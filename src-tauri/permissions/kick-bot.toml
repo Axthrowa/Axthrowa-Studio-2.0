@@ -1,0 +1,14 @@
+[[permission]]
+identifier = "allow-kick-bot"
+description = "Kick bot giriş penceresi, oturum ve chatroom komutları"
+commands.allow = [
+  "open_kick_bot_login",
+  "close_kick_bot_login",
+  "open_kick_login_in_browser",
+  "ingest_kick_bot_cookie_header",
+  "import_kick_session_from_browser",
+  "harvest_kick_bot_cookies",
+  "kick_bot_session_status",
+  "kick_bot_session_disconnect",
+  "fetch_kick_chatroom",
+]

@@ -1,0 +1,26 @@
+node_modules/
+dist/
+resonance/node_modules/
+resonance/dist/
+src-tauri/target/
+app-data/
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# derleme çıktıları / yedekler / yerel veri (gizli bilgi içerebilir)
+target-docker/
+target-linux/
+cikti/
+cikti - Kopya/
+Portable-Build-NEW/
+Dist-AxthrowA/
+media/
+data/
+_tmp_ui.tsx
+*.exe
+*.zip
+*.pfx
+*.tsbuildinfo
+.cursor/

@@ -1,0 +1,187 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { NowPlayingWidget } from '../components/widget/NowPlayingWidget'
+import { useConfig, DEFAULT_CONFIG } from '../context/ConfigContext'
+import { useNowPlaying } from '../hooks/useNowPlaying'
+import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
+import { hostBaseUrl, loadOverlayConfig } from '../lib/hostBridge'
+
+export default function Overlay() {
+  const [params] = useSearchParams()
+  const profileId = params.get('profile')
+  const { profiles } = useConfig()
+  const [, forceTick] = useState(0)
+
+  // A self-contained Browser Source URL may carry embedded config (`data=`).
+  // OBS uses an isolated profile so that snapshot used to be necessary — but
+  // when the host app is running we prefer the live `aktif` config so theme /
+  // animation / color changes apply without regenerating the URL. Embedded
+  // `data` is kept only as a credential + offline fallback.
+  const portable = useMemo(() => decodeOverlayData(params.get('data')), [params])
+
+  // Kısa adres: `?p=<profil>` veya parametresiz → aktif tema.
+  // `data=` olsa bile host'tan okumayı dene; aksi halde OBS'e yapıştırılan
+  // uzun URL temayı donmuş bir kopyada kilitliyordu.
+  const shortId = params.get('p') || ACTIVE_OVERLAY_ID
+  const [hosted, setHosted] = useState(null)
+  const [configReady, setConfigReady] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    // Tema yalnız açılışta okunursa, Resonance'ta skin değiştirildiğinde
+    // Giriş/Çıkış/Mola ekranları eski temada kalıyordu (OBS kaynağını elle
+    // yenilemek gerekiyordu). Düzenli yoklayıp *gerçekten* değiştiyse
+    // uyguluyoruz — aynı veride setState yok, boşuna yeniden çizim olmasın.
+    let lastJson = ''
+    const sync = async () => {
+      try {
+        const d = await loadOverlayConfig(shortId)
+        if (cancelled) return
+        const json = JSON.stringify(d)
+        if (json !== lastJson) {
+          lastJson = json
+          setHosted(d)
+        }
+      } catch {
+        /* sunucu kısa süre yanıt vermezse mevcut tema korunur */
+      } finally {
+        if (!cancelled) setConfigReady(true)
+      }
+    }
+    void sync()
+
+    // Anında güncelleme: uygulama tema değişince WebSocket'ten haber veriyor.
+    // Yoklama yalnız yedek — bağlantı kopmuşsa devreye girsin diye seyrek.
+    let ws = null
+    let retry
+    const connect = () => {
+      if (cancelled) return
+      try {
+        ws = new WebSocket(`${hostBaseUrl().replace(/^http/, 'ws')}/ws/overlay-sync`)
+      } catch {
+        return
+      }
+      ws.onmessage = (ev) => {
+        try {
+          if (JSON.parse(ev.data)?.type === 'overlay-config') void sync()
+        } catch {
+          /* ilgisiz mesaj */
+        }
+      }
+      ws.onclose = () => {
+        if (!cancelled) retry = setTimeout(connect, 3000)
+      }
+    }
+    connect()
+
+    const timer = setInterval(sync, 15000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+      clearTimeout(retry)
+      try {
+        ws?.close()
+      } catch {
+        /* */
+      }
+    }
+  }, [shortId])
+
+  const profile = profiles.find((p) => p.id === profileId) || profiles[0]
+  // Host cevabı gelmeden localStorage varsayılanına (compact) düşme —
+  // OBS'te yanlış temanın bir anlığına / kalıcı görünmesine yol açıyordu.
+  const rawConfig = hosted?.config || (configReady ? portable?.config || profile?.config : null)
+  const config = rawConfig ? { ...DEFAULT_CONFIG, ...rawConfig } : null
+  const overrides = { ytmd: portable?.ytmd || null, spotify: portable?.spotify || null }
+  const { track, isPlaying, progressMs } = useNowPlaying(
+    config?.musicService || DEFAULT_CONFIG.musicService,
+    overrides,
+  )
+
+  useEffect(() => {
+    document.body.classList.add('overlay-transparent')
+    document.documentElement.classList.add('overlay-transparent')
+    const onStorage = () => forceTick((t) => t + 1)
+    window.addEventListener('storage', onStorage)
+    return () => {
+      document.body.classList.remove('overlay-transparent')
+      document.documentElement.classList.remove('overlay-transparent')
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
+  // Gömülü kullanımda (Giriş/Çıkış/Mola ekranları bu sayfayı iframe olarak
+  // kullanıyor) kartın gerçek boyutunu üst pencereye bildiriyoruz. Sabit
+  // ölçülü bir çerçevede tema değişince kart yarım kalıyordu.
+  const boxRef = useRef(null)
+  const lastSizeRef = useRef({ width: 420, height: 150 })
+  const stateRef = useRef({
+    hasTrack: false,
+    isPlaying: false,
+    visible: false,
+  })
+  stateRef.current.hasTrack = Boolean(track)
+  stateRef.current.isPlaying = Boolean(isPlaying)
+
+  const postState = (extra = {}) => {
+    const el = boxRef.current
+    if (!el || window.parent === window) return
+    const r = el.getBoundingClientRect()
+    let width = Math.ceil(r.width)
+    let height = Math.ceil(r.height)
+    // Kart gizlenince kutu 0×0 oluyor; ebeveyn çerçevesini çökertme —
+    // müzik yeniden başlayınca tema görünmez / kesik kalıyordu.
+    if (width >= 40 && height >= 20) {
+      lastSizeRef.current = { width, height }
+    } else {
+      width = lastSizeRef.current.width
+      height = lastSizeRef.current.height
+    }
+    window.parent.postMessage(
+      {
+        source: 'resonance-overlay',
+        type: 'state',
+        width,
+        height,
+        hasTrack: stateRef.current.hasTrack,
+        isPlaying: stateRef.current.isPlaying,
+        visible: stateRef.current.visible,
+        ...extra,
+      },
+      '*',
+    )
+  }
+
+  useEffect(() => {
+    const el = boxRef.current
+    if (!el || window.parent === window) return undefined
+    postState()
+    const ro = new ResizeObserver(() => postState())
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  useEffect(() => {
+    postState()
+  }, [track, isPlaying])
+
+  const onVisibilityChange = useCallback((visible) => {
+    stateRef.current.visible = Boolean(visible)
+    postState({ visible: Boolean(visible) })
+  }, [])
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-transparent">
+      <div ref={boxRef} className="inline-flex min-h-[1px] min-w-[1px]">
+        {config && (
+          <NowPlayingWidget
+            track={track}
+            isPlaying={isPlaying}
+            progressMs={progressMs}
+            config={config}
+            onVisibilityChange={onVisibilityChange}
+          />
+        )}
+      </div>
+    </div>
+  )
+}

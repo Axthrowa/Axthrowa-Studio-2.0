@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-sync-global-hotkeys"
+description = "Küresel kısayolları kaydetmeye izin verir (tepsi / alta alınca da çalışsın)"
+commands.allow = ["sync_global_hotkeys"]

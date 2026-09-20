@@ -1,0 +1,20 @@
+[[permission]]
+identifier = "allow-alerts-widgets"
+description = "Alerts / Widgets CRUD ve yerel medya stream URL üretimi"
+commands.allow = [
+  "media_playable_urls",
+  "media_import_file",
+  "alerts_list",
+  "alerts_get",
+  "alerts_upsert",
+  "alerts_delete",
+  "alert_variants_list",
+  "alert_variants_upsert",
+  "alert_variants_delete",
+  "widgets_list",
+  "widgets_get",
+  "widgets_upsert",
+  "widgets_patch_config",
+  "widgets_delete",
+  "widgets_obs_url",
+]

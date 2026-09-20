@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-launch-obs"
+description = "OBS Studio sürecini başlatmaya izin verir"
+commands.allow = ["launch_obs"]

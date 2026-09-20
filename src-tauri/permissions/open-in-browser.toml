@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-open-in-browser"
+description = "Sistem tarayıcısında URL açmaya izin verir"
+commands.allow = ["open_in_browser"]

@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0e14;
+  --color-surface: #0e131c;
+  --color-surface-2: #161d29;
+  --color-surface-3: #1f2a3b;
+  --color-border: #202a3d;
+  --color-text: #ccd4e0;
+  --color-text-muted: #7c8aa3;
+  --color-accent: #22d3b8;
+  --color-accent-2: #6366f1;
+  --font-sans: "Poppins", "Poppins Fallback", sans-serif;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-3);
+  border-radius: 999px;
+}
+
+.gradient-text {
+  background-image: linear-gradient(to right bottom, var(--color-accent), var(--color-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.overlay-transparent {
+  background: transparent !important;
+}
+
+/* A quiet waveform motif used behind hero/banner sections for a bit of
+   signature texture without needing image assets. */
+.waveform-backdrop {
+  position: relative;
+  overflow: hidden;
+}
+
+.waveform-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-accent) 14%, transparent) 0px,
+    color-mix(in srgb, var(--color-accent) 14%, transparent) 3px,
+    transparent 3px,
+    transparent 11px
+  );
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+  pointer-events: none;
+}
+
+:root[data-theme='light'] {
+  --color-bg: #f5f6f9;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef0f5;
+  --color-surface-3: #e1e4ec;
+  --color-border: #dfe2ea;
+  --color-text: #131a26;
+  --color-text-muted: #5c6579;
+}
+
+/* --- Now Playing widget ------------------------------------------------ */
+
+/* Plak dönüşü: CSS animasyonu (ana iş parçacığını yormaz, duraklatınca açıyı korur). */
+@keyframes resonance-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.resonance-spin {
+  animation: resonance-spin 6s linear infinite;
+}
+
+/* "Arka planı gizle": kabuk, degrade, bulanık kapak ve gölge görünmez olur;
+   yalnız yazılar, kapak ve çubuklar kalır. Okunabilirlik için yumuşak yazı
+   gölgesi (renk `--bare-shadow` ile temaya göre gelir). `data-keep-border`
+   çerçevesi kimliğin parçası olan skinlerde (Kenarlık) çerçeve korunur. */
+[data-bare='1'] {
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  text-shadow: var(--bare-shadow, 0 1px 6px rgba(0, 0, 0, 0.75), 0 0 2px rgba(0, 0, 0, 0.55));
+}
+[data-bare='1']:not([data-keep-border='1']) {
+  border-color: transparent !important;
+}

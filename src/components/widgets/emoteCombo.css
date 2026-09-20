@@ -1,0 +1,99 @@
+/* Emote Combo — Desktop/Emote kombosu/index.emotekombosu.css (scoped) */
+
+.yya-emote-combo {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.yya-emote-combo .emote-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  gap: 20px;
+}
+
+.yya-emote-combo .emote-combo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 6px;
+  margin-right: 6px;
+  position: relative;
+  transition: transform 0.5s ease;
+}
+
+.yya-emote-combo .emote {
+  height: 50px;
+  width: 50px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.yya-emote-combo .emote--lg {
+  height: 72px;
+  width: 72px;
+}
+
+.yya-emote-combo .emote--xl {
+  height: 96px;
+  width: 96px;
+}
+
+.yya-emote-combo .emote-label {
+  color: #fff;
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+  text-shadow: 0 0 2px #000, 0 1px 2px #000;
+}
+
+.yya-emote-combo .combo-text {
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  position: absolute;
+  text-align: center;
+  text-shadow: 0 0 2px #000, 0 1px 2px #000;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  transition: transform 0.3s ease, font-size 0.3s ease, color 0.3s ease;
+}
+
+.yya-emote-combo .combo-text--tier5 {
+  color: #ff8c2a;
+  font-size: 32px;
+  top: 48px;
+  text-shadow:
+    0 0 6px rgba(255, 100, 0, 0.9),
+    0 0 2px #000,
+    0 1px 2px #000;
+}
+
+.yya-emote-combo .combo-text--tier10 {
+  color: #ffd54a;
+  font-size: 38px;
+  top: 56px;
+  text-shadow:
+    0 0 10px rgba(255, 200, 40, 0.95),
+    0 0 2px #000,
+    0 1px 2px #000;
+}
+
+.yya-emote-combo .combo-badge {
+  margin-top: 28px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 180, 100, 0.9);
+  text-shadow: 0 1px 2px #000;
+}
+
+.yya-emote-combo .combo-badge--gold {
+  color: rgba(255, 220, 80, 0.95);
+}

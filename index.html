@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yayın Yönetim Aracı</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Caveat:wght@500;700&family=Nunito:wght@600;800&family=Orbitron:wght@400..900&family=Oswald:wght@500;700&family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:ital,wght@0,400..700;1,400..600&family=Press+Start+2P&family=Space+Grotesk:wght@500;600;700&family=VT323&display=swap" rel="stylesheet" />
+    <script>
+      /* Eski Hash OBS URL → path (BrowserRouter). Örn: #/widgets/cup?obs=1 → /widgets/cup?obs=1 */
+      (function () {
+        var h = location.hash || "";
+        if (h.indexOf("#/") === 0) {
+          var rest = h.slice(1);
+          var qi = rest.indexOf("?");
+          var path = qi >= 0 ? rest.slice(0, qi) : rest;
+          var q = qi >= 0 ? rest.slice(qi) : location.search || "";
+          if (!q && path.indexOf("/widgets/") === 0) q = "?obs=1";
+          if (path && path !== location.pathname) {
+            location.replace(path + q);
+            return;
+          }
+        }
+        /* OBS Browser Source: ?obs=1 veya /widgets/ — React yüklenmeden şeffaf boya */
+        var obs =
+          /[?&]obs=1(?:&|$)/.test(location.search) ||
+          location.pathname.indexOf("/widgets") === 0;
+        if (obs) {
+          document.documentElement.classList.add("obs-transparent");
+          document.documentElement.style.background = "transparent";
+          document.documentElement.style.backgroundColor = "transparent";
+        }
+      })();
+    </script>
+    <style>
+      /* OBS CEF: erken şeffaflık (CSS bundle gelmeden) */
+      html.obs-transparent,
+      html.obs-transparent body,
+      html.obs-transparent #root {
+        background: transparent !important;
+        background-color: transparent !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

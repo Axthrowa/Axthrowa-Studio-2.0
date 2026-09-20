@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OBS Çıkış Ekranı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Orbitron:wght@400..900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="obs-style.css?v=16">
+</head>
+<body data-obs-screen="outro">
+
+<div class="obs-canvas-wrap" id="obsCanvasWrap">
+  <div class="yt-bg-wrap hidden" id="ytBgWrap">
+    <div id="ytPlayer"></div>
+  </div>
+  <video id="bgVideo" class="hidden" autoplay muted playsinline></video>
+  <canvas id="bgCanvas"></canvas>
+  <div class="vignette"></div>
+
+  <div class="obs-overlay" id="obsOverlay">
+
+    <div class="draggable" data-key="logo">
+      <div class="logo-ring">
+        <img id="logoImg" alt="" class="hidden">
+        <span id="logoFallback">▶</span>
+      </div>
+    </div>
+
+    <div class="draggable" data-key="title">
+      <p class="eyebrow" id="eyebrowText">YAYIN BİTTİ</p>
+      <h1 class="stream-title" id="streamTitleText">İzlediğiniz için teşekkürler!</h1>
+      <p class="stream-sub" id="streamSubText">Bir sonraki yayında görüşmek üzere</p>
+    </div>
+
+    <div class="draggable" data-key="countdown">
+      <div class="countdown" id="countdownWrap">
+        <div class="cd-box">
+          <span class="cd-num" id="cdMinutes">00</span>
+          <span class="cd-label">Dakika</span>
+        </div>
+        <span class="cd-sep">:</span>
+        <div class="cd-box">
+          <span class="cd-num" id="cdSeconds">00</span>
+          <span class="cd-label">Saniye</span>
+        </div>
+      </div>
+      <div class="live-badge hidden" id="liveBadge">
+        <span class="dot"></span>
+        <span id="liveBadgeText">YİNE GÖRÜŞÜRÜZ</span>
+      </div>
+    </div>
+
+    <div class="draggable" data-key="socials">
+      <div class="socials" id="socialsRow"></div>
+    </div>
+
+    <div class="draggable" data-key="ticker">
+      <div class="ticker-wrap" id="tickerWrap">
+        <p class="ticker" id="tickerText"></p>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="settings-fab" id="settingsFab" type="button" title="Ayarlar">⚙</button>
+</div>
+
+<aside class="settings-drawer hidden" id="settingsDrawer">
+  <div class="drawer-head">
+    <h2>Çıkış Ekranı Ayarları</h2>
+    <button class="modal-close" id="drawerClose" type="button">×</button>
+  </div>
+
+  <button id="btnPullFromMain" class="btn ghost full" type="button">Ana Araçtan Başlık Çek</button>
+
+  <p class="settings-note">
+    Yayın bittiğinde OBS'te göstereceğiniz outro ekranı. Logo, başlık, rozet,
+    sosyal medya ve alt not kutucuklarını fare ile sürükleyerek konumlandırın.
+    Arka plana kendi videonuzu veya YouTube linkini ekleyebilirsiniz.
+  </p>
+  <button id="btnResetPositions" class="btn ghost full" type="button">Konumları Sıfırla</button>
+
+  <div class="settings-section">
+    <h3>Boyutlar</h3>
+    <div class="size-row">
+      <label for="szLogo">Logo</label>
+      <input id="szLogo" type="range" min="40" max="220" step="5" value="100">
+      <span class="size-value" id="szLogoVal">100%</span>
+    </div>
+    <div class="size-row">
+      <label for="szTitle">Başlık</label>
+      <input id="szTitle" type="range" min="40" max="220" step="5" value="100">
+      <span class="size-value" id="szTitleVal">100%</span>
+    </div>
+    <div class="size-row">
+      <label for="szCountdown">Rozet</label>
+      <input id="szCountdown" type="range" min="40" max="220" step="5" value="100">
+      <span class="size-value" id="szCountdownVal">100%</span>
+    </div>
+    <div class="size-row">
+      <label for="szSocials">Sosyal Medya</label>
+      <input id="szSocials" type="range" min="40" max="220" step="5" value="100">
+      <span class="size-value" id="szSocialsVal">100%</span>
+    </div>
+    <div class="size-row">
+      <label for="szTicker">Alt Not</label>
+      <input id="szTicker" type="range" min="40" max="220" step="5" value="100">
+      <span class="size-value" id="szTickerVal">100%</span>
+    </div>
+    <button id="btnResetSizes" class="btn ghost full" type="button">Boyutları Sıfırla</button>
+  </div>
+
+  <div class="settings-section">
+    <h3>Görünürlük</h3>
+    <label class="switch-row"><input type="checkbox" id="visLogo" checked> <span>Logo</span></label>
+    <label class="switch-row"><input type="checkbox" id="visTitle" checked> <span>Başlık</span></label>
+    <label class="switch-row"><input type="checkbox" id="visCountdown" checked> <span>Rozet</span></label>
+    <label class="switch-row"><input type="checkbox" id="visSocials" checked> <span>Sosyal Medya</span></label>
+    <label class="switch-row"><input type="checkbox" id="visTicker" checked> <span>Alt Not</span></label>
+  </div>
+
+  <div class="settings-section">
+    <h3>Metinler</h3>
+    <div class="field">
+      <label for="sEyebrow">Üst Etiket</label>
+      <input id="sEyebrow" type="text" placeholder="YAYIN BİTTİ">
+    </div>
+    <div class="field">
+      <label for="sTitle">Ana Başlık</label>
+      <input id="sTitle" type="text" placeholder="İzlediğiniz için teşekkürler!">
+    </div>
+    <div class="field">
+      <label for="sSub">Alt Başlık / Açıklama</label>
+      <input id="sSub" type="text" placeholder="Bir sonraki yayında görüşmek üzere">
+    </div>
+    <div class="field">
+      <label for="sTicker">Alt Kayan Not (opsiyonel)</label>
+      <input id="sTicker" type="text" placeholder="Discord: discord.gg/ornek · Bir sonraki yayın yakında">
+    </div>
+    <div class="field">
+      <label for="sLiveText">Rozet Yazısı</label>
+      <input id="sLiveText" type="text" placeholder="YİNE GÖRÜŞÜRÜZ">
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Opsiyonel Geri Sayım</h3>
+    <p class="settings-note">Boş bırakırsanız ekranda yalnızca rozet görünür. Tarih verirseniz süre dolana kadar geri sayım, sonra rozet gösterilir.</p>
+    <div class="field">
+      <label for="sTargetDate">Bitiş Tarihi/Saati</label>
+      <input id="sTargetDate" type="datetime-local">
+    </div>
+    <div class="field-row-inline">
+      <div>
+        <label for="sCountdownMinutes">...veya kaç dakika sonra</label>
+        <input id="sCountdownMinutes" type="number" min="0" step="1" placeholder="örn. 5">
+      </div>
+      <div style="display:flex; align-items:flex-end; padding-bottom:1px;">
+        <button id="btnSetCountdownMinutes" class="btn ghost" type="button">Ayarla</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Görünüm</h3>
+    <div class="field">
+      <label for="sAccent">Vurgu Rengi</label>
+      <input id="sAccent" type="color" value="#7c5cff">
+    </div>
+    <div class="color-grid">
+      <div class="field">
+        <label for="sEyebrowColor">Üst Etiket Rengi</label>
+        <input id="sEyebrowColor" type="color" value="#b39dff">
+      </div>
+      <div class="field">
+        <label for="sTextColor">Başlık Rengi</label>
+        <input id="sTextColor" type="color" value="#ffffff">
+      </div>
+      <div class="field">
+        <label for="sSubColor">Alt Başlık Rengi</label>
+        <input id="sSubColor" type="color" value="#c9cddb">
+      </div>
+      <div class="field">
+        <label for="sCountdownColor">Rozet / Geri Sayım Rengi</label>
+        <input id="sCountdownColor" type="color" value="#ffffff">
+      </div>
+      <div class="field">
+        <label for="sTickerColor">Alt Not Rengi</label>
+        <input id="sTickerColor" type="color" value="#9aa0b4">
+      </div>
+    </div>
+    <div class="field">
+      <label for="sFont">Yazı Tipi</label>
+      <select id="sFont">
+        <option value="system">Varsayılan</option>
+        <option value="pixel8">8-Bit (Piksel)</option>
+        <option value="terminal">Piksel Terminal</option>
+        <option value="futuristic">Fütüristik</option>
+        <option value="bold">Kalın Vurgulu</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="sBgStyle">Arka Plan Stili</label>
+      <select id="sBgStyle">
+        <option value="mix">Karma (Twitch + Kick + YouTube)</option>
+        <option value="accent">Vurgu Rengine Göre</option>
+        <option value="dark">Sade Koyu</option>
+        <option value="custom">Kendi Görselim</option>
+        <option value="video">Kendi Videom</option>
+        <option value="youtube">YouTube Videosu</option>
+      </select>
+      <span class="hint">Aşağıdaki görsel/video/YouTube alanlarından birine bir şey verdiğinizde stil otomatik olarak ona geçer.</span>
+    </div>
+    <div class="field">
+      <label for="sBgImage">Arka Plan Görseli</label>
+      <input id="sBgImage" type="file" accept="image/*">
+    </div>
+    <div class="field">
+      <label for="sBgVideo">Arka Plan Videosu (dosya)</label>
+      <input id="sBgVideo" type="file" accept="video/*">
+      <span class="hint">Video sunucudaki dosyaya kaydedilir, büyük/kaliteli videolar da desteklenir; yalnızca yükleme biraz zaman alabilir.</span>
+
+      <div class="trim-wrap hidden" id="vidTrimWrap">
+        <div class="trim-bar" id="vidTrimBar">
+          <div class="trim-range" id="vidTrimRange"></div>
+          <div class="trim-handle" id="vidTrimHandleStart"></div>
+          <div class="trim-handle" id="vidTrimHandleEnd"></div>
+        </div>
+        <div class="trim-time-labels">
+          <span id="vidTrimStartLabel">0:00</span>
+          <span id="vidTrimEndLabel">0:00</span>
+        </div>
+      </div>
+
+      <div class="field-row-inline">
+        <div>
+          <label for="sBgVideoStart">Başlangıç (sn)</label>
+          <input id="sBgVideoStart" type="number" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label for="sBgVideoEnd">Bitiş (sn)</label>
+          <input id="sBgVideoEnd" type="number" min="0" step="1" placeholder="sonuna kadar">
+        </div>
+      </div>
+      <span class="hint">Belirttiğiniz aralık sürekli döngüde oynar (bitiş boşsa videonun sonuna kadar). Video yüklenince yukarıdaki çubuktan da sürükleyerek kırpabilirsiniz.</span>
+    </div>
+    <div class="field">
+      <label for="sYoutubeUrl">YouTube Video Linki</label>
+      <input id="sYoutubeUrl" type="text" placeholder="https://www.youtube.com/watch?v=...">
+      <span class="hint">Video sessiz ve döngüde otomatik oynar. Bağlantıyı yapıştırıp Enter'a basın veya alandan çıkın.</span>
+
+      <div class="trim-wrap hidden" id="ytTrimWrap">
+        <div class="trim-bar" id="ytTrimBar">
+          <div class="trim-range" id="ytTrimRange"></div>
+          <div class="trim-handle" id="ytTrimHandleStart"></div>
+          <div class="trim-handle" id="ytTrimHandleEnd"></div>
+        </div>
+        <div class="trim-time-labels">
+          <span id="ytTrimStartLabel">0:00</span>
+          <span id="ytTrimEndLabel">0:00</span>
+        </div>
+      </div>
+
+      <div class="field-row-inline">
+        <div>
+          <label for="sYoutubeStart">Başlangıç (sn)</label>
+          <input id="sYoutubeStart" type="number" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label for="sYoutubeEnd">Bitiş (sn)</label>
+          <input id="sYoutubeEnd" type="number" min="0" step="1" placeholder="sonuna kadar">
+        </div>
+      </div>
+      <span class="hint">Belirttiğiniz aralık sürekli döngüde oynar (bitiş boşsa videonun sonuna kadar). Video yüklenince yukarıdaki çubuktan da sürükleyerek kırpabilirsiniz.</span>
+    </div>
+    <label class="switch-row">
+      <input type="checkbox" id="sParticles" checked>
+      <span>Parçacık animasyonu</span>
+    </label>
+    <div class="particle-shapes" id="particleShapesWrap">
+      <span class="hint">Parçacık şekilleri (assets/particles/ klasöründen otomatik):</span>
+      <div id="particleShapeCheckboxes"></div>
+      <span class="hint">Boyutlar (her şekil ayrı, %50–%400):</span>
+      <div id="particleShapeSizes"></div>
+    </div>
+    <label class="switch-row">
+      <input type="checkbox" id="sTransparent">
+      <span>Şeffaf arka plan (yalnızca overlay katmanı için)</span>
+    </label>
+    <label class="switch-row">
+      <input type="checkbox" id="sVideoSound">
+      <span>Arka plan videosunun/YouTube'un sesini aç</span>
+    </label>
+    <span class="hint">Bazı tarayıcılarda sesli otomatik oynatma engellenebilir; OBS Tarayıcı Kaynağı'nda genellikle çalışır.</span>
+    <div class="size-row" id="videoVolumeRow">
+      <label for="sVideoVolume">Ses Seviyesi</label>
+      <input id="sVideoVolume" type="range" min="0" max="100" step="5" value="100">
+      <span class="size-value" id="sVideoVolumeVal">100%</span>
+    </div>
+    <div class="field">
+      <label for="sLogo">Logo / Avatar</label>
+      <input id="sLogo" type="file" accept="image/*">
+    </div>
+    <label class="switch-row">
+      <input type="checkbox" id="sLogoFit" checked>
+      <span>Logoyu sığdır (kırpma)</span>
+    </label>
+    <label class="switch-row">
+      <input type="checkbox" id="sLogoFrame" checked>
+      <span>Logo çerçevesi (halka/parlama)</span>
+    </label>
+    <div id="logoCropFields">
+      <div class="size-row">
+        <label for="logoZoom">Yakınlaştır</label>
+        <input id="logoZoom" type="range" min="100" max="300" step="5" value="100">
+        <span class="size-value" id="logoZoomVal">100%</span>
+      </div>
+      <div class="size-row">
+        <label for="logoPanX">Yatay Konum</label>
+        <input id="logoPanX" type="range" min="-50" max="50" step="1" value="0">
+        <span class="size-value" id="logoPanXVal">0</span>
+      </div>
+      <div class="size-row">
+        <label for="logoPanY">Dikey Konum</label>
+        <input id="logoPanY" type="range" min="-50" max="50" step="1" value="0">
+        <span class="size-value" id="logoPanYVal">0</span>
+      </div>
+      <button id="btnResetLogoCrop" class="btn ghost full" type="button">Logo Kırpmasını Sıfırla</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Yazı Ayarları (Tek Tek)</h3>
+    <span class="hint">Her yazı için ayrı yazı tipi, boyut ve efekt seçin. "Genel Yazı Tipini Kullan" seçilirse yukarıdaki genel yazı tipi kullanılır.</span>
+
+    <div class="text-style-row">
+      <strong>Üst Etiket</strong>
+      <div class="field-row-inline">
+        <div>
+          <label for="txFontEyebrow">Yazı Tipi</label>
+          <select id="txFontEyebrow">
+            <option value="">Genel Yazı Tipini Kullan</option>
+            <option value="system">Varsayılan</option>
+            <option value="pixel8">8-Bit (Piksel)</option>
+            <option value="terminal">Piksel Terminal</option>
+            <option value="futuristic">Fütüristik</option>
+            <option value="bold">Kalın Vurgulu</option>
+          </select>
+        </div>
+        <div>
+          <label for="txEffectEyebrow">Efekt</label>
+          <select id="txEffectEyebrow">
+            <option value="none">Yok</option>
+            <option value="glow">Parlama</option>
+            <option value="shadow">Gölge</option>
+            <option value="outline">Kontur</option>
+            <option value="retro">Retro Blok Gölge</option>
+          </select>
+        </div>
+        <div>
+          <label for="txAnimEyebrow">Animasyon</label>
+          <select id="txAnimEyebrow">
+            <option value="none">Yok</option>
+            <option value="pulse">Nabız</option>
+            <option value="float">Süzülme</option>
+            <option value="wiggle">Sallanma</option>
+            <option value="blink">Yanıp Sönme</option>
+            <option value="glowPulse">Parlama Nabzı</option>
+          </select>
+        </div>
+      </div>
+      <div class="size-row">
+        <label for="txSizeEyebrow">Boyut</label>
+        <input id="txSizeEyebrow" type="range" min="50" max="200" step="5" value="100">
+        <span class="size-value" id="txSizeEyebrowVal">100%</span>
+      </div>
+    </div>
+
+    <div class="text-style-row">
+      <strong>Ana Başlık</strong>
+      <div class="field-row-inline">
+        <div>
+          <label for="txFontTitle">Yazı Tipi</label>
+          <select id="txFontTitle">
+            <option value="">Genel Yazı Tipini Kullan</option>
+            <option value="system">Varsayılan</option>
+            <option value="pixel8">8-Bit (Piksel)</option>
+            <option value="terminal">Piksel Terminal</option>
+            <option value="futuristic">Fütüristik</option>
+            <option value="bold">Kalın Vurgulu</option>
+          </select>
+        </div>
+        <div>
+          <label for="txEffectTitle">Efekt</label>
+          <select id="txEffectTitle">
+            <option value="none">Yok</option>
+            <option value="glow">Parlama</option>
+            <option value="shadow">Gölge</option>
+            <option value="outline">Kontur</option>
+            <option value="retro">Retro Blok Gölge</option>
+          </select>
+        </div>
+        <div>
+          <label for="txAnimTitle">Animasyon</label>
+          <select id="txAnimTitle">
+            <option value="none">Yok</option>
+            <option value="pulse">Nabız</option>
+            <option value="float">Süzülme</option>
+            <option value="wiggle">Sallanma</option>
+            <option value="blink">Yanıp Sönme</option>
+            <option value="glowPulse">Parlama Nabzı</option>
+          </select>
+        </div>
+      </div>
+      <div class="size-row">
+        <label for="txSizeTitle">Boyut</label>
+        <input id="txSizeTitle" type="range" min="50" max="200" step="5" value="100">
+        <span class="size-value" id="txSizeTitleVal">100%</span>
+      </div>
+    </div>
+
+    <div class="text-style-row">
+      <strong>Alt Başlık</strong>
+      <div class="field-row-inline">
+        <div>
+          <label for="txFontSub">Yazı Tipi</label>
+          <select id="txFontSub">
+            <option value="">Genel Yazı Tipini Kullan</option>
+            <option value="system">Varsayılan</option>
+            <option value="pixel8">8-Bit (Piksel)</option>
+            <option value="terminal">Piksel Terminal</option>
+            <option value="futuristic">Fütüristik</option>
+            <option value="bold">Kalın Vurgulu</option>
+          </select>
+        </div>
+        <div>
+          <label for="txEffectSub">Efekt</label>
+          <select id="txEffectSub">
+            <option value="none">Yok</option>
+            <option value="glow">Parlama</option>
+            <option value="shadow">Gölge</option>
+            <option value="outline">Kontur</option>
+            <option value="retro">Retro Blok Gölge</option>
+          </select>
+        </div>
+        <div>
+          <label for="txAnimSub">Animasyon</label>
+          <select id="txAnimSub">
+            <option value="none">Yok</option>
+            <option value="pulse">Nabız</option>
+            <option value="float">Süzülme</option>
+            <option value="wiggle">Sallanma</option>
+            <option value="blink">Yanıp Sönme</option>
+            <option value="glowPulse">Parlama Nabzı</option>
+          </select>
+        </div>
+      </div>
+      <div class="size-row">
+        <label for="txSizeSub">Boyut</label>
+        <input id="txSizeSub" type="range" min="50" max="200" step="5" value="100">
+        <span class="size-value" id="txSizeSubVal">100%</span>
+      </div>
+    </div>
+
+    <div class="text-style-row">
+      <strong>Rozet / Geri Sayım</strong>
+      <div class="field-row-inline">
+        <div>
+          <label for="txFontCountdown">Yazı Tipi</label>
+          <select id="txFontCountdown">
+            <option value="">Genel Yazı Tipini Kullan</option>
+            <option value="system">Varsayılan</option>
+            <option value="pixel8">8-Bit (Piksel)</option>
+            <option value="terminal">Piksel Terminal</option>
+            <option value="futuristic">Fütüristik</option>
+            <option value="bold">Kalın Vurgulu</option>
+          </select>
+        </div>
+        <div>
+          <label for="txEffectCountdown">Efekt</label>
+          <select id="txEffectCountdown">
+            <option value="none">Yok</option>
+            <option value="glow">Parlama</option>
+            <option value="shadow">Gölge</option>
+            <option value="outline">Kontur</option>
+            <option value="retro">Retro Blok Gölge</option>
+          </select>
+        </div>
+        <div>
+          <label for="txAnimCountdown">Animasyon</label>
+          <select id="txAnimCountdown">
+            <option value="none">Yok</option>
+            <option value="pulse">Nabız</option>
+            <option value="float">Süzülme</option>
+            <option value="wiggle">Sallanma</option>
+            <option value="blink">Yanıp Sönme</option>
+            <option value="glowPulse">Parlama Nabzı</option>
+          </select>
+        </div>
+      </div>
+      <div class="size-row">
+        <label for="txSizeCountdown">Boyut</label>
+        <input id="txSizeCountdown" type="range" min="50" max="200" step="5" value="100">
+        <span class="size-value" id="txSizeCountdownVal">100%</span>
+      </div>
+    </div>
+
+    <div class="text-style-row">
+      <strong>Alt Not</strong>
+      <div class="field-row-inline">
+        <div>
+          <label for="txFontTicker">Yazı Tipi</label>
+          <select id="txFontTicker">
+            <option value="">Genel Yazı Tipini Kullan</option>
+            <option value="system">Varsayılan</option>
+            <option value="pixel8">8-Bit (Piksel)</option>
+            <option value="terminal">Piksel Terminal</option>
+            <option value="futuristic">Fütüristik</option>
+            <option value="bold">Kalın Vurgulu</option>
+          </select>
+        </div>
+        <div>
+          <label for="txEffectTicker">Efekt</label>
+          <select id="txEffectTicker">
+            <option value="none">Yok</option>
+            <option value="glow">Parlama</option>
+            <option value="shadow">Gölge</option>
+            <option value="outline">Kontur</option>
+            <option value="retro">Retro Blok Gölge</option>
+          </select>
+        </div>
+        <div>
+          <label for="txAnimTicker">Animasyon</label>
+          <select id="txAnimTicker">
+            <option value="none">Yok</option>
+            <option value="pulse">Nabız</option>
+            <option value="float">Süzülme</option>
+            <option value="wiggle">Sallanma</option>
+            <option value="blink">Yanıp Sönme</option>
+            <option value="glowPulse">Parlama Nabzı</option>
+          </select>
+        </div>
+      </div>
+      <div class="size-row">
+        <label for="txSizeTicker">Boyut</label>
+        <input id="txSizeTicker" type="range" min="50" max="200" step="5" value="100">
+        <span class="size-value" id="txSizeTickerVal">100%</span>
+      </div>
+    </div>
+
+    <button id="btnResetTextStyles" class="btn ghost full" type="button">Yazı Ayarlarını Sıfırla</button>
+  </div>
+
+  <div class="settings-section">
+    <h3>Sosyal Medya</h3>
+    <div class="social-edit" data-key="twitch">
+      <label class="switch-row"><input type="checkbox" class="soc-enabled"> <span>Twitch</span></label>
+      <input type="text" class="soc-handle" placeholder="kullanıcıadı">
+    </div>
+    <div class="social-edit" data-key="youtube">
+      <label class="switch-row"><input type="checkbox" class="soc-enabled"> <span>YouTube</span></label>
+      <input type="text" class="soc-handle" placeholder="@kanaladi">
+    </div>
+    <div class="social-edit" data-key="kick">
+      <label class="switch-row"><input type="checkbox" class="soc-enabled"> <span>Kick</span></label>
+      <input type="text" class="soc-handle" placeholder="kullaniciadi">
+    </div>
+    <div class="social-edit" data-key="x">
+      <label class="switch-row"><input type="checkbox" class="soc-enabled"> <span>X / Twitter</span></label>
+      <input type="text" class="soc-handle" placeholder="@kullaniciadi">
+    </div>
+    <div class="social-edit" data-key="instagram">
+      <label class="switch-row"><input type="checkbox" class="soc-enabled"> <span>Instagram</span></label>
+      <input type="text" class="soc-handle" placeholder="@kullaniciadi">
+    </div>
+    <div class="social-edit" data-key="discord">
+      <label class="switch-row"><input type="checkbox" class="soc-enabled"> <span>Discord</span></label>
+      <input type="text" class="soc-handle" placeholder="discord.gg/sunucu">
+    </div>
+    <div class="social-edit" data-key="tiktok">
+      <label class="switch-row"><input type="checkbox" class="soc-enabled"> <span>TikTok</span></label>
+      <input type="text" class="soc-handle" placeholder="@kullaniciadi">
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>OBS'e Ekleme</h3>
+    <p class="settings-note">
+      OBS'te <strong>Kaynaklar → Ekle → Tarayıcı Kaynağı (Browser Source)</strong> seçin,
+      aşağıdaki URL'yi yapıştırın. Bu URL <strong>kısa ve sabittir</strong> — bir daha
+      değiştirmenize gerek yok. Bu sayfayı açık tuttuğunuz sürece (bu bilgisayardaki
+      yerel sunucu çalışırken) yaptığınız her değişiklik — logo ve arka plan görseli/videosu
+      dahil — birkaç saniye içinde otomatik olarak OBS'e yansır. Önerilen boyut: 1920×1080.
+    </p>
+    <div class="field">
+      <input id="obsUrlBox" type="text" readonly>
+    </div>
+    <button id="btnCopyObsUrl" class="btn ghost full" type="button">URL'yi Kopyala</button>
+  </div>
+
+  <button id="btnResetObs" class="btn danger full" type="button">Ayarları Sıfırla</button>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script src="obs-app.js?v=59"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Yayin Yonetim Araci",
+  "version": "1.0.0",
+  "identifier": "com.axthrowa.yayin-yonetim-araci",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build:all",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Yayın Yönetim Aracı",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 1024,
+        "minHeight": 768,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' ipc: http://ipc.localhost https://ipc.localhost; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.youtube.com https://www.youtube-nocookie.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: asset: http://asset.localhost https://*.kick.com https://kick.com https://files.kick.com https://7tv.io https://*.7tv.io https://cdn.7tv.app https://*.jtvnw.net https://*.ggpht.com https://*.ytimg.com; media-src 'self' blob: asset: http://asset.localhost http://127.0.0.1:* http://localhost:* https:; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:* wss://127.0.0.1:* https://*.kick.com https://kick.com wss://*.kick.com https://7tv.io https://*.7tv.io https://cdn.7tv.app https://*.pusher.com wss://*.pusher.com https://*.twitch.tv https://id.twitch.tv wss://irc-ws.chat.twitch.tv https://*.jtvnw.net https://*.youtube.com https://www.googleapis.com https://*.googleapis.com https://accounts.google.com https://*.google.com; frame-src https://player.kick.com https://kick.com https://www.youtube.com https://www.youtube-nocookie.com; font-src 'self' data: https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPLOCALDATA/**", "$APPDATA/**", "$RESOURCE/**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
+    "resources": {
+      "../dist": "dist/",
+      "../resonance/dist": "resonance/dist/"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": "C111F8943858B938053836E8275672D03E094407",
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "http://timestamp.digicert.com",
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ2QTgwNzBBQTMzMkMwRjEKUldUeHdES2pDZ2VvUnBpbTFyQWQ2cXRMSWc1cStROE9FOUpSWElpUkRLNkw5U054QzJmbzdidU8K",
+      "endpoints": [
+        "https://releases.example.com/yayin-yonetim-araci/{{target}}/{{arch}}/{{current_version}}",
+        "https://github.com/axthrowa/yayin-yonetim-araci/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

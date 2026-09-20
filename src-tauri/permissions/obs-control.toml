@@ -1,0 +1,17 @@
+[[permission]]
+identifier = "allow-obs-control"
+description = "OBS WebSocket v5 bağlantısı ve yayın kontrollerine izin verir"
+commands.allow = [
+  "connect_obs",
+  "obs_get_status",
+  "obs_disconnect",
+  "obs_get_scenes",
+  "obs_set_scene",
+  "obs_get_sources",
+  "obs_toggle_source",
+  "obs_get_inputs",
+  "obs_toggle_mute",
+  "obs_toggle_stream",
+  "obs_start_stream_sequence",
+  "obs_stop_stream_sequence"
+]

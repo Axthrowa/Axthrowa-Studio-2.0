@@ -1,0 +1,628 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Night Signal Deep — varsayılan (data-skin)
+*/
+:root,
+:root[data-skin="night-signal"] {
+  color-scheme: dark;
+  --panel-bg: #0c0d10;
+  --panel-bg-deep: #090a0c;
+  --panel-card: rgba(255, 255, 255, 0.02);
+  --panel-elevated: #12141a;
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --panel-accent: #3EEDFE;
+  --panel-accent-strong: #25cbd9;
+  --panel-accent-glow: rgba(62, 237, 254, 0.14);
+  --panel-cta: #3EEDFE;
+  --panel-cta-ink: #032f34;
+  /* %40 beyaz, panel zemininde 3.83:1 kontrast veriyordu — 10px etiketler
+     için WCAG AA eşiği 4.5:1. %55 ile 6.15:1'e çıkıyor; diğer temaların
+     (6.5–6.7:1) bandıyla da aynı hizaya geliyor. */
+  --panel-muted: rgba(255, 255, 255, 0.55);
+  --panel-soft: rgba(62, 237, 254, 0.1);
+  --panel-glow-a: transparent;
+  --panel-glow-b: transparent;
+  --panel-pattern: transparent;
+  --panel-glass: rgba(12, 13, 16, 0.92);
+  --panel-glass-border: rgba(255, 255, 255, 0.05);
+  --skin-pattern-opacity: 0;
+
+  --accent: #3EEDFE;
+  /* Tema yazı renkleri — `text-white` (Tailwind) bunlara bağlı. Her skin
+     kendi üçlüsünü tanımlamak zorunda (bkz. theme-contract testi). */
+  --fg-rgb: 255 255 255;
+  --accent-rgb: 62 237 254;
+  --accent-text-rgb: 62 237 254;
+  --title-color: rgba(255, 255, 255, 0.92);
+  --eyebrow-color: rgba(255, 255, 255, 0.4);
+  --sub-color: rgba(255, 255, 255, 0.55);
+  --countdown-color: #ffffff;
+  --ticker-color: rgba(255, 255, 255, 0.4);
+  --logo-zoom: 1;
+  --logo-pan-x: 0%;
+  --logo-pan-y: 0%;
+}
+
+/* Crimson Dragon — NVIDIA MCP yönü: ejderha pulları + lav */
+:root[data-skin="crimson-dragon"] {
+  --panel-bg: #120808;
+  --panel-bg-deep: #080404;
+  --panel-card: rgba(28, 12, 12, 0.88);
+  --panel-elevated: #1c1010;
+  --panel-border: #3f1d1d;
+  --panel-accent: #e8b84a;
+  --panel-accent-strong: #d4a017;
+  --panel-accent-glow: rgba(232, 184, 74, 0.22);
+  --panel-cta: #dc2626;
+  --panel-cta-ink: #1a0505;
+  --panel-muted: #a8998f;
+  --panel-soft: rgba(220, 38, 38, 0.12);
+  --panel-glow-a: rgba(220, 38, 38, 0.18);
+  --panel-glow-b: rgba(232, 184, 74, 0.12);
+  --panel-pattern: rgba(232, 184, 74, 0.04);
+  --panel-glass: rgba(22, 10, 10, 0.62);
+  --panel-glass-border: rgba(232, 184, 74, 0.14);
+  --skin-pattern-opacity: 0.45;
+  --accent: #e8b84a;
+  --fg-rgb: 255 240 232;
+  --accent-rgb: 232 184 74;
+  --accent-text-rgb: 240 201 106;
+  --eyebrow-color: #f0c96a;
+}
+
+/* Cyber Neon — synthwave grid + glitch glow */
+:root[data-skin="cyber-neon"] {
+  --panel-bg: #07061a;
+  --panel-bg-deep: #030214;
+  --panel-card: rgba(12, 10, 36, 0.88);
+  --panel-elevated: #121030;
+  --panel-border: #2a2458;
+  --panel-accent: #00e5ff;
+  --panel-accent-strong: #ff2bd6;
+  --panel-accent-glow: rgba(255, 43, 214, 0.28);
+  --panel-cta: #ff2bd6;
+  --panel-cta-ink: #1a0514;
+  --panel-muted: #9b93c9;
+  --panel-soft: rgba(0, 229, 255, 0.12);
+  --panel-glow-a: rgba(0, 229, 255, 0.2);
+  --panel-glow-b: rgba(255, 43, 214, 0.16);
+  --panel-pattern: rgba(0, 229, 255, 0.05);
+  --panel-glass: rgba(10, 8, 32, 0.65);
+  --panel-glass-border: rgba(255, 43, 214, 0.18);
+  --skin-pattern-opacity: 0.55;
+  --accent: #00e5ff;
+  --fg-rgb: 226 232 255;
+  --accent-rgb: 0 229 255;
+  --accent-text-rgb: 0 229 255;
+  --eyebrow-color: #ff7ae8;
+}
+
+/* Aurora — soğuk mor + nane yeşili, camsı yüzeyler */
+:root[data-skin="aurora"] {
+  --panel-bg: #0a0f1c;
+  --panel-bg-deep: #060912;
+  --panel-card: rgba(20, 28, 52, 0.7);
+  --panel-elevated: #121a30;
+  --panel-border: #25325a;
+  --panel-accent: #7cf5c1;
+  --panel-accent-strong: #4be3a5;
+  --panel-accent-glow: rgba(124, 245, 193, 0.2);
+  --panel-cta: #a78bfa;
+  --panel-cta-ink: #120a2a;
+  --panel-muted: #9fb0d8;
+  --panel-soft: rgba(124, 245, 193, 0.1);
+  --panel-glow-a: rgba(139, 92, 246, 0.22);
+  --panel-glow-b: rgba(124, 245, 193, 0.12);
+  --panel-pattern: transparent;
+  --panel-glass: rgba(14, 20, 40, 0.7);
+  --panel-glass-border: rgba(167, 139, 250, 0.2);
+  --skin-pattern-opacity: 0;
+  --accent: #7cf5c1;
+  --fg-rgb: 236 242 255;
+  --accent-rgb: 124 245 193;
+  --accent-text-rgb: 124 245 193;
+  --eyebrow-color: #a78bfa;
+}
+
+/* Warm Sepia — kahve tonlu sıcak koyu tema, krem yazı */
+:root[data-skin="warm-sepia"] {
+  --panel-bg: #17110c;
+  --panel-bg-deep: #0f0a07;
+  --panel-card: rgba(48, 34, 22, 0.7);
+  --panel-elevated: #21170f;
+  --panel-border: #4a3626;
+  --panel-accent: #e0a96d;
+  --panel-accent-strong: #c98b45;
+  --panel-accent-glow: rgba(224, 169, 109, 0.2);
+  --panel-cta: #d97757;
+  --panel-cta-ink: #1c0d05;
+  --panel-muted: #b8a592;
+  --panel-soft: rgba(224, 169, 109, 0.12);
+  --panel-glow-a: rgba(217, 119, 87, 0.16);
+  --panel-glow-b: rgba(224, 169, 109, 0.1);
+  --panel-pattern: transparent;
+  --panel-glass: rgba(33, 23, 15, 0.7);
+  --panel-glass-border: rgba(224, 169, 109, 0.18);
+  --skin-pattern-opacity: 0;
+  --accent: #e0a96d;
+  --fg-rgb: 250 240 226;
+  --accent-rgb: 224 169 109;
+  --accent-text-rgb: 236 190 135;
+  --eyebrow-color: #e8b57a;
+}
+
+/* Mono Contrast — saf siyah zemin, beyaz yazı, sarı vurgu; erişilebilirlik odaklı */
+:root[data-skin="mono-contrast"] {
+  --panel-bg: #000000;
+  --panel-bg-deep: #000000;
+  --panel-card: #0a0a0a;
+  --panel-elevated: #111111;
+  --panel-border: rgba(255, 255, 255, 0.35);
+  --panel-accent: #ffd400;
+  --panel-accent-strong: #ffea55;
+  --panel-accent-glow: rgba(255, 212, 0, 0.25);
+  --panel-cta: #ffd400;
+  --panel-cta-ink: #000000;
+  --panel-muted: rgba(255, 255, 255, 0.78);
+  --panel-soft: rgba(255, 212, 0, 0.14);
+  --panel-glow-a: transparent;
+  --panel-glow-b: transparent;
+  --panel-pattern: transparent;
+  --panel-glass: rgba(0, 0, 0, 0.92);
+  --panel-glass-border: rgba(255, 255, 255, 0.4);
+  --skin-pattern-opacity: 0;
+  --accent: #ffd400;
+  --fg-rgb: 255 255 255;
+  --accent-rgb: 255 212 0;
+  --accent-text-rgb: 255 212 0;
+  --eyebrow-color: #ffd400;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--panel-bg);
+  color: rgb(var(--fg-rgb, 255 255 255) / 0.9);
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.011em;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* İnce dark scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Atmosfer — mat, glow yok */
+body.panel-app,
+.panel-shell {
+  background: var(--panel-bg);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.panel-shell::before {
+  display: none;
+}
+
+/* Dragon scale tessellation */
+:root[data-skin="crimson-dragon"] .panel-shell::before {
+  background-color: transparent;
+  background-image:
+    radial-gradient(circle at 50% 18%, rgba(220, 38, 38, 0.22), transparent 42%),
+    radial-gradient(ellipse 80% 50% at 50% 120%, rgba(232, 184, 74, 0.12), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='64' viewBox='0 0 56 64'%3E%3Cpath d='M28 2 L52 16 L52 48 L28 62 L4 48 L4 16 Z' fill='none' stroke='%23e8b84a' stroke-opacity='0.14' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: auto, auto, 56px 64px;
+  background-position: center, center, 0 0;
+  opacity: 0.7;
+}
+
+/* Synthwave perspective grid */
+:root[data-skin="cyber-neon"] .panel-shell::before {
+  background-color: transparent;
+  background-image:
+    linear-gradient(rgba(255, 43, 214, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.08) 1px, transparent 1px),
+    radial-gradient(ellipse 90% 40% at 50% 100%, rgba(255, 43, 214, 0.25), transparent 60%),
+    linear-gradient(180deg, transparent 40%, rgba(7, 6, 26, 0.85) 100%);
+  background-size: 48px 48px, 48px 48px, auto, auto;
+  background-position: center bottom, center bottom, center, center;
+  transform: perspective(600px) rotateX(52deg) translateY(-12%) scale(1.35);
+  transform-origin: center bottom;
+  opacity: 0.55;
+  height: 70%;
+  top: auto;
+  bottom: 0;
+}
+
+:root[data-skin="cyber-neon"] .panel-shell {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(255, 43, 214, 0.18), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 90% 20%, rgba(0, 229, 255, 0.12), transparent 50%),
+    linear-gradient(180deg, #0a0824 0%, var(--panel-bg) 45%, var(--panel-bg-deep) 100%);
+}
+
+:root[data-skin="cyber-neon"] .studio-nav-btn:hover,
+:root[data-skin="cyber-neon"] .yya-btn-primary:hover {
+  text-shadow: 0 0 8px var(--panel-accent-glow);
+  box-shadow: 0 0 18px var(--panel-accent-glow);
+}
+
+/* Atmosfer ::before (z:0) üstünde kalsın; header dropdown nav’ın altında kalmasın */
+.panel-shell > * {
+  position: relative;
+  z-index: 1;
+}
+.panel-shell > header {
+  z-index: 50;
+}
+
+select,
+select option {
+  background-color: var(--panel-elevated) !important;
+  color: #f0f4fa !important;
+}
+select:focus {
+  outline: 1px solid var(--panel-accent);
+}
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="datetime-local"],
+textarea {
+  color: #f0f4fa;
+  background-color: var(--panel-elevated);
+}
+input::placeholder,
+textarea::placeholder {
+  color: #64748b;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@layer components {
+  .yya-card {
+    @apply rounded-lg border border-white/[0.05] bg-white/[0.02] p-3;
+  }
+  .yya-card-hover {
+    @apply yya-card transition-colors duration-150 hover:bg-white/[0.06];
+  }
+  .yya-input {
+    @apply h-8 w-full rounded-md border border-white/[0.08] bg-black/40 px-2.5 text-xs text-white/90 outline-none transition-colors duration-150;
+  }
+  .yya-input:focus {
+    border-color: color-mix(in srgb, var(--panel-accent) 45%, transparent);
+  }
+  .yya-btn {
+    @apply inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors duration-150;
+  }
+  .yya-btn-primary {
+    @apply yya-btn bg-teal-500 text-[#042f2e] hover:bg-teal-400;
+  }
+  .yya-btn-accent {
+    @apply yya-btn bg-teal-500 text-[#042f2e] hover:bg-teal-400;
+  }
+  .yya-btn-ghost {
+    @apply yya-btn border border-white/[0.08] text-white/70 hover:bg-white/[0.06] hover:text-white;
+  }
+  .yya-btn-danger {
+    @apply yya-btn border border-red-500/20 text-red-300/90 hover:bg-red-500/10;
+  }
+  .yya-nav-item {
+    @apply flex w-full flex-col rounded-md px-2.5 py-2 text-left transition-colors duration-150;
+  }
+  .yya-nav-item-active {
+    @apply yya-nav-item bg-teal-500/10 text-teal-400;
+  }
+  .yya-nav-item-idle {
+    @apply yya-nav-item text-white/60 hover:bg-white/[0.06] hover:text-white/90;
+  }
+  .studio-nav-btn {
+    @apply flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors duration-150;
+  }
+  .studio-nav-btn-active {
+    @apply studio-nav-btn bg-teal-500/10 text-teal-400;
+  }
+  .studio-nav-btn-idle {
+    @apply studio-nav-btn text-white/60 hover:bg-white/[0.06] hover:text-white/90;
+  }
+  .studio-nav-label {
+    color: inherit;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .studio-nav-hint {
+    display: none;
+  }
+  .studio-nav-icon {
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04];
+  }
+  .studio-nav-btn-active .studio-nav-icon {
+    background: rgba(16, 185, 129, 0.15);
+  }
+  .yya-pill {
+    @apply rounded-md px-2 py-1 text-[11px] font-medium transition-colors duration-150;
+  }
+  .yya-section-title {
+    @apply text-[15px] font-semibold tracking-tight text-white/90;
+  }
+  .yya-section-sub {
+    @apply mt-0.5 max-w-xl text-[11px] leading-relaxed text-white/60;
+  }
+  .yya-stat {
+    @apply rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2.5;
+  }
+  .yya-label {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-white/60;
+  }
+  .yya-value {
+    @apply text-[13px] text-white/90;
+  }
+  .yya-settings-panel {
+    @apply overflow-hidden rounded-lg border border-white/[0.05] bg-white/[0.02];
+  }
+  .yya-modal-backdrop {
+    @apply bg-black/50 backdrop-blur-sm;
+  }
+
+  /* Widget kök — OBS tam ekran; Master slot içinde parent’ı doldur */
+  .yya-widget-root {
+    @apply relative h-screen w-screen bg-transparent;
+  }
+  [data-master-slot="1"] .yya-widget-root,
+  [data-master-slot="1"] .yya-widget-stage {
+    height: 100% !important;
+    width: 100% !important;
+    max-height: 100% !important;
+    max-width: 100% !important;
+  }
+
+  @keyframes accordion-down {
+    from { height: 0; opacity: 0.4; }
+    to { height: var(--radix-accordion-content-height); opacity: 1; }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); opacity: 1; }
+    to { height: 0; opacity: 0.4; }
+  }
+  .animate-accordion-down {
+    animation: accordion-down 0.2s ease-out;
+  }
+  .animate-accordion-up {
+    animation: accordion-up 0.18s ease-out;
+  }
+
+  /* Mac-style settings list */
+  .ns-settings-group {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .ns-range {
+    @apply h-1 w-full cursor-pointer appearance-none rounded-full bg-white/10;
+  }
+  .ns-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 12px;
+    width: 12px;
+    border-radius: 999px;
+    background: rgb(var(--accent-rgb, 62 237 254));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+  .ns-switch {
+    @apply relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-white/10 transition-colors duration-150;
+  }
+  .ns-switch[data-on="true"] {
+    background: rgb(var(--accent-rgb, 62 237 254));
+  }
+  .ns-switch[data-on="false"] {
+    background: rgb(var(--fg-rgb, 255 255 255) / 0.08);
+  }
+  .ns-switch-knob {
+    @apply absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-pure-white shadow transition;
+  }
+  .ns-switch[data-on="true"] .ns-switch-knob {
+    transform: translateX(1rem);
+  }
+}
+
+/* Light theme
+   `:root.theme-light` (özgüllük 0,2,0) — skin blokları `:root[data-skin=…]`
+   (0,2,0). Eskiden burada `html.theme-light` (0,1,1) vardı: uygulama
+   `data-skin`'i her zaman yazdığı için skin, açık temanın zemin ve yazı
+   değişkenlerini eziyor ve açık tema fiilen çalışmıyordu. Özgüllük eşit
+   olunca kaynak sırası belirler; bu blok skinlerden sonra geldiği için kazanır. */
+:root.theme-light {
+  color-scheme: light;
+  --panel-bg: #eef2f6;
+  --panel-bg-deep: #e4eaf1;
+  --panel-card: #ffffff;
+  --panel-elevated: #f7f9fc;
+  --panel-border: #c9d3e0;
+  --panel-accent: #3EEDFE;
+  --panel-accent-strong: #25cbd9;
+  --panel-accent-glow: rgba(62, 237, 254, 0.18);
+  --panel-cta: #ea580c;
+  --panel-cta-ink: #fff7ed;
+  --panel-muted: #5b6b7f;
+  --panel-soft: rgba(62, 237, 254, 0.1);
+  --panel-glow-a: rgba(62, 237, 254, 0.12);
+  --panel-glow-b: rgba(234, 88, 12, 0.08);
+  --panel-pattern: rgba(15, 23, 42, 0.03);
+  --panel-glass: rgba(255, 255, 255, 0.78);
+  --panel-glass-border: rgba(15, 23, 42, 0.08);
+  /* Açık tema: metin koyu, metin vurgusu koyu turkuaz (parlak #3EEDFE beyaz
+     zeminde 1.3:1 kontrast veriyordu), dolgu vurgusu parlak kalır. */
+  --fg-rgb: 15 23 42;
+  --accent-rgb: 62 237 254;
+  --accent-text-rgb: 14 116 144;
+}
+html.theme-light body,
+html.theme-light #root {
+  background: var(--panel-bg);
+  color: #0f172a;
+}
+html.theme-light .bg-panel-bg {
+  background-color: var(--panel-bg) !important;
+}
+html.theme-light .bg-panel-card,
+html.theme-light .bg-black\/20,
+html.theme-light .bg-black\/15,
+html.theme-light .bg-black\/25,
+html.theme-light .bg-black\/30,
+html.theme-light .bg-black\/40 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  color: #0f172a;
+}
+html.theme-light .text-panel-muted,
+html.theme-light .text-white\/90 {
+  color: var(--panel-muted) !important;
+}
+/* Açık tema: koyu yazı %50-60 alfada beyaz zeminde 3.5:1 veriyordu (AA: 4.5).
+   İkincil yazı sınıflarının alfasını açık temada yükselt. */
+:root.theme-light .text-white\/50,
+:root.theme-light .text-white\/55,
+:root.theme-light .text-white\/60 {
+  color: rgb(var(--fg-rgb) / 0.72);
+}
+:root.theme-light .text-white\/70,
+:root.theme-light .text-white\/75 {
+  color: rgb(var(--fg-rgb) / 0.82);
+}
+:root.theme-light .yya-btn-ghost {
+  border-color: rgb(var(--fg-rgb) / 0.18);
+  color: rgb(var(--fg-rgb) / 0.8);
+}
+:root.theme-light .yya-btn-ghost:hover {
+  background-color: rgb(var(--fg-rgb) / 0.06);
+  color: rgb(var(--fg-rgb));
+}
+:root.theme-light .yya-pill {
+  color: rgb(var(--fg-rgb) / 0.75);
+}
+:root.theme-light .yya-pill.text-panel-accent {
+  color: rgb(var(--accent-text-rgb));
+}
+:root.theme-light .yya-input {
+  border-color: rgb(var(--fg-rgb) / 0.22);
+}
+html.theme-light .border-panel-border,
+html.theme-light .border-panel-border\/60,
+html.theme-light .border-panel-border\/50,
+html.theme-light .border-panel-border\/70 {
+  border-color: var(--panel-border) !important;
+}
+/* `.text-white` telafisi kaldırıldı: `white` artık --fg-rgb'ye bağlı. */
+html.theme-light .studio-nav-label {
+  color: #0f172a !important;
+}
+html.theme-light .studio-nav-hint {
+  color: #5b6b7f !important;
+}
+html.theme-light .studio-nav-btn-active .studio-nav-label {
+  color: var(--panel-accent) !important;
+}
+html.theme-light select,
+html.theme-light select option,
+html.theme-light input[type="text"],
+html.theme-light input[type="number"],
+html.theme-light input[type="password"],
+html.theme-light input[type="datetime-local"],
+html.theme-light textarea {
+  background-color: #fff !important;
+  color: #0f172a !important;
+}
+
+html.obs-transparent,
+html.obs-transparent body,
+html.obs-transparent #root {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.obs-transparent body,
+html.obs-transparent body.panel-app {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--accent-rgb, 62 237 254) / 0.35) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--accent-rgb, 62 237 254) / 0.28);
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--accent-rgb, 62 237 254) / 0.5);
+}
+
+
+/* --- Sadelik: iç içe kutu ve çizgileri azalt --------------------------------
+   Panel her iç grup için ayrı çerçeve çiziyordu (kutu içinde kutu içinde kutu).
+   Yalnız ana sütun kartları çerçeveli kalır; içindekiler çerçevesiz, hafif
+   zeminli olur. Giriş alanları (input/select) kullanılabilirlik için çerçevesini
+   korur ama daha soluk. Durum belirten renkli çerçeveler (aktif, hata, uyarı)
+   dokunulmaz: yalnız `border` + nötr renk (panel/beyaz) hedeflenir. */
+.panel-shell aside :is(section, div, details, fieldset, label)[class~="border"][class*="border-white/"],
+.panel-shell aside :is(section, div, details, fieldset, label)[class~="border"][class*="border-panel-border"],
+/* diğer sekmeler: çerçeveli bir kutunun İÇİNDEKİ çerçeveli kutu */
+.panel-shell [class~="border"] :is(section, div, details, fieldset, label)[class~="border"][class*="border-white/"],
+.panel-shell [class~="border"] :is(section, div, details, fieldset, label)[class~="border"][class*="border-panel-border"] {
+  border-color: transparent !important;
+}
+.panel-shell aside :is(section, div)[class*="bg-[#101216]"],
+.panel-shell aside :is(section, div)[class*="bg-black/20"][class~="border"] {
+  background-color: rgb(var(--fg-rgb) / 0.035) !important;
+}
+.panel-shell aside :is(input, select, textarea)[class*="border-panel-border"],
+.panel-shell aside :is(input, select, textarea)[class*="border-white/"] {
+  border-color: rgb(var(--fg-rgb) / 0.09) !important;
+}
+/* ayırıcı çizgiler (üst/alt) daha soluk */
+.panel-shell aside [class*="border-t"][class*="border-white/"],
+.panel-shell aside [class*="border-b"][class*="border-white/"],
+.panel-shell aside [class*="border-t"][class*="border-panel-border"],
+.panel-shell aside [class*="border-b"][class*="border-panel-border"] {
+  border-color: rgb(var(--fg-rgb) / 0.05) !important;
+}

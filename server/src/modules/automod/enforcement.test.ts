@@ -93,10 +93,13 @@ describe('eylemPlani', () => {
     expect(p.dusurulen).toContain('mesaj silme');
   });
 
-  it('Twitch mesaj silmeyi destekler', () => {
+  it('Twitch moderasyonu henüz UYGULANMADI — uyarıya düşer', () => {
+    // Yetenek tablosu "platform ne yapabilir"i değil "biz ne yapabiliyoruz"u
+    // ilan eder. Twitch tarafı yazılınca bu test güncellenir.
     const p = eylemPlani(ayar({ eylem: 'delete_warn' }), 'twitch');
-    expect(p.sil).toBe(true);
+    expect(p.sil).toBe(false);
     expect(p.uyar).toBe(true);
+    expect(p.dusurulen).toContain('mesaj silme');
   });
 
   it('bilinmeyen platformda her şey uyarıya düşer', () => {

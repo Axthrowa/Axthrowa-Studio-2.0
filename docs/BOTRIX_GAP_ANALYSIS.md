@@ -371,3 +371,68 @@ Sıralama ölçütü: **risk × etki ÷ çaba**.
 - Çok kiracılı her şey (`NOT_APPLICABLE`)
 - `$(eval)` — BotRix'te bile beta ve elle erişim; güvenlik riski
 - `$(leagueoflegends)` — niş
+
+---
+
+## 13. FİNAL DURUM — 2026-09-21 turu sonu
+
+Bu turda tamamlananlar `DONE`, kalanlar `PARTIAL` / `NOT_DONE`.
+Ayrıntı: [`IMPLEMENTATION_REPORT.md`](IMPLEMENTATION_REPORT.md),
+[`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md)
+
+### P0 — Güvenlik
+
+| Madde | Final |
+|---|---|
+| S1 Kimlik doğrulama yok | `DONE` — yerel bağlama + köken doğrulaması ile kapatıldı (tek kullanıcılı yerel araçta parola gereksiz) |
+| S2 `cors: '*'` | `DONE` |
+| S3 `0.0.0.0` dinleme | `DONE` |
+| S4 `/api/platforms` token sızıntısı | `DONE` |
+| S5 `/api/settings` sır sızıntısı | `DONE` |
+| S6 Token disk şifrelemesi | `NOT_DONE` — `KNOWN_LIMITATIONS N5` |
+| S7 Hız sınırı | `NOT_DONE` |
+| S8 Widget URL token'ı | `NOT_DONE` |
+
+### P1 — En yüksek etki
+
+| Madde | Final |
+|---|---|
+| Değişken motoru (~60) | `DONE` — 60 değişken, 10 grup |
+| Komut derinliği | `PARTIAL` — kullanıcı başına bekleme, fiyat, platform `DONE`; anahtar kelime tetikleyici ve erişim kipi şema hazır, mantık bağlanmadı |
+| Moderasyon eylemleri | `PARTIAL` — motor, 5 eylem, 11 kademe, bypass `DONE`; Kick timeout **uygulandı, canlı doğrulanmadı**; Twitch/YouTube/TikTok `BLOCKED_BY_PLATFORM` (adaptör yazılmadı) |
+| Sayaçlar | `DONE` — `$(count)` `$(getcounter)` `$(setcounter)` `!editcounter` |
+| Yerleşik komutlar | `DONE` — `!uptime` `!watchtime` `!followage` `!so` `!addcom` `!editcom` `!delcom`; `!komutlar` gerçek liste |
+
+### P2 — Ürün kalitesi
+
+| Madde | Final |
+|---|---|
+| Animasyon motoru (37 ön ayar) | `NOT_DONE` — tasarım `TARGET_ARCHITECTURE §7` |
+| Alert kuyruk durum makinesi | `NOT_DONE` |
+| Uyarı varyantları | `NOT_DONE` |
+| Metin penceresi / ayrı metin renkleri / metin konumu | `NOT_DONE` |
+| Seviye / XP sistemi | `NOT_DONE` — DB sütunları hazır (göç #4) |
+| TTS filtreleri | `NOT_DONE` |
+| Sohbet tarafı olay mesajları | `NOT_DONE` |
+| Medya kütüphanesi | `NOT_DONE` |
+| Tema kütüphanesi | `NOT_DONE` |
+
+### P3 — Genişleme
+
+| Madde | Final |
+|---|---|
+| Platform yetenek modeli | `DONE` (sunucu) · `NOT_DONE` (panel arayüzü) |
+| Tahminler / kuyruk / puan düşüşleri | `NOT_DONE` |
+| Discord duyuru entegrasyonu | `NOT_DONE` |
+| Trovo adaptörü | `NOT_DONE` |
+| Tasarım sistemi / toast / onay diyaloğu | `NOT_DONE` |
+| Nightbot içe aktarma / uyarı dışa aktarma | `NOT_DONE` |
+
+### Kapsam dışı (değişmedi)
+
+| Madde | Final |
+|---|---|
+| Çok kiracılı her şey | `NOT_APPLICABLE` |
+| `$(eval)` | `NOT_DONE` (bilinçli — keyfi JS yürütme) |
+| `$(leagueoflegends)` | `NOT_DONE` (niş) |
+| Hype Treni / Subathon BotRix ayarları | `UNVERIFIED_BOTRIX_FEATURE` — premium kilidi |

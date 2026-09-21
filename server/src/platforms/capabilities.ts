@@ -61,7 +61,13 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
   twitch: {
     sohbet: { oku: true, gonder: true },
     olaylar: ['chat', 'follow', 'sub', 'resub', 'gift_sub', 'bits', 'tip', 'raid'],
-    moderasyon: { timeout: true, ban: true, mesajSil: true },
+    // Twitch PLATFORMU bunlari destekler; BIZIM adaptorumuz henuz uygulamadi.
+    // Bu tablo "platform ne yapabilir"i degil "biz ne yapabiliyoruz"u ilan
+    // eder — aksi halde panel olmayan bir sey vaat eder. Twitch moderasyonu
+    // Helix API'si ve moderator yetkili token gerektiriyor; sohbet IRC
+    // uzerinden yurudugu icin ayri bir entegrasyon isi.
+    // Bkz. docs/KNOWN_LIMITATIONS.md
+    moderasyon: { timeout: false, ban: false, mesajSil: false },
     yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
     roller: ['everyone', 'sub', 'vip', 'mod', 'broadcaster']
   },

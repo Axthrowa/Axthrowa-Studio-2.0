@@ -1,6 +1,14 @@
 import { db } from '../../db/index.js';
-import { ChatMessagePayload } from '../../core/event-bus.js';
+import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { commandManager } from '../commands/command-manager.js';
+import { platformManager } from '../../platforms/manager.js';
+import {
+  bypassEder,
+  eylemPlani,
+  kuralAyariOku,
+  sureyiYaz,
+  type KuralAdi
+} from './enforcement.js';
 
 export interface AutoModViolation {
   rule: 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'ai_toxic';
@@ -158,6 +166,93 @@ export class AutoModEngine {
     }
 
     return null;
+  }
+
+  /**
+   * Bulunan ihlale gore eylemi uygular.
+   *
+   * Sira onemli: once bypass kontrolu (yayinci/mod zaten `checkMessage`
+   * icinde eleniyor ama abone/VIP muafiyeti burada), sonra platform
+   * eylemi, en son sohbet uyarisi.
+   */
+  async ihlaliUygula(message: ChatMessagePayload, violation: AutoModViolation): Promise<void> {
+    const row = this.getSettings();
+    const kural = (violation.rule === 'ai_toxic' ? 'blacklist' : violation.rule) as KuralAdi;
+    const ayar = kuralAyariOku(row, kural, violation.reason);
+
+    // Rol muafiyeti — BotRix'te her kuralin kendi bypass listesi var
+    if (bypassEder(message.user as any, ayar.bypass)) return;
+
+    const plan = eylemPlani(ayar, message.platform);
+
+    // Calisma anindaki basarisizliklar burada toplanir. `eylemPlani` yalnizca
+    // platformun YETENEGINI bilir; token eksikligi veya baglanti kopmasi gibi
+    // anlik hatalari bilemez. Bu yuzden gercek sonuca gore uyariya dusulur —
+    // aksi halde "timeout" secili bir kuralda ihlal SESSIZCE gecerdi.
+    let calismaHatasi: string | null = null;
+
+    // 1) Zaman asimi
+    if (plan.timeoutSn > 0) {
+      const p: any = platformManager.getPlatform(message.platform);
+      if (typeof p?.timeoutUser === 'function') {
+        const sonuc = await p.timeoutUser(message.user.username, plan.timeoutSn, ayar.mesaj);
+        if (sonuc?.ok) {
+          this.denetimKaydet(message, violation, `timeout ${sureyiYaz(plan.timeoutSn)}`);
+          eventBus.emitBotMessage({
+            platform: message.platform,
+            channel: message.channel,
+            message: `🛡️ @${message.user.displayName} ${sureyiYaz(plan.timeoutSn)} susturuldu: ${ayar.mesaj}`
+          });
+          return;
+        }
+        // Basarisizsa sessizce gecme — sebebi panele tasi ve uyariya dus
+        calismaHatasi = sonuc?.hata || 'bilinmeyen hata';
+        console.warn(`[AutoMod] Zaman asimi uygulanamadi:`, calismaHatasi);
+        eventBus.emitSendError(message.platform, `AutoMod zaman asimi uygulanamadi: ${calismaHatasi}`);
+      } else {
+        calismaHatasi = `${message.platform} adaptorunde zaman asimi uygulanmamis`;
+      }
+    }
+
+    // 2) Mesaj silme
+    if (plan.sil) {
+      const p: any = platformManager.getPlatform(message.platform);
+      const mesajId = (message as any).id || (message as any).messageId;
+      if (typeof p?.deleteMessage === 'function' && mesajId) {
+        const sonuc = await p.deleteMessage(String(mesajId));
+        if (sonuc?.ok) this.denetimKaydet(message, violation, 'mesaj silindi');
+      }
+    }
+
+    // 3) Uyari — plan uyari istemese bile eylem uygulanamadiysa uyar.
+    if (plan.uyar || calismaHatasi) {
+      const sebep = plan.dusurulen || calismaHatasi;
+      const ek = sebep ? ` (${sebep})` : '';
+      eventBus.emitBotMessage({
+        platform: message.platform,
+        channel: message.channel,
+        message: `🛡️ AutoMod: @${message.user.displayName}, ${ayar.mesaj}${ek}`
+      });
+      this.denetimKaydet(message, violation, 'uyari');
+    }
+  }
+
+  /** Denetim kaydi — panelde "Kalkan & Denetim" sekmesinde gorunur. */
+  private denetimKaydet(message: ChatMessagePayload, violation: AutoModViolation, eylem: string): void {
+    try {
+      db.prepare(
+        'INSERT INTO audit_logs (timestamp, action, moderator, target, details, severity) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(
+        Date.now(),
+        `automod:${violation.rule}`,
+        'AutoMod',
+        message.user.username,
+        `${eylem} — ${violation.reason}`,
+        violation.rule === 'blacklist' ? 'high' : 'medium'
+      );
+    } catch {
+      /* denetim kaydi kritik degil */
+    }
   }
 }
 

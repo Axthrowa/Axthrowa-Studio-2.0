@@ -1,6 +1,6 @@
 import Pusher from 'pusher-js';
 import axios from 'axios';
-import { BasePlatform, PlatformStatus } from './base.js';
+import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { settingsCache } from '../core/settings-cache.js';
@@ -498,6 +498,58 @@ export class KickPlatform extends BasePlatform {
 
   /** Panelin "neden gitmedi" diye gösterebilmesi için son hata. */
   lastSendError = '';
+
+  /**
+   * Kullaniciya zaman asimi verir (Kick resmi API'si).
+   *
+   * NOT: Bu yol CANLI YAYINDA DOGRULANMADI — gercek bir izleyiciye timeout
+   * atmak kullanicinin kanalinda gorunur bir moderasyon eylemi olurdu.
+   * API sozlesmesi mevcut `sendKickMessage` desenine gore yazildi.
+   * Bkz. docs/KNOWN_LIMITATIONS.md
+   */
+  async timeoutUser(username: string, saniye: number, sebep?: string): Promise<ModerasyonSonucu> {
+    const ad = String(username || '').replace(/^@/, '').trim();
+    if (!ad) return { ok: false, hata: 'Kullanici adi bos' };
+    if (!this.broadcasterUserId) return { ok: false, hata: 'Kanal kimligi bilinmiyor (baglanti yok)' };
+
+    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
+
+    try {
+      // Hedef kullanicinin kimligini cozumle
+      const kanal = await axios.get(`https://kick.com/api/v2/channels/${ad.toLowerCase()}`, {
+        headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+        timeout: 8000
+      });
+      const hedefId = kanal.data?.user_id || kanal.data?.user?.id;
+      if (!hedefId) return { ok: false, hata: `${ad} kullanicisi bulunamadi` };
+
+      await axios.post(
+        'https://api.kick.com/public/v1/moderation/bans',
+        {
+          broadcaster_user_id: Number(this.broadcasterUserId),
+          user_id: Number(hedefId),
+          // Kick DAKIKA bekliyor; en az 1 dakika
+          duration: Math.max(1, Math.round(Number(saniye) / 60)),
+          reason: String(sebep || 'AutoMod').slice(0, 100)
+        },
+        {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          timeout: 10000
+        }
+      );
+
+      return { ok: true };
+    } catch (e: any) {
+      const durum = e?.response?.status;
+      const mesaj =
+        durum === 401 || durum === 403
+          ? 'Kick tokeni moderasyon yetkisine sahip degil'
+          : String(e?.response?.data?.message || e?.message || e);
+      console.warn(`[Kick] timeout basarisiz (${ad}):`, mesaj);
+      return { ok: false, hata: mesaj };
+    }
+  }
 
   async sendMessage(channel: string, message: string): Promise<boolean> {
     const res = await this.sendKickMessage(channel, message);

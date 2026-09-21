@@ -27,6 +27,8 @@ import { extras } from '../modules/extras/extras.js';
 import crypto from 'crypto';
 import { temizle, gizliMi, yeniSirDegeri, maskeDegeriMi } from '../core/security/redact.js';
 import { degiskenKatalogu, degiskenSayisi, baglamOlustur, degiskenleriCoz } from '../core/variables/index.js';
+import { YETENEKLER } from '../platforms/capabilities.js';
+import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../modules/automod/enforcement.js';
 
 const router = Router();
 let kickPkceVerifier = '';
@@ -487,6 +489,31 @@ router.post('/automod', (req: Request, res: Response) => {
     ai_moderation_enabled ? 1 : 0, ai_toxicity_threshold
   );
 
+  // Kural basina ihlal eylemi (BotRix parity, GAP §4). Alan gonderilmemisse
+  // MEVCUT deger korunur — eski panel surumu yeni ayarlari silmesin.
+  const kurallar: Array<'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist'> = [
+    'caps', 'emotes', 'links', 'symbols', 'blacklist'
+  ];
+  const eylemler = req.body?.actions || {};
+  for (const k of kurallar) {
+    const a = eylemler[k];
+    if (!a) continue;
+    if (a.action !== undefined) {
+      db.prepare(`UPDATE automod_settings SET ${k}_action = ? WHERE id = 1`).run(String(a.action));
+    }
+    if (a.timeout !== undefined) {
+      db.prepare(`UPDATE automod_settings SET ${k}_timeout = ? WHERE id = 1`).run(Number(a.timeout) || 60);
+    }
+    if (a.message !== undefined) {
+      db.prepare(`UPDATE automod_settings SET ${k}_message = ? WHERE id = 1`).run(String(a.message));
+    }
+    if (a.bypass !== undefined) {
+      db.prepare(`UPDATE automod_settings SET ${k}_bypass = ? WHERE id = 1`).run(
+        JSON.stringify(Array.isArray(a.bypass) ? a.bypass : [])
+      );
+    }
+  }
+
   autoMod.reload();
   if (advanced) {
     db.prepare(`INSERT INTO bot_settings (key, value) VALUES ('automod_advanced', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).run(JSON.stringify(advanced));
@@ -610,6 +637,15 @@ router.post('/alerts/test', (req: Request, res: Response) => {
   const { eventType } = req.body;
   wsHub.triggerTestAlert(eventType || 'follow');
   res.json({ success: true });
+});
+
+// 9.4 Platform yetenekleri — panel desteklenmeyen ayari devre disi gostersin
+router.get('/platforms/capabilities', (req: Request, res: Response) => {
+  res.json({
+    yetenekler: YETENEKLER,
+    eylemSecenekleri: EYLEM_SECENEKLERI,
+    timeoutKademeleri: TIMEOUT_KADEMELERI
+  });
 });
 
 // 9.5 Degisken katalogu — panelde komut yazarken hangi degiskenler var

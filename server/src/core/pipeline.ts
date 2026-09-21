@@ -76,15 +76,14 @@ export class MessagePipeline {
     economy.recordMessage(message);
 
 
-    // 1. AutoMod Check
+    // 1. AutoMod
     const violation = autoMod.checkMessage(message);
     if (violation) {
-      // Send warning to chat
-      eventBus.emitBotMessage({
-        platform: message.platform,
-        channel: message.channel,
-        message: `🛡️ AutoMod: @${message.user.displayName}, ${violation.reason}`
-      });
+      // Eskiden burada SADECE sohbete uyari yaziliyordu; platformda hicbir
+      // eylem yapilmiyordu. Artik kural basina secilen eylem uygulanir
+      // (uyar / zaman asimi / mesaj sil), bypass rolleri gozetilir ve
+      // platform desteklemiyorsa uyariya dusulur.
+      await autoMod.ihlaliUygula(message, violation);
       return;
     }
 

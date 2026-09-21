@@ -16,6 +16,11 @@ export function AISettings() {
   const [prompt, setPrompt] = useState('');
   const [enabled, setEnabled] = useState(true);
   const [saved, setSaved] = useState(false);
+  // Anahtar sunucuda maskelenerek geliyor; panel gerçek değeri hiç görmez.
+  const [anahtarKayitli, setAnahtarKayitli] = useState(false);
+  const [aktifModel, setAktifModel] = useState('');
+  const [durum, setDurum] = useState<any>(null);
+  const [durumYukleniyor, setDurumYukleniyor] = useState(false);
 
   // Chat Rescue State
   const [rescue, setRescue] = useState<ChatRescueSettings>({
@@ -41,6 +46,7 @@ export function AISettings() {
       .then(r => r.json())
       .then(d => {
         setApiKey(d.gemini_api_key || '');
+        setAnahtarKayitli(Boolean(d.gemini_api_keyVar));
         setPrompt(d.gemini_prompt || '');
         setEnabled(d.gemini_enabled !== 'false');
       })
@@ -96,34 +102,57 @@ export function AISettings() {
     }
   };
 
+  /**
+   * Asistana GERÇEKTEN sorar.
+   *
+   * Bu kutu daha önce sunucuya hiç gitmiyordu: `setTimeout` ile sabit bir
+   * cümle gösteriyordu, bu yüzden API anahtarı doğru olsa bile "hep aynı
+   * yanıtı veriyor" görünüyordu. Artık `POST /api/ai/ask` çağrılıyor.
+   */
   const handleTestChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testInput.trim() || loading) return;
 
     const userMessage = testInput.trim();
     setTestInput('');
-    setChatLog(prev => [...prev, { role: 'user', text: userMessage }]);
+    setChatLog(prev => [...prev, { role: 'user', text: userMessage }, { role: 'bot', text: 'Düşünüyor...' }]);
     setLoading(true);
 
+    const yaz = (text: string) =>
+      setChatLog(prev => [...prev.filter(m => m.text !== 'Düşünüyor...'), { role: 'bot', text }]);
+
     try {
-      setChatLog(prev => [...prev, { role: 'bot', text: 'Düşünüyor...' }]);
-      setTimeout(() => {
-        setChatLog(prev => {
-          const filtered = prev.filter(m => m.text !== 'Düşünüyor...');
-          return [
-            ...filtered,
-            {
-              role: 'bot',
-              text: apiKey
-                ? `Harika bir soru! Canlı yayında "${userMessage}" konusunu konuşmak süper oldu! 🎮🔥`
-                : 'Lütfen önce geçerli bir Google Gemini API anahtarı kaydedin!'
-            }
-          ];
-        });
-        setLoading(false);
-      }, 800);
-    } catch {
+      const res = await fetch('/api/ai/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userMessage, sender: 'Yayıncı' })
+      });
+      const d = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        yaz(`⚠️ Sunucu hatası (${res.status}): ${d?.error || 'bilinmeyen'}`);
+      } else {
+        yaz(d?.cevap || '⚠️ Boş yanıt geldi.');
+        if (d?.model) setAktifModel(d.model);
+      }
+    } catch (err: any) {
+      yaz(`⚠️ StreamAxT sunucusuna ulaşılamadı: ${String(err?.message || err)}`);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  /** Anahtarı ve modeli sunucuya doğrulatır — üretim kotası harcamaz. */
+  const durumuYenile = async () => {
+    setDurumYukleniyor(true);
+    try {
+      const d = await fetch('/api/ai/status').then(r => r.json());
+      setDurum(d);
+      if (d?.model) setAktifModel(d.model);
+    } catch {
+      setDurum({ hazir: false, hata: 'Sunucuya ulaşılamadı' });
+    } finally {
+      setDurumYukleniyor(false);
     }
   };
 
@@ -265,6 +294,53 @@ export function AISettings() {
               <p className="text-[11px] text-gray-500 mt-1">
                 Google AI Studio üzerinden ücretsiz API anahtarınızı alabilirsiniz: <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">aistudio.google.com</a>
               </p>
+
+              {/* Anahtar sunucuda MASKELENIR; panel gercek degeri hic gormez.
+                  Kutuyu bos birakip kaydetmek kayitli anahtari SILMEZ. */}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {anahtarKayitli && (
+                  <span className="text-[10px] px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
+                    ✓ Anahtar kayıtlı (güvenlik için maskeli gösterilir)
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={durumuYenile}
+                  disabled={durumYukleniyor}
+                  className="text-[10px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-bold disabled:opacity-50"
+                >
+                  {durumYukleniyor ? 'Deneniyor…' : 'Bağlantıyı sına'}
+                </button>
+                {aktifModel && (
+                  <span className="text-[10px] px-2 py-1 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
+                    model: {aktifModel}
+                  </span>
+                )}
+              </div>
+
+              {durum && (
+                <div
+                  className={`mt-2 text-[11px] rounded-xl px-3 py-2 border ${
+                    durum.hazir
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                      : 'bg-red-500/10 border-red-500/30 text-red-200'
+                  }`}
+                >
+                  {durum.hazir ? (
+                    <>
+                      Bağlantı çalışıyor. Hesabınızda <strong>{durum.modeller?.length ?? 0}</strong> model açık,
+                      kullanılan: <strong className="font-mono">{durum.model}</strong>.
+                      {durum.kotasiDolan?.length > 0 && (
+                        <span className="block mt-1 text-amber-300">
+                          Kotası dolduğu için atlanan: {durum.kotasiDolan.join(', ')}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>Bağlantı kurulamadı: {durum.hata || 'bilinmeyen sebep'}</>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

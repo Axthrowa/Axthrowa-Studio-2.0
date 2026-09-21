@@ -639,6 +639,34 @@ router.post('/alerts/test', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// 9.3 Yapay zeka asistani — paneldeki sohbet kutusu bunu kullanir.
+// Eskiden panel HIC sunucuya gitmiyordu: `setTimeout` ile sabit bir cumle
+// gosteriyordu ("hep ayni yaniti veriyor" sikayeti buydu).
+router.post('/ai/ask', async (req: Request, res: Response) => {
+  const soru = String(req.body?.prompt ?? '').trim();
+  const kimden = String(req.body?.sender ?? 'Yayıncı').slice(0, 40);
+  if (!soru) return res.status(400).json({ success: false, error: 'prompt gerekli' });
+  if (soru.length > 2000) return res.status(400).json({ success: false, error: 'Soru çok uzun (en fazla 2000 karakter).' });
+
+  try {
+    const cevap = await geminiCoHost.ask(soru, kimden);
+    // `ask` hata durumunda da metin dondurur; uyari isaretini ayirt et.
+    const hataMi = typeof cevap === 'string' && cevap.startsWith('⚠️');
+    res.json({ success: !hataMi, cevap, model: geminiCoHost.aktifModel() });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: String(e?.message || e) });
+  }
+});
+
+// Baglanti testi: anahtar gecerli mi, hangi modeller acik?
+router.get('/ai/status', async (req: Request, res: Response) => {
+  try {
+    res.json(await geminiCoHost.durum());
+  } catch (e: any) {
+    res.status(500).json({ hazir: false, hata: String(e?.message || e) });
+  }
+});
+
 // 9.4 Platform yetenekleri — panel desteklenmeyen ayari devre disi gostersin
 router.get('/platforms/capabilities', (req: Request, res: Response) => {
   res.json({

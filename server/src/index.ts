@@ -1,0 +1,123 @@
+/**
+ * StreamAxT Core Server & Multi-Platform Bot Engine
+ * Developed by AxthrowA
+ * (c) 2026 AxthrowA. All rights reserved.
+ */
+
+import express from 'express';
+import cors from 'cors';
+import http from 'http';
+import path from 'path';
+import fs from 'fs';
+import dotenv from 'dotenv';
+import apiRoutes from './api/routes.js';
+import { wsHub } from './ws/server.js';
+import { platformManager } from './platforms/manager.js';
+import { messagePipeline } from './core/pipeline.js';
+import { commandManager } from './modules/commands/command-manager.js';
+import { timerManager } from './modules/timers/timers.js';
+import { setStreamStartTime } from './core/variable-parser.js';
+import { extras } from './modules/extras/extras.js';
+import { economy } from './modules/economy/economy.js';
+
+dotenv.config();
+
+const app = express();
+const server = http.createServer(app);
+
+// CORS & Middleware
+app.use(cors({ origin: '*' }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// API Routes
+app.use('/api', apiRoutes);
+
+// API 404 Handler - Always return JSON, never HTML
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `API uç noktası bulunamadı: ${req.method} ${req.originalUrl}. Lütfen StreamAxT'yi yeniden başlatın.`
+  });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Setup WebSockets
+wsHub.init(server);
+
+// Serve static frontend in production/portable mode
+const clientDistCandidates = [
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(process.cwd(), '../client/dist'),
+  path.resolve(process.cwd(), 'dist-client'),
+  path.resolve(process.cwd(), 'public')
+];
+
+const clientDist = clientDistCandidates.find(p => fs.existsSync(p));
+if (clientDist) {
+  app.use(express.static(clientDist, {
+    maxAge: '1d',
+    etag: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.includes('assets')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/ws') || req.path.startsWith('/health')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
+
+const PORT = process.env.PORT || 3001;
+
+server.on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[UYARI] 3001 numarali port su anda mesgul!`);
+    console.error(`Onceki StreamAxT penceresi veya bir baska uygulama 3001 portunu kullaniyor.\n`);
+    process.exit(1);
+  } else {
+    console.error('[Sunucu Hatasi]:', err);
+  }
+});
+
+server.listen(PORT, async () => {
+  setStreamStartTime(Date.now());
+  console.log(`\n======================================================`);
+  console.log(`🚀 StreamAxT Core Bot Engine - Developed by AxthrowA`);
+  console.log(`🔗 Web Dashboard: http://localhost:${PORT}`);
+  console.log(`📡 WebSocket Hub: ws://localhost:${PORT}/ws`);
+  console.log(`======================================================\n`);
+
+  // Initialize Message Processing Pipeline & Commands
+  messagePipeline.init();
+  commandManager.reload();
+  extras.initExtras();
+
+  // Start Announcement Timers
+  timerManager.startAll();
+
+  // İzleme süresi / düzenli puan tiki (Rankings > Watchtime bunu kullanır).
+  economy.startWatchTimeLoop(5);
+
+  // Connect active streaming platforms
+  try {
+    await platformManager.connectAll();
+  } catch (err) {
+    console.error('Error connecting platforms:', err);
+  }
+});
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\nShutting down StreamAxT gracefully...');
+  timerManager.stopAll();
+  process.exit(0);
+});

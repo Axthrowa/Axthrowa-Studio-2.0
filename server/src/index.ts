@@ -19,6 +19,7 @@ import { timerManager } from './modules/timers/timers.js';
 import { setStreamStartTime } from './core/variable-parser.js';
 import { extras } from './modules/extras/extras.js';
 import { economy } from './modules/economy/economy.js';
+import { yerelKokenMi, istekKabulEdilir, baglanmaAdresi, baglanmaUyarisi } from './core/security/local-guard.js';
 
 dotenv.config();
 
@@ -26,9 +27,32 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS & Middleware
-app.use(cors({ origin: '*' }));
+//
+// Eskiden `cors({ origin: '*' })` vardi: kullanicinin ziyaret ettigi HERHANGI
+// bir web sayfasi fetch('http://localhost:3001/api/platforms') ile Kick OAuth
+// tokenini okuyabiliyordu. Artik yalniz yerel kokenler yanit okuyabilir.
+app.use(
+  cors({
+    origin(origin, cb) {
+      cb(null, yerelKokenMi(origin));
+    },
+    credentials: false
+  })
+);
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// CSRF korumasi: basit istekler on kontrole tabi olmadigi icin CORS yaniti
+// gizlese bile istek sunucuda CALISIR. Yan etkisi olan yontemlerde kokeni
+// ayrica dogrula — yabanci bir sayfa bot adina mesaj gonderemesin.
+app.use('/api', (req, res, next) => {
+  if (istekKabulEdilir(req.method, req.headers.origin)) return next();
+  console.warn(`[Guvenlik] Yabanci kokenden yazma istegi reddedildi: ${req.headers.origin} ${req.method} ${req.originalUrl}`);
+  res.status(403).json({
+    success: false,
+    error: 'Bu istek yalniz StreamAxT panelinden yapilabilir.'
+  });
+});
 
 // API Routes
 app.use('/api', apiRoutes);
@@ -76,7 +100,7 @@ if (clientDist) {
   });
 }
 
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
@@ -88,12 +112,19 @@ server.on('error', (err: any) => {
   }
 });
 
-server.listen(PORT, async () => {
+// Varsayilan olarak YALNIZ bu makine. Eskiden host verilmedigi icin Node tum
+// ag arayuzlerini dinliyordu; ayni agdaki her cihaz botu yonetebiliyordu.
+const HOST = baglanmaAdresi();
+
+server.listen(PORT, HOST, async () => {
   setStreamStartTime(Date.now());
+  const uyari = baglanmaUyarisi(HOST);
   console.log(`\n======================================================`);
   console.log(`🚀 StreamAxT Core Bot Engine - Developed by AxthrowA`);
   console.log(`🔗 Web Dashboard: http://localhost:${PORT}`);
   console.log(`📡 WebSocket Hub: ws://localhost:${PORT}/ws`);
+  console.log(`🔒 Baglanti adresi: ${HOST}`);
+  if (uyari) console.warn(uyari);
   console.log(`======================================================\n`);
 
   // Initialize Message Processing Pipeline & Commands

@@ -25,6 +25,7 @@ import { ttsEngine } from '../modules/tts/tts.js';
 import { syncTriviaBank } from '../modules/games/trivia-sync.js';
 import { extras } from '../modules/extras/extras.js';
 import crypto from 'crypto';
+import { temizle, gizliMi, yeniSirDegeri, maskeDegeriMi } from '../core/security/redact.js';
 
 const router = Router();
 let kickPkceVerifier = '';
@@ -83,7 +84,10 @@ router.get('/status', (req: Request, res: Response) => {
 
 // 2. Platforms Management
 router.get('/platforms', (req: Request, res: Response) => {
-  const channels = db.prepare('SELECT * FROM channels').all();
+  // GUVENLIK: bu uc eskiden `SELECT *` sonucunu oldugu gibi donduruyordu;
+  // yanit Kick OAuth tokenini DUZ METIN tasiyordu. Artik maskelenir ve
+  // panele yalniz "tokenVar: true/false" bilgisi gider.
+  const channels = temizle(db.prepare('SELECT * FROM channels').all());
   const liveStatuses = platformManager.getAllStatuses();
   res.json({ channels, liveStatuses });
 });
@@ -97,11 +101,15 @@ router.post('/platforms/save', async (req: Request, res: Response) => {
 
   const existing = db.prepare('SELECT * FROM channels WHERE platform = ?').get(platform) as any;
   if (existing) {
+    // Panel artik gercek tokeni gormuyor; alan bos veya maskeli geldiginde
+    // KAYITLI deger korunur. Aksi halde her kaydetme tokeni silerdi.
+    const yeniToken = yeniSirDegeri(token, existing.token ?? null);
+    const yeniRefresh = yeniSirDegeri(refreshToken, existing.refresh_token ?? null);
     db.prepare(`
       UPDATE channels 
       SET channel_name = ?, account_id = ?, token = ?, refresh_token = ?, is_active = ?
       WHERE platform = ?
-    `).run(channelName, accountId || null, token || null, refreshToken || null, isActive ? 1 : 0, platform);
+    `).run(channelName, accountId || null, yeniToken, yeniRefresh, isActive ? 1 : 0, platform);
   } else {
     db.prepare(`
       INSERT INTO channels (id, platform, channel_name, account_id, token, refresh_token, is_active, created_at)
@@ -202,9 +210,15 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
 
 router.post('/platforms/kick/verify', async (req: Request, res: Response) => {
   const channelSlug = (req.body.channelSlug || req.body.channelName || '').trim();
-  const token = (req.body.token || '').trim();
+  let token = (req.body.token || '').trim();
   if (!channelSlug) {
     return res.status(400).json({ success: false, error: 'Kanal adı gereklidir' });
+  }
+  // Panel artik tokeni gormuyor: bos veya maskeli geldiginde kayitli token
+  // sunucu tarafinda okunur. Dogrulama boylece calismaya devam eder.
+  if (!token || maskeDegeriMi(token)) {
+    const kayit = db.prepare("SELECT token FROM channels WHERE platform = 'kick'").get() as { token?: string } | undefined;
+    token = (kayit?.token || '').trim();
   }
   const result = await kickPlatform.verifyChannel(channelSlug, token);
   res.json(result);
@@ -599,12 +613,15 @@ router.post('/alerts/test', (req: Request, res: Response) => {
 
 // 10. General Bot Settings
 router.get('/settings', (req: Request, res: Response) => {
+  // GUVENLIK: `kick_client_secret` ve `gemini_api_key` eskiden duz metin
+  // donuyordu. Artik maskelenir; panel `<key>Var` alanindan dolu olup
+  // olmadigini anlar.
   const rows = db.prepare('SELECT * FROM bot_settings').all() as Array<{ key: string; value: string }>;
   const settingsObj: Record<string, string> = {};
   for (const r of rows) {
     settingsObj[r.key] = r.value;
   }
-  res.json(settingsObj);
+  res.json(temizle(settingsObj));
 });
 
 router.post('/settings', (req: Request, res: Response) => {
@@ -614,7 +631,17 @@ router.post('/settings', (req: Request, res: Response) => {
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
   `);
 
+  const mevcutOku = db.prepare('SELECT value FROM bot_settings WHERE key = ?');
   for (const [key, value] of Object.entries(updates)) {
+    // Maskelenmis deger geri gonderildiginde gercek sir "****1234" ile
+    // EZILMEMELI; bos gonderim de ayni sekilde mevcut degeri korur.
+    if (gizliMi(key)) {
+      const mevcut = (mevcutOku.get(key) as { value?: string } | undefined)?.value ?? null;
+      const yazilacak = yeniSirDegeri(value, mevcut);
+      if (yazilacak === null) continue;
+      upsert.run(key, String(yazilacak));
+      continue;
+    }
     upsert.run(key, String(value));
   }
 

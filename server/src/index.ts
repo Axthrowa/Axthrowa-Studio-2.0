@@ -19,6 +19,7 @@ import { timerManager } from './modules/timers/timers.js';
 import { setStreamStartTime } from './core/variable-parser.js';
 import { extras } from './modules/extras/extras.js';
 import { economy } from './modules/economy/economy.js';
+import { subathon } from './modules/subathon/subathon.js';
 import { yerelKokenMi, istekKabulEdilir, baglanmaAdresi, baglanmaUyarisi } from './core/security/local-guard.js';
 
 dotenv.config();
@@ -137,6 +138,11 @@ server.listen(PORT, HOST, async () => {
 
   // İzleme süresi / düzenli puan tiki (Rankings > Watchtime bunu kullanır).
   economy.startWatchTimeLoop(5);
+
+  // Subathon sayacı sunucuda tutulur; olaylar (abone / hediye abone / bağış /
+  // KICKs) otomatik olarak süreye eklenir.
+  subathon.yayinciBagla((tip, veri) => wsHub.broadcastTo(['all'], { type: tip, data: veri }));
+  subathon.baslangic();
 
   // Connect active streaming platforms
   try {

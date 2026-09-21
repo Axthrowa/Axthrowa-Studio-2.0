@@ -153,7 +153,12 @@ export class KickPlatform extends BasePlatform {
       channel.bind_global((eventName: string, data: any) => {
         if (eventName && eventName.includes('ChatMessageEvent')) {
           this.handleChatMessage(data, channelSlug);
+          return;
         }
+        // KICKs ve host olaylari icin ADI degisebilen olaylari burada
+        // yakaliyoruz: Kick bu olaylarin adini gecmiste degistirdi ve sabit
+        // `bind` kullanmak sessizce calismamaya yol aciyordu.
+        this.handleGlobalEvent(eventName, data, channelSlug);
       });
 
       // 5. Listen to Follows
@@ -279,6 +284,60 @@ export class KickPlatform extends BasePlatform {
       });
     } catch (err) {
       console.error('[Kick] Error parsing chat message:', err);
+    }
+  }
+
+  /**
+   * Adi sabitlenmemis Kick olaylari (KICKs, host/raid).
+   *
+   * `alert_presets` tablosunda `kicks` ve `host` satirlari vardi ama veri
+   * yolunda karsiliklari YOKTU: gercek yayinda hic tetiklenmiyor, yalniz
+   * panelin "Test" dugmesiyle geliyorlardi. Subathon sayacinin KICKs ile
+   * otomatik uzamasi da bu yuzden calismiyordu.
+   */
+  private handleGlobalEvent(eventName: string, data: any, channelSlug: string): void {
+    if (!eventName) return;
+    const ad = String(eventName);
+    let p: any = data;
+    try {
+      if (typeof data === 'string') p = JSON.parse(data);
+    } catch {
+      return;
+    }
+    if (!p || typeof p !== 'object') return;
+
+    // --- KICKs ---
+    if (/kick(s)?(gift|sent|received)|KicksGifted|RewardRedeemed/i.test(ad)) {
+      const adet = Number(
+        p.amount ?? p.kicks ?? p.quantity ?? p.gift?.amount ?? p.kicks_amount ?? 0
+      );
+      if (adet > 0) {
+        const kim = p.sender?.username || p.username || p.user?.username || 'İzleyici';
+        eventBus.emitKicks({
+          platform: 'kick',
+          channel: channelSlug,
+          username: kim,
+          displayName: p.sender?.display_name || p.display_name || kim,
+          amount: adet,
+          message: p.message || p.gift?.name || '',
+          timestamp: Date.now()
+        });
+      }
+      return;
+    }
+
+    // --- Host / Raid ---
+    if (/StreamHost|HostEvent|RaidEvent/i.test(ad)) {
+      const izleyici = Number(p.number_viewers ?? p.viewers ?? p.optional_message?.viewers ?? 0);
+      const kim = p.host_username || p.username || p.user?.username || 'Yayıncı';
+      eventBus.emitHost({
+        platform: 'kick',
+        channel: channelSlug,
+        username: kim,
+        displayName: p.host_username || kim,
+        viewers: izleyici,
+        timestamp: Date.now()
+      });
     }
   }
 

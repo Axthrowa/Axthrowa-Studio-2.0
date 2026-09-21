@@ -28,6 +28,7 @@ import crypto from 'crypto';
 import { temizle, gizliMi, yeniSirDegeri, maskeDegeriMi } from '../core/security/redact.js';
 import { degiskenKatalogu, degiskenSayisi, baglamOlustur, degiskenleriCoz } from '../core/variables/index.js';
 import { YETENEKLER } from '../platforms/capabilities.js';
+import { subathon } from '../modules/subathon/subathon.js';
 import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../modules/automod/enforcement.js';
 
 const router = Router();
@@ -637,6 +638,46 @@ router.post('/alerts/test', (req: Request, res: Response) => {
   const { eventType } = req.body;
   wsHub.triggerTestAlert(eventType || 'follow');
   res.json({ success: true });
+});
+
+// 9.2 Subathon — sayac artik SUNUCUDA. Eskiden tamamen tarayicidaydi:
+// iki OBS kaynagi acilinca iki farkli sayac gorunuyor, panel sayaci
+// goremiyor ve KICKs olayi hic eklenmiyordu.
+router.get('/subathon', (req: Request, res: Response) => {
+  res.json(subathon.durumAl());
+});
+
+router.post('/subathon/settings', (req: Request, res: Response) => {
+  const g = req.body || {};
+  const sayi = (v: any, varsayilan: number) => (v === undefined || v === null || v === '' ? varsayilan : Math.max(0, Number(v) || 0));
+  const mevcut = subathon.ayarOku();
+  res.json(
+    subathon.ayarYaz({
+      baslangicDakika: sayi(g.baslangicDakika, mevcut.baslangicDakika),
+      aboneDakika: sayi(g.aboneDakika, mevcut.aboneDakika),
+      hediyeAboneDakika: sayi(g.hediyeAboneDakika, mevcut.hediyeAboneDakika),
+      bagisDakika: sayi(g.bagisDakika, mevcut.bagisDakika),
+      bagisBirimi: Math.max(1, sayi(g.bagisBirimi, mevcut.bagisBirimi)),
+      kicksDakika: sayi(g.kicksDakika, mevcut.kicksDakika),
+      kicksBirimi: Math.max(1, sayi(g.kicksBirimi, mevcut.kicksBirimi)),
+      maksSaat: sayi(g.maksSaat, mevcut.maksSaat)
+    })
+  );
+});
+
+router.post('/subathon/start', (req: Request, res: Response) => {
+  res.json(subathon.baslat(req.body?.dakika));
+});
+
+router.post('/subathon/stop', (req: Request, res: Response) => {
+  res.json(subathon.durdur());
+});
+
+/** Elle sure ekle/cikar: `{ dakika: 5 }` veya `{ dakika: -5 }`. */
+router.post('/subathon/add', (req: Request, res: Response) => {
+  const dk = Number(req.body?.dakika);
+  if (!Number.isFinite(dk) || dk === 0) return res.status(400).json({ error: 'dakika gerekli' });
+  res.json(subathon.sureEkle(Math.round(dk * 60), `${dk > 0 ? '+' : ''}${dk} dk · elle`));
 });
 
 // 9.3 Yapay zeka asistani — paneldeki sohbet kutusu bunu kullanir.

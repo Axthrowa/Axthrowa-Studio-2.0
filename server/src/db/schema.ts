@@ -139,7 +139,7 @@ export interface GiveawayEntry {
 
 export interface AlertPreset {
   id: string;
-  eventType: 'follow' | 'sub' | 'gift' | 'tip' | 'raid' | 'kick' | 'gift_tiktok';
+  eventType: 'follow' | 'sub' | 'gift' | 'gift_sub' | 'tip' | 'raid' | 'kick' | 'kicks' | 'host' | 'gift_tiktok';
   titleTemplate: string;
   messageTemplate: string;
   soundUrl: string;
@@ -156,7 +156,7 @@ export interface AlertPreset {
 export interface StreamEvent {
   id: string;
   platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
-  eventType: 'chat' | 'follow' | 'sub' | 'tip' | 'raid' | 'gift';
+  eventType: 'chat' | 'follow' | 'sub' | 'gift' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid';
   username: string;
   displayName?: string;
   message?: string;

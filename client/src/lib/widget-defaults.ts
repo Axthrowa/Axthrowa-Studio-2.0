@@ -294,24 +294,23 @@ export const GIVEAWAY_DEFAULTS = {
  * Subathon sayacı — olay başına eklenecek süreler panelden ayarlanır.
  * `tipMinutes` her `tipPerAmount` birim bağış için eklenir (ör. 10₺ başına 2 dk).
  */
+/**
+ * Subathon — YALNIZ görünüm ayarları.
+ *
+ * Süre kuralları (abone / hediye abone / bağış / KICKs kaç dakika ekler)
+ * artık SUNUCUDA tutuluyor: `/api/subathon/settings`. Sayaç tarayıcıda
+ * yaşarken iki OBS kaynağı iki farklı süre gösteriyordu ve KICKs hiç
+ * işlenmiyordu. Kurallar Overlay Stüdyo > Subathon panelinden ayarlanır.
+ */
 export const SUBATHON_DEFAULTS = {
   title: 'SUBATHON',
-  startMinutes: 120,
-  subMinutes: 5,
-  giftSubMinutes: 5,
-  tipMinutes: 2,
-  tipPerAmount: 10,
-  kicksMinutes: 1,
-  kicksPerAmount: 100,
-  maxHours: 0,
   notifyMs: 4000,
   showTotalAdded: true,
+  hideWhenIdle: false,
   accentColor: '#22d3ee',
   accentColor2: '#34d399'
 };
 
-
-/** Bil Bakalım katmanı — kart görünümü ve ses. */
 export const TRIVIA_DEFAULTS = {
   maxWidth: 672,
   radius: 24,

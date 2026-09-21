@@ -51,6 +51,8 @@ import {
 import confetti from 'canvas-confetti';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
+import { OverlayKatmanlari } from '../widgets/OverlayLayers.js';
+import { SubathonPanel } from '../components/SubathonPanel.js';
 
 interface ChatOverlayConfig {
   maxMessages: number;
@@ -451,6 +453,20 @@ export function OverlayStudio() {
 
   // Canvas interactive drag-and-drop state
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * Tuval 1920x1080 cizilip CSS ile kuculuyor: boylece onizlemedeki her
+   * piksel OBS'teki ayni pikseldir. Genislik degistikce yeniden olculur.
+   */
+  const [tuvalOlcek, setTuvalOlcek] = useState(1);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const guncelle = () => setTuvalOlcek((el.clientWidth || 1920) / 1920);
+    guncelle();
+    const gozlemci = new ResizeObserver(guncelle);
+    gozlemci.observe(el);
+    return () => gozlemci.disconnect();
+  }, []);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const dragStartRef = useRef<{ pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
@@ -1123,429 +1139,68 @@ export function OverlayStudio() {
                   1920 x 1080 OBS CANVAS
                 </div>
 
-                {/* Render All 11 Canvas Components Draggable */}
-
-                {/* 1. Event Labels */}
-                {allInOne.eventLabels && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'eventLabels')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.eventLabels.x || 0) / 1920) * 100}%`,
-                      top: `${((allInOne.eventLabels.y || 0) / 1080) * 100}%`,
-                      width: `${((allInOne.eventLabels.width || 1920) / 1920) * 100}%`,
-                      height: `${((allInOne.eventLabels.height || 44) / 1080) * 100}%`,
-                      opacity: allInOne.eventLabels.enabled ? 1 : 0.35
+                {/* TUVAL = OBS ÇIKTISI
+                    Eskiden burada her katman için elle yazılmış sahte
+                    maketler vardı ("03:45:20", "🪙 x12", "Lv. 2 %80"), OBS
+                    ise gerçek widget'ları yüklüyordu — bu yüzden önizleme
+                    ile yayın birbirini tutmuyordu.
+                    Artık ikisi de OverlayLayers.tsx'i kullanıyor. Tuval
+                    1920×1080 çizilip CSS ile küçültülüyor, böylece ölçek ve
+                    konum birebir aynı. */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: 1920,
+                    height: 1080,
+                    transform: `scale(${tuvalOlcek})`,
+                    transformOrigin: 'top left'
+                  }}
+                >
+                  <OverlayKatmanlari
+                    config={allInOne as any}
+                    onizleme
+                    sarmala={(katman, icerik, stil) => {
+                      const item = (allInOne as any)[katman.anahtar];
+                      const secili = selectedCanvasWidget === katman.anahtar;
+                      return (
+                        <div
+                          onPointerDown={(e) => handleWidgetPointerDown(e, katman.anahtar)}
+                          title={katman.etiket}
+                          style={{
+                            ...stil,
+                            cursor: 'move',
+                            // Kapalı katman tuvalde soluk görünür ki
+                            // konumlandırılabilsin; OBS'te hiç çizilmez.
+                            opacity: item?.enabled ? 1 : 0.3,
+                            outline: secili ? '3px solid #a78bfa' : '1px dashed rgba(167,139,250,0.35)',
+                            outlineOffset: 2,
+                            borderRadius: 6
+                          }}
+                        >
+                          <div style={{ pointerEvents: 'none', width: '100%', height: '100%' }}>{icerik}</div>
+                          {secili && (
+                            <div
+                              onPointerDown={(e) => handleResizePointerDown(e, katman.anahtar)}
+                              style={{
+                                position: 'absolute',
+                                right: 0,
+                                bottom: 0,
+                                width: 30,
+                                height: 30,
+                                background: '#a78bfa',
+                                cursor: 'se-resize',
+                                borderTopLeftRadius: 6
+                              }}
+                            />
+                          )}
+                        </div>
+                      );
                     }}
-                    className={`cursor-move transition-shadow rounded-lg overflow-hidden flex items-center justify-around px-3 text-[9px] text-purple-200 font-mono bg-purple-950/80 border ${
-                      selectedCanvasWidget === 'eventLabels' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-purple-500/30 z-10'
-                    }`}
-                  >
-                    <span>⭐ Son Takipçi: <b>Caner99</b></span>
-                    <span>🔥 En Çok Bağış: <b>Efe (+150 TL)</b></span>
-                    <span>💎 Son Abone: <b>Zeynep</b></span>
-                    {selectedCanvasWidget === 'eventLabels' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'eventLabels')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
+                  />
+                </div>
 
-                {/* 2. Goals (Hedef Çubuğu) */}
-                {allInOne.goals && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'goals')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.goals.x || 40) / 1920) * 100}%`,
-                      top: `${((allInOne.goals.y || 60) / 1080) * 100}%`,
-                      width: `${((allInOne.goals.width || 380) / 1920) * 100}%`,
-                      height: `${((allInOne.goals.height || 60) / 1080) * 100}%`,
-                      opacity: allInOne.goals.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/80 border flex flex-col justify-center ${
-                      selectedCanvasWidget === 'goals' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-emerald-500/30 z-10'
-                    }`}
-                  >
-                    <div className="text-[9px] font-bold text-gray-300 flex justify-between">
-                      <span className="truncate">{allInOne.goals.title || 'Takipçi Hedefi'}</span>
-                      <span className="text-emerald-400 font-mono">%{Math.round(((allInOne.goals.current || 28) / (allInOne.goals.target || 100)) * 100)}</span>
-                    </div>
-                    <div className="w-full bg-white/10 h-2 rounded-full mt-1 overflow-hidden">
-                      <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-[28%]" />
-                    </div>
-                    {selectedCanvasWidget === 'goals' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'goals')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 3. Subathon Timer */}
-                {allInOne.subathon && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'subathon')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.subathon.x || 1560) / 1920) * 100}%`,
-                      top: `${((allInOne.subathon.y || 60) / 1080) * 100}%`,
-                      width: `${((allInOne.subathon.width || 320) / 1920) * 100}%`,
-                      height: `${((allInOne.subathon.height || 70) / 1080) * 100}%`,
-                      opacity: allInOne.subathon.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/85 border flex items-center justify-center gap-2 ${
-                      selectedCanvasWidget === 'subathon' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-amber-500/30 z-10'
-                    }`}
-                  >
-                    <Hourglass className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                    <span className="text-xs font-mono font-black text-white">03:45:20</span>
-                    <span className="text-[9px] text-purple-300 font-mono">+5dk</span>
-                    {selectedCanvasWidget === 'subathon' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'subathon')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* Bil Bakalım — sürüklenip boyutlandırılabilir katman */}
-                {allInOne.trivia && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'trivia')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.trivia.x ?? 660) / 1920) * 100}%`,
-                      top: `${((allInOne.trivia.y ?? 700) / 1080) * 100}%`,
-                      width: `${((allInOne.trivia.width ?? 600) / 1920) * 100}%`,
-                      height: `${((allInOne.trivia.height ?? 320) / 1080) * 100}%`,
-                      opacity: allInOne.trivia.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/85 border flex flex-col items-center justify-center gap-1 ${
-                      selectedCanvasWidget === 'trivia'
-                        ? 'border-purple-400 ring-2 ring-purple-500/50 z-30'
-                        : 'border-cyan-500/30 z-10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
-                      <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300">Bil Bakalım</span>
-                    </div>
-                    <span className="text-[9px] text-gray-400 text-center leading-tight px-1">
-                      Soru + 4 şık · chatten A/B/C/D
-                    </span>
-                    {selectedCanvasWidget === 'trivia' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'trivia')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 4. Alert Box Notifications */}
-                {allInOne.alerts && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'alerts')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.alerts.x || 660) / 1920) * 100}%`,
-                      top: `${((allInOne.alerts.y || 60) / 1080) * 100}%`,
-                      width: `${((allInOne.alerts.width || 600) / 1920) * 100}%`,
-                      height: `${((allInOne.alerts.height || 260) / 1080) * 100}%`,
-                      opacity: allInOne.alerts.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-2xl p-3 bg-black/90 border flex flex-col items-center justify-center text-center ${
-                      selectedCanvasWidget === 'alerts' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-amber-400/40 z-20'
-                    }`}
-                  >
-                    <span className="text-xl">⭐</span>
-                    <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider mt-0.5">
-                      YENİ ABONE!
-                    </div>
-                    <div className="text-[9px] text-white font-bold">
-                      @Ahmet_Kaya katıldı!
-                    </div>
-                    {selectedCanvasWidget === 'alerts' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'alerts')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 5. Live Chat Box */}
-                {allInOne.chat && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'chat')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.chat.x || 40) / 1920) * 100}%`,
-                      top: `${((allInOne.chat.y || 430) / 1080) * 100}%`,
-                      width: `${((allInOne.chat.width || 420) / 1920) * 100}%`,
-                      height: `${((allInOne.chat.height || 610) / 1080) * 100}%`,
-                      opacity: allInOne.chat.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-2xl p-2.5 bg-black/80 border flex flex-col justify-end space-y-1 ${
-                      selectedCanvasWidget === 'chat' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-white/15 z-15'
-                    }`}
-                  >
-                    <div className="text-[8px] text-gray-400 flex items-center gap-1 border-b border-white/10 pb-1">
-                      <MessageSquare className="w-2.5 h-2.5 text-purple-400" />
-                      <span>Sohbet Kutusu</span>
-                    </div>
-                    <div className="space-y-1 overflow-hidden text-[8px] text-white">
-                      <div className="truncate"><b className="text-[#53fc18]">@can:</b> Herkese selamlar! 🔥</div>
-                      <div className="truncate"><b className="text-purple-400">@ayse:</b> İyi yayınlar!</div>
-                      <div className="truncate"><b className="text-amber-400">@mert:</b> !zar 50</div>
-                    </div>
-                    {selectedCanvasWidget === 'chat' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'chat')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 6. Emote Combo */}
-                {allInOne.emoteCombo && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'emoteCombo')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.emoteCombo.x || 1560) / 1920) * 100}%`,
-                      top: `${((allInOne.emoteCombo.y || 460) / 1080) * 100}%`,
-                      width: `${((allInOne.emoteCombo.width || 320) / 1920) * 100}%`,
-                      height: `${((allInOne.emoteCombo.height || 140) / 1080) * 100}%`,
-                      opacity: allInOne.emoteCombo.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/80 border flex items-center justify-center ${
-                      selectedCanvasWidget === 'emoteCombo' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-orange-500/30 z-10'
-                    }`}
-                  >
-                    <div className="bg-gradient-to-r from-amber-500 to-red-500 px-2.5 py-1 rounded-full text-[9px] font-black text-black shadow-lg animate-pulse">
-                      🔥 KOMBO x7
-                    </div>
-                    {selectedCanvasWidget === 'emoteCombo' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'emoteCombo')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 7. Now Playing Song Card */}
-                {allInOne.nowPlaying && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'nowPlaying')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.nowPlaying.x || 1460) / 1920) * 100}%`,
-                      top: `${((allInOne.nowPlaying.y || 960) / 1080) * 100}%`,
-                      width: `${((allInOne.nowPlaying.width || 420) / 1920) * 100}%`,
-                      height: `${((allInOne.nowPlaying.height || 90) / 1080) * 100}%`,
-                      opacity: allInOne.nowPlaying.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/80 border flex items-center gap-2 ${
-                      selectedCanvasWidget === 'nowPlaying' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-pink-500/30 z-10'
-                    }`}
-                  >
-                    <Music className="w-4 h-4 text-pink-400" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[8px] text-pink-300 font-mono font-bold">ŞU AN ÇALAN</div>
-                      <div className="text-[8px] text-white font-bold truncate">StreamAxT Lofi Chill</div>
-                    </div>
-                    {selectedCanvasWidget === 'nowPlaying' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'nowPlaying')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 8. The Cup (Jeton Kavanozu) */}
-                {allInOne.theCup && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'theCup')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.theCup.x || 1580) / 1920) * 100}%`,
-                      top: `${((allInOne.theCup.y || 610) / 1080) * 100}%`,
-                      width: `${((allInOne.theCup.width || 300) / 1920) * 100}%`,
-                      height: `${((allInOne.theCup.height || 430) / 1080) * 100}%`,
-                      opacity: allInOne.theCup.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/80 border flex flex-col items-center justify-center ${
-                      selectedCanvasWidget === 'theCup' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-cyan-500/30 z-10'
-                    }`}
-                  >
-                    <Wine className="w-5 h-5 text-cyan-400" />
-                    <span className="text-[8px] text-gray-300 font-mono mt-1">The Cup</span>
-                    <span className="text-[8px] text-amber-300 font-bold">🪙 x12</span>
-                    {selectedCanvasWidget === 'theCup' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'theCup')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 9. Live Polls */}
-                {allInOne.polls && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'polls')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.polls.x || 1540) / 1920) * 100}%`,
-                      top: `${((allInOne.polls.y || 180) / 1080) * 100}%`,
-                      width: `${((allInOne.polls.width || 340) / 1920) * 100}%`,
-                      height: `${((allInOne.polls.height || 260) / 1080) * 100}%`,
-                      opacity: allInOne.polls.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/80 border flex flex-col justify-center space-y-1 ${
-                      selectedCanvasWidget === 'polls' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-emerald-500/30 z-10'
-                    }`}
-                  >
-                    <div className="text-[8px] font-bold text-emerald-300 flex items-center gap-1">
-                      <BarChart3 className="w-2.5 h-2.5" />
-                      <span>Canlı Anket: Valorant mı GTA mı?</span>
-                    </div>
-                    <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-emerald-500 h-full w-[65%]" />
-                    </div>
-                    {selectedCanvasWidget === 'polls' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'polls')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 10. Çarkıfelek */}
-                {allInOne.wheel && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'wheel')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.wheel.x || 760) / 1920) * 100}%`,
-                      top: `${((allInOne.wheel.y || 340) / 1080) * 100}%`,
-                      width: `${((allInOne.wheel.width || 400) / 1920) * 100}%`,
-                      height: `${((allInOne.wheel.height || 400) / 1080) * 100}%`,
-                      opacity: allInOne.wheel.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-full p-2 bg-black/80 border flex items-center justify-center ${
-                      selectedCanvasWidget === 'wheel' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-pink-500/30 z-10'
-                    }`}
-                  >
-                    <Disc className="w-6 h-6 text-pink-400 animate-spin-slow" />
-                    {selectedCanvasWidget === 'wheel' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'wheel')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 11. Hype Train */}
-                {allInOne.hypeTrain && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'hypeTrain')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.hypeTrain.x || 685) / 1920) * 100}%`,
-                      top: `${((allInOne.hypeTrain.y || 350) / 1080) * 100}%`,
-                      width: `${((allInOne.hypeTrain.width || 550) / 1920) * 100}%`,
-                      height: `${((allInOne.hypeTrain.height || 85) / 1080) * 100}%`,
-                      opacity: allInOne.hypeTrain.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-xl p-2 bg-black/80 border flex items-center justify-between gap-2 ${
-                      selectedCanvasWidget === 'hypeTrain' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-indigo-500/30 z-10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-300">
-                      <span>🚂</span>
-                      <span>HYPE TRENİ (Lv. 2)</span>
-                    </div>
-                    <span className="text-[8px] text-gray-300 font-mono">%80</span>
-                    {selectedCanvasWidget === 'hypeTrain' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'hypeTrain')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 12. Widget Lyrics (Canlı Şarkı Sözleri) */}
-                {allInOne.lyrics && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'lyrics')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.lyrics.x || 460) / 1920) * 100}%`,
-                      top: `${((allInOne.lyrics.y || 880) / 1080) * 100}%`,
-                      width: `${((allInOne.lyrics.width || 1000) / 1920) * 100}%`,
-                      height: `${((allInOne.lyrics.height || 150) / 1080) * 100}%`,
-                      opacity: allInOne.lyrics.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-2xl p-3 bg-black/80 border flex flex-col items-center justify-center ${
-                      selectedCanvasWidget === 'lyrics' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-cyan-500/30 z-10'
-                    }`}
-                  >
-                    <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">🎶 CANLI ŞARKI SÖZLERİ (LYRICS)</span>
-                    <span className="text-xs font-black text-white mt-1">"StreamAxT ile müzik ve ritim bir arada..."</span>
-                    {selectedCanvasWidget === 'lyrics' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'lyrics')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 13. King System (Tahtın Kralı) */}
-                {allInOne.king && (
-                  <div
-                    onPointerDown={(e) => handleWidgetPointerDown(e, 'king')}
-                    style={{
-                      position: 'absolute',
-                      left: `${((allInOne.king.x || 1560) / 1920) * 100}%`,
-                      top: `${((allInOne.king.y || 180) / 1080) * 100}%`,
-                      width: `${((allInOne.king.width || 320) / 1920) * 100}%`,
-                      height: `${((allInOne.king.height || 120) / 1080) * 100}%`,
-                      opacity: allInOne.king.enabled ? 1 : 0.35
-                    }}
-                    className={`cursor-move transition-shadow rounded-2xl p-2.5 bg-black/80 border flex items-center gap-2.5 ${
-                      selectedCanvasWidget === 'king' ? 'border-purple-400 ring-2 ring-purple-500/50 z-30' : 'border-amber-500/30 z-10'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/40">
-                      👑
-                    </div>
-                    <div>
-                      <div className="text-[9px] font-bold text-amber-400 uppercase">Yayın Hükümdarı</div>
-                      <div className="text-xs font-black text-white">KralKullanici</div>
-                      <div className="text-[8px] text-gray-400">💎 500 Puan | 14 dk</div>
-                    </div>
-                    {selectedCanvasWidget === 'king' && (
-                      <div
-                        onPointerDown={(e) => handleResizePointerDown(e, 'king')}
-                        className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-purple-500 cursor-se-resize flex items-center justify-center rounded-tl"
-                      />
-                    )}
-                  </div>
-                )}
               </div>
             </div>
 
@@ -2102,22 +1757,10 @@ export function OverlayStudio() {
                     </div>
                   )}
 
-                  {selectedWidgetModal.id === 'subathon' && (
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => triggerWidgetTest('subathon', { timeRemaining: 18000, running: true })}
-                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> 15 Dakika Ekle
-                      </button>
-                      <button 
-                        onClick={() => triggerWidgetTest('subathon', { timeRemaining: 3600, running: true })}
-                        className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
-                      >
-                        <Minus className="w-3.5 h-3.5" /> 5 Dakika Çıkar
-                      </button>
-                    </div>
-                  )}
+                  {/* Subathon kendi kontrol panelini kullanir: sayac artik
+                      sunucuda, sure kurallari buradan ayarlanir. Eski iki
+                      dugme yalniz sahte bir WS mesaji yolluyordu. */}
+                  {selectedWidgetModal.id === 'subathon' && <SubathonPanel />}
 
                   {selectedWidgetModal.id === 'wheel-of-fortune' && (
                     <div className="flex items-center gap-2">

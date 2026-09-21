@@ -57,6 +57,26 @@ export interface TipPayload {
   timestamp: number;
 }
 
+/** Kick'in kendi para birimi. `amount` KICKs adedidir. */
+export interface KicksPayload {
+  platform: 'kick';
+  channel: string;
+  username: string;
+  displayName?: string;
+  amount: number;
+  message?: string;
+  timestamp: number;
+}
+
+export interface HostPayload {
+  platform: 'twitch' | 'kick';
+  channel: string;
+  username: string;
+  displayName?: string;
+  viewers: number;
+  timestamp: number;
+}
+
 export interface RaidPayload {
   platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
   channel: string;
@@ -141,6 +161,40 @@ class UniversalEventBus extends EventEmitter {
       amount: payload.amount,
       currency: payload.currency,
       message: payload.message,
+      timestamp: payload.timestamp
+    });
+  }
+
+  /**
+   * KICKs olayi. Veri yolunda karsiligi YOKTU: `alert_presets` tablosunda
+   * `kicks` satiri vardi ama gercek yayinda hic tetiklenmiyordu, yalniz
+   * "Test" dugmesiyle geliyordu.
+   */
+  emitKicks(payload: KicksPayload) {
+    this.emit('kicks', payload);
+    this.logEvent({
+      id: uuidv4(),
+      platform: payload.platform,
+      eventType: 'kicks',
+      username: payload.username,
+      displayName: payload.displayName || payload.username,
+      amount: payload.amount,
+      currency: 'KICK',
+      message: payload.message,
+      timestamp: payload.timestamp
+    });
+  }
+
+  emitHost(payload: HostPayload) {
+    this.emit('host', payload);
+    this.logEvent({
+      id: uuidv4(),
+      platform: payload.platform,
+      eventType: 'host',
+      username: payload.username,
+      displayName: payload.displayName || payload.username,
+      amount: payload.viewers,
+      message: `${payload.viewers} izleyiciyle host`,
       timestamp: payload.timestamp
     });
   }

@@ -26,6 +26,7 @@ import { syncTriviaBank } from '../modules/games/trivia-sync.js';
 import { extras } from '../modules/extras/extras.js';
 import crypto from 'crypto';
 import { temizle, gizliMi, yeniSirDegeri, maskeDegeriMi } from '../core/security/redact.js';
+import { degiskenKatalogu, degiskenSayisi, baglamOlustur, degiskenleriCoz } from '../core/variables/index.js';
 
 const router = Router();
 let kickPkceVerifier = '';
@@ -609,6 +610,42 @@ router.post('/alerts/test', (req: Request, res: Response) => {
   const { eventType } = req.body;
   wsHub.triggerTestAlert(eventType || 'follow');
   res.json({ success: true });
+});
+
+// 9.5 Degisken katalogu — panelde komut yazarken hangi degiskenler var
+router.get('/variables', (req: Request, res: Response) => {
+  res.json({ sayi: degiskenSayisi(), gruplar: degiskenKatalogu() });
+});
+
+// Sablon onizleme: komut kaydetmeden nasil gorunecegini dener.
+// `isTest: true` ile puan/sayac YAZMAYAN bir calistirma yapilir.
+router.post('/variables/preview', async (req: Request, res: Response) => {
+  const sablon = String(req.body?.template ?? '');
+  if (!sablon) return res.status(400).json({ error: 'template gerekli' });
+
+  const sahteMesaj: any = {
+    platform: String(req.body?.platform || 'kick'),
+    channel: String(req.body?.channel || 'test'),
+    user: {
+      username: 'onizleme',
+      displayName: 'Önizleme',
+      isBroadcaster: true,
+      isMod: true,
+      isSub: false,
+      isVip: false
+    },
+    message: sablon,
+    timestamp: Date.now()
+  };
+
+  const args = String(req.body?.args || '').trim().split(/\s+/).filter(Boolean);
+  try {
+    const ctx = baglamOlustur(sahteMesaj, args, String(req.body?.commandName || 'onizleme'), true);
+    const sonuc = await degiskenleriCoz(sablon, ctx);
+    res.json({ success: true, sonuc });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: String(e?.message || e) });
+  }
 });
 
 // 10. General Bot Settings

@@ -1,7 +1,12 @@
 import { db } from '../../db/index.js';
-import { ChatMessagePayload } from '../../core/event-bus.js';
+import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { parseVariables } from '../../core/variable-parser.js';
+import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
+import { randomUUID } from 'node:crypto';
 import { economy } from '../economy/economy.js';
+import { getStreamUptime } from '../../core/variable-parser.js';
+import { sayacAl, sayacAyarla, sayacDegistir } from '../../core/variables/store.js';
+import { sayacIfadesi } from '../../core/variables/pure.js';
 import { songRequest } from '../songrequest/songrequest.js';
 import { giveaway } from '../giveaways/giveaways.js';
 import { geminiCoHost } from '../ai/gemini.js';
@@ -480,8 +485,116 @@ export class CommandManager {
       case 'komutlar':
       case 'commands':
       case 'yardim':
-      case 'help':
-        return '📌 Komutlar: !puan, !liderlik, !kral, !tahtikap <puan>, !oyunlar, !sr <şarkı>, !sarki, !atla, !sor <soru>, !katil';
+      case 'help': {
+        // Sabit liste yerine gercekten TANIMLI komutlar listelenir; kullanici
+        // komut ekleyince liste kendiliginden guncellenir.
+        const ozel = db
+          .prepare('SELECT name FROM commands WHERE is_enabled = 1 ORDER BY name LIMIT 25')
+          .all() as Array<{ name: string }>;
+        const yerlesik = ['!puan', '!liderlik', '!uptime', '!izleme', '!oyunlar', '!sr', '!sor'];
+        const hepsi = [...yerlesik, ...ozel.map((c) => `!${String(c.name).replace(/^!/, '')}`)];
+        return `📌 Komutlar: ${[...new Set(hepsi)].join(', ')}`;
+      }
+
+      // ---- BotRix karsiligi olan yerlesik komutlar (GAP §2.1) -------------
+      case 'uptime':
+      case 'yayinsuresi':
+        return `⏱️ Yayin ${getStreamUptime()} once basladi.`;
+
+      case 'watchtime':
+      case 'izleme': {
+        const hedef = (args[0] || message.user.username).replace(/^@/, '');
+        const r = db
+          .prepare('SELECT display_name, watch_time_minutes FROM economy WHERE LOWER(username) = LOWER(?)')
+          .get(hedef) as { display_name?: string; watch_time_minutes?: number } | undefined;
+        if (!r) return `@${message.user.displayName}, ${hedef} icin izleme kaydi yok.`;
+        const dk = Number(r.watch_time_minutes) || 0;
+        const sa = Math.floor(dk / 60);
+        return `⏳ ${r.display_name || hedef} bu kanali ${sa > 0 ? `${sa} saat ` : ''}${dk % 60} dakika izledi.`;
+      }
+
+      case 'followage':
+      case 'takipsuresi': {
+        const hedef = (args[0] || message.user.username).replace(/^@/, '');
+        const r = db
+          .prepare(
+            "SELECT timestamp FROM stream_events WHERE event_type = 'follow' AND LOWER(username) = LOWER(?) ORDER BY timestamp ASC LIMIT 1"
+          )
+          .get(hedef) as { timestamp?: number } | undefined;
+        if (!r?.timestamp) {
+          return `@${message.user.displayName}, ${hedef} icin takip kaydi bulunamadi.`;
+        }
+        const gun = Math.floor((Date.now() - Number(r.timestamp)) / 86400000);
+        return `💜 ${hedef} bu kanali ${gun} gundur takip ediyor.`;
+      }
+
+      case 'so':
+      case 'promo': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const kanal = (args[0] || '').replace(/^@/, '').trim();
+        if (!kanal) return `@${message.user.displayName}, kullanim: !so <kanal>`;
+        const adresler: Record<string, string> = {
+          kick: 'https://kick.com',
+          twitch: 'https://twitch.tv',
+          youtube: 'https://youtube.com/@'
+        };
+        const kok = adresler[String(message.platform).toLowerCase()] || 'https://kick.com';
+        // Overlay'deki Shoutout widget'ini da tetikle
+        try {
+          eventBus.emit('widget_update', { type: 'shoutout', data: { channel: kanal, platform: message.platform } });
+        } catch {}
+        return `📢 ${kanal} kanalina goz atin: ${kok}/${kanal}`;
+      }
+
+      case 'editcounter':
+      case 'sayac': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').trim();
+        if (!ad) return `@${message.user.displayName}, kullanim: !editcounter <ad> <deger>`;
+        if (args[1] === undefined) return `🔢 ${ad}: ${sayacAl(ad)}`;
+        const ifade = sayacIfadesi(args[1]);
+        const yeniDeger =
+          ifade.tur === 'fark' ? sayacDegistir(ad, ifade.deger) : sayacAyarla(ad, ifade.deger);
+        return `🔢 ${ad}: ${yeniDeger}`;
+      }
+
+      case 'addcom':
+      case 'komutekle': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').replace(/^!/, '').trim().toLowerCase();
+        const yanit = args.slice(1).join(' ').trim();
+        if (!ad || !yanit) return `@${message.user.displayName}, kullanim: !addcom !merhaba Selam $(sender)`;
+        const var_ = db.prepare('SELECT id FROM commands WHERE LOWER(name) = ?').get(ad);
+        if (var_) return `@${message.user.displayName}, !${ad} zaten var. !editcom kullan.`;
+        db.prepare(
+          'INSERT INTO commands (id, name, response, user_level, cooldown, is_enabled) VALUES (?, ?, ?, ?, ?, 1)'
+        ).run(randomUUID(), ad, yanit, 'everyone', 5);
+        this.reload();
+        return `✅ !${ad} komutu eklendi.`;
+      }
+
+      case 'editcom':
+      case 'komutduzenle': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').replace(/^!/, '').trim().toLowerCase();
+        const yanit = args.slice(1).join(' ').trim();
+        if (!ad || !yanit) return `@${message.user.displayName}, kullanim: !editcom !merhaba Yeni yanit`;
+        const sonuc = db.prepare('UPDATE commands SET response = ? WHERE LOWER(name) = ?').run(yanit, ad);
+        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadi.`;
+        this.reload();
+        return `✅ !${ad} guncellendi.`;
+      }
+
+      case 'delcom':
+      case 'komutsil': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').replace(/^!/, '').trim().toLowerCase();
+        if (!ad) return `@${message.user.displayName}, kullanim: !delcom merhaba`;
+        const sonuc = db.prepare('DELETE FROM commands WHERE LOWER(name) = ?').run(ad);
+        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadi.`;
+        this.reload();
+        return `🗑️ !${ad} silindi.`;
+      }
 
       default:
         return null;
@@ -489,27 +602,58 @@ export class CommandManager {
   }
 
   private async executeCustomCommand(cmd: any, args: string[], message: ChatMessagePayload): Promise<string | null> {
-    // Check permission level
+    // 1) Yetki
     if (!this.hasPermission(cmd.user_level, message)) {
       return `@${message.user.displayName}, bu komutu kullanma yetkiniz yok (${cmd.user_level}).`;
     }
 
-    // Check cooldown
-    const cdKey = `${cmd.id}_${message.user.id}`;
-    const globalKey = `${cmd.id}_global`;
-    const now = Date.now();
+    const ayricalikli = message.user.isBroadcaster || message.user.isMod;
 
-    const cd = cmd.cooldown || 5;
-    const existingCd = this.globalCooldowns.get(globalKey);
-    if (existingCd && existingCd.expiresAt > now && !message.user.isBroadcaster && !message.user.isMod) {
-      return null; // Silent cooldown ignore
+    // 2) Platform filtresi — komut yalnız secili platformlarda calisir.
+    //    Bos liste "tum platformlar" demektir (geriye uyum).
+    const platformlar = String(cmd.platforms || '').trim();
+    if (platformlar) {
+      const izinli = platformlar.split(',').map((p: string) => p.trim().toLowerCase()).filter(Boolean);
+      if (izinli.length && !izinli.includes(String(message.platform).toLowerCase())) {
+        return null;
+      }
     }
 
-    this.globalCooldowns.set(globalKey, { expiresAt: now + cd * 1000 });
-    this.userCooldowns.set(cdKey, { expiresAt: now + cd * 1000 });
+    // 3) Bekleme suresi. `cooldown_mode` = 'global' | 'user'
+    const now = Date.now();
+    const cdKey = `${cmd.id}_${message.user.username}`;
+    const globalKey = `${cmd.id}_global`;
+    const kip = String(cmd.cooldown_mode || 'global');
+    const genelSn = Number(cmd.cooldown) || 5;
+    const kisiSn = Number(cmd.user_cooldown) || genelSn;
 
-    // Parse variables in response template
-    const parsedResponse = await parseVariables(cmd.response, {
+    if (!ayricalikli) {
+      if (kip === 'user') {
+        const mevcut = this.userCooldowns.get(cdKey);
+        if (mevcut && mevcut.expiresAt > now) return null;
+      } else {
+        const mevcut = this.globalCooldowns.get(globalKey);
+        if (mevcut && mevcut.expiresAt > now) return null;
+      }
+    }
+
+    // 4) Puan maliyeti — bekleme yazilmadan ONCE tahsil edilir ki yetersiz
+    //    bakiyede komut bekleme suresini tuketmesin.
+    const maliyet = Math.max(0, Number(cmd.cost_points) || 0);
+    if (maliyet > 0 && !message.user.isBroadcaster) {
+      const bakiye = economy.getUserPoints(message.user.username);
+      if (bakiye < maliyet) {
+        return `@${message.user.displayName}, bu komut ${maliyet} puan gerektiriyor (bakiyen: ${bakiye}).`;
+      }
+      economy.addPoints(message.user.username, -maliyet);
+    }
+
+    this.globalCooldowns.set(globalKey, { expiresAt: now + genelSn * 1000 });
+    this.userCooldowns.set(cdKey, { expiresAt: now + kisiSn * 1000 });
+
+    // 5) Degiskenler: once ESKI `{user}` bicimi (geriye uyum), sonra yeni
+    //    `$(...)` motoru. Eski sablonlar oldugu gibi calismaya devam eder.
+    const eskiBicim = await parseVariables(cmd.response, {
       message,
       commandName: cmd.name,
       args,
@@ -518,7 +662,8 @@ export class CommandManager {
       }
     });
 
-    return parsedResponse;
+    const ctx = baglamOlustur(message, args, cmd.name);
+    return await degiskenleriCoz(eskiBicim, ctx);
   }
 
   private hasPermission(level: string, message: ChatMessagePayload): boolean {

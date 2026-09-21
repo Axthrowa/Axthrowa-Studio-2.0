@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { syncTriviaBank } from '../modules/games/trivia-sync.js';
+import { gocleriUygula } from './migrations.js';
 import { 
   ChannelConfig, 
   CustomCommand, 
@@ -346,6 +347,10 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_trivia_scores_total ON trivia_scores(total_score DESC);
 `);
+
+// Surumlu gocler: yeni tablo ve sutunlar buradan gelir (db/migrations.ts).
+// Yikici gocler yasak; yalniz CREATE IF NOT EXISTS ve varsayilanli ADD COLUMN.
+gocleriUygula(db);
 
 // Seed default settings if empty
 const settingsCount = db.prepare('SELECT COUNT(*) as cnt FROM bot_settings').get() as { cnt: number };

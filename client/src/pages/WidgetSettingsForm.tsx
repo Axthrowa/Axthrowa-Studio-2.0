@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
 import { ANIMATIONS, FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 
 const LABELS: Record<string, string> = {
   showFollow: 'Takip göster', showSub: 'Abone göster', showGiftSub: 'Hediye abone göster',
@@ -94,7 +95,15 @@ const LABELS: Record<string, string> = {
   showFollows: 'Takip bölümü', showRaids: 'Raid bölümü', showAmounts: 'Tutarları göster',
   showFooter: 'Alt notu göster', loop: 'Döngü',
   maxQueue: 'Maks. kuyruk', showStatus: 'Durum kartı', showText: 'Okunan metni göster',
-  showQueue: 'Kuyruk sayısı'
+  showQueue: 'Kuyruk sayısı',
+  // --- Uyarı kutusu derinleştirmesi ---
+  exitAnimation: 'Çıkış animasyonu',
+  messageColor: 'Alt metin rengi',
+  messageSize: 'Alt metin boyutu (px)',
+  textOffsetX: 'Metin yatay konumu (px)',
+  textOffsetY: 'Metin dikey konumu (px)', hideUserMessage: 'Kullanıcı mesajını gizle',
+  textFromMs: 'Metin görünsün (ms, başlangıç)', textToMs: 'Metin görünsün (ms, bitiş)',
+  imageMaxHeight: 'Görsel maks. yükseklik (px)'
 };
 
 const SECTIONS: Record<string, string> = {
@@ -169,7 +178,12 @@ const SECTIONS: Record<string, string> = {
   titleFollows: 'Bölümler', titleRaids: 'Bölümler', showSubs: 'Bölümler', showTips: 'Bölümler',
   showFollows: 'Bölümler', showRaids: 'Bölümler', showAmounts: 'Bölümler',
   showFooter: 'Düzen', loop: 'Animasyon',
-  maxQueue: 'Ses', showStatus: 'Düzen', showText: 'Düzen', showQueue: 'Düzen'
+  maxQueue: 'Ses', showStatus: 'Düzen', showText: 'Düzen', showQueue: 'Düzen',
+  exitAnimation: 'Animasyon',
+  messageColor: 'Metin', messageSize: 'Metin',
+  textOffsetX: 'Metin', textOffsetY: 'Metin',
+  hideUserMessage: 'Metin', textFromMs: 'Metin', textToMs: 'Metin',
+  imageMaxHeight: 'Görünüm'
 };
 
 /**
@@ -191,7 +205,10 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
 };
 
 const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
-  animation: ANIMATIONS,
+  // 37 on ayar (lib/animations.ts). Eski 9'luk liste geriye uyum icin
+  // `animKimligi()` ile eslenmeye devam ediyor.
+  animation: ANIM_SECENEKLERI,
+  exitAnimation: ANIM_SECENEKLERI,
   fontFamily: FONTS.map(f => ({ value: f, label: f })),
   usernameColorMode: [
     { value: 'user', label: 'Kullanıcı rengi' },
@@ -224,14 +241,7 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
     { value: 'side-by-side', label: 'Yan yana' },
     { value: 'text-over', label: 'Yazı üstünde' }
   ],
-  textEffect: [
-    { value: 'none', label: 'Yok' },
-    { value: 'shine', label: 'Shine' },
-    { value: 'wiggle', label: 'Wiggle' },
-    { value: 'wave', label: 'Wave' },
-    { value: 'pulse', label: 'Pulse' },
-    { value: 'shake', label: 'Shake' }
-  ]
+  textEffect: METIN_EFEKTLERI
 };
 
 /**

@@ -244,20 +244,53 @@ export const WHEEL_DEFAULTS = {
   animation: 'ease-out'
 };
 
+/**
+ * Uyarı kutusu — BotRix'in uyarı sayfasındaki derinliğe göre genişletildi
+ * (BOTRIX_ALERT_MATRIX §2). Eskiden 13 ayar vardı; metin katmanı, konum,
+ * görünüm penceresi ve animasyon süresi hiç ayarlanamıyordu.
+ */
 export const ALERT_ADVANCED_DEFAULTS = {
+  // Kuyruk
   queueEnabled: true,
   gapMs: 800,
+  skipEnabled: true,
+
+  // Ses
   ttsEnabled: false,
   ttsReadMessage: true,
   globalVolume: 0.7,
+
+  // Yerleşim
   layoutMode: 'stacked',
+  fontFamily: 'Plus Jakarta Sans',
+
+  // Animasyon
   animation: 'bounce',
+  animationDuration: 500,
+  exitAnimation: 'fade',
   textEffect: 'shine',
+
+  // Metin katmanları — BotRix'te üst ve alt metnin rengi AYRI ayarlanıyor
+  titleColor: '#3EEDFE',
+  messageColor: '#ffffff',
+  titleSize: 36,
+  messageSize: 18,
+  textShadow: 80,
+  textOffsetX: 0,
+  textOffsetY: 0,
+  hideUserMessage: false,
+
+  // Metin görünüm penceresi (ms) — görsel/ses ile metin senkronizasyonu
+  textFromMs: 0,
+  textToMs: 0,
+
+  // Görsel
+  imageMaxHeight: 192,
+
+  // Eşikler
   minTipAmount: 0,
   minKicks: 0,
-  skipEnabled: true,
-  confetti: true,
-  fontFamily: 'Plus Jakarta Sans'
+  confetti: true
 };
 
 export const GIVEAWAY_DEFAULTS = {

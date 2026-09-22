@@ -8,6 +8,9 @@ import { getStreamUptime } from '../../core/variable-parser.js';
 import { sayacAl, sayacAyarla, sayacDegistir } from '../../core/variables/store.js';
 import { sayacIfadesi } from '../../core/variables/pure.js';
 import { seviyeler } from '../levels/levels.js';
+import { tahminler } from '../engagement/predictions.js';
+import { kuyruk } from '../engagement/queue.js';
+import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
 import { giveaway } from '../giveaways/giveaways.js';
 import { geminiCoHost } from '../ai/gemini.js';
@@ -495,6 +498,140 @@ export class CommandManager {
         const yerlesik = ['!puan', '!liderlik', '!uptime', '!izleme', '!oyunlar', '!sr', '!sor'];
         const hepsi = [...yerlesik, ...ozel.map((c) => `!${String(c.name).replace(/^!/, '')}`)];
         return `📌 Komutlar: ${[...new Set(hepsi)].join(', ')}`;
+      }
+
+      // ---- Topluluk bahisleri (BotRix: !bet) -------------------------------
+      case 'bahis':
+      case 'bet': {
+        const alt = (args[0] || '').toLowerCase();
+        const mod = message.user.isBroadcaster || message.user.isMod;
+
+        if (alt === 'create' || alt === 'ac') {
+          if (!mod) return null;
+          const kalan = args.slice(1).join(' ');
+          const [baslik, ...sec] = kalan.split('|').map((x) => x.trim());
+          const t = tahminler.olustur(baslik || 'Tahmin', sec.length ? sec : ['Evet', 'Hayır']);
+          if ('hata' in t) return `@${message.user.displayName}, ${t.hata}`;
+          return `🎲 Tahmin açıldı: ${t.baslik} → ${t.secenekler.map((x, i) => `${i + 1}) ${x}`).join(' ')} · Katıl: !bet <seçenek> <puan>`;
+        }
+
+        if (alt === 'result' || alt === 'sonuc') {
+          if (!mod) return null;
+          const r = tahminler.sonuclandir(args.slice(1).join(' '));
+          if (!r.ok) return `@${message.user.displayName}, ${r.hata}`;
+          return `🏆 Kazanan: ${r.secenek} · ${r.kazananlar} kişiye toplam ${r.dagitilan} puan dağıtıldı!`;
+        }
+
+        if (alt === 'lock' || alt === 'kilit') {
+          if (!mod) return null;
+          return tahminler.kilitle() ? '🔒 Bahisler kapandı.' : 'Açık tahmin yok.';
+        }
+
+        if (alt === 'cancel' || alt === 'iptal') {
+          if (!mod) return null;
+          const r = tahminler.iptal();
+          return r.ok ? `↩️ Tahmin iptal edildi, ${r.iade} puan iade edildi.` : 'Açık tahmin yok.';
+        }
+
+        if (!alt) {
+          const d = tahminler.durum();
+          if (!d.tahmin) return 'Şu an açık bir tahmin yok.';
+          return `🎲 ${d.tahmin.baslik} · ${d.tahmin.secenekler.map((x, i) => `${x}: ${d.secenekToplam[i]}p`).join(' · ')} · Havuz: ${d.havuz}`;
+        }
+
+        const r = tahminler.bahisKoy(message.user.username, message.user.displayName, alt, Number(args[1]));
+        if (!r.ok) return `@${message.user.displayName}, ${r.hata}`;
+        return `✅ @${message.user.displayName} "${r.secenek}" için ${r.puan} puan yatırdı.`;
+      }
+
+      // ---- Izleyici kuyrugu (BotRix: !joinq ailesi) ------------------------
+      case 'joinq':
+      case 'sirayagir': {
+        const r = kuyruk.katil(message.user.username, message.user.displayName, message.platform, {
+          isSub: message.user.isSub,
+          isVip: message.user.isVip,
+          isMod: message.user.isMod,
+          isBroadcaster: message.user.isBroadcaster
+        });
+        return r.ok ? `🎟️ @${message.user.displayName} kuyruğa girdi · Sıra: ${r.sira}` : `@${message.user.displayName}, ${r.hata}`;
+      }
+
+      case 'leaveq':
+      case 'siradancik':
+        return kuyruk.ayril(message.user.username)
+          ? `👋 @${message.user.displayName} kuyruktan çıktı.`
+          : `@${message.user.displayName}, kuyrukta değilsin.`;
+
+      case 'posq':
+      case 'siram': {
+        const n = kuyruk.sira(message.user.username);
+        return n > 0 ? `🎟️ @${message.user.displayName}, sıran: ${n}` : `@${message.user.displayName}, kuyrukta değilsin.`;
+      }
+
+      case 'queue':
+      case 'listq':
+      case 'sira': {
+        const l = kuyruk.liste();
+        if (!l.length) return 'Kuyruk boş.';
+        return `🎟️ Kuyruk (${l.length}): ${l.slice(0, 10).map((k, i) => `${i + 1}. ${k.gorunenAd}`).join(' · ')}`;
+      }
+
+      case 'openq':
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        kuyruk.ac();
+        return '🎟️ Kuyruk açıldı! Katılmak için: !joinq';
+
+      case 'closeq':
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        kuyruk.kapat();
+        return '🔒 Kuyruk yeni katılımlara kapatıldı.';
+
+      case 'nextq': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const k = kuyruk.sonraki();
+        return k ? `➡️ Sıradaki: @${k.gorunenAd}` : 'Kuyruk boş.';
+      }
+
+      case 'removeq': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const hedef = (args[0] || '').replace(/^@/, '');
+        if (!hedef) return 'Kullanım: !removeq <kullanıcı>';
+        return kuyruk.ayril(hedef) ? `🗑️ ${hedef} kuyruktan çıkarıldı.` : `${hedef} kuyrukta değil.`;
+      }
+
+      case 'clearq': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const n = kuyruk.temizle();
+        return `🧹 Kuyruk temizlendi (${n} kişi).`;
+      }
+
+      // ---- Puan dususu (BotRix: !pdrops) ----------------------------------
+      case 'pdrops':
+      case 'puandususu': {
+        const ayar = puanDususu.ayarOku();
+        const yetkili = message.user.isBroadcaster || (message.user.isMod && ayar.modBaslatabilir);
+        const alt = (args[0] || 'status').toLowerCase();
+
+        if (alt === 'status' || alt === 'durum') {
+          const d = puanDususu.durum();
+          return d.aktif
+            ? `🎁 Puan düşüşü açık! "${d.anahtar}" yaz · ${d.katilanlar.length} kişi · ${d.kalanSaniye} sn kaldı`
+            : 'Şu an açık bir puan düşüşü yok.';
+        }
+
+        if (!yetkili) return null;
+
+        if (alt === 'start' || alt === 'basla') {
+          const r = puanDususu.baslat();
+          if (!r.ok) return `@${message.user.displayName}, ${r.hata}`;
+          return `🎁 PUAN DÜŞÜŞÜ! İlk ${ayar.maksKisi || '∞'} kişi "${ayar.anahtar}" yazsın · ${ayar.toplamPuan} puan dağıtılacak!`;
+        }
+
+        if (alt === 'stop' || alt === 'dur') {
+          return puanDususu.durdur().iptal ? '🛑 Puan düşüşü iptal edildi.' : 'Açık düşüş yok.';
+        }
+
+        return null;
       }
 
       // ---- Seviye sistemi ------------------------------------------------

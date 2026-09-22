@@ -8,6 +8,7 @@ import { triviaEngine } from '../modules/games/trivia-engine.js';
 import { economy } from '../modules/economy/economy.js';
 import { seviyeler } from '../modules/levels/levels.js';
 import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
+import { puanDususu } from '../modules/engagement/point-drops.js';
 import { settingsCache } from './settings-cache.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
@@ -104,6 +105,12 @@ export class MessagePipeline {
       // (uyar / zaman asimi / mesaj sil), bypass rolleri gozetilir ve
       // platform desteklemiyorsa uyariya dusulur.
       await autoMod.ihlaliUygula(message, violation);
+      return;
+    }
+
+    // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin
+    // komut isleyicisinden ONCE bakilir.
+    if (puanDususu.katil(message.user.username, message.user.displayName, rawText)) {
       return;
     }
 

@@ -22,6 +22,7 @@ import { economy } from './modules/economy/economy.js';
 import { subathon } from './modules/subathon/subathon.js';
 import { seviyeler } from './modules/levels/levels.js';
 import { sohbetUyarilari } from './modules/chat-alerts/chat-alerts.js';
+import { puanDususu } from './modules/engagement/point-drops.js';
 import { eventBus } from './core/event-bus.js';
 import { yerelKokenMi, istekKabulEdilir, baglanmaAdresi, baglanmaUyarisi } from './core/security/local-guard.js';
 
@@ -152,6 +153,18 @@ server.listen(PORT, HOST, async () => {
   // Sohbet tarafi olay mesajlari (BotRix'te 'Metin uyarilari'). Gorsel
   // overlay'den bagimsiz: olay olunca sohbete metin yazar.
   sohbetUyarilari.baglaOlaylar();
+
+  // Puan dususu bitince sonucu sohbete duyur.
+  puanDususu.bitisiDinle(({ katilan, kisiBasi }) => {
+    if (!katilan) {
+      eventBus.emitBotMessage({ platform: 'all', message: '🎁 Puan düşüşü bitti, kimse katılmadı.' });
+      return;
+    }
+    eventBus.emitBotMessage({
+      platform: 'all',
+      message: `🎁 Puan düşüşü bitti! ${katilan} kişi ${kisiBasi} puan kazandı.`
+    });
+  });
 
   // Destek olaylari da XP verir (BotRix'te seviye sistemi abonelik ve
   // bagisla da besleniyor).

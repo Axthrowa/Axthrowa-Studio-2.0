@@ -33,6 +33,11 @@ import { seviyeler } from '../modules/levels/levels.js';
 import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../modules/media/media.js';
 import { varyantlar } from '../modules/alerts/variants.js';
+import { tahminler } from '../modules/engagement/predictions.js';
+import { kuyruk } from '../modules/engagement/queue.js';
+import { puanDususu } from '../modules/engagement/point-drops.js';
+import { discordDuyuru } from '../modules/integrations/discord-announce.js';
+import { nightbot } from '../modules/integrations/nightbot-import.js';
 import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../modules/automod/enforcement.js';
 
 const router = Router();
@@ -643,6 +648,79 @@ router.post('/alerts/test', (req: Request, res: Response) => {
   wsHub.triggerTestAlert(eventType || 'follow');
   res.json({ success: true });
 });
+
+// 8.6 Entegrasyonlar: Discord duyurusu + Nightbot ice aktarma
+router.get('/integrations/discord', (req: Request, res: Response) => {
+  // Webhook adresi SIR sayilir: icinde token var, maskelenerek doner.
+  res.json(temizle(discordDuyuru.ayarOku()));
+});
+
+router.post('/integrations/discord', (req: Request, res: Response) => {
+  // Maskeli webhook geri gonderilirse mevcut deger korunur.
+  const gelen = req.body || {};
+  const mevcut = discordDuyuru.ayarOku();
+  for (const k of Object.keys(gelen)) {
+    if (gelen[k] && typeof gelen[k] === 'object') {
+      gelen[k].webhook = yeniSirDegeri(gelen[k].webhook, (mevcut as any)[k]?.webhook ?? '');
+    }
+  }
+  res.json(temizle(discordDuyuru.ayarYaz(gelen)));
+});
+
+/** Test duyurusu — bekleme suresini atlar. */
+router.post('/integrations/discord/test', async (req: Request, res: Response) => {
+  const kaynak = String(req.body?.kaynak || 'kick') as any;
+  const kanal = String(req.body?.kanal || '');
+  res.json(await discordDuyuru.duyur(kaynak, kanal, true));
+});
+
+router.post('/integrations/nightbot/import', (req: Request, res: Response) => {
+  const veri = req.body?.veri;
+  if (!veri) return res.status(400).json({ error: 'veri gerekli (Nightbot JSON)' });
+  try {
+    res.json(nightbot.aktar(veri, Boolean(req.body?.uzerineYaz)));
+    commandManager.reload();
+  } catch (e: any) {
+    res.status(400).json({ error: String(e?.message || e) });
+  }
+});
+
+// 8.7 Etkilesim: tahminler, kuyruk, puan dususlari
+router.get('/predictions', (req: Request, res: Response) => res.json(tahminler.durum()));
+
+router.post('/predictions', (req: Request, res: Response) => {
+  const r = tahminler.olustur(
+    String(req.body?.baslik || ''),
+    Array.isArray(req.body?.secenekler) ? req.body.secenekler : [],
+    Number(req.body?.kilitDakika) || 0
+  );
+  res.status('hata' in r ? 400 : 200).json(r);
+});
+
+router.post('/predictions/lock', (req: Request, res: Response) => res.json(tahminler.kilitle() || { hata: 'Açık tahmin yok' }));
+router.post('/predictions/resolve', (req: Request, res: Response) => {
+  const r = tahminler.sonuclandir(String(req.body?.secenek || ''));
+  res.status(r.ok ? 200 : 400).json(r);
+});
+router.post('/predictions/cancel', (req: Request, res: Response) => res.json(tahminler.iptal()));
+
+router.get('/queue', (req: Request, res: Response) => res.json({ liste: kuyruk.liste(), ayar: kuyruk.ayarOku() }));
+router.post('/queue/settings', (req: Request, res: Response) => res.json(kuyruk.ayarYaz(req.body || {})));
+router.post('/queue/open', (req: Request, res: Response) => res.json(kuyruk.ac()));
+router.post('/queue/close', (req: Request, res: Response) => res.json(kuyruk.kapat()));
+router.post('/queue/next', (req: Request, res: Response) => res.json(kuyruk.sonraki() || { bos: true }));
+router.post('/queue/clear', (req: Request, res: Response) => res.json({ silinen: kuyruk.temizle() }));
+router.delete('/queue/:kullanici', (req: Request, res: Response) =>
+  res.json({ ok: kuyruk.ayril(String(req.params.kullanici || '')) })
+);
+
+router.get('/point-drops', (req: Request, res: Response) => res.json(puanDususu.durum()));
+router.post('/point-drops/settings', (req: Request, res: Response) => res.json(puanDususu.ayarYaz(req.body || {})));
+router.post('/point-drops/start', (req: Request, res: Response) => {
+  const r = puanDususu.baslat();
+  res.status(r.ok ? 200 : 400).json(r);
+});
+router.post('/point-drops/stop', (req: Request, res: Response) => res.json(puanDususu.durdur()));
 
 // 8.8 Uyari varyantlari — ayni olay her geldiginde farkli gorsel/ses.
 // Tutara gore de secilir: 1000 TL bagis "0+" varyantina dusmez.

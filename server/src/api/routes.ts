@@ -694,6 +694,15 @@ router.get('/media/:id/dosya', (req: Request, res: Response) => {
   res.sendFile(medya.dosyaYolu(oge));
 });
 
+// 8.95 TTS filtreleri — neler okunsun, hangi sinirlar gecerli?
+router.get('/tts/filters', (req: Request, res: Response) => {
+  res.json(ttsEngine.filtreAyarlari());
+});
+
+router.post('/tts/filters', (req: Request, res: Response) => {
+  res.json(ttsEngine.filtreYaz(req.body || {}));
+});
+
 // 9.0 Sohbet tarafi olay mesajlari
 router.get('/chat-alerts', (req: Request, res: Response) => {
   res.json(sohbetUyarilari.ayarOku());

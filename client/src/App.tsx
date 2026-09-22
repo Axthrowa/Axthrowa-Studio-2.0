@@ -74,6 +74,8 @@ import ViewerCounterWidget from './widgets/ViewerCounterWidget.js';
 import ActivityFeedWidget from './widgets/ActivityFeedWidget.js';
 import GiveawayWidget from './widgets/GiveawayWidget.js';
 import RankingsWidget from './widgets/RankingsWidget.js';
+import BotAdvanced from './pages/BotAdvanced.js';
+import { ToastSaglayici } from './ui/index.js';
 import { BRAND } from './brand.js';
 import { openLink } from './lib/openLink.js';
 
@@ -123,6 +125,7 @@ export function App() {
     { id: 'commands', label: 'Komutlar', icon: Terminal, badge: 'My/Default' },
     { id: 'timers', label: 'Zamanlayıcılar', icon: Clock },
     { id: 'automod', label: 'Bot Moderation', icon: ShieldCheck },
+    { id: 'botadvanced', label: 'Gelişmiş Bot', icon: Sparkles, badge: 'Yeni' },
     { id: 'extras', label: 'Extras', icon: Sparkles, badge: 'Clip/Level' },
     { id: 'rankings', label: 'Rankings', icon: Trophy },
     { id: 'alerts', label: 'Alert Box', icon: Bell, highlight: true },
@@ -155,6 +158,7 @@ export function App() {
       case 'commands': return <Commands />;
       case 'timers': return <Timers />;
       case 'automod': return <AutoMod />;
+      case 'botadvanced': return <BotAdvanced />;
       case 'extras': return <Extras />;
       case 'rankings': return <Rankings />;
       case 'alerts': return <AlertsStudio />;
@@ -172,6 +176,8 @@ export function App() {
 
 
   return (
+    // Toast bildirimleri tum panelde kullanilabilsin (ui/index.tsx).
+    <ToastSaglayici>
     <div className="flex min-h-screen bg-[#090b10] text-gray-200">
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-[#0d1017]/90 backdrop-blur-xl flex flex-col justify-between fixed inset-y-0 left-0 z-30">
@@ -272,6 +278,7 @@ export function App() {
         </main>
       </div>
     </div>
+    </ToastSaglayici>
   );
 }
 

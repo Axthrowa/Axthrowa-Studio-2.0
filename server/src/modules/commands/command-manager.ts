@@ -7,6 +7,7 @@ import { economy } from '../economy/economy.js';
 import { getStreamUptime } from '../../core/variable-parser.js';
 import { sayacAl, sayacAyarla, sayacDegistir } from '../../core/variables/store.js';
 import { sayacIfadesi } from '../../core/variables/pure.js';
+import { seviyeler } from '../levels/levels.js';
 import { songRequest } from '../songrequest/songrequest.js';
 import { giveaway } from '../giveaways/giveaways.js';
 import { geminiCoHost } from '../ai/gemini.js';
@@ -494,6 +495,22 @@ export class CommandManager {
         const yerlesik = ['!puan', '!liderlik', '!uptime', '!izleme', '!oyunlar', '!sr', '!sor'];
         const hepsi = [...yerlesik, ...ozel.map((c) => `!${String(c.name).replace(/^!/, '')}`)];
         return `📌 Komutlar: ${[...new Set(hepsi)].join(', ')}`;
+      }
+
+      // ---- Seviye sistemi ------------------------------------------------
+      case 'seviye2':
+      case 'xp': {
+        const hedef = (args[0] || message.user.username).replace(/^@/, '');
+        const k = seviyeler.kullanici(hedef);
+        if (!seviyeler.ayarOku().aktif) return `@${message.user.displayName}, seviye sistemi kapalı.`;
+        return `⭐ ${k.displayName} · Seviye ${k.seviye} · ${k.buSeviyedeXp}/${k.sonrakiIcinXp} XP (%${k.yuzde})`;
+      }
+
+      case 'seviyeler':
+      case 'toplevel': {
+        const liste = seviyeler.siralama(5);
+        if (!liste.length) return 'Henüz seviye kaydı yok.';
+        return `🏆 Seviye sıralaması: ${liste.map((u, i) => `${i + 1}. ${u.displayName} (Sv.${u.seviye})`).join(' · ')}`;
       }
 
       // ---- BotRix karsiligi olan yerlesik komutlar (GAP §2.1) -------------

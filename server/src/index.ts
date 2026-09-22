@@ -20,6 +20,9 @@ import { setStreamStartTime } from './core/variable-parser.js';
 import { extras } from './modules/extras/extras.js';
 import { economy } from './modules/economy/economy.js';
 import { subathon } from './modules/subathon/subathon.js';
+import { seviyeler } from './modules/levels/levels.js';
+import { sohbetUyarilari } from './modules/chat-alerts/chat-alerts.js';
+import { eventBus } from './core/event-bus.js';
 import { yerelKokenMi, istekKabulEdilir, baglanmaAdresi, baglanmaUyarisi } from './core/security/local-guard.js';
 
 dotenv.config();
@@ -143,6 +146,24 @@ server.listen(PORT, HOST, async () => {
   // KICKs) otomatik olarak süreye eklenir.
   subathon.yayinciBagla((tip, veri) => wsHub.broadcastTo(['all'], { type: tip, data: veri }));
   subathon.baslangic();
+
+  // Sohbet tarafi olay mesajlari (BotRix'te 'Metin uyarilari'). Gorsel
+  // overlay'den bagimsiz: olay olunca sohbete metin yazar.
+  sohbetUyarilari.baglaOlaylar();
+
+  // Destek olaylari da XP verir (BotRix'te seviye sistemi abonelik ve
+  // bagisla da besleniyor).
+  eventBus.on('sub', (p: any) => {
+    const a = seviyeler.ayarOku();
+    if (!a.aktif) return;
+    seviyeler.xpEkle(p?.username, p?.isGift ? a.hediyeAboneXp : a.aboneXp);
+  });
+  eventBus.on('tip', (p: any) => {
+    const a = seviyeler.ayarOku();
+    if (!a.aktif || a.bagisXp <= 0) return;
+    const adet = Math.floor(Math.max(0, Number(p?.amount) || 0) / Math.max(1, a.bagisBirimi));
+    if (adet > 0) seviyeler.xpEkle(p?.username, adet * a.bagisXp);
+  });
 
   // Connect active streaming platforms
   try {

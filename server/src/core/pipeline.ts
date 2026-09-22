@@ -6,6 +6,8 @@ import { ttsEngine } from '../modules/tts/tts.js';
 import { gamesEngine } from '../modules/games/games.js';
 import { triviaEngine } from '../modules/games/trivia-engine.js';
 import { economy } from '../modules/economy/economy.js';
+import { seviyeler } from '../modules/levels/levels.js';
+import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { settingsCache } from './settings-cache.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
@@ -72,8 +74,26 @@ export class MessagePipeline {
     // Notify Chat Rescue of active conversation
     chatRescueService.recordChatMessage();
 
+    // Ilk kez yazan izleyiciyi karsila (BotRix'te 'Karsilama').
+    sohbetUyarilari.sohbetMesaji(message.user.username, message);
+
     // Record Loyalty (Messages count, watch time activity, loyalty tier, points)
     economy.recordMessage(message);
+
+    // Seviye XP'si — puandan AYRI tutulur: mağazadan alışveriş yapan izleyici
+    // seviyesini kaybetmesin. Bekleme süresi spam ile seviye kasmayı engeller.
+    try {
+      const sv = seviyeler.mesajXp(message.user.username);
+      if (sv?.atladi) {
+        eventBus.emitBotMessage({
+          platform: message.platform,
+          channel: message.channel,
+          message: `⭐ @${message.user.displayName} seviye ${sv.seviye} oldu!`
+        });
+      }
+    } catch {
+      /* seviye sistemi kritik degil */
+    }
 
 
     // 1. AutoMod
@@ -128,7 +148,13 @@ export class MessagePipeline {
     // 3. TTS Trigger (e.g. if !tts or normal chat if configured)
     if (message.message.startsWith('!tts ')) {
       const speechText = message.message.replace('!tts ', '').trim();
-      ttsEngine.enqueue(speechText, message.user.displayName);
+      // Roller de gonderilir: minimum rol ayari uygulanabilsin.
+      ttsEngine.enqueue(speechText, message.user.displayName, undefined, undefined, {
+        isBroadcaster: message.user.isBroadcaster,
+        isMod: message.user.isMod,
+        isVip: message.user.isVip,
+        isSub: message.user.isSub
+      });
     }
 
     // 4. Cross-Chat Relay (Instant in-memory lookup)

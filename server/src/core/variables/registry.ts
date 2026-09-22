@@ -12,6 +12,7 @@
  */
 import { db } from '../../db/index.js';
 import { economy } from '../../modules/economy/economy.js';
+import { seviyeler } from '../../modules/levels/levels.js';
 import { getStreamUptime } from '../variable-parser.js';
 import { settingsCache } from '../settings-cache.js';
 import { guvenliGetir } from './net.js';
@@ -153,6 +154,11 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       { yazar: true }
     ),
     tanim('currency', 'loyalty', 'Puan biriminin adı', () => settingsCache.get('currency_name', 'Puan')),
+    tanim('level', 'loyalty', 'Kullanıcının seviyesi', (h, c) => String(seviyeler.kullanici(atSil(h) || c.user.username).seviye)),
+    tanim('xp', 'loyalty', 'Kullanıcının toplam XP değeri', (h, c) => String(seviyeler.kullanici(atSil(h) || c.user.username).xp)),
+    tanim('nextlvl', 'loyalty', 'Sonraki seviye için gereken XP', (h, c) =>
+      String(seviyeler.kullanici(atSil(h) || c.user.username).sonrakiIcinXp)
+    ),
 
     // ---- Sayaçlar -----------------------------------------------------------
     tanim(

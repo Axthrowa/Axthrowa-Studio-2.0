@@ -29,6 +29,8 @@ import { temizle, gizliMi, yeniSirDegeri, maskeDegeriMi } from '../core/security
 import { degiskenKatalogu, degiskenSayisi, baglamOlustur, degiskenleriCoz } from '../core/variables/index.js';
 import { YETENEKLER } from '../platforms/capabilities.js';
 import { subathon } from '../modules/subathon/subathon.js';
+import { seviyeler } from '../modules/levels/levels.js';
+import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../modules/automod/enforcement.js';
 
 const router = Router();
@@ -638,6 +640,39 @@ router.post('/alerts/test', (req: Request, res: Response) => {
   const { eventType } = req.body;
   wsHub.triggerTestAlert(eventType || 'follow');
   res.json({ success: true });
+});
+
+// 9.0 Sohbet tarafi olay mesajlari
+router.get('/chat-alerts', (req: Request, res: Response) => {
+  res.json(sohbetUyarilari.ayarOku());
+});
+
+router.post('/chat-alerts', (req: Request, res: Response) => {
+  res.json(sohbetUyarilari.ayarYaz(req.body || {}));
+});
+
+// 9.1 Seviye / XP sistemi
+router.get('/levels/settings', (req: Request, res: Response) => {
+  res.json(seviyeler.ayarOku());
+});
+
+router.post('/levels/settings', (req: Request, res: Response) => {
+  res.json(seviyeler.ayarYaz(req.body || {}));
+});
+
+router.get('/levels/leaderboard', (req: Request, res: Response) => {
+  res.json(seviyeler.siralama(Number(req.query.limit) || 10));
+});
+
+router.get('/levels/:username', (req: Request, res: Response) => {
+  res.json(seviyeler.kullanici(String(req.params.username || '')));
+});
+
+/** BotRix'teki "Siralamalar > Sifirla" karsiligi. */
+router.post('/levels/reset', (req: Request, res: Response) => {
+  const neyi = String(req.body?.neyi || 'xp') as 'xp' | 'puan' | 'ikisi';
+  if (!['xp', 'puan', 'ikisi'].includes(neyi)) return res.status(400).json({ error: 'neyi: xp | puan | ikisi' });
+  res.json(seviyeler.sifirla(neyi));
 });
 
 // 9.2 Subathon — sayac artik SUNUCUDA. Eskiden tamamen tarayicidaydi:

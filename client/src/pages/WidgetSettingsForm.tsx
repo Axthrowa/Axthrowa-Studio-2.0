@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
 import { ANIMATIONS, FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
+import { temalar, temayiUygula } from '../lib/themes.js';
 
 const LABELS: Record<string, string> = {
   showFollow: 'Takip göster', showSub: 'Abone göster', showGiftSub: 'Hediye abone göster',
@@ -435,6 +436,35 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
           <option value="all">Tüm sekmeler</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+      </div>
+
+      {/* Tema kutuphanesi — BotRix widget basina 13-28 tema sunuyor, bizde
+          4-5 vardi. Tema, ayar degerlerinin hazir bir kumesidir: secilince
+          ilgili alanlar dolar, kullanici sonra tek tek degistirebilir.
+          Widget'in TANIMADIGI anahtarlar atlanir. */}
+      <div>
+        <div className="text-[10px] font-black uppercase tracking-wider text-cyan-300 border-b border-white/10 pb-1 mb-2">
+          Hazır Temalar ({temalar(ayarId).length})
+        </div>
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-40 overflow-y-auto pr-1">
+          {temalar(ayarId).map(t => (
+            <button
+              key={t.id}
+              type="button"
+              title={t.etiket}
+              onClick={() => setValues(v => temayiUygula(v, t, keys) as Record<string, any>)}
+              className="rounded-lg border border-white/10 hover:border-cyan-400 overflow-hidden text-left transition-colors"
+            >
+              <div
+                className="h-7 flex items-center justify-center"
+                style={{ background: t.onizleme.arka, borderBottom: `2px solid ${t.onizleme.vurgu}` }}
+              >
+                <span className="text-[9px] font-black" style={{ color: t.onizleme.metin }}>Aa</span>
+              </div>
+              <div className="px-1 py-0.5 text-[9px] text-gray-300 truncate">{t.etiket}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {sections.filter(s => openSection === 'all' || openSection === s).map(section => (

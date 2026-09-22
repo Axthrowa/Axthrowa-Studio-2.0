@@ -31,6 +31,8 @@ import { YETENEKLER } from '../platforms/capabilities.js';
 import { subathon } from '../modules/subathon/subathon.js';
 import { seviyeler } from '../modules/levels/levels.js';
 import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
+import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../modules/media/media.js';
+import { varyantlar } from '../modules/alerts/variants.js';
 import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../modules/automod/enforcement.js';
 
 const router = Router();
@@ -640,6 +642,56 @@ router.post('/alerts/test', (req: Request, res: Response) => {
   const { eventType } = req.body;
   wsHub.triggerTestAlert(eventType || 'follow');
   res.json({ success: true });
+});
+
+// 8.8 Uyari varyantlari — ayni olay her geldiginde farkli gorsel/ses.
+// Tutara gore de secilir: 1000 TL bagis "0+" varyantina dusmez.
+router.get('/alerts/variants', (req: Request, res: Response) => {
+  res.json(varyantlar.listele(req.query.eventType ? String(req.query.eventType) : undefined));
+});
+
+router.post('/alerts/variants/:eventType', (req: Request, res: Response) => {
+  res.json(varyantlar.kaydet(String(req.params.eventType || ''), req.body || {}));
+});
+
+router.delete('/alerts/variants/:id', (req: Request, res: Response) => {
+  res.json({ ok: varyantlar.sil(String(req.params.id || '')) });
+});
+
+// 8.9 Medya kutuphanesi — uyari gorseli ve sesi artik yerel dosyadan
+// gelebilir. Onceden yalniz harici URL vardi: internet kesilince uyarilar
+// bozuluyordu.
+router.get('/media', (req: Request, res: Response) => {
+  const tur = req.query.tur ? String(req.query.tur) : undefined;
+  res.json({
+    ogeler: medya.listele(tur as any),
+    toplamBoyut: medya.toplamBoyut(),
+    maksBoyut: MAKS_BOYUT,
+    maksToplam: MAKS_TOPLAM
+  });
+});
+
+router.post('/media', (req: Request, res: Response) => {
+  const ad = String(req.body?.ad || 'dosya');
+  const veri = String(req.body?.veri || '');
+  if (!veri) return res.status(400).json({ ok: false, hata: 'veri (base64) gerekli' });
+  const sonuc = medya.ekle(ad, veri);
+  res.status(sonuc.ok ? 200 : 400).json(sonuc);
+});
+
+router.delete('/media/:id', (req: Request, res: Response) => {
+  res.json({ ok: medya.sil(String(req.params.id || '')) });
+});
+
+/** Dosyanin kendisi. Yol gezinmesi imkansiz: kimlik ile arayip diskten okur. */
+router.get('/media/:id/dosya', (req: Request, res: Response) => {
+  const oge = medya.bul(String(req.params.id || ''));
+  if (!oge) return res.status(404).json({ error: 'Bulunamadı' });
+  res.setHeader('Content-Type', oge.mime);
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  // SVG izinli listede yok; yine de tarayici tur tahmini yapmasin
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.sendFile(medya.dosyaYolu(oge));
 });
 
 // 9.0 Sohbet tarafi olay mesajlari

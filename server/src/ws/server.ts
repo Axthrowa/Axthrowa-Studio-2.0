@@ -6,6 +6,7 @@ import { ttsEngine, TTSItem } from '../modules/tts/tts.js';
 import { songRequest } from '../modules/songrequest/songrequest.js';
 import { platformManager } from '../platforms/manager.js';
 import { economy } from '../modules/economy/economy.js';
+import { varyantlar } from '../modules/alerts/variants.js';
 
 interface ClientConnection {
   ws: WebSocket;
@@ -205,6 +206,46 @@ export class WebSocketHub {
       }
     });
 
+    // 4.5 KICKs — Kick'in kendi para birimi. Veri yolunda karsiligi YOKTU:
+    // `alert_presets` tablosunda satiri vardi ama gercek yayinda hic
+    // tetiklenmiyordu.
+    eventBus.on('kicks', (payload: any) => {
+      try {
+        // KICKs de bagis sayilir: ekonomi ve hedefler beslensin
+        economy.recordTip(payload.username, 'kick', Number(payload.amount) || 0);
+      } catch {}
+
+      const alertData = this.buildAlertPayload('kicks', {
+        user: payload.displayName || payload.username,
+        amount: payload.amount
+      });
+      this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
+        type: 'alert',
+        subType: 'kicks',
+        data: payload,
+        alert: alertData
+      });
+
+      this.broadcastTo(['all'], {
+        type: 'cup_drop',
+        data: { type: 'kicks', user: payload.displayName || payload.username, amount: payload.amount }
+      });
+    });
+
+    // 4.6 Host
+    eventBus.on('host', (payload: any) => {
+      const alertData = this.buildAlertPayload('host', {
+        user: payload.displayName || payload.username,
+        viewers: payload.viewers
+      });
+      this.broadcastTo(['dashboard', 'alertbox', 'all'], {
+        type: 'alert',
+        subType: 'host',
+        data: payload,
+        alert: alertData
+      });
+    });
+
     // 5. Raid Event -> AlertBox & Dashboard
     eventBus.on('raid', (payload: RaidPayload) => {
       const alertData = this.buildAlertPayload('raid', {
@@ -283,6 +324,32 @@ export class WebSocketHub {
     }
 
     if (preset && !preset.is_enabled && !isTest) return null;
+
+    // Varyant secimi: ayni olay her geldiginde farkli gorsel/ses gosterilsin
+    // ve tutara gore daha gorkemli varyant secilebilsin. Varyant yoksa
+    // preset oldugu gibi kullanilir (geriye uyum).
+    try {
+      const deger = Number(variables?.amount ?? variables?.viewers ?? variables?.count ?? 0) || 0;
+      const v = varyantlar.sec(eventType, deger);
+      if (v) {
+        preset = {
+          ...preset,
+          title_template: v.baslikSablonu || preset.title_template,
+          message_template: v.mesajSablonu || preset.message_template,
+          image_url: v.gorselUrl || preset.image_url,
+          sound_url: v.sesUrl || preset.sound_url,
+          sound_volume: v.sesSeviyesi ?? preset.sound_volume,
+          duration_ms: v.sureMs || preset.duration_ms,
+          animation: v.animasyon || preset.animation,
+          accent_color: v.vurguRengi || preset.accent_color,
+          text_color: v.metinRengi || preset.text_color,
+          variant_id: v.id,
+          variant_name: v.ad
+        };
+      }
+    } catch (e) {
+      console.warn('[AlertBox] Varyant secimi basarisiz:', e);
+    }
 
     if (!preset) {
       const defaults: Record<string, any> = {

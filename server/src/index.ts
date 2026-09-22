@@ -43,8 +43,10 @@ app.use(
     credentials: false
   })
 );
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+// Medya yuklemesi base64 ile geldigi icin govde siniri buyutuldu
+// (5 MB dosya base64'te ~6.7 MB olur).
+app.use(express.json({ limit: '12mb' }));
+app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 
 // CSRF korumasi: basit istekler on kontrole tabi olmadigi icin CORS yaniti
 // gizlese bile istek sunucuda CALISIR. Yan etkisi olan yontemlerde kokeni

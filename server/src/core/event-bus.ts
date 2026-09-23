@@ -5,7 +5,7 @@ import { StreamEvent } from '../db/schema.js';
 
 export interface ChatMessagePayload {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel: string;
   user: {
     id: string;
@@ -27,7 +27,7 @@ export interface ChatMessagePayload {
 }
 
 export interface FollowPayload {
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel: string;
   username: string;
   displayName?: string;
@@ -35,7 +35,7 @@ export interface FollowPayload {
 }
 
 export interface SubPayload {
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel: string;
   username: string;
   displayName?: string;
@@ -47,7 +47,7 @@ export interface SubPayload {
 }
 
 export interface TipPayload {
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel: string;
   username: string;
   displayName?: string;
@@ -78,7 +78,7 @@ export interface HostPayload {
 }
 
 export interface RaidPayload {
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel: string;
   username: string;
   displayName?: string;
@@ -99,7 +99,7 @@ export interface TikTokGiftPayload {
 }
 
 export interface BotMessagePayload {
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'all';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo' | 'all';
   channel?: string;
   message: string;
   replyToId?: string;

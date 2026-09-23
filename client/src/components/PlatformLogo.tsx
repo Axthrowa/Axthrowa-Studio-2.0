@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type PlatformType = 'kick' | 'twitch' | 'youtube' | 'discord' | 'tiktok' | 'spotify' | 'ytmusic';
+export type PlatformType = 'kick' | 'twitch' | 'youtube' | 'discord' | 'tiktok' | 'trovo' | 'spotify' | 'ytmusic';
 
 interface PlatformLogoProps {
   platform: PlatformType | string;
@@ -91,6 +91,20 @@ export const PlatformLogo: React.FC<PlatformLogoProps> = ({
           </svg>
         );
 
+      case 'trovo':
+        return (
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className={`${sizeClass} ${className}`}
+            style={sizeStyle}
+          >
+            {/* Trovo'nun kendi logosu TELIFLIDIR ve kopyalanmadi.
+                Burada notr, kendi cizdigimiz bir "canli yayin" isareti var. */}
+            <path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-5.2l-2.1 2.6a.9.9 0 0 1-1.4 0L9.2 18H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm5.6 4.1v6.8a.6.6 0 0 0 .92.5l5.3-3.4a.6.6 0 0 0 0-1l-5.3-3.4a.6.6 0 0 0-.92.5z" />
+          </svg>
+        );
+
       case 'spotify':
         return (
           <svg
@@ -129,6 +143,7 @@ export const PlatformLogo: React.FC<PlatformLogoProps> = ({
       youtube: { bg: 'bg-[#ff0000]', text: 'text-white', label: 'YOUTUBE', logoColor: 'text-white' },
       discord: { bg: 'bg-[#5865f2]', text: 'text-white', label: 'DISCORD', logoColor: 'text-white' },
       tiktok: { bg: 'bg-[#000000] border border-cyan-400/40', text: 'text-white', label: 'TIKTOK', logoColor: 'text-[#00f2fe]' },
+      trovo: { bg: 'bg-[#19d66c] border border-emerald-300/40', text: 'text-black', label: 'TROVO', logoColor: 'text-black' },
       spotify: { bg: 'bg-[#1db954]', text: 'text-black', label: 'SPOTIFY', logoColor: 'text-black' },
       ytmusic: { bg: 'bg-[#ff0000]', text: 'text-white', label: 'YT MUSIC', logoColor: 'text-white' },
     };
@@ -156,6 +171,7 @@ export const PlatformLogo: React.FC<PlatformLogoProps> = ({
       youtube: { bg: 'bg-[#ff0000]/10', border: 'border-[#ff0000]/30', text: 'text-red-400', label: 'YouTube', logoColor: 'text-[#ff0000]' },
       discord: { bg: 'bg-[#5865f2]/10', border: 'border-[#5865f2]/30', text: 'text-[#7289da]', label: 'Discord', logoColor: 'text-[#5865f2]' },
       tiktok: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-300', label: 'TikTok', logoColor: 'text-[#00f2fe]' },
+      trovo: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-300', label: 'Trovo', logoColor: 'text-[#19d66c]' },
       spotify: { bg: 'bg-[#1db954]/10', border: 'border-[#1db954]/30', text: 'text-[#1db954]', label: 'Spotify', logoColor: 'text-[#1db954]' },
       ytmusic: { bg: 'bg-red-600/10', border: 'border-red-600/30', text: 'text-red-400', label: 'YT Music', logoColor: 'text-red-500' },
     };

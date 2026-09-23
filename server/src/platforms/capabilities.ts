@@ -16,7 +16,7 @@
  * Burada kodda `if (platform === 'kick')` yazmak yerine yetenek sorulur.
  */
 
-export type PlatformAdi = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+export type PlatformAdi = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
 
 export type OlayTuru =
   | 'chat'
@@ -84,6 +84,19 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     moderasyon: { timeout: false, ban: false, mesajSil: false },
     yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
     roller: ['everyone', 'mod', 'broadcaster']
+  },
+  trovo: {
+    sohbet: { oku: true, gonder: true },
+    // Trovo sohbet akisi bu olaylari veriyor (Chat Service §3.4).
+    // `tip` spell (mana/elixir) karsiligidir; tutar BILINMEDIGI icin 0
+    // gonderilir, adet mesajda tasinir.
+    olaylar: ['chat', 'follow', 'sub', 'gift_sub', 'tip', 'raid', 'stream_online', 'stream_offline'],
+    // Trovo moderasyon uclari var; BIZ uygulamadik. Tablo "biz ne
+    // yapabiliyoruz"u ilan eder.
+    moderasyon: { timeout: false, ban: false, mesajSil: false },
+    yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
+    // Trovo'da VIP yok; editor/supermod en yakin kanal rolleridir.
+    roller: ['everyone', 'sub', 'vip', 'mod', 'broadcaster']
   },
   discord: {
     sohbet: { oku: true, gonder: true },

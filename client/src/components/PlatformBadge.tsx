@@ -9,7 +9,7 @@ export interface BadgeInfo {
 }
 
 interface PlatformBadgeProps {
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   badge: string | BadgeInfo;
   size?: number;
 }
@@ -308,7 +308,7 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = ({ platform, badge, s
 };
 
 interface PlatformBadgesProps {
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   user: {
     badges?: string[];
     rawBadges?: any[];

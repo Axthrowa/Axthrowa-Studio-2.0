@@ -4,6 +4,7 @@ import { kickPlatform } from './kick.js';
 import { youtubePlatform } from './youtube.js';
 import { discordPlatform } from './discord.js';
 import { tiktokPlatform } from './tiktok.js';
+import { trovoPlatform } from './trovo.js';
 import { eventBus, BotMessagePayload } from '../core/event-bus.js';
 
 export class PlatformManager {
@@ -15,6 +16,7 @@ export class PlatformManager {
     this.register(youtubePlatform);
     this.register(discordPlatform);
     this.register(tiktokPlatform);
+    this.register(trovoPlatform);
 
     this.setupMessageRouting();
   }

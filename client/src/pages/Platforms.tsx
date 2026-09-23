@@ -368,6 +368,16 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       nameLabel: 'TikTok Kullanıcı Adı (@ olmadan, örn: yayinci)',
       tokenLabel: 'Şifre/Token gerekmez (Açık canlı yayın bağlantısı)',
       helpText: 'TikTok canlı yayınınız başladığında bot otomatik bağlanır ve hediyeleri ekrana basar.'
+    },
+    {
+      key: 'trovo',
+      name: 'Trovo',
+      badgeColor: 'bg-[#19d66c] text-black font-black',
+      description: 'Trovo sohbeti, takip, abone, hediye abone, spell ve raid olayları.',
+      nameLabel: 'Trovo Kullanıcı Adı (kanal linkinin son kısmı, örn: leafinsummer)',
+      tokenLabel: 'OAuth Erişim Jetonu — YALNIZ mesaj göndermek için gerekir',
+      helpText:
+        'Sohbeti OKUMAK için jeton gerekmez; Ayarlar bölümünde Trovo Client-ID girmeniz yeterlidir. Mesaj GÖNDERMEK için chat_send_self izinli bir OAuth jetonu gerekir.'
     }
   ];
 

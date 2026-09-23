@@ -12,7 +12,7 @@ export interface ModerasyonSonucu {
 }
 
 export abstract class BasePlatform {
-  abstract readonly name: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  abstract readonly name: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
 
   abstract connect(): Promise<boolean>;
   abstract disconnect(): Promise<void>;

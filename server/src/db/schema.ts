@@ -1,6 +1,6 @@
 export interface ChannelConfig {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channelName: string;
   accountId?: string;
   token?: string;
@@ -155,7 +155,7 @@ export interface AlertPreset {
 
 export interface StreamEvent {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   eventType: 'chat' | 'follow' | 'sub' | 'gift' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid';
   username: string;
   displayName?: string;

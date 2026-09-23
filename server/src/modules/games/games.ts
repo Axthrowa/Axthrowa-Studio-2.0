@@ -4,7 +4,7 @@ import { db } from '../../db/index.js';
 import { triviaEngine } from './trivia-engine.js';
 
 // --- TYPES ---
-type PlatformType = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'all';
+type PlatformType = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo' | 'all';
 
 export interface GameSettings {
   enabledGames: {

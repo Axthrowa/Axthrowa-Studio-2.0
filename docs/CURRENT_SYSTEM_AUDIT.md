@@ -1,5 +1,7 @@
 # CURRENT SYSTEM AUDIT — StreamAxT
 
+> **GÜNCELLİK NOTU (2026-09-22):** Bu denetim **1. tur başındaki** (2026-09-21) durumu anlatır ve tarihsel kayıt olarak olduğu gibi bırakıldı. Bulguların hangilerinin kapandığı [`BOTRIX_GAP_ANALYSIS §13`](BOTRIX_GAP_ANALYSIS.md) ve [`KNOWN_LIMITATIONS §5`](KNOWN_LIMITATIONS.md) tablolarındadır. 2. turda **yeni bir güvenlik bulgusu** eklendi: Discord webhook adresi düz metin dönüyordu (`S9`, kapatıldı).
+
 **Denetim tarihi:** 2026-09-21
 **Denetlenen sürüm:** git `cdc968e` (etiket `pre-botrix-revision-20260921-182105`)
 **Yöntem:** Kaynak kod okuma + canlı veritabanı şeması + çalışan örnek üzerinde

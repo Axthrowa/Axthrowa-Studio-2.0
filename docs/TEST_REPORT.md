@@ -207,3 +207,127 @@ sütunların varsayılan değeri var.
 | OBS tarayıcı kaynağında widget doğrulaması | Bu turda widget'lara dokunulmadı |
 | Yük / eşzamanlılık testi | Tek kullanıcılı yerel araç; kapsam dışı |
 | Tarayıcı uyumluluk matrisi | Panel yalnız Chrome/WebView2 hedefliyor |
+
+---
+
+## 8. İKİNCİ TUR TESTLERİ (2026-09-22)
+
+### 8.1 Otomatik test sayısı
+
+| Paket | 1. tur | 2. tur | Fark |
+|---|---|---|---|
+| Sunucu | 207 | **250** | +43 |
+| Panel | 32 | **67** | +35 |
+| **Toplam** | 239 | **317** | +78 |
+
+Yeni dosyalar: `modules/alerts/backup.test.ts` (9),
+`platforms/trovo.test.ts` (30), `client/src/lib/lib.test.ts` (35),
+`core/security/security.test.ts` içine 4 webhook testi.
+
+```
+npx --prefix server vitest run --root server   → 11 dosya / 250 test, hepsi geçti
+npx --prefix client vitest run --root client   →  2 dosya /  67 test, hepsi geçti
+```
+
+### 8.2 Komut çakışması — H1
+
+İzole örnekte (3011, **temiz veritabanı**) tam akış:
+
+```
+!joinq        | ali    -> @ali, Kuyruk şu an kapalı.          (varsayılan KAPALI)
+!openq        | sahip  -> 🎟️ Kuyruk açıldı!
+!joinq        | ali    -> 🎟️ @ali kuyruğa girdi · Sıra: 1
+!joinq        | veli   -> 🎟️ @veli kuyruğa girdi · Sıra: 1    (abone öne geçti)
+!kuyruk       | ali    -> 🎟️ Kuyruk (2): 1. veli · 2. ali
+!listq        | ali    -> 🎟️ Kuyruk (2): 1. veli · 2. ali
+!sira         | ali    -> 🎵 Şarkı sırası şu an boş.          (ŞARKI kuyruğu korundu)
+!posq         | ali    -> 🎟️ @ali, sıran: 2
+!nextq        | sahip  -> ➡️ Sıradaki: @veli
+!clearq       | sahip  -> 🧹 Kuyruk temizlendi (1 kişi).
+```
+
+### 8.3 Tahmin dağıtımı — kuruş kuruş
+
+Bahis: ali 300 → "Biz", veli 200 → "Onlar", ayşe 100 → "BIZ" (büyük harf,
+Türkçe noktasız ı). Havuz 600, kazanan "Biz".
+
+| Kullanıcı | Beklenen | Ölçülen | |
+|---|---|---|---|
+| ali | +450 (600 × 300/400) | **+450** | OK |
+| ayşe | +150 (600 × 100/400) | **+150** | OK |
+| veli | 0 (kaybetti) | **0** | OK |
+
+Ölçüm mutlak bakiyeden değil, `!bet result` öncesi/sonrası **farktan**
+alındı; sohbet ödülleri sonucu kirletmesin diye.
+
+### 8.4 Puan düşüşü
+
+`!kap` yazan: ali, veli, ali (ikinci kez). Katılan **2** (yinelenen
+sayılmadı). 900 puan bölüşümü → kişi başı 450; ölçüm ali +450, veli +450.
+
+### 8.5 Uyarı yedeği
+
+| Adım | Sonuç |
+|---|---|
+| Dışa aktar | `surum 1 · 8 preset · 2 varyant`; JSON içinde `token`/`webhook`/`password`/`secret` geçen **tek alan yok** |
+| İçe aktar (üzerine yazma **kapalı**) | `eklenen 0 · güncellenen 0 · atlanan 8`; `follow` başlığı DEĞİŞMEDİ; uyarı metni kullanıcıya seçeneği anlattı |
+| İçe aktar (üzerine yazma **açık**) | `güncellenen 8`; `follow` başlığı yedekteki değere geçti |
+| Yabancı dosya (`uygulama: "Nightbot"`) | **HTTP 400**, açıklamalı hata |
+| Aynı yedeği iki kez yükle | Varyant sayısı 6 → 6 (**artmadı**), `atlanan 2` |
+
+### 8.6 Medya kütüphanesi — içerik imzası
+
+| Deneme | Sonuç |
+|---|---|
+| Gerçek 1×1 PNG | `ok: true`, `tur: image`, `/api/media/<uuid>/dosya` |
+| **HTML'i `.png` adıyla yükle** | `ok: false` — "Desteklenmeyen dosya türü". İstemcinin bildirdiği MIME'a güvenilmiyor |
+| Dosya adı `../../../etc/passwd` | Kabul edildi ama ad `______etc_passwd` olarak temizlendi; diskte UUID adıyla duruyor |
+| Dosya sunumu başlıkları | `Content-Type: image/png`, `X-Content-Type-Options: nosniff`, `Cache-Control: immutable` |
+| `GET /api/media/..%2f..%2fpackage.json/dosya` | **404** — yol gezinmesi imkânsız (kimlikle aranıyor) |
+
+### 8.7 Discord webhook maskeleme — H2
+
+| Adım | Sonuç |
+|---|---|
+| Gerçek webhook yaz | POST yanıtı zaten maskeli döndü (`••••1234`) |
+| `GET /api/integrations/discord` | `••••1234`, `webhookVar: true`; ham token yanıtta **yok** |
+| Maskeli değeri geri gönder + `beklemeDk: 45` | `beklemeDk` güncellendi, **gerçek adres korundu** (maske 8 karakter olsaydı yanıt tamamen noktalı dönerdi; son 4'ün `1234` kalması saklananın uzun gerçek adres olduğunu gösterir) |
+
+`/api/integrations/discord/test` **çalıştırılmadı**: Discord sunucusuna
+gerçek, görünür bir mesaj göndermek olurdu.
+
+### 8.8 Panel — tarayıcıda uçtan uca
+
+İzole örnekte (3011) gerçek panel açılarak:
+
+* `Etkileşim → Tahminler`: formdan tahmin açıldı; `GET /api/predictions`
+  `{baslik: "Panelden açılan tahmin çalışıyor mu?", durum: "acik",
+  secenekler: ["Evet","Hayır"]}` döndü; kart canlı havuz çubuklarıyla
+  göründü; sonra iptal edilip temizlendi
+* `Etkileşim → İzleyici Kuyruğu` ve `→ Puan Düşüşleri`: doğru durum,
+  ayarlar ve komut listeleri
+* `Entegrasyonlar`: üç sekme de yüklendi; webhook alanı maskeli, açıklama
+  "boş bırakırsanız mevcut adres korunur" diyor
+* `Alert Box → Varyantlar`: eşik ve ağırlık doğru listelendi; olay kaynağı
+  etiketi göründü
+* `Alert Box → Medya Kütüphanesi`: yüklenen iki dosya, boyutlar ve doluluk
+  çubuğu doğru
+
+### 8.9 Trovo
+
+Canlı bağlantı **denenmedi** (Trovo hesabı/Client-ID yok — `L3`). Bunun
+yerine eşleme katmanı belgedeki **her örnek satırla** test edildi (30 test):
+tür kodları, roller, spell JSON'u, hediye abone alıcısı, raid sayısı,
+PONG `gap` sınırları, yeniden bağlanma gecikmesi. Ayrıca iki "uydurma
+yapmama" kilidi: bilinmeyen tür `yoksay`, Trovo üyeliği (`ace`) VIP değil.
+
+### 8.10 Regresyon
+
+| Alan | Sonuç |
+|---|---|
+| Sunucu derlemesi (`tsc`) | Temiz |
+| Panel derlemesi (`tsc` + `vite build`) | Temiz |
+| Tüm testler | 317/317 geçti |
+| Mevcut uçlar | `GET /api/alerts`, `/api/predictions`, `/api/queue`, `/api/point-drops`, `/api/media`, `/api/integrations/discord` — hepsi 200 |
+| `PlatformAdi` birliğine `trovo` eklenmesi | 5 dosyada 11 yer; derleme temiz, mevcut platform davranışı değişmedi |
+| Şarkı isteği `!sira` | Bozulmadı (§8.2) |

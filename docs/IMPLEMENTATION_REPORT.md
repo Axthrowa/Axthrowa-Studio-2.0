@@ -274,3 +274,98 @@ tam geri yükleme: [`BACKUP_MANIFEST.md §7`](../BACKUP_MANIFEST.md)
 2301fe5  Araştırma fazı: denetim + BotRix envanteri + gap analizi
 cdc968e  Revizyon öncesi anlık görüntü  ← pre-botrix-revision-20260921-182105
 ```
+
+---
+
+## 12. İKİNCİ TUR — P2 / P3 (2026-09-22)
+
+Birinci tur güvenlik ve motor katmanını kurdu ama **P2 ve P3 maddeleri
+panelde görünmüyordu**. Bu turun kuralı şuydu: bir yetenek yalnız sunucuda
+duruyorsa `DONE` sayılmaz — yayıncı ekranda göremiyorsa yok demektir.
+
+### 12.1 Sunucuda yeni modüller
+
+| Dosya | İş |
+|---|---|
+| `modules/alerts/backup.ts` | Uyarı ayarlarının dışa/içe aktarımı. Beyaz listeli alanlar, sürüm kontrolü, yinelenen varyant engeli. İçinde **token/webhook/şifre taşımaz** |
+| `platforms/trovo.ts` | Trovo adaptörü — WebSocket sohbet, AUTH/PING-PONG, üstel yeniden bağlanma, `chat/send` |
+| `platforms/trovo-map.ts` | Trovo tür kodlarının bizim olaylarımıza saf eşlemesi (DB'siz, testli) |
+| `modules/integrations/discord-rules.ts` | Discord kurallarının DB'siz parçası |
+| `modules/integrations/nightbot-map.ts` | Nightbot değişken eşlemesinin DB'siz parçası |
+
+Son iki dosya davranış değiştirmez; testler çalışan sunucunun SQLite
+kilidine takıldığı için ayrıldı (`prediction-math.ts` ile aynı desen).
+Bu, tam takımda düzensiz düşen bir test dosyasını kalıcı olarak düzeltti.
+
+### 12.2 Panelde yeni ekranlar
+
+| Ekran | Kapsam |
+|---|---|
+| `Etkileşim` (`pages/Interaction.tsx`) | **Tahminler** (canlı havuz çubukları, kilit, sonuçlandır, iptal+iade), **İzleyici Kuyruğu** (aç/kapa, sıradakini çağır, tek tek çıkar, öncelik/kota/yalnız-abone kuralları), **Puan Düşüşleri** (canlı geri sayım, katılan listesi, havuz/sabit paylaşım) |
+| `Entegrasyonlar` (`pages/Integrations.tsx`) | **Discord Duyuruları** (4 kaynak, şablon, bekleme, etiket, test), **Nightbot'tan İçe Aktar** (dosya veya yapıştır, üzerine yazma onayı, uyarı listesi), **Uyarı Yedeği** (indir / geri yükle) |
+| `Alert Box → Varyantlar` (`components/AlertVariants.tsx`) | Olay başına varyant listesi, eşik + ağırlık, kopyala/sil, kütüphaneden medya seçimi |
+| `Alert Box → Medya Kütüphanesi` (`components/MediaLibrary.tsx`) | Çoklu yükleme, önizleme, doluluk çubuğu, bağlantı kopyalama, silme onayı |
+| `lib/capabilities.ts` | Olayın hangi kaynaktan geldiğini panelde etiketler |
+
+Ayrıca olay sekmelerindeki `Görsel / Ses URL` alanlarına "kütüphaneden seç"
+düğmesi eklendi; medya artık yalnız harici URL olmak zorunda değil.
+
+### 12.3 Yetenek etiketleri — gizlemek yerine söylemek
+
+BotRix karşılığı olmayan ayarları **gizlemek** yerine, hangi platformun
+ürettiğini yazıyoruz. Sessizce çalışmayan bir ayar, sebebini söylemekten
+kötüdür.
+
+Bir incelik: bağış (`tip`) yalnız platform tablosuna bakılırsa
+"Twitch · YouTube" görünüyordu. Ama BynoGame bağışı **platformdan bağımsız**
+bir webhook'tan gelir ve Kick yayıncısında da çalışır. Etiket bu yüzden dış
+kaynakları da anıyor (`DIS_KAYNAKLAR`) — aksi hâlde panel kullanıcıyı
+yanıltırdı.
+
+### 12.4 Trovo — belgeye dayalı, uydurmasız
+
+Protokolün her ayrıntısı Trovo'nun **resmi geliştirici belgesinden** alındı
+(`CONFIRMED_IN_PUBLIC_DOCS`), tahmin edilmedi:
+
+* `wss://open-chat.trovo.live/chat`, AUTH → RESPONSE, PING → PONG (`data.gap`)
+* Sohbet jetonu `GET /openplatform/chat/channel-token/{id}` — **erişim jetonu
+  istemez**, yalnız Client-ID. Bu yüzden *okuma* OAuth kurmadan çalışır
+* Kanal kimliği `POST /openplatform/getusers`
+* Mesaj gönderme `POST /openplatform/chat/send` — `chat_send_self` ister
+
+Tür kodları (0, 5, 6–9, 5001, 5003, 5005, 5006, 5008, 5009, 5012) belgedeki
+tablodan birebir alındı. **Tanınmayan tür sessizce yok sayılır** — uydurma
+bir olaya bağlanmaz; yanlış uyarı göstermek hiç göstermemekten kötüdür.
+
+Trovo'da VIP rolü yoktur; `editor`/`supermod` en yakın kanal ayrıcalığı
+olduğu için `isVip` yalnız onlarda açılır. Trovo üyeliği (`ace`, `ace+`)
+kanal rolü olmadığı için VIP saymıyoruz — bunun testi de var.
+
+Spell (hediye) bağış olarak iletilir ama `amount: 0` gider: spell'in para
+karşılığı sohbet olayında gelmiyor, **uydurma tutar üretmiyoruz**. Hediye
+adı ve adedi mesajda taşınır.
+
+Yetenek tablosunda Trovo moderasyonu `false` — Trovo'nun uçları var, biz
+uygulamadık. Tablo "platform ne yapabilir"i değil "biz ne yapabiliyoruz"u
+ilan eder.
+
+### 12.5 Bu turda bulunan ve düzeltilen hatalar
+
+| # | Hata | Kök neden | Düzeltme |
+|---|---|---|---|
+| H1 | `!queue` ve `!sira` izleyici kuyruğunu **hiç** açmıyordu | Aynı adlar `switch` içinde daha yukarıda şarkı isteğine bağlıydı; izleyici kuyruğu dalı ölü koddu | İzleyici kuyruğuna çakışmayan adlar verildi: `!kuyruk` `!listq` `!siradakiler`. `!sira` şarkı isteğinde kaldı |
+| H2 | **Discord webhook adresi düz metin dönüyordu** | `webhook` sır listesinde değildi; oysa adresi bilen herkes o kanala mesaj atabilir | `redact.ts`'e eklendi. Artık maskeleniyor; maskeli değer geri gönderilince mevcut adres korunuyor (4 test) |
+| H3 | Aynı yedeği ikinci kez yüklemek varyant listesini kopyalarla şişiriyordu | Varyant her zaman `INSERT` ediliyordu | (olay + ad) ikilisi anahtar kabul edildi: yoksa ekler, varsa `uzerineYaz` durumuna göre atlar veya günceller |
+| H4 | Kuyruk ayarı yazarken girdi geri sıçrayabiliyordu | POST havadayken gelen yoklama yanıtı eski değeri yazıyordu | Son düzenleme zaman damgası ile 2 sn'lik koruma |
+| H5 | Bağış uyarısı "Twitch · YouTube" etiketleniyordu | Etiket yalnız platform tablosuna bakıyordu | `DIS_KAYNAKLAR` eklendi; BynoGame/webhook bağışı ayrıca anılıyor |
+| H6 | `integrations.test.ts` tam takımda düzensiz düşüyordu | Test dosyası DB'ye dokunan modülü içeri alıyordu; çalışan sunucuyla SQLite kilidi çakışıyordu | Saf mantık DB'siz modüllere ayrıldı |
+
+### 12.6 Yeni API uçları
+
+| Uç | İş |
+|---|---|
+| `GET /api/alerts/backup` | Uyarı yedeğini JSON olarak indirir (sırsız) |
+| `POST /api/alerts/backup/import` | Yedeği geri yükler; `uzerineYaz` seçeneği ve uyarı listesi döner |
+
+Diğer P3 uçları (tahmin/kuyruk/puan düşüşü/varyant/medya/Discord/Nightbot)
+birinci turda yazılmıştı; bu turda **panele bağlandı**.

@@ -374,65 +374,130 @@ Sıralama ölçütü: **risk × etki ÷ çaba**.
 
 ---
 
-## 13. FİNAL DURUM — 2026-09-21 turu sonu
+## 13. FİNAL DURUM — iki tur sonu (2026-09-21 · 2026-09-22)
 
-Bu turda tamamlananlar `DONE`, kalanlar `PARTIAL` / `NOT_DONE`.
+İki tur yapıldı:
+
+* **1. tur (2026-09-21)** — yedek, denetim, BotRix araştırması, güvenlik (P0),
+  değişken motoru ve moderasyon (P1).
+* **2. tur (2026-09-22)** — P2 (ürün kalitesi) ve P3 (genişleme), panel
+  arayüzleri, Trovo, dokümantasyon.
+
+Durum kodları: `DONE` · `PARTIAL` · `NOT_DONE` · `NOT_APPLICABLE` ·
+`BLOCKED_BY_PLATFORM` · `UNVERIFIED_BOTRIX_FEATURE`.
 Ayrıntı: [`IMPLEMENTATION_REPORT.md`](IMPLEMENTATION_REPORT.md),
-[`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md)
+[`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md),
+[`TEST_REPORT.md`](TEST_REPORT.md)
 
 ### P0 — Güvenlik
 
-| Madde | Final |
-|---|---|
-| S1 Kimlik doğrulama yok | `DONE` — yerel bağlama + köken doğrulaması ile kapatıldı (tek kullanıcılı yerel araçta parola gereksiz) |
-| S2 `cors: '*'` | `DONE` |
-| S3 `0.0.0.0` dinleme | `DONE` |
-| S4 `/api/platforms` token sızıntısı | `DONE` |
-| S5 `/api/settings` sır sızıntısı | `DONE` |
-| S6 Token disk şifrelemesi | `NOT_DONE` — `KNOWN_LIMITATIONS N5` |
-| S7 Hız sınırı | `NOT_DONE` |
-| S8 Widget URL token'ı | `NOT_DONE` |
+| Madde | 1. tur | Final |
+|---|---|---|
+| S1 Kimlik doğrulama yok | `DONE` | `DONE` — yerel bağlama + köken doğrulaması (tek kullanıcılı yerel araçta parola gereksiz) |
+| S2 `cors: '*'` | `DONE` | `DONE` |
+| S3 `0.0.0.0` dinleme | `DONE` | `DONE` |
+| S4 `/api/platforms` token sızıntısı | `DONE` | `DONE` |
+| S5 `/api/settings` sır sızıntısı | `DONE` | `DONE` |
+| S6 Token disk şifrelemesi | `NOT_DONE` | `NOT_DONE` — `KNOWN_LIMITATIONS N5` |
+| S7 Hız sınırı | `NOT_DONE` | `NOT_DONE` — yerel bağlama S7'nin saldırı yüzeyini büyük ölçüde kapatıyor |
+| S8 Widget URL token'ı | `NOT_DONE` | `NOT_DONE` — widget URL'leri sır taşımıyor; kimliksiz |
+| **S9 Discord webhook düz metin dönüyordu** (2. turda bulundu) | — | `DONE` — `webhook` sır listesine eklendi, maskelenir; maskeli değer geri gönderilince mevcut adres korunur |
 
 ### P1 — En yüksek etki
 
-| Madde | Final |
-|---|---|
-| Değişken motoru (~60) | `DONE` — 60 değişken, 10 grup |
-| Komut derinliği | `PARTIAL` — kullanıcı başına bekleme, fiyat, platform `DONE`; anahtar kelime tetikleyici ve erişim kipi şema hazır, mantık bağlanmadı |
-| Moderasyon eylemleri | `PARTIAL` — motor, 5 eylem, 11 kademe, bypass `DONE`; Kick timeout **uygulandı, canlı doğrulanmadı**; Twitch/YouTube/TikTok `BLOCKED_BY_PLATFORM` (adaptör yazılmadı) |
-| Sayaçlar | `DONE` — `$(count)` `$(getcounter)` `$(setcounter)` `!editcounter` |
-| Yerleşik komutlar | `DONE` — `!uptime` `!watchtime` `!followage` `!so` `!addcom` `!editcom` `!delcom`; `!komutlar` gerçek liste |
+| Madde | 1. tur | Final |
+|---|---|---|
+| Değişken motoru | `DONE` | `DONE` — 63 değişken, 10 grup |
+| Komut derinliği | `PARTIAL` | `PARTIAL` — kullanıcı başına bekleme, fiyat, platform `DONE`; anahtar kelime tetikleyici ve erişim kipi şema hazır, mantık bağlanmadı |
+| Moderasyon eylemleri | `PARTIAL` | `PARTIAL` — motor, 5 eylem, 11 kademe, bypass `DONE`; Kick timeout **uygulandı, canlı doğrulanmadı** (`L1`); Twitch/YouTube/TikTok `BLOCKED_BY_PLATFORM` |
+| Sayaçlar | `DONE` | `DONE` |
+| Yerleşik komutlar | `DONE` | `DONE` |
 
 ### P2 — Ürün kalitesi
 
-| Madde | Final |
-|---|---|
-| Animasyon motoru (37 ön ayar) | `NOT_DONE` — tasarım `TARGET_ARCHITECTURE §7` |
-| Alert kuyruk durum makinesi | `NOT_DONE` |
-| Uyarı varyantları | `NOT_DONE` |
-| Metin penceresi / ayrı metin renkleri / metin konumu | `NOT_DONE` |
-| Seviye / XP sistemi | `NOT_DONE` — DB sütunları hazır (göç #4) |
-| TTS filtreleri | `NOT_DONE` |
-| Sohbet tarafı olay mesajları | `NOT_DONE` |
-| Medya kütüphanesi | `NOT_DONE` |
-| Tema kütüphanesi | `NOT_DONE` |
+| Madde | 1. tur | Final |
+|---|---|---|
+| Animasyon motoru | `NOT_DONE` | `DONE` — 38 ön ayar (`lib/animations.ts`), eski ayar adları korunur, `prefers-reduced-motion` desteği |
+| Alert kuyruk durum makinesi | `NOT_DONE` | `DONE` — `queued → entering → visible → exiting → completed`, boşluk (gap) durumu, ses uzunsa görünür aşama sese uyar |
+| Uyarı varyantları | `NOT_DONE` | `DONE` — eşik + ağırlık seçimi, panel arayüzü (`AlertVariants.tsx`), yedeğe dahil |
+| Metin efektleri | `NOT_DONE` | `DONE` — 6 efekt (`METIN_EFEKTLERI`) |
+| Seviye / XP sistemi | `NOT_DONE` | `DONE` — eğri, XP, sıralama, panel (`BotAdvanced → Seviye/XP`) |
+| TTS filtreleri | `NOT_DONE` | `DONE` — link/emoji/sayı/simge/tekrar süzgeçleri, rol eşiği, kullanıcı başına bekleme |
+| Sohbet tarafı olay mesajları | `NOT_DONE` | `DONE` — 9 olay, eşik ve bekleme süreleri |
+| Medya kütüphanesi | `NOT_DONE` | `DONE` — yükleme, içerik imzası doğrulaması, panel arayüzü, 5 MB/dosya · 500 MB toplam |
+| Tema kütüphanesi | `NOT_DONE` | `DONE` — 20 genel tema + widget'a özel temalar |
+| Önizleme = OBS eşitliği | (bu turda bulundu) | `DONE` — stüdyo sahte çizim yerine gerçek `OverlayKatmanlari` kullanıyor |
 
 ### P3 — Genişleme
 
-| Madde | Final |
-|---|---|
-| Platform yetenek modeli | `DONE` (sunucu) · `NOT_DONE` (panel arayüzü) |
-| Tahminler / kuyruk / puan düşüşleri | `NOT_DONE` |
-| Discord duyuru entegrasyonu | `NOT_DONE` |
-| Trovo adaptörü | `NOT_DONE` |
-| Tasarım sistemi / toast / onay diyaloğu | `NOT_DONE` |
-| Nightbot içe aktarma / uyarı dışa aktarma | `NOT_DONE` |
+| Madde | 1. tur | Final |
+|---|---|---|
+| Platform yetenek modeli | `DONE` (sunucu) · `NOT_DONE` (panel) | `DONE` — panelde olay kaynağı etiketleri (Alert Box + Varyantlar), dış kaynaklı bağış ayrıca anılıyor |
+| Tahminler | `NOT_DONE` | `DONE` — havuz dağıtımı, Türkçe büyük/küçük harf eşleşmesi, panel + sohbet komutları |
+| İzleyici kuyruğu | `NOT_DONE` | `DONE` — öncelik, kota, yalnız-abone, panel + komutlar (`!kuyruk` `!listq` `!siradakiler`) |
+| Puan düşüşleri | `NOT_DONE` | `DONE` — havuz/sabit paylaşım, kontenjan, panel + `!pdrops` |
+| Discord duyuru entegrasyonu | `NOT_DONE` | `DONE` — 4 kaynak, webhook doğrulaması, `allowed_mentions` koruması, panel |
+| Nightbot içe aktarma | `NOT_DONE` | `DONE` — komut + zamanlayıcı, değişken eşlemesi, desteklenmeyende uyarı, panel |
+| Uyarı dışa/içe aktarma | `NOT_DONE` | `DONE` — sırsız JSON, sürüm kontrolü, yinelenen varyant engeli, panel |
+| Trovo adaptörü | `NOT_DONE` | `PARTIAL` — protokol resmi belgeye göre uygulandı ve eşleme katmanı 30 testle kilitlendi; **canlı bağlantı doğrulanmadı** (`L3`) |
+| Tasarım sistemi / toast / onay diyaloğu | `NOT_DONE` | `DONE` — `ui/index.tsx` |
+| Subathon | (bu turda istendi) | `DONE` — sunucu tarafı motor, abone/hediye/KICKs/bağış kuralları, otomatik süre ekleme |
+| Gemini AI asistanı | (bu turda bulundu) | `DONE` — panel sohbeti gerçek uca bağlandı, model listesi ve kota soğuması eklendi |
 
 ### Kapsam dışı (değişmedi)
 
 | Madde | Final |
 |---|---|
-| Çok kiracılı her şey | `NOT_APPLICABLE` |
-| `$(eval)` | `NOT_DONE` (bilinçli — keyfi JS yürütme) |
-| `$(leagueoflegends)` | `NOT_DONE` (niş) |
-| Hype Treni / Subathon BotRix ayarları | `UNVERIFIED_BOTRIX_FEATURE` — premium kilidi |
+| Çok kiracılı her şey | `NOT_APPLICABLE` — BotRix SaaS, StreamAxT tek kullanıcılı yerel araç (`§0`) |
+| Premium/plan kilitleri (varyant 5/25, 5 MB/50 MB) | `NOT_APPLICABLE` — yerel araçta plan yok; sınırlar disk korumasıdır |
+| `$(eval <js>)` | `NOT_DONE` (bilinçli — keyfi JS yürütme, `N2`) |
+| `$(leagueoflegends)` | `NOT_DONE` (niş, Riot API anahtarı, `N3`) |
+| `$(settitle)` / `$(setcategory)` | `BLOCKED_BY_PLATFORM` — yazma yetkili token yok (`N4`) |
+| Hype Treni / BotRix Subathon **ayar ekranı** | `UNVERIFIED_BOTRIX_FEATURE` — premium kilidi ardında; bizim subathonumuz BotRix'e bakılmadan, kullanıcının istediği kurallarla yazıldı |
+
+---
+
+## 14. YAN YANA KARŞILAŞTIRMA — özet
+
+Satırlar `BOTRIX_UI_INVENTORY.md` menü yapısından türetildi. "Bizde" sütunu
+panelde **kullanıcının görebildiği** karşılığı gösterir; yalnız sunucuda
+duran bir yetenek `DONE` sayılmadı.
+
+| BotRix menüsü | Bizdeki karşılığı | Durum |
+|---|---|---|
+| Panel / Genel Bakış | `Genel Bakış` | `DONE` |
+| Sohbet Botu → Komutlar | `Komutlar` | `PARTIAL` — anahtar kelime tetikleyici bağlanmadı |
+| Sohbet Botu → Zamanlayıcılar | `Zamanlayıcılar` | `DONE` |
+| Sohbet Botu → Moderasyon | `Bot Moderation` + `Gelişmiş Bot → Moderasyon Eylemleri` | `PARTIAL` — yalnız Kick'te uygulanabiliyor |
+| Sohbet Botu → Ekstralar (Nightbot içe aktarma) | `Entegrasyonlar → Nightbot'tan İçe Aktar` | `DONE` |
+| Sohbet Botu → Değişkenler | `Gelişmiş Bot → Değişkenler` | `DONE` — 63 değişken kataloğu, arama ve önizleme |
+| Sadakat → Puanlar / Mağaza / Sıralama | `Sadakat & Ekonomi`, `Rankings` | `DONE` |
+| Sadakat → Seviyeler | `Gelişmiş Bot → Seviye / XP` | `DONE` |
+| Uyarılar (Alerts) → olay başına ayar | `Alert Box` sekmeleri | `DONE` |
+| Uyarılar → varyantlar | `Alert Box → Varyantlar` | `DONE` |
+| Uyarılar → yükleme (medya) | `Alert Box → Medya Kütüphanesi` | `DONE` |
+| Widget'lar / Overlay | `OBS Overlay Stüdyo` (29 widget) | `DONE` — önizleme ile OBS aynı bileşeni çiziyor |
+| TTS | `5-Motorlu TTS` + `Gelişmiş Bot → TTS Filtreleri` | `DONE` |
+| Etkileşim → Tahminler | `Etkileşim → Tahminler` | `DONE` |
+| Etkileşim → İzleyici Kuyruğu (BETA) | `Etkileşim → İzleyici Kuyruğu` | `DONE` |
+| Etkileşim → Puan Düşüşleri | `Etkileşim → Puan Düşüşleri` | `DONE` |
+| Anketler (Polls) | `Polls` | `DONE` |
+| Çekilişler | `Çekilişler` | `DONE` |
+| Şarkı isteği | `Şarkı İsteği (SR)` | `DONE` |
+| Entegrasyonlar (Discord duyurusu) | `Entegrasyonlar → Discord Duyuruları` | `DONE` |
+| Platform bağlantıları | `Platformlar` (Kick, Twitch, YouTube, TikTok, Discord, Trovo) | `PARTIAL` — Trovo canlı doğrulanmadı |
+| Hesap / Plan / Faturalama | — | `NOT_APPLICABLE` |
+
+### Bizde olup BotRix'te gözlenmeyenler
+
+Bunlar parity hedefi değil, kullanıcının kendi istekleri ve mevcut sistemin
+güçlü yanları:
+
+* Bil Bakalım (trivia) stüdyosu — 3311 soruluk yerel havuz
+* JumpScare + BynoGame bağış zinciri
+* Subathon sayacı ve otomatik süre kuralları
+* Gemini AI asistanı
+* 5 motorlu TTS yedeklemesi (fail-safe)
+* Birleşik Multi-Chat
+* Kalkan & Denetim ekranı
+* Tauri panel kabuğuna gömülü çalışma

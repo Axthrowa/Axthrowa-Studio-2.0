@@ -1,5 +1,7 @@
 # BOTRIX ALERT MATRIX
 
+> **GÜNCELLİK NOTU (2026-09-22):** Bu belge **BotRix'in** uyarı matrisidir; araştırma kaydı olarak değişmedi. Bizim tarafımızda 38 animasyon ön ayarı (`client/src/lib/animations.ts`), 6 metin efekti ve eşik/ağırlıklı varyant seçimi uygulandı — [`BOTRIX_GAP_ANALYSIS §13 · P2`](BOTRIX_GAP_ANALYSIS.md).
+
 **Kaynak:** `botrix.live/panel/alerts` — `OBSERVED_IN_UI` (2026-09-21)
 **Hesap:** ücretsiz plan, Kick bağlı
 **Not:** BotRix kodu kopyalanmadı; yalnız gözlemlenen ayar yüzeyi kaydedildi.

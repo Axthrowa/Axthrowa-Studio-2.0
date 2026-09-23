@@ -1,5 +1,7 @@
 # BOTRIX UI INVENTORY
 
+> **GÜNCELLİK NOTU (2026-09-22):** Bu belge **BotRix'i** anlatır, bizi değil; araştırma kaydı olarak değişmedi. Her satırın bizdeki karşılığı ve durumu için [`BOTRIX_GAP_ANALYSIS §14 — Yan yana karşılaştırma`](BOTRIX_GAP_ANALYSIS.md).
+
 **İnceleme tarihi:** 2026-09-21
 **Yöntem:** Chrome'da kullanıcının kendi yetkili BotRix oturumu üzerinden
 sayfa sayfa gezinti. Kimlik doğrulama veya erişim kontrolü **bypass edilmedi**.

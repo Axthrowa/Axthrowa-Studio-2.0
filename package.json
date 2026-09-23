@@ -1,6 +1,7 @@
 {
   "name": "streamaxt-workspace",
   "version": "1.0.0",
+  "engines": { "node": ">=22.5.0" },
   "private": true,
   "workspaces": [
     "server",

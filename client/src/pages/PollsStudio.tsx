@@ -35,7 +35,7 @@ export function PollsStudio() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-white flex items-center gap-2"><BarChart3 className="w-6 h-6 text-emerald-400" /> Polls</h1>
+        <h1 className="text-2xl font-black text-white flex items-center gap-2"><BarChart3 className="w-6 h-6 text-emerald-400" /> Anketler</h1>
         <p className="text-sm text-gray-400">Anket oluştur, sohbetten oyla, overlay’de göster.</p>
       </div>
       <div className="glass-panel p-6 rounded-2xl space-y-4">

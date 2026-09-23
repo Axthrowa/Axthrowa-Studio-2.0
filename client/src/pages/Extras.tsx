@@ -52,7 +52,7 @@ export function Extras() {
     <div className="space-y-6">
       <div className="flex justify-between">
         <div>
-          <h1 className="text-2xl font-black text-white">Extras</h1>
+          <h1 className="text-2xl font-black text-white">Ekstralar</h1>
           <p className="text-sm text-gray-400">Chat alerts, clip command, level system, quotes & counters.</p>
         </div>
         <button onClick={save} className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 ${saved ? 'bg-emerald-600' : 'bg-purple-600'} text-white`}>

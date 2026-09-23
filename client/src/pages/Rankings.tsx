@@ -55,7 +55,7 @@ export function Rankings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-white flex items-center gap-2"><Trophy className="w-6 h-6 text-amber-400" /> Rankings</h1>
+        <h1 className="text-2xl font-black text-white flex items-center gap-2"><Trophy className="w-6 h-6 text-amber-400" /> Sıralamalar</h1>
         <p className="text-sm text-gray-400">
           Watchtime, puan ve mesaj sıralamaları. Overlay: /widgets/rankings
           {updatedAt > 0 && (

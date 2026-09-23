@@ -114,24 +114,39 @@ export function App() {
 
   // Otherwise, render full StreamAxT Dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
+  // Tarayıcı geri/ileri tuşu (B7): sekme adresteki #sekme ile eşlenir.
+  // NOT: yukarıdaki useState satırı BİLEREK değiştirilmedi — panel kabuğunun
+  // hazırlama betiği (streamaxt-hazirla.mjs) o satırı birebir arayıp gömme
+  // yamasını uyguluyor. Bu etkiler yama uygulansa da uygulanmasa da çalışır.
+  useEffect(() => {
+    const ilk = window.location.hash.replace('#', '');
+    if (ilk) setActiveTab(ilk);
+    const geri = () => setActiveTab(window.location.hash.replace('#', '') || 'dashboard');
+    window.addEventListener('popstate', geri);
+    return () => window.removeEventListener('popstate', geri);
+  }, []);
+  useEffect(() => {
+    const hedef = `#${activeTab}`;
+    if (window.location.hash !== hedef) window.history.pushState(null, '', hedef);
+  }, [activeTab]);
   const [focusPlatform, setFocusPlatform] = useState<string | null>(null);
 
   const navItems = [
     { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
-    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '5 Platform' },
+    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '6 Platform' },
     { id: 'multichat', label: 'Canlı Multi-Chat', icon: MessageSquare, highlight: true },
     { id: 'trivia', label: 'Bil Bakalım', icon: HelpCircle, badge: 'Canlı 🧠', highlight: true },
-    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, badge: 'Fail-Safe' },
+    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, badge: 'Yedekli' },
     { id: 'donations', label: 'BynoGame & Bağış', icon: DollarSign, badge: 'JumpScare' },
-    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, badge: 'Shield' },
-    { id: 'commands', label: 'Komutlar', icon: Terminal, badge: 'My/Default' },
+    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, badge: 'Kalkan' },
+    { id: 'commands', label: 'Komutlar', icon: Terminal, badge: 'Anahtar kelime' },
     { id: 'timers', label: 'Zamanlayıcılar', icon: Clock },
-    { id: 'automod', label: 'Bot Moderation', icon: ShieldCheck },
+    { id: 'automod', label: 'Bot Moderasyonu', icon: ShieldCheck },
     { id: 'botadvanced', label: 'Gelişmiş Bot', icon: Sparkles, badge: 'Yeni' },
-    { id: 'extras', label: 'Extras', icon: Sparkles, badge: 'Clip/Level' },
-    { id: 'rankings', label: 'Rankings', icon: Trophy },
-    { id: 'alerts', label: 'Alert Box', icon: Bell, highlight: true },
-    { id: 'polls', label: 'Polls', icon: BarChart3 },
+    { id: 'extras', label: 'Ekstralar', icon: Sparkles, badge: 'Klip/Seviye' },
+    { id: 'rankings', label: 'Sıralamalar', icon: Trophy },
+    { id: 'alerts', label: 'Uyarılar (Alert Box)', icon: Bell, highlight: true },
+    { id: 'polls', label: 'Anketler', icon: BarChart3 },
     { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk' },
     { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music },
     { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins },

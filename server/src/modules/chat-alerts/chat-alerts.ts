@@ -15,7 +15,7 @@
  * `<ifKick>` vb. hepsi çalışır.
  */
 import { db } from '../../db/index.js';
-import { eventBus } from '../../core/event-bus.js';
+import { hediyeAdedi, eventBus } from '../../core/event-bus.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
 
 export type SohbetOlayi = 'follow' | 'sub' | 'resub' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'welcome';
@@ -151,7 +151,7 @@ class SohbetUyarilari {
 
     eventBus.on('sub', (p: any) => {
       if (p?.isGift) {
-        const adet = Number(String(p?.recipient || '').match(/\d+/)?.[0] || p?.count || 1);
+        const adet = hediyeAdedi(p);
         void this.gonder('gift_sub', p, adet, [String(adet)]);
       } else if (Number(p?.months) > 1) {
         void this.gonder('resub', p, Number(p.months), [String(p.months)]);

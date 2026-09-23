@@ -43,6 +43,12 @@ export interface SubPayload {
   months: number;
   isGift: boolean;
   recipient?: string;
+  /**
+   * Hediye abonelikte ADET. Eskiden adet yalnız `recipient` metninden
+   * ("5 izleyiciye") ayıklanıyordu; Trovo'nun rastgele hediyesinde metin
+   * olmadığı için sayı 1'e düşüyordu.
+   */
+  count?: number;
   timestamp: number;
 }
 
@@ -271,3 +277,11 @@ class UniversalEventBus extends EventEmitter {
 
 export const eventBus = new UniversalEventBus();
 export default eventBus;
+
+/** Hediye abonelik adedi: önce `count`, yoksa `recipient` metnindeki sayı, yoksa 1. */
+export function hediyeAdedi(p: { count?: unknown; recipient?: unknown } | null | undefined): number {
+  const n = Number(p?.count);
+  if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  const m = String(p?.recipient ?? '').match(/\d+/);
+  return m ? Math.max(1, Number(m[0])) : 1;
+}

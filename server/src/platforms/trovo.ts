@@ -366,8 +366,9 @@ export class TrovoPlatform extends BasePlatform {
           username: kullanici,
           displayName: gorunen,
           tier: String(c.sub_lv || 'L1'),
-          months: Math.max(1, olay.adet),
+          months: 1,
           isGift: true,
+          count: Math.max(1, olay.adet),
           recipient: olay.hedef || undefined,
           timestamp: zaman
         });

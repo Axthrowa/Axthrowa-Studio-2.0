@@ -196,6 +196,7 @@ export class TwitchPlatform extends BasePlatform {
           tier: 'Tier 1',
           months: 1,
           isGift: true,
+          count: 1,
           recipient: tags['msg-param-recipient-display-name'] || 'İzleyici',
           timestamp: Date.now()
         });

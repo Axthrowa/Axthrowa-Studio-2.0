@@ -15,7 +15,7 @@
  *
  * Artık tek doğru kaynak burası. Widget yalnız gösterir.
  */
-import { eventBus } from '../../core/event-bus.js';
+import { hediyeAdedi, eventBus } from '../../core/event-bus.js';
 import { db } from '../../db/index.js';
 
 export interface SubathonAyarlari {
@@ -221,7 +221,7 @@ class SubathonMotoru {
       const ad = p?.displayName || p?.username || 'İzleyici';
       if (p?.isGift) {
         // Kick'te hediye abonelik birden çok kişiye olabilir
-        const adet = Number(String(p?.recipient || '').match(/\d+/)?.[0] || p?.count || 1);
+        const adet = hediyeAdedi(p);
         const dk = hediyeDakikasi(adet, a.hediyeAboneDakika);
         if (dk > 0) this.sureEkle(dk * 60, `+${dk} dk · ${adet} hediye abone (${ad})`);
       } else {

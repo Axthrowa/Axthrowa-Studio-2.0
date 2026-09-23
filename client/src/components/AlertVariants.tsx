@@ -90,6 +90,7 @@ export function AlertVariants() {
   const [duzenlenen, setDuzenlenen] = useState<UyariVaryanti | null>(null);
   const [medyaAcik, setMedyaAcik] = useState<'gorsel' | 'ses' | null>(null);
   const [yetenek, setYetenek] = useState<YetenekHaritasi>({});
+  const [testDegeri, setTestDegeri] = useState('');
 
   useEffect(() => {
     yetenekleriGetir().then(setYetenek);
@@ -370,15 +371,28 @@ export function AlertVariants() {
             <Buton ton="sade" onClick={() => setDuzenlenen(null)}>
               Vazgeç
             </Buton>
+            {secili.degerAdi !== '—' && (
+              <Girdi
+                type="number"
+                min={0}
+                value={testDegeri}
+                onChange={(e) => setTestDegeri(e.target.value)}
+                placeholder={`test ${secili.degerAdi}`}
+                className="ml-auto w-36"
+              />
+            )}
             <Buton
               ton="ikincil"
               ikon={<Play className="w-3.5 h-3.5" />}
-              className="ml-auto"
+              className={secili.degerAdi === '—' ? 'ml-auto' : ''}
               onClick={() =>
                 fetch('/api/alerts/test', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ eventType: olay })
+                  body: JSON.stringify({
+                    eventType: olay,
+                    ...(testDegeri ? { deger: Number(testDegeri) } : {})
+                  })
                 }).then(() => toast('Test uyarısı tetiklendi — overlay’i izleyin.', 'basari'))
               }
             >
@@ -387,7 +401,8 @@ export function AlertVariants() {
           </div>
           <p className="text-[10px] text-gray-500">
             <Layers className="w-3 h-3 inline mr-1" />
-            Test, kayıtlı varyantlar arasından kural gereği seçim yapar — önce kaydedin.
+            Test, kayıtlı varyantlar arasından kural gereği seçim yapar — önce kaydedin. Eşiği denemek için test
+            değeri girin (ör. 500 → "tutar ≥ 500" varyantı seçilir).
           </p>
         </Kart>
       )}

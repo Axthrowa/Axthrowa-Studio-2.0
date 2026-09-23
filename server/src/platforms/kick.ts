@@ -206,6 +206,7 @@ export class KickPlatform extends BasePlatform {
           tier: 'Tier 1',
           months: 1,
           isGift: true,
+          count: Number(parsed?.gifted_usernames?.length) || 1,
           recipient: `${parsed?.gifted_usernames?.length || 1} izleyiciye`,
           timestamp: Date.now()
         });

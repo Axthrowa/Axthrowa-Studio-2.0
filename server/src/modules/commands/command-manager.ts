@@ -4,7 +4,7 @@ import { parseVariables } from '../../core/variable-parser.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
 import { randomUUID } from 'node:crypto';
 import { economy } from '../economy/economy.js';
-import { getStreamUptime } from '../../core/variable-parser.js';
+import { getStreamUptime, yayinAcikMi } from '../../core/variable-parser.js';
 import { sayacAl, sayacAyarla, sayacDegistir } from '../../core/variables/store.js';
 import { sayacIfadesi } from '../../core/variables/pure.js';
 import { seviyeler } from '../levels/levels.js';
@@ -19,6 +19,8 @@ import { triviaEngine } from '../games/trivia-engine.js';
 import { kingSystemService } from '../games/king-system.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { extras } from '../extras/extras.js';
+import { canliDurum } from '../../core/live-status.js';
+import { anahtarKomutuSec, erisimAciklamasi, erisimUygunMu } from './command-input.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -68,6 +70,8 @@ export class CommandManager {
   private globalCooldowns: Map<string, CooldownEntry> = new Map();
   private commandsCache: Map<string, any> = new Map();
   private aliasesCache: Map<string, any> = new Map();
+  /** "Sohbet anahtar kelimesi" ile etkinleşen komutlar. */
+  private anahtarKomutlar: any[] = [];
   private permits: Map<string, number> = new Map();
   private clipLast = 0;
   private initialized: boolean = false;
@@ -80,10 +84,12 @@ export class CommandManager {
   reload() {
     this.commandsCache.clear();
     this.aliasesCache.clear();
+    this.anahtarKomutlar = [];
     try {
       const rows = db.prepare('SELECT * FROM commands WHERE is_enabled = 1').all() as any[];
       for (const row of rows) {
         this.commandsCache.set(row.name.toLowerCase(), row);
+        if (String(row.trigger_type || 'command') === 'keyword') this.anahtarKomutlar.push(row);
         if (row.aliases) {
           try {
             const aliases: string[] = JSON.parse(row.aliases);
@@ -114,7 +120,8 @@ export class CommandManager {
     if (!text.startsWith(prefix)) {
       // Award active chatter points
       economy.getUser(message.platform, message.user.username, message.user.displayName);
-      return null;
+      // Önek yoksa yalnız "Sohbet anahtar kelimesi" komutları bakılır
+      return this.anahtarKelimeIsle(message, text);
     }
 
     const withoutPrefix = text.slice(prefix.length).trim();
@@ -137,7 +144,68 @@ export class CommandManager {
       return null;
     }
 
-    return this.executeCustomCommand(cmdRow, args, message);
+    return this.executeCustomCommand(cmdRow, args, message, true);
+  }
+
+  /**
+   * Anahtar kelime komutları: mesajın herhangi bir yerinde bütün kelime
+   * olarak geçince çalışır (BotRix "Etkinleştirme: Sohbet anahtar kelimesi").
+   *
+   * Döngü koruması: botun kendi mesajı ASLA tetiklemez — yanıt metninde
+   * anahtar kelime geçiyorsa bot kendine sonsuza dek cevap verirdi.
+   */
+  private async anahtarKelimeIsle(message: ChatMessagePayload, text: string): Promise<string | null> {
+    this.ensureLoaded();
+    if (!this.anahtarKomutlar.length) return null;
+    if (message.user.isSelf) return null;
+    try {
+      const { platformManager } = await import('../../platforms/manager.js');
+      if (platformManager.botKullaniciAdlari().has(String(message.user.username).toLowerCase())) return null;
+    } catch {
+      /* yönetici yüklenemediyse yalnız isSelf korur */
+    }
+    const k = anahtarKomutuSec(text, this.anahtarKomutlar);
+    if (!k) return null;
+    return this.executeCustomCommand(k, [], message, false);
+  }
+
+  /** `!title` / `!game`: göster veya (mod/yayıncı) değiştir. */
+  private async yayinBilgisi(tur: 'baslik' | 'kategori', yeni: string, message: ChatMessagePayload): Promise<string> {
+    const ayricalikli = message.user.isMod || message.user.isBroadcaster;
+    const durum = canliDurum.platform(message.platform);
+
+    if (!yeni || !ayricalikli) {
+      const deger = tur === 'baslik' ? durum?.baslik : durum?.kategori;
+      if (deger) return tur === 'baslik' ? `📺 Yayın başlığı: ${deger}` : `🎮 Kategori: ${deger}`;
+      return `@${message.user.displayName}, ${tur === 'baslik' ? 'başlık' : 'kategori'} şu an bilinmiyor (yayın kapalı olabilir).`;
+    }
+
+    const { platformManager } = await import('../../platforms/manager.js');
+    const p = platformManager.getPlatform(message.platform);
+    if (tur === 'baslik') {
+      if (!p?.baslikDegistir) return `@${message.user.displayName}, ${message.platform} başlık değiştirmeyi desteklemiyor.`;
+      const r = await p.baslikDegistir(yeni);
+      return r.ok ? `✅ Başlık güncellendi: ${yeni}` : `❌ Başlık değiştirilemedi: ${r.hata}`;
+    }
+    if (!p?.kategoriDegistir) return `@${message.user.displayName}, ${message.platform} kategori değiştirmeyi desteklemiyor.`;
+    const r = await p.kategoriDegistir(yeni);
+    return r.ok ? `✅ Kategori: ${r.kategori || yeni}` : `❌ Kategori değiştirilemedi: ${r.hata}`;
+  }
+
+  /** `!accountage`: hesabın açılış tarihi platform destekliyorsa. */
+  private async hesapYasi(hedefHam: string, message: ChatMessagePayload): Promise<string> {
+    const hedef = String(hedefHam || '').replace(/^@/, '');
+    const { platformManager } = await import('../../platforms/manager.js');
+    const p: any = platformManager.getPlatform(message.platform);
+    if (typeof p?.hesapOlusturma !== 'function') {
+      return `@${message.user.displayName}, ${message.platform} hesap açılış tarihini paylaşmıyor.`;
+    }
+    const t: number | null = await p.hesapOlusturma(hedef);
+    if (!t) return `@${message.user.displayName}, ${hedef} için hesap tarihi bulunamadı.`;
+    const gun = Math.floor((Date.now() - t) / 86400000);
+    const yil = Math.floor(gun / 365);
+    const metin = yil > 0 ? `${yil} yıl ${gun % 365} gün` : `${gun} gün`;
+    return `📅 ${hedef} hesabı ${metin} önce açılmış (${new Date(t).toLocaleDateString('tr-TR')}).`;
   }
 
   private async executeBuiltIn(name: string, args: string[], message: ChatMessagePayload): Promise<string | null> {
@@ -294,19 +362,24 @@ export class CommandManager {
         const n = extras.bumpCounter(args[0] || 'count', args[1] === 'reset' ? 0 : 1) as any;
         return `🔢 ${n.name}: ${n.count}`;
       }
-      case 'watchtime':
-      case 'izleme': {
-        const u = economy.getUser(message.platform, message.user.username, message.user.displayName);
-        return `@${message.user.displayName} izleme süresi: ${u.watch_time_minutes || 0} dakika.`;
-      }
+      // NOT: Burada eskiden `watchtime`/`izleme` ve `followage` için SAHTE
+      // vakalar vardı; aşağıdaki gerçek uygulamaları GÖLGELİYORDU (switch ilk
+      // eşleşeni çalıştırır). Kaldırıldı. Tekrar olmasın diye
+      // command-manager.test.ts yinelenen `case` etiketini yakalar.
+
+      // Yayın başlığı / kategorisi. Argümansız: gösterir. Mod/yayıncı
+      // argüman verirse komutun geldiği platformda değiştirir.
       case 'title':
-        return 'Yayın başlığı panelden güncellenir.';
+      case 'baslik':
+        return this.yayinBilgisi('baslik', args.join(' ').trim(), message);
       case 'game':
-        return 'Yayın kategorisi panelden güncellenir.';
-      case 'followage':
-        return `@${message.user.displayName}, takip süren yayın kaydından hesaplanır.`;
+      case 'category':
+      case 'kategori':
+        return this.yayinBilgisi('kategori', args.join(' ').trim(), message);
+
       case 'accountage':
-        return `@${message.user.displayName}, hesap yaşın platform API'sinden gelir.`;
+      case 'hesapyasi':
+        return this.hesapYasi(args[0] || message.user.username, message);
       case 'cark':
       case 'wheel': {
         const { wsHub } = await import('../../ws/server.js');
@@ -656,7 +729,9 @@ export class CommandManager {
       // ---- BotRix karsiligi olan yerlesik komutlar (GAP §2.1) -------------
       case 'uptime':
       case 'yayinsuresi':
-        return `⏱️ Yayin ${getStreamUptime()} once basladi.`;
+        // Yayın kapalıyken "X önce başladı" demek yanlış bilgiydi
+        if (yayinAcikMi() === false) return '📴 Yayın şu an kapalı.';
+        return `⏱️ Yayın ${getStreamUptime()} önce başladı.`;
 
       case 'watchtime':
       case 'izleme': {
@@ -703,8 +778,9 @@ export class CommandManager {
         return `📢 ${kanal} kanalina goz atin: ${kok}/${kanal}`;
       }
 
+      // `sayac` burada da vardı ama yukarıdaki `count`/`sayac` onu gölgeliyordu
       case 'editcounter':
-      case 'sayac': {
+      case 'sayacduzenle': {
         if (!message.user.isMod && !message.user.isBroadcaster) return null;
         const ad = (args[0] || '').trim();
         if (!ad) return `@${message.user.displayName}, kullanim: !editcounter <ad> <deger>`;
@@ -758,10 +834,38 @@ export class CommandManager {
     }
   }
 
-  private async executeCustomCommand(cmd: any, args: string[], message: ChatMessagePayload): Promise<string | null> {
+  /**
+   * @param acikCagri `!komut` ile mi çağrıldı? Anahtar kelimeyle
+   *   tetiklenince reddetmeler SESSİZ olur — sohbette bir kelime yazan
+   *   izleyiciye "yetkin yok" diye cevap verilmez.
+   */
+  private async executeCustomCommand(
+    cmd: any,
+    args: string[],
+    message: ChatMessagePayload,
+    acikCagri = true
+  ): Promise<string | null> {
     // 1) Yetki
     if (!this.hasPermission(cmd.user_level, message)) {
+      if (!acikCagri) return null;
       return `@${message.user.displayName}, bu komutu kullanma yetkiniz yok (${cmd.user_level}).`;
+    }
+
+    // 1b) Erişim kipi: her zaman / yalnız yayında / yalnız yayın kapalıyken
+    const kip = String(cmd.access_mode || 'always');
+    if (!erisimUygunMu(kip, canliDurum.genel().canli)) {
+      return acikCagri ? `@${message.user.displayName}, ${erisimAciklamasi(kip)}.` : null;
+    }
+
+    // 1c) Seviye şartı (Seviye / XP sistemi açıksa)
+    const minSeviye = Math.max(0, Number(cmd.min_level) || 0);
+    if (minSeviye > 0 && !message.user.isBroadcaster && seviyeler.ayarOku().aktif) {
+      const sv = seviyeler.kullanici(message.user.username).seviye;
+      if (sv < minSeviye) {
+        return acikCagri
+          ? `@${message.user.displayName}, bu komut için seviye ${minSeviye} gerekiyor (seninki ${sv}).`
+          : null;
+      }
     }
 
     const ayricalikli = message.user.isBroadcaster || message.user.isMod;
@@ -780,12 +884,17 @@ export class CommandManager {
     const now = Date.now();
     const cdKey = `${cmd.id}_${message.user.username}`;
     const globalKey = `${cmd.id}_global`;
-    const kip = String(cmd.cooldown_mode || 'global');
-    const genelSn = Number(cmd.cooldown) || 5;
+    const beklemeKipi = String(cmd.cooldown_mode || 'global');
+    // Eskiden `Number(cmd.cooldown) || 5` idi: kayıtlı 0 bile 5 sn'ye
+    // dönüyordu, "beklemesiz komut" yazılamıyordu. Artık 0 = beklemesiz.
+    // Anahtar kelime tetiklemesinde sel olmasın diye en az 3 sn uygulanır.
+    const hamBekleme = Number(cmd.cooldown);
+    const tabanSn = Number.isFinite(hamBekleme) && hamBekleme >= 0 ? hamBekleme : 5;
+    const genelSn = acikCagri ? tabanSn : Math.max(3, tabanSn);
     const kisiSn = Number(cmd.user_cooldown) || genelSn;
 
     if (!ayricalikli) {
-      if (kip === 'user') {
+      if (beklemeKipi === 'user') {
         const mevcut = this.userCooldowns.get(cdKey);
         if (mevcut && mevcut.expiresAt > now) return null;
       } else {
@@ -796,7 +905,9 @@ export class CommandManager {
 
     // 4) Puan maliyeti — bekleme yazilmadan ONCE tahsil edilir ki yetersiz
     //    bakiyede komut bekleme suresini tuketmesin.
-    const maliyet = Math.max(0, Number(cmd.cost_points) || 0);
+    // Anahtar kelimeyle tetiklenince puan ALINMAZ: izleyici yalnız bir kelime
+    // yazdı diye ücretlendirilmemeli. `!komut` biçimi normal ücretlenir.
+    const maliyet = acikCagri ? Math.max(0, Number(cmd.cost_points) || 0) : 0;
     if (maliyet > 0 && !message.user.isBroadcaster) {
       const bakiye = economy.getUserPoints(message.user.username);
       if (bakiye < maliyet) {

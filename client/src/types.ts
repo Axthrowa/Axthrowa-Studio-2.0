@@ -25,6 +25,15 @@ export interface CustomCommand {
   is_enabled: number;
   use_count: number;
   description?: string;
+  /** BotRix komut formu alanları (sunucu: command-input.ts) */
+  cooldown_mode?: 'global' | 'user';
+  user_cooldown?: number;
+  cost_points?: number;
+  min_level?: number;
+  /** Virgüllü; boş = tüm platformlar */
+  platforms?: string;
+  trigger_type?: 'command' | 'keyword';
+  access_mode?: 'always' | 'online' | 'offline';
 }
 
 export interface TimerConfig {

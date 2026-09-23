@@ -75,6 +75,8 @@ import ActivityFeedWidget from './widgets/ActivityFeedWidget.js';
 import GiveawayWidget from './widgets/GiveawayWidget.js';
 import RankingsWidget from './widgets/RankingsWidget.js';
 import BotAdvanced from './pages/BotAdvanced.js';
+import Interaction from './pages/Interaction.js';
+import Integrations from './pages/Integrations.js';
 import { ToastSaglayici } from './ui/index.js';
 import { BRAND } from './brand.js';
 import { openLink } from './lib/openLink.js';
@@ -130,12 +132,14 @@ export function App() {
     { id: 'rankings', label: 'Rankings', icon: Trophy },
     { id: 'alerts', label: 'Alert Box', icon: Bell, highlight: true },
     { id: 'polls', label: 'Polls', icon: BarChart3 },
+    { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk' },
     { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music },
     { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins },
     { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun' },
     { id: 'giveaways', label: 'Çekilişler', icon: Gift },
     { id: 'overlays', label: 'OBS Overlay Stüdyo', icon: Layers },
     { id: 'ai', label: 'Gemini AI Asistan', icon: Sparkles },
+    { id: 'integrations', label: 'Entegrasyonlar', icon: Link2, badge: 'Discord' },
     { id: 'settings', label: 'Ayarlar', icon: SettingsIcon },
   ];
 
@@ -159,6 +163,8 @@ export function App() {
       case 'timers': return <Timers />;
       case 'automod': return <AutoMod />;
       case 'botadvanced': return <BotAdvanced />;
+      case 'interaction': return <Interaction />;
+      case 'integrations': return <Integrations />;
       case 'extras': return <Extras />;
       case 'rankings': return <Rankings />;
       case 'alerts': return <AlertsStudio />;

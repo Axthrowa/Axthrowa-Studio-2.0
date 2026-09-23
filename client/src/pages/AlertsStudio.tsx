@@ -5,6 +5,9 @@
 import { useEffect, useState } from 'react';
 import { Bell, Check, Play, Save, Settings2 } from 'lucide-react';
 import { ALERT_ADVANCED_DEFAULTS, ANIMATIONS, FONTS } from '../lib/widget-defaults.js';
+import AlertVariants from '../components/AlertVariants.js';
+import { MediaLibrary, type MedyaOgesi } from '../components/MediaLibrary.js';
+import { yetenekleriGetir, olayEtiketi, type YetenekHaritasi } from '../lib/capabilities.js';
 
 const TABS = [
   { id: 'advanced', label: 'Advanced Settings' },
@@ -14,8 +17,14 @@ const TABS = [
   { id: 'host', label: 'Host' },
   { id: 'tip', label: 'Tip / Donate' },
   { id: 'kicks', label: 'Kicks' },
-  { id: 'raid', label: 'Raid' }
+  { id: 'raid', label: 'Raid' },
+  // Bu turda eklendi: aynı olayın birden çok görünümü + yerel dosya kütüphanesi
+  { id: 'variants', label: 'Varyantlar' },
+  { id: 'media', label: 'Medya Kütüphanesi' }
 ];
+
+/** Ayar sekmesi olmayan (olay preseti taşımayan) sekmeler. */
+const OLAY_DISI = new Set(['advanced', 'variants', 'media']);
 
 const EVENT_DEFAULTS: Record<string, any> = {
   follow: { event_type: 'follow', title_template: 'YENİ TAKİPÇİ!', message_template: '{user} aileye katıldı!', accent_color: '#8b5cf6', duration_ms: 5000 },
@@ -32,6 +41,11 @@ export function AlertsStudio() {
   const [presets, setPresets] = useState<any[]>([]);
   const [advanced, setAdvanced] = useState(ALERT_ADVANCED_DEFAULTS);
   const [saved, setSaved] = useState('');
+  const [kutuphane, setKutuphane] = useState<'image' | 'audio' | null>(null);
+  // Hangi olayı hangi platform üretebilir? Ayar gizlenmez, ETİKETLENİR —
+  // sessizce çalışmayan bir ayar, sebebini söylemekten kötüdür.
+  const [yetenek, setYetenek] = useState<YetenekHaritasi>({});
+  useEffect(() => { yetenekleriGetir().then(setYetenek); }, []);
 
   const load = () => {
     fetch('/api/alerts').then(r => r.json()).then(setPresets).catch(() => {});
@@ -43,7 +57,7 @@ export function AlertsStudio() {
 
   useEffect(() => { load(); }, []);
 
-  const current = presets.find(p => p.event_type === tab) || { ...EVENT_DEFAULTS[tab], sound_url: '', image_url: '', font_family: 'Plus Jakarta Sans', text_color: '#ffffff', animation: 'bounce', sound_volume: 0.7, is_enabled: 1, layout_mode: 'stacked', text_effect: 'shine' };
+  const current = presets.find(p => p.event_type === tab) || { ...(EVENT_DEFAULTS[tab] || {}), sound_url: '', image_url: '', font_family: 'Plus Jakarta Sans', text_color: '#ffffff', animation: 'bounce', sound_volume: 0.7, is_enabled: 1, layout_mode: 'stacked', text_effect: 'shine' };
 
   const updatePreset = (patch: Record<string, any>) => {
     setPresets(prev => {
@@ -99,7 +113,7 @@ export function AlertsStudio() {
     await fetch('/api/alerts/test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventType: tab === 'advanced' ? 'follow' : tab })
+      body: JSON.stringify({ eventType: OLAY_DISI.has(tab) ? 'follow' : tab })
     });
   };
 
@@ -123,7 +137,11 @@ export function AlertsStudio() {
         ))}
       </div>
 
-      {tab === 'advanced' ? (
+      {tab === 'variants' ? (
+        <AlertVariants />
+      ) : tab === 'media' ? (
+        <MediaLibrary />
+      ) : tab === 'advanced' ? (
         <div className="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-xs text-gray-300 font-bold">Kuyruk <input className="ml-2" type="checkbox" checked={advanced.queueEnabled} onChange={e => setAdvanced(a => ({ ...a, queueEnabled: e.target.checked }))} /></label>
           <label className="text-xs text-gray-300 font-bold">Alert atla <input className="ml-2" type="checkbox" checked={advanced.skipEnabled} onChange={e => setAdvanced(a => ({ ...a, skipEnabled: e.target.checked }))} /></label>
@@ -160,6 +178,27 @@ export function AlertsStudio() {
           <label className="md:col-span-2 text-xs text-gray-300 font-bold space-y-1">Mesaj şablonu<textarea value={current.message_template || ''} onChange={e => updatePreset({ message_template: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 min-h-[70px]" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Görsel / GIF URL<input value={current.image_url || ''} onChange={e => updatePreset({ image_url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Ses URL<input value={current.sound_url || ''} onChange={e => updatePreset({ sound_url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          {/* Harici URL kırılgandı: site dosyayı silince uyarı sessizce bozuluyordu */}
+          <div className="md:col-span-2 flex flex-wrap gap-2">
+            <button onClick={() => setKutuphane(kutuphane === 'image' ? null : 'image')} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-gray-200">
+              {kutuphane === 'image' ? 'Kütüphaneyi kapat' : 'Görseli kütüphaneden seç'}
+            </button>
+            <button onClick={() => setKutuphane(kutuphane === 'audio' ? null : 'audio')} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-gray-200">
+              {kutuphane === 'audio' ? 'Kütüphaneyi kapat' : 'Sesi kütüphaneden seç'}
+            </button>
+          </div>
+          {kutuphane && (
+            <div className="md:col-span-2 pt-2 border-t border-white/10">
+              <MediaLibrary
+                onSec={(o: MedyaOgesi) => {
+                  updatePreset(kutuphane === 'image' ? { image_url: o.url } : { sound_url: o.url });
+                  setKutuphane(null);
+                  setSaved(`${o.ad} seçildi — kaydetmeyi unutmayın`);
+                  setTimeout(() => setSaved(''), 2500);
+                }}
+              />
+            </div>
+          )}
           <label className="text-xs text-gray-300 font-bold space-y-1">Süre (ms)<input type="number" value={current.duration_ms || 5000} onChange={e => updatePreset({ duration_ms: Number(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Ses ({current.sound_volume ?? 0.7})<input type="range" min={0} max={1} step={0.05} value={current.sound_volume ?? 0.7} onChange={e => updatePreset({ sound_volume: Number(e.target.value) })} className="w-full" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Yazı rengi<input type="color" value={current.text_color || '#ffffff'} onChange={e => updatePreset({ text_color: e.target.value })} className="w-full h-9 bg-black/40 rounded-xl" /></label>
@@ -184,6 +223,11 @@ export function AlertsStudio() {
               <option value="none">Yok</option><option value="shine">Shine</option><option value="wiggle">Wiggle</option><option value="wave">Wave</option><option value="pulse">Pulse</option>
             </select>
           </label>
+          {olayEtiketi(yetenek, tab) && (
+            <p className="md:col-span-2 text-[11px] text-amber-300/90">
+              Bu olayı üreten kaynaklar: {olayEtiketi(yetenek, tab)}
+            </p>
+          )}
           <p className="md:col-span-2 text-[11px] text-gray-500">Değişkenler: {'{user} {amount} {currency} {message} {months} {tier} {count} {viewers}'}</p>
           <button onClick={saveEvent} className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 w-fit">
             <Save className="w-4 h-4" /> Bu sekmeyi kaydet

@@ -33,6 +33,7 @@ import { seviyeler } from '../modules/levels/levels.js';
 import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../modules/media/media.js';
 import { varyantlar } from '../modules/alerts/variants.js';
+import { uyariYedegi } from '../modules/alerts/backup.js';
 import { tahminler } from '../modules/engagement/predictions.js';
 import { kuyruk } from '../modules/engagement/queue.js';
 import { puanDususu } from '../modules/engagement/point-drops.js';
@@ -734,6 +735,19 @@ router.post('/alerts/variants/:eventType', (req: Request, res: Response) => {
 
 router.delete('/alerts/variants/:id', (req: Request, res: Response) => {
   res.json({ ok: varyantlar.sil(String(req.params.id || '')) });
+});
+
+// 8.85 Uyari yedegi — makine degistirince emek kaybolmasin.
+// Icinde token/sifre YOK; paylasilabilir bir dosyadir.
+router.get('/alerts/backup', (_req: Request, res: Response) => {
+  const yedek = uyariYedegi.disaAktar();
+  res.setHeader('Content-Disposition', 'attachment; filename="streamaxt-uyarilar.json"');
+  res.json(yedek);
+});
+
+router.post('/alerts/backup/import', (req: Request, res: Response) => {
+  const sonuc = uyariYedegi.iceAktar(req.body?.veri, Boolean(req.body?.uzerineYaz));
+  res.status(sonuc.ok ? 200 : 400).json(sonuc);
 });
 
 // 8.9 Medya kutuphanesi — uyari gorseli ve sesi artik yerel dosyadan

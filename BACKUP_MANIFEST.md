@@ -215,13 +215,14 @@ arasındadır.)
 
 | Yedek | Konum | Doğrulama |
 |---|---|---|
-| **StreamAxT git paketi** (tüm geçmiş, 4 ref) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\streamaxt-tur2-20260923-182053.bundle` (687 KB) | `git bundle verify` → *is okay*; `revamp/botrix-parity-20260921` = `5b48133` |
+| **StreamAxT git paketi — SON** (tüm geçmiş) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\streamaxt-tur2-final-20260923-182538.bundle` (690 KB) | `git bundle verify` → *is okay*; `revamp/botrix-parity-20260921` = `70610fd` (Trovo düzeltmeleri dahil) |
+| StreamAxT git paketi — ara | `…\streamaxt-tur2-20260923-182053.bundle` (687 KB) | `5b48133`; son paket bunu kapsar |
 | **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` ayarları ve veritabanı) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\yedek-20260923-181946-streamaxt-P2-P3-tur2-trovo-etkilesim-entegrasyon.zip` (10,8 MB) | `scripts\yedek-al.ps1` |
 
 Git paketinden geri yükleme:
 
 ```bash
-git clone streamaxt-tur2-20260923-182053.bundle StreamAxT-geri -b revamp/botrix-parity-20260921
+git clone streamaxt-tur2-final-20260923-182538.bundle StreamAxT-geri -b revamp/botrix-parity-20260921
 ```
 
 İkinci turun veritabanı değişiklikleri **eklemeli**dir: beş yeni tablo

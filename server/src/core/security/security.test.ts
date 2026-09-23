@@ -243,3 +243,35 @@ describe('baglanmaAdresi', () => {
     expect(baglanmaUyarisi('192.168.1.5')).toContain('UYARI');
   });
 });
+
+describe('webhook adresleri sır sayılır', () => {
+  it('Discord webhook adresi maskelenir', () => {
+    // Adresi bilen herkes o kanala mesaj atabilir: taşıyıcı kimlik bilgisi.
+    expect(gizliMi('webhook')).toBe(true);
+    expect(gizliMi('webhookUrl')).toBe(true);
+    expect(gizliMi('webhook_url')).toBe(true);
+  });
+
+  it('temizle() iç içe webhook alanını da maskeler', () => {
+    const c: any = temizle({ kick: { aktif: true, webhook: 'https://discord.com/api/webhooks/1/GIZLI_TOKEN' } });
+    expect(c.kick.webhook).not.toContain('GIZLI_TOKEN');
+    expect(c.kick.webhook).toBe('••••OKEN');
+    expect(c.kick.webhookVar).toBe(true);
+    expect(c.kick.aktif).toBe(true);
+  });
+
+  it('boş webhook "ayarlı" görünmez', () => {
+    const c: any = temizle({ kick: { webhook: '' } });
+    expect(c.kick.webhook).toBe('');
+    expect(c.kick.webhookVar).toBe(false);
+  });
+
+  it('maskeli adres geri gönderilince mevcut değer korunur', () => {
+    const mevcut = 'https://discord.com/api/webhooks/1/GIZLI_TOKEN';
+    expect(yeniSirDegeri('••••OKEN', mevcut)).toBe(mevcut);
+    expect(yeniSirDegeri('', mevcut)).toBe(mevcut);
+    expect(yeniSirDegeri('https://discord.com/api/webhooks/2/YENI', mevcut)).toBe(
+      'https://discord.com/api/webhooks/2/YENI'
+    );
+  });
+});

@@ -25,7 +25,10 @@ const GIZLI_PARCA = [
   'access_token',
   'client_secret',
   'credential',
-  'private_key'
+  'private_key',
+  // Discord webhook ADRESİ bir taşıyıcı kimlik bilgisidir: adresi bilen
+  // herkes o kanala mesaj atabilir. Denetimde düz metin döndüğü görüldü.
+  'webhook'
 ];
 
 /** Sır GİBİ görünse de gizlenmemesi gereken alanlar. */

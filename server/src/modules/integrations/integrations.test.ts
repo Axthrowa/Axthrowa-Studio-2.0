@@ -3,8 +3,8 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { webhookGecerliMi, etiketOneki } from './discord-announce.js';
-import { seviyeCevir, sablonCevir } from './nightbot-import.js';
+import { webhookGecerliMi, etiketOneki } from './discord-rules.js';
+import { seviyeCevir, sablonCevir } from './nightbot-map.js';
 
 describe('webhookGecerliMi', () => {
   it('gerçek Discord webhook adresini kabul eder', () => {

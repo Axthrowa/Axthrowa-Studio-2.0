@@ -1,6 +1,7 @@
 import Pusher from 'pusher-js';
 import axios from 'axios';
 import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
+import { kickZamani, type YayinBilgisi } from '../core/live-status-math.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { settingsCache } from '../core/settings-cache.js';
@@ -36,6 +37,12 @@ export class KickPlatform extends BasePlatform {
    * gönderdiği metinler elenir, yayıncının elle yazdığı mesajlar durur.
    */
   private recentlySent: Map<string, number> = new Map();
+  /**
+   * Sohbetten öğrenilen kullanıcı adı → Kick kullanıcı kimliği.
+   * Zaman aşımı için kimlik gerekir; her seferinde kanal sayfasını
+   * sorgulamak yerine sohbette zaten gelen `sender.id` kullanılır.
+   */
+  private kullaniciKimlikleri: Map<string, number> = new Map();
 
   /** Yankı elemesi: bu metin son 20 saniyede bot tarafından mı gönderildi? */
   private wasJustSentByBot(text: string): boolean {
@@ -260,6 +267,14 @@ export class KickPlatform extends BasePlatform {
       // Botun kendi gönderdiği mesaj Kick'ten geri geliyor; akışta ikinci kez
       // görünmesin (komut döngüsü de başlatmasın).
       if (isSelf && this.wasJustSentByBot(content)) return;
+
+      if (sender.id && senderName) {
+        this.kullaniciKimlikleri.set(senderName.toLowerCase(), Number(sender.id));
+        if (this.kullaniciKimlikleri.size > 5000) {
+          const ilk = this.kullaniciKimlikleri.keys().next().value;
+          if (ilk) this.kullaniciKimlikleri.delete(ilk);
+        }
+      }
 
       eventBus.emitChat({
         id: msgId,
@@ -575,12 +590,15 @@ export class KickPlatform extends BasePlatform {
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
 
     try {
-      // Hedef kullanicinin kimligini cozumle
-      const kanal = await axios.get(`https://kick.com/api/v2/channels/${ad.toLowerCase()}`, {
-        headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
-        timeout: 8000
-      });
-      const hedefId = kanal.data?.user_id || kanal.data?.user?.id;
+      // Hedef kullanicinin kimligi: once sohbetten ogrenilen, yoksa kanal sayfasi
+      let hedefId: number | undefined = this.kullaniciKimlikleri.get(ad.toLowerCase());
+      if (!hedefId) {
+        const kanal = await axios.get(`https://kick.com/api/v2/channels/${ad.toLowerCase()}`, {
+          headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+          timeout: 8000
+        });
+        hedefId = kanal.data?.user_id || kanal.data?.user?.id;
+      }
       if (!hedefId) return { ok: false, hata: `${ad} kullanicisi bulunamadi` };
 
       await axios.post(
@@ -603,11 +621,125 @@ export class KickPlatform extends BasePlatform {
       const durum = e?.response?.status;
       const mesaj =
         durum === 401 || durum === 403
-          ? 'Kick tokeni moderasyon yetkisine sahip degil'
+          ? 'Kick tokeninde "moderation:ban" izni yok — Platformlar > Kick > yeniden baglan (yeni izinlerle)'
           : String(e?.response?.data?.message || e?.message || e);
       console.warn(`[Kick] timeout basarisiz (${ad}):`, mesaj);
       return { ok: false, hata: mesaj };
     }
+  }
+
+  /** Resmi API: `DELETE /public/v1/chat/{message_id}` — izin `moderation:chat_message:manage`. */
+  async deleteMessage(messageId: string): Promise<ModerasyonSonucu> {
+    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
+    if (!messageId) return { ok: false, hata: 'Mesaj kimligi yok' };
+    try {
+      await axios.delete(`https://api.kick.com/public/v1/chat/${encodeURIComponent(messageId)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 8000
+      });
+      return { ok: true };
+    } catch (e: any) {
+      const durum = e?.response?.status;
+      const hata =
+        durum === 401 || durum === 403
+          ? 'Kick tokeninde "moderation:chat_message:manage" izni yok — Platformlar > Kick > yeniden baglan'
+          : durum === 404
+            ? 'Mesaj bulunamadi (zaten silinmis olabilir)'
+            : String(e?.response?.data?.message || e?.message || e);
+      console.warn('[Kick] mesaj silme basarisiz:', hata);
+      return { ok: false, hata };
+    }
+  }
+
+  /**
+   * Yayin durumu. Baglanirken zaten kullanilan kanal sayfasi (v2) okunur:
+   * `livestream` yayin kapaliyken `null`, aciksa `is_live`, `start_time`
+   * (UTC, saat dilimsiz), `viewer_count`, `session_title`, `categories`.
+   * Gozlem: 2026-09-23. Resmi `/public/v1/channels` yaniti YAYIN ANAHTARINI
+   * da (stream key) donduruyor; o yuzden bilerek KULLANILMIYOR.
+   */
+  async yayinDurumu(): Promise<YayinBilgisi | null> {
+    if (!this.connected || !this.currentChannel) return null;
+    try {
+      const res = await axios.get(`https://kick.com/api/v2/channels/${this.currentChannel}`, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json'
+        },
+        timeout: 8000
+      });
+      const ls = res.data?.livestream;
+      if (!ls || ls.is_live === false) return { canli: false, kanal: this.currentChannel };
+      return {
+        canli: true,
+        baslangic: kickZamani(ls.start_time || ls.created_at),
+        izleyici: Number(ls.viewer_count) || 0,
+        baslik: String(ls.session_title || ''),
+        kategori: String(ls.categories?.[0]?.name || ''),
+        yayinId: String(ls.id || ''),
+        kanal: this.currentChannel
+      };
+    } catch {
+      return null; // ag hatasi: durumu degistirme
+    }
+  }
+
+  /** Resmi API: `PATCH /public/v1/channels` — izin `channel:write`. */
+  private async kanalGuncelle(govde: Record<string, unknown>): Promise<ModerasyonSonucu> {
+    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
+    try {
+      await axios.patch('https://api.kick.com/public/v1/channels', govde, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        timeout: 10000
+      });
+      return { ok: true };
+    } catch (e: any) {
+      const durum = e?.response?.status;
+      return {
+        ok: false,
+        hata:
+          durum === 401 || durum === 403
+            ? 'Kick tokeninde "channel:write" izni yok ya da token yayinciya ait degil — Platformlar > Kick > yeniden baglan'
+            : String(e?.response?.data?.message || e?.message || e)
+      };
+    }
+  }
+
+  async baslikDegistir(baslik: string): Promise<ModerasyonSonucu> {
+    const b = String(baslik || '').trim();
+    if (!b) return { ok: false, hata: 'Baslik bos olamaz' };
+    return this.kanalGuncelle({ stream_title: b.slice(0, 140) });
+  }
+
+  /** Kategori adiyla arar (`GET /public/v2/categories?name=`), bulunanla gunceller. */
+  async kategoriDegistir(kategori: string): Promise<ModerasyonSonucu & { kategori?: string }> {
+    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
+    const ad = String(kategori || '').trim();
+    if (!ad) return { ok: false, hata: 'Kategori adi bos' };
+    try {
+      const r = await axios.get('https://api.kick.com/public/v2/categories', {
+        params: { name: ad, limit: 10 },
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 8000
+      });
+      const liste: any[] = Array.isArray(r.data?.data) ? r.data.data : [];
+      if (!liste.length) return { ok: false, hata: `"${ad}" adli Kick kategorisi bulunamadi` };
+      const tam = liste.find((k) => String(k.name).toLowerCase() === ad.toLowerCase());
+      const k = tam || liste[0];
+      const g = await this.kanalGuncelle({ category_id: Number(k.id) });
+      return g.ok ? { ok: true, kategori: String(k.name) } : g;
+    } catch (e: any) {
+      return { ok: false, hata: String(e?.response?.data?.message || e?.message || e) };
+    }
+  }
+
+  /** Botun Kick kullanici adi — anahtar kelime komutu kendini tetiklemesin. */
+  botKullaniciAdi(): string {
+    return (this.botUsername || '').toLowerCase();
   }
 
   async sendMessage(channel: string, message: string): Promise<boolean> {

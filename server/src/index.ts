@@ -22,6 +22,9 @@ import { economy } from './modules/economy/economy.js';
 import { subathon } from './modules/subathon/subathon.js';
 import { seviyeler } from './modules/levels/levels.js';
 import { sohbetUyarilari } from './modules/chat-alerts/chat-alerts.js';
+import { discordDuyuru } from './modules/integrations/discord-announce.js';
+import { canliYoklayici } from './modules/stream/live-poller.js';
+import { yayinDegistiriciAyarla } from './core/variables/registry.js';
 import { puanDususu } from './modules/engagement/point-drops.js';
 import { eventBus } from './core/event-bus.js';
 import { yerelKokenMi, istekKabulEdilir, baglanmaAdresi, baglanmaUyarisi } from './core/security/local-guard.js';
@@ -69,6 +72,26 @@ app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
     error: `API uç noktası bulunamadı: ${req.method} ${req.originalUrl}. Lütfen StreamAxT'yi yeniden başlatın.`
+  });
+});
+
+// Hata işleyicisi. Express'in varsayılanı HTML yığın izi döndürüyordu:
+// panel JSON bekleyip çöküyor, yanıt da diskteki dosya yollarını
+// (C:\Users\...\routes.js) açık ediyordu. Artık JSON, yığın izi yalnız
+// sunucu günlüğünde.
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (res.headersSent) return next(err);
+  // Bozuk JSON gövdesi (body-parser) kullanıcı hatasıdır
+  if (err?.type === 'entity.parse.failed') {
+    return res.status(400).json({ success: false, error: 'İstek gövdesi geçerli JSON değil.' });
+  }
+  if (err?.type === 'entity.too.large') {
+    return res.status(413).json({ success: false, error: 'İstek çok büyük.' });
+  }
+  console.error(`[API] ${req.method} ${req.originalUrl} hata:`, err?.stack || err);
+  res.status(Number(err?.status) || 500).json({
+    success: false,
+    error: 'Sunucu hatası — ayrıntı StreamAxT günlüğünde.'
   });
 });
 
@@ -153,6 +176,26 @@ server.listen(PORT, HOST, async () => {
   // Sohbet tarafi olay mesajlari (BotRix'te 'Metin uyarilari'). Gorsel
   // overlay'den bagimsiz: olay olunca sohbete metin yazar.
   sohbetUyarilari.baglaOlaylar();
+
+  // Yayin acilinca Discord duyurusu. Onceden bu dinleyici HIC baglanmamisti.
+  discordDuyuru.baglaOlaylar();
+
+  // Yayin durumu: Kick/Twitch/YouTube dakikada bir yoklanir; TikTok/Trovo
+  // kendi olaylariyla bildirir. !uptime, erisim kipli komutlar ve Discord
+  // duyurusu buradan beslenir. Panel `stream_status` ile canli gosterir.
+  eventBus.on('stream_status', (ozet: any) => wsHub.broadcastTo(['all'], { type: 'stream_status', data: ozet }));
+  canliYoklayici.baslat();
+
+  // $(settitle) / $(setcategory): değişken motoru adaptörleri bilmez, burada bağlanır
+  yayinDegistiriciAyarla(async (tur, deger, platform) => {
+    const p = platformManager.getPlatform(platform);
+    if (tur === 'baslik') {
+      if (!p?.baslikDegistir) return { ok: false, hata: `${platform} başlık değiştirmeyi desteklemiyor` };
+      return p.baslikDegistir(deger);
+    }
+    if (!p?.kategoriDegistir) return { ok: false, hata: `${platform} kategori değiştirmeyi desteklemiyor` };
+    return p.kategoriDegistir(deger);
+  });
 
   // Puan dususu bitince sonucu sohbete duyur.
   puanDususu.bitisiDinle(({ katilan, kisiBasi }) => {

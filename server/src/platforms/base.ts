@@ -1,3 +1,5 @@
+import type { YayinBilgisi } from '../core/live-status-math.js';
+
 export interface PlatformStatus {
   connected: boolean;
   channel?: string;
@@ -28,4 +30,17 @@ export abstract class BasePlatform {
 
   /** Tek bir sohbet mesajini siler. */
   deleteMessage?(messageId: string): Promise<ModerasyonSonucu>;
+
+  /**
+   * Yayin acik mi? Yoklama servisi (live-poller) bunu dakikada bir cagirir.
+   * `null` = bu turda bilinemedi (ag hatasi vb.) — durum degistirilmez.
+   * Olayla bildiren platformlar (TikTok, Trovo) bunu tanimlamaz.
+   */
+  yayinDurumu?(): Promise<YayinBilgisi | null>;
+
+  /** Yayin basligini degistirir (`!title`, `$(settitle)`). */
+  baslikDegistir?(baslik: string): Promise<ModerasyonSonucu>;
+
+  /** Yayin kategorisini degistirir (`!game`, `$(setcategory)`). */
+  kategoriDegistir?(kategori: string): Promise<ModerasyonSonucu & { kategori?: string }>;
 }

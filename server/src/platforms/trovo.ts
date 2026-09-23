@@ -25,10 +25,11 @@
  */
 import crypto from 'node:crypto';
 import WebSocket from 'ws';
-import { BasePlatform, PlatformStatus } from './base.js';
+import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { settingsCache } from '../core/settings-cache.js';
+import { canliDurum } from '../core/live-status.js';
 import {
   kalpAtisiAraligi,
   rolleriCoz,
@@ -61,6 +62,11 @@ export class TrovoPlatform extends BasePlatform {
    * kanal adını değiştirirse bayat kimlikle ESKİ kanala bağlanırdık.
    */
   private kimlikler = new Map<string, string>();
+  /**
+   * Mesaj kimliği → gönderenin uid'si. Trovo mesaj silme ucu gönderenin
+   * uid'sini de istiyor (`/channels/{c}/messages/{m}/users/{u}`).
+   */
+  private mesajSahipleri = new Map<string, string>();
 
   // ------------------------------------------------------------- yardımcı --
 
@@ -302,6 +308,13 @@ export class TrovoPlatform extends BasePlatform {
 
     switch (olay.tur) {
       case 'chat':
+        if (c.message_id && (c.uid ?? c.sender_id) !== undefined) {
+          this.mesajSahipleri.set(String(c.message_id), String(c.uid ?? c.sender_id));
+          if (this.mesajSahipleri.size > 2000) {
+            const ilk = this.mesajSahipleri.keys().next().value;
+            if (ilk) this.mesajSahipleri.delete(ilk);
+          }
+        }
         eventBus.emitChat({
           id: String(c.message_id || `${zaman}-${kullanici}`),
           platform: 'trovo',
@@ -387,12 +400,19 @@ export class TrovoPlatform extends BasePlatform {
         });
         break;
 
+      // Olay doğrudan yayılmaz: canlı durum servisi geçişi yönetir, Discord
+      // duyurusu ve erişim kipli komutlar oradan beslenir.
       case 'stream_online':
-        eventBus.emit('stream_online', { platform: 'trovo', channel: kanal, timestamp: zaman });
+        canliDurum.bildir('trovo', {
+          canli: true,
+          baslangic: zaman,
+          yayinId: `${this.channelId}:${Math.floor(zaman / 60_000)}`,
+          kanal
+        });
         break;
 
       case 'stream_offline':
-        eventBus.emit('stream_offline', { platform: 'trovo', channel: kanal, timestamp: zaman });
+        canliDurum.bildir('trovo', { canli: false, kanal });
         break;
     }
   }
@@ -411,6 +431,64 @@ export class TrovoPlatform extends BasePlatform {
     }
     this.ws = null;
     this.connected = false;
+    canliDurum.unut('trovo');
+  }
+
+  // ------------------------------------------------------- moderasyon ------
+
+  /** Resmi uç: `POST /openplatform/channels/command` (kapsam manage_messages). */
+  private async komutCalistir(komut: string): Promise<ModerasyonSonucu> {
+    if (!this.erisimJetonu()) return { ok: false, hata: 'Trovo moderasyonu için OAuth jetonu gerekir (manage_messages)' };
+    if (!this.channelId) return { ok: false, hata: 'Trovo kanalı bağlı değil' };
+    try {
+      const r = await fetch(`${API}/channels/command`, {
+        method: 'POST',
+        headers: this.baslik(true),
+        body: JSON.stringify({ command: komut, channel_id: Number(this.channelId) }),
+        signal: AbortSignal.timeout(10_000)
+      });
+      const g: any = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, hata: `Trovo ${r.status}: ${String(g?.message || g?.error || '').slice(0, 120)}` };
+      // Belge: 200 dönse de `is_success:false` olabilir, sebep `display_msg`
+      if (g?.is_success === false) return { ok: false, hata: `Trovo: ${String(g?.display_msg || 'komut reddedildi')}` };
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, hata: String(e?.message || e).slice(0, 120) };
+    }
+  }
+
+  /**
+   * Mesaj silme: `DELETE /channels/{channelID}/messages/{messageID}/users/{uID}`
+   * (kapsam manage_messages). uid, sohbetten öğrenilmiş olmalı.
+   */
+  async deleteMessage(messageId: string): Promise<ModerasyonSonucu> {
+    if (!this.erisimJetonu()) return { ok: false, hata: 'Trovo moderasyonu için OAuth jetonu gerekir (manage_messages)' };
+    const uid = this.mesajSahipleri.get(String(messageId));
+    if (!uid) return { ok: false, hata: 'Mesajın göndereni bilinmiyor (bu oturumda görülmedi)' };
+    try {
+      const r = await fetch(
+        `${API}/channels/${encodeURIComponent(this.channelId)}/messages/${encodeURIComponent(messageId)}/users/${encodeURIComponent(uid)}`,
+        { method: 'DELETE', headers: this.baslik(true), signal: AbortSignal.timeout(10_000) }
+      );
+      if (!r.ok) {
+        const g: any = await r.json().catch(() => ({}));
+        return { ok: false, hata: `Trovo ${r.status}: ${String(g?.message || g?.error || '').slice(0, 120)}` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, hata: String(e?.message || e).slice(0, 120) };
+    }
+  }
+
+  /**
+   * Başlık: resmi belgedeki örnek komut `settitle xxx`.
+   * Trovo zaman aşımı komutunun sözdizimi belgede YOK — uydurmamak için
+   * `timeoutUser` bilerek tanımlanmadı (yetenek tablosunda false).
+   */
+  async baslikDegistir(baslik: string): Promise<ModerasyonSonucu> {
+    const b = String(baslik || '').replace(/[\r\n]+/g, ' ').trim();
+    if (!b) return { ok: false, hata: 'Başlık boş olamaz' };
+    return this.komutCalistir(`settitle ${b.slice(0, 140)}`);
   }
 
   async sendMessage(_channel: string, message: string): Promise<boolean> {

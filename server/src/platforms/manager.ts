@@ -29,6 +29,27 @@ export class PlatformManager {
     return this.platforms.get(name);
   }
 
+  /** Tüm kayıtlı adaptörler (yoklayıcı ve yetenek sorguları için). */
+  tumu(): BasePlatform[] {
+    return [...this.platforms.values()];
+  }
+
+  /**
+   * Bağlı platformlardaki BOT hesaplarının adları (küçük harf).
+   * Anahtar kelime komutunun kendi yanıtıyla yeniden tetiklenmemesi için.
+   */
+  botKullaniciAdlari(): Set<string> {
+    const k = new Set<string>();
+    for (const p of this.platforms.values()) {
+      const fn = (p as any).botKullaniciAdi;
+      if (typeof fn === 'function' && p.isConnected()) {
+        const ad = String(fn.call(p) || '').toLowerCase();
+        if (ad) k.add(ad);
+      }
+    }
+    return k;
+  }
+
   getAllStatuses(): Record<string, any> {
     const statuses: Record<string, any> = {};
     for (const [name, p] of this.platforms.entries()) {

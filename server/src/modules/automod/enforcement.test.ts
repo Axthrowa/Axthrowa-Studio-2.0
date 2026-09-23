@@ -78,28 +78,48 @@ describe('eylemPlani', () => {
     expect(p.uyar).toBe(true);
   });
 
-  it('YouTube zaman aşımını DESTEKLEMEZ — uyarıya düşer, sebebi bildirir', () => {
-    const p = eylemPlani(ayar({ eylem: 'timeout' }), 'youtube');
+  // Aşağıdaki üç test eskiden YouTube/Kick/Twitch ile yazılmıştı; o
+  // platformlarda moderasyon artık UYGULANDI (bkz. capabilities.ts). "Desteklemeyen
+  // platformda uyarıya düş" davranışı değişmedi — örnek platform, bugün
+  // gerçekten desteklemeyenlerle değiştirildi.
+  it('TikTok zaman aşımını DESTEKLEMEZ — uyarıya düşer, sebebi bildirir', () => {
+    const p = eylemPlani(ayar({ eylem: 'timeout' }), 'tiktok');
     expect(p.timeoutSn).toBe(0);
     // İhlal cevapsız kalmamalı
     expect(p.uyar).toBe(true);
     expect(p.dusurulen).toContain('zaman aşımı');
   });
 
-  it('Kick mesaj silmeyi desteklemez — uyarıya düşer', () => {
-    const p = eylemPlani(ayar({ eylem: 'delete' }), 'kick');
+  it('Discord mesaj silmeyi desteklemez — uyarıya düşer', () => {
+    const p = eylemPlani(ayar({ eylem: 'delete' }), 'discord');
     expect(p.sil).toBe(false);
     expect(p.uyar).toBe(true);
     expect(p.dusurulen).toContain('mesaj silme');
   });
 
-  it('Twitch moderasyonu henüz UYGULANMADI — uyarıya düşer', () => {
-    // Yetenek tablosu "platform ne yapabilir"i değil "biz ne yapabiliyoruz"u
-    // ilan eder. Twitch tarafı yazılınca bu test güncellenir.
-    const p = eylemPlani(ayar({ eylem: 'delete_warn' }), 'twitch');
-    expect(p.sil).toBe(false);
+  it('Trovo zaman aşımı belgelenmediği için UYGULANMADI — uyarıya düşer', () => {
+    const p = eylemPlani(ayar({ eylem: 'timeout_warn' }), 'trovo');
+    expect(p.timeoutSn).toBe(0);
     expect(p.uyar).toBe(true);
-    expect(p.dusurulen).toContain('mesaj silme');
+  });
+
+  it('Twitch artık zaman aşımı ve mesaj silme uygular (Helix)', () => {
+    const t = eylemPlani(ayar({ eylem: 'timeout' }), 'twitch');
+    expect(t.timeoutSn).toBeGreaterThan(0);
+    const d = eylemPlani(ayar({ eylem: 'delete_warn' }), 'twitch');
+    expect(d.sil).toBe(true);
+    expect(d.uyar).toBe(true);
+  });
+
+  it('Kick artık mesaj siler (DELETE /public/v1/chat/{id})', () => {
+    const p = eylemPlani(ayar({ eylem: 'delete' }), 'kick');
+    expect(p.sil).toBe(true);
+    expect(p.dusurulen || '').not.toContain('mesaj silme');
+  });
+
+  it('YouTube artık zaman aşımı uygular (liveChatBans)', () => {
+    const p = eylemPlani(ayar({ eylem: 'timeout' }), 'youtube');
+    expect(p.timeoutSn).toBeGreaterThan(0);
   });
 
   it('bilinmeyen platformda her şey uyarıya düşer', () => {

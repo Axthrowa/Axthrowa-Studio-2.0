@@ -50,39 +50,50 @@ export interface PlatformYetenekleri {
  * uygulanmış olmalıdır; aksi halde arayüz olmayan bir şey vaat eder.
  */
 export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
+  // `ban`: kalıcı yasaklama YÖNTEMİ uygulanmış mı? Hiçbir adaptörde yok
+  // (AutoMod zaman aşımı ve mesaj silme kullanıyor). Önceden Kick'te `true`
+  // yazıyordu ama karşılığı yoktu — düzeltildi.
   kick: {
     sohbet: { oku: true, gonder: true },
-    olaylar: ['chat', 'follow', 'sub', 'gift_sub', 'kicks', 'host'],
-    moderasyon: { timeout: true, ban: true, mesajSil: false },
-    yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
+    olaylar: ['chat', 'follow', 'sub', 'gift_sub', 'kicks', 'host', 'stream_online', 'stream_offline'],
+    // Resmi API (docs.kick.com): POST /moderation/bans (dakika, 1-10080),
+    // DELETE /chat/{id}, PATCH /channels. Token şu izinleri taşımalı:
+    // moderation:ban, moderation:chat_message:manage, channel:write —
+    // eski bağlantılar taşımaz, bir kez yeniden bağlanmak gerekir.
+    moderasyon: { timeout: true, ban: false, mesajSil: true },
+    yayin: { baslikDegistir: true, kategoriDegistir: true, izleyiciSayisi: true },
     // Kick'in rol kümesi — BotRix TTS sayfasında da aynısı listeleniyor
     roller: ['everyone', 'sub', 'vip', 'og', 'mod', 'broadcaster']
   },
   twitch: {
     sohbet: { oku: true, gonder: true },
-    olaylar: ['chat', 'follow', 'sub', 'resub', 'gift_sub', 'bits', 'tip', 'raid'],
-    // Twitch PLATFORMU bunlari destekler; BIZIM adaptorumuz henuz uygulamadi.
-    // Bu tablo "platform ne yapabilir"i degil "biz ne yapabiliyoruz"u ilan
-    // eder — aksi halde panel olmayan bir sey vaat eder. Twitch moderasyonu
-    // Helix API'si ve moderator yetkili token gerektiriyor; sohbet IRC
-    // uzerinden yurudugu icin ayri bir entegrasyon isi.
-    // Bkz. docs/KNOWN_LIMITATIONS.md
-    moderasyon: { timeout: false, ban: false, mesajSil: false },
-    yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
+    olaylar: ['chat', 'follow', 'sub', 'resub', 'gift_sub', 'bits', 'tip', 'raid', 'stream_online', 'stream_offline'],
+    // Helix (twitch-helix.ts). IRC jetonu `oauth2/validate` ile doğrulanıp
+    // Client-ID ondan öğrenilir. Jetonda ilgili izin yoksa işlem SEBEBİYLE
+    // reddedilir (moderator:manage:banned_users, moderator:manage:chat_messages,
+    // channel:manage:broadcast). Jetonsuz (anonim) okuyucuda hiçbiri çalışmaz.
+    moderasyon: { timeout: true, ban: false, mesajSil: true },
+    yayin: { baslikDegistir: true, kategoriDegistir: true, izleyiciSayisi: true },
     roller: ['everyone', 'sub', 'vip', 'mod', 'broadcaster']
   },
   youtube: {
     sohbet: { oku: true, gonder: true },
-    olaylar: ['chat', 'superchat', 'tip', 'member'],
-    moderasyon: { timeout: false, ban: false, mesajSil: false },
-    yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
+    olaylar: ['chat', 'superchat', 'tip', 'member', 'stream_online', 'stream_offline'],
+    // liveChatBans.insert (temporary) ve liveChatMessages.delete — OAuth
+    // jetonu gerekir. Başlık videos.update ile; YouTube'da "oyun/kategori"
+    // Data API ile değiştirilemiyor.
+    moderasyon: { timeout: true, ban: false, mesajSil: true },
+    yayin: { baslikDegistir: true, kategoriDegistir: false, izleyiciSayisi: true },
     roller: ['everyone', 'sub', 'mod', 'broadcaster']
   },
   tiktok: {
-    sohbet: { oku: true, gonder: true },
-    olaylar: ['chat', 'follow', 'gift_tiktok'],
+    // TikTok sohbeti YALNIZ OKUNABİLİR (resmi yazma API'si yok). Önceden
+    // `gonder: true` yazıyordu ama `sendMessage` her zaman false dönüyordu.
+    sohbet: { oku: true, gonder: false },
+    olaylar: ['chat', 'follow', 'gift_tiktok', 'stream_online', 'stream_offline'],
     moderasyon: { timeout: false, ban: false, mesajSil: false },
-    yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
+    // İzleyici sayısı kütüphanede var ama adaptörde OKUNMUYOR
+    yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: false },
     roller: ['everyone', 'mod', 'broadcaster']
   },
   trovo: {
@@ -91,10 +102,11 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // `tip` spell (mana/elixir) karsiligidir; tutar BILINMEDIGI icin 0
     // gonderilir, adet mesajda tasinir.
     olaylar: ['chat', 'follow', 'sub', 'gift_sub', 'tip', 'raid', 'stream_online', 'stream_offline'],
-    // Trovo moderasyon uclari var; BIZ uygulamadik. Tablo "biz ne
-    // yapabiliyoruz"u ilan eder.
-    moderasyon: { timeout: false, ban: false, mesajSil: false },
-    yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: true },
+    // Mesaj silme: DELETE /channels/{c}/messages/{m}/users/{u} (belgeli).
+    // Zaman aşımı komutunun sözdizimi belgede YOK — uydurulmadı.
+    moderasyon: { timeout: false, ban: false, mesajSil: true },
+    // Başlık: belgedeki örnek komut `settitle`. Kategori komutu belgede yok.
+    yayin: { baslikDegistir: true, kategoriDegistir: false, izleyiciSayisi: false },
     // Trovo'da VIP yok; editor/supermod en yakin kanal rolleridir.
     roller: ['everyone', 'sub', 'vip', 'mod', 'broadcaster']
   },

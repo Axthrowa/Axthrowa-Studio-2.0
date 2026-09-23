@@ -34,6 +34,7 @@ import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../modules/media/media.js';
 import { varyantlar } from '../modules/alerts/variants.js';
 import { uyariYedegi } from '../modules/alerts/backup.js';
+import { komutGirdisiniCoz } from '../modules/commands/command-input.js';
 import { tahminler } from '../modules/engagement/predictions.js';
 import { kuyruk } from '../modules/engagement/queue.js';
 import { puanDususu } from '../modules/engagement/point-drops.js';
@@ -260,7 +261,13 @@ router.get('/platforms/kick/auth-url', (req: Request, res: Response) => {
   const codeChallenge = crypto.createHash('sha256').update(kickPkceVerifier).digest('base64url');
   const state = crypto.randomBytes(16).toString('hex');
 
-  const scope = encodeURIComponent('chat:write channel:read user:read');
+  // Moderasyon (AutoMod zaman aşımı / mesaj silme) ve !title/!game için
+  // gereken izinler eklendi. Eski kapsamla alınan token bunları YAPAMAZ:
+  // Kick 403 döner ve AutoMod uyarıya düşer. Kullanıcı bir kez yeniden
+  // bağlanmalı (Platformlar > Kick). Kaynak: docs.kick.com/getting-started/scopes
+  const scope = encodeURIComponent(
+    'chat:write channel:read user:read channel:write moderation:ban moderation:chat_message:manage'
+  );
   const authUrl = `https://id.kick.com/oauth/authorize?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256&state=${encodeURIComponent(state)}&prompt=login`;
   res.json({ authUrl, clientId, redirectUri, codeVerifier: kickPkceVerifier, state });
 });
@@ -383,40 +390,67 @@ router.get('/commands', (req: Request, res: Response) => {
   res.json(rows);
 });
 
+// Komut oluşturma/düzenleme. Panel `user_level`/`is_enabled` (yılan),
+// eski istemciler `userLevel`/`isEnabled` (deve) gönderiyor — ikisi de kabul
+// edilir. ESKİDEN: seçilen rol yok sayılıyor, takma adlar kaydedilmiyor,
+// düzenleme her seferinde HTTP 500 veriyordu (command-input.ts).
+const KOMUT_SUTUNLARI = [
+  'name',
+  'response',
+  'user_level',
+  'cooldown',
+  'aliases',
+  'is_enabled',
+  'description',
+  'cooldown_mode',
+  'user_cooldown',
+  'cost_points',
+  'min_level',
+  'platforms',
+  'trigger_type',
+  'access_mode'
+] as const;
+
 router.post('/commands', (req: Request, res: Response) => {
-  const { name, response, userLevel = 'everyone', cooldown = 5, description = '' } = req.body;
-  if (!name || !response) {
-    return res.status(400).json({ error: 'Komut adı ve cevabı gereklidir' });
-  }
+  const g = komutGirdisiniCoz(req.body || {});
+  if (!g.ok) return res.status(400).json({ error: g.hata });
+  const k = g.kayit;
 
-  const cleanName = name.replace(/^!/, '').toLowerCase();
-  const id = `cmd-${cleanName}-${Date.now()}`;
+  const cakisan = db.prepare('SELECT id FROM commands WHERE LOWER(name) = ?').get(k.name);
+  if (cakisan) return res.status(400).json({ error: `!${k.name} adlı bir komut zaten var` });
 
+  const id = `cmd-${k.name.replace(/\s+/g, '-')}-${Date.now()}`;
   try {
-    db.prepare(`
-      INSERT INTO commands (id, name, response, user_level, cooldown, aliases, is_enabled, use_count, description)
-      VALUES (?, ?, ?, ?, ?, '[]', 1, 0, ?)
-    `).run(id, cleanName, response, userLevel, cooldown, description);
+    db.prepare(
+      `INSERT INTO commands (id, use_count, ${KOMUT_SUTUNLARI.join(', ')})
+       VALUES (?, 0, ${KOMUT_SUTUNLARI.map(() => '?').join(', ')})`
+    ).run(id, ...KOMUT_SUTUNLARI.map((c) => (k as any)[c]));
     commandManager.reload();
-    res.json({ success: true, id });
+    res.json({ success: true, id, komut: k });
   } catch (err: any) {
-    res.status(400).json({ error: 'Bu isimde bir komut zaten var' });
+    res.status(400).json({ error: `Komut kaydedilemedi: ${String(err?.message || err).slice(0, 120)}` });
   }
 });
 
 router.put('/commands/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { name, response, userLevel, cooldown, isEnabled, description } = req.body;
+  const id = String(req.params.id);
+  const mevcut = db.prepare('SELECT * FROM commands WHERE id = ?').get(id) as any;
+  if (!mevcut) return res.status(404).json({ error: 'Komut bulunamadı' });
 
-  const cleanName = name.replace(/^!/, '').toLowerCase();
-  db.prepare(`
-    UPDATE commands 
-    SET name = ?, response = ?, user_level = ?, cooldown = ?, is_enabled = ?, description = ?
-    WHERE id = ?
-  `).run(cleanName, response, userLevel, cooldown, isEnabled ? 1 : 0, description, String(id));
+  // Gövdede olmayan alanlar MEVCUT değerden alınır (kısmi güncelleme)
+  const g = komutGirdisiniCoz(req.body || {}, mevcut);
+  if (!g.ok) return res.status(400).json({ error: g.hata });
+  const k = g.kayit;
 
+  const cakisan = db.prepare('SELECT id FROM commands WHERE LOWER(name) = ? AND id <> ?').get(k.name, id);
+  if (cakisan) return res.status(400).json({ error: `!${k.name} adlı başka bir komut var` });
+
+  db.prepare(`UPDATE commands SET ${KOMUT_SUTUNLARI.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`).run(
+    ...KOMUT_SUTUNLARI.map((c) => (k as any)[c]),
+    id
+  );
   commandManager.reload();
-  res.json({ success: true });
+  res.json({ success: true, komut: k });
 });
 
 router.delete('/commands/:id', (req: Request, res: Response) => {

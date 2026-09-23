@@ -49,7 +49,13 @@ app.use(
 );
 // Medya yuklemesi base64 ile geldigi icin govde siniri buyutuldu
 // (5 MB dosya base64'te ~6.7 MB olur).
-app.use(express.json({ limit: '12mb' }));
+// Medya gömülü uyarı yedeği 12 MB'ı aşabilir: YALNIZ o uç için büyük sınır.
+// Genel sınır küçük kalır — her uca 150 MB gövde açmak gereksiz risk.
+const buyukGovde = express.json({ limit: '150mb' });
+const normalGovde = express.json({ limit: '12mb' });
+app.use((req, res, next) =>
+  req.path === '/api/alerts/backup/import' ? buyukGovde(req, res, next) : normalGovde(req, res, next)
+);
 app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 
 // CSRF korumasi: basit istekler on kontrole tabi olmadigi icin CORS yaniti

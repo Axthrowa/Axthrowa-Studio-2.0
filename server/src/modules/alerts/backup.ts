@@ -18,7 +18,9 @@
  * alana sır eklenirse yedeğe sızmasın diye.
  */
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import { db } from '../../db/index.js';
+import { medya } from '../media/media.js';
 
 export const YEDEK_SURUMU = 1;
 
@@ -60,6 +62,14 @@ const VARYANT_ALANLARI = [
 
 const GELISMIS_ANAHTARI = 'widget_settings_alert-box';
 
+export interface GomuluMedya {
+  /** Yedeği alan makinedeki kimlik — bağlantılar buna göre yeniden yazılır. */
+  eskiId: string;
+  ad: string;
+  /** base64 (data: öneki yok) */
+  veri: string;
+}
+
 export interface UyariYedegi {
   surum: number;
   olusturma: number;
@@ -67,6 +77,25 @@ export interface UyariYedegi {
   presets: Array<Record<string, unknown>>;
   varyantlar: Array<Record<string, unknown>>;
   gelismis: Record<string, unknown>;
+  /** İstenirse: uyarıların kullandığı yerel medya dosyaları. */
+  medya?: GomuluMedya[];
+}
+
+/** Gömülü medyanın toplam üst sınırı (ham bayt). JSON base64 ile ~%33 büyür. */
+export const GOMULU_MEDYA_UST = 100 * 1024 * 1024;
+
+/** `/api/media/<id>/dosya` → `<id>` */
+export function medyaKimligi(url: unknown): string {
+  const m = String(url ?? '').match(/^\/api\/media\/([0-9a-f-]+)\/dosya$/i);
+  return m ? m[1] : '';
+}
+
+/** Yerel medya bağlantılarını yeni kimliklere çevirir; eşleşmeyene dokunmaz. */
+export function medyaBaglantisiniCevir(url: unknown, harita: Map<string, string>): unknown {
+  const id = medyaKimligi(url);
+  if (!id) return url;
+  const yeni = harita.get(id);
+  return yeni ? `/api/media/${yeni}/dosya` : url;
 }
 
 export interface IceAktarmaSonucu {
@@ -74,6 +103,7 @@ export interface IceAktarmaSonucu {
   hata?: string;
   preset: { eklenen: number; guncellenen: number; atlanan: number };
   varyant: { eklenen: number; atlanan: number };
+  medya: { eklenen: number; zatenVardi: number; atlanan: number };
   gelismis: boolean;
   uyarilar: string[];
 }
@@ -94,6 +124,12 @@ export function yerelMedyaMi(url: unknown): boolean {
   return typeof url === 'string' && /^\/api\/media\/[0-9a-f-]+\/dosya$/i.test(url);
 }
 
+/** Yerel medya bağlantısı ama bu makinenin kütüphanesinde karşılığı yok. */
+function karsiliksizMedya(url: unknown): boolean {
+  const id = medyaKimligi(url);
+  return !!id && !medya.bul(id);
+}
+
 /** Gelen JSON gerçekten bizim yedeğimiz mi? */
 export function yedekGecerliMi(veri: any): { ok: true } | { ok: false; hata: string } {
   if (!veri || typeof veri !== 'object') return { ok: false, hata: 'Dosya okunamadı (JSON değil).' };
@@ -108,7 +144,7 @@ export function yedekGecerliMi(veri: any): { ok: true } | { ok: false; hata: str
 }
 
 class UyariYedegiDeposu {
-  disaAktar(): UyariYedegi {
+  disaAktar(medyaIle = false): UyariYedegi & { medyaUyarisi?: string } {
     const presets = (db.prepare('SELECT * FROM alert_presets').all() as any[]).map((r) => suz(r, PRESET_ALANLARI));
 
     let varyantlar: Array<Record<string, unknown>> = [];
@@ -128,7 +164,7 @@ class UyariYedegiDeposu {
       /* bozuk JSON — boş bırak */
     }
 
-    return {
+    const yedek: UyariYedegi & { medyaUyarisi?: string } = {
       surum: YEDEK_SURUMU,
       olusturma: Date.now(),
       uygulama: 'StreamAxT',
@@ -136,6 +172,95 @@ class UyariYedegiDeposu {
       varyantlar,
       gelismis
     };
+
+    if (medyaIle) {
+      // Yalnız uyarıların KULLANDIĞI dosyalar — kütüphanenin tamamı değil
+      const kimlikler = new Set<string>();
+      for (const p of presets) for (const a of ['image_url', 'sound_url']) kimlikler.add(medyaKimligi(p[a]));
+      for (const v of varyantlar) for (const a of ['gorsel_url', 'ses_url']) kimlikler.add(medyaKimligi(v[a]));
+      kimlikler.delete('');
+
+      const gomulu: GomuluMedya[] = [];
+      let toplam = 0;
+      let atlanan = 0;
+      for (const id of kimlikler) {
+        const oge = medya.bul(id);
+        if (!oge) continue;
+        if (toplam + oge.boyut > GOMULU_MEDYA_UST) {
+          atlanan++;
+          continue;
+        }
+        try {
+          const bayt = fs.readFileSync(medya.dosyaYolu(oge));
+          gomulu.push({ eskiId: id, ad: oge.ad, veri: bayt.toString('base64') });
+          toplam += bayt.length;
+        } catch {
+          atlanan++;
+        }
+      }
+      yedek.medya = gomulu;
+      if (atlanan) {
+        yedek.medyaUyarisi = `${atlanan} dosya ${Math.round(GOMULU_MEDYA_UST / 1024 / 1024)} MB sınırı yüzünden yedeğe eklenmedi.`;
+      }
+    }
+
+    return yedek;
+  }
+
+  /**
+   * Gömülü medyayı kütüphaneye geri yükler. İçeriği AYNI olan dosya zaten
+   * varsa yenisi yazılmaz (aynı yedeği iki kez yüklemek kütüphaneyi
+   * şişirmesin). Döner: eski kimlik → yeni kimlik.
+   */
+  private medyaGeriYukle(liste: GomuluMedya[], sonuc: IceAktarmaSonucu): Map<string, string> {
+    const harita = new Map<string, string>();
+    const ozet = (b: Buffer) => crypto.createHash('sha256').update(b).digest('hex');
+
+    // Mevcut kütüphanenin özetleri (yalnız gerektiğinde, boyuta göre)
+    const mevcutlar = medya.listele();
+    const ozetOnbellek = new Map<string, string>();
+    const mevcutOzet = (id: string, dosya: string) => {
+      if (!ozetOnbellek.has(id)) {
+        try {
+          ozetOnbellek.set(id, ozet(fs.readFileSync(dosya)));
+        } catch {
+          ozetOnbellek.set(id, '');
+        }
+      }
+      return ozetOnbellek.get(id)!;
+    };
+
+    for (const m of liste) {
+      const eskiId = String(m?.eskiId || '');
+      const veri = String(m?.veri || '');
+      if (!eskiId || !veri) continue;
+      let bayt: Buffer;
+      try {
+        bayt = Buffer.from(veri, 'base64');
+      } catch {
+        sonuc.uyarilar.push(`"${m?.ad || eskiId}" çözülemedi, atlandı.`);
+        continue;
+      }
+      const o = ozet(bayt);
+      const ayni = mevcutlar.find((x) => x.boyut === bayt.length && mevcutOzet(x.id, medya.dosyaYolu(x)) === o);
+      if (ayni) {
+        harita.set(eskiId, ayni.id);
+        sonuc.medya.zatenVardi++;
+        continue;
+      }
+      // İçerik imzası doğrulaması medya.ekle içinde: sahte uzantı geçmez
+      const r = medya.ekle(String(m?.ad || 'dosya'), veri);
+      if (r.ok) {
+        harita.set(eskiId, r.oge.id);
+        mevcutlar.push(r.oge);
+        ozetOnbellek.set(r.oge.id, o);
+        sonuc.medya.eklenen++;
+      } else {
+        sonuc.medya.atlanan++;
+        sonuc.uyarilar.push(`"${m?.ad || eskiId}" yüklenemedi: ${r.hata}`);
+      }
+    }
+    return harita;
   }
 
   /**
@@ -153,6 +278,7 @@ class UyariYedegiDeposu {
       ok: false,
       preset: { eklenen: 0, guncellenen: 0, atlanan: 0 },
       varyant: { eklenen: 0, atlanan: 0 },
+      medya: { eklenen: 0, zatenVardi: 0, atlanan: 0 },
       gelismis: false,
       uyarilar: []
     };
@@ -165,14 +291,20 @@ class UyariYedegiDeposu {
 
     let yerelMedya = 0;
 
+    // Gömülü medya varsa ÖNCE kütüphaneye yüklenir; bağlantılar yeni
+    // kimliklere çevrilir. Yoksa bağlantılar olduğu gibi kalır (uyarı verilir).
+    const harita = Array.isArray(veri.medya) ? this.medyaGeriYukle(veri.medya, sonuc) : new Map<string, string>();
+
     for (const ham of Array.isArray(veri.presets) ? veri.presets : []) {
       const p = suz(ham, PRESET_ALANLARI);
+      p.image_url = medyaBaglantisiniCevir(p.image_url, harita);
+      p.sound_url = medyaBaglantisiniCevir(p.sound_url, harita);
       const olay = String(p.event_type || '').trim();
       if (!olay) {
         sonuc.preset.atlanan++;
         continue;
       }
-      if (yerelMedyaMi(p.image_url) || yerelMedyaMi(p.sound_url)) yerelMedya++;
+      if (karsiliksizMedya(p.image_url) || karsiliksizMedya(p.sound_url)) yerelMedya++;
 
       const mevcut = db.prepare('SELECT id FROM alert_presets WHERE event_type = ?').get(olay) as
         | { id: string }
@@ -228,13 +360,15 @@ class UyariYedegiDeposu {
 
     for (const ham of Array.isArray(veri.varyantlar) ? veri.varyantlar : []) {
       const v = suz(ham, VARYANT_ALANLARI);
+      v.gorsel_url = medyaBaglantisiniCevir(v.gorsel_url, harita);
+      v.ses_url = medyaBaglantisiniCevir(v.ses_url, harita);
       const olay = String(v.event_type || '').trim();
       const ad = String(v.ad || '').trim();
       if (!olay || !ad) {
         sonuc.varyant.atlanan++;
         continue;
       }
-      if (yerelMedyaMi(v.gorsel_url) || yerelMedyaMi(v.ses_url)) yerelMedya++;
+      if (karsiliksizMedya(v.gorsel_url) || karsiliksizMedya(v.ses_url)) yerelMedya++;
 
       // Aynı olay + aynı ad = aynı varyant sayılır
       const mevcutVaryant = db
@@ -306,8 +440,8 @@ class UyariYedegiDeposu {
 
     if (yerelMedya > 0) {
       sonuc.uyarilar.push(
-        `${yerelMedya} uyarı yerel medya kütüphanesine bağlı. Bu dosyalar yedeğin içinde DEĞİL — ` +
-          'başka bir bilgisayarda görsel/ses boş görünecektir, medyayı yeniden yükleyin.'
+        `${yerelMedya} uyarı bu bilgisayarın kütüphanesinde OLMAYAN bir dosyaya bağlı — görsel/ses boş görünecek. ` +
+          'Yedeği "medya dosyalarını da ekle" seçeneğiyle yeniden alın ya da dosyaları yeniden yükleyin.'
       );
     }
     if (!uzerineYaz && sonuc.preset.atlanan + sonuc.varyant.atlanan > 0) {

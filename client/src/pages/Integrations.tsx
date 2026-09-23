@@ -40,7 +40,8 @@ const KAYNAKLAR: Array<{ id: string; etiket: string; renk: string }> = [
   { id: 'kick', etiket: 'Kick', renk: 'text-[#53fc18]' },
   { id: 'twitch', etiket: 'Twitch', renk: 'text-purple-400' },
   { id: 'youtube', etiket: 'YouTube', renk: 'text-red-400' },
-  { id: 'tiktok', etiket: 'TikTok', renk: 'text-pink-400' }
+  { id: 'tiktok', etiket: 'TikTok', renk: 'text-pink-400' },
+  { id: 'trovo', etiket: 'Trovo', renk: 'text-emerald-400' }
 ];
 
 async function al<T>(yol: string): Promise<T> {
@@ -142,7 +143,8 @@ function DiscordPaneli() {
         <ol className="text-[11px] text-gray-400 space-y-1 list-decimal list-inside">
           <li>Discord’da kanal → Ayarlar → Entegrasyonlar → Webhook’lar → Yeni Webhook</li>
           <li>“Webhook URL’sini kopyala” deyin ve aşağıdaki ilgili platforma yapıştırın</li>
-          <li>Yayına başlayınca duyuru otomatik gider; test düğmesi beklemeyi atlar</li>
+          <li>Yayına başlayınca duyuru otomatik gider (yayın durumu dakikada bir okunur); test düğmesi beklemeyi atlar</li>
+          <li>Aynı yayın bot yeniden başlasa da ikinci kez duyurulmaz</li>
         </ol>
         <Alan etiket="Test için kanal adı" ipucu="$(channel) değişkeni bununla doldurulur">
           <Girdi value={kanal} onChange={(e) => setKanal(e.target.value)} placeholder="kanal_adiniz" />
@@ -365,18 +367,24 @@ function YedekPaneli() {
   const { sor, eleman } = useOnay();
   const [sonuc, setSonuc] = useState<any>(null);
   const [uzerineYaz, setUzerineYaz] = useState(false);
+  const [medyaIle, setMedyaIle] = useState(true);
   const indirBag = useRef<HTMLAnchorElement | null>(null);
 
   const disaAktar = async () => {
     try {
-      const yedek = await al<any>('/api/alerts/backup');
+      const yedek = await al<any>(`/api/alerts/backup${medyaIle ? '?medya=1' : ''}`);
       const url = URL.createObjectURL(new Blob([JSON.stringify(yedek, null, 2)], { type: 'application/json' }));
       const a = indirBag.current!;
       a.href = url;
       a.download = `streamaxt-uyarilar-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast(`${yedek.presets.length} uyarı, ${yedek.varyantlar.length} varyant indirildi.`, 'basari');
+      const medyaSayisi = Array.isArray(yedek.medya) ? yedek.medya.length : 0;
+      toast(
+        `${yedek.presets.length} uyarı, ${yedek.varyantlar.length} varyant${medyaIle ? `, ${medyaSayisi} medya dosyası` : ''} indirildi.`,
+        'basari'
+      );
+      if (yedek.medyaUyarisi) toast(yedek.medyaUyarisi, 'hata');
     } catch {
       toast('Yedek alınamadı.', 'hata');
     }
@@ -422,9 +430,16 @@ function YedekPaneli() {
         aciklama="Alert preset’leri, varyantlar ve Alert Box gelişmiş ayarları tek bir JSON dosyasına yazılır."
       >
         <p className="text-[11px] text-gray-400">
-          Dosyanın içinde <b>şifre, token veya webhook adresi bulunmaz</b> — paylaşmak güvenlidir. Yerel medya
-          kütüphanesinden gelen görsel ve sesler dosyaya <b>gömülmez</b>; başka bir bilgisayarda onları yeniden
-          yüklemeniz gerekir.
+          Dosyanın içinde <b>şifre, token veya webhook adresi bulunmaz</b> — paylaşmak güvenlidir.
+        </p>
+        <Anahtar
+          acik={medyaIle}
+          etiket="Uyarıların kullandığı medya dosyalarını da ekle (başka bilgisayara taşırken)"
+          onChange={setMedyaIle}
+        />
+        <p className="text-[10px] text-gray-500">
+          Açıkken yalnız uyarıların KULLANDIĞI yerel görsel ve sesler gömülür (en fazla 100 MB); dosya büyür. Kapalıyken
+          yalnız ayarlar yedeklenir, yerel medya başka bilgisayarda boş görünür.
         </p>
         <Buton ikon={<Download className="w-3.5 h-3.5" />} onClick={disaAktar}>
           Yedeği indir
@@ -458,6 +473,13 @@ function YedekPaneli() {
               <b className="text-white">{sonuc.varyant.atlanan}</b> atlandı
             </li>
             <li>Gelişmiş ayarlar: {sonuc.gelismis ? 'uygulandı' : 'yedekte yoktu'}</li>
+            {sonuc.medya && (sonuc.medya.eklenen + sonuc.medya.zatenVardi + sonuc.medya.atlanan > 0) && (
+              <li>
+                Medya: <b className="text-white">{sonuc.medya.eklenen}</b> eklendi ·{' '}
+                <b className="text-white">{sonuc.medya.zatenVardi}</b> zaten vardı ·{' '}
+                <b className="text-white">{sonuc.medya.atlanan}</b> atlandı
+              </li>
+            )}
           </ul>
 
           {sonuc.uyarilar?.length > 0 && (

@@ -679,8 +679,8 @@ router.post('/alerts/save', (req: Request, res: Response) => {
 });
 
 router.post('/alerts/test', (req: Request, res: Response) => {
-  const { eventType } = req.body;
-  wsHub.triggerTestAlert(eventType || 'follow');
+  const { eventType, deger } = req.body || {};
+  wsHub.triggerTestAlert(eventType || 'follow', deger === undefined ? undefined : Number(deger));
   res.json({ success: true });
 });
 
@@ -773,8 +773,9 @@ router.delete('/alerts/variants/:id', (req: Request, res: Response) => {
 
 // 8.85 Uyari yedegi — makine degistirince emek kaybolmasin.
 // Icinde token/sifre YOK; paylasilabilir bir dosyadir.
-router.get('/alerts/backup', (_req: Request, res: Response) => {
-  const yedek = uyariYedegi.disaAktar();
+router.get('/alerts/backup', (req: Request, res: Response) => {
+  // ?medya=1 → uyarıların kullandığı yerel görsel/ses dosyaları da gömülür
+  const yedek = uyariYedegi.disaAktar(String(req.query.medya || '') === '1');
   res.setHeader('Content-Disposition', 'attachment; filename="streamaxt-uyarilar.json"');
   res.json(yedek);
 });

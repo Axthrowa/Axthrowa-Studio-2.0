@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { yerelMedyaMi, yedekGecerliMi, YEDEK_SURUMU } from './backup.js';
+import { medyaBaglantisiniCevir, medyaKimligi, yerelMedyaMi, yedekGecerliMi, YEDEK_SURUMU } from './backup.js';
 
 describe('yerelMedyaMi', () => {
   it('kütüphane bağlantısını tanır', () => {
@@ -53,5 +53,27 @@ describe('yedekGecerliMi', () => {
 
   it('yalnız varyant taşıyan yedek geçerlidir', () => {
     expect(yedekGecerliMi({ uygulama: 'StreamAxT', surum: 1, varyantlar: [{}] }).ok).toBe(true);
+  });
+});
+
+describe('gömülü medya bağlantıları', () => {
+  const id = '8f14e45f-ea1f-4b2c-9c3a-1234567890ab';
+
+  it('bağlantıdan kimlik çıkarır', () => {
+    expect(medyaKimligi(`/api/media/${id}/dosya`)).toBe(id);
+    expect(medyaKimligi('https://ornek.com/a.gif')).toBe('');
+    expect(medyaKimligi(undefined)).toBe('');
+  });
+
+  it('eski kimliği yeni makinedeki kimliğe çevirir', () => {
+    const harita = new Map([[id, 'aaaaaaaa-0000-0000-0000-000000000001']]);
+    expect(medyaBaglantisiniCevir(`/api/media/${id}/dosya`, harita)).toBe('/api/media/aaaaaaaa-0000-0000-0000-000000000001/dosya');
+  });
+
+  it('haritada olmayan ve harici bağlantılara DOKUNMAZ', () => {
+    const harita = new Map<string, string>();
+    expect(medyaBaglantisiniCevir(`/api/media/${id}/dosya`, harita)).toBe(`/api/media/${id}/dosya`);
+    expect(medyaBaglantisiniCevir('https://ornek.com/a.gif', harita)).toBe('https://ornek.com/a.gif');
+    expect(medyaBaglantisiniCevir('', harita)).toBe('');
   });
 });

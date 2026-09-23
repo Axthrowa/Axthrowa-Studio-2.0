@@ -568,9 +568,12 @@ export class CommandManager {
         return n > 0 ? `🎟️ @${message.user.displayName}, sıran: ${n}` : `@${message.user.displayName}, kuyrukta değilsin.`;
       }
 
-      case 'queue':
+      // NOT: `!queue` ve `!sira` ZATEN sarki istegi kuyruguna ait (yukarida,
+      // satir ~217). Izleyici kuyruguna ayri adlar verildi; aksi halde
+      // switch ilk esleseni calistirdigi icin bu dal hic calismiyordu.
       case 'listq':
-      case 'sira': {
+      case 'siradakiler':
+      case 'kuyruk': {
         const l = kuyruk.liste();
         if (!l.length) return 'Kuyruk boş.';
         return `🎟️ Kuyruk (${l.length}): ${l.slice(0, 10).map((k, i) => `${i + 1}. ${k.gorunenAd}`).join(' · ')}`;

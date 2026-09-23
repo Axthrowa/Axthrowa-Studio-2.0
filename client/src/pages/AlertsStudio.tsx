@@ -10,12 +10,12 @@ import { MediaLibrary, type MedyaOgesi } from '../components/MediaLibrary.js';
 import { yetenekleriGetir, olayEtiketi, type YetenekHaritasi } from '../lib/capabilities.js';
 
 const TABS = [
-  { id: 'advanced', label: 'Advanced Settings' },
-  { id: 'follow', label: 'Followers' },
-  { id: 'sub', label: 'Subscription' },
-  { id: 'gift_sub', label: 'Gift Sub' },
+  { id: 'advanced', label: 'Gelişmiş Ayarlar' },
+  { id: 'follow', label: 'Takipçi' },
+  { id: 'sub', label: 'Abonelik' },
+  { id: 'gift_sub', label: 'Hediye Abone' },
   { id: 'host', label: 'Host' },
-  { id: 'tip', label: 'Tip / Donate' },
+  { id: 'tip', label: 'Bağış' },
   { id: 'kicks', label: 'Kicks' },
   { id: 'raid', label: 'Raid' },
   // Bu turda eklendi: aynı olayın birden çok görünümü + yerel dosya kütüphanesi
@@ -125,7 +125,7 @@ export function AlertsStudio() {
           <p className="text-sm text-gray-400">Takip, abone, hediye abone, host, bağış, kicks ve raid alert ayarları.</p>
         </div>
         <button onClick={test} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5">
-          <Play className="w-4 h-4" /> Test Alert
+          <Play className="w-4 h-4" /> Test uyarısı
         </button>
       </div>
 
@@ -167,6 +167,30 @@ export function AlertsStudio() {
               {FONTS.map(f => <option key={f}>{f}</option>)}
             </select>
           </label>
+          {/* Metin katmanı — önceden yalnız OBS Stüdyo formundaydı */}
+          <div className="md:col-span-2 pt-3 border-t border-white/10">
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">Metin katmanı</p>
+            <p className="text-[10px] text-gray-500">Üst metin (başlık) ve alt metin (mesaj) ayrı renklenir; konum ve görünme aralığı görsel/ses ile senkron için.</p>
+          </div>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Üst metin rengi<input type="color" value={advanced.titleColor} onChange={e => setAdvanced(a => ({ ...a, titleColor: e.target.value }))} className="w-full h-9 bg-black/40 rounded-xl" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Alt metin rengi<input type="color" value={advanced.messageColor} onChange={e => setAdvanced(a => ({ ...a, messageColor: e.target.value }))} className="w-full h-9 bg-black/40 rounded-xl" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Üst metin boyutu (px)<input type="number" min={10} max={160} value={advanced.titleSize} onChange={e => setAdvanced(a => ({ ...a, titleSize: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Alt metin boyutu (px)<input type="number" min={9} max={120} value={advanced.messageSize} onChange={e => setAdvanced(a => ({ ...a, messageSize: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Metin gölgesi ({advanced.textShadow}%)<input type="range" min={0} max={100} value={advanced.textShadow} onChange={e => setAdvanced(a => ({ ...a, textShadow: Number(e.target.value) }))} className="w-full" /></label>
+          <label className="text-xs text-gray-300 font-bold">Kullanıcı mesajını gizle <input className="ml-2" type="checkbox" checked={!!advanced.hideUserMessage} onChange={e => setAdvanced(a => ({ ...a, hideUserMessage: e.target.checked }))} /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Metin yatay konumu (px)<input type="number" value={advanced.textOffsetX} onChange={e => setAdvanced(a => ({ ...a, textOffsetX: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Metin dikey konumu (px)<input type="number" value={advanced.textOffsetY} onChange={e => setAdvanced(a => ({ ...a, textOffsetY: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Metin görünsün — başlangıç (ms)<input type="number" min={0} step={100} value={advanced.textFromMs} onChange={e => setAdvanced(a => ({ ...a, textFromMs: Math.max(0, Number(e.target.value)) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Metin görünsün — bitiş (ms)<input type="number" min={0} step={100} value={advanced.textToMs} onChange={e => setAdvanced(a => ({ ...a, textToMs: Math.max(0, Number(e.target.value)) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <p className="md:col-span-2 text-[10px] text-gray-500">0 – 0 = metin hep görünür. Örnek: 1500 – 4500 → uyarı başladıktan 1,5 sn sonra belirir, 4,5. saniyede kaybolur.</p>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Çıkış animasyonu
+            <select value={advanced.exitAnimation} onChange={e => setAdvanced(a => ({ ...a, exitAnimation: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+              {ANIMATIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+            </select>
+          </label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Animasyon süresi (ms)<input type="number" min={0} max={3000} step={50} value={advanced.animationDuration} onChange={e => setAdvanced(a => ({ ...a, animationDuration: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Görsel en fazla yükseklik (px)<input type="number" min={40} max={1080} value={advanced.imageMaxHeight} onChange={e => setAdvanced(a => ({ ...a, imageMaxHeight: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+
           <button onClick={saveAdvanced} className="md:col-span-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 w-fit">
             <Settings2 className="w-4 h-4" /> Gelişmiş ayarları kaydet
           </button>

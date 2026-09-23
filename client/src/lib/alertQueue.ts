@@ -37,9 +37,15 @@ export interface KuyrukDurumu {
   asama: UyariAsamasi;
   /** Aktif aşamanın bitiş anı (epoch ms). */
   asamaBitis: number;
+  /**
+   * Aktif uyarının BAŞLADIĞI an (epoch ms). Metin görünüm penceresi
+   * (ms–ms) buna göre ölçülür — aşama bitişine göre ölçmek, uyarı
+   * başlar başlamaz ~4,5 sn geçmiş saymaya yol açıyordu.
+   */
+  aktifBaslangic: number;
 }
 
-export const BOS_DURUM: KuyrukDurumu = { bekleyen: [], aktif: null, asama: 'completed', asamaBitis: 0 };
+export const BOS_DURUM: KuyrukDurumu = { bekleyen: [], aktif: null, asama: 'completed', asamaBitis: 0, aktifBaslangic: 0 };
 
 /** Son görülen kimlikler — halka tampon. */
 export class GorulenKimlikler {
@@ -100,11 +106,23 @@ export function kuyrugaEkle(
   simdi = Date.now()
 ): KuyrukDurumu {
   if (!kuyrukAcik) {
-    return { bekleyen: [], aktif: oge, asama: 'entering', asamaBitis: simdi + asamaSuresi(oge, 'entering') };
+    return {
+      bekleyen: [],
+      aktif: oge,
+      asama: 'entering',
+      asamaBitis: simdi + asamaSuresi(oge, 'entering'),
+      aktifBaslangic: simdi
+    };
   }
 
   if (!durum.aktif) {
-    return { bekleyen: durum.bekleyen, aktif: oge, asama: 'entering', asamaBitis: simdi + asamaSuresi(oge, 'entering') };
+    return {
+      bekleyen: durum.bekleyen,
+      aktif: oge,
+      asama: 'entering',
+      asamaBitis: simdi + asamaSuresi(oge, 'entering'),
+      aktifBaslangic: simdi
+    };
   }
 
   return { ...durum, bekleyen: [...durum.bekleyen, oge] };
@@ -121,7 +139,13 @@ export function ilerlet(durum: KuyrukDurumu, gapMs: number, simdi = Date.now()):
     // Boştayken bekleyen varsa ve boşluk dolduysa başlat
     if (durum.bekleyen.length && simdi >= durum.asamaBitis) {
       const [ilk, ...kalan] = durum.bekleyen;
-      return { bekleyen: kalan, aktif: ilk, asama: 'entering', asamaBitis: simdi + asamaSuresi(ilk, 'entering') };
+      return {
+        bekleyen: kalan,
+        aktif: ilk,
+        asama: 'entering',
+        asamaBitis: simdi + asamaSuresi(ilk, 'entering'),
+        aktifBaslangic: simdi
+      };
     }
     return durum;
   }
@@ -141,7 +165,8 @@ export function ilerlet(durum: KuyrukDurumu, gapMs: number, simdi = Date.now()):
       bekleyen: durum.bekleyen,
       aktif: null,
       asama: 'completed',
-      asamaBitis: simdi + Math.max(0, gapMs || 0)
+      asamaBitis: simdi + Math.max(0, gapMs || 0),
+      aktifBaslangic: 0
     };
   }
 
@@ -156,7 +181,37 @@ export function atla(durum: KuyrukDurumu, simdi = Date.now()): KuyrukDurumu {
 
 /** Kuyruğu boşaltır. */
 export function temizle(durum: KuyrukDurumu): KuyrukDurumu {
-  return { ...BOS_DURUM, aktif: durum.aktif, asama: durum.asama, asamaBitis: durum.asamaBitis };
+  return {
+    ...BOS_DURUM,
+    aktif: durum.aktif,
+    asama: durum.asama,
+    asamaBitis: durum.asamaBitis,
+    aktifBaslangic: durum.aktifBaslangic
+  };
+}
+
+/**
+ * Metin görünüm penceresi (BotRix: "Metin görünümü ms – ms").
+ * 0–0 = her zaman görünür. Yalnız başlangıç verilirse o andan sonuna kadar,
+ * yalnız bitiş verilirse baştan o ana kadar.
+ */
+export function metinPenceresiAcik(gecenMs: number, basMs: number, bitMs: number): boolean {
+  const bas = Math.max(0, Number(basMs) || 0);
+  const bit = Math.max(0, Number(bitMs) || 0);
+  if (!bas && !bit) return true;
+  if (bas && gecenMs < bas) return false;
+  if (bit && gecenMs >= bit) return false;
+  return true;
+}
+
+/**
+ * Metnin görünürlüğü bir sonraki kez ne zaman değişir (ms)?
+ * Widget tam o anda yeniden çizilsin diye; değişmeyecekse null.
+ */
+export function sonrakiMetinSiniri(gecenMs: number, basMs: number, bitMs: number): number | null {
+  const sinirlar = [Number(basMs) || 0, Number(bitMs) || 0].filter((x) => x > 0 && x > gecenMs);
+  if (!sinirlar.length) return null;
+  return Math.max(0, Math.min(...sinirlar) - gecenMs);
 }
 
 /**

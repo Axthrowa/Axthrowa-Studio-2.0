@@ -15,6 +15,8 @@ import {
   gorunurSure,
   ilerlet,
   kuyrugaEkle,
+  metinPenceresiAcik,
+  sonrakiMetinSiniri,
   sonrakiTik,
   type UyariOgesi
 } from './alertQueue.js';
@@ -274,5 +276,52 @@ describe('yetenekleriGetir', () => {
     await yetenekleriGetir();
     await yetenekleriGetir();
     expect(sahte).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('metin görünüm penceresi (BotRix: Metin görünümü ms – ms)', () => {
+  it('0–0 her zaman görünür', () => {
+    expect(metinPenceresiAcik(0, 0, 0)).toBe(true);
+    expect(metinPenceresiAcik(9999, 0, 0)).toBe(true);
+  });
+
+  it('1500–4000: başta gizli, pencerede görünür, sonra gizli', () => {
+    expect(metinPenceresiAcik(0, 1500, 4000)).toBe(false);
+    expect(metinPenceresiAcik(1500, 1500, 4000)).toBe(true);
+    expect(metinPenceresiAcik(3999, 1500, 4000)).toBe(true);
+    expect(metinPenceresiAcik(4000, 1500, 4000)).toBe(false);
+  });
+
+  it('yalnız başlangıç: o andan sonuna kadar; yalnız bitiş: baştan o ana kadar', () => {
+    expect(metinPenceresiAcik(500, 1000, 0)).toBe(false);
+    expect(metinPenceresiAcik(8000, 1000, 0)).toBe(true);
+    expect(metinPenceresiAcik(500, 0, 1000)).toBe(true);
+    expect(metinPenceresiAcik(1500, 0, 1000)).toBe(false);
+  });
+
+  it('bir sonraki sınıra kalan süre — widget tam o anda yeniden çizilir', () => {
+    expect(sonrakiMetinSiniri(0, 1500, 4000)).toBe(1500);
+    expect(sonrakiMetinSiniri(2000, 1500, 4000)).toBe(2000);
+    expect(sonrakiMetinSiniri(5000, 1500, 4000)).toBeNull();
+    expect(sonrakiMetinSiniri(0, 0, 0)).toBeNull();
+  });
+
+  it('ESKİ HATA: geçen süre uyarının BAŞLANGICINDAN ölçülür, aşama bitişinden değil', () => {
+    const d = kuyrugaEkle(BOS_DURUM, oge({ id: 'a', sureMs: 5000, animMs: 500 }), true, 10_000);
+    expect(d.aktifBaslangic).toBe(10_000);
+    // Başladıktan 100 ms sonra "1500 ms'de belir" diyen metin henüz gizli olmalı
+    expect(metinPenceresiAcik(10_100 - d.aktifBaslangic, 1500, 0)).toBe(false);
+  });
+
+  it('sıradaki uyarı başlayınca başlangıç yenilenir', () => {
+    let d = kuyrugaEkle(BOS_DURUM, oge({ id: 'a' }), true, 0);
+    d = kuyrugaEkle(d, oge({ id: 'b' }), true, 0);
+    d = ilerlet(d, 0, d.asamaBitis);
+    d = ilerlet(d, 0, d.asamaBitis);
+    d = ilerlet(d, 0, d.asamaBitis); // completed
+    const an = d.asamaBitis;
+    d = ilerlet(d, 0, an); // b başlar
+    expect(d.aktif?.id).toBe('b');
+    expect(d.aktifBaslangic).toBe(an);
   });
 });

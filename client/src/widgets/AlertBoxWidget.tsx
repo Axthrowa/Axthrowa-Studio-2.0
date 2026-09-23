@@ -3,7 +3,16 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ALERT_ADVANCED_DEFAULTS } from '../lib/widget-defaults.js';
-import { BOS_DURUM, GorulenKimlikler, ilerlet, kuyrugaEkle, sonrakiTik, type KuyrukDurumu } from '../lib/alertQueue.js';
+import {
+  BOS_DURUM,
+  GorulenKimlikler,
+  ilerlet,
+  kuyrugaEkle,
+  metinPenceresiAcik,
+  sonrakiMetinSiniri,
+  sonrakiTik,
+  type KuyrukDurumu
+} from '../lib/alertQueue.js';
 import { animStili, type AnimAsamasi } from '../lib/animations.js';
 
 interface AlertItem {
@@ -158,8 +167,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
         Boolean(advanced.queueEnabled)
       )
     );
-
-    oynat(item);
+    // Ses/konfeti burada ÇALINMIYOR: kuyrukta bekleyen uyarının sesi, önündeki
+    // uyarı ekrandayken çalıyordu (görsel ile ses kayıyordu). Aşağıdaki etki,
+    // uyarı gerçekten ekrana geldiğinde çalar.
   };
 
   /** Ses ve konfeti — gorsel asamadan bagimsiz, olay gelir gelmez. */
@@ -191,6 +201,27 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     if (activeAlert) enqueueAlert(normalizeAlert(activeAlert));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAlert]);
+
+  // Uyarı ekrana gelince (aktif değişince) ses ve konfeti
+  const sonCalinan = useRef<string>('');
+  useEffect(() => {
+    const oge = kuyruk.aktif;
+    if (!oge || sonCalinan.current === oge.id) return;
+    sonCalinan.current = oge.id;
+    oynat(oge.veri as AlertItem);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kuyruk.aktif?.id]);
+
+  // Metin görünüm penceresi sınırında yeniden çiz (ör. 1500 ms'de metin belirsin)
+  const [, setMetinSaati] = useState(0);
+  useEffect(() => {
+    if (!kuyruk.aktif) return;
+    const gecen = Date.now() - kuyruk.aktifBaslangic;
+    const kalan = sonrakiMetinSiniri(gecen, Number(advanced.textFromMs) || 0, Number(advanced.textToMs) || 0);
+    if (kalan === null) return;
+    const t = setTimeout(() => setMetinSaati((x) => x + 1), kalan + 5);
+    return () => clearTimeout(t);
+  });
 
   // Durum makinesini tam gerektiginde ilerlet — surekli setInterval yok.
   useEffect(() => {
@@ -243,16 +274,13 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
    * senkronize edilmesini saglar. 0-0 ise her zaman gorunur.
    */
   const metinGorunur = () => {
-    const bas = Number(advanced.textFromMs) || 0;
-    const bit = Number(advanced.textToMs) || 0;
-    if (!bas && !bit) return true;
+    // Önizlemede (aktif uyarı yok) metin hep görünür
     if (!kuyruk.aktif) return true;
-    const oge = kuyruk.aktif;
-    const toplam = oge.sureMs || 5000;
-    const gecen = toplam - Math.max(0, kuyruk.asamaBitis - Date.now());
-    if (bas && gecen < bas) return false;
-    if (bit && gecen > bit) return false;
-    return true;
+    return metinPenceresiAcik(
+      Date.now() - kuyruk.aktifBaslangic,
+      Number(advanced.textFromMs) || 0,
+      Number(advanced.textToMs) || 0
+    );
   };
 
   /** İşletim sisteminde "hareketi azalt" açıksa animasyonlar sadeleşir. */

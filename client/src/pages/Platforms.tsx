@@ -147,6 +147,16 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     } catch {}
   };
 
+  // Trovo'nun her ucu Client-ID ister (sohbeti OKUMAK dahil). Kanal
+  // tablosunda yeri yok; bot_settings'e `trovo_client_id` olarak yazılır.
+  const [trovoClientId, setTrovoClientId] = useState('');
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((d) => setTrovoClientId(String(d?.trovo_client_id || '')))
+      .catch(() => {});
+  }, []);
+
   const handleChange = (platform: string, field: string, value: any) => {
     setChannels(prev => ({
       ...prev,
@@ -166,8 +176,21 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       return;
     }
 
+    if (platform === 'trovo' && !trovoClientId.trim()) {
+      alert('Trovo için Client-ID gerekli (developer.trovo.live → uygulamanız).');
+      return;
+    }
+
     setLoading(true);
     try {
+      if (platform === 'trovo') {
+        // Bağlanmadan ÖNCE yazılmalı: adaptör connect() içinde okuyor
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trovo_client_id: trovoClientId.trim() })
+        });
+      }
       const res = await fetch('/api/platforms/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -377,7 +400,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       nameLabel: 'Trovo Kullanıcı Adı (kanal linkinin son kısmı, örn: leafinsummer)',
       tokenLabel: 'OAuth Erişim Jetonu — YALNIZ mesaj göndermek için gerekir',
       helpText:
-        'Sohbeti OKUMAK için jeton gerekmez; Ayarlar bölümünde Trovo Client-ID girmeniz yeterlidir. Mesaj GÖNDERMEK için chat_send_self izinli bir OAuth jetonu gerekir.'
+        'Sohbeti OKUMAK için yalnız Client-ID yeterli, jeton gerekmez. Mesaj GÖNDERMEK için chat_send_self izinli bir OAuth jetonu gerekir.'
     }
   ];
 
@@ -875,6 +898,24 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                       />
                     </div>
+
+                    {p.key === 'trovo' && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-300 mb-1 flex items-center gap-1.5">
+                          <Key className="w-3.5 h-3.5 text-gray-400" />
+                          Trovo Client-ID (zorunlu)
+                        </label>
+                        <input
+                          type="text"
+                          value={trovoClientId}
+                          onChange={e => setTrovoClientId(e.target.value)}
+                          placeholder="developer.trovo.live → uygulamanızın Client ID'si"
+                          autoComplete="off"
+                          spellCheck={false}
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    )}
 
                     <p className="text-[11px] text-gray-500 italic">
                       ℹ️ {p.helpText}

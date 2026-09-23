@@ -359,6 +359,9 @@ ilan eder.
 | H4 | Kuyruk ayarı yazarken girdi geri sıçrayabiliyordu | POST havadayken gelen yoklama yanıtı eski değeri yazıyordu | Son düzenleme zaman damgası ile 2 sn'lik koruma |
 | H5 | Bağış uyarısı "Twitch · YouTube" etiketleniyordu | Etiket yalnız platform tablosuna bakıyordu | `DIS_KAYNAKLAR` eklendi; BynoGame/webhook bağışı ayrıca anılıyor |
 | H6 | `integrations.test.ts` tam takımda düzensiz düşüyordu | Test dosyası DB'ye dokunan modülü içeri alıyordu; çalışan sunucuyla SQLite kilidi çakışıyordu | Saf mantık DB'siz modüllere ayrıldı |
+| H7 | Trovo kartı "Client-ID'yi girin" diyordu ama **panelde öyle bir alan yoktu** | Adaptör `trovo_client_id` ayarını okuyor, arayüz yazmıyordu — Trovo panelden hiç kurulamazdı | Trovo kartına Client-ID alanı eklendi; kaydederken bağlanmadan ÖNCE `bot_settings`'e yazılıyor, açılışta geri dolduruluyor |
+| H8 | Trovo kanal adı değişince **eski kanala** bağlanılabilirdi | Çözülen kanal kimliği `account_id`'ye yazılıyordu; panelin genel kaydetme ucu eski `account_id`'yi geri gönderiyor | Kimlik yalnız bellekte, kanal adına göre tutuluyor; veritabanına yazılmıyor |
+| H9 | `connect()` iki kez çağrılırsa **iki soket** açılır, her mesaj iki kez işlenirdi | Yeni soket açılırken eskisi kapatılmıyordu | Eski soket kapatılıyor; olay dinleyicileri yalnız GÜNCEL soketi işliyor. Kanal adı yanlışsa (kalıcı hata) sonsuz yeniden deneme yapılmıyor |
 
 ### 12.6 Yeni API uçları
 

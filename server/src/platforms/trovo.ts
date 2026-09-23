@@ -55,6 +55,12 @@ export class TrovoPlatform extends BasePlatform {
   private deneme = 0;
   /** Kullanıcı bilerek kapattıysa yeniden bağlanma. */
   private kapatiliyor = false;
+  /**
+   * Kullanıcı adı → kanal kimliği. Veritabanına (`account_id`) YAZILMAZ:
+   * panelin genel kaydetme ucu eski `account_id`'yi geri gönderiyor; kullanıcı
+   * kanal adını değiştirirse bayat kimlikle ESKİ kanala bağlanırdık.
+   */
+  private kimlikler = new Map<string, string>();
 
   // ------------------------------------------------------------- yardımcı --
 
@@ -91,7 +97,11 @@ export class TrovoPlatform extends BasePlatform {
     if (!r.ok) throw new Error(`getusers ${r.status}`);
     const j: any = await r.json();
     const k = j?.users?.[0]?.channel_id;
-    if (!k) throw new Error(`"${kullaniciAdi}" adlı Trovo kanalı bulunamadı.`);
+    if (!k) {
+      const e: any = new Error(`"${kullaniciAdi}" adlı Trovo kanalı bulunamadı.`);
+      e.kalici = true; // yeniden denemek düzeltmez: kanal adı yanlış
+      throw e;
+    }
     return String(k);
   }
 
@@ -124,7 +134,7 @@ export class TrovoPlatform extends BasePlatform {
     }
     if (!this.clientId()) {
       // Client-ID olmadan hiçbir Trovo ucu çalışmaz; sessizce denemeyelim.
-      this.sonHata = 'Trovo Client-ID ayarlanmamış (Ayarlar → Platformlar).';
+      this.sonHata = 'Trovo Client-ID girilmemiş (Platformlar → Trovo kartı).';
       this.connected = false;
       return false;
     }
@@ -133,14 +143,9 @@ export class TrovoPlatform extends BasePlatform {
     this.currentChannel = String(kanal.channel_name).trim().replace(/^@/, '');
 
     try {
-      this.channelId = kanal.account_id
-        ? String(kanal.account_id)
-        : await this.kanalKimligi(this.currentChannel);
-
-      // Kimliği bir daha aramayalım
-      if (!kanal.account_id) {
-        db.prepare('UPDATE channels SET account_id = ? WHERE id = ?').run(this.channelId, kanal.id);
-      }
+      const anahtar = this.currentChannel.toLowerCase();
+      this.channelId = this.kimlikler.get(anahtar) || (await this.kanalKimligi(this.currentChannel));
+      this.kimlikler.set(anahtar, this.channelId);
 
       const jeton = await this.sohbetJetonu(this.channelId);
       await this.wsAc(jeton);
@@ -149,13 +154,26 @@ export class TrovoPlatform extends BasePlatform {
       this.sonHata = String(e?.message || e).slice(0, 160);
       this.connected = false;
       console.error('[Trovo] Bağlantı hatası:', this.sonHata);
-      this.yenidenDene();
+      if (!e?.kalici) this.yenidenDene();
       return false;
     }
   }
 
   private wsAc(jeton: string): Promise<void> {
     return new Promise((coz, at) => {
+      // connect() iki kez çağrılırsa (açılış + yeniden bağlan) iki soket
+      // açılır ve her sohbet mesajı İKİ KEZ işlenirdi. Eskisi sessizce
+      // kapatılır; kapanış olayı aşağıdaki "güncel mi" denetimiyle yok sayılır.
+      const eski = this.ws;
+      this.ws = null;
+      if (eski) {
+        try {
+          eski.terminate();
+        } catch {
+          /* zaten kapalı */
+        }
+      }
+
       const ws = new WebSocket(WS_ADRES);
       this.ws = ws;
       let yanitlandi = false;
@@ -179,6 +197,7 @@ export class TrovoPlatform extends BasePlatform {
       });
 
       ws.on('message', (ham: WebSocket.RawData) => {
+        if (this.ws !== ws) return; // eski soket
         let p: any;
         try {
           p = JSON.parse(String(ham));
@@ -216,6 +235,7 @@ export class TrovoPlatform extends BasePlatform {
       });
 
       ws.on('close', () => {
+        if (this.ws !== ws) return; // yeni bağlantı devraldı
         this.connected = false;
         this.kalpAtisiDurdur();
         if (!this.kapatiliyor) this.yenidenDene();

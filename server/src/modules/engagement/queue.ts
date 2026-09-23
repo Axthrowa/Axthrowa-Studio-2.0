@@ -10,6 +10,7 @@
  * Saf mantık: sıra bellekte + diskte tutulur, komutlar buradan beslenir.
  */
 import { db } from '../../db/index.js';
+import { degisinceBildir, durumYayinci } from '../../core/state-push.js';
 
 export * from './queue-order.js';
 import { sirala, VARSAYILAN_KUYRUK, type KuyrukAyarlari, type KuyrukKaydi } from './queue-order.js';
@@ -126,4 +127,11 @@ class KuyrukMotoru {
 }
 
 export const kuyruk = new KuyrukMotoru();
+
+// Durum değişince panele anında yayınla (yoklama yerine)
+degisinceBildir(
+  kuyruk,
+  ['katil', 'ayril', 'sonraki', 'temizle', 'ac', 'kapat', 'ayarYaz'],
+  durumYayinci('kuyruk_durumu', () => ({ liste: kuyruk.liste(), ayar: kuyruk.ayarOku() }))
+);
 export default kuyruk;

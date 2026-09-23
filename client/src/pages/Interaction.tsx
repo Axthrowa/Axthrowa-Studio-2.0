@@ -7,12 +7,17 @@
  * bu turda yazıldı, API uçları hazırdı ama panelde hiç görünmüyordu —
  * yani yayıncı için yok hükmündeydi. Bu sayfa o üç aracın tam yüzeyi.
  *
+ * Güncelleme: durum değişince sunucu WebSocket ile ANINDA gönderir
+ * (`tahmin_durumu`, `kuyruk_durumu`, `dusus_durumu`). Yoklama yalnız yedek
+ * ve 15 sn'de bir — eskiden 2-4 sn'de bir sürekli istek atılıyordu.
+ *
  * Uçlar:
  *   /api/predictions  (+ /lock /resolve /cancel)
  *   /api/queue        (+ /settings /open /close /next /clear, DELETE /:kullanici)
  *   /api/point-drops  (+ /settings /start /stop)
  */
 import { useEffect, useRef, useState } from 'react';
+import { useWebSocket } from '../hooks/useWebSocket.js';
 import { BarChart3, Gift, ListOrdered, Lock, Play, Plus, RotateCcw, Save, Square, Trash2, X } from 'lucide-react';
 import {
   Alan,
@@ -79,10 +84,15 @@ function TahminPaneli() {
       })
       .catch(() => setHata('Tahmin durumu okunamadı.'));
 
-  // Açık tahminde havuz canlı büyür; 3 sn'de bir tazelenir.
+  // Canlı güncelleme WebSocket'ten; yoklama yalnız yedek
+  const { lastMessage } = useWebSocket('dashboard');
+  useEffect(() => {
+    if (lastMessage?.type === 'tahmin_durumu' && lastMessage.data) setD(lastMessage.data);
+  }, [lastMessage]);
+
   useEffect(() => {
     yukle();
-    const t = setInterval(yukle, 3000);
+    const t = setInterval(yukle, 15000);
     return () => clearInterval(t);
   }, []);
 
@@ -286,9 +296,16 @@ function KuyrukPaneli() {
       })
       .catch(() => setHata('Kuyruk okunamadı.'));
 
+  const { lastMessage } = useWebSocket('dashboard');
+  useEffect(() => {
+    if (lastMessage?.type !== 'kuyruk_durumu' || !lastMessage.data) return;
+    setListe(lastMessage.data.liste || []);
+    if (Date.now() - sonDuzenleme.current > 2000) setAyar(lastMessage.data.ayar);
+  }, [lastMessage]);
+
   useEffect(() => {
     yukle();
-    const t = setInterval(yukle, 4000);
+    const t = setInterval(yukle, 15000);
     return () => clearInterval(t);
   }, []);
 
@@ -455,9 +472,24 @@ function DususPaneli() {
       })
       .catch(() => setHata('Puan düşüşü durumu okunamadı.'));
 
+  const { lastMessage } = useWebSocket('dashboard');
+  useEffect(() => {
+    if (lastMessage?.type !== 'dusus_durumu' || !lastMessage.data) return;
+    setD(lastMessage.data);
+    if (!kirli.current) setAyar(lastMessage.data.ayar);
+  }, [lastMessage]);
+
+  // Geri sayım yerelde akar (bitiş anından) — her saniye sunucuya sormaya gerek yok
+  const [, setSaniye] = useState(0);
+  useEffect(() => {
+    if (!d?.aktif) return;
+    const t = setInterval(() => setSaniye((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [d?.aktif]);
+
   useEffect(() => {
     yukle();
-    const t = setInterval(yukle, 2000);
+    const t = setInterval(yukle, 15000);
     return () => clearInterval(t);
   }, []);
 
@@ -482,7 +514,9 @@ function DususPaneli() {
         baslik="Düşüş durumu"
         aciklama={
           d.aktif
-            ? `Açık · "${d.anahtar}" yazan ${d.katilanlar.length} kişi · ${sureMetni(d.kalanSaniye)} kaldı`
+            ? `Açık · "${d.anahtar}" yazan ${d.katilanlar.length} kişi · ${sureMetni(
+                d.bitisAni ? Math.max(0, (d.bitisAni - Date.now()) / 1000) : d.kalanSaniye
+              )} kaldı`
             : 'Kapalı — başlatınca sohbete anahtar kelimeyi yazan ilk kişiler puanı paylaşır.'
         }
         sag={

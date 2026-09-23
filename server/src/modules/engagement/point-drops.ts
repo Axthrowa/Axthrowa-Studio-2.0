@@ -11,6 +11,7 @@
  * yazan ilk N kişi puanı paylaşır. Amaç izleyiciyi ekran başında tutmak.
  */
 import { db } from '../../db/index.js';
+import { degisinceBildir, durumYayinci } from '../../core/state-push.js';
 import { economy } from '../economy/economy.js';
 
 export * from './drop-math.js';
@@ -133,4 +134,10 @@ class DususMotoru {
 }
 
 export const puanDususu = new DususMotoru();
+
+degisinceBildir(
+  puanDususu,
+  ['baslat', 'katil', 'bitir', 'durdur', 'ayarYaz'],
+  durumYayinci('dusus_durumu', () => puanDususu.durum())
+);
 export default puanDususu;

@@ -14,6 +14,7 @@
  */
 import crypto from 'node:crypto';
 import { db } from '../../db/index.js';
+import { degisinceBildir, durumYayinci } from '../../core/state-push.js';
 import { economy } from '../economy/economy.js';
 
 export * from './prediction-math.js';
@@ -199,4 +200,10 @@ class TahminMotoru {
 }
 
 export const tahminler = new TahminMotoru();
+
+degisinceBildir(
+  tahminler,
+  ['olustur', 'bahisKoy', 'kilitle', 'sonuclandir', 'iptal'],
+  durumYayinci('tahmin_durumu', () => tahminler.durum())
+);
 export default tahminler;

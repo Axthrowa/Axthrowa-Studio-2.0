@@ -208,3 +208,25 @@ içermez. Yedeklenen veritabanları **düz metin OAuth tokenı ve API gizli
 anahtarı içerdiği için** yedek klasörü, kaynak proje kadar gizli tutulmalıdır.
 (Bu düz metin saklama, revizyonun güvenlik fazında ele alınacak bulgular
 arasındadır.)
+
+---
+
+## 9. İkinci tur yedekleri (2026-09-23)
+
+| Yedek | Konum | Doğrulama |
+|---|---|---|
+| **StreamAxT git paketi** (tüm geçmiş, 4 ref) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\streamaxt-tur2-20260923-182053.bundle` (687 KB) | `git bundle verify` → *is okay*; `revamp/botrix-parity-20260921` = `5b48133` |
+| **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` ayarları ve veritabanı) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\yedek-20260923-181946-streamaxt-P2-P3-tur2-trovo-etkilesim-entegrasyon.zip` (10,8 MB) | `scripts\yedek-al.ps1` |
+
+Git paketinden geri yükleme:
+
+```bash
+git clone streamaxt-tur2-20260923-182053.bundle StreamAxT-geri -b revamp/botrix-parity-20260921
+```
+
+İkinci turun veritabanı değişiklikleri **eklemeli**dir: beş yeni tablo
+(`predictions`, `prediction_bets`, `viewer_queue`, `alert_variants`,
+`media_library`) `CREATE TABLE IF NOT EXISTS` ile oluşur; mevcut tablolara ve
+sütunlara dokunulmaz, göç yoktur. Trovo mevcut `channels` tablosunu kullanır.
+Eski kod bu tabloları görmezden gelir — birinci turun geri alma yolu (`§7`)
+veri kaybettirmeden aynen geçerlidir.

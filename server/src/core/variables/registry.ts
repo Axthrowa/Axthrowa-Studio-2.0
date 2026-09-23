@@ -20,6 +20,7 @@ import { kvOku, kvYaz, kvListele, sayacAl, sayacAyarla, sayacDegistir, sayacIfad
 import { SINIR, type DegiskenBaglam, type DegiskenTanimi } from './types.js';
 import { noktaliBol } from './resolve.js';
 import { sayi, sureMetni, matematik, jsonYolu } from './pure.js';
+import { canliDurum } from '../live-status.js';
 
 export { matematik, jsonYolu } from './pure.js';
 
@@ -32,6 +33,23 @@ function atSil(s: string): string {
 function yedekli(ham: string, deger: string): string {
   if (deger) return deger;
   return ham.trim();
+}
+
+/**
+ * Yayın başlığı/kategorisi DEĞİŞTİRİCİ. Değişken motoru platform
+ * adaptörlerine bağımlı olmasın (döngüsel içe aktarma) diye başlangıçta
+ * `index.ts` enjekte eder.
+ */
+export type YayinDegistirici = (
+  tur: 'baslik' | 'kategori',
+  deger: string,
+  platform: string
+) => Promise<{ ok: boolean; hata?: string; kategori?: string }>;
+
+let yayinDegistirici: YayinDegistirici | null = null;
+
+export function yayinDegistiriciAyarla(fn: YayinDegistirici) {
+  yayinDegistirici = fn;
 }
 
 /** Sohbette son görülen kullanıcılardan rastgele biri. */
@@ -100,6 +118,37 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       return m[String(c.platform).toLowerCase()] || '';
     }),
     tanim('uptime', 'channel', 'Yayının ne kadardır açık olduğu', () => getStreamUptime()),
+    tanim('title', 'channel', 'Yayının şu anki başlığı', (_h, c) => canliDurum.platform(c.platform)?.baslik || ''),
+    tanim('game', 'channel', 'Yayının şu anki kategorisi', (_h, c) => canliDurum.platform(c.platform)?.kategori || ''),
+    tanim('viewers', 'channel', 'Anlık izleyici sayısı (tüm platformlar)', () => String(canliDurum.genel().izleyici || 0)),
+    tanim(
+      'settitle',
+      'channel',
+      'Yayın başlığını değiştirir — yalnız mod/yayıncı çalıştırabilir',
+      async (h, c) => {
+        if (!(c.user.isMod || c.user.isBroadcaster)) return '(yetki yok)';
+        const yeni = h.trim();
+        if (!yeni) return '(başlık boş)';
+        if (!yayinDegistirici) return '(desteklenmiyor)';
+        const r = await yayinDegistirici('baslik', yeni, c.platform);
+        return r.ok ? yeni : `(değiştirilemedi: ${r.hata})`;
+      },
+      { yazar: true, ornek: '$(settitle $(query))' }
+    ),
+    tanim(
+      'setcategory',
+      'channel',
+      'Yayın kategorisini değiştirir — yalnız mod/yayıncı çalıştırabilir',
+      async (h, c) => {
+        if (!(c.user.isMod || c.user.isBroadcaster)) return '(yetki yok)';
+        const yeni = h.trim();
+        if (!yeni) return '(kategori boş)';
+        if (!yayinDegistirici) return '(desteklenmiyor)';
+        const r = await yayinDegistirici('kategori', yeni, c.platform);
+        return r.ok ? r.kategori || yeni : `(değiştirilemedi: ${r.hata})`;
+      },
+      { yazar: true, ornek: '$(setcategory $(query))' }
+    ),
     tanim('followers', 'channel', 'Takipçi sayısı', () => {
       const r = db
         .prepare("SELECT COUNT(*) c FROM stream_events WHERE event_type = 'follow'")

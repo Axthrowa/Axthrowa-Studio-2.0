@@ -19,6 +19,7 @@ import {
   VARSAYILAN_DUYURU,
   webhookGecerliMi,
   etiketOneki,
+  zatenDuyuruldu,
   type DuyuruAyarlari,
   type DuyuruKaynagi,
   type DuyuruKurali
@@ -110,8 +111,8 @@ class DiscordDuyurulari {
         body: JSON.stringify({
           content: govde.slice(0, 1900),
           // Etiket ayarı kapalıyken şablonda @everyone yazsa bile ping ATMASIN
-          allowed_mentions:
-            kural.etiket === 'yok' ? { parse: [] } : { parse: [kural.etiket === 'here' ? 'everyone' : 'everyone'] }
+          // Discord'da @here de "everyone" izniyle çalışır (allowed_mentions)
+          allowed_mentions: kural.etiket === 'yok' ? { parse: [] } : { parse: ['everyone'] }
         }),
         signal: AbortSignal.timeout(8000)
       });
@@ -124,13 +125,39 @@ class DiscordDuyurulari {
     }
   }
 
+  private sonYayinAnahtari(kaynak: DuyuruKaynagi) {
+    return `discord_son_yayin_${kaynak}`;
+  }
+
+  /**
+   * Yayın açılınca otomatik duyuru.
+   *
+   * Önceki sürümde bu dinleyici YAZILMIŞ ama HİÇ BAĞLANMAMIŞTI (index.ts
+   * çağırmıyordu) ve Kick/Twitch/YouTube `stream_online` üretmiyordu —
+   * otomatik duyuru hiç çalışmıyordu, yalnız "Test" düğmesi çalışıyordu.
+   * Artık canlı durum servisi (live-status.ts) olayı üretiyor.
+   */
   baglaOlaylar() {
-    // Yayın başlangıcı olayı henüz platform adaptörlerinde yok
-    // (KNOWN_LIMITATIONS). Şimdilik elle/API ile tetiklenir; olay eklenince
-    // burası otomatik çalışır.
-    eventBus.on('stream_online', (p: any) => {
+    eventBus.on('stream_online', async (p: any) => {
       const kaynak = String(p?.platform || '').toLowerCase() as DuyuruKaynagi;
-      if (kaynak) void this.duyur(kaynak, p?.channel || '');
+      if (!kaynak || !this.ayarOku()[kaynak]) return;
+
+      const anahtar = this.sonYayinAnahtari(kaynak);
+      const onceki = (db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(anahtar) as { value?: string } | undefined)
+        ?.value;
+      if (zatenDuyuruldu(p?.yayinId, onceki)) return;
+
+      const r = await this.duyur(kaynak, p?.channel || '');
+      if (r.ok) {
+        if (p?.yayinId) {
+          db.prepare(
+            'INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+          ).run(anahtar, String(p.yayinId));
+        }
+        console.log(`[Discord] ${kaynak} yayını duyuruldu.`);
+      } else if (r.hata && !/kapalı/.test(r.hata)) {
+        console.warn(`[Discord] ${kaynak} duyurusu gönderilemedi:`, r.hata);
+      }
     });
   }
 }

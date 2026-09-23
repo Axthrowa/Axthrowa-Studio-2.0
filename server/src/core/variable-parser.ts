@@ -2,23 +2,36 @@ import axios from 'axios';
 import { db } from '../db/index.js';
 import { ChatMessagePayload } from './event-bus.js';
 
+import { canliDurum, sureMetni } from './live-status.js';
+
+/**
+ * YEDEK başlangıç: yalnız hiçbir platform yayın durumu bildirmiyorsa
+ * kullanılır. Eskiden TEK kaynak buydu ve botun açılış anıydı — `!uptime`
+ * yayının değil botun süresini söylüyordu.
+ */
 let streamStartTime = Date.now();
 
 export function setStreamStartTime(time: number) {
   streamStartTime = time;
 }
 
+/**
+ * Yayın süresi.
+ *   • Yayın açık ve başlangıç biliniyor → gerçek süre
+ *   • Yayın kapalı (bir platform kapalı dedi) → "yayın kapalı"
+ *   • Hiçbir platform durum bildirmiyor → eski davranış (bot açılışı),
+ *     geriye uyum için; algılama olmayan kurulumda da boş dönmesin.
+ */
 export function getStreamUptime(): string {
-  const diff = Date.now() - streamStartTime;
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  const g = canliDurum.genel();
+  if (g.canli === true && g.baslangic) return sureMetni(Date.now() - g.baslangic);
+  if (g.canli === false) return 'yayın kapalı';
+  return sureMetni(Date.now() - streamStartTime);
+}
 
-  const parts = [];
-  if (hours > 0) parts.push(`${hours} saat`);
-  if (minutes > 0 || hours > 0) parts.push(`${minutes} dakika`);
-  parts.push(`${seconds} saniye`);
-  return parts.join(' ');
+/** `!uptime` için: yayın açık mı, bilinmiyor mu? */
+export function yayinAcikMi(): boolean | null {
+  return canliDurum.genel().canli;
 }
 
 export async function parseVariables(

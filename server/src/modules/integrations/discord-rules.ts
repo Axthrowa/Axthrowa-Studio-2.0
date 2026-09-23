@@ -6,7 +6,7 @@
  * kilidine takılmasın (prediction-math.ts / queue-order.ts ile aynı desen).
  */
 
-export type DuyuruKaynagi = 'kick' | 'twitch' | 'youtube' | 'tiktok';
+export type DuyuruKaynagi = 'kick' | 'twitch' | 'youtube' | 'tiktok' | 'trovo';
 
 export interface DuyuruKurali {
   aktif: boolean;
@@ -32,8 +32,22 @@ export const VARSAYILAN_DUYURU: DuyuruAyarlari = {
   kick: K(),
   twitch: K(),
   youtube: K(),
-  tiktok: K()
+  tiktok: K(),
+  trovo: K()
 };
+
+/**
+ * Bu yayın zaten duyuruldu mu?
+ *
+ * Bekleme süresi bellekte tutuluyordu: bot yayın ortasında yeniden
+ * başlatılınca aynı yayın İKİNCİ KEZ duyurulurdu. Yayın kimliği kalıcı
+ * saklanır; aynı kimlik bir daha duyurulmaz. Kimlik yoksa (bazı platformlar
+ * vermiyor) yalnız bekleme süresi korur.
+ */
+export function zatenDuyuruldu(yayinId: string | undefined, sonDuyurulan: string | undefined): boolean {
+  const y = String(yayinId || '').trim();
+  return !!y && y === String(sonDuyurulan || '').trim();
+}
 
 /** Webhook adresi gerçekten Discord'a mı gidiyor? */
 export function webhookGecerliMi(url: string): boolean {

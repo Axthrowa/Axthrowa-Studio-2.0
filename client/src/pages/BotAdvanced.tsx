@@ -411,7 +411,8 @@ const KURAL_ADLARI: Record<string, string> = {
   emotes: 'Emoji koruması',
   links: 'Link koruması',
   symbols: 'Sembol koruması',
-  blacklist: 'Yasaklı kelime'
+  blacklist: 'Yasaklı kelime',
+  repeat: 'Tekrarlanan mesaj'
 };
 
 function ModerasyonPaneli() {

@@ -1,6 +1,13 @@
 /**
  * StreamAxT AutoMod
  * Developed by AxthrowA
+ *
+ * DÜZELTME (3. tur): Bu sayfadaki "Aksiyon" ve "Timeout" seçimleri
+ * `automod_advanced` JSON'una `warning/delete/timeout` olarak yazılıyordu ama
+ * ihlal motoru (enforcement.ts) kural başına SÜTUNLARI okuyor — seçimler hiç
+ * uygulanmıyordu. Artık eylem, süre ve uyarı mesajı doğrudan motorun
+ * okuduğu yere (`actions`) yazılıyor; Gelişmiş Bot > Moderasyon Eylemleri ile
+ * aynı veriyi düzenliyor.
  */
 import { useState, useEffect } from 'react';
 import { AutoModSettings } from '../types.js';
@@ -25,18 +32,39 @@ const ADV_DEFAULT: Adv = {
 };
 
 const TABS = [
-  { id: 'caps', label: 'Caps Protection' },
-  { id: 'links', label: 'Link Protection' },
-  { id: 'emotes', label: 'Emote Protection' },
-  { id: 'symbols', label: 'Symbol Protection' },
-  { id: 'words', label: 'Bad Words' },
-  { id: 'name', label: 'Name' }
+  { id: 'caps', label: 'Büyük Harf' },
+  { id: 'links', label: 'Link' },
+  { id: 'emotes', label: 'Emoji' },
+  { id: 'symbols', label: 'Sembol' },
+  { id: 'words', label: 'Yasaklı Kelimeler' },
+  { id: 'repeat', label: 'Tekrar' },
+  { id: 'name', label: 'Kullanıcı Adı' }
 ];
+
+type Kural = 'caps' | 'links' | 'emotes' | 'symbols' | 'blacklist' | 'repeat';
+const KURALLAR: Kural[] = ['caps', 'links', 'emotes', 'symbols', 'blacklist', 'repeat'];
+interface KuralEylemi { action: string; timeout: number; message: string }
+
+/** Motorun kabul ettiği eylemler (server/modules/automod/enforcement.ts). */
+const EYLEMLER = [
+  { value: 'warn', label: 'Uyarı mesajı gönder' },
+  { value: 'timeout', label: 'Zaman aşımı ver' },
+  { value: 'timeout_warn', label: 'Zaman aşımı + uyarı' },
+  { value: 'delete', label: 'Mesajı sil' },
+  { value: 'delete_warn', label: 'Sil + uyarı' }
+];
+
+/** BotRix'teki on bir kademe. */
+const SURELER = [
+  [30, '30 sn'], [60, '1 dk'], [120, '2 dk'], [300, '5 dk'], [900, '15 dk'], [1800, '30 dk'],
+  [3600, '1 sa'], [7200, '2 sa'], [18000, '5 sa'], [43200, '12 sa'], [86400, '1 gün']
+] as const;
 
 export function AutoMod() {
   const [settings, setSettings] = useState<AutoModSettings | null>(null);
   const [adv, setAdv] = useState<Adv>(ADV_DEFAULT);
   const [tab, setTab] = useState('caps');
+  const [kural, setKural] = useState<Record<Kural, KuralEylemi> | null>(null);
   const [newWord, setNewWord] = useState('');
   const [newDomain, setNewDomain] = useState('');
   const [newNameWord, setNewNameWord] = useState('');
@@ -47,7 +75,22 @@ export function AutoMod() {
       .then(r => r.json())
       .then(d => {
         setSettings(d);
-        setAdv({ ...ADV_DEFAULT, ...(d.advanced || {}) });
+        const a = { ...ADV_DEFAULT, ...(d.advanced || {}) };
+        setAdv(a);
+        // Gerçek kaynak: kural başına sütunlar. Mesaj boşsa eski uyarı metni.
+        const uyari: Record<Kural, string> = {
+          caps: a.caps_warning, links: a.links_warning, emotes: a.emotes_warning,
+          symbols: a.symbols_warning, blacklist: a.blacklist_warning, repeat: (a as any).repeat_warning || ''
+        };
+        const k = {} as Record<Kural, KuralEylemi>;
+        for (const r of KURALLAR) {
+          k[r] = {
+            action: String(d[`${r}_action`] || 'warn'),
+            timeout: Number(d[`${r}_timeout`]) || 60,
+            message: String(d[`${r}_message`] || uyari[r] || '')
+          };
+        }
+        setKural(k);
       })
       .catch(() => {});
   }, []);
@@ -57,7 +100,8 @@ export function AutoMod() {
     const res = await fetch('/api/automod', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...settings, advanced: adv })
+      // `actions`: motorun okuduğu kural başına eylem/süre/mesaj
+      body: JSON.stringify({ ...settings, advanced: adv, actions: kural || undefined })
     });
     if (res.ok) {
       setSaved(true);
@@ -65,29 +109,51 @@ export function AutoMod() {
     }
   };
 
-  if (!settings) return <div className="p-8 text-center text-gray-500">Yükleniyor...</div>;
+  if (!settings || !kural) return <div className="p-8 text-center text-gray-500">Yükleniyor...</div>;
 
-  const ActionSelect = ({ k }: { k: keyof Adv }) => (
-    <label className="text-xs text-gray-300 font-bold space-y-1">
-      Aksiyon
-      <select value={String(adv[k])} onChange={e => setAdv(a => ({ ...a, [k]: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-        <option value="warning">Uyarı</option>
-        <option value="delete">Mesajı sil</option>
-        <option value="timeout">Timeout</option>
-      </select>
-    </label>
+  const kuralDegis = (r: Kural, yama: Partial<KuralEylemi>) => setKural({ ...kural, [r]: { ...kural[r], ...yama } });
+
+  /** Kural başına eylem — motorun okuduğu yere yazılır. */
+  // NOT: Bileşen değil düz fonksiyon — render içinde tanımlanan bileşen her
+  // tuşta yeniden bağlanır ve metin kutusu odağı kaybederdi.
+  const eylemSecimi = (k: string) => {
+    const r = (k.replace(/_action$/, '') as Kural);
+    const e = kural[r];
+    const sureli = e.action === 'timeout' || e.action === 'timeout_warn';
+    return (
+      <>
+        <label className="text-xs text-gray-300 font-bold space-y-1">
+          İhlal eylemi
+          <select value={e.action} onChange={ev => kuralDegis(r, { action: ev.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+            {EYLEMLER.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+          </select>
+        </label>
+        {sureli && (
+          <label className="text-xs text-gray-300 font-bold space-y-1">
+            Zaman aşımı süresi
+            <select value={e.timeout} onChange={ev => kuralDegis(r, { timeout: Number(ev.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+              {SURELER.map(([sn, ad]) => <option key={sn} value={sn}>{ad}</option>)}
+            </select>
+          </label>
+        )}
+      </>
+    );
+  };
+
+  const uyariMesaji = (r: Kural) => (
+    <label className="text-xs space-y-1 block">Uyarı mesajı<input value={kural[r].message} onChange={e => kuralDegis(r, { message: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white">Bot Moderation</h1>
-          <p className="text-sm text-gray-400">Caps, link, emote, symbol, bad words ve isim korumasını yapılandır.</p>
+          <h1 className="text-2xl font-black text-white">Bot Moderasyonu</h1>
+          <p className="text-sm text-gray-400">Büyük harf, link, emoji, sembol, yasaklı kelime, tekrar ve kullanıcı adı koruması.</p>
         </div>
         <button onClick={handleSave} className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${saved ? 'bg-emerald-600 text-white' : 'bg-purple-600 text-white'}`}>
           {saved ? <Check className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
-          {saved ? 'Kaydedildi' : 'Configure kaydet'}
+          {saved ? 'Kaydedildi' : 'Kaydet'}
         </button>
       </div>
 
@@ -99,31 +165,29 @@ export function AutoMod() {
 
       {tab === 'caps' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2"><Type className="w-5 h-5 text-purple-400" /><h2 className="font-bold">Caps Protection Configure</h2></div>
+          <div className="flex items-center gap-2"><Type className="w-5 h-5 text-purple-400" /><h2 className="font-bold">Büyük Harf Koruması</h2></div>
           <label className="flex justify-between text-xs">Caps Lock filtresi <input type="checkbox" checked={settings.caps_enabled !== 0} onChange={e => setSettings({ ...settings, caps_enabled: e.target.checked ? 1 : 0 })} /></label>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-xs space-y-1">Asgari karakter<input type="number" value={settings.caps_min_length} onChange={e => setSettings({ ...settings, caps_min_length: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
             <label className="text-xs space-y-1">Max büyük harf % ({settings.caps_max_percent})<input type="range" min={30} max={100} value={settings.caps_max_percent} onChange={e => setSettings({ ...settings, caps_max_percent: +e.target.value })} className="w-full" /></label>
-            <label className="text-xs space-y-1">Timeout (sn)<input type="number" value={adv.caps_timeout} onChange={e => setAdv(a => ({ ...a, caps_timeout: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-            <ActionSelect k="caps_action" />
+            {eylemSecimi("caps_action")}
           </div>
           <label className="flex justify-between text-xs">Aboneleri muaf tut <input type="checkbox" checked={adv.caps_exclude_subs} onChange={e => setAdv(a => ({ ...a, caps_exclude_subs: e.target.checked }))} /></label>
           <label className="flex justify-between text-xs">VIP muaf <input type="checkbox" checked={adv.caps_exclude_vips} onChange={e => setAdv(a => ({ ...a, caps_exclude_vips: e.target.checked }))} /></label>
-          <label className="text-xs space-y-1">Uyarı mesajı<input value={adv.caps_warning} onChange={e => setAdv(a => ({ ...a, caps_warning: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          {uyariMesaji("caps")}
         </div>
       )}
 
       {tab === 'links' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2"><Link className="w-5 h-5 text-blue-400" /><h2 className="font-bold">Link Protection Configure</h2></div>
+          <div className="flex items-center gap-2"><Link className="w-5 h-5 text-blue-400" /><h2 className="font-bold">Link Koruması</h2></div>
           <label className="flex justify-between text-xs">İzinsiz linkleri engelle <input type="checkbox" checked={settings.links_enabled !== 0} onChange={e => setSettings({ ...settings, links_enabled: e.target.checked ? 1 : 0 })} /></label>
           <div className="grid grid-cols-2 gap-4">
-            <label className="text-xs space-y-1">Timeout (sn)<input type="number" value={adv.links_timeout} onChange={e => setAdv(a => ({ ...a, links_timeout: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
             <label className="text-xs space-y-1">!permit süresi (sn)<input type="number" value={adv.links_permit_seconds} onChange={e => setAdv(a => ({ ...a, links_permit_seconds: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-            <ActionSelect k="links_action" />
+            {eylemSecimi("links_action")}
           </div>
           <label className="flex justify-between text-xs">Aboneleri muaf tut <input type="checkbox" checked={adv.links_exclude_subs} onChange={e => setAdv(a => ({ ...a, links_exclude_subs: e.target.checked }))} /></label>
-          <label className="text-xs space-y-1">Uyarı mesajı<input value={adv.links_warning} onChange={e => setAdv(a => ({ ...a, links_warning: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          {uyariMesaji("links")}
           <div className="flex gap-2">
             <input value={newDomain} onChange={e => setNewDomain(e.target.value)} placeholder="twitch.tv" className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs" />
             <button type="button" onClick={() => { if (newDomain.trim()) setSettings({ ...settings, links_whitelist: [...settings.links_whitelist, newDomain.trim()] }); setNewDomain(''); }} className="px-3 py-2 bg-blue-600 rounded-xl"><Plus className="w-4 h-4" /></button>
@@ -136,42 +200,54 @@ export function AutoMod() {
 
       {tab === 'emotes' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2"><Smile className="w-5 h-5 text-pink-400" /><h2 className="font-bold">Emote Protection Configure</h2></div>
+          <div className="flex items-center gap-2"><Smile className="w-5 h-5 text-pink-400" /><h2 className="font-bold">Emoji Koruması</h2></div>
           <label className="flex justify-between text-xs">Emoji sınırı <input type="checkbox" checked={settings.emotes_enabled !== 0} onChange={e => setSettings({ ...settings, emotes_enabled: e.target.checked ? 1 : 0 })} /></label>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-xs space-y-1">Max emote<input type="number" value={settings.emotes_max} onChange={e => setSettings({ ...settings, emotes_max: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-            <label className="text-xs space-y-1">Timeout (sn)<input type="number" value={adv.emotes_timeout} onChange={e => setAdv(a => ({ ...a, emotes_timeout: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-            <ActionSelect k="emotes_action" />
+            {eylemSecimi("emotes_action")}
           </div>
           <label className="flex justify-between text-xs">Aboneleri muaf tut <input type="checkbox" checked={adv.emotes_exclude_subs} onChange={e => setAdv(a => ({ ...a, emotes_exclude_subs: e.target.checked }))} /></label>
-          <label className="text-xs space-y-1">Uyarı mesajı<input value={adv.emotes_warning} onChange={e => setAdv(a => ({ ...a, emotes_warning: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          {uyariMesaji("emotes")}
         </div>
       )}
 
       {tab === 'symbols' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2"><Hash className="w-5 h-5 text-amber-400" /><h2 className="font-bold">Symbol Protection Configure</h2></div>
+          <div className="flex items-center gap-2"><Hash className="w-5 h-5 text-amber-400" /><h2 className="font-bold">Sembol Koruması</h2></div>
           <label className="flex justify-between text-xs">Sembol filtresi <input type="checkbox" checked={settings.symbols_enabled !== 0} onChange={e => setSettings({ ...settings, symbols_enabled: e.target.checked ? 1 : 0 })} /></label>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-xs space-y-1">Max sembol % ({settings.symbols_max_percent})<input type="range" min={20} max={100} value={settings.symbols_max_percent} onChange={e => setSettings({ ...settings, symbols_max_percent: +e.target.value })} className="w-full" /></label>
             <label className="text-xs space-y-1">Min uzunluk<input type="number" value={adv.symbols_min_length} onChange={e => setAdv(a => ({ ...a, symbols_min_length: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-            <label className="text-xs space-y-1">Timeout (sn)<input type="number" value={adv.symbols_timeout} onChange={e => setAdv(a => ({ ...a, symbols_timeout: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-            <ActionSelect k="symbols_action" />
+            {eylemSecimi("symbols_action")}
           </div>
           <label className="flex justify-between text-xs">Aboneleri muaf tut <input type="checkbox" checked={adv.symbols_exclude_subs} onChange={e => setAdv(a => ({ ...a, symbols_exclude_subs: e.target.checked }))} /></label>
-          <label className="text-xs space-y-1">Uyarı mesajı<input value={adv.symbols_warning} onChange={e => setAdv(a => ({ ...a, symbols_warning: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          {uyariMesaji("symbols")}
+        </div>
+      )}
+
+      {tab === 'repeat' && (
+        <div className="glass-panel p-6 rounded-2xl space-y-4">
+          <div className="flex items-center gap-2"><Type className="w-5 h-5 text-sky-400" /><h2 className="font-bold">Tekrarlanan Mesaj Koruması</h2></div>
+          <p className="text-[11px] text-gray-500">Aynı izleyici kısa sürede aynı mesajı tekrar yazarsa ihlal sayılır. "Merhaba", "MERHABA!!" ve "merhaba" aynı mesajdır. Moderatör ve yayıncı muaftır.</p>
+          <label className="flex justify-between text-xs">Tekrar koruması <input type="checkbox" checked={Number((settings as any).repeat_enabled) === 1} onChange={e => setSettings({ ...settings, repeat_enabled: e.target.checked ? 1 : 0 } as any)} /></label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="text-xs space-y-1">Kaçıncı tekrarda ({Number((settings as any).repeat_count) || 3})<input type="range" min={2} max={10} value={Number((settings as any).repeat_count) || 3} onChange={e => setSettings({ ...settings, repeat_count: +e.target.value } as any)} className="w-full" /></label>
+            <label className="text-xs space-y-1">Zaman penceresi (sn)<input type="number" min={5} max={3600} value={Number((settings as any).repeat_window) || 30} onChange={e => setSettings({ ...settings, repeat_window: +e.target.value } as any)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+            {eylemSecimi("repeat_action")}
+          </div>
+          <label className="flex justify-between text-xs">Aboneleri muaf tut <input type="checkbox" checked={!!(adv as any).repeat_exclude_subs} onChange={e => setAdv(a => ({ ...a, repeat_exclude_subs: e.target.checked } as any))} /></label>
+          {uyariMesaji("repeat")}
         </div>
       )}
 
       {tab === 'words' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2"><Ban className="w-5 h-5 text-red-400" /><h2 className="font-bold">Bad Words Protection Configure</h2></div>
+          <div className="flex items-center gap-2"><Ban className="w-5 h-5 text-red-400" /><h2 className="font-bold">Yasaklı Kelime Koruması</h2></div>
           <div className="grid grid-cols-2 gap-4">
-            <label className="text-xs space-y-1">Timeout (sn)<input type="number" value={adv.blacklist_timeout} onChange={e => setAdv(a => ({ ...a, blacklist_timeout: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-            <ActionSelect k="blacklist_action" />
+            {eylemSecimi("blacklist_action")}
           </div>
           <label className="flex justify-between text-xs">Aboneleri muaf tut <input type="checkbox" checked={adv.blacklist_exclude_subs} onChange={e => setAdv(a => ({ ...a, blacklist_exclude_subs: e.target.checked }))} /></label>
-          <label className="text-xs space-y-1">Uyarı mesajı<input value={adv.blacklist_warning} onChange={e => setAdv(a => ({ ...a, blacklist_warning: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          {uyariMesaji("blacklist")}
           <div className="flex gap-2">
             <input value={newWord} onChange={e => setNewWord(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWord.trim()) { setSettings({ ...settings, blacklist_words: [...settings.blacklist_words, newWord.trim()] }); setNewWord(''); } }} placeholder="yasaklı kelime" className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm" />
             <button type="button" onClick={() => { if (newWord.trim()) setSettings({ ...settings, blacklist_words: [...settings.blacklist_words, newWord.trim()] }); setNewWord(''); }} className="px-4 py-2 bg-red-600 rounded-xl text-xs font-bold">Ekle</button>
@@ -184,10 +260,10 @@ export function AutoMod() {
 
       {tab === 'name' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2"><User className="w-5 h-5 text-cyan-400" /><h2 className="font-bold">Name Protection</h2></div>
+          <div className="flex items-center gap-2"><User className="w-5 h-5 text-cyan-400" /><h2 className="font-bold">Kullanıcı Adı Koruması</h2></div>
           <label className="flex justify-between text-xs">Kullanıcı adı filtresi <input type="checkbox" checked={adv.name_enabled} onChange={e => setAdv(a => ({ ...a, name_enabled: e.target.checked }))} /></label>
           <label className="text-xs space-y-1">Regex<input value={adv.name_regex} onChange={e => setAdv(a => ({ ...a, name_regex: e.target.value }))} placeholder="(scam|xxx)" className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <label className="text-xs space-y-1">Timeout (sn)<input type="number" value={adv.name_timeout} onChange={e => setAdv(a => ({ ...a, name_timeout: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <p className="text-[10px] text-gray-500">İhlalde "Yasaklı Kelimeler" kuralının eylemi uygulanır.</p>
           <label className="text-xs space-y-1">Uyarı<input value={adv.name_warning} onChange={e => setAdv(a => ({ ...a, name_warning: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <div className="flex gap-2">
             <input value={newNameWord} onChange={e => setNewNameWord(e.target.value)} placeholder="yasaklı isim parçası" className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs" />

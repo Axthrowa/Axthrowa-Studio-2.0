@@ -98,6 +98,20 @@ export const GOCLER: Gocler[] = [
         sutunEkle(db, 'automod_settings', `${kural}_bypass`, "TEXT NOT NULL DEFAULT '[\"mod\",\"broadcaster\"]'");
       }
     }
+  },
+  {
+    version: 6,
+    name: 'automod — tekrarlanan mesaj kuralı',
+    up(db) {
+      // Denetim B9. Eklemeli: yeni sütunlar varsayılanlı, eski kod etkilenmez.
+      sutunEkle(db, 'automod_settings', 'repeat_enabled', 'INTEGER NOT NULL DEFAULT 0');
+      sutunEkle(db, 'automod_settings', 'repeat_count', 'INTEGER NOT NULL DEFAULT 3');
+      sutunEkle(db, 'automod_settings', 'repeat_window', 'INTEGER NOT NULL DEFAULT 30');
+      sutunEkle(db, 'automod_settings', 'repeat_action', "TEXT NOT NULL DEFAULT 'delete_warn'");
+      sutunEkle(db, 'automod_settings', 'repeat_timeout', 'INTEGER NOT NULL DEFAULT 60');
+      sutunEkle(db, 'automod_settings', 'repeat_message', "TEXT NOT NULL DEFAULT ''");
+      sutunEkle(db, 'automod_settings', 'repeat_bypass', "TEXT NOT NULL DEFAULT '[\"mod\",\"broadcaster\"]'");
+    }
   }
 ];
 

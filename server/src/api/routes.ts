@@ -537,9 +537,21 @@ router.post('/automod', (req: Request, res: Response) => {
 
   // Kural basina ihlal eylemi (BotRix parity, GAP §4). Alan gonderilmemisse
   // MEVCUT deger korunur — eski panel surumu yeni ayarlari silmesin.
-  const kurallar: Array<'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist'> = [
-    'caps', 'emotes', 'links', 'symbols', 'blacklist'
+  const kurallar: Array<'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat'> = [
+    'caps', 'emotes', 'links', 'symbols', 'blacklist', 'repeat'
   ];
+
+  // Tekrarlanan mesaj kuralı (B9) — gönderilmeyen alan korunur
+  const rb = req.body || {};
+  if (rb.repeat_enabled !== undefined) {
+    db.prepare('UPDATE automod_settings SET repeat_enabled = ? WHERE id = 1').run(rb.repeat_enabled ? 1 : 0);
+  }
+  if (rb.repeat_count !== undefined) {
+    db.prepare('UPDATE automod_settings SET repeat_count = ? WHERE id = 1').run(Math.min(20, Math.max(2, Number(rb.repeat_count) || 3)));
+  }
+  if (rb.repeat_window !== undefined) {
+    db.prepare('UPDATE automod_settings SET repeat_window = ? WHERE id = 1').run(Math.min(3600, Math.max(5, Number(rb.repeat_window) || 30)));
+  }
   const eylemler = req.body?.actions || {};
   for (const k of kurallar) {
     const a = eylemler[k];

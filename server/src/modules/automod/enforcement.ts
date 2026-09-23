@@ -16,7 +16,7 @@ import { yetenek } from '../../platforms/capabilities.js';
 
 export type IhlalEylemi = 'warn' | 'timeout' | 'timeout_warn' | 'delete' | 'delete_warn';
 
-export type KuralAdi = 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist';
+export type KuralAdi = 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat';
 
 /** BotRix'teki on bir kademe (BOTRIX_UI_INVENTORY §6.1). */
 export const TIMEOUT_KADEMELERI = [30, 60, 120, 300, 900, 1800, 3600, 7200, 18000, 43200, 86400] as const;

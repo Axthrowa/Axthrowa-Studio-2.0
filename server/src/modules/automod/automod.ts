@@ -9,9 +9,10 @@ import {
   sureyiYaz,
   type KuralAdi
 } from './enforcement.js';
+import { TekrarIzleyici } from './repeat.js';
 
 export interface AutoModViolation {
-  rule: 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'ai_toxic';
+  rule: 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'ai_toxic';
   reason: string;
   matchedText?: string;
 }
@@ -21,6 +22,7 @@ export class AutoModEngine {
   private blacklistCache: string[] = [];
   private whitelistCache: string[] = [];
   private lastLoadTime: number = 0;
+  private tekrar = new TekrarIzleyici();
 
   reload() {
     try {
@@ -76,6 +78,14 @@ export class AutoModEngine {
 
     const text = message.message.trim();
     if (!text) return null;
+
+    // Tekrar sayacı HER mesajı kaydeder (başka kural yakalasa da): spamcı
+    // büyük harfle/küçük harfle dönüşümlü yazınca sayım kaçmasın. Karar
+    // aşağıda, başka kural ihlal bulmazsa verilir.
+    const tekrarAcik = !!row.repeat_enabled && !(advanced.repeat_exclude_subs && message.user.isSub);
+    const tekrarSayisi = tekrarAcik
+      ? this.tekrar.kaydet(message.user.username, text, (Number(row.repeat_window) || 30) * 1000)
+      : 0;
 
     // 1. Fast Blacklisted Words Filter (in-memory)
     if (!(advanced.blacklist_exclude_subs && message.user.isSub)) {
@@ -163,6 +173,15 @@ export class AutoModEngine {
           };
         }
       }
+    }
+
+    // 6. Tekrarlanan mesaj (B9)
+    if (tekrarAcik && tekrarSayisi >= Math.max(2, Number(row.repeat_count) || 3)) {
+      this.tekrar.sifirla(message.user.username);
+      return {
+        rule: 'repeat',
+        reason: advanced.repeat_warning || 'Aynı mesajı tekrar tekrar yazma.'
+      };
     }
 
     return null;

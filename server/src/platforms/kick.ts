@@ -2,6 +2,7 @@ import Pusher from 'pusher-js';
 import axios from 'axios';
 import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { kickZamani, type YayinBilgisi } from '../core/live-status-math.js';
+import { sifreleHepsi } from '../core/security/vault.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { settingsCache } from '../core/settings-cache.js';
@@ -409,7 +410,7 @@ export class KickPlatform extends BasePlatform {
           UPDATE channels 
           SET token = ?, refresh_token = ?, token_expires_at = ? 
           WHERE platform = 'kick'
-        `).run(newToken, newRefresh, expiresAt);
+        `).run(...sifreleHepsi([newToken, newRefresh]), expiresAt);
 
         console.log('[Kick Token Refresh] Successfully obtained and saved fresh Kick token!');
         return true;

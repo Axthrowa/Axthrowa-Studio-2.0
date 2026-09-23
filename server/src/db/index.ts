@@ -1,4 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
+import { satiriCoz } from '../core/security/vault.js';
 import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -35,6 +36,32 @@ db.exec('PRAGMA mmap_size = 33554432;'); // 32 MB memory-mapped I/O
 db.exec('PRAGMA temp_store = MEMORY;');
 db.exec('PRAGMA wal_autocheckpoint = 100;'); // Keeps WAL file compact
 db.exec('PRAGMA busy_timeout = 5000;');
+
+// S6 — şifreli sırlar (`dpapi:v1:...`) TEK NOKTADAN, okurken çözülür:
+// 29 ayrı okuma yerine dokunmadan tüm `get/all/iterate` sonuçlarındaki
+// önekli değerler düz metne çevrilir. Öneksiz değerler AYNEN geçer
+// (geriye uyum). Bkz. core/security/vault.ts
+const asilPrepare = db.prepare.bind(db);
+/** Şifre ÇÖZMEDEN okuma — yalnız sır geçişi (vault-migrate) için. */
+export function hamSorgu(sql: string) {
+  return asilPrepare(sql);
+}
+{
+  (db as any).prepare = (sql: string) => {
+    const st: any = asilPrepare(sql);
+    const asilGet = st.get.bind(st);
+    const asilAll = st.all.bind(st);
+    st.get = (...a: any[]) => satiriCoz(asilGet(...a));
+    st.all = (...a: any[]) => (asilAll(...a) as any[]).map((r) => satiriCoz(r));
+    if (typeof st.iterate === 'function') {
+      const asilIterate = st.iterate.bind(st);
+      st.iterate = function* (...a: any[]) {
+        for (const r of asilIterate(...a)) yield satiriCoz(r);
+      };
+    }
+    return st;
+  };
+}
 db.exec('PRAGMA optimize;');
 
 // Initialize tables

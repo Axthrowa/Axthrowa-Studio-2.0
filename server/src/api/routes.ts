@@ -35,6 +35,7 @@ import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../modules/media/media.js';
 import { varyantlar } from '../modules/alerts/variants.js';
 import { uyariYedegi } from '../modules/alerts/backup.js';
 import { komutGirdisiniCoz } from '../modules/commands/command-input.js';
+import { sifrele, sifreleHepsi } from '../core/security/vault.js';
 import { tahminler } from '../modules/engagement/predictions.js';
 import { kuyruk } from '../modules/engagement/queue.js';
 import { puanDususu } from '../modules/engagement/point-drops.js';
@@ -124,12 +125,12 @@ router.post('/platforms/save', async (req: Request, res: Response) => {
       UPDATE channels 
       SET channel_name = ?, account_id = ?, token = ?, refresh_token = ?, is_active = ?
       WHERE platform = ?
-    `).run(channelName, accountId || null, yeniToken, yeniRefresh, isActive ? 1 : 0, platform);
+    `).run(channelName, accountId || null, ...sifreleHepsi([yeniToken, yeniRefresh]), isActive ? 1 : 0, platform);
   } else {
     db.prepare(`
       INSERT INTO channels (id, platform, channel_name, account_id, token, refresh_token, is_active, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(uuidv4(), platform, channelName, accountId || null, token || null, refreshToken || null, isActive ? 1 : 0, Date.now());
+    `).run(uuidv4(), platform, channelName, accountId || null, ...sifreleHepsi([token || null, refreshToken || null]), isActive ? 1 : 0, Date.now());
   }
 
   // Reconnect platform
@@ -201,12 +202,12 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
       UPDATE channels 
       SET channel_name = ?, account_id = ?, token = ?, is_active = 1
       WHERE platform = 'kick'
-    `).run(slug, String(verification.broadcasterUserId || ''), finalToken);
+    `).run(slug, String(verification.broadcasterUserId || ''), sifrele(finalToken));
   } else {
     db.prepare(`
       INSERT INTO channels (id, platform, channel_name, account_id, token, is_active, created_at)
       VALUES (?, 'kick', ?, ?, ?, 1, ?)
-    `).run(uuidv4(), slug, String(verification.broadcasterUserId || ''), finalToken, Date.now());
+    `).run(uuidv4(), slug, String(verification.broadcasterUserId || ''), sifrele(finalToken), Date.now());
   }
 
   // Save kick credentials in bot_settings if provided
@@ -317,7 +318,7 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
         const expiresAt = Date.now() + ((tokenRes.data.expires_in || 3600) * 1000);
         const kickRow = db.prepare("SELECT * FROM channels WHERE platform = 'kick'").get() as any;
         if (kickRow) {
-          db.prepare("UPDATE channels SET token = ?, refresh_token = ?, token_expires_at = ?, is_active = 1 WHERE platform = 'kick'").run(accessToken, refreshToken, expiresAt);
+          db.prepare("UPDATE channels SET token = ?, refresh_token = ?, token_expires_at = ?, is_active = 1 WHERE platform = 'kick'").run(...sifreleHepsi([accessToken, refreshToken]), expiresAt);
           await platformManager.reconnect('kick');
         } else {
           let autoSlug = 'kick_streamer';
@@ -337,7 +338,7 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
           db.prepare(`
             INSERT INTO channels (id, platform, channel_name, account_id, token, refresh_token, token_expires_at, is_active, created_at)
             VALUES (?, 'kick', ?, ?, ?, ?, ?, 1, ?)
-          `).run(uuidv4(), autoSlug, autoUserId, accessToken, refreshToken, expiresAt, Date.now());
+          `).run(uuidv4(), autoSlug, autoUserId, ...sifreleHepsi([accessToken, refreshToken]), expiresAt, Date.now());
           await platformManager.reconnect('kick');
         }
       }
@@ -1004,7 +1005,8 @@ router.post('/settings', (req: Request, res: Response) => {
       const mevcut = (mevcutOku.get(key) as { value?: string } | undefined)?.value ?? null;
       const yazilacak = yeniSirDegeri(value, mevcut);
       if (yazilacak === null) continue;
-      upsert.run(key, String(yazilacak));
+      // S6: sırlar diskte DPAPI ile şifreli
+      upsert.run(key, String(sifrele(String(yazilacak))));
       continue;
     }
     upsert.run(key, String(value));

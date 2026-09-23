@@ -27,12 +27,33 @@ import { canliYoklayici } from './modules/stream/live-poller.js';
 import { yayinDegistiriciAyarla } from './core/variables/registry.js';
 import { puanDususu } from './modules/engagement/point-drops.js';
 import { eventBus } from './core/event-bus.js';
-import { yerelKokenMi, istekKabulEdilir, baglanmaAdresi, baglanmaUyarisi } from './core/security/local-guard.js';
+import { yerelKokenMi, yazmaYontemiMi, baglanmaAdresi, baglanmaUyarisi } from './core/security/local-guard.js';
+import { izinliHostMu, kokenKabulEdilir } from './core/security/origin-guard.js';
+import { arayuzAdresleri, ekIzinliHostlar } from './core/security/host-list.js';
+import { HizSiniri, kuralBul } from './core/security/rate-limit.js';
+import { sirlariHazirla } from './core/security/vault-migrate.js';
 
 dotenv.config();
 
+// S6: şifreli sırları toplu çöz (tek PowerShell çağrısı), düz kalanları şifrele.
+// Platformlar bağlanmadan ÖNCE çalışır.
+try {
+  sirlariHazirla();
+} catch (e) {
+  console.warn('[Kasa] Hazırlık başarısız, sırlar olduğu gibi kullanılacak:', e);
+}
+
 const app = express();
 const server = http.createServer(app);
+
+// DNS yeniden bağlama (rebinding) koruması: Host başlığı izin listesinde
+// değilse HİÇBİR şey sunulmaz. Saldırgan kendi alan adını 127.0.0.1'e
+// çözdürse bile Host'u kendi alan adı olur ve burada reddedilir.
+app.use((req, res, next) => {
+  if (izinliHostMu(req.headers.host, arayuzAdresleri(), ekIzinliHostlar())) return next();
+  console.warn(`[Guvenlik] Izin listesinde olmayan Host reddedildi: ${req.headers.host}`);
+  res.status(403).json({ success: false, error: 'Geçersiz Host başlığı.' });
+});
 
 // CORS & Middleware
 //
@@ -62,12 +83,29 @@ app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 // gizlese bile istek sunucuda CALISIR. Yan etkisi olan yontemlerde kokeni
 // ayrica dogrula — yabanci bir sayfa bot adina mesaj gonderemesin.
 app.use('/api', (req, res, next) => {
-  if (istekKabulEdilir(req.method, req.headers.origin)) return next();
+  // Yazma istekleri: yerel köken VEYA sunucunun kendi kökeni (LAN kipinde
+  // başka bilgisayardaki OBS sayfası). Host yukarıda doğrulandığı için
+  // "aynı köken" DNS rebinding ile taklit edilemez.
+  if (!yazmaYontemiMi(req.method) || kokenKabulEdilir(req.headers.origin, req.headers.host)) return next();
   console.warn(`[Guvenlik] Yabanci kokenden yazma istegi reddedildi: ${req.headers.origin} ${req.method} ${req.originalUrl}`);
   res.status(403).json({
     success: false,
     error: 'Bu istek yalniz StreamAxT panelinden yapilabilir.'
   });
+});
+
+// Hız sınırı (S7): kaçak bir döngü ya da bozuk eklenti sunucuyu/diski
+// kilitlemesin; pahalı uçlar (medya, AI, Discord testi) ayrıca sınırlı.
+const hizSiniri = new HizSiniri();
+setInterval(() => hizSiniri.temizle(), 60_000).unref();
+app.use('/api', (req, res, next) => {
+  const kural = kuralBul(req.method, req.path);
+  if (!kural) return next();
+  const r = hizSiniri.izinVer(`${req.ip}|${kural.ad}`, kural);
+  if (r.ok) return next();
+  const sn = Math.ceil(r.bekleMs / 1000);
+  res.setHeader('Retry-After', String(sn));
+  res.status(429).json({ success: false, error: `Çok fazla istek (${kural.ad}) — ${sn} sn sonra tekrar deneyin.` });
 });
 
 // API Routes

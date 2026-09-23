@@ -11,6 +11,7 @@
  * kanal ayarlarından bir webhook adresi alıp yapıştırır.
  */
 import { db } from '../../db/index.js';
+import { coz, sifreleHepsi } from '../../core/security/vault.js';
 import { eventBus } from '../../core/event-bus.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
 
@@ -42,6 +43,8 @@ class DiscordDuyurulari {
         const birlesik = { ...VARSAYILAN_DUYURU };
         for (const k of Object.keys(birlesik) as DuyuruKaynagi[]) {
           if (kayitli[k]) birlesik[k] = { ...birlesik[k], ...kayitli[k] };
+          // Webhook adresi JSON içinde şifreli durur (S6)
+          birlesik[k].webhook = String(coz(birlesik[k].webhook) ?? '');
         }
         return birlesik;
       }
@@ -56,9 +59,16 @@ class DiscordDuyurulari {
     for (const k of Object.keys(yeni) as DuyuruKaynagi[]) {
       if (mevcut[k] && yeni[k]) mevcut[k] = { ...mevcut[k], ...yeni[k] };
     }
+    // Diske yazarken webhook adresleri şifrelenir; döndürülen nesne düz kalır
+    const anahtarlar = Object.keys(mevcut) as DuyuruKaynagi[];
+    const sifreli = sifreleHepsi(anahtarlar.map((k) => mevcut[k].webhook)); // tek PowerShell çağrısı
+    const disk: Record<string, DuyuruKurali> = {};
+    anahtarlar.forEach((k, i) => {
+      disk[k] = { ...mevcut[k], webhook: String(sifreli[i] ?? '') };
+    });
     db.prepare(
       'INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).run(AYAR_ANAHTARI, JSON.stringify(mevcut));
+    ).run(AYAR_ANAHTARI, JSON.stringify(disk));
     return mevcut;
   }
 

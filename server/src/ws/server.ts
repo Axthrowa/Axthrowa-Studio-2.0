@@ -1,4 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import { izinliHostMu, kokenKabulEdilir } from '../core/security/origin-guard.js';
+import { arayuzAdresleri, ekIzinliHostlar } from '../core/security/host-list.js';
 import { Server as HttpServer } from 'http';
 import { hediyeAdedi, eventBus, ChatMessagePayload, FollowPayload, SubPayload, TipPayload, RaidPayload, TikTokGiftPayload, BotMessagePayload } from '../core/event-bus.js';
 import { db } from '../db/index.js';
@@ -18,7 +20,22 @@ export class WebSocketHub {
   private clients: Set<ClientConnection> = new Set();
 
   init(server: HttpServer) {
-    this.wss = new WebSocketServer({ server, path: '/ws' });
+    // Köken + Host doğrulaması (Cross-Site WebSocket Hijacking). Eskiden YOKTU:
+    // herhangi bir web sitesi bağlanıp bota sohbet mesajı yazdırabiliyor,
+    // TTS okutabiliyor, canlı sohbeti dinleyebiliyordu. Tarayıcılar WebSocket
+    // el sıkışmasında Origin'i her zaman gönderir; tarayıcı dışı istemciler
+    // (Origin yok) etkilenmez.
+    this.wss = new WebSocketServer({
+      server,
+      path: '/ws',
+      verifyClient: (info: { origin?: string; req: { headers: Record<string, any> } }) => {
+        const host = info.req.headers.host as string | undefined;
+        const tamam =
+          izinliHostMu(host, arayuzAdresleri(), ekIzinliHostlar()) && kokenKabulEdilir(info.origin, host);
+        if (!tamam) console.warn(`[Guvenlik] WebSocket reddedildi: origin=${info.origin} host=${host}`);
+        return tamam;
+      }
+    });
 
     this.wss.on('connection', (ws: WebSocket, req) => {
       const url = new URL(req.url || '', `http://${req.headers.host}`);

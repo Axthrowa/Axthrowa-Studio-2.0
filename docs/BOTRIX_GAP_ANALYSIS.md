@@ -376,6 +376,10 @@ Sıralama ölçütü: **risk × etki ÷ çaba**.
 
 ## 13. FİNAL DURUM — iki tur sonu (2026-09-21 · 2026-09-22)
 
+> **Güncel durum `§15`'tedir.** Bu tablo 2. tur sonunu gösterir; bazı
+> `DONE` satırlarının gerçekte çalışmadığı 3. turda bulundu ve `§15`'te
+> düzeltildi.
+
 İki tur yapıldı:
 
 * **1. tur (2026-09-21)** — yedek, denetim, BotRix araştırması, güvenlik (P0),
@@ -457,7 +461,7 @@ Ayrıntı: [`IMPLEMENTATION_REPORT.md`](IMPLEMENTATION_REPORT.md),
 
 ---
 
-## 14. YAN YANA KARŞILAŞTIRMA — özet
+## 14. YAN YANA KARŞILAŞTIRMA — özet (3. turda güncellendi)
 
 Satırlar `BOTRIX_UI_INVENTORY.md` menü yapısından türetildi. "Bizde" sütunu
 panelde **kullanıcının görebildiği** karşılığı gösterir; yalnız sunucuda
@@ -465,18 +469,18 @@ duran bir yetenek `DONE` sayılmadı.
 
 | BotRix menüsü | Bizdeki karşılığı | Durum |
 |---|---|---|
-| Panel / Genel Bakış | `Genel Bakış` | `DONE` |
-| Sohbet Botu → Komutlar | `Komutlar` | `PARTIAL` — anahtar kelime tetikleyici bağlanmadı |
+| Panel / Genel Bakış | `Genel Bakış` | `DONE` — botun gördüğü canlı yayın durumu rozeti (3. tur) |
+| Sohbet Botu → Komutlar | `Komutlar` | `DONE` — anahtar kelime tetikleyici, erişim kipi, en düşük seviye (3. tur) |
 | Sohbet Botu → Zamanlayıcılar | `Zamanlayıcılar` | `DONE` |
-| Sohbet Botu → Moderasyon | `Bot Moderation` + `Gelişmiş Bot → Moderasyon Eylemleri` | `PARTIAL` — yalnız Kick'te uygulanabiliyor |
+| Sohbet Botu → Moderasyon | `Bot Moderasyonu` + `Gelişmiş Bot → Moderasyon Eylemleri` | `PARTIAL` — Kick/Twitch/YouTube uygulandı, canlı doğrulanmadı; TikTok engelli; tekrar kuralı eklendi; sayfa seçimleri 3. tura kadar uygulanmıyordu |
 | Sohbet Botu → Ekstralar (Nightbot içe aktarma) | `Entegrasyonlar → Nightbot'tan İçe Aktar` | `DONE` |
 | Sohbet Botu → Değişkenler | `Gelişmiş Bot → Değişkenler` | `DONE` — 63 değişken kataloğu, arama ve önizleme |
-| Sadakat → Puanlar / Mağaza / Sıralama | `Sadakat & Ekonomi`, `Rankings` | `DONE` |
+| Sadakat → Puanlar / Mağaza / Sıralama | `Sadakat & Ekonomi`, `Sıralamalar` | `DONE` |
 | Sadakat → Seviyeler | `Gelişmiş Bot → Seviye / XP` | `DONE` |
-| Uyarılar (Alerts) → olay başına ayar | `Alert Box` sekmeleri | `DONE` |
+| Uyarılar (Alerts) → olay başına ayar | `Alert Box` sekmeleri | `DONE` — hediye abone gerçek olayda 3. turda düzeltildi; metin penceresi/konum |
 | Uyarılar → varyantlar | `Alert Box → Varyantlar` | `DONE` |
 | Uyarılar → yükleme (medya) | `Alert Box → Medya Kütüphanesi` | `DONE` |
-| Widget'lar / Overlay | `OBS Overlay Stüdyo` (29 widget) | `DONE` — önizleme ile OBS aynı bileşeni çiziyor |
+| Widget'lar / Overlay | `OBS Overlay Stüdyo` (29 widget) | `DONE` — önizleme ile OBS aynı bileşeni çiziyor; 5 test düğmesi ve Hype Treni 3. turda düzeltildi |
 | TTS | `5-Motorlu TTS` + `Gelişmiş Bot → TTS Filtreleri` | `DONE` |
 | Etkileşim → Tahminler | `Etkileşim → Tahminler` | `DONE` |
 | Etkileşim → İzleyici Kuyruğu (BETA) | `Etkileşim → İzleyici Kuyruğu` | `DONE` |
@@ -484,7 +488,7 @@ duran bir yetenek `DONE` sayılmadı.
 | Anketler (Polls) | `Polls` | `DONE` |
 | Çekilişler | `Çekilişler` | `DONE` |
 | Şarkı isteği | `Şarkı İsteği (SR)` | `DONE` |
-| Entegrasyonlar (Discord duyurusu) | `Entegrasyonlar → Discord Duyuruları` | `DONE` |
+| Entegrasyonlar (Discord duyurusu) | `Entegrasyonlar → Discord Duyuruları` | `DONE` — otomatik duyuru 3. turda bağlandı (öncesinde yalnız test düğmesi çalışıyordu) |
 | Platform bağlantıları | `Platformlar` (Kick, Twitch, YouTube, TikTok, Discord, Trovo) | `PARTIAL` — Trovo canlı doğrulanmadı |
 | Hesap / Plan / Faturalama | — | `NOT_APPLICABLE` |
 
@@ -501,3 +505,73 @@ güçlü yanları:
 * Birleşik Multi-Chat
 * Kalkan & Denetim ekranı
 * Tauri panel kabuğuna gömülü çalışma
+
+---
+
+## 15. ÜÇÜNCÜ TUR — final durum (2026-09-24)
+
+`§13` 2. tur sonunu gösterir. Bu bölüm 3. turdan sonraki güncel durumdur
+ve `§13`'teki **yanlış beyanları düzeltir** (`D1`–`D13`:
+`IMPLEMENTATION_REPORT §13.2`). Canlı doğrulanamayanlar:
+`KNOWN_LIMITATIONS §1`.
+
+### P0 — Güvenlik
+
+| Madde | 2. tur | 3. tur |
+|---|---|---|
+| S1 Kimlik doğrulama / köken | `DONE` | `DONE` — köken denetimi yalnız HTTP'deydi, **WebSocket'te yoktu** (`D12`); artık ikisinde de köken + Host izin listesi (DNS rebinding dahil) |
+| S6 Token disk şifrelemesi | `NOT_DONE` | `DONE` — Windows DPAPI (`7ef820b`) |
+| S7 Hız sınırı | `NOT_DONE` | `DONE` — kayan pencere, uç başına kural, 429 + `Retry-After` (`a4804f1`) |
+| S8 Widget URL'i | `NOT_DONE` | `DONE` (politika) — adreslerde sır yok (kullanıcı şartı); yabancı sitelerin okuması ve WebSocket bağlantısı engelli; varsayılan yalnız bu makine. Adrese kimlik token'ı **bilinçli olarak** eklenmedi |
+| **S10** Kick OAuth geri dönüşünde yansıyan XSS + token yayını (3. turda bulundu) | — | `DONE` (`dce642c`) |
+| **S11** Express hata yanıtı yığın izi ve disk yolu sızdırıyordu (3. turda bulundu) | — | `DONE` — JSON hata, iz yalnız günlükte (`1c1775b`) |
+| **S12** Günlüğe sır düşebiliyordu (axios hata nesneleri) (3. turda bulundu) | — | `DONE` — maskeleme (`d235c82`) |
+
+### P1 — En yüksek etki
+
+| Madde | 2. tur | 3. tur |
+|---|---|---|
+| Komut derinliği | `PARTIAL` | `DONE` — anahtar kelime tetikleyici, erişim kipi, en düşük seviye; panel formu artık gerçekten kaydediyor (`D2`) |
+| Moderasyon eylemleri | `PARTIAL` | `PARTIAL` — Kick/Twitch/YouTube zaman aşımı + mesaj silme, Trovo mesaj silme **uygulandı, canlı doğrulanmadı**; kalıcı ban yok; TikTok `BLOCKED_BY_PLATFORM`. "Bot Moderasyonu" sayfası artık motorun okuduğu yere yazıyor (`D4`); tekrarlanan mesaj kuralı eklendi |
+| Yerleşik komutlar | `DONE` | `DONE` — `!watchtime`/`!followage`/`!sayac` 3. tura kadar **ulaşılamazdı** (`D1`); `!title` `!game` `!accountage` eklendi |
+| Değişken motoru | `DONE` | `DONE` — `$(title)` `$(game)` `$(viewers)` `$(settitle)` `$(setcategory)`; `$(uptime)` artık yayının süresi (`D11`) |
+| Sayaçlar | `DONE` | `DONE` |
+
+### P2 — Ürün kalitesi
+
+| Madde | 2. tur | 3. tur |
+|---|---|---|
+| Metin görünüm penceresi (ms–ms) + metin konumu px | `NOT_DONE` (beyan) | `DONE` — 2. turda yazılmış ama yanlış ölçülüyordu (`D6`); ayarlar Alert Box'ta da |
+| Alert kuyruk durum makinesi | `DONE` | `DONE` — ses/konfeti uyarı **ekrana gelince** (kuyruktaki uyarının sesi öndekinin üstüne binmiyor) |
+| Uyarı varyantları | `DONE` | `DONE` — temel şablonsuz çökme ve abone ay eşiği düzeltildi; test değeriyle denenebilir |
+| Hediye abone uyarısı | (`DONE` sanılıyordu) | `DONE` — gerçek olayda kendi türü ve adediyle (`D8`) |
+| Abone hedefi | (`DONE` sanılıyordu) | `DONE` — normal abonelikler hedefe eklenmiyordu (`D8`) |
+
+### P3 — Genişleme
+
+| Madde | 2. tur | 3. tur |
+|---|---|---|
+| Discord duyurusu | `DONE` | `DONE` — **otomatik** duyuru 3. tura kadar bağlı değildi (`D3`); kalıcı tekilleştirme; Trovo kaynağı |
+| Uyarı dışa/içe aktarma | `DONE` | `DONE` — medya gömme (≤100 MB, tekilleştirmeli) |
+| Etkileşim ekranı | `DONE` | `DONE` — WebSocket itme (~40 ms) |
+| Hype Treni | (tarayıcıda) | `DONE` — durum sunucuda; tüm OBS kaynakları aynı treni görür |
+| Widget test düğmeleri | (`DONE` sanılıyordu) | `DONE` — beş widget'ın testi hiçbir şey yapmıyordu (`D9`) |
+| YouTube sohbeti | (`DONE` sanılıyordu) | `DONE` kodda — video kimliğiyle sohbet **okunmuyordu**, ilk yoklama geçmişi yeniden işliyordu (`D10`); canlı yayında doğrulanmadı |
+| Trovo | `PARTIAL` | `PARTIAL` — mesaj silme + başlık eklendi; canlı bağlantı doğrulanmadı |
+| Canlı yayın durumu | — | `DONE` — platform başına durum, pano rozeti; kullanıcının kendi yayınında doğrulanmadı |
+
+### Teknik borç
+
+B1–B7, B9, B10 `DONE`; B8 `PARTIAL` (i18n altyapısı yok). Ayrıntı:
+`KNOWN_LIMITATIONS §5`.
+
+### Kapsam dışı (güncel)
+
+| Madde | 2. tur | 3. tur |
+|---|---|---|
+| `$(settitle)` / `$(setcategory)` | `BLOCKED_BY_PLATFORM` | `DONE` kodda — Kick/Twitch başlık + kategori, YouTube/Trovo başlık; yalnız mod/yayıncı; canlı doğrulanmadı |
+| TikTok yazma/moderasyon | — | `BLOCKED_BY_PLATFORM` — resmi sohbet API'si yok |
+| Kalıcı ban | — | `NOT_DONE` — yöntem yok, tabloda `false` |
+| `$(eval <js>)` | `NOT_DONE` | `NOT_DONE` (bilinçli) |
+| `$(leagueoflegends)` | `NOT_DONE` | `NOT_DONE` |
+| Çok kiracılı her şey | `NOT_APPLICABLE` | `NOT_APPLICABLE` |

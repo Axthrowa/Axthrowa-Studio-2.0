@@ -1,6 +1,6 @@
 # TEST REPORT
 
-**Tarih:** 2026-09-21
+**Tarih:** 2026-09-21 · 2. tur 2026-09-22 · 3. tur 2026-09-23/24 (`§9`)
 **Sürüm:** `revamp/botrix-parity-20260921` · `26911f3`+
 **Test örneği:** port 3011, **boş ve izole veritabanı** — kullanıcının
 gerçek StreamAxT'sine (3001) hiç dokunulmadı.
@@ -331,3 +331,152 @@ yapmama" kilidi: bilinmeyen tür `yoksay`, Trovo üyeliği (`ace`) VIP değil.
 | Mevcut uçlar | `GET /api/alerts`, `/api/predictions`, `/api/queue`, `/api/point-drops`, `/api/media`, `/api/integrations/discord` — hepsi 200 |
 | `PlatformAdi` birliğine `trovo` eklenmesi | 5 dosyada 11 yer; derleme temiz, mevcut platform davranışı değişmedi |
 | Şarkı isteği `!sira` | Bozulmadı (§8.2) |
+
+---
+
+## 9. ÜÇÜNCÜ TUR TESTLERİ (2026-09-23 · 2026-09-24)
+
+Bütün canlı denemeler izole örnekte yapıldı: port **3011**, kendi
+`data/` klasörü (gerçek botun veritabanına dokunulmadı). Gerçek sohbet
+mesajı, moderasyon, başlık değişikliği, Discord gönderisi, bağış veya ödül
+**yok**. Sohbet denemeleri botun işleme hattına doğrudan mesaj verilerek
+yapıldı; yanıtlar platforma gönderilmedi.
+
+### 9.1 Otomatik test sayısı
+
+| Paket | 2. tur | 3. tur | Fark |
+|---|---|---|---|
+| Sunucu | 250 | **372** | +122 |
+| Panel | 67 | **77** | +10 |
+| **Toplam** | 317 | **449** | +132 |
+
+Yeni dosyalar (116 test): `commands/command-input.test.ts` (26),
+`core/live-status.test.ts` (27), `security/guard.test.ts` (17),
+`security/vault.test.ts` (7 — gerçek Windows DPAPI gidiş-dönüşü dahil),
+`automod/repeat.test.ts` (8), `hype/hype.test.ts` (6),
+`widgets/settings-validate.test.ts` (9), `core/logger.test.ts` (10),
+`security/html.test.ts` (4), `api/rotalar/rotalar.test.ts` (2).
+Genişleyenler: `alerts/backup.test.ts`, `automod/enforcement.test.ts`,
+`client/src/lib/lib.test.ts` (metin penceresi + canlı rozet).
+
+```
+npx --prefix server vitest run --root server   → 21 dosya / 372 test, hepsi geçti
+npx --prefix client vitest run --root client   →  2 dosya /  77 test, hepsi geçti
+```
+
+**Kırılan test gizlenmedi:** `enforcement.test.ts`'deki 3 test eski
+(yanlış) yetenek tablosunu kodluyordu. Tablo dürüstleştirilince örnek
+platformlar bugün gerçekten desteklemeyenlerle (TikTok/Discord/Trovo)
+değiştirildi ve yeni destek ayrı testlerle kilitlendi; hiçbir test devre
+dışı bırakılmadı.
+
+### 9.2 Canlı doğrulamalar
+
+**Komutlar (`8ffab37`)**
+
+| Deneme | Sonuç |
+|---|---|
+| Panelin gövdesiyle yeni komut (`user_level=mod`, takma ad) | Rol `mod`, takma ad kayıtlı (hata öncesi yeniden üretimde rol `everyone`'a düşüyor, takma ad kayboluyordu) |
+| Yalnız yanıtı değiştirerek düzenle | **200** (eskiden HTTP 500 + HTML yığın izi) |
+| Kısmi düzenleme (yalnız `response`) | Rol, fiyat, platform, açık/kapalı korundu |
+| Aynı adla ikinci komut | 400, açıklamalı hata |
+| Bozuk JSON gövdesi | 400 JSON; yığın izi / dosya yolu **yok** |
+| Anahtar kelime: `İYİ YAYINLAR herkese!!` | Tetiklendi (Türkçe katlama, noktalama yok sayıldı) |
+| Anahtar kelime: `selamlar millet` | Tetiklenmedi (bütün kelime eşleşmesi) |
+| Anahtar kelime: botun kendi mesajı | Tetiklenmedi |
+| Anahtar kelimeyle puan ücreti | İlk denemede **alınıyordu** (hata) → düzeltildi, yeniden denemede alınmadı |
+| Erişim kipi, durum bilinmiyor | "Yalnız yayında" ve "yalnız yayın dışı" komutları çalıştı (engellemez) |
+| Kick "kapalı" bildirildi | "Yalnız yayında" komutu reddedildi; `!uptime` → "Yayın şu an kapalı" |
+| Kick "açık, 2 saat önce" bildirildi | "Yalnız yayın dışı" komutu reddedildi; `!uptime` → "2 saat 5 dakika"; `!title` / `!game` başlığı ve kategoriyi okudu; `stream_online` tek kez |
+| `!watchtime`, `!followage` | Gerçek uygulamaya ulaştı (eskiden sahte `case`'e takılıyordu) |
+
+**Uyarılar, yedek, etkileşim (`31dfbf7` `c53125a` `6d926c9` `73e0f90`)**
+
+| Deneme | Sonuç |
+|---|---|
+| Kuyruk ayarını art arda iki kez değiştir | Tek `kuyruk_durumu` mesajı (50 ms birleştirme), **~43 ms**'de (eskiden 4 sn'lik yoklama); `dusus_durumu` da geldi |
+| Test uyarısı `deger` 50 / 750 | "KÜÇÜK BAĞIŞ" / "DEV BAĞIŞ" varyantı |
+| Sunucu çalışırken host şablonu silinip varyant tetiklendi | Varyant uygulandı (eskiden `null`'da patlayıp sessizce atlanıyordu) |
+| Medya yükle → medyalı yedek → dosyayı sil → geri yükle | 1 gömülü dosya; geri yüklemede eklendi, bağlantı yeni kimliğe çevrildi, `200 image/png` sunuldu |
+| Aynı yedeği tekrar yükle | `eklenen 0 · zaten vardı 1` — kopya oluşmadı |
+| Medyasız yedek | Medya alanı yok |
+
+**Güvenlik (`a4804f1` `7ef820b` `dce642c`)**
+
+| Deneme | Sonuç |
+|---|---|
+| WebSocket, yabancı site kökeni | **401** |
+| WebSocket, yerel panel kökeni / kökensiz istemci | Bağlandı / bağlandı |
+| WebSocket, DNS rebinding (Host + Origin yabancı ad) | **401** |
+| HTTP `Host: <yabancı ad>` / `Host: 127.0.0.1` | **403** / 200 |
+| 60/dk sınırlı test uyarısı ucuna 61 istek | 59. ve 60. 200; 61. **429**, `Retry-After: 57`; başka uç etkilenmedi |
+| DPAPI birim: şifrele, yeni süreçte çöz | Önekli, düz metni içermiyor; Türkçe karakterlerle geri çözüldü; öneksiz değer aynen; bozuk şifreli değer boş + uyarı. Tek değer ~1,5 sn, üç değer tek çağrıda ~1,1 sn |
+| DPAPI göçü: düz Twitch jetonlu veritabanıyla açılış | Diskte `dpapi:v1:…`; API `••••9876`; Discord webhook diskte şifreli, maskeli değer geri gönderilince korundu |
+| OAuth `callback?error=<script>alert(1)</script>` | Kaçışlı `&lt;script&gt;` |
+| OAuth `callback?code=');alert(1);//</script><script>alert(2)</script>` | Ham `<script>alert(2)` yok; sayfada tek betik bloğu; değer JSON dizesi içinde; sayfada token yok |
+
+**AutoMod ve widget'lar (`2206329` `f93f777`)**
+
+| Deneme | Sonuç |
+|---|---|
+| Tekrar kuralı (sınır 3) + CAPS kuralı açık, aynı mesaj 3 kez | 1. sessiz · 2. CAPS kuralı · 3. "Aynı mesajı tekrar tekrar yazma". İlk denemede 3. mesaj **kaçıyordu**: sayaç yalnız diğer kurallardan geçen mesajları sayıyordu; kayıt başa alındı |
+| Başka izleyicinin tek mesajı | Sessiz |
+| Zaman aşımı eylemi (test örneğinde platform bağlantısı yok) | "Kanal kimliği bilinmiyor" — sessiz kalmadı, uyarıya düştü |
+| Hype Treni: 3 abone (3×100) + 30 TL bağış (×10) | 600 puan → seviye 2, puan 100/750; sonradan açılan widget aynı treni gösterdi |
+| Hype, Subathon, Now Playing, Jenerik, Emote Combo test düğmeleri | Beşi de widget'ın dinlediği mesajı yayınladı; test sonrası gerçek tren **değişmedi** |
+
+**Teknik borç (`dce642c` `8eef974` `d235c82` `81e76e5`)**
+
+| Deneme | Sonuç |
+|---|---|
+| Widget ayarı: geçersiz kimlik · 60 karakter kimlik | 400 · 400 |
+| `__proto__` + `constructor` · `fontSize: "abc"` · `"30"` | Atıldı · eski değer (24) korundu · 30 (sayı) |
+| 3 MB gövde · dizi gövde · 12 seviyeli nesne | 400 · 400 · 8. seviyede kırpıldı |
+| Düzeltme bildirimi | `X-StreamAxT-Uyari` başlığında ve günlükte `UYARI` satırı |
+| Açılış günlüğü | Her satır ISO zaman + seviye; günlükte maskelenmemiş sır deseni **0** |
+| Bozuk `jumpscare_settings` JSON'u + 6 istek | Yanıt varsayılan; günlükte **tek** uyarı satırı |
+| Pano, canlı durum bilinmiyorken | Sarı "Yayın durumu bilinmiyor" rozeti, ipucu komut etkisini açıklıyor; 6 platform kartı (Trovo dahil) |
+| Açılış süresi | Süreç başlangıcından `/health`'e **3,2 sn** (panel kabuğu 12 sn bekler) |
+
+### 9.3 Rota bölme (B1) — davranış eşitliği
+
+`api/routes.ts` 13 modüle bölünürken üç ayrı karşılaştırma yapıldı:
+
+1. **Çalışma anı yönlendirici dökümü** (derlenmiş kod geçici bir dizinde
+   yüklendi, gerçek/test veritabanına dokunmadan): önce 154, sonra 154
+   rota; yöntem + yol + işleyici zinciri çoklu kümesi **birebir**.
+2. **Öncelik:** aynı isteğe uyabilen rota çiftleri parça parça birleştirmeyle
+   bulundu (ilk denemede örnek adres yöntemi `/widgets/test/:ad` ile
+   `/widgets/:id/settings` çiftini kaçırdı; yöntem düzeltildi). Üç çiftin
+   üçünde de öncelik korundu:
+   `GET /levels/settings` ve `/levels/leaderboard` > `/levels/:username`,
+   `POST /widgets/test/:widgetName` > `/widgets/:widgetId/settings`.
+3. **Canlı:** yan etkisiz 50 parametresiz GET ucu önce ve sonra çağrıldı —
+   durum kodu ve yanıt biçimi (anahtar kümesi / dizi uzunluğu) **50/50
+   aynı**. OAuth kaçışlama, widget ayarı POST'u ve tanımsız uçta JSON 404
+   de aynı. Çağrılmayanlar: OAuth başlatma/geri dönüş, BynoGame GET
+   webhook'u, dış servise giden şarkı sözü ve AI durum uçları.
+
+`rotalar.test.ts` negatif denemeyle sınandı: bir modülün bağlama satırı
+silinince test düştü, geri konunca geçti.
+
+### 9.4 Yapılmayan testler (3. tur)
+
+| Test | Neden |
+|---|---|
+| Kick/Twitch/YouTube/Trovo **gerçek** zaman aşımı ve mesaj silme | Gerçek izleyiciye moderasyon — kullanıcı yasakladı (`KNOWN_LIMITATIONS L1–L6`) |
+| Gerçek başlık/kategori değiştirme | Kanalda görünür değişiklik |
+| Otomatik Discord duyurusu, Discord test düğmesi | Gerçek Discord kanalına gönderi |
+| Kullanıcının kendi yayınında canlı durum | Yayın açık değildi (Kick yanıt biçimi başka bir canlı kanalda gözlendi) |
+| Trovo canlı bağlantı | Hesap / Client-ID yok |
+| Gerçek veritabanında DPAPI göçü | Yeni sürüm ilk açılışta çalıştırır; yalnız test örneğinde denendi |
+| OBS'in kendi tarayıcı kaynağı | Widget'lar tarayıcı panelinde ve WebSocket mesaj düzeyinde denendi |
+
+### 9.5 Regresyon
+
+| Alan | Sonuç |
+|---|---|
+| Sunucu `tsc` / panel `tsc` + `vite build` | Temiz |
+| Tüm testler | 449/449 |
+| Rota envanteri | 154 → 154, öncelik aynı (§9.3) |
+| Panel kabuğu hazırlama betiği | `App.tsx`'teki `useState('dashboard')` satırı bilerek korundu (gömme yaması o satırı birebir arıyor) |

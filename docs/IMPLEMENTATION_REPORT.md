@@ -1,6 +1,6 @@
 # IMPLEMENTATION REPORT — BotRix parity revizyonu
 
-**Tarih:** 2026-09-21
+**Tarih:** 2026-09-21 · 2. tur 2026-09-22 · 3. tur 2026-09-23/24
 **Çalışma branch'i:** `revamp/botrix-parity-20260921`
 **Başlangıç commit'i:** `cdc968e` (etiket `pre-botrix-revision-20260921-182105`)
 
@@ -372,3 +372,133 @@ ilan eder.
 
 Diğer P3 uçları (tahmin/kuyruk/puan düşüşü/varyant/medya/Discord/Nightbot)
 birinci turda yazılmıştı; bu turda **panele bağlandı**.
+
+---
+
+## 13. ÜÇÜNCÜ TUR — kalan her şey (2026-09-23 · 2026-09-24)
+
+İstek: `KNOWN_LIMITATIONS §4–§6`'daki bütün açık maddeler (anahtar kelime
+tetikleyici, Twitch/YouTube/TikTok/Trovo moderasyonu, uyarı metin penceresi
+ve konumu, yedekte medya gömme, S6/S7/S8, teknik borç B1–B10, C12/C13).
+
+Çalışma kuralı: her madde izole bir örnekte (port 3011, **kendi**
+veritabanı) canlı denendi. Dışarıda gerçek etki doğuracak hiçbir şey
+yapılmadı: gerçek moderasyon, başlık değişikliği, sohbet mesajı, Discord
+gönderisi, bağış veya ödül yok. Bunlar `KNOWN_LIMITATIONS §1`'de
+"uygulandı, canlı doğrulanmadı" olarak ayrı listelendi.
+
+### 13.1 Commit'ler
+
+| Commit | Alan | Özet |
+|---|---|---|
+| `8ffab37` | Komutlar | Panel formu hiç çalışmıyordu (alan adı uyuşmazlığı); BotRix formunun tüm alanları, anahtar kelime tetikleyici, erişim kipi, en düşük seviye, `!title`/`!game`/`!accountage` |
+| `59dcbe2` | Yayın durumu | Gerçek `!uptime`; canlı durum servisi; otomatik Discord duyurusu gerçekten bağlandı; `$(title)` `$(game)` `$(viewers)` `$(settitle)` `$(setcategory)` |
+| `1c1775b` | Platformlar | Kick izinleri, Twitch Helix, YouTube video kimliği ve moderasyon, Trovo silme/başlık, dürüst yetenek tablosu, JSON hata işleyicisi |
+| `31dfbf7` | Uyarılar | Metin görünüm penceresi yanlış ölçülüyordu; ses kuyruktaki uyarıyla kayıyordu; metin katmanı ayarları Alert Box'ta |
+| `c53125a` | Uyarılar | Hediye abone kendi türüyle; abone hedefi normal aboneleri saymıyordu; varyant düzeltmeleri; test değeri (C13) |
+| `6d926c9` | Yedek | Medya gömme (≤100 MB); Discord'a Trovo kaynağı |
+| `73e0f90` | Etkileşim | Durum WebSocket ile anında (C12) |
+| `a4804f1` | Güvenlik | WebSocket ele geçirme (CSWSH) ve DNS rebinding kapatıldı; hız sınırı (S7); S8 politikası |
+| `7ef820b` | Güvenlik | Sırlar diskte Windows DPAPI ile şifreli (S6) |
+| `2206329` | AutoMod | Sayfadaki eylem seçimleri hiç uygulanmıyordu; tekrarlanan mesaj kuralı (B9) |
+| `659dbc4` `c5de138` | Panel | Tarayıcı geri tuşu (B7), Türkçe etiketler (B8), `engines` (B10) |
+| `f93f777` | Widget'lar | Hype Treni sunucuda (B3); beş widget test düğmesi hiçbir şey yapmıyordu |
+| `d235c82` | Günlük | Zaman damgası, seviye, sır maskeleme (B5) |
+| `dce642c` | Güvenlik | Kick OAuth geri dönüşünde yansıyan XSS ve token yayını; widget ayar doğrulaması (B2) |
+| `8eef974` | Güvenilirlik | Sessiz `catch` blokları — veri kaybı artık günlükte (B4) |
+| `51af8e6` | Yapı | `api/routes.ts` 13 alan modülüne bölündü (B1) |
+| `81e76e5` | Pano | Botun gördüğü canlı yayın durumu; Trovo kartı |
+
+Her commit'in gövdesi kök nedeni ve canlı doğrulamayı yazar.
+
+### 13.2 Önceki turların yanlış veya eksik beyanları — düzeltme
+
+Bu turda canlı denemeler, önceki raporlarda `DONE` yazılan bazı maddelerin
+**gerçekte çalışmadığını** gösterdi. Hepsi düzeltildi; beyanlar burada açıkça
+geri alınıyor:
+
+| # | Önceki beyan | Gerçek | Düzeltme |
+|---|---|---|---|
+| D1 | "Yerleşik komutlar `DONE`" (`GAP §13`) | `!watchtime`, `!followage`, `!sayac` yinelenen `case` etiketlerine takılıyor, 1. turda yazılan gerçek uygulamaya **hiç ulaşmıyordu** | `8ffab37` — sahte vakalar kaldırıldı; kaynak metinden yinelenen etiketi yakalayan test |
+| D2 | "Komut derinliği: bekleme, fiyat, platform `DONE`" | Bu alanlar API'den ve panelden **yazılamıyordu**; panel `user_level` gönderip sunucu `userLevel` okuduğu için yeni komutta rol yok sayılıyor (moderatör komutu herkese açılıyordu), takma adlar kaydedilmiyor, düzenleme HTTP 500 veriyordu; bekleme 0 bile 5 sn'ye dönüyordu | `8ffab37` |
+| D3 | "Discord duyuru entegrasyonu `DONE`" (`GAP §13 P3`) | **Otomatik** duyuru hiç çalışmıyordu: dinleyici yazılmış ama bağlanmamıştı; Kick/Twitch/YouTube `stream_online` üretmiyordu. Yalnız test düğmesi çalışıyordu | `59dcbe2` — bağlandı, kalıcı tekilleştirme |
+| D4 | "Moderasyon: motor, 5 eylem, 11 kademe `DONE`" | "Bot Moderasyonu" sayfasındaki eylem seçimleri motorun **okumadığı** bir JSON'a yazılıyordu — hiç uygulanmıyordu (yalnız Gelişmiş Bot sayfası çalışıyordu) | `2206329` — iki sayfa aynı veriyi yazıyor |
+| D5 | "Kick zaman aşımı uygulandı, canlı doğrulanmadı" | OAuth yalnız `chat:write channel:read user:read` istiyordu; zaman aşımı bu jetonla **her zaman 403** alırdı | `1c1775b` — izinler eklendi (kullanıcı bir kez yeniden bağlanmalı) |
+| D6 | "Metin görünüm penceresi — yapılmadı" (`KNOWN_LIMITATIONS §4`) | 2. turda yazılmıştı ama pencere uyarının başından değil **aşamanın bitişinden** ölçülüyordu; pratikte çalışmıyordu | `31dfbf7` |
+| D7 | Yetenek tablosu "biz ne yapabiliyoruz'u ilan eder" (`§12.3`) | TikTok `gonder: true` iken `sendMessage` hep `false` dönüyordu; bazı platformlarda yöntemi olmayan `ban: true`; okunmayan izleyici sayıları `true` | `1c1775b` — tablo dürüstleştirildi, 3 test eski tabloyu kodluyordu, yeni destek ayrı testlerle kilitlendi |
+| D8 | "Uyarılar → olay başına ayar `DONE`" (`GAP §14`) | Gerçek hediye abonelikler düz `sub` geliyordu: Hediye Abone ayarı ve varyantları yalnız test düğmesinde çalışıyordu. Normal abonelikler abone hedefine **hiç** eklenmiyordu | `c53125a` |
+| D9 | "Widget'lar `DONE` (29 widget)" (`GAP §14`) | Hype Treni, Subathon, Now Playing, Jenerik ve Emote Combo test düğmeleri widget'ın dinlemediği mesajları yayınlıyordu; Hype Treni her OBS kaynağında ayrıydı | `f93f777` |
+| D10 | YouTube kartı "v=xxxx kodunu yazın" diyordu | Adaptör yalnız `liveChatId` kabul ediyordu — video kimliğiyle sohbet **hiç** okunmuyordu; ilk yoklama sohbet geçmişini yeni mesaj sanıp eski komutlara yeniden yanıt veriyordu | `1c1775b` |
+| D11 | "`!uptime`" | Yayının değil **botun** çalışma süresini söylüyordu | `59dcbe2` |
+| D12 | "S1: yerel bağlama + köken doğrulaması `DONE`" | Köken denetimi yalnız HTTP'deydi; **WebSocket'te yoktu**. Yayıncının açtığı herhangi bir web sitesi `ws://127.0.0.1:<port>/ws`'ye bağlanıp bota gerçek sohbete mesaj yazdırabilir, yayında metin okutabilir, sohbeti dinleyebilirdi | `a4804f1` — köken + Host izin listesi |
+| D13 | (beyan yoktu) Kick OAuth geri dönüşü | `error`/`code` parametreleri sayfaya ham gömülüyordu (yansıyan XSS); ham erişim token'ı `postMessage('*')` ile ve WebSocket üzerinden widget'lar dahil **tüm** istemcilere gidiyordu | `dce642c` |
+
+### 13.3 Mimari notlar
+
+* **Canlı durum servisi** (`core/live-status.ts`): platform başına
+  durum, kenar tetiklemeli `stream_online` / `stream_offline` /
+  `stream_status` olayları. Kick/Twitch/YouTube dakikada bir yoklanır;
+  TikTok/Trovo olayla bildirir. Hiçbir platform bildirmiyorsa durum
+  `null` (bilinmiyor) — erişim kipi bu durumda engellemez, pano söyler.
+  Kick'in resmi `/public/v1/channels` yanıtı yayın anahtarını da
+  döndürdüğü için **bilerek** kullanılmadı; durum kanal sayfası ucundan.
+* **DPAPI kasası** (`core/security/vault.ts`): yerel (native) modül Akıllı
+  Uygulama Denetimi'ne takılacağı için imzalı `powershell.exe` + .NET
+  `ProtectedData`; sırlar komut satırından değil stdin'den geçer. Okuma
+  tek noktada (`db.prepare` sarmalayıcısı `dpapi:v1:` önekini çözer) —
+  29 okuma yerine dokunulmadı.
+* **Durum itme** (`core/state-push.ts`): durum değiştiren yöntemler
+  sarmalanır, 50 ms birleştirmeyle WebSocket'e yayınlanır. Panel yoklaması
+  yalnız 15 sn'lik yedek.
+* **Rota modülleri** (`api/rotalar/`): bölme sırasında çalışma anı
+  yönlendirici dökümü önce/sonra karşılaştırıldı; aynı isteğe uyabilen
+  rota çiftlerinde öncelik korundu (`TEST_REPORT §9.3`).
+* **Saf modüller**: `command-input`, `live-status-math`, `twitch-rules`,
+  `hype-math`, `repeat`, `settings-validate`, `html`, `origin-guard`,
+  `rate-limit`, `logger` — veritabanına dokunmaz, çalışan sunucunun SQLite
+  kilidine takılmadan test edilir.
+
+### 13.4 Yeni ve değişen API
+
+| Uç | Değişiklik |
+|---|---|
+| `POST/PUT /api/commands` | BotRix formunun tüm alanları (`snake_case` ve `camelCase`), kısmi güncelleme; hata gövdesi panelde gösterilir |
+| `GET /api/status` | `canli` alanı (genel + platform başına yayın durumu) |
+| `POST /api/alerts/test` | `deger`: tutara/aya göre varyant denemesi |
+| `GET /api/alerts/backup?medya=1` | Kullanılan yerel medyayı gömer |
+| `POST /api/alerts/backup/import` | Gömülü medyayı geri yükler; gövde sınırı yalnız bu uçta 150 MB (genel 12 MB) |
+| `GET /api/hype-train` · `POST /api/hype-train/reset` | Hype Treni durumu sunucuda |
+| `POST /api/widgets/:id/settings` | Doğrulama; geçersizde 400, düzeltmede `X-StreamAxT-Uyari` başlığı |
+| `POST /api/giveaways/create` | Ek ayarlar yazılamazsa `uyari` |
+| `GET /api/auth/kick/callback` | Token yayınlamaz; `error`/`code` kaçışlı |
+| Tüm `/api` | JSON hata yanıtı (yığın izi ve disk yolu yok); bozuk JSON 400; Host izin listesi (403); hız sınırı (429 + `Retry-After`) |
+| WebSocket | Köken + Host denetimi (401); yeni olaylar `stream_status`, `hype_state`, `kuyruk_durumu`, `tahmin_durumu`, `dusus_durumu`; `kick_auth_success` token taşımaz |
+
+### 13.5 Veritabanı
+
+* Göç **#6** (`automod_settings` tekrar kuralı sütunları) — eklemeli,
+  varsayılanlı.
+* DPAPI: şema değişmez; sır anahtarlarının **değeri** `dpapi:v1:` önekli
+  şifreli metne çevrilir. Göç tek transaction'dır ve yalnız gidiş-dönüş
+  doğrulaması tutan değer değiştirilir. Eski koda dönüş yolu:
+  `KNOWN_LIMITATIONS §7`.
+* Discord duyuru tekilleştirmesi `bot_settings` içinde (yeni anahtar).
+
+### 13.6 Kullanıcının yapması gerekenler
+
+`KNOWN_LIMITATIONS §0`: Kick bir kez yeniden bağlanmalı (yeni izinler);
+Twitch/YouTube'da yazma ve moderasyon için jeton izinleri; taşınabilir
+kopya başka bilgisayara taşınırsa tokenlar yeniden girilmeli.
+
+### 13.7 Dağıtım
+
+| Hedef | Durum |
+|---|---|
+| `release/app/{dist,public}` | Güncellendi (bağımlılık değişmedi; `node_modules`'a dokunulmadı) |
+| `release/StreamAxT-v1.0.0-Portable/app/{dist,public}` | Güncellendi |
+| Panel gömmesi `cikti/portable/streamaxt` | `node scripts/streamaxt-hazirla.mjs` — turkuaz derleme, gömme yaması uygulandı. Gömülü kipte (`?embed=1`) sekme adresten açılıyor, yan menü gizli, adres değişimi ve geri tuşu tarayıcıda denendi |
+
+Gerçek bot (3001) dağıtım sırasında **çalışmıyordu**; yeni sürüm panel bir
+sonraki açılışta başlatınca devreye girer. DPAPI göçü o ilk açılışta
+gerçek veritabanında çalışır (`KNOWN_LIMITATIONS L9`); göç öncesi
+veritabanı `BACKUP_MANIFEST §10`'daki zip'te.

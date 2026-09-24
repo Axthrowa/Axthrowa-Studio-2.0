@@ -56,21 +56,30 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     loadPlatforms();
 
     // Listen for Kick OAuth popup message
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'KICK_AUTH_SUCCESS') {
-        const receivedToken = event.data.token || event.data.code;
-        if (receivedToken) {
-          setKickTokenInput(receivedToken);
-          setKickFeedback({
-            type: 'success',
-            text: event.data.token
-              ? 'Kick Access Token başarıyla oluşturuldu ve bağlandı! Bot artık sohbete yazabilir.'
-              : 'Kick OAuth kodu alındı! "Kick API Bağla ve Aktifleştir" butonuna tıklayarak işlemi tamamlayabilirsiniz.'
-          });
-          setTimeout(() => setKickFeedback(null), 7000);
-          loadPlatforms();
-        }
+    // Sunucu artık ham token GÖNDERMİYOR (güvenlik): başarıda token zaten
+    // kaydedilmiştir, maskeli değer platform listesinden okunur. Yalnız
+    // değişim başarısızsa eski elle bağlama için yetki kodu gelir.
+    const kickYetkiSonucu = (veri: any) => {
+      if (veri?.ok) {
+        setKickFeedback({
+          type: 'success',
+          text: 'Kick yetkilendirmesi başarılı — token kaydedildi ve bağlanıldı. Bot artık sohbete yazabilir.'
+        });
+      } else if (veri?.code) {
+        setKickTokenInput(String(veri.code));
+        setKickFeedback({
+          type: 'success',
+          text: 'Kick OAuth kodu alındı! "Kick API Bağla ve Aktifleştir" butonuna tıklayarak işlemi tamamlayabilirsiniz.'
+        });
+      } else {
+        return;
       }
+      setTimeout(() => setKickFeedback(null), 7000);
+      loadPlatforms();
+    };
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'KICK_AUTH_SUCCESS') kickYetkiSonucu(event.data);
     };
     window.addEventListener('message', handleMessage);
 
@@ -83,20 +92,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       ws.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          if (payload.type === 'kick_auth_success') {
-            const receivedToken = payload.token || payload.code;
-            if (receivedToken) {
-              setKickTokenInput(receivedToken);
-              setKickFeedback({
-                type: 'success',
-                text: payload.token
-                  ? 'Kick Access Token başarıyla oluşturuldu ve bağlandı! Bot artık sohbete yazabilir.'
-                  : 'Kick OAuth kodu alındı! "Kick API Bağla ve Aktifleştir" butonuna tıklayarak işlemi tamamlayabilirsiniz.'
-              });
-              setTimeout(() => setKickFeedback(null), 7000);
-              loadPlatforms();
-            }
-          }
+          if (payload.type === 'kick_auth_success') kickYetkiSonucu(payload);
         } catch {}
       };
     } catch {}

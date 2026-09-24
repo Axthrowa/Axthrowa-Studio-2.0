@@ -36,6 +36,8 @@ import { varyantlar } from '../modules/alerts/variants.js';
 import { uyariYedegi } from '../modules/alerts/backup.js';
 import { komutGirdisiniCoz } from '../modules/commands/command-input.js';
 import { hypeTreni } from '../modules/hype/hype-train.js';
+import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../modules/widgets/settings-validate.js';
+import { betikJsonu, htmlKacisla } from '../core/security/html.js';
 import { sifrele, sifreleHepsi } from '../core/security/vault.js';
 import { tahminler } from '../modules/engagement/predictions.js';
 import { kuyruk } from '../modules/engagement/queue.js';
@@ -282,7 +284,7 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
       <html><body style="font-family:sans-serif;background:#0b0f19;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
         <div style="background:#1e293b;padding:32px;border-radius:16px;text-align:center;max-width:400px;border:1px solid rgba(239,68,68,0.3);">
           <h2 style="color:#ef4444;margin-top:0;">Kick Yetkilendirme Hatası</h2>
-          <p style="color:#94a3b8;font-size:14px;">${error || 'Yetki kodu alınamadı.'}</p>
+          <p style="color:#94a3b8;font-size:14px;">${htmlKacisla(error || 'Yetki kodu alınamadı.')}</p>
           <button onclick="window.close()" style="margin-top:16px;padding:10px 20px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Pencereyi Kapat</button>
         </div>
       </body></html>
@@ -348,12 +350,13 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
     }
   }
 
-  // Broadcast to all open dashboards (including when authorized from an incognito window)
-  wsHub.broadcastTo(['dashboard', 'all'], {
-    type: 'kick_auth_success',
-    code: String(code),
-    token: accessToken
-  });
+  // Açık panellere bildir (gizli pencereden yetkilendirmede de). GÜVENLİK:
+  // token artık YAYINLANMIYOR — eskiden ham erişim token'ı widget'lar dahil
+  // tüm WebSocket istemcilerine gidiyordu. Sunucu token'ı zaten kaydetti;
+  // panel maskeli değeri yeniden okur. Kod yalnız değişim BAŞARISIZSA
+  // (istemci sırrı yoksa) eski elle bağlama akışı için gönderilir.
+  const bildirim = { type: 'kick_auth_success', ok: !!accessToken, code: accessToken ? undefined : String(code) };
+  wsHub.broadcastTo(['dashboard', 'all'], bildirim);
 
   res.send(`
     <!DOCTYPE html>
@@ -365,7 +368,7 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
         <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:20px;">
           ${accessToken 
             ? 'Bot hesabınız başarıyla StreamAxT\'ye bağlandı! Erişim anahtarı (Access Token) kaydedildi. Artık botunuz yayın sohbetine mesaj gönderebilir.' 
-            : 'Kick yetki kodu StreamAxT sistemine iletildi: <br/><code style="background:#0f172a;padding:4px 8px;border-radius:6px;color:#53fc18;word-break:break-all;">' + code + '</code>'}
+            : 'Kick yetki kodu StreamAxT sistemine iletildi: <br/><code style="background:#0f172a;padding:4px 8px;border-radius:6px;color:#53fc18;word-break:break-all;">' + htmlKacisla(code) + '</code>'}
         </p>
         <div style="background:rgba(83,252,24,0.08);border:1px dashed rgba(83,252,24,0.3);padding:12px;border-radius:12px;margin-bottom:20px;font-size:13px;color:#cbd5e1;">
           💡 Bu pencereyi (veya Gizli Sekmeyi) kapatıp <b>StreamAxT Paneline</b> dönebilirsiniz. Bağlantı otomatik olarak algılanmıştır.
@@ -375,11 +378,13 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
         </button>
       </div>
       <script>
+        // Sır İÇERMEYEN bildirim (token yok): '*' hedefi bu yüzden güvenli.
+        var veri = ${betikJsonu({ type: 'KICK_AUTH_SUCCESS', ok: !!accessToken, code: accessToken ? undefined : String(code) })};
         if (window.opener) {
           try {
-            window.opener.postMessage({ type: 'KICK_AUTH_SUCCESS', code: '${code}', token: '${accessToken || ''}' }, '*');
-            setTimeout(() => window.close(), 1800);
-          } catch(e) {}
+            window.opener.postMessage(veri, '*');
+            setTimeout(function () { window.close(); }, 1800);
+          } catch (e) {}
         }
       </script>
     </body></html>
@@ -1725,6 +1730,7 @@ router.post('/widgets/test/:widgetName', (req: Request, res: Response) => {
 });
 
 router.get('/widgets/:widgetId/settings', (req: Request, res: Response) => {
+  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
   const key = `widget_settings_${req.params.widgetId}`;
   try {
     const row = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(key) as { value: string } | undefined;
@@ -1735,10 +1741,24 @@ router.get('/widgets/:widgetId/settings', (req: Request, res: Response) => {
 });
 
 router.post('/widgets/:widgetId/settings', (req: Request, res: Response) => {
+  // B2: kimlik, boyut, derinlik, prototip kirletme ve tür denetimi
+  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
   const key = `widget_settings_${req.params.widgetId}`;
   const currentRaw = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(key) as { value: string } | undefined;
-  const current = currentRaw?.value ? JSON.parse(currentRaw.value) : {};
-  const updated = { ...current, ...(req.body || {}) };
+  let current: Record<string, unknown> = {};
+  try {
+    current = currentRaw?.value ? JSON.parse(currentRaw.value) : {};
+  } catch {
+    current = {}; // bozuk kayıt: yeni ayar temiz başlar
+  }
+  const temiz = widgetAyariniTemizle(req.body || {}, current);
+  if (!temiz.ok) return res.status(400).json({ error: temiz.hata });
+  if (temiz.uyarilar.length) {
+    console.warn(`[Widget] ${req.params.widgetId} ayarında düzeltme:`, temiz.uyarilar.slice(0, 5).join(' · '));
+    // Yanıt gövdesi değişmesin (panel ayar nesnesi bekliyor); uyarı başlıkta
+    res.setHeader('X-StreamAxT-Uyari', encodeURIComponent(temiz.uyarilar.slice(0, 3).join(' | ')));
+  }
+  const updated = { ...current, ...temiz.deger };
   db.prepare(`
     INSERT INTO bot_settings (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value

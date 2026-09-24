@@ -6,6 +6,7 @@ import { sifreleHepsi } from '../core/security/vault.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { settingsCache } from '../core/settings-cache.js';
+import { hataMetni } from '../core/logger.js';
 
 export interface KickChannelVerification {
   success: boolean;
@@ -120,7 +121,9 @@ export class KickPlatform extends BasePlatform {
                   this.botUsername = String(botUser2.name || '');
                   console.log(`[Kick] Bot refreshed & authenticated as: @${this.botUsername} (User ID: ${this.botUserId})`);
                 }
-              } catch {}
+              } catch (e2) {
+                console.warn('[Kick] Token yenilendi ama bot kullanıcı bilgisi alınamadı:', hataMetni(e2));
+              }
             }
           } else {
             console.warn('[Kick] Note: Could not fetch bot user profile:', e?.message || e);
@@ -432,7 +435,9 @@ export class KickPlatform extends BasePlatform {
         if (!this.currentChannel && row?.channel_name) {
           this.currentChannel = row.channel_name;
         }
-      } catch {}
+      } catch (e) {
+        console.warn('[Kick] Kayıtlı token okunamadı:', hataMetni(e));
+      }
     }
 
     let cleanToken = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();

@@ -144,7 +144,9 @@ export async function parseVariables(
       const cleanCond = cond.replace(/[^0-9><=!&|.]/g, '');
       // eslint-disable-next-line no-eval
       evalCondition = Boolean(Function(`"use strict"; return (${cleanCond});`)());
-    } catch {}
+    } catch {
+      /* geçersiz koşul (ör. "5 >") yanlış sayılır — kullanıcı girdisi, günlüğe yazılmaz */
+    }
     result = result.replace(full, evalCondition ? thenVal : elseVal);
   }
 

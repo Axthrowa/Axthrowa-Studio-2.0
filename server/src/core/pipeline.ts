@@ -12,6 +12,7 @@ import { puanDususu } from '../modules/engagement/point-drops.js';
 import { settingsCache } from './settings-cache.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
+import { seyrekUyar } from './logger.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
@@ -92,8 +93,9 @@ export class MessagePipeline {
           message: `⭐ @${message.user.displayName} seviye ${sv.seviye} oldu!`
         });
       }
-    } catch {
-      /* seviye sistemi kritik degil */
+    } catch (e) {
+      /* seviye sistemi kritik değil — mesaj işlemeye devam */
+      seyrekUyar('seviye:mesajXp', '[Seviye] Mesaj XP işlenemedi', e);
     }
 
 

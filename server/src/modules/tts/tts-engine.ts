@@ -11,6 +11,7 @@ import { db } from '../../db/index.js';
 import { TTSSettings } from '../../db/schema.js';
 import { GoogleGenAI } from '@google/genai';
 import crypto from 'crypto';
+import { seyrekUyar } from '../../core/logger.js';
 
 export interface TTSQueueItem {
   id: string;
@@ -202,7 +203,9 @@ export class MultiEngineTTS extends EventEmitter {
         // ayar her okunuşta "Puck"a dönüyordu; seçim hiç tutmuyordu.
         return { ...DEFAULT_TTS_SETTINGS, ...JSON.parse(row.value) } as TTSSettings;
       }
-    } catch {}
+    } catch (e) {
+      seyrekUyar('ayar:tts', '[TTS] Ayar okunamadı — varsayılan kullanılıyor', e);
+    }
     return { ...DEFAULT_TTS_SETTINGS };
   }
 

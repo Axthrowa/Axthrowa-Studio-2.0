@@ -17,6 +17,7 @@
  */
 import { hediyeAdedi, eventBus } from '../../core/event-bus.js';
 import { db } from '../../db/index.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 export interface SubathonAyarlari {
   /** Sayaç açık mı — kapalıyken olaylar süreye eklenmez. */
@@ -125,8 +126,9 @@ class SubathonMotoru {
       db.prepare(
         'INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
       ).run(DURUM_ANAHTARI, JSON.stringify(this.durum));
-    } catch {
-      /* yazılamadı — bellekte devam */
+    } catch (e) {
+      /* yazılamadı — bellekte devam; yeniden başlatmada son kayıtlı süre döner */
+      seyrekUyar('subathon:yaz', '[Subathon] Durum diske yazılamadı — bellekte devam ediyor', e, 30_000);
     }
   }
 

@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { db } from '../../db/index.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 /**
  * Sozu verilen sure icinde bitmezse vazgec.
@@ -134,8 +135,9 @@ class GeminiCoHost {
       db.prepare(
         "INSERT INTO bot_settings (key, value) VALUES ('gemini_model_resolved', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
       ).run(model);
-    } catch {
-      /* ayar yazilamadi — bellekte kalir */
+    } catch (e) {
+      /* ayar yazılamadı — bellekte kalır, yeniden başlatmada model yeniden aranır */
+      seyrekUyar('gemini:model-yaz', '[Gemini] Çözülen model adı kaydedilemedi', e, 300_000);
     }
   }
 

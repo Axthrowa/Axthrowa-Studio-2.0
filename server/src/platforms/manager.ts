@@ -6,6 +6,7 @@ import { discordPlatform } from './discord.js';
 import { tiktokPlatform } from './tiktok.js';
 import { trovoPlatform } from './trovo.js';
 import { eventBus, BotMessagePayload } from '../core/event-bus.js';
+import { seyrekUyar } from '../core/logger.js';
 
 export class PlatformManager {
   private platforms: Map<string, BasePlatform> = new Map();
@@ -124,7 +125,9 @@ export class PlatformManager {
         if (name !== originPlatform && p.isConnected()) {
           try {
             await p.sendMessage('', text);
-          } catch {}
+          } catch (e) {
+            seyrekUyar(`aktarim:${name}`, `[Sohbet aktarımı] ${name} kanalına iletilemedi`, e);
+          }
         }
       }
     });

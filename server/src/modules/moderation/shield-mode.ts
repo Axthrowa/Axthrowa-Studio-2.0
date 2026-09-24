@@ -2,6 +2,7 @@ import { db } from '../../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
 import { AuditLog, ShieldModeSettings } from '../../db/schema.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 export class ShieldModeService extends EventEmitter {
   getSettings(): ShieldModeSettings {
@@ -10,7 +11,9 @@ export class ShieldModeService extends EventEmitter {
       if (row?.value) {
         return JSON.parse(row.value);
       }
-    } catch {}
+    } catch (e) {
+      seyrekUyar('ayar:shield_mode_settings', '[Ayar] Kalkan modu ayarı okunamadı — varsayılan kullanılıyor', e);
+    }
 
     return {
       isActive: false,

@@ -21,6 +21,7 @@ import { settingsCache } from '../../core/settings-cache.js';
 import { extras } from '../extras/extras.js';
 import { canliDurum } from '../../core/live-status.js';
 import { anahtarKomutuSec, erisimAciklamasi, erisimUygunMu } from './command-input.js';
+import { hataMetni, seyrekUyar } from '../../core/logger.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -98,7 +99,9 @@ export class CommandManager {
                 this.aliasesCache.set(alias.trim().toLowerCase(), row);
               }
             }
-          } catch {}
+          } catch (e) {
+            console.warn(`[Komut] !${row.name} takma adları okunamadı (bozuk kayıt):`, hataMetni(e));
+          }
         }
       }
       this.initialized = true;
@@ -212,7 +215,9 @@ export class CommandManager {
     try {
       const disabled = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
       if (Array.isArray(disabled) && disabled.includes(name)) return null;
-    } catch {}
+    } catch (e) {
+      seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
+    }
 
     switch (name) {
       case 'puan':
@@ -774,7 +779,9 @@ export class CommandManager {
         // Overlay'deki Shoutout widget'ini da tetikle
         try {
           eventBus.emit('widget_update', { type: 'shoutout', data: { channel: kanal, platform: message.platform } });
-        } catch {}
+        } catch (e) {
+          seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e);
+        }
         return `📢 ${kanal} kanalina goz atin: ${kok}/${kanal}`;
       }
 

@@ -45,6 +45,7 @@ import { puanDususu } from '../modules/engagement/point-drops.js';
 import { discordDuyuru } from '../modules/integrations/discord-announce.js';
 import { nightbot } from '../modules/integrations/nightbot-import.js';
 import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../modules/automod/enforcement.js';
+import { hataMetni, seyrekUyar } from '../core/logger.js';
 
 const router = Router();
 let kickPkceVerifier = '';
@@ -336,7 +337,10 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
               autoSlug = String(userData.name).toLowerCase();
               autoUserId = String(userData.user_id || '');
             }
-          } catch {}
+          } catch (e) {
+            // Yetki alındı ama kanal adı çözülemedi: kullanıcı elle girmeli
+            console.warn('[Kick OAuth] Kullanıcı bilgisi alınamadı:', hataMetni(e));
+          }
 
           db.prepare(`
             INSERT INTO channels (id, platform, channel_name, account_id, token, refresh_token, token_expires_at, is_active, created_at)
@@ -622,7 +626,11 @@ router.post('/songrequest/open-desktop', (req: Request, res: Response) => {
 router.get('/economy/leaderboard', (req: Request, res: Response) => {
   // Puanlar bellekte tutuluyor ve diske seyrek yazılıyor; sıralama bayat
   // kalmasın diye önce hepsini yaz.
-  try { economyService.flushAll(); } catch {}
+  try {
+    economyService.flushAll();
+  } catch (e) {
+    console.warn('[Ekonomi] Sıralama öncesi puanlar diske yazılamadı (liste bayat olabilir):', hataMetni(e));
+  }
   const sort = String(req.query.sort || 'points');
   const allowed = ['points', 'watch_time_minutes', 'messages_count'];
   const col = allowed.includes(sort) ? sort : 'points';
@@ -641,13 +649,19 @@ router.get('/giveaways', (req: Request, res: Response) => {
 router.post('/giveaways/create', (req: Request, res: Response) => {
   const { title, keyword = '!katil', subBonusMultiplier = 2.0, costPoints = 0, durationMinutes = 10, winnerCount = 1, maxEntries = 0, followerOnly = false, subOnly = false, minWatchMinutes = 0 } = req.body;
   const created = giveaway.createGiveaway(title, keyword, subBonusMultiplier, costPoints);
+  let uyari: string | undefined;
   if (created?.id) {
     try {
       db.prepare('UPDATE giveaways SET duration_minutes=?, winner_count=?, max_entries=?, follower_only=?, sub_only=?, min_watch_minutes=? WHERE id=?')
         .run(durationMinutes, winnerCount, maxEntries, followerOnly ? 1 : 0, subOnly ? 1 : 0, minWatchMinutes, created.id);
-    } catch {}
+    } catch (e) {
+      // Eskiden sessizdi: süre, kazanan sayısı ve katılım şartları kaybolur,
+      // çekiliş varsayılanlarla açılırdı — yayıncı fark etmezdi.
+      uyari = 'Çekiliş açıldı ama ek ayarlar (süre, kazanan sayısı, katılım şartları) kaydedilemedi.';
+      console.error('[Çekiliş] Ek ayarlar yazılamadı:', hataMetni(e));
+    }
   }
-  res.json({ success: true, giveaway: giveaway.getActiveGiveaway() });
+  res.json({ success: true, giveaway: giveaway.getActiveGiveaway(), ...(uyari ? { uyari } : {}) });
 });
 
 router.post('/giveaways/draw', (req: Request, res: Response) => {
@@ -1551,7 +1565,9 @@ router.get('/overlay/all-in-one', (req: Request, res: Response) => {
     try {
       const parsed = JSON.parse(row.config_json);
       return res.json(normalizeAllInOneConfig(parsed));
-    } catch {}
+    } catch (e) {
+      seyrekUyar('overlay:all-in-one', '[Overlay] Hepsi-bir-arada ayarı bozuk — varsayılan kullanılıyor', e);
+    }
   }
   res.json(normalizeAllInOneConfig(null));
 });
@@ -1817,7 +1833,9 @@ router.get('/donations/jumpscare', (req: Request, res: Response) => {
     if (row?.value) {
       return res.json(JSON.parse(row.value));
     }
-  } catch {}
+  } catch (e) {
+    seyrekUyar('ayar:jumpscare_settings', '[Bağış] Jumpscare ayarı okunamadı — varsayılan kullanılıyor', e);
+  }
   res.json({
     isEnabled: true,
     minAmount: 50,
@@ -1916,7 +1934,9 @@ const processDonation = (donorName: string, amount: number, currency: string = '
 
   try {
     economyService.recordTip(safeName, 'kick', numAmount);
-  } catch {}
+  } catch (e) {
+    console.warn('[Ekonomi] Bağış sadakat kaydına işlenemedi:', hataMetni(e));
+  }
 
   let jumpscareFired = false;
   try {
@@ -2134,8 +2154,9 @@ router.get('/viewers/:username/sentiment', async (req: Request, res: Response) =
         recent: messages.slice(-5),
       });
     }
-  } catch {
+  } catch (e) {
     /* anahtar yok / model hatası → kelime yöntemine düş */
+    seyrekUyar('ai:duygu', '[AI] Duygu analizi modeli kullanılamadı — kelime yöntemine düşüldü', e, 300_000);
   }
 
   // 2) Yedek: kelime tabanlı sayım. Eskiden her kelime en fazla 1 sayılıyordu ve
@@ -2253,7 +2274,8 @@ router.get('/lyrics/current', async (req: Request, res: Response) => {
       }
     }
   } catch (err) {
-    // Fallback if network/API fails
+    // Ağ/servis hatası: aşağıdaki "söz bulunamadı" yanıtına düşülür
+    seyrekUyar('sarki-sozu', '[Şarkı sözü] Söz servisine ulaşılamadı', err, 300_000);
   }
 
   // Graceful fallback lines

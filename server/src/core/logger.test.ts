@@ -2,9 +2,9 @@
  * StreamAxT — günlük sır maskeleme testleri (B5)
  * Developed by AxthrowA
  */
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import util from 'node:util';
-import { sirlariMaskele } from './logger.js';
+import { hataMetni, seyrekUyar, sirlariMaskele } from './logger.js';
 
 describe('sirlariMaskele', () => {
   it('Authorization başlıkları', () => {
@@ -46,5 +46,47 @@ describe('sirlariMaskele', () => {
 
   it('kasa değerlerini kısaltır', () => {
     expect(sirlariMaskele('deger=dpapi:v1:AQAAANCMnd8BFdERjHoAwE')).toBe('deger=dpapi:v1:••••');
+  });
+});
+
+describe('hataMetni', () => {
+  it('Error, metin ve nesne', () => {
+    expect(hataMetni(new Error('disk dolu'))).toBe('disk dolu');
+    expect(hataMetni('düz metin')).toBe('düz metin');
+    expect(hataMetni({ kod: 5 })).toContain('kod');
+  });
+  it('sırları maskeler ve tek satıra indirir', () => {
+    expect(hataMetni(new Error('istek başarısız\nAuthorization: Bearer abcdefghijkl'))).toBe(
+      'istek başarısız Authorization: Bearer ••••'
+    );
+  });
+});
+
+describe('seyrekUyar', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('aralık içinde tekrarı bastırır, sonra sayısını yazar', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-24T12:00:00Z'));
+    const uyari = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(seyrekUyar('test:a', '[Test] bozuk', new Error('x'), 1000)).toBe(true);
+    expect(seyrekUyar('test:a', '[Test] bozuk', new Error('x'), 1000)).toBe(false);
+    expect(seyrekUyar('test:a', '[Test] bozuk', new Error('x'), 1000)).toBe(false);
+    expect(uyari).toHaveBeenCalledTimes(1);
+    expect(uyari.mock.calls[0][0]).toBe('[Test] bozuk: x');
+
+    vi.setSystemTime(new Date('2026-09-24T12:00:01.500Z'));
+    expect(seyrekUyar('test:a', '[Test] bozuk', new Error('x'), 1000)).toBe(true);
+    expect(uyari.mock.calls[1][0]).toBe('[Test] bozuk: x (son uyarıdan beri 2 tekrar)');
+  });
+
+  it('farklı anahtarlar birbirini bastırmaz', () => {
+    const uyari = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    seyrekUyar('test:b', 'B');
+    seyrekUyar('test:c', 'C');
+    expect(uyari).toHaveBeenCalledTimes(2);
   });
 });

@@ -10,6 +10,7 @@ import {
   type KuralAdi
 } from './enforcement.js';
 import { TekrarIzleyici } from './repeat.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 export interface AutoModViolation {
   rule: 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'ai_toxic';
@@ -58,7 +59,9 @@ export class AutoModEngine {
     try {
       const adv = db.prepare("SELECT value FROM bot_settings WHERE key = 'automod_advanced'").get() as { value: string } | undefined;
       advanced = adv?.value ? JSON.parse(adv.value) : {};
-    } catch {}
+    } catch (e) {
+      seyrekUyar('ayar:automod_advanced', '[AutoMod] Gelişmiş ayar okunamadı — varsayılan kullanılıyor', e);
+    }
 
     if (advanced.caps_exclude_subs && message.user.isSub) { /* skip later per-rule */ }
     if (advanced.name_enabled) {
@@ -72,7 +75,10 @@ export class AutoModEngine {
           if (new RegExp(advanced.name_regex, 'i').test(uname)) {
             return { rule: 'blacklist', reason: advanced.name_warning || 'Kullanıcı adı kurala uymuyor.' };
           }
-        } catch {}
+        } catch (e) {
+          // Eskiden sessizdi: yazım hatalı ifade kuralı fark edilmeden kapatıyordu
+          seyrekUyar('automod:name_regex', '[AutoMod] Kullanıcı adı düzenli ifadesi geçersiz — kural uygulanmıyor', e, 300_000);
+        }
       }
     }
 
@@ -269,8 +275,9 @@ export class AutoModEngine {
         `${eylem} — ${violation.reason}`,
         violation.rule === 'blacklist' ? 'high' : 'medium'
       );
-    } catch {
-      /* denetim kaydi kritik degil */
+    } catch (e) {
+      /* denetim kaydı kritik değil — eylem yine uygulanır */
+      seyrekUyar('automod:denetim', '[AutoMod] Denetim kaydı yazılamadı', e);
     }
   }
 }

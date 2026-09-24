@@ -12,6 +12,7 @@
  * yazınca her mesaj için ayrı yayın yapılmasın.
  */
 import { eventBus } from './event-bus.js';
+import { seyrekUyar } from './logger.js';
 
 /** Birleştirilmiş (debounce) durum yayıncısı üretir. */
 export function durumYayinci(tip: string, oku: () => unknown, gecikmeMs = 50): () => void {
@@ -43,8 +44,9 @@ export function degisinceBildir<T extends object>(nesne: T, yontemler: Array<key
       const sonuc = asil.apply(nesne, argumanlar);
       try {
         bildir();
-      } catch {
-        /* bildirim hatası asıl işi bozmasın */
+      } catch (e) {
+        /* bildirim hatası asıl işi bozmasın — ama sessiz de kalmasın */
+        seyrekUyar(`durum-bildir:${ad}`, `[Durum] ${ad} sonrası canlı bildirim başarısız`, e);
       }
       return sonuc;
     };

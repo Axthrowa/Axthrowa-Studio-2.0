@@ -19,6 +19,7 @@ import {
   TriviaQuestion,
   TriviaScore
 } from './schema.js';
+import { hataMetni } from '../core/logger.js';
 
 const dataDir = path.resolve(process.cwd(), 'data');
 if (!fs.existsSync(dataDir)) {
@@ -245,6 +246,8 @@ db.exec(`
 `);
 
 // Safe column migrations for existing SQLite databases
+// Sütun zaten varsa ALTER hata verir: bu satırlardaki boş catch BİLİNÇLİ.
+// Yeni sütunlar buraya değil, sürümlü db/migrations.ts'ye eklenir.
 try { db.exec('ALTER TABLE economy ADD COLUMN messages_count INTEGER NOT NULL DEFAULT 0;'); } catch {}
 try { db.exec('ALTER TABLE economy ADD COLUMN subs_count INTEGER NOT NULL DEFAULT 0;'); } catch {}
 try { db.exec('ALTER TABLE economy ADD COLUMN gifted_subs_count INTEGER NOT NULL DEFAULT 0;'); } catch {}
@@ -556,7 +559,9 @@ const extraAlerts = [
 for (const a of extraAlerts) {
   try {
     db.prepare(`INSERT OR IGNORE INTO alert_presets (id, event_type, title_template, message_template, sound_url, image_url, duration_ms, font_family, text_color, accent_color, animation, sound_volume, is_enabled) VALUES (?, ?, ?, ?, '', '', 6000, 'Plus Jakarta Sans', '#ffffff', ?, 'bounce', 0.7, 1)`).run(a.id, a.eventType, a.title, a.msg, a.color);
-  } catch {}
+  } catch (e) {
+    console.warn('[DB] Varsayılan uyarı şablonu eklenemedi:', a.id, hataMetni(e));
+  }
 }
 
 // Seed sample announcement timer

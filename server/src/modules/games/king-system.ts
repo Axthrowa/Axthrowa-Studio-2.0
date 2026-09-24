@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { db } from '../../db/index.js';
 import { KingState } from '../../db/schema.js';
 import economyService from '../economy/economy.js';
+import { hataMetni } from '../../core/logger.js';
 
 export class KingSystemService extends EventEmitter {
   private updateTimer: NodeJS.Timeout | null = null;
@@ -83,7 +84,9 @@ export class KingSystemService extends EventEmitter {
     let history: any[] = [];
     try {
       history = JSON.parse(current.history || '[]');
-    } catch {}
+    } catch (e) {
+      console.warn('[Kral] Geçmiş kaydı bozuk — boş geçmişle devam:', hataMetni(e));
+    }
 
     history.unshift({
       king: current.currentKing,

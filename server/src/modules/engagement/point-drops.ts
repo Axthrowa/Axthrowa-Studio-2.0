@@ -16,6 +16,7 @@ import { economy } from '../economy/economy.js';
 
 export * from './drop-math.js';
 import { kisiBasiPuan, VARSAYILAN_DUSUS, type DususAyarlari, type DususDurumu } from './drop-math.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 const AYAR_ANAHTARI = 'point_drop_settings';
 
@@ -117,8 +118,9 @@ class DususMotoru {
 
     try {
       this.bitince?.(sonuc);
-    } catch {
-      /* dinleyici hatasi kritik degil */
+    } catch (e) {
+      /* dinleyici hatası düşüşü bozmasın — ama sessiz de kalmasın */
+      seyrekUyar('puan-dususu:bitince', '[Puan düşüşü] Bitiş dinleyicisi hata verdi', e);
     }
     return sonuc;
   }

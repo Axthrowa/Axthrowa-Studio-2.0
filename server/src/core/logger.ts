@@ -66,3 +66,44 @@ export function gunlukKur(): void {
     };
   }
 }
+
+/** Hata nesnesinden kısa, tek satır metin (yığın izi yok, sırlar maskeli). */
+export function hataMetni(e: unknown): string {
+  let ham: string;
+  if (e instanceof Error) ham = e.message;
+  else if (typeof e === 'string') ham = e;
+  else {
+    try {
+      ham = util.inspect(e, { depth: 1, breakLength: Infinity });
+    } catch {
+      ham = String(e);
+    }
+  }
+  return sirlariMaskele(ham).replace(/\s+/g, ' ').trim().slice(0, 300);
+}
+
+const sonUyarilar = new Map<string, { an: number; bastirilan: number }>();
+
+/**
+ * B4: aynı `anahtar` için en fazla `aralikMs` içinde BİR uyarı yazar.
+ *
+ * Denetimde 40'tan fazla boş `catch {}` vardı; puan/bağış kaydı, çekiliş
+ * ayarı, subathon durumu gibi yazımlar başarısız olunca hiçbir iz
+ * kalmıyordu. Bir kısmı sohbet mesajı başına çalışıyor (AutoMod, ayar
+ * okuma, sohbet aktarımı): bozuk tek bir ayar günlüğü dakikada binlerce
+ * satırla doldurmasın diye seyreltilir. Bastırılan tekrar sayısı bir
+ * sonraki uyarıda yazılır — hata sessiz kalmaz.
+ */
+export function seyrekUyar(anahtar: string, mesaj: string, hata?: unknown, aralikMs = 60_000): boolean {
+  const an = Date.now();
+  const kayit = sonUyarilar.get(anahtar);
+  if (kayit && an - kayit.an < aralikMs) {
+    kayit.bastirilan++;
+    return false;
+  }
+  if (sonUyarilar.size > 500) sonUyarilar.clear(); // anahtarlar sabit; yine de sınırsız büyümesin
+  const ek = kayit?.bastirilan ? ` (son uyarıdan beri ${kayit.bastirilan} tekrar)` : '';
+  sonUyarilar.set(anahtar, { an, bastirilan: 0 });
+  console.warn(hata === undefined ? `${mesaj}${ek}` : `${mesaj}: ${hataMetni(hata)}${ek}`);
+  return true;
+}

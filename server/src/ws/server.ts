@@ -9,6 +9,7 @@ import { songRequest } from '../modules/songrequest/songrequest.js';
 import { platformManager } from '../platforms/manager.js';
 import { economy } from '../modules/economy/economy.js';
 import { varyantlar } from '../modules/alerts/variants.js';
+import { hataMetni, seyrekUyar } from '../core/logger.js';
 
 interface ClientConnection {
   ws: WebSocket;
@@ -170,7 +171,9 @@ export class WebSocketHub {
       // Record in Loyalty Engine
       try {
         economy.recordSub(payload.username, payload.platform, payload.isGift, 1, payload.recipient);
-      } catch {}
+      } catch (e) {
+        console.warn('[Ekonomi] Abonelik sadakat kaydına işlenemedi:', hataMetni(e));
+      }
 
       // Hediye abonelik KENDİ türüyle gösterilir: Alert Box'taki "Hediye
       // Abone" ayarı ve varyantları eskiden yalnız test düğmesinde
@@ -202,7 +205,9 @@ export class WebSocketHub {
       // Record in Loyalty Engine
       try {
         economy.recordTip(payload.username, payload.platform, payload.amount);
-      } catch {}
+      } catch (e) {
+        console.warn('[Ekonomi] Bağış sadakat kaydına işlenemedi:', hataMetni(e));
+      }
 
       const alertData = this.buildAlertPayload('tip', {
         user: payload.displayName || payload.username,
@@ -236,7 +241,9 @@ export class WebSocketHub {
       try {
         // KICKs de bagis sayilir: ekonomi ve hedefler beslensin
         economy.recordTip(payload.username, 'kick', Number(payload.amount) || 0);
-      } catch {}
+      } catch (e) {
+        console.warn('[Ekonomi] KICKs sadakat kaydına işlenemedi:', hataMetni(e));
+      }
 
       const alertData = this.buildAlertPayload('kicks', {
         user: payload.displayName || payload.username,
@@ -287,7 +294,9 @@ export class WebSocketHub {
     eventBus.on('gift_tiktok', (payload: TikTokGiftPayload) => {
       try {
         economy.recordTip(payload.username, payload.platform, (payload.diamonds || 10) * 0.1);
-      } catch {}
+      } catch (e) {
+        console.warn('[Ekonomi] TikTok hediyesi sadakat kaydına işlenemedi:', hataMetni(e));
+      }
 
       const alertData = this.buildAlertPayload('gift_tiktok', {
         user: payload.displayName || payload.username,
@@ -577,8 +586,9 @@ export class WebSocketHub {
     if (payload?.type === 'alert') {
       try {
         eventBus.emit('uyari_yayinlandi', { subType: payload.subType, data: payload.data });
-      } catch {
-        /* dinleyici hatası yayını bozmasın */
+      } catch (e) {
+        /* dinleyici hatası yayını bozmasın — ama sessiz de kalmasın */
+        seyrekUyar('ws:uyari_yayinlandi', '[WS] Uyarı dinleyicisi hata verdi', e);
       }
     }
     const raw = JSON.stringify(payload);

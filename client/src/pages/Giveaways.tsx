@@ -42,7 +42,7 @@ export function Giveaways() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/giveaways/create', {
+    const res = await fetch('/api/giveaways/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -58,6 +58,9 @@ export function Giveaways() {
         minWatchMinutes: minWatch
       })
     });
+    // Sunucu ek ayarları yazamazsa artık söylüyor (eskiden sessizdi)
+    const veri = await res.json().catch(() => null);
+    if (veri?.uyari) alert(veri.uyari);
     setIsCreating(false);
     setTitle('');
     loadGiveaways();

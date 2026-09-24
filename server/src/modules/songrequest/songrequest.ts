@@ -131,7 +131,9 @@ export class SongRequestEngine {
         if (oembed.data?.title) {
           title = oembed.data.title;
         }
-      } catch {}
+      } catch {
+        /* başlık isteğe bağlı: oEmbed yanıt vermezse sorgu metni başlık kalır */
+      }
     }
 
     const songId = uuidv4();

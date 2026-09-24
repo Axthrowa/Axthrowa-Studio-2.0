@@ -22,6 +22,7 @@ import {
 } from './alertQueue.js';
 import { GENEL_TEMALAR, temaBul, temalar, temayiUygula } from './themes.js';
 import { birlesikRoller, olayEtiketi, olayiDestekleyenler, onbellegiTemizle, yetenekleriGetir } from './capabilities.js';
+import { genelRozet, platformRozeti, type CanliOzet } from './live-status.js';
 
 const oge = (o: Partial<UyariOgesi> = {}): UyariOgesi => ({
   id: 'a1',
@@ -323,5 +324,46 @@ describe('metin görünüm penceresi (BotRix: Metin görünümü ms – ms)', ()
     d = ilerlet(d, 0, an); // b başlar
     expect(d.aktif?.id).toBe('b');
     expect(d.aktifBaslangic).toBe(an);
+  });
+});
+
+describe('canlı yayın rozetleri', () => {
+  const kapali: CanliOzet = { canli: false, baslangic: null, izleyici: 0, canliPlatformlar: [], platformlar: [] };
+  const canli: CanliOzet = {
+    canli: true,
+    baslangic: 1,
+    izleyici: 1234,
+    canliPlatformlar: ['kick', 'youtube'],
+    platformlar: [
+      { platform: 'kick', canli: true, izleyici: 1000, baslik: 'Gece yayını', kategori: 'Just Chatting', baslangic: 1 },
+      { platform: 'youtube', canli: true, izleyici: 234, baslik: '', kategori: '', baslangic: 1 },
+      { platform: 'twitch', canli: false, izleyici: 0, baslik: '', kategori: '', baslangic: null }
+    ]
+  };
+
+  it('bilinmiyor: hiçbir platform bildirmediyse engellenmediği söylenir', () => {
+    expect(genelRozet(null).tur).toBe('bilinmiyor');
+    const r = genelRozet({ ...kapali, canli: null });
+    expect(r.tur).toBe('bilinmiyor');
+    expect(r.ipucu).toContain('engellenmez');
+  });
+
+  it('canlı: toplam izleyici ve platform adları', () => {
+    const r = genelRozet(canli);
+    expect(r.tur).toBe('canli');
+    expect(r.metin).toBe('CANLI · 1.234 izleyici');
+    expect(r.ipucu).toBe('Yayında: Kick, YouTube');
+  });
+
+  it('kapalı', () => {
+    expect(genelRozet(kapali)).toMatchObject({ tur: 'kapali', metin: 'Yayın kapalı' });
+  });
+
+  it('platform satırı: canlı, kapalı, bildirmeyen', () => {
+    expect(platformRozeti(canli, 'kick')).toMatchObject({ tur: 'canli', ipucu: 'Gece yayını · Just Chatting' });
+    expect(platformRozeti(canli, 'youtube')?.ipucu).toBe('YouTube yayında');
+    expect(platformRozeti(canli, 'twitch')?.tur).toBe('kapali');
+    expect(platformRozeti(canli, 'tiktok')).toBeNull();
+    expect(platformRozeti(undefined, 'kick')).toBeNull();
   });
 });

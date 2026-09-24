@@ -14,6 +14,13 @@ import {
   XCircle 
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
+import { genelRozet, platformRozeti, type Rozet } from '../lib/live-status.js';
+
+const ROZET_RENGI: Record<Rozet['tur'], string> = {
+  canli: 'bg-red-500/15 text-red-300 border-red-500/40',
+  kapali: 'bg-white/5 text-gray-300 border-white/10',
+  bilinmiyor: 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+};
 
 export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform: string) => void }) {
   const { platformStatuses, testAlert, triggerTTS } = useWebSocket('dashboard');
@@ -48,7 +55,11 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
     { key: 'youtube', name: 'YouTube', color: 'text-[#ff0000]', border: 'border-[#ff0000]/30' },
     { key: 'discord', name: 'Discord', color: 'text-[#5865f2]', border: 'border-[#5865f2]/30' },
     { key: 'tiktok', name: 'TikTok', color: 'text-[#00f2fe]', border: 'border-[#00f2fe]/30' },
+    { key: 'trovo', name: 'Trovo', color: 'text-[#19d66c]', border: 'border-[#19d66c]/30' },
   ];
+
+  // Botun yayını nasıl gördüğü — "yalnız yayındayken" komutları buna bağlı
+  const rozet = genelRozet(stats.canli);
 
   return (
     <div className="space-y-6">
@@ -64,11 +75,18 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
             </span>
           </div>
           <p className="text-sm text-gray-400">
-            Beş platformlu yayın asistanınız devrede. Bir platform kutusuna tıklayarak bağlama ekranını açın.
+            Altı platformlu yayın asistanınız devrede. Bir platform kutusuna tıklayarak bağlama ekranını açın.
           </p>
         </div>
 
         <div className="mt-4 md:mt-0 flex items-center space-x-3 bg-black/40 border border-white/10 px-4 py-2 rounded-xl">
+          <span
+            title={rozet.ipucu}
+            className={`text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${ROZET_RENGI[rozet.tur]}`}
+          >
+            {rozet.tur === 'canli' && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+            {rozet.metin}
+          </span>
           <Clock className="w-4 h-4 text-purple-400" />
           <span className="text-xs text-gray-400">Yayın Süresi:</span>
           <span className="text-sm font-bold text-white">{stats.uptime}</span>
@@ -76,10 +94,11 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
       </div>
 
       {/* Platform Connection Status Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {platforms.map(p => {
           const status = platformStatuses[p.key];
           const isConnected = status?.connected || false;
+          const yayin = platformRozeti(stats.canli, p.key);
 
           return (
             <button
@@ -108,6 +127,14 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
                   </span>
                 ) : (
                   <span className="text-gray-500">Bağlantı Yok · Tıkla ve bağla</span>
+                )}
+                {yayin && (
+                  <span
+                    title={yayin.ipucu}
+                    className={`mt-1.5 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${ROZET_RENGI[yayin.tur]}`}
+                  >
+                    {yayin.metin}
+                  </span>
                 )}
               </div>
             </button>

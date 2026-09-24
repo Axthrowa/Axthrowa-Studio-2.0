@@ -11,6 +11,7 @@ import { db } from '../../db/index.js';
 import { platformManager } from '../../platforms/manager.js';
 import { giveaway } from '../../modules/giveaways/giveaways.js';
 import { getStreamUptime } from '../../core/variable-parser.js';
+import { canliDurum } from '../../core/live-status.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { temizle, gizliMi, yeniSirDegeri } from '../../core/security/redact.js';
 import { degiskenKatalogu, degiskenSayisi, baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
@@ -30,6 +31,9 @@ router.get('/status', (req: Request, res: Response) => {
 
   res.json({
     uptime: getStreamUptime(),
+    // Botun yayını nasıl gördüğü (platform API yoklaması). `$(uptime)` ve
+    // "yalnız yayındayken" komutları buna bağlı; pano rozetinde gösterilir.
+    canli: canliDurum.ozet(),
     platforms,
     stats: {
       commandsCount,

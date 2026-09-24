@@ -246,6 +246,7 @@ veri kaybettirmeden aynen geçerlidir.
 | **StreamAxT git paketi** (tüm geçmiş) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\streamaxt-tur3-final-20260924-233106.bundle` (840 KB, sha256 `8c148f2b…0c46ad9`) | `git bundle verify` → *is okay*, tam geçmiş; `revamp/botrix-parity-20260921` = `52b99d0` (kod + belgeler), `master` ve `pre-botrix-revision-20260921-182105` etiketi dahil |
 | **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` + `app-data`) | `…\yedek-20260924-233048-streamaxt-tur3-guvenlik-dpapi-rotalar-belgeler.zip` (10,8 MB, 500 dosya) | Zip bütünlük denetimi OK. `-Sakla 11` ile alındı: betiğin varsayılanı (10) en eski zip'i (`yedek-20260921-013303-…`) **silecekti**; hiçbir yedek silinmedi |
 | **StreamAxT gerçek veritabanı — DPAPI göçünden önce** | `…\streamaxt-veritabani-dpapi-oncesi-20260924-233145.zip` (458 KB, sha256 `6013b769…fc528a25daa`) | Zip bütünlük OK; `streamaxt.sqlite` + `-wal` + `-shm`, bot çalışmıyorken kopyalandı. Panel yedek betiği `cikti\portable\streamaxt\data` klasörünü **paketlemediği** için ayrıca alındı |
+| **StreamAxT release veritabanı — DPAPI göçünden önce** (`Projeler\release\data`, `Start-StreamAxT.bat` / tepsi başlatıcısının kullandığı) | `…\streamaxt-release-veritabani-dpapi-oncesi-20260924-233349.zip` (295 KB, sha256 `2ab0a569…406373cf`) | Zip bütünlük OK; bot çalışmıyorken kopyalandı. `release/` git dışında olduğu için başka yedeği yoktu |
 
 Git paketinden geri yükleme:
 
@@ -253,13 +254,17 @@ Git paketinden geri yükleme:
 git clone streamaxt-tur3-final-20260924-233106.bundle StreamAxT-geri -b revamp/botrix-parity-20260921
 ```
 
-**Gerçek veritabanının durumu** (zip'teki kopya geçici klasörde açılarak
-okundu; asıl dosyaya ve sır değerlerine dokunulmadı): göç 1–5 uygulanmış,
-son yazım 2026-09-21. Yalnız Kick kanal satırında token dolu ve **düz
-metin**. Yeni sürüm ilk açılışta göç **#6**'yı (eklemeli, AutoMod tekrar
-kuralı sütunları) ve DPAPI şifrelemesini uygular.
+**Gerçek veritabanlarının durumu** (zip'teki kopyalar geçici klasörde
+açılarak okundu; asıl dosyalara ve sır değerlerine dokunulmadı):
 
-**3. turdan önceye dönüş:** bot kapalıyken yukarıdaki veritabanı zip'indeki
-üç dosyayı `cikti\portable\streamaxt\data\` altına koyun ve kodu geri
-alın (`§7`). Kodu geri almadan yalnız veritabanını geri koymak da
+| Veritabanı | Uygulanmış göç | Son yazım | Token | İlk açılışta |
+|---|---|---|---|---|
+| Panel gömmesi (`cikti\portable\streamaxt\data`) | 1–5 | 2026-09-21 22:50 | Kick, **düz metin** | Göç #6 + DPAPI |
+| Release (`Projeler\release\data`) | yok (göç sistemi öncesi) | 2026-09-21 22:07 | Kick, **düz metin** | Göç #1–#6 + DPAPI |
+
+Göçlerin hepsi eklemelidir (yeni tablo / varsayılanlı yeni sütun).
+
+**3. turdan önceye dönüş:** bot kapalıyken ilgili veritabanı zip'indeki üç
+dosyayı kendi klasörüne (`cikti\portable\streamaxt\data\` ya da
+`Projeler\release\data\`) koyun ve kodu geri alın (`§7`). Kodu geri almadan yalnız veritabanını geri koymak da
 güvenlidir: yeni sürüm açılışta göç #6'yı ve şifrelemeyi yeniden uygular.

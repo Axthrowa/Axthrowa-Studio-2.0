@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { END_CREDITS_DEFAULTS } from '../lib/widget-defaults.js';
-import { rgba, onizlemeKipi } from '../lib/widget-style.js';
+import { rgba, onizlemeKipi , wsAdresi } from '../lib/widget-style.js';
 
 export interface EndCreditsWidgetProps {
   embedded?: boolean;
@@ -42,13 +42,32 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
   const s = useWidgetSettings('end-credits', END_CREDITS_DEFAULTS);
   const onizleme = onizlemeKipi(previewMode);
   const [events, setEvents] = useState<Olay[]>(onizleme ? ORNEK : []);
+  // Kaydırmayı baştan başlatmak için anahtar (credits_start gelince artar)
+  const [tur, setTur] = useState(0);
 
   useEffect(() => {
     if (onizleme) return;
-    fetch('/api/events')
-      .then((r) => r.json())
-      .then((d) => setEvents(Array.isArray(d) ? d : []))
-      .catch(() => {});
+    const yukle = () =>
+      fetch('/api/events')
+        .then((r) => r.json())
+        .then((d) => setEvents(Array.isArray(d) ? d : []))
+        .catch(() => {});
+    yukle();
+    // Widget "Test" düğmesi ve yayın sonu komutu `credits_start` yayınlar;
+    // eskiden dinlenmiyordu, jenerik yalnız sayfa açılışında bir kez akıyordu.
+    const ws = new WebSocket(wsAdresi());
+    ws.onmessage = (ev) => {
+      try {
+        const m = JSON.parse(ev.data);
+        if (m.type === 'credits_start') {
+          yukle();
+          setTur((x) => x + 1);
+        }
+      } catch {
+        /* bozuk mesaj */
+      }
+    };
+    return () => ws.close();
   }, [onizleme]);
 
   const tavan = Math.max(1, Number(s.maxPerSection) || 15);
@@ -74,6 +93,7 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
       style={{ background: rgba(s.bgColor, s.bgOpacity), fontFamily: s.fontFamily, color: s.textColor }}
     >
       <div
+        key={tur}
         className="absolute bottom-0 w-full flex flex-col items-center"
         style={{
           maxWidth: 640,

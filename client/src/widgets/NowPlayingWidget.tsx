@@ -63,7 +63,18 @@ export function NowPlayingWidget({ embedded = false, previewMode = false }: NowP
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        if (payload.type === 'song_started' && payload.song) setSong(payload.song);
+        if (payload.type === 'song_started' && payload.song) {
+          setSong(payload.song);
+          // Test şarkısı birkaç saniye görünür, sonra çalan gerçek şarkıya dönülür
+          if (payload.test) {
+            setTimeout(() => {
+              fetch('/api/songrequest/current')
+                .then((r) => r.json())
+                .then((d) => setSong(d && d.title ? d : null))
+                .catch(() => setSong(null));
+            }, 8000);
+          }
+        }
         if (payload.type === 'song_ended' && s.hideWhenIdle) setSong(null);
       } catch {
         /* bozuk mesaj */

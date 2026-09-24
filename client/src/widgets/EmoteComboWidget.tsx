@@ -17,8 +17,19 @@ export function EmoteComboWidget(_props?: { embedded?: boolean; previewMode?: bo
   const last = useRef<{ emote: string; at: number } | null>(null);
 
   useEffect(() => {
-    if (!lastMessage || lastMessage.type !== 'chat') return;
-    const text: string = lastMessage.data?.message || lastMessage.payload?.message || '';
+    if (!lastMessage) return;
+    // `emote_used`: widget "Test" düğmesi ve sunucu olayları (eskiden dinlenmiyordu)
+    const dogrudan = lastMessage.type === 'emote_used' ? String(lastMessage.emote || lastMessage.data?.emote || '') : '';
+    if (lastMessage.type !== 'chat' && !dogrudan) return;
+    const text: string = dogrudan || lastMessage.data?.message || lastMessage.payload?.message || '';
+    // Olay kombo sayısını hazır verirse (test: combo 7) doğrudan göster
+    const hazirKombo = dogrudan ? Math.max(0, Number(lastMessage.combo) || 0) : 0;
+    if (hazirKombo > 1) {
+      const an = Date.now();
+      setCombo({ emote: dogrudan, count: hazirKombo, displayUntil: an + s.displayMs });
+      last.current = { emote: dogrudan, at: an };
+      return;
+    }
     const tokens = text.trim().split(/\s+/);
     const emote = tokens.find(t => t.startsWith(':') && t.endsWith(':') && t.length > 2)
       || tokens.find(t => /^[\u{1F300}-\u{1FAFF}]$/u.test(t))

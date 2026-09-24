@@ -7,6 +7,13 @@
  * Artık abone / hediye abone / bağış / KICKs / takip olayları puan ekliyor,
  * puan seviye hedefini aşınca tren seviye atlıyor ve süre dolunca tren
  * duruyor. Eşikler ve puan karşılıkları panelden ayarlanır.
+ *
+ * 3. tur: tren durumu SUNUCUDA (server/modules/hype/hype-train.ts). Eskiden
+ * her OBS kaynağı kendi trenini tutuyordu: iki kaynak iki farklı tren
+ * gösteriyor, kaynak yenilenince tren sıfırlanıyordu. Widget artık yalnız
+ * gösterir: açılışta /api/hype-train, sonra `hype_state` yayınları.
+ * Aşağıdaki hesap fonksiyonları sunucuyla aynı kuraldır, önizleme ve
+ * geriye uyum için duruyor.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -66,69 +73,62 @@ export function seviyeIlerlet(
 export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeTrainWidgetProps) {
   const s = useWidgetSettings('hype-train', HYPE_TRAIN_DEFAULTS);
   const onizleme = onizlemeKipi(previewMode);
-  const ayarRef = useRef(s);
-  ayarRef.current = s;
 
   const [aktif, setAktif] = useState(onizleme);
-  // Seviye ve seviye içi puan TEK durumda tutulur: iç içe setState çağrıları
-  // React 18'in iki kez çalıştırdığı güncelleyicilerde puanı iki kez ekliyordu.
   const [tren, setTren] = useState({ seviye: onizleme ? 3 : 1, puan: onizleme ? 410 : 0 });
   const { seviye, puan } = tren;
-  const [kalan, setKalan] = useState(onizleme ? 187 : 0);
+  const [bitisAni, setBitisAni] = useState(onizleme ? Date.now() + 187_000 : 0);
   const [sonDestek, setSonDestek] = useState<string | null>(onizleme ? 'Can_Stream · +100' : null);
+  const [, setTik] = useState(0);
+  const testZaman = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Geri sayım: süre dolunca tren durur, seviye ve puan sıfırlanır.
+  const uygula = (d: any) => {
+    if (!d) return;
+    setAktif(!!d.aktif);
+    setTren({ seviye: Math.max(1, Number(d.seviye) || 1), puan: Math.max(0, Number(d.puan) || 0) });
+    setBitisAni(Number(d.bitisAni) || 0);
+    setSonDestek(d.sonDestek ?? null);
+  };
+
+  const gercegiYukle = () =>
+    fetch('/api/hype-train')
+      .then((r) => r.json())
+      .then(uygula)
+      .catch(() => {});
+
+  // Geri sayım yerelde akar (bitiş anından); sıfırlamayı sunucu yapar
   useEffect(() => {
     if (!aktif || onizleme) return;
-    const t = setInterval(() => {
-      setKalan((p) => {
-        if (p <= 1) {
-          setAktif(false);
-          setTren({ seviye: 1, puan: 0 });
-          setSonDestek(null);
-          return 0;
-        }
-        return p - 1;
-      });
-    }, 1000);
+    const t = setInterval(() => setTik((x) => x + 1), 1000);
     return () => clearInterval(t);
   }, [aktif, onizleme]);
 
   useEffect(() => {
     if (onizleme) return;
+    gercegiYukle();
     const ws = new WebSocket(wsAdresi());
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-
-        if (payload.type === 'hype_train_reset') {
-          setAktif(false);
-          setTren({ seviye: 1, puan: 0 });
-          setKalan(0);
-          setSonDestek(null);
-          return;
+        if (payload.type !== 'hype_state' || !payload.data) return;
+        uygula(payload.data);
+        // Test gösterimi: birkaç saniye sonra gerçek duruma dön
+        if (payload.data.test) {
+          if (testZaman.current) clearTimeout(testZaman.current);
+          testZaman.current = setTimeout(gercegiYukle, 8000);
         }
-        if (payload.type !== 'alert') return;
-
-        const a = ayarRef.current;
-        const tur = String(payload.subType || '');
-        const eklenen = olayPuani(tur, payload.data, a);
-        if (eklenen <= 0) return;
-
-        const ad = payload.data?.displayName || payload.data?.username || 'İzleyici';
-        setSonDestek(`${ad} · +${eklenen}`);
-        setKalan(Math.max(10, Number(a.windowSeconds) || 300));
-        setAktif(true);
-        setTren((once) => {
-          const sonuc = seviyeIlerlet(once.seviye, once.puan, eklenen, a);
-          return { seviye: sonuc.seviye, puan: sonuc.puan };
-        });
       } catch {
         /* bozuk mesaj */
       }
     };
-    return () => ws.close();
+    return () => {
+      ws.close();
+      if (testZaman.current) clearTimeout(testZaman.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onizleme]);
+
+  const kalan = aktif ? Math.max(0, Math.round((bitisAni - Date.now()) / 1000)) : 0;
 
   if (!aktif && s.hideWhenIdle) return null;
 

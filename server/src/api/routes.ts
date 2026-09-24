@@ -35,6 +35,7 @@ import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../modules/media/media.js';
 import { varyantlar } from '../modules/alerts/variants.js';
 import { uyariYedegi } from '../modules/alerts/backup.js';
 import { komutGirdisiniCoz } from '../modules/commands/command-input.js';
+import { hypeTreni } from '../modules/hype/hype-train.js';
 import { sifrele, sifreleHepsi } from '../core/security/vault.js';
 import { tahminler } from '../modules/engagement/predictions.js';
 import { kuyruk } from '../modules/engagement/queue.js';
@@ -883,6 +884,13 @@ router.get('/subathon', (req: Request, res: Response) => {
   res.json(subathon.durumAl());
 });
 
+// Hype Treni (B3) — durum sunucuda
+router.get('/hype-train', (_req: Request, res: Response) => res.json(hypeTreni.durum()));
+router.post('/hype-train/reset', (_req: Request, res: Response) => {
+  hypeTreni.sifirla();
+  res.json(hypeTreni.durum());
+});
+
 router.post('/subathon/settings', (req: Request, res: Response) => {
   const g = req.body || {};
   const sayi = (v: any, varsayilan: number) => (v === undefined || v === null || v === '' ? varsayilan : Math.max(0, Number(v) || 0));
@@ -1627,29 +1635,40 @@ router.post('/widgets/test/:widgetName', (req: Request, res: Response) => {
         username: body.username || 'TestBağışçı'
       });
       break;
+    // NOT: Aşağıdaki üç test eskiden widget'ın HİÇ dinlemediği mesajları
+    // yayınlıyordu (hype_train_progress, subathon_update, now_playing):
+    // Test düğmesi hiçbir şey yapmıyordu. Artık widget'ın gerçekten dinlediği
+    // biçimde, `test: true` ile gönderiliyor; widget birkaç saniye örneği
+    // gösterip gerçek duruma döner — gerçek tren/sayaç/şarkı DEĞİŞMEZ.
     case 'hype-train':
+      hypeTreni.testGoster();
+      break;
+    case 'subathon': {
+      const d = subathon.durumAl();
       wsHub.broadcastTo(['all'], {
-        type: 'hype_train_progress',
-        level: body.level || 2,
-        percent: body.percent || 65,
-        secondsLeft: body.secondsLeft || 180
+        type: 'subathon_state',
+        data: {
+          ...d,
+          aktif: true,
+          bitisAni: Date.now() + (Number(body.timeRemaining) || 14400) * 1000,
+          kalanSaniye: Number(body.timeRemaining) || 14400,
+          sonEkleme: { metin: '+5 dk · test aboneliği', saniye: 300, zaman: Date.now() },
+          test: true
+        }
       });
       break;
-    case 'subathon':
-      wsHub.broadcastTo(['all'], {
-        type: 'subathon_update',
-        timeRemaining: body.timeRemaining || 14400,
-        running: body.running !== false
-      });
-      break;
+    }
     case 'now-playing':
       wsHub.broadcastTo(['all'], {
-        type: 'now_playing',
-        title: body.title || 'Blinding Lights',
-        artist: body.artist || 'The Weeknd',
-        coverUrl: body.coverUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop',
-        duration: 200,
-        progress: 45
+        type: 'song_started',
+        test: true,
+        song: {
+          title: body.title || 'Test Şarkısı',
+          artist: body.artist || 'StreamAxT',
+          requestedBy: body.requestedBy || 'TestIzleyici',
+          thumbnail: body.coverUrl || '',
+          duration: 200
+        }
       });
       break;
     case 'shoutout':

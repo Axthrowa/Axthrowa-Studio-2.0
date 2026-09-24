@@ -572,6 +572,15 @@ export class WebSocketHub {
   }
 
   broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all'>, payload: any) {
+    // Yayınlanan her uyarı sunucu içi dinleyicilere de bildirilir (Hype Treni
+    // eskiden tarayıcıda tam olarak bu mesajı dinliyordu; anlam korunur).
+    if (payload?.type === 'alert') {
+      try {
+        eventBus.emit('uyari_yayinlandi', { subType: payload.subType, data: payload.data });
+      } catch {
+        /* dinleyici hatası yayını bozmasın */
+      }
+    }
     const raw = JSON.stringify(payload);
     for (const client of this.clients) {
       if (types.includes(client.type) || types.includes('all') || client.type === 'all') {

@@ -20,6 +20,7 @@ import { setStreamStartTime } from './core/variable-parser.js';
 import { extras } from './modules/extras/extras.js';
 import { economy } from './modules/economy/economy.js';
 import { subathon } from './modules/subathon/subathon.js';
+import { hypeTreni } from './modules/hype/hype-train.js';
 import { seviyeler } from './modules/levels/levels.js';
 import { sohbetUyarilari } from './modules/chat-alerts/chat-alerts.js';
 import { discordDuyuru } from './modules/integrations/discord-announce.js';
@@ -216,6 +217,9 @@ server.listen(PORT, HOST, async () => {
   // KICKs) otomatik olarak süreye eklenir.
   subathon.yayinciBagla((tip, veri) => wsHub.broadcastTo(['all'], { type: tip, data: veri }));
   subathon.baslangic();
+
+  // Hype Treni de sunucuda (B3): tüm OBS kaynakları aynı treni görür.
+  hypeTreni.baglaOlaylar();
 
   // Sohbet tarafi olay mesajlari (BotRix'te 'Metin uyarilari'). Gorsel
   // overlay'den bagimsiz: olay olunca sohbete metin yazar.

@@ -97,7 +97,19 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
     ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data);
-        if (msg.type === 'subathon_state' && msg.data) durumuUygula(msg.data);
+        if (msg.type === 'subathon_state' && msg.data) {
+          durumuUygula(msg.data);
+          // Widget "Test" düğmesi örnek durum gönderir; birkaç saniye sonra
+          // gerçek sayaca dönülür (gerçek süre değişmez).
+          if (msg.data.test) {
+            setTimeout(() => {
+              fetch('/api/subathon')
+                .then((r) => r.json())
+                .then((d) => d && durumuUygula(d))
+                .catch(() => {});
+            }, 8000);
+          }
+        }
       } catch {
         /* bozuk mesaj */
       }

@@ -206,8 +206,13 @@ cd "C:\Users\Axthrowa\Desktop\Projeler" && npm install
 Bu manifest hiçbir şifre, API anahtarı, OAuth tokenı veya oturum çerezi
 içermez. Yedeklenen veritabanları **düz metin OAuth tokenı ve API gizli
 anahtarı içerdiği için** yedek klasörü, kaynak proje kadar gizli tutulmalıdır.
-(Bu düz metin saklama, revizyonun güvenlik fazında ele alınacak bulgular
-arasındadır.)
+
+**3. tur güncellemesi:** Sırlar artık diskte Windows DPAPI ile şifreli
+(`dpapi:v1:`), ama bu yalnız yeni sürüm **açıldıktan sonra** yazılan
+veritabanları için geçerli. Bu klasördeki 2026-09-24 ve öncesine ait bütün
+zip'ler ve `streamaxt-veritabani-dpapi-oncesi-*.zip` **düz metin token**
+içerir — paylaşmayın. Şifreli bir veritabanı da başka bilgisayarda
+çözülemez; taşınabilir yedek için tokenlar yeniden girilmelidir.
 
 ---
 
@@ -231,3 +236,30 @@ git clone streamaxt-tur2-final-20260923-182538.bundle StreamAxT-geri -b revamp/b
 sütunlara dokunulmaz, göç yoktur. Trovo mevcut `channels` tablosunu kullanır.
 Eski kod bu tabloları görmezden gelir — birinci turun geri alma yolu (`§7`)
 veri kaybettirmeden aynen geçerlidir.
+
+---
+
+## 10. Üçüncü tur yedekleri (2026-09-24)
+
+| Yedek | Konum | Doğrulama |
+|---|---|---|
+| **StreamAxT git paketi** (tüm geçmiş) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\streamaxt-tur3-final-20260924-233106.bundle` (840 KB, sha256 `8c148f2b…0c46ad9`) | `git bundle verify` → *is okay*, tam geçmiş; `revamp/botrix-parity-20260921` = `52b99d0` (kod + belgeler), `master` ve `pre-botrix-revision-20260921-182105` etiketi dahil |
+| **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` + `app-data`) | `…\yedek-20260924-233048-streamaxt-tur3-guvenlik-dpapi-rotalar-belgeler.zip` (10,8 MB, 500 dosya) | Zip bütünlük denetimi OK. `-Sakla 11` ile alındı: betiğin varsayılanı (10) en eski zip'i (`yedek-20260921-013303-…`) **silecekti**; hiçbir yedek silinmedi |
+| **StreamAxT gerçek veritabanı — DPAPI göçünden önce** | `…\streamaxt-veritabani-dpapi-oncesi-20260924-233145.zip` (458 KB, sha256 `6013b769…fc528a25daa`) | Zip bütünlük OK; `streamaxt.sqlite` + `-wal` + `-shm`, bot çalışmıyorken kopyalandı. Panel yedek betiği `cikti\portable\streamaxt\data` klasörünü **paketlemediği** için ayrıca alındı |
+
+Git paketinden geri yükleme:
+
+```bash
+git clone streamaxt-tur3-final-20260924-233106.bundle StreamAxT-geri -b revamp/botrix-parity-20260921
+```
+
+**Gerçek veritabanının durumu** (zip'teki kopya geçici klasörde açılarak
+okundu; asıl dosyaya ve sır değerlerine dokunulmadı): göç 1–5 uygulanmış,
+son yazım 2026-09-21. Yalnız Kick kanal satırında token dolu ve **düz
+metin**. Yeni sürüm ilk açılışta göç **#6**'yı (eklemeli, AutoMod tekrar
+kuralı sütunları) ve DPAPI şifrelemesini uygular.
+
+**3. turdan önceye dönüş:** bot kapalıyken yukarıdaki veritabanı zip'indeki
+üç dosyayı `cikti\portable\streamaxt\data\` altına koyun ve kodu geri
+alın (`§7`). Kodu geri almadan yalnız veritabanını geri koymak da
+güvenlidir: yeni sürüm açılışta göç #6'yı ve şifrelemeyi yeniden uygular.

@@ -4,6 +4,8 @@
  * (c) 2026 AxthrowA. All rights reserved.
  */
 
+// Günlük: zaman damgası + seviye + sır maskeleme (B5) — İLK içe aktarma kalmalı
+import './core/logger-init.js';
 import express from 'express';
 import cors from 'cors';
 import http from 'http';

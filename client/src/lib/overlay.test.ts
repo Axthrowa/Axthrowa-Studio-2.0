@@ -155,6 +155,29 @@ describe('kuyrugaEkle', () => {
   });
 });
 
+describe('duraklatma (ekip çapında denetim)', () => {
+  it('duraklatılmışken yeni uyarı başlamaz, bekler', () => {
+    const d = kuyrugaEkle(BOS_DURUM, oge('1'), true, 0, true);
+    expect(d.aktif).toBeNull();
+    expect(d.bekleyen.map((x) => x.id)).toEqual(['1']);
+    // Kuyruk kapalı (anında değiştir) kipte bile duraklatma uyarıyı bekletir
+    const k = kuyrugaEkle(BOS_DURUM, oge('2'), false, 0, true);
+    expect(k.aktif).toBeNull();
+  });
+
+  it('ekrandaki uyarı biter ama sıradaki duraklatma kalkana kadar başlamaz', () => {
+    let d = kuyrugaEkle(BOS_DURUM, oge('1', { sureMs: 1000, animMs: 0 }), true, 0);
+    d = kuyrugaEkle(d, oge('2'), true, 10);
+    d = ilerlet(d, 0, 0, true); // entering → visible
+    d = ilerlet(d, 0, 1000, true); // visible → exiting
+    d = ilerlet(d, 0, 1000, true); // exiting → completed
+    expect(d.aktif).toBeNull();
+    expect(ilerlet(d, 0, 5000, true).aktif).toBeNull();
+    // Sürdür
+    expect(ilerlet(d, 0, 5000, false).aktif?.id).toBe('2');
+  });
+});
+
 describe('ilerlet — tam yaşam döngüsü', () => {
   it('queued → entering → visible → exiting → completed', () => {
     let d = kuyrugaEkle(BOS_DURUM, oge('1', { sureMs: 5000, animMs: 500 }), true, 0);

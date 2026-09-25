@@ -103,8 +103,13 @@ export function kuyrugaEkle(
   durum: KuyrukDurumu,
   oge: UyariOgesi,
   kuyrukAcik: boolean,
-  simdi = Date.now()
+  simdi = Date.now(),
+  duraklatildi = false
 ): KuyrukDurumu {
+  // Ekip denetimiyle duraklatılmışken hiçbir uyarı başlamaz; kuyruk kapalı kipte bile bekletilir
+  if (duraklatildi) {
+    return { ...durum, bekleyen: [...durum.bekleyen, oge] };
+  }
   if (!kuyrukAcik) {
     return {
       bekleyen: [],
@@ -134,10 +139,10 @@ export function kuyrugaEkle(
  * `gapMs` iki uyarı arasındaki boşluk — çıkış bittikten sonra bu kadar
  * beklenir, sonra sıradaki başlar.
  */
-export function ilerlet(durum: KuyrukDurumu, gapMs: number, simdi = Date.now()): KuyrukDurumu {
+export function ilerlet(durum: KuyrukDurumu, gapMs: number, simdi = Date.now(), duraklatildi = false): KuyrukDurumu {
   if (!durum.aktif) {
-    // Boştayken bekleyen varsa ve boşluk dolduysa başlat
-    if (durum.bekleyen.length && simdi >= durum.asamaBitis) {
+    // Boştayken bekleyen varsa ve boşluk dolduysa başlat (duraklatılmışsa bekler; ekrandaki uyarı yine biter)
+    if (!duraklatildi && durum.bekleyen.length && simdi >= durum.asamaBitis) {
       const [ilk, ...kalan] = durum.bekleyen;
       return {
         bekleyen: kalan,

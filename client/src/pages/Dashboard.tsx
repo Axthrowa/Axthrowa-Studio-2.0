@@ -14,6 +14,7 @@ import {
   XCircle 
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
+import { AlertQueueControl } from '../components/AlertQueueControl.js';
 import { genelRozet, platformRozeti, type Rozet } from '../lib/live-status.js';
 
 const ROZET_RENGI: Record<Rozet['tur'], string> = {
@@ -186,6 +187,9 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
           </div>
         </div>
       </div>
+
+      {/* Ekip çapında uyarı kuyruğu denetimi (Aktivite Akışı widget'ının vaat ettiği atla/sustur/yeniden oynat) */}
+      <AlertQueueControl />
 
       {/* Grid: Test Alert Studio & Live Event Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

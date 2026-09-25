@@ -11,6 +11,7 @@ import { economy } from '../modules/economy/economy.js';
 import { varyantlar } from '../modules/alerts/variants.js';
 import { hataMetni, seyrekUyar } from '../core/logger.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
+import { BASLANGIC, kontrolUygula, KontrolDurumu, SonUyari, SonUyarilar, uyariKimligi } from '../modules/alerts/control.js';
 
 interface ClientConnection {
   ws: WebSocket;
@@ -20,6 +21,46 @@ interface ClientConnection {
 export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
+  /** Ekip çapında uyarı kuyruğu denetimi (modules/alerts/control.ts) */
+  private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
+  private sonUyarilar = new SonUyarilar(50);
+
+  uyariKontrolDurumu(): { state: KontrolDurumu; recent: Omit<SonUyari, 'alert'>[] } {
+    return {
+      state: this.uyariKontrol,
+      recent: this.sonUyarilar.hepsi().map(({ alert: _a, ...geri }) => geri)
+    };
+  }
+
+  /**
+   * Denetim eylemini uygular ve tüm uyarı widget'larına / panellere yayınlar.
+   * `replay`: son uyarılardan birini YENİ kimlikle yeniden oynatır (hedef, hype treni gibi sayaçlara işlemez).
+   */
+  uyariKontrolEt(eylem: string, kim: string, surum?: number | null, alertId?: string) {
+    let tekrar: SonUyari | undefined;
+    if (eylem === 'replay') {
+      tekrar = alertId ? this.sonUyarilar.bul(String(alertId)) : undefined;
+      if (!tekrar) return { ok: false as const, kod: 'invalid' as const, mesaj: 'Yeniden oynatılacak uyarı bulunamadı', durum: this.uyariKontrol };
+    }
+    const sonuc = kontrolUygula(this.uyariKontrol, eylem, kim, surum);
+    if (!sonuc.ok) return sonuc;
+    this.uyariKontrol = sonuc.durum;
+    this.broadcastTo(['dashboard', 'alertbox', 'all'], {
+      type: 'alert_control',
+      action: eylem,
+      state: this.uyariKontrol,
+      ...(alertId ? { alertId: String(alertId) } : {})
+    });
+    if (tekrar) {
+      this.broadcastTo(['dashboard', 'alertbox', 'all'], {
+        type: 'alert',
+        subType: tekrar.eventType,
+        replay: true,
+        alert: { ...tekrar.alert, id: uyariKimligi(`replay${tekrar.eventType}`), isReplay: true }
+      });
+    }
+    return sonuc;
+  }
 
   init(server: HttpServer) {
     // Köken + Host doğrulaması (Cross-Site WebSocket Hijacking). Eskiden YOKTU:
@@ -162,7 +203,7 @@ export class WebSocketHub {
 
     // 2. Follow Event -> AlertBox & Dashboard & Goals
     eventBus.on('follow', (payload: FollowPayload) => {
-      const alertData = this.buildAlertPayload('follow', { user: payload.displayName || payload.username });
+      const alertData = this.buildAlertPayload('follow', { user: payload.displayName || payload.username }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
         type: 'alert',
         subType: 'follow',
@@ -190,7 +231,7 @@ export class WebSocketHub {
         tier: payload.tier,
         months: payload.months,
         ...(hediye ? { count: hediyeAdedi(payload) } : {})
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
         type: 'alert',
         subType: tur,
@@ -219,7 +260,7 @@ export class WebSocketHub {
         amount: payload.amount,
         currency: payload.currency,
         message: payload.message || ''
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
         type: 'alert',
         subType: 'tip',
@@ -253,7 +294,7 @@ export class WebSocketHub {
       const alertData = this.buildAlertPayload('kicks', {
         user: payload.displayName || payload.username,
         amount: payload.amount
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
         type: 'alert',
         subType: 'kicks',
@@ -272,7 +313,7 @@ export class WebSocketHub {
       const alertData = this.buildAlertPayload('host', {
         user: payload.displayName || payload.username,
         viewers: payload.viewers
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'all'], {
         type: 'alert',
         subType: 'host',
@@ -286,7 +327,7 @@ export class WebSocketHub {
       const alertData = this.buildAlertPayload('raid', {
         user: payload.displayName || payload.username,
         viewers: payload.viewers
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'all'], {
         type: 'alert',
         subType: 'raid',
@@ -308,7 +349,7 @@ export class WebSocketHub {
         giftName: payload.giftName,
         count: payload.count,
         diamonds: payload.diamonds
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'all'], {
         type: 'alert',
         subType: 'gift_tiktok',
@@ -437,7 +478,10 @@ export class WebSocketHub {
     }
 
     return {
-      id: preset.id,
+      // Olay başına benzersiz: ön ayar kimliği türe göre sabitti, widget ikinci uyarıyı "tekrar" sayıp atıyordu
+      id: uyariKimligi(eventType),
+      presetId: preset.id,
+      isTest,
       eventType: preset.event_type,
       title,
       message,
@@ -477,7 +521,8 @@ export class WebSocketHub {
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
         alertData = this.buildAlertPayload('follow', { user: randomUser }, true);
         eventBus.emitFollow(dataPayload);
@@ -493,7 +538,8 @@ export class WebSocketHub {
           tier: 'Tier 1',
           months: d ?? 3,
           isGift: false,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
         alertData = this.buildAlertPayload('sub', { user: randomUser, tier: 'Tier 1', months: d ?? 3 }, true);
         eventBus.emitSub(dataPayload);
@@ -509,7 +555,8 @@ export class WebSocketHub {
           amount: d ?? 50,
           currency: '₺',
           message: 'Harika yayınlar, seviliyorsun!',
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
         alertData = this.buildAlertPayload('tip', { user: randomUser, amount: d ?? 50, currency: '₺', message: 'Harika yayınlar, seviliyorsun!' }, true);
         eventBus.emitTip(dataPayload);
@@ -523,7 +570,8 @@ export class WebSocketHub {
           username: randomUser,
           displayName: randomUser,
           viewers: d ?? 128,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
         alertData = this.buildAlertPayload('raid', { user: randomUser, viewers: d ?? 128 }, true);
         eventBus.emitRaid(dataPayload);
@@ -539,7 +587,8 @@ export class WebSocketHub {
           giftName: 'Asa & Taç',
           count: 5,
           diamonds: 500,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
         alertData = this.buildAlertPayload('gift_tiktok', { user: randomUser, giftName: 'Asa & Taç', count: 5, diamonds: 500 }, true);
         eventBus.emitTikTokGift(dataPayload);
@@ -547,15 +596,15 @@ export class WebSocketHub {
         break;
 
       case 'gift_sub':
-        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, count: d ?? 5, timestamp: Date.now() };
+        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, count: d ?? 5, timestamp: Date.now(), isTest: true };
         alertData = this.buildAlertPayload('gift_sub', { user: randomUser, count: d ?? 5 }, true);
         break;
       case 'host':
-        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, viewers: d ?? 42, timestamp: Date.now() };
+        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, viewers: d ?? 42, timestamp: Date.now(), isTest: true };
         alertData = this.buildAlertPayload('host', { user: randomUser, viewers: d ?? 42 }, true);
         break;
       case 'kicks':
-        dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, amount: d ?? 100, timestamp: Date.now() };
+        dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, amount: d ?? 100, timestamp: Date.now(), isTest: true };
         alertData = this.buildAlertPayload('kicks', { user: randomUser, amount: d ?? 100 }, true);
         break;
     }
@@ -589,7 +638,20 @@ export class WebSocketHub {
   broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all'>, payload: any) {
     // Yayınlanan her uyarı sunucu içi dinleyicilere de bildirilir (Hype Treni
     // eskiden tarayıcıda tam olarak bu mesajı dinliyordu; anlam korunur).
-    if (payload?.type === 'alert') {
+    if (payload?.type === 'alert' && payload.alert && !payload.replay) {
+      const a = payload.alert;
+      this.sonUyarilar.ekle({
+        id: String(a.id || uyariKimligi(payload.subType)),
+        eventType: String(payload.subType || a.eventType || 'alert'),
+        title: String(a.title || ''),
+        message: String(a.message || ''),
+        at: Date.now(),
+        isTest: !!a.isTest,
+        alert: a
+      });
+    }
+    // Yeniden oynatma sayaçlara (hype treni, hedef) ikinci kez işlemez
+    if (payload?.type === 'alert' && !payload.replay) {
       try {
         eventBus.emit('uyari_yayinlandi', { subType: payload.subType, data: payload.data });
       } catch (e) {

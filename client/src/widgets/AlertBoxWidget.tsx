@@ -6,8 +6,10 @@ import { ALERT_ADVANCED_DEFAULTS } from '../lib/widget-defaults.js';
 import {
   BOS_DURUM,
   GorulenKimlikler,
+  atla,
   ilerlet,
   kuyrugaEkle,
+  temizle,
   metinPenceresiAcik,
   sonrakiMetinSiniri,
   sonrakiTik,
@@ -63,7 +65,11 @@ function playSynthesizedChime(volume: number = 0.7) {
 
 export function AlertBoxWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
   const advanced = useWidgetSettings('alert-box', ALERT_ADVANCED_DEFAULTS);
-  const { activeAlert, setActiveAlert } = useWebSocket('alertbox');
+  const { activeAlert, setActiveAlert, alertControl } = useWebSocket('alertbox');
+  /** Ekip denetimi (duraklat / sustur); OBS kaynağı yeniden yüklense de sunucudan okunur */
+  const [denetim, setDenetim] = useState({ paused: false, muted: false });
+  const denetimRef = useRef(denetim);
+  denetimRef.current = denetim;
   const [kuyruk, setKuyruk] = useState<KuyrukDurumu>(BOS_DURUM);
   const gorulenler = useRef(new GorulenKimlikler(200));
   const [imgError, setImgError] = useState(false);
@@ -159,7 +165,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
           sureMs: item.durationMs || 5000,
           animMs
         },
-        Boolean(advanced.queueEnabled)
+        Boolean(advanced.queueEnabled),
+        Date.now(),
+        denetimRef.current.paused
       )
     );
     // Ses/konfeti burada ÇALINMIYOR: kuyrukta bekleyen uyarının sesi, önündeki
@@ -171,7 +179,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
   const oynat = (alert: AlertItem) => {
     setImgError(false);
 
-    if (alert.soundUrl) {
+    if (denetimRef.current.muted) {
+      // Uyarılar sessize alındı: görsel sürer, ses çalınmaz
+    } else if (alert.soundUrl) {
       try {
         const audio = new Audio(alert.soundUrl);
         audio.volume = Math.max(0, Math.min(1, (alert.soundVolume ?? 0.7) * (advanced.globalVolume ?? 1)));
@@ -191,6 +201,29 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       }
     }
   };
+
+  // Açılışta güncel denetim durumu (OBS kaynağı yayın ortasında yeniden yüklenebilir)
+  useEffect(() => {
+    fetch('/api/alerts/control')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.state) setDenetim({ paused: !!d.state.paused, muted: !!d.state.muted });
+      })
+      .catch(() => {});
+  }, []);
+
+  // Panelden / moderatörden gelen denetim komutları
+  useEffect(() => {
+    if (!alertControl) return;
+    const s = alertControl.state || {};
+    setDenetim({ paused: !!s.paused, muted: !!s.muted });
+    if (alertControl.action === 'skip' && advanced.skipEnabled !== false) {
+      setKuyruk((d) => atla(d));
+    } else if (alertControl.action === 'clear') {
+      setKuyruk((d) => temizle(d));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alertControl]);
 
   useEffect(() => {
     if (activeAlert) enqueueAlert(normalizeAlert(activeAlert));
@@ -224,14 +257,14 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     if (bekle === null) return;
     const t = setTimeout(() => {
       setKuyruk((d) => {
-        const yeni = ilerlet(d, Number(advanced.gapMs) || 0);
+        const yeni = ilerlet(d, Number(advanced.gapMs) || 0, Date.now(), denetimRef.current.paused);
         if (yeni.aktif === null && d.aktif !== null) setActiveAlert(null);
         return yeni;
       });
     }, bekle);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kuyruk, advanced.gapMs]);
+  }, [kuyruk, advanced.gapMs, denetim.paused]);
 
   // Mock alert for preview / OBS setup mode
   const mockPreviewAlert: AlertItem = {

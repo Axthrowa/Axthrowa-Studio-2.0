@@ -9,6 +9,8 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
   const [winnerEvent, setWinnerEvent] = useState<any | null>(null);
   const [ttsItem, setTtsItem] = useState<any | null>(null);
   const [lastMessage, setLastMessage] = useState<any | null>(null);
+  /** Ekip çapında uyarı kuyruğu denetimi: {action, state, alertId?} — her mesaj yeni nesne (aynı eylem tekrar gelse de) */
+  const [alertControl, setAlertControl] = useState<any | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,6 +42,8 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
             setChatMessages((prev) => [...prev.slice(-150), payload.data]);
           } else if (payload.type === 'alert') {
             setActiveAlert(payload.alert || payload);
+          } else if (payload.type === 'alert_control') {
+            setAlertControl({ ...payload, receivedAt: Date.now() });
           } else if (payload.type === 'giveaway_winner') {
             setWinnerEvent(payload.winner);
           } else if (payload.type === 'tts' || payload.type === 'tts_play') {
@@ -119,6 +123,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
     sendChat,
     clearChat,
     triggerTTS,
-    lastMessage
+    lastMessage,
+    alertControl
   };
 }

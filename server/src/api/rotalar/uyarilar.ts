@@ -12,6 +12,7 @@ import { wsHub } from '../../ws/server.js';
 import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../../modules/media/media.js';
 import { varyantlar } from '../../modules/alerts/variants.js';
 import { uyariYedegi } from '../../modules/alerts/backup.js';
+import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 
 const router = Router();
 
@@ -48,6 +49,44 @@ router.post('/alerts/save', (req: Request, res: Response) => {
     animation || 'bounce', soundVolume ?? 0.7, isEnabled ? 1 : 0, layoutMode || 'stacked', textEffect || 'shine'
   );
   res.json({ success: true, id: alertId });
+});
+
+// Ekip çapında uyarı kuyruğu denetimi: duraklat / sürdür / sustur / sesi aç / atla / temizle / yeniden oynat.
+// İyimser kilit: istemci gördüğü `version`'ı gönderir; arada başka biri değiştirdiyse 409 + güncel durum.
+router.get('/alerts/control', (_req: Request, res: Response) => {
+  res.json(wsHub.uyariKontrolDurumu());
+});
+
+const EYLEM_ETIKETI: Record<string, string> = {
+  pause: 'duraklattı',
+  resume: 'sürdürdü',
+  mute: 'sessize aldı',
+  unmute: 'sesini açtı',
+  skip: 'geçerli uyarıyı atladı',
+  clear: 'bekleyen uyarıları temizledi',
+  replay: 'uyarıyı yeniden oynattı'
+};
+
+router.post('/alerts/control', (req: Request, res: Response) => {
+  const { action, version, alertId, actor } = req.body || {};
+  // Yalnız yerel kökenler ulaşabilir (local-guard); ad yalnız denetim kaydında etiket olarak kullanılır
+  const kim = String(actor || 'Panel').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 40) || 'Panel';
+  const surum = version === undefined || version === null || version === '' ? null : Number(version);
+  if (surum !== null && !Number.isInteger(surum)) {
+    return res.status(400).json({ error: 'Geçersiz sürüm' });
+  }
+  const sonuc = wsHub.uyariKontrolEt(String(action || ''), kim, surum, alertId ? String(alertId).slice(0, 80) : undefined);
+  if (!sonuc.ok) {
+    return res.status(sonuc.kod === 'conflict' ? 409 : 400).json({ error: sonuc.mesaj, ...wsHub.uyariKontrolDurumu() });
+  }
+  shieldModeService.addAuditLog(
+    `ALERT_${String(action).toUpperCase()}`,
+    kim,
+    `Uyarı kuyruğunu ${EYLEM_ETIKETI[String(action)] || String(action)}`,
+    alertId ? String(alertId).slice(0, 80) : undefined,
+    'info'
+  );
+  res.json(wsHub.uyariKontrolDurumu());
 });
 
 router.post('/alerts/test', (req: Request, res: Response) => {

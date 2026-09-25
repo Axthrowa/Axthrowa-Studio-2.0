@@ -20,7 +20,8 @@ import {
   type Kayit
 } from './resolve.js';
 import { matematik, jsonYolu, sureMetni, sayacIfadesi } from './pure.js';
-import { adresGuvenliMi, ozelIpMi } from './net.js';
+import { adresGuvenliMi, guvenliGetir, guvenliLookup, ozelIpMi, yasakIpMi } from './net.js';
+import http from 'node:http';
 import type { DegiskenBaglam, DegiskenTanimi } from './types.js';
 
 // ---- Yardımcılar ------------------------------------------------------------
@@ -424,5 +425,51 @@ describe('adresGuvenliMi', () => {
   it('normal dış adrese izin verir', () => {
     expect(adresGuvenliMi('https://api.example.com/data').ok).toBe(true);
     expect(adresGuvenliMi('http://example.com').ok).toBe(true);
+  });
+});
+
+describe('SSRF — IPv6 ve alan adı çözümlemesi (4. tur)', () => {
+  it('IPv4 eşlemeli / gömülü IPv6 biçimleri yerel sayılır', () => {
+    for (const ip of ['::ffff:127.0.0.1', '::ffff:7f00:1', '::1', '::', 'fd00::1', 'fe80::1', '64:ff9b::7f00:1', '2002:c0a8:101::1', 'ff02::1']) {
+      expect(yasakIpMi(ip), ip).toBe(true);
+    }
+    for (const ip of ['2606:4700:4700::1111', '8.8.8.8']) {
+      expect(yasakIpMi(ip), ip).toBe(false);
+    }
+    expect(yasakIpMi('bozuk')).toBe(true);
+  });
+
+  it('metin biçiminde gizlenmiş yerel adresleri engeller', () => {
+    // Eskiden ::ffff:127.0.0.1 doğrudan kendi API'mize gidiyordu
+    expect(adresGuvenliMi('http://[::ffff:127.0.0.1]:3001/api/platforms').ok).toBe(false);
+    expect(adresGuvenliMi('http://2130706433:3001/').ok).toBe(false);
+    expect(adresGuvenliMi('http://0x7f.1/').ok).toBe(false);
+    expect(adresGuvenliMi('http://api.localhost/').ok).toBe(false);
+    expect(adresGuvenliMi('https://example.com/').ok).toBe(true);
+  });
+
+  it('çözümleme yerel adrese çıkarsa bağlantı kurulmaz', async () => {
+    const hata = await new Promise<NodeJS.ErrnoException | null>((coz) =>
+      guvenliLookup('localhost', {}, (e) => coz(e))
+    );
+    expect(hata?.code).toBe('ESSRF');
+  });
+
+  it('metin denetimini atlatan alan adı (sondaki nokta) yerel sunucuya ulaşamaz', async () => {
+    let istekGeldi = false;
+    const sunucu = http.createServer((_, res) => {
+      istekGeldi = true;
+      res.end('gizli-token');
+    });
+    await new Promise<void>((coz) => sunucu.listen(0, '127.0.0.1', () => coz()));
+    const port = (sunucu.address() as { port: number }).port;
+    try {
+      // "localhost." yasak listesindeki "localhost" ile eşleşmez; çözümleme yakalar
+      const sonuc = await guvenliGetir(`http://localhost.:${port}/`);
+      expect(sonuc).toBe('(fetch: özel ağ adresi engelli)');
+      expect(istekGeldi).toBe(false);
+    } finally {
+      sunucu.close();
+    }
   });
 });

@@ -1,7 +1,7 @@
 import { db } from '../../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import { ChatMessagePayload } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
 
@@ -15,6 +15,24 @@ export interface SongItem {
   thumbnail?: string;
   createdAt: number;
   isPlayed: boolean;
+}
+
+/**
+ * Adresi / protokol URI'sini (spotify:, https:) kabuk KULLANMADAN açar.
+ *
+ * Eskiden `exec('start "" "..."')` cmd.exe üzerinden çalışıyordu; cmd
+ * `%DEĞİŞKEN%` kalıplarını tırnak içinde bile genişletir ve şarkı adı izleyiciden
+ * geliyor. explorer.exe bağımsız değişkeni olduğu gibi kabuğa iletir.
+ */
+function sistemdeAc(hedef: string): void {
+  if (!/^(https:\/\/|spotify:)[^\s"]+$/i.test(hedef)) {
+    console.warn('[SongRequest] Açılmayan hedef reddedildi');
+    return;
+  }
+  const komut = process.platform === 'win32' ? 'explorer.exe' : 'xdg-open';
+  const cocuk = spawn(komut, [hedef], { detached: true, stdio: 'ignore', windowsHide: true });
+  cocuk.on('error', (e) => console.error('[SongRequest] Masaüstü oynatıcı açılamadı:', e.message));
+  cocuk.unref();
 }
 
 export class SongRequestEngine {
@@ -168,7 +186,7 @@ export class SongRequestEngine {
         }
 
         console.log(`[SongRequest] Opening in Spotify Desktop: ${spotifyUri}`);
-        exec(`start "" "${spotifyUri}"`, { windowsHide: true });
+        sistemdeAc(spotifyUri);
         return true;
       } 
       else if (player === 'ytmusic') {
@@ -184,8 +202,8 @@ export class SongRequestEngine {
         }
 
         console.log(`[SongRequest] Opening in YouTube Music: ${ytMusicUrl}`);
-        // Windows start command opens YouTube Music in default browser or desktop PWA app
-        exec(`start "" "${ytMusicUrl}"`, { windowsHide: true });
+        // Varsayılan tarayıcıda ya da YouTube Music masaüstü uygulamasında açılır
+        sistemdeAc(ytMusicUrl);
         return true;
       }
     } catch (err: any) {

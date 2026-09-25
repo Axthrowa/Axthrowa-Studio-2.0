@@ -17,6 +17,7 @@ import { temizle, gizliMi, yeniSirDegeri } from '../../core/security/redact.js';
 import { degiskenKatalogu, degiskenSayisi, baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
 import { YETENEKLER } from '../../platforms/capabilities.js';
 import { sifrele } from '../../core/security/vault.js';
+import { ayarGuncellemesiniCoz } from '../../core/settings-input.js';
 import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../../modules/automod/enforcement.js';
 
 const router = Router();
@@ -103,14 +104,15 @@ router.get('/settings', (req: Request, res: Response) => {
 });
 
 router.post('/settings', (req: Request, res: Response) => {
-  const updates = req.body;
+  const cozum = ayarGuncellemesiniCoz(req.body);
+  if (!cozum.ok) return res.status(400).json({ error: cozum.hata });
   const upsert = db.prepare(`
     INSERT INTO bot_settings (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
   `);
 
   const mevcutOku = db.prepare('SELECT value FROM bot_settings WHERE key = ?');
-  for (const [key, value] of Object.entries(updates)) {
+  for (const [key, value] of cozum.degerler) {
     // Maskelenmis deger geri gonderildiginde gercek sir "****1234" ile
     // EZILMEMELI; bos gonderim de ayni sekilde mevcut degeri korur.
     if (gizliMi(key)) {
@@ -121,7 +123,7 @@ router.post('/settings', (req: Request, res: Response) => {
       upsert.run(key, String(sifrele(String(yazilacak))));
       continue;
     }
-    upsert.run(key, String(value));
+    upsert.run(key, value);
   }
 
   settingsCache.reload();

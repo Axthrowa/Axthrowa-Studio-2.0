@@ -134,4 +134,6 @@ export interface ChatMessage {
   timestamp: number;
   /** Ortak kara listedeki kullanıcı: panelde işaretli, OBS katmanında gizli. */
   karaListede?: boolean;
+  /** Açık kalkanın kuralına takıldı (abone/link/caps/emoji): panelde işaretli, OBS katmanında gizli. */
+  kalkanda?: 'abone' | 'link' | 'caps' | 'emoji';
 }

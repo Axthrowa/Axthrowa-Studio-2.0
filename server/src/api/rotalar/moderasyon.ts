@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { wsHub } from '../../ws/server.js';
 import { autoMod } from '../../modules/automod/automod.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
+import { KALKAN_DESTEKLENMEYEN } from '../../modules/moderation/shield-rules.js';
 import { elleModerasyonCoz, kalkanAyariniCoz, type ElleEylem } from '../../modules/moderation/moderation-input.js';
 import { platformManager } from '../../platforms/manager.js';
 import { yetenek } from '../../platforms/capabilities.js';
@@ -129,7 +130,8 @@ router.post('/chat/clear', (req: Request, res: Response) => {
 
 // 3. Shield Mode & Moderation Security
 router.get('/moderation/shield', (req: Request, res: Response) => {
-  res.json(shieldModeService.getSettings());
+  // Uygulanamayan ayarlar arayüzde "desteklenmiyor" diye gösterilsin
+  res.json({ ...shieldModeService.getSettings(), engellenenMesaj: shieldModeService.engellenenSayisi(), desteklenmeyen: KALKAN_DESTEKLENMEYEN });
 });
 
 router.post('/moderation/shield/activate', (req: Request, res: Response) => {

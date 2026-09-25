@@ -69,6 +69,11 @@ export interface ShieldModeSettings {
    * davranış) / mesajı platformda sil / platformda kalıcı banla.
    */
   karaListeEylemi?: 'yoksay' | 'sil' | 'ban';
+  /**
+   * Kalkan açıkken kurala uymayan mesaj platformda da silinsin mi (destekleyen
+   * platformda). Varsayılan kapalı: eskiden kalkan yalnız botun yok saymasıydı.
+   */
+  platformdaSil?: boolean;
 }
 
 export interface ChatRescueSettings {

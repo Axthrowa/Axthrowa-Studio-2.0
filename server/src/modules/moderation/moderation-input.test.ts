@@ -55,4 +55,8 @@ describe('kalkanAyariniCoz', () => {
   it('bilinmeyen kara liste eylemi atılır', () => {
     expect(kalkanAyariniCoz({ karaListeEylemi: 'patlat' })).toEqual({});
   });
+  it('platformda silme seçeneği yalnız mantıksal değer olarak kabul edilir', () => {
+    expect(kalkanAyariniCoz({ platformdaSil: true })).toEqual({ platformdaSil: true });
+    expect(kalkanAyariniCoz({ platformdaSil: 'true' })).toEqual({});
+  });
 });

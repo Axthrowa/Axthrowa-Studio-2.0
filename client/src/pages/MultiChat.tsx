@@ -6,6 +6,13 @@ import { PlatformBadges } from '../components/PlatformBadge.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { yetenekleriGetir, type YetenekHaritasi } from '../lib/capabilities.js';
 
+const KALKAN_ETIKETI: Record<'abone' | 'link' | 'caps' | 'emoji', string> = {
+  abone: 'yalnız abone',
+  link: 'link',
+  caps: 'büyük harf',
+  emoji: 'emoji seli'
+};
+
 type ElleEylem = 'timeout' | 'ban' | 'unban';
 
 interface ViewerModalData {
@@ -249,9 +256,15 @@ export function MultiChat() {
               <div
                 key={msg.id}
                 className={`p-2.5 rounded-xl hover:bg-white/[0.05] transition-all flex items-start space-x-2.5 text-sm ${
-                  msg.karaListede ? 'bg-red-500/[0.06] opacity-60' : 'bg-white/[0.02]'
+                  msg.karaListede || msg.kalkanda ? 'bg-red-500/[0.06] opacity-60' : 'bg-white/[0.02]'
                 }`}
-                title={msg.karaListede ? 'Ortak kara listede: bot yok sayar, OBS sohbetinde gösterilmez' : undefined}
+                title={
+                  msg.karaListede
+                    ? 'Ortak kara listede: bot yok sayar, OBS sohbetinde gösterilmez'
+                    : msg.kalkanda
+                      ? `Kalkan kuralına takıldı (${KALKAN_ETIKETI[msg.kalkanda]}): bot yok sayar, OBS sohbetinde gösterilmez`
+                      : undefined
+                }
               >
                 {msg.user.avatarUrl && (
                   <img
@@ -276,6 +289,11 @@ export function MultiChat() {
                     {msg.karaListede && (
                       <span className="text-[9px] font-bold uppercase text-red-300 bg-red-500/15 border border-red-500/30 rounded px-1.5 py-0.5">
                         kara liste
+                      </span>
+                    )}
+                    {msg.kalkanda && (
+                      <span className="text-[9px] font-bold uppercase text-amber-200 bg-amber-500/15 border border-amber-500/30 rounded px-1.5 py-0.5">
+                        kalkan · {KALKAN_ETIKETI[msg.kalkanda]}
                       </span>
                     )}
                     <span className="text-[10px] text-gray-500">

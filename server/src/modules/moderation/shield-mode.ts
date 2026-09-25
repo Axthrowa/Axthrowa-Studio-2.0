@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import { AuditLog, ShieldModeSettings } from '../../db/schema.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { karaListeAdi, karaListeEslesir, karaListePlatformu, type KaraListePlatformu } from './blacklist-rules.js';
+import { kalkanIhlali, type KalkanIhlali, type KalkanMesaji } from './shield-rules.js';
 
 const VARSAYILAN_KALKAN: ShieldModeSettings = {
   isActive: false,
@@ -14,7 +15,8 @@ const VARSAYILAN_KALKAN: ShieldModeSettings = {
   blockEmotes: true,
   followerOnly: true,
   subOnly: false,
-  karaListeEylemi: 'yoksay'
+  karaListeEylemi: 'yoksay',
+  platformdaSil: false
 };
 
 export interface KaraListeKaydi {
@@ -29,6 +31,21 @@ export interface KaraListeKaydi {
 export class ShieldModeService extends EventEmitter {
   /** Her sohbet mesajında bakılır: bellekte tutulur, ekleme/silmede tazelenir. */
   private karaListe: Map<string, KaraListeKaydi> | null = null;
+  /** Bu etkinleştirmeden beri kalkanın engellediği mesaj sayısı (panelde gösterilir). */
+  private engellenen = 0;
+
+  /** Kalkan açıkken bu mesaj kurallardan birine takılıyor mu? (ayar her çağrıda taze okunur) */
+  ihlal(mesaj: KalkanMesaji): KalkanIhlali | null {
+    return kalkanIhlali(this.getSettings(), mesaj);
+  }
+
+  engellendi(): void {
+    this.engellenen++;
+  }
+
+  engellenenSayisi(): number {
+    return this.engellenen;
+  }
 
   getSettings(): ShieldModeSettings {
     try {
@@ -58,6 +75,7 @@ export class ShieldModeService extends EventEmitter {
 
   activate(moderator: string = 'Yayıncı'): ShieldModeSettings {
     const updated = this.saveSettings({ isActive: true, activatedAt: Date.now() });
+    this.engellenen = 0;
     this.addAuditLog('SHIELD_MODE_ACTIVATED', moderator, 'Kalkan Modu (Acil Durum) devreye alındı. Aşırı spam ve raid korumaları aktif.', undefined, 'danger');
     this.emit('activated', { moderator, timestamp: Date.now() });
     return updated;
@@ -65,7 +83,7 @@ export class ShieldModeService extends EventEmitter {
 
   deactivate(moderator: string = 'Yayıncı'): ShieldModeSettings {
     const updated = this.saveSettings({ isActive: false });
-    this.addAuditLog('SHIELD_MODE_DEACTIVATED', moderator, 'Kalkan Modu kapatıldı. Normal moderasyon devrede.', undefined, 'info');
+    this.addAuditLog('SHIELD_MODE_DEACTIVATED', moderator, `Kalkan Modu kapatıldı (${this.engellenen} mesaj engellendi). Normal moderasyon devrede.`, undefined, 'info');
     this.emit('deactivated', { moderator, timestamp: Date.now() });
     return updated;
   }

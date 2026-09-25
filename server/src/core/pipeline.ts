@@ -9,8 +9,8 @@ import { seviyeler } from '../modules/levels/levels.js';
 import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { puanDususu } from '../modules/engagement/point-drops.js';
 import { settingsCache } from './settings-cache.js';
-import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { karaListeyiUygula } from '../modules/moderation/blacklist.js';
+import { kalkaniUygula } from '../modules/moderation/shield-enforce.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
 import { seyrekUyar } from './logger.js';
 import { aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
@@ -70,16 +70,9 @@ export class MessagePipeline {
     // platformda uygulanır. OBS sohbet katmanından ws/server.ts gizler.
     if (karaListeyiUygula(message)) return;
 
-    // Shield Mode Active Check
-    const shield = shieldModeService.getSettings();
-    if (shield.isActive) {
-      if (shield.subOnly && !message.user.isSub && !message.user.isBroadcaster && !message.user.isMod) {
-        return; // Silent suppress in sub-only shield mode
-      }
-      if (shield.blockLinks && /(https?:\/\/|www\.)\S+/i.test(rawText)) {
-        return; // Block links strictly in shield mode
-      }
-    }
+    // Kalkan modu: yalnız abone / link / büyük harf / emoji seli kuralları.
+    // Bot yok sayar; OBS sohbetinden ws/server.ts gizler; seçiliyse platformda silinir.
+    if (kalkaniUygula(message)) return;
 
     // Notify Chat Rescue of active conversation
     chatRescueService.recordChatMessage();

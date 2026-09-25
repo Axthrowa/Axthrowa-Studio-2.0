@@ -21,7 +21,28 @@ interface ShieldSettings {
   followerOnly: boolean;
   subOnly: boolean;
   karaListeEylemi?: KaraListeEylemi;
+  platformdaSil?: boolean;
+  /** Sunucu: bu etkinleştirmeden beri engellenen mesaj */
+  engellenenMesaj?: number;
+  /** Sunucu: uygulanamayan ayar → gerekçe */
+  desteklenmeyen?: Partial<Record<'followerOnly' | 'minAccountAgeDays', string>>;
 }
+
+type KalkanKurali = 'subOnly' | 'blockLinks' | 'blockCaps' | 'blockEmotes' | 'platformdaSil' | 'autoClearRaidMessages';
+
+const KALKAN_KURALLARI: Array<{ id: KalkanKurali; ad: string; aciklama: string }> = [
+  { id: 'blockLinks', ad: 'Link engeli', aciklama: 'Adres içeren her mesaj (normal moddaki izinli alan adları kalkanda geçmez).' },
+  { id: 'blockCaps', ad: 'Büyük harf engeli', aciklama: "En az 8 harfin %70'i büyük harfse." },
+  { id: 'blockEmotes', ad: 'Emoji seli engeli', aciklama: "3'ten fazla emoji ya da emote." },
+  { id: 'subOnly', ad: 'Yalnız aboneler', aciklama: 'Abone, VIP, moderatör ve yayıncı dışındaki herkesin mesajı.' },
+  { id: 'platformdaSil', ad: 'Platformda da sil', aciklama: "Takılan mesaj platformda da silinir (Kick, Twitch, YouTube, Trovo, Discord). Kapalıyken yalnız bot yok sayar ve OBS'te gizlenir." },
+  { id: 'autoClearRaidMessages', ad: 'Açarken OBS sohbetini temizle', aciklama: 'Kalkan açılınca OBS sohbet katmanı boşaltılır (platform sohbetine dokunulmaz).' }
+];
+
+const DESTEKLENMEYEN_AD: Record<'followerOnly' | 'minAccountAgeDays', string> = {
+  followerOnly: 'Yalnız takipçiler',
+  minAccountAgeDays: 'En az hesap yaşı'
+};
 
 type KaraListeEylemi = 'yoksay' | 'sil' | 'ban';
 
@@ -79,6 +100,7 @@ export default function ShieldAndAudit() {
   const [newBanPlatform, setNewBanPlatform] = useState('kick');
   const [actionFilter, setActionFilter] = useState('');
   const [eylemNotu, setEylemNotu] = useState<{ ok: boolean; text: string } | null>(null);
+  const [kuralNotu, setKuralNotu] = useState<{ ok: boolean; text: string } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -133,6 +155,28 @@ export default function ShieldAndAudit() {
         fetchData();
       }
     } catch {}
+  };
+
+  // Kalkan kuralları anında kaydedilir (4. tur: eskiden bu ayarlar hiçbir yerde uygulanmıyordu)
+  const kuralKaydet = async (id: KalkanKurali, deger: boolean) => {
+    if (id === 'platformdaSil' && deger && !confirm('Kalkan açıkken kurallara takılan mesajlar platformda SİLİNECEK. Emin misiniz?')) return;
+    setKuralNotu(null);
+    try {
+      const res = await fetch('/api/moderation/shield/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [id]: deger })
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d?.settings) {
+        setShield((s) => ({ ...s, ...d.settings }));
+        setKuralNotu({ ok: true, text: 'Kaydedildi.' });
+      } else {
+        setKuralNotu({ ok: false, text: d?.error || `Kaydedilemedi (HTTP ${res.status})` });
+      }
+    } catch {
+      setKuralNotu({ ok: false, text: 'Sunucuya ulaşılamadı' });
+    }
   };
 
   const karaListeEylemiKaydet = async (eylem: KaraListeEylemi) => {
@@ -202,7 +246,9 @@ export default function ShieldAndAudit() {
               Tek Tıkla Raid & Bot Saldırı Kalkanı
             </h1>
             <p className="text-gray-300 text-sm max-w-2xl">
-              Raid, spam veya kötü niyetli bot saldırısı başladığında tek tıkla kalkanı kaldırın. Sohbet anında temizlenir, katı link/caps kısıtlamaları devreye girer ve kanal korumaya alınır.
+              Raid, spam ya da bot saldırısında tek tıkla açın: aşağıdaki kurallara takılan mesajları bot yok sayar ve
+              OBS sohbetinde gösterilmez; isterseniz platformda da silinir. Platformun kendi sohbet modları (yalnız
+              takipçi, yavaş mod) buradan değiştirilmez.
             </p>
           </div>
 
@@ -218,6 +264,54 @@ export default function ShieldAndAudit() {
             {shield.isActive ? 'Kalkanı Kapat (Normale Dön)' : '🛡️ Kalkanı Aktif Et!'}
           </button>
         </div>
+      </div>
+
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-md font-bold text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            Kalkan kuralları
+          </h2>
+          {shield.isActive && (
+            <span className="text-xs font-bold text-amber-200">
+              Açıldığından beri {shield.engellenenMesaj ?? 0} mesaj engellendi
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-400">
+          Yalnız kalkan açıkken uygulanır; yayıncı ve moderatörler muaftır. Değişiklik anında kaydedilir.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+          {KALKAN_KURALLARI.map((k) => (
+            <label
+              key={k.id}
+              className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-950/60 p-3 cursor-pointer hover:border-slate-600"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={!!shield[k.id]}
+                onChange={(e) => void kuralKaydet(k.id, e.target.checked)}
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-bold text-white">{k.ad}</span>
+                <span className="block text-[11px] text-gray-400 leading-snug">{k.aciklama}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {shield.desteklenmeyen && Object.keys(shield.desteklenmeyen).length > 0 && (
+          <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 space-y-1">
+            {(Object.entries(shield.desteklenmeyen) as Array<['followerOnly' | 'minAccountAgeDays', string]>).map(([id, neden]) => (
+              <p key={id} className="text-[11px] text-gray-400">
+                <span className="font-bold text-gray-300">{DESTEKLENMEYEN_AD[id] ?? id}</span> — desteklenmiyor: {neden}
+              </p>
+            ))}
+          </div>
+        )}
+        {kuralNotu && (
+          <p className={`text-[11px] font-semibold ${kuralNotu.ok ? 'text-emerald-400' : 'text-red-300'}`}>{kuralNotu.text}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

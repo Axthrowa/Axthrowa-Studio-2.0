@@ -49,9 +49,10 @@ export interface KalkanAyarGirdisi {
   followerOnly?: boolean;
   subOnly?: boolean;
   karaListeEylemi?: KaraListeEylemi;
+  platformdaSil?: boolean;
 }
 
-const MANTIKSAL = ['autoClearRaidMessages', 'blockLinks', 'blockCaps', 'blockEmotes', 'followerOnly', 'subOnly'] as const;
+const MANTIKSAL = ['autoClearRaidMessages', 'blockLinks', 'blockCaps', 'blockEmotes', 'followerOnly', 'subOnly', 'platformdaSil'] as const;
 
 export function kalkanAyariniCoz(govde: unknown): KalkanAyarGirdisi {
   const g = (govde && typeof govde === 'object' ? govde : {}) as Record<string, unknown>;

@@ -21,8 +21,8 @@ export function EmoteComboWidget(_props?: { embedded?: boolean; previewMode?: bo
     // `emote_used`: widget "Test" düğmesi ve sunucu olayları (eskiden dinlenmiyordu)
     const dogrudan = lastMessage.type === 'emote_used' ? String(lastMessage.emote || lastMessage.data?.emote || '') : '';
     if (lastMessage.type !== 'chat' && !dogrudan) return;
-    // Ortak kara listedeki kullanıcı kombo sayacına katılmaz
-    if (!dogrudan && lastMessage.data?.karaListede) return;
+    // Ortak kara listedeki kullanıcı ve kalkana takılan mesaj kombo sayacına katılmaz
+    if (!dogrudan && (lastMessage.data?.karaListede || lastMessage.data?.kalkanda)) return;
     const text: string = dogrudan || lastMessage.data?.message || lastMessage.payload?.message || '';
     // Olay kombo sayısını hazır verirse (test: combo 7) doğrudan göster
     const hazirKombo = dogrudan ? Math.max(0, Number(lastMessage.combo) || 0) : 0;

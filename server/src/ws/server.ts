@@ -145,9 +145,11 @@ export class WebSocketHub {
       // widget'ları göstermez. Eskiden liste yalnız botun işleme hattındaydı;
       // mesajlar yayında görünmeye devam ediyordu.
       const karaListede = !!shieldModeService.karaListeKaydi(payload.user?.username, payload.platform);
+      // Kalkan kuralına takılan mesaj da OBS'te gösterilmez (panelde işaretli görünür)
+      const kalkanda = !karaListede && payload.user ? shieldModeService.ihlal(payload) : null;
       this.broadcastTo(['dashboard', 'chatbox', 'all'], {
         type: 'chat',
-        data: karaListede ? { ...payload, karaListede: true } : payload
+        data: karaListede ? { ...payload, karaListede: true } : kalkanda ? { ...payload, kalkanda } : payload
       });
     });
 

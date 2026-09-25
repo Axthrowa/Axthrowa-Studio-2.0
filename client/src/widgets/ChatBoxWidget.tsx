@@ -31,8 +31,8 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
   useEffect(() => {
     if (!lastMessage || lastMessage.type !== 'chat') return;
     const p = lastMessage.data || lastMessage.payload;
-    // Ortak kara listedeki kullanıcının mesajı yayında gösterilmez
-    if (!p || p.karaListede) return;
+    // Ortak kara listedeki kullanıcının ve kalkana takılan mesaj yayında gösterilmez
+    if (!p || p.karaListede || p.kalkanda) return;
     const user = p.user;
     const username = (user?.username || '').toLowerCase();
     const ignored = (s.ignoreList || '').split(',').map((x: string) => x.trim().toLowerCase()).filter(Boolean);

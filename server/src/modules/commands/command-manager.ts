@@ -323,7 +323,7 @@ export class CommandManager {
         if (!cfg.clip_enabled) return null;
         if (Date.now() - this.clipLast < (cfg.clip_cooldown || 30) * 1000) return `@${message.user.displayName}, clip komutu beklemede.`;
         this.clipLast = Date.now();
-        return (cfg.clip_message || 'Klip alındı.').replace('{user}', message.user.displayName);
+        return (cfg.clip_message || 'Klip alındı.').replace('{user}', () => message.user.displayName);
       }
 
       // Yayıncı (kanal sahibi) elle puan verir/alır.

@@ -431,8 +431,9 @@ export class WebSocketHub {
 
     for (const [key, val] of Object.entries(variables)) {
       const reg = new RegExp(`\\{${key}\\}`, 'gi');
-      title = title.replace(reg, String(val));
-      message = message.replace(reg, String(val));
+      // İşlevle yerine koy: izleyici adı/mesajındaki `$&` kalıpları metni bozmasın
+      title = title.replace(reg, () => String(val));
+      message = message.replace(reg, () => String(val));
     }
 
     return {

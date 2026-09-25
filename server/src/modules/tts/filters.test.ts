@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { metniHazirla, rolSeviyesi, rolYeterli, TTSBekleme, VARSAYILAN_FILTRE } from './filters.js';
+import { kufurleriMaskele, metniHazirla, rolSeviyesi, rolYeterli, TTSBekleme, VARSAYILAN_FILTRE } from './filters.js';
 
 const A = (ek = {}) => ({ ...VARSAYILAN_FILTRE, ...ek });
 
@@ -157,5 +157,32 @@ describe('TTSBekleme', () => {
     const b = new TTSBekleme();
     b.isaretle('Ali', 1000);
     expect(b.hazirMi('ALI', 30, 2000)).toBe(false);
+  });
+});
+
+describe('kufurleriMaskele', () => {
+  it('Türkçe harfle biten kelimeleri de maskeler (eski \b sınırı kaçırıyordu)', () => {
+    expect(kufurleriMaskele('sen bir piç')).toBe('sen bir ***');
+    expect(kufurleriMaskele('oç!')).toBe('***!');
+    expect(kufurleriMaskele('ananı')).toBe('***');
+  });
+
+  it('Türkçe büyük harfleri tanır', () => {
+    expect(kufurleriMaskele('SİKTİR git')).toBe('*** git');
+    expect(kufurleriMaskele('PİÇ')).toBe('***');
+  });
+
+  it('kelime içindeki eşleşmeye dokunmaz', () => {
+    expect(kufurleriMaskele('sikke koleksiyonu')).toBe('sikke koleksiyonu');
+    expect(kufurleriMaskele('kitapçı')).toBe('kitapçı');
+  });
+});
+
+describe('metniHazirla — şablon güvenliği', () => {
+  it('kullanıcı adındaki $ kalıbı ve yer tutucu metni bozmaz', () => {
+    const ayar = { ...VARSAYILAN_FILTRE, sablon: '{user} diyor ki {message}' };
+    // Mesajdaki semboller zaten ayıklanıyor; kullanıcı adı ayıklanmıyor.
+    expect(metniHazirla('selam', '$&ali', ayar)?.metin).toBe('$&ali diyor ki selam');
+    expect(metniHazirla('selam', '{message}', ayar)?.metin).toBe('{message} diyor ki selam');
   });
 });

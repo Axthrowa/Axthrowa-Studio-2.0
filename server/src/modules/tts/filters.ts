@@ -170,9 +170,12 @@ export function metniHazirla(
 
   if (t.length < Math.max(1, ayar.minUzunluk)) return null;
 
+  // Tek geçiş + işlev ile yerine koyma: izleyici metnindeki `$&` gibi kalıplar
+  // yerine koyma sözdizimi sayılmasın, kullanıcı adındaki `{message}` da
+  // ikinci kez değiştirilmesin.
+  const degerler: Record<string, string> = { user: kullaniciAdi || '', message: t };
   const metin = String(ayar.sablon || '{message}')
-    .replace(/\{user\}/gi, kullaniciAdi || '')
-    .replace(/\{message\}/gi, t)
+    .replace(/\{(user|message)\}/gi, (_, anahtar: string) => degerler[anahtar.toLowerCase()])
     .replace(/\s{2,}/g, ' ')
     .trim();
 
@@ -203,3 +206,39 @@ export class TTSBekleme {
 }
 
 export { IZINLI_NOKTALAMA };
+
+/** Seslendirmede maskelenecek kelimeler (kök hâlleri ve yaygın yazımlar). */
+export const TURKCE_KUFURLER = [
+  'amk', 'aq', 'sik', 'sikerim', 'yarrak', 'orospu', 'piç', 'pic', 'göt', 'oç',
+  'kahpe', 'puşt', 'ibne', 'amcık', 'dalyarak', 'amına', 'ananı', 'siktir', 'pezevenk'
+];
+
+function kacisla(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Kelimeyi, Türkçe büyük/küçük harf farkını da kapsayan bir desene çevirir.
+ *
+ * JS'in `\b` sınırı yalnız ASCII harfleri tanır: "piç", "oç", "ananı" gibi
+ * Türkçe harfle BİTEN kelimeler eski filtrede hiç yakalanmıyor ve yayında
+ * sesli okunuyordu. Sınırlar Unicode harf/rakam üzerinden kurulur; `i/İ` ve
+ * `ı/I` eşlemesi `i` bayrağının bilmediği Türkçe kuralını tamamlar.
+ */
+function kufurDeseni(kelime: string): RegExp {
+  const govde = [...kelime]
+    .map((h) => (h === 'i' ? '[iİ]' : h === 'ı' ? '[ıI]' : kacisla(h)))
+    .join('');
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${govde}(?=$|[^\\p{L}\\p{N}])`, 'giu');
+}
+
+const KUFUR_DESENLERI = TURKCE_KUFURLER.map(kufurDeseni);
+
+/** Küfürleri `***` ile değiştirir; kelime sınırındaki karakter korunur. */
+export function kufurleriMaskele(metin: string): string {
+  let t = String(metin ?? '');
+  for (const desen of KUFUR_DESENLERI) {
+    t = t.replace(desen, (_, on: string) => `${on}***`);
+  }
+  return t;
+}

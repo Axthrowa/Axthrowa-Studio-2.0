@@ -4,7 +4,8 @@
  */
 import { useEffect, useState } from 'react';
 import { Bell, Check, Play, Save, Settings2 } from 'lucide-react';
-import { ALERT_ADVANCED_DEFAULTS, ANIMATIONS, FONTS } from '../lib/widget-defaults.js';
+import { ALERT_ADVANCED_DEFAULTS, FONTS } from '../lib/widget-defaults.js';
+import { ANIM_SECENEKLERI, animKimligi } from '../lib/animations.js';
 import AlertVariants from '../components/AlertVariants.js';
 import { MediaLibrary, type MedyaOgesi } from '../components/MediaLibrary.js';
 import { yetenekleriGetir, olayEtiketi, type YetenekHaritasi } from '../lib/capabilities.js';
@@ -158,8 +159,8 @@ export function AlertsStudio() {
             </select>
           </label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Animasyon
-            <select value={advanced.animation} onChange={e => setAdvanced(a => ({ ...a, animation: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              {ANIMATIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+            <select value={animKimligi(advanced.animation)} onChange={e => setAdvanced(a => ({ ...a, animation: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+              {ANIM_SECENEKLERI.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
             </select>
           </label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Yazı tipi
@@ -184,8 +185,8 @@ export function AlertsStudio() {
           <label className="text-xs text-gray-300 font-bold space-y-1">Metin görünsün — bitiş (ms)<input type="number" min={0} step={100} value={advanced.textToMs} onChange={e => setAdvanced(a => ({ ...a, textToMs: Math.max(0, Number(e.target.value)) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <p className="md:col-span-2 text-[10px] text-gray-500">0 – 0 = metin hep görünür. Örnek: 1500 – 4500 → uyarı başladıktan 1,5 sn sonra belirir, 4,5. saniyede kaybolur.</p>
           <label className="text-xs text-gray-300 font-bold space-y-1">Çıkış animasyonu
-            <select value={advanced.exitAnimation} onChange={e => setAdvanced(a => ({ ...a, exitAnimation: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              {ANIMATIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+            <select value={animKimligi(advanced.exitAnimation)} onChange={e => setAdvanced(a => ({ ...a, exitAnimation: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+              {ANIM_SECENEKLERI.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
             </select>
           </label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Animasyon süresi (ms)<input type="number" min={0} max={3000} step={50} value={advanced.animationDuration} onChange={e => setAdvanced(a => ({ ...a, animationDuration: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
@@ -233,8 +234,8 @@ export function AlertsStudio() {
             </select>
           </label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Animasyon
-            <select value={current.animation || 'bounce'} onChange={e => updatePreset({ animation: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              {ANIMATIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+            <select value={animKimligi(current.animation || 'bounce')} onChange={e => updatePreset({ animation: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+              {ANIM_SECENEKLERI.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
             </select>
           </label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Düzen

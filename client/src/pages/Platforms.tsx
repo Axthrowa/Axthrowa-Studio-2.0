@@ -792,7 +792,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
             </div>
 
             <div>
-              <div className="text-gray-400 text-[11px]">Bot Chat Durumu</div>
+              <div className="text-gray-400 text-[11px]">Bot Sohbet Durumu</div>
               <div className="font-bold text-xs">
                 {kickResult.canSendChat ? (
                   <span className="text-[#53fc18] flex items-center gap-1">

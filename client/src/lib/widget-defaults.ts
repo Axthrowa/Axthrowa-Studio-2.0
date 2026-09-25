@@ -8,18 +8,6 @@ export const FONTS = [
   'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito'
 ];
 
-export const ANIMATIONS = [
-  { value: 'none', label: 'Yok' },
-  { value: 'fade', label: 'Fade' },
-  { value: 'slide', label: 'Slide' },
-  { value: 'slide-left', label: 'Slide Left' },
-  { value: 'slide-right', label: 'Slide Right' },
-  { value: 'slide-up', label: 'Slide Up' },
-  { value: 'bounce', label: 'Bounce' },
-  { value: 'zoom', label: 'Zoom' },
-  { value: 'pulse', label: 'Pulse' }
-];
-
 export const ACTIVITY_DEFAULTS = {
   showFollow: true,
   showSub: true,

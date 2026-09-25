@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
-import { ANIMATIONS, FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 

@@ -693,36 +693,28 @@ export function OverlayStudio() {
   const widgetGalleryItems = [
     {
       id: 'activity-feed',
-      title: 'Activity Feed',
       category: 'On-Stream',
-      description: 'View and manage your latest events (e.g. followers, donations). Allows replaying alerts and controlling the widget (mute, pause, skip).',
       icon: Layers,
       url: `${baseUrl}/widgets/activity-feed`,
       beta: false
     },
     {
       id: 'alert-box',
-      title: 'Alert Box',
       category: 'On-Stream',
-      description: 'Follow, sub, donation, raid and TikTok gift alerts with sound, GIF and animation.',
       icon: Bell,
       url: `${baseUrl}/widgets/alertbox`,
       beta: false
     },
     {
       id: 'chat-overlay',
-      title: 'Chat Overlay',
       category: 'Engagement',
-      description: 'Add your channel chat directly to your streaming screen with smooth mask and customizable layout.',
       icon: MessageSquare,
       url: `${baseUrl}/widgets/chatbox`,
       beta: false
     },
     {
       id: 'cloud-tts',
-      title: 'CloudTTS',
       category: 'Audio & AI',
-      description: 'Generates audio using Cloud voices (no PC dependency). Ideal for IRL streams, mobile setups, and multi-device streaming.',
       icon: Cloud,
       url: `${baseUrl}/widgets/audio-player`,
       beta: true,
@@ -730,27 +722,21 @@ export function OverlayStudio() {
     },
     {
       id: 'donation-goal',
-      title: 'Donation Goal',
       category: 'Goals',
-      description: 'Set a donation goal so your viewers can help you reach it in real time.',
       icon: DollarSign,
       url: `${baseUrl}/widgets/donation-goal`,
       beta: false
     },
     {
       id: 'emote-combo',
-      title: 'Emote Combo',
       category: 'Engagement',
-      description: 'Displays an emote combo when the same emote is sent multiple times, boosting chat engagement.',
       icon: Smile,
       url: `${baseUrl}/widgets/emote-combo`,
       beta: false
     },
     {
       id: 'end-credits',
-      title: 'End Credits',
       category: 'On-Stream',
-      description: 'Shows followers, subs and donations shown on stream by alerts widget as rolling cinematic credits.',
       icon: Film,
       url: `${baseUrl}/widgets/credits`,
       beta: true,
@@ -758,36 +744,28 @@ export function OverlayStudio() {
     },
     {
       id: 'event-labels',
-      title: 'Event Labels',
       category: 'On-Stream',
-      description: 'Get text from your latest events such as last follower, last subscriber, and top tipper.',
       icon: Tag,
       url: `${baseUrl}/widgets/event-labels`,
       beta: false
     },
     {
       id: 'follower-goal',
-      title: 'Follower Goal',
       category: 'Goals',
-      description: 'Set a follower goal so your viewers can help you reach it.',
       icon: TrendingUp,
       url: `${baseUrl}/widgets/follower-goal`,
       beta: false
     },
     {
       id: 'giveaways',
-      title: 'Giveaways',
       category: 'Engagement',
-      description: 'Run giveaways and raffles among members of your chat with keyword entry (!katil).',
       icon: Gift,
       url: `${baseUrl}/widgets/giveaways`,
       beta: false
     },
     {
       id: 'hype-train',
-      title: 'Hype Train',
       category: 'Engagement',
-      description: 'Turn viewer support into an on-screen event with levels, countdowns, and a train your community completes together.',
       icon: Train,
       url: `${baseUrl}/widgets/hype-train`,
       beta: true,
@@ -795,36 +773,28 @@ export function OverlayStudio() {
     },
     {
       id: 'loyalty-redemptions',
-      title: 'Loyalty Redemptions',
       category: 'Engagement',
-      description: 'Allows viewers to redeem rewards using loyalty points: sounds, TTS, VIP roles, and custom alerts.',
       icon: Trophy,
       url: `${baseUrl}/widgets/loyalty-redeem`,
       beta: false
     },
     {
       id: 'now-playing',
-      title: 'Now Playing',
       category: 'Audio & AI',
-      description: 'Shows in real time the song currently playing in the Song Request queue with animated visualizer.',
       icon: Music,
       url: `${baseUrl}/widgets/now-playing`,
       beta: false
     },
     {
       id: 'on-screen-emotes',
-      title: 'On-Screen Emotes',
       category: 'Engagement',
-      description: 'Displays emotes sent in chat floating across the screen, increasing chat interaction.',
       icon: Smile,
       url: `${baseUrl}/widgets/emotes`,
       beta: false
     },
     {
       id: 'pinned-messages',
-      title: 'Pinned Messages',
       category: 'On-Stream',
-      description: 'Keep highlighted chat messages visible on your stream with a customizable overlay banner.',
       icon: Pin,
       url: `${baseUrl}/widgets/pinned`,
       beta: true,
@@ -832,27 +802,21 @@ export function OverlayStudio() {
     },
     {
       id: 'polls',
-      title: 'Polls',
       category: 'Engagement',
-      description: 'Display interactive polls for your stream. Viewers can vote in real time via chat (!oy), and results update instantly on screen.',
       icon: BarChart3,
       url: `${baseUrl}/widgets/polls`,
       beta: false
     },
     {
       id: 'shoutout',
-      title: 'Shoutout',
       category: 'On-Stream',
-      description: 'Highlight other streamers on your channel by showing their information and letting viewers follow them easily (!so <kanal>).',
       icon: Megaphone,
       url: `${baseUrl}/widgets/shoutout`,
       beta: false
     },
     {
       id: 'subathon',
-      title: 'Subathon',
       category: 'Goals',
-      description: 'Allows you to create extensible streams where you can increase your stream duration through viewer support.',
       icon: Hourglass,
       url: `${baseUrl}/widgets/subathon`,
       beta: true,
@@ -860,45 +824,35 @@ export function OverlayStudio() {
     },
     {
       id: 'subscriber-goal',
-      title: 'Subscriber Goal',
       category: 'Goals',
-      description: 'Set a subscriber goal so your viewers can help you reach it.',
       icon: Target,
       url: `${baseUrl}/widgets/subscriber-goal`,
       beta: false
     },
     {
       id: 'the-cup',
-      title: 'The Cup',
       category: 'Engagement',
-      description: 'Add a dynamic cup to your stream, filled with physics-based donations and coins from your fans.',
       icon: Wine,
       url: `${baseUrl}/widgets/the-cup`,
       beta: false
     },
     {
       id: 'tts',
-      title: 'TTS',
       category: 'Audio & AI',
-      description: 'Lets you hear messages written by your viewers in chat directly in OBS.',
       icon: Volume2,
       url: `${baseUrl}/widgets/audio-player`,
       beta: false
     },
     {
       id: 'viewer-counter',
-      title: 'Viewer Counter',
       category: 'On-Stream',
-      description: 'Displays the number of viewers watching your stream across Kick, Twitch, and YouTube.',
       icon: Users,
       url: `${baseUrl}/widgets/viewer-counter`,
       beta: false
     },
     {
       id: 'trivia-quiz',
-      title: 'Bil Bakalım',
       category: 'Engagement',
-      description: 'Bil Bakalım tarzı 4 şıklı canlı TV bilgi yarışması. İzleyiciler chatten A, B, C, D yazarak oylar; hız ve seri bonusları OBS ekranında canlı parlar.',
       icon: HelpCircle,
       url: `${baseUrl}/widgets/trivia`,
       beta: false,
@@ -906,18 +860,14 @@ export function OverlayStudio() {
     },
     {
       id: 'wheel-of-fortune',
-      title: 'Wheel Of Fortune',
       category: 'Engagement',
-      description: 'Viewers can spin the wheel using a custom command (!cark). You decide what is on it, from challenges to fun actions.',
       icon: Disc,
       url: `${baseUrl}/widgets/wheel`,
       beta: false
     },
     {
       id: 'kicks-goal',
-      title: 'KICKs Goal',
       category: 'Goals',
-      description: 'Set a KICKs follower/sub goal so your viewers can help you reach it.',
       icon: Gem,
       url: `${baseUrl}/widgets/kicks-goal`,
       beta: false
@@ -926,18 +876,14 @@ export function OverlayStudio() {
     // OBS adresleri vardı ama panelden ayarlanamıyorlardı.
     {
       id: 'rankings',
-      title: 'Sıralama (Rankings)',
       category: 'On-Stream',
-      description: 'Puan, izleme süresi veya mesaj sayısına göre ilk 10 izleyiciyi canlı tabloda gösterir.',
       icon: Trophy,
       url: `${baseUrl}/widgets/rankings`,
       beta: false
     },
     {
       id: 'lyrics',
-      title: 'Şarkı Sözleri',
       category: 'On-Stream',
-      description: 'Çalan parçanın sözlerini önceki ve sonraki satırla birlikte akıtır.',
       icon: Disc,
       url: `${baseUrl}/widgets/lyrics`,
       beta: true,
@@ -945,18 +891,14 @@ export function OverlayStudio() {
     },
     {
       id: 'king',
-      title: 'Yayın Kralı',
       category: 'Engagement',
-      description: 'Tahtı puanıyla satın alan izleyiciyi ve saltanat süresini gösterir.',
       icon: Gem,
       url: `${baseUrl}/widgets/king`,
       beta: false
     },
     {
       id: 'jumpscare',
-      title: 'JumpScare',
       category: 'Alerts',
-      description: 'Bağış eşiği aşılınca tam ekran korku medyası oynatır; eşik ve süre ayarlanır.',
       icon: Eye,
       url: `${baseUrl}/widgets/jumpscare`,
       beta: false
@@ -965,8 +907,8 @@ export function OverlayStudio() {
 
   const widgetGalleryItemsTr = widgetGalleryItems.map(w => ({
     ...w,
-    title: GALERI_TR[w.id]?.baslik || w.title,
-    description: GALERI_TR[w.id]?.aciklama || w.description
+    title: GALERI_TR[w.id]?.baslik || w.id,
+    description: GALERI_TR[w.id]?.aciklama || ''
   }));
 
   const filteredWidgets = widgetGalleryItemsTr.filter(w => {

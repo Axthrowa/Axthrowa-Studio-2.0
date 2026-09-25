@@ -13,7 +13,6 @@ export interface SongItem {
   requestedBy: string;
   platform: string;
   thumbnail?: string;
-  sourceType?: 'youtube' | 'spotify' | 'ytmusic';
   createdAt: number;
   isPlayed: boolean;
 }
@@ -35,13 +34,11 @@ export class SongRequestEngine {
     let title = rawQuery;
     let thumbnailUrl = '';
     let videoUrl = '';
-    let sourceType: 'youtube' | 'spotify' | 'ytmusic' = 'youtube';
 
     // 1. Check if query is a Spotify Track URL or URI
     const spotifyMatch = rawQuery.match(/(?:https?:\/\/open\.spotify\.com\/track\/|spotify:track:)([a-zA-Z0-9]+)/);
     if (spotifyMatch) {
       const trackId = spotifyMatch[1];
-      sourceType = 'spotify';
       videoUrl = `https://open.spotify.com/track/${trackId}`;
       
       // Fast oEmbed for Spotify title
@@ -63,7 +60,6 @@ export class SongRequestEngine {
       const ytMusicMatch = rawQuery.match(/v=([a-zA-Z0-9_-]{11})/);
       if (ytMusicMatch) {
         videoId = ytMusicMatch[1];
-        sourceType = 'ytmusic';
         videoUrl = `https://music.youtube.com/watch?v=${videoId}`;
         thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       }

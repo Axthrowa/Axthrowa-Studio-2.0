@@ -10,7 +10,6 @@ import { gizliMi, maskele, temizle, maskeDegeriMi, yeniSirDegeri } from './redac
 import {
   yerelKokenMi,
   yazmaYontemiMi,
-  istekKabulEdilir,
   baglanmaAdresi,
   baglanmaUyarisi
 } from './local-guard.js';
@@ -194,29 +193,6 @@ describe('yerelKokenMi', () => {
   it('bozuk köken değerini reddeder', () => {
     expect(yerelKokenMi('not a url')).toBe(false);
     expect(yerelKokenMi('javascript:alert(1)')).toBe(false);
-  });
-});
-
-describe('istekKabulEdilir', () => {
-  it('okuma isteklerini kökenden bağımsız geçirir (CORS zaten engelliyor)', () => {
-    expect(istekKabulEdilir('GET', 'https://evil.example')).toBe(true);
-    expect(istekKabulEdilir('HEAD', 'https://evil.example')).toBe(true);
-    expect(istekKabulEdilir('OPTIONS', 'https://evil.example')).toBe(true);
-  });
-
-  it('yabancı kökenden yazmayı reddeder', () => {
-    for (const m of ['POST', 'PUT', 'PATCH', 'DELETE']) {
-      expect(istekKabulEdilir(m, 'https://evil.example'), m).toBe(false);
-    }
-  });
-
-  it('panelden yazmayı kabul eder', () => {
-    expect(istekKabulEdilir('POST', 'http://localhost:3001')).toBe(true);
-    expect(istekKabulEdilir('DELETE', 'http://127.0.0.1:3001')).toBe(true);
-  });
-
-  it('Origin göndermeyen istemciyi (OBS, curl) engellemez', () => {
-    expect(istekKabulEdilir('POST', undefined)).toBe(true);
   });
 });
 

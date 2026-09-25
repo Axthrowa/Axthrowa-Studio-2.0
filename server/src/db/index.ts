@@ -2,23 +2,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { satiriCoz } from '../core/security/vault.js';
 import path from 'path';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
 import { syncTriviaBank } from '../modules/games/trivia-sync.js';
 import { gocleriUygula } from './migrations.js';
-import { 
-  ChannelConfig, 
-  CustomCommand, 
-  TimerConfig, 
-  AutoModSettings, 
-  EconomyUser, 
-  SongQueueItem, 
-  Giveaway, 
-  GiveawayEntry, 
-  AlertPreset, 
-  StreamEvent,
-  TriviaQuestion,
-  TriviaScore
-} from './schema.js';
 import { hataMetni } from '../core/logger.js';
 
 const dataDir = path.resolve(process.cwd(), 'data');

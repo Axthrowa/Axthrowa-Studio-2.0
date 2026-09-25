@@ -77,14 +77,6 @@ function bankCandidates(): string[] {
   return list;
 }
 
-function findBilBakalimDir(): string | null {
-  return (
-    bankCandidates().find(
-      (d) => fs.existsSync(path.join(d, 'categories.json')) && fs.existsSync(path.join(d, 'questions')),
-    ) || null
-  );
-}
-
 /** Bankadaki SQLite dosyası (JSON ile aynı klasörde aranır). */
 function findBilBakalimDb(): string | null {
   for (const d of bankCandidates()) {

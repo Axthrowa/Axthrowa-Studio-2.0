@@ -12,7 +12,7 @@
  * alışveriş yapan izleyici seviyesini kaybetmez.
  */
 import { db } from '../../db/index.js';
-import { seviyeMaliyeti, seviyeHesapla } from './curve.js';
+import { seviyeHesapla } from './curve.js';
 
 export { seviyeMaliyeti, seviyeHesapla } from './curve.js';
 

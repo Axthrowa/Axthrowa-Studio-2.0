@@ -115,15 +115,6 @@ function suz(kaynak: any, alanlar: readonly string[]): Record<string, unknown> {
   return c;
 }
 
-/**
- * Yerel medya bağlantısı mı?
- * `/api/media/<id>/dosya` başka makinede o kimlik yoksa kırık gelir —
- * sessizce kırık uyarı bırakmaktansa kullanıcıya söylenir.
- */
-export function yerelMedyaMi(url: unknown): boolean {
-  return typeof url === 'string' && /^\/api\/media\/[0-9a-f-]+\/dosya$/i.test(url);
-}
-
 /** Yerel medya bağlantısı ama bu makinenin kütüphanesinde karşılığı yok. */
 function karsiliksizMedya(url: unknown): boolean {
   const id = medyaKimligi(url);

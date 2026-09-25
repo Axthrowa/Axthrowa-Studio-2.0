@@ -18,7 +18,7 @@ import { settingsCache } from '../settings-cache.js';
 import { guvenliGetir } from './net.js';
 import { lolSiralamasi } from '../../modules/integrations/riot.js';
 import { kvOku, kvYaz, kvListele, sayacAl, sayacAyarla, sayacDegistir, sayacIfadesi } from './store.js';
-import { SINIR, type DegiskenBaglam, type DegiskenTanimi } from './types.js';
+import { SINIR, type DegiskenTanimi } from './types.js';
 import { noktaliBol } from './resolve.js';
 import { sayi, sureMetni, matematik, jsonYolu } from './pure.js';
 import { canliDurum } from '../live-status.js';

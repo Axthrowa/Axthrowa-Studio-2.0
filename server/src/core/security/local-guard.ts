@@ -51,26 +51,11 @@ export function yerelKokenMi(origin: string | undefined | null): boolean {
   return YEREL_HOST.has(u.hostname);
 }
 
-/** Yanıtta kullanılacak `Access-Control-Allow-Origin` değeri (yoksa null). */
-export function corsKokeni(origin: string | undefined): string | null {
-  if (!origin) return null;
-  return yerelKokenMi(origin) ? origin : null;
-}
-
 /** Yan etkisi olan HTTP yöntemleri. */
 const YAZMA = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 export function yazmaYontemiMi(method: string): boolean {
   return YAZMA.has(String(method).toUpperCase());
-}
-
-/**
- * İstek kabul edilmeli mi? Yalnız yazma isteklerinde köken zorunlu olarak
- * yerel olmalı. Okuma isteklerini CORS zaten engelliyor.
- */
-export function istekKabulEdilir(method: string, origin: string | undefined): boolean {
-  if (!yazmaYontemiMi(method)) return true;
-  return yerelKokenMi(origin);
 }
 
 /**

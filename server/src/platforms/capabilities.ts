@@ -138,21 +138,3 @@ export function yetenek(platform: string): PlatformYetenekleri {
   return YETENEKLER[String(platform).toLowerCase() as PlatformAdi] ?? BOS;
 }
 
-/** Belirli bir olayı hangi platformlar üretebilir? */
-export function olayiDestekleyenler(olay: OlayTuru): PlatformAdi[] {
-  return (Object.keys(YETENEKLER) as PlatformAdi[]).filter((p) =>
-    YETENEKLER[p].olaylar.includes(olay)
-  );
-}
-
-/** Panelin "neden yapamıyorum" diye açıklaması için kısa metin. */
-export function moderasyonAciklamasi(platform: string, eylem: 'timeout' | 'ban' | 'mesajSil'): string | null {
-  const y = yetenek(platform);
-  if (y.moderasyon[eylem]) return null;
-  const adlar: Record<string, string> = {
-    timeout: 'zaman aşımı',
-    ban: 'yasaklama',
-    mesajSil: 'mesaj silme'
-  };
-  return `${platform} platformu ${adlar[eylem]} desteklemiyor; uyarı mesajına düşülür.`;
-}

@@ -1,4 +1,4 @@
-import { TriviaQuestion, TriviaCategory } from '../../db/schema.js';
+import { TriviaCategory } from '../../db/schema.js';
 
 export interface TriviaSeedItem {
   category: TriviaCategory;

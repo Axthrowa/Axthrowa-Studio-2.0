@@ -3,23 +3,13 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { medyaBaglantisiniCevir, medyaKimligi, yerelMedyaMi, yedekGecerliMi, YEDEK_SURUMU } from './backup.js';
+import { medyaBaglantisiniCevir, medyaKimligi, yedekGecerliMi, YEDEK_SURUMU } from './backup.js';
 
-describe('yerelMedyaMi', () => {
-  it('kütüphane bağlantısını tanır', () => {
-    expect(yerelMedyaMi('/api/media/8f14e45f-ea1f-4b2c-9c3a-1234567890ab/dosya')).toBe(true);
-  });
-
-  it('harici adresi yerel saymaz', () => {
-    expect(yerelMedyaMi('https://ornek.com/a.gif')).toBe(false);
-    expect(yerelMedyaMi('')).toBe(false);
-    expect(yerelMedyaMi(undefined)).toBe(false);
-    expect(yerelMedyaMi(42)).toBe(false);
-  });
-
-  it('benzeyen ama farklı yolu kabul etmez', () => {
-    expect(yerelMedyaMi('/api/media/../../etc/passwd/dosya')).toBe(false);
-    expect(yerelMedyaMi('https://kotu.example/api/media/abc/dosya')).toBe(false);
+describe('medyaKimligi — yol gezinme ve yabancı adres', () => {
+  it('yalnız /api/media/<kimlik>/dosya biçimini tanır', () => {
+    expect(medyaKimligi('/api/media/../../etc/passwd/dosya')).toBe('');
+    expect(medyaKimligi('https://kotu.example/api/media/abc/dosya')).toBe('');
+    expect(medyaKimligi(42)).toBe('');
   });
 });
 

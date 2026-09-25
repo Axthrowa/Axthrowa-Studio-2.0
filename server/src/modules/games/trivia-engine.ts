@@ -1,10 +1,9 @@
 import { EventEmitter } from 'events';
 import { db } from '../../db/index.js';
 import { TriviaQuestion, TriviaCategory, TriviaScore } from '../../db/schema.js';
-import { eventBus, ChatMessagePayload } from '../../core/event-bus.js';
+import { eventBus } from '../../core/event-bus.js';
 import { economy } from '../economy/economy.js';
 import { wsHub } from '../../ws/server.js';
-import { v4 as uuidv4 } from 'uuid';
 import { hataMetni } from '../../core/logger.js';
 
 export interface VoteDistribution {

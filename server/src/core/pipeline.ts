@@ -1,7 +1,6 @@
 import { eventBus, ChatMessagePayload } from './event-bus.js';
 import { autoMod } from '../modules/automod/automod.js';
 import { commandManager } from '../modules/commands/command-manager.js';
-import { db } from '../db/index.js';
 import { ttsEngine } from '../modules/tts/tts.js';
 import { gamesEngine } from '../modules/games/games.js';
 import { triviaEngine } from '../modules/games/trivia-engine.js';

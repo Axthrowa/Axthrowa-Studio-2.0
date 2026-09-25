@@ -13,6 +13,7 @@ import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { karaListeyiUygula } from '../modules/moderation/blacklist.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
 import { seyrekUyar } from './logger.js';
+import { aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
@@ -47,6 +48,15 @@ export class MessagePipeline {
 
     // Prevent echoing automated bot outputs
     if (this.recentBotOutputs.has(rawText)) {
+      return;
+    }
+
+    // Çapraz aktarım yankısı: botun başka platforma yazdığı metin o platformdan
+    // geri geldi. Yeniden aktarılırsa platformlar arasında döngü oluşur; komut,
+    // puan ya da seviye olarak da işlenmemeli.
+    const aktarimAcik = settingsCache.getBoolean('cross_chat_enabled', false);
+    const aktarimBicimi = settingsCache.get('cross_chat_format', '[$platform] $user: $message');
+    if (aktarimAcik && aktarimYankisiMi(aktarimBicimi, rawText)) {
       return;
     }
 
@@ -165,15 +175,17 @@ export class MessagePipeline {
     }
 
     // 4. Cross-Chat Relay (Instant in-memory lookup)
-    const isCrossChatEnabled = settingsCache.getBoolean('cross_chat_enabled', true);
-
-    if (isCrossChatEnabled) {
-      const format = settingsCache.get('cross_chat_format', '[$platform] $user: $message');
-
-      const relayText = format
-        .replace('$platform', message.platform.toUpperCase())
-        .replace('$user', message.user.displayName || message.user.username)
-        .replace('$message', message.message);
+    // Botun kendi mesajı aktarılmaz (Kick yankısı isSelf ile işaretli).
+    if (aktarimAcik && !message.user.isSelf) {
+      const relayText = aktarimMetni(aktarimBicimi, {
+        platform: message.platform,
+        user: message.user.displayName || message.user.username,
+        message: message.message
+      });
+      // Biçim yalnız `$message` ise ayırt edici iz yoktur; birebir yankıyı
+      // botun kendi çıktıları gibi ele.
+      this.recentBotOutputs.add(relayText);
+      setTimeout(() => this.recentBotOutputs.delete(relayText), 15000);
 
       // Emit relay message to all platforms except the origin
       eventBus.emit('cross_chat_relay', {

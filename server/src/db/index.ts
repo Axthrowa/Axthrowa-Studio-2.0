@@ -372,7 +372,9 @@ const settingsCount = db.prepare('SELECT COUNT(*) as cnt FROM bot_settings').get
 if (settingsCount.cnt === 0) {
   const defaultSettings: Record<string, string> = {
     prefix: '!',
-    cross_chat_enabled: 'true',
+    // Varsayılan KAPALI: açıkken her izleyici mesajı bot hesabıyla diğer tüm
+    // bağlı platformlara yazılır; yayıncı bunu bilerek seçmeli.
+    cross_chat_enabled: 'false',
     cross_chat_format: '[$platform] $user: $message',
     tts_enabled: 'true',
     tts_voice: 'tr-TR-AhmetNeural',

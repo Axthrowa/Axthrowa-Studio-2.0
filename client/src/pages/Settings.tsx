@@ -95,7 +95,7 @@ export function Settings() {
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.cross_chat_enabled !== 'false'}
+                checked={settings.cross_chat_enabled === 'true'}
                 onChange={e => handleChange('cross_chat_enabled', e.target.checked ? 'true' : 'false')}
                 className="sr-only peer"
               />

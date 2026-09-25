@@ -37,13 +37,6 @@ interface SunucuDurumu {
   };
 }
 
-/** Bağış/KICKs tutarını dakikaya çevirir — sunucudaki kuralın aynısı. */
-export function birimDakikasi(tutar: number, dakika: number, birim: number): number {
-  const b = Math.max(1, Number(birim) || 1);
-  const adet = Math.floor(Math.max(0, Number(tutar) || 0) / b);
-  return adet * Math.max(0, Number(dakika) || 0);
-}
-
 export function sureYaz(toplamSn: number): string {
   const t = Math.max(0, Math.floor(toplamSn));
   const sa = Math.floor(t / 3600);

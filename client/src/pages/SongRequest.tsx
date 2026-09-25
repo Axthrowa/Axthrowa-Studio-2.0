@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { SongItem } from '../types.js';
-import { 
-  Music, SkipForward, Trash2, Plus, Volume2, Play, ExternalLink, 
-  Disc3, Radio, Check, Laptop, Sparkles, Send 
+import {
+  Music,
+  SkipForward,
+  Trash2,
+  ExternalLink,
+  Laptop,
+  Sparkles
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 

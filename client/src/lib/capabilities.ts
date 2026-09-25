@@ -15,8 +15,6 @@
  * yalnız onu okur ve önbelleğe alır.
  */
 
-export type PlatformAdi = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
-
 export interface PlatformYetenekleri {
   sohbet: { oku: boolean; gonder: boolean };
   olaylar: string[];
@@ -103,10 +101,3 @@ export function olayEtiketi(harita: YetenekHaritasi, olay: string): string {
   return dis ? `${platformlar} · ${dis}` : platformlar;
 }
 
-/** Rol listesi: bağlı platformların desteklediği rollerin birleşimi. */
-export function birlesikRoller(harita: YetenekHaritasi): string[] {
-  const sira = ['everyone', 'sub', 'vip', 'og', 'mod', 'broadcaster'];
-  const kume = new Set<string>();
-  for (const p of Object.keys(harita)) for (const r of harita[p]?.roller || []) kume.add(r);
-  return sira.filter((r) => kume.has(r));
-}

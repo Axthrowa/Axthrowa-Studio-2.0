@@ -67,14 +67,10 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
   const [kuyruk, setKuyruk] = useState<KuyrukDurumu>(BOS_DURUM);
   const gorulenler = useRef(new GorulenKimlikler(200));
   const [imgError, setImgError] = useState(false);
-  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showHelper, setShowHelper] = useState(!embedded);
 
   const params = new URLSearchParams(window.location.search);
   const isPreview = previewMode || params.get('preview') === '1' || params.get('test') === '1';
-
-  const alertQueue = useRef<AlertItem[]>([]);
-  const isProcessing = useRef(false);
 
   // Auto-hide helper indicator after 6 seconds
   useEffect(() => {
@@ -85,7 +81,6 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
   // Listen for audio unlock clicks
   const unlockAudio = () => {
-    setAudioUnlocked(true);
     setShowHelper(false);
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;

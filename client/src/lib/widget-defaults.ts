@@ -716,7 +716,3 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'audio-player': AUDIO_PLAYER_DEFAULTS
 };
 
-export function parseBool(v: string | null, fallback: boolean) {
-  if (v === null) return fallback;
-  return v !== '0' && v !== 'false';
-}

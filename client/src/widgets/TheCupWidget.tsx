@@ -49,9 +49,6 @@ export function kupayaDuser(
   return tur === 'sub' || tur === 'gift_sub' || tur === 'gift_tiktok';
 }
 
-/** Kupaya sayılmayan türler: takip, raid, host. */
-export const KUPA_DISI = ['follow', 'raid', 'host'];
-
 export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWidgetProps) {
   const s = useWidgetSettings('the-cup', THE_CUP_DEFAULTS);
   const onizleme = onizlemeKipi(previewMode);

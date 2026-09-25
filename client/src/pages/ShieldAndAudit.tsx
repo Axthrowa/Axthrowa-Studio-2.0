@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldAlert, 
-  ShieldCheck, 
-  Trash2, 
-  UserX, 
-  History, 
-  RefreshCw, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Info, 
+import {
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  UserX,
+  History,
+  RefreshCw,
   Lock,
-  Plus,
-  Sliders,
-  Radio
+  Plus
 } from 'lucide-react';
 
 interface ShieldSettings {

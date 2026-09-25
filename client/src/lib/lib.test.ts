@@ -20,8 +20,8 @@ import {
   sonrakiTik,
   type UyariOgesi
 } from './alertQueue.js';
-import { GENEL_TEMALAR, temaBul, temalar, temayiUygula } from './themes.js';
-import { birlesikRoller, olayEtiketi, olayiDestekleyenler, onbellegiTemizle, yetenekleriGetir } from './capabilities.js';
+import { GENEL_TEMALAR, temalar, temayiUygula } from './themes.js';
+import { olayEtiketi, olayiDestekleyenler, onbellegiTemizle, yetenekleriGetir } from './capabilities.js';
 import { genelRozet, platformRozeti, type CanliOzet } from './live-status.js';
 
 const oge = (o: Partial<UyariOgesi> = {}): UyariOgesi => ({
@@ -203,10 +203,6 @@ describe('temalar', () => {
     expect(sonuc.baska).toBe(1);
   });
 
-  it('temaBul bilinmeyen kimlikte undefined döner', () => {
-    expect(temaBul('alert-box', 'yok-boyle')).toBeUndefined();
-  });
-
   it('temalar() en az bir seçenek verir', () => {
     expect(temalar('alert-box').length).toBeGreaterThan(0);
   });
@@ -255,10 +251,6 @@ describe('yetenek etiketleri', () => {
     const h = { kick: { olaylar: ['chat'] } } as any;
     expect(olayEtiketi(h, 'tip')).toContain('BynoGame');
     expect(olayEtiketi(h, 'tip')).not.toContain('Hiçbir');
-  });
-
-  it('roller doğru sırayla birleşir', () => {
-    expect(birlesikRoller(YETENEK)).toEqual(['everyone', 'sub', 'vip', 'og', 'mod']);
   });
 });
 

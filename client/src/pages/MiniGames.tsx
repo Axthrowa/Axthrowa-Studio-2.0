@@ -1,20 +1,17 @@
 import { useState, useEffect } from 'react';
-import { 
-  Gamepad2, 
-  Trophy, 
-  Timer, 
-  Coins, 
-  Check, 
-  Sparkles, 
-  Play, 
-  X, 
-  HelpCircle, 
-  Flame, 
-  ShieldAlert, 
-  Zap, 
-  Dice5, 
+import {
+  Gamepad2,
+  Trophy,
+  Coins,
+  Check,
+  Sparkles,
+  Play,
+  HelpCircle,
+  Flame,
+  ShieldAlert,
+  Zap,
+  Dice5,
   RefreshCw,
-  Sliders,
   CheckCircle2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -262,7 +259,10 @@ export function MiniGames() {
 
           <button
             onClick={handleSave}
-            disabled={saving}
+            // Ayarlar sunucudan gelmeden kaydedilirse varsayılanlar gerçek
+            // ayarların üzerine yazılırdı (`loading` tutuluyor ama kullanılmıyordu)
+            disabled={saving || loading}
+            title={loading ? 'Ayarlar yükleniyor…' : undefined}
             className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-purple-600/30 disabled:opacity-50"
           >
             {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}

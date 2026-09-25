@@ -1,51 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
 import { AlertPreset } from '../types.js';
-import { 
-  Layers, 
-  Copy, 
-  Check, 
-  ExternalLink, 
-  Sliders, 
-  Bell, 
-  Sparkles, 
-  Play, 
-  Volume2, 
-  CheckCircle2, 
-  Search, 
-  MessageSquare, 
-  Cloud, 
-  DollarSign, 
-  Smile, 
-  Film, 
-  Tag, 
-  TrendingUp, 
-  Gift, 
-  Train, 
-  Trophy, 
-  Music, 
-  Pin, 
-  BarChart3, 
-  Megaphone, 
-  Hourglass, 
-  Target, 
-  Wine, 
-  Users, 
-  Disc, 
-  Gem, 
+import {
+  Layers,
+  Copy,
+  Check,
+  Bell,
+  Sparkles,
+  Play,
+  Volume2,
+  CheckCircle2,
+  Search,
+  MessageSquare,
+  Cloud,
+  DollarSign,
+  Smile,
+  Film,
+  Tag,
+  TrendingUp,
+  Gift,
+  Train,
+  Trophy,
+  Music,
+  Pin,
+  BarChart3,
+  Megaphone,
+  Hourglass,
+  Target,
+  Wine,
+  Users,
+  Disc,
+  Gem,
   HelpCircle,
   Monitor,
-  RotateCcw,
   X,
-  VolumeX,
-  FastForward,
-  Plus,
-  Minus,
-  Radio,
   Move,
-  Maximize2,
   Eye,
   EyeOff,
-  Palette,
   Settings2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -432,15 +422,6 @@ const DEFAULT_ALL_IN_ONE_CONFIG: AllInOneConfig = {
 };
 
 
-interface LivePreviewAlert {
-  title: string;
-  message: string;
-  imageUrl: string;
-  soundUrl: string;
-  accentColor: string;
-  textColor: string;
-  durationMs: number;
-}
 
 export function OverlayStudio() {
   const [activeTab, setActiveTab] = useState<'all_in_one' | 'gallery' | 'chat_settings' | 'alerts'>('all_in_one');
@@ -608,9 +589,6 @@ export function OverlayStudio() {
   // AlertBox State
   const [alerts, setAlerts] = useState<AlertPreset[]>([]);
   const [selectedAlert, setSelectedAlert] = useState<AlertPreset | null>(null);
-  const [livePreview, setLivePreview] = useState<LivePreviewAlert | null>(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const baseUrl = `${window.location.protocol}//${window.location.host}`;
   const singleOverlayUrl = `${baseUrl}/widgets/overlay`;

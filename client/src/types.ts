@@ -61,16 +61,6 @@ export interface AutoModSettings {
   ai_toxicity_threshold: number;
 }
 
-export interface EconomyUser {
-  id: string;
-  platform: string;
-  username: string;
-  display_name: string;
-  points: number;
-  watch_time_minutes: number;
-  last_active: number;
-}
-
 export interface SongItem {
   id: string;
   title: string;

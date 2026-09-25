@@ -174,11 +174,6 @@ export const KATMANLAR: KatmanTanimi[] = [
   }
 ];
 
-/** Anahtardan katman tanımı. */
-export function katmanBul(anahtar: string): KatmanTanimi | undefined {
-  return KATMANLAR.find((k) => k.anahtar === anahtar);
-}
-
 /**
  * Bir katmanın mutlak yerleşim stili.
  *

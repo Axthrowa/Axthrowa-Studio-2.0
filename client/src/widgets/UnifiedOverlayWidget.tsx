@@ -240,27 +240,6 @@ export function UnifiedOverlayWidget() {
     ? 1 
     : Math.min(scaleX, scaleY);
 
-  const getWidgetStyle = (item: WidgetLayoutItem | undefined, defaultZIndex = 50): React.CSSProperties => {
-    if (!item) return { display: 'none' };
-    const x = typeof item.x === 'number' ? item.x : 0;
-    const y = typeof item.y === 'number' ? item.y : 0;
-    const width = item.width || 300;
-    const height = item.height || 200;
-    const scale = typeof item.scale === 'number' ? item.scale : 1;
-
-    return {
-      position: 'absolute',
-      left: `${x}px`,
-      top: `${y}px`,
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `scale(${scale})`,
-      transformOrigin: 'top left',
-      zIndex: defaultZIndex,
-      pointerEvents: 'none'
-    };
-  };
-
   return (
     <div
       style={{

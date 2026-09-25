@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Bot, Save, Check, Send, User, MessageSquarePlus, Zap, Clock, Smile, Flame, BookOpen, Crown } from 'lucide-react';
+import { Sparkles, Bot, Save, Check, Send, User, MessageSquarePlus, Zap } from 'lucide-react';
 
 interface ChatRescueSettings {
   isEnabled: boolean;

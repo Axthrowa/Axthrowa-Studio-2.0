@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
-import { ChatMessage } from '../types.js';
-import { Send, Filter, Radio, MessageSquare, Trash2, Check, AlertTriangle, User, Smile, Frown, Meh, Save, X, ShieldAlert, Sparkles } from 'lucide-react';
+import { Send, Trash2, User, Smile, Frown, Meh, Save, X, ShieldAlert, Sparkles } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
@@ -23,7 +22,7 @@ interface ViewerModalData {
 }
 
 export function MultiChat() {
-  const { chatMessages, sendChat, clearChat, connected } = useWebSocket('chatbox');
+  const { chatMessages, sendChat, clearChat } = useWebSocket('chatbox');
   const [filter, setFilter] = useState<'all' | 'kick' | 'twitch' | 'youtube' | 'trovo' | 'tiktok' | 'discord'>('all');
   const [inputMessage, setInputMessage] = useState('');
   const [targetPlatform, setTargetPlatform] = useState<string>('all');
@@ -385,7 +384,7 @@ export function MultiChat() {
                 )}
               </div>
               <p className="text-[11px] text-gray-400">
-                {selectedViewer.sentimentDetails?.summary ||
+                {loadingViewer ? 'Mesajlar inceleniyor…' : selectedViewer.sentimentDetails?.summary ||
                   (selectedViewer.sentiment === 'positive'
                     ? 'İzleyici son mesajlarında yayıncıyı öven, pozitif bir ton kullandı.'
                     : selectedViewer.sentiment === 'negative'

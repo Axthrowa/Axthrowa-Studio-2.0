@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, Check, Volume2, Share2, Coins } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Check, Volume2, Share2 } from 'lucide-react';
 
 export function Settings() {
   const [settings, setSettings] = useState<Record<string, string>>({});

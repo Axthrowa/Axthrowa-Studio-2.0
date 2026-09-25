@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
 import { openLink } from '../lib/openLink.js';
 import { ChannelConfig } from '../types.js';
-import { 
-  Save, Check, RefreshCw, Key, MessageSquare, Hash, 
-  ShieldCheck, Radio, Send, ExternalLink, Zap, AlertCircle, CheckCircle2,
-  Sparkles, Lock, ArrowRight, HelpCircle, Terminal, Copy
+import {
+  Save,
+  Check,
+  RefreshCw,
+  Key,
+  MessageSquare,
+  Hash,
+  Send,
+  ExternalLink,
+  Zap,
+  AlertCircle,
+  CheckCircle2,
+  Sparkles,
+  Lock,
+  HelpCircle,
+  Copy
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 

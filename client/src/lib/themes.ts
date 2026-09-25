@@ -224,7 +224,3 @@ export function temayiUygula(
   return yeni;
 }
 
-/** Tema kimliğinden tanım. */
-export function temaBul(widgetId: string, temaId: string): TemaTanimi | undefined {
-  return temalar(widgetId).find((t) => t.id === temaId);
-}

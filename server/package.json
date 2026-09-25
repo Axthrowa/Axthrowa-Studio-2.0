@@ -22,7 +22,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "pusher-js": "^8.4.0-rc2",
-    "tiktok-live-connector": "^2.0.1",
+    "tiktok-live-connector": "2.4.0",
     "uuid": "^11.0.5",
     "ws": "^8.18.0"
   },

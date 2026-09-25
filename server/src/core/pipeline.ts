@@ -11,6 +11,7 @@ import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { puanDususu } from '../modules/engagement/point-drops.js';
 import { settingsCache } from './settings-cache.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
+import { karaListeyiUygula } from '../modules/moderation/blacklist.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
 import { seyrekUyar } from './logger.js';
 
@@ -56,11 +57,9 @@ export class MessagePipeline {
       return;
     }
 
-    // Check Kick Shared Global Ban List
-    if (shieldModeService.isUserBanned(message.user.username)) {
-      console.warn(`[ShieldMode] Blocked message from banned user: @${message.user.username}`);
-      return;
-    }
+    // Ortak kara liste: bot yok sayar; seçilen eylem (sil / kalıcı ban)
+    // platformda uygulanır. OBS sohbet katmanından ws/server.ts gizler.
+    if (karaListeyiUygula(message)) return;
 
     // Shield Mode Active Check
     const shield = shieldModeService.getSettings();

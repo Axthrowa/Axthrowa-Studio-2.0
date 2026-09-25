@@ -15,6 +15,7 @@ import {
   raidSayisi,
   rolleriCoz,
   sohbetOlayi,
+  trovoKomutAdi,
   yenidenBaglanmaGecikmesi
 } from './trovo-map.js';
 
@@ -191,5 +192,17 @@ describe('yenidenBaglanmaGecikmesi', () => {
 
   it('negatif denemede ilk gecikmeye döner', () => {
     expect(yenidenBaglanmaGecikmesi(-3)).toBe(1000);
+  });
+});
+
+describe('trovoKomutAdi — komut dizgesine giren ad', () => {
+  it('olağan adları kabul eder', () => {
+    expect(trovoKomutAdi('@Leaf_In.Summer-2')).toBe('Leaf_In.Summer-2');
+    expect(trovoKomutAdi('çağrı')).toBe('çağrı');
+  });
+  it('boşluk, eğik çizgi ve boş adı reddeder (ek argüman / komut sokma)', () => {
+    for (const ad of ['ali 99999', 'ali\nunban veli', 'ali\tveli', '/ban', 'a/b', '', '   ', 'x'.repeat(41)]) {
+      expect(trovoKomutAdi(ad)).toBeNull();
+    }
   });
 });

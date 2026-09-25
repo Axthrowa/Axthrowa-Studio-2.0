@@ -5,11 +5,16 @@ import { Send, Filter, Radio, MessageSquare, Trash2, Check, AlertTriangle, User,
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
+import { yetenekleriGetir, type YetenekHaritasi } from '../lib/capabilities.js';
+
+type ElleEylem = 'timeout' | 'ban' | 'unban';
 
 interface ViewerModalData {
   username: string;
   displayName: string;
   platform: string;
+  /** Botun kendi mesajı: moderasyon düğmeleri gösterilmez. */
+  kendiBotu?: boolean;
   avatarUrl?: string;
   roles?: string[];
   note: string;
@@ -19,7 +24,7 @@ interface ViewerModalData {
 
 export function MultiChat() {
   const { chatMessages, sendChat, clearChat, connected } = useWebSocket('chatbox');
-  const [filter, setFilter] = useState<'all' | 'kick' | 'twitch' | 'youtube' | 'tiktok' | 'discord'>('all');
+  const [filter, setFilter] = useState<'all' | 'kick' | 'twitch' | 'youtube' | 'trovo' | 'tiktok' | 'discord'>('all');
   const [inputMessage, setInputMessage] = useState('');
   const [targetPlatform, setTargetPlatform] = useState<string>('all');
   const [confirmClear, setConfirmClear] = useState(false);
@@ -31,6 +36,14 @@ export function MultiChat() {
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [noteSavedMsg, setNoteSavedMsg] = useState('');
+  // Elle moderasyon (4. tur): gerçek platform eylemi; sonuç kartta yazılır
+  const [yetenekler, setYetenekler] = useState<YetenekHaritasi>({});
+  const [modBusy, setModBusy] = useState<ElleEylem | 'karaliste' | null>(null);
+  const [modMesaj, setModMesaj] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    void yetenekleriGetir().then(setYetenekler);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,6 +72,7 @@ export function MultiChat() {
       username,
       displayName: user.displayName || username,
       platform,
+      kendiBotu: user.id === 'streamaxt_bot' || user.isSelf === true,
       avatarUrl: user.avatarUrl,
       roles: user.roles || [],
       note: '',
@@ -66,11 +80,13 @@ export function MultiChat() {
     });
     setLoadingViewer(true);
     setNoteSavedMsg('');
+    setModMesaj(null);
 
     try {
+      const ad = encodeURIComponent(username);
       const [notesRes, sentimentRes] = await Promise.all([
-        fetch(`/api/viewers/${username}/notes`).then(r => r.json()),
-        fetch(`/api/viewers/${username}/sentiment`).then(r => r.json())
+        fetch(`/api/viewers/${ad}/notes`).then(r => r.json()),
+        fetch(`/api/viewers/${ad}/sentiment`).then(r => r.json())
       ]);
 
       const note = notesRes?.note || '';
@@ -92,7 +108,7 @@ export function MultiChat() {
     if (!selectedViewer) return;
     setSavingNote(true);
     try {
-      const res = await fetch(`/api/viewers/${selectedViewer.username}/notes`, {
+      const res = await fetch(`/api/viewers/${encodeURIComponent(selectedViewer.username)}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ note: noteText })
@@ -106,17 +122,55 @@ export function MultiChat() {
     }
   };
 
+  // Kara liste kaydı yalnız BU platform için tutulur: başka platformdaki aynı
+  // adlı (büyük olasılıkla başka) kişi etkilenmesin.
   const handleAddToSharedBan = async () => {
     if (!selectedViewer) return;
-    if (confirm(`@${selectedViewer.username} kullanıcısını Kick Ortak Kara Listesine eklemek istediğinize emin misiniz?`)) {
-      await fetch('/api/moderation/shared-bans', {
+    const { username, platform } = selectedViewer;
+    if (!confirm(`@${username} (${platform}) ortak kara listeye eklensin mi?\nBot bu kişiyi yok sayar, mesajları OBS sohbetinde gösterilmez; Kalkan ekranındaki kara liste eylemi uygulanır.`)) return;
+    setModBusy('karaliste');
+    try {
+      const res = await fetch('/api/moderation/shared-bans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: selectedViewer.username, reason: 'Chat üzerinden moderatör engeli' })
+        body: JSON.stringify({ username, platform, reason: 'Sohbetten moderatör kararı', addedBy: 'Yayıncı' })
       });
-      alert('Kullanıcı kara listeye eklendi.');
-      setSelectedViewer(null);
+      setModMesaj(res.ok ? { ok: true, text: `@${username} kara listeye eklendi (${platform}).` } : { ok: false, text: `Eklenemedi (HTTP ${res.status})` });
+    } catch {
+      setModMesaj({ ok: false, text: 'Sunucuya ulaşılamadı' });
+    } finally {
+      setModBusy(null);
     }
+  };
+
+  const moderasyonYap = async (eylem: ElleEylem) => {
+    if (!selectedViewer) return;
+    const { username, platform } = selectedViewer;
+    if (eylem === 'ban' && !confirm(`@${username} ${platform} platformunda KALICI olarak banlanacak. Emin misiniz?`)) return;
+    setModBusy(eylem);
+    setModMesaj(null);
+    try {
+      const res = await fetch(`/api/moderation/${eylem}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform, username, saniye: 600, sebep: 'Panelden moderatör kararı' })
+      });
+      const d = await res.json().catch(() => ({}));
+      const ne = eylem === 'timeout' ? '10 dakika susturuldu' : eylem === 'ban' ? 'kalıcı olarak banlandı' : 'banı kaldırıldı';
+      setModMesaj(d?.ok ? { ok: true, text: `@${username} ${ne}.` } : { ok: false, text: d?.hata || `HTTP ${res.status}` });
+    } catch {
+      setModMesaj({ ok: false, text: 'Sunucuya ulaşılamadı' });
+    } finally {
+      setModBusy(null);
+    }
+  };
+
+  /** Platform eylemi desteklemiyorsa düğme kapalı, sebebi ipucunda. */
+  const destek = (eylem: ElleEylem): string | null => {
+    const y = selectedViewer ? yetenekler[selectedViewer.platform] : undefined;
+    if (!y) return null; // yetenek listesi gelmediyse sunucu karar versin
+    const var_ = eylem === 'timeout' ? y.moderasyon.timeout : y.moderasyon.ban;
+    return var_ ? null : `${selectedViewer?.platform} bu eylemi desteklemiyor`;
   };
 
   const filteredMessages = chatMessages.filter(m =>
@@ -145,7 +199,7 @@ export function MultiChat() {
             Birleşik Canlı Sohbet (Multi-Chat Dock)
           </h1>
           <p className="text-xs text-gray-400">
-            Kick, Twitch, YouTube, Discord ve TikTok yayın sohbetlerinizi tek ekranda toplayın ve yönetin.
+            Kick, Twitch, YouTube, Trovo, Discord ve TikTok yayın sohbetlerinizi tek ekranda toplayın ve yönetin.
           </p>
         </div>
 
@@ -166,7 +220,7 @@ export function MultiChat() {
 
           {/* Filter Tabs */}
           <div className="flex items-center space-x-1.5 bg-black/40 border border-white/10 p-1 rounded-xl text-xs font-bold">
-            {(['all', 'kick', 'twitch', 'youtube', 'tiktok', 'discord'] as const).map(p => (
+            {(['all', 'kick', 'twitch', 'youtube', 'trovo', 'tiktok', 'discord'] as const).map(p => (
               <button
                 key={p}
                 onClick={() => setFilter(p)}
@@ -177,7 +231,7 @@ export function MultiChat() {
                 }`}
               >
                 {p !== 'all' && <PlatformLogo platform={p} size={12} />}
-                <span>{p}</span>
+                <span>{p === 'all' ? 'tümü' : p}</span>
               </button>
             ))}
           </div>
@@ -195,7 +249,10 @@ export function MultiChat() {
             filteredMessages.map(msg => (
               <div
                 key={msg.id}
-                className="p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] transition-all flex items-start space-x-2.5 text-sm"
+                className={`p-2.5 rounded-xl hover:bg-white/[0.05] transition-all flex items-start space-x-2.5 text-sm ${
+                  msg.karaListede ? 'bg-red-500/[0.06] opacity-60' : 'bg-white/[0.02]'
+                }`}
+                title={msg.karaListede ? 'Ortak kara listede: bot yok sayar, OBS sohbetinde gösterilmez' : undefined}
               >
                 {msg.user.avatarUrl && (
                   <img
@@ -217,8 +274,13 @@ export function MultiChat() {
                     >
                       {msg.user.displayName || msg.user.username}:
                     </button>
+                    {msg.karaListede && (
+                      <span className="text-[9px] font-bold uppercase text-red-300 bg-red-500/15 border border-red-500/30 rounded px-1.5 py-0.5">
+                        kara liste
+                      </span>
+                    )}
                     <span className="text-[10px] text-gray-500">
-                      {new Date(msg.timestamp).toLocaleTimeString()}
+                      {new Date(msg.timestamp).toLocaleTimeString('tr-TR')}
                     </span>
                   </div>
 
@@ -244,6 +306,7 @@ export function MultiChat() {
           <option value="kick">Sadece Kick</option>
           <option value="twitch">Sadece Twitch</option>
           <option value="youtube">Sadece YouTube</option>
+          <option value="trovo">Sadece Trovo</option>
           <option value="discord">Sadece Discord</option>
         </select>
 
@@ -372,14 +435,60 @@ export function MultiChat() {
               <div className="text-xs text-emerald-400 font-semibold">{noteSavedMsg}</div>
             )}
 
+            {/* Moderasyon — GERÇEK platform eylemi, yalnız bu platformda */}
+            {!selectedViewer.kendiBotu && (
+            <div className="space-y-2 p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+              <div className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
+                Moderasyon ({selectedViewer.platform})
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  ['timeout', '10 dk sustur'],
+                  ['ban', 'Kalıcı banla'],
+                  ['unban', 'Banı kaldır']
+                ] as Array<[ElleEylem, string]>).map(([eylem, etiket]) => {
+                  const sebep = destek(eylem);
+                  return (
+                    <button
+                      key={eylem}
+                      type="button"
+                      onClick={() => void moderasyonYap(eylem)}
+                      disabled={!!sebep || modBusy !== null}
+                      title={sebep || undefined}
+                      className={`text-[11px] font-bold px-2 py-1.5 rounded-lg border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                        eylem === 'ban'
+                          ? 'bg-red-600/20 border-red-500/40 text-red-200 hover:bg-red-600/30'
+                          : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'
+                      }`}
+                    >
+                      {modBusy === eylem ? '…' : etiket}
+                    </button>
+                  );
+                })}
+              </div>
+              {modMesaj && (
+                <div className={`text-[11px] font-semibold ${modMesaj.ok ? 'text-emerald-400' : 'text-red-300'}`}>
+                  {modMesaj.ok ? '✅ ' : '⚠️ '}
+                  {modMesaj.text}
+                </div>
+              )}
+            </div>
+            )}
+
             {/* Modal Actions */}
             <div className="flex items-center justify-between pt-2">
-              <button
-                onClick={handleAddToSharedBan}
-                className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 font-semibold cursor-pointer"
-              >
-                <ShieldAlert className="w-3.5 h-3.5" /> Kara Listeye Ekle
-              </button>
+              {selectedViewer.kendiBotu ? (
+                <span />
+              ) : (
+                <button
+                  onClick={handleAddToSharedBan}
+                  disabled={modBusy !== null}
+                  className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" /> Kara Listeye Ekle
+                </button>
+              )}
 
               <button
                 onClick={handleSaveNote}

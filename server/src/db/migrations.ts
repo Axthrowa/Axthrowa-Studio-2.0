@@ -112,6 +112,16 @@ export const GOCLER: Gocler[] = [
       sutunEkle(db, 'automod_settings', 'repeat_message', "TEXT NOT NULL DEFAULT ''");
       sutunEkle(db, 'automod_settings', 'repeat_bypass', "TEXT NOT NULL DEFAULT '[\"mod\",\"broadcaster\"]'");
     }
+  },
+  {
+    version: 7,
+    name: 'ortak kara liste — platform',
+    up(db) {
+      // 4. tur: kara liste kullanıcı adını platformdan bağımsız eşliyordu.
+      // Eklemeli; eski kayıtlar 'kick' sayılır (ekran "Kick Ortak Kara
+      // Listesi" diyordu). 'tum' = bütün platformlar.
+      sutunEkle(db, 'kick_shared_bans', 'platform', "TEXT NOT NULL DEFAULT 'kick'");
+    }
   }
 ];
 

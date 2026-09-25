@@ -10,6 +10,7 @@ import { platformManager } from '../platforms/manager.js';
 import { economy } from '../modules/economy/economy.js';
 import { varyantlar } from '../modules/alerts/variants.js';
 import { hataMetni, seyrekUyar } from '../core/logger.js';
+import { shieldModeService } from '../modules/moderation/shield-mode.js';
 
 interface ClientConnection {
   ws: WebSocket;
@@ -99,9 +100,13 @@ export class WebSocketHub {
   private setupEventForwarding() {
     // 1. Chat Event -> Send to Dashboard & ChatBox Overlay
     eventBus.on('chat', (payload: ChatMessagePayload) => {
+      // Ortak kara listedeki kullanıcı: panelde işaretli görünür, OBS sohbet
+      // widget'ları göstermez. Eskiden liste yalnız botun işleme hattındaydı;
+      // mesajlar yayında görünmeye devam ediyordu.
+      const karaListede = !!shieldModeService.karaListeKaydi(payload.user?.username, payload.platform);
       this.broadcastTo(['dashboard', 'chatbox', 'all'], {
         type: 'chat',
-        data: payload
+        data: karaListede ? { ...payload, karaListede: true } : payload
       });
     });
 

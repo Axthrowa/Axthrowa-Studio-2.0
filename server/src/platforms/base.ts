@@ -32,6 +32,15 @@ export abstract class BasePlatform {
   deleteMessage?(messageId: string): Promise<ModerasyonSonucu>;
 
   /**
+   * Kullaniciyi bu platformda KALICI banlar. Yalniz resmi API'si olan
+   * platformlarda tanimlidir (Kick, Twitch, YouTube, Trovo).
+   */
+  banUser?(username: string, sebep?: string): Promise<ModerasyonSonucu>;
+
+  /** Kalici bani (ya da suren zaman asimini) kaldirir. */
+  unbanUser?(username: string): Promise<ModerasyonSonucu>;
+
+  /**
    * Yayin acik mi? Yoklama servisi (live-poller) bunu dakikada bir cagirir.
    * `null` = bu turda bilinemedi (ag hatasi vb.) — durum degistirilmez.
    * Olayla bildiren platformlar (TikTok, Trovo) bunu tanimlamaz.

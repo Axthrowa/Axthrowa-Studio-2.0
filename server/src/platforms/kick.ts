@@ -589,6 +589,45 @@ export class KickPlatform extends BasePlatform {
    * Bkz. docs/KNOWN_LIMITATIONS.md
    */
   async timeoutUser(username: string, saniye: number, sebep?: string): Promise<ModerasyonSonucu> {
+    // Kick DAKIKA bekliyor: belgeye gore 1–10080 (7 gun)
+    const dakika = Math.min(10080, Math.max(1, Math.round(Number(saniye) / 60)));
+    return this.yasakIstegi('timeout', username, { duration: dakika, reason: String(sebep || 'AutoMod').slice(0, 100) });
+  }
+
+  /** Kalici ban: ayni uc, `duration` VERILMEZ (docs.kick.com — moderation). */
+  async banUser(username: string, sebep?: string): Promise<ModerasyonSonucu> {
+    return this.yasakIstegi('ban', username, { reason: String(sebep || 'Moderatör').slice(0, 100) });
+  }
+
+  /** `DELETE /public/v1/moderation/bans` — ban ve zaman asimini kaldirir. */
+  async unbanUser(username: string): Promise<ModerasyonSonucu> {
+    return this.yasakIstegi('unban', username, {});
+  }
+
+  /** Hedef kullanicinin kimligi: once sohbetten ogrenilen, yoksa kanal sayfasi. */
+  private async hedefKimligi(ad: string): Promise<number | undefined> {
+    const onbellek = this.kullaniciKimlikleri.get(ad.toLowerCase());
+    if (onbellek) return onbellek;
+    const kanal = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(ad.toLowerCase())}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      timeout: 8000
+    });
+    const id = Number(kanal.data?.user_id || kanal.data?.user?.id);
+    return Number.isFinite(id) && id > 0 ? id : undefined;
+  }
+
+  /**
+   * Zaman asimi, kalici ban ve ban kaldirma ayni resmi uctur
+   * (`/public/v1/moderation/bans`, izin `moderation:ban`).
+   *
+   * NOT: CANLI YAYINDA DOGRULANMADI — gercek bir izleyiciye moderasyon
+   * kullanicinin kanalinda gorunur bir eylem olurdu. Bkz. KNOWN_LIMITATIONS.
+   */
+  private async yasakIstegi(
+    tur: 'timeout' | 'ban' | 'unban',
+    username: string,
+    ek: { duration?: number; reason?: string }
+  ): Promise<ModerasyonSonucu> {
     const ad = String(username || '').replace(/^@/, '').trim();
     if (!ad) return { ok: false, hata: 'Kullanici adi bos' };
     if (!this.broadcasterUserId) return { ok: false, hata: 'Kanal kimligi bilinmiyor (baglanti yok)' };
@@ -597,32 +636,16 @@ export class KickPlatform extends BasePlatform {
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
 
     try {
-      // Hedef kullanicinin kimligi: once sohbetten ogrenilen, yoksa kanal sayfasi
-      let hedefId: number | undefined = this.kullaniciKimlikleri.get(ad.toLowerCase());
-      if (!hedefId) {
-        const kanal = await axios.get(`https://kick.com/api/v2/channels/${ad.toLowerCase()}`, {
-          headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
-          timeout: 8000
-        });
-        hedefId = kanal.data?.user_id || kanal.data?.user?.id;
-      }
+      const hedefId = await this.hedefKimligi(ad);
       if (!hedefId) return { ok: false, hata: `${ad} kullanicisi bulunamadi` };
 
-      await axios.post(
-        'https://api.kick.com/public/v1/moderation/bans',
-        {
-          broadcaster_user_id: Number(this.broadcasterUserId),
-          user_id: Number(hedefId),
-          // Kick DAKIKA bekliyor; en az 1 dakika
-          duration: Math.max(1, Math.round(Number(saniye) / 60)),
-          reason: String(sebep || 'AutoMod').slice(0, 100)
-        },
-        {
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          timeout: 10000
-        }
-      );
-
+      const govde = { broadcaster_user_id: Number(this.broadcasterUserId), user_id: hedefId, ...ek };
+      const basliklar = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+      if (tur === 'unban') {
+        await axios.delete('https://api.kick.com/public/v1/moderation/bans', { data: govde, headers: basliklar, timeout: 10000 });
+      } else {
+        await axios.post('https://api.kick.com/public/v1/moderation/bans', govde, { headers: basliklar, timeout: 10000 });
+      }
       return { ok: true };
     } catch (e: any) {
       const durum = e?.response?.status;
@@ -630,7 +653,7 @@ export class KickPlatform extends BasePlatform {
         durum === 401 || durum === 403
           ? 'Kick tokeninde "moderation:ban" izni yok — Platformlar > Kick > yeniden baglan (yeni izinlerle)'
           : String(e?.response?.data?.message || e?.message || e);
-      console.warn(`[Kick] timeout basarisiz (${ad}):`, mesaj);
+      console.warn(`[Kick] ${tur} basarisiz (${ad}):`, mesaj);
       return { ok: false, hata: mesaj };
     }
   }

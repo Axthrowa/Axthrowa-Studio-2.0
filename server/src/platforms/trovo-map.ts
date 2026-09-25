@@ -173,3 +173,14 @@ export function yenidenBaglanmaGecikmesi(deneme: number): number {
   const n = Math.max(0, Math.floor(deneme));
   return Math.min(30_000, 1000 * 2 ** Math.min(n, 5));
 }
+
+/**
+ * Trovo'nun komut ucu (`channels/command`) tek bir dizge alır: `ban xxx`.
+ * Kullanıcı adında boşluk olursa ek argüman sayılabilir (ör. `ban ali 99`
+ * süre olarak yorumlanabilir) ya da `/` ile başka komut sokulabilir. Yalnız
+ * harf, rakam, alt çizgi, nokta ve tire kabul edilir; aksi hâlde `null`.
+ */
+export function trovoKomutAdi(ham: unknown): string | null {
+  const ad = String(ham ?? '').trim().replace(/^@+/, '');
+  return /^[\p{L}\p{N}_.\-]{1,40}$/u.test(ad) ? ad : null;
+}

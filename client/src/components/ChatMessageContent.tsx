@@ -2,7 +2,7 @@ import React from 'react';
 
 interface ChatMessageContentProps {
   message: string;
-  platform?: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform?: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   className?: string;
   size?: number; // emote height in px, default 24
 }

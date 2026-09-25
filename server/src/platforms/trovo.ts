@@ -35,7 +35,8 @@ import {
   rolleriCoz,
   sohbetOlayi,
   yenidenBaglanmaGecikmesi,
-  type TrovoSohbeti
+  type TrovoSohbeti,
+  trovoKomutAdi
 } from './trovo-map.js';
 
 export * from './trovo-map.js';
@@ -482,8 +483,29 @@ export class TrovoPlatform extends BasePlatform {
   }
 
   /**
+   * Kalıcı ban: resmi belgedeki örnek komut `ban xxx`
+   * (developer.trovo.live — "Perform chat commands").
+   *
+   * Zaman aşımı BİLEREK YOK: üçüncü taraf listeler `/ban [@ad] [süre]`
+   * yazıyor ama sürenin BİRİMİ (saniye mi dakika mı) hiçbir kaynakta yok.
+   * Tahmin etmek gerçek bir izleyiciye 10 dakika yerine 10 saat ceza
+   * verebilirdi; yetenek tablosunda `timeout: false`.
+   */
+  async banUser(username: string, _sebep?: string): Promise<ModerasyonSonucu> {
+    const ad = trovoKomutAdi(username);
+    if (!ad) return { ok: false, hata: 'Geçersiz Trovo kullanıcı adı (boşluk/özel karakter komuta karışabilirdi)' };
+    return this.komutCalistir(`ban ${ad}`);
+  }
+
+  async unbanUser(username: string): Promise<ModerasyonSonucu> {
+    const ad = trovoKomutAdi(username);
+    if (!ad) return { ok: false, hata: 'Geçersiz Trovo kullanıcı adı' };
+    return this.komutCalistir(`unban ${ad}`);
+  }
+
+  /**
    * Başlık: resmi belgedeki örnek komut `settitle xxx`.
-   * Trovo zaman aşımı komutunun sözdizimi belgede YOK — uydurmamak için
+   * Trovo zaman aşımı komutunun süre birimi belgede YOK — uydurmamak için
    * `timeoutUser` bilerek tanımlanmadı (yetenek tablosunda false).
    */
   async baslikDegistir(baslik: string): Promise<ModerasyonSonucu> {

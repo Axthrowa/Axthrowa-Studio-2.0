@@ -249,6 +249,11 @@ export interface ShieldModeSettings {
   blockEmotes: boolean;
   followerOnly: boolean;
   subOnly: boolean;
+  /**
+   * Ortak kara listedeki kullanıcı yazınca: yok say (varsayılan, eski
+   * davranış) / mesajı platformda sil / platformda kalıcı banla.
+   */
+  karaListeEylemi?: 'yoksay' | 'sil' | 'ban';
 }
 
 export interface ChatRescueSettings {

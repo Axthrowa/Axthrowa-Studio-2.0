@@ -258,6 +258,21 @@ export class TwitchPlatform extends BasePlatform {
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };
   }
 
+  /** Kalıcı ban: Helix `POST /moderation/bans`, `duration` verilmez. */
+  async banUser(username: string, sebep?: string): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.yasakla(this.currentChannel, username, undefined, sebep || 'Moderatör');
+    if (!r.ok) console.warn(`[Twitch] ban başarısız (${username}):`, r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  async unbanUser(username: string): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.yasakKaldir(this.currentChannel, username);
+    if (!r.ok) console.warn(`[Twitch] ban kaldırma başarısız (${username}):`, r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
   async deleteMessage(messageId: string): Promise<ModerasyonSonucu> {
     if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
     const r = await this.helix.mesajSil(this.currentChannel, messageId);

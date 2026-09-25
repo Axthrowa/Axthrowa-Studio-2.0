@@ -15,7 +15,7 @@
  * yalnız onu okur ve önbelleğe alır.
  */
 
-export type PlatformAdi = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+export type PlatformAdi = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
 
 export interface PlatformYetenekleri {
   sohbet: { oku: boolean; gonder: boolean };

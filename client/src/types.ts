@@ -7,7 +7,7 @@ export interface PlatformStatus {
 
 export interface ChannelConfig {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel_name: string;
   account_id?: string;
   token?: string;
@@ -112,7 +112,7 @@ export interface AlertPreset {
 
 export interface StreamEvent {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   event_type: 'chat' | 'follow' | 'sub' | 'tip' | 'raid' | 'gift';
   username: string;
   display_name?: string;
@@ -125,7 +125,7 @@ export interface StreamEvent {
 
 export interface ChatMessage {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel: string;
   user: {
     id: string;
@@ -142,4 +142,6 @@ export interface ChatMessage {
   };
   message: string;
   timestamp: number;
+  /** Ortak kara listedeki kullanıcı: panelde işaretli, OBS katmanında gizli. */
+  karaListede?: boolean;
 }

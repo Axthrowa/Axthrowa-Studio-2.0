@@ -12,6 +12,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { wsHub } from '../../ws/server.js';
 import { autoMod } from '../../modules/automod/automod.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
+import { elleModerasyonCoz, kalkanAyariniCoz, type ElleEylem } from '../../modules/moderation/moderation-input.js';
+import { platformManager } from '../../platforms/manager.js';
+import { yetenek } from '../../platforms/capabilities.js';
 import { chatRescueService } from '../../modules/ai/chat-rescue.js';
 
 const router = Router();
@@ -157,11 +160,61 @@ router.get('/moderation/shared-bans', (req: Request, res: Response) => {
 });
 
 router.post('/moderation/shared-bans', (req: Request, res: Response) => {
-  const { username, reason = 'Spam/Raid hesabı', addedBy = 'Moderatör' } = req.body;
-  if (!username) return res.status(400).json({ error: 'Kullanıcı adı zorunludur' });
-  const ok = shieldModeService.addSharedBan(username, reason, addedBy);
+  const { username, reason = 'Spam/Raid hesabı', addedBy = 'Moderatör', platform } = req.body || {};
+  if (!String(username || '').trim()) return res.status(400).json({ error: 'Kullanıcı adı zorunludur' });
+  const ok = shieldModeService.addSharedBan(String(username), String(reason), String(addedBy), platform);
+  if (!ok) return res.status(400).json({ error: 'Geçersiz kullanıcı adı' });
   res.json({ success: ok });
 });
+
+// Kalkan ayarları (4. tur): eskiden kaydeden bir uç YOKTU; ayarlar yalnız
+// varsayılanlarla çalışıyordu. `isActive` burada değişmez (activate/deactivate).
+router.post('/moderation/shield/settings', (req: Request, res: Response) => {
+  const girdi = kalkanAyariniCoz(req.body);
+  if (!Object.keys(girdi).length) return res.status(400).json({ error: 'Geçerli ayar yok' });
+  res.json({ success: true, settings: shieldModeService.saveSettings(girdi) });
+});
+
+// Panel izleyici kartından elle moderasyon (4. tur). GERÇEK platform eylemi:
+// yalnız yayıncının tıklamasıyla çalışır; sonuç denetim günlüğüne yazılır.
+async function elleModerasyon(eylem: ElleEylem, req: Request, res: Response) {
+  const c = elleModerasyonCoz(req.body, eylem);
+  if (!c.ok) return res.status(400).json({ ok: false, hata: c.hata });
+
+  const y = yetenek(c.platform).moderasyon;
+  if (!(eylem === 'timeout' ? y.timeout : y.ban)) {
+    return res.status(400).json({
+      ok: false,
+      hata: `${c.platform} ${eylem === 'timeout' ? 'zaman aşımını' : 'kalıcı banı'} desteklemiyor`
+    });
+  }
+  const p: any = platformManager.getPlatform(c.platform);
+  const yontem = eylem === 'timeout' ? 'timeoutUser' : eylem === 'ban' ? 'banUser' : 'unbanUser';
+  if (!p?.isConnected?.() || typeof p[yontem] !== 'function') {
+    return res.status(400).json({ ok: false, hata: `${c.platform} bağlı değil` });
+  }
+
+  const sonuc =
+    eylem === 'timeout'
+      ? await p.timeoutUser(c.ad, c.saniye, c.sebep)
+      : eylem === 'ban'
+        ? await p.banUser(c.ad, c.sebep)
+        : await p.unbanUser(c.ad);
+
+  const ne = eylem === 'timeout' ? `${Math.round(c.saniye / 60)} dk zaman aşımı` : eylem === 'ban' ? 'kalıcı ban' : 'ban kaldırma';
+  shieldModeService.addAuditLog(
+    `MANUAL_${eylem.toUpperCase()}`,
+    'Yayıncı',
+    `${c.platform}: ${ne} ${sonuc?.ok ? 'uygulandı' : `başarısız — ${sonuc?.hata || 'bilinmeyen hata'}`}${eylem === 'unban' ? '' : `. Sebep: ${c.sebep}`}`,
+    c.ad,
+    sonuc?.ok ? (eylem === 'unban' ? 'info' : 'danger') : 'warn'
+  );
+  res.status(sonuc?.ok ? 200 : 502).json(sonuc?.ok ? { ok: true } : { ok: false, hata: sonuc?.hata || 'bilinmeyen hata' });
+}
+
+router.post('/moderation/timeout', (req: Request, res: Response) => void elleModerasyon('timeout', req, res));
+router.post('/moderation/ban', (req: Request, res: Response) => void elleModerasyon('ban', req, res));
+router.post('/moderation/unban', (req: Request, res: Response) => void elleModerasyon('unban', req, res));
 
 router.delete('/moderation/shared-bans/:username', (req: Request, res: Response) => {
   const username = String(req.params.username || '');

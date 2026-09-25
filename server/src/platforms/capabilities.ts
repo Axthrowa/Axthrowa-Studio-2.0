@@ -50,9 +50,10 @@ export interface PlatformYetenekleri {
  * uygulanmış olmalıdır; aksi halde arayüz olmayan bir şey vaat eder.
  */
 export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
-  // `ban`: kalıcı yasaklama YÖNTEMİ uygulanmış mı? Hiçbir adaptörde yok
-  // (AutoMod zaman aşımı ve mesaj silme kullanıyor). Önceden Kick'te `true`
-  // yazıyordu ama karşılığı yoktu — düzeltildi.
+  // `ban`: kalıcı yasaklama YÖNTEMİ (`banUser`/`unbanUser`) uygulanmış mı?
+  // 4. turda Kick, Twitch, YouTube ve Trovo'ya resmi uçlarla eklendi;
+  // ortak kara liste ve panel izleyici kartı kullanır. AutoMod kural
+  // eylemleri BotRix'teki gibi uyarı/silme/zaman aşımıyla sınırlı kalır.
   kick: {
     sohbet: { oku: true, gonder: true },
     olaylar: ['chat', 'follow', 'sub', 'gift_sub', 'kicks', 'host', 'stream_online', 'stream_offline'],
@@ -60,7 +61,8 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // DELETE /chat/{id}, PATCH /channels. Token şu izinleri taşımalı:
     // moderation:ban, moderation:chat_message:manage, channel:write —
     // eski bağlantılar taşımaz, bir kez yeniden bağlanmak gerekir.
-    moderasyon: { timeout: true, ban: false, mesajSil: true },
+    // Kalıcı ban: aynı uç, `duration` verilmez; kaldırma DELETE.
+    moderasyon: { timeout: true, ban: true, mesajSil: true },
     yayin: { baslikDegistir: true, kategoriDegistir: true, izleyiciSayisi: true },
     // Kick'in rol kümesi — BotRix TTS sayfasında da aynısı listeleniyor
     roller: ['everyone', 'sub', 'vip', 'og', 'mod', 'broadcaster']
@@ -72,17 +74,18 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // Client-ID ondan öğrenilir. Jetonda ilgili izin yoksa işlem SEBEBİYLE
     // reddedilir (moderator:manage:banned_users, moderator:manage:chat_messages,
     // channel:manage:broadcast). Jetonsuz (anonim) okuyucuda hiçbiri çalışmaz.
-    moderasyon: { timeout: true, ban: false, mesajSil: true },
+    moderasyon: { timeout: true, ban: true, mesajSil: true },
     yayin: { baslikDegistir: true, kategoriDegistir: true, izleyiciSayisi: true },
     roller: ['everyone', 'sub', 'vip', 'mod', 'broadcaster']
   },
   youtube: {
     sohbet: { oku: true, gonder: true },
     olaylar: ['chat', 'superchat', 'tip', 'member', 'stream_online', 'stream_offline'],
-    // liveChatBans.insert (temporary) ve liveChatMessages.delete — OAuth
-    // jetonu gerekir. Başlık videos.update ile; YouTube'da "oyun/kategori"
-    // Data API ile değiştirilemiyor.
-    moderasyon: { timeout: true, ban: false, mesajSil: true },
+    // liveChatBans.insert (temporary/permanent) ve liveChatMessages.delete —
+    // OAuth jetonu gerekir. Ban kaldırma eklemenin döndürdüğü kimlikle.
+    // Başlık videos.update ile; YouTube'da "oyun/kategori" Data API ile
+    // değiştirilemiyor.
+    moderasyon: { timeout: true, ban: true, mesajSil: true },
     yayin: { baslikDegistir: true, kategoriDegistir: false, izleyiciSayisi: true },
     roller: ['everyone', 'sub', 'mod', 'broadcaster']
   },
@@ -103,8 +106,9 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // gonderilir, adet mesajda tasinir.
     olaylar: ['chat', 'follow', 'sub', 'gift_sub', 'tip', 'raid', 'stream_online', 'stream_offline'],
     // Mesaj silme: DELETE /channels/{c}/messages/{m}/users/{u} (belgeli).
-    // Zaman aşımı komutunun sözdizimi belgede YOK — uydurulmadı.
-    moderasyon: { timeout: false, ban: false, mesajSil: true },
+    // Kalıcı ban: belgedeki örnek komut `ban xxx`. Zaman aşımının SÜRE
+    // BİRİMİ hiçbir kaynakta yok — uydurulmadı.
+    moderasyon: { timeout: false, ban: true, mesajSil: true },
     // Başlık: belgedeki örnek komut `settitle`. Kategori komutu belgede yok.
     yayin: { baslikDegistir: true, kategoriDegistir: false, izleyiciSayisi: false },
     // Trovo'da VIP yok; editor/supermod en yakin kanal rolleridir.

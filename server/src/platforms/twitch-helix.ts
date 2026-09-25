@@ -164,6 +164,22 @@ export class TwitchHelix {
     );
   }
 
+  /** Ban ya da zaman aşımını kaldırır: `DELETE /moderation/bans`. */
+  async yasakKaldir(kanal: string, hedef: string): Promise<HelixSonuc> {
+    const d = await this.dogrula();
+    if (!d.ok) return d;
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    const kisi = await this.kullaniciKimligi(hedef);
+    if (!kisi.ok) return kisi;
+    return this.istek(
+      'DELETE',
+      `/moderation/bans?broadcaster_id=${yayinci.veri}&moderator_id=${d.veri.userId}&user_id=${kisi.veri}`,
+      undefined,
+      'moderator:manage:banned_users'
+    );
+  }
+
   async mesajSil(kanal: string, mesajId: string): Promise<HelixSonuc> {
     const d = await this.dogrula();
     if (!d.ok) return d;

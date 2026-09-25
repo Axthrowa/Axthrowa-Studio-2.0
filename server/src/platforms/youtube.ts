@@ -316,6 +316,72 @@ export class YouTubePlatform extends BasePlatform {
     }
   }
 
+  /**
+   * Kalıcı ban: `liveChatBans.insert`, `type: permanent`. YouTube banı
+   * kaldırmak için eklemenin döndürdüğü ban KİMLİĞİNİ ister
+   * (`liveChatBans.delete?id=`); kimlik kanal kimliğiyle saklanır.
+   */
+  async banUser(username: string, _sebep?: string): Promise<ModerasyonSonucu> {
+    if (!this.oauthToken) return { ok: false, hata: 'YouTube moderasyonu için OAuth jetonu gerekir' };
+    if (!this.liveChatId) return { ok: false, hata: 'Etkin YouTube canlı sohbeti yok' };
+    const kanalId = this.kanalKimlikleri.get(String(username || '').replace(/^@/, '').toLowerCase());
+    if (!kanalId) return { ok: false, hata: `${username} bu oturumda sohbette görülmedi (kanal kimliği yok)` };
+    try {
+      const r = await axios.post(
+        `${API}/liveChat/bans?part=snippet`,
+        { snippet: { liveChatId: this.liveChatId, type: 'permanent', bannedUserDetails: { channelId: kanalId } } },
+        { headers: { Authorization: `Bearer ${this.oauthToken}`, 'Content-Type': 'application/json' }, timeout: 10000 }
+      );
+      const banId = String(r.data?.id || '');
+      if (banId) this.banKimlikleriYaz({ ...this.banKimlikleriOku(), [kanalId]: banId });
+      return { ok: true };
+    } catch (e: any) {
+      const hata = googleHatasi(e);
+      console.warn(`[YouTube] ban başarısız (${username}):`, hata);
+      return { ok: false, hata };
+    }
+  }
+
+  async unbanUser(username: string): Promise<ModerasyonSonucu> {
+    if (!this.oauthToken) return { ok: false, hata: 'YouTube moderasyonu için OAuth jetonu gerekir' };
+    const kanalId = this.kanalKimlikleri.get(String(username || '').replace(/^@/, '').toLowerCase());
+    const kimlikler = this.banKimlikleriOku();
+    const banId = kanalId ? kimlikler[kanalId] : undefined;
+    if (!banId) {
+      return { ok: false, hata: 'Bu ban StreamAxT ile yapılmamış (ban kimliği yok) — YouTube Studio > Topluluk üzerinden kaldırın' };
+    }
+    try {
+      await axios.delete(`${API}/liveChat/bans`, {
+        params: { id: banId },
+        headers: { Authorization: `Bearer ${this.oauthToken}` },
+        timeout: 8000
+      });
+      delete kimlikler[kanalId!];
+      this.banKimlikleriYaz(kimlikler);
+      return { ok: true };
+    } catch (e: any) {
+      const hata = googleHatasi(e);
+      console.warn(`[YouTube] ban kaldırma başarısız (${username}):`, hata);
+      return { ok: false, hata };
+    }
+  }
+
+  private banKimlikleriOku(): Record<string, string> {
+    try {
+      const r = db.prepare("SELECT value FROM bot_settings WHERE key = 'youtube_ban_kimlikleri'").get() as { value?: string } | undefined;
+      const v = r?.value ? JSON.parse(r.value) : {};
+      return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+    } catch {
+      return {}; // bozuk kayıt: yeni banlar yeniden yazar
+    }
+  }
+
+  private banKimlikleriYaz(v: Record<string, string>): void {
+    db.prepare(
+      "INSERT INTO bot_settings (key, value) VALUES ('youtube_ban_kimlikleri', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+    ).run(JSON.stringify(v));
+  }
+
   async deleteMessage(messageId: string): Promise<ModerasyonSonucu> {
     if (!this.oauthToken) return { ok: false, hata: 'YouTube moderasyonu için OAuth jetonu gerekir' };
     try {

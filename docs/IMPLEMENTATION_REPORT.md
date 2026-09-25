@@ -502,3 +502,20 @@ Gerçek bot (3001) dağıtım sırasında **çalışmıyordu**; yeni sürüm pan
 sonraki açılışta başlatınca devreye girer. DPAPI göçü o ilk açılışta
 gerçek veritabanında çalışır (`KNOWN_LIMITATIONS L9`); göç öncesi
 veritabanı `BACKUP_MANIFEST §10`'daki zip'te.
+
+## 14. STREAMING OS TURU (2026-09-25 · 2026-09-26)
+
+Ana rapor panel deposunda: `yayin-yonetim-araci - Kopya (2)/docs/IMPLEMENTATION_REPORT.md` (çoklu yayın, Kontrol
+Merkezi, güvenlik/performans/test raporları). Bu depo için yapılanlar (`revamp/streaming-os-20260925` dalı,
+güvenlik etiketi `pre-streaming-os-20260925-175532`):
+
+| Commit | İş | Durum |
+|---|---|---|
+| b53051d | Ekip çapında uyarı kuyruğu denetimi (`/api/alerts/control`: duraklat, sürdür, atla, sustur, temizle, yeniden oynat; iyimser sürüm → 409; `ALERT_*` denetim kaydı; Genel Bakış kartı, panel Kontrol Merkezi) + her türün yalnız ilk uyarısının oynaması hatası (tekrarlanan kimlik) + test uyarılarının `isTest` işaretinin kaybolması | DONE |
+| a9736f0 | Sunucu portu tek kaynaktan (`PORT`); Kick geri dönüş adresi gerçek porttan; `state` tek kullanımlık/15 dk/sabit zamanlı doğrulama; sorgu `redirectUri` kabul edilmiyor; PKCE doğrulayıcısı yanıta konmuyor; kenar çubuğu ve Platformlar WS'i 3001'e sabit değil | DONE |
+| a7083dc | `KaydedilmemisUyari` bağlandı (Ayarlar, Bot Moderasyonu, Chat Oyunları, Gemini AI) + sekme/geri tuşu onayı; başarısız kayıtlar artık "Kaydedildi" demiyor | DONE (4 sayfa) |
+| f54d6f9 | Kalkan modu kuralları gerçekten uygulanıyor (link, büyük harf, emoji seli, yalnız abone; OBS sohbet/emote katmanından gizleme; isteğe bağlı platformda silme, varsayılan kapalı); takipçi/hesap yaşı "desteklenmiyor" | DONE |
+| 3865500 | Aktivite Akışı açıklaması denetimlerin gerçek yerini gösteriyor | DONE |
+
+Test: sunucu 451, istemci 81 (tur başı 431 / 75). Tüm canlı denemeler `scratchpad/sx-test2` altındaki yalıtılmış
+veritabanıyla; gerçek sohbet/bildirim/moderasyon eylemi tetiklenmedi.

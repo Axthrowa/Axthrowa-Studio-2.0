@@ -166,3 +166,15 @@ eski kod yeni şema üstünde sorunsuz çalışır. **Tek istisna DPAPI:** eski 
 (1) yeni sürüm `STREAMAXT_SIFRELEME=kapali` ile açılır, (2) tokenlar
 panelden yeniden girilir — bu kipte düz yazılır, (3) kod geri alınır.
 Ya da `BACKUP_MANIFEST §10`'daki göç öncesi veritabanı yedeği kullanılır.
+
+## 8. STREAMING OS TURU (2026-09-26)
+
+1. **Kalkan modu:** "yalnız takipçi" ve "en az hesap yaşı" uygulanmaz — sohbet olayları bu bilgiyi taşımıyor; sayfa
+   gerekçesiyle "desteklenmiyor" gösterir. Platformun kendi sohbet modları buradan değiştirilmez. Platformda silme
+   varsayılan kapalı.
+2. **Kaydedilmemiş değişiklik şeridi** yalnız 4 sayfada; diğerleri otomatik kaydediyor ya da tek alanlı.
+3. **Kick yetkilendirmesi** güncelleme anında yarımdaysa yeni sürümde `state` eşleşmez; panelden yeniden başlatın.
+4. **Çapraz sohbet aktarımı** kullanıcının veritabanlarında açık; Twitch'e eşzamanlı yayında panelin yayın öncesi
+   kontrolü uyarır, kendiliğinden kapatılmadı.
+5. Uyarı kuyruğu denetim durumu bellekte tutulur; sunucu yeniden başlarsa duraklatma/susturma sıfırlanır.
+6. Çoklu yayın ve platform sınırları için panel deposundaki `docs/KNOWN_LIMITATIONS.md`.

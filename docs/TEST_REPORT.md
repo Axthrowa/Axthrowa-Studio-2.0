@@ -480,3 +480,21 @@ silinince test düştü, geri konunca geçti.
 | Tüm testler | 449/449 |
 | Rota envanteri | 154 → 154, öncelik aynı (§9.3) |
 | Panel kabuğu hazırlama betiği | `App.tsx`'teki `useState('dashboard')` satırı bilerek korundu (gömme yaması o satırı birebir arıyor) |
+
+## 10. STREAMING OS TURU TESTLERİ (2026-09-26)
+
+| Paket | Sonuç | Tur başı |
+|---|---|---|
+| Sunucu `npx vitest run` | **451/451**, 30 dosya | 431 / 27 dosya |
+| İstemci `npx vitest run` | **81/81** | 75 |
+| `tsc` (sunucu + istemci), `vite build` | temiz | — |
+| `npm audit` (üretim + geliştirme) | 0 açık | — |
+
+Yeni testler: `modules/alerts/control.test.ts` (uyarı denetimi, sürüm çakışması, benzersiz kimlik),
+`core/security/oauth-state.test.ts` (port, Kick adresi, `state`), `modules/moderation/shield-rules.test.ts` (kalkan
+kuralları, Türkçe büyük harf, Kick emote işaretlemesi), `moderation-input.test.ts` (+`platformdaSil`),
+`client/src/lib/lib.test.ts` (+`sunucuPortu`, kaydedilmemiş değişiklik kaydı).
+
+Canlı (yalıtılmış kopya, PORT=3012): uyarı denetimi 11/11; Kick auth-url → `localhost:3012`, yabancı / yinelenen /
+eksik `state` reddedildi; kaydedilmemiş değişiklik şeridi + onay diyaloğu + geri tuşu; kalkan uygulama yolu 9/9 ve
+arayüzde kural aç/kapa; kenar çubuğu "Port 3012". Ayrıntı: panel `docs/TEST_REPORT.md`.

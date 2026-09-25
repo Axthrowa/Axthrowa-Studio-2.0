@@ -79,6 +79,7 @@ import Integrations from './pages/Integrations.js';
 import { ToastSaglayici } from './ui/index.js';
 import { BRAND } from './brand.js';
 import { openLink } from './lib/openLink.js';
+import { sunucuPortu } from './lib/widget-style.js';
 
 export function App() {
   const path = window.location.pathname;
@@ -260,7 +261,7 @@ export function App() {
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Sistem Aktif
             </span>
-            <span className="font-mono text-purple-400">Port 3001</span>
+            <span className="font-mono text-purple-400">Port {sunucuPortu()}</span>
           </div>
           <div className="text-[10px] text-gray-500 text-center font-medium border-t border-white/5 pt-1.5">
             {BRAND.name} • Developed by <span className="text-purple-400 font-bold">{BRAND.author}</span>

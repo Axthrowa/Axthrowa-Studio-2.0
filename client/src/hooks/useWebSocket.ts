@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage, PlatformStatus } from '../types.js';
+import { wsAdresi } from '../lib/widget-style.js';
 
 export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all' = 'all') {
   const [connected, setConnected] = useState(false);
@@ -16,9 +17,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const connect = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const port = (window.location.port === '5173' || window.location.port === '3000') ? '3001' : (window.location.port || '3001');
-    const wsUrl = `${protocol}//${window.location.hostname}:${port}/ws?type=${type}`;
+    const wsUrl = wsAdresi(type);
 
     try {
       const ws = new WebSocket(wsUrl);

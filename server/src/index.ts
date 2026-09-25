@@ -35,6 +35,7 @@ import { izinliHostMu, kokenKabulEdilir } from './core/security/origin-guard.js'
 import { arayuzAdresleri, ekIzinliHostlar } from './core/security/host-list.js';
 import { HizSiniri, kuralBul } from './core/security/rate-limit.js';
 import { sirlariHazirla } from './core/security/vault-migrate.js';
+import { sunucuPortu } from './core/security/oauth-state.js';
 
 dotenv.config();
 
@@ -184,7 +185,7 @@ if (clientDist) {
   });
 }
 
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = sunucuPortu();
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {

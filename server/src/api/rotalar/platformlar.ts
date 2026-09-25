@@ -19,10 +19,13 @@ import { temizle, yeniSirDegeri, maskeDegeriMi } from '../../core/security/redac
 import { betikJsonu, htmlKacisla } from '../../core/security/html.js';
 import { sifrele, sifreleHepsi } from '../../core/security/vault.js';
 import { hataMetni } from '../../core/logger.js';
+import { kickYonlendirmeAdresi, stateGecerliMi, yeniState, type BekleyenState } from '../../core/security/oauth-state.js';
 
 const router = Router();
 
 let kickPkceVerifier = '';
+// Son auth-url çağrısının state'i; geri dönüşte tek kullanımlık doğrulanır
+let kickState: BekleyenState | null = null;
 
 // 2. Platforms Management
 router.get('/platforms', (req: Request, res: Response) => {
@@ -84,7 +87,7 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
   const oauthCode = code || (token && !token.startsWith('Bearer') && token.length > 20 && !token.includes('.') ? token : '');
   if (oauthCode && clientId && clientSecret) {
     try {
-      const redirectUri = 'http://localhost:3001/api/auth/kick/callback';
+      const redirectUri = kickYonlendirmeAdresi();
       const params = new URLSearchParams();
       params.append('grant_type', 'authorization_code');
       params.append('client_id', clientId);
@@ -181,12 +184,14 @@ router.get('/platforms/kick/auth-url', (req: Request, res: Response) => {
       error: 'Kick Client ID girilmedi! Lütfen kick.com/settings/developer adresinden oluşturduğunuz App Client ID\'yi girin.' 
     });
   }
-  const redirectUri = (req.query.redirectUri as string) || 'http://localhost:3001/api/auth/kick/callback';
+  // Sorgudan yönlendirme adresi ARTIK kabul edilmiyor: tek geçerli geri dönüş bu sunucunun kendisi
+  const redirectUri = kickYonlendirmeAdresi();
   
   // PKCE & State Generation
   kickPkceVerifier = crypto.randomBytes(32).toString('base64url');
   const codeChallenge = crypto.createHash('sha256').update(kickPkceVerifier).digest('base64url');
-  const state = crypto.randomBytes(16).toString('hex');
+  kickState = yeniState();
+  const state = kickState.deger;
 
   // Moderasyon (AutoMod zaman aşımı / mesaj silme) ve !title/!game için
   // gereken izinler eklendi. Eski kapsamla alınan token bunları YAPAMAZ:
@@ -196,27 +201,34 @@ router.get('/platforms/kick/auth-url', (req: Request, res: Response) => {
     'chat:write channel:read user:read channel:write moderation:ban moderation:chat_message:manage'
   );
   const authUrl = `https://id.kick.com/oauth/authorize?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256&state=${encodeURIComponent(state)}&prompt=login`;
-  res.json({ authUrl, clientId, redirectUri, codeVerifier: kickPkceVerifier, state });
+  // PKCE doğrulayıcısı sunucuda kalır (istemci kullanmıyordu; yanıta konmaz)
+  res.json({ authUrl, clientId, redirectUri, state });
 });
 
 router.get('/auth/kick/callback', async (req: Request, res: Response) => {
-  const { code, error } = req.query;
-  if (error || !code) {
+  const { code, error, state } = req.query;
+  // Bu sunucunun başlatmadığı (ya da süresi geçmiş / zaten kullanılmış) bir
+  // yetkilendirmenin geri dönüşü: kod ne değiştirilir ne de panellere iletilir.
+  const stateHatasi = !error && code && !stateGecerliMi(kickState, state)
+    ? 'Yetkilendirme oturumu doğrulanamadı (süresi dolmuş ya da bu uygulama başlatmamış). Panelden Kick bağlantısını yeniden başlatın.'
+    : '';
+  if (error || !code || stateHatasi) {
     return res.send(`
       <!DOCTYPE html>
       <html><body style="font-family:sans-serif;background:#0b0f19;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
         <div style="background:#1e293b;padding:32px;border-radius:16px;text-align:center;max-width:400px;border:1px solid rgba(239,68,68,0.3);">
           <h2 style="color:#ef4444;margin-top:0;">Kick Yetkilendirme Hatası</h2>
-          <p style="color:#94a3b8;font-size:14px;">${htmlKacisla(error || 'Yetki kodu alınamadı.')}</p>
+          <p style="color:#94a3b8;font-size:14px;">${htmlKacisla(stateHatasi || error || 'Yetki kodu alınamadı.')}</p>
           <button onclick="window.close()" style="margin-top:16px;padding:10px 20px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Pencereyi Kapat</button>
         </div>
       </body></html>
     `);
   }
 
+  kickState = null; // tek kullanımlık
   const clientId = settingsCache.get('kick_client_id') || '';
   const clientSecret = settingsCache.get('kick_client_secret') || '';
-  const redirectUri = 'http://localhost:3001/api/auth/kick/callback';
+  const redirectUri = kickYonlendirmeAdresi();
   let accessToken = '';
 
   if (clientId && clientSecret && kickPkceVerifier) {

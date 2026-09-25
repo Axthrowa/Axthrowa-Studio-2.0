@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ANIM_ON_AYARLARI, ANIM_SECENEKLERI, animBul, animKimligi, animStili, METIN_EFEKTLERI } from './animations.js';
+import { sunucuPortu } from './widget-style.js';
 import {
   BOS_DURUM,
   GorulenKimlikler,
@@ -357,5 +358,16 @@ describe('canlı yayın rozetleri', () => {
     expect(platformRozeti(canli, 'twitch')?.tur).toBe('kapali');
     expect(platformRozeti(canli, 'tiktok')).toBeNull();
     expect(platformRozeti(undefined, 'kick')).toBeNull();
+  });
+});
+
+describe('sunucuPortu', () => {
+  it('sayfanın açıldığı portu kullanır; yalnız vite geliştirme portları 3001 olur', () => {
+    // Eskiden kenar çubuğu ve Kick yetki penceresi 3001'e sabitti
+    expect(sunucuPortu({ port: '3011' })).toBe('3011');
+    expect(sunucuPortu({ port: '3001' })).toBe('3001');
+    expect(sunucuPortu({ port: '5173' })).toBe('3001');
+    expect(sunucuPortu({ port: '3000' })).toBe('3001');
+    expect(sunucuPortu({ port: '' })).toBe('3001');
   });
 });

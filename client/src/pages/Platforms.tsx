@@ -19,6 +19,7 @@ import {
   Copy
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
+import { sunucuPortu, wsAdresi } from '../lib/widget-style.js';
 
 interface KickVerificationResult {
   success: boolean;
@@ -98,8 +99,9 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     // Also connect to WebSocket to receive OAuth events from incognito/private windows
     let ws: WebSocket | null = null;
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.hostname}:3001/ws?type=dashboard`;
+      // Eskiden 3001'e sabitti: sunucu başka portta çalışınca gizli pencereden
+      // yapılan Kick yetkilendirmesi panele hiç ulaşmıyordu
+      const wsUrl = wsAdresi('dashboard');
       ws = new WebSocket(wsUrl);
       ws.onmessage = (event) => {
         try {
@@ -607,7 +609,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 </div>
                 <ol className="list-decimal list-inside space-y-1 text-gray-300 text-[11px] leading-relaxed">
                   <li>Yukarıdaki linkten Kick Developer Portal'a gidin ve <b>"Create App"</b> butonuna basın.</li>
-                  <li>Redirect URI alanına şunu girin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-[#53fc18] font-mono select-all">http://localhost:3001/api/auth/kick/callback</code></li>
+                  <li>Redirect URI alanına şunu girin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-[#53fc18] font-mono select-all">{`http://localhost:${sunucuPortu()}/api/auth/kick/callback`}</code></li>
                   <li>Oluşan <b>Client ID</b> ve <b>Client Secret</b> değerlerini yukarıdaki kutulara yapıştırın.</li>
                   <li>Aşağıdaki butonlardan biriyle yetkilendirmeyi tamamlayın:</li>
                 </ol>

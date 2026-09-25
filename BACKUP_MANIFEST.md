@@ -1,3 +1,14 @@
+# En güncel yedek — Streaming OS dönüşümü öncesi (2026-09-25 17:55:32)
+
+İki depoyu (bu depo + masaüstü paneli) ve tüm kullanıcı verisini kapsar; ayrıntılı manifesto panel deposunda
+`BACKUP_MANIFEST.md` ve yedek klasöründe:
+
+- Yedek: `C:\Users\Axthrowa\Yedekler\backup-pre-streaming-os-20260925-175532` (3644 dosya, SHA-256 ile 3644/3644 doğrulandı)
+- Bu depo: dal `revamp/botrix-parity-20260921`, HEAD `ef6481e21c6eb56997442dc91becce7e96714755`, paket `git/streamaxt.bundle`
+- Güvenlik noktası: etiket `pre-streaming-os-20260925-175532`, çalışma dalı `revamp/streaming-os-20260925`
+
+---
+
 # BACKUP MANIFEST — BotRix parity revizyonu öncesi
 
 **Yedek zamanı:** 2026-09-21 18:21:05 (yerel saat)

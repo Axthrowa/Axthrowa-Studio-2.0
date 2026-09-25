@@ -275,12 +275,16 @@ class GeminiCoHost {
         : `${senderName} diyor ki: "${prompt}"`;
 
       const model = await this.resolveModel(client);
-      const response = await client.models.generateContent({
-        model,
-        contents: [
-          { role: 'user', parts: [{ text: `[Yönerge: ${systemInstruction}]\n\n${formattedPrompt}` }] }
-        ]
-      });
+      const response = await zamanAsimiyla(
+        client.models.generateContent({
+          model,
+          contents: [
+            { role: 'user', parts: [{ text: `[Yönerge: ${systemInstruction}]\n\n${formattedPrompt}` }] }
+          ]
+        }),
+        URETIM_ZAMAN_ASIMI,
+        'Gemini'
+      );
 
       const reply = response.text?.trim() || 'Hmm, bir şey diyemedim!';
 
@@ -301,10 +305,14 @@ class GeminiCoHost {
       else this.forgetModel();
       try {
         const model2 = await this.resolveModel(client);
-        const fallbackResp = await client.models.generateContent({
-          model: model2,
-          contents: [{ role: 'user', parts: [{ text: `${systemInstruction}\n\n${senderName}: ${prompt}` }] }]
-        });
+        const fallbackResp = await zamanAsimiyla(
+          client.models.generateContent({
+            model: model2,
+            contents: [{ role: 'user', parts: [{ text: `${systemInstruction}\n\n${senderName}: ${prompt}` }] }]
+          }),
+          URETIM_ZAMAN_ASIMI,
+          'Gemini'
+        );
         return fallbackResp.text?.trim() || 'Anlaşılamadı.';
       } catch (fbError: any) {
         // Sabit cümle yerine GERÇEK sebep: kullanıcı ne yapacağını bilsin.
@@ -346,10 +354,14 @@ class GeminiCoHost {
 
     try {
       const model = await this.resolveModel(client);
-      const response = await client.models.generateContent({
-        model,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      });
+      const response = await zamanAsimiyla(
+        client.models.generateContent({
+          model,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        }),
+        20000,
+        'Gemini duygu analizi'
+      );
       const raw = response.text?.trim() || '';
       const m = raw.match(/\{[\s\S]*\}/);
       if (!m) return null;
@@ -376,7 +388,9 @@ class GeminiCoHost {
 
     try {
       const model = await this.resolveModel(client);
-      const resp = await client.models.generateContent({
+      // Sohbet mesajı başına çalışabilir: kısa tutulur, asılı kalan istek
+      // mesaj işlemeyi biriktirmesin.
+      const resp = await zamanAsimiyla(client.models.generateContent({
         model,
         contents: [{
           role: 'user',
@@ -384,7 +398,7 @@ class GeminiCoHost {
             text: `Aşağıdaki canlı yayın mesajını analiz et. Mesaj açık bir nefret söylemi, ağır hakaret, ırkçılık veya taciz içeriyor mu? SADECE tek kelimeyle EVET veya HAYIR şeklinde cevap ver.\n\nMesaj: "${text}"`
           }]
         }]
-      });
+      }), 10000, 'Gemini zehirlilik denetimi');
       const answer = resp.text?.trim().toUpperCase();
       return answer === 'EVET';
     } catch {

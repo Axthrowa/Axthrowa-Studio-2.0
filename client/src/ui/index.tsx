@@ -16,10 +16,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useState,
   type ReactNode
 } from 'react';
+import { kirliIsaretle } from '../lib/kaydedilmemis.js';
 
 // ---- Buton -----------------------------------------------------------------
 
@@ -332,11 +334,16 @@ export function useOnay() {
 // ---- Kaydedilmemiş değişiklik uyarısı --------------------------------------
 
 /**
- * Sayfadan ayrılırken kaydedilmemiş değişiklik varsa uyarır.
- * BotRix'te kalıcı bir şerit var ("Kaydedilmeyi bekleyen değişiklikleriniz
- * var / Onayla"); bizde hiç yoktu.
+ * Kaydedilmemiş değişiklik varken kalıcı şerit gösterir; sekme değişiminde
+ * (App → gecisOnayla) ve sayfa kapanırken/yenilenirken sorar.
  */
 export function KaydedilmemisUyari({ varMi, onKaydet }: { varMi: boolean; onKaydet?: () => void }) {
+  const kimlik = useId();
+  useEffect(() => {
+    kirliIsaretle(kimlik, varMi);
+    return () => kirliIsaretle(kimlik, false);
+  }, [kimlik, varMi]);
+
   useEffect(() => {
     if (!varMi) return;
     const f = (e: BeforeUnloadEvent) => {

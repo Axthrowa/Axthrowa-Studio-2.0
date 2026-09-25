@@ -15,6 +15,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { KaydedilmemisUyari } from '../ui/index.js';
+import { useKirliTakip } from '../hooks/useKirliTakip.js';
 
 interface GameSettings {
   soygun: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number; winMultiplier: number };
@@ -49,13 +51,16 @@ export function MiniGames() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [activeLobbies, setActiveLobbies] = useState<any[]>([]);
   const [selectedGameTab, setSelectedGameTab] = useState<string>('all');
+  const { kirli, taban } = useKirliTakip(settings);
 
   const fetchSettings = async () => {
     try {
       const res = await fetch('/api/games/settings');
       const data = await res.json();
       if (data && typeof data === 'object') {
-        setSettings(prev => ({ ...prev, ...data }));
+        const yuklenen = { ...DEFAULT_GAME_SETTINGS, ...data };
+        setSettings(yuklenen);
+        taban(yuklenen);
       }
     } catch {}
     setLoading(false);
@@ -81,11 +86,14 @@ export function MiniGames() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch('/api/games/settings', {
+      const res = await fetch('/api/games/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       });
+      // fetch 4xx/5xx'te hata fırlatmaz: eskiden reddedilen kayıt da "başarıyla kaydedildi" diyordu
+      if (!res.ok) throw new Error(String(res.status));
+      taban(settings);
       confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } });
       setStatusMessage('✅ Tüm chat oyun ayarları başarıyla kaydedildi!');
       setTimeout(() => setStatusMessage(null), 3500);
@@ -236,6 +244,7 @@ export function MiniGames() {
 
   return (
     <div className="space-y-6">
+      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

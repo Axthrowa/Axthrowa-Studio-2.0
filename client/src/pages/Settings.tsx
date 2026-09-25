@@ -1,34 +1,49 @@
 import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Save, Check, Volume2, Share2 } from 'lucide-react';
+import { KaydedilmemisUyari, useToast } from '../ui/index.js';
+import { useKirliTakip } from '../hooks/useKirliTakip.js';
 
 export function Settings() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const toast = useToast();
+  const { kirli, taban } = useKirliTakip(settings);
 
   useEffect(() => {
     fetch('/api/settings')
       .then(r => r.json())
-      .then(d => setSettings(d || {}))
+      .then(d => {
+        setSettings(d || {});
+        taban(d || {});
+      })
       .catch(() => {});
-  }, []);
+  }, [taban]);
 
   const handleChange = (key: string, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch('/api/settings', {
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    // Eskiden yanıta bakılmadan "Kaydedildi" gösteriliyordu (sunucu reddetse de)
+    const res = await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(settings)
-    });
+    }).catch(() => null);
+    if (!res?.ok) {
+      const hata = res ? await res.json().catch(() => null) : null;
+      toast(`Ayarlar kaydedilemedi${hata?.error ? `: ${hata.error}` : ''}`, 'hata');
+      return;
+    }
+    taban(settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
   return (
     <div className="space-y-6 max-w-4xl">
+      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white">Genel Bot Ayarları</h1>

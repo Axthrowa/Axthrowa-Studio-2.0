@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   LayoutDashboard,
   Link2,
@@ -76,7 +76,8 @@ import RankingsWidget from './widgets/RankingsWidget.js';
 import BotAdvanced from './pages/BotAdvanced.js';
 import Interaction from './pages/Interaction.js';
 import Integrations from './pages/Integrations.js';
-import { ToastSaglayici } from './ui/index.js';
+import { ToastSaglayici, useOnay } from './ui/index.js';
+import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
 import { openLink } from './lib/openLink.js';
 import { sunucuPortu } from './lib/widget-style.js';
@@ -118,10 +119,39 @@ export function App() {
   // NOT: yukarıdaki useState satırı BİLEREK değiştirilmedi — panel kabuğunun
   // hazırlama betiği (streamaxt-hazirla.mjs) o satırı birebir arayıp gömme
   // yamasını uyguluyor. Bu etkiler yama uygulansa da uygulanmasa da çalışır.
+  // Kaydedilmemiş form varken sekme değişimi önce sorar (tek sayfalık
+  // uygulamada `beforeunload` sekme geçişinde tetiklenmez).
+  const { sor: onayIste, eleman: onayDiyalogu } = useOnay();
+  const aktifSekme = useRef(activeTab);
+  aktifSekme.current = activeTab;
+  const sekmeyeGec = useCallback((hedef: string) => {
+    if (hedef === aktifSekme.current) return;
+    if (!kaydedilmemisVar()) {
+      setActiveTab(hedef);
+      return;
+    }
+    onayIste('Kaydedilmemiş değişiklikler', AYRILMA_SORUSU, () => {
+      kirlileriBirak();
+      setActiveTab(hedef);
+    });
+  }, [onayIste]);
+  const sekmeyeGecRef = useRef(sekmeyeGec);
+  sekmeyeGecRef.current = sekmeyeGec;
   useEffect(() => {
     const ilk = window.location.hash.replace('#', '');
     if (ilk) setActiveTab(ilk);
-    const geri = () => setActiveTab(window.location.hash.replace('#', '') || 'dashboard');
+    const geri = () => {
+      const hedef = window.location.hash.replace('#', '') || 'dashboard';
+      if (hedef === aktifSekme.current) return;
+      if (kaydedilmemisVar()) {
+        // Adres onay gelene kadar mevcut sekmede kalsın (gömülü kabuğun
+        // hashchange dinleyicisi de bu adresi okur ve sekmeyi değiştirmez)
+        window.history.replaceState(null, '', `#${aktifSekme.current}`);
+        sekmeyeGecRef.current(hedef);
+        return;
+      }
+      setActiveTab(hedef);
+    };
     window.addEventListener('popstate', geri);
     return () => window.removeEventListener('popstate', geri);
   }, []);
@@ -164,7 +194,7 @@ export function App() {
         <Dashboard
           onConnectPlatform={(platform) => {
             setFocusPlatform(platform);
-            setActiveTab('platforms');
+            sekmeyeGec('platforms');
           }}
         />
       );
@@ -199,6 +229,7 @@ export function App() {
   return (
     // Toast bildirimleri tum panelde kullanilabilsin (ui/index.tsx).
     <ToastSaglayici>
+    {onayDiyalogu}
     <div className="flex min-h-screen bg-[#090b10] text-gray-200">
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-[#0d1017]/90 backdrop-blur-xl flex flex-col justify-between fixed inset-y-0 left-0 z-30">
@@ -227,7 +258,7 @@ export function App() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => sekmeyeGec(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'

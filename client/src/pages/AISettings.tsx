@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Bot, Save, Check, Send, User, MessageSquarePlus, Zap } from 'lucide-react';
+import { KaydedilmemisUyari, useToast } from '../ui/index.js';
+import { useKirliTakip } from '../hooks/useKirliTakip.js';
 
 interface ChatRescueSettings {
   isEnabled: boolean;
@@ -40,15 +42,23 @@ export function AISettings() {
     { role: 'bot', text: 'Merhaba! Ben StreamAxT AI yayın asistanınım. Sohbetteki izleyicilerin sorularına senin belirlediğin kişilikle yanıt verebilirim!' }
   ]);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
+  const gemini = useKirliTakip({ apiKey, prompt, enabled });
+  const kurtarma = useKirliTakip(rescue);
+  const kirli = gemini.kirli || kurtarma.kirli;
+  const geminiTaban = gemini.taban;
+  const kurtarmaTaban = kurtarma.taban;
 
   useEffect(() => {
     fetch('/api/settings')
       .then(r => r.json())
       .then(d => {
-        setApiKey(d.gemini_api_key || '');
+        const yuklenen = { apiKey: d.gemini_api_key || '', prompt: d.gemini_prompt || '', enabled: d.gemini_enabled !== 'false' };
+        setApiKey(yuklenen.apiKey);
         setAnahtarKayitli(Boolean(d.gemini_api_keyVar));
-        setPrompt(d.gemini_prompt || '');
-        setEnabled(d.gemini_enabled !== 'false');
+        setPrompt(yuklenen.prompt);
+        setEnabled(yuklenen.enabled);
+        geminiTaban(yuklenen);
       })
       .catch(() => {});
 
@@ -57,14 +67,15 @@ export function AISettings() {
       .then(d => {
         if (d && typeof d.isEnabled === 'boolean') {
           setRescue(d);
+          kurtarmaTaban(d);
         }
       })
       .catch(() => {});
-  }, []);
+  }, [geminiTaban, kurtarmaTaban]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await Promise.all([
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const [ayarYaniti, kurtarmaYaniti] = await Promise.all([
       fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,14 +84,22 @@ export function AISettings() {
           gemini_prompt: prompt,
           gemini_enabled: enabled ? 'true' : 'false'
         })
-      }),
+      }).catch(() => null),
       fetch('/api/chat-rescue/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(rescue)
-      })
+      }).catch(() => null)
     ]);
-
+    // Eskiden yanıtlara bakılmadan "Kaydedildi" gösteriliyordu
+    if (!ayarYaniti?.ok || !kurtarmaYaniti?.ok) {
+      toast(!ayarYaniti?.ok ? 'Yapay zekâ ayarları kaydedilemedi.' : 'Sohbet kurtarma ayarları kaydedilemedi.', 'hata');
+      if (ayarYaniti?.ok) geminiTaban({ apiKey, prompt, enabled });
+      if (kurtarmaYaniti?.ok) kurtarmaTaban(rescue);
+      return;
+    }
+    geminiTaban({ apiKey, prompt, enabled });
+    kurtarmaTaban(rescue);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -158,6 +177,7 @@ export function AISettings() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       <div>
         <h1 className="text-2xl font-black text-white flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-purple-400" />

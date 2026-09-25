@@ -308,7 +308,7 @@ açık ara önde* (widget başına 13–28 tema). Ayrıca BotRix'te
 | Özellik | BotRix | Bizde | Durum |
 |---|---|---|---|
 | Tasarım sistemi | ✅ tutarlı | ❌ 47 kopya buton | `MISSING` |
-| **Kaydedilmemiş değişiklik uyarısı** | ✅ kalıcı şerit | ❌ | `MISSING` |
+| **Kaydedilmemiş değişiklik uyarısı** | ✅ kalıcı şerit | ✅ kalıcı şerit + sekme/geri tuşu onayı + sayfa kapanış uyarısı (Ayarlar, Bot Moderasyonu, Chat Oyunları, Gemini AI) | `DONE` (kısmi kapsam: diğer sayfalar otomatik kaydediyor ya da tek alanlı) |
 | Otomatik kaydetme | kısmi | ✅ widget ayarlarında | `EXISTING` |
 | **Onay diyaloğu (silme)** | ✅ | ❌ | `MISSING` |
 | **Toast bildirimi** | `BOTRIX_UNVERIFIED` | ❌ | `MISSING` |

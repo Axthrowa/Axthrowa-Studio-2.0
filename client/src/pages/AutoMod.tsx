@@ -12,6 +12,8 @@
 import { useState, useEffect } from 'react';
 import { AutoModSettings } from '../types.js';
 import { Shield, Check, Plus, X, Sparkles, Link, Type, Smile, Ban, Hash, User } from 'lucide-react';
+import { KaydedilmemisUyari, useToast } from '../ui/index.js';
+import { useKirliTakip } from '../hooks/useKirliTakip.js';
 
 type Adv = {
   caps_timeout: number; caps_exclude_subs: boolean; caps_exclude_vips: boolean; caps_warning: string; caps_action: string;
@@ -69,6 +71,8 @@ export function AutoMod() {
   const [newDomain, setNewDomain] = useState('');
   const [newNameWord, setNewNameWord] = useState('');
   const [saved, setSaved] = useState(false);
+  const toast = useToast();
+  const { kirli, taban } = useKirliTakip({ settings, adv, kural });
 
   useEffect(() => {
     fetch('/api/automod')
@@ -91,9 +95,10 @@ export function AutoMod() {
           };
         }
         setKural(k);
+        taban({ settings: d, adv: a, kural: k });
       })
       .catch(() => {});
-  }, []);
+  }, [taban]);
 
   const handleSave = async () => {
     if (!settings) return;
@@ -102,11 +107,16 @@ export function AutoMod() {
       headers: { 'Content-Type': 'application/json' },
       // `actions`: motorun okuduğu kural başına eylem/süre/mesaj
       body: JSON.stringify({ ...settings, advanced: adv, actions: kural || undefined })
-    });
-    if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+    }).catch(() => null);
+    if (!res?.ok) {
+      // Eskiden başarısız kayıt sessizce yutuluyordu
+      const hata = res ? await res.json().catch(() => null) : null;
+      toast(`Moderasyon ayarları kaydedilemedi${hata?.error ? `: ${hata.error}` : ''}`, 'hata');
+      return;
     }
+    taban({ settings, adv, kural });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   if (!settings || !kural) return <div className="p-8 text-center text-gray-500">Yükleniyor...</div>;
@@ -146,6 +156,7 @@ export function AutoMod() {
 
   return (
     <div className="space-y-6">
+      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white">Bot Moderasyonu</h1>

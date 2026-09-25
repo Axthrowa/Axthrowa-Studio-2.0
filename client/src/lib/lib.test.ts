@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ANIM_ON_AYARLARI, ANIM_SECENEKLERI, animBul, animKimligi, animStili, METIN_EFEKTLERI } from './animations.js';
 import { sunucuPortu } from './widget-style.js';
+import { anlikGoruntu, kaydedilmemisVar, kirliIsaretle, kirlileriBirak } from './kaydedilmemis.js';
 import {
   BOS_DURUM,
   GorulenKimlikler,
@@ -369,5 +370,32 @@ describe('sunucuPortu', () => {
     expect(sunucuPortu({ port: '5173' })).toBe('3001');
     expect(sunucuPortu({ port: '3000' })).toBe('3001');
     expect(sunucuPortu({ port: '' })).toBe('3001');
+  });
+});
+
+describe('kaydedilmemiş değişiklik kaydı', () => {
+  afterEach(() => kirlileriBirak());
+
+  it('kirli kaynak varken sekme geçişi sorulur; temizlenince sorulmaz', () => {
+    expect(kaydedilmemisVar()).toBe(false);
+    kirliIsaretle('ayarlar', true);
+    kirliIsaretle('automod', true);
+    expect(kaydedilmemisVar()).toBe(true);
+    kirliIsaretle('ayarlar', false);
+    expect(kaydedilmemisVar()).toBe(true);
+    kirliIsaretle('automod', false);
+    expect(kaydedilmemisVar()).toBe(false);
+  });
+
+  it('kullanıcı ayrılmayı onaylayınca kayıt boşalır', () => {
+    kirliIsaretle('a', true);
+    kirlileriBirak();
+    expect(kaydedilmemisVar()).toBe(false);
+  });
+
+  it('anahtar sırası farkı değişiklik sayılmaz, değer farkı sayılır', () => {
+    expect(anlikGoruntu({ a: 1, b: { c: 2, d: [1, 2] } })).toBe(anlikGoruntu({ b: { d: [1, 2], c: 2 }, a: 1 }));
+    expect(anlikGoruntu({ a: 1 })).not.toBe(anlikGoruntu({ a: '1' }));
+    expect(anlikGoruntu({ l: [1, 2] })).not.toBe(anlikGoruntu({ l: [2, 1] }));
   });
 });

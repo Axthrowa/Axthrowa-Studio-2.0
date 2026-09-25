@@ -147,7 +147,7 @@ const KATEGORI_ADI: Record<string, string> = {
 const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   'activity-feed': {
     baslik: 'Aktivite Akışı',
-    aciklama: 'Son olayları (takip, abone, bağış) listeler; uyarıyı tekrar oynatma, sessize alma ve atlama kontrolleri içerir.'
+    aciklama: 'Son olayları (takip, abone, bağış) listeler. Uyarıyı yeniden oynatma, susturma ve atlama denetimleri Genel Bakış’taki uyarı kuyruğu kartındadır (OBS kaynağı tıklanamaz).'
   },
   'alert-box': {
     baslik: 'Uyarı Kutusu',

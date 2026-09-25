@@ -164,7 +164,13 @@ if (clientDist) {
     maxAge: '1d',
     etag: true,
     setHeaders: (res, filePath) => {
-      if (filePath.includes('assets')) {
+      if (/\.html?$/i.test(filePath)) {
+        // index.html paket adlarını (hash) taşır. Eskiden 1 gün önbellekte
+        // kalıyordu: güncellemeden sonra eski kopya SİLİNMİŞ paketleri istiyor,
+        // panel/OBS sayfası boş açılıyordu. Her açılışta yeniden doğrulanır
+        // (değişmediyse ETag ile 304 — maliyeti yok).
+        res.setHeader('Cache-Control', 'no-cache');
+      } else if (filePath.includes('assets')) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }
@@ -173,6 +179,7 @@ if (clientDist) {
     if (req.path.startsWith('/api') || req.path.startsWith('/ws') || req.path.startsWith('/health')) {
       return next();
     }
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }

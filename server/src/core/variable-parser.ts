@@ -1,6 +1,8 @@
-import axios from 'axios';
 import { db } from '../db/index.js';
 import { ChatMessagePayload } from './event-bus.js';
+import { kullaniciDegerleriniYerlestir } from './legacy-vars.js';
+import { kacisiGeriAl, veriKacisla } from './variables/resolve.js';
+import { guvenliGetir } from './variables/net.js';
 
 import { canliDurum, sureMetni } from './live-status.js';
 
@@ -50,20 +52,17 @@ export async function parseVariables(
   const user = message.user.displayName || message.user.username;
   const targetUser = args[0] ? args[0].replace('@', '') : user;
 
-  // Support both {var} and $(var) syntax
-  result = result.replace(/\{user\}/gi, user).replace(/\$\(user\)/gi, user);
-  result = result.replace(/\{touser\}/gi, targetUser).replace(/\$\(touser\)/gi, targetUser);
-  result = result.replace(/\{query\}/gi, rawArgs).replace(/\$\(query\)/gi, rawArgs);
-  result = result.replace(/\{args\}/gi, rawArgs).replace(/\$\(args\)/gi, rawArgs);
-  result = result.replace(/\{uptime\}/gi, getStreamUptime()).replace(/\$\(uptime\)/gi, getStreamUptime());
-  result = result.replace(/\{platform\}/gi, message.platform.toUpperCase()).replace(/\$\(platform\)/gi, message.platform.toUpperCase());
-
-  // $(1), $(2), ... and {1}, {2}, ...
-  for (let i = 0; i < 9; i++) {
-    const regDollar = new RegExp(`\\$\\(${i + 1}\\)`, 'g');
-    const regBrace = new RegExp(`\\{${i + 1}\\}`, 'g');
-    result = result.replace(regDollar, args[i] || '').replace(regBrace, args[i] || '');
-  }
+  // İzleyici değerleri VERİ olarak işaretlenip yerleştirilir: sonraki
+  // adımlar (sayaç, urlfetch, ai…) ve yeni motor onları kod sanmaz
+  // (şablon enjeksiyonu — legacy-vars.ts).
+  result = kullaniciDegerleriniYerlestir(result, {
+    user,
+    targetUser,
+    rawArgs,
+    args,
+    platform: message.platform,
+    uptime: getStreamUptime()
+  });
 
   // Persistent Named Counters: {count:counter_name} or $(count:counter_name)
   const namedCountRegex = /(?:\{count:([a-zA-Z0-9_\-]+)\}|\$\(count:([a-zA-Z0-9_\-]+)\))/gi;
@@ -166,34 +165,36 @@ export async function parseVariables(
   }
 
   // URL Fetch: $(urlfetch <url>)
+  // GÜVENLİK: eskiden düz axios.get — SSRF koruması YOKTU (127.0.0.1, yerel
+  // ağ, bulut meta verisi getirilebiliyordu) ve yanıt sohbete yazılıyordu.
+  // Artık yeni motorla aynı korumalı getirici; yanıt VERİ olarak işaretlenir.
   const urlFetchRegex = /\$\(urlfetch\s+(https?:\/\/[^\)]+)\)/gi;
   let urlMatch;
   while ((urlMatch = urlFetchRegex.exec(result)) !== null) {
-    const targetUrl = urlMatch[1];
-    try {
-      const response = await axios.get(targetUrl, { timeout: 3500 });
-      const fetchedText = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
-      result = result.replace(urlMatch[0], fetchedText.slice(0, 400));
-    } catch {
-      result = result.replace(urlMatch[0], '[API Hatası]');
-    }
+    const hedef = urlMatch[0];
+    const getirilen = veriKacisla((await guvenliGetir(urlMatch[1])).slice(0, 400));
+    result = result.replace(hedef, () => getirilen);
+    urlFetchRegex.lastIndex = 0;
   }
 
   // AI Prompt: {ai:soru} or $(ai soru) or $(sor soru)
   const aiRegex = /(?:\{ai:([^}]+)\}|\$\((?:ai|sor)\s+([^\)]+)\))/gi;
   let aiMatch;
   while ((aiMatch = aiRegex.exec(result)) !== null) {
-    const prompt = (aiMatch[1] || aiMatch[2] || '').trim();
+    const prompt = kacisiGeriAl((aiMatch[1] || aiMatch[2] || '').trim());
+    const hedef = aiMatch[0];
     if (geminiCaller && prompt) {
       try {
-        const aiAnswer = await geminiCaller(prompt);
-        result = result.replace(aiMatch[0], aiAnswer);
+        // Yapay zekâ yanıtı VERİdir: içinde $(…) olsa da çalıştırılmaz
+        const aiAnswer = veriKacisla(await geminiCaller(prompt));
+        result = result.replace(hedef, () => aiAnswer);
       } catch {
-        result = result.replace(aiMatch[0], 'AI yanıt veremedi.');
+        result = result.replace(hedef, 'AI yanıt veremedi.');
       }
     } else {
-      result = result.replace(aiMatch[0], 'Gemini AI yapılandırılmamış.');
+      result = result.replace(hedef, 'Gemini AI yapılandırılmamış.');
     }
+    aiRegex.lastIndex = 0;
   }
 
   return result.trim();

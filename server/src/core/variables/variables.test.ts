@@ -15,6 +15,8 @@ import {
   gizliMetniSil,
   bosluklariTopla,
   coz,
+  kacisiGeriAl,
+  veriKacisla,
   type Kayit
 } from './resolve.js';
 import { matematik, jsonYolu, sureMetni, sayacIfadesi } from './pure.js';
@@ -236,6 +238,77 @@ describe('coz — test kipi', () => {
 
     await coz('$(addPoints 100)', kayit, baglam({ isTest: false }));
     expect(yazildi).toBe(true);
+  });
+});
+
+describe('coz — şablon enjeksiyonu (güvenlik, 4. tur)', () => {
+  function kayitVeCagrilar() {
+    const cagrilar: string[] = [];
+    const kayit = sahteKayit({
+      query: (_h, c) => c.rawArgs,
+      urlfetch: (h) => {
+        cagrilar.push(h);
+        return 'getirildi';
+      },
+      upper: (h) => h.toUpperCase(),
+      urlencode: (h) => encodeURIComponent(h),
+      yabanci: () => '$(urlfetch http://saldirgan) fetch[http://x] <hideText>gizli</hideText>'
+    });
+    return { kayit, cagrilar };
+  }
+
+  it('izleyici metnindeki $(...) ÇALIŞMAZ, aynen görünür', async () => {
+    const { kayit, cagrilar } = kayitVeCagrilar();
+    const s = await coz('Yazdın: $(query)', kayit, baglam({ rawArgs: '$(urlfetch http://saldirgan/x)' }));
+    expect(s).toBe('Yazdın: $(urlfetch http://saldirgan/x)');
+    expect(cagrilar).toEqual([]);
+  });
+
+  it('eski biçimler (fetch[...], <hideText>, <ifKick>) izleyici metninde çalışmaz', async () => {
+    const { kayit, cagrilar } = kayitVeCagrilar();
+    const s = await coz('$(query)', kayit, baglam({ rawArgs: 'fetch[http://x] <hideText>a</hideText> <ifTwitch>b</ifTwitch>' }));
+    expect(s).toBe('fetch[http://x] <hideText>a</hideText> <ifTwitch>b</ifTwitch>');
+    expect(cagrilar).toEqual([]);
+  });
+
+  it('bir değişkenin ÇIKTISI da kod olarak çalışmaz (getirilen sayfa, saklanan değer)', async () => {
+    const { kayit, cagrilar } = kayitVeCagrilar();
+    const s = await coz('$(yabanci)', kayit, baglam());
+    expect(s).toContain('$(urlfetch http://saldirgan)');
+    expect(s).toContain('<hideText>gizli</hideText>');
+    expect(cagrilar).toEqual([]);
+  });
+
+  it('izleyici parantezi dış değişkenin argümanını kesemez', async () => {
+    const { kayit } = kayitVeCagrilar();
+    expect(await coz('$(upper $(query))', kayit, baglam({ rawArgs: 'a) b $(x' }))).toBe('A) B $(X');
+  });
+
+  it('işleyici gerçek metni görür (urlencode bozulmaz)', async () => {
+    const { kayit } = kayitVeCagrilar();
+    expect(await coz('$(urlencode $(query))', kayit, baglam({ rawArgs: 'a<b>[c]{d}$e' }))).toBe(
+      encodeURIComponent('a<b>[c]{d}$e')
+    );
+  });
+
+  it('şablon yazarının kendi fetch[...] ve etiketleri çalışmaya devam eder', async () => {
+    const { kayit, cagrilar } = kayitVeCagrilar();
+    const s = await coz('fetch[https://ornek.com] <ifKick>kick</ifKick>', kayit, baglam());
+    expect(s).toBe('getirildi kick');
+    expect(cagrilar).toEqual(['https://ornek.com']);
+  });
+
+  it('yerine koyma kalıpları ($&, $1) metni bozmaz', async () => {
+    const { kayit } = kayitVeCagrilar();
+    expect(await coz('[$(query)]', kayit, baglam({ rawArgs: "$& $1 $' $`" }))).toBe("[$& $1 $' $`]");
+  });
+});
+
+describe('veriKacisla / kacisiGeriAl', () => {
+  it('gidiş-dönüş kayıpsız', () => {
+    const s = 'a $(b) {c} <d> [e] $& ;';
+    expect(kacisiGeriAl(veriKacisla(s))).toBe(s);
+    expect(veriKacisla(s)).not.toMatch(/[$(){}<>[\]]/);
   });
 });
 

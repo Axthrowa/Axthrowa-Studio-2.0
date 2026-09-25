@@ -28,12 +28,27 @@ import {
   useToast
 } from '../ui/index.js';
 
-type Sekme = 'discord' | 'nightbot' | 'yedek';
+type Sekme = 'discord' | 'nightbot' | 'yedek' | 'lol';
 
 const SEKMELER: Array<{ id: Sekme; etiket: string }> = [
   { id: 'discord', etiket: 'Discord Duyuruları' },
   { id: 'nightbot', etiket: "Nightbot'tan İçe Aktar" },
-  { id: 'yedek', etiket: 'Uyarı Yedeği' }
+  { id: 'yedek', etiket: 'Uyarı Yedeği' },
+  { id: 'lol', etiket: 'League of Legends' }
+];
+
+const LOL_BOLGELERI: Array<{ value: string; label: string }> = [
+  { value: 'tr1', label: 'Türkiye (TR)' },
+  { value: 'euw1', label: 'Batı Avrupa (EUW)' },
+  { value: 'eun1', label: 'Kuzey ve Doğu Avrupa (EUNE)' },
+  { value: 'ru', label: 'Rusya (RU)' },
+  { value: 'na1', label: 'Kuzey Amerika (NA)' },
+  { value: 'br1', label: 'Brezilya (BR)' },
+  { value: 'la1', label: 'Latin Amerika Kuzey (LAN)' },
+  { value: 'la2', label: 'Latin Amerika Güney (LAS)' },
+  { value: 'kr', label: 'Kore (KR)' },
+  { value: 'jp1', label: 'Japonya (JP)' },
+  { value: 'oc1', label: 'Okyanusya (OCE)' }
 ];
 
 const KAYNAKLAR: Array<{ id: string; etiket: string; renk: string }> = [
@@ -498,6 +513,113 @@ function YedekPaneli() {
   );
 }
 
+// ------------------------------------------------------- League of Legends ---
+
+/**
+ * `$(leagueoflegends Ad#Etiket bölge)` değişkeni için Riot API anahtarı.
+ * Anahtar sır sayılır: diskte şifreli, panelde maskeli; alan boş bırakılırsa
+ * mevcut anahtar korunur.
+ */
+function LolPaneli() {
+  const toast = useToast();
+  const [kayitli, setKayitli] = useState('');
+  const [anahtar, setAnahtar] = useState('');
+  const [bolge, setBolge] = useState('tr1');
+  const [deneme, setDeneme] = useState('');
+  const [sonuc, setSonuc] = useState('');
+  const [hata, setHata] = useState('');
+  const [yuklendi, setYuklendi] = useState(false);
+  const [calisiyor, setCalisiyor] = useState(false);
+
+  const yukle = () =>
+    al<Record<string, string>>('/api/settings')
+      .then((a) => {
+        setKayitli(String(a?.riot_api_key || ''));
+        setBolge(String(a?.riot_varsayilan_bolge || 'tr1'));
+        setHata('');
+        setYuklendi(true);
+      })
+      .catch(() => setHata('Ayarlar okunamadı.'));
+
+  useEffect(() => {
+    yukle();
+  }, []);
+
+  if (hata) return <HataDurumu mesaj={hata} yenidenDene={yukle} />;
+  if (!yuklendi) return <Iskelet satir={4} />;
+
+  const kaydet = async () => {
+    try {
+      const govde: Record<string, string> = { riot_varsayilan_bolge: bolge };
+      if (anahtar.trim()) govde.riot_api_key = anahtar.trim();
+      await yolla('/api/settings', govde);
+      setAnahtar('');
+      await yukle();
+      toast('League of Legends ayarları kaydedildi.', 'basari');
+    } catch (e: any) {
+      toast(String(e.message), 'hata');
+    }
+  };
+
+  const dene = async () => {
+    if (!deneme.trim()) return;
+    setCalisiyor(true);
+    setSonuc('');
+    try {
+      const r = await yolla<any>('/api/variables/preview', {
+        template: `$(leagueoflegends ${deneme.trim()})`
+      });
+      setSonuc(String(r?.sonuc ?? r?.result ?? r?.output ?? JSON.stringify(r)));
+    } catch (e: any) {
+      setSonuc(String(e.message));
+    } finally {
+      setCalisiyor(false);
+    }
+  };
+
+  return (
+    <Kart
+      baslik="League of Legends sıralaması"
+      aciklama="Komutlarda $(leagueoflegends Ad#Etiket tr) değişkeni oyuncunun dereceli sıralamasını yazar."
+    >
+      <div className="space-y-4">
+        <Alan
+          etiket="Riot API anahtarı"
+          ipucu={
+            kayitli
+              ? `Kayıtlı: ${kayitli}. Değiştirmek için yenisini yazın; boş bırakırsanız mevcut anahtar korunur.`
+              : 'developer.riotgames.com üzerinden alınır. Geliştirici anahtarının süresi 24 saatte dolar; kalıcı kullanım için Riot’a kişisel anahtar başvurusu gerekir.'
+          }
+        >
+          <Girdi
+            type="password"
+            autoComplete="off"
+            value={anahtar}
+            onChange={(e) => setAnahtar(e.target.value)}
+            placeholder={kayitli ? 'Kayıtlı anahtar korunuyor' : 'RGAPI-…'}
+          />
+        </Alan>
+        <Alan etiket="Varsayılan bölge" ipucu="Komutta bölge yazılmazsa bu kullanılır.">
+          <Secim value={bolge} onChange={(e) => setBolge(e.target.value)} secenekler={LOL_BOLGELERI} />
+        </Alan>
+        <Buton onClick={() => void kaydet()} ikon={<Save className="w-4 h-4" />}>
+          Kaydet
+        </Buton>
+
+        <Alan etiket="Dene" ipucu="Örnek: Oyuncu#TR1 tr — herkese açık sıralama verisi okunur, hiçbir şey yazılmaz.">
+          <div className="flex gap-2">
+            <Girdi value={deneme} onChange={(e) => setDeneme(e.target.value)} placeholder="Ad#Etiket bölge" />
+            <Buton ton="ikincil" onClick={() => void dene()} disabled={calisiyor || !deneme.trim()} ikon={<Play className="w-4 h-4" />}>
+              {calisiyor ? 'Sorgulanıyor…' : 'Sorgula'}
+            </Buton>
+          </div>
+        </Alan>
+        {sonuc && <p className="text-xs text-gray-200 bg-black/30 rounded-lg px-3 py-2">{sonuc}</p>}
+      </div>
+    </Kart>
+  );
+}
+
 // ------------------------------------------------------------------ Sayfa ---
 
 export function Integrations() {
@@ -510,7 +632,7 @@ export function Integrations() {
           <Plug className="w-6 h-6 text-purple-400" /> Entegrasyonlar
         </h1>
         <p className="text-sm text-gray-400">
-          Discord duyuruları, Nightbot’tan taşıma ve uyarı ayarlarının yedeği.
+          Discord duyuruları, Nightbot’tan taşıma, uyarı ayarlarının yedeği ve League of Legends sıralaması.
         </p>
       </div>
 
@@ -531,6 +653,7 @@ export function Integrations() {
       {sekme === 'discord' && <DiscordPaneli />}
       {sekme === 'nightbot' && <NightbotPaneli />}
       {sekme === 'yedek' && <YedekPaneli />}
+      {sekme === 'lol' && <LolPaneli />}
     </div>
   );
 }

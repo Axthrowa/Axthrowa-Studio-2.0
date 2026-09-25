@@ -16,6 +16,7 @@ import { seviyeler } from '../../modules/levels/levels.js';
 import { getStreamUptime } from '../variable-parser.js';
 import { settingsCache } from '../settings-cache.js';
 import { guvenliGetir } from './net.js';
+import { lolSiralamasi } from '../../modules/integrations/riot.js';
 import { kvOku, kvYaz, kvListele, sayacAl, sayacAyarla, sayacDegistir, sayacIfadesi } from './store.js';
 import { SINIR, type DegiskenBaglam, type DegiskenTanimi } from './types.js';
 import { noktaliBol } from './resolve.js';
@@ -294,6 +295,13 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
 
     // ---- Web ----------------------------------------------------------------
     tanim('urlfetch', 'web', 'Adresten metin getirir', (h) => guvenliGetir(h), { ag: true }),
+    tanim(
+      'leagueoflegends',
+      'web',
+      'League of Legends dereceli sıralaması (Riot API anahtarı gerekir)',
+      (h) => lolSiralamasi(h),
+      { ag: true, ornek: '$(leagueoflegends Oyuncu#TR1 tr)' }
+    ),
     tanim('earlyfetch', 'web', 'Diğer değişkenlerden ÖNCE getirir', (h) => guvenliGetir(h), { ag: true }),
     tanim('urlencode', 'web', 'Adres için metni kodlar', (h) => encodeURIComponent(h)),
     tanim('urldecode', 'web', 'Kodlanmış metni çözer', (h) => {

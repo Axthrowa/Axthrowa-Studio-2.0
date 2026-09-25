@@ -90,11 +90,16 @@ describe('eylemPlani', () => {
     expect(p.dusurulen).toContain('zaman aşımı');
   });
 
-  it('Discord mesaj silmeyi desteklemez — uyarıya düşer', () => {
-    const p = eylemPlani(ayar({ eylem: 'delete' }), 'discord');
+  it('TikTok mesaj silmeyi desteklemez (resmi API yok) — uyarıya düşer', () => {
+    const p = eylemPlani(ayar({ eylem: 'delete' }), 'tiktok');
     expect(p.sil).toBe(false);
     expect(p.uyar).toBe(true);
     expect(p.dusurulen).toContain('mesaj silme');
+  });
+
+  it('Discord 4. turdan beri siler ve zaman aşımı uygular', () => {
+    expect(eylemPlani(ayar({ eylem: 'delete' }), 'discord').sil).toBe(true);
+    expect(eylemPlani(ayar({ eylem: 'timeout_warn' }), 'discord').timeoutSn).toBeGreaterThan(0);
   });
 
   it('Trovo zaman aşımı belgelenmediği için UYGULANMADI — uyarıya düşer', () => {

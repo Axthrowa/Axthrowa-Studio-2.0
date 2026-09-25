@@ -22,7 +22,10 @@ describe('karaListePlatformu', () => {
   });
   it('bilinmeyen/boş değer eski davranışa (Kick) düşer', () => {
     expect(karaListePlatformu(undefined)).toBe('kick');
-    expect(karaListePlatformu('discord')).toBe('kick');
+    expect(karaListePlatformu('myspace')).toBe('kick');
+  });
+  it('Discord da seçilebilir (4. turda moderasyonu eklendi)', () => {
+    expect(karaListePlatformu('Discord')).toBe('discord');
   });
 });
 
@@ -61,7 +64,7 @@ describe('eylemPlani', () => {
     expect(eylemPlani('ban', hepsi, 'kick')).toEqual({ sil: false, ban: true });
   });
   it('ban yoksa silmeye, o da yoksa yalnız yok saymaya düşer — notla', () => {
-    const silme = eylemPlani('ban', { ban: false, mesajSil: true }, 'discord');
+    const silme = eylemPlani('ban', { ban: false, mesajSil: true }, 'ornekplatform');
     expect(silme.sil).toBe(true);
     expect(silme.not).toContain('kalıcı ban desteklemiyor');
     const hic = eylemPlani('ban', { ban: false, mesajSil: false }, 'tiktok');

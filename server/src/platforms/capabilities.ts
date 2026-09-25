@@ -117,7 +117,9 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
   discord: {
     sohbet: { oku: true, gonder: true },
     olaylar: ['chat'],
-    moderasyon: { timeout: false, ban: false, mesajSil: false },
+    // discord.js (4. tur): mesaj silme, zaman aşımı (en çok 28 gün), ban.
+    // Bot sunucuda ilgili izinlere sahip olmalı; yoksa sebep söylenir.
+    moderasyon: { timeout: true, ban: true, mesajSil: true },
     yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: false },
     roller: ['everyone', 'mod', 'broadcaster']
   }

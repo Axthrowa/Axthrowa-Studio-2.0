@@ -15,7 +15,7 @@
  *   ban    → + kullanıcı o platformda KALICI banlanır (destekleyen platformda)
  */
 
-export const KARA_LISTE_PLATFORMLARI = ['kick', 'twitch', 'youtube', 'trovo', 'tiktok', 'tum'] as const;
+export const KARA_LISTE_PLATFORMLARI = ['kick', 'twitch', 'youtube', 'trovo', 'tiktok', 'discord', 'tum'] as const;
 export type KaraListePlatformu = (typeof KARA_LISTE_PLATFORMLARI)[number];
 
 export const KARA_LISTE_EYLEMLERI = ['yoksay', 'sil', 'ban'] as const;

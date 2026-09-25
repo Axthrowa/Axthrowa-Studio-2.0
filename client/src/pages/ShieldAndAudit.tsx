@@ -32,8 +32,8 @@ type KaraListeEylemi = 'yoksay' | 'sil' | 'ban';
 
 const KARA_LISTE_EYLEMLERI: Array<{ id: KaraListeEylemi; ad: string; aciklama: string }> = [
   { id: 'yoksay', ad: 'Yalnız yok say', aciklama: 'Bot komut/puan/TTS işlemez; mesaj OBS sohbetinde gösterilmez. Platformda bir şey yapılmaz.' },
-  { id: 'sil', ad: 'Mesajını sil', aciklama: 'Ayrıca mesaj platformda silinir (Kick, Twitch, YouTube, Trovo).' },
-  { id: 'ban', ad: 'Kalıcı banla', aciklama: 'Ayrıca kişi o platformda KALICI banlanır (Kick, Twitch, YouTube, Trovo). Desteklemeyen platformda silmeye düşülür.' }
+  { id: 'sil', ad: 'Mesajını sil', aciklama: 'Ayrıca mesaj platformda silinir (Kick, Twitch, YouTube, Trovo, Discord).' },
+  { id: 'ban', ad: 'Kalıcı banla', aciklama: 'Ayrıca kişi o platformda KALICI banlanır (Kick, Twitch, YouTube, Trovo, Discord). Desteklemeyen platformda (TikTok) yalnız yok sayılır.' }
 ];
 
 const KARA_LISTE_PLATFORMLARI: Array<{ id: string; ad: string }> = [
@@ -42,6 +42,7 @@ const KARA_LISTE_PLATFORMLARI: Array<{ id: string; ad: string }> = [
   { id: 'youtube', ad: 'YouTube' },
   { id: 'trovo', ad: 'Trovo' },
   { id: 'tiktok', ad: 'TikTok' },
+  { id: 'discord', ad: 'Discord' },
   { id: 'tum', ad: 'Tüm platformlar' }
 ];
 

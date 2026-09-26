@@ -19,7 +19,7 @@ import {
   veriKacisla,
   type Kayit
 } from './resolve.js';
-import { matematik, jsonYolu, sureMetni, sayacIfadesi } from './pure.js';
+import { matematik, jsonYolu, jsonYoluYaz, jsonYoluSil, jsonDegeri, sureMetni, sayacIfadesi } from './pure.js';
 import { adresGuvenliMi, guvenliGetir, guvenliLookup, ozelIpMi, yasakIpMi } from './net.js';
 import http from 'node:http';
 import type { DegiskenBaglam, DegiskenTanimi } from './types.js';
@@ -471,5 +471,35 @@ describe('SSRF — IPv6 ve alan adı çözümlemesi (4. tur)', () => {
     } finally {
       sunucu.close();
     }
+  });
+});
+
+describe('jsonset / jsonunset yardımcıları (BotRix belgesindeki örnekler)', () => {
+  it('yol yazar, ara nesneleri kurar; değer JSON ise türüyle saklanır', () => {
+    expect(JSON.stringify(jsonYoluYaz({}, 'stats.wins', jsonDegeri('2')))).toBe('{"stats":{"wins":2}}');
+    expect(JSON.stringify(jsonYoluYaz({ a: 1 }, 'items[0].name', jsonDegeri('sword')))).toBe('{"a":1,"items":[{"name":"sword"}]}');
+    expect(jsonDegeri('true')).toBe(true);
+    expect(jsonDegeri('merhaba dünya')).toBe('merhaba dünya');
+    expect(JSON.stringify(jsonYoluYaz('düz metin', 'x', 1))).toBe('{"x":1}');
+  });
+
+  it('girdiyi değiştirmez (kopya döner)', () => {
+    const v = { stats: { wins: 1 } };
+    jsonYoluYaz(v, 'stats.wins', 5);
+    expect(v.stats.wins).toBe(1);
+  });
+
+  it('yol siler; dizi indisinde eleman çıkarır; olmayan yol veriyi aynen bırakır', () => {
+    expect(JSON.stringify(jsonYoluSil({ stats: { wins: 2 } }, 'stats.wins'))).toBe('{"stats":{}}');
+    expect(JSON.stringify(jsonYoluSil({ l: [1, 2, 3] }, 'l[1]'))).toBe('{"l":[1,3]}');
+    expect(JSON.stringify(jsonYoluSil({ a: 1 }, 'x.y'))).toBe('{"a":1}');
+  });
+
+  it('prototip kirletmeye açılan yollar reddedilir', () => {
+    expect(jsonYoluYaz({}, '__proto__.polluted', true)).toBeNull();
+    expect(jsonYoluYaz({}, 'a.constructor.prototype.x', 1)).toBeNull();
+    expect(jsonYoluSil({}, '__proto__')).toBeNull();
+    expect(({} as any).polluted).toBeUndefined();
+    expect(jsonYoluYaz({}, '', 1)).toBeNull();
   });
 });

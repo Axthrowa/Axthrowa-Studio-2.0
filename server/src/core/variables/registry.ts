@@ -18,9 +18,9 @@ import { settingsCache } from '../settings-cache.js';
 import { guvenliGetir } from './net.js';
 import { lolSiralamasi } from '../../modules/integrations/riot.js';
 import { kvOku, kvYaz, kvListele, sayacAl, sayacAyarla, sayacDegistir, sayacIfadesi } from './store.js';
-import { SINIR, type DegiskenTanimi } from './types.js';
+import { SINIR, type DegiskenBaglam, type DegiskenTanimi } from './types.js';
 import { noktaliBol } from './resolve.js';
-import { sayi, sureMetni, matematik, jsonYolu } from './pure.js';
+import { sayi, sureMetni, matematik, jsonYolu, jsonYoluYaz, jsonYoluSil, jsonDegeri, JSON_DEGISKEN_SINIRI } from './pure.js';
 import { canliDurum } from '../live-status.js';
 
 export { matematik, jsonYolu } from './pure.js';
@@ -395,8 +395,57 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       } catch {
         return '(json invalid)';
       }
-    })
+    }),
+    tanim(
+      'jsonset',
+      'json',
+      'JSON içinde yol yazar. $(jsonset globalvar;profil;stats.wins;2) veya $(jsonset uservar;@kisi;profil;stats.wins;4)',
+      (h, c) => jsonDegistir(h, c, 'yaz'),
+      { yazar: true }
+    ),
+    tanim(
+      'jsonunset',
+      'json',
+      'JSON içinden yol siler. $(jsonunset globalvar;profil;stats.wins)',
+      (h, c) => jsonDegistir(h, c, 'sil'),
+      { yazar: true }
+    )
   ];
+
+  /** `$(jsonset …)` / `$(jsonunset …)` ortak gövdesi: oku → değiştir → sınır → yaz. */
+  function jsonDegistir(h: string, c: DegiskenBaglam, islem: 'yaz' | 'sil'): string {
+    const p = noktaliBol(h);
+    const kapsam = p[0];
+    const kisiVerildi = p[1]?.startsWith('@');
+    const sahip = kisiVerildi ? p[1] : c.user.username;
+    const k = kisiVerildi ? p[2] : p[1];
+    const yol = kisiVerildi ? p[3] : p[2];
+    const degerHam = (kisiVerildi ? p.slice(4) : p.slice(3)).join(';');
+    if (!k || !yol) return '(json yol?)';
+
+    let ham: string | null = null;
+    if (kapsam === 'local') ham = c.yerel.get(k) ?? null;
+    else if (kapsam === 'uservar') ham = kvOku('user', sahip, k);
+    else if (kapsam === 'globalvar') ham = kvOku('global', '', k);
+    else return '(json kapsam?)';
+
+    let veri: unknown = {};
+    if (ham !== null && ham !== '') {
+      try {
+        veri = JSON.parse(ham);
+      } catch {
+        return '(json invalid)';
+      }
+    }
+    const yeni = islem === 'yaz' ? jsonYoluYaz(veri, yol, jsonDegeri(degerHam)) : jsonYoluSil(veri, yol);
+    if (yeni === null) return '(json yol?)';
+    const metin = JSON.stringify(yeni);
+    if (metin.length > JSON_DEGISKEN_SINIRI) return '(json çok büyük)';
+    if (kapsam === 'local') c.yerel.set(k, metin);
+    else if (kapsam === 'uservar') kvYaz('user', sahip, k, metin);
+    else kvYaz('global', '', k, metin);
+    return metin;
+  }
 
   const harita = new Map<string, DegiskenTanimi>();
   for (const t of liste) harita.set(t.ad.toLowerCase(), t);

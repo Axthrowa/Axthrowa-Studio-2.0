@@ -61,6 +61,66 @@ export function jsonYolu(veri: unknown, yol: string): unknown {
   return o;
 }
 
+/** Prototip kirletmeye açılan yol parçaları (`__proto__` vb.) — yazma/silmede reddedilir. */
+const YASAK_PARCA = new Set(['__proto__', 'prototype', 'constructor']);
+/** Sohbetten yazılan JSON değişkeni sınırsız büyümesin */
+export const JSON_DEGISKEN_SINIRI = 8000;
+
+function yolParcalari(yol: string): string[] | null {
+  const p = String(yol || '')
+    .replace(/\[(\d+)\]/g, '.$1')
+    .split('.')
+    .filter(Boolean);
+  if (!p.length || p.length > 16 || p.some((x) => YASAK_PARCA.has(x))) return null;
+  return p;
+}
+
+/** Değer JSON olarak ayrıştırılabiliyorsa (sayı, true, {"a":1}) öyle, değilse düz metin saklanır. */
+export function jsonDegeri(ham: string): unknown {
+  const t = String(ham ?? '');
+  try {
+    return JSON.parse(t);
+  } catch {
+    return t;
+  }
+}
+
+/**
+ * `veri` içinde yolu yazar (ara nesneleri oluşturur), yeni kopyayı döner. Geçersiz yol → `null`.
+ * `items[0].name` gibi dizi indisleri desteklenir.
+ */
+export function jsonYoluYaz(veri: unknown, yol: string, deger: unknown): unknown | null {
+  const p = yolParcalari(yol);
+  if (!p) return null;
+  const kok: any = veri && typeof veri === 'object' ? JSON.parse(JSON.stringify(veri)) : {};
+  let o: any = kok;
+  for (let i = 0; i < p.length - 1; i++) {
+    const sonraki = p[i + 1];
+    if (o[p[i]] === null || typeof o[p[i]] !== 'object') o[p[i]] = /^\d+$/.test(sonraki) ? [] : {};
+    o = o[p[i]];
+  }
+  o[p[p.length - 1]] = deger;
+  return kok;
+}
+
+/** Yolu siler, yeni kopyayı döner. Geçersiz yol → `null`; yol yoksa veri aynen döner. */
+export function jsonYoluSil(veri: unknown, yol: string): unknown | null {
+  const p = yolParcalari(yol);
+  if (!p) return null;
+  if (!veri || typeof veri !== 'object') return veri;
+  const kok: any = JSON.parse(JSON.stringify(veri));
+  let o: any = kok;
+  for (let i = 0; i < p.length - 1; i++) {
+    if (o === null || typeof o !== 'object') return kok;
+    o = o[p[i]];
+  }
+  if (o && typeof o === 'object') {
+    if (Array.isArray(o) && /^\d+$/.test(p[p.length - 1])) o.splice(Number(p[p.length - 1]), 1);
+    else delete o[p[p.length - 1]];
+  }
+  return kok;
+}
+
 /**
  * `+1`, `-10`, `5` gibi bir ifadeyi ayrıştırır.
  * İşaretli ise göreli (fark), değilse mutlak değerdir.

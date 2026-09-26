@@ -280,6 +280,14 @@ export class TwitchPlatform extends BasePlatform {
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };
   }
 
+  /** Sohbet modları (yavaş / takipçi / abone / emote / benzersiz). Gövde önceden doğrulanmış olmalı. */
+  async sohbetModu(govde: Record<string, boolean | number>): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.sohbetModlari(this.currentChannel, govde);
+    if (!r.ok) console.warn('[Twitch] sohbet modu değiştirilemedi:', r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
   /** `!accountage` için. */
   async hesapOlusturma(login: string): Promise<number | null> {
     if (!this.botToken) return null;

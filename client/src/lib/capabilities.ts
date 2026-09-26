@@ -18,7 +18,7 @@
 export interface PlatformYetenekleri {
   sohbet: { oku: boolean; gonder: boolean };
   olaylar: string[];
-  moderasyon: { timeout: boolean; ban: boolean; mesajSil: boolean };
+  moderasyon: { timeout: boolean; ban: boolean; mesajSil: boolean; sohbetModlari?: boolean };
   yayin: { baslikDegistir: boolean; kategoriDegistir: boolean; izleyiciSayisi: boolean };
   roller: string[];
 }

@@ -193,6 +193,20 @@ export class TwitchHelix {
     );
   }
 
+  /** Sohbet modları: `PATCH /chat/settings` (gövde `sohbetModuGovdesi` ile doğrulanmış olmalı). */
+  async sohbetModlari(kanal: string, govde: Record<string, boolean | number>): Promise<HelixSonuc> {
+    const d = await this.dogrula();
+    if (!d.ok) return d;
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    return this.istek(
+      'PATCH',
+      `/chat/settings?broadcaster_id=${yayinci.veri}&moderator_id=${d.veri.userId}`,
+      govde,
+      'moderator:manage:chat_settings'
+    );
+  }
+
   /** Kategori adıyla arar; tam eşleşme yoksa ilk sonuç. */
   async kategoriBul(ad: string): Promise<HelixSonuc<{ id: string; ad: string }>> {
     const r = await this.istek('GET', `/search/categories?query=${encodeURIComponent(ad)}&first=10`);

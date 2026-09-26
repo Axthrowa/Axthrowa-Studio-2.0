@@ -13,7 +13,8 @@ import { wsHub } from '../../ws/server.js';
 import { autoMod } from '../../modules/automod/automod.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { KALKAN_DESTEKLENMEYEN } from '../../modules/moderation/shield-rules.js';
-import { elleModerasyonCoz, kalkanAyariniCoz, type ElleEylem } from '../../modules/moderation/moderation-input.js';
+import { elleModerasyonCoz, kalkanAyariniCoz, MODERASYON_PLATFORMLARI, type ElleEylem } from '../../modules/moderation/moderation-input.js';
+import { sohbetModuGovdesi } from '../../platforms/twitch-rules.js';
 import { platformManager } from '../../platforms/manager.js';
 import { yetenek } from '../../platforms/capabilities.js';
 import { chatRescueService } from '../../modules/ai/chat-rescue.js';
@@ -217,6 +218,49 @@ async function elleModerasyon(eylem: ElleEylem, req: Request, res: Response) {
 router.post('/moderation/timeout', (req: Request, res: Response) => void elleModerasyon('timeout', req, res));
 router.post('/moderation/ban', (req: Request, res: Response) => void elleModerasyon('ban', req, res));
 router.post('/moderation/unban', (req: Request, res: Response) => void elleModerasyon('unban', req, res));
+
+// Kontrol Merkezi sohbetinden tek mesaj silme. GERÇEK platform eylemi: yalnız yayıncının/moderatörün
+// tıklamasıyla; yetenek + bağlantı denetimi; sonuç denetim günlüğüne yazılır.
+router.post('/moderation/delete-message', async (req: Request, res: Response) => {
+  const platform = String(req.body?.platform ?? '').trim().toLowerCase();
+  const mesajId = String(req.body?.messageId ?? '').trim();
+  if (!(MODERASYON_PLATFORMLARI as readonly string[]).includes(platform)) return res.status(400).json({ ok: false, hata: 'Geçersiz platform' });
+  if (!mesajId || mesajId.length > 200 || /[\s\u0000-\u001f]/.test(mesajId)) return res.status(400).json({ ok: false, hata: 'Geçersiz mesaj kimliği' });
+  if (!yetenek(platform).moderasyon.mesajSil) return res.status(400).json({ ok: false, hata: `${platform} mesaj silmeyi desteklemiyor` });
+  const p: any = platformManager.getPlatform(platform);
+  if (!p?.isConnected?.() || typeof p.deleteMessage !== 'function') return res.status(400).json({ ok: false, hata: `${platform} bağlı değil` });
+  const sonuc = await p.deleteMessage(mesajId);
+  shieldModeService.addAuditLog(
+    'MANUAL_DELETE_MESSAGE',
+    String(req.body?.actor || 'Yayıncı').slice(0, 40),
+    `${platform}: mesaj silme ${sonuc?.ok ? 'uygulandı' : `başarısız — ${sonuc?.hata || 'bilinmeyen hata'}`}`,
+    String(req.body?.username || '').slice(0, 60) || undefined,
+    sonuc?.ok ? 'info' : 'warn'
+  );
+  res.status(sonuc?.ok ? 200 : 502).json(sonuc?.ok ? { ok: true } : { ok: false, hata: sonuc?.hata || 'bilinmeyen hata' });
+});
+
+// Sohbet modları (yavaş / takipçi / abone / emote / benzersiz). Bugün yalnız Twitch Helix'te API var.
+router.post('/moderation/chat-mode', async (req: Request, res: Response) => {
+  const platform = String(req.body?.platform ?? '').trim().toLowerCase();
+  if (!(MODERASYON_PLATFORMLARI as readonly string[]).includes(platform)) return res.status(400).json({ ok: false, hata: 'Geçersiz platform' });
+  if (!yetenek(platform).moderasyon.sohbetModlari) {
+    return res.status(400).json({ ok: false, hata: `${platform} sohbet modlarını API ile değiştirmeye izin vermiyor` });
+  }
+  const g = sohbetModuGovdesi(req.body);
+  if (!g.ok) return res.status(400).json({ ok: false, hata: g.hata });
+  const p: any = platformManager.getPlatform(platform);
+  if (!p?.isConnected?.() || typeof p.sohbetModu !== 'function') return res.status(400).json({ ok: false, hata: `${platform} bağlı değil` });
+  const sonuc = await p.sohbetModu(g.govde);
+  shieldModeService.addAuditLog(
+    'CHAT_MODE_CHANGED',
+    String(req.body?.actor || 'Yayıncı').slice(0, 40),
+    `${platform}: sohbet modu ${JSON.stringify(g.govde)} ${sonuc?.ok ? 'uygulandı' : `başarısız — ${sonuc?.hata || 'bilinmeyen hata'}`}`,
+    undefined,
+    sonuc?.ok ? 'info' : 'warn'
+  );
+  res.status(sonuc?.ok ? 200 : 502).json(sonuc?.ok ? { ok: true, uygulanan: g.govde } : { ok: false, hata: sonuc?.hata || 'bilinmeyen hata' });
+});
 
 router.delete('/moderation/shared-bans/:username', (req: Request, res: Response) => {
   const username = String(req.params.username || '');

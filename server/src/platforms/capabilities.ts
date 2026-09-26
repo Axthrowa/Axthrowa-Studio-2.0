@@ -40,7 +40,8 @@ export type Rol = 'everyone' | 'sub' | 'vip' | 'og' | 'mod' | 'broadcaster';
 export interface PlatformYetenekleri {
   sohbet: { oku: boolean; gonder: boolean };
   olaylar: OlayTuru[];
-  moderasyon: { timeout: boolean; ban: boolean; mesajSil: boolean };
+  /** sohbetModlari: yavaş / takipçi / abone / emote modu API'si (yalnız Twitch Helix; Kick ve YouTube'un resmi API'sinde yok) */
+  moderasyon: { timeout: boolean; ban: boolean; mesajSil: boolean; sohbetModlari: boolean };
   yayin: { baslikDegistir: boolean; kategoriDegistir: boolean; izleyiciSayisi: boolean };
   roller: Rol[];
 }
@@ -62,7 +63,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // moderation:ban, moderation:chat_message:manage, channel:write —
     // eski bağlantılar taşımaz, bir kez yeniden bağlanmak gerekir.
     // Kalıcı ban: aynı uç, `duration` verilmez; kaldırma DELETE.
-    moderasyon: { timeout: true, ban: true, mesajSil: true },
+    moderasyon: { timeout: true, ban: true, mesajSil: true, sohbetModlari: false },
     yayin: { baslikDegistir: true, kategoriDegistir: true, izleyiciSayisi: true },
     // Kick'in rol kümesi — BotRix TTS sayfasında da aynısı listeleniyor
     roller: ['everyone', 'sub', 'vip', 'og', 'mod', 'broadcaster']
@@ -73,8 +74,8 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // Helix (twitch-helix.ts). IRC jetonu `oauth2/validate` ile doğrulanıp
     // Client-ID ondan öğrenilir. Jetonda ilgili izin yoksa işlem SEBEBİYLE
     // reddedilir (moderator:manage:banned_users, moderator:manage:chat_messages,
-    // channel:manage:broadcast). Jetonsuz (anonim) okuyucuda hiçbiri çalışmaz.
-    moderasyon: { timeout: true, ban: true, mesajSil: true },
+    // channel:manage:broadcast, moderator:manage:chat_settings). Jetonsuz (anonim) okuyucuda hiçbiri çalışmaz.
+    moderasyon: { timeout: true, ban: true, mesajSil: true, sohbetModlari: true },
     yayin: { baslikDegistir: true, kategoriDegistir: true, izleyiciSayisi: true },
     roller: ['everyone', 'sub', 'vip', 'mod', 'broadcaster']
   },
@@ -85,7 +86,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // OAuth jetonu gerekir. Ban kaldırma eklemenin döndürdüğü kimlikle.
     // Başlık videos.update ile; YouTube'da "oyun/kategori" Data API ile
     // değiştirilemiyor.
-    moderasyon: { timeout: true, ban: true, mesajSil: true },
+    moderasyon: { timeout: true, ban: true, mesajSil: true, sohbetModlari: false },
     yayin: { baslikDegistir: true, kategoriDegistir: false, izleyiciSayisi: true },
     roller: ['everyone', 'sub', 'mod', 'broadcaster']
   },
@@ -94,7 +95,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // `gonder: true` yazıyordu ama `sendMessage` her zaman false dönüyordu.
     sohbet: { oku: true, gonder: false },
     olaylar: ['chat', 'follow', 'gift_tiktok', 'stream_online', 'stream_offline'],
-    moderasyon: { timeout: false, ban: false, mesajSil: false },
+    moderasyon: { timeout: false, ban: false, mesajSil: false, sohbetModlari: false },
     // İzleyici sayısı kütüphanede var ama adaptörde OKUNMUYOR
     yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: false },
     roller: ['everyone', 'mod', 'broadcaster']
@@ -108,7 +109,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // Mesaj silme: DELETE /channels/{c}/messages/{m}/users/{u} (belgeli).
     // Kalıcı ban: belgedeki örnek komut `ban xxx`. Zaman aşımının SÜRE
     // BİRİMİ hiçbir kaynakta yok — uydurulmadı.
-    moderasyon: { timeout: false, ban: true, mesajSil: true },
+    moderasyon: { timeout: false, ban: true, mesajSil: true, sohbetModlari: false },
     // Başlık: belgedeki örnek komut `settitle`. Kategori komutu belgede yok.
     yayin: { baslikDegistir: true, kategoriDegistir: false, izleyiciSayisi: false },
     // Trovo'da VIP yok; editor/supermod en yakin kanal rolleridir.
@@ -119,7 +120,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     olaylar: ['chat'],
     // discord.js (4. tur): mesaj silme, zaman aşımı (en çok 28 gün), ban.
     // Bot sunucuda ilgili izinlere sahip olmalı; yoksa sebep söylenir.
-    moderasyon: { timeout: true, ban: true, mesajSil: true },
+    moderasyon: { timeout: true, ban: true, mesajSil: true, sohbetModlari: false },
     yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: false },
     roller: ['everyone', 'mod', 'broadcaster']
   }
@@ -129,7 +130,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
 const BOS: PlatformYetenekleri = {
   sohbet: { oku: false, gonder: false },
   olaylar: [],
-  moderasyon: { timeout: false, ban: false, mesajSil: false },
+  moderasyon: { timeout: false, ban: false, mesajSil: false, sohbetModlari: false },
   yayin: { baslikDegistir: false, kategoriDegistir: false, izleyiciSayisi: false },
   roller: ['everyone', 'broadcaster']
 };

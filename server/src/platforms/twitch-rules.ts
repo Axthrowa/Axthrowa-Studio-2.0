@@ -13,6 +13,11 @@
  *                        "PRIVMSG'deki id etiketi mesaj kimliğidir"
  *   • Modify Channel     PATCH  /helix/channels?broadcaster_id  {title?, game_id?}
  *                        kapsam channel:manage:broadcast, jeton YAYINCININ olmalı
+ *   • Update Chat Settings PATCH /helix/chat/settings?broadcaster_id&moderator_id
+ *                        kapsam moderator:manage:chat_settings; tüm alanlar isteğe bağlı;
+ *                        slow_mode_wait_time 3…120 sn (vars. 30), follower_mode_duration
+ *                        0…129600 dk (vars. 0); süre alanı yalnız ilgili mod true iken
+ *                        (Chrome ile resmi belgeden okundu, 2026-09-26)
  *   • Token doğrulama    GET    https://id.twitch.tv/oauth2/validate
  *                        → {client_id, login, user_id, scopes, expires_in}
  *
@@ -82,4 +87,52 @@ export function twitchYayinCoz(govde: any): {
     kategori: String(s.game_name || ''),
     yayinId: String(s.id || '')
   };
+}
+
+/** Sohbet modu isteği (panel) — yalnız verilen alanlar değişir. */
+export interface SohbetModuGirdisi {
+  /** 0 = kapat, 3…120 sn = aç */
+  yavasSn?: number;
+  /** null/false = kapat, 0…129600 dk = aç */
+  takipciDk?: number | null | false;
+  abone?: boolean;
+  emote?: boolean;
+  benzersiz?: boolean;
+}
+
+export const YAVAS_MOD_ARALIK = [3, 120] as const;
+export const TAKIPCI_MOD_UST_DK = 129_600;
+
+/**
+ * Panel girdisini Helix `PATCH /chat/settings` gövdesine çevirir; aralık dışı değer reddedilir (Twitch
+ * 400 dönmeden önce açık hata). En az bir alan gerekir.
+ */
+export function sohbetModuGovdesi(g: unknown): { ok: true; govde: Record<string, boolean | number> } | { ok: false; hata: string } {
+  const o = (g && typeof g === 'object' ? g : {}) as Record<string, unknown>;
+  const govde: Record<string, boolean | number> = {};
+  if (o.yavasSn !== undefined) {
+    const n = Number(o.yavasSn);
+    if (!Number.isInteger(n)) return { ok: false, hata: 'Yavaş mod süresi tam sayı olmalı' };
+    if (n === 0) govde.slow_mode = false;
+    else if (n >= YAVAS_MOD_ARALIK[0] && n <= YAVAS_MOD_ARALIK[1]) {
+      govde.slow_mode = true;
+      govde.slow_mode_wait_time = n;
+    } else return { ok: false, hata: `Yavaş mod ${YAVAS_MOD_ARALIK[0]}-${YAVAS_MOD_ARALIK[1]} sn olmalı (0 = kapat)` };
+  }
+  if (o.takipciDk !== undefined) {
+    if (o.takipciDk === null || o.takipciDk === false) govde.follower_mode = false;
+    else {
+      const n = Number(o.takipciDk);
+      if (!Number.isInteger(n) || n < 0 || n > TAKIPCI_MOD_UST_DK) return { ok: false, hata: `Takipçi modu 0-${TAKIPCI_MOD_UST_DK} dk olmalı` };
+      govde.follower_mode = true;
+      govde.follower_mode_duration = n;
+    }
+  }
+  for (const [ad, alan] of [['abone', 'subscriber_mode'], ['emote', 'emote_mode'], ['benzersiz', 'unique_chat_mode']] as const) {
+    if (o[ad] === undefined) continue;
+    if (typeof o[ad] !== 'boolean') return { ok: false, hata: `'${ad}' true/false olmalı` };
+    govde[alan] = o[ad] as boolean;
+  }
+  if (!Object.keys(govde).length) return { ok: false, hata: 'Değiştirilecek sohbet modu yok' };
+  return { ok: true, govde };
 }

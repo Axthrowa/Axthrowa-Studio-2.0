@@ -129,7 +129,7 @@ BotRix ~60 değişken belgeliyor, bizde 8 var.
 | **Web/API** | `fetch[]` `$(urlfetch)` `$(earlyFetch)` `$(urlencode/decode)` | ❌ | `MISSING` |
 | **Matematik/zaman** | `$(math)` `$(round)` `$(countdown)` `$(countup)` `$(time)` | ❌ | `MISSING` |
 | **Kalıcı değişken** | `local` / `uservar` / `globalvar` + liste | ❌ | `MISSING` |
-| **JSON** | `$(json)` `$(jsonset)` `$(jsonunset)` | ❌ | `MISSING` |
+| **JSON** | `$(json)` `$(jsonset)` `$(jsonunset)` | ❌ → `$(json)` (3. tur), `$(jsonset)` / `$(jsonunset)` (2026-09-26, 3837b88) | `MISSING` → `DONE` |
 | **Koşullu etiket** | `<ifTwitch>` `<ifKick>` `<ifYouTube>` `<hideText>` | ❌ | `MISSING` |
 | Gelişmiş | `$(leagueoflegends)` `$(eval)` | ❌ | `BOTRIX_UNVERIFIED` (beta, elle erişim) |
 

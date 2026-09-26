@@ -178,3 +178,15 @@ Ya da `BACKUP_MANIFEST §10`'daki göç öncesi veritabanı yedeği kullanılır
    kontrolü uyarır, kendiliğinden kapatılmadı.
 5. Uyarı kuyruğu denetim durumu bellekte tutulur; sunucu yeniden başlarsa duraklatma/susturma sıfırlanır.
 6. Çoklu yayın ve platform sınırları için panel deposundaki `docs/KNOWN_LIMITATIONS.md`.
+
+## 9. STREAMING OS İKİNCİ TUR (2026-09-26)
+
+1. **Twitch sohbet modları ve tek mesaj silme canlı denenmedi** (gerçek moderasyon kuralı). Twitch bağlantısının
+   jetonu `moderator:manage:chat_settings` kapsamını içermiyorsa uç "kapsam eksik" hatası döner; kapsam için Twitch
+   bağlantısı yeniden yetkilendirilmeli. Kick ve YouTube'un resmi API'sinde sohbet modu yok → yetenek kapalı.
+2. **`tiktok-live-connector` 2.4.0'da sabit:** TikTok'un resmi olmayan protokolü değişirse bağlantı kopabilir;
+   daha yeni sürüm AGPL-3.0 (karar ürün sahibinin — panel `docs/LICENSE_AND_DEPENDENCY_REVIEW.md` §3).
+3. **Eski arşivler:** `release\StreamAxT-v1.0.0-Portable.zip` ve `StreamAxT-v1.0.0-Setup.zip` hâlâ 2.5.0 (AGPL)
+   içerir; yeniden paketlenmeden dağıtılmamalı.
+4. `$(jsonset)` / `$(jsonunset)` yalnız `local`, `uservar` ve `globalvar` kapsamlarında çalışır; sonuç 8000 karakteri
+   aşarsa yazılmaz ve `(json çok büyük)` döner; bozuk JSON'a yazılmaz (`(json invalid)`).

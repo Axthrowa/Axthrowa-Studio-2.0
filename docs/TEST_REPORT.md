@@ -498,3 +498,20 @@ kuralları, Türkçe büyük harf, Kick emote işaretlemesi), `moderation-input.
 Canlı (yalıtılmış kopya, PORT=3012): uyarı denetimi 11/11; Kick auth-url → `localhost:3012`, yabancı / yinelenen /
 eksik `state` reddedildi; kaydedilmemiş değişiklik şeridi + onay diyaloğu + geri tuşu; kalkan uygulama yolu 9/9 ve
 arayüzde kural aç/kapa; kenar çubuğu "Port 3012". Ayrıntı: panel `docs/TEST_REPORT.md`.
+
+## 11. STREAMING OS İKİNCİ TUR TESTLERİ (2026-09-26)
+
+| Paket | Sonuç |
+|---|---|
+| Sunucu `npx vitest run` | **462/462**, 32 dosya |
+| İstemci `npx vitest run` | **81/81** |
+| `tsc` (sunucu + istemci) | temiz |
+
+Yeni testler: `platforms/twitch-rules.test.ts` (sohbet modu gövdesi, sınırlar 3–120 sn / 0–129600 dk, geçersiz
+girdi), değişken motoru `$(jsonset)` / `$(jsonunset)` (iç içe yol, dizi, sınır, prototip kirletme reddi),
+`core/licenses.test.ts` (SPDX değerlendirme, kilit dosyası izin listesi, tiktok 2.4.0/MIT).
+
+Canlı (yalıtılmış örnek, PORT=3012): moderasyon uçlarının 8 hata/yetenek yolu (eksik alan, bilinmeyen platform,
+bağlı olmayan platform, desteklenmeyen sohbet modu, sınır dışı değer…) beklenen kodlarla döndü; panelin Kontrol
+destesi ve Hızlı eylemleri uyarı denetimini bu örnek üzerinden sürdü (duraklat → `paused: true`, sürdür →
+`paused: false`). Dağıtım klasörlerinde `tiktok-live-connector` içe aktarma denemesi başarılı.

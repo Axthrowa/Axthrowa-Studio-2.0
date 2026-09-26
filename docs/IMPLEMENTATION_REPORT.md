@@ -519,3 +519,18 @@ güvenlik etiketi `pre-streaming-os-20260925-175532`):
 
 Test: sunucu 451, istemci 81 (tur başı 431 / 75). Tüm canlı denemeler `scratchpad/sx-test2` altındaki yalıtılmış
 veritabanıyla; gerçek sohbet/bildirim/moderasyon eylemi tetiklenmedi.
+
+## 15. STREAMING OS — İKİNCİ TUR (2026-09-26, "Creator Streaming OS")
+
+Dal `revamp/streaming-os-20260926`, güvenlik etiketi `pre-streaming-os-revision-20260926-010500`, tam yedek
+`C:\Users\Axthrowa\Yedekler\backup-pre-streaming-os-revision-20260926-010500` (SHA-256 manifestolu). Ana rapor panel
+deposunda (`docs/IMPLEMENTATION_REPORT.md` §7).
+
+| Commit | İş | Durum |
+|---|---|---|
+| 71d0c37 | `tiktok-live-connector` tam sürüm `2.4.0` (son MIT sürüm; 2.4.1+ AGPL-3.0-only). Dağıtım klasörleri (`release/app`, `release/StreamAxT-v1.0.0-Portable/app`) de 2.4.0 + proto 0.2.3'e indirildi | DONE |
+| 3837b88 | `$(jsonset)` / `$(jsonunset)` — JSON yolu yazma/silme (8000 karakter sınırı, `__proto__` / `prototype` / `constructor` reddi) | DONE |
+| 64023eb | Tek mesaj silme (`POST /api/moderation/delete-message`) ve Twitch sohbet modları (`POST /api/moderation/chat-mode`: yavaş, takipçi, abone, yalnız emote, sohbet gecikmesi) — yetenek güdümlü (`moderasyon.mesajSil`, `moderasyon.sohbetModlari` yalnız Twitch), denetim kaydı, Twitch belgesindeki sınırlar | DONE (canlı UNVERIFIED) |
+| f8a247d | Lisans bekçisi testi (kilit dosyası + 2.4.0 sabitlemesi) | DONE |
+
+Test: sunucu 462 (32 dosya), istemci 81; `tsc` temiz. Gerçek moderasyon, sohbet mesajı ya da bildirim tetiklenmedi.

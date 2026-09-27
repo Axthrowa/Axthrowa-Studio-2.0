@@ -7,6 +7,7 @@ import { EmoteProvider } from "./lib/emotes/EmoteContext";
 import { ThemeProvider } from "./lib/theme/ThemeContext";
 import { applyPlatformTheme } from "./lib/platformTheme";
 import "./styles/index.css";
+import "./styles/desktop.css";
 import "./styles/overlay.css";
 
 applyPlatformTheme();

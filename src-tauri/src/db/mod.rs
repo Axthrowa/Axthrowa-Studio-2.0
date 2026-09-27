@@ -1,6 +1,7 @@
 //! Yerel Botaxt SQLite (sqlx) — pool, migrasyon, smartBot import.
 
 pub mod alerts;
+pub mod audit;
 pub mod bot_auth;
 pub mod bot_vars;
 pub mod botaxt_api;
@@ -51,13 +52,11 @@ pub async fn open_connected(data_dir: &Path) -> Result<SqlitePool> {
     .create_if_missing(true)
     .journal_mode(SqliteJournalMode::Wal)
     .foreign_keys(true);
-  Ok(
-    SqlitePoolOptions::new()
-      .max_connections(5)
-      .connect_with(opts)
-      .await
-      .context("sqlite connect")?,
-  )
+  SqlitePoolOptions::new()
+    .max_connections(5)
+    .connect_with(opts)
+    .await
+    .context("sqlite connect")
 }
 
 /// Migrasyon + varsayılan kanal + smartBot otomatik import.

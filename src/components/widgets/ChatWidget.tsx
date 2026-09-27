@@ -190,9 +190,9 @@ function themeShell(theme: ThemeId, bgOpacity: number): {
       };
     case "glitch":
       return {
-        wrap: "rounded-xl border border-fuchsia-400/40 bg-black/45 p-3 shadow-[0_0_20px_rgba(232,121,249,.25)]",
+        wrap: "rounded-xl border border-cyan-400/40 bg-black/45 p-3 shadow-[0_0_20px_rgba(62,237,254,.25)]",
         row: "",
-        bg: `rgba(12,4,18,${a})`,
+        bg: `rgba(4,14,22,${a})`,
       };
     case "boxed":
     default:

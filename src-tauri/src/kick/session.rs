@@ -131,7 +131,10 @@ impl KickBotSession {
       *self.data.write() = data;
     }
     self.save();
-    let _ = crate::db::bot_auth::save(pool, &Self::metadata_only(&self.data.read())).await;
+    // Okuma kilidi `.await` boyunca tutulmasın: bu sırada yazmak isteyen başka
+    // bir görev çalışan iş parçacığını kilitlerdi.
+    let meta = Self::metadata_only(&self.data.read());
+    let _ = crate::db::bot_auth::save(pool, &meta).await;
     Ok(())
   }
 
@@ -161,10 +164,6 @@ impl KickBotSession {
     *self.session_lost.write() = Some(reason.to_string());
   }
 
-  pub fn session_lost_reason(&self) -> Option<String> {
-    self.session_lost.read().clone()
-  }
-
   pub fn status(&self) -> Value {
     let d = self.data.read();
     let ready = !d.cookie_header.is_empty()
@@ -184,15 +183,6 @@ impl KickBotSession {
       "sessionLost": lost.is_some(),
       "lostReason": lost.unwrap_or_default(),
     })
-  }
-
-  pub fn is_ready(&self) -> bool {
-    let d = self.data.read();
-    if d.cookie_header.is_empty() {
-      return false;
-    }
-    // Klasik Laravel: XSRF; modern Kick: bearer yeterli olabilir
-    !d.xsrf_token.is_empty() || !d.bearer_token.is_empty()
   }
 
   /// Cookie ile kick.com’dan XSRF-TOKEN tamamla.
@@ -738,7 +728,7 @@ impl KickBotSession {
     let c = client()?;
     let urls = [
       url_v2.clone(),
-      format!("https://kick.com/api/v1/chat-messages"),
+      "https://kick.com/api/v1/chat-messages".to_string(),
     ];
     let bodies = [body_v2, body_v1];
     let mut last_err = String::new();
@@ -866,8 +856,7 @@ impl KickBotSession {
     // -L sonrası son HTTP satırı
     let code = hdr
       .lines()
-      .filter(|l| l.starts_with("HTTP/"))
-      .last()
+      .rfind(|l| l.starts_with("HTTP/"))
       .and_then(|l| l.split_whitespace().nth(1))
       .and_then(|s| s.parse::<u16>().ok())
       .unwrap_or(0);
@@ -878,119 +867,6 @@ impl KickBotSession {
       return Err(anyhow!("curl Cloudflare challenge HTML"));
     }
     Err(anyhow!("curl HTTP {code}: {text}"))
-  }
-
-  /// Timeout / ban (internal).
-  pub async fn ban_user(
-    &self,
-    channel_slug: &str,
-    username: &str,
-    duration_min: Option<u64>,
-    reason: &str,
-  ) -> Result<Value> {
-    let sess = self.snapshot();
-    if sess.cookie_header.is_empty() || sess.xsrf_token.is_empty() {
-      return Err(anyhow!("Kick bot oturumu yok"));
-    }
-    let slug = normalize_slug(if channel_slug.is_empty() {
-      &sess.channel_slug
-    } else {
-      channel_slug
-    });
-    if slug.is_empty() {
-      return Err(anyhow!("channel slug yok"));
-    }
-    let user = username.trim().trim_start_matches('@');
-    if user.is_empty() {
-      return Err(anyhow!("kullanıcı adı boş"));
-    }
-    let permanent = duration_min.is_none() || duration_min == Some(0);
-    let body = if permanent {
-      json!({
-        "banned_username": user,
-        "permanent": true,
-        "reason": reason,
-      })
-    } else {
-      json!({
-        "banned_username": user,
-        "permanent": false,
-        "duration": duration_min.unwrap_or(5),
-        "reason": reason,
-      })
-    };
-
-    let c = client()?;
-    let url = format!("https://kick.com/api/v2/channels/{slug}/bans");
-    let mut req = c
-      .post(&url)
-      .header("Accept", "application/json")
-      .header("Content-Type", "application/json")
-      .header("User-Agent", UA)
-      .header("Origin", "https://kick.com")
-      .header("Referer", format!("https://kick.com/{slug}"))
-      .header("X-XSRF-TOKEN", &sess.xsrf_token)
-      .header("Cookie", &sess.cookie_header);
-    if !sess.bearer_token.is_empty() {
-      req = req.header("Authorization", format!("Bearer {}", sess.bearer_token));
-    }
-    let res = req.json(&body).send().await?;
-    let status = res.status();
-    let text = res.text().await.unwrap_or_default();
-    if !status.is_success() {
-      let code = status.as_u16();
-      yya_warn!("[kick-session] ban/timeout FAIL · HTTP {code}: {text}");
-      if code == 403 || code == 401 || code == 419 || text.to_lowercase().contains("csrf") {
-        self.mark_session_lost(&format!("Moderasyon API hatası ({code})"));
-      }
-      return Err(anyhow!("Kick ban/timeout başarısız ({status}): {text}"));
-    }
-    yya_log!(
-      "[kick-session] ban/timeout OK · @{user} · {} dk",
-      duration_min.unwrap_or(0)
-    );
-    Ok(json!({ "ok": true, "user": user, "duration": duration_min }))
-  }
-
-  pub async fn delete_message(&self, channel_slug: &str, message_id: &str) -> Result<Value> {
-    let sess = self.snapshot();
-    if sess.cookie_header.is_empty() || sess.xsrf_token.is_empty() {
-      return Err(anyhow!("Kick bot oturumu yok"));
-    }
-    let slug = normalize_slug(if channel_slug.is_empty() {
-      &sess.channel_slug
-    } else {
-      channel_slug
-    });
-    let mid = message_id.trim();
-    if slug.is_empty() || mid.is_empty() {
-      return Err(anyhow!("slug veya message_id boş"));
-    }
-    let c = client()?;
-    let url = format!("https://kick.com/api/v2/channels/{slug}/messages/{mid}");
-    let mut req = c
-      .delete(&url)
-      .header("Accept", "application/json")
-      .header("User-Agent", UA)
-      .header("Origin", "https://kick.com")
-      .header("Referer", format!("https://kick.com/{slug}"))
-      .header("X-XSRF-TOKEN", &sess.xsrf_token)
-      .header("Cookie", &sess.cookie_header);
-    if !sess.bearer_token.is_empty() {
-      req = req.header("Authorization", format!("Bearer {}", sess.bearer_token));
-    }
-    let res = req.send().await?;
-    let status = res.status();
-    let text = res.text().await.unwrap_or_default();
-    if !status.is_success() {
-      let code = status.as_u16();
-      yya_warn!("[kick-session] delete FAIL · HTTP {code}: {text}");
-      if code == 403 || code == 401 || code == 419 || text.to_lowercase().contains("csrf") {
-        self.mark_session_lost(&format!("Mesaj silme API hatası ({code})"));
-      }
-      return Err(anyhow!("Kick mesaj silinemedi ({status}): {text}"));
-    }
-    Ok(json!({ "ok": true, "messageId": mid }))
   }
 
   /// Kick sohbet geçmişini platform tarafında temizler (moderatör oturumu).

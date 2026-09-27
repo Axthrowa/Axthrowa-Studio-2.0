@@ -3,7 +3,6 @@ import {
   bindingName,
   buildHotkeyPlan,
   conflictFailures,
-  isConflictLoser,
   migrateHotkeyDefaults,
 } from "./hotkeyPlan";
 
@@ -34,8 +33,8 @@ describe("buildHotkeyPlan", () => {
     expect(plan.conflicts).toEqual([
       { spec: "Ctrl+F1", winnerId: "starting", loserIds: ["sfx:pad1"] },
     ]);
-    expect(isConflictLoser(plan, "sfx:pad1")?.winnerId).toBe("starting");
-    expect(isConflictLoser(plan, "starting")).toBeNull();
+    // Yalnız kaybeden uyarı alır; kazanan kısayol çalışmaya devam eder.
+    expect(conflictFailures(plan).map((f) => f.id)).toEqual(["sfx:pad1"]);
   });
 
   it("sahne kısayolu aksiyondan önce gelir", () => {

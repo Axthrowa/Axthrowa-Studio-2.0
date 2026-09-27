@@ -118,16 +118,3 @@ export function dismissAppAlert(): void {
   emit();
 }
 
-/** Toast metni hataysa merkeze al; başarı mesajını toast’ta bırak. */
-export function routeUserMessage(
-  text: string,
-  showToast: (m: string) => void
-): void {
-  const s = String(text || "").trim();
-  if (!s) return;
-  if (isErrorLike(s)) {
-    pushAppAlert({ message: s });
-    return;
-  }
-  showToast(s);
-}

@@ -13,12 +13,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon", "protocol-asset", "image-png"] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
 tauri-plugin-global-shortcut = "2"
-tauri-plugin-updater = "2"
-tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
@@ -33,15 +30,18 @@ http-range = "0.1"
 parking_lot = "0.12"
 uuid = { version = "1", features = ["v4"] }
 urlencoding = "2"
-keyring = "3"
+# windows-native olmadan keyring 3 sahte (mock) bellek deposuna düşer: sırlar hiç kalıcı olmuyordu.
+keyring = { version = "3", features = ["windows-native"] }
 chrono = { version = "0.4", features = ["serde"] }
 anyhow = "1"
 percent-encoding = "2"
 http = "1"
 base64 = "0.22"
 sha2 = "0.10"
+# Eklenti paketi (zip) açma — zaten bağımlılık ağacında (reqwest/tauri üzerinden)
+flate2 = "1"
 # OBS WebSocket v5 istemcisi (kalıcı Control Hub bağlantısı)
-obws = { version = "0.14", default-features = false, features = ["events"] }
+obws = { version = "0.15", default-features = false, features = ["events"] }
 sqlx = { version = "0.8", default-features = false, features = [
   "runtime-tokio",
   "sqlite",
@@ -54,9 +54,15 @@ windows = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_Media_Audio",
   "Win32_Security",
+  "Win32_Security_Cryptography",
+  "Win32_Security_Cryptography_Catalog",
+  "Win32_Security_Cryptography_Sip",
+  "Win32_Security_WinTrust",
+  "Win32_Storage_FileSystem",
   "Win32_System_Com",
   "Win32_System_Com_StructuredStorage",
   "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_JobObjects",
   "Win32_System_Threading",
   "Win32_System_Variant",
   "Win32_UI_Shell",

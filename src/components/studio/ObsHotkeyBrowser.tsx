@@ -115,44 +115,44 @@ export default function ObsHotkeyBrowser({
   }, [shown]);
 
   return (
-    <section className="space-y-3">
-      <div>
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Search className="h-4 w-4 text-panel-accent" /> Diğer OBS kısayolları
+    <section className="space-y-4 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
+      <div className="border-b border-white/[0.06] pb-2.5">
+        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+          <Search className="h-4.5 w-4.5 text-panel-accent" /> Diğer OBS kısayolları
         </h3>
-        <p className="mt-0.5 text-[11px] leading-snug text-panel-muted">
+        <p className="mt-1 text-xs leading-relaxed text-white/75">
           OBS'in Ayarlar → Kısayollar listesindeki her komut: ses kaynağını sessize alma, bas-konuş, tarayıcı
           kaynağını yenileme, stüdyo modu, belirli bir sahneyi seçme…
         </p>
       </div>
 
-      <div className="space-y-2 rounded-lg bg-white/[0.03] p-2.5">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-3 rounded-xl bg-white/[0.03] p-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             disabled={busy}
-            className="yya-btn-ghost h-8 px-3 text-xs disabled:opacity-50"
+            className="yya-btn-ghost h-9 px-3.5 text-xs md:text-sm font-bold disabled:opacity-50"
             onClick={() => void load()}
           >
             {busy ? "Okunuyor…" : catalog ? "Listeyi yenile" : "OBS'ten kısayolları yükle"}
           </button>
           {catalog && (
             <input
-              className="yya-input h-8 min-w-[10rem] flex-1 text-xs"
+              className="yya-input h-9 min-w-[10rem] flex-1 text-xs md:text-sm font-medium text-white"
               placeholder="Ara (ör. sessize, tarayıcı, sahne)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           )}
         </div>
-        {error && <p className="rounded-md bg-red-500/10 px-2 py-1.5 text-[11px] text-red-200">{error}</p>}
+        {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-medium text-red-200">{error}</p>}
 
         {catalog && (
-          <div className="grid gap-2 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto_auto]">
-            <label className="text-[11px] text-panel-muted">
+          <div className="grid gap-2.5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto_auto]">
+            <label className="text-xs font-bold uppercase tracking-wider text-white/80">
               Kısayol
               <select
-                className="yya-input mt-0.5 h-8 w-full text-xs"
+                className="yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white"
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -172,10 +172,10 @@ export default function ObsHotkeyBrowser({
                 ))}
               </select>
             </label>
-            <label className="text-[11px] text-panel-muted">
+            <label className="text-xs font-bold uppercase tracking-wider text-white/80">
               {group === "scene" ? "Sahne" : "Kaynak"}
               <input
-                className="yya-input mt-0.5 h-8 w-full text-xs disabled:opacity-40"
+                className="yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white disabled:opacity-40"
                 list="obs-hk-context"
                 value={context}
                 disabled={!selected?.needsContext}
@@ -188,11 +188,11 @@ export default function ObsHotkeyBrowser({
                 ))}
               </datalist>
             </label>
-            <div className="text-[11px] text-panel-muted">
+            <div className="text-xs font-bold uppercase tracking-wider text-white/80">
               Tuş
-              <div className="mt-0.5">
+              <div className="mt-1">
                 <HotkeyInput
-                  className="h-8 w-28 rounded border border-panel-border bg-black/40 px-1.5 text-center text-xs"
+                  className="h-9 w-32 rounded-lg border border-panel-border bg-black/50 px-2 text-center font-mono text-xs md:text-sm font-medium text-white"
                   value={hotkey}
                   onListeningChange={onListeningChange}
                   onChange={setHotkey}
@@ -203,7 +203,7 @@ export default function ObsHotkeyBrowser({
               <button
                 type="button"
                 disabled={!canAdd}
-                className="h-8 rounded-md bg-panel-accent px-3 text-xs font-medium text-[#08131c] disabled:opacity-40"
+                className="h-9 rounded-lg bg-panel-accent px-4 text-xs md:text-sm font-bold text-[#08131c] hover:bg-panel-accent/90 disabled:opacity-40"
                 onClick={add}
               >
                 Ekle

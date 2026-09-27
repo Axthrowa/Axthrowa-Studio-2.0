@@ -7,8 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   canonicalizeHotkeySpec,
   eventToSpec,
-  modsPreviewFromEvent,
-  toAccelerator,
+  toAccelerator
 } from "../../lib/globalHotkeys";
 import { useT } from "../../i18n";
 
@@ -81,7 +80,7 @@ function mainCodeFromEvent(e: KeyboardEvent): string | null {
 export default function HotkeyInput({
   value,
   onChange,
-  className = "min-w-[10rem] w-40 shrink-0 rounded border border-panel-border bg-black/40 px-1.5 py-1 text-center text-xs",
+  className = "min-w-[7.5rem] rounded-lg border border-white/[0.09] bg-black/40 px-2 py-1 text-center font-mono text-xs text-white placeholder:text-panel-muted outline-none transition-all focus:border-panel-accent/60 focus:ring-1 focus:ring-panel-accent/30",
   placeholder = "Ctrl+Alt+1",
   title = "Kısayol — Tuş ata ile kombinasyon yakala veya elle yaz (Ctrl+Alt+1)",
   onListeningChange,
@@ -276,10 +275,14 @@ export default function HotkeyInput({
   };
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <div className="flex items-center gap-1">
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5">
         <input
-          className={className}
+          className={`${className} ${
+            listening
+              ? "!border-amber-500/80 !bg-amber-500/10 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+              : ""
+          }`}
           value={listening ? preview || draft : draft}
           placeholder={placeholder}
           title={title}
@@ -299,10 +302,10 @@ export default function HotkeyInput({
         <button
           type="button"
           className={
-            "shrink-0 rounded px-1.5 py-1 text-[10px] font-medium whitespace-nowrap " +
+            "shrink-0 rounded-lg border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-150 active:scale-95 " +
             (listening
-              ? "bg-amber-600 text-white"
-              : "bg-panel-accent/70 text-white hover:bg-panel-accent")
+              ? "border-amber-500/60 bg-amber-500 text-black shadow-glow animate-pulse"
+              : "border-panel-accent/30 bg-panel-accent/15 text-panel-accent hover:border-panel-accent/50 hover:bg-panel-accent/25")
           }
           title={t("hotkey.listenHint")}
           onPointerDown={(e) => e.preventDefault()}
@@ -317,7 +320,7 @@ export default function HotkeyInput({
         </button>
       </div>
       {listening || hint ? (
-        <span className="max-w-[16rem] text-[10px] leading-tight text-amber-300">
+        <span className="max-w-[18rem] text-[10px] font-medium leading-tight text-amber-300">
           {listening
             ? `${t("hotkey.listenHint")}${preview ? ` · ${preview}` : ""}`
             : hint}

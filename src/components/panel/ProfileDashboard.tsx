@@ -43,6 +43,27 @@ function markStreamLive(live: boolean) {
   }));
 }
 
+/**
+ * `<video src>` bu akışı doğrudan oynatabilir mi?
+ *
+ * Kick'in playback adresi HLS (.m3u8). Chromium/WebView2 HLS'i yerel olarak
+ * oynatmaz (yalnız Safari oynatır), bu yüzden önizleme siyah kalıyordu.
+ * Oynatamıyorsak Kick'in kendi oynatıcısını (iframe) kullanırız.
+ */
+export function canPlayDirectly(url: string, probe?: (t: string) => string): boolean {
+  if (!/\.m3u8(\?|$)/i.test(url)) return true;
+  const can =
+    probe ||
+    ((t: string) => {
+      try {
+        return document.createElement("video").canPlayType(t);
+      } catch {
+        return "";
+      }
+    });
+  return !!(can("application/vnd.apple.mpegurl") || can("application/x-mpegURL"));
+}
+
 export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Props) {
   const [data, setData] = useState<DashboardSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -228,12 +249,15 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
   ]);
 
   const onEnd = async () => {
+    if (busy) return;
+    // Çıkış ekranı veritabanı oturumuna BAĞLI DEĞİL. Eskiden `active_session`
+    // yoksa (yayın OBS'ten başlatıldıysa ya da oturum açılamadıysa) düğme hiç
+    // çalışmıyordu: "yayını kapat dediğimde çıkış ekranı gelmiyor".
     const sid = data?.active_session?.id;
-    if (!sid || busy) return;
     setBusy(true);
-    stopPending.current = true;
+    stopPending.current = !!sid;
     try {
-      onToast("Çıkış ekranı — yayın süre bitince kapanacak");
+      onToast(sid ? "Çıkış ekranı — yayın süre bitince kapanacak" : "Çıkış ekranına geçiliyor");
       setBusy(false);
       void (async () => {
         try {
@@ -280,16 +304,20 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
           </h2>
         </div>
         <div className="flex flex-wrap gap-2">
-          {data?.active_session ? (
-            <button
-              type="button"
-              disabled={busy}
-              className="yya-btn-danger"
-              onClick={() => void onEnd()}
-            >
-              Yayını bitir
-            </button>
-          ) : null}
+          {/* Düğme her zaman görünür: çıkış ekranına geçiş oturumdan bağımsız. */}
+          <button
+            type="button"
+            disabled={busy}
+            className="yya-btn-danger"
+            onClick={() => void onEnd()}
+            title={
+              data?.active_session
+                ? "Yayını bitir: çıkış ekranına geç ve OBS yayınını durdur"
+                : "Çıkış ekranına geç ve OBS yayınını durdur"
+            }
+          >
+            Yayını bitir
+          </button>
           <button type="button" className="yya-btn-ghost" onClick={() => void refresh()}>
             Yenile
           </button>
@@ -398,9 +426,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
         <div className="grid min-h-[28rem] lg:grid-cols-[1.55fr_1fr]">
           <div className="min-h-[22rem] bg-black lg:min-h-[28rem]">
             {(liveStatus.live || streamLive || !!data?.active_session) && kickSlug ? (
-              liveStatus.playbackUrl ? (
+              liveStatus.playbackUrl && canPlayDirectly(liveStatus.playbackUrl) ? (
                 <video
-                  key={`${kickSlug}-hls`}
+                  key={`${kickSlug}-hls-${previewEpoch}`}
                   className="h-full min-h-[22rem] w-full object-contain lg:min-h-[28rem]"
                   src={liveStatus.playbackUrl}
                   autoPlay
@@ -410,7 +438,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
                 />
               ) : (
               <iframe
-                key={kickSlug}
+                // Yayın durumu değişince yeniden yüklenir: yayın başlamadan açılan
+                // oynatıcı aksi hâlde "çevrimdışı" ekranında kalıyordu.
+                key={`${kickSlug}-${previewEpoch}`}
                 title={`${kickSlug} canlı yayın önizlemesi`}
                 src={`https://player.kick.com/${encodeURIComponent(kickSlug)}?autoplay=true&muted=true`}
                 className="h-full min-h-[22rem] w-full border-0 lg:min-h-[28rem]"
@@ -641,11 +671,11 @@ function HealthBadge({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-panel-border/70 bg-panel-elevated/50 px-3 py-2.5">
+    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-panel-card/70 px-3.5 py-2.5 shadow-panel">
       <span className={ok ? "text-panel-accent" : "text-amber-300"}>{icon}</span>
       <span>
-        <span className="block text-[11px] uppercase tracking-wider text-panel-muted">{label}</span>
-        <span className={`text-xs font-semibold ${ok ? "text-panel-accent" : "text-amber-200"}`}>
+        <span className="block text-[10px] font-bold uppercase tracking-wider text-panel-muted">{label}</span>
+        <span className={`text-xs font-bold ${ok ? "text-panel-accent" : "text-amber-200"}`}>
           {value}
         </span>
       </span>
@@ -663,10 +693,10 @@ function Stat({
   hint?: string;
 }) {
   return (
-    <div className="yya-stat">
-      <div className="text-[11px] uppercase tracking-wider text-panel-muted">{label}</div>
-      <div className="mt-1 font-display text-xl font-semibold text-panel-accent">{value}</div>
-      {hint && <div className="mt-0.5 text-[10px] text-panel-muted">{hint}</div>}
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-panel-card/70 p-3.5 shadow-panel transition-all duration-150 hover:border-white/[0.14] hover:bg-white/[0.04]">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-panel-muted">{label}</div>
+      <div className="mt-1.5 font-display text-2xl font-bold tracking-tight text-panel-accent">{value}</div>
+      {hint && <div className="mt-1 text-[10px] text-white/50">{hint}</div>}
     </div>
   );
 }

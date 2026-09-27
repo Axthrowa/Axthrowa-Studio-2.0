@@ -35,7 +35,7 @@ pub fn claim() -> bool {
 }
 
 fn one_getir() {
-  let title: Vec<u16> = "Yayın Yönetim Aracı\0".encode_utf16().collect();
+  let title: Vec<u16> = "StreamAxT\0".encode_utf16().collect();
   unsafe {
     // Sınıf adı bilinmiyor; başlıkla bul.
     if let Ok(hwnd) = FindWindowW(PCWSTR::null(), PCWSTR(title.as_ptr())) {

@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
-use axum::extract::{Query, State};
+use axum::extract::{ConnectInfo, Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
@@ -13,7 +13,7 @@ use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use axum::http::HeaderValue;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::services::{ServeDir, ServeFile};
 
@@ -21,8 +21,22 @@ use crate::media;
 use crate::settings::ScreenKind;
 use crate::AppState;
 
+mod actions_api;
+pub(crate) use actions_api::kisayol_eylemi;
 mod auth;
 mod botaxt;
+mod control_plane;
+mod destek_api;
+mod eklenti_api;
+mod dosya_adi;
+mod local_guard;
+mod koleksiyon_api;
+mod motor_api;
+mod profil_api;
+mod motor_sahne_api;
+mod motor_ses_api;
+mod multistream_api;
+mod otomasyon_kilidi;
 pub mod runtime_api;
 
 fn resolve_resonance_dist(root: &std::path::Path) -> Option<PathBuf> {
@@ -70,8 +84,10 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
   let index = dist.join("index.html");
   let has_dist = index.exists();
 
+  // Yalnız yerel kökenler yanıtı okuyabilir (bkz. local_guard). Eskiden
+  // `allow_origin(Any)`: ziyaret edilen her site ayarları/dosyaları okuyabiliyordu.
   let cors = CorsLayer::new()
-    .allow_origin(Any)
+    .allow_origin(AllowOrigin::predicate(local_guard::cors_origin_ok))
     .allow_methods(Any)
     .allow_headers(Any);
 
@@ -105,7 +121,6 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/kick/oauth/status", get(api_kick_oauth_status))
     .route("/api/kick/oauth/disconnect", post(api_kick_oauth_disconnect))
     .route("/api/kick/hub", get(api_kick_hub))
-    .route("/api/kick/webhook", post(api_kick_webhook))
     .route("/api/auth/notify-success", post(api_auth_notify_success))
     .route("/api/kick/chat/send", post(api_kick_chat_send))
     .route("/api/kick/bot-session/status", get(api_kick_bot_session_status))
@@ -148,6 +163,8 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/player/spotify/disconnect", post(api_spotify_disconnect))
     .route("/api/player/spotify/recently-played", get(api_spotify_recently_played))
     .route("/api/open-external", post(api_open_external))
+    .route("/api/automation/claim", post(api_automation_claim))
+    .route("/api/automation/release", post(api_automation_release))
     .route("/api/player/spotify/manual", post(api_spotify_manual))
     .route("/api/player/spotify/token", post(api_spotify_token))
     // Botaxt Modül 1 — profil / dashboard / oturum (+ eski /api/botrix alias)
@@ -178,7 +195,18 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .nest_service("/assets/backgrounds", ServeDir::new(&backgrounds_dir));
 
   // Botaxt Modül 2–8
-  let mut api = api.merge(botaxt::router()).merge(runtime_api::router());
+  let mut api = api
+    .merge(botaxt::router())
+    .merge(runtime_api::router())
+    .merge(multistream_api::router())
+    .merge(actions_api::router())
+    .merge(motor_api::router())
+    .merge(motor_sahne_api::router())
+    .merge(koleksiyon_api::router())
+    .merge(profil_api::router())
+    .merge(motor_ses_api::router())
+    .merge(destek_api::router())
+    .merge(eklenti_api::router());
 
   if let Some(res_dist) = resonance_dist {
     let resonance_index = res_dist.join("index.html");
@@ -238,6 +266,9 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     state_arc.clone(),
     auth::require_bearer_outside_loopback,
   ));
+  // En dış katman: yabancı Host (DNS yeniden bağlama) ve yabancı kökenden
+  // yazma / WebSocket istekleri hiçbir işleyiciye ulaşmasın.
+  let app = app.layer(axum::middleware::from_fn(local_guard::guard));
 
   let addr = SocketAddr::from((bind_host, port));
   let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -656,39 +687,6 @@ async fn api_kick_hub(State(state): State<Arc<AppState>>) -> Json<Value> {
   Json(hub)
 }
 
-/// Kick Developer webhook URL: `http(s)://HOST/api/kick/webhook`
-/// Not: localhost Kick tarafından ulaşılamaz — tunnel (ngrok/cloudflare) gerekir.
-async fn api_kick_webhook(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-  body: axum::body::Bytes,
-) -> StatusCode {
-  let event_type = headers
-    .get("Kick-Event-Type")
-    .or_else(|| headers.get("kick-event-type"))
-    .and_then(|v| v.to_str().ok())
-    .unwrap_or("");
-  let parsed: Value = serde_json::from_slice(&body).unwrap_or(json!({}));
-  yya_warn!("[kick-webhook] event={event_type}");
-  if let Some(msg) = crate::kick::inbound_from_event(event_type, &parsed) {
-    let st = state.clone();
-    tokio::spawn(async move {
-      if let Err(e) = crate::bot::pipeline::handle_inbound(st, msg).await {
-        yya_warn!("[kick-webhook] pipeline: {e:#}");
-      }
-    });
-  } else {
-    // livestream vs. — overlay’e yayınla
-    state.broadcast_json(&json!({
-      "type": "kick-api-event",
-      "event": event_type,
-      "data": parsed,
-      "t": crate::db::chrono_now(),
-    }));
-  }
-  StatusCode::OK
-}
-
 async fn api_kick_oauth_disconnect(State(state): State<Arc<AppState>>) -> Json<Value> {
   state.kick_auth.disconnect();
   Json(state.kick_auth.status())
@@ -1040,10 +1038,10 @@ async fn api_particle_upload(
     .get("x-filename")
     .and_then(|v| v.to_str().ok())
     .map(|s| s.to_string());
+  let varsayilan = format!("particle-{}.{}", chrono::Utc::now().timestamp_millis(), ext);
   let safe = name_hdr
-    .unwrap_or_else(|| format!("particle-{}.{}", chrono::Utc::now().timestamp_millis(), ext))
-    .replace(['/', '\\'], "_")
-    .replace("..", "_");
+    .and_then(|n| dosya_adi::asset_file_name(&n))
+    .unwrap_or(varsayilan);
   let safe = if safe.to_lowercase().ends_with(".png")
     || safe.to_lowercase().ends_with(".webp")
     || safe.to_lowercase().ends_with(".jpg")
@@ -1073,10 +1071,9 @@ async fn api_particle_delete(
   State(state): State<Arc<AppState>>,
   Json(body): Json<ParticleDelete>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let name = body.name.replace(['/', '\\'], "");
-  if name.contains("..") {
+  let Some(name) = dosya_adi::asset_file_name(&body.name) else {
     return Err((StatusCode::BAD_REQUEST, "invalid name".into()));
-  }
+  };
   let path = state.root.join("assets").join("particles").join(&name);
   if path.is_file() {
     std::fs::remove_file(&path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1119,10 +1116,10 @@ async fn api_music_upload(
     .get("x-filename")
     .and_then(|v| v.to_str().ok())
     .map(|s| s.to_string());
+  let varsayilan = format!("music-{}.{}", chrono::Utc::now().timestamp_millis(), ext);
   let safe = name_hdr
-    .unwrap_or_else(|| format!("music-{}.{}", chrono::Utc::now().timestamp_millis(), ext))
-    .replace(['/', '\\'], "_")
-    .replace("..", "_");
+    .and_then(|n| dosya_adi::asset_file_name(&n))
+    .unwrap_or(varsayilan);
   let lower = safe.to_lowercase();
   let safe = if lower.ends_with(".mp3")
     || lower.ends_with(".wav")
@@ -1155,10 +1152,9 @@ async fn api_music_delete(
   State(state): State<Arc<AppState>>,
   Json(body): Json<MusicDelete>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let name = body.name.replace(['/', '\\'], "");
-  if name.contains("..") {
+  let Some(name) = dosya_adi::asset_file_name(&body.name) else {
     return Err((StatusCode::BAD_REQUEST, "invalid name".into()));
-  }
+  };
   let path = state.root.join("assets").join("music").join(&name);
   if path.is_file() {
     std::fs::remove_file(&path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1222,10 +1218,10 @@ async fn api_sfx_upload(
     .get("x-filename")
     .and_then(|v| v.to_str().ok())
     .map(|s| s.to_string());
+  let varsayilan = format!("sfx-{}.{}", chrono::Utc::now().timestamp_millis(), ext);
   let safe = name_hdr
-    .unwrap_or_else(|| format!("sfx-{}.{}", chrono::Utc::now().timestamp_millis(), ext))
-    .replace(['/', '\\'], "_")
-    .replace("..", "_");
+    .and_then(|n| dosya_adi::asset_file_name(&n))
+    .unwrap_or(varsayilan);
   let lower = safe.to_lowercase();
   let safe = if lower.ends_with(".mp3")
     || lower.ends_with(".wav")
@@ -1258,10 +1254,9 @@ async fn api_sfx_delete(
   State(state): State<Arc<AppState>>,
   Json(body): Json<SfxDelete>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let name = body.name.replace(['/', '\\'], "");
-  if name.contains("..") {
+  let Some(name) = dosya_adi::asset_file_name(&body.name) else {
     return Err((StatusCode::BAD_REQUEST, "invalid name".into()));
-  }
+  };
   let path = state.root.join("assets").join("sfx").join(&name);
   if path.is_file() {
     std::fs::remove_file(&path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1383,10 +1378,9 @@ fn delete_named_asset(
   folder: &str,
   name: &str,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let name = name.replace(['/', '\\'], "");
-  if name.contains("..") {
+  let Some(name) = dosya_adi::asset_file_name(name) else {
     return Err((StatusCode::BAD_REQUEST, "invalid name".into()));
-  }
+  };
   let path = root.join("assets").join(folder).join(&name);
   if path.is_file() {
     std::fs::remove_file(&path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1436,7 +1430,8 @@ async fn api_library_import(
     .file_name()
     .map(|s| s.to_string_lossy().to_string())
     .unwrap_or_else(|| format!("import-{}", chrono::Utc::now().timestamp_millis()));
-  let safe = fname.replace(['/', '\\'], "_").replace("..", "_");
+  let safe = dosya_adi::asset_file_name(&fname)
+    .unwrap_or_else(|| format!("import-{}", chrono::Utc::now().timestamp_millis()));
   let dir = state.root.join("assets").join(folder);
   std::fs::create_dir_all(&dir).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   let dest = dir.join(&safe);
@@ -1715,6 +1710,36 @@ async fn api_put_overlay_config(
 #[derive(Deserialize)]
 struct OpenExternalBody {
   url: String,
+}
+
+#[derive(Deserialize)]
+struct OtomasyonKilidiBody {
+  key: String,
+  owner: String,
+}
+
+/// Giriş/çıkış bitiş eylemini yalnız BİR görünüm yapsın (OBS sayfası ya da
+/// panel) — bkz. `otomasyon_kilidi`. Kilit zehirlenirse eylem engellenmez.
+async fn api_automation_claim(
+  Json(b): Json<OtomasyonKilidiBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+  if !otomasyon_kilidi::gecerli_anahtar(&b.key) || !otomasyon_kilidi::gecerli_sahip(&b.owner) {
+    return Err((StatusCode::BAD_REQUEST, "geçersiz kilit isteği".to_string()));
+  }
+  let ok = otomasyon_kilidi::kilitler()
+    .lock()
+    .map(|mut k| k.talep(&b.key, &b.owner, std::time::Instant::now()))
+    .unwrap_or(true);
+  Ok(Json(json!({ "ok": ok })))
+}
+
+async fn api_automation_release(Json(b): Json<OtomasyonKilidiBody>) -> StatusCode {
+  if otomasyon_kilidi::gecerli_anahtar(&b.key) && otomasyon_kilidi::gecerli_sahip(&b.owner) {
+    if let Ok(mut k) = otomasyon_kilidi::kilitler().lock() {
+      k.birak(&b.key, &b.owner);
+    }
+  }
+  StatusCode::NO_CONTENT
 }
 
 #[derive(Deserialize)]
@@ -2029,11 +2054,20 @@ async fn api_media_file(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
-async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> impl IntoResponse {
-  ws.on_upgrade(move |socket| client_ws(socket, state))
+async fn ws_handler(
+  ws: WebSocketUpgrade,
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+  // GÜVENLİK: `/ws/*` LAN kipinde Bearer istemez (OBS tarayıcı kaynakları başlık gönderemez) ama
+  // anlık görüntü ekran ayarlarını — kasadan enjekte edilmiş OBS şifresi dahil — taşıyordu. LAN'daki
+  // herhangi bir cihaz şifreyi okuyabiliyordu; HTTP ayar ucu ise LAN'da zaten Bearer istiyor.
+  // Aynı bilgisayardaki OBS (loopback) otomasyon için şifreyi almaya devam eder.
+  let redact = !addr.ip().is_loopback();
+  ws.on_upgrade(move |socket| client_ws(socket, state, redact))
 }
 
-async fn client_ws(socket: WebSocket, state: Arc<AppState>) {
+async fn client_ws(socket: WebSocket, state: Arc<AppState>, redact: bool) {
   let (mut sender, mut receiver) = socket.split();
   let mut rx = state.tx.subscribe();
   // Bu bağlantıya özel yanıtlar (pong) için ayrı kanal — yayın kanalını
@@ -2042,7 +2076,7 @@ async fn client_ws(socket: WebSocket, state: Arc<AppState>) {
 
   let snap = {
     let s = state.settings.read();
-    serde_json::json!({
+    let mut v = serde_json::json!({
       "type": "snapshot",
       "starting": s.get(ScreenKind::Starting),
       "ending": s.get(ScreenKind::Ending),
@@ -2050,8 +2084,11 @@ async fn client_ws(socket: WebSocket, state: Arc<AppState>) {
       "chat": s.get(ScreenKind::Chat),
       "panel": s.get(ScreenKind::Panel),
       "nowPlaying": state.music.now_playing(),
-    })
-    .to_string()
+    });
+    if redact {
+      crate::secret_store::redact_obs_passwords(&mut v);
+    }
+    v.to_string()
   };
   if sender.send(Message::Text(snap.into())).await.is_err() {
     return;
@@ -2070,6 +2107,11 @@ async fn client_ws(socket: WebSocket, state: Arc<AppState>) {
           Some(m) => m,
           None => break,
         },
+      };
+      let out = if redact {
+        crate::secret_store::redact_obs_passwords_text(&out).into_owned()
+      } else {
+        out
       };
       if sender.send(Message::Text(out.into())).await.is_err() {
         break;

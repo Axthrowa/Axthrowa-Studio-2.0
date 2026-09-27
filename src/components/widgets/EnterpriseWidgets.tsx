@@ -458,8 +458,8 @@ export function HypeTrainWidget({ config }: Cfg) {
     theme === "minimal"
       ? "border-white/15 bg-black/40"
       : theme === "cyberpunk"
-        ? "border-fuchsia-400/50 bg-[#120818]/80 shadow-[0_0_40px_rgba(232,121,249,.25)]"
-        : "border-fuchsia-400/30 bg-zinc-950/55 shadow-[0_0_30px_rgba(232,121,249,.15)]";
+        ? "border-cyan-400/50 bg-[#061218]/80 shadow-[0_0_40px_rgba(62,237,254,.25)]"
+        : "border-cyan-400/30 bg-zinc-950/55 shadow-[0_0_30px_rgba(62,237,254,.15)]";
   return (
     <div
       className="flex yya-widget-root items-start justify-center bg-transparent p-6"
@@ -474,12 +474,12 @@ export function HypeTrainWidget({ config }: Cfg) {
       }
     >
       <div className={`w-full max-w-md rounded-2xl border p-4 text-white backdrop-blur ${shell}`}>
-        <p className="text-[11px] uppercase tracking-widest text-fuchsia-300">
+        <p className="text-[11px] uppercase tracking-widest text-cyan-300 font-bold">
           Hype Train · Lv {level} · {theme}
         </p>
         <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/10">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 to-[#ff8a5b]"
+            className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-teal-400"
             animate={{ width: `${pct * 100}%` }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
           />

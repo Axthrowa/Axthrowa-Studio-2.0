@@ -31,14 +31,14 @@ function StyleRow({
   extra?: ReactNode;
 }) {
   return (
-    <div className="space-y-1.5 rounded-lg border border-panel-border/80 bg-black/25 p-2.5">
-      <div className="text-xs font-medium text-panel-muted">{label}</div>
+    <div className="space-y-2 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 shadow-sm">
+      <div className="text-xs font-bold uppercase tracking-wider text-white/90">{label}</div>
       {extra}
-      <div className="grid grid-cols-2 gap-1.5">
-        <label className="block text-[10px] text-panel-muted">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Font
           <select
-            className="mt-0.5 w-full rounded-md border border-panel-border bg-[#1c2030] text-white px-1.5 py-1.5 text-xs"
+            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-[#12151e] px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
             value={st.font || defaultFont || "system"}
             onChange={(e) => onPatch({ font: e.target.value })}
           >
@@ -49,10 +49,10 @@ function StyleRow({
             ))}
           </select>
         </label>
-        <label className="block text-[10px] text-panel-muted">
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Efekt
           <select
-            className="mt-0.5 w-full rounded-md border border-panel-border bg-[#1c2030] text-white px-1.5 py-1.5 text-xs"
+            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-[#12151e] px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
             value={st.effect || "none"}
             onChange={(e) => onPatch({ effect: e.target.value })}
           >
@@ -63,10 +63,10 @@ function StyleRow({
             ))}
           </select>
         </label>
-        <label className="col-span-2 block text-[10px] text-panel-muted">
+        <label className="col-span-2 block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Animasyon
           <select
-            className="mt-0.5 w-full rounded-md border border-panel-border bg-[#1c2030] text-white px-1.5 py-1.5 text-xs"
+            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-[#12151e] px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
             value={st.anim || "none"}
             onChange={(e) => onPatch({ anim: e.target.value })}
           >
@@ -77,36 +77,36 @@ function StyleRow({
             ))}
           </select>
         </label>
-        <label className="block text-[10px] text-panel-muted">
-          Yazı rengi
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+          Yazı Rengi
           <input
             type="color"
-            className="mt-0.5 h-8 w-full cursor-pointer rounded-md border border-panel-border bg-[#1c2030] text-white"
+            className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-[#12151e] p-0.5 text-white"
             value={st.color || "#ffffff"}
             onChange={(e) => onPatch({ color: e.target.value })}
           />
         </label>
-        <label className="block text-[10px] text-panel-muted">
-          Vurgu rengi
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+          Vurgu Rengi
           <input
             type="color"
-            className="mt-0.5 h-8 w-full cursor-pointer rounded-md border border-panel-border bg-[#1c2030] text-white"
+            className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-[#12151e] p-0.5 text-white"
             value={st.accentColor || "#7c5cff"}
             onChange={(e) => onPatch({ accentColor: e.target.value })}
           />
         </label>
       </div>
-      <div className="flex items-center gap-2 text-[10px]">
-        <span className="text-panel-muted">Boyut</span>
+      <div className="flex items-center gap-2 pt-1 text-[10px]">
+        <span className="font-semibold uppercase tracking-wider text-panel-muted">Boyut</span>
         <input
           type="range"
           min={40}
           max={280}
           value={st.size ?? 100}
           onChange={(e) => onPatch({ size: Number(e.target.value) })}
-          className="flex-1"
+          className="ns-range flex-1"
         />
-        <span className="w-10 text-right">{st.size ?? 100}%</span>
+        <span className="w-10 text-right font-mono text-white/90">{st.size ?? 100}%</span>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { Pin, PinOff, Save } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
@@ -34,7 +35,7 @@ import NavTabBar, { applyTabOrder } from "../../components/panel/NavTabBar";
 import AppSettingsPage from "../../components/panel/AppSettingsPage";
 import SettingsSection from "../../components/panel/SettingsSection";
 import SoundBoardPanel from "../../components/panel/SoundBoardPanel";
-import SmartBotPanel from "../../components/panel/SmartBotPanel";
+import StreamAxtHost from "../../components/panel/StreamAxtHost";
 import ProfileDashboard from "../../components/panel/ProfileDashboard";
 import ConnectionsHub from "../../components/panel/ConnectionsHub";
 import StreamHealthCard from "../../components/panel/StreamHealthCard";
@@ -42,9 +43,14 @@ import ObsControlHub from "../../components/studio/ObsControlHub";
 import HotkeysPage from "../../components/panel/HotkeysPage";
 import ProfileSwitcher from "../../components/panel/ProfileSwitcher";
 import PanelTimer from "../../components/panel/PanelTimer";
-import { type SceneNavHint } from "../../components/studio/ObsShortcutSettings";
+import CloseRequestModal from "../../components/panel/CloseRequestModal";
+import EdgePanel from "../../components/panel/EdgePanel";
 import TemplatePicker from "../../components/panel/TemplatePicker";
 import { runObsAction, type ActionRow } from "../../lib/obsActions";
+import { resonanceLinkAllowed } from "../../lib/embedMessages";
+// Kontrol Merkezi yalnız o sekme açılınca yüklenir (ana paketi büyütmesin)
+const ControlCenter = lazy(() => import("../../components/control/ControlCenter"));
+const YayinCalismaAlani = lazy(() => import("../../components/broadcast/YayinCalismaAlani"));
 import ThemeSelector from "../../components/ThemeSelector";
 import { I18nProvider } from "../../i18n";
 import { en, tr, type MsgKey } from "../../i18n/messages";
@@ -93,6 +99,7 @@ import {
   runStartingEndAction,
   seedStartingCountdown,
 } from "../../lib/streamAutomation";
+import { ruleStopStream } from "../../lib/endRules";
 import { obsControl } from "../../lib/obsControl";
 import { clearPlatformChats, clearResultToast } from "../../lib/clearPlatformChats";
 import { endSession, fetchDashboard, startSession } from "../../lib/api/botaxt";
@@ -102,7 +109,7 @@ import { suggestSceneMap, type SceneRole } from "../../lib/sceneSuggest";
 import { saveBotConfig } from "../../lib/smartBot";
 import { ANIM_OPTIONS, EFFECT_OPTIONS } from "../../lib/textStyles";
 import { useCreditsCollector } from "../../lib/useCreditsCollector";
-import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec, type HotkeyBinding } from "../../lib/globalHotkeys";
+import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec } from "../../lib/globalHotkeys";
 import { useVideoDownload } from "../../lib/useVideoDownload";
 import { clearNotice, pushNotice, useNotices } from "../../lib/notices";
 import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
@@ -112,14 +119,6 @@ import {
   creditsSessionCounts,
   subscribeCreditsSession,
 } from "../../lib/creditsSession";
-
-/** Panel — AxthrowA */
-const SCREENS: { id: ScreenId; label: string }[] = [
-  { id: "starting", label: "Giriş" },
-  { id: "ending", label: "Çıkış" },
-  { id: "brb", label: "Mola (BRB)" },
-  { id: "chat", label: "Canlı Chat" },
-];
 
 /** Önizlemede gizlenebilen parçalar ve okunur adları */
 const PART_LABELS_TR: Record<string, string> = {
@@ -191,7 +190,13 @@ export default function PanelPage() {
   hotkeyCaptureRef.current = hotkeyCapture;
   const [settings, setSettings] = useState<OverlaySettings>({ socials: DEFAULT_SOCIALS });
   const musicTab = activeNav === "music";
+  const controlTab = activeNav === "control";
+  const yayinTab = activeNav === "yayin";
   const botTab = activeNav === "bot";
+  const chatTab = activeNav === "chat";
+  // Canlı Chat sekmesi StreamAxT'nin Multi-Chat'ini gösterir; panelin kendi
+  // sohbet KATMANI ayarlarına (OBS overlay tasarımı) bu bayrakla dönülür.
+  const [chatOverlaySettings, setChatOverlaySettings] = useState(false);
   const profileTab = activeNav === "profile" || activeNav === "obs";
   const soundsTab = activeNav === "sounds";
   const hotkeysTab = activeNav === "hotkeys";
@@ -258,6 +263,22 @@ export default function PanelPage() {
    * Ayar `localStorage`'da: bu bir panel tercihi, overlay ayarı değil —
    * `settings` içine koymak onu OBS'e de yayınlardı.
    */
+  // Yan paneller kenara gizlensin mi? (varsayılan: gizli — önizleme tam genişlik)
+  const [panelsPinned, setPanelsPinned] = useState(() => {
+    try {
+      return localStorage.getItem("panel.yanPanelSabit") === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("panel.yanPanelSabit", panelsPinned ? "1" : "0");
+    } catch {
+      /* depolama kapalı */
+    }
+  }, [panelsPinned]);
+
   const [previewOn, setPreviewOn] = useState(() => {
     try {
       return localStorage.getItem("panel.onizleme") !== "0";
@@ -655,7 +676,12 @@ export default function PanelPage() {
       });
       saveObsSaved(cfg);
       // Ekran dilimini hizala: kısayol/plan kodu dilimi okuyor.
-      if (!sameObsConnection(settingsRef.current.obs, cfg)) {
+      // Ama BOŞ şifre, dilimde duran dolu şifrenin üstüne yazılmaz: panel kartı
+      // şifresiz kaldığında bu hizalama kullanıcının OBS şifresini siliyordu.
+      const sliceObs = (settingsRef.current.obs || {}) as { password?: unknown };
+      const slicePw = typeof sliceObs.password === "string" ? sliceObs.password.trim() : "";
+      const wouldClearPassword = !cfg.password && !!slicePw;
+      if (!sameObsConnection(settingsRef.current.obs, cfg) && !wouldClearPassword) {
         update({ obs: { host: cfg.host, port: cfg.port, password: cfg.password } });
       }
       // Yalnız kopuk olanı bağla: sağlam Rust bağlantısını her 5 sn'de sıfırlamak
@@ -874,6 +900,11 @@ export default function PanelPage() {
     startingSwitchDoneRef.current = false;
     endingStopDoneRef.current = false;
     streamWatchArmedRef.current = true;
+    // Çıkış jeneriği oturumu YENİ yayın başlarken sıfırlanır (bitişte değil):
+    // çıkış ekranı kendi listesini gösterirken silinmemeli, ama bir sonraki
+    // yayına önceki yayının bağış/takip/abone isimleri taşınmamalı.
+    clearCreditsSession();
+    setCreditCounts(creditsSessionCounts());
 
     const obs = settingsRef.current.obs || {};
     const scene = resolveStartingScene(obs);
@@ -1001,8 +1032,9 @@ export default function PanelPage() {
         if (startingSwitchDoneRef.current) return;
         startingSwitchDoneRef.current = true;
         try {
-          const scene = await runStartingEndAction(live);
-          if (scene) showToast(`Süre bitti → ${scene}`);
+          const r = await runStartingEndAction(live);
+          if (!r.done) showToast("Süre bitti — sahne geçişini OBS'teki sayfa yaptı");
+          else if (r.result) showToast(`Süre bitti → ${r.result}`);
           else showToast("Süre bitti ama hedef sahne seçili değil");
         } catch (e: any) {
           startingSwitchDoneRef.current = false;
@@ -1016,7 +1048,13 @@ export default function PanelPage() {
         streamWatchArmedRef.current = false;
         try {
           const r = await runEndingEndAction(live);
-          if (r.stopped) {
+          if (!r.done) {
+            // Bitişi OBS'teki sayfa üstlendi; kural yayını kapatıyorsa
+            // panelin oturum kaydı da kapanmalı (eskiden iki taraf da
+            // StopStream gönderiyor, ikincisi hata verip oturum açık kalıyordu).
+            showToast("Çıkış bitti — işlemi OBS'teki sayfa yaptı");
+            if (ruleStopStream((live.obs || {}) as never)) await closeDbSessionQuiet();
+          } else if (r.result.stopped) {
             showToast("Çıkış bitti — yayın kapatıldı");
             await closeDbSessionQuiet();
           } else {
@@ -1042,8 +1080,8 @@ export default function PanelPage() {
         if (end > 0 && end <= Date.now()) {
           startingSwitchDoneRef.current = true;
           void runStartingEndAction({ obs } as OverlaySettings)
-            .then((scene) => {
-              if (scene) showToast(`Süre bitti → ${scene}`);
+            .then((r) => {
+              if (r.done && r.result) showToast(`Süre bitti → ${r.result}`);
             })
             .catch((e) => {
               startingSwitchDoneRef.current = false;
@@ -1061,8 +1099,8 @@ export default function PanelPage() {
             streamWatchArmedRef.current = false;
             void runEndingEndAction(settingsRef.current)
               .then(async (r) => {
-                if (r.stopped) {
-                  showToast("Çıkış bitti — yayın kapatıldı");
+                if (r.done ? r.result.stopped : ruleStopStream((settingsRef.current.obs || {}) as never)) {
+                  showToast(r.done ? "Çıkış bitti — yayın kapatıldı" : "Çıkış bitti — işlemi OBS'teki sayfa yaptı");
                   await closeDbSessionQuiet();
                 }
               })
@@ -1432,58 +1470,13 @@ export default function PanelPage() {
       locale={prefs.locale}
       onLocaleChange={(l) => setPrefs((p) => ({ ...p, locale: l }))}
     >
-    <div className="panel-shell flex h-screen w-full flex-col overflow-hidden bg-panel-bg text-white">
+      <CloseRequestModal />
+    <div className="panel-shell flex h-screen w-full flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
-      <header className="relative z-40 mx-3 mt-2 flex items-center justify-between gap-3 overflow-visible rounded-xl bg-panel-card/60 px-4 py-2">
-        <div className="min-w-0">
-          <h1 className="font-display text-lg font-semibold tracking-tight text-white">
-            {tt("brand.title")}
-          </h1>
-          <p className="mt-0.5 text-[11px] text-panel-muted">
-            {tt("brand.autosave")} · {server?.baseUrl || "…"}
-            <PanelTimer
-              timer={{
-                screen,
-                endingMinutes: settings.endingMinutes,
-                brbMinutes: settings.brbMinutes,
-                targetDate: settings.targetDate,
-              }}
-              render={(text) => (
-                <span className="ml-3 rounded-lg bg-panel-soft px-2 py-0.5 font-mono text-[11px] text-panel-accent">
-                  {screen === "starting"
-                    ? tt("nav.starting")
-                    : screen === "ending"
-                      ? tt("nav.ending")
-                      : tt("nav.brb")}{" "}
-                  {text}
-                </span>
-              )}
-            />
-          </p>
-        </div>
-        <div className="shrink-0 text-center">
-          {/* İmza kalıyor ama vurgu rengi eylemlere ayrılmış olmalı: aynı renk
-              ve ağırlıkta olunca "Şimdi Kaydet" ile yarışıyordu. */}
-          <p className="font-display text-xs font-medium tracking-wide text-panel-muted">
-            {tt("brand.by")}
-          </p>
-        </div>
-        <div className="relative z-50 flex shrink-0 items-center gap-2">
-          <ProfileSwitcher onToast={showToast} />
-          <ThemeSelector />
-          <button
-            className="yya-btn-primary h-8 shrink-0 px-3 text-xs"
-            onClick={async () => {
-              await persistNow(screen, settings);
-              showToast(tt("brand.saved"));
-            }}
-          >
-            {tt("brand.saveNow")}
-          </button>
-        </div>
-      </header>
-
       <NavTabBar
+        brandTitle={tt("brand.title")}
+        statusLabel={prefs.locale === "en" ? "System active" : "Sistem aktif"}
+        statusHint={`:${(server?.baseUrl || API_BASE).split(":").pop()?.replace(/\D/g, "") || "8843"}`}
         visibleTabs={visibleTabs}
         activeNav={String(activeNav)}
         layoutOrder={layout.tabs.order}
@@ -1521,6 +1514,54 @@ export default function PanelPage() {
           onClose={() => setEditLayout(false)}
         />
       </NavTabBar>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <header className="relative z-40 mx-4 mt-2.5 flex shrink-0 items-center justify-between gap-4 overflow-visible rounded-2xl border border-white/[0.08] bg-panel-card/85 px-4 py-2.5 shadow-panel">
+        <div className="flex min-w-0 items-center gap-2 text-[11px] text-panel-muted">
+          <span>{tt("brand.autosave")}</span>
+          <span className="text-panel-muted">·</span>
+          <span className="font-mono text-[10px] text-white/60">{server?.baseUrl || "…"}</span>
+          <PanelTimer
+            timer={{
+              screen,
+              endingMinutes: settings.endingMinutes,
+              brbMinutes: settings.brbMinutes,
+              targetDate: settings.targetDate,
+            }}
+            render={(text) => (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-panel-accent/30 bg-panel-soft px-2 py-0.5 font-mono text-[11px] font-semibold text-panel-accent shadow-glow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-panel-accent animate-ping" />
+                {screen === "starting"
+                  ? tt("nav.starting")
+                  : screen === "ending"
+                    ? tt("nav.ending")
+                    : tt("nav.brb")}{" "}
+                {text}
+              </span>
+            )}
+          />
+        </div>
+
+        <div className="hidden lg:block shrink-0 text-center">
+          <p className="font-display text-xs font-medium tracking-wide text-panel-muted/80">
+            {tt("brand.by")}
+          </p>
+        </div>
+
+        <div className="relative z-50 flex shrink-0 items-center gap-2.5">
+          <ProfileSwitcher onToast={showToast} />
+          <ThemeSelector />
+          <button
+            className="yya-btn-primary h-8 shrink-0 px-3.5 text-xs font-bold gap-1.5 shadow-glow"
+            onClick={async () => {
+              await persistNow(screen, settings);
+              showToast(tt("brand.saved"));
+            }}
+          >
+            <Save className="h-3.5 w-3.5" />
+            <span>{tt("brand.saveNow")}</span>
+          </button>
+        </div>
+      </header>
 
       {profileTab ? (
         <motion.div
@@ -1565,17 +1606,46 @@ export default function PanelPage() {
             />
           </div>
         </motion.div>
+      ) : controlTab ? (
+        <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
+          <ControlCenter onToast={showToast} />
+        </Suspense>
+      ) : yayinTab ? (
+        <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yayın çalışma alanı yükleniyor…</div>}>
+          <YayinCalismaAlani onToast={showToast} onGit={(n) => setActiveNav(n)} />
+        </Suspense>
       ) : musicTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
           <MusicPanel
             baseUrl={server?.baseUrl || API_BASE}
             onToast={showToast}
-            onOpenExternal={openExternal}
+            onOpenExternal={(url) => {
+              // Müzik kartı mesajın hangi çerçeveden geldiğine bakmıyor;
+              // yalnız Resonance'ın gerçekten açtırdığı adresler geçer.
+              if (resonanceLinkAllowed(url)) return openExternal(url);
+              showToast("Bu adres güvenlik nedeniyle açılmadı");
+            }}
           />
         </div>
       ) : botTab ? (
-        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-        <SmartBotPanel onToast={showToast} />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <StreamAxtHost onToast={showToast} />
+        </div>
+      ) : chatTab && !chatOverlaySettings ? (
+        // Canlı Chat = StreamAxT'nin Multi-Chat'i (çapraz sohbet, izleyici kartları).
+        // Panelin kendi sohbet KATMANI ayarlarına düğmeyle dönülür.
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center gap-2 px-3 pt-1.5 text-[11px] text-panel-muted">
+            <span className="ml-auto" />
+            <button
+              type="button"
+              className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 font-semibold text-white/80 transition hover:bg-white/[0.08] hover:text-white"
+              onClick={() => setChatOverlaySettings(true)}
+            >
+              Sohbet katmanı ayarları
+            </button>
+          </div>
+          <StreamAxtHost onToast={showToast} tab="multichat" embed />
         </div>
       ) : soundsTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -1622,8 +1692,19 @@ export default function PanelPage() {
         />
         </div>
       ) : (
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden p-4 xl:grid-cols-[380px_1fr_340px]">
-        <aside className="custom-scrollbar flex max-h-full min-h-0 flex-col gap-4 overflow-y-auto rounded-2xl border border-white/[0.05] bg-panel-card/50 p-4">
+      <div
+        className={
+          "relative grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden py-4 " +
+          (panelsPinned ? "px-4 xl:grid-cols-[380px_1fr_340px]" : "px-6")
+        }
+      >
+        <EdgePanel
+          side="left"
+          pinned={panelsPinned}
+          width={380}
+          label="Ayar paneli — fareyi getir"
+          className="custom-scrollbar flex flex-col gap-4 overflow-y-auto rounded-2xl border border-white/[0.05] bg-panel-card/50 p-4"
+        >
           {screen !== "chat" && (
             <>
               {(screen === "starting" || screen === "ending" || screen === "brb") && (
@@ -1970,7 +2051,9 @@ export default function PanelPage() {
                 <button
                   type="button"
                   className={`flex-1 rounded-md px-2 py-2 text-sm ${
-                    settings.bgStyle === "video" ? "bg-panel-accent" : "bg-black/40"
+                    settings.bgStyle === "video"
+                      ? "bg-panel-accent text-[color:var(--panel-cta-ink)] font-semibold"
+                      : "bg-black/40"
                   }`}
                   onClick={() => {
                     if (!settings.bgVideoPath && videoFiles[0]) {
@@ -1985,7 +2068,9 @@ export default function PanelPage() {
                 <button
                   type="button"
                   className={`flex-1 rounded-md px-2 py-2 text-sm ${
-                    settings.bgStyle === "youtube" ? "bg-panel-accent" : "bg-black/40"
+                    settings.bgStyle === "youtube"
+                      ? "bg-panel-accent text-[color:var(--panel-cta-ink)] font-semibold"
+                      : "bg-black/40"
                   }`}
                   onClick={() => update({ bgStyle: "youtube", lastVideoSource: "youtube" })}
                 >
@@ -2126,7 +2211,7 @@ export default function PanelPage() {
                 </div>
                 <p className="mt-1 text-[10px] text-panel-muted">
                   Yerel video ve YouTube aynı ses ayarını kullanır — hangisi fon ise o çalar.
-                  Windows ses karıştırıcısında &quot;Yayın Yönetim Aracı&quot; adıyla görünür
+                  Windows ses karıştırıcısında &quot;StreamAxT&quot; adıyla görünür
                   (ses çalarken; Edge WebView2 diye arama).
                 </p>
               </div>
@@ -3199,25 +3284,51 @@ export default function PanelPage() {
               </label>
             </SettingsSection>
           )}
-        </aside>
+        </EdgePanel>
 
-        <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.05] bg-[color:var(--panel-bg-deep)]">
-          <div className="flex items-center justify-between gap-3 border-b border-white/[0.05] px-3 py-2 text-xs text-panel-muted">
-            <span>{previewOn ? tt("preview.on") : tt("preview.off")}</span>
-            <div className="flex items-center gap-3">
+        <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[color:var(--panel-bg-deep)] shadow-glass">
+          <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] bg-black/30 px-4 py-2.5 text-xs text-panel-muted">
+            <div className="flex items-center gap-2">
+              <span
+                className={`size-2 rounded-full transition-colors ${
+                  previewOn ? "bg-emerald-400 shadow-glow-sm" : "bg-neutral-500"
+                }`}
+              />
+              <span className="font-display text-[11px] font-bold tracking-wider text-white">
+                {previewOn ? tt("preview.on") : tt("preview.off")}
+              </span>
+              <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.2 text-[9px] font-mono text-panel-muted">
+                1080P STUDIO
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
               <label
-                className="flex cursor-pointer items-center gap-1.5 text-white"
+                className="flex cursor-pointer items-center gap-2 text-xs text-white/90 transition hover:text-white"
                 title="Kapatınca video çözme ve parçacık çizimi durur; CPU/RAM belirgin düşer. Öğeleri sürükleyip konumlamak için açık olması gerekir."
               >
                 <input
                   type="checkbox"
                   checked={previewOn}
                   onChange={(e) => setPreviewOn(e.target.checked)}
+                  className="size-3.5 rounded border-white/20 text-panel-accent focus:ring-panel-accent/40"
                 />
-                {tt("preview.toggle")}
+                <span className="text-[11px] font-medium">{tt("preview.toggle")}</span>
               </label>
+              <button
+                type="button"
+                onClick={() => setPanelsPinned((v) => !v)}
+                title={
+                  panelsPinned
+                    ? "Yan panelleri kenara gizle (önizleme büyür)"
+                    : "Yan panelleri sabitle (hep açık kalsın)"
+                }
+                className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-white/80 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white"
+              >
+                {panelsPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                <span>{panelsPinned ? "Panelleri gizle" : "Panelleri sabitle"}</span>
+              </button>
               <a
-                className="text-panel-accent"
+                className="inline-flex items-center gap-1 rounded-lg border border-panel-accent/30 bg-panel-accent/15 px-2.5 py-1 text-[11px] font-semibold text-panel-accent transition hover:border-panel-accent/50 hover:bg-panel-accent/25"
                 href={obsUrl}
                 onClick={(e) => {
                   e.preventDefault();
@@ -3314,13 +3425,23 @@ export default function PanelPage() {
           </div>
         </section>
 
-        <aside className="custom-scrollbar flex max-h-full min-h-0 flex-col space-y-4 overflow-y-auto rounded-2xl border border-white/[0.05] bg-panel-card/50 p-4">
+        <EdgePanel
+          side="right"
+          pinned={panelsPinned}
+          width={340}
+          label="Görünüm paneli — fareyi getir"
+          className="custom-scrollbar flex flex-col space-y-4 overflow-y-auto rounded-2xl border border-white/[0.05] bg-panel-card/50 p-4"
+        >
           {!sectionHidden("obsUrl") && (
             <SettingsSection id="obsUrl" title={tt("sec.obsUrl")} style={secOrder("obsUrl", true)}>
           <p className="text-[11px] text-panel-muted">
             URL: <code className="text-white/80">http://127.0.0.1:8843/starting?obs=1</code> — uygulama açık olmalı. Genişlik 1920, Yükseklik 1080.
           </p>
-          <CopyUrl url={obsUrl} onCopied={() => showToast("Kopyalandı")} />
+          <CopyUrl
+            url={obsUrl}
+            onCopied={() => showToast("Kopyalandı")}
+            onOpened={(u, s) => showToast(s === "opened" ? "Önizleme tarayıcıda açıldı" : s === "copied" ? "Tarayıcı açılamadı — adres kopyalandı" : "Önizleme açılamadı: " + u)}
+          />
             </SettingsSection>
           )}
 
@@ -3337,7 +3458,11 @@ export default function PanelPage() {
           >
             Müzik sekmesini aç
           </button>
-          <CopyUrl url={resonanceOverlayUrl} onCopied={() => showToast("Kopyalandı")} />
+          <CopyUrl
+            url={resonanceOverlayUrl}
+            onCopied={() => showToast("Kopyalandı")}
+            onOpened={(u, s) => showToast(s === "opened" ? "Önizleme tarayıcıda açıldı" : s === "copied" ? "Tarayıcı açılamadı — adres kopyalandı" : "Önizleme açılamadı: " + u)}
+          />
           <p className="text-[11px] text-panel-muted">
             Ayrı OBS kaynağı isterseniz yukarıdaki adresi kullan. Gerekmez — “Şimdi Çalıyor”
             widget’ı zaten Giriş/Mola/Çıkış ekranlarında.
@@ -3424,44 +3549,63 @@ export default function PanelPage() {
 
           {!sectionHidden("sosyal") && (
             <SettingsSection id="sosyal" title={tt("sec.sosyal")} style={secOrder("sosyal", true)}>
-          {Object.keys(SOCIAL_META).map((key) => (
-            <div key={key} className="mb-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={!!settings.socials?.[key]?.enabled}
-                onChange={(e) =>
-                  update({
-                    socials: {
-                      ...DEFAULT_SOCIALS,
-                      ...settings.socials,
-                      [key]: { ...settings.socials?.[key], enabled: e.target.checked, handle: settings.socials?.[key]?.handle || "" },
-                    },
-                  })
-                }
-              />
-              <span className="w-16 text-xs uppercase text-panel-muted">{key}</span>
-              <input
-                className="flex-1 rounded border border-panel-border bg-black/40 px-2 py-1 text-xs"
-                value={settings.socials?.[key]?.handle || ""}
-                placeholder="kullanıcı"
-                onChange={(e) =>
-                  update({
-                    socials: {
-                      ...DEFAULT_SOCIALS,
-                      ...settings.socials,
-                      [key]: {
-                        enabled: true,
-                        handle: e.target.value,
-                      },
-                    },
-                  })
-                }
-              />
-            </div>
-          ))}
+              <div className="space-y-2">
+                {Object.keys(SOCIAL_META).map((key) => {
+                  const isEnabled = !!settings.socials?.[key]?.enabled;
+                  return (
+                    <div
+                      key={key}
+                      className={`flex items-center gap-2.5 rounded-xl border p-2 transition-all ${
+                        isEnabled
+                          ? "border-panel-accent/40 bg-panel-accent/[0.05]"
+                          : "border-white/[0.06] bg-black/30"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isEnabled}
+                        onChange={(e) =>
+                          update({
+                            socials: {
+                              ...DEFAULT_SOCIALS,
+                              ...settings.socials,
+                              [key]: {
+                                ...settings.socials?.[key],
+                                enabled: e.target.checked,
+                                handle: settings.socials?.[key]?.handle || "",
+                              },
+                            },
+                          })
+                        }
+                        className="size-3.5 rounded border-white/20 text-panel-accent focus:ring-panel-accent/40"
+                      />
+                      <span className="w-16 truncate font-mono text-[11px] font-bold uppercase tracking-wider text-panel-muted">
+                        {key}
+                      </span>
+                      <input
+                        className="h-7 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-black/40 px-2 text-xs text-white placeholder:text-panel-muted outline-none transition-colors focus:border-panel-accent/60"
+                        value={settings.socials?.[key]?.handle || ""}
+                        placeholder="kullanıcı"
+                        onChange={(e) =>
+                          update({
+                            socials: {
+                              ...DEFAULT_SOCIALS,
+                              ...settings.socials,
+                              [key]: {
+                                enabled: true,
+                                handle: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </SettingsSection>
           )}
-        </aside>
+        </EdgePanel>
       </div>
       )}
 
@@ -3471,6 +3615,7 @@ export default function PanelPage() {
         </div>
       )}
       <AppAlertModal />
+      </div>
     </div>
     </I18nProvider>
   );
@@ -3491,10 +3636,10 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-panel-muted">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
       <input
         type={type}
-        className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
+        className="yya-input h-9 w-full rounded-xl border border-white/[0.12] bg-black/50 px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
@@ -3516,9 +3661,9 @@ function Select({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-panel-muted">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
       <select
-        className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
+        className="h-9 w-full rounded-xl border border-white/[0.12] bg-[#12151e] px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >

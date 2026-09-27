@@ -256,6 +256,12 @@ async fn ytdlp_hazirla(root: &Path) -> anyhow::Result<PathBuf> {
   Ok(hedef)
 }
 
+/// İndirmeden, bu makinede hazır ffmpeg'i bulur (PATH ya da uygulamanın araç klasörü).
+/// Çoklu yayın yönlendiricisi de bunu kullanır.
+pub fn ffmpeg_yolu(data_dir: &Path) -> Option<PathBuf> {
+  path_uzerinde("ffmpeg.exe").or_else(|| ffmpeg_bul(&araclar_dizini(data_dir).join("ffmpeg")))
+}
+
 /// ffmpeg yolunu döndürür. Bulunamaz/indirilemezse `None`: bu durumda
 /// yt-dlp'yi birleşik (en fazla 720p) akışla çalıştırıyoruz — kalite düşük
 /// olsa da indirme tamamen başarısız olmasın.

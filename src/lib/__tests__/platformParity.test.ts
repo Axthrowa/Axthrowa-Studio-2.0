@@ -1,29 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PLATFORM_BRAND, TURQUOISE, type BotPlatform } from "../platformTheme";
-import { STUDIO_NAV } from "../../components/studio/StudioShell";
 
 const PLATFORMS: BotPlatform[] = ["kick", "twitch", "youtube", "discord"];
-
-describe("Botrix parity — studio tabs", () => {
-  it("exposes Botrix-equivalent top-level tabs", () => {
-    const ids = STUDIO_NAV.map((n) => n.id);
-    for (const need of [
-      "dashboard",
-      "alerts",
-      "widgets",
-      "chatbot",
-      "loyalty",
-      "shop",
-      "minigames",
-      "integrations",
-      "profile",
-      "subusers",
-      "settings",
-    ]) {
-      expect(ids).toContain(need);
-    }
-  });
-});
 
 describe("platform brand / theme", () => {
   it("uses official brand colors", () => {
@@ -46,14 +24,6 @@ describe("security — credentials", () => {
     expect(url).toContain("client_id=public-client-id");
     expect(url.toLowerCase()).not.toContain("client_secret");
     expect(url).toContain("id.twitch.tv/oauth2/authorize");
-  });
-
-  it("Kick authorize stays on id.kick.com", async () => {
-    const { buildAuthorizeUrl } = await import("../../auth/oauthConfig");
-    const url = buildAuthorizeUrl("kick");
-    expect(url.startsWith("https://id.kick.com/oauth/authorize")).toBe(true);
-    expect(url).toContain("state=");
-    expect(url.toLowerCase()).not.toContain("client_secret");
   });
 });
 

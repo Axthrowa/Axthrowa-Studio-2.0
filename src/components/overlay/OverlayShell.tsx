@@ -90,13 +90,6 @@ export default function OverlayShell({
   });
   const mediaEpoch = mediaEpochProp || syncEpoch || 0;
   const settings = liveSettings ?? synced;
-  const setSettings = (updater: any) => {
-    if (liveSettings) {
-      // panel controlled — positions via callback only
-      return;
-    }
-    setSynced(updater);
-  };
   const [guides, setGuides] = useState<{ v?: number; h?: number }>({});
   const endedRef = useRef(false);
   // Çıkış ekranında süre girilmediyse bitişi video belirler. Değer sayaç

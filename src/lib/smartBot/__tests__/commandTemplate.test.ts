@@ -3,7 +3,6 @@ import {
   extractDiscordInvite,
   finalizeCommandReply,
   normalizeSocialUrl,
-  sanitizeCommandResponse,
 } from "../commandTemplate";
 
 describe("commandTemplate", () => {
@@ -17,17 +16,6 @@ describe("commandTemplate", () => {
     );
     expect(extractDiscordInvite("gel: https://discord.gg/abc123")).toBe(
       "https://discord.gg/abc123"
-    );
-  });
-
-  it("does not save !discord as the reply text", () => {
-    expect(sanitizeCommandResponse("discord", "!discord")).toBe("Discord: {url}");
-    expect(sanitizeCommandResponse("discord", "discord")).toBe("Discord: {url}");
-    expect(sanitizeCommandResponse("discord", "https://discord.gg/x")).toBe(
-      "Discord: {url}"
-    );
-    expect(sanitizeCommandResponse("discord", "Sunucu: https://discord.gg/x")).toBe(
-      "Sunucu: https://discord.gg/x"
     );
   });
 

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.tauri.app/config/2/capability",
+  "identifier": "projektor",
+  "description": "Projektör ve ayrı dock pencereleri: yalnız kendini kapatır (IPC'nin geri kalanı yok; veriyi yerel HTTP/WS'den alır)",
+  "windows": [
+    "projektor-*",
+    "dock-*"
+  ],
+  "permissions": [
+    "core:window:allow-close",
+    "core:window:allow-outer-position",
+    "core:window:allow-scale-factor"
+  ]
+}

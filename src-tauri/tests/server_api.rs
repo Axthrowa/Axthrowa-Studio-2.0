@@ -8,7 +8,7 @@
 //!   * Kötü girdiler sunucuyu düşürmemeli
 
 use std::net::TcpListener;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
@@ -99,7 +99,7 @@ async fn restart(h: Harness) -> Harness {
 }
 
 /// Oynatılabilir olması gerekmez; testler yalnız bayt/başlık semantiğine bakar.
-fn write_video(root: &PathBuf, name: &str, len: usize) -> PathBuf {
+fn write_video(root: &Path, name: &str, len: usize) -> PathBuf {
   let path = root.join("assets").join("videos").join(name);
   let data: Vec<u8> = (0..len).map(|i| (i % 251) as u8).collect();
   std::fs::write(&path, data).unwrap();
@@ -291,6 +291,21 @@ async fn media_file_endpoint_streams_and_blocks_traversal() {
   assert_eq!(res.status(), 206);
   let len = res.bytes().await.unwrap().len();
   assert!(len > 0 && len <= 4 * 1024 * 1024, "parça boyutu: {len}");
+
+  // Medya olmayan dosya mutlak yolla bile sunulmamalı (eskiden sunuluyordu)
+  let gizli = h.root.join("gizli-ayar.json");
+  std::fs::write(&gizli, b"{\"token\":\"x\"}").unwrap();
+  let res = h
+    .client
+    .get(format!(
+      "{}/media/file?path={}",
+      h.base,
+      urlencoding::encode(&gizli.to_string_lossy())
+    ))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(res.status(), 400, "medya dışı dosya sunuldu");
 
   // Dizin dışına çıkma engellenmeli
   for bad in ["../../../Windows/win.ini", "video.mp4", ""] {
@@ -938,4 +953,1245 @@ async fn spotify_failures_are_recorded_in_status() {
     .unwrap();
   let note = status["note"].as_str().unwrap_or("");
   assert!(note.contains("/resonance/callback"), "adres ipucu yok: {note}");
+}
+
+/// Yayıncının tarayıcısında açık bir yabancı site yerel API'yi yönetememeli.
+///
+/// Eskiden CORS her kökene açıktı ve Host denetlenmiyordu: herhangi bir web
+/// sayfası ayarları okuyup değiştirebiliyor, WebSocket'ten canlı veriyi
+/// dinleyebiliyordu.
+#[tokio::test]
+async fn foreign_sites_cannot_drive_the_local_api() {
+  let h = start().await;
+  let patch = format!("{}/api/settings/patch?screen=starting", h.base);
+
+  // 1) Yabancı kökenden yazma → 403 ve ayar değişmez
+  let res = h
+    .client
+    .post(&patch)
+    .header("Origin", "https://kotu.example")
+    .json(&json!({ "saldiri": "evet" }))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(res.status(), 403);
+  let s: Value = h
+    .client
+    .get(format!("{}/api/settings?screen=starting", h.base))
+    .send()
+    .await
+    .unwrap()
+    .json()
+    .await
+    .unwrap();
+  assert!(s.get("saldiri").is_none(), "yabancı köken ayarı değiştirdi");
+
+  // 2) Yerel köken (panelin kendisi) yazabilir
+  let res = h
+    .client
+    .post(&patch)
+    .header("Origin", h.base.as_str())
+    .json(&json!({ "yerel": "evet" }))
+    .send()
+    .await
+    .unwrap();
+  assert!(res.status().is_success());
+
+  // 3) Yabancı köken yanıtı okuyamaz: CORS izni verilmez
+  let res = h
+    .client
+    .get(format!("{}/api/settings?screen=panel", h.base))
+    .header("Origin", "https://kotu.example")
+    .send()
+    .await
+    .unwrap();
+  assert!(res.headers().get("access-control-allow-origin").is_none());
+  let res = h
+    .client
+    .get(format!("{}/api/settings?screen=panel", h.base))
+    .header("Origin", "http://localhost:3001")
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(
+    res.headers().get("access-control-allow-origin").unwrap(),
+    "http://localhost:3001"
+  );
+
+  // 4) DNS yeniden bağlama: yabancı alan adıyla gelen Host reddedilir
+  let res = h
+    .client
+    .get(format!("{}/api/settings?screen=panel", h.base))
+    .header("Host", "kotu.example:8843")
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(res.status(), 403);
+
+  // 5) Yabancı kökenden WebSocket el sıkışması reddedilir
+  use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+  let ws_url = format!("{}/ws/overlay-sync", h.base.replace("http", "ws"));
+  let mut req = ws_url.as_str().into_client_request().unwrap();
+  req
+    .headers_mut()
+    .insert("Origin", "https://kotu.example".parse().unwrap());
+  assert!(tokio_tungstenite::connect_async(req).await.is_err());
+  let mut req = ws_url.as_str().into_client_request().unwrap();
+  req.headers_mut().insert("Origin", h.base.parse().unwrap());
+  assert!(tokio_tungstenite::connect_async(req).await.is_ok());
+}
+
+/// Çoklu yayın API'si: hedef ekleme/doğrulama/silme, anahtarın hiçbir yanıta ve denetim kaydına düşmemesi,
+/// onaysız "hepsini bitir"in reddedilmesi.
+#[tokio::test]
+async fn multistream_api_keys_never_leak_and_actions_are_audited() {
+  let h = start().await;
+  let gizli = format!("live_{}_TESTANAHTAR", free_port());
+
+  let s: Value = h.client.get(format!("{}/api/multistream", h.base)).send().await.unwrap().json().await.unwrap();
+  assert_eq!(s["destinations"].as_array().unwrap().len(), 0);
+  assert_eq!(s["presets"].as_array().unwrap().len(), 4);
+
+  // Anahtar sunucu alanına yapıştırılırsa reddedilir
+  let res = h
+    .client
+    .post(format!("{}/api/multistream/destinations", h.base))
+    .json(&json!({"name": "Twitch", "platform": "twitch", "server": format!("rtmps://live.twitch.tv/app/{gizli}")}))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(res.status(), 400);
+
+  let res = h
+    .client
+    .post(format!("{}/api/multistream/destinations", h.base))
+    .json(&json!({"id": "itest-twitch", "name": "Twitch", "platform": "twitch", "server": "rtmps://live.twitch.tv:443/app", "key": gizli}))
+    .send()
+    .await
+    .unwrap();
+  assert!(res.status().is_success());
+  let body = res.text().await.unwrap();
+  assert!(!body.contains(&gizli), "yanıtta anahtar var");
+  let s: Value = serde_json::from_str(&body).unwrap();
+  let d = &s["destinations"][0];
+  assert_eq!(d["hasKey"], true);
+  assert_eq!(d["state"], "ready");
+
+  // Ayar dosyasına anahtar yazılmamalı
+  let disk = std::fs::read_to_string(h.root.join("app-data").join("settings-panel.json")).unwrap();
+  assert!(disk.contains("itest-twitch") && !disk.contains(&gizli));
+
+  // Onaysız oturum kapatma reddedilir
+  let res = h
+    .client
+    .post(format!("{}/api/multistream/session/stop", h.base))
+    .json(&json!({}))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(res.status(), 400);
+
+  // Kontrol listesi çalışır (OBS bağlı değil uyarısı beklenir)
+  let p: Value = h.client.get(format!("{}/api/multistream/preflight", h.base)).send().await.unwrap().json().await.unwrap();
+  assert!(p["findings"].as_array().unwrap().iter().any(|f| f["id"] == "system.obs"));
+
+  // Denetim günlüğü: eylem var, anahtar yok
+  let a = h.client.get(format!("{}/api/audit", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(a.contains("MULTISTREAM_DEST_ADD"));
+  assert!(!a.contains(&gizli), "denetim kaydında anahtar var");
+
+  // Silme anahtarı da Kimlik Yöneticisinden kaldırır
+  let res = h
+    .client
+    .post(format!("{}/api/multistream/destinations/delete", h.base))
+    .json(&json!({"id": "itest-twitch"}))
+    .send()
+    .await
+    .unwrap();
+  assert!(res.status().is_success());
+  assert!(yayin_yonetim_araci_lib::secret_store::get_secret("multistream.key.itest-twitch").is_none());
+}
+
+/// Eylem kayıt defteri: onay zorunluluğu, kullanılabilirlik, bilinmeyen eylem, StreamAxT'e iletim ve denetim kaydı.
+/// StreamAxT yerine test içinde sahte bir uyarı denetimi sunucusu açılır (gerçek bota dokunulmaz).
+#[tokio::test(flavor = "multi_thread")]
+async fn action_registry_enforces_confirmation_availability_and_audit() {
+  use std::sync::{Arc, Mutex};
+  let alinan: Arc<Mutex<Vec<Value>>> = Arc::new(Mutex::new(Vec::new()));
+  let kayit = alinan.clone();
+  let sahte = axum::Router::new().route(
+    "/api/alerts/control",
+    axum::routing::post(move |axum::Json(govde): axum::Json<Value>| {
+      let kayit = kayit.clone();
+      async move {
+        let eylem = govde["action"].as_str().unwrap_or("").to_string();
+        kayit.lock().unwrap().push(govde);
+        if eylem == "skip" {
+          (axum::http::StatusCode::CONFLICT, axum::Json(json!({"error": "Başka biri az önce değiştirdi"})))
+        } else {
+          (axum::http::StatusCode::OK, axum::Json(json!({"state": {"paused": eylem == "pause", "version": 7}})))
+        }
+      }
+    }),
+  );
+  let dinleyici = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+  let sahte_port = dinleyici.local_addr().unwrap().port();
+  tokio::spawn(async move { axum::serve(dinleyici, sahte).await.unwrap() });
+  // Bu değişkeni yalnız eylem iletimi ve ön kontrolün çapraz sohbet sorgusu okur (2021 sürümünde set_var güvenli)
+  std::env::set_var("YYA_STREAMAXT_PORT", sahte_port.to_string());
+
+  let h = start().await;
+  let liste: Value = h.client.get(format!("{}/api/actions", h.base)).send().await.unwrap().json().await.unwrap();
+  let eylemler = liste["actions"].as_array().unwrap();
+  assert!(eylemler.len() >= 18);
+  let bul = |id: &str| eylemler.iter().find(|a| a["id"] == id).unwrap().clone();
+  assert_eq!(bul("scene.switch")["available"], false, "OBS bağlı değilken sahne eylemi kullanılabilir görünmemeli");
+  assert_eq!(bul("scene.switch")["reason"], "OBS bağlı değil");
+  assert_eq!(bul("destination.stop")["available"], false);
+  assert_eq!(bul("stream.stop")["confirm"], true);
+  // OBS'e bağlı değilken salt-okunur OBS uçları açık çakışma döner (boş liste uydurmaz)
+  for yol in ["/api/obs/canvases", "/api/obs/meters"] {
+    let r = h.client.get(format!("{}{yol}", h.base)).send().await.unwrap();
+    assert_eq!(r.status(), 409, "{yol}");
+  }
+
+  let calistir = |govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}/api/actions/run", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  // Onaysız yayın durdurma reddedilir (OBS'e hiç gidilmez)
+  assert_eq!(calistir(json!({"id": "stream.stop"})).await.status(), 428);
+  // Bilinmeyen eylem ve eksik parametre
+  assert_eq!(calistir(json!({"id": "uydurma"})).await.status(), 404);
+  assert_eq!(calistir(json!({"id": "scene.switch", "params": {}})).await.status(), 400);
+  // Bileşen yoksa açık çakışma
+  let r = calistir(json!({"id": "scene.switch", "params": {"scene": "Oyun"}})).await;
+  assert_eq!(r.status(), 409);
+  assert!(r.text().await.unwrap().contains("OBS"));
+  assert_eq!(calistir(json!({"id": "destination.start", "params": {"id": "yok"}})).await.status(), 409);
+
+  // StreamAxT'e iletim: durum geri döner, istek yerel aktörle gider
+  let r = calistir(json!({"id": "alert.pause"})).await;
+  assert!(r.status().is_success());
+  let v: Value = r.json().await.unwrap();
+  assert_eq!(v["result"]["paused"], true);
+  // StreamAxT çakışması arayüze hata olarak taşınır
+  let r = calistir(json!({"id": "alert.skip"})).await;
+  assert_eq!(r.status(), 502);
+  assert!(r.text().await.unwrap().contains("değiştirdi"));
+  {
+    let a = alinan.lock().unwrap();
+    assert_eq!(a.len(), 2);
+    assert_eq!(a[0]["action"], "pause");
+    assert_eq!(a[0]["actor"], "yerel");
+    assert!(a[0].get("version").is_none(), "hızlı eylem sürüm göndermemeli");
+  }
+
+  // Denetim günlüğü: yürütülen iki eylem (başarılı + başarısız), reddedilenler yürütülmediği için yok
+  let d: Value = h.client.get(format!("{}/api/audit?limit=20", h.base)).send().await.unwrap().json().await.unwrap();
+  let kayitlar: Vec<&Value> = d["items"].as_array().unwrap().iter().filter(|r| r["action"].as_str().unwrap_or("").starts_with("ACTION:")).collect();
+  assert_eq!(kayitlar.len(), 2, "{kayitlar:?}");
+  let detay = |r: &Value| serde_json::from_str::<Value>(r["detail_json"].as_str().unwrap_or("{}")).unwrap_or(Value::Null);
+  assert!(kayitlar.iter().any(|r| r["action"] == "ACTION:alert.pause" && detay(r)["ok"] == true));
+  assert!(kayitlar.iter().any(|r| r["action"] == "ACTION:alert.skip" && detay(r)["ok"] == false));
+}
+
+/// Denetim düzlemi eklemeleri: yeni kayıt defteri eylemlerinin onay/kullanılabilirlik kuralları ve sırları ayıklanmış
+/// destek paketi (yayın anahtarı, token alanı, rtmp yolu, kullanıcı klasörü pakete girmez).
+#[tokio::test(flavor = "multi_thread")]
+async fn eylem_eklemeleri_ve_destek_paketi_sir_sizdirmaz() {
+  let h = start().await;
+  let gizli = format!("live_{}_A8TESTANAHTAR", free_port());
+  let res = h
+    .client
+    .post(format!("{}/api/multistream/destinations", h.base))
+    .json(&json!({"id": "itest-a8", "name": "Twitch", "platform": "twitch", "server": "rtmps://live.twitch.tv:443/app", "key": gizli}))
+    .send()
+    .await
+    .unwrap();
+  assert!(res.status().is_success());
+  let res = h
+    .client
+    .post(format!("{}/api/settings/patch?screen=starting", h.base))
+    .json(&json!({"deneme": {"apiToken": "tok-A8-sadece-test", "baslik": "Merhaba"}}))
+    .send()
+    .await
+    .unwrap();
+  assert!(res.status().is_success());
+
+  let liste: Value = h.client.get(format!("{}/api/actions", h.base)).send().await.unwrap().json().await.unwrap();
+  let eylemler = liste["actions"].as_array().unwrap();
+  let bul = |id: &str| eylemler.iter().find(|a| a["id"] == id).unwrap_or_else(|| panic!("{id} yok")).clone();
+  assert_eq!(bul("engine.goLive")["available"], false);
+  assert_eq!(bul("engine.goLive")["reason"], "Yayın motoru çalışmıyor");
+  assert_eq!(bul("engine.goLive")["confirm"], true);
+  assert_eq!(bul("destination.reconnect")["confirm"], true);
+  assert_eq!(bul("source.toggle")["params"][1]["kind"], "source");
+
+  let calistir = |govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}/api/actions/run", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  // Yayını başlatan eylem onaysız çalışmaz; onaylı olsa da motor yoksa açık çakışma
+  assert_eq!(calistir(json!({"id": "engine.goLive"})).await.status(), 428);
+  let r = calistir(json!({"id": "engine.goLive", "confirm": true})).await;
+  assert_eq!(r.status(), 409);
+  assert!(r.text().await.unwrap().contains("motor"));
+  assert_eq!(calistir(json!({"id": "audio.volume", "params": {"input": "Müzik", "delta": 0}})).await.status(), 400);
+  assert_eq!(calistir(json!({"id": "source.toggle", "params": {"scene": "Oyun"}})).await.status(), 400);
+  assert_eq!(calistir(json!({"id": "destination.reconnect", "confirm": true, "params": {"id": "itest-a8"}})).await.status(), 409);
+
+  // Destek paketi
+  let r = h.client.post(format!("{}/api/destek/paket", h.base)).send().await.unwrap();
+  assert!(r.status().is_success(), "{}", r.status());
+  let v: Value = r.json().await.unwrap();
+  let yol = std::path::PathBuf::from(v["yol"].as_str().unwrap());
+  assert!(yol.starts_with(h.root.join("app-data")), "{yol:?}");
+  let metin = std::fs::read_to_string(&yol).unwrap();
+  let paket: Value = serde_json::from_str(&metin).unwrap();
+  assert_eq!(paket["bicim"], "yya-destek-paketi");
+  for bolum in ["uygulama", "obs", "motor", "cokluYayin", "onKontrol", "ayarlar", "denetim", "gunlukler", "gizleme"] {
+    assert!(!paket[bolum].is_null(), "{bolum} bölümü yok");
+  }
+  assert!(!metin.contains(&gizli), "yayın anahtarı pakette");
+  assert!(!metin.contains("tok-A8-sadece-test"), "token alanı pakette");
+  assert!(!metin.contains("/app\""), "rtmp yolu pakette");
+  assert_eq!(paket["ayarlar"]["starting"]["deneme"]["apiToken"], "[gizli]");
+  assert_eq!(paket["ayarlar"]["starting"]["deneme"]["baslik"], "Merhaba");
+  if let Ok(ev) = std::env::var("USERPROFILE") {
+    // JSON metninde ters bölü kaçışlıdır (C:\\Users\\…)
+    let kacisli = ev.replace('\\', "\\\\").to_lowercase();
+    assert!(!metin.to_lowercase().contains(&kacisli), "kullanıcı klasörü pakette");
+  }
+  assert!(paket["gizleme"]["gizlenenDeger"].as_u64().unwrap() >= 2);
+  let a = h.client.get(format!("{}/api/audit", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(a.contains("SUPPORT_BUNDLE"));
+  assert!(!a.contains(&gizli));
+
+  let res = h
+    .client
+    .post(format!("{}/api/multistream/destinations/delete", h.base))
+    .json(&json!({"id": "itest-a8"}))
+    .send()
+    .await
+    .unwrap();
+  assert!(res.status().is_success());
+  assert!(yayin_yonetim_araci_lib::secret_store::get_secret("multistream.key.itest-a8").is_none());
+}
+
+/// Eklenti yöneticisi uçtan uca — YALNIZ kendi GPL test eklentilerimizle (üçüncü taraf ikili çalıştırılmaz):
+/// OBS klasörleri salt-okunur taranır; klasör paketi incelenir ve yönetilen klasöre kurulur; yalıtılmış sınama;
+/// etkinleştirme; açılışta çöken eklenti motoru düşürür → çökme kapısı (409) → "devre dışı bırak" kararı →
+/// karantina; sağlıklı eklentinin kaynak türü sahneye eklenir, özellik formu okunur/yazılır.
+#[tokio::test(flavor = "multi_thread")]
+async fn eklenti_yoneticisi_kurulum_sinama_cokme_ve_karantina() {
+  let test_dll = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../motor/test-eklentileri/target/release");
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+    || !test_dll.join("yym_test_kaynak.dll").is_file()
+  {
+    eprintln!("motor, OBS ya da test eklentileri yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let uzun = reqwest::Client::builder().timeout(std::time::Duration::from_secs(120)).build().unwrap();
+  let post = |yol: &str, govde: Value| {
+    let c = uzun.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  let get = |yol: &str| {
+    let c = uzun.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  let bul = |l: &Value, id: &str| l["eklentiler"].as_array().unwrap().iter().find(|e| e["id"] == id).cloned().unwrap_or(Value::Null);
+
+  assert!(get("/api/eklentiler").await["eklentiler"].as_array().unwrap().is_empty());
+
+  // OBS klasörleri: izinsiz taranmaz; izinle salt-okunur tarama, deftere bir şey eklenmez
+  assert_eq!(post("/api/eklentiler/tara", json!({})).await.status(), 428);
+  let t: Value = post("/api/eklentiler/tara", json!({"izin": true})).await.json().await.unwrap();
+  assert!(t["sayilar"]["obsEklentisi"].as_u64().unwrap() > 0, "{}", t["sayilar"]);
+  assert!(t["sayilar"]["birinciTaraf"].as_u64().unwrap() > 0, "OBS Project imzalı modüller birinci taraf sayılmalı");
+  assert!(t["adaylar"].as_array().unwrap().iter().any(|a| a["id"] == "obs-ffmpeg" && a["arayuz"] == "ENGINE_MANAGED"));
+  assert!(get("/api/eklentiler").await["eklentiler"].as_array().unwrap().is_empty(), "tarama deftere yazmamalı");
+
+  // Klasör paketi: ProgramData düzeninde iki test eklentisi + bir kurulum programı (çalıştırılmaz)
+  let paket = h.root.join("paket");
+  for m in ["yym_test_kaynak", "yym_test_cokme"] {
+    let bin = paket.join(m).join("bin").join("64bit");
+    std::fs::create_dir_all(&bin).unwrap();
+    std::fs::copy(test_dll.join(format!("{m}.dll")), bin.join(format!("{m}.dll"))).unwrap();
+  }
+  std::fs::create_dir_all(paket.join("yym_test_kaynak").join("data").join("locale")).unwrap();
+  std::fs::write(paket.join("yym_test_kaynak").join("data").join("locale").join("tr-TR.ini"), "A=B").unwrap();
+  std::fs::write(paket.join("kurulum.exe"), b"MZ").unwrap();
+  let i: Value = post("/api/eklentiler/paket/incele", json!({"yol": paket})).await.json().await.unwrap();
+  assert_eq!(i["adaylar"].as_array().unwrap().len(), 2, "{i}");
+  assert_eq!(i["kurulumProgramlari"][0], "kurulum.exe");
+  assert!(i["uyarilar"]["kurulumProgrami"].as_str().unwrap().contains("çalıştırılmaz"));
+  for a in i["adaylar"].as_array().unwrap() {
+    assert_eq!(a["arayuz"], "LIKELY_COMPATIBLE", "{a}");
+    assert_eq!(a["imza"], "Imzasiz");
+  }
+  let k: Value = post("/api/eklentiler/paket/kur", json!({"kimlik": i["kimlik"], "moduller": ["yym_test_kaynak", "yym_test_cokme"]}))
+    .await
+    .json()
+    .await
+    .unwrap();
+  assert_eq!(k["kurulan"].as_array().unwrap().len(), 2, "{k}");
+  let kurulu = h.root.join("app-data").join("eklentiler").join("kurulu");
+  assert!(kurulu.join("yym_test_kaynak").join("bin").join("64bit").join("yym_test_kaynak.dll").is_file());
+  assert!(kurulu.join("yym_test_kaynak").join("data").join("locale").join("tr-TR.ini").is_file());
+  assert!(!kurulu.join("kurulum.exe").exists());
+
+  // Yalıtılmış sınama: onaysız çalışmaz; onaylı sınama "uyumlu" + türler
+  assert_eq!(post("/api/eklentiler/sina", json!({"id": "yym_test_kaynak"})).await.status(), 428);
+  let s: Value = post("/api/eklentiler/sina", json!({"id": "yym_test_kaynak", "onay": true})).await.json().await.unwrap();
+  assert_eq!(s["yoklama"]["sonuc"], "yuklendi", "{s}");
+  assert_eq!(s["eklenti"]["arayuz"], "COMPATIBLE");
+  assert_eq!(s["eklenti"]["gerekliLibobs"], "32.0");
+  for id in ["yym_test_kaynak", "yym_test_cokme"] {
+    assert!(post("/api/eklentiler/etkin", json!({"id": id, "etkin": true})).await.status().is_success(), "{id}");
+  }
+
+  // Motor açılırken çöken eklenti: süreç düşer, çökme kapısı karar ister
+  let r = post("/api/motor/baslat", json!({})).await;
+  assert_eq!(r.status(), 409);
+  assert!(r.text().await.unwrap().contains("yym_test_cokme"));
+  let d = get("/api/motor").await;
+  assert_eq!(d["calisiyor"], false);
+  assert_eq!(d["cokme"]["supheli"], "yym_test_cokme");
+  assert_eq!(d["cokme"]["cikisKodu"].as_i64(), Some(0xC000_0005));
+  assert_eq!(post("/api/motor/baslat", json!({})).await.status(), 409, "karar verilmeden başlatılmamalı");
+  let r = post("/api/motor/baslat", json!({"cokme_karari": "devre-disi"})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let l = get("/api/eklentiler").await;
+  let c = bul(&l, "yym_test_cokme");
+  assert_eq!(c["arayuz"], "QUARANTINED", "{c}");
+  assert_eq!(c["etkin"], false);
+  assert_eq!(bul(&l, "yym_test_kaynak")["oturumdaYuklu"], true);
+  assert!(l["bekleyenCokme"].is_null());
+
+  // Eklentinin kaynak türü: sahneye eklenir; kayıtlı olmayan tür "eklenti" yolundan geçemez
+  assert_eq!(post("/api/motor/kaynak", json!({"tur": "eklenti", "deger": "color_source"})).await.status(), 400);
+  let r = post("/api/motor/kaynak", json!({"tur": "eklenti", "deger": "yym_test_desen", "ad": "Desen"})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let kaynak: Value = r.json().await.unwrap();
+  let kid = kaynak["id"].as_str().unwrap().to_string();
+  let o = get(&format!("/api/motor/kaynak/ozellikler?id={kid}")).await;
+  let adlar: Vec<&str> = o["ozellikler"].as_array().unwrap().iter().filter_map(|x| x["ad"].as_str()).collect();
+  assert_eq!(adlar, ["renk", "kalinlik", "hareket"], "{o}");
+  let kal = o["ozellikler"].as_array().unwrap().iter().find(|x| x["ad"] == "kalinlik").unwrap();
+  assert_eq!((kal["tur"].as_str(), kal["min"].as_i64(), kal["max"].as_i64()), (Some("int"), Some(1), Some(90)));
+  assert!(post("/api/motor/kaynak/guncelle", json!({"id": kid, "ayarlar": {"kalinlik": 40}})).await.status().is_success());
+  assert_eq!(get(&format!("/api/motor/kaynak/ozellikler?id={kid}")).await["ayarlar"]["kalinlik"], 40);
+  // Önizleme: ilk kare işlenene kadar 204 döner; eklenti kaynağıyla kare gelmeli
+  let mut kare = false;
+  for _ in 0..40 {
+    let pn = uzun.get(format!("{}/api/motor/onizleme?tuval=ana&genislik=320", h.base)).send().await.unwrap();
+    if pn.status() == 200 {
+      kare = true;
+      break;
+    }
+    tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+  }
+  assert!(kare, "eklenti kaynağıyla önizleme karesi gelmedi");
+
+  // Düzgün durdurma: oturum işaretleri kalmaz, yeniden açılışta çökme sorulmaz
+  assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
+  let motor_dir = h.root.join("app-data").join("motor");
+  assert!(!motor_dir.join("oturum.json").exists() && !motor_dir.join("eklenti-yukleniyor.json").exists());
+  assert!(get("/api/motor").await["cokme"].is_null());
+
+  // Kaldırma: yönetilen klasör silinmez, yedeğe taşınır
+  assert_eq!(post("/api/eklentiler/kaldir", json!({"id": "yym_test_cokme"})).await.status(), 428);
+  let r: Value = post("/api/eklentiler/kaldir", json!({"id": "yym_test_cokme", "onay": true})).await.json().await.unwrap();
+  assert!(std::path::Path::new(r["yedek"]["yol"].as_str().unwrap()).join("bin").is_dir());
+  assert!(bul(&get("/api/eklentiler").await, "yym_test_cokme").is_null());
+
+  let a = uzun.get(format!("{}/api/audit?limit=100", h.base)).send().await.unwrap().text().await.unwrap();
+  for e in ["PLUGIN_SCAN", "PLUGIN_INSTALL", "PLUGIN_PROBE", "PLUGIN_ENABLE", "PLUGIN_UNINSTALL", "MOTOR_SOURCE_SETTINGS"] {
+    assert!(a.contains(e), "denetimde {e} yok");
+  }
+}
+
+/// Yerel yayın çekirdeği API'si — gerçek `yayin-motoru` + libobs, YALNIZ sentetik kaynaklar (renk, yazı), yayın
+/// yalnız 127.0.0.1'deki FFmpeg alıcısına. Çekirdek derlenmemişse ya da OBS/FFmpeg yoksa atlanır.
+/// Kapsam: kaynak/öğe düzenleme, hedef başına tuval + ses izi, kayıt, tekrar arabelleği, motor GO LIVE durdurma,
+/// kalıcılık (yeniden açılışta geri kurma) ve eksik eklenti türünün yer tutucu olarak korunması.
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_api_sentetik_kaynak_ve_hedef() {
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let Some(ff) = std::process::Command::new("where")
+    .arg("ffmpeg")
+    .output()
+    .ok()
+    .and_then(|o| String::from_utf8_lossy(&o.stdout).lines().next().map(|l| PathBuf::from(l.trim())))
+  else {
+    eprintln!("ffmpeg yok — atlandı");
+    return;
+  };
+  let h = start().await;
+  let kayit_dir = h.root.join("kayitlar");
+  std::env::set_var("YYA_MOTOR_KAYIT_DIR", &kayit_dir);
+  // Önceden kaydedilmiş koleksiyon: yüklü olmayan bir eklentinin kaynağı (yer tutucu olarak korunmalı)
+  let motor_dir = h.root.join("app-data").join("motor");
+  std::fs::create_dir_all(&motor_dir).unwrap();
+  std::fs::write(
+    motor_dir.join("sahne-koleksiyonu.json"),
+    json!({"surum": 1, "sayac": 90, "kaynaklar": [{"id": "k90", "tur": "eklenti", "obs_turu": "yym_yok_eklenti_kaynagi",
+      "ad": "Eksik eklenti kaynağı", "ayarlar": {"ozel": 42}, "ogeler": [{"tuval": "ana", "konum": [5, 6]}]}]})
+    .to_string(),
+  )
+  .unwrap();
+
+  let port = free_port();
+  let hedef_id = format!("itest-motor-{port}");
+  let anahtar = format!("itest_motor_anahtar_{port}");
+  let alici_dosya = h.root.join("motor-alici.flv");
+  let mut alici = std::process::Command::new(&ff)
+    .args(["-hide_banner", "-loglevel", "error", "-listen", "1", "-i"])
+    .arg(format!("rtmp://127.0.0.1:{port}/live/{anahtar}"))
+    .args(["-c", "copy", "-f", "flv", "-y"])
+    .arg(&alici_dosya)
+    .stdin(std::process::Stdio::piped())
+    .stdout(std::process::Stdio::null())
+    .stderr(std::process::Stdio::null())
+    .spawn()
+    .unwrap();
+  let post = |yol: &str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  let get = |yol: &str| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  let bekle = |ms: u64| tokio::time::sleep(std::time::Duration::from_millis(ms));
+
+  // Motor çalışmıyorken kaynak açık çakışma döner; kayıtlı koleksiyon durumda görünür
+  assert_eq!(post("/api/motor/kaynak", json!({"tur": "renk", "deger": "#203040"})).await.status(), 409);
+  let d = get("/api/motor").await;
+  assert_eq!(d["calisiyor"], false);
+  assert_eq!(d["kaynaklar"][0]["id"], "k90");
+
+  let r = post("/api/motor/baslat", json!({"dikey": true, "fps": 30})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let b: Value = r.json().await.unwrap();
+  assert_eq!(b["eksikKaynaklar"], json!(["Eksik eklenti kaynağı"]), "eksik eklenti türü yer tutucu olmalı");
+  assert_eq!(post("/api/motor/baslat", json!({})).await.status(), 409);
+
+  let r = post("/api/motor/kaynak", json!({"tur": "renk", "deger": "#203040", "ad": "Arka", "tuvaller": ["ana", "dikey"]})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let renk: Value = r.json().await.unwrap();
+  let r = post("/api/motor/kaynak", json!({"tur": "yazi", "deger": "motor API sınaması", "ad": "Başlık", "tuvaller": ["ana", "dikey"]})).await;
+  let yazi: Value = r.json().await.unwrap();
+  let (renk_id, yazi_id) = (renk["id"].as_str().unwrap().to_string(), yazi["id"].as_str().unwrap().to_string());
+  assert_eq!(renk_id, "k91", "sayaç kayıttan sürer");
+  // Doğrulama
+  assert_eq!(post("/api/motor/kaynak", json!({"tur": "medya", "deger": "http://ornek.com/a.mp4"})).await.status(), 400);
+  assert_eq!(post("/api/motor/kaynak", json!({"tur": "pencere", "deger": ""})).await.status(), 400);
+  assert_eq!(post("/api/motor/kaynak", json!({"tur": "renk", "deger": "#000000", "tuvaller": ["yan"]})).await.status(), 400);
+  assert_eq!(h.client.get(format!("{}/api/motor/secenekler?tur=renk", h.base)).send().await.unwrap().status(), 400);
+
+  // Öğe düzenleme: yazı en alta, konum; dikeyde renk gizli
+  let s = get("/api/motor/sahne?tuval=ana").await;
+  let adlar: Vec<&str> = s["ogeler"].as_array().unwrap().iter().map(|o| o["kaynak"].as_str().unwrap()).collect();
+  assert_eq!(adlar, vec![renk_id.as_str(), yazi_id.as_str()]);
+  assert_eq!(s["ogeler"][1]["ad"], "Başlık");
+  assert!(post("/api/motor/oge", json!({"oge": format!("sahne-ana/{yazi_id}"), "eylem": "sira", "yon": "en_alt"})).await.status().is_success());
+  assert!(post("/api/motor/oge", json!({"oge": format!("sahne-ana/{yazi_id}"), "eylem": "donustur", "konum": [120, 80]})).await.status().is_success());
+  assert!(post("/api/motor/oge", json!({"oge": format!("sahne-dikey/{renk_id}"), "eylem": "donustur", "gorunur": false})).await.status().is_success());
+  assert_eq!(post("/api/motor/oge", json!({"oge": "sahne-ana/yok", "eylem": "sira", "yon": "en_alt"})).await.status(), 409);
+  // Ses izi maskesi
+  assert!(post("/api/motor/kaynak/izler", json!({"id": yazi_id, "maske": 3})).await.status().is_success());
+  assert_eq!(post("/api/motor/kaynak/izler", json!({"id": yazi_id, "maske": 64})).await.status(), 400);
+
+  // Hedef: dikey tuval, 2. ses izi
+  let r = post(
+    "/api/multistream/destinations",
+    json!({"id": hedef_id, "name": "Motor sınama", "platform": "custom", "server": format!("rtmp://127.0.0.1:{port}/live"), "key": anahtar}),
+  )
+  .await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  assert_eq!(post("/api/motor/hedef", json!({"id": hedef_id, "eylem": "baslat", "tuval": "dikey", "iz": 9})).await.status(), 400);
+  let r = post("/api/motor/hedef", json!({"id": hedef_id, "eylem": "baslat", "tuval": "dikey", "iz": 2})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let mut canli = false;
+  for _ in 0..60 {
+    let d = get("/api/motor").await;
+    let hd = d["hedefler"].as_array().unwrap().iter().find(|x| x["id"] == json!(hedef_id)).cloned().unwrap();
+    if hd["durum"] == "canli" {
+      canli = true;
+      assert_eq!((hd["tuval"].as_str(), hd["iz"].as_u64()), (Some("dikey"), Some(1)), "iz motorda 0 tabanlı saklanır");
+      break;
+    }
+    bekle(250).await;
+  }
+  assert!(canli, "hedef canlıya geçmedi");
+  assert_eq!(post("/api/multistream/destinations/start", json!({"id": hedef_id})).await.status(), 409);
+
+  // Önizleme
+  let url = format!("{}/api/motor/onizleme?tuval=dikey&genislik=320", h.base);
+  let _ = h.client.get(&url).send().await.unwrap();
+  bekle(1500).await;
+  let r = h.client.get(&url).send().await.unwrap();
+  assert_eq!(r.status(), 200);
+  let png = r.bytes().await.unwrap();
+  assert_eq!((u32::from_be_bytes(png[16..20].try_into().unwrap()), u32::from_be_bytes(png[20..24].try_into().unwrap())), (180, 320));
+
+  // Kayıt ve tekrar arabelleği
+  let r = post("/api/motor/kayit", json!({"eylem": "baslat"})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let kayit_yolu = PathBuf::from(r.json::<Value>().await.unwrap()["yol"].as_str().unwrap());
+  assert_eq!(post("/api/motor/kayit", json!({"eylem": "baslat"})).await.status(), 409, "ikinci kayıt reddedilir");
+  let r = post("/api/motor/tekrar", json!({"eylem": "ac", "sure_sn": 10})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  bekle(3500).await;
+  let r = post("/api/motor/tekrar", json!({"eylem": "kaydet"})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let tekrar_yolu = PathBuf::from(r.json::<Value>().await.unwrap()["yol"].as_str().unwrap().to_string());
+  assert!(post("/api/motor/kayit", json!({"eylem": "durdur"})).await.status().is_success());
+  assert!(post("/api/motor/tekrar", json!({"eylem": "kapat"})).await.status().is_success());
+  bekle(800).await;
+  assert!(kayit_yolu.starts_with(&kayit_dir) && kayit_yolu.metadata().map(|m| m.len() > 10_000).unwrap_or(false), "kayıt dosyası: {kayit_yolu:?}");
+  assert!(tekrar_yolu.starts_with(&kayit_dir) && tekrar_yolu.exists(), "tekrar dosyası: {tekrar_yolu:?}");
+
+  // Motor GO LIVE durdurma onay ister; onayla motor hedefleri durur
+  assert_eq!(post("/api/motor/golive", json!({"eylem": "durdur"})).await.status(), 428);
+  let r = post("/api/motor/golive", json!({"eylem": "durdur", "confirm": true})).await;
+  assert!(r.status().is_success());
+  assert_eq!(r.json::<Value>().await.unwrap()["sonuc"][&hedef_id]["ok"], true);
+  bekle(1000).await;
+  assert_eq!(post("/api/motor/durdur", json!({})).await.status(), 428);
+  assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
+  assert_eq!(get("/api/motor").await["calisiyor"], false);
+
+  // Kalıcılık: yeniden açılışta kaynaklar, sıra, konum, görünürlük, iz maskesi ve hedef ataması geri gelir
+  let r = post("/api/motor/baslat", json!({})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let d = get("/api/motor").await;
+  assert_eq!(d["dikey"], true, "dikey tuval kayıttan");
+  let kaynaklar = d["kaynaklar"].as_array().unwrap();
+  assert!(kaynaklar.iter().any(|k| k["id"] == "k90" && k["eksik"] == true && k["ayarlar"]["ozel"] == 42), "eksik kaynak ayarlarıyla korunur");
+  assert!(kaynaklar.iter().any(|k| k["id"] == json!(yazi_id) && k["izler"] == 3));
+  let hd = d["hedefler"].as_array().unwrap().iter().find(|x| x["id"] == json!(hedef_id)).cloned().unwrap();
+  assert_eq!((hd["tuval"].as_str(), hd["iz"].as_u64()), (Some("dikey"), Some(1)));
+  let s = get("/api/motor/sahne?tuval=ana").await;
+  let adlar: Vec<&str> = s["ogeler"].as_array().unwrap().iter().map(|o| o["kaynak"].as_str().unwrap()).collect();
+  assert_eq!(adlar, vec![yazi_id.as_str(), renk_id.as_str()], "sıra korunur");
+  assert_eq!(s["ogeler"][0]["konum"], json!([120.0, 80.0]));
+  let sd = get("/api/motor/sahne?tuval=dikey").await;
+  let renk_dikey = sd["ogeler"].as_array().unwrap().iter().find(|o| o["kaynak"] == json!(renk_id)).cloned().unwrap();
+  assert_eq!(renk_dikey["gorunur"], false, "görünürlük korunur");
+  assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
+
+  // Alıcı: dikey 1080×1920; 2. ses izi (yazının iz maskesi 1+2) — ses akışı var
+  if let Some(mut g) = alici.stdin.take() {
+    use std::io::Write;
+    let _ = g.write_all(b"q");
+  }
+  for _ in 0..50 {
+    if alici.try_wait().unwrap().is_some() {
+      break;
+    }
+    bekle(100).await;
+  }
+  let _ = alici.kill();
+  let _ = alici.wait();
+  let probe = ff.with_file_name("ffprobe.exe");
+  let boyut = std::process::Command::new(&probe)
+    .args(["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0"])
+    .arg(&alici_dosya)
+    .output()
+    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    .unwrap_or_default();
+  assert_eq!(boyut, "1080,1920", "alıcıdaki akış dikey tuvalden gelmeli");
+
+  // Denetim ve sızıntı
+  let a = h.client.get(format!("{}/api/audit?limit=100", h.base)).send().await.unwrap().text().await.unwrap();
+  for e in ["MOTOR_START", "MOTOR_SOURCE_ADD", "MOTOR_ITEM_EDIT", "MOTOR_SOURCE_TRACKS", "MOTOR_DEST_START", "MOTOR_RECORD_START", "MOTOR_REPLAY_SAVE", "MOTOR_STOP_ALL", "MOTOR_STOP"] {
+    assert!(a.contains(e), "denetimde {e} yok");
+  }
+  assert!(!a.contains(&anahtar));
+  assert!(!get("/api/motor").await.to_string().contains(&anahtar));
+  let koleksiyon = std::fs::read_to_string(motor_dir.join("koleksiyonlar").join("varsayilan.json")).unwrap();
+  assert!(!koleksiyon.contains(&anahtar), "anahtar koleksiyon dosyasına yazılmamalı");
+  assert!(koleksiyon.contains("\"surum\": 2"), "v1 kayıt v2'ye göç etmeli");
+  let v1 = std::fs::read_to_string(motor_dir.join("sahne-koleksiyonu.json")).unwrap();
+  assert!(v1.contains("\"surum\":1") && v1.contains("k90"), "v1 dosyası silinmez ve değişmez");
+  let libobs = std::fs::read_to_string(motor_dir.join("motor-libobs.log")).unwrap_or_default();
+  assert!(!libobs.contains(&anahtar), "anahtar motor günlüğünde");
+  assert!(!libobs.contains("[HATA]"), "motor günlüğünde hata:\n{libobs}");
+  let _ = post("/api/multistream/destinations/delete", json!({"id": hedef_id})).await;
+}
+
+/// Motor v2 (OBS iş akışı paritesi) — gerçek `yayin-motoru` + libobs, YALNIZ sentetik kaynaklar (renk, yazı,
+/// FFmpeg'in ürettiği tonlu ses dosyası). Yayın yok; izleme yalnız "kapalı" (hoparlöre ses verilmez).
+/// Kapsam: çoklu sahne, program geçişi + geçiş geçersiz kılma, geçiş türü, Studio Mode, tam dönüşüm, gruplar,
+/// filtreler, ses özellikleri, kaynak/sahne çoğaltma, `/ws/motor` canlı akış, koleksiyon değiştirme, OBS içe
+/// aktarımı, dışa aktarım ve yeniden başlatmada kalıcılık.
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_v2_sahneler_gruplar_filtreler_koleksiyonlar() {
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let Some(ff) = std::process::Command::new("where")
+    .arg("ffmpeg")
+    .output()
+    .ok()
+    .and_then(|o| String::from_utf8_lossy(&o.stdout).lines().next().map(|l| PathBuf::from(l.trim())))
+  else {
+    eprintln!("ffmpeg yok — atlandı");
+    return;
+  };
+  // Kayıt yapılmaz: YYA_MOTOR_KAYIT_DIR süreç geneli; diğer motor testiyle yarışmasın diye burada ayarlanmaz
+  let h = start().await;
+  let ton = h.root.join("ton.wav");
+  let durum = std::process::Command::new(&ff)
+    .args(["-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "30", "-y"])
+    .arg(&ton)
+    .status()
+    .unwrap();
+  assert!(durum.success());
+  let post = |yol: &str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let get = |yol: String| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.get(url).send().await.unwrap();
+      assert!(r.status().is_success(), "GET {yol}: {}", r.status());
+      r.json::<Value>().await.unwrap()
+    }
+  };
+  let bekle = |ms: u64| tokio::time::sleep(std::time::Duration::from_millis(ms));
+
+  tamam("/api/motor/baslat", json!({})).await;
+  let renk = tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#204060", "ad": "Arka"})).await["id"].as_str().unwrap().to_string();
+  let s = get("/api/motor/sahneler".into()).await;
+  assert_eq!(s["sahneler"].as_array().unwrap().len(), 1);
+  assert_eq!(s["program"]["ana"], "sahne-ana");
+  let kaynaklar = get("/api/motor".into()).await["kaynaklar"].clone();
+  let renk_kayit = kaynaklar.as_array().unwrap().iter().find(|k| k["id"] == renk.as_str()).cloned().unwrap();
+  assert_eq!(renk_kayit["obs_turu"], "color_source_v3", "yeni kaynak türün en yeni sürümüyle");
+
+  // Yeni sahne, kaynak doğrudan sahneye; var olan kaynak ikinci sahneye
+  let oyun = tamam("/api/motor/sahne-islem", json!({"eylem": "olustur", "ad": "Oyun"})).await["id"].as_str().unwrap().to_string();
+  let yazi = tamam("/api/motor/kaynak", json!({"tur": "yazi", "deger": "Başlık", "ad": "Başlık", "sahne": oyun})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/oge", json!({"eylem": "ekle", "sahne": oyun, "kaynak": renk})).await;
+  let medya = tamam("/api/motor/kaynak", json!({"tur": "medya", "deger": ton.to_string_lossy(), "ad": "Ton", "sahne": oyun})).await["id"].as_str().unwrap().to_string();
+  assert_eq!(post("/api/motor/oge", json!({"eylem": "ekle", "sahne": oyun, "kaynak": oyun})).await.status(), 400, "sahne kendine eklenemez");
+  tamam("/api/motor/sahne-islem", json!({"eylem": "adlandir", "id": oyun, "ad": "Oyun sahnesi"})).await;
+
+  // Program geçişi; sahne-ana'ya kesme geçersiz kılması
+  tamam("/api/motor/program", json!({"sahne": oyun})).await;
+  bekle(500).await;
+  assert_eq!(get("/api/motor/sahneler".into()).await["program"]["ana"], json!(oyun));
+  tamam("/api/motor/sahne-islem", json!({"eylem": "gecis", "id": "sahne-ana", "gecis": {"tur": "cut_transition", "sure_ms": 0}})).await;
+  tamam("/api/motor/program", json!({"sahne": "sahne-ana"})).await;
+  bekle(400).await;
+  let g = get("/api/motor/gecis?tuval=ana".into()).await;
+  assert_eq!(g["bilgi"]["program"], "sahne-ana");
+  assert_eq!(g["bilgi"]["tur"], "fade_transition", "geçersiz kılmadan sonra tuvalin geçişi geri gelir");
+  assert!(g["turler"].as_array().unwrap().iter().any(|t| t["id"] == "slide_transition"));
+  tamam("/api/motor/gecis", json!({"tuval": "ana", "tur": "slide_transition", "sure_ms": 500})).await;
+  assert_eq!(post("/api/motor/gecis", json!({"tuval": "ana", "tur": "../x"})).await.status(), 400);
+  assert_eq!(post("/api/motor/sahne-islem", json!({"eylem": "sil", "id": "sahne-ana"})).await.status(), 409, "programdaki sahne silinemez");
+
+  // Studio Mode: önizlemeye Oyun, geçiş (takas) → program Oyun, önizleme sahne-ana
+  let st = tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "ac"})).await;
+  assert_eq!(st["onizleme"], "sahne-ana");
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "onizleme", "sahne": oyun})).await;
+  let url = format!("{}/api/motor/onizleme?tuval=studyo-ana&genislik=320", h.base);
+  let _ = h.client.get(&url).send().await.unwrap();
+  bekle(1000).await;
+  assert_eq!(h.client.get(&url).send().await.unwrap().status(), 200, "Studio önizleme karesi");
+  let st = tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "gecis", "takas": true, "sure_ms": 0})).await;
+  assert_eq!(st["program"], json!(oyun));
+  bekle(300).await;
+  let s = get("/api/motor/sahneler".into()).await;
+  assert_eq!((s["program"]["ana"].as_str(), s["studyo"]["ana"].as_str()), (Some(oyun.as_str()), Some("sahne-ana")));
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "kapat"})).await;
+
+  // Tam dönüşüm
+  let yazi_oge = format!("{oyun}/{yazi}");
+  tamam("/api/motor/oge", json!({"oge": yazi_oge, "eylem": "donustur", "donusum": {"konum": [300, 200], "olcek": [2, 2], "aci": 45, "kirp": [2, 0, 0, 4], "kilit": true, "hizalama": 0}})).await;
+  assert_eq!(post("/api/motor/oge", json!({"oge": yazi_oge, "eylem": "donustur", "donusum": {"kirp": [0, -5, 0, 0]}})).await.status(), 400);
+  let sahne = get(format!("/api/motor/sahne?sahne={oyun}")).await;
+  let y = sahne["ogeler"].as_array().unwrap().iter().find(|o| o["oge"] == yazi_oge.as_str()).cloned().unwrap();
+  assert_eq!((y["olcek"].clone(), y["aci"].clone(), y["kirp"].clone(), y["kilit"].clone()), (json!([2.0, 2.0]), json!(45.0), json!([2, 0, 0, 4]), json!(true)));
+  assert_eq!(y["durum"], "hazir");
+
+  // Gruplar
+  let renk_oge = format!("{oyun}/{renk}");
+  let gr = tamam("/api/motor/oge", json!({"eylem": "grupla", "sahne": oyun, "ogeler": [renk_oge, yazi_oge], "ad": "Grup A"})).await;
+  let grup_oge = gr["oge"].as_str().unwrap().to_string();
+  let sahne = get(format!("/api/motor/sahne?sahne={oyun}")).await;
+  let ogeler = sahne["ogeler"].as_array().unwrap();
+  let grup = ogeler.iter().find(|o| o["oge"] == grup_oge.as_str()).cloned().unwrap();
+  assert_eq!((grup["tur"].as_str(), grup["ad"].as_str()), (Some("grup"), Some("Grup A")));
+  assert_eq!(ogeler.iter().filter(|o| o["ust"] == grup_oge.as_str()).count(), 2);
+
+  // Filtreler
+  let turler = get("/api/motor/filtre-turleri".into()).await;
+  assert!(turler["turler"].as_array().unwrap().iter().any(|t| t["id"] == "color_filter_v2"));
+  let f = tamam("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": renk, "tur": "color_filter_v2", "ad": "Renk düzeltme"})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/filtre", json!({"eylem": "guncelle", "id": f, "ayarlar": {"opacity": 0.5}})).await;
+  tamam("/api/motor/filtre", json!({"eylem": "etkin", "id": f, "acik": false})).await;
+  let fk = tamam("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": medya, "tur": "gain_filter", "ad": "Kazanç", "ayarlar": {"db": -6.0}})).await["id"].as_str().unwrap().to_string();
+  let fl = get(format!("/api/motor/filtreler?kaynak={renk}")).await;
+  assert_eq!(fl["filtreler"][0]["etkin"], false);
+  let fo = get(format!("/api/motor/filtre/ozellikler?id={f}")).await;
+  assert_eq!(fo["ayarlar"]["opacity"], 0.5);
+  assert_eq!(post("/api/motor/filtre", json!({"eylem": "sil", "id": "yok"})).await.status(), 404);
+
+  // Ses: mikser, gelişmiş ses özellikleri (izleme yalnız kapalı)
+  let ses = get("/api/motor/ses".into()).await;
+  let m = ses["kaynaklar"].as_array().unwrap().iter().find(|x| x["id"] == medya.as_str()).cloned().unwrap();
+  assert_eq!((m["ad"].as_str(), m["izleme"].as_i64()), (Some("Ton"), Some(0)));
+  assert_eq!(ses["izAdlari"].as_array().unwrap().len(), 6);
+  for (e, d) in [("ses", json!(0.5)), ("denge", json!(0.3)), ("mono", json!(true)), ("senkron", json!(120)), ("izleme", json!(0)), ("izler", json!(3))] {
+    tamam("/api/motor/ses", json!({"id": medya, "eylem": e, "deger": d})).await;
+  }
+  for (e, d) in [("ses", json!(25)), ("denge", json!(2)), ("senkron", json!(-5000)), ("izleme", json!(3)), ("izler", json!(64))] {
+    assert_eq!(post("/api/motor/ses", json!({"id": medya, "eylem": e, "deger": d})).await.status(), 400, "{e} {d}");
+  }
+  let m = get("/api/motor/ses".into()).await["kaynaklar"].as_array().unwrap().iter().find(|x| x["id"] == medya.as_str()).cloned().unwrap();
+  assert_eq!((m["mono"].as_bool(), m["senkron_ms"].as_i64(), m["izler"].as_u64()), (Some(true), Some(120), Some(3)));
+  tamam("/api/motor/medya", json!({"id": medya, "eylem": "yeniden"})).await;
+
+  // Canlı akış: seviye olayları ve JPEG kareleri (yalnız yerel WebSocket)
+  let ws_url = format!("{}/ws/motor", h.base.replace("http://", "ws://"));
+  let (mut ws, _) = tokio_tungstenite::connect_async(&ws_url).await.unwrap();
+  ws.send(tokio_tungstenite::tungstenite::Message::Text(r#"{"seviye": true, "kare": {"tuval": "ana", "genislik": 320, "fps": 10}}"#.into())).await.unwrap();
+  let (mut kare, mut seviye) = (0, 0);
+  let son = std::time::Instant::now() + std::time::Duration::from_secs(6);
+  while std::time::Instant::now() < son && (kare < 3 || seviye < 3) {
+    if let Ok(Some(Ok(tokio_tungstenite::tungstenite::Message::Text(t)))) = tokio::time::timeout(std::time::Duration::from_secs(2), ws.next()).await {
+      if t.starts_with(r#"{"olay":"kare""#) {
+        kare += 1;
+      } else if t.starts_with(r#"{"olay":"seviyeler""#) {
+        seviye += 1;
+        assert!(t.contains(&medya), "tonlu medya seviyelerde");
+      }
+    }
+  }
+  let _ = ws.close(None).await;
+  assert!(kare >= 3 && seviye >= 3, "kare {kare}, seviye {seviye}");
+
+  // Kaynak ve sahne çoğaltma
+  let kopya = tamam("/api/motor/kaynak-islem", json!({"id": renk, "eylem": "cogalt", "oge": format!("{oyun}/{renk}")})).await;
+  let kopya_id = kopya["id"].as_str().unwrap().to_string();
+  assert_ne!(kopya_id, renk);
+  assert_eq!(get(format!("/api/motor/filtreler?kaynak={kopya_id}")).await["filtreler"].as_array().unwrap().len(), 1, "filtreler de çoğalır");
+  tamam("/api/motor/kaynak-islem", json!({"id": kopya_id, "eylem": "adlandir", "ad": "Arka kopya"})).await;
+  let ikiz = tamam("/api/motor/sahne-islem", json!({"eylem": "cogalt", "id": oyun})).await["id"].as_str().unwrap().to_string();
+  let ikiz_ogeler = get(format!("/api/motor/sahne?sahne={ikiz}")).await["ogeler"].as_array().unwrap().clone();
+  let ikiz_grup = ikiz_ogeler.iter().find(|o| o["tur"] == "grup").cloned().unwrap();
+  assert_eq!(ikiz_grup["ad"], "Grup A");
+  assert_ne!(ikiz_grup["kaynak"], grup["kaynak"], "çoğaltılan grubun kimliği yeni");
+  tamam("/api/motor/sahne-islem", json!({"eylem": "sirala", "sira": [ikiz, oyun, "sahne-ana"]})).await;
+  let s = get("/api/motor/sahneler".into()).await;
+  let sira: Vec<&str> = s["sahneler"].as_array().unwrap().iter().map(|x| x["id"].as_str().unwrap()).collect();
+  assert_eq!(sira, [ikiz.as_str(), oyun.as_str(), "sahne-ana"]);
+  tamam("/api/motor/sahne-islem", json!({"eylem": "sil", "id": ikiz})).await;
+
+  // Koleksiyonlar: yeni → geç (motor çalışırken) → geri dön; OBS içe aktarımı
+  let kl = get("/api/motor/koleksiyonlar".into()).await;
+  assert_eq!(kl["etkin"], "varsayilan");
+  let ikinci = tamam("/api/motor/koleksiyon", json!({"eylem": "yeni", "ad": "İkinci Koleksiyon"})).await["id"].as_str().unwrap().to_string();
+  assert_eq!(ikinci, "ikinci-koleksiyon");
+  tamam("/api/motor/koleksiyon", json!({"eylem": "gec", "id": ikinci})).await;
+  let s = get("/api/motor/sahneler".into()).await;
+  assert_eq!((s["koleksiyon"]["id"].as_str(), s["sahneler"].as_array().unwrap().len()), (Some(ikinci.as_str()), 1));
+  assert!(get("/api/motor/ses".into()).await["kaynaklar"].as_array().unwrap().is_empty(), "önceki koleksiyonun kaynakları kalktı");
+  tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#ff0000", "ad": "Kırmızı"})).await;
+  assert_eq!(post("/api/motor/koleksiyon", json!({"eylem": "sil", "id": ikinci})).await.status(), 409, "etkin koleksiyon silinemez");
+  tamam("/api/motor/koleksiyon", json!({"eylem": "gec", "id": "varsayilan"})).await;
+  let s = get("/api/motor/sahneler".into()).await;
+  assert_eq!(s["sahneler"].as_array().unwrap().len(), 2);
+  assert_eq!(get(format!("/api/motor/filtreler?kaynak={renk}")).await["filtreler"][0]["etkin"], false, "filtre geri kuruldu");
+  let m = get("/api/motor/ses".into()).await["kaynaklar"].as_array().unwrap().iter().find(|x| x["id"] == medya.as_str()).cloned().unwrap();
+  assert!((m["denge"].as_f64().unwrap() - 0.3).abs() < 0.01, "ses özellikleri geri kuruldu");
+  let obs = json!({
+    "name": "Sentetik OBS", "current_program_scene": "Ana", "current_transition": "Fade", "transition_duration": 250,
+    "scene_order": [{"name": "Ana"}],
+    "sources": [
+      {"name": "Mavi", "uuid": "a1", "id": "color_source", "versioned_id": "color_source_v3", "settings": {"color": 4294901760u32, "width": 400, "height": 300}},
+      {"name": "Ana", "uuid": "a2", "id": "scene", "settings": {"items": [{"name": "Mavi", "source_uuid": "a1", "visible": true, "pos": {"x": 50, "y": 60}, "scale": {"x": 1, "y": 1}, "align": 5}]}}
+    ]
+  });
+  let ice = tamam("/api/motor/koleksiyon", json!({"eylem": "obs-ice-aktar", "veri": obs})).await;
+  assert_eq!((ice["kaynak"].as_u64(), ice["sahne"].as_u64()), (Some(1), Some(1)));
+  let obs_id = ice["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/koleksiyon", json!({"eylem": "gec", "id": obs_id})).await;
+  let s = get("/api/motor/sahne?tuval=ana".into()).await;
+  assert_eq!((s["ogeler"][0]["ad"].as_str(), s["ogeler"][0]["konum"].clone()), (Some("Mavi"), json!([50.0, 60.0])));
+  tamam("/api/motor/koleksiyon", json!({"eylem": "gec", "id": "varsayilan"})).await;
+  tamam("/api/motor/koleksiyon", json!({"eylem": "sil", "id": ikinci})).await;
+  assert!(h.root.join("app-data").join("motor").join("koleksiyon-yedekleri").read_dir().unwrap().count() >= 1, "silinen koleksiyon yedekte");
+
+  // Kalıcılık: yeniden başlatınca sahneler, program, geçiş, grup, dönüşüm, filtre ve ses özellikleri geri gelir
+  tamam("/api/motor/durdur", json!({"confirm": true})).await;
+  tamam("/api/motor/baslat", json!({})).await;
+  let s = get("/api/motor/sahneler".into()).await;
+  assert_eq!(s["program"]["ana"], json!(oyun));
+  assert_eq!((s["gecisler"]["ana"]["tur"].as_str(), s["gecisler"]["ana"]["sure_ms"].as_u64()), (Some("slide_transition"), Some(500)));
+  let sahne = get(format!("/api/motor/sahne?sahne={oyun}")).await;
+  let ogeler = sahne["ogeler"].as_array().unwrap();
+  let grup = ogeler.iter().find(|o| o["tur"] == "grup").cloned().unwrap();
+  assert_eq!(grup["ad"], "Grup A");
+  let y = ogeler.iter().find(|o| o["kaynak"] == yazi.as_str()).cloned().unwrap();
+  assert_eq!(y["ust"], grup["oge"], "yazı grubun içinde");
+  assert_eq!((y["olcek"].clone(), y["aci"].clone(), y["kirp"].clone(), y["kilit"].clone()), (json!([2.0, 2.0]), json!(45.0), json!([2, 0, 0, 4]), json!(true)));
+  assert_eq!(get(format!("/api/motor/filtreler?kaynak={medya}")).await["filtreler"][0]["id"], json!(fk));
+  let m = get("/api/motor/ses".into()).await["kaynaklar"].as_array().unwrap().iter().find(|x| x["id"] == medya.as_str()).cloned().unwrap();
+  assert!((m["ses"].as_f64().unwrap() - 0.5).abs() < 0.01 && m["mono"] == true && m["senkron_ms"] == 120 && m["izleme"] == 0);
+
+  // Dışa aktarım: sır yok, tekrar içe aktarılabilir
+  let r = h.client.get(format!("{}/api/motor/koleksiyon/disa-aktar?id=varsayilan", h.base)).send().await.unwrap();
+  assert!(r.headers()["content-disposition"].to_str().unwrap().contains("varsayilan.json"));
+  let disa: Value = r.json().await.unwrap();
+  assert_eq!(disa["surum"], 2);
+  let ice = tamam("/api/motor/koleksiyon", json!({"eylem": "ice-aktar", "veri": disa, "ad": "Geri yüklenen"})).await;
+  assert_eq!(ice["id"], "geri-yuklenen");
+  tamam("/api/motor/durdur", json!({"confirm": true})).await;
+
+  let a = h.client.get(format!("{}/api/audit?limit=200", h.base)).send().await.unwrap().text().await.unwrap();
+  for e in ["MOTOR_SCENE_EDIT", "MOTOR_SCENE_SWITCH", "MOTOR_TRANSITION_SET", "MOTOR_STUDIO", "MOTOR_ITEM_EDIT", "MOTOR_FILTER", "MOTOR_AUDIO", "MOTOR_MEDIA", "MOTOR_SOURCE_EDIT", "MOTOR_COLLECTION"] {
+    assert!(a.contains(e), "denetimde {e} yok");
+  }
+  let libobs = std::fs::read_to_string(h.root.join("app-data").join("motor").join("motor-libobs.log")).unwrap_or_default();
+  assert!(!libobs.contains("[HATA]"), "motor günlüğünde hata:\n{libobs}");
+}
+
+/// Motor profilleri — gerçek `yayin-motoru`, yalnız sentetik kaynaklar, yayın yalnız 127.0.0.1'deki FFmpeg
+/// alıcılarına. Kapsam: profil göçü, kısmi güncelleme, kodlama paylaşımı (aynı tuval + bit hızı tek kodlayıcı,
+/// farklı bit hızı ayrı), çok izli hibrit MP4 kaydı profil klasörüne, etkin çıktı varken profil değişimi reddi,
+/// boştayken profil değişimi (motor 30 FPS ile yeniden başlar), dışa aktarımda sır yok.
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_profil_kodlama_paylasimi_ve_kayit() {
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let Some(ff) = std::process::Command::new("where")
+    .arg("ffmpeg")
+    .output()
+    .ok()
+    .and_then(|o| String::from_utf8_lossy(&o.stdout).lines().next().map(|l| PathBuf::from(l.trim())))
+  else {
+    eprintln!("ffmpeg yok — atlandı");
+    return;
+  };
+  let h = start().await;
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let post = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  let get = |yol: String| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  let bekle = |ms: u64| tokio::time::sleep(std::time::Duration::from_millis(ms));
+
+  // Göç: profil yokken varsayılan oluşur
+  let p = get("/api/motor/profil".into()).await;
+  assert_eq!((p["id"].as_str(), p["profil"]["fps"].as_u64()), (Some("varsayilan"), Some(60)));
+  tamam("/api/motor/baslat", json!({})).await;
+  tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#335577", "ad": "Arka"})).await;
+  tamam("/api/motor/kaynak", json!({"tur": "yazi", "deger": "profil sınaması", "ad": "Yazı"})).await;
+
+  // Kısmi güncelleme: kayıt hibrit MP4, iki iz, profil klasörü; iz adı
+  let kayit_dir = h.root.join("profil-kayitlari");
+  let r = tamam(
+    "/api/motor/profil",
+    json!({"eylem": "guncelle", "degisim": {"cikis": {"bit_hizi_ana": 4500}, "kayit": {"bicim": "hibrit_mp4", "izler": [0, 1], "klasor": kayit_dir}, "iz_adlari": ["Canlı", "VOD", "Kayıt", "Klip", "Müziksiz", "Temiz"]}}),
+  )
+  .await;
+  assert_eq!(r["profil"]["cikis"]["bit_hizi_ana"], 4500);
+  assert_eq!(r["profil"]["cikis"]["bit_hizi_dikey"], 4000, "verilmeyen alan korunur");
+  assert_eq!(post("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"anahtar": "x"}})).await.status(), 400);
+  assert_eq!(get("/api/motor/ses".into()).await["izAdlari"][0], "Canlı");
+
+  // Hedefler: A tuval bit hızıyla (paylaşılan kodlayıcı), B 2500 kbps (ayrı kodlayıcı), C aynı 2500 (B ile paylaşır)
+  let mut alicilar = Vec::new();
+  let mut kimlikler = Vec::new();
+  for (i, bh) in [None, Some(2500), Some(2500)].into_iter().enumerate() {
+    let port = free_port();
+    let id = format!("itest-profil-{i}-{port}");
+    let anahtar = format!("itest_profil_anahtar_{i}_{port}");
+    alicilar.push(
+      std::process::Command::new(&ff)
+        .args(["-hide_banner", "-loglevel", "error", "-listen", "1", "-i"])
+        .arg(format!("rtmp://127.0.0.1:{port}/live/{anahtar}"))
+        .args(["-c", "copy", "-f", "flv", "-y"])
+        .arg(h.root.join(format!("alici-{i}.flv")))
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .unwrap(),
+    );
+    tamam("/api/multistream/destinations", json!({"id": id, "name": format!("Profil {i}"), "platform": "custom", "server": format!("rtmp://127.0.0.1:{port}/live"), "key": anahtar})).await;
+    if let Some(b) = bh {
+      tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"hedefler": {id.clone(): {"tuval": "ana", "iz": 0, "bit_hizi": b}}}})).await;
+    }
+    kimlikler.push((id, anahtar));
+  }
+  bekle(800).await;
+  for (id, _) in &kimlikler {
+    tamam("/api/motor/hedef", json!({"id": id, "eylem": "baslat"})).await;
+  }
+  let mut canli = 0;
+  for _ in 0..60 {
+    let d = get("/api/motor".into()).await;
+    canli = d["hedefler"].as_array().unwrap().iter().filter(|x| kimlikler.iter().any(|(k, _)| x["id"] == k.as_str()) && x["durum"] == "canli").count();
+    if canli == 3 {
+      break;
+    }
+    bekle(250).await;
+  }
+  assert_eq!(canli, 3, "üç hedef canlıya geçmedi");
+  let d = get("/api/motor".into()).await;
+  assert_eq!(d["kodlayicilar"], json!(["v-ana", "v-ana-2500"]), "aynı bit hızı paylaşılır, farklısı ayrı kodlayıcı");
+  assert_eq!(d["hedefler"].as_array().unwrap().iter().find(|x| x["id"] == kimlikler[1].0.as_str()).unwrap()["bitHizi"], 2500);
+
+  // Kayıt: profil klasörü, .mp4, iki ses izi; kayıt sürerken profil değişimi reddedilir
+  let r = tamam("/api/motor/kayit", json!({"eylem": "baslat"})).await;
+  let yol = PathBuf::from(r["yol"].as_str().unwrap());
+  assert!(yol.starts_with(&kayit_dir) && yol.extension().unwrap() == "mp4", "{yol:?}");
+  let yeni = tamam("/api/motor/profil", json!({"eylem": "yeni", "ad": "Otuz FPS"})).await["id"].as_str().unwrap().to_string();
+  let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "id": yeni, "degisim": {"fps": 30}})).await;
+  assert_eq!(r["profil"]["fps"], 30, "etkin olmayan profil dosyada güncellenir");
+  assert_eq!(get("/api/motor".into()).await["fps"], 60, "etkin profil değişmedi");
+  assert_eq!(post("/api/motor/profil", json!({"eylem": "gec", "id": yeni})).await.status(), 409, "etkin çıktı varken profil değişmez");
+  bekle(3000).await;
+  tamam("/api/motor/kayit", json!({"eylem": "durdur"})).await;
+  tamam("/api/motor/golive", json!({"eylem": "durdur", "confirm": true})).await;
+  bekle(1500).await;
+  let probe = ff.with_file_name("ffprobe.exe");
+  let izler = std::process::Command::new(&probe)
+    .args(["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0"])
+    .arg(&yol)
+    .output()
+    .map(|o| String::from_utf8_lossy(&o.stdout).lines().filter(|l| !l.trim().is_empty()).count())
+    .unwrap_or(0);
+  assert_eq!(izler, 2, "hibrit MP4'te iki ses izi");
+
+  // Boştayken profil değişimi: motor 30 FPS ile yeniden başlar; koleksiyon geri kurulur
+  tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {}})).await;
+  let r = post("/api/motor/profil", json!({"eylem": "gec", "id": yeni})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let d = get("/api/motor".into()).await;
+  assert_eq!((d["calisiyor"].as_bool(), d["fps"].as_u64(), d["profil"]["ad"].as_str()), (Some(true), Some(30), Some("Otuz FPS")));
+  assert_eq!(get("/api/motor/sahne?tuval=ana".into()).await["ogeler"].as_array().unwrap().len(), 2, "sahne geri kuruldu");
+  let mut fps = 0.0;
+  for _ in 0..20 {
+    fps = get("/api/motor".into()).await["istatistik"]["fps"].as_f64().unwrap_or(0.0);
+    if (fps - 30.0).abs() < 1.0 {
+      break;
+    }
+    bekle(250).await;
+  }
+  assert!((fps - 30.0).abs() < 1.0, "motor 30 FPS değil: {fps}");
+  assert_eq!(post("/api/motor/profil", json!({"eylem": "sil", "id": yeni})).await.status(), 409, "etkin profil silinmez");
+  tamam("/api/motor/profil", json!({"eylem": "gec", "id": "varsayilan"})).await;
+  tamam("/api/motor/profil", json!({"eylem": "sil", "id": yeni})).await;
+
+  // Dışa aktarım: hedef atamaları var, anahtar yok
+  let disa = h.client.get(format!("{}/api/motor/profil/disa-aktar?id=varsayilan", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(disa.contains(&kimlikler[1].0) && disa.contains("2500"));
+  for (id, anahtar) in &kimlikler {
+    assert!(!disa.contains(anahtar), "profil dışa aktarımında anahtar");
+    let _ = post("/api/multistream/destinations/delete", json!({"id": id})).await;
+  }
+  let profil_dosyasi = std::fs::read_to_string(h.root.join("app-data").join("motor").join("profiller").join("varsayilan.json")).unwrap();
+  assert!(kimlikler.iter().all(|(_, a)| !profil_dosyasi.contains(a)));
+  tamam("/api/motor/durdur", json!({"confirm": true})).await;
+  for mut a in alicilar {
+    if let Some(mut g) = a.stdin.take() {
+      use std::io::Write;
+      let _ = g.write_all(b"q");
+    }
+    for _ in 0..30 {
+      if a.try_wait().unwrap().is_some() {
+        break;
+      }
+      bekle(100).await;
+    }
+    let _ = a.kill();
+    let _ = a.wait();
+  }
+  let a = h.client.get(format!("{}/api/audit?limit=200", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(a.contains("MOTOR_PROFILE"));
+}
+
+/// Çoklu yayın anahtarı: göster (yalnız yerel, önbelleksiz, denetimde değer yok), sil, bağlantı sınaması (yalnız
+/// TCP; 127.0.0.1'de açık ve kapalı bağlantı noktası), durumda `secure://` başvurusu.
+#[tokio::test(flavor = "multi_thread")]
+async fn multistream_anahtar_goster_sil_ve_baglanti_sinamasi() {
+  let h = start().await;
+  let dinleyici = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+  let acik = dinleyici.local_addr().unwrap().port();
+  let kapali = free_port();
+  let id = format!("itest-sir-{acik}");
+  let anahtar = format!("itest_sir_anahtar_{acik}");
+  let post = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  let r = post("/api/multistream/destinations", json!({"id": id, "name": "Sır sınaması", "platform": "custom", "server": format!("rtmp://127.0.0.1:{acik}/live"), "key": anahtar})).await;
+  assert!(r.status().is_success());
+  let durum = h.client.get(format!("{}/api/multistream", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(durum.contains(&format!("secure://custom/{id}/stream-key")), "başvuru durumda");
+  assert!(!durum.contains(&anahtar), "anahtar durumda yok");
+  // Bağlantı sınaması: açık port
+  let t: Value = post("/api/multistream/destinations/test", json!({"id": id})).await.json().await.unwrap();
+  assert_eq!(t["ok"], true, "{t}");
+  assert!(t["not"].as_str().unwrap().contains("yayın gönderilmedi"));
+  // Göster: değer döner, önbelleğe alınmaz
+  let r = post("/api/multistream/destinations/reveal", json!({"id": id})).await;
+  assert_eq!(r.headers()["cache-control"], "no-store");
+  assert_eq!(r.json::<Value>().await.unwrap()["key"], json!(anahtar));
+  // Kapalı port: başarısız
+  let r = post("/api/multistream/destinations", json!({"id": id, "name": "Sır sınaması", "platform": "custom", "server": format!("rtmp://127.0.0.1:{kapali}/live")})).await;
+  assert!(r.status().is_success(), "anahtar verilmeden güncelleme mevcut anahtarı korur");
+  let t: Value = post("/api/multistream/destinations/test", json!({"id": id})).await.json().await.unwrap();
+  assert_eq!(t["ok"], false, "{t}");
+  assert_eq!(post("/api/multistream/destinations/reveal", json!({"id": id})).await.json::<Value>().await.unwrap()["key"], json!(anahtar));
+  // Anahtarı sil: hedef kalır, gösterilecek anahtar yok
+  assert!(post("/api/multistream/destinations/key-delete", json!({"id": id})).await.status().is_success());
+  assert_eq!(post("/api/multistream/destinations/reveal", json!({"id": id})).await.status(), 404);
+  let d: Value = h.client.get(format!("{}/api/multistream", h.base)).send().await.unwrap().json().await.unwrap();
+  let hedef = d["destinations"].as_array().unwrap().iter().find(|x| x["id"] == json!(id)).cloned().unwrap();
+  assert_eq!(hedef["hasKey"], false);
+  let a = h.client.get(format!("{}/api/audit?limit=100", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(a.contains("MULTISTREAM_KEY_REVEAL") && a.contains("MULTISTREAM_KEY_DELETE") && a.contains("MULTISTREAM_DEST_TEST"));
+  assert!(!a.contains(&anahtar), "denetimde anahtar değeri yok");
+  let _ = post("/api/multistream/destinations/delete", json!({"id": id})).await;
+  drop(dinleyici);
+}
+
+/// Motor kısayol eylemleri (eylem kayıt defteri üzerinden, kısayol/deste ile aynı yol) — gerçek motor, sentetik ses:
+/// bas-konuş basılı/bırakıldı, bas-sustur, sustur-değiştir, adla sahneye geç (Studio Mode'da önizlemeye), Studio
+/// geçişi, medya baştan/oynat-duraklat. İzleme hep kapalı.
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_kisayol_eylemleri_bas_konus_ve_sahne() {
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let Some(ff) = std::process::Command::new("where").arg("ffmpeg").output().ok().and_then(|o| String::from_utf8_lossy(&o.stdout).lines().next().map(|l| PathBuf::from(l.trim()))) else {
+    eprintln!("ffmpeg yok — atlandı");
+    return;
+  };
+  let h = start().await;
+  let ton = h.root.join("ton.wav");
+  assert!(std::process::Command::new(&ff)
+    .args(["-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=330:sample_rate=48000", "-t", "20", "-y"])
+    .arg(&ton)
+    .status()
+    .unwrap()
+    .success());
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let get = |yol: &'static str| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  let eylem = |id: &'static str, params: Value| tamam("/api/actions/run", json!({"id": id, "params": params}));
+  tamam("/api/motor/baslat", json!({})).await;
+  tamam("/api/motor/kaynak", json!({"tur": "medya", "deger": ton.to_string_lossy(), "ad": "Mikrofon Benzeri"})).await;
+  let sessiz = || async { get("/api/motor/ses").await["kaynaklar"].as_array().unwrap().iter().find(|k| k["ad"] == "Mikrofon Benzeri").unwrap()["sessiz"].as_bool().unwrap() };
+  eylem("engine.audio.pushToTalk", json!({"source": "mikrofon benzeri", "durum": "released"})).await;
+  assert!(sessiz().await, "bas-konuş bırakıldı → kapalı");
+  eylem("engine.audio.pushToTalk", json!({"source": "Mikrofon Benzeri"})).await;
+  assert!(!sessiz().await, "bas-konuş basılı → açık");
+  eylem("engine.audio.pushToMute", json!({"source": "Mikrofon Benzeri"})).await;
+  assert!(sessiz().await, "bas-sustur basılı → kapalı");
+  eylem("engine.audio.pushToMute", json!({"source": "Mikrofon Benzeri", "durum": "released"})).await;
+  assert!(!sessiz().await);
+  eylem("engine.audio.toggle", json!({"source": "Mikrofon Benzeri"})).await;
+  assert!(sessiz().await);
+  eylem("engine.audio.unmute", json!({"source": "Mikrofon Benzeri"})).await;
+  assert!(!sessiz().await);
+  eylem("engine.media.restart", json!({"source": "Mikrofon Benzeri"})).await;
+  let r = eylem("engine.media.playPause", json!({"source": "Mikrofon Benzeri"})).await;
+  assert_eq!(r["result"]["eylem"], "duraklat", "oynayan medya duraklatılır");
+  // Sahne: adla geç; Studio Mode'da önizlemeye
+  let yeni = tamam("/api/motor/sahne-islem", json!({"eylem": "olustur", "ad": "Bekleme Ekranı"})).await["id"].as_str().unwrap().to_string();
+  let r = eylem("engine.scene.switch", json!({"scene": "bekleme ekranı"})).await;
+  assert_eq!(r["result"]["program"], true);
+  assert_eq!(get("/api/motor/sahneler").await["program"]["ana"], json!(yeni));
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "ac"})).await;
+  let r = eylem("engine.scene.switch", json!({"scene": "sahne-ana"})).await;
+  assert_eq!(r["result"]["onizleme"], true);
+  assert_eq!(get("/api/motor/sahneler").await["program"]["ana"], json!(yeni), "Studio Mode'da program değişmez");
+  eylem("engine.studio.transition", json!({})).await;
+  assert_eq!(get("/api/motor/sahneler").await["program"]["ana"], "sahne-ana");
+  let c = h.client.post(format!("{}/api/actions/run", h.base)).json(&json!({"id": "engine.audio.mute", "params": {"source": "yok"}})).send().await.unwrap();
+  assert_eq!(c.status(), 502, "bilinmeyen kaynak yürütmede hata");
+  let izleme = get("/api/motor/ses").await["kaynaklar"][0]["izleme"].as_i64();
+  assert_eq!(izleme, Some(0));
+  tamam("/api/motor/durdur", json!({"confirm": true})).await;
+  let a = h.client.get(format!("{}/api/audit?limit=100", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(a.contains("ACTION:engine.audio.pushToTalk") && a.contains("ACTION:engine.scene.switch"));
 }

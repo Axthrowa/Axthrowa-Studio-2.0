@@ -6,8 +6,12 @@ use sqlx::SqlitePool;
 
 use crate::kick::StoredKickBotSession;
 
+/// cookie_header, xsrf_token, bearer_token, username, user_id, channel_slug,
+/// chatroom_id, updated_at
+type BotAuthRow = (String, String, String, String, i64, String, i64, i64);
+
 pub async fn load(pool: &SqlitePool) -> Result<Option<StoredKickBotSession>> {
-  let row: Option<(String, String, String, String, i64, String, i64, i64)> = sqlx::query_as(
+  let row: Option<BotAuthRow> = sqlx::query_as(
     r#"
     SELECT cookie_header, xsrf_token, bearer_token, username, user_id,
            channel_slug, chatroom_id, updated_at
@@ -32,10 +36,13 @@ pub async fn load(pool: &SqlitePool) -> Result<Option<StoredKickBotSession>> {
     return Ok(None);
   };
 
-  if cookie_header.is_empty() && xsrf_token.is_empty() && bearer_token.is_empty() {
-    if username.is_empty() && channel_slug.is_empty() {
-      return Ok(None);
-    }
+  if cookie_header.is_empty()
+    && xsrf_token.is_empty()
+    && bearer_token.is_empty()
+    && username.is_empty()
+    && channel_slug.is_empty()
+  {
+    return Ok(None);
   }
 
   Ok(Some(StoredKickBotSession {

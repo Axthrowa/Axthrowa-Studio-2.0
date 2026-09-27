@@ -210,8 +210,7 @@ fn strip_platform_tags(input: &str, platform: &str) -> String {
   ] {
     let open = format!("<{tag}>");
     let close = format!("</{tag}>");
-    loop {
-      let Some(start) = out.find(&open) else { break };
+    while let Some(start) = out.find(&open) {
       let Some(rel_end) = out[start..].find(&close) else {
         // Kapanışı olmayan etiket: açılışı at, metni bırak.
         out.replace_range(start..start + open.len(), "");
@@ -231,8 +230,7 @@ fn strip_platform_tags(input: &str, platform: &str) -> String {
 /// `<hideText>…</hideText>` — içerik zaten çalıştırıldı, çıktıdan düşsün.
 fn strip_hidden(input: &str) -> String {
   let mut out = input.to_string();
-  loop {
-    let Some(start) = out.find("<hideText>") else { break };
+  while let Some(start) = out.find("<hideText>") {
     let Some(rel_end) = out[start..].find("</hideText>") else {
       out.replace_range(start..start + "<hideText>".len(), "");
       break;
@@ -324,8 +322,7 @@ fn find_innermost_open(s: &str) -> Option<usize> {
 /// Eski köşeli biçimler: `Rand[a,b]` ve `RandomList[a;b;c]`.
 fn resolve_legacy(input: &str, rng: &mut dyn Rng) -> String {
   let mut out = input.to_string();
-  loop {
-    let Some(start) = out.find("RandomList[") else { break };
+  while let Some(start) = out.find("RandomList[") {
     let Some(rel) = out[start..].find(']') else { break };
     let end = start + rel;
     let items: Vec<&str> = out[start + "RandomList[".len()..end]
@@ -340,8 +337,7 @@ fn resolve_legacy(input: &str, rng: &mut dyn Rng) -> String {
     };
     out.replace_range(start..end + 1, &pick);
   }
-  loop {
-    let Some(start) = out.find("Rand[") else { break };
+  while let Some(start) = out.find("Rand[") {
     let Some(rel) = out[start..].find(']') else { break };
     let end = start + rel;
     let inner = out[start + "Rand[".len()..end].to_string();
@@ -744,7 +740,7 @@ fn span_text(when: Option<DateTime<Utc>>, now: DateTime<Utc>, countdown: bool) -
   };
   let (from, to) = if countdown { (now, when) } else { (when, now) };
   if to <= from {
-    return if countdown { "0 dakika".into() } else { "0 dakika".into() };
+    return "0 dakika".into();
   }
   // Yıl/ay takvimsel, gerisi süreden: "1 ay" her zaman 30 gün değil.
   let mut years = to.year() - from.year();

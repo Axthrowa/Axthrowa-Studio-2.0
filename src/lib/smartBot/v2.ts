@@ -387,7 +387,7 @@ export function defaultAlertTypes(): AlertTypesConfig {
   return {
     follow: defaultAlertType("{user} takip etti!", "#f59e0b"),
     sub: defaultAlertType("{user} abone oldu!", "#38bdf8"),
-    gifted: defaultAlertType("{user} hediye abone gönderdi!", "#a78bfa"),
+    gifted: defaultAlertType("{user} hediye abone gönderdi!", "#22d3ee"),
     host: defaultAlertType("{user} host attı!", "#34d399"),
     tip: defaultAlertType("{user} bahşiş gönderdi!", "#fb7185"),
     kicks: defaultAlertType("{user} Kick ile destekledi!", "#3EEDFE"),
@@ -551,7 +551,7 @@ export function defaultLabels(): LabelConfig[] {
     { kind: "follows", title: "Son takipler", maxItems: 5, textColor: "#ffffff", accentColor: "#3ecfcf" },
     { kind: "subs", title: "Son aboneler", maxItems: 5, textColor: "#ffffff", accentColor: "#38bdf8" },
     { kind: "raids", title: "Son raidler", maxItems: 5, textColor: "#ffffff", accentColor: "#34d399" },
-    { kind: "redeems", title: "Son ödüller", maxItems: 5, textColor: "#ffffff", accentColor: "#a78bfa" },
+    { kind: "redeems", title: "Son ödüller", maxItems: 5, textColor: "#ffffff", accentColor: "#22d3ee" },
     { kind: "top", title: "Top puan", maxItems: 5, textColor: "#ffffff", accentColor: "#f59e0b" },
   ];
 }

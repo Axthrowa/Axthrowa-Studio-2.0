@@ -44,7 +44,7 @@ const SCREENS: { id: EndScreen; label: string }[] = [
 ];
 
 const field =
-  "yya-input mt-0.5 h-8 w-full text-xs";
+  "yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white";
 
 export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: Props) {
   const rules: Rules = useMemo(() => obs?.endRules || {}, [obs?.endRules]);
@@ -71,10 +71,10 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
   };
 
   return (
-    <div className="mt-2 space-y-1.5 rounded-lg border border-panel-border/70 bg-black/20 p-2">
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-[11px] font-semibold text-white">Bitiş kuralı</h4>
-        <span className="text-[10px] text-panel-muted">Ekran ne zaman bitsin?</span>
+    <div className="mt-2.5 space-y-2 rounded-xl border border-panel-border/70 bg-black/30 p-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-1.5">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-white">Bitiş Kuralı</h4>
+        <span className="text-xs font-medium text-white/70">Ekran ne zaman bitsin?</span>
       </div>
 
       {SCREENS.map(({ id, label }) => {
@@ -84,9 +84,9 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
         const hint = END_MODES.find((m) => m.id === mode)?.hint;
 
         return (
-          <div key={id} className="rounded-md border border-white/[0.06] bg-black/20 p-1.5">
-            <div className="flex items-center gap-1.5">
-              <span className="w-10 shrink-0 text-[11px] font-medium text-white">{label}</span>
+          <div key={id} className="rounded-lg border border-white/[0.08] bg-black/25 p-2">
+            <div className="flex items-center gap-2">
+              <span className="w-12 shrink-0 text-xs font-bold text-white">{label}</span>
               <select
                 className={field}
                 value={mode}
@@ -107,7 +107,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             </div>
 
             {(mode === "minutes" || mode === "minutesOrMediaEnd") && (
-              <label className="mt-1 block text-[11px] text-panel-muted">
+              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
                 Süre (dakika)
                 <input
                   className={field}
@@ -122,7 +122,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {mode === "mediaLoops" && (
-              <label className="mt-1 block text-[11px] text-panel-muted">
+              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
                 Video kaç kez dönünce bitsin? ({MIN_LOOPS}–{MAX_LOOPS})
                 <input
                   className={field}
@@ -136,7 +136,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {mode === "targetDate" && (
-              <label className="mt-1 block text-[11px] text-panel-muted">
+              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
                 Hedef tarih ve saat
                 <input
                   className={field}
@@ -148,7 +148,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {mode !== "" && mode !== "manual" && (
-              <label className="mt-1 block text-[11px] text-panel-muted">
+              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
                 Bitince geçilecek OBS sahnesi
                 <input
                   className={field}
@@ -166,7 +166,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {id === "ending" && mode !== "" && mode !== "manual" && (
-              <label className="mt-1 block text-[11px] text-panel-muted">
+              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
                 Bitince yayın
                 <select
                   className={field}
@@ -184,9 +184,9 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
               </label>
             )}
 
-            <p className="mt-1 text-[10px] leading-snug text-panel-muted">
+            <p className="mt-2 text-xs leading-relaxed text-white/75">
               {hint ? `${hint} ` : ""}
-              <span className="text-white/80">
+              <span className="font-semibold text-panel-accent">
                 {rule ? describeRule(r) : `Şu an: ${describeRule(r)}`}
               </span>
             </p>

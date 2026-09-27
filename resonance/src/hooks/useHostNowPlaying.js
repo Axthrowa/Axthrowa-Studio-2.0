@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getNowPlaying, hostBaseUrl, isHostAvailable } from '../lib/hostBridge'
+import { PROGRESS_TICK_MS } from '../components/widget/skinParts'
 
 function toTrack(np) {
   if (!np || !np.title) return null
@@ -69,7 +70,7 @@ export function useHostNowPlaying(enabled = true, pollMs = 3000) {
       if (!base.playing) return
       const next = base.progress + (Date.now() - base.at)
       setProgressMs(base.duration ? Math.min(next, base.duration) : next)
-    }, 250)
+    }, PROGRESS_TICK_MS)
 
     let ws = null
     let retry

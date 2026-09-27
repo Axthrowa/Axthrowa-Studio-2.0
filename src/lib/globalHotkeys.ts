@@ -121,16 +121,6 @@ export function canonicalizeHotkeySpec(raw: string): string | null {
   return [...mods, key].join("+");
 }
 
-/** Basılı modifier’lar (henüz ana tuş yok) — örn. `Ctrl+Shift+…` */
-export function modsPreviewFromEvent(e: KeyboardEvent): string {
-  const mods: string[] = [];
-  if (e.ctrlKey) mods.push("Ctrl");
-  if (e.altKey) mods.push("Alt");
-  if (e.shiftKey) mods.push("Shift");
-  if (e.metaKey) mods.push("Win");
-  return mods.length ? `${mods.join("+")}+…` : "…";
-}
-
 /** KeyboardEvent → kullanıcı spec'i (`Ctrl+Shift+F5`). Yalnız modifier ise null. */
 export function eventToSpec(e: KeyboardEvent): string | null {
   if (e.key === "Control" || e.key === "Alt" || e.key === "Shift" || e.key === "Meta") return null;
@@ -219,8 +209,12 @@ export type HotkeyBinding = {
   mode?: string;
   /** volume: dB farkı */
   delta?: number;
-  /** obsHotkey: OBS kısayol adı */
+  /** obsHotkey: OBS kısayol adı · action: eylem kayıt defteri kimliği */
   name?: string;
+  /** action: çoklu yayın hedef kimliği */
+  target?: string;
+  /** action: onay isteyen eylem onaysız çalışsın */
+  confirmed?: boolean;
 };
 
 function tauriAvailable() {

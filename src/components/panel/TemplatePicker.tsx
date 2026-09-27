@@ -45,7 +45,7 @@ function Preview({ t }: { t: ScreenTemplate }) {
   const font = FONT_STACKS[s.textStyles?.title?.font || s.font || "system"] || FONT_STACKS.system;
   return (
     <div
-      className="relative flex h-[68px] w-full flex-col items-center justify-center overflow-hidden rounded-md border border-white/10"
+      className="relative flex h-[72px] w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-white/[0.09] shadow-sm transition-all duration-150 group-hover:border-white/[0.22] group-hover:scale-[1.02]"
       style={
         {
           "--tpl-accent": `${s.accent || "#7c5cff"}55`,
@@ -55,19 +55,19 @@ function Preview({ t }: { t: ScreenTemplate }) {
       aria-hidden
     >
       <span
-        className="text-[8px] uppercase tracking-widest"
+        className="text-[8px] uppercase tracking-widest font-semibold"
         style={{ color: s.eyebrowColor || s.accent }}
       >
         {s.eyebrow || "etiket"}
       </span>
       <span
-        className="max-w-full truncate px-1 text-[15px] leading-tight"
+        className="max-w-full truncate px-1 text-[14px] font-bold leading-tight"
         style={{ color: s.textColor || "#fff", fontFamily: font }}
       >
         {s.title || "Başlık"}
       </span>
       <span
-        className="mt-0.5 rounded px-1.5 text-[10px] tabular-nums"
+        className="mt-0.5 rounded px-1.5 text-[10px] tabular-nums font-mono"
         style={{ color: s.countdownColor || "#fff", border: `1px solid ${s.accent || "#fff"}88` }}
       >
         05:00
@@ -168,7 +168,7 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
 
   return (
     <section
-      className="rounded-xl border border-white/[0.07] bg-[#101216] p-3"
+      className="mb-3 rounded-2xl border border-white/[0.08] bg-panel-card/70 p-3.5 shadow-panel"
       aria-label="Şablonlar"
     >
       <div className="mb-2 flex items-center justify-between gap-2">

@@ -16,7 +16,10 @@ cikti/
 cikti - Kopya/
 Portable-Build-NEW/
 Dist-AxthrowA/
-media/
+# Yalnız kökteki medya kitaplığı; eskiden desen src-tauri/src/media/ kaynak
+# modülünü de gizliyordu (depoda yoktu, temiz klondan derlenemiyordu).
+/media/
+legacy/media/
 data/
 _tmp_ui.tsx
 *.exe
@@ -24,3 +27,8 @@ _tmp_ui.tsx
 *.pfx
 *.tsbuildinfo
 .cursor/
+src_backup_ui/
+Portable-Build/
+
+# yerel yayın çekirdeği (ayrı Cargo projesi)
+motor/target/

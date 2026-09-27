@@ -102,13 +102,9 @@ fn regex_kick_emote(text: &str) -> Option<(String, String)> {
   // [emote:12345:KEKW] veya [emote:12345:KEKW:scale]
   let lower = text;
   let marker = "[emote:";
-  let Some(i) = lower.find(marker) else {
-    return None;
-  };
+  let i = lower.find(marker)?;
   let rest = &lower[i + marker.len()..];
-  let Some(end) = rest.find(']') else {
-    return None;
-  };
+  let end = rest.find(']')?;
   let inner = &rest[..end];
   let mut parts = inner.split(':');
   let id = parts.next()?.trim();

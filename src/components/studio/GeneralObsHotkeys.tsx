@@ -28,31 +28,31 @@ type Props = {
 
 export default function GeneralObsHotkeys({ all, registered, failures, onListeningChange, onChange }: Props) {
   return (
-    <section className="space-y-3">
-      <div>
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Radio className="h-4 w-4 text-panel-accent" /> Yayın ve kayıt
+    <section className="space-y-4 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
+      <div className="border-b border-white/[0.06] pb-2.5">
+        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+          <Radio className="h-4.5 w-4.5 text-panel-accent" /> Yayın ve kayıt
         </h3>
-        <p className="mt-0.5 text-[11px] leading-snug text-panel-muted">
+        <p className="mt-1 text-xs leading-relaxed text-white/75">
           OBS'in Ayarlar → Kısayollar → Genel bölümündeki komutlar. Tuş ata, boş bırakırsan kapalı kalır.
         </p>
       </div>
-      <div className="grid gap-1.5 md:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2">
         {GENERAL_HOTKEYS.map((g) => {
           const hk = generalHotkeyOf(all, g.name);
           return (
-            <div key={g.name} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+            <div key={g.name} className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-black/25 px-3 py-2">
               <HotkeyStatusDot
                 bindingId={actionBindingId(generalRowId(g.name))}
                 hotkey={hk}
                 registered={registered}
                 failures={failures}
               />
-              <span className="min-w-0 flex-1 truncate text-xs text-white" title={g.name}>
+              <span className="min-w-0 flex-1 truncate text-xs md:text-sm font-semibold text-white" title={g.name}>
                 {g.label}
               </span>
               <HotkeyInput
-                className="w-28 rounded border border-panel-border bg-black/40 px-1.5 py-1 text-center text-xs"
+                className="w-32 rounded-lg border border-panel-border bg-black/50 px-2 py-1.5 text-center font-mono text-xs md:text-sm font-medium text-white"
                 value={hk}
                 onListeningChange={onListeningChange}
                 onChange={(v) => onChange(setGeneralHotkey(all, g.name, v))}

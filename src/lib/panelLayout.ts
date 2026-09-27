@@ -2,6 +2,8 @@
 
 export type NavId =
   | "profile"
+  | "yayin"
+  | "control"
   | "starting"
   | "ending"
   | "brb"
@@ -43,6 +45,8 @@ export type PanelLayout = {
 
 export const DEFAULT_TABS: { id: NavId; labelKey: string; label: string }[] = [
   { id: "profile", labelKey: "nav.profile", label: "Dashboard" },
+  { id: "yayin", labelKey: "nav.yayin", label: "Yayın" },
+  { id: "control", labelKey: "nav.control", label: "Kontrol Merkezi" },
   { id: "starting", labelKey: "nav.starting", label: "Giriş" },
   { id: "ending", labelKey: "nav.ending", label: "Çıkış" },
   { id: "brb", labelKey: "nav.brb", label: "Mola (BRB)" },
@@ -211,6 +215,3 @@ export function reorderByDrop(order: string[], dragId: string, dropId: string): 
   return next;
 }
 
-export function sectionLabelKey(id: string): string {
-  return `sec.${id}`;
-}

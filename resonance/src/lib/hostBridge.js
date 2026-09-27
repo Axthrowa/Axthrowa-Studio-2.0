@@ -47,13 +47,6 @@ export function getPlayerStatus() {
   return hostFetch('/api/player/status')
 }
 
-export function setPlayerSource(source) {
-  return hostFetch('/api/player/source', {
-    method: 'POST',
-    body: JSON.stringify({ source }),
-  })
-}
-
 export function playerCommand(action, source) {
   return hostFetch('/api/player/command', {
     method: 'POST',
@@ -133,8 +126,11 @@ export function openExternalViaHost(url) {
 export async function openExternal(url) {
   const embedded = window.parent && window.parent !== window
   if (embedded) {
-    // Panel bir bildirim gösterebilsin
+    // Gömülüyken açmayı panel yapar (Tauri komutu → yerel sunucu → pencere
+    // yedekleriyle). Eskiden burada host'a da ayrıca istek atılıyordu; panel de
+    // mesajı alıp açtığı için Spotify onay sayfası İKİ sekmede açılıyordu.
     window.parent.postMessage({ source: 'resonance', type: 'open-external', url }, '*')
+    return
   }
   try {
     await openExternalViaHost(url)

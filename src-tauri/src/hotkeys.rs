@@ -46,9 +46,43 @@ pub struct HotkeyBindingIn {
   /// `volume` için dB farkı (+ artırır, − azaltır).
   #[serde(default)]
   pub delta: f64,
-  /// `obsHotkey` için OBS kısayol adı (örn. "OBSBasic.StartReplayBuffer").
+  /// `obsHotkey` için OBS kısayol adı (örn. "OBSBasic.StartReplayBuffer"); `action` için eylem kayıt defteri
+  /// kimliği (örn. "destination.reconnect").
   #[serde(default)]
   pub name: String,
+  /// `action` için çoklu yayın hedef kimliği.
+  #[serde(default)]
+  pub target: String,
+  /// `action`: onay isteyen eylem (yayını başlatan/kesen) bu kısayolda onaysız çalışsın mı? Kullanıcı ayarda
+  /// açıkça işaretlemezse böyle bir kısayol kaydedilmez.
+  #[serde(default)]
+  pub confirmed: bool,
+}
+
+/// Kayıt defteri eyleminin parametreleri — kısayol satırındaki alanlardan.
+pub(crate) fn eylem_parametreleri(b: &HotkeyBindingIn) -> serde_json::Value {
+  serde_json::json!({
+    "scene": b.scene,
+    "input": b.input,
+    "source": b.source,
+    "delta": b.delta,
+    "id": b.target,
+  })
+}
+
+/// Basılı tutma eylemi mi (bas-konuş / bas-sustur): bırakma olayı da işlenir, tekrar-basış süzgeci uygulanmaz
+pub(crate) fn basili_eylem(b: &HotkeyBindingIn) -> bool {
+  b.kind == "action" && crate::actions::BASILI_EYLEMLER.contains(&b.name.trim())
+}
+
+/// `action` kısayolu kaydedilmeden önce: eylem var mı, parametreleri geçerli mi, onay gerekiyorsa verilmiş mi?
+/// Her basışta hata vermek yerine sorun kayıt anında, satırın yanında görünür.
+pub(crate) fn eylem_denetimi(b: &HotkeyBindingIn) -> Result<(), String> {
+  let spec = crate::actions::find(b.name.trim()).ok_or_else(|| format!("bilinmeyen eylem: {}", b.name.trim()))?;
+  if spec.confirm && !b.confirmed {
+    return Err(format!("«{}» onay ister; kısayolda onaysız çalıştırma işaretli değil", spec.label));
+  }
+  crate::actions::parse(spec.id, &eylem_parametreleri(b)).map(|_| ())
 }
 
 struct LiveMap {
@@ -60,6 +94,12 @@ struct LiveMap {
 
 pub struct HotkeyHub {
   inner: RwLock<LiveMap>,
+}
+
+impl Default for HotkeyHub {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl HotkeyHub {
@@ -145,15 +185,29 @@ fn code_from_key(key: &str) -> Option<Code> {
 pub fn build_plugin<R: Runtime>(hub: Arc<HotkeyHub>) -> tauri_plugin_global_shortcut::Builder<R> {
   let hub_handler = hub.clone();
   tauri_plugin_global_shortcut::Builder::new().with_handler(move |app, shortcut, event| {
+    let id = shortcut.id();
     if event.state != ShortcutState::Pressed {
+      // Bırakma yalnız bas-konuş / bas-sustur eylemlerinde işlenir
+      let b = hub_handler.inner.read().by_id.get(&id).cloned().filter(basili_eylem);
+      if let Some(b) = b {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+          let state = app.state::<AppState>();
+          let mut p = eylem_parametreleri(&b);
+          p["durum"] = serde_json::json!("released");
+          if let Err(e) = crate::server::kisayol_eylemi(state.inner(), b.name.trim(), p, b.confirmed).await {
+            report_hotkey_error(&app, &b, &e);
+          }
+        });
+      }
       return;
     }
-    let id = shortcut.id();
     let binding = {
       let mut g = hub_handler.inner.write();
       let now = Instant::now();
+      let basili = g.by_id.get(&id).is_some_and(basili_eylem);
       if let Some(prev) = g.last_fire.get(&id) {
-        if now.duration_since(*prev) < Duration::from_millis(400) {
+        if !basili && now.duration_since(*prev) < Duration::from_millis(400) {
           return;
         }
       }
@@ -238,6 +292,10 @@ async fn fire_binding<R: Runtime>(app: &AppHandle<R>, b: &HotkeyBindingIn) -> Re
     | "obsHotkey" | "sceneNext" | "scenePrev" => {
       run_obs_action(state.inner(), b, kind).await?;
     }
+    // Eylem kayıt defteri: Kontrol Merkezi, deste ve uzak arayüzle aynı yol (kullanılabilirlik + denetim kaydı)
+    "action" => {
+      crate::server::kisayol_eylemi(state.inner(), b.name.trim(), eylem_parametreleri(b), b.confirmed).await?;
+    }
     _ if b.id.starts_with("sfx:") || b.id == "clearChat" || b.id == "sfxStop" => {}
     _ => {
       run_obs_action(state.inner(), b, "scene").await?;
@@ -283,11 +341,35 @@ pub(crate) fn merge_obs_config(panel: Option<&serde_json::Value>, slices: &[serd
   if let Some(pm) = panel.and_then(|p| p.as_object()) {
     let host_ok = pm.get("host").and_then(|v| v.as_str()).map(|h| !h.trim().is_empty()).unwrap_or(false);
     if host_ok {
-      for k in ["host", "port", "password"] {
+      for k in ["host", "port"] {
         if let Some(v) = pm.get(k) {
           out.insert(k.to_string(), v.clone());
         } else {
           out.remove(k);
+        }
+      }
+      // Şifre ayrı ele alınır: panel dilimindeki şifre BOŞ ise AYNI adresi
+      // taşıyan ekran dilimindeki şifre korunur (eskiden boş panel şifresi
+      // doluyu eziyordu, açılışta el sıkışma düşüyordu). Başka bir makinenin
+      // şifresi ise asla sızmaz: adres farklıysa şifre düşer.
+      let panel_pw = pm.get("password").and_then(|v| v.as_str()).unwrap_or("");
+      if !panel_pw.trim().is_empty() {
+        out.insert("password".to_string(), pm["password"].clone());
+      } else {
+        let panel_host = pm.get("host").and_then(|v| v.as_str()).unwrap_or("").trim();
+        let same_host_pw = slices.iter().find_map(|sl| {
+          let m = sl.as_object()?;
+          let h = m.get("host").and_then(|v| v.as_str()).unwrap_or("").trim();
+          let pw = m.get("password").and_then(|v| v.as_str()).unwrap_or("");
+          (h == panel_host && !pw.trim().is_empty()).then(|| m["password"].clone())
+        });
+        match same_host_pw {
+          Some(v) => {
+            out.insert("password".to_string(), v);
+          }
+          None => {
+            out.remove("password");
+          }
         }
       }
     }
@@ -337,7 +419,7 @@ pub async fn switch_obs_scene(state: &AppState, scene: &str) -> Result<(), Strin
   run_obs_action(state, &b, "scene").await
 }
 
-async fn run_obs_action(state: &AppState, b: &HotkeyBindingIn, kind: &str) -> Result<(), String> {
+pub(crate) async fn run_obs_action(state: &AppState, b: &HotkeyBindingIn, kind: &str) -> Result<(), String> {
   let (host, port, password, obs) = obs_cfg_from_settings(state);
   // Kalıcı bağlantıyı paylaş (her tuşta yeni el sıkışma yok). Bağlantı kopmuşsa
   // ağ hatasında bir kez yeniden bağlanıp tekrar dene.
@@ -370,7 +452,7 @@ async fn run_with_client(
       let scene = if !b.scene.is_empty() {
         b.scene.clone()
       } else {
-        resolve_scene(&obs, &b.id)
+        resolve_scene(obs, &b.id)
       };
       if scene.is_empty() {
         return Err("sahne atanmamış".into());
@@ -395,14 +477,14 @@ async fn run_with_client(
       if input.is_empty() {
         return Err("mikrofon kaynağı seçilmemiş".into());
       }
-      toggle_input_mute(&client, input.as_str()).await?;
+      toggle_input_mute(client, input.as_str()).await?;
     }
     "srcMute" => {
       let input = b.input.trim();
       if input.is_empty() {
         return Err("kaynak seçilmemiş".into());
       }
-      toggle_input_mute(&client, input).await?;
+      toggle_input_mute(client, input).await?;
     }
     "muteAll" => {
       let except_mic = obs
@@ -413,7 +495,7 @@ async fn run_with_client(
         .get("micInput")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-      toggle_all_except(&client, if except_mic { mic } else { "" }).await?;
+      toggle_all_except(client, if except_mic { mic } else { "" }).await?;
     }
 
     /* ---- yeni aksiyonlar ---- */
@@ -699,6 +781,12 @@ pub fn plan_bindings(
       });
       continue;
     };
+    if b.kind == "action" {
+      if let Err(reason) = eylem_denetimi(&b) {
+        failed.push(HotkeyFailure { id: b.id.clone(), spec: b.spec.clone(), reason });
+        continue;
+      }
+    }
     let key = sc.id();
     if let Some(kazanan) = sahip.get(&key) {
       // Eskiden sessizce düşüyordu; kullanıcı neden çalışmadığını göremiyordu.
@@ -800,12 +888,64 @@ mod plan_testleri {
     assert_eq!(plan.len(), 3);
     assert!(failed.is_empty());
   }
+
+  fn eylem(id: &str, spec: &str, eylem: &str) -> HotkeyBindingIn {
+    HotkeyBindingIn { kind: "action".into(), name: eylem.into(), ..b(id, spec) }
+  }
+
+  #[test]
+  fn kayit_defteri_eylemi_kayit_aninda_denetlenir() {
+    let mut hedef = eylem("act:3", "F8", "destination.reconnect");
+    hedef.target = "hedef-1".into();
+    let mut onayli = hedef.clone();
+    onayli.id = "act:4".into();
+    onayli.spec = "F9".into();
+    onayli.confirmed = true;
+    let mut ses = eylem("act:5", "F10", "audio.volume");
+    ses.input = "Müzik".into();
+    ses.delta = -3.0;
+    let (plan, failed) = plan_bindings(vec![
+      eylem("act:1", "F6", "uydurma.eylem"),
+      eylem("act:2", "F7", "source.toggle"),
+      hedef,
+      onayli,
+      ses,
+      eylem("act:6", "F11", "engine.replay.save"),
+    ]);
+    let neden = |id: &str| failed.iter().find(|f| f.id == id).map(|f| f.reason.clone()).unwrap_or_default();
+    assert!(neden("act:1").contains("bilinmeyen"), "{}", neden("act:1"));
+    assert!(neden("act:2").contains("source"), "{}", neden("act:2"));
+    // Yayını kesen eylem kullanıcı açıkça işaretlemeden kısayola bağlanmaz
+    assert!(neden("act:3").contains("onay"), "{}", neden("act:3"));
+    let planlanan: Vec<_> = plan.iter().map(|(_, b)| b.id.as_str()).collect();
+    assert_eq!(planlanan, ["act:4", "act:5", "act:6"]);
+  }
 }
 
 #[cfg(test)]
 mod obs_merge_testleri {
   use super::merge_obs_config;
   use serde_json::json;
+
+  #[test]
+  fn panel_sifresi_bossa_dilim_sifresi_korunur() {
+    // Panel kartı adresi verir ama şifre kutusu boş kaldıysa (eski kayıtlarda
+    // olan durum) ekran dilimindeki şifre kullanılmalı.
+    let panel = json!({"host": "192.168.1.5", "port": 4455, "password": ""});
+    let dilim = json!({"host": "192.168.1.5", "password": "gercek-sifre"});
+    let out = merge_obs_config(Some(&panel), &[dilim]);
+    assert_eq!(out["password"], json!("gercek-sifre"));
+    assert_eq!(out["host"], json!("192.168.1.5"));
+  }
+
+  #[test]
+  fn panel_sifresi_doluysa_o_kazanir() {
+    let panel = json!({"host": "10.0.0.2", "password": "yeni"});
+    let dilim = json!({"host": "10.0.0.9", "password": "eski"});
+    let out = merge_obs_config(Some(&panel), &[dilim]);
+    assert_eq!(out["password"], json!("yeni"));
+    assert_eq!(out["host"], json!("10.0.0.2"));
+  }
 
   #[test]
   fn baglanti_panelden_mikrofon_dilimden_gelir() {

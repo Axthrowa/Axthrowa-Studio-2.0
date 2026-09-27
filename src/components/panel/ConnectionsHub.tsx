@@ -8,6 +8,7 @@ import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
 import { obsControl, type ObsConnectionStatus } from "../../lib/obsControl";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
+import BotSessions from "./BotSessions";
 import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
 import StatusDot from "../ui/StatusDot";
 import EndRulesEditor from "./EndRulesEditor";
@@ -55,7 +56,7 @@ const EMPTY_OBS: ObsConnectionStatus = {
   port: 4455,
 };
 
-const inputCls = "yya-input mt-0.5 h-8 text-xs";
+const inputCls = "yya-input mt-1 h-9 text-xs md:text-sm font-medium text-white";
 
 export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsPatch, onObsConnected }: Props) {
   const [kickSlug, setKickSlug] = useState("");
@@ -179,6 +180,24 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
         setHost(String(obs.host || saved?.host || "127.0.0.1"));
         setPort(Number(obs.port) || saved?.port || 4455);
         setPassword(String(obs.password ?? saved?.password ?? ""));
+        // Panel dilimi şifresizse (eski kayıtlarda oluyordu) ekran dilimlerinde
+        // duran şifreyi getir: kutu doğru değeri göstersin, Kaydet onu yazsın.
+        if (!String(obs.password ?? saved?.password ?? "").trim()) {
+          void (async () => {
+            for (const scr of ["starting", "ending", "brb", "chat"] as const) {
+              try {
+                const o = ((await fetchSettings(scr)).obs || {}) as Record<string, unknown>;
+                const pw = String(o.password || "");
+                if (pw.trim()) {
+                  setPassword(pw);
+                  break;
+                }
+              } catch {
+                /* dilim okunamadı */
+              }
+            }
+          })();
+        }
         setStartHoldMin(Math.max(1, Number(obs.startHoldMin) || 5));
         setEndHoldMin(Math.max(1, Number(obs.endHoldMin) || 2));
       } catch {
@@ -286,11 +305,6 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
       try {
         const { invoke } = await import("@tauri-apps/api/core");
         try {
-          await invoke("close_kick_bot_login");
-        } catch {
-          /* açık pencere yoksa sorun değil */
-        }
-        try {
           await invoke("open_kick_login_in_browser");
           nativeAcildi = true;
         } catch {
@@ -328,51 +342,63 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
   };
 
   return (
-    <div className="mx-4 mb-2 mt-1 grid gap-2 lg:grid-cols-[minmax(0,1fr)_16rem_minmax(0,1fr)]">
-      <section className="rounded-xl border border-panel-border/80 bg-panel-card/80 p-2.5">
-        <header className="mb-1.5 flex items-center justify-between gap-2">
-          <h3 className="text-xs font-semibold text-white">Yayın platformu · Kick</h3>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 text-[10px] text-panel-muted">
-              Oturum
-              <StatusDot ok={kickReady} />
-            </span>
-            <span className="flex items-center gap-1 text-[10px] text-panel-muted">
-              API
-              <StatusDot ok={!!kickApi.connected} />
-            </span>
+    <div className="mx-4 mb-3 mt-1.5 grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_17rem_minmax(0,1fr)]">
+      <section className="relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
+        <div>
+          <header className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Kick Platformu</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-xs font-semibold text-white/80">
+                Oturum
+                <StatusDot ok={kickReady} />
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-xs font-semibold text-white/80">
+                API
+                <StatusDot ok={!!kickApi.connected} />
+              </span>
+            </div>
+          </header>
+          <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
+            Kanal Adı
+            <input
+              className={inputCls}
+              placeholder="ör. kanal-adi"
+              value={kickSlug}
+              onChange={(e) => setKickSlug(e.target.value)}
+            />
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="yya-btn-ghost h-9 flex-1 px-3.5 text-xs md:text-sm font-bold" onClick={() => void openKickLogin()}>
+              <Radio className="mr-1.5 inline h-4 w-4 text-panel-accent" />
+              Kick Girişi
+            </button>
+            <button
+              type="button"
+              disabled={!!busy}
+              className="yya-btn-accent h-9 flex-1 px-3.5 text-xs md:text-sm font-bold"
+              onClick={() => void harvestCookies()}
+            >
+              <Cookie className="mr-1.5 inline h-4 w-4" />
+              {busy === "cookie" ? "Alınıyor…" : "Çerez Al"}
+            </button>
           </div>
-        </header>
-        <label className="block text-[11px] uppercase tracking-wider text-panel-muted">
-          Kanal
-          <input
-            className={inputCls}
-            placeholder="kanal-adi"
-            value={kickSlug}
-            onChange={(e) => setKickSlug(e.target.value)}
-          />
-        </label>
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <button type="button" className="yya-btn-ghost h-8 px-2.5 text-[11px]" onClick={() => void openKickLogin()}>
-            <Radio className="mr-1 inline h-3 w-3" />
-            Kick girişi
-          </button>
-          <button
-            type="button"
-            disabled={!!busy}
-            className="yya-btn-accent h-8 px-2.5 text-[11px]"
-            onClick={() => void harvestCookies()}
-          >
-            <Cookie className="mr-1 inline h-3 w-3" />
-            {busy === "cookie" ? "Alınıyor…" : "Çerez al"}
-          </button>
+          {kickSession.username ? (
+            <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-mono">@{kickSession.username}</span>
+            </div>
+          ) : null}
+          {/* Bot (StreamAxT) durumu ve bağlı olduğu platform oturumları. */}
+          <div className="mt-3">
+            <BotSessions />
+          </div>
         </div>
-        {kickSession.username ? (
-          <p className="mt-1 truncate text-[11px] text-panel-muted">@{kickSession.username}</p>
-        ) : null}
         {/* İki durum ayrı: çerez oturumu sohbeti okumaya, API yazmaya yarıyor. */}
         {!kickApi.connected && (
-          <p className="mt-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
+          <p className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium leading-relaxed text-amber-200">
             {kickApi.clientId
               ? "Kick API bağlı değil — bot sohbete yazamaz. Bot sekmesinden Bağlan’a basıp Kick onayını tamamla."
               : "Kick API bilgileri girilmemiş — bot sohbete yazamaz. Bot sekmesinden Client ID ve Secret’ı gir."}
@@ -385,107 +411,121 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
           type="button"
           disabled={master.busy}
           className={
-            // Panelin tek birincil eylemi bu. %15 opaklıkla neredeyse diğer
-            // kartlarla aynı ağırlıktaydı; dolu zemine alıp odak noktası yaptık.
-            "flex min-h-[7.5rem] w-full flex-col items-center justify-center gap-2 rounded-xl border-2 " +
-            "text-base font-semibold tracking-wide transition focus:outline-none focus-visible:ring-2 " +
-            "focus-visible:ring-white/60 disabled:opacity-60 " +
+            "group relative flex min-h-[8.5rem] w-full flex-col items-center justify-center gap-2.5 rounded-2xl border-2 " +
+            "text-base font-bold tracking-wider transition-all duration-200 active:scale-[0.98] focus:outline-none " +
+            "disabled:opacity-60 " +
             (master.live
-              ? "border-red-300 bg-red-500 text-red-950 shadow-[0_0_24px_rgba(239,68,68,0.35)] hover:bg-red-400"
-              : "border-emerald-300 bg-emerald-500 text-emerald-950 shadow-[0_0_24px_rgba(16,185,129,0.35)] hover:bg-emerald-400")
+              ? "border-red-400 bg-gradient-to-b from-red-500 to-red-600 text-white shadow-[0_0_30px_rgba(239,68,68,0.55)] hover:from-red-400 hover:to-red-500 hover:shadow-[0_0_40px_rgba(239,68,68,0.7)]"
+              : "border-emerald-400/80 bg-gradient-to-b from-emerald-500 to-emerald-600 text-[#03291e] shadow-[0_0_28px_rgba(16,185,129,0.45)] hover:from-emerald-400 hover:to-emerald-500 hover:shadow-[0_0_38px_rgba(16,185,129,0.65)]")
           }
           onClick={master.onToggle}
         >
-          <CirclePower className="h-9 w-9" />
-          {master.busy ? "…" : master.live ? "Yayını Bitir" : "Yayını Başlat"}
+          <div className="relative">
+            <CirclePower className="h-10 w-10 transition-transform group-hover:scale-110" />
+            {master.live && (
+              <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-red-600 bg-white animate-ping" />
+            )}
+          </div>
+          <span className="text-sm font-extrabold uppercase tracking-widest">
+            {master.busy ? "İşleniyor…" : master.live ? "Yayını Bitir" : "Yayını Başlat"}
+          </span>
+          <span className="text-xs font-semibold opacity-90">
+            {master.live ? "OBS + Platform Yayında" : "Tek Tıkla Canlıya Geç"}
+          </span>
         </button>
       ) : (
         <div />
       )}
 
-      <section className="rounded-xl border border-panel-border/80 bg-panel-card/80 p-2.5">
-        <header className="mb-1.5 flex items-center justify-between gap-2">
-          <h3 className="text-xs font-semibold text-white">OBS WebSocket</h3>
-          <StatusDot ok={status.connected} />
-        </header>
-        <div className="grid grid-cols-[1fr_4.5rem] gap-1.5">
-          <label className="block text-[11px] uppercase tracking-wider text-panel-muted">
-            IP
-            <input className={inputCls} value={host} onChange={(e) => setHost(e.target.value)} />
-          </label>
-          <label className="block text-[11px] uppercase tracking-wider text-panel-muted">
-            Port
+      <section className="relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
+        <div>
+          <header className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-panel-accent shadow-glow-sm" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">OBS WebSocket</h3>
+            </div>
+            <StatusDot ok={status.connected} />
+          </header>
+          <div className="grid grid-cols-[1fr_6rem] gap-2.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
+              IP Adresi
+              <input className={inputCls} value={host} onChange={(e) => setHost(e.target.value)} />
+            </label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
+              Port
+              <input
+                className={inputCls}
+                type="number"
+                value={port}
+                onChange={(e) => setPort(Number(e.target.value) || 4455)}
+              />
+            </label>
+          </div>
+          <label className="mt-2.5 block text-xs font-bold uppercase tracking-wider text-white/85">
+            Parola
             <input
               className={inputCls}
-              type="number"
-              value={port}
-              onChange={(e) => setPort(Number(e.target.value) || 4455)}
+              type="password"
+              value={password}
+              placeholder="••••••••"
+              onChange={(e) => setPassword(e.target.value)}
             />
           </label>
+          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
+              Giriş Bekletme (dk)
+              <input
+                className={inputCls}
+                type="number"
+                min={1}
+                value={startHoldMin}
+                onChange={(e) => setStartHoldMin(Math.max(1, Number(e.target.value) || 5))}
+              />
+            </label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
+              Çıkış Bekletme (dk)
+              <input
+                className={inputCls}
+                type="number"
+                min={1}
+                value={endHoldMin}
+                onChange={(e) => setEndHoldMin(Math.max(1, Number(e.target.value) || 2))}
+              />
+            </label>
+          </div>
+          {onObsPatch && (
+            <EndRulesEditor
+              obs={sharedObs}
+              legacy={legacyEnd}
+              scenes={obsScenes}
+              onChange={(endRules) => onObsPatch({ endRules })}
+            />
+          )}
         </div>
-        <label className="mt-1.5 block text-[11px] uppercase tracking-wider text-panel-muted">
-          Şifre
-          <input
-            className={inputCls}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-          <label className="block text-[11px] uppercase tracking-wider text-panel-muted">
-            Giriş (dk)
-            <input
-              className={inputCls}
-              type="number"
-              min={1}
-              value={startHoldMin}
-              onChange={(e) => setStartHoldMin(Math.max(1, Number(e.target.value) || 5))}
-            />
-          </label>
-          <label className="block text-[11px] uppercase tracking-wider text-panel-muted">
-            Çıkış (dk)
-            <input
-              className={inputCls}
-              type="number"
-              min={1}
-              value={endHoldMin}
-              onChange={(e) => setEndHoldMin(Math.max(1, Number(e.target.value) || 2))}
-            />
-          </label>
-        </div>
-        {onObsPatch && (
-          <EndRulesEditor
-            obs={sharedObs}
-            legacy={legacyEnd}
-            scenes={obsScenes}
-            onChange={(endRules) => onObsPatch({ endRules })}
-          />
-        )}
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
           <button
             type="button"
             disabled={!!busy}
-            className="yya-btn-primary h-8 px-3 text-[11px]"
+            className="yya-btn-primary h-9 px-4 text-xs md:text-sm font-bold"
             onClick={() => void saveAll()}
           >
-            <Save className="mr-1 inline h-3 w-3" />
+            <Save className="mr-1.5 inline h-4 w-4" />
             {busy === "save" ? "Kaydediliyor…" : "Kaydet"}
           </button>
           {status.connected && (
             <button
               type="button"
-              className="yya-btn-ghost h-8 px-2.5 text-[11px]"
+              className="yya-btn-danger h-9 px-3.5 text-xs md:text-sm font-bold"
               onClick={() => {
                 void obsControl.disconnect().then(setStatus);
               }}
             >
-              <Unplug className="mr-1 inline h-3 w-3" />
-              Kes
+              <Unplug className="mr-1.5 inline h-4 w-4" />
+              Bağlantıyı Kes
             </button>
           )}
-          <span className="ml-auto inline-flex items-center gap-1 self-center text-[10px] text-panel-muted">
-            <Cable className="h-3 w-3" /> v5
+          <span className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-mono font-medium text-white/80">
+            <Cable className="h-3.5 w-3.5 text-panel-accent" /> v5.x
           </span>
         </div>
       </section>

@@ -17,22 +17,6 @@ export type DiscordSession = {
   expiresAt: number;
 };
 
-function load(): DiscordSession | null {
-  try {
-    const raw = localStorage.getItem(LS);
-    if (!raw) return null;
-    const j = JSON.parse(raw) as DiscordSession;
-    if (!j?.accessToken || !j?.username) return null;
-    if (j.expiresAt > 0 && j.expiresAt < Date.now()) {
-      localStorage.removeItem(LS);
-      return null;
-    }
-    return j;
-  } catch {
-    return null;
-  }
-}
-
 function save(s: DiscordSession | null) {
   try {
     if (!s) localStorage.removeItem(LS);
@@ -40,19 +24,6 @@ function save(s: DiscordSession | null) {
   } catch {
     /* */
   }
-}
-
-export function getDiscordSession() {
-  return load();
-}
-
-export function clearDiscordSession() {
-  save(null);
-}
-
-export function discordAuthStatus() {
-  const s = load();
-  return { connected: !!s?.accessToken, username: s?.username || "", clientId: s?.clientId || "" };
 }
 
 export function discordRedirectUri() {

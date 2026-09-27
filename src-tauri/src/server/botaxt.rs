@@ -570,7 +570,7 @@ async fn api_widgets_test(
         if bump <= 0.0 {
           bump = 15.0;
           if let Ok(cid) = crate::db::default_channel_id(&state.db).await {
-            if let Ok(row) = sqlx::query_as::<_, (String,)>(
+            if let Ok(Some((cfg_text,))) = sqlx::query_as::<_, (String,)>(
               "SELECT config_json FROM widget_instances
                WHERE channel_id = ? AND kind IN ('goal','goals') AND enabled = 1
                ORDER BY sort_order LIMIT 1",
@@ -579,16 +579,14 @@ async fn api_widgets_test(
             .fetch_optional(&state.db)
             .await
             {
-              if let Some((cfg_text,)) = row {
-                if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&cfg_text) {
-                  let target = cfg.get("target").and_then(|v| v.as_f64()).unwrap_or(100.0).max(1.0);
-                  let start = cfg
-                    .get("startValue")
-                    .or_else(|| cfg.get("start"))
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0);
-                  bump = ((target - start).max(1.0) * 0.15).max(5.0);
-                }
+              if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&cfg_text) {
+                let target = cfg.get("target").and_then(|v| v.as_f64()).unwrap_or(100.0).max(1.0);
+                let start = cfg
+                  .get("startValue")
+                  .or_else(|| cfg.get("start"))
+                  .and_then(|v| v.as_f64())
+                  .unwrap_or(0.0);
+                bump = ((target - start).max(1.0) * 0.15).max(5.0);
               }
             }
           }
@@ -1403,7 +1401,7 @@ async fn api_remote_users_upsert(
   headers: HeaderMap,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  if let Some(_) = extract_bearer(&headers) {
+  if extract_bearer(&headers).is_some() {
     let info = require_remote(&state, &headers).await?;
     if info.role != "admin" {
       return Err((StatusCode::FORBIDDEN, "Yalnızca yönetici".into()));
@@ -1425,7 +1423,7 @@ async fn api_remote_users_delete(
   headers: HeaderMap,
   Json(body): Json<IdBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  if let Some(_) = extract_bearer(&headers) {
+  if extract_bearer(&headers).is_some() {
     let info = require_remote(&state, &headers).await?;
     if info.role != "admin" {
       return Err((StatusCode::FORBIDDEN, "Yalnızca yönetici".into()));

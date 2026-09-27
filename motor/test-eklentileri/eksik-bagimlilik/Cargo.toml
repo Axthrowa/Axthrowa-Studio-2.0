@@ -1,0 +1,11 @@
+[package]
+name = "yym-test-eksik-bagimlilik"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "yym_test_eksik_bagimlilik"
+path = "lib.rs"
+crate-type = ["cdylib"]

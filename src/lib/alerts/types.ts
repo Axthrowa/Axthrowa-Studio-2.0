@@ -72,36 +72,6 @@ export type AlertTypeConfig = {
   minAmount: number;
 };
 
-export type AlertsConfigMap = Record<AlertEventId, AlertTypeConfig>;
-
-export const ALERT_EVENT_TABS: {
-  id: AlertEventId;
-  label: string;
-  testUser: string;
-  testAmount: string;
-  testMessage: string;
-}[] = [
-  { id: "sub", label: "Subscription", testUser: "DemoSub", testAmount: "3", testMessage: "" },
-  { id: "gifted", label: "Gift Sub", testUser: "DemoGifter", testAmount: "5", testMessage: "" },
-  { id: "follow", label: "Followers", testUser: "DemoFollow", testAmount: "", testMessage: "" },
-  { id: "host", label: "Host", testUser: "DemoHost", testAmount: "12", testMessage: "" },
-  { id: "tip", label: "Tip/Donate", testUser: "DemoTip", testAmount: "50", testMessage: "Harika yayın!" },
-  { id: "raid", label: "KICKs", testUser: "DemoKick", testAmount: "25", testMessage: "" },
-];
-
-export const LAYOUT_OPTIONS: { id: AlertLayoutMode; label: string; hint: string }[] = [
-  { id: "image-top", label: "Image Top", hint: "Resim üstte, yazı altta" },
-  { id: "side-by-side", label: "Side by Side", hint: "Resim ve yazı yan yana" },
-  { id: "text-over", label: "Text Over", hint: "Yazı resmin üzerinde" },
-];
-
-export const STYLE_OPTIONS: { id: AlertStyleMode; label: string }[] = [
-  { id: "compact", label: "Compact" },
-  { id: "banner", label: "Legacy / Banner" },
-  { id: "card", label: "Card" },
-  { id: "minimal", label: "Minimal" },
-];
-
 export const ANIM_IN_OPTIONS: { id: AlertAnimIn; label: string }[] = [
   { id: "none", label: "None" },
   { id: "fade", label: "Fade" },
@@ -114,49 +84,6 @@ export const ANIM_IN_OPTIONS: { id: AlertAnimIn; label: string }[] = [
   { id: "bounce", label: "Bounce" },
   { id: "flip", label: "Flip" },
   { id: "glitch", label: "Glitch" },
-];
-
-export const ANIM_OUT_OPTIONS: { id: AlertAnimOut; label: string }[] = [
-  { id: "fade", label: "Fade" },
-  { id: "slide", label: "Slide" },
-  { id: "none", label: "None" },
-];
-
-export const TEXT_EFFECT_OPTIONS: { id: AlertTextEffect; label: string }[] = [
-  { id: "none", label: "None" },
-  { id: "wiggle", label: "Wiggle" },
-  { id: "wave", label: "Wave" },
-  { id: "shine", label: "Shine" },
-  { id: "skew", label: "Skew" },
-  { id: "elastic", label: "Elastic" },
-  { id: "bounce", label: "Bounce" },
-  { id: "pulse", label: "Pulse" },
-  { id: "shake", label: "Shake" },
-];
-
-export const TTS_LANG_OPTIONS = [
-  { id: "", label: "Off (TTS kapalı)" },
-  { id: "tr-TR", label: "Türkçe" },
-  { id: "en-US", label: "English (US)" },
-  { id: "en-GB", label: "English (UK)" },
-  { id: "es-ES", label: "Español" },
-  { id: "de-DE", label: "Deutsch" },
-  { id: "fr-FR", label: "Français" },
-  { id: "pt-BR", label: "Português (BR)" },
-  { id: "ru-RU", label: "Русский" },
-];
-
-export const FONT_OPTIONS = [
-  "Outfit, system-ui, sans-serif",
-  "Inter, system-ui, sans-serif",
-  "Segoe UI, system-ui, sans-serif",
-  "Montserrat, system-ui, sans-serif",
-  "Poppins, system-ui, sans-serif",
-  "Roboto, system-ui, sans-serif",
-  "Georgia, serif",
-  "Impact, sans-serif",
-  "Courier New, monospace",
-  "Comic Sans MS, cursive",
 ];
 
 function normalizeAnimIn(raw: string): AlertAnimIn {
@@ -177,7 +104,7 @@ export function defaultAlertType(id: AlertEventId): AlertTypeConfig {
   };
   const accents: Record<AlertEventId, string> = {
     sub: "#38bdf8",
-    gifted: "#a78bfa",
+    gifted: "#22d3ee",
     follow: "#f59e0b",
     host: "#34d399",
     tip: "#fb7185",
@@ -212,17 +139,6 @@ export function defaultAlertType(id: AlertEventId): AlertTypeConfig {
     ttsPitch: 1,
     customCss: "",
     minAmount: 0,
-  };
-}
-
-export function defaultAlertsConfig(): AlertsConfigMap {
-  return {
-    sub: defaultAlertType("sub"),
-    gifted: defaultAlertType("gifted"),
-    follow: defaultAlertType("follow"),
-    host: defaultAlertType("host"),
-    tip: defaultAlertType("tip"),
-    raid: defaultAlertType("raid"),
   };
 }
 
@@ -298,35 +214,6 @@ export function configFromDbRow(row: Record<string, unknown>): AlertTypeConfig {
     minAmount: Number(row.min_amount ?? extras.minAmount ?? 0),
     layout,
     styleMode,
-  };
-}
-
-/** Botrix config → DB upsert */
-export function configToDbRow(id: AlertEventId, cfg: AlertTypeConfig, label: string) {
-  const payload: AlertTypeConfig = { ...cfg };
-  return {
-    id,
-    enabled: cfg.enabled ? 1 : 0,
-    label,
-    template: cfg.template,
-    duration_ms: Math.round(cfg.durationSec * 1000),
-    volume: cfg.volume,
-    media_path: cfg.mediaPath || null,
-    sound_path: cfg.soundPath || null,
-    font_family: cfg.fontFamily,
-    font_size: cfg.fontSize,
-    text_color: cfg.textColor,
-    accent_color: cfg.nameColor,
-    anim_in: cfg.animIn,
-    anim_out: cfg.animOut,
-    layout: cfg.layout,
-    custom_html: JSON.stringify(payload),
-    custom_css: cfg.customCss || null,
-    tts_enabled: cfg.ttsEnabled ? 1 : 0,
-    tts_lang: cfg.ttsLang || "tr-TR",
-    tts_rate: cfg.ttsRate,
-    tts_volume: cfg.ttsVolume,
-    min_amount: cfg.minAmount,
   };
 }
 

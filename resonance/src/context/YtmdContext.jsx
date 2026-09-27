@@ -7,7 +7,7 @@ import {
   getYtmdPort,
   setYtmdConnection,
 } from '../lib/ytmdAuth'
-import { isHostAvailable, putYtmdSession } from '../lib/hostBridge'
+import { isHostAvailable, notifyHostChanged, putYtmdSession } from '../lib/hostBridge'
 
 const YtmdContext = createContext(null)
 
@@ -41,6 +41,7 @@ export function YtmdProvider({ children }) {
       // Resonance sekmesi açık olmasa da komut gönderebilsin.
       if (await isHostAvailable()) {
         await putYtmdSession({ host, port, token }).catch(() => {})
+        notifyHostChanged('ytmd')
       }
     } catch (err) {
       setError(err.message)
@@ -57,6 +58,7 @@ export function YtmdProvider({ children }) {
     reportSocket('idle')
     if (await isHostAvailable()) {
       await putYtmdSession({ host: getYtmdHost(), port: getYtmdPort(), token: '' }).catch(() => {})
+      notifyHostChanged('ytmd')
     }
   }
 

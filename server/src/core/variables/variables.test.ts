@@ -7,6 +7,7 @@
  * geliştirme veritabanına dokunmamalı.
  */
 import { describe, it, expect } from 'vitest';
+import dns from 'node:dns';
 import {
   enIcteki,
   adVeArguman,
@@ -455,7 +456,11 @@ describe('SSRF — IPv6 ve alan adı çözümlemesi (4. tur)', () => {
     expect(hata?.code).toBe('ESSRF');
   });
 
-  it('metin denetimini atlatan alan adı (sondaki nokta) yerel sunucuya ulaşamaz', async () => {
+  it('metin denetimini atlatan alan adı (sondaki nokta) yerel sunucuya ulaşamaz', async (ctx) => {
+    // Ön koşul: işletim sistemi `localhost.` adını geri döngüye çözmeli (Windows çözer; bazı
+    // yalıtılmış Linux ortamları çözemez — o durumda istek zaten gidemez, denenecek bir şey yok).
+    const cozulur = await new Promise<boolean>((coz) => dns.lookup('localhost.', (hata) => coz(!hata)));
+    if (!cozulur) ctx.skip();
     let istekGeldi = false;
     const sunucu = http.createServer((_, res) => {
       istekGeldi = true;

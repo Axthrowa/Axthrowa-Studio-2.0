@@ -1,0 +1,697 @@
+/*
+ * Masaüstü bileşenleri (dt-*) — docs/UI_UX_DESIGN_SYSTEM.md.
+ * Yoğun ama okunur; köşeler küçük; gölge yalnız katmanlı öğede; renk yalnız anlam taşır.
+ */
+
+:root {
+  --dt-surface-1: color-mix(in srgb, var(--panel-bg) 88%, rgb(var(--fg-rgb, 255 255 255)) 3%);
+  --dt-surface-2: color-mix(in srgb, var(--panel-bg) 82%, rgb(var(--fg-rgb, 255 255 255)) 6%);
+  --dt-surface-3: color-mix(in srgb, var(--panel-bg) 74%, rgb(var(--fg-rgb, 255 255 255)) 11%);
+  --dt-line: color-mix(in srgb, rgb(var(--fg-rgb, 255 255 255)) 10%, transparent);
+  --dt-line-strong: color-mix(in srgb, rgb(var(--fg-rgb, 255 255 255)) 18%, transparent);
+  --dt-text: rgb(var(--fg-rgb, 255 255 255) / 0.92);
+  --dt-text-2: rgb(var(--fg-rgb, 255 255 255) / 0.68);
+  --dt-text-3: rgb(var(--fg-rgb, 255 255 255) / 0.5);
+  --dt-live: #e5484d;
+  --dt-rec: #ff6b57;
+  --dt-warn: #f5a524;
+  --dt-error: #e5484d;
+  --dt-ok: #3dd68c;
+  --dt-focus: color-mix(in srgb, var(--panel-accent) 70%, transparent);
+}
+
+/* ── Yuvalı panel ─────────────────────────────────────────── */
+.dt-dock {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex-direction: column;
+  background: var(--dt-surface-1);
+  border: 1px solid var(--dt-line);
+  border-radius: 2px;
+}
+.dt-dock-baslik {
+  display: flex;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--dt-line);
+  background: var(--dt-surface-2);
+  color: var(--dt-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  user-select: none;
+}
+.dt-dock-baslik > .dt-bosluk,
+.dt-bosluk {
+  flex: 1;
+}
+.dt-dock-govde {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+.dt-arac-cubugu {
+  display: flex;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  border-top: 1px solid var(--dt-line);
+  background: var(--dt-surface-2);
+}
+
+/* ── Düğmeler ─────────────────────────────────────────────── */
+.dt-btn,
+.dt-btn-primary,
+.dt-btn-danger {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--dt-line-strong);
+  background: var(--dt-surface-2);
+  color: var(--dt-text);
+  transition: background-color 0.12s, border-color 0.12s;
+}
+.dt-btn:hover {
+  background: var(--dt-surface-3);
+}
+.dt-btn-primary {
+  border-color: transparent;
+  background: var(--panel-accent);
+  color: var(--panel-cta-ink, #032f34);
+}
+.dt-btn-primary:hover {
+  filter: brightness(1.08);
+}
+.dt-btn-danger {
+  border-color: color-mix(in srgb, var(--dt-error) 55%, transparent);
+  background: color-mix(in srgb, var(--dt-error) 14%, transparent);
+  color: #ffd9da;
+}
+.dt-btn-danger:hover {
+  background: color-mix(in srgb, var(--dt-error) 24%, transparent);
+}
+.dt-btn:disabled,
+.dt-btn-primary:disabled,
+.dt-btn-danger:disabled,
+.dt-tool:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.dt-tool {
+  display: inline-flex;
+  height: 24px;
+  min-width: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  color: var(--dt-text-2);
+  font-size: 12px;
+}
+.dt-tool:hover {
+  background: var(--dt-surface-3);
+  color: var(--dt-text);
+}
+.dt-tool[aria-pressed="true"] {
+  background: var(--dt-surface-3);
+  color: var(--dt-text);
+}
+.dt-toggle {
+  display: inline-flex;
+  height: 20px;
+  min-width: 20px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--dt-line-strong);
+  border-radius: 3px;
+  color: var(--dt-text-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.dt-toggle[aria-pressed="true"] {
+  border-color: var(--dt-focus);
+  background: color-mix(in srgb, var(--panel-accent) 18%, transparent);
+  color: var(--dt-text);
+}
+.dt-btn:focus-visible,
+.dt-btn-primary:focus-visible,
+.dt-btn-danger:focus-visible,
+.dt-tool:focus-visible,
+.dt-toggle:focus-visible,
+.dt-row:focus-visible,
+.dt-input:focus-visible {
+  outline: 2px solid var(--dt-focus);
+  outline-offset: 1px;
+}
+
+/* ── Girişler ─────────────────────────────────────────────── */
+.dt-input {
+  height: 26px;
+  min-width: 0;
+  padding: 0 8px;
+  border: 1px solid var(--dt-line-strong);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--panel-bg) 70%, black 30%);
+  color: var(--dt-text);
+  font-size: 12px;
+  outline: none;
+}
+.dt-input:focus {
+  border-color: var(--dt-focus);
+}
+.dt-form {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.dt-form > label,
+.dt-etiket {
+  color: var(--dt-text-2);
+  font-size: 12px;
+}
+.dt-birim {
+  color: var(--dt-text-3);
+  font-size: 11px;
+}
+
+/* ── Liste ve tablo ───────────────────────────────────────── */
+.dt-row {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  color: var(--dt-text);
+  font-size: 12px;
+  cursor: default;
+  user-select: none;
+}
+.dt-row:hover {
+  background: color-mix(in srgb, rgb(var(--fg-rgb, 255 255 255)) 4%, transparent);
+}
+.dt-row[aria-selected="true"] {
+  background: color-mix(in srgb, var(--panel-accent) 20%, transparent);
+}
+.dt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.dt-table th {
+  position: sticky;
+  top: 0;
+  height: 26px;
+  padding: 0 8px;
+  background: var(--dt-surface-2);
+  border-bottom: 1px solid var(--dt-line);
+  color: var(--dt-text-2);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+.dt-table td {
+  height: 30px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--dt-line);
+  color: var(--dt-text);
+  white-space: nowrap;
+}
+.dt-table tr[aria-selected="true"] td {
+  background: color-mix(in srgb, var(--panel-accent) 16%, transparent);
+}
+.dt-sayi {
+  font-variant-numeric: tabular-nums;
+}
+.dt-soluk {
+  color: var(--dt-text-3);
+}
+
+/* ── Durum ────────────────────────────────────────────────── */
+.dt-nokta {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--dt-text-3);
+}
+.dt-nokta[data-durum="canli"] {
+  background: var(--dt-live);
+}
+.dt-nokta[data-durum="kayit"] {
+  background: var(--dt-rec);
+}
+.dt-nokta[data-durum="uyari"] {
+  background: var(--dt-warn);
+}
+.dt-nokta[data-durum="hazir"] {
+  background: var(--dt-ok);
+}
+.dt-canli {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: 3px;
+  background: var(--dt-live);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.dt-kayit {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--dt-rec) 60%, transparent);
+  border-radius: 3px;
+  color: var(--dt-rec);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dt-uyari-metni {
+  color: var(--dt-warn);
+}
+.dt-hata-metni {
+  color: #ff9ea1;
+}
+
+/* ── Katmanlı öğeler (gölge yalnız burada) ────────────────── */
+.dt-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--dt-line-strong);
+  border-radius: 6px;
+  background: var(--dt-surface-2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+.dt-menu-oge {
+  display: flex;
+  width: 100%;
+  height: 26px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border-radius: 4px;
+  color: var(--dt-text);
+  text-align: left;
+}
+.dt-menu-oge:hover,
+.dt-menu-oge:focus-visible {
+  background: color-mix(in srgb, var(--panel-accent) 22%, transparent);
+  outline: none;
+}
+.dt-menu-oge:disabled {
+  color: var(--dt-text-3);
+  background: none;
+}
+.dt-menu-oge[data-tehlikeli="true"] {
+  color: #ffb3b5;
+}
+.dt-menu-ayirici {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--dt-line);
+}
+.dt-menu-kisayol {
+  margin-left: auto;
+  color: var(--dt-text-3);
+  font-size: 11px;
+}
+.dt-modal-arka {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgba(0, 0, 0, 0.45);
+}
+.dt-modal {
+  width: min(560px, calc(100vw - 32px));
+  max-height: 76vh;
+  overflow: auto;
+  border: 1px solid var(--dt-line-strong);
+  border-radius: 6px;
+  background: var(--dt-surface-1);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-btn,
+  .dt-btn-primary,
+  .dt-btn-danger {
+    transition: none;
+  }
+}
+
+/* ── Sekme şeridi (ayar/yönetici pencereleri) ── */
+.dt-sekmeler {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--dt-line);
+  padding: 0 8px;
+  background: var(--dt-surface-1);
+}
+.dt-sekme {
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--dt-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dt-sekme:hover {
+  color: var(--dt-text);
+}
+.dt-sekme[aria-selected="true"] {
+  color: var(--dt-text);
+  border-bottom-color: var(--panel-accent);
+}
+.dt-sekme:focus-visible {
+  outline: 2px solid var(--dt-focus);
+  outline-offset: -2px;
+}
+
+/* ── Durum: nokta + metin (hap rozet değil) ── */
+.dt-durum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dt-text);
+}
+.dt-durum::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dt-text-3);
+  flex: none;
+}
+.dt-durum[data-ton="iyi"]::before {
+  background: var(--dt-ok);
+}
+.dt-durum[data-ton="uyari"]::before {
+  background: var(--dt-warn);
+}
+.dt-durum[data-ton="hata"]::before {
+  background: var(--dt-error);
+}
+
+/* ── Geniş iletişim kutusu (yönetici pencereleri) ── */
+.dt-modal-genis {
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, calc(100vw - 32px));
+  height: min(760px, calc(100vh - 48px));
+  max-height: none;
+  overflow: hidden;
+}
+.dt-kaydir {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+.dt-ayrinti {
+  border-top: 1px solid var(--dt-line);
+  background: var(--dt-surface-2);
+  overflow: auto;
+}
+.dt-kod {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+/* ── Yayın çalışma alanı: menü çubuğu ── */
+.dt-menu-cubugu {
+  display: flex;
+  height: 26px;
+  flex-shrink: 0;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--dt-line);
+  background: var(--dt-surface-2);
+}
+.dt-menu-baslik {
+  padding: 0 9px;
+  border-radius: 3px;
+  color: var(--dt-text-2);
+  font-size: 12px;
+}
+.dt-menu-baslik:hover,
+.dt-menu-baslik[aria-expanded="true"],
+.dt-menu-baslik:focus-visible {
+  background: var(--dt-surface-3);
+  color: var(--dt-text);
+  outline: none;
+}
+
+/* ── Önizleme ── */
+.dt-onizleme-bolme {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  border: 1px solid var(--dt-line);
+  background: var(--dt-surface-1);
+}
+.dt-onizleme-bolme[data-vurgu="program"] > .dt-onizleme-etiket {
+  box-shadow: inset 0 -2px 0 var(--dt-live);
+}
+.dt-onizleme-bolme[data-vurgu="onizleme"] > .dt-onizleme-etiket {
+  box-shadow: inset 0 -2px 0 var(--dt-ok);
+}
+.dt-onizleme-etiket {
+  height: 22px;
+  flex-shrink: 0;
+  padding: 3px 8px 0;
+  color: var(--dt-text-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+.dt-onizleme-alan {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #0b0b0d;
+}
+.dt-onizleme-tuval {
+  position: relative;
+  background: #000;
+}
+.dt-onizleme-kare {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  user-select: none;
+}
+.dt-onizleme-katman {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  outline: none;
+  touch-action: none;
+}
+.dt-onizleme-katman:focus-visible {
+  outline: 2px solid var(--dt-focus);
+  outline-offset: 1px;
+}
+.dt-secim-ince {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 1px;
+}
+.dt-secim-ince:hover {
+  stroke: color-mix(in srgb, #ff4040 70%, transparent);
+}
+.dt-secim-kutu {
+  fill: transparent;
+  stroke: #ff4040;
+  stroke-width: 1.5px;
+}
+.dt-tutamac {
+  fill: #ff4040;
+  stroke: #fff;
+  stroke-width: 1px;
+}
+
+/* ── Dock sırası ── */
+.dt-yatay-ayirici {
+  height: 5px;
+  flex-shrink: 0;
+  cursor: ns-resize;
+}
+.dt-dikey-ayirici {
+  width: 5px;
+  flex-shrink: 0;
+  cursor: ew-resize;
+}
+.dt-yatay-ayirici:hover,
+.dt-dikey-ayirici:hover {
+  background: var(--dt-focus);
+}
+.dt-yatay-ayirici[data-kilitli],
+.dt-dikey-ayirici[data-kilitli] {
+  cursor: default;
+  background: none;
+}
+.dt-row[data-surukle-hedef="true"] {
+  box-shadow: inset 0 1px 0 var(--dt-focus);
+}
+
+/* ── Mikser ── */
+.dt-kanal {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dt-line);
+  font-size: 12px;
+}
+.dt-kanal[data-soluk="true"] {
+  opacity: 0.55;
+}
+.dt-olcer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dt-olcer-kanal {
+  position: relative;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: color-mix(in srgb, rgb(var(--fg-rgb, 255 255 255)) 8%, transparent);
+}
+.dt-olcer-rms,
+.dt-olcer-tepe {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+}
+.dt-olcer-tepe {
+  opacity: 0.45;
+}
+.dt-olcer-rms[data-bolge="yesil"],
+.dt-olcer-tepe[data-bolge="yesil"] {
+  background: #3dd68c;
+}
+.dt-olcer-rms[data-bolge="sari"],
+.dt-olcer-tepe[data-bolge="sari"] {
+  background: #f5d524;
+}
+.dt-olcer-rms[data-bolge="kirmizi"],
+.dt-olcer-tepe[data-bolge="kirmizi"] {
+  background: #e5484d;
+}
+.dt-olcer-tutma {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #fff;
+  opacity: 0;
+}
+.dt-olcer[data-kirpma="true"] .dt-olcer-kanal {
+  box-shadow: inset -6px 0 0 #e5484d;
+}
+.dt-fader {
+  height: 16px;
+  accent-color: var(--panel-accent);
+}
+.dt-uyari-kutusu {
+  margin: 6px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--dt-warn) 60%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--dt-warn) 8%, transparent);
+  font-size: 12px;
+}
+
+/* ── Durum çubuğu ── */
+.dt-durum-cubugu {
+  display: flex;
+  height: 24px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+  border-top: 1px solid var(--dt-line);
+  background: var(--dt-surface-2);
+  color: var(--dt-text-2);
+  font-size: 11px;
+}
+
+/* ── Yayın ayarları: çoklu yayın kartları ── */
+.dt-hedef-karti {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--dt-line);
+  border-radius: 4px;
+  background: var(--dt-surface-2);
+  font-size: 12px;
+}
+.dt-platform-simge {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--dt-line-strong);
+  border-radius: 50%;
+  color: var(--dt-text-2);
+  font-size: 11px;
+  font-weight: 700;
+}
+.dt-anahtar-alani {
+  min-width: 180px;
+  max-width: 360px;
+  padding: 3px 6px;
+  border: 1px solid var(--dt-line);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--panel-bg) 70%, black 30%);
+  user-select: text;
+}

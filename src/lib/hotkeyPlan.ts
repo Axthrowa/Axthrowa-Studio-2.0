@@ -149,6 +149,8 @@ function actionRows(
       mode: r.mode || "",
       delta: Number(r.delta) || 0,
       name: r.name || "",
+      target: r.target || "",
+      confirmed: !!r.confirmed,
     });
   }
 
@@ -254,13 +256,6 @@ export function conflictFailures(
       reason: `${c.spec} tuşu zaten ${bindingName(c.winnerId, plan.bindings)} için kullanılıyor`,
     }))
   );
-}
-
-/**
- * Bir binding kimliğinin çakışma yüzünden düştüğünü söyler — UI uyarısı için.
- */
-export function isConflictLoser(plan: HotkeyPlan, id: string): HotkeyConflict | null {
-  return plan.conflicts.find((c) => c.loserIds.includes(id)) || null;
 }
 
 /**

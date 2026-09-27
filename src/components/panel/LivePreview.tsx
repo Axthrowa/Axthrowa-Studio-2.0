@@ -81,7 +81,15 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd }: Props) {
   }, [previewMuted, previewVolume]);
 
   return (
-    <div ref={boxRef} className="relative h-full w-full overflow-hidden bg-black">
+    <div ref={boxRef} className="relative h-full w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-[#050608] shadow-2xl">
+      {/* Studio Monitor Header Tag */}
+      <div className="absolute left-3 top-3 z-50 flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-2.5 py-1 shadow-md pointer-events-none">
+        <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse" />
+        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/90">
+          CANLI ÖNİZLEME · 1920×1080
+        </span>
+      </div>
+
       <div
         style={{
           position: "absolute",
@@ -111,17 +119,18 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd }: Props) {
           </PreviewQualityProvider>
         </div>
       </div>
-      <div className="absolute bottom-3 right-3 z-50 flex items-center gap-2 rounded-full border border-white/15 bg-black/75 px-3 py-2 shadow-xl">
+
+      <div className="absolute bottom-3 right-3 z-50 flex items-center gap-2.5 rounded-full border border-white/15 bg-black/80 px-3.5 py-1.5 shadow-glass-elevated">
         <button
           type="button"
-          className="text-panel-accent"
+          className="text-panel-accent hover:brightness-125 transition-all"
           title={previewMuted ? "Önizleme sesini aç" : "Önizleme sesini kapat"}
           onClick={() => setPreviewMuted((v) => !v)}
         >
           {previewMuted || previewVolume === 0 ? (
-            <VolumeX className="h-4 w-4" />
+            <VolumeX className="h-4 w-4 text-white/50" />
           ) : (
-            <Volume2 className="h-4 w-4" />
+            <Volume2 className="h-4 w-4 text-panel-accent" />
           )}
         </button>
         <input
@@ -136,7 +145,7 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd }: Props) {
             setPreviewMuted(false);
           }}
         />
-        <span className="w-8 text-right text-[10px] text-white/70">
+        <span className="w-8 text-right font-mono text-[10px] text-white/80">
           {previewMuted ? 0 : previewVolume}%
         </span>
       </div>

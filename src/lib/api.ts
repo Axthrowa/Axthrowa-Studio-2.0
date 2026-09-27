@@ -164,16 +164,6 @@ export async function fetchPlayerStatus(): Promise<PlayerStatus> {
   return res.json();
 }
 
-export async function setPlayerSource(source: string): Promise<PlayerStatus> {
-  const res = await fetch(`${API_BASE}/api/player/source`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ source }),
-  });
-  if (!res.ok) throw new Error("source failed");
-  return res.json();
-}
-
 export async function sendPlayerCommand(action: string, source?: string) {
   const res = await fetch(`${API_BASE}/api/player/command`, {
     method: "POST",

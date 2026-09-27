@@ -458,8 +458,18 @@ async fn try_handle_mod_commands(
   }
 }
 
+/// Eski yerleşik botun sohbete yanıt yazmasına izin veriliyor mu?
+pub fn legacy_replies_enabled() -> bool {
+  std::env::var("YYA_LEGACY_BOT").map(|v| v.trim() == "1").unwrap_or(false)
+}
+
 pub async fn send_reply(state: &AppState, msg: &ChatInbound, reply: &str) -> Result<()> {
   if reply.trim().is_empty() {
+    return Ok(());
+  }
+  // Bot sekmesi artık StreamAxT: eski yerleşik bot sohbete yanıt yazmaz (çift yanıt
+  // olmasın). Geri açmak için ortam değişkeni `YYA_LEGACY_BOT=1`.
+  if !legacy_replies_enabled() {
     return Ok(());
   }
   log_reply(state, &msg.platform, reply);

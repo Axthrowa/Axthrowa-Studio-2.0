@@ -102,10 +102,6 @@ export function sfxCandidateUrls(file: string): string[] {
   return [...new Set(urls)];
 }
 
-export function sfxUrl(file: string): string {
-  return sfxCandidateUrls(file)[0];
-}
-
 const active = new Set<HTMLAudioElement>();
 
 type QueueItem = {

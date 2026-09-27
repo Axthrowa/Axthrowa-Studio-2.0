@@ -20,7 +20,7 @@ const FILL: Record<SpawnKind, string> = {
   coin: "#fbbf24",
   gem: "#22d3ee",
   logo: "#ff8a5b",
-  sub: "#a78bfa",
+  sub: "#22d3ee",
   emoji: "#f8fafc",
 };
 

@@ -56,13 +56,6 @@ export function startBotTimers() {
   }, 15_000);
 }
 
-export function stopBotTimers() {
-  if (tickTimer != null) {
-    window.clearInterval(tickTimer);
-    tickTimer = null;
-  }
-}
-
 /** İzleme puanı — dakikada bir */
 let loyaltyTick: number | null = null;
 const activeChatters = new Map<string, number>();

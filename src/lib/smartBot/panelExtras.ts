@@ -1,6 +1,6 @@
 /** Botaxt panel sekmelerinden aktarılan ekstra config şeması. */
 
-import { uid, type BotCommand, type UserLevel } from "./types";
+import { uid, type UserLevel } from "./types";
 
 export type CommandTrigger = "command" | "keyword";
 export type KeywordMatch = "exact" | "startsWith" | "contains" | "endsWith";
@@ -18,11 +18,6 @@ export type ExtraCommandFields = {
   /** response dışında ek rastgele yanıtlar */
   responses: string[];
 };
-
-/** @deprecated alias — ExtraCommandFields */
-export type CommandExtras = ExtraCommandFields;
-
-export type ExtendedCommand = BotCommand & ExtraCommandFields;
 
 export type ClaimDropConfig = {
   enabled: boolean;

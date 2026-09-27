@@ -199,15 +199,6 @@ export async function playWidgetSfxAsync(
   return false;
 }
 
-/** Panel test butonu — örnek coin SFX */
-export async function testWidgetSfx(volume = 0.7): Promise<boolean> {
-  const ok = await playWidgetSfxAsync("preset:coin", volume);
-  if (!ok) {
-    logger.error("[SFX Test] Ses çalınamadı — tarayıcı autoplay veya dosya yolu hatası");
-  }
-  return ok;
-}
-
 export function resolveSfx(
   config: Record<string, unknown>,
   key: string,

@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-streamaxt"
+description = "Bot sekmesi: StreamAxT sunucusunu başlatma / durdurma / durum"
+commands.allow = ["streamaxt_status", "streamaxt_start", "streamaxt_stop"]

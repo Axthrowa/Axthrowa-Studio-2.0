@@ -11,7 +11,7 @@ export const translations = {
       whatsNew: "What's New",
       widgets: 'Widgets',
       overview: 'Overview',
-      pulse: 'Axt',
+      pulse: 'Resonance',
       connections: 'Connections',
       music: 'Music',
       social: 'Social',
@@ -86,7 +86,7 @@ export const translations = {
       ],
     },
     pulse: {
-      title: 'Axt',
+      title: 'Resonance',
       nothingPlaying: 'Nothing Playing',
       waitingForTrack: 'Waiting for the next track...',
       previewHintSpotify: 'Play something on Spotify to preview it live here.',
@@ -114,7 +114,7 @@ export const translations = {
       browserSourceUrl: 'Browser Source URL',
       copyToClipboard: 'Copy to Clipboard',
       copied: 'Copied',
-      learnHow: 'Learn how to use Axt',
+      learnHow: 'Learn how to use Resonance',
       gettingStarted: 'Getting Started',
       obsUrlNote:
         "This URL includes your current settings and, for YouTube Music Desktop, its connection — OBS's browser doesn't need to sign in to anything separately. If you change settings afterward, copy the URL again and update it in OBS.",
@@ -254,7 +254,7 @@ export const translations = {
       whatsNew: 'Yenilikler',
       widgets: 'Widgetlar',
       overview: 'Genel Bakış',
-      pulse: 'Axt',
+      pulse: 'Resonance',
       connections: 'Bağlantılar',
       music: 'Müzik',
       social: 'Sosyal',
@@ -330,7 +330,7 @@ export const translations = {
       ],
     },
     pulse: {
-      title: 'Axt',
+      title: 'Resonance',
       nothingPlaying: 'Şu An Çalmıyor',
       waitingForTrack: 'Sıradaki şarkı bekleniyor...',
       previewHintSpotify: "Canlı önizleme için Spotify'da bir şey çal.",
@@ -358,7 +358,7 @@ export const translations = {
       browserSourceUrl: 'Tarayıcı Kaynağı URL\'si',
       copyToClipboard: 'Panoya Kopyala',
       copied: 'Kopyalandı',
-      learnHow: "Axt'ı nasıl kullanacağını öğren",
+      learnHow: "Resonance'ı nasıl kullanacağını öğren",
       gettingStarted: 'Başlarken',
       obsUrlNote:
         "Bu URL mevcut ayarlarınızı ve YouTube Music Desktop kullanıyorsanız bağlantı bilgisini de içeriyor — OBS'in tarayıcısının ayrıca bir yere giriş yapmasına gerek yok. Ayarları sonradan değiştirirseniz URL'yi tekrar kopyalayıp OBS'te güncellemeniz gerekir.",

@@ -2,7 +2,7 @@
 //! Medya yolları `media::paths` ile mutlak path olarak saklanır;
 //! oynatma OBS için HTTP Range stream üzerinden yapılır.
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use serde_json::{json, Value};
 use sqlx::SqlitePool;
 
@@ -42,191 +42,6 @@ pub async fn get_alert_type(pool: &SqlitePool, id: &str) -> Result<Option<AlertT
   .fetch_optional(pool)
   .await?;
   Ok(row)
-}
-
-/// Tek alert oluştur / güncelle. `app_root` + `http_base` medya path normalize için.
-pub async fn upsert_alert_type(
-  pool: &SqlitePool,
-  body: &Value,
-  app_root: &std::path::Path,
-  http_base: &str,
-) -> Result<AlertType> {
-  let channel_id = default_channel_id(pool).await?;
-  let id = body
-    .get("id")
-    .and_then(|v| v.as_str())
-    .filter(|s| !s.is_empty())
-    .map(str::to_string)
-    .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-
-  let enabled = body.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true) as i64;
-  let label = body
-    .get("label")
-    .and_then(|v| v.as_str())
-    .unwrap_or(id.as_str())
-    .to_string();
-  let template = body
-    .get("template")
-    .or_else(|| body.get("text"))
-    .and_then(|v| v.as_str())
-    .unwrap_or("{user}")
-    .to_string();
-  let duration_ms = body
-    .get("duration_ms")
-    .and_then(|v| v.as_i64())
-    .or_else(|| {
-      body
-        .get("durationSec")
-        .and_then(|v| v.as_i64())
-        .map(|s| s * 1000)
-    })
-    .unwrap_or(6000);
-  let volume = body.get("volume").and_then(|v| v.as_f64()).unwrap_or(0.8);
-
-  let existing = get_alert_type(pool, &id).await?;
-
-  let media_path = match body
-    .get("media_path")
-    .or_else(|| body.get("imageUrl"))
-  {
-    None => existing.as_ref().and_then(|e| e.media_path.clone()),
-    Some(Value::Null) => None,
-    Some(v) => paths::opt_normalize(v.as_str(), app_root, http_base)?,
-  };
-  let sound_path = match body
-    .get("sound_path")
-    .or_else(|| body.get("soundUrl"))
-  {
-    None => existing.as_ref().and_then(|e| e.sound_path.clone()),
-    Some(Value::Null) => None,
-    Some(v) => paths::opt_normalize(v.as_str(), app_root, http_base)?,
-  };
-
-  let font_family = body
-    .get("font_family")
-    .and_then(|v| v.as_str())
-    .map(str::to_string);
-  let font_size = body.get("font_size").and_then(|v| v.as_i64()).unwrap_or(32);
-  let text_color = body
-    .get("text_color")
-    .or_else(|| body.get("textColor"))
-    .and_then(|v| v.as_str())
-    .unwrap_or("#FFFFFF");
-  let accent_color = body
-    .get("accent_color")
-    .or_else(|| body.get("accentColor"))
-    .and_then(|v| v.as_str())
-    .unwrap_or("#3ECFCF");
-  let anim_in = body
-    .get("anim_in")
-    .or_else(|| body.get("animation"))
-    .and_then(|v| v.as_str())
-    .unwrap_or("fade");
-  let anim_out = body
-    .get("anim_out")
-    .and_then(|v| v.as_str())
-    .unwrap_or("fade");
-  let tts_enabled = body
-    .get("tts_enabled")
-    .and_then(|v| v.as_bool())
-    .unwrap_or(false) as i64;
-  let tts_lang = body
-    .get("tts_lang")
-    .or_else(|| body.get("ttsLang"))
-    .and_then(|v| v.as_str())
-    .unwrap_or("tr-TR");
-  let min_amount = body
-    .get("min_amount")
-    .and_then(|v| v.as_f64())
-    .unwrap_or(0.0);
-  let layout = body
-    .get("layout")
-    .and_then(|v| v.as_str())
-    .unwrap_or("banner");
-  let sort_order = body
-    .get("sort_order")
-    .and_then(|v| v.as_i64())
-    .unwrap_or(0);
-  let custom_html = body
-    .get("custom_html")
-    .and_then(|v| v.as_str())
-    .map(str::to_string);
-  let custom_css = body
-    .get("custom_css")
-    .and_then(|v| v.as_str())
-    .map(str::to_string);
-  let tts_rate = body.get("tts_rate").and_then(|v| v.as_f64()).unwrap_or(1.0);
-  let tts_volume = body
-    .get("tts_volume")
-    .and_then(|v| v.as_f64())
-    .unwrap_or(1.0);
-
-  sqlx::query(
-    "INSERT INTO alert_types(
-       id, channel_id, enabled, label, template, duration_ms, volume,
-       media_path, sound_path, font_family, font_size, text_color, accent_color,
-       anim_in, anim_out, tts_enabled, tts_lang, min_amount, layout, sort_order,
-       custom_html, custom_css, tts_rate, tts_volume
-     ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-     ON CONFLICT(channel_id, id) DO UPDATE SET
-       enabled=excluded.enabled, label=excluded.label, template=excluded.template,
-       duration_ms=excluded.duration_ms, volume=excluded.volume,
-       media_path=excluded.media_path, sound_path=excluded.sound_path,
-       font_family=excluded.font_family, font_size=excluded.font_size,
-       text_color=excluded.text_color, accent_color=excluded.accent_color,
-       anim_in=excluded.anim_in, anim_out=excluded.anim_out,
-       tts_enabled=excluded.tts_enabled, tts_lang=excluded.tts_lang,
-       min_amount=excluded.min_amount, layout=excluded.layout,
-       sort_order=excluded.sort_order, custom_html=excluded.custom_html,
-       custom_css=excluded.custom_css, tts_rate=excluded.tts_rate,
-       tts_volume=excluded.tts_volume",
-  )
-  .bind(&id)
-  .bind(&channel_id)
-  .bind(enabled)
-  .bind(&label)
-  .bind(&template)
-  .bind(duration_ms)
-  .bind(volume)
-  .bind(&media_path)
-  .bind(&sound_path)
-  .bind(&font_family)
-  .bind(font_size)
-  .bind(text_color)
-  .bind(accent_color)
-  .bind(anim_in)
-  .bind(anim_out)
-  .bind(tts_enabled)
-  .bind(tts_lang)
-  .bind(min_amount)
-  .bind(layout)
-  .bind(sort_order)
-  .bind(&custom_html)
-  .bind(&custom_css)
-  .bind(tts_rate)
-  .bind(tts_volume)
-  .execute(pool)
-  .await?;
-
-  get_alert_type(pool, &id)
-    .await?
-    .context("alert yazıldı ama okunamadı")
-}
-
-pub async fn delete_alert_type(pool: &SqlitePool, id: &str) -> Result<bool> {
-  let channel_id = default_channel_id(pool).await?;
-  // varyantları temizle
-  sqlx::query("DELETE FROM alert_variants WHERE channel_id = ? AND type_id = ?")
-    .bind(&channel_id)
-    .bind(id)
-    .execute(pool)
-    .await?;
-  let r = sqlx::query("DELETE FROM alert_types WHERE channel_id = ? AND id = ?")
-    .bind(&channel_id)
-    .bind(id)
-    .execute(pool)
-    .await?;
-  Ok(r.rows_affected() > 0)
 }
 
 pub async fn list_alert_variants(pool: &SqlitePool) -> Result<Vec<AlertVariant>> {
@@ -397,14 +212,6 @@ pub async fn upsert_alert_variant(
     .fetch_one(pool)
     .await
     .map_err(Into::into)
-}
-
-pub async fn delete_alert_variant(pool: &SqlitePool, id: &str) -> Result<bool> {
-  let r = sqlx::query("DELETE FROM alert_variants WHERE id = ?")
-    .bind(id)
-    .execute(pool)
-    .await?;
-  Ok(r.rows_affected() > 0)
 }
 
 /// Toplu upsert (HTTP API uyumu) — medya path normalize eder.

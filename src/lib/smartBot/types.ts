@@ -122,12 +122,6 @@ export type BotConfig = {
   discordClientId: string;
 };
 
-export type BotReply = {
-  lines: string[];
-  platform?: "kick" | "twitch" | "youtube";
-  silent?: boolean;
-};
-
 export const LEVEL_LABELS: Record<UserLevel, string> = {
   100: "Herkes",
   250: "Abone",

@@ -14,6 +14,7 @@ import { ChatPart, kickParts, normalizeParts, partsToText, textPart } from "./ch
 import { ChatBadge, kickBadges, setKickSubBadges, youtubeBadges } from "./chatBadges";
 import { handleSmartBotMessage } from "./smartBot";
 import { isRustKickChatActive, refreshRustKickChatActive } from "./rustKickGate";
+import { setYoutubeLiveContext } from "./platformAuth/youtubeWrite";
 
 export type Platform = "kick" | "twitch" | "youtube";
 
@@ -417,6 +418,10 @@ function startYoutube(ref: string, h: ChatHubHandlers): Stop {
       if (!data?.videoId) throw new Error("videoId yok");
       videoId = String(data.videoId);
       continuation = "";
+      // Bot yanıtları da bu yayına gitsin: yazma tarafı video kimliğini ilk
+      // bulduğu yerde önbelleğe alıp bir daha değiştirmiyordu — yeni yayında
+      // yanıtlar bitmiş yayının sohbetine gönderilmeye çalışılıyordu.
+      setYoutubeLiveContext(videoId);
       return true;
     } catch (e) {
       status("error", trimErr((e as Error).message));

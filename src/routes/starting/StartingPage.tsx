@@ -21,8 +21,8 @@ export default function StartingPage() {
       initial={initial}
       onCountdownEnd={async (live) => {
         try {
-          const scene = await runStartingEndAction(live || initial);
-          if (!scene) {
+          const r = await runStartingEndAction(live || initial);
+          if (r.done && !r.result) {
             logger.warn("Hedef oyun sahnesi seçilmedi (obs.sceneMap.game / sceneOnEnd)");
           }
         } catch (e) {

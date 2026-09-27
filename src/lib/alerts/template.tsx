@@ -49,22 +49,3 @@ export function renderTemplateNodes(
   });
 }
 
-/** Editörde değişken çiplerini vurgula (ham şablon) */
-export function highlightTemplateEditor(template: string): ReactNode[] {
-  const parts = template.split(VAR_RE);
-  return parts.filter(Boolean).map((part, i) => {
-    if (/^\{(name|user|amount|message)\}$/i.test(part)) {
-      return (
-        <span
-          key={i}
-          className="mx-0.5 inline-flex rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-300"
-        >
-          {part}
-        </span>
-      );
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
-
-export const TEMPLATE_CHIPS = ["{name}", "{amount}", "{message}"] as const;

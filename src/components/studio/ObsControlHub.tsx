@@ -85,9 +85,6 @@ const EMPTY_SCENES: ObsSceneSnapshot = {
 };
 
 export default function ObsControlHub({ onToast, shortcuts }: Props) {
-  const [host, setHost] = useState("127.0.0.1");
-  const [port, setPort] = useState(4455);
-  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<ObsConnectionStatus>(EMPTY_STATUS);
   const [snapshot, setSnapshot] = useState<ObsSceneSnapshot>(EMPTY_SCENES);
   const [sources, setSources] = useState<ObsSourceInfo[]>([]);
@@ -101,9 +98,6 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
       try {
         const settings = await fetchSettings("panel");
         const obs = (settings.obs || {}) as Record<string, any>;
-        setHost(String(obs.host || "127.0.0.1"));
-        setPort(Number(obs.port) || 4455);
-        setPassword(String(obs.password || ""));
         setAutomation({ ...DEFAULT_AUTOMATION, ...(obs.automation || {}) });
       } catch {
         /* Varsayılanlarla aç. */
@@ -169,33 +163,6 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
       .then(setAutomationSources)
       .catch(() => setAutomationSources([]));
   }, [automation.sceneName, status.connected]);
-
-  const connect = async () => {
-    if (busy) return;
-    setBusy("connect");
-    setStatus((prev) => ({ ...prev, connecting: true, lastError: null }));
-    try {
-      const next = await obsControl.connect(host, port, password);
-      setStatus(next);
-      // Şifre kutusu boşsa kayıtlı şifreyi ezme (aynı adreste); bkz. ConnectionsHub.
-      const kayit: Record<string, unknown> = { host, port, automation };
-      if (password.trim()) kayit.password = password;
-      await patchSettings("panel", { obs: kayit });
-      await refresh(true);
-      onToast("OBS WebSocket v5 bağlantısı kuruldu");
-    } catch (error) {
-      const message = String((error as Error)?.message || error);
-      setStatus((prev) => ({
-        ...prev,
-        connected: false,
-        connecting: false,
-        lastError: message,
-      }));
-      onToast(message);
-    } finally {
-      setBusy("");
-    }
-  };
 
   const selectScene = async (sceneName: string) => {
     if (busy) return;

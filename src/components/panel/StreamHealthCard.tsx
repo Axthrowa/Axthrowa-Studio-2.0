@@ -64,75 +64,96 @@ export default function StreamHealthCard() {
   ];
 
   return (
-    <section className="mx-4 mb-2 rounded-xl border border-panel-border/80 bg-panel-card/80 p-2.5">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold text-white">Yayın sağlığı</h3>
+    <section className="mx-4 mb-3 rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
+      <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-panel-accent" />
+          <h3 className="text-sm font-bold uppercase tracking-wider text-white">Yayın Sağlığı & Telemetri</h3>
+        </div>
         <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
             health.active
-              ? "bg-emerald-500/15 text-emerald-200"
-              : "bg-white/5 text-panel-muted"
+              ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+              : "border border-white/10 bg-white/5 text-white/70"
           }`}
         >
+          <span className={`h-2 w-2 rounded-full ${health.active ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
           {health.active ? "Canlı" : "Kapalı"}
         </span>
       </div>
-      {/* Yayın kapalıyken 0:00 / %0.0 gerçek ölçüm gibi duruyordu; ölçüm yoksa
-          sayı yerine tire gösterip soluklaştırıyoruz. */}
-      <div className={`grid grid-cols-3 gap-1.5 ${health.active ? "" : "opacity-60"}`}>
-        <div className="rounded-lg border border-white/[0.06] bg-black/20 px-2 py-1.5">
-          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-panel-muted">
-            <Clock className="h-3 w-3" /> Süre
+
+      <div className={`grid grid-cols-3 gap-3 ${health.active ? "" : "opacity-65"}`}>
+        <div className="rounded-xl border border-white/[0.08] bg-black/35 p-3">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/80">
+            <Clock className="h-3.5 w-3.5 text-panel-accent" /> Süre
           </p>
-          <p className="mt-0.5 font-mono text-sm text-white">
-            {health.active ? fmtUptime(health.durationMs) : "—"}
+          <p className="mt-1 font-mono text-lg md:text-xl font-bold tracking-tight text-white">
+            {health.active ? fmtUptime(health.durationMs) : "—:—"}
           </p>
+          <p className="mt-0.5 text-xs font-medium text-white/70">Yayın zamanlayıcısı</p>
         </div>
-        <div className="rounded-lg border border-white/[0.06] bg-black/20 px-2 py-1.5">
-          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-panel-muted">
-            <WifiOff className="h-3 w-3" /> Drop
+
+        <div className="rounded-xl border border-white/[0.08] bg-black/35 p-3">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/80">
+            <WifiOff className="h-3.5 w-3.5 text-amber-400" /> Drop Kare
           </p>
           <p
-            className={`mt-0.5 font-mono text-sm ${
+            className={`mt-1 font-mono text-lg md:text-xl font-bold tracking-tight ${
               health.dropPct >= 2 ? "text-amber-300" : "text-white"
             }`}
           >
             {health.active ? `%${health.dropPct.toFixed(1)}` : "—"}
           </p>
-          <p className="text-[10px] text-panel-muted">
+          <p className="mt-0.5 truncate text-xs font-medium text-white/70">
             {health.active ? `${health.skippedFrames}/${health.totalFrames} kare` : "ölçüm yok"}
           </p>
         </div>
-        <div className="rounded-lg border border-white/[0.06] bg-black/20 px-2 py-1.5">
-          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-panel-muted">
-            <Activity className="h-3 w-3" /> Yoğunluk
+
+        <div className="rounded-xl border border-white/[0.08] bg-black/35 p-3">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/80">
+            <Activity className="h-3.5 w-3.5 text-panel-accent" /> Ağ Yoğunluğu
           </p>
-          <p className="mt-0.5 font-mono text-sm text-white">
+          <p className="mt-1 font-mono text-lg md:text-xl font-bold tracking-tight text-white">
             {health.active
               ? `%${Math.round(Math.min(1, Math.max(0, health.congestion)) * 100)}`
               : "—"}
           </p>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full bg-gradient-to-r from-teal-400 to-emerald-400 transition-all duration-300"
+              style={{
+                width: health.active
+                  ? `${Math.min(100, Math.max(5, Math.round(health.congestion * 100)))}%`
+                  : "0%",
+              }}
+            />
+          </div>
         </div>
       </div>
+
       {!health.active && (
-        <p className="mt-1.5 text-[11px] text-panel-muted">
-          Yayın başlayınca ölçülmeye başlar.
+        <p className="mt-2.5 text-xs font-medium text-white/70">
+          Yayın başlayınca canlı OBS telemetri verileri aktarılır.
         </p>
       )}
+
       {errors.length > 0 ? (
-        <ul className="mt-2 space-y-1">
+        <ul className="mt-3 space-y-2">
           {errors.slice(0, 4).map((text) => (
             <li
               key={text}
-              className="flex items-start gap-1.5 rounded-md border border-red-400/25 bg-red-500/10 px-2 py-1 text-[11px] text-red-100"
+              className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-xs font-medium leading-relaxed text-red-100"
             >
-              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
               <span>{text}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-[10px] text-panel-muted">Aktif hata yok</p>
+        <div className="mt-2.5 flex items-center gap-2 text-xs font-medium text-white/75">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <span>Sistem kararlı · Aktif hata yok</span>
+        </div>
       )}
     </section>
   );

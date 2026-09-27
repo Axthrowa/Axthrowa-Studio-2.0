@@ -31,12 +31,23 @@ export default {
           card: "var(--panel-card)",
           elevated: "var(--panel-elevated)",
           border: "var(--panel-border)",
-          accent: "var(--panel-accent)",
+          // Saydamlık eki (`bg-panel-accent/85`, `border-panel-accent/60` …) ancak
+          // renk `<alpha-value>` ile tanımlıysa çalışır. Düz `var(--panel-accent)`
+          // iken Tailwind bu sınıflar için HİÇ kural üretmiyordu: vurgulu düğmeler
+          // zeminsiz kalıp koyu yazıyla okunmaz oluyor, kenarlıklar kayboluyordu.
+          // `--accent-rgb` her skin'de tanımlı (tema sözleşmesi testi bunu korur).
+          accent: "rgb(var(--accent-rgb) / <alpha-value>)",
           "accent-strong": "var(--panel-accent-strong)",
           cta: "var(--panel-cta)",
           muted: "var(--panel-muted)",
           soft: "var(--panel-soft)",
         },
+      },
+      // Plus Jakarta Sans 800'e, Inter 900'e kadar var. Tailwind'in `font-black`i
+      // 900 ister; gövde yazısında bu ağırlık yoksa tarayıcı "sahte kalın" üretir
+      // (glifleri kalınlaştırarak bulanıklaştırır). 800'e sabitliyoruz.
+      fontWeight: {
+        black: "800",
       },
       fontFamily: {
         sans: ['Inter', "Segoe UI", "system-ui", "sans-serif"],
@@ -44,11 +55,21 @@ export default {
         pixel: ['"Press Start 2P"', "monospace"],
         terminal: ['"JetBrains Mono"', "ui-monospace", "Consolas", "monospace"],
         futuristic: ['"Orbitron"', "sans-serif"],
-        bold: ['"Bebas Neue"', "sans-serif"],
+        // DİKKAT: buraya `bold` anahtarı KOYMAYIN. Tailwind ondan `.font-bold`
+        // üretiyordu ve bu, kalınlık yardımcısı `.font-bold` ile aynı ada sahip.
+        // İkisi farklı özellik yazdığı için birlikte uygulanıyor, sonuçta
+        // "kalın" yazan her yer (131 yer) Bebas Neue'ye dönüyordu: yalnız 400
+        // ağırlığı olan dar bir başlık yazı tipi, üstüne sahte kalınlaştırma —
+        // yazılar bulanık/ezik görünüyordu. Bebas'ı isteyen yerler kendi
+        // yığınını yazıyor (src/lib/textStyles.ts, styles/overlay.css).
       },
       boxShadow: {
         panel: "0 8px 24px rgba(0,0,0,.28)",
-        glow: "none",
+        glow: "0 0 18px var(--panel-accent-glow)",
+        "glow-sm": "0 0 10px var(--panel-accent-glow)",
+        "glow-lg": "0 0 30px var(--panel-accent-glow)",
+        glass: "0 4px 20px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+        "glass-elevated": "0 8px 32px -4px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
       },
       backgroundImage: {
         "panel-atmosphere":

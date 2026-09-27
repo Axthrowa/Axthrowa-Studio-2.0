@@ -112,7 +112,7 @@ export function pickTemplateFields(settings: Json | null | undefined, includeTex
   return out;
 }
 
-/** Şablon ayarındaki bilinmeyen/izinsiz alanlar — testler ve içe aktarma için. */
+/** Şablon ayarındaki bilinmeyen/izinsiz alanlar — hazır şablonların testte denetlenmesi için. */
 export function forbiddenKeys(settings: Json): string[] {
   return Object.keys(settings || {}).filter((k) => !ALL_FIELDS.has(k));
 }
@@ -165,11 +165,6 @@ export function mergeTemplate(
     changed.push(key);
   }
   return { next, changed, before };
-}
-
-/** Uygulamadan önceki değerleri geri yazacak yama (`undefined` = alanı kaldır). */
-export function undoPatch(before: Json): Json {
-  return { ...before };
 }
 
 /** Anlık ekran ayarından kullanıcı şablonu üretir. */

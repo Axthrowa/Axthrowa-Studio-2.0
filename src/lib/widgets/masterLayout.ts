@@ -1,7 +1,5 @@
 /** Master Overlay — evrensel konum / boyut / z-index yardımcıları. */
 
-import type { CSSProperties } from "react";
-
 export type MasterWidgetRow = {
   id: string;
   kind: string;
@@ -31,46 +29,6 @@ export function isWidgetMasterEnabled(w: MasterWidgetRow, config?: Record<string
   const dbOn = w.enabled === true || w.enabled === 1 || w.enabled == null;
   const cfgOn = cfg.enabled === undefined ? true : Boolean(cfg.enabled);
   return dbOn && cfgOn;
-}
-
-function cssSize(v: unknown, fallback: string): string {
-  if (v == null || v === "") return fallback;
-  if (typeof v === "number" && Number.isFinite(v)) return `${v}px`;
-  const s = String(v).trim();
-  if (!s) return fallback;
-  if (/^-?\d+(\.\d+)?$/.test(s)) return `${s}px`;
-  return s;
-}
-
-export type MasterSlotStyleOpts = {
-  /** Studio önizleme: tıklama / sürükleme açık */
-  interactive?: boolean;
-};
-
-/** Absolute wrapper stili — Master Overlay kasası. */
-export function masterSlotStyle(
-  config: Record<string, unknown>,
-  opts?: MasterSlotStyleOpts
-): CSSProperties {
-  const x = Number(config.position_x ?? config.posX ?? 0);
-  const y = Number(config.position_y ?? config.posY ?? 0);
-  const z = Number(config.z_index ?? 10);
-  const scale = Number(config.scale ?? 1);
-  const rot = Number(config.rotateDeg ?? 0);
-  const width = cssSize(config.width ?? "100%", "100%");
-  const height = cssSize(config.height ?? "100%", "100%");
-  return {
-    position: "absolute",
-    left: Number.isFinite(x) ? x : 0,
-    top: Number.isFinite(y) ? y : 0,
-    width,
-    height,
-    zIndex: Number.isFinite(z) ? z : 10,
-    transform: `scale(${Number.isFinite(scale) ? scale : 1}) rotate(${Number.isFinite(rot) ? rot : 0}deg)`,
-    transformOrigin: "top left",
-    overflow: "hidden",
-    pointerEvents: opts?.interactive ? "auto" : "none",
-  };
 }
 
 export function readMasterLayout(config: Record<string, unknown>): {
@@ -165,7 +123,3 @@ export function configForMasterInner(config: Record<string, unknown>): Record<st
   };
 }
 
-export function masterObsUrl(apiBase: string): string {
-  const base = apiBase.replace(/\/$/, "");
-  return `${base}/overlay/master?obs=1`;
-}

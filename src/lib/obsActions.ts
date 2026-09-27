@@ -13,6 +13,7 @@
  */
 
 import { getObs } from "./obs";
+import { actionParams, actionsApi } from "./api/actions";
 
 export type ActionKind =
   | "srcToggle"
@@ -21,7 +22,8 @@ export type ActionKind =
   | "filter"
   | "sceneNext"
   | "scenePrev"
-  | "obsHotkey";
+  | "obsHotkey"
+  | "action";
 
 export type RecordMode = "toggle" | "start" | "stop" | "pause";
 
@@ -60,8 +62,12 @@ export type ActionRow = {
   delta?: number;
   /** record: RecordMode · srcToggle: SourceMode */
   mode?: RecordMode | SourceMode | string;
-  /** obsHotkey: OBS kısayol adı */
+  /** obsHotkey: OBS kısayol adı · action: eylem kayıt defteri kimliği */
   name?: string;
+  /** action: çoklu yayın hedef kimliği */
+  target?: string;
+  /** action: onay isteyen eylem bu kısayolda onaysız çalışsın (kullanıcı açıkça işaretler) */
+  confirmed?: boolean;
 };
 
 export const ACTION_KINDS: { id: ActionKind; label: string; hint: string }[] = [
@@ -79,6 +85,11 @@ export const ACTION_KINDS: { id: ActionKind; label: string; hint: string }[] = [
     id: "obsHotkey",
     label: "OBS kısayolu (ileri düzey)",
     hint: "OBS'teki herhangi bir kısayolu adıyla tetikler: tekrar arabelleği, sanal kamera, stüdyo modu…",
+  },
+  {
+    id: "action",
+    label: "Panel eylemi",
+    hint: "Kontrol Merkezi'ndeki bir eylemi (çoklu yayın hedefi, yayın motoru, uyarılar…) tuşa bağlar. Kontrol Merkezi ile aynı yoldan çalışır ve denetim günlüğüne yazılır.",
   },
 ];
 
@@ -120,6 +131,8 @@ export function missingField(row: ActionRow): string | null {
       return (row.filter || "").trim() ? null : "filtre";
     case "obsHotkey":
       return (row.name || "").trim() ? null : "OBS kısayol adı";
+    case "action":
+      return (row.name || "").trim() ? null : "eylem";
     default:
       return null;
   }
@@ -207,6 +220,11 @@ export async function runObsAction(row: ActionRow): Promise<string> {
         ...(context ? { contextName: context } : {}),
       });
       return `OBS kısayolu: ${row.name}${context ? ` · ${context}` : ""}`;
+    }
+
+    case "action": {
+      await actionsApi.run(String(row.name).trim(), actionParams(row), !!row.confirmed);
+      return "Eylem çalıştı";
     }
 
     case "sceneNext":

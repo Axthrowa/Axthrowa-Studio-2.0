@@ -29,7 +29,8 @@ import OverlayWidgetRedirect from "./routes/overlay/OverlayWidgetRedirect";
 import MasterOverlay from "./routes/overlay/MasterOverlay";
 import RemoteLoginPage from "./routes/remote/RemoteLoginPage";
 import LoginPage from "./auth/LoginPage";
-import Callback from "./auth/Callback";
+import ProjektorSayfasi from "./routes/ProjektorSayfasi";
+import BagimsizDockSayfasi from "./routes/BagimsizDockSayfasi";
 
 export default function App() {
   const loc = useLocation();
@@ -38,8 +39,9 @@ export default function App() {
     <Routes>
       <Route path="/" element={<PanelPage />} />
       <Route path="/panel" element={<PanelPage />} />
+      <Route path="/projektor" element={<ProjektorSayfasi />} />
+      <Route path="/dock" element={<BagimsizDockSayfasi />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/auth/callback" element={<Callback />} />
       <Route path="/remote" element={<RemoteLoginPage />} />
       <Route path="/remote/login" element={<RemoteLoginPage />} />
       <Route path="/oauth/twitch" element={<OAuthCallbackPage platform="twitch" />} />

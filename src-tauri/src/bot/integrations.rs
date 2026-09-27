@@ -123,7 +123,7 @@ pub async fn kick_listener(
           }
         }
         tokio::time::sleep(backoff).await;
-        if key_i % KICK_PUSHER_KEYS.len() == 0 {
+        if key_i.is_multiple_of(KICK_PUSHER_KEYS.len()) {
           backoff = (backoff.saturating_mul(2)).min(Duration::from_secs(12));
         }
       }
@@ -483,7 +483,7 @@ fn parse_twitch_line(line: &str) -> Option<ChatInbound> {
     return None;
   }
   let tags = parse_tags(tags_raw);
-  let msg_part = rest.splitn(2, " PRIVMSG ").nth(1)?;
+  let msg_part = rest.split_once(" PRIVMSG ")?.1;
   let text = msg_part
     .find(" :")
     .map(|i| &msg_part[i + 2..])

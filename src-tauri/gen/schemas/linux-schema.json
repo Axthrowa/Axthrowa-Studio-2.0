@@ -2031,6 +2031,12 @@
           "markdownDescription": "Sistem tarayıcısında URL açmaya izin verir"
         },
         {
+          "description": "Bot sekmesi: StreamAxT sunucusunu başlatma / durdurma / durum",
+          "type": "string",
+          "const": "allow-streamaxt",
+          "markdownDescription": "Bot sekmesi: StreamAxT sunucusunu başlatma / durdurma / durum"
+        },
+        {
           "description": "Küresel kısayolları kaydetmeye izin verir (tepsi / alta alınca da çalışsın)",
           "type": "string",
           "const": "allow-sync-global-hotkeys",

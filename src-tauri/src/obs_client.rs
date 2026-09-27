@@ -7,6 +7,7 @@ use std::time::Duration;
 use futures_util::StreamExt;
 use obws::events::Event as ObsEvent;
 use obws::requests::inputs::InputId;
+use obws::requests::EventSubscription;
 use obws::requests::scene_items::SetEnabled;
 use obws::requests::scenes::SceneId;
 use parking_lot::RwLock;
@@ -51,6 +52,67 @@ pub struct ObsInputInfo {
   pub muted: bool,
 }
 
+/// OBS tuvali (obs-websocket 5.7 `GetCanvasList`) — salt-okunur keşif.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ObsCanvasInfo {
+  pub name: String,
+  pub uuid: String,
+  pub main: bool,
+  pub width: u32,
+  pub height: u32,
+  pub fps: f64,
+  pub mix_audio: bool,
+  pub ephemeral: bool,
+  /// Tuvali oluşturan bilinen eklenti (adından); bilinmiyorsa `None`
+  pub provider: Option<&'static str>,
+  /// Bu uygulama bu tuvalde program sahnesini değiştirebilir mi (obs-websocket yalnız ana tuvalde izin verir)
+  pub scene_switch_supported: bool,
+}
+
+/// Tuval adından sağlayıcı eklenti. SE.Live tuvallerini "🚀 SE.Live: <ad>" biçiminde yayımlar
+/// (kullanıcının OBS'inde gözlemlendi, 2026-09-26).
+pub fn canvas_provider(name: &str) -> Option<&'static str> {
+  let n = name.to_lowercase();
+  if n.contains("se.live") {
+    Some("SE.Live")
+  } else if n.contains("aitum") || n.contains("vertical canvas") {
+    Some("Aitum Vertical")
+  } else {
+    None
+  }
+}
+
+/// Giriş ses seviyesi (obs-websocket `InputVolumeMeters`): kanalların en yükseği, dBFS.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ObsInputLevel {
+  pub name: String,
+  /// Tepe değeri (peak), dBFS; sessizlik `METER_FLOOR_DB`
+  pub peak_db: f32,
+  /// Ortalama büyüklük (magnitude), dBFS
+  pub magnitude_db: f32,
+}
+
+pub const METER_FLOOR_DB: f32 = -100.0;
+/// Bu kadar süre ölçer isteği gelmezse yüksek hacimli abonelik kapatılır.
+const METER_IDLE_MS: i64 = 10_000;
+
+/// Doğrusal genlik (obs-websocket "Mul") → dBFS. 0, negatif ve sayı olmayan değerler sessizlik sayılır.
+pub fn mul_to_db(mul: f32) -> f32 {
+  if !mul.is_finite() || mul <= 0.0 {
+    return METER_FLOOR_DB;
+  }
+  (20.0 * mul.log10()).clamp(METER_FLOOR_DB, 20.0)
+}
+
+/// Kanal başına `[magnitude, peak, inputPeak]` üçlülerini tek seviyeye indirger (kanalların en yükseği).
+pub fn summarize_levels(name: String, channels: &[[f32; 3]]) -> ObsInputLevel {
+  let peak = channels.iter().map(|c| c[1]).fold(0.0f32, f32::max);
+  let magnitude = channels.iter().map(|c| c[0]).fold(0.0f32, f32::max);
+  ObsInputLevel { name, peak_db: mul_to_db(peak), magnitude_db: mul_to_db(magnitude) }
+}
+
 struct ObsConnection {
   client: Option<Arc<obws::Client>>,
   host: String,
@@ -64,6 +126,10 @@ pub struct ObsClientState {
   connecting: AtomicBool,
   last_automation_ms: AtomicI64,
   sequence_gen: AtomicU64,
+  meters: RwLock<Vec<ObsInputLevel>>,
+  meters_updated_ms: AtomicI64,
+  meter_demand_ms: AtomicI64,
+  meters_on: AtomicBool,
 }
 
 impl Default for ObsClientState {
@@ -85,6 +151,10 @@ impl ObsClientState {
       connecting: AtomicBool::new(false),
       last_automation_ms: AtomicI64::new(0),
       sequence_gen: AtomicU64::new(0),
+      meters: RwLock::new(Vec::new()),
+      meters_updated_ms: AtomicI64::new(0),
+      meter_demand_ms: AtomicI64::new(0),
+      meters_on: AtomicBool::new(false),
     }
   }
 
@@ -206,6 +276,27 @@ impl ObsClientState {
       .client
       .clone()
       .ok_or_else(|| "OBS bağlı değil".to_string())
+  }
+
+  /// Etkin yayın servisi (tür + ayarlar). Ayarlar kullanıcının yayın anahtarını içerir — çağıran saklamalı,
+  /// asla günlüğe ya da istemciye yazmamalı.
+  pub async fn stream_service(&self) -> Result<(String, serde_json::Value), String> {
+    let client = self.client()?;
+    let s = client
+      .config()
+      .stream_service_settings::<serde_json::Value>()
+      .await
+      .map_err(|e| e.to_string())?;
+    Ok((s.r#type, s.settings))
+  }
+
+  pub async fn set_stream_service(&self, kind: &str, settings: &serde_json::Value) -> Result<(), String> {
+    let client = self.client()?;
+    client
+      .config()
+      .set_stream_service_settings(kind, settings)
+      .await
+      .map_err(|e| e.to_string())
   }
 
   fn set_error(&self, error: &str) {
@@ -338,6 +429,137 @@ impl ObsClientState {
       .set_muted(InputId::Name(input_name), muted)
       .await
       .map_err(|error| format!("OBS ses durumu değiştirilemedi: {error}"))
+  }
+
+  /// Giriş ses seviyeleri ve son ölçümün yaşı (ms). İlk çağrı yüksek hacimli `InputVolumeMeters` aboneliğini
+  /// açar (OBS her 50 ms'de tüm girişleri gönderir); `METER_IDLE_MS` boyunca istek gelmezse abonelik kapanır.
+  /// Yalnız okuma: OBS'te hiçbir ayar değişmez.
+  pub async fn meters(self: &Arc<Self>) -> Result<(Vec<ObsInputLevel>, i64), String> {
+    let client = self.client()?;
+    let now = crate::db::chrono_now();
+    self.meter_demand_ms.store(now, Ordering::SeqCst);
+    if self.meters_on.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+      // Akışı abonelikten önce al: ilk ölçüm kaçmasın
+      let events = match client.events() {
+        Ok(e) => e,
+        Err(e) => {
+          self.meters_on.store(false, Ordering::SeqCst);
+          return Err(format!("OBS olay akışı alınamadı: {e}"));
+        }
+      };
+      if let Err(e) = client.reidentify(EventSubscription::ALL | EventSubscription::INPUT_VOLUME_METERS).await {
+        self.meters_on.store(false, Ordering::SeqCst);
+        return Err(format!("OBS ses ölçer aboneliği açılamadı: {e}"));
+      }
+      tokio::spawn(Arc::clone(self).meter_pump(client, events));
+    }
+    let updated = self.meters_updated_ms.load(Ordering::SeqCst);
+    let age = if updated == 0 { -1 } else { now - updated };
+    Ok((self.meters.read().clone(), age))
+  }
+
+  /// Ölçer aboneliği şu an açık mı (tanılama / test).
+  pub fn meters_active(&self) -> bool {
+    self.meters_on.load(Ordering::SeqCst)
+  }
+
+  async fn meter_pump(self: Arc<Self>, client: Arc<obws::Client>, events: obws::events::EventStream) {
+    let mut events = std::pin::pin!(events);
+    let mut tick = tokio::time::interval(Duration::from_secs(1));
+    loop {
+      tokio::select! {
+        ev = events.next() => match ev {
+          Some(ObsEvent::InputVolumeMeters { inputs }) => {
+            let list = inputs.into_iter().map(|m| summarize_levels(m.name, &m.levels)).collect();
+            *self.meters.write() = list;
+            self.meters_updated_ms.store(crate::db::chrono_now(), Ordering::SeqCst);
+          }
+          Some(_) => {}
+          None => break, // bağlantı kapandı; yeni bağlantıda abonelik yeniden açılır
+        },
+        _ = tick.tick() => {
+          if crate::db::chrono_now() - self.meter_demand_ms.load(Ordering::SeqCst) > METER_IDLE_MS {
+            let _ = client.reidentify(EventSubscription::ALL).await;
+            break;
+          }
+        }
+      }
+    }
+    self.meters.write().clear();
+    self.meters_updated_ms.store(0, Ordering::SeqCst);
+    self.meters_on.store(false, Ordering::SeqCst);
+  }
+
+  /// OBS tuvalleri (obs-websocket 5.7+). Eski OBS'te istek bilinmez → açıklayıcı hata.
+  pub async fn canvases(&self) -> Result<Vec<ObsCanvasInfo>, String> {
+    let client = self.client()?;
+    let list = client
+      .canvases()
+      .list()
+      .await
+      .map_err(|e| format!("OBS tuvalleri okunamadı (obs-websocket 5.7 / OBS 32.1+ gerekir): {e}"))?;
+    Ok(
+      list
+        .into_iter()
+        .map(|c| {
+          let v = c.video_settings;
+          let main = c.flags.contains(obws::responses::canvases::CanvasFlags::MAIN);
+          ObsCanvasInfo {
+            provider: canvas_provider(&c.id.name),
+            name: c.id.name,
+            uuid: c.id.uuid.to_string(),
+            main,
+            width: v.base_width,
+            height: v.base_height,
+            fps: if v.fps_denominator > 0 { v.fps_numerator as f64 / v.fps_denominator as f64 } else { 0.0 },
+            mix_audio: c.flags.contains(obws::responses::canvases::CanvasFlags::MIX_AUDIO),
+            ephemeral: c.flags.contains(obws::responses::canvases::CanvasFlags::EPHEMERAL),
+            scene_switch_supported: main,
+          }
+        })
+        .collect(),
+    )
+  }
+
+  /// Kaydı başlatır / durdurur (eylem kayıt defteri). Durum zaten istenen hâldeyse hata sayılmaz.
+  pub async fn set_recording(&self, on: bool) -> Result<(), String> {
+    let client = self.client()?;
+    let sonuc = if on {
+      client.recording().start().await.map(|_| ())
+    } else {
+      client.recording().stop().await.map(|_| ())
+    };
+    match sonuc {
+      Ok(()) => Ok(()),
+      Err(error) => {
+        let message = error.to_string();
+        let lower = message.to_ascii_lowercase();
+        let zaten = if on { lower.contains("already") || lower.contains("active") } else { lower.contains("not") && lower.contains("active") };
+        if zaten {
+          Ok(())
+        } else {
+          Err(format!("OBS kaydı {}: {message}", if on { "başlatılamadı" } else { "durdurulamadı" }))
+        }
+      }
+    }
+  }
+
+  /// Tekrar arabelleğini kaydeder. Arabellek kapalıysa açıklayıcı hata (OBS'te açılması gerekir).
+  pub async fn save_replay(&self) -> Result<(), String> {
+    let client = self.client()?;
+    let etkin = client
+      .replay_buffer()
+      .status()
+      .await
+      .map_err(|error| format!("Tekrar arabelleği durumu okunamadı: {error}"))?;
+    if !etkin {
+      return Err("Tekrar arabelleği kapalı — OBS'te açın (Ayarlar → Çıkış → Tekrar Arabelleği)".into());
+    }
+    client
+      .replay_buffer()
+      .save()
+      .await
+      .map_err(|error| format!("Tekrar kaydedilemedi: {error}"))
   }
 
   pub async fn toggle_stream(&self) -> Result<bool, String> {
@@ -1009,5 +1231,34 @@ mod kalici_baglanti_testleri {
     ] {
       assert!(!is_transport_error(m), "{m}");
     }
+  }
+}
+
+#[cfg(test)]
+mod tuval_tests {
+  use super::{canvas_provider, mul_to_db, summarize_levels, METER_FLOOR_DB};
+
+  #[test]
+  fn ses_seviyesi_dbfs_donusumu() {
+    assert_eq!(mul_to_db(1.0), 0.0);
+    assert!((mul_to_db(0.5) - (-6.0206)).abs() < 0.001);
+    assert_eq!(mul_to_db(0.0), METER_FLOOR_DB);
+    assert_eq!(mul_to_db(-1.0), METER_FLOOR_DB);
+    assert_eq!(mul_to_db(f32::NAN), METER_FLOOR_DB);
+    assert_eq!(mul_to_db(1e-9), METER_FLOOR_DB, "çok küçük değer taban altına inmez");
+    assert_eq!(mul_to_db(1e6), 20.0, "kırpılma üst sınırda kalır");
+    // Kanalların en yükseği; boş giriş sessizlik
+    let l = summarize_levels("Mikrofon".into(), &[[0.1, 0.25, 0.3], [0.2, 0.5, 0.6]]);
+    assert!((l.peak_db - mul_to_db(0.5)).abs() < 1e-6);
+    assert!((l.magnitude_db - mul_to_db(0.2)).abs() < 1e-6);
+    assert_eq!(summarize_levels("Boş".into(), &[]).peak_db, METER_FLOOR_DB);
+  }
+
+  #[test]
+  fn tuval_saglayicisi_adindan_taninir() {
+    assert_eq!(canvas_provider("🚀 SE.Live: Vertical"), Some("SE.Live"));
+    assert_eq!(canvas_provider("Aitum Vertical"), Some("Aitum Vertical"));
+    assert_eq!(canvas_provider("Main"), None);
+    assert_eq!(canvas_provider("Dikey"), None);
   }
 }

@@ -189,10 +189,6 @@ export function fetchDashboard() {
   return json<DashboardSnapshot>("/dashboard");
 }
 
-export function fetchSessions(limit = 20) {
-  return json<{ sessions: StreamSession[] }>(`/sessions?limit=${limit}`);
-}
-
 export function startSession(title?: string) {
   return json<StreamSession>("/sessions", {
     method: "POST",

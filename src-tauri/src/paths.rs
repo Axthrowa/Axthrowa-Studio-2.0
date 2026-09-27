@@ -161,9 +161,3 @@ pub fn resolve(resource_root: PathBuf) -> AppPaths {
   }
 }
 
-/// Depolama kökü (eski `root/app-data` içeriği artık doğrudan burada).
-pub fn ensure_subdir(data_dir: &Path, name: &str) -> PathBuf {
-  let p = data_dir.join(name);
-  let _ = fs::create_dir_all(&p);
-  p
-}

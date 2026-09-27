@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { HOWTO, HowToUse, howToFor } from './HowToUse'
 
-describe('Axt rehberi', () => {
+describe('Resonance rehberi', () => {
   it('iki dilde de aynı sayıda adım ve sorun giderme maddesi var', () => {
     expect(HOWTO.tr.steps.length).toBe(HOWTO.en.steps.length)
     expect(HOWTO.tr.troubleshoot.length).toBe(HOWTO.en.troubleshoot.length)
@@ -26,7 +26,7 @@ describe('Axt rehberi', () => {
     const html = renderToStaticMarkup(
       <HowToUse open onClose={() => {}} language="tr" obsUrl="http://127.0.0.1:8843/resonance/overlay" />,
     )
-    expect(html).toContain('Axt nasıl kullanılır?')
+    expect(html).toContain('Resonance nasıl kullanılır?')
     expect(html).toContain('http://127.0.0.1:8843/resonance/overlay')
     expect(html).toContain('role="dialog"')
     for (const s of HOWTO.tr.steps) expect(html).toContain(s.title.replace("'", '&#x27;'))

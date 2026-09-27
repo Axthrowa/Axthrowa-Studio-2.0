@@ -1,4 +1,5 @@
 import OBSWebSocket from "obs-websocket-js";
+import { isAudioInput } from "./obsAudio";
 
 export type ObsConnection = {
   host: string;
@@ -163,36 +164,6 @@ export async function toggleInputMute(inputName: string): Promise<boolean> {
 }
 
 /**
- * OBS'teki ses kaynaklarını toplu sustur / aç.
- *
- * `kindsHint` verilmezse yaygın ses girdi türleri seçilir (mikrofon, masaüstü
- * sesi, tarayıcı kaynağı vb.). Sahne video kameralarına dokunulmaz.
- */
-export async function setAudioInputsMuted(
-  muted: boolean,
-  opts?: { onlyNames?: string[]; excludeNames?: string[] }
-): Promise<number> {
-  const inputs = await listInputs();
-  const only = new Set((opts?.onlyNames || []).filter(Boolean));
-  const exclude = new Set((opts?.excludeNames || []).filter(Boolean));
-  const audioKind =
-    /wasapi|coreaudio|pulse|alsa|audio|vlc_source|ffmpeg_source|browser_source|mediassource|soundtrack/i;
-  let n = 0;
-  for (const i of inputs) {
-    if (exclude.has(i.name)) continue;
-    const match = only.size ? only.has(i.name) : audioKind.test(i.kind) || /ses|audio|mic|masaüstü|desktop/i.test(i.name);
-    if (!match) continue;
-    try {
-      await setInputMute(i.name, muted);
-      n += 1;
-    } catch {
-      /* bazı girdiler mute desteklemez */
-    }
-  }
-  return n;
-}
-
-/**
  * OBS ses kaynaklarını toplu aç/kapa.
  * En az biri açıksa hepsini susturur; hepsi sessizse hepsini açar.
  * @returns Yeni durum: `true` = susturuldu.
@@ -203,8 +174,6 @@ export async function toggleAudioInputsMuted(
   const inputs = await listInputs();
   const only = new Set((opts?.onlyNames || []).filter(Boolean));
   const exclude = new Set((opts?.excludeNames || []).filter(Boolean));
-  const audioKind =
-    /wasapi|coreaudio|pulse|alsa|audio|vlc_source|ffmpeg_source|browser_source|mediassource|soundtrack/i;
 
   let anyUnmuted = false;
   const targets: string[] = [];
@@ -212,7 +181,7 @@ export async function toggleAudioInputsMuted(
     if (exclude.has(i.name)) continue;
     const match = only.size
       ? only.has(i.name)
-      : audioKind.test(i.kind) || /ses|audio|mic|masaüstü|desktop/i.test(i.name);
+      : isAudioInput(i.kind, i.name);
     if (!match) continue;
     targets.push(i.name);
     try {
@@ -287,27 +256,6 @@ export async function getStreamHealth(): Promise<StreamHealth> {
   };
 }
 
-/** OBS WebSocket kısa süreliğine hazır olmayabilir; birkaç kez dene. */
-export async function startStreamWithRetry(cfg: ObsConnection, tries = 3) {
-  let last: unknown;
-  for (let i = 0; i < tries; i++) {
-    try {
-      await connectObs(cfg, 5000);
-      await Promise.race([
-        startStream(),
-        new Promise<never>((_, rej) =>
-          setTimeout(() => rej(new Error("StartStream zaman aşımı")), 5000)
-        ),
-      ]);
-      return;
-    } catch (e) {
-      last = e;
-      await new Promise((r) => setTimeout(r, 300 * (i + 1)));
-    }
-  }
-  throw last instanceof Error ? last : new Error(String(last || "StartStream başarısız"));
-}
-
 /**
  * Uygulamamızın overlay URL'lerini taşıyan OBS tarayıcı kaynaklarını yeniler.
  *
@@ -372,25 +320,3 @@ export async function stopStreamWithRetry(cfg: ObsConnection, tries = 3) {
   throw last instanceof Error ? last : new Error(String(last || "StopStream başarısız"));
 }
 
-/** Aktif program sahnesi değişince (BRB mute otomasyonu). */
-export function onProgramSceneChanged(
-  cb: (sceneName: string) => void
-): () => void {
-  const client = getObs();
-  const handler = (ev: { sceneName?: string }) => {
-    if (ev?.sceneName) cb(ev.sceneName);
-  };
-  client.on("CurrentProgramSceneChanged", handler as any);
-  return () => {
-    try {
-      client.off("CurrentProgramSceneChanged", handler as any);
-    } catch {
-      /* */
-    }
-  };
-}
-
-export async function getCurrentProgramScene(): Promise<string> {
-  const res = await getObs().call("GetCurrentProgramScene");
-  return String((res as any).currentProgramSceneName || (res as any).sceneName || "");
-}

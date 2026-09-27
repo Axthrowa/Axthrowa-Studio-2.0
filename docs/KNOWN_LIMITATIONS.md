@@ -1,0 +1,105 @@
+# Bilinen Sınırlamalar — Streaming OS turu (2026-09-25/26)
+
+Bu liste bilerek yapılmayanları, doğrulanamayanları ve ödünleşimleri dürüstçe kaydeder. "Destekleniyor" demediğimiz
+hiçbir şey arayüzde destekleniyor gibi gösterilmez.
+
+## Canlı ortamda DOĞRULANMAYANLAR
+
+| Konu | Durum | Neden |
+|---|---|---|
+| Gerçek platformlara (Kick, Twitch, YouTube) çoklu yayın | **UNVERIFIED** | Kullanıcı kuralı: gerçek yayın başlatılmaz. Tüm uçtan uca testler yerel RTMP dinleyicileriyle (127.0.0.1) yapıldı. |
+| RTMPS hedefleri (Twitch `rtmps://live.twitch.tv:443/app`, YouTube `rtmps://a.rtmps.youtube.com:443/live2`, Kick) | **UNVERIFIED** | Ön ayarlar resmi belgelere göre; FFmpeg RTMPS desteği var ama canlı bağlantı denenmedi. |
+| Platform kuralları (Kick ≤ 8000 kbps, yalnız H.264, 2 sn anahtar kare; YouTube anahtar kare ≤ 4 sn; Twitch eşzamanlı yayın koşulları) | CONFIRMED_IN_OFFICIAL_DOCS (tarih: 2026-09-25) | Platformlar kuralları değiştirebilir; tablo `multistream/policy.rs`'te tek yerde. |
+| LAN kipinde WS şifre ayıklaması | birim testli, canlı LAN denenmedi | 0.0.0.0'a bağlanmak Windows Güvenlik Duvarı penceresi açıp kullanıcının tam ekran oyununu bölebilirdi. |
+| Kontrol Merkezi "Sahne & Ses" paneli ile gerçek OBS | **kısmi** (2026-09-26): istemci katmanı gerçek OBS 32.2.2'ye karşı yalnız okuma çağrılarıyla doğrulandı (`examples/obs_probe`: 5 sahne, 11 giriş, 2 tuval, 8 girişte ses ölçümü, 12 sn boşta ölçer aboneliğinin kapanması); sahne geçişi / susturma canlı denenmedi | Kullanıcının canlı OBS sahnesini test için değiştirmedim. Tarayıcı düzeneğinde panel OBS'e JS istemcisiyle bağlanır ve parola ister — parola girmek kural dışı; ölçer çubuklarının arayüzde canlı görünümü bu yüzden **UNVERIFIED** (Tauri uygulamasında sunucu yolunu kullanır). |
+| BotRix / StreamElements arayüz araştırmasının bir kısmı | **kısmen giderildi (2026-09-26)** | Chrome bağlandı: StreamElements'in beş SE.Live makalesi ve Ground Control makalesi tam metin okundu (`CONFIRMED_OFFICIAL_DOCS`). BotRix paneli oturum olmadığı için `NOT_ACCESSIBLE` (giriş yapılmadı); herkese açık BotRix belgeleri okundu. SE.Live / Ground Control uygulama arayüzleri gözlenmedi (masaüstü girdi otomasyonu yapılmıyor). |
+
+## Mimari ödünleşimler
+
+1. **Tek kodlama → tüm hedefler aynı akış.** Çözünürlük, bit hızı ve ses izi hedef başına farklılaşamaz; en katı
+   platform (çoğunlukla Kick: ≤ 8000 kbps, H.264) OBS kodlayıcı ayarını belirler. Yayın öncesi kontrol bu çakışmayı
+   uyarı/engel olarak gösterir. Hedef başına yeniden kodlama (ikinci kodlayıcı) sonraki faz.
+2. **Hedef başına ses izi seçimi yok** (AUDIO_ENGINE.md §3): tüm hedefler OBS'in yayın izini alır.
+3. **Dikey tuval / Twitch Dual Format uygulanmadı** (MULTICANVAS_ARCHITECTURE.md): OBS 32'de ek tuval altyapısı
+   var, ancak ayrı çıkış eklenti/Enhanced Broadcasting gerektiriyor; yalnız mimari ve rehber hazır.
+4. **Alıcı (ingest) yayın anahtarını doğrulamaz.** FFmpeg `-listen 1` anahtar denetimi yapmaz. Azaltımlar: yalnız
+   127.0.0.1'e bağlanır, her oturumda rastgele port + rastgele anahtar, oturum kapanınca kapanır. Oturum açıkken aynı
+   bilgisayardaki başka bir süreç alıcıya yayın gönderebilir (yerel ayrıcalık gerektirir).
+5. **Yayıncı maliyeti FFmpeg RTMP çıkışından gelir:** hedef başına tek çekirdeğin ~%22–30'u (PERFORMANCE_REPORT.md).
+   Yönlendiricinin kendi payı ~%1–3. Yerel bir Rust RTMP yayıncısı bu maliyeti düşürebilir — sonraki faz.
+6. **Kontrol Merkezi yerleşimi ızgaradır:** gizle, sırala, genişlik (1–3), hazır düzenler. Bölme ağacı, sekme yığını
+   ve ayrı pencere (CONTROL_CENTER_ARCHITECTURE.md §2) yapılmadı.
+7. ~~Sahne geçişi ve susturma denetim günlüğüne yazılmaz~~ → Kontrol Merkezi'nden (Sahne & Ses, Hızlı eylemler,
+   Kontrol destesi) yapılanlar artık eylem kayıt defterinden geçer ve `ACTION:<id>` olarak günlüğe düşer (e58c677).
+   **Kalan:** küresel kısayollar ve Dashboard'daki OBS kartı hâlâ doğrudan Tauri/obs-websocket yolunu kullanır —
+   günlüğe yazılmaz.
+8. ~~Ses karıştırıcıda seviye ölçer yok~~ → Sahne & Ses panelinde tepe/ortalama ölçer (4b8b20d). Ses seviyesi
+   (fader) ayarı yok; yalnız susturma.
+
+## Güvenlik ödünleşimleri
+
+1. **LAN'dan yüklenen overlay OBS şifresini almaz** (0077750). Aynı bilgisayardaki OBS (127.0.0.1) etkilenmez. İki
+   bilgisayarlı kurulumda BRB overlay'inin OBS'e doğrudan bağlanan otomasyonu (mikrofon susturma, sahne dönüşü) OBS
+   WebSocket kimlik doğrulaması açıksa çalışmaz. Bu, şifrenin LAN'daki her cihaza açık olmasından daha güvenli bir
+   varsayılan olarak seçildi.
+2. **Loopback WS istemcileri OBS şifresini almaya devam eder** (aynı bilgisayardaki overlay otomasyonu için gerekli).
+   Yabancı web sitelerinin WS el sıkışması köken denetimiyle zaten reddediliyor (`local_guard.rs`).
+3. **Uzak kullanıcılar `broadcast.outputs` izniyle özel RTMP hedefi ekleyebilir;** hedef adresi herhangi bir ana
+   makine olabilir (iç ağ dahil). Yalnız yöneticinin verdiği izinle; tüm eklemeler denetim günlüğünde.
+
+## Kullanıcıyı etkileyen tek seferlik durumlar
+
+1. **Sırlar önceden hiç kalıcı değildi** (keyring mock deposu, a76f2b5). Düzeltmeden önce girilen OBS şifresi ve
+   Kick oturumu diske/kasaya yazılmamıştı: **OBS şifresini ve Kick girişini bir kez yeniden girmek gerekir.**
+   Düzeltmeyi geri almak (eski sürüme dönmek) bu sorunu geri getirir.
+2. **StreamAxT'te çapraz sohbet aktarımı (`cross_chat_enabled`) kullanıcının veritabanlarında açık.** Twitch'e
+   eşzamanlı yayında birleşik sohbeti yayında göstermek Twitch koşullarıyla çelişebilir; yayın öncesi kontrol bunu
+   uyarı olarak gösterir. Kapatmak kullanıcının kararıdır, kendiliğinden değiştirilmedi.
+3. **Kick yetkilendirmesi güncelleme anında yarımdaysa** (auth-url açılmış, geri dönüş gelmemiş) yeni sürümde `state`
+   eşleşmez; panelden bir kez yeniden başlatılmalı.
+
+## StreamAxT (bot) tarafı
+
+1. **Kalkan modunda "yalnız takipçi" ve "en az hesap yaşı" uygulanmaz** — sohbet olayları bu bilgiyi taşımıyor;
+   sayfa bunu gerekçesiyle "desteklenmiyor" diye gösterir. Platformun kendi sohbet modları (takipçi modu, yavaş mod)
+   StreamAxT'ten değiştirilmez.
+2. **Kalkanın platformda silmesi varsayılan kapalı** (onayla açılır); kapalıyken yalnız bot yok sayar ve OBS
+   sohbetinde gizler.
+3. **Kaydedilmemiş değişiklik şeridi dört sayfada** (Ayarlar, Bot Moderasyonu, Chat Oyunları, Gemini AI). Diğer
+   sayfalar otomatik kaydediyor ya da tek alanlı formlar.
+
+## Derleme
+
+- Panel ana JS paketi 1292 kB (sınır uyarısı 1200 kB) — bu turdan önce de aşılıyordu; Kontrol Merkezi ayrı ~30 kB
+  parçaya bölündü. Kod bölme sonraki iş.
+
+## İkinci tur (2026-09-26, "Creator Streaming OS")
+
+| Konu | Durum | Açıklama |
+|---|---|---|
+| OBS 32 + SE.Live kararlılığı | `CONFIRMED_OFFICIAL_DOCS` uyarı | StreamElements, OBS 32'de SE.Live dahil birçok eklentiyi etkileyen kararlılık sorunları olduğunu ve çökmede OBS 31'e dönmeyi öneriyor. Kullanıcı OBS 32.2.2 + SE.Live kullanıyor. Uygulamamız OBS'e yalnız obs-websocket üzerinden, SE.Live'a hiç dokunmadan bağlanır. |
+| SE.Live ikincil tuvali | yalnız **keşif** | obs-websocket 5.7 ikincil tuvalde sahne değiştirmeye, tuval oluşturmaya, tuval Backtrack'ini tetiklemeye izin vermiyor; SE.Live'ın uzaktan denetim API'si yok. Tuval listesi gösterilir, "SE.Live yönetir" yazılır. |
+| Aitum Vertical köprüsü (ADR-002 katman 2) | bu kullanıcıda **uygulanamaz** | Resmi belge: SE.Live ve Aitum Vertical birlikte kurulmamalı. |
+| Kendi GPL-2.0 OBS eklentimiz (tuval oluşturma, hedef başına kodlayıcı/ses izi) | **PLANNED** (P2) | OBS SDK derleme zinciri, ayrı açık kaynak depo ve imzalı dağıtım gerektirir; bu turda başlanmadı. Tasarım: `ENCODER_LIFECYCLE_DESIGN.md`, `STREAMING_ENGINE_DECISION.md` ADR-002. |
+| Donanım Stream Deck | HTTP yolu VERIFIED (curl), Elgato yazılımıyla **UNVERIFIED** | Stream Deck yazılımı/donanımı bu makinede yok. Yerel Elgato eklentisi PLANNED. Donanım tuşunda `confirm: true` göndermek çift dokunuş korumasını atlar (belgelendi). |
+| Kontrol destesi yapılandırması | son yazan kazanır | Yapılandırma panel ayarlarında tek kayıt; iki cihazdan aynı anda düzenlenirse sonuncusu geçerli olur (sürüm kilidi yok). |
+| Twitch sohbet modları, mesaj silme | canlı **UNVERIFIED** | Gerçek moderasyon kullanıcı kuralı gereği tetiklenmedi. Gövde kuralları Twitch resmi belgesine göre (yavaş mod 3–120 sn, takipçi modu 0–129600 dk) birim testli; hata/yetenek yolları yalıtılmış StreamAxT'e karşı 8 durumda doğrulandı. Kick ve YouTube'da resmi sohbet modu API'si yok → devre dışı + neden. |
+| Ses ölçerleri | yalnız okuma, talebe bağlı | OBS aboneliği ilk istekte açılır, 10 sn istek gelmezse kapanır; arayüz 5/sn yoklar. Tüm girişler o an sessiz olduğu için canlı ölçümde yalnız -100 dBFS görüldü; dönüşüm birim testli. |
+| Tek seferlik test başarısızlığı | izleniyor | `server_api` paketinde bir çalıştırmada 22 testten 1'i başarısız oldu; çıktı o an filtrelendiği için hangi test olduğu kaydedilmedi. Sonraki 41 çalıştırmada (12 sıralı, 4 eşzamanlı yük altında, 25 döngü) tekrar etmedi. Test devre dışı bırakılmadı; olası neden paylaşılan ortam/port yarışı. Yeniden görülürse tam çıktı saklanacak. |
+| Eski StreamAxT dağıtım arşivleri | dikkat | `release\StreamAxT-v1.0.0-*.zip` arşivleri AGPL `tiktok-live-connector` 2.5.0 içerir; klasörler 2.4.0'a indirildi ama arşivler yeniden paketlenmedi. |
+
+## Yerel yayın çekirdeği (ADR-003) — 2026-09-26
+
+| Konu | Durum | Açıklama |
+|---|---|---|
+| Kurulu OBS gerekir | tasarım gereği | Çekirdek kullanıcının kurulu OBS 32.x kitaplıklarını kullanır; OBS yoksa ya da ana sürüm farklıysa açık hatayla başlamaz (panelin geri kalanı etkilenmez). |
+| Yakalama kaynakları (ekran, oyun, mikrofon, masaüstü sesi) | **UNVERIFIED** | Kod yolu var; kullanıcı kuralı gereği sınamada ekran/oyun/cihaz yakalanmadı. Oyun yakalama, libobs'un oyuna kanca enjeksiyonunu kullanır (OBS ile aynı mekanizma). |
+| Kamera, pencere yakalama | MISSING | Cihaz/pencere seçimi arayüzü yok. |
+| Sahne düzenleyici | PARTIAL | Kaynaklar tuvale sığdırılarak ya da sol üste eklenir; sürükle-bırak, kırpma, kilit, grup, geri al yok. Tek sahne/tuval. |
+| Hedef başına ses izi / ayrı ses karışımı | MISSING (arayüz) | Çekirdek 6 iz destekler; panel tek AAC kodlayıcı kullanır. |
+| Kayıt ve tekrar arabelleği | PARTIAL | Çekirdek kaydı destekler (sınamada paylaşılan kodlayıcıyla); panelde kayıt düğmesi ve tekrar arabelleği yok. |
+| Hedef tuvali | oturum içinde sabit | Bir hedef bir motor oturumunda ilk bağlandığı tuvalde kalır; değiştirmek için motor yeniden başlatılır. |
+| Önizleme boyutu | ilk istek belirler | Bir tuvalin önizlemesi ilk istenen genişlikte açılır (varsayılan 480). |
+| Kurulum dosyası (NSIS) | motor YOK | Motor portable pakete girer; Tauri kaynaklarına eklemek, motor derlenmemişken panelin kendi derlemesini kıracağı için kurulum dosyasına henüz eklenmedi. |
+| Yardımcı programlar | kopyalanır | `obs-ffmpeg-mux.exe`, `obs-nvenc-test.exe` vb. kurulu OBS'ten çekirdeğin klasörüne kopyalanır (libobs onları çalışan exe'nin yanında arar). |
+| GO LIVE bütünleşmesi | PARTIAL | Motor hedefleri Yayın motoru panelinden tek tek başlatılır; mevcut "GO LIVE" düğmesi FFmpeg yönlendiricisini kullanır. |

@@ -3,6 +3,7 @@ import { io } from 'socket.io-client'
 import { useYtmd } from '../context/YtmdContext'
 import { getYtmdHost, getYtmdPort, getYtmdToken } from '../lib/ytmdAuth'
 import { isHostAvailable, putNowPlaying } from '../lib/hostBridge'
+import { PROGRESS_TICK_MS } from '../components/widget/skinParts'
 
 /// Parça değişmese de ilerlemeyi bu sıklıkta host'a yaz. Seyrek yazınca
 /// overlay ekranları eski bir tabandan yürütüyor ve saniye takılıyordu.
@@ -148,7 +149,7 @@ export function useYtmdNowPlaying(enabled = true, override = null, bridge = fals
       if (!base.playing) return
       const next = base.progress + (Date.now() - base.at)
       setProgressMs(base.duration > 0 ? Math.min(next, base.duration) : next)
-    }, 250)
+    }, PROGRESS_TICK_MS)
 
     // Host yeniden başladığında bir sonraki `state-update`'i beklemeden
     // mevcut parçayı geri koy.

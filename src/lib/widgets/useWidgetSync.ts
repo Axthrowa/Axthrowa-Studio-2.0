@@ -486,13 +486,3 @@ export function useWidgetConfig(kind: string) {
   return { config, loading, setConfig };
 }
 
-/** Panel → sahte olay yayını */
-export async function widgetsTest(kind: string, event?: string) {
-  const r = await fetch(`${API_BASE}/api/botaxt/widgets/test`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kind, ...(event ? { event } : {}) }),
-  });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json() as Promise<{ ok: boolean; broadcast: number }>;
-}

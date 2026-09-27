@@ -1,3 +1,4 @@
+import { Keyboard, AlertCircle } from "lucide-react";
 import ObsShortcutSettings, { type SceneNavHint } from "../studio/ObsShortcutSettings";
 import ObsActionSettings from "../studio/ObsActionSettings";
 import SourceVisibilityHotkeys from "../studio/SourceVisibilityHotkeys";
@@ -50,76 +51,109 @@ export default function HotkeysPage({
   const setAll = (next: HotkeyRow[]) => onPatch({ actionHotkeys: next });
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 p-5">
-      <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-white">Kısayollar</h2>
-        <p className="text-xs leading-relaxed text-panel-muted">
-          Tuşlar uygulama tepsideyken de çalışır. Noktalar: <span className="text-emerald-300">yeşil</span> =
-          kayıtlı, <span className="text-amber-300">sarı</span> = yalnız panel odaktayken,{" "}
-          <span className="text-red-300">kırmızı</span> = kaydedilemedi (imleci üzerine getirip sebebini gör).
-          {!obsConnected && (
-            <span className="ml-1 text-amber-200">
-              OBS'e bağlı değil: kaynak ve OBS kısayol listeleri için önce Dashboard'dan bağlan.
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-6">
+      {/* Header Deck */}
+      <header className="rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-xl border border-panel-accent/30 bg-panel-accent/15 text-panel-accent shadow-glow-sm">
+              <Keyboard className="size-5.5" />
             </span>
-          )}
-        </p>
+            <div>
+              <h2 className="font-display text-xl font-bold tracking-tight text-white">
+                Stüdyo Kısayolları
+              </h2>
+              <p className="text-sm font-medium text-white/80">
+                Tüm global ve yerel kısayol atamalarını tek merkezden yönetin
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-300 font-semibold">
+              <span className="size-2 rounded-full bg-emerald-400 shadow-glow-sm" />
+              Küresel Kayıtlı
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-amber-300 font-semibold">
+              <span className="size-2 rounded-full bg-amber-400" />
+              Panel Odaklı
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-red-300 font-semibold">
+              <span className="size-2 rounded-full bg-red-400" />
+              Çakışma / Hata
+            </span>
+          </div>
+        </div>
+
+        {!obsConnected && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs md:text-sm text-amber-200">
+            <AlertCircle className="size-4.5 shrink-0 mt-0.5" />
+            <div className="leading-relaxed font-medium">
+              <span className="font-bold">OBS bağlantısı aktif değil: </span>
+              Kaynak ve sahne kısayol listelerini senkronize etmek için önce Dashboard üzerinden OBS WebSocket bağlantısını kurun.
+            </div>
+          </div>
+        )}
       </header>
 
-      <ObsShortcutSettings
-        obs={obs}
-        scenes={scenes}
-        inputs={inputs}
-        globalHotkeys={globalHotkeys}
-        hotkeyFailures={hotkeyFailures}
-        hotkeyError={hotkeyError}
-        onListeningChange={onListeningChange}
-        onPatch={onPatch}
-        onGoScene={onGoScene}
-        onAction={onAction}
-      />
+      {/* Sections */}
+      <div className="space-y-6">
+        <ObsShortcutSettings
+          obs={obs}
+          scenes={scenes}
+          inputs={inputs}
+          globalHotkeys={globalHotkeys}
+          hotkeyFailures={hotkeyFailures}
+          hotkeyError={hotkeyError}
+          onListeningChange={onListeningChange}
+          onPatch={onPatch}
+          onGoScene={onGoScene}
+          onAction={onAction}
+        />
 
-      <SourceVisibilityHotkeys
-        rows={parts.source}
-        scenes={scenes}
-        obsConnected={obsConnected}
-        registered={globalHotkeys}
-        failures={hotkeyFailures}
-        onListeningChange={onListeningChange}
-        onChange={(next) => setAll(replaceSection(all, "source", next))}
-        onRun={onRunRow}
-      />
+        <SourceVisibilityHotkeys
+          rows={parts.source}
+          scenes={scenes}
+          obsConnected={obsConnected}
+          registered={globalHotkeys}
+          failures={hotkeyFailures}
+          onListeningChange={onListeningChange}
+          onChange={(next) => setAll(replaceSection(all, "source", next))}
+          onRun={onRunRow}
+        />
 
-      <GeneralObsHotkeys
-        all={all}
-        registered={globalHotkeys}
-        failures={hotkeyFailures}
-        onListeningChange={onListeningChange}
-        onChange={setAll}
-      />
+        <GeneralObsHotkeys
+          all={all}
+          registered={globalHotkeys}
+          failures={hotkeyFailures}
+          onListeningChange={onListeningChange}
+          onChange={setAll}
+        />
 
-      <ObsHotkeyBrowser
-        rows={parts.obsHotkey}
-        inputs={inputs}
-        scenes={scenes}
-        obsConnected={obsConnected}
-        registered={globalHotkeys}
-        failures={hotkeyFailures}
-        onListeningChange={onListeningChange}
-        onChange={(next) => setAll(replaceSection(all, "obsHotkey", next))}
-        onRun={onRunRow}
-      />
+        <ObsHotkeyBrowser
+          rows={parts.obsHotkey}
+          inputs={inputs}
+          scenes={scenes}
+          obsConnected={obsConnected}
+          registered={globalHotkeys}
+          failures={hotkeyFailures}
+          onListeningChange={onListeningChange}
+          onChange={(next) => setAll(replaceSection(all, "obsHotkey", next))}
+          onRun={onRunRow}
+        />
 
-      <ObsActionSettings
-        rows={parts.action as ActionRow[]}
-        scenes={scenes}
-        inputs={inputs}
-        registered={globalHotkeys}
-        failures={hotkeyFailures}
-        onListeningChange={onListeningChange}
-        onChange={(next) => setAll(replaceSection(all, "action", next as HotkeyRow[]))}
-        onRun={(row) => onRunRow(row as HotkeyRow)}
-        hideKinds={["srcToggle", "obsHotkey"]}
-      />
+        <ObsActionSettings
+          rows={parts.action as ActionRow[]}
+          scenes={scenes}
+          inputs={inputs}
+          registered={globalHotkeys}
+          failures={hotkeyFailures}
+          onListeningChange={onListeningChange}
+          onChange={(next) => setAll(replaceSection(all, "action", next as HotkeyRow[]))}
+          onRun={(row) => onRunRow(row as HotkeyRow)}
+          hideKinds={["srcToggle", "obsHotkey"]}
+        />
+      </div>
     </div>
   );
 }

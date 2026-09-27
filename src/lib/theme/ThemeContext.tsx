@@ -50,9 +50,9 @@ export const STUDIO_SKINS: SkinMeta[] = [
   },
   {
     id: "aurora",
-    label: "Aurora",
-    hint: "Soğuk mor · nane yeşili",
-    swatch: ["#0a0f1c", "#7cf5c1"],
+    label: "Aurora Turkuaz",
+    hint: "Turkuaz · okyanus siber",
+    swatch: ["#0a0f1c", "#3EEDFE"],
   },
   {
     id: "warm-sepia",

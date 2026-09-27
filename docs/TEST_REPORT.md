@@ -1,0 +1,133 @@
+# Test Raporu — Streaming OS turu
+
+Son çalıştırma: 2026-09-26. Tur başındaki sayılar `CURRENT_SYSTEM_AUDIT.md`'den. Hiçbir test devre dışı bırakılmadı, atlanmadı ya da gevşetilmedi. Başarısız olan her
+test asıl nedeni düzeltilerek geçirildi (aşağıda "Testlerin yakaladıkları").
+
+## Sonuçlar
+
+| Paket | Komut | Sonuç | Tur başındaki durum |
+|---|---|---|---|
+| Panel ön yüz (TS) | `npx vitest run` | **342/342**, 35 dosya (2. tur sonu) | 314 / 29 dosya |
+| Panel Rust kitaplık | `cargo test --lib` | **236/236** (2. tur sonu) | 192 |
+| Panel API bütünleşme | `cargo test --test server_api` | **22 geçti, 1 bilerek yok sayılan** (2. tur sonu) (`serve_portable`: gerçek `cikti\portable` ile sunucuyu açık tutan geliştirme yardımcısı, test değil) | 21 (1 yok sayılan dahil) |
+| Çoklu yayın uçtan uca (gerçek FFmpeg) | `cargo test --test multistream_e2e` | **2/2** (~21 sn) | yoktu |
+| Resonance widget | `npx vitest run` (resonance/) | **71/71**, 4 dosya | 71 |
+| StreamAxT sunucu | `npx vitest run` (server/) | **462/462**, 32 dosya (2. tur sonu) | 431 / 27 dosya |
+| StreamAxT istemci | `npx vitest run` (client/) | **81/81** | 75 |
+| Tip denetimi | `tsc --noEmit` (panel, StreamAxT sunucu+istemci) | temiz | — |
+| Rust lint | `cargo clippy --lib --tests --examples` | uyarısız | — |
+| Rust crate lisansları | `node scripts/lisans-denetimi.mjs` | 579 crate, izin listesi dışı yok | — |
+| Üretim derlemesi | `vite build` (panel, StreamAxT istemci), `tsc` (StreamAxT sunucu), `cargo build --release --example headless_server` | başarılı | — |
+
+## Bu turda eklenen testler
+
+**Çoklu yayın (Rust)**
+- `multistream/flv.rs`: parçalı akış ayrıştırma, FLV olmayan akış reddi, 8 MB üstü etiket reddi, AVC anahtar kare /
+  dizi başlığı, Enhanced RTMP (HEVC/AV1), geç katılma ve yeniden bağlanmada zaman tabanı.
+- `multistream/state.rs`: yaşam döngüsü, kopma → yeniden bağlanma → tükenme, kapalı hedef, sınırlı geri çekilme,
+  sağlık kararı.
+- `multistream/config.rs`: geçerli adresler, **sunucu alanına yapıştırılan anahtarın reddi**, şema ve Kick RTMPS
+  kuralı, maskeleme, bozuk ayar listesi.
+- `multistream/policy.rs`: Kick kuralları, uygun ayarda bulgu yok, Twitch eşzamanlı yayında birleşik sohbet uyarısı,
+  YouTube anahtar kare, FFmpeg yoksa engel.
+- `multistream/obs_profile.rs`: gelişmiş/basit kip, kesirli FPS, kodek eşlemesi, bozuk JSON güvenliği
+  (`service.json` — yayın anahtarı — **hiç okunmaz**).
+- `multistream/mod.rs`: anlık görüntü anahtar sızdırmaz; oturumsuz/anahtarsız hedef başlamaz; **yavaş hedef anahtar
+  kareye kadar atlanır, diğeri etkilenmez** (mutasyonla doğrulandı: düşürme satırı bozulunca başarısız).
+- `tests/multistream_e2e.rs` (gerçek FFmpeg, platform yok): bağımsız başlat/durdur + geç katılma + 0 çözme hatası;
+  kopan hedef diğerini etkilemez ve geri bağlanır.
+- `tests/server_api.rs`: `foreign_sites_cannot_drive_the_local_api`,
+  `multistream_api_keys_never_leak_and_actions_are_audited`.
+- `secret_store.rs`: **sır ayrı okumada kalıcı** (keyring mock deposu gerilemesi — düzeltme olmadan başarısız olduğu
+  doğrulandı); WS mesajında OBS şifresinin her derinlikte silinmesi; şifresiz metnin aynen geçmesi.
+
+**Panel ön yüz (TS)**
+- `controlCenter.test.ts`: düzen ayrıştırma/göç, gizle/genişlik/sıra, hazır düzenler, durum etiketleri, bayt biçimi,
+  yeni panelin eski kayıtlı düzene gizli eklenmesi.
+- `streamaxt.test.ts`: StreamAxT kök adresi (port korunur, zararlı şema reddedilir), ses girişi kuralı.
+
+**StreamAxT**
+- `modules/alerts/control.test.ts`: uyarı kuyruğu denetimi (duraklat/sürdür/atla/sustur/temizle/yeniden oynat),
+  iyimser sürüm çakışması, benzersiz uyarı kimliği.
+- `core/security/oauth-state.test.ts`: port çözümü, Kick geri dönüş adresi, `state` eşleşmesi/süresi/tek kullanım.
+- `modules/moderation/shield-rules.test.ts`: kalkan kuralları (kapalı kalkan, büyük harf, emoji, link, abone,
+  muafiyetler), Türkçe büyük harf, Kick emote işaretlemesi.
+- `client/src/lib/lib.test.ts`: `sunucuPortu`, kaydedilmemiş değişiklik kaydı ve anlık görüntü karşılaştırması.
+
+## Canlı / elle doğrulamalar (tarayıcı bölmesi, yalıtılmış veri)
+
+| Senaryo | Nasıl | Sonuç |
+|---|---|---|
+| Kontrol Merkezi uçtan uca | başsız sunucu + Vite; arayüzden hedef ekle → GO LIVE → sentetik kaynak | kartta "Canlı · 2659 kbps · 38 fps"; hedef tek başına durduruldu (alıcı 420 kare, 0 çözme hatası); "Hepsini bitir" çift onay; denetim günlüğünde 4 olay |
+| Yayın öncesi kontrol | gerçek OBS profili okundu | H.264, 8000 kbps CBR, 2 sn, 1920×1080@60; "OBS bağlı değil" uyarısı |
+| Uyarı kuyruğu denetimi | yalıtılmış StreamAxT (3012) | 11/11 senaryo; widget duraklat/sürdür |
+| Kick OAuth | yalıtılmış StreamAxT (PORT=3012) | adres 3012'yi izliyor; yabancı / yinelenen / eksik `state` reddedildi; Kick hata parametresi geçti |
+| Kaydedilmemiş değişiklik | yalıtılmış StreamAxT | şerit, onay diyaloğu (Vazgeç korur), geri tuşu, şeritten kaydet, geri alınca şerit kaybolur; 4 sayfada yanlış alarm yok |
+| Kalkan modu | yalıtılmış veritabanıyla derlenmiş modüller | 9/9 (kapalı kalkan, 3 kural, normal mesaj, mod muafiyeti, sayaç, ayarın taze okunması, WS kararı); arayüzde kural aç/kapa kaydı |
+| Performans | release başsız sunucu, 1/3/5 hedef | PERFORMANCE_REPORT.md |
+
+**Hiçbir test gerçek platforma yayın açmadı, gerçek sohbet mesajı / bildirim / ödeme / moderasyon eylemi
+tetiklemedi, kullanıcının gerçek OBS'ini değiştirmedi.** StreamAxT denemeleri gerçek veritabanının değil,
+`scratchpad/sx-test2/data` altındaki yalıtılmış kopyanın üzerinde yapıldı; değiştirilen test değerleri geri alındı.
+
+## Testlerin yakaladıkları (asıl neden düzeltildi)
+
+1. **Sırlar hiç kalıcı değildi:** `keyring 3` platform özelliği olmadan sahte depoya düşüyordu (API testinde
+   `hasKey: false`) → `windows-native` özelliği + gerileme testi.
+2. **Geç katılan hedef çözülemiyordu:** çalışan hedeflere dizi başlığı iletilmiyordu → düzeltildi.
+3. **Durdurmada son ~2 sn kayboluyordu:** doğrudan öldürme → stdin kapat, 3 sn bekle.
+4. **Uyarılar tekrarlanan kimlikle yutuluyordu** (her türün yalnız ilki oynuyordu) → benzersiz kimlik.
+5. **Kontrol Merkezi okunabilirlik sözleşmesini ihlal etti** (`text-white/35–45`, AA altı) → `text-panel-muted`.
+6. **Ölçüm sırasında "tek hedefte iki yayıncı"** — hata değil, geçici test verisinde kalmış ikinci etkin hedefti;
+   yönlendirici doğru davranmıştı (bağlantı reddi → geri çekilmeli yeniden deneme).
+
+## İkinci tur (2026-09-26) — eklenen testler ve canlı doğrulamalar
+
+**Eklenen testler**
+- Rust: `actions` (eylem ayrıştırma, parametre, onay; 5 test), `multistream::policy` bant genişliği bulguları,
+  `multistream` yavaş hedef dağıtıcısı, `obs_client::tuval_tests` (tuval sağlayıcısı, dBFS dönüşümü, kanal özeti),
+  `secret_store` OBS parolası metin ayıklama; API: `action_registry_enforces_confirmation_availability_and_audit`
+  (sahte StreamAxT ile; OBS yokken tuval/ölçer uçları 409).
+- Panel TS: `api/actions.test.ts`, `chat/chat.test.ts` (evrensel sohbet modeli), `deck.test.ts`,
+  `controlCenter.test.ts` (yeni panelin hazır profile göre göçü), `licenses.test.ts`, ses ölçeri ölçeklemesi.
+- StreamAxT: `platforms/twitch-rules.test.ts` (sohbet modu gövdesi ve sınırları), değişken motoru `$(jsonset)` /
+  `$(jsonunset)` (prototip kirletme reddi dahil), `core/licenses.test.ts`.
+
+**Canlı / elle doğrulamalar**
+
+| Senaryo | Nasıl | Sonuç |
+|---|---|---|
+| Kontrol destesi | başsız sunucu + Vite + yalıtılmış StreamAxT (3012) | duraklat/sürdür 3012'de durum değiştirdi (`updatedBy: yerel`); onaylı düğmede ilk dokunuş istek göndermedi, ikincisi `ACTION:alert.clear ok:true`; OBS yokken sahne düğmesi "OBS bağlı değil" ile devre dışı; ekle/sil/taşı/sayfa işlemleri yeniden yüklemede korundu |
+| Donanım deste HTTP yolu | curl | kökensiz 200, yabancı köken/host 403, onaysız 428 |
+| OBS istemcisi | `cargo run --example obs_probe` (gerçek OBS 32.2.2, yalnız okuma) | 5 sahne, 11 giriş, 2 tuval (SE.Live dikey tuvali tanındı), 8 girişte ölçüm (~50 ms taze), 12 sn boşta abonelik kapandı |
+| Evrensel sohbet | tarayıcı | yazı boyutu 12/14/16 döngüsü ve kalıcılık; hızlı art arda tıklamada eski kapanım hatası bulundu ve düzeltildi |
+| Bant genişliği bulgusu | gerçek OBS profili (8000 kbps, 3 hedef) | gereksinim 25,7 Mbps; 20 Mbps girilince "aşıldı" uyarısı |
+| StreamAxT moderasyon uçları | yalıtılmış örnek | 8 hata/yetenek yolu beklenen kodlarla |
+| Kararsızlık avı | `server_api` 25 döngü + 12 sıralı + 4 eşzamanlı | 0 başarısız (tek seferlik başarısızlık KNOWN_LIMITATIONS'ta) |
+
+Hiçbir doğrulama gerçek sohbet mesajı, moderasyon, bildirim, ödeme ya da yayın tetiklemedi; kullanıcının OBS'inde
+hiçbir ayar/sahne değişmedi.
+
+## Yerel yayın çekirdeği (ADR-003) — 2026-09-26
+
+| Paket | Komut | Sonuç |
+|---|---|---|
+| Çekirdek birim | `cargo test --release` (motor/) | **12/12** (yapı boyutları başlıklarla, günlükte anahtar maskesi, sinyal → durum, ters sıralı sinyal, önizleme boyutu, protokol ayrıştırma) |
+| Çekirdek protokol uçtan uca | `tests/hizmet.rs` | **1/1** — gerçek libobs, sentetik sahne, yerel alıcıya yayın, önizleme PNG, istatistik, durdur, temiz çıkış; anahtar protokol çıktısında ve libobs günlüğünde yok, günlükte hata yok |
+| Çekirdek sentetik senaryo | `yayin-motoru sinama` | **14/14** (aşağıda) |
+| Panel API | `cargo test --test server_api` | **23/23** (+1 yok sayılan) — yeni `motor_api_sentetik_kaynak_ve_hedef` |
+| Panel kitaplık | `cargo test --lib` | **238/238** |
+| Panel ön yüz | `npx vitest run` | **344/344**, 36 dosya |
+| Lint | clippy (panel + çekirdek, `--all-targets`) | uyarısız |
+
+`yayin-motoru sinama` denetimleri: NVENC seçildi · üç hedef canlı · kapalı porttaki hedef tek başına başarısız (kod
+-2) · B tek başına durdu · **B durunca çekirdeğin B soketi kapandı** (bulunan hatanın gerileme denetimi) · A ve C canlı
+kaldı · B yeniden başladı · A 1920×1080 ve C 1080×1920 kesintisiz, 0 çözme hatası · B iki parça tam · kayıt paylaşılan
+kodlayıcıyla · kayıt durumu ters sinyale dayanıklı · önizleme iki tuvalde (480×270, 270×480) · düşen kare 0.
+
+Tarayıcı (başsız sunucu + gerçek çekirdek, yalnız renk + yazı): arayüzden başlat → önizlemeler → hedef dikey tuvalle
+canlı (alıcıda 1080×1920, 1131 kare, 0 hata) → yönlendiriciden aynı hedef 409 → durdur → motoru çift tıklamayla kapat
+(çıkış 0) → denetimde 6 `MOTOR_*` kaydı.
+
+**Sınanmayanlar (kullanıcı kuralı):** ekran, pencere, oyun yakalama, kamera, mikrofon, masaüstü sesi — kod yolu var,
+çalışma anında `UNVERIFIED`.

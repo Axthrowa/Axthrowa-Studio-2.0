@@ -5,6 +5,16 @@
 import { useMemo, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import {
+  Download,
+  FolderOpen,
+  Info,
+  Languages,
+  Monitor,
+  Palette,
+  Play,
+  Upload
+} from "lucide-react";
 import { useI18n } from "../../i18n";
 import type { MsgKey } from "../../i18n/messages";
 import type { AppPrefs, AppTheme } from "../../lib/appPrefs";
@@ -111,18 +121,22 @@ export default function AppSettingsPage({
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 overflow-visible p-4 pb-16">
-      <div className="flex gap-2 border-b border-panel-border pb-2">
+    <div className="mx-auto max-w-2xl space-y-6 overflow-visible p-4 pb-20 md:p-6">
+      {/* Segmented Tab Bar */}
+      <div className="flex gap-1.5 rounded-2xl border border-white/[0.07] bg-black/40 p-1.5 shadow-inner">
         {visibleTabs.map((id) => {
           const meta = SETTINGS_SECTIONS.find((s) => s.id === id);
+          const isActive = activeTab === id;
           return (
             <button
               key={id}
               type="button"
-              className={
-                "rounded-md px-3 py-1.5 text-sm " +
-                (activeTab === id ? "bg-panel-accent text-white" : "bg-white/5 hover:bg-white/10")
-              }
+              className={cn(
+                "flex-1 rounded-xl px-4 py-2.5 text-xs md:text-sm font-bold tracking-wide transition-all duration-150",
+                isActive
+                  ? "border border-panel-accent/40 bg-panel-accent/90 text-[#08131c] shadow-glow-sm"
+                  : "text-white/70 hover:bg-white/[0.05] hover:text-white"
+              )}
               onClick={() => setTab(id)}
             >
               {meta ? t(meta.labelKey as MsgKey) : id}
@@ -132,10 +146,14 @@ export default function AppSettingsPage({
       </div>
 
       {activeTab === "general" && (
-        <div className="space-y-5 rounded-lg border border-panel-border bg-black/20 p-4">
-          <div className="space-y-2">
-            <p className="text-sm text-panel-muted">{t("settings.theme")}</p>
-            <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-6 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-6 shadow-glass">
+          {/* Theme Option */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+              <Palette className="size-4 text-panel-accent" />
+              <span>{t("settings.theme")}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2.5">
               {THEME_OPTS.map((opt) => {
                 const on = prefs.theme === opt.id;
                 return (
@@ -144,10 +162,10 @@ export default function AppSettingsPage({
                     type="button"
                     onClick={() => set({ theme: opt.id })}
                     className={cn(
-                      "rounded-lg border px-2 py-2.5 text-sm font-medium transition",
+                      "rounded-xl border px-3.5 py-3 text-xs md:text-sm font-bold transition-all active:scale-95",
                       on
-                        ? "border-panel-accent bg-panel-accent/20 text-white"
-                        : "border-panel-border bg-black/30 text-white/70 hover:bg-white/10 hover:text-white"
+                        ? "border-panel-accent/60 bg-panel-accent/15 text-panel-accent shadow-glow-sm"
+                        : "border-white/[0.08] bg-black/30 text-white/75 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
                     )}
                   >
                     {t(opt.labelKey)}
@@ -157,9 +175,10 @@ export default function AppSettingsPage({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm text-panel-muted">Görünüm stili</p>
-            <div className="space-y-1.5">
+          {/* Skin Selection */}
+          <div className="space-y-2.5">
+            <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">Görünüm stili</p>
+            <div className="space-y-2.5">
               {skins.map((s) => {
                 const on = skin === s.id;
                 return (
@@ -168,26 +187,28 @@ export default function AppSettingsPage({
                     type="button"
                     onClick={() => setSkin(s.id as StudioSkin)}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition",
+                      "flex w-full items-center gap-3.5 rounded-xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.99]",
                       on
-                        ? "border-panel-accent/60 bg-panel-accent/15"
-                        : "border-panel-border bg-black/25 hover:bg-white/[0.06]"
+                        ? "border-panel-accent/60 bg-panel-accent/[0.12] shadow-glow-sm"
+                        : "border-white/[0.07] bg-black/30 hover:border-white/[0.12] hover:bg-black/50"
                     )}
                   >
                     <span
-                      className="size-9 shrink-0 rounded-lg border border-white/10"
+                      className="size-10 shrink-0 rounded-xl border border-white/20 shadow-sm"
                       style={{
                         background: `linear-gradient(145deg, ${s.swatch[0]} 40%, ${s.swatch[1]})`,
                       }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-semibold text-white">
+                      <span className="block text-sm font-bold text-white">
                         {s.label}
                       </span>
-                      <span className="block text-[11px] text-white/50">{s.hint}</span>
+                      <span className="block text-xs font-medium text-white/75">{s.hint}</span>
                     </span>
                     {on ? (
-                      <span className="text-[11px] font-semibold text-panel-accent">Aktif</span>
+                      <span className="rounded-lg border border-panel-accent/30 bg-panel-accent/20 px-2.5 py-1 text-xs font-bold text-panel-accent">
+                        Aktif
+                      </span>
                     ) : null}
                   </button>
                 );
@@ -195,9 +216,13 @@ export default function AppSettingsPage({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm text-panel-muted">{t("settings.language")}</p>
-            <div className="grid grid-cols-2 gap-2">
+          {/* Language Selection */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+              <Languages className="size-4 text-panel-accent" />
+              <span>{t("settings.language")}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
               {(
                 [
                   { id: "tr" as const, labelKey: "settings.lang.tr" as MsgKey },
@@ -214,10 +239,10 @@ export default function AppSettingsPage({
                       set({ locale: opt.id });
                     }}
                     className={cn(
-                      "rounded-lg border px-2 py-2.5 text-sm font-medium transition",
+                      "rounded-xl border px-3.5 py-3 text-xs md:text-sm font-bold transition-all active:scale-95",
                       on
-                        ? "border-panel-accent bg-panel-accent/20 text-white"
-                        : "border-panel-border bg-black/30 text-white/70 hover:bg-white/10 hover:text-white"
+                        ? "border-panel-accent/60 bg-panel-accent/15 text-panel-accent shadow-glow-sm"
+                        : "border-white/[0.08] bg-black/30 text-white/75 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
                     )}
                   >
                     {t(opt.labelKey)}
@@ -227,51 +252,71 @@ export default function AppSettingsPage({
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={prefs.openObsOnLaunch}
-              onChange={(e) => set({ openObsOnLaunch: e.target.checked })}
-            />
-            {t("settings.openObs")}
-          </label>
-
-          <div className="space-y-1 text-sm">
-            <span className="text-panel-muted">{t("settings.obsPath")}</span>
-            <div className="flex gap-2">
+          {/* OBS Auto-launch switch */}
+          <div className="rounded-xl border border-white/[0.07] bg-black/30 p-4">
+            <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-white">
               <input
-                className="min-w-0 flex-1 rounded border border-panel-border bg-black/40 px-2 py-1.5 text-xs"
+                type="checkbox"
+                checked={prefs.openObsOnLaunch}
+                onChange={(e) => set({ openObsOnLaunch: e.target.checked })}
+                className="size-4.5 rounded border-white/20 text-panel-accent focus:ring-panel-accent/40"
+              />
+              <span>{t("settings.openObs")}</span>
+            </label>
+          </div>
+
+          {/* OBS Path */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+              <Monitor className="size-4 text-panel-accent" />
+              <span>{t("settings.obsPath")}</span>
+            </div>
+            <div className="flex gap-2.5">
+              <input
+                className="min-w-0 flex-1 rounded-xl border border-white/[0.09] bg-black/40 px-3.5 py-2.5 text-xs md:text-sm font-medium text-white placeholder:text-panel-muted outline-none focus:border-panel-accent/60"
                 value={prefs.obsExePath || ""}
                 placeholder="C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
                 onChange={(e) => set({ obsExePath: e.target.value || null })}
               />
               <button
                 type="button"
-                className="shrink-0 rounded bg-white/10 px-2 py-1 text-xs"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.05] px-4 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-white/[0.1] transition-all active:scale-95"
                 onClick={() => void browseObs()}
               >
+                <FolderOpen className="size-4" />
                 {t("settings.obsBrowse")}
               </button>
             </div>
           </div>
 
-          <button
-            type="button"
-            className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-            onClick={() => void launchObs()}
-          >
-            {t("settings.obsLaunchNow")}
-          </button>
-          {msg && <p className="text-xs text-panel-muted">{msg}</p>}
+          {/* Launch OBS Action */}
+          <div className="flex flex-wrap items-center gap-3.5">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-600/90 px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-glow-sm transition-all hover:bg-emerald-500 active:scale-95"
+              onClick={() => void launchObs()}
+            >
+              <Play className="size-4 fill-current" />
+              {t("settings.obsLaunchNow")}
+            </button>
+            {msg && <p className="text-xs md:text-sm font-semibold text-panel-accent">{msg}</p>}
+          </div>
 
-          <hr className="border-panel-border/60" />
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold">{t("backup.title")}</h3>
-            <p className="text-[11px] text-panel-muted">{t("backup.hint")}</p>
-            <div className="flex flex-wrap gap-2">
+          <hr className="border-white/[0.08]" />
+
+          {/* Backup & Restore */}
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+                {t("backup.title")}
+              </h3>
+              <p className="mt-1 text-xs font-medium text-white/75">{t("backup.hint")}</p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                className="rounded-md bg-panel-accent px-3 py-2 text-sm font-medium text-black"
+                className="inline-flex items-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 px-4 py-2.5 text-xs md:text-sm font-bold text-[#08131c] shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95"
                 onClick={async () => {
                   try {
                     const { buildBackup, downloadBackupJson } = await import("../../lib/panelBackup");
@@ -283,9 +328,11 @@ export default function AppSettingsPage({
                   }
                 }}
               >
+                <Download className="size-4" />
                 {t("backup.export")}
               </button>
-              <label className="cursor-pointer rounded-md bg-white/10 px-3 py-2 text-sm hover:bg-white/15">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.05] px-4 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-white/[0.1] transition-all active:scale-95">
+                <Upload className="size-4" />
                 {t("backup.import")}
                 <input
                   type="file"
@@ -310,27 +357,30 @@ export default function AppSettingsPage({
               </label>
             </div>
           </div>
+
+          <hr className="border-white/[0.08]" />
+          <DestekPaketi />
         </div>
       )}
 
       {activeTab === "help" && (
-        <div className="space-y-3 text-sm">
+        <div className="space-y-4 text-xs md:text-sm">
           {HELP_BLOCKS.map((block) => (
             <section
               key={block.title}
-              className="overflow-hidden rounded-lg border border-panel-border bg-black/20"
+              className="overflow-hidden rounded-2xl border border-white/[0.07] bg-panel-card/60 shadow-glass"
             >
               {block.img && (
                 <img
                   src={block.img}
                   alt={block.imgAlt || ""}
-                  className="max-h-48 w-full object-cover object-center"
+                  className="max-h-52 w-full object-cover object-center border-b border-white/[0.06]"
                   loading="lazy"
                 />
               )}
-              <div className="p-3">
-                <h3 className="mb-1 font-semibold">{t(block.title)}</h3>
-                <p className="text-panel-muted leading-relaxed">{t(block.body)}</p>
+              <div className="p-5 space-y-2">
+                <h3 className="font-display text-base font-bold text-white">{t(block.title)}</h3>
+                <p className="text-xs md:text-sm text-white/80 leading-relaxed">{t(block.body)}</p>
               </div>
             </section>
           ))}
@@ -338,17 +388,79 @@ export default function AppSettingsPage({
       )}
 
       {activeTab === "about" && (
-        <div className="space-y-2 rounded-lg border border-panel-border bg-black/20 p-4 text-sm">
-          <h2 className="text-lg font-semibold">{t("brand.title")}</h2>
-          <p className="text-base font-medium text-panel-accent">{t("about.credit")}</p>
-          <p className="text-panel-muted">
-            {t("about.version")}: {version}
-          </p>
-          <p className="text-panel-muted">
-            {t("about.port")}: {API_BASE}
-          </p>
+        <div className="space-y-4 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-6 text-xs md:text-sm shadow-glass">
+          <div className="flex items-center gap-3.5">
+            <span className="flex size-12 items-center justify-center rounded-2xl border border-panel-accent/30 bg-panel-accent/15 text-panel-accent shadow-glow-sm">
+              <Info className="size-6" />
+            </span>
+            <div>
+              <h2 className="font-display text-xl font-bold tracking-tight text-white">{t("brand.title")}</h2>
+              <p className="text-base font-bold text-panel-accent">{t("about.credit")}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-white/[0.06] bg-black/30 p-4">
+            <p className="text-xs md:text-sm text-white/80 font-medium">
+              {t("about.version")}: <span className="font-mono font-bold text-white">{version}</span>
+            </p>
+            <p className="text-xs md:text-sm text-white/80 font-medium">
+              {t("about.port")}: <span className="font-mono font-bold text-white">{API_BASE}</span>
+            </p>
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Destek paketi (§93): sırları ayıklanmış tanılama dosyası. Dosya yalnız bu bilgisayara yazılır; paylaşmak kullanıcının kararı. */
+function DestekPaketi() {
+  const [durum, setDurum] = useState<{ yol: string; boyut: number; gizlenen: number } | null>(null);
+  const [hata, setHata] = useState("");
+  const [yuk, setYuk] = useState(false);
+  return (
+    <div className="space-y-2">
+      <div>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-white">Destek paketi</h3>
+        <p className="mt-1 text-xs font-medium text-white/75">
+          Sorun bildirirken ekleyebileceğin tek bir JSON dosyası: sürüm, OBS ve motor durumu, çoklu yayın hedefleri, ön kontrol,
+          ayarlar ve son günlük satırları. Yayın anahtarları, parolalar, token alanları, rtmp yolları ve kullanıcı klasörü
+          dosyaya yazılmadan önce ayıklanır. Dosya hiçbir yere gönderilmez.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className="dt-btn"
+          disabled={yuk}
+          onClick={async () => {
+            setYuk(true);
+            setHata("");
+            try {
+              const { supportApi } = await import("../../lib/api/actions");
+              const r = await supportApi.create();
+              setDurum({ yol: r.yol, boyut: r.boyut, gizlenen: r.gizlenen });
+            } catch (e) {
+              setHata(String((e as Error).message || e).slice(0, 200));
+            } finally {
+              setYuk(false);
+            }
+          }}
+        >
+          {yuk ? "Hazırlanıyor…" : "Destek paketi oluştur"}
+        </button>
+        {durum && (
+          <button type="button" className="dt-btn" onClick={() => void navigator.clipboard?.writeText(durum.yol)}>
+            Yolu kopyala
+          </button>
+        )}
+      </div>
+      {durum && (
+        <p className="break-all text-xs text-white/80">
+          {durum.yol} · {(durum.boyut / 1024).toFixed(0)} KB · {durum.gizlenen} değer ayıklandı
+        </p>
+      )}
+      {hata && <p className="text-xs text-red-300">{hata}</p>}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { getStoredTokens, clearTokens, isSpotifyConfigured } from '../lib/spotifyAuth'
 import { getMe } from '../lib/spotifyApi'
-import { disconnectSpotify, getPlayerStatus, isHostAvailable } from '../lib/hostBridge'
+import { disconnectSpotify, getPlayerStatus, isHostAvailable, notifyHostChanged } from '../lib/hostBridge'
 
 const AuthContext = createContext(null)
 
@@ -70,6 +70,7 @@ export function AuthProvider({ children }) {
       await disconnectSpotify().catch(() => {})
       setUser(null)
       refreshUser()
+      notifyHostChanged('spotify')
       return
     }
     clearTokens()

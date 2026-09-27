@@ -411,7 +411,7 @@ pub fn chat_alert_reply(extras_json: &str, kind: &str, user: &str, amount: Optio
     .cloned()
     .unwrap_or(json!({}));
   let default_on = !matches!(event_key, "follow" | "welcome");
-  if ev.get("enabled").and_then(|v| v.as_bool()).unwrap_or(default_on) == false {
+  if !ev.get("enabled").and_then(|v| v.as_bool()).unwrap_or(default_on) {
     return None;
   }
   let min_amount = ev.get("min_amount").and_then(|v| v.as_f64()).unwrap_or(0.0);

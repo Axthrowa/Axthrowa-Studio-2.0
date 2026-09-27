@@ -53,6 +53,34 @@ if (-not $SkipRust) {
   }
 }
 
+# Yerel yayin cekirdegi (motor/, ayri Cargo projesi, GPL-2.0-or-later). Hata paketi durdurmaz: motor yoksa panel
+# "motor paketi bulunamadi" der, geri kalan her sey calisir.
+if (-not $SkipRust) {
+  Write-Host "== Yayin motoru (motor/) =="
+  # Motorun kendi hedef klasoru var (motor\target); paketle.ps1 ve kurulum oradan alir. Ustteki ortak
+  # CARGO_TARGET_DIR burada gecerli olursa motor baska yere derlenir ve pakete ESKI motor girer.
+  $oncekiHedef = $env:CARGO_TARGET_DIR
+  $env:CARGO_TARGET_DIR = Join-Path $proj "motor\target"
+  Push-Location (Join-Path $proj "motor")
+  try {
+    cargo build --release
+    if ($LASTEXITCODE -ne 0) { Write-Warning "Yayin motoru derlenemedi; pakete eski motor (varsa) konur." }
+  } finally {
+    Pop-Location
+    $env:CARGO_TARGET_DIR = $oncekiHedef
+  }
+}
+
+# Motor kuruluma kaynak dosyasi olarak girer (uygulama exe'sinin yanina). tauri.conf.json'a yazilmaz: gelistirme
+# derlemesi motor exe'si olmadan da calismali. Kurulumdan once imzalanir; SAC imzasiz yeni hash'i keser.
+$motorExe = Join-Path $proj "motor\target\release\yayin-motoru.exe"
+$motorLisans = Join-Path $proj "motor\LICENSE"
+$motorVar = (Test-Path -LiteralPath $motorExe) -and (Test-Path -LiteralPath $motorLisans)
+if ($motorVar -and -not $SkipSign -and -not $SkipBundle) {
+  & powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "sign-cikti.ps1") -Yalniz $motorExe
+  if ($LASTEXITCODE -ne 0) { Write-Warning "Motor imzalanamadi; kuruluma imzasiz motor girer." }
+}
+
 # NSIS setup - tauri bundle (exe zaten derliyse sadece paketler)
 # Updater private key yoksa tauri sonda hata verebilir; NSIS yine de uretilmis olur.
 $bundleOk = $false
@@ -60,7 +88,17 @@ $nsisDir = Join-Path $td "release\bundle\nsis"
 if (-not $SkipBundle) {
   Write-Host "== NSIS setup (tauri bundle) =="
   $cfgPath = Join-Path $env:TEMP "yya-tauri-bundle.json"
-  Set-Content -LiteralPath $cfgPath -Value '{"bundle":{"createUpdaterArtifacts":false}}' -Encoding ASCII
+  $kaynaklar = [ordered]@{ "../dist" = "dist/"; "../resonance/dist" = "resonance/dist/" }
+  if ($motorVar) {
+    $kaynaklar[$motorExe.Replace("\", "/")] = "yayin-motoru.exe"
+    $kaynaklar[$motorLisans.Replace("\", "/")] = "yayin-motoru-LICENSE.txt"
+    Write-Host "Kuruluma motor ekleniyor: $motorExe"
+  } else {
+    Write-Warning "motor\target\release\yayin-motoru.exe yok - kurulum motorsuz uretilir (panel 'motor paketi bulunamadi' der)."
+  }
+  $cfg = @{ bundle = @{ createUpdaterArtifacts = $false; resources = $kaynaklar } } | ConvertTo-Json -Depth 5
+  # UTF-8 BOM'suz: yol Turkce karakter icerebilir, tauri BOM'lu JSON'u okuyamaz.
+  [IO.File]::WriteAllText($cfgPath, $cfg, (New-Object Text.UTF8Encoding($false)))
   npx --yes tauri bundle --bundles nsis --ci --config $cfgPath
   Remove-Item -LiteralPath $cfgPath -Force -ErrorAction SilentlyContinue
   $nsisHit = Get-ChildItem -LiteralPath $nsisDir -Filter "*setup*.exe" -File -ErrorAction SilentlyContinue |

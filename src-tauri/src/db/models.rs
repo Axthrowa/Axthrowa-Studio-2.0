@@ -33,17 +33,6 @@ pub struct StreamSession {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct StreamMetricSample {
-  pub id: i64,
-  pub session_id: String,
-  pub ts: i64,
-  pub viewers: i64,
-  pub chat_rpm: f64,
-  pub followers: i64,
-  pub subs: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct EventLog {
   pub id: String,
   pub session_id: Option<String>,
@@ -189,14 +178,6 @@ pub struct BotSettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct BotModule {
-  pub channel_id: String,
-  pub module_id: String,
-  pub enabled: i64,
-  pub config_json: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct BotCommand {
   pub id: String,
   pub channel_id: String,
@@ -247,17 +228,6 @@ pub struct BotFilters {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct ModerationStrike {
-  pub id: String,
-  pub channel_id: String,
-  pub user_key: String,
-  pub reason: String,
-  pub action: String,
-  pub ts: i64,
-  pub expires_at: Option<i64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct LoyaltySettings {
   pub channel_id: String,
   pub points_name: String,
@@ -275,17 +245,6 @@ pub struct LoyaltySettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct RecentBits {
-  pub id: String,
-  pub channel_id: String,
-  pub user_name: String,
-  pub user_key: String,
-  pub amount: f64,
-  pub message: Option<String>,
-  pub ts: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct LoyaltyUser {
   pub channel_id: String,
   pub user_key: String,
@@ -297,16 +256,6 @@ pub struct LoyaltyUser {
   pub messages: i64,
   pub watch_sec: i64,
   pub last_seen: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct LoyaltyRank {
-  pub id: String,
-  pub channel_id: String,
-  pub name: String,
-  pub min_xp: i64,
-  pub join_message: Option<String>,
-  pub sort_order: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -337,17 +286,6 @@ pub struct ShopSale {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct PointsLedgerRow {
-  pub id: i64,
-  pub channel_id: String,
-  pub user_key: String,
-  pub delta: i64,
-  pub reason: String,
-  pub ref_id: Option<String>,
-  pub ts: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct GameSettings {
   pub channel_id: String,
   pub config_json: String,
@@ -364,19 +302,6 @@ pub struct GameRound {
   pub result_json: String,
   pub started_at: i64,
   pub settled_at: Option<i64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct GameBet {
-  pub id: String,
-  pub round_id: String,
-  pub channel_id: String,
-  pub user_key: String,
-  pub user_name: String,
-  pub amount: i64,
-  pub choice_json: String,
-  pub payout: i64,
-  pub ts: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -400,17 +325,3 @@ pub struct SoundboardPad {
   pub sort_order: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct MediaShareItem {
-  pub id: String,
-  pub channel_id: String,
-  pub user_key: String,
-  pub user_name: String,
-  pub url: String,
-  pub media_type: String,
-  pub cost_points: i64,
-  pub duration_sec: Option<i64>,
-  pub status: String,
-  pub created_at: i64,
-  pub played_at: Option<i64>,
-}

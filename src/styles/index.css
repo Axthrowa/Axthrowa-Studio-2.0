@@ -21,7 +21,7 @@
   /* %40 beyaz, panel zemininde 3.83:1 kontrast veriyordu — 10px etiketler
      için WCAG AA eşiği 4.5:1. %55 ile 6.15:1'e çıkıyor; diğer temaların
      (6.5–6.7:1) bandıyla da aynı hizaya geliyor. */
-  --panel-muted: rgba(255, 255, 255, 0.55);
+  --panel-muted: rgba(255, 255, 255, 0.72);
   --panel-soft: rgba(62, 237, 254, 0.1);
   --panel-glow-a: transparent;
   --panel-glow-b: transparent;
@@ -100,31 +100,31 @@
   --eyebrow-color: #ff7ae8;
 }
 
-/* Aurora — soğuk mor + nane yeşili, camsı yüzeyler */
+/* Aurora — turkuaz + nane yeşili, camsı yüzeyler */
 :root[data-skin="aurora"] {
   --panel-bg: #0a0f1c;
   --panel-bg-deep: #060912;
   --panel-card: rgba(20, 28, 52, 0.7);
   --panel-elevated: #121a30;
   --panel-border: #25325a;
-  --panel-accent: #7cf5c1;
-  --panel-accent-strong: #4be3a5;
-  --panel-accent-glow: rgba(124, 245, 193, 0.2);
-  --panel-cta: #a78bfa;
-  --panel-cta-ink: #120a2a;
+  --panel-accent: #3EEDFE;
+  --panel-accent-strong: #00e5ff;
+  --panel-accent-glow: rgba(62, 237, 254, 0.25);
+  --panel-cta: #3EEDFE;
+  --panel-cta-ink: #032f34;
   --panel-muted: #9fb0d8;
-  --panel-soft: rgba(124, 245, 193, 0.1);
-  --panel-glow-a: rgba(139, 92, 246, 0.22);
-  --panel-glow-b: rgba(124, 245, 193, 0.12);
+  --panel-soft: rgba(62, 237, 254, 0.12);
+  --panel-glow-a: rgba(62, 237, 254, 0.22);
+  --panel-glow-b: rgba(34, 211, 238, 0.14);
   --panel-pattern: transparent;
   --panel-glass: rgba(14, 20, 40, 0.7);
-  --panel-glass-border: rgba(167, 139, 250, 0.2);
+  --panel-glass-border: rgba(62, 237, 254, 0.2);
   --skin-pattern-opacity: 0;
-  --accent: #7cf5c1;
+  --accent: #3EEDFE;
   --fg-rgb: 236 242 255;
-  --accent-rgb: 124 245 193;
-  --accent-text-rgb: 124 245 193;
-  --eyebrow-color: #a78bfa;
+  --accent-rgb: 62 237 254;
+  --accent-text-rgb: 62 237 254;
+  --eyebrow-color: #3EEDFE;
 }
 
 /* Warm Sepia — kahve tonlu sıcak koyu tema, krem yazı */
@@ -187,15 +187,56 @@ body,
   margin: 0;
   min-height: 100%;
   background: var(--panel-bg);
-  color: rgb(var(--fg-rgb, 255 255 255) / 0.9);
-  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: rgb(var(--fg-rgb, 255 255 255));
+  font-family: "Plus Jakarta Sans", Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  -webkit-font-smoothing: antialiased;
-  letter-spacing: -0.011em;
+  /* Yazılar "bulanık" görünüyordu; üç neden vardı ve üçü de burasıydı:
+     1) `-webkit-font-smoothing: antialiased` Windows'ta ClearType'ı (alt piksel
+        yumuşatma) KAPATIR — gri tonlamalı yumuşatmada ince yazı puslu çıkar.
+     2) `text-rendering: optimizeLegibility` kesirli glif genişlikleri kullanır.
+     3) `letter-spacing: 0.005em` harfleri tam piksele değil aralara oturtur.
+     Üçü birden 1x ekran ölçeğinde (dpr=1) küçük yazıyı gözle görülür bulanıklaştırıyordu. */
+  text-rendering: auto;
 }
 
 * {
   box-sizing: border-box;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Okunabilirlik tabanı
+   9–11px'lik etiketler (rozet, ipucu, üst yazı) ve %50–60 saydam beyaz metin
+   ekranda soluk ve puslu okunuyordu. Bileşenleri tek tek değiştirmek yerine
+   burada bir taban belirlenir: en küçük yazı 11px, en soluk metin %75.
+   Not: sınıf adları Tailwind'in ürettiği adlar olduğu için kaçışlı yazılır.
+--------------------------------------------------------------------------- */
+.text-\[9px\] {
+  font-size: 11px;
+}
+.text-\[10px\] {
+  font-size: 11px;
+}
+.text-\[11px\] {
+  font-size: 12px;
+}
+
+/* Soluk metin tabanı — açık temada zaten kendi kuralları var (aşağıda). */
+:root:not(.theme-light) .text-white\/50,
+:root:not(.theme-light) .text-white\/55,
+:root:not(.theme-light) .text-white\/60 {
+  color: rgb(var(--fg-rgb) / 0.78);
+}
+:root:not(.theme-light) .text-white\/70,
+:root:not(.theme-light) .text-white\/75 {
+  color: rgb(var(--fg-rgb) / 0.86);
+}
+
+/* Büyük harf + geniş aralık küçük punto ile birleşince okunurluğu düşürüyor. */
+.text-\[11px\].uppercase.tracking-wider,
+.text-\[10px\].uppercase.tracking-wider,
+.text-\[9px\].uppercase.tracking-wider {
+  letter-spacing: 0.04em;
 }
 
 /* İnce dark scrollbar */
@@ -275,7 +316,7 @@ body.panel-app,
 
 :root[data-skin="cyber-neon"] .studio-nav-btn:hover,
 :root[data-skin="cyber-neon"] .yya-btn-primary:hover {
-  text-shadow: 0 0 8px var(--panel-accent-glow);
+  /* Yazı üstünde glow = bulanık yazı; parlama yalnız kutuda kalsın. */
   box-shadow: 0 0 18px var(--panel-accent-glow);
 }
 
@@ -283,6 +324,13 @@ body.panel-app,
 .panel-shell > * {
   position: relative;
   z-index: 1;
+}
+/* Sol menü rayı: `.panel-shell > *` kuralı Tailwind'in `z-[80]` sınıfını
+   eziyordu (aynı özgüllük, bu kural sonra geliyor). Menü z=1'de kalınca,
+   DOM'da sonra gelen içerik sütunu onun ÜSTÜNE çiziliyordu: menü açılınca
+   Giriş/Çıkış/Mola ekranlarında arkada kalıyor ve şeffafmış gibi görünüyordu. */
+.panel-shell > .yya-nav-rail {
+  z-index: 80;
 }
 .panel-shell > header {
   z-index: 50;
@@ -315,87 +363,105 @@ textarea::placeholder {
 
 @layer components {
   .yya-card {
-    @apply rounded-lg border border-white/[0.05] bg-white/[0.02] p-3;
+    @apply rounded-md border border-white/[0.07] bg-white/[0.025] p-3.5 transition-colors duration-150;
   }
   .yya-card-hover {
-    @apply yya-card transition-colors duration-150 hover:bg-white/[0.06];
+    @apply yya-card hover:border-white/[0.14] hover:bg-white/[0.05];
   }
   .yya-input {
-    @apply h-8 w-full rounded-md border border-white/[0.08] bg-black/40 px-2.5 text-xs text-white/90 outline-none transition-colors duration-150;
+    @apply h-9 w-full rounded border border-white/[0.12] bg-black/50 px-3 text-xs md:text-sm font-medium text-white outline-none transition-colors duration-150;
   }
   .yya-input:focus {
-    border-color: color-mix(in srgb, var(--panel-accent) 45%, transparent);
+    border-color: color-mix(in srgb, var(--panel-accent) 65%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-accent) 40%, transparent);
   }
   .yya-btn {
-    @apply inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors duration-150;
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded px-3.5 text-xs md:text-sm font-semibold transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none;
   }
   .yya-btn-primary {
-    @apply yya-btn bg-teal-500 text-[#042f2e] hover:bg-teal-400;
+    @apply yya-btn bg-panel-accent text-[color:var(--panel-cta-ink)] hover:brightness-110;
   }
   .yya-btn-accent {
-    @apply yya-btn bg-teal-500 text-[#042f2e] hover:bg-teal-400;
+    @apply yya-btn bg-cyan-400 text-[#022227] hover:bg-cyan-300;
   }
   .yya-btn-ghost {
-    @apply yya-btn border border-white/[0.08] text-white/70 hover:bg-white/[0.06] hover:text-white;
+    @apply yya-btn border border-white/[0.08] bg-white/[0.02] text-white/80 hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-white;
   }
   .yya-btn-danger {
-    @apply yya-btn border border-red-500/20 text-red-300/90 hover:bg-red-500/10;
+    @apply yya-btn border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/20 hover:border-red-500/50;
   }
   .yya-nav-item {
-    @apply flex w-full flex-col rounded-md px-2.5 py-2 text-left transition-colors duration-150;
+    @apply flex w-full flex-col rounded-lg px-2.5 py-2 text-left transition-all duration-150;
   }
   .yya-nav-item-active {
-    @apply yya-nav-item bg-teal-500/10 text-teal-400;
+    @apply yya-nav-item bg-cyan-400/15 text-cyan-300 font-semibold;
   }
   .yya-nav-item-idle {
     @apply yya-nav-item text-white/60 hover:bg-white/[0.06] hover:text-white/90;
   }
   .studio-nav-btn {
-    @apply flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors duration-150;
+    @apply flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-all duration-150;
   }
   .studio-nav-btn-active {
-    @apply studio-nav-btn bg-teal-500/10 text-teal-400;
+    @apply studio-nav-btn bg-cyan-400/15 text-cyan-300 font-bold shadow-[0_0_12px_rgba(62,237,254,0.18)];
   }
   .studio-nav-btn-idle {
-    @apply studio-nav-btn text-white/60 hover:bg-white/[0.06] hover:text-white/90;
+    @apply studio-nav-btn text-white/70 hover:bg-white/[0.08] hover:text-white;
   }
   .studio-nav-label {
     color: inherit;
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
   }
   .studio-nav-hint {
     display: none;
   }
   .studio-nav-icon {
-    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04];
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04] transition-colors;
   }
   .studio-nav-btn-active .studio-nav-icon {
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(62, 237, 254, 0.22);
+    color: #3EEDFE;
+  }
+  .glass-panel {
+    background: rgba(10, 18, 26, 0.75);
+    border: 1px solid rgba(62, 237, 254, 0.12);
+  }
+  .glass-panel-hover {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-panel-hover:hover {
+    background: rgba(16, 28, 40, 0.85);
+    border-color: rgba(62, 237, 254, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -10px rgba(62, 237, 254, 0.25);
+  }
+  .glow-turquoise {
+    box-shadow: 0 0 35px -5px rgba(62, 237, 254, 0.3);
   }
   .yya-pill {
-    @apply rounded-md px-2 py-1 text-[11px] font-medium transition-colors duration-150;
+    @apply rounded-full px-3 py-1 text-xs font-semibold transition-all duration-150;
   }
   .yya-section-title {
-    @apply text-[15px] font-semibold tracking-tight text-white/90;
+    @apply text-base font-bold tracking-tight text-white;
   }
   .yya-section-sub {
-    @apply mt-0.5 max-w-xl text-[11px] leading-relaxed text-white/60;
+    @apply mt-0.5 max-w-xl text-xs leading-relaxed text-white/80;
   }
   .yya-stat {
-    @apply rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2.5;
+    @apply rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3 shadow-sm;
   }
   .yya-label {
-    @apply text-[11px] font-semibold uppercase tracking-wider text-white/60;
+    @apply text-xs font-bold uppercase tracking-wider text-white/80;
   }
   .yya-value {
-    @apply text-[13px] text-white/90;
+    @apply text-sm font-semibold text-white;
   }
   .yya-settings-panel {
-    @apply overflow-hidden rounded-lg border border-white/[0.05] bg-white/[0.02];
+    @apply overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025];
   }
   .yya-modal-backdrop {
-    @apply bg-black/50 backdrop-blur-sm;
+    @apply bg-black/60 backdrop-blur-md;
   }
 
   /* Widget kök — OBS tam ekran; Master slot içinde parent’ı doldur */
@@ -430,28 +496,36 @@ textarea::placeholder {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
   .ns-range {
-    @apply h-1 w-full cursor-pointer appearance-none rounded-full bg-white/10;
+    @apply h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 transition-colors;
+  }
+  .ns-range:hover {
+    @apply bg-white/15;
   }
   .ns-range::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    height: 12px;
-    width: 12px;
+    height: 14px;
+    width: 14px;
     border-radius: 999px;
     background: rgb(var(--accent-rgb, 62 237 254));
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 10px var(--panel-accent-glow), 0 1px 3px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease;
+  }
+  .ns-range::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
   }
   .ns-switch {
-    @apply relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-white/10 transition-colors duration-150;
+    @apply relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-white/15 transition-all duration-200;
   }
   .ns-switch[data-on="true"] {
     background: rgb(var(--accent-rgb, 62 237 254));
+    box-shadow: 0 0 10px var(--panel-accent-glow);
   }
   .ns-switch[data-on="false"] {
     background: rgb(var(--fg-rgb, 255 255 255) / 0.08);
   }
   .ns-switch-knob {
-    @apply absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-pure-white shadow transition;
+    @apply absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-pure-white shadow-md transition-transform duration-200;
   }
   .ns-switch[data-on="true"] .ns-switch-knob {
     transform: translateX(1rem);
@@ -474,9 +548,12 @@ textarea::placeholder {
   --panel-accent: #3EEDFE;
   --panel-accent-strong: #25cbd9;
   --panel-accent-glow: rgba(62, 237, 254, 0.18);
-  --panel-cta: #ea580c;
+  /* Açık temada CTA dolgusu koyulaştırıldı: #ea580c üstünde krem yazı 3.35:1
+     kalıyordu (etkin menü satırı okunmuyordu), #c2410c ile ~5.5:1. */
+  --panel-cta: #c2410c;
   --panel-cta-ink: #fff7ed;
-  --panel-muted: #5b6b7f;
+  /* İkincil yazı: #5b6b7f kart zemininde 3.3–4.1:1 kalıyordu (AA 4.5). */
+  --panel-muted: #44546a;
   --panel-soft: rgba(62, 237, 254, 0.1);
   --panel-glow-a: rgba(62, 237, 254, 0.12);
   --panel-glow-b: rgba(234, 88, 12, 0.08);
@@ -487,7 +564,9 @@ textarea::placeholder {
      zeminde 1.3:1 kontrast veriyordu), dolgu vurgusu parlak kalır. */
   --fg-rgb: 15 23 42;
   --accent-rgb: 62 237 254;
-  --accent-text-rgb: 14 116 144;
+  /* Yazı vurgusu: açık zeminde ~6.5:1 (eski 14 116 144 rozet zemininde 4.3'e
+     düşüyordu). Dolgu vurgusu (--accent-rgb) parlak kalır. */
+  --accent-text-rgb: 12 94 116;
 }
 html.theme-light body,
 html.theme-light #root {
@@ -519,7 +598,27 @@ html.theme-light .text-white\/90 {
 }
 :root.theme-light .text-white\/70,
 :root.theme-light .text-white\/75 {
-  color: rgb(var(--fg-rgb) / 0.82);
+  color: rgb(var(--fg-rgb) / 0.88);
+}
+
+/* Açık temada kenar çubuğu vurguları: parlak turkuaz (#3EEDFE) beyaz zeminde
+   1.2–1.7:1 kalıyordu. Yazı için koyu turkuaz (--accent-text-rgb) kullanılır;
+   dolgular parlak kalır. */
+:root.theme-light .text-cyan-300,
+:root.theme-light .text-cyan-400,
+:root.theme-light .text-cyan-400\/90 {
+  color: rgb(var(--accent-text-rgb));
+}
+:root.theme-light .bg-cyan-500\/20 {
+  background-color: rgb(var(--accent-text-rgb) / 0.14);
+}
+
+/* `text-panel-accent` dolgu vurgusunu (parlak turkuaz) kullanıyordu; açık
+   zeminde 1.2–1.4:1 ile okunmuyordu. Açık temada yazı vurgusuna çevrilir. */
+:root.theme-light .text-panel-accent,
+:root.theme-light .text-panel-accent\/90,
+:root.theme-light .text-panel-accent\/60 {
+  color: rgb(var(--accent-text-rgb));
 }
 :root.theme-light .yya-btn-ghost {
   border-color: rgb(var(--fg-rgb) / 0.18);

@@ -41,10 +41,6 @@ function save(s: TwitchWriteSession | null) {
   }
 }
 
-export function getTwitchWriteSession(): TwitchWriteSession | null {
-  return load();
-}
-
 export function clearTwitchWriteSession() {
   save(null);
 }

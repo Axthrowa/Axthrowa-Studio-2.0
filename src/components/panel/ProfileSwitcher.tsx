@@ -107,16 +107,16 @@ export default function ProfileSwitcher({ onToast }: Props) {
         aria-haspopup="menu"
         aria-expanded={open}
         title="Ayar profili"
-        className="inline-flex h-8 max-w-[11rem] items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 text-xs text-white transition hover:bg-white/[0.1]"
+        className="inline-flex h-8 max-w-[12rem] items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-white/90 transition-all hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-white"
       >
         <span className="truncate">{active.name}</span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-panel-muted" />
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-panel-muted transition-transform group-hover:text-white" />
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-10 z-[90] w-72 rounded-xl bg-[#0e1116] p-2 shadow-2xl ring-1 ring-white/10"
+          className="absolute right-0 top-10 z-[90] w-72 rounded-2xl border border-white/[0.12] bg-[#0c0e14] p-2.5 shadow-glass-elevated"
         >
           <p className="px-2 pb-1.5 text-[11px] leading-snug text-panel-muted">
             Profil, Giriş/Çıkış/Mola/Chat ayarlarını ve ses panelini saklar. OBS bağlantısı ortaktır.

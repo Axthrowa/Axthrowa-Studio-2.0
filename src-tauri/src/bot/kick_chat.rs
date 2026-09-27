@@ -24,6 +24,12 @@ pub struct KickChatRuntime {
   task: Mutex<Option<JoinHandle<()>>>,
 }
 
+impl Default for KickChatRuntime {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl KickChatRuntime {
   pub fn new() -> Self {
     Self {

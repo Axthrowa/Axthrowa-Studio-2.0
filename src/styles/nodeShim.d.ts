@@ -1,5 +1,5 @@
 /**
- * Yalnızca `themeContract.test.ts` için: dosya metnini okuma ve dizin gezme
+ * Yalnızca testler için (`themeContract.test.ts`, `lib/licenses.test.ts`): dosya metnini okuma ve dizin gezme
  * fonksiyonlarının tipi.
  *
  * `@types/node` eklemedik çünkü tüm projeye global tipler sokuyor (örn.

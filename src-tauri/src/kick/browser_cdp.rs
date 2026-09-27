@@ -872,15 +872,14 @@ async fn cdp_xsrf_via_new_tab(port: u16) -> Result<BTreeMap<String, String>> {
         .and_then(|x| x.as_str())
         .unwrap_or("");
       let url = page.get("url").and_then(|u| u.as_str()).unwrap_or("");
-      if (!target_id.is_empty() && id == target_id)
+      if ((!target_id.is_empty() && id == target_id)
         || url.starts_with("https://kick.com")
-        || url.starts_with("https://www.kick.com")
+        || url.starts_with("https://www.kick.com"))
+        && !ws.is_empty()
       {
-        if !ws.is_empty() {
-          page_ws = Some(ws.to_string());
-          if id == target_id {
-            break;
-          }
+        page_ws = Some(ws.to_string());
+        if id == target_id {
+          break;
         }
       }
     }
@@ -1013,12 +1012,6 @@ pub async fn send_chat_via_cdp(
     }
   }
   Err(last_err)
-}
-
-/// Edge CDP’den Kick cookie çiftlerini çek.
-#[allow(dead_code)]
-pub async fn fetch_kick_cookies_via_cdp() -> Result<(u16, Vec<(String, String)>)> {
-  cdp_get_kick_cookies().await
 }
 
 /// data_dir bilerek çağır (port dosyası + CDP).

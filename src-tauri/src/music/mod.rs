@@ -340,19 +340,6 @@ impl MusicState {
     self.now.read().clone()
   }
 
-  pub fn set_now(&self, mut np: Option<NowPlaying>) {
-    if let Some(v) = np.as_mut() {
-      // Zaman damgası her zaman burada konur: okuyan taraf ilerlemeyi
-      // "örnek ne kadar eski" üzerinden yürütüyor, istemcinin gönderdiği
-      // damga eski kalırsa çubuk geri sıçrıyor.
-      v.updated_at = now_ms();
-      if v.source.is_empty() {
-        v.source = self.source();
-      }
-    }
-    *self.now.write() = np;
-  }
-
   /// Spotify veya YTMD anlık görüntüsünü kaydeder; çalan kaynağa otomatik geçer.
   pub fn ingest_now(&self, mut np: Option<NowPlaying>, from: &str) {
     let from = if from == SOURCE_YTMD {

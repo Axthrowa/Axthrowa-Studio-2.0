@@ -2,23 +2,23 @@ import { useEffect } from 'react'
 import { X } from 'lucide-react'
 
 /**
- * "Axt'ı nasıl kullanırım?" rehberi.
+ * "Resonance'ı nasıl kullanırım?" rehberi.
  *
  * Eskiden bu satırdaki "Başlarken" düğmesi harici bir OBS belge sayfasına
  * gidiyordu (`target=_blank`). Uygulama içinde (gömülü çerçeve) yeni pencere
  * açılmadığı için düğme hiçbir şey yapmıyor gibi görünüyordu. Rehber artık
- * uygulamanın içinde, Axt'a özel adımlarla açılır.
+ * uygulamanın içinde, Resonance'a özel adımlarla açılır.
  */
 
 export const HOWTO = {
   tr: {
-    title: "Axt nasıl kullanılır?",
+    title: "Resonance nasıl kullanılır?",
     intro:
-      'Axt, çalan şarkıyı (Spotify veya YouTube Music) yayın ekranında gösteren kart. Kurulum üç adım: müziği bağla, görünümü seç, OBS\'e ekle.',
+      'Resonance, çalan şarkıyı (Spotify veya YouTube Music) yayın ekranında gösteren kart. Kurulum üç adım: müziği bağla, görünümü seç, OBS\'e ekle.',
     steps: [
       {
         title: 'Müzik kaynağını bağla',
-        body: 'Soldaki menüden Bağlantılar → Müzik\'e git. Spotify için kendi Spotify uygulamanın Client ID\'sini gir ve Bağlan\'a bas; YouTube Music için YouTube Music Desktop\'ı aç, Companion Server ve Authorization requests\'i etkinleştirip Bağlan\'a bas. Bağlanınca Axt çalan şarkıyı kendiliğinden gösterir.',
+        body: 'Soldaki menüden Bağlantılar → Müzik\'e git. Spotify için kendi Spotify uygulamanın Client ID\'sini gir ve Bağlan\'a bas; YouTube Music için YouTube Music Desktop\'ı aç, Companion Server ve Authorization requests\'i etkinleştirip Bağlan\'a bas. Bağlanınca Resonance çalan şarkıyı kendiliğinden gösterir.',
       },
       {
         title: 'Görünümü seç',
@@ -45,13 +45,13 @@ export const HOWTO = {
     close: 'Kapat',
   },
   en: {
-    title: 'How to use Axt',
+    title: 'How to use Resonance',
     intro:
-      "Axt is a card that shows the currently playing song (Spotify or YouTube Music) on your stream. Setup takes three steps: connect your music, pick a look, add it to OBS.",
+      "Resonance is a card that shows the currently playing song (Spotify or YouTube Music) on your stream. Setup takes three steps: connect your music, pick a look, add it to OBS.",
     steps: [
       {
         title: 'Connect your music source',
-        body: "Go to Connections → Music in the left menu. For Spotify, enter your own Spotify app's Client ID and press Connect; for YouTube Music, open YouTube Music Desktop, enable Companion Server and Authorization requests, then press Connect. Once connected Axt shows the playing song automatically.",
+        body: "Go to Connections → Music in the left menu. For Spotify, enter your own Spotify app's Client ID and press Connect; for YouTube Music, open YouTube Music Desktop, enable Companion Server and Authorization requests, then press Connect. Once connected Resonance shows the playing song automatically.",
       },
       {
         title: 'Pick a look',

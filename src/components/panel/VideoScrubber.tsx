@@ -434,11 +434,11 @@ export default function VideoScrubber({
   const startPct = duration > 0 ? Math.min(100, ((start || 0) / duration) * 100) : 0;
   const endPct = duration > 0 && end > start ? Math.min(100, (end / duration) * 100) : 100;
   const btn =
-    "flex h-8 items-center justify-center gap-1 rounded-md bg-white/10 px-2 text-xs text-white transition hover:bg-white/20 disabled:opacity-40";
+    "flex h-8 items-center justify-center gap-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 text-xs font-medium text-white transition-all hover:border-white/[0.15] hover:bg-white/[0.08] active:scale-95 disabled:opacity-40";
 
   return (
     <div
-      className="space-y-2 rounded-md border border-panel-border/70 bg-black/30 p-3"
+      className="space-y-3 rounded-2xl border border-white/[0.08] bg-black/40 p-4 shadow-glass"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft") {
@@ -454,7 +454,7 @@ export default function VideoScrubber({
       }}
     >
       {/* Panel sütunu genişleyince oynatıcı sayfayı yutmasın diye yükseklik sınırlı. */}
-      <div className="relative mx-auto aspect-video max-h-[220px] w-full overflow-hidden rounded-md bg-black">
+      <div className="relative mx-auto aspect-video max-h-[220px] w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black">
         {isYt ? (
           <div ref={ytHostRef} className="h-full w-full [&>iframe]:h-full [&>iframe]:w-full" />
         ) : (
@@ -483,7 +483,7 @@ export default function VideoScrubber({
       {/* Sürme çubuğu — kırpma aralığı arkada soluk vurgulu */}
       <div
         ref={barRef}
-        className="relative h-2.5 cursor-pointer rounded-full bg-white/10"
+        className="relative h-3 cursor-pointer rounded-full border border-white/[0.06] bg-white/[0.06]"
         onPointerDown={(e) => {
           if (duration <= 0) return;
           dragging.current = true;
@@ -495,17 +495,17 @@ export default function VideoScrubber({
           style={{ left: `${startPct}%`, width: `${Math.max(0, endPct - startPct)}%` }}
         />
         <div
-          className="absolute top-0 h-full rounded-full bg-panel-accent/80"
+          className="absolute top-0 h-full rounded-full bg-panel-accent/80 shadow-glow-sm"
           style={{ width: `${pct}%` }}
         />
         <div
-          className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pure-white bg-panel-accent"
+          className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pure-white bg-panel-accent shadow-glow-sm"
           style={{ left: `${pct}%` }}
         />
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-panel-muted">
-        <span>{formatClock(time)}</span>
+      <div className="flex items-center justify-between font-mono text-[11px] text-panel-muted">
+        <span className="text-white font-semibold">{formatClock(time)}</span>
         <span>{duration > 0 ? formatClock(duration) : "—"}</span>
       </div>
 
@@ -522,7 +522,7 @@ export default function VideoScrubber({
           <Rewind />
           {SKIP}
         </button>
-        <button type="button" className={`${btn} px-3`} title="Oynat / duraklat" onClick={toggle}>
+        <button type="button" className={`${btn} px-3.5 bg-panel-accent/20 border-panel-accent/40 text-panel-accent hover:bg-panel-accent/30`} title="Oynat / duraklat" onClick={toggle}>
           {playing ? <Pause /> : <Play />}
         </button>
         <button type="button" className={btn} title="10 sn ileri" onClick={() => skip(SKIP)}>
@@ -538,7 +538,7 @@ export default function VideoScrubber({
           <VolumeIcon muted={muted} />
         </button>
         <select
-          className="h-8 rounded-md border border-panel-border bg-[#1c2030] px-1.5 text-xs text-white"
+          className="h-8 rounded-xl border border-white/[0.09] bg-[#12151e] px-2 text-xs font-semibold text-white outline-none focus:border-panel-accent/60"
           value={speed}
           title="Oynatma hızı"
           onChange={(e) => setSpeed(Number(e.target.value))}
@@ -554,7 +554,7 @@ export default function VideoScrubber({
       {onGoLive && (
         <button
           type="button"
-          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-panel-accent/90 text-xs font-semibold text-[#08131c] transition hover:bg-panel-accent"
+          className="flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 text-xs font-bold text-[#08131c] shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95"
           onClick={() => {
             onGoLive(Math.round(ctl().now() * 10) / 10);
             setLiveAt(Date.now());

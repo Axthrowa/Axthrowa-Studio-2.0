@@ -136,17 +136,17 @@ export default function VideoTrimBar({
   if (!show) return null;
 
   return (
-    <div className="space-y-2 rounded-md border border-panel-border/70 bg-black/30 p-3">
-      <div className="flex justify-between text-[11px] text-panel-muted">
-        <span>
+    <div className="space-y-3 rounded-2xl border border-white/[0.08] bg-black/40 p-4 shadow-glass">
+      <div className="flex justify-between font-mono text-[11px] font-medium text-panel-muted">
+        <span className="text-white">
           {label}: {formatTime(start)}
         </span>
         <span>{maxDur > 0 ? formatTime(maxDur) : loadError || "süre yükleniyor…"}</span>
-        <span>{formatTime(effectiveEnd || maxDur)}</span>
+        <span className="text-panel-accent font-semibold">{formatTime(effectiveEnd || maxDur)}</span>
       </div>
       <div
         ref={barRef}
-        className="relative h-3 cursor-pointer rounded-full bg-white/10"
+        className="relative h-3.5 cursor-pointer rounded-full border border-white/[0.06] bg-white/[0.06]"
         onPointerDown={(e) => {
           if (maxDur <= 0) return;
           const t = posToTime(e.clientX);
@@ -157,11 +157,11 @@ export default function VideoTrimBar({
         }}
       >
         <div
-          className="absolute top-0 h-full rounded-full bg-panel-accent/70"
+          className="absolute top-0 h-full rounded-full bg-panel-accent/80 shadow-glow-sm"
           style={{ left: `${startPct}%`, width: `${Math.max(0, endPct - startPct)}%` }}
         />
         <div
-          className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-pure-white bg-panel-accent"
+          className="absolute top-1/2 size-4.5 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-pure-white bg-panel-accent shadow-md transition-transform hover:scale-125"
           style={{ left: `${startPct}%` }}
           onPointerDown={(e) => {
             e.stopPropagation();
@@ -169,7 +169,7 @@ export default function VideoTrimBar({
           }}
         />
         <div
-          className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-pure-white bg-panel-accent"
+          className="absolute top-1/2 size-4.5 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-pure-white bg-panel-accent shadow-md transition-transform hover:scale-125"
           style={{ left: `${endPct}%` }}
           onPointerDown={(e) => {
             e.stopPropagation();
@@ -177,27 +177,27 @@ export default function VideoTrimBar({
           }}
         />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-[10px] text-panel-muted">
+      <div className="grid grid-cols-2 gap-2.5">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Başlangıç (sn)
           <input
             type="number"
             min={0}
             step={0.5}
             max={maxDur || undefined}
-            className="mt-0.5 w-full rounded-md border border-panel-border bg-black/40 px-2 py-1 text-xs"
+            className="mt-1 w-full rounded-xl border border-white/[0.09] bg-black/50 px-3 py-1.5 font-mono text-xs text-white outline-none transition-all focus:border-panel-accent/60"
             value={start || 0}
             onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0), end)}
           />
         </label>
-        <label className="text-[10px] text-panel-muted">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Bitiş (sn, 0=son)
           <input
             type="number"
             min={0}
             step={0.5}
             max={maxDur || undefined}
-            className="mt-0.5 w-full rounded-md border border-panel-border bg-black/40 px-2 py-1 text-xs"
+            className="mt-1 w-full rounded-xl border border-white/[0.09] bg-black/50 px-3 py-1.5 font-mono text-xs text-white outline-none transition-all focus:border-panel-accent/60"
             value={end || 0}
             onChange={(e) => onChange(start, Math.max(0, Number(e.target.value) || 0))}
           />

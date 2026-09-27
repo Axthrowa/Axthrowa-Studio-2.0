@@ -31,38 +31,6 @@ export function normalizeSocialUrl(kind: string, raw: string): string {
   return s;
 }
 
-/** Yanıt komutun kendisiyse ( !discord → !discord ) varsayılan şablona çevir. */
-export function sanitizeCommandResponse(name: string, response: string): string {
-  const n = String(name || "")
-    .replace(/^!/, "")
-    .trim()
-    .toLowerCase();
-  const r = String(response || "").trim();
-  const compact = r.replace(/^!/, "").trim().toLowerCase();
-  const isEcho = !r || compact === n;
-  if (n === "discord") {
-    if (isEcho || r === "{url}") return "Discord: {url}";
-    const invite = extractDiscordInvite(r);
-    if (invite) {
-      const only = r.replace(/^discord:\s*/i, "").trim();
-      if (
-        only === invite ||
-        only === invite.replace(/^https?:\/\//i, "") ||
-        /^https?:\/\/(?:www\.)?discord(?:app)?\.gg\/[A-Za-z0-9-]+\/?$/i.test(only) ||
-        /^discord\.gg\/[A-Za-z0-9-]+\/?$/i.test(only)
-      ) {
-        return "Discord: {url}";
-      }
-    }
-    return r;
-  }
-  if (n === "sosyal" || n === "socials" || n === "links") {
-    if (isEcho || r === "{url}") return "Sosyal: {url}";
-    return r;
-  }
-  return r;
-}
-
 export function fillBraceVars(
   template: string,
   vars: Record<string, string>

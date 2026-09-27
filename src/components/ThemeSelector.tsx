@@ -66,7 +66,7 @@ export default function ThemeSelector({ className }: { className?: string }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.16 }}
-              className="fixed z-[9999] w-64 rounded-xl border border-white/10 bg-[#0a0e16] p-1.5 shadow-2xl"
+              className="fixed z-[9999] w-64 rounded-2xl border border-white/[0.12] bg-[#0c0e14] p-2 shadow-glass-elevated"
               style={{ top: pos.top, right: pos.right }}
               role="listbox"
             >
@@ -83,18 +83,20 @@ export default function ThemeSelector({ className }: { className?: string }) {
                       setOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition",
-                      on ? "bg-[color:var(--panel-accent)]/15" : "hover:bg-white/[0.05]"
+                      "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-all duration-150",
+                      on
+                        ? "bg-[color:var(--panel-accent)]/15 ring-1 ring-[color:var(--panel-accent)]/30"
+                        : "hover:bg-white/[0.05]"
                     )}
                   >
                     <span
-                      className="size-8 shrink-0 rounded-lg border border-white/10"
+                      className="size-7 shrink-0 rounded-lg border border-white/10 shadow-sm"
                       style={{
                         background: `linear-gradient(145deg, ${s.swatch[0]} 40%, ${s.swatch[1]})`,
                       }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-semibold text-white">
+                      <span className="block text-xs font-semibold text-white">
                         {s.label}
                       </span>
                       <span className="block text-[10px] text-white/50">{s.hint}</span>
@@ -117,12 +119,12 @@ export default function ThemeSelector({ className }: { className?: string }) {
         ref={btn}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[12px] font-medium text-white/80 transition hover:border-[color:var(--panel-accent)]/40 hover:text-[color:var(--panel-accent)]"
+        className="inline-flex h-8 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-white/80 transition-all hover:border-[color:var(--panel-accent)]/40 hover:bg-white/[0.06] hover:text-[color:var(--panel-accent)]"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         <span
-          className="size-3 rounded-full ring-1 ring-white/20"
+          className="size-2.5 rounded-full ring-1 ring-white/30 shadow-sm"
           style={{
             background: `linear-gradient(135deg, ${active?.swatch[0]}, ${active?.swatch[1]})`,
           }}

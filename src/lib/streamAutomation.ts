@@ -1,11 +1,61 @@
 /** Yayın otomasyonu — Giriş bitişi → oyun sahnesi, Çıkış bitişi → Stop Stream */
 
-import type { OverlaySettings } from "./api";
+import { API_BASE, type OverlaySettings } from "./api";
 import { connectObs, stopStreamWithRetry, switchScene } from "./obs";
 import { logger } from "./logger";
 import { ruleStopStream, ruleThenScene } from "./endRules";
 
 export type ObsSlice = NonNullable<OverlaySettings["obs"]>;
+
+/**
+ * Tek hakem: bitiş eylemini yalnız BİR görünüm yapar.
+ *
+ * Giriş/çıkış bitişi hem OBS'teki sayfada (StartingPage/EndingPage) hem
+ * panelde (önizleme + izleyici) tetikleniyor; ayrı süreçler olduğu için
+ * birbirinden habersizdiler. Çıkışta StopStream iki kez gidiyor, ikincisi
+ * hata verip panelde yanıltıcı bildirim çıkıyordu. Panel sunucusundaki kilit
+ * (`/api/automation/claim`) ilk talebi kabul eder; eylem başarısız olursa
+ * kilit bırakılır ki öteki görünüm üstlenebilsin. Uç yoksa (eski exe) ya da
+ * sunucuya ulaşılamıyorsa eski davranış sürer — eylem ENGELLENMEZ.
+ */
+export type EndKind = "starting" | "ending";
+export type EndOutcome<T> = { done: true; result: T } | { done: false; reason: "other-view" };
+
+const OWNER = (() => {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+})();
+
+async function lockCall(path: "claim" | "release", kind: EndKind): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/automation/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: `${kind}-end`, owner: OWNER }),
+    });
+    if (path === "release" || !res.ok) return true;
+    const data = await res.json().catch(() => null);
+    return data?.ok !== false;
+  } catch {
+    return true;
+  }
+}
+
+export async function requestEnd<T>(kind: EndKind, action: () => Promise<T>): Promise<EndOutcome<T>> {
+  if (!(await lockCall("claim", kind))) {
+    logger.log(`[stream] ${kind} bitişi başka bir görünümde işleniyor — atlandı`);
+    return { done: false, reason: "other-view" };
+  }
+  try {
+    return { done: true, result: await action() };
+  } catch (e) {
+    await lockCall("release", kind);
+    throw e;
+  }
+}
 
 export function resolveGameScene(obs: ObsSlice | Record<string, unknown> | undefined): string {
   const o = (obs || {}) as ObsSlice & {
@@ -71,8 +121,15 @@ export async function cancelRustSequence(): Promise<void> {
   }
 }
 
-/** Giriş sayacı / medya bitince oyun sahnesine geç */
-export async function runStartingEndAction(live: OverlaySettings): Promise<string | null> {
+/**
+ * Giriş sayacı / medya bitince oyun sahnesine geç. Başka bir görünüm
+ * üstlendiyse `{ done: false }` — çağıran "sahne seçili değil" DEMEMELİ.
+ */
+export async function runStartingEndAction(live: OverlaySettings): Promise<EndOutcome<string | null>> {
+  return requestEnd("starting", () => startingEnd(live));
+}
+
+async function startingEnd(live: OverlaySettings): Promise<string | null> {
   const obs = live.obs || {};
   await cancelRustSequence();
   const scene = resolveGameScene(obs);
@@ -87,8 +144,14 @@ export async function runStartingEndAction(live: OverlaySettings): Promise<strin
   return scene;
 }
 
-/** Çıkış bitince Stop Stream (+ isteğe bağlı sahne) */
-export async function runEndingEndAction(live: OverlaySettings): Promise<{
+/** Çıkış bitince Stop Stream (+ isteğe bağlı sahne) — tek görünüm yapar. */
+export async function runEndingEndAction(
+  live: OverlaySettings,
+): Promise<EndOutcome<{ stopped: boolean; scene: string | null }>> {
+  return requestEnd("ending", () => endingEnd(live));
+}
+
+async function endingEnd(live: OverlaySettings): Promise<{
   stopped: boolean;
   scene: string | null;
 }> {

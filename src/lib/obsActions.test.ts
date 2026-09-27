@@ -120,6 +120,20 @@ describe("kısayol planına entegrasyon", () => {
     expect(plan.bindings.map((b) => b.id)).toEqual(["act:d"]);
   });
 
+  it("panel eylemi satırı kayıt defteri kimliği, hedef ve onayla plana girer (Rust HotkeyBindingIn alanları)", () => {
+    expect(missingField({ id: "e", kind: "action" })).toBe("eylem");
+    const plan = buildHotkeyPlan({
+      obs: {
+        actionHotkeys: [
+          { id: "e1", kind: "action", hotkey: "F9", name: "destination.reconnect", target: "hedef-1", confirmed: true },
+          { id: "e2", kind: "action", hotkey: "F10" },
+        ],
+      },
+    });
+    expect(plan.bindings).toHaveLength(1);
+    expect(plan.bindings[0]).toMatchObject({ id: "act:e1", kind: "action", name: "destination.reconnect", target: "hedef-1", confirmed: true });
+  });
+
   it("aksiyon kısayolu da çakışma tespitine dahil", () => {
     const plan = buildHotkeyPlan({
       obs: {

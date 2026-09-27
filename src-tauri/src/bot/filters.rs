@@ -28,7 +28,7 @@ fn parse_blacklist(raw: &str) -> Vec<String> {
       .filter(|s| !s.is_empty())
       .collect(),
     Value::String(s) => s
-      .split(|c: char| c == ',' || c == '\n')
+      .split([',', '\n'])
       .map(|x| x.trim().to_ascii_lowercase())
       .filter(|s| !s.is_empty())
       .collect(),
@@ -217,11 +217,9 @@ pub async fn check_filters(state: &AppState, msg: &ChatInbound) -> Result<Option
           yya_warn!("[mod] Kick API ban: {e:#}");
         }
       }
-      "delete" | "warn" => {
-        if !msg.raw_id.is_empty() {
-          if let Err(e) = state.kick_auth.delete_chat_message(&msg.raw_id).await {
-            yya_warn!("[mod] Kick API delete: {e:#}");
-          }
+      "delete" | "warn" if !msg.raw_id.is_empty() => {
+        if let Err(e) = state.kick_auth.delete_chat_message(&msg.raw_id).await {
+          yya_warn!("[mod] Kick API delete: {e:#}");
         }
       }
       _ => {}

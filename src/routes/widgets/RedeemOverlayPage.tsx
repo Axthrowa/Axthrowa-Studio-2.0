@@ -105,10 +105,10 @@ export default function RedeemOverlayPage() {
               ? "rounded-lg bg-black/55 px-5 py-3 text-center text-xl font-semibold backdrop-blur-md"
               : layout === "card"
                 ? "rounded-2xl border border-white/15 bg-gradient-to-br from-zinc-900/90 to-stone-950/90 px-8 py-6 text-center shadow-2xl backdrop-blur-md"
-                : "rounded-xl border border-violet-400/25 bg-zinc-950/80 px-8 py-5 text-center shadow-[0_20px_60px_rgba(0,0,0,.45)] backdrop-blur-md"
+                : "rounded-xl border border-cyan-400/25 bg-zinc-950/80 px-8 py-5 text-center shadow-[0_20px_60px_rgba(0,0,0,.45)] backdrop-blur-md"
           }`}
         >
-          <div className="mb-1 text-[11px] uppercase tracking-[0.2em] text-violet-300/80">redeem</div>
+          <div className="mb-1 text-[11px] uppercase tracking-[0.2em] text-cyan-300/80">redeem</div>
           <div className="text-2xl font-semibold leading-snug md:text-3xl">{current.text}</div>
           {current.message && <div className="mt-2 text-sm text-white/70">{current.message}</div>}
         </div>

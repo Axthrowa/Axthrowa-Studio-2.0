@@ -42,10 +42,6 @@ function save(s: YoutubeWriteSession | null) {
   }
 }
 
-export function getYoutubeWriteSession() {
-  return load();
-}
-
 export function clearYoutubeWriteSession() {
   save(null);
   cachedLiveChatId = "";

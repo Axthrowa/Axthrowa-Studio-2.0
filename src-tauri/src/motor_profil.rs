@@ -120,6 +120,94 @@ pub struct HedefAtamasi {
   pub bit_hizi: Option<u32>,
 }
 
+/// Ayarlar > Video + Gelişmiş > Video (OBS düzeni). Taban = sahnelerin koordinat uzayı; çıkış = kodlayıcıya giden
+/// ölçekli boyut. Değişiklik motor yeniden başlayınca uygulanır (çıktı sürerken reddedilir).
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct VideoAyari {
+  pub taban: [u32; 2],
+  pub cikis: [u32; 2],
+  /// Dikey tuvalin boyutu (dikey tuval açıkken)
+  pub dikey_taban: [u32; 2],
+  /// bilinear | bicubic | lanczos | area
+  pub olcek_filtresi: String,
+  /// nv12 | i420 | i444 | p010 | i010 | bgra
+  pub renk_bicimi: String,
+  /// 601 | 709 | srgb | 2100pq | 2100hlg
+  pub renk_uzayi: String,
+  /// kismi | tam
+  pub renk_araligi: String,
+}
+
+impl Default for VideoAyari {
+  fn default() -> Self {
+    VideoAyari {
+      taban: [1920, 1080],
+      cikis: [1920, 1080],
+      dikey_taban: [1080, 1920],
+      olcek_filtresi: "bicubic".into(),
+      renk_bicimi: "nv12".into(),
+      renk_uzayi: "709".into(),
+      renk_araligi: "kismi".into(),
+    }
+  }
+}
+
+pub const OLCEK_FILTRELERI: [&str; 4] = ["bilinear", "bicubic", "lanczos", "area"];
+pub const RENK_BICIMLERI: [&str; 6] = ["nv12", "i420", "i444", "p010", "i010", "bgra"];
+pub const RENK_UZAYLARI: [&str; 5] = ["601", "709", "srgb", "2100pq", "2100hlg"];
+pub const HOPARLORLER: [&str; 7] = ["mono", "stereo", "2.1", "4.0", "4.1", "5.1", "7.1"];
+
+/// Ayarlar > Ses: örnekleme hızı ve kanal düzeni (motor yeniden başlayınca)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct SesAyari {
+  pub ornekleme: u32,
+  pub hoparlor: String,
+}
+
+impl Default for SesAyari {
+  fn default() -> Self {
+    SesAyari { ornekleme: 48_000, hoparlor: "stereo".into() }
+  }
+}
+
+/// Ayarlar > Gelişmiş > Ağ ve Yeniden bağlanma (RTMP hedeflerine uygulanır; motorun `AgAyari`yla aynı alanlar)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct AgAyari {
+  pub bagla_ip: String,
+  pub ip_ailesi: String,
+  pub yeni_soket_dongusu: bool,
+  pub dusuk_gecikme: bool,
+  pub dinamik_bit_hizi: bool,
+  pub yeniden_baglan: bool,
+  pub deneme_gecikmesi_sn: u32,
+  pub en_cok_deneme: u32,
+}
+
+impl Default for AgAyari {
+  fn default() -> Self {
+    AgAyari {
+      bagla_ip: "default".into(),
+      ip_ailesi: "IPv4+IPv6".into(),
+      yeni_soket_dongusu: false,
+      dusuk_gecikme: false,
+      dinamik_bit_hizi: false,
+      yeniden_baglan: true,
+      deneme_gecikmesi_sn: 2,
+      en_cok_deneme: 25,
+    }
+  }
+}
+
+/// Çift, 16–7680 aralığında boyut
+fn boyut_duzelt(b: &mut [u32; 2], v: [u32; 2]) {
+  if b.iter().any(|x| !(16..=7680).contains(x) || x % 2 != 0) {
+    *b = v;
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct IzlemeAygiti {
   pub id: String,
@@ -145,6 +233,12 @@ pub struct Profil {
   pub hedefler: BTreeMap<String, HedefAtamasi>,
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub izleme_aygiti: Option<IzlemeAygiti>,
+  #[serde(default)]
+  pub video: VideoAyari,
+  #[serde(default)]
+  pub ses: SesAyari,
+  #[serde(default)]
+  pub ag: AgAyari,
 }
 
 impl Default for Profil {
@@ -159,6 +253,9 @@ impl Default for Profil {
       iz_adlari: iz_adlari(),
       hedefler: BTreeMap::new(),
       izleme_aygiti: None,
+      video: VideoAyari::default(),
+      ses: SesAyari::default(),
+      ag: AgAyari::default(),
     }
   }
 }
@@ -210,11 +307,71 @@ impl Profil {
       let t: String = a.trim().chars().filter(|c| !c.is_control()).take(24).collect();
       *a = if t.is_empty() { VARSAYILAN_IZ_ADLARI[i].to_string() } else { t };
     }
+    let v = &mut self.video;
+    let vv = VideoAyari::default();
+    boyut_duzelt(&mut v.taban, vv.taban);
+    boyut_duzelt(&mut v.cikis, v.taban);
+    boyut_duzelt(&mut v.dikey_taban, vv.dikey_taban);
+    if !OLCEK_FILTRELERI.contains(&v.olcek_filtresi.as_str()) {
+      v.olcek_filtresi = vv.olcek_filtresi;
+    }
+    if !RENK_BICIMLERI.contains(&v.renk_bicimi.as_str()) {
+      v.renk_bicimi = vv.renk_bicimi.clone();
+    }
+    if !RENK_UZAYLARI.contains(&v.renk_uzayi.as_str()) {
+      v.renk_uzayi = vv.renk_uzayi.clone();
+    }
+    if v.renk_araligi != "kismi" && v.renk_araligi != "tam" {
+      v.renk_araligi = vv.renk_araligi;
+    }
+    // HDR (Rec. 2100) 10 bit biçim ister; tutarsızsa SDR varsayılanına döner (motor da reddeder)
+    if v.renk_uzayi.starts_with("2100") && v.renk_bicimi != "p010" && v.renk_bicimi != "i010" {
+      v.renk_uzayi = vv.renk_uzayi;
+    }
+    if self.ses.ornekleme != 44_100 && self.ses.ornekleme != 48_000 {
+      self.ses.ornekleme = 48_000;
+    }
+    if !HOPARLORLER.contains(&self.ses.hoparlor.as_str()) {
+      self.ses.hoparlor = "stereo".into();
+    }
+    let a = &mut self.ag;
+    if a.bagla_ip != "default" && a.bagla_ip.parse::<std::net::IpAddr>().is_err() {
+      a.bagla_ip = "default".into();
+    }
+    if !["IPv4+IPv6", "IPv4", "IPv6"].contains(&a.ip_ailesi.as_str()) {
+      a.ip_ailesi = "IPv4+IPv6".into();
+    }
+    a.deneme_gecikmesi_sn = a.deneme_gecikmesi_sn.clamp(1, 30);
+    a.en_cok_deneme = a.en_cok_deneme.min(10_000);
     self.hedefler.retain(|id, h| !id.is_empty() && (h.tuval == "ana" || h.tuval == "dikey"));
     for h in self.hedefler.values_mut() {
       h.iz = h.iz.min(5);
       h.bit_hizi = h.bit_hizi.map(|b| b.clamp(200, 100_000));
     }
+  }
+
+  /// Motorun `baslat` isteğindeki video/ses alanları
+  pub fn motor_video_ses(&self) -> Map<String, Value> {
+    let v = &self.video;
+    serde_json::json!({
+      "genislik": v.taban[0], "yukseklik": v.taban[1], "cikis_genislik": v.cikis[0], "cikis_yukseklik": v.cikis[1],
+      "fps": self.fps, "olcek_filtresi": v.olcek_filtresi, "renk_bicimi": v.renk_bicimi, "renk_uzayi": v.renk_uzayi,
+      "renk_araligi": v.renk_araligi, "ornekleme": self.ses.ornekleme, "hoparlor": self.ses.hoparlor,
+    })
+    .as_object()
+    .cloned()
+    .unwrap_or_default()
+  }
+
+  /// Tuvalin taban boyutu
+  pub fn tuval_boyutu(&self, tuval: &str) -> (u32, u32) {
+    let b = if tuval == "dikey" { self.video.dikey_taban } else { self.video.taban };
+    (b[0], b[1])
+  }
+
+  /// Motorun yeniden başlamasını gerektiren değişiklik mi (kare hızı, video, ses)
+  pub fn motor_ayari_farkli(&self, diger: &Profil) -> bool {
+    self.fps != diger.fps || self.video != diger.video || self.ses != diger.ses
   }
 
   /// Tuvalin varsayılan bit hızı
@@ -394,7 +551,7 @@ pub fn yeni_kimlik(d: &Dizin, ad: &str) -> String {
 
 /// Kısmi güncelleme: yalnız verilen alanlar (JSON birleştirme), sonra doğrulama. Bilinmeyen alan reddedilir.
 pub fn birlestir(p: &Profil, parca: &Map<String, Value>) -> Result<Profil, String> {
-  const ALANLAR: [&str; 8] = ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti"];
+  const ALANLAR: [&str; 11] = ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti", "video", "ses", "ag"];
   if let Some(a) = parca.keys().find(|k| !ALANLAR.contains(&k.as_str())) {
     return Err(format!("bilinmeyen profil alanı: {a}"));
   }
@@ -494,4 +651,23 @@ mod tests {
     assert!(yedekle(&d, VARSAYILAN_KIMLIK, true).unwrap().is_file());
     let _ = std::fs::remove_dir_all(&d);
   }
+
+  #[test]
+  fn video_ses_ag_dogrulama_ve_motor_istegi() {
+    let Okuma::Tamam(p) = cozumle(r#"{"surum":1,"video":{"taban":[2560,1440],"cikis":[1281,720],"renk_bicimi":"p010","renk_uzayi":"2100hlg","olcek_filtresi":"x"},"ses":{"ornekleme":96000,"hoparlor":"5.1"},"ag":{"bagla_ip":"eth0","ip_ailesi":"IPv4","deneme_gecikmesi_sn":0,"en_cok_deneme":99999}}"#) else { panic!() };
+    // Tek sayı çıkış tabana döner; 10 bit + HDR tutarlı → korunur; bilinmeyen filtre → bikübik
+    assert_eq!((p.video.taban, p.video.cikis, p.video.renk_uzayi.as_str(), p.video.olcek_filtresi.as_str()), ([2560, 1440], [2560, 1440], "2100hlg", "bicubic"));
+    assert_eq!((p.ses.ornekleme, p.ses.hoparlor.as_str()), (48_000, "5.1"));
+    assert_eq!((p.ag.bagla_ip.as_str(), p.ag.ip_ailesi.as_str(), p.ag.deneme_gecikmesi_sn, p.ag.en_cok_deneme), ("default", "IPv4", 1, 10_000));
+    let m = p.motor_video_ses();
+    assert_eq!((m["genislik"].as_u64(), m["cikis_yukseklik"].as_u64(), m["renk_bicimi"].as_str()), (Some(2560), Some(1440), Some("p010")));
+    assert_eq!(p.tuval_boyutu("dikey"), (1080, 1920));
+    let mut q = (*p).clone();
+    q.ses.ornekleme = 44_100;
+    assert!(q.motor_ayari_farkli(&p));
+    q = (*p).clone();
+    q.ag.dusuk_gecikme = true;
+    assert!(!q.motor_ayari_farkli(&p), "ağ ayarı motoru yeniden başlatmaz (hedef başlarken uygulanır)");
+  }
+
 }

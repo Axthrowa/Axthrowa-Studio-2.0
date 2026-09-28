@@ -32,6 +32,8 @@ struct Calisan {
 #[derive(Default)]
 pub struct Ozet {
   pub bilgi: Value,
+  /// Çalışan motor sürecinin kimliği (GPU payı için)
+  pub motor_pid: Option<u32>,
   pub cikislar: HashMap<String, Value>,
   pub son_cikis_kodu: Option<i32>,
   pub dikey: bool,
@@ -180,7 +182,7 @@ impl MotorKoprusu {
         bekleyen.lock().clear();
       });
     }
-    *self.ozet.lock() = Ozet::default();
+    *self.ozet.lock() = Ozet { motor_pid: cocuk.id(), ..Ozet::default() };
     *self.ic.lock().await = Some(Calisan { cocuk, girdi, bekleyen, sonraki: 0 });
     self.oturum.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let mut istek = ayar;

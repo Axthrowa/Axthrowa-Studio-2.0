@@ -15,7 +15,7 @@ use serde_json::{json, Map, Value};
 
 use super::control_plane::{audit, authorize};
 use super::motor_api::{
-  catisma, gecersiz, kaydet, kaydet_sahneler, kaynak_kur, klasor, komut, koleksiyonu_yaz, motor_calisiyor, oge_kur,
+  catisma, filtreleri_kur, gecersiz, kaydet, kaydet_sahneler, kaynak_kur, klasor, komut, koleksiyonu_yaz, motor_calisiyor, oge_kur,
   tuval_boyutu,
 };
 use crate::motor_koleksiyon::{self as kol, Donusum, GecisKaydi, KaynakKaydi, OgeTuru, Okuma, SahneKaydi, SahneOgesi};
@@ -139,10 +139,14 @@ struct SahneIslemi {
 }
 
 /// Grup kimliklerini (çoğaltılan sahnede) yeniler
+/// Çoğaltılan öğelerde grup ve grup filtresi kimlikleri yenilenir (kimlikler koleksiyonda benzersiz)
 fn gruplari_yenile(ogeler: &mut [SahneOgesi], k: &mut kol::Koleksiyon) {
   for o in ogeler.iter_mut() {
     if o.tur == OgeTuru::Grup {
       o.kaynak = k.yeni_kimlik("g");
+      for f in &mut o.filtreler {
+        f.id = k.yeni_kimlik("f");
+      }
     }
   }
 }
@@ -222,9 +226,15 @@ async fn api_sahne_islem(
           Some(a) => ad_temizle(a)?,
           None => format!("{} (kopya)", kaynak.ad).chars().take(80).collect(),
         };
-        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis, ..Default::default() })
+        // Sahne filtreleri de çoğalır (OBS gibi), yeni kimliklerle
+        let mut filtreler = kaynak.filtreler.clone();
+        for f in &mut filtreler {
+          f.id = o.koleksiyon.yeni_kimlik("f");
+        }
+        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis, filtreler })
       };
       komut(&state, json!({"komut": "sahne.olustur", "id": yeni, "tuval": kayit.tuval, "ad": kayit.ad})).await?;
+      filtreleri_kur(&state, &yeni, &kayit.filtreler).await?;
       let eksikler: HashSet<String> = state.motor.ozet().lock().koleksiyon.kaynaklar.iter().filter(|r| r.eksik).map(|r| r.id.clone()).collect();
       for o in &kayit.ogeler {
         oge_kur(&state, &yeni, o, &eksikler).await?;
@@ -566,6 +576,12 @@ struct OgeGovdesi {
   grup: Option<String>,
   #[serde(default)]
   ad: Option<String>,
+  /// `gecis`: true = gösterme, false = gizleme geçişi
+  #[serde(default)]
+  goster: Option<bool>,
+  /// `gecis`: `{tur, sure_ms, ayarlar?}`; null = geçişi kaldır
+  #[serde(default)]
+  gecis: Option<Value>,
 }
 
 /// Dönüşüm alanlarını doğrular ve motor biçimine çevirir (yalnız verilen alanlar)
@@ -690,6 +706,48 @@ async fn api_oge(
     }
     "gruptan-cikar" => {
       komut(&state, json!({"komut": "grup.cikar", "oge": g.oge})).await?;
+    }
+    "gecis" => {
+      // Öğe gösterme/gizleme geçişi (OBS "Show/Hide Transition")
+      let goster = g.goster.ok_or_else(|| gecersiz("'goster' gerekli".into()))?;
+      let gecis: Option<kol::GecisKaydi> = match g.gecis.clone() {
+        None | Some(Value::Null) => None,
+        Some(v) => Some(serde_json::from_value(v).map_err(|e| gecersiz(format!("geçiş: {e}")))?),
+      };
+      if let Some(x) = &gecis {
+        if !(50..=20_000).contains(&x.sure_ms) {
+          return Err(gecersiz("süre 50–20000 ms olmalı".into()));
+        }
+        if x.ayarlar.to_string().len() > 32 * 1024 {
+          return Err(gecersiz("ayarlar çok büyük".into()));
+        }
+      }
+      // Öğenin kayıttaki yeri: aynı kaynağın motor listesindeki kaçıncı görünümü
+      let liste = komut(&state, json!({"komut": "sahne.ogeler", "sahne": sahne})).await?;
+      let satirlar = liste.as_array().cloned().unwrap_or_default();
+      let konum = satirlar.iter().position(|x| x["oge"] == g.oge.as_str()).ok_or_else(|| bulunamadi("öğe yok".into()))?;
+      let kaynak = satirlar[konum]["kaynak"].as_str().unwrap_or("").to_string();
+      let n = satirlar[..konum].iter().filter(|x| x["kaynak"] == kaynak.as_str()).count();
+      let mut istek = json!({"komut": "oge.gecis", "oge": g.oge, "goster": goster});
+      if let Some(x) = &gecis {
+        istek["tur"] = json!(x.tur);
+        istek["sure_ms"] = json!(x.sure_ms);
+        istek["ayarlar"] = if x.ayarlar.is_object() { x.ayarlar.clone() } else { json!({}) };
+      }
+      komut(&state, istek).await?;
+      kaydet_sahneler(&state, std::slice::from_ref(&sahne)).await?;
+      {
+        let o = state.motor.ozet();
+        let mut o = o.lock();
+        if let Some(kayit) = o.koleksiyon.oge_bul_mut(&sahne, &kaynak, n) {
+          if goster {
+            kayit.goster_gecisi = gecis;
+          } else {
+            kayit.gizle_gecisi = gecis;
+          }
+        }
+      }
+      koleksiyonu_yaz(&state)?;
     }
     "grup-adlandir" => {
       let ad = ad_temizle(g.ad.as_deref().unwrap_or(""))?;

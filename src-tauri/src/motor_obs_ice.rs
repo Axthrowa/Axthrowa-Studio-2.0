@@ -127,6 +127,37 @@ fn donusum(o: &Value) -> Donusum {
   }
 }
 
+/// OBS filtre dizisi (kaynak, sahne ya da grup `filters`) → filtre kayıtları
+fn filtreleri_cevir(sahip: &str, s: &Value, r: &mut IceAktarimRaporu) -> Vec<FiltreKaydi> {
+  let mut v = Vec::new();
+  for f in s.get("filters").and_then(Value::as_array).into_iter().flatten() {
+    let ftur = f.get("versioned_id").or(f.get("id")).and_then(Value::as_str).unwrap_or("");
+    if ftur.is_empty() {
+      continue;
+    }
+    v.push(FiltreKaydi {
+      id: format!("{sahip}-f{}", v.len() + 1),
+      tur: ftur.to_string(),
+      ad: f.get("name").and_then(Value::as_str).unwrap_or(ftur).to_string(),
+      etkin: f.get("enabled").and_then(Value::as_bool).unwrap_or(true),
+      ayarlar: f.get("settings").cloned().unwrap_or(json!({})),
+    });
+    r.filtre += 1;
+  }
+  v
+}
+
+/// Öğenin gösterme/gizleme geçişi (OBS: `{"id", "versioned_id", "name", "transition": {ayarlar}, "duration"}`;
+/// geçiş atanmamışsa yalnız `duration`)
+fn oge_gecisi(t: &Value) -> Option<GecisKaydi> {
+  let tur = t.get("versioned_id").or(t.get("id")).and_then(Value::as_str).filter(|x| !x.is_empty())?;
+  Some(GecisKaydi {
+    tur: tur.to_string(),
+    sure_ms: t.get("duration").and_then(Value::as_u64).unwrap_or(300).clamp(50, 20_000) as u32,
+    ayarlar: t.get("transition").or(t.get("settings")).cloned().filter(Value::is_object).unwrap_or(Value::Null),
+  })
+}
+
 /// OBS koleksiyon JSON'unu motor koleksiyonuna çevirir (hepsi ana tuvalde). `kayitli`: motorda kayıtlı giriş türleri
 /// (boşsa sürüm seçimi OBS dosyasındaki `versioned_id` ile yapılır).
 pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, IceAktarimRaporu), String> {
@@ -176,20 +207,7 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
           senkron_ms: (s.get("sync").and_then(Value::as_i64).unwrap_or(0) / 1_000_000).clamp(-950, 20_000),
           izleme: s.get("monitoring_type").and_then(Value::as_i64).unwrap_or(0).clamp(0, 2) as i32,
         };
-        for f in s.get("filters").and_then(Value::as_array).into_iter().flatten() {
-          let ftur = f.get("versioned_id").or(f.get("id")).and_then(Value::as_str).unwrap_or("");
-          if ftur.is_empty() {
-            continue;
-          }
-          rec.filtreler.push(FiltreKaydi {
-            id: format!("{id}-f{}", rec.filtreler.len() + 1),
-            tur: ftur.to_string(),
-            ad: f.get("name").and_then(Value::as_str).unwrap_or(ftur).to_string(),
-            etkin: f.get("enabled").and_then(Value::as_bool).unwrap_or(true),
-            ayarlar: f.get("settings").cloned().unwrap_or(json!({})),
-          });
-          r.filtre += 1;
-        }
+        rec.filtreler = filtreleri_cevir(&id, s, &mut r);
         if s.get("hotkeys").and_then(Value::as_object).is_some_and(|h| h.values().any(|v| v.as_array().is_some_and(|a| !a.is_empty()))) {
           r.notlar.push(format!("«{isim}»: kısayol bağları aktarılmadı (Kısayollar sayfasından atayın)"));
         }
@@ -211,7 +229,16 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
     } else {
       OgeTuru::Kaynak
     };
-    Some(SahneOgesi { kaynak: hedef, tur, ad: grup_adi.unwrap_or("").to_string(), donusum: donusum(o), cocuklar, ..Default::default() })
+    Some(SahneOgesi {
+      kaynak: hedef,
+      tur,
+      ad: grup_adi.unwrap_or("").to_string(),
+      donusum: donusum(o),
+      cocuklar,
+      goster_gecisi: oge_gecisi(&o["show_transition"]),
+      gizle_gecisi: oge_gecisi(&o["hide_transition"]),
+      ..Default::default()
+    })
   };
   for (sid, s) in &sahne_json {
     let mut ogeler = Vec::new();
@@ -222,18 +249,17 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
       };
       if let Some(g) = grup_json.get(&hedef) {
         let cocuklar: Vec<SahneOgesi> = g["settings"]["items"].as_array().into_iter().flatten().filter_map(|c| oge_cevir(c, Vec::new(), None)).collect();
-        if let Some(x) = oge_cevir(o, cocuklar, g["name"].as_str()) {
+        if let Some(mut x) = oge_cevir(o, cocuklar, g["name"].as_str()) {
+          x.filtreler = filtreleri_cevir(&hedef, g, &mut r);
           ogeler.push(x);
           r.grup += 1;
         }
       } else if let Some(x) = oge_cevir(o, Vec::new(), None) {
         ogeler.push(x);
       }
-      if o.get("show_transition").and_then(|t| t.get("id")).is_some() || o.get("hide_transition").and_then(|t| t.get("id")).is_some() {
-        r.notlar.push(format!("«{}» öğesinin göster/gizle geçişi aktarılmadı", o["name"].as_str().unwrap_or("?")));
-      }
     }
-    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, ..Default::default() });
+    let filtreler = filtreleri_cevir(sid, s, &mut r);
+    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, filtreler });
     r.sahne += 1;
   }
   // Sahne sırası (OBS "scene_order")
@@ -285,17 +311,23 @@ mod tests {
         {"name": "Ara", "uuid": "u4", "id": "scene", "versioned_id": "scene", "settings": {"items": [
           {"name": "Arka", "source_uuid": "u1", "visible": true, "locked": false, "pos": {"x": 0, "y": 0}, "scale": {"x": 1, "y": 1}, "align": 5, "bounds_type": 0}
         ]}},
-        {"name": "Oyun", "uuid": "u5", "id": "scene", "versioned_id": "scene", "settings": {"items": [
+        {"name": "Oyun", "uuid": "u5", "id": "scene", "versioned_id": "scene",
+         "filters": [{"name": "Sahne rengi", "id": "color_filter", "versioned_id": "color_filter_v2", "settings": {"brightness": -0.2}}],
+         "settings": {"items": [
           {"name": "Arka", "source_uuid": "u1", "visible": true, "locked": true, "rot": 90.0, "pos": {"x": 10, "y": 20}, "scale": {"x": 2, "y": 2},
            "align": 5, "bounds_type": 2, "bounds_align": 0, "bounds": {"x": 1920, "y": 1080}, "crop_left": 4, "crop_top": 0, "crop_right": 0, "crop_bottom": 8,
-           "scale_filter": "lanczos", "blend_type": "screen", "show_transition": {"id": "fade_transition"}},
+           "scale_filter": "lanczos", "blend_type": "screen",
+           "show_transition": {"id": "fade_transition", "versioned_id": "fade_transition", "name": "Soldur", "transition": {}, "duration": 450},
+           "hide_transition": {"duration": 300}},
           {"name": "Kamera Grubu", "source_uuid": "u6", "visible": true, "pos": {"x": 100, "y": 100}, "scale": {"x": 1, "y": 1}},
           {"name": "Ara", "source_uuid": "u4", "visible": false, "pos": {"x": 0, "y": 0}, "scale": {"x": 0.5, "y": 0.5}},
           {"name": "Yok", "source_uuid": "u99"}
         ]}}
       ],
       "groups": [
-        {"name": "Kamera Grubu", "uuid": "u6", "id": "group", "settings": {"items": [
+        {"name": "Kamera Grubu", "uuid": "u6", "id": "group",
+         "filters": [{"name": "Grup maskesi", "id": "mask_filter", "versioned_id": "mask_filter_v2", "enabled": false, "settings": {}}],
+         "settings": {"items": [
           {"name": "Başlık", "source_uuid": "u3", "visible": false, "pos": {"x": 5, "y": 6}, "scale": {"x": 1, "y": 1}},
           {"name": "Müzik", "source_uuid": "u2", "visible": true, "pos": {"x": 0, "y": 0}, "scale": {"x": 1, "y": 1}}
         ]}}
@@ -307,7 +339,7 @@ mod tests {
   fn obs_koleksiyonu_cevrilir() {
     let kayitli: Vec<String> = ["color_source", "color_source_v2", "color_source_v3", "ffmpeg_source", "text_gdiplus", "text_gdiplus_v3"].iter().map(|s| s.to_string()).collect();
     let (k, r) = cevir(&ornek(), "OBS: Sentetik", &kayitli).unwrap();
-    assert_eq!((r.kaynak, r.sahne, r.grup, r.filtre), (3, 2, 1, 1));
+    assert_eq!((r.kaynak, r.sahne, r.grup, r.filtre), (3, 2, 1, 3));
     assert_eq!(k.ad, "OBS: Sentetik");
     // Sahne sırası ve program
     let adlar: Vec<&str> = k.sahneler.iter().map(|s| s.ad.as_str()).collect();
@@ -334,7 +366,14 @@ mod tests {
     assert_eq!(k.gecisler["ana"].tur, "slide_transition");
     assert_eq!(k.gecisler["ana"].sure_ms, 450);
     assert!(r.notlar.iter().any(|n| n.contains("kısayol")));
-    assert!(r.notlar.iter().any(|n| n.contains("göster/gizle")));
+    // Öğe geçişleri, sahne ve grup filtreleri
+    let gos = oyun.ogeler[0].goster_gecisi.as_ref().unwrap();
+    assert_eq!((gos.tur.as_str(), gos.sure_ms), ("fade_transition", 450));
+    assert!(oyun.ogeler[0].gizle_gecisi.is_none(), "atanmamış geçiş (yalnız süre) aktarılmaz");
+    assert_eq!(oyun.filtreler.len(), 1);
+    assert_eq!(oyun.filtreler[0].tur, "color_filter_v2");
+    assert_eq!((g.filtreler.len(), g.filtreler[0].etkin), (1, false));
+    assert!(!r.notlar.iter().any(|n| n.contains("göster/gizle")));
     assert!(r.notlar.iter().any(|n| n.contains("bilinmeyen")));
     assert!(cevir(&json!({"x": 1}), "a", &[]).is_err());
   }

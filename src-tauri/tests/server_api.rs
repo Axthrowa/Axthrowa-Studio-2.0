@@ -2239,3 +2239,107 @@ async fn motor_sihirbaz_yerel_kodlama_sinamasi() {
   assert!(v["notlar"].as_array().unwrap().iter().any(|n| n.as_str().unwrap().contains("Yükleme hızı girilmedi")));
   assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
 }
+
+/// Parite eksikleri: sahne ve grup filtreleri, öğe gösterme/gizleme geçişi (koleksiyon değişiminde korunur), etkileşim
+/// ucu (etkileşimsiz kaynak reddedilir), profil video/ses değişimi motoru ölçekli çıkışla yeniden başlatır, GPU alanı.
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_sahne_grup_filtresi_oge_gecisi_etkilesim_video_ayari() {
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let post = |yol: &str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let get = |yol: String| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.get(url).send().await.unwrap();
+      assert!(r.status().is_success(), "GET {yol}: {}", r.status());
+      r.json::<Value>().await.unwrap()
+    }
+  };
+
+  let bas = tamam("/api/motor/baslat", json!({})).await;
+  assert!(bas["bilgi"]["libobs"].is_string(), "{bas}");
+  let renk = tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#204060", "ad": "Arka"})).await["id"].as_str().unwrap().to_string();
+  let yazi = tamam("/api/motor/kaynak", json!({"tur": "yazi", "deger": "Başlık", "ad": "Başlık"})).await["id"].as_str().unwrap().to_string();
+
+  // Sahne filtresi
+  let sf = tamam("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": "sahne-ana", "tur": "color_filter_v2", "ad": "Sahne rengi", "ayarlar": {"brightness": -0.1}})).await["id"].as_str().unwrap().to_string();
+  assert_eq!(get("/api/motor/filtreler?kaynak=sahne-ana".into()).await["filtreler"][0]["id"], json!(sf));
+  assert_eq!(post("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": "boyle-bir-sey-yok", "tur": "color_filter_v2"})).await.status(), 404);
+
+  // Grup filtresi
+  let gr = tamam("/api/motor/oge", json!({"eylem": "grupla", "sahne": "sahne-ana", "ogeler": [format!("sahne-ana/{renk}"), format!("sahne-ana/{yazi}")], "ad": "Grup"})).await;
+  let grup_oge = gr["oge"].as_str().unwrap().to_string();
+  let grup_id = grup_oge.rsplit_once('/').unwrap().1.to_string();
+  let gf = tamam("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": grup_id, "tur": "color_filter_v2", "ad": "Grup rengi"})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/filtre", json!({"eylem": "etkin", "id": gf, "acik": false})).await;
+  let sahne = get("/api/motor/sahne?sahne=sahne-ana".into()).await;
+  let grup = sahne["ogeler"].as_array().unwrap().iter().find(|o| o["oge"] == grup_oge.as_str()).cloned().unwrap();
+  assert_eq!(grup["filtre"], 1, "grubun filtre sayısı listede");
+
+  // Öğe gizleme geçişi
+  let renk_oge = format!("sahne-ana/{renk}");
+  tamam("/api/motor/oge", json!({"oge": renk_oge, "eylem": "gecis", "goster": false, "gecis": {"tur": "fade_transition", "sure_ms": 400}})).await;
+  assert_eq!(post("/api/motor/oge", json!({"oge": renk_oge, "eylem": "gecis", "goster": true, "gecis": {"tur": "fade_transition", "sure_ms": 10}})).await.status(), 400);
+  let oge_bul = |s: &Value| s["ogeler"].as_array().unwrap().iter().find(|o| o["oge"] == renk_oge.as_str()).cloned().unwrap();
+  let o = oge_bul(&get("/api/motor/sahne?sahne=sahne-ana".into()).await);
+  assert_eq!((o["gizleGecisi"]["tur"].as_str(), o["gizleGecisi"]["sure_ms"].as_u64(), o["gosterGecisi"].is_null()), (Some("fade_transition"), Some(400), true));
+
+  // Koleksiyon değişimi ve geri dönüş: sahne/grup filtreleri ve öğe geçişi geri kurulur
+  let ikinci = tamam("/api/motor/koleksiyon", json!({"eylem": "yeni", "ad": "Geçici"})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/koleksiyon", json!({"eylem": "gec", "id": ikinci})).await;
+  tamam("/api/motor/koleksiyon", json!({"eylem": "gec", "id": "varsayilan"})).await;
+  assert_eq!(get("/api/motor/filtreler?kaynak=sahne-ana".into()).await["filtreler"].as_array().unwrap().len(), 1, "sahne filtresi geri kuruldu");
+  let gl = get(format!("/api/motor/filtreler?kaynak={grup_id}")).await;
+  assert_eq!((gl["filtreler"].as_array().unwrap().len(), gl["filtreler"][0]["etkin"].clone()), (1, json!(false)), "grup filtresi geri kuruldu: {gl}");
+  let o = oge_bul(&get("/api/motor/sahne?sahne=sahne-ana".into()).await);
+  assert_eq!(o["gizleGecisi"]["tur"], "fade_transition", "öğe geçişi geri kuruldu");
+
+  // Sahne çoğaltma: sahne filtresi yeni kimlikle kopyalanır
+  let ikiz = tamam("/api/motor/sahne-islem", json!({"eylem": "cogalt", "id": "sahne-ana"})).await["id"].as_str().unwrap().to_string();
+  let ikiz_f = get(format!("/api/motor/filtreler?kaynak={ikiz}")).await;
+  assert_eq!(ikiz_f["filtreler"].as_array().unwrap().len(), 1);
+  assert_ne!(ikiz_f["filtreler"][0]["id"], json!(sf));
+  tamam("/api/motor/sahne-islem", json!({"eylem": "sil", "id": ikiz})).await;
+
+  // Etkileşim: renk kaynağı etkileşim almaz; geçersiz kimlik reddedilir
+  assert!(post("/api/motor/etkilesim", json!({"kaynak": renk, "eylem": "ac"})).await.status().is_client_error());
+  assert_eq!(post("/api/motor/etkilesim", json!({"kaynak": "../x", "eylem": "ac"})).await.status(), 400);
+  assert_eq!(post("/api/motor/etkilesim", json!({"kaynak": renk, "eylem": "zipla"})).await.status(), 400);
+
+  // Profil video/ses: ölçekli çıkış ve 44,1 kHz → motor yeni ayarlarla yeniden başlar; tuval boyutu tabandan
+  let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"video": {"cikis": [1280, 720], "olcek_filtresi": "lanczos"}, "ses": {"ornekleme": 44100}}})).await;
+  assert_eq!(r["motorYenidenBasladi"], true, "{r}");
+  let d = get("/api/motor".into()).await;
+  assert_eq!(d["calisiyor"], true);
+  assert_eq!(d["bilgi"]["video"]["cikis"], json!([1280, 720]), "{}", d["bilgi"]);
+  assert_eq!((d["bilgi"]["video"]["olcek_filtresi"].as_str(), d["bilgi"]["video"]["ornekleme"].as_u64()), (Some("lanczos"), Some(44_100)));
+  assert_eq!(d["tuvalBoyutlari"]["ana"], json!([1920, 1080]));
+  assert!(d.get("gpu").is_some(), "GPU alanı (ölçüm yoksa null)");
+  // Yeniden başlamadan sonra koleksiyon yerinde
+  assert_eq!(get("/api/motor/filtreler?kaynak=sahne-ana".into()).await["filtreler"].as_array().unwrap().len(), 1);
+  // Geçersiz değerler düzeltilir (HDR + 8 bit → SDR, tek sayı çözünürlük → varsayılan)
+  let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"video": {"renk_uzayi": "2100pq", "taban": [1921, 1080]}}})).await;
+  assert_eq!((r["profil"]["video"]["renk_uzayi"].as_str(), r["profil"]["video"]["taban"].clone()), (Some("709"), json!([1920, 1080])));
+  assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
+}

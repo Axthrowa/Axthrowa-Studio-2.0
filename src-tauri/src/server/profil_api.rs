@@ -138,10 +138,21 @@ async fn api_islem(
       let calisiyor = state.motor.calisiyor().await;
       let once = if calisiyor { state.motor.ozet().lock().profil.clone() } else { prf::etkin(&d) };
       let yeni = prf::birlestir(&once, &degisim).map_err(gecersiz)?;
-      if yeni.fps != once.fps && calisiyor {
-        return Err(catisma("kare hızı motor çalışırken değişmez; motoru durdurup değiştirin (ya da profil değiştirin)".into()));
+      // Kare hızı, video ve ses ayarları motorun yeniden başlamasını ister (OBS'te de çıktılar dururken uygulanır)
+      let yeniden = calisiyor && yeni.motor_ayari_farkli(&once);
+      if yeniden && etkin_cikis_var(&state) {
+        return Err(catisma("kare hızı, video ve ses ayarları yayın, kayıt ya da tekrar arabelleği sürerken değişmez; önce çıktıları durdurun".into()));
       }
       prf::etkin_yaz(&d, &yeni).map_err(catisma)?;
+      if yeniden {
+        let dikey = state.motor.ozet().lock().dikey;
+        let _ = super::motor_api::kaydet(&state).await;
+        state.motor.durdur().await.map_err(catisma)?;
+        crate::eklenti::kayit::oturum_bitti(&d);
+        motoru_baslat(&state, &actor, BaslatGovdesi { dikey: Some(dikey), ..Default::default() }).await?;
+        audit(&state, &actor, "MOTOR_PROFILE", json!({"eylem": "guncelle", "alanlar": degisim.keys().collect::<Vec<_>>(), "motorYenidenBasladi": true})).await;
+        return Ok(Json(json!({"profil": yeni, "bekleyen": false, "motorYenidenBasladi": true})));
+      }
       if calisiyor {
         state.motor.ozet().lock().profil = yeni.clone();
         if yeni.cikis != once.cikis || yeni.kayit != once.kayit {

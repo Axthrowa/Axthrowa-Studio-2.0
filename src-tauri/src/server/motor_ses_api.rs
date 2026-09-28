@@ -16,7 +16,7 @@ use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
 use super::control_plane::{audit, authorize};
-use super::motor_api::{gecersiz, komut, koleksiyonu_yaz, modul_grubu_yukle, motor_calisiyor, tuval_boyutu};
+use super::motor_api::{gecersiz, komut, koleksiyonu_yaz, modul_grubu_yukle, motor_calisiyor, onizleme_tuvali_gecerli};
 use crate::motor_koleksiyon::{FiltreKaydi, KaynakKaydi};
 use crate::AppState;
 
@@ -33,6 +33,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/filtre", post(api_filtre))
     .route("/api/motor/filtre/ozellikler", get(api_filtre_ozellikleri))
     .route("/api/motor/medya", post(api_medya))
+    .route("/api/motor/etkilesim", post(api_etkilesim))
     .route("/api/motor/kaynak-durumlari", get(api_kaynak_durumlari))
     .route("/api/motor/tur-ozellikleri", get(api_tur_ozellikleri))
     .route("/ws/motor", get(ws_motor))
@@ -283,7 +284,7 @@ async fn api_filtreler(
   motor_calisiyor(&state).await?;
   let motor = komut(&state, json!({"komut": "filtre.listesi", "kaynak": q.kaynak})).await?;
   // Motorda kurulamamış (türü olmayan) filtreler de kayıttan gösterilir
-  let kayit: Vec<FiltreKaydi> = state.motor.ozet().lock().koleksiyon.kaynaklar.iter().find(|k| k.id == q.kaynak).map(|k| k.filtreler.clone()).unwrap_or_default();
+  let kayit: Vec<FiltreKaydi> = state.motor.ozet().lock().koleksiyon.filtreler_mut(&q.kaynak).map(|v| v.clone()).unwrap_or_default();
   let motordakiler = motor["filtreler"].as_array().cloned().unwrap_or_default();
   let eksik: Vec<Value> = kayit
     .iter()
@@ -312,11 +313,6 @@ struct FiltreGovdesi {
   acik: Option<bool>,
 }
 
-/// Filtrenin sahibi kaynak (kayıttan)
-fn filtre_sahibi(k: &crate::motor_koleksiyon::Koleksiyon, fid: &str) -> Option<String> {
-  k.kaynaklar.iter().find(|x| x.filtreler.iter().any(|f| f.id == fid)).map(|x| x.id.clone())
-}
-
 async fn api_filtre(
   State(state): State<Arc<AppState>>,
   ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -326,7 +322,8 @@ async fn api_filtre(
   let actor = authorize(&state, &addr, &headers, "scene.edit").await?;
   motor_calisiyor(&state).await?;
   let fid = || g.id.clone().ok_or_else(|| gecersiz("'id' gerekli".into()));
-  let sahip = |fid: &str| filtre_sahibi(&state.motor.ozet().lock().koleksiyon, fid).ok_or_else(|| bulunamadi("filtre yok".into()));
+  // Filtre sahibi kaynak, sahne ya da grup olabilir (OBS sahne/grup filtreleri)
+  let sahip = |fid: &str| state.motor.ozet().lock().koleksiyon.filtre_sahibi(fid).ok_or_else(|| bulunamadi("filtre yok".into()));
   let mut sonuc = json!({"ok": true});
   match g.eylem.as_str() {
     "ekle" => {
@@ -340,14 +337,15 @@ async fn api_filtre(
       let yeni = {
         let o = state.motor.ozet();
         let mut o = o.lock();
-        if !o.koleksiyon.kaynaklar.iter().any(|k| k.id == kaynak && !k.eksik) {
-          return Err(bulunamadi("kaynak yok".into()));
+        let eksik = o.koleksiyon.kaynaklar.iter().any(|k| k.id == kaynak && k.eksik);
+        if eksik || o.koleksiyon.filtreler_mut(&kaynak).is_none() {
+          return Err(bulunamadi("kaynak, sahne ya da grup yok".into()));
         }
         o.koleksiyon.yeni_kimlik("f")
       };
       komut(&state, json!({"komut": "filtre.ekle", "kaynak": kaynak, "id": yeni, "tur": tur, "ad": ad, "ayarlar": ayarlar})).await?;
-      if let Some(k) = state.motor.ozet().lock().koleksiyon.kaynak(&kaynak) {
-        k.filtreler.push(FiltreKaydi { id: yeni.clone(), tur, ad, etkin: true, ayarlar });
+      if let Some(v) = state.motor.ozet().lock().koleksiyon.filtreler_mut(&kaynak) {
+        v.push(FiltreKaydi { id: yeni.clone(), tur, ad, etkin: true, ayarlar });
       }
       sonuc["id"] = json!(yeni);
     }
@@ -355,8 +353,8 @@ async fn api_filtre(
       let id = fid()?;
       let k = sahip(&id)?;
       komut(&state, json!({"komut": "filtre.sil", "id": id})).await?;
-      if let Some(x) = state.motor.ozet().lock().koleksiyon.kaynak(&k) {
-        x.filtreler.retain(|f| f.id != id);
+      if let Some(v) = state.motor.ozet().lock().koleksiyon.filtreler_mut(&k) {
+        v.retain(|f| f.id != id);
       }
     }
     "sira" => {
@@ -367,8 +365,8 @@ async fn api_filtre(
       // Motorun gerçek sırası kayda yansıtılır
       let liste = komut(&state, json!({"komut": "filtre.listesi", "kaynak": k})).await?;
       let sira: Vec<String> = liste["filtreler"].as_array().into_iter().flatten().filter_map(|f| f["id"].as_str().map(String::from)).collect();
-      if let Some(x) = state.motor.ozet().lock().koleksiyon.kaynak(&k) {
-        x.filtreler.sort_by_key(|f| sira.iter().position(|s| s == &f.id).unwrap_or(usize::MAX));
+      if let Some(v) = state.motor.ozet().lock().koleksiyon.filtreler_mut(&k) {
+        v.sort_by_key(|f| sira.iter().position(|s| s == &f.id).unwrap_or(usize::MAX));
       }
     }
     "etkin" => {
@@ -376,7 +374,7 @@ async fn api_filtre(
       let k = sahip(&id)?;
       let acik = g.acik.ok_or_else(|| gecersiz("'acik' gerekli".into()))?;
       komut(&state, json!({"komut": "filtre.etkin", "id": id, "acik": acik})).await?;
-      if let Some(f) = state.motor.ozet().lock().koleksiyon.kaynak(&k).and_then(|x| x.filtreler.iter_mut().find(|f| f.id == id)) {
+      if let Some(f) = state.motor.ozet().lock().koleksiyon.filtreler_mut(&k).and_then(|v| v.iter_mut().find(|f| f.id == id)) {
         f.etkin = acik;
       }
     }
@@ -388,7 +386,7 @@ async fn api_filtre(
         return Err(gecersiz("ad boş olamaz".into()));
       }
       komut(&state, json!({"komut": "filtre.adlandir", "id": id, "ad": ad})).await?;
-      if let Some(f) = state.motor.ozet().lock().koleksiyon.kaynak(&k).and_then(|x| x.filtreler.iter_mut().find(|f| f.id == id)) {
+      if let Some(f) = state.motor.ozet().lock().koleksiyon.filtreler_mut(&k).and_then(|v| v.iter_mut().find(|f| f.id == id)) {
         f.ad = ad;
       }
     }
@@ -400,7 +398,7 @@ async fn api_filtre(
         return Err(gecersiz("ayarlar çok büyük".into()));
       }
       komut(&state, json!({"komut": "filtre.guncelle", "id": id, "ayarlar": ayarlar})).await?;
-      if let Some(f) = state.motor.ozet().lock().koleksiyon.kaynak(&k).and_then(|x| x.filtreler.iter_mut().find(|f| f.id == id)) {
+      if let Some(f) = state.motor.ozet().lock().koleksiyon.filtreler_mut(&k).and_then(|v| v.iter_mut().find(|f| f.id == id)) {
         if !f.ayarlar.is_object() {
           f.ayarlar = json!({});
         }
@@ -432,6 +430,51 @@ async fn api_filtre_ozellikleri(
   authorize(&state, &addr, &headers, "broadcast.read").await?;
   motor_calisiyor(&state).await?;
   Ok(Json(komut(&state, json!({"komut": "filtre.ozellikler", "id": q.id})).await?))
+}
+
+// ─── Etkileşim (tarayıcı kaynağı vb.) ───────────────────────────────────────
+
+#[derive(Deserialize)]
+struct EtkilesimGovdesi {
+  kaynak: String,
+  /// `ac` (kaynağın tek başına görüntüsü için tuval), `kapat`, `olay`
+  eylem: String,
+  #[serde(default)]
+  olay: Option<Value>,
+}
+
+/// OBS "Etkileşim" penceresi: fare/klavye olayları kaynağa iletilir. Yalnız yerel istemci (olaylar kullanıcının
+/// oturum açtığı web sayfalarına tıklama/tuş olarak gider) ve `scene.edit` yetkisi.
+async fn api_etkilesim(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<EtkilesimGovdesi>,
+) -> ApiResult {
+  if !addr.ip().is_loopback() {
+    return Err((StatusCode::FORBIDDEN, "etkileşim yalnız bu bilgisayardan".into()));
+  }
+  authorize(&state, &addr, &headers, "scene.edit").await?;
+  motor_calisiyor(&state).await?;
+  if !crate::motor_koleksiyon::gecerli_kimlik(&g.kaynak) {
+    return Err(gecersiz("geçersiz kaynak".into()));
+  }
+  match g.eylem.as_str() {
+    "ac" => Ok(Json(komut(&state, json!({"komut": "etkilesim.ac", "kaynak": g.kaynak})).await?)),
+    "kapat" => {
+      komut(&state, json!({"komut": "etkilesim.kapat", "kaynak": g.kaynak})).await?;
+      Ok(Json(json!({"ok": true})))
+    }
+    "olay" => {
+      let olay = g.olay.ok_or_else(|| gecersiz("'olay' gerekli".into()))?;
+      if olay.to_string().len() > 1024 {
+        return Err(gecersiz("olay çok büyük".into()));
+      }
+      komut(&state, json!({"komut": "etkilesim", "kaynak": g.kaynak, "olay": olay})).await?;
+      Ok(Json(json!({"ok": true})))
+    }
+    e => Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
+  }
 }
 
 // ─── Medya, durumlar, tür özellikleri ──────────────────────────────────────
@@ -572,7 +615,9 @@ fn abonelik_isle(onceki: &Abonelik, m: &str) -> Abonelik {
   if let Some(k) = v.get("kare") {
     a.kare = k.as_object().and_then(|k| {
       let t = k.get("tuval")?.as_str()?.to_string();
-      tuval_boyutu(t.strip_prefix("studyo-").unwrap_or(&t))?;
+      if !onizleme_tuvali_gecerli(&t) {
+        return None;
+      }
       let g = k.get("genislik").and_then(Value::as_u64).unwrap_or(640).clamp(160, 1280) as u32;
       let f = k.get("fps").and_then(Value::as_u64).unwrap_or(10).clamp(1, 15) as u32;
       Some((t, g, f))

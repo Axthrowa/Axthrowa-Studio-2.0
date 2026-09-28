@@ -856,20 +856,31 @@ impl Koleksiyon {
     None
   }
 
-  /// Sahne öğesi motorun listeleme sırasıyla (kök öğe, ardından grup çocukları; alttan üste)
-  pub fn oge_sirayla(&mut self, sahne: &str, sira: usize) -> Option<&mut SahneOgesi> {
+  /// Sahnede bu kaynağı (ya da grubu) gösteren `n`. öğe (0'dan; kök öğe, ardından grup çocukları — motorun listeleme
+  /// sırası). Eksik kaynakların öğeleri motor listesinde olmadığı için sıra numarası değil kaynak + görünüm kullanılır.
+  pub fn oge_bul(&self, sahne: &str, kaynak: &str, n: usize) -> Option<&SahneOgesi> {
+    let s = self.sahne_ref(sahne)?;
+    s.ogeler.iter().flat_map(|o| std::iter::once(o).chain(o.cocuklar.iter())).filter(|o| o.kaynak == kaynak).nth(n)
+  }
+
+  pub fn oge_bul_mut(&mut self, sahne: &str, kaynak: &str, n: usize) -> Option<&mut SahneOgesi> {
     let s = self.sahne(sahne)?;
-    let mut i = 0;
+    let mut sayac = 0;
     for o in s.ogeler.iter_mut() {
-      if i == sira {
-        return Some(o);
+      if o.kaynak == kaynak {
+        if sayac == n {
+          return Some(o);
+        }
+        sayac += 1;
       }
-      i += 1;
-      let n = o.cocuklar.len();
-      if sira < i + n {
-        return o.cocuklar.get_mut(sira - i);
+      for c in o.cocuklar.iter_mut() {
+        if c.kaynak == kaynak {
+          if sayac == n {
+            return Some(c);
+          }
+          sayac += 1;
+        }
       }
-      i += n;
     }
     None
   }

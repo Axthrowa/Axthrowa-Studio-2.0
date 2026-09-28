@@ -11,6 +11,7 @@ pub mod actions;
 pub mod destek;
 pub mod disk;
 pub mod eklenti;
+pub mod gpu;
 pub mod motor_koleksiyon;
 pub mod motor_obs_ice;
 pub mod motor_profil;

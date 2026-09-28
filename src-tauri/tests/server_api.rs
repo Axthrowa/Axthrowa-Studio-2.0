@@ -2195,3 +2195,47 @@ async fn motor_kisayol_eylemleri_bas_konus_ve_sahne() {
   let a = h.client.get(format!("{}/api/audit?limit=100", h.base)).send().await.unwrap().text().await.unwrap();
   assert!(a.contains("ACTION:engine.audio.pushToTalk") && a.contains("ACTION:engine.scene.switch"));
 }
+
+/// Otomatik yapılandırma sihirbazı — gerçek motor, sentetik sahne: yerel 5 sn kodlama sınaması (geçici dosya, yayın
+/// yok), yükleme hızından hedef başı öneri, profil değişmez, geride çıktı/kodlayıcı/dosya kalmaz.
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_sihirbaz_yerel_kodlama_sinamasi() {
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  // Sınama kodlayıcı başına ~6 sn sürer: uzun zaman aşımlı istemci
+  let uzun = reqwest::Client::builder().timeout(std::time::Duration::from_secs(90)).build().unwrap();
+  let post = |yol: &'static str, govde: Value| {
+    let c = uzun.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  assert!(post("/api/motor/baslat", json!({})).await.status().is_success());
+  assert!(post("/api/motor/kaynak", json!({"tur": "renk", "deger": "#224466", "ad": "Arka"})).await.status().is_success());
+  assert!(post("/api/motor/kaynak", json!({"tur": "yazi", "deger": "sihirbaz", "ad": "Yazı"})).await.status().is_success());
+  let once = h.client.get(format!("{}/api/motor/profil", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  let r = post("/api/motor/sihirbaz", json!({"yukleme_kbps": 10000, "hedef_sayisi": 2})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let v: Value = r.json().await.unwrap();
+  let ilk = &v["sonuclar"][0];
+  assert_eq!(ilk["gecti"], true, "{v}");
+  assert!(ilk["kare"].as_u64().unwrap() >= 200, "5 sn × 60 FPS civarı kare: {ilk}");
+  assert!(v["oneri"]["kodlayici"].as_str().is_some());
+  assert_eq!(v["oneri"]["bit_hizi_ana"], 3400);
+  assert!(v["diskDakika"].as_u64().is_some());
+  let d = h.client.get(format!("{}/api/motor", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert!(!d["istatistik"]["cikislar"].as_array().unwrap().iter().any(|c| c["id"] == "sihirbaz"), "sınama çıktısı silindi");
+  assert!(!d["kodlayicilar"].as_array().unwrap().iter().any(|k| k == "sihirbaz-v"));
+  let sonra = h.client.get(format!("{}/api/motor/profil", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(once["profil"], sonra["profil"], "sihirbaz profili değiştirmez");
+  assert!(!std::env::temp_dir().join("yayin-motoru-sihirbaz").join("sinama-obs_nvenc_h264_tex.mkv").exists());
+  // Yükleme hızı verilmezse bant genişliği önerisi yok
+  let v: Value = post("/api/motor/sihirbaz", json!({})).await.json().await.unwrap();
+  assert!(v["oneri"]["bit_hizi_ana"].is_null());
+  assert!(v["notlar"].as_array().unwrap().iter().any(|n| n.as_str().unwrap().contains("Yükleme hızı girilmedi")));
+  assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
+}

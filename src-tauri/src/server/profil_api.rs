@@ -32,6 +32,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/profil", get(api_etkin).post(api_islem))
     .route("/api/motor/profil/disa-aktar", get(api_disa_aktar))
     .route("/api/motor/kodlayici-ozellikleri", get(api_kodlayici_ozellikleri))
+    .route("/api/motor/sihirbaz", axum::routing::post(api_sihirbaz))
 }
 
 /// Motor yokken bilinen kayıt biçimleri (motor çalışırken kurulu OBS'in gerçek listesi kullanılır)
@@ -279,4 +280,151 @@ async fn api_kodlayici_ozellikleri(State(state): State<Arc<AppState>>, ConnectIn
     }
   }
   Ok(Json(v))
+}
+
+// ─── Otomatik yapılandırma sihirbazı ───────────────────────────────────────
+
+#[derive(Deserialize)]
+struct SihirbazGovdesi {
+  /// Kullanıcının ölçtüğü yükleme hızı (kbps). Verilmezse bant genişliği önerisi yapılmaz (platforma sınama
+  /// bağlantısı izinsiz açılmaz).
+  #[serde(default)]
+  yukleme_kbps: Option<u32>,
+  /// Aynı anda yayın yapılacak hedef sayısı (1–8)
+  #[serde(default)]
+  hedef_sayisi: Option<u32>,
+  /// Sınanacak bit hızı (varsayılan profildeki yatay bit hızı)
+  #[serde(default)]
+  bit_hizi: Option<u32>,
+}
+
+/// Önerilen hedef başı video bit hızı: güvenli kullanım payıyla bütçe − ses − protokol payı; 6000 kbps üst sınır
+/// (yaygın 1080p60 değeri; platforma özel sınırlar ayrıca uygulanır). Bütçe yetmezse `None`.
+pub(crate) fn onerilen_bit_hizi(yukleme_kbps: u32, hedef: u32, ses_kbps: u32) -> Option<u32> {
+  use crate::multistream::policy::{GUVENLI_KULLANIM, PROTOKOL_PAYI};
+  let hedef = hedef.clamp(1, 8) as f64;
+  let butce = yukleme_kbps as f64 * GUVENLI_KULLANIM / hedef / (1.0 + PROTOKOL_PAYI) - ses_kbps as f64;
+  (butce >= 1000.0).then(|| ((butce.min(6000.0) / 100.0).floor() * 100.0) as u32)
+}
+
+/// Yerel kodlama sınaması: mevcut program sahnesi seçilen kodlayıcıyla 5 sn geçici dosyaya kaydedilir (yayın yok),
+/// atlanan kare oranı ölçülür; oran %2'yi aşarsa sıradaki kodlayıcı denenir. Disk süresi ve (verildiyse) yükleme
+/// hızından hedef başı bit hızı önerilir. Profili DEĞİŞTİRMEZ — arayüz "Uygula" ile yazar.
+async fn api_sihirbaz(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectInfo<SocketAddr>, headers: HeaderMap, Json(g): Json<SihirbazGovdesi>) -> ApiResult {
+  let actor = authorize(&state, &addr, &headers, "broadcast.record").await?;
+  motor_calisiyor(&state).await?;
+  if etkin_cikis_var(&state) {
+    return Err(catisma("yayın/kayıt sürerken sınama yapılmaz (ölçüm yanıltıcı olur)".into()));
+  }
+  let (profil, bilgi) = {
+    let o = state.motor.ozet();
+    let o = o.lock();
+    (o.profil.clone(), o.bilgi.clone())
+  };
+  let bit_hizi = g.bit_hizi.unwrap_or(profil.cikis.bit_hizi_ana).clamp(500, 50_000);
+  // Aday kodlayıcılar: donanım (NVENC/AMF/QSV) önce, sonra x264
+  let mut adaylar: Vec<(String, String, bool)> = bilgi["video_kodlayicilari"]
+    .as_array()
+    .into_iter()
+    .flatten()
+    .filter(|k| k["kodek"] == "h264")
+    .filter_map(|k| Some((k["id"].as_str()?.to_string(), k["ad"].as_str().unwrap_or("").to_string(), k["donanim"].as_bool().unwrap_or(false))))
+    .collect();
+  adaylar.sort_by_key(|(_, _, d)| !*d);
+  adaylar.truncate(3);
+  if adaylar.is_empty() {
+    return Err(catisma("kurulu OBS'te H.264 kodlayıcı bulunamadı".into()));
+  }
+  super::motor_api::ses_hazirla(&state, 0).await?;
+  let klasor_ = std::env::temp_dir().join("yayin-motoru-sihirbaz");
+  let _ = std::fs::create_dir_all(&klasor_);
+  let mut sonuclar = Vec::new();
+  let mut secilen: Option<(String, f64)> = None;
+  for (tur, ad, donanim) in &adaylar {
+    let yol = klasor_.join(format!("sinama-{tur}.mkv"));
+    let r = async {
+      komut(&state, json!({"komut": "kodlayici.video", "id": "sihirbaz-v", "tur": tur, "tuval": "ana", "bit_hizi": bit_hizi, "anahtar_kare_sn": 2})).await?;
+      komut(&state, json!({"komut": "cikis.kayit", "id": "sihirbaz", "yol": yol, "video": "sihirbaz-v", "sesler": ["ses-0"]})).await?;
+      let once = komut(&state, json!({"komut": "istatistik"})).await?;
+      komut(&state, json!({"komut": "cikis.baslat", "id": "sihirbaz"})).await?;
+      tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+      let sonra = komut(&state, json!({"komut": "istatistik"})).await?;
+      komut(&state, json!({"komut": "cikis.durdur", "id": "sihirbaz"})).await?;
+      Ok::<_, Hata>((once, sonra))
+    }
+    .await;
+    // Temizlik: çıktı, kodlayıcı, geçici dosya (hata olsa da)
+    tokio::time::sleep(std::time::Duration::from_millis(700)).await;
+    let _ = komut(&state, json!({"komut": "cikis.sil", "id": "sihirbaz"})).await;
+    let _ = komut(&state, json!({"komut": "kodlayici.sil", "id": "sihirbaz-v"})).await;
+    let boyut = std::fs::metadata(&yol).map(|m| m.len()).unwrap_or(0);
+    let _ = std::fs::remove_file(&yol);
+    match r {
+      Ok((once, sonra)) => {
+        let fark = |a: &str| sonra[a].as_u64().unwrap_or(0).saturating_sub(once[a].as_u64().unwrap_or(0));
+        let (atlanan, video, geciken) = (fark("atlanan_kare"), fark("video_kare"), fark("geciken_kare"));
+        let oran = if video > 0 { atlanan as f64 / video as f64 } else { 1.0 };
+        let gecti = video > 0 && oran <= 0.02 && boyut > 0;
+        sonuclar.push(json!({"tur": tur, "ad": ad, "donanim": donanim, "kare": video, "atlanan": atlanan, "geciken": geciken, "oran": oran, "bayt": boyut, "gecti": gecti}));
+        if gecti && secilen.is_none() {
+          secilen = Some((tur.clone(), oran));
+        }
+      }
+      Err((_, e)) => sonuclar.push(json!({"tur": tur, "ad": ad, "donanim": donanim, "hata": e, "gecti": false})),
+    }
+    if secilen.is_some() {
+      break;
+    }
+  }
+  let _ = std::fs::remove_dir(&klasor_);
+  let mut notlar: Vec<String> = Vec::new();
+  let hedef = g.hedef_sayisi.unwrap_or(1).clamp(1, 8);
+  let oneri_bh = match g.yukleme_kbps {
+    Some(u) => {
+      let b = onerilen_bit_hizi(u, hedef, profil.cikis.ses_bit_hizi);
+      if b.is_none() {
+        notlar.push(format!("{u} kbps yükleme {hedef} hedef için yetersiz: hedef sayısını azaltın ya da tek hedefe yayınlayın."));
+      }
+      b
+    }
+    None => {
+      notlar.push("Yükleme hızı girilmedi: bant genişliğine göre bit hızı önerilmedi (platform sunucusuna izinsiz sınama bağlantısı açılmaz).".into());
+      None
+    }
+  };
+  let kayit_dizini = profil.kayit.klasor.as_ref().map(std::path::PathBuf::from).unwrap_or_else(super::motor_api::kayit_klasoru);
+  let onerilen = oneri_bh.unwrap_or(bit_hizi);
+  let disk_dk = crate::disk::bos_alan(&kayit_dizini).map(|b| crate::multistream::policy::record_minutes(b, onerilen));
+  if secilen.is_none() {
+    notlar.push("Hiçbir kodlayıcı %2'nin altında atlanan kareyle kodlayamadı: çözünürlük/kare hızını düşürmeyi ya da daha düşük bit hızını deneyin.".into());
+  }
+  notlar.push("Sınama yalnız bu bilgisayarın kodlama gücünü mevcut sahneyle ölçer; ağ kalitesi ve platform kabulü sınanmadı.".into());
+  audit(&state, &actor, "MOTOR_WIZARD", json!({"secilen": secilen.as_ref().map(|s| &s.0), "yukleme": g.yukleme_kbps.is_some()})).await;
+  Ok(Json(json!({
+    "sonuclar": sonuclar,
+    "oneri": {
+      "kodlayici": secilen.as_ref().map(|s| s.0.clone()),
+      "bit_hizi_ana": oneri_bh,
+      "bit_hizi_dikey": oneri_bh,
+    },
+    "sinananBitHizi": bit_hizi,
+    "diskDakika": disk_dk,
+    "notlar": notlar,
+  })))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::onerilen_bit_hizi;
+
+  #[test]
+  fn bant_genisligi_onerisi() {
+    // 20 Mbps, 2 hedef: 20000×0,75/2/1,05 − 160 ≈ 6982 → 6000 üst sınır
+    assert_eq!(onerilen_bit_hizi(20_000, 2, 160), Some(6000));
+    // 10 Mbps, 2 hedef: ≈ 3411 → 3400
+    assert_eq!(onerilen_bit_hizi(10_000, 2, 160), Some(3400));
+    // 3 Mbps, 3 hedef: bütçe yetmez
+    assert_eq!(onerilen_bit_hizi(3_000, 3, 160), None);
+    assert_eq!(onerilen_bit_hizi(10_000, 0, 160), onerilen_bit_hizi(10_000, 1, 160));
+  }
 }

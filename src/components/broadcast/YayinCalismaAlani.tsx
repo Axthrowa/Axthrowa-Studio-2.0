@@ -52,6 +52,8 @@ import { AdIstemi, hataMetni, MenuCubugu, OnayKutusu, Pencere, type Menu, type O
 import { OzellikFormu } from "./OzellikFormu";
 import { SahnelerDock } from "./SahnelerDock";
 import { YayinAyarlari } from "./YayinAyarlari";
+import { SihirbazDiyalogu } from "./SihirbazDiyalogu";
+import { KomutPaleti, komutlar, type Komut } from "./KomutPaleti";
 import { ayriPencere, monitorler, type Monitor } from "../../lib/projektor";
 
 type Props = { onToast: (m: string) => void; onGit?: (hedef: "control" | "hotkeys" | "settings") => void };
@@ -233,6 +235,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [koleksiyonlar, setKoleksiyonlar] = useState<MotorKoleksiyonOzeti[]>([]);
   const [profiller, setProfiller] = useState<{ id: string; ad: string; etkin: boolean }[]>([]);
   const [ekranlar, setEkranlar] = useState<Monitor[]>([]);
+  const [sihirbaz, setSihirbaz] = useState(false);
+  const [palet, setPalet] = useState<Komut[] | null>(null);
   useEffect(() => {
     monitorler().then(setEkranlar, () => setEkranlar([]));
   }, []);
@@ -715,8 +719,13 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   // ── Klavye (çalışma alanı geneli) ──
   const genelTus = (e: React.KeyboardEvent) => {
     const hedef = e.target as HTMLElement;
-    if (["INPUT", "TEXTAREA", "SELECT"].includes(hedef.tagName)) return;
     const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      paletAc();
+      return;
+    }
+    if (["INPUT", "TEXTAREA", "SELECT"].includes(hedef.tagName)) return;
     if (ctrl && (e.key === "z" || e.key === "Z") && !e.shiftKey) {
       e.preventDefault();
       void yigin.geriAl().then((ad) => ad && onToast(`Geri alındı: ${ad}`), (x) => onToast(`Geri alınamadı: ${hataMetni(x)}`));
@@ -883,6 +892,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       ad: "Araçlar",
       ogeler: () => [
         { etiket: "Eklentiler…", eylem: () => setEklentiPenceresi({ sekme: "kurulu" }) },
+        { etiket: "Otomatik yapılandırma sihirbazı…", devreDisi: !calisiyor, eylem: () => setSihirbaz(true) },
+        { etiket: "Komut paleti", kisayol: "Ctrl+K", eylem: () => paletAc() },
         { etiket: "Kısayollar ve eylemler", eylem: () => onGit?.("hotkeys") },
       ],
     },
@@ -919,6 +930,13 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       ],
     },
   ];
+
+  function paletAc() {
+    const sahneKomutlari: Komut[] = (sl?.sahneler ?? [])
+      .filter((s) => s.etkinTuval)
+      .map((s) => ({ etiket: `${studyo && s.tuval === tuval ? "Önizlemeye al" : "Sahneye geç"}: ${s.ad}`, grup: `Sahne · ${TUVAL_ADI[s.tuval]}`, eylem: () => (s.tuval === tuval ? sahneSec(s.id) : void yap("Sahne geçişi", () => motorApi.program(s.id))) }));
+    setPalet(komutlar(menuler, sahneKomutlari));
+  }
 
   // ── Oluşturma ──
   if (!d) return <div className="flex flex-1 items-center justify-center text-[13px] dt-soluk">Yayın motoru durumu alınıyor…</div>;
@@ -1311,6 +1329,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         />
       )}
       {onKontrol && <OnKontrol d={d} onBaslat={golive} onKapat={() => setOnKontrol(false)} />}
+      {sihirbaz && <SihirbazDiyalogu onToast={onToast} onKapat={() => (setSihirbaz(false), hepsiniYenile())} />}
+      {palet && <KomutPaleti liste={palet} onKapat={() => setPalet(null)} />}
       {ayarlar && (
         <YayinAyarlari
           baslangic={ayarlar}

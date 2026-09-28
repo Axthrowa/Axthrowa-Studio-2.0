@@ -324,7 +324,7 @@ async fn kodlayici_hazirla(state: &AppState, tuval: &str) -> Result<(), Hata> {
   video_kodlayici_hazirla(state, tuval, None).await.map(|_| ())
 }
 
-async fn ses_hazirla(state: &AppState, iz: u8) -> Result<(), Hata> {
+pub(crate) async fn ses_hazirla(state: &AppState, iz: u8) -> Result<(), Hata> {
   if iz > 5 {
     return Err(gecersiz("ses izi 1–6 olmalı".into()));
   }

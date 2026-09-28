@@ -339,6 +339,18 @@ pub fn kodlayici_ozellikleri(tur: &str) -> Result<Value, String> {
   Ok(tanim_uret(props, ayar))
 }
 
+/// Çıktı türünün özellik formu ve varsayılanları (ör. `rtmp_output`: bağlanılacak IP listesi) — örneksiz
+pub fn cikis_turu_ozellikleri(tur: &str) -> Result<Value, String> {
+  let a = api();
+  let t = cs(tur);
+  let ayar = unsafe { (a.obs_output_defaults)(t.as_ptr()) };
+  if ayar.is_null() {
+    return Err(format!("çıktı türü kayıtlı değil: {tur}"));
+  }
+  let props = unsafe { (a.obs_get_output_properties)(t.as_ptr()) };
+  Ok(tanim_uret(props, ayar))
+}
+
 /// Kaynak türünün özellik formu ve varsayılanları — **örnek oluşturmadan** (`obs_get_source_properties`). Yakalama
 /// türleri için güvenli yol: oyun yakalama örneği oluşturmak çalışan bir oyuna kanca atmayı başlatabilirdi.
 pub fn kaynak_turu_ozellikleri(tur: &str) -> Result<Value, String> {

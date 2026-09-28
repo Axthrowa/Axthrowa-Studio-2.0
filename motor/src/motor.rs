@@ -216,6 +216,8 @@ pub struct KaynakDurumu {
   /// herhangi bir görünümde (önizleme dahil)
   pub gorunuyor: bool,
   pub durum: &'static str,
+  /// fare/klavye etkileşimi alır (tarayıcı kaynağı vb.)
+  pub etkilesim: bool,
 }
 
 /// Kayıt biçimi: libobs çıktı türü ve (varsa) FFmpeg muxer ayarı.
@@ -262,12 +264,79 @@ pub fn kayit_bicimleri() -> Vec<KayitBicimi> {
   KAYIT_BICIMLERI.iter().filter(|b| cikislar.iter().any(|c| c == b.cikis)).copied().collect()
 }
 
-/// Motor ayarları (ana tuval).
-#[derive(Clone, Copy, Debug)]
+/// Motor ayarları (ana tuval). Taban çözünürlük sahnelerin koordinat uzayıdır; çıkış çözünürlüğü kodlayıcılara giden
+/// (ölçeklenmiş) boyuttur (OBS Ayarlar > Video). Renk ve ses ayarları tüm tuvallere uygulanır.
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MotorAyari {
   pub genislik: u32,
   pub yukseklik: u32,
   pub fps: u32,
+  pub cikis_genislik: u32,
+  pub cikis_yukseklik: u32,
+  /// `enum obs_scale_type`
+  pub olcek: std::ffi::c_int,
+  /// `enum video_format`
+  pub bicim: std::ffi::c_int,
+  /// `enum video_colorspace`
+  pub renk_uzayi: std::ffi::c_int,
+  /// `enum video_range_type`
+  pub aralik: std::ffi::c_int,
+  pub ornekleme: u32,
+  /// `enum speaker_layout`
+  pub hoparlor: std::ffi::c_int,
+}
+
+impl MotorAyari {
+  /// Varsayılanlar: çıkış = taban, bikübik, NV12, Rec. 709, kısmi aralık, 48 kHz stereo (OBS varsayılanları)
+  pub fn yeni(genislik: u32, yukseklik: u32, fps: u32) -> Self {
+    MotorAyari {
+      genislik,
+      yukseklik,
+      fps,
+      cikis_genislik: genislik,
+      cikis_yukseklik: yukseklik,
+      olcek: obs::OBS_SCALE_BICUBIC,
+      bicim: obs::VIDEO_FORMAT_NV12,
+      renk_uzayi: obs::VIDEO_CS_709,
+      aralik: obs::VIDEO_RANGE_PARTIAL,
+      ornekleme: 48_000,
+      hoparlor: obs::SPEAKERS_STEREO,
+    }
+  }
+
+  /// Aynı renk/ses ayarlarıyla başka boyutta tuval (ek tuvaller: çıkış = taban)
+  pub fn boyutla(self, genislik: u32, yukseklik: u32) -> Self {
+    MotorAyari { genislik, yukseklik, cikis_genislik: genislik, cikis_yukseklik: yukseklik, ..self }
+  }
+}
+
+/// Ayar adları ↔ libobs sayıları (protokol ve bilgi çıktısı için)
+pub const OLCEK_FILTRELERI: [(&str, std::ffi::c_int); 4] = [("bilinear", 3), ("bicubic", 2), ("lanczos", 4), ("area", 5)];
+pub const RENK_BICIMLERI: [(&str, std::ffi::c_int); 6] = [("nv12", 2), ("i420", 1), ("i444", 10), ("p010", 18), ("i010", 17), ("bgra", 7)];
+pub const RENK_UZAYLARI: [(&str, std::ffi::c_int); 5] = [("601", 1), ("709", 2), ("srgb", 3), ("2100pq", 4), ("2100hlg", 5)];
+pub const RENK_ARALIKLARI: [(&str, std::ffi::c_int); 2] = [("kismi", 1), ("tam", 2)];
+pub const HOPARLORLER: [(&str, std::ffi::c_int); 7] = [("mono", 1), ("stereo", 2), ("2.1", 3), ("4.0", 4), ("4.1", 5), ("5.1", 6), ("7.1", 8)];
+
+pub fn ada_gore(tablo: &[(&str, std::ffi::c_int)], ad: &str, alan: &str) -> Result<std::ffi::c_int, String> {
+  tablo.iter().find(|(a, _)| *a == ad).map(|(_, d)| *d).ok_or_else(|| {
+    let gecerli: Vec<&str> = tablo.iter().map(|(a, _)| *a).collect();
+    format!("geçersiz {alan}: {ad} (geçerli: {})", gecerli.join(", "))
+  })
+}
+
+pub fn ad_bul(tablo: &[(&'static str, std::ffi::c_int)], d: std::ffi::c_int) -> &'static str {
+  tablo.iter().find(|(_, x)| *x == d).map(|(a, _)| *a).unwrap_or("?")
+}
+
+/// Renk ayarlarının tutarlılığı: HDR renk uzayları (2100) 10 bit biçim ister; 10 bit biçim SDR'de de çalışır (OBS
+/// de izin verir). HDR + 8 bit ise libobs sessizce yanlış renk üretir → reddedilir.
+pub fn renk_denetimi(bicim: std::ffi::c_int, uzay: std::ffi::c_int) -> Result<(), String> {
+  let hdr = uzay == 4 || uzay == 5;
+  let on_bit = bicim == 18 || bicim == 17;
+  if hdr && !on_bit {
+    return Err("HDR renk uzayı (Rec. 2100) 10 bit renk biçimi ister (P010 ya da I010)".into());
+  }
+  Ok(())
 }
 
 pub struct Motor {
@@ -296,6 +365,8 @@ pub struct Motor {
   pub(crate) akislar: HashMap<String, crate::akis::Akis>,
   /// libobs CPU ölçer (`os_cpu_usage_info_t`)
   pub(crate) cpu: Ptr,
+  /// Kaynak → etkileşim penceresinin önizleme tuvali (bkz. `etkilesim.rs`)
+  pub(crate) etkilesim_tuvalleri: HashMap<String, Kanvas>,
 }
 
 pub(crate) fn video_bilgisi(ayar: MotorAyari, grafik: &std::ffi::CStr) -> VideoInfo {
@@ -305,14 +376,14 @@ pub(crate) fn video_bilgisi(ayar: MotorAyari, grafik: &std::ffi::CStr) -> VideoI
     fps_den: 1,
     base_width: ayar.genislik,
     base_height: ayar.yukseklik,
-    output_width: ayar.genislik,
-    output_height: ayar.yukseklik,
-    output_format: obs::VIDEO_FORMAT_NV12,
+    output_width: ayar.cikis_genislik,
+    output_height: ayar.cikis_yukseklik,
+    output_format: ayar.bicim,
     adapter: 0,
     gpu_conversion: true,
-    colorspace: obs::VIDEO_CS_709,
-    range: obs::VIDEO_RANGE_PARTIAL,
-    scale_type: obs::OBS_SCALE_BICUBIC,
+    colorspace: ayar.renk_uzayi,
+    range: ayar.aralik,
+    scale_type: ayar.olcek,
   }
 }
 
@@ -390,6 +461,11 @@ impl Motor {
   /// libobs'u yükler, videoyu/sesi başlatır, kendi servisimizi kaydeder ve temel modülleri yükler.
   pub fn baslat(ana: MotorAyari, olay: Sender<Olay>, gunluk: Box<dyn std::io::Write + Send>) -> Result<Motor, String> {
     gecerli_boyut(ana.genislik, ana.yukseklik, ana.fps)?;
+    gecerli_boyut(ana.cikis_genislik, ana.cikis_yukseklik, ana.fps)?;
+    renk_denetimi(ana.bicim, ana.renk_uzayi)?;
+    if ana.ornekleme != 44_100 && ana.ornekleme != 48_000 {
+      return Err(format!("geçersiz örnekleme hızı: {} (44100 ya da 48000)", ana.ornekleme));
+    }
     let kurulum = ObsKurulumu::bul()?;
     let a = obs::Api::yukle(&kurulum)?;
     obs::gunlugu_yonlendir(a, gunluk);
@@ -410,7 +486,7 @@ impl Motor {
         (a.obs_shutdown)();
         return Err(format!("video başlatılamadı (kod {sonuc})"));
       }
-      let oai = obs::AudioInfo { samples_per_sec: 48_000, speakers: obs::SPEAKERS_STEREO };
+      let oai = obs::AudioInfo { samples_per_sec: ana.ornekleme, speakers: ana.hoparlor };
       if !(a.obs_reset_audio)(&oai) {
         (a.obs_shutdown)();
         return Err("ses başlatılamadı".into());
@@ -440,6 +516,7 @@ impl Motor {
       ses: crate::ses::SesDurumu::default(),
       akislar: HashMap::new(),
       cpu: unsafe { (api().os_cpu_usage_info_start)() },
+      etkilesim_tuvalleri: HashMap::new(),
     };
     motor.ses.baslat(motor.olay.clone());
     motor.kanvaslar.insert(
@@ -514,6 +591,22 @@ impl Motor {
     crate::eklenti::guncelle(k, ayarlar)
   }
 
+  /// Etkin video/ses ayarları (panelin gösterdiği ve doğruladığı değerler)
+  pub fn video_ayari(&self) -> serde_json::Value {
+    let a = self.ana;
+    serde_json::json!({
+      "taban": [a.genislik, a.yukseklik],
+      "cikis": [a.cikis_genislik, a.cikis_yukseklik],
+      "fps": a.fps,
+      "olcek_filtresi": ad_bul(&OLCEK_FILTRELERI, a.olcek),
+      "renk_bicimi": ad_bul(&RENK_BICIMLERI, a.bicim),
+      "renk_uzayi": ad_bul(&RENK_UZAYLARI, a.renk_uzayi),
+      "renk_araligi": ad_bul(&RENK_ARALIKLARI, a.aralik),
+      "ornekleme": a.ornekleme,
+      "hoparlor": ad_bul(&HOPARLORLER, a.hoparlor),
+    })
+  }
+
   pub fn surum(&self) -> String {
     unsafe { cstr((api().obs_get_version_string)()) }
   }
@@ -566,7 +659,7 @@ impl Motor {
     if self.kanvaslar.contains_key(id) {
       return Err(format!("tuval zaten var: {id}"));
     }
-    let mut ovi = video_bilgisi(MotorAyari { genislik, yukseklik, fps: self.ana.fps }, c"libobs-d3d11");
+    let mut ovi = video_bilgisi(self.ana.boyutla(genislik, yukseklik), c"libobs-d3d11");
     let ad_c = cs(ad);
     let ptr = unsafe { (api().obs_canvas_create)(ad_c.as_ptr(), &mut ovi, EK_TUVAL_BAYRAKLARI) };
     if ptr.is_null() {
@@ -594,9 +687,12 @@ impl Motor {
   pub fn onizleme_png(&mut self, tuval: &str, en_fazla: u32) -> Result<Option<Vec<u8>>, String> {
     self.bosta_onizlemeleri_kapat();
     if !self.onizlemeler.contains_key(tuval) {
-      let k = match tuval.strip_prefix("studyo-") {
-        Some(t) => &self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas,
-        None => self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?,
+      let k = if let Some(t) = tuval.strip_prefix("studyo-") {
+        &self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas
+      } else if let Some(k) = tuval.strip_prefix(crate::etkilesim::ONEK) {
+        self.etkilesim_tuvalleri.get(k).ok_or("etkileşim penceresi açık değil")?
+      } else {
+        self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?
       };
       let o = Onizleme::baglan(&format!("onizleme-{tuval}"), k.video(), k.genislik, k.yukseklik, en_fazla)?;
       self.onizlemeler.insert(tuval.into(), o);
@@ -663,6 +759,7 @@ impl Motor {
 
   /// Kaynağı tüm sahnelerden çıkarır ve serbest bırakır.
   pub fn kaynak_sil(&mut self, id: &str) -> Result<(), String> {
+    self.etkilesim_kapat(id);
     if !self.kaynaklar.contains_key(id) {
       return Err(format!("kaynak yok: {id}"));
     }
@@ -763,6 +860,7 @@ impl Motor {
   /// kurulana dek program boş kare verir.
   pub fn sahne_grafigini_temizle(&mut self) {
     let a = api();
+    self.etkilesimleri_kapat();
     let tuvaller: Vec<String> = self.studyo.keys().cloned().collect();
     for t in tuvaller {
       let _ = self.studyo_kapat(&t);
@@ -884,6 +982,7 @@ impl Motor {
           etkin: (a.obs_source_active)(k),
           gorunuyor: (a.obs_source_showing)(k),
           durum: if goruntu && (g == 0 || y == 0) { "bekliyor" } else { "hazir" },
+          etkilesim: bayrak & obs::OBS_SOURCE_INTERACTION != 0,
         }
       })
       .collect()
@@ -1054,8 +1153,9 @@ impl Motor {
   }
 
   /// RTMP/RTMPS hedefi. Anahtar yalnız servis nesnesinde tutulur; günlüğe ve yanıtlara yazılmaz.
-  pub fn rtmp_cikisi(&mut self, id: &str, sunucu: &str, anahtar: &str, video: &str, ses: &str) -> Result<(), String> {
+  pub fn rtmp_cikisi(&mut self, id: &str, sunucu: &str, anahtar: &str, video: &str, ses: &str, ag: &AgAyari) -> Result<(), String> {
     gecerli_kimlik(id)?;
+    ag.denetle()?;
     let s = sunucu.trim().to_ascii_lowercase();
     if !(s.starts_with("rtmp://") || s.starts_with("rtmps://")) {
       return Err("sunucu rtmp:// ya da rtmps:// ile başlamalı".into());
@@ -1068,8 +1168,14 @@ impl Motor {
       return Err("servis oluşturulamadı".into());
     }
     drop(ayar);
-    let bos = Veri::yeni();
-    let ptr = unsafe { (api().obs_output_create)(c"rtmp_output".as_ptr(), ad_c.as_ptr(), bos.0, std::ptr::null_mut()) };
+    // obs-outputs rtmp-stream ayar anahtarları (OBS Ayarlar > Gelişmiş > Ağ)
+    let cikis_ayari = Veri::yeni()
+      .yazi("bind_ip", &ag.bagla_ip)
+      .yazi("ip_family", &ag.ip_ailesi)
+      .mantiksal("new_socket_loop_enabled", ag.yeni_soket_dongusu)
+      .mantiksal("low_latency_mode_enabled", ag.dusuk_gecikme)
+      .mantiksal("dyn_bitrate", ag.dinamik_bit_hizi);
+    let ptr = unsafe { (api().obs_output_create)(c"rtmp_output".as_ptr(), ad_c.as_ptr(), cikis_ayari.0, std::ptr::null_mut()) };
     if ptr.is_null() {
       unsafe { (api().obs_service_release)(servis) };
       return Err("RTMP çıktısı oluşturulamadı (obs-outputs yüklü mü?)".into());
@@ -1078,7 +1184,9 @@ impl Motor {
       (api().obs_output_set_service)(ptr, servis);
       (api().obs_output_set_video_encoder)(ptr, v);
       (api().obs_output_set_audio_encoder)(ptr, a, 0);
-      (api().obs_output_set_reconnect_settings)(ptr, 10, 2);
+      // OBS: en çok deneme 0 = yeniden bağlanma kapalı
+      let (deneme, gecikme) = if ag.yeniden_baglan { (ag.en_cok_deneme, ag.deneme_gecikmesi_sn) } else { (0, 0) };
+      (api().obs_output_set_reconnect_settings)(ptr, deneme as std::ffi::c_int, gecikme as std::ffi::c_int);
     }
     self.cikis_ekle(id, ptr, servis, "rtmp");
     Ok(())
@@ -1302,6 +1410,7 @@ impl Motor {
 
   /// Her şeyi ters sırada serbest bırakır ve libobs'u kapatır.
   pub fn kapat(mut self) {
+    self.etkilesimleri_kapat();
     let a = api();
     // Akışlar ve ses ölçerleri önce: iş parçacıkları libobs nesnelerine dokunmayı bıraksın
     self.akislari_kapat();
@@ -1456,6 +1565,53 @@ sinyal_fn!(sinyal_reconnect_success, "reconnect_success");
 
 const SINYAL_CB: [obs::SignalCb; 6] =
   [sinyal_starting, sinyal_start, sinyal_stopping, sinyal_stop, sinyal_reconnect, sinyal_reconnect_success];
+
+
+/// RTMP çıktısının ağ ayarları (OBS Ayarlar > Gelişmiş > Ağ ve Yeniden bağlanma). Varsayılanlar OBS'inkiler.
+#[derive(Clone, Debug, PartialEq, serde::Deserialize)]
+#[serde(default)]
+pub struct AgAyari {
+  /// "default" ya da yerel bir IP adresi
+  pub bagla_ip: String,
+  /// "IPv4+IPv6", "IPv4", "IPv6"
+  pub ip_ailesi: String,
+  pub yeni_soket_dongusu: bool,
+  pub dusuk_gecikme: bool,
+  pub dinamik_bit_hizi: bool,
+  pub yeniden_baglan: bool,
+  pub deneme_gecikmesi_sn: u32,
+  pub en_cok_deneme: u32,
+}
+
+impl Default for AgAyari {
+  fn default() -> Self {
+    AgAyari {
+      bagla_ip: "default".into(),
+      ip_ailesi: "IPv4+IPv6".into(),
+      yeni_soket_dongusu: false,
+      dusuk_gecikme: false,
+      dinamik_bit_hizi: false,
+      yeniden_baglan: true,
+      deneme_gecikmesi_sn: 2,
+      en_cok_deneme: 25,
+    }
+  }
+}
+
+impl AgAyari {
+  pub fn denetle(&self) -> Result<(), String> {
+    if self.bagla_ip != "default" && self.bagla_ip.parse::<std::net::IpAddr>().is_err() {
+      return Err(format!("geçersiz bağlanılacak IP: {}", self.bagla_ip));
+    }
+    if !["IPv4+IPv6", "IPv4", "IPv6"].contains(&self.ip_ailesi.as_str()) {
+      return Err(format!("geçersiz IP ailesi: {}", self.ip_ailesi));
+    }
+    if !(1..=30).contains(&self.deneme_gecikmesi_sn) || self.en_cok_deneme > 10_000 {
+      return Err("yeniden bağlanma: gecikme 1–30 sn, en çok deneme 0–10000".into());
+    }
+    Ok(())
+  }
+}
 
 #[cfg(test)]
 mod tests {

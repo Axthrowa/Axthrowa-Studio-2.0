@@ -12,6 +12,7 @@
 mod akis;
 mod cokme;
 mod eklenti;
+mod etkilesim;
 mod filtre;
 mod gecis;
 mod motor;
@@ -67,6 +68,16 @@ fn main() -> ExitCode {
         }
       }
     }
+    Some("olcek-sinama") => match (args.get(2), args.get(3)) {
+      (Some(k), Some(medya)) => match sinama::olcek_sinamasi(std::path::Path::new(k), std::path::Path::new(medya)) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+          eprintln!("ölçek sınaması hatası: {e}");
+          ExitCode::from(2)
+        }
+      },
+      _ => ExitCode::from(64),
+    },
     Some("hizmet") => match protokol::hizmet() {
       Ok(()) => ExitCode::SUCCESS,
       Err(e) => {
@@ -95,7 +106,7 @@ fn eklenti_yokla(dll: &str, veri: &str) -> ExitCode {
   let gecici = std::env::temp_dir().join(format!("yayin-motoru-yoklama-{}", std::process::id()));
   std::env::set_var("YAYIN_MOTORU_AYAR", &gecici);
   let (tx, _rx) = std::sync::mpsc::channel();
-  let sonuc = match motor::Motor::baslat(motor::MotorAyari { genislik: 640, yukseklik: 360, fps: 30 }, tx, Box::new(std::io::stderr())) {
+  let sonuc = match motor::Motor::baslat(motor::MotorAyari::yeni(640, 360, 30), tx, Box::new(std::io::stderr())) {
     Ok(mut m) => {
       let istek = eklenti::EklentiIstegi { id: "yoklama".into(), dll: dll.clone(), veri: veri.clone() };
       let s = m.eklentileri_yukle(std::slice::from_ref(&istek), None);
@@ -121,7 +132,7 @@ fn eklenti_yokla(dll: &str, veri: &str) -> ExitCode {
 fn bilgi() -> ExitCode {
   let (tx, _rx) = std::sync::mpsc::channel();
   let gunluk = Box::new(std::io::stderr());
-  match motor::Motor::baslat(motor::MotorAyari { genislik: 1280, yukseklik: 720, fps: 30 }, tx, gunluk) {
+  match motor::Motor::baslat(motor::MotorAyari::yeni(1280, 720, 30), tx, gunluk) {
     Ok(m) => {
       let v = serde_json::json!({
         "libobs": m.surum(),

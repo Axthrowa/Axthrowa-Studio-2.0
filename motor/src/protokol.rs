@@ -26,6 +26,34 @@ fn yaz_metin(satir: &str) {
   let _ = out.flush();
 }
 
+/// `baslat` isteğinden video/ses ayarları (verilmeyen alan varsayılan)
+fn motor_ayari(istek: &Value) -> Result<MotorAyari, String> {
+  use crate::motor::{ada_gore, HOPARLORLER, OLCEK_FILTRELERI, RENK_ARALIKLARI, RENK_BICIMLERI, RENK_UZAYLARI};
+  let g = sayi(istek, "genislik", Some(1920))? as u32;
+  let y = sayi(istek, "yukseklik", Some(1080))? as u32;
+  let mut a = MotorAyari::yeni(g, y, sayi(istek, "fps", Some(60))? as u32);
+  a.cikis_genislik = sayi(istek, "cikis_genislik", Some(g as u64))? as u32;
+  a.cikis_yukseklik = sayi(istek, "cikis_yukseklik", Some(y as u64))? as u32;
+  let ad = |alan: &str| istek.get(alan).and_then(Value::as_str);
+  if let Some(x) = ad("olcek_filtresi") {
+    a.olcek = ada_gore(&OLCEK_FILTRELERI, x, "ölçek filtresi")?;
+  }
+  if let Some(x) = ad("renk_bicimi") {
+    a.bicim = ada_gore(&RENK_BICIMLERI, x, "renk biçimi")?;
+  }
+  if let Some(x) = ad("renk_uzayi") {
+    a.renk_uzayi = ada_gore(&RENK_UZAYLARI, x, "renk uzayı")?;
+  }
+  if let Some(x) = ad("renk_araligi") {
+    a.aralik = ada_gore(&RENK_ARALIKLARI, x, "renk aralığı")?;
+  }
+  if let Some(x) = ad("hoparlor") {
+    a.hoparlor = ada_gore(&HOPARLORLER, x, "hoparlör düzeni")?;
+  }
+  a.ornekleme = sayi(istek, "ornekleme", Some(48_000))? as u32;
+  Ok(a)
+}
+
 fn metin<'a>(v: &'a Value, ad: &str) -> Result<&'a str, String> {
   v.get(ad).and_then(Value::as_str).ok_or_else(|| format!("'{ad}' alanı gerekli"))
 }
@@ -72,11 +100,7 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
     if motor.is_some() {
       return Err("motor zaten çalışıyor".into());
     }
-    let ayar = MotorAyari {
-      genislik: sayi(istek, "genislik", Some(1920))? as u32,
-      yukseklik: sayi(istek, "yukseklik", Some(1080))? as u32,
-      fps: sayi(istek, "fps", Some(60))? as u32,
-    };
+    let ayar = motor_ayari(istek)?;
     let gunluk: Box<dyn Write + Send> = match istek.get("gunluk").and_then(Value::as_str) {
       Some(yol) => Box::new(std::fs::File::create(yol).map_err(|e| format!("günlük dosyası: {e}"))?),
       None => Box::new(std::io::stderr()),
@@ -89,7 +113,7 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
     let eklentiler = m.eklentileri_yukle(&istekler, isaret.as_deref());
     let sonuc = json!({
       "libobs": m.surum(), "moduller": m.moduller(), "video_kodlayicilari": m.video_kodlayicilari(),
-      "eklentiler": eklentiler, "giris_turleri": m.giris_turleri(),
+      "eklentiler": eklentiler, "giris_turleri": m.giris_turleri(), "video": m.video_ayari(),
     });
     *motor = Some(m);
     return Ok(sonuc);
@@ -268,9 +292,30 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       json!({})
     }
     "kaynak.durumlari" => json!({ "kaynaklar": m.kaynak_durumlari() }),
+    "etkilesim" => {
+      let olay = istek.get("olay").ok_or("'olay' gerekli")?;
+      m.etkilesim(metin(istek, "kaynak")?, olay)?;
+      json!({})
+    }
+    "etkilesim.ac" => m.etkilesim_ac(metin(istek, "kaynak")?)?,
+    "etkilesim.kapat" => {
+      m.etkilesim_kapat(metin(istek, "kaynak")?);
+      json!({})
+    }
+    "oge.gecis" => {
+      let ayarlar = istek.get("ayarlar").and_then(Value::as_object).cloned().unwrap_or_default();
+      let goster = istek.get("goster").and_then(Value::as_bool).ok_or("'goster' (bool) gerekli")?;
+      let tur = istek.get("tur").and_then(Value::as_str);
+      let sure = sayi(istek, "sure_ms", Some(300))? as u32;
+      m.oge_gecisi(metin(istek, "oge")?, goster, tur, sure, &ayarlar)?;
+      json!({})
+    }
+    "oge.gecisleri" => m.oge_gecisleri(metin(istek, "oge")?)?,
     "kaynak.tur_ozellikleri" => crate::eklenti::kaynak_turu_ozellikleri(metin(istek, "tur")?)?,
     "kayit.bicimleri" => json!({ "bicimler": crate::motor::kayit_bicimleri() }),
     "kodlayici.ozellikleri" => crate::eklenti::kodlayici_ozellikleri(metin(istek, "tur")?)?,
+    "cikis.tur_ozellikleri" => crate::eklenti::cikis_turu_ozellikleri(metin(istek, "tur")?)?,
+    "video.ayari" => m.video_ayari(),
     "kaynak.olustur" => {
       let ayarlar = istek.get("ayarlar").and_then(Value::as_object).cloned().unwrap_or_default();
       m.kaynak_olustur(id()?, metin(istek, "tur")?, metin(istek, "ad").unwrap_or(id()?), &ayarlar)?;
@@ -320,7 +365,9 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       json!({})
     }
     "cikis.rtmp" => {
-      m.rtmp_cikisi(id()?, metin(istek, "sunucu")?, metin(istek, "anahtar").unwrap_or(""), metin(istek, "video")?, metin(istek, "ses")?)?;
+      let ag: crate::motor::AgAyari =
+        istek.get("ag").cloned().map(serde_json::from_value).transpose().map_err(|e| format!("ag: {e}"))?.unwrap_or_default();
+      m.rtmp_cikisi(id()?, metin(istek, "sunucu")?, metin(istek, "anahtar").unwrap_or(""), metin(istek, "video")?, metin(istek, "ses")?, &ag)?;
       json!({})
     }
     "cikis.kayit" => {
@@ -461,6 +508,37 @@ mod tests {
     assert_eq!(sayi(&json!({}), "g", Some(7)).unwrap(), 7);
     assert!(sayi(&json!({}), "g", None).is_err());
     assert!(metin(&json!({"a": 1}), "a").is_err());
+  }
+
+  #[test]
+  fn video_ses_ayari_ayristirma() {
+    // Verilmeyen alanlar OBS varsayılanı; çıkış = taban
+    let v = motor_ayari(&json!({"genislik": 2560, "yukseklik": 1440})).unwrap();
+    assert_eq!((v.cikis_genislik, v.cikis_yukseklik, v.ornekleme), (2560, 1440, 48_000));
+    assert_eq!(v, MotorAyari { genislik: 2560, yukseklik: 1440, cikis_genislik: 2560, cikis_yukseklik: 1440, ..MotorAyari::yeni(2560, 1440, 60) });
+    let o = motor_ayari(&json!({
+      "cikis_genislik": 1280, "cikis_yukseklik": 720, "olcek_filtresi": "lanczos", "renk_bicimi": "p010",
+      "renk_uzayi": "2100pq", "renk_araligi": "tam", "ornekleme": 44100, "hoparlor": "5.1"
+    }))
+    .unwrap();
+    assert_eq!((o.cikis_genislik, o.olcek, o.bicim, o.renk_uzayi, o.aralik, o.ornekleme, o.hoparlor), (1280, 4, 18, 4, 2, 44_100, 6));
+    let e = motor_ayari(&json!({"renk_bicimi": "yuv9"})).unwrap_err();
+    assert!(e.contains("nv12"), "{e}");
+    assert!(crate::motor::renk_denetimi(2, 4).is_err());
+    assert!(crate::motor::renk_denetimi(18, 2).is_ok());
+  }
+
+  #[test]
+  fn ag_ayari_dogrulama() {
+    let v: crate::motor::AgAyari = serde_json::from_value(json!({"dusuk_gecikme": true})).unwrap();
+    assert!(v.dusuk_gecikme && v.yeniden_baglan && v.bagla_ip == "default" && v.en_cok_deneme == 25);
+    assert!(v.denetle().is_ok());
+    for kotu in [json!({"bagla_ip": "eth0"}), json!({"ip_ailesi": "IPv5"}), json!({"deneme_gecikmesi_sn": 0}), json!({"en_cok_deneme": 99999})] {
+      let a: crate::motor::AgAyari = serde_json::from_value(kotu.clone()).unwrap();
+      assert!(a.denetle().is_err(), "{kotu}");
+    }
+    let ip6: crate::motor::AgAyari = serde_json::from_value(json!({"bagla_ip": "::1"})).unwrap();
+    assert!(ip6.denetle().is_ok());
   }
 
   #[test]

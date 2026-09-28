@@ -84,6 +84,12 @@ impl Motor {
         }
       }
     }
+    // Sahnenin ve gruplarının filtreleri (kaynakları silinmeden önce çıkarılır)
+    let gruplar: Vec<String> = self.gruplar.iter().filter(|(_, s)| *s == id).map(|(g, _)| g.clone()).collect();
+    for g in &gruplar {
+      self.kaynak_filtrelerini_birak(Some(g));
+    }
+    self.kaynak_filtrelerini_birak(Some(id));
     self.gruplar.retain(|_, sahne| sahne != id);
     let s = self.sahneler.remove(id).unwrap();
     unsafe {
@@ -159,6 +165,8 @@ impl Motor {
       })
       .collect();
     let onceki: Vec<Ptr> = sahne_ogeleri_ham(s);
+    // Grubun filtreleri grupla birlikte gider (OBS'te de)
+    self.kaynak_filtrelerini_birak(Some(crate::sahne::oge_kaynagi(grup_oge)));
     unsafe { (api().obs_sceneitem_group_ungroup2)(g, true) };
     self.ogeler.remove(grup_oge);
     self.gruplar.remove(crate::sahne::oge_kaynagi(grup_oge));

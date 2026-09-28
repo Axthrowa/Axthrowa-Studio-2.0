@@ -196,6 +196,14 @@ struct Parite {
   yakalama: String,
   temizle_ok: bool,
   temizle: String,
+  sahne_filtre_ok: bool,
+  sahne_filtre: String,
+  oge_gecis_ok: bool,
+  oge_gecis: String,
+  etkilesim_ok: bool,
+  etkilesim: String,
+  cikis_turu_ok: bool,
+  cikis_turu: String,
 }
 
 /// Yakalama türlerinde bulunması gereken özellik anahtarları (OBS 32.2.2'de örnek oluşturmadan okunarak gözlendi).
@@ -218,6 +226,8 @@ html,body{margin:0;background:#1060c0;overflow:hidden}
 @keyframes y{from{transform:translateX(0)}to{transform:translateX(700px)}}
 </style></head><body><div id="k"></div><script>
 try{const c=new AudioContext(),o=c.createOscillator(),g=c.createGain();o.frequency.value=1000;g.gain.value=0.05;o.connect(g).connect(c.destination);o.start();}catch(e){}
+document.addEventListener('mousedown',()=>{document.documentElement.style.background=document.body.style.background='#c02020'});
+document.addEventListener('keydown',e=>{if(e.key==='g'||e.key==='G'||e.keyCode===71){document.documentElement.style.background=document.body.style.background='#20c040'}});
 </script></body></html>"#;
 
 /// PNG'deki (x, y) pikselinin RGB değeri
@@ -382,6 +392,50 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
   })();
   (p.donusum_ok, p.donusum) = ayir(r);
 
+  // Sahneye ve gruba filtre (OBS'te sahne/grup filtreleri): sahne karartılınca önizlemede görünür
+  let r = (|| -> Result<String, String> {
+    m.studyo_ac("ana")?;
+    m.studyo_onizleme("ana", "yatay-2")?;
+    let _ = m.onizleme_png("studyo-ana", 320);
+    bekle(800);
+    let piksel = |m: &mut Motor| m.onizleme_png("studyo-ana", 320).ok().flatten().and_then(|b| png_pikseli(&b, 310, 175));
+    let once = piksel(m);
+    m.filtre_ekle("yatay-2", "f-sahne", "color_filter_v2", "Sahne karartma", &nesne(json!({"brightness": -1.0})))?;
+    bekle(700);
+    let karanlik = piksel(m);
+    let sahne_liste = m.filtre_listesi("yatay-2")?.len();
+    m.filtre_sil("f-sahne")?;
+    let g = m.grup_olustur("yatay-2", "g2", "Grup 2", &["yatay-2/arka".to_string()])?;
+    m.filtre_ekle("g2", "f-grup", "color_filter_v2", "Grup saydamlığı", &nesne(json!({"opacity": 0.5})))?;
+    let grup_liste = m.filtre_listesi("g2")?.len();
+    m.grup_coz(&g)?;
+    let grup_temiz = m.filtre_ozellikleri("f-grup").is_err();
+    m.studyo_kapat("ana")?;
+    let toplam = |p: Option<[u8; 3]>| p.map(|[r, g, b]| r as u32 + g as u32 + b as u32);
+    let ok = toplam(once).is_some_and(|t| t > 60) && toplam(karanlik).is_some_and(|t| t < 20) && sahne_liste == 1 && grup_liste == 1 && grup_temiz;
+    Ok(format!("{ok}|sahne pikseli {once:?} → karartma filtresiyle {karanlik:?}; sahne filtresi {sahne_liste}; grup filtresi {grup_liste}, grup çözülünce filtre bırakıldı {grup_temiz}"))
+  })();
+  (p.sahne_filtre_ok, p.sahne_filtre) = ayir(r);
+
+  // Öğe gösterme/gizleme geçişi
+  let r = (|| -> Result<String, String> {
+    let bos = serde_json::Map::new();
+    m.oge_gecisi("yatay-2/arka", false, Some("fade_transition"), 400, &bos)?;
+    m.oge_gecisi("yatay-2/arka", true, Some("cut_transition"), 100, &bos)?;
+    let g = m.oge_gecisleri("yatay-2/arka")?;
+    let red = m.oge_gecisi("yatay-2/arka", true, Some("boyle-gecis-yok"), 300, &bos).is_err()
+      && m.oge_gecisi("yatay-2/arka", true, Some("fade_transition"), 10, &bos).is_err();
+    m.donustur("yatay-2/arka", &Donusum { gorunur: Some(false), ..Default::default() })?;
+    bekle(900);
+    let gizli = m.sahne_ogeleri("yatay-2")?.iter().find(|o| o.oge == "yatay-2/arka").is_some_and(|o| !o.gorunur);
+    m.donustur("yatay-2/arka", &Donusum { gorunur: Some(true), ..Default::default() })?;
+    m.oge_gecisi("yatay-2/arka", false, None, 0, &bos)?;
+    let kaldirildi = m.oge_gecisleri("yatay-2/arka")?["gizle"].is_null();
+    let ok = g["gizle"]["tur"] == "fade_transition" && g["gizle"]["sure_ms"] == 400 && g["goster"]["tur"] == "cut_transition" && red && gizli && kaldirildi;
+    Ok(format!("{ok}|geçişler {g}; geçersiz tür/süre reddedildi {red}; gizleme geçişle tamamlandı {gizli}; kaldırıldı {kaldirildi}"))
+  })();
+  (p.oge_gecis_ok, p.oge_gecis) = ayir(r);
+
   // Canlı önizleme akışı ve seviye olayları (olaylar çağıranda sayılır)
   let _ = m.akis_baslat("ana", 320, 10);
   bekle(1200);
@@ -430,9 +484,6 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     m.kaynak_olustur("eksik-gorsel", "image_source", "Eksik görsel", &nesne(json!({"file": klasor.join("yok.png").to_string_lossy()})))?;
     let eksik = m.kaynak_durumlari().into_iter().find(|k| k.id == "eksik-gorsel").map(|k| k.durum);
     m.kaynak_sil("eksik-gorsel")?;
-    m.studyo_kapat("ana")?;
-    m.sahne_sil("tarayici-s")?;
-    m.kaynak_sil("tarayici")?;
     let ok = (-40.0..-12.0).contains(&tepe) && mavi && farkli && ses == Some(0) && durum_ok && eksik == Some("bekliyor");
     Ok(format!(
       "{ok}|WebAudio tonu tepe ortalaması {tepe:.1} dB (beklenen ≈ −26); zemin pikseli {zemin:?}; ardışık kareler farklı {farkli}; mikserde, izleme {ses:?}; durum {:?} (görünüyor, programda değil: {durum_ok}); dosyasız görsel {eksik:?}",
@@ -440,6 +491,41 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     ))
   })();
   (p.tarayici_ok, p.tarayici) = ayir(r);
+
+  // Etkileşim (OBS "Etkileşim" penceresi): kaynağın tek başına görüntüsü + fare/klavye olayları tarayıcıya ulaşır
+  let r = (|| -> Result<String, String> {
+    let etkilesimsiz = m.etkilesim("arka", &json!({"tur": "odak"})).is_err();
+    let t = m.etkilesim_ac("tarayici")?;
+    let ad = format!("{}tarayici", crate::etkilesim::ONEK);
+    let _ = m.onizleme_png(&ad, 320);
+    bekle(900);
+    let piksel = |m: &mut Motor| m.onizleme_png(&ad, 320).ok().flatten().and_then(|b| png_pikseli(&b, 300, 170));
+    let once = piksel(m);
+    m.etkilesim("tarayici", &json!({"tur": "hareket", "x": 480, "y": 500}))?;
+    m.etkilesim("tarayici", &json!({"tur": "tik", "dugme": "sol", "x": 480, "y": 500}))?;
+    m.etkilesim("tarayici", &json!({"tur": "tik", "dugme": "sol", "x": 480, "y": 500, "birak": true}))?;
+    bekle(800);
+    let tik = piksel(m);
+    m.etkilesim("tarayici", &json!({"tur": "odak", "acik": true}))?;
+    m.etkilesim("tarayici", &json!({"tur": "tus", "metin": "g", "vkey": 0x47, "tarama": 0x22}))?;
+    m.etkilesim("tarayici", &json!({"tur": "tus", "metin": "g", "vkey": 0x47, "tarama": 0x22, "birak": true}))?;
+    bekle(800);
+    let tus = piksel(m);
+    if let Some(b) = m.onizleme_png(&ad, 320).ok().flatten() {
+      let _ = std::fs::write(klasor.join("etkilesim-kare.png"), b);
+    }
+    m.etkilesim_kapat("tarayici");
+    let kapandi = m.onizleme_png(&ad, 320).is_err();
+    let mavi = once.is_some_and(|[r, _, b]| b > 150 && r < 60);
+    let kirmizi = tik.is_some_and(|[r, g, b]| r > 150 && g < 80 && b < 80);
+    let yesil = tus.is_some_and(|[r, g, b]| g > 150 && r < 80 && b < 110);
+    let ok = etkilesimsiz && t["genislik"] == 960 && t["yukseklik"] == 540 && mavi && kirmizi && yesil && kapandi;
+    Ok(format!("{ok}|etkileşimsiz kaynak reddedildi {etkilesimsiz}; tuval {}×{}; zemin {once:?} → tıklayınca {tik:?} → 'g' tuşunda {tus:?}; kapatılınca tuval kalktı {kapandi}", t["genislik"], t["yukseklik"]))
+  })();
+  (p.etkilesim_ok, p.etkilesim) = ayir(r);
+  let _ = m.studyo_kapat("ana");
+  let _ = m.sahne_sil("tarayici-s");
+  let _ = m.kaynak_sil("tarayici");
 
   // Yakalama türleri: özellik formu tür üzerinden okunur, örnek oluşturulmaz (oyuna kanca atılmaz, aygıt açılmaz)
   let r = (|| -> Result<String, String> {
@@ -505,7 +591,68 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     Ok(format!("{ok}|obs_x264: {} özellik ({:?}…), varsayılan bit hızı {}", adlar.len(), adlar.iter().take(6).collect::<Vec<_>>(), v["ayarlar"]["bitrate"]))
   })();
   (p.kodlayici_ok, p.kodlayici) = ayir(r);
+
+  // RTMP çıktı türünün ağ özellikleri (Ayarlar > Gelişmiş > Ağ): örneksiz okunur
+  let r = (|| -> Result<String, String> {
+    let v = crate::eklenti::cikis_turu_ozellikleri("rtmp_output")?;
+    let adlar: Vec<String> = v["ozellikler"].as_array().into_iter().flatten().filter_map(|o| o["ad"].as_str().map(String::from)).collect();
+    let ip_sayisi = v["ozellikler"]
+      .as_array()
+      .into_iter()
+      .flatten()
+      .find(|o| o["ad"] == "bind_ip")
+      .and_then(|o| o["liste"]["ogeler"].as_array())
+      .map_or(0, |a| a.len());
+    let ok = ["bind_ip", "new_socket_loop_enabled", "low_latency_mode_enabled"].iter().all(|a| adlar.iter().any(|x| x == a)) && ip_sayisi >= 1;
+    Ok(format!("{ok}|rtmp_output: {} özellik, bağlanılacak IP seçeneği {ip_sayisi}", adlar.len()))
+  })();
+  (p.cikis_turu_ok, p.cikis_turu) = ayir(r);
   p
+}
+
+/// Ses akışının örnekleme hızı ve kanal sayısı
+fn ses_bicimi(ffprobe: &Path, dosya: &Path) -> (u32, u32) {
+  let v: serde_json::Value = Command::new(ffprobe)
+    .args(["-v", "error", "-select_streams", "a:0", "-show_entries", "stream=sample_rate,channels", "-of", "json"])
+    .arg(dosya)
+    .output()
+    .ok()
+    .and_then(|o| serde_json::from_slice(&o.stdout).ok())
+    .unwrap_or(serde_json::Value::Null);
+  let a = &v["streams"][0];
+  (a["sample_rate"].as_str().and_then(|s| s.parse().ok()).unwrap_or(0), a["channels"].as_u64().unwrap_or(0) as u32)
+}
+
+/// Ayrı süreçte (libobs süreç başına bir kez başlar): taban 1920×1080 → çıkış 1280×720 (Lanczos), 44,1 kHz mono ses.
+/// Kısa bir MKV kaydı yazar; denetimi ana süreç ffprobe ile yapar.
+pub fn olcek_sinamasi(klasor: &Path, medya: &Path) -> Result<(), String> {
+  std::fs::create_dir_all(klasor).map_err(|e| format!("klasör: {e}"))?;
+  let mut ayar = MotorAyari::yeni(1920, 1080, 30);
+  ayar.cikis_genislik = 1280;
+  ayar.cikis_yukseklik = 720;
+  ayar.olcek = crate::motor::ada_gore(&crate::motor::OLCEK_FILTRELERI, "lanczos", "ölçek")?;
+  ayar.ornekleme = 44_100;
+  ayar.hoparlor = crate::motor::ada_gore(&crate::motor::HOPARLORLER, "mono", "hoparlör")?;
+  let hdr_red = crate::motor::renk_denetimi(2, 4).is_err();
+  let (tx, _rx) = mpsc::channel::<Olay>();
+  let gunluk = std::fs::File::create(klasor.join("libobs.log")).map_err(|e| format!("günlük: {e}"))?;
+  let mut m = Motor::baslat(ayar, tx, Box::new(gunluk))?;
+  m.kaynak_olustur("arka", "color_source", "Arka", &nesne(json!({"color": 0xFF804020_u32, "width": 1920, "height": 1080})))?;
+  m.kaynak_olustur("medya", "ffmpeg_source", "Medya", &nesne(json!({"is_local_file": true, "local_file": medya.to_string_lossy(), "looping": true})))?;
+  m.sahne_olustur("s", "ana", "S")?;
+  m.sahneye_ekle("s", "arka", &Donusum::default())?;
+  m.sahneye_ekle("s", "medya", &Donusum::default())?;
+  m.video_kodlayici("v", "otomatik", "ana", &KodlayiciAyari { bit_hizi_kbps: 3000, anahtar_kare_sn: 2 })?;
+  m.ses_kodlayici("a", 128, 0)?;
+  m.kayit_cikisi("k", &klasor.join("olcekli.mkv"), None, "v", &["a"])?;
+  m.cikis_baslat("k")?;
+  std::thread::sleep(Duration::from_secs(4));
+  m.cikis_durdur("k")?;
+  std::thread::sleep(Duration::from_secs(1));
+  let video = m.video_ayari();
+  m.kapat();
+  println!("{}", json!({"video": video, "hdr_8bit_reddedildi": hdr_red}));
+  Ok(())
 }
 
 /// "ok|ayrıntı" biçimli sonucu ayırır; hata → (false, hata)
@@ -557,7 +704,7 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   let (olay_tx, olay_rx) = mpsc::channel::<Olay>();
   let gunluk = std::fs::File::create(klasor.join("libobs.log")).map_err(|e| format!("günlük: {e}"))?;
   let baslangic = Instant::now();
-  let mut m = Motor::baslat(MotorAyari { genislik: 1920, yukseklik: 1080, fps: 60 }, olay_tx, Box::new(gunluk))?;
+  let mut m = Motor::baslat(MotorAyari::yeni(1920, 1080, 60), olay_tx, Box::new(gunluk))?;
   let acilis_ms = baslangic.elapsed().as_millis();
   let kodlayicilar = m.video_kodlayicilari();
   m.tuval_olustur("dikey", "Dikey", 1080, 1920)?;
@@ -592,17 +739,25 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   m.kaynak_izleri("medya", 0b10)?;
 
   let sunucu = |p: u16| format!("rtmp://127.0.0.1:{p}/live");
-  m.rtmp_cikisi("hedef-a", &sunucu(pa), "sinama", "v-yatay", "a-ana")?;
-  m.rtmp_cikisi("hedef-b", &sunucu(pb), "sinama", "v-yatay", "a-ana")?;
-  m.rtmp_cikisi("hedef-c", &sunucu(pc), "sinama", "v-dikey", "a-ana")?;
-  m.rtmp_cikisi("hedef-d", &sunucu(kapali_port), "sinama", "v-yatay", "a-ana")?;
+  m.rtmp_cikisi("hedef-a", &sunucu(pa), "sinama", "v-yatay", "a-ana", &Default::default())?;
+  m.rtmp_cikisi("hedef-b", &sunucu(pb), "sinama", "v-yatay", "a-ana", &Default::default())?;
+  m.rtmp_cikisi("hedef-c", &sunucu(pc), "sinama", "v-dikey", "a-ana", &Default::default())?;
+  m.rtmp_cikisi("hedef-d", &sunucu(kapali_port), "sinama", "v-yatay", "a-ana", &Default::default())?;
   // Çok izli kayıt: iz 1 (a-ana) + iz 2 (a-iz2); tonlu medya yalnız 2. izde
   m.kayit_cikisi("kayit", &dosya("kayit.mkv"), None, "v-yatay", &["a-ana", "a-iz2"])?;
   let hibrit = crate::motor::kayit_bicimleri().iter().any(|b| b.ad == "hibrit_mp4");
   if hibrit {
     m.kayit_cikisi("kayit-hibrit", &dosya("kayit-hibrit.mp4"), Some("hibrit_mp4"), "v-yatay", &["a-ana", "a-iz2"])?;
   }
-  m.rtmp_cikisi("hedef-e", &sunucu(pe), "sinama", "v-yatay", "a-iz2")?;
+  let ag_e = crate::motor::AgAyari {
+    bagla_ip: "127.0.0.1".into(),
+    ip_ailesi: "IPv4".into(),
+    dusuk_gecikme: true,
+    dinamik_bit_hizi: true,
+    ..Default::default()
+  };
+  let ag_red = crate::motor::AgAyari { bagla_ip: "yerel".into(), ..Default::default() }.denetle().is_err();
+  m.rtmp_cikisi("hedef-e", &sunucu(pe), "sinama", "v-yatay", "a-iz2", &ag_e)?;
   m.tekrar_cikisi("tekrar", &klasor, 10, "v-yatay", &["a-ana"])?;
 
   let kayitsiz = std::env::var_os("YYM_SINAMA_KAYITSIZ").is_some();
@@ -676,6 +831,18 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   for mut a in alicilar {
     alici_kapat(&mut a, Duration::from_secs(5));
   }
+  // Ölçeklenmiş çıkış + ses ayarları: ayrı süreçte (libobs süreç başına bir kez başlar)
+  let olcek_klasoru = dosya("olcek");
+  let olcek_cikti = std::env::current_exe()
+    .map_err(|e| e.to_string())
+    .and_then(|exe| Command::new(exe).arg("olcek-sinama").arg(&olcek_klasoru).arg(&medya).output().map_err(|e| e.to_string()));
+  let olcek_json: serde_json::Value = olcek_cikti
+    .as_ref()
+    .ok()
+    .and_then(|o| String::from_utf8_lossy(&o.stdout).lines().rev().find_map(|l| serde_json::from_str(l).ok()))
+    .unwrap_or(serde_json::Value::Null);
+  let olcekli = incele(&ffprobe, &ff, &olcek_klasoru.join("olcekli.mkv"));
+  let (olcek_hz, olcek_kanal) = ses_bicimi(&ffprobe, &olcek_klasoru.join("olcekli.mkv"));
   let tum_olaylar: Vec<Olay> = olay_rx.try_iter().collect();
   // Kare ve seviye olayları çok sayıda ve büyük: rapora yalnız sayıları girer
   let kare_olaylari: Vec<String> = tum_olaylar
@@ -789,6 +956,25 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   ekle("tarayıcı kaynağı: yerel sayfa işlenir, WebAudio mikserde", p.tarayici_ok, p.tarayici.clone());
   ekle("yakalama türlerinin özellikleri (örnek oluşturmadan)", p.yakalama_ok, p.yakalama.clone());
   ekle("koleksiyon değişimi: grafik temizlenir, çıktılar sürer", p.temizle_ok, p.temizle.clone());
+  ekle("sahneye ve gruba filtre", p.sahne_filtre_ok, p.sahne_filtre.clone());
+  ekle("öğe gösterme/gizleme geçişi", p.oge_gecis_ok, p.oge_gecis.clone());
+  ekle("etkileşim: tıklama ve tuş tarayıcı kaynağına ulaşır", p.etkilesim_ok, p.etkilesim.clone());
+  ekle("RTMP ağ özellikleri (bağlanılacak IP, düşük gecikme)", p.cikis_turu_ok, p.cikis_turu.clone());
+  ekle(
+    "ağ ayarlı hedef (127.0.0.1'e bağlan, IPv4, düşük gecikme, dinamik bit hızı) yayınladı; geçersiz IP reddedildi",
+    e.kare > 0 && e.cozme_hatasi == 0 && ag_red,
+    format!("hedef-e {} kare, {} hata; geçersiz IP reddedildi {ag_red}", e.kare, e.cozme_hatasi),
+  );
+  ekle(
+    "ölçeklenmiş çıkış 1280×720 (taban 1920×1080, Lanczos), ses 44,1 kHz mono; HDR + 8 bit reddedildi",
+    olcekli.genislik == 1280 && olcekli.yukseklik == 720 && olcekli.kare > 0 && olcekli.cozme_hatasi == 0 && olcek_hz == 44_100 && olcek_kanal == 1
+      && olcek_json["video"]["cikis"] == json!([1280, 720]) && olcek_json["hdr_8bit_reddedildi"] == true,
+    format!(
+      "{}×{} {} kare {} hata; ses {olcek_hz} Hz {olcek_kanal} kanal; motor bildirimi {}; süreç {}",
+      olcekli.genislik, olcekli.yukseklik, olcekli.kare, olcekli.cozme_hatasi, olcek_json,
+      olcek_cikti.as_ref().map(|o| o.status.to_string()).unwrap_or_else(|e| e.clone())
+    ),
+  );
   let jpeg_gecerli = kare_olaylari
     .iter()
     .filter(|b| {

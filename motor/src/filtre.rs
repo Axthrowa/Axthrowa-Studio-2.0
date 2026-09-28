@@ -1,5 +1,8 @@
 //! Kaynak filtreleri (ses ve video). Türler çalışma anında libobs'tan listelenir: sabit liste yoktur, yüklü
 //! modüllerin (obs-filters, nv-filters, eklentiler) kaydettiği her filtre kullanılabilir.
+//!
+//! Filtre hedefi bir kaynak, bir sahne (sahnenin kendi kaynağı) ya da bir grup (grup kimliği) olabilir — OBS'te de
+//! sahneye ve gruba video filtresi eklenir.
 
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -61,6 +64,16 @@ unsafe extern "C" fn topla(_ust: Ptr, cocuk: Ptr, param: Ptr) {
 }
 
 impl Motor {
+  /// Filtre hedefinin libobs kaynağı: kaynak → sahne kaynağı → grup öğesinin kaynağı
+  pub(crate) fn filtre_hedefi(&self, id: &str) -> Result<Ptr, String> {
+    if let Some(k) = self.kaynak_ya_da_sahne(id) {
+      return Ok(k);
+    }
+    let sahne = self.gruplar.get(id).ok_or_else(|| format!("kaynak yok: {id}"))?;
+    let g = *self.ogeler.get(&format!("{sahne}/{id}")).ok_or_else(|| format!("grup öğesi yok: {id}"))?;
+    Ok(unsafe { (api().obs_sceneitem_get_source)(g) })
+  }
+
   fn filtre_ptr(&self, id: &str) -> Result<Ptr, String> {
     self.filtreler.get(id).map(|f| f.ptr).ok_or_else(|| format!("filtre yok: {id}"))
   }
@@ -70,7 +83,7 @@ impl Motor {
     if self.filtreler.contains_key(id) {
       return Err(format!("filtre zaten var: {id}"));
     }
-    let k = *self.kaynaklar.get(kaynak).ok_or_else(|| format!("kaynak yok: {kaynak}"))?;
+    let k = self.filtre_hedefi(kaynak)?;
     if !filtre_turleri().iter().any(|t| t.id == tur) {
       return Err(format!("filtre türü yok: {tur}"));
     }
@@ -87,8 +100,8 @@ impl Motor {
 
   pub fn filtre_sil(&mut self, id: &str) -> Result<(), String> {
     let f = self.filtreler.remove(id).ok_or_else(|| format!("filtre yok: {id}"))?;
-    if let Some(k) = self.kaynaklar.get(&f.kaynak) {
-      unsafe { (api().obs_source_filter_remove)(*k, f.ptr) };
+    if let Ok(k) = self.filtre_hedefi(&f.kaynak) {
+      unsafe { (api().obs_source_filter_remove)(k, f.ptr) };
     }
     unsafe { (api().obs_source_release)(f.ptr) };
     Ok(())
@@ -97,7 +110,7 @@ impl Motor {
   /// `yukari`, `asagi`, `en_ust`, `en_alt` (libobs sırası: ilk filtre kaynağa en yakın olandır)
   pub fn filtre_sira(&mut self, id: &str, yon: &str) -> Result<(), String> {
     let f = self.filtreler.get(id).ok_or_else(|| format!("filtre yok: {id}"))?;
-    let k = *self.kaynaklar.get(&f.kaynak).ok_or("kaynak yok")?;
+    let k = self.filtre_hedefi(&f.kaynak)?;
     let hareket = match yon {
       "yukari" => 0,
       "asagi" => 1,
@@ -123,7 +136,7 @@ impl Motor {
 
   /// Kaynağın filtreleri libobs sırasıyla (yalnız bu motorun eklediği filtreler).
   pub fn filtre_listesi(&self, kaynak: &str) -> Result<Vec<FiltreBilgisi>, String> {
-    let k = *self.kaynaklar.get(kaynak).ok_or_else(|| format!("kaynak yok: {kaynak}"))?;
+    let k = self.filtre_hedefi(kaynak)?;
     let mut ptrler: Vec<Ptr> = Vec::new();
     unsafe { (api().obs_source_enum_filters)(k, topla, &mut ptrler as *mut Vec<Ptr> as Ptr) };
     Ok(

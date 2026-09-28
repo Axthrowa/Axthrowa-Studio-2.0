@@ -435,7 +435,50 @@ obs_api! {
   fn obs_encoder_defaults(*const c_char) -> Ptr;
   fn obs_encoder_update(Ptr, Ptr);
   fn obs_encoder_get_settings(Ptr) -> Ptr;
+  // Etkileşim (obs.h / obs-interaction.h)
+  fn obs_source_send_mouse_click(Ptr, *const FareOlayi, i32, bool, u32);
+  fn obs_source_send_mouse_move(Ptr, *const FareOlayi, bool);
+  fn obs_source_send_mouse_wheel(Ptr, *const FareOlayi, c_int, c_int);
+  fn obs_source_send_focus(Ptr, bool);
+  fn obs_source_send_key_click(Ptr, *const TusOlayi, bool);
+  // Sahne öğesi gösterme/gizleme geçişleri (OBS 27+)
+  fn obs_sceneitem_set_transition(Ptr, bool, Ptr);
+  fn obs_sceneitem_get_transition(Ptr, bool) -> Ptr;
+  fn obs_sceneitem_set_transition_duration(Ptr, bool, u32);
+  fn obs_sceneitem_get_transition_duration(Ptr, bool) -> u32;
+  fn obs_output_defaults(*const c_char) -> Ptr;
+  fn obs_get_output_properties(*const c_char) -> Ptr;
 }
+
+/// `struct obs_mouse_event` (obs-interaction.h)
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FareOlayi {
+  pub modifiers: u32,
+  pub x: i32,
+  pub y: i32,
+}
+
+/// `struct obs_key_event` (obs-interaction.h). `text` UTF-8, NUL sonlu; libobs kopyalamaz, çağrı süresince yaşamalı.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct TusOlayi {
+  pub modifiers: u32,
+  pub text: *const c_char,
+  pub native_modifiers: u32,
+  pub native_scancode: u32,
+  pub native_vkey: u32,
+}
+
+/// `enum obs_interaction_flags`
+pub const INTERACT_SHIFT_KEY: u32 = 1 << 1;
+pub const INTERACT_CONTROL_KEY: u32 = 1 << 2;
+pub const INTERACT_ALT_KEY: u32 = 1 << 3;
+pub const INTERACT_MOUSE_LEFT: u32 = 1 << 4;
+pub const INTERACT_MOUSE_MIDDLE: u32 = 1 << 5;
+pub const INTERACT_MOUSE_RIGHT: u32 = 1 << 6;
+/// `OBS_SOURCE_INTERACTION` çıktı bayrağı: kaynak fare/klavye olayı alır
+pub const OBS_SOURCE_INTERACTION: u32 = 1 << 5;
 
 // SAFETY: libobs fonksiyonları iş parçacığı güvenlidir (libobs kendi kilitlerini tutar); tablo değişmez.
 unsafe impl Send for Api {}
@@ -741,6 +784,11 @@ mod tests {
     // obs_service_info: 1 kimlik + 25 fonksiyon göstericisi + type_data = 27 × 8
     assert_eq!(std::mem::size_of::<ServiceInfo>(), 27 * 8);
     assert_eq!(std::mem::size_of::<Calldata>(), 32);
+    // obs_mouse_event: 3 × 32 bit; obs_key_event: u32 (+4 dolgu) + gösterici + 3 × u32 (+4 dolgu)
+    assert_eq!(std::mem::size_of::<FareOlayi>(), 12);
+    assert_eq!(std::mem::size_of::<TusOlayi>(), 32);
+    assert_eq!(std::mem::offset_of!(TusOlayi, text), 8);
+    assert_eq!(std::mem::offset_of!(TusOlayi, native_vkey), 24);
   }
 
   #[test]

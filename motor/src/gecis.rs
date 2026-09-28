@@ -8,7 +8,7 @@
 use serde::Serialize;
 use serde_json::{Map, Value};
 
-use crate::motor::{video_bilgisi, Kanvas, Motor, MotorAyari};
+use crate::motor::{video_bilgisi, Kanvas, Motor};
 use crate::obs::{self, api, cs, cstr, Ptr, Veri};
 
 pub struct Gecis {
@@ -185,7 +185,7 @@ impl Motor {
       let k = self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?;
       (k.genislik, k.yukseklik)
     };
-    let mut ovi = video_bilgisi(MotorAyari { genislik: g, yukseklik: y, fps: self.ana.fps }, c"libobs-d3d11");
+    let mut ovi = video_bilgisi(self.ana.boyutla(g, y), c"libobs-d3d11");
     let ad = cs(&format!("Önizleme ({tuval})"));
     let ptr = unsafe { (api().obs_canvas_create_private)(ad.as_ptr(), &mut ovi, obs::CANVAS_PREVIEW) };
     if ptr.is_null() {

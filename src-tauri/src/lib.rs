@@ -484,6 +484,38 @@ fn launch_obs_process(override_path: Option<&str>) -> Result<String, String> {
 }
 
 #[cfg(test)]
+mod tls_tests {
+  /// Regresyon: Kick/Twitch wss:// bağlantısı rustls istemci yapılandırması kurar; sağlayıcı yoksa bu panikler ve
+  /// `panic = "abort"` ile uygulama açılışta kapanır.
+  #[test]
+  fn wss_istemcisi_icin_kripto_saglayicisi_var() {
+    super::tls_saglayicisini_kur();
+    super::tls_saglayicisini_kur();
+    assert!(rustls::crypto::CryptoProvider::get_default().is_some());
+    let _ = rustls::ClientConfig::builder()
+      .with_root_certificates(rustls::RootCertStore::empty())
+      .with_no_client_auth();
+  }
+
+  /// Botun kullandığı yol: TCP bağlantısı kurulur, ardından tokio-tungstenite rustls yapılandırması oluşturur. Yerel
+  /// dinleyici el sıkışmayı hemen keser → hata dönmeli, panik olmamalı (dış ağa çıkılmaz).
+  #[tokio::test]
+  async fn wss_baglantisi_panik_yerine_hata_doner() {
+    super::tls_saglayicisini_kur();
+    let dinleyici = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = dinleyici.local_addr().unwrap().port();
+    let kabul = tokio::spawn(async move {
+      if let Ok((soket, _)) = dinleyici.accept().await {
+        drop(soket);
+      }
+    });
+    let sonuc = tokio_tungstenite::connect_async(format!("wss://127.0.0.1:{port}/")).await;
+    assert!(sonuc.is_err());
+    let _ = kabul.await;
+  }
+}
+
+#[cfg(test)]
 mod open_in_browser_tests {
   use super::*;
 
@@ -591,8 +623,47 @@ fn configure_webview_memory() {
   }
 }
 
+/// rustls için süreç geneli kripto sağlayıcısını (ring) kurar. Bağımlılık ağacında hiçbir paket sağlayıcı özelliği
+/// açmadığında rustls ilk TLS bağlantısında (Kick/Twitch wss://) panikler; `panic = "abort"` ile bu, uygulamanın
+/// açılır açılmaz kapanması demekti. İkinci çağrı zararsızdır (zaten kurulu sağlayıcı korunur).
+pub fn tls_saglayicisini_kur() {
+  let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
+/// Çökme günlüğü: `panic = "abort"` altında panik mesajı pencereli uygulamada hiçbir yere yazılmıyordu. Mesaj, konum
+/// ve iş parçacığı adı `<veri>/cokme-gunlugu.log` dosyasına eklenir (belirtece benzeyen sözcükler ve RTMP yolları
+/// gizlenir; dosya 256 KB'ı aşınca baştan başlar), ardından varsayılan kanca çalışır.
+pub fn panik_kaydini_kur(data_dir: &std::path::Path) {
+  let yol = data_dir.join("cokme-gunlugu.log");
+  let onceki = std::panic::take_hook();
+  std::panic::set_hook(Box::new(move |bilgi| {
+    let mesaj = bilgi
+      .payload()
+      .downcast_ref::<&str>()
+      .map(|s| s.to_string())
+      .or_else(|| bilgi.payload().downcast_ref::<String>().cloned())
+      .unwrap_or_else(|| "(metin olmayan panik)".into());
+    let mesaj: String = destek::Gizleyici::new(Vec::new(), None).metin(&mesaj).chars().take(2000).collect();
+    let konum = bilgi.location().map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column())).unwrap_or_default();
+    let is_parcacigi = std::thread::current().name().unwrap_or("?").to_string();
+    let satir = format!(
+      "{} sürüm={} iş={is_parcacigi} konum={konum} panik: {mesaj}\n",
+      chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+      env!("CARGO_PKG_VERSION"),
+    );
+    let buyuk = std::fs::metadata(&yol).map(|m| m.len() > 256 * 1024).unwrap_or(false);
+    let dosya = std::fs::OpenOptions::new().create(true).write(true).append(!buyuk).truncate(buyuk).open(&yol);
+    if let Ok(mut f) = dosya {
+      use std::io::Write;
+      let _ = f.write_all(satir.as_bytes());
+    }
+    onceki(bilgi);
+  }));
+}
+
 pub fn run() {
   configure_webview_memory();
+  tls_saglayicisini_kur();
 
   #[cfg(windows)]
   {
@@ -626,6 +697,8 @@ pub fn run() {
     }
   }
   let resolved = paths::resolve(root);
+  let _ = std::fs::create_dir_all(&resolved.data_dir);
+  panik_kaydini_kur(&resolved.data_dir);
   let state = AppState::new(
     resolved.resource_root,
     resolved.data_dir,

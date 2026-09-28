@@ -10,7 +10,8 @@ use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() {
-  let port: u16 = std::env::args().nth(1).and_then(|a| a.parse().ok()).unwrap_or(18843);
+  yayin_yonetim_araci_lib::tls_saglayicisini_kur();
+  let port: u16 =std::env::args().nth(1).and_then(|a| a.parse().ok()).unwrap_or(18843);
   let root: PathBuf = std::env::temp_dir().join(format!("yya-headless-{port}"));
   std::fs::create_dir_all(root.join("assets")).expect("geçici kök");
   let data_dir = root.join("app-data");

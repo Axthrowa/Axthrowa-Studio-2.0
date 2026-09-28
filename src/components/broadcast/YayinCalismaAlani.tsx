@@ -77,6 +77,8 @@ import { DeckPanel } from "../control/DeckPanel";
 import { EtkilesimPenceresi } from "./EtkilesimPenceresi";
 import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
+import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
+import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
 
 type Props = { onToast: (m: string) => void; onGit?: (hedef: "control" | "hotkeys" | "settings") => void };
 
@@ -294,6 +296,47 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const docklarRef = useRef<HTMLDivElement>(null);
   const [sekmeBirlestir, setSekmeBirlestir] = useState(false);
   const [hakkinda, setHakkinda] = useState(false);
+  const [gunlukAcik, setGunlukAcik] = useState(false);
+  const [zamanlayiciAcik, setZamanlayiciAcik] = useState(false);
+  const [zamanlayici, setZamanlayici] = useState<Zamanlayici>(ZAMANLAYICI_BOS);
+  const [filtrePanosu, setFiltrePanosu] = useState<{ kaynak: string; ad: string } | null>(null);
+  // Görünüm tercihleri (bu görüntüleyicinin tarayıcısında)
+  const tercih = (ad: string) => {
+    try {
+      return localStorage.getItem(`yya.yayin.${ad}`) === "1";
+    } catch {
+      return false;
+    }
+  };
+  const [onizlemeKilitli, setOnizlemeKilitli] = useState(() => tercih("onizlemeKilidi"));
+  const [kilavuz, setKilavuz] = useState(() => tercih("kilavuz"));
+  const [ustte, setUstte] = useState(false);
+  useEffect(() => {
+    try {
+      localStorage.setItem("yya.yayin.onizlemeKilidi", onizlemeKilitli ? "1" : "0");
+      localStorage.setItem("yya.yayin.kilavuz", kilavuz ? "1" : "0");
+    } catch {
+      /* depolama kapalıysa yalnız bu oturumda */
+    }
+  }, [onizlemeKilitli, kilavuz]);
+  const ustteDegistir = async () => {
+    try {
+      const { isTauri } = await import("@tauri-apps/api/core");
+      if (!isTauri()) return onToast("Her zaman üstte yalnız masaüstü uygulamasında");
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      await getCurrentWindow().setAlwaysOnTop(!ustte);
+      setUstte(!ustte);
+    } catch (e) {
+      onToast(`Pencere: ${hataMetni(e)}`);
+    }
+  };
+  const klasorAc = (tur: "kayit" | "gunluk" | "ayarlar") => void motorApi.klasorAc(tur).catch((e) => onToast(`Klasör açılamadı: ${hataMetni(e)}`));
+  const filtreleriYapistir = (hedef: string) =>
+    filtrePanosu &&
+    void yap("Filtreler yapıştırılamadı", () => motorApi.filtre({ eylem: "yapistir", kaynak: hedef, kaynaktan: filtrePanosu.kaynak }), (r) => {
+      const x = r as { eklenen?: number; atlanan?: number };
+      return `${x.eklenen ?? 0} filtre yapıştırıldı${x.atlanan ? ` (${x.atlanan} uyumsuz filtre atlandı)` : ""}`;
+    });
   const [birakmaHedefi, setBirakmaHedefi] = useState<DockKimligi | null>(null);
   // Tek docklarda başlık sürüklenebilir (sekme olarak başka dock'a bırakmak için); kilitliyken değil
   useEffect(() => {
@@ -404,6 +447,18 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const kayitta = d ? cikisEtkin(d.kayit.durum) : false;
   const duraklatildi = !!d?.kayit.duraklatildi;
   const sanalKameraAcik = d?.sanalKamera ? cikisEtkin(d.sanalKamera.durum) : false;
+  const canliVar = (d?.hedefler ?? []).some((h) => cikisEtkin(h.durum));
+  // Çıkış zamanlayıcısı: süre dolunca çıktı durur
+  useEffect(() => {
+    if (zamanlayici.yayinBitis === null && zamanlayici.kayitBitis === null) return;
+    const t = window.setInterval(() => {
+      const { durdur, kalan } = dolanlar(zamanlayici, Date.now(), canliVar, kayitta);
+      if (kalan.yayinBitis !== zamanlayici.yayinBitis || kalan.kayitBitis !== zamanlayici.kayitBitis) setZamanlayici(kalan);
+      if (durdur.includes("kayit")) void motorApi.kayit("durdur").then(() => onToast("Çıkış zamanlayıcısı: kayıt durduruldu"), () => undefined);
+      if (durdur.includes("yayin")) void motorApi.golive("durdur").then(() => onToast("Çıkış zamanlayıcısı: yayın durduruldu"), () => undefined);
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [zamanlayici, canliVar, kayitta, onToast]);
   useEffect(() => setCanliBas((b) => (ozet.canli > 0 ? (b ?? Date.now()) : null)), [ozet.canli]);
   useEffect(() => setKayitBas((b) => (kayitta ? (b ?? Date.now()) : null)), [kayitta]);
   useEffect(() => {
@@ -668,6 +723,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ? { etiket: "Grup filtreleri…", eylem: () => sahipFiltreAc(o.kaynak, o.ad ?? o.kaynak) }
         : { etiket: "Filtreler…", devreDisi: !k || !!k.eksik, eylem: () => filtreAc(o.kaynak) },
       { etiket: "Etkileşim…", devreDisi: !o.etkilesim, eylem: () => setEtkilesim({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
+      { etiket: "Filtreleri kopyala", devreDisi: o.tur === "sahne", eylem: () => setFiltrePanosu({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
+      { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || filtrePanosu.kaynak === o.kaynak || o.tur === "sahne", eylem: () => filtreleriYapistir(o.kaynak) },
       "ayirici",
       {
         etiket: `Gösterme geçişi: ${o.gosterGecisi ? `${gecisAdi(o.gosterGecisi.tur)} ${o.gosterGecisi.sure_ms} ms` : "yok"}…`,
@@ -857,11 +914,14 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       ad: "Dosya",
       ogeler: () => [
         { etiket: calisiyor ? "Motoru durdur…" : "Motoru başlat", eylem: calisiyor ? motorDurdur : () => void yap("Motor başlatılamadı", () => motorApi.baslat(d?.dikey ?? false, d?.fps === 30 ? 30 : 60)) },
-        { etiket: `Kayıt klasörü: ${d?.kayitKlasoru ?? "—"}`, devreDisi: true, eylem: () => undefined },
+        { etiket: "Kayıtları göster", eylem: () => klasorAc("kayit") },
+        { etiket: "Ayarlar klasörünü göster", eylem: () => klasorAc("ayarlar") },
         ...(d?.kayit.son ? [{ etiket: `Son kayıt: ${d.kayit.son.split(/[\\/]/).pop()}`, devreDisi: true, eylem: () => undefined } as MenuOgesi] : []),
         "ayirici",
         { etiket: "Yayın ayarları…", eylem: () => setAyarlar("cikis") },
         { etiket: "Uygulama ayarları", eylem: () => onGit?.("settings") },
+        "ayirici",
+        { etiket: `${ustte ? "☑" : "☐"} Her zaman üstte`, eylem: () => void ustteDegistir() },
       ],
     },
     {
@@ -873,6 +933,10 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Kopyala", kisayol: "Ctrl+C", devreDisi: !tek, eylem: () => tek && kopyala(tek) },
         { etiket: "Yapıştır (başvuru)", kisayol: "Ctrl+V", devreDisi: !kaynakPanosu, eylem: () => yapistir(false) },
         { etiket: "Yapıştır (kopya)", devreDisi: !kaynakPanosu, eylem: () => yapistir(true) },
+        { etiket: "Filtreleri kopyala", devreDisi: !tek || tek.tur === "sahne", eylem: () => tek && setFiltrePanosu({ kaynak: tek.kaynak, ad: tek.ad ?? tek.kaynak }) },
+        { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || !tek || tek.kaynak === filtrePanosu.kaynak, eylem: () => tek && filtreleriYapistir(tek.kaynak) },
+        "ayirici",
+        { etiket: `${onizlemeKilitli ? "☑" : "☐"} Önizlemeyi kilitle`, eylem: () => setOnizlemeKilitli((x) => !x) },
         "ayirici",
         ...(tek ? donusumMenusu(tek) : [{ etiket: "Dönüşüm (bir kaynak seçin)", devreDisi: true, eylem: () => undefined } as MenuOgesi]),
         "ayirici",
@@ -888,6 +952,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ...projektorMenusu(),
         "ayirici",
         { etiket: `${durumCubugu ? "☑" : "☐"} Durum çubuğu`, eylem: () => setDurumCubugu((x) => !x) },
+        { etiket: `${kilavuz ? "☑" : "☐"} Güvenli alan kılavuzları`, eylem: () => setKilavuz((x) => !x) },
       ],
     },
     {
@@ -965,6 +1030,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Eklentiler…", eylem: () => setEklentiPenceresi({ sekme: "kurulu" }) },
         { etiket: "Otomatik yapılandırma sihirbazı…", devreDisi: !calisiyor, eylem: () => setSihirbaz(true) },
         { etiket: "Komut paleti", kisayol: "Ctrl+K", eylem: () => paletAc() },
+        { etiket: "Çıkış zamanlayıcısı…", devreDisi: !calisiyor, eylem: () => setZamanlayiciAcik(true) },
         { etiket: "Kısayollar ve eylemler", eylem: () => onGit?.("hotkeys") },
       ],
     },
@@ -1001,6 +1067,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       ogeler: () => [
         { etiket: `libobs ${d?.bilgi?.libobs ?? "—"}`, devreDisi: true, eylem: () => undefined },
         { etiket: "Kısayollar: Ctrl+Z/Y geri al/yinele · Ctrl+C/V kopyala/yapıştır · Ctrl+E dönüşüm · Ctrl+F sığdır · Del kaldır · F2 adlandır", devreDisi: true, eylem: () => undefined },
+        "ayirici",
+        { etiket: "Son günlüğü görüntüle…", eylem: () => setGunlukAcik(true) },
+        { etiket: "Günlük klasörünü aç", eylem: () => klasorAc("gunluk") },
         "ayirici",
         { etiket: "Hakkında ve lisanslar…", eylem: () => setHakkinda(true) },
       ],
@@ -1334,7 +1403,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 canliBagli={canli.bagli}
                 agac={agac}
                 secim={secim}
-                duzenlenebilir
+                duzenlenebilir={!onizlemeKilitli}
+                kilavuz={kilavuz}
                 eylem={onizlemeEylem}
                 vurgu={studyo ? "onizleme" : "program"}
               />
@@ -1428,6 +1498,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             </span>
           )}
           {sanalKameraAcik && <span className="dt-sayi">SANAL KAMERA</span>}
+          {zamanlayici.yayinBitis !== null && <span className="dt-sayi" title="Çıkış zamanlayıcısı">yayın {kalanMetin(zamanlayici.yayinBitis, simdi)} sonra durur</span>}
+          {zamanlayici.kayitBitis !== null && <span className="dt-sayi" title="Çıkış zamanlayıcısı">kayıt {kalanMetin(zamanlayici.kayitBitis, simdi)} sonra durur</span>}
+          {onizlemeKilitli && <span className="dt-soluk">önizleme kilitli</span>}
           {(yenidenBaglanan > 0 || basarisiz > 0) && (
             <span className="dt-uyari-metni">
               {yenidenBaglanan > 0 && `${yenidenBaglanan} hedef yeniden bağlanıyor`} {basarisiz > 0 && `${basarisiz} hedef başarısız`}
@@ -1552,6 +1625,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           onKapat={() => setOgeGecisi(null)}
         />
       )}
+      {gunlukAcik && <GunlukPenceresi onKapat={() => setGunlukAcik(false)} />}
+      {zamanlayiciAcik && <CikisZamanlayicisiPenceresi z={zamanlayici} canli={canliVar} kayitta={kayitta} onAyarla={setZamanlayici} onKapat={() => setZamanlayiciAcik(false)} />}
       {hakkinda && <HakkindaDiyalogu libobs={d.bilgi?.libobs} onKapat={() => setHakkinda(false)} />}
       {sekmeBirlestir && (
         <SekmeBirlestirDiyalogu

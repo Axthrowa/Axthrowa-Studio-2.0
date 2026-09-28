@@ -44,6 +44,8 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/kayit", post(api_kayit))
     .route("/api/motor/tekrar", post(api_tekrar))
     .route("/api/motor/sanal-kamera", post(api_sanal_kamera))
+    .route("/api/motor/klasor-ac", post(api_klasor_ac))
+    .route("/api/motor/gunluk", get(api_gunluk))
     .route("/api/motor/onizleme", get(api_onizleme))
 }
 
@@ -1591,6 +1593,57 @@ async fn api_kayit(
     }
     e => Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
   }
+}
+
+#[derive(Deserialize)]
+struct KlasorGovdesi {
+  /// kayit | gunluk | ayarlar — yalnız bilinen klasörler (serbest yol yok)
+  tur: String,
+}
+
+/// Dosya › Kayıtları göster / Ayarlar klasörü, Yardım › Günlük klasörü: Gezgin'de açar. Yalnız bu bilgisayardan.
+async fn api_klasor_ac(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<KlasorGovdesi>,
+) -> ApiResult {
+  if !addr.ip().is_loopback() {
+    return Err((StatusCode::FORBIDDEN, "yalnız bu bilgisayardan".into()));
+  }
+  authorize(&state, &addr, &headers, "broadcast.read").await?;
+  let yol = match g.tur.as_str() {
+    "kayit" => crate::motor_profil::etkin(&klasor(&state)).kayit.klasor.map(PathBuf::from).unwrap_or_else(kayit_klasoru),
+    "gunluk" | "ayarlar" => klasor(&state),
+    e => return Err(gecersiz(format!("bilinmeyen klasör: {e}"))),
+  };
+  std::fs::create_dir_all(&yol).map_err(|e| catisma(format!("klasör: {e}")))?;
+  #[cfg(windows)]
+  std::process::Command::new("explorer.exe").arg(&yol).spawn().map_err(|e| catisma(format!("Gezgin açılamadı: {e}")))?;
+  Ok(Json(json!({"ok": true, "yol": yol})))
+}
+
+#[derive(Deserialize)]
+struct GunlukSorgusu {
+  #[serde(default)]
+  satir: Option<usize>,
+}
+
+/// Yardım › Son günlüğü görüntüle: motorun libobs günlüğünün son satırları, yayın anahtarları ve kullanıcı klasörü
+/// ayıklanmış olarak (destek paketiyle aynı gizleyici).
+async fn api_gunluk(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Query(q): Query<GunlukSorgusu>,
+) -> ApiResult {
+  authorize(&state, &addr, &headers, "admin.support").await?;
+  let n = q.satir.unwrap_or(400).clamp(10, 5000);
+  let satirlar = crate::destek::son_satirlar(&klasor(&state).join("motor-libobs.log"), n);
+  let sirlar: Vec<String> = state.multistream.configs().iter().filter_map(|c| state.multistream.key_for(&c.id)).collect();
+  let mut g = crate::destek::Gizleyici::new(sirlar, std::env::var("USERPROFILE").ok());
+  let temiz: Vec<String> = satirlar.iter().map(|s| g.metin(s)).collect();
+  Ok(Json(json!({"satirlar": temiz, "gizlenen": g.sayac})))
 }
 
 #[derive(Deserialize)]

@@ -311,6 +311,9 @@ struct FiltreGovdesi {
   yon: Option<String>,
   #[serde(default)]
   acik: Option<bool>,
+  /// `yapistir`: filtrelerin kopyalanacağı kaynak (OBS "Filtreleri kopyala / yapıştır")
+  #[serde(default)]
+  kaynaktan: Option<String>,
 }
 
 async fn api_filtre(
@@ -408,6 +411,40 @@ async fn api_filtre(
           }
         }
       }
+    }
+    "yapistir" => {
+      // Kaynağın (ya da sahnenin/grubun) tüm filtreleri hedefe yeni kimliklerle, aynı sırayla eklenir
+      let hedef = g.kaynak.clone().ok_or_else(|| gecersiz("'kaynak' gerekli".into()))?;
+      let kaynak = g.kaynaktan.clone().ok_or_else(|| gecersiz("'kaynaktan' gerekli".into()))?;
+      if hedef == kaynak {
+        return Err(gecersiz("kaynak ile hedef aynı".into()));
+      }
+      let (liste, yeniler) = {
+        let o = state.motor.ozet();
+        let mut o = o.lock();
+        if o.koleksiyon.filtreler_mut(&hedef).is_none() {
+          return Err(bulunamadi("hedef yok".into()));
+        }
+        let liste = o.koleksiyon.filtreler_mut(&kaynak).map(|v| v.clone()).ok_or_else(|| bulunamadi("kaynak yok".into()))?;
+        let yeniler: Vec<String> = liste.iter().map(|_| o.koleksiyon.yeni_kimlik("f")).collect();
+        (liste, yeniler)
+      };
+      let mut eklenen = 0;
+      for (f, yeni) in liste.iter().zip(yeniler) {
+        let r = komut(&state, json!({"komut": "filtre.ekle", "kaynak": hedef, "id": yeni, "tur": f.tur, "ad": f.ad, "ayarlar": f.ayarlar})).await;
+        if r.is_err() {
+          continue; // hedef türüne uymayan filtre (ör. görüntüsüz kaynağa video filtresi) atlanır
+        }
+        if !f.etkin {
+          komut(&state, json!({"komut": "filtre.etkin", "id": yeni, "acik": false})).await?;
+        }
+        if let Some(v) = state.motor.ozet().lock().koleksiyon.filtreler_mut(&hedef) {
+          v.push(FiltreKaydi { id: yeni, ..f.clone() });
+        }
+        eklenen += 1;
+      }
+      sonuc["eklenen"] = json!(eklenen);
+      sonuc["atlanan"] = json!(liste.len() - eklenen);
     }
     e => return Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
   }

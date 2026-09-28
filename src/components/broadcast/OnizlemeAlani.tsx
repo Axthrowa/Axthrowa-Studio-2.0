@@ -75,6 +75,7 @@ export function TuvalGorunumu({
   duzenlenebilir,
   eylem,
   vurgu,
+  kilavuz,
 }: {
   etiket: string;
   /** Kare kaynağı: "ana", "dikey", "studyo-ana"… */
@@ -87,6 +88,8 @@ export function TuvalGorunumu({
   duzenlenebilir: boolean;
   eylem: OnizlemeEylemleri;
   vurgu?: "program" | "onizleme";
+  /** Güvenli alan kılavuzları (eylem %90, başlık %80) ve merkez çizgileri */
+  kilavuz?: boolean;
 }) {
   const kap = useRef<HTMLDivElement>(null);
   const [olcu, setOlcu] = useState({ g: 0, y: 0 });
@@ -238,6 +241,14 @@ export function TuvalGorunumu({
               eylem.menu(e, o);
             }}
           >
+            {kilavuz && (
+              <g className="dt-kilavuz" aria-hidden>
+                <rect x={boyut[0] * 0.05} y={boyut[1] * 0.05} width={boyut[0] * 0.9} height={boyut[1] * 0.9} vectorEffect="non-scaling-stroke" />
+                <rect x={boyut[0] * 0.1} y={boyut[1] * 0.1} width={boyut[0] * 0.8} height={boyut[1] * 0.8} vectorEffect="non-scaling-stroke" />
+                <line x1={boyut[0] / 2} y1={0} x2={boyut[0] / 2} y2={boyut[1]} vectorEffect="non-scaling-stroke" />
+                <line x1={0} y1={boyut[1] / 2} x2={boyut[0]} y2={boyut[1] / 2} vectorEffect="non-scaling-stroke" />
+              </g>
+            )}
             {duzenlenebilir &&
               agac.map(({ oge }) => {
                 if (!oge.gorunur) return null;

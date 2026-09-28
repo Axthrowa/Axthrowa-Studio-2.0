@@ -2623,3 +2623,52 @@ async fn obs_websocket_uyumlu_sunucu() {
   }
   assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
 }
+
+/// Filtreleri kopyala/yapıştır (sıra, etkinlik korunur; yeni kimlik) ve son günlük (sırlar ayıklanmış)
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_filtre_yapistir_ve_gunluk() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let get = |yol: String| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  tamam("/api/motor/baslat", json!({})).await;
+  let a = tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#204060", "ad": "A"})).await["id"].as_str().unwrap().to_string();
+  let b = tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#602040", "ad": "B"})).await["id"].as_str().unwrap().to_string();
+  let f1 = tamam("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": a, "tur": "color_filter_v2", "ad": "Renk", "ayarlar": {"opacity": 0.7}})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": a, "tur": "sharpness_filter_v2", "ad": "Keskin"})).await;
+  tamam("/api/motor/filtre", json!({"eylem": "etkin", "id": f1, "acik": false})).await;
+  let r = tamam("/api/motor/filtre", json!({"eylem": "yapistir", "kaynak": b, "kaynaktan": a})).await;
+  assert_eq!((r["eklenen"].as_u64(), r["atlanan"].as_u64()), (Some(2), Some(0)), "{r}");
+  let fb = get(format!("/api/motor/filtreler?kaynak={b}")).await;
+  let adlar: Vec<&str> = fb["filtreler"].as_array().unwrap().iter().map(|f| f["ad"].as_str().unwrap()).collect();
+  assert_eq!(adlar, ["Renk", "Keskin"], "sıra korunur");
+  assert_eq!(fb["filtreler"][0]["etkin"], false, "kapalı filtre kapalı kopyalanır");
+  assert_ne!(fb["filtreler"][0]["id"], json!(f1), "yeni kimlik");
+  assert_eq!(get(format!("/api/motor/filtre/ozellikler?id={}", fb["filtreler"][0]["id"].as_str().unwrap())).await["ayarlar"]["opacity"], 0.7);
+  assert_eq!(h.client.post(format!("{}/api/motor/filtre", h.base)).json(&json!({"eylem": "yapistir", "kaynak": b, "kaynaktan": b})).send().await.unwrap().status(), 400);
+  let g = get("/api/motor/gunluk?satir=50".into()).await;
+  let satirlar = g["satirlar"].as_array().unwrap();
+  assert!(!satirlar.is_empty() && satirlar.len() <= 50, "{} satır", satirlar.len());
+  assert!(satirlar.iter().any(|s| s.as_str().unwrap().contains("libobs")) || satirlar.iter().any(|s| s.as_str().unwrap().contains("obs")));
+  assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
+}

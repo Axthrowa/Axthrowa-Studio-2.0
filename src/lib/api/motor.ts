@@ -358,15 +358,18 @@ export const motorApi = {
   filtreTurleri: () => istek<{ turler: MotorFiltreTuru[] }>("/api/motor/filtre-turleri").then((r) => r.turler),
   filtreler: (kaynak: string) => istek<{ filtreler: MotorFiltre[]; eksikler: MotorFiltre[] }>(`/api/motor/filtreler?kaynak=${encodeURIComponent(kaynak)}`),
   filtre: (govde: {
-    eylem: "ekle" | "sil" | "sira" | "etkin" | "adlandir" | "guncelle";
+    eylem: "ekle" | "sil" | "sira" | "etkin" | "adlandir" | "guncelle" | "yapistir";
     id?: string;
     kaynak?: string;
+    kaynaktan?: string;
     tur?: string;
     ad?: string;
     ayarlar?: Record<string, unknown>;
     yon?: string;
     acik?: boolean;
-  }) => istek<{ ok: boolean; id?: string }>("/api/motor/filtre", govde),
+  }) => istek<{ ok: boolean; id?: string; eklenen?: number; atlanan?: number }>("/api/motor/filtre", govde),
+  klasorAc: (tur: "kayit" | "gunluk" | "ayarlar") => istek<{ ok: boolean; yol: string }>("/api/motor/klasor-ac", { tur }),
+  gunluk: (satir = 400) => istek<{ satirlar: string[]; gizlenen: number }>(`/api/motor/gunluk?satir=${satir}`),
   filtreOzellikleri: (id: string) => istek<OzellikTanimi>(`/api/motor/filtre/ozellikler?id=${encodeURIComponent(id)}`),
   medya: (id: string, eylem: "oynat" | "duraklat" | "yeniden" | "durdur") => istek<{ ok: boolean }>("/api/motor/medya", { id, eylem }),
   koleksiyonlar: () => istek<{ etkin: string; liste: MotorKoleksiyonOzeti[] }>("/api/motor/koleksiyonlar"),

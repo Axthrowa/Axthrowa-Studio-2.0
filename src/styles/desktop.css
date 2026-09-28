@@ -754,3 +754,12 @@
   outline: 2px solid var(--dt-focus);
   outline-offset: 1px;
 }
+
+/* ── Önizleme güvenli alan kılavuzları ── */
+.dt-kilavuz rect,
+.dt-kilavuz line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--panel-accent) 55%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 6 4;
+}

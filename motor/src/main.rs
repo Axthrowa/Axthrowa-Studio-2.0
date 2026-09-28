@@ -20,9 +20,11 @@ mod obs;
 mod onizleme;
 mod protokol;
 mod sahne;
+mod sanal_kamera;
 mod servis;
 mod ses;
 mod sinama;
+mod ui_gorev;
 
 use std::path::PathBuf;
 use std::process::ExitCode;

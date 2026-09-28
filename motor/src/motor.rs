@@ -69,6 +69,9 @@ pub struct CikisIstatistigi {
   pub kare: i64,
   pub dusen_kare: i64,
   pub baglanti_ms: i64,
+  /// Kayıt duraklatılmış (yalnız kayıt çıktısı)
+  #[serde(skip_serializing_if = "std::ops::Not::not")]
+  pub duraklatildi: bool,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub son_hata: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -494,6 +497,7 @@ impl Motor {
     }
     crate::servis::kaydet();
     crate::onizleme::kaydet();
+    crate::ui_gorev::kur();
 
     let mut motor = Motor {
       kurulum,
@@ -1195,7 +1199,17 @@ impl Motor {
   /// Kayıt çıktısı; yayın kodlayıcısını paylaşabilir (§52). `bicim` (bkz. [`KAYIT_BICIMLERI`]) verilmezse uzantıdan
   /// (mkv/mp4/mov). Birden çok ses kodlayıcısı = çok izli kayıt (sırası dosyadaki ses akışı sırası).
   pub fn kayit_cikisi(&mut self, id: &str, yol: &Path, bicim: Option<&str>, video: &str, sesler: &[&str]) -> Result<(), String> {
+    self.kayit_cikisi_bolmeli(id, yol, bicim, video, sesler, &KayitBolme::default())
+  }
+
+  /// Kayıt çıktısı + bölme (OBS "Otomatik dosya bölme"): süre/boyut sınırında ya da elle (`kayit_bol`) yeni dosyaya
+  /// geçer. Yeni dosyalar ilk dosyanın klasöründe, ilk dosya adı + tarih-saat biçimiyle adlanır. Bölme her zaman
+  /// etkinleştirilir (sınırlar 0 ise yalnız elle bölünür); OBS'in muxer'ı zaman damgalarını her dosyada sıfırlar.
+  pub fn kayit_cikisi_bolmeli(&mut self, id: &str, yol: &Path, bicim: Option<&str>, video: &str, sesler: &[&str], bolme: &KayitBolme) -> Result<(), String> {
     gecerli_kimlik(id)?;
+    if bolme.sure_sn > 24 * 3600 || bolme.boyut_mb > 1024 * 1024 {
+      return Err("bölme sınırı: en çok 24 saat / 1 TB".into());
+    }
     if !yol.is_absolute() {
       return Err("kayıt yolu mutlak olmalı".into());
     }
@@ -1211,7 +1225,19 @@ impl Motor {
       return Err(format!("bu OBS sürümünde '{}' kayıt biçimi yok ({} çıktısı kayıtlı değil)", b.ad, b.cikis));
     }
     let v = self.kodlayici(video)?;
-    let mut ayar = Veri::yeni().yazi("path", &yol.to_string_lossy());
+    let klasor = yol.parent().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+    let govde = yol.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "Kayit".into());
+    let mut ayar = Veri::yeni()
+      .yazi("path", &yol.to_string_lossy())
+      .yazi("directory", &klasor)
+      .yazi("format", &format!("{} %CCYY-%MM-%DD %hh-%mm-%ss", govde.replace('%', "%%")))
+      .yazi("extension", b.uzanti)
+      .mantiksal("allow_spaces", true)
+      .mantiksal("allow_overwrite", false)
+      .mantiksal("split_file", true)
+      .mantiksal("reset_timestamps", true)
+      .tamsayi("max_time_sec", bolme.sure_sn as i64)
+      .tamsayi("max_size_mb", bolme.boyut_mb as i64);
     if !b.muxer.is_empty() {
       ayar = ayar.yazi("muxer_settings", b.muxer);
     }
@@ -1285,13 +1311,95 @@ impl Motor {
     unsafe { (api().proc_handler_call)(ph, c"save".as_ptr(), &mut cd) };
     let bitis = std::time::Instant::now() + std::time::Duration::from_secs(8);
     while std::time::Instant::now() < bitis {
+      // Yol birkaç adımda güncellenir (UI görevi); dosya gerçekten oluşunca dönülür
       let yol = son_yol(ph);
-      if !yol.is_empty() && yol != once {
+      if !yol.is_empty() && yol != once && Path::new(&yol).is_file() {
         return Ok(yol);
       }
       std::thread::sleep(std::time::Duration::from_millis(100));
     }
     Err("tekrar kaydedilemedi (8 sn içinde dosya oluşmadı)".into())
+  }
+
+  fn kayit_ptr(&self, id: &str) -> Result<Ptr, String> {
+    let c = self.cikislar.get(id).ok_or_else(|| format!("çıktı yok: {id}"))?;
+    if c.tur != "kayit" {
+      return Err("bu çıktı kayıt değil".into());
+    }
+    if !unsafe { (api().obs_output_active)(c.ptr) } {
+      return Err("kayıt çalışmıyor".into());
+    }
+    Ok(c.ptr)
+  }
+
+  /// Kaydı duraklatır / sürdürür (OBS "Duraklat"). Kodlayıcı ya da biçim desteklemiyorsa hata döner.
+  pub fn kayit_duraklat(&mut self, id: &str, duraklat: bool) -> Result<bool, String> {
+    let p = self.kayit_ptr(id)?;
+    let a = api();
+    unsafe {
+      if !(a.obs_output_can_pause)(p) {
+        return Err("bu kayıt duraklatılamaz (kodlayıcı/biçim desteklemiyor)".into());
+      }
+      // libobs duraklatmayı kodlayıcıda uygular: kodlayıcı başka bir etkin çıktıyla (yayın) paylaşılıyorsa o da
+      // duraklardı. OBS de bu durumda duraklatmaya izin vermez → kayıt ayrı kodlayıcıyla kurulmalı.
+      if duraklat && self.kodlayici_paylasiliyor(id) {
+        return Err("kayıt yayınla aynı kodlayıcıyı paylaşıyor; duraklatma yayını da durdururdu (kayda ayrı kodlayıcı gerekir)".into());
+      }
+      if (a.obs_output_paused)(p) == duraklat {
+        return Ok(duraklat);
+      }
+      if !(a.obs_output_pause)(p, duraklat) {
+        return Err(if duraklat { "kayıt duraklatılamadı" } else { "kayıt sürdürülemedi" }.into());
+      }
+      Ok((a.obs_output_paused)(p))
+    }
+  }
+
+  /// Çıktının kodlayıcılarından biri başka bir etkin çıktı tarafından da kullanılıyor mu
+  pub(crate) fn kodlayici_paylasiliyor(&self, id: &str) -> bool {
+    let a = api();
+    let kodlayicilar = |p: Ptr| -> Vec<Ptr> {
+      let mut v = vec![unsafe { (a.obs_output_get_video_encoder)(p) }];
+      for i in 0..6 {
+        v.push(unsafe { (a.obs_output_get_audio_encoder)(p, i) });
+      }
+      v.retain(|x| !x.is_null());
+      v
+    };
+    let Some(c) = self.cikislar.get(id) else { return false };
+    let bizim = kodlayicilar(c.ptr);
+    self
+      .cikislar
+      .iter()
+      .filter(|(k, o)| *k != id && unsafe { (a.obs_output_active)(o.ptr) })
+      .any(|(_, o)| kodlayicilar(o.ptr).iter().any(|x| bizim.contains(x)))
+  }
+
+  /// Kaydı yeni dosyaya böler (OBS "Kayıt dosyasını böl"); yeni dosya bir sonraki anahtar karede başlar.
+  pub fn kayit_bol(&mut self, id: &str) -> Result<(), String> {
+    let p = self.kayit_ptr(id)?;
+    let ph = unsafe { (api().obs_output_get_proc_handler)(p) };
+    let mut cd = obs::Calldata::bos();
+    let cagrildi = unsafe { (api().proc_handler_call)(ph, c"split_file".as_ptr(), &mut cd) };
+    if !cagrildi {
+      return Err("bu kayıt biçimi elle bölmeyi desteklemiyor".into());
+    }
+    let mut etkin = true;
+    // calldata_get_bool başlıkta satır içi; dışa aktarılan calldata_get_data ile 1 bayt okunur
+    unsafe { (api().calldata_get_data)(&cd, c"split_file_enabled".as_ptr(), &mut etkin as *mut bool as Ptr, std::mem::size_of::<bool>()) };
+    if !etkin {
+      return Err("kayıtta bölme etkin değil".into());
+    }
+    Ok(())
+  }
+
+  pub(crate) fn cikislar_var(&self, id: &str) -> bool {
+    self.cikislar.contains_key(id)
+  }
+
+  /// Servissiz çıktıyı durum/istatistik tablosuna kaydeder (sanal kamera vb.)
+  pub(crate) fn cikis_kaydet(&mut self, id: &str, ptr: Ptr, tur: &'static str) {
+    self.cikis_ekle(id, ptr, std::ptr::null_mut(), tur);
   }
 
   fn cikis_ekle(&mut self, id: &str, ptr: Ptr, servis: Ptr, tur: &'static str) {
@@ -1388,6 +1496,7 @@ impl Motor {
           kare: (a.obs_output_get_total_frames)(c.ptr) as i64,
           dusen_kare: (a.obs_output_get_frames_dropped)(c.ptr) as i64,
           baglanti_ms: (a.obs_output_get_connect_time_ms)(c.ptr) as i64,
+          duraklatildi: c.tur == "kayit" && (a.obs_output_paused)(c.ptr),
           son_hata: (!hata.is_empty()).then(|| obs::gizle(&hata)),
           son_kod,
         }
@@ -1566,6 +1675,15 @@ sinyal_fn!(sinyal_reconnect_success, "reconnect_success");
 const SINYAL_CB: [obs::SignalCb; 6] =
   [sinyal_starting, sinyal_start, sinyal_stopping, sinyal_stop, sinyal_reconnect, sinyal_reconnect_success];
 
+
+
+/// Kayıt bölme sınırları (0 = o sınır kapalı; ikisi de 0 ise yalnız elle bölünür)
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize)]
+#[serde(default)]
+pub struct KayitBolme {
+  pub sure_sn: u32,
+  pub boyut_mb: u32,
+}
 
 /// RTMP çıktısının ağ ayarları (OBS Ayarlar > Gelişmiş > Ağ ve Yeniden bağlanma). Varsayılanlar OBS'inkiler.
 #[derive(Clone, Debug, PartialEq, serde::Deserialize)]

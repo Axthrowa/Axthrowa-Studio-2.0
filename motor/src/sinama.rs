@@ -824,6 +824,94 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
 
   // ── OBS paritesi: geçiş, Studio Mode, filtre, ses ölçer, gruplar, dönüşüm, akış, kodlayıcı özellikleri ──
   let p = parite(&mut m, &dosya("parite"));
+
+  // Kayıt duraklatma: 2,5 sn kayıt + 3 sn duraklatma + 2,5 sn kayıt → dosya ≈ 5 sn. Paylaşılan yayın kodlayıcısı
+  // duraklatmayı desteklemezse (libobs kuralı) kayda ayrı kodlayıcı açılır — panel de aynısını yapar.
+  let bekle = |ms: u64| std::thread::sleep(Duration::from_millis(ms));
+  let dur_dosya = dosya("duraklatma.mkv");
+  let _ = std::fs::remove_file(&dur_dosya);
+  let duraklatma_notu = (|| -> Result<String, String> {
+    m.kayit_cikisi("kayit-dur", &dur_dosya, None, "v-yatay", &["a-ana"])?;
+    m.cikis_baslat("kayit-dur")?;
+    bekle(1500);
+    let mut yol = "paylaşılan kodlayıcı";
+    if m.kayit_duraklat("kayit-dur", true).is_err() {
+      m.cikis_durdur("kayit-dur")?;
+      bekle(1000);
+      m.cikis_sil("kayit-dur")?;
+      let _ = std::fs::remove_file(&dur_dosya);
+      m.video_kodlayici("v-kayit-dur", "otomatik", "ana", &KodlayiciAyari { bit_hizi_kbps: 4000, anahtar_kare_sn: 1 })?;
+      m.ses_kodlayici("a-kayit-dur", 160, 0)?;
+      m.kayit_cikisi("kayit-dur", &dur_dosya, None, "v-kayit-dur", &["a-kayit-dur"])?;
+      m.cikis_baslat("kayit-dur")?;
+      bekle(1500);
+      m.kayit_duraklat("kayit-dur", true)?;
+      yol = "paylaşılan kodlayıcıda reddedildi → ayrı kodlayıcı";
+    } else {
+      // İlk 1,5 sn'ye 1 sn daha ekle (toplam 2,5)
+      m.kayit_duraklat("kayit-dur", false)?;
+      bekle(1000);
+      m.kayit_duraklat("kayit-dur", true)?;
+    }
+    let durum = m.istatistik().cikislar.iter().find(|c| c.id == "kayit-dur").map(|c| c.duraklatildi);
+    bekle(3000);
+    m.kayit_duraklat("kayit-dur", false)?;
+    bekle(2500);
+    m.cikis_durdur("kayit-dur")?;
+    bekle(1500);
+    m.cikis_sil("kayit-dur")?;
+    Ok(format!("{yol}; duraklatılmış bildirildi {durum:?}"))
+  })();
+  // Hata yolunda da çıktı kalmasın
+  if m.cikis_etkin("kayit-dur") || m.cikislar_var("kayit-dur") {
+    let _ = m.cikis_sil("kayit-dur");
+  }
+
+  // Elle bölme: 2,5 sn → böl → 3 sn → durdur = iki dosya
+  let bol_klasor = dosya("bolme");
+  let _ = std::fs::remove_dir_all(&bol_klasor);
+  let _ = std::fs::create_dir_all(&bol_klasor);
+  let bolme_notu = (|| -> Result<String, String> {
+    m.kayit_cikisi("kayit-bol", &bol_klasor.join("bol.mkv"), None, "v-yatay", &["a-ana"])?;
+    m.cikis_baslat("kayit-bol")?;
+    bekle(2500);
+    m.kayit_bol("kayit-bol")?;
+    bekle(3000);
+    m.cikis_durdur("kayit-bol")?;
+    bekle(1500);
+    m.cikis_sil("kayit-bol")?;
+    Ok("elle bölündü".into())
+  })();
+  if m.cikislar_var("kayit-bol") {
+    let _ = m.cikis_sil("kayit-bol");
+  }
+
+  // Sanal kamera: program görüntüsü OBS'in sanal kamera sürücüsüne; FFmpeg aygıttan bir kare okur. Başka bir
+  // uygulama sanal kamerayı açmışsa hiç başlatılmaz (onun görüntüsü bozulmasın).
+  let sk_png = dosya("sanal-kamera.png");
+  let _ = std::fs::remove_file(&sk_png);
+  let sanal_kamera = if crate::sanal_kamera::baska_uretici_var() {
+    Err("başka bir uygulama sanal kamerayı kullanıyor — sınanmadı".to_string())
+  } else {
+    (|| -> Result<Option<[u8; 3]>, String> {
+      m.sanal_kamera_baslat("ana")?;
+      bekle(1500);
+      // Aygıt kare vermezse FFmpeg beklemesin: 12 sn sonra kapatılır
+      if let Ok(mut c) = Command::new(&ff)
+        .args(["-hide_banner", "-loglevel", "error", "-f", "dshow", "-i", "video=OBS Virtual Camera", "-frames:v", "1", "-y"])
+        .arg(&sk_png)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+      {
+        alici_kapat(&mut c, Duration::from_secs(12));
+      }
+      m.sanal_kamera_durdur()?;
+      let b = std::fs::read(&sk_png).map_err(|e| format!("kare okunamadı: {e}"))?;
+      Ok(png_pikseli(&b, 20, 20))
+    })()
+  };
   let surum = m.surum();
   let moduller = m.moduller().to_vec();
   m.kapat();
@@ -960,6 +1048,23 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   ekle("öğe gösterme/gizleme geçişi", p.oge_gecis_ok, p.oge_gecis.clone());
   ekle("etkileşim: tıklama ve tuş tarayıcı kaynağına ulaşır", p.etkilesim_ok, p.etkilesim.clone());
   ekle("RTMP ağ özellikleri (bağlanılacak IP, düşük gecikme)", p.cikis_turu_ok, p.cikis_turu.clone());
+  let dur = incele(&ffprobe, &ff, &dur_dosya);
+  ekle(
+    "kayıt duraklatma: 3 sn duraklatma dosyaya girmez; paylaşılan kodlayıcıda reddedilir",
+    duraklatma_notu.is_ok() && (4.0..=6.5).contains(&dur.sure_sn) && dur.cozme_hatasi == 0,
+    format!("{:?}; dosya {} sn, {} kare, {} hata", duraklatma_notu, dur.sure_sn, dur.kare, dur.cozme_hatasi),
+  );
+  let mut parcalar: Vec<PathBuf> = std::fs::read_dir(&bol_klasor).into_iter().flatten().flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "mkv")).collect();
+  parcalar.sort();
+  let parca_bilgi: Vec<DosyaBilgisi> = parcalar.iter().map(|p| incele(&ffprobe, &ff, p)).collect();
+  ekle(
+    "kayıt bölme: elle bölünce iki dosya, ikisi de çözülür",
+    bolme_notu.is_ok() && parca_bilgi.len() == 2 && parca_bilgi.iter().all(|b| b.kare > 0 && b.cozme_hatasi == 0),
+    format!("{bolme_notu:?}; {} parça: {:?}", parca_bilgi.len(), parca_bilgi.iter().map(|b| b.sure_sn).collect::<Vec<_>>()),
+  );
+  // Program sahnesi `yeni-sahne` (renk 0xFF204060 = R 0x60, G 0x40, B 0x20)
+  let sk_ok = matches!(&sanal_kamera, Ok(Some([r, g, b])) if (*r as i32 - 0x60).abs() < 24 && (*g as i32 - 0x40).abs() < 24 && (*b as i32 - 0x20).abs() < 24);
+  ekle("sanal kamera: program görüntüsü aygıttan okunur", sk_ok, format!("{sanal_kamera:?} (beklenen ≈ [96, 64, 32])"));
   ekle(
     "ağ ayarlı hedef (127.0.0.1'e bağlan, IPv4, düşük gecikme, dinamik bit hızı) yayınladı; geçersiz IP reddedildi",
     e.kare > 0 && e.cozme_hatasi == 0 && ag_red,

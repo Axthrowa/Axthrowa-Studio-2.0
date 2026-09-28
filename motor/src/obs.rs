@@ -314,6 +314,12 @@ obs_api! {
   fn obs_output_get_total_frames(Ptr) -> c_int;
   fn obs_output_get_connect_time_ms(Ptr) -> c_int;
   fn obs_output_get_signal_handler(Ptr) -> Ptr;
+  fn obs_output_pause(Ptr, bool) -> bool;
+  fn obs_output_get_video_encoder(Ptr) -> Ptr;
+  fn obs_output_get_audio_encoder(Ptr, usize) -> Ptr;
+  fn obs_set_ui_task_handler(Option<crate::ui_gorev::Isleyici>);
+  fn obs_output_paused(Ptr) -> bool;
+  fn obs_output_can_pause(Ptr) -> bool;
   fn obs_service_create(*const c_char, *const c_char, Ptr, Ptr) -> Ptr;
   fn obs_service_release(Ptr);
   fn obs_register_service_s(*const ServiceInfo, usize);

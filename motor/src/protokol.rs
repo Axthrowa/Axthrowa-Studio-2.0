@@ -373,7 +373,25 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
     "cikis.kayit" => {
       let sesler: Vec<&str> = istek.get("sesler").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
       let bicim = istek.get("bicim").and_then(Value::as_str);
-      m.kayit_cikisi(id()?, &PathBuf::from(metin(istek, "yol")?), bicim, metin(istek, "video")?, &sesler)?;
+      let bolme: crate::motor::KayitBolme =
+        istek.get("bolme").cloned().map(serde_json::from_value).transpose().map_err(|e| format!("bolme: {e}"))?.unwrap_or_default();
+      m.kayit_cikisi_bolmeli(id()?, &PathBuf::from(metin(istek, "yol")?), bicim, metin(istek, "video")?, &sesler, &bolme)?;
+      json!({})
+    }
+    "kayit.duraklat" => {
+      let d = istek.get("duraklat").and_then(Value::as_bool).ok_or("'duraklat' (bool) gerekli")?;
+      json!({ "duraklatildi": m.kayit_duraklat(id()?, d)? })
+    }
+    "sanal_kamera.baslat" => {
+      m.sanal_kamera_baslat(metin(istek, "tuval").unwrap_or("ana"))?;
+      json!({})
+    }
+    "sanal_kamera.durdur" => {
+      m.sanal_kamera_durdur()?;
+      json!({})
+    }
+    "kayit.bol" => {
+      m.kayit_bol(id()?)?;
       json!({})
     }
     "cikis.baslat" => {

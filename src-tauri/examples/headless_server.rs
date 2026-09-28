@@ -15,6 +15,10 @@ async fn main() {
   let root: PathBuf = std::env::temp_dir().join(format!("yya-headless-{port}"));
   std::fs::create_dir_all(root.join("assets")).expect("geçici kök");
   let data_dir = root.join("app-data");
+  // Kayıt/ekran görüntüsü dosyaları kullanıcının Videolar klasörüne değil sınama köküne
+  if std::env::var_os("YYA_MOTOR_KAYIT_DIR").is_none() {
+    std::env::set_var("YYA_MOTOR_KAYIT_DIR", root.join("kayitlar"));
+  }
   eprintln!("başsız sunucu: http://127.0.0.1:{port}  (veri: {})", data_dir.display());
   let state = tokio::task::spawn_blocking(move || {
     yayin_yonetim_araci_lib::AppState::new(root, data_dir, false, port)

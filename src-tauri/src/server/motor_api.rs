@@ -45,6 +45,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/tekrar", post(api_tekrar))
     .route("/api/motor/sanal-kamera", post(api_sanal_kamera))
     .route("/api/motor/klasor-ac", post(api_klasor_ac))
+    .route("/api/motor/ekran-goruntusu", post(api_ekran_goruntusu))
     .route("/api/motor/gunluk", get(api_gunluk))
     .route("/api/motor/onizleme", get(api_onizleme))
 }
@@ -220,6 +221,9 @@ pub(crate) async fn kaynak_kur(state: &AppState, k: &KaynakKaydi) -> Result<bool
     komut(state, json!({"komut": "kaynak.mono", "id": k.id, "acik": s.mono})).await?;
     komut(state, json!({"komut": "kaynak.senkron", "id": k.id, "ms": s.senkron_ms})).await?;
     komut(state, json!({"komut": "kaynak.izleme", "id": k.id, "tur": s.izleme})).await?;
+  }
+  if k.deinterlace != [0, 0] {
+    komut(state, json!({"komut": "kaynak.deinterlace", "id": k.id, "kip": k.deinterlace[0], "alan": k.deinterlace[1]})).await?;
   }
   filtreleri_kur(state, &k.id, &k.filtreler).await?;
   Ok(true)
@@ -1106,6 +1110,7 @@ async fn api_sahne(
         x["ses"] = d["ses"].clone();
         x["etkilesim"] = d["etkilesim"].clone();
         x["filtre"] = json!(k.filtreler.len());
+        x["deinterlace"] = json!(k.deinterlace);
       } else if let Some(s) = o.koleksiyon.sahne_ref(&id) {
         x["ad"] = json!(s.ad);
         x["tur"] = json!("sahne");
@@ -1593,6 +1598,40 @@ async fn api_kayit(
     }
     e => Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
   }
+}
+
+#[derive(Deserialize)]
+struct EkranGoruntusuGovdesi {
+  /// ana | dikey | studyo-ana | studyo-dikey (Studio Mode önizlemesi)
+  #[serde(default)]
+  tuval: Option<String>,
+}
+
+/// Dosya › Ekran görüntüsü (Çıkış): tuvalin tam çözünürlükte tek karesi, kayıt klasörüne
+/// `Ekran Goruntusu <zaman>.png` adıyla. Dosya adı sunucuda üretilir (serbest yol yok).
+async fn api_ekran_goruntusu(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<EkranGoruntusuGovdesi>,
+) -> ApiResult {
+  let actor = authorize(&state, &addr, &headers, "broadcast.record").await?;
+  motor_calisiyor(&state).await?;
+  let tuval = g.tuval.unwrap_or_else(|| "ana".into());
+  if tuval.starts_with("etkilesim-") || !onizleme_tuvali_gecerli(&tuval) {
+    return Err(gecersiz(format!("bilinmeyen tuval: {tuval}")));
+  }
+  let klasor_yolu = crate::motor_profil::etkin(&klasor(&state)).kayit.klasor.map(PathBuf::from).unwrap_or_else(kayit_klasoru);
+  std::fs::create_dir_all(&klasor_yolu).map_err(|e| catisma(format!("klasör: {e}")))?;
+  let mut yol = klasor_yolu.join(format!("Ekran Goruntusu {}.png", zaman_damgasi()));
+  let mut n = 2;
+  while yol.exists() {
+    yol = klasor_yolu.join(format!("Ekran Goruntusu {} ({n}).png", zaman_damgasi()));
+    n += 1;
+  }
+  let r = komut(&state, json!({"komut": "ekran_goruntusu", "tuval": tuval, "yol": yol})).await?;
+  audit(&state, &actor, "MOTOR_SCREENSHOT", json!({"tuval": tuval})).await;
+  Ok(Json(json!({"ok": true, "yol": yol, "genislik": r["genislik"], "yukseklik": r["yukseklik"]})))
 }
 
 #[derive(Deserialize)]

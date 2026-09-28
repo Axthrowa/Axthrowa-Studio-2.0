@@ -147,6 +147,11 @@ export function DonusumDiyalogu({
             </option>
           ))}
         </select>
+        <label htmlFor="dn-ky">Karıştırma yöntemi</label>
+        <select id="dn-ky" className="dt-input" value={oge.karistirma_yontemi ?? 0} onChange={(e) => d("karistirma_yontemi", Number(e.target.value))}>
+          <option value={0}>Varsayılan</option>
+          <option value={1}>sRGB kapalı</option>
+        </select>
       </div>
     </Pencere>
   );

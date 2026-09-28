@@ -90,6 +90,7 @@ pub fn donusum(v: Option<&Value>) -> Donusum {
     kilit: v.get("kilit").and_then(Value::as_bool),
     olcek_filtresi: tam("olcek_filtresi").map(|x| x.clamp(0, 6) as i32),
     karistirma: tam("karistirma").map(|x| x.clamp(0, 6) as i32),
+    karistirma_yontemi: tam("karistirma_yontemi").map(|x| x.clamp(0, 1) as i32),
   }
 }
 
@@ -292,6 +293,17 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       json!({})
     }
     "kaynak.durumlari" => json!({ "kaynaklar": m.kaynak_durumlari() }),
+    "ekran_goruntusu" => {
+      let (g, y) = m.ekran_goruntusu(metin(istek, "tuval").unwrap_or("ana"), &PathBuf::from(metin(istek, "yol")?))?;
+      json!({ "genislik": g, "yukseklik": y })
+    }
+    "kaynak.deinterlace" => {
+      if istek.get("kip").is_some() {
+        m.kaynak_deinterlace(id()?, sayi(istek, "kip", None)? as i32, sayi(istek, "alan", Some(0))? as i32)?;
+      }
+      let (k, a) = m.kaynak_deinterlace_oku(id()?)?;
+      json!({ "kip": k, "alan": a })
+    }
     "etkilesim" => {
       let olay = istek.get("olay").ok_or("'olay' gerekli")?;
       m.etkilesim(metin(istek, "kaynak")?, olay)?;

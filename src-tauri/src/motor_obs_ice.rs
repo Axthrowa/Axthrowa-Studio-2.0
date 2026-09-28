@@ -125,6 +125,7 @@ fn donusum(o: &Value) -> Donusum {
     gorunur: o.get("visible").and_then(Value::as_bool).unwrap_or(true),
     olcek_filtresi: olcek_filtresi(o.get("scale_filter").and_then(Value::as_str).unwrap_or("disable")),
     karistirma: karistirma(o.get("blend_type").and_then(Value::as_str).unwrap_or("normal")),
+    karistirma_yontemi: i32::from(o.get("blend_method").and_then(Value::as_str) == Some("srgb_off")),
   }
 }
 
@@ -209,6 +210,10 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
           izleme: s.get("monitoring_type").and_then(Value::as_i64).unwrap_or(0).clamp(0, 2) as i32,
         };
         rec.filtreler = filtreleri_cevir(&id, s, &mut r);
+        rec.deinterlace = [
+          s.get("deinterlace_mode").and_then(Value::as_i64).unwrap_or(0).clamp(0, 8) as i32,
+          s.get("deinterlace_field_order").and_then(Value::as_i64).unwrap_or(0).clamp(0, 1) as i32,
+        ];
         if s.get("hotkeys").and_then(Value::as_object).is_some_and(|h| h.values().any(|v| v.as_array().is_some_and(|a| !a.is_empty()))) {
           r.notlar.push(format!("«{isim}»: kısayol bağları aktarılmadı (Kısayollar sayfasından atayın)"));
         }
@@ -306,7 +311,8 @@ mod tests {
          "mixers": 0, "volume": 1.0, "muted": false, "balance": 0.5, "sync": 0, "flags": 0, "monitoring_type": 0,
          "filters": [{"name": "Renk", "id": "color_filter", "versioned_id": "color_filter_v2", "enabled": false, "settings": {"opacity": 0.5}}]},
         {"name": "Müzik", "uuid": "u2", "id": "ffmpeg_source", "versioned_id": "ffmpeg_source", "settings": {"local_file": "C:/m.mp3"},
-         "mixers": 255, "volume": 0.5, "muted": true, "balance": 0.25, "sync": 150000000i64, "flags": 2, "monitoring_type": 1},
+         "mixers": 255, "volume": 0.5, "muted": true, "balance": 0.25, "sync": 150000000i64, "flags": 2, "monitoring_type": 1,
+         "deinterlace_mode": 7, "deinterlace_field_order": 1},
         {"name": "Başlık", "uuid": "u3", "id": "text_gdiplus", "versioned_id": "text_gdiplus_v3", "settings": {"text": "Merhaba"},
          "hotkeys": {"libobs.show_scene_item.1": [{"key": "OBS_KEY_F1"}]}},
         {"name": "Ara", "uuid": "u4", "id": "scene", "versioned_id": "scene", "settings": {"items": [
@@ -317,7 +323,7 @@ mod tests {
          "settings": {"items": [
           {"name": "Arka", "source_uuid": "u1", "visible": true, "locked": true, "rot": 90.0, "pos": {"x": 10, "y": 20}, "scale": {"x": 2, "y": 2},
            "align": 5, "bounds_type": 2, "bounds_align": 0, "bounds": {"x": 1920, "y": 1080}, "crop_left": 4, "crop_top": 0, "crop_right": 0, "crop_bottom": 8,
-           "scale_filter": "lanczos", "blend_type": "screen",
+           "scale_filter": "lanczos", "blend_type": "screen", "blend_method": "srgb_off",
            "show_transition": {"id": "fade_transition", "versioned_id": "fade_transition", "name": "Soldur", "transition": {}, "duration": 450},
            "hide_transition": {"duration": 300}},
           {"name": "Kamera Grubu", "source_uuid": "u6", "visible": true, "pos": {"x": 100, "y": 100}, "scale": {"x": 1, "y": 1}},
@@ -355,10 +361,11 @@ mod tests {
     let muzik = k.kaynaklar.iter().find(|x| x.ad == "Müzik").unwrap();
     assert_eq!((muzik.ses.ses, muzik.ses.sessiz, muzik.ses.denge, muzik.ses.mono, muzik.ses.senkron_ms, muzik.ses.izleme), (0.5, true, 0.25, true, 150, 1));
     assert_eq!(muzik.izler, 0x3F);
+    assert_eq!(muzik.deinterlace, [7, 1]);
     // Öğeler: dönüşüm, grup, iç içe sahne, bilinmeyen atlandı
     assert_eq!(oyun.ogeler.len(), 3);
     let d = &oyun.ogeler[0].donusum;
-    assert_eq!((d.konum, d.olcek, d.aci, d.kilit, d.sinir, d.kirp, d.olcek_filtresi, d.karistirma), ([10.0, 20.0], [2.0, 2.0], 90.0, true, Some([1920.0, 1080.0]), [4, 0, 0, 8], 4, 3));
+    assert_eq!((d.konum, d.olcek, d.aci, d.kilit, d.sinir, d.kirp, d.olcek_filtresi, d.karistirma, d.karistirma_yontemi), ([10.0, 20.0], [2.0, 2.0], 90.0, true, Some([1920.0, 1080.0]), [4, 0, 0, 8], 4, 3, 1));
     let g = &oyun.ogeler[1];
     assert_eq!((g.tur, g.ad.as_str(), g.cocuklar.len()), (OgeTuru::Grup, "Kamera Grubu", 2));
     assert!(!g.cocuklar[0].donusum.gorunur);

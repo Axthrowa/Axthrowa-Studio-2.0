@@ -188,6 +188,11 @@ pub fn boyut(tuval_g: u32, tuval_y: u32, en_fazla: u32) -> (u32, u32) {
 impl Onizleme {
   pub fn baglan(ad: &str, video: Ptr, tuval_g: u32, tuval_y: u32, en_fazla: u32) -> Result<Onizleme, String> {
     let (genislik, yukseklik) = boyut(tuval_g, tuval_y, en_fazla);
+    Self::baglan_boyutlu(ad, video, genislik, yukseklik)
+  }
+
+  /// Verilen tam boyutta (ekran görüntüsü: tuvalin kendi çözünürlüğü)
+  pub fn baglan_boyutlu(ad: &str, video: Ptr, genislik: u32, yukseklik: u32) -> Result<Onizleme, String> {
     let kare = Arc::new(Mutex::new(Kare { genislik, yukseklik, aralik_ms: 250, ..Default::default() }));
     let ham = Arc::into_raw(Arc::clone(&kare));
     let ayar = Veri::yeni().yazi("baglam", &format!("{:x}", ham as usize));

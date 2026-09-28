@@ -383,12 +383,28 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
         hizalama: Some(5),
         kilit: Some(true),
         aci: Some(15.0),
+        karistirma_yontemi: Some(1),
         ..Default::default()
       },
     )?;
     let o = m.sahne_ogeleri("yatay-2")?.into_iter().find(|o| o.oge == "yatay-2/yazi").ok_or("öğe yok")?;
-    let ok = o.kirp == [10, 5, 0, 0] && o.hizalama == 5 && o.kilit && (o.aci - 15.0).abs() < 0.01 && o.genislik > 0;
-    Ok(format!("{ok}|kırp {:?} hizalama {} kilit {} açı {} kaynak {}×{}", o.kirp, o.hizalama, o.kilit, o.aci, o.genislik, o.yukseklik))
+    // Deinterlace kipi/alan sırası kaynakta saklanır (renk kaynağında görsel etkisi yok; ayar gidiş-dönüşü sınanır)
+    m.kaynak_deinterlace("arka", 7, 1)?;
+    let di = m.kaynak_deinterlace_oku("arka")?;
+    let di_red = m.kaynak_deinterlace("arka", 9, 0).is_err();
+    m.kaynak_deinterlace("arka", 0, 0)?;
+    let ok = o.kirp == [10, 5, 0, 0]
+      && o.hizalama == 5
+      && o.kilit
+      && (o.aci - 15.0).abs() < 0.01
+      && o.genislik > 0
+      && o.karistirma_yontemi == 1
+      && di == (7, 1)
+      && di_red;
+    Ok(format!(
+      "{ok}|kırp {:?} hizalama {} kilit {} açı {} kaynak {}×{} karıştırma yöntemi {} deinterlace {di:?} (geçersiz reddedildi {di_red})",
+      o.kirp, o.hizalama, o.kilit, o.aci, o.genislik, o.yukseklik, o.karistirma_yontemi
+    ))
   })();
   (p.donusum_ok, p.donusum) = ayir(r);
 
@@ -786,6 +802,15 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   if let Some(p) = &on_dikey {
     let _ = std::fs::write(dosya("onizleme-dikey.png"), p);
   }
+  // Ekran görüntüsü (Çıkış): tuvalin kendi çözünürlüğünde, önizleme sınırı (960) olmadan
+  let ekran_yolu = dosya("ekran-goruntusu-ana.png");
+  let _ = std::fs::remove_file(&ekran_yolu);
+  let ekran = m.ekran_goruntusu("ana", &ekran_yolu);
+  let ekran_boyutu = std::fs::read(&ekran_yolu).ok().and_then(|b| {
+    let o = png::Decoder::new(b.as_slice()).read_info().ok()?;
+    Some((o.info().width, o.info().height))
+  });
+  let ekran_goreli_red = m.ekran_goruntusu("ana", Path::new("goreli.png")).is_err();
   // Sahne öğeleri: sıra, taşıma, kaldırma (yalnız dikey sahneden)
   let ogeler_once: Vec<String> = m.sahne_ogeleri("yatay")?.into_iter().map(|o| o.kaynak).collect();
   m.oge_sira("yatay/yazi", "en_alt")?;
@@ -1017,6 +1042,11 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     format!("önce {ogeler_once:?}, en alta taşıyınca {ogeler_sonra:?}, dikeyde kalan {dikey_ogeler}"),
   );
   ekle(
+    "ekran görüntüsü (çıkış): tam çözünürlük PNG, göreli yol reddedilir",
+    ekran.as_ref().is_ok_and(|b| *b == (1920, 1080)) && ekran_boyutu == Some((1920, 1080)) && ekran_goreli_red,
+    format!("{ekran:?}, dosya {ekran_boyutu:?}, göreli red {ekran_goreli_red}"),
+  );
+  ekle(
     "özellik seçenekleri (yazı hizalama listesi)",
     ["left", "center", "right"].iter().all(|h| hizalama.iter().any(|x| x == h)),
     format!("{hizalama:?}"),
@@ -1038,7 +1068,7 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   ekle("ses filtresi (kazanç −20 dB) ölçerde görünür", p.kazanc_ok, p.kazanc.clone());
   ekle("ses özellikleri: denge, mono, senkron, izleme", p.ses_ok, p.ses.clone());
   ekle("grup: gruplanır, çözülünce öğe kimlikleri korunur", p.grup_ok, p.grup.clone());
-  ekle("öğe dönüşümü: kırpma, hizalama, kilit, döndürme", p.donusum_ok, p.donusum.clone());
+  ekle("öğe dönüşümü: kırpma, hizalama, kilit, döndürme, karıştırma yöntemi, deinterlace", p.donusum_ok, p.donusum.clone());
   ekle("sahne silme: programdaki silinemez, diğeri silinir", p.silme_ok, p.silme.clone());
   ekle("kodlayıcı özellikleri (Uzman kip) okunur", p.kodlayici_ok, p.kodlayici.clone());
   ekle("tarayıcı kaynağı: yerel sayfa işlenir, WebAudio mikserde", p.tarayici_ok, p.tarayici.clone());

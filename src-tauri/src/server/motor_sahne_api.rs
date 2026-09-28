@@ -624,6 +624,7 @@ fn donusum_dogrula(d: &Map<String, Value>) -> Result<Value, Hata> {
       "gorunur" | "kilit" => json!(v.as_bool().ok_or_else(|| gecersiz(format!("{ad} true/false olmalı")))?),
       "hizalama" | "sinir_hizalama" => json!(v.as_u64().filter(|x| *x <= 15).ok_or_else(|| gecersiz(format!("{ad} 0–15 olmalı")))?),
       "sinir_turu" | "olcek_filtresi" | "karistirma" => json!(v.as_u64().filter(|x| *x <= 6).ok_or_else(|| gecersiz(format!("{ad} 0–6 olmalı")))?),
+      "karistirma_yontemi" => json!(v.as_u64().filter(|x| *x <= 1).ok_or_else(|| gecersiz("karıştırma yöntemi 0–1 olmalı".into()))?),
       "kirp" => {
         let a = v.as_array().filter(|a| a.len() == 4).ok_or_else(|| gecersiz("kırpma [sol, üst, sağ, alt] olmalı".into()))?;
         let n: Vec<i64> = a.iter().map(|x| x.as_i64().unwrap_or(-1)).collect();
@@ -799,6 +800,11 @@ struct KaynakIslemi {
   /// `cogalt`: kopya bu öğenin sahnesine, aynı dönüşümle, en üste eklenir
   #[serde(default)]
   oge: Option<String>,
+  /// `deinterlace`: kip 0–8 (0 kapalı) ve alan sırası 0 üst / 1 alt
+  #[serde(default)]
+  kip: Option<i32>,
+  #[serde(default)]
+  alan: Option<i32>,
 }
 
 async fn api_kaynak_islem(
@@ -861,6 +867,22 @@ async fn api_kaynak_islem(
         koleksiyonu_yaz(&state)?;
       }
       json!({"id": yeni.id, "oge": oge})
+    }
+    "deinterlace" => {
+      let kip = g.kip.unwrap_or(0);
+      let alan = g.alan.unwrap_or(0);
+      if !(0..=8).contains(&kip) || !(0..=1).contains(&alan) {
+        return Err(gecersiz("deinterlace kipi 0–8, alan sırası 0–1 olmalı".into()));
+      }
+      if state.motor.ozet().lock().koleksiyon.kaynak(&g.id).is_none() {
+        return Err(bulunamadi("kaynak yok".into()));
+      }
+      komut(&state, json!({"komut": "kaynak.deinterlace", "id": g.id, "kip": kip, "alan": alan})).await?;
+      if let Some(k) = state.motor.ozet().lock().koleksiyon.kaynak(&g.id) {
+        k.deinterlace = [kip, alan];
+      }
+      koleksiyonu_yaz(&state)?;
+      json!({"kip": kip, "alan": alan})
     }
     e => return Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
   };

@@ -98,6 +98,9 @@ pub struct Donusum {
   pub olcek_filtresi: i32,
   #[serde(default)]
   pub karistirma: i32,
+  /// OBS "Blending Method": 0 varsayılan, 1 sRGB kapalı
+  #[serde(default)]
+  pub karistirma_yontemi: i32,
 }
 
 impl Default for Donusum {
@@ -115,6 +118,7 @@ impl Default for Donusum {
       gorunur: true,
       olcek_filtresi: 0,
       karistirma: 0,
+      karistirma_yontemi: 0,
     }
   }
 }
@@ -126,6 +130,7 @@ impl Donusum {
       "konum": self.konum, "olcek": self.olcek, "aci": self.aci, "gorunur": self.gorunur,
       "hizalama": self.hizalama, "sinir_turu": self.sinir_turu, "sinir_hizalama": self.sinir_hizalama,
       "kirp": self.kirp, "kilit": self.kilit, "olcek_filtresi": self.olcek_filtresi, "karistirma": self.karistirma,
+      "karistirma_yontemi": self.karistirma_yontemi,
     });
     if let (Some(s), true) = (self.sinir, self.sinir_turu != 0) {
       d["sinir"] = json!(s);
@@ -159,6 +164,7 @@ impl Donusum {
       gorunur: o.get("gorunur").and_then(Value::as_bool).unwrap_or(true),
       olcek_filtresi: tam("olcek_filtresi", 0) as i32,
       karistirma: tam("karistirma", 0) as i32,
+      karistirma_yontemi: tam("karistirma_yontemi", 0) as i32,
     }
   }
 }
@@ -290,6 +296,13 @@ pub struct KaynakKaydi {
   pub filtreler: Vec<FiltreKaydi>,
   #[serde(default, skip_serializing_if = "SesKaydi::varsayilan_mi")]
   pub ses: SesKaydi,
+  /// Deinterlace [kip 0–8, alan sırası 0 üst / 1 alt]; [0, 0] = kapalı (OBS "Deinterlacing")
+  #[serde(default, skip_serializing_if = "deinterlace_kapali")]
+  pub deinterlace: [i32; 2],
+}
+
+fn deinterlace_kapali(d: &[i32; 2]) -> bool {
+  *d == [0, 0]
 }
 
 impl KaynakKaydi {
@@ -306,6 +319,7 @@ impl KaynakKaydi {
       gizli_alanlar: Vec::new(),
       filtreler: Vec::new(),
       ses: SesKaydi::default(),
+      deinterlace: [0, 0],
     }
   }
 }

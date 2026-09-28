@@ -144,6 +144,10 @@ export type MotorSahneOgesi = {
   kilit?: boolean;
   olcek_filtresi?: number;
   karistirma?: number;
+  /** 0 varsayılan, 1 sRGB kapalı */
+  karistirma_yontemi?: number;
+  /** [kip 0–8, alan sırası 0 üst / 1 alt] */
+  deinterlace?: [number, number];
   /** Kaynağın kendi boyutu (dönüşümsüz) */
   genislik?: number;
   yukseklik?: number;
@@ -217,6 +221,7 @@ export type MotorDonusumAlanlari = Partial<{
   gorunur: boolean;
   olcek_filtresi: number;
   karistirma: number;
+  karistirma_yontemi: number;
 }>;
 export type MotorOgeIslemi = {
   eylem: "sira" | "kaldir" | "donustur" | "ekle" | "grupla" | "grubu-coz" | "gruba-ekle" | "gruptan-cikar" | "grup-adlandir";
@@ -347,7 +352,7 @@ export const motorApi = {
   gecisGuncelle: (tuval: string, ayarlar: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/gecis/guncelle", { tuval, ayarlar }),
   studyo: (tuval: string, eylem: "ac" | "kapat" | "onizleme" | "gecis", ek: { sahne?: string; sure_ms?: number; takas?: boolean } = {}) =>
     istek<{ onizleme?: string | null; program?: string | null }>("/api/motor/studyo", { tuval, eylem, ...ek }),
-  kaynakIslem: (id: string, eylem: "adlandir" | "cogalt", ek: { ad?: string; oge?: string } = {}) =>
+  kaynakIslem: (id: string, eylem: "adlandir" | "cogalt" | "deinterlace", ek: { ad?: string; oge?: string; kip?: number; alan?: number } = {}) =>
     istek<{ id?: string; oge?: string }>("/api/motor/kaynak-islem", { id, eylem, ...ek }),
   ses: () => istek<MotorSesDurumu>("/api/motor/ses"),
   sesAyarla: (id: string, eylem: "ses" | "sessiz" | "denge" | "mono" | "senkron" | "izleme" | "izler", deger: number | boolean) =>
@@ -368,6 +373,8 @@ export const motorApi = {
     yon?: string;
     acik?: boolean;
   }) => istek<{ ok: boolean; id?: string; eklenen?: number; atlanan?: number }>("/api/motor/filtre", govde),
+  ekranGoruntusu: (tuval = "ana") =>
+    istek<{ ok: boolean; yol: string; genislik: number; yukseklik: number }>("/api/motor/ekran-goruntusu", { tuval }),
   klasorAc: (tur: "kayit" | "gunluk" | "ayarlar") => istek<{ ok: boolean; yol: string }>("/api/motor/klasor-ac", { tur }),
   gunluk: (satir = 400) => istek<{ satirlar: string[]; gizlenen: number }>(`/api/motor/gunluk?satir=${satir}`),
   filtreOzellikleri: (id: string) => istek<OzellikTanimi>(`/api/motor/filtre/ozellikler?id=${encodeURIComponent(id)}`),
@@ -473,3 +480,16 @@ export function izDegistir(maske: number, iz: number): number {
   const yeni = maske ^ bit;
   return yeni === 0 ? maske : yeni & 0x3f;
 }
+
+/** OBS deinterlace kipleri (libobs `enum obs_deinterlace_mode` sırası) */
+export const DEINTERLACE_KIPLERI: { kip: number; ad: string }[] = [
+  { kip: 0, ad: "Kapalı" },
+  { kip: 1, ad: "At (Discard)" },
+  { kip: 2, ad: "Retro" },
+  { kip: 3, ad: "Karıştır (Blend)" },
+  { kip: 4, ad: "Karıştır 2x" },
+  { kip: 5, ad: "Doğrusal" },
+  { kip: 6, ad: "Doğrusal 2x" },
+  { kip: 7, ad: "Yadif" },
+  { kip: 8, ad: "Yadif 2x" },
+];

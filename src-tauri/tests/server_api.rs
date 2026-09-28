@@ -2672,3 +2672,71 @@ async fn motor_filtre_yapistir_ve_gunluk() {
   assert!(satirlar.iter().any(|s| s.as_str().unwrap().contains("libobs")) || satirlar.iter().any(|s| s.as_str().unwrap().contains("obs")));
   assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
 }
+
+/// Ekran görüntüsü (Çıkış) tam çözünürlükte kayıt klasörüne; kaynak deinterlace ve öğe karıştırma yöntemi
+/// koleksiyona yazılır ve motorda uygulanır
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let kayit_dir = h.root.join("goruntuler");
+  std::env::set_var("YYA_MOTOR_KAYIT_DIR", &kayit_dir);
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  tamam("/api/motor/baslat", json!({})).await;
+  let k = tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#204060", "ad": "Arka"})).await;
+  let id = k["id"].as_str().unwrap().to_string();
+  let sahne = h.client.get(format!("{}/api/motor/sahne?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  let oge = sahne["ogeler"].as_array().unwrap().iter().find(|o| o["kaynak"] == id.as_str()).and_then(|o| o["oge"].as_str()).unwrap().to_string();
+
+  let r = tamam("/api/motor/ekran-goruntusu", json!({"tuval": "ana"})).await;
+  assert_eq!((r["genislik"].as_u64(), r["yukseklik"].as_u64()), (Some(1920), Some(1080)), "{r}");
+  let yol = PathBuf::from(r["yol"].as_str().unwrap());
+  assert!(yol.starts_with(&kayit_dir) && yol.extension().is_some_and(|e| e == "png"), "{yol:?}");
+  let bayt = std::fs::read(&yol).unwrap();
+  assert_eq!(&bayt[..8], b"\x89PNG\r\n\x1a\n");
+  assert_eq!((u32::from_be_bytes(bayt[16..20].try_into().unwrap()), u32::from_be_bytes(bayt[20..24].try_into().unwrap())), (1920, 1080));
+  let red = |g: Value| {
+    let c = h.client.clone();
+    let url = format!("{}/api/motor/ekran-goruntusu", h.base);
+    async move { c.post(url).json(&g).send().await.unwrap().status().as_u16() }
+  };
+  assert_eq!(red(json!({"tuval": "etkilesim-x"})).await, 400);
+  assert_eq!(red(json!({"tuval": "../x"})).await, 400);
+
+  let d = tamam("/api/motor/kaynak-islem", json!({"id": id, "eylem": "deinterlace", "kip": 7, "alan": 1})).await;
+  assert_eq!((d["kip"].as_i64(), d["alan"].as_i64()), (Some(7), Some(1)));
+  assert_eq!(
+    h.client.post(format!("{}/api/motor/kaynak-islem", h.base)).json(&json!({"id": id, "eylem": "deinterlace", "kip": 9})).send().await.unwrap().status(),
+    400
+  );
+  let motor_dir = h.root.join("app-data").join("motor");
+  let dizin: Value = serde_json::from_str(&std::fs::read_to_string(motor_dir.join("koleksiyonlar.json")).unwrap()).unwrap();
+  let etkin = dizin["etkin"].as_str().unwrap();
+  let kol: Value = serde_json::from_str(&std::fs::read_to_string(motor_dir.join("koleksiyonlar").join(format!("{etkin}.json"))).unwrap()).unwrap();
+  let kayit = kol["kaynaklar"].as_array().unwrap().iter().find(|k| k["id"] == id.as_str()).unwrap().clone();
+  assert_eq!(kayit["deinterlace"], json!([7, 1]));
+
+  tamam("/api/motor/oge", json!({"oge": oge, "eylem": "donustur", "donusum": {"karistirma_yontemi": 1}})).await;
+  let o = h.client.get(format!("{}/api/motor/sahne?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  let satir = o["ogeler"].as_array().unwrap().iter().find(|x| x["oge"] == oge.as_str()).cloned().unwrap();
+  assert_eq!(satir["karistirma_yontemi"], 1, "{satir}");
+  let r = h.client.post(format!("{}/api/motor/oge", h.base)).json(&json!({"oge": oge, "eylem": "donustur", "donusum": {"karistirma_yontemi": 2}})).send().await.unwrap();
+  assert_eq!(r.status(), 400);
+  assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
+}

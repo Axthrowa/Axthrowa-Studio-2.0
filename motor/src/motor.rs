@@ -98,6 +98,8 @@ pub struct OgeBilgisi {
   pub kilit: bool,
   pub olcek_filtresi: i32,
   pub karistirma: i32,
+  /// 0 varsayılan, 1 sRGB kapalı (OBS "Blending Method")
+  pub karistirma_yontemi: i32,
   /// Kaynağın kendi boyutu (dönüşümsüz)
   pub genislik: u32,
   pub yukseklik: u32,
@@ -690,6 +692,54 @@ impl Motor {
       .collect()
   }
 
+  /// Tuvalin tam çözünürlükte tek karesi PNG dosyasına (OBS "Ekran görüntüsü (Çıkış)"). Dönüş: (genişlik, yükseklik)
+  pub fn ekran_goruntusu(&mut self, tuval: &str, yol: &Path) -> Result<(u32, u32), String> {
+    if !yol.is_absolute() || yol.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).as_deref() != Some("png") {
+      return Err("ekran görüntüsü yolu mutlak ve .png olmalı".into());
+    }
+    let (video, g, y) = {
+      let k = if let Some(t) = tuval.strip_prefix("studyo-") {
+        &self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas
+      } else {
+        self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?
+      };
+      (k.video(), k.genislik & !1, k.yukseklik & !1)
+    };
+    let mut o = Onizleme::baglan_boyutlu(&format!("ekran-{tuval}"), video, g, y)?;
+    let bitis = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    let png = loop {
+      if let Some(b) = o.png()? {
+        break b;
+      }
+      if std::time::Instant::now() > bitis {
+        return Err("kare alınamadı".into());
+      }
+      std::thread::sleep(std::time::Duration::from_millis(40));
+    };
+    drop(o);
+    std::fs::write(yol, png).map_err(|e| format!("dosya yazılamadı: {e}"))?;
+    Ok((g, y))
+  }
+
+  /// Kaynağın deinterlace kipi (0 kapalı, 1 at, 2 retro, 3 karıştır, 4 karıştır 2x, 5 doğrusal, 6 doğrusal 2x,
+  /// 7 yadif, 8 yadif 2x) ve alan sırası (0 üst, 1 alt) — OBS "Deinterlacing" (yakalama kartları)
+  pub fn kaynak_deinterlace(&mut self, id: &str, kip: i32, alan: i32) -> Result<(), String> {
+    let k = *self.kaynaklar.get(id).ok_or_else(|| format!("kaynak yok: {id}"))?;
+    if !(0..=8).contains(&kip) || !(0..=1).contains(&alan) {
+      return Err("deinterlace kipi 0–8, alan sırası 0–1 olmalı".into());
+    }
+    unsafe {
+      (api().obs_source_set_deinterlace_mode)(k, kip);
+      (api().obs_source_set_deinterlace_field_order)(k, alan);
+    }
+    Ok(())
+  }
+
+  pub fn kaynak_deinterlace_oku(&self, id: &str) -> Result<(i32, i32), String> {
+    let k = *self.kaynaklar.get(id).ok_or_else(|| format!("kaynak yok: {id}"))?;
+    Ok(unsafe { ((api().obs_source_get_deinterlace_mode)(k), (api().obs_source_get_deinterlace_field_order)(k)) })
+  }
+
   /// Tuvalin son önizleme karesi (PNG). İlk istekte bağlanır ve `None` döner (kare hazırlanıyor).
   pub fn onizleme_png(&mut self, tuval: &str, en_fazla: u32) -> Result<Option<Vec<u8>>, String> {
     self.bosta_onizlemeleri_kapat();
@@ -813,6 +863,7 @@ impl Motor {
         kilit: (a.obs_sceneitem_locked)(p),
         olcek_filtresi: (a.obs_sceneitem_get_scale_filter)(p),
         karistirma: (a.obs_sceneitem_get_blending_mode)(p),
+        karistirma_yontemi: (a.obs_sceneitem_get_blending_method)(p),
         genislik: (a.obs_source_get_width)(kaynak),
         yukseklik: (a.obs_source_get_height)(kaynak),
         grup: (a.obs_sceneitem_is_group)(p),
@@ -1058,6 +1109,9 @@ impl Motor {
       }
       if let Some(f) = d.olcek_filtresi {
         (a.obs_sceneitem_set_scale_filter)(oge, f.clamp(0, 6));
+      }
+      if let Some(y) = d.karistirma_yontemi {
+        (a.obs_sceneitem_set_blending_method)(oge, y.clamp(0, 1));
       }
       if let Some(b) = d.karistirma {
         (a.obs_sceneitem_set_blending_mode)(oge, b.clamp(0, 6));
@@ -1624,6 +1678,7 @@ pub struct Donusum {
   pub kilit: Option<bool>,
   pub olcek_filtresi: Option<i32>,
   pub karistirma: Option<i32>,
+  pub karistirma_yontemi: Option<i32>,
 }
 
 #[derive(Clone, Copy, Debug)]

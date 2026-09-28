@@ -26,6 +26,7 @@ import {
   type MotorSahneYaniti,
   type MotorSesDurumu,
   type MotorSesKanali,
+  DEINTERLACE_KIPLERI,
 } from "../../lib/api/motor";
 import { multistreamApi, type Finding } from "../../lib/api/multistream";
 import { canliOzeti, sureBicimi } from "../../lib/broadcast";
@@ -76,6 +77,7 @@ import { ActivityFeedPanel, UniversalChatPanel } from "../control/UniversalChat"
 import { DeckPanel } from "../control/DeckPanel";
 import { EtkilesimPenceresi } from "./EtkilesimPenceresi";
 import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
+import { DeinterlaceDiyalogu } from "./DeinterlaceDiyalogu";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
 import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
@@ -274,6 +276,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [filtre, setFiltre] = useState<{ kaynak: string; ad: string; ses: boolean; goruntu: boolean } | null>(null);
   const [etkilesim, setEtkilesim] = useState<{ kaynak: string; ad: string } | null>(null);
   const [ogeGecisi, setOgeGecisi] = useState<{ oge: MotorSahneOgesi; goster: boolean } | null>(null);
+  const [deinterlace, setDeinterlace] = useState<MotorSahneOgesi | null>(null);
   const [donusumOge, setDonusumOge] = useState<string | null>(null);
   const [gelismisSes, setGelismisSes] = useState(false);
   const [koleksiyonPenceresi, setKoleksiyonPenceresi] = useState(false);
@@ -331,6 +334,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     }
   };
   const klasorAc = (tur: "kayit" | "gunluk" | "ayarlar") => void motorApi.klasorAc(tur).catch((e) => onToast(`Klasör açılamadı: ${hataMetni(e)}`));
+  const ekranGoruntusu = (t: string) =>
+    void motorApi
+      .ekranGoruntusu(t)
+      .then((r) => onToast(`Ekran görüntüsü kaydedildi (${r.genislik}×${r.yukseklik}): ${r.yol.split(/[\\/]/).pop()}`))
+      .catch((e) => onToast(`Ekran görüntüsü alınamadı: ${hataMetni(e)}`));
   const filtreleriYapistir = (hedef: string) =>
     filtrePanosu &&
     void yap("Filtreler yapıştırılamadı", () => motorApi.filtre({ eylem: "yapistir", kaynak: hedef, kaynaktan: filtrePanosu.kaynak }), (r) => {
@@ -576,6 +584,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 kirp: o.kirp ?? [0, 0, 0, 0],
                 olcek_filtresi: o.olcek_filtresi ?? 0,
                 karistirma: o.karistirma ?? 0,
+                karistirma_yontemi: o.karistirma_yontemi ?? 0,
                 ...(o.sinir && (o.sinir_turu ?? 0) !== 0 ? { sinir: o.sinir } : {}),
               },
             });
@@ -723,6 +732,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ? { etiket: "Grup filtreleri…", eylem: () => sahipFiltreAc(o.kaynak, o.ad ?? o.kaynak) }
         : { etiket: "Filtreler…", devreDisi: !k || !!k.eksik, eylem: () => filtreAc(o.kaynak) },
       { etiket: "Etkileşim…", devreDisi: !o.etkilesim, eylem: () => setEtkilesim({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
+      {
+        etiket: `Deinterlace: ${o.deinterlace && o.deinterlace[0] ? (DEINTERLACE_KIPLERI[o.deinterlace[0]]?.ad ?? o.deinterlace[0]) : "kapalı"}…`,
+        devreDisi: !k || !!k.eksik || o.grup || o.tur === "sahne",
+        eylem: () => setDeinterlace(o),
+      },
       { etiket: "Filtreleri kopyala", devreDisi: o.tur === "sahne", eylem: () => setFiltrePanosu({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
       { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || filtrePanosu.kaynak === o.kaynak || o.tur === "sahne", eylem: () => filtreleriYapistir(o.kaynak) },
       "ayirici",
@@ -916,6 +930,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: calisiyor ? "Motoru durdur…" : "Motoru başlat", eylem: calisiyor ? motorDurdur : () => void yap("Motor başlatılamadı", () => motorApi.baslat(d?.dikey ?? false, d?.fps === 30 ? 30 : 60)) },
         { etiket: "Kayıtları göster", eylem: () => klasorAc("kayit") },
         { etiket: "Ayarlar klasörünü göster", eylem: () => klasorAc("ayarlar") },
+        { etiket: `Ekran görüntüsü (Çıkış · ${TUVAL_ADI[tuval]})`, devreDisi: !calisiyor, eylem: () => ekranGoruntusu(tuval) },
+        ...(studyo ? [{ etiket: `Ekran görüntüsü (Önizleme · ${TUVAL_ADI[tuval]})`, eylem: () => ekranGoruntusu(`studyo-${tuval}`) } as MenuOgesi] : []),
         ...(d?.kayit.son ? [{ etiket: `Son kayıt: ${d.kayit.son.split(/[\\/]/).pop()}`, devreDisi: true, eylem: () => undefined } as MenuOgesi] : []),
         "ayirici",
         { etiket: "Yayın ayarları…", eylem: () => setAyarlar("cikis") },
@@ -1351,6 +1367,10 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const toplamKbps = Object.entries(bitHizi)
     .filter(([id]) => id.startsWith("h-"))
     .reduce((t, [, v]) => t + v, 0);
+  // OBS "Düşen kare (ağ)": etkin yayın çıktılarının toplamı
+  const yayinCikislari = (ist?.cikislar ?? []).filter((c) => c.tur === "rtmp" && c.etkin);
+  const dusenKare = yayinCikislari.reduce((t, c) => t + c.dusen_kare, 0);
+  const yayinKare = yayinCikislari.reduce((t, c) => t + c.kare, 0);
   const yenidenBaglanan = d.hedefler.filter((h) => h.durum === "yeniden_baglaniyor").length;
   const basarisiz = d.hedefler.filter((h) => h.durum === "basarisiz").length;
 
@@ -1519,6 +1539,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 geciken {ist.geciken_kare}
               </span>
               {ist.atlanan_kare != null && <span className="dt-sayi" title="Kodlamada atlanan kare">atlanan {ist.atlanan_kare}</span>}
+              {yayinCikislari.length > 0 && (
+                <span className={`dt-sayi${dusenKare > 0 ? " dt-uyari-metni" : ""}`} title="Ağ nedeniyle düşen kare (etkin yayın hedeflerinin toplamı)">
+                  düşen {dusenKare} ({yayinKare > 0 ? ((dusenKare / yayinKare) * 100).toFixed(1) : "0.0"}%)
+                </span>
+              )}
               {toplamKbps > 0 && <span className="dt-sayi">{Math.round(toplamKbps)} kbps</span>}
             </>
           )}
@@ -1623,6 +1648,18 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             void yap("Öğe geçişi ayarlanamadı", () => motorApi.ogeGecis(oge.oge, goster, g)).then(sahneYenile);
           }}
           onKapat={() => setOgeGecisi(null)}
+        />
+      )}
+      {deinterlace && (
+        <DeinterlaceDiyalogu
+          ad={deinterlace.ad ?? deinterlace.kaynak}
+          mevcut={deinterlace.deinterlace}
+          onKaydet={(kip, alan) => {
+            const kaynak = deinterlace.kaynak;
+            setDeinterlace(null);
+            void yap("Deinterlace ayarlanamadı", () => motorApi.kaynakIslem(kaynak, "deinterlace", { kip, alan })).then(sahneYenile);
+          }}
+          onKapat={() => setDeinterlace(null)}
         />
       )}
       {gunlukAcik && <GunlukPenceresi onKapat={() => setGunlukAcik(false)} />}

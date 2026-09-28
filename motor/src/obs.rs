@@ -383,6 +383,12 @@ obs_api! {
   fn obs_sceneitem_get_scale_filter(Ptr) -> c_int;
   fn obs_sceneitem_set_blending_mode(Ptr, c_int);
   fn obs_sceneitem_get_blending_mode(Ptr) -> c_int;
+  fn obs_sceneitem_set_blending_method(Ptr, c_int);
+  fn obs_sceneitem_get_blending_method(Ptr) -> c_int;
+  fn obs_source_set_deinterlace_mode(Ptr, c_int);
+  fn obs_source_get_deinterlace_mode(Ptr) -> c_int;
+  fn obs_source_set_deinterlace_field_order(Ptr, c_int);
+  fn obs_source_get_deinterlace_field_order(Ptr) -> c_int;
   fn obs_scene_add_group2(Ptr, *const c_char, bool) -> Ptr;
   fn obs_sceneitem_is_group(Ptr) -> bool;
   fn obs_sceneitem_group_add_item(Ptr, Ptr);

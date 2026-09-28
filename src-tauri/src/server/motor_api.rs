@@ -1092,6 +1092,7 @@ async fn api_sahne(
         let d = durum(&id);
         x["durum"] = d["durum"].clone();
         x["ses"] = d["ses"].clone();
+        x["etkilesim"] = d["etkilesim"].clone();
         x["filtre"] = json!(k.filtreler.len());
       } else if let Some(s) = o.koleksiyon.sahne_ref(&id) {
         x["ad"] = json!(s.ad);

@@ -201,8 +201,15 @@ export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record
                   <span className="dt-sayi">{ist.bellek_mb.toFixed(0)} MB</span>
                 </>
               )}
-              <span className="dt-etiket">GPU</span>
-              <span className="dt-soluk" title="libobs GPU kullanımını bildirmez">ölçülmüyor</span>
+              <span className="dt-etiket">GPU (3D)</span>
+              {d.gpu ? (
+                <span className="dt-sayi" title="Windows performans sayaçları (GPU Engine, 3D): sistem geneli ve yayın motoru süreci">
+                  sistem %{d.gpu.sistem.toFixed(1)}
+                  {d.gpu.motor != null && ` · motor %${d.gpu.motor.toFixed(1)}`}
+                </span>
+              ) : (
+                <span className="dt-soluk" title="Bu sistemde GPU performans sayacı okunamadı">ölçülemiyor</span>
+              )}
             </div>
             <table className="dt-table">
               <thead>

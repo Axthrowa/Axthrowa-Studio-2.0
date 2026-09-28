@@ -74,9 +74,12 @@ import { KomutPaleti, komutlar, type Komut } from "./KomutPaleti";
 import { ayriPencere, monitorler, type Monitor } from "../../lib/projektor";
 import { ActivityFeedPanel, UniversalChatPanel } from "../control/UniversalChat";
 import { DeckPanel } from "../control/DeckPanel";
+import { EtkilesimPenceresi } from "./EtkilesimPenceresi";
+import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
 
 type Props = { onToast: (m: string) => void; onGit?: (hedef: "control" | "hotkeys" | "settings") => void };
 
+/** Profil okunamadığında varsayılan tuval boyutları */
 const BOYUT: Record<string, [number, number]> = { ana: [1920, 1080], dikey: [1080, 1920] };
 
 function duzenYukle(): DockDuzeni {
@@ -266,6 +269,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [ekle, setEkle] = useState<{ tur: MotorKaynakTuru; eklenti?: { id: string; ad: string } } | null>(null);
   const [ozellik, setOzellik] = useState<{ id: string; ad: string } | null>(null);
   const [filtre, setFiltre] = useState<{ kaynak: string; ad: string; ses: boolean; goruntu: boolean } | null>(null);
+  const [etkilesim, setEtkilesim] = useState<{ kaynak: string; ad: string } | null>(null);
+  const [ogeGecisi, setOgeGecisi] = useState<{ oge: MotorSahneOgesi; goster: boolean } | null>(null);
   const [donusumOge, setDonusumOge] = useState<string | null>(null);
   const [gelismisSes, setGelismisSes] = useState(false);
   const [koleksiyonPenceresi, setKoleksiyonPenceresi] = useState(false);
@@ -309,6 +314,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const program = sl?.program[tuval];
   const onizleme = studyo ? (sl?.studyo[tuval] ?? program ?? null) : undefined;
   const aktifSahne = studyo ? (onizleme ?? program) : program;
+  // Tuval boyutları profilden (Ayarlar > Video); motor durumu gelene dek varsayılan
+  const boyutlar: Record<string, [number, number]> = { ana: d?.tuvalBoyutlari?.ana ?? BOYUT.ana, dikey: d?.tuvalBoyutlari?.dikey ?? BOYUT.dikey };
+  const gecisAdi = (tur: string) => sl?.gecisTurleri?.find((t) => t.id === tur)?.ad ?? tur;
   const tuvaller = calisiyor ? (sl?.dikey || d?.dikey ? ["ana", "dikey"] : ["ana"]) : [];
 
   const durumYenile = useCallback(async () => {
@@ -563,6 +571,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     const k = kaynakKaydi(kaynak);
     if (k && !k.eksik) setOzellik({ id: k.id, ad: k.ad });
   };
+  /** Sahne ya da grup filtreleri (yalnız video filtreleri; OBS'te de) */
+  const sahipFiltreAc = (id: string, ad: string) => setFiltre({ kaynak: id, ad, ses: false, goruntu: true });
+
   const filtreAc = (kaynak: string) => {
     const k = kaynakKaydi(kaynak);
     if (!k || k.eksik) return;
@@ -613,7 +624,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
 
   // ── Bağlam menüleri ──
   const donusumMenusu = (o: MotorSahneOgesi): MenuOgesi[] => {
-    const b = BOYUT[tuval];
+    const b = boyutlar[tuval];
     const ad = o.ad ?? o.kaynak;
     const cevir = (x: number, y: number) => ogeDonustur(o, { olcek: [o.olcek[0] * x, o.olcek[1] * y] }, `«${ad}» çevir`);
     return [
@@ -649,8 +660,19 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           ]
         : []),
       { etiket: "Özellikler…", devreDisi: !k || !!k.eksik, eylem: () => ozellikAc(o.kaynak) },
-      { etiket: "Filtreler…", devreDisi: !k || !!k.eksik, eylem: () => filtreAc(o.kaynak) },
-      { etiket: "Etkileşim…", devreDisi: true, eylem: () => undefined },
+      o.grup
+        ? { etiket: "Grup filtreleri…", eylem: () => sahipFiltreAc(o.kaynak, o.ad ?? o.kaynak) }
+        : { etiket: "Filtreler…", devreDisi: !k || !!k.eksik, eylem: () => filtreAc(o.kaynak) },
+      { etiket: "Etkileşim…", devreDisi: !o.etkilesim, eylem: () => setEtkilesim({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
+      "ayirici",
+      {
+        etiket: `Gösterme geçişi: ${o.gosterGecisi ? `${gecisAdi(o.gosterGecisi.tur)} ${o.gosterGecisi.sure_ms} ms` : "yok"}…`,
+        eylem: () => setOgeGecisi({ oge: o, goster: true }),
+      },
+      {
+        etiket: `Gizleme geçişi: ${o.gizleGecisi ? `${gecisAdi(o.gizleGecisi.tur)} ${o.gizleGecisi.sure_ms} ms` : "yok"}…`,
+        eylem: () => setOgeGecisi({ oge: o, goster: false }),
+      },
       "ayirici",
       ...donusumMenusu(o),
       "ayirici",
@@ -772,7 +794,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     } else if (ctrl && tek && (e.key === "f" || e.key === "s" || e.key === "d")) {
       e.preventDefault();
       const kip = e.key === "f" ? "sigdir" : e.key === "s" ? "uzat" : "ortala";
-      ogeDonustur(tek, tuvaleGore(tek, BOYUT[tuval], kip), `«${tek.ad ?? tek.kaynak}» ${kip}`);
+      ogeDonustur(tek, tuvaleGore(tek, boyutlar[tuval], kip), `«${tek.ad ?? tek.kaynak}» ${kip}`);
     } else if (ctrl && tek && (e.key === "Home" || e.key === "End")) {
       e.preventDefault();
       tasi(tek, e.key === "Home" ? "en_ust" : "en_alt");
@@ -1009,6 +1031,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               cogalt: (s) => void yap("Sahne çoğaltılamadı", () => motorApi.sahneIslem({ eylem: "cogalt", id: s.id })),
               sirala: (ids) => void yap("Sahneler sıralanamadı", () => motorApi.sahneIslem({ eylem: "sirala", sira: ids })),
               gecisGecersiz: (s, g: MotorGecis | null) => void yap("Geçiş ayarlanamadı", () => motorApi.sahneIslem({ eylem: "gecis", id: s.id, gecis: g })),
+              filtreler: (s) => sahipFiltreAc(s.id, s.ad),
               menuAc: menu.ac,
             }}
           />
@@ -1262,7 +1285,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 <div className="dt-sekmeler" role="tablist" aria-label="Tuval">
                   {tuvaller.map((t) => (
                     <button key={t} type="button" role="tab" aria-selected={t === tuval} className="dt-sekme" onClick={() => setTuval(t)}>
-                      {TUVAL_ADI[t]} <span className="dt-soluk font-normal">{BOYUT[t].join("×")}</span>
+                      {TUVAL_ADI[t]} <span className="dt-soluk font-normal">{boyutlar[t].join("×")}</span>
                     </button>
                   ))}
                 </div>
@@ -1279,7 +1302,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               <TuvalGorunumu
                 etiket={studyo ? `Önizleme · ${sahneBilgi(onizleme)?.ad ?? ""}` : `Program · ${sahneBilgi(program)?.ad ?? ""}`}
                 tuval={studyo ? `studyo-${tuval}` : tuval}
-                boyut={BOYUT[tuval]}
+                boyut={boyutlar[tuval]}
                 kare={canli.kare?.tuval === (studyo ? `studyo-${tuval}` : tuval) ? canli.kare.url : null}
                 canliBagli={canli.bagli}
                 agac={agac}
@@ -1304,7 +1327,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                   <TuvalGorunumu
                     etiket={`Program · ${sahneBilgi(program)?.ad ?? ""}`}
                     tuval={tuval}
-                    boyut={BOYUT[tuval]}
+                    boyut={boyutlar[tuval]}
                     kare={programAkisi.kare?.tuval === tuval ? programAkisi.kare.url : null}
                     canliBagli={programAkisi.bagli}
                     agac={[]}
@@ -1380,6 +1403,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           {calisiyor && ist && (
             <>
               <span className="dt-sayi">CPU %{(ist.cpu ?? 0).toFixed(1)}</span>
+              {d.gpu && (
+                <span className="dt-sayi" title="GPU 3D kullanımı (sistem geneli; Windows performans sayaçları)">
+                  GPU %{d.gpu.sistem.toFixed(0)}
+                </span>
+              )}
               <span className="dt-sayi">{ist.fps.toFixed(2)} FPS</span>
               <span className="dt-sayi" title="İşlemede geciken kare / toplam">
                 geciken {ist.geciken_kare}
@@ -1476,6 +1504,21 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       )}
       {istem && <AdIstemi baslik={istem.baslik} baslangic={istem.baslangic} onKapat={() => setIstem(null)} onTamam={(ad) => (setIstem(null), istem.yap(ad))} />}
       {onay && <OnayKutusu istek={onay} onKapat={() => setOnay(null)} />}
+      {etkilesim && <EtkilesimPenceresi kaynak={etkilesim.kaynak} ad={etkilesim.ad} onToast={onToast} onKapat={() => setEtkilesim(null)} />}
+      {ogeGecisi && (
+        <OgeGecisiDiyalogu
+          ad={ogeGecisi.oge.ad ?? ogeGecisi.oge.kaynak}
+          goster={ogeGecisi.goster}
+          mevcut={ogeGecisi.goster ? ogeGecisi.oge.gosterGecisi : ogeGecisi.oge.gizleGecisi}
+          turler={sl?.gecisTurleri ?? []}
+          onKaydet={(g) => {
+            const { oge, goster } = ogeGecisi;
+            setOgeGecisi(null);
+            void yap("Öğe geçişi ayarlanamadı", () => motorApi.ogeGecis(oge.oge, goster, g)).then(sahneYenile);
+          }}
+          onKapat={() => setOgeGecisi(null)}
+        />
+      )}
       {sekmeBirlestir && (
         <SekmeBirlestirDiyalogu
           duzen={duzen}

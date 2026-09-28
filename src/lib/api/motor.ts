@@ -87,7 +87,33 @@ export type MotorDurumu = {
   /** Bu oturumda yüklenen üçüncü taraf eklentiler ve kaydettikleri türler */
   eklentiler: MotorEklentiSonucu[];
   guvenliKip: boolean;
+  /** Profildeki tuval taban boyutları */
+  tuvalBoyutlari?: Record<"ana" | "dikey", [number, number]>;
+  video?: MotorVideoAyari;
+  /** Windows performans sayaçlarından 3D motor kullanımı (%); ölçüm yoksa null */
+  gpu?: { sistem: number; motor: number | null } | null;
 };
+export type MotorVideoAyari = {
+  taban: [number, number];
+  cikis: [number, number];
+  dikey_taban: [number, number];
+  olcek_filtresi: "bilinear" | "bicubic" | "lanczos" | "area";
+  renk_bicimi: "nv12" | "i420" | "i444" | "p010" | "i010" | "bgra";
+  renk_uzayi: "601" | "709" | "srgb" | "2100pq" | "2100hlg";
+  renk_araligi: "kismi" | "tam";
+};
+export type MotorSesAyari = { ornekleme: 44100 | 48000; hoparlor: "mono" | "stereo" | "2.1" | "4.0" | "4.1" | "5.1" | "7.1" };
+export type MotorAgAyari = {
+  bagla_ip: string;
+  ip_ailesi: "IPv4+IPv6" | "IPv4" | "IPv6";
+  yeni_soket_dongusu: boolean;
+  dusuk_gecikme: boolean;
+  dinamik_bit_hizi: boolean;
+  yeniden_baglan: boolean;
+  deneme_gecikmesi_sn: number;
+  en_cok_deneme: number;
+};
+export type MotorOgeGecisi = { tur: string; sure_ms: number; ayarlar?: Record<string, unknown> };
 export type MotorEklentiSonucu = {
   id: string;
   sonuc: string;
@@ -125,6 +151,10 @@ export type MotorSahneOgesi = {
   ust?: string;
   /** hazir | bekliyor (boyutu 0: pencere/oyun bulunamadı, aygıt yok…) */
   durum?: "hazir" | "bekliyor";
+  /** Fare/klavye etkileşimi alır (tarayıcı kaynağı vb.) */
+  etkilesim?: boolean;
+  gosterGecisi?: MotorOgeGecisi | null;
+  gizleGecisi?: MotorOgeGecisi | null;
   ses?: boolean;
   filtre?: number;
 };
@@ -218,6 +248,9 @@ export type MotorProfil = {
   iz_adlari: string[];
   hedefler: Record<string, MotorHedefAtamasi>;
   izleme_aygiti?: { id: string; ad: string } | null;
+  video: MotorVideoAyari;
+  ses: MotorSesAyari;
+  ag: MotorAgAyari;
 };
 export type MotorProfilYaniti = {
   id: string;
@@ -276,6 +309,13 @@ export const motorApi = {
   /** Bir sahnenin öğeleri (motor sırası: alttan üste; grup çocukları grubun ardından) */
   sahneDetay: (sahne: string) => istek<MotorSahneYaniti>(`/api/motor/sahne?sahne=${encodeURIComponent(sahne)}`),
   ogeIslem: (govde: MotorOgeIslemi) => istek<{ ok: boolean; oge?: string }>("/api/motor/oge", govde),
+  /** Öğe gösterme (goster=true) ya da gizleme geçişi; null = kaldır */
+  ogeGecis: (oge: string, goster: boolean, gecis: MotorOgeGecisi | null) =>
+    istek<{ ok: boolean }>("/api/motor/oge", { oge, eylem: "gecis", goster, gecis }),
+  /** Etkileşim penceresi: `ac` kaynağın tek başına görüntüsünü (`etkilesim-<kaynak>` tuvali) hazırlar */
+  etkilesimAc: (kaynak: string) => istek<{ tuval: string; genislik: number; yukseklik: number }>("/api/motor/etkilesim", { kaynak, eylem: "ac" }),
+  etkilesimKapat: (kaynak: string) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "kapat" }),
+  etkilesimOlayi: (kaynak: string, olay: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "olay", olay }),
   sahneler: () => istek<MotorSahneler>("/api/motor/sahneler"),
   sahneIslem: (govde: { eylem: "olustur" | "adlandir" | "sil" | "cogalt" | "sirala" | "gecis"; id?: string; ad?: string; tuval?: string; sira?: string[]; gecis?: MotorGecis | null }) =>
     istek<{ id?: string }>("/api/motor/sahne-islem", govde),

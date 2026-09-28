@@ -13,17 +13,77 @@ import { multistreamApi, type Destination, type MultistreamStatus, type Platform
 import { OzellikGovdesi } from "./OzellikFormu";
 import { hataMetni, Pencere } from "./ortak";
 
-type Bolum = "video" | "cikis" | "kayit" | "tekrar" | "ses" | "coklu" | "kisayol";
+type Bolum = "video" | "cikis" | "kayit" | "tekrar" | "ses" | "coklu" | "gelismis" | "kisayol";
 
 const BOLUMLER: { id: Bolum; ad: string; anahtarlar: string }[] = [
-  { id: "video", ad: "Video", anahtarlar: "kare hızı fps çözünürlük tuval dikey yatay" },
+  { id: "video", ad: "Video", anahtarlar: "kare hızı fps çözünürlük tuval taban çıkış ölçekli ölçek filtresi lanczos bicubic dikey yatay" },
   { id: "cikis", ad: "Çıkış", anahtarlar: "kodlayıcı encoder nvenc x264 bit hızı bitrate anahtar kare keyframe ses bit hızı basit gelişmiş uzman kodlama paylaşımı" },
   { id: "kayit", ad: "Kayıt", anahtarlar: "kayıt biçim mkv mp4 hibrit parçalı mov iz klasör yol çok izli" },
   { id: "tekrar", ad: "Tekrar arabelleği", anahtarlar: "tekrar replay klip süre" },
-  { id: "ses", ad: "Ses", anahtarlar: "iz adı karışım vod müziksiz temiz izleme aygıtı kulaklık monitoring" },
+  { id: "ses", ad: "Ses", anahtarlar: "iz adı karışım vod müziksiz temiz izleme aygıtı kulaklık monitoring örnekleme hızı khz kanal mono stereo 5.1" },
   { id: "coklu", ad: "Çoklu yayın", anahtarlar: "hedef platform twitch youtube kick rtmp sunucu anahtar stream key göster kopyala sına bağlantı bit hızı tuval iz" },
+  { id: "gelismis", ad: "Gelişmiş", anahtarlar: "renk biçimi nv12 p010 i444 renk uzayı 709 601 srgb hdr 2100 aralık ağ bağlanılacak ip ipv4 ipv6 düşük gecikme dinamik bit hızı yeniden bağlan deneme" },
   { id: "kisayol", ad: "Kısayollar", anahtarlar: "kısayol hotkey tuş bas konuş push to talk" },
 ];
+
+const KARE_HIZLARI = [24, 25, 30, 48, 50, 60, 100, 120, 144];
+const TABAN_HAZIR: [number, number][] = [
+  [1920, 1080],
+  [2560, 1440],
+  [3840, 2160],
+  [1280, 720],
+];
+const CIKIS_HAZIR: [number, number][] = [
+  [1920, 1080],
+  [1600, 900],
+  [1280, 720],
+  [1152, 648],
+  [2560, 1440],
+];
+const DIKEY_HAZIR: [number, number][] = [
+  [1080, 1920],
+  [720, 1280],
+];
+const OLCEK_ADI: Record<string, string> = { bilinear: "Bilinear (en hızlı, bulanık)", bicubic: "Bicubic (keskin, 16 örnek)", lanczos: "Lanczos (keskin, 36 örnek)", area: "Alan (alt örnekleme)" };
+const BICIM_ADI: Record<string, string> = { nv12: "NV12 (8 bit, 4:2:0)", i420: "I420 (8 bit, 4:2:0)", i444: "I444 (8 bit, 4:4:4)", p010: "P010 (10 bit, 4:2:0)", i010: "I010 (10 bit, 4:2:0)", bgra: "BGRA (8 bit)" };
+const UZAY_ADI: Record<string, string> = { "601": "Rec. 601", "709": "Rec. 709", srgb: "sRGB", "2100pq": "Rec. 2100 (PQ)", "2100hlg": "Rec. 2100 (HLG)" };
+const HOPARLOR_ADI: Record<string, string> = { mono: "Mono", stereo: "Stereo", "2.1": "2.1", "4.0": "4.0", "4.1": "4.1", "5.1": "5.1", "7.1": "7.1" };
+
+/** Çözünürlük seçimi: hazır listesi + serbest genişlik × yükseklik (çift sayı, 16–7680) */
+function BoyutAlani({ id, deger, hazir, onUygula }: { id: string; deger: [number, number]; hazir: [number, number][]; onUygula: (v: [number, number]) => void }) {
+  const [g, setG] = useState(String(deger[0]));
+  const [y, setY] = useState(String(deger[1]));
+  useEffect(() => {
+    setG(String(deger[0]));
+    setY(String(deger[1]));
+  }, [deger]);
+  const liste = hazir.some(([a, b]) => a === deger[0] && b === deger[1]) ? hazir : [...hazir, deger];
+  const uygula = () => {
+    const [a, b] = [Math.round(Number(g)), Math.round(Number(y))];
+    const gecerli = (n: number) => Number.isFinite(n) && n >= 16 && n <= 7680 && n % 2 === 0;
+    if (gecerli(a) && gecerli(b)) {
+      if (a !== deger[0] || b !== deger[1]) onUygula([a, b]);
+    } else {
+      setG(String(deger[0]));
+      setY(String(deger[1]));
+    }
+  };
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      <select id={id} className="dt-input w-40" value={`${deger[0]}x${deger[1]}`} onChange={(e) => onUygula(e.target.value.split("x").map(Number) as [number, number])}>
+        {liste.map(([a, b]) => (
+          <option key={`${a}x${b}`} value={`${a}x${b}`}>
+            {a}×{b}
+          </option>
+        ))}
+      </select>
+      <input className="dt-input dt-sayi w-20" aria-label="Genişlik" inputMode="numeric" value={g} onChange={(e) => setG(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <span className="dt-birim">×</span>
+      <input className="dt-input dt-sayi w-20" aria-label="Yükseklik" inputMode="numeric" value={y} onChange={(e) => setY(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <span className="dt-birim">px (çift sayı)</span>
+    </span>
+  );
+}
 
 const PLATFORM_ADI: Record<Platform, string> = { twitch: "Twitch", youtube: "YouTube", kick: "Kick", custom: "Özel RTMP" };
 
@@ -347,9 +407,10 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
 
   const guncelle = async (degisim: Record<string, unknown>) => {
     try {
-      const r = await motorApi.profilGuncelle(degisim);
+      const r = (await motorApi.profilGuncelle(degisim)) as Awaited<ReturnType<typeof motorApi.profilGuncelle>> & { motorYenidenBasladi?: boolean };
       setP((x) => (x ? { ...x, profil: r.profil } : x));
       setBekleyen(r.bekleyen);
+      if (r.motorYenidenBasladi) onToast("Motor yeni video/ses ayarlarıyla yeniden başladı");
     } catch (e) {
       onToast(`Ayar kaydedilemedi: ${hataMetni(e)}`);
     }
@@ -403,18 +464,33 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
             <p className="p-3 text-[12px] dt-soluk">Profil okunuyor…</p>
           ) : bolum === "video" ? (
             <div className="dt-form">
-              <span className="dt-etiket">Kare hızı</span>
-              <span className="flex items-center gap-3">
-                {[30, 60].map((f) => (
-                  <label key={f} className="inline-flex items-center gap-1.5">
-                    <input type="radio" name="fps" checked={pr.fps === f} disabled={p!.calisiyor} onChange={() => void guncelle({ fps: f })} />
-                    {f} FPS
-                  </label>
+              <label htmlFor="ay-taban">Temel (tuval) çözünürlük</label>
+              <BoyutAlani id="ay-taban" deger={pr.video.taban} hazir={TABAN_HAZIR} onUygula={(v) => void guncelle({ video: { taban: v } })} />
+              <label htmlFor="ay-cikisc">Çıkış (ölçekli) çözünürlük</label>
+              <BoyutAlani id="ay-cikisc" deger={pr.video.cikis} hazir={CIKIS_HAZIR} onUygula={(v) => void guncelle({ video: { cikis: v } })} />
+              <label htmlFor="ay-olcek">Ölçek filtresi</label>
+              <select id="ay-olcek" className="dt-input w-72" value={pr.video.olcek_filtresi} onChange={(e) => void guncelle({ video: { olcek_filtresi: e.target.value } })}>
+                {Object.entries(OLCEK_ADI).map(([k, a]) => (
+                  <option key={k} value={k}>
+                    {a}
+                  </option>
                 ))}
-                {p!.calisiyor && <span className="text-[11px] dt-soluk">Motor çalışırken değişmez (video sıfırlanmalı): motoru durdurup değiştirin.</span>}
+              </select>
+              <label htmlFor="ay-fps">Kare hızı</label>
+              <select id="ay-fps" className="dt-input w-40" value={pr.fps} onChange={(e) => void guncelle({ fps: Number(e.target.value) })}>
+                {KARE_HIZLARI.map((f) => (
+                  <option key={f} value={f}>
+                    {f} FPS
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="ay-dikey">Dikey tuval</label>
+              <BoyutAlani id="ay-dikey" deger={pr.video.dikey_taban} hazir={DIKEY_HAZIR} onUygula={(v) => void guncelle({ video: { dikey_taban: v } })} />
+              <span />
+              <span className="text-[11px] dt-soluk">
+                Sahneler temel çözünürlükte düzenlenir; kodlayıcılara çıkış çözünürlüğü gider. Motor çalışırken değiştirilirse (yayın/kayıt yoksa) motor yeni ayarlarla yeniden başlar; yayın ya da kayıt
+                sürerken değişmez. Dikey tuval motor açılışında etkinleştirilir.
               </span>
-              <span className="dt-etiket">Tuvaller</span>
-              <span className="text-[12px]">Yatay 1920×1080 · Dikey 1080×1920 (dikey tuval motor açılışında seçilir; sahneleri koleksiyondadır)</span>
             </div>
           ) : bolum === "cikis" ? (
             <>
@@ -552,6 +628,21 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                   </span>
                 ))}
               </span>
+              <label htmlFor="ay-orn">Örnekleme hızı</label>
+              <select id="ay-orn" className="dt-input w-40" value={pr.ses.ornekleme} onChange={(e) => void guncelle({ ses: { ornekleme: Number(e.target.value) } })}>
+                <option value={44100}>44,1 kHz</option>
+                <option value={48000}>48 kHz</option>
+              </select>
+              <label htmlFor="ay-hop">Kanallar</label>
+              <select id="ay-hop" className="dt-input w-40" value={pr.ses.hoparlor} onChange={(e) => void guncelle({ ses: { hoparlor: e.target.value } })}>
+                {Object.entries(HOPARLOR_ADI).map(([k, a]) => (
+                  <option key={k} value={k}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+              <span />
+              <span className="text-[11px] dt-soluk">Örnekleme hızı ve kanallar motor yeniden başlayınca uygulanır (çıktı yoksa kendiliğinden).</span>
               <label htmlFor="ay-iz">İzleme aygıtı</label>
               {ses?.izlemeAygitlari?.length ? (
                 <select
@@ -574,6 +665,76 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
               )}
               <span />
               <span className="text-[11px] dt-soluk">Kaynakların hangi karışıma gideceği Gelişmiş Ses Özellikleri'nde, hedeflerin hangi karışımı alacağı Çoklu yayın'dadır.</span>
+            </div>
+          ) : bolum === "gelismis" ? (
+            <div className="dt-form">
+              <span className="dt-etiket col-span-2 font-semibold">Video</span>
+              <label htmlFor="ay-rb">Renk biçimi</label>
+              <select id="ay-rb" className="dt-input w-72" value={pr.video.renk_bicimi} onChange={(e) => void guncelle({ video: { renk_bicimi: e.target.value } })}>
+                {Object.entries(BICIM_ADI).map(([k, a]) => (
+                  <option key={k} value={k}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="ay-ru">Renk uzayı</label>
+              <select id="ay-ru" className="dt-input w-72" value={pr.video.renk_uzayi} onChange={(e) => void guncelle({ video: { renk_uzayi: e.target.value } })}>
+                {Object.entries(UZAY_ADI).map(([k, a]) => (
+                  <option key={k} value={k} disabled={k.startsWith("2100") && !["p010", "i010"].includes(pr.video.renk_bicimi)}>
+                    {a}
+                    {k.startsWith("2100") && !["p010", "i010"].includes(pr.video.renk_bicimi) ? " — 10 bit biçim gerekir" : ""}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="ay-ra">Renk aralığı</label>
+              <select id="ay-ra" className="dt-input w-72" value={pr.video.renk_araligi} onChange={(e) => void guncelle({ video: { renk_araligi: e.target.value } })}>
+                <option value="kismi">Sınırlı (kısmi)</option>
+                <option value="tam">Tam</option>
+              </select>
+              <span className="dt-etiket col-span-2 mt-2 font-semibold">Ağ (RTMP hedefleri)</span>
+              <label htmlFor="ay-ip">Bağlanılacak IP</label>
+              <input
+                id="ay-ip"
+                className="dt-input w-72"
+                placeholder="default"
+                defaultValue={pr.ag.bagla_ip}
+                key={pr.ag.bagla_ip}
+                onBlur={(e) => {
+                  const v = e.target.value.trim() || "default";
+                  if (v !== pr.ag.bagla_ip) void guncelle({ ag: { bagla_ip: v } });
+                }}
+              />
+              <label htmlFor="ay-ipa">IP ailesi</label>
+              <select id="ay-ipa" className="dt-input w-40" value={pr.ag.ip_ailesi} onChange={(e) => void guncelle({ ag: { ip_ailesi: e.target.value } })}>
+                <option value="IPv4+IPv6">IPv4 ve IPv6</option>
+                <option value="IPv4">Yalnız IPv4</option>
+                <option value="IPv6">Yalnız IPv6</option>
+              </select>
+              {(
+                [
+                  ["dinamik_bit_hizi", "Tıkanıklıkta bit hızını dinamik düşür"],
+                  ["yeni_soket_dongusu", "Yeni ağ kodunu kullan"],
+                  ["dusuk_gecikme", "Düşük gecikme kipi"],
+                ] as const
+              ).map(([k, a]) => (
+                <label key={k} className="col-span-2 inline-flex items-center gap-1.5">
+                  <input type="checkbox" checked={pr.ag[k]} onChange={(e) => void guncelle({ ag: { [k]: e.target.checked } })} />
+                  {a}
+                </label>
+              ))}
+              <span className="dt-etiket col-span-2 mt-2 font-semibold">Yeniden bağlanma</span>
+              <label className="col-span-2 inline-flex items-center gap-1.5">
+                <input type="checkbox" checked={pr.ag.yeniden_baglan} onChange={(e) => void guncelle({ ag: { yeniden_baglan: e.target.checked } })} />
+                Bağlantı koparsa otomatik yeniden bağlan
+              </label>
+              <label htmlFor="ay-rg">Deneme aralığı</label>
+              <SayiAlani id="ay-rg" deger={pr.ag.deneme_gecikmesi_sn} en_az={1} en_cok={30} birim="sn" devreDisi={!pr.ag.yeniden_baglan} onUygula={(v) => void guncelle({ ag: { deneme_gecikmesi_sn: v } })} />
+              <label htmlFor="ay-rd">En çok deneme</label>
+              <SayiAlani id="ay-rd" deger={pr.ag.en_cok_deneme} en_az={0} en_cok={10000} devreDisi={!pr.ag.yeniden_baglan} onUygula={(v) => void guncelle({ ag: { en_cok_deneme: v } })} />
+              <span />
+              <span className="text-[11px] dt-soluk">
+                Renk ayarları motor yeniden başlayınca uygulanır; HDR (Rec. 2100) 10 bit biçim ister ve kodlayıcının da desteklemesi gerekir. Ağ ayarları bir hedef başlatılırken uygulanır.
+              </span>
             </div>
           ) : bolum === "coklu" ? (
             <div className="flex flex-col gap-2 p-3">

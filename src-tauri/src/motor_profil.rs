@@ -153,6 +153,8 @@ impl Default for VideoAyari {
   }
 }
 
+/// Ayarlar > Video'daki ortak kare hızları (tamsayı; motor 1–240 kabul eder)
+pub const KARE_HIZLARI: [u32; 9] = [24, 25, 30, 48, 50, 60, 100, 120, 144];
 pub const OLCEK_FILTRELERI: [&str; 4] = ["bilinear", "bicubic", "lanczos", "area"];
 pub const RENK_BICIMLERI: [&str; 6] = ["nv12", "i420", "i444", "p010", "i010", "bgra"];
 pub const RENK_UZAYLARI: [&str; 5] = ["601", "709", "srgb", "2100pq", "2100hlg"];
@@ -274,7 +276,7 @@ impl Profil {
   /// Değerleri geçerli aralığa çeker (bozuk/elle düzenlenmiş dosyaya karşı)
   pub fn duzelt(&mut self) {
     self.surum = SURUM;
-    if !(self.fps == 30 || self.fps == 60) {
+    if !KARE_HIZLARI.contains(&self.fps) {
       self.fps = 60;
     }
     self.tekrar_sn = self.tekrar_sn.clamp(5, 600);

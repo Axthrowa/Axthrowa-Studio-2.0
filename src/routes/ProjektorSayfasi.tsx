@@ -87,7 +87,7 @@ export default function ProjektorSayfasi() {
       {kare ? (
         <img src={kare} alt="" className="max-h-full max-w-full" style={{ aspectRatio: dikey ? "9 / 16" : "16 / 9", objectFit: "contain" }} draggable={false} />
       ) : (
-        <span className="text-[13px] text-white/40">Motor görüntüsü bekleniyor…</span>
+        <span className="text-[13px] text-white/70">Motor görüntüsü bekleniyor…</span>
       )}
     </div>
   );

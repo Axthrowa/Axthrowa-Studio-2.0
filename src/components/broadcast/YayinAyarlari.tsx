@@ -8,12 +8,12 @@
  * yazılmaz; "Kopyala" panoyu 30 sn sonra (hâlâ aynı değerse) temizler. Uzman kipte ayar sessizce değiştirilmez.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motorApi, type MotorProfil, type MotorProfilYaniti, type MotorSesDurumu } from "../../lib/api/motor";
+import { motorApi, obsWebsocketApi, type MotorProfil, type MotorProfilYaniti, type MotorSesDurumu, type ObsWebsocketDurumu } from "../../lib/api/motor";
 import { multistreamApi, type Destination, type MultistreamStatus, type Platform } from "../../lib/api/multistream";
 import { OzellikGovdesi } from "./OzellikFormu";
 import { hataMetni, Pencere } from "./ortak";
 
-type Bolum = "video" | "cikis" | "kayit" | "tekrar" | "ses" | "coklu" | "gelismis" | "kisayol";
+type Bolum = "video" | "cikis" | "kayit" | "tekrar" | "ses" | "coklu" | "gelismis" | "uzak" | "kisayol";
 
 const BOLUMLER: { id: Bolum; ad: string; anahtarlar: string }[] = [
   { id: "video", ad: "Video", anahtarlar: "kare hızı fps çözünürlük tuval taban çıkış ölçekli ölçek filtresi lanczos bicubic dikey yatay" },
@@ -23,8 +23,94 @@ const BOLUMLER: { id: Bolum; ad: string; anahtarlar: string }[] = [
   { id: "ses", ad: "Ses", anahtarlar: "iz adı karışım vod müziksiz temiz izleme aygıtı kulaklık monitoring örnekleme hızı khz kanal mono stereo 5.1" },
   { id: "coklu", ad: "Çoklu yayın", anahtarlar: "hedef platform twitch youtube kick rtmp sunucu anahtar stream key göster kopyala sına bağlantı bit hızı tuval iz" },
   { id: "gelismis", ad: "Gelişmiş", anahtarlar: "renk biçimi nv12 p010 i444 renk uzayı 709 601 srgb hdr 2100 aralık ağ bağlanılacak ip ipv4 ipv6 düşük gecikme dinamik bit hızı yeniden bağlan deneme" },
+  { id: "uzak", ad: "Uzaktan denetim", anahtarlar: "obs-websocket websocket stream deck touch portal streamer.bot uzaktan denetim port parola" },
   { id: "kisayol", ad: "Kısayollar", anahtarlar: "kısayol hotkey tuş bas konuş push to talk" },
 ];
+
+/** Uzaktan denetim: obs-websocket 5.x uyumlu sunucu. Parola yalnız "Göster"le bu bilgisayardan okunur, 20 sn sonra gizlenir. */
+function UzaktanDenetim({ onToast }: { onToast: (m: string) => void }) {
+  const [d, setD] = useState<ObsWebsocketDurumu | null>(null);
+  const [parola, setParola] = useState<string | null>(null);
+  const gizle = useRef<number | undefined>(undefined);
+  const yukle = useCallback(() => obsWebsocketApi.durum().then(setD, (e) => onToast(`Uzaktan denetim: ${hataMetni(e)}`)), [onToast]);
+  useEffect(() => {
+    void yukle();
+    return () => window.clearTimeout(gizle.current);
+  }, [yukle]);
+  const ayarla = async (g: Parameters<typeof obsWebsocketApi.ayarla>[0], basari?: string) => {
+    try {
+      await obsWebsocketApi.ayarla(g);
+      if (basari) onToast(basari);
+    } catch (e) {
+      onToast(`Uzaktan denetim: ${hataMetni(e)}`);
+    }
+    void yukle();
+  };
+  const goster = async () => {
+    try {
+      setParola((await obsWebsocketApi.parola()).parola);
+      window.clearTimeout(gizle.current);
+      gizle.current = window.setTimeout(() => setParola(null), 20_000);
+    } catch (e) {
+      onToast(`Parola okunamadı: ${hataMetni(e)}`);
+    }
+  };
+  const kopyala = async () => {
+    try {
+      const p = (await obsWebsocketApi.parola()).parola;
+      await navigator.clipboard.writeText(p);
+      onToast("Parola panoya kopyalandı; 30 sn sonra pano temizlenir");
+      window.setTimeout(async () => {
+        try {
+          if ((await navigator.clipboard.readText()) === p) await navigator.clipboard.writeText("");
+        } catch {
+          /* pano okunamıyorsa dokunma */
+        }
+      }, 30_000);
+    } catch (e) {
+      onToast(`Kopyalanamadı: ${hataMetni(e)}`);
+    }
+  };
+  if (!d) return <p className="p-3 text-[12px] dt-soluk">Okunuyor…</p>;
+  return (
+    <div className="dt-form">
+      <span className="dt-etiket">Sunucu</span>
+      <label className="inline-flex items-center gap-1.5">
+        <input type="checkbox" checked={d.etkin} onChange={(e) => void ayarla({ etkin: e.target.checked }, e.target.checked ? "Uzaktan denetim açıldı" : "Uzaktan denetim kapatıldı")} />
+        obs-websocket {d.surum} uyumlu sunucuyu aç
+        <span className="dt-durum" data-ton={d.calisanPort ? "iyi" : undefined}>
+          {d.calisanPort ? `dinleniyor: 127.0.0.1:${d.calisanPort}` : "kapalı"}
+        </span>
+      </label>
+      <label htmlFor="ay-wsport">Port</label>
+      <SayiAlani id="ay-wsport" deger={d.port} en_az={1024} en_cok={65535} onUygula={(v) => void ayarla({ port: v })} />
+      <span className="dt-etiket">Parola</span>
+      <span className="inline-flex flex-wrap items-center gap-1.5">
+        <code className="dt-input w-48 select-all">{parola ?? (d.parolaVar ? "••••••••••••••••" : "(açınca üretilir)")}</code>
+        <button type="button" className="dt-btn" disabled={!d.parolaVar && !d.etkin} onClick={() => void goster()}>
+          Göster
+        </button>
+        <button type="button" className="dt-btn" disabled={!d.parolaVar && !d.etkin} onClick={() => void kopyala()}>
+          Kopyala
+        </button>
+        <button type="button" className="dt-btn" onClick={() => void ayarla({ parola_yenile: true }, "Yeni parola üretildi; bağlı araçlarda güncelleyin")}>
+          Yenile
+        </button>
+      </span>
+      <span className="dt-etiket">Yayın denetimi</span>
+      <label className="inline-flex items-center gap-1.5">
+        <input type="checkbox" checked={d.yayinDenetimi} onChange={(e) => void ayarla({ yayin_denetimi: e.target.checked })} />
+        Bağlı araçlar yayını başlatıp durdurabilsin (StartStream / StopStream)
+      </label>
+      <span />
+      <span className="text-[11px] dt-soluk">
+        Stream Deck, Touch Portal, Streamer.bot gibi araçlar bu uygulamayı OBS gibi denetler: sahneler, ses, sahne öğeleri, filtreler, Studio Mode, kayıt, tekrar, sanal kamera ({d.istekSayisi} istek).
+        Yalnız bu bilgisayardan bağlanılır; parola Windows Kimlik Yöneticisi'nde saklanır. Varsayılan port 4456 — OBS Studio'nun kendi 4455 portuyla çakışmaz. Yayın denetimi izni kapalıyken yayını
+        başlatma/durdurma istekleri reddedilir.
+      </span>
+    </div>
+  );
+}
 
 const KARE_HIZLARI = [24, 25, 30, 48, 50, 60, 100, 120, 144];
 const TABAN_HAZIR: [number, number][] = [
@@ -752,6 +838,8 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 Renk ayarları motor yeniden başlayınca uygulanır; HDR (Rec. 2100) 10 bit biçim ister ve kodlayıcının da desteklemesi gerekir. Ağ ayarları bir hedef başlatılırken uygulanır.
               </span>
             </div>
+          ) : bolum === "uzak" ? (
+            <UzaktanDenetim onToast={onToast} />
           ) : bolum === "coklu" ? (
             <div className="flex flex-col gap-2 p-3">
               {ms?.sinirlar && (

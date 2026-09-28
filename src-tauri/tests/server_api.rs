@@ -2467,3 +2467,159 @@ async fn motor_kayit_duraklat_bol_dikey_tekrar_sanal_kamera_filtre_eylemi() {
   }
   assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
 }
+
+type WsAkisi = tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
+
+/// obs-websocket isteği gönderir, yanıtı bekler (arada gelen olayları `olaylar`a ekler)
+async fn obsws_iste(ws: &mut WsAkisi, no: &mut u32, tur: &str, veri: Value, olaylar: &mut Vec<Value>) -> Value {
+  use tokio_tungstenite::tungstenite::Message;
+  *no += 1;
+  let id = format!("r{no}");
+  ws.send(Message::Text(json!({"op": 6, "d": {"requestType": tur, "requestId": id, "requestData": veri}}).to_string().into())).await.unwrap();
+  loop {
+    let Some(Ok(Message::Text(t))) = ws.next().await else { panic!("yanıt yok: {tur}") };
+    let v: Value = serde_json::from_str(&t).unwrap();
+    if v["op"] == 5 {
+      olaylar.push(v["d"].clone());
+      continue;
+    }
+    assert_eq!(v["op"], 7);
+    assert_eq!(v["d"]["requestId"], id.as_str());
+    return v["d"].clone();
+  }
+}
+
+/// Bağlanır, Hello'yu okur ve verilen parolayla Identify gönderir (istemci tarafı hesap, protokol belgesindeki yöntem)
+async fn obsws_baglan(port: u16, parola: &str) -> WsAkisi {
+  use base64::Engine as _;
+  use sha2::Digest as _;
+  use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+  use tokio_tungstenite::tungstenite::Message;
+  let mut istek = format!("ws://127.0.0.1:{port}").into_client_request().unwrap();
+  istek.headers_mut().insert("sec-websocket-protocol", "obswebsocket.json".parse().unwrap());
+  let (mut ws, yanit) = tokio_tungstenite::connect_async(istek).await.unwrap();
+  assert_eq!(yanit.headers().get("sec-websocket-protocol").and_then(|v| v.to_str().ok()), Some("obswebsocket.json"));
+  let Some(Ok(Message::Text(t))) = ws.next().await else { panic!("Hello gelmedi") };
+  let hello: Value = serde_json::from_str(&t).unwrap();
+  assert_eq!((hello["op"].as_u64(), hello["d"]["rpcVersion"].as_u64()), (Some(0), Some(1)));
+  let tuz = hello["d"]["authentication"]["salt"].as_str().unwrap().to_string();
+  let meydan = hello["d"]["authentication"]["challenge"].as_str().unwrap().to_string();
+  let b64 = |v: &[u8]| base64::engine::general_purpose::STANDARD.encode(v);
+  let gizli = b64(&sha2::Sha256::digest(format!("{parola}{tuz}").as_bytes()));
+  let kimlik = b64(&sha2::Sha256::digest(format!("{gizli}{meydan}").as_bytes()));
+  ws.send(Message::Text(json!({"op": 1, "d": {"rpcVersion": 1, "authentication": kimlik}}).to_string().into())).await.unwrap();
+  ws
+}
+
+/// obs-websocket 5.x uyumlu sunucu: Hello/Identify (parola doğrulama), istekler, toplu istek, olay, yetkisiz yayın
+/// denetimi (703), yanlış parola (4009). Parola gerçek Kimlik Yöneticisi'ndedir: test başında yoksa sonunda silinir.
+#[tokio::test(flavor = "multi_thread")]
+async fn obs_websocket_uyumlu_sunucu() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  use tokio_tungstenite::tungstenite::Message;
+  let h = start().await;
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let get = |yol: String| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+
+  let d0 = get("/api/obs-websocket".into()).await;
+  assert_eq!(d0["etkin"], false, "varsayılan kapalı");
+  let parola_vardi = d0["parolaVar"] == true;
+  tamam("/api/motor/baslat", json!({})).await;
+  tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#204060", "ad": "Arka"})).await;
+  let oyun = tamam("/api/motor/sahne-islem", json!({"eylem": "olustur", "ad": "Oyun"})).await["id"].as_str().unwrap().to_string();
+
+  let port = free_port();
+  let a = tamam("/api/obs-websocket", json!({"etkin": true, "port": port})).await;
+  assert_eq!(a["calisanPort"], port);
+  let parola = tamam("/api/obs-websocket/parola", json!({})).await["parola"].as_str().unwrap().to_string();
+
+  let mut ws = obsws_baglan(port, &parola).await;
+  let Some(Ok(Message::Text(t))) = ws.next().await else { panic!("Identified gelmedi") };
+  assert_eq!(serde_json::from_str::<Value>(&t).unwrap()["op"], 2);
+
+  let mut olaylar: Vec<Value> = Vec::new();
+  let mut no = 0u32;
+  let v = obsws_iste(&mut ws, &mut no, "GetVersion", json!({}), &mut olaylar).await;
+  assert_eq!(v["requestStatus"]["code"], 100);
+  assert!(v["responseData"]["availableRequests"].as_array().unwrap().iter().any(|x| x == "SetCurrentProgramScene"));
+  let s = obsws_iste(&mut ws, &mut no, "GetSceneList", json!({}), &mut olaylar).await;
+  assert_eq!(s["responseData"]["scenes"].as_array().unwrap().len(), 2, "{s}");
+  let r = obsws_iste(&mut ws, &mut no, "SetCurrentProgramScene", json!({"sceneName": "oyun"}), &mut olaylar).await;
+  assert_eq!(r["requestStatus"]["result"], true, "{r}");
+  assert_eq!(get("/api/motor/sahneler".into()).await["program"]["ana"], json!(oyun));
+  // Olay: sahne değişimi (izleyici 300 ms'de bir karşılaştırır)
+  let son = std::time::Instant::now() + std::time::Duration::from_secs(3);
+  while !olaylar.iter().any(|o| o["eventType"] == "CurrentProgramSceneChanged") && std::time::Instant::now() < son {
+    if let Ok(Some(Ok(Message::Text(t)))) = tokio::time::timeout(std::time::Duration::from_millis(500), ws.next()).await {
+      let v: Value = serde_json::from_str(&t).unwrap();
+      if v["op"] == 5 {
+        olaylar.push(v["d"].clone());
+      }
+    }
+  }
+  let o = olaylar.iter().find(|o| o["eventType"] == "CurrentProgramSceneChanged").cloned().expect("sahne değişimi olayı");
+  assert_eq!(o["eventData"]["sceneName"], "Oyun");
+
+  let g = obsws_iste(&mut ws, &mut no, "GetInputList", json!({}), &mut olaylar).await;
+  assert!(g["responseData"]["inputs"].as_array().unwrap().iter().any(|x| x["inputName"] == "Arka"));
+  assert_eq!(obsws_iste(&mut ws, &mut no, "SetInputMute", json!({"inputName": "Arka", "inputMuted": true}), &mut olaylar).await["requestStatus"]["code"], 100);
+  assert_eq!(obsws_iste(&mut ws, &mut no, "GetInputMute", json!({"inputName": "Arka"}), &mut olaylar).await["responseData"]["inputMuted"], true);
+  assert_eq!(obsws_iste(&mut ws, &mut no, "GetInputMute", json!({"inputName": "Yok"}), &mut olaylar).await["requestStatus"]["code"], 600);
+  assert_eq!(obsws_iste(&mut ws, &mut no, "GetInputMute", json!({}), &mut olaylar).await["requestStatus"]["code"], 300);
+  // Yayın denetimi izni kapalı → 703; bilinmeyen istek → 204
+  assert_eq!(obsws_iste(&mut ws, &mut no, "StartStream", json!({}), &mut olaylar).await["requestStatus"]["code"], 703);
+  assert_eq!(obsws_iste(&mut ws, &mut no, "UydurmaIstek", json!({}), &mut olaylar).await["requestStatus"]["code"], 204);
+  let st = obsws_iste(&mut ws, &mut no, "GetStudioModeEnabled", json!({}), &mut olaylar).await;
+  assert_eq!(st["responseData"]["studioModeEnabled"], false);
+  let items = obsws_iste(&mut ws, &mut no, "GetSceneItemList", json!({"sceneName": "Sahne"}), &mut olaylar).await;
+  let arka = items["responseData"]["sceneItems"].as_array().unwrap().iter().find(|x| x["sourceName"] == "Arka").cloned().expect("sahne öğesi");
+  let r = obsws_iste(&mut ws, &mut no, "SetSceneItemEnabled", json!({"sceneName": "Sahne", "sceneItemId": arka["sceneItemId"], "sceneItemEnabled": false}), &mut olaylar).await;
+  assert_eq!(r["requestStatus"]["code"], 100, "{r}");
+  assert_eq!(obsws_iste(&mut ws, &mut no, "GetSceneItemEnabled", json!({"sceneName": "Sahne", "sceneItemId": arka["sceneItemId"]}), &mut olaylar).await["responseData"]["sceneItemEnabled"], false);
+  // Toplu istek
+  ws.send(Message::Text(json!({"op": 8, "d": {"requestId": "t1", "requests": [{"requestType": "GetRecordStatus"}, {"requestType": "GetReplayBufferStatus"}]}}).to_string().into())).await.unwrap();
+  loop {
+    let Some(Ok(Message::Text(t))) = ws.next().await else { panic!("toplu yanıt yok") };
+    let v: Value = serde_json::from_str(&t).unwrap();
+    if v["op"] == 9 {
+      assert_eq!(v["d"]["results"].as_array().unwrap().len(), 2);
+      assert_eq!(v["d"]["results"][0]["responseData"]["outputActive"], false);
+      break;
+    }
+  }
+  let _ = ws.close(None).await;
+
+  // Yanlış parola → 4009
+  let mut kotu = obsws_baglan(port, "yanlis-parola").await;
+  match kotu.next().await {
+    Some(Ok(Message::Close(Some(c)))) => assert_eq!(u16::from(c.code), 4009),
+    x => panic!("4009 bekleniyordu: {x:?}"),
+  }
+
+  tamam("/api/obs-websocket", json!({"etkin": false})).await;
+  assert!(tokio::net::TcpStream::connect(("127.0.0.1", port)).await.is_err(), "kapatınca port dinlenmez");
+  if !parola_vardi {
+    yayin_yonetim_araci_lib::secret_store::delete_secret("obs-websocket.parola");
+  }
+  assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
+}

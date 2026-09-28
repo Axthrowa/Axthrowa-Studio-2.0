@@ -500,6 +500,34 @@ pub(crate) async fn studyo_gecisi(state: &AppState, tuval: &str, takas: bool, su
   Ok(program)
 }
 
+/// Studio Mode'u açar; önizleme başlangıçta program sahnesi (OBS gibi). Dönüş: önizlemedeki sahne
+pub(crate) async fn studyo_ac(state: &AppState, tuval: &str) -> Result<Option<String>, Hata> {
+  motor_calisiyor(state).await?;
+  komut(state, json!({"komut": "studyo.ac", "tuval": tuval})).await?;
+  let program = state.motor.ozet().lock().koleksiyon.program.get(tuval).cloned();
+  if let Some(p) = &program {
+    komut(state, json!({"komut": "studyo.onizleme", "tuval": tuval, "sahne": p})).await?;
+  }
+  state.motor.ozet().lock().studyo.insert(tuval.to_string(), program.clone());
+  Ok(program)
+}
+
+pub(crate) async fn studyo_kapat(state: &AppState, tuval: &str) -> Result<(), Hata> {
+  motor_calisiyor(state).await?;
+  komut(state, json!({"komut": "studyo.kapat", "tuval": tuval})).await?;
+  state.motor.ozet().lock().studyo.remove(tuval);
+  Ok(())
+}
+
+pub(crate) async fn studyo_onizleme(state: &AppState, tuval: &str, sahne: &str) -> Result<(), Hata> {
+  if !state.motor.ozet().lock().studyo.contains_key(tuval) {
+    return Err(catisma("Studio Mode kapalı".into()));
+  }
+  komut(state, json!({"komut": "studyo.onizleme", "tuval": tuval, "sahne": sahne})).await?;
+  state.motor.ozet().lock().studyo.insert(tuval.to_string(), Some(sahne.to_string()));
+  Ok(())
+}
+
 async fn api_studyo(
   State(state): State<Arc<AppState>>,
   ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -510,28 +538,14 @@ async fn api_studyo(
   motor_calisiyor(&state).await?;
   let tuval = tuval_al(g.tuval.clone())?;
   let sonuc = match g.eylem.as_str() {
-    "ac" => {
-      komut(&state, json!({"komut": "studyo.ac", "tuval": tuval})).await?;
-      // Önizleme başlangıçta program sahnesi (OBS gibi)
-      let program = state.motor.ozet().lock().koleksiyon.program.get(&tuval).cloned();
-      if let Some(p) = &program {
-        komut(&state, json!({"komut": "studyo.onizleme", "tuval": tuval, "sahne": p})).await?;
-      }
-      state.motor.ozet().lock().studyo.insert(tuval.clone(), program.clone());
-      json!({"onizleme": program})
-    }
+    "ac" => json!({"onizleme": studyo_ac(&state, &tuval).await?}),
     "kapat" => {
-      komut(&state, json!({"komut": "studyo.kapat", "tuval": tuval})).await?;
-      state.motor.ozet().lock().studyo.remove(&tuval);
+      studyo_kapat(&state, &tuval).await?;
       json!({})
     }
     "onizleme" => {
       let sahne = g.sahne.clone().ok_or_else(|| gecersiz("'sahne' gerekli".into()))?;
-      if !state.motor.ozet().lock().studyo.contains_key(&tuval) {
-        return Err(catisma("Studio Mode kapalı".into()));
-      }
-      komut(&state, json!({"komut": "studyo.onizleme", "tuval": tuval, "sahne": sahne})).await?;
-      state.motor.ozet().lock().studyo.insert(tuval.clone(), Some(sahne.clone()));
+      studyo_onizleme(&state, &tuval, &sahne).await?;
       json!({"onizleme": sahne})
     }
     "gecis" => {

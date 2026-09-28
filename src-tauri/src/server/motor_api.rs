@@ -25,7 +25,7 @@ use crate::motor_kopru::{self, kaynak_tanimi};
 use crate::AppState;
 
 type ApiResult = Result<Json<Value>, (StatusCode, String)>;
-type Hata = (StatusCode, String);
+pub(crate) type Hata = (StatusCode, String);
 
 pub fn router() -> Router<Arc<AppState>> {
   Router::new()
@@ -104,7 +104,7 @@ pub fn motor_hedefi_etkin(state: &AppState, hedef: &str) -> bool {
   cikis_etkin(state, &format!("h-{hedef}"))
 }
 
-fn cikis_etkin(state: &AppState, cikis: &str) -> bool {
+pub(crate) fn cikis_etkin(state: &AppState, cikis: &str) -> bool {
   let o = state.motor.ozet();
   let o = o.lock();
   o.cikislar
@@ -1265,7 +1265,7 @@ pub(crate) fn basarili(sonuc: &serde_json::Map<String, Value>) -> usize {
 }
 
 /// GO LIVE'a girecek hedefler: etkin ve yayın anahtarı kayıtlı olanlar.
-fn golive_hedefleri(state: &AppState) -> Vec<String> {
+pub(crate) fn golive_hedefleri(state: &AppState) -> Vec<String> {
   state
     .multistream
     .configs()
@@ -1619,6 +1619,63 @@ struct TekrarGovdesi {
   sure_sn: Option<u32>,
 }
 
+/// Tekrar arabelleğini açar (ana tuval; profilde seçiliyse dikey de). `sure_sn` yoksa profildeki süre. Açıksa dokunmaz.
+pub(crate) async fn tekrar_ac(state: &AppState, g_sure: Option<u32>) -> Result<u32, Hata> {
+  motor_calisiyor(state).await?;
+  if cikis_etkin(state, "tekrar") {
+    return Ok(state.motor.ozet().lock().profil.tekrar_sn);
+  }
+  let sure = match g_sure {
+    Some(s) if (5..=600).contains(&s) => s,
+    Some(_) => return Err(gecersiz("tekrar süresi 5–600 sn olmalı".into())),
+    None => state.motor.ozet().lock().profil.tekrar_sn,
+  };
+  // OBS gibi tekrar da kayıt yoluna yazılır (profilde klasör yoksa varsayılan kayıt klasörü)
+  let dizin = state.motor.ozet().lock().profil.kayit.klasor.as_ref().map(PathBuf::from).unwrap_or_else(kayit_klasoru);
+  std::fs::create_dir_all(&dizin).map_err(|e| catisma(format!("kayıt klasörü: {e}")))?;
+  kodlayici_hazirla(state, "ana").await?;
+  ses_hazirla(state, 0).await?;
+  if state.motor.ozet().lock().tekrar_cikisi_var {
+    komut(state, json!({"komut": "cikis.sil", "id": "tekrar"})).await?;
+  }
+  komut(state, json!({"komut": "cikis.tekrar", "id": "tekrar", "klasor": dizin, "sure_sn": sure, "video": "v-ana", "sesler": ["ses-0"]})).await?;
+  state.motor.ozet().lock().tekrar_cikisi_var = true;
+  komut(state, json!({"komut": "cikis.baslat", "id": "tekrar"})).await?;
+  // Dikey tuval için de (profil seçeneği ve dikey tuval açıksa)
+  let (dikey_iste, dikey_var, dikey_eski) = {
+    let o = state.motor.ozet();
+    let o = o.lock();
+    (o.profil.tekrar_dikey, o.dikey_tuval, o.tekrar_dikey_var)
+  };
+  if dikey_iste && dikey_var {
+    kodlayici_hazirla(state, "dikey").await?;
+    if dikey_eski {
+      komut(state, json!({"komut": "cikis.sil", "id": "tekrar-dikey"})).await?;
+    }
+    let d = dizin.join("Dikey");
+    std::fs::create_dir_all(&d).map_err(|e| catisma(format!("kayıt klasörü: {e}")))?;
+    komut(state, json!({"komut": "cikis.tekrar", "id": "tekrar-dikey", "klasor": d, "sure_sn": sure, "video": "v-dikey", "sesler": ["ses-0"]})).await?;
+    state.motor.ozet().lock().tekrar_dikey_var = true;
+    komut(state, json!({"komut": "cikis.baslat", "id": "tekrar-dikey"})).await?;
+  }
+  let mut p = state.motor.ozet().lock().profil.clone();
+  if p.tekrar_sn != sure {
+    p.tekrar_sn = sure;
+    profil_yaz(state, &p)?;
+  }
+  Ok(sure)
+}
+
+/// Tekrar arabelleğini (ve dikeyini) durdurur
+pub(crate) async fn tekrar_kapat(state: &AppState) -> Result<(), Hata> {
+  motor_calisiyor(state).await?;
+  komut(state, json!({"komut": "cikis.durdur", "id": "tekrar"})).await?;
+  if state.motor.ozet().lock().tekrar_dikey_var {
+    let _ = komut(state, json!({"komut": "cikis.durdur", "id": "tekrar-dikey"})).await;
+  }
+  Ok(())
+}
+
 async fn api_tekrar(
   State(state): State<Arc<AppState>>,
   ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -1629,55 +1686,12 @@ async fn api_tekrar(
   motor_calisiyor(&state).await?;
   match g.eylem.as_str() {
     "ac" => {
-      if cikis_etkin(&state, "tekrar") {
-        return Ok(Json(json!({"ok": true, "not": "zaten açık"})));
-      }
-      let sure = match g.sure_sn {
-        Some(s) if (5..=600).contains(&s) => s,
-        Some(_) => return Err(gecersiz("tekrar süresi 5–600 sn olmalı".into())),
-        None => state.motor.ozet().lock().profil.tekrar_sn,
-      };
-      // OBS gibi tekrar da kayıt yoluna yazılır (profilde klasör yoksa varsayılan kayıt klasörü)
-      let dizin = state.motor.ozet().lock().profil.kayit.klasor.as_ref().map(PathBuf::from).unwrap_or_else(kayit_klasoru);
-      std::fs::create_dir_all(&dizin).map_err(|e| catisma(format!("kayıt klasörü: {e}")))?;
-      kodlayici_hazirla(&state, "ana").await?;
-      ses_hazirla(&state, 0).await?;
-      if state.motor.ozet().lock().tekrar_cikisi_var {
-        komut(&state, json!({"komut": "cikis.sil", "id": "tekrar"})).await?;
-      }
-      komut(&state, json!({"komut": "cikis.tekrar", "id": "tekrar", "klasor": dizin, "sure_sn": sure, "video": "v-ana", "sesler": ["ses-0"]})).await?;
-      state.motor.ozet().lock().tekrar_cikisi_var = true;
-      komut(&state, json!({"komut": "cikis.baslat", "id": "tekrar"})).await?;
-      // Dikey tuval için de (profil seçeneği ve dikey tuval açıksa)
-      let (dikey_iste, dikey_var, dikey_eski) = {
-        let o = state.motor.ozet();
-        let o = o.lock();
-        (o.profil.tekrar_dikey, o.dikey_tuval, o.tekrar_dikey_var)
-      };
-      if dikey_iste && dikey_var {
-        kodlayici_hazirla(&state, "dikey").await?;
-        if dikey_eski {
-          komut(&state, json!({"komut": "cikis.sil", "id": "tekrar-dikey"})).await?;
-        }
-        let d = dizin.join("Dikey");
-        std::fs::create_dir_all(&d).map_err(|e| catisma(format!("kayıt klasörü: {e}")))?;
-        komut(&state, json!({"komut": "cikis.tekrar", "id": "tekrar-dikey", "klasor": d, "sure_sn": sure, "video": "v-dikey", "sesler": ["ses-0"]})).await?;
-        state.motor.ozet().lock().tekrar_dikey_var = true;
-        komut(&state, json!({"komut": "cikis.baslat", "id": "tekrar-dikey"})).await?;
-      }
-      let mut p = state.motor.ozet().lock().profil.clone();
-      if p.tekrar_sn != sure {
-        p.tekrar_sn = sure;
-        profil_yaz(&state, &p)?;
-      }
+      let sure = tekrar_ac(&state, g.sure_sn).await?;
       audit(&state, &actor, "MOTOR_REPLAY_ON", json!({"sureSn": sure})).await;
       Ok(Json(json!({"ok": true})))
     }
     "kapat" => {
-      komut(&state, json!({"komut": "cikis.durdur", "id": "tekrar"})).await?;
-      if state.motor.ozet().lock().tekrar_dikey_var {
-        let _ = komut(&state, json!({"komut": "cikis.durdur", "id": "tekrar-dikey"})).await;
-      }
+      tekrar_kapat(&state).await?;
       audit(&state, &actor, "MOTOR_REPLAY_OFF", json!({})).await;
       Ok(Json(json!({"ok": true})))
     }

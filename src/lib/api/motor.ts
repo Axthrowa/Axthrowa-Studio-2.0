@@ -293,6 +293,24 @@ async function istek<T>(yol: string, govde?: unknown): Promise<T> {
   return (metin ? JSON.parse(metin) : {}) as T;
 }
 
+export type ObsWebsocketDurumu = {
+  etkin: boolean;
+  port: number;
+  yayinDenetimi: boolean;
+  calisanPort: number | null;
+  parolaVar: boolean;
+  surum: string;
+  istekSayisi: number;
+};
+
+/** obs-websocket 5.x uyumlu uzaktan denetim sunucusu (Stream Deck, Touch Portal, Streamer.bot…) */
+export const obsWebsocketApi = {
+  durum: () => istek<ObsWebsocketDurumu>("/api/obs-websocket"),
+  ayarla: (g: { etkin?: boolean; port?: number; yayin_denetimi?: boolean; parola_yenile?: boolean }) =>
+    istek<{ ok: boolean; calisanPort: number | null }>("/api/obs-websocket", g),
+  parola: () => istek<{ parola: string }>("/api/obs-websocket/parola", {}),
+};
+
 export const motorApi = {
   durum: () => istek<MotorDurumu>("/api/motor"),
   baslat: (dikey: boolean, fps: 30 | 60, ek: { cokme_karari?: "normal" | "guvenli" | "devre-disi"; guvenli_kip?: boolean } = {}) =>

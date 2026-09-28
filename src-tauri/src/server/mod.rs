@@ -35,6 +35,7 @@ mod motor_api;
 mod profil_api;
 mod motor_sahne_api;
 mod motor_ses_api;
+mod obsws;
 mod multistream_api;
 mod otomasyon_kilidi;
 pub mod runtime_api;
@@ -206,7 +207,8 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(profil_api::router())
     .merge(motor_ses_api::router())
     .merge(destek_api::router())
-    .merge(eklenti_api::router());
+    .merge(eklenti_api::router())
+    .merge(obsws::router());
 
   if let Some(res_dist) = resonance_dist {
     let resonance_index = res_dist.join("index.html");
@@ -233,6 +235,15 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
 
   let bind_host = auth::resolve_bind_host(&state);
   let state_arc = Arc::new(state);
+  // obs-websocket uyumlu sunucu (ayarda açıksa; varsayılan kapalı)
+  {
+    let st = state_arc.clone();
+    tokio::spawn(async move {
+      if let Err(e) = obsws::uygula(st).await {
+        yya_warn!("[obs-websocket] başlatılamadı: {e}");
+      }
+    });
+  }
   let api = api.with_state(state_arc.clone());
 
   let app = if has_dist {

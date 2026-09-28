@@ -67,6 +67,7 @@ pub(crate) fn eylem_parametreleri(b: &HotkeyBindingIn) -> serde_json::Value {
     "source": b.source,
     "delta": b.delta,
     "id": b.target,
+    "filter": b.filter,
   })
 }
 

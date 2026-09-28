@@ -27,6 +27,8 @@ pub enum ParamKind {
   EngineSource,
   /// Yerel yayın çekirdeğindeki sahne (ad ya da kimlik)
   EngineScene,
+  /// Motor kaynağındaki filtrenin adı
+  EngineFilter,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -71,6 +73,7 @@ const KAYNAK: &[ParamSpec] = &[
 const SEVIYE: &[ParamSpec] = &[ParamSpec { name: "input", kind: ParamKind::Input }, ParamSpec { name: "delta", kind: ParamKind::Db }];
 const MOTOR_KAYNAK: &[ParamSpec] = &[ParamSpec { name: "source", kind: ParamKind::EngineSource }];
 const MOTOR_SAHNE: &[ParamSpec] = &[ParamSpec { name: "scene", kind: ParamKind::EngineScene }];
+const MOTOR_FILTRE: &[ParamSpec] = &[ParamSpec { name: "source", kind: ParamKind::EngineSource }, ParamSpec { name: "filter", kind: ParamKind::EngineFilter }];
 
 /// Basılı tutma eylemleri: kısayol bırakılınca da çağrılır (`durum: "released"`)
 pub const BASILI_EYLEMLER: [&str; 2] = ["engine.audio.pushToTalk", "engine.audio.pushToMute"];
@@ -98,6 +101,16 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "engine.record.start", label: "Motor: kaydı başlat", category: "engine", perm: "broadcast.record", confirm: false, requires: Requires::Motor, params: &[] },
   ActionSpec { id: "engine.record.stop", label: "Motor: kaydı durdur", category: "engine", perm: "broadcast.record", confirm: true, requires: Requires::Motor, params: &[] },
   ActionSpec { id: "engine.replay.save", label: "Motor: tekrarı kaydet", category: "engine", perm: "broadcast.replay", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.record.pause", label: "Motor: kaydı duraklat", category: "engine", perm: "broadcast.record", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.record.resume", label: "Motor: kaydı sürdür", category: "engine", perm: "broadcast.record", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.record.togglePause", label: "Motor: kaydı duraklat / sürdür", category: "engine", perm: "broadcast.record", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.record.split", label: "Motor: kayıt dosyasını böl", category: "engine", perm: "broadcast.record", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.virtualcam.start", label: "Motor: sanal kamerayı başlat", category: "engine", perm: "broadcast.outputs", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.virtualcam.stop", label: "Motor: sanal kamerayı durdur", category: "engine", perm: "broadcast.outputs", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.virtualcam.toggle", label: "Motor: sanal kamerayı aç / kapat", category: "engine", perm: "broadcast.outputs", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.filter.enable", label: "Motor: filtreyi aç", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_FILTRE },
+  ActionSpec { id: "engine.filter.disable", label: "Motor: filtreyi kapat", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_FILTRE },
+  ActionSpec { id: "engine.filter.toggle", label: "Motor: filtreyi aç / kapat", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_FILTRE },
   ActionSpec { id: "engine.source.show", label: "Motor: kaynağı göster", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
   ActionSpec { id: "engine.source.hide", label: "Motor: kaynağı gizle", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
   ActionSpec { id: "engine.source.toggle", label: "Motor: kaynağı göster / gizle", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
@@ -152,6 +165,13 @@ pub enum Action {
   /// Bas-konuş (`konus`) / bas-sustur; `basili`: tuş basıldı mı bırakıldı mı
   EngineHold { source: String, konus: bool, basili: bool },
   EngineMedia { source: String, eylem: &'static str },
+  /// `Some(true)` duraklat, `Some(false)` sürdür, `None` değiştir
+  EngineRecordPause { pause: Option<bool> },
+  EngineRecordSplit,
+  /// `baslat` | `durdur` | `degistir`
+  EngineVirtualCam { eylem: &'static str },
+  /// `acik`: `None` = değiştir
+  EngineFilter { source: String, filter: String, acik: Option<bool> },
   /// StreamAxT uyarı kuyruğu denetimine iletilecek eylem adı
   Alert { action: &'static str },
 }
@@ -229,6 +249,22 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
     "engine.record.start" => Action::EngineRecord { start: true },
     "engine.record.stop" => Action::EngineRecord { start: false },
     "engine.replay.save" => Action::EngineReplaySave,
+    "engine.record.pause" => Action::EngineRecordPause { pause: Some(true) },
+    "engine.record.resume" => Action::EngineRecordPause { pause: Some(false) },
+    "engine.record.togglePause" => Action::EngineRecordPause { pause: None },
+    "engine.record.split" => Action::EngineRecordSplit,
+    "engine.virtualcam.start" => Action::EngineVirtualCam { eylem: "baslat" },
+    "engine.virtualcam.stop" => Action::EngineVirtualCam { eylem: "durdur" },
+    "engine.virtualcam.toggle" => Action::EngineVirtualCam { eylem: "degistir" },
+    "engine.filter.enable" | "engine.filter.disable" | "engine.filter.toggle" => Action::EngineFilter {
+      source: metin(params, "source")?,
+      filter: metin(params, "filter")?,
+      acik: match spec.id {
+        "engine.filter.enable" => Some(true),
+        "engine.filter.disable" => Some(false),
+        _ => None,
+      },
+    },
     "engine.scene.switch" => Action::EngineSceneSwitch { scene: metin(params, "scene")? },
     "engine.studio.transition" => Action::EngineStudioTransition,
     "engine.audio.mute" => Action::EngineAudioMute { source: metin(params, "source")?, muted: Some(true) },
@@ -292,7 +328,7 @@ mod tests {
     let mut gorulen = std::collections::HashSet::new();
     for a in ACTIONS {
       assert!(gorulen.insert(a.id), "yinelenen kimlik: {}", a.id);
-      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3});
+      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk"});
       assert!(parse(a.id, &ornek).is_ok(), "yürütücüsüz eylem: {}", a.id);
       assert!(!a.perm.is_empty() && a.perm.contains('.'), "izin adı: {}", a.id);
     }

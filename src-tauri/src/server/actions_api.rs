@@ -235,6 +235,13 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
       super::motor_ses_api::medya(state, &id, e).await.map_err(motor_hatasi)?;
       Ok(json!({ "kaynak": ad, "eylem": e }))
     }
+    Action::EngineRecordPause { pause } => motor_api::kayit_duraklat(state, *pause).await.map(|d| json!({ "duraklatildi": d })).map_err(motor_hatasi),
+    Action::EngineRecordSplit => motor_api::kayit_bol(state).await.map(|_| json!({ "bolundu": true })).map_err(motor_hatasi),
+    Action::EngineVirtualCam { eylem } => motor_api::sanal_kamera(state, eylem, "ana").await.map(|a| json!({ "acik": a })).map_err(motor_hatasi),
+    Action::EngineFilter { source, filter, acik } => {
+      let (kaynak, ad, _) = motor_api::motor_ses_kaynagi(state, source).await.map_err(motor_hatasi)?;
+      super::motor_ses_api::filtre_adla_etkin(state, &kaynak, filter, *acik).await.map(|a| json!({ "kaynak": ad, "filtre": filter, "acik": a })).map_err(motor_hatasi)
+    }
     Action::EngineSourceVisibility { source, mode } => motor_api::kaynak_gorunurlugu(state, source, mode)
       .await
       .map(|(ad, gorunur, n)| json!({ "kaynak": ad, "gorunur": gorunur, "oge": n }))

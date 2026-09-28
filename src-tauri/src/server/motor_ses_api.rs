@@ -416,6 +416,30 @@ async fn api_filtre(
   Ok(Json(sonuc))
 }
 
+/// Kaynağın filtresini adıyla (büyük/küçük harf duyarsız, tek eşleşme) açar/kapatır; `acik` None = değiştir.
+/// Kısayol ve eylem kayıt defteri kullanır (OBS "filtreyi etkinleştir/devre dışı bırak" kısayolu).
+pub(crate) async fn filtre_adla_etkin(state: &AppState, kaynak: &str, filtre: &str, acik: Option<bool>) -> Result<bool, Hata> {
+  motor_calisiyor(state).await?;
+  let (id, etkin) = {
+    let o = state.motor.ozet();
+    let mut o = o.lock();
+    let liste = o.koleksiyon.filtreler_mut(kaynak).ok_or_else(|| bulunamadi("kaynak yok".into()))?;
+    let eslesen: Vec<&FiltreKaydi> = liste.iter().filter(|f| crate::motor_koleksiyon::ad_esit(&f.ad, filtre)).collect();
+    match eslesen.as_slice() {
+      [f] => (f.id.clone(), f.etkin),
+      [] => return Err(bulunamadi(format!("«{filtre}» adlı filtre yok"))),
+      _ => return Err(gecersiz(format!("«{filtre}» adını birden çok filtre taşıyor"))),
+    }
+  };
+  let yeni = acik.unwrap_or(!etkin);
+  komut(state, json!({"komut": "filtre.etkin", "id": id, "acik": yeni})).await?;
+  if let Some(f) = state.motor.ozet().lock().koleksiyon.filtreler_mut(kaynak).and_then(|v| v.iter_mut().find(|f| f.id == id)) {
+    f.etkin = yeni;
+  }
+  koleksiyonu_yaz(state)?;
+  Ok(yeni)
+}
+
 #[derive(Deserialize)]
 struct IdSorgusu {
   id: String,

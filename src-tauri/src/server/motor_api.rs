@@ -43,6 +43,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/golive", post(api_golive))
     .route("/api/motor/kayit", post(api_kayit))
     .route("/api/motor/tekrar", post(api_tekrar))
+    .route("/api/motor/sanal-kamera", post(api_sanal_kamera))
     .route("/api/motor/onizleme", get(api_onizleme))
 }
 
@@ -394,6 +395,10 @@ pub(crate) async fn kodlayicilari_tazele(state: &AppState) {
   if tekrar && !cikis_etkin(state, "tekrar") && komut(state, json!({"komut": "cikis.sil", "id": "tekrar"})).await.is_ok() {
     state.motor.ozet().lock().tekrar_cikisi_var = false;
   }
+  let dikey = state.motor.ozet().lock().tekrar_dikey_var;
+  if dikey && !cikis_etkin(state, "tekrar-dikey") && komut(state, json!({"komut": "cikis.sil", "id": "tekrar-dikey"})).await.is_ok() {
+    state.motor.ozet().lock().tekrar_dikey_var = false;
+  }
   let (videolar, sesler) = {
     let o = state.motor.ozet();
     let o = o.lock();
@@ -491,8 +496,13 @@ async fn api_durum(
     "istatistik": istatistik,
     "kaynaklar": kol_.as_ref().map(|k| json!(k.kaynaklar)).unwrap_or(json!([])),
     "hedefler": hedefler,
-    "kayit": {"durum": durum("kayit"), "son": o.son_kayit},
-    "tekrar": {"durum": durum("tekrar"), "sureSn": profil.tekrar_sn, "son": o.son_tekrar},
+    "kayit": {
+      "durum": durum("kayit"), "son": o.son_kayit,
+      "duraklatildi": istatistik["cikislar"].as_array().and_then(|a| a.iter().find(|c| c["id"] == "kayit")).and_then(|c| c["duraklatildi"].as_bool()).unwrap_or(false),
+      "ayriKodlayici": profil.kayit.ayri_kodlayici,
+    },
+    "tekrar": {"durum": durum("tekrar"), "sureSn": profil.tekrar_sn, "son": o.son_tekrar, "dikey": o.tekrar_dikey_var.then(|| durum("tekrar-dikey"))},
+    "sanalKamera": {"durum": durum("sanal-kamera")},
     "profil": {"id": crate::motor_profil::etkin_kimlik(&klasor(&state)), "ad": profil.ad},
     // Kodlama paylaşımı tanısı: kurulu video kodlayıcıları (aynı tuval + bit hızı tek kodlayıcı)
     "kodlayicilar": kodlayicilar,
@@ -1310,20 +1320,102 @@ pub(crate) async fn kayit_baslat(state: &AppState) -> Result<PathBuf, Hata> {
     _ => "mkv",
   };
   let yol = dizin.join(format!("Kayit {}.{uzanti}", zaman_damgasi()));
-  kodlayici_hazirla(state, "ana").await?;
-  let mut sesler = Vec::new();
-  for iz in &ayar.izler {
-    ses_hazirla(state, *iz).await?;
-    sesler.push(format!("ses-{iz}"));
-  }
+  let (video, sesler) = if ayar.ayri_kodlayici {
+    kayit_kodlayicilari(state, &ayar.izler).await?
+  } else {
+    kodlayici_hazirla(state, "ana").await?;
+    let mut sesler = Vec::new();
+    for iz in &ayar.izler {
+      ses_hazirla(state, *iz).await?;
+      sesler.push(format!("ses-{iz}"));
+    }
+    ("v-ana".to_string(), sesler)
+  };
   if state.motor.ozet().lock().kayit_cikisi_var {
     komut(state, json!({"komut": "cikis.sil", "id": "kayit"})).await?;
   }
-  komut(state, json!({"komut": "cikis.kayit", "id": "kayit", "yol": yol, "bicim": ayar.bicim, "video": "v-ana", "sesler": sesler})).await?;
+  let bolme = json!({"sure_sn": ayar.bolme_dk * 60, "boyut_mb": ayar.bolme_mb});
+  komut(state, json!({"komut": "cikis.kayit", "id": "kayit", "yol": yol, "bicim": ayar.bicim, "video": video, "sesler": sesler, "bolme": bolme})).await?;
   state.motor.ozet().lock().kayit_cikisi_var = true;
   komut(state, json!({"komut": "cikis.baslat", "id": "kayit"})).await?;
   state.motor.ozet().lock().son_kayit = Some(yol.to_string_lossy().into_owned());
   Ok(yol)
+}
+
+/// Kayda özel kodlayıcılar (`v-kayit`, `sk-<iz>`): profilin ana tuval ayarlarıyla; yayınla paylaşılmaz
+async fn kayit_kodlayicilari(state: &AppState, izler: &[u8]) -> Result<(String, Vec<String>), Hata> {
+  let (var, tur, kbps, anahtar_kare, uzman, ses_bh) = {
+    let o = state.motor.ozet();
+    let o = o.lock();
+    let p = &o.profil;
+    (o.kodlayicilar.clone(), p.cikis.kodlayici.clone(), p.cikis.bit_hizi_ana, p.cikis.anahtar_kare_sn, p.uzman_ayarlari(&p.cikis.kodlayici), p.cikis.ses_bit_hizi)
+  };
+  if !var.contains("v-kayit") {
+    komut(state, json!({"komut": "kodlayici.video", "id": "v-kayit", "tur": tur, "tuval": "ana", "bit_hizi": kbps, "anahtar_kare_sn": anahtar_kare, "ayarlar": uzman})).await?;
+    state.motor.ozet().lock().kodlayicilar.insert("v-kayit".into());
+  }
+  let mut sesler = Vec::new();
+  for iz in izler {
+    let id = format!("sk-{iz}");
+    if !var.contains(&id) {
+      komut(state, json!({"komut": "kodlayici.ses", "id": id, "bit_hizi": ses_bh, "iz": iz})).await?;
+      state.motor.ozet().lock().kodlayicilar.insert(id.clone());
+    }
+    sesler.push(id);
+  }
+  Ok(("v-kayit".into(), sesler))
+}
+
+/// Kaydı duraklatır/sürdürür; `None` = değiştir. Dönüş: yeni durum (duraklatıldı mı)
+pub(crate) async fn kayit_duraklat(state: &AppState, duraklat: Option<bool>) -> Result<bool, Hata> {
+  motor_calisiyor(state).await?;
+  if !cikis_etkin(state, "kayit") {
+    return Err(catisma("kayıt sürmüyor".into()));
+  }
+  let d = match duraklat {
+    Some(d) => d,
+    None => !kayit_duraklatildi(state).await,
+  };
+  let v = komut(state, json!({"komut": "kayit.duraklat", "id": "kayit", "duraklat": d})).await?;
+  Ok(v["duraklatildi"].as_bool().unwrap_or(d))
+}
+
+pub(crate) async fn kayit_duraklatildi(state: &AppState) -> bool {
+  let ist = komut(state, json!({"komut": "istatistik"})).await.unwrap_or(Value::Null);
+  ist["cikislar"].as_array().and_then(|a| a.iter().find(|c| c["id"] == "kayit")).and_then(|c| c["duraklatildi"].as_bool()).unwrap_or(false)
+}
+
+pub(crate) async fn kayit_bol(state: &AppState) -> Result<(), Hata> {
+  motor_calisiyor(state).await?;
+  if !cikis_etkin(state, "kayit") {
+    return Err(catisma("kayıt sürmüyor".into()));
+  }
+  komut(state, json!({"komut": "kayit.bol", "id": "kayit"})).await?;
+  Ok(())
+}
+
+/// Sanal kamera: `baslat` | `durdur` | `degistir`. Dönüş: açık mı
+pub(crate) async fn sanal_kamera(state: &AppState, eylem: &str, tuval: &str) -> Result<bool, Hata> {
+  motor_calisiyor(state).await?;
+  let acik = cikis_etkin(state, "sanal-kamera");
+  let ac = match eylem {
+    "baslat" => true,
+    "durdur" => false,
+    "degistir" => !acik,
+    e => return Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
+  };
+  if ac == acik {
+    return Ok(acik);
+  }
+  if ac {
+    if tuval_boyutu(tuval).is_none() || (tuval == "dikey" && !state.motor.ozet().lock().dikey_tuval) {
+      return Err(gecersiz(format!("tuval yok: {tuval}")));
+    }
+    komut(state, json!({"komut": "sanal_kamera.baslat", "tuval": tuval})).await?;
+  } else {
+    komut(state, json!({"komut": "sanal_kamera.durdur"})).await?;
+  }
+  Ok(ac)
 }
 
 pub(crate) async fn kayit_durdur(state: &AppState) -> Result<Option<String>, Hata> {
@@ -1341,6 +1433,12 @@ pub(crate) async fn tekrar_kaydet(state: &AppState) -> Result<Value, Hata> {
   let v = komut(state, json!({"komut": "tekrar.kaydet", "id": "tekrar"})).await?;
   let yol = v.get("yol").cloned().unwrap_or(Value::Null);
   state.motor.ozet().lock().son_tekrar = yol.as_str().map(String::from);
+  // Dikey tuvalin arabelleği de açıksa o da yazılır (tuval başına tekrar)
+  if cikis_etkin(state, "tekrar-dikey") {
+    if let Ok(d) = komut(state, json!({"komut": "tekrar.kaydet", "id": "tekrar-dikey"})).await {
+      return Ok(json!({"ana": yol, "dikey": d.get("yol").cloned().unwrap_or(Value::Null)}));
+    }
+  }
   Ok(yol)
 }
 
@@ -1356,7 +1454,7 @@ pub(crate) async fn kaynak_gorunurlugu(state: &AppState, kaynak: &str, kip: &str
     let bulunan = match k.iter().find(|r| r.id == kaynak) {
       Some(r) => r,
       None => {
-        let adlar: Vec<_> = k.iter().filter(|r| r.ad.to_lowercase() == kaynak.to_lowercase()).collect();
+        let adlar: Vec<_> = k.iter().filter(|r| crate::motor_koleksiyon::ad_esit(&r.ad, kaynak)).collect();
         match adlar.as_slice() {
           [r] => *r,
           [] => return Err((StatusCode::NOT_FOUND, format!("«{kaynak}» adlı motor kaynağı yok"))),
@@ -1407,7 +1505,7 @@ pub(crate) async fn motor_ses_kaynagi(state: &AppState, kaynak: &str) -> Result<
   let r = match k.iter().find(|r| r.id == kaynak) {
     Some(r) => r,
     None => {
-      let adlar: Vec<_> = k.iter().filter(|r| r.ad.to_lowercase() == kaynak.to_lowercase()).collect();
+      let adlar: Vec<_> = k.iter().filter(|r| crate::motor_koleksiyon::ad_esit(&r.ad, kaynak)).collect();
       match adlar.as_slice() {
         [r] => *r,
         [] => return Err((StatusCode::NOT_FOUND, format!("«{kaynak}» adlı motor kaynağı yok"))),
@@ -1439,7 +1537,7 @@ pub(crate) async fn motor_sahnesine_gec(state: &AppState, sahne: &str) -> Result
     let bulunan = match s.iter().find(|x| x.id == sahne) {
       Some(x) => x,
       None => {
-        let adlar: Vec<_> = s.iter().filter(|x| x.ad.to_lowercase() == sahne.to_lowercase()).collect();
+        let adlar: Vec<_> = s.iter().filter(|x| crate::motor_koleksiyon::ad_esit(&x.ad, sahne)).collect();
         match adlar.as_slice() {
           [x] => *x,
           [] => return Err((StatusCode::NOT_FOUND, format!("«{sahne}» adlı motor sahnesi yok"))),
@@ -1481,8 +1579,37 @@ async fn api_kayit(
       audit(&state, &actor, "MOTOR_RECORD_STOP", json!({})).await;
       Ok(Json(json!({"ok": true, "yol": yol})))
     }
+    "duraklat" | "surdur" => {
+      let d = kayit_duraklat(&state, Some(g.eylem == "duraklat")).await?;
+      audit(&state, &actor, "MOTOR_RECORD_PAUSE", json!({"duraklatildi": d})).await;
+      Ok(Json(json!({"ok": true, "duraklatildi": d})))
+    }
+    "bol" => {
+      kayit_bol(&state).await?;
+      audit(&state, &actor, "MOTOR_RECORD_SPLIT", json!({})).await;
+      Ok(Json(json!({"ok": true})))
+    }
     e => Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
   }
+}
+
+#[derive(Deserialize)]
+struct SanalKameraGovdesi {
+  eylem: String,
+  #[serde(default)]
+  tuval: Option<String>,
+}
+
+async fn api_sanal_kamera(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<SanalKameraGovdesi>,
+) -> ApiResult {
+  let actor = authorize(&state, &addr, &headers, "broadcast.outputs").await?;
+  let acik = sanal_kamera(&state, &g.eylem, g.tuval.as_deref().unwrap_or("ana")).await?;
+  audit(&state, &actor, "MOTOR_VIRTUALCAM", json!({"acik": acik, "tuval": g.tuval})).await;
+  Ok(Json(json!({"ok": true, "acik": acik})))
 }
 
 #[derive(Deserialize)]
@@ -1510,7 +1637,8 @@ async fn api_tekrar(
         Some(_) => return Err(gecersiz("tekrar süresi 5–600 sn olmalı".into())),
         None => state.motor.ozet().lock().profil.tekrar_sn,
       };
-      let dizin = kayit_klasoru();
+      // OBS gibi tekrar da kayıt yoluna yazılır (profilde klasör yoksa varsayılan kayıt klasörü)
+      let dizin = state.motor.ozet().lock().profil.kayit.klasor.as_ref().map(PathBuf::from).unwrap_or_else(kayit_klasoru);
       std::fs::create_dir_all(&dizin).map_err(|e| catisma(format!("kayıt klasörü: {e}")))?;
       kodlayici_hazirla(&state, "ana").await?;
       ses_hazirla(&state, 0).await?;
@@ -1520,6 +1648,23 @@ async fn api_tekrar(
       komut(&state, json!({"komut": "cikis.tekrar", "id": "tekrar", "klasor": dizin, "sure_sn": sure, "video": "v-ana", "sesler": ["ses-0"]})).await?;
       state.motor.ozet().lock().tekrar_cikisi_var = true;
       komut(&state, json!({"komut": "cikis.baslat", "id": "tekrar"})).await?;
+      // Dikey tuval için de (profil seçeneği ve dikey tuval açıksa)
+      let (dikey_iste, dikey_var, dikey_eski) = {
+        let o = state.motor.ozet();
+        let o = o.lock();
+        (o.profil.tekrar_dikey, o.dikey_tuval, o.tekrar_dikey_var)
+      };
+      if dikey_iste && dikey_var {
+        kodlayici_hazirla(&state, "dikey").await?;
+        if dikey_eski {
+          komut(&state, json!({"komut": "cikis.sil", "id": "tekrar-dikey"})).await?;
+        }
+        let d = dizin.join("Dikey");
+        std::fs::create_dir_all(&d).map_err(|e| catisma(format!("kayıt klasörü: {e}")))?;
+        komut(&state, json!({"komut": "cikis.tekrar", "id": "tekrar-dikey", "klasor": d, "sure_sn": sure, "video": "v-dikey", "sesler": ["ses-0"]})).await?;
+        state.motor.ozet().lock().tekrar_dikey_var = true;
+        komut(&state, json!({"komut": "cikis.baslat", "id": "tekrar-dikey"})).await?;
+      }
       let mut p = state.motor.ozet().lock().profil.clone();
       if p.tekrar_sn != sure {
         p.tekrar_sn = sure;
@@ -1530,6 +1675,9 @@ async fn api_tekrar(
     }
     "kapat" => {
       komut(&state, json!({"komut": "cikis.durdur", "id": "tekrar"})).await?;
+      if state.motor.ozet().lock().tekrar_dikey_var {
+        let _ = komut(&state, json!({"komut": "cikis.durdur", "id": "tekrar-dikey"})).await;
+      }
       audit(&state, &actor, "MOTOR_REPLAY_OFF", json!({})).await;
       Ok(Json(json!({"ok": true})))
     }

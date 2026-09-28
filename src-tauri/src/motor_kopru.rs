@@ -59,6 +59,8 @@ pub struct Ozet {
   pub koleksiyon: crate::motor_koleksiyon::Koleksiyon,
   pub kayit_cikisi_var: bool,
   pub tekrar_cikisi_var: bool,
+  /// Dikey tuvalin tekrar arabelleği (`tekrar-dikey`) oluşturuldu
+  pub tekrar_dikey_var: bool,
   pub son_kayit: Option<String>,
   pub son_tekrar: Option<String>,
   /// Motor panel istemeden kapandıysa çıkış kodu (NTSTATUS dahil, işaretsiz). Çökme bekçisi okuyup temizler.

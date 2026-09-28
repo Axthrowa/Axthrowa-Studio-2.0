@@ -137,6 +137,13 @@ function PanelEylemiAlanlari({
                     <input className={field} value={row.scene || ""} placeholder="Yayın sekmesindeki sahne adı" onChange={(e) => onPatch({ scene: e.target.value })} />
                   </label>
                 );
+              case "engineFilter":
+                return (
+                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                    Filtre adı
+                    <input className={field} value={row.filter || ""} placeholder="Filtreler penceresindeki adı" onChange={(e) => onPatch({ filter: e.target.value })} />
+                  </label>
+                );
               case "input":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">

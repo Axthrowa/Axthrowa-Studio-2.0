@@ -94,6 +94,16 @@ pub struct KayitAyari {
   /// Boşsa `%USERPROFILE%\Videos\Yayin Motoru`
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub klasor: Option<String>,
+  /// Kayıt için ayrı kodlayıcı (OBS "Kodlayıcı: yayın kodlayıcısını kullan" kapalı). Duraklatma bunu ister: libobs
+  /// duraklatmayı kodlayıcıda uygular, paylaşılan kodlayıcı yayını da durdururdu.
+  #[serde(default)]
+  pub ayri_kodlayici: bool,
+  /// Otomatik dosya bölme: dakika (0 = kapalı)
+  #[serde(default)]
+  pub bolme_dk: u32,
+  /// Otomatik dosya bölme: MB (0 = kapalı)
+  #[serde(default)]
+  pub bolme_mb: u32,
 }
 
 fn mkv() -> String {
@@ -105,7 +115,7 @@ fn ilk_iz() -> Vec<u8> {
 
 impl Default for KayitAyari {
   fn default() -> Self {
-    KayitAyari { bicim: mkv(), izler: ilk_iz(), klasor: None }
+    KayitAyari { bicim: mkv(), izler: ilk_iz(), klasor: None, ayri_kodlayici: false, bolme_dk: 0, bolme_mb: 0 }
   }
 }
 
@@ -235,6 +245,9 @@ pub struct Profil {
   pub hedefler: BTreeMap<String, HedefAtamasi>,
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub izleme_aygiti: Option<IzlemeAygiti>,
+  /// Dikey tuval için de tekrar arabelleği (plandaki "Backtrack": tuval başına)
+  #[serde(default)]
+  pub tekrar_dikey: bool,
   #[serde(default)]
   pub video: VideoAyari,
   #[serde(default)]
@@ -255,6 +268,7 @@ impl Default for Profil {
       iz_adlari: iz_adlari(),
       hedefler: BTreeMap::new(),
       izleme_aygiti: None,
+      tekrar_dikey: false,
       video: VideoAyari::default(),
       ses: SesAyari::default(),
       ag: AgAyari::default(),
@@ -301,6 +315,8 @@ impl Profil {
     if !["mkv", "mp4", "mov", "parcali_mp4", "parcali_mov", "hibrit_mp4"].contains(&k.bicim.as_str()) {
       k.bicim = mkv();
     }
+    k.bolme_dk = k.bolme_dk.min(24 * 60);
+    k.bolme_mb = k.bolme_mb.min(1024 * 1024);
     if k.klasor.as_deref().is_some_and(|d| d.trim().is_empty() || !Path::new(d).is_absolute()) {
       k.klasor = None;
     }
@@ -553,7 +569,7 @@ pub fn yeni_kimlik(d: &Dizin, ad: &str) -> String {
 
 /// Kısmi güncelleme: yalnız verilen alanlar (JSON birleştirme), sonra doğrulama. Bilinmeyen alan reddedilir.
 pub fn birlestir(p: &Profil, parca: &Map<String, Value>) -> Result<Profil, String> {
-  const ALANLAR: [&str; 11] = ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti", "video", "ses", "ag"];
+  const ALANLAR: [&str; 12] = ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti", "video", "ses", "ag", "tekrar_dikey"];
   if let Some(a) = parca.keys().find(|k| !ALANLAR.contains(&k.as_str())) {
     return Err(format!("bilinmeyen profil alanı: {a}"));
   }

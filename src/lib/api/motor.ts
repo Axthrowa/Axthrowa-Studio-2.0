@@ -78,8 +78,9 @@ export type MotorDurumu = {
   istatistik: { fps: number; ortalama_kare_ms: number; toplam_kare: number; geciken_kare: number; cikislar: MotorCikisIstatistigi[] } | null;
   kaynaklar: MotorKaynak[];
   hedefler: MotorHedef[];
-  kayit: { durum: MotorCikisDurumu; son: string | null };
-  tekrar: { durum: MotorCikisDurumu; sureSn: number; son: string | null };
+  kayit: { durum: MotorCikisDurumu; son: string | null; duraklatildi?: boolean; ayriKodlayici?: boolean };
+  tekrar: { durum: MotorCikisDurumu; sureSn: number; son: string | null; dikey?: MotorCikisDurumu | null };
+  sanalKamera?: { durum: MotorCikisDurumu };
   kayitKlasoru: string;
   sonCikisKodu: number | null;
   /** Önceki oturum üçüncü taraf eklentiyle çöktü; karar verilmeden motor başlatılmaz */
@@ -243,7 +244,8 @@ export type MotorProfil = {
     ses_bit_hizi: number;
     uzman?: Record<string, Record<string, unknown>>;
   };
-  kayit: { bicim: string; izler: number[]; klasor?: string | null };
+  kayit: { bicim: string; izler: number[]; klasor?: string | null; ayri_kodlayici: boolean; bolme_dk: number; bolme_mb: number };
+  tekrar_dikey: boolean;
   tekrar_sn: number;
   iz_adlari: string[];
   hedefler: Record<string, MotorHedefAtamasi>;
@@ -375,7 +377,8 @@ export const motorApi = {
   hedef: (id: string, eylem: "baslat" | "durdur", tuval?: string, iz?: number) => istek<{ ok: boolean }>("/api/motor/hedef", { id, eylem, tuval, iz }),
   golive: (eylem: "baslat" | "durdur") =>
     istek<{ sonuc: Record<string, { ok: boolean; hata?: string }> }>("/api/motor/golive", { eylem, confirm: eylem === "durdur" }),
-  kayit: (eylem: "baslat" | "durdur") => istek<{ ok: boolean; yol?: string }>("/api/motor/kayit", { eylem }),
+  kayit: (eylem: "baslat" | "durdur" | "duraklat" | "surdur" | "bol") => istek<{ ok: boolean; yol?: string; duraklatildi?: boolean }>("/api/motor/kayit", { eylem }),
+  sanalKamera: (eylem: "baslat" | "durdur", tuval = "ana") => istek<{ ok: boolean; acik: boolean }>("/api/motor/sanal-kamera", { eylem, tuval }),
   tekrar: (eylem: "ac" | "kapat" | "kaydet", sure_sn?: number) => istek<{ ok: boolean; yol?: string }>("/api/motor/tekrar", { eylem, sure_sn }),
   /** Son önizleme karesi; kare henüz hazır değilse `null` (sunucu 204). */
   onizleme: async (tuval: string, genislik = 480): Promise<Blob | null> => {

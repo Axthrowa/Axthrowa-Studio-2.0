@@ -593,15 +593,31 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                   if ((v || null) !== (pr.kayit.klasor ?? null)) void guncelle({ kayit: { klasor: v || null } });
                 }}
               />
+              <span className="dt-etiket">Kodlayıcı</span>
+              <label className="inline-flex items-center gap-1.5">
+                <input type="checkbox" checked={pr.kayit.ayri_kodlayici} onChange={(e) => void guncelle({ kayit: { ayri_kodlayici: e.target.checked } })} />
+                Kayıt için ayrı kodlayıcı (yayın kodlayıcısını kullanma) — kaydı duraklatmak için gerekli
+              </label>
+              <label htmlFor="ay-bdk">Otomatik bölme (süre)</label>
+              <SayiAlani id="ay-bdk" deger={pr.kayit.bolme_dk} en_az={0} en_cok={1440} birim="dk (0 = kapalı)" onUygula={(v) => void guncelle({ kayit: { bolme_dk: v } })} />
+              <label htmlFor="ay-bmb">Otomatik bölme (boyut)</label>
+              <SayiAlani id="ay-bmb" deger={pr.kayit.bolme_mb} en_az={0} en_cok={1048576} birim="MB (0 = kapalı)" onUygula={(v) => void guncelle({ kayit: { bolme_mb: v } })} />
               <span />
-              <span className="text-[11px] dt-soluk">Çok izli kayıt: seçilen her iz dosyada ayrı ses akışıdır. Tam yol girin (ör. D:\Kayıtlar).</span>
+              <span className="text-[11px] dt-soluk">
+                Çok izli kayıt: seçilen her iz dosyada ayrı ses akışıdır. Tam yol girin (ör. D:\Kayıtlar). Kayıt sırasında Denetimler'deki makasla elle de bölünebilir; yeni dosya aynı klasöre tarih-saatli adla yazılır.
+              </span>
             </div>
           ) : bolum === "tekrar" ? (
             <div className="dt-form">
               <label htmlFor="ay-ts">Süre</label>
               <SayiAlani id="ay-ts" deger={pr.tekrar_sn} en_az={5} en_cok={600} birim="sn" onUygula={(v) => void guncelle({ tekrar_sn: v })} />
+              <span className="dt-etiket">Dikey tuval</span>
+              <label className="inline-flex items-center gap-1.5">
+                <input type="checkbox" checked={pr.tekrar_dikey} onChange={(e) => void guncelle({ tekrar_dikey: e.target.checked })} />
+                Dikey tuval için de tekrar arabelleği (kısa video; "Tekrarı kaydet" ikisini de yazar)
+              </label>
               <span />
-              <span className="text-[11px] dt-soluk">Son bu kadar saniye bellekte tutulur; "Tekrarı kaydet" diske yazar.</span>
+              <span className="text-[11px] dt-soluk">Son bu kadar saniye bellekte tutulur; "Tekrarı kaydet" diske yazar (dikey: kayıt klasörü\Dikey).</span>
             </div>
           ) : bolum === "ses" ? (
             <div className="dt-form">

@@ -402,6 +402,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   // ── Süreler ──
   const ozet = d ? canliOzeti(d) : { canli: 0, toplam: 0 };
   const kayitta = d ? cikisEtkin(d.kayit.durum) : false;
+  const duraklatildi = !!d?.kayit.duraklatildi;
+  const sanalKameraAcik = d?.sanalKamera ? cikisEtkin(d.sanalKamera.durum) : false;
   useEffect(() => setCanliBas((b) => (ozet.canli > 0 ? (b ?? Date.now()) : null)), [ozet.canli]);
   useEffect(() => setKayitBas((b) => (kayitta ? (b ?? Date.now()) : null)), [kayitta]);
   useEffect(() => {
@@ -821,7 +823,20 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     void yap("Kayıt", () => motorApi.kayit(kayitta ? "durdur" : "baslat"), (r) => (kayitta ? `Kayıt kaydedildi: ${String((r as { yol?: string }).yol ?? "").split(/[\\/]/).pop()}` : null));
   const tekrarAcik = d ? cikisEtkin(d.tekrar.durum) : false;
   const tekrarDugmesi = () => void yap("Tekrar arabelleği", () => motorApi.tekrar(tekrarAcik ? "kapat" : "ac"));
-  const tekrarKaydet = () => void yap("Tekrar kaydedilemedi", () => motorApi.tekrar("kaydet"), (r) => `Tekrar kaydedildi: ${String((r as { yol?: string }).yol ?? "").split(/[\\/]/).pop()}`);
+  const duraklatDugmesi = () =>
+    void yap("Kayıt duraklatılamadı", () => motorApi.kayit(duraklatildi ? "surdur" : "duraklat"), (r) =>
+      (r as { duraklatildi?: boolean }).duraklatildi ? "Kayıt duraklatıldı" : "Kayıt sürüyor"
+    );
+  const bolDugmesi = () => void yap("Kayıt bölünemedi", () => motorApi.kayit("bol"), () => "Kayıt yeni dosyaya bölünüyor (bir sonraki anahtar karede)");
+  const sanalKameraDugmesi = () =>
+    void yap("Sanal kamera", () => motorApi.sanalKamera(sanalKameraAcik ? "durdur" : "baslat", tuval), (r) => ((r as { acik?: boolean }).acik ? "Sanal kamera açık" : "Sanal kamera kapalı"));
+  const tekrarKaydet = () =>
+    void yap("Tekrar kaydedilemedi", () => motorApi.tekrar("kaydet"), (r) => {
+      // Dikey tekrar da açıksa yanıt { ana, dikey }
+      const y = (r as { yol?: unknown }).yol;
+      const ad = (v: unknown) => String(v ?? "").split(/[\\/]/).pop();
+      return y && typeof y === "object" ? `Tekrar kaydedildi: ${ad((y as { ana?: unknown }).ana)} + dikey ${ad((y as { dikey?: unknown }).dikey)}` : `Tekrar kaydedildi: ${ad(y)}`;
+    });
   const studyoDugmesi = () => void yap("Studio Mode", () => motorApi.studyo(tuval, studyo ? "kapat" : "ac"));
   const motorDurdur = () => setOnay({ baslik: "Motoru durdur", metin: "Motor kapanır: tüm motor yayınları, kayıt ve tekrar arabelleği biter. Sahne koleksiyonu kayıtlıdır.", eylem: "Motoru durdur", yap: () => void yap("Motor durdurulamadı", () => motorApi.durdur()) });
 
@@ -958,6 +973,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       ogeler: () => [
         { etiket: ozet.canli > 0 ? "Yayını bitir…" : "Yayını başlat…", devreDisi: !calisiyor || (ozet.canli === 0 && ozet.toplam === 0), eylem: yayinDugmesi },
         { etiket: kayitta ? "Kaydı durdur" : "Kaydı başlat", devreDisi: !calisiyor, eylem: kayitDugmesi },
+        { etiket: duraklatildi ? "Kaydı sürdür" : "Kaydı duraklat", devreDisi: !kayitta, eylem: duraklatDugmesi },
+        { etiket: "Kayıt dosyasını böl", devreDisi: !kayitta, eylem: bolDugmesi },
+        { etiket: sanalKameraAcik ? "Sanal kamerayı durdur" : "Sanal kamerayı başlat", devreDisi: !calisiyor, eylem: sanalKameraDugmesi },
         { etiket: tekrarAcik ? "Tekrar arabelleğini kapat" : "Tekrar arabelleğini aç", devreDisi: !calisiyor, eylem: tekrarDugmesi },
         { etiket: "Tekrarı kaydet", devreDisi: !tekrarAcik, eylem: tekrarKaydet },
       ],
@@ -1135,6 +1153,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             meşgul={mesgul !== null}
             onYayin={yayinDugmesi}
             onKayit={kayitDugmesi}
+            duraklatildi={duraklatildi}
+            sanalKamera={sanalKameraAcik}
+            onDuraklat={duraklatDugmesi}
+            onBol={bolDugmesi}
+            onSanalKamera={sanalKameraDugmesi}
             onTekrar={tekrarDugmesi}
             onTekrarKaydet={tekrarKaydet}
             onStudyo={studyoDugmesi}
@@ -1398,7 +1421,13 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               CANLI {sureBicimi(simdi - canliBas)} · {ozet.canli}/{ozet.toplam}
             </span>
           )}
-          {kayitBas !== null && <span className="dt-kayit">KAYIT {sureBicimi(simdi - kayitBas)}</span>}
+          {kayitBas !== null && (
+            <span className="dt-kayit">
+              KAYIT {sureBicimi(simdi - kayitBas)}
+              {duraklatildi ? " · duraklatıldı" : ""}
+            </span>
+          )}
+          {sanalKameraAcik && <span className="dt-sayi">SANAL KAMERA</span>}
           {(yenidenBaglanan > 0 || basarisiz > 0) && (
             <span className="dt-uyari-metni">
               {yenidenBaglanan > 0 && `${yenidenBaglanan} hedef yeniden bağlanıyor`} {basarisiz > 0 && `${basarisiz} hedef başarısız`}

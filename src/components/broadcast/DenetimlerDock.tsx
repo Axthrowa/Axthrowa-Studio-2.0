@@ -1,18 +1,24 @@
 /**
- * Denetimler dock'u (OBS "Controls"): yayını başlat (ön kontrol penceresiyle) / bitir, kaydı başlat/durdur,
- * tekrar arabelleği, Studio Mode, ayarlar, motoru durdur. Yayın yalnız kullanıcının açık eylemiyle başlar.
+ * Denetimler dock'u (OBS "Controls"): yayını başlat (ön kontrol penceresiyle) / bitir, kaydı başlat/durdur +
+ * duraklat/sürdür + böl, tekrar arabelleği, sanal kamera, Studio Mode, ayarlar, motoru durdur. Yayın yalnız
+ * kullanıcının açık eylemiyle başlar.
  */
-import { Circle, Clapperboard, MonitorPlay, Radio, Save, Settings, Square } from "lucide-react";
+import { Circle, Clapperboard, MonitorPlay, Pause, Play, Radio, Save, Scissors, Settings, Square, Video } from "lucide-react";
 
 export function DenetimlerDock({
   canli,
   canliToplam,
   kayitta,
+  duraklatildi,
+  sanalKamera,
   tekrarAcik,
   studyo,
   meşgul,
   onYayin,
   onKayit,
+  onDuraklat,
+  onBol,
+  onSanalKamera,
   onTekrar,
   onTekrarKaydet,
   onStudyo,
@@ -22,11 +28,16 @@ export function DenetimlerDock({
   canli: number;
   canliToplam: number;
   kayitta: boolean;
+  duraklatildi: boolean;
+  sanalKamera: boolean;
   tekrarAcik: boolean;
   studyo: boolean;
   meşgul: boolean;
   onYayin: () => void;
   onKayit: () => void;
+  onDuraklat: () => void;
+  onBol: () => void;
+  onSanalKamera: () => void;
   onTekrar: () => void;
   onTekrarKaydet: () => void;
   onStudyo: () => void;
@@ -47,10 +58,30 @@ export function DenetimlerDock({
           <Radio className="h-3.5 w-3.5" />
           {canli > 0 ? `Yayını bitir (${canli}/${canliToplam})` : "Yayını başlat"}
         </button>
-        <button type="button" className="dt-btn w-full" disabled={meşgul} onClick={onKayit}>
-          {kayitta ? <Square className="h-3.5 w-3.5" style={{ color: "var(--dt-rec)" }} /> : <Circle className="h-3.5 w-3.5" />}
-          {kayitta ? "Kaydı durdur" : "Kaydı başlat"}
-        </button>
+        <div className="flex gap-1">
+          <button type="button" className="dt-btn min-w-0 flex-1" disabled={meşgul} onClick={onKayit}>
+            {kayitta ? <Square className="h-3.5 w-3.5" style={{ color: "var(--dt-rec)" }} /> : <Circle className="h-3.5 w-3.5" />}
+            {kayitta ? (duraklatildi ? "Kayıt duraklatıldı" : "Kaydı durdur") : "Kaydı başlat"}
+          </button>
+          {kayitta && (
+            <>
+              <button
+                type="button"
+                className="dt-btn"
+                aria-pressed={duraklatildi}
+                aria-label={duraklatildi ? "Kaydı sürdür" : "Kaydı duraklat"}
+                title={duraklatildi ? "Kaydı sürdür" : "Kaydı duraklat (kayıt yayınla aynı kodlayıcıyı paylaşıyorsa Ayarlar › Kayıt › ayrı kodlayıcı gerekir)"}
+                disabled={meşgul}
+                onClick={onDuraklat}
+              >
+                {duraklatildi ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+              </button>
+              <button type="button" className="dt-btn" aria-label="Kayıt dosyasını böl" title="Kayıt dosyasını böl (yeni dosya bir sonraki anahtar karede başlar)" disabled={meşgul} onClick={onBol}>
+                <Scissors className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
+        </div>
         <div className="flex gap-1">
           <button type="button" className="dt-btn min-w-0 flex-1" aria-pressed={tekrarAcik} disabled={meşgul} onClick={onTekrar}>
             <Clapperboard className="h-3.5 w-3.5" />
@@ -60,6 +91,10 @@ export function DenetimlerDock({
             <Save className="h-3.5 w-3.5" />
           </button>
         </div>
+        <button type="button" className="dt-btn w-full" aria-pressed={sanalKamera} disabled={meşgul} onClick={onSanalKamera} title="Program görüntüsünü sanal kamera aygıtı olarak ver (kurulu OBS'in sanal kamera sürücüsü)">
+          <Video className="h-3.5 w-3.5" />
+          {sanalKamera ? "Sanal kamerayı durdur" : "Sanal kamerayı başlat"}
+        </button>
         <button type="button" className="dt-btn w-full" aria-pressed={studyo} onClick={onStudyo}>
           <MonitorPlay className="h-3.5 w-3.5" />
           {studyo ? "Studio Mode: açık" : "Studio Mode"}

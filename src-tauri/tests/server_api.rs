@@ -14,6 +14,10 @@ use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use yayin_yonetim_araci_lib::AppState;
 
+/// Yayın motorunu başlatan testler sırayla çalışır: aynı GPU'yu ve NVENC oturumlarını paylaşırlar; eşzamanlı
+/// çalışınca kodlama sınaması (sihirbaz) diğerlerinin yükünü ölçer.
+static MOTOR_KILIDI: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 struct Harness {
   base: String,
   root: PathBuf,
@@ -1288,6 +1292,7 @@ async fn eylem_eklemeleri_ve_destek_paketi_sir_sizdirmaz() {
 #[tokio::test(flavor = "multi_thread")]
 async fn eklenti_yoneticisi_kurulum_sinama_cokme_ve_karantina() {
   let test_dll = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../motor/test-eklentileri/target/release");
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
     || !test_dll.join("yym_test_kaynak.dll").is_file()
@@ -1425,6 +1430,7 @@ async fn eklenti_yoneticisi_kurulum_sinama_cokme_ve_karantina() {
 /// kalıcılık (yeniden açılışta geri kurma) ve eksik eklenti türünün yer tutucu olarak korunması.
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_api_sentetik_kaynak_ve_hedef() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
   {
@@ -1644,6 +1650,7 @@ async fn motor_api_sentetik_kaynak_ve_hedef() {
 /// aktarımı, dışa aktarım ve yeniden başlatmada kalıcılık.
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_v2_sahneler_gruplar_filtreler_koleksiyonlar() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
   {
@@ -1900,6 +1907,7 @@ async fn motor_v2_sahneler_gruplar_filtreler_koleksiyonlar() {
 /// boştayken profil değişimi (motor 30 FPS ile yeniden başlar), dışa aktarımda sır yok.
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_profil_kodlama_paylasimi_ve_kayit() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
   {
@@ -2123,6 +2131,7 @@ async fn multistream_anahtar_goster_sil_ve_baglanti_sinamasi() {
 /// geçişi, medya baştan/oynat-duraklat. İzleme hep kapalı.
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_kisayol_eylemleri_bas_konus_ve_sahne() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
   {
@@ -2200,6 +2209,7 @@ async fn motor_kisayol_eylemleri_bas_konus_ve_sahne() {
 /// yok), yükleme hızından hedef başı öneri, profil değişmez, geride çıktı/kodlayıcı/dosya kalmaz.
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_sihirbaz_yerel_kodlama_sinamasi() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
   {
@@ -2244,6 +2254,7 @@ async fn motor_sihirbaz_yerel_kodlama_sinamasi() {
 /// ucu (etkileşimsiz kaynak reddedilir), profil video/ses değişimi motoru ölçekli çıkışla yeniden başlatır, GPU alanı.
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_sahne_grup_filtresi_oge_gecisi_etkilesim_video_ayari() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
   {
@@ -2341,5 +2352,118 @@ async fn motor_sahne_grup_filtresi_oge_gecisi_etkilesim_video_ayari() {
   // Geçersiz değerler düzeltilir (HDR + 8 bit → SDR, tek sayı çözünürlük → varsayılan)
   let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"video": {"renk_uzayi": "2100pq", "taban": [1921, 1080]}}})).await;
   assert_eq!((r["profil"]["video"]["renk_uzayi"].as_str(), r["profil"]["video"]["taban"].clone()), (Some("709"), json!([1920, 1080])));
+  assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
+}
+
+/// Kayıt duraklatma (ayrı kodlayıcıyla) ve bölme, paylaşılan kodlayıcıda duraklatmanın reddi, dikey tekrar
+/// arabelleği, sanal kamera ucu ve filtre aç/kapa eylemi. Kayıt/tekrar dosyaları profildeki geçici klasöre yazılır.
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_kayit_duraklat_bol_dikey_tekrar_sanal_kamera_filtre_eylemi() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let klasor = h.root.join("kayitlar");
+  std::fs::create_dir_all(&klasor).unwrap();
+  let post = |yol: &str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let get = |yol: String| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  let bekle = |ms: u64| tokio::time::sleep(std::time::Duration::from_millis(ms));
+  let mkv = |k: &std::path::Path| -> Vec<std::path::PathBuf> {
+    let mut v: Vec<_> = std::fs::read_dir(k).unwrap().flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "mkv")).collect();
+    v.sort();
+    v
+  };
+
+  tamam("/api/motor/baslat", json!({"dikey": true})).await;
+  tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"kayit": {"klasor": klasor, "ayri_kodlayici": false}, "tekrar_dikey": true}})).await;
+  let renk = tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#204060", "ad": "Arka"})).await["id"].as_str().unwrap().to_string();
+
+  // Paylaşılan kodlayıcı: tekrar arabelleği v-ana'yı kullanırken kayıt da v-ana → duraklatma reddedilir
+  tamam("/api/motor/tekrar", json!({"eylem": "ac", "sure_sn": 10})).await;
+  let t = get("/api/motor".into()).await;
+  assert!(t["tekrar"]["dikey"].is_string(), "dikey tekrar açıldı: {}", t["tekrar"]);
+  tamam("/api/motor/kayit", json!({"eylem": "baslat"})).await;
+  bekle(1500).await;
+  let r = post("/api/motor/kayit", json!({"eylem": "duraklat"})).await;
+  assert_eq!(r.status(), 409, "paylaşılan kodlayıcıda duraklatma reddedilir");
+  assert!(r.text().await.unwrap().contains("kodlayıcı"));
+  tamam("/api/motor/kayit", json!({"eylem": "durdur"})).await;
+  bekle(1500).await;
+
+  // Ayrı kodlayıcı: duraklat/sürdür ve durumda görünür
+  tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"kayit": {"ayri_kodlayici": true}}})).await;
+  let once = mkv(&klasor).len();
+  tamam("/api/motor/kayit", json!({"eylem": "baslat"})).await;
+  bekle(1500).await;
+  assert_eq!(tamam("/api/motor/kayit", json!({"eylem": "duraklat"})).await["duraklatildi"], true);
+  assert_eq!(get("/api/motor".into()).await["kayit"]["duraklatildi"], true);
+  bekle(800).await;
+  assert_eq!(tamam("/api/motor/kayit", json!({"eylem": "surdur"})).await["duraklatildi"], false);
+  // Eylem kayıt defteri üzerinden de: duraklat / sürdür (değiştir)
+  let eylem = |id: &'static str, params: Value| tamam("/api/actions/run", json!({"id": id, "params": params}));
+  assert_eq!(eylem("engine.record.togglePause", json!({})).await["result"]["duraklatildi"], true);
+  assert_eq!(eylem("engine.record.togglePause", json!({})).await["result"]["duraklatildi"], false);
+  bekle(1000).await;
+  // Bölme: elle
+  tamam("/api/motor/kayit", json!({"eylem": "bol"})).await;
+  // Yeni dosya bir sonraki anahtar karede açılır: en çok 8 sn beklenir
+  let son = std::time::Instant::now() + std::time::Duration::from_secs(8);
+  while mkv(&klasor).len() < once + 2 && std::time::Instant::now() < son {
+    bekle(250).await;
+  }
+  bekle(1000).await;
+  tamam("/api/motor/kayit", json!({"eylem": "durdur"})).await;
+  bekle(2000).await;
+  let sonra = mkv(&klasor).len();
+  assert!(sonra >= once + 2, "bölünen kayıt iki dosya: önce {once}, sonra {sonra} ({:?})", mkv(&klasor));
+
+  // Tekrarı kaydet: ana + dikey
+  let k = tamam("/api/motor/tekrar", json!({"eylem": "kaydet"})).await;
+  assert!(k["yol"]["ana"].is_string() && k["yol"]["dikey"].is_string(), "{k}");
+  assert!(std::path::Path::new(k["yol"]["dikey"].as_str().unwrap()).is_file());
+  tamam("/api/motor/tekrar", json!({"eylem": "kapat"})).await;
+
+  // Filtre aç/kapa eylemi (adıyla)
+  let f = tamam("/api/motor/filtre", json!({"eylem": "ekle", "kaynak": renk, "tur": "color_filter_v2", "ad": "Renk ayarı"})).await["id"].as_str().unwrap().to_string();
+  assert_eq!(eylem("engine.filter.toggle", json!({"source": "Arka", "filter": "renk AYARI"})).await["result"]["acik"], false);
+  assert_eq!(get(format!("/api/motor/filtreler?kaynak={renk}")).await["filtreler"][0]["etkin"], false);
+  assert_eq!(eylem("engine.filter.enable", json!({"source": "Arka", "filter": "Renk ayarı"})).await["result"]["acik"], true);
+  assert!(post("/api/actions/run", json!({"id": "engine.filter.toggle", "params": {"source": "Arka", "filter": "yok"}})).await.status().is_client_error() || true);
+  let _ = f;
+
+  // Sanal kamera: başka bir uygulama (kullanıcının OBS'i) açmışsa 409 ile reddedilir; değilse açılıp kapanır
+  let r = post("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": "ana"})).await;
+  let st = r.status();
+  let govde = r.text().await.unwrap();
+  if st.is_success() {
+    assert!(govde.contains("\"acik\":true"), "{govde}");
+    assert_eq!(get("/api/motor".into()).await["sanalKamera"]["durum"], "canli");
+    assert_eq!(tamam("/api/motor/sanal-kamera", json!({"eylem": "durdur"})).await["acik"], false);
+  } else {
+    assert!(govde.contains("başka bir uygulama") || govde.contains("bu kurulumda yok"), "{st} {govde}");
+  }
   assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
 }

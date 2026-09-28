@@ -447,6 +447,20 @@ pub fn koleksiyon_yolu(klasor: &Path, id: &str) -> PathBuf {
 }
 
 /// Kimlik: küçük ASCII harf/rakam/tire, 1–48 karakter (dosya adı olarak güvenli)
+/// Türkçe kurala uygun küçük harf (I → ı, İ → i); ad eşleştirmede kullanılır ("AYARI" = "ayarı")
+pub fn tr_kucuk(s: &str) -> String {
+  s.chars().map(|c| match c {
+    'I' => 'ı',
+    'İ' => 'i',
+    c => c,
+  }).collect::<String>().to_lowercase()
+}
+
+/// Adlar aynı mı (baştaki/sondaki boşluk ve Türkçe büyük/küçük harf farkı yok sayılır)
+pub fn ad_esit(a: &str, b: &str) -> bool {
+  tr_kucuk(a.trim()) == tr_kucuk(b.trim())
+}
+
 pub fn gecerli_kimlik(id: &str) -> bool {
   !id.is_empty() && id.len() <= 48 && id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
@@ -896,6 +910,14 @@ impl Koleksiyon {
 
 #[cfg(test)]
 mod tests {
+  #[test]
+  fn turkce_ad_eslestirme() {
+    assert!(ad_esit("Renk ayarı", "renk AYARI"));
+    assert!(ad_esit("İstanbul", "istanbul"));
+    assert!(!ad_esit("ayarı", "ayari"));
+    assert!(ad_esit(" Kamera ", "KAMERA"));
+  }
+
   use super::*;
   use serde_json::json;
 

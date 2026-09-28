@@ -370,6 +370,8 @@ pub struct Motor {
   pub(crate) cpu: Ptr,
   /// Kaynak → etkileşim penceresinin önizleme tuvali (bkz. `etkilesim.rs`)
   pub(crate) etkilesim_tuvalleri: HashMap<String, Kanvas>,
+  /// Çıktı → son duraklat/sürdür zamanı (art arda geçişleri aralamak için)
+  pub(crate) duraklatma_zamani: HashMap<String, std::time::Instant>,
 }
 
 pub(crate) fn video_bilgisi(ayar: MotorAyari, grafik: &std::ffi::CStr) -> VideoInfo {
@@ -521,6 +523,7 @@ impl Motor {
       akislar: HashMap::new(),
       cpu: unsafe { (api().os_cpu_usage_info_start)() },
       etkilesim_tuvalleri: HashMap::new(),
+      duraklatma_zamani: HashMap::new(),
     };
     motor.ses.baslat(motor.olay.clone());
     motor.kanvaslar.insert(
@@ -1348,7 +1351,19 @@ impl Motor {
       if (a.obs_output_paused)(p) == duraklat {
         return Ok(duraklat);
       }
-      if !(a.obs_output_pause)(p, duraklat) {
+      // Art arda geçişler libobs'un kayıt hattını kilitliyor (gözlendi: sürdürmenin hemen ardından duraklatınca
+      // bölme ve durdurma yanıt vermez). Önceki geçişten bu yana en az ARALIK geçmeden yenisi yapılmaz; erken gelen
+      // istek kalan süreyi bekler ve tek bir çağrı yapılır.
+      const ARALIK: std::time::Duration = std::time::Duration::from_millis(600);
+      if let Some(t) = self.duraklatma_zamani.get(id) {
+        let gecen = t.elapsed();
+        if gecen < ARALIK {
+          std::thread::sleep(ARALIK - gecen);
+        }
+      }
+      let oldu = (a.obs_output_pause)(p, duraklat);
+      self.duraklatma_zamani.insert(id.to_string(), std::time::Instant::now());
+      if !oldu {
         return Err(if duraklat { "kayıt duraklatılamadı" } else { "kayıt sürdürülemedi" }.into());
       }
       Ok((a.obs_output_paused)(p))

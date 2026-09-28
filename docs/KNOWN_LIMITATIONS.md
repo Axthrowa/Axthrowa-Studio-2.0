@@ -103,3 +103,29 @@ hiçbir şey arayüzde destekleniyor gibi gösterilmez.
 | Kurulum dosyası (NSIS) | motor YOK | Motor portable pakete girer; Tauri kaynaklarına eklemek, motor derlenmemişken panelin kendi derlemesini kıracağı için kurulum dosyasına henüz eklenmedi. |
 | Yardımcı programlar | kopyalanır | `obs-ffmpeg-mux.exe`, `obs-nvenc-test.exe` vb. kurulu OBS'ten çekirdeğin klasörüne kopyalanır (libobs onları çalışan exe'nin yanında arar). |
 | GO LIVE bütünleşmesi | PARTIAL | Motor hedefleri Yayın motoru panelinden tek tek başlatılır; mevcut "GO LIVE" düğmesi FFmpeg yönlendiricisini kullanır. |
+
+## OBS iş akışı paritesi (2026-09-28) — güncel durum
+
+Yukarıdaki "Yerel yayın çekirdeği" tablosundaki şu satırlar **artık geçerli değil**: sahne düzenleyici (çoklu sahne,
+sürükle/boyutlandır, kırpma, kilit, grup, geri al var), hedef başına ses izi (profil ataması), kayıt ve tekrar
+arayüzü, hedef tuvali (hedef atama değişince çıktı yeniden kurulur), GO LIVE bütünleşmesi (Denetimler dock'u motoru
+kullanır), NSIS (motor kurulum dosyasına girer). Ayrıntı: [OBS_FUNCTIONAL_PARITY_SPEC](OBS_FUNCTIONAL_PARITY_SPEC.md).
+
+| Konu | Durum | Not |
+|---|---|---|
+| Ekran/pencere/oyun/kamera/mikrofon/masaüstü/uygulama sesi yakalama | UNVERIFIED | Kullanıcı kararı: yalnız sentetik sınama. Özellik anahtarları örneksiz doğrulandı; oyun yakalama örneği hiç oluşturulmadı |
+| Ses izleme | yalnız "kapalı" sınandı | Hoparlöre ses verilmez kuralı |
+| Küresel kısayol basışı | UNVERIFIED | Masaüstü girdi otomasyonu kullanılmaz; eylemler kayıt defteri üzerinden sınandı |
+| Gerçek platforma yayın | UNVERIFIED | Yalnız 127.0.0.1 alıcıları; "Sına" yalnız TCP bağlantısı |
+| "Etkileşim" (tarayıcı kaynağına tıklama/klavye) | YOK | Menüde devre dışı |
+| Alt+sürükle kırpma | YOK | Kırpma Dönüşüm penceresinden |
+| Sahne öğesi göster/gizle geçişleri | YOK | OBS içe aktarımında not düşülür |
+| Sahneye/gruba filtre | YOK | Filtreler kaynaklarda |
+| Dock sekme grupları; Kontrol Merkezi bileşenlerinin dock olması | YOK | Ek docklar: Hedefler, İstatistikler; ayrı pencere: mikser, sahneler, hedefler, istatistikler |
+| Tuval çözünürlükleri | sabit | 1920×1080 ve 1080×1920 |
+| Ses örnekleme / renk alanı / ağ bağlama ayarları | YOK | 48 kHz stereo, NV12/709 |
+| GPU kullanımı | ölçülmüyor | libobs bildirmez |
+| Ek tuvaller (OBS 31+) içe aktarımı | YOK | Tüm sahneler ana tuvale alınır, not düşülür |
+| Solo | YOK | OBS'te de yok |
+| Kare hızı değişimi | motor dururken | Profil değişimi boşta motoru yeniden başlatır |
+| Ekran görüntüsü doğrulaması | kısıtlı | Tarayıcı bölmesi 560×301; düzen DOM ölçümüyle doğrulandı |

@@ -131,3 +131,23 @@ canlı (alıcıda 1080×1920, 1131 kare, 0 hata) → yönlendiriciden aynı hede
 
 **Sınanmayanlar (kullanıcı kuralı):** ekran, pencere, oyun yakalama, kamera, mikrofon, masaüstü sesi — kod yolu var,
 çalışma anında `UNVERIFIED`.
+
+## OBS iş akışı paritesi (2026-09-28)
+
+Komitler: 070326b, cb8b503, 6cd90a2, 1c6f0be, a140c38, f23418e, b9aba4b.
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **35/35** (yeni: tarayıcı kaynağı — kare değişimi + WebAudio −26 dBFS + durum; yakalama türü özellikleri örneksiz; çok izli kayıt iz 1 −91 / iz 2 −21 dB; hibrit MP4 iki iz; koleksiyon değişiminde grafik temizlenir, çıktılar sürer) |
+| Motor birim | 19 (olay satırı alan sırası, yol dönüşümü, çökme kaydı modülü, JPEG) |
+| Panel birim (Rust) | **290** (koleksiyon v2 göçü, OBS içe aktarımı, profil, dönüşüm doğrulama, çift ses, abonelik, bant genişliği önerisi, güvenli başvuru, basılı eylemler) |
+| Panel entegrasyon | **30** geçti, 1 elle çalıştırılan göz ardı (yeni: `motor_v2_sahneler_gruplar_filtreler_koleksiyonlar`, `motor_profil_kodlama_paylasimi_ve_kayit`, `multistream_anahtar_goster_sil_ve_baglanti_sinamasi`, `motor_kisayol_eylemleri_bas_konus_ve_sahne`, `motor_sihirbaz_yerel_kodlama_sinamasi`) |
+| Ön yüz (vitest) | **383** (sahne ağacı/geometri, geri al, dock düzeni, ses hesapları, canlı akış satırları, projektör, komut paleti) |
+| clippy (panel + motor) | 0 uyarı |
+
+Testlerin yakaladıkları (asıl neden düzeltildi): libobs modül adını yalnız `/` ile ayırdığı için CEF önbellek yolu
+bozuluyor ve motor 0x80000003 ile duruyordu; motor olay satırları `to_value` ile alfabetik sıralanıyordu (kareler
+WebSocket'e yönlenmiyordu); "İ" küçük harfe çevrilince birleşik nokta üretiyordu (koleksiyon kimliği); paralel
+testlerde süreç geneli ortam değişkeni yarışı; panel yeni kaynakları eski v1 türüyle oluşturuyordu.
+
+Arayüz sınaması: [UX_ACCEPTANCE_TESTS](UX_ACCEPTANCE_TESTS.md).

@@ -143,3 +143,11 @@ bir süreç** olarak yapılacak; sınamalar yalnız sentetik kaynaklarla (ekran/
    arabelleği arayüzü (§52–§53), GO LIVE'ın çekirdek hedeflerini de başlatması, stüdyo modu ve geçişler (§55–§56).
 3. Denetim düzlemi boşlukları: eylem kayıt defterine kalan eylemler (§59), küresel kısayolların kayıt defterine
    bağlanması (§60), yayın öncesi kontrole disk/mikrofon (§87), destek paketi (§93).
+
+## OBS iş akışı paritesi istemi (2026-09-28)
+
+İstemin 80 maddesinin izlenebilirliği: [OBS_FUNCTIONAL_PARITY_SPEC](OBS_FUNCTIONAL_PARITY_SPEC.md) (madde → durum →
+kanıt), ayar/kaynak/ses/kısayol/eklenti matrisleri, [UX_ACCEPTANCE_TESTS](UX_ACCEPTANCE_TESTS.md) (§73–78). Yukarıdaki
+"Sonraki kilometre taşı" maddeleri 2 ve 3 bu turda tamamlandı (sahne düzenleyici, hedef başına ses izi, kayıt/tekrar
+arayüzü, GO LIVE motor bütünleşmesi, Studio Mode ve geçişler, kayıt defteri kısayolları, disk/mikrofon ön kontrolü,
+destek paketi).

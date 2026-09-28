@@ -94,3 +94,16 @@ Rapor hiçbir parola, anahtar, token ya da çerez değeri içermez.
 | Soket devralma | Kayıt alt süreci açık RTMP soketlerini devralıyordu (durdurulan bağlantı açık kalıyordu) → soketler devralınamaz yapılır; gerileme denetimi var. |
 | Kullanıcının OBS'i | Yapılandırmasına yazılmaz (ayrı modül ayar klasörü); Program Files'a yazılmaz. |
 | Lisans | Çekirdek GPL-2.0-or-later, kaynak depoda; panel ayrı süreç. |
+
+## OBS iş akışı paritesi (2026-09-28)
+
+- Anahtar gösterme yalnız yerel, önbelleksiz, denetimde değersiz; kopya panodan 30 sn sonra silinir; anahtar silme
+  yayındayken reddedilir ([SECRET_STORAGE_ARCHITECTURE](SECRET_STORAGE_ARCHITECTURE.md)).
+- `/ws/motor` (ekran kareleri, ses seviyeleri) yalnız loopback; uzak istemciye 403.
+- Tarayıcı kaynağı adresinde kullanıcı adı/parola reddedilir; yerel dosya yalnız `.html/.htm` ve mutlak yol.
+- OBS koleksiyonu içe aktarımı: yalnız dosya adı (klasör dışına çıkış yok), en çok 20 MB, yalnız yerel; OBS
+  dosyalarına yazılmaz. Profil/koleksiyon dışa aktarımında sır yok (testli).
+- Ayrı pencereler (projektör, dock) yalnız kendini kapatma ve konum okuma yetkisine sahip.
+- Otomatik yapılandırma platform sunucusuna bağlanmaz; kodlama sınaması geçici dosyayı siler.
+- Oyun yakalama örneği sınamada hiç oluşturulmadı (çalışan oyuna kanca atma riski); tür özellikleri örneksiz okundu.
+- Motor kendi CEF alt süreçlerini kapatır; kullanıcının OBS süreçlerine dokunulmaz.

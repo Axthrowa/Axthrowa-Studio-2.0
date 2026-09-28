@@ -20,7 +20,7 @@ export type MotorKaynakTuru =
   | "masaustu"
   | "uygulama_sesi"
   | "eklenti"
-  | "obs";
+  | "obs" | "slayt";
 export type MotorCikisDurumu = "hazir" | "baglaniyor" | "canli" | "yeniden_baglaniyor" | "durduruluyor" | "durduruldu" | "basarisiz";
 
 export type MotorOgeKaydi = { tuval: string; konum: [number, number]; sinir?: [number, number] | null; gorunur: boolean };
@@ -392,7 +392,7 @@ export const motorApi = {
 export type KaynakTuruTanimi = {
   tur: MotorKaynakTuru;
   ad: string;
-  deger: "renk" | "yazi" | "dosya" | "secim" | "yok";
+  deger: "renk" | "yazi" | "dosya" | "klasor" | "secim" | "yok";
   yakalar?: string;
   /** Ses taşır: iz maskesi anlamlı */
   ses?: boolean;
@@ -403,6 +403,7 @@ export const KAYNAK_TURLERI: KaynakTuruTanimi[] = [
   { tur: "yazi", ad: "Yazı", deger: "yazi" },
   { tur: "gorsel", ad: "Görsel dosyası", deger: "dosya" },
   { tur: "medya", ad: "Medya dosyası", deger: "dosya", ses: true },
+  { tur: "slayt", ad: "Görsel slayt gösterisi", deger: "klasor" },
   { tur: "tarayici", ad: "Tarayıcı", deger: "yazi", ses: true },
   { tur: "ekran", ad: "Ekran yakalama", deger: "secim", yakalar: "seçilen ekranı" },
   { tur: "pencere", ad: "Pencere yakalama", deger: "secim", yakalar: "seçilen pencereyi" },

@@ -82,7 +82,7 @@ export function KaynakEkleDiyalogu({ tur, eklentiTuru, sahne, kaynaklar, onEklen
       ? !varOlan
       : (tanim.deger === "renk" && !deger) ||
         (tanim.deger === "yazi" && !deger.trim()) ||
-        (tanim.deger === "dosya" && !deger.trim()) ||
+        ((tanim.deger === "dosya" || tanim.deger === "klasor") && !deger.trim()) ||
         (tur === "tarayici" && !/^(https?:\/\/.+|[A-Za-z]:\\.+\.html?)$/i.test(deger.trim())) ||
         (secimGerekli && tur !== "ekran" && tur !== "mikrofon" && tur !== "masaustu" && !deger);
 
@@ -154,6 +154,14 @@ export function KaynakEkleDiyalogu({ tur, eklentiTuru, sahne, kaynaklar, onEklen
               <>
                 <label htmlFor="ke-dosya">Dosya</label>
                 <input id="ke-dosya" className="dt-input" placeholder={tur === "gorsel" ? "C:\\…\\görsel.png" : "C:\\…\\video.mp4"} value={deger} onChange={(e) => setDeger(e.target.value)} />
+              </>
+            )}
+            {tanim.deger === "klasor" && (
+              <>
+                <label htmlFor="ke-klasor">Klasör</label>
+                <input id="ke-klasor" className="dt-input" placeholder="C:\…\Görseller" value={deger} onChange={(e) => setDeger(e.target.value)} />
+                <span />
+                <span className="text-[11px] dt-soluk">Klasördeki görseller 5 sn arayla, soldurarak döner; süre, geçiş, döngü ve rastgele sıra Özellikler'de.</span>
               </>
             )}
             {tur === "oyun" && (

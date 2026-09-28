@@ -42,6 +42,7 @@ export function turEtiketi(o: MotorSahneOgesi): string {
           renk: "Renk",
           yazi: "Yazı",
           gorsel: "Görsel",
+          slayt: "Slayt gösterisi",
           medya: "Medya",
           tarayici: "Tarayıcı",
           ekran: "Ekran",

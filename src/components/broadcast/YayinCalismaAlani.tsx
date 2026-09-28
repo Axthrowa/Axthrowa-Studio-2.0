@@ -742,7 +742,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       .filter((s) => s.id !== aktifSahne)
       .map((s) => ({ etiket: `Sahne: ${s.ad}`, eylem: () => void yap("Sahne eklenemedi", () => motorApi.ogeIslem({ eylem: "ekle", sahne: aktifSahne, kaynak: s.id })) }));
     menu.ac(e, [
-      ...grup(["renk", "yazi", "gorsel", "medya", "tarayici"]),
+      ...grup(["renk", "yazi", "gorsel", "slayt", "medya", "tarayici"]),
       "ayirici",
       ...grup(["ekran", "pencere", "oyun", "kamera"]),
       "ayirici",

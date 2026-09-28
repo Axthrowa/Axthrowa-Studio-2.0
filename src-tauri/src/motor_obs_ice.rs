@@ -32,6 +32,7 @@ pub fn panel_turu(obs_turu: &str) -> &'static str {
     "color_source" => "renk",
     "text_gdiplus" => "yazi",
     "image_source" => "gorsel",
+    "slideshow" => "slayt",
     "ffmpeg_source" => "medya",
     "browser_source" => "tarayici",
     "monitor_capture" => "ekran",

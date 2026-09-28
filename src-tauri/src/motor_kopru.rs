@@ -302,6 +302,17 @@ fn yerel_dosya(deger: &str, uzantilar: &[&str]) -> Result<String, String> {
   Ok(p.to_string_lossy().into_owned())
 }
 
+fn yerel_klasor(deger: &str) -> Result<String, String> {
+  let p = Path::new(deger.trim());
+  if !p.is_absolute() {
+    return Err("klasör yolu mutlak olmalı".into());
+  }
+  if !p.is_dir() {
+    return Err("klasör bulunamadı".into());
+  }
+  Ok(p.to_string_lossy().into_owned())
+}
+
 /// `#RRGGBB` → libobs rengi (0xAABBGGRR, opak).
 pub fn renk(deger: &str) -> Result<u32, String> {
   let h = deger.trim().trim_start_matches('#');
@@ -347,6 +358,17 @@ pub fn kaynak_tanimi(tur: &str, deger: &str, genislik: u32, yukseklik: u32) -> R
       t("text_gdiplus", json!({"text": metin}), false, false, false)
     }
     "gorsel" => t("image_source", json!({"file": yerel_dosya(deger, GORSEL_UZANTI)?}), false, false, true),
+    // Slayt gösterisi: klasördeki görseller (OBS "Image Slide Show"); ayarlar (süre, geçiş, döngü, rastgele) Özellikler'de
+    "slayt" => t(
+      "slideshow",
+      json!({
+        "files": [{"value": yerel_klasor(deger)?, "selected": false, "hidden": false}],
+        "slide_time": 5000, "transition": "fade", "transition_speed": 700, "loop": true, "randomize": false,
+      }),
+      false,
+      false,
+      true,
+    ),
     // Yalnız yerel dosya: ağ adresi kabul edilmez (motor sunucu tarafında URL açmasın)
     "medya" => t(
       "ffmpeg_source",
@@ -441,6 +463,12 @@ mod tests {
     assert_eq!(kaynak_tanimi("kamera", r"Kamera:\\?\usb#1", 1920, 1080).unwrap().ayarlar["video_device_id"], r"Kamera:\\?\usb#1");
     assert_eq!(kaynak_tanimi("ekran", r"\\?\DISPLAY#1", 1920, 1080).unwrap().ayarlar["monitor_id"], r"\\?\DISPLAY#1");
     assert!(kaynak_tanimi("uydurma", "", 1920, 1080).is_err());
+    // Slayt gösterisi: mutlak ve var olan klasör
+    let k = std::env::temp_dir();
+    let s = kaynak_tanimi("slayt", &k.to_string_lossy(), 1920, 1080).unwrap();
+    assert_eq!((s.obs_turu.as_str(), s.ayarlar["files"][0]["value"].as_str()), ("slideshow", Some(k.to_string_lossy().as_ref())));
+    assert!(kaynak_tanimi("slayt", "Resimler", 1920, 1080).is_err());
+    assert!(kaynak_tanimi("slayt", r"C:\yok\klasor", 1920, 1080).is_err());
     // Tarayıcı: http(s) adresi ya da yerel .html; kimlik bilgili adres reddedilir; ses motora yönlendirilir
     let b = kaynak_tanimi("tarayici", "https://ornek.com/widget?tema=koyu", 1920, 1080).unwrap();
     assert_eq!((b.obs_turu.as_str(), b.ayarlar["is_local_file"].as_bool(), b.ayarlar["reroute_audio"].as_bool()), ("browser_source", Some(false), Some(true)));

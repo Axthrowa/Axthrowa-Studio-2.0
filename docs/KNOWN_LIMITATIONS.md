@@ -117,15 +117,17 @@ kullanır), NSIS (motor kurulum dosyasına girer). Ayrıntı: [OBS_FUNCTIONAL_PA
 | Ses izleme | yalnız "kapalı" sınandı | Hoparlöre ses verilmez kuralı |
 | Küresel kısayol basışı | UNVERIFIED | Masaüstü girdi otomasyonu kullanılmaz; eylemler kayıt defteri üzerinden sınandı |
 | Gerçek platforma yayın | UNVERIFIED | Yalnız 127.0.0.1 alıcıları; "Sına" yalnız TCP bağlantısı |
-| "Etkileşim" (tarayıcı kaynağına tıklama/klavye) | YOK | Menüde devre dışı |
-| Alt+sürükle kırpma | YOK | Kırpma Dönüşüm penceresinden |
-| Sahne öğesi göster/gizle geçişleri | YOK | OBS içe aktarımında not düşülür |
-| Sahneye/gruba filtre | YOK | Filtreler kaynaklarda |
-| Dock sekme grupları; Kontrol Merkezi bileşenlerinin dock olması | YOK | Ek docklar: Hedefler, İstatistikler; ayrı pencere: mikser, sahneler, hedefler, istatistikler |
-| Tuval çözünürlükleri | sabit | 1920×1080 ve 1080×1920 |
-| Ses örnekleme / renk alanı / ağ bağlama ayarları | YOK | 48 kHz stereo, NV12/709 |
-| GPU kullanımı | ölçülmüyor | libobs bildirmez |
 | Ek tuvaller (OBS 31+) içe aktarımı | YOK | Tüm sahneler ana tuvale alınır, not düşülür |
 | Solo | YOK | OBS'te de yok |
-| Kare hızı değişimi | motor dururken | Profil değişimi boşta motoru yeniden başlatır |
+| Video/ses ayarı değişimi | çıktı yokken | Kare hızı, çözünürlük, renk, örnekleme değişince motor yeniden başlar; yayın/kayıt sürerken reddedilir (OBS'te de) |
+| HDR (Rec. 2100) | UNVERIFIED | Ayar ve 10 bit biçim zorunluluğu var; HDR kodlama/ekran çıktısı sınanmadı |
+| Etkileşim: tuş iletimi arayüzden | kısmi doğrulama | Motor sınamasında "g" tuşu sayfaya ulaştı; arayüzde tıklama doğrulandı, arayüz üzerinden yazma ölçümü tamamlanmadı |
+
+**2026-09-28 ikinci tur — kapananlar** (önceki sürümde YOK olan satırlar): Etkileşim penceresi (tarayıcı kaynağına
+tıklama/tekerlek/klavye; motor `sinama` + tarayıcı bölmesinde tıklama → zemin rengi değişti), Alt+sürükle kırpma,
+öğe gösterme/gizleme geçişleri (OBS içe aktarımı dahil), sahne ve grup filtreleri, dock sekme grupları + Çoklu
+Sohbet / Etkinlik Akışı / Hızlı Eylemler dockları, ayarlanabilir taban/çıkış çözünürlüğü ve ölçek filtresi, kare
+hızı 24–144, örnekleme hızı ve kanallar, renk biçimi/uzayı/aralığı, RTMP ağ ayarları (bağlanılacak IP, IP ailesi,
+düşük gecikme, dinamik bit hızı, yeniden bağlanma), GPU kullanımı (Windows "GPU Engine" 3D sayaçları; sistem ve
+motor süreci; sayaç yoksa "ölçülemiyor").
 | Ekran görüntüsü doğrulaması | kısıtlı | Tarayıcı bölmesi 560×301; düzen DOM ölçümüyle doğrulandı |

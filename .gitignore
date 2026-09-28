@@ -32,3 +32,7 @@ Portable-Build/
 
 # yerel yayın çekirdeği (ayrı Cargo projesi)
 motor/target/
+
+# Uretilen lisans dosyalari (scripts/ucuncu-taraf-bildirimleri.mjs); kok THIRD_PARTY_NOTICES.txt izlenir
+public/THIRD_PARTY_NOTICES.txt
+public/LICENSE.txt

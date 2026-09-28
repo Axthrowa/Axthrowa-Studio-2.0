@@ -76,6 +76,7 @@ import { ActivityFeedPanel, UniversalChatPanel } from "../control/UniversalChat"
 import { DeckPanel } from "../control/DeckPanel";
 import { EtkilesimPenceresi } from "./EtkilesimPenceresi";
 import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
+import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 
 type Props = { onToast: (m: string) => void; onGit?: (hedef: "control" | "hotkeys" | "settings") => void };
 
@@ -292,6 +293,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   useEffect(() => yigin.abone(() => setYiginSurum((s) => s + 1)), [yigin]);
   const docklarRef = useRef<HTMLDivElement>(null);
   const [sekmeBirlestir, setSekmeBirlestir] = useState(false);
+  const [hakkinda, setHakkinda] = useState(false);
   const [birakmaHedefi, setBirakmaHedefi] = useState<DockKimligi | null>(null);
   // Tek docklarda başlık sürüklenebilir (sekme olarak başka dock'a bırakmak için); kilitliyken değil
   useEffect(() => {
@@ -981,6 +983,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       ogeler: () => [
         { etiket: `libobs ${d?.bilgi?.libobs ?? "—"}`, devreDisi: true, eylem: () => undefined },
         { etiket: "Kısayollar: Ctrl+Z/Y geri al/yinele · Ctrl+C/V kopyala/yapıştır · Ctrl+E dönüşüm · Ctrl+F sığdır · Del kaldır · F2 adlandır", devreDisi: true, eylem: () => undefined },
+        "ayirici",
+        { etiket: "Hakkında ve lisanslar…", eylem: () => setHakkinda(true) },
       ],
     },
   ];
@@ -1519,6 +1523,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           onKapat={() => setOgeGecisi(null)}
         />
       )}
+      {hakkinda && <HakkindaDiyalogu libobs={d.bilgi?.libobs} onKapat={() => setHakkinda(false)} />}
       {sekmeBirlestir && (
         <SekmeBirlestirDiyalogu
           duzen={duzen}

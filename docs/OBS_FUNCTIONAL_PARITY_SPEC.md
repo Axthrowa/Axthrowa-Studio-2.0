@@ -29,7 +29,7 @@
 | 4 | Menüler | UYGULANDI | Dosya, Düzen, Görünüm, Docklar, Profil, Sahne Koleksiyonu, Araçlar, Yayın, Hedefler, Eklentiler, Kontrol Merkezi, Otomasyon, Yardım; klavyeyle gezilir; Ctrl+K komut paleti |
 | 5 | Sahneler paneli | UYGULANDI | Ekle, kaldır, yeniden adlandır, çoğalt, sürükle-bırak/menü sırala, geçiş geçersiz kılma; tıklama programa (Studio Mode'da önizlemeye) |
 | 6 | Sahne koleksiyonları | UYGULANDI | Çoklu koleksiyon; yeni/çoğalt/adlandır/geç (motor çalışırken, çıktılar sürer)/sil(yedeğe)/yedekle/içe-dışa aktar/**OBS'ten içe aktar**; v1 dosyası silinmeden göç |
-| 7, 18 | Kaynaklar paneli + bağlam menüsü | UYGULANDI | Ağaç (gruplar), göz, kilit, durum, filtre işareti; Özellikler, Filtreler, Dönüşüm alt menüsü, Sıra, Grupla/Çöz, Kopyala, Yapıştır (başvuru/kopya), Çoğalt, Yeniden adlandır, Kaldır, Kaynağı sil. "Etkileşim" görünür ama devre dışı (bkz. KNOWN_LIMITATIONS) |
+| 7, 18 | Kaynaklar paneli + bağlam menüsü | UYGULANDI | Ağaç (gruplar), göz, kilit, durum, filtre işareti; Özellikler, Filtreler, Dönüşüm alt menüsü, Sıra, Grupla/Çöz, Kopyala, Yapıştır (başvuru/kopya), Çoğalt, Yeniden adlandır, Kaldır, Kaynağı sil, **Etkileşim** (etkileşimli kaynakta), **Gösterme/Gizleme geçişi**, grup filtreleri; sahnede Filtreler |
 | 8 | Kaynak ekle | UYGULANDI (+UNVERIFIED) | Renk, yazı, görsel, medya, **tarayıcı**, sahne (iç içe), eklenti türleri, "var olanı ekle" sınandı; ekran/pencere/oyun/kamera/mikrofon/masaüstü/**uygulama sesi** yakalama UNVERIFIED |
 | 9 | Kaynak/uygulama sesi yakalama | UYGULANDI-UNVERIFIED | Oyun/pencere yakalamada `capture_audio`, `wasapi_process_output_capture` (pencere + öncelik); özellik anahtarları örnek oluşturmadan doğrulandı |
 | 10 | Çift ses uyarısı | UYGULANDI | Uygulama sesi + masaüstü sesi ortak izde → İkisini tut / Masaüstünü sustur / Yok say (birim testi) |
@@ -39,7 +39,7 @@
 | 14 | Gelişmiş Ses Özellikleri | UYGULANDI | Düzey (+26 dB), mono, denge, senkron (−950…20000 ms), izleme, iz 1–6 |
 | 15 | Ses filtreleri | UYGULANDI | Kurulu OBS'in tüm ses filtreleri (kazanç −20 dB ölçerde tam 20 dB düşüş sınandı) |
 | 16 | Dönüşüm | UYGULANDI | Konum, döndürme, ölçek/boyut, hizalama, sınır türü/hizalama/boyutu, kırpma, ölçek filtresi, karıştırma; kopyala/yapıştır/sıfırla/çevir/90°/sığdır/uzat/ortala |
-| 17 | Önizleme etkileşimi | UYGULANDI | Seç, Ctrl çoklu, sürükle, 8 tutamaç (köşe oran korur, Shift serbest), kenar/merkez yapışma, ok tuşu itme, bağlam menüsü, geri al/yinele. Alt+sürükle kırpma yok (Dönüşüm penceresinden) |
+| 17 | Önizleme etkileşimi | UYGULANDI | Seç, Ctrl çoklu, sürükle, 8 tutamaç (köşe oran korur, Shift serbest), kenar/merkez yapışma, ok tuşu itme, bağlam menüsü, geri al/yinele, **Alt+tutamaç kırpma** (sınırsız, döndürülmemiş öğede) |
 | 19 | Geçişler | UYGULANDI | Kurulu OBS'in geçişleri (Kes, Soldur, Swipe, Slide, Stinger, Renge Geç, Luma Wipe), süre, özellikler, sahne başına geçersiz kılma |
 | 20 | Studio Mode | UYGULANDI | Önizleme | Geçiş/Kes/Takas | Program; ayrı işleme tuvali |
 | 21–24 | Kısayollar | UYGULANDI (+küresel UNVERIFIED) | Eylem kayıt defteri: sahneye geç, Studio geçişi, göster/gizle, sustur/aç, **bas-konuş/bas-sustur** (bırakma olayı), medya, kayıt/tekrar/yayın; çakışma denetimi mevcut. Gerçek küresel tuş basışı masaüstü otomasyonu yasak olduğundan sınanmadı ([OBS_HOTKEY_PARITY_MATRIX](OBS_HOTKEY_PARITY_MATRIX.md)) |

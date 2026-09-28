@@ -109,3 +109,14 @@ Docker: `docker/docker-compose.yml` (Linux CI toolchain).
 ## İmza
 
 axthrowa — 2026-09-05
+
+## Lisans
+
+Bu ürünün tamamı (panel `src/`, `src-tauri/`, yayın motoru `motor/`, betikler) **GNU GPL-2.0-or-later** ile
+lisanslanır — bkz. [LICENSE](LICENSE) ve karar kaydı [ADR-005](docs/ADR-005-DAGITIM-VE-OZGUN-MOTOR.md). Üçüncü taraf
+bileşenlerin lisansları `THIRD_PARTY_NOTICES.txt` dosyasındadır (`node scripts/ucuncu-taraf-bildirimleri.mjs` üretir;
+sürüm derlemesi pakete koyar). İkili dağıtılırken kaynak kodu da sunulmalıdır.
+
+OBS Studio, OBS Project'in markasıdır; bu ürün onunla bağlantılı değildir. Yayın motoru kullanıcının kurulu OBS
+Studio'sundaki libobs'u yükler; libobs bu pakete dahil değildir.
+

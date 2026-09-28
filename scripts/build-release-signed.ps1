@@ -22,6 +22,12 @@ $td = Join-Path $env:LOCALAPPDATA "yya-cargo-target"
 New-Item -ItemType Directory -Force -Path $td | Out-Null
 $env:CARGO_TARGET_DIR = $td
 
+Write-Host "== Lisans denetimi + ucuncu taraf bildirimleri + SBOM (ADR-005) =="
+node (Join-Path $proj "scripts\lisans-denetimi.mjs")
+if ($LASTEXITCODE -ne 0) { throw "lisans denetimi basarisiz: GPL-2.0-or-later ile uyumsuz bagimlilik" }
+node (Join-Path $proj "scripts\ucuncu-taraf-bildirimleri.mjs")
+if ($LASTEXITCODE -ne 0) { throw "ucuncu taraf bildirimleri uretilemedi" }
+
 Write-Host "== Frontend =="
 npm run build
 if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }

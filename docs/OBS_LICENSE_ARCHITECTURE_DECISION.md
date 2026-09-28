@@ -1,6 +1,10 @@
 # OBS lisans ve mimari kararı (ADR-004)
 
-> Durum: **KABUL** (2026-09-26) · Önceki kararlar: [ADR-001/002/003](STREAMING_ENGINE_DECISION.md).
+> Durum: **YERİNE GEÇİLDİ** (2026-09-28) → [ADR-005](ADR-005-DAGITIM-VE-OZGUN-MOTOR.md): dağıtım VAR, tüm ürün
+> GPL-2.0-or-later (YOL G). Aşağıdaki mimari kurallar (A + C, OBS kaynağı kopyalanmaz, marka yok, libobs paketlenmez)
+> geçerliliğini korur; "kişisel kullanım, dağıtım yok" ve "panelde GPL kod yok" maddeleri geçersizdir.
+>
+> İlk durum: **KABUL** (2026-09-26) · Önceki kararlar: [ADR-001/002/003](STREAMING_ENGINE_DECISION.md).
 > Bu belge hukuki danışmanlık değildir; mühendislik kararının gerekçesidir.
 
 ## 1. Ürünün durumu (ürün sahibinin beyanı)

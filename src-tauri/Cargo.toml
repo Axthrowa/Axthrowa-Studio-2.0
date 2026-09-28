@@ -3,6 +3,7 @@ name = "yayin-yonetim-araci"
 version = "1.0.0"
 description = "Yayın Yönetim Aracı — OBS Overlay Desktop"
 authors = ["axthrowa"]
+license = "GPL-2.0-or-later"
 edition = "2021"
 
 [lib]

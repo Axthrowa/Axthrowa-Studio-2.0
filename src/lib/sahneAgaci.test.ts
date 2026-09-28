@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MotorSahneOgesi } from "./api/motor";
-import { altanSira, boyutlandir, duzListe, noktadakiOge, noktaKutuda, ogeKutusu, sahneAgaci, tuvaleGore, yapistir } from "./sahneAgaci";
+import { altanSira, boyutlandir, duzListe, kirpilabilir, kirpSurukle, noktadakiOge, noktaKutuda, ogeKutusu, sahneAgaci, tuvaleGore, yapistir } from "./sahneAgaci";
 
 const o = (oge: string, ek: Partial<MotorSahneOgesi> = {}): MotorSahneOgesi => ({
   oge,
@@ -89,5 +89,43 @@ describe("önizleme geometrisi", () => {
     expect(tuvaleGore(oge, [1920, 1080], "uzat")).toMatchObject({ sinir_turu: 1 });
     expect(tuvaleGore(oge, [1920, 1080], "ortala")).toEqual({ konum: [910, 515] });
     expect(tuvaleGore(oge, [1920, 1080], "yatay-ortala")).toEqual({ konum: [910, 9] });
+  });
+});
+
+describe("Alt+sürükle kırpma", () => {
+  it("sol kenar içeri: kırpma artar, sağ kenar yerinde kalır; ölçek kaynak pikseline çevrilir", () => {
+    const oge = o("s/a", { konum: [100, 100], olcek: [2, 2] }); // kutu 100,100 200×100
+    const k = ogeKutusu(oge)!;
+    const r = kirpSurukle(oge, k, { x: 0, y: 0.5 }, [140, 999]);
+    expect(r.kirp).toEqual([20, 0, 0, 0]);
+    expect(r.konum).toEqual([140, 100]);
+    const yeni = ogeKutusu({ ...oge, ...r })!;
+    expect(yeni.x + yeni.g).toBe(k.x + k.g);
+  });
+
+  it("sağ alt köşe: iki eksen; dışarı çekmek kırpmayı azaltır ama 0'ın altına indirmez", () => {
+    const oge = o("s/a", { kirp: [0, 0, 10, 10] }); // kutu 0,0 90×40
+    const k = ogeKutusu(oge)!;
+    expect(kirpSurukle(oge, k, { x: 1, y: 1 }, [80, 30]).kirp).toEqual([0, 0, 20, 20]);
+    expect(kirpSurukle(oge, k, { x: 1, y: 1 }, [500, 500]).kirp).toEqual([0, 0, 0, 0]);
+  });
+
+  it("en az 1 px görüntü kalır; merkez hizalamada kutu yerinde kalır", () => {
+    const oge = o("s/a", { konum: [50, 25], hizalama: 0 }); // merkez: kutu 0,0 100×50
+    const k = ogeKutusu(oge)!;
+    const r = kirpSurukle(oge, k, { x: 0, y: 0 }, [1000, 1000]);
+    expect(r.kirp).toEqual([99, 49, 0, 0]);
+    const yeni = ogeKutusu({ ...oge, ...r })!;
+    // Konum tam piksele yuvarlanır: merkez hizalamada yarım piksel kayabilir
+    expect([yeni.g, yeni.h]).toEqual([1, 1]);
+    expect(Math.abs(yeni.x - 99)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(yeni.y - 49)).toBeLessThanOrEqual(0.5);
+  });
+
+  it("sınır kutulu ya da döndürülmüş öğe Alt ile kırpılmaz", () => {
+    expect(kirpilabilir(o("s/a"))).toBe(true);
+    expect(kirpilabilir(o("s/a", { sinir: [10, 10], sinir_turu: 2 }))).toBe(false);
+    expect(kirpilabilir(o("s/a", { aci: 90 }))).toBe(false);
+    expect(kirpilabilir(o("s/a", { genislik: 0 }))).toBe(false);
   });
 });

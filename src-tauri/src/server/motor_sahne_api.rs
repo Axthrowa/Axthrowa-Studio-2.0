@@ -170,7 +170,7 @@ async fn api_sahne_islem(
         o.koleksiyon.yeni_kimlik("s")
       };
       komut(&state, json!({"komut": "sahne.olustur", "id": yeni, "tuval": tuval, "ad": ad})).await?;
-      state.motor.ozet().lock().koleksiyon.sahneler.push(SahneKaydi { id: yeni.clone(), ad, tuval, ogeler: Vec::new(), gecis: None });
+      state.motor.ozet().lock().koleksiyon.sahneler.push(SahneKaydi { id: yeni.clone(), ad, tuval, ogeler: Vec::new(), gecis: None, ..Default::default() });
       koleksiyonu_yaz(&state)?;
       json!({"id": yeni})
     }
@@ -222,7 +222,7 @@ async fn api_sahne_islem(
           Some(a) => ad_temizle(a)?,
           None => format!("{} (kopya)", kaynak.ad).chars().take(80).collect(),
         };
-        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis })
+        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis, ..Default::default() })
       };
       komut(&state, json!({"komut": "sahne.olustur", "id": yeni, "tuval": kayit.tuval, "ad": kayit.ad})).await?;
       let eksikler: HashSet<String> = state.motor.ozet().lock().koleksiyon.kaynaklar.iter().filter(|r| r.eksik).map(|r| r.id.clone()).collect();

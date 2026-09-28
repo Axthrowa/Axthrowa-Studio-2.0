@@ -29,7 +29,24 @@ import {
 } from "../../lib/api/motor";
 import { multistreamApi, type Finding } from "../../lib/api/multistream";
 import { canliOzeti, sureBicimi } from "../../lib/broadcast";
-import { ayiriciKaydir, ANAHTAR, DOCKLAR, dockDegistir, duzenOku, EN_AZ_YUKSEKLIK, EN_COK_YUKSEKLIK, siraliGorunur, varsayilanDuzen, type DockDuzeni, type DockKimligi } from "../../lib/dockDuzeni";
+import {
+  ayiriciKaydir,
+  ANAHTAR,
+  DOCKLAR,
+  dockDegistir,
+  duzenOku,
+  EN_AZ_YUKSEKLIK,
+  EN_COK_YUKSEKLIK,
+  oneCikan,
+  sekmeGrubu,
+  sekmeSec,
+  sekmeyeEkle,
+  sekmeyiAyir,
+  siraliGorunur,
+  varsayilanDuzen,
+  type DockDuzeni,
+  type DockKimligi,
+} from "../../lib/dockDuzeni";
 import { GeriAlYigini } from "../../lib/geriAl";
 import { useMotorCanli } from "../../lib/motorCanli";
 import { altanSira, sahneAgaci, tuvaleGore } from "../../lib/sahneAgaci";
@@ -55,6 +72,8 @@ import { YayinAyarlari } from "./YayinAyarlari";
 import { SihirbazDiyalogu } from "./SihirbazDiyalogu";
 import { KomutPaleti, komutlar, type Komut } from "./KomutPaleti";
 import { ayriPencere, monitorler, type Monitor } from "../../lib/projektor";
+import { ActivityFeedPanel, UniversalChatPanel } from "../control/UniversalChat";
+import { DeckPanel } from "../control/DeckPanel";
 
 type Props = { onToast: (m: string) => void; onGit?: (hedef: "control" | "hotkeys" | "settings") => void };
 
@@ -267,6 +286,15 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [, setYiginSurum] = useState(0);
   useEffect(() => yigin.abone(() => setYiginSurum((s) => s + 1)), [yigin]);
   const docklarRef = useRef<HTMLDivElement>(null);
+  const [sekmeBirlestir, setSekmeBirlestir] = useState(false);
+  const [birakmaHedefi, setBirakmaHedefi] = useState<DockKimligi | null>(null);
+  // Tek docklarda başlık sürüklenebilir (sekme olarak başka dock'a bırakmak için); kilitliyken değil
+  useEffect(() => {
+    docklarRef.current?.querySelectorAll<HTMLElement>("[data-dock-yuvasi] > .dt-dock > .dt-dock-baslik").forEach((b) => {
+      b.draggable = !duzen.kilitli;
+      b.title = duzen.kilitli ? "" : "Sürükleyip başka bir dock'a bırakın: sekme olarak birleşir";
+    });
+  });
 
   const setDuzen = (f: (d: DockDuzeni) => DockDuzeni) =>
     setDuzenHam((d) => {
@@ -829,9 +857,13 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ...DOCKLAR.map((x): MenuOgesi => ({ etiket: `${duzen.gorunur.includes(x.id) ? "☑" : "☐"} ${x.ad}`, eylem: () => setDuzen((dz) => dockDegistir(dz, x.id)) })),
         "ayirici",
         { etiket: `${duzen.kilitli ? "☑" : "☐"} Dockları kilitle`, eylem: () => setDuzen((dz) => ({ ...dz, kilitli: !dz.kilitli })) },
+        { etiket: "Sekme olarak birleştir… (ya da başlığı başka bir dock'a sürükleyin)", devreDisi: duzen.kilitli, eylem: () => setSekmeBirlestir(true) },
+        ...(Object.keys(duzen.sekme) as DockKimligi[]).map(
+          (c): MenuOgesi => ({ etiket: `Sekmeyi ayır: ${DOCKLAR.find((x) => x.id === c)?.ad}`, devreDisi: duzen.kilitli, eylem: () => setDuzen((dz) => sekmeyiAyir(dz, c)) })
+        ),
         { etiket: "Düzeni sıfırla", eylem: () => setDuzen(() => varsayilanDuzen()) },
         "ayirici",
-        ...(["mikser", "sahneler", "hedefler", "istatistik"] as const).map(
+        ...(["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste"] as const).map(
           (x): MenuOgesi => ({
             etiket: `Ayrı pencerede aç: ${DOCKLAR.find((k) => k.id === x)?.ad}`,
             eylem: () =>
@@ -1096,7 +1128,74 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         );
       case "istatistik":
         return <IstatistikDock d={d} bitHizi={bitHizi} />;
+      case "sohbet":
+        return (
+          <section className="dt-dock h-full" aria-label="Çoklu sohbet">
+            <div className="dt-dock-baslik">Çoklu Sohbet</div>
+            <div className="dt-dock-govde p-1.5">
+              <UniversalChatPanel onToast={onToast} />
+            </div>
+          </section>
+        );
+      case "etkinlik":
+        return (
+          <section className="dt-dock h-full" aria-label="Etkinlik akışı">
+            <div className="dt-dock-baslik">Etkinlik Akışı</div>
+            <div className="dt-dock-govde p-1.5">
+              <ActivityFeedPanel onToast={onToast} />
+            </div>
+          </section>
+        );
+      case "deste":
+        return (
+          <section className="dt-dock h-full" aria-label="Hızlı eylemler">
+            <div className="dt-dock-baslik">Hızlı Eylemler</div>
+            <div className="dt-dock-govde p-1.5">
+              <DeckPanel onToast={onToast} />
+            </div>
+          </section>
+        );
     }
+  };
+
+  /** Yuva: tek dock ya da sekme grubu (sekme çubuğu + öndeki dock) */
+  const yuva = (ev: DockKimligi) => {
+    const grup = sekmeGrubu(duzen, ev);
+    const on = oneCikan(duzen, ev);
+    if (grup.length === 1) return dock(ev);
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="dt-dock-sekmeleri" role="tablist" aria-label="Dock sekmeleri">
+          {grup.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={id === on}
+              className="dt-dock-sekme"
+              draggable={!duzen.kilitli}
+              onDragStart={(e) => {
+                e.dataTransfer.setData(DOCK_SURUKLEME, id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onClick={() => setDuzen((dz) => sekmeSec(dz, ev, id))}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                menu.ac(e, [
+                  id === ev
+                    ? { etiket: "Ev sekmesi (diğerlerini ayırın)", devreDisi: true, eylem: () => undefined }
+                    : { etiket: "Sekmeyi ayır", devreDisi: duzen.kilitli, eylem: () => setDuzen((dz) => sekmeyiAyir(dz, id)) },
+                  { etiket: "Gizle", eylem: () => setDuzen((dz) => dockDegistir(dz, id)) },
+                ]);
+              }}
+            >
+              {DOCKLAR.find((x) => x.id === id)?.ad}
+            </button>
+          ))}
+        </div>
+        <div className="min-h-0 flex-1">{dock(on)}</div>
+      </div>
+    );
   };
 
   function sesAyarla(k: MotorSesKanali, eylem: "ses" | "mono" | "denge" | "senkron" | "izleme" | "izler", deger: number | boolean) {
@@ -1223,7 +1322,35 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           <div ref={docklarRef} className="flex min-h-0 gap-0 px-1" style={{ height: duzen.yukseklik }}>
             {gorunurDocklar.map((id, i) => (
               <div key={id} className="flex min-h-0 min-w-0" style={{ flex: `${(duzen.oranlar[id] ?? 1) / toplamOran} 1 0` }}>
-                <div className="min-h-0 min-w-0 flex-1">{dock(id)}</div>
+                <div
+                  className="min-h-0 min-w-0 flex-1"
+                  data-dock-yuvasi={id}
+                  data-birakma={birakmaHedefi === id || undefined}
+                  onDragStart={(e) => {
+                    // Tek dock'un başlığı sürüklenir (başlığa `draggable` etkiyle verilir)
+                    if (e.dataTransfer.types.includes(DOCK_SURUKLEME)) return;
+                    if (!(e.target as HTMLElement).classList?.contains("dt-dock-baslik")) return;
+                    e.dataTransfer.setData(DOCK_SURUKLEME, oneCikan(duzen, id));
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => {
+                    if (duzen.kilitli || !e.dataTransfer.types.includes(DOCK_SURUKLEME)) return;
+                    e.preventDefault();
+                    if (birakmaHedefi !== id) setBirakmaHedefi(id);
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setBirakmaHedefi(null);
+                  }}
+                  onDrop={(e) => {
+                    setBirakmaHedefi(null);
+                    const c = e.dataTransfer.getData(DOCK_SURUKLEME) as DockKimligi;
+                    if (!c || duzen.kilitli || c === id) return;
+                    e.preventDefault();
+                    setDuzen((dz) => sekmeyeEkle(sekmeyiAyir(dz, c), c, id));
+                  }}
+                >
+                  {yuva(id)}
+                </div>
                 {i < gorunurDocklar.length - 1 && (
                   <div className="dt-dikey-ayirici" role="separator" aria-orientation="vertical" data-kilitli={duzen.kilitli || undefined} onPointerDown={ayiriciSurukle(id, gorunurDocklar[i + 1])} />
                 )}
@@ -1349,6 +1476,16 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       )}
       {istem && <AdIstemi baslik={istem.baslik} baslangic={istem.baslangic} onKapat={() => setIstem(null)} onTamam={(ad) => (setIstem(null), istem.yap(ad))} />}
       {onay && <OnayKutusu istek={onay} onKapat={() => setOnay(null)} />}
+      {sekmeBirlestir && (
+        <SekmeBirlestirDiyalogu
+          duzen={duzen}
+          onTamam={(c, ev) => {
+            setSekmeBirlestir(false);
+            setDuzen((dz) => sekmeyeEkle(sekmeyiAyir(dz, c), c, ev));
+          }}
+          onKapat={() => setSekmeBirlestir(false)}
+        />
+      )}
       {eklentiPenceresi && (
         <EklentiYoneticisi
           baslangic={eklentiPenceresi.sekme}
@@ -1375,4 +1512,40 @@ function GecisOzellikleri({ tuval, ad, onKapat }: { tuval: string; ad: string; o
   const oku = useCallback(() => motorApi.gecisOzellikleri(tuval), [tuval]);
   const yaz = useCallback((a: Record<string, unknown>) => motorApi.gecisGuncelle(tuval, a), [tuval]);
   return <OzellikFormu baslik={`Geçiş: ${ad}`} oku={oku} yaz={yaz} onKapat={onKapat} />;
+}
+
+const DOCK_SURUKLEME = "application/x-yya-dock";
+
+function SekmeBirlestirDiyalogu({ duzen, onTamam, onKapat }: { duzen: DockDuzeni; onTamam: (cocuk: DockKimligi, ev: DockKimligi) => void; onKapat: () => void }) {
+  const [cocuk, setCocuk] = useState<DockKimligi>("gecisler");
+  const [ev, setEv] = useState<DockKimligi>("denetimler");
+  const secenekler = DOCKLAR.map((x) => (
+    <option key={x.id} value={x.id}>
+      {x.ad}
+      {duzen.gorunur.includes(x.id) ? "" : " (gizli)"}
+    </option>
+  ));
+  return (
+    <Pencere baslik="Sekme olarak birleştir" onKapat={onKapat}>
+      <div className="dt-form">
+        <label htmlFor="sekme-cocuk">Dock</label>
+        <select id="sekme-cocuk" className="dt-input" value={cocuk} onChange={(e) => setCocuk(e.target.value as DockKimligi)}>
+          {secenekler}
+        </select>
+        <label htmlFor="sekme-ev">Şu dock'un sekmesi olsun</label>
+        <select id="sekme-ev" className="dt-input" value={ev} onChange={(e) => setEv(e.target.value as DockKimligi)}>
+          {secenekler}
+        </select>
+        <p className="col-span-2 dt-soluk">İkisi de görünür olur; sekme bağlam menüsünden ya da Docklar menüsünden ayrılır.</p>
+        <div className="col-span-2 flex justify-end gap-2">
+          <button type="button" className="dt-btn" onClick={onKapat}>
+            Vazgeç
+          </button>
+          <button type="button" className="dt-btn-primary" disabled={cocuk === ev} onClick={() => onTamam(cocuk, ev)}>
+            Birleştir
+          </button>
+        </div>
+      </div>
+    </Pencere>
+  );
 }

@@ -173,7 +173,7 @@ pub enum OgeTuru {
   Grup,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct SahneOgesi {
   /// Kaynak ya da sahne kimliği; grupta grup kimliği
   pub kaynak: String,
@@ -187,6 +187,14 @@ pub struct SahneOgesi {
   /// Grubun öğeleri (alttan üste)
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
   pub cocuklar: Vec<SahneOgesi>,
+  /// Grubun filtreleri (yalnız grupta; OBS'te gruba video filtresi eklenir)
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub filtreler: Vec<FiltreKaydi>,
+  /// Öğe gösterilirken / gizlenirken oynatılan geçiş (OBS "Show/Hide Transition")
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub goster_gecisi: Option<GecisKaydi>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub gizle_gecisi: Option<GecisKaydi>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -197,7 +205,7 @@ pub struct GecisKaydi {
   pub ayarlar: Value,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct SahneKaydi {
   pub id: String,
   pub ad: String,
@@ -208,6 +216,9 @@ pub struct SahneKaydi {
   /// Bu sahneye geçerken kullanılacak geçiş (OBS "Transition Override")
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub gecis: Option<GecisKaydi>,
+  /// Sahnenin kendi filtreleri (OBS sahne filtreleri)
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub filtreler: Vec<FiltreKaydi>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -637,10 +648,10 @@ impl Koleksiyon {
 
   pub fn kimlik_kullanimda(&self, id: &str) -> bool {
     fn grupta(o: &[SahneOgesi], id: &str) -> bool {
-      o.iter().any(|x| (x.tur == OgeTuru::Grup && x.kaynak == id) || grupta(&x.cocuklar, id))
+      o.iter().any(|x| (x.tur == OgeTuru::Grup && (x.kaynak == id || x.filtreler.iter().any(|f| f.id == id))) || grupta(&x.cocuklar, id))
     }
     self.kaynaklar.iter().any(|k| k.id == id || k.filtreler.iter().any(|f| f.id == id))
-      || self.sahneler.iter().any(|s| s.id == id || grupta(&s.ogeler, id))
+      || self.sahneler.iter().any(|s| s.id == id || s.filtreler.iter().any(|f| f.id == id) || grupta(&s.ogeler, id))
   }
 
   /// Tutarlılık: her etkin tuvalde en az bir sahne, geçerli program sahnesi; bilinmeyen kaynağa işaret eden ve
@@ -652,7 +663,7 @@ impl Koleksiyon {
       if !self.sahneler.iter().any(|s| s.tuval == tv) {
         let (id, ad) = if tv == "ana" { ("sahne-ana", "Sahne") } else { ("sahne-dikey", "Dikey sahne") };
         let id = if self.kimlik_kullanimda(id) { self.yeni_kimlik("s") } else { id.to_string() };
-        self.sahneler.push(SahneKaydi { id, ad: ad.into(), tuval: tv.into(), ogeler: Vec::new(), gecis: None });
+        self.sahneler.push(SahneKaydi { id, ad: ad.into(), tuval: tv.into(), ogeler: Vec::new(), gecis: None, ..Default::default() });
       }
     }
     for tv in TUVALLER {
@@ -718,11 +729,11 @@ impl Koleksiyon {
               gorunur: o.gorunur,
               ..Default::default()
             },
-            cocuklar: Vec::new(),
+            ..Default::default()
           })
         })
         .collect();
-      self.sahneler.push(SahneKaydi { id: id.into(), ad: ad.into(), tuval: tv.into(), ogeler, gecis: None });
+      self.sahneler.push(SahneKaydi { id: id.into(), ad: ad.into(), tuval: tv.into(), ogeler, gecis: None, ..Default::default() });
       self.program.insert(tv.into(), id.into());
     }
     for k in &mut self.kaynaklar {
@@ -758,6 +769,22 @@ impl Koleksiyon {
     let Some(s) = self.sahne(sahne) else { return };
     let eski = std::mem::take(&mut s.ogeler);
     let grup_adi = |id: &str| -> Option<String> { eski.iter().find(|o| o.tur == OgeTuru::Grup && o.kaynak == id).map(|o| o.ad.clone()) };
+    // Motorun bilmediği öğe alanları (geçiş ayarları, grup filtreleri): aynı kaynağın n. görünümünden taşınır
+    let mut eski_duz: Vec<&SahneOgesi> = Vec::new();
+    for o in &eski {
+      eski_duz.push(o);
+      eski_duz.extend(o.cocuklar.iter());
+    }
+    let mut goruldu: BTreeMap<String, usize> = BTreeMap::new();
+    let mut tasi = |kayit: &mut SahneOgesi| {
+      let n = goruldu.entry(kayit.kaynak.clone()).or_insert(0);
+      if let Some(e) = eski_duz.iter().filter(|e| e.kaynak == kayit.kaynak && e.tur == kayit.tur).nth(*n) {
+        kayit.filtreler = e.filtreler.clone();
+        kayit.goster_gecisi = e.goster_gecisi.clone();
+        kayit.gizle_gecisi = e.gizle_gecisi.clone();
+      }
+      *n += 1;
+    };
     let mut kok: Vec<SahneOgesi> = Vec::new();
     for o in motor_ogeleri {
       let Some(kaynak) = o.get("kaynak").and_then(Value::as_str) else { continue };
@@ -769,13 +796,15 @@ impl Koleksiyon {
       } else {
         OgeTuru::Kaynak
       };
-      let kayit = SahneOgesi {
+      let mut kayit = SahneOgesi {
         kaynak: kaynak.to_string(),
         tur,
         ad: if grup { grup_adi(kaynak).unwrap_or_else(|| kaynak.to_string()) } else { String::new() },
         donusum: Donusum::motordan(o),
         cocuklar: Vec::new(),
+        ..Default::default()
       };
+      tasi(&mut kayit);
       match o.get("ust").and_then(Value::as_str) {
         Some(ust) => {
           let gid = ust.rsplit_once('/').map_or(ust, |(_, g)| g);
@@ -794,6 +823,55 @@ impl Koleksiyon {
     if let Some(s) = self.sahne(sahne) {
       s.ogeler = kok;
     }
+  }
+
+  /// Filtre sahibinin (kaynak, sahne ya da grup kimliği) filtre listesi
+  pub fn filtreler_mut(&mut self, sahip: &str) -> Option<&mut Vec<FiltreKaydi>> {
+    fn grup<'a>(o: &'a mut [SahneOgesi], id: &str) -> Option<&'a mut SahneOgesi> {
+      o.iter_mut().find(|x| x.tur == OgeTuru::Grup && x.kaynak == id)
+    }
+    if self.kaynaklar.iter().any(|k| k.id == sahip) {
+      return self.kaynak(sahip).map(|k| &mut k.filtreler);
+    }
+    if self.sahneler.iter().any(|s| s.id == sahip) {
+      return self.sahne(sahip).map(|s| &mut s.filtreler);
+    }
+    self.sahneler.iter_mut().find_map(|s| grup(&mut s.ogeler, sahip)).map(|g| &mut g.filtreler)
+  }
+
+  /// Filtrenin sahibi (kaynak, sahne ya da grup kimliği)
+  pub fn filtre_sahibi(&self, fid: &str) -> Option<String> {
+    let var = |v: &[FiltreKaydi]| v.iter().any(|f| f.id == fid);
+    if let Some(k) = self.kaynaklar.iter().find(|k| var(&k.filtreler)) {
+      return Some(k.id.clone());
+    }
+    for s in &self.sahneler {
+      if var(&s.filtreler) {
+        return Some(s.id.clone());
+      }
+      if let Some(g) = s.ogeler.iter().find(|o| o.tur == OgeTuru::Grup && var(&o.filtreler)) {
+        return Some(g.kaynak.clone());
+      }
+    }
+    None
+  }
+
+  /// Sahne öğesi motorun listeleme sırasıyla (kök öğe, ardından grup çocukları; alttan üste)
+  pub fn oge_sirayla(&mut self, sahne: &str, sira: usize) -> Option<&mut SahneOgesi> {
+    let s = self.sahne(sahne)?;
+    let mut i = 0;
+    for o in s.ogeler.iter_mut() {
+      if i == sira {
+        return Some(o);
+      }
+      i += 1;
+      let n = o.cocuklar.len();
+      if sira < i + n {
+        return o.cocuklar.get_mut(sira - i);
+      }
+      i += n;
+    }
+    None
   }
 
   /// Sahnede (gruplar dahil) bu kaynağı gösteren öğe sayısı
@@ -910,11 +988,11 @@ mod tests {
     let mut eksik = KaynakKaydi::yeni("e", "eklenti", "yok", "E", json!({}));
     eksik.eksik = true;
     k.kaynaklar.push(eksik);
-    k.sahneler.push(SahneKaydi { id: "s2".into(), ad: "İkinci".into(), tuval: "ana".into(), ogeler: vec![], gecis: None });
+    k.sahneler.push(SahneKaydi { id: "s2".into(), ad: "İkinci".into(), tuval: "ana".into(), ogeler: vec![], gecis: None, ..Default::default() });
     let s = k.sahneler[0].id.clone();
     k.sahne(&s).unwrap().ogeler = vec![
-      SahneOgesi { kaynak: "e".into(), tur: OgeTuru::Kaynak, ad: String::new(), donusum: Donusum::default(), cocuklar: vec![] },
-      SahneOgesi { kaynak: "g1".into(), tur: OgeTuru::Grup, ad: "Kamera grubu".into(), donusum: Donusum::default(), cocuklar: vec![] },
+      SahneOgesi { kaynak: "e".into(), tur: OgeTuru::Kaynak, ad: String::new(), donusum: Donusum::default(), cocuklar: vec![], ..Default::default() },
+      SahneOgesi { kaynak: "g1".into(), tur: OgeTuru::Grup, ad: "Kamera grubu".into(), donusum: Donusum::default(), cocuklar: vec![], ..Default::default() },
     ];
     let motor = [
       json!({"oge": format!("{s}/a"), "kaynak": "a", "konum": [1, 2], "olcek": [2, 2], "kirp": [1, 2, 3, 4], "kilit": true, "grup": false}),
@@ -937,8 +1015,8 @@ mod tests {
     let j = Donusum::default().motor_json();
     assert!(j.get("sinir").is_none() && j["sinir_turu"] == 0 && j["hizalama"] == 5);
     // Kendini içeren sahne ve bilinmeyen kaynak düzeltmede düşer
-    k.sahne("s2").unwrap().ogeler.push(SahneOgesi { kaynak: "s2".into(), tur: OgeTuru::Sahne, ad: String::new(), donusum: Donusum::default(), cocuklar: vec![] });
-    k.sahne("s2").unwrap().ogeler.push(SahneOgesi { kaynak: "yok".into(), tur: OgeTuru::Kaynak, ad: String::new(), donusum: Donusum::default(), cocuklar: vec![] });
+    k.sahne("s2").unwrap().ogeler.push(SahneOgesi { kaynak: "s2".into(), tur: OgeTuru::Sahne, ad: String::new(), donusum: Donusum::default(), cocuklar: vec![], ..Default::default() });
+    k.sahne("s2").unwrap().ogeler.push(SahneOgesi { kaynak: "yok".into(), tur: OgeTuru::Kaynak, ad: String::new(), donusum: Donusum::default(), cocuklar: vec![], ..Default::default() });
     k.duzelt();
     assert!(k.sahne_ref("s2").unwrap().ogeler.is_empty());
     assert!(k.kimlik_kullanimda("g1") && !k.kimlik_kullanimda("g2"));

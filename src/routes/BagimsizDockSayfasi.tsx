@@ -1,5 +1,5 @@
 /**
- * Ayrı pencerede dock (çoklu monitör): `/dock?id=mikser|sahneler|hedefler|istatistik`. Veri ve eylemler ana
+ * Ayrı pencerede dock (çoklu monitör): `/dock?id=mikser|sahneler|hedefler|istatistik|sohbet|etkinlik|deste`. Veri ve eylemler ana
  * çalışma alanıyla aynı uçlardan gelir (izin + denetim sunucuda); ayrı pencere yalnız görünüm ve bu dock'un kendi
  * eylemleridir. Motor kapalıyken bilgi gösterir.
  */
@@ -12,11 +12,23 @@ import { MikserDock } from "../components/broadcast/MikserDock";
 import { SahnelerDock } from "../components/broadcast/SahnelerDock";
 import { HedeflerDock, IstatistikDock, useBitHizi } from "../components/broadcast/HedeflerDock";
 import { konumuKaydet } from "../lib/projektor";
+import { ActivityFeedPanel, UniversalChatPanel } from "../components/control/UniversalChat";
+import { DeckPanel } from "../components/control/DeckPanel";
 import "../styles/desktop.css";
 
-export type BagimsizDockKimligi = "mikser" | "sahneler" | "hedefler" | "istatistik";
-const GECERLI: BagimsizDockKimligi[] = ["mikser", "sahneler", "hedefler", "istatistik"];
-const AD: Record<BagimsizDockKimligi, string> = { mikser: "Ses Mikseri", sahneler: "Sahneler", hedefler: "Hedefler", istatistik: "İstatistikler" };
+export type BagimsizDockKimligi = "mikser" | "sahneler" | "hedefler" | "istatistik" | "sohbet" | "etkinlik" | "deste";
+const GECERLI: BagimsizDockKimligi[] = ["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste"];
+const AD: Record<BagimsizDockKimligi, string> = {
+  mikser: "Ses Mikseri",
+  sahneler: "Sahneler",
+  hedefler: "Hedefler",
+  istatistik: "İstatistikler",
+  sohbet: "Çoklu Sohbet",
+  etkinlik: "Etkinlik Akışı",
+  deste: "Hızlı Eylemler",
+};
+/** Motordan bağımsız docklar (Kontrol Merkezi bileşenleri): motor kapalıyken de çalışır */
+const MOTORSUZ: BagimsizDockKimligi[] = ["sohbet", "etkinlik", "deste"];
 
 export function dockKimligi(arama: string): BagimsizDockKimligi {
   const id = new URLSearchParams(arama).get("id") as BagimsizDockKimligi | null;
@@ -73,8 +85,18 @@ export default function BagimsizDockSayfasi() {
   const tuval = "ana";
   const studyo = !!sl && Object.prototype.hasOwnProperty.call(sl.studyo, tuval);
 
+  const toast = (m: string) => {
+    setMesaj(m.slice(0, 200));
+    window.setTimeout(() => setMesaj(null), 5000);
+  };
   let icerik: React.ReactNode;
-  if (!d) icerik = <p className="p-3 text-[12px] dt-soluk">Bağlanıyor…</p>;
+  if (MOTORSUZ.includes(id))
+    icerik = (
+      <div className="h-full overflow-auto p-1.5">
+        {id === "sohbet" ? <UniversalChatPanel onToast={toast} /> : id === "etkinlik" ? <ActivityFeedPanel onToast={toast} /> : <DeckPanel onToast={toast} />}
+      </div>
+    );
+  else if (!d) icerik = <p className="p-3 text-[12px] dt-soluk">Bağlanıyor…</p>;
   else if (!calisiyor) icerik = <p className="p-3 text-[12px] dt-soluk">Yayın motoru kapalı. Ana penceredeki Yayın sekmesinden başlatın.</p>;
   else if (id === "mikser")
     icerik = (

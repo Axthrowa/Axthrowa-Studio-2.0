@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ayiriciKaydir, dockDegistir, duzenOku, siraliGorunur, varsayilanDuzen } from "./dockDuzeni";
+import { ayiriciKaydir, dockDegistir, duzenOku, oneCikan, sekmeGrubu, sekmeSec, sekmeyeEkle, sekmeyiAyir, siraliGorunur, varsayilanDuzen } from "./dockDuzeni";
 
 describe("dock düzeni", () => {
   it("varsayılan OBS alt sırası; ek docklar kapalı", () => {
@@ -28,5 +28,43 @@ describe("dock düzeni", () => {
     // Aşırı kaydırma: komşu en az payda kalır
     const a = ayiriciKaydir(v, "sahneler", "kaynaklar", 100000, 1000);
     expect(a.oranlar.kaynaklar).toBeGreaterThan(0.2);
+  });
+});
+
+describe("dock sekme grupları", () => {
+  it("sekmeye ekle: çocuk yuvasını kaybeder, evin sekmesi olur ve öne çıkar; ayır geri getirir", () => {
+    const d = sekmeyeEkle(varsayilanDuzen(), "gecisler", "denetimler");
+    expect(siraliGorunur(d)).toEqual(["sahneler", "kaynaklar", "mikser", "denetimler"]);
+    expect(sekmeGrubu(d, "denetimler")).toEqual(["denetimler", "gecisler"]);
+    expect(oneCikan(d, "denetimler")).toBe("gecisler");
+    expect(oneCikan(sekmeSec(d, "denetimler", "denetimler"), "denetimler")).toBe("denetimler");
+    const a = sekmeyiAyir(d, "gecisler");
+    expect(siraliGorunur(a)).toEqual(siraliGorunur(varsayilanDuzen()));
+    expect(oneCikan(a, "denetimler")).toBe("denetimler");
+  });
+
+  it("gizli dock sekmeye alınınca görünür olur; ev gizlenince çocuk kendi yuvasına döner", () => {
+    const d = sekmeyeEkle(varsayilanDuzen(), "sohbet", "mikser");
+    expect(d.gorunur).toContain("sohbet");
+    expect(sekmeGrubu(d, "mikser")).toEqual(["mikser", "sohbet"]);
+    const g = dockDegistir(d, "mikser");
+    expect(siraliGorunur(g)).toContain("sohbet");
+  });
+
+  it("zincir oluşmaz: sekmeye sekme eklemek ortak eve ekler; çocuğun sekmeleri taşınır", () => {
+    let d = sekmeyeEkle(varsayilanDuzen(), "gecisler", "denetimler");
+    d = sekmeyeEkle(d, "hedefler", "gecisler");
+    expect(d.sekme.hedefler).toBe("denetimler");
+    d = sekmeyeEkle(d, "denetimler", "sahneler");
+    expect([d.sekme.denetimler, d.sekme.gecisler, d.sekme.hedefler]).toEqual(["sahneler", "sahneler", "sahneler"]);
+    expect(sekmeGrubu(d, "sahneler")).toEqual(["sahneler", "gecisler", "denetimler", "hedefler"]);
+    expect(sekmeyeEkle(d, "sahneler", "gecisler")).toBe(d);
+  });
+
+  it("kayıt doğrulama: bilinmeyen, kendine ve zincirli sekme bağları düşer", () => {
+    const d = duzenOku(JSON.stringify({ gorunur: ["sahneler", "mikser", "gecisler"], sekme: { gecisler: "mikser", mikser: "sahneler", x: "mikser", sahneler: "sahneler" }, etkinSekme: { sahneler: "yok", mikser: "gecisler" } }));
+    expect(d.sekme).toEqual({ mikser: "sahneler" });
+    expect(d.etkinSekme).toEqual({});
+    expect(siraliGorunur(d)).toEqual(["sahneler", "gecisler"]);
   });
 });

@@ -211,7 +211,7 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
     } else {
       OgeTuru::Kaynak
     };
-    Some(SahneOgesi { kaynak: hedef, tur, ad: grup_adi.unwrap_or("").to_string(), donusum: donusum(o), cocuklar })
+    Some(SahneOgesi { kaynak: hedef, tur, ad: grup_adi.unwrap_or("").to_string(), donusum: donusum(o), cocuklar, ..Default::default() })
   };
   for (sid, s) in &sahne_json {
     let mut ogeler = Vec::new();
@@ -233,7 +233,7 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
         r.notlar.push(format!("«{}» öğesinin göster/gizle geçişi aktarılmadı", o["name"].as_str().unwrap_or("?")));
       }
     }
-    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None });
+    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, ..Default::default() });
     r.sahne += 1;
   }
   // Sahne sırası (OBS "scene_order")

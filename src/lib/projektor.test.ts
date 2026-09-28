@@ -14,6 +14,7 @@ describe("projektör", () => {
   it("ayrı dock kimliği doğrulanır", () => {
     expect(dockKimligi("?id=sahneler")).toBe("sahneler");
     expect(dockKimligi("?id=x")).toBe("mikser");
+    expect(dockKimligi("?id=sohbet")).toBe("sohbet");
   });
 
   it("ekran dışı pencere ana monitöre alınır", () => {

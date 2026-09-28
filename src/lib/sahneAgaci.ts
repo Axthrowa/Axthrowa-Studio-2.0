@@ -185,6 +185,41 @@ export function boyutlandir(
   return { konum, olcek: [+(g / kg).toFixed(4), +(h / kh).toFixed(4)] };
 }
 
+/** Alt+sürükle kırpması yapılabilir mi: sınırsız, döndürülmemiş, boyutu bilinen öğe (sınır kutulu öğede kırpma
+ * Dönüşüm penceresinden yapılır — OBS'te de sınır kutusu kırpılmış görüntüyü yeniden ölçekler) */
+export function kirpilabilir(o: MotorSahneOgesi): boolean {
+  return (o.sinir_turu ?? (o.sinir ? 2 : 0)) === 0 && !(o.aci ?? 0) && (o.genislik ?? 0) > 0 && (o.yukseklik ?? 0) > 0 && o.olcek[0] > 0 && o.olcek[1] > 0;
+}
+
+/**
+ * Alt+tutamaç sürüklemesi (OBS): ölçek değişmez, sürüklenen kenar kaynağı kırpar; karşı kenar yerinde kalır.
+ * Kırpma kaynak pikselidir (tuval farkı / ölçek), 0'ın altına inmez ve en az 1 px görüntü bırakır.
+ * Dönüş: yeni kırpma (sol, üst, sağ, alt) ve kutunun yerinde kalması için hizalama noktası.
+ */
+export function kirpSurukle(
+  o: MotorSahneOgesi,
+  k: Kutu,
+  tutamac: { x: number; y: number },
+  nokta: [number, number]
+): { konum: [number, number]; kirp: [number, number, number, number] } {
+  const [sx, sy] = o.olcek;
+  const [kg, ky] = [o.genislik ?? 0, o.yukseklik ?? 0];
+  const [cl, ct, cr, cb] = o.kirp ?? [0, 0, 0, 0];
+  let [yl, yt, yr, yb] = [cl, ct, cr, cb];
+  if (tutamac.x === 0) yl = Math.min(kg - cr - 1, Math.max(0, cl + (nokta[0] - k.x) / sx));
+  if (tutamac.x === 1) yr = Math.min(kg - cl - 1, Math.max(0, cr + (k.x + k.g - nokta[0]) / sx));
+  if (tutamac.y === 0) yt = Math.min(ky - cb - 1, Math.max(0, ct + (nokta[1] - k.y) / sy));
+  if (tutamac.y === 1) yb = Math.min(ky - ct - 1, Math.max(0, cb + (k.y + k.h - nokta[1]) / sy));
+  const kirp: [number, number, number, number] = [Math.round(yl), Math.round(yt), Math.round(yr), Math.round(yb)];
+  // Yeni kutu: sol/üst kırpma kutuyu sağa/aşağı iter, sağ/alt kırpma yalnız daraltır
+  const x = k.x + (kirp[0] - cl) * sx;
+  const y = k.y + (kirp[1] - ct) * sy;
+  const g = (kg - kirp[0] - kirp[2]) * sx;
+  const h = (ky - kirp[1] - kirp[3]) * sy;
+  const [dx, dy] = hizalamaOfseti(o.hizalama ?? 5, g, h);
+  return { konum: [Math.round(x + dx), Math.round(y + dy)], kirp };
+}
+
 /** Tuvale sığdır / uzat / ortala (OBS "Transform" menüsü) */
 export function tuvaleGore(
   o: MotorSahneOgesi,

@@ -402,6 +402,48 @@
   outline-offset: -2px;
 }
 
+/* ── Dock sekme grupları ── */
+.dt-dock-sekmeleri {
+  display: flex;
+  height: 24px;
+  flex-shrink: 0;
+  align-items: stretch;
+  gap: 1px;
+  overflow-x: auto;
+  background: var(--dt-surface-2);
+  border: 1px solid var(--dt-line);
+  border-bottom: 0;
+}
+.dt-dock-sekme {
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--dt-text-2);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dt-dock-sekme:hover {
+  color: var(--dt-text);
+}
+.dt-dock-sekme[aria-selected="true"] {
+  color: var(--dt-text);
+  border-bottom-color: var(--panel-accent);
+  background: var(--dt-surface-1);
+}
+.dt-dock-sekme:focus-visible {
+  outline: 2px solid var(--dt-focus);
+  outline-offset: -2px;
+}
+[data-dock-yuvasi][data-birakma] {
+  outline: 2px dashed var(--panel-accent);
+  outline-offset: -2px;
+}
+[data-dock-yuvasi] .dt-dock-baslik[draggable="true"] {
+  cursor: grab;
+}
+
 /* ── Durum: nokta + metin (hap rozet değil) ── */
 .dt-durum {
   display: inline-flex;

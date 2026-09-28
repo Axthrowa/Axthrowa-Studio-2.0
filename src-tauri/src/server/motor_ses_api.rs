@@ -660,7 +660,7 @@ mod tests {
     masa.izler = 0b10;
     k.kaynaklar = vec![oyun, masa];
     let s = k.sahneler[0].id.clone();
-    k.sahne(&s).unwrap().ogeler.push(SahneOgesi { kaynak: "o".into(), tur: OgeTuru::Kaynak, ad: String::new(), donusum: Default::default(), cocuklar: vec![] });
+    k.sahne(&s).unwrap().ogeler.push(SahneOgesi { kaynak: "o".into(), tur: OgeTuru::Kaynak, ad: String::new(), donusum: Default::default(), cocuklar: vec![], ..Default::default() });
     let u = cift_ses_uyarilari(&k);
     assert_eq!(u.len(), 1);
     assert_eq!(u[0]["izler"], json!([2]));

@@ -106,7 +106,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Kanal: ad, dB fader, tepe+RMS ölçer, tepe tutma, sessiz, izleme, dişli menüsü | VAR | sinama (ölçer), tp | |
 | Bağlam: Gizle, Filtreler, Özellikler, Gelişmiş ses, izleme türü, izler | VAR | tp | |
 | Yüzde olarak göster | VAR | vt:sesMatematik | Kanal bağlam menüsünden; tercih yerel |
-| Dikey düzen, ölçer tipi (true peak), düşüş hızı, kilitle | YOK | | |
+| Dikey düzen | VAR | tp | Başlıktaki düğmeyle; tercih yerel |
+| Ölçer tipi (true peak), düşüş hızı, kilitle | YOK | | |
 | Gelişmiş Ses Özellikleri tablosu (ses, mono, denge, senkron, izleme, İz 1–6, yalnız etkin kaynaklar) | VAR | sinama, it | |
 | Bas-konuş / bas-sustur | VAR | it:motor_kisayol_eylemleri_bas_konus_ve_sahne | Gecikme ms ayarı yok |
 | Solo | YOK | | |
@@ -130,7 +131,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Tekrar arabelleği + Kaydet | VAR | sinama, it | |
 | Sanal kamera başlat | VAR | sinama, it | OBS sanal kamera sürücüsü gerekir |
 | Studio Mode, Ayarlar | VAR | tp | |
-| Backtrack | YOK | | Tekrar arabelleği var; tuval başına sürekli arabellek yok |
+| Backtrack | KISMİ | sinama, it:motor_kayit_…_dikey_tekrar | Tekrar arabelleği yatay ve (profilde açılırsa) dikey tuvalde; klip listesi ve kırpma yok |
 
 ## 4.9 Studio Mode
 
@@ -181,6 +182,6 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 | Yayın öncesi kontrol (GO LIVE) | VAR | it | |
 | Yayın bilgisi dock'u (başlık/kategori, platform API'si) | YOK | | Platform OAuth'u gerektirir |
 | Çoklu tuval (yatay + dikey) | KISMİ | sinama | İki sabit tuval; sınırsız tuval ve bağlı sahneler yok |
-| Backtrack | YOK | | |
+| Backtrack | KISMİ | it | Tuval başına tekrar arabelleği (yatay + dikey); klip listesi/hızlı kırpma yok |
 | Birleşik sohbet + etkinlik dock'u | VAR | — | Mevcut StreamAxT/chatHub altyapısı |
 | Twitch Enhanced Broadcasting | DESTEKLENMİYOR | | Platform onayı/API gerektirir; arayüzde gösterilmez |

@@ -146,4 +146,4 @@ Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
 | T-bar | sabit geçişlerde yok | Kes ve Stinger (libobs "fixed" geçişler) T-bar ile sürüklenemez; OBS'te de devre dışıdır |
 | Deinterlace görsel etkisi | UNVERIFIED | Geçmeli kaynak (yakalama kartı) yok; ayar libobs'ta saklanır ve geri okunur |
 | Hızlı geçiş: geçici tür değişimi | kısmi | Hızlı geçiş sürerken tuvalin geçişi o türe alınır, süre + 250 ms sonra geri kurulur; bu arada başka geçiş başlatılırsa geri kurma yine olur |
-| Betikler, Altyazı, Backtrack, özel tarayıcı dock'u, mikser dikey düzeni | YOK | Kontrol listesinde satır satır |
+| Betikler, Altyazı, Backtrack klip listesi, özel tarayıcı dock'u | YOK | Kontrol listesinde satır satır |

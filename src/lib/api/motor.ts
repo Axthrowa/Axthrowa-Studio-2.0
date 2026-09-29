@@ -176,7 +176,13 @@ export type MotorSahneler = {
   gecisler: Record<string, MotorGecis>;
   gecisTurleri: { id: string; ad: string }[] | null;
   dikey?: boolean;
+  adliGecisler?: MotorAdliGecis[];
+  hizliGecisler?: MotorHizliGecis[];
+  /** Tuval → seçili adlandırılmış geçiş */
+  seciliGecis?: Record<string, string>;
 };
+export type MotorAdliGecis = { id: string; ad: string; tur: string; yerlesik: boolean };
+export type MotorHizliGecis = { id: string; gecis: string; sure_ms: number };
 export type MotorSesKanali = {
   id: string;
   ad: string;
@@ -348,6 +354,9 @@ export const motorApi = {
   program: (sahne: string, gecis = true, sure_ms?: number) => istek<{ ok: boolean }>("/api/motor/program", { sahne, gecis, sure_ms }),
   gecis: (tuval: string) =>
     istek<{ tuval: string; bilgi: { tur: string; sure_ms: number; program: string | null }; turler: { id: string; ad: string }[] }>(`/api/motor/gecis?tuval=${tuval}`),
+  gecisListesi: (govde: { eylem: "ekle" | "sil" | "adlandir" | "sec" | "hizli-ekle" | "hizli-sil"; id?: string; ad?: string; tur?: string; tuval?: string; gecis?: string; sure_ms?: number }) =>
+    istek<{ id?: string }>("/api/motor/gecis-listesi", govde),
+  studyoHizli: (tuval: string, hizli: string) => istek<{ program: string | null }>("/api/motor/studyo", { tuval, eylem: "hizli", hizli }),
   gecisAyarla: (tuval: string, tur: string, sure_ms?: number) => istek<{ ok: boolean }>("/api/motor/gecis", { tuval, tur, sure_ms }),
   gecisOzellikleri: (tuval: string) => istek<OzellikTanimi>(`/api/motor/gecis/ozellikler?tuval=${tuval}`),
   gecisGuncelle: (tuval: string, ayarlar: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/gecis/guncelle", { tuval, ayarlar }),

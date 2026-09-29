@@ -211,6 +211,28 @@ pub struct GecisKaydi {
   pub ayarlar: Value,
 }
 
+/// Adlandırılmış geçiş (OBS Geçişler dock'undaki liste): tür + ayarlar. Süre dock'ta, geçişten bağımsızdır.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct AdliGecis {
+  pub id: String,
+  pub ad: String,
+  pub tur: String,
+  #[serde(default, skip_serializing_if = "Value::is_null")]
+  pub ayarlar: Value,
+}
+
+/// Studio Mode hızlı geçiş düğmesi: adlandırılmış geçiş + süre
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct HizliGecis {
+  pub id: String,
+  /// `AdliGecis::id` ya da yerleşik (`kes`, `soldur`)
+  pub gecis: String,
+  pub sure_ms: u32,
+}
+
+/// Silinemeyen yerleşik geçişler (OBS'te de Kes ve Soldur her zaman listededir): (kimlik, ad, libobs türü)
+pub const YERLESIK_GECISLER: [(&str, &str, &str); 2] = [("kes", "Kes", "cut_transition"), ("soldur", "Soldur", "fade_transition")];
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct SahneKaydi {
   pub id: String,
@@ -363,6 +385,14 @@ pub struct Koleksiyon {
   /// Çift ses uyarısında "İkisini de tut" denen çiftler (`uygulama|masaustu` kaynak kimlikleri)
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
   pub cift_ses_tut: Vec<String>,
+  /// Kullanıcının adlandırdığı geçişler (yerleşik Kes/Soldur listede ayrıca durur)
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub adli_gecisler: Vec<AdliGecis>,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub hizli_gecisler: Vec<HizliGecis>,
+  /// Tuval → seçili adlandırılmış geçişin kimliği (türle seçilen geçişte yok)
+  #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+  pub secili_gecis: BTreeMap<String, String>,
 }
 
 fn varsayilan_fps() -> u32 {
@@ -389,6 +419,9 @@ impl Default for Koleksiyon {
       hedefler: BTreeMap::new(),
       tekrar_sn: 30,
       cift_ses_tut: Vec::new(),
+      adli_gecisler: Vec::new(),
+      hizli_gecisler: Vec::new(),
+      secili_gecis: BTreeMap::new(),
     }
   }
 }
@@ -396,7 +429,8 @@ impl Default for Koleksiyon {
 #[derive(Debug, PartialEq)]
 pub enum Okuma {
   Yok,
-  Tamam(Koleksiyon),
+  /// Kutulu: koleksiyon büyük, diğer varyantlar küçük
+  Tamam(Box<Koleksiyon>),
   /// Daha yeni bir sürümün yazdığı kayıt: okunmaz ve ÜZERİNE YAZILMAZ (veri kaybı olmasın)
   YeniSurum(u32),
   Bozuk(String),
@@ -425,7 +459,7 @@ pub fn cozumle(metin: &str) -> Okuma {
       }
       k.surum = SURUM;
       k.duzelt();
-      Okuma::Tamam(k)
+      Okuma::Tamam(Box::new(k))
     }
     Err(e) => Okuma::Bozuk(e.to_string()),
   }
@@ -680,6 +714,17 @@ impl Koleksiyon {
     }
     self.kaynaklar.iter().any(|k| k.id == id || k.filtreler.iter().any(|f| f.id == id))
       || self.sahneler.iter().any(|s| s.id == id || s.filtreler.iter().any(|f| f.id == id) || grupta(&s.ogeler, id))
+      || self.adli_gecisler.iter().any(|g| g.id == id)
+      || self.hizli_gecisler.iter().any(|g| g.id == id)
+      || YERLESIK_GECISLER.iter().any(|(y, _, _)| *y == id)
+  }
+
+  /// Adlandırılmış (ya da yerleşik) geçiş: (ad, tür, ayarlar)
+  pub fn adli_gecis(&self, id: &str) -> Option<(String, String, Value)> {
+    if let Some((_, ad, tur)) = YERLESIK_GECISLER.iter().find(|(y, _, _)| *y == id) {
+      return Some((ad.to_string(), tur.to_string(), Value::Null));
+    }
+    self.adli_gecisler.iter().find(|g| g.id == id).map(|g| (g.ad.clone(), g.tur.clone(), g.ayarlar.clone()))
   }
 
   /// Tutarlılık: her etkin tuvalde en az bir sahne, geçerli program sahnesi; bilinmeyen kaynağa işaret eden ve
@@ -1019,7 +1064,7 @@ mod tests {
     let d = gecici("yeni");
     let k = Koleksiyon::bos("A", false, 60);
     yaz(&d, &k).unwrap();
-    assert_eq!(oku(&d), Okuma::Tamam(k.clone()));
+    assert_eq!(oku(&d), Okuma::Tamam(Box::new(k.clone())));
     std::fs::write(koleksiyon_yolu(&d, VARSAYILAN_KIMLIK), r#"{"surum": 7, "gelecek": true}"#).unwrap();
     assert!(yaz(&d, &k).is_err(), "daha yeni sürümün kaydı ezilmemeli");
     assert!(std::fs::read_to_string(koleksiyon_yolu(&d, VARSAYILAN_KIMLIK)).unwrap().contains("gelecek"));

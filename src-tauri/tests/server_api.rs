@@ -2760,6 +2760,28 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
   assert_eq!(sl["program"]["ana"], oyun.as_str());
   assert_eq!(h.client.post(format!("{}/api/motor/studyo", h.base)).json(&json!({"tuval": "ana", "eylem": "tbar", "konum": 1.5})).send().await.unwrap().status(), 400);
+
+  // Adlandırılmış geçişler: ekle, seç (tuvalin geçişi olur), yerleşik silinemez; hızlı geçiş geçici uygulanır
+  let kaydir = tamam("/api/motor/gecis-listesi", json!({"eylem": "ekle", "ad": "Kaydır", "tur": "slide_transition"})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/gecis-listesi", json!({"eylem": "sec", "id": kaydir, "tuval": "ana"})).await;
+  let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!((sl["seciliGecis"]["ana"].as_str(), sl["gecisler"]["ana"]["tur"].as_str()), (Some(kaydir.as_str()), Some("slide_transition")), "{sl}");
+  assert!(sl["adliGecisler"].as_array().unwrap().iter().any(|g| g["id"] == "kes" && g["yerlesik"] == true));
+  assert_eq!(h.client.post(format!("{}/api/motor/gecis-listesi", h.base)).json(&json!({"eylem": "sil", "id": "soldur"})).send().await.unwrap().status(), 400);
+  assert_eq!(h.client.post(format!("{}/api/motor/gecis-listesi", h.base)).json(&json!({"eylem": "ekle", "ad": "X", "tur": "boyle_gecis_yok"})).send().await.unwrap().status(), 400);
+  tamam("/api/motor/gecis", json!({"tuval": "ana", "tur": "fade_transition", "sure_ms": 300})).await;
+  let hz = tamam("/api/motor/gecis-listesi", json!({"eylem": "hizli-ekle", "gecis": kaydir, "sure_ms": 200})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "onizleme", "sahne": "sahne-ana"})).await;
+  let r = tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "hizli", "hizli": hz})).await;
+  assert_eq!(r["program"], "sahne-ana", "{r}");
+  tokio::time::sleep(std::time::Duration::from_millis(900)).await;
+  let gb = h.client.get(format!("{}/api/motor/gecis?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(gb["bilgi"]["tur"], "fade_transition", "hızlı geçişten sonra tuvalin geçişi geri kurulur: {gb}");
+  let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert!(sl["seciliGecis"].get("ana").is_none(), "türle seçimde adlandırılmış seçim düşer");
+  tamam("/api/motor/gecis-listesi", json!({"eylem": "sil", "id": kaydir})).await;
+  let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert!(sl["hizliGecisler"].as_array().unwrap().is_empty(), "silinen geçişin hızlı geçişi de düşer");
   tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "kapat"})).await;
 
   // Multiview: hücre düzeni sahne adlarıyla, canlı kare tuvali; kapatınca kare istenemez

@@ -47,7 +47,7 @@ fn ad_temizle(ad: &str) -> Result<String, Hata> {
 
 fn okunan(o: Okuma) -> Result<Koleksiyon, Hata> {
   match o {
-    Okuma::Tamam(k) => Ok(k),
+    Okuma::Tamam(k) => Ok(*k),
     Okuma::Yok => Err(bulunamadi("koleksiyon yok".into())),
     Okuma::YeniSurum(s) => Err(catisma(format!("koleksiyon daha yeni bir sürümle (v{s}) yazılmış"))),
     Okuma::Bozuk(e) => Err(catisma(format!("koleksiyon dosyası bozuk: {e}"))),
@@ -206,7 +206,7 @@ async fn api_islem(
         return Err(gecersiz("koleksiyon çok büyük".into()));
       }
       let mut k = match kol::cozumle(&metin) {
-        Okuma::Tamam(k) => k,
+        Okuma::Tamam(k) => *k,
         Okuma::YeniSurum(s) => return Err(catisma(format!("bu koleksiyon daha yeni bir sürümden (v{s})"))),
         _ => return Err(gecersiz("geçerli bir koleksiyon değil".into())),
       };

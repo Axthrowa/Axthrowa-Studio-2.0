@@ -462,7 +462,7 @@ async fn api_durum(
     (Value::Null, Value::Null)
   };
   let kayitli = match kol::oku(&klasor(&state)) {
-    Okuma::Tamam(k) => Some(k),
+    Okuma::Tamam(k) => Some(*k),
     _ => None,
   };
   let profil = if calisiyor { state.motor.ozet().lock().profil.clone() } else { crate::motor_profil::etkin(&klasor(&state)) };
@@ -556,7 +556,7 @@ pub(crate) async fn motoru_baslat(state: &AppState, actor: &super::control_plane
   let dizin = klasor(state);
   let (mut k, not) = match kol::oku(&dizin) {
     Okuma::Yok => (Koleksiyon::default(), None),
-    Okuma::Tamam(k) => (k, None),
+    Okuma::Tamam(k) => (*k, None),
     Okuma::YeniSurum(s) => return Err(catisma(format!("sahne koleksiyonu daha yeni bir sürümle (v{s}) yazılmış; bu sürüm açamaz"))),
     Okuma::Bozuk(e) => {
       let yedek = kol::bozugu_yedekle(&dizin);

@@ -275,6 +275,20 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
   if let Some(p) = program {
     k.program.insert("ana".into(), p);
   }
+  // OBS'in adlandırılmış geçişleri (Kes/Soldur yerleşik olduğundan listeye ayrıca eklenmez)
+  for t in obs["transitions"].as_array().into_iter().flatten() {
+    let (Some(ad), Some(tur)) = (t["name"].as_str(), t["id"].as_str()) else { continue };
+    if (tur == "cut_transition" && ad == "Cut") || (tur == "fade_transition" && ad == "Fade") {
+      continue;
+    }
+    let id = k.yeni_kimlik("g");
+    k.adli_gecisler.push(crate::motor_koleksiyon::AdliGecis {
+      id,
+      ad: ad.chars().take(80).collect(),
+      tur: tur.to_string(),
+      ayarlar: t.get("settings").cloned().unwrap_or(Value::Null),
+    });
+  }
   // Geçerli geçiş: yerleşik adlar ya da `transitions` dizisindeki kayıt
   let sure = obs["transition_duration"].as_u64().unwrap_or(300).min(20_000) as u32;
   if let Some(ad) = obs["current_transition"].as_str() {
@@ -285,6 +299,14 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
       _ => ("fade_transition".into(), Value::Null),
     };
     k.gecisler.insert("ana".into(), GecisKaydi { tur, sure_ms: sure, ayarlar });
+    let secili = match ad {
+      "Cut" => Some("kes".to_string()),
+      "Fade" => Some("soldur".to_string()),
+      _ => k.adli_gecisler.iter().find(|g| g.ad == ad).map(|g| g.id.clone()),
+    };
+    if let Some(id) = secili {
+      k.secili_gecis.insert("ana".into(), id);
+    }
   }
   if obs.get("canvases").and_then(Value::as_array).is_some_and(|c| !c.is_empty()) {
     r.notlar.push("Ek tuvaller (OBS 31+) aktarılmadı; tüm sahneler ana tuvalde".into());
@@ -373,6 +395,9 @@ mod tests {
     // Geçiş ve notlar
     assert_eq!(k.gecisler["ana"].tur, "slide_transition");
     assert_eq!(k.gecisler["ana"].sure_ms, 450);
+    assert_eq!(k.adli_gecisler.len(), 1, "Kayar listeye alınır");
+    assert_eq!((k.adli_gecisler[0].ad.as_str(), k.adli_gecisler[0].tur.as_str()), ("Kayar", "slide_transition"));
+    assert_eq!(k.secili_gecis["ana"], k.adli_gecisler[0].id);
     assert!(r.notlar.iter().any(|n| n.contains("kısayol")));
     // Öğe geçişleri, sahne ve grup filtreleri
     let gos = oyun.ogeler[0].goster_gecisi.as_ref().unwrap();

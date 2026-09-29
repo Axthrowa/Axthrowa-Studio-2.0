@@ -115,7 +115,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 |---|---|---|---|
 | Tür listesi, süre, özellikler (dişli) | VAR | sinama, it | Türler çalışma anında libobs'tan |
 | Kes, Soldur, Kaydır, İt, Rengi soldur, Luma, Stinger | VAR | sinama (tür listesi) | Stinger/Luma ayarları genel özellik formuyla |
-| Birden çok adlandırılmış geçiş (+/−, yeniden adlandır) | YOK | | Tuval başına tek geçiş |
+| Birden çok adlandırılmış geçiş (+/−, yeniden adlandır, özellikler) | VAR | it:motor_ekran_…_tbar, tp | Yerleşik Kes/Soldur silinemez; ayarlar geçişle saklanır; OBS'ten `transitions` listesi aktarılır |
 | Hareket (Move) geçişi | DESTEKLENMİYOR | | Üçüncü taraf eklenti; kuruluysa tür listesinde görünür |
 | Sahne başına geçiş geçersiz kılma | VAR | it:motor_v2_… | |
 
@@ -137,7 +137,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Önizleme · geçiş sütunu · Program, Geçiş / Kes | VAR | sinama, it, tp | Önizleme ayrı özel tuvalde (programı etkilemez) |
 | Takas (swap) | VAR | sinama, it | Düğme olarak |
 | T-bar (sürükle; uçta tamamla/geri al, ortada kalır) | VAR | sinama, it, vt:tbar, tp | Sabit geçişlerde (Kes/Stinger) reddedilir |
-| Hızlı geçiş düğmeleri | YOK | | |
+| Hızlı geçiş düğmeleri | VAR | it, vt:HizliGecisler, tp | Geçiş süresince tuvalin geçişi geçici değişir, bitince geri kurulur (OBS'te ayrı geçiş kaynağı kullanılır; görünür sonuç aynı) |
 | Sahneyi çoğalt seçeneği, canlı düzenleme uyarısı, dikey düzen | YOK | | |
 
 ## 4.10 Durum çubuğu

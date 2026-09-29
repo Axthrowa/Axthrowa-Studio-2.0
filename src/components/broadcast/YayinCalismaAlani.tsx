@@ -58,7 +58,8 @@ import { EklentiYoneticisi, type EklentiSekmesi } from "../eklenti/EklentiYoneti
 import { DenetimlerDock } from "./DenetimlerDock";
 import { DonusumDiyalogu } from "./DonusumDiyalogu";
 import { FiltrelerDiyalogu } from "./FiltrelerDiyalogu";
-import { GecislerDock } from "./GecislerDock";
+import { GecisEkleDiyalogu, GecislerDock } from "./GecislerDock";
+import { HizliGecisEkleDiyalogu, HizliGecisler } from "./HizliGecisler";
 import { GelismisSesDiyalogu } from "./GelismisSesDiyalogu";
 import { HedeflerDock, IstatistikDock, TUVAL_ADI, useBitHizi } from "./HedeflerDock";
 import { KaynakEkleDiyalogu } from "./KaynakEkleDiyalogu";
@@ -283,6 +284,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [deinterlace, setDeinterlace] = useState<MotorSahneOgesi | null>(null);
   const [remuxAcik, setRemuxAcik] = useState(false);
   const [multiviewAcik, setMultiviewAcik] = useState(false);
+  const [gecisEkle, setGecisEkle] = useState(false);
+  const [hizliEkle, setHizliEkle] = useState(false);
   const [donusumOge, setDonusumOge] = useState<string | null>(null);
   const [gelismisSes, setGelismisSes] = useState(false);
   const [koleksiyonPenceresi, setKoleksiyonPenceresi] = useState(false);
@@ -1235,10 +1238,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         return (
           <GecislerDock
             gecis={gecis}
-            turler={sl?.gecisTurleri ?? []}
+            adliGecisler={sl?.adliGecisler ?? []}
+            secili={sl?.seciliGecis?.[tuval]}
             studyo={studyo}
             meşgul={mesgul !== null}
-            onTur={(t) => void yap("Geçiş", () => motorApi.gecisAyarla(tuval, t))}
+            onSec={(id) => void yap("Geçiş", () => motorApi.gecisListesi({ eylem: "sec", id, tuval }))}
+            onEkle={() => setGecisEkle(true)}
+            onSil={(g) =>
+              setOnay({ baslik: "Geçişi kaldır", metin: `«${g.ad}» geçişi listeden kaldırılacak; onu kullanan hızlı geçişler de kalkar.`, eylem: "Kaldır", yap: () => void yap("Geçiş kaldırılamadı", () => motorApi.gecisListesi({ eylem: "sil", id: g.id })) })
+            }
+            onAdlandir={(g) => setIstem({ baslik: "Geçişi yeniden adlandır", baslangic: g.ad, yap: (ad) => void yap("Adlandırılamadı", () => motorApi.gecisListesi({ eylem: "adlandir", id: g.id, ad })) })}
+            menuAc={menu.ac}
             onSure={(ms) => void yap("Geçiş süresi", () => motorApi.gecisAyarla(tuval, gecis?.tur ?? "fade_transition", ms))}
             onOzellikler={() => setGecisOzellik(true)}
             onGecis={() => void yap("Geçiş", () => motorApi.studyo(tuval, "gecis"))}
@@ -1457,6 +1467,15 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                     <button type="button" className="dt-btn" disabled={mesgul !== null} onClick={() => void yap("Takas", () => motorApi.studyo(tuval, "gecis", { takas: true }))} title="Geç ve önizlemeyi eski programla değiştir">
                       Takas ⇄
                     </button>
+                    <HizliGecisler
+                      hizli={sl?.hizliGecisler ?? []}
+                      gecisler={sl?.adliGecisler ?? []}
+                      devreDisi={mesgul !== null || !onizleme}
+                      onGec={(id) => void yap("Hızlı geçiş", () => motorApi.studyoHizli(tuval, id))}
+                      onEkle={() => setHizliEkle(true)}
+                      onSil={(id) => void yap("Hızlı geçiş kaldırılamadı", () => motorApi.gecisListesi({ eylem: "hizli-sil", id }))}
+                      menuAc={menu.ac}
+                    />
                     <TBar tuval={tuval} devreDisi={mesgul !== null || !onizleme || onizleme === program} onHata={(m) => onToast(`T-bar: ${m}`)} onBitti={sahneYenile} />
                   </div>
                   <TuvalGorunumu
@@ -1687,6 +1706,31 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             void yap("Deinterlace ayarlanamadı", () => motorApi.kaynakIslem(kaynak, "deinterlace", { kip, alan })).then(sahneYenile);
           }}
           onKapat={() => setDeinterlace(null)}
+        />
+      )}
+      {gecisEkle && (
+        <GecisEkleDiyalogu
+          turler={sl?.gecisTurleri ?? []}
+          onKapat={() => setGecisEkle(false)}
+          onEkle={(ad, tur) => {
+            setGecisEkle(false);
+            void yap("Geçiş eklenemedi", async () => {
+              const r = await motorApi.gecisListesi({ eylem: "ekle", ad, tur });
+              if (r.id) await motorApi.gecisListesi({ eylem: "sec", id: r.id, tuval });
+              return r;
+            });
+          }}
+        />
+      )}
+      {hizliEkle && (
+        <HizliGecisEkleDiyalogu
+          gecisler={sl?.adliGecisler ?? []}
+          varsayilanSure={gecis?.sure_ms ?? 300}
+          onKapat={() => setHizliEkle(false)}
+          onEkle={(g, ms) => {
+            setHizliEkle(false);
+            void yap("Hızlı geçiş eklenemedi", () => motorApi.gecisListesi({ eylem: "hizli-ekle", gecis: g, sure_ms: ms }));
+          }}
         />
       )}
       {multiviewAcik && calisiyor && (

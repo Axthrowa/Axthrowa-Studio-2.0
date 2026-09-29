@@ -33,6 +33,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/gecis/ozellikler", get(api_gecis_ozellikleri))
     .route("/api/motor/gecis/guncelle", post(api_gecis_guncelle))
     .route("/api/motor/studyo", post(api_studyo))
+    .route("/api/motor/gecis-listesi", post(api_gecis_listesi))
     .route("/api/motor/multiview", post(api_multiview))
     .route("/api/motor/oge", post(api_oge))
     .route("/api/motor/kaynak-islem", post(api_kaynak_islem))
@@ -83,7 +84,7 @@ async fn api_sahneler(
     Some(state.motor.ozet().lock().koleksiyon.clone())
   } else {
     match kol::oku(&dizin) {
-      Okuma::Tamam(k) => Some(k),
+      Okuma::Tamam(k) => Some(*k),
       _ => None,
     }
   };
@@ -118,6 +119,9 @@ async fn api_sahneler(
     "gecisler": gecisler,
     "gecisTurleri": turler,
     "dikey": k.dikey,
+    "adliGecisler": adli_gecis_listesi(&k),
+    "hizliGecisler": k.hizli_gecisler,
+    "seciliGecis": k.secili_gecis,
   })))
 }
 
@@ -360,6 +364,176 @@ fn tuval_al(t: Option<String>) -> Result<String, Hata> {
   Ok(t)
 }
 
+/// Yerleşik + kullanıcı geçişleri (dock listesi sırası)
+fn adli_gecis_listesi(k: &kol::Koleksiyon) -> Vec<Value> {
+  kol::YERLESIK_GECISLER
+    .iter()
+    .map(|(id, ad, tur)| json!({"id": id, "ad": ad, "tur": tur, "yerlesik": true}))
+    .chain(k.adli_gecisler.iter().map(|g| json!({"id": g.id, "ad": g.ad, "tur": g.tur, "yerlesik": false})))
+    .collect()
+}
+
+/// Hızlı geçiş (OBS Studio Mode "Quick Transitions"): önizleme verilen geçiş ve süreyle programa alınır; geçiş bitince
+/// tuvalin kendi geçişi geri kurulur (dock'taki seçim değişmez). Yeniden kurma, geçiş süresi + pay kadar sonra yapılır.
+async fn hizli_gecis(state: &Arc<AppState>, tuval: &str, tur: &str, ayarlar: &Value, sure_ms: u32, onceki: Option<GecisKaydi>) -> Result<Value, Hata> {
+  let mut istek = json!({"komut": "gecis.ayarla", "tuval": tuval, "tur": tur, "sure_ms": sure_ms});
+  if ayarlar.is_object() {
+    istek["ayarlar"] = ayarlar.clone();
+  }
+  komut(state, istek).await?;
+  let geri = move |state: Arc<AppState>, tuval: String| async move {
+    let g = onceki.unwrap_or(GecisKaydi { tur: VARSAYILAN_GECIS.into(), sure_ms: VARSAYILAN_SURE_MS, ayarlar: Value::Null });
+    let mut istek = json!({"komut": "gecis.ayarla", "tuval": tuval, "tur": g.tur, "sure_ms": g.sure_ms});
+    if g.ayarlar.is_object() {
+      istek["ayarlar"] = g.ayarlar;
+    }
+    let _ = komut(&state, istek).await;
+  };
+  match studyo_gecisi(state, tuval, false, Some(sure_ms)).await {
+    Ok(program) => {
+      let (s, t) = (state.clone(), tuval.to_string());
+      tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(u64::from(sure_ms) + 250)).await;
+        geri(s, t).await;
+      });
+      Ok(json!({"program": program}))
+    }
+    Err(e) => {
+      geri(state.clone(), tuval.to_string()).await;
+      Err(e)
+    }
+  }
+}
+
+#[derive(Deserialize)]
+struct GecisListesiGovdesi {
+  eylem: String,
+  #[serde(default)]
+  id: Option<String>,
+  #[serde(default)]
+  ad: Option<String>,
+  #[serde(default)]
+  tur: Option<String>,
+  #[serde(default)]
+  tuval: Option<String>,
+  /// `hizli-ekle`: adlandırılmış geçiş kimliği
+  #[serde(default)]
+  gecis: Option<String>,
+  #[serde(default)]
+  sure_ms: Option<u32>,
+}
+
+/// Adlandırılmış geçişler ve hızlı geçişler: ekle, sil, adlandır, seç (tuvalin geçişi olur), hızlı ekle/sil
+async fn api_gecis_listesi(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<GecisListesiGovdesi>,
+) -> ApiResult {
+  let actor = authorize(&state, &addr, &headers, "scene.edit").await?;
+  motor_calisiyor(&state).await?;
+  let id = || g.id.clone().ok_or_else(|| gecersiz("kimlik gerekli".into()));
+  let yerlesik = |id: &str| kol::YERLESIK_GECISLER.iter().any(|(y, _, _)| *y == id);
+  let sonuc = match g.eylem.as_str() {
+    "ekle" => {
+      let ad = ad_temizle(g.ad.as_deref().unwrap_or(""))?;
+      let tur = g.tur.clone().unwrap_or_default();
+      gecis_dogrula(&GecisKaydi { tur: tur.clone(), sure_ms: 0, ayarlar: Value::Null })?;
+      let turler = komut(&state, json!({"komut": "gecis.turleri"})).await?;
+      if !turler["turler"].as_array().is_some_and(|a| a.iter().any(|t| t["id"] == tur.as_str())) {
+        return Err(gecersiz(format!("geçiş türü bu motorda yok: {tur}")));
+      }
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      if o.koleksiyon.adli_gecisler.len() >= 64 {
+        return Err(gecersiz("en çok 64 geçiş".into()));
+      }
+      let yeni = o.koleksiyon.yeni_kimlik("g");
+      o.koleksiyon.adli_gecisler.push(kol::AdliGecis { id: yeni.clone(), ad, tur, ayarlar: Value::Null });
+      json!({"id": yeni})
+    }
+    "sil" => {
+      let id = id()?;
+      if yerlesik(&id) {
+        return Err(gecersiz("yerleşik geçiş kaldırılamaz".into()));
+      }
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      let n = o.koleksiyon.adli_gecisler.len();
+      o.koleksiyon.adli_gecisler.retain(|a| a.id != id);
+      if o.koleksiyon.adli_gecisler.len() == n {
+        return Err(bulunamadi("geçiş yok".into()));
+      }
+      // Etkin geçiş olduğu gibi kalır (tür/ayar); yalnız liste bağı ve onu kullanan hızlı geçişler düşer
+      o.koleksiyon.hizli_gecisler.retain(|h| h.gecis != id);
+      o.koleksiyon.secili_gecis.retain(|_, v| *v != id);
+      json!({})
+    }
+    "adlandir" => {
+      let id = id()?;
+      let ad = ad_temizle(g.ad.as_deref().unwrap_or(""))?;
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      let a = o.koleksiyon.adli_gecisler.iter_mut().find(|a| a.id == id).ok_or_else(|| bulunamadi("geçiş yok (yerleşik geçişler adlandırılamaz)".into()))?;
+      a.ad = ad;
+      json!({})
+    }
+    "sec" => {
+      let id = id()?;
+      let tuval = tuval_al(g.tuval.clone())?;
+      let (tur, ayarlar, sure) = {
+        let o = state.motor.ozet();
+        let o = o.lock();
+        let (_, tur, ayarlar) = o.koleksiyon.adli_gecis(&id).ok_or_else(|| bulunamadi("geçiş yok".into()))?;
+        (tur, ayarlar, o.koleksiyon.gecisler.get(&tuval).map_or(VARSAYILAN_SURE_MS, |p| p.sure_ms))
+      };
+      let mut istek = json!({"komut": "gecis.ayarla", "tuval": tuval, "tur": tur, "sure_ms": sure});
+      if ayarlar.is_object() {
+        istek["ayarlar"] = ayarlar.clone();
+      }
+      komut(&state, istek).await?;
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      o.koleksiyon.gecisler.insert(tuval.clone(), GecisKaydi { tur, sure_ms: sure, ayarlar });
+      o.koleksiyon.secili_gecis.insert(tuval, id);
+      json!({})
+    }
+    "hizli-ekle" => {
+      let gecis = g.gecis.clone().ok_or_else(|| gecersiz("geçiş gerekli".into()))?;
+      let sure = g.sure_ms.unwrap_or(VARSAYILAN_SURE_MS);
+      if sure > 20_000 {
+        return Err(gecersiz("geçiş süresi en çok 20 sn".into()));
+      }
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      if o.koleksiyon.adli_gecis(&gecis).is_none() {
+        return Err(bulunamadi("geçiş yok".into()));
+      }
+      if o.koleksiyon.hizli_gecisler.len() >= 16 {
+        return Err(gecersiz("en çok 16 hızlı geçiş".into()));
+      }
+      let yeni = o.koleksiyon.yeni_kimlik("h");
+      o.koleksiyon.hizli_gecisler.push(kol::HizliGecis { id: yeni.clone(), gecis, sure_ms: sure });
+      json!({"id": yeni})
+    }
+    "hizli-sil" => {
+      let id = id()?;
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      let n = o.koleksiyon.hizli_gecisler.len();
+      o.koleksiyon.hizli_gecisler.retain(|h| h.id != id);
+      if o.koleksiyon.hizli_gecisler.len() == n {
+        return Err(bulunamadi("hızlı geçiş yok".into()));
+      }
+      json!({})
+    }
+    e => return Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
+  };
+  koleksiyonu_yaz(&state)?;
+  audit(&state, &actor, "MOTOR_TRANSITION_LIST", json!({"eylem": g.eylem, "id": g.id})).await;
+  Ok(Json(sonuc))
+}
+
 #[derive(Deserialize)]
 struct MultiviewGovdesi {
   #[serde(default)]
@@ -445,7 +619,15 @@ async fn api_gecis_ayarla(
     istek["ayarlar"] = kayit.ayarlar.clone();
   }
   komut(&state, istek).await?;
-  state.motor.ozet().lock().koleksiyon.gecisler.insert(tuval.clone(), kayit.clone());
+  {
+    let o = state.motor.ozet();
+    let mut o = o.lock();
+    // Tür değişti: artık adlandırılmış bir geçiş seçili değil (yalnız süre değiştiyse seçim kalır)
+    if onceki.as_ref().is_none_or(|p| p.tur != kayit.tur) {
+      o.koleksiyon.secili_gecis.remove(&tuval);
+    }
+    o.koleksiyon.gecisler.insert(tuval.clone(), kayit.clone());
+  }
   koleksiyonu_yaz(&state)?;
   audit(&state, &actor, "MOTOR_TRANSITION_SET", json!({"tuval": tuval, "tur": kayit.tur, "sureMs": kayit.sure_ms})).await;
   Ok(Json(json!({"ok": true})))
@@ -496,6 +678,13 @@ async fn api_gecis_guncelle(
         m.insert(a.clone(), v.clone());
       }
     }
+    // Seçili adlandırılmış geçişin ayarları da güncellenir (bir sonraki seçimde aynı ayarlarla gelsin)
+    let yeni = k.ayarlar.clone();
+    if let Some(id) = o.koleksiyon.secili_gecis.get(&tuval).cloned() {
+      if let Some(a) = o.koleksiyon.adli_gecisler.iter_mut().find(|a| a.id == id) {
+        a.ayarlar = yeni;
+      }
+    }
   }
   koleksiyonu_yaz(&state)?;
   audit(&state, &actor, "MOTOR_TRANSITION_SETTINGS", json!({"tuval": tuval, "alanlar": g.ayarlar.keys().collect::<Vec<_>>()})).await;
@@ -520,6 +709,9 @@ struct StudyoGovdesi {
   /// Geçişten sonra önizleme ile program yer değiştirsin (OBS "Swap Preview/Program")
   #[serde(default)]
   takas: bool,
+  /// `hizli`: hızlı geçiş kimliği
+  #[serde(default)]
+  hizli: Option<String>,
   /// `tbar`: 0–1 arası T-bar konumu; `birak` true ise kullanıcı bıraktı
   #[serde(default)]
   konum: Option<f32>,
@@ -600,6 +792,17 @@ async fn api_studyo(
     "gecis" => {
       let program = studyo_gecisi(&state, &tuval, g.takas, g.sure_ms).await?;
       json!({"program": program})
+    }
+    "hizli" => {
+      let id = g.hizli.clone().ok_or_else(|| gecersiz("hızlı geçiş kimliği gerekli".into()))?;
+      let (tur, ayarlar, sure, onceki) = {
+        let o = state.motor.ozet();
+        let o = o.lock();
+        let h = o.koleksiyon.hizli_gecisler.iter().find(|h| h.id == id).cloned().ok_or_else(|| bulunamadi("hızlı geçiş yok".into()))?;
+        let (_, tur, ayarlar) = o.koleksiyon.adli_gecis(&h.gecis).ok_or_else(|| bulunamadi("hızlı geçişin geçişi silinmiş".into()))?;
+        (tur, ayarlar, h.sure_ms, o.koleksiyon.gecisler.get(&tuval).cloned())
+      };
+      hizli_gecis(&state, &tuval, &tur, &ayarlar, sure, onceki).await?
     }
     "tbar" => {
       let konum = g.konum.filter(|k| k.is_finite() && (0.0..=1.0).contains(k)).ok_or_else(|| gecersiz("konum 0–1 olmalı".into()))?;

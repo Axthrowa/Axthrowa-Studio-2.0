@@ -55,9 +55,15 @@ export function GelismisSesDiyalogu({
   onKapat: () => void;
 }) {
   const izAdlari = ses?.izAdlari ?? [];
+  const [yalnizEtkin, setYalnizEtkin] = useState(false);
+  const satirlar = (ses?.kaynaklar ?? []).filter((k) => !yalnizEtkin || k.etkin !== false);
   return (
     <Pencere baslik="Gelişmiş ses özellikleri" genis onKapat={onKapat} alt={<button type="button" className="dt-btn-primary" onClick={onKapat}>Kapat</button>}>
-      {!ses || ses.kaynaklar.length === 0 ? (
+      <label className="flex items-center gap-2 px-3 pt-2 text-[12px]">
+        <input type="checkbox" checked={yalnizEtkin} onChange={(e) => setYalnizEtkin(e.target.checked)} />
+        Yalnız etkin kaynakları göster (programdaki sahnede olanlar)
+      </label>
+      {!ses || satirlar.length === 0 ? (
         <p className="p-3 text-[12px] dt-soluk">Ses taşıyan kaynak yok.</p>
       ) : (
         <table className="dt-table">
@@ -78,7 +84,7 @@ export function GelismisSesDiyalogu({
             </tr>
           </thead>
           <tbody>
-            {ses.kaynaklar.map((k) => (
+            {satirlar.map((k) => (
               <tr key={k.id}>
                 <td className={k.etkin === false ? "dt-soluk" : undefined} title={k.etkin === false ? "Programdaki sahnede değil" : undefined}>
                   {k.ad}

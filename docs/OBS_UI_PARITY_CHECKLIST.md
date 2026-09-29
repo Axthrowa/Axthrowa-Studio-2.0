@@ -104,7 +104,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Bağlam: Gizle, Filtreler, Özellikler, Gelişmiş ses, izleme türü, izler | VAR | tp | |
 | Yüzde olarak göster | VAR | vt:sesMatematik | Kanal bağlam menüsünden; tercih yerel |
 | Dikey düzen, ölçer tipi (true peak), düşüş hızı, kilitle | YOK | | |
-| Gelişmiş Ses Özellikleri tablosu (ses, mono, denge, senkron, izleme, İz 1–6) | VAR | sinama, it | "Yalnız etkin kaynakları göster" yok |
+| Gelişmiş Ses Özellikleri tablosu (ses, mono, denge, senkron, izleme, İz 1–6, yalnız etkin kaynaklar) | VAR | sinama, it | |
 | Bas-konuş / bas-sustur | VAR | it:motor_kisayol_eylemleri_bas_konus_ve_sahne | Gecikme ms ayarı yok |
 | Solo | YOK | | |
 

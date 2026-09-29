@@ -830,6 +830,21 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     Some((o.info().width, o.info().height))
   });
   let ekran_goreli_red = m.ekran_goruntusu("ana", Path::new("goreli.png")).is_err();
+  // Multiview: üstte önizleme | program, altta sahneler; boş hücre siyah. Arka planın medya dışında kalan noktası
+  // (1850, 540) her hücrede aynı ölçekle aranır (960×540 önizleme karesinde)
+  let mv = m.multiview_ac("ana", &["yatay".to_string()]);
+  let _ = m.onizleme_png("multiview-ana", 960);
+  std::thread::sleep(Duration::from_millis(900));
+  let mv_png = m.onizleme_png("multiview-ana", 960).ok().flatten();
+  let mv_piksel = |x: u32, y: u32| mv_png.as_deref().and_then(|b| png_pikseli(b, x, y));
+  let yakin = |p: Option<[u8; 3]>| p.is_some_and(|p| (p[0] as i32 - 30).abs() <= 14 && (p[1] as i32 - 30).abs() <= 14 && (p[2] as i32 - 46).abs() <= 14);
+  let (mv_on, mv_pr, mv_sahne, mv_bos) = (mv_piksel(459, 135), mv_piksel(939, 135), mv_piksel(228, 337), mv_piksel(600, 337));
+  if let Some(b) = &mv_png {
+    let _ = std::fs::write(dosya("multiview-ana.png"), b);
+  }
+  let mv_yabanci_red = m.multiview_ac("ana", &["dikey".to_string()]).is_err();
+  m.multiview_kapat("ana");
+  let mv_kapandi = m.onizleme_png("multiview-ana", 960).is_err();
   // Sahne ve kaynak ekran görüntüsü: geçici özel tuvalde, sahne tuval boyutunda / kaynak kendi boyutunda
   let sahne_goruntu = m.kaynak_ekran_goruntusu("dikey", &dosya("ekran-sahne-dikey.png"));
   let yazi_boyu = m.sahne_ogeleri("yatay")?.into_iter().find(|o| o.kaynak == "yazi").map(|o| (o.genislik, o.yukseklik));
@@ -1088,6 +1103,11 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
       && rm_sonra.cozme_hatasi == 0
       && remux_ustune_red,
     format!("{remux:?}; kare {} → {}, süre {:.2} → {:.2}, çözme hatası {}, üzerine yazma reddi {remux_ustune_red}", rm_once.kare, rm_sonra.kare, rm_once.sure_sn, rm_sonra.sure_sn, rm_sonra.cozme_hatasi),
+  );
+  ekle(
+    "multiview: önizleme, program ve sahne hücreleri işlenir; başka tuvalin sahnesi reddedilir",
+    mv.is_ok() && yakin(mv_on) && yakin(mv_pr) && yakin(mv_sahne) && mv_bos.is_some_and(|p| p.iter().all(|c| *c < 12)) && mv_yabanci_red && mv_kapandi,
+    format!("önizleme {mv_on:?}, program {mv_pr:?}, sahne {mv_sahne:?}, boş {mv_bos:?}; yabancı sahne reddi {mv_yabanci_red}; kapanış {mv_kapandi}"),
   );
   let cift = |(g, y): (u32, u32)| (g.max(16).div_ceil(2) * 2, y.max(16).div_ceil(2) * 2);
   ekle(

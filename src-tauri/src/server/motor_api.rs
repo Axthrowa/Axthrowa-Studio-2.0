@@ -63,10 +63,13 @@ pub(crate) fn gecersiz(e: String) -> Hata {
 }
 
 /// Tuval kimliği → (genişlik, yükseklik)
-/// Önizleme/canlı kare istenebilecek tuval adı: `ana`, `dikey`, `studyo-<tuval>`, `etkilesim-<kaynak>`
+/// Önizleme/canlı kare istenebilecek tuval adı: `ana`, `dikey`, `studyo-<tuval>`, `etkilesim-<kaynak>`, `multiview-<tuval>`
 pub(crate) fn onizleme_tuvali_gecerli(t: &str) -> bool {
   if let Some(k) = t.strip_prefix("etkilesim-") {
     return kol::gecerli_kimlik(k);
+  }
+  if let Some(k) = t.strip_prefix("multiview-") {
+    return tuval_boyutu(k).is_some();
   }
   tuval_boyutu(t.strip_prefix("studyo-").unwrap_or(t)).is_some()
 }
@@ -1625,7 +1628,7 @@ async fn api_ekran_goruntusu(
   let actor = authorize(&state, &addr, &headers, "broadcast.record").await?;
   motor_calisiyor(&state).await?;
   let tuval = g.tuval.unwrap_or_else(|| "ana".into());
-  if tuval.starts_with("etkilesim-") || !onizleme_tuvali_gecerli(&tuval) {
+  if tuval.starts_with("etkilesim-") || tuval.starts_with("multiview-") || !onizleme_tuvali_gecerli(&tuval) {
     return Err(gecersiz(format!("bilinmeyen tuval: {tuval}")));
   }
   if let Some(k) = &g.kaynak {

@@ -80,6 +80,7 @@ import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
 import { DeinterlaceDiyalogu } from "./DeinterlaceDiyalogu";
 import { TBar } from "./TBar";
 import { RemuxPenceresi } from "./RemuxPenceresi";
+import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
 import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
@@ -280,6 +281,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [ogeGecisi, setOgeGecisi] = useState<{ oge: MotorSahneOgesi; goster: boolean } | null>(null);
   const [deinterlace, setDeinterlace] = useState<MotorSahneOgesi | null>(null);
   const [remuxAcik, setRemuxAcik] = useState(false);
+  const [multiviewAcik, setMultiviewAcik] = useState(false);
   const [donusumOge, setDonusumOge] = useState<string | null>(null);
   const [gelismisSes, setGelismisSes] = useState(false);
   const [koleksiyonPenceresi, setKoleksiyonPenceresi] = useState(false);
@@ -971,6 +973,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ...tuvaller.map((t): MenuOgesi => ({ etiket: `${t === tuval ? "● " : ""}Tuval: ${TUVAL_ADI[t]}`, eylem: () => setTuval(t) })),
         "ayirici",
         ...projektorMenusu(),
+        { etiket: `Multiview (pencere) · ${TUVAL_ADI[tuval]}`, devreDisi: !calisiyor, eylem: () => setMultiviewAcik(true) },
         "ayirici",
         { etiket: `${durumCubugu ? "☑" : "☐"} Durum çubuğu`, eylem: () => setDurumCubugu((x) => !x) },
         { etiket: `${kilavuz ? "☑" : "☐"} Güvenli alan kılavuzları`, eylem: () => setKilavuz((x) => !x) },
@@ -1667,6 +1670,19 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             void yap("Deinterlace ayarlanamadı", () => motorApi.kaynakIslem(kaynak, "deinterlace", { kip, alan })).then(sahneYenile);
           }}
           onKapat={() => setDeinterlace(null)}
+        />
+      )}
+      {multiviewAcik && calisiyor && (
+        <MultiviewPenceresi
+          tuval={tuval}
+          tuvalAdi={TUVAL_ADI[tuval]}
+          sahneler={tuvalSahneleri}
+          program={program}
+          onizleme={onizleme}
+          studyo={studyo}
+          onSec={sahneSec}
+          onProgramaAl={programaAl}
+          onKapat={() => setMultiviewAcik(false)}
         />
       )}
       {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}

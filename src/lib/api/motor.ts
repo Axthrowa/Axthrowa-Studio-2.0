@@ -338,6 +338,7 @@ export const motorApi = {
   ogeGecis: (oge: string, goster: boolean, gecis: MotorOgeGecisi | null) =>
     istek<{ ok: boolean }>("/api/motor/oge", { oge, eylem: "gecis", goster, gecis }),
   /** Etkileşim penceresi: `ac` kaynağın tek başına görüntüsünü (`etkilesim-<kaynak>` tuvali) hazırlar */
+  multiview: (tuval: string, eylem: "ac" | "kapat") => istek<MultiviewDuzeni>("/api/motor/multiview", { tuval, eylem }),
   etkilesimAc: (kaynak: string) => istek<{ tuval: string; genislik: number; yukseklik: number }>("/api/motor/etkilesim", { kaynak, eylem: "ac" }),
   etkilesimKapat: (kaynak: string) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "kapat" }),
   etkilesimOlayi: (kaynak: string, olay: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "olay", olay }),
@@ -509,3 +510,6 @@ export type RemuxIsi = {
   sonuc?: { video: number; ses: number; atlanan_akis: number; paket: number; erken_bitti: boolean };
 };
 export type RemuxDurumu = { isler: RemuxIsi[]; calisiyor: boolean; kayitKlasoru: string; kayitlar: { yol: string; boyut: number }[] };
+
+export type MultiviewHucresi = { tur: "onizleme" | "program" | "sahne"; sahne?: string; ad?: string; kutu: [number, number, number, number] };
+export type MultiviewDuzeni = { tuval: string; genislik: number; yukseklik: number; hucreler: MultiviewHucresi[] };

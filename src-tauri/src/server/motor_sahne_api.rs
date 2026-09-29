@@ -33,6 +33,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/gecis/ozellikler", get(api_gecis_ozellikleri))
     .route("/api/motor/gecis/guncelle", post(api_gecis_guncelle))
     .route("/api/motor/studyo", post(api_studyo))
+    .route("/api/motor/multiview", post(api_multiview))
     .route("/api/motor/oge", post(api_oge))
     .route("/api/motor/kaynak-islem", post(api_kaynak_islem))
 }
@@ -357,6 +358,49 @@ fn tuval_al(t: Option<String>) -> Result<String, Hata> {
   let t = t.unwrap_or_else(|| "ana".into());
   tuval_boyutu(&t).ok_or_else(|| gecersiz(format!("tuval yok: {t}")))?;
   Ok(t)
+}
+
+#[derive(Deserialize)]
+struct MultiviewGovdesi {
+  #[serde(default)]
+  tuval: Option<String>,
+  /// ac (yeniden kurar) | kapat
+  eylem: String,
+}
+
+/// Multiview: tuvalin ilk 8 sahnesi (koleksiyon sırasıyla) + önizleme + program. Dönüş: canlı kare tuvali ve hücre
+/// düzeni (sahne adlarıyla); panel etiketleri ve çerçeveleri bu düzene göre çizer.
+async fn api_multiview(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<MultiviewGovdesi>,
+) -> ApiResult {
+  authorize(&state, &addr, &headers, "broadcast.read").await?;
+  motor_calisiyor(&state).await?;
+  let tuval = tuval_al(g.tuval)?;
+  match g.eylem.as_str() {
+    "ac" => {
+      let (sahneler, adlar): (Vec<String>, Vec<(String, String)>) = {
+        let o = state.motor.ozet();
+        let o = o.lock();
+        let s: Vec<_> = o.koleksiyon.sahneler.iter().filter(|s| s.tuval == tuval).take(8).collect();
+        (s.iter().map(|x| x.id.clone()).collect(), s.iter().map(|x| (x.id.clone(), x.ad.clone())).collect())
+      };
+      let mut r = komut(&state, json!({"komut": "multiview.ac", "tuval": tuval, "sahneler": sahneler})).await?;
+      for h in r["hucreler"].as_array_mut().into_iter().flatten() {
+        if let Some(ad) = h["sahne"].as_str().and_then(|id| adlar.iter().find(|(i, _)| i == id)).map(|(_, a)| a.clone()) {
+          h["ad"] = json!(ad);
+        }
+      }
+      Ok(Json(r))
+    }
+    "kapat" => {
+      komut(&state, json!({"komut": "multiview.kapat", "tuval": tuval})).await?;
+      Ok(Json(json!({"ok": true})))
+    }
+    e => Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
+  }
 }
 
 async fn api_gecis(

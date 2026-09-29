@@ -2758,6 +2758,21 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   assert_eq!(sl["program"]["ana"], oyun.as_str());
   assert_eq!(h.client.post(format!("{}/api/motor/studyo", h.base)).json(&json!({"tuval": "ana", "eylem": "tbar", "konum": 1.5})).send().await.unwrap().status(), 400);
   tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "kapat"})).await;
+
+  // Multiview: hücre düzeni sahne adlarıyla, canlı kare tuvali; kapatınca kare istenemez
+  let mv = tamam("/api/motor/multiview", json!({"tuval": "ana", "eylem": "ac"})).await;
+  assert_eq!(mv["tuval"], "multiview-ana");
+  let hucreler = mv["hucreler"].as_array().unwrap();
+  assert_eq!((hucreler[0]["tur"].as_str(), hucreler[1]["tur"].as_str()), (Some("onizleme"), Some("program")));
+  assert!(hucreler.iter().any(|h| h["sahne"] == oyun.as_str() && h["ad"] == "Oyun"), "{mv}");
+  let url = format!("{}/api/motor/onizleme?tuval=multiview-ana&genislik=480", h.base);
+  let _ = h.client.get(&url).send().await.unwrap();
+  tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+  let r = h.client.get(&url).send().await.unwrap();
+  assert_eq!(r.status(), 200, "multiview karesi");
+  assert_eq!(&r.bytes().await.unwrap()[1..4], b"PNG");
+  assert_eq!(h.client.post(format!("{}/api/motor/ekran-goruntusu", h.base)).json(&json!({"tuval": "multiview-ana"})).send().await.unwrap().status(), 400);
+  tamam("/api/motor/multiview", json!({"tuval": "ana", "eylem": "kapat"})).await;
   assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
 }
 

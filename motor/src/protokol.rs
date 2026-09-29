@@ -216,6 +216,14 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       m.studyo_onizleme(metin(istek, "tuval")?, metin(istek, "sahne")?)?;
       json!({})
     }
+    "multiview.ac" => {
+      let sahneler: Vec<String> = istek.get("sahneler").and_then(Value::as_array).map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect()).unwrap_or_default();
+      m.multiview_ac(metin(istek, "tuval")?, &sahneler)?
+    }
+    "multiview.kapat" => {
+      m.multiview_kapat(metin(istek, "tuval")?);
+      json!({})
+    }
     "studyo.tbar" => {
       let konum = istek.get("konum").and_then(Value::as_f64).ok_or("konum (0–1) gerekli")? as f32;
       let etkin = m.studyo_tbar(metin(istek, "tuval")?, konum, istek.get("birak").and_then(Value::as_bool).unwrap_or(false))?;

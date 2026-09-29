@@ -372,6 +372,7 @@ pub struct Motor {
   pub(crate) cpu: Ptr,
   /// Kaynak → etkileşim penceresinin önizleme tuvali (bkz. `etkilesim.rs`)
   pub(crate) etkilesim_tuvalleri: HashMap<String, Kanvas>,
+  pub(crate) multiviewler: HashMap<String, crate::multiview::Multiview>,
   /// Çıktı → son duraklat/sürdür zamanı (art arda geçişleri aralamak için)
   pub(crate) duraklatma_zamani: HashMap<String, std::time::Instant>,
 }
@@ -525,6 +526,7 @@ impl Motor {
       akislar: HashMap::new(),
       cpu: unsafe { (api().os_cpu_usage_info_start)() },
       etkilesim_tuvalleri: HashMap::new(),
+      multiviewler: HashMap::new(),
       duraklatma_zamani: HashMap::new(),
     };
     motor.ses.baslat(motor.olay.clone());
@@ -773,6 +775,8 @@ impl Motor {
         &self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas
       } else if let Some(k) = tuval.strip_prefix(crate::etkilesim::ONEK) {
         self.etkilesim_tuvalleri.get(k).ok_or("etkileşim penceresi açık değil")?
+      } else if let Some(k) = tuval.strip_prefix(crate::multiview::ONEK) {
+        &self.multiviewler.get(k).ok_or("multiview açık değil")?.kanvas
       } else {
         self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?
       };
@@ -944,6 +948,7 @@ impl Motor {
   pub fn sahne_grafigini_temizle(&mut self) {
     let a = api();
     self.etkilesimleri_kapat();
+    self.multiviewleri_kapat();
     let tuvaller: Vec<String> = self.studyo.keys().cloned().collect();
     for t in tuvaller {
       let _ = self.studyo_kapat(&t);
@@ -1614,6 +1619,7 @@ impl Motor {
   /// Her şeyi ters sırada serbest bırakır ve libobs'u kapatır.
   pub fn kapat(mut self) {
     self.etkilesimleri_kapat();
+    self.multiviewleri_kapat();
     let a = api();
     // Akışlar ve ses ölçerleri önce: iş parçacıkları libobs nesnelerine dokunmayı bıraksın
     self.akislari_kapat();

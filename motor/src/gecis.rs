@@ -205,6 +205,7 @@ impl Motor {
     if let Some(p) = program {
       self.studyo_onizleme(tuval, &p)?;
     }
+    self.multiview_yenile(tuval);
     Ok(())
   }
 
@@ -221,6 +222,7 @@ impl Motor {
         (api().obs_canvas_release)(s.kanvas.ptr);
       }
     }
+    self.multiview_yenile(tuval);
     Ok(())
   }
 
@@ -239,6 +241,7 @@ impl Motor {
     }
     unsafe { (api().obs_canvas_set_channel)(st.kanvas.ptr, 0, kaynak) };
     st.sahne = Some(sahne.to_string());
+    self.multiview_yenile(tuval);
     Ok(())
   }
 

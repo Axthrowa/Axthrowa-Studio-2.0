@@ -143,6 +143,8 @@ pub const OBS_FADER_LOG: c_int = 2;
 /// `enum obs_transition_mode`
 pub const OBS_TRANSITION_MODE_AUTO: c_int = 0;
 pub const OBS_TRANSITION_MODE_MANUAL: c_int = 1;
+pub const OBS_ALIGN_LEFT: u32 = 1;
+pub const OBS_ALIGN_TOP: u32 = 4;
 /// `enum obs_canvas_flags` PREVIEW ön ayarı (= EPHEMERAL): kaynakları etkinleştirmez, sesi karıştırmaz
 pub const CANVAS_PREVIEW: u32 = 1 << 4;
 pub const MAX_AUDIO_CHANNELS: usize = 8;
@@ -251,6 +253,7 @@ obs_api! {
   fn obs_source_set_volume(Ptr, f32);
   fn obs_source_set_audio_mixers(Ptr, u32);
   fn obs_scene_create(*const c_char) -> Ptr;
+  fn obs_scene_create_private(*const c_char) -> Ptr;
   fn obs_scene_release(Ptr);
   fn obs_scene_get_source(Ptr) -> Ptr;
   fn obs_scene_add(Ptr, Ptr) -> Ptr;

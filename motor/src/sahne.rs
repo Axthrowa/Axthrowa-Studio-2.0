@@ -70,6 +70,7 @@ impl Motor {
     if self.studyo_durumu(&kanvas).flatten().as_deref() == Some(id) {
       return Err("Studio Mode önizlemesindeki sahne silinemez".into());
     }
+    self.multiviewden_cikar(id);
     // Bu sahnenin öğeleri ve başka sahnelerde bu sahneyi kaynak olarak kullanan öğeler
     let dus: Vec<String> = self
       .ogeler

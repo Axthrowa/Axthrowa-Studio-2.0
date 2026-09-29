@@ -18,6 +18,7 @@ mod etkilesim;
 mod filtre;
 mod gecis;
 mod motor;
+mod multiview;
 mod obs;
 mod onizleme;
 mod protokol;

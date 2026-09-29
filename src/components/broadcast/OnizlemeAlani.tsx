@@ -4,12 +4,13 @@
  * Etkileşim (OBS alışkanlıkları): tıkla-seç (Ctrl ile çoklu), sürükle-taşı (kenar/merkez yapışması; Ctrl basılıyken
  * yapışma kapalı), köşe/kenar tutamaçlarıyla boyutlandır (köşede oran korunur, Shift serbest), ok tuşlarıyla 1 px
  * (Shift 10 px) itme, sağ tık bağlam menüsü. Kilitli öğe seçilir ama taşınmaz; döndürülmüş öğe yalnız taşınır.
+ * Üstteki yuvarlak tutamaç öğeyi merkezi etrafında döndürür (Shift ile 15° adımlar).
  * Alt basılıyken tutamaç sürüklemek kaynağı kırpar (sınırsız, döndürülmemiş öğede; ölçek değişmez).
  * Sürükleme sırasında motor ~12 kez/sn güncellenir; bırakınca tek geri alınabilir işlem kaydedilir.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motorApi, type MotorDonusumAlanlari, type MotorSahneOgesi } from "../../lib/api/motor";
-import { boyutlandir, kirpilabilir, kirpSurukle, noktadakiOge, ogeKutusu, TUTAMACLAR, yapistir, type AgacDugumu, type Kutu } from "../../lib/sahneAgaci";
+import { boyutlandir, kirpilabilir, kirpSurukle, noktadakiOge, ogeKutusu, TUTAMACLAR, yapistir, type AgacDugumu, type Kutu, merkezdenDondur } from "../../lib/sahneAgaci";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { kutuBoyutu, olcekMetni, yakinlastir, type OlcekKipi } from "../../lib/onizlemeOlcek";
 
@@ -54,7 +55,8 @@ function yakala(e: React.PointerEvent<Element>) {
 type Surukleme =
   | { tur: "tasi"; bas: [number, number]; ogeler: { oge: MotorSahneOgesi; konum: [number, number]; kutu: Kutu }[] }
   | { tur: "boyut"; oge: MotorSahneOgesi; kutu: Kutu; tutamac: { x: number; y: number }; eski: MotorDonusumAlanlari }
-  | { tur: "kirp"; oge: MotorSahneOgesi; kutu: Kutu; tutamac: { x: number; y: number }; eski: MotorDonusumAlanlari };
+  | { tur: "kirp"; oge: MotorSahneOgesi; kutu: Kutu; tutamac: { x: number; y: number }; eski: MotorDonusumAlanlari }
+  | { tur: "dondur"; oge: MotorSahneOgesi; kutu: Kutu; eski: MotorDonusumAlanlari };
 
 export type OnizlemeEylemleri = {
   sec: (oge: string | null, kip: "tek" | "ekle") => void;
@@ -150,6 +152,15 @@ export function TuvalGorunumu({
   const goster = (o: MotorSahneOgesi): MotorSahneOgesi => (gecici[o.oge] ? ({ ...o, ...gecici[o.oge] } as MotorSahneOgesi) : o);
   const seciliOgeler = agac.map((d) => d.oge).filter((o) => secim.includes(o.oge));
   const tutamacBoyu = 9 / olcek;
+  /** Döndürme tutamacının kutunun üst kenarından uzaklığı (tuval pikseli) */
+  const dondurmeUzakligi = 28 / olcek;
+  /** Döndürme tutamacının tuvaldeki yeri (öğenin açısıyla döner) */
+  const dondurmeNoktasi = (k: Kutu): [number, number] => {
+    const lx = k.x + k.g / 2 - k.ox;
+    const ly = k.y - dondurmeUzakligi - k.oy;
+    const r = (k.aci * Math.PI) / 180;
+    return [k.ox + lx * Math.cos(r) - ly * Math.sin(r), k.oy + lx * Math.sin(r) + ly * Math.cos(r)];
+  };
 
   // Motor yeni değeri bildirince geçici gösterim düşer
   useEffect(() => {
@@ -163,6 +174,15 @@ export function TuvalGorunumu({
     if (seciliOgeler.length === 1) {
       const o = seciliOgeler[0];
       const k = ogeKutusu(o);
+      // Döndürme tutamacı (açıdan bağımsız); Shift ile 15° adımlar
+      if (k && !o.kilit) {
+        const [dx, dy] = dondurmeNoktasi(k);
+        if (Math.hypot(p[0] - dx, p[1] - dy) <= tutamacBoyu) {
+          yakala(e);
+          setSurukleme({ tur: "dondur", oge: o, kutu: k, eski: { konum: o.konum, aci: o.aci ?? 0 } });
+          return;
+        }
+      }
       if (k && !o.kilit && !(o.aci ?? 0)) {
         const t = TUTAMACLAR.find((h) => Math.abs(p[0] - (k.x + h.x * k.g)) <= tutamacBoyu && Math.abs(p[1] - (k.y + h.y * k.h)) <= tutamacBoyu);
         if (t) {
@@ -208,6 +228,9 @@ export function TuvalGorunumu({
       for (const x of surukleme.ogeler) yeniler[x.oge.oge] = { konum: [Math.round(x.konum[0] + dx), Math.round(x.konum[1] + dy)] };
     } else if (surukleme.tur === "kirp") {
       yeniler[surukleme.oge.oge] = kirpSurukle(surukleme.oge, surukleme.kutu, surukleme.tutamac, p);
+    } else if (surukleme.tur === "dondur") {
+      const d = merkezdenDondur(surukleme.kutu, p, e.shiftKey ? 15 : undefined);
+      yeniler[surukleme.oge.oge] = { konum: [Math.round(d.konum[0] * 10) / 10, Math.round(d.konum[1] * 10) / 10], aci: Math.round(d.aci * 10) / 10 };
     } else {
       yeniler[surukleme.oge.oge] = boyutlandir(surukleme.oge, surukleme.kutu, surukleme.tutamac, p, e.shiftKey);
     }
@@ -229,7 +252,7 @@ export function TuvalGorunumu({
         .map((x) => ({ oge: x.oge, yeni: gecici[x.oge.oge], eski: { konum: x.konum } }));
       if (degisim.length) eylem.donustur(degisim, degisim.length > 1 ? `${degisim.length} öğeyi taşı` : `«${degisim[0].oge.ad ?? degisim[0].oge.kaynak}» taşı`);
     } else if (gecici[s.oge.oge]) {
-      const ad = s.tur === "kirp" ? "kırp" : "boyutlandır";
+      const ad = s.tur === "kirp" ? "kırp" : s.tur === "dondur" ? "döndür" : "boyutlandır";
       eylem.donustur([{ oge: s.oge, yeni: gecici[s.oge.oge], eski: s.eski }], `«${s.oge.ad ?? s.oge.kaynak}» ${ad}`);
     }
   };
@@ -324,6 +347,14 @@ export function TuvalGorunumu({
                   return (
                     <g key={o.oge} transform={k.aci ? `rotate(${k.aci} ${k.ox} ${k.oy})` : undefined}>
                       <rect x={k.x} y={k.y} width={k.g} height={k.h} className={secili ? "dt-secim-kutu" : "dt-secim-ince"} vectorEffect="non-scaling-stroke" />
+                      {secili && !o.kilit && seciliOgeler.length === 1 && (
+                        <>
+                          <line x1={k.x + k.g / 2} y1={k.y} x2={k.x + k.g / 2} y2={k.y - dondurmeUzakligi} className="dt-secim-kutu" vectorEffect="non-scaling-stroke" />
+                          <circle cx={k.x + k.g / 2} cy={k.y - dondurmeUzakligi} r={tutamacBoyu * 0.65} className="dt-tutamac" style={{ cursor: "grab" }} vectorEffect="non-scaling-stroke">
+                            <title>Döndür (Shift: 15° adımlar)</title>
+                          </circle>
+                        </>
+                      )}
                       {secili &&
                         !o.kilit &&
                         !k.aci &&

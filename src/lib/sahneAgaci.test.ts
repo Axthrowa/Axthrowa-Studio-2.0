@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MotorSahneOgesi } from "./api/motor";
-import { altanSira, boyutlandir, duzListe, kirpilabilir, kirpSurukle, noktadakiOge, noktaKutuda, ogeKutusu, sahneAgaci, tuvaleGore, yapistir } from "./sahneAgaci";
+import { altanSira, boyutlandir, duzListe, kirpilabilir, kirpSurukle, noktadakiOge, noktaKutuda, ogeKutusu, sahneAgaci, tuvaleGore, yapistir, kutuMerkezi, merkezdenDondur } from "./sahneAgaci";
 
 const o = (oge: string, ek: Partial<MotorSahneOgesi> = {}): MotorSahneOgesi => ({
   oge,
@@ -127,5 +127,23 @@ describe("Alt+sürükle kırpma", () => {
     expect(kirpilabilir(o("s/a", { sinir: [10, 10], sinir_turu: 2 }))).toBe(false);
     expect(kirpilabilir(o("s/a", { aci: 90 }))).toBe(false);
     expect(kirpilabilir(o("s/a", { genislik: 0 }))).toBe(false);
+  });
+});
+
+describe("döndürme tutamacı", () => {
+  const k = { x: 100, y: 100, g: 200, h: 100, aci: 0, ox: 100, oy: 100 };
+  it("merkez sabit kalır", () => {
+    const merkez = kutuMerkezi(k);
+    expect(merkez).toEqual([200, 150]);
+    // İmleç merkezin sağında → 90°
+    const d = merkezdenDondur(k, [300, 150]);
+    expect(d.aci).toBeCloseTo(90);
+    const yeni = kutuMerkezi({ ...k, aci: d.aci, ox: d.konum[0], oy: d.konum[1], x: k.x + d.konum[0] - k.ox, y: k.y + d.konum[1] - k.oy });
+    expect(yeni[0]).toBeCloseTo(200);
+    expect(yeni[1]).toBeCloseTo(150);
+  });
+  it("imleç üstteyse 0°, adımlı yuvarlama", () => {
+    expect(merkezdenDondur(k, [200, 0]).aci).toBeCloseTo(0);
+    expect(merkezdenDondur(k, [300, 60], 15).aci % 15).toBe(0);
   });
 });

@@ -95,7 +95,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 |---|---|---|---|
 | Seçim + 8 tutamaç, taşı, ölçekle (Shift serbest), Alt kırp, Ctrl yapışma kapalı | VAR | vt:sahneAgaci, tp | |
 | Ok 1 px / Shift+ok 10 px, kenar/merkez yapışması, güvenli alan kılavuzları | VAR | vt, tp | Yapışma eşiği sabit (ayar yok) |
-| Döndürme tutamacı | YOK | | Döndürme menü/diyalogla |
+| Döndürme tutamacı | VAR | vt:sahneAgaci, tp | Merkez etrafında (konum telafisiyle), Shift ile 15° adımlar, geri alınabilir; sınamada 90° → merkez aynı piksel |
 | Boşluk yardımcıları (mesafe çizgileri) | YOK | | |
 | Önizleme yakınlaştırma/kaydırma | VAR | vt:onizlemeOlcek, tp | Ctrl+tekerlek 1,25 kat (×0,25–×8), orta tuşla sürükleyerek kaydır, kaydırma çubukları; %100'de seçim isabeti doğrulandı |
 | Önizlemeyi devre dışı bırak | VAR | tp | Kare aboneliği kesilir (motor önizleme dönüştürmez); ses ölçerleri sürer |

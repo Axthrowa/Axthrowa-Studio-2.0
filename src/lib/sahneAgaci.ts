@@ -235,3 +235,32 @@ export function tuvaleGore(
   const y = kip === "yatay-ortala" ? k.y : (tuval[1] - k.h) / 2;
   return { konum: [Math.round(x + dx), Math.round(y + dy)] };
 }
+
+/** Kutunun merkezinin tuvaldeki yeri (döndürme hesaba katılır) */
+export function kutuMerkezi(k: Kutu): [number, number] {
+  const vx = k.x + k.g / 2 - k.ox;
+  const vy = k.y + k.h / 2 - k.oy;
+  const r = (k.aci * Math.PI) / 180;
+  return [k.ox + vx * Math.cos(r) - vy * Math.sin(r), k.oy + vx * Math.sin(r) + vy * Math.cos(r)];
+}
+
+/**
+ * Döndürme tutamacı (OBS 30+): öğe kutusunun MERKEZİ etrafında döner. libobs döndürmeyi hizalama noktası (konum)
+ * etrafında yaptığı için konum telafi edilir: yeni konum = O + (R(a0) − R(a1))·v, v = merkez − O (döndürülmemiş).
+ * `p`: imlecin tuval noktası; tutamaç kutunun üstünde olduğundan açı +90°. `adim` verilirse açı ona yuvarlanır.
+ */
+export function merkezdenDondur(k: Kutu, p: [number, number], adim?: number): { konum: [number, number]; aci: number } {
+  const [cx, cy] = kutuMerkezi(k);
+  let aci = (Math.atan2(p[1] - cy, p[0] - cx) * 180) / Math.PI + 90;
+  if (adim) aci = Math.round(aci / adim) * adim;
+  aci = ((aci % 360) + 360) % 360;
+  const vx = k.x + k.g / 2 - k.ox;
+  const vy = k.y + k.h / 2 - k.oy;
+  const d = (a: number) => {
+    const r = (a * Math.PI) / 180;
+    return [vx * Math.cos(r) - vy * Math.sin(r), vx * Math.sin(r) + vy * Math.cos(r)];
+  };
+  const [x0, y0] = d(k.aci);
+  const [x1, y1] = d(aci);
+  return { konum: [k.ox + x0 - x1, k.oy + y0 - y1], aci };
+}

@@ -554,7 +554,16 @@
 }
 .dt-onizleme-tuval {
   position: relative;
+  flex-shrink: 0;
+  /* Taşınca kaydırma sol/üstten başlasın (flex ortalaması taşan içeriği keser) */
+  margin: auto;
   background: #000;
+}
+.dt-onizleme-alan[data-kaydirilabilir] {
+  overflow: auto;
+  /* Ortalama tuvalin margin:auto'sunda; flex ortalaması taşan sol/üst kısmı erişilemez yapar */
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 .dt-onizleme-kare {
   position: absolute;

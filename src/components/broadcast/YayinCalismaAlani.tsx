@@ -83,6 +83,7 @@ import { TBar } from "./TBar";
 import { RemuxPenceresi } from "./RemuxPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { KaynakAracCubugu } from "./KaynakAracCubugu";
+import type { OlcekKipi } from "../../lib/onizlemeOlcek";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
 import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
@@ -285,6 +286,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [remuxAcik, setRemuxAcik] = useState(false);
   const [multiviewAcik, setMultiviewAcik] = useState(false);
   const [gecisEkle, setGecisEkle] = useState(false);
+  const [onizlemeOlcek, setOnizlemeOlcek] = useState<OlcekKipi>({ tur: "sigdir" });
   const [hizliEkle, setHizliEkle] = useState(false);
   const [donusumOge, setDonusumOge] = useState<string | null>(null);
   const [gelismisSes, setGelismisSes] = useState(false);
@@ -861,6 +863,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       return;
     }
     if (["INPUT", "TEXTAREA", "SELECT"].includes(hedef.tagName)) return;
+    if (ctrl && e.key === "0") {
+      e.preventDefault();
+      setOnizlemeOlcek({ tur: "sigdir" });
+      return;
+    }
     if (ctrl && (e.key === "z" || e.key === "Z") && !e.shiftKey) {
       e.preventDefault();
       void yigin.geriAl().then((ad) => ad && onToast(`Geri alındı: ${ad}`), (x) => onToast(`Geri alınamadı: ${hataMetni(x)}`));
@@ -983,6 +990,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ...tuvaller.map((t): MenuOgesi => ({ etiket: `${t === tuval ? "● " : ""}Tuval: ${TUVAL_ADI[t]}`, eylem: () => setTuval(t) })),
         "ayirici",
         ...projektorMenusu(),
+        { etiket: `${onizlemeOlcek.tur === "sigdir" ? "● " : ""}Önizleme ölçekleme: pencereye sığdır`, kisayol: "Ctrl+0", eylem: () => setOnizlemeOlcek({ tur: "sigdir" }) },
+        { etiket: `${onizlemeOlcek.tur === "tuval" ? "● " : ""}Önizleme ölçekleme: tuval (%100)`, eylem: () => setOnizlemeOlcek({ tur: "tuval" }) },
+        { etiket: `${onizlemeOlcek.tur === "yakin" ? "● " : ""}Yakınlaştır / uzaklaştır: Ctrl+tekerlek · kaydır: orta tuşla sürükle`, devreDisi: true, eylem: () => undefined },
         { etiket: `Multiview (pencere) · ${TUVAL_ADI[tuval]}`, devreDisi: !calisiyor, eylem: () => setMultiviewAcik(true) },
         "ayirici",
         { etiket: `${durumCubugu ? "☑" : "☐"} Durum çubuğu`, eylem: () => setDurumCubugu((x) => !x) },
@@ -1454,6 +1464,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 kilavuz={kilavuz}
                 eylem={onizlemeEylem}
                 vurgu={studyo ? "onizleme" : "program"}
+                olcekKipi={onizlemeOlcek}
+                onOlcek={setOnizlemeOlcek}
               />
               {studyo && (
                 <>

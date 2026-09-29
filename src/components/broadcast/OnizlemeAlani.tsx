@@ -11,6 +11,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motorApi, type MotorDonusumAlanlari, type MotorSahneOgesi } from "../../lib/api/motor";
 import { boyutlandir, kirpilabilir, kirpSurukle, noktadakiOge, ogeKutusu, TUTAMACLAR, yapistir, type AgacDugumu, type Kutu } from "../../lib/sahneAgaci";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
+import { kutuBoyutu, olcekMetni, yakinlastir, type OlcekKipi } from "../../lib/onizlemeOlcek";
 
 /** WebSocket karesi yokken yedek: PNG yoklaması (uzaktan açılan panel ya da bağlantı kopukken) */
 function YoklamaKaresi({ tuval, genislik }: { tuval: string; genislik: number }) {
@@ -76,6 +77,8 @@ export function TuvalGorunumu({
   eylem,
   vurgu,
   kilavuz,
+  olcekKipi,
+  onOlcek,
 }: {
   etiket: string;
   /** Kare kaynağı: "ana", "dikey", "studyo-ana"… */
@@ -90,9 +93,14 @@ export function TuvalGorunumu({
   vurgu?: "program" | "onizleme";
   /** Güvenli alan kılavuzları (eylem %90, başlık %80) ve merkez çizgileri */
   kilavuz?: boolean;
+  /** Önizleme ölçekleme (verilmezse pencereye sığar); `onOlcek` varsa Ctrl+tekerlek yakınlaştırır */
+  olcekKipi?: OlcekKipi;
+  onOlcek?: (k: OlcekKipi) => void;
 }) {
   const kap = useRef<HTMLDivElement>(null);
-  const [olcu, setOlcu] = useState({ g: 0, y: 0 });
+  const [alan, setAlan] = useState({ g: 0, y: 0 });
+  const kip: OlcekKipi = olcekKipi ?? { tur: "sigdir" };
+  const olcu = kutuBoyutu(alan, boyut, kip);
   const [surukleme, setSurukleme] = useState<Surukleme | null>(null);
   const [gecici, setGecici] = useState<Record<string, MotorDonusumAlanlari>>({});
   const sonAnlik = useRef(0);
@@ -101,17 +109,35 @@ export function TuvalGorunumu({
   useLayoutEffect(() => {
     const el = kap.current;
     if (!el) return;
+    // Kaydırma çubukları alanı daraltmasın: iç (clientWidth) değil kutu boyutu
     const hesapla = () => {
       const r = el.getBoundingClientRect();
-      const oran = boyut[0] / boyut[1];
-      const g = Math.min(r.width, r.height * oran);
-      setOlcu({ g: Math.floor(g), y: Math.floor(g / oran) });
+      setAlan({ g: r.width, y: r.height });
     };
     hesapla();
     const ro = new ResizeObserver(hesapla);
     ro.observe(el);
     return () => ro.disconnect();
   }, [boyut]);
+
+  // Ctrl+tekerlek: yakınlaştır/uzaklaştır (sayfa yakınlaşmasın diye pasif olmayan dinleyici)
+  const kipRef = useRef(kip);
+  kipRef.current = kip;
+  useEffect(() => {
+    const el = kap.current;
+    if (!el || !onOlcek) return;
+    const tekerlek = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      onOlcek(yakinlastir({ g: r.width, y: r.height }, boyut, kipRef.current, e.deltaY < 0 ? 1 : -1));
+    };
+    el.addEventListener("wheel", tekerlek, { passive: false });
+    return () => el.removeEventListener("wheel", tekerlek);
+  }, [onOlcek, boyut]);
+
+  // Orta tuşla sürükleyerek kaydır (yakınlaştırılmışken)
+  const kaydir = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
 
   const olcek = olcu.g > 0 ? olcu.g / boyut[0] : 1;
   const tuvalNoktasi = (e: { clientX: number; clientY: number }, el: Element): [number, number] => {
@@ -217,8 +243,33 @@ export function TuvalGorunumu({
 
   return (
     <div className="dt-onizleme-bolme" data-vurgu={vurgu}>
-      <div className="dt-onizleme-etiket">{etiket}</div>
-      <div ref={kap} className="dt-onizleme-alan">
+      <div className="dt-onizleme-etiket">
+        {etiket}
+        {kip.tur !== "sigdir" && <span className="dt-sayi dt-soluk ml-2">{olcekMetni(alan, boyut, kip)}</span>}
+      </div>
+      <div
+        ref={kap}
+        className="dt-onizleme-alan"
+        data-kaydirilabilir={kip.tur !== "sigdir" || undefined}
+        onPointerDown={(e) => {
+          if (e.button !== 1 || kip.tur === "sigdir") return;
+          e.preventDefault();
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            /* yakalama yoksa sürükleme alan içinde sürer */
+          }
+          kaydir.current = { x: e.clientX, y: e.clientY, sl: e.currentTarget.scrollLeft, st: e.currentTarget.scrollTop };
+        }}
+        onPointerMove={(e) => {
+          const k = kaydir.current;
+          if (!k) return;
+          e.currentTarget.scrollLeft = k.sl - (e.clientX - k.x);
+          e.currentTarget.scrollTop = k.st - (e.clientY - k.y);
+        }}
+        onPointerUp={() => (kaydir.current = null)}
+        onPointerCancel={() => (kaydir.current = null)}
+      >
         <div className="dt-onizleme-tuval" style={{ width: olcu.g, height: olcu.y }}>
           {canliBagli && kare ? <img src={kare} alt={etiket} className="dt-onizleme-kare" draggable={false} /> : <YoklamaKaresi tuval={tuval} genislik={Math.min(960, Math.max(320, Math.round(olcu.g)))} />}
           <svg

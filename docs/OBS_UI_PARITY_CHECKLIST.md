@@ -40,11 +40,12 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Düzen › Dönüşüm alt menüsü (düzenle, kopyala, yapıştır, sıfırla, 90°/180°, çevir, sığdır, yay, ortala) | VAR | tp | Alt menü yerine düz liste |
 | Düzen › Sıra | VAR | — | Yukarı/aşağı/en üst/en alt (Düzen ve bağlam menüsünde) |
 | Düzen › Önizlemeyi kilitle | VAR | tp | |
-| Düzen › Önizleme ölçekleme (Pencere/Tuval/Çıkış) | YOK | | Önizleme her zaman pencereye sığar |
+| Düzen › Önizleme ölçekleme (Pencereye sığdır / Tuval %100) | VAR | vt:onizlemeOlcek, tp | Görünüm menüsünde; "Çıkış (ölçeklenmiş)" seçeneği yok |
 | Düzen › Gelişmiş ses özellikleri | VAR | tp | |
 | Görünüm › Studio Mode, tuval seçimi, projektörler, durum çubuğu, güvenli alan kılavuzları | VAR | tp | |
 | Görünüm › Multiview (pencere) | VAR | sinama, it, tp | Tek düzen (üstte önizleme/program, altta 8 sahne) |
-| Görünüm › Tam ekran arayüz, kaynak simgeleri, önizleme yakınlaştırma | YOK | | |
+| Görünüm › Önizleme yakınlaştırma (Ctrl+tekerlek, Ctrl+0) | VAR | vt, tp | |
+| Görünüm › Tam ekran arayüz, kaynak simgeleri | YOK | | |
 | Docklar › onay kutuları, kilitle, sekme birleştir/ayır, düzeni sıfırla, ayrı pencere | VAR | tp | Özel tarayıcı dock'u yok |
 | Profil › liste, Yeni, Çoğalt, Yeniden adlandır, Kaldır (yedeğe), Dışa aktar | VAR | it:motor_profil_… | Profil içe aktarma yok |
 | Sahne Koleksiyonu › liste, Yeni, yönetici (çoğalt, adlandır, içe/dışa aktar, OBS JSON'dan al) | VAR | it:motor_v2_…, vt | Eşlenemeyen kaynak "eksik" yer tutucu olur |
@@ -94,7 +95,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Ok 1 px / Shift+ok 10 px, kenar/merkez yapışması, güvenli alan kılavuzları | VAR | vt, tp | Yapışma eşiği sabit (ayar yok) |
 | Döndürme tutamacı | YOK | | Döndürme menü/diyalogla |
 | Boşluk yardımcıları (mesafe çizgileri) | YOK | | |
-| Önizleme yakınlaştırma/kaydırma, önizlemeyi devre dışı bırak | YOK | | |
+| Önizleme yakınlaştırma/kaydırma | VAR | vt:onizlemeOlcek, tp | Ctrl+tekerlek 1,25 kat (×0,25–×8), orta tuşla sürükleyerek kaydır, kaydırma çubukları; %100'de seçim isabeti doğrulandı |
+| Önizlemeyi devre dışı bırak | YOK | | |
 | Dönüşüm penceresi (konum, açı, boyut, 9 nokta hizalama, sınır türü + hizalama, kırpma) | VAR | tp | "Kırpmayı sınıra uygula" yok |
 
 ## 4.6 Ses mikseri

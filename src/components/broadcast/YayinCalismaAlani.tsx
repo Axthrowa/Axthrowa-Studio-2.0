@@ -81,6 +81,7 @@ import { DeinterlaceDiyalogu } from "./DeinterlaceDiyalogu";
 import { TBar } from "./TBar";
 import { RemuxPenceresi } from "./RemuxPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
+import { KaynakAracCubugu } from "./KaynakAracCubugu";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
 import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
@@ -1466,6 +1467,15 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 </>
               )}
             </div>
+            {calisiyor && (
+              <KaynakAracCubugu
+                oge={tek}
+                kanal={tek ? ses?.kaynaklar.find((k) => k.id === tek.kaynak) : undefined}
+                onMedya={(e) => tek && void yap("Medya", () => motorApi.medya(tek.kaynak, e))}
+                onOzellikler={() => tek && ozellikAc(tek.kaynak)}
+                onFiltreler={() => tek && filtreAc(tek.kaynak)}
+              />
+            )}
           </div>
           {/* Alt dock sırası */}
           <div className="dt-yatay-ayirici" role="separator" aria-orientation="horizontal" aria-label="Dock yüksekliği" data-kilitli={duzen.kilitli || undefined} onPointerDown={yukseklikSurukle} />

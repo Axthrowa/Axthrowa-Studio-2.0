@@ -1073,6 +1073,22 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     ekran.as_ref().is_ok_and(|b| *b == (1920, 1080)) && ekran_boyutu == Some((1920, 1080)) && ekran_goreli_red,
     format!("{ekran:?}, dosya {ekran_boyutu:?}, göreli red {ekran_goreli_red}"),
   );
+  // Yeniden muxlama (Dosya › Yeniden muxla): sentetik MP4 → MKV, kare sayısı ve süre korunur, çözme hatasız
+  let remux_yolu = dosya("sentetik-remux.mkv");
+  let _ = std::fs::remove_file(&remux_yolu);
+  let remux = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &remux_yolu, |_| {}));
+  let (rm_once, rm_sonra) = (incele(&ffprobe, &ff, &medya), incele(&ffprobe, &ff, &remux_yolu));
+  let remux_ustune_red = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &remux_yolu, |_| {})).is_err();
+  ekle(
+    "yeniden muxlama (MP4 → MKV): kare/süre korunur, üzerine yazılmaz",
+    remux.as_ref().is_ok_and(|r| r.video == 1 && r.ses == 1)
+      && rm_sonra.kare == rm_once.kare
+      && rm_sonra.kare > 0
+      && (rm_sonra.sure_sn - rm_once.sure_sn).abs() < 0.1
+      && rm_sonra.cozme_hatasi == 0
+      && remux_ustune_red,
+    format!("{remux:?}; kare {} → {}, süre {:.2} → {:.2}, çözme hatası {}, üzerine yazma reddi {remux_ustune_red}", rm_once.kare, rm_sonra.kare, rm_once.sure_sn, rm_sonra.sure_sn, rm_sonra.cozme_hatasi),
+  );
   let cift = |(g, y): (u32, u32)| (g.max(16).div_ceil(2) * 2, y.max(16).div_ceil(2) * 2);
   ekle(
     "sahne/kaynak ekran görüntüsü: sahne tuval boyutunda, kaynak kendi boyutunda",

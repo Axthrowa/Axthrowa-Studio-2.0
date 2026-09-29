@@ -2,6 +2,8 @@
 //!
 //!   yayin-motoru bilgi               libobs sürümü, yüklü modüller, kullanılabilir kodlayıcılar (JSON)
 //!   yayin-motoru sinama [klasör]     sentetik uçtan uca sınama (yalnız 127.0.0.1 alıcıları)
+//!   yayin-motoru remux <girdi> <çıktı>
+//!                                    kaydı yeniden kodlamadan başka kaba kopyalar (ilerleme JSON satırları)
 //!   yayin-motoru hizmet              stdio üzerinden JSON satır protokolü (panel bu kipi başlatır)
 //!   yayin-motoru eklenti-yokla <dll> [veri-klasörü]
 //!                                    tek bir OBS eklentisini bu süreçte yükler, sonucu JSON olarak yazar ve çıkar
@@ -19,6 +21,7 @@ mod motor;
 mod obs;
 mod onizleme;
 mod protokol;
+mod remux;
 mod sahne;
 mod sanal_kamera;
 mod servis;
@@ -80,6 +83,13 @@ fn main() -> ExitCode {
       },
       _ => ExitCode::from(64),
     },
+    Some("remux") => match (args.get(2), args.get(3)) {
+      (Some(g), Some(c)) => remux_calistir(std::path::Path::new(g), std::path::Path::new(c)),
+      _ => {
+        eprintln!("kullanım: yayin-motoru remux <girdi> <çıktı.mp4|.mov|.mkv>");
+        ExitCode::from(64)
+      }
+    },
     Some("hizmet") => match protokol::hizmet() {
       Ok(()) => ExitCode::SUCCESS,
       Err(e) => {
@@ -90,6 +100,30 @@ fn main() -> ExitCode {
     _ => {
       eprintln!("kullanım: yayin-motoru <bilgi | sinama [klasör] | hizmet | eklenti-yokla <dll> [veri]>");
       ExitCode::from(64)
+    }
+  }
+}
+
+/// Remux alt süreci: stdout'a `{"ilerleme": 0.42}` satırları, sonda `{"tamam": true, ...}` ya da `{"hata": "..."}`.
+fn remux_calistir(girdi: &std::path::Path, cikti: &std::path::Path) -> ExitCode {
+  use std::io::Write;
+  let yaz = |v: serde_json::Value| {
+    let mut o = std::io::stdout().lock();
+    let _ = writeln!(o, "{v}");
+    let _ = o.flush();
+  };
+  let sonuc = obs::ObsKurulumu::bul().and_then(|k| {
+    obs::dll_klasoru_ekle(&k.bin)?;
+    remux::remux(&k.bin, girdi, cikti, |x| yaz(serde_json::json!({ "ilerleme": (x * 1000.0).round() / 1000.0 })))
+  });
+  match sonuc {
+    Ok(s) => {
+      yaz(serde_json::json!({ "tamam": true, "sonuc": s }));
+      ExitCode::SUCCESS
+    }
+    Err(e) => {
+      yaz(serde_json::json!({ "hata": e }));
+      ExitCode::from(1)
     }
   }
 }

@@ -559,7 +559,7 @@ impl Api {
 }
 
 #[cfg(windows)]
-fn dll_klasoru_ekle(klasor: &Path) -> Result<(), String> {
+pub fn dll_klasoru_ekle(klasor: &Path) -> Result<(), String> {
   use std::os::windows::ffi::OsStrExt;
   #[link(name = "kernel32")]
   extern "system" {
@@ -580,7 +580,7 @@ fn dll_klasoru_ekle(klasor: &Path) -> Result<(), String> {
 }
 
 #[cfg(not(windows))]
-fn dll_klasoru_ekle(_klasor: &Path) -> Result<(), String> {
+pub fn dll_klasoru_ekle(_klasor: &Path) -> Result<(), String> {
   Err("yalnız Windows destekleniyor".into())
 }
 

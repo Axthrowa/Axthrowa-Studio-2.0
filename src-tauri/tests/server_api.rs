@@ -2760,3 +2760,55 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "kapat"})).await;
   assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
 }
+
+/// Yeniden muxlama kuyruğu: MKV → MP4 motorun alt sürecinde, ilerleme ve sonuç; göreli yol, var olan çıktı reddedilir
+#[tokio::test(flavor = "multi_thread")]
+async fn remux_kuyrugu_mkv_mp4() {
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\avformat-62.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS FFmpeg kitaplıkları yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let klasor = h.root.join("remux");
+  std::fs::create_dir_all(&klasor).unwrap();
+  let girdi = klasor.join("kayit.mkv");
+  let durum = std::process::Command::new("ffmpeg")
+    .args(["-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=30", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000"])
+    .args(["-t", "3", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-y"])
+    .arg(&girdi)
+    .status();
+  if !durum.is_ok_and(|d| d.success()) {
+    eprintln!("ffmpeg yok — atlandı");
+    return;
+  }
+  let post = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap() }
+  };
+  assert_eq!(post("/api/motor/remux", json!({"dosyalar": ["kayit.mkv"]})).await.status(), 400, "göreli yol");
+  assert_eq!(post("/api/motor/remux", json!({"dosyalar": [klasor.join("yok.mkv")]})).await.status(), 400);
+  assert_eq!(post("/api/motor/remux", json!({"dosyalar": [&girdi], "bicim": "avi"})).await.status(), 400);
+  let r = post("/api/motor/remux", json!({"dosyalar": [&girdi]})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let mut son = Value::Null;
+  for _ in 0..100 {
+    son = h.client.get(format!("{}/api/motor/remux", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+    let is = son["isler"].as_array().unwrap().iter().find(|i| i["girdi"] == json!(girdi)).cloned().unwrap();
+    if is["durum"] != "bekliyor" && is["durum"] != "suruyor" {
+      break;
+    }
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+  }
+  let is = son["isler"].as_array().unwrap().iter().find(|i| i["girdi"] == json!(girdi)).cloned().unwrap();
+  assert_eq!(is["durum"], "tamam", "{is}");
+  assert_eq!((is["sonuc"]["video"].as_u64(), is["sonuc"]["ses"].as_u64()), (Some(1), Some(1)));
+  let cikti = klasor.join("kayit.mp4");
+  let bayt = std::fs::read(&cikti).unwrap();
+  assert_eq!(&bayt[4..8], b"ftyp", "MP4 kabı");
+  assert!(!klasor.join("kayit.mp4.remux-gecici").exists());
+  assert_eq!(post("/api/motor/remux", json!({"dosyalar": [&girdi]})).await.status(), 409, "üzerine yazılmaz");
+  assert!(post("/api/motor/remux/temizle", json!({})).await.status().is_success());
+}

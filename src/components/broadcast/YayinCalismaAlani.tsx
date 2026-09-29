@@ -79,6 +79,7 @@ import { EtkilesimPenceresi } from "./EtkilesimPenceresi";
 import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
 import { DeinterlaceDiyalogu } from "./DeinterlaceDiyalogu";
 import { TBar } from "./TBar";
+import { RemuxPenceresi } from "./RemuxPenceresi";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
 import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
@@ -278,6 +279,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [etkilesim, setEtkilesim] = useState<{ kaynak: string; ad: string } | null>(null);
   const [ogeGecisi, setOgeGecisi] = useState<{ oge: MotorSahneOgesi; goster: boolean } | null>(null);
   const [deinterlace, setDeinterlace] = useState<MotorSahneOgesi | null>(null);
+  const [remuxAcik, setRemuxAcik] = useState(false);
   const [donusumOge, setDonusumOge] = useState<string | null>(null);
   const [gelismisSes, setGelismisSes] = useState(false);
   const [koleksiyonPenceresi, setKoleksiyonPenceresi] = useState(false);
@@ -931,6 +933,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       ogeler: () => [
         { etiket: calisiyor ? "Motoru durdur…" : "Motoru başlat", eylem: calisiyor ? motorDurdur : () => void yap("Motor başlatılamadı", () => motorApi.baslat(d?.dikey ?? false, d?.fps === 30 ? 30 : 60)) },
         { etiket: "Kayıtları göster", eylem: () => klasorAc("kayit") },
+        { etiket: "Yeniden muxla…", eylem: () => setRemuxAcik(true) },
         { etiket: "Ayarlar klasörünü göster", eylem: () => klasorAc("ayarlar") },
         { etiket: `Ekran görüntüsü (Çıkış · ${TUVAL_ADI[tuval]})`, devreDisi: !calisiyor, eylem: () => ekranGoruntusu(tuval) },
         ...(studyo ? [{ etiket: `Ekran görüntüsü (Önizleme · ${TUVAL_ADI[tuval]})`, eylem: () => ekranGoruntusu(`studyo-${tuval}`) } as MenuOgesi] : []),
@@ -1666,6 +1669,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           onKapat={() => setDeinterlace(null)}
         />
       )}
+      {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}
       {gunlukAcik && <GunlukPenceresi onKapat={() => setGunlukAcik(false)} />}
       {zamanlayiciAcik && <CikisZamanlayicisiPenceresi z={zamanlayici} canli={canliVar} kayitta={kayitta} onAyarla={setZamanlayici} onKapat={() => setZamanlayiciAcik(false)} />}
       {hakkinda && <HakkindaDiyalogu libobs={d.bilgi?.libobs} onKapat={() => setHakkinda(false)} />}

@@ -377,6 +377,10 @@ export const motorApi = {
   }) => istek<{ ok: boolean; id?: string; eklenen?: number; atlanan?: number }>("/api/motor/filtre", govde),
   ekranGoruntusu: (tuval = "ana", kaynak?: string) =>
     istek<{ ok: boolean; yol: string; genislik: number; yukseklik: number }>("/api/motor/ekran-goruntusu", { tuval, kaynak }),
+  remux: () => istek<RemuxDurumu>("/api/motor/remux"),
+  remuxEkle: (dosyalar: string[], bicim: "mp4" | "mov" | "mkv") => istek<{ ok: boolean; eklenen: number }>("/api/motor/remux", { dosyalar, bicim }),
+  remuxIptal: () => istek<{ ok: boolean }>("/api/motor/remux/iptal", {}),
+  remuxTemizle: () => istek<{ ok: boolean }>("/api/motor/remux/temizle", {}),
   klasorAc: (tur: "kayit" | "gunluk" | "ayarlar") => istek<{ ok: boolean; yol: string }>("/api/motor/klasor-ac", { tur }),
   gunluk: (satir = 400) => istek<{ satirlar: string[]; gizlenen: number }>(`/api/motor/gunluk?satir=${satir}`),
   filtreOzellikleri: (id: string) => istek<OzellikTanimi>(`/api/motor/filtre/ozellikler?id=${encodeURIComponent(id)}`),
@@ -495,3 +499,13 @@ export const DEINTERLACE_KIPLERI: { kip: number; ad: string }[] = [
   { kip: 7, ad: "Yadif" },
   { kip: 8, ad: "Yadif 2x" },
 ];
+
+export type RemuxIsi = {
+  girdi: string;
+  cikti: string;
+  durum: "bekliyor" | "suruyor" | "tamam" | "hata" | "iptal";
+  ilerleme: number;
+  hata?: string;
+  sonuc?: { video: number; ses: number; atlanan_akis: number; paket: number; erken_bitti: boolean };
+};
+export type RemuxDurumu = { isler: RemuxIsi[]; calisiyor: boolean; kayitKlasoru: string; kayitlar: { yol: string; boyut: number }[] };

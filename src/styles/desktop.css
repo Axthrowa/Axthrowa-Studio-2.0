@@ -763,3 +763,16 @@
   stroke-width: 1;
   stroke-dasharray: 6 4;
 }
+
+/* Studio Mode T-bar: dikey kaydırıcı (üst = önizleme başlangıcı, alt = geçiş tamam) */
+.dt-tbar {
+  writing-mode: vertical-lr;
+  height: 120px;
+  width: 22px;
+  accent-color: var(--panel-accent);
+  cursor: ns-resize;
+}
+.dt-tbar:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

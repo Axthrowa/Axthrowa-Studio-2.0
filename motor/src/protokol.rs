@@ -216,6 +216,11 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       m.studyo_onizleme(metin(istek, "tuval")?, metin(istek, "sahne")?)?;
       json!({})
     }
+    "studyo.tbar" => {
+      let konum = istek.get("konum").and_then(Value::as_f64).ok_or("konum (0–1) gerekli")? as f32;
+      let etkin = m.studyo_tbar(metin(istek, "tuval")?, konum, istek.get("birak").and_then(Value::as_bool).unwrap_or(false))?;
+      json!({ "etkin": etkin, "program": m.program_sahnesi(metin(istek, "tuval")?) })
+    }
     "studyo.gecis" => {
       let sure = istek.get("sure_ms").and_then(Value::as_u64).map(|x| x as u32);
       m.studyo_gecis(metin(istek, "tuval")?, istek.get("takas").and_then(Value::as_bool).unwrap_or(false), sure)?;
@@ -294,7 +299,11 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
     }
     "kaynak.durumlari" => json!({ "kaynaklar": m.kaynak_durumlari() }),
     "ekran_goruntusu" => {
-      let (g, y) = m.ekran_goruntusu(metin(istek, "tuval").unwrap_or("ana"), &PathBuf::from(metin(istek, "yol")?))?;
+      let yol = PathBuf::from(metin(istek, "yol")?);
+      let (g, y) = match metin(istek, "kaynak") {
+        Ok(k) => m.kaynak_ekran_goruntusu(k, &yol)?,
+        Err(_) => m.ekran_goruntusu(metin(istek, "tuval").unwrap_or("ana"), &yol)?,
+      };
       json!({ "genislik": g, "yukseklik": y })
     }
     "kaynak.deinterlace" => {

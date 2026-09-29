@@ -20,7 +20,12 @@ pub struct Gecis {
 pub struct Studyo {
   pub kanvas: Kanvas,
   pub sahne: Option<String>,
+  /// T-bar sürükleniyor: (eski program, hedef) — bırakılınca ya hedefe tamamlanır ya eskiye döner
+  pub tbar: Option<(String, String)>,
 }
+
+/// T-bar uçlara bu kadar yakın bırakılırsa geçiş tamamlanır / geri alınır
+const TBAR_UC: f32 = 0.02;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct GecisTuru {
@@ -120,6 +125,10 @@ impl Motor {
       (s.kanvas.clone(), unsafe { (api().obs_scene_get_source)(s.ptr) })
     };
     let tr = self.gecis_hazirla(&kanvas)?;
+    // Programa doğrudan geçiş yarım kalmış T-bar'ı geçersiz kılar
+    if let Some(s) = self.studyo.get_mut(&kanvas) {
+      s.tbar = None;
+    }
     let sure = sure_ms.unwrap_or(self.gecisler[&kanvas].sure_ms).min(AZAMI_SURE_MS);
     unsafe {
       if !gecis || !(api().obs_transition_start)(tr, obs::OBS_TRANSITION_MODE_AUTO, sure, kaynak) {
@@ -192,7 +201,7 @@ impl Motor {
       return Err("önizleme tuvali oluşturulamadı".into());
     }
     let program = self.program_sahnesi(tuval);
-    self.studyo.insert(tuval.into(), Studyo { kanvas: Kanvas { ptr, genislik: g, yukseklik: y }, sahne: None });
+    self.studyo.insert(tuval.into(), Studyo { kanvas: Kanvas { ptr, genislik: g, yukseklik: y }, sahne: None, tbar: None });
     if let Some(p) = program {
       self.studyo_onizleme(tuval, &p)?;
     }
@@ -200,6 +209,10 @@ impl Motor {
   }
 
   pub fn studyo_kapat(&mut self, tuval: &str) -> Result<(), String> {
+    // Yarım bırakılmış T-bar: program olduğu yerde (hedef sahne) kalmaz, eskiye döner
+    if self.studyo.get(tuval).is_some_and(|s| s.tbar.is_some()) {
+      let _ = self.studyo_tbar(tuval, 0.0, true);
+    }
     self.onizlemeler.remove(&format!("studyo-{tuval}"));
     if let Some(s) = self.studyo.remove(tuval) {
       unsafe {
@@ -221,6 +234,9 @@ impl Motor {
       unsafe { (api().obs_scene_get_source)(s.ptr) }
     };
     let st = self.studyo.get_mut(tuval).ok_or("Studio Mode kapalı")?;
+    if st.tbar.is_some() {
+      return Err("T-bar sürükleniyor; önce bırakın".into());
+    }
     unsafe { (api().obs_canvas_set_channel)(st.kanvas.ptr, 0, kaynak) };
     st.sahne = Some(sahne.to_string());
     Ok(())
@@ -228,7 +244,11 @@ impl Motor {
 
   /// Önizlemedeki sahneyi geçişle programa alır. `takas`: eski program önizlemeye gelir (OBS'teki seçenek).
   pub fn studyo_gecis(&mut self, tuval: &str, takas: bool, sure_ms: Option<u32>) -> Result<(), String> {
-    let onizleme = self.studyo.get(tuval).ok_or("Studio Mode kapalı")?.sahne.clone().ok_or("önizlemede sahne yok")?;
+    let st = self.studyo.get(tuval).ok_or("Studio Mode kapalı")?;
+    if st.tbar.is_some() {
+      return Err("T-bar sürükleniyor; önce bırakın".into());
+    }
+    let onizleme = st.sahne.clone().ok_or("önizlemede sahne yok")?;
     let eski = self.program_sahnesi(tuval);
     self.sahneye_gec(&onizleme, true, sure_ms)?;
     if takas {
@@ -237,6 +257,60 @@ impl Motor {
       }
     }
     Ok(())
+  }
+
+  /// T-bar (OBS Studio Mode): geçişi elle `konum` (0–1) noktasına getirir. İlk hareket önizlemedeki sahneye manuel
+  /// geçiş başlatır. `birak`: uca yakınsa (≥0,98) geçiş tamamlanır, başa yakınsa (≤0,02) eski programa dönülür,
+  /// arada bırakılırsa olduğu yerde kalır (OBS'teki gibi). Sabit geçişler (Kes, Stinger) T-bar'ı desteklemez.
+  /// Dönüş: T-bar hâlâ etkin mi.
+  pub fn studyo_tbar(&mut self, tuval: &str, konum: f32, birak: bool) -> Result<bool, String> {
+    if !konum.is_finite() {
+      return Err("konum sayı olmalı".into());
+    }
+    let konum = konum.clamp(0.0, 1.0);
+    let tr = self.gecis_hazirla(tuval)?;
+    let st = self.studyo.get(tuval).ok_or("Studio Mode kapalı")?;
+    let (eski, hedef) = match st.tbar.clone() {
+      Some(e) => e,
+      None => {
+        if birak {
+          return Ok(false);
+        }
+        if unsafe { (api().obs_transition_fixed)(tr) } {
+          return Err("bu geçiş türü T-bar ile sürüklenemez (sabit geçiş)".into());
+        }
+        let hedef = st.sahne.clone().ok_or("önizlemede sahne yok")?;
+        let eski = self.program_sahnesi(tuval).ok_or("programda sahne yok")?;
+        if eski == hedef {
+          return Err("önizleme ve program aynı sahne".into());
+        }
+        let kaynak = unsafe { (api().obs_scene_get_source)(self.sahneler[&hedef].ptr) };
+        if !unsafe { (api().obs_transition_start)(tr, obs::OBS_TRANSITION_MODE_MANUAL, 0, kaynak) } {
+          return Err("manuel geçiş başlatılamadı".into());
+        }
+        self.studyo.get_mut(tuval).unwrap().tbar = Some((eski.clone(), hedef.clone()));
+        (eski, hedef)
+      }
+    };
+    unsafe { (api().obs_transition_set_manual_time)(tr, konum) };
+    if !birak {
+      return Ok(true);
+    }
+    let sonuc = if konum >= 1.0 - TBAR_UC {
+      Some(hedef)
+    } else if konum <= TBAR_UC {
+      Some(eski)
+    } else {
+      None
+    };
+    let Some(son) = sonuc else {
+      return Ok(true);
+    };
+    // Uçta bırakıldı: geçiş temizlenir ve sonuç sahnesi doğrudan program olur (yarım kalmış geçiş bırakılmaz)
+    let kaynak = unsafe { (api().obs_scene_get_source)(self.sahneler.get(&son).ok_or("sahne silindi")?.ptr) };
+    unsafe { (api().obs_transition_set)(tr, kaynak) };
+    self.studyo.get_mut(tuval).unwrap().tbar = None;
+    Ok(false)
   }
 
   pub fn studyo_durumu(&self, tuval: &str) -> Option<Option<String>> {

@@ -142,6 +142,7 @@ pub const OBS_SOURCE_FLAG_FORCE_MONO: u32 = 1 << 1;
 pub const OBS_FADER_LOG: c_int = 2;
 /// `enum obs_transition_mode`
 pub const OBS_TRANSITION_MODE_AUTO: c_int = 0;
+pub const OBS_TRANSITION_MODE_MANUAL: c_int = 1;
 /// `enum obs_canvas_flags` PREVIEW ön ayarı (= EPHEMERAL): kaynakları etkinleştirmez, sesi karıştırmaz
 pub const CANVAS_PREVIEW: u32 = 1 << 4;
 pub const MAX_AUDIO_CHANNELS: usize = 8;
@@ -404,6 +405,8 @@ obs_api! {
   fn obs_transition_set_size(Ptr, u32, u32);
   fn obs_transition_set_alignment(Ptr, u32);
   fn obs_transition_force_stop(Ptr);
+  fn obs_transition_set_manual_time(Ptr, f32);
+  fn obs_transition_fixed(Ptr) -> bool;
   fn obs_canvas_create_private(*const c_char, *mut VideoInfo, u32) -> Ptr;
   fn obs_get_source_output_flags(*const c_char) -> u32;
   fn obs_source_filter_add(Ptr, Ptr);

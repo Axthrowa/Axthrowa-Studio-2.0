@@ -352,6 +352,8 @@ export const motorApi = {
   gecisGuncelle: (tuval: string, ayarlar: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/gecis/guncelle", { tuval, ayarlar }),
   studyo: (tuval: string, eylem: "ac" | "kapat" | "onizleme" | "gecis", ek: { sahne?: string; sure_ms?: number; takas?: boolean } = {}) =>
     istek<{ onizleme?: string | null; program?: string | null }>("/api/motor/studyo", { tuval, eylem, ...ek }),
+  studyoTbar: (tuval: string, konum: number, birak: boolean) =>
+    istek<{ etkin: boolean; program: string | null }>("/api/motor/studyo", { tuval, eylem: "tbar", konum, birak }),
   kaynakIslem: (id: string, eylem: "adlandir" | "cogalt" | "deinterlace", ek: { ad?: string; oge?: string; kip?: number; alan?: number } = {}) =>
     istek<{ id?: string; oge?: string }>("/api/motor/kaynak-islem", { id, eylem, ...ek }),
   ses: () => istek<MotorSesDurumu>("/api/motor/ses"),
@@ -373,8 +375,8 @@ export const motorApi = {
     yon?: string;
     acik?: boolean;
   }) => istek<{ ok: boolean; id?: string; eklenen?: number; atlanan?: number }>("/api/motor/filtre", govde),
-  ekranGoruntusu: (tuval = "ana") =>
-    istek<{ ok: boolean; yol: string; genislik: number; yukseklik: number }>("/api/motor/ekran-goruntusu", { tuval }),
+  ekranGoruntusu: (tuval = "ana", kaynak?: string) =>
+    istek<{ ok: boolean; yol: string; genislik: number; yukseklik: number }>("/api/motor/ekran-goruntusu", { tuval, kaynak }),
   klasorAc: (tur: "kayit" | "gunluk" | "ayarlar") => istek<{ ok: boolean; yol: string }>("/api/motor/klasor-ac", { tur }),
   gunluk: (satir = 400) => istek<{ satirlar: string[]; gizlenen: number }>(`/api/motor/gunluk?satir=${satir}`),
   filtreOzellikleri: (id: string) => istek<OzellikTanimi>(`/api/motor/filtre/ozellikler?id=${encodeURIComponent(id)}`),

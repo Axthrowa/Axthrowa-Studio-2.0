@@ -2676,7 +2676,7 @@ async fn motor_filtre_yapistir_ve_gunluk() {
 /// Ekran görüntüsü (Çıkış) tam çözünürlükte kayıt klasörüne; kaynak deinterlace ve öğe karıştırma yöntemi
 /// koleksiyona yazılır ve motorda uygulanır
 #[tokio::test(flavor = "multi_thread")]
-async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi() {
+async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
@@ -2717,6 +2717,10 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi() {
     async move { c.post(url).json(&g).send().await.unwrap().status().as_u16() }
   };
   assert_eq!(red(json!({"tuval": "etkilesim-x"})).await, 400);
+  assert_eq!(red(json!({"kaynak": "yok-boyle"})).await, 404);
+  let rk = tamam("/api/motor/ekran-goruntusu", json!({"kaynak": id})).await;
+  assert!(rk["genislik"].as_u64().unwrap() > 0 && PathBuf::from(rk["yol"].as_str().unwrap()).exists(), "{rk}");
+  assert_ne!(rk["yol"], r["yol"], "aynı saniyede ikinci dosya ayrı adla");
   assert_eq!(red(json!({"tuval": "../x"})).await, 400);
 
   let d = tamam("/api/motor/kaynak-islem", json!({"id": id, "eylem": "deinterlace", "kip": 7, "alan": 1})).await;
@@ -2738,5 +2742,21 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi() {
   assert_eq!(satir["karistirma_yontemi"], 1, "{satir}");
   let r = h.client.post(format!("{}/api/motor/oge", h.base)).json(&json!({"oge": oge, "eylem": "donustur", "donusum": {"karistirma_yontemi": 2}})).send().await.unwrap();
   assert_eq!(r.status(), 400);
+
+  // Studio Mode T-bar: ortada bırakılınca etkin kalır, sona bırakınca program değişir; geçersiz konum 400
+  let oyun = tamam("/api/motor/sahne-islem", json!({"eylem": "olustur", "ad": "Oyun"})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/gecis", json!({"tuval": "ana", "tur": "fade_transition", "sure_ms": 300})).await;
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "ac"})).await;
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "onizleme", "sahne": oyun})).await;
+  let r = tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "tbar", "konum": 0.4})).await;
+  assert_eq!(r["etkin"], true, "{r}");
+  let r = tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "tbar", "konum": 0.6, "birak": true})).await;
+  assert_eq!(r["etkin"], true, "ortada bırakılınca sürer: {r}");
+  let r = tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "tbar", "konum": 1.0, "birak": true})).await;
+  assert_eq!((r["etkin"].as_bool(), r["program"].as_str()), (Some(false), Some(oyun.as_str())), "{r}");
+  let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(sl["program"]["ana"], oyun.as_str());
+  assert_eq!(h.client.post(format!("{}/api/motor/studyo", h.base)).json(&json!({"tuval": "ana", "eylem": "tbar", "konum": 1.5})).send().await.unwrap().status(), 400);
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "kapat"})).await;
   assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
 }

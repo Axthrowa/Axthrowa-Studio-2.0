@@ -54,6 +54,10 @@ pub(crate) fn catisma(e: String) -> Hata {
   (StatusCode::CONFLICT, e)
 }
 
+fn bulunamadi(e: String) -> Hata {
+  (StatusCode::NOT_FOUND, e)
+}
+
 pub(crate) fn gecersiz(e: String) -> Hata {
   (StatusCode::BAD_REQUEST, e)
 }
@@ -1605,6 +1609,9 @@ struct EkranGoruntusuGovdesi {
   /// ana | dikey | studyo-ana | studyo-dikey (Studio Mode önizlemesi)
   #[serde(default)]
   tuval: Option<String>,
+  /// Sahne ya da kaynak kimliği: yalnız onun görüntüsü (sahne/kaynak bağlam menüsü)
+  #[serde(default)]
+  kaynak: Option<String>,
 }
 
 /// Dosya › Ekran görüntüsü (Çıkış): tuvalin tam çözünürlükte tek karesi, kayıt klasörüne
@@ -1621,6 +1628,13 @@ async fn api_ekran_goruntusu(
   if tuval.starts_with("etkilesim-") || !onizleme_tuvali_gecerli(&tuval) {
     return Err(gecersiz(format!("bilinmeyen tuval: {tuval}")));
   }
+  if let Some(k) = &g.kaynak {
+    let o = state.motor.ozet();
+    let o = o.lock();
+    if o.koleksiyon.kaynaklar.iter().all(|x| &x.id != k) && o.koleksiyon.sahne_ref(k).is_none() {
+      return Err(bulunamadi(format!("kaynak ya da sahne yok: {k}")));
+    }
+  }
   let klasor_yolu = crate::motor_profil::etkin(&klasor(&state)).kayit.klasor.map(PathBuf::from).unwrap_or_else(kayit_klasoru);
   std::fs::create_dir_all(&klasor_yolu).map_err(|e| catisma(format!("klasör: {e}")))?;
   let mut yol = klasor_yolu.join(format!("Ekran Goruntusu {}.png", zaman_damgasi()));
@@ -1629,8 +1643,12 @@ async fn api_ekran_goruntusu(
     yol = klasor_yolu.join(format!("Ekran Goruntusu {} ({n}).png", zaman_damgasi()));
     n += 1;
   }
-  let r = komut(&state, json!({"komut": "ekran_goruntusu", "tuval": tuval, "yol": yol})).await?;
-  audit(&state, &actor, "MOTOR_SCREENSHOT", json!({"tuval": tuval})).await;
+  let mut istek = json!({"komut": "ekran_goruntusu", "tuval": tuval, "yol": yol});
+  if let Some(k) = &g.kaynak {
+    istek["kaynak"] = json!(k);
+  }
+  let r = komut(&state, istek).await?;
+  audit(&state, &actor, "MOTOR_SCREENSHOT", json!({"tuval": tuval, "kaynak": g.kaynak})).await;
   Ok(Json(json!({"ok": true, "yol": yol, "genislik": r["genislik"], "yukseklik": r["yukseklik"]})))
 }
 

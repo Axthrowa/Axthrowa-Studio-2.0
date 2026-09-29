@@ -476,6 +476,11 @@ struct StudyoGovdesi {
   /// Geçişten sonra önizleme ile program yer değiştirsin (OBS "Swap Preview/Program")
   #[serde(default)]
   takas: bool,
+  /// `tbar`: 0–1 arası T-bar konumu; `birak` true ise kullanıcı bıraktı
+  #[serde(default)]
+  konum: Option<f32>,
+  #[serde(default)]
+  birak: bool,
 }
 
 /// Studio Mode geçişi: önizlemedeki sahne programa alınır. Dönüş: yeni program sahnesi.
@@ -551,6 +556,22 @@ async fn api_studyo(
     "gecis" => {
       let program = studyo_gecisi(&state, &tuval, g.takas, g.sure_ms).await?;
       json!({"program": program})
+    }
+    "tbar" => {
+      let konum = g.konum.filter(|k| k.is_finite() && (0.0..=1.0).contains(k)).ok_or_else(|| gecersiz("konum 0–1 olmalı".into()))?;
+      let r = komut(&state, json!({"komut": "studyo.tbar", "tuval": tuval, "konum": konum, "birak": g.birak})).await?;
+      let etkin = r["etkin"].as_bool().unwrap_or(false);
+      if !etkin {
+        if let Some(p) = r["program"].as_str() {
+          state.motor.ozet().lock().koleksiyon.program.insert(tuval.clone(), p.to_string());
+          koleksiyonu_yaz(&state)?;
+        }
+      }
+      // Sürükleme sırasında her adım denetim kaydına yazılmaz; yalnız bırakma
+      if !g.birak {
+        return Ok(Json(json!({"etkin": etkin, "program": r["program"]})));
+      }
+      json!({"etkin": etkin, "program": r["program"]})
     }
     e => return Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
   };

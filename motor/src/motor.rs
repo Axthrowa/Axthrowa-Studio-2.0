@@ -705,19 +705,44 @@ impl Motor {
       };
       (k.video(), k.genislik & !1, k.yukseklik & !1)
     };
-    let mut o = Onizleme::baglan_boyutlu(&format!("ekran-{tuval}"), video, g, y)?;
-    let bitis = std::time::Instant::now() + std::time::Duration::from_secs(3);
-    let png = loop {
-      if let Some(b) = o.png()? {
-        break b;
-      }
-      if std::time::Instant::now() > bitis {
-        return Err("kare alınamadı".into());
-      }
-      std::thread::sleep(std::time::Duration::from_millis(40));
-    };
-    drop(o);
+    let png = kare_yakala(&format!("ekran-{tuval}"), video, g, y)?;
     std::fs::write(yol, png).map_err(|e| format!("dosya yazılamadı: {e}"))?;
+    Ok((g, y))
+  }
+
+  /// Tek bir sahnenin ya da kaynağın ekran görüntüsü (OBS sahne/kaynak bağlam menüsü "Ekran görüntüsü"): kaynak kendi
+  /// boyutunda (sahne tuvalinin boyutunda) geçici özel bir tuvalde işlenir; programı ve önizlemeyi etkilemez.
+  pub fn kaynak_ekran_goruntusu(&mut self, id: &str, yol: &Path) -> Result<(u32, u32), String> {
+    if !yol.is_absolute() || yol.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).as_deref() != Some("png") {
+      return Err("ekran görüntüsü yolu mutlak ve .png olmalı".into());
+    }
+    let (kaynak, g, y) = if let Some(s) = self.sahneler.get(id) {
+      let k = self.kanvaslar.get(&s.kanvas).ok_or("sahnenin tuvali yok")?;
+      (unsafe { (api().obs_scene_get_source)(s.ptr) }, k.genislik, k.yukseklik)
+    } else {
+      let k = *self.kaynaklar.get(id).ok_or_else(|| format!("kaynak ya da sahne yok: {id}"))?;
+      (k, unsafe { (api().obs_source_get_width)(k) }, unsafe { (api().obs_source_get_height)(k) })
+    };
+    if g == 0 || y == 0 {
+      return Err("kaynağın görüntüsü yok (boyutu 0)".into());
+    }
+    let (g, y) = (g.max(16).div_ceil(2) * 2, y.max(16).div_ceil(2) * 2);
+    gecerli_boyut(g, y, self.ana.fps)?;
+    let mut ovi = video_bilgisi(self.ana.boyutla(g, y), c"libobs-d3d11");
+    let ad = cs(&format!("Ekran görüntüsü ({id})"));
+    let tuval = unsafe { (api().obs_canvas_create_private)(ad.as_ptr(), &mut ovi, obs::CANVAS_PREVIEW) };
+    if tuval.is_null() {
+      return Err("geçici tuval oluşturulamadı".into());
+    }
+    unsafe { (api().obs_canvas_set_channel)(tuval, 0, kaynak) };
+    let video = unsafe { (api().obs_canvas_get_video)(tuval) };
+    let sonuc = kare_yakala(&format!("ekran-k-{id}"), video, g, y);
+    unsafe {
+      (api().obs_canvas_set_channel)(tuval, 0, std::ptr::null_mut());
+      (api().obs_canvas_remove)(tuval);
+      (api().obs_canvas_release)(tuval);
+    }
+    std::fs::write(yol, sonuc?).map_err(|e| format!("dosya yazılamadı: {e}"))?;
     Ok((g, y))
   }
 
@@ -1798,6 +1823,21 @@ impl AgAyari {
       return Err("yeniden bağlanma: gecikme 1–30 sn, en çok deneme 0–10000".into());
     }
     Ok(())
+  }
+}
+
+/// Videodan tek kare PNG (en çok 3 sn bekler); geçici önizleme çıktısı sonra kapanır
+fn kare_yakala(ad: &str, video: Ptr, g: u32, y: u32) -> Result<Vec<u8>, String> {
+  let mut o = Onizleme::baglan_boyutlu(ad, video, g, y)?;
+  let bitis = std::time::Instant::now() + std::time::Duration::from_secs(3);
+  loop {
+    if let Some(b) = o.png()? {
+      return Ok(b);
+    }
+    if std::time::Instant::now() > bitis {
+      return Err("kare alınamadı".into());
+    }
+    std::thread::sleep(std::time::Duration::from_millis(40));
   }
 }
 

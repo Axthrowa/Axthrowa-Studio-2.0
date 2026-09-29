@@ -78,6 +78,7 @@ import { DeckPanel } from "../control/DeckPanel";
 import { EtkilesimPenceresi } from "./EtkilesimPenceresi";
 import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
 import { DeinterlaceDiyalogu } from "./DeinterlaceDiyalogu";
+import { TBar } from "./TBar";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
 import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
@@ -334,9 +335,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     }
   };
   const klasorAc = (tur: "kayit" | "gunluk" | "ayarlar") => void motorApi.klasorAc(tur).catch((e) => onToast(`Klasör açılamadı: ${hataMetni(e)}`));
-  const ekranGoruntusu = (t: string) =>
+  const ekranGoruntusu = (t: string, kaynak?: string) =>
     void motorApi
-      .ekranGoruntusu(t)
+      .ekranGoruntusu(t, kaynak)
       .then((r) => onToast(`Ekran görüntüsü kaydedildi (${r.genislik}×${r.yukseklik}): ${r.yol.split(/[\\/]/).pop()}`))
       .catch((e) => onToast(`Ekran görüntüsü alınamadı: ${hataMetni(e)}`));
   const filtreleriYapistir = (hedef: string) =>
@@ -739,6 +740,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       },
       { etiket: "Filtreleri kopyala", devreDisi: o.tur === "sahne", eylem: () => setFiltrePanosu({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
       { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || filtrePanosu.kaynak === o.kaynak || o.tur === "sahne", eylem: () => filtreleriYapistir(o.kaynak) },
+      { etiket: "Ekran görüntüsü (kaynak)", devreDisi: !k || !!k.eksik || o.grup || o.durum === "bekliyor", eylem: () => ekranGoruntusu(tuval, o.kaynak) },
       "ayirici",
       {
         etiket: `Gösterme geçişi: ${o.gosterGecisi ? `${gecisAdi(o.gosterGecisi.tur)} ${o.gosterGecisi.sure_ms} ms` : "yok"}…`,
@@ -1139,6 +1141,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               sirala: (ids) => void yap("Sahneler sıralanamadı", () => motorApi.sahneIslem({ eylem: "sirala", sira: ids })),
               gecisGecersiz: (s, g: MotorGecis | null) => void yap("Geçiş ayarlanamadı", () => motorApi.sahneIslem({ eylem: "gecis", id: s.id, gecis: g })),
               filtreler: (s) => sahipFiltreAc(s.id, s.ad),
+              ekranGoruntusu: (s) => ekranGoruntusu(tuval, s.id),
               menuAc: menu.ac,
             }}
           />
@@ -1440,6 +1443,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                     <button type="button" className="dt-btn" disabled={mesgul !== null} onClick={() => void yap("Takas", () => motorApi.studyo(tuval, "gecis", { takas: true }))} title="Geç ve önizlemeyi eski programla değiştir">
                       Takas ⇄
                     </button>
+                    <TBar tuval={tuval} devreDisi={mesgul !== null || !onizleme || onizleme === program} onHata={(m) => onToast(`T-bar: ${m}`)} onBitti={sahneYenile} />
                   </div>
                   <TuvalGorunumu
                     etiket={`Program · ${sahneBilgi(program)?.ad ?? ""}`}

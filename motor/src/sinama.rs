@@ -298,13 +298,32 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     bekle(200);
     let program_sonra = m.program_sahnesi("ana");
     let onizleme_sonra = m.studyo_durumu("ana").flatten();
+    // T-bar: kesme (sabit geçiş) reddedilir; yumuşak geçişte ortada bırakılınca etkin kalır, sona bırakınca hedef,
+    // başa bırakınca eski program kalır
+    let tbar_sabit_red = m.studyo_tbar("ana", 0.5, false).is_err();
+    m.gecis_ayarla("ana", Some("fade_transition"), Some(300), None)?;
+    let t1 = m.studyo_tbar("ana", 0.5, false)?;
+    let t2 = m.studyo_tbar("ana", 0.5, true)?;
+    let onizleme_kilitli = m.studyo_onizleme("ana", "yatay-2").is_err();
+    let t3 = m.studyo_tbar("ana", 1.0, true)?;
+    let tbar_sona = m.program_sahnesi("ana");
+    m.studyo_onizleme("ana", "yatay-2")?;
+    m.studyo_tbar("ana", 0.3, false)?;
+    let t4 = m.studyo_tbar("ana", 0.0, true)?;
+    let tbar_basa = m.program_sahnesi("ana");
+    m.gecis_ayarla("ana", Some("cut_transition"), Some(0), None)?;
+    let tbar_ok = tbar_sabit_red && t1 && t2 && onizleme_kilitli && !t3 && !t4 && tbar_sona.as_deref() == Some("yatay") && tbar_basa.as_deref() == Some("yatay");
     m.sahneye_gec("yatay", false, None)?;
     m.studyo_kapat("ana")?;
     let ok = program_once.as_deref() == Some("yatay")
       && png.is_some()
       && program_sonra.as_deref() == Some("yatay-2")
-      && onizleme_sonra.as_deref() == Some("yatay");
-    Ok(format!("{ok}|önizlemeye yatay-2 konunca program {program_once:?}; önizleme karesi {}; geçişten sonra program {program_sonra:?}, önizleme (takas) {onizleme_sonra:?}", png.is_some()))
+      && onizleme_sonra.as_deref() == Some("yatay")
+      && tbar_ok;
+    Ok(format!(
+      "{ok}|önizlemeye yatay-2 konunca program {program_once:?}; önizleme karesi {}; geçişten sonra program {program_sonra:?}, önizleme (takas) {onizleme_sonra:?}; T-bar: sabit geçiş reddi {tbar_sabit_red}, ortada etkin {t1}/{t2}, sona → {tbar_sona:?}, başa → {tbar_basa:?}",
+      png.is_some()
+    ))
   })();
   (p.studyo_ok, p.studyo) = ayir(r);
 
@@ -811,6 +830,14 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     Some((o.info().width, o.info().height))
   });
   let ekran_goreli_red = m.ekran_goruntusu("ana", Path::new("goreli.png")).is_err();
+  // Sahne ve kaynak ekran görüntüsü: geçici özel tuvalde, sahne tuval boyutunda / kaynak kendi boyutunda
+  let sahne_goruntu = m.kaynak_ekran_goruntusu("dikey", &dosya("ekran-sahne-dikey.png"));
+  let yazi_boyu = m.sahne_ogeleri("yatay")?.into_iter().find(|o| o.kaynak == "yazi").map(|o| (o.genislik, o.yukseklik));
+  let kaynak_goruntu = m.kaynak_ekran_goruntusu("yazi", &dosya("ekran-kaynak-yazi.png"));
+  let kaynak_dosya = std::fs::read(dosya("ekran-kaynak-yazi.png")).ok().and_then(|b| {
+    let o = png::Decoder::new(b.as_slice()).read_info().ok()?;
+    Some((o.info().width, o.info().height))
+  });
   // Sahne öğeleri: sıra, taşıma, kaldırma (yalnız dikey sahneden)
   let ogeler_once: Vec<String> = m.sahne_ogeleri("yatay")?.into_iter().map(|o| o.kaynak).collect();
   m.oge_sira("yatay/yazi", "en_alt")?;
@@ -1046,6 +1073,13 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     ekran.as_ref().is_ok_and(|b| *b == (1920, 1080)) && ekran_boyutu == Some((1920, 1080)) && ekran_goreli_red,
     format!("{ekran:?}, dosya {ekran_boyutu:?}, göreli red {ekran_goreli_red}"),
   );
+  let cift = |(g, y): (u32, u32)| (g.max(16).div_ceil(2) * 2, y.max(16).div_ceil(2) * 2);
+  ekle(
+    "sahne/kaynak ekran görüntüsü: sahne tuval boyutunda, kaynak kendi boyutunda",
+    sahne_goruntu.as_ref().is_ok_and(|b| *b == (1080, 1920))
+      && yazi_boyu.is_some_and(|b| kaynak_goruntu.as_ref().is_ok_and(|k| *k == cift(b)) && kaynak_dosya == Some(cift(b))),
+    format!("sahne {sahne_goruntu:?}; yazı kaynağı {yazi_boyu:?} → {kaynak_goruntu:?}, dosya {kaynak_dosya:?}"),
+  );
   ekle(
     "özellik seçenekleri (yazı hizalama listesi)",
     ["left", "center", "right"].iter().all(|h| hizalama.iter().any(|x| x == h)),
@@ -1063,7 +1097,7 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   );
   // Parite denetimleri
   ekle("geçiş: sahne değişimi geçişle, program doğru", p.gecis_ok, p.gecis.clone());
-  ekle("Studio Mode: önizleme ayrı tuvalde, geçiş programa alır", p.studyo_ok, p.studyo.clone());
+  ekle("Studio Mode: önizleme ayrı tuvalde, geçiş programa alır, takas, T-bar", p.studyo_ok, p.studyo.clone());
   ekle("filtre: video filtreleri eklenir, sıralanır, kapatılır", p.filtre_ok, p.filtre.clone());
   ekle("ses filtresi (kazanç −20 dB) ölçerde görünür", p.kazanc_ok, p.kazanc.clone());
   ekle("ses özellikleri: denge, mono, senkron, izleme", p.ses_ok, p.ses.clone());

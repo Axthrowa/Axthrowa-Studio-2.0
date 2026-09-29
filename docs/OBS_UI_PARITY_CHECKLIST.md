@@ -33,7 +33,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Dosya › Yeniden muxla | VAR | sinama, it:remux_kuyrugu_mkv_mp4, tp | Kurulu OBS'in FFmpeg 8 kitaplıkları; MP4/MOV/MKV |
 | Dosya › Ekran görüntüsü (Çıkış / Önizleme) | VAR | sinama, it:motor_ekran_goruntusu_… , tp | Tuvalin tam çözünürlüğü, kayıt klasörüne |
 | Dosya › Ayarlar, Ayarlar klasörünü göster, Her zaman üstte | VAR | tp | |
-| Dosya › Profil klasörünü göster, Çıkış | YOK | | Çıkış uygulama penceresinden |
+| Dosya › Profil klasörünü göster | VAR | — | Gezgin'de açar (yalnız yerel) |
+| Dosya › Çıkış | YOK | | Uygulama penceresinden kapatılır |
 | Düzen › Geri al/Yinele (açıklamalı) | VAR | vt | "Geri al: «X» taşı" |
 | Düzen › Kopyala / Yapıştır (başvuru) / Yapıştır (kopya) / Filtreleri kopyala-yapıştır | VAR | it:motor_filtre_yapistir_ve_gunluk, tp | |
 | Düzen › Dönüşüm alt menüsü (düzenle, kopyala, yapıştır, sıfırla, 90°/180°, çevir, sığdır, yay, ortala) | VAR | tp | Alt menü yerine düz liste |
@@ -54,7 +55,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Araçlar › Altyazı | YOK | | |
 | Araçlar › Sanal kamera ayarları | KISMİ | it:motor_kayit_…_sanal_kamera | Başlat/durdur; hedef (program/sahne/kaynak) seçimi yok |
 | Yardım › Son günlüğü görüntüle, Günlük klasörü, Hakkında (sürüm, lisanslar) | VAR | it, tp | Günlük sırları ayıklanmış |
-| Yardım › Çökme raporları | KISMİ | — | `cokme-gunlugu.log` var, menüden görüntüleme yok |
+| Yardım › Çökme raporları | VAR | it:motor_filtre_yapistir_ve_gunluk | Panelin çökme günlüğü, sırlar ayıklanmış; dışarı gönderilmez |
 | Yardım › Güncellemeleri denetle | YOK | | Ağ isteği kullanıcı izni gerektirir |
 | Güvenli kipte başlat | VAR | it:eklenti_yoneticisi_… | Motor başlangıç ekranında |
 

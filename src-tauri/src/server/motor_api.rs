@@ -1657,7 +1657,7 @@ async fn api_ekran_goruntusu(
 
 #[derive(Deserialize)]
 struct KlasorGovdesi {
-  /// kayit | gunluk | ayarlar — yalnız bilinen klasörler (serbest yol yok)
+  /// kayit | gunluk | ayarlar | profil — yalnız bilinen klasörler (serbest yol yok)
   tur: String,
 }
 
@@ -1675,6 +1675,7 @@ async fn api_klasor_ac(
   let yol = match g.tur.as_str() {
     "kayit" => crate::motor_profil::etkin(&klasor(&state)).kayit.klasor.map(PathBuf::from).unwrap_or_else(kayit_klasoru),
     "gunluk" | "ayarlar" => klasor(&state),
+    "profil" => klasor(&state).join(crate::motor_profil::DIZIN),
     e => return Err(gecersiz(format!("bilinmeyen klasör: {e}"))),
   };
   std::fs::create_dir_all(&yol).map_err(|e| catisma(format!("klasör: {e}")))?;
@@ -1687,6 +1688,9 @@ async fn api_klasor_ac(
 struct GunlukSorgusu {
   #[serde(default)]
   satir: Option<usize>,
+  /// motor (libobs günlüğü, varsayılan) | cokme (panelin çökme günlüğü)
+  #[serde(default)]
+  tur: Option<String>,
 }
 
 /// Yardım › Son günlüğü görüntüle: motorun libobs günlüğünün son satırları, yayın anahtarları ve kullanıcı klasörü
@@ -1699,7 +1703,12 @@ async fn api_gunluk(
 ) -> ApiResult {
   authorize(&state, &addr, &headers, "admin.support").await?;
   let n = q.satir.unwrap_or(400).clamp(10, 5000);
-  let satirlar = crate::destek::son_satirlar(&klasor(&state).join("motor-libobs.log"), n);
+  let dosya = match q.tur.as_deref().unwrap_or("motor") {
+    "motor" => klasor(&state).join("motor-libobs.log"),
+    "cokme" => state.data_dir.join("cokme-gunlugu.log"),
+    e => return Err(gecersiz(format!("bilinmeyen günlük: {e}"))),
+  };
+  let satirlar = crate::destek::son_satirlar(&dosya, n);
   let sirlar: Vec<String> = state.multistream.configs().iter().filter_map(|c| state.multistream.key_for(&c.id)).collect();
   let mut g = crate::destek::Gizleyici::new(sirlar, std::env::var("USERPROFILE").ok());
   let temiz: Vec<String> = satirlar.iter().map(|s| g.metin(s)).collect();

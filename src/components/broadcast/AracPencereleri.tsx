@@ -95,12 +95,12 @@ export function CikisZamanlayicisiPenceresi({
   );
 }
 
-export function GunlukPenceresi({ onKapat }: { onKapat: () => void }) {
+export function GunlukPenceresi({ onKapat, tur = "motor" }: { onKapat: () => void; tur?: "motor" | "cokme" }) {
   const [satirlar, setSatirlar] = useState<string[] | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [gizlenen, setGizlenen] = useState(0);
   const yukle = () =>
-    motorApi.gunluk(600).then(
+    motorApi.gunluk(600, tur).then(
       (r) => {
         setSatirlar(r.satirlar);
         setGizlenen(r.gizlenen);
@@ -112,7 +112,7 @@ export function GunlukPenceresi({ onKapat }: { onKapat: () => void }) {
   }, []);
   return (
     <Pencere
-      baslik="Son günlük (yayın motoru)"
+      baslik={tur === "cokme" ? "Çökme raporları (panel)" : "Son günlük (yayın motoru)"}
       genis
       onKapat={onKapat}
       alt={
@@ -131,7 +131,7 @@ export function GunlukPenceresi({ onKapat }: { onKapat: () => void }) {
         <p className="p-3 text-[12px] dt-uyari-metni">{hata}</p>
       ) : (
         <pre className="h-full overflow-auto whitespace-pre-wrap p-2 text-[11px] leading-snug" tabIndex={0} aria-label="Günlük satırları">
-          {satirlar ? (satirlar.length ? satirlar.join("\n") : "Günlük boş (motor hiç başlatılmadı).") : "Okunuyor…"}
+          {satirlar ? (satirlar.length ? satirlar.join("\n") : tur === "cokme" ? "Kayıtlı çökme yok." : "Günlük boş (motor hiç başlatılmadı).") : "Okunuyor…"}
         </pre>
       )}
     </Pencere>

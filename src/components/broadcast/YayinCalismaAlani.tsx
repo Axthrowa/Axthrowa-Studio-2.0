@@ -305,7 +305,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const docklarRef = useRef<HTMLDivElement>(null);
   const [sekmeBirlestir, setSekmeBirlestir] = useState(false);
   const [hakkinda, setHakkinda] = useState(false);
-  const [gunlukAcik, setGunlukAcik] = useState(false);
+  const [gunlukAcik, setGunlukAcik] = useState<false | "motor" | "cokme">(false);
   const [zamanlayiciAcik, setZamanlayiciAcik] = useState(false);
   const [zamanlayici, setZamanlayici] = useState<Zamanlayici>(ZAMANLAYICI_BOS);
   const [filtrePanosu, setFiltrePanosu] = useState<{ kaynak: string; ad: string } | null>(null);
@@ -339,7 +339,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       onToast(`Pencere: ${hataMetni(e)}`);
     }
   };
-  const klasorAc = (tur: "kayit" | "gunluk" | "ayarlar") => void motorApi.klasorAc(tur).catch((e) => onToast(`Klasör açılamadı: ${hataMetni(e)}`));
+  const klasorAc = (tur: "kayit" | "gunluk" | "ayarlar" | "profil") => void motorApi.klasorAc(tur).catch((e) => onToast(`Klasör açılamadı: ${hataMetni(e)}`));
   const ekranGoruntusu = (t: string, kaynak?: string) =>
     void motorApi
       .ekranGoruntusu(t, kaynak)
@@ -938,6 +938,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Kayıtları göster", eylem: () => klasorAc("kayit") },
         { etiket: "Yeniden muxla…", eylem: () => setRemuxAcik(true) },
         { etiket: "Ayarlar klasörünü göster", eylem: () => klasorAc("ayarlar") },
+        { etiket: "Profil klasörünü göster", eylem: () => klasorAc("profil") },
         { etiket: `Ekran görüntüsü (Çıkış · ${TUVAL_ADI[tuval]})`, devreDisi: !calisiyor, eylem: () => ekranGoruntusu(tuval) },
         ...(studyo ? [{ etiket: `Ekran görüntüsü (Önizleme · ${TUVAL_ADI[tuval]})`, eylem: () => ekranGoruntusu(`studyo-${tuval}`) } as MenuOgesi] : []),
         ...(d?.kayit.son ? [{ etiket: `Son kayıt: ${d.kayit.son.split(/[\\/]/).pop()}`, devreDisi: true, eylem: () => undefined } as MenuOgesi] : []),
@@ -1098,8 +1099,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: `libobs ${d?.bilgi?.libobs ?? "—"}`, devreDisi: true, eylem: () => undefined },
         { etiket: "Kısayollar: Ctrl+Z/Y geri al/yinele · Ctrl+C/V kopyala/yapıştır · Ctrl+E dönüşüm · Ctrl+F sığdır · Del kaldır · F2 adlandır", devreDisi: true, eylem: () => undefined },
         "ayirici",
-        { etiket: "Son günlüğü görüntüle…", eylem: () => setGunlukAcik(true) },
+        { etiket: "Son günlüğü görüntüle…", eylem: () => setGunlukAcik("motor") },
         { etiket: "Günlük klasörünü aç", eylem: () => klasorAc("gunluk") },
+        { etiket: "Çökme raporları…", eylem: () => setGunlukAcik("cokme") },
         "ayirici",
         { etiket: "Hakkında ve lisanslar…", eylem: () => setHakkinda(true) },
       ],
@@ -1701,7 +1703,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         />
       )}
       {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}
-      {gunlukAcik && <GunlukPenceresi onKapat={() => setGunlukAcik(false)} />}
+      {gunlukAcik && <GunlukPenceresi key={gunlukAcik} tur={gunlukAcik} onKapat={() => setGunlukAcik(false)} />}
       {zamanlayiciAcik && <CikisZamanlayicisiPenceresi z={zamanlayici} canli={canliVar} kayitta={kayitta} onAyarla={setZamanlayici} onKapat={() => setZamanlayiciAcik(false)} />}
       {hakkinda && <HakkindaDiyalogu libobs={d.bilgi?.libobs} onKapat={() => setHakkinda(false)} />}
       {sekmeBirlestir && (

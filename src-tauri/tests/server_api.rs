@@ -2666,6 +2666,9 @@ async fn motor_filtre_yapistir_ve_gunluk() {
   assert_ne!(fb["filtreler"][0]["id"], json!(f1), "yeni kimlik");
   assert_eq!(get(format!("/api/motor/filtre/ozellikler?id={}", fb["filtreler"][0]["id"].as_str().unwrap())).await["ayarlar"]["opacity"], 0.7);
   assert_eq!(h.client.post(format!("{}/api/motor/filtre", h.base)).json(&json!({"eylem": "yapistir", "kaynak": b, "kaynaktan": b})).send().await.unwrap().status(), 400);
+  let c = get("/api/motor/gunluk?satir=50&tur=cokme".into()).await;
+  assert!(c["satirlar"].is_array(), "çökme günlüğü (yoksa boş): {c}");
+  assert_eq!(h.client.get(format!("{}/api/motor/gunluk?tur=../x", h.base)).send().await.unwrap().status(), 400);
   let g = get("/api/motor/gunluk?satir=50".into()).await;
   let satirlar = g["satirlar"].as_array().unwrap();
   assert!(!satirlar.is_empty() && satirlar.len() <= 50, "{} satır", satirlar.len());

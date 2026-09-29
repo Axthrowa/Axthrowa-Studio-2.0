@@ -37,7 +37,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Düzen › Geri al/Yinele (açıklamalı) | VAR | vt | "Geri al: «X» taşı" |
 | Düzen › Kopyala / Yapıştır (başvuru) / Yapıştır (kopya) / Filtreleri kopyala-yapıştır | VAR | it:motor_filtre_yapistir_ve_gunluk, tp | |
 | Düzen › Dönüşüm alt menüsü (düzenle, kopyala, yapıştır, sıfırla, 90°/180°, çevir, sığdır, yay, ortala) | VAR | tp | Alt menü yerine düz liste |
-| Düzen › Sıra alt menüsü | KISMİ | tp | Bağlam menüsünde var, Düzen menüsünde yok |
+| Düzen › Sıra | VAR | — | Yukarı/aşağı/en üst/en alt (Düzen ve bağlam menüsünde) |
 | Düzen › Önizlemeyi kilitle | VAR | tp | |
 | Düzen › Önizleme ölçekleme (Pencere/Tuval/Çıkış) | YOK | | Önizleme her zaman pencereye sığar |
 | Düzen › Gelişmiş ses özellikleri | VAR | tp | |

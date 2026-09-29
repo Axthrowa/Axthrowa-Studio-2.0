@@ -1073,6 +1073,9 @@ struct KaynakIslemi {
   kip: Option<i32>,
   #[serde(default)]
   alan: Option<i32>,
+  /// `renk`: `#rrggbb` ya da boş (etiketi kaldırır)
+  #[serde(default)]
+  renk: Option<String>,
 }
 
 async fn api_kaynak_islem(
@@ -1135,6 +1138,16 @@ async fn api_kaynak_islem(
         koleksiyonu_yaz(&state)?;
       }
       json!({"id": yeni.id, "oge": oge})
+    }
+    "renk" => {
+      let renk = match g.renk.as_deref().map(str::trim).filter(|r| !r.is_empty()) {
+        None => None,
+        Some(r) if r.len() == 7 && r.starts_with('#') && r[1..].bytes().all(|b| b.is_ascii_hexdigit()) => Some(r.to_ascii_lowercase()),
+        Some(_) => return Err(gecersiz("renk #rrggbb biçiminde olmalı".into())),
+      };
+      state.motor.ozet().lock().koleksiyon.kaynak(&g.id).ok_or_else(|| bulunamadi("kaynak yok".into()))?.renk = renk.clone();
+      koleksiyonu_yaz(&state)?;
+      json!({"renk": renk})
     }
     "deinterlace" => {
       let kip = g.kip.unwrap_or(0);

@@ -321,6 +321,9 @@ pub struct KaynakKaydi {
   /// Deinterlace [kip 0–8, alan sırası 0 üst / 1 alt]; [0, 0] = kapalı (OBS "Deinterlacing")
   #[serde(default, skip_serializing_if = "deinterlace_kapali")]
   pub deinterlace: [i32; 2],
+  /// Kaynak rengi etiketi (OBS "Source Color"): yalnız listede gösterim, `#rrggbb`
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub renk: Option<String>,
 }
 
 fn deinterlace_kapali(d: &[i32; 2]) -> bool {
@@ -342,6 +345,7 @@ impl KaynakKaydi {
       filtreler: Vec::new(),
       ses: SesKaydi::default(),
       deinterlace: [0, 0],
+      renk: None,
     }
   }
 }

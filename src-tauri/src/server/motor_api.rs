@@ -1120,6 +1120,7 @@ async fn api_sahne(
         x["etkilesim"] = d["etkilesim"].clone();
         x["filtre"] = json!(k.filtreler.len());
         x["deinterlace"] = json!(k.deinterlace);
+        x["renk"] = json!(k.renk);
       } else if let Some(s) = o.koleksiyon.sahne_ref(&id) {
         x["ad"] = json!(s.ad);
         x["tur"] = json!("sahne");

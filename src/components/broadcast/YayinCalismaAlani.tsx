@@ -79,6 +79,7 @@ import { DeckPanel } from "../control/DeckPanel";
 import { EtkilesimPenceresi } from "./EtkilesimPenceresi";
 import { OgeGecisiDiyalogu } from "./OgeGecisiDiyalogu";
 import { DeinterlaceDiyalogu } from "./DeinterlaceDiyalogu";
+import { KaynakRengiDiyalogu } from "./KaynakRengiDiyalogu";
 import { TBar } from "./TBar";
 import { RemuxPenceresi } from "./RemuxPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
@@ -283,6 +284,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [etkilesim, setEtkilesim] = useState<{ kaynak: string; ad: string } | null>(null);
   const [ogeGecisi, setOgeGecisi] = useState<{ oge: MotorSahneOgesi; goster: boolean } | null>(null);
   const [deinterlace, setDeinterlace] = useState<MotorSahneOgesi | null>(null);
+  const [kaynakRengi, setKaynakRengi] = useState<MotorSahneOgesi | null>(null);
   const [remuxAcik, setRemuxAcik] = useState(false);
   const [multiviewAcik, setMultiviewAcik] = useState(false);
   const [gecisEkle, setGecisEkle] = useState(false);
@@ -778,6 +780,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       },
       { etiket: "Filtreleri kopyala", devreDisi: o.tur === "sahne", eylem: () => setFiltrePanosu({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
       { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || filtrePanosu.kaynak === o.kaynak || o.tur === "sahne", eylem: () => filtreleriYapistir(o.kaynak) },
+      { etiket: "Kaynak rengi…", devreDisi: !k || o.grup || o.tur === "sahne", eylem: () => setKaynakRengi(o) },
       { etiket: "Ekran görüntüsü (kaynak)", devreDisi: !k || !!k.eksik || o.grup || o.durum === "bekliyor", eylem: () => ekranGoruntusu(tuval, o.kaynak) },
       "ayirici",
       {
@@ -1743,6 +1746,18 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             void yap("Öğe geçişi ayarlanamadı", () => motorApi.ogeGecis(oge.oge, goster, g)).then(sahneYenile);
           }}
           onKapat={() => setOgeGecisi(null)}
+        />
+      )}
+      {kaynakRengi && (
+        <KaynakRengiDiyalogu
+          ad={kaynakRengi.ad ?? kaynakRengi.kaynak}
+          mevcut={kaynakRengi.renk}
+          onKapat={() => setKaynakRengi(null)}
+          onKaydet={(renk) => {
+            const kaynak = kaynakRengi.kaynak;
+            setKaynakRengi(null);
+            void yap("Kaynak rengi ayarlanamadı", () => motorApi.kaynakIslem(kaynak, "renk", { renk })).then(sahneYenile);
+          }}
         />
       )}
       {deinterlace && (

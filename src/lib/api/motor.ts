@@ -148,6 +148,8 @@ export type MotorSahneOgesi = {
   karistirma_yontemi?: number;
   /** [kip 0–8, alan sırası 0 üst / 1 alt] */
   deinterlace?: [number, number];
+  /** Kaynak rengi etiketi (#rrggbb) */
+  renk?: string | null;
   /** Kaynağın kendi boyutu (dönüşümsüz) */
   genislik?: number;
   yukseklik?: number;
@@ -364,7 +366,7 @@ export const motorApi = {
     istek<{ onizleme?: string | null; program?: string | null }>("/api/motor/studyo", { tuval, eylem, ...ek }),
   studyoTbar: (tuval: string, konum: number, birak: boolean) =>
     istek<{ etkin: boolean; program: string | null }>("/api/motor/studyo", { tuval, eylem: "tbar", konum, birak }),
-  kaynakIslem: (id: string, eylem: "adlandir" | "cogalt" | "deinterlace", ek: { ad?: string; oge?: string; kip?: number; alan?: number } = {}) =>
+  kaynakIslem: (id: string, eylem: "adlandir" | "cogalt" | "deinterlace" | "renk", ek: { ad?: string; oge?: string; kip?: number; alan?: number; renk?: string } = {}) =>
     istek<{ id?: string; oge?: string }>("/api/motor/kaynak-islem", { id, eylem, ...ek }),
   ses: () => istek<MotorSesDurumu>("/api/motor/ses"),
   sesAyarla: (id: string, eylem: "ses" | "sessiz" | "denge" | "mono" | "senkron" | "izleme" | "izler", deger: number | boolean) =>

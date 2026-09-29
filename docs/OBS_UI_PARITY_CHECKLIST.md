@@ -86,7 +86,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Bağlam: Gösterme/Gizleme geçişi | VAR | sinama, it | |
 | Bağlam: Kaynak ekran görüntüsü | VAR | sinama, it | |
 | Bağlam: Etkileşim | VAR | sinama, tp | Tarayıcı kaynağı |
-| Bağlam: Kaynak rengi (etiket), kaynak projektörü, Multiview'da göster | YOK | | |
+| Bağlam: Kaynak rengi (etiket) | VAR | it, tp | 8 hazır renk + özel + yok; listede satırın solunda şerit |
+| Bağlam: Kaynak projektörü, Multiview'da göster | YOK | | |
 
 ## 4.5 Önizleme etkileşimi
 

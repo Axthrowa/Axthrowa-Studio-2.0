@@ -2738,6 +2738,17 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   let kol: Value = serde_json::from_str(&std::fs::read_to_string(motor_dir.join("koleksiyonlar").join(format!("{etkin}.json"))).unwrap()).unwrap();
   let kayit = kol["kaynaklar"].as_array().unwrap().iter().find(|k| k["id"] == id.as_str()).unwrap().clone();
   assert_eq!(kayit["deinterlace"], json!([7, 1]));
+  // Kaynak rengi etiketi: yazılır, sahne listesinde görünür, geçersiz 400, boş kaldırır
+  tamam("/api/motor/kaynak-islem", json!({"id": id, "eylem": "renk", "renk": "#FF8800"})).await;
+  let sr = h.client.get(format!("{}/api/motor/sahne?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(sr["ogeler"].as_array().unwrap().iter().find(|o| o["kaynak"] == id.as_str()).unwrap()["renk"], "#ff8800");
+  assert_eq!(
+    h.client.post(format!("{}/api/motor/kaynak-islem", h.base)).json(&json!({"id": id, "eylem": "renk", "renk": "red;x"})).send().await.unwrap().status(),
+    400
+  );
+  tamam("/api/motor/kaynak-islem", json!({"id": id, "eylem": "renk", "renk": ""})).await;
+  let sr = h.client.get(format!("{}/api/motor/sahne?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert!(sr["ogeler"].as_array().unwrap().iter().find(|o| o["kaynak"] == id.as_str()).unwrap()["renk"].is_null());
 
   tamam("/api/motor/oge", json!({"oge": oge, "eylem": "donustur", "donusum": {"karistirma_yontemi": 1}})).await;
   let o = h.client.get(format!("{}/api/motor/sahne?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();

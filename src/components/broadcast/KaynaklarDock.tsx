@@ -136,7 +136,11 @@ export function KaynaklarDock({
               aria-expanded={grup ? acik : undefined}
               aria-level={derinlik + 1}
               className="dt-row"
-              style={derinlik ? { paddingLeft: 26 } : undefined}
+              style={{
+                ...(derinlik ? { paddingLeft: 26 } : {}),
+                // Kaynak rengi etiketi: satırın solunda şerit
+                ...(o.renk ? { boxShadow: `inset 3px 0 0 ${o.renk}` } : {}),
+              }}
               draggable={derinlik === 0}
               data-surukle-hedef={surukle && surukle !== o.oge && derinlik === 0 ? "true" : undefined}
               onDragStart={(e) => {

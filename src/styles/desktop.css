@@ -592,15 +592,15 @@
   stroke-width: 1px;
 }
 .dt-secim-ince:hover {
-  stroke: color-mix(in srgb, #ff4040 70%, transparent);
+  stroke: color-mix(in srgb, var(--dt-erisim-secim, #ff4040) 70%, transparent);
 }
 .dt-secim-kutu {
   fill: transparent;
-  stroke: #ff4040;
+  stroke: var(--dt-erisim-secim, #ff4040);
   stroke-width: 1.5px;
 }
 .dt-tutamac {
-  fill: #ff4040;
+  fill: var(--dt-erisim-secim, #ff4040);
   stroke: #fff;
   stroke-width: 1px;
 }
@@ -666,15 +666,15 @@
 }
 .dt-olcer-rms[data-bolge="yesil"],
 .dt-olcer-tepe[data-bolge="yesil"] {
-  background: #3dd68c;
+  background: var(--dt-olcer-normal, #3dd68c);
 }
 .dt-olcer-rms[data-bolge="sari"],
 .dt-olcer-tepe[data-bolge="sari"] {
-  background: #f5d524;
+  background: var(--dt-olcer-uyari, #f5d524);
 }
 .dt-olcer-rms[data-bolge="kirmizi"],
 .dt-olcer-tepe[data-bolge="kirmizi"] {
-  background: #e5484d;
+  background: var(--dt-olcer-hata, #e5484d);
 }
 .dt-olcer-tutma {
   position: absolute;

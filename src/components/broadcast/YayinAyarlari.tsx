@@ -12,8 +12,9 @@ import { motorApi, obsWebsocketApi, type MotorProfil, type MotorProfilYaniti, ty
 import { multistreamApi, type Destination, type MultistreamStatus, type Platform } from "../../lib/api/multistream";
 import { OzellikGovdesi } from "./OzellikFormu";
 import { hataMetni, Pencere } from "./ortak";
+import { HAZIRLAR, oku as erisimOku, uygula as erisimUygula, VARSAYILAN_RENKLER, yaz as erisimYaz, type ErisimRenkleri } from "../../lib/erisilebilirlik";
 
-type Bolum = "video" | "cikis" | "kayit" | "tekrar" | "ses" | "coklu" | "gelismis" | "uzak" | "kisayol";
+type Bolum = "video" | "cikis" | "kayit" | "tekrar" | "ses" | "coklu" | "gelismis" | "uzak" | "erisim" | "kisayol";
 
 const BOLUMLER: { id: Bolum; ad: string; anahtarlar: string }[] = [
   { id: "video", ad: "Video", anahtarlar: "kare hızı fps çözünürlük tuval taban çıkış ölçekli ölçek filtresi lanczos bicubic dikey yatay" },
@@ -24,8 +25,57 @@ const BOLUMLER: { id: Bolum; ad: string; anahtarlar: string }[] = [
   { id: "coklu", ad: "Çoklu yayın", anahtarlar: "hedef platform twitch youtube kick rtmp sunucu anahtar stream key göster kopyala sına bağlantı bit hızı tuval iz" },
   { id: "gelismis", ad: "Gelişmiş", anahtarlar: "renk biçimi nv12 p010 i444 renk uzayı 709 601 srgb hdr 2100 aralık ağ bağlanılacak ip ipv4 ipv6 düşük gecikme dinamik bit hızı yeniden bağlan deneme" },
   { id: "uzak", ad: "Uzaktan denetim", anahtarlar: "obs-websocket websocket stream deck touch portal streamer.bot uzaktan denetim port parola" },
+  { id: "erisim", ad: "Erişilebilirlik", anahtarlar: "erişilebilirlik renk körlüğü yüksek kontrast seçim rengi ölçer renkleri" },
   { id: "kisayol", ad: "Kısayollar", anahtarlar: "kısayol hotkey tuş bas konuş push to talk" },
 ];
+
+/** Erişilebilirlik: önizleme seçim kutusu ve ses ölçeri renkleri (bu bilgisayarda saklanır, hemen uygulanır) */
+function Erisilebilirlik() {
+  const [r, setR] = useState<ErisimRenkleri>(erisimOku);
+  const degistir = (y: ErisimRenkleri) => {
+    setR(y);
+    erisimYaz(y);
+    erisimUygula(y);
+  };
+  const alan = (k: keyof ErisimRenkleri, ad: string) => (
+    <>
+      <label htmlFor={`er-${k}`}>{ad}</label>
+      <span className="flex items-center gap-2">
+        <input id={`er-${k}`} type="color" value={r[k]} onChange={(e) => degistir({ ...r, [k]: e.target.value })} />
+        <span className="dt-sayi dt-soluk text-[11px]">{r[k]}</span>
+      </span>
+    </>
+  );
+  const hazir = HAZIRLAR.find((h) => (Object.keys(h.renkler) as (keyof ErisimRenkleri)[]).every((k) => h.renkler[k] === r[k]))?.id ?? "ozel";
+  return (
+    <div className="dt-form p-3">
+      <label htmlFor="er-hazir">Hazır</label>
+      <select id="er-hazir" className="dt-input" value={hazir} onChange={(e) => degistir(HAZIRLAR.find((h) => h.id === e.target.value)?.renkler ?? VARSAYILAN_RENKLER)}>
+        {HAZIRLAR.map((h) => (
+          <option key={h.id} value={h.id}>
+            {h.ad}
+          </option>
+        ))}
+        {hazir === "ozel" && <option value="ozel">Özel</option>}
+      </select>
+      {alan("secim", "Seçim kutusu ve tutamaçlar")}
+      {alan("normal", "Ölçer: normal")}
+      {alan("uyari", "Ölçer: uyarı (−20 dB üstü)")}
+      {alan("hata", "Ölçer: kırpılmaya yakın (−9 dB üstü)")}
+      <span />
+      <span className="flex items-center gap-2">
+        <span className="h-3 w-16 rounded-sm" style={{ background: r.normal }} />
+        <span className="h-3 w-8 rounded-sm" style={{ background: r.uyari }} />
+        <span className="h-3 w-6 rounded-sm" style={{ background: r.hata }} />
+        <button type="button" className="dt-btn ml-auto" onClick={() => degistir(VARSAYILAN_RENKLER)}>
+          Varsayılana dön
+        </button>
+      </span>
+      <span />
+      <span className="text-[11px] dt-soluk">Renkler bu bilgisayarda saklanır ve hemen uygulanır; yayın/kayıt görüntüsünü etkilemez.</span>
+    </div>
+  );
+}
 
 /** Uzaktan denetim: obs-websocket 5.x uyumlu sunucu. Parola yalnız "Göster"le bu bilgisayardan okunur, 20 sn sonra gizlenir. */
 function UzaktanDenetim({ onToast }: { onToast: (m: string) => void }) {
@@ -840,6 +890,8 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
             </div>
           ) : bolum === "uzak" ? (
             <UzaktanDenetim onToast={onToast} />
+          ) : bolum === "erisim" ? (
+            <Erisilebilirlik />
           ) : bolum === "coklu" ? (
             <div className="flex flex-col gap-2 p-3">
               {ms?.sinirlar && (

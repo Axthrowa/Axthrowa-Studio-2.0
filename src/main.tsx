@@ -6,11 +6,14 @@ import { ObsProvider } from "./lib/obs/ObsContext";
 import { EmoteProvider } from "./lib/emotes/EmoteContext";
 import { ThemeProvider } from "./lib/theme/ThemeContext";
 import { applyPlatformTheme } from "./lib/platformTheme";
+import { oku as erisimOku, uygula as erisimUygula } from "./lib/erisilebilirlik";
 import "./styles/index.css";
 import "./styles/desktop.css";
 import "./styles/overlay.css";
 
 applyPlatformTheme();
+// Erişilebilirlik renkleri (ayrı dock pencereleri de bu girişten açılır)
+erisimUygula(erisimOku());
 
 /**
  * Panel + OBS HTTP (`http://127.0.0.1:8843/...`) — BrowserRouter.

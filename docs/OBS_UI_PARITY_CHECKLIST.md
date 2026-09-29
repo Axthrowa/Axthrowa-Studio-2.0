@@ -156,7 +156,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 Satır satır: `docs/OBS_SETTINGS_PARITY_MATRIX.md`. Özet: Video (taban/çıkış/ölçek filtresi/FPS/renk biçimi-uzayı-aralığı),
 Ses (örnekleme, kanallar), Çıkış (kodlayıcı, ayrı kayıt kodlayıcısı, bölme süre/boyut, kayıt biçimi), Gelişmiş ağ
 (IP'ye bağla, yeni ağ kodu, dinamik bit hızı, yeniden bağlanma), Uzaktan denetim (obs-websocket uyumlu), Kısayollar
-VAR; Erişilebilirlik sayfası ve Genel sayfasındaki onay/tepsi seçenekleri YOK.
+VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yüksek kontrast hazırları; vt:erisilebilirlik, tp) VAR; Genel sayfasındaki onay/tepsi seçenekleri YOK.
 
 ## 4.12 Diğer pencereler
 

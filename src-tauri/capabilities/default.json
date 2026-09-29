@@ -25,6 +25,7 @@
     "allow-streamaxt",
     "core:webview:allow-create-webview-window",
     "core:window:allow-set-focus",
-    "core:window:allow-set-always-on-top"
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-set-fullscreen"
   ]
 }

@@ -79,6 +79,7 @@ export function TuvalGorunumu({
   kilavuz,
   olcekKipi,
   onOlcek,
+  kapali,
 }: {
   etiket: string;
   /** Kare kaynağı: "ana", "dikey", "studyo-ana"… */
@@ -96,6 +97,8 @@ export function TuvalGorunumu({
   /** Önizleme ölçekleme (verilmezse pencereye sığar); `onOlcek` varsa Ctrl+tekerlek yakınlaştırır */
   olcekKipi?: OlcekKipi;
   onOlcek?: (k: OlcekKipi) => void;
+  /** OBS "Önizlemeyi devre dışı bırak": kare alınmaz, düzenleme katmanı gösterilmez */
+  kapali?: boolean;
 }) {
   const kap = useRef<HTMLDivElement>(null);
   const [alan, setAlan] = useState({ g: 0, y: 0 });
@@ -144,7 +147,7 @@ export function TuvalGorunumu({
     const r = el.getBoundingClientRect();
     return [((e.clientX - r.left) / r.width) * boyut[0], ((e.clientY - r.top) / r.height) * boyut[1]];
   };
-  const goster = (o: MotorSahneOgesi): MotorSahneOgesi => (gecici[o.oge] ? { ...o, ...gecici[o.oge] } as MotorSahneOgesi : o);
+  const goster = (o: MotorSahneOgesi): MotorSahneOgesi => (gecici[o.oge] ? ({ ...o, ...gecici[o.oge] } as MotorSahneOgesi) : o);
   const seciliOgeler = agac.map((d) => d.oge).filter((o) => secim.includes(o.oge));
   const tutamacBoyu = 9 / olcek;
 
@@ -237,7 +240,9 @@ export function TuvalGorunumu({
     const d = { ArrowLeft: [-adim, 0], ArrowRight: [adim, 0], ArrowUp: [0, -adim], ArrowDown: [0, adim] }[e.key];
     if (!d) return;
     e.preventDefault();
-    const degisim = seciliOgeler.filter((o) => !o.kilit).map((o) => ({ oge: o, yeni: { konum: [o.konum[0] + d[0], o.konum[1] + d[1]] as [number, number] }, eski: { konum: o.konum } }));
+    const degisim = seciliOgeler
+      .filter((o) => !o.kilit)
+      .map((o) => ({ oge: o, yeni: { konum: [o.konum[0] + d[0], o.konum[1] + d[1]] as [number, number] }, eski: { konum: o.konum } }));
     if (degisim.length) eylem.donustur(degisim, "Öğeyi it");
   };
 
@@ -270,67 +275,77 @@ export function TuvalGorunumu({
         onPointerUp={() => (kaydir.current = null)}
         onPointerCancel={() => (kaydir.current = null)}
       >
-        <div className="dt-onizleme-tuval" style={{ width: olcu.g, height: olcu.y }}>
-          {canliBagli && kare ? <img src={kare} alt={etiket} className="dt-onizleme-kare" draggable={false} /> : <YoklamaKaresi tuval={tuval} genislik={Math.min(960, Math.max(320, Math.round(olcu.g)))} />}
-          <svg
-            className="dt-onizleme-katman"
-            viewBox={`0 0 ${boyut[0]} ${boyut[1]}`}
-            preserveAspectRatio="none"
-            tabIndex={duzenlenebilir ? 0 : -1}
-            role="application"
-            aria-label={`${etiket} düzenleme alanı`}
-            onPointerDown={basla}
-            onPointerMove={hareket}
-            onPointerUp={bitir}
-            onPointerCancel={bitir}
-            onKeyDown={tus}
-            onContextMenu={(e) => {
-              if (!duzenlenebilir) return;
-              const p = tuvalNoktasi(e, e.currentTarget);
-              const o = noktadakiOge(agac, p[0], p[1]);
-              if (o && !secim.includes(o.oge)) eylem.sec(o.oge, "tek");
-              eylem.menu(e, o);
-            }}
-          >
-            {kilavuz && (
-              <g className="dt-kilavuz" aria-hidden>
-                <rect x={boyut[0] * 0.05} y={boyut[1] * 0.05} width={boyut[0] * 0.9} height={boyut[1] * 0.9} vectorEffect="non-scaling-stroke" />
-                <rect x={boyut[0] * 0.1} y={boyut[1] * 0.1} width={boyut[0] * 0.8} height={boyut[1] * 0.8} vectorEffect="non-scaling-stroke" />
-                <line x1={boyut[0] / 2} y1={0} x2={boyut[0] / 2} y2={boyut[1]} vectorEffect="non-scaling-stroke" />
-                <line x1={0} y1={boyut[1] / 2} x2={boyut[0]} y2={boyut[1] / 2} vectorEffect="non-scaling-stroke" />
-              </g>
+        {kapali ? (
+          <div className="dt-onizleme-tuval flex items-center justify-center text-[12px] dt-soluk" style={{ width: olcu.g, height: olcu.y }}>
+            Önizleme devre dışı (Görünüm menüsünden açın)
+          </div>
+        ) : (
+          <div className="dt-onizleme-tuval" style={{ width: olcu.g, height: olcu.y }}>
+            {canliBagli && kare ? (
+              <img src={kare} alt={etiket} className="dt-onizleme-kare" draggable={false} />
+            ) : (
+              <YoklamaKaresi tuval={tuval} genislik={Math.min(960, Math.max(320, Math.round(olcu.g)))} />
             )}
-            {duzenlenebilir &&
-              agac.map(({ oge }) => {
-                if (!oge.gorunur) return null;
-                const o = goster(oge);
-                const k = ogeKutusu(o);
-                if (!k) return null;
-                const secili = secim.includes(o.oge);
-                return (
-                  <g key={o.oge} transform={k.aci ? `rotate(${k.aci} ${k.ox} ${k.oy})` : undefined}>
-                    <rect x={k.x} y={k.y} width={k.g} height={k.h} className={secili ? "dt-secim-kutu" : "dt-secim-ince"} vectorEffect="non-scaling-stroke" />
-                    {secili &&
-                      !o.kilit &&
-                      !k.aci &&
-                      seciliOgeler.length === 1 &&
-                      TUTAMACLAR.map((h) => (
-                        <rect
-                          key={h.ad}
-                          x={k.x + h.x * k.g - tutamacBoyu / 2}
-                          y={k.y + h.y * k.h - tutamacBoyu / 2}
-                          width={tutamacBoyu}
-                          height={tutamacBoyu}
-                          className="dt-tutamac"
-                          style={{ cursor: h.imlec }}
-                          vectorEffect="non-scaling-stroke"
-                        />
-                      ))}
-                  </g>
-                );
-              })}
-          </svg>
-        </div>
+            <svg
+              className="dt-onizleme-katman"
+              viewBox={`0 0 ${boyut[0]} ${boyut[1]}`}
+              preserveAspectRatio="none"
+              tabIndex={duzenlenebilir ? 0 : -1}
+              role="application"
+              aria-label={`${etiket} düzenleme alanı`}
+              onPointerDown={basla}
+              onPointerMove={hareket}
+              onPointerUp={bitir}
+              onPointerCancel={bitir}
+              onKeyDown={tus}
+              onContextMenu={(e) => {
+                if (!duzenlenebilir) return;
+                const p = tuvalNoktasi(e, e.currentTarget);
+                const o = noktadakiOge(agac, p[0], p[1]);
+                if (o && !secim.includes(o.oge)) eylem.sec(o.oge, "tek");
+                eylem.menu(e, o);
+              }}
+            >
+              {kilavuz && (
+                <g className="dt-kilavuz" aria-hidden>
+                  <rect x={boyut[0] * 0.05} y={boyut[1] * 0.05} width={boyut[0] * 0.9} height={boyut[1] * 0.9} vectorEffect="non-scaling-stroke" />
+                  <rect x={boyut[0] * 0.1} y={boyut[1] * 0.1} width={boyut[0] * 0.8} height={boyut[1] * 0.8} vectorEffect="non-scaling-stroke" />
+                  <line x1={boyut[0] / 2} y1={0} x2={boyut[0] / 2} y2={boyut[1]} vectorEffect="non-scaling-stroke" />
+                  <line x1={0} y1={boyut[1] / 2} x2={boyut[0]} y2={boyut[1] / 2} vectorEffect="non-scaling-stroke" />
+                </g>
+              )}
+              {duzenlenebilir &&
+                agac.map(({ oge }) => {
+                  if (!oge.gorunur) return null;
+                  const o = goster(oge);
+                  const k = ogeKutusu(o);
+                  if (!k) return null;
+                  const secili = secim.includes(o.oge);
+                  return (
+                    <g key={o.oge} transform={k.aci ? `rotate(${k.aci} ${k.ox} ${k.oy})` : undefined}>
+                      <rect x={k.x} y={k.y} width={k.g} height={k.h} className={secili ? "dt-secim-kutu" : "dt-secim-ince"} vectorEffect="non-scaling-stroke" />
+                      {secili &&
+                        !o.kilit &&
+                        !k.aci &&
+                        seciliOgeler.length === 1 &&
+                        TUTAMACLAR.map((h) => (
+                          <rect
+                            key={h.ad}
+                            x={k.x + h.x * k.g - tutamacBoyu / 2}
+                            y={k.y + h.y * k.h - tutamacBoyu / 2}
+                            width={tutamacBoyu}
+                            height={tutamacBoyu}
+                            className="dt-tutamac"
+                            style={{ cursor: h.imlec }}
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        ))}
+                    </g>
+                  );
+                })}
+            </svg>
+          </div>
+        )}
       </div>
     </div>
   );

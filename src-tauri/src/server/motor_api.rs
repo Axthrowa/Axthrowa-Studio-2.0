@@ -513,6 +513,8 @@ async fn api_durum(
       "durum": durum("kayit"), "son": o.son_kayit,
       "duraklatildi": istatistik["cikislar"].as_array().and_then(|a| a.iter().find(|c| c["id"] == "kayit")).and_then(|c| c["duraklatildi"].as_bool()).unwrap_or(false),
       "ayriKodlayici": profil.kayit.ayri_kodlayici,
+      // İstatistikler: kayıt klasörünün diskindeki boş alan (kalan kayıt süresi arayüzde bit hızından)
+      "diskBos": crate::disk::bos_alan(&profil.kayit.klasor.as_ref().map(PathBuf::from).unwrap_or_else(kayit_klasoru)),
     },
     "tekrar": {"durum": durum("tekrar"), "sureSn": profil.tekrar_sn, "son": o.son_tekrar, "dikey": o.tekrar_dikey_var.then(|| durum("tekrar-dikey"))},
     "sanalKamera": {"durum": durum("sanal-kamera")},

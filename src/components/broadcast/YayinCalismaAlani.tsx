@@ -287,6 +287,22 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [multiviewAcik, setMultiviewAcik] = useState(false);
   const [gecisEkle, setGecisEkle] = useState(false);
   const [onizlemeOlcek, setOnizlemeOlcek] = useState<OlcekKipi>({ tur: "sigdir" });
+  const [onizlemeKapali, setOnizlemeKapali] = useState(() => {
+    try {
+      return localStorage.getItem("yya.yayin.onizleme-kapali.v1") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const onizlemeKapaliDegistir = () =>
+    setOnizlemeKapali((k) => {
+      try {
+        localStorage.setItem("yya.yayin.onizleme-kapali.v1", k ? "0" : "1");
+      } catch {
+        /* yalnız bu oturumda */
+      }
+      return !k;
+    });
   const [hizliEkle, setHizliEkle] = useState(false);
   const [donusumOge, setDonusumOge] = useState<string | null>(null);
   const [gelismisSes, setGelismisSes] = useState(false);
@@ -340,6 +356,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       await getCurrentWindow().setAlwaysOnTop(!ustte);
       setUstte(!ustte);
+    } catch (e) {
+      onToast(`Pencere: ${hataMetni(e)}`);
+    }
+  };
+  const tamEkranDegistir = async () => {
+    try {
+      const { isTauri } = await import("@tauri-apps/api/core");
+      if (!isTauri()) return onToast("Tam ekran arayüz yalnız masaüstü uygulamasında");
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      const w = getCurrentWindow();
+      await w.setFullscreen(!(await w.isFullscreen()));
     } catch (e) {
       onToast(`Pencere: ${hataMetni(e)}`);
     }
@@ -458,8 +485,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   useEffect(() => setSecim([]), [aktifSahne]);
 
   // ── Canlı akış ──
-  const canli = useMotorCanli(calisiyor, { seviye: true, kare: calisiyor ? { tuval: studyo ? `studyo-${tuval}` : tuval, genislik: 960, fps: 10 } : null });
-  const programAkisi = useMotorCanli(calisiyor && studyo, { seviye: false, kare: calisiyor && studyo ? { tuval, genislik: 640, fps: 10 } : null });
+  // Önizleme kapalıyken kare aboneliği yok (motor önizleme dönüşümü yapmaz); ses ölçerleri sürer
+  const canli = useMotorCanli(calisiyor, { seviye: true, kare: calisiyor && !onizlemeKapali ? { tuval: studyo ? `studyo-${tuval}` : tuval, genislik: 960, fps: 10 } : null });
+  const programAkisi = useMotorCanli(calisiyor && studyo && !onizlemeKapali, { seviye: false, kare: calisiyor && studyo && !onizlemeKapali ? { tuval, genislik: 640, fps: 10 } : null });
 
   // ── Süreler ──
   const ozet = d ? canliOzeti(d) : { canli: 0, toplam: 0 };
@@ -863,6 +891,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       return;
     }
     if (["INPUT", "TEXTAREA", "SELECT"].includes(hedef.tagName)) return;
+    if (e.key === "F11") {
+      e.preventDefault();
+      void tamEkranDegistir();
+      return;
+    }
     if (ctrl && e.key === "0") {
       e.preventDefault();
       setOnizlemeOlcek({ tur: "sigdir" });
@@ -990,6 +1023,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ...tuvaller.map((t): MenuOgesi => ({ etiket: `${t === tuval ? "● " : ""}Tuval: ${TUVAL_ADI[t]}`, eylem: () => setTuval(t) })),
         "ayirici",
         ...projektorMenusu(),
+        { etiket: "Tam ekran arayüz", kisayol: "F11", eylem: () => void tamEkranDegistir() },
+        { etiket: `${onizlemeKapali ? "☑" : "☐"} Önizlemeyi devre dışı bırak`, eylem: onizlemeKapaliDegistir },
         { etiket: `${onizlemeOlcek.tur === "sigdir" ? "● " : ""}Önizleme ölçekleme: pencereye sığdır`, kisayol: "Ctrl+0", eylem: () => setOnizlemeOlcek({ tur: "sigdir" }) },
         { etiket: `${onizlemeOlcek.tur === "tuval" ? "● " : ""}Önizleme ölçekleme: tuval (%100)`, eylem: () => setOnizlemeOlcek({ tur: "tuval" }) },
         { etiket: `${onizlemeOlcek.tur === "yakin" ? "● " : ""}Yakınlaştır / uzaklaştır: Ctrl+tekerlek · kaydır: orta tuşla sürükle`, devreDisi: true, eylem: () => undefined },
@@ -1466,6 +1501,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 vurgu={studyo ? "onizleme" : "program"}
                 olcekKipi={onizlemeOlcek}
                 onOlcek={setOnizlemeOlcek}
+                kapali={onizlemeKapali}
               />
               {studyo && (
                 <>
@@ -1501,6 +1537,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                     duzenlenebilir={false}
                     eylem={onizlemeEylem}
                     vurgu="program"
+                    kapali={onizlemeKapali}
                   />
                 </>
               )}

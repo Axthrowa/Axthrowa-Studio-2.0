@@ -45,7 +45,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Görünüm › Studio Mode, tuval seçimi, projektörler, durum çubuğu, güvenli alan kılavuzları | VAR | tp | |
 | Görünüm › Multiview (pencere) | VAR | sinama, it, tp | Tek düzen (üstte önizleme/program, altta 8 sahne) |
 | Görünüm › Önizleme yakınlaştırma (Ctrl+tekerlek, Ctrl+0) | VAR | vt, tp | |
-| Görünüm › Tam ekran arayüz, kaynak simgeleri | YOK | | |
+| Görünüm › Tam ekran arayüz (F11) | VAR | — | Yalnız masaüstü uygulamasında (Tauri penceresi); tarayıcı bölmesinde sınanamaz |
+| Görünüm › Kaynak simgeleri | YOK | | |
 | Docklar › onay kutuları, kilitle, sekme birleştir/ayır, düzeni sıfırla, ayrı pencere | VAR | tp | Özel tarayıcı dock'u yok |
 | Profil › liste, Yeni, Çoğalt, Yeniden adlandır, Kaldır (yedeğe), Dışa aktar | VAR | it:motor_profil_… | Profil içe aktarma yok |
 | Sahne Koleksiyonu › liste, Yeni, yönetici (çoğalt, adlandır, içe/dışa aktar, OBS JSON'dan al) | VAR | it:motor_v2_…, vt | Eşlenemeyen kaynak "eksik" yer tutucu olur |
@@ -96,7 +97,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Döndürme tutamacı | YOK | | Döndürme menü/diyalogla |
 | Boşluk yardımcıları (mesafe çizgileri) | YOK | | |
 | Önizleme yakınlaştırma/kaydırma | VAR | vt:onizlemeOlcek, tp | Ctrl+tekerlek 1,25 kat (×0,25–×8), orta tuşla sürükleyerek kaydır, kaydırma çubukları; %100'de seçim isabeti doğrulandı |
-| Önizlemeyi devre dışı bırak | YOK | | |
+| Önizlemeyi devre dışı bırak | VAR | tp | Kare aboneliği kesilir (motor önizleme dönüştürmez); ses ölçerleri sürer |
 | Dönüşüm penceresi (konum, açı, boyut, 9 nokta hizalama, sınır türü + hizalama, kırpma) | VAR | tp | "Kırpmayı sınıra uygula" yok |
 
 ## 4.6 Ses mikseri
@@ -167,7 +168,7 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 | Özellikler penceresi (genel özellik formu) | VAR | it | "Varsayılanlar" düğmesi yok |
 | Projektörler (pencere, tam ekran monitör) | VAR | tp | Kaynak/sahne projektörü yok |
 | Multiview | VAR | sinama, it, tp | Tek düzen |
-| İstatistikler | KISMİ | tp | Disk alanı/kalan kayıt süresi ve "sıfırla" yok |
+| İstatistikler | KISMİ | vt:kayitSuresi, tp | Disk boş alanı ve kalan kayıt süresi VAR (sınamada 40,8 GB / 5256 kbps → 18 sa 32 dk); "sıfırla" yok |
 | Otomatik yapılandırma sihirbazı | VAR | it:motor_sihirbaz_yerel_kodlama_sinamasi | Bant genişliği testi yok (izin gerektirir) |
 | Remux penceresi | VAR | it, tp | |
 | Eksik dosyalar penceresi | YOK | | Eksik eklenti yer tutucusu var |

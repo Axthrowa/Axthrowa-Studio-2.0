@@ -5,6 +5,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { CIKIS_DURUM_ETIKETI, cikisEtkin, hedefBaslatilabilir, type MotorDurumu } from "../../lib/api/motor";
+import { boyutMetni, kalanKayitSn, sureMetni } from "../../lib/kayitSuresi";
+
 
 export const TUVAL_ADI: Record<string, string> = { ana: "Yatay", dikey: "Dikey" };
 
@@ -201,6 +203,12 @@ export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record
                   <span className="dt-sayi">{ist.bellek_mb.toFixed(0)} MB</span>
                 </>
               )}
+              <span className="dt-etiket">Kayıt diski boş alan</span>
+              <span className="dt-sayi">{boyutMetni(d.kayit.diskBos)}</span>
+              <span className="dt-etiket">Kalan kayıt süresi</span>
+              <span className="dt-sayi" title="Boş alan ÷ ölçülen kayıt bit hızı (yalnız kayıt sürerken)">
+                {sureMetni(kalanKayitSn(d.kayit.diskBos, bitHizi["kayit"]))}
+              </span>
               <span className="dt-etiket">GPU (3D)</span>
               {d.gpu ? (
                 <span className="dt-sayi" title="Windows performans sayaçları (GPU Engine, 3D): sistem geneli ve yayın motoru süreci">

@@ -78,7 +78,7 @@ export type MotorDurumu = {
   istatistik: { fps: number; ortalama_kare_ms: number; toplam_kare: number; geciken_kare: number; cikislar: MotorCikisIstatistigi[] } | null;
   kaynaklar: MotorKaynak[];
   hedefler: MotorHedef[];
-  kayit: { durum: MotorCikisDurumu; son: string | null; duraklatildi?: boolean; ayriKodlayici?: boolean };
+  kayit: { durum: MotorCikisDurumu; son: string | null; duraklatildi?: boolean; ayriKodlayici?: boolean; diskBos?: number | null };
   tekrar: { durum: MotorCikisDurumu; sureSn: number; son: string | null; dikey?: MotorCikisDurumu | null };
   sanalKamera?: { durum: MotorCikisDurumu };
   kayitKlasoru: string;

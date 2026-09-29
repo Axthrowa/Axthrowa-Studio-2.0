@@ -1843,7 +1843,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
 function KaynakOzellikleri({ id, ad, onKapat }: { id: string; ad: string; onKapat: () => void }) {
   const oku = useCallback(() => motorApi.kaynakOzellikleri(id), [id]);
   const yaz = useCallback((a: Record<string, unknown>) => motorApi.kaynakGuncelle(id, a), [id]);
-  return <OzellikFormu baslik={ad} oku={oku} yaz={yaz} onKapat={onKapat} />;
+  const varsayilanlar = useCallback(() => motorApi.kaynakVarsayilanlar(id), [id]);
+  return <OzellikFormu baslik={ad} oku={oku} yaz={yaz} onKapat={onKapat} varsayilanlar={varsayilanlar} />;
 }
 
 function GecisOzellikleri({ tuval, ad, onKapat }: { tuval: string; ad: string; onKapat: () => void }) {

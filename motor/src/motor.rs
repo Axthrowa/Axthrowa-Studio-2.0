@@ -602,6 +602,17 @@ impl Motor {
     crate::eklenti::guncelle(k, ayarlar)
   }
 
+  /// Özellikler › Varsayılanlar: kaynağın tüm ayarlarını türünün varsayılanlarına döndürür
+  pub fn kaynak_varsayilanlar(&self, id: &str) -> Result<(), String> {
+    let k = *self.kaynaklar.get(id).ok_or_else(|| format!("kaynak yok: {id}"))?;
+    unsafe {
+      let bos = (api().obs_data_create)();
+      (api().obs_source_reset_settings)(k, bos);
+      (api().obs_data_release)(bos);
+    }
+    Ok(())
+  }
+
   /// Etkin video/ses ayarları (panelin gösterdiği ve doğruladığı değerler)
   pub fn video_ayari(&self) -> serde_json::Value {
     let a = self.ana;

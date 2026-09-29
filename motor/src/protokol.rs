@@ -351,6 +351,10 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       json!({})
     }
     "kaynak.ozellikler" => m.kaynak_ozellikleri(id()?)?,
+    "kaynak.varsayilanlar" => {
+      m.kaynak_varsayilanlar(id()?)?;
+      json!({})
+    }
     "kaynak.guncelle" => {
       let ayarlar = istek.get("ayarlar").and_then(Value::as_object).ok_or("'ayarlar' nesnesi gerekli")?;
       m.kaynak_guncelle(id()?, ayarlar)?;

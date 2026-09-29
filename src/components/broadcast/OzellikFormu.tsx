@@ -23,6 +23,8 @@ type Props = {
   oku: () => Promise<OzellikTanimi>;
   yaz: (ayarlar: Record<string, unknown>) => Promise<unknown>;
   onKapat: () => void;
+  /** Verilirse "Varsayılanlar" düğmesi gösterilir (onaydan sonra çağrılır) */
+  varsayilanlar?: () => Promise<unknown>;
 };
 
 function Alan({
@@ -312,15 +314,45 @@ export function OzellikGovdesi({ oku, yaz, bos = "Ayarlanabilir özellik yok." }
   );
 }
 
-export function OzellikFormu({ baslik, oku, yaz, onKapat }: Props) {
+export function OzellikFormu({ baslik, oku, yaz, onKapat, varsayilanlar }: Props) {
+  const [surum, setSurum] = useState(0);
+  const [onay, setOnay] = useState(false);
+  const [hata, setHata] = useState("");
+  const sifirla = async () => {
+    setOnay(false);
+    try {
+      await varsayilanlar?.();
+      setHata("");
+      setSurum((s) => s + 1);
+    } catch (e) {
+      setHata(String((e as Error).message || e).slice(0, 300));
+    }
+  };
   return (
     <div className="dt-modal-arka" onMouseDown={(e) => e.target === e.currentTarget && onKapat()}>
       <div className="dt-modal" role="dialog" aria-label={`Özellikler: ${baslik}`} style={{ width: 520 }} onKeyDown={(e) => e.key === "Escape" && onKapat()}>
         <div className="dt-dock-baslik">Özellikler — {baslik}</div>
         <div className="max-h-[60vh] overflow-auto">
-          <OzellikGovdesi oku={oku} yaz={yaz} bos="Bu kaynağın ayarlanabilir özelliği yok." />
+          <OzellikGovdesi key={surum} oku={oku} yaz={yaz} bos="Bu kaynağın ayarlanabilir özelliği yok." />
         </div>
+        {hata && <p className="px-3 pb-2 text-[12px] dt-hata-metni">{hata}</p>}
         <div className="flex items-center justify-end gap-2 border-t border-[color:var(--dt-line)] px-3 py-2">
+          {varsayilanlar &&
+            (onay ? (
+              <span className="mr-auto flex items-center gap-2 text-[12px]">
+                Tüm ayarlar varsayılana dönsün mü? (parolalar korunur)
+                <button type="button" className="dt-btn-danger" onClick={() => void sifirla()}>
+                  Evet, sıfırla
+                </button>
+                <button type="button" className="dt-btn" onClick={() => setOnay(false)}>
+                  Hayır
+                </button>
+              </span>
+            ) : (
+              <button type="button" className="dt-btn mr-auto" onClick={() => setOnay(true)}>
+                Varsayılanlar
+              </button>
+            ))}
           <button type="button" className="dt-btn" onClick={onKapat}>
             Kapat
           </button>

@@ -37,6 +37,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/kaynak/izler", post(api_kaynak_izler))
     .route("/api/motor/kaynak/ozellikler", get(api_kaynak_ozellikler))
     .route("/api/motor/kaynak/guncelle", post(api_kaynak_guncelle))
+    .route("/api/motor/kaynak/varsayilanlar", post(api_kaynak_varsayilanlar))
     .route("/api/motor/secenekler", get(api_secenekler))
     .route("/api/motor/sahne", get(api_sahne))
     .route("/api/motor/hedef", post(api_hedef))
@@ -975,6 +976,45 @@ async fn api_kaynak_ozellikler(
 struct GuncelleGovdesi {
   id: String,
   ayarlar: serde_json::Map<String, Value>,
+}
+
+#[derive(Deserialize)]
+struct KimlikGovdesi {
+  id: String,
+}
+
+/// Özellikler › Varsayılanlar: ayarlar türün varsayılanlarına döner (koleksiyonda boş ayar). Parola alanları
+/// Kimlik Yöneticisinde durur ve yeniden uygulanır (bir sıfırlama kayıtlı sırrı silmez).
+async fn api_kaynak_varsayilanlar(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<KimlikGovdesi>,
+) -> ApiResult {
+  let actor = authorize(&state, &addr, &headers, "scene.edit").await?;
+  motor_calisiyor(&state).await?;
+  let gizli = {
+    let o = state.motor.ozet();
+    let mut o = o.lock();
+    let k = o.koleksiyon.kaynak(&g.id).ok_or_else(|| bulunamadi("kaynak yok".into()))?;
+    k.gizli_alanlar.clone()
+  };
+  komut(&state, json!({"komut": "kaynak.varsayilanlar", "id": g.id})).await?;
+  let mut parolalar = serde_json::Map::new();
+  for alan in &gizli {
+    if let Some(v) = crate::secret_store::get_secret(&gizli_anahtar(&g.id, alan)) {
+      parolalar.insert(alan.clone(), json!(v));
+    }
+  }
+  if !parolalar.is_empty() {
+    komut(&state, json!({"komut": "kaynak.guncelle", "id": g.id, "ayarlar": parolalar})).await?;
+  }
+  if let Some(k) = state.motor.ozet().lock().koleksiyon.kaynak(&g.id) {
+    k.ayarlar = json!({});
+  }
+  kaydet(&state).await?;
+  audit(&state, &actor, "MOTOR_SOURCE_DEFAULTS", json!({"id": g.id})).await;
+  Ok(Json(json!({"ok": true, "parolaKorundu": parolalar.len()})))
 }
 
 async fn api_kaynak_guncelle(

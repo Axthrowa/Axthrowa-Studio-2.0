@@ -289,6 +289,7 @@ obs_api! {
   fn obs_sceneitem_set_bounds(Ptr, *const Vec2);
   fn obs_sceneitem_set_visible(Ptr, bool) -> bool;
   fn obs_data_create() -> Ptr;
+  fn obs_source_reset_settings(Ptr, Ptr);
   fn obs_data_release(Ptr);
   fn obs_data_set_string(Ptr, *const c_char, *const c_char);
   fn obs_data_set_int(Ptr, *const c_char, i64);

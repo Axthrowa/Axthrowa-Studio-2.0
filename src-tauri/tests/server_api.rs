@@ -2738,6 +2738,18 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   let kol: Value = serde_json::from_str(&std::fs::read_to_string(motor_dir.join("koleksiyonlar").join(format!("{etkin}.json"))).unwrap()).unwrap();
   let kayit = kol["kaynaklar"].as_array().unwrap().iter().find(|k| k["id"] == id.as_str()).unwrap().clone();
   assert_eq!(kayit["deinterlace"], json!([7, 1]));
+  // Özellikler › Varsayılanlar: ayar değişir, sıfırlanınca türün varsayılanına döner, koleksiyonda boş ayar
+  tamam("/api/motor/kaynak/guncelle", json!({"id": id, "ayarlar": {"width": 123}})).await;
+  let oz = h.client.get(format!("{}/api/motor/kaynak/ozellikler?id={id}", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(oz["ayarlar"]["width"], 123);
+  let r = tamam("/api/motor/kaynak/varsayilanlar", json!({"id": id})).await;
+  assert_eq!(r["parolaKorundu"], 0);
+  let oz = h.client.get(format!("{}/api/motor/kaynak/ozellikler?id={id}", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_ne!(oz["ayarlar"]["width"], 123, "varsayılana döndü: {}", oz["ayarlar"]);
+  let dizin: Value = serde_json::from_str(&std::fs::read_to_string(motor_dir.join("koleksiyonlar.json")).unwrap()).unwrap();
+  let kol: Value = serde_json::from_str(&std::fs::read_to_string(motor_dir.join("koleksiyonlar").join(format!("{}.json", dizin["etkin"].as_str().unwrap()))).unwrap()).unwrap();
+  assert_eq!(kol["kaynaklar"].as_array().unwrap().iter().find(|k| k["id"] == id.as_str()).unwrap()["ayarlar"], json!({}));
+  assert_eq!(h.client.post(format!("{}/api/motor/kaynak/varsayilanlar", h.base)).json(&json!({"id": "yok"})).send().await.unwrap().status(), 404);
   // Kaynak rengi etiketi: yazılır, sahne listesinde görünür, geçersiz 400, boş kaldırır
   tamam("/api/motor/kaynak-islem", json!({"id": id, "eylem": "renk", "renk": "#FF8800"})).await;
   let sr = h.client.get(format!("{}/api/motor/sahne?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();

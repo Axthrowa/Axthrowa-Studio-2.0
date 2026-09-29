@@ -166,7 +166,7 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 | Madde | Durum | Test | Not |
 |---|---|---|---|
 | Filtreler penceresi (sırala, göz, kopyala/yapıştır) | VAR | sinama, it | Ses/video iki ayrı liste yerine tek liste + tür etiketi |
-| Özellikler penceresi (genel özellik formu) | VAR | it | "Varsayılanlar" düğmesi yok |
+| Özellikler penceresi (genel özellik formu, Varsayılanlar) | VAR | it | Varsayılanlar onayla; parolalar Kimlik Yöneticisinde korunur ve yeniden uygulanır |
 | Projektörler (pencere, tam ekran monitör) | VAR | tp | Kaynak/sahne projektörü yok |
 | Multiview | VAR | sinama, it, tp | Tek düzen |
 | İstatistikler | KISMİ | vt:kayitSuresi, tp | Disk boş alanı ve kalan kayıt süresi VAR (sınamada 40,8 GB / 5256 kbps → 18 sa 32 dk); "sıfırla" yok |

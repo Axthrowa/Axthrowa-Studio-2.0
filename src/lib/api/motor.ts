@@ -335,6 +335,7 @@ export const motorApi = {
   kaynakIzler: (id: string, maske: number) => istek<{ ok: boolean }>("/api/motor/kaynak/izler", { id, maske }),
   kaynakOzellikleri: (id: string) => istek<OzellikTanimi>(`/api/motor/kaynak/ozellikler?id=${encodeURIComponent(id)}`),
   kaynakGuncelle: (id: string, ayarlar: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/kaynak/guncelle", { id, ayarlar }),
+  kaynakVarsayilanlar: (id: string) => istek<{ ok: boolean; parolaKorundu: number }>("/api/motor/kaynak/varsayilanlar", { id }),
   secenekler: (tur: MotorKaynakTuru) => istek<{ secenekler: MotorSecenek[] }>(`/api/motor/secenekler?tur=${tur}`).then((r) => r.secenekler),
   sahne: (tuval: string) => istek<{ ogeler: MotorSahneOgesi[] }>(`/api/motor/sahne?tuval=${tuval}`).then((r) => r.ogeler),
   oge: (oge: string, eylem: "sira" | "kaldir" | "donustur", ek: { yon?: string; konum?: [number, number]; sinir?: [number, number]; gorunur?: boolean } = {}) =>

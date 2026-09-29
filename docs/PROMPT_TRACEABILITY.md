@@ -151,3 +151,11 @@ kanıt), ayar/kaynak/ses/kısayol/eklenti matrisleri, [UX_ACCEPTANCE_TESTS](UX_A
 "Sonraki kilometre taşı" maddeleri 2 ve 3 bu turda tamamlandı (sahne düzenleyici, hedef başına ses izi, kayıt/tekrar
 arayüzü, GO LIVE motor bütünleşmesi, Studio Mode ve geçişler, kayıt defteri kısayolları, disk/mikrofon ön kontrolü,
 destek paketi).
+
+## Plan istemi (Özgün Yayın Motoru, YOL G) — §4 OBS arayüz paritesi (2026-09-29)
+
+Kullanıcı kararı YOL G (ADR-005): özgün motor fazları (F1–F3 `cekirdek/`) yapılmaz; §4 arayüz paritesi libobs motoru
+üzerinde uygulanır. Madde → durum → test: [OBS_UI_PARITY_CHECKLIST](OBS_UI_PARITY_CHECKLIST.md). Bu turda eklenenler:
+ekran görüntüsü (çıkış/önizleme/sahne/kaynak), deinterlace, karıştırma yöntemi, düşen kare %, T-bar, yeniden muxla,
+Multiview, kaynak araç çubuğu. Kalan YOK maddeleri kontrol listesinde ve
+[KNOWN_LIMITATIONS](KNOWN_LIMITATIONS.md) sonunda.

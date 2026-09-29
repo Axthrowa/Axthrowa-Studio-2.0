@@ -151,3 +151,26 @@ WebSocket'e yönlenmiyordu); "İ" küçük harfe çevrilince birleşik nokta ür
 testlerde süreç geneli ortam değişkeni yarışı; panel yeni kaynakları eski v1 türüyle oluşturuyordu.
 
 Arayüz sınaması: [UX_ACCEPTANCE_TESTS](UX_ACCEPTANCE_TESTS.md).
+
+## OBS arayüz paritesi — plan §4 (2026-09-29)
+
+Komitler: b855b0f, cba0f8c, c5a5d07, ddce4f8, a281802, 892e2fa.
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **48/48** (yeni: tam çözünürlük ekran görüntüsü 1920×1080 + göreli yol reddi; sahne/kaynak ekran görüntüsü boyutları; deinterlace gidiş-dönüş + ret; karıştırma yöntemi; T-bar — sabit geçiş reddi, ortada bırakınca sürer, sona/başa bırakınca program; yeniden muxla MP4→MKV 1200→1200 kare, 20,00 s, çözme hatası 0, üzerine yazma reddi; Multiview hücre pikselleri, boş hücre siyah, yabancı tuval sahnesi reddi) |
+| Motor birim | 26 (remux çıktı biçimi, AVRational düzeni, Multiview düzeni) |
+| Panel birim (Rust) | **300** (OBS içe aktarımında deinterlace + blend_method, remux çıktı kuralları) |
+| Panel entegrasyon | **36** geçti, 1 elle çalıştırılan göz ardı (yeni: `motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar` — ekran görüntüsü, kaynak görüntüsü, deinterlace kalıcılığı, karıştırma yöntemi, T-bar, Multiview; `remux_kuyrugu_mkv_mp4`) |
+| Ön yüz (vitest) | **399** (T-bar bırakma kuralı) |
+| clippy (panel + motor) | 0 uyarı |
+
+Tarayıcı bölmesinde (başsız sunucu, geçici veri kökü) elle: Dosya › Ekran görüntüsü → 1920×1080 PNG; sahne bağlam
+menüsünden ekran görüntüsü; kaynak menüsünde Deinterlace diyaloğu (Yadif + alt alan → menü "Deinterlace: Yadif");
+T-bar ortada bırakıldı (program değişmedi, kaydırıcı %50'de kaldı) → sona çekildi (program "Oyun", kaydırıcı sıfırlandı);
+Remux penceresi kayıt klasöründeki MKV'yi MP4'e çevirdi (ffprobe 5,0 s); Multiview canlı karesi, program kırmızı
+çerçeve; kaynak araç çubuğunda medya denetimleri ve konum.
+
+Testlerin yakaladıkları (asıl neden düzeltildi): Multiview'da iç içe sahnenin tuval dışına taşan öğeleri hücreden
+taşıyordu → ölçek filtresiyle öğe kaynak boyutunda dokuya çizdirildi (OBS multiview'unun kırpmasına eşdeğer);
+başsız sınama sunucusu ekran görüntülerini kullanıcının Videolar klasörüne yazacaktı → geçici köke yönlendirildi.

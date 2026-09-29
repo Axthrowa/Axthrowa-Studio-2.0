@@ -19,9 +19,17 @@
 | Ses girişi | wasapi_input_capture | mikrofon | UNVERIFIED | |
 | Ses çıkışı | wasapi_output_capture | masaustu | UNVERIFIED | çift ses uyarısı birim testiyle |
 | Uygulama ses yakalama | wasapi_process_output_capture | uygulama_sesi | UNVERIFIED | pencere + öncelik anahtarları doğrulandı |
-| Slayt gösterisi | slideshow_v2 | obs (içe aktarımda) | KISMİ | "Kaynak ekle" menüsünde yok; OBS'ten içe aktarılırsa çalışır |
+| Slayt gösterisi | slideshow (kurulu sürüm) | slayt | UYGULANDI | "Kaynak ekle" menüsünde klasör seçimiyle; tanım birim testiyle (göreli/olmayan klasör reddi); OBS'ten içe aktarılan slayt gösterisi `slayt` türüne eşlenir. Çalışma anı resim geçişi yalnız elle görüldü |
 | VLC, eklenti kaynakları | eklentinin türü | eklenti / obs | UYGULANDI | test eklentisi kaynağı + eksik eklenti yer tutucusu |
 
 Ortak: Özellikler (libobs özellik formu; parola alanları Kimlik Yöneticisinde), Filtreler, Dönüşüm, göster/gizle,
 kilit, yeniden adlandır, çoğalt (filtrelerle), var olanı başka sahneye ekle, kaynak durumu (hazır / bekliyor —
 boyut 0: pencere/oyun bulunamadı, aygıt yok, sayfa yüklenmedi). "Etkileşim" (tarayıcıya tıklama/klavye) yok.
+
+## Kaynak başına ek ayarlar
+
+| OBS ayarı | Durum | Kanıt |
+|---|---|---|
+| Deinterlace kipi (Kapalı, At, Retro, Karıştır, Karıştır 2x, Doğrusal, Doğrusal 2x, Yadif, Yadif 2x) + alan sırası | UYGULANDI | sinama (gidiş-dönüş, geçersiz ret), entegrasyon (koleksiyona yazılır, OBS içe aktarımı); görsel etki gerçek geçmeli kaynak olmadan UNVERIFIED |
+| Öğe karıştırma kipi ve karıştırma yöntemi (Varsayılan / sRGB kapalı) | UYGULANDI | sinama, entegrasyon, OBS içe aktarımı (`blend_type`, `blend_method`) |
+| Kaynak / sahne ekran görüntüsü | UYGULANDI | sinama (kaynak kendi boyutunda, sahne tuval boyutunda), entegrasyon |

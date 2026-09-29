@@ -131,3 +131,18 @@ hızı 24–144, örnekleme hızı ve kanallar, renk biçimi/uzayı/aralığı, 
 düşük gecikme, dinamik bit hızı, yeniden bağlanma), GPU kullanımı (Windows "GPU Engine" 3D sayaçları; sistem ve
 motor süreci; sayaç yoksa "ölçülemiyor").
 | Ekran görüntüsü doğrulaması | kısıtlı | Tarayıcı bölmesi 560×301; düzen DOM ölçümüyle doğrulandı |
+
+## OBS arayüz paritesi — 2026-09-29 turu
+
+Madde madde durum: [OBS_UI_PARITY_CHECKLIST](OBS_UI_PARITY_CHECKLIST.md). Bu turda kapananlar: ekran görüntüsü
+(çıkış, Studio Mode önizlemesi, sahne, kaynak), deinterlace, karıştırma yöntemi, ağdan düşen kare yüzdesi, Studio
+Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
+
+| Konu | Durum | Not |
+|---|---|---|
+| Yeniden muxla | kurulu OBS'e bağlı | FFmpeg kitaplıkları dağıtılmaz; kurulu OBS 32'nin `avformat-62`/`avcodec-62`/`avutil-60` DLL'leri kullanılır. Başka FFmpeg sürümünde (OBS güncellemesi) yapı düzeni doğrulanmadığı için remux açıkça reddedilir — sürüm eklenince yeniden doğrulanmalı |
+| Yeniden muxla: bozuk kayıt | kısmi | Yarım MKV'de (sınamada 200 KB'ye kesildi) FFmpeg dosya sonu bildirdi, okunabilen kısım MP4'e yazıldı; "yarım" işareti yalnız okuma hatayla biterse görünür |
+| Multiview | tek düzen | Üstte önizleme/program, altta ilk 8 sahne; OBS'teki diğer düzenler, etiket/güvenli alan seçenekleri ve "Multiview'da göster" yok |
+| T-bar | sabit geçişlerde yok | Kes ve Stinger (libobs "fixed" geçişler) T-bar ile sürüklenemez; OBS'te de devre dışıdır |
+| Deinterlace görsel etkisi | UNVERIFIED | Geçmeli kaynak (yakalama kartı) yok; ayar libobs'ta saklanır ve geri okunur |
+| Hızlı geçişler, birden çok adlandırılmış geçiş, Betikler, Altyazı, Backtrack, özel tarayıcı dock'u, Erişilebilirlik ayarları, mikser dikey düzeni | YOK | Kontrol listesinde satır satır |

@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { Headphones, Pause, Play, RotateCcw, Settings2, Volume2, VolumeX } from "lucide-react";
 import type { MotorCiftSes, MotorSesDurumu, MotorSesKanali, MotorSeviye } from "../../lib/api/motor";
-import { carpandanDb, dbdenCarpan, dbdenKonum, dbMetni, IZLEME_ADLARI, kirpiliyor, konumdanDb, olcerBolgesi, olcerYuzdesi } from "../../lib/sesMatematik";
+import { carpandanDb, dbdenCarpan, dbdenKonum, dbMetni, yuzdeMetni, IZLEME_ADLARI, kirpiliyor, konumdanDb, olcerBolgesi, olcerYuzdesi } from "../../lib/sesMatematik";
 import type { MenuOgesi } from "../ui/BaglamMenusu";
 
 export type MikserEylemleri = {
@@ -27,6 +27,15 @@ export type MikserEylemleri = {
 };
 
 const GIZLI_ANAHTAR = "yya.yayin.mikser-gizli.v1";
+const YUZDE_ANAHTAR = "yya.yayin.mikser-yuzde.v1";
+
+function yuzdeOku(): boolean {
+  try {
+    return localStorage.getItem(YUZDE_ANAHTAR) === "1";
+  } catch {
+    return false;
+  }
+}
 
 function gizliOku(): Set<string> {
   try {
@@ -95,7 +104,23 @@ function Olcer({ id, seviyeler }: { id: string; seviyeler: MutableRefObject<Map<
   );
 }
 
-function Kanal({ k, seviyeler, izAdlari, eylem, gizle }: { k: MotorSesKanali; seviyeler: MutableRefObject<Map<string, MotorSeviye>>; izAdlari: string[]; eylem: MikserEylemleri; gizle: () => void }) {
+function Kanal({
+  k,
+  seviyeler,
+  izAdlari,
+  eylem,
+  gizle,
+  yuzde,
+  yuzdeDegistir,
+}: {
+  k: MotorSesKanali;
+  seviyeler: MutableRefObject<Map<string, MotorSeviye>>;
+  izAdlari: string[];
+  eylem: MikserEylemleri;
+  gizle: () => void;
+  yuzde: boolean;
+  yuzdeDegistir: () => void;
+}) {
   const [konum, setKonum] = useState(() => dbdenKonum(carpandanDb(k.ses)));
   const surukleniyor = useRef(false);
   const zaman = useRef<number | undefined>(undefined);
@@ -107,7 +132,9 @@ function Kanal({ k, seviyeler, izAdlari, eylem, gizle }: { k: MotorSesKanali; se
     window.clearTimeout(zaman.current);
     zaman.current = window.setTimeout(() => eylem.ses(k, dbdenCarpan(konumdanDb(v))), 60);
   };
-  const db = carpandanDb(dbdenCarpan(konumdanDb(konum)));
+  const carpan = dbdenCarpan(konumdanDb(konum));
+  const db = carpandanDb(carpan);
+  const deger = yuzde ? yuzdeMetni(carpan) : dbMetni(db);
   const menu = (): MenuOgesi[] => [
     { etiket: k.sessiz ? "Sesi aç" : "Sustur", eylem: () => eylem.sessiz(k) },
     { etiket: "Gelişmiş ses özellikleri…", eylem: eylem.gelismis },
@@ -128,6 +155,7 @@ function Kanal({ k, seviyeler, izAdlari, eylem, gizle }: { k: MotorSesKanali; se
     "ayirici",
     { etiket: k.mono ? "Monoyu kapat" : "Mono'ya indir", eylem: () => eylem.mono(k) },
     { etiket: "Mikserde gizle", eylem: gizle },
+    { etiket: `${yuzde ? "☑" : "☐"} Yüzde olarak göster`, eylem: yuzdeDegistir },
   ];
   return (
     <div className="dt-kanal" data-soluk={k.etkin === false ? "true" : undefined} title={k.etkin === false ? "Programdaki sahnede değil" : undefined}>
@@ -139,7 +167,7 @@ function Kanal({ k, seviyeler, izAdlari, eylem, gizle }: { k: MotorSesKanali; se
           </span>
         )}
         {k.mono && <span className="dt-soluk text-[10px]">MONO</span>}
-        <span className="dt-sayi dt-soluk w-[62px] text-right text-[11px]">{k.sessiz ? "susturuldu" : dbMetni(db)}</span>
+        <span className="dt-sayi dt-soluk w-[62px] text-right text-[11px]">{k.sessiz ? "susturuldu" : deger}</span>
       </div>
       <Olcer id={k.id} seviyeler={seviyeler} />
       <div className="flex items-center gap-1">
@@ -147,7 +175,7 @@ function Kanal({ k, seviyeler, izAdlari, eylem, gizle }: { k: MotorSesKanali; se
           type="range"
           className="dt-fader min-w-0 flex-1"
           aria-label={`${k.ad} ses düzeyi`}
-          aria-valuetext={dbMetni(db)}
+          aria-valuetext={deger}
           min={0}
           max={1000}
           value={Math.round(konum * 1000)}
@@ -181,6 +209,16 @@ function Kanal({ k, seviyeler, izAdlari, eylem, gizle }: { k: MotorSesKanali; se
 export function MikserDock({ ses, seviyeler, canliBagli, eylem }: { ses: MotorSesDurumu | null; seviyeler: MutableRefObject<Map<string, MotorSeviye>>; canliBagli: boolean; eylem: MikserEylemleri }) {
   const [gizli, setGizli] = useState<Set<string>>(gizliOku);
   const [yokSay, setYokSay] = useState<Set<string>>(new Set());
+  const [yuzde, setYuzde] = useState(yuzdeOku);
+  const yuzdeDegistir = () =>
+    setYuzde((y) => {
+      try {
+        localStorage.setItem(YUZDE_ANAHTAR, y ? "0" : "1");
+      } catch {
+        /* yalnız bu oturumda */
+      }
+      return !y;
+    });
   const kanallar = (ses?.kaynaklar ?? []).filter((k) => !gizli.has(k.id));
   const uyarilar = (ses?.ciftSes ?? []).filter((c) => !yokSay.has(`${c.uygulama}|${c.masaustu}`));
   const gizleDegistir = (id: string, gizlensin: boolean) => {
@@ -228,7 +266,7 @@ export function MikserDock({ ses, seviyeler, canliBagli, eylem }: { ses: MotorSe
         {!ses && <p className="p-3 text-[12px] dt-soluk">Mikser okunuyor…</p>}
         {ses && kanallar.length === 0 && <p className="p-3 text-[12px] dt-soluk">Ses taşıyan kaynak yok. Mikrofon, masaüstü sesi, uygulama sesi ya da sesli medya ekleyin.</p>}
         {kanallar.map((k) => (
-          <Kanal key={k.id} k={k} seviyeler={seviyeler} izAdlari={ses?.izAdlari ?? []} eylem={eylem} gizle={() => gizleDegistir(k.id, true)} />
+          <Kanal key={k.id} k={k} seviyeler={seviyeler} izAdlari={ses?.izAdlari ?? []} eylem={eylem} gizle={() => gizleDegistir(k.id, true)} yuzde={yuzde} yuzdeDegistir={yuzdeDegistir} />
         ))}
       </div>
     </section>

@@ -35,6 +35,12 @@ export function dbMetni(db: number): string {
   return `${r > 0 ? "+" : r < 0 ? "−" : ""}${Math.abs(r).toFixed(1)} dB`;
 }
 
+/** OBS "Yüzde olarak göster": doğrusal çarpanın yüzdesi (0 dB = %100) */
+export function yuzdeMetni(carpan: number): string {
+  if (!Number.isFinite(carpan) || carpan <= 0) return "%0";
+  return `%${Math.round(carpan * 100)}`;
+}
+
 /** Ölçer çubuğunun yüzdesi (−60 dB … 0 dB) */
 export function olcerYuzdesi(db: number): number {
   if (!Number.isFinite(db) || db <= FADER_ALT_DB) return 0;

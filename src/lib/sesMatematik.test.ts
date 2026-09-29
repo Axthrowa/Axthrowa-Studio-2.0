@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canliAdres, canliSatir } from "./motorCanli";
-import { carpandanDb, dbdenCarpan, dbdenKonum, dbMetni, dengeMetni, kirpiliyor, konumdanDb, olcerBolgesi, olcerYuzdesi } from "./sesMatematik";
+import { carpandanDb, dbdenCarpan, dbdenKonum, dbMetni, dengeMetni, kirpiliyor, konumdanDb, olcerBolgesi, olcerYuzdesi, yuzdeMetni } from "./sesMatematik";
 
 describe("ses hesapları", () => {
   it("çarpan ↔ dB", () => {
@@ -40,5 +40,14 @@ describe("ses hesapları", () => {
     expect(canliSatir('{"olay":"seviyeler","seviyeler":[{"id":"m","tepe":[-6,-6],"ortalama":[-9,-9]}]}')).toMatchObject({ tur: "seviyeler" });
     expect(canliSatir("bozuk")).toBeNull();
     expect(canliSatir('{"olay":"cikis"}')).toBeNull();
+  });
+});
+
+describe("yüzde gösterimi", () => {
+  it("0 dB %100, −6 dB yaklaşık %50, sessiz %0", () => {
+    expect(yuzdeMetni(1)).toBe("%100");
+    expect(yuzdeMetni(dbdenCarpan(-6.02))).toBe("%50");
+    expect(yuzdeMetni(0)).toBe("%0");
+    expect(yuzdeMetni(Number.NaN)).toBe("%0");
   });
 });

@@ -971,6 +971,68 @@ impl Koleksiyon {
   }
 }
 
+/// Eksik dosya (OBS "Missing Files"): kaynağın ayarında işaret ettiği ama diskte olmayan dosya/klasör
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub struct EksikDosya {
+  pub kaynak: String,
+  pub ad: String,
+  /// Ayardaki yeri: `local_file`, `file` ya da `files/<sıra>`
+  pub alan: String,
+  pub yol: String,
+}
+
+/// Kaynakların dosya yollarını tarar. `var_mi` diskte varlık denetimi (sınamada sahte verilebilir).
+/// Kapsam: medya ve yerel tarayıcı sayfası (`local_file`, `is_local_file` false değilse), görsel (`file`),
+/// slayt gösterisi (`files[].value`). Eksik eklentili (`eksik`) kaynaklar da taranır.
+pub fn eksik_dosyalar(k: &Koleksiyon, var_mi: impl Fn(&Path) -> bool) -> Vec<EksikDosya> {
+  let mut v = Vec::new();
+  for x in &k.kaynaklar {
+    let a = &x.ayarlar;
+    let mut ekle = |alan: String, yol: &str| {
+      if !yol.trim().is_empty() && !var_mi(Path::new(yol)) {
+        v.push(EksikDosya { kaynak: x.id.clone(), ad: x.ad.clone(), alan, yol: yol.to_string() });
+      }
+    };
+    if a.get("is_local_file").and_then(Value::as_bool) != Some(false) {
+      if let Some(y) = a.get("local_file").and_then(Value::as_str) {
+        ekle("local_file".into(), y);
+      }
+    }
+    if let Some(y) = a.get("file").and_then(Value::as_str) {
+      ekle("file".into(), y);
+    }
+    for (i, f) in a.get("files").and_then(Value::as_array).into_iter().flatten().enumerate() {
+      if let Some(y) = f.get("value").and_then(Value::as_str) {
+        ekle(format!("files/{i}"), y);
+      }
+    }
+  }
+  v
+}
+
+/// Eksik dosyanın ayardaki yerine yeni yolu yazar; alan bilinmiyorsa `false`
+pub fn dosya_yolunu_yaz(ayarlar: &mut Value, alan: &str, yol: &str) -> bool {
+  if !ayarlar.is_object() {
+    *ayarlar = json!({});
+  }
+  match alan {
+    "local_file" | "file" => {
+      ayarlar[alan] = json!(yol);
+      true
+    }
+    _ => {
+      let Some(i) = alan.strip_prefix("files/").and_then(|n| n.parse::<usize>().ok()) else { return false };
+      match ayarlar.get_mut("files").and_then(Value::as_array_mut).and_then(|a| a.get_mut(i)) {
+        Some(f) if f.is_object() => {
+          f["value"] = json!(yol);
+          true
+        }
+        _ => false,
+      }
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   #[test]
@@ -1117,5 +1179,23 @@ mod tests {
     assert!(k.sahne_ref("s2").unwrap().ogeler.is_empty());
     assert!(k.kimlik_kullanimda("g1") && !k.kimlik_kullanimda("g2"));
     assert_eq!(k.yeni_kimlik("k"), format!("k{}", k.sayac));
+  }
+
+  #[test]
+  fn eksik_dosya_taramasi_ve_yeni_yol() {
+    let mut k = Koleksiyon::default();
+    k.kaynaklar.push(KaynakKaydi::yeni("k1", "medya", "ffmpeg_source", "Video", json!({"is_local_file": true, "local_file": "C:/yok/a.mp4"})));
+    k.kaynaklar.push(KaynakKaydi::yeni("k2", "gorsel", "image_source", "Logo", json!({"file": "C:/var/logo.png"})));
+    k.kaynaklar.push(KaynakKaydi::yeni("k3", "slayt", "slideshow", "Slayt", json!({"files": [{"value": "C:/var/k"}, {"value": "C:/yok/k2"}]})));
+    k.kaynaklar.push(KaynakKaydi::yeni("k4", "tarayici", "browser_source", "Web", json!({"is_local_file": false, "local_file": "C:/yok/x.html", "url": "https://ornek"})));
+    let var_mi = |p: &Path| p.to_string_lossy().contains("/var/");
+    let e = eksik_dosyalar(&k, var_mi);
+    let ozet: Vec<(&str, &str)> = e.iter().map(|x| (x.kaynak.as_str(), x.alan.as_str())).collect();
+    assert_eq!(ozet, [("k1", "local_file"), ("k3", "files/1")], "URL kipindeki tarayıcının eski yerel yolu sayılmaz");
+    let mut a = k.kaynaklar[2].ayarlar.clone();
+    assert!(dosya_yolunu_yaz(&mut a, "files/1", "C:/var/k2"));
+    assert_eq!(a["files"][1]["value"], "C:/var/k2");
+    assert!(!dosya_yolunu_yaz(&mut a, "files/9", "x"));
+    assert!(!dosya_yolunu_yaz(&mut a, "url", "x"));
   }
 }

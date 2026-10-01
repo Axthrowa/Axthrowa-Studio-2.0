@@ -2875,3 +2875,60 @@ async fn remux_kuyrugu_mkv_mp4() {
   assert_eq!(post("/api/motor/remux", json!({"dosyalar": [&girdi]})).await.status(), 409, "üzerine yazılmaz");
   assert!(post("/api/motor/remux/temizle", json!({})).await.status().is_success());
 }
+
+/// Eksik dosyalar: taşınan görsel listelenir, klasörde aranınca bulunur, yeni yol yazılınca liste boşalır
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_eksik_dosyalar_ara_ve_duzelt() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  // 1×1 PNG
+  const PNG: &[u8] = &[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
+    0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0xF8, 0xCF, 0xC0, 0xF0, 0x1F, 0x00, 0x05, 0x00,
+    0x01, 0xFF, 0x89, 0x99, 0x3D, 0x1D, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+  ];
+  let eski = h.root.join("eski");
+  let yeni = h.root.join("yeni");
+  std::fs::create_dir_all(&eski).unwrap();
+  std::fs::create_dir_all(&yeni).unwrap();
+  let dosya = eski.join("logo.png");
+  std::fs::write(&dosya, PNG).unwrap();
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let liste = || {
+    let c = h.client.clone();
+    let url = format!("{}/api/motor/eksik-dosyalar", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  tamam("/api/motor/baslat", json!({})).await;
+  let id = tamam("/api/motor/kaynak", json!({"tur": "gorsel", "deger": dosya, "ad": "Logo"})).await["id"].as_str().unwrap().to_string();
+  assert!(liste().await["eksikler"].as_array().unwrap().is_empty());
+  std::fs::rename(&dosya, yeni.join("logo.png")).unwrap();
+  let e = liste().await;
+  let satir = e["eksikler"].as_array().unwrap().iter().find(|x| x["kaynak"] == id.as_str()).cloned().unwrap();
+  assert_eq!(satir["alan"], "file");
+  let o = tamam("/api/motor/eksik-dosyalar", json!({"eylem": "ara", "klasor": yeni})).await;
+  let oneri = o["oneriler"].as_array().unwrap().iter().find(|x| x["kaynak"] == id.as_str()).cloned().unwrap();
+  let r = h.client.post(format!("{}/api/motor/eksik-dosyalar", h.base)).json(&json!({"eylem": "duzelt", "kaynak": id, "alan": "file", "yol": "goreli.png"})).send().await.unwrap();
+  assert_eq!(r.status(), 400, "göreli yol");
+  let r = tamam("/api/motor/eksik-dosyalar", json!({"eylem": "duzelt", "kaynak": id, "alan": "file", "yol": oneri["yol"]})).await;
+  assert_eq!(r["kalan"], 0);
+  let oz = h.client.get(format!("{}/api/motor/kaynak/ozellikler?id={id}", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert!(oz["ayarlar"]["file"].as_str().unwrap().ends_with("yeni/logo.png"), "{}", oz["ayarlar"]["file"]);
+  assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
+}

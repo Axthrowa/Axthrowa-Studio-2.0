@@ -33,6 +33,7 @@ mod local_guard;
 mod koleksiyon_api;
 mod motor_api;
 mod remux_api;
+mod eksik_dosya_api;
 mod profil_api;
 mod motor_sahne_api;
 mod motor_ses_api;
@@ -210,7 +211,8 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(destek_api::router())
     .merge(eklenti_api::router())
     .merge(obsws::router())
-    .merge(remux_api::router());
+    .merge(remux_api::router())
+    .merge(eksik_dosya_api::router());
 
   if let Some(res_dist) = resonance_dist {
     let resonance_index = res_dist.join("index.html");

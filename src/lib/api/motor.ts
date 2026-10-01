@@ -390,6 +390,9 @@ export const motorApi = {
   }) => istek<{ ok: boolean; id?: string; eklenen?: number; atlanan?: number }>("/api/motor/filtre", govde),
   ekranGoruntusu: (tuval = "ana", kaynak?: string) =>
     istek<{ ok: boolean; yol: string; genislik: number; yukseklik: number }>("/api/motor/ekran-goruntusu", { tuval, kaynak }),
+  eksikDosyalar: () => istek<{ eksikler: EksikDosya[] }>("/api/motor/eksik-dosyalar"),
+  eksikDosyaAra: (klasor: string) => istek<{ oneriler: { kaynak: string; alan: string; yol: string }[] }>("/api/motor/eksik-dosyalar", { eylem: "ara", klasor }),
+  eksikDosyaDuzelt: (kaynak: string, alan: string, yol: string) => istek<{ ok: boolean; kalan: number }>("/api/motor/eksik-dosyalar", { eylem: "duzelt", kaynak, alan, yol }),
   remux: () => istek<RemuxDurumu>("/api/motor/remux"),
   remuxEkle: (dosyalar: string[], bicim: "mp4" | "mov" | "mkv") => istek<{ ok: boolean; eklenen: number }>("/api/motor/remux", { dosyalar, bicim }),
   remuxIptal: () => istek<{ ok: boolean }>("/api/motor/remux/iptal", {}),
@@ -525,3 +528,5 @@ export type RemuxDurumu = { isler: RemuxIsi[]; calisiyor: boolean; kayitKlasoru:
 
 export type MultiviewHucresi = { tur: "onizleme" | "program" | "sahne"; sahne?: string; ad?: string; kutu: [number, number, number, number] };
 export type MultiviewDuzeni = { tuval: string; genislik: number; yukseklik: number; hucreler: MultiviewHucresi[] };
+
+export type EksikDosya = { kaynak: string; ad: string; alan: string; yol: string };

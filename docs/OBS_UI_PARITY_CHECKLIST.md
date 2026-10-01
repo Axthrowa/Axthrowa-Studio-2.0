@@ -50,7 +50,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Docklar › onay kutuları, kilitle, sekme birleştir/ayır, düzeni sıfırla, ayrı pencere | VAR | tp | Özel tarayıcı dock'u yok |
 | Profil › liste, Yeni, Çoğalt, Yeniden adlandır, Kaldır (yedeğe), Dışa aktar | VAR | it:motor_profil_… | Profil içe aktarma yok |
 | Sahne Koleksiyonu › liste, Yeni, yönetici (çoğalt, adlandır, içe/dışa aktar, OBS JSON'dan al) | VAR | it:motor_v2_…, vt | Eşlenemeyen kaynak "eksik" yer tutucu olur |
-| Sahne Koleksiyonu › Eksik dosyaları denetle | YOK | | |
+| Sahne Koleksiyonu › Eksik dosyaları denetle | VAR | it:motor_eksik_dosyalar_ara_ve_duzelt, tp | Medya, görsel, slayt, yerel tarayıcı sayfası; satır başına yeni yol, "Klasörde ara" |
 | Araçlar › Otomatik yapılandırma sihirbazı, Çıkış zamanlayıcısı | VAR | it:motor_sihirbaz_…, vt:cikisZamanlayicisi | Bant genişliği testi izinsiz yapılmaz (yok) |
 | Araçlar › WebSocket sunucu ayarları | VAR | it:obs_websocket_uyumlu_sunucu | Yayın Ayarları › Uzaktan denetim; 127.0.0.1 |
 | Araçlar › Betikler | DESTEKLENMİYOR | | OBS betik altyapısı (obs-scripting, Lua/Python) ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
@@ -172,7 +172,7 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 | İstatistikler | KISMİ | vt:kayitSuresi, tp | Disk boş alanı ve kalan kayıt süresi VAR (sınamada 40,8 GB / 5256 kbps → 18 sa 32 dk); "sıfırla" yok |
 | Otomatik yapılandırma sihirbazı | VAR | it:motor_sihirbaz_yerel_kodlama_sinamasi | Bant genişliği testi yok (izin gerektirir) |
 | Remux penceresi | VAR | it, tp | |
-| Eksik dosyalar penceresi | YOK | | Eksik eklenti yer tutucusu var |
+| Eksik dosyalar penceresi | VAR | it, tp | Yeni yol mutlak ve diskte olmalı; eksik eklentili kaynakta yalnız kayıt güncellenir |
 | Günlük görüntüleyici, çökme sonrası güvenli kip, çıkış zamanlayıcısı | VAR | it, vt | |
 | Betikler penceresi | DESTEKLENMİYOR | | Bkz. Araçlar › Betikler |
 

@@ -35,6 +35,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/studyo", post(api_studyo))
     .route("/api/motor/gecis-listesi", post(api_gecis_listesi))
     .route("/api/motor/multiview", post(api_multiview))
+    .route("/api/motor/kaynak-tuvali", post(api_kaynak_tuvali))
     .route("/api/motor/oge", post(api_oge))
     .route("/api/motor/kaynak-islem", post(api_kaynak_islem))
 }
@@ -532,6 +533,35 @@ async fn api_gecis_listesi(
   koleksiyonu_yaz(&state)?;
   audit(&state, &actor, "MOTOR_TRANSITION_LIST", json!({"eylem": g.eylem, "id": g.id})).await;
   Ok(Json(sonuc))
+}
+
+#[derive(Deserialize)]
+struct KaynakTuvaliGovdesi {
+  id: String,
+  /// ac | kapat
+  eylem: String,
+}
+
+/// Sahne/kaynak projektörü: kaynağın kendi tuvalini açar (canlı kare adı `kaynak-<kimlik>`) ya da kapatır
+async fn api_kaynak_tuvali(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  Json(g): Json<KaynakTuvaliGovdesi>,
+) -> ApiResult {
+  authorize(&state, &addr, &headers, "broadcast.read").await?;
+  motor_calisiyor(&state).await?;
+  if !kol::gecerli_kimlik(&g.id) {
+    return Err(gecersiz("geçersiz kimlik".into()));
+  }
+  match g.eylem.as_str() {
+    "ac" => Ok(Json(komut(&state, json!({"komut": "kaynak_tuvali.ac", "id": g.id})).await?)),
+    "kapat" => {
+      komut(&state, json!({"komut": "kaynak_tuvali.kapat", "id": g.id})).await?;
+      Ok(Json(json!({"ok": true})))
+    }
+    e => Err(gecersiz(format!("bilinmeyen eylem: {e}"))),
+  }
 }
 
 #[derive(Deserialize)]

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { gorunurKonum, type Monitor } from "./projektor";
-import { projektorTuvali } from "../routes/ProjektorSayfasi";
+import { projektorKaynagi, projektorTuvali } from "../routes/ProjektorSayfasi";
 import { dockKimligi } from "../routes/BagimsizDockSayfasi";
 
 describe("projektör", () => {
@@ -25,5 +25,15 @@ describe("projektör", () => {
     expect(gorunurKonum({ x: -500, y: 500 }, m)).toEqual({ x: -500, y: 500 });
     expect(gorunurKonum({ x: 5000, y: 100 }, m)).toEqual({ x: 80, y: 80 });
     expect(gorunurKonum({ x: 5, y: 5 }, [])).toEqual({ x: 5, y: 5 });
+  });
+});
+
+describe("sahne/kaynak projektörü kimliği", () => {
+  it("motor kimliği kuralına uyan kaynak kabul edilir", () => {
+    expect(projektorKaynagi("?kaynak=k12&ad=Kamera")).toBe("k12");
+    expect(projektorKaynagi("?kaynak=sahne-ana")).toBe("sahne-ana");
+    expect(projektorKaynagi("?kaynak=../x")).toBeNull();
+    expect(projektorKaynagi("?kaynak=K1")).toBeNull();
+    expect(projektorKaynagi("")).toBeNull();
   });
 });

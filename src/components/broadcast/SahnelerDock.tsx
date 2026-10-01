@@ -20,6 +20,7 @@ export type SahneEylemleri = {
   /** Sahne filtreleri (verilmezse menüde görünmez — ayrı pencere dock'u) */
   filtreler?: (s: MotorSahneOzeti) => void;
   ekranGoruntusu?: (s: MotorSahneOzeti) => void;
+  projektor?: (s: MotorSahneOzeti) => void;
   menuAc: (e: { clientX: number; clientY: number; preventDefault?: () => void }, o: MenuOgesi[]) => void;
 };
 
@@ -70,6 +71,7 @@ export function SahnelerDock({
     { etiket: "Yeniden adlandır", kisayol: "F2", eylem: () => eylem.adlandir(s) },
     ...(eylem.filtreler ? [{ etiket: "Filtreler…", eylem: () => eylem.filtreler?.(s) } as MenuOgesi] : []),
     ...(eylem.ekranGoruntusu ? [{ etiket: "Ekran görüntüsü (sahne)", eylem: () => eylem.ekranGoruntusu?.(s) } as MenuOgesi] : []),
+    ...(eylem.projektor ? [{ etiket: "Projektör (pencere)", eylem: () => eylem.projektor?.(s) } as MenuOgesi] : []),
     { etiket: "Kaldır", kisayol: "Del", tehlikeli: true, devreDisi: sahneler.length <= 1 || s.id === program, eylem: () => eylem.sil(s) },
     "ayirici",
     { etiket: "Yukarı taşı", devreDisi: sahneler[0]?.id === s.id, eylem: () => tasi(s.id, -1) },

@@ -69,7 +69,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Studio Mode'da tıklama önizlemeye alır | VAR | tp | |
 | Bağlam: Çoğalt, Yeniden adlandır (F2), Kaldır (Del), Sıra, Filtreler, Geçişi geçersiz kıl | VAR | it, tp | |
 | Bağlam: Ekran görüntüsü | VAR | sinama, it, tp | |
-| Bağlam: Projektör, Multiview'da göster | KISMİ | — | Projektör Görünüm menüsünden (program/önizleme); sahne başına projektör ve multiview seçimi yok |
+| Bağlam: Projektör (pencere) | VAR | sinama, it | Sahne tuval boyutunda; tam ekran sahne projektörü yok |
+| Bağlam: Multiview'da göster | YOK | | |
 | Sahne başına kısayol | VAR | it:motor_kisayol_eylemleri_… | Kısayollar sayfası |
 
 ## 4.4 Kaynaklar dock'u
@@ -87,7 +88,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Bağlam: Kaynak ekran görüntüsü | VAR | sinama, it | |
 | Bağlam: Etkileşim | VAR | sinama, tp | Tarayıcı kaynağı |
 | Bağlam: Kaynak rengi (etiket) | VAR | it, tp | 8 hazır renk + özel + yok; listede satırın solunda şerit |
-| Bağlam: Kaynak projektörü, Multiview'da göster | YOK | | |
+| Bağlam: Kaynak projektörü | VAR | sinama, it, tp | Kaynak kendi boyutunda, pencere kapanınca motor tuvali bırakılır |
+| Bağlam: Multiview'da göster | YOK | | |
 
 ## 4.5 Önizleme etkileşimi
 
@@ -167,7 +169,7 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 |---|---|---|---|
 | Filtreler penceresi (sırala, göz, kopyala/yapıştır) | VAR | sinama, it | Ses/video iki ayrı liste yerine tek liste + tür etiketi |
 | Özellikler penceresi (genel özellik formu, Varsayılanlar) | VAR | it | Varsayılanlar onayla; parolalar Kimlik Yöneticisinde korunur ve yeniden uygulanır |
-| Projektörler (pencere, tam ekran monitör) | VAR | tp | Kaynak/sahne projektörü yok |
+| Projektörler (pencere, tam ekran monitör, sahne, kaynak) | VAR | sinama, it, tp | Sahne/kaynak projektörü yalnız pencere |
 | Multiview | VAR | sinama, it, tp | Tek düzen |
 | İstatistikler | KISMİ | vt:kayitSuresi, tp | Disk boş alanı ve kalan kayıt süresi VAR (sınamada 40,8 GB / 5256 kbps → 18 sa 32 dk); "sıfırla" yok |
 | Otomatik yapılandırma sihirbazı | VAR | it:motor_sihirbaz_yerel_kodlama_sinamasi | Bant genişliği testi yok (izin gerektirir) |

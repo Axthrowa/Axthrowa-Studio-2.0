@@ -71,6 +71,7 @@ impl Motor {
       return Err("Studio Mode önizlemesindeki sahne silinemez".into());
     }
     self.multiviewden_cikar(id);
+    self.kaynak_tuvali_kapat(id);
     // Bu sahnenin öğeleri ve başka sahnelerde bu sahneyi kaynak olarak kullanan öğeler
     let dus: Vec<String> = self
       .ogeler

@@ -845,6 +845,15 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   let mv_yabanci_red = m.multiview_ac("ana", &["dikey".to_string()]).is_err();
   m.multiview_kapat("ana");
   let mv_kapandi = m.onizleme_png("multiview-ana", 960).is_err();
+  // Sahne/kaynak projektörü tuvali: kaynak kendi boyutunda canlı kare verir; kapatınca kare istenemez
+  let pj = m.kaynak_tuvali_ac("yazi");
+  let _ = m.onizleme_png("kaynak-yazi", 480);
+  std::thread::sleep(Duration::from_millis(700));
+  let pj_kare = m.onizleme_png("kaynak-yazi", 480).ok().flatten().is_some();
+  let pj_yine = m.kaynak_tuvali_ac("yazi").map(|v| v["tuval"].clone());
+  m.kaynak_tuvali_kapat("yazi");
+  let pj_kapali = m.onizleme_png("kaynak-yazi", 480).is_err();
+  let pj_yok = m.kaynak_tuvali_ac("boyle-kaynak-yok").is_err();
   // Sahne ve kaynak ekran görüntüsü: geçici özel tuvalde, sahne tuval boyutunda / kaynak kendi boyutunda
   let sahne_goruntu = m.kaynak_ekran_goruntusu("dikey", &dosya("ekran-sahne-dikey.png"));
   let yazi_boyu = m.sahne_ogeleri("yatay")?.into_iter().find(|o| o.kaynak == "yazi").map(|o| (o.genislik, o.yukseklik));
@@ -1103,6 +1112,11 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
       && rm_sonra.cozme_hatasi == 0
       && remux_ustune_red,
     format!("{remux:?}; kare {} → {}, süre {:.2} → {:.2}, çözme hatası {}, üzerine yazma reddi {remux_ustune_red}", rm_once.kare, rm_sonra.kare, rm_once.sure_sn, rm_sonra.sure_sn, rm_sonra.cozme_hatasi),
+  );
+  ekle(
+    "sahne/kaynak projektörü tuvali: kare verir, ikinci açılış aynı tuval, kapanınca biter",
+    pj.as_ref().is_ok_and(|v| v["tuval"] == "kaynak-yazi") && pj_kare && pj_yine.as_ref().is_ok_and(|t| t == "kaynak-yazi") && pj_kapali && pj_yok,
+    format!("{pj:?}; kare {pj_kare}; kapandı {pj_kapali}; olmayan kaynak reddi {pj_yok}"),
   );
   ekle(
     "multiview: önizleme, program ve sahne hücreleri işlenir; başka tuvalin sahnesi reddedilir",

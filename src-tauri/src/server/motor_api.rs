@@ -72,6 +72,9 @@ pub(crate) fn onizleme_tuvali_gecerli(t: &str) -> bool {
   if let Some(k) = t.strip_prefix("multiview-") {
     return tuval_boyutu(k).is_some();
   }
+  if let Some(k) = t.strip_prefix("kaynak-") {
+    return kol::gecerli_kimlik(k);
+  }
   tuval_boyutu(t.strip_prefix("studyo-").unwrap_or(t)).is_some()
 }
 
@@ -1671,7 +1674,7 @@ async fn api_ekran_goruntusu(
   let actor = authorize(&state, &addr, &headers, "broadcast.record").await?;
   motor_calisiyor(&state).await?;
   let tuval = g.tuval.unwrap_or_else(|| "ana".into());
-  if tuval.starts_with("etkilesim-") || tuval.starts_with("multiview-") || !onizleme_tuvali_gecerli(&tuval) {
+  if ["etkilesim-", "multiview-", "kaynak-"].iter().any(|o| tuval.starts_with(o)) || !onizleme_tuvali_gecerli(&tuval) {
     return Err(gecersiz(format!("bilinmeyen tuval: {tuval}")));
   }
   if let Some(k) = &g.kaynak {

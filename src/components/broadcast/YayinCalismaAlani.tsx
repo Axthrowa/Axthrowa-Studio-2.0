@@ -796,6 +796,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       { etiket: "Filtreleri kopyala", devreDisi: o.tur === "sahne", eylem: () => setFiltrePanosu({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
       { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || filtrePanosu.kaynak === o.kaynak || o.tur === "sahne", eylem: () => filtreleriYapistir(o.kaynak) },
       { etiket: "Kaynak rengi…", devreDisi: !k || o.grup || o.tur === "sahne", eylem: () => setKaynakRengi(o) },
+      { etiket: "Projektör (pencere)", devreDisi: o.grup || o.durum === "bekliyor", eylem: () => kaynakProjektoru(o.kaynak, o.ad ?? o.kaynak) },
       { etiket: "Ekran görüntüsü (kaynak)", devreDisi: !k || !!k.eksik || o.grup || o.durum === "bekliyor", eylem: () => ekranGoruntusu(tuval, o.kaynak) },
       "ayirici",
       {
@@ -982,6 +983,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   // ── Projektör ──
   const projektor = (hedef: string, monitor?: Monitor) =>
     void ayriPencere(`projektor-${hedef}${monitor ? "-tam" : ""}`, `/projektor?tuval=${encodeURIComponent(hedef)}`, `Projektör — ${hedef}`, { monitor, genislik: hedef.endsWith("dikey") ? 540 : 960, yukseklik: hedef.endsWith("dikey") ? 960 : 540 }).catch((e) =>
+      onToast(`Projektör açılamadı: ${hataMetni(e)}`)
+    );
+  /** Sahne/kaynak projektörü (pencere): motor kaynağı kendi tuvalinde işler */
+  const kaynakProjektoru = (id: string, ad: string) =>
+    void ayriPencere(`projektor-kaynak-${id}`, `/projektor?kaynak=${encodeURIComponent(id)}&ad=${encodeURIComponent(ad)}`, `Projektör — ${ad}`, { genislik: 960, yukseklik: 540 }).catch((e) =>
       onToast(`Projektör açılamadı: ${hataMetni(e)}`)
     );
   const projektorMenusu = (): MenuOgesi[] => [
@@ -1224,6 +1230,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               gecisGecersiz: (s, g: MotorGecis | null) => void yap("Geçiş ayarlanamadı", () => motorApi.sahneIslem({ eylem: "gecis", id: s.id, gecis: g })),
               filtreler: (s) => sahipFiltreAc(s.id, s.ad),
               ekranGoruntusu: (s) => ekranGoruntusu(tuval, s.id),
+              projektor: (s) => kaynakProjektoru(s.id, s.ad),
               menuAc: menu.ac,
             }}
           />

@@ -373,6 +373,7 @@ pub struct Motor {
   /// Kaynak → etkileşim penceresinin önizleme tuvali (bkz. `etkilesim.rs`)
   pub(crate) etkilesim_tuvalleri: HashMap<String, Kanvas>,
   pub(crate) multiviewler: HashMap<String, crate::multiview::Multiview>,
+  pub(crate) kaynak_tuvalleri: HashMap<String, Kanvas>,
   /// Çıktı → son duraklat/sürdür zamanı (art arda geçişleri aralamak için)
   pub(crate) duraklatma_zamani: HashMap<String, std::time::Instant>,
 }
@@ -527,6 +528,7 @@ impl Motor {
       cpu: unsafe { (api().os_cpu_usage_info_start)() },
       etkilesim_tuvalleri: HashMap::new(),
       multiviewler: HashMap::new(),
+      kaynak_tuvalleri: HashMap::new(),
       duraklatma_zamani: HashMap::new(),
     };
     motor.ses.baslat(motor.olay.clone());
@@ -788,6 +790,8 @@ impl Motor {
         self.etkilesim_tuvalleri.get(k).ok_or("etkileşim penceresi açık değil")?
       } else if let Some(k) = tuval.strip_prefix(crate::multiview::ONEK) {
         &self.multiviewler.get(k).ok_or("multiview açık değil")?.kanvas
+      } else if let Some(k) = tuval.strip_prefix(crate::multiview::KAYNAK_ONEK) {
+        self.kaynak_tuvalleri.get(k).ok_or("projektör tuvali açık değil")?
       } else {
         self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?
       };
@@ -857,6 +861,7 @@ impl Motor {
   /// Kaynağı tüm sahnelerden çıkarır ve serbest bırakır.
   pub fn kaynak_sil(&mut self, id: &str) -> Result<(), String> {
     self.etkilesim_kapat(id);
+    self.kaynak_tuvali_kapat(id);
     if !self.kaynaklar.contains_key(id) {
       return Err(format!("kaynak yok: {id}"));
     }
@@ -960,6 +965,7 @@ impl Motor {
     let a = api();
     self.etkilesimleri_kapat();
     self.multiviewleri_kapat();
+    self.kaynak_tuvallerini_kapat();
     let tuvaller: Vec<String> = self.studyo.keys().cloned().collect();
     for t in tuvaller {
       let _ = self.studyo_kapat(&t);
@@ -1631,6 +1637,7 @@ impl Motor {
   pub fn kapat(mut self) {
     self.etkilesimleri_kapat();
     self.multiviewleri_kapat();
+    self.kaynak_tuvallerini_kapat();
     let a = api();
     // Akışlar ve ses ölçerleri önce: iş parçacıkları libobs nesnelerine dokunmayı bıraksın
     self.akislari_kapat();

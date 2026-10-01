@@ -2816,6 +2816,16 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   assert!(sl["hizliGecisler"].as_array().unwrap().is_empty(), "silinen geçişin hızlı geçişi de düşer");
   tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "kapat"})).await;
 
+  // Sahne/kaynak projektörü tuvali: açılır, canlı/PNG kare verir, kapanır; geçersiz kimlik 400
+  let pj = tamam("/api/motor/kaynak-tuvali", json!({"id": oyun, "eylem": "ac"})).await;
+  assert_eq!(pj["tuval"], format!("kaynak-{oyun}"));
+  assert_eq!((pj["genislik"].as_u64(), pj["yukseklik"].as_u64()), (Some(1920), Some(1080)));
+  let url = format!("{}/api/motor/onizleme?tuval=kaynak-{oyun}&genislik=320", h.base);
+  let _ = h.client.get(&url).send().await.unwrap();
+  tokio::time::sleep(std::time::Duration::from_millis(900)).await;
+  assert_eq!(h.client.get(&url).send().await.unwrap().status(), 200, "projektör karesi");
+  tamam("/api/motor/kaynak-tuvali", json!({"id": oyun, "eylem": "kapat"})).await;
+  assert_eq!(h.client.post(format!("{}/api/motor/kaynak-tuvali", h.base)).json(&json!({"id": "../x", "eylem": "ac"})).send().await.unwrap().status(), 400);
   // Multiview: hücre düzeni sahne adlarıyla, canlı kare tuvali; kapatınca kare istenemez
   let mv = tamam("/api/motor/multiview", json!({"tuval": "ana", "eylem": "ac"})).await;
   assert_eq!(mv["tuval"], "multiview-ana");

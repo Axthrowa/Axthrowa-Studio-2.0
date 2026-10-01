@@ -170,6 +170,62 @@ impl Motor {
   }
 }
 
+/// Sahne/kaynak projektörü tuvali öneki (`kaynak-<kimlik>`)
+pub const KAYNAK_ONEK: &str = "kaynak-";
+
+impl Motor {
+  /// Sahne ya da kaynak projektörü (OBS bağlam menüsü › Projektör): kaynağı kendi boyutunda (sahneyi tuval
+  /// boyutunda) özel, etkinleştirmeyen bir tuvalde işler; önizleme/canlı kare altyapısı `kaynak-<kimlik>` adıyla
+  /// kullanır. Zaten açıksa aynı tuval döner.
+  pub fn kaynak_tuvali_ac(&mut self, id: &str) -> Result<Value, String> {
+    let ad = format!("{KAYNAK_ONEK}{id}");
+    if let Some(t) = self.kaynak_tuvalleri.get(id) {
+      return Ok(json!({"tuval": ad, "genislik": t.genislik, "yukseklik": t.yukseklik}));
+    }
+    let (kaynak, g, y) = if let Some(s) = self.sahneler.get(id) {
+      let k = self.kanvaslar.get(&s.kanvas).ok_or("sahnenin tuvali yok")?;
+      (unsafe { (api().obs_scene_get_source)(s.ptr) }, k.genislik, k.yukseklik)
+    } else {
+      let k = *self.kaynaklar.get(id).ok_or_else(|| format!("kaynak ya da sahne yok: {id}"))?;
+      (k, unsafe { (api().obs_source_get_width)(k) }, unsafe { (api().obs_source_get_height)(k) })
+    };
+    if g == 0 || y == 0 {
+      return Err("kaynağın görüntüsü yok (boyutu 0)".into());
+    }
+    let (g, y) = (g.max(16).div_ceil(2) * 2, y.max(16).div_ceil(2) * 2);
+    crate::motor::gecerli_boyut(g, y, self.ana.fps)?;
+    let mut ovi = video_bilgisi(self.ana.boyutla(g, y), c"libobs-d3d11");
+    let ad_c = cs(&format!("Projektör ({id})"));
+    let ptr = unsafe { (api().obs_canvas_create_private)(ad_c.as_ptr(), &mut ovi, obs::CANVAS_PREVIEW) };
+    if ptr.is_null() {
+      return Err("projektör tuvali oluşturulamadı".into());
+    }
+    unsafe { (api().obs_canvas_set_channel)(ptr, 0, kaynak) };
+    self.kaynak_tuvalleri.insert(id.into(), Kanvas { ptr, genislik: g, yukseklik: y });
+    Ok(json!({"tuval": ad, "genislik": g, "yukseklik": y}))
+  }
+
+  pub fn kaynak_tuvali_kapat(&mut self, id: &str) {
+    let ad = format!("{KAYNAK_ONEK}{id}");
+    self.akis_durdur(&ad);
+    self.onizlemeler.remove(&ad);
+    if let Some(t) = self.kaynak_tuvalleri.remove(id) {
+      unsafe {
+        (api().obs_canvas_set_channel)(t.ptr, 0, std::ptr::null_mut());
+        (api().obs_canvas_remove)(t.ptr);
+        (api().obs_canvas_release)(t.ptr);
+      }
+    }
+  }
+
+  pub(crate) fn kaynak_tuvallerini_kapat(&mut self) {
+    let hepsi: Vec<String> = self.kaynak_tuvalleri.keys().cloned().collect();
+    for k in hepsi {
+      self.kaynak_tuvali_kapat(&k);
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

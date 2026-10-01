@@ -220,6 +220,11 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       let sahneler: Vec<String> = istek.get("sahneler").and_then(Value::as_array).map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect()).unwrap_or_default();
       m.multiview_ac(metin(istek, "tuval")?, &sahneler)?
     }
+    "kaynak_tuvali.ac" => m.kaynak_tuvali_ac(id()?)?,
+    "kaynak_tuvali.kapat" => {
+      m.kaynak_tuvali_kapat(id()?);
+      json!({})
+    }
     "multiview.kapat" => {
       m.multiview_kapat(metin(istek, "tuval")?);
       json!({})

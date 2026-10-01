@@ -347,6 +347,8 @@ export const motorApi = {
   ogeGecis: (oge: string, goster: boolean, gecis: MotorOgeGecisi | null) =>
     istek<{ ok: boolean }>("/api/motor/oge", { oge, eylem: "gecis", goster, gecis }),
   /** Etkileşim penceresi: `ac` kaynağın tek başına görüntüsünü (`etkilesim-<kaynak>` tuvali) hazırlar */
+  kaynakTuvali: (id: string, eylem: "ac" | "kapat") =>
+    istek<{ tuval: string; genislik: number; yukseklik: number; ok?: boolean }>("/api/motor/kaynak-tuvali", { id, eylem }),
   multiview: (tuval: string, eylem: "ac" | "kapat") => istek<MultiviewDuzeni>("/api/motor/multiview", { tuval, eylem }),
   etkilesimAc: (kaynak: string) => istek<{ tuval: string; genislik: number; yukseklik: number }>("/api/motor/etkilesim", { kaynak, eylem: "ac" }),
   etkilesimKapat: (kaynak: string) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "kapat" }),

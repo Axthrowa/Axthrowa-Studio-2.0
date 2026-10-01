@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MotorSahneOgesi } from "./api/motor";
-import { altanSira, boyutlandir, duzListe, kirpilabilir, kirpSurukle, noktadakiOge, noktaKutuda, ogeKutusu, sahneAgaci, tuvaleGore, yapistir, kutuMerkezi, merkezdenDondur } from "./sahneAgaci";
+import { altanSira, boyutlandir, duzListe, kirpilabilir, kirpSurukle, noktadakiOge, noktaKutuda, ogeKutusu, sahneAgaci, tuvaleGore, yapistir, kutuMerkezi, merkezdenDondur, bosluklar } from "./sahneAgaci";
 
 const o = (oge: string, ek: Partial<MotorSahneOgesi> = {}): MotorSahneOgesi => ({
   oge,
@@ -145,5 +145,16 @@ describe("döndürme tutamacı", () => {
   it("imleç üstteyse 0°, adımlı yuvarlama", () => {
     expect(merkezdenDondur(k, [200, 0]).aci).toBeCloseTo(0);
     expect(merkezdenDondur(k, [300, 60], 15).aci % 15).toBe(0);
+  });
+});
+
+describe("boşluk yardımcıları", () => {
+  it("dört kenara mesafe, taşan ve döndürülmüş kutuda yok", () => {
+    const k = { x: 100, y: 50, g: 200, h: 100, aci: 0, ox: 100, oy: 50 };
+    const b = bosluklar(k, [1920, 1080]);
+    expect(b.map((x) => x.deger)).toEqual([100, 1620, 50, 930]);
+    expect(b[0]).toMatchObject({ x1: 0, x2: 100, y1: 100, y2: 100 });
+    expect(bosluklar({ ...k, x: 0, y: -10 }, [1920, 1080]).map((x) => x.deger)).toEqual([1720, 990]);
+    expect(bosluklar({ ...k, aci: 30 }, [1920, 1080])).toEqual([]);
   });
 });

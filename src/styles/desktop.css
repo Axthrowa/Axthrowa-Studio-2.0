@@ -835,3 +835,17 @@
   cursor: default;
   opacity: 0.5;
 }
+
+/* Önizleme boşluk yardımcıları (taşırken tuval kenarlarına mesafe) */
+.dt-bosluk-cizgi line {
+  stroke: var(--dt-erisim-secim, #ff4040);
+  stroke-width: 1px;
+  stroke-dasharray: 4 3;
+}
+.dt-bosluk-cizgi text {
+  fill: #fff;
+  stroke: #000;
+  stroke-width: 3px;
+  vector-effect: non-scaling-stroke;
+  font-family: ui-monospace, monospace;
+}

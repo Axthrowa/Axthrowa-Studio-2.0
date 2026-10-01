@@ -10,7 +10,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motorApi, type MotorDonusumAlanlari, type MotorSahneOgesi } from "../../lib/api/motor";
-import { boyutlandir, kirpilabilir, kirpSurukle, noktadakiOge, ogeKutusu, TUTAMACLAR, yapistir, type AgacDugumu, type Kutu, merkezdenDondur } from "../../lib/sahneAgaci";
+import { boyutlandir, kirpilabilir, kirpSurukle, noktadakiOge, ogeKutusu, TUTAMACLAR, yapistir, type AgacDugumu, type Kutu, merkezdenDondur, bosluklar } from "../../lib/sahneAgaci";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { kutuBoyutu, olcekMetni, yakinlastir, type OlcekKipi } from "../../lib/onizlemeOlcek";
 
@@ -329,7 +329,26 @@ export function TuvalGorunumu({
                 eylem.menu(e, o);
               }}
             >
-              {kilavuz && (
+              {/* Boşluk yardımcıları: tek öğe taşınırken tuval kenarlarına mesafe (px) */}
+            {surukleme?.tur === "tasi" &&
+              surukleme.ogeler.length === 1 &&
+              (() => {
+                const k = ogeKutusu(goster(surukleme.ogeler[0].oge));
+                if (!k) return null;
+                return (
+                  <g className="dt-bosluk-cizgi" aria-hidden>
+                    {bosluklar(k, boyut).map((c, i) => (
+                      <g key={i}>
+                        <line x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} vectorEffect="non-scaling-stroke" />
+                        <text x={c.tx} y={c.ty} fontSize={12 / olcek} textAnchor="middle" dominantBaseline="central" paintOrder="stroke">
+                          {c.deger} px
+                        </text>
+                      </g>
+                    ))}
+                  </g>
+                );
+              })()}
+            {kilavuz && (
                 <g className="dt-kilavuz" aria-hidden>
                   <rect x={boyut[0] * 0.05} y={boyut[1] * 0.05} width={boyut[0] * 0.9} height={boyut[1] * 0.9} vectorEffect="non-scaling-stroke" />
                   <rect x={boyut[0] * 0.1} y={boyut[1] * 0.1} width={boyut[0] * 0.8} height={boyut[1] * 0.8} vectorEffect="non-scaling-stroke" />

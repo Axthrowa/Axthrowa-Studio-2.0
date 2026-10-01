@@ -264,3 +264,24 @@ export function merkezdenDondur(k: Kutu, p: [number, number], adim?: number): { 
   const [x1, y1] = d(aci);
   return { konum: [k.ox + x0 - x1, k.oy + y0 - y1], aci };
 }
+
+export type BoslukCizgisi = { x1: number; y1: number; x2: number; y2: number; deger: number; tx: number; ty: number };
+
+/**
+ * Boşluk yardımcıları (OBS "spacing helpers"): döndürülmemiş kutunun dört kenarından tuval kenarlarına mesafe
+ * çizgileri, kutunun orta hattında. Sıfır ya da negatif (tuval dışına taşan) mesafe çizilmez.
+ */
+export function bosluklar(k: Kutu, tuval: [number, number]): BoslukCizgisi[] {
+  if (k.aci % 360 !== 0) return [];
+  const ox = k.x + k.g / 2;
+  const oy = k.y + k.h / 2;
+  const sag = k.x + k.g;
+  const alt = k.y + k.h;
+  const c: BoslukCizgisi[] = [
+    { x1: 0, y1: oy, x2: k.x, y2: oy, deger: k.x, tx: k.x / 2, ty: oy },
+    { x1: sag, y1: oy, x2: tuval[0], y2: oy, deger: tuval[0] - sag, tx: (sag + tuval[0]) / 2, ty: oy },
+    { x1: ox, y1: 0, x2: ox, y2: k.y, deger: k.y, tx: ox, ty: k.y / 2 },
+    { x1: ox, y1: alt, x2: ox, y2: tuval[1], deger: tuval[1] - alt, tx: ox, ty: (alt + tuval[1]) / 2 },
+  ];
+  return c.filter((x) => x.deger > 0.5).map((x) => ({ ...x, deger: Math.round(x.deger) }));
+}

@@ -2058,6 +2058,15 @@ async fn motor_profil_kodlama_paylasimi_ve_kayit() {
     assert!(!disa.contains(anahtar), "profil dışa aktarımında anahtar");
     let _ = post("/api/multistream/destinations/delete", json!({"id": id})).await;
   }
+  // İçe aktarım: dışa aktarılan profil yeni kimlikle eklenir, ayarlar korunur; bozuk veri 400
+  let veri: Value = serde_json::from_str(&disa).unwrap();
+  let ice = tamam("/api/motor/profil", json!({"eylem": "ice-aktar", "veri": veri, "ad": "İçe alınan"})).await;
+  let ice_id = ice["id"].as_str().unwrap().to_string();
+  assert_ne!(ice_id, "varsayilan");
+  let ice_disa = h.client.get(format!("{}/api/motor/profil/disa-aktar?id={ice_id}", h.base)).send().await.unwrap().text().await.unwrap();
+  assert!(ice_disa.contains("İçe alınan") && ice_disa.contains("2500"), "{ice_disa}");
+  assert_eq!(post("/api/motor/profil", json!({"eylem": "ice-aktar", "veri": [1, 2]})).await.status(), 400);
+  tamam("/api/motor/profil", json!({"eylem": "sil", "id": ice_id})).await;
   let profil_dosyasi = std::fs::read_to_string(h.root.join("app-data").join("motor").join("profiller").join("varsayilan.json")).unwrap();
   assert!(kimlikler.iter().all(|(_, a)| !profil_dosyasi.contains(a)));
   tamam("/api/motor/durdur", json!({"confirm": true})).await;

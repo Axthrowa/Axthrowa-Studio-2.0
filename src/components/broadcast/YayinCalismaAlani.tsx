@@ -288,6 +288,19 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [kaynakRengi, setKaynakRengi] = useState<MotorSahneOgesi | null>(null);
   const [remuxAcik, setRemuxAcik] = useState(false);
   const [eksikDosyalar, setEksikDosyalar] = useState(false);
+  const profilDosyasi = useRef<HTMLInputElement>(null);
+  /** Profil › İçe aktar: dışa aktarılmış profil JSON'u yeni profil olarak eklenir (sır içermez) */
+  const profilIceAktar = async (f: File | undefined) => {
+    if (!f) return;
+    if (f.size > 1024 * 1024) return onToast("Dosya çok büyük (en çok 1 MB)");
+    let veri: unknown;
+    try {
+      veri = JSON.parse(await f.text());
+    } catch {
+      return onToast("Dosya JSON değil");
+    }
+    await yap("Profil içe aktarılamadı", () => motorApi.profilIslem({ eylem: "ice-aktar", veri }), () => "Profil içe aktarıldı (Profil menüsünden geçebilirsiniz)").then(koleksiyonlarYenile);
+  };
   const [multiviewAcik, setMultiviewAcik] = useState(false);
   const [gecisEkle, setGecisEkle] = useState(false);
   const [onizlemeOlcek, setOnizlemeOlcek] = useState<OlcekKipi>({ tur: "sigdir" });
@@ -1087,6 +1100,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             })),
           "ayirici",
           { etiket: "Dışa aktar (etkin profil)", devreDisi: !etkin, eylem: () => etkin && window.open(motorApi.profilDisaAktarUrl(etkin.id), "_blank") },
+          { etiket: "İçe aktar…", eylem: () => profilDosyasi.current?.click() },
           { etiket: "Yayın ayarları…", eylem: () => setAyarlar("cikis") },
         ];
       },
@@ -1813,6 +1827,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           onKapat={() => setMultiviewAcik(false)}
         />
       )}
+      <input ref={profilDosyasi} type="file" accept=".json,application/json" hidden onChange={(e) => void profilIceAktar(e.target.files?.[0]).finally(() => (e.target.value = ""))} />
       {eksikDosyalar && <EksikDosyalarPenceresi onToast={onToast} onDegisti={() => void sahneYenile()} onKapat={() => setEksikDosyalar(false)} />}
       {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}
       {gunlukAcik && <GunlukPenceresi key={gunlukAcik} tur={gunlukAcik} onKapat={() => setGunlukAcik(false)} />}

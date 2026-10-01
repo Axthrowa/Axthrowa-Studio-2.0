@@ -174,3 +174,28 @@ Remux penceresi kayıt klasöründeki MKV'yi MP4'e çevirdi (ffprobe 5,0 s); Mul
 Testlerin yakaladıkları (asıl neden düzeltildi): Multiview'da iç içe sahnenin tuval dışına taşan öğeleri hücreden
 taşıyordu → ölçek filtresiyle öğe kaynak boyutunda dokuya çizdirildi (OBS multiview'unun kırpmasına eşdeğer);
 başsız sınama sunucusu ekran görüntülerini kullanıcının Videolar klasörüne yazacaktı → geçici köke yönlendirildi.
+
+### Ek (2026-09-29 → 10-01): kalan OBS arayüz maddeleri
+
+Komitler: 34cf983 … 4656405 (Sıra menüsü, mikser yüzde/dikey düzen, yalnız etkin kaynaklar, çökme raporları,
+profil klasörü, adlandırılmış/hızlı geçişler, önizleme ölçekleme ve yakınlaştırma, Erişilebilirlik renkleri,
+önizlemeyi devre dışı bırak, tam ekran arayüz, kalan kayıt süresi, kaynak rengi, döndürme tutamacı, Özellikler ›
+Varsayılanlar).
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **48/48** |
+| Panel birim (Rust) | **300** (OBS `transitions` listesinin içe aktarımı) |
+| Panel entegrasyon | **36** geçti, 1 elle çalıştırılan göz ardı (genişletilen: adlandırılmış geçiş ekle/seç/sil, hızlı geçiş + geri kurma, kaynak rengi, Varsayılanlar, çökme günlüğü uç noktası) |
+| Ön yüz (vitest) | **412** (önizleme ölçek hesapları, döndürme geometrisi, kalan kayıt süresi, erişilebilirlik renk doğrulaması, hızlı geçiş etiketi, yüzde gösterimi) |
+| clippy | 0 uyarı (`Okuma::Tamam` kutulandı) |
+
+Tarayıcı bölmesinde elle: Slide geçişi eklenip seçildi, Studio Mode'da "Slide 400 ms" hızlı geçişi programı değiştirdi
+ve tuvalin geçişi geri kuruldu; Ctrl+tekerlek ×1,25, %100'de seçim isabeti, orta tuşla kaydırma, Ctrl+0; renk körlüğü
+hazırı CSS değişkenlerine uygulandı; mikser dikey düzende ölçer aşağıdan yukarı; önizleme kapatılınca kare yok;
+3 dakikalık sınama kaydında kalan süre 40,8 GB / 5256 kbps → 18 sa 32 dk (kayıt sonra silindi); kaynak rengi şeridi;
+döndürme tutamacıyla 90° → merkez aynı piksel, Ctrl+Z geri aldı.
+
+Testlerin yakaladıkları: Geçişler dock'unda üç düğme 171 px genişlikte taşıyordu (ayrı satıra alındı); yakınlaştırılmış
+önizlemede flex ortalaması taşan sol/üst kısmı erişilemez yapıyordu (kaydırılabilirken başa hizalama); sentetik
+işaretçide `setPointerCapture` hata atınca orta tuşla kaydırma başlamıyordu (korundu).

@@ -58,7 +58,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Araçlar › Sanal kamera ayarları | KISMİ | sinama, it:motor_kayit_…_sanal_kamera | Hedef: Program / Önizleme (Studio Mode) / Sahne (Denetimler dock'u dişlisi); tek kaynak hedefi yok (kaynak kendi boyutunda olduğundan kamera çözünürlüğü tutarsız olurdu); arayüz tarayıcıda görülmedi |
 | Yardım › Son günlüğü görüntüle, Günlük klasörü, Hakkında (sürüm, lisanslar) | VAR | it, tp | Günlük sırları ayıklanmış |
 | Yardım › Çökme raporları | VAR | it:motor_filtre_yapistir_ve_gunluk | Panelin çökme günlüğü, sırlar ayıklanmış; dışarı gönderilmez |
-| Yardım › Güncellemeleri denetle | YOK | | Ağ isteği kullanıcı izni gerektirir |
+| Yardım › Güncellemeleri denetle | VAR | it:guncelleme_denetimi_yerel_bildirim | Kullanıcının tanımladığı bildirim adresi (https; yalnız yerelde http), yalnız istenince, yalnız bu bilgisayardan; sürüm karşılaştırılır, sayfa tarayıcıda açılır — indirme/çalıştırma yok. Uygulamanın kendi dağıtım sunucusu olmadığı için varsayılan adres yok |
 | Güvenli kipte başlat | VAR | it:eklenti_yoneticisi_… | Motor başlangıç ekranında |
 
 ## 4.3 Sahneler dock'u

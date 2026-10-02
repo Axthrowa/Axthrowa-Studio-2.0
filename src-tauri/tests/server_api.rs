@@ -3007,3 +3007,42 @@ async fn motor_eksik_dosyalar_ara_ve_duzelt() {
   assert!(oz["ayarlar"]["file"].as_str().unwrap().ends_with("yeni/logo.png"), "{}", oz["ayarlar"]["file"]);
   assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
 }
+
+/// Güncelleme denetimi: adres tanımlı değilse ağ isteği yok; yerel sahte bildirimle sürüm karşılaştırılır; dış http reddedilir
+#[tokio::test(flavor = "multi_thread")]
+async fn guncelleme_denetimi_yerel_bildirim() {
+  let h = start().await;
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  assert_eq!(tamam("/api/guncelleme/denetle", json!({})).await["tanimli"], false);
+  // Yerel sahte bildirim sunucusu (tek bağlantı başına sabit yanıt)
+  let dinleyici = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+  let port = dinleyici.local_addr().unwrap().port();
+  tokio::spawn(async move {
+    loop {
+      let Ok((mut s, _)) = dinleyici.accept().await else { break };
+      tokio::spawn(async move {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let mut b = [0u8; 2048];
+        let _ = s.read(&mut b).await;
+        let govde = r#"{"surum":"99.0.0","sayfa":"https://ornek.com/indir","notlar":"Sınama"}"#;
+        let yanit = format!("HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{govde}", govde.len());
+        let _ = s.write_all(yanit.as_bytes()).await;
+      });
+    }
+  });
+  let r = h.client.post(format!("{}/api/guncelleme", h.base)).json(&json!({"adres": "http://ornek.com/x.json"})).send().await.unwrap();
+  assert_eq!(r.status(), 400, "dış adreste düz http");
+  tamam("/api/guncelleme", json!({"adres": format!("http://127.0.0.1:{port}/guncelleme.json")})).await;
+  let d = tamam("/api/guncelleme/denetle", json!({})).await;
+  assert_eq!((d["tanimli"].as_bool(), d["son"].as_str(), d["yeniVar"].as_bool(), d["sayfa"].as_str()), (Some(true), Some("99.0.0"), Some(true), Some("https://ornek.com/indir")), "{d}");
+}

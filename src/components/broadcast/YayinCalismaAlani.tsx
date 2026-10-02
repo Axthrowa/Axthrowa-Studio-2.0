@@ -88,6 +88,7 @@ import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { KaynakAracCubugu } from "./KaynakAracCubugu";
 import { TarayiciDock } from "./TarayiciDock";
 import { KliplerDock } from "./KliplerDock";
+import { GuncellemePenceresi } from "./GuncellemePenceresi";
 import type { OlcekKipi } from "../../lib/onizlemeOlcek";
 import { yayinSagligi } from "../../lib/yayinSagligi";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
@@ -354,6 +355,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   // Studio Mode seçenekleri (OBS: dikey düzen, canlı sahne düzenleme uyarısı); tercih yerel
   const [studyoDikey, setStudyoDikey] = useState(() => bayrakOku("studyo-dikey", false));
   const [hedefTablosu, setHedefTablosu] = useState(false);
+  const [guncelleme, setGuncelleme] = useState(false);
   const [canliUyari, setCanliUyari] = useState(() => bayrakOku("canli-uyari", true));
   const [onizlemeOlcek, setOnizlemeOlcek] = useState<OlcekKipi>({ tur: "sigdir" });
   const [onizlemeKapali, setOnizlemeKapali] = useState(() => {
@@ -1264,6 +1266,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Günlük klasörünü aç", eylem: () => klasorAc("gunluk") },
         { etiket: "Çökme raporları…", eylem: () => setGunlukAcik("cokme") },
         "ayirici",
+        { etiket: "Güncellemeleri denetle…", eylem: () => setGuncelleme(true) },
         { etiket: "Hakkında ve lisanslar…", eylem: () => setHakkinda(true) },
       ],
     },
@@ -1991,6 +1994,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       )}
       <input ref={profilDosyasi} type="file" accept=".json,application/json" hidden onChange={(e) => void profilIceAktar(e.target.files?.[0]).finally(() => (e.target.value = ""))} />
       {eksikDosyalar && <EksikDosyalarPenceresi onToast={onToast} onDegisti={() => void sahneYenile()} onKapat={() => setEksikDosyalar(false)} />}
+      {guncelleme && <GuncellemePenceresi onKapat={() => setGuncelleme(false)} />}
       {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}
       {gunlukAcik && <GunlukPenceresi key={gunlukAcik} tur={gunlukAcik} onKapat={() => setGunlukAcik(false)} />}
       {zamanlayiciAcik && <CikisZamanlayicisiPenceresi z={zamanlayici} canli={canliVar} kayitta={kayitta} onAyarla={setZamanlayici} onKapat={() => setZamanlayiciAcik(false)} />}

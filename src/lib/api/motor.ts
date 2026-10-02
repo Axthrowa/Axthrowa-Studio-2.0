@@ -168,7 +168,7 @@ export type MotorSahneOgesi = {
 export type MotorEksikOge = { kaynak: string; ad: string; tur: string; obsTuru: string; eksik: true };
 export type MotorSahneYaniti = { tuval: string; sahne: string; genislik: number; yukseklik: number; ogeler: MotorSahneOgesi[]; eksikler: MotorEksikOge[] };
 export type MotorGecis = { tur: string; sure_ms: number; ayarlar?: Record<string, unknown> };
-export type MotorSahneOzeti = { id: string; ad: string; tuval: string; ogeSayisi: number; gecis: MotorGecis | null; etkinTuval: boolean };
+export type MotorSahneOzeti = { id: string; ad: string; tuval: string; ogeSayisi: number; gecis: MotorGecis | null; etkinTuval: boolean; multiview?: boolean };
 export type MotorSahneler = {
   calisiyor: boolean;
   koleksiyon?: { id: string; ad: string };
@@ -354,7 +354,15 @@ export const motorApi = {
   etkilesimKapat: (kaynak: string) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "kapat" }),
   etkilesimOlayi: (kaynak: string, olay: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "olay", olay }),
   sahneler: () => istek<MotorSahneler>("/api/motor/sahneler"),
-  sahneIslem: (govde: { eylem: "olustur" | "adlandir" | "sil" | "cogalt" | "sirala" | "gecis"; id?: string; ad?: string; tuval?: string; sira?: string[]; gecis?: MotorGecis | null }) =>
+  sahneIslem: (govde: {
+    eylem: "olustur" | "adlandir" | "sil" | "cogalt" | "sirala" | "gecis" | "multiview";
+    id?: string;
+    ad?: string;
+    tuval?: string;
+    sira?: string[];
+    gecis?: MotorGecis | null;
+    acik?: boolean;
+  }) =>
     istek<{ id?: string }>("/api/motor/sahne-islem", govde),
   program: (sahne: string, gecis = true, sure_ms?: number) => istek<{ ok: boolean }>("/api/motor/program", { sahne, gecis, sure_ms }),
   gecis: (tuval: string) =>

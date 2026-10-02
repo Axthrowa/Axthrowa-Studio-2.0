@@ -247,6 +247,9 @@ pub struct SahneKaydi {
   /// Sahnenin kendi filtreleri (OBS sahne filtreleri)
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
   pub filtreler: Vec<FiltreKaydi>,
+  /// OBS "Multiview'da göster" kapalı (varsayılan: gösterilir)
+  #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+  pub multiview_gizli: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

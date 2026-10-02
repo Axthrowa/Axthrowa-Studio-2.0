@@ -70,7 +70,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Bağlam: Çoğalt, Yeniden adlandır (F2), Kaldır (Del), Sıra, Filtreler, Geçişi geçersiz kıl | VAR | it, tp | |
 | Bağlam: Ekran görüntüsü | VAR | sinama, it, tp | |
 | Bağlam: Projektör (pencere) | VAR | sinama, it | Sahne tuval boyutunda; tam ekran sahne projektörü yok |
-| Bağlam: Multiview'da göster | YOK | | |
+| Bağlam: Multiview'da göster | VAR | it, birim (OBS içe aktarımı) | Sahne bağlam menüsünde (OBS'teki gibi); kaynak menüsünde OBS'te de yok |
 | Sahne başına kısayol | VAR | it:motor_kisayol_eylemleri_… | Kısayollar sayfası |
 
 ## 4.4 Kaynaklar dock'u
@@ -89,7 +89,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Bağlam: Etkileşim | VAR | sinama, tp | Tarayıcı kaynağı |
 | Bağlam: Kaynak rengi (etiket) | VAR | it, tp | 8 hazır renk + özel + yok; listede satırın solunda şerit |
 | Bağlam: Kaynak projektörü | VAR | sinama, it, tp | Kaynak kendi boyutunda, pencere kapanınca motor tuvali bırakılır |
-| Bağlam: Multiview'da göster | YOK | | |
+| Bağlam: Multiview'da göster | VAR | it, birim (OBS içe aktarımı) | Sahne bağlam menüsünde (OBS'teki gibi); kaynak menüsünde OBS'te de yok |
 
 ## 4.5 Önizleme etkileşimi
 

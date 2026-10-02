@@ -265,7 +265,9 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
       }
     }
     let filtreler = filtreleri_cevir(sid, s, &mut r);
-    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, filtreler });
+    // OBS "Multiview'da göster": sahnenin özel ayarlarında `show_in_multiview` (yoksa gösterilir)
+    let multiview_gizli = s["private_settings"]["show_in_multiview"].as_bool() == Some(false);
+    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, filtreler, multiview_gizli });
     r.sahne += 1;
   }
   // Sahne sırası (OBS "scene_order")
@@ -337,7 +339,7 @@ mod tests {
          "deinterlace_mode": 7, "deinterlace_field_order": 1},
         {"name": "Başlık", "uuid": "u3", "id": "text_gdiplus", "versioned_id": "text_gdiplus_v3", "settings": {"text": "Merhaba"},
          "hotkeys": {"libobs.show_scene_item.1": [{"key": "OBS_KEY_F1"}]}},
-        {"name": "Ara", "uuid": "u4", "id": "scene", "versioned_id": "scene", "settings": {"items": [
+        {"name": "Ara", "uuid": "u4", "id": "scene", "versioned_id": "scene", "private_settings": {"show_in_multiview": false}, "settings": {"items": [
           {"name": "Arka", "source_uuid": "u1", "visible": true, "locked": false, "pos": {"x": 0, "y": 0}, "scale": {"x": 1, "y": 1}, "align": 5, "bounds_type": 0}
         ]}},
         {"name": "Oyun", "uuid": "u5", "id": "scene", "versioned_id": "scene",
@@ -396,6 +398,8 @@ mod tests {
     assert_eq!(k.gecisler["ana"].tur, "slide_transition");
     assert_eq!(k.gecisler["ana"].sure_ms, 450);
     assert_eq!(k.adli_gecisler.len(), 1, "Kayar listeye alınır");
+    let multiview: Vec<(&str, bool)> = k.sahneler.iter().map(|s| (s.ad.as_str(), s.multiview_gizli)).collect();
+    assert_eq!(multiview, [("Oyun", false), ("Ara", true)], "show_in_multiview false → gizli");
     assert_eq!((k.adli_gecisler[0].ad.as_str(), k.adli_gecisler[0].tur.as_str()), ("Kayar", "slide_transition"));
     assert_eq!(k.secili_gecis["ana"], k.adli_gecisler[0].id);
     assert!(r.notlar.iter().any(|n| n.contains("kısayol")));

@@ -2849,6 +2849,13 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   assert_eq!(r.status(), 200, "multiview karesi");
   assert_eq!(&r.bytes().await.unwrap()[1..4], b"PNG");
   assert_eq!(h.client.post(format!("{}/api/motor/ekran-goruntusu", h.base)).json(&json!({"tuval": "multiview-ana"})).send().await.unwrap().status(), 400);
+  // Multiview'da göster kapalı sahne ızgarada yer almaz
+  tamam("/api/motor/sahne-islem", json!({"eylem": "multiview", "id": oyun, "acik": false})).await;
+  let mv2 = tamam("/api/motor/multiview", json!({"tuval": "ana", "eylem": "ac"})).await;
+  assert!(!mv2["hucreler"].as_array().unwrap().iter().any(|h| h["sahne"] == oyun.as_str()), "{mv2}");
+  let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(sl["sahneler"].as_array().unwrap().iter().find(|x| x["id"] == oyun.as_str()).unwrap()["multiview"], false);
+  tamam("/api/motor/sahne-islem", json!({"eylem": "multiview", "id": oyun, "acik": true})).await;
   tamam("/api/motor/multiview", json!({"tuval": "ana", "eylem": "kapat"})).await;
   assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
 }

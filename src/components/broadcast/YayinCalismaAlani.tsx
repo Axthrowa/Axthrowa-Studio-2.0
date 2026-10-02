@@ -1290,6 +1290,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               filtreler: (s) => sahipFiltreAc(s.id, s.ad),
               ekranGoruntusu: (s) => ekranGoruntusu(tuval, s.id),
               projektor: (s) => kaynakProjektoru(s.id, s.ad),
+              multiview: (s, acik) => void yap("Multiview ayarı", () => motorApi.sahneIslem({ eylem: "multiview", id: s.id, acik })),
               menuAc: menu.ac,
             }}
           />

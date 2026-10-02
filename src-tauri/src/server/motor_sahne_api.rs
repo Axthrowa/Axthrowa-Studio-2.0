@@ -101,7 +101,7 @@ async fn api_sahneler(
   let sahneler: Vec<Value> = k
     .sahneler
     .iter()
-    .map(|s| json!({"id": s.id, "ad": s.ad, "tuval": s.tuval, "ogeSayisi": s.ogeler.len(), "gecis": s.gecis, "etkinTuval": k.tuvaller().contains(&s.tuval.as_str())}))
+    .map(|s| json!({"id": s.id, "ad": s.ad, "tuval": s.tuval, "ogeSayisi": s.ogeler.len(), "gecis": s.gecis, "etkinTuval": k.tuvaller().contains(&s.tuval.as_str()), "multiview": !s.multiview_gizli}))
     .collect();
   let gecisler: Map<String, Value> = k
     .tuvaller()
@@ -142,6 +142,9 @@ struct SahneIslemi {
   /// `gecis` eylemi: geçiş geçersiz kılma (null = kaldır)
   #[serde(default)]
   gecis: Option<GecisKaydi>,
+  /// `multiview` eylemi: sahne Multiview'da gösterilsin mi
+  #[serde(default)]
+  acik: Option<bool>,
 }
 
 /// Grup kimliklerini (çoğaltılan sahnede) yeniler
@@ -237,7 +240,7 @@ async fn api_sahne_islem(
         for f in &mut filtreler {
           f.id = o.koleksiyon.yeni_kimlik("f");
         }
-        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis, filtreler })
+        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis, filtreler, multiview_gizli: kaynak.multiview_gizli })
       };
       komut(&state, json!({"komut": "sahne.olustur", "id": yeni, "tuval": kayit.tuval, "ad": kayit.ad})).await?;
       filtreleri_kur(&state, &yeni, &kayit.filtreler).await?;
@@ -266,6 +269,13 @@ async fn api_sahne_islem(
       }
       koleksiyonu_yaz(&state)?;
       json!({})
+    }
+    "multiview" => {
+      let id = id()?;
+      let acik = g.acik.ok_or_else(|| gecersiz("'acik' gerekli".into()))?;
+      state.motor.ozet().lock().koleksiyon.sahne(&id).ok_or_else(|| bulunamadi("sahne yok".into()))?.multiview_gizli = !acik;
+      koleksiyonu_yaz(&state)?;
+      json!({"acik": acik})
     }
     "gecis" => {
       let id = id()?;
@@ -588,7 +598,7 @@ async fn api_multiview(
       let (sahneler, adlar): (Vec<String>, Vec<(String, String)>) = {
         let o = state.motor.ozet();
         let o = o.lock();
-        let s: Vec<_> = o.koleksiyon.sahneler.iter().filter(|s| s.tuval == tuval).take(8).collect();
+        let s: Vec<_> = o.koleksiyon.sahneler.iter().filter(|s| s.tuval == tuval && !s.multiview_gizli).take(8).collect();
         (s.iter().map(|x| x.id.clone()).collect(), s.iter().map(|x| (x.id.clone(), x.ad.clone())).collect())
       };
       let mut r = komut(&state, json!({"komut": "multiview.ac", "tuval": tuval, "sahneler": sahneler})).await?;

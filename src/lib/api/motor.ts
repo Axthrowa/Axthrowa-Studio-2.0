@@ -406,7 +406,10 @@ export const motorApi = {
   eksikDosyaAra: (klasor: string) => istek<{ oneriler: { kaynak: string; alan: string; yol: string }[] }>("/api/motor/eksik-dosyalar", { eylem: "ara", klasor }),
   eksikDosyaDuzelt: (kaynak: string, alan: string, yol: string) => istek<{ ok: boolean; kalan: number }>("/api/motor/eksik-dosyalar", { eylem: "duzelt", kaynak, alan, yol }),
   remux: () => istek<RemuxDurumu>("/api/motor/remux"),
-  remuxEkle: (dosyalar: string[], bicim: "mp4" | "mov" | "mkv") => istek<{ ok: boolean; eklenen: number }>("/api/motor/remux", { dosyalar, bicim }),
+  remuxEkle: (dosyalar: string[], bicim: "mp4" | "mov" | "mkv", aralik?: [number, number]) =>
+    istek<{ ok: boolean; eklenen: number }>("/api/motor/remux", { dosyalar, bicim, ...(aralik ? { aralik } : {}) }),
+  klipler: () => istek<{ kayitKlasoru: string; klipler: { ad: string; boyut: number; zaman: number; tekrar: boolean }[] }>("/api/motor/klipler"),
+  klipUrl: (ad: string) => `${API_BASE}/api/motor/klip?ad=${encodeURIComponent(ad)}`,
   remuxIptal: () => istek<{ ok: boolean }>("/api/motor/remux/iptal", {}),
   remuxTemizle: () => istek<{ ok: boolean }>("/api/motor/remux/temizle", {}),
   klasorAc: (tur: "kayit" | "gunluk" | "ayarlar" | "profil") => istek<{ ok: boolean; yol: string }>("/api/motor/klasor-ac", { tur }),

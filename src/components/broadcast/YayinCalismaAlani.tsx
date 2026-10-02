@@ -87,6 +87,7 @@ import { EksikDosyalarPenceresi } from "./EksikDosyalarPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { KaynakAracCubugu } from "./KaynakAracCubugu";
 import { TarayiciDock } from "./TarayiciDock";
+import { KliplerDock } from "./KliplerDock";
 import type { OlcekKipi } from "../../lib/onizlemeOlcek";
 import { yayinSagligi } from "../../lib/yayinSagligi";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
@@ -1481,6 +1482,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         );
       case "tarayici":
         return <TarayiciDock onToast={onToast} />;
+      case "klipler":
+        return <KliplerDock onToast={onToast} />;
       case "deste":
         return (
           <section className="dt-dock h-full" aria-label="Hızlı eylemler">

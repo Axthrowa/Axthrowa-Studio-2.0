@@ -2868,6 +2868,8 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
 /// Yeniden muxlama kuyruğu: MKV → MP4 motorun alt sürecinde, ilerleme ve sonuç; göreli yol, var olan çıktı reddedilir
 #[tokio::test(flavor = "multi_thread")]
 async fn remux_kuyrugu_mkv_mp4() {
+  // YYA_MOTOR_KAYIT_DIR süreç geneli: aynı değişkeni kullanan motor testleriyle yarışmasın
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
   if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
     || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\avformat-62.dll").exists()
   {
@@ -2914,6 +2916,32 @@ async fn remux_kuyrugu_mkv_mp4() {
   assert_eq!(&bayt[4..8], b"ftyp", "MP4 kabı");
   assert!(!klasor.join("kayit.mp4.remux-gecici").exists());
   assert_eq!(post("/api/motor/remux", json!({"dosyalar": [&girdi]})).await.status(), 409, "üzerine yazılmaz");
+
+  // Klipler (Backtrack): kayıt klasöründeki dosyalar listelenir, önizleme Range ile sunulur, klasör dışına çıkılamaz,
+  // kırpma kuyruğu aralıklı çıktı üretir
+  std::env::set_var("YYA_MOTOR_KAYIT_DIR", &klasor);
+  let k = h.client.get(format!("{}/api/motor/klipler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert!(k["klipler"].as_array().unwrap().iter().any(|x| x["ad"] == "kayit.mkv"), "{k}");
+  let r = h.client.get(format!("{}/api/motor/klip?ad=kayit.mkv", h.base)).header("range", "bytes=0-99").send().await.unwrap();
+  assert_eq!(r.status(), 206);
+  assert_eq!(r.bytes().await.unwrap().len(), 100);
+  for kotu in ["..%2Fkayit.mkv", "..%5Ckayit.mkv", "yok.mkv", "C%3Akayit.mkv"] {
+    assert_eq!(h.client.get(format!("{}/api/motor/klip?ad={kotu}", h.base)).send().await.unwrap().status(), 404, "{kotu}");
+  }
+  let r = post("/api/motor/remux", json!({"dosyalar": [&girdi], "bicim": "mp4", "aralik": [1.0, 2.5]})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  let klip = klasor.join("kayit klip 1-3.mp4");
+  for _ in 0..100 {
+    if klip.exists() {
+      break;
+    }
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+  }
+  tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+  assert!(klip.exists(), "klip yazılmadı");
+  assert_eq!(post("/api/motor/remux", json!({"dosyalar": [&girdi, &girdi], "aralik": [1.0, 2.0]})).await.status(), 400, "kırpmada tek dosya");
+  assert_eq!(post("/api/motor/remux", json!({"dosyalar": [&girdi], "aralik": [3.0, 1.0]})).await.status(), 400, "ters aralık");
+  std::env::remove_var("YYA_MOTOR_KAYIT_DIR");
   assert!(post("/api/motor/remux/temizle", json!({})).await.status().is_success());
 }
 

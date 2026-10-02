@@ -48,6 +48,9 @@ pub struct Is {
   pub hata: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub sonuc: Option<Value>,
+  /// Klip kırpma aralığı (sn); yoksa tüm dosya
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub aralik: Option<[f64; 2]>,
 }
 
 #[derive(Default)]
@@ -62,6 +65,8 @@ static KUYRUK: Mutex<Kuyruk> = Mutex::new(Kuyruk { isler: Vec::new(), calisiyor:
 
 pub fn router() -> Router<Arc<AppState>> {
   Router::new()
+    .route("/api/motor/klipler", get(api_klipler))
+    .route("/api/motor/klip", get(api_klip))
     .route("/api/motor/remux", get(api_durum).post(api_ekle))
     .route("/api/motor/remux/iptal", post(api_iptal))
     .route("/api/motor/remux/temizle", post(api_temizle))
@@ -100,6 +105,30 @@ pub fn cikti_yolu(girdi: &Path, bicim: &str) -> Result<PathBuf, String> {
   Ok(girdi.with_extension(bicim))
 }
 
+/// Klip kırpma çıktısı: aynı klasörde `<ad> klip <bas>-<bit>.<biçim>` (saniyeler tam sayıya yuvarlanır)
+pub fn klip_yolu(girdi: &Path, bicim: &str, [bas, bit]: [f64; 2]) -> Result<PathBuf, String> {
+  if !girdi.is_absolute() {
+    return Err("dosya yolu mutlak olmalı".into());
+  }
+  if !GIRDI_UZANTILARI.contains(&uzanti(girdi).as_str()) {
+    return Err(format!("desteklenmeyen kayıt uzantısı: {}", girdi.display()));
+  }
+  if !CIKTI_BICIMLERI.contains(&bicim) {
+    return Err("çıktı biçimi mp4, mov ya da mkv olmalı".into());
+  }
+  let kok = girdi.file_stem().and_then(|s| s.to_str()).unwrap_or("klip");
+  Ok(girdi.with_file_name(format!("{kok} klip {}-{}.{bicim}", bas.floor() as u64, bit.ceil() as u64)))
+}
+
+/// Kayıt klasöründeki tek bir dosyanın yolu: ad yalnız dosya adı (klasör ayırıcı, `..` yok) ve bilinen video uzantısı
+pub fn klasordeki_dosya(klasor: &Path, ad: &str) -> Option<PathBuf> {
+  if ad.is_empty() || ad.len() > 255 || ad.contains(['/', '\\', ':']) || ad.contains("..") {
+    return None;
+  }
+  let p = klasor.join(ad);
+  (GIRDI_UZANTILARI.contains(&uzanti(&p).as_str()) && p.is_file()).then_some(p)
+}
+
 fn kayit_yeri(state: &AppState) -> PathBuf {
   crate::motor_profil::etkin(&klasor(state)).kayit.klasor.map(PathBuf::from).unwrap_or_else(kayit_klasoru)
 }
@@ -134,6 +163,9 @@ struct EkleGovdesi {
   dosyalar: Vec<String>,
   #[serde(default)]
   bicim: Option<String>,
+  /// Klip kırpma (Backtrack): [başlangıç, bitiş] sn; yalnız tek dosyayla
+  #[serde(default)]
+  aralik: Option<[f64; 2]>,
 }
 
 async fn api_ekle(
@@ -149,17 +181,26 @@ async fn api_ekle(
   if g.dosyalar.is_empty() || g.dosyalar.len() > 100 {
     return Err(gecersiz("1–100 dosya seçin"));
   }
+  if let Some([bas, bit]) = g.aralik {
+    if g.dosyalar.len() != 1 || !(bas.is_finite() && bit.is_finite() && bas >= 0.0 && bit > bas && bit - bas <= 24.0 * 3600.0) {
+      return Err(gecersiz("kırpma: tek dosya ve 0 ≤ başlangıç < bitiş"));
+    }
+  }
   let mut yeni = Vec::new();
   for d in &g.dosyalar {
     let girdi = PathBuf::from(d);
-    let cikti = cikti_yolu(&girdi, &bicim).map_err(gecersiz)?;
+    // Kırpmada çıktı girdiyle aynı kapta olabilir: ad "<ad> klip <bas>-<bit>"
+    let cikti = match g.aralik {
+      Some(a) => klip_yolu(&girdi, &bicim, a).map_err(gecersiz)?,
+      None => cikti_yolu(&girdi, &bicim).map_err(gecersiz)?,
+    };
     if !girdi.is_file() {
       return Err(gecersiz(format!("dosya yok: {}", girdi.display())));
     }
     if cikti.exists() {
       return Err((StatusCode::CONFLICT, format!("çıktı zaten var (üzerine yazılmaz): {}", cikti.display())));
     }
-    yeni.push(Is { girdi, cikti, durum: Durum::Bekliyor, ilerleme: 0.0, hata: None, sonuc: None });
+    yeni.push(Is { girdi, cikti, durum: Durum::Bekliyor, ilerleme: 0.0, hata: None, sonuc: None, aralik: g.aralik });
   }
   let baslat = {
     let mut k = KUYRUK.lock();
@@ -186,7 +227,7 @@ async fn isle(exe: PathBuf) {
       match k.isler.iter().position(|i| i.durum == Durum::Bekliyor) {
         Some(n) => {
           k.isler[n].durum = Durum::Suruyor;
-          Some((n, k.isler[n].girdi.clone(), k.isler[n].cikti.clone()))
+          Some((n, k.isler[n].girdi.clone(), k.isler[n].cikti.clone(), k.isler[n].aralik))
         }
         None => {
           k.calisiyor = false;
@@ -195,8 +236,8 @@ async fn isle(exe: PathBuf) {
         }
       }
     };
-    let Some((n, girdi, cikti)) = sira else { return };
-    let sonuc = tek(&exe, n, &girdi, &cikti).await;
+    let Some((n, girdi, cikti, aralik)) = sira else { return };
+    let sonuc = tek(&exe, n, &girdi, &cikti, aralik).await;
     let mut k = KUYRUK.lock();
     k.pid = None;
     if let Some(i) = k.isler.get_mut(n) {
@@ -217,9 +258,13 @@ async fn isle(exe: PathBuf) {
   }
 }
 
-async fn tek(exe: &Path, n: usize, girdi: &Path, cikti: &Path) -> Result<Value, String> {
+async fn tek(exe: &Path, n: usize, girdi: &Path, cikti: &Path, aralik: Option<[f64; 2]>) -> Result<Value, String> {
   let mut komut = tokio::process::Command::new(exe);
-  komut.arg("remux").arg(girdi).arg(cikti).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null()).kill_on_drop(true);
+  komut.arg("remux").arg(girdi).arg(cikti);
+  if let Some([b, e]) = aralik {
+    komut.arg(format!("{b:.3}")).arg(format!("{e:.3}"));
+  }
+  komut.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null()).kill_on_drop(true);
   #[cfg(windows)]
   {
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -284,6 +329,21 @@ mod tests {
   use super::*;
 
   #[test]
+  fn klip_adi_ve_klasor_disina_cikilmaz() {
+    let g = Path::new(r"C:\kayit\Tekrar 1.mkv");
+    assert_eq!(klip_yolu(g, "mp4", [4.2, 11.6]).unwrap(), PathBuf::from(r"C:\kayit\Tekrar 1 klip 4-12.mp4"));
+    assert!(klip_yolu(Path::new("x.mkv"), "mp4", [0.0, 1.0]).is_err());
+    let d = std::env::temp_dir().join(format!("yya-klip-{}", std::process::id()));
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(d.join("a.mkv"), b"x").unwrap();
+    assert_eq!(klasordeki_dosya(&d, "a.mkv"), Some(d.join("a.mkv")));
+    for kotu in ["../a.mkv", r"..\a.mkv", "C:a.mkv", "alt/a.mkv", "a.exe", "yok.mkv", ""] {
+      assert_eq!(klasordeki_dosya(&d, kotu), None, "{kotu}");
+    }
+    let _ = std::fs::remove_dir_all(&d);
+  }
+
+  #[test]
   fn cikti_kurallari() {
     let g = Path::new(r"C:\kayit\a.mkv");
     assert_eq!(cikti_yolu(g, "mp4").unwrap(), PathBuf::from(r"C:\kayit\a.mp4"));
@@ -292,4 +352,54 @@ mod tests {
     assert!(cikti_yolu(g, "avi").is_err(), "bilinmeyen biçim");
     assert!(cikti_yolu(Path::new(r"C:\a.mp4"), "mp4").is_err(), "aynı kap");
   }
+}
+
+
+/// Klipler (Backtrack): kayıt klasöründeki video dosyaları, en yeni önce (en çok 100)
+async fn api_klipler(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectInfo<SocketAddr>, headers: HeaderMap) -> ApiResult {
+  yerel(&addr)?;
+  authorize(&state, &addr, &headers, "broadcast.read").await?;
+  let yer = kayit_yeri(&state);
+  let mut v: Vec<(std::time::SystemTime, String, u64)> = std::fs::read_dir(&yer)
+    .into_iter()
+    .flatten()
+    .flatten()
+    .filter_map(|e| {
+      let p = e.path();
+      let m = e.metadata().ok()?;
+      let uygun = m.is_file() && GIRDI_UZANTILARI.contains(&uzanti(&p).as_str());
+      uygun.then_some((m.modified().ok()?, p.file_name()?.to_string_lossy().into_owned(), m.len()))
+    })
+    .collect();
+  v.sort_by_key(|x| std::cmp::Reverse(x.0));
+  let klipler: Vec<Value> = v
+    .into_iter()
+    .take(100)
+    .map(|(z, ad, boyut)| {
+      let ms = z.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0);
+      json!({"ad": ad, "boyut": boyut, "zaman": ms, "tekrar": ad.starts_with("Tekrar") || ad.starts_with("Replay")})
+    })
+    .collect();
+  Ok(Json(json!({"kayitKlasoru": yer, "klipler": klipler})))
+}
+
+#[derive(Deserialize)]
+struct KlipSorgusu {
+  ad: String,
+}
+
+/// Klip önizlemesi: kayıt klasöründeki dosyayı (Range destekli) sunar; yalnız bu bilgisayardan, yalnız dosya adıyla
+async fn api_klip(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+  axum::extract::Query(q): axum::extract::Query<KlipSorgusu>,
+  istek: axum::extract::Request,
+) -> Result<axum::response::Response, Hata> {
+  yerel(&addr)?;
+  authorize(&state, &addr, &headers, "broadcast.read").await?;
+  let yol = klasordeki_dosya(&kayit_yeri(&state), &q.ad).ok_or((StatusCode::NOT_FOUND, "klip yok".to_string()))?;
+  use tower::ServiceExt;
+  let yanit = tower_http::services::ServeFile::new(yol).oneshot(istek).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+  Ok(axum::response::IntoResponse::into_response(yanit))
 }

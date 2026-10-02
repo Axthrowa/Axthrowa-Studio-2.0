@@ -19,7 +19,8 @@ export type DockKimligi =
   | "sohbet"
   | "etkinlik"
   | "deste"
-  | "tarayici";
+  | "tarayici"
+  | "klipler";
 
 export const DOCKLAR: { id: DockKimligi; ad: string; varsayilan: boolean; oran: number; kontrolMerkezi?: boolean }[] = [
   { id: "sahneler", ad: "Sahneler", varsayilan: true, oran: 1 },
@@ -33,6 +34,7 @@ export const DOCKLAR: { id: DockKimligi; ad: string; varsayilan: boolean; oran: 
   { id: "etkinlik", ad: "Etkinlik Akışı", varsayilan: false, oran: 1.2, kontrolMerkezi: true },
   { id: "deste", ad: "Hızlı Eylemler", varsayilan: false, oran: 1.2, kontrolMerkezi: true },
   { id: "tarayici", ad: "Tarayıcı (özel)", varsayilan: false, oran: 1.4 },
+  { id: "klipler", ad: "Klipler (Backtrack)", varsayilan: false, oran: 1.3 },
 ];
 
 export type DockDuzeni = {

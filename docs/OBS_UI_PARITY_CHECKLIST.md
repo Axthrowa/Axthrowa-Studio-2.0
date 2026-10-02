@@ -135,7 +135,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Tekrar arabelleği + Kaydet | VAR | sinama, it | |
 | Sanal kamera başlat | VAR | sinama, it | OBS sanal kamera sürücüsü gerekir |
 | Studio Mode, Ayarlar | VAR | tp | |
-| Backtrack | KISMİ | sinama, it:motor_kayit_…_dikey_tekrar | Tekrar arabelleği yatay ve (profilde açılırsa) dikey tuvalde; klip listesi ve kırpma yok |
+| Backtrack | VAR | sinama (kırpma), it:remux_kuyrugu_mkv_mp4, it:motor_kayit_…_dikey_tekrar | Tuval başına tekrar arabelleği; "Klipler" dock'u: kayıt klasöründeki klipler, oynatıcı, başlangıç/bitiş, yeniden kodlamasız kırpma (anahtar kareden). Dock arayüzü tarayıcıda görülmedi |
 
 ## 4.9 Studio Mode
 
@@ -187,6 +187,6 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 | Yayın öncesi kontrol (GO LIVE) | VAR | it | |
 | Yayın bilgisi dock'u (başlık/kategori, platform API'si) | YOK | | Platform OAuth'u gerektirir |
 | Çoklu tuval (yatay + dikey) | KISMİ | sinama | İki sabit tuval; sınırsız tuval ve bağlı sahneler yok |
-| Backtrack | KISMİ | it | Tuval başına tekrar arabelleği (yatay + dikey); klip listesi/hızlı kırpma yok |
+| Backtrack | VAR | sinama, it | Tuval başına tekrar arabelleği + Klipler dock'u (liste, oynat, kırp) |
 | Birleşik sohbet + etkinlik dock'u | VAR | — | Mevcut StreamAxT/chatHub altyapısı |
 | Twitch Enhanced Broadcasting | DESTEKLENMİYOR | | Platform onayı/API gerektirir; arayüzde gösterilmez |

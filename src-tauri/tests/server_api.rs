@@ -3046,3 +3046,49 @@ async fn guncelleme_denetimi_yerel_bildirim() {
   let d = tamam("/api/guncelleme/denetle", json!({})).await;
   assert_eq!((d["tanimli"].as_bool(), d["son"].as_str(), d["yeniVar"].as_bool(), d["sayfa"].as_str()), (Some(true), Some("99.0.0"), Some(true), Some("https://ornek.com/indir")), "{d}");
 }
+
+/// Bağlı sahneler: yatay sahne programa alınınca dikey eşi de programa alınır; aynı tuvale bağ reddedilir; eş silinince bağ düşer
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_bagli_sahneler() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let sahneler = || {
+    let c = h.client.clone();
+    let url = format!("{}/api/motor/sahneler", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  tamam("/api/motor/baslat", json!({"dikey": true})).await;
+  let oyun = tamam("/api/motor/sahne-islem", json!({"eylem": "olustur", "ad": "Oyun", "tuval": "ana"})).await["id"].as_str().unwrap().to_string();
+  let oyun_d = tamam("/api/motor/sahne-islem", json!({"eylem": "olustur", "ad": "Oyun D", "tuval": "dikey"})).await["id"].as_str().unwrap().to_string();
+  let r = h.client.post(format!("{}/api/motor/sahne-islem", h.base)).json(&json!({"eylem": "bagla", "id": oyun, "hedef": "sahne-ana"})).send().await.unwrap();
+  assert_eq!(r.status(), 400, "aynı tuvale bağ");
+  tamam("/api/motor/sahne-islem", json!({"eylem": "bagla", "id": oyun, "hedef": oyun_d})).await;
+  assert_ne!(sahneler().await["program"]["dikey"], oyun_d.as_str());
+  tamam("/api/motor/program", json!({"sahne": oyun, "gecis": false})).await;
+  let s = sahneler().await;
+  assert_eq!((s["program"]["ana"].as_str(), s["program"]["dikey"].as_str()), (Some(oyun.as_str()), Some(oyun_d.as_str())), "{s}");
+  assert_eq!(s["sahneler"].as_array().unwrap().iter().find(|x| x["id"] == oyun.as_str()).unwrap()["bagli"], oyun_d.as_str());
+  // Eşi silmek için önce dikeyde başka sahneye geçilir
+  tamam("/api/motor/program", json!({"sahne": "sahne-dikey", "gecis": false})).await;
+  tamam("/api/motor/sahne-islem", json!({"eylem": "sil", "id": oyun_d})).await;
+  let s = sahneler().await;
+  assert!(s["sahneler"].as_array().unwrap().iter().find(|x| x["id"] == oyun.as_str()).unwrap()["bagli"].is_null(), "silinen eşe bağ düşer");
+  assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
+}

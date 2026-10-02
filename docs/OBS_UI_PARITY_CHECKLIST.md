@@ -186,7 +186,7 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 | Çoklu yayın kartları, hedef başına tuval/kodlayıcı/ses izi, tek başına başlat/durdur, durum | VAR | sinama, it:multistream_… | Yalnız 127.0.0.1 alıcılarıyla sınandı; gerçek platform UNVERIFIED |
 | Yayın öncesi kontrol (GO LIVE) | VAR | it | |
 | Yayın bilgisi dock'u (başlık/kategori, platform API'si) | YOK | | Platform OAuth'u gerektirir |
-| Çoklu tuval (yatay + dikey) | KISMİ | sinama | İki sabit tuval; sınırsız tuval ve bağlı sahneler yok |
+| Çoklu tuval (yatay + dikey) | KISMİ | sinama, it:motor_bagli_sahneler | İki sabit tuval; **bağlı sahneler VAR** (sahne bağlam menüsü › Bağlı sahne: programa alınınca diğer tuvaldeki eşi de geçişle programa alınır, tek atlama; eş silinince bağ kalkar); sınırsız tuval yok |
 | Backtrack | VAR | sinama, it | Tuval başına tekrar arabelleği + Klipler dock'u (liste, oynat, kırp) |
 | Birleşik sohbet + etkinlik dock'u | VAR | — | Mevcut StreamAxT/chatHub altyapısı |
 | Twitch Enhanced Broadcasting | DESTEKLENMİYOR | | Platform onayı/API gerektirir; arayüzde gösterilmez |

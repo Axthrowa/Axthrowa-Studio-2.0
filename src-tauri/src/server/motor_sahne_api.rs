@@ -101,7 +101,7 @@ async fn api_sahneler(
   let sahneler: Vec<Value> = k
     .sahneler
     .iter()
-    .map(|s| json!({"id": s.id, "ad": s.ad, "tuval": s.tuval, "ogeSayisi": s.ogeler.len(), "gecis": s.gecis, "etkinTuval": k.tuvaller().contains(&s.tuval.as_str()), "multiview": !s.multiview_gizli}))
+    .map(|s| json!({"id": s.id, "ad": s.ad, "tuval": s.tuval, "ogeSayisi": s.ogeler.len(), "gecis": s.gecis, "etkinTuval": k.tuvaller().contains(&s.tuval.as_str()), "multiview": !s.multiview_gizli, "bagli": s.bagli}))
     .collect();
   let gecisler: Map<String, Value> = k
     .tuvaller()
@@ -145,6 +145,9 @@ struct SahneIslemi {
   /// `multiview` eylemi: sahne Multiview'da gösterilsin mi
   #[serde(default)]
   acik: Option<bool>,
+  /// `bagla` eylemi: diğer tuvaldeki bağlı sahne (null/yok = bağı kaldır)
+  #[serde(default)]
+  hedef: Option<String>,
 }
 
 /// Grup kimliklerini (çoğaltılan sahnede) yeniler
@@ -214,6 +217,9 @@ async fn api_sahne_islem(
         let o = state.motor.ozet();
         let mut o = o.lock();
         o.koleksiyon.sahneler.retain(|s| s.id != id);
+        for s in o.koleksiyon.sahneler.iter_mut().filter(|s| s.bagli.as_deref() == Some(id.as_str())) {
+          s.bagli = None;
+        }
         if o.studyo.get(&tuval).and_then(|x| x.as_deref()) == Some(id.as_str()) {
           o.studyo.insert(tuval.clone(), None);
         }
@@ -240,7 +246,7 @@ async fn api_sahne_islem(
         for f in &mut filtreler {
           f.id = o.koleksiyon.yeni_kimlik("f");
         }
-        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis, filtreler, multiview_gizli: kaynak.multiview_gizli })
+        (yeni.clone(), SahneKaydi { id: yeni, ad, tuval: kaynak.tuval, ogeler, gecis: kaynak.gecis, filtreler, multiview_gizli: kaynak.multiview_gizli, bagli: None })
       };
       komut(&state, json!({"komut": "sahne.olustur", "id": yeni, "tuval": kayit.tuval, "ad": kayit.ad})).await?;
       filtreleri_kur(&state, &yeni, &kayit.filtreler).await?;
@@ -269,6 +275,22 @@ async fn api_sahne_islem(
       }
       koleksiyonu_yaz(&state)?;
       json!({})
+    }
+    "bagla" => {
+      let id = id()?;
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      let tuval = o.koleksiyon.sahne_ref(&id).ok_or_else(|| bulunamadi("sahne yok".into()))?.tuval.clone();
+      if let Some(h) = &g.hedef {
+        let ht = o.koleksiyon.sahne_ref(h).ok_or_else(|| bulunamadi("bağlanacak sahne yok".into()))?.tuval.clone();
+        if ht == tuval {
+          return Err(gecersiz("bağlı sahne diğer tuvalde olmalı".into()));
+        }
+      }
+      o.koleksiyon.sahne(&id).ok_or_else(|| bulunamadi("sahne yok".into()))?.bagli = g.hedef.clone();
+      drop(o);
+      koleksiyonu_yaz(&state)?;
+      json!({"bagli": g.hedef})
     }
     "multiview" => {
       let id = id()?;
@@ -348,7 +370,29 @@ pub(crate) async fn programa_al(state: &AppState, sahne: &str, gecis: bool, sure
   }
   state.motor.ozet().lock().koleksiyon.program.insert(tuval.clone(), sahne.to_string());
   koleksiyonu_yaz(state)?;
+  bagli_esi_programa(state, sahne).await;
   Ok(tuval)
+}
+
+/// Bağlı sahne: eşi diğer tuvalde programda değilse o da geçişle programa alınır (tek atlama — döngü olmaz).
+/// Diğer tuval kapalıysa ya da eş bulunamazsa sessizce geçilir; hata ana geçişi bozmaz.
+pub(crate) async fn bagli_esi_programa(state: &AppState, sahne: &str) {
+  let es = {
+    let o = state.motor.ozet();
+    let o = o.lock();
+    o.koleksiyon
+      .sahne_ref(sahne)
+      .and_then(|s| s.bagli.clone())
+      .filter(|b| o.koleksiyon.sahne_ref(b).is_some_and(|e| o.koleksiyon.tuvaller().contains(&e.tuval.as_str()) && o.koleksiyon.program.get(&e.tuval) != Some(b)))
+  };
+  let Some(es) = es else { return };
+  let tuval = state.motor.ozet().lock().koleksiyon.sahne_ref(&es).map(|e| e.tuval.clone());
+  if let Some(t) = tuval {
+    if komut(state, json!({"komut": "sahne.etkinlestir", "id": es, "gecis": true})).await.is_ok() {
+      state.motor.ozet().lock().koleksiyon.program.insert(t, es);
+      let _ = koleksiyonu_yaz(state);
+    }
+  }
 }
 
 async fn api_program(
@@ -788,6 +832,9 @@ pub(crate) async fn studyo_gecisi(state: &AppState, tuval: &str, takas: bool, su
     o.studyo.insert(tuval.to_string(), bilgi["studyo"].as_str().map(String::from));
   }
   koleksiyonu_yaz(state)?;
+  if let Some(p) = &program {
+    bagli_esi_programa(state, p).await;
+  }
   Ok(program)
 }
 

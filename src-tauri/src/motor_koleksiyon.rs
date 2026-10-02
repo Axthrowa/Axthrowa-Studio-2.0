@@ -250,6 +250,9 @@ pub struct SahneKaydi {
   /// OBS "Multiview'da göster" kapalı (varsayılan: gösterilir)
   #[serde(default, skip_serializing_if = "std::ops::Not::not")]
   pub multiview_gizli: bool,
+  /// Bağlı sahne (SE.Live "linked scenes"): bu sahne programa alınınca diğer tuvaldeki bu sahne de programa alınır
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub bagli: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -739,6 +742,13 @@ impl Koleksiyon {
   pub fn duzelt(&mut self) {
     let mut gorulen = BTreeSet::new();
     self.sahneler.retain(|s| !s.id.is_empty() && TUVALLER.contains(&s.tuval.as_str()) && gorulen.insert(s.id.clone()));
+    // Bağlı sahne: var olmalı ve başka tuvalde olmalı
+    let tuvali: BTreeMap<String, String> = self.sahneler.iter().map(|s| (s.id.clone(), s.tuval.clone())).collect();
+    for s in self.sahneler.iter_mut() {
+      if s.bagli.as_ref().is_some_and(|b| tuvali.get(b).is_none_or(|t| *t == s.tuval)) {
+        s.bagli = None;
+      }
+    }
     for tv in self.tuvaller() {
       if !self.sahneler.iter().any(|s| s.tuval == tv) {
         let (id, ad) = if tv == "ana" { ("sahne-ana", "Sahne") } else { ("sahne-dikey", "Dikey sahne") };

@@ -267,7 +267,7 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
     let filtreler = filtreleri_cevir(sid, s, &mut r);
     // OBS "Multiview'da göster": sahnenin özel ayarlarında `show_in_multiview` (yoksa gösterilir)
     let multiview_gizli = s["private_settings"]["show_in_multiview"].as_bool() == Some(false);
-    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, filtreler, multiview_gizli });
+    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, filtreler, multiview_gizli, bagli: None });
     r.sahne += 1;
   }
   // Sahne sırası (OBS "scene_order")

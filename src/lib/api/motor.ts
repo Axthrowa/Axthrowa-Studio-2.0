@@ -20,7 +20,8 @@ export type MotorKaynakTuru =
   | "masaustu"
   | "uygulama_sesi"
   | "eklenti"
-  | "obs" | "slayt";
+  | "obs"
+  | "slayt";
 export type MotorCikisDurumu = "hazir" | "baglaniyor" | "canli" | "yeniden_baglaniyor" | "durduruluyor" | "durduruldu" | "basarisiz";
 
 export type MotorOgeKaydi = { tuval: string; konum: [number, number]; sinir?: [number, number] | null; gorunur: boolean };
@@ -168,7 +169,16 @@ export type MotorSahneOgesi = {
 export type MotorEksikOge = { kaynak: string; ad: string; tur: string; obsTuru: string; eksik: true };
 export type MotorSahneYaniti = { tuval: string; sahne: string; genislik: number; yukseklik: number; ogeler: MotorSahneOgesi[]; eksikler: MotorEksikOge[] };
 export type MotorGecis = { tur: string; sure_ms: number; ayarlar?: Record<string, unknown> };
-export type MotorSahneOzeti = { id: string; ad: string; tuval: string; ogeSayisi: number; gecis: MotorGecis | null; etkinTuval: boolean; multiview?: boolean };
+export type MotorSahneOzeti = {
+  id: string;
+  ad: string;
+  tuval: string;
+  ogeSayisi: number;
+  gecis: MotorGecis | null;
+  etkinTuval: boolean;
+  multiview?: boolean;
+  bagli?: string | null;
+};
 export type MotorSahneler = {
   calisiyor: boolean;
   koleksiyon?: { id: string; ad: string };
@@ -346,8 +356,7 @@ export const motorApi = {
   sahneDetay: (sahne: string) => istek<MotorSahneYaniti>(`/api/motor/sahne?sahne=${encodeURIComponent(sahne)}`),
   ogeIslem: (govde: MotorOgeIslemi) => istek<{ ok: boolean; oge?: string }>("/api/motor/oge", govde),
   /** Öğe gösterme (goster=true) ya da gizleme geçişi; null = kaldır */
-  ogeGecis: (oge: string, goster: boolean, gecis: MotorOgeGecisi | null) =>
-    istek<{ ok: boolean }>("/api/motor/oge", { oge, eylem: "gecis", goster, gecis }),
+  ogeGecis: (oge: string, goster: boolean, gecis: MotorOgeGecisi | null) => istek<{ ok: boolean }>("/api/motor/oge", { oge, eylem: "gecis", goster, gecis }),
   /** Etkileşim penceresi: `ac` kaynağın tek başına görüntüsünü (`etkilesim-<kaynak>` tuvali) hazırlar */
   kaynakTuvali: (id: string, eylem: "ac" | "kapat") =>
     istek<{ tuval: string; genislik: number; yukseklik: number; ok?: boolean }>("/api/motor/kaynak-tuvali", { id, eylem }),
@@ -357,20 +366,29 @@ export const motorApi = {
   etkilesimOlayi: (kaynak: string, olay: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/etkilesim", { kaynak, eylem: "olay", olay }),
   sahneler: () => istek<MotorSahneler>("/api/motor/sahneler"),
   sahneIslem: (govde: {
-    eylem: "olustur" | "adlandir" | "sil" | "cogalt" | "sirala" | "gecis" | "multiview";
+    eylem: "olustur" | "adlandir" | "sil" | "cogalt" | "sirala" | "gecis" | "multiview" | "bagla";
     id?: string;
     ad?: string;
     tuval?: string;
     sira?: string[];
     gecis?: MotorGecis | null;
     acik?: boolean;
-  }) =>
-    istek<{ id?: string }>("/api/motor/sahne-islem", govde),
+    hedef?: string | null;
+  }) => istek<{ id?: string }>("/api/motor/sahne-islem", govde),
   program: (sahne: string, gecis = true, sure_ms?: number) => istek<{ ok: boolean }>("/api/motor/program", { sahne, gecis, sure_ms }),
   gecis: (tuval: string) =>
-    istek<{ tuval: string; bilgi: { tur: string; sure_ms: number; program: string | null }; turler: { id: string; ad: string }[] }>(`/api/motor/gecis?tuval=${tuval}`),
-  gecisListesi: (govde: { eylem: "ekle" | "sil" | "adlandir" | "sec" | "hizli-ekle" | "hizli-sil"; id?: string; ad?: string; tur?: string; tuval?: string; gecis?: string; sure_ms?: number }) =>
-    istek<{ id?: string }>("/api/motor/gecis-listesi", govde),
+    istek<{ tuval: string; bilgi: { tur: string; sure_ms: number; program: string | null }; turler: { id: string; ad: string }[] }>(
+      `/api/motor/gecis?tuval=${tuval}`
+    ),
+  gecisListesi: (govde: {
+    eylem: "ekle" | "sil" | "adlandir" | "sec" | "hizli-ekle" | "hizli-sil";
+    id?: string;
+    ad?: string;
+    tur?: string;
+    tuval?: string;
+    gecis?: string;
+    sure_ms?: number;
+  }) => istek<{ id?: string }>("/api/motor/gecis-listesi", govde),
   studyoHizli: (tuval: string, hizli: string) => istek<{ program: string | null }>("/api/motor/studyo", { tuval, eylem: "hizli", hizli }),
   gecisAyarla: (tuval: string, tur: string, sure_ms?: number) => istek<{ ok: boolean }>("/api/motor/gecis", { tuval, tur, sure_ms }),
   gecisOzellikleri: (tuval: string) => istek<OzellikTanimi>(`/api/motor/gecis/ozellikler?tuval=${tuval}`),
@@ -379,8 +397,11 @@ export const motorApi = {
     istek<{ onizleme?: string | null; program?: string | null }>("/api/motor/studyo", { tuval, eylem, ...ek }),
   studyoTbar: (tuval: string, konum: number, birak: boolean) =>
     istek<{ etkin: boolean; program: string | null }>("/api/motor/studyo", { tuval, eylem: "tbar", konum, birak }),
-  kaynakIslem: (id: string, eylem: "adlandir" | "cogalt" | "deinterlace" | "renk", ek: { ad?: string; oge?: string; kip?: number; alan?: number; renk?: string } = {}) =>
-    istek<{ id?: string; oge?: string }>("/api/motor/kaynak-islem", { id, eylem, ...ek }),
+  kaynakIslem: (
+    id: string,
+    eylem: "adlandir" | "cogalt" | "deinterlace" | "renk",
+    ek: { ad?: string; oge?: string; kip?: number; alan?: number; renk?: string } = {}
+  ) => istek<{ id?: string; oge?: string }>("/api/motor/kaynak-islem", { id, eylem, ...ek }),
   ses: () => istek<MotorSesDurumu>("/api/motor/ses"),
   sesAyarla: (id: string, eylem: "ses" | "sessiz" | "denge" | "mono" | "senkron" | "izleme" | "izler", deger: number | boolean) =>
     istek<{ ok: boolean }>("/api/motor/ses", { id, eylem, deger }),
@@ -403,8 +424,10 @@ export const motorApi = {
   ekranGoruntusu: (tuval = "ana", kaynak?: string) =>
     istek<{ ok: boolean; yol: string; genislik: number; yukseklik: number }>("/api/motor/ekran-goruntusu", { tuval, kaynak }),
   eksikDosyalar: () => istek<{ eksikler: EksikDosya[] }>("/api/motor/eksik-dosyalar"),
-  eksikDosyaAra: (klasor: string) => istek<{ oneriler: { kaynak: string; alan: string; yol: string }[] }>("/api/motor/eksik-dosyalar", { eylem: "ara", klasor }),
-  eksikDosyaDuzelt: (kaynak: string, alan: string, yol: string) => istek<{ ok: boolean; kalan: number }>("/api/motor/eksik-dosyalar", { eylem: "duzelt", kaynak, alan, yol }),
+  eksikDosyaAra: (klasor: string) =>
+    istek<{ oneriler: { kaynak: string; alan: string; yol: string }[] }>("/api/motor/eksik-dosyalar", { eylem: "ara", klasor }),
+  eksikDosyaDuzelt: (kaynak: string, alan: string, yol: string) =>
+    istek<{ ok: boolean; kalan: number }>("/api/motor/eksik-dosyalar", { eylem: "duzelt", kaynak, alan, yol }),
   remux: () => istek<RemuxDurumu>("/api/motor/remux"),
   remuxEkle: (dosyalar: string[], bicim: "mp4" | "mov" | "mkv", aralik?: [number, number]) =>
     istek<{ ok: boolean; eklenen: number }>("/api/motor/remux", { dosyalar, bicim, ...(aralik ? { aralik } : {}) }),
@@ -442,7 +465,8 @@ export const motorApi = {
   hedef: (id: string, eylem: "baslat" | "durdur", tuval?: string, iz?: number) => istek<{ ok: boolean }>("/api/motor/hedef", { id, eylem, tuval, iz }),
   golive: (eylem: "baslat" | "durdur") =>
     istek<{ sonuc: Record<string, { ok: boolean; hata?: string }> }>("/api/motor/golive", { eylem, confirm: eylem === "durdur" }),
-  kayit: (eylem: "baslat" | "durdur" | "duraklat" | "surdur" | "bol") => istek<{ ok: boolean; yol?: string; duraklatildi?: boolean }>("/api/motor/kayit", { eylem }),
+  kayit: (eylem: "baslat" | "durdur" | "duraklat" | "surdur" | "bol") =>
+    istek<{ ok: boolean; yol?: string; duraklatildi?: boolean }>("/api/motor/kayit", { eylem }),
   sanalKamera: (eylem: "baslat" | "durdur", tuval = "ana") => istek<{ ok: boolean; acik: boolean }>("/api/motor/sanal-kamera", { eylem, tuval }),
   tekrar: (eylem: "ac" | "kapat" | "kaydet", sure_sn?: number) => istek<{ ok: boolean; yol?: string }>("/api/motor/tekrar", { eylem, sure_sn }),
   /** Son önizleme karesi; kare henüz hazır değilse `null` (sunucu 204). */

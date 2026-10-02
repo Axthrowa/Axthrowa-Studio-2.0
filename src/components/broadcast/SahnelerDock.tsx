@@ -22,6 +22,8 @@ export type SahneEylemleri = {
   ekranGoruntusu?: (s: MotorSahneOzeti) => void;
   projektor?: (s: MotorSahneOzeti) => void;
   multiview?: (s: MotorSahneOzeti, acik: boolean) => void;
+  /** Bağlı sahne (diğer tuvaldeki eş); null = bağı kaldır */
+  bagla?: (s: MotorSahneOzeti, hedef: string | null) => void;
   menuAc: (e: { clientX: number; clientY: number; preventDefault?: () => void }, o: MenuOgesi[]) => void;
 };
 
@@ -73,7 +75,21 @@ export function SahnelerDock({
     ...(eylem.filtreler ? [{ etiket: "Filtreler…", eylem: () => eylem.filtreler?.(s) } as MenuOgesi] : []),
     ...(eylem.ekranGoruntusu ? [{ etiket: "Ekran görüntüsü (sahne)", eylem: () => eylem.ekranGoruntusu?.(s) } as MenuOgesi] : []),
     ...(eylem.projektor ? [{ etiket: "Projektör (pencere)", eylem: () => eylem.projektor?.(s) } as MenuOgesi] : []),
-    ...(eylem.multiview ? [{ etiket: `${s.multiview !== false ? "☑" : "☐"} Multiview'da göster`, eylem: () => eylem.multiview?.(s, s.multiview === false) } as MenuOgesi] : []),
+    ...(eylem.multiview
+      ? [{ etiket: `${s.multiview !== false ? "☑" : "☐"} Multiview'da göster`, eylem: () => eylem.multiview?.(s, s.multiview === false) } as MenuOgesi]
+      : []),
+    // Bağlı sahne: diğer (etkin) tuvaldeki sahnelerden biri
+    ...(eylem.bagla && tumSahneler.some((x) => x.tuval !== s.tuval && x.etkinTuval)
+      ? [
+          "ayirici" as const,
+          ...tumSahneler
+            .filter((x) => x.tuval !== s.tuval && x.etkinTuval)
+            .map((x): MenuOgesi => ({
+              etiket: `${s.bagli === x.id ? "● " : ""}Bağlı sahne: ${x.ad}`,
+              eylem: () => eylem.bagla?.(s, s.bagli === x.id ? null : x.id),
+            })),
+        ]
+      : []),
     { etiket: "Kaldır", kisayol: "Del", tehlikeli: true, devreDisi: sahneler.length <= 1 || s.id === program, eylem: () => eylem.sil(s) },
     "ayirici",
     { etiket: "Yukarı taşı", devreDisi: sahneler[0]?.id === s.id, eylem: () => tasi(s.id, -1) },
@@ -81,11 +97,18 @@ export function SahnelerDock({
     { etiket: "En üste", eylem: () => tasi(s.id, "ust") },
     { etiket: "En alta", eylem: () => tasi(s.id, "alt") },
     "ayirici",
-    { etiket: `Geçiş geçersiz kılma: ${s.gecis ? (gecisTurleri.find((t) => t.id === s.gecis?.tur)?.ad ?? s.gecis.tur) : "yok"}`, devreDisi: true, eylem: () => undefined },
+    {
+      etiket: `Geçiş geçersiz kılma: ${s.gecis ? (gecisTurleri.find((t) => t.id === s.gecis?.tur)?.ad ?? s.gecis.tur) : "yok"}`,
+      devreDisi: true,
+      eylem: () => undefined,
+    },
     { etiket: "Geçersiz kılmayı kaldır", devreDisi: !s.gecis, eylem: () => eylem.gecisGecersiz(s, null) },
-    ...gecisTurleri.slice(0, 8).map(
-      (t): MenuOgesi => ({ etiket: `Bu sahneye geçerken: ${t.ad}`, eylem: () => eylem.gecisGecersiz(s, { tur: t.id, sure_ms: s.gecis?.sure_ms ?? 300 }) })
-    ),
+    ...gecisTurleri
+      .slice(0, 8)
+      .map((t): MenuOgesi => ({
+        etiket: `Bu sahneye geçerken: ${t.ad}`,
+        eylem: () => eylem.gecisGecersiz(s, { tur: t.id, sure_ms: s.gecis?.sure_ms ?? 300 }),
+      })),
   ];
 
   return (
@@ -157,8 +180,16 @@ export function SahnelerDock({
                   {gecisTurleri.find((t) => t.id === s.gecis?.tur)?.ad ?? s.gecis.tur}
                 </span>
               )}
-              {programda && <span className="text-[10px] font-semibold" style={{ color: "var(--dt-live)" }}>PROGRAM</span>}
-              {onizlemede && !programda && <span className="text-[10px] font-semibold" style={{ color: "var(--dt-ok)" }}>ÖNİZLEME</span>}
+              {programda && (
+                <span className="text-[10px] font-semibold" style={{ color: "var(--dt-live)" }}>
+                  PROGRAM
+                </span>
+              )}
+              {onizlemede && !programda && (
+                <span className="text-[10px] font-semibold" style={{ color: "var(--dt-ok)" }}>
+                  ÖNİZLEME
+                </span>
+              )}
             </div>
           );
         })}
@@ -167,7 +198,14 @@ export function SahnelerDock({
         <button type="button" className="dt-tool" aria-label="Sahne ekle" title="Sahne ekle" onClick={eylem.ekle}>
           <Plus className="h-3.5 w-3.5" />
         </button>
-        <button type="button" className="dt-tool" aria-label="Sahneyi kaldır" title="Sahneyi kaldır (Del)" disabled={!seciliSahne || sahneler.length <= 1} onClick={() => seciliSahne && eylem.sil(seciliSahne)}>
+        <button
+          type="button"
+          className="dt-tool"
+          aria-label="Sahneyi kaldır"
+          title="Sahneyi kaldır (Del)"
+          disabled={!seciliSahne || sahneler.length <= 1}
+          onClick={() => seciliSahne && eylem.sil(seciliSahne)}
+        >
           <Minus className="h-3.5 w-3.5" />
         </button>
         <button
@@ -181,10 +219,24 @@ export function SahnelerDock({
           <Settings2 className="h-3.5 w-3.5" />
         </button>
         <span className="dt-bosluk" />
-        <button type="button" className="dt-tool" aria-label="Yukarı taşı" title="Yukarı taşı" disabled={!seciliSahne} onClick={() => seciliSahne && tasi(seciliSahne.id, -1)}>
+        <button
+          type="button"
+          className="dt-tool"
+          aria-label="Yukarı taşı"
+          title="Yukarı taşı"
+          disabled={!seciliSahne}
+          onClick={() => seciliSahne && tasi(seciliSahne.id, -1)}
+        >
           <ChevronUp className="h-3.5 w-3.5" />
         </button>
-        <button type="button" className="dt-tool" aria-label="Aşağı taşı" title="Aşağı taşı" disabled={!seciliSahne} onClick={() => seciliSahne && tasi(seciliSahne.id, 1)}>
+        <button
+          type="button"
+          className="dt-tool"
+          aria-label="Aşağı taşı"
+          title="Aşağı taşı"
+          disabled={!seciliSahne}
+          onClick={() => seciliSahne && tasi(seciliSahne.id, 1)}
+        >
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
       </div>

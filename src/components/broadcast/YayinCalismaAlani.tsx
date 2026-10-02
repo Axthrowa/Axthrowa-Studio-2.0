@@ -178,7 +178,9 @@ function MotorKapali({
         {d.cokme ? (
           <div className="mt-3 rounded border border-[color:var(--dt-warn)] p-3" role="alert">
             <p className="font-semibold">{cokmeMetni(d.cokme)}</p>
-            <p className="mt-1 text-[12px] dt-soluk">Sahneleriniz korunuyor. Güvenli kip bu açılışta üçüncü taraf eklentileri yüklemez; eklentinin kaynakları yer tutucu olarak görünür.</p>
+            <p className="mt-1 text-[12px] dt-soluk">
+              Sahneleriniz korunuyor. Güvenli kip bu açılışta üçüncü taraf eklentileri yüklemez; eklentinin kaynakları yer tutucu olarak görünür.
+            </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" className="dt-btn-primary" disabled={mesgul} onClick={() => onBaslat(dikey, fps, { cokme_karari: "guvenli" })}>
                 Güvenli kipte başlat
@@ -201,7 +203,13 @@ function MotorKapali({
             <button type="button" className="dt-btn-primary" disabled={mesgul} onClick={() => onBaslat(dikey, fps)}>
               {mesgul ? "Başlatılıyor…" : "Motoru başlat"}
             </button>
-            <button type="button" className="dt-btn" disabled={mesgul} title="Üçüncü taraf eklentiler bu açılışta yüklenmez" onClick={() => onBaslat(dikey, fps, { guvenli_kip: true })}>
+            <button
+              type="button"
+              className="dt-btn"
+              disabled={mesgul}
+              title="Üçüncü taraf eklentiler bu açılışta yüklenmez"
+              onClick={() => onBaslat(dikey, fps, { guvenli_kip: true })}
+            >
               Güvenli kipte başlat
             </button>
             {onAyarlar && (
@@ -348,7 +356,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     } catch {
       return onToast("Dosya JSON değil");
     }
-    await yap("Profil içe aktarılamadı", () => motorApi.profilIslem({ eylem: "ice-aktar", veri }), () => "Profil içe aktarıldı (Profil menüsünden geçebilirsiniz)").then(koleksiyonlarYenile);
+    await yap(
+      "Profil içe aktarılamadı",
+      () => motorApi.profilIslem({ eylem: "ice-aktar", veri }),
+      () => "Profil içe aktarıldı (Profil menüsünden geçebilirsiniz)"
+    ).then(koleksiyonlarYenile);
   };
   const [multiviewAcik, setMultiviewAcik] = useState(false);
   const [gecisEkle, setGecisEkle] = useState(false);
@@ -461,10 +473,14 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       .catch((e) => onToast(`Ekran görüntüsü alınamadı: ${hataMetni(e)}`));
   const filtreleriYapistir = (hedef: string) =>
     filtrePanosu &&
-    void yap("Filtreler yapıştırılamadı", () => motorApi.filtre({ eylem: "yapistir", kaynak: hedef, kaynaktan: filtrePanosu.kaynak }), (r) => {
-      const x = r as { eklenen?: number; atlanan?: number };
-      return `${x.eklenen ?? 0} filtre yapıştırıldı${x.atlanan ? ` (${x.atlanan} uyumsuz filtre atlandı)` : ""}`;
-    });
+    void yap(
+      "Filtreler yapıştırılamadı",
+      () => motorApi.filtre({ eylem: "yapistir", kaynak: hedef, kaynaktan: filtrePanosu.kaynak }),
+      (r) => {
+        const x = r as { eklenen?: number; atlanan?: number };
+        return `${x.eklenen ?? 0} filtre yapıştırıldı${x.atlanan ? ` (${x.atlanan} uyumsuz filtre atlandı)` : ""}`;
+      }
+    );
   const [birakmaHedefi, setBirakmaHedefi] = useState<DockKimligi | null>(null);
   // Tek docklarda başlık sürüklenebilir (sekme olarak başka dock'a bırakmak için); kilitliyken değil
   useEffect(() => {
@@ -568,8 +584,14 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
 
   // ── Canlı akış ──
   // Önizleme kapalıyken kare aboneliği yok (motor önizleme dönüşümü yapmaz); ses ölçerleri sürer
-  const canli = useMotorCanli(calisiyor, { seviye: true, kare: calisiyor && !onizlemeKapali ? { tuval: studyo ? `studyo-${tuval}` : tuval, genislik: 960, fps: 10 } : null });
-  const programAkisi = useMotorCanli(calisiyor && studyo && !onizlemeKapali, { seviye: false, kare: calisiyor && studyo && !onizlemeKapali ? { tuval, genislik: 640, fps: 10 } : null });
+  const canli = useMotorCanli(calisiyor, {
+    seviye: true,
+    kare: calisiyor && !onizlemeKapali ? { tuval: studyo ? `studyo-${tuval}` : tuval, genislik: 960, fps: 10 } : null,
+  });
+  const programAkisi = useMotorCanli(calisiyor && studyo && !onizlemeKapali, {
+    seviye: false,
+    kare: calisiyor && studyo && !onizlemeKapali ? { tuval, genislik: 640, fps: 10 } : null,
+  });
 
   // ── Süreler ──
   const ozet = d ? canliOzeti(d) : { canli: 0, toplam: 0 };
@@ -583,8 +605,16 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     const t = window.setInterval(() => {
       const { durdur, kalan } = dolanlar(zamanlayici, Date.now(), canliVar, kayitta);
       if (kalan.yayinBitis !== zamanlayici.yayinBitis || kalan.kayitBitis !== zamanlayici.kayitBitis) setZamanlayici(kalan);
-      if (durdur.includes("kayit")) void motorApi.kayit("durdur").then(() => onToast("Çıkış zamanlayıcısı: kayıt durduruldu"), () => undefined);
-      if (durdur.includes("yayin")) void motorApi.golive("durdur").then(() => onToast("Çıkış zamanlayıcısı: yayın durduruldu"), () => undefined);
+      if (durdur.includes("kayit"))
+        void motorApi.kayit("durdur").then(
+          () => onToast("Çıkış zamanlayıcısı: kayıt durduruldu"),
+          () => undefined
+        );
+      if (durdur.includes("yayin"))
+        void motorApi.golive("durdur").then(
+          () => onToast("Çıkış zamanlayıcısı: yayın durduruldu"),
+          () => undefined
+        );
     }, 1000);
     return () => window.clearInterval(t);
   }, [zamanlayici, canliVar, kayitta, onToast]);
@@ -648,7 +678,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   /** Geri alınabilir dönüşüm */
   const donustur = useCallback(
     async (degisim: { oge: MotorSahneOgesi; yeni: MotorDonusumAlanlari; eski: MotorDonusumAlanlari }[], ad: string) => {
-      const uygula = (hangisi: "yeni" | "eski") => Promise.all(degisim.map((x) => motorApi.ogeIslem({ eylem: "donustur", oge: x.oge.oge, donusum: x[hangisi] })));
+      const uygula = (hangisi: "yeni" | "eski") =>
+        Promise.all(degisim.map((x) => motorApi.ogeIslem({ eylem: "donustur", oge: x.oge.oge, donusum: x[hangisi] })));
       try {
         await uygula("yeni");
         yigin.kaydet({ ad, geri: () => uygula("eski").then(sahneYenile), ileri: () => uygula("yeni").then(sahneYenile) });
@@ -661,7 +692,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   );
 
   const eskiDonusum = (o: MotorSahneOgesi, alanlar: MotorDonusumAlanlari): MotorDonusumAlanlari =>
-    Object.fromEntries(Object.keys(alanlar).map((k) => [k, (o as Record<string, unknown>)[k] ?? null]).filter(([, v]) => v !== null)) as MotorDonusumAlanlari;
+    Object.fromEntries(
+      Object.keys(alanlar)
+        .map((k) => [k, (o as Record<string, unknown>)[k] ?? null])
+        .filter(([, v]) => v !== null)
+    ) as MotorDonusumAlanlari;
 
   const ogeDonustur = (o: MotorSahneOgesi, yeni: MotorDonusumAlanlari, ad: string) => void donustur([{ oge: o, yeni, eski: eskiDonusum(o, yeni) }], ad);
 
@@ -751,7 +786,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
 
   const kaynakAdlandir = (o: MotorSahneOgesi) => {
     if (o.grup) {
-      setIstem({ baslik: "Grubu yeniden adlandır", baslangic: o.ad ?? "", yap: (ad) => void yap("Adlandırılamadı", () => motorApi.ogeIslem({ eylem: "grup-adlandir", oge: o.oge, ad })) });
+      setIstem({
+        baslik: "Grubu yeniden adlandır",
+        baslangic: o.ad ?? "",
+        yap: (ad) => void yap("Adlandırılamadı", () => motorApi.ogeIslem({ eylem: "grup-adlandir", oge: o.oge, ad })),
+      });
       return;
     }
     if (o.tur === "sahne") {
@@ -828,7 +867,12 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       },
     });
   const sahneSil = (s: MotorSahneOzeti) =>
-    setOnay({ baslik: "Sahneyi kaldır", metin: `«${s.ad}» sahnesi kaldırılacak. İçindeki kaynaklar koleksiyonda kalır. Bu işlem geri alınamaz.`, eylem: "Kaldır", yap: () => void yap("Sahne kaldırılamadı", () => motorApi.sahneIslem({ eylem: "sil", id: s.id })) });
+    setOnay({
+      baslik: "Sahneyi kaldır",
+      metin: `«${s.ad}» sahnesi kaldırılacak. İçindeki kaynaklar koleksiyonda kalır. Bu işlem geri alınamaz.`,
+      eylem: "Kaldır",
+      yap: () => void yap("Sahne kaldırılamadı", () => motorApi.sahneIslem({ eylem: "sil", id: s.id })),
+    });
 
   // ── Bağlam menüleri ──
   const donusumMenusu = (o: MotorSahneOgesi): MenuOgesi[] => {
@@ -837,9 +881,25 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     const cevir = (x: number, y: number) => ogeDonustur(o, { olcek: [o.olcek[0] * x, o.olcek[1] * y] }, `«${ad}» çevir`);
     return [
       { etiket: "Dönüşümü düzenle…", kisayol: "Ctrl+E", eylem: () => setDonusumOge(o.oge) },
-      { etiket: "Dönüşümü kopyala", eylem: () => setDonusumPanosu({ konum: o.konum, olcek: o.olcek, aci: o.aci ?? 0, hizalama: o.hizalama ?? 5, sinir_turu: o.sinir_turu ?? 0, sinir_hizalama: o.sinir_hizalama ?? 0, kirp: o.kirp ?? [0, 0, 0, 0], ...(o.sinir ? { sinir: o.sinir } : {}) }) },
+      {
+        etiket: "Dönüşümü kopyala",
+        eylem: () =>
+          setDonusumPanosu({
+            konum: o.konum,
+            olcek: o.olcek,
+            aci: o.aci ?? 0,
+            hizalama: o.hizalama ?? 5,
+            sinir_turu: o.sinir_turu ?? 0,
+            sinir_hizalama: o.sinir_hizalama ?? 0,
+            kirp: o.kirp ?? [0, 0, 0, 0],
+            ...(o.sinir ? { sinir: o.sinir } : {}),
+          }),
+      },
       { etiket: "Dönüşümü yapıştır", devreDisi: !donusumPanosu, eylem: () => donusumPanosu && ogeDonustur(o, donusumPanosu, `«${ad}» dönüşüm yapıştır`) },
-      { etiket: "Dönüşümü sıfırla", eylem: () => ogeDonustur(o, { konum: [0, 0], olcek: [1, 1], aci: 0, hizalama: 5, sinir_turu: 0, kirp: [0, 0, 0, 0] }, `«${ad}» dönüşüm sıfırla`) },
+      {
+        etiket: "Dönüşümü sıfırla",
+        eylem: () => ogeDonustur(o, { konum: [0, 0], olcek: [1, 1], aci: 0, hizalama: 5, sinir_turu: 0, kirp: [0, 0, 0, 0] }, `«${ad}» dönüşüm sıfırla`),
+      },
       "ayirici",
       { etiket: "90° saat yönünde döndür", eylem: () => ogeDonustur(o, { aci: ((o.aci ?? 0) + 90) % 360 }, `«${ad}» döndür`) },
       { etiket: "90° saat yönü tersine döndür", eylem: () => ogeDonustur(o, { aci: ((o.aci ?? 0) + 270) % 360 }, `«${ad}» döndür`) },
@@ -878,7 +938,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         eylem: () => setDeinterlace(o),
       },
       { etiket: "Filtreleri kopyala", devreDisi: o.tur === "sahne", eylem: () => setFiltrePanosu({ kaynak: o.kaynak, ad: o.ad ?? o.kaynak }) },
-      { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || filtrePanosu.kaynak === o.kaynak || o.tur === "sahne", eylem: () => filtreleriYapistir(o.kaynak) },
+      {
+        etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır",
+        devreDisi: !filtrePanosu || filtrePanosu.kaynak === o.kaynak || o.tur === "sahne",
+        eylem: () => filtreleriYapistir(o.kaynak),
+      },
       { etiket: "Kaynak rengi…", devreDisi: !k || o.grup || o.tur === "sahne", eylem: () => setKaynakRengi(o) },
       { etiket: "Projektör (pencere)", devreDisi: o.grup || o.durum === "bekliyor", eylem: () => kaynakProjektoru(o.kaynak, o.ad ?? o.kaynak) },
       { etiket: "Ekran görüntüsü (kaynak)", devreDisi: !k || !!k.eksik || o.grup || o.durum === "bekliyor", eylem: () => ekranGoruntusu(tuval, o.kaynak) },
@@ -899,12 +963,27 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       { etiket: "En üste", kisayol: "Ctrl+Home", eylem: () => tasi(o, "en_ust") },
       { etiket: "En alta", kisayol: "Ctrl+End", eylem: () => tasi(o, "en_alt") },
       "ayirici",
-      ...(o.grup ? [{ etiket: "Grubu çöz", eylem: () => void yap("Grup çözülemedi", () => motorApi.ogeIslem({ eylem: "grubu-coz", oge: o.oge })) } as MenuOgesi] : []),
-      ...(o.ust ? [{ etiket: "Gruptan çıkar", eylem: () => void yap("Gruptan çıkarılamadı", () => motorApi.ogeIslem({ eylem: "gruptan-cikar", oge: o.oge })) } as MenuOgesi] : []),
+      ...(o.grup
+        ? [{ etiket: "Grubu çöz", eylem: () => void yap("Grup çözülemedi", () => motorApi.ogeIslem({ eylem: "grubu-coz", oge: o.oge })) } as MenuOgesi]
+        : []),
+      ...(o.ust
+        ? [
+            {
+              etiket: "Gruptan çıkar",
+              eylem: () => void yap("Gruptan çıkarılamadı", () => motorApi.ogeIslem({ eylem: "gruptan-cikar", oge: o.oge })),
+            } as MenuOgesi,
+          ]
+        : []),
       ...(!o.grup && !o.ust
         ? agac
             .filter((g) => g.oge.grup)
-            .map((g) => ({ etiket: `«${g.oge.ad ?? g.oge.kaynak}» grubuna ekle`, eylem: () => void yap("Gruba eklenemedi", () => motorApi.ogeIslem({ eylem: "gruba-ekle", oge: o.oge, grup: g.oge.oge })) }) as MenuOgesi)
+            .map(
+              (g) =>
+                ({
+                  etiket: `«${g.oge.ad ?? g.oge.kaynak}» grubuna ekle`,
+                  eylem: () => void yap("Gruba eklenemedi", () => motorApi.ogeIslem({ eylem: "gruba-ekle", oge: o.oge, grup: g.oge.oge })),
+                }) as MenuOgesi
+            )
         : []),
       { etiket: o.gorunur ? "Gizle" : "Göster", eylem: () => gorunurlukDegistir(o) },
       { etiket: o.kilit ? "Kilidi aç" : "Kilitle", eylem: () => kilitDegistir(o) },
@@ -912,7 +991,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       { etiket: "Kopyala", kisayol: "Ctrl+C", devreDisi: o.grup || o.tur === "sahne", eylem: () => kopyala(o) },
       { etiket: "Yapıştır (başvuru)", kisayol: "Ctrl+V", devreDisi: !kaynakPanosu, eylem: () => yapistir(false) },
       { etiket: "Yapıştır (kopya)", devreDisi: !kaynakPanosu, eylem: () => yapistir(true) },
-      { etiket: "Çoğalt", devreDisi: !k || !!k.eksik || o.grup, eylem: () => void yap("Çoğaltılamadı", () => motorApi.kaynakIslem(o.kaynak, "cogalt", { oge: o.oge })) },
+      {
+        etiket: "Çoğalt",
+        devreDisi: !k || !!k.eksik || o.grup,
+        eylem: () => void yap("Çoğaltılamadı", () => motorApi.kaynakIslem(o.kaynak, "cogalt", { oge: o.oge })),
+      },
       { etiket: "Yeniden adlandır", kisayol: "F2", eylem: () => kaynakAdlandir(o) },
       { etiket: "Kaldır", kisayol: "Del", tehlikeli: true, eylem: () => ogeleriKaldir(coklu ? seciliOgeler : [o]) },
       ...(k ? ["ayirici" as const, { etiket: "Kaynağı tamamen sil…", tehlikeli: true, eylem: () => kaynakSilOnay(k) } as MenuOgesi] : []),
@@ -920,7 +1003,12 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   };
 
   const kaynakSilOnay = (k: MotorKaynak) =>
-    setOnay({ baslik: "Kaynağı sil", metin: `«${k.ad}» tüm sahnelerden kaldırılacak ve ayarları, filtreleri silinecek. Bu işlem geri alınamaz.`, eylem: "Sil", yap: () => void yap("Kaynak silinemedi", () => motorApi.kaynakSil(k.id)) });
+    setOnay({
+      baslik: "Kaynağı sil",
+      metin: `«${k.ad}» tüm sahnelerden kaldırılacak ve ayarları, filtreleri silinecek. Bu işlem geri alınamaz.`,
+      eylem: "Sil",
+      yap: () => void yap("Kaynak silinemedi", () => motorApi.kaynakSil(k.id)),
+    });
 
   const grupla = (liste: MotorSahneOgesi[]) =>
     setIstem({
@@ -950,11 +1038,18 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   };
 
   const ekleMenusu = (e: { clientX: number; clientY: number }) => {
-    const grup = (turler: MotorKaynakTuru[]): MenuOgesi[] => turler.map((t) => ({ etiket: KAYNAK_TURLERI.find((k) => k.tur === t)!.ad, eylem: () => setEkle({ tur: t }) }));
-    const eklenti: MenuOgesi[] = eklentiKaynakTurleri(d?.eklentiler).map((t) => ({ etiket: `${t.ad} — ${t.eklenti}`, eylem: () => setEkle({ tur: "eklenti", eklenti: { id: t.id, ad: t.ad } }) }));
+    const grup = (turler: MotorKaynakTuru[]): MenuOgesi[] =>
+      turler.map((t) => ({ etiket: KAYNAK_TURLERI.find((k) => k.tur === t)!.ad, eylem: () => setEkle({ tur: t }) }));
+    const eklenti: MenuOgesi[] = eklentiKaynakTurleri(d?.eklentiler).map((t) => ({
+      etiket: `${t.ad} — ${t.eklenti}`,
+      eylem: () => setEkle({ tur: "eklenti", eklenti: { id: t.id, ad: t.ad } }),
+    }));
     const sahneler: MenuOgesi[] = tuvalSahneleri
       .filter((s) => s.id !== aktifSahne)
-      .map((s) => ({ etiket: `Sahne: ${s.ad}`, eylem: () => void yap("Sahne eklenemedi", () => motorApi.ogeIslem({ eylem: "ekle", sahne: aktifSahne, kaynak: s.id })) }));
+      .map((s) => ({
+        etiket: `Sahne: ${s.ad}`,
+        eylem: () => void yap("Sahne eklenemedi", () => motorApi.ogeIslem({ eylem: "ekle", sahne: aktifSahne, kaynak: s.id })),
+      }));
     menu.ac(e, [
       ...grup(["renk", "yazi", "gorsel", "slayt", "medya", "tarayici"]),
       "ayirici",
@@ -980,7 +1075,12 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         e,
         o
           ? ogeMenusu(o)
-          : [{ etiket: "Kaynak ekle…", eylem: () => ekleMenusu(e) }, { etiket: "Yapıştır (başvuru)", devreDisi: !kaynakPanosu, eylem: () => yapistir(false) }, "ayirici", ...projektorMenusu()]
+          : [
+              { etiket: "Kaynak ekle…", eylem: () => ekleMenusu(e) },
+              { etiket: "Yapıştır (başvuru)", devreDisi: !kaynakPanosu, eylem: () => yapistir(false) },
+              "ayirici",
+              ...projektorMenusu(),
+            ]
       ),
   };
 
@@ -1006,10 +1106,16 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     }
     if (ctrl && (e.key === "z" || e.key === "Z") && !e.shiftKey) {
       e.preventDefault();
-      void yigin.geriAl().then((ad) => ad && onToast(`Geri alındı: ${ad}`), (x) => onToast(`Geri alınamadı: ${hataMetni(x)}`));
+      void yigin.geriAl().then(
+        (ad) => ad && onToast(`Geri alındı: ${ad}`),
+        (x) => onToast(`Geri alınamadı: ${hataMetni(x)}`)
+      );
     } else if (ctrl && (e.key === "y" || ((e.key === "z" || e.key === "Z") && e.shiftKey))) {
       e.preventDefault();
-      void yigin.yinele().then((ad) => ad && onToast(`Yinelendi: ${ad}`), (x) => onToast(`Yinelenemedi: ${hataMetni(x)}`));
+      void yigin.yinele().then(
+        (ad) => ad && onToast(`Yinelendi: ${ad}`),
+        (x) => onToast(`Yinelenemedi: ${hataMetni(x)}`)
+      );
     } else if (ctrl && e.key === "c" && tek) {
       e.preventDefault();
       kopyala(tek);
@@ -1032,52 +1138,106 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   // ── Yayın denetimleri ──
   const yayinDugmesi = () => {
     if (!d) return;
-    if (ozet.canli > 0) setOnay({ baslik: "Yayını bitir", metin: "Tüm motor hedefleri durdurulacak. Kayıt ve tekrar arabelleği sürer.", eylem: "Yayını bitir", yap: () => void yap("Yayın durdurulamadı", () => motorApi.golive("durdur")) });
+    if (ozet.canli > 0)
+      setOnay({
+        baslik: "Yayını bitir",
+        metin: "Tüm motor hedefleri durdurulacak. Kayıt ve tekrar arabelleği sürer.",
+        eylem: "Yayını bitir",
+        yap: () => void yap("Yayın durdurulamadı", () => motorApi.golive("durdur")),
+      });
     else setOnKontrol(true);
   };
   const golive = () => {
     setOnKontrol(false);
-    void yap("Yayın başlatılamadı", () => motorApi.golive("baslat"), (r) => {
-      const s = Object.entries((r as { sonuc: Record<string, { ok: boolean; hata?: string }> }).sonuc);
-      const kotu = s.filter(([, v]) => !v.ok);
-      return kotu.length ? `${s.length - kotu.length}/${s.length} hedef başladı. ${kotu.map(([k, v]) => `${k}: ${v.hata}`).join(" · ")}` : `${s.length} hedef başladı`;
-    });
+    void yap(
+      "Yayın başlatılamadı",
+      () => motorApi.golive("baslat"),
+      (r) => {
+        const s = Object.entries((r as { sonuc: Record<string, { ok: boolean; hata?: string }> }).sonuc);
+        const kotu = s.filter(([, v]) => !v.ok);
+        return kotu.length
+          ? `${s.length - kotu.length}/${s.length} hedef başladı. ${kotu.map(([k, v]) => `${k}: ${v.hata}`).join(" · ")}`
+          : `${s.length} hedef başladı`;
+      }
+    );
   };
   const kayitDugmesi = () =>
-    void yap("Kayıt", () => motorApi.kayit(kayitta ? "durdur" : "baslat"), (r) => (kayitta ? `Kayıt kaydedildi: ${String((r as { yol?: string }).yol ?? "").split(/[\\/]/).pop()}` : null));
+    void yap(
+      "Kayıt",
+      () => motorApi.kayit(kayitta ? "durdur" : "baslat"),
+      (r) =>
+        kayitta
+          ? `Kayıt kaydedildi: ${String((r as { yol?: string }).yol ?? "")
+              .split(/[\\/]/)
+              .pop()}`
+          : null
+    );
   const tekrarAcik = d ? cikisEtkin(d.tekrar.durum) : false;
   const tekrarDugmesi = () => void yap("Tekrar arabelleği", () => motorApi.tekrar(tekrarAcik ? "kapat" : "ac"));
   const duraklatDugmesi = () =>
-    void yap("Kayıt duraklatılamadı", () => motorApi.kayit(duraklatildi ? "surdur" : "duraklat"), (r) =>
-      (r as { duraklatildi?: boolean }).duraklatildi ? "Kayıt duraklatıldı" : "Kayıt sürüyor"
+    void yap(
+      "Kayıt duraklatılamadı",
+      () => motorApi.kayit(duraklatildi ? "surdur" : "duraklat"),
+      (r) => ((r as { duraklatildi?: boolean }).duraklatildi ? "Kayıt duraklatıldı" : "Kayıt sürüyor")
     );
-  const bolDugmesi = () => void yap("Kayıt bölünemedi", () => motorApi.kayit("bol"), () => "Kayıt yeni dosyaya bölünüyor (bir sonraki anahtar karede)");
+  const bolDugmesi = () =>
+    void yap(
+      "Kayıt bölünemedi",
+      () => motorApi.kayit("bol"),
+      () => "Kayıt yeni dosyaya bölünüyor (bir sonraki anahtar karede)"
+    );
   const sanalKameraDugmesi = () =>
-    void yap("Sanal kamera", () => motorApi.sanalKamera(sanalKameraAcik ? "durdur" : "baslat", sanalKameraHedefi(skHedef)), (r) => ((r as { acik?: boolean }).acik ? "Sanal kamera açık" : "Sanal kamera kapalı"));
+    void yap(
+      "Sanal kamera",
+      () => motorApi.sanalKamera(sanalKameraAcik ? "durdur" : "baslat", sanalKameraHedefi(skHedef)),
+      (r) => ((r as { acik?: boolean }).acik ? "Sanal kamera açık" : "Sanal kamera kapalı")
+    );
   const tekrarKaydet = () =>
-    void yap("Tekrar kaydedilemedi", () => motorApi.tekrar("kaydet"), (r) => {
-      // Dikey tekrar da açıksa yanıt { ana, dikey }
-      const y = (r as { yol?: unknown }).yol;
-      const ad = (v: unknown) => String(v ?? "").split(/[\\/]/).pop();
-      return y && typeof y === "object" ? `Tekrar kaydedildi: ${ad((y as { ana?: unknown }).ana)} + dikey ${ad((y as { dikey?: unknown }).dikey)}` : `Tekrar kaydedildi: ${ad(y)}`;
-    });
+    void yap(
+      "Tekrar kaydedilemedi",
+      () => motorApi.tekrar("kaydet"),
+      (r) => {
+        // Dikey tekrar da açıksa yanıt { ana, dikey }
+        const y = (r as { yol?: unknown }).yol;
+        const ad = (v: unknown) =>
+          String(v ?? "")
+            .split(/[\\/]/)
+            .pop();
+        return y && typeof y === "object"
+          ? `Tekrar kaydedildi: ${ad((y as { ana?: unknown }).ana)} + dikey ${ad((y as { dikey?: unknown }).dikey)}`
+          : `Tekrar kaydedildi: ${ad(y)}`;
+      }
+    );
   const studyoDugmesi = () => void yap("Studio Mode", () => motorApi.studyo(tuval, studyo ? "kapat" : "ac"));
-  const motorDurdur = () => setOnay({ baslik: "Motoru durdur", metin: "Motor kapanır: tüm motor yayınları, kayıt ve tekrar arabelleği biter. Sahne koleksiyonu kayıtlıdır.", eylem: "Motoru durdur", yap: () => void yap("Motor durdurulamadı", () => motorApi.durdur()) });
+  const motorDurdur = () =>
+    setOnay({
+      baslik: "Motoru durdur",
+      metin: "Motor kapanır: tüm motor yayınları, kayıt ve tekrar arabelleği biter. Sahne koleksiyonu kayıtlıdır.",
+      eylem: "Motoru durdur",
+      yap: () => void yap("Motor durdurulamadı", () => motorApi.durdur()),
+    });
 
   // ── Projektör ──
   const projektor = (hedef: string, monitor?: Monitor) =>
-    void ayriPencere(`projektor-${hedef}${monitor ? "-tam" : ""}`, `/projektor?tuval=${encodeURIComponent(hedef)}`, `Projektör — ${hedef}`, { monitor, genislik: hedef.endsWith("dikey") ? 540 : 960, yukseklik: hedef.endsWith("dikey") ? 960 : 540 }).catch((e) =>
-      onToast(`Projektör açılamadı: ${hataMetni(e)}`)
-    );
+    void ayriPencere(`projektor-${hedef}${monitor ? "-tam" : ""}`, `/projektor?tuval=${encodeURIComponent(hedef)}`, `Projektör — ${hedef}`, {
+      monitor,
+      genislik: hedef.endsWith("dikey") ? 540 : 960,
+      yukseklik: hedef.endsWith("dikey") ? 960 : 540,
+    }).catch((e) => onToast(`Projektör açılamadı: ${hataMetni(e)}`));
   /** Sahne/kaynak projektörü (pencere): motor kaynağı kendi tuvalinde işler */
   const kaynakProjektoru = (id: string, ad: string) =>
-    void ayriPencere(`projektor-kaynak-${id}`, `/projektor?kaynak=${encodeURIComponent(id)}&ad=${encodeURIComponent(ad)}`, `Projektör — ${ad}`, { genislik: 960, yukseklik: 540 }).catch((e) =>
-      onToast(`Projektör açılamadı: ${hataMetni(e)}`)
-    );
+    void ayriPencere(`projektor-kaynak-${id}`, `/projektor?kaynak=${encodeURIComponent(id)}&ad=${encodeURIComponent(ad)}`, `Projektör — ${ad}`, {
+      genislik: 960,
+      yukseklik: 540,
+    }).catch((e) => onToast(`Projektör açılamadı: ${hataMetni(e)}`));
   const projektorMenusu = (): MenuOgesi[] => [
     { etiket: `Projektör (pencere): Program · ${TUVAL_ADI[tuval]}`, devreDisi: !calisiyor, eylem: () => projektor(tuval) },
     ...(studyo ? [{ etiket: `Projektör (pencere): Önizleme · ${TUVAL_ADI[tuval]}`, eylem: () => projektor(`studyo-${tuval}`) } as MenuOgesi] : []),
-    ...ekranlar.map((m): MenuOgesi => ({ etiket: `Tam ekran projektör: ${m.ad} (${m.genislik}×${m.yukseklik})`, devreDisi: !calisiyor, eylem: () => projektor(tuval, m) })),
+    ...ekranlar.map((m): MenuOgesi => ({
+      etiket: `Tam ekran projektör: ${m.ad} (${m.genislik}×${m.yukseklik})`,
+      devreDisi: !calisiyor,
+      eylem: () => projektor(tuval, m),
+    })),
   ];
 
   // ── Menü çubuğu ──
@@ -1085,7 +1245,10 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     {
       ad: "Dosya",
       ogeler: () => [
-        { etiket: calisiyor ? "Motoru durdur…" : "Motoru başlat", eylem: calisiyor ? motorDurdur : () => void yap("Motor başlatılamadı", () => motorApi.baslat(d?.dikey ?? false, d?.fps === 30 ? 30 : 60)) },
+        {
+          etiket: calisiyor ? "Motoru durdur…" : "Motoru başlat",
+          eylem: calisiyor ? motorDurdur : () => void yap("Motor başlatılamadı", () => motorApi.baslat(d?.dikey ?? false, d?.fps === 30 ? 30 : 60)),
+        },
         { etiket: "Kayıtları göster", eylem: () => klasorAc("kayit") },
         { etiket: "Yeniden muxla…", eylem: () => setRemuxAcik(true) },
         { etiket: "Ayarlar klasörünü göster", eylem: () => klasorAc("ayarlar") },
@@ -1105,14 +1268,32 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     {
       ad: "Düzen",
       ogeler: () => [
-        { etiket: yigin.geriAdi ? `Geri al: ${yigin.geriAdi}` : "Geri al", kisayol: "Ctrl+Z", devreDisi: !yigin.geriAdi, eylem: () => void yigin.geriAl().catch((x) => onToast(`Geri alınamadı: ${hataMetni(x)}`)) },
-        { etiket: yigin.ileriAdi ? `Yinele: ${yigin.ileriAdi}` : "Yinele", kisayol: "Ctrl+Y", devreDisi: !yigin.ileriAdi, eylem: () => void yigin.yinele().catch((x) => onToast(`Yinelenemedi: ${hataMetni(x)}`)) },
+        {
+          etiket: yigin.geriAdi ? `Geri al: ${yigin.geriAdi}` : "Geri al",
+          kisayol: "Ctrl+Z",
+          devreDisi: !yigin.geriAdi,
+          eylem: () => void yigin.geriAl().catch((x) => onToast(`Geri alınamadı: ${hataMetni(x)}`)),
+        },
+        {
+          etiket: yigin.ileriAdi ? `Yinele: ${yigin.ileriAdi}` : "Yinele",
+          kisayol: "Ctrl+Y",
+          devreDisi: !yigin.ileriAdi,
+          eylem: () => void yigin.yinele().catch((x) => onToast(`Yinelenemedi: ${hataMetni(x)}`)),
+        },
         "ayirici",
         { etiket: "Kopyala", kisayol: "Ctrl+C", devreDisi: !tek, eylem: () => tek && kopyala(tek) },
         { etiket: "Yapıştır (başvuru)", kisayol: "Ctrl+V", devreDisi: !kaynakPanosu, eylem: () => yapistir(false) },
         { etiket: "Yapıştır (kopya)", devreDisi: !kaynakPanosu, eylem: () => yapistir(true) },
-        { etiket: "Filtreleri kopyala", devreDisi: !tek || tek.tur === "sahne", eylem: () => tek && setFiltrePanosu({ kaynak: tek.kaynak, ad: tek.ad ?? tek.kaynak }) },
-        { etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır", devreDisi: !filtrePanosu || !tek || tek.kaynak === filtrePanosu.kaynak, eylem: () => tek && filtreleriYapistir(tek.kaynak) },
+        {
+          etiket: "Filtreleri kopyala",
+          devreDisi: !tek || tek.tur === "sahne",
+          eylem: () => tek && setFiltrePanosu({ kaynak: tek.kaynak, ad: tek.ad ?? tek.kaynak }),
+        },
+        {
+          etiket: filtrePanosu ? `Filtreleri yapıştır (${filtrePanosu.ad})` : "Filtreleri yapıştır",
+          devreDisi: !filtrePanosu || !tek || tek.kaynak === filtrePanosu.kaynak,
+          eylem: () => tek && filtreleriYapistir(tek.kaynak),
+        },
         "ayirici",
         { etiket: `${onizlemeKilitli ? "☑" : "☐"} Önizlemeyi kilitle`, eylem: () => setOnizlemeKilitli((x) => !x) },
         "ayirici",
@@ -1138,9 +1319,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: `${onizlemeKapali ? "☑" : "☐"} Önizlemeyi devre dışı bırak`, eylem: onizlemeKapaliDegistir },
         { etiket: `${studyoDikey ? "☑" : "☐"} Studio Mode: dikey düzen`, eylem: () => setStudyoDikey((v) => bayrakYaz("studyo-dikey", !v)) },
         { etiket: `${canliUyari ? "☑" : "☐"} Studio Mode: canlı sahne düzenleme uyarısı`, eylem: () => setCanliUyari((v) => bayrakYaz("canli-uyari", !v)) },
-        { etiket: `${onizlemeOlcek.tur === "sigdir" ? "● " : ""}Önizleme ölçekleme: pencereye sığdır`, kisayol: "Ctrl+0", eylem: () => setOnizlemeOlcek({ tur: "sigdir" }) },
+        {
+          etiket: `${onizlemeOlcek.tur === "sigdir" ? "● " : ""}Önizleme ölçekleme: pencereye sığdır`,
+          kisayol: "Ctrl+0",
+          eylem: () => setOnizlemeOlcek({ tur: "sigdir" }),
+        },
         { etiket: `${onizlemeOlcek.tur === "tuval" ? "● " : ""}Önizleme ölçekleme: tuval (%100)`, eylem: () => setOnizlemeOlcek({ tur: "tuval" }) },
-        { etiket: `${onizlemeOlcek.tur === "yakin" ? "● " : ""}Yakınlaştır / uzaklaştır: Ctrl+tekerlek · kaydır: orta tuşla sürükle`, devreDisi: true, eylem: () => undefined },
+        {
+          etiket: `${onizlemeOlcek.tur === "yakin" ? "● " : ""}Yakınlaştır / uzaklaştır: Ctrl+tekerlek · kaydır: orta tuşla sürükle`,
+          devreDisi: true,
+          eylem: () => undefined,
+        },
         { etiket: `Multiview (pencere) · ${TUVAL_ADI[tuval]}`, devreDisi: !calisiyor, eylem: () => setMultiviewAcik(true) },
         "ayirici",
         { etiket: `${durumCubugu ? "☑" : "☐"} Durum çubuğu`, eylem: () => setDurumCubugu((x) => !x) },
@@ -1150,24 +1339,28 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     {
       ad: "Docklar",
       ogeler: () => [
-        ...DOCKLAR.map((x): MenuOgesi => ({ etiket: `${duzen.gorunur.includes(x.id) ? "☑" : "☐"} ${x.ad}`, eylem: () => setDuzen((dz) => dockDegistir(dz, x.id)) })),
+        ...DOCKLAR.map((x): MenuOgesi => ({
+          etiket: `${duzen.gorunur.includes(x.id) ? "☑" : "☐"} ${x.ad}`,
+          eylem: () => setDuzen((dz) => dockDegistir(dz, x.id)),
+        })),
         "ayirici",
         { etiket: `${duzen.kilitli ? "☑" : "☐"} Dockları kilitle`, eylem: () => setDuzen((dz) => ({ ...dz, kilitli: !dz.kilitli })) },
         { etiket: "Sekme olarak birleştir… (ya da başlığı başka bir dock'a sürükleyin)", devreDisi: duzen.kilitli, eylem: () => setSekmeBirlestir(true) },
-        ...(Object.keys(duzen.sekme) as DockKimligi[]).map(
-          (c): MenuOgesi => ({ etiket: `Sekmeyi ayır: ${DOCKLAR.find((x) => x.id === c)?.ad}`, devreDisi: duzen.kilitli, eylem: () => setDuzen((dz) => sekmeyiAyir(dz, c)) })
-        ),
+        ...(Object.keys(duzen.sekme) as DockKimligi[]).map((c): MenuOgesi => ({
+          etiket: `Sekmeyi ayır: ${DOCKLAR.find((x) => x.id === c)?.ad}`,
+          devreDisi: duzen.kilitli,
+          eylem: () => setDuzen((dz) => sekmeyiAyir(dz, c)),
+        })),
         { etiket: "Düzeni sıfırla", eylem: () => setDuzen(() => varsayilanDuzen()) },
         "ayirici",
-        ...(["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste", "tarayici"] as const).map(
-          (x): MenuOgesi => ({
-            etiket: `Ayrı pencerede aç: ${DOCKLAR.find((k) => k.id === x)?.ad}`,
-            eylem: () =>
-              void ayriPencere(`dock-${x}`, `/dock?id=${x}`, DOCKLAR.find((k) => k.id === x)?.ad ?? x, { genislik: x === "hedefler" ? 900 : 420, yukseklik: 520 }).catch((e) =>
-                onToast(`Pencere açılamadı: ${hataMetni(e)}`)
-              ),
-          })
-        ),
+        ...(["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste", "tarayici"] as const).map((x): MenuOgesi => ({
+          etiket: `Ayrı pencerede aç: ${DOCKLAR.find((k) => k.id === x)?.ad}`,
+          eylem: () =>
+            void ayriPencere(`dock-${x}`, `/dock?id=${x}`, DOCKLAR.find((k) => k.id === x)?.ad ?? x, {
+              genislik: x === "hedefler" ? 900 : 420,
+              yukseklik: 520,
+            }).catch((e) => onToast(`Pencere açılamadı: ${hataMetni(e)}`)),
+        })),
       ],
     },
     {
@@ -1178,20 +1371,55 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           void yap(
             "Profil değiştirilemedi",
             () => motorApi.profilIslem({ eylem: "gec", id }),
-            (r) => ((r as { motorYenidenBasladi?: boolean }).motorYenidenBasladi ? `«${ad}» profili: motor yeni ayarlarla yeniden başladı` : `«${ad}» profili etkin`)
+            (r) =>
+              (r as { motorYenidenBasladi?: boolean }).motorYenidenBasladi ? `«${ad}» profili: motor yeni ayarlarla yeniden başladı` : `«${ad}» profili etkin`
           ).then(koleksiyonlarYenile);
         return [
           ...profiller.map((x): MenuOgesi => ({ etiket: `${x.etkin ? "● " : ""}${x.ad}`, devreDisi: x.etkin, eylem: () => profilAc(x.id, x.ad) })),
           "ayirici",
-          { etiket: "Yeni…", eylem: () => setIstem({ baslik: "Yeni profil", baslangic: "Yeni profil", yap: (ad) => void yap("Oluşturulamadı", () => motorApi.profilIslem({ eylem: "yeni", ad })).then(koleksiyonlarYenile) }) },
-          { etiket: "Çoğalt…", devreDisi: !etkin, eylem: () => etkin && setIstem({ baslik: "Profili çoğalt", baslangic: `${etkin.ad} (kopya)`, yap: (ad) => void yap("Çoğaltılamadı", () => motorApi.profilIslem({ eylem: "cogalt", id: etkin.id, ad })).then(koleksiyonlarYenile) }) },
-          { etiket: "Yeniden adlandır…", devreDisi: !etkin, eylem: () => etkin && setIstem({ baslik: "Profili yeniden adlandır", baslangic: etkin.ad, yap: (ad) => void yap("Adlandırılamadı", () => motorApi.profilIslem({ eylem: "adlandir", id: etkin.id, ad })).then(koleksiyonlarYenile) }) },
+          {
+            etiket: "Yeni…",
+            eylem: () =>
+              setIstem({
+                baslik: "Yeni profil",
+                baslangic: "Yeni profil",
+                yap: (ad) => void yap("Oluşturulamadı", () => motorApi.profilIslem({ eylem: "yeni", ad })).then(koleksiyonlarYenile),
+              }),
+          },
+          {
+            etiket: "Çoğalt…",
+            devreDisi: !etkin,
+            eylem: () =>
+              etkin &&
+              setIstem({
+                baslik: "Profili çoğalt",
+                baslangic: `${etkin.ad} (kopya)`,
+                yap: (ad) => void yap("Çoğaltılamadı", () => motorApi.profilIslem({ eylem: "cogalt", id: etkin.id, ad })).then(koleksiyonlarYenile),
+              }),
+          },
+          {
+            etiket: "Yeniden adlandır…",
+            devreDisi: !etkin,
+            eylem: () =>
+              etkin &&
+              setIstem({
+                baslik: "Profili yeniden adlandır",
+                baslangic: etkin.ad,
+                yap: (ad) => void yap("Adlandırılamadı", () => motorApi.profilIslem({ eylem: "adlandir", id: etkin.id, ad })).then(koleksiyonlarYenile),
+              }),
+          },
           ...profiller
             .filter((x) => !x.etkin)
             .map((x): MenuOgesi => ({
               etiket: `Kaldır: ${x.ad}…`,
               tehlikeli: true,
-              eylem: () => setOnay({ baslik: "Profili kaldır", metin: `«${x.ad}» profili yedek klasörüne taşınacak (silinmez).`, eylem: "Kaldır", yap: () => void yap("Kaldırılamadı", () => motorApi.profilIslem({ eylem: "sil", id: x.id })).then(koleksiyonlarYenile) }),
+              eylem: () =>
+                setOnay({
+                  baslik: "Profili kaldır",
+                  metin: `«${x.ad}» profili yedek klasörüne taşınacak (silinmez).`,
+                  eylem: "Kaldır",
+                  yap: () => void yap("Kaldırılamadı", () => motorApi.profilIslem({ eylem: "sil", id: x.id })).then(koleksiyonlarYenile),
+                }),
             })),
           "ayirici",
           { etiket: "Dışa aktar (etkin profil)", devreDisi: !etkin, eylem: () => etkin && window.open(motorApi.profilDisaAktarUrl(etkin.id), "_blank") },
@@ -1207,13 +1435,25 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           etiket: `${k.etkin ? "● " : ""}${k.ad}`,
           devreDisi: k.etkin,
           eylem: () =>
-            void yap("Koleksiyona geçilemedi", () => motorApi.koleksiyon({ eylem: "gec", id: k.id }), () => `«${k.ad}» koleksiyonuna geçildi`).then(() => {
+            void yap(
+              "Koleksiyona geçilemedi",
+              () => motorApi.koleksiyon({ eylem: "gec", id: k.id }),
+              () => `«${k.ad}» koleksiyonuna geçildi`
+            ).then(() => {
               yigin.temizle();
               koleksiyonlarYenile();
             }),
         })),
         "ayirici",
-        { etiket: "Yeni…", eylem: () => setIstem({ baslik: "Yeni koleksiyon", baslangic: "Yeni koleksiyon", yap: (ad) => void yap("Oluşturulamadı", () => motorApi.koleksiyon({ eylem: "yeni", ad })).then(koleksiyonlarYenile) }) },
+        {
+          etiket: "Yeni…",
+          eylem: () =>
+            setIstem({
+              baslik: "Yeni koleksiyon",
+              baslangic: "Yeni koleksiyon",
+              yap: (ad) => void yap("Oluşturulamadı", () => motorApi.koleksiyon({ eylem: "yeni", ad })).then(koleksiyonlarYenile),
+            }),
+        },
         { etiket: "Koleksiyonları yönet (çoğalt, adlandır, içe/dışa aktar, OBS'ten al)…", eylem: () => setKoleksiyonPenceresi(true) },
         { etiket: "Eksik dosyaları denetle…", devreDisi: !calisiyor, eylem: () => setEksikDosyalar(true) },
       ],
@@ -1253,14 +1493,30 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Hedef ekle / düzenle (Kontrol Merkezi)", eylem: () => onGit?.("control") },
       ],
     },
-    { ad: "Eklentiler", ogeler: () => [{ etiket: "Eklenti yöneticisi…", eylem: () => setEklentiPenceresi({ sekme: "kurulu" }) }, { etiket: "Paket kur…", eylem: () => setEklentiPenceresi({ sekme: "kurulu", paket: true }) }] },
+    {
+      ad: "Eklentiler",
+      ogeler: () => [
+        { etiket: "Eklenti yöneticisi…", eylem: () => setEklentiPenceresi({ sekme: "kurulu" }) },
+        { etiket: "Paket kur…", eylem: () => setEklentiPenceresi({ sekme: "kurulu", paket: true }) },
+      ],
+    },
     { ad: "Kontrol Merkezi", ogeler: () => [{ etiket: "Kontrol Merkezi'ni aç", eylem: () => onGit?.("control") }] },
-    { ad: "Otomasyon", ogeler: () => [{ etiket: "Kısayollar ve eylem kayıt defteri", eylem: () => onGit?.("hotkeys") }, { etiket: "Olay kuralları (Kontrol Merkezi)", eylem: () => onGit?.("control") }] },
+    {
+      ad: "Otomasyon",
+      ogeler: () => [
+        { etiket: "Kısayollar ve eylem kayıt defteri", eylem: () => onGit?.("hotkeys") },
+        { etiket: "Olay kuralları (Kontrol Merkezi)", eylem: () => onGit?.("control") },
+      ],
+    },
     {
       ad: "Yardım",
       ogeler: () => [
         { etiket: `libobs ${d?.bilgi?.libobs ?? "—"}`, devreDisi: true, eylem: () => undefined },
-        { etiket: "Kısayollar: Ctrl+Z/Y geri al/yinele · Ctrl+C/V kopyala/yapıştır · Ctrl+E dönüşüm · Ctrl+F sığdır · Del kaldır · F2 adlandır", devreDisi: true, eylem: () => undefined },
+        {
+          etiket: "Kısayollar: Ctrl+Z/Y geri al/yinele · Ctrl+C/V kopyala/yapıştır · Ctrl+E dönüşüm · Ctrl+F sığdır · Del kaldır · F2 adlandır",
+          devreDisi: true,
+          eylem: () => undefined,
+        },
         "ayirici",
         { etiket: "Son günlüğü görüntüle…", eylem: () => setGunlukAcik("motor") },
         { etiket: "Günlük klasörünü aç", eylem: () => klasorAc("gunluk") },
@@ -1275,7 +1531,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   function paletAc() {
     const sahneKomutlari: Komut[] = (sl?.sahneler ?? [])
       .filter((s) => s.etkinTuval)
-      .map((s) => ({ etiket: `${studyo && s.tuval === tuval ? "Önizlemeye al" : "Sahneye geç"}: ${s.ad}`, grup: `Sahne · ${TUVAL_ADI[s.tuval]}`, eylem: () => (s.tuval === tuval ? sahneSec(s.id) : void yap("Sahne geçişi", () => motorApi.program(s.id))) }));
+      .map((s) => ({
+        etiket: `${studyo && s.tuval === tuval ? "Önizlemeye al" : "Sahneye geç"}: ${s.ad}`,
+        grup: `Sahne · ${TUVAL_ADI[s.tuval]}`,
+        eylem: () => (s.tuval === tuval ? sahneSec(s.id) : void yap("Sahne geçişi", () => motorApi.program(s.id))),
+      }));
     setPalet(komutlar(menuler, sahneKomutlari));
   }
 
@@ -1322,6 +1582,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               ekranGoruntusu: (s) => ekranGoruntusu(tuval, s.id),
               projektor: (s) => kaynakProjektoru(s.id, s.ad),
               multiview: (s, acik) => void yap("Multiview ayarı", () => motorApi.sahneIslem({ eylem: "multiview", id: s.id, acik })),
+              bagla: (s, hedef) => void yap("Bağlı sahne", () => motorApi.sahneIslem({ eylem: "bagla", id: s.id, hedef })),
               menuAc: menu.ac,
             }}
           />
@@ -1409,9 +1670,20 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             onSec={(id) => void yap("Geçiş", () => motorApi.gecisListesi({ eylem: "sec", id, tuval }))}
             onEkle={() => setGecisEkle(true)}
             onSil={(g) =>
-              setOnay({ baslik: "Geçişi kaldır", metin: `«${g.ad}» geçişi listeden kaldırılacak; onu kullanan hızlı geçişler de kalkar.`, eylem: "Kaldır", yap: () => void yap("Geçiş kaldırılamadı", () => motorApi.gecisListesi({ eylem: "sil", id: g.id })) })
+              setOnay({
+                baslik: "Geçişi kaldır",
+                metin: `«${g.ad}» geçişi listeden kaldırılacak; onu kullanan hızlı geçişler de kalkar.`,
+                eylem: "Kaldır",
+                yap: () => void yap("Geçiş kaldırılamadı", () => motorApi.gecisListesi({ eylem: "sil", id: g.id })),
+              })
             }
-            onAdlandir={(g) => setIstem({ baslik: "Geçişi yeniden adlandır", baslangic: g.ad, yap: (ad) => void yap("Adlandırılamadı", () => motorApi.gecisListesi({ eylem: "adlandir", id: g.id, ad })) })}
+            onAdlandir={(g) =>
+              setIstem({
+                baslik: "Geçişi yeniden adlandır",
+                baslangic: g.ad,
+                yap: (ad) => void yap("Adlandırılamadı", () => motorApi.gecisListesi({ eylem: "adlandir", id: g.id, ad })),
+              })
+            }
             menuAc={menu.ac}
             onSure={(ms) => void yap("Geçiş süresi", () => motorApi.gecisAyarla(tuval, gecis?.tur ?? "fade_transition", ms))}
             onOzellikler={() => setGecisOzellik(true)}
@@ -1440,9 +1712,10 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 { etiket: `${skHedef.tur === "program" ? "● " : ""}Program`, eylem: () => setSkHedef({ tur: "program" }) },
                 { etiket: `${skHedef.tur === "onizleme" ? "● " : ""}Önizleme (Studio Mode)`, devreDisi: !studyo, eylem: () => setSkHedef({ tur: "onizleme" }) },
                 "ayirici",
-                ...tuvalSahneleri.map(
-                  (s): MenuOgesi => ({ etiket: `${skHedef.tur === "sahne" && skHedef.id === s.id ? "● " : ""}Sahne: ${s.ad}`, eylem: () => setSkHedef({ tur: "sahne", id: s.id, ad: s.ad }) })
-                ),
+                ...tuvalSahneleri.map((s): MenuOgesi => ({
+                  etiket: `${skHedef.tur === "sahne" && skHedef.id === s.id ? "● " : ""}Sahne: ${s.ad}`,
+                  eylem: () => setSkHedef({ tur: "sahne", id: s.id, ad: s.ad }),
+                })),
               ])
             }
             onTekrar={tekrarDugmesi}
@@ -1560,7 +1833,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     if (duzen.kilitli) return;
     const bas = e.clientY;
     const ilk = duzen.yukseklik;
-    const hareket = (m: PointerEvent) => setDuzen((dz) => ({ ...dz, yukseklik: Math.min(EN_COK_YUKSEKLIK, Math.max(EN_AZ_YUKSEKLIK, ilk - (m.clientY - bas))) }));
+    const hareket = (m: PointerEvent) =>
+      setDuzen((dz) => ({ ...dz, yukseklik: Math.min(EN_COK_YUKSEKLIK, Math.max(EN_AZ_YUKSEKLIK, ilk - (m.clientY - bas))) }));
     const birak = () => {
       window.removeEventListener("pointermove", hareket);
       window.removeEventListener("pointerup", birak);
@@ -1589,10 +1863,14 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             d={d}
             mesgul={mesgul === "Motor başlatılamadı"}
             onBaslat={(dikey, fps, ek) =>
-              void yap("Motor başlatılamadı", () => motorApi.baslat(dikey, fps, ek), (r) => {
-                const eksik = (r as { eksikKaynaklar?: string[] }).eksikKaynaklar ?? [];
-                return eksik.length ? `Eklentisi yüklü olmayan ${eksik.length} kaynak yer tutucu olarak korundu: ${eksik.join(", ")}` : null;
-              })
+              void yap(
+                "Motor başlatılamadı",
+                () => motorApi.baslat(dikey, fps, ek),
+                (r) => {
+                  const eksik = (r as { eksikKaynaklar?: string[] }).eksikKaynaklar ?? [];
+                  return eksik.length ? `Eklentisi yüklü olmayan ${eksik.length} kaynak yer tutucu olarak korundu: ${eksik.join(", ")}` : null;
+                }
+              )
             }
             onEklentiler={(s) => setEklentiPenceresi({ sekme: s })}
             onAyarlar={() => setAyarlar("cikis")}
@@ -1644,14 +1922,34 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               />
               {studyo && (
                 <>
-                  <div className={studyoDikey ? "flex flex-wrap items-center justify-center gap-2 py-1" : "flex flex-col items-center justify-center gap-2 px-1"}>
-                    <button type="button" className="dt-btn-primary" disabled={mesgul !== null} onClick={() => void yap("Geçiş", () => motorApi.studyo(tuval, "gecis"))} title="Önizlemeyi programa al">
+                  <div
+                    className={studyoDikey ? "flex flex-wrap items-center justify-center gap-2 py-1" : "flex flex-col items-center justify-center gap-2 px-1"}
+                  >
+                    <button
+                      type="button"
+                      className="dt-btn-primary"
+                      disabled={mesgul !== null}
+                      onClick={() => void yap("Geçiş", () => motorApi.studyo(tuval, "gecis"))}
+                      title="Önizlemeyi programa al"
+                    >
                       Geçiş →
                     </button>
-                    <button type="button" className="dt-btn" disabled={mesgul !== null} onClick={() => void yap("Kesme", () => motorApi.studyo(tuval, "gecis", { sure_ms: 0 }))} title="Anında geç">
+                    <button
+                      type="button"
+                      className="dt-btn"
+                      disabled={mesgul !== null}
+                      onClick={() => void yap("Kesme", () => motorApi.studyo(tuval, "gecis", { sure_ms: 0 }))}
+                      title="Anında geç"
+                    >
                       Kes →
                     </button>
-                    <button type="button" className="dt-btn" disabled={mesgul !== null} onClick={() => void yap("Takas", () => motorApi.studyo(tuval, "gecis", { takas: true }))} title="Geç ve önizlemeyi eski programla değiştir">
+                    <button
+                      type="button"
+                      className="dt-btn"
+                      disabled={mesgul !== null}
+                      onClick={() => void yap("Takas", () => motorApi.studyo(tuval, "gecis", { takas: true }))}
+                      title="Geç ve önizlemeyi eski programla değiştir"
+                    >
                       Takas ⇄
                     </button>
                     <HizliGecisler
@@ -1663,7 +1961,12 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                       onSil={(id) => void yap("Hızlı geçiş kaldırılamadı", () => motorApi.gecisListesi({ eylem: "hizli-sil", id }))}
                       menuAc={menu.ac}
                     />
-                    <TBar tuval={tuval} devreDisi={mesgul !== null || !onizleme || onizleme === program} onHata={(m) => onToast(`T-bar: ${m}`)} onBitti={sahneYenile} />
+                    <TBar
+                      tuval={tuval}
+                      devreDisi={mesgul !== null || !onizleme || onizleme === program}
+                      onHata={(m) => onToast(`T-bar: ${m}`)}
+                      onBitti={sahneYenile}
+                    />
                   </div>
                   <TuvalGorunumu
                     etiket={`Program · ${sahneBilgi(program)?.ad ?? ""}`}
@@ -1692,7 +1995,14 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             )}
           </div>
           {/* Alt dock sırası */}
-          <div className="dt-yatay-ayirici" role="separator" aria-orientation="horizontal" aria-label="Dock yüksekliği" data-kilitli={duzen.kilitli || undefined} onPointerDown={yukseklikSurukle} />
+          <div
+            className="dt-yatay-ayirici"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Dock yüksekliği"
+            data-kilitli={duzen.kilitli || undefined}
+            onPointerDown={yukseklikSurukle}
+          />
           <div ref={docklarRef} className="flex min-h-0 gap-0 px-1" style={{ height: duzen.yukseklik }}>
             {gorunurDocklar.map((id, i) => (
               <div key={id} className="flex min-h-0 min-w-0" style={{ flex: `${(duzen.oranlar[id] ?? 1) / toplamOran} 1 0` }}>
@@ -1726,7 +2036,13 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                   {yuva(id)}
                 </div>
                 {i < gorunurDocklar.length - 1 && (
-                  <div className="dt-dikey-ayirici" role="separator" aria-orientation="vertical" data-kilitli={duzen.kilitli || undefined} onPointerDown={ayiriciSurukle(id, gorunurDocklar[i + 1])} />
+                  <div
+                    className="dt-dikey-ayirici"
+                    role="separator"
+                    aria-orientation="vertical"
+                    data-kilitli={duzen.kilitli || undefined}
+                    onPointerDown={ayiriciSurukle(id, gorunurDocklar[i + 1])}
+                  />
                 )}
               </div>
             ))}
@@ -1737,13 +2053,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       {durumCubugu && (
         <div className="dt-durum-cubugu" role="status" aria-label="Durum çubuğu">
           <span className="dt-nokta" data-durum={calisiyor ? "hazir" : undefined} />
-          <span>{calisiyor ? `libobs ${d.bilgi?.libobs ?? "?"}` : d.sonCikisKodu != null ? `Motor kapalı (son çıkış kodu ${d.sonCikisKodu})` : "Motor kapalı"}</span>
+          <span>
+            {calisiyor ? `libobs ${d.bilgi?.libobs ?? "?"}` : d.sonCikisKodu != null ? `Motor kapalı (son çıkış kodu ${d.sonCikisKodu})` : "Motor kapalı"}
+          </span>
           {sl?.koleksiyon && <span className="dt-soluk">· {sl.koleksiyon.ad}</span>}
           <span className="dt-bosluk" />
           {(() => {
             const saglik = yayinSagligi(ist?.cikislar ?? []);
             if (!saglik) return null;
-            const ad = { yesil: "sağlıklı", sari: "yeniden bağlanma ya da %1'den çok düşen kare", kirmizi: "başarısız hedef ya da %5'ten çok düşen kare" }[saglik];
+            const ad = { yesil: "sağlıklı", sari: "yeniden bağlanma ya da %1'den çok düşen kare", kirmizi: "başarısız hedef ya da %5'ten çok düşen kare" }[
+              saglik
+            ];
             return (
               <span className="relative">
                 <button
@@ -1774,7 +2094,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                             <tr key={h.id}>
                               <td>{h.ad}</td>
                               <td>{CIKIS_DURUM_ETIKETI[h.durum] ?? h.durum}</td>
-                              <td className="dt-sayi text-right">{bitHizi[`h-${h.id}`] != null && c?.etkin ? `${Math.round(bitHizi[`h-${h.id}`])} kbps` : "—"}</td>
+                              <td className="dt-sayi text-right">
+                                {bitHizi[`h-${h.id}`] != null && c?.etkin ? `${Math.round(bitHizi[`h-${h.id}`])} kbps` : "—"}
+                              </td>
                               <td className="dt-sayi text-right">{c ? `${c.dusen_kare}${oran ? ` (%${oran})` : ""}` : "—"}</td>
                             </tr>
                           );
@@ -1798,8 +2120,16 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             </span>
           )}
           {sanalKameraAcik && <span className="dt-sayi">SANAL KAMERA</span>}
-          {zamanlayici.yayinBitis !== null && <span className="dt-sayi" title="Çıkış zamanlayıcısı">yayın {kalanMetin(zamanlayici.yayinBitis, simdi)} sonra durur</span>}
-          {zamanlayici.kayitBitis !== null && <span className="dt-sayi" title="Çıkış zamanlayıcısı">kayıt {kalanMetin(zamanlayici.kayitBitis, simdi)} sonra durur</span>}
+          {zamanlayici.yayinBitis !== null && (
+            <span className="dt-sayi" title="Çıkış zamanlayıcısı">
+              yayın {kalanMetin(zamanlayici.yayinBitis, simdi)} sonra durur
+            </span>
+          )}
+          {zamanlayici.kayitBitis !== null && (
+            <span className="dt-sayi" title="Çıkış zamanlayıcısı">
+              kayıt {kalanMetin(zamanlayici.kayitBitis, simdi)} sonra durur
+            </span>
+          )}
           {onizlemeKilitli && <span className="dt-soluk">önizleme kilitli</span>}
           {(yenidenBaglanan > 0 || basarisiz > 0) && (
             <span className="dt-uyari-metni">
@@ -1818,7 +2148,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               <span className="dt-sayi" title="İşlemede geciken kare / toplam">
                 geciken {ist.geciken_kare}
               </span>
-              {ist.atlanan_kare != null && <span className="dt-sayi" title="Kodlamada atlanan kare">atlanan {ist.atlanan_kare}</span>}
+              {ist.atlanan_kare != null && (
+                <span className="dt-sayi" title="Kodlamada atlanan kare">
+                  atlanan {ist.atlanan_kare}
+                </span>
+              )}
               {yayinCikislari.length > 0 && (
                 <span className={`dt-sayi${dusenKare > 0 ? " dt-uyari-metni" : ""}`} title="Ağ nedeniyle düşen kare (etkin yayın hedeflerinin toplamı)">
                   düşen {dusenKare} ({yayinKare > 0 ? ((dusenKare / yayinKare) * 100).toFixed(1) : "0.0"}%)
@@ -1874,12 +2208,20 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         <DonusumDiyalogu
           oge={donusumHedefi}
           onDegistir={(yeni, eski) => void donustur([{ oge: donusumHedefi, yeni, eski }], `«${donusumHedefi.ad ?? donusumHedefi.kaynak}» dönüşüm`)}
-          onSifirla={() => ogeDonustur(donusumHedefi, { konum: [0, 0], olcek: [1, 1], aci: 0, hizalama: 5, sinir_turu: 0, kirp: [0, 0, 0, 0] }, "Dönüşüm sıfırla")}
+          onSifirla={() =>
+            ogeDonustur(donusumHedefi, { konum: [0, 0], olcek: [1, 1], aci: 0, hizalama: 5, sinir_turu: 0, kirp: [0, 0, 0, 0] }, "Dönüşüm sıfırla")
+          }
           onKapat={() => setDonusumOge(null)}
         />
       )}
       {gelismisSes && <GelismisSesDiyalogu ses={ses} onAyarla={sesAyarla} onKapat={() => setGelismisSes(false)} />}
-      {gecisOzellik && <GecisOzellikleri tuval={tuval} ad={sl?.gecisTurleri?.find((t) => t.id === gecis?.tur)?.ad ?? gecis?.tur ?? ""} onKapat={() => setGecisOzellik(false)} />}
+      {gecisOzellik && (
+        <GecisOzellikleri
+          tuval={tuval}
+          ad={sl?.gecisTurleri?.find((t) => t.id === gecis?.tur)?.ad ?? gecis?.tur ?? ""}
+          onKapat={() => setGecisOzellik(false)}
+        />
+      )}
       {koleksiyonPenceresi && (
         <KoleksiyonYoneticisi
           onToast={onToast}
@@ -1992,12 +2334,20 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           onKapat={() => setMultiviewAcik(false)}
         />
       )}
-      <input ref={profilDosyasi} type="file" accept=".json,application/json" hidden onChange={(e) => void profilIceAktar(e.target.files?.[0]).finally(() => (e.target.value = ""))} />
+      <input
+        ref={profilDosyasi}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        onChange={(e) => void profilIceAktar(e.target.files?.[0]).finally(() => (e.target.value = ""))}
+      />
       {eksikDosyalar && <EksikDosyalarPenceresi onToast={onToast} onDegisti={() => void sahneYenile()} onKapat={() => setEksikDosyalar(false)} />}
       {guncelleme && <GuncellemePenceresi onKapat={() => setGuncelleme(false)} />}
       {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}
       {gunlukAcik && <GunlukPenceresi key={gunlukAcik} tur={gunlukAcik} onKapat={() => setGunlukAcik(false)} />}
-      {zamanlayiciAcik && <CikisZamanlayicisiPenceresi z={zamanlayici} canli={canliVar} kayitta={kayitta} onAyarla={setZamanlayici} onKapat={() => setZamanlayiciAcik(false)} />}
+      {zamanlayiciAcik && (
+        <CikisZamanlayicisiPenceresi z={zamanlayici} canli={canliVar} kayitta={kayitta} onAyarla={setZamanlayici} onKapat={() => setZamanlayiciAcik(false)} />
+      )}
       {hakkinda && <HakkindaDiyalogu libobs={d.bilgi?.libobs} onKapat={() => setHakkinda(false)} />}
       {sekmeBirlestir && (
         <SekmeBirlestirDiyalogu
@@ -2040,7 +2390,15 @@ function GecisOzellikleri({ tuval, ad, onKapat }: { tuval: string; ad: string; o
 
 const DOCK_SURUKLEME = "application/x-yya-dock";
 
-function SekmeBirlestirDiyalogu({ duzen, onTamam, onKapat }: { duzen: DockDuzeni; onTamam: (cocuk: DockKimligi, ev: DockKimligi) => void; onKapat: () => void }) {
+function SekmeBirlestirDiyalogu({
+  duzen,
+  onTamam,
+  onKapat,
+}: {
+  duzen: DockDuzeni;
+  onTamam: (cocuk: DockKimligi, ev: DockKimligi) => void;
+  onKapat: () => void;
+}) {
   const [cocuk, setCocuk] = useState<DockKimligi>("gecisler");
   const [ev, setEv] = useState<DockKimligi>("denetimler");
   const secenekler = DOCKLAR.map((x) => (

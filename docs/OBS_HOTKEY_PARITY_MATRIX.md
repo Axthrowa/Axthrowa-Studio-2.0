@@ -23,7 +23,7 @@
 | Filtreyi aç / kapat | `engine.filter.enable/disable/toggle` (kaynak + filtre adı) | UYGULANDI |
 | Sahne öğesi göster/gizle geçişi | `engine.source.show/hide/toggle` öğenin gösterme/gizleme geçişiyle | UYGULANDI (geçiş ayarı ve gizlenme sınandı; geçişin piksel düzeyinde oynaması sınanmadı) |
 | T-bar | — | OBS'te de kısayol yok; Studio Mode'da arayüzden |
-| Hızlı geçişler | — | Studio Mode düğmeleri VAR; kısayol ataması YOK |
+| Hızlı geçiş | `engine.studio.quickTransition` (adlandırılmış geçiş adı) | UYGULANDI — süre o geçişin hızlı geçiş düğmesinden, yoksa tuvalin süresi |
 
 Çalışma alanı içi (odak panelde): Ctrl+Z/Y geri al/yinele, Ctrl+C/V kopyala/yapıştır, Ctrl+E dönüşüm, Ctrl+F sığdır,
 Ctrl+S uzat, Ctrl+D ortala, Ctrl+Home/End en üst/alt, Del kaldır, F2 yeniden adlandır, oklar it (Shift 10 px),

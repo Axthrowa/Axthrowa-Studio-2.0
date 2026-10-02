@@ -144,6 +144,13 @@ function PanelEylemiAlanlari({
                     <input className={field} value={row.filter || ""} placeholder="Filtreler penceresindeki adı" onChange={(e) => onPatch({ filter: e.target.value })} />
                   </label>
                 );
+              case "engineTransition":
+                return (
+                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                    Geçiş adı
+                    <input className={field} value={row.transition || ""} placeholder="Sahne Geçişleri listesindeki ad (ör. Kes, Soldur)" onChange={(e) => onPatch({ transition: e.target.value })} />
+                  </label>
+                );
               case "input":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">

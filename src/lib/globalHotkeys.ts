@@ -205,6 +205,8 @@ export type HotkeyBinding = {
   /** srcToggle (sahnedeki kaynak) / filter (filtrenin sahibi) */
   source?: string;
   filter?: string;
+  /** engine.studio.quickTransition: adlandırılmış geçiş */
+  transition?: string;
   /** record: toggle | start | stop | pause */
   mode?: string;
   /** volume: dB farkı */
@@ -312,6 +314,7 @@ export function useGlobalHotkeys(
                   label: b.label || "",
                   source: b.source || "",
                   filter: b.filter || "",
+                  transition: b.transition || "",
                   mode: b.mode || "",
                   delta: Number(b.delta) || 0,
                   name: b.name || "",

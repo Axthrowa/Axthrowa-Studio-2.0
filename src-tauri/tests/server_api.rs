@@ -2826,6 +2826,12 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   assert_eq!(gb["bilgi"]["tur"], "fade_transition", "hızlı geçişten sonra tuvalin geçişi geri kurulur: {gb}");
   let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
   assert!(sl["seciliGecis"].get("ana").is_none(), "türle seçimde adlandırılmış seçim düşer");
+  // Kısayol eylemi: adlandırılmış geçiş adıyla hızlı geçiş (Studio Mode açık)
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "onizleme", "sahne": oyun})).await;
+  let r = tamam("/api/actions/run", json!({"id": "engine.studio.quickTransition", "params": {"transition": "Kes"}})).await;
+  assert_eq!(r["result"]["program"], oyun.as_str(), "{r}");
+  let r = h.client.post(format!("{}/api/actions/run", h.base)).json(&json!({"id": "engine.studio.quickTransition", "params": {"transition": "Yok Böyle"}})).send().await.unwrap();
+  assert!(!r.status().is_success(), "bilinmeyen geçiş reddedilir");
   tamam("/api/motor/gecis-listesi", json!({"eylem": "sil", "id": kaydir})).await;
   let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
   assert!(sl["hizliGecisler"].as_array().unwrap().is_empty(), "silinen geçişin hızlı geçişi de düşer");

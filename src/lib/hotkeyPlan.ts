@@ -146,6 +146,7 @@ function actionRows(
       input: r.input || "",
       source: r.source || "",
       filter: r.filter || "",
+      transition: r.transition || "",
       mode: r.mode || "",
       delta: Number(r.delta) || 0,
       name: r.name || "",

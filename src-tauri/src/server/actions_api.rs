@@ -212,6 +212,7 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
     Action::EngineRecord { start: false } => motor_api::kayit_durdur(state).await.map(|_| json!({ "kayit": false })).map_err(motor_hatasi),
     Action::EngineReplaySave => motor_api::tekrar_kaydet(state).await.map(|_| json!({ "kaydedildi": true })).map_err(motor_hatasi),
     Action::EngineSceneSwitch { scene } => motor_api::motor_sahnesine_gec(state, scene).await.map_err(motor_hatasi),
+    Action::EngineQuickTransition { transition } => super::motor_sahne_api::hizli_gecis_adla(state, transition).await.map_err(motor_hatasi),
     Action::EngineStudioTransition => super::motor_sahne_api::studyo_gecisi(state, "ana", false, None)
       .await
       .map(|p| json!({ "program": p }))

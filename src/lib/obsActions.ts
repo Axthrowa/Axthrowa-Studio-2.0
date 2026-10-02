@@ -56,6 +56,8 @@ export type ActionRow = {
   source?: string;
   /** filter: filtre adı */
   filter?: string;
+  /** engine.studio.quickTransition: adlandırılmış geçiş adı */
+  transition?: string;
   /** volume: ses girişi */
   input?: string;
   /** volume: dB farkı */

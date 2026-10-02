@@ -385,35 +385,45 @@ fn adli_gecis_listesi(k: &kol::Koleksiyon) -> Vec<Value> {
 }
 
 /// Hızlı geçiş (OBS Studio Mode "Quick Transitions"): önizleme verilen geçiş ve süreyle programa alınır; geçiş bitince
-/// tuvalin kendi geçişi geri kurulur (dock'taki seçim değişmez). Yeniden kurma, geçiş süresi + pay kadar sonra yapılır.
-async fn hizli_gecis(state: &Arc<AppState>, tuval: &str, tur: &str, ayarlar: &Value, sure_ms: u32, onceki: Option<GecisKaydi>) -> Result<Value, Hata> {
+/// tuvalin kendi geçişi geri kurulur (dock'taki seçim değişmez). Çağrı, geçiş süresi + pay kadar bekleyip geri kurar.
+pub(crate) async fn hizli_gecis(state: &AppState, tuval: &str, tur: &str, ayarlar: &Value, sure_ms: u32, onceki: Option<GecisKaydi>) -> Result<Value, Hata> {
   let mut istek = json!({"komut": "gecis.ayarla", "tuval": tuval, "tur": tur, "sure_ms": sure_ms});
   if ayarlar.is_object() {
     istek["ayarlar"] = ayarlar.clone();
   }
   komut(state, istek).await?;
-  let geri = move |state: Arc<AppState>, tuval: String| async move {
-    let g = onceki.unwrap_or(GecisKaydi { tur: VARSAYILAN_GECIS.into(), sure_ms: VARSAYILAN_SURE_MS, ayarlar: Value::Null });
-    let mut istek = json!({"komut": "gecis.ayarla", "tuval": tuval, "tur": g.tur, "sure_ms": g.sure_ms});
-    if g.ayarlar.is_object() {
-      istek["ayarlar"] = g.ayarlar;
-    }
-    let _ = komut(&state, istek).await;
-  };
-  match studyo_gecisi(state, tuval, false, Some(sure_ms)).await {
-    Ok(program) => {
-      let (s, t) = (state.clone(), tuval.to_string());
-      tokio::spawn(async move {
-        tokio::time::sleep(std::time::Duration::from_millis(u64::from(sure_ms) + 250)).await;
-        geri(s, t).await;
-      });
-      Ok(json!({"program": program}))
-    }
-    Err(e) => {
-      geri(state.clone(), tuval.to_string()).await;
-      Err(e)
-    }
+  let sonuc = studyo_gecisi(state, tuval, false, Some(sure_ms)).await;
+  if sonuc.is_ok() {
+    tokio::time::sleep(std::time::Duration::from_millis(u64::from(sure_ms) + 250)).await;
   }
+  let g = onceki.unwrap_or(GecisKaydi { tur: VARSAYILAN_GECIS.into(), sure_ms: VARSAYILAN_SURE_MS, ayarlar: Value::Null });
+  let mut geri = json!({"komut": "gecis.ayarla", "tuval": tuval, "tur": g.tur, "sure_ms": g.sure_ms});
+  if g.ayarlar.is_object() {
+    geri["ayarlar"] = g.ayarlar;
+  }
+  let _ = komut(state, geri).await;
+  sonuc.map(|program| json!({"program": program}))
+}
+
+/// Kısayol eylemi: adlandırılmış geçişi (ad ya da kimlik) hızlı geçiş olarak oynatır. Süre: bu geçiş için tanımlı ilk
+/// hızlı geçiş düğmesininki, yoksa tuvalin süresi.
+pub(crate) async fn hizli_gecis_adla(state: &AppState, gecis: &str) -> Result<Value, Hata> {
+  motor_calisiyor(state).await?;
+  let (tur, ayarlar, sure, onceki) = {
+    let o = state.motor.ozet();
+    let o = o.lock();
+    let k = &o.koleksiyon;
+    let id = kol::YERLESIK_GECISLER
+      .iter()
+      .find(|(i, ad, _)| *i == gecis || kol::ad_esit(ad, gecis))
+      .map(|(i, _, _)| i.to_string())
+      .or_else(|| k.adli_gecisler.iter().find(|g| g.id == gecis || kol::ad_esit(&g.ad, gecis)).map(|g| g.id.clone()))
+      .ok_or_else(|| bulunamadi(format!("geçiş yok: {gecis}")))?;
+    let (_, tur, ayarlar) = k.adli_gecis(&id).ok_or_else(|| bulunamadi("geçiş yok".into()))?;
+    let sure = k.hizli_gecisler.iter().find(|h| h.gecis == id).map(|h| h.sure_ms).or_else(|| k.gecisler.get("ana").map(|g| g.sure_ms)).unwrap_or(VARSAYILAN_SURE_MS);
+    (tur, ayarlar, sure, k.gecisler.get("ana").cloned())
+  };
+  hizli_gecis(state, "ana", &tur, &ayarlar, sure, onceki).await
 }
 
 #[derive(Deserialize)]

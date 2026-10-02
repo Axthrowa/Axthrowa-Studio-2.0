@@ -29,6 +29,8 @@ pub enum ParamKind {
   EngineScene,
   /// Motor kaynağındaki filtrenin adı
   EngineFilter,
+  /// Adlandırılmış geçiş (Sahne Geçişleri dock'undaki ad)
+  EngineTransition,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -116,6 +118,7 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "engine.source.toggle", label: "Motor: kaynağı göster / gizle", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
   ActionSpec { id: "engine.scene.switch", label: "Motor: sahneye geç (Studio Mode'da önizlemeye)", category: "engine", perm: "scene.switch", confirm: false, requires: Requires::Motor, params: MOTOR_SAHNE },
   ActionSpec { id: "engine.studio.transition", label: "Motor: Studio Mode geçişi (önizleme → program)", category: "engine", perm: "scene.switch", confirm: false, requires: Requires::Motor, params: &[] },
+  ActionSpec { id: "engine.studio.quickTransition", label: "Motor: hızlı geçiş (Studio Mode, adlandırılmış geçişle)", category: "engine", perm: "scene.switch", confirm: false, requires: Requires::Motor, params: &[ParamSpec { name: "transition", kind: ParamKind::EngineTransition }] },
   ActionSpec { id: "engine.audio.mute", label: "Motor: sesi kapat", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
   ActionSpec { id: "engine.audio.unmute", label: "Motor: sesi aç", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
   ActionSpec { id: "engine.audio.toggle", label: "Motor: sesi aç / kapat", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
@@ -160,6 +163,7 @@ pub enum Action {
   EngineSourceVisibility { source: String, mode: &'static str },
   EngineSceneSwitch { scene: String },
   EngineStudioTransition,
+  EngineQuickTransition { transition: String },
   /// `muted: None` = değiştir
   EngineAudioMute { source: String, muted: Option<bool> },
   /// Bas-konuş (`konus`) / bas-sustur; `basili`: tuş basıldı mı bırakıldı mı
@@ -267,6 +271,7 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
     },
     "engine.scene.switch" => Action::EngineSceneSwitch { scene: metin(params, "scene")? },
     "engine.studio.transition" => Action::EngineStudioTransition,
+    "engine.studio.quickTransition" => Action::EngineQuickTransition { transition: metin(params, "transition")? },
     "engine.audio.mute" => Action::EngineAudioMute { source: metin(params, "source")?, muted: Some(true) },
     "engine.audio.unmute" => Action::EngineAudioMute { source: metin(params, "source")?, muted: Some(false) },
     "engine.audio.toggle" => Action::EngineAudioMute { source: metin(params, "source")?, muted: None },
@@ -328,7 +333,7 @@ mod tests {
     let mut gorulen = std::collections::HashSet::new();
     for a in ACTIONS {
       assert!(gorulen.insert(a.id), "yinelenen kimlik: {}", a.id);
-      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk"});
+      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk", "transition": "Kes"});
       assert!(parse(a.id, &ornek).is_ok(), "yürütücüsüz eylem: {}", a.id);
       assert!(!a.perm.is_empty() && a.perm.contains('.'), "izin adı: {}", a.id);
     }

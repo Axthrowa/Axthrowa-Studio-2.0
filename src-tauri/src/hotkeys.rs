@@ -40,6 +40,9 @@ pub struct HotkeyBindingIn {
   /// Filtre adı — `filter`.
   #[serde(default)]
   pub filter: String,
+  /// Adlandırılmış geçiş — `engine.studio.quickTransition`.
+  #[serde(default)]
+  pub transition: String,
   /// `record` için: toggle | start | stop | pause.
   #[serde(default)]
   pub mode: String,
@@ -68,6 +71,7 @@ pub(crate) fn eylem_parametreleri(b: &HotkeyBindingIn) -> serde_json::Value {
     "delta": b.delta,
     "id": b.target,
     "filter": b.filter,
+    "transition": b.transition,
   })
 }
 

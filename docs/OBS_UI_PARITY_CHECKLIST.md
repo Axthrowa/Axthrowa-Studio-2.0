@@ -155,7 +155,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Canlı süre, kayıt süresi (duraklatıldı), CPU %, GPU %, FPS, kb/s | VAR | tp | GPU Windows performans sayaçlarından |
 | Ağdan düşen kare (sayı + %) | VAR | — | Etkin yayın hedeflerinin toplamı |
 | Geciken/atlanan kare | VAR | tp | |
-| Sağlık karesi rengi, hedef başına tablo | KISMİ | — | Hedefler dock'unda hedef başına durum |
+| Sağlık karesi rengi, hedef başına tablo | VAR | vt:yayinSagligi | Yeşil/sarı/kırmızı (başarısız ya da >%5 düşen kare kırmızı, yeniden bağlanma ya da >%1 sarı); tıklayınca hedef başına durum, bit hızı, düşen kare |
 
 ## 4.11 Ayarlar penceresi
 

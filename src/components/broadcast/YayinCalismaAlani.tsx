@@ -27,6 +27,7 @@ import {
   type MotorSesDurumu,
   type MotorSesKanali,
   DEINTERLACE_KIPLERI,
+  CIKIS_DURUM_ETIKETI,
 } from "../../lib/api/motor";
 import { multistreamApi, type Finding } from "../../lib/api/multistream";
 import { canliOzeti, sureBicimi } from "../../lib/broadcast";
@@ -87,6 +88,7 @@ import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { KaynakAracCubugu } from "./KaynakAracCubugu";
 import { TarayiciDock } from "./TarayiciDock";
 import type { OlcekKipi } from "../../lib/onizlemeOlcek";
+import { yayinSagligi } from "../../lib/yayinSagligi";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
 import { BOS as ZAMANLAYICI_BOS, dolanlar, kalanMetin, type Zamanlayici } from "../../lib/cikisZamanlayicisi";
@@ -350,6 +352,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [gecisEkle, setGecisEkle] = useState(false);
   // Studio Mode seçenekleri (OBS: dikey düzen, canlı sahne düzenleme uyarısı); tercih yerel
   const [studyoDikey, setStudyoDikey] = useState(() => bayrakOku("studyo-dikey", false));
+  const [hedefTablosu, setHedefTablosu] = useState(false);
   const [canliUyari, setCanliUyari] = useState(() => bayrakOku("canli-uyari", true));
   const [onizlemeOlcek, setOnizlemeOlcek] = useState<OlcekKipi>({ tur: "sigdir" });
   const [onizlemeKapali, setOnizlemeKapali] = useState(() => {
@@ -1731,6 +1734,52 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           <span>{calisiyor ? `libobs ${d.bilgi?.libobs ?? "?"}` : d.sonCikisKodu != null ? `Motor kapalı (son çıkış kodu ${d.sonCikisKodu})` : "Motor kapalı"}</span>
           {sl?.koleksiyon && <span className="dt-soluk">· {sl.koleksiyon.ad}</span>}
           <span className="dt-bosluk" />
+          {(() => {
+            const saglik = yayinSagligi(ist?.cikislar ?? []);
+            if (!saglik) return null;
+            const ad = { yesil: "sağlıklı", sari: "yeniden bağlanma ya da %1'den çok düşen kare", kirmizi: "başarısız hedef ya da %5'ten çok düşen kare" }[saglik];
+            return (
+              <span className="relative">
+                <button
+                  type="button"
+                  className="dt-saglik"
+                  data-saglik={saglik}
+                  aria-label={`Yayın sağlığı: ${ad}. Hedef tablosu`}
+                  aria-expanded={hedefTablosu}
+                  title={`Yayın sağlığı: ${ad} — hedef başına tablo için tıklayın`}
+                  onClick={() => setHedefTablosu((v) => !v)}
+                />
+                {hedefTablosu && (
+                  <div className="dt-hedef-tablosu" role="dialog" aria-label="Hedef durumu">
+                    <table className="dt-table">
+                      <thead>
+                        <tr>
+                          <th>Hedef</th>
+                          <th>Durum</th>
+                          <th className="text-right">Bit hızı</th>
+                          <th className="text-right">Düşen kare</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {d.hedefler.map((h) => {
+                          const c = ist?.cikislar.find((x) => x.id === `h-${h.id}`);
+                          const oran = c && c.kare > 0 ? ((c.dusen_kare / c.kare) * 100).toFixed(1) : null;
+                          return (
+                            <tr key={h.id}>
+                              <td>{h.ad}</td>
+                              <td>{CIKIS_DURUM_ETIKETI[h.durum] ?? h.durum}</td>
+                              <td className="dt-sayi text-right">{bitHizi[`h-${h.id}`] != null && c?.etkin ? `${Math.round(bitHizi[`h-${h.id}`])} kbps` : "—"}</td>
+                              <td className="dt-sayi text-right">{c ? `${c.dusen_kare}${oran ? ` (%${oran})` : ""}` : "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </span>
+            );
+          })()}
           {canliBas !== null && (
             <span className="dt-canli" title={`${ozet.canli}/${ozet.toplam} hedef canlı`}>
               CANLI {sureBicimi(simdi - canliBas)} · {ozet.canli}/{ozet.toplam}

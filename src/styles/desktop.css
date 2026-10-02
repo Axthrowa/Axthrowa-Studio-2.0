@@ -849,3 +849,33 @@
   vector-effect: non-scaling-stroke;
   font-family: ui-monospace, monospace;
 }
+
+/* Durum çubuğu: yayın sağlığı karesi ve hedef tablosu */
+.dt-saglik {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.dt-saglik[data-saglik="yesil"] {
+  background: var(--dt-ok);
+}
+.dt-saglik[data-saglik="sari"] {
+  background: var(--dt-warn);
+}
+.dt-saglik[data-saglik="kirmizi"] {
+  background: var(--dt-error);
+}
+.dt-hedef-tablosu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 40;
+  min-width: 360px;
+  border: 1px solid var(--dt-line);
+  border-radius: 4px;
+  background: var(--dt-surface-2, #1b1d22);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+}

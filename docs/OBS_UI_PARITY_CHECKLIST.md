@@ -22,7 +22,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Dock'u ayrı pencereye çıkarma | VAR | vitest:projektor (her dock listede) | Docklar › Ayrı pencerede aç: tüm docklar (Sahneler, Kaynaklar, Mikser, Geçişler, Denetimler, Hedefler, İstatistik, Sohbet, Etkinlik, Deste, Tarayıcı, Klipler). Ayrı Kaynaklar penceresi: seç, göster/gizle, kilit, sıra, onaylı kaldır; Denetimler: kayıt/duraklat/böl/tekrar/sanal kamera (program)/Studio Mode, yayını bitir onaylı. Ön kontrol, kaynak ekleme, özellik/filtre diyalogları ana pencerede kalır (pencere bunu söyler). Arayüz tarayıcıda görülmedi |
 | Özel tarayıcı dock'u | VAR | vt:ozelDocklar | "Tarayıcı (özel)" dock'u: ad + http(s) adres listesi, korumalı çerçeve, ayrı pencereye çıkarılabilir; bazı siteler çerçeveyi reddeder |
 | Dock düzeni profil başına | VAR | — | Profil değişince o profilin düzeni yüklenir; profilin düzeni yoksa genel düzen ona yazılır (yerel depolama) |
-| Ek docklar: İstatistikler, Sohbet, Etkinlik, Çoklu çıkış (Hedefler), Deste | VAR | tp | Backtrack ve Günlük dock yok (Günlük pencere olarak var) |
+| Ek docklar: İstatistikler, Sohbet, Etkinlik, Çoklu çıkış (Hedefler), Deste, Klipler (Backtrack), Tarayıcı | VAR | tp | Günlük dock yok (Günlük pencere olarak var) |
 | Tam ekran arayüz, pencere konumu kalıcılığı, karışık DPI | VAR | vt:projektor | F11 tam ekran; ana pencere konum/boyut/büyütülmüş ve ayrı pencere konumları kalıcı (ekranda değilse ana monitöre; mantıksal piksel, monitör ölçeğiyle). Karışık DPI'da çalışma anı UNVERIFIED (tek monitörlü sınama ortamı) |
 
 ## 4.2 Menü ağacı
@@ -54,7 +54,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Araçlar › Otomatik yapılandırma sihirbazı, Çıkış zamanlayıcısı | VAR | it:motor_sihirbaz_…, vt:cikisZamanlayicisi | Bant genişliği testi izinsiz yapılmaz (yok) |
 | Araçlar › WebSocket sunucu ayarları | VAR | it:obs_websocket_uyumlu_sunucu | Yayın Ayarları › Uzaktan denetim; 127.0.0.1 |
 | Araçlar › Betikler | DESTEKLENMİYOR | | OBS betik altyapısı (obs-scripting, Lua/Python) ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
-| Araçlar › Altyazı | YOK | | |
+| Araçlar › Altyazı | KISMİ | sinama (CEA-608 baytları alıcı dosyasından çözüldü: yalnız seçilen hedefte), it:motor_api_sentetik_kaynak_ve_hedef | Araçlar › Altyazı…: yazılan satır CEA-608 kapalı altyazısı olarak canlı yayınlara (ya da seçilenlere) gömülür; `engine.caption.send` eylemiyle kısayol/Deste/otomasyondan da gönderilir. **Konuşma tanıma yok** (OBS'in aracı mikrofon sesini Windows konuşma tanımasıyla metne çevirir; burada mikrofon yakalanmaz, metin dışarıdan gelir). ş/ğ/ı → s/g/i (608 kümesinde yok), satır ≤ 128 bayt. FFmpeg libobs'un kare sonuna yazdığı SEI'yi okumaz ("late SEI"); platform oynatıcısında görünümü UNVERIFIED |
 | Araçlar › Sanal kamera ayarları | VAR | sinama (kaynak hedefi: 16:9, ortalanmış, silinince kapanır), it:motor_kayit_…_sanal_kamera | Hedef: Program / Önizleme (Studio Mode) / Sahne / **Kaynak** (Denetimler dock'u dişlisi). Kaynak hedefi kaynağı ana tuval boyutundaki özel bir tuvale en-boy korunarak sığdırır (kamera çözünürlüğü kaynağın boyutuna bağlı değil); kamera durunca ya da kaynak silinince tuval kapanır. Arayüz tarayıcıda görülmedi |
 | Yardım › Son günlüğü görüntüle, Günlük klasörü, Hakkında (sürüm, lisanslar) | VAR | it, tp | Günlük sırları ayıklanmış |
 | Yardım › Çökme raporları | VAR | it:motor_filtre_yapistir_ve_gunluk | Panelin çökme günlüğü, sırlar ayıklanmış; dışarı gönderilmez |

@@ -1548,6 +1548,15 @@ async fn motor_api_sentetik_kaynak_ve_hedef() {
   assert!(canli, "hedef canlıya geçmedi");
   assert_eq!(post("/api/multistream/destinations/start", json!({"id": hedef_id})).await.status(), 409);
 
+  // Altyazı (CEA-608): canlı hedefe gider; boş metin, olmayan hedef reddedilir; kayıt defteri eylemiyle de gönderilir
+  let r = post("/api/motor/altyazi", json!({"metin": "Merhaba izleyiciler", "sure_sn": 3})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+  assert_eq!(r.json::<Value>().await.unwrap()["hedefler"], json!([hedef_id]));
+  assert_eq!(post("/api/motor/altyazi", json!({"metin": "   "})).await.status(), 400);
+  assert!(post("/api/motor/altyazi", json!({"metin": "x", "hedefler": ["boyle-hedef-yok"]})).await.status().is_client_error());
+  let r = post("/api/actions/run", json!({"id": "engine.caption.send", "params": {"text": "Kısayoldan satır"}})).await;
+  assert!(r.status().is_success(), "{}", r.text().await.unwrap());
+
   // Önizleme
   let url = format!("{}/api/motor/onizleme?tuval=dikey&genislik=320", h.base);
   let _ = h.client.get(&url).send().await.unwrap();
@@ -1578,6 +1587,17 @@ async fn motor_api_sentetik_kaynak_ve_hedef() {
   assert_eq!(post("/api/motor/golive", json!({"eylem": "durdur"})).await.status(), 428);
   let r = post("/api/motor/golive", json!({"eylem": "durdur", "confirm": true})).await;
   assert!(r.status().is_success());
+  // Çıktı durması eşzamansız: durana dek beklenir, sonra altyazı reddedilir
+  let mut red = None;
+  for _ in 0..40 {
+    let st = post("/api/motor/altyazi", json!({"metin": "yayın yokken"})).await.status();
+    if !st.is_success() {
+      red = Some(st);
+      break;
+    }
+    bekle(250).await;
+  }
+  assert!(red.is_some_and(|s| s.is_client_error()), "canlı yayın yokken altyazı reddedilir: {red:?}");
   assert_eq!(r.json::<Value>().await.unwrap()["sonuc"][&hedef_id]["ok"], true);
   bekle(1000).await;
   assert_eq!(post("/api/motor/durdur", json!({})).await.status(), 428);

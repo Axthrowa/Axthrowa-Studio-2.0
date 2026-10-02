@@ -46,8 +46,7 @@ type ObsLike = Record<string, any> | null | undefined;
 function sceneRows(obs: Record<string, any>): HotkeyBinding[] {
   const map = obs.sceneMap || {};
   const hk = obs.hotkeys || {};
-  const extras: { id: string; scene?: string; hotkey?: string; label?: string }[] =
-    obs.sceneSwitchHotkeys || [];
+  const extras: { id: string; scene?: string; hotkey?: string; label?: string }[] = obs.sceneSwitchHotkeys || [];
 
   const sabit: HotkeyBinding[] = [
     {
@@ -97,15 +96,9 @@ function sceneRows(obs: Record<string, any>): HotkeyBinding[] {
 }
 
 /** Ses / OBS aksiyon kısayolları. */
-function actionRows(
-  obs: Record<string, any>,
-  sfxPads: SfxPadLike[],
-  clearChatHk: string,
-  sfxStopHk: string
-): HotkeyBinding[] {
+function actionRows(obs: Record<string, any>, sfxPads: SfxPadLike[], clearChatHk: string, sfxStopHk: string): HotkeyBinding[] {
   const hk = obs.hotkeys || {};
-  const sourceMutes: { id: string; input?: string; hotkey?: string }[] =
-    obs.sourceMuteHotkeys || [];
+  const sourceMutes: { id: string; input?: string; hotkey?: string }[] = obs.sourceMuteHotkeys || [];
 
   const rows: HotkeyBinding[] = [
     { id: "mic", spec: hk.mic || "", kind: "mic", input: obs.micInput || "" },
@@ -147,6 +140,7 @@ function actionRows(
       source: r.source || "",
       filter: r.filter || "",
       transition: r.transition || "",
+      text: r.text || "",
       mode: r.mode || "",
       delta: Number(r.delta) || 0,
       name: r.name || "",
@@ -177,10 +171,7 @@ export function buildHotkeyPlan(input: {
   sfxStopHk?: string;
 }): HotkeyPlan {
   const obs = input.obs || {};
-  const ham = [
-    ...sceneRows(obs),
-    ...actionRows(obs, input.sfxPads || [], input.clearChatHk || "", input.sfxStopHk || ""),
-  ];
+  const ham = [...sceneRows(obs), ...actionRows(obs, input.sfxPads || [], input.clearChatHk || "", input.sfxStopHk || "")];
 
   const bindings: HotkeyBinding[] = [];
   const invalid: { id: string; spec: string }[] = [];
@@ -247,9 +238,7 @@ export function bindingName(id: string, bindings: HotkeyBinding[]): string {
  * çakışmayı ise plan zaten hesaplıyor. Bu çeviri sayesinde arayüz uyarıyı
  * tarayıcıda da, kayıttan önce de gösterebiliyor.
  */
-export function conflictFailures(
-  plan: HotkeyPlan
-): { id: string; spec: string; reason: string }[] {
+export function conflictFailures(plan: HotkeyPlan): { id: string; spec: string; reason: string }[] {
   return plan.conflicts.flatMap((c) =>
     c.loserIds.map((id) => ({
       id,
@@ -289,7 +278,5 @@ export function migrateHotkeyDefaults(obs: ObsLike): Record<string, any> | null 
 
   // Bayrak her hâlükârda yazılır: kullanıcı kasten temizlediyse bir daha
   // geri gelmesin.
-  return degisti
-    ? { hotkeys: hk, hotkeyDefaultsApplied: true }
-    : { hotkeyDefaultsApplied: true };
+  return degisti ? { hotkeys: hk, hotkeyDefaultsApplied: true } : { hotkeyDefaultsApplied: true };
 }

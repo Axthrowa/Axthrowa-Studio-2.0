@@ -4,7 +4,8 @@
  */
 import { API_BASE } from "../api";
 
-export type ActionParamKind = "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "engineSource" | "engineScene" | "engineFilter" | "engineTransition";
+export type ActionParamKind =
+  "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "engineSource" | "engineScene" | "engineFilter" | "engineTransition" | "text";
 
 export type ActionInfo = {
   id: string;
@@ -104,6 +105,7 @@ export const PARAM_LABEL: Record<ActionParamKind, string> = {
   engineScene: "motor sahnesi",
   engineFilter: "filtre adı",
   engineTransition: "geçiş adı",
+  text: "metin",
 };
 
 /** Destek paketi (§93): sırları ayıklanmış JSON dosyası uygulama veri klasörüne yazılır; hiçbir yere gönderilmez. */

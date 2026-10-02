@@ -238,6 +238,7 @@ obs_api! {
   fn obs_canvas_get_video(Ptr) -> Ptr;
   fn obs_register_output_s(Ptr, usize);
   fn obs_output_set_media(Ptr, Ptr, Ptr);
+  fn obs_output_output_caption_text2(Ptr, *const c_char, f64);
   fn obs_output_set_video_conversion(Ptr, Ptr);
   fn obs_output_begin_data_capture(Ptr, u32) -> bool;
   fn obs_output_end_data_capture(Ptr);

@@ -1597,6 +1597,35 @@ impl Motor {
     self.cikislar.get(id).is_some_and(|c| unsafe { (api().obs_output_active)(c.ptr) })
   }
 
+  /// Araçlar › Altyazı (OBS "Captions"): metin CEA-608 altyazısı olarak etkin yayın çıktılarının (verilmişse yalnız
+  /// `hedefler`in) video paketlerine gömülür (libobs `obs_output_output_caption_text2`; H.264/HEVC). Konuşma tanıma
+  /// yoktur — metin panelden, kısayoldan ya da otomasyondan gelir. Dönüş: altyazının gittiği çıktılar.
+  pub fn altyazi_gonder(&self, metin: &str, sure_sn: f64, hedefler: &[String]) -> Result<Vec<String>, String> {
+    let metin = cea608_metni(metin);
+    if metin.is_empty() {
+      return Err("altyazı metni boş".into());
+    }
+    if !(0.5..=30.0).contains(&sure_sn) {
+      return Err("altyazı süresi 0,5–30 sn olmalı".into());
+    }
+    let c = cs(&metin);
+    let mut giden: Vec<String> = Vec::new();
+    for (id, cikis) in &self.cikislar {
+      if cikis.tur != "rtmp" || (!hedefler.is_empty() && !hedefler.contains(id)) {
+        continue;
+      }
+      if unsafe { (api().obs_output_active)(cikis.ptr) } {
+        unsafe { (api().obs_output_output_caption_text2)(cikis.ptr, c.as_ptr(), sure_sn) };
+        giden.push(id.clone());
+      }
+    }
+    if giden.is_empty() {
+      return Err("altyazının gideceği etkin yayın yok".into());
+    }
+    giden.sort();
+    Ok(giden)
+  }
+
   pub fn cikis_durumu(&self, id: &str) -> Option<CikisDurumu> {
     self.durumlar.lock().unwrap().get(id).map(|d| d.0)
   }
@@ -1926,5 +1955,44 @@ mod tests {
   fn olay_json_bicimi() {
     let o = Olay::Cikis { id: "twitch".into(), durum: CikisDurumu::YenidenBaglaniyor, kod: None };
     assert_eq!(serde_json::to_string(&o).unwrap(), r#"{"olay":"cikis","id":"twitch","durum":"yeniden_baglaniyor"}"#);
+  }
+}
+
+/// CEA-608 karakter kümesinde olmayan Türkçe harfler en yakın Latin harfine çevrilir (ç, ö, ü kümede var); satır sonu ve
+/// denetim karakterleri boşluk olur; en çok 128 bayt (libobs altyazı satırını `CAPTION_LINE_BYTES` = 128 baytta keser;
+/// karakter ortasından kesilmesin diye sınır burada uygulanır).
+pub fn cea608_metni(s: &str) -> String {
+  let d: String = s
+    .chars()
+    .map(|c| match c {
+      'ş' => 's',
+      'Ş' => 'S',
+      'ğ' => 'g',
+      'Ğ' => 'G',
+      'ı' => 'i',
+      'İ' => 'I',
+      c if c.is_control() => ' ',
+      c => c,
+    })
+    .collect();
+  let mut sonuc = String::new();
+  for c in d.split_whitespace().collect::<Vec<_>>().join(" ").chars() {
+    if sonuc.len() + c.len_utf8() > 128 {
+      break;
+    }
+    sonuc.push(c);
+  }
+  sonuc
+}
+
+#[cfg(test)]
+mod altyazi_testleri {
+  #[test]
+  fn cea608_metni_turkce_ve_sinir() {
+    assert_eq!(super::cea608_metni("  Şimdi\nyağmur  ılık; İyi geceler "), "Simdi yagmur ilik; Iyi geceler");
+    assert_eq!(super::cea608_metni("çöü ÇÖÜ"), "çöü ÇÖÜ");
+    assert_eq!(super::cea608_metni(&"a".repeat(300)).len(), 128);
+    assert_eq!(super::cea608_metni(&"ç".repeat(100)).len(), 128, "çok baytlı karakter bölünmez");
+    assert_eq!(super::cea608_metni("\u{0}\t"), "");
   }
 }

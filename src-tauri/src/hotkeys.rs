@@ -43,6 +43,9 @@ pub struct HotkeyBindingIn {
   /// Adlandırılmış geçiş — `engine.studio.quickTransition`.
   #[serde(default)]
   pub transition: String,
+  /// Serbest metin — `engine.caption.send` (altyazı satırı).
+  #[serde(default)]
+  pub text: String,
   /// `record` için: toggle | start | stop | pause.
   #[serde(default)]
   pub mode: String,
@@ -72,6 +75,7 @@ pub(crate) fn eylem_parametreleri(b: &HotkeyBindingIn) -> serde_json::Value {
     "id": b.target,
     "filter": b.filter,
     "transition": b.transition,
+    "text": b.text,
   })
 }
 

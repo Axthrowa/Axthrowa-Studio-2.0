@@ -84,6 +84,7 @@ import { DeinterlaceDiyalogu } from "./DeinterlaceDiyalogu";
 import { KaynakRengiDiyalogu } from "./KaynakRengiDiyalogu";
 import { TBar } from "./TBar";
 import { RemuxPenceresi } from "./RemuxPenceresi";
+import { AltyaziPenceresi } from "./AltyaziPenceresi";
 import { EksikDosyalarPenceresi } from "./EksikDosyalarPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { KaynakAracCubugu } from "./KaynakAracCubugu";
@@ -341,6 +342,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [deinterlace, setDeinterlace] = useState<MotorSahneOgesi | null>(null);
   const [kaynakRengi, setKaynakRengi] = useState<MotorSahneOgesi | null>(null);
   const [remuxAcik, setRemuxAcik] = useState(false);
+  const [altyaziAcik, setAltyaziAcik] = useState(false);
   const [eksikDosyalar, setEksikDosyalar] = useState(false);
   /** Sanal kamera hedefi (OBS 30+ "Output Type"): program / önizleme / sahne; kamera kapalıyken seçilir */
   const [skHedef, setSkHedef] = useState<{ tur: "program" } | { tur: "onizleme" } | { tur: "sahne" | "kaynak"; id: string; ad: string }>({ tur: "program" });
@@ -1474,6 +1476,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Otomatik yapılandırma sihirbazı…", devreDisi: !calisiyor, eylem: () => setSihirbaz(true) },
         { etiket: "Komut paleti", kisayol: "Ctrl+K", eylem: () => paletAc() },
         { etiket: "Çıkış zamanlayıcısı…", devreDisi: !calisiyor, eylem: () => setZamanlayiciAcik(true) },
+        { etiket: "Altyazı…", devreDisi: !calisiyor, eylem: () => setAltyaziAcik(true) },
         { etiket: "Kısayollar ve eylemler", eylem: () => onGit?.("hotkeys") },
       ],
     },
@@ -2360,6 +2363,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       {eksikDosyalar && <EksikDosyalarPenceresi onToast={onToast} onDegisti={() => void sahneYenile()} onKapat={() => setEksikDosyalar(false)} />}
       {guncelleme && <GuncellemePenceresi onKapat={() => setGuncelleme(false)} />}
       {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}
+      {altyaziAcik && <AltyaziPenceresi hedefler={d?.hedefler ?? []} onKapat={() => setAltyaziAcik(false)} />}
       {gunlukAcik && <GunlukPenceresi key={gunlukAcik} tur={gunlukAcik} onKapat={() => setGunlukAcik(false)} />}
       {zamanlayiciAcik && (
         <CikisZamanlayicisiPenceresi z={zamanlayici} canli={canliVar} kayitta={kayitta} onAyarla={setZamanlayici} onKapat={() => setZamanlayiciAcik(false)} />

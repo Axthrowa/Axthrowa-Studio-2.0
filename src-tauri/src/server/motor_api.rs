@@ -45,6 +45,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/motor/kayit", post(api_kayit))
     .route("/api/motor/tekrar", post(api_tekrar))
     .route("/api/motor/sanal-kamera", post(api_sanal_kamera))
+    .route("/api/motor/altyazi", post(api_altyazi))
     .route("/api/motor/klasor-ac", post(api_klasor_ac))
     .route("/api/motor/ekran-goruntusu", post(api_ekran_goruntusu))
     .route("/api/motor/gunluk", get(api_gunluk))
@@ -1808,6 +1809,34 @@ async fn api_sanal_kamera(
   let acik = sanal_kamera(&state, &g.eylem, g.tuval.as_deref().unwrap_or("ana")).await?;
   audit(&state, &actor, "MOTOR_VIRTUALCAM", json!({"acik": acik, "tuval": g.tuval})).await;
   Ok(Json(json!({"ok": true, "acik": acik})))
+}
+
+/// Araçlar › Altyazı: metin CEA-608 olarak etkin motor yayınlarına (verilmişse yalnız `hedefler`e) gömülür.
+/// Dönüş: altyazının gittiği hedef kimlikleri. Metnin kendisi denetim günlüğüne yazılmaz (yalnız uzunluğu).
+pub(crate) async fn altyazi(state: &AppState, metin: &str, sure_sn: f64, hedefler: &[String]) -> Result<Vec<String>, Hata> {
+  motor_calisiyor(state).await?;
+  if metin.trim().is_empty() || metin.chars().count() > 500 {
+    return Err(gecersiz("altyazı metni boş ya da çok uzun (en çok 500 karakter)".into()));
+  }
+  let cikislar: Vec<String> = hedefler.iter().map(|h| format!("h-{h}")).collect();
+  let r = komut(state, json!({"komut": "altyazi.gonder", "metin": metin, "sure_sn": sure_sn, "hedefler": cikislar})).await?;
+  Ok(r["hedefler"].as_array().into_iter().flatten().filter_map(|x| x.as_str()).map(|x| x.strip_prefix("h-").unwrap_or(x).to_string()).collect())
+}
+
+#[derive(Deserialize)]
+struct AltyaziGovdesi {
+  metin: String,
+  #[serde(default)]
+  sure_sn: Option<f64>,
+  #[serde(default)]
+  hedefler: Vec<String>,
+}
+
+async fn api_altyazi(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectInfo<SocketAddr>, headers: HeaderMap, Json(g): Json<AltyaziGovdesi>) -> ApiResult {
+  let actor = authorize(&state, &addr, &headers, "broadcast.stream").await?;
+  let giden = altyazi(&state, &g.metin, g.sure_sn.unwrap_or(4.0), &g.hedefler).await?;
+  audit(&state, &actor, "MOTOR_CAPTION", json!({"uzunluk": g.metin.chars().count(), "hedefler": giden})).await;
+  Ok(Json(json!({"ok": true, "hedefler": giden})))
 }
 
 #[derive(Deserialize)]

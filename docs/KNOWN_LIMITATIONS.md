@@ -142,9 +142,10 @@ Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
 |---|---|---|
 | Yeniden muxla | kurulu OBS'e bağlı | FFmpeg kitaplıkları dağıtılmaz; kurulu OBS 32'nin `avformat-62`/`avcodec-62`/`avutil-60` DLL'leri kullanılır. Başka FFmpeg sürümünde (OBS güncellemesi) yapı düzeni doğrulanmadığı için remux açıkça reddedilir — sürüm eklenince yeniden doğrulanmalı |
 | Yeniden muxla: bozuk kayıt | kısmi | Yarım MKV'de (sınamada 200 KB'ye kesildi) FFmpeg dosya sonu bildirdi, okunabilen kısım MP4'e yazıldı; "yarım" işareti yalnız okuma hatayla biterse görünür |
-| Multiview | tek düzen | Üstte önizleme/program, altta ilk 8 sahne; OBS'teki diğer düzenler, etiket/güvenli alan seçenekleri ve "Multiview'da göster" yok |
+| Multiview | tek düzen | Üstte önizleme/program, altta ilk 8 sahne ("Multiview'da göster" var); OBS'teki diğer düzenler ve etiket/güvenli alan seçenekleri yok |
 | T-bar | sabit geçişlerde yok | Kes ve Stinger (libobs "fixed" geçişler) T-bar ile sürüklenemez; OBS'te de devre dışıdır |
 | Deinterlace görsel etkisi | UNVERIFIED | Geçmeli kaynak (yakalama kartı) yok; ayar libobs'ta saklanır ve geri okunur |
 | Hızlı geçiş: geçici tür değişimi | kısmi | Hızlı geçiş sürerken tuvalin geçişi o türe alınır, süre + 250 ms sonra geri kurulur; bu arada başka geçiş başlatılırsa geri kurma yine olur |
-| Betikler, Altyazı, Backtrack klip listesi, özel tarayıcı dock'u | YOK | Kontrol listesinde satır satır |
+| Betikler | DESTEKLENMİYOR | obs-scripting ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
+| Altyazı: konuşma tanıma | YOK | Altyazı satırları elle/kısayolla/otomasyonla gönderilir (CEA-608); mikrofon metne çevrilmez. ş/ğ/ı Latin karşılığıyla gider. Platform oynatıcısında görünüm UNVERIFIED (yalnız akış baytları doğrulandı) |
 | Özel tarayıcı dock'u ve CSP | ödünleşim | Masaüstü uygulamasının CSP'sinde `frame-src` https ve yerel adreslere açıldı (önceden yalnız Kick/YouTube). Çerçeve `sandbox` ile açılır (üst pencereye gezinme yok, köken farklı olduğundan uygulamaya erişim yok), `script-src` değişmedi. Bazı siteler çerçeve içinde açılmayı reddeder (X-Frame-Options) — "Tarayıcıda aç" düğmesi sunulur |

@@ -390,6 +390,8 @@ export const motorApi = {
     sure_ms?: number;
   }) => istek<{ id?: string }>("/api/motor/gecis-listesi", govde),
   studyoHizli: (tuval: string, hizli: string) => istek<{ program: string | null }>("/api/motor/studyo", { tuval, eylem: "hizli", hizli }),
+  altyazi: (metin: string, sure_sn?: number, hedefler?: string[]) =>
+    istek<{ ok: boolean; hedefler: string[] }>("/api/motor/altyazi", { metin, sure_sn, hedefler }),
   gecisAyarla: (tuval: string, tur: string, sure_ms?: number) => istek<{ ok: boolean }>("/api/motor/gecis", { tuval, tur, sure_ms }),
   gecisOzellikleri: (tuval: string) => istek<OzellikTanimi>(`/api/motor/gecis/ozellikler?tuval=${tuval}`),
   gecisGuncelle: (tuval: string, ayarlar: Record<string, unknown>) => istek<{ ok: boolean }>("/api/motor/gecis/guncelle", { tuval, ayarlar }),

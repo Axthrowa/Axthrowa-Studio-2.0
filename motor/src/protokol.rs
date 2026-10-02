@@ -433,6 +433,11 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       m.sanal_kamera_durdur()?;
       json!({})
     }
+    "altyazi.gonder" => {
+      let hedefler: Vec<String> = istek["hedefler"].as_array().map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect()).unwrap_or_default();
+      let giden = m.altyazi_gonder(metin(istek, "metin").unwrap_or(""), istek["sure_sn"].as_f64().unwrap_or(4.0), &hedefler)?;
+      json!({"hedefler": giden})
+    }
     "kayit.bol" => {
       m.kayit_bol(id()?)?;
       json!({})

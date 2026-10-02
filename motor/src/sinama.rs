@@ -231,6 +231,46 @@ document.addEventListener('keydown',e=>{if(e.key==='g'||e.key==='G'||e.keyCode==
 </script></body></html>"#;
 
 /// PNG'deki (x, y) pikselinin RGB değeri
+/// Dosyadaki ATSC A/53 (GA94) altyazı SEI'lerinden CEA-608 1. alan metnini çıkarır (denetim çiftleri atlanır). libobs
+/// SEI'yi karenin dilimlerinden sonra yazar; FFmpeg bunu ("late SEI") okumadığı için baytlar doğrudan çözülür.
+fn cea608_oku(dosya: &Path) -> String {
+  let Ok(b) = std::fs::read(dosya) else { return String::new() };
+  let mut metin = String::new();
+  let mut i = 0;
+  while let Some(k) = b[i..].windows(4).position(|w| w == b"GA94") {
+    let mut j = i + k + 4;
+    // user_data_type_code 3, ardından cc_count (alt 5 bit) ve em_data
+    if b.get(j) == Some(&3) {
+      let sayi = (b.get(j + 1).copied().unwrap_or(0) & 0x1F) as usize;
+      j += 3;
+      // Öykünme önleme baytları (00 00 03) atılarak üçlüler okunur
+      let mut uclu = Vec::with_capacity(sayi * 3);
+      while uclu.len() < sayi * 3 && j < b.len() {
+        if b[j] == 3 && j >= 2 && b[j - 1] == 0 && b[j - 2] == 0 {
+          j += 1;
+          continue;
+        }
+        uclu.push(b[j]);
+        j += 1;
+      }
+      for c in uclu.chunks(3) {
+        // cc_valid ve cc_type 0 (608 1. alan)
+        if c.len() == 3 && c[0] & 0x04 != 0 && c[0] & 0x03 == 0 {
+          let (x, y) = (c[1] & 0x7F, c[2] & 0x7F);
+          if x >= 0x20 {
+            metin.push(x as char);
+            if y >= 0x20 {
+              metin.push(y as char);
+            }
+          }
+        }
+      }
+    }
+    i += k + 4;
+  }
+  metin
+}
+
 fn png_pikseli(png: &[u8], x: u32, y: u32) -> Option<[u8; 3]> {
   let mut okuyucu = png::Decoder::new(png).read_info().ok()?;
   let mut tampon = vec![0; okuyucu.output_buffer_size()];
@@ -816,6 +856,9 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   let b_canli = bekle_durum(&m, "hedef-b", &canli, Duration::from_secs(15));
   let c_canli = bekle_durum(&m, "hedef-c", &canli, Duration::from_secs(15));
   let d_durum = bekle_durum(&m, "hedef-d", &[CikisDurumu::Basarisiz], Duration::from_secs(15));
+  // Altyazı (CEA-608): yalnız hedef-a'ya; alıcı dosyasından FFmpeg ile geri okunur. Boş metin ve etkin olmayan hedef reddedilir.
+  let altyazi = m.altyazi_gonder("SINAMA ALTYAZI 42", 3.0, &["hedef-a".to_string()]);
+  let altyazi_red = m.altyazi_gonder("  ", 3.0, &[]).is_err() && m.altyazi_gonder("x", 3.0, &["hedef-d".to_string()]).is_err();
 
   // Önizleme: ana ve dikey tuval (ilk istek bağlanır, sonraki kare döner)
   let _ = m.onizleme_png("ana", 480);
@@ -1036,6 +1079,7 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   for mut a in alicilar {
     alici_kapat(&mut a, Duration::from_secs(5));
   }
+  let (altyazi_a, altyazi_c) = (cea608_oku(&dosya("hedef-a.flv")), cea608_oku(&dosya("hedef-c.flv")));
   // Ölçeklenmiş çıkış + ses ayarları: ayrı süreçte (libobs süreç başına bir kez başlar)
   let olcek_klasoru = dosya("olcek");
   let olcek_cikti = std::env::current_exe()
@@ -1158,6 +1202,11 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     "sahne/kaynak projektörü tuvali: kare verir, ikinci açılış aynı tuval, kapanınca biter",
     pj.as_ref().is_ok_and(|v| v["tuval"] == "kaynak-yazi") && pj_kare && pj_yine.as_ref().is_ok_and(|t| t == "kaynak-yazi") && pj_kapali && pj_yok,
     format!("{pj:?}; kare {pj_kare}; kapandı {pj_kapali}; olmayan kaynak reddi {pj_yok}"),
+  );
+  ekle(
+    "altyazı (CEA-608): seçilen yayına gömülür, diğerine gitmez; boş metin ve etkin olmayan hedef reddedilir",
+    altyazi.as_ref().is_ok_and(|h| h == &["hedef-a".to_string()]) && altyazi_a.contains("SINAMA ALTYAZI 42") && !altyazi_c.contains("SINAMA") && altyazi_red,
+    format!("{altyazi:?}; hedef-a: {:?}; hedef-c altyazısız: {}; red {altyazi_red}", altyazi_a.lines().filter(|l| l.contains("SINAMA")).collect::<Vec<_>>(), !altyazi_c.contains("SINAMA")),
   );
   ekle(
     "sanal kamera kaynak hedefi: kaynak ana tuval boyutunda (16:9) ortalanıp sığdırılır, silinince tuval kapanır",

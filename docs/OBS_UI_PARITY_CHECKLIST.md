@@ -21,9 +21,9 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Dock sürükle-bırak, sekmeleme, kilitleme, düzeni sıfırla, kalıcılık | VAR | vt:dockDuzeni, tp | |
 | Dock'u ayrı pencereye çıkarma | KISMİ | — | Mikser, Sahneler, Hedefler, İstatistik, Sohbet, Etkinlik, Deste; Kaynaklar/Geçişler/Denetimler çıkarılamaz |
 | Özel tarayıcı dock'u | YOK | | |
-| Dock düzeni profil başına | YOK | | Düzen tek (yerel depolama) |
+| Dock düzeni profil başına | VAR | — | Profil değişince o profilin düzeni yüklenir; profilin düzeni yoksa genel düzen ona yazılır (yerel depolama) |
 | Ek docklar: İstatistikler, Sohbet, Etkinlik, Çoklu çıkış (Hedefler), Deste | VAR | tp | Backtrack ve Günlük dock yok (Günlük pencere olarak var) |
-| Tam ekran arayüz, pencere konumu kalıcılığı, karışık DPI | KISMİ | — | Tauri pencere durumu; tam ekran arayüz kipi yok; karışık DPI sınanmadı (UNVERIFIED) |
+| Tam ekran arayüz, pencere konumu kalıcılığı, karışık DPI | KISMİ | — | Tam ekran arayüz (F11) VAR; ayrı dock/projektör pencerelerinin konumu kalıcı; karışık DPI sınanmadı (UNVERIFIED) |
 
 ## 4.2 Menü ağacı
 
@@ -34,7 +34,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Dosya › Ekran görüntüsü (Çıkış / Önizleme) | VAR | sinama, it:motor_ekran_goruntusu_… , tp | Tuvalin tam çözünürlüğü, kayıt klasörüne |
 | Dosya › Ayarlar, Ayarlar klasörünü göster, Her zaman üstte | VAR | tp | |
 | Dosya › Profil klasörünü göster | VAR | — | Gezgin'de açar (yalnız yerel) |
-| Dosya › Çıkış | YOK | | Uygulama penceresinden kapatılır |
+| Dosya › Çıkış | VAR | — | Ana pencereyi kapatır (uygulamanın kapanış akışı); yalnız masaüstü uygulamasında |
 | Düzen › Geri al/Yinele (açıklamalı) | VAR | vt | "Geri al: «X» taşı" |
 | Düzen › Kopyala / Yapıştır (başvuru) / Yapıştır (kopya) / Filtreleri kopyala-yapıştır | VAR | it:motor_filtre_yapistir_ve_gunluk, tp | |
 | Düzen › Dönüşüm alt menüsü (düzenle, kopyala, yapıştır, sıfırla, 90°/180°, çevir, sığdır, yay, ortala) | VAR | tp | Alt menü yerine düz liste |
@@ -46,7 +46,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Görünüm › Multiview (pencere) | VAR | sinama, it, tp | Tek düzen (üstte önizleme/program, altta 8 sahne) |
 | Görünüm › Önizleme yakınlaştırma (Ctrl+tekerlek, Ctrl+0) | VAR | vt, tp | |
 | Görünüm › Tam ekran arayüz (F11) | VAR | — | Yalnız masaüstü uygulamasında (Tauri penceresi); tarayıcı bölmesinde sınanamaz |
-| Görünüm › Kaynak simgeleri | YOK | | |
+| Görünüm › Kaynak simgeleri | VAR | vt:KaynaklarDock | Tür simgesi (lucide), açılıp kapanır; tercih yerel |
 | Docklar › onay kutuları, kilitle, sekme birleştir/ayır, düzeni sıfırla, ayrı pencere | VAR | tp | Özel tarayıcı dock'u yok |
 | Profil › liste, Yeni, Çoğalt, Yeniden adlandır, Kaldır (yedeğe), Dışa aktar, İçe aktar | VAR | it:motor_profil_… | Dışa aktarımda sır yok; içe aktarım yeni kimlikle eklenir |
 | Sahne Koleksiyonu › liste, Yeni, yönetici (çoğalt, adlandır, içe/dışa aktar, OBS JSON'dan al) | VAR | it:motor_v2_…, vt | Eşlenemeyen kaynak "eksik" yer tutucu olur |
@@ -171,7 +171,7 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 | Özellikler penceresi (genel özellik formu, Varsayılanlar) | VAR | it | Varsayılanlar onayla; parolalar Kimlik Yöneticisinde korunur ve yeniden uygulanır |
 | Projektörler (pencere, tam ekran monitör, sahne, kaynak) | VAR | sinama, it, tp | Sahne/kaynak projektörü yalnız pencere |
 | Multiview | VAR | sinama, it, tp | Tek düzen |
-| İstatistikler | KISMİ | vt:kayitSuresi, tp | Disk boş alanı ve kalan kayıt süresi VAR (sınamada 40,8 GB / 5256 kbps → 18 sa 32 dk); "sıfırla" yok |
+| İstatistikler | VAR | vt:kayitSuresi, vt:istatistikTabani, tp | Disk boş alanı, kalan kayıt süresi, Sıfırla (arayüz tabanı; motor sayaçlarına dokunulmaz) |
 | Otomatik yapılandırma sihirbazı | VAR | it:motor_sihirbaz_yerel_kodlama_sinamasi | Bant genişliği testi yok (izin gerektirir) |
 | Remux penceresi | VAR | it, tp | |
 | Eksik dosyalar penceresi | VAR | it, tp | Yeni yol mutlak ve diskte olmalı; eksik eklentili kaynakta yalnız kayıt güncellenir |

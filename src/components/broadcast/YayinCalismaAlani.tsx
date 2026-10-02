@@ -95,17 +95,21 @@ type Props = { onToast: (m: string) => void; onGit?: (hedef: "control" | "hotkey
 /** Profil okunamadığında varsayılan tuval boyutları */
 const BOYUT: Record<string, [number, number]> = { ana: [1920, 1080], dikey: [1080, 1920] };
 
-function duzenYukle(): DockDuzeni {
+/** Dock düzeni profil başına (OBS gibi): `<anahtar>.<profil>`; profilin düzeni yoksa genel düzen */
+function duzenYukle(profil?: string): DockDuzeni {
   try {
-    return duzenOku(localStorage.getItem(ANAHTAR));
+    const ozel = profil ? localStorage.getItem(`${ANAHTAR}.${profil}`) : null;
+    return duzenOku(ozel ?? localStorage.getItem(ANAHTAR));
   } catch {
     return varsayilanDuzen();
   }
 }
 
-function duzenKaydet(d: DockDuzeni) {
+function duzenKaydet(d: DockDuzeni, profil?: string) {
   try {
-    localStorage.setItem(ANAHTAR, JSON.stringify(d));
+    const metin = JSON.stringify(d);
+    localStorage.setItem(ANAHTAR, metin);
+    if (profil) localStorage.setItem(`${ANAHTAR}.${profil}`, metin);
   } catch {
     /* depolama yoksa yalnız bu oturum */
   }
@@ -266,7 +270,24 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [tuval, setTuval] = useState("ana");
   const [secim, setSecim] = useState<string[]>([]);
   const [acikGruplar, setAcikGruplar] = useState<Set<string>>(new Set());
-  const [duzen, setDuzenHam] = useState<DockDuzeni>(duzenYukle);
+  const [duzen, setDuzenHam] = useState<DockDuzeni>(() => duzenYukle());
+  const profilKimligi = useRef<string | undefined>(undefined);
+  const [kaynakSimgeleri, setKaynakSimgeleri] = useState(() => {
+    try {
+      return localStorage.getItem("yya.yayin.kaynak-simgeleri") !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const kaynakSimgeleriDegistir = () =>
+    setKaynakSimgeleri((v) => {
+      try {
+        localStorage.setItem("yya.yayin.kaynak-simgeleri", v ? "0" : "1");
+      } catch {
+        /* yalnız bu oturumda */
+      }
+      return !v;
+    });
   const [koleksiyonlar, setKoleksiyonlar] = useState<MotorKoleksiyonOzeti[]>([]);
   const [profiller, setProfiller] = useState<{ id: string; ad: string; etkin: boolean }[]>([]);
   const [ekranlar, setEkranlar] = useState<Monitor[]>([]);
@@ -381,6 +402,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       onToast(`Pencere: ${hataMetni(e)}`);
     }
   };
+  /** Dosya › Çıkış: masaüstü uygulamasının ana penceresini kapatır (uygulamanın kendi kapanış akışı işler) */
+  const uygulamadanCik = async () => {
+    try {
+      const { isTauri } = await import("@tauri-apps/api/core");
+      if (!isTauri()) return onToast("Çıkış yalnız masaüstü uygulamasında");
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      await getCurrentWindow().close();
+    } catch (e) {
+      onToast(`Pencere: ${hataMetni(e)}`);
+    }
+  };
   const tamEkranDegistir = async () => {
     try {
       const { isTauri } = await import("@tauri-apps/api/core");
@@ -416,7 +448,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const setDuzen = (f: (d: DockDuzeni) => DockDuzeni) =>
     setDuzenHam((d) => {
       const y = f(d);
-      duzenKaydet(y);
+      duzenKaydet(y, profilKimligi.current);
       return y;
     });
 
@@ -535,6 +567,25 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     return () => window.clearInterval(id);
   }, [canliBas, kayitBas]);
   const bitHizi = useBitHizi(d?.istatistik as never);
+  // Profil değişince o profilin dock düzeni yüklenir
+  const etkinProfil = (d as { profil?: { id?: string } } | null)?.profil?.id;
+  useEffect(() => {
+    if (!etkinProfil || profilKimligi.current === etkinProfil) return;
+    const ilk = profilKimligi.current === undefined;
+    profilKimligi.current = etkinProfil;
+    // İlk açılışta profilin kendi düzeni yoksa mevcut (genel) düzen ona yazılır
+    if (ilk) {
+      let var_ = false;
+      try {
+        var_ = localStorage.getItem(`${ANAHTAR}.${etkinProfil}`) !== null;
+      } catch {
+        /* yok */
+      }
+      if (!var_) return duzenKaydet(duzen, etkinProfil);
+    }
+    setDuzenHam(duzenYukle(etkinProfil));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etkinProfil]);
 
   // ── Yardımcılar ──
   const yap = useCallback(
@@ -1018,6 +1069,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Uygulama ayarları", eylem: () => onGit?.("settings") },
         "ayirici",
         { etiket: `${ustte ? "☑" : "☐"} Her zaman üstte`, eylem: () => void ustteDegistir() },
+        "ayirici",
+        { etiket: "Çıkış", eylem: () => void uygulamadanCik() },
       ],
     },
     {
@@ -1052,6 +1105,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         "ayirici",
         ...projektorMenusu(),
         { etiket: "Tam ekran arayüz", kisayol: "F11", eylem: () => void tamEkranDegistir() },
+        { etiket: `${kaynakSimgeleri ? "☑" : "☐"} Kaynak simgeleri`, eylem: kaynakSimgeleriDegistir },
         { etiket: `${onizlemeKapali ? "☑" : "☐"} Önizlemeyi devre dışı bırak`, eylem: onizlemeKapaliDegistir },
         { etiket: `${onizlemeOlcek.tur === "sigdir" ? "● " : ""}Önizleme ölçekleme: pencereye sığdır`, kisayol: "Ctrl+0", eylem: () => setOnizlemeOlcek({ tur: "sigdir" }) },
         { etiket: `${onizlemeOlcek.tur === "tuval" ? "● " : ""}Önizleme ölçekleme: tuval (%100)`, eylem: () => setOnizlemeOlcek({ tur: "tuval" }) },
@@ -1242,6 +1296,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       case "kaynaklar":
         return (
           <KaynaklarDock
+            simgeler={kaynakSimgeleri}
             sahneAdi={aktifSahneAdi}
             agac={agac}
             eksikler={sahne?.eksikler ?? []}

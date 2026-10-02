@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CIKIS_DURUM_ETIKETI, cikisEtkin, hedefBaslatilabilir, type MotorDurumu } from "../../lib/api/motor";
 import { boyutMetni, kalanKayitSn, sureMetni } from "../../lib/kayitSuresi";
+import { tabandanFark, type Sayaclar } from "../../lib/istatistikTabani";
 
 
 export const TUVAL_ADI: Record<string, string> = { ana: "Yatay", dikey: "Dikey" };
@@ -164,11 +165,31 @@ export function HedeflerDock({
   );
 }
 
+function sayaclar(ist: Istatistik): Sayaclar {
+  return {
+    geciken: ist.geciken_kare,
+    toplam: ist.toplam_kare,
+    atlanan: ist.atlanan_kare,
+    videoKare: ist.video_kare,
+    cikislar: Object.fromEntries(ist.cikislar.map((c) => [c.id, { kare: c.kare, dusen: c.dusen_kare, bayt: c.bayt }])),
+  };
+}
+
 export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record<string, number> }) {
   const ist = d.istatistik as Istatistik | null;
+  // Sıfırla: sayaçlar bu andan itibaren (motor sayaçlarına dokunulmaz)
+  const [taban, setTaban] = useState<Sayaclar | null>(null);
+  const g = ist ? tabandanFark(sayaclar(ist), taban) : null;
   return (
     <section className="dt-dock h-full" aria-label="İstatistikler">
-      <div className="dt-dock-baslik">İstatistikler</div>
+      <div className="dt-dock-baslik">
+        İstatistikler
+        <span className="dt-bosluk" />
+        {taban && <span className="dt-soluk font-normal text-[11px]">sıfırlamadan beri</span>}
+        <button type="button" className="dt-tool text-[11px]" disabled={!ist} onClick={() => ist && setTaban(sayaclar(ist))} title="Kare ve çıktı sayaçlarını sıfırla">
+          Sıfırla
+        </button>
+      </div>
       <div className="dt-dock-govde">
         {!ist ? (
           <p className="p-3 text-[12px] dt-soluk">Motor çalışmıyor.</p>
@@ -181,13 +202,13 @@ export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record
               <span className="dt-sayi">{ist.ortalama_kare_ms.toFixed(2)} ms</span>
               <span className="dt-etiket">Geciken kare (işleme)</span>
               <span className="dt-sayi">
-                {ist.geciken_kare} / {ist.toplam_kare}
+                {g?.geciken} / {g?.toplam}
               </span>
               {ist.atlanan_kare != null && (
                 <>
                   <span className="dt-etiket">Atlanan kare (kodlama)</span>
                   <span className="dt-sayi">
-                    {ist.atlanan_kare} / {ist.video_kare ?? "—"}
+                    {g?.atlanan} / {g?.videoKare ?? "—"}
                   </span>
                 </>
               )}
@@ -236,9 +257,9 @@ export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record
                     <td>{c.id.startsWith("h-") ? (d.hedefler.find((h) => `h-${h.id}` === c.id)?.ad ?? c.id) : c.id === "kayit" ? "Kayıt" : c.id === "tekrar" ? "Tekrar arabelleği" : c.id}</td>
                     <td>{CIKIS_DURUM_ETIKETI[c.durum] ?? c.durum}</td>
                     <td className="dt-sayi text-right">{c.etkin && bitHizi[c.id] != null ? `${Math.round(bitHizi[c.id])} kbps` : "—"}</td>
-                    <td className="dt-sayi text-right">{c.kare}</td>
-                    <td className="dt-sayi text-right">{c.dusen_kare}</td>
-                    <td className="dt-sayi text-right">{(c.bayt / 1e6).toFixed(1)} MB</td>
+                    <td className="dt-sayi text-right">{g?.cikislar[c.id]?.kare ?? c.kare}</td>
+                    <td className="dt-sayi text-right">{g?.cikislar[c.id]?.dusen ?? c.dusen_kare}</td>
+                    <td className="dt-sayi text-right">{((g?.cikislar[c.id]?.bayt ?? c.bayt) / 1e6).toFixed(1)} MB</td>
                   </tr>
                 ))}
               </tbody>

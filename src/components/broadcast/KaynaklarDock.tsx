@@ -4,7 +4,37 @@
  * klavye: ↑/↓ seçim, Del kaldır, F2 yeniden adlandır, Enter özellikler, Menü/Shift+F10 bağlam menüsü.
  */
 import { useState } from "react";
-import { AlertTriangle, ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, Filter, Lock, LockOpen, Minus, Plus, Settings2 } from "lucide-react";
+import {
+  AlertTriangle,
+  AppWindow,
+  Box,
+  Camera,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Clapperboard,
+  Eye,
+  EyeOff,
+  Film,
+  Filter,
+  Folder,
+  Gamepad2,
+  Globe,
+  Image,
+  Images,
+  Lock,
+  LockOpen,
+  Mic,
+  Minus,
+  Monitor,
+  Palette,
+  Plus,
+  Puzzle,
+  Settings2,
+  Type,
+  Volume2,
+  type LucideIcon,
+} from "lucide-react";
 import type { MotorEksikOge, MotorSahneOgesi } from "../../lib/api/motor";
 import { duzListe, type AgacDugumu } from "../../lib/sahneAgaci";
 
@@ -57,7 +87,32 @@ export function turEtiketi(o: MotorSahneOgesi): string {
   }
 }
 
+/** Kaynak türü simgesi (OBS "Kaynak simgeleri"); bilinmeyen tür için kutu */
+const TUR_SIMGESI: Record<string, LucideIcon> = {
+  renk: Palette,
+  yazi: Type,
+  gorsel: Image,
+  slayt: Images,
+  medya: Film,
+  tarayici: Globe,
+  ekran: Monitor,
+  pencere: AppWindow,
+  oyun: Gamepad2,
+  kamera: Camera,
+  mikrofon: Mic,
+  masaustu: Volume2,
+  uygulama_sesi: Volume2,
+  sahne: Clapperboard,
+  eklenti: Puzzle,
+};
+
+export function kaynakSimgesi(o: MotorSahneOgesi): LucideIcon {
+  if (o.grup) return Folder;
+  return TUR_SIMGESI[o.tur ?? ""] ?? Box;
+}
+
 export function KaynaklarDock({
+  simgeler = true,
   sahneAdi,
   agac,
   eksikler,
@@ -65,6 +120,8 @@ export function KaynaklarDock({
   acikGruplar,
   eylem,
 }: {
+  /** Kaynak türü simgeleri (Görünüm › Kaynak simgeleri) */
+  simgeler?: boolean;
   sahneAdi: string | null;
   agac: AgacDugumu[];
   eksikler: MotorEksikOge[];
@@ -174,6 +231,11 @@ export function KaynaklarDock({
                   {acik ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                 </button>
               ) : null}
+              {simgeler &&
+                (() => {
+                  const S = kaynakSimgesi(o);
+                  return <S className="h-3.5 w-3.5 shrink-0 dt-soluk" aria-hidden />;
+                })()}
               <span className={`min-w-0 flex-1 truncate ${o.gorunur ? "" : "dt-soluk"}`} title={o.ad ?? o.kaynak}>
                 {o.ad ?? o.kaynak}
               </span>

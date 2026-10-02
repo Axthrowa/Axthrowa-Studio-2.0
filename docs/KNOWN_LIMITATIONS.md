@@ -147,3 +147,4 @@ Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
 | Deinterlace görsel etkisi | UNVERIFIED | Geçmeli kaynak (yakalama kartı) yok; ayar libobs'ta saklanır ve geri okunur |
 | Hızlı geçiş: geçici tür değişimi | kısmi | Hızlı geçiş sürerken tuvalin geçişi o türe alınır, süre + 250 ms sonra geri kurulur; bu arada başka geçiş başlatılırsa geri kurma yine olur |
 | Betikler, Altyazı, Backtrack klip listesi, özel tarayıcı dock'u | YOK | Kontrol listesinde satır satır |
+| Özel tarayıcı dock'u ve CSP | ödünleşim | Masaüstü uygulamasının CSP'sinde `frame-src` https ve yerel adreslere açıldı (önceden yalnız Kick/YouTube). Çerçeve `sandbox` ile açılır (üst pencereye gezinme yok, köken farklı olduğundan uygulamaya erişim yok), `script-src` değişmedi. Bazı siteler çerçeve içinde açılmayı reddeder (X-Frame-Options) — "Tarayıcıda aç" düğmesi sunulur |

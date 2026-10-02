@@ -14,10 +14,11 @@ import { HedeflerDock, IstatistikDock, useBitHizi } from "../components/broadcas
 import { konumuKaydet } from "../lib/projektor";
 import { ActivityFeedPanel, UniversalChatPanel } from "../components/control/UniversalChat";
 import { DeckPanel } from "../components/control/DeckPanel";
+import { TarayiciDock } from "../components/broadcast/TarayiciDock";
 import "../styles/desktop.css";
 
-export type BagimsizDockKimligi = "mikser" | "sahneler" | "hedefler" | "istatistik" | "sohbet" | "etkinlik" | "deste";
-const GECERLI: BagimsizDockKimligi[] = ["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste"];
+export type BagimsizDockKimligi = "mikser" | "sahneler" | "hedefler" | "istatistik" | "sohbet" | "etkinlik" | "deste" | "tarayici";
+const GECERLI: BagimsizDockKimligi[] = ["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste", "tarayici"];
 const AD: Record<BagimsizDockKimligi, string> = {
   mikser: "Ses Mikseri",
   sahneler: "Sahneler",
@@ -26,9 +27,10 @@ const AD: Record<BagimsizDockKimligi, string> = {
   sohbet: "Çoklu Sohbet",
   etkinlik: "Etkinlik Akışı",
   deste: "Hızlı Eylemler",
+  tarayici: "Tarayıcı (özel)",
 };
 /** Motordan bağımsız docklar (Kontrol Merkezi bileşenleri): motor kapalıyken de çalışır */
-const MOTORSUZ: BagimsizDockKimligi[] = ["sohbet", "etkinlik", "deste"];
+const MOTORSUZ: BagimsizDockKimligi[] = ["sohbet", "etkinlik", "deste", "tarayici"];
 
 export function dockKimligi(arama: string): BagimsizDockKimligi {
   const id = new URLSearchParams(arama).get("id") as BagimsizDockKimligi | null;
@@ -93,7 +95,15 @@ export default function BagimsizDockSayfasi() {
   if (MOTORSUZ.includes(id))
     icerik = (
       <div className="h-full overflow-auto p-1.5">
-        {id === "sohbet" ? <UniversalChatPanel onToast={toast} /> : id === "etkinlik" ? <ActivityFeedPanel onToast={toast} /> : <DeckPanel onToast={toast} />}
+        {id === "sohbet" ? (
+          <UniversalChatPanel onToast={toast} />
+        ) : id === "etkinlik" ? (
+          <ActivityFeedPanel onToast={toast} />
+        ) : id === "tarayici" ? (
+          <TarayiciDock onToast={toast} />
+        ) : (
+          <DeckPanel onToast={toast} />
+        )}
       </div>
     );
   else if (!d) icerik = <p className="p-3 text-[12px] dt-soluk">Bağlanıyor…</p>;

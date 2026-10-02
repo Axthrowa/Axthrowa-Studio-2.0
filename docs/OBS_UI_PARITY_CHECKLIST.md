@@ -20,7 +20,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Önizleme altında kaynak araç çubuğu | KISMİ | tp | Medya (oynat/duraklat/baştan/durdur/konum), Özellikler, Filtreler. OBS'teki metin/aygıt seçimi kısayolları yok |
 | Dock sürükle-bırak, sekmeleme, kilitleme, düzeni sıfırla, kalıcılık | VAR | vt:dockDuzeni, tp | |
 | Dock'u ayrı pencereye çıkarma | KISMİ | — | Mikser, Sahneler, Hedefler, İstatistik, Sohbet, Etkinlik, Deste; Kaynaklar/Geçişler/Denetimler çıkarılamaz |
-| Özel tarayıcı dock'u | YOK | | |
+| Özel tarayıcı dock'u | VAR | vt:ozelDocklar | "Tarayıcı (özel)" dock'u: ad + http(s) adres listesi, korumalı çerçeve, ayrı pencereye çıkarılabilir; bazı siteler çerçeveyi reddeder |
 | Dock düzeni profil başına | VAR | — | Profil değişince o profilin düzeni yüklenir; profilin düzeni yoksa genel düzen ona yazılır (yerel depolama) |
 | Ek docklar: İstatistikler, Sohbet, Etkinlik, Çoklu çıkış (Hedefler), Deste | VAR | tp | Backtrack ve Günlük dock yok (Günlük pencere olarak var) |
 | Tam ekran arayüz, pencere konumu kalıcılığı, karışık DPI | KISMİ | — | Tam ekran arayüz (F11) VAR; ayrı dock/projektör pencerelerinin konumu kalıcı; karışık DPI sınanmadı (UNVERIFIED) |
@@ -47,7 +47,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Görünüm › Önizleme yakınlaştırma (Ctrl+tekerlek, Ctrl+0) | VAR | vt, tp | |
 | Görünüm › Tam ekran arayüz (F11) | VAR | — | Yalnız masaüstü uygulamasında (Tauri penceresi); tarayıcı bölmesinde sınanamaz |
 | Görünüm › Kaynak simgeleri | VAR | vt:KaynaklarDock | Tür simgesi (lucide), açılıp kapanır; tercih yerel |
-| Docklar › onay kutuları, kilitle, sekme birleştir/ayır, düzeni sıfırla, ayrı pencere | VAR | tp | Özel tarayıcı dock'u yok |
+| Docklar › onay kutuları, kilitle, sekme birleştir/ayır, düzeni sıfırla, ayrı pencere, özel tarayıcı dock'u | VAR | tp | |
 | Profil › liste, Yeni, Çoğalt, Yeniden adlandır, Kaldır (yedeğe), Dışa aktar, İçe aktar | VAR | it:motor_profil_… | Dışa aktarımda sır yok; içe aktarım yeni kimlikle eklenir |
 | Sahne Koleksiyonu › liste, Yeni, yönetici (çoğalt, adlandır, içe/dışa aktar, OBS JSON'dan al) | VAR | it:motor_v2_…, vt | Eşlenemeyen kaynak "eksik" yer tutucu olur |
 | Sahne Koleksiyonu › Eksik dosyaları denetle | VAR | it:motor_eksik_dosyalar_ara_ve_duzelt, tp | Medya, görsel, slayt, yerel tarayıcı sayfası; satır başına yeni yol, "Klasörde ara" |

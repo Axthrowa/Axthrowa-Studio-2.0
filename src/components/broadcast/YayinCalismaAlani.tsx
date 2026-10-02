@@ -85,6 +85,7 @@ import { RemuxPenceresi } from "./RemuxPenceresi";
 import { EksikDosyalarPenceresi } from "./EksikDosyalarPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { KaynakAracCubugu } from "./KaynakAracCubugu";
+import { TarayiciDock } from "./TarayiciDock";
 import type { OlcekKipi } from "../../lib/onizlemeOlcek";
 import { HakkindaDiyalogu } from "./HakkindaDiyalogu";
 import { CikisZamanlayicisiPenceresi, GunlukPenceresi } from "./AracPencereleri";
@@ -1128,7 +1129,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         ),
         { etiket: "Düzeni sıfırla", eylem: () => setDuzen(() => varsayilanDuzen()) },
         "ayirici",
-        ...(["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste"] as const).map(
+        ...(["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste", "tarayici"] as const).map(
           (x): MenuOgesi => ({
             etiket: `Ayrı pencerede aç: ${DOCKLAR.find((k) => k.id === x)?.ad}`,
             eylem: () =>
@@ -1450,6 +1451,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             </div>
           </section>
         );
+      case "tarayici":
+        return <TarayiciDock onToast={onToast} />;
       case "deste":
         return (
           <section className="dt-dock h-full" aria-label="Hızlı eylemler">

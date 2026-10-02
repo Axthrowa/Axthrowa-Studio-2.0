@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canliAdres, canliSatir } from "./motorCanli";
-import { carpandanDb, dbdenCarpan, dbdenKonum, dbMetni, dengeMetni, kirpiliyor, konumdanDb, olcerBolgesi, olcerYuzdesi, yuzdeMetni } from "./sesMatematik";
+import { carpandanDb, dbdenCarpan, dbdenKonum, dbMetni, dengeMetni, kirpiliyor, konumdanDb, olcerBolgesi, olcerYuzdesi, yuzdeMetni, dusur, soloPlani, soloGeriAl, DUSUS_HIZLARI } from "./sesMatematik";
 
 describe("ses hesapları", () => {
   it("çarpan ↔ dB", () => {
@@ -49,5 +49,36 @@ describe("yüzde gösterimi", () => {
     expect(yuzdeMetni(dbdenCarpan(-6.02))).toBe("%50");
     expect(yuzdeMetni(0)).toBe("%0");
     expect(yuzdeMetni(Number.NaN)).toBe("%0");
+  });
+});
+
+describe("ölçer düşüşü", () => {
+  it("yükselişte anında, düşüşte hız sınırlı", () => {
+    expect(dusur(-30, -10, DUSUS_HIZLARI.hizli, 0.1)).toBe(-10);
+    expect(dusur(-10, -60, DUSUS_HIZLARI.orta, 0.1)).toBeCloseTo(-11.176);
+    expect(dusur(-10, -10.5, DUSUS_HIZLARI.yavas, 1)).toBe(-10.5);
+    expect(dusur(Number.NEGATIVE_INFINITY, -20, 10, 0.1)).toBe(-20);
+  });
+});
+
+describe("solo dinle", () => {
+  it("seçilen izlenir, izlenen diğerleri kapanır, geri alma yalnız değişenleri döndürür", () => {
+    const k = [
+      { id: "mik", izleme: 0 },
+      { id: "muzik", izleme: 2 },
+      { id: "oyun", izleme: 0 },
+    ];
+    const p = soloPlani(k, "mik");
+    expect(p.degisiklikler).toEqual([
+      { id: "mik", izleme: 1 },
+      { id: "muzik", izleme: 0 },
+    ]);
+    expect(soloGeriAl(p.onceki)).toEqual([
+      { id: "mik", izleme: 0 },
+      { id: "muzik", izleme: 2 },
+    ]);
+  });
+  it("zaten izlenen kanal türünü korur", () => {
+    expect(soloPlani([{ id: "a", izleme: 2 }], "a").degisiklikler).toEqual([]);
   });
 });

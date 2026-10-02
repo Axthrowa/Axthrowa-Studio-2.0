@@ -158,6 +158,9 @@ async fn api_islem(
         if yeni.cikis != once.cikis || yeni.kayit != once.kayit {
           kodlayicilari_tazele(&state).await;
         }
+        if yeni.gercek_tepe != once.gercek_tepe {
+          komut(&state, json!({"komut": "olcer.tepe_tipi", "gercek": yeni.gercek_tepe})).await?;
+        }
         if yeni.izleme_aygiti != once.izleme_aygiti {
           if let Some(a) = &yeni.izleme_aygiti {
             komut(&state, json!({"komut": "izleme.aygit", "id": a.id, "ad": a.ad})).await?;

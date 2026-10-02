@@ -647,6 +647,9 @@ pub(crate) async fn motoru_baslat(state: &AppState, actor: &super::control_plane
   }
   eklenti_sonuclarini_isle(state, &sonuclar).await;
   // Profilin izleme aygıtı (seçilmişse)
+  if profil.gercek_tepe {
+    let _ = komut(state, json!({"komut": "olcer.tepe_tipi", "gercek": true})).await;
+  }
   if let Some(a) = &profil.izleme_aygiti {
     let _ = komut(state, json!({"komut": "izleme.aygit", "id": a.id, "ad": a.ad})).await;
   }

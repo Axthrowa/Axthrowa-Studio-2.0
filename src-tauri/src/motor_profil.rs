@@ -254,6 +254,9 @@ pub struct Profil {
   pub ses: SesAyari,
   #[serde(default)]
   pub ag: AgAyari,
+  /// Ses ölçeri tepe tipi: gerçek tepe (true peak; OBS Ayarlar › Ses › "Peak Meter Type"). Varsayılan örnek tepe
+  #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+  pub gercek_tepe: bool,
 }
 
 impl Default for Profil {
@@ -272,6 +275,7 @@ impl Default for Profil {
       video: VideoAyari::default(),
       ses: SesAyari::default(),
       ag: AgAyari::default(),
+      gercek_tepe: false,
     }
   }
 }
@@ -569,7 +573,7 @@ pub fn yeni_kimlik(d: &Dizin, ad: &str) -> String {
 
 /// Kısmi güncelleme: yalnız verilen alanlar (JSON birleştirme), sonra doğrulama. Bilinmeyen alan reddedilir.
 pub fn birlestir(p: &Profil, parca: &Map<String, Value>) -> Result<Profil, String> {
-  const ALANLAR: [&str; 12] = ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti", "video", "ses", "ag", "tekrar_dikey"];
+  const ALANLAR: [&str; 13] = ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti", "video", "ses", "ag", "tekrar_dikey", "gercek_tepe"];
   if let Some(a) = parca.keys().find(|k| !ALANLAR.contains(&k.as_str())) {
     return Err(format!("bilinmeyen profil alanı: {a}"));
   }

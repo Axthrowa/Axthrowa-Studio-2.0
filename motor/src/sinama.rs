@@ -355,8 +355,16 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     let sonra = tepe_ortalamasi(m, "medya", Duration::from_millis(1000));
     m.filtre_sil("f-kazanc")?;
     let fark = once - sonra;
-    let ok = once > -40.0 && (15.0..=25.0).contains(&fark);
-    Ok(format!("{ok}|tepe ortalaması {once:.1} dB → {sonra:.1} dB (fark {fark:.1} dB)"))
+    // Gerçek tepe (true peak) ölçer: aynı tonda örnek tepeden düşük olmaz, birkaç dB içinde kalır
+    bekle(300);
+    let ornek = tepe_ortalamasi(m, "medya", Duration::from_millis(800));
+    m.tepe_tipi_ayarla(true);
+    bekle(300);
+    let gercek = tepe_ortalamasi(m, "medya", Duration::from_millis(800));
+    m.tepe_tipi_ayarla(false);
+    let tp_ok = gercek >= ornek - 0.5 && gercek - ornek <= 3.5;
+    let ok = once > -40.0 && (15.0..=25.0).contains(&fark) && tp_ok;
+    Ok(format!("{ok}|tepe ortalaması {once:.1} dB → {sonra:.1} dB (fark {fark:.1} dB); örnek tepe {ornek:.1} / gerçek tepe {gercek:.1} dB"))
   })();
   (p.kazanc_ok, p.kazanc) = ayir(r);
 
@@ -1164,7 +1172,7 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   ekle("geçiş: sahne değişimi geçişle, program doğru", p.gecis_ok, p.gecis.clone());
   ekle("Studio Mode: önizleme ayrı tuvalde, geçiş programa alır, takas, T-bar", p.studyo_ok, p.studyo.clone());
   ekle("filtre: video filtreleri eklenir, sıralanır, kapatılır", p.filtre_ok, p.filtre.clone());
-  ekle("ses filtresi (kazanç −20 dB) ölçerde görünür", p.kazanc_ok, p.kazanc.clone());
+  ekle("ses filtresi (kazanç −20 dB) ölçerde görünür; gerçek tepe ölçer", p.kazanc_ok, p.kazanc.clone());
   ekle("ses özellikleri: denge, mono, senkron, izleme", p.ses_ok, p.ses.clone());
   ekle("grup: gruplanır, çözülünce öğe kimlikleri korunur", p.grup_ok, p.grup.clone());
   ekle("öğe dönüşümü: kırpma, hizalama, kilit, döndürme, karıştırma yöntemi, deinterlace", p.donusum_ok, p.donusum.clone());

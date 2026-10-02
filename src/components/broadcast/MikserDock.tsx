@@ -20,6 +20,10 @@ import {
   konumdanDb,
   olcerBolgesi,
   olcerYuzdesi,
+  dusur,
+  soloPlani,
+  DUSUS_HIZLARI,
+  type DususHizi,
 } from "../../lib/sesMatematik";
 import type { MenuOgesi } from "../ui/BaglamMenusu";
 
@@ -40,6 +44,35 @@ export type MikserEylemleri = {
 const GIZLI_ANAHTAR = "yya.yayin.mikser-gizli.v1";
 const YUZDE_ANAHTAR = "yya.yayin.mikser-yuzde.v1";
 const DIKEY_ANAHTAR = "yya.yayin.mikser-dikey.v1";
+const DUSUS_ANAHTAR = "yya.yayin.olcer-dusus.v1";
+const KILIT_ANAHTAR = "yya.yayin.mikser-kilit.v1";
+
+/** Ölçer düşüş hızı (Yayın ayarları › Ses); her karede okunur ki ayar değişince hemen uygulansın */
+export function dususOku(): DususHizi {
+  try {
+    const v = localStorage.getItem(DUSUS_ANAHTAR);
+    return v === "orta" || v === "yavas" ? v : "hizli";
+  } catch {
+    return "hizli";
+  }
+}
+
+export function dususYaz(v: DususHizi) {
+  try {
+    localStorage.setItem(DUSUS_ANAHTAR, v);
+  } catch {
+    /* yalnız bu oturumda */
+  }
+}
+
+function kilitOku(): Set<string> {
+  try {
+    const v = JSON.parse(localStorage.getItem(KILIT_ANAHTAR) ?? "[]");
+    return new Set(Array.isArray(v) ? v.filter((x) => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
 
 function bayrakOku(anahtar: string): boolean {
   try {
@@ -88,15 +121,23 @@ function Olcer({ id, seviyeler, dikey = false }: { id: string; seviyeler: Mutabl
   useEffect(() => {
     let r = 0;
     const tut = [-Infinity, -Infinity];
+    // Gösterilen seviyeler (düşüş hızıyla iner): [rms0, rms1, tepe0, tepe1]
+    const gost = [-Infinity, -Infinity, -Infinity, -Infinity];
+    let onceki = 0;
     let tutZaman = [0, 0];
     let kirpma = 0;
     const ciz = (t: number) => {
       const s = seviyeler.current.get(id);
       const el = kok.current;
+      const dt = onceki ? (t - onceki) / 1000 : 0;
+      onceki = t;
+      const hiz = DUSUS_HIZLARI[dususOku()];
       if (el) {
         for (const kanal of [0, 1] as const) {
-          const tepe = s?.tepe[kanal] ?? -144;
-          const ort = s?.ortalama[kanal] ?? -144;
+          gost[kanal] = dusur(gost[kanal], s?.ortalama[kanal] ?? -144, hiz, dt);
+          gost[2 + kanal] = dusur(gost[2 + kanal], s?.tepe[kanal] ?? -144, hiz, dt);
+          const ort = gost[kanal];
+          const tepe = gost[2 + kanal];
           if (tepe > tut[kanal] || t - tutZaman[kanal] > 1500) {
             tut[kanal] = tepe;
             tutZaman = kanal === 0 ? [t, tutZaman[1]] : [tutZaman[0], t];
@@ -143,6 +184,10 @@ function Kanal({
   yuzde,
   yuzdeDegistir,
   dikey,
+  kilitli,
+  kilitDegistir,
+  solo,
+  soloDegistir,
 }: {
   k: MotorSesKanali;
   seviyeler: MutableRefObject<Map<string, MotorSeviye>>;
@@ -152,6 +197,10 @@ function Kanal({
   yuzde: boolean;
   yuzdeDegistir: () => void;
   dikey: boolean;
+  kilitli: boolean;
+  kilitDegistir: () => void;
+  solo: boolean;
+  soloDegistir: () => void;
 }) {
   const [konum, setKonum] = useState(() => dbdenKonum(carpandanDb(k.ses)));
   const surukleniyor = useRef(false);
@@ -186,6 +235,8 @@ function Kanal({
     { etiket: k.mono ? "Monoyu kapat" : "Mono'ya indir", eylem: () => eylem.mono(k) },
     { etiket: "Mikserde gizle", eylem: gizle },
     { etiket: `${yuzde ? "☑" : "☐"} Yüzde olarak göster`, eylem: yuzdeDegistir },
+    { etiket: `${kilitli ? "☑" : "☐"} Ses düzeyini kilitle`, eylem: kilitDegistir },
+    { etiket: solo ? "Soloyu bitir" : "Solo dinle (yalnız bu kanalı izle)", eylem: soloDegistir },
   ];
   const fader = (
     <input
@@ -198,6 +249,7 @@ function Kanal({
       value={Math.round(konum * 1000)}
       onPointerDown={() => (surukleniyor.current = true)}
       onPointerUp={() => (surukleniyor.current = false)}
+      disabled={kilitli}
       onChange={(e) => degistir(Number(e.target.value) / 1000)}
       onDoubleClick={() => degistir(1)}
       title="Çift tık: 0 dB"
@@ -290,6 +342,37 @@ export function MikserDock({
   const [yokSay, setYokSay] = useState<Set<string>>(new Set());
   const [yuzde, setYuzde] = useState(yuzdeOku);
   const [dikey, setDikey] = useState(() => bayrakOku(DIKEY_ANAHTAR));
+  const [kilitler, setKilitler] = useState<Set<string>>(kilitOku);
+  const kilitDegistir = (id: string) =>
+    setKilitler((k) => {
+      const y = new Set(k);
+      if (y.has(id)) y.delete(id);
+      else y.add(id);
+      try {
+        localStorage.setItem(KILIT_ANAHTAR, JSON.stringify([...y]));
+      } catch {
+        /* yalnız bu oturumda */
+      }
+      return y;
+    });
+  // Solo: seçilen kanal izlenir, izlenen diğerleri kapanır; bitince yalnız değişenler geri yüklenir
+  const [solo, setSolo] = useState<{ id: string; onceki: Record<string, number> } | null>(null);
+  const uygula = (liste: { id: string; izleme: number }[]) => {
+    for (const d of liste) {
+      const k = ses?.kaynaklar.find((x) => x.id === d.id);
+      if (k) eylem.izleme(k, d.izleme);
+    }
+  };
+  const soloDegistir = (id: string) => {
+    // Kanalların asıl (solo öncesi) izleme türleri; her kanala yalnız SON hedef değeri gönderilir (sıra yarışı yok)
+    const asil = (ses?.kaynaklar ?? []).map((k) => ({ id: k.id, izleme: solo && k.id in solo.onceki ? solo.onceki[k.id] : k.izleme }));
+    const bitir = solo?.id === id;
+    const plan = bitir ? { degisiklikler: [], onceki: {} } : soloPlani(asil, id);
+    const hedef = new Map(asil.map((k) => [k.id, k.izleme]));
+    for (const d of plan.degisiklikler) hedef.set(d.id, d.izleme);
+    uygula((ses?.kaynaklar ?? []).filter((k) => hedef.get(k.id) !== k.izleme).map((k) => ({ id: k.id, izleme: hedef.get(k.id) ?? k.izleme })));
+    setSolo(bitir ? null : { id, onceki: plan.onceki });
+  };
   const dikeyDegistir = () =>
     setDikey((d) => {
       bayrakYaz(DIKEY_ANAHTAR, !d);
@@ -377,6 +460,10 @@ export function MikserDock({
             yuzde={yuzde}
             yuzdeDegistir={yuzdeDegistir}
             dikey={dikey}
+            kilitli={kilitler.has(k.id)}
+            kilitDegistir={() => kilitDegistir(k.id)}
+            solo={solo?.id === k.id}
+            soloDegistir={() => soloDegistir(k.id)}
           />
         ))}
       </div>

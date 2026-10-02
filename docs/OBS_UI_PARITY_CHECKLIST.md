@@ -111,10 +111,10 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Bağlam: Gizle, Filtreler, Özellikler, Gelişmiş ses, izleme türü, izler | VAR | tp | |
 | Yüzde olarak göster | VAR | vt:sesMatematik | Kanal bağlam menüsünden; tercih yerel |
 | Dikey düzen | VAR | tp | Başlıktaki düğmeyle; tercih yerel |
-| Ölçer tipi (true peak), düşüş hızı, kilitle | YOK | | |
+| Ölçer tipi (gerçek tepe), düşüş hızı, kanal kilidi | VAR | sinama (örnek/gerçek tepe), it (profil), vt:sesMatematik | Tepe tipi profilde ve motorda (obs_volmeter_set_peak_meter_type); düşüş hızı OBS değerleri (23,53/11,76/8,57 dB/sn); kilit fader'ı kapatır |
 | Gelişmiş Ses Özellikleri tablosu (ses, mono, denge, senkron, izleme, İz 1–6, yalnız etkin kaynaklar) | VAR | sinama, it | |
 | Bas-konuş / bas-sustur | VAR | it:motor_kisayol_eylemleri_bas_konus_ve_sahne | Gecikme ms ayarı yok |
-| Solo | YOK | | |
+| Solo dinle | VAR | vt:sesMatematik | Panel eki (OBS'te yok): seçilen kanal izlenir, izlenen diğerleri kapanır, bitince eski izleme türleri döner; yayına giden ses değişmez. Çalışma anı hoparlör çıkışı sınanmadı (izleme sınamada yalnız kapalı) |
 
 ## 4.7 Sahne geçişleri dock'u
 

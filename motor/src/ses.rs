@@ -43,6 +43,8 @@ pub struct SesDurumu {
   pub(crate) abone: Arc<AtomicBool>,
   pub(crate) dur: Arc<AtomicBool>,
   pub(crate) is: Option<JoinHandle<()>>,
+  /// Tepe ölçer tipi (OBS Ayarlar › Ses › "Peak Meter Type"): false örnek tepe, true gerçek tepe (true peak)
+  pub(crate) gercek_tepe: bool,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq)]
@@ -150,6 +152,8 @@ impl Motor {
     if vm.is_null() {
       return;
     }
+    // libobs `enum obs_peak_meter_type`: 0 örnek tepe, 1 gerçek tepe (4× aşırı örnekleme, daha çok CPU)
+    unsafe { (a.obs_volmeter_set_peak_meter_type)(vm, i32::from(self.ses.gercek_tepe)) };
     let hucre = Arc::new(Hucre::default());
     for i in 0..4 {
       hucre.yaz(i, SESSIZLIK_DB);
@@ -168,6 +172,14 @@ impl Motor {
       h.insert(id.to_string(), hucre);
     }
     self.ses.olcerler.insert(id.to_string(), Olcer { ptr: vm, hucre: ham });
+  }
+
+  /// Tüm ölçerlerin tepe tipini değiştirir (yenileri de bu tiple kurulur)
+  pub fn tepe_tipi_ayarla(&mut self, gercek: bool) {
+    self.ses.gercek_tepe = gercek;
+    for o in self.ses.olcerler.values() {
+      unsafe { (api().obs_volmeter_set_peak_meter_type)(o.ptr, i32::from(gercek)) };
+    }
   }
 
   pub(crate) fn olcer_birak(&mut self, id: &str) {

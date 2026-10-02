@@ -420,6 +420,7 @@ obs_api! {
   fn obs_source_set_enabled(Ptr, bool);
   fn obs_source_enabled(Ptr) -> bool;
   fn obs_volmeter_create(c_int) -> Ptr;
+  fn obs_volmeter_set_peak_meter_type(Ptr, c_int);
   fn obs_volmeter_destroy(Ptr);
   fn obs_volmeter_attach_source(Ptr, Ptr) -> bool;
   fn obs_volmeter_detach_source(Ptr);

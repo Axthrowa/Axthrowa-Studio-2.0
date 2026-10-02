@@ -1964,6 +1964,11 @@ async fn motor_profil_kodlama_paylasimi_ve_kayit() {
   assert_eq!(r["profil"]["cikis"]["bit_hizi_ana"], 4500);
   assert_eq!(r["profil"]["cikis"]["bit_hizi_dikey"], 4000, "verilmeyen alan korunur");
   assert_eq!(post("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"anahtar": "x"}})).await.status(), 400);
+  // Gerçek tepe ölçer: motor çalışırken uygulanır, profilde saklanır; motor yeniden başlamaz
+  let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"gercek_tepe": true}})).await;
+  assert_eq!((r["profil"]["gercek_tepe"].as_bool(), r["motorYenidenBasladi"].as_bool()), (Some(true), None), "{r}");
+  let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"gercek_tepe": false}})).await;
+  assert!(r["profil"].get("gercek_tepe").is_none(), "kapalıyken yazılmaz");
   assert_eq!(get("/api/motor/ses".into()).await["izAdlari"][0], "Canlı");
 
   // Hedefler: A tuval bit hızıyla (paylaşılan kodlayıcı), B 2500 kbps (ayrı kodlayıcı), C aynı 2500 (B ile paylaşır)

@@ -259,6 +259,8 @@ export type MotorProfil = {
   };
   kayit: { bicim: string; izler: number[]; klasor?: string | null; ayri_kodlayici: boolean; bolme_dk: number; bolme_mb: number };
   tekrar_dikey: boolean;
+  /** Ölçer tepe tipi: gerçek tepe (true peak) */
+  gercek_tepe?: boolean;
   tekrar_sn: number;
   iz_adlari: string[];
   hedefler: Record<string, MotorHedefAtamasi>;

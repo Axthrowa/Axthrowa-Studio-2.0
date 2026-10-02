@@ -65,3 +65,37 @@ export function dengeMetni(d: number): string {
 }
 
 export const IZLEME_ADLARI = ["İzleme kapalı", "Yalnız izle (çıkışı sustur)", "İzle ve çıkışa ver"] as const;
+
+/** Ölçer düşüş hızı (OBS Ayarlar › Ses › "Meter Decay Rate"), dB/sn */
+export const DUSUS_HIZLARI = { hizli: 23.53, orta: 11.76, yavas: 8.57 } as const;
+export type DususHizi = keyof typeof DUSUS_HIZLARI;
+
+/** Gösterilen seviye: yeni değer yüksekse hemen ona çıkar, düşükse en çok `hiz × dt` kadar iner */
+export function dusur(gosterilen: number, yeni: number, hiz: number, dtSn: number): number {
+  if (!Number.isFinite(gosterilen) || yeni >= gosterilen) return yeni;
+  return Math.max(yeni, gosterilen - hiz * Math.max(0, dtSn));
+}
+
+export type SoloPlani = { degisiklikler: { id: string; izleme: number }[]; onceki: Record<string, number> };
+
+/**
+ * Solo dinle (panel ekidir; OBS'te yok): seçilen kanal izlenir ("Yalnız izle", kapalıysa), izlenen diğer kanallar
+ * susturulur (izleme kapalı). Önceki izleme türleri saklanır; solo bitince geri yüklenir. Yayına giden ses değişmez.
+ */
+export function soloPlani(kanallar: { id: string; izleme: number }[], solo: string): SoloPlani {
+  const onceki: Record<string, number> = {};
+  const degisiklikler: { id: string; izleme: number }[] = [];
+  for (const k of kanallar) {
+    const hedef = k.id === solo ? (k.izleme === 0 ? 1 : k.izleme) : 0;
+    if (hedef !== k.izleme) {
+      onceki[k.id] = k.izleme;
+      degisiklikler.push({ id: k.id, izleme: hedef });
+    }
+  }
+  return { degisiklikler, onceki };
+}
+
+/** Solo bitince: yalnız soloda değiştirilen kanallar eski izleme türüne döner */
+export function soloGeriAl(onceki: Record<string, number>): { id: string; izleme: number }[] {
+  return Object.entries(onceki).map(([id, izleme]) => ({ id, izleme }));
+}

@@ -269,6 +269,11 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       json!({})
     }
     "ses.listesi" => json!({ "kaynaklar": m.ses_listesi() }),
+    "olcer.tepe_tipi" => {
+      let gercek = istek.get("gercek").and_then(Value::as_bool).ok_or("'gercek' (true/false) gerekli")?;
+      m.tepe_tipi_ayarla(gercek);
+      json!({ "gercek": gercek })
+    }
     "seviye.abone" => {
       m.seviye_abone(istek.get("acik").and_then(Value::as_bool).unwrap_or(false));
       json!({})

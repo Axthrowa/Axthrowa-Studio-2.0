@@ -11,6 +11,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motorApi, obsWebsocketApi, type MotorProfil, type MotorProfilYaniti, type MotorSesDurumu, type ObsWebsocketDurumu } from "../../lib/api/motor";
 import { multistreamApi, type Destination, type MultistreamStatus, type Platform } from "../../lib/api/multistream";
 import { OzellikGovdesi } from "./OzellikFormu";
+import { dususOku, dususYaz } from "./MikserDock";
+import type { DususHizi } from "../../lib/sesMatematik";
 import { hataMetni, Pencere } from "./ortak";
 import { HAZIRLAR, oku as erisimOku, uygula as erisimUygula, VARSAYILAN_RENKLER, yaz as erisimYaz, type ErisimRenkleri } from "../../lib/erisilebilirlik";
 
@@ -541,6 +543,7 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
     if (p?.calisiyor) motorApi.ses().then(setSes, () => setSes(null));
   }, [p?.calisiyor]);
 
+  const [dusus, setDusus] = useState<DususHizi>(dususOku);
   const guncelle = async (degisim: Record<string, unknown>) => {
     try {
       const r = (await motorApi.profilGuncelle(degisim)) as Awaited<ReturnType<typeof motorApi.profilGuncelle>> & { motorYenidenBasladi?: boolean };
@@ -757,6 +760,17 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
             </div>
           ) : bolum === "ses" ? (
             <div className="dt-form">
+              <label htmlFor="ay-tepe">Tepe ölçer tipi</label>
+              <select id="ay-tepe" className="dt-input" value={pr.gercek_tepe ? "gercek" : "ornek"} onChange={(e) => void guncelle({ gercek_tepe: e.target.value === "gercek" })}>
+                <option value="ornek">Örnek tepe</option>
+                <option value="gercek">Gerçek tepe (true peak; daha çok işlemci)</option>
+              </select>
+              <label htmlFor="ay-dusus">Ölçer düşüş hızı</label>
+              <select id="ay-dusus" className="dt-input" value={dusus} onChange={(e) => (setDusus(e.target.value as DususHizi), dususYaz(e.target.value as DususHizi))}>
+                <option value="hizli">Hızlı</option>
+                <option value="orta">Orta (IEC 60268-18 tip I)</option>
+                <option value="yavas">Yavaş (IEC 60268-18 tip II)</option>
+              </select>
               <span className="dt-etiket">Karışım (iz) adları</span>
               <span className="grid grid-cols-3 gap-1.5">
                 {pr.iz_adlari.map((a, i) => (

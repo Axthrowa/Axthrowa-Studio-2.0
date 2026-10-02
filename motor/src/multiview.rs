@@ -207,6 +207,7 @@ impl Motor {
 
   pub fn kaynak_tuvali_kapat(&mut self, id: &str) {
     let ad = format!("{KAYNAK_ONEK}{id}");
+    self.sanal_kamera_tuvali_kapaniyor(&ad);
     self.akis_durdur(&ad);
     self.onizlemeler.remove(&ad);
     if let Some(t) = self.kaynak_tuvalleri.remove(id) {

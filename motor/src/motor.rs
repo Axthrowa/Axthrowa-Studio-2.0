@@ -374,6 +374,8 @@ pub struct Motor {
   pub(crate) etkilesim_tuvalleri: HashMap<String, Kanvas>,
   pub(crate) multiviewler: HashMap<String, crate::multiview::Multiview>,
   pub(crate) kaynak_tuvalleri: HashMap<String, Kanvas>,
+  /// Sanal kameranın görüntü aldığı tuval adı (kaynağı kapanırken kamera önce durdurulur)
+  pub(crate) sanal_kamera_kaynagi: Option<String>,
   /// Çıktı → son duraklat/sürdür zamanı (art arda geçişleri aralamak için)
   pub(crate) duraklatma_zamani: HashMap<String, std::time::Instant>,
 }
@@ -529,6 +531,7 @@ impl Motor {
       etkilesim_tuvalleri: HashMap::new(),
       multiviewler: HashMap::new(),
       kaynak_tuvalleri: HashMap::new(),
+      sanal_kamera_kaynagi: None,
       duraklatma_zamani: HashMap::new(),
     };
     motor.ses.baslat(motor.olay.clone());

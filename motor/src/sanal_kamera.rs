@@ -48,7 +48,15 @@ impl Motor {
     if !crate::eklenti::kayitli_turler("cikis").iter().any(|t| t == "virtualcam_output") {
       return Err("sanal kamera bu kurulumda yok (OBS'in win-dshow modülü/sürücüsü bulunamadı)".into());
     }
-    let video = self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?.video();
+    // Hedef (OBS 30+ "Output Type"): program tuvali, Studio Mode önizlemesi (`studyo-<tuval>`) ya da bir sahnenin
+    // projektör tuvali (`kaynak-<sahne>`; panel önce açar)
+    let video = if let Some(t) = tuval.strip_prefix("studyo-") {
+      self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas.video()
+    } else if let Some(k) = tuval.strip_prefix(crate::multiview::KAYNAK_ONEK) {
+      self.kaynak_tuvalleri.get(k).ok_or("sahne tuvali açık değil")?.video()
+    } else {
+      self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?.video()
+    };
     if self.cikislar_var(CIKIS_ID) {
       self.cikis_sil(CIKIS_ID)?;
     }
@@ -60,10 +68,19 @@ impl Motor {
     }
     unsafe { (api().obs_output_set_media)(ptr, video, (api().obs_get_audio)()) };
     self.cikis_kaydet(CIKIS_ID, ptr, "sanal_kamera");
+    self.sanal_kamera_kaynagi = Some(tuval.to_string());
     self.cikis_baslat(CIKIS_ID)
   }
 
+  /// Görüntü aldığı tuval kapanacaksa sanal kamera önce durdurulur (çıktı yok olmuş videoya bağlı kalmasın)
+  pub(crate) fn sanal_kamera_tuvali_kapaniyor(&mut self, tuval: &str) {
+    if self.sanal_kamera_kaynagi.as_deref() == Some(tuval) {
+      let _ = self.sanal_kamera_durdur();
+    }
+  }
+
   pub fn sanal_kamera_durdur(&mut self) -> Result<(), String> {
+    self.sanal_kamera_kaynagi = None;
     if self.cikislar_var(CIKIS_ID) {
       self.cikis_sil(CIKIS_ID)?;
     }

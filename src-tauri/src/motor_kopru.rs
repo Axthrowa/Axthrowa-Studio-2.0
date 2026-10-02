@@ -61,6 +61,8 @@ pub struct Ozet {
   pub tekrar_cikisi_var: bool,
   /// Dikey tuvalin tekrar arabelleği (`tekrar-dikey`) oluşturuldu
   pub tekrar_dikey_var: bool,
+  /// Sanal kameranın hedefi (`ana`, `studyo-ana`, `sahne:<kimlik>`); sahnede kamera durunca sahne tuvali bırakılır
+  pub sanal_kamera_hedef: Option<String>,
   pub son_kayit: Option<String>,
   pub son_tekrar: Option<String>,
   /// Motor panel istemeden kapandıysa çıkış kodu (NTSTATUS dahil, işaretsiz). Çökme bekçisi okuyup temizler.

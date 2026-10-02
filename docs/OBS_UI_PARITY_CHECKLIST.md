@@ -55,7 +55,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Araçlar › WebSocket sunucu ayarları | VAR | it:obs_websocket_uyumlu_sunucu | Yayın Ayarları › Uzaktan denetim; 127.0.0.1 |
 | Araçlar › Betikler | DESTEKLENMİYOR | | OBS betik altyapısı (obs-scripting, Lua/Python) ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
 | Araçlar › Altyazı | YOK | | |
-| Araçlar › Sanal kamera ayarları | KISMİ | it:motor_kayit_…_sanal_kamera | Başlat/durdur; hedef (program/sahne/kaynak) seçimi yok |
+| Araçlar › Sanal kamera ayarları | KISMİ | sinama, it:motor_kayit_…_sanal_kamera | Hedef: Program / Önizleme (Studio Mode) / Sahne (Denetimler dock'u dişlisi); tek kaynak hedefi yok (kaynak kendi boyutunda olduğundan kamera çözünürlüğü tutarsız olurdu); arayüz tarayıcıda görülmedi |
 | Yardım › Son günlüğü görüntüle, Günlük klasörü, Hakkında (sürüm, lisanslar) | VAR | it, tp | Günlük sırları ayıklanmış |
 | Yardım › Çökme raporları | VAR | it:motor_filtre_yapistir_ve_gunluk | Panelin çökme günlüğü, sırlar ayıklanmış; dışarı gönderilmez |
 | Yardım › Güncellemeleri denetle | YOK | | Ağ isteği kullanıcı izni gerektirir |

@@ -521,7 +521,7 @@ async fn api_durum(
       "diskBos": crate::disk::bos_alan(&profil.kayit.klasor.as_ref().map(PathBuf::from).unwrap_or_else(kayit_klasoru)),
     },
     "tekrar": {"durum": durum("tekrar"), "sureSn": profil.tekrar_sn, "son": o.son_tekrar, "dikey": o.tekrar_dikey_var.then(|| durum("tekrar-dikey"))},
-    "sanalKamera": {"durum": durum("sanal-kamera")},
+    "sanalKamera": {"durum": durum("sanal-kamera"), "hedef": o.sanal_kamera_hedef},
     "profil": {"id": crate::motor_profil::etkin_kimlik(&klasor(&state)), "ad": profil.ad},
     // Kodlama paylaşımı tanısı: kurulu video kodlayıcıları (aynı tuval + bit hızı tek kodlayıcı)
     "kodlayicilar": kodlayicilar,
@@ -1468,12 +1468,32 @@ pub(crate) async fn sanal_kamera(state: &AppState, eylem: &str, tuval: &str) -> 
     return Ok(acik);
   }
   if ac {
-    if tuval_boyutu(tuval).is_none() || (tuval == "dikey" && !state.motor.ozet().lock().dikey_tuval) {
-      return Err(gecersiz(format!("tuval yok: {tuval}")));
-    }
-    komut(state, json!({"komut": "sanal_kamera.baslat", "tuval": tuval})).await?;
+    // Hedef (OBS 30+ "Output Type"): program tuvali, Studio Mode önizlemesi ya da bir sahne
+    let hedef = if let Some(sahne) = tuval.strip_prefix("sahne:") {
+      if !kol::gecerli_kimlik(sahne) || state.motor.ozet().lock().koleksiyon.sahne_ref(sahne).is_none() {
+        return Err(gecersiz(format!("sahne yok: {sahne}")));
+      }
+      komut(state, json!({"komut": "kaynak_tuvali.ac", "id": sahne})).await?;
+      format!("kaynak-{sahne}")
+    } else if let Some(t) = tuval.strip_prefix("studyo-") {
+      if tuval_boyutu(t).is_none() || !state.motor.ozet().lock().studyo.contains_key(t) {
+        return Err(gecersiz("Studio Mode bu tuvalde kapalı".into()));
+      }
+      tuval.to_string()
+    } else {
+      if tuval_boyutu(tuval).is_none() || (tuval == "dikey" && !state.motor.ozet().lock().dikey_tuval) {
+        return Err(gecersiz(format!("tuval yok: {tuval}")));
+      }
+      tuval.to_string()
+    };
+    komut(state, json!({"komut": "sanal_kamera.baslat", "tuval": hedef})).await?;
+    state.motor.ozet().lock().sanal_kamera_hedef = Some(tuval.to_string());
   } else {
     komut(state, json!({"komut": "sanal_kamera.durdur"})).await?;
+    let hedef = state.motor.ozet().lock().sanal_kamera_hedef.take();
+    if let Some(s) = hedef.as_deref().and_then(|h| h.strip_prefix("sahne:")) {
+      let _ = komut(state, json!({"komut": "kaynak_tuvali.kapat", "id": s})).await;
+    }
   }
   Ok(ac)
 }

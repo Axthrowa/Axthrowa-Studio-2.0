@@ -214,6 +214,7 @@ impl Motor {
     if self.studyo.get(tuval).is_some_and(|s| s.tbar.is_some()) {
       let _ = self.studyo_tbar(tuval, 0.0, true);
     }
+    self.sanal_kamera_tuvali_kapaniyor(&format!("studyo-{tuval}"));
     self.onizlemeler.remove(&format!("studyo-{tuval}"));
     if let Some(s) = self.studyo.remove(tuval) {
       unsafe {

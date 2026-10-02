@@ -19,6 +19,8 @@ export function DenetimlerDock({
   onDuraklat,
   onBol,
   onSanalKamera,
+  onSanalKameraHedef,
+  sanalKameraHedefAdi,
   onTekrar,
   onTekrarKaydet,
   onStudyo,
@@ -38,6 +40,9 @@ export function DenetimlerDock({
   onDuraklat: () => void;
   onBol: () => void;
   onSanalKamera: () => void;
+  /** Sanal kamera hedef menüsü (dişli); verilmezse gösterilmez */
+  onSanalKameraHedef?: (e: { clientX: number; clientY: number }) => void;
+  sanalKameraHedefAdi?: string;
   onTekrar: () => void;
   onTekrarKaydet: () => void;
   onStudyo: () => void;
@@ -91,10 +96,34 @@ export function DenetimlerDock({
             <Save className="h-3.5 w-3.5" />
           </button>
         </div>
-        <button type="button" className="dt-btn w-full" aria-pressed={sanalKamera} disabled={meşgul} onClick={onSanalKamera} title="Program görüntüsünü sanal kamera aygıtı olarak ver (kurulu OBS'in sanal kamera sürücüsü)">
-          <Video className="h-3.5 w-3.5" />
-          {sanalKamera ? "Sanal kamerayı durdur" : "Sanal kamerayı başlat"}
-        </button>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            className="dt-btn min-w-0 flex-1"
+            aria-pressed={sanalKamera}
+            disabled={meşgul}
+            onClick={onSanalKamera}
+            title={`Görüntüyü sanal kamera aygıtı olarak ver (kurulu OBS'in sanal kamera sürücüsü) · hedef: ${sanalKameraHedefAdi ?? "Program"}`}
+          >
+            <Video className="h-3.5 w-3.5" />
+            {sanalKamera ? "Sanal kamerayı durdur" : "Sanal kamerayı başlat"}
+          </button>
+          {onSanalKameraHedef && (
+            <button
+              type="button"
+              className="dt-btn"
+              aria-label="Sanal kamera hedefi"
+              title={`Sanal kamera hedefi: ${sanalKameraHedefAdi ?? "Program"}`}
+              disabled={meşgul || sanalKamera}
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                onSanalKameraHedef({ clientX: r.left, clientY: r.bottom });
+              }}
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
         <button type="button" className="dt-btn w-full" aria-pressed={studyo} onClick={onStudyo}>
           <MonitorPlay className="h-3.5 w-3.5" />
           {studyo ? "Studio Mode: açık" : "Studio Mode"}

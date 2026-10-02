@@ -2471,6 +2471,16 @@ async fn motor_kayit_duraklat_bol_dikey_tekrar_sanal_kamera_filtre_eylemi() {
     assert!(govde.contains("\"acik\":true"), "{govde}");
     assert_eq!(get("/api/motor".into()).await["sanalKamera"]["durum"], "canli");
     assert_eq!(tamam("/api/motor/sanal-kamera", json!({"eylem": "durdur"})).await["acik"], false);
+    // Hedef: bir sahne (sahne tuvali açılır, kamera durunca bırakılır); Studio Mode kapalıyken önizleme hedefi reddedilir
+    let sahne = get("/api/motor/sahneler".into()).await["program"]["ana"].as_str().unwrap().to_string();
+    tamam("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": format!("sahne:{sahne}")})).await;
+    let d = get("/api/motor".into()).await;
+    assert_eq!((d["sanalKamera"]["durum"].as_str(), d["sanalKamera"]["hedef"].as_str()), (Some("canli"), Some(format!("sahne:{sahne}").as_str())));
+    tamam("/api/motor/sanal-kamera", json!({"eylem": "durdur"})).await;
+    let r = h.client.get(format!("{}/api/motor/onizleme?tuval=kaynak-{sahne}&genislik=320", h.base)).send().await.unwrap();
+    assert_eq!(r.status(), 409, "sahne tuvali bırakıldı");
+    assert_eq!(post("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": "studyo-ana"})).await.status(), 400);
+    assert_eq!(post("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": "sahne:yok"})).await.status(), 400);
   } else {
     assert!(govde.contains("başka bir uygulama") || govde.contains("bu kurulumda yok"), "{st} {govde}");
   }

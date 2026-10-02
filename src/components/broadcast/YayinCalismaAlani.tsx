@@ -288,6 +288,10 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [kaynakRengi, setKaynakRengi] = useState<MotorSahneOgesi | null>(null);
   const [remuxAcik, setRemuxAcik] = useState(false);
   const [eksikDosyalar, setEksikDosyalar] = useState(false);
+  /** Sanal kamera hedefi (OBS 30+ "Output Type"): program / önizleme / sahne; kamera kapalıyken seçilir */
+  const [skHedef, setSkHedef] = useState<{ tur: "program" } | { tur: "onizleme" } | { tur: "sahne"; id: string; ad: string }>({ tur: "program" });
+  const sanalKameraHedefi = (h: typeof skHedef) => (h.tur === "sahne" ? `sahne:${h.id}` : h.tur === "onizleme" ? `studyo-${tuval}` : tuval);
+  const skHedefAdi = skHedef.tur === "sahne" ? `Sahne: ${skHedef.ad}` : skHedef.tur === "onizleme" ? "Önizleme (Studio Mode)" : "Program";
   const profilDosyasi = useRef<HTMLInputElement>(null);
   /** Profil › İçe aktar: dışa aktarılmış profil JSON'u yeni profil olarak eklenir (sır içermez) */
   const profilIceAktar = async (f: File | undefined) => {
@@ -969,7 +973,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     );
   const bolDugmesi = () => void yap("Kayıt bölünemedi", () => motorApi.kayit("bol"), () => "Kayıt yeni dosyaya bölünüyor (bir sonraki anahtar karede)");
   const sanalKameraDugmesi = () =>
-    void yap("Sanal kamera", () => motorApi.sanalKamera(sanalKameraAcik ? "durdur" : "baslat", tuval), (r) => ((r as { acik?: boolean }).acik ? "Sanal kamera açık" : "Sanal kamera kapalı"));
+    void yap("Sanal kamera", () => motorApi.sanalKamera(sanalKameraAcik ? "durdur" : "baslat", sanalKameraHedefi(skHedef)), (r) => ((r as { acik?: boolean }).acik ? "Sanal kamera açık" : "Sanal kamera kapalı"));
   const tekrarKaydet = () =>
     void yap("Tekrar kaydedilemedi", () => motorApi.tekrar("kaydet"), (r) => {
       // Dikey tekrar da açıksa yanıt { ana, dikey }
@@ -1342,6 +1346,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
             onDuraklat={duraklatDugmesi}
             onBol={bolDugmesi}
             onSanalKamera={sanalKameraDugmesi}
+            sanalKameraHedefAdi={skHedefAdi}
+            onSanalKameraHedef={(e) =>
+              menu.ac(e, [
+                { etiket: `${skHedef.tur === "program" ? "● " : ""}Program`, eylem: () => setSkHedef({ tur: "program" }) },
+                { etiket: `${skHedef.tur === "onizleme" ? "● " : ""}Önizleme (Studio Mode)`, devreDisi: !studyo, eylem: () => setSkHedef({ tur: "onizleme" }) },
+                "ayirici",
+                ...tuvalSahneleri.map(
+                  (s): MenuOgesi => ({ etiket: `${skHedef.tur === "sahne" && skHedef.id === s.id ? "● " : ""}Sahne: ${s.ad}`, eylem: () => setSkHedef({ tur: "sahne", id: s.id, ad: s.ad }) })
+                ),
+              ])
+            }
             onTekrar={tekrarDugmesi}
             onTekrarKaydet={tekrarKaydet}
             onStudyo={studyoDugmesi}

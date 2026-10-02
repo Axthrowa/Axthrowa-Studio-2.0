@@ -988,6 +988,21 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
       Ok(png_pikseli(&b, 20, 20))
     })()
   };
+  // Sanal kamera hedefi: bir sahnenin tuvali; o tuval kapanınca sanal kamera önce durur (yok olmuş videoya bağlı
+  // çıktı kalmaz)
+  let sk_hedef = if crate::sanal_kamera::baska_uretici_var() || sanal_kamera.is_err() {
+    Err("sanal kamera kullanılamıyor — sınanmadı".to_string())
+  } else {
+    (|| -> Result<(bool, bool), String> {
+      m.kaynak_tuvali_ac("yeni-sahne")?;
+      m.sanal_kamera_baslat("kaynak-yeni-sahne")?;
+      bekle(800);
+      let acikti = m.cikis_etkin(crate::sanal_kamera::CIKIS_ID);
+      m.kaynak_tuvali_kapat("yeni-sahne");
+      bekle(300);
+      Ok((acikti, !m.cikislar_var(crate::sanal_kamera::CIKIS_ID)))
+    })()
+  };
   let surum = m.surum();
   let moduller = m.moduller().to_vec();
   m.kapat();
@@ -1179,6 +1194,13 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   // Program sahnesi `yeni-sahne` (renk 0xFF204060 = R 0x60, G 0x40, B 0x20)
   let sk_ok = matches!(&sanal_kamera, Ok(Some([r, g, b])) if (*r as i32 - 0x60).abs() < 24 && (*g as i32 - 0x40).abs() < 24 && (*b as i32 - 0x20).abs() < 24);
   ekle("sanal kamera: program görüntüsü aygıttan okunur", sk_ok, format!("{sanal_kamera:?} (beklenen ≈ [96, 64, 32])"));
+  if sanal_kamera.is_ok() {
+    ekle(
+      "sanal kamera hedefi: sahne tuvali; tuval kapanınca kamera önce durur",
+      sk_hedef.as_ref().is_ok_and(|(a, d)| *a && *d),
+      format!("{sk_hedef:?} (açıldı, kapanınca durdu)"),
+    );
+  }
   ekle(
     "ağ ayarlı hedef (127.0.0.1'e bağlan, IPv4, düşük gecikme, dinamik bit hızı) yayınladı; geçersiz IP reddedildi",
     e.kare > 0 && e.cozme_hatasi == 0 && ag_red,

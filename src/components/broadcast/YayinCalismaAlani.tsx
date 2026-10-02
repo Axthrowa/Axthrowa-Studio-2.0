@@ -116,6 +116,25 @@ function duzenKaydet(d: DockDuzeni, profil?: string) {
   }
 }
 
+/** Basit görünüm tercihleri (yerel depolama `yya.yayin.<ad>`; okunamazsa varsayılan) */
+function bayrakOku(ad: string, vars: boolean): boolean {
+  try {
+    const v = localStorage.getItem(`yya.yayin.${ad}`);
+    return v === null ? vars : v === "1";
+  } catch {
+    return vars;
+  }
+}
+
+function bayrakYaz(ad: string, v: boolean): boolean {
+  try {
+    localStorage.setItem(`yya.yayin.${ad}`, v ? "1" : "0");
+  } catch {
+    /* yalnız bu oturumda */
+  }
+  return v;
+}
+
 // ─── Motor kapalı ekranı ───────────────────────────────────────────────────
 
 function MotorKapali({
@@ -329,6 +348,9 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   };
   const [multiviewAcik, setMultiviewAcik] = useState(false);
   const [gecisEkle, setGecisEkle] = useState(false);
+  // Studio Mode seçenekleri (OBS: dikey düzen, canlı sahne düzenleme uyarısı); tercih yerel
+  const [studyoDikey, setStudyoDikey] = useState(() => bayrakOku("studyo-dikey", false));
+  const [canliUyari, setCanliUyari] = useState(() => bayrakOku("canli-uyari", true));
   const [onizlemeOlcek, setOnizlemeOlcek] = useState<OlcekKipi>({ tur: "sigdir" });
   const [onizlemeKapali, setOnizlemeKapali] = useState(() => {
     try {
@@ -1108,6 +1130,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         { etiket: "Tam ekran arayüz", kisayol: "F11", eylem: () => void tamEkranDegistir() },
         { etiket: `${kaynakSimgeleri ? "☑" : "☐"} Kaynak simgeleri`, eylem: kaynakSimgeleriDegistir },
         { etiket: `${onizlemeKapali ? "☑" : "☐"} Önizlemeyi devre dışı bırak`, eylem: onizlemeKapaliDegistir },
+        { etiket: `${studyoDikey ? "☑" : "☐"} Studio Mode: dikey düzen`, eylem: () => setStudyoDikey((v) => bayrakYaz("studyo-dikey", !v)) },
+        { etiket: `${canliUyari ? "☑" : "☐"} Studio Mode: canlı sahne düzenleme uyarısı`, eylem: () => setCanliUyari((v) => bayrakYaz("canli-uyari", !v)) },
         { etiket: `${onizlemeOlcek.tur === "sigdir" ? "● " : ""}Önizleme ölçekleme: pencereye sığdır`, kisayol: "Ctrl+0", eylem: () => setOnizlemeOlcek({ tur: "sigdir" }) },
         { etiket: `${onizlemeOlcek.tur === "tuval" ? "● " : ""}Önizleme ölçekleme: tuval (%100)`, eylem: () => setOnizlemeOlcek({ tur: "tuval" }) },
         { etiket: `${onizlemeOlcek.tur === "yakin" ? "● " : ""}Yakınlaştır / uzaklaştır: Ctrl+tekerlek · kaydır: orta tuşla sürükle`, devreDisi: true, eylem: () => undefined },
@@ -1586,8 +1610,13 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               )}
               <span className="dt-bosluk" />
               {studyo && <span className="dt-soluk">Studio Mode · önizlemede düzenleyin, "Geçiş" ile programa alın</span>}
+              {studyo && canliUyari && onizleme && onizleme === program && (
+                <span className="dt-uyari-metni" role="status">
+                  Önizlemedeki sahne şu an programda: değişiklikler yayında hemen görünür
+                </span>
+              )}
             </div>
-            <div className="flex min-h-0 flex-1 gap-1">
+            <div className={`flex min-h-0 flex-1 gap-1 ${studyo && studyoDikey ? "flex-col" : ""}`}>
               <TuvalGorunumu
                 etiket={studyo ? `Önizleme · ${sahneBilgi(onizleme)?.ad ?? ""}` : `Program · ${sahneBilgi(program)?.ad ?? ""}`}
                 tuval={studyo ? `studyo-${tuval}` : tuval}
@@ -1606,7 +1635,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               />
               {studyo && (
                 <>
-                  <div className="flex flex-col items-center justify-center gap-2 px-1">
+                  <div className={studyoDikey ? "flex flex-wrap items-center justify-center gap-2 py-1" : "flex flex-col items-center justify-center gap-2 px-1"}>
                     <button type="button" className="dt-btn-primary" disabled={mesgul !== null} onClick={() => void yap("Geçiş", () => motorApi.studyo(tuval, "gecis"))} title="Önizlemeyi programa al">
                       Geçiş →
                     </button>

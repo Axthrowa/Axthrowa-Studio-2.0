@@ -145,7 +145,8 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Takas (swap) | VAR | sinama, it | Düğme olarak |
 | T-bar (sürükle; uçta tamamla/geri al, ortada kalır) | VAR | sinama, it, vt:tbar, tp | Sabit geçişlerde (Kes/Stinger) reddedilir |
 | Hızlı geçiş düğmeleri | VAR | it, vt:HizliGecisler, tp | Geçiş süresince tuvalin geçişi geçici değişir, bitince geri kurulur (OBS'te ayrı geçiş kaynağı kullanılır; görünür sonuç aynı) |
-| Sahneyi çoğalt seçeneği, canlı düzenleme uyarısı, dikey düzen | YOK | | |
+| Dikey düzen, canlı sahne düzenleme uyarısı | VAR | — | Görünüm menüsünde; uyarı önizlemedeki sahne programdayken gösterilir |
+| "Sahneyi çoğalt" seçeneği | DESTEKLENMİYOR | | Düzenlemeler sahnenin kalıcı kaydına (koleksiyon) gider; OBS'teki geçici özel kopya anlamı için düzenleme hedefi ve geçişte birleştirme yeniden tasarlanmalı. Eşdeğer akış: Sahne › Çoğalt ile kopyayı düzenleyip programa almak |
 
 ## 4.10 Durum çubuğu
 

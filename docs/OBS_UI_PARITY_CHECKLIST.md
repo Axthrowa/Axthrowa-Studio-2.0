@@ -17,7 +17,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Madde | Durum | Test | Not |
 |---|---|---|---|
 | Menü çubuğu · önizleme · alt dock sırası Sahneler/Kaynaklar/Ses Mikseri/Geçişler/Denetimler · durum çubuğu | VAR | tp | `dockDuzeni.ts` varsayılan sıra |
-| Önizleme altında kaynak araç çubuğu | KISMİ | tp | Medya (oynat/duraklat/baştan/durdur/konum), Özellikler, Filtreler. OBS'teki metin/aygıt seçimi kısayolları yok |
+| Önizleme altında kaynak araç çubuğu | VAR | tp | Medya (oynat/duraklat/baştan/durdur/konum), metin kutusu (yazı kaynağı), aygıt/pencere/ekran listesi (yakalama ve ses kaynakları; liste yalnız okunur, yakalama başlatmaz), Özellikler, Filtreler. Metin ve aygıt alanları tarayıcıda görülmedi |
 | Dock sürükle-bırak, sekmeleme, kilitleme, düzeni sıfırla, kalıcılık | VAR | vt:dockDuzeni, tp | |
 | Dock'u ayrı pencereye çıkarma | KISMİ | — | Mikser, Sahneler, Hedefler, İstatistik, Sohbet, Etkinlik, Deste; Kaynaklar/Geçişler/Denetimler çıkarılamaz |
 | Özel tarayıcı dock'u | VAR | vt:ozelDocklar | "Tarayıcı (özel)" dock'u: ad + http(s) adres listesi, korumalı çerçeve, ayrı pencereye çıkarılabilir; bazı siteler çerçeveyi reddeder |

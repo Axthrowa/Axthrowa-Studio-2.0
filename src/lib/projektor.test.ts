@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { gorunurKonum, type Monitor } from "./projektor";
 import { projektorKaynagi, projektorTuvali } from "../routes/ProjektorSayfasi";
 import { dockKimligi } from "../routes/BagimsizDockSayfasi";
+import { BAGIMSIZ_DOCKLAR, DOCKLAR } from "./dockDuzeni";
 
 describe("projektör", () => {
   it("tuval sorgusu doğrulanır", () => {
@@ -15,6 +16,12 @@ describe("projektör", () => {
     expect(dockKimligi("?id=sahneler")).toBe("sahneler");
     expect(dockKimligi("?id=x")).toBe("mikser");
     expect(dockKimligi("?id=sohbet")).toBe("sohbet");
+    expect(dockKimligi("?id=kaynaklar")).toBe("kaynaklar");
+    expect(dockKimligi("?id=denetimler")).toBe("denetimler");
+  });
+
+  it("her dock ayrı pencereye çıkarılabilir", () => {
+    expect([...BAGIMSIZ_DOCKLAR].sort()).toEqual(DOCKLAR.map((d) => d.id).sort());
   });
 
   it("ekran dışı pencere ana monitöre alınır", () => {

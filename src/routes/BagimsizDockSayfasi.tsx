@@ -1,10 +1,25 @@
 /**
- * Ayrı pencerede dock (çoklu monitör): `/dock?id=mikser|sahneler|hedefler|istatistik|sohbet|etkinlik|deste`. Veri ve eylemler ana
+ * Ayrı pencerede dock (çoklu monitör): `/dock?id=mikser|sahneler|kaynaklar|gecisler|denetimler|hedefler|istatistik|sohbet|etkinlik|deste|tarayici`. Veri ve eylemler ana
  * çalışma alanıyla aynı uçlardan gelir (izin + denetim sunucuda); ayrı pencere yalnız görünüm ve bu dock'un kendi
  * eylemleridir. Motor kapalıyken bilgi gösterir.
  */
-import { useCallback, useEffect, useState } from "react";
-import { motorApi, type MotorDurumu, type MotorSahneler, type MotorSesDurumu, type MotorSesKanali } from "../lib/api/motor";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  cikisEtkin,
+  motorApi,
+  type MotorDurumu,
+  type MotorSahneOgesi,
+  type MotorSahneler,
+  type MotorSahneYaniti,
+  type MotorSesDurumu,
+  type MotorSesKanali,
+} from "../lib/api/motor";
+import { canliOzeti } from "../lib/broadcast";
+import { sahneAgaci } from "../lib/sahneAgaci";
+import { KaynaklarDock } from "../components/broadcast/KaynaklarDock";
+import { GecislerDock } from "../components/broadcast/GecislerDock";
+import { DenetimlerDock } from "../components/broadcast/DenetimlerDock";
+import { BAGIMSIZ_DOCKLAR, type BagimsizDockKimligi } from "../lib/dockDuzeni";
 import { useMotorCanli } from "../lib/motorCanli";
 import { clearVisibleInterval, setVisibleInterval } from "../lib/visibleInterval";
 import { useBaglamMenusu } from "../components/ui/BaglamMenusu";
@@ -15,22 +30,27 @@ import { konumuKaydet } from "../lib/projektor";
 import { ActivityFeedPanel, UniversalChatPanel } from "../components/control/UniversalChat";
 import { DeckPanel } from "../components/control/DeckPanel";
 import { TarayiciDock } from "../components/broadcast/TarayiciDock";
+import { KliplerDock } from "../components/broadcast/KliplerDock";
 import "../styles/desktop.css";
 
-export type BagimsizDockKimligi = "mikser" | "sahneler" | "hedefler" | "istatistik" | "sohbet" | "etkinlik" | "deste" | "tarayici";
-const GECERLI: BagimsizDockKimligi[] = ["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste", "tarayici"];
+export type { BagimsizDockKimligi };
+const GECERLI = BAGIMSIZ_DOCKLAR;
 const AD: Record<BagimsizDockKimligi, string> = {
   mikser: "Ses Mikseri",
   sahneler: "Sahneler",
+  kaynaklar: "Kaynaklar",
+  gecisler: "Sahne Geçişleri",
+  denetimler: "Denetimler",
   hedefler: "Hedefler",
   istatistik: "İstatistikler",
   sohbet: "Çoklu Sohbet",
   etkinlik: "Etkinlik Akışı",
   deste: "Hızlı Eylemler",
   tarayici: "Tarayıcı (özel)",
+  klipler: "Klipler (Backtrack)",
 };
 /** Motordan bağımsız docklar (Kontrol Merkezi bileşenleri): motor kapalıyken de çalışır */
-const MOTORSUZ: BagimsizDockKimligi[] = ["sohbet", "etkinlik", "deste", "tarayici"];
+const MOTORSUZ: BagimsizDockKimligi[] = ["sohbet", "etkinlik", "deste", "tarayici", "klipler"];
 
 export function dockKimligi(arama: string): BagimsizDockKimligi {
   const id = new URLSearchParams(arama).get("id") as BagimsizDockKimligi | null;
@@ -42,6 +62,11 @@ export default function BagimsizDockSayfasi() {
   const [d, setD] = useState<MotorDurumu | null>(null);
   const [sl, setSl] = useState<MotorSahneler | null>(null);
   const [ses, setSes] = useState<MotorSesDurumu | null>(null);
+  const [sahne, setSahne] = useState<MotorSahneYaniti | null>(null);
+  const [secim, setSecim] = useState<string[]>([]);
+  const [acikGruplar, setAcikGruplar] = useState<Set<string>>(new Set());
+  /** Geri alınamaz eylemler (yayını bitir, öğe kaldır) bu pencerede de açık onay ister */
+  const [onay, setOnay] = useState<{ metin: string; eylem: string; yap: () => void } | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const menu = useBaglamMenusu();
   const calisiyor = !!d?.calisiyor;
@@ -54,7 +79,15 @@ export default function BagimsizDockSayfasi() {
       setD(x);
       if (!x.calisiyor) return;
       if (id === "mikser") setSes(await motorApi.ses());
-      if (id === "sahneler") setSl(await motorApi.sahneler());
+      if (id === "sahneler" || id === "kaynaklar" || id === "gecisler" || id === "denetimler") {
+        const s = await motorApi.sahneler();
+        setSl(s);
+        if (id === "kaynaklar") {
+          // Ana tuvalin etkin sahnesi: Studio Mode'da önizleme, değilse program (ana pencereyle aynı kural)
+          const hedef = Object.prototype.hasOwnProperty.call(s.studyo, "ana") ? (s.studyo.ana ?? s.program.ana) : s.program.ana;
+          setSahne(hedef ? await motorApi.sahneDetay(hedef) : null);
+        }
+      }
     } catch {
       /* sunucu yeniden başlıyor olabilir */
     }
@@ -83,9 +116,33 @@ export default function BagimsizDockSayfasi() {
     }
     void yenile();
   };
-  const sesAyarla = (k: MotorSesKanali, eylem: "ses" | "sessiz" | "izleme" | "izler" | "mono", deger: number | boolean) => void yap(() => motorApi.sesAyarla(k.id, eylem, deger));
+  const sesAyarla = (k: MotorSesKanali, eylem: "ses" | "sessiz" | "izleme" | "izler" | "mono", deger: number | boolean) =>
+    void yap(() => motorApi.sesAyarla(k.id, eylem, deger));
   const tuval = "ana";
   const studyo = !!sl && Object.prototype.hasOwnProperty.call(sl.studyo, tuval);
+  const ogeler = useMemo(() => sahne?.ogeler ?? [], [sahne]);
+  const agac = useMemo(() => sahneAgaci(ogeler), [ogeler]);
+  const sahneAdi = sl?.sahneler.find((s) => s.id === sahne?.sahne)?.ad ?? null;
+  const anaPencerede = (ne: string) => () => setMesaj(`${ne} ana pencerede`);
+  const ogeDegistir = (o: MotorSahneOgesi, donusum: { gorunur?: boolean; kilit?: boolean }) =>
+    void yap(() => motorApi.ogeIslem({ eylem: "donustur", oge: o.oge, donusum }));
+  const ogeTasi = (o: MotorSahneOgesi, yon: "yukari" | "asagi" | "en_ust" | "en_alt") => void yap(() => motorApi.ogeIslem({ eylem: "sira", oge: o.oge, yon }));
+  const kaldirOnayi = (liste: MotorSahneOgesi[]) => {
+    if (!liste.length) return;
+    setOnay({
+      metin: `${liste.map((o) => `«${o.ad ?? o.kaynak}»`).join(", ")} bu sahneden kaldırılsın mı? (Bu pencerede geri alınamaz; kaynaklar koleksiyonda kalır.)`,
+      eylem: "Kaldır",
+      yap: () =>
+        void yap(async () => {
+          for (const o of liste) await motorApi.ogeIslem({ eylem: "kaldir", oge: o.oge });
+          setSecim([]);
+        }),
+    });
+  };
+  const ozet = d ? canliOzeti(d) : { canli: 0, toplam: 0 };
+  const kayitta = d ? cikisEtkin(d.kayit.durum) : false;
+  const tekrarAcik = d ? cikisEtkin(d.tekrar.durum) : false;
+  const sanalKameraAcik = d?.sanalKamera ? cikisEtkin(d.sanalKamera.durum) : false;
 
   const toast = (m: string) => {
     setMesaj(m.slice(0, 200));
@@ -101,6 +158,8 @@ export default function BagimsizDockSayfasi() {
           <ActivityFeedPanel onToast={toast} />
         ) : id === "tarayici" ? (
           <TarayiciDock onToast={toast} />
+        ) : id === "klipler" ? (
+          <KliplerDock onToast={toast} />
         ) : (
           <DeckPanel onToast={toast} />
         )}
@@ -141,7 +200,10 @@ export default function BagimsizDockSayfasi() {
         gecisTurleri={sl?.gecisTurleri ?? []}
         eylem={{
           sec: (s) => void yap(() => (studyo ? motorApi.studyo(tuval, "onizleme", { sahne: s }) : motorApi.program(s))),
-          programa: (s) => void yap(async () => (studyo ? (await motorApi.studyo(tuval, "onizleme", { sahne: s }), await motorApi.studyo(tuval, "gecis")) : await motorApi.program(s))),
+          programa: (s) =>
+            void yap(async () =>
+              studyo ? (await motorApi.studyo(tuval, "onizleme", { sahne: s }), await motorApi.studyo(tuval, "gecis")) : await motorApi.program(s)
+            ),
           ekle: () => setMesaj("Sahne eklemek için ana pencereyi kullanın"),
           sil: () => setMesaj("Sahne silmek için ana pencereyi kullanın"),
           adlandir: () => setMesaj("Yeniden adlandırmak için ana pencereyi kullanın"),
@@ -150,6 +212,100 @@ export default function BagimsizDockSayfasi() {
           gecisGecersiz: (s, g) => void yap(() => motorApi.sahneIslem({ eylem: "gecis", id: s.id, gecis: g })),
           menuAc: menu.ac,
         }}
+      />
+    );
+  else if (id === "kaynaklar")
+    icerik = (
+      <KaynaklarDock
+        sahneAdi={sahneAdi}
+        agac={agac}
+        eksikler={sahne?.eksikler ?? []}
+        secim={secim}
+        acikGruplar={acikGruplar}
+        eylem={{
+          sec: (o, kip) => setSecim((s) => (kip === "ekle" ? (s.includes(o) ? s.filter((x) => x !== o) : [...s, o]) : [o])),
+          grupAcKapa: (o) =>
+            setAcikGruplar((s) => {
+              const y = new Set(s);
+              if (y.has(o)) y.delete(o);
+              else y.add(o);
+              return y;
+            }),
+          gorunurluk: (o) => ogeDegistir(o, { gorunur: !o.gorunur }),
+          kilit: (o) => ogeDegistir(o, { kilit: !o.kilit }),
+          menu: (e, o) =>
+            menu.ac(e, [
+              { etiket: o.gorunur ? "Gizle" : "Göster", eylem: () => ogeDegistir(o, { gorunur: !o.gorunur }) },
+              { etiket: o.kilit ? "Kilidi aç" : "Kilitle", eylem: () => ogeDegistir(o, { kilit: !o.kilit }) },
+              "ayirici",
+              { etiket: "Sıra › Yukarı", eylem: () => ogeTasi(o, "yukari") },
+              { etiket: "Sıra › Aşağı", eylem: () => ogeTasi(o, "asagi") },
+              { etiket: "Sıra › En üste", eylem: () => ogeTasi(o, "en_ust") },
+              { etiket: "Sıra › En alta", eylem: () => ogeTasi(o, "en_alt") },
+              "ayirici",
+              { etiket: "Kaldır…", tehlikeli: true, eylem: () => kaldirOnayi([o]) },
+            ]),
+          bosMenu: anaPencerede("Kaynak ekleme"),
+          ekleMenusu: anaPencerede("Kaynak ekleme"),
+          kaldir: () => kaldirOnayi(secim.map((x) => ogeler.find((o) => o.oge === x)).filter((x): x is MotorSahneOgesi => !!x)),
+          ozellikler: anaPencerede("Özellikler"),
+          filtreler: anaPencerede("Filtreler"),
+          adlandir: anaPencerede("Yeniden adlandırma"),
+          tasi: (o, yon) => ogeTasi(o, yon),
+          birak: anaPencerede("Sürükleyerek sıralama"),
+          eksikMenu: anaPencerede("Eksik eklenti işlemleri"),
+        }}
+      />
+    );
+  else if (id === "gecisler")
+    icerik = (
+      <GecislerDock
+        gecis={sl?.gecisler[tuval]}
+        adliGecisler={sl?.adliGecisler ?? []}
+        secili={sl?.seciliGecis?.[tuval]}
+        studyo={studyo}
+        meşgul={false}
+        onSec={(g) => void yap(() => motorApi.gecisListesi({ eylem: "sec", id: g, tuval }))}
+        onEkle={anaPencerede("Geçiş ekleme")}
+        onSil={anaPencerede("Geçiş kaldırma")}
+        onAdlandir={anaPencerede("Geçiş adlandırma")}
+        onSure={(ms) => void yap(() => motorApi.gecisAyarla(tuval, sl?.gecisler[tuval]?.tur ?? "fade_transition", ms))}
+        onOzellikler={anaPencerede("Geçiş özellikleri")}
+        onGecis={() => void yap(() => motorApi.studyo(tuval, "gecis"))}
+        menuAc={menu.ac}
+      />
+    );
+  else if (id === "denetimler")
+    icerik = (
+      <DenetimlerDock
+        canli={ozet.canli}
+        canliToplam={ozet.toplam}
+        kayitta={kayitta}
+        duraklatildi={!!d.kayit.duraklatildi}
+        sanalKamera={sanalKameraAcik}
+        tekrarAcik={tekrarAcik}
+        studyo={studyo}
+        meşgul={false}
+        // Yayına geçiş ön kontrol penceresinden geçer (ana pencere); bitirmek burada da onaylıdır
+        onYayin={
+          ozet.canli > 0
+            ? () =>
+                setOnay({
+                  metin: "Tüm motor hedefleri durdurulsun mu? Kayıt ve tekrar arabelleği sürer.",
+                  eylem: "Yayını bitir",
+                  yap: () => void yap(() => motorApi.golive("durdur")),
+                })
+            : anaPencerede("Yayına geçiş (ön kontrol)")
+        }
+        onKayit={() => void yap(() => motorApi.kayit(kayitta ? "durdur" : "baslat"))}
+        onDuraklat={() => void yap(() => motorApi.kayit(d.kayit.duraklatildi ? "surdur" : "duraklat"))}
+        onBol={() => void yap(() => motorApi.kayit("bol"))}
+        onSanalKamera={() => void yap(() => motorApi.sanalKamera(sanalKameraAcik ? "durdur" : "baslat", tuval))}
+        onTekrar={() => void yap(() => motorApi.tekrar(tekrarAcik ? "kapat" : "ac"))}
+        onTekrarKaydet={() => void yap(() => motorApi.tekrar("kaydet"))}
+        onStudyo={() => void yap(() => motorApi.studyo(tuval, studyo ? "kapat" : "ac"))}
+        onAyarlar={anaPencerede("Ayarlar")}
+        onMotorDurdur={anaPencerede("Motoru durdurma")}
       />
     );
   else if (id === "hedefler")
@@ -168,6 +324,24 @@ export default function BagimsizDockSayfasi() {
   return (
     <div className="flex h-screen flex-col p-1 text-[13px]" style={{ background: "var(--panel-bg, #0f1115)", color: "var(--dt-text)" }}>
       <div className="min-h-0 flex-1">{icerik}</div>
+      {onay && (
+        <div className="dt-durum-cubugu flex items-center gap-2" role="alertdialog" aria-label="Onay">
+          <span className="min-w-0 flex-1">{onay.metin}</span>
+          <button
+            type="button"
+            className="dt-btn-danger"
+            onClick={() => {
+              onay.yap();
+              setOnay(null);
+            }}
+          >
+            {onay.eylem}
+          </button>
+          <button type="button" className="dt-btn" onClick={() => setOnay(null)}>
+            Vazgeç
+          </button>
+        </div>
+      )}
       {mesaj && (
         <div className="dt-durum-cubugu" role="status">
           {mesaj}

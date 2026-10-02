@@ -34,6 +34,7 @@ import { canliOzeti, sureBicimi } from "../../lib/broadcast";
 import {
   ayiriciKaydir,
   ANAHTAR,
+  BAGIMSIZ_DOCKLAR,
   DOCKLAR,
   dockDegistir,
   duzenOku,
@@ -1353,11 +1354,11 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         })),
         { etiket: "Düzeni sıfırla", eylem: () => setDuzen(() => varsayilanDuzen()) },
         "ayirici",
-        ...(["mikser", "sahneler", "hedefler", "istatistik", "sohbet", "etkinlik", "deste", "tarayici"] as const).map((x): MenuOgesi => ({
+        ...BAGIMSIZ_DOCKLAR.map((x): MenuOgesi => ({
           etiket: `Ayrı pencerede aç: ${DOCKLAR.find((k) => k.id === x)?.ad}`,
           eylem: () =>
             void ayriPencere(`dock-${x}`, `/dock?id=${x}`, DOCKLAR.find((k) => k.id === x)?.ad ?? x, {
-              genislik: x === "hedefler" ? 900 : 420,
+              genislik: x === "hedefler" ? 900 : x === "denetimler" || x === "gecisler" ? 280 : 420,
               yukseklik: 520,
             }).catch((e) => onToast(`Pencere açılamadı: ${hataMetni(e)}`)),
         })),

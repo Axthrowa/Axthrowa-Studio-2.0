@@ -19,7 +19,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Menü çubuğu · önizleme · alt dock sırası Sahneler/Kaynaklar/Ses Mikseri/Geçişler/Denetimler · durum çubuğu | VAR | tp | `dockDuzeni.ts` varsayılan sıra |
 | Önizleme altında kaynak araç çubuğu | VAR | tp | Medya (oynat/duraklat/baştan/durdur/konum), metin kutusu (yazı kaynağı), aygıt/pencere/ekran listesi (yakalama ve ses kaynakları; liste yalnız okunur, yakalama başlatmaz), Özellikler, Filtreler. Metin ve aygıt alanları tarayıcıda görülmedi |
 | Dock sürükle-bırak, sekmeleme, kilitleme, düzeni sıfırla, kalıcılık | VAR | vt:dockDuzeni, tp | |
-| Dock'u ayrı pencereye çıkarma | KISMİ | — | Mikser, Sahneler, Hedefler, İstatistik, Sohbet, Etkinlik, Deste; Kaynaklar/Geçişler/Denetimler çıkarılamaz |
+| Dock'u ayrı pencereye çıkarma | VAR | vitest:projektor (her dock listede) | Docklar › Ayrı pencerede aç: tüm docklar (Sahneler, Kaynaklar, Mikser, Geçişler, Denetimler, Hedefler, İstatistik, Sohbet, Etkinlik, Deste, Tarayıcı, Klipler). Ayrı Kaynaklar penceresi: seç, göster/gizle, kilit, sıra, onaylı kaldır; Denetimler: kayıt/duraklat/böl/tekrar/sanal kamera (program)/Studio Mode, yayını bitir onaylı. Ön kontrol, kaynak ekleme, özellik/filtre diyalogları ana pencerede kalır (pencere bunu söyler). Arayüz tarayıcıda görülmedi |
 | Özel tarayıcı dock'u | VAR | vt:ozelDocklar | "Tarayıcı (özel)" dock'u: ad + http(s) adres listesi, korumalı çerçeve, ayrı pencereye çıkarılabilir; bazı siteler çerçeveyi reddeder |
 | Dock düzeni profil başına | VAR | — | Profil değişince o profilin düzeni yüklenir; profilin düzeni yoksa genel düzen ona yazılır (yerel depolama) |
 | Ek docklar: İstatistikler, Sohbet, Etkinlik, Çoklu çıkış (Hedefler), Deste | VAR | tp | Backtrack ve Günlük dock yok (Günlük pencere olarak var) |

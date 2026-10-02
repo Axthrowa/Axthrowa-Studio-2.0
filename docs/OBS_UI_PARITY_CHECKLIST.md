@@ -23,7 +23,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Özel tarayıcı dock'u | VAR | vt:ozelDocklar | "Tarayıcı (özel)" dock'u: ad + http(s) adres listesi, korumalı çerçeve, ayrı pencereye çıkarılabilir; bazı siteler çerçeveyi reddeder |
 | Dock düzeni profil başına | VAR | — | Profil değişince o profilin düzeni yüklenir; profilin düzeni yoksa genel düzen ona yazılır (yerel depolama) |
 | Ek docklar: İstatistikler, Sohbet, Etkinlik, Çoklu çıkış (Hedefler), Deste | VAR | tp | Backtrack ve Günlük dock yok (Günlük pencere olarak var) |
-| Tam ekran arayüz, pencere konumu kalıcılığı, karışık DPI | KISMİ | — | Tam ekran arayüz (F11) VAR; ayrı dock/projektör pencerelerinin konumu kalıcı; karışık DPI sınanmadı (UNVERIFIED) |
+| Tam ekran arayüz, pencere konumu kalıcılığı, karışık DPI | VAR | vt:projektor | F11 tam ekran; ana pencere konum/boyut/büyütülmüş ve ayrı pencere konumları kalıcı (ekranda değilse ana monitöre; mantıksal piksel, monitör ölçeğiyle). Karışık DPI'da çalışma anı UNVERIFIED (tek monitörlü sınama ortamı) |
 
 ## 4.2 Menü ağacı
 

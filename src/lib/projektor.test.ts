@@ -37,3 +37,14 @@ describe("sahne/kaynak projektörü kimliği", () => {
     expect(projektorKaynagi("")).toBeNull();
   });
 });
+
+describe("ana pencere durumu", () => {
+  it("geçerli kayıt okunur, bozuk ya da aşırı değer yok sayılır", async () => {
+    const { anaPencereOku } = await import("./projektor");
+    expect(anaPencereOku('{"x":10,"y":20,"g":1280,"y2":860,"buyuk":true}')).toEqual({ x: 10, y: 20, g: 1280, y2: 860, buyuk: true });
+    expect(anaPencereOku('{"x":10,"y":20,"g":100,"y2":860}')).toBeNull();
+    expect(anaPencereOku('{"x":"a"}')).toBeNull();
+    expect(anaPencereOku("bozuk")).toBeNull();
+    expect(anaPencereOku(null)).toBeNull();
+  });
+});

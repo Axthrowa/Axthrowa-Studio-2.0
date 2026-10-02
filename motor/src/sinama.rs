@@ -862,6 +862,24 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   m.kaynak_tuvali_kapat("yazi");
   let pj_kapali = m.onizleme_png("kaynak-yazi", 480).is_err();
   let pj_yok = m.kaynak_tuvali_ac("boyle-kaynak-yok").is_err();
+  // Sanal kamera "Kaynak" hedefi: dikey küçük yeşil kaynak ana tuval boyutunda (16:9) ortalanır, yanlar boş kalır;
+  // kaynak silinince tuval de kapanır
+  /// genişlik, yükseklik, orta piksel, kenar piksel, silinince kapandı
+  type SigdirSonuc = (u32, u32, Option<[u8; 3]>, Option<[u8; 3]>, bool);
+  let sigdir = (|| -> Result<SigdirSonuc, String> {
+    m.kaynak_olustur("sk-kare", "color_source", "SK kare", &nesne(json!({"color": 0xFF00C000_u32, "width": 200, "height": 400})))?;
+    m.sigdirilmis_ac("sk-kare")?;
+    let _ = m.onizleme_png("sigdir-sk-kare", 960);
+    std::thread::sleep(Duration::from_millis(700));
+    let png = m.onizleme_png("sigdir-sk-kare", 960)?.ok_or("kare yok")?;
+    let o = png::Decoder::new(png.as_slice()).read_info().map_err(|e| e.to_string())?;
+    let (g, y) = (o.info().width, o.info().height);
+    let orta = png_pikseli(&png, g / 2, y / 2);
+    let kenar = png_pikseli(&png, 8, y / 2);
+    m.kaynak_sil("sk-kare")?;
+    let kapandi = m.onizleme_png("sigdir-sk-kare", 960).is_err() && m.sigdirilmis.is_empty();
+    Ok((g, y, orta, kenar, kapandi))
+  })();
   // Sahne ve kaynak ekran görüntüsü: geçici özel tuvalde, sahne tuval boyutunda / kaynak kendi boyutunda
   let sahne_goruntu = m.kaynak_ekran_goruntusu("dikey", &dosya("ekran-sahne-dikey.png"));
   let yazi_boyu = m.sahne_ogeleri("yatay")?.into_iter().find(|o| o.kaynak == "yazi").map(|o| (o.genislik, o.yukseklik));
@@ -1140,6 +1158,13 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     "sahne/kaynak projektörü tuvali: kare verir, ikinci açılış aynı tuval, kapanınca biter",
     pj.as_ref().is_ok_and(|v| v["tuval"] == "kaynak-yazi") && pj_kare && pj_yine.as_ref().is_ok_and(|t| t == "kaynak-yazi") && pj_kapali && pj_yok,
     format!("{pj:?}; kare {pj_kare}; kapandı {pj_kapali}; olmayan kaynak reddi {pj_yok}"),
+  );
+  ekle(
+    "sanal kamera kaynak hedefi: kaynak ana tuval boyutunda (16:9) ortalanıp sığdırılır, silinince tuval kapanır",
+    sigdir.as_ref().is_ok_and(|(g, y, orta, kenar, kapandi)| {
+      g * 9 == y * 16 && matches!(orta, Some([r, gg, b]) if *r < 40 && *gg > 150 && *b < 40) && matches!(kenar, Some([r, gg, b]) if *r < 40 && *gg < 40 && *b < 40) && *kapandi
+    }),
+    format!("{sigdir:?} (beklenen: 16:9, orta yeşil, kenar siyah, kapandı)"),
   );
   ekle(
     "multiview: önizleme, program ve sahne hücreleri işlenir; başka tuvalin sahnesi reddedilir",

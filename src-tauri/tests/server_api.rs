@@ -2486,6 +2486,16 @@ async fn motor_kayit_duraklat_bol_dikey_tekrar_sanal_kamera_filtre_eylemi() {
     assert_eq!(r.status(), 409, "sahne tuvali bırakıldı");
     assert_eq!(post("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": "studyo-ana"})).await.status(), 400);
     assert_eq!(post("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": "sahne:yok"})).await.status(), 400);
+    // Hedef: tek kaynak (ana tuval boyutuna sığdırılmış özel tuval; kamera durunca motor kapatır)
+    tamam("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": format!("kaynak:{renk}")})).await;
+    let d = get("/api/motor".into()).await;
+    assert_eq!((d["sanalKamera"]["durum"].as_str(), d["sanalKamera"]["hedef"].as_str()), (Some("canli"), Some(format!("kaynak:{renk}").as_str())));
+    let r = h.client.get(format!("{}/api/motor/onizleme?tuval=sigdir-{renk}&genislik=320", h.base)).send().await.unwrap();
+    assert!(r.status().is_success(), "sığdırılmış tuval açık (200 kare, 204 hazırlanıyor): {}", r.status());
+    tamam("/api/motor/sanal-kamera", json!({"eylem": "durdur"})).await;
+    let r = h.client.get(format!("{}/api/motor/onizleme?tuval=sigdir-{renk}&genislik=320", h.base)).send().await.unwrap();
+    assert_eq!(r.status(), 409, "sığdırılmış tuval kapandı");
+    assert_eq!(post("/api/motor/sanal-kamera", json!({"eylem": "baslat", "tuval": "kaynak:yok"})).await.status(), 400);
   } else {
     assert!(govde.contains("başka bir uygulama") || govde.contains("bu kurulumda yok"), "{st} {govde}");
   }

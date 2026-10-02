@@ -55,7 +55,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Araçlar › WebSocket sunucu ayarları | VAR | it:obs_websocket_uyumlu_sunucu | Yayın Ayarları › Uzaktan denetim; 127.0.0.1 |
 | Araçlar › Betikler | DESTEKLENMİYOR | | OBS betik altyapısı (obs-scripting, Lua/Python) ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
 | Araçlar › Altyazı | YOK | | |
-| Araçlar › Sanal kamera ayarları | KISMİ | sinama, it:motor_kayit_…_sanal_kamera | Hedef: Program / Önizleme (Studio Mode) / Sahne (Denetimler dock'u dişlisi); tek kaynak hedefi yok (kaynak kendi boyutunda olduğundan kamera çözünürlüğü tutarsız olurdu); arayüz tarayıcıda görülmedi |
+| Araçlar › Sanal kamera ayarları | VAR | sinama (kaynak hedefi: 16:9, ortalanmış, silinince kapanır), it:motor_kayit_…_sanal_kamera | Hedef: Program / Önizleme (Studio Mode) / Sahne / **Kaynak** (Denetimler dock'u dişlisi). Kaynak hedefi kaynağı ana tuval boyutundaki özel bir tuvale en-boy korunarak sığdırır (kamera çözünürlüğü kaynağın boyutuna bağlı değil); kamera durunca ya da kaynak silinince tuval kapanır. Arayüz tarayıcıda görülmedi |
 | Yardım › Son günlüğü görüntüle, Günlük klasörü, Hakkında (sürüm, lisanslar) | VAR | it, tp | Günlük sırları ayıklanmış |
 | Yardım › Çökme raporları | VAR | it:motor_filtre_yapistir_ve_gunluk | Panelin çökme günlüğü, sırlar ayıklanmış; dışarı gönderilmez |
 | Yardım › Güncellemeleri denetle | VAR | it:guncelleme_denetimi_yerel_bildirim | Kullanıcının tanımladığı bildirim adresi (https; yalnız yerelde http), yalnız istenince, yalnız bu bilgisayardan; sürüm karşılaştırılır, sayfa tarayıcıda açılır — indirme/çalıştırma yok. Uygulamanın kendi dağıtım sunucusu olmadığı için varsayılan adres yok |

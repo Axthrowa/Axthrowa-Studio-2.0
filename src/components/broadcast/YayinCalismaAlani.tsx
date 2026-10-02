@@ -343,9 +343,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [remuxAcik, setRemuxAcik] = useState(false);
   const [eksikDosyalar, setEksikDosyalar] = useState(false);
   /** Sanal kamera hedefi (OBS 30+ "Output Type"): program / önizleme / sahne; kamera kapalıyken seçilir */
-  const [skHedef, setSkHedef] = useState<{ tur: "program" } | { tur: "onizleme" } | { tur: "sahne"; id: string; ad: string }>({ tur: "program" });
-  const sanalKameraHedefi = (h: typeof skHedef) => (h.tur === "sahne" ? `sahne:${h.id}` : h.tur === "onizleme" ? `studyo-${tuval}` : tuval);
-  const skHedefAdi = skHedef.tur === "sahne" ? `Sahne: ${skHedef.ad}` : skHedef.tur === "onizleme" ? "Önizleme (Studio Mode)" : "Program";
+  const [skHedef, setSkHedef] = useState<{ tur: "program" } | { tur: "onizleme" } | { tur: "sahne" | "kaynak"; id: string; ad: string }>({ tur: "program" });
+  const sanalKameraHedefi = (h: typeof skHedef) =>
+    h.tur === "sahne" ? `sahne:${h.id}` : h.tur === "kaynak" ? `kaynak:${h.id}` : h.tur === "onizleme" ? `studyo-${tuval}` : tuval;
+  const skHedefAdi =
+    skHedef.tur === "sahne"
+      ? `Sahne: ${skHedef.ad}`
+      : skHedef.tur === "kaynak"
+        ? `Kaynak: ${skHedef.ad}`
+        : skHedef.tur === "onizleme"
+          ? "Önizleme (Studio Mode)"
+          : "Program";
   const profilDosyasi = useRef<HTMLInputElement>(null);
   /** Profil › İçe aktar: dışa aktarılmış profil JSON'u yeni profil olarak eklenir (sır içermez) */
   const profilIceAktar = async (f: File | undefined) => {
@@ -1717,6 +1725,13 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                   etiket: `${skHedef.tur === "sahne" && skHedef.id === s.id ? "● " : ""}Sahne: ${s.ad}`,
                   eylem: () => setSkHedef({ tur: "sahne", id: s.id, ad: s.ad }),
                 })),
+                // Tek kaynak (OBS "Source"): ana tuval boyutuna en-boy korunarak sığdırılır; yalnız ses kaynakları listelenmez
+                ...(d?.kaynaklar ?? [])
+                  .filter((k) => !["mikrofon", "masaustu", "uygulama_sesi"].includes(k.tur) && !k.eksik)
+                  .map((k): MenuOgesi => ({
+                    etiket: `${skHedef.tur === "kaynak" && skHedef.id === k.id ? "● " : ""}Kaynak: ${k.ad}`,
+                    eylem: () => setSkHedef({ tur: "kaynak", id: k.id, ad: k.ad }),
+                  })),
               ])
             }
             onTekrar={tekrarDugmesi}

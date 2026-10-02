@@ -48,12 +48,18 @@ impl Motor {
     if !crate::eklenti::kayitli_turler("cikis").iter().any(|t| t == "virtualcam_output") {
       return Err("sanal kamera bu kurulumda yok (OBS'in win-dshow modülü/sürücüsü bulunamadı)".into());
     }
-    // Hedef (OBS 30+ "Output Type"): program tuvali, Studio Mode önizlemesi (`studyo-<tuval>`) ya da bir sahnenin
-    // projektör tuvali (`kaynak-<sahne>`; panel önce açar)
+    // Hedef (OBS 30+ "Output Type"): program tuvali, Studio Mode önizlemesi (`studyo-<tuval>`), bir sahnenin
+    // projektör tuvali (`kaynak-<sahne>`; panel önce açar) ya da tek kaynak (`sigdir-<kaynak>`: ana tuval boyutunda
+    // sığdırılmış tuval burada açılır, kamera durunca kapanır)
+    if let Some(k) = tuval.strip_prefix(crate::multiview::SIGDIR_ONEK) {
+      self.sigdirilmis_ac(k)?;
+    }
     let video = if let Some(t) = tuval.strip_prefix("studyo-") {
       self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas.video()
     } else if let Some(k) = tuval.strip_prefix(crate::multiview::KAYNAK_ONEK) {
       self.kaynak_tuvalleri.get(k).ok_or("sahne tuvali açık değil")?.video()
+    } else if let Some(k) = tuval.strip_prefix(crate::multiview::SIGDIR_ONEK) {
+      self.sigdirilmis.get(k).ok_or("kaynak tuvali açılamadı")?.kanvas.video()
     } else {
       self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?.video()
     };
@@ -64,12 +70,25 @@ impl Motor {
     let ad = cs(CIKIS_ID);
     let ptr = unsafe { (api().obs_output_create)(TUR.as_ptr(), ad.as_ptr(), bos.0, std::ptr::null_mut()) };
     if ptr.is_null() {
+      self.sigdirilmisi_birak(tuval);
       return Err("sanal kamera çıktısı oluşturulamadı".into());
     }
     unsafe { (api().obs_output_set_media)(ptr, video, (api().obs_get_audio)()) };
     self.cikis_kaydet(CIKIS_ID, ptr, "sanal_kamera");
     self.sanal_kamera_kaynagi = Some(tuval.to_string());
-    self.cikis_baslat(CIKIS_ID)
+    let r = self.cikis_baslat(CIKIS_ID);
+    if r.is_err() {
+      self.sanal_kamera_kaynagi = None;
+      self.sigdirilmisi_birak(tuval);
+    }
+    r
+  }
+
+  /// Yalnız sanal kamera için açılmış sığdırılmış kaynak tuvali kamera bırakınca kapanır
+  fn sigdirilmisi_birak(&mut self, tuval: &str) {
+    if let Some(k) = tuval.strip_prefix(crate::multiview::SIGDIR_ONEK) {
+      self.sigdirilmis_kapat(k);
+    }
   }
 
   /// Görüntü aldığı tuval kapanacaksa sanal kamera önce durdurulur (çıktı yok olmuş videoya bağlı kalmasın)
@@ -80,9 +99,12 @@ impl Motor {
   }
 
   pub fn sanal_kamera_durdur(&mut self) -> Result<(), String> {
-    self.sanal_kamera_kaynagi = None;
+    let onceki = self.sanal_kamera_kaynagi.take();
     if self.cikislar_var(CIKIS_ID) {
       self.cikis_sil(CIKIS_ID)?;
+    }
+    if let Some(t) = onceki {
+      self.sigdirilmisi_birak(&t);
     }
     Ok(())
   }

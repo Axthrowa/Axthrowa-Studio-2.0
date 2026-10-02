@@ -374,6 +374,7 @@ pub struct Motor {
   pub(crate) etkilesim_tuvalleri: HashMap<String, Kanvas>,
   pub(crate) multiviewler: HashMap<String, crate::multiview::Multiview>,
   pub(crate) kaynak_tuvalleri: HashMap<String, Kanvas>,
+  pub(crate) sigdirilmis: HashMap<String, crate::multiview::Sigdirilmis>,
   /// Sanal kameranın görüntü aldığı tuval adı (kaynağı kapanırken kamera önce durdurulur)
   pub(crate) sanal_kamera_kaynagi: Option<String>,
   /// Çıktı → son duraklat/sürdür zamanı (art arda geçişleri aralamak için)
@@ -531,6 +532,7 @@ impl Motor {
       etkilesim_tuvalleri: HashMap::new(),
       multiviewler: HashMap::new(),
       kaynak_tuvalleri: HashMap::new(),
+      sigdirilmis: HashMap::new(),
       sanal_kamera_kaynagi: None,
       duraklatma_zamani: HashMap::new(),
     };
@@ -795,6 +797,8 @@ impl Motor {
         &self.multiviewler.get(k).ok_or("multiview açık değil")?.kanvas
       } else if let Some(k) = tuval.strip_prefix(crate::multiview::KAYNAK_ONEK) {
         self.kaynak_tuvalleri.get(k).ok_or("projektör tuvali açık değil")?
+      } else if let Some(k) = tuval.strip_prefix(crate::multiview::SIGDIR_ONEK) {
+        &self.sigdirilmis.get(k).ok_or("sanal kamera kaynak tuvali açık değil")?.kanvas
       } else {
         self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?
       };
@@ -865,6 +869,7 @@ impl Motor {
   pub fn kaynak_sil(&mut self, id: &str) -> Result<(), String> {
     self.etkilesim_kapat(id);
     self.kaynak_tuvali_kapat(id);
+    self.sigdirilmis_kapat(id);
     if !self.kaynaklar.contains_key(id) {
       return Err(format!("kaynak yok: {id}"));
     }

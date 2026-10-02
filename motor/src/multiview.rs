@@ -172,6 +172,14 @@ impl Motor {
 
 /// Sahne/kaynak projektörü tuvali öneki (`kaynak-<kimlik>`)
 pub const KAYNAK_ONEK: &str = "kaynak-";
+/// Sığdırılmış kaynak tuvali (sanal kamera "Kaynak" hedefi): ana tuval boyutunda, kaynak en-boy korunarak ortalanır
+pub const SIGDIR_ONEK: &str = "sigdir-";
+
+pub struct Sigdirilmis {
+  pub kanvas: Kanvas,
+  pub sahne: Ptr,
+  pub oge: Ptr,
+}
 
 impl Motor {
   /// Sahne ya da kaynak projektörü (OBS bağlam menüsü › Projektör): kaynağı kendi boyutunda (sahneyi tuval
@@ -223,6 +231,71 @@ impl Motor {
     let hepsi: Vec<String> = self.kaynak_tuvalleri.keys().cloned().collect();
     for k in hepsi {
       self.kaynak_tuvali_kapat(&k);
+    }
+    let hepsi: Vec<String> = self.sigdirilmis.keys().cloned().collect();
+    for k in hepsi {
+      self.sigdirilmis_kapat(&k);
+    }
+  }
+
+  /// OBS sanal kamera "Kaynak" çıkış türü: tek bir kaynak (ya da sahne) ana tuval boyutundaki özel bir tuvale en-boy
+  /// korunarak sığdırılır ve ortalanır. Kamera çözünürlüğü böylece kaynağın boyutuna bağlı olmaz (kaynak boyutu
+  /// değişse, ör. kamera geç açılsa da sabit kalır). Özel tuval kaynakları etkinleştirmez, ses karıştırmaz.
+  pub fn sigdirilmis_ac(&mut self, id: &str) -> Result<Value, String> {
+    let ad = format!("{SIGDIR_ONEK}{id}");
+    if let Some(t) = self.sigdirilmis.get(id) {
+      return Ok(json!({"tuval": ad, "genislik": t.kanvas.genislik, "yukseklik": t.kanvas.yukseklik}));
+    }
+    let kaynak = if let Some(s) = self.sahneler.get(id) {
+      unsafe { (api().obs_scene_get_source)(s.ptr) }
+    } else {
+      *self.kaynaklar.get(id).ok_or_else(|| format!("kaynak ya da sahne yok: {id}"))?
+    };
+    let (g, y) = self.kanvaslar.get("ana").map(|k| (k.genislik, k.yukseklik)).ok_or("ana tuval yok")?;
+    let mut ovi = video_bilgisi(self.ana.boyutla(g, y), c"libobs-d3d11");
+    let ad_c = cs(&format!("Sanal kamera kaynağı ({id})"));
+    let ptr = unsafe { (api().obs_canvas_create_private)(ad_c.as_ptr(), &mut ovi, obs::CANVAS_PREVIEW) };
+    if ptr.is_null() {
+      return Err("sanal kamera tuvali oluşturulamadı".into());
+    }
+    let sahne = unsafe { (api().obs_scene_create_private)(ad_c.as_ptr()) };
+    let oge = if sahne.is_null() { std::ptr::null_mut() } else { unsafe { (api().obs_scene_add)(sahne, kaynak) } };
+    if oge.is_null() {
+      unsafe {
+        if !sahne.is_null() {
+          (api().obs_scene_release)(sahne);
+        }
+        (api().obs_canvas_remove)(ptr);
+        (api().obs_canvas_release)(ptr);
+      }
+      return Err("sanal kamera sahnesi kurulamadı".into());
+    }
+    unsafe {
+      (api().obs_sceneitem_set_alignment)(oge, obs::OBS_ALIGN_LEFT | obs::OBS_ALIGN_TOP);
+      (api().obs_sceneitem_set_pos)(oge, &Vec2 { x: 0.0, y: 0.0 });
+      (api().obs_sceneitem_set_bounds_type)(oge, SINIR_ICERIDEN);
+      // Sınır hizalaması 0 = ortala
+      (api().obs_sceneitem_set_bounds_alignment)(oge, 0);
+      (api().obs_sceneitem_set_bounds)(oge, &Vec2 { x: g as f32, y: y as f32 });
+      (api().obs_canvas_set_channel)(ptr, 0, (api().obs_scene_get_source)(sahne));
+    }
+    self.sigdirilmis.insert(id.into(), Sigdirilmis { kanvas: Kanvas { ptr, genislik: g, yukseklik: y }, sahne, oge });
+    Ok(json!({"tuval": ad, "genislik": g, "yukseklik": y}))
+  }
+
+  pub fn sigdirilmis_kapat(&mut self, id: &str) {
+    let ad = format!("{SIGDIR_ONEK}{id}");
+    self.sanal_kamera_tuvali_kapaniyor(&ad);
+    self.akis_durdur(&ad);
+    self.onizlemeler.remove(&ad);
+    if let Some(t) = self.sigdirilmis.remove(id) {
+      unsafe {
+        (api().obs_canvas_set_channel)(t.kanvas.ptr, 0, std::ptr::null_mut());
+        (api().obs_sceneitem_remove)(t.oge);
+        (api().obs_scene_release)(t.sahne);
+        (api().obs_canvas_remove)(t.kanvas.ptr);
+        (api().obs_canvas_release)(t.kanvas.ptr);
+      }
     }
   }
 }

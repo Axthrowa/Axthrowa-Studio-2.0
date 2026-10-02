@@ -64,7 +64,8 @@ pub(crate) fn gecersiz(e: String) -> Hata {
 }
 
 /// Tuval kimliği → (genişlik, yükseklik)
-/// Önizleme/canlı kare istenebilecek tuval adı: `ana`, `dikey`, `studyo-<tuval>`, `etkilesim-<kaynak>`, `multiview-<tuval>`
+/// Önizleme/canlı kare istenebilecek tuval adı: `ana`, `dikey`, `studyo-<tuval>`, `etkilesim-<kaynak>`, `multiview-<tuval>`,
+/// `kaynak-<kaynak|sahne>` (projektör), `sigdir-<kaynak>` (sanal kamera kaynak hedefi)
 pub(crate) fn onizleme_tuvali_gecerli(t: &str) -> bool {
   if let Some(k) = t.strip_prefix("etkilesim-") {
     return kol::gecerli_kimlik(k);
@@ -72,7 +73,7 @@ pub(crate) fn onizleme_tuvali_gecerli(t: &str) -> bool {
   if let Some(k) = t.strip_prefix("multiview-") {
     return tuval_boyutu(k).is_some();
   }
-  if let Some(k) = t.strip_prefix("kaynak-") {
+  if let Some(k) = t.strip_prefix("kaynak-").or_else(|| t.strip_prefix("sigdir-")) {
     return kol::gecerli_kimlik(k);
   }
   tuval_boyutu(t.strip_prefix("studyo-").unwrap_or(t)).is_some()
@@ -1471,8 +1472,14 @@ pub(crate) async fn sanal_kamera(state: &AppState, eylem: &str, tuval: &str) -> 
     return Ok(acik);
   }
   if ac {
-    // Hedef (OBS 30+ "Output Type"): program tuvali, Studio Mode önizlemesi ya da bir sahne
-    let hedef = if let Some(sahne) = tuval.strip_prefix("sahne:") {
+    // Hedef (OBS 30+ "Output Type"): program tuvali, Studio Mode önizlemesi, bir sahne ya da tek kaynak (motor
+    // kaynağı ana tuval boyutundaki özel bir tuvale sığdırır; kamera durunca o tuvali kendisi kapatır)
+    let hedef = if let Some(kaynak) = tuval.strip_prefix("kaynak:") {
+      if !kol::gecerli_kimlik(kaynak) || !state.motor.ozet().lock().koleksiyon.kaynaklar.iter().any(|k| k.id == kaynak) {
+        return Err(gecersiz(format!("kaynak yok: {kaynak}")));
+      }
+      format!("sigdir-{kaynak}")
+    } else if let Some(sahne) = tuval.strip_prefix("sahne:") {
       if !kol::gecerli_kimlik(sahne) || state.motor.ozet().lock().koleksiyon.sahne_ref(sahne).is_none() {
         return Err(gecersiz(format!("sahne yok: {sahne}")));
       }
@@ -1697,7 +1704,7 @@ async fn api_ekran_goruntusu(
   let actor = authorize(&state, &addr, &headers, "broadcast.record").await?;
   motor_calisiyor(&state).await?;
   let tuval = g.tuval.unwrap_or_else(|| "ana".into());
-  if ["etkilesim-", "multiview-", "kaynak-"].iter().any(|o| tuval.starts_with(o)) || !onizleme_tuvali_gecerli(&tuval) {
+  if ["etkilesim-", "multiview-", "kaynak-", "sigdir-"].iter().any(|o| tuval.starts_with(o)) || !onizleme_tuvali_gecerli(&tuval) {
     return Err(gecersiz(format!("bilinmeyen tuval: {tuval}")));
   }
   if let Some(k) = &g.kaynak {

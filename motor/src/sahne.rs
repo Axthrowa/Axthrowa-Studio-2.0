@@ -72,6 +72,7 @@ impl Motor {
     }
     self.multiviewden_cikar(id);
     self.kaynak_tuvali_kapat(id);
+    self.sigdirilmis_kapat(id);
     // Bu sahnenin öğeleri ve başka sahnelerde bu sahneyi kaynak olarak kullanan öğeler
     let dus: Vec<String> = self
       .ogeler

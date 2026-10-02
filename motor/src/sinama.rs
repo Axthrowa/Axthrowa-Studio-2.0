@@ -1123,9 +1123,9 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   // Yeniden muxlama (Dosya › Yeniden muxla): sentetik MP4 → MKV, kare sayısı ve süre korunur, çözme hatasız
   let remux_yolu = dosya("sentetik-remux.mkv");
   let _ = std::fs::remove_file(&remux_yolu);
-  let remux = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &remux_yolu, |_| {}));
+  let remux = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &remux_yolu, None, |_| {}));
   let (rm_once, rm_sonra) = (incele(&ffprobe, &ff, &medya), incele(&ffprobe, &ff, &remux_yolu));
-  let remux_ustune_red = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &remux_yolu, |_| {})).is_err();
+  let remux_ustune_red = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &remux_yolu, None, |_| {})).is_err();
   ekle(
     "yeniden muxlama (MP4 → MKV): kare/süre korunur, üzerine yazılmaz",
     remux.as_ref().is_ok_and(|r| r.video == 1 && r.ses == 1)
@@ -1145,6 +1145,17 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     "multiview: önizleme, program ve sahne hücreleri işlenir; başka tuvalin sahnesi reddedilir",
     mv.is_ok() && yakin(mv_on) && yakin(mv_pr) && yakin(mv_sahne) && mv_bos.is_some_and(|p| p.iter().all(|c| *c < 12)) && mv_yabanci_red && mv_kapandi,
     format!("önizleme {mv_on:?}, program {mv_pr:?}, sahne {mv_sahne:?}, boş {mv_bos:?}; yabancı sahne reddi {mv_yabanci_red}; kapanış {mv_kapandi}"),
+  );
+  // Klip kırpma (Backtrack): 5–12 sn → anahtar kareden başlar (≤ 1 GOP erken), 12 sn'de biter, çözme hatasız
+  let kirp_yolu = dosya("sentetik-kirp.mp4");
+  let _ = std::fs::remove_file(&kirp_yolu);
+  let kirp = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &kirp_yolu, Some((5.0, 12.0)), |_| {}));
+  let kb = incele(&ffprobe, &ff, &kirp_yolu);
+  let kirp_ters_red = crate::obs::ObsKurulumu::bul().and_then(|k| crate::remux::remux(&k.bin, &medya, &dosya("x.mp4"), Some((9.0, 3.0)), |_| {})).is_err();
+  ekle(
+    "klip kırpma (5–12 sn): yeniden kodlamasız, anahtar kareden, ters aralık reddedilir",
+    kirp.is_ok() && (7.0..=11.5).contains(&kb.sure_sn) && kb.cozme_hatasi == 0 && kb.kare > 0 && kirp_ters_red,
+    format!("{kirp:?}; süre {:.2} sn, {} kare, çözme hatası {}; ters aralık reddi {kirp_ters_red}", kb.sure_sn, kb.kare, kb.cozme_hatasi),
   );
   let cift = |(g, y): (u32, u32)| (g.max(16).div_ceil(2) * 2, y.max(16).div_ceil(2) * 2);
   ekle(

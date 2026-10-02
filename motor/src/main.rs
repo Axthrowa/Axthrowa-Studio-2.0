@@ -2,7 +2,7 @@
 //!
 //!   yayin-motoru bilgi               libobs sürümü, yüklü modüller, kullanılabilir kodlayıcılar (JSON)
 //!   yayin-motoru sinama [klasör]     sentetik uçtan uca sınama (yalnız 127.0.0.1 alıcıları)
-//!   yayin-motoru remux <girdi> <çıktı>
+//!   yayin-motoru remux <girdi> <çıktı> [başlangıç_sn bitiş_sn]
 //!                                    kaydı yeniden kodlamadan başka kaba kopyalar (ilerleme JSON satırları)
 //!   yayin-motoru hizmet              stdio üzerinden JSON satır protokolü (panel bu kipi başlatır)
 //!   yayin-motoru eklenti-yokla <dll> [veri-klasörü]
@@ -85,7 +85,14 @@ fn main() -> ExitCode {
       _ => ExitCode::from(64),
     },
     Some("remux") => match (args.get(2), args.get(3)) {
-      (Some(g), Some(c)) => remux_calistir(std::path::Path::new(g), std::path::Path::new(c)),
+      (Some(g), Some(c)) => {
+        // İsteğe bağlı kırpma: remux <girdi> <çıktı> <başlangıç_sn> <bitiş_sn>
+        let aralik = match (args.get(4).and_then(|x| x.parse::<f64>().ok()), args.get(5).and_then(|x| x.parse::<f64>().ok())) {
+          (Some(b), Some(e)) => Some((b, e)),
+          _ => None,
+        };
+        remux_calistir(std::path::Path::new(g), std::path::Path::new(c), aralik)
+      }
       _ => {
         eprintln!("kullanım: yayin-motoru remux <girdi> <çıktı.mp4|.mov|.mkv>");
         ExitCode::from(64)
@@ -106,7 +113,7 @@ fn main() -> ExitCode {
 }
 
 /// Remux alt süreci: stdout'a `{"ilerleme": 0.42}` satırları, sonda `{"tamam": true, ...}` ya da `{"hata": "..."}`.
-fn remux_calistir(girdi: &std::path::Path, cikti: &std::path::Path) -> ExitCode {
+fn remux_calistir(girdi: &std::path::Path, cikti: &std::path::Path, aralik: Option<(f64, f64)>) -> ExitCode {
   use std::io::Write;
   let yaz = |v: serde_json::Value| {
     let mut o = std::io::stdout().lock();
@@ -115,7 +122,7 @@ fn remux_calistir(girdi: &std::path::Path, cikti: &std::path::Path) -> ExitCode 
   };
   let sonuc = obs::ObsKurulumu::bul().and_then(|k| {
     obs::dll_klasoru_ekle(&k.bin)?;
-    remux::remux(&k.bin, girdi, cikti, |x| yaz(serde_json::json!({ "ilerleme": (x * 1000.0).round() / 1000.0 })))
+    remux::remux(&k.bin, girdi, cikti, aralik, |x| yaz(serde_json::json!({ "ilerleme": (x * 1000.0).round() / 1000.0 })))
   });
   match sonuc {
     Ok(s) => {

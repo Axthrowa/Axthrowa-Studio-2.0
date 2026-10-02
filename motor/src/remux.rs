@@ -36,7 +36,13 @@ const ST_TIME_BASE: usize = 32;
 const CP_CODEC_TYPE: usize = 0;
 const CP_CODEC_TAG: usize = 8;
 /// AVPacket: buf, pts (8), dts (16), data (24), size (32), stream_index (36), flags, side_data, elems, duration, pos (72)
+const PK_PTS: usize = 8;
+const PK_DTS: usize = 16;
 const PK_STREAM_INDEX: usize = 36;
+/// AV_NOPTS_VALUE
+const NOPTS: i64 = i64::MIN;
+/// AVSEEK_FLAG_BACKWARD: istenen zamandan önceki anahtar kareye
+const AVSEEK_FLAG_BACKWARD: c_int = 1;
 const PK_POS: usize = 72;
 
 #[repr(C)]
@@ -56,6 +62,7 @@ struct Ff {
   avformat_write_header: unsafe extern "C" fn(Ptr, Ptr) -> c_int,
   avformat_free_context: unsafe extern "C" fn(Ptr),
   av_read_frame: unsafe extern "C" fn(Ptr, Ptr) -> c_int,
+  av_seek_frame: unsafe extern "C" fn(Ptr, c_int, i64, c_int) -> c_int,
   av_interleaved_write_frame: unsafe extern "C" fn(Ptr, Ptr) -> c_int,
   av_write_trailer: unsafe extern "C" fn(Ptr) -> c_int,
   avio_open: unsafe extern "C" fn(*mut Ptr, *const c_char, c_int) -> c_int,
@@ -96,6 +103,7 @@ impl Ff {
       avformat_write_header: sembol(&format, b"avformat_write_header\0")?,
       avformat_free_context: sembol(&format, b"avformat_free_context\0")?,
       av_read_frame: sembol(&format, b"av_read_frame\0")?,
+      av_seek_frame: sembol(&format, b"av_seek_frame\0")?,
       av_interleaved_write_frame: sembol(&format, b"av_interleaved_write_frame\0")?,
       av_write_trailer: sembol(&format, b"av_write_trailer\0")?,
       avio_open: sembol(&format, b"avio_open\0")?,
@@ -154,7 +162,14 @@ pub struct RemuxSonucu {
 
 /// Girdi dosyasını `cikti`ya yeniden muxlar. Çıktı önce geçici adla yazılır, başarıda yerine taşınır; var olan dosyanın
 /// üzerine yazılmaz. `ilerleme` 0–1 arası okunan bayt oranıyla en çok 5 kez/sn çağrılır.
-pub fn remux(bin: &Path, girdi: &Path, cikti: &Path, mut ilerleme: impl FnMut(f64)) -> Result<RemuxSonucu, String> {
+/// `aralik`: (başlangıç, bitiş) saniye — klip kırpma (Backtrack). Yeniden kodlama yoktur: başlangıçtan önceki anahtar
+/// kareden başlanır (klip birkaç kare erken başlayabilir), zaman damgaları sıfırdan başlatılır.
+pub fn remux(bin: &Path, girdi: &Path, cikti: &Path, aralik: Option<(f64, f64)>, mut ilerleme: impl FnMut(f64)) -> Result<RemuxSonucu, String> {
+  if let Some((bas, bit)) = aralik {
+    if !(bas.is_finite() && bit.is_finite() && bas >= 0.0 && bit > bas) {
+      return Err("kırpma aralığı geçersiz (0 ≤ başlangıç < bitiş)".into());
+    }
+  }
   let bicim_adi = bicim(cikti).ok_or("çıktı uzantısı .mp4, .mov ya da .mkv olmalı")?;
   if !girdi.is_file() {
     return Err(format!("girdi dosyası yok: {}", girdi.display()));
@@ -240,9 +255,19 @@ pub fn remux(bin: &Path, girdi: &Path, cikti: &Path, mut ilerleme: impl FnMut(f6
       if paket.is_null() {
         return Err("bellek yetersiz".into());
       }
+      if let Some((bas, _)) = aralik {
+        if bas > 0.0 {
+          let r = (ff.av_seek_frame)(giris, -1, (bas * 1_000_000.0) as i64, AVSEEK_FLAG_BACKWARD);
+          if r < 0 {
+            return Err(format!("başlangıca gidilemedi: {}", ff.hata(r)));
+          }
+        }
+      }
       let mut sayac = 0u64;
       let mut son_bildirim = Instant::now();
       let erken_bitti;
+      // Kırpmada ilk tutulan paketin zamanı (sn): çıktı zaman damgaları bundan çıkarılır
+      let mut kayma: Option<f64> = None;
       loop {
         let r = (ff.av_read_frame)(giris, paket);
         if r < 0 {
@@ -256,7 +281,41 @@ pub fn remux(bin: &Path, girdi: &Path, cikti: &Path, mut ilerleme: impl FnMut(f6
         };
         let kaynak_tb: Oran = oku(akis(giris, i as usize), ST_TIME_BASE);
         let hedef_tb: Oran = oku(akis(cikis, hedef), ST_TIME_BASE);
+        if let Some((_, bit)) = aralik {
+          let pts: i64 = oku(paket, PK_PTS);
+          let dts: i64 = oku(paket, PK_DTS);
+          let ts = if pts != NOPTS { pts } else { dts };
+          if ts == NOPTS || kaynak_tb.den == 0 {
+            (ff.av_packet_unref)(paket);
+            continue;
+          }
+          let sn = ts as f64 * kaynak_tb.num as f64 / kaynak_tb.den as f64;
+          if sn > bit {
+            (ff.av_packet_unref)(paket);
+            // Bitişi yarım saniye geçince dur (akışlar arası küçük kayma için pay)
+            if sn > bit + 0.5 {
+              erken_bitti = false;
+              break;
+            }
+            continue;
+          }
+          let k = *kayma.get_or_insert(sn);
+          if sn < k {
+            // Seekten sonra ilk tutulan paketten önceye ait paket (başka akış): atlanır
+            (ff.av_packet_unref)(paket);
+            continue;
+          }
+        }
         (ff.av_packet_rescale_ts)(paket, kaynak_tb, hedef_tb);
+        if let (Some(k), true) = (kayma, hedef_tb.num > 0) {
+          let fark = (k * hedef_tb.den as f64 / hedef_tb.num as f64).round() as i64;
+          for alan in [PK_PTS, PK_DTS] {
+            let v: i64 = oku(paket, alan);
+            if v != NOPTS {
+              yaz::<i64>(paket, alan, v - fark);
+            }
+          }
+        }
         yaz::<c_int>(paket, PK_STREAM_INDEX, hedef as c_int);
         yaz::<i64>(paket, PK_POS, -1);
         let r = (ff.av_interleaved_write_frame)(cikis, paket);

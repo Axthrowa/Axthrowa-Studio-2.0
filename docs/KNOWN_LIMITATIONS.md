@@ -146,6 +146,7 @@ Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
 | T-bar | sabit geçişlerde yok | Kes ve Stinger (libobs "fixed" geçişler) T-bar ile sürüklenemez; OBS'te de devre dışıdır |
 | Deinterlace görsel etkisi | UNVERIFIED | Geçmeli kaynak (yakalama kartı) yok; ayar libobs'ta saklanır ve geri okunur |
 | Hızlı geçiş: geçici tür değişimi | kısmi | Hızlı geçiş sürerken tuvalin geçişi o türe alınır, süre + 250 ms sonra geri kurulur; bu arada başka geçiş başlatılırsa geri kurma yine olur |
+| Ek tuvaller | 8 sınırı, boyut yeniden başlatmada | En çok 8 ek tuval; boyut değişikliği motor yeniden başlayınca uygulanır; silinen tuval nesnesi motor oturumu boyunca boş kalır (bağlı kodlayıcıları serbest bırakmak güvenli değil). Kayıt ve tekrar arabelleği yalnız yatay (+ isteğe bağlı dikey) tuvalden |
 | Yayın bilgisi | yalnız Kick | Kick: oku + onaylı güncelle (`channel:write`; eski bağlantılarda yeniden bağlanmak gerekir). Gerçek kanal güncellemesi sınanmadı (UNVERIFIED). Twitch/YouTube yayın bilgisi bağlantısı yok |
 | Betikler | DESTEKLENMİYOR | obs-scripting ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
 | Altyazı: konuşma tanıma | YOK | Altyazı satırları elle/kısayolla/otomasyonla gönderilir (CEA-608); mikrofon metne çevrilmez. ş/ğ/ı Latin karşılığıyla gider. Platform oynatıcısında görünüm UNVERIFIED (yalnız akış baytları doğrulandı) |

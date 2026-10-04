@@ -3098,6 +3098,80 @@ async fn yayin_bilgisi_kick_bagli_degilken() {
   assert_eq!(k("Just%20Chatting").await.unwrap().status(), 409);
 }
 
+/// Ek tuvaller: eklenir (ilk sahnesi programda, önizleme karesi kendi boyutunda), sahne/kaynak eklenir, adlandırılır,
+/// boyut değişikliği motor yeniden başlayınca uygulanır; silinince sahneleri kalkar, kimlik bu oturumda yeniden kullanılmaz;
+/// motor yeniden başlayınca koleksiyondan yeniden kurulur
+#[tokio::test(flavor = "multi_thread")]
+async fn motor_ek_tuvaller() {
+  let _motor_kilidi = MOTOR_KILIDI.lock().await;
+  if yayin_yonetim_araci_lib::motor_kopru::exe_yolu().is_none()
+    || !std::path::Path::new(r"C:\Program Files\obs-studio\bin\64bit\obs.dll").exists()
+  {
+    eprintln!("yayin-motoru ya da OBS yok — atlandı");
+    return;
+  }
+  let h = start().await;
+  let tamam = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
+  let durum = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap().status().as_u16() }
+  };
+  let sahneler = || {
+    let c = h.client.clone();
+    let url = format!("{}/api/motor/sahneler", h.base);
+    async move { c.get(url).send().await.unwrap().json::<Value>().await.unwrap() }
+  };
+  tamam("/api/motor/baslat", json!({})).await;
+  assert_eq!(durum("/api/motor/tuval", json!({"eylem": "ekle", "ad": "Kare", "genislik": 641, "yukseklik": 640})).await, 400, "tek boyut");
+  assert_eq!(durum("/api/motor/tuval", json!({"eylem": "ekle", "ad": " ", "genislik": 640, "yukseklik": 640})).await, 400, "boş ad");
+  let r = tamam("/api/motor/tuval", json!({"eylem": "ekle", "ad": "Kare", "genislik": 640, "yukseklik": 640})).await;
+  let (id, ilk) = (r["id"].as_str().unwrap().to_string(), r["sahne"].as_str().unwrap().to_string());
+  assert_eq!(id, "tuval-1");
+  let s = sahneler().await;
+  let t = s["tuvaller"].as_array().unwrap().iter().find(|t| t["id"] == id.as_str()).cloned().unwrap();
+  assert_eq!((t["ad"].as_str(), t["genislik"].as_u64(), t["ek"].as_bool()), (Some("Kare"), Some(640), Some(true)), "{t}");
+  assert_eq!(s["program"][&id], ilk.as_str());
+  // Sahne ve kaynak bu tuvalde; önizleme karesi tuvalin en-boyunda
+  let ikinci = tamam("/api/motor/sahne-islem", json!({"eylem": "olustur", "ad": "Kare 2", "tuval": id})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#336699", "ad": "Kare renk", "tuvaller": [id]})).await;
+  let detay: Value = h.client.get(format!("{}/api/motor/sahne?sahne={ilk}", h.base)).send().await.unwrap().json().await.unwrap();
+  assert_eq!(detay["ogeler"].as_array().unwrap().len(), 1, "{detay}");
+  let url = format!("{}/api/motor/onizleme?tuval={id}&genislik=320", h.base);
+  let _ = h.client.get(&url).send().await.unwrap();
+  tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+  let png = h.client.get(&url).send().await.unwrap().bytes().await.unwrap();
+  assert_eq!((u32::from_be_bytes(png[16..20].try_into().unwrap()), u32::from_be_bytes(png[20..24].try_into().unwrap())), (320, 320));
+  tamam("/api/motor/tuval", json!({"eylem": "adlandir", "id": id, "ad": "Kare (1:1)"})).await;
+  assert_eq!(tamam("/api/motor/tuval", json!({"eylem": "boyut", "id": id, "genislik": 720, "yukseklik": 720})).await["motorYenidenBaslamali"], true);
+  // Silme: sahneler kalkar; yeni tuval aynı kimliği almaz (oturumda başka boyutla kurulmuştu)
+  tamam("/api/motor/tuval", json!({"eylem": "sil", "id": id})).await;
+  let s = sahneler().await;
+  assert!(s["sahneler"].as_array().unwrap().iter().all(|x| x["id"] != ikinci.as_str() && x["id"] != ilk.as_str()), "{s}");
+  assert!(s["tuvaller"].as_array().unwrap().iter().all(|t| t["id"] != id.as_str()));
+  assert_eq!(durum("/api/motor/tuval", json!({"eylem": "sil", "id": id})).await, 404);
+  let yeni = tamam("/api/motor/tuval", json!({"eylem": "ekle", "ad": "Geniş", "genislik": 2560, "yukseklik": 1080})).await["id"].as_str().unwrap().to_string();
+  assert_eq!(yeni, "tuval-2", "silinen kimlik bu oturumda yeniden kullanılmaz");
+  // Yeniden başlatma: ek tuval koleksiyondan kurulur
+  assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
+  tamam("/api/motor/baslat", json!({})).await;
+  let s = sahneler().await;
+  assert!(s["tuvaller"].as_array().unwrap().iter().any(|t| t["id"] == yeni.as_str() && t["genislik"] == 2560), "{s}");
+  assert!(s["program"][&yeni].is_string());
+  tamam("/api/motor/tuval", json!({"eylem": "sil", "id": yeni})).await;
+  assert!(h.client.post(format!("{}/api/motor/durdur", h.base)).json(&json!({"confirm": true})).send().await.unwrap().status().is_success());
+}
+
 /// Bağlı sahneler: yatay sahne programa alınınca dikey eşi de programa alınır; aynı tuvale bağ reddedilir; eş silinince bağ düşer
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_bagli_sahneler() {

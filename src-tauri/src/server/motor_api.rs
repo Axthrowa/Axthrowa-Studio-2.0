@@ -80,12 +80,25 @@ pub(crate) fn onizleme_tuvali_gecerli(t: &str) -> bool {
   tuval_boyutu(t.strip_prefix("studyo-").unwrap_or(t)).is_some()
 }
 
+/// Tuval kimliği sözdizimsel olarak geçerli mi (ana, dikey ya da `tuval-<n>`); ek tuvalin gerçek boyutu koleksiyonda
+/// (`tuval_olcusu`), burada 0×0 döner.
 pub(crate) fn tuval_boyutu(tuval: &str) -> Option<(u32, u32)> {
   match tuval {
     "ana" => Some((1920, 1080)),
     "dikey" => Some((1080, 1920)),
+    t if kol::ek_tuval_kimligi(t) => Some((0, 0)),
     _ => None,
   }
+}
+
+/// Tuvalin taban boyutu: ek tuval koleksiyondan, ana/dikey profilden
+pub(crate) fn tuval_olcusu(o: &motor_kopru::Ozet, tuval: &str) -> (u32, u32) {
+  o.koleksiyon.ek_tuval(tuval).map(|t| (t.genislik, t.yukseklik)).unwrap_or_else(|| o.profil.tuval_boyutu(tuval))
+}
+
+/// Ek tuval kimliği koleksiyonda tanımlı değilse hata
+fn ek_tuval_var(o: &motor_kopru::Ozet, tuval: &str) -> bool {
+  !kol::ek_tuval_kimligi(tuval) || o.koleksiyon.ek_tuval(tuval).is_some()
 }
 
 pub(crate) fn klasor(state: &AppState) -> PathBuf {
@@ -141,7 +154,7 @@ pub(crate) async fn kaydet(state: &AppState) -> Result<(), Hata> {
     let o = state.motor.ozet();
     let o = o.lock();
     let tuvaller = o.koleksiyon.tuvaller();
-    o.koleksiyon.sahneler.iter().filter(|s| tuvaller.contains(&s.tuval.as_str())).map(|s| s.id.clone()).collect()
+    o.koleksiyon.sahneler.iter().filter(|s| tuvaller.contains(&s.tuval)).map(|s| s.id.clone()).collect()
   };
   kaydet_sahneler(state, &sahneler).await
 }
@@ -311,7 +324,7 @@ pub(crate) async fn oge_kur(state: &AppState, sahne: &str, o: &SahneOgesi, eksik
 /// Kaynaklar önceden kurulmuş olmalı (`kaynak_kur`).
 pub(crate) async fn grafigi_kur(state: &AppState, k: &Koleksiyon) -> Result<(), Hata> {
   let tuvaller = k.tuvaller();
-  let sahneler: Vec<&kol::SahneKaydi> = k.sahneler.iter().filter(|s| tuvaller.contains(&s.tuval.as_str())).collect();
+  let sahneler: Vec<&kol::SahneKaydi> = k.sahneler.iter().filter(|s| tuvaller.contains(&s.tuval)).collect();
   for s in &sahneler {
     komut(state, json!({"komut": "sahne.olustur", "id": s.id, "tuval": s.tuval, "ad": s.ad})).await?;
     filtreleri_kur(state, &s.id, &s.filtreler).await?;
@@ -324,7 +337,7 @@ pub(crate) async fn grafigi_kur(state: &AppState, k: &Koleksiyon) -> Result<(), 
     }
   }
   for tv in &tuvaller {
-    if let Some(g) = k.gecisler.get(*tv) {
+    if let Some(g) = k.gecisler.get(tv) {
       let mut istek = json!({"komut": "gecis.ayarla", "tuval": tv, "tur": g.tur, "sure_ms": g.sure_ms});
       if g.ayarlar.is_object() {
         istek["ayarlar"] = g.ayarlar.clone();
@@ -333,9 +346,30 @@ pub(crate) async fn grafigi_kur(state: &AppState, k: &Koleksiyon) -> Result<(), 
         crate::yya_warn!("[motor] geçiş kurulamadı ({tv} / {}): {e}", g.tur);
       }
     }
-    if let Some(p) = k.program.get(*tv) {
+    if let Some(p) = k.program.get(tv) {
       komut(state, json!({"komut": "sahne.etkinlestir", "id": p, "gecis": false})).await?;
     }
+  }
+  Ok(())
+}
+
+/// Koleksiyonun ek tuvallerini motorda kurar. Bu oturumda aynı kimlikle başka boyutta bir tuval kurulmuşsa (silinmiş
+/// ya da başka koleksiyonun tuvali) koleksiyondaki kimlik yenisiyle değiştirilir; aynı boyuttaysa yeniden kullanılır.
+pub(crate) async fn ek_tuvalleri_kur(state: &AppState, k: &mut Koleksiyon) -> Result<(), Hata> {
+  for t in k.ek_tuvaller.clone() {
+    let mevcut = state.motor.ozet().lock().motor_tuvalleri.clone();
+    let id = match mevcut.get(&t.id) {
+      Some(b) if *b == (t.genislik, t.yukseklik) => continue,
+      Some(_) => {
+        let kullanilan: std::collections::BTreeSet<String> = mevcut.keys().cloned().collect();
+        let yeni = k.yeni_ek_tuval_kimligi(&kullanilan);
+        k.ek_tuval_kimligini_degistir(&t.id, &yeni);
+        yeni
+      }
+      None => t.id.clone(),
+    };
+    komut(state, json!({"komut": "tuval.olustur", "id": id, "ad": t.ad, "genislik": t.genislik, "yukseklik": t.yukseklik})).await?;
+    state.motor.ozet().lock().motor_tuvalleri.insert(id, (t.genislik, t.yukseklik));
   }
   Ok(())
 }
@@ -347,6 +381,7 @@ pub(crate) async fn koleksiyonu_kur(state: &AppState, mut k: Koleksiyon) -> Resu
     komut(state, json!({"komut": "tuval.olustur", "id": "dikey", "ad": "Dikey", "genislik": g, "yukseklik": y})).await?;
     state.motor.ozet().lock().dikey_tuval = true;
   }
+  ek_tuvalleri_kur(state, &mut k).await?;
   let mut kaynaklar = k.kaynaklar.clone();
   for rec in kaynaklar.iter_mut() {
     rec.eksik = !kaynak_kur(state, rec).await?;
@@ -500,6 +535,12 @@ async fn api_durum(
     })
     .collect();
   let durum = |id: &str| o.cikislar.get(id).and_then(|v| v.get("durum")).cloned().unwrap_or(json!("hazir"));
+  let mut tuval_boyutlari = serde_json::Map::new();
+  tuval_boyutlari.insert("ana".into(), json!(profil.tuval_boyutu("ana")));
+  tuval_boyutlari.insert("dikey".into(), json!(profil.tuval_boyutu("dikey")));
+  for t in kol_.iter().flat_map(|k| k.ek_tuvaller.iter()) {
+    tuval_boyutlari.insert(t.id.clone(), json!([t.genislik, t.yukseklik]));
+  }
   let mut kodlayicilar: Vec<&String> = o.kodlayicilar.iter().collect();
   kodlayicilar.sort();
   Ok(Json(json!({
@@ -508,7 +549,7 @@ async fn api_durum(
     "bilgi": o.bilgi,
     "dikey": kol_.as_ref().map(|k| k.dikey).unwrap_or(false),
     "fps": profil.fps,
-    "tuvalBoyutlari": {"ana": profil.tuval_boyutu("ana"), "dikey": profil.tuval_boyutu("dikey")},
+    "tuvalBoyutlari": tuval_boyutlari,
     "video": profil.video,
     "gpu": crate::gpu::kullanim(if calisiyor { o.motor_pid } else { None }),
     "tuvaller": tuvaller,
@@ -803,9 +844,11 @@ async fn api_kaynak_ekle(
     // Renk iki tuvali de kaplasın diye kare (tuvallerin en büyük kenarı)
     let kenar = {
       let o = state.motor.ozet();
-      let p = &o.lock().profil;
+      let o = o.lock();
+      let p = &o.profil;
       let ((a, b), (c, d)) = (p.tuval_boyutu("ana"), p.tuval_boyutu("dikey"));
-      a.max(b).max(c).max(d)
+      let ek = o.koleksiyon.ek_tuvaller.iter().map(|t| t.genislik.max(t.yukseklik)).max().unwrap_or(0);
+      a.max(b).max(c).max(d).max(ek)
     };
     kaynak_tanimi(&g.tur, &g.deger, kenar, kenar).map_err(gecersiz)?
   };
@@ -827,7 +870,7 @@ async fn api_kaynak_ekle(
         }
         let mut v = Vec::new();
         for tv in &tuvaller {
-          if tuval_boyutu(tv).is_none() || (tv == "dikey" && !dikey) {
+          if tuval_boyutu(tv).is_none() || (tv == "dikey" && !dikey) || !ek_tuval_var(&o, tv) {
             return Err(gecersiz(format!("tuval yok: {tv}")));
           }
           let p = o.koleksiyon.program.get(tv).cloned().ok_or_else(|| gecersiz(format!("tuvalin sahnesi yok: {tv}")))?;
@@ -854,7 +897,7 @@ async fn api_kaynak_ekle(
   }
   state.motor.ozet().lock().koleksiyon.kaynaklar.push(rec.clone());
   for (sahne, tuval) in &sahneler {
-    let (gw, gy) = state.motor.ozet().lock().profil.tuval_boyutu(tuval);
+    let (gw, gy) = tuval_olcusu(&state.motor.ozet().lock(), tuval);
     let mut d = Donusum::default();
     if g.tur == "renk" {
       // renk kaynağı tuvali kaplar (boyutu kaynak ayarında)
@@ -1133,7 +1176,7 @@ async fn api_sahne(
       }
     }
   };
-  let (g_, y_) = state.motor.ozet().lock().profil.tuval_boyutu(&tuval);
+  let (g_, y_) = tuval_olcusu(&state.motor.ozet().lock(), &tuval);
   let ogeler = komut(&state, json!({"komut": "sahne.ogeler", "sahne": sahne})).await?;
   let durumlar = komut(&state, json!({"komut": "kaynak.durumlari"})).await.unwrap_or(Value::Null);
   let durum = |id: &str| -> Value {
@@ -1216,15 +1259,16 @@ async fn hedef_baslat(state: &AppState, id: &str, tuval: Option<String>, iz: Opt
   if cikis_etkin(state, &cikis) {
     return Err(catisma("Bu hedef zaten yayında".into()));
   }
-  let (dikey, kayitli, eski_kayit, mevcut) = {
+  let (dikey, kayitli, eski_kayit, mevcut, ek_tuvaller) = {
     let o = state.motor.ozet();
     let o = o.lock();
-    (o.dikey, o.profil.hedefler.get(id).cloned(), o.koleksiyon.hedefler.get(id).cloned(), o.hedef_tuval.get(id).cloned())
+    let ek: Vec<String> = o.koleksiyon.ek_tuvaller.iter().map(|t| t.id.clone()).collect();
+    (o.dikey, o.profil.hedefler.get(id).cloned(), o.koleksiyon.hedefler.get(id).cloned(), o.hedef_tuval.get(id).cloned(), ek)
   };
   let tuval = tuval.or(kayitli.as_ref().map(|k| k.tuval.clone())).or(eski_kayit.as_ref().map(|k| k.tuval.clone())).unwrap_or_else(|| "ana".into());
   let iz = iz.or(kayitli.as_ref().map(|k| k.iz)).or(eski_kayit.as_ref().map(|k| k.iz)).unwrap_or(0);
   let bit_hizi = kayitli.as_ref().and_then(|k| k.bit_hizi);
-  if tuval_boyutu(&tuval).is_none() || (tuval == "dikey" && !dikey) {
+  if tuval_boyutu(&tuval).is_none() || (tuval == "dikey" && !dikey) || (kol::ek_tuval_kimligi(&tuval) && !ek_tuvaller.contains(&tuval)) {
     return Err(gecersiz(format!("tuval yok: {tuval}")));
   }
   let video = video_kodlayici_hazirla(state, &tuval, bit_hizi).await?;
@@ -1492,7 +1536,7 @@ pub(crate) async fn sanal_kamera(state: &AppState, eylem: &str, tuval: &str) -> 
       }
       tuval.to_string()
     } else {
-      if tuval_boyutu(tuval).is_none() || (tuval == "dikey" && !state.motor.ozet().lock().dikey_tuval) {
+      if tuval_boyutu(tuval).is_none() || (tuval == "dikey" && !state.motor.ozet().lock().dikey_tuval) || !ek_tuval_var(&state.motor.ozet().lock(), tuval) {
         return Err(gecersiz(format!("tuval yok: {tuval}")));
       }
       tuval.to_string()

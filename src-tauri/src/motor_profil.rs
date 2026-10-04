@@ -365,7 +365,7 @@ impl Profil {
     }
     a.deneme_gecikmesi_sn = a.deneme_gecikmesi_sn.clamp(1, 30);
     a.en_cok_deneme = a.en_cok_deneme.min(10_000);
-    self.hedefler.retain(|id, h| !id.is_empty() && (h.tuval == "ana" || h.tuval == "dikey"));
+    self.hedefler.retain(|id, h| !id.is_empty() && (h.tuval == "ana" || h.tuval == "dikey" || crate::motor_koleksiyon::ek_tuval_kimligi(&h.tuval)));
     for h in self.hedefler.values_mut() {
       h.iz = h.iz.min(5);
       h.bit_hizi = h.bit_hizi.map(|b| b.clamp(200, 100_000));

@@ -41,6 +41,9 @@ pub struct Ozet {
   pub yuklu_gruplar: std::collections::HashSet<String>,
   /// Dikey tuval motorda oluşturuldu
   pub dikey_tuval: bool,
+  /// Bu motor oturumunda kurulmuş ek tuvaller → boyut (silinen tuval nesnesi oturum sonuna dek kalır; kimliği yeniden
+  /// kullanılmaz)
+  pub motor_tuvalleri: std::collections::BTreeMap<String, (u32, u32)>,
   /// Studio Mode açık tuvaller → önizlemedeki sahne
   pub studyo: HashMap<String, Option<String>>,
   /// Canlı akış aboneleri: seviye olayları ve tuval başına kare akışı (WebSocket bağlantı sayısı)

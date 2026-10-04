@@ -8,8 +8,8 @@ import { CIKIS_DURUM_ETIKETI, cikisEtkin, hedefBaslatilabilir, type MotorDurumu 
 import { boyutMetni, kalanKayitSn, sureMetni } from "../../lib/kayitSuresi";
 import { tabandanFark, type Sayaclar } from "../../lib/istatistikTabani";
 
-
-export const TUVAL_ADI: Record<string, string> = { ana: "Yatay", dikey: "Dikey" };
+import { TUVAL_ADI } from "../../lib/tuvaller";
+export { TUVAL_ADI };
 
 type Istatistik = NonNullable<MotorDurumu["istatistik"]> & { atlanan_kare?: number; video_kare?: number; cpu?: number; bellek_mb?: number };
 
@@ -64,7 +64,13 @@ function HedefSatiri({
       <td>{h.ad}</td>
       <td className="dt-soluk">{h.platform}</td>
       <td>
-        <select className="dt-input" aria-label={`${h.ad} tuvali`} value={tuval} disabled={etkin || tuvaller.length < 2} onChange={(e) => setTuval(e.target.value)}>
+        <select
+          className="dt-input"
+          aria-label={`${h.ad} tuvali`}
+          value={tuval}
+          disabled={etkin || tuvaller.length < 2}
+          onChange={(e) => setTuval(e.target.value)}
+        >
           {tuvaller.map((t) => (
             <option key={t} value={t}>
               {TUVAL_ADI[t]}
@@ -96,7 +102,13 @@ function HedefSatiri({
             Durdur
           </button>
         ) : (
-          <button type="button" className="dt-btn" disabled={!b.olur || mesgul} title={b.neden ?? "Bu hedefe yayını başlat"} onClick={() => onBaslat(tuval, iz)}>
+          <button
+            type="button"
+            className="dt-btn"
+            disabled={!b.olur || mesgul}
+            title={b.neden ?? "Bu hedefe yayını başlat"}
+            onClick={() => onBaslat(tuval, iz)}
+          >
             Başlat
           </button>
         )}
@@ -186,7 +198,13 @@ export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record
         İstatistikler
         <span className="dt-bosluk" />
         {taban && <span className="dt-soluk font-normal text-[11px]">sıfırlamadan beri</span>}
-        <button type="button" className="dt-tool text-[11px]" disabled={!ist} onClick={() => ist && setTaban(sayaclar(ist))} title="Kare ve çıktı sayaçlarını sıfırla">
+        <button
+          type="button"
+          className="dt-tool text-[11px]"
+          disabled={!ist}
+          onClick={() => ist && setTaban(sayaclar(ist))}
+          title="Kare ve çıktı sayaçlarını sıfırla"
+        >
           Sıfırla
         </button>
       </div>
@@ -237,7 +255,9 @@ export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record
                   {d.gpu.motor != null && ` · motor %${d.gpu.motor.toFixed(1)}`}
                 </span>
               ) : (
-                <span className="dt-soluk" title="Bu sistemde GPU performans sayacı okunamadı">ölçülemiyor</span>
+                <span className="dt-soluk" title="Bu sistemde GPU performans sayacı okunamadı">
+                  ölçülemiyor
+                </span>
               )}
             </div>
             <table className="dt-table">
@@ -254,7 +274,15 @@ export function IstatistikDock({ d, bitHizi }: { d: MotorDurumu; bitHizi: Record
               <tbody>
                 {ist.cikislar.map((c) => (
                   <tr key={c.id}>
-                    <td>{c.id.startsWith("h-") ? (d.hedefler.find((h) => `h-${h.id}` === c.id)?.ad ?? c.id) : c.id === "kayit" ? "Kayıt" : c.id === "tekrar" ? "Tekrar arabelleği" : c.id}</td>
+                    <td>
+                      {c.id.startsWith("h-")
+                        ? (d.hedefler.find((h) => `h-${h.id}` === c.id)?.ad ?? c.id)
+                        : c.id === "kayit"
+                          ? "Kayıt"
+                          : c.id === "tekrar"
+                            ? "Tekrar arabelleği"
+                            : c.id}
+                    </td>
                     <td>{CIKIS_DURUM_ETIKETI[c.durum] ?? c.durum}</td>
                     <td className="dt-sayi text-right">{c.etkin && bitHizi[c.id] != null ? `${Math.round(bitHizi[c.id])} kbps` : "—"}</td>
                     <td className="dt-sayi text-right">{g?.cikislar[c.id]?.kare ?? c.kare}</td>

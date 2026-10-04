@@ -7,6 +7,7 @@
  * Güvenlik: anahtar yalnız "Göster"e basınca bu bilgisayardan okunur, 20 sn sonra gizlenir ve hiçbir kalıcı duruma
  * yazılmaz; "Kopyala" panoyu 30 sn sonra (hâlâ aynı değerse) temizler. Uzman kipte ayar sessizce değiştirilmez.
  */
+import { ekTuvaller } from "../../lib/tuvaller";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motorApi, obsWebsocketApi, type MotorProfil, type MotorProfilYaniti, type MotorSesDurumu, type ObsWebsocketDurumu } from "../../lib/api/motor";
 import { multistreamApi, type Destination, type MultistreamStatus, type Platform } from "../../lib/api/multistream";
@@ -20,12 +21,25 @@ type Bolum = "video" | "cikis" | "kayit" | "tekrar" | "ses" | "coklu" | "gelismi
 
 const BOLUMLER: { id: Bolum; ad: string; anahtarlar: string }[] = [
   { id: "video", ad: "Video", anahtarlar: "kare hızı fps çözünürlük tuval taban çıkış ölçekli ölçek filtresi lanczos bicubic dikey yatay" },
-  { id: "cikis", ad: "Çıkış", anahtarlar: "kodlayıcı encoder nvenc x264 bit hızı bitrate anahtar kare keyframe ses bit hızı basit gelişmiş uzman kodlama paylaşımı" },
+  {
+    id: "cikis",
+    ad: "Çıkış",
+    anahtarlar: "kodlayıcı encoder nvenc x264 bit hızı bitrate anahtar kare keyframe ses bit hızı basit gelişmiş uzman kodlama paylaşımı",
+  },
   { id: "kayit", ad: "Kayıt", anahtarlar: "kayıt biçim mkv mp4 hibrit parçalı mov iz klasör yol çok izli" },
   { id: "tekrar", ad: "Tekrar arabelleği", anahtarlar: "tekrar replay klip süre" },
   { id: "ses", ad: "Ses", anahtarlar: "iz adı karışım vod müziksiz temiz izleme aygıtı kulaklık monitoring örnekleme hızı khz kanal mono stereo 5.1" },
-  { id: "coklu", ad: "Çoklu yayın", anahtarlar: "hedef platform twitch youtube kick rtmp sunucu anahtar stream key göster kopyala sına bağlantı bit hızı tuval iz" },
-  { id: "gelismis", ad: "Gelişmiş", anahtarlar: "renk biçimi nv12 p010 i444 renk uzayı 709 601 srgb hdr 2100 aralık ağ bağlanılacak ip ipv4 ipv6 düşük gecikme dinamik bit hızı yeniden bağlan deneme" },
+  {
+    id: "coklu",
+    ad: "Çoklu yayın",
+    anahtarlar: "hedef platform twitch youtube kick rtmp sunucu anahtar stream key göster kopyala sına bağlantı bit hızı tuval iz",
+  },
+  {
+    id: "gelismis",
+    ad: "Gelişmiş",
+    anahtarlar:
+      "renk biçimi nv12 p010 i444 renk uzayı 709 601 srgb hdr 2100 aralık ağ bağlanılacak ip ipv4 ipv6 düşük gecikme dinamik bit hızı yeniden bağlan deneme",
+  },
   { id: "uzak", ad: "Uzaktan denetim", anahtarlar: "obs-websocket websocket stream deck touch portal streamer.bot uzaktan denetim port parola" },
   { id: "erisim", ad: "Erişilebilirlik", anahtarlar: "erişilebilirlik renk körlüğü yüksek kontrast seçim rengi ölçer renkleri" },
   { id: "kisayol", ad: "Kısayollar", anahtarlar: "kısayol hotkey tuş bas konuş push to talk" },
@@ -52,7 +66,12 @@ function Erisilebilirlik() {
   return (
     <div className="dt-form p-3">
       <label htmlFor="er-hazir">Hazır</label>
-      <select id="er-hazir" className="dt-input" value={hazir} onChange={(e) => degistir(HAZIRLAR.find((h) => h.id === e.target.value)?.renkler ?? VARSAYILAN_RENKLER)}>
+      <select
+        id="er-hazir"
+        className="dt-input"
+        value={hazir}
+        onChange={(e) => degistir(HAZIRLAR.find((h) => h.id === e.target.value)?.renkler ?? VARSAYILAN_RENKLER)}
+      >
         {HAZIRLAR.map((h) => (
           <option key={h.id} value={h.id}>
             {h.ad}
@@ -128,7 +147,11 @@ function UzaktanDenetim({ onToast }: { onToast: (m: string) => void }) {
     <div className="dt-form">
       <span className="dt-etiket">Sunucu</span>
       <label className="inline-flex items-center gap-1.5">
-        <input type="checkbox" checked={d.etkin} onChange={(e) => void ayarla({ etkin: e.target.checked }, e.target.checked ? "Uzaktan denetim açıldı" : "Uzaktan denetim kapatıldı")} />
+        <input
+          type="checkbox"
+          checked={d.etkin}
+          onChange={(e) => void ayarla({ etkin: e.target.checked }, e.target.checked ? "Uzaktan denetim açıldı" : "Uzaktan denetim kapatıldı")}
+        />
         obs-websocket {d.surum} uyumlu sunucuyu aç
         <span className="dt-durum" data-ton={d.calisanPort ? "iyi" : undefined}>
           {d.calisanPort ? `dinleniyor: 127.0.0.1:${d.calisanPort}` : "kapalı"}
@@ -156,9 +179,9 @@ function UzaktanDenetim({ onToast }: { onToast: (m: string) => void }) {
       </label>
       <span />
       <span className="text-[11px] dt-soluk">
-        Stream Deck, Touch Portal, Streamer.bot gibi araçlar bu uygulamayı OBS gibi denetler: sahneler, ses, sahne öğeleri, filtreler, Studio Mode, kayıt, tekrar, sanal kamera ({d.istekSayisi} istek).
-        Yalnız bu bilgisayardan bağlanılır; parola Windows Kimlik Yöneticisi'nde saklanır. Varsayılan port 4456 — OBS Studio'nun kendi 4455 portuyla çakışmaz. Yayın denetimi izni kapalıyken yayını
-        başlatma/durdurma istekleri reddedilir.
+        Stream Deck, Touch Portal, Streamer.bot gibi araçlar bu uygulamayı OBS gibi denetler: sahneler, ses, sahne öğeleri, filtreler, Studio Mode, kayıt,
+        tekrar, sanal kamera ({d.istekSayisi} istek). Yalnız bu bilgisayardan bağlanılır; parola Windows Kimlik Yöneticisi'nde saklanır. Varsayılan port 4456 —
+        OBS Studio'nun kendi 4455 portuyla çakışmaz. Yayın denetimi izni kapalıyken yayını başlatma/durdurma istekleri reddedilir.
       </span>
     </div>
   );
@@ -182,13 +205,35 @@ const DIKEY_HAZIR: [number, number][] = [
   [1080, 1920],
   [720, 1280],
 ];
-const OLCEK_ADI: Record<string, string> = { bilinear: "Bilinear (en hızlı, bulanık)", bicubic: "Bicubic (keskin, 16 örnek)", lanczos: "Lanczos (keskin, 36 örnek)", area: "Alan (alt örnekleme)" };
-const BICIM_ADI: Record<string, string> = { nv12: "NV12 (8 bit, 4:2:0)", i420: "I420 (8 bit, 4:2:0)", i444: "I444 (8 bit, 4:4:4)", p010: "P010 (10 bit, 4:2:0)", i010: "I010 (10 bit, 4:2:0)", bgra: "BGRA (8 bit)" };
+const OLCEK_ADI: Record<string, string> = {
+  bilinear: "Bilinear (en hızlı, bulanık)",
+  bicubic: "Bicubic (keskin, 16 örnek)",
+  lanczos: "Lanczos (keskin, 36 örnek)",
+  area: "Alan (alt örnekleme)",
+};
+const BICIM_ADI: Record<string, string> = {
+  nv12: "NV12 (8 bit, 4:2:0)",
+  i420: "I420 (8 bit, 4:2:0)",
+  i444: "I444 (8 bit, 4:4:4)",
+  p010: "P010 (10 bit, 4:2:0)",
+  i010: "I010 (10 bit, 4:2:0)",
+  bgra: "BGRA (8 bit)",
+};
 const UZAY_ADI: Record<string, string> = { "601": "Rec. 601", "709": "Rec. 709", srgb: "sRGB", "2100pq": "Rec. 2100 (PQ)", "2100hlg": "Rec. 2100 (HLG)" };
 const HOPARLOR_ADI: Record<string, string> = { mono: "Mono", stereo: "Stereo", "2.1": "2.1", "4.0": "4.0", "4.1": "4.1", "5.1": "5.1", "7.1": "7.1" };
 
 /** Çözünürlük seçimi: hazır listesi + serbest genişlik × yükseklik (çift sayı, 16–7680) */
-function BoyutAlani({ id, deger, hazir, onUygula }: { id: string; deger: [number, number]; hazir: [number, number][]; onUygula: (v: [number, number]) => void }) {
+function BoyutAlani({
+  id,
+  deger,
+  hazir,
+  onUygula,
+}: {
+  id: string;
+  deger: [number, number];
+  hazir: [number, number][];
+  onUygula: (v: [number, number]) => void;
+}) {
   const [g, setG] = useState(String(deger[0]));
   const [y, setY] = useState(String(deger[1]));
   useEffect(() => {
@@ -208,16 +253,37 @@ function BoyutAlani({ id, deger, hazir, onUygula }: { id: string; deger: [number
   };
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      <select id={id} className="dt-input w-40" value={`${deger[0]}x${deger[1]}`} onChange={(e) => onUygula(e.target.value.split("x").map(Number) as [number, number])}>
+      <select
+        id={id}
+        className="dt-input w-40"
+        value={`${deger[0]}x${deger[1]}`}
+        onChange={(e) => onUygula(e.target.value.split("x").map(Number) as [number, number])}
+      >
         {liste.map(([a, b]) => (
           <option key={`${a}x${b}`} value={`${a}x${b}`}>
             {a}×{b}
           </option>
         ))}
       </select>
-      <input className="dt-input dt-sayi w-20" aria-label="Genişlik" inputMode="numeric" value={g} onChange={(e) => setG(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <input
+        className="dt-input dt-sayi w-20"
+        aria-label="Genişlik"
+        inputMode="numeric"
+        value={g}
+        onChange={(e) => setG(e.target.value)}
+        onBlur={uygula}
+        onKeyDown={(e) => e.key === "Enter" && uygula()}
+      />
       <span className="dt-birim">×</span>
-      <input className="dt-input dt-sayi w-20" aria-label="Yükseklik" inputMode="numeric" value={y} onChange={(e) => setY(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <input
+        className="dt-input dt-sayi w-20"
+        aria-label="Yükseklik"
+        inputMode="numeric"
+        value={y}
+        onChange={(e) => setY(e.target.value)}
+        onBlur={uygula}
+        onKeyDown={(e) => e.key === "Enter" && uygula()}
+      />
       <span className="dt-birim">px (çift sayı)</span>
     </span>
   );
@@ -234,7 +300,23 @@ function PlatformSimgesi({ p }: { p: Platform }) {
   );
 }
 
-function SayiAlani({ id, deger, en_az, en_cok, birim, devreDisi, onUygula }: { id: string; deger: number; en_az: number; en_cok: number; birim?: string; devreDisi?: boolean; onUygula: (v: number) => void }) {
+function SayiAlani({
+  id,
+  deger,
+  en_az,
+  en_cok,
+  birim,
+  devreDisi,
+  onUygula,
+}: {
+  id: string;
+  deger: number;
+  en_az: number;
+  en_cok: number;
+  birim?: string;
+  devreDisi?: boolean;
+  onUygula: (v: number) => void;
+}) {
   const [m, setM] = useState(String(deger));
   useEffect(() => setM(String(deger)), [deger]);
   const uygula = () => {
@@ -245,7 +327,16 @@ function SayiAlani({ id, deger, en_az, en_cok, birim, devreDisi, onUygula }: { i
   };
   return (
     <span className="inline-flex items-center gap-1.5">
-      <input id={id} className="dt-input dt-sayi w-24" inputMode="numeric" value={m} disabled={devreDisi} onChange={(e) => setM(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <input
+        id={id}
+        className="dt-input dt-sayi w-24"
+        inputMode="numeric"
+        value={m}
+        disabled={devreDisi}
+        onChange={(e) => setM(e.target.value)}
+        onBlur={uygula}
+        onKeyDown={(e) => e.key === "Enter" && uygula()}
+      />
       {birim && <span className="dt-birim">{birim}</span>}
       <span className="dt-birim">
         ({en_az}–{en_cok})
@@ -333,7 +424,13 @@ function HedefKarti({
           {yayinda ? "yayında (yönlendirici)" : h.hasKey ? "hazır" : "anahtar yok"}
         </span>
         <label className="inline-flex items-center gap-1.5 text-[12px]">
-          <input type="checkbox" checked={h.enabled} onChange={(e) => void yap("Hedef", () => multistreamApi.upsert({ id: h.id, name: h.name, platform: h.platform, server: h.server, enabled: e.target.checked }))} />
+          <input
+            type="checkbox"
+            checked={h.enabled}
+            onChange={(e) =>
+              void yap("Hedef", () => multistreamApi.upsert({ id: h.id, name: h.name, platform: h.platform, server: h.server, enabled: e.target.checked }))
+            }
+          />
           Etkin
         </label>
       </div>
@@ -344,7 +441,10 @@ function HedefKarti({
           className="dt-input"
           value={sunucu}
           onChange={(e) => setSunucu(e.target.value)}
-          onBlur={() => sunucu.trim() !== h.server && void yap("Sunucu", () => multistreamApi.upsert({ id: h.id, name: h.name, platform: h.platform, server: sunucu.trim(), enabled: h.enabled }))}
+          onBlur={() =>
+            sunucu.trim() !== h.server &&
+            void yap("Sunucu", () => multistreamApi.upsert({ id: h.id, name: h.name, platform: h.platform, server: sunucu.trim(), enabled: h.enabled }))
+          }
         />
         <span className="dt-etiket">Yayın anahtarı</span>
         <span className="flex flex-wrap items-center gap-1.5">
@@ -365,7 +465,11 @@ function HedefKarti({
             {h.hasKey ? "Değiştir" : "Ekle"}
           </button>
           {h.hasKey && (
-            <button type="button" className="dt-btn-danger" onClick={() => void yap("Anahtar silinemedi", () => multistreamApi.keyDelete(h.id), "Anahtar silindi")}>
+            <button
+              type="button"
+              className="dt-btn-danger"
+              onClick={() => void yap("Anahtar silinemedi", () => multistreamApi.keyDelete(h.id), "Anahtar silindi")}
+            >
               Sil
             </button>
           )}
@@ -374,7 +478,14 @@ function HedefKarti({
           <>
             <label htmlFor={`hk-${h.id}`}>Yeni anahtar</label>
             <span className="flex items-center gap-1.5">
-              <input id={`hk-${h.id}`} type="password" autoComplete="off" className="dt-input min-w-0 flex-1" value={yeniAnahtar} onChange={(e) => setYeniAnahtar(e.target.value)} />
+              <input
+                id={`hk-${h.id}`}
+                type="password"
+                autoComplete="off"
+                className="dt-input min-w-0 flex-1"
+                value={yeniAnahtar}
+                onChange={(e) => setYeniAnahtar(e.target.value)}
+              />
               <button
                 type="button"
                 className="dt-btn-primary"
@@ -382,7 +493,11 @@ function HedefKarti({
                 onClick={() => {
                   const k = yeniAnahtar;
                   setYeniAnahtar(null);
-                  void yap("Anahtar kaydedilemedi", () => multistreamApi.upsert({ id: h.id, name: h.name, platform: h.platform, server: h.server, enabled: h.enabled, key: k }), "Anahtar Kimlik Yöneticisine yazıldı");
+                  void yap(
+                    "Anahtar kaydedilemedi",
+                    () => multistreamApi.upsert({ id: h.id, name: h.name, platform: h.platform, server: h.server, enabled: h.enabled, key: k }),
+                    "Anahtar Kimlik Yöneticisine yazıldı"
+                  );
                 }}
               >
                 Kaydet
@@ -399,6 +514,14 @@ function HedefKarti({
         <select id={`ht-${h.id}`} className="dt-input w-40" value={atama.tuval} onChange={(e) => atamaYaz({ tuval: e.target.value })}>
           <option value="ana">Yatay (1920×1080)</option>
           <option value="dikey">Dikey (1080×1920)</option>
+          {ekTuvaller().map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.ad} ({t.genislik}×{t.yukseklik})
+            </option>
+          ))}
+          {atama.tuval !== "ana" && atama.tuval !== "dikey" && !ekTuvaller().some((t) => t.id === atama.tuval) && (
+            <option value={atama.tuval}>{atama.tuval} (bu koleksiyonda yok)</option>
+          )}
         </select>
         <label htmlFor={`hi-${h.id}`}>Ses karışımı</label>
         <select id={`hi-${h.id}`} className="dt-input w-48" value={atama.iz} onChange={(e) => atamaYaz({ iz: Number(e.target.value) })}>
@@ -426,7 +549,12 @@ function HedefKarti({
           />
           <span className="dt-birim">kbps · boş: tuvalin bit hızı ({tuvalBh}) ile kodlayıcı paylaşılır</span>
           {h.platform === "kick" && sinirlar && (
-            <button type="button" className="dt-btn" onClick={() => atamaYaz({ bit_hizi: Math.min(tuvalBh, sinirlar.kickMaxKbps) })} title={`${sinirlar.kaynaklar.kick} · ${sinirlar.dogrulama}`}>
+            <button
+              type="button"
+              className="dt-btn"
+              onClick={() => atamaYaz({ bit_hizi: Math.min(tuvalBh, sinirlar.kickMaxKbps) })}
+              title={`${sinirlar.kaynaklar.kick} · ${sinirlar.dogrulama}`}
+            >
               Kick sınırına uy
             </button>
           )}
@@ -435,7 +563,8 @@ function HedefKarti({
           <>
             <span />
             <span className="dt-uyari-metni text-[11px]">
-              Kick en fazla {sinirlar!.kickMaxKbps} kbps kabul eder (kaynak: {sinirlar!.kaynaklar.kick}, {sinirlar!.dogrulama}). Uzman kipte ayar kendiliğinden değiştirilmez.
+              Kick en fazla {sinirlar!.kickMaxKbps} kbps kabul eder (kaynak: {sinirlar!.kaynaklar.kick}, {sinirlar!.dogrulama}). Uzman kipte ayar kendiliğinden
+              değiştirilmez.
             </span>
           </>
         )}
@@ -479,7 +608,12 @@ function YeniHedef({ durum, onToast, onDegisti }: { durum: MultistreamStatus | n
         <label htmlFor="yh-ad">Ad</label>
         <input id="yh-ad" className="dt-input" maxLength={60} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         <label htmlFor="yh-p">Platform</label>
-        <select id="yh-p" className="dt-input w-40" value={f.platform} onChange={(e) => setF({ ...f, platform: e.target.value as Platform, server: onerilen(e.target.value as Platform) })}>
+        <select
+          id="yh-p"
+          className="dt-input w-40"
+          value={f.platform}
+          onChange={(e) => setF({ ...f, platform: e.target.value as Platform, server: onerilen(e.target.value as Platform) })}
+        >
           {(Object.keys(PLATFORM_ADI) as Platform[]).map((p) => (
             <option key={p} value={p}>
               {PLATFORM_ADI[p]}
@@ -520,7 +654,19 @@ function YeniHedef({ durum, onToast, onDegisti }: { durum: MultistreamStatus | n
 
 // ─── Pencere ───────────────────────────────────────────────────────────────
 
-export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast, onGit, onKapat }: { baslangic?: Bolum; motorKodlayicilari?: string[]; onToast: (m: string) => void; onGit?: (h: "hotkeys") => void; onKapat: () => void }) {
+export function YayinAyarlari({
+  baslangic = "cikis",
+  motorKodlayicilari,
+  onToast,
+  onGit,
+  onKapat,
+}: {
+  baslangic?: Bolum;
+  motorKodlayicilari?: string[];
+  onToast: (m: string) => void;
+  onGit?: (h: "hotkeys") => void;
+  onKapat: () => void;
+}) {
   const [bolum, setBolum] = useState<Bolum>(baslangic);
   const [ara, setAra] = useState("");
   const [p, setP] = useState<MotorProfilYaniti | null>(null);
@@ -565,7 +711,11 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
 
   const pr = p?.profil;
   const kodlayiciOku = useCallback(() => motorApi.kodlayiciOzellikleri(pr?.cikis.kodlayici ?? ""), [pr?.cikis.kodlayici]);
-  const kodlayiciYaz = useCallback((a: Record<string, unknown>) => motorApi.profilGuncelle({ cikis: { uzman: { [pr?.cikis.kodlayici ?? ""]: a } } }).then((r) => setP((x) => (x ? { ...x, profil: r.profil } : x))), [pr?.cikis.kodlayici]);
+  const kodlayiciYaz = useCallback(
+    (a: Record<string, unknown>) =>
+      motorApi.profilGuncelle({ cikis: { uzman: { [pr?.cikis.kodlayici ?? ""]: a } } }).then((r) => setP((x) => (x ? { ...x, profil: r.profil } : x))),
+    [pr?.cikis.kodlayici]
+  );
 
   return (
     <Pencere
@@ -596,9 +746,7 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
           </div>
         </nav>
         <div className="min-h-0 overflow-auto" role="tabpanel">
-          <div className="dt-dock-baslik">
-            Yayın ayarları › {BOLUMLER.find((b) => b.id === bolum)?.ad}
-          </div>
+          <div className="dt-dock-baslik">Yayın ayarları › {BOLUMLER.find((b) => b.id === bolum)?.ad}</div>
           {!pr ? (
             <p className="p-3 text-[12px] dt-soluk">Profil okunuyor…</p>
           ) : bolum === "video" ? (
@@ -608,7 +756,12 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
               <label htmlFor="ay-cikisc">Çıkış (ölçekli) çözünürlük</label>
               <BoyutAlani id="ay-cikisc" deger={pr.video.cikis} hazir={CIKIS_HAZIR} onUygula={(v) => void guncelle({ video: { cikis: v } })} />
               <label htmlFor="ay-olcek">Ölçek filtresi</label>
-              <select id="ay-olcek" className="dt-input w-72" value={pr.video.olcek_filtresi} onChange={(e) => void guncelle({ video: { olcek_filtresi: e.target.value } })}>
+              <select
+                id="ay-olcek"
+                className="dt-input w-72"
+                value={pr.video.olcek_filtresi}
+                onChange={(e) => void guncelle({ video: { olcek_filtresi: e.target.value } })}
+              >
                 {Object.entries(OLCEK_ADI).map(([k, a]) => (
                   <option key={k} value={k}>
                     {a}
@@ -627,8 +780,8 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
               <BoyutAlani id="ay-dikey" deger={pr.video.dikey_taban} hazir={DIKEY_HAZIR} onUygula={(v) => void guncelle({ video: { dikey_taban: v } })} />
               <span />
               <span className="text-[11px] dt-soluk">
-                Sahneler temel çözünürlükte düzenlenir; kodlayıcılara çıkış çözünürlüğü gider. Motor çalışırken değiştirilirse (yayın/kayıt yoksa) motor yeni ayarlarla yeniden başlar; yayın ya da kayıt
-                sürerken değişmez. Dikey tuval motor açılışında etkinleştirilir.
+                Sahneler temel çözünürlükte düzenlenir; kodlayıcılara çıkış çözünürlüğü gider. Motor çalışırken değiştirilirse (yayın/kayıt yoksa) motor yeni
+                ayarlarla yeniden başlar; yayın ya da kayıt sürerken değişmez. Dikey tuval motor açılışında etkinleştirilir.
               </span>
             </div>
           ) : bolum === "cikis" ? (
@@ -644,7 +797,12 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                   ))}
                 </span>
                 <label htmlFor="ay-kod">Video kodlayıcı</label>
-                <select id="ay-kod" className="dt-input w-72" value={pr.cikis.kodlayici} onChange={(e) => void guncelle({ cikis: { kodlayici: e.target.value } })}>
+                <select
+                  id="ay-kod"
+                  className="dt-input w-72"
+                  value={pr.cikis.kodlayici}
+                  onChange={(e) => void guncelle({ cikis: { kodlayici: e.target.value } })}
+                >
                   <option value="otomatik">Otomatik (NVENC varsa o, yoksa x264)</option>
                   {(p!.videoKodlayicilari ?? []).map((k) => (
                     <option key={k.id} value={k.id}>
@@ -657,19 +815,49 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 {!p!.videoKodlayicilari && (
                   <>
                     <span />
-                    <span className="text-[11px] dt-soluk">Kodlayıcı listesi motor çalışırken kurulu OBS'ten okunur (yalnız bu sistemde gerçekten kullanılabilenler).</span>
+                    <span className="text-[11px] dt-soluk">
+                      Kodlayıcı listesi motor çalışırken kurulu OBS'ten okunur (yalnız bu sistemde gerçekten kullanılabilenler).
+                    </span>
                   </>
                 )}
                 <label htmlFor="ay-bh">Bit hızı (yatay)</label>
-                <SayiAlani id="ay-bh" deger={pr.cikis.bit_hizi_ana} en_az={200} en_cok={100000} birim="kbps" onUygula={(v) => void guncelle({ cikis: { bit_hizi_ana: v } })} />
+                <SayiAlani
+                  id="ay-bh"
+                  deger={pr.cikis.bit_hizi_ana}
+                  en_az={200}
+                  en_cok={100000}
+                  birim="kbps"
+                  onUygula={(v) => void guncelle({ cikis: { bit_hizi_ana: v } })}
+                />
                 <label htmlFor="ay-bhd">Bit hızı (dikey)</label>
-                <SayiAlani id="ay-bhd" deger={pr.cikis.bit_hizi_dikey} en_az={200} en_cok={100000} birim="kbps" onUygula={(v) => void guncelle({ cikis: { bit_hizi_dikey: v } })} />
+                <SayiAlani
+                  id="ay-bhd"
+                  deger={pr.cikis.bit_hizi_dikey}
+                  en_az={200}
+                  en_cok={100000}
+                  birim="kbps"
+                  onUygula={(v) => void guncelle({ cikis: { bit_hizi_dikey: v } })}
+                />
                 <label htmlFor="ay-sbh">Ses bit hızı</label>
-                <SayiAlani id="ay-sbh" deger={pr.cikis.ses_bit_hizi} en_az={32} en_cok={512} birim="kbps" onUygula={(v) => void guncelle({ cikis: { ses_bit_hizi: v } })} />
+                <SayiAlani
+                  id="ay-sbh"
+                  deger={pr.cikis.ses_bit_hizi}
+                  en_az={32}
+                  en_cok={512}
+                  birim="kbps"
+                  onUygula={(v) => void guncelle({ cikis: { ses_bit_hizi: v } })}
+                />
                 {pr.cikis.kip !== "basit" && (
                   <>
                     <label htmlFor="ay-ak">Anahtar kare aralığı</label>
-                    <SayiAlani id="ay-ak" deger={pr.cikis.anahtar_kare_sn} en_az={1} en_cok={10} birim="sn" onUygula={(v) => void guncelle({ cikis: { anahtar_kare_sn: v } })} />
+                    <SayiAlani
+                      id="ay-ak"
+                      deger={pr.cikis.anahtar_kare_sn}
+                      en_az={1}
+                      en_cok={10}
+                      birim="sn"
+                      onUygula={(v) => void guncelle({ cikis: { anahtar_kare_sn: v } })}
+                    />
                   </>
                 )}
                 <span className="dt-etiket">Kodlama paylaşımı</span>
@@ -688,7 +876,9 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                   ) : (
                     <OzellikGovdesi key={pr.cikis.kodlayici} oku={kodlayiciOku} yaz={kodlayiciYaz} bos="Bu kodlayıcının ayarı yok." />
                   )}
-                  <p className="px-3 pb-2 text-[11px] dt-soluk">Uzman ayarları temel ayarların (bit hızı, anahtar kare) üzerine yazılır ve kendiliğinden değiştirilmez.</p>
+                  <p className="px-3 pb-2 text-[11px] dt-soluk">
+                    Uzman ayarları temel ayarların (bit hızı, anahtar kare) üzerine yazılır ve kendiliğinden değiştirilmez.
+                  </p>
                 </div>
               )}
             </>
@@ -738,12 +928,27 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 Kayıt için ayrı kodlayıcı (yayın kodlayıcısını kullanma) — kaydı duraklatmak için gerekli
               </label>
               <label htmlFor="ay-bdk">Otomatik bölme (süre)</label>
-              <SayiAlani id="ay-bdk" deger={pr.kayit.bolme_dk} en_az={0} en_cok={1440} birim="dk (0 = kapalı)" onUygula={(v) => void guncelle({ kayit: { bolme_dk: v } })} />
+              <SayiAlani
+                id="ay-bdk"
+                deger={pr.kayit.bolme_dk}
+                en_az={0}
+                en_cok={1440}
+                birim="dk (0 = kapalı)"
+                onUygula={(v) => void guncelle({ kayit: { bolme_dk: v } })}
+              />
               <label htmlFor="ay-bmb">Otomatik bölme (boyut)</label>
-              <SayiAlani id="ay-bmb" deger={pr.kayit.bolme_mb} en_az={0} en_cok={1048576} birim="MB (0 = kapalı)" onUygula={(v) => void guncelle({ kayit: { bolme_mb: v } })} />
+              <SayiAlani
+                id="ay-bmb"
+                deger={pr.kayit.bolme_mb}
+                en_az={0}
+                en_cok={1048576}
+                birim="MB (0 = kapalı)"
+                onUygula={(v) => void guncelle({ kayit: { bolme_mb: v } })}
+              />
               <span />
               <span className="text-[11px] dt-soluk">
-                Çok izli kayıt: seçilen her iz dosyada ayrı ses akışıdır. Tam yol girin (ör. D:\Kayıtlar). Kayıt sırasında Denetimler'deki makasla elle de bölünebilir; yeni dosya aynı klasöre tarih-saatli adla yazılır.
+                Çok izli kayıt: seçilen her iz dosyada ayrı ses akışıdır. Tam yol girin (ör. D:\Kayıtlar). Kayıt sırasında Denetimler'deki makasla elle de
+                bölünebilir; yeni dosya aynı klasöre tarih-saatli adla yazılır.
               </span>
             </div>
           ) : bolum === "tekrar" ? (
@@ -761,12 +966,22 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
           ) : bolum === "ses" ? (
             <div className="dt-form">
               <label htmlFor="ay-tepe">Tepe ölçer tipi</label>
-              <select id="ay-tepe" className="dt-input" value={pr.gercek_tepe ? "gercek" : "ornek"} onChange={(e) => void guncelle({ gercek_tepe: e.target.value === "gercek" })}>
+              <select
+                id="ay-tepe"
+                className="dt-input"
+                value={pr.gercek_tepe ? "gercek" : "ornek"}
+                onChange={(e) => void guncelle({ gercek_tepe: e.target.value === "gercek" })}
+              >
                 <option value="ornek">Örnek tepe</option>
                 <option value="gercek">Gerçek tepe (true peak; daha çok işlemci)</option>
               </select>
               <label htmlFor="ay-dusus">Ölçer düşüş hızı</label>
-              <select id="ay-dusus" className="dt-input" value={dusus} onChange={(e) => (setDusus(e.target.value as DususHizi), dususYaz(e.target.value as DususHizi))}>
+              <select
+                id="ay-dusus"
+                className="dt-input"
+                value={dusus}
+                onChange={(e) => (setDusus(e.target.value as DususHizi), dususYaz(e.target.value as DususHizi))}
+              >
                 <option value="hizli">Hızlı</option>
                 <option value="orta">Orta (IEC 60268-18 tip I)</option>
                 <option value="yavas">Yavaş (IEC 60268-18 tip II)</option>
@@ -795,7 +1010,12 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 ))}
               </span>
               <label htmlFor="ay-orn">Örnekleme hızı</label>
-              <select id="ay-orn" className="dt-input w-40" value={pr.ses.ornekleme} onChange={(e) => void guncelle({ ses: { ornekleme: Number(e.target.value) } })}>
+              <select
+                id="ay-orn"
+                className="dt-input w-40"
+                value={pr.ses.ornekleme}
+                onChange={(e) => void guncelle({ ses: { ornekleme: Number(e.target.value) } })}
+              >
                 <option value={44100}>44,1 kHz</option>
                 <option value={48000}>48 kHz</option>
               </select>
@@ -830,13 +1050,20 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 <span className="text-[12px] dt-soluk">Aygıt listesi motor çalışırken okunur.</span>
               )}
               <span />
-              <span className="text-[11px] dt-soluk">Kaynakların hangi karışıma gideceği Gelişmiş Ses Özellikleri'nde, hedeflerin hangi karışımı alacağı Çoklu yayın'dadır.</span>
+              <span className="text-[11px] dt-soluk">
+                Kaynakların hangi karışıma gideceği Gelişmiş Ses Özellikleri'nde, hedeflerin hangi karışımı alacağı Çoklu yayın'dadır.
+              </span>
             </div>
           ) : bolum === "gelismis" ? (
             <div className="dt-form">
               <span className="dt-etiket col-span-2 font-semibold">Video</span>
               <label htmlFor="ay-rb">Renk biçimi</label>
-              <select id="ay-rb" className="dt-input w-72" value={pr.video.renk_bicimi} onChange={(e) => void guncelle({ video: { renk_bicimi: e.target.value } })}>
+              <select
+                id="ay-rb"
+                className="dt-input w-72"
+                value={pr.video.renk_bicimi}
+                onChange={(e) => void guncelle({ video: { renk_bicimi: e.target.value } })}
+              >
                 {Object.entries(BICIM_ADI).map(([k, a]) => (
                   <option key={k} value={k}>
                     {a}
@@ -844,7 +1071,12 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 ))}
               </select>
               <label htmlFor="ay-ru">Renk uzayı</label>
-              <select id="ay-ru" className="dt-input w-72" value={pr.video.renk_uzayi} onChange={(e) => void guncelle({ video: { renk_uzayi: e.target.value } })}>
+              <select
+                id="ay-ru"
+                className="dt-input w-72"
+                value={pr.video.renk_uzayi}
+                onChange={(e) => void guncelle({ video: { renk_uzayi: e.target.value } })}
+              >
                 {Object.entries(UZAY_ADI).map(([k, a]) => (
                   <option key={k} value={k} disabled={k.startsWith("2100") && !["p010", "i010"].includes(pr.video.renk_bicimi)}>
                     {a}
@@ -853,7 +1085,12 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 ))}
               </select>
               <label htmlFor="ay-ra">Renk aralığı</label>
-              <select id="ay-ra" className="dt-input w-72" value={pr.video.renk_araligi} onChange={(e) => void guncelle({ video: { renk_araligi: e.target.value } })}>
+              <select
+                id="ay-ra"
+                className="dt-input w-72"
+                value={pr.video.renk_araligi}
+                onChange={(e) => void guncelle({ video: { renk_araligi: e.target.value } })}
+              >
                 <option value="kismi">Sınırlı (kısmi)</option>
                 <option value="tam">Tam</option>
               </select>
@@ -894,12 +1131,28 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
                 Bağlantı koparsa otomatik yeniden bağlan
               </label>
               <label htmlFor="ay-rg">Deneme aralığı</label>
-              <SayiAlani id="ay-rg" deger={pr.ag.deneme_gecikmesi_sn} en_az={1} en_cok={30} birim="sn" devreDisi={!pr.ag.yeniden_baglan} onUygula={(v) => void guncelle({ ag: { deneme_gecikmesi_sn: v } })} />
+              <SayiAlani
+                id="ay-rg"
+                deger={pr.ag.deneme_gecikmesi_sn}
+                en_az={1}
+                en_cok={30}
+                birim="sn"
+                devreDisi={!pr.ag.yeniden_baglan}
+                onUygula={(v) => void guncelle({ ag: { deneme_gecikmesi_sn: v } })}
+              />
               <label htmlFor="ay-rd">En çok deneme</label>
-              <SayiAlani id="ay-rd" deger={pr.ag.en_cok_deneme} en_az={0} en_cok={10000} devreDisi={!pr.ag.yeniden_baglan} onUygula={(v) => void guncelle({ ag: { en_cok_deneme: v } })} />
+              <SayiAlani
+                id="ay-rd"
+                deger={pr.ag.en_cok_deneme}
+                en_az={0}
+                en_cok={10000}
+                devreDisi={!pr.ag.yeniden_baglan}
+                onUygula={(v) => void guncelle({ ag: { en_cok_deneme: v } })}
+              />
               <span />
               <span className="text-[11px] dt-soluk">
-                Renk ayarları motor yeniden başlayınca uygulanır; HDR (Rec. 2100) 10 bit biçim ister ve kodlayıcının da desteklemesi gerekir. Ağ ayarları bir hedef başlatılırken uygulanır.
+                Renk ayarları motor yeniden başlayınca uygulanır; HDR (Rec. 2100) 10 bit biçim ister ve kodlayıcının da desteklemesi gerekir. Ağ ayarları bir
+                hedef başlatılırken uygulanır.
               </span>
             </div>
           ) : bolum === "uzak" ? (
@@ -910,12 +1163,20 @@ export function YayinAyarlari({ baslangic = "cikis", motorKodlayicilari, onToast
             <div className="flex flex-col gap-2 p-3">
               {ms?.sinirlar && (
                 <p className="text-[11px] dt-soluk">
-                  Doğrulanmış sınırlar ({ms.sinirlar.dogrulama}): Kick en çok {ms.sinirlar.kickMaxKbps} kbps; YouTube anahtar kare en çok {ms.sinirlar.youtubeMaxKeyintSn} sn. Diğer platformlar için
-                  resmi önerileri platformun kendi sayfasından doğrulayın.
+                  Doğrulanmış sınırlar ({ms.sinirlar.dogrulama}): Kick en çok {ms.sinirlar.kickMaxKbps} kbps; YouTube anahtar kare en çok{" "}
+                  {ms.sinirlar.youtubeMaxKeyintSn} sn. Diğer platformlar için resmi önerileri platformun kendi sayfasından doğrulayın.
                 </p>
               )}
               {(ms?.destinations ?? []).map((h) => (
-                <HedefKarti key={h.id} h={h} profil={pr} sinirlar={ms?.sinirlar} onGuncelle={(d) => void guncelle(d)} onToast={onToast} onDegisti={() => void yukle()} />
+                <HedefKarti
+                  key={h.id}
+                  h={h}
+                  profil={pr}
+                  sinirlar={ms?.sinirlar}
+                  onGuncelle={(d) => void guncelle(d)}
+                  onToast={onToast}
+                  onDegisti={() => void yukle()}
+                />
               ))}
               <YeniHedef durum={ms} onToast={onToast} onDegisti={() => void yukle()} />
             </div>

@@ -28,6 +28,28 @@ pub const DIZIN_DOSYASI: &str = "koleksiyonlar.json";
 pub const YEDEK_DIZINI: &str = "koleksiyon-yedekleri";
 pub const VARSAYILAN_KIMLIK: &str = "varsayilan";
 pub const TUVALLER: [&str; 2] = ["ana", "dikey"];
+/// Kullanıcı tanımlı ek tuvallerin kimlik öneki (`tuval-<n>`)
+pub const EK_TUVAL_ONEK: &str = "tuval-";
+pub const EN_COK_EK_TUVAL: usize = 8;
+
+/// Kullanıcı tanımlı ek tuval (OBS 32 "Canvases" karşılığı): adı ve taban çözünürlüğü koleksiyonda saklanır
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct EkTuval {
+  pub id: String,
+  pub ad: String,
+  pub genislik: u32,
+  pub yukseklik: u32,
+}
+
+/// `tuval-<1–6 hane>`
+pub fn ek_tuval_kimligi(t: &str) -> bool {
+  t.strip_prefix(EK_TUVAL_ONEK).is_some_and(|n| !n.is_empty() && n.len() <= 6 && n.chars().all(|c| c.is_ascii_digit()) && !n.starts_with('0'))
+}
+
+/// Motorun kabul ettiği aralık: 16–8192, çift sayı
+pub fn ek_tuval_boyutu_gecerli(g: u32, y: u32) -> bool {
+  (16..=8192).contains(&g) && (16..=8192).contains(&y) && g.is_multiple_of(2) && y.is_multiple_of(2)
+}
 
 fn dogru() -> bool {
   true
@@ -403,6 +425,9 @@ pub struct Koleksiyon {
   /// Tuval → seçili adlandırılmış geçişin kimliği (türle seçilen geçişte yok)
   #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
   pub secili_gecis: BTreeMap<String, String>,
+  /// Kullanıcı tanımlı ek tuvaller (yatay ve dikeyin yanında)
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub ek_tuvaller: Vec<EkTuval>,
 }
 
 fn varsayilan_fps() -> u32 {
@@ -432,6 +457,7 @@ impl Default for Koleksiyon {
       adli_gecisler: Vec::new(),
       hizli_gecisler: Vec::new(),
       secili_gecis: BTreeMap::new(),
+      ek_tuvaller: Vec::new(),
     }
   }
 }
@@ -698,13 +724,65 @@ impl Koleksiyon {
     self.sahneler.iter().find(|s| s.id == id)
   }
 
-  /// Etkin tuvaller (dikey kapalıysa yalnız ana)
-  pub fn tuvaller(&self) -> Vec<&'static str> {
+  /// Etkin tuvaller: ana, (açıksa) dikey ve ek tuvaller
+  pub fn tuvaller(&self) -> Vec<String> {
+    let mut v = vec!["ana".to_string()];
     if self.dikey {
-      TUVALLER.to_vec()
-    } else {
-      vec!["ana"]
+      v.push("dikey".into());
     }
+    v.extend(self.ek_tuvaller.iter().map(|t| t.id.clone()));
+    v
+  }
+
+  pub fn tuval_etkin(&self, t: &str) -> bool {
+    t == "ana" || (t == "dikey" && self.dikey) || self.ek_tuval(t).is_some()
+  }
+
+  pub fn ek_tuval(&self, id: &str) -> Option<&EkTuval> {
+    self.ek_tuvaller.iter().find(|t| t.id == id)
+  }
+
+  /// Koleksiyonda ve `kullanilan`da (motor oturumunda başka boyutla kurulmuş tuvaller) olmayan ilk `tuval-<n>`
+  pub fn yeni_ek_tuval_kimligi(&self, kullanilan: &BTreeSet<String>) -> String {
+    (1..)
+      .map(|n| format!("{EK_TUVAL_ONEK}{n}"))
+      .find(|id| self.ek_tuval(id).is_none() && !kullanilan.contains(id))
+      .expect("sonsuz dizi")
+  }
+
+  /// Ek tuvalin kimliğini değiştirir (sahneler, program, geçiş, seçili geçiş, hedef atamaları dahil)
+  pub fn ek_tuval_kimligini_degistir(&mut self, eski: &str, yeni: &str) {
+    for t in self.ek_tuvaller.iter_mut().filter(|t| t.id == eski) {
+      t.id = yeni.to_string();
+    }
+    for s in self.sahneler.iter_mut().filter(|s| s.tuval == eski) {
+      s.tuval = yeni.to_string();
+    }
+    for h in self.hedefler.values_mut().filter(|h| h.tuval == eski) {
+      h.tuval = yeni.to_string();
+    }
+    if let Some(p) = self.program.remove(eski) {
+      self.program.insert(yeni.into(), p);
+    }
+    if let Some(g) = self.gecisler.remove(eski) {
+      self.gecisler.insert(yeni.into(), g);
+    }
+    if let Some(g) = self.secili_gecis.remove(eski) {
+      self.secili_gecis.insert(yeni.into(), g);
+    }
+  }
+
+  /// Ek tuvali ve sahnelerini kaldırır; o tuvale atanmış hedefler ana tuvale döner
+  pub fn ek_tuvali_kaldir(&mut self, id: &str) {
+    self.ek_tuvaller.retain(|t| t.id != id);
+    self.sahneler.retain(|s| s.tuval != id);
+    for h in self.hedefler.values_mut().filter(|h| h.tuval == id) {
+      h.tuval = "ana".into();
+    }
+    self.program.remove(id);
+    self.gecisler.remove(id);
+    self.secili_gecis.remove(id);
+    self.duzelt();
   }
 
   /// Yeni benzersiz kimlik (kaynak, sahne, grup, filtre için ortak sayaç): `<onek><n>`
@@ -740,8 +818,23 @@ impl Koleksiyon {
   /// Tutarlılık: her etkin tuvalde en az bir sahne, geçerli program sahnesi; bilinmeyen kaynağa işaret eden ve
   /// kendini içeren öğeler düşer.
   pub fn duzelt(&mut self) {
+    // Ek tuvaller: geçerli kimlik, tekil, geçerli boyut, en çok 8; adsıza ad verilir
+    let mut ek_gorulen = BTreeSet::new();
+    self
+      .ek_tuvaller
+      .retain(|t| ek_tuval_kimligi(&t.id) && ek_tuval_boyutu_gecerli(t.genislik, t.yukseklik) && ek_gorulen.insert(t.id.clone()));
+    self.ek_tuvaller.truncate(EN_COK_EK_TUVAL);
+    for t in self.ek_tuvaller.iter_mut() {
+      t.ad = t.ad.trim().chars().take(40).collect();
+      if t.ad.is_empty() {
+        t.ad = format!("Tuval {}", t.id.trim_start_matches(EK_TUVAL_ONEK));
+      }
+    }
+    let ekler: BTreeSet<String> = self.ek_tuvaller.iter().map(|t| t.id.clone()).collect();
     let mut gorulen = BTreeSet::new();
-    self.sahneler.retain(|s| !s.id.is_empty() && TUVALLER.contains(&s.tuval.as_str()) && gorulen.insert(s.id.clone()));
+    self
+      .sahneler
+      .retain(|s| !s.id.is_empty() && (TUVALLER.contains(&s.tuval.as_str()) || ekler.contains(&s.tuval)) && gorulen.insert(s.id.clone()));
     // Bağlı sahne: var olmalı ve başka tuvalde olmalı
     let tuvali: BTreeMap<String, String> = self.sahneler.iter().map(|s| (s.id.clone(), s.tuval.clone())).collect();
     for s in self.sahneler.iter_mut() {
@@ -751,12 +844,21 @@ impl Koleksiyon {
     }
     for tv in self.tuvaller() {
       if !self.sahneler.iter().any(|s| s.tuval == tv) {
-        let (id, ad) = if tv == "ana" { ("sahne-ana", "Sahne") } else { ("sahne-dikey", "Dikey sahne") };
-        let id = if self.kimlik_kullanimda(id) { self.yeni_kimlik("s") } else { id.to_string() };
-        self.sahneler.push(SahneKaydi { id, ad: ad.into(), tuval: tv.into(), ogeler: Vec::new(), gecis: None, ..Default::default() });
+        let (id, ad) = match tv.as_str() {
+          "ana" => ("sahne-ana".to_string(), "Sahne".to_string()),
+          "dikey" => ("sahne-dikey".to_string(), "Dikey sahne".to_string()),
+          ek => (format!("sahne-{ek}"), format!("{} sahnesi", self.ek_tuval(ek).map(|t| t.ad.as_str()).unwrap_or(ek))),
+        };
+        let id = if self.kimlik_kullanimda(&id) { self.yeni_kimlik("s") } else { id };
+        self.sahneler.push(SahneKaydi { id, ad, tuval: tv, ogeler: Vec::new(), gecis: None, ..Default::default() });
       }
     }
-    for tv in TUVALLER {
+    let tum: Vec<String> = TUVALLER.iter().map(|t| t.to_string()).chain(ekler.iter().cloned()).collect();
+    self.program.retain(|k, _| tum.contains(k));
+    for h in self.hedefler.values_mut().filter(|h| !tum.contains(&h.tuval)) {
+      h.tuval = "ana".into();
+    }
+    for tv in tum.iter().map(String::as_str) {
       let gecerli = self.program.get(tv).is_some_and(|p| self.sahneler.iter().any(|s| &s.id == p && s.tuval == tv));
       if !gecerli {
         match self.sahneler.iter().find(|s| s.tuval == tv) {

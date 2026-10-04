@@ -4,6 +4,7 @@
  * `?kaynak=<kimlik>&ad=<ad>` (motor kaynağı kendi tuvalinde işler, pencere kapanınca tuval bırakılır). Kareler `/ws/motor`
  * akışından (en çok 15 kare/sn); bağlantı yoksa PNG yoklaması. Esc ya da çift tık pencereyi kapatır.
  */
+import { EK_TUVAL, tuvalAdi } from "../lib/tuvaller";
 import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { API_BASE } from "../lib/api";
@@ -15,7 +16,8 @@ const GECERLI = ["ana", "dikey", "studyo-ana", "studyo-dikey"];
 
 export function projektorTuvali(arama: string): string {
   const t = new URLSearchParams(arama).get("tuval") ?? "ana";
-  return GECERLI.includes(t) ? t : "ana";
+  const taban = t.startsWith("studyo-") ? t.slice(7) : t;
+  return GECERLI.includes(t) || EK_TUVAL.test(taban) ? t : "ana";
 }
 
 /** `?kaynak=` geçerliyse sahne/kaynak kimliği (motor kimliği kuralı: küçük harf, rakam, tire; en çok 48) */
@@ -53,7 +55,13 @@ export default function ProjektorSayfasi() {
       (r) => setKaynakBoyu([r.genislik, r.yukseklik]),
       (e) => setKaynakHata(String((e as Error).message || e))
     );
-    const birak = () => void fetch(`${API_BASE}/api/motor/kaynak-tuvali`, { method: "POST", keepalive: true, headers: { "content-type": "application/json" }, body: JSON.stringify({ id: kaynak, eylem: "kapat" }) }).catch(() => {});
+    const birak = () =>
+      void fetch(`${API_BASE}/api/motor/kaynak-tuvali`, {
+        method: "POST",
+        keepalive: true,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: kaynak, eylem: "kapat" }),
+      }).catch(() => {});
     window.addEventListener("pagehide", birak);
     return () => {
       window.removeEventListener("pagehide", birak);
@@ -66,9 +74,20 @@ export default function ProjektorSayfasi() {
       );
     };
   }, [kaynak]);
+  // Ek tuvalin en-boy oranı motor durumundan (taban boyutu koleksiyonda)
+  const [ekBoyu, setEkBoyu] = useState<[number, number] | null>(null);
+  useEffect(() => {
+    const t = tuval.replace(/^studyo-/, "");
+    if (!kaynak && EK_TUVAL.test(t))
+      motorApi.durum().then(
+        (d) => setEkBoyu(d.tuvalBoyutlari?.[t] ?? null),
+        () => {}
+      );
+  }, [tuval, kaynak]);
   const hazir = !kaynak || !!kaynakBoyu;
-  const dikey = kaynak ? !!kaynakBoyu && kaynakBoyu[1] > kaynakBoyu[0] : tuval.endsWith("dikey");
-  const oran = kaynakBoyu ? `${kaynakBoyu[0]} / ${kaynakBoyu[1]}` : dikey ? "9 / 16" : "16 / 9";
+  const boyu = kaynakBoyu ?? ekBoyu;
+  const dikey = boyu ? boyu[1] > boyu[0] : tuval.endsWith("dikey");
+  const oran = boyu ? `${boyu[0]} / ${boyu[1]}` : dikey ? "9 / 16" : "16 / 9";
   const canli = useMotorCanli(hazir, { seviye: false, kare: hazir ? { tuval, genislik: 1280, fps: 15 } : null });
   const [yedek, setYedek] = useState<string | null>(null);
   const [imlec, setImlec] = useState(true);
@@ -97,7 +116,7 @@ export default function ProjektorSayfasi() {
   }, [canli.bagli, tuval, hazir]);
 
   useEffect(() => {
-    document.title = kaynak ? `Projektör — ${kaynakAdi}` : `Projektör — ${dikey ? "Dikey" : "Yatay"}${tuval.startsWith("studyo-") ? " (önizleme)" : ""}`;
+    document.title = kaynak ? `Projektör — ${kaynakAdi}` : `Projektör — ${tuvalAdi(tuval)}`;
     const tus = (e: KeyboardEvent) => e.key === "Escape" && void kapat();
     window.addEventListener("keydown", tus);
     // İmleç 2 sn hareketsizse gizlenir (tam ekran projektörde)

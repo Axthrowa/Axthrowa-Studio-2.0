@@ -698,6 +698,31 @@ impl Motor {
     Ok(())
   }
 
+  /// Ek tuvalin sahne grafiğini boşaltır (panel tuvali silerken): Studio Mode, Multiview ve sanal kamera hedefi
+  /// kapanır, geçiş boşaltılır, tuvalin sahneleri silinir. Tuval nesnesi ve kodlayıcıları motor oturumu boyunca kalır
+  /// (bağlı çıktılar varken serbest bırakmak güvenli değil); boş tuval siyah kare işler.
+  pub fn tuval_bosalt(&mut self, id: &str) -> Result<(), String> {
+    if id == "ana" || !self.kanvaslar.contains_key(id) {
+      return Err(format!("boşaltılacak ek tuval yok: {id}"));
+    }
+    if self.studyo.contains_key(id) {
+      self.studyo_kapat(id)?;
+    }
+    self.multiview_kapat(id);
+    self.sanal_kamera_tuvali_kapaniyor(id);
+    if let Some(g) = self.gecisler.get(id) {
+      unsafe {
+        (api().obs_transition_force_stop)(g.ptr);
+        (api().obs_transition_set)(g.ptr, std::ptr::null_mut());
+      }
+    }
+    let sahneler: Vec<String> = self.sahneler.iter().filter(|(_, s)| s.kanvas == id).map(|(k, _)| k.clone()).collect();
+    for s in sahneler {
+      self.sahne_sil(&s)?;
+    }
+    Ok(())
+  }
+
   pub fn tuvaller(&self) -> Vec<TuvalBilgisi> {
     self
       .kanvaslar

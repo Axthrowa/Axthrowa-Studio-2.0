@@ -4,16 +4,10 @@
  * Tuval önizlemeleri, kaynak ekleme/silme, hedef başına tuval seçimi ve bağımsız başlat/durdur. Kaynakları ve tuvalleri
  * çekirdek işler; bu bileşen yalnız `/api/motor` uçlarını çağırır (izin + denetim sunucuda).
  */
+import { tuvalAdi } from "../../lib/tuvaller";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Cpu, Play, Plus, Square, Trash2 } from "lucide-react";
-import {
-  CIKIS_DURUM_ETIKETI,
-  hedefBaslatilabilir,
-  KAYNAK_TURLERI,
-  motorApi,
-  type MotorDurumu,
-  type MotorKaynakTuru,
-} from "../../lib/api/motor";
+import { CIKIS_DURUM_ETIKETI, hedefBaslatilabilir, KAYNAK_TURLERI, motorApi, type MotorDurumu, type MotorKaynakTuru } from "../../lib/api/motor";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 
 const DURUM_RENGI: Record<string, string> = {
@@ -55,8 +49,15 @@ function Onizleme({ tuval, oran }: { tuval: string; oran: string }) {
   }, [tuval]);
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="flex items-center justify-center overflow-hidden rounded-md border border-white/10 bg-black/40" style={{ aspectRatio: oran, height: 150 }}>
-        {url ? <img src={url} alt={`${tuval} tuvali önizlemesi`} className="h-full w-full object-contain" /> : <span className="text-[10px] text-panel-muted">hazırlanıyor…</span>}
+      <div
+        className="flex items-center justify-center overflow-hidden rounded-md border border-white/10 bg-black/40"
+        style={{ aspectRatio: oran, height: 150 }}
+      >
+        {url ? (
+          <img src={url} alt={`${tuval} tuvali önizlemesi`} className="h-full w-full object-contain" />
+        ) : (
+          <span className="text-[10px] text-panel-muted">hazırlanıyor…</span>
+        )}
       </div>
       <span className="text-[10px] text-panel-muted">{tuval === "ana" ? "Yatay 1920×1080" : "Dikey 1080×1920"}</span>
     </div>
@@ -139,7 +140,12 @@ export function MotorPanel({ onToast }: { onToast: (m: string) => void }) {
               <option value={60}>60 fps</option>
               <option value={30}>30 fps</option>
             </select>
-            <button type="button" className="yya-btn-primary !px-2 !py-1" disabled={yuk !== null} onClick={() => void yap("Motor başlatılamadı", () => motorApi.baslat(dikey, fps))}>
+            <button
+              type="button"
+              className="yya-btn-primary !px-2 !py-1"
+              disabled={yuk !== null}
+              onClick={() => void yap("Motor başlatılamadı", () => motorApi.baslat(dikey, fps))}
+            >
               <Play className="mr-1 inline h-3 w-3" />
               {yuk ? "Başlatılıyor…" : "Motoru başlat"}
             </button>
@@ -173,9 +179,17 @@ export function MotorPanel({ onToast }: { onToast: (m: string) => void }) {
               {d.kaynaklar.map((k) => (
                 <div key={k.id} className="flex items-center justify-between gap-2 rounded bg-white/[0.04] px-2 py-1">
                   <span className="min-w-0 truncate text-white/85">
-                    {k.ad} <span className="text-panel-muted">· {KAYNAK_TURLERI.find((x) => x.tur === k.tur)?.ad ?? k.tur} · {k.eksik ? "eksik tür" : `${k.filtreler?.length ?? 0} filtre`}</span>
+                    {k.ad}{" "}
+                    <span className="text-panel-muted">
+                      · {KAYNAK_TURLERI.find((x) => x.tur === k.tur)?.ad ?? k.tur} · {k.eksik ? "eksik tür" : `${k.filtreler?.length ?? 0} filtre`}
+                    </span>
                   </span>
-                  <button type="button" aria-label={`${k.ad} kaynağını sil`} className="rounded p-1 text-red-300 hover:bg-white/10" onClick={() => void yap("Kaynak silinemedi", () => motorApi.kaynakSil(k.id))}>
+                  <button
+                    type="button"
+                    aria-label={`${k.ad} kaynağını sil`}
+                    className="rounded p-1 text-red-300 hover:bg-white/10"
+                    onClick={() => void yap("Kaynak silinemedi", () => motorApi.kaynakSil(k.id))}
+                  >
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
@@ -199,11 +213,33 @@ export function MotorPanel({ onToast }: { onToast: (m: string) => void }) {
                 ))}
               </select>
               {tanim.deger === "renk" && <input type="color" aria-label="Renk" value={deger} onChange={(e) => setDeger(e.target.value)} />}
-              {tanim.deger === "yazi" && <input className="yya-input !py-1 text-xs" aria-label="Yazı" placeholder="Yazı" maxLength={500} value={deger} onChange={(e) => setDeger(e.target.value)} />}
-              {tanim.deger === "dosya" && (
-                <input className="yya-input min-w-[14rem] !py-1 text-xs" aria-label="Dosya yolu" placeholder="C:\…\dosya" value={deger} onChange={(e) => setDeger(e.target.value)} />
+              {tanim.deger === "yazi" && (
+                <input
+                  className="yya-input !py-1 text-xs"
+                  aria-label="Yazı"
+                  placeholder="Yazı"
+                  maxLength={500}
+                  value={deger}
+                  onChange={(e) => setDeger(e.target.value)}
+                />
               )}
-              <input className="yya-input w-28 !py-1 text-xs" aria-label="Kaynak adı" placeholder="Ad (isteğe bağlı)" maxLength={60} value={ad} onChange={(e) => setAd(e.target.value)} />
+              {tanim.deger === "dosya" && (
+                <input
+                  className="yya-input min-w-[14rem] !py-1 text-xs"
+                  aria-label="Dosya yolu"
+                  placeholder="C:\…\dosya"
+                  value={deger}
+                  onChange={(e) => setDeger(e.target.value)}
+                />
+              )}
+              <input
+                className="yya-input w-28 !py-1 text-xs"
+                aria-label="Kaynak adı"
+                placeholder="Ad (isteğe bağlı)"
+                maxLength={60}
+                value={ad}
+                onChange={(e) => setAd(e.target.value)}
+              />
               {tuvaller.length > 1 &&
                 tuvaller.map((t) => (
                   <label key={t} className="inline-flex items-center gap-1 text-white/75">
@@ -212,7 +248,7 @@ export function MotorPanel({ onToast }: { onToast: (m: string) => void }) {
                       checked={tuvalSec.includes(t)}
                       onChange={(e) => setTuvalSec((s) => (e.target.checked ? [...new Set([...s, t])] : s.filter((x) => x !== t)))}
                     />
-                    {t === "ana" ? "Yatay" : "Dikey"}
+                    {tuvalAdi(t)}
                   </label>
                 ))}
               <button
@@ -221,7 +257,12 @@ export function MotorPanel({ onToast }: { onToast: (m: string) => void }) {
                 disabled={yuk !== null || (tanim.deger !== "yok" && !deger.trim())}
                 onClick={() =>
                   void yap("Kaynak eklenemedi", async () => {
-                    await motorApi.kaynakEkle(tur, deger, ad, tuvalSec.filter((t) => tuvaller.includes(t)));
+                    await motorApi.kaynakEkle(
+                      tur,
+                      deger,
+                      ad,
+                      tuvalSec.filter((t) => tuvaller.includes(t))
+                    );
                     setAd("");
                   })
                 }
@@ -266,12 +307,17 @@ export function MotorPanel({ onToast }: { onToast: (m: string) => void }) {
                     >
                       {tuvaller.map((t) => (
                         <option key={t} value={t}>
-                          {t === "ana" ? "Yatay" : "Dikey"}
+                          {tuvalAdi(t)}
                         </option>
                       ))}
                     </select>
                     {canli ? (
-                      <button type="button" className="yya-btn-ghost !px-2 !py-0.5" disabled={yuk !== null} onClick={() => void yap("Hedef durdurulamadı", () => motorApi.hedef(h.id, "durdur"))}>
+                      <button
+                        type="button"
+                        className="yya-btn-ghost !px-2 !py-0.5"
+                        disabled={yuk !== null}
+                        onClick={() => void yap("Hedef durdurulamadı", () => motorApi.hedef(h.id, "durdur"))}
+                      >
                         Durdur
                       </button>
                     ) : (

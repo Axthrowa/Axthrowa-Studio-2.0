@@ -85,6 +85,8 @@ import { KaynakRengiDiyalogu } from "./KaynakRengiDiyalogu";
 import { TBar } from "./TBar";
 import { RemuxPenceresi } from "./RemuxPenceresi";
 import { AltyaziPenceresi } from "./AltyaziPenceresi";
+import { TuvallerPenceresi } from "./TuvallerPenceresi";
+import { tuvalleriKaydet } from "../../lib/tuvaller";
 import { YayinBilgisiDock } from "./YayinBilgisiDock";
 import { EksikDosyalarPenceresi } from "./EksikDosyalarPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
@@ -344,6 +346,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [kaynakRengi, setKaynakRengi] = useState<MotorSahneOgesi | null>(null);
   const [remuxAcik, setRemuxAcik] = useState(false);
   const [altyaziAcik, setAltyaziAcik] = useState(false);
+  const [tuvallerAcik, setTuvallerAcik] = useState(false);
   const [eksikDosyalar, setEksikDosyalar] = useState(false);
   /** Sanal kamera hedefi (OBS 30+ "Output Type"): program / önizleme / sahne; kamera kapalıyken seçilir */
   const [skHedef, setSkHedef] = useState<{ tur: "program" } | { tur: "onizleme" } | { tur: "sahne" | "kaynak"; id: string; ad: string }>({ tur: "program" });
@@ -516,9 +519,14 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const onizleme = studyo ? (sl?.studyo[tuval] ?? program ?? null) : undefined;
   const aktifSahne = studyo ? (onizleme ?? program) : program;
   // Tuval boyutları profilden (Ayarlar > Video); motor durumu gelene dek varsayılan
-  const boyutlar: Record<string, [number, number]> = { ana: d?.tuvalBoyutlari?.ana ?? BOYUT.ana, dikey: d?.tuvalBoyutlari?.dikey ?? BOYUT.dikey };
+  const boyutlar: Record<string, [number, number]> = { ...BOYUT, ...(d?.tuvalBoyutlari ?? {}) };
   const gecisAdi = (tur: string) => sl?.gecisTurleri?.find((t) => t.id === tur)?.ad ?? tur;
-  const tuvaller = calisiyor ? (sl?.dikey || d?.dikey ? ["ana", "dikey"] : ["ana"]) : [];
+  const tuvaller = calisiyor ? (sl?.tuvaller?.map((t) => t.id) ?? (sl?.dikey || d?.dikey ? ["ana", "dikey"] : ["ana"])) : [];
+  tuvalleriKaydet(sl?.tuvaller);
+  // Seçili tuval silindiyse yataya dön
+  useEffect(() => {
+    if (tuvaller.length && !tuvaller.includes(tuval)) setTuval("ana");
+  }, [tuvaller, tuval]);
 
   const durumYenile = useCallback(async () => {
     try {
@@ -1468,6 +1476,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         },
         { etiket: "Koleksiyonları yönet (çoğalt, adlandır, içe/dışa aktar, OBS'ten al)…", eylem: () => setKoleksiyonPenceresi(true) },
         { etiket: "Eksik dosyaları denetle…", devreDisi: !calisiyor, eylem: () => setEksikDosyalar(true) },
+        { etiket: "Tuvaller…", devreDisi: !calisiyor, eylem: () => setTuvallerAcik(true) },
       ],
     },
     {
@@ -2366,6 +2375,17 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       {eksikDosyalar && <EksikDosyalarPenceresi onToast={onToast} onDegisti={() => void sahneYenile()} onKapat={() => setEksikDosyalar(false)} />}
       {guncelleme && <GuncellemePenceresi onKapat={() => setGuncelleme(false)} />}
       {remuxAcik && <RemuxPenceresi onKapat={() => setRemuxAcik(false)} onToast={onToast} />}
+      {tuvallerAcik && (
+        <TuvallerPenceresi
+          tuvaller={sl?.tuvaller ?? []}
+          onKapat={() => setTuvallerAcik(false)}
+          onDegisti={() => {
+            void sahnelerYenile();
+            void durumYenile();
+          }}
+          onToast={onToast}
+        />
+      )}
       {altyaziAcik && <AltyaziPenceresi hedefler={d?.hedefler ?? []} onKapat={() => setAltyaziAcik(false)} />}
       {gunlukAcik && <GunlukPenceresi key={gunlukAcik} tur={gunlukAcik} onKapat={() => setGunlukAcik(false)} />}
       {zamanlayiciAcik && (

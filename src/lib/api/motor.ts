@@ -2,6 +2,7 @@
  * Yerel yayın çekirdeği istemcisi (`/api/motor…`). Çekirdek ayrı bir süreçtir (libobs); panel yalnız bu uçlar
  * üzerinden yönetir. Yayın anahtarları hiçbir yanıtta yer almaz.
  */
+import type { TuvalBilgisi } from "../tuvaller";
 import { API_BASE } from "../api";
 import type { Cokme } from "./eklentiler";
 import type { OzellikTanimi } from "../ozellikFormu";
@@ -90,7 +91,8 @@ export type MotorDurumu = {
   eklentiler: MotorEklentiSonucu[];
   guvenliKip: boolean;
   /** Profildeki tuval taban boyutları */
-  tuvalBoyutlari?: Record<"ana" | "dikey", [number, number]>;
+  /** Tuval → taban boyutu (ana, dikey ve ek tuvaller) */
+  tuvalBoyutlari?: Record<string, [number, number]>;
   video?: MotorVideoAyari;
   /** Windows performans sayaçlarından 3D motor kullanımı (%); ölçüm yoksa null */
   gpu?: { sistem: number; motor: number | null } | null;
@@ -188,6 +190,8 @@ export type MotorSahneler = {
   gecisler: Record<string, MotorGecis>;
   gecisTurleri: { id: string; ad: string }[] | null;
   dikey?: boolean;
+  /** Etkin tuvaller (yatay, dikey, ek tuvaller) */
+  tuvaller?: TuvalBilgisi[];
   adliGecisler?: MotorAdliGecis[];
   hizliGecisler?: MotorHizliGecis[];
   /** Tuval → seçili adlandırılmış geçiş */
@@ -390,6 +394,8 @@ export const motorApi = {
     sure_ms?: number;
   }) => istek<{ id?: string }>("/api/motor/gecis-listesi", govde),
   studyoHizli: (tuval: string, hizli: string) => istek<{ program: string | null }>("/api/motor/studyo", { tuval, eylem: "hizli", hizli }),
+  tuval: (govde: { eylem: "ekle" | "adlandir" | "boyut" | "sil"; id?: string; ad?: string; genislik?: number; yukseklik?: number }) =>
+    istek<{ id: string; sahne?: string; motorYenidenBaslamali?: boolean }>("/api/motor/tuval", govde),
   altyazi: (metin: string, sure_sn?: number, hedefler?: string[]) =>
     istek<{ ok: boolean; hedefler: string[] }>("/api/motor/altyazi", { metin, sure_sn, hedefler }),
   gecisAyarla: (tuval: string, tur: string, sure_ms?: number) => istek<{ ok: boolean }>("/api/motor/gecis", { tuval, tur, sure_ms }),

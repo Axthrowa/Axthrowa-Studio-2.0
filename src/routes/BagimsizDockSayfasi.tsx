@@ -19,6 +19,7 @@ import { sahneAgaci } from "../lib/sahneAgaci";
 import { KaynaklarDock } from "../components/broadcast/KaynaklarDock";
 import { GecislerDock } from "../components/broadcast/GecislerDock";
 import { DenetimlerDock } from "../components/broadcast/DenetimlerDock";
+import { tuvalleriKaydet } from "../lib/tuvaller";
 import { BAGIMSIZ_DOCKLAR, type BagimsizDockKimligi } from "../lib/dockDuzeni";
 import { useMotorCanli } from "../lib/motorCanli";
 import { clearVisibleInterval, setVisibleInterval } from "../lib/visibleInterval";
@@ -81,9 +82,10 @@ export default function BagimsizDockSayfasi() {
       setD(x);
       if (!x.calisiyor) return;
       if (id === "mikser") setSes(await motorApi.ses());
-      if (id === "sahneler" || id === "kaynaklar" || id === "gecisler" || id === "denetimler") {
+      if (id === "sahneler" || id === "kaynaklar" || id === "gecisler" || id === "denetimler" || id === "hedefler") {
         const s = await motorApi.sahneler();
         setSl(s);
+        tuvalleriKaydet(s.tuvaller);
         if (id === "kaynaklar") {
           // Ana tuvalin etkin sahnesi: Studio Mode'da önizleme, değilse program (ana pencereyle aynı kural)
           const hedef = Object.prototype.hasOwnProperty.call(s.studyo, "ana") ? (s.studyo.ana ?? s.program.ana) : s.program.ana;
@@ -316,7 +318,7 @@ export default function BagimsizDockSayfasi() {
     icerik = (
       <HedeflerDock
         d={d}
-        tuvaller={d.dikey ? ["ana", "dikey"] : ["ana"]}
+        tuvaller={sl?.tuvaller?.map((t) => t.id) ?? (d.dikey ? ["ana", "dikey"] : ["ana"])}
         mesgul={false}
         bitHizi={bitHizi}
         onBaslat={(h, t, iz) => void yap(() => motorApi.hedef(h, "baslat", t, iz))}

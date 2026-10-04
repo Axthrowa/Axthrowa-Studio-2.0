@@ -905,6 +905,20 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   m.kaynak_tuvali_kapat("yazi");
   let pj_kapali = m.onizleme_png("kaynak-yazi", 480).is_err();
   let pj_yok = m.kaynak_tuvali_ac("boyle-kaynak-yok").is_err();
+  // Ek tuval (kullanıcı tanımlı): oluşur, sahnesi programa alınır, kare verir; boşaltılınca sahnesi ve programı kalkar
+  let ek_tuval = (|| -> Result<(bool, bool, bool, bool), String> {
+    m.tuval_olustur("tuval-9", "Kare", 640, 640)?;
+    m.sahne_olustur("ek-sahne", "tuval-9", "Ek sahne")?;
+    m.sahneye_ekle("ek-sahne", "yazi", &Donusum::default())?;
+    m.sahneye_gec("ek-sahne", false, None)?;
+    let _ = m.onizleme_png("tuval-9", 320);
+    std::thread::sleep(Duration::from_millis(700));
+    let kare = m.onizleme_png("tuval-9", 320)?.and_then(|b| png::Decoder::new(b.as_slice()).read_info().ok().map(|o| (o.info().width, o.info().height)));
+    let program = m.program_sahnesi("tuval-9").as_deref() == Some("ek-sahne");
+    m.tuval_bosalt("tuval-9")?;
+    let bos = m.program_sahnesi("tuval-9").is_none() && m.tuvaller().iter().any(|t| t.id == "tuval-9" && t.sahneler.is_empty());
+    Ok((kare == Some((320, 320)), program, bos, m.tuval_bosalt("ana").is_err()))
+  })();
   // Sanal kamera "Kaynak" hedefi: dikey küçük yeşil kaynak ana tuval boyutunda (16:9) ortalanır, yanlar boş kalır;
   // kaynak silinince tuval de kapanır
   /// genişlik, yükseklik, orta piksel, kenar piksel, silinince kapandı
@@ -1207,6 +1221,11 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     "altyazı (CEA-608): seçilen yayına gömülür, diğerine gitmez; boş metin ve etkin olmayan hedef reddedilir",
     altyazi.as_ref().is_ok_and(|h| h == &["hedef-a".to_string()]) && altyazi_a.contains("SINAMA ALTYAZI 42") && !altyazi_c.contains("SINAMA") && altyazi_red,
     format!("{altyazi:?}; hedef-a: {:?}; hedef-c altyazısız: {}; red {altyazi_red}", altyazi_a.lines().filter(|l| l.contains("SINAMA")).collect::<Vec<_>>(), !altyazi_c.contains("SINAMA")),
+  );
+  ekle(
+    "ek tuval: kendi boyutunda kare verir, sahnesi programda; boşaltılınca sahnesi kalkar; ana tuval boşaltılamaz",
+    ek_tuval.as_ref().is_ok_and(|(k, p, b, a)| *k && *p && *b && *a),
+    format!("{ek_tuval:?} (kare 320×320, program, boş, ana reddi)"),
   );
   ekle(
     "sanal kamera kaynak hedefi: kaynak ana tuval boyutunda (16:9) ortalanıp sığdırılır, silinince tuval kapanır",

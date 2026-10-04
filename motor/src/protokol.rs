@@ -140,6 +140,10 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       m.tuval_olustur(id()?, metin(istek, "ad").unwrap_or(id()?), sayi(istek, "genislik", None)? as u32, sayi(istek, "yukseklik", None)? as u32)?;
       json!({})
     }
+    "tuval.bosalt" => {
+      m.tuval_bosalt(id()?)?;
+      json!({})
+    }
     "sahne.olustur" => {
       m.sahne_olustur(id()?, metin(istek, "tuval").unwrap_or("ana"), metin(istek, "ad").unwrap_or(id()?))?;
       json!({})

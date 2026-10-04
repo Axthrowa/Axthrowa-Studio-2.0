@@ -246,7 +246,29 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
       ..Default::default()
     })
   };
+  // OBS 32 ek tuvalleri: sahneler `canvas_uuid` ile tuvaline bağlıdır; program sahnesinin tuvali ana tuvaldir. Tuval
+  // kaydında boyut yok (yalnız ad/uuid/bayrak) — 1920×1080 alınır, kullanıcı Tuvaller penceresinden düzeltir.
+  let program_adi = obs["current_program_scene"].as_str().unwrap_or("");
+  let ana_uuid = sahne_json.iter().find(|(_, s)| s["name"].as_str() == Some(program_adi)).and_then(|(_, s)| s["canvas_uuid"].as_str()).unwrap_or("");
+  let mut tuval_esle: HashMap<String, String> = HashMap::new();
+  for c in obs["canvases"].as_array().into_iter().flatten() {
+    let uuid = c["uuid"].as_str().unwrap_or("");
+    if uuid.is_empty() || uuid == ana_uuid || c["private"].as_bool() == Some(true) {
+      continue;
+    }
+    if k.ek_tuvaller.len() >= crate::motor_koleksiyon::EN_COK_EK_TUVAL {
+      r.notlar.push(format!("«{}» tuvali aktarılmadı (en çok 8 ek tuval); sahneleri ana tuvalde", c["name"].as_str().unwrap_or("?")));
+      continue;
+    }
+    let id = format!("tuval-{}", k.ek_tuvaller.len() + 1);
+    k.ek_tuvaller.push(crate::motor_koleksiyon::EkTuval { id: id.clone(), ad: c["name"].as_str().unwrap_or("").chars().take(40).collect(), genislik: 1920, yukseklik: 1080 });
+    tuval_esle.insert(uuid.to_string(), id);
+  }
+  if !k.ek_tuvaller.is_empty() {
+    r.notlar.push(format!("{} ek tuval aktarıldı; OBS dosyası tuval boyutunu saklamadığı için 1920×1080 alındı — Sahne Koleksiyonu › Tuvaller'den düzeltin", k.ek_tuvaller.len()));
+  }
   for (sid, s) in &sahne_json {
+    let tuval = s["canvas_uuid"].as_str().and_then(|u| tuval_esle.get(u)).cloned().unwrap_or_else(|| "ana".into());
     let mut ogeler = Vec::new();
     for o in s["settings"]["items"].as_array().into_iter().flatten() {
       let Some(hedef) = kimlik(o) else {
@@ -267,7 +289,7 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
     let filtreler = filtreleri_cevir(sid, s, &mut r);
     // OBS "Multiview'da göster": sahnenin özel ayarlarında `show_in_multiview` (yoksa gösterilir)
     let multiview_gizli = s["private_settings"]["show_in_multiview"].as_bool() == Some(false);
-    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval: "ana".into(), ogeler, gecis: None, filtreler, multiview_gizli, bagli: None });
+    k.sahneler.push(SahneKaydi { id: sid.clone(), ad: s["name"].as_str().unwrap_or("Sahne").to_string(), tuval, ogeler, gecis: None, filtreler, multiview_gizli, bagli: None });
     r.sahne += 1;
   }
   // Sahne sırası (OBS "scene_order")
@@ -310,9 +332,6 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
       k.secili_gecis.insert("ana".into(), id);
     }
   }
-  if obs.get("canvases").and_then(Value::as_array).is_some_and(|c| !c.is_empty()) {
-    r.notlar.push("Ek tuvaller (OBS 31+) aktarılmadı; tüm sahneler ana tuvalde".into());
-  }
   k.duzelt();
   Ok((k, r))
 }
@@ -320,6 +339,25 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn ek_tuval_canvas_uuid_ile_aktarilir() {
+    let obs = json!({
+      "current_program_scene": "Ana",
+      "canvases": [{"name": "Dikey (eklenti)", "uuid": "c2", "flags": 0}, {"name": "Gizli", "uuid": "c3", "private": true}],
+      "sources": [
+        {"name": "Ana", "uuid": "s1", "id": "scene", "canvas_uuid": "c1", "settings": {"items": []}},
+        {"name": "Dikey sahne", "uuid": "s2", "id": "scene", "canvas_uuid": "c2", "settings": {"items": []}}
+      ]
+    });
+    let (k, r) = cevir(&obs, "Sınama", &[]).unwrap();
+    assert_eq!(k.ek_tuvaller.len(), 1);
+    assert_eq!((k.ek_tuvaller[0].id.as_str(), k.ek_tuvaller[0].ad.as_str()), ("tuval-1", "Dikey (eklenti)"));
+    let tuval = |ad: &str| k.sahneler.iter().find(|s| s.ad == ad).unwrap().tuval.clone();
+    assert_eq!((tuval("Ana"), tuval("Dikey sahne")), ("ana".to_string(), "tuval-1".to_string()));
+    assert!(k.program.contains_key("tuval-1"));
+    assert!(r.notlar.iter().any(|n| n.contains("1920×1080")));
+  }
 
   fn ornek() -> Value {
     json!({

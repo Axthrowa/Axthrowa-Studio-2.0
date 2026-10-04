@@ -117,7 +117,7 @@ kullanır), NSIS (motor kurulum dosyasına girer). Ayrıntı: [OBS_FUNCTIONAL_PA
 | Ses izleme | yalnız "kapalı" sınandı | Hoparlöre ses verilmez kuralı |
 | Küresel kısayol basışı | UNVERIFIED | Masaüstü girdi otomasyonu kullanılmaz; eylemler kayıt defteri üzerinden sınandı |
 | Gerçek platforma yayın | UNVERIFIED | Yalnız 127.0.0.1 alıcıları; "Sına" yalnız TCP bağlantısı |
-| Ek tuvaller (OBS 31+) içe aktarımı | YOK | Tüm sahneler ana tuvale alınır, not düşülür |
+| Ek tuvaller (OBS 31+) içe aktarımı | KISMİ | Sahneler `canvas_uuid` ile kendi ek tuvallerine aktarılır (en çok 8); OBS tuval boyutunu dosyada saklamadığı için 1920×1080 alınır ve not düşülür |
 | Solo | YOK | OBS'te de yok |
 | Video/ses ayarı değişimi | çıktı yokken | Kare hızı, çözünürlük, renk, örnekleme değişince motor yeniden başlar; yayın/kayıt sürerken reddedilir (OBS'te de) |
 | HDR (Rec. 2100) | UNVERIFIED | Ayar ve 10 bit biçim zorunluluğu var; HDR kodlama/ekran çıktısı sınanmadı |

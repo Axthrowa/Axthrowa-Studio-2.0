@@ -85,6 +85,7 @@ import { KaynakRengiDiyalogu } from "./KaynakRengiDiyalogu";
 import { TBar } from "./TBar";
 import { RemuxPenceresi } from "./RemuxPenceresi";
 import { AltyaziPenceresi } from "./AltyaziPenceresi";
+import { YayinBilgisiDock } from "./YayinBilgisiDock";
 import { EksikDosyalarPenceresi } from "./EksikDosyalarPenceresi";
 import { MultiviewPenceresi } from "./MultiviewPenceresi";
 import { KaynakAracCubugu } from "./KaynakAracCubugu";
@@ -1779,6 +1780,8 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
         return <TarayiciDock onToast={onToast} />;
       case "klipler":
         return <KliplerDock onToast={onToast} />;
+      case "yayinbilgisi":
+        return <YayinBilgisiDock onToast={onToast} />;
       case "deste":
         return (
           <section className="dt-dock h-full" aria-label="Hızlı eylemler">

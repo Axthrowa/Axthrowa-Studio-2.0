@@ -9,7 +9,19 @@
  */
 
 export type DockKimligi =
-  "sahneler" | "kaynaklar" | "mikser" | "gecisler" | "denetimler" | "hedefler" | "istatistik" | "sohbet" | "etkinlik" | "deste" | "tarayici" | "klipler";
+  | "sahneler"
+  | "kaynaklar"
+  | "mikser"
+  | "gecisler"
+  | "denetimler"
+  | "hedefler"
+  | "istatistik"
+  | "sohbet"
+  | "etkinlik"
+  | "deste"
+  | "tarayici"
+  | "klipler"
+  | "yayinbilgisi";
 
 export const DOCKLAR: { id: DockKimligi; ad: string; varsayilan: boolean; oran: number; kontrolMerkezi?: boolean }[] = [
   { id: "sahneler", ad: "Sahneler", varsayilan: true, oran: 1 },
@@ -24,6 +36,7 @@ export const DOCKLAR: { id: DockKimligi; ad: string; varsayilan: boolean; oran: 
   { id: "deste", ad: "Hızlı Eylemler", varsayilan: false, oran: 1.2, kontrolMerkezi: true },
   { id: "tarayici", ad: "Tarayıcı (özel)", varsayilan: false, oran: 1.4 },
   { id: "klipler", ad: "Klipler (Backtrack)", varsayilan: false, oran: 1.3 },
+  { id: "yayinbilgisi", ad: "Yayın Bilgisi", varsayilan: false, oran: 1.1 },
 ];
 
 /** Ayrı pencereye çıkarılabilen docklar (`/dock?id=…`; Docklar menüsü bu listeden üretilir) */
@@ -41,6 +54,7 @@ export const BAGIMSIZ_DOCKLAR: BagimsizDockKimligi[] = [
   "deste",
   "tarayici",
   "klipler",
+  "yayinbilgisi",
 ];
 
 export type DockDuzeni = {

@@ -185,7 +185,7 @@ VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yü
 |---|---|---|---|
 | Çoklu yayın kartları, hedef başına tuval/kodlayıcı/ses izi, tek başına başlat/durdur, durum | VAR | sinama, it:multistream_… | Yalnız 127.0.0.1 alıcılarıyla sınandı; gerçek platform UNVERIFIED |
 | Yayın öncesi kontrol (GO LIVE) | VAR | it | |
-| Yayın bilgisi dock'u (başlık/kategori, platform API'si) | YOK | | Platform OAuth'u gerektirir |
+| Yayın bilgisi dock'u (başlık/kategori, platform API'si) | KISMİ | it:yayin_bilgisi_kick_bagli_degilken, rust:kanal_govdesi_dogrular, vitest | Docklar › Yayın Bilgisi: **Kick** kanalının başlığı/kategorisi okunur (`GET /public/v1/channels`), kategori aranır, başlık/kategori/etiketler onayla güncellenir (`PATCH /public/v1/channels`, `channel:write` — resmi belge docs.kick.com). Önceden bağlanmış hesapta yazma kapsamı yoktur → yeniden bağlanana dek yalnız okuma. Gerçek kanal sınamada değiştirilmedi: güncelleme çalışma anı **UNVERIFIED**. Twitch/YouTube: bu uygulamada OAuth bağlantısı yok (dock söyler) |
 | Çoklu tuval (yatay + dikey) | KISMİ | sinama, it:motor_bagli_sahneler | İki sabit tuval; **bağlı sahneler VAR** (sahne bağlam menüsü › Bağlı sahne: programa alınınca diğer tuvaldeki eşi de geçişle programa alınır, tek atlama; eş silinince bağ kalkar); sınırsız tuval yok |
 | Backtrack | VAR | sinama, it | Tuval başına tekrar arabelleği + Klipler dock'u (liste, oynat, kırp) |
 | Birleşik sohbet + etkinlik dock'u | VAR | — | Mevcut StreamAxT/chatHub altyapısı |

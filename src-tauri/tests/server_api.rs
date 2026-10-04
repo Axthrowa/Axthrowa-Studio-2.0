@@ -3077,6 +3077,27 @@ async fn guncelleme_denetimi_yerel_bildirim() {
   assert_eq!((d["tanimli"].as_bool(), d["son"].as_str(), d["yeniVar"].as_bool(), d["sayfa"].as_str()), (Some(true), Some("99.0.0"), Some(true), Some("https://ornek.com/indir")), "{d}");
 }
 
+/// Yayın bilgisi: Kick bağlı değilken hiçbir ağ isteği yapılmaz; gövde doğrulanır, onaysız güncelleme 428 ile reddedilir
+#[tokio::test(flavor = "multi_thread")]
+async fn yayin_bilgisi_kick_bagli_degilken() {
+  let h = start().await;
+  let post = |yol: &'static str, govde: Value| {
+    let c = h.client.clone();
+    let url = format!("{}{yol}", h.base);
+    async move { c.post(url).json(&govde).send().await.unwrap().status().as_u16() }
+  };
+  let d: Value = h.client.get(format!("{}/api/yayin-bilgisi", h.base)).send().await.unwrap().json().await.unwrap();
+  assert_eq!((d["kick"]["bagli"].as_bool(), d["kick"]["yazabilir"].as_bool()), (Some(false), Some(false)), "{d}");
+  assert_eq!(post("/api/yayin-bilgisi/oku", json!({})).await, 409);
+  assert_eq!(post("/api/yayin-bilgisi", json!({"confirm": true})).await, 400, "alan yok");
+  assert_eq!(post("/api/yayin-bilgisi", json!({"baslik": "  ", "confirm": true})).await, 400);
+  assert_eq!(post("/api/yayin-bilgisi", json!({"baslik": "Sınama başlığı"})).await, 428, "onaysız");
+  assert_eq!(post("/api/yayin-bilgisi", json!({"baslik": "Sınama başlığı", "confirm": true})).await, 409, "yazma izni yok");
+  let k = |q: &str| h.client.get(format!("{}/api/yayin-bilgisi/kategoriler?q={q}", h.base)).send();
+  assert_eq!(k("a").await.unwrap().status(), 400);
+  assert_eq!(k("Just%20Chatting").await.unwrap().status(), 409);
+}
+
 /// Bağlı sahneler: yatay sahne programa alınınca dikey eşi de programa alınır; aynı tuvale bağ reddedilir; eş silinince bağ düşer
 #[tokio::test(flavor = "multi_thread")]
 async fn motor_bagli_sahneler() {

@@ -31,6 +31,7 @@ import { ActivityFeedPanel, UniversalChatPanel } from "../components/control/Uni
 import { DeckPanel } from "../components/control/DeckPanel";
 import { TarayiciDock } from "../components/broadcast/TarayiciDock";
 import { KliplerDock } from "../components/broadcast/KliplerDock";
+import { YayinBilgisiDock } from "../components/broadcast/YayinBilgisiDock";
 import "../styles/desktop.css";
 
 export type { BagimsizDockKimligi };
@@ -48,9 +49,10 @@ const AD: Record<BagimsizDockKimligi, string> = {
   deste: "Hızlı Eylemler",
   tarayici: "Tarayıcı (özel)",
   klipler: "Klipler (Backtrack)",
+  yayinbilgisi: "Yayın Bilgisi",
 };
 /** Motordan bağımsız docklar (Kontrol Merkezi bileşenleri): motor kapalıyken de çalışır */
-const MOTORSUZ: BagimsizDockKimligi[] = ["sohbet", "etkinlik", "deste", "tarayici", "klipler"];
+const MOTORSUZ: BagimsizDockKimligi[] = ["sohbet", "etkinlik", "deste", "tarayici", "klipler", "yayinbilgisi"];
 
 export function dockKimligi(arama: string): BagimsizDockKimligi {
   const id = new URLSearchParams(arama).get("id") as BagimsizDockKimligi | null;
@@ -160,6 +162,8 @@ export default function BagimsizDockSayfasi() {
           <TarayiciDock onToast={toast} />
         ) : id === "klipler" ? (
           <KliplerDock onToast={toast} />
+        ) : id === "yayinbilgisi" ? (
+          <YayinBilgisiDock onToast={toast} />
         ) : (
           <DeckPanel onToast={toast} />
         )}

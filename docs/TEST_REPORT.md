@@ -199,3 +199,23 @@ döndürme tutamacıyla 90° → merkez aynı piksel, Ctrl+Z geri aldı.
 Testlerin yakaladıkları: Geçişler dock'unda üç düğme 171 px genişlikte taşıyordu (ayrı satıra alındı); yakınlaştırılmış
 önizlemede flex ortalaması taşan sol/üst kısmı erişilemez yapıyordu (kaydırılabilirken başa hizalama); sentetik
 işaretçide `setPointerCapture` hata atınca orta tuşla kaydırma başlamıyordu (korundu).
+
+### Ek (2026-10-02 → 10-05): son OBS paritesi maddeleri
+
+Komitler: 2504f5c … 4d43a41 (bağlı sahneler, tüm docklar ayrı pencerede, sanal kamera kaynak hedefi, Araçlar ›
+Altyazı (CEA-608), Yayın Bilgisi dock'u (Kick), ek tuvaller, OBS'ten ek tuval aktarımı).
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **54/54** (yeni: sanal kamera kaynak hedefi — 200×400 yeşil kaynak 16:9 tuvalde ortada, kenar siyah, kaynak silinince tuval kapanır; altyazı — alıcı dosyasındaki GA94 SEI baytları çözülerek "SINAMA ALTYAZI 42" yalnız seçilen hedefte bulundu, diğer hedef altyazısız, boş metin / etkin olmayan hedef reddedildi; ek tuval — 640×640 tuval kendi en-boyunda kare verir, sahnesi programda, boşaltılınca sahnesi kalkar, ana tuval boşaltılamaz) |
+| Panel birim (Rust) | **306** (CEA-608 metin dönüşümü, Kick kapsam eşleşmesi, kanal güncelleme gövdesi doğrulaması, OBS `canvas_uuid` aktarımı) |
+| Panel entegrasyon | **42** (1 elle çalıştırılan göz ardı); yeni: `motor_bagli_sahneler`, `yayin_bilgisi_kick_bagli_degilken` (ağsız: 409/428/400), `motor_ek_tuvaller` (ekle → önizleme 320×320, adlandır, boyut → yeniden başlatma gerekir, sil, kimlik yeniden kullanılmaz, motor yeniden başlayınca koleksiyondan kurulur); genişletilen: sanal kamera `kaynak:` hedefi, altyazı ucu + `engine.caption.send` |
+| Ön yüz (vitest) | **430** (her dock ayrı pencereye çıkarılabilir, etiket ayrıştırma, tuval adları/kimlik kuralı) |
+| clippy | 0 uyarı |
+
+Dış ağ dalgalanması: `youtube_endscreen_probe_reports_real_cards` tam koşuda bir kez başarısız oldu (YouTube o anda bitiş
+ekranı içermeyen sayfa sürümü döndürdü); kod değişmeden iki yeniden koşuda geçti. Test kapatılmadı.
+
+Sınanmayanlar (UNVERIFIED): altyazının platform oynatıcısında görünümü (FFmpeg libobs'un kare sonuna yazdığı SEI'yi
+okumaz — "late SEI"); Kick kanal güncellemesi (gerçek kanal değiştirilmedi); yeni arayüz parçaları tarayıcı bölmesinde
+görülmedi (Altyazı, Yayın Bilgisi, Tuvaller, ayrı pencere docklar).

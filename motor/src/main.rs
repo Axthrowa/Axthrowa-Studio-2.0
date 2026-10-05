@@ -17,6 +17,7 @@ mod eklenti;
 mod etkilesim;
 mod filtre;
 mod gecis;
+mod hareket;
 mod motor;
 mod multiview;
 mod obs;

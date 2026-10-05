@@ -178,6 +178,8 @@ struct Parite {
   studyo: String,
   kopya_ok: bool,
   kopya: String,
+  hareket_ok: bool,
+  hareket: String,
   filtre_ok: bool,
   filtre: String,
   kazanc_ok: bool,
@@ -394,7 +396,16 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     let (pr, on) = (kare(m, "ana"), kare(m, "studyo-ana"));
     let silme_red = m.sahne_sil("kopya-s").is_err();
     m.studyo_kapat("ana")?;
-    let pr_sonra = kare(m, "ana");
+    // Önizleme karesi yük altında gecikebilir: siyah 3 sn'ye kadar yoklanır
+    let pr_sonra = {
+      let bitis = Instant::now() + Duration::from_secs(3);
+      loop {
+        let p = kare(m, "ana");
+        if !kirmizi(p) || Instant::now() > bitis {
+          break p;
+        }
+      }
+    };
     m.sahneye_gec("yatay", false, None)?;
     m.sahne_sil("kopya-s")?;
     m.kaynak_sil("kp-kirmizi")?;
@@ -402,6 +413,64 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     Ok(format!("{ok}|program {program:?}; öğe kaldırılınca program {pr:?} (kırmızı kalmalı), önizleme {on:?}; programdaki sahne silinemez {silme_red}; kapanınca program {pr_sonra:?}; kip 3 reddi {kip_red}"))
   })();
   (p.kopya_ok, p.kopya) = ayir(r);
+
+  // "Hareket" geçişi: iki sahnedeki aynı kare (400×400) 3 sn'de (0,0)'dan (1000,500)'e kayar; yarıda ara konumda,
+  // sonda hedefte; araya giren kesme hareketi iptal eder (bitişte program geri alınmaz)
+  let r = (|| -> Result<String, String> {
+    let nesne = |v: serde_json::Value| v.as_object().cloned().unwrap_or_default();
+    let yer = |x: f32, y: f32| Donusum { konum: Some(Vec2 { x, y }), ..Default::default() };
+    m.kaynak_olustur("hk-kare", "color_source", "HK kare", &nesne(json!({"color": 0xFF0000E0_u32, "width": 400, "height": 400})))?;
+    m.sahne_olustur("hk-a", "ana", "HK A")?;
+    m.sahneye_ekle("hk-a", "hk-kare", &yer(0.0, 0.0))?;
+    m.sahne_olustur("hk-b", "ana", "HK B")?;
+    m.sahneye_ekle("hk-b", "hk-kare", &yer(1000.0, 500.0))?;
+    m.sahneye_gec("hk-a", false, None)?;
+    let tur_var = crate::gecis::gecis_turleri().iter().any(|t| t.id == "hareket");
+    m.gecis_ayarla("ana", Some("hareket"), Some(3000), None)?;
+    let _ = m.onizleme_png("ana", 320);
+    bekle(400);
+    let kirmizi = |p: Option<[u8; 3]>| p.is_some_and(|p| p[0] > 180 && p[1] < 60 && p[2] < 60);
+    // Önizleme karesi yük altında gecikebilir: beklenen piksel 3 sn'ye kadar yoklanır
+    let piksel_bekle = |m: &mut Motor, x: u32, y: u32, istenen: bool| -> Option<[u8; 3]> {
+      let bitis = Instant::now() + Duration::from_secs(3);
+      loop {
+        let p = m.onizleme_png("ana", 320).ok().flatten().and_then(|b| png_pikseli(&b, x, y));
+        if kirmizi(p) == istenen || Instant::now() > bitis {
+          return p;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+      }
+    };
+    m.sahneye_gec("hk-b", true, None)?;
+    let sirada = m.program_sahnesi("ana");
+    bekle(1500);
+    // Yarıda (≈1,5 sn / 3 sn) karenin sol üst köşesi (0,0) ile (1000,500) arasında: öğe durumundan okunur
+    let orta = m.program_ust_oge_konumu("ana");
+    let arada = orta.is_some_and(|k| k.x > 150.0 && k.x < 850.0 && k.y > 75.0 && k.y < 425.0);
+    bekle(2000);
+    let bitti = m.program_sahnesi("ana");
+    // 320×180 karede (1/6): hedef merkez (1200,700) → (200,116)
+    let son_kare = piksel_bekle(m, 200, 116, true);
+    // İptal: hareket başlar, hemen kesmeyle hk-b'ye dönülür; 3,5 sn sonra program hâlâ hk-b
+    m.sahneye_gec("hk-a", true, None)?;
+    m.sahneye_gec("hk-b", false, None)?;
+    bekle(3500);
+    let iptal = m.program_sahnesi("ana");
+    m.gecis_ayarla("ana", Some("cut_transition"), Some(0), None)?;
+    m.sahneye_gec("yatay", false, None)?;
+    m.sahne_sil("hk-a")?;
+    m.sahne_sil("hk-b")?;
+    m.kaynak_sil("hk-kare")?;
+    let ok = tur_var
+      && sirada.as_deref() == Some("hk-b")
+      && arada
+      && bitti.as_deref() == Some("hk-b")
+      && kirmizi(son_kare)
+      && iptal.as_deref() == Some("hk-b")
+      && m.hareketler.values().all(|h| h.durum.lock().map(|d| d.bitti).unwrap_or(false));
+    Ok(format!("{ok}|tür {tur_var}; geçiş sürerken program {sirada:?}; yarıda sol üst {orta:?}; bitince {bitti:?} {son_kare:?}; iptalden sonra {iptal:?}"))
+  })();
+  (p.hareket_ok, p.hareket) = ayir(r);
 
   // Video filtreleri
   let r = (|| -> Result<String, String> {
@@ -1311,6 +1380,7 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   // Parite denetimleri
   ekle("geçiş: sahne değişimi geçişle, program doğru", p.gecis_ok, p.gecis.clone());
   ekle("Studio Mode: önizleme ayrı tuvalde, geçiş programa alır, takas, T-bar", p.studyo_ok, p.studyo.clone());
+  ekle("Hareket geçişi: eşleşen öğe ara konumdan hedefe kayar, sonda hedef sahne, araya giren geçiş iptal eder", p.hareket_ok, p.hareket.clone());
   ekle("Studio Mode \"Sahneyi çoğalt\": program özel kopya, önizlemedeki düzenleme programı değiştirmez, kapanınca asıl sahne", p.kopya_ok, p.kopya.clone());
   ekle("filtre: video filtreleri eklenir, sıralanır, kapatılır", p.filtre_ok, p.filtre.clone());
   ekle("ses filtresi (kazanç −20 dB) ölçerde görünür; gerçek tepe ölçer", p.kazanc_ok, p.kazanc.clone());

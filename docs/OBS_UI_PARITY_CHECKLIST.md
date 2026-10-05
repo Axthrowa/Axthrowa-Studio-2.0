@@ -123,7 +123,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | Tür listesi, süre, özellikler (dişli) | VAR | sinama, it | Türler çalışma anında libobs'tan |
 | Kes, Soldur, Kaydır, İt, Rengi soldur, Luma, Stinger | VAR | sinama (tür listesi) | Stinger/Luma ayarları genel özellik formuyla |
 | Birden çok adlandırılmış geçiş (+/−, yeniden adlandır, özellikler) | VAR | it:motor_ekran_…_tbar, tp | Yerleşik Kes/Soldur silinemez; ayarlar geçişle saklanır; OBS'ten `transitions` listesi aktarılır |
-| Hareket (Move) geçişi | DESTEKLENMİYOR | | Üçüncü taraf eklenti; kuruluysa tür listesinde görünür |
+| Hareket (Move) geçişi | VAR (kendi uygulamamız) | sinama (yarıda öğe konumu iki uç arasında, sonda hedef sahne ve kare, araya giren kesme iptal eder), it:motor_ekran_goruntusu_…_tbar (tür listesi, adlandırılmış geçiş, Studio Mode), rust:egri/ara_deger, rust:move_gecisi_harekete_cevrilir | Geçiş türü "Hareket": iki sahnede aynı kaynağı gösteren öğeler konum/ölçek/açı/sınır/kırpmayla kayar (yumuşak eğri, ≈60 Hz); eşleşmeyenler yarıda değişir. Üçüncü taraf Move eklentisinin kodu kullanılmadı, ayarları (eğri türü, gecikme vb.) yok. Grup içeren sahnede yumuşak geçişe düşülür; hizalama/sınır türü farklı eşleşmeler yarıda değişir; T-bar'da yumuşak geçiş gibi davranır. OBS koleksiyonundaki `move_transition` buna çevrilir |
 | Sahne başına geçiş geçersiz kılma | VAR | it:motor_v2_… | |
 
 ## 4.8 Denetimler dock'u

@@ -38,7 +38,7 @@ pub struct AudioInfo {
 
 /// `struct vec2` (birleşim: `{x, y}` / `ptr[2]`, 8 bayt)
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Vec2 {
   pub x: f32,
   pub y: f32,
@@ -247,6 +247,7 @@ obs_api! {
   fn obs_output_end_data_capture(Ptr);
   fn obs_source_create(*const c_char, *const c_char, Ptr, Ptr) -> Ptr;
   fn obs_source_release(Ptr);
+  fn obs_source_get_ref(Ptr) -> Ptr;
   fn obs_source_remove(Ptr);
   fn obs_source_update(Ptr, Ptr);
   fn obs_source_get_width(Ptr) -> u32;
@@ -259,6 +260,7 @@ obs_api! {
   fn obs_scene_create(*const c_char) -> Ptr;
   fn obs_scene_create_private(*const c_char) -> Ptr;
   fn obs_scene_release(Ptr);
+  fn obs_scene_from_source(Ptr) -> Ptr;
   fn obs_scene_duplicate(Ptr, *const c_char, c_int) -> Ptr;
   fn obs_scene_get_source(Ptr) -> Ptr;
   fn obs_scene_add(Ptr, Ptr) -> Ptr;

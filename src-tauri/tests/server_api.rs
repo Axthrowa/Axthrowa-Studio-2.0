@@ -2878,6 +2878,22 @@ async fn motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar() {
   tamam("/api/motor/gecis-listesi", json!({"eylem": "sil", "id": kaydir})).await;
   let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
   assert!(sl["hizliGecisler"].as_array().unwrap().is_empty(), "silinen geçişin hızlı geçişi de düşer");
+  // Hareket geçişi: tür listesinde; adlandırılmış geçiş olarak eklenip seçilir; Studio Mode geçişi süre boyunca program
+  // sorgusunda hedefi gösterir, sonra hedefte kalır
+  let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert!(sl["gecisTurleri"].as_array().unwrap().iter().any(|t| t["id"] == "hareket"), "{}", sl["gecisTurleri"]);
+  let hareket = tamam("/api/motor/gecis-listesi", json!({"eylem": "ekle", "ad": "Hareket", "tur": "hareket"})).await["id"].as_str().unwrap().to_string();
+  tamam("/api/motor/gecis-listesi", json!({"eylem": "sec", "id": hareket, "tuval": "ana"})).await;
+  tamam("/api/motor/gecis", json!({"tuval": "ana", "tur": "hareket", "sure_ms": 600})).await;
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "onizleme", "sahne": "sahne-ana"})).await;
+  tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "gecis"})).await;
+  let gb = h.client.get(format!("{}/api/motor/gecis?tuval=ana", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(gb["bilgi"]["tur"], "hareket", "{gb}");
+  tokio::time::sleep(std::time::Duration::from_millis(900)).await;
+  let sl = h.client.get(format!("{}/api/motor/sahneler", h.base)).send().await.unwrap().json::<Value>().await.unwrap();
+  assert_eq!(sl["program"]["ana"], "sahne-ana", "{}", sl["program"]);
+  tamam("/api/motor/gecis-listesi", json!({"eylem": "sil", "id": hareket})).await;
+  tamam("/api/motor/gecis", json!({"tuval": "ana", "tur": "fade_transition", "sure_ms": 300})).await;
   tamam("/api/motor/studyo", json!({"tuval": "ana", "eylem": "kapat"})).await;
 
   // Sahne/kaynak projektörü tuvali: açılır, canlı/PNG kare verir, kapanır; geçersiz kimlik 400

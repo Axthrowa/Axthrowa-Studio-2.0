@@ -58,6 +58,10 @@ pub fn gecis_turleri() -> Vec<GecisTuru> {
     let ad = unsafe { cstr((a.obs_source_get_display_name)(id)) };
     v.push(GecisTuru { id: kimlik, ad });
   }
+  // Kendi "Hareket" geçişimiz (altında yumuşak geçiş nesnesi)
+  if v.iter().any(|t| t.id == "fade_transition") {
+    v.push(GecisTuru { id: crate::hareket::TUR.into(), ad: crate::hareket::AD.into() });
+  }
   v
 }
 
@@ -80,6 +84,8 @@ impl Motor {
     if !gecis_turleri().iter().any(|t| t.id == tur) {
       return Err(format!("geçiş türü yok: {tur}"));
     }
+    // Hareket geçişinin libobs nesnesi yumuşak geçiştir (T-bar ve kesintide o kullanılır)
+    let tur = if tur == crate::hareket::TUR { "fade_transition" } else { tur };
     let veri = Veri::yeni().json(ayarlar);
     let (tur_c, ad_c) = (cs(tur), cs(&format!("Geçiş ({tuval})")));
     let ptr = unsafe { (api().obs_source_create_private)(tur_c.as_ptr(), ad_c.as_ptr(), veri.0) };
@@ -112,6 +118,7 @@ impl Motor {
       .map(|(id, _)| id.clone())
       // Programdaki özel kopya asıl sahnesinin kimliğiyle görünür
       .or_else(|| self.program_kopyalari.values().find(|(p, _)| unsafe { (api().obs_scene_get_source)(*p) } == kaynak).map(|(_, id)| id.clone()))
+      .or_else(|| self.hareket_hedefi(kaynak))
   }
 
   /// Studio Mode geçişinin hedef kaynağı: "Sahneyi çoğalt" açıksa sahnenin özel kopyası (yeni program kopyası olarak
@@ -165,19 +172,36 @@ impl Motor {
       let s = self.sahneler.get(id).ok_or_else(|| format!("sahne yok: {id}"))?;
       (s.kanvas.clone(), unsafe { (api().obs_scene_get_source)(s.ptr) })
     };
+    if gecis && self.hareket_mi(&kanvas) {
+      let sure = sure_ms.unwrap_or(self.gecisler[&kanvas].sure_ms).min(AZAMI_SURE_MS);
+      if self.hareket_baslat(&kanvas, kaynak, id, sure)? {
+        self.tbar_temizle(&kanvas);
+        Self::kopyayi_birak(self.program_kopyalari.remove(&kanvas));
+        return Ok(());
+      }
+    }
     self.kaynaga_gec(&kanvas, kaynak, gecis, sure_ms)?;
     // Program artık asıl sahne: önceki özel kopya bırakılır (geçiş kendi başvurusunu tutar)
     Self::kopyayi_birak(self.program_kopyalari.remove(&kanvas));
     Ok(())
   }
 
-  fn kaynaga_gec(&mut self, kanvas: &str, kaynak: Ptr, gecis: bool, sure_ms: Option<u32>) -> Result<(), String> {
-    let tr = self.gecis_hazirla(kanvas)?;
-    // Programa doğrudan geçiş yarım kalmış T-bar'ı geçersiz kılar
+  fn hareket_mi(&self, tuval: &str) -> bool {
+    self.gecisler.get(tuval).is_some_and(|g| g.tur == crate::hareket::TUR)
+  }
+
+  /// Programa doğrudan geçiş yarım kalmış T-bar'ı geçersiz kılar
+  fn tbar_temizle(&mut self, kanvas: &str) {
     if let Some(s) = self.studyo.get_mut(kanvas) {
       s.tbar = None;
       Self::kopyayi_birak(s.tbar_kopya.take());
     }
+  }
+
+  fn kaynaga_gec(&mut self, kanvas: &str, kaynak: Ptr, gecis: bool, sure_ms: Option<u32>) -> Result<(), String> {
+    self.hareketi_iptal(kanvas);
+    let tr = self.gecis_hazirla(kanvas)?;
+    self.tbar_temizle(kanvas);
     let sure = sure_ms.unwrap_or(self.gecisler[kanvas].sure_ms).min(AZAMI_SURE_MS);
     unsafe {
       if !gecis || !(api().obs_transition_start)(tr, obs::OBS_TRANSITION_MODE_AUTO, sure, kaynak) {
@@ -311,7 +335,19 @@ impl Motor {
     let onizleme = st.sahne.clone().ok_or("önizlemede sahne yok")?;
     let eski = self.program_sahnesi(tuval);
     let (kaynak, eski_kopya) = self.gecis_kaynagi(tuval, &onizleme)?;
-    let sonuc = self.kaynaga_gec(tuval, kaynak, true, sure_ms);
+    let sonuc = if self.hareket_mi(tuval) {
+      let sure = sure_ms.unwrap_or(self.gecisler[tuval].sure_ms).min(AZAMI_SURE_MS);
+      match self.hareket_baslat(tuval, kaynak, &onizleme, sure) {
+        Ok(true) => {
+          self.tbar_temizle(tuval);
+          Ok(())
+        }
+        Ok(false) => self.kaynaga_gec(tuval, kaynak, true, sure_ms),
+        Err(e) => Err(e),
+      }
+    } else {
+      self.kaynaga_gec(tuval, kaynak, true, sure_ms)
+    };
     Self::kopyayi_birak(eski_kopya);
     sonuc?;
     if takas {
@@ -347,6 +383,7 @@ impl Motor {
         if eski == hedef {
           return Err("önizleme ve program aynı sahne".into());
         }
+        self.hareketi_iptal(tuval);
         let (kaynak, eski_kopya) = self.gecis_kaynagi(tuval, &hedef)?;
         if !unsafe { (api().obs_transition_start)(tr, obs::OBS_TRANSITION_MODE_MANUAL, 0, kaynak) } {
           // Başlamadıysa kopya geri alınır
@@ -409,6 +446,7 @@ impl Motor {
 
   /// Kapanışta: geçişler kanaldan çıkarılır ve bırakılır, önizleme tuvalleri kaldırılır.
   pub(crate) fn gecisleri_kapat(&mut self) {
+    self.hareketleri_iptal();
     let tuvaller: Vec<String> = self.studyo.keys().cloned().collect();
     for t in tuvaller {
       let _ = self.studyo_kapat(&t);

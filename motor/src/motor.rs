@@ -365,6 +365,8 @@ pub struct Motor {
   pub(crate) studyo: HashMap<String, crate::gecis::Studyo>,
   /// Studio Mode "Sahneyi çoğalt": tuval → programdaki özel kopya sahne ve asıl sahnenin kimliği
   pub(crate) program_kopyalari: HashMap<String, (Ptr, String)>,
+  /// Süren "Hareket" geçişleri (tuval başına)
+  pub(crate) hareketler: HashMap<String, crate::hareket::Hareket>,
   pub(crate) filtreler: BTreeMap<String, crate::filtre::Filtre>,
   /// Grup kimliği → sahnesi
   pub(crate) gruplar: BTreeMap<String, String>,
@@ -526,6 +528,7 @@ impl Motor {
       ucuncu_taraf: Vec::new(),
       gecisler: HashMap::new(),
       program_kopyalari: HashMap::new(),
+      hareketler: HashMap::new(),
       studyo: HashMap::new(),
       filtreler: BTreeMap::new(),
       gruplar: BTreeMap::new(),
@@ -708,6 +711,7 @@ impl Motor {
     if id == "ana" || !self.kanvaslar.contains_key(id) {
       return Err(format!("boşaltılacak ek tuval yok: {id}"));
     }
+    self.hareketi_iptal(id);
     if self.studyo.contains_key(id) {
       self.studyo_kapat(id)?;
     }
@@ -1000,6 +1004,7 @@ impl Motor {
   /// kurulana dek program boş kare verir.
   pub fn sahne_grafigini_temizle(&mut self) {
     let a = api();
+    self.hareketleri_iptal();
     self.etkilesimleri_kapat();
     self.multiviewleri_kapat();
     self.kaynak_tuvallerini_kapat();

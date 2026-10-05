@@ -306,12 +306,14 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
       continue;
     }
     let id = k.yeni_kimlik("g");
-    k.adli_gecisler.push(crate::motor_koleksiyon::AdliGecis {
-      id,
-      ad: ad.chars().take(80).collect(),
-      tur: tur.to_string(),
-      ayarlar: t.get("settings").cloned().unwrap_or(Value::Null),
-    });
+    // Move eklentisinin geçişi kendi "Hareket" geçişimize eşlenir (eklentinin ayarları taşınmaz)
+    let (tur, ayarlar) = if tur == "move_transition" {
+      r.notlar.push(format!("«{ad}» (Move) geçişi yerleşik Hareket geçişine çevrildi; eklentinin ayarları taşınmadı"));
+      ("hareket", Value::Null)
+    } else {
+      (tur, t.get("settings").cloned().unwrap_or(Value::Null))
+    };
+    k.adli_gecisler.push(crate::motor_koleksiyon::AdliGecis { id, ad: ad.chars().take(80).collect(), tur: tur.to_string(), ayarlar });
   }
   // Geçerli geçiş: yerleşik adlar ya da `transitions` dizisindeki kayıt
   let sure = obs["transition_duration"].as_u64().unwrap_or(300).min(20_000) as u32;
@@ -339,6 +341,21 @@ pub fn cevir(obs: &Value, ad: &str, kayitli: &[String]) -> Result<(Koleksiyon, I
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn move_gecisi_harekete_cevrilir() {
+    let obs = json!({
+      "current_program_scene": "A",
+      "current_transition": "Kayma",
+      "transitions": [{"name": "Kayma", "id": "move_transition", "settings": {"easing_function": 3}}],
+      "sources": [{"name": "A", "uuid": "s1", "id": "scene", "settings": {"items": []}}]
+    });
+    let (k, r) = cevir(&obs, "Sınama", &[]).unwrap();
+    let g = k.adli_gecisler.iter().find(|g| g.ad == "Kayma").unwrap();
+    assert_eq!((g.tur.as_str(), g.ayarlar.is_null()), ("hareket", true));
+    assert_eq!(k.secili_gecis.get("ana"), Some(&g.id));
+    assert!(r.notlar.iter().any(|n| n.contains("Hareket")));
+  }
 
   #[test]
   fn ek_tuval_canvas_uuid_ile_aktarilir() {

@@ -143,6 +143,9 @@ pub const OBS_FADER_LOG: c_int = 2;
 /// `enum obs_transition_mode`
 pub const OBS_TRANSITION_MODE_AUTO: c_int = 0;
 pub const OBS_TRANSITION_MODE_MANUAL: c_int = 1;
+/// `enum obs_scene_duplicate_type`: REFS, COPY, PRIVATE_REFS, PRIVATE_COPY
+pub const OBS_SCENE_DUP_PRIVATE_REFS: c_int = 2;
+pub const OBS_SCENE_DUP_PRIVATE_COPY: c_int = 3;
 pub const OBS_ALIGN_LEFT: u32 = 1;
 pub const OBS_ALIGN_TOP: u32 = 4;
 /// `enum obs_canvas_flags` PREVIEW ön ayarı (= EPHEMERAL): kaynakları etkinleştirmez, sesi karıştırmaz
@@ -256,6 +259,7 @@ obs_api! {
   fn obs_scene_create(*const c_char) -> Ptr;
   fn obs_scene_create_private(*const c_char) -> Ptr;
   fn obs_scene_release(Ptr);
+  fn obs_scene_duplicate(Ptr, *const c_char, c_int) -> Ptr;
   fn obs_scene_get_source(Ptr) -> Ptr;
   fn obs_scene_add(Ptr, Ptr) -> Ptr;
   fn obs_sceneitem_remove(Ptr);

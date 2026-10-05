@@ -40,7 +40,12 @@ const BOLUMLER: { id: Bolum; ad: string; anahtarlar: string }[] = [
     anahtarlar:
       "renk biçimi nv12 p010 i444 renk uzayı 709 601 srgb hdr 2100 aralık ağ bağlanılacak ip ipv4 ipv6 düşük gecikme dinamik bit hızı yeniden bağlan deneme",
   },
-  { id: "uzak", ad: "Uzaktan denetim", anahtarlar: "obs-websocket websocket stream deck touch portal streamer.bot uzaktan denetim port parola" },
+  {
+    id: "uzak",
+    ad: "Uzaktan denetim",
+    anahtarlar:
+      "studio mode sahneyi çoğalt duplicate scene kaynak özellikleri obs-websocket websocket stream deck touch portal streamer.bot uzaktan denetim port parola",
+  },
   { id: "erisim", ad: "Erişilebilirlik", anahtarlar: "erişilebilirlik renk körlüğü yüksek kontrast seçim rengi ölçer renkleri" },
   { id: "kisayol", ad: "Kısayollar", anahtarlar: "kısayol hotkey tuş bas konuş push to talk" },
 ];
@@ -1056,6 +1061,23 @@ export function YayinAyarlari({
             </div>
           ) : bolum === "gelismis" ? (
             <div className="dt-form">
+              <span className="dt-etiket col-span-2 font-semibold">Studio Mode</span>
+              <label htmlFor="ay-cogalt">Sahneyi çoğalt</label>
+              <select
+                id="ay-cogalt"
+                className="dt-input w-72"
+                value={pr.studyo_cogalt ?? 1}
+                onChange={(e) => void guncelle({ studyo_cogalt: Number(e.target.value) })}
+              >
+                <option value={0}>Kapalı (program sahnenin kendisi)</option>
+                <option value={1}>Sahneyi çoğalt (varsayılan)</option>
+                <option value={2}>Sahneyi ve kaynak özelliklerini çoğalt</option>
+              </select>
+              <span />
+              <span className="text-[11px] dt-soluk">
+                Açıkken geçiş, önizlemedeki sahnenin o anki kopyasını programa alır: aynı sahneyi önizlemede düzenlerken program değişmez; düzenlemeler sahneye
+                kaydolur ve bir sonraki geçişte programa gelir. Studio Mode kapanınca program sahnenin kendisine döner.
+              </span>
               <span className="dt-etiket col-span-2 font-semibold">Video</span>
               <label htmlFor="ay-rb">Renk biçimi</label>
               <select

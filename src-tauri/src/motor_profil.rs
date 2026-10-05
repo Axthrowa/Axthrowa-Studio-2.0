@@ -257,6 +257,14 @@ pub struct Profil {
   /// Ses ölçeri tepe tipi: gerçek tepe (true peak; OBS Ayarlar › Ses › "Peak Meter Type"). Varsayılan örnek tepe
   #[serde(default, skip_serializing_if = "std::ops::Not::not")]
   pub gercek_tepe: bool,
+  /// Studio Mode "Sahneyi çoğalt" (OBS Ayarlar › Genel › Studio Mode): 0 kapalı, 1 sahne (OBS varsayılanı), 2 sahne +
+  /// kaynak özellikleri
+  #[serde(default = "varsayilan_cogalt")]
+  pub studyo_cogalt: u8,
+}
+
+fn varsayilan_cogalt() -> u8 {
+  1
 }
 
 impl Default for Profil {
@@ -276,6 +284,7 @@ impl Default for Profil {
       ses: SesAyari::default(),
       ag: AgAyari::default(),
       gercek_tepe: false,
+      studyo_cogalt: varsayilan_cogalt(),
     }
   }
 }
@@ -365,6 +374,7 @@ impl Profil {
     }
     a.deneme_gecikmesi_sn = a.deneme_gecikmesi_sn.clamp(1, 30);
     a.en_cok_deneme = a.en_cok_deneme.min(10_000);
+    self.studyo_cogalt = self.studyo_cogalt.min(2);
     self.hedefler.retain(|id, h| !id.is_empty() && (h.tuval == "ana" || h.tuval == "dikey" || crate::motor_koleksiyon::ek_tuval_kimligi(&h.tuval)));
     for h in self.hedefler.values_mut() {
       h.iz = h.iz.min(5);
@@ -573,7 +583,8 @@ pub fn yeni_kimlik(d: &Dizin, ad: &str) -> String {
 
 /// Kısmi güncelleme: yalnız verilen alanlar (JSON birleştirme), sonra doğrulama. Bilinmeyen alan reddedilir.
 pub fn birlestir(p: &Profil, parca: &Map<String, Value>) -> Result<Profil, String> {
-  const ALANLAR: [&str; 13] = ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti", "video", "ses", "ag", "tekrar_dikey", "gercek_tepe"];
+  const ALANLAR: [&str; 14] =
+    ["ad", "fps", "cikis", "kayit", "tekrar_sn", "iz_adlari", "hedefler", "izleme_aygiti", "video", "ses", "ag", "tekrar_dikey", "gercek_tepe", "studyo_cogalt"];
   if let Some(a) = parca.keys().find(|k| !ALANLAR.contains(&k.as_str())) {
     return Err(format!("bilinmeyen profil alanı: {a}"));
   }
@@ -603,6 +614,15 @@ pub fn birlestir(p: &Profil, parca: &Map<String, Value>) -> Result<Profil, Strin
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn studyo_cogalt_varsayilan_acik_ve_sinirli() {
+    assert_eq!(Profil::default().studyo_cogalt, 1, "OBS varsayılanı: Sahneyi çoğalt açık");
+    let eski: Profil = serde_json::from_value(serde_json::json!({"surum": SURUM})).unwrap();
+    assert_eq!(eski.studyo_cogalt, 1, "alanı olmayan eski profil");
+    let y = birlestir(&Profil::default(), serde_json::json!({"studyo_cogalt": 7}).as_object().unwrap()).unwrap();
+    assert_eq!(y.studyo_cogalt, 2);
+  }
   use crate::motor_koleksiyon::HedefKaydi;
   use serde_json::json;
 

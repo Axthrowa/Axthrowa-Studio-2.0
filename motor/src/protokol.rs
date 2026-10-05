@@ -212,6 +212,10 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       m.studyo_ac(metin(istek, "tuval")?)?;
       json!({})
     }
+    "studyo.cogalt" => {
+      m.studyo_cogalt(metin(istek, "tuval")?, istek.get("kip").and_then(Value::as_u64).unwrap_or(0).min(255) as u8)?;
+      json!({})
+    }
     "studyo.kapat" => {
       m.studyo_kapat(metin(istek, "tuval")?)?;
       json!({})

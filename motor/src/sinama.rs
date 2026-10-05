@@ -176,6 +176,8 @@ struct Parite {
   gecis: String,
   studyo_ok: bool,
   studyo: String,
+  kopya_ok: bool,
+  kopya: String,
   filtre_ok: bool,
   filtre: String,
   kazanc_ok: bool,
@@ -366,6 +368,40 @@ fn parite(m: &mut Motor, klasor: &Path) -> Parite {
     ))
   })();
   (p.studyo_ok, p.studyo) = ayir(r);
+
+  // "Sahneyi çoğalt": program sahnenin özel kopyası; asıl sahnede öğe kaldırılınca önizleme değişir, program değişmez;
+  // Studio Mode kapanınca program asıl sahneye bırakılır
+  let r = (|| -> Result<String, String> {
+    let nesne = |v: serde_json::Value| v.as_object().cloned().unwrap_or_default();
+    m.kaynak_olustur("kp-kirmizi", "color_source", "KP kırmızı", &nesne(json!({"color": 0xFF0000E0_u32, "width": 1920, "height": 1080})))?;
+    m.sahne_olustur("kopya-s", "ana", "Kopya sınaması")?;
+    let oge = m.sahneye_ekle("kopya-s", "kp-kirmizi", &Donusum::default())?;
+    m.studyo_ac("ana")?;
+    m.studyo_cogalt("ana", 1)?;
+    let kip_red = m.studyo_cogalt("ana", 3).is_err();
+    m.studyo_onizleme("ana", "kopya-s")?;
+    m.studyo_gecis("ana", false, Some(0))?;
+    bekle(300);
+    let program = m.program_sahnesi("ana");
+    m.studyo_onizleme("ana", "kopya-s")?;
+    m.oge_kaldir(&oge)?;
+    let kare = |m: &mut Motor, t: &str| -> Option<[u8; 3]> {
+      let _ = m.onizleme_png(t, 320);
+      std::thread::sleep(Duration::from_millis(700));
+      m.onizleme_png(t, 320).ok().flatten().and_then(|b| png_pikseli(&b, 160, 90))
+    };
+    let kirmizi = |p: Option<[u8; 3]>| p.is_some_and(|p| p[0] > 180 && p[1] < 60 && p[2] < 60);
+    let (pr, on) = (kare(m, "ana"), kare(m, "studyo-ana"));
+    let silme_red = m.sahne_sil("kopya-s").is_err();
+    m.studyo_kapat("ana")?;
+    let pr_sonra = kare(m, "ana");
+    m.sahneye_gec("yatay", false, None)?;
+    m.sahne_sil("kopya-s")?;
+    m.kaynak_sil("kp-kirmizi")?;
+    let ok = program.as_deref() == Some("kopya-s") && kirmizi(pr) && !kirmizi(on) && !kirmizi(pr_sonra) && silme_red && kip_red && m.program_kopyalari.is_empty();
+    Ok(format!("{ok}|program {program:?}; öğe kaldırılınca program {pr:?} (kırmızı kalmalı), önizleme {on:?}; programdaki sahne silinemez {silme_red}; kapanınca program {pr_sonra:?}; kip 3 reddi {kip_red}"))
+  })();
+  (p.kopya_ok, p.kopya) = ayir(r);
 
   // Video filtreleri
   let r = (|| -> Result<String, String> {
@@ -1275,6 +1311,7 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
   // Parite denetimleri
   ekle("geçiş: sahne değişimi geçişle, program doğru", p.gecis_ok, p.gecis.clone());
   ekle("Studio Mode: önizleme ayrı tuvalde, geçiş programa alır, takas, T-bar", p.studyo_ok, p.studyo.clone());
+  ekle("Studio Mode \"Sahneyi çoğalt\": program özel kopya, önizlemedeki düzenleme programı değiştirmez, kapanınca asıl sahne", p.kopya_ok, p.kopya.clone());
   ekle("filtre: video filtreleri eklenir, sıralanır, kapatılır", p.filtre_ok, p.filtre.clone());
   ekle("ses filtresi (kazanç −20 dB) ölçerde görünür; gerçek tepe ölçer", p.kazanc_ok, p.kazanc.clone());
   ekle("ses özellikleri: denge, mono, senkron, izleme", p.ses_ok, p.ses.clone());

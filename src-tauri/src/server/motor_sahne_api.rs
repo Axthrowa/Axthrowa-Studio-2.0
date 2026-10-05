@@ -844,6 +844,8 @@ pub(crate) async fn studyo_gecisi(state: &AppState, tuval: &str, takas: bool, su
 pub(crate) async fn studyo_ac(state: &AppState, tuval: &str) -> Result<Option<String>, Hata> {
   motor_calisiyor(state).await?;
   komut(state, json!({"komut": "studyo.ac", "tuval": tuval})).await?;
+  let kip = state.motor.ozet().lock().profil.studyo_cogalt;
+  komut(state, json!({"komut": "studyo.cogalt", "tuval": tuval, "kip": kip})).await?;
   let program = state.motor.ozet().lock().koleksiyon.program.get(tuval).cloned();
   if let Some(p) = &program {
     komut(state, json!({"komut": "studyo.onizleme", "tuval": tuval, "sahne": p})).await?;

@@ -146,7 +146,7 @@ Son güncelleme: 29.09.2026 (commit `892e2fa`).
 | T-bar (sürükle; uçta tamamla/geri al, ortada kalır) | VAR | sinama, it, vt:tbar, tp | Sabit geçişlerde (Kes/Stinger) reddedilir |
 | Hızlı geçiş düğmeleri | VAR | it, vt:HizliGecisler, tp | Geçiş süresince tuvalin geçişi geçici değişir, bitince geri kurulur (OBS'te ayrı geçiş kaynağı kullanılır; görünür sonuç aynı) |
 | Dikey düzen, canlı sahne düzenleme uyarısı | VAR | — | Görünüm menüsünde; uyarı önizlemedeki sahne programdayken gösterilir |
-| "Sahneyi çoğalt" seçeneği | DESTEKLENMİYOR | | Düzenlemeler sahnenin kalıcı kaydına (koleksiyon) gider; OBS'teki geçici özel kopya anlamı için düzenleme hedefi ve geçişte birleştirme yeniden tasarlanmalı. Eşdeğer akış: Sahne › Çoğalt ile kopyayı düzenleyip programa almak |
+| "Sahneyi çoğalt" seçeneği | VAR | sinama (öğe kaldırılınca program kırmızı kalır, önizleme değişir; programdaki sahne silinemez; kapanınca asıl sahne), rust:studyo_cogalt_varsayilan_acik_ve_sinirli | Ayarlar › Gelişmiş › Studio Mode: Kapalı / Sahneyi çoğalt (varsayılan, OBS gibi) / Sahneyi ve kaynak özelliklerini çoğalt. Geçiş (ve T-bar) önizleme sahnesinin o anki özel kopyasını (libobs `OBS_SCENE_DUP_PRIVATE_REFS` / `PRIVATE_COPY`) programa alır; düzenlemeler asıl sahneye kaydolur, bir sonraki geçişte programa gelir. Studio Mode kapanınca program asıl sahneye bırakılır. Arayüz tarayıcıda görülmedi |
 
 ## 4.10 Durum çubuğu
 

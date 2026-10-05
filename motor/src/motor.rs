@@ -363,6 +363,8 @@ pub struct Motor {
   pub(crate) gecisler: HashMap<String, crate::gecis::Gecis>,
   /// Tuval → Studio Mode önizleme tuvali
   pub(crate) studyo: HashMap<String, crate::gecis::Studyo>,
+  /// Studio Mode "Sahneyi çoğalt": tuval → programdaki özel kopya sahne ve asıl sahnenin kimliği
+  pub(crate) program_kopyalari: HashMap<String, (Ptr, String)>,
   pub(crate) filtreler: BTreeMap<String, crate::filtre::Filtre>,
   /// Grup kimliği → sahnesi
   pub(crate) gruplar: BTreeMap<String, String>,
@@ -523,6 +525,7 @@ impl Motor {
       onizlemeler: HashMap::new(),
       ucuncu_taraf: Vec::new(),
       gecisler: HashMap::new(),
+      program_kopyalari: HashMap::new(),
       studyo: HashMap::new(),
       filtreler: BTreeMap::new(),
       gruplar: BTreeMap::new(),
@@ -716,6 +719,7 @@ impl Motor {
         (api().obs_transition_set)(g.ptr, std::ptr::null_mut());
       }
     }
+    Self::kopyayi_birak(self.program_kopyalari.remove(id));
     let sahneler: Vec<String> = self.sahneler.iter().filter(|(_, s)| s.kanvas == id).map(|(k, _)| k.clone()).collect();
     for s in sahneler {
       self.sahne_sil(&s)?;
@@ -1008,6 +1012,9 @@ impl Motor {
         (a.obs_transition_force_stop)(g.ptr);
         (a.obs_transition_set)(g.ptr, std::ptr::null_mut());
       }
+    }
+    for (_, k) in std::mem::take(&mut self.program_kopyalari) {
+      Self::kopyayi_birak(Some(k));
     }
     let ids: Vec<String> = self.kaynaklar.keys().cloned().collect();
     for id in &ids {

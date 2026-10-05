@@ -2312,6 +2312,19 @@ async fn motor_sahne_grup_filtresi_oge_gecisi_etkilesim_video_ayari() {
       serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
     }
   };
+  // Motoru başlatan / yeniden başlatan uçlar (profil video değişimi) yük altında 10 sn'yi aşabilir: uzun istemci
+  let uzun = reqwest::Client::builder().timeout(std::time::Duration::from_secs(90)).build().unwrap();
+  let tamam_uzun = |yol: &'static str, govde: Value| {
+    let c = uzun.clone();
+    let url = format!("{}{yol}", h.base);
+    async move {
+      let r = c.post(url).json(&govde).send().await.unwrap();
+      let st = r.status();
+      let t = r.text().await.unwrap();
+      assert!(st.is_success(), "{yol} {govde}: {st} {t}");
+      serde_json::from_str::<Value>(&t).unwrap_or(Value::Null)
+    }
+  };
   let get = |yol: String| {
     let c = h.client.clone();
     let url = format!("{}{yol}", h.base);
@@ -2322,7 +2335,7 @@ async fn motor_sahne_grup_filtresi_oge_gecisi_etkilesim_video_ayari() {
     }
   };
 
-  let bas = tamam("/api/motor/baslat", json!({})).await;
+  let bas = tamam_uzun("/api/motor/baslat", json!({})).await;
   assert!(bas["bilgi"]["libobs"].is_string(), "{bas}");
   let renk = tamam("/api/motor/kaynak", json!({"tur": "renk", "deger": "#204060", "ad": "Arka"})).await["id"].as_str().unwrap().to_string();
   let yazi = tamam("/api/motor/kaynak", json!({"tur": "yazi", "deger": "Başlık", "ad": "Başlık"})).await["id"].as_str().unwrap().to_string();
@@ -2373,7 +2386,7 @@ async fn motor_sahne_grup_filtresi_oge_gecisi_etkilesim_video_ayari() {
   assert_eq!(post("/api/motor/etkilesim", json!({"kaynak": renk, "eylem": "zipla"})).await.status(), 400);
 
   // Profil video/ses: ölçekli çıkış ve 44,1 kHz → motor yeni ayarlarla yeniden başlar; tuval boyutu tabandan
-  let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"video": {"cikis": [1280, 720], "olcek_filtresi": "lanczos"}, "ses": {"ornekleme": 44100}}})).await;
+  let r = tamam_uzun("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"video": {"cikis": [1280, 720], "olcek_filtresi": "lanczos"}, "ses": {"ornekleme": 44100}}})).await;
   assert_eq!(r["motorYenidenBasladi"], true, "{r}");
   let d = get("/api/motor".into()).await;
   assert_eq!(d["calisiyor"], true);
@@ -2384,7 +2397,7 @@ async fn motor_sahne_grup_filtresi_oge_gecisi_etkilesim_video_ayari() {
   // Yeniden başlamadan sonra koleksiyon yerinde
   assert_eq!(get("/api/motor/filtreler?kaynak=sahne-ana".into()).await["filtreler"].as_array().unwrap().len(), 1);
   // Geçersiz değerler düzeltilir (HDR + 8 bit → SDR, tek sayı çözünürlük → varsayılan)
-  let r = tamam("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"video": {"renk_uzayi": "2100pq", "taban": [1921, 1080]}}})).await;
+  let r = tamam_uzun("/api/motor/profil", json!({"eylem": "guncelle", "degisim": {"video": {"renk_uzayi": "2100pq", "taban": [1921, 1080]}}})).await;
   assert_eq!((r["profil"]["video"]["renk_uzayi"].as_str(), r["profil"]["video"]["taban"].clone()), (Some("709"), json!([1920, 1080])));
   assert!(post("/api/motor/durdur", json!({"confirm": true})).await.status().is_success());
 }

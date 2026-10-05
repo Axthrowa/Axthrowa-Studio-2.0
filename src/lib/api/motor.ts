@@ -275,6 +275,8 @@ export type MotorProfil = {
   tekrar_dikey: boolean;
   /** Ölçer tepe tipi: gerçek tepe (true peak) */
   gercek_tepe?: boolean;
+  /** Studio Mode "Sahneyi çoğalt": 0 kapalı, 1 sahne, 2 sahne + kaynak özellikleri */
+  studyo_cogalt?: number;
   tekrar_sn: number;
   iz_adlari: string[];
   hedefler: Record<string, MotorHedefAtamasi>;

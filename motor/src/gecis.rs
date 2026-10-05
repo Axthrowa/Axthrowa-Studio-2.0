@@ -22,6 +22,12 @@ pub struct Studyo {
   pub sahne: Option<String>,
   /// T-bar sürükleniyor: (eski program, hedef) — bırakılınca ya hedefe tamamlanır ya eskiye döner
   pub tbar: Option<(String, String)>,
+  /// "Sahneyi çoğalt" (OBS Studio Mode seçeneği): 0 kapalı, 1 sahne kopyası (kaynaklar ortak), 2 sahne + kaynak
+  /// özellikleri kopyası ("Özellikleri düzenle"). Açıkken geçiş önizleme sahnesinin o anki özel kopyasını programa
+  /// alır; aynı sahne önizlemede düzenlenirken program değişmez, düzenlemeler asıl sahneye kaydolur.
+  pub cogalt: u8,
+  /// T-bar sürerken önceki program kopyası (eskiye dönülürse geri kurulur)
+  pub tbar_kopya: Option<(Ptr, String)>,
 }
 
 /// T-bar uçlara bu kadar yakın bırakılırsa geçiş tamamlanır / geri alınır
@@ -104,6 +110,41 @@ impl Motor {
       .iter()
       .find(|(_, s)| unsafe { (api().obs_scene_get_source)(s.ptr) } == kaynak)
       .map(|(id, _)| id.clone())
+      // Programdaki özel kopya asıl sahnesinin kimliğiyle görünür
+      .or_else(|| self.program_kopyalari.values().find(|(p, _)| unsafe { (api().obs_scene_get_source)(*p) } == kaynak).map(|(_, id)| id.clone()))
+  }
+
+  /// Studio Mode geçişinin hedef kaynağı: "Sahneyi çoğalt" açıksa sahnenin özel kopyası (yeni program kopyası olarak
+  /// kaydedilir; önceki kopya `eski_kopya` olarak döner — geçiş kendi başvurusunu tuttuğundan bırakmak güvenlidir).
+  fn gecis_kaynagi(&mut self, tuval: &str, sahne: &str) -> Result<(Ptr, Option<(Ptr, String)>), String> {
+    let kip = self.studyo.get(tuval).map(|s| s.cogalt).unwrap_or(0);
+    let ptr = self.sahneler.get(sahne).ok_or_else(|| format!("sahne yok: {sahne}"))?.ptr;
+    if kip == 0 {
+      return Ok((unsafe { (api().obs_scene_get_source)(ptr) }, None));
+    }
+    let ad = cs(&format!("{sahne} (program kopyası)"));
+    let tur = if kip == 2 { obs::OBS_SCENE_DUP_PRIVATE_COPY } else { obs::OBS_SCENE_DUP_PRIVATE_REFS };
+    let kopya = unsafe { (api().obs_scene_duplicate)(ptr, ad.as_ptr(), tur) };
+    if kopya.is_null() {
+      return Err("sahne kopyası oluşturulamadı".into());
+    }
+    let eski = self.program_kopyalari.insert(tuval.into(), (kopya, sahne.into()));
+    Ok((unsafe { (api().obs_scene_get_source)(kopya) }, eski))
+  }
+
+  pub(crate) fn kopyayi_birak(kopya: Option<(Ptr, String)>) {
+    if let Some((p, _)) = kopya {
+      unsafe { (api().obs_scene_release)(p) };
+    }
+  }
+
+  /// Studio Mode "Sahneyi çoğalt" kipi (0–2)
+  pub fn studyo_cogalt(&mut self, tuval: &str, kip: u8) -> Result<(), String> {
+    if kip > 2 {
+      return Err("kip 0–2 olmalı".into());
+    }
+    self.studyo.get_mut(tuval).ok_or("Studio Mode kapalı")?.cogalt = kip;
+    Ok(())
   }
 
   /// Tuvalin programdaki sahnesi (geçişin etkin kaynağı).
@@ -124,12 +165,20 @@ impl Motor {
       let s = self.sahneler.get(id).ok_or_else(|| format!("sahne yok: {id}"))?;
       (s.kanvas.clone(), unsafe { (api().obs_scene_get_source)(s.ptr) })
     };
-    let tr = self.gecis_hazirla(&kanvas)?;
+    self.kaynaga_gec(&kanvas, kaynak, gecis, sure_ms)?;
+    // Program artık asıl sahne: önceki özel kopya bırakılır (geçiş kendi başvurusunu tutar)
+    Self::kopyayi_birak(self.program_kopyalari.remove(&kanvas));
+    Ok(())
+  }
+
+  fn kaynaga_gec(&mut self, kanvas: &str, kaynak: Ptr, gecis: bool, sure_ms: Option<u32>) -> Result<(), String> {
+    let tr = self.gecis_hazirla(kanvas)?;
     // Programa doğrudan geçiş yarım kalmış T-bar'ı geçersiz kılar
-    if let Some(s) = self.studyo.get_mut(&kanvas) {
+    if let Some(s) = self.studyo.get_mut(kanvas) {
       s.tbar = None;
+      Self::kopyayi_birak(s.tbar_kopya.take());
     }
-    let sure = sure_ms.unwrap_or(self.gecisler[&kanvas].sure_ms).min(AZAMI_SURE_MS);
+    let sure = sure_ms.unwrap_or(self.gecisler[kanvas].sure_ms).min(AZAMI_SURE_MS);
     unsafe {
       if !gecis || !(api().obs_transition_start)(tr, obs::OBS_TRANSITION_MODE_AUTO, sure, kaynak) {
         (api().obs_transition_set)(tr, kaynak);
@@ -201,7 +250,7 @@ impl Motor {
       return Err("önizleme tuvali oluşturulamadı".into());
     }
     let program = self.program_sahnesi(tuval);
-    self.studyo.insert(tuval.into(), Studyo { kanvas: Kanvas { ptr, genislik: g, yukseklik: y }, sahne: None, tbar: None });
+    self.studyo.insert(tuval.into(), Studyo { kanvas: Kanvas { ptr, genislik: g, yukseklik: y }, sahne: None, tbar: None, cogalt: 0, tbar_kopya: None });
     if let Some(p) = program {
       self.studyo_onizleme(tuval, &p)?;
     }
@@ -216,6 +265,13 @@ impl Motor {
     }
     self.sanal_kamera_tuvali_kapaniyor(&format!("studyo-{tuval}"));
     self.onizlemeler.remove(&format!("studyo-{tuval}"));
+    // Program özel kopyadaysa asıl sahneye bırakılır: Studio Mode dışında düzenlemeler programda görünmeli
+    if let Some((_, asil)) = self.program_kopyalari.get(tuval).cloned() {
+      if let (Some(g), Some(s)) = (self.gecisler.get(tuval), self.sahneler.get(&asil)) {
+        unsafe { (api().obs_transition_set)(g.ptr, (api().obs_scene_get_source)(s.ptr)) };
+      }
+      Self::kopyayi_birak(self.program_kopyalari.remove(tuval));
+    }
     if let Some(s) = self.studyo.remove(tuval) {
       unsafe {
         (api().obs_canvas_set_channel)(s.kanvas.ptr, 0, std::ptr::null_mut());
@@ -254,7 +310,10 @@ impl Motor {
     }
     let onizleme = st.sahne.clone().ok_or("önizlemede sahne yok")?;
     let eski = self.program_sahnesi(tuval);
-    self.sahneye_gec(&onizleme, true, sure_ms)?;
+    let (kaynak, eski_kopya) = self.gecis_kaynagi(tuval, &onizleme)?;
+    let sonuc = self.kaynaga_gec(tuval, kaynak, true, sure_ms);
+    Self::kopyayi_birak(eski_kopya);
+    sonuc?;
     if takas {
       if let Some(e) = eski.filter(|e| *e != onizleme) {
         self.studyo_onizleme(tuval, &e)?;
@@ -288,11 +347,19 @@ impl Motor {
         if eski == hedef {
           return Err("önizleme ve program aynı sahne".into());
         }
-        let kaynak = unsafe { (api().obs_scene_get_source)(self.sahneler[&hedef].ptr) };
+        let (kaynak, eski_kopya) = self.gecis_kaynagi(tuval, &hedef)?;
         if !unsafe { (api().obs_transition_start)(tr, obs::OBS_TRANSITION_MODE_MANUAL, 0, kaynak) } {
+          // Başlamadıysa kopya geri alınır
+          let yeni = match eski_kopya {
+            Some(e) => self.program_kopyalari.insert(tuval.into(), e),
+            None => self.program_kopyalari.remove(tuval),
+          };
+          Self::kopyayi_birak(yeni);
           return Err("manuel geçiş başlatılamadı".into());
         }
-        self.studyo.get_mut(tuval).unwrap().tbar = Some((eski.clone(), hedef.clone()));
+        let st = self.studyo.get_mut(tuval).unwrap();
+        st.tbar = Some((eski.clone(), hedef.clone()));
+        st.tbar_kopya = eski_kopya;
         (eski, hedef)
       }
     };
@@ -310,8 +377,27 @@ impl Motor {
     let Some(son) = sonuc else {
       return Ok(true);
     };
-    // Uçta bırakıldı: geçiş temizlenir ve sonuç sahnesi doğrudan program olur (yarım kalmış geçiş bırakılmaz)
-    let kaynak = unsafe { (api().obs_scene_get_source)(self.sahneler.get(&son).ok_or("sahne silindi")?.ptr) };
+    // Uçta bırakıldı: geçiş temizlenir ve sonuç sahnesi doğrudan program olur (yarım kalmış geçiş bırakılmaz). Kopya
+    // kipinde hedefe varılırsa yeni kopya, eskiye dönülürse önceki kopya (yoksa asıl sahne) programdır.
+    let hedefe = konum >= 1.0 - TBAR_UC;
+    let onceki = self.studyo.get_mut(tuval).unwrap().tbar_kopya.take();
+    let kaynak = if hedefe {
+      Self::kopyayi_birak(onceki);
+      match self.program_kopyalari.get(tuval) {
+        Some((p, _)) => unsafe { (api().obs_scene_get_source)(*p) },
+        None => unsafe { (api().obs_scene_get_source)(self.sahneler.get(&son).ok_or("sahne silindi")?.ptr) },
+      }
+    } else {
+      let yeni = match onceki {
+        Some(e) => self.program_kopyalari.insert(tuval.into(), e),
+        None => self.program_kopyalari.remove(tuval),
+      };
+      Self::kopyayi_birak(yeni);
+      match self.program_kopyalari.get(tuval) {
+        Some((p, _)) => unsafe { (api().obs_scene_get_source)(*p) },
+        None => unsafe { (api().obs_scene_get_source)(self.sahneler.get(&son).ok_or("sahne silindi")?.ptr) },
+      }
+    };
     unsafe { (api().obs_transition_set)(tr, kaynak) };
     self.studyo.get_mut(tuval).unwrap().tbar = None;
     Ok(false)
@@ -333,6 +419,9 @@ impl Motor {
         (api().obs_transition_force_stop)(g.ptr);
         (api().obs_source_release)(g.ptr);
       }
+    }
+    for (_, k) in std::mem::take(&mut self.program_kopyalari) {
+      Self::kopyayi_birak(Some(k));
     }
   }
 }

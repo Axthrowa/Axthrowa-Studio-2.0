@@ -240,3 +240,26 @@ konumu artık öğe durumundan okunuyor, son durumlar 3 sn'ye kadar yoklanıyor.
 
 Sınanmayanlar (UNVERIFIED): Twitch ve YouTube yayın bilgisi gerçek kanalda (yalnız sahte `fetch`); Hareket ve
 Sahneyi çoğalt arayüzü tarayıcıda görülmedi.
+
+### Ek (2026-10-05): akıcı önizleme (H.264 + WebCodecs), OBS Yami görünümü, Ses/Video Panosu (bot)
+
+Komitler: dd4f6b6, eed4e94 (panel); ec02106 (StreamAxT).
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **57/57** (yeni: canlı H.264 — `yym_canli_h264` çıktısı NVENC'le kodlar, ilk paket anahtar kare + SPS/PPS, boyut ölçeklenmiş tuval) |
+| Motor birim | **31** + 1 (paket çerçevesi biçimi, bit hızı sınırları) |
+| Panel birim (Rust) | **308** · entegrasyon **41** (1 elle; `/ws/motor` `{"video":…}` aboneliği ikili kare döndürür, tuval süzgeci) |
+| Ön yüz (vitest) | **438** (`canliVideo`: SPS'ten `avc1.PPCCLL`, çerçeve ayrıştırma; lisans bekçisi OFL-1.1 Open Sans) |
+| StreamAxT | sunucu **469**, istemci **83** (ses panosu: kova ağırlıklı seçim, bekleme, yetki, sohbet adı, katman konumu) |
+
+Canlı doğrulamalar (başsız sunucu + başsız Chrome, ayrı profil): önizleme ve program bölmeleri ≈60 kare/sn, uzun görev
+yok; Studio Mode'da seçili öğe çerçevesi yalnız önizleme bölmesinde (9 tutamaç önizlemede, 0 programda); pencere
+yakalama (WGC) motor kaynağında görüntü veriyor — simge durumuna küçültülmüş pencere siyah kalır (Windows sınırı).
+Ses panosu: yalıtılmış bot sunucusunda (127.0.0.1:3013) sentetik 1 sn 440 Hz WAV yüklendi → panodan oynat →
+`/widgets/pano` katmanında `<audio>` 0→0,89 sn çaldı, bitince `pano_bitti` ile sıra boşaldı, geçmişe yazıldı; yabancı
+kökenden yazma 403.
+
+Sınanmayanlar (UNVERIFIED): ses panosunun gerçek sohbette `!ses` ile tetiklenmesi (gerçek sohbet olayı üretilmedi;
+birim testleri var); platform kanal puanı/Bits ödülleri bağlı değil (bot `KNOWN_LIMITATIONS §10`); NVENC olmayan
+makinede x264 yedeği yalnız kod yolu olarak.

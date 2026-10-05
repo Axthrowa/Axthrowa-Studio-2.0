@@ -125,6 +125,7 @@ impl Motor {
     let ad = format!("{ONEK}{tuval}");
     self.akis_durdur(&ad);
     self.onizlemeler.remove(&ad);
+    self.video_akislari.remove(&ad);
     if let Some(mv) = self.multiviewler.remove(tuval) {
       unsafe {
         (api().obs_canvas_set_channel)(mv.kanvas.ptr, 0, std::ptr::null_mut());
@@ -218,6 +219,7 @@ impl Motor {
     self.sanal_kamera_tuvali_kapaniyor(&ad);
     self.akis_durdur(&ad);
     self.onizlemeler.remove(&ad);
+    self.video_akislari.remove(&ad);
     if let Some(t) = self.kaynak_tuvalleri.remove(id) {
       unsafe {
         (api().obs_canvas_set_channel)(t.ptr, 0, std::ptr::null_mut());
@@ -288,6 +290,7 @@ impl Motor {
     self.sanal_kamera_tuvali_kapaniyor(&ad);
     self.akis_durdur(&ad);
     self.onizlemeler.remove(&ad);
+    self.video_akislari.remove(&ad);
     if let Some(t) = self.sigdirilmis.remove(id) {
       unsafe {
         (api().obs_canvas_set_channel)(t.kanvas.ptr, 0, std::ptr::null_mut());

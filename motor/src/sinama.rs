@@ -1191,6 +1191,47 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
       Ok((acikti, !m.cikislar_var(crate::sanal_kamera::CIKIS_ID)))
     })()
   };
+  // Canlı H.264 önizleme: anahtarla bağlanan istemciye SPS'li anahtar kareyle başlayan akış; FFmpeg çözer; yanlış
+  // anahtar veri almaz
+  type VideoSonuc = (serde_json::Value, usize, bool, DosyaBilgisi, bool);
+  let video = (|| -> Result<VideoSonuc, String> {
+    use std::io::{Read, Write};
+    let bilgi = m.video_baslat("ana", 640, 400)?;
+    let port = bilgi["port"].as_u64().ok_or("port yok")? as u16;
+    let anahtar = bilgi["anahtar"].as_str().ok_or("anahtar yok")?.to_string();
+    let mut yanlis = std::net::TcpStream::connect(("127.0.0.1", port)).map_err(|e| e.to_string())?;
+    yanlis.write_all(b"yanlis-anahtar
+").map_err(|e| e.to_string())?;
+    let _ = yanlis.set_read_timeout(Some(Duration::from_millis(1500)));
+    let mut s = std::net::TcpStream::connect(("127.0.0.1", port)).map_err(|e| e.to_string())?;
+    s.write_all(format!("{anahtar}
+").as_bytes()).map_err(|e| e.to_string())?;
+    s.set_read_timeout(Some(Duration::from_secs(3))).map_err(|e| e.to_string())?;
+    let bas = Instant::now();
+    let (mut kareler, mut ilk_anahtar_sps, mut ilk, mut dokum) = (0usize, false, true, Vec::new());
+    while bas.elapsed() < Duration::from_millis(2000) {
+      let mut u = [0u8; 4];
+      s.read_exact(&mut u).map_err(|e| format!("okuma: {e}"))?;
+      let mut c = vec![0u8; u32::from_le_bytes(u) as usize];
+      s.read_exact(&mut c).map_err(|e| format!("okuma: {e}"))?;
+      let ad = c[0] as usize;
+      let anahtar_kare = c[1 + ad] == 1;
+      let veri = &c[1 + ad + 1 + 2 + 2 + 8..];
+      if ilk {
+        // İlk çerçeve anahtar kare olmalı ve SPS (NAL 7) içermeli
+        ilk_anahtar_sps = anahtar_kare && veri.windows(5).any(|w| w[..4] == [0, 0, 0, 1] && w[4] & 0x1f == 7 || w[1..4] == [0, 0, 1] && w[4] & 0x1f == 7);
+        ilk = false;
+      }
+      dokum.extend_from_slice(veri);
+      kareler += 1;
+    }
+    let mut b = [0u8; 16];
+    let yanlis_bos = !matches!(yanlis.read(&mut b), Ok(n) if n > 0);
+    m.video_durdur("ana");
+    let dosya = klasor.join("canli-onizleme.h264");
+    std::fs::write(&dosya, &dokum).map_err(|e| e.to_string())?;
+    Ok((bilgi, kareler, ilk_anahtar_sps, incele(&ffprobe, &ff, &dosya), yanlis_bos))
+  })();
   let surum = m.surum();
   let moduller = m.moduller().to_vec();
   m.kapat();
@@ -1331,6 +1372,14 @@ pub fn calistir(klasor: &Path) -> Result<bool, String> {
     "ek tuval: kendi boyutunda kare verir, sahnesi programda; boşaltılınca sahnesi kalkar; ana tuval boşaltılamaz",
     ek_tuval.as_ref().is_ok_and(|(k, p, b, a)| *k && *p && *b && *a),
     format!("{ek_tuval:?} (kare 320×320, program, boş, ana reddi)"),
+  );
+  ekle(
+    "canlı H.264 önizleme: anahtarlı yerel bağlantı, SPS'li anahtar kareyle başlar, ≥45 kare/sn, FFmpeg 640×360 çözer, yanlış anahtar veri almaz",
+    video.as_ref().is_ok_and(|(_, n, sps, b, y)| *n >= 90 && *sps && b.genislik == 640 && b.yukseklik == 360 && b.kare >= 90 && b.cozme_hatasi == 0 && *y),
+    match &video {
+      Ok((bilgi, n, sps, b, y)) => format!("{} {}×{}; 2 sn'de {n} çerçeve; ilk anahtar+SPS {sps}; FFmpeg {}×{} {} kare, hata {}; yanlış anahtar boş {y}", bilgi["kodlayici"], bilgi["genislik"], bilgi["yukseklik"], b.genislik, b.yukseklik, b.kare, b.cozme_hatasi),
+      Err(e) => e.clone(),
+    },
   );
   ekle(
     "sanal kamera kaynak hedefi: kaynak ana tuval boyutunda (16:9) ortalanıp sığdırılır, silinince tuval kapanır",

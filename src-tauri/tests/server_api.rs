@@ -1835,6 +1835,28 @@ async fn motor_v2_sahneler_gruplar_filtreler_koleksiyonlar() {
   let _ = ws.close(None).await;
   assert!(kare >= 3 && seviye >= 3, "kare {kare}, seviye {seviye}");
 
+  // Canlı H.264: ikili çerçeveler (başlıkta tuval ve boyut), ilki SPS'li anahtar kare; aboneliği bırakınca akış durur
+  let (mut ws, _) = tokio_tungstenite::connect_async(&ws_url).await.unwrap();
+  ws.send(tokio_tungstenite::tungstenite::Message::Text(r#"{"video": {"tuval": "ana", "genislik": 640, "yukseklik": 400}}"#.into())).await.unwrap();
+  let (mut cerceve, mut ilk) = (0, None::<(bool, u16, u16, bool)>);
+  let son = std::time::Instant::now() + std::time::Duration::from_secs(8);
+  while std::time::Instant::now() < son && cerceve < 30 {
+    if let Ok(Some(Ok(tokio_tungstenite::tungstenite::Message::Binary(b)))) = tokio::time::timeout(std::time::Duration::from_secs(3), ws.next()).await {
+      let n = b[0] as usize;
+      assert_eq!(&b[1..1 + n], b"ana");
+      let (anahtar, g, y) = (b[1 + n] == 1, u16::from_le_bytes([b[2 + n], b[3 + n]]), u16::from_le_bytes([b[4 + n], b[5 + n]]));
+      let veri = &b[1 + n + 13..];
+      let sps = veri.windows(5).any(|w| w[..4] == [0, 0, 0, 1] && w[4] & 0x1f == 7);
+      if ilk.is_none() {
+        ilk = Some((anahtar, g, y, sps));
+      }
+      cerceve += 1;
+    }
+  }
+  let _ = ws.close(None).await;
+  assert_eq!(ilk, Some((true, 640, 360, true)), "ilk çerçeve anahtar kare, 640×360, SPS'li");
+  assert!(cerceve >= 30, "çerçeve {cerceve}");
+
   // Kaynak ve sahne çoğaltma
   let kopya = tamam("/api/motor/kaynak-islem", json!({"id": renk, "eylem": "cogalt", "oge": format!("{oyun}/{renk}")})).await;
   let kopya_id = kopya["id"].as_str().unwrap().to_string();

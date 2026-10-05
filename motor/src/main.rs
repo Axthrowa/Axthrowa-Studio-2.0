@@ -30,6 +30,7 @@ mod servis;
 mod ses;
 mod sinama;
 mod ui_gorev;
+mod video_akisi;
 
 use std::path::PathBuf;
 use std::process::ExitCode;

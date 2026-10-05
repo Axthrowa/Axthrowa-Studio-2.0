@@ -4,6 +4,8 @@
  * `?kaynak=<kimlik>&ad=<ad>` (motor kaynağı kendi tuvalinde işler, pencere kapanınca tuval bırakılır). Kareler `/ws/motor`
  * akışından (en çok 15 kare/sn); bağlantı yoksa PNG yoklaması. Esc ya da çift tık pencereyi kapatır.
  */
+import { videoDestekli } from "../lib/canliVideo";
+import { CanliVideo } from "../components/broadcast/CanliVideo";
 import { EK_TUVAL, tuvalAdi } from "../lib/tuvaller";
 import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
@@ -88,13 +90,15 @@ export default function ProjektorSayfasi() {
   const boyu = kaynakBoyu ?? ekBoyu;
   const dikey = boyu ? boyu[1] > boyu[0] : tuval.endsWith("dikey");
   const oran = boyu ? `${boyu[0]} / ${boyu[1]}` : dikey ? "9 / 16" : "16 / 9";
-  const canli = useMotorCanli(hazir, { seviye: false, kare: hazir ? { tuval, genislik: 1280, fps: 15 } : null });
+  // Donanım H.264 çözücüsüyle akıcı görüntü; yoksa JPEG/PNG
+  const [videoYok, setVideoYok] = useState(() => !videoDestekli());
+  const canli = useMotorCanli(hazir && videoYok, { seviye: false, kare: hazir && videoYok ? { tuval, genislik: 1280, fps: 15 } : null });
   const [yedek, setYedek] = useState<string | null>(null);
   const [imlec, setImlec] = useState(true);
 
   // Canlı akış yoksa yedek: saniyede bir PNG
   useEffect(() => {
-    if (canli.bagli || !hazir) return;
+    if (canli.bagli || !hazir || !videoYok) return;
     let onceki: string | null = null;
     const cek = () =>
       motorApi
@@ -113,7 +117,7 @@ export default function ProjektorSayfasi() {
       clearVisibleInterval(id);
       if (onceki) URL.revokeObjectURL(onceki);
     };
-  }, [canli.bagli, tuval, hazir]);
+  }, [canli.bagli, tuval, hazir, videoYok]);
 
   useEffect(() => {
     document.title = kaynak ? `Projektör — ${kaynakAdi}` : `Projektör — ${tuvalAdi(tuval)}`;
@@ -144,7 +148,11 @@ export default function ProjektorSayfasi() {
       role="img"
       aria-label={`Projektör: ${tuval}`}
     >
-      {kare ? (
+      {hazir && !videoYok ? (
+        <div className="relative h-full w-full" style={{ aspectRatio: oran, maxHeight: "100%", maxWidth: "100%" }}>
+          <CanliVideo tuval={tuval} className="absolute inset-0 h-full w-full" onDesteksiz={() => setVideoYok(true)} />
+        </div>
+      ) : kare ? (
         <img src={kare} alt="" className="max-h-full max-w-full" style={{ aspectRatio: oran, objectFit: "contain" }} draggable={false} />
       ) : (
         <span className="text-[13px] text-white/70">{kaynakHata ? `Projektör açılamadı: ${kaynakHata}` : "Motor görüntüsü bekleniyor…"}</span>

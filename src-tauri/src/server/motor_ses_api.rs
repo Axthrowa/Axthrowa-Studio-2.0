@@ -619,6 +619,8 @@ async fn ws_motor(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>, Conn
 struct Abonelik {
   seviye: bool,
   kare: Option<(String, u32, u32)>,
+  /// Canlı H.264: tuval, genişlik, yükseklik (önizleme alanının piksel boyutu)
+  video: Option<(String, u32, u32)>,
 }
 
 async fn abone_ol(state: &AppState, a: &Abonelik) {
@@ -631,6 +633,15 @@ async fn abone_ol(state: &AppState, a: &Abonelik) {
     };
     if ilk {
       let _ = state.motor.komut(json!({"komut": "seviye.abone", "acik": true})).await;
+    }
+  }
+  if let Some((t, g, y)) = &a.video {
+    state.motor.ozet().lock().video_abonesi.entry(t.clone()).and_modify(|n| *n += 1).or_insert(1);
+    // Son abonenin boyutu geçerli (motor tuval başına tek kodlayıcı tutar)
+    if let Ok(v) = state.motor.komut(json!({"komut": "video.baslat", "tuval": t, "genislik": g, "yukseklik": y})).await {
+      if let (Some(port), Some(anahtar)) = (v["port"].as_u64(), v["anahtar"].as_str()) {
+        state.motor.video_baglan(port as u16, anahtar);
+      }
     }
   }
   if let Some((t, g, f)) = &a.kare {
@@ -650,6 +661,18 @@ async fn abonelikten_cik(state: &AppState, a: &Abonelik) {
     };
     if son {
       let _ = state.motor.komut(json!({"komut": "seviye.abone", "acik": false})).await;
+    }
+  }
+  if let Some((t, _, _)) = &a.video {
+    let son = {
+      let o = state.motor.ozet();
+      let mut o = o.lock();
+      let n = o.video_abonesi.entry(t.clone()).or_insert(1);
+      *n = n.saturating_sub(1);
+      *n == 0
+    };
+    if son {
+      let _ = state.motor.komut(json!({"komut": "video.durdur", "tuval": t})).await;
     }
   }
   if let Some((t, _, _)) = &a.kare {
@@ -684,6 +707,17 @@ fn abonelik_isle(onceki: &Abonelik, m: &str) -> Abonelik {
       Some((t, g, f))
     });
   }
+  if let Some(k) = v.get("video") {
+    a.video = k.as_object().and_then(|k| {
+      let t = k.get("tuval")?.as_str()?.to_string();
+      if !onizleme_tuvali_gecerli(&t) {
+        return None;
+      }
+      let g = k.get("genislik").and_then(Value::as_u64).unwrap_or(1280).clamp(64, 3840) as u32;
+      let y = k.get("yukseklik").and_then(Value::as_u64).unwrap_or(720).clamp(64, 2160) as u32;
+      Some((t, g, y))
+    });
+  }
   a
 }
 
@@ -696,6 +730,7 @@ fn kare_tuvali(satir: &str) -> Option<&str> {
 async fn motor_ws(socket: WebSocket, state: Arc<AppState>) {
   let (mut gonder, mut al) = socket.split();
   let mut olaylar = state.motor.canli_abone();
+  let mut video = state.motor.video_abone();
   let mut abonelik = Abonelik::default();
   let mut oturum = state.motor.oturum();
   let mut tik = tokio::time::interval(std::time::Duration::from_secs(2));
@@ -727,6 +762,17 @@ async fn motor_ws(socket: WebSocket, state: Arc<AppState>) {
         Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
         Err(_) => break,
       },
+      c = video.recv() => match c {
+        Ok(c) => {
+          let gerekli = abonelik.video.as_ref().is_some_and(|(t, _, _)| crate::motor_kopru::video_tuvali(&c) == Some(t.as_str()));
+          if gerekli && gonder.send(Message::Binary(c)).await.is_err() {
+            break;
+          }
+        }
+        // Geride kalan istemci çerçeve kaçırır; çözücü bir sonraki anahtar karede toparlanır
+        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+        Err(_) => break,
+      },
       _ = tik.tick() => {
         // Motor yeniden başladıysa (sayaçlar sıfırlandı) abonelik yenilenir
         let simdi = state.motor.oturum();
@@ -747,6 +793,12 @@ mod tests {
 
   #[test]
   fn abonelik_ve_kare_tuvali() {
+    let v = abonelik_isle(&Abonelik::default(), r#"{"video": {"tuval": "ana", "genislik": 99999, "yukseklik": 1}}"#);
+    assert_eq!(v.video, Some(("ana".into(), 3840, 64)));
+    assert_eq!(abonelik_isle(&v, r#"{"video": null}"#).video, None);
+    assert_eq!(abonelik_isle(&Abonelik::default(), r#"{"video": {"tuval": "../x"}}"#).video, None);
+    assert_eq!(crate::motor_kopru::video_tuvali(&[3, b'a', b'n', b'a', 1, 0]), Some("ana"));
+    assert_eq!(crate::motor_kopru::video_tuvali(&[9, b'a']), None);
     let a = abonelik_isle(&Abonelik::default(), r#"{"seviye": true, "kare": {"tuval": "studyo-ana", "genislik": 5000, "fps": 99}}"#);
     assert!(a.seviye);
     assert_eq!(a.kare, Some(("studyo-ana".into(), 1280, 15)));

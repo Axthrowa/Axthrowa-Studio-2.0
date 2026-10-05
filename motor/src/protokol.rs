@@ -212,6 +212,15 @@ fn yurut(motor: &mut Option<Motor>, istek: &Value, olay: &mpsc::Sender<Olay>) ->
       m.studyo_ac(metin(istek, "tuval")?)?;
       json!({})
     }
+    "video.baslat" => m.video_baslat(
+      metin(istek, "tuval")?,
+      sayi(istek, "genislik", Some(1280))? as u32,
+      sayi(istek, "yukseklik", Some(720))? as u32,
+    )?,
+    "video.durdur" => {
+      m.video_durdur(metin(istek, "tuval")?);
+      json!({})
+    }
     "studyo.cogalt" => {
       m.studyo_cogalt(metin(istek, "tuval")?, istek.get("kip").and_then(Value::as_u64).unwrap_or(0).min(255) as u8)?;
       json!({})

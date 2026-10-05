@@ -357,6 +357,9 @@ pub struct Motor {
   pub(crate) durumlar: DurumTablosu,
   pub(crate) olay: Sender<Olay>,
   pub(crate) onizlemeler: HashMap<String, Onizleme>,
+  /// Canlı H.264 önizleme akışları (tuval başına) ve paket sunucusu
+  pub(crate) video_akislari: HashMap<String, crate::video_akisi::VideoAkisi>,
+  pub(crate) video_sunucusu: Option<crate::video_akisi::PaketSunucusu>,
   /// Bu oturumda yüklenmeye çalışılan üçüncü taraf eklentiler ve sonuçları
   pub(crate) ucuncu_taraf: Vec<crate::eklenti::EklentiSonucu>,
   /// Tuval → program geçişi (kanal 0'daki geçiş kaynağı)
@@ -510,6 +513,7 @@ impl Motor {
     }
     crate::servis::kaydet();
     crate::onizleme::kaydet();
+    crate::video_akisi::kaydet();
     crate::ui_gorev::kur();
 
     let mut motor = Motor {
@@ -525,6 +529,8 @@ impl Motor {
       durumlar: Arc::new(Mutex::new(HashMap::new())),
       olay,
       onizlemeler: HashMap::new(),
+      video_akislari: HashMap::new(),
+      video_sunucusu: None,
       ucuncu_taraf: Vec::new(),
       gecisler: HashMap::new(),
       program_kopyalari: HashMap::new(),
@@ -819,22 +825,38 @@ impl Motor {
   }
 
   /// Tuvalin son önizleme karesi (PNG). İlk istekte bağlanır ve `None` döner (kare hazırlanıyor).
+  /// Önizleme/akış hedefi tuvalin libobs tuvali: ana/ek tuval, Studio Mode önizlemesi, etkileşim, Multiview, projektör,
+  /// sığdırılmış kaynak
+  pub(crate) fn tuval_kanvasi(&self, tuval: &str) -> Result<&Kanvas, String> {
+    let k = if let Some(t) = tuval.strip_prefix("studyo-") {
+      &self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas
+    } else if let Some(k) = tuval.strip_prefix(crate::etkilesim::ONEK) {
+      self.etkilesim_tuvalleri.get(k).ok_or("etkileşim penceresi açık değil")?
+    } else if let Some(k) = tuval.strip_prefix(crate::multiview::ONEK) {
+      &self.multiviewler.get(k).ok_or("multiview açık değil")?.kanvas
+    } else if let Some(k) = tuval.strip_prefix(crate::multiview::KAYNAK_ONEK) {
+      self.kaynak_tuvalleri.get(k).ok_or("projektör tuvali açık değil")?
+    } else if let Some(k) = tuval.strip_prefix(crate::multiview::SIGDIR_ONEK) {
+      &self.sigdirilmis.get(k).ok_or("sanal kamera kaynak tuvali açık değil")?.kanvas
+    } else {
+      self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?
+    };
+    Ok(k)
+  }
+
+  pub(crate) fn tuval_videosu(&self, tuval: &str) -> Result<Ptr, String> {
+    Ok(self.tuval_kanvasi(tuval)?.video())
+  }
+
+  pub(crate) fn tuval_boyutu_motor(&self, tuval: &str) -> Result<(u32, u32), String> {
+    let k = self.tuval_kanvasi(tuval)?;
+    Ok((k.genislik, k.yukseklik))
+  }
+
   pub fn onizleme_png(&mut self, tuval: &str, en_fazla: u32) -> Result<Option<Vec<u8>>, String> {
     self.bosta_onizlemeleri_kapat();
     if !self.onizlemeler.contains_key(tuval) {
-      let k = if let Some(t) = tuval.strip_prefix("studyo-") {
-        &self.studyo.get(t).ok_or("Studio Mode kapalı")?.kanvas
-      } else if let Some(k) = tuval.strip_prefix(crate::etkilesim::ONEK) {
-        self.etkilesim_tuvalleri.get(k).ok_or("etkileşim penceresi açık değil")?
-      } else if let Some(k) = tuval.strip_prefix(crate::multiview::ONEK) {
-        &self.multiviewler.get(k).ok_or("multiview açık değil")?.kanvas
-      } else if let Some(k) = tuval.strip_prefix(crate::multiview::KAYNAK_ONEK) {
-        self.kaynak_tuvalleri.get(k).ok_or("projektör tuvali açık değil")?
-      } else if let Some(k) = tuval.strip_prefix(crate::multiview::SIGDIR_ONEK) {
-        &self.sigdirilmis.get(k).ok_or("sanal kamera kaynak tuvali açık değil")?.kanvas
-      } else {
-        self.kanvaslar.get(tuval).ok_or_else(|| format!("tuval yok: {tuval}"))?
-      };
+      let k = self.tuval_kanvasi(tuval)?;
       let o = Onizleme::baglan(&format!("onizleme-{tuval}"), k.video(), k.genislik, k.yukseklik, en_fazla)?;
       self.onizlemeler.insert(tuval.into(), o);
       return Ok(None);
@@ -1709,6 +1731,8 @@ impl Motor {
 
   /// Her şeyi ters sırada serbest bırakır ve libobs'u kapatır.
   pub fn kapat(mut self) {
+    // Canlı video kodlayıcıları tuvallerden önce bırakılır
+    self.video_akislarini_kapat();
     self.etkilesimleri_kapat();
     self.multiviewleri_kapat();
     self.kaynak_tuvallerini_kapat();

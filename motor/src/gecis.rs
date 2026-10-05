@@ -289,6 +289,7 @@ impl Motor {
     }
     self.sanal_kamera_tuvali_kapaniyor(&format!("studyo-{tuval}"));
     self.onizlemeler.remove(&format!("studyo-{tuval}"));
+    self.video_akislari.remove(&format!("studyo-{tuval}"));
     // Program özel kopyadaysa asıl sahneye bırakılır: Studio Mode dışında düzenlemeler programda görünmeli
     if let Some((_, asil)) = self.program_kopyalari.get(tuval).cloned() {
       if let (Some(g), Some(s)) = (self.gecisler.get(tuval), self.sahneler.get(&asil)) {

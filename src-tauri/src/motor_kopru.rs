@@ -49,6 +49,8 @@ pub struct Ozet {
   /// Canlı akış aboneleri: seviye olayları ve tuval başına kare akışı (WebSocket bağlantı sayısı)
   pub seviye_abonesi: usize,
   pub kare_abonesi: HashMap<String, usize>,
+  /// Canlı H.264 önizleme aboneleri (tuval → WebSocket sayısı)
+  pub video_abonesi: HashMap<String, usize>,
   /// Kurulmuş video kodlayıcıları (motor kimliği: `v-ana`, `v-ana-3500`…)
   pub kodlayicilar: std::collections::HashSet<String>,
   /// Bu oturumun profili (başlatmada yüklenir; profil ayarı değişince güncellenir)
@@ -86,11 +88,30 @@ impl Default for CanliKanal {
   }
 }
 
+/// Canlı H.264 çerçeveleri (motorun yerel paket sunucusundan, başlıklı) — WebSocket abonelerine ikili ileti olarak
+/// iletilir. Yavaş abone çerçeve kaçırır (bir sonraki anahtar karede toparlanır), motoru bekletmez.
+pub struct VideoKanal(pub tokio::sync::broadcast::Sender<axum::body::Bytes>);
+
+impl Default for VideoKanal {
+  fn default() -> Self {
+    VideoKanal(tokio::sync::broadcast::channel(256).0)
+  }
+}
+
+/// Çerçeve başlığındaki tuval adı (`u8 uzunluk` + ad)
+pub fn video_tuvali(c: &[u8]) -> Option<&str> {
+  let n = *c.first()? as usize;
+  std::str::from_utf8(c.get(1..1 + n)?).ok()
+}
+
 #[derive(Default)]
 pub struct MotorKoprusu {
   ic: tokio::sync::Mutex<Option<Calisan>>,
   ozet: Arc<Mutex<Ozet>>,
   canli: CanliKanal,
+  video: VideoKanal,
+  /// Bağlı olunan motor paket sunucusu (port, anahtar); bağlantı koparsa boşalır
+  video_baglanti: Arc<Mutex<Option<(u16, String)>>>,
   /// Her başlatmada artar: canlı abonelikler motor yeniden başlayınca yenilenir
   oturum: std::sync::atomic::AtomicU64,
 }
@@ -115,6 +136,50 @@ impl MotorKoprusu {
 
   pub fn canli_abone(&self) -> tokio::sync::broadcast::Receiver<Arc<str>> {
     self.canli.0.subscribe()
+  }
+
+  pub fn video_abone(&self) -> tokio::sync::broadcast::Receiver<axum::body::Bytes> {
+    self.video.0.subscribe()
+  }
+
+  /// Motorun paket sunucusuna (yalnız 127.0.0.1) bağlanır; zaten aynı sunucuya bağlıysa bir şey yapmaz. Çerçeveler
+  /// video kanalına akar. Anahtar yalnız bu bağlantıda kullanılır, hiçbir yere yazılmaz.
+  pub fn video_baglan(&self, port: u16, anahtar: &str) {
+    {
+      let mut b = self.video_baglanti.lock();
+      if b.as_ref().is_some_and(|(p, a)| *p == port && a == anahtar) {
+        return;
+      }
+      *b = Some((port, anahtar.to_string()));
+    }
+    let (tx, baglanti, anahtar) = (self.video.0.clone(), Arc::clone(&self.video_baglanti), anahtar.to_string());
+    tokio::spawn(async move {
+      use tokio::io::{AsyncReadExt, AsyncWriteExt};
+      if let Ok(mut s) = tokio::net::TcpStream::connect(("127.0.0.1", port)).await {
+        let _ = s.set_nodelay(true);
+        if s.write_all(format!("{anahtar}\n").as_bytes()).await.is_ok() {
+          loop {
+            let mut u = [0u8; 4];
+            if s.read_exact(&mut u).await.is_err() {
+              break;
+            }
+            let n = u32::from_le_bytes(u) as usize;
+            if n == 0 || n > 32 << 20 {
+              break;
+            }
+            let mut c = vec![0u8; n];
+            if s.read_exact(&mut c).await.is_err() {
+              break;
+            }
+            let _ = tx.send(axum::body::Bytes::from(c));
+          }
+        }
+      }
+      let mut b = baglanti.lock();
+      if b.as_ref().is_some_and(|(p, _)| *p == port) {
+        *b = None;
+      }
+    });
   }
 
   pub fn oturum(&self) -> u64 {

@@ -244,6 +244,11 @@ obs_api! {
   fn obs_output_output_caption_text2(Ptr, *const c_char, f64);
   fn obs_output_set_video_conversion(Ptr, Ptr);
   fn obs_output_begin_data_capture(Ptr, u32) -> bool;
+  fn obs_output_can_begin_data_capture(Ptr, u32) -> bool;
+  fn obs_output_initialize_encoders(Ptr, u32) -> bool;
+  fn obs_encoder_set_scaled_size(Ptr, u32, u32);
+  fn obs_encoder_set_gpu_scale_type(Ptr, c_int) -> bool;
+  fn obs_encoder_get_extra_data(Ptr, *mut *mut u8, *mut usize) -> bool;
   fn obs_output_end_data_capture(Ptr);
   fn obs_source_create(*const c_char, *const c_char, Ptr, Ptr) -> Ptr;
   fn obs_source_release(Ptr);

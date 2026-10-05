@@ -8,6 +8,7 @@
  * o an düzenlenen sahneye (normalde program, Studio Mode'da önizleme) uygulanır.
  * Düzenlemeler Ctrl+Z / Ctrl+Y ile geri alınır (dönüşüm, görünürlük, kilit, sıra, kaldırma, ad).
  */
+import { videoDestekli } from "../../lib/canliVideo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   cikisEtkin,
@@ -535,28 +536,41 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
       onToast(`Motor durumu alınamadı: ${hataMetni(e)}`);
     }
   }, [onToast]);
+  // Yoklama yanıtı öncekiyle aynıysa durum güncellenmez (çalışma alanı boşuna yeniden çizilmez)
+  const sonYanit = useRef<Record<string, string>>({});
+  const degistiyse = useCallback(<T,>(anahtar: string, v: T, koy: (v: T) => void) => {
+    const m = JSON.stringify(v);
+    if (sonYanit.current[anahtar] === m) return;
+    sonYanit.current[anahtar] = m;
+    koy(v);
+  }, []);
   const sahnelerYenile = useCallback(async () => {
     try {
-      setSl(await motorApi.sahneler());
+      degistiyse("sahneler", await motorApi.sahneler(), setSl);
     } catch {
       /* motor kapanırken */
     }
-  }, []);
+  }, [degistiyse]);
   const sahneYenile = useCallback(async () => {
-    if (!aktifSahne) return setSahne(null);
+    if (!aktifSahne) {
+      sonYanit.current.sahne = "";
+      return setSahne(null);
+    }
     try {
-      setSahne(await motorApi.sahneDetay(aktifSahne));
+      degistiyse("sahne", await motorApi.sahneDetay(aktifSahne), setSahne);
     } catch {
+      sonYanit.current.sahne = "";
       setSahne(null);
     }
-  }, [aktifSahne]);
+  }, [aktifSahne, degistiyse]);
   const sesYenile = useCallback(async () => {
     try {
-      setSes(await motorApi.ses());
+      degistiyse("ses", await motorApi.ses(), setSes);
     } catch {
+      sonYanit.current.ses = "";
       setSes(null);
     }
-  }, []);
+  }, [degistiyse]);
   const koleksiyonlarYenile = useCallback(() => {
     motorApi
       .koleksiyonlar()
@@ -604,11 +618,14 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
 
   // ── Canlı akış ──
   // Önizleme kapalıyken kare aboneliği yok (motor önizleme dönüşümü yapmaz); ses ölçerleri sürer
+  // Donanım H.264 çözücüsü varsa kareler önizleme bileşeninin kendi bağlantısından gelir (bu bileşen yeniden çizilmez);
+  // JPEG aboneliği yalnız yedek yol için
+  const jpegYolu = !videoDestekli();
   const canli = useMotorCanli(calisiyor, {
     seviye: true,
-    kare: calisiyor && !onizlemeKapali ? { tuval: studyo ? `studyo-${tuval}` : tuval, genislik: 960, fps: 10 } : null,
+    kare: calisiyor && !onizlemeKapali && jpegYolu ? { tuval: studyo ? `studyo-${tuval}` : tuval, genislik: 960, fps: 10 } : null,
   });
-  const programAkisi = useMotorCanli(calisiyor && studyo && !onizlemeKapali, {
+  const programAkisi = useMotorCanli(calisiyor && studyo && !onizlemeKapali && jpegYolu, {
     seviye: false,
     kare: calisiyor && studyo && !onizlemeKapali ? { tuval, genislik: 640, fps: 10 } : null,
   });

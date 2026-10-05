@@ -138,6 +138,7 @@ impl Motor {
     let ad = format!("{ONEK}{kaynak}");
     self.akis_durdur(&ad);
     self.onizlemeler.remove(&ad);
+    self.video_akislari.remove(&ad);
     if let Some(t) = self.etkilesim_tuvalleri.remove(kaynak) {
       unsafe {
         (api().obs_canvas_set_channel)(t.ptr, 0, std::ptr::null_mut());

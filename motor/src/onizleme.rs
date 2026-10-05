@@ -62,6 +62,49 @@ pub struct OutputInfo {
   protocols: *const c_char,
 }
 
+impl OutputInfo {
+  /// Yalnız kodlanmış video paketleri alan çıktı türü (bkz. `video_akisi.rs`)
+  #[allow(clippy::too_many_arguments)]
+  pub fn kodlanmis(
+    id: *const c_char,
+    flags: u32,
+    get_name: unsafe extern "C" fn(Ptr) -> *const c_char,
+    create: unsafe extern "C" fn(Ptr, Ptr) -> Ptr,
+    destroy: unsafe extern "C" fn(Ptr),
+    start: unsafe extern "C" fn(Ptr) -> bool,
+    stop: unsafe extern "C" fn(Ptr, u64),
+    encoded_packet: unsafe extern "C" fn(Ptr, Ptr),
+    kodekler: *const c_char,
+  ) -> OutputInfo {
+    OutputInfo {
+      id,
+      flags,
+      get_name: Some(get_name),
+      create: Some(create),
+      destroy: Some(destroy),
+      start: Some(start),
+      stop: Some(stop),
+      raw_video: None,
+      raw_audio: None,
+      encoded_packet: Some(encoded_packet),
+      update: None,
+      get_defaults: None,
+      get_properties: None,
+      unused1: None,
+      get_total_bytes: None,
+      get_dropped_frames: None,
+      type_data: std::ptr::null_mut(),
+      free_type_data: None,
+      get_congestion: None,
+      get_connect_time_ms: None,
+      encoded_video_codecs: kodekler,
+      encoded_audio_codecs: std::ptr::null(),
+      raw_audio2: None,
+      protocols: std::ptr::null(),
+    }
+  }
+}
+
 const OBS_OUTPUT_VIDEO: u32 = 1;
 const VIDEO_FORMAT_RGBA: c_int = 6;
 const VIDEO_RANGE_FULL: c_int = 2;

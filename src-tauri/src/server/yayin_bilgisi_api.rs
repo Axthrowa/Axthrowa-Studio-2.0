@@ -1,7 +1,7 @@
 //! Yayın bilgisi dock'u (OBS 30+ "Stream Information"/"Edit Stream Info" karşılığı): bağlı Kick kanalının yayın
 //! başlığı, kategorisi ve etiketleri okunur ve — yalnız kullanıcı açıkça onaylayınca — güncellenir
-//! (`PATCH /public/v1/channels`, `channel:write`). Twitch/YouTube için bu uygulamada OAuth bağlantısı yoktur; arayüz
-//! bunu söyler. Dışarıya istek yaptıran uçlar yalnız bu bilgisayardan çağrılabilir.
+//! (`PATCH /public/v1/channels`, `channel:write`). Twitch ve YouTube'un yayın bilgisi ön yüzdeki tarayıcı oturumlarıyla
+//! (`src/lib/platformAuth/`) doğrudan güncellenir. Dışarıya istek yaptıran uçlar yalnız bu bilgisayardan çağrılabilir.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -93,8 +93,6 @@ async fn api_durum(State(state): State<Arc<AppState>>, ConnectInfo(addr): Connec
       "yazabilir": s["canWriteChannel"].as_bool().unwrap_or(false),
       "kanal": s["broadcasterSlug"],
     },
-    // Bu uygulamada yayın bilgisi için OAuth bağlantısı olmayan platformlar (dürüst durum)
-    "desteklenmeyen": ["Twitch", "YouTube"],
   })))
 }
 

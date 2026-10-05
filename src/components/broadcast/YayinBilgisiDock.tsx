@@ -1,14 +1,19 @@
 /**
- * Yayın bilgisi dock'u (OBS "Stream Information" karşılığı): bağlı Kick kanalının başlığı, kategorisi ve etiketleri.
- * "Kanaldan oku" yalnız okur; "Kick'te güncelle" herkese açık kanalı değiştirdiği için ayrıca onay ister. Twitch ve
- * YouTube için bu uygulamada OAuth bağlantısı yoktur — dock bunu açıkça söyler.
+ * Yayın bilgisi dock'u (OBS "Stream Information" karşılığı): başlık, kategori ve etiketler — Kick (panel sunucusu
+ * üzerinden, `channel:write`), Twitch (Helix, `channel:manage:broadcast`) ve YouTube (Data API, canlı ya da planlanmış
+ * yayın). "Kanaldan oku" yalnız okur; "… güncelle" herkese açık kanalı değiştirdiği için ayrıca onay ister. Yazma izni
+ * olmayan eski bağlantılarda dock yeniden bağlanmayı söyler.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "../../lib/api";
+import { twitchKanalGuncelle, twitchKanalOku, twitchKanalYazabilir, twitchKategoriAra, twitchWriteStatus } from "../../lib/platformAuth/twitchWrite";
+import { youtubeKategoriler, youtubeWriteStatus, youtubeYayinGuncelle, youtubeYayinOku } from "../../lib/platformAuth/youtubeWrite";
 import { hataMetni } from "./ortak";
 
-type Durum = { kick: { bagli: boolean; yazabilir: boolean; kanal: string }; desteklenmeyen: string[] };
-type Kategori = { id: number; name: string };
+type KickDurum = { kick: { bagli: boolean; yazabilir: boolean; kanal: string } };
+type Kategori = { id: string; ad: string };
+type Platform = "kick" | "twitch" | "youtube";
+type Okunan = { baslik: string; kategori: Kategori | null; etiketler: string[]; not?: string; kategoriKapali?: boolean };
 
 async function istek<T>(yol: string, govde?: unknown): Promise<T> {
   const r = await fetch(`${API_BASE}${yol}`, {
@@ -21,7 +26,7 @@ async function istek<T>(yol: string, govde?: unknown): Promise<T> {
   return (t ? JSON.parse(t) : {}) as T;
 }
 
-/** "a, b ,, c" → ["a", "b", "c"] (en çok 10; Kick belgesi) */
+/** "a, b ,, c" → ["a", "b", "c"] (en çok 10; Kick ve Twitch belgeleri) */
 export function etiketleriAyir(metin: string): string[] {
   return metin
     .split(",")
@@ -30,42 +35,121 @@ export function etiketleriAyir(metin: string): string[] {
     .slice(0, 10);
 }
 
+const AD: Record<Platform, string> = { kick: "Kick", twitch: "Twitch", youtube: "YouTube" };
+const KONUM: Record<Platform, string> = { kick: "Kick'te", twitch: "Twitch'te", youtube: "YouTube'da" };
+
 export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) {
-  const [durum, setDurum] = useState<Durum | null>(null);
+  const [platform, setPlatform] = useState<Platform>(() => {
+    try {
+      const p = localStorage.getItem("yya.yayinBilgisi.platform");
+      return p === "twitch" || p === "youtube" ? p : "kick";
+    } catch {
+      return "kick";
+    }
+  });
+  const [kick, setKick] = useState<KickDurum["kick"] | null>(null);
   const [baslik, setBaslik] = useState("");
   const [kategori, setKategori] = useState<Kategori | null>(null);
+  const [kategoriKapali, setKategoriKapali] = useState(false);
   const [arama, setArama] = useState("");
   const [sonuclar, setSonuclar] = useState<Kategori[]>([]);
+  const [ytKategoriler, setYtKategoriler] = useState<Kategori[]>([]);
   const [etiketler, setEtiketler] = useState("");
+  const [not, setNot] = useState<string | null>(null);
   const [onay, setOnay] = useState(false);
   const [mesgul, setMesgul] = useState(false);
   const zamanlayici = useRef<number | undefined>(undefined);
 
-  const yukle = useCallback(() => istek<Durum>("/api/yayin-bilgisi").then(setDurum, (e) => onToast(`Yayın bilgisi: ${hataMetni(e)}`)), [onToast]);
+  const yukle = useCallback(
+    () =>
+      istek<KickDurum>("/api/yayin-bilgisi").then(
+        (d) => setKick(d.kick),
+        (e) => onToast(`Yayın bilgisi: ${hataMetni(e)}`)
+      ),
+    [onToast]
+  );
   useEffect(() => void yukle(), [yukle]);
 
-  // Kategori araması: yazmayı bırakınca (400 ms), en az 2 karakter
+  const tw = twitchWriteStatus();
+  const yt = youtubeWriteStatus();
+  const bagli = platform === "kick" ? !!kick?.bagli : platform === "twitch" ? tw.connected : yt.connected;
+  const yazabilir = platform === "kick" ? !!kick?.yazabilir : platform === "twitch" ? twitchKanalYazabilir() : yt.connected;
+
+  const platformSec = (p: Platform) => {
+    setPlatform(p);
+    try {
+      localStorage.setItem("yya.yayinBilgisi.platform", p);
+    } catch {
+      /* yalnız bu oturumda */
+    }
+    setBaslik("");
+    setKategori(null);
+    setKategoriKapali(false);
+    setEtiketler("");
+    setNot(null);
+    setOnay(false);
+    setArama("");
+    setSonuclar([]);
+  };
+
+  // YouTube kategorileri sabit bir listedir (bölge: TR); bağlanınca bir kez alınır
+  useEffect(() => {
+    if (platform !== "youtube" || !yt.connected || ytKategoriler.length) return;
+    youtubeKategoriler().then(setYtKategoriler, (e) => onToast(`YouTube kategorileri: ${hataMetni(e)}`));
+  }, [platform, yt.connected, ytKategoriler.length, onToast]);
+
+  // Kick/Twitch kategori araması: yazmayı bırakınca (400 ms), en az 2 karakter
   useEffect(() => {
     window.clearTimeout(zamanlayici.current);
     const q = arama.trim();
-    if (q.length < 2 || !durum?.kick.bagli) return setSonuclar([]);
+    if (q.length < 2 || !bagli || platform === "youtube") return setSonuclar([]);
     zamanlayici.current = window.setTimeout(() => {
-      istek<{ kategoriler: Kategori[] }>(`/api/yayin-bilgisi/kategoriler?q=${encodeURIComponent(q)}`).then(
-        (r) => setSonuclar(r.kategoriler),
-        (e) => (setSonuclar([]), onToast(`Kategori araması: ${hataMetni(e)}`))
-      );
+      const ara =
+        platform === "kick"
+          ? istek<{ kategoriler: { id: number; name: string }[] }>(`/api/yayin-bilgisi/kategoriler?q=${encodeURIComponent(q)}`).then((r) =>
+              r.kategoriler.map((k) => ({ id: String(k.id), ad: k.name }))
+            )
+          : twitchKategoriAra(q);
+      ara.then(setSonuclar, (e) => (setSonuclar([]), onToast(`Kategori araması: ${hataMetni(e)}`)));
     }, 400);
     return () => window.clearTimeout(zamanlayici.current);
-  }, [arama, durum?.kick.bagli, onToast]);
+  }, [arama, bagli, platform, onToast]);
+
+  const okuyucu = async (): Promise<Okunan> => {
+    if (platform === "kick") {
+      const r = await istek<{ baslik: string | null; kategori: { id: number | null; ad: string | null } }>("/api/yayin-bilgisi/oku", {});
+      return {
+        baslik: r.baslik ?? "",
+        kategori: r.kategori.id ? { id: String(r.kategori.id), ad: r.kategori.ad ?? String(r.kategori.id) } : null,
+        etiketler: [],
+      };
+    }
+    if (platform === "twitch") {
+      const r = await twitchKanalOku();
+      return { baslik: r.baslik, kategori: r.kategori, etiketler: r.etiketler };
+    }
+    const r = await youtubeYayinOku();
+    const kat = r.video ? (ytKategoriler.find((k) => k.id === r.video!.kategoriId) ?? { id: r.video.kategoriId, ad: r.video.kategoriId }) : null;
+    return {
+      baslik: r.baslik,
+      kategori: kat,
+      etiketler: r.video?.etiketler ?? [],
+      kategoriKapali: !r.video,
+      not: `${r.durum === "active" ? "Canlı" : "Planlanmış"} yayın${r.video ? "" : " — videosu doğrulanamadı: yalnız başlık değiştirilebilir"}`,
+    };
+  };
 
   const oku = async () => {
     setMesgul(true);
     try {
-      const r = await istek<{ baslik: string | null; kategori: { id: number | null; ad: string | null } }>("/api/yayin-bilgisi/oku", {});
-      setBaslik(r.baslik ?? "");
-      setKategori(r.kategori.id ? { id: r.kategori.id, name: r.kategori.ad ?? String(r.kategori.id) } : null);
+      const r = await okuyucu();
+      setBaslik(r.baslik);
+      setKategori(r.kategori);
+      setEtiketler(r.etiketler.join(", "));
+      setKategoriKapali(!!r.kategoriKapali);
+      setNot(r.not ?? null);
     } catch (e) {
-      onToast(`Kanal okunamadı: ${hataMetni(e)}`);
+      onToast(`${AD[platform]} okunamadı: ${hataMetni(e)}`);
     } finally {
       setMesgul(false);
     }
@@ -74,14 +158,28 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
   const guncelle = async () => {
     setOnay(false);
     setMesgul(true);
+    const b = baslik.trim() || undefined;
+    const et = etiketler.trim()
+      ? etiketler
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean)
+      : undefined;
     try {
-      await istek("/api/yayin-bilgisi", {
-        baslik: baslik.trim() || undefined,
-        kategori_id: kategori?.id,
-        etiketler: etiketler.trim() ? etiketleriAyir(etiketler) : undefined,
-        confirm: true,
-      });
-      onToast("Kick kanal bilgisi güncellendi");
+      if (platform === "kick") {
+        await istek("/api/yayin-bilgisi", {
+          baslik: b,
+          kategori_id: kategori ? Number(kategori.id) : undefined,
+          etiketler: et ? etiketleriAyir(etiketler) : undefined,
+          confirm: true,
+        });
+      } else if (platform === "twitch") {
+        await twitchKanalGuncelle({ baslik: b, kategoriId: kategori?.id, etiketler: et });
+      } else {
+        const yol = await youtubeYayinGuncelle(kategoriKapali ? { baslik: b } : { baslik: b, kategoriId: kategori?.id, etiketler: et });
+        if (yol === "yayin") setNot("Yalnız başlık güncellendi (yayın videosu doğrulanamadı)");
+      }
+      onToast(`${AD[platform]} yayın bilgisi güncellendi`);
     } catch (e) {
       onToast(`Güncellenemedi: ${hataMetni(e)}`);
     } finally {
@@ -89,37 +187,80 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
     }
   };
 
-  const k = durum?.kick;
+  const izinNotu =
+    platform === "kick"
+      ? "yazma izni (channel:write) yok: güncellemek için Kick'i yeniden bağlayın"
+      : "yazma izni (channel:manage:broadcast) yok: güncellemek için Twitch'i yeniden bağlayın";
+  const hesap = platform === "kick" ? kick?.kanal : platform === "twitch" ? tw.login : yt.email;
   const degisiklikVar = !!baslik.trim() || !!kategori || !!etiketler.trim();
   return (
     <section className="dt-dock h-full" aria-label="Yayın bilgisi">
       <div className="dt-dock-baslik">Yayın Bilgisi</div>
       <div className="dt-dock-govde flex flex-col gap-1.5 overflow-auto p-2 text-[12px]">
-        {!durum ? (
+        <div className="flex gap-1" role="tablist" aria-label="Platform">
+          {(Object.keys(AD) as Platform[]).map((p) => (
+            <button
+              key={p}
+              type="button"
+              role="tab"
+              aria-selected={platform === p}
+              className={platform === p ? "dt-btn-primary" : "dt-btn"}
+              onClick={() => platformSec(p)}
+            >
+              {AD[p]}
+            </button>
+          ))}
+        </div>
+        {platform === "kick" && !kick ? (
           <p className="dt-soluk">Yükleniyor…</p>
-        ) : !k?.bagli ? (
-          <p className="dt-soluk">Kick bağlı değil — Kick hesabını uygulamanın giriş (platform bağlantısı) ekranından bağlayın.</p>
+        ) : !bagli ? (
+          <p className="dt-soluk">{AD[platform]} bağlı değil — hesabı uygulamanın giriş (platform bağlantısı) ekranından bağlayın.</p>
         ) : (
           <>
             <p className="dt-soluk">
-              Kick{k.kanal ? ` · ${k.kanal}` : ""}
-              {!k.yazabilir && " — yazma izni (channel:write) yok: güncellemek için Kick'i yeniden bağlayın"}
+              {AD[platform]}
+              {hesap ? ` · ${hesap}` : ""}
+              {!yazabilir && ` — ${izinNotu}`}
             </p>
             <button type="button" className="dt-btn" disabled={mesgul} onClick={() => void oku()}>
               Kanaldan oku
             </button>
+            {not && <p className="dt-soluk">{not}</p>}
             <label className="dt-etiket" htmlFor="yb-baslik">
               Başlık
             </label>
-            <input id="yb-baslik" className="dt-input" value={baslik} onChange={(e) => setBaslik(e.target.value)} />
-            <span className="dt-etiket">Kategori{kategori ? `: ${kategori.name}` : ""}</span>
             <input
+              id="yb-baslik"
               className="dt-input"
-              value={arama}
-              placeholder="Kategori ara (en az 2 harf)"
-              aria-label="Kategori ara"
-              onChange={(e) => setArama(e.target.value)}
+              value={baslik}
+              maxLength={platform === "twitch" ? 140 : undefined}
+              onChange={(e) => setBaslik(e.target.value)}
             />
+            <span className="dt-etiket">Kategori{kategori ? `: ${kategori.ad}` : ""}</span>
+            {platform === "youtube" ? (
+              <select
+                className="dt-input"
+                aria-label="Kategori"
+                disabled={kategoriKapali}
+                value={kategori?.id ?? ""}
+                onChange={(e) => setKategori(ytKategoriler.find((k) => k.id === e.target.value) ?? null)}
+              >
+                <option value="">—</option>
+                {ytKategoriler.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.ad}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="dt-input"
+                value={arama}
+                placeholder="Kategori ara (en az 2 harf)"
+                aria-label="Kategori ara"
+                onChange={(e) => setArama(e.target.value)}
+              />
+            )}
             {sonuclar.length > 0 && (
               <ul className="flex max-h-32 flex-col gap-0.5 overflow-auto" aria-label="Kategori sonuçları">
                 {sonuclar.map((s) => (
@@ -130,19 +271,20 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
                       aria-pressed={kategori?.id === s.id}
                       onClick={() => (setKategori(s), setArama(""), setSonuclar([]))}
                     >
-                      {s.name}
+                      {s.ad}
                     </button>
                   </li>
                 ))}
               </ul>
             )}
             <label className="dt-etiket" htmlFor="yb-etiket">
-              Etiketler (virgülle, en çok 10)
+              Etiketler (virgülle{platform === "youtube" ? "" : ", en çok 10"}
+              {platform === "twitch" ? "; yalnız harf/rakam" : ""})
             </label>
-            <input id="yb-etiket" className="dt-input" value={etiketler} onChange={(e) => setEtiketler(e.target.value)} />
+            <input id="yb-etiket" className="dt-input" value={etiketler} disabled={kategoriKapali} onChange={(e) => setEtiketler(e.target.value)} />
             {onay ? (
               <div className="flex flex-col gap-1" role="alertdialog" aria-label="Onay">
-                <span>Kick kanalınızın bilgisi herkese açık olarak değişecek. Emin misiniz?</span>
+                <span>{AD[platform]} kanalınızın bilgisi herkese açık olarak değişecek. Emin misiniz?</span>
                 <div className="flex gap-1">
                   <button type="button" className="dt-btn-primary" onClick={() => void guncelle()}>
                     Güncelle
@@ -153,13 +295,12 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
                 </div>
               </div>
             ) : (
-              <button type="button" className="dt-btn-primary" disabled={mesgul || !k.yazabilir || !degisiklikVar} onClick={() => setOnay(true)}>
-                Kick'te güncelle…
+              <button type="button" className="dt-btn-primary" disabled={mesgul || !yazabilir || !degisiklikVar} onClick={() => setOnay(true)}>
+                {KONUM[platform]} güncelle…
               </button>
             )}
           </>
         )}
-        {durum && <p className="dt-soluk mt-1">{durum.desteklenmeyen.join(" ve ")}: bu uygulamada yayın bilgisi bağlantısı yok.</p>}
       </div>
     </section>
   );

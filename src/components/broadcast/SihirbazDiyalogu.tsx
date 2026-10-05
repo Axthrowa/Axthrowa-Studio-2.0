@@ -69,7 +69,12 @@ export function SihirbazDiyalogu({ onToast, onKapat }: { onToast: (m: string) =>
           <button type="button" className="dt-btn" disabled={calisiyor} onClick={() => void calistir()}>
             {calisiyor ? "Sınanıyor (her kodlayıcı ~6 sn)…" : sonuc ? "Yeniden sına" : "Sınamayı başlat"}
           </button>
-          <button type="button" className="dt-btn-primary" disabled={!sonuc || (!sonuc.oneri.kodlayici && !sonuc.oneri.bit_hizi_ana)} onClick={() => void uygula()}>
+          <button
+            type="button"
+            className="dt-btn-primary"
+            disabled={!sonuc || (!sonuc.oneri.kodlayici && !sonuc.oneri.bit_hizi_ana)}
+            onClick={() => void uygula()}
+          >
             Öneriyi uygula
           </button>
         </>
@@ -85,8 +90,8 @@ export function SihirbazDiyalogu({ onToast, onKapat }: { onToast: (m: string) =>
         <input id="sh-h" className="dt-input dt-sayi w-16" inputMode="numeric" value={hedef} onChange={(e) => setHedef(e.target.value)} />
       </div>
       <p className="px-3 pb-2 text-[12px] dt-soluk">
-        Sınama motor çalışırken, yayın ve kayıt yokken yapılır: programdaki sahne 5 sn geçici dosyaya kodlanır (yayın gönderilmez, dosya silinir) ve atlanan kare
-        oranı ölçülür.
+        Sınama motor çalışırken, yayın ve kayıt yokken yapılır: programdaki sahne 5 sn geçici dosyaya kodlanır (yayın gönderilmez, dosya silinir) ve atlanan
+        kare oranı ölçülür.
       </p>
       {sonuc && (
         <>
@@ -107,7 +112,15 @@ export function SihirbazDiyalogu({ onToast, onKapat }: { onToast: (m: string) =>
                   </td>
                   <td className="dt-sayi text-right">{s.kare ?? "—"}</td>
                   <td className="dt-sayi text-right">{s.oran != null ? `%${(s.oran * 100).toFixed(1)}` : "—"}</td>
-                  <td>{s.hata ? <span className="dt-hata-metni">{s.hata}</span> : s.gecti ? <span style={{ color: "var(--dt-ok)" }}>yeterli</span> : <span className="dt-uyari-metni">yetersiz</span>}</td>
+                  <td>
+                    {s.hata ? (
+                      <span className="dt-hata-metni">{s.hata}</span>
+                    ) : s.gecti ? (
+                      <span style={{ color: "var(--dt-ok)" }}>yeterli</span>
+                    ) : (
+                      <span className="dt-uyari-metni">yetersiz</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

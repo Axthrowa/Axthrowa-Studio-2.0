@@ -58,21 +58,33 @@ export function HakkindaDiyalogu({ libobs, onKapat }: { libobs?: string; onKapat
             <p className="font-semibold">Yayın Yönetim Aracı</p>
             <p>
               Bu program özgür yazılımdır: GNU Genel Kamu Lisansı'nın 2. sürümü ya da (tercihinize göre) daha sonraki bir sürümü koşullarıyla dağıtabilir ve
-              değiştirebilirsiniz. Program yararlı olacağı umuduyla, ancak <strong>hiçbir garanti olmaksızın</strong> dağıtılır. İkili sürümü alan herkes karşılık gelen
-              kaynak kodunu da aynı lisansla alma hakkına sahiptir.
+              değiştirebilirsiniz. Program yararlı olacağı umuduyla, ancak <strong>hiçbir garanti olmaksızın</strong> dağıtılır. İkili sürümü alan herkes
+              karşılık gelen kaynak kodunu da aynı lisansla alma hakkına sahiptir.
             </p>
             <p>
-              Yayın motoru, bilgisayarınızda kurulu OBS Studio'nun libobs kütüphanesini{libobs ? ` (${libobs})` : ""} çalışma anında yükler; libobs ve OBS eklentileri bu pakete
-              dahil değildir.
+              Yayın motoru, bilgisayarınızda kurulu OBS Studio'nun libobs kütüphanesini{libobs ? ` (${libobs})` : ""} çalışma anında yükler; libobs ve OBS
+              eklentileri bu pakete dahil değildir.
             </p>
-            <p className="dt-soluk">OBS Studio, OBS Project'in markasıdır; bu ürün onunla bağlantılı değildir. Platform adları yalnız uyumluluğu tarif etmek için geçer.</p>
+            <p className="dt-soluk">
+              OBS Studio, OBS Project'in markasıdır; bu ürün onunla bağlantılı değildir. Platform adları yalnız uyumluluğu tarif etmek için geçer.
+            </p>
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col gap-2 p-2">
             {sekme === "bildirimler" && (
-              <input className="dt-input" placeholder="Bileşen ara (ad, lisans)…" aria-label="Bileşen ara" value={ara} onChange={(e) => setAra(e.target.value)} />
+              <input
+                className="dt-input"
+                placeholder="Bileşen ara (ad, lisans)…"
+                aria-label="Bileşen ara"
+                value={ara}
+                onChange={(e) => setAra(e.target.value)}
+              />
             )}
-            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap text-[11px] leading-snug" tabIndex={0} aria-label={sekme === "lisans" ? "Lisans metni" : "Üçüncü taraf bildirimleri"}>
+            <pre
+              className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap text-[11px] leading-snug"
+              tabIndex={0}
+              aria-label={sekme === "lisans" ? "Lisans metni" : "Üçüncü taraf bildirimleri"}
+            >
               {gosterilen ?? "Yükleniyor…"}
             </pre>
           </div>

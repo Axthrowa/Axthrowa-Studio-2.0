@@ -55,7 +55,8 @@ export function MultiviewPenceresi({
     if ((h.tur === "onizleme" && studyo) || (h.tur === "sahne" && studyo && h.sahne === onizleme)) return "var(--dt-ok)";
     return undefined;
   };
-  const etiket = (h: MultiviewHucresi) => (h.tur === "onizleme" ? (studyo ? "Önizleme" : "Önizleme (Studio Mode kapalı: program)") : h.tur === "program" ? "Program" : (h.ad ?? h.sahne));
+  const etiket = (h: MultiviewHucresi) =>
+    h.tur === "onizleme" ? (studyo ? "Önizleme" : "Önizleme (Studio Mode kapalı: program)") : h.tur === "program" ? "Program" : (h.ad ?? h.sahne);
 
   return (
     <Pencere baslik={`Multiview — ${tuvalAdi}`} genis onKapat={onKapat}>

@@ -10,7 +10,11 @@ import { hataMetni, Pencere } from "./ortak";
 type Sonuc = { tanimli: boolean; mevcut: string; son?: string; yeniVar?: boolean; sayfa?: string | null; notlar?: string | null };
 
 async function istek<T>(yol: string, govde?: unknown): Promise<T> {
-  const r = await fetch(`${API_BASE}${yol}`, { method: govde === undefined ? "GET" : "POST", headers: { "Content-Type": "application/json" }, body: govde === undefined ? undefined : JSON.stringify(govde) });
+  const r = await fetch(`${API_BASE}${yol}`, {
+    method: govde === undefined ? "GET" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: govde === undefined ? undefined : JSON.stringify(govde),
+  });
   const t = await r.text();
   if (!r.ok) throw new Error(t || `HTTP ${r.status}`);
   return JSON.parse(t) as T;
@@ -63,7 +67,8 @@ export function GuncellemePenceresi({ onKapat }: { onKapat: () => void }) {
         <input id="gn-adres" className="dt-input" placeholder="https://…/guncelleme.json" value={adres} onChange={(e) => setAdres(e.target.value)} />
         <span />
         <span className="text-[11px] dt-soluk">
-          Uygulamanın kendi dağıtım sunucusu yok: bir güncelleme bildirimi adresi (JSON: surum, sayfa, notlar) tanımlayın. Denetim yalnız siz "Denetle"ye basınca yapılır; hiçbir şey indirilmez.
+          Uygulamanın kendi dağıtım sunucusu yok: bir güncelleme bildirimi adresi (JSON: surum, sayfa, notlar) tanımlayın. Denetim yalnız siz "Denetle"ye
+          basınca yapılır; hiçbir şey indirilmez.
         </span>
         {sonuc && (
           <>

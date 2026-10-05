@@ -54,7 +54,15 @@ export function CikisZamanlayicisiPenceresi({
     const t = window.setInterval(() => setSimdi(Date.now()), 500);
     return () => window.clearInterval(t);
   }, []);
-  const satir = (ad: string, id: string, deger: [number, number, number], setD: (d: [number, number, number]) => void, bitis: number | null, acik: boolean, alan: "yayinBitis" | "kayitBitis") => (
+  const satir = (
+    ad: string,
+    id: string,
+    deger: [number, number, number],
+    setD: (d: [number, number, number]) => void,
+    bitis: number | null,
+    acik: boolean,
+    alan: "yayinBitis" | "kayitBitis"
+  ) => (
     <>
       <label htmlFor={id}>{ad}</label>
       <span className="inline-flex flex-wrap items-center gap-2">
@@ -89,7 +97,9 @@ export function CikisZamanlayicisiPenceresi({
         {satir("Yayını durdur", "cz-yayin", yayin, setYayin, z.yayinBitis, canli, "yayinBitis")}
         {satir("Kaydı durdur", "cz-kayit", kayit, setKayit, z.kayitBitis, kayitta, "kayitBitis")}
         <span />
-        <span className="text-[11px] dt-soluk">Süre dolunca çıktı durdurulur. Zamanlayıcı bu pencere kapalıyken de çalışır, uygulama kapanınca sıfırlanır (OBS'te de böyledir).</span>
+        <span className="text-[11px] dt-soluk">
+          Süre dolunca çıktı durdurulur. Zamanlayıcı bu pencere kapalıyken de çalışır, uygulama kapanınca sıfırlanır (OBS'te de böyledir).
+        </span>
       </div>
     </Pencere>
   );
@@ -117,7 +127,9 @@ export function GunlukPenceresi({ onKapat, tur = "motor" }: { onKapat: () => voi
       onKapat={onKapat}
       alt={
         <>
-          <span className="mr-auto text-[11px] dt-soluk">{gizlenen > 0 ? `${gizlenen} olası sır/kişisel yol gizlendi` : "Yayın anahtarları ve kullanıcı klasörü gizlenir"}</span>
+          <span className="mr-auto text-[11px] dt-soluk">
+            {gizlenen > 0 ? `${gizlenen} olası sır/kişisel yol gizlendi` : "Yayın anahtarları ve kullanıcı klasörü gizlenir"}
+          </span>
           <button type="button" className="dt-btn" onClick={() => void yukle()}>
             Yenile
           </button>

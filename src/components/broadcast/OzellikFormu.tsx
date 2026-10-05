@@ -174,7 +174,14 @@ function Alan({
           <>
             {etiket}
             <span>
-              <input id={kimlik} className="dt-input" list={`${kimlik}-l`} disabled={kilitli} defaultValue={String(deger ?? "")} onBlur={(e) => degistir(o.ad, e.target.value, true)} />
+              <input
+                id={kimlik}
+                className="dt-input"
+                list={`${kimlik}-l`}
+                disabled={kilitli}
+                defaultValue={String(deger ?? "")}
+                onBlur={(e) => degistir(o.ad, e.target.value, true)}
+              />
               <datalist id={`${kimlik}-l`}>
                 {l.ogeler.map((x, i) => (
                   <option key={i} value={String(x.deger)}>
@@ -189,7 +196,13 @@ function Alan({
       return (
         <>
           {etiket}
-          <select id={kimlik} className="dt-input" disabled={kilitli} value={listeSecili(o, deger)} onChange={(e) => degistir(o.ad, donustur(Number(e.target.value)), true)}>
+          <select
+            id={kimlik}
+            className="dt-input"
+            disabled={kilitli}
+            value={listeSecili(o, deger)}
+            onChange={(e) => degistir(o.ad, donustur(Number(e.target.value)), true)}
+          >
             {listeSecili(o, deger) === "" && <option value="">—</option>}
             {l.ogeler.map((x, i) => (
               <option key={i} value={String(i)} disabled={x.devreDisi}>
@@ -206,7 +219,13 @@ function Alan({
         <>
           {etiket}
           <span className="inline-flex items-center gap-2">
-            <input id={kimlik} type="color" disabled={kilitli} value={obsRengindenHex(deger)} onChange={(e) => degistir(o.ad, hextenObsRengi(e.target.value, deger))} />
+            <input
+              id={kimlik}
+              type="color"
+              disabled={kilitli}
+              value={obsRengindenHex(deger)}
+              onChange={(e) => degistir(o.ad, hextenObsRengi(e.target.value, deger))}
+            />
             {o.tur === "color_alpha" && (
               <label className="inline-flex items-center gap-1 dt-soluk">
                 Opaklık
@@ -228,9 +247,11 @@ function Alan({
         <fieldset className="col-span-2 border-t border-[color:var(--dt-line)] pt-1">
           <legend className="dt-etiket">{o.aciklama || o.ad}</legend>
           <div className="dt-form px-0">
-            {(o.grup ?? []).filter((x) => x.gorunur).map((x) => (
-              <Alan key={x.ad} o={x} ayarlar={ayarlar} gizliDolu={gizliDolu} degistir={degistir} />
-            ))}
+            {(o.grup ?? [])
+              .filter((x) => x.gorunur)
+              .map((x) => (
+                <Alan key={x.ad} o={x} ayarlar={ayarlar} gizliDolu={gizliDolu} degistir={degistir} />
+              ))}
           </div>
         </fieldset>
       );

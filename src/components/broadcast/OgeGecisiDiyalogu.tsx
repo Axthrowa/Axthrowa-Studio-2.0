@@ -58,7 +58,9 @@ export function OgeGecisiDiyalogu({
           <span className="dt-birim">ms (50–20000)</span>
         </span>
         <span />
-        <span className="text-[11px] dt-soluk">Öğe {goster ? "gösterilirken" : "gizlenirken"} bu geçiş oynatılır (göz simgesi, kısayol ya da otomasyonla).</span>
+        <span className="text-[11px] dt-soluk">
+          Öğe {goster ? "gösterilirken" : "gizlenirken"} bu geçiş oynatılır (göz simgesi, kısayol ya da otomasyonla).
+        </span>
       </div>
     </Pencere>
   );

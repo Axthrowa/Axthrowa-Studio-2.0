@@ -92,8 +92,7 @@ export function RemuxPenceresi({ onKapat, onToast }: { onKapat: () => void; onTo
     >
       <div className="flex flex-col gap-3 p-3 text-[12px]">
         <p className="dt-soluk">
-          Kayıt yeniden kodlanmaz, yalnız kabı değişir (kalite kaybı yok). Çıktı aynı klasöre aynı adla yazılır; aynı adda dosya varsa üzerine
-          yazılmaz.
+          Kayıt yeniden kodlanmaz, yalnız kabı değişir (kalite kaybı yok). Çıktı aynı klasöre aynı adla yazılır; aynı adda dosya varsa üzerine yazılmaz.
         </p>
         <div className="flex items-center gap-2">
           <label htmlFor="rm-bicim">Çıktı biçimi</label>
@@ -131,7 +130,13 @@ export function RemuxPenceresi({ onKapat, onToast }: { onKapat: () => void; onTo
                 <span className="min-w-0 flex-1 truncate" title={`${i.girdi} → ${i.cikti}`}>
                   {dosyaAdi(i.girdi)} → {dosyaAdi(i.cikti)}
                 </span>
-                <progress className="w-32" style={{ accentColor: "var(--panel-accent)" }} max={1} value={i.ilerleme} aria-label={`${dosyaAdi(i.girdi)} ilerleme`} />
+                <progress
+                  className="w-32"
+                  style={{ accentColor: "var(--panel-accent)" }}
+                  max={1}
+                  value={i.ilerleme}
+                  aria-label={`${dosyaAdi(i.girdi)} ilerleme`}
+                />
                 <span className={`w-24 text-right ${i.durum === "hata" ? "dt-uyari-metni" : "dt-soluk"}`} title={i.hata}>
                   {DURUM_ADI[i.durum]}
                   {i.sonuc?.erken_bitti ? " (yarım)" : ""}

@@ -95,7 +95,11 @@ export function EtkilesimPenceresi({ kaynak, ad, onKapat, onToast }: { kaynak: s
               gonder(tusOlayi(e, true));
             }}
           >
-            {kare ? <img src={kare} alt="" draggable={false} className="h-full w-full object-contain" /> : <span className="dt-soluk text-[12px]">{tuval ? "Görüntü bekleniyor…" : "Açılıyor…"}</span>}
+            {kare ? (
+              <img src={kare} alt="" draggable={false} className="h-full w-full object-contain" />
+            ) : (
+              <span className="dt-soluk text-[12px]">{tuval ? "Görüntü bekleniyor…" : "Açılıyor…"}</span>
+            )}
           </div>
           <p className="mt-1.5 text-[11px] dt-soluk">
             Tıklama, kaydırma ve klavye bu kaynağa iletilir (görüntüyü önce tıklayın). {tuval ? `${tuval.genislik}×${tuval.yukseklik}` : ""} · Esc kapatır.

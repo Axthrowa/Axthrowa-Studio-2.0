@@ -26,9 +26,9 @@ export type DockKimligi =
 export const DOCKLAR: { id: DockKimligi; ad: string; varsayilan: boolean; oran: number; kontrolMerkezi?: boolean }[] = [
   { id: "sahneler", ad: "Sahneler", varsayilan: true, oran: 1 },
   { id: "kaynaklar", ad: "Kaynaklar", varsayilan: true, oran: 1.25 },
-  { id: "mikser", ad: "Ses Mikseri", varsayilan: true, oran: 1.7 },
+  { id: "mikser", ad: "Ses Karıştırıcı", varsayilan: true, oran: 1.7 },
   { id: "gecisler", ad: "Sahne Geçişleri", varsayilan: true, oran: 0.8 },
-  { id: "denetimler", ad: "Denetimler", varsayilan: true, oran: 0.8 },
+  { id: "denetimler", ad: "Kontroller", varsayilan: true, oran: 0.8 },
   { id: "hedefler", ad: "Hedefler", varsayilan: false, oran: 1.6 },
   { id: "istatistik", ad: "İstatistikler", varsayilan: false, oran: 1 },
   { id: "sohbet", ad: "Çoklu Sohbet", varsayilan: false, oran: 1.4, kontrolMerkezi: true },

@@ -68,15 +68,42 @@ export function KoleksiyonYoneticisi({ onToast, onDegisti, onKapat }: { onToast:
     // OBS koleksiyonu "sources" dizisi taşır; bu uygulamanınki "surum" + "sahneler"
     const obs = !!veri && typeof veri === "object" && Array.isArray((veri as { sources?: unknown }).sources);
     const ad = f.name.replace(/\.json$/i, "");
-    await yap("İçe aktarılamadı", () => motorApi.koleksiyon({ eylem: obs ? "obs-ice-aktar" : "ice-aktar", veri, ad: obs ? `OBS: ${ad}` : ad }), obs ? iceAktarRaporu : () => "Koleksiyon içe aktarıldı");
+    await yap(
+      "İçe aktarılamadı",
+      () => motorApi.koleksiyon({ eylem: obs ? "obs-ice-aktar" : "ice-aktar", veri, ad: obs ? `OBS: ${ad}` : ad }),
+      obs ? iceAktarRaporu : () => "Koleksiyon içe aktarıldı"
+    );
   };
 
   return (
-    <Pencere baslik="Sahne koleksiyonları" genislik={640} onKapat={onKapat} alt={<button type="button" className="dt-btn-primary" onClick={onKapat}>Kapat</button>}>
+    <Pencere
+      baslik="Sahne koleksiyonları"
+      genislik={640}
+      onKapat={onKapat}
+      alt={
+        <button type="button" className="dt-btn-primary" onClick={onKapat}>
+          Kapat
+        </button>
+      }
+    >
       <div className="grid" style={{ gridTemplateColumns: "minmax(0,1fr) 180px" }}>
         <div role="listbox" aria-label="Koleksiyonlar" className="min-h-[220px] border-r border-[color:var(--dt-line)]">
           {liste.map((x) => (
-            <div key={x.id} role="option" aria-selected={x.id === secili} className="dt-row" onClick={() => setSecili(x.id)} onDoubleClick={() => !x.etkin && void yap("Geçilemedi", () => motorApi.koleksiyon({ eylem: "gec", id: x.id }), () => `«${x.ad}» koleksiyonuna geçildi`)}>
+            <div
+              key={x.id}
+              role="option"
+              aria-selected={x.id === secili}
+              className="dt-row"
+              onClick={() => setSecili(x.id)}
+              onDoubleClick={() =>
+                !x.etkin &&
+                void yap(
+                  "Geçilemedi",
+                  () => motorApi.koleksiyon({ eylem: "gec", id: x.id }),
+                  () => `«${x.ad}» koleksiyonuna geçildi`
+                )
+              }
+            >
               <span className="dt-nokta" data-durum={x.etkin ? "hazir" : undefined} />
               <span className="min-w-0 flex-1 truncate">{x.ad}</span>
               <span className="dt-soluk text-[10px]">
@@ -86,19 +113,62 @@ export function KoleksiyonYoneticisi({ onToast, onDegisti, onKapat }: { onToast:
           ))}
         </div>
         <div className="flex flex-col gap-1.5 p-2">
-          <button type="button" className="dt-btn" disabled={mesgul || !k || k.etkin} onClick={() => k && void yap("Geçilemedi", () => motorApi.koleksiyon({ eylem: "gec", id: k.id }), () => `«${k.ad}» koleksiyonuna geçildi`)}>
+          <button
+            type="button"
+            className="dt-btn"
+            disabled={mesgul || !k || k.etkin}
+            onClick={() =>
+              k &&
+              void yap(
+                "Geçilemedi",
+                () => motorApi.koleksiyon({ eylem: "gec", id: k.id }),
+                () => `«${k.ad}» koleksiyonuna geçildi`
+              )
+            }
+          >
             Bu koleksiyona geç
           </button>
-          <button type="button" className="dt-btn" disabled={mesgul} onClick={() => setIstem({ baslik: "Yeni koleksiyon", baslangic: "Yeni koleksiyon", yap: (ad) => motorApi.koleksiyon({ eylem: "yeni", ad }) })}>
+          <button
+            type="button"
+            className="dt-btn"
+            disabled={mesgul}
+            onClick={() => setIstem({ baslik: "Yeni koleksiyon", baslangic: "Yeni koleksiyon", yap: (ad) => motorApi.koleksiyon({ eylem: "yeni", ad }) })}
+          >
             Yeni…
           </button>
-          <button type="button" className="dt-btn" disabled={mesgul || !k} onClick={() => k && setIstem({ baslik: "Koleksiyonu çoğalt", baslangic: `${k.ad} (kopya)`, yap: (ad) => motorApi.koleksiyon({ eylem: "cogalt", id: k.id, ad }) })}>
+          <button
+            type="button"
+            className="dt-btn"
+            disabled={mesgul || !k}
+            onClick={() =>
+              k && setIstem({ baslik: "Koleksiyonu çoğalt", baslangic: `${k.ad} (kopya)`, yap: (ad) => motorApi.koleksiyon({ eylem: "cogalt", id: k.id, ad }) })
+            }
+          >
             Çoğalt…
           </button>
-          <button type="button" className="dt-btn" disabled={mesgul || !k} onClick={() => k && setIstem({ baslik: "Yeniden adlandır", baslangic: k.ad, yap: (ad) => motorApi.koleksiyon({ eylem: "adlandir", id: k.id, ad }) })}>
+          <button
+            type="button"
+            className="dt-btn"
+            disabled={mesgul || !k}
+            onClick={() =>
+              k && setIstem({ baslik: "Yeniden adlandır", baslangic: k.ad, yap: (ad) => motorApi.koleksiyon({ eylem: "adlandir", id: k.id, ad }) })
+            }
+          >
             Yeniden adlandır…
           </button>
-          <button type="button" className="dt-btn" disabled={mesgul || !k} onClick={() => k && void yap("Yedeklenemedi", () => motorApi.koleksiyon({ eylem: "yedekle", id: k.id }), (r) => `Yedek: ${(r as { yedek?: string }).yedek ?? ""}`)}>
+          <button
+            type="button"
+            className="dt-btn"
+            disabled={mesgul || !k}
+            onClick={() =>
+              k &&
+              void yap(
+                "Yedeklenemedi",
+                () => motorApi.koleksiyon({ eylem: "yedekle", id: k.id }),
+                (r) => `Yedek: ${(r as { yedek?: string }).yedek ?? ""}`
+              )
+            }
+          >
             Yedekle
           </button>
           <a className={`dt-btn ${!k ? "pointer-events-none opacity-50" : ""}`} href={k ? motorApi.koleksiyonDisaAktarUrl(k.id) : undefined} download>
@@ -107,13 +177,24 @@ export function KoleksiyonYoneticisi({ onToast, onDegisti, onKapat }: { onToast:
           <button type="button" className="dt-btn" disabled={mesgul} onClick={() => dosya.current?.click()}>
             İçe aktar (dosya)…
           </button>
-          <input ref={dosya} type="file" accept=".json,application/json" hidden onChange={(e) => void dosyaSecildi(e.target.files?.[0]).finally(() => (e.target.value = ""))} />
+          <input
+            ref={dosya}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            onChange={(e) => void dosyaSecildi(e.target.files?.[0]).finally(() => (e.target.value = ""))}
+          />
           <button
             type="button"
             className="dt-btn"
             disabled={mesgul}
             title="OBS'in koleksiyon klasörünü (yalnız okuyarak) listeler"
-            onClick={() => void motorApi.koleksiyon({ eylem: "obs-listesi" }).then((r) => setObsDosyalari(r.dosyalar ?? [])).catch((e) => onToast(`OBS klasörü okunamadı: ${hataMetni(e)}`))}
+            onClick={() =>
+              void motorApi
+                .koleksiyon({ eylem: "obs-listesi" })
+                .then((r) => setObsDosyalari(r.dosyalar ?? []))
+                .catch((e) => onToast(`OBS klasörü okunamadı: ${hataMetni(e)}`))
+            }
           >
             OBS'ten içe aktar…
           </button>
@@ -128,7 +209,12 @@ export function KoleksiyonYoneticisi({ onToast, onDegisti, onKapat }: { onToast:
                 baslik: "Koleksiyonu kaldır",
                 metin: `«${k.ad}» listeden kaldırılacak; dosyası yedek klasörüne taşınır (silinmez).`,
                 eylem: "Kaldır",
-                yap: () => void yap("Kaldırılamadı", () => motorApi.koleksiyon({ eylem: "sil", id: k.id }), () => `«${k.ad}» yedeğe taşındı`),
+                yap: () =>
+                  void yap(
+                    "Kaldırılamadı",
+                    () => motorApi.koleksiyon({ eylem: "sil", id: k.id }),
+                    () => `«${k.ad}» yedeğe taşındı`
+                  ),
               })
             }
           >
@@ -146,14 +232,19 @@ export function KoleksiyonYoneticisi({ onToast, onDegisti, onKapat }: { onToast:
             <div key={f.dosya} className="dt-row">
               <span className="min-w-0 flex-1 truncate">{f.dosya.replace(/\.json$/i, "")}</span>
               <span className="dt-soluk text-[10px]">{(f.boyut / 1024).toFixed(0)} KB</span>
-              <button type="button" className="dt-btn" disabled={mesgul} onClick={() => void yap("İçe aktarılamadı", () => motorApi.koleksiyon({ eylem: "obs-ice-aktar", dosya: f.dosya }), iceAktarRaporu)}>
+              <button
+                type="button"
+                className="dt-btn"
+                disabled={mesgul}
+                onClick={() => void yap("İçe aktarılamadı", () => motorApi.koleksiyon({ eylem: "obs-ice-aktar", dosya: f.dosya }), iceAktarRaporu)}
+              >
                 İçe aktar
               </button>
             </div>
           ))}
           <p className="px-3 py-2 text-[11px] dt-soluk">
-            İçe aktarılan koleksiyon yeni bir koleksiyon olarak eklenir; geçene dek motora yüklenmez. Yakalama kaynakları (oyun, pencere, ekran, kamera)
-            geçişte çalışmaya başlar.
+            İçe aktarılan koleksiyon yeni bir koleksiyon olarak eklenir; geçene dek motora yüklenmez. Yakalama kaynakları (oyun, pencere, ekran, kamera) geçişte
+            çalışmaya başlar.
           </p>
         </div>
       )}

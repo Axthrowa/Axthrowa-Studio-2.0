@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Box, Folder, Palette } from "lucide-react";
+import { Box, Folder, Palette } from "./obsSimgeler";
 import type { MotorSahneOgesi } from "../../lib/api/motor";
 import { kaynakSimgesi } from "./KaynaklarDock";
 

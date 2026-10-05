@@ -18,7 +18,16 @@ function Izgara({ deger, onSec, etiket }: { deger: number; onSec: (v: number) =>
   return (
     <div role="radiogroup" aria-label={etiket} className="grid w-[66px] grid-cols-3 gap-0.5">
       {HIZALAMA_IZGARASI.map((v) => (
-        <button key={v} type="button" role="radio" aria-checked={deger === v} title={HIZALAMA_ADI[v]} aria-label={HIZALAMA_ADI[v]} className="dt-toggle" onClick={() => onSec(v)}>
+        <button
+          key={v}
+          type="button"
+          role="radio"
+          aria-checked={deger === v}
+          title={HIZALAMA_ADI[v]}
+          aria-label={HIZALAMA_ADI[v]}
+          className="dt-toggle"
+          onClick={() => onSec(v)}
+        >
           {deger === v ? "●" : ""}
         </button>
       ))}
@@ -36,7 +45,15 @@ function Sayi({ id, deger, onUygula, birim, adim = 1 }: { id: string; deger: num
   };
   return (
     <span className="inline-flex items-center gap-1">
-      <input id={id} className="dt-input dt-sayi w-20" inputMode="decimal" value={m} onChange={(e) => setM(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <input
+        id={id}
+        className="dt-input dt-sayi w-20"
+        inputMode="decimal"
+        value={m}
+        onChange={(e) => setM(e.target.value)}
+        onBlur={uygula}
+        onKeyDown={(e) => e.key === "Enter" && uygula()}
+      />
       {birim && <span className="dt-birim">{birim}</span>}
     </span>
   );
@@ -56,7 +73,8 @@ export function DonusumDiyalogu({
   const [kg, kh] = kirpikBoyut(oge);
   const sinirTuru = oge.sinir_turu ?? 0;
   const kirp = oge.kirp ?? [0, 0, 0, 0];
-  const d = <K extends keyof MotorDonusumAlanlari>(alan: K, v: MotorDonusumAlanlari[K]) => onDegistir({ [alan]: v } as MotorDonusumAlanlari, { [alan]: oge[alan as keyof MotorSahneOgesi] } as MotorDonusumAlanlari);
+  const d = <K extends keyof MotorDonusumAlanlari>(alan: K, v: MotorDonusumAlanlari[K]) =>
+    onDegistir({ [alan]: v } as MotorDonusumAlanlari, { [alan]: oge[alan as keyof MotorSahneOgesi] } as MotorDonusumAlanlari);
   return (
     <Pencere
       baslik={`Dönüşümü düzenle — ${oge.ad ?? oge.kaynak}`}
@@ -64,7 +82,9 @@ export function DonusumDiyalogu({
       onKapat={onKapat}
       alt={
         <>
-          <span className="mr-auto text-[11px] dt-soluk">Kaynak boyutu {oge.genislik ?? 0}×{oge.yukseklik ?? 0} px · değişiklikler anında uygulanır (Ctrl+Z geri alır)</span>
+          <span className="mr-auto text-[11px] dt-soluk">
+            Kaynak boyutu {oge.genislik ?? 0}×{oge.yukseklik ?? 0} px · değişiklikler anında uygulanır (Ctrl+Z geri alır)
+          </span>
           <button type="button" className="dt-btn" onClick={onSifirla}>
             Sıfırla
           </button>

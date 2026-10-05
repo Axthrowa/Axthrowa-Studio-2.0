@@ -7,7 +7,7 @@
  * Çift ses uyarısı: uygulama sesini yakalayan kaynak + masaüstü sesi aynı izlerde.
  */
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
-import { Columns3, Headphones, Pause, Play, RotateCcw, Rows3, Settings2, Volume2, VolumeX } from "lucide-react";
+import { Columns3, DotsVert as Settings2, Headphones, Rows3, Volume2, VolumeX } from "./obsSimgeler";
 import type { MotorCiftSes, MotorSesDurumu, MotorSesKanali, MotorSeviye } from "../../lib/api/motor";
 import {
   carpandanDb,
@@ -175,6 +175,8 @@ function Olcer({ id, seviyeler, dikey = false }: { id: string; seviyeler: Mutabl
   );
 }
 
+const CETVEL = [-60, -55, -50, -45, -40, -35, -30, -25, -20, -15, -10, -5, 0];
+
 function Kanal({
   k,
   seviyeler,
@@ -253,26 +255,20 @@ function Kanal({
       onChange={(e) => degistir(Number(e.target.value) / 1000)}
       onDoubleClick={() => degistir(1)}
       title="Çift tık: 0 dB"
+      style={{ "--dolu": `${(konum * 100).toFixed(1)}%` } as React.CSSProperties}
     />
   );
   const dugmeler = (
     <>
-      {k.medya && (
-        <>
-          <button
-            type="button"
-            className="dt-tool"
-            aria-label={k.medya.durum === "oynuyor" ? "Duraklat" : "Oynat"}
-            onClick={() => eylem.medya(k, k.medya?.durum === "oynuyor" ? "duraklat" : "oynat")}
-          >
-            {k.medya.durum === "oynuyor" ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-          </button>
-          <button type="button" className="dt-tool" aria-label="Baştan oynat" onClick={() => eylem.medya(k, "yeniden")}>
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
-        </>
-      )}
-      <button type="button" className="dt-tool" aria-label={k.sessiz ? "Sesi aç" : "Sustur"} aria-pressed={k.sessiz} onClick={() => eylem.sessiz(k)}>
+      {/* Medya denetimleri OBS'teki gibi önizleme altındaki bağlam çubuğunda (kaynak seçilince) */}
+      <button
+        type="button"
+        className="dt-tool"
+        aria-label={k.sessiz ? "Sesi aç" : "Sustur"}
+        aria-pressed={k.sessiz}
+        data-sessiz={k.sessiz || undefined}
+        onClick={() => eylem.sessiz(k)}
+      >
         {k.sessiz ? <VolumeX className="h-3.5 w-3.5" style={{ color: "var(--dt-error)" }} /> : <Volume2 className="h-3.5 w-3.5" />}
       </button>
       <button
@@ -316,9 +312,15 @@ function Kanal({
           </span>
         )}
         {k.mono && <span className="dt-soluk text-[10px]">MONO</span>}
-        <span className="dt-sayi dt-soluk w-[62px] text-right text-[11px]">{k.sessiz ? "susturuldu" : deger}</span>
+        <span className="dt-sayi dt-soluk w-[62px] text-right text-[11px]">{deger}</span>
       </div>
       <Olcer id={k.id} seviyeler={seviyeler} />
+      {/* OBS yatay ölçer cetveli: −60 … 0 dB, 5 dB adım */}
+      <div className="dt-olcek-cetveli" aria-hidden>
+        {CETVEL.map((d) => (
+          <span key={d}>{d}</span>
+        ))}
+      </div>
       <div className="flex items-center gap-1">
         {fader}
         {dugmeler}
@@ -399,7 +401,7 @@ export function MikserDock({
   return (
     <section className="dt-dock h-full" aria-label="Ses mikseri">
       <div className="dt-dock-baslik">
-        Ses Mikseri
+        Ses Karıştırıcı
         <span className="dt-bosluk" />
         {!canliBagli && (
           <span className="dt-soluk font-normal" title="Canlı ölçer bağlantısı yok">

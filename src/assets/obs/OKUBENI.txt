@@ -1,0 +1,5 @@
+Bu klasördeki SVG simgeleri OBS Studio'nun "Dark" simge setidir (kurulu OBS 32.2.2:
+C:\Program Files\obs-studio\data\obs-studio\themes\Dark). Telif: OBS Project ve katkıda bulunanlar,
+GNU General Public License v2.0 (ya da sonrası) altında. Kullanıcının kişisel kullanım kararıyla (2026-10-05)
+Yayın çalışma alanının OBS ile birebir görünmesi için alınmıştır; dağıtılacaksa GPL yükümlülükleri geçerlidir.
+OBS logosu ve markası kullanılmamıştır.

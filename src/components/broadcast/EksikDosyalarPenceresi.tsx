@@ -60,7 +60,16 @@ export function EksikDosyalarPenceresi({ onKapat, onToast, onDegisti }: { onKapa
     );
 
   return (
-    <Pencere baslik="Eksik dosyalar" genis onKapat={onKapat} alt={<button type="button" className="dt-btn-primary" onClick={onKapat}>Kapat</button>}>
+    <Pencere
+      baslik="Eksik dosyalar"
+      genis
+      onKapat={onKapat}
+      alt={
+        <button type="button" className="dt-btn-primary" onClick={onKapat}>
+          Kapat
+        </button>
+      }
+    >
       <div className="flex flex-col gap-3 p-3 text-[12px]">
         {liste === null && !hata && <p className="dt-soluk">Denetleniyor…</p>}
         {liste?.length === 0 && <p>Eksik dosya yok: koleksiyondaki bütün dosya yolları diskte bulunuyor.</p>}

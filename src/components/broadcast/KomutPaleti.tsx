@@ -71,7 +71,14 @@ export function KomutPaleti({ liste, onKapat }: { liste: Komut[]; onKapat: () =>
         <div role="listbox" aria-label="Komutlar" className="max-h-[50vh] overflow-auto pb-2">
           {sonuc.length === 0 && <p className="px-3 py-2 text-[12px] dt-soluk">Eşleşen komut yok.</p>}
           {sonuc.map((k, j) => (
-            <div key={`${k.grup}|${k.etiket}`} role="option" aria-selected={j === i} className="dt-row" onMouseEnter={() => setI(j)} onClick={() => calistir(k)}>
+            <div
+              key={`${k.grup}|${k.etiket}`}
+              role="option"
+              aria-selected={j === i}
+              className="dt-row"
+              onMouseEnter={() => setI(j)}
+              onClick={() => calistir(k)}
+            >
               <span className="dt-soluk w-28 shrink-0 truncate text-[11px]">{k.grup}</span>
               <span className="min-w-0 flex-1 truncate">{k.etiket}</span>
               {k.kisayol && <span className="dt-menu-kisayol">{k.kisayol}</span>}

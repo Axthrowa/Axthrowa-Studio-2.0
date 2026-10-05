@@ -34,15 +34,18 @@ import { TarayiciDock } from "../components/broadcast/TarayiciDock";
 import { KliplerDock } from "../components/broadcast/KliplerDock";
 import { YayinBilgisiDock } from "../components/broadcast/YayinBilgisiDock";
 import "../styles/desktop.css";
+import "@fontsource/open-sans/400.css";
+import "@fontsource/open-sans/700.css";
+import "../styles/obs-yami.css";
 
 export type { BagimsizDockKimligi };
 const GECERLI = BAGIMSIZ_DOCKLAR;
 const AD: Record<BagimsizDockKimligi, string> = {
-  mikser: "Ses Mikseri",
+  mikser: "Ses Karıştırıcı",
   sahneler: "Sahneler",
   kaynaklar: "Kaynaklar",
   gecisler: "Sahne Geçişleri",
-  denetimler: "Denetimler",
+  denetimler: "Kontroller",
   hedefler: "Hedefler",
   istatistik: "İstatistikler",
   sohbet: "Çoklu Sohbet",
@@ -328,7 +331,7 @@ export default function BagimsizDockSayfasi() {
   else icerik = <IstatistikDock d={d} bitHizi={bitHizi} />;
 
   return (
-    <div className="flex h-screen flex-col p-1 text-[13px]" style={{ background: "var(--panel-bg, #0f1115)", color: "var(--dt-text)" }}>
+    <div className="obs-yami flex h-screen flex-col p-1">
       <div className="min-h-0 flex-1">{icerik}</div>
       {onay && (
         <div className="dt-durum-cubugu flex items-center gap-2" role="alertdialog" aria-label="Onay">

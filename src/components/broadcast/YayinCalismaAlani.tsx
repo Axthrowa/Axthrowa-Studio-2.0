@@ -8,6 +8,9 @@
  * o an düzenlenen sahneye (normalde program, Studio Mode'da önizleme) uygulanır.
  * Düzenlemeler Ctrl+Z / Ctrl+Y ile geri alınır (dönüşüm, görünürlük, kilit, sıra, kaldırma, ad).
  */
+import "@fontsource/open-sans/400.css";
+import "@fontsource/open-sans/700.css";
+import "../../styles/obs-yami.css";
 import { videoDestekli } from "../../lib/canliVideo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -299,6 +302,13 @@ function OnKontrol({ d, onBaslat, onKapat }: { d: MotorDurumu; onBaslat: () => v
 }
 
 // ─── Ana bileşen ───────────────────────────────────────────────────────────
+
+/** OBS durum çubuğu süresi: SS:DD:SS */
+function obsSure(ms: number): string {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const iki = (n: number) => String(n).padStart(2, "0");
+  return `${iki(Math.floor(t / 3600))}:${iki(Math.floor((t % 3600) / 60))}:${iki(t % 60)}`;
+}
 
 export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const [d, setD] = useState<MotorDurumu | null>(null);
@@ -1826,7 +1836,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
     const on = oneCikan(duzen, ev);
     if (grup.length === 1) return dock(ev);
     return (
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="obs-yami flex h-full min-h-0 flex-col">
         <div className="dt-dock-sekmeleri" role="tablist" aria-label="Dock sekmeleri">
           {grup.map((id) => (
             <button
@@ -1903,7 +1913,7 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
   const basarisiz = d.hedefler.filter((h) => h.durum === "basarisiz").length;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col text-[13px]" style={{ color: "var(--dt-text)" }} onKeyDown={genelTus}>
+    <div className="obs-yami flex min-h-0 flex-1 flex-col" onKeyDown={genelTus}>
       <MenuCubugu menuler={menuler} />
       {!calisiyor ? (
         <div className="flex min-h-0 flex-1 p-1">
@@ -1944,7 +1954,6 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
                 </span>
               )}
               <span className="dt-bosluk" />
-              {studyo && <span className="dt-soluk">Studio Mode · önizlemede düzenleyin, "Geçiş" ile programa alın</span>}
               {studyo && canliUyari && onizleme && onizleme === program && (
                 <span className="dt-uyari-metni" role="status">
                   Önizlemedeki sahne şu an programda: değişiklikler yayında hemen görünür
@@ -2156,25 +2165,15 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
               </span>
             );
           })()}
-          {canliBas !== null && (
-            <span className="dt-canli" title={`${ozet.canli}/${ozet.toplam} hedef canlı`}>
-              CANLI {sureBicimi(simdi - canliBas)} · {ozet.canli}/{ozet.toplam}
-            </span>
-          )}
-          {kayitBas !== null && (
-            <span className="dt-kayit">
-              KAYIT {sureBicimi(simdi - kayitBas)}
-              {duraklatildi ? " · duraklatıldı" : ""}
-            </span>
-          )}
-          {sanalKameraAcik && <span className="dt-sayi">SANAL KAMERA</span>}
+          {/* Ek bilgiler (OBS'te yok): soluk, sol tarafta */}
+          {sanalKameraAcik && <span className="dt-sayi dt-soluk">Sanal kamera</span>}
           {zamanlayici.yayinBitis !== null && (
-            <span className="dt-sayi" title="Çıkış zamanlayıcısı">
+            <span className="dt-sayi dt-soluk" title="Çıkış zamanlayıcısı">
               yayın {kalanMetin(zamanlayici.yayinBitis, simdi)} sonra durur
             </span>
           )}
           {zamanlayici.kayitBitis !== null && (
-            <span className="dt-sayi" title="Çıkış zamanlayıcısı">
+            <span className="dt-sayi dt-soluk" title="Çıkış zamanlayıcısı">
               kayıt {kalanMetin(zamanlayici.kayitBitis, simdi)} sonra durur
             </span>
           )}
@@ -2186,27 +2185,43 @@ export default function YayinCalismaAlani({ onToast, onGit }: Props) {
           )}
           {calisiyor && ist && (
             <>
-              <span className="dt-sayi">CPU %{(ist.cpu ?? 0).toFixed(1)}</span>
               {d.gpu && (
-                <span className="dt-sayi" title="GPU 3D kullanımı (sistem geneli; Windows performans sayaçları)">
+                <span className="dt-sayi dt-soluk" title="GPU 3D kullanımı (sistem geneli; Windows performans sayaçları)">
                   GPU %{d.gpu.sistem.toFixed(0)}
                 </span>
               )}
-              <span className="dt-sayi">{ist.fps.toFixed(2)} FPS</span>
-              <span className="dt-sayi" title="İşlemede geciken kare / toplam">
+              <span className="dt-sayi dt-soluk" title="İşlemede geciken kare / kodlamada atlanan kare">
                 geciken {ist.geciken_kare}
+                {ist.atlanan_kare != null ? ` · atlanan ${ist.atlanan_kare}` : ""}
               </span>
-              {ist.atlanan_kare != null && (
-                <span className="dt-sayi" title="Kodlamada atlanan kare">
-                  atlanan {ist.atlanan_kare}
-                </span>
-              )}
+              {/* OBS durum çubuğu bölmeleri: düşen kare (yayında), kb/s, kayıt, yayın, CPU, FPS */}
               {yayinCikislari.length > 0 && (
-                <span className={`dt-sayi${dusenKare > 0 ? " dt-uyari-metni" : ""}`} title="Ağ nedeniyle düşen kare (etkin yayın hedeflerinin toplamı)">
-                  düşen {dusenKare} ({yayinKare > 0 ? ((dusenKare / yayinKare) * 100).toFixed(1) : "0.0"}%)
+                <span
+                  data-bolum
+                  className={`dt-sayi${dusenKare > 0 ? " dt-uyari-metni" : ""}`}
+                  title="Ağ nedeniyle düşen kare (etkin yayın hedeflerinin toplamı)"
+                >
+                  Kaybedilen Kareler {dusenKare} ({yayinKare > 0 ? ((dusenKare / yayinKare) * 100).toFixed(1) : "0.0"}%)
                 </span>
               )}
-              {toplamKbps > 0 && <span className="dt-sayi">{Math.round(toplamKbps)} kbps</span>}
+              <span data-bolum className="dt-sayi">
+                {Math.round(toplamKbps)} kb/s
+              </span>
+              <span data-bolum className="dt-sayi inline-flex items-center gap-1.5" title={duraklatildi ? "Kayıt duraklatıldı" : "Kayıt süresi"}>
+                <span className="dt-nokta" data-durum={kayitBas !== null ? "kayit" : undefined} />
+                {obsSure(kayitBas !== null ? simdi - kayitBas : 0)}
+                {duraklatildi ? " (duraklatıldı)" : ""}
+              </span>
+              <span data-bolum className="dt-sayi inline-flex items-center gap-1.5" title={`${ozet.canli}/${ozet.toplam} hedef canlı`}>
+                <span className="dt-nokta" data-durum={canliBas !== null ? "canli" : undefined} />
+                {obsSure(canliBas !== null ? simdi - canliBas : 0)}
+              </span>
+              <span data-bolum className="dt-sayi">
+                CPU: {(ist.cpu ?? 0).toFixed(1)}%
+              </span>
+              <span data-bolum className="dt-sayi">
+                {ist.fps.toFixed(2)} / {(d.fps ?? 60).toFixed(2)} FPS
+              </span>
             </>
           )}
         </div>

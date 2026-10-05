@@ -33,8 +33,10 @@ import {
   Settings2,
   Type,
   Volume2,
-  type LucideIcon,
-} from "lucide-react";
+  Layers,
+  AudioLines,
+  type Simge,
+} from "./obsSimgeler";
 import type { MotorEksikOge, MotorSahneOgesi } from "../../lib/api/motor";
 import { duzListe, type AgacDugumu } from "../../lib/sahneAgaci";
 
@@ -68,27 +70,31 @@ export function turEtiketi(o: MotorSahneOgesi): string {
       return o.obsTuru ?? "OBS";
     default:
       return (
-        {
-          renk: "Renk",
-          yazi: "Yazı",
-          gorsel: "Görsel",
-          slayt: "Slayt gösterisi",
-          medya: "Medya",
-          tarayici: "Tarayıcı",
-          ekran: "Ekran",
-          pencere: "Pencere",
-          oyun: "Oyun",
-          kamera: "Kamera",
-          mikrofon: "Mikrofon",
-          masaustu: "Masaüstü sesi",
-          uygulama_sesi: "Uygulama sesi",
-        } as Record<string, string>
-      )[o.tur ?? ""] ?? o.tur ?? "";
+        (
+          {
+            renk: "Renk",
+            yazi: "Yazı",
+            gorsel: "Görsel",
+            slayt: "Slayt gösterisi",
+            medya: "Medya",
+            tarayici: "Tarayıcı",
+            ekran: "Ekran",
+            pencere: "Pencere",
+            oyun: "Oyun",
+            kamera: "Kamera",
+            mikrofon: "Mikrofon",
+            masaustu: "Masaüstü sesi",
+            uygulama_sesi: "Uygulama sesi",
+          } as Record<string, string>
+        )[o.tur ?? ""] ??
+        o.tur ??
+        ""
+      );
   }
 }
 
 /** Kaynak türü simgesi (OBS "Kaynak simgeleri"); bilinmeyen tür için kutu */
-const TUR_SIMGESI: Record<string, LucideIcon> = {
+const TUR_SIMGESI: Record<string, Simge> = {
   renk: Palette,
   yazi: Type,
   gorsel: Image,
@@ -101,12 +107,12 @@ const TUR_SIMGESI: Record<string, LucideIcon> = {
   kamera: Camera,
   mikrofon: Mic,
   masaustu: Volume2,
-  uygulama_sesi: Volume2,
-  sahne: Clapperboard,
+  uygulama_sesi: AudioLines,
+  sahne: Layers,
   eklenti: Puzzle,
 };
 
-export function kaynakSimgesi(o: MotorSahneOgesi): LucideIcon {
+export function kaynakSimgesi(o: MotorSahneOgesi): Simge {
   if (o.grup) return Folder;
   return TUR_SIMGESI[o.tur ?? ""] ?? Box;
 }
@@ -131,7 +137,7 @@ export function KaynaklarDock({
 }) {
   const [surukle, setSurukle] = useState<string | null>(null);
   const satirlar = duzListe(agac, acikGruplar);
-  const tek = secim.length === 1 ? satirlar.find((s) => s.oge.oge === secim[0])?.oge ?? null : null;
+  const tek = secim.length === 1 ? (satirlar.find((s) => s.oge.oge === secim[0])?.oge ?? null) : null;
 
   const tus = (e: React.KeyboardEvent) => {
     const i = satirlar.findIndex((s) => s.oge.oge === secim.at(-1));
@@ -157,9 +163,7 @@ export function KaynaklarDock({
 
   return (
     <section className="dt-dock h-full" aria-label="Kaynaklar">
-      <div className="dt-dock-baslik">
-        Kaynaklar {sahneAdi && <span className="dt-soluk truncate font-normal">· {sahneAdi}</span>}
-      </div>
+      <div className="dt-dock-baslik">Kaynaklar {sahneAdi && <span className="dt-soluk truncate font-normal">· {sahneAdi}</span>}</div>
       <div
         className="dt-dock-govde"
         role="tree"
@@ -240,25 +244,13 @@ export function KaynaklarDock({
                 {o.ad ?? o.kaynak}
               </span>
               {o.durum === "bekliyor" && (
-                <span className="dt-uyari-metni text-[10px]" title="Görüntü yok: pencere/oyun bulunamadı, aygıt bağlı değil ya da içerik yükleniyor">
-                  bekliyor
+                <span
+                  title="Görüntü yok: pencere/oyun bulunamadı (simge durumunda olabilir), aygıt bağlı değil ya da içerik yükleniyor"
+                  aria-label="Görüntü yok"
+                >
+                  <AlertTriangle className="h-4 w-4" />
                 </span>
               )}
-              {!!o.filtre && (
-                <button
-                  type="button"
-                  className="dt-tool"
-                  aria-label={`${o.filtre} filtre`}
-                  title={`${o.filtre} filtre`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    eylem.filtreler(o);
-                  }}
-                >
-                  <Filter className="h-3 w-3" />
-                </button>
-              )}
-              <span className="dt-soluk w-16 truncate text-right text-[10px]">{turEtiketi(o)}</span>
               <button
                 type="button"
                 className="dt-tool"
@@ -310,10 +302,24 @@ export function KaynaklarDock({
         <button type="button" className="dt-tool" aria-label="Seçilenleri kaldır" title="Kaldır (Del)" disabled={!secim.length} onClick={eylem.kaldir}>
           <Minus className="h-3.5 w-3.5" />
         </button>
-        <button type="button" className="dt-tool" aria-label="Özellikler" title="Özellikler" disabled={!tek || !!tek.grup} onClick={() => tek && eylem.ozellikler(tek)}>
+        <button
+          type="button"
+          className="dt-tool"
+          aria-label="Özellikler"
+          title="Özellikler"
+          disabled={!tek || !!tek.grup}
+          onClick={() => tek && eylem.ozellikler(tek)}
+        >
           <Settings2 className="h-3.5 w-3.5" />
         </button>
-        <button type="button" className="dt-tool" aria-label="Filtreler" title="Filtreler" disabled={!tek || !!tek.grup || tek.tur === "sahne"} onClick={() => tek && eylem.filtreler(tek)}>
+        <button
+          type="button"
+          className="dt-tool"
+          aria-label="Filtreler"
+          title="Filtreler"
+          disabled={!tek || !!tek.grup || tek.tur === "sahne"}
+          onClick={() => tek && eylem.filtreler(tek)}
+        >
           <Filter className="h-3.5 w-3.5" />
         </button>
         <span className="dt-bosluk" />

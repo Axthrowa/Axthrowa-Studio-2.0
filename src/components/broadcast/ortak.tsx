@@ -96,7 +96,15 @@ export function AdIstemi({
     >
       <div className="dt-form">
         <label htmlFor="ad-istemi">{etiket}</label>
-        <input id="ad-istemi" ref={kutu} className="dt-input" maxLength={80} value={ad} onChange={(e) => setAd(e.target.value)} onKeyDown={(e) => e.key === "Enter" && tamam()} />
+        <input
+          id="ad-istemi"
+          ref={kutu}
+          className="dt-input"
+          maxLength={80}
+          value={ad}
+          onChange={(e) => setAd(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && tamam()}
+        />
       </div>
     </Pencere>
   );

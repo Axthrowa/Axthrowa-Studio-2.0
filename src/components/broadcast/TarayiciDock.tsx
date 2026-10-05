@@ -67,7 +67,14 @@ export function TarayiciDock({ onToast }: { onToast: (m: string) => void }) {
             <label htmlFor="td-ad">Ad</label>
             <input id="td-ad" className="dt-input" maxLength={60} value={ad} onChange={(e) => setAd(e.target.value)} />
             <label htmlFor="td-url">Adres</label>
-            <input id="td-url" className="dt-input" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ekleUygula()} />
+            <input
+              id="td-url"
+              className="dt-input"
+              placeholder="https://…"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && ekleUygula()}
+            />
             <span />
             <span className="flex gap-1">
               <button type="button" className="dt-btn-primary" disabled={!ad.trim() || !adresGecerli(url)} onClick={ekleUygula}>
@@ -90,7 +97,11 @@ export function TarayiciDock({ onToast }: { onToast: (m: string) => void }) {
             allow=""
           />
         ) : (
-          !ekle && <p className="p-3 text-[12px] dt-soluk">Henüz sayfa yok. "+" ile ad ve adres (https://…) ekleyin; ör. bir platformun sohbet ya da etkinlik açılır penceresi.</p>
+          !ekle && (
+            <p className="p-3 text-[12px] dt-soluk">
+              Henüz sayfa yok. "+" ile ad ve adres (https://…) ekleyin; ör. bir platformun sohbet ya da etkinlik açılır penceresi.
+            </p>
+          )
         )}
       </div>
     </section>

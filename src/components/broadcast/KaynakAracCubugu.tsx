@@ -4,7 +4,7 @@
  * uygulama sesi/kamera/mikrofon/masaüstü sesinde aygıt ya da pencere listesi; her kaynakta Özellikler ve Filtreler.
  */
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, Square } from "lucide-react";
+import { Pause, Play, RotateCcw, Square } from "./obsSimgeler";
 import { motorApi, type MotorKaynakTuru, type MotorSahneOgesi, type MotorSecenek, type MotorSesKanali } from "../../lib/api/motor";
 
 const MEDYA_TURLERI = new Set(["ffmpeg_source", "vlc_source"]);
@@ -114,7 +114,7 @@ export function KaynakAracCubugu({
   if (!oge || oge.grup || oge.tur === "sahne") {
     return (
       <div className="dt-arac-cubugu px-2 text-[11px] dt-soluk" aria-label="Kaynak araç çubuğu">
-        {oge ? "Grup/sahne seçili" : "Kaynak seçilmedi"}
+        {oge ? "Grup/sahne seçili" : "Kaynak seçilmemiş"}
       </div>
     );
   }
@@ -128,7 +128,13 @@ export function KaynakAracCubugu({
       </span>
       {medyaKaynagi && (
         <>
-          <button type="button" className="dt-tool" onClick={() => onMedya(oynuyor ? "duraklat" : "oynat")} aria-label={oynuyor ? "Duraklat" : "Oynat"} title={oynuyor ? "Duraklat" : "Oynat"}>
+          <button
+            type="button"
+            className="dt-tool"
+            onClick={() => onMedya(oynuyor ? "duraklat" : "oynat")}
+            aria-label={oynuyor ? "Duraklat" : "Oynat"}
+            title={oynuyor ? "Duraklat" : "Oynat"}
+          >
             {oynuyor ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
           </button>
           <button type="button" className="dt-tool" onClick={() => onMedya("yeniden")} aria-label="Baştan oynat" title="Baştan oynat">

@@ -4,7 +4,7 @@
  * bağlam menüsünde çoğalt ve geçiş geçersiz kılma.
  */
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Minus, Plus, Settings2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Plus, Settings2 } from "./obsSimgeler";
 import type { MotorGecis, MotorSahneOzeti } from "../../lib/api/motor";
 import type { MenuOgesi } from "../ui/BaglamMenusu";
 
@@ -103,12 +103,10 @@ export function SahnelerDock({
       eylem: () => undefined,
     },
     { etiket: "Geçersiz kılmayı kaldır", devreDisi: !s.gecis, eylem: () => eylem.gecisGecersiz(s, null) },
-    ...gecisTurleri
-      .slice(0, 8)
-      .map((t): MenuOgesi => ({
-        etiket: `Bu sahneye geçerken: ${t.ad}`,
-        eylem: () => eylem.gecisGecersiz(s, { tur: t.id, sure_ms: s.gecis?.sure_ms ?? 300 }),
-      })),
+    ...gecisTurleri.slice(0, 8).map((t): MenuOgesi => ({
+      etiket: `Bu sahneye geçerken: ${t.ad}`,
+      eylem: () => eylem.gecisGecersiz(s, { tur: t.id, sure_ms: s.gecis?.sure_ms ?? 300 }),
+    })),
   ];
 
   return (
@@ -173,23 +171,7 @@ export function SahnelerDock({
               }}
               title={studyo ? "Tıkla: önizlemeye al · Çift tıkla: programa geç" : "Tıkla: programa geç"}
             >
-              <span className="dt-nokta" data-durum={programda ? "canli" : onizlemede ? "hazir" : undefined} aria-hidden />
               <span className="min-w-0 flex-1 truncate">{s.ad}</span>
-              {s.gecis && (
-                <span className="dt-soluk text-[10px]" title="Geçiş geçersiz kılma">
-                  {gecisTurleri.find((t) => t.id === s.gecis?.tur)?.ad ?? s.gecis.tur}
-                </span>
-              )}
-              {programda && (
-                <span className="text-[10px] font-semibold" style={{ color: "var(--dt-live)" }}>
-                  PROGRAM
-                </span>
-              )}
-              {onizlemede && !programda && (
-                <span className="text-[10px] font-semibold" style={{ color: "var(--dt-ok)" }}>
-                  ÖNİZLEME
-                </span>
-              )}
             </div>
           );
         })}

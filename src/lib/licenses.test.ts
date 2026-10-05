@@ -19,6 +19,7 @@ const IZINLI = new Set([
   "CC-BY-4.0", // yalnız veri paketi (caniuse-lite) — atıf
   "MPL-2.0", // dosya düzeyinde zayıf copyleft; değiştirilmeden kullanılıyor
   "BlueOak-1.0.0",
+  "OFL-1.1", // yalnız yazı tipi dosyası (@fontsource/open-sans — OBS Yami teması); kodla birleşmez, ayrı kaynak olarak yüklenir
   // GPL-2.0-or-later ürünle uyumlu copyleft lisanslar (ADR-005 §3)
   "LGPL-2.1-or-later",
   "LGPL-3.0-or-later",

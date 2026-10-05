@@ -22,7 +22,14 @@ function DbGirdisi({ k, onUygula }: { k: MotorSesKanali; onUygula: (carpan: numb
   };
   return (
     <span className="inline-flex items-center gap-1">
-      <input className="dt-input dt-sayi w-16" aria-label={`${k.ad} düzey (dB)`} value={m} onChange={(e) => setM(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <input
+        className="dt-input dt-sayi w-16"
+        aria-label={`${k.ad} düzey (dB)`}
+        value={m}
+        onChange={(e) => setM(e.target.value)}
+        onBlur={uygula}
+        onKeyDown={(e) => e.key === "Enter" && uygula()}
+      />
       <span className="dt-birim">dB</span>
     </span>
   );
@@ -39,7 +46,14 @@ function SenkronGirdisi({ k, onUygula }: { k: MotorSesKanali; onUygula: (ms: num
   };
   return (
     <span className="inline-flex items-center gap-1">
-      <input className="dt-input dt-sayi w-16" aria-label={`${k.ad} senkron kaydırma (ms)`} value={m} onChange={(e) => setM(e.target.value)} onBlur={uygula} onKeyDown={(e) => e.key === "Enter" && uygula()} />
+      <input
+        className="dt-input dt-sayi w-16"
+        aria-label={`${k.ad} senkron kaydırma (ms)`}
+        value={m}
+        onChange={(e) => setM(e.target.value)}
+        onBlur={uygula}
+        onKeyDown={(e) => e.key === "Enter" && uygula()}
+      />
       <span className="dt-birim">ms</span>
     </span>
   );
@@ -58,7 +72,16 @@ export function GelismisSesDiyalogu({
   const [yalnizEtkin, setYalnizEtkin] = useState(false);
   const satirlar = (ses?.kaynaklar ?? []).filter((k) => !yalnizEtkin || k.etkin !== false);
   return (
-    <Pencere baslik="Gelişmiş ses özellikleri" genis onKapat={onKapat} alt={<button type="button" className="dt-btn-primary" onClick={onKapat}>Kapat</button>}>
+    <Pencere
+      baslik="Gelişmiş ses özellikleri"
+      genis
+      onKapat={onKapat}
+      alt={
+        <button type="button" className="dt-btn-primary" onClick={onKapat}>
+          Kapat
+        </button>
+      }
+    >
       <label className="flex items-center gap-2 px-3 pt-2 text-[12px]">
         <input type="checkbox" checked={yalnizEtkin} onChange={(e) => setYalnizEtkin(e.target.checked)} />
         Yalnız etkin kaynakları göster (programdaki sahnede olanlar)
@@ -137,8 +160,8 @@ export function GelismisSesDiyalogu({
         </table>
       )}
       <p className="px-3 py-2 text-[11px] dt-soluk">
-        İzleme: "Yalnız izle" sesi yalnız bu bilgisayarın izleme aygıtına verir (yayına/kayda gitmez); "İzle ve çıkışa ver" ikisine de. İzler,
-        hedeflerin ve kaydın hangi karışımı alacağını belirler.
+        İzleme: "Yalnız izle" sesi yalnız bu bilgisayarın izleme aygıtına verir (yayına/kayda gitmez); "İzle ve çıkışa ver" ikisine de. İzler, hedeflerin ve
+        kaydın hangi karışımı alacağını belirler.
       </p>
     </Pencere>
   );

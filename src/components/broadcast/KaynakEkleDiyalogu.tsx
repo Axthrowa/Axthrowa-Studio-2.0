@@ -145,7 +145,14 @@ export function KaynakEkleDiyalogu({ tur, eklentiTuru, sahne, kaynaklar, onEklen
             {tur === "tarayici" && (
               <>
                 <label htmlFor="ke-url">Adres</label>
-                <input id="ke-url" className="dt-input" maxLength={2048} placeholder="https://… ya da C:\…\sayfa.html" value={deger} onChange={(e) => setDeger(e.target.value)} />
+                <input
+                  id="ke-url"
+                  className="dt-input"
+                  maxLength={2048}
+                  placeholder="https://… ya da C:\…\sayfa.html"
+                  value={deger}
+                  onChange={(e) => setDeger(e.target.value)}
+                />
                 <span />
                 <span className="text-[11px] dt-soluk">Sayfa 1920×1080 açılır; boyut, CSS ve kare hızı Özellikler'de. Sayfanın sesi mikserde görünür.</span>
               </>
@@ -153,7 +160,13 @@ export function KaynakEkleDiyalogu({ tur, eklentiTuru, sahne, kaynaklar, onEklen
             {tanim.deger === "dosya" && (
               <>
                 <label htmlFor="ke-dosya">Dosya</label>
-                <input id="ke-dosya" className="dt-input" placeholder={tur === "gorsel" ? "C:\\…\\görsel.png" : "C:\\…\\video.mp4"} value={deger} onChange={(e) => setDeger(e.target.value)} />
+                <input
+                  id="ke-dosya"
+                  className="dt-input"
+                  placeholder={tur === "gorsel" ? "C:\\…\\görsel.png" : "C:\\…\\video.mp4"}
+                  value={deger}
+                  onChange={(e) => setDeger(e.target.value)}
+                />
               </>
             )}
             {tanim.deger === "klasor" && (
@@ -161,7 +174,9 @@ export function KaynakEkleDiyalogu({ tur, eklentiTuru, sahne, kaynaklar, onEklen
                 <label htmlFor="ke-klasor">Klasör</label>
                 <input id="ke-klasor" className="dt-input" placeholder="C:\…\Görseller" value={deger} onChange={(e) => setDeger(e.target.value)} />
                 <span />
-                <span className="text-[11px] dt-soluk">Klasördeki görseller 5 sn arayla, soldurarak döner; süre, geçiş, döngü ve rastgele sıra Özellikler'de.</span>
+                <span className="text-[11px] dt-soluk">
+                  Klasördeki görseller 5 sn arayla, soldurarak döner; süre, geçiş, döngü ve rastgele sıra Özellikler'de.
+                </span>
               </>
             )}
             {tur === "oyun" && (
@@ -175,7 +190,9 @@ export function KaynakEkleDiyalogu({ tur, eklentiTuru, sahne, kaynaklar, onEklen
             )}
             {secimGerekli && (
               <>
-                <label htmlFor="ke-secim">{tur === "pencere" || tur === "oyun" ? "Pencere" : tur === "uygulama_sesi" ? "Uygulama" : tur === "ekran" ? "Ekran" : "Aygıt"}</label>
+                <label htmlFor="ke-secim">
+                  {tur === "pencere" || tur === "oyun" ? "Pencere" : tur === "uygulama_sesi" ? "Uygulama" : tur === "ekran" ? "Ekran" : "Aygıt"}
+                </label>
                 {secenekler === null ? (
                   <span className="dt-soluk">{hata ? "—" : "Liste alınıyor…"}</span>
                 ) : secenekler.length === 0 ? (
@@ -195,10 +212,16 @@ export function KaynakEkleDiyalogu({ tur, eklentiTuru, sahne, kaynaklar, onEklen
         )}
         {kip === "yeni" && tanim.yakalar && <p className="px-3 pb-2 text-[12px] dt-soluk">Bu kaynak {tanim.yakalar} yakalar.</p>}
         {kip === "yeni" && tur === "uygulama_sesi" && (
-          <p className="px-3 pb-2 text-[12px] dt-soluk">Yalnız seçilen uygulamanın sesi alınır. Masaüstü sesi de açıksa bu uygulama iki kez duyulabilir; mikser uyarır.</p>
+          <p className="px-3 pb-2 text-[12px] dt-soluk">
+            Yalnız seçilen uygulamanın sesi alınır. Masaüstü sesi de açıksa bu uygulama iki kez duyulabilir; mikser uyarır.
+          </p>
         )}
-        {kip === "yeni" && tur === "eklenti" && <p className="px-3 pb-2 text-[12px] dt-soluk">Üçüncü taraf eklenti kaynağı. Ayarlarını ekledikten sonra Özellikler'den yapabilirsiniz.</p>}
-        {dikeyeSes && <p className="px-3 pb-2 text-[12px] dt-uyari-metni">Ses kaynağı yalnız ana (yatay) tuvalin karışımına girer. Ana tuvaldeki bir sahneye ekleyin.</p>}
+        {kip === "yeni" && tur === "eklenti" && (
+          <p className="px-3 pb-2 text-[12px] dt-soluk">Üçüncü taraf eklenti kaynağı. Ayarlarını ekledikten sonra Özellikler'den yapabilirsiniz.</p>
+        )}
+        {dikeyeSes && (
+          <p className="px-3 pb-2 text-[12px] dt-uyari-metni">Ses kaynağı yalnız ana (yatay) tuvalin karışımına girer. Ana tuvaldeki bir sahneye ekleyin.</p>
+        )}
         {hata && <p className="px-3 pb-2 text-[12px] dt-hata-metni">{hata}</p>}
         <div className="flex justify-end gap-2 border-t border-[color:var(--dt-line)] px-3 py-2">
           <button type="button" className="dt-btn" onClick={onKapat}>

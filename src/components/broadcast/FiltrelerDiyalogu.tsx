@@ -103,7 +103,10 @@ export function FiltrelerDiyalogu({
             onDoubleClick={() => setAdlandir({ id: f.id, ad: f.ad })}
             onContextMenu={(e) =>
               menuAc(e, [
-                { etiket: f.etkin ? "Devre dışı bırak" : "Etkinleştir", eylem: () => void yap(() => motorApi.filtre({ eylem: "etkin", id: f.id, acik: !f.etkin })) },
+                {
+                  etiket: f.etkin ? "Devre dışı bırak" : "Etkinleştir",
+                  eylem: () => void yap(() => motorApi.filtre({ eylem: "etkin", id: f.id, acik: !f.etkin })),
+                },
                 { etiket: "Yeniden adlandır", kisayol: "F2", eylem: () => setAdlandir({ id: f.id, ad: f.ad }) },
                 { etiket: "Yukarı taşı", eylem: () => void yap(() => motorApi.filtre({ eylem: "sira", id: f.id, yon: "yukari" })) },
                 { etiket: "Aşağı taşı", eylem: () => void yap(() => motorApi.filtre({ eylem: "sira", id: f.id, yon: "asagi" })) },
@@ -138,10 +141,22 @@ export function FiltrelerDiyalogu({
           <Minus className="h-3.5 w-3.5" />
         </button>
         <span className="dt-bosluk" />
-        <button type="button" className="dt-tool" aria-label="Yukarı taşı" disabled={!secilen || !ogeler.includes(secilen)} onClick={() => secilen && void yap(() => motorApi.filtre({ eylem: "sira", id: secilen.id, yon: "yukari" }))}>
+        <button
+          type="button"
+          className="dt-tool"
+          aria-label="Yukarı taşı"
+          disabled={!secilen || !ogeler.includes(secilen)}
+          onClick={() => secilen && void yap(() => motorApi.filtre({ eylem: "sira", id: secilen.id, yon: "yukari" }))}
+        >
           <ChevronUp className="h-3.5 w-3.5" />
         </button>
-        <button type="button" className="dt-tool" aria-label="Aşağı taşı" disabled={!secilen || !ogeler.includes(secilen)} onClick={() => secilen && void yap(() => motorApi.filtre({ eylem: "sira", id: secilen.id, yon: "asagi" }))}>
+        <button
+          type="button"
+          className="dt-tool"
+          aria-label="Aşağı taşı"
+          disabled={!secilen || !ogeler.includes(secilen)}
+          onClick={() => secilen && void yap(() => motorApi.filtre({ eylem: "sira", id: secilen.id, yon: "asagi" }))}
+        >
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -149,7 +164,16 @@ export function FiltrelerDiyalogu({
   );
 
   return (
-    <Pencere baslik={`Filtreler — ${kaynakAdi}`} genis onKapat={onKapat} alt={<button type="button" className="dt-btn-primary" onClick={onKapat}>Kapat</button>}>
+    <Pencere
+      baslik={`Filtreler — ${kaynakAdi}`}
+      genis
+      onKapat={onKapat}
+      alt={
+        <button type="button" className="dt-btn-primary" onClick={onKapat}>
+          Kapat
+        </button>
+      }
+    >
       <div className="grid h-full min-h-0" style={{ gridTemplateColumns: "300px minmax(0,1fr)" }}>
         <div className="flex min-h-0 flex-col border-r border-[color:var(--dt-line)]">
           {ses && liste("Ses filtreleri", sesFiltreleri, true)}

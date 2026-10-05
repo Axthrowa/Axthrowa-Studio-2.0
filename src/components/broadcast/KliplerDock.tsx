@@ -89,7 +89,15 @@ export function KliplerDock({ onToast }: { onToast: (m: string) => void }) {
         {secili && (
           <>
             {/* Önizleme yalnız bu bilgisayardan: sunucu dosyayı kayıt klasöründen adla verir */}
-            <video ref={video} key={secili} src={motorApi.klipUrl(secili)} controls muted className="max-h-56 w-full bg-black" onLoadedMetadata={(e) => setAralik([0, e.currentTarget.duration])} />
+            <video
+              ref={video}
+              key={secili}
+              src={motorApi.klipUrl(secili)}
+              controls
+              muted
+              className="max-h-56 w-full bg-black"
+              onLoadedMetadata={(e) => setAralik([0, e.currentTarget.duration])}
+            />
             <div className="flex flex-wrap items-center gap-1">
               <button type="button" className="dt-btn" onClick={() => setAralik((a) => [konum(), Math.max(konum() + 0.1, a?.[1] ?? 0)])}>
                 Başlangıç = konum
@@ -105,12 +113,20 @@ export function KliplerDock({ onToast }: { onToast: (m: string) => void }) {
                 <option value="mov">MOV</option>
                 <option value="mkv">MKV</option>
               </select>
-              <button type="button" className="dt-btn-primary" disabled={!gecerli} onClick={kirp} title="Yeniden kodlamadan kırp (başlangıçtan önceki anahtar kareden başlar)">
+              <button
+                type="button"
+                className="dt-btn-primary"
+                disabled={!gecerli}
+                onClick={kirp}
+                title="Yeniden kodlamadan kırp (başlangıçtan önceki anahtar kareden başlar)"
+              >
                 <Scissors className="h-3.5 w-3.5" />
                 Kırp
               </button>
             </div>
-            <p className="text-[11px] dt-soluk">Kalite kaybı yok; klip başlangıçtan önceki anahtar kareden başlar. Yeni dosya aynı klasöre "… klip a-b" adıyla yazılır.</p>
+            <p className="text-[11px] dt-soluk">
+              Kalite kaybı yok; klip başlangıçtan önceki anahtar kareden başlar. Yeni dosya aynı klasöre "… klip a-b" adıyla yazılır.
+            </p>
           </>
         )}
       </div>

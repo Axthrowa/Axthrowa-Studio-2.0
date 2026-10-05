@@ -7,7 +7,17 @@ import { Pencere } from "./ortak";
 
 export const HAZIR_RENKLER = ["#e5484d", "#f76b15", "#f5d524", "#3dd68c", "#12a594", "#3e63dd", "#8e4ec6", "#d6409f"];
 
-export function KaynakRengiDiyalogu({ ad, mevcut, onKaydet, onKapat }: { ad: string; mevcut: string | null | undefined; onKaydet: (renk: string) => void; onKapat: () => void }) {
+export function KaynakRengiDiyalogu({
+  ad,
+  mevcut,
+  onKaydet,
+  onKapat,
+}: {
+  ad: string;
+  mevcut: string | null | undefined;
+  onKaydet: (renk: string) => void;
+  onKapat: () => void;
+}) {
   const [renk, setRenk] = useState(mevcut ?? "");
   return (
     <Pencere

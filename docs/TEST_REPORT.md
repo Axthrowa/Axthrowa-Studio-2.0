@@ -219,3 +219,24 @@ ekranı içermeyen sayfa sürümü döndürdü); kod değişmeden iki yeniden ko
 Sınanmayanlar (UNVERIFIED): altyazının platform oynatıcısında görünümü (FFmpeg libobs'un kare sonuna yazdığı SEI'yi
 okumaz — "late SEI"); Kick kanal güncellemesi (gerçek kanal değiştirilmedi); yeni arayüz parçaları tarayıcı bölmesinde
 görülmedi (Altyazı, Yayın Bilgisi, Tuvaller, ayrı pencere docklar).
+
+### Ek (2026-10-05): kalan maddeler — Yayın Bilgisi (Twitch/YouTube), Sahneyi çoğalt, Hareket geçişi
+
+Komitler: 1fad182 … 5e1922b.
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **56/56**, art arda iki koşu (yeni: "Sahneyi çoğalt" — asıl sahneden öğe kaldırılınca program kırmızı kalır, önizleme siyah, programdaki sahne silinemez, Studio Mode kapanınca program asıl sahne; Hareket — 3 sn'lik geçişin yarısında öğenin sol üstü (≈491, 245) iki uç arasında, sonda hedef sahne ve kare, araya giren kesme hareketi iptal eder) |
+| Motor birim | **29** (eğri uçları/simetri, ara değer ve en kısa açı) |
+| Panel birim (Rust) | **308** (studyo_cogalt varsayılanı ve sınırı, `move_transition` → hareket aktarımı) |
+| Panel entegrasyon | **41** (1 elle çalıştırılan göz ardı); genişletilen: Hareket tür listesi + adlandırılmış geçiş + Studio Mode geçişi |
+| Ön yüz (vitest) | **435** (sahte `fetch`: Twitch PATCH gövdesi ve belge sınırları, kapsam yoksa yazma reddi; YouTube snippet birleştirme, video doğrulanınca `videos.update`, doğrulanmazsa yalnız başlık `liveBroadcasts.update`) |
+| clippy | 0 uyarı (motor + panel) |
+
+Testlerin yakaladıkları: (1) Tam koşuda bir kez, profil video değişikliğinin motoru yeniden başlattığı adım test istemcisinin
+10 sn zaman aşımını aştı — o adımlar diğer uzun testlerdeki gibi 90 sn'lik istemciye alındı (beklentiler değişmedi).
+(2) Bir sınama koşusunda önizleme karesi yük altında gecikti ve iki piksel denetimi eski kareyi okudu — hareketin ara
+konumu artık öğe durumundan okunuyor, son durumlar 3 sn'ye kadar yoklanıyor.
+
+Sınanmayanlar (UNVERIFIED): Twitch ve YouTube yayın bilgisi gerçek kanalda (yalnız sahte `fetch`); Hareket ve
+Sahneyi çoğalt arayüzü tarayıcıda görülmedi.

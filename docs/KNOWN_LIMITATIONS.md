@@ -103,3 +103,53 @@ hiçbir şey arayüzde destekleniyor gibi gösterilmez.
 | Kurulum dosyası (NSIS) | motor YOK | Motor portable pakete girer; Tauri kaynaklarına eklemek, motor derlenmemişken panelin kendi derlemesini kıracağı için kurulum dosyasına henüz eklenmedi. |
 | Yardımcı programlar | kopyalanır | `obs-ffmpeg-mux.exe`, `obs-nvenc-test.exe` vb. kurulu OBS'ten çekirdeğin klasörüne kopyalanır (libobs onları çalışan exe'nin yanında arar). |
 | GO LIVE bütünleşmesi | PARTIAL | Motor hedefleri Yayın motoru panelinden tek tek başlatılır; mevcut "GO LIVE" düğmesi FFmpeg yönlendiricisini kullanır. |
+
+## OBS iş akışı paritesi (2026-09-28) — güncel durum
+
+Yukarıdaki "Yerel yayın çekirdeği" tablosundaki şu satırlar **artık geçerli değil**: sahne düzenleyici (çoklu sahne,
+sürükle/boyutlandır, kırpma, kilit, grup, geri al var), hedef başına ses izi (profil ataması), kayıt ve tekrar
+arayüzü, hedef tuvali (hedef atama değişince çıktı yeniden kurulur), GO LIVE bütünleşmesi (Denetimler dock'u motoru
+kullanır), NSIS (motor kurulum dosyasına girer). Ayrıntı: [OBS_FUNCTIONAL_PARITY_SPEC](OBS_FUNCTIONAL_PARITY_SPEC.md).
+
+| Konu | Durum | Not |
+|---|---|---|
+| Ekran/pencere/oyun/kamera/mikrofon/masaüstü/uygulama sesi yakalama | UNVERIFIED | Kullanıcı kararı: yalnız sentetik sınama. Özellik anahtarları örneksiz doğrulandı; oyun yakalama örneği hiç oluşturulmadı |
+| Ses izleme | yalnız "kapalı" sınandı | Hoparlöre ses verilmez kuralı |
+| Küresel kısayol basışı | UNVERIFIED | Masaüstü girdi otomasyonu kullanılmaz; eylemler kayıt defteri üzerinden sınandı |
+| Gerçek platforma yayın | UNVERIFIED | Yalnız 127.0.0.1 alıcıları; "Sına" yalnız TCP bağlantısı |
+| Ek tuvaller (OBS 31+) içe aktarımı | KISMİ | Sahneler `canvas_uuid` ile kendi ek tuvallerine aktarılır (en çok 8); OBS tuval boyutunu dosyada saklamadığı için 1920×1080 alınır ve not düşülür |
+| Solo | YOK | OBS'te de yok |
+| Video/ses ayarı değişimi | çıktı yokken | Kare hızı, çözünürlük, renk, örnekleme değişince motor yeniden başlar; yayın/kayıt sürerken reddedilir (OBS'te de) |
+| HDR (Rec. 2100) | UNVERIFIED | Ayar ve 10 bit biçim zorunluluğu var; HDR kodlama/ekran çıktısı sınanmadı |
+| Etkileşim: tuş iletimi arayüzden | kısmi doğrulama | Motor sınamasında "g" tuşu sayfaya ulaştı; arayüzde tıklama doğrulandı, arayüz üzerinden yazma ölçümü tamamlanmadı |
+
+**2026-09-28 ikinci tur — kapananlar** (önceki sürümde YOK olan satırlar): Etkileşim penceresi (tarayıcı kaynağına
+tıklama/tekerlek/klavye; motor `sinama` + tarayıcı bölmesinde tıklama → zemin rengi değişti), Alt+sürükle kırpma,
+öğe gösterme/gizleme geçişleri (OBS içe aktarımı dahil), sahne ve grup filtreleri, dock sekme grupları + Çoklu
+Sohbet / Etkinlik Akışı / Hızlı Eylemler dockları, ayarlanabilir taban/çıkış çözünürlüğü ve ölçek filtresi, kare
+hızı 24–144, örnekleme hızı ve kanallar, renk biçimi/uzayı/aralığı, RTMP ağ ayarları (bağlanılacak IP, IP ailesi,
+düşük gecikme, dinamik bit hızı, yeniden bağlanma), GPU kullanımı (Windows "GPU Engine" 3D sayaçları; sistem ve
+motor süreci; sayaç yoksa "ölçülemiyor").
+| Ekran görüntüsü doğrulaması | kısıtlı | Tarayıcı bölmesi 560×301; düzen DOM ölçümüyle doğrulandı |
+
+## OBS arayüz paritesi — 2026-09-29 turu
+
+Madde madde durum: [OBS_UI_PARITY_CHECKLIST](OBS_UI_PARITY_CHECKLIST.md). Bu turda kapananlar: ekran görüntüsü
+(çıkış, Studio Mode önizlemesi, sahne, kaynak), deinterlace, karıştırma yöntemi, ağdan düşen kare yüzdesi, Studio
+Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
+
+| Konu | Durum | Not |
+|---|---|---|
+| Yeniden muxla | kurulu OBS'e bağlı | FFmpeg kitaplıkları dağıtılmaz; kurulu OBS 32'nin `avformat-62`/`avcodec-62`/`avutil-60` DLL'leri kullanılır. Başka FFmpeg sürümünde (OBS güncellemesi) yapı düzeni doğrulanmadığı için remux açıkça reddedilir — sürüm eklenince yeniden doğrulanmalı |
+| Yeniden muxla: bozuk kayıt | kısmi | Yarım MKV'de (sınamada 200 KB'ye kesildi) FFmpeg dosya sonu bildirdi, okunabilen kısım MP4'e yazıldı; "yarım" işareti yalnız okuma hatayla biterse görünür |
+| Multiview | tek düzen | Üstte önizleme/program, altta ilk 8 sahne ("Multiview'da göster" var); OBS'teki diğer düzenler ve etiket/güvenli alan seçenekleri yok |
+| T-bar | sabit geçişlerde yok | Kes ve Stinger (libobs "fixed" geçişler) T-bar ile sürüklenemez; OBS'te de devre dışıdır |
+| Deinterlace görsel etkisi | UNVERIFIED | Geçmeli kaynak (yakalama kartı) yok; ayar libobs'ta saklanır ve geri okunur |
+| Hızlı geçiş: geçici tür değişimi | kısmi | Hızlı geçiş sürerken tuvalin geçişi o türe alınır, süre + 250 ms sonra geri kurulur; bu arada başka geçiş başlatılırsa geri kurma yine olur |
+| Ek tuvaller | 8 sınırı, boyut yeniden başlatmada | En çok 8 ek tuval; boyut değişikliği motor yeniden başlayınca uygulanır; silinen tuval nesnesi motor oturumu boyunca boş kalır (bağlı kodlayıcıları serbest bırakmak güvenli değil). Kayıt ve tekrar arabelleği yalnız yatay (+ isteğe bağlı dikey) tuvalden |
+| Yayın bilgisi | gerçek kanalda sınanmadı | Kick/Twitch/YouTube istekleri yalnız sahte `fetch` ve ağsız uçlarla sınandı (UNVERIFIED). Kick (`channel:write`) ve Twitch (`channel:manage:broadcast`) için eski bağlantılarda yeniden bağlanmak gerekir. YouTube kategori/etiketi yalnız yayın kimliği video olarak doğrulanırsa değişir |
+| Hareket geçişi | sade | Move eklentisinin seçenekleri (eğri türleri, gecikme, metin/sayı geçişi) yok; grup içeren sahnede yumuşak geçiş; T-bar'da yumuşak geçiş gibi |
+| Altyazı: konuşma tanıma | kurulamaz | Bu bilgisayarda SAPI tanıyıcısı ve WinRT konuşma dili kurulu değil (OBS'in kendi altyazı aracı da çalışmaz); yerel bir model eklemek indirme gerektirir — kullanıcı onayı bekleniyor |
+| Betikler | DESTEKLENMİYOR | obs-scripting ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
+| Altyazı: konuşma tanıma | YOK | Altyazı satırları elle/kısayolla/otomasyonla gönderilir (CEA-608); mikrofon metne çevrilmez. ş/ğ/ı Latin karşılığıyla gider. Platform oynatıcısında görünüm UNVERIFIED (yalnız akış baytları doğrulandı) |
+| Özel tarayıcı dock'u ve CSP | ödünleşim | Masaüstü uygulamasının CSP'sinde `frame-src` https ve yerel adreslere açıldı (önceden yalnız Kick/YouTube). Çerçeve `sandbox` ile açılır (üst pencereye gezinme yok, köken farklı olduğundan uygulamaya erişim yok), `script-src` değişmedi. Bazı siteler çerçeve içinde açılmayı reddeder (X-Frame-Options) — "Tarayıcıda aç" düğmesi sunulur |

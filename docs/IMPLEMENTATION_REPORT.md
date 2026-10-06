@@ -128,3 +128,21 @@ Doğrulama: çekirdek 12 birim + protokol uçtan uca + `sinama` 14/14; panel API
 arayüzden başlat → önizleme → dikey tuvalle hedef → alıcıda 1080×1920 → durdur. Performans: `PERFORMANCE_REPORT`
 "Yerel yayın çekirdeği". Sınırlar: `KNOWN_LIMITATIONS` "Yerel yayın çekirdeği" (yakalama kaynakları `UNVERIFIED`,
 kamera/pencere/sahne düzenleyici/kayıt düğmesi eksik).
+
+## 9. OBS iş akışı paritesi (2026-09-28)
+
+Komitler: 070326b, cb8b503, 6cd90a2, 1c6f0be, a140c38, f23418e, b9aba4b. Özet: [OBS_FUNCTIONAL_PARITY_SPEC](OBS_FUNCTIONAL_PARITY_SPEC.md).
+
+- **Motor**: tarayıcı kaynağı (obs-browser/CEF; Windows 10 manifesti, `/` modül yolları), yakalanmamış istisna kaydı,
+  kayıt biçimleri + çok izli kayıt, tür özellikleri (örneksiz), kaynak durumları, sahne grafiği temizleme, konuma göre
+  sıra, kodlayıcı bırakma, `tr-TR` yerel ayarı.
+- **Panel alan modeli**: sahne koleksiyonları v2 (çoklu sahne, grup ağaçları, tam dönüşüm, filtreler, ses özellikleri,
+  geçişler; v1'den kopyalayarak göç), OBS koleksiyonu içe aktarımı, profiller (çıkış, kayıt, tekrar, iz adları, hedef
+  atamaları, izleme aygıtı), kodlama paylaşımı.
+- **API**: `motor_sahne_api`, `motor_ses_api` (+ `/ws/motor`), `koleksiyon_api`, `profil_api` (+ sihirbaz), çoklu
+  yayın anahtar göster/sil/sına.
+- **Arayüz**: OBS'e tanıdık çalışma alanı ([WORKSPACE_LAYOUT_ARCHITECTURE](WORKSPACE_LAYOUT_ARCHITECTURE.md)), önizleme
+  etkileşimi, Studio Mode, mikser, filtreler, dönüşüm, koleksiyon/profil yönetimi, yayın ayarları penceresi, çoklu
+  yayın kartları, projektör, ayrı pencere dock'ları, komut paleti, sihirbaz.
+- **Kısayollar**: motor sahne/Studio/ses/bas-konuş/bas-sustur/medya eylemleri; bırakma olayı.
+- **Belgeler**: §80 listesinin tamamı.

@@ -47,3 +47,6 @@
 | 70–72 | Platform önerileri, Uzman kip saygısı, otomatik yapılandırma | PARTIAL | Politika tablosu + ön kontrol var |
 | 73–78 | Kabul sınamaları | — | Uygulama sonunda |
 | 80 | Belgeler | PARTIAL | Bu tur yazılıyor |
+
+> **Son durum (2026-09-28):** yukarıdaki MISSING/PARTIAL maddelerinin güncel durumu ve kanıtları
+> [OBS_FUNCTIONAL_PARITY_SPEC](OBS_FUNCTIONAL_PARITY_SPEC.md)'tedir.

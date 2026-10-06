@@ -224,7 +224,7 @@ async fn api_key_delete(
   if !state.multistream.configs().iter().any(|c| c.id == body.id) {
     return Err((StatusCode::NOT_FOUND, "Hedef bulunamadı".into()));
   }
-  if super::motor_api::motor_hedefi_etkin(&state, &body.id) || state.multistream.snapshot().destinations.iter().any(|d| d.id == body.id && d.state.is_active()) {
+  if state.multistream.snapshot().destinations.iter().any(|d| d.id == body.id && d.state.is_active()) {
     return Err((StatusCode::CONFLICT, "Hedef yayındayken anahtarı silinemez".into()));
   }
   state.multistream.delete_key(&body.id);
@@ -261,9 +261,6 @@ async fn api_dest_start(
   Json(body): Json<IdBody>,
 ) -> ApiResult {
   let actor = authorize(&state, &addr, &headers, PERM).await?;
-  if super::motor_api::motor_hedefi_etkin(&state, &body.id) {
-    return Err((StatusCode::CONFLICT, "Bu hedef yayın motorunda canlı; önce orada durdurun".into()));
-  }
   let (findings, _) = build_preflight(&state).await;
   if policy::blocked(&findings, &body.id) {
     let neden: Vec<&str> = findings
@@ -406,13 +403,12 @@ pub(crate) async fn build_preflight(state: &Arc<AppState>) -> (Vec<policy::Findi
   (policy::evaluate(&ctx), encoder)
 }
 
-/// OBS'in ve yerel motorun kayıt klasörlerinin birimlerindeki boş alan (aynı birim bir kez).
+/// OBS'in kayıt klasörünün birimindeki boş alan.
 async fn kayit_birimleri() -> Vec<(&'static str, String, u64)> {
   tokio::task::spawn_blocking(|| {
     let mut out: Vec<(&'static str, String, u64)> = Vec::new();
     let adaylar = [
       ("OBS kayıt klasörü", obs_profile::current_record_dir()),
-      ("Motor kayıt klasörü", Some(super::motor_api::kayit_klasoru())),
     ];
     for (etiket, yol) in adaylar {
       let Some(yol) = yol else { continue };

@@ -6,7 +6,7 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\sign-cikti.ps1 -SkipPortable
 #     SkipPortable: SAC hash'i korunmus portable exe'yi yeniden imzalama.
 #   powershell -ExecutionPolicy Bypass -File scripts\sign-cikti.ps1 -Yalniz <dosya>[,<dosya>]
-#     Yalniz: yalniz verilen dosyalari imzala (build-release-signed motoru kurulumdan once boyle imzalar).
+#     Yalniz: yalniz verilen dosyalari imzala.
 param([string]$Thumbprint, [switch]$SkipPortable, [string[]]$Yalniz)
 
 $ErrorActionPreference = "Stop"
@@ -35,7 +35,7 @@ $files = @(
   (Join-Path $proj "cikti\Yayin Yonetim Araci_1.0.0_x64-setup.exe")
 )
 if (-not $SkipPortable) {
-  $files = @((Join-Path $proj "cikti\portable\YayinYonetimAraci.exe"), (Join-Path $proj "cikti\portable\yayin-motoru.exe")) + $files
+  $files = @((Join-Path $proj "cikti\portable\YayinYonetimAraci.exe")) + $files
 }
 if ($Yalniz) { $files = $Yalniz }
 $files = $files | Where-Object { Test-Path $_ } | Select-Object -Unique

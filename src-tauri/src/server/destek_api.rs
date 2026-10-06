@@ -89,28 +89,6 @@ async fn topla(state: &Arc<AppState>) -> (Value, Vec<&'static str>) {
   p["obs"] = json!({ "bagli": state.obs.is_connected(), "profilKodlayici": profil });
   bolumler.push("obs");
 
-  let calisiyor = state.motor.calisiyor().await;
-  let motor = {
-    let o = state.motor.ozet();
-    let o = o.lock();
-    let mut turler: std::collections::BTreeMap<String, usize> = Default::default();
-    for k in &o.koleksiyon.kaynaklar {
-      *turler.entry(k.obs_turu.clone()).or_default() += 1;
-    }
-    json!({
-      "calisiyor": calisiyor,
-      "exeBulundu": crate::motor_kopru::exe_yolu().is_some(),
-      "bilgi": o.bilgi,
-      "sonCikisKodu": o.son_cikis_kodu,
-      "dikeyTuval": o.dikey,
-      "kayitliGirisTuru": o.giris_turleri.len(),
-      "kaynakTurleri": turler,
-      "eksikEklentiKaynagi": o.koleksiyon.kaynaklar.iter().filter(|k| k.eksik).count(),
-      "cikislar": o.cikislar,
-    })
-  };
-  p["motor"] = motor;
-  bolumler.push("motor");
 
   p["cokluYayin"] = serde_json::to_value(state.multistream.snapshot()).unwrap_or(Value::Null);
   bolumler.push("cokluYayin");
@@ -137,10 +115,7 @@ async fn topla(state: &Arc<AppState>) -> (Value, Vec<&'static str>) {
   };
   bolumler.push("denetim");
 
-  let motor_dizin = state.data_dir.join("motor");
   let mut gunluk = serde_json::Map::new();
-  gunluk.insert("motor-libobs.log".into(), json!(son_satirlar(&motor_dizin.join("motor-libobs.log"), 200)));
-  gunluk.insert("motor-stderr.log".into(), json!(son_satirlar(&motor_dizin.join("motor-stderr.log"), 100)));
   gunluk.insert("hotkey-hatalari.log".into(), json!(son_satirlar(&state.data_dir.join("hotkey-hatalari.log"), 100)));
   if let Some(d) = crate::streamaxt::find_dir() {
     gunluk.insert("streamaxt.log".into(), json!(son_satirlar(&d.join("streamaxt.log"), 100)));

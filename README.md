@@ -17,6 +17,20 @@ Yeniden paketleme + imzalama tek komut:
 powershell -ExecutionPolicy Bypass -File scripts/paketle.ps1
 ```
 
+## OBS Studio ile çalışma
+
+Yayının kendisi (sahneler, kaynaklar, filtreler, kodlayıcılar, eklentiler) **kurulu OBS Studio'nun kendi
+arayüzünde** yapılır. Bu uygulama OBS'e özel tarayıcı dock'u olarak eklenir ve OBS'i obs-websocket üzerinden yönetir.
+
+1. Panel › **OBS Studio** sekmesi: OBS kurulumu, sürümü, açık/bağlı durumu.
+2. **Bağlantı bilgisini OBS'ten al**: obs-websocket portu ve şifresi OBS'in kendi ayarından okunur
+   (panelde şifre girilmemişse uygulama bunu kendiliğinden de kullanır).
+3. **Seçilenleri OBS'e ekle** (OBS kapalıyken): sohbet, etkinlik akışı, hızlı eylemler, yayın bilgisi, kontrol
+   merkezi, müzik, ses paneli ya da tüm panel OBS'in Docklar menüsüne yazılır (`%APPDATA%\obs-studio\user.ini`;
+   ilk değişiklikte `user.ini.yya-yedek` yedeği alınır). Dock adresleri: `http://127.0.0.1:8843/dock?id=<kimlik>`.
+4. Kısayollar, kontrol destesi, bot ve otomasyon eylemleri (sahne, ses, kayıt duraklat/böl, sanal kamera, filtre,
+   Studio Mode geçişi, altyazı, medya, bas-konuş) OBS'e websocket üzerinden gider.
+
 ## Çalıştırma
 
 1. `cikti\portable\Baslat.bat` veya kurulum exe
@@ -109,3 +123,14 @@ Docker: `docker/docker-compose.yml` (Linux CI toolchain).
 ## İmza
 
 axthrowa — 2026-09-05
+
+## Lisans
+
+Bu ürünün tamamı (panel `src/`, `src-tauri/`, betikler) **GNU GPL-2.0-or-later** ile
+lisanslanır — bkz. [LICENSE](LICENSE) ve karar kaydı [ADR-005](docs/ADR-005-DAGITIM-VE-OZGUN-MOTOR.md). Üçüncü taraf
+bileşenlerin lisansları `THIRD_PARTY_NOTICES.txt` dosyasındadır (`node scripts/ucuncu-taraf-bildirimleri.mjs` üretir;
+sürüm derlemesi pakete koyar). İkili dağıtılırken kaynak kodu da sunulmalıdır.
+
+OBS Studio, OBS Project'in markasıdır; bu ürün onunla bağlantılı değildir. Uygulama kullanıcının kurulu OBS Studio'suyla
+obs-websocket üzerinden konuşur; OBS bu pakete dahil değildir. Karar: [ADR-006](docs/ADR-006-OBS-STUDIO-ENTEGRASYONU.md).
+

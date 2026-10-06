@@ -32,6 +32,7 @@ import {
   sfxOverlayUrl,
   stopAllSounds,
   uploadSfxFile,
+  resolveSoundboard,
   type SoundPad,
 } from "../../lib/soundboard";
 
@@ -83,6 +84,11 @@ export default function SoundBoardPanel({
     void refreshFiles();
     const loaded = loadSoundboard();
     if (loaded.length) saveSoundboard(loaded);
+    // Bu tarayıcının deposu boşsa (ör. OBS dock'u) liste sunucudaki panel ayarından gelir
+    else
+      void resolveSoundboard().then((p) => {
+        if (p.length) setPads(p);
+      });
   }, [refreshFiles]);
 
   useEffect(() => {

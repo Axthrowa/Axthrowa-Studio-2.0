@@ -4,7 +4,8 @@
  */
 import { API_BASE } from "../api";
 
-export type ActionParamKind = "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "engineSource" | "engineScene";
+export type ActionParamKind =
+  "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "filter" | "transition" | "text";
 
 export type ActionInfo = {
   id: string;
@@ -12,7 +13,7 @@ export type ActionInfo = {
   category: string;
   perm: string;
   confirm: boolean;
-  requires: "obs" | "multistream" | "streamAxt" | "motor";
+  requires: "obs" | "multistream" | "streamAxt";
   params: { name: string; kind: ActionParamKind }[];
   available: boolean;
   reason: string | null;
@@ -100,8 +101,9 @@ export const PARAM_LABEL: Record<ActionParamKind, string> = {
   source: "kaynak",
   destination: "hedef",
   db: "dB farkı",
-  engineSource: "motor kaynağı",
-  engineScene: "motor sahnesi",
+  filter: "filtre adı",
+  transition: "geçiş adı",
+  text: "metin",
 };
 
 /** Destek paketi (§93): sırları ayıklanmış JSON dosyası uygulama veri klasörüne yazılır; hiçbir yere gönderilmez. */

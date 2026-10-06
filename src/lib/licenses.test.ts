@@ -1,6 +1,7 @@
 /**
- * Bağımlılık lisans bekçisi (panel + Resonance npm ağaçları). Bir güncelleme GPL/AGPL/SSPL gibi izin listesi dışı
- * bir lisans getirirse test kırılır; karar ürün sahibinindir (docs/LICENSE_AND_DEPENDENCY_REVIEW.md).
+ * Bağımlılık lisans bekçisi (panel + Resonance npm ağaçları). Ürün GPL-2.0-or-later (ADR-005): bağımlılık bununla
+ * uyumlu olmalı. AGPL, SSPL, GPL-2.0-only (Apache-2.0 ile birleşemez) ve tescilli lisans getiren bir güncelleme testi
+ * kırar; karar ürün sahibinindir (docs/LICENSE_AND_DEPENDENCY_REVIEW.md).
  * Rust crate'leri için: `node scripts/lisans-denetimi.mjs` (cargo metadata, çevrimdışı).
  */
 import { readFileSync } from "node:fs";
@@ -18,6 +19,12 @@ const IZINLI = new Set([
   "CC-BY-4.0", // yalnız veri paketi (caniuse-lite) — atıf
   "MPL-2.0", // dosya düzeyinde zayıf copyleft; değiştirilmeden kullanılıyor
   "BlueOak-1.0.0",
+  "OFL-1.1", // yalnız yazı tipi dosyası (@fontsource/open-sans — OBS Yami teması); kodla birleşmez, ayrı kaynak olarak yüklenir
+  // GPL-2.0-or-later ürünle uyumlu copyleft lisanslar (ADR-005 §3)
+  "LGPL-2.1-or-later",
+  "LGPL-3.0-or-later",
+  "GPL-2.0-or-later",
+  "GPL-3.0-or-later",
 ]);
 
 /** Kilit dosyasında `license` alanı olmayan (eski `licenses` dizisi) ve LICENSE metni elle doğrulanmış paketler. */
@@ -76,6 +83,8 @@ describe("lisansUygun", () => {
     expect(lisansUygun("(MIT OR CC0-1.0)")).toBe(true);
     expect(lisansUygun("AGPL-3.0-only")).toBe(false);
     expect(lisansUygun("MIT AND GPL-2.0-only")).toBe(false);
+    expect(lisansUygun("GPL-3.0-or-later")).toBe(true);
+    expect(lisansUygun("SSPL-1.0")).toBe(false);
     expect(lisansUygun("")).toBe(false);
   });
 });

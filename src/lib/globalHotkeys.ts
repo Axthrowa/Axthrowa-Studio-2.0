@@ -126,7 +126,16 @@ export function eventToSpec(e: KeyboardEvent): string | null {
   if (e.key === "Control" || e.key === "Alt" || e.key === "Shift" || e.key === "Meta") return null;
   if (e.key === "Escape") return null;
   // Modifier-only code (bazı WebView’ler)
-  if (e.code === "ControlLeft" || e.code === "ControlRight" || e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "AltLeft" || e.code === "AltRight" || e.code === "MetaLeft" || e.code === "MetaRight") {
+  if (
+    e.code === "ControlLeft" ||
+    e.code === "ControlRight" ||
+    e.code === "ShiftLeft" ||
+    e.code === "ShiftRight" ||
+    e.code === "AltLeft" ||
+    e.code === "AltRight" ||
+    e.code === "MetaLeft" ||
+    e.code === "MetaRight"
+  ) {
     return null;
   }
 
@@ -205,6 +214,10 @@ export type HotkeyBinding = {
   /** srcToggle (sahnedeki kaynak) / filter (filtrenin sahibi) */
   source?: string;
   filter?: string;
+  /** engine.studio.quickTransition: adlandırılmış geçiş */
+  transition?: string;
+  /** engine.caption.send: altyazı metni */
+  text?: string;
   /** record: toggle | start | stop | pause */
   mode?: string;
   /** volume: dB farkı */
@@ -312,6 +325,8 @@ export function useGlobalHotkeys(
                   label: b.label || "",
                   source: b.source || "",
                   filter: b.filter || "",
+                  transition: b.transition || "",
+                  text: b.text || "",
                   mode: b.mode || "",
                   delta: Number(b.delta) || 0,
                   name: b.name || "",

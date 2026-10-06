@@ -3,15 +3,7 @@ import { Play, Plus, Trash2, Zap } from "lucide-react";
 import HotkeyInput from "../panel/HotkeyInput";
 import { actionsApi, CATEGORY_LABEL, missingActionParam, type ActionInfo } from "../../lib/api/actions";
 import { multistreamApi } from "../../lib/api/multistream";
-import {
-  ACTION_KINDS,
-  actionBindingId,
-  missingField,
-  normalizeRecordMode,
-  type ActionKind,
-  type ActionRow,
-  type RecordMode,
-} from "../../lib/obsActions";
+import { ACTION_KINDS, actionBindingId, missingField, normalizeRecordMode, type ActionKind, type ActionRow, type RecordMode } from "../../lib/obsActions";
 
 /**
  * OBS eylem kısayolları — sahne değiştirmenin ötesi: kaynak aç/kapa, kayıt,
@@ -41,25 +33,11 @@ type Props = {
 const field = "yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white";
 
 function newId() {
-  return typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `ac-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `ac-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 /** Aynı üç durumlu nokta: yeşil kayıtlı · kırmızı kaydedilemedi · sarı bekliyor. */
-function Dot({
-  id,
-  hotkey,
-  eksik,
-  registered,
-  failures,
-}: {
-  id: string;
-  hotkey: string;
-  eksik: string | null;
-  registered: Set<string>;
-  failures: Failure[];
-}) {
+function Dot({ id, hotkey, eksik, registered, failures }: { id: string; hotkey: string; eksik: string | null; registered: Set<string>; failures: Failure[] }) {
   const fail = failures.find((f) => f.id === id);
   const ok = !!hotkey && registered.has(id);
   const color = fail ? "bg-red-400" : ok ? "bg-emerald-400" : "bg-amber-400";
@@ -130,11 +108,41 @@ function PanelEylemiAlanlari({
                     />
                   </label>
                 );
-              case "engineScene":
+              case "filter":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
-                    Motor sahnesi
-                    <input className={field} value={row.scene || ""} placeholder="Yayın sekmesindeki sahne adı" onChange={(e) => onPatch({ scene: e.target.value })} />
+                    Filtre adı
+                    <input
+                      className={field}
+                      value={row.filter || ""}
+                      placeholder="OBS'te kaynağın Filtreler penceresindeki adı"
+                      onChange={(e) => onPatch({ filter: e.target.value })}
+                    />
+                  </label>
+                );
+              case "transition":
+                return (
+                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                    Geçiş adı
+                    <input
+                      className={field}
+                      value={row.transition || ""}
+                      placeholder="OBS Sahne Geçişleri listesindeki ad (ör. Kes, Soldur)"
+                      onChange={(e) => onPatch({ transition: e.target.value })}
+                    />
+                  </label>
+                );
+              case "text":
+                return (
+                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                    Metin
+                    <input
+                      className={field}
+                      value={row.text || ""}
+                      placeholder="Gönderilecek altyazı satırı"
+                      maxLength={500}
+                      onChange={(e) => onPatch({ text: e.target.value })}
+                    />
                   </label>
                 );
               case "input":
@@ -145,14 +153,13 @@ function PanelEylemiAlanlari({
                   </label>
                 );
               case "source":
-              case "engineSource":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
-                    {p.kind === "engineSource" ? "Motor kaynağı" : "Kaynak adı"}
+                    Kaynak adı
                     <input
                       className={field}
                       value={row.source || ""}
-                      placeholder={p.kind === "engineSource" ? "Yayın sekmesindeki adı" : "örn. Kamera"}
+                      placeholder="örn. Kamera"
                       onChange={(e) => onPatch({ source: e.target.value })}
                     />
                   </label>
@@ -193,32 +200,21 @@ function PanelEylemiAlanlari({
       {spec?.confirm && (
         <label className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-100">
           <input type="checkbox" className="mt-0.5" checked={!!row.confirmed} onChange={(e) => onPatch({ confirmed: e.target.checked })} />
-          <span>
-            Bu kısayol onay sormadan çalışsın. «{spec.label}» yayını başlatır ya da keser; işaretlemezsen kısayol kaydedilmez.
-          </span>
+          <span>Bu kısayol onay sormadan çalışsın. «{spec.label}» yayını başlatır ya da keser; işaretlemezsen kısayol kaydedilmez.</span>
         </label>
       )}
       {row.hotkey && eksik && (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200">Kısayol kaydedilmedi: {eksik} boş.</p>
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200">
+          Kısayol kaydedilmedi: {eksik} boş.
+        </p>
       )}
       {spec && !spec.available && spec.reason && <p className="text-xs text-white/70">Şu an kullanılamıyor: {spec.reason}.</p>}
     </div>
   );
 }
 
-export default function ObsActionSettings({
-  rows,
-  scenes,
-  inputs,
-  registered,
-  failures,
-  onListeningChange,
-  onChange,
-  onRun,
-  hideKinds = [],
-}: Props) {
-  const patch = (idx: number, part: Partial<ActionRow>) =>
-    onChange(rows.map((r, i) => (i === idx ? { ...r, ...part } : r)));
+export default function ObsActionSettings({ rows, scenes, inputs, registered, failures, onListeningChange, onChange, onRun, hideKinds = [] }: Props) {
+  const patch = (idx: number, part: Partial<ActionRow>) => onChange(rows.map((r, i) => (i === idx ? { ...r, ...part } : r)));
 
   // Panel eylemleri kataloğu yalnız böyle bir satır varken alınır
   const eylemVar = rows.some((r) => r.kind === "action");
@@ -245,14 +241,15 @@ export default function ObsActionSettings({
         <button
           type="button"
           className="yya-btn-ghost inline-flex h-8 items-center gap-1 px-3 text-xs font-bold"
-          onClick={() => onChange([...rows, { id: newId(), kind: (ACTION_KINDS.find((k) => !hideKinds.includes(k.id))?.id || "volume") as ActionKind, hotkey: "" }])}
+          onClick={() =>
+            onChange([...rows, { id: newId(), kind: (ACTION_KINDS.find((k) => !hideKinds.includes(k.id))?.id || "volume") as ActionKind, hotkey: "" }])
+          }
         >
           <Plus className="h-3.5 w-3.5" /> Eylem
         </button>
       </div>
       <p className="mb-3 text-xs leading-relaxed text-white/75">
-        Kaynak aç/kapa, kayıt, ses seviyesi, filtre ve sahne gezme. Bir kısayola bağlayıp yayın
-        sırasında tek tuşla kullan.
+        Kaynak aç/kapa, kayıt, ses seviyesi, filtre ve sahne gezme. Bir kısayola bağlayıp yayın sırasında tek tuşla kullan.
       </p>
 
       {rows.length === 0 && (
@@ -271,25 +268,14 @@ export default function ObsActionSettings({
           return (
             <div key={row.id} className="space-y-2 rounded-xl border border-white/[0.08] bg-black/30 p-2.5">
               <div className="flex items-center gap-2">
-                <select
-                  className={field}
-                  value={row.kind}
-                  aria-label="Eylem türü"
-                  onChange={(e) => patch(idx, { kind: e.target.value as ActionKind })}
-                >
+                <select className={field} value={row.kind} aria-label="Eylem türü" onChange={(e) => patch(idx, { kind: e.target.value as ActionKind })}>
                   {ACTION_KINDS.filter((k) => !hideKinds.includes(k.id) || k.id === row.kind).map((k) => (
                     <option key={k.id} value={k.id}>
                       {k.label}
                     </option>
                   ))}
                 </select>
-                <Dot
-                  id={bid}
-                  hotkey={row.hotkey || ""}
-                  eksik={eksik}
-                  registered={registered}
-                  failures={failures}
-                />
+                <Dot id={bid} hotkey={row.hotkey || ""} eksik={eksik} registered={registered} failures={failures} />
                 <button
                   type="button"
                   title="Şimdi dene"
@@ -324,12 +310,7 @@ export default function ObsActionSettings({
                   </label>
                   <label className="text-xs font-bold uppercase tracking-wider text-white/80">
                     Kaynak adı
-                    <input
-                      className={field}
-                      value={row.source || ""}
-                      placeholder="örn. Kamera"
-                      onChange={(e) => patch(idx, { source: e.target.value })}
-                    />
+                    <input className={field} value={row.source || ""} placeholder="örn. Kamera" onChange={(e) => patch(idx, { source: e.target.value })} />
                   </label>
                 </div>
               )}
@@ -362,11 +343,7 @@ export default function ObsActionSettings({
               {row.kind === "record" && (
                 <label className="block text-xs font-bold uppercase tracking-wider text-white/80">
                   Ne yapsın?
-                  <select
-                    className={field}
-                    value={normalizeRecordMode(row.mode)}
-                    onChange={(e) => patch(idx, { mode: e.target.value as RecordMode })}
-                  >
+                  <select className={field} value={normalizeRecordMode(row.mode)} onChange={(e) => patch(idx, { mode: e.target.value as RecordMode })}>
                     <option value="toggle">Başlat / durdur (tersle)</option>
                     <option value="start">Yalnız başlat</option>
                     <option value="stop">Yalnız durdur</option>
@@ -379,28 +356,16 @@ export default function ObsActionSettings({
                 <div className="grid grid-cols-2 gap-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-white/80">
                     Kaynak
-                    <input
-                      className={field}
-                      value={row.source || ""}
-                      placeholder="örn. Kamera"
-                      onChange={(e) => patch(idx, { source: e.target.value })}
-                    />
+                    <input className={field} value={row.source || ""} placeholder="örn. Kamera" onChange={(e) => patch(idx, { source: e.target.value })} />
                   </label>
                   <label className="text-xs font-bold uppercase tracking-wider text-white/80">
                     Filtre adı
-                    <input
-                      className={field}
-                      value={row.filter || ""}
-                      placeholder="örn. Bulanıklık"
-                      onChange={(e) => patch(idx, { filter: e.target.value })}
-                    />
+                    <input className={field} value={row.filter || ""} placeholder="örn. Bulanıklık" onChange={(e) => patch(idx, { filter: e.target.value })} />
                   </label>
                 </div>
               )}
 
-              {row.kind === "action" && (
-                <PanelEylemiAlanlari row={row} katalog={katalog} hedefler={hedefler} onPatch={(p) => patch(idx, p)} />
-              )}
+              {row.kind === "action" && <PanelEylemiAlanlari row={row} katalog={katalog} hedefler={hedefler} onPatch={(p) => patch(idx, p)} />}
 
               {row.kind === "obsHotkey" && (
                 <label className="block text-xs font-bold uppercase tracking-wider text-white/80">

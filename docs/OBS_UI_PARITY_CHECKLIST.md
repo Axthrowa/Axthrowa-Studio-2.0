@@ -1,0 +1,192 @@
+# OBS arayüz paritesi — kontrol listesi (plan §4)
+
+Kaynak: `docs/PLAN_PROMPT_OZGUN_YAYIN_MOTORU.md` §4. Karar: **YOL G** (ADR-005) — motor libobs (GPL), özgün motor
+yok; arayüz kendi `dt-*` tasarım sistemimiz (OBS simgesi/QSS/görseli kopyalanmaz).
+
+Durum sözlüğü: **VAR** (çalışır ve sınanmış) · **KISMİ** (çalışır ama OBS'teki seçeneklerin bir bölümü eksik;
+eksik not sütununda) · **YOK** (henüz yapılmadı) · **DESTEKLENMİYOR** (bilinçli olarak yok; neden yazılı).
+
+Test sütunu: `sinama` = `yayin-motoru sinama` öz-sınaması (48 denetim, sentetik) · `it:<ad>` =
+`src-tauri/tests/server_api.rs` entegrasyon testi · `vt:<dosya>` = vitest · `tp` = tarayıcı bölmesinde başsız
+sunucuyla elle (ekran görüntüsü/JS denetimi) · `—` = yalnız derleme/tip denetimi.
+
+Son güncelleme: 29.09.2026 (commit `892e2fa`).
+
+## 4.1 Ana pencere
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Menü çubuğu · önizleme · alt dock sırası Sahneler/Kaynaklar/Ses Mikseri/Geçişler/Denetimler · durum çubuğu | VAR | tp | `dockDuzeni.ts` varsayılan sıra |
+| Önizleme altında kaynak araç çubuğu | VAR | tp | Medya (oynat/duraklat/baştan/durdur/konum), metin kutusu (yazı kaynağı), aygıt/pencere/ekran listesi (yakalama ve ses kaynakları; liste yalnız okunur, yakalama başlatmaz), Özellikler, Filtreler. Metin ve aygıt alanları tarayıcıda görülmedi |
+| Dock sürükle-bırak, sekmeleme, kilitleme, düzeni sıfırla, kalıcılık | VAR | vt:dockDuzeni, tp | |
+| Dock'u ayrı pencereye çıkarma | VAR | vitest:projektor (her dock listede) | Docklar › Ayrı pencerede aç: tüm docklar (Sahneler, Kaynaklar, Mikser, Geçişler, Denetimler, Hedefler, İstatistik, Sohbet, Etkinlik, Deste, Tarayıcı, Klipler). Ayrı Kaynaklar penceresi: seç, göster/gizle, kilit, sıra, onaylı kaldır; Denetimler: kayıt/duraklat/böl/tekrar/sanal kamera (program)/Studio Mode, yayını bitir onaylı. Ön kontrol, kaynak ekleme, özellik/filtre diyalogları ana pencerede kalır (pencere bunu söyler). Arayüz tarayıcıda görülmedi |
+| Özel tarayıcı dock'u | VAR | vt:ozelDocklar | "Tarayıcı (özel)" dock'u: ad + http(s) adres listesi, korumalı çerçeve, ayrı pencereye çıkarılabilir; bazı siteler çerçeveyi reddeder |
+| Dock düzeni profil başına | VAR | — | Profil değişince o profilin düzeni yüklenir; profilin düzeni yoksa genel düzen ona yazılır (yerel depolama) |
+| Ek docklar: İstatistikler, Sohbet, Etkinlik, Çoklu çıkış (Hedefler), Deste, Klipler (Backtrack), Tarayıcı | VAR | tp | Günlük dock yok (Günlük pencere olarak var) |
+| Tam ekran arayüz, pencere konumu kalıcılığı, karışık DPI | VAR | vt:projektor | F11 tam ekran; ana pencere konum/boyut/büyütülmüş ve ayrı pencere konumları kalıcı (ekranda değilse ana monitöre; mantıksal piksel, monitör ölçeğiyle). Karışık DPI'da çalışma anı UNVERIFIED (tek monitörlü sınama ortamı) |
+
+## 4.2 Menü ağacı
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Dosya › Kayıtları göster | VAR | — | Gezgin'i açar; yalnız yerel (sınamada pencere açılmaması için çalıştırılmadı) |
+| Dosya › Yeniden muxla | VAR | sinama, it:remux_kuyrugu_mkv_mp4, tp | Kurulu OBS'in FFmpeg 8 kitaplıkları; MP4/MOV/MKV |
+| Dosya › Ekran görüntüsü (Çıkış / Önizleme) | VAR | sinama, it:motor_ekran_goruntusu_… , tp | Tuvalin tam çözünürlüğü, kayıt klasörüne |
+| Dosya › Ayarlar, Ayarlar klasörünü göster, Her zaman üstte | VAR | tp | |
+| Dosya › Profil klasörünü göster | VAR | — | Gezgin'de açar (yalnız yerel) |
+| Dosya › Çıkış | VAR | — | Ana pencereyi kapatır (uygulamanın kapanış akışı); yalnız masaüstü uygulamasında |
+| Düzen › Geri al/Yinele (açıklamalı) | VAR | vt | "Geri al: «X» taşı" |
+| Düzen › Kopyala / Yapıştır (başvuru) / Yapıştır (kopya) / Filtreleri kopyala-yapıştır | VAR | it:motor_filtre_yapistir_ve_gunluk, tp | |
+| Düzen › Dönüşüm alt menüsü (düzenle, kopyala, yapıştır, sıfırla, 90°/180°, çevir, sığdır, yay, ortala) | VAR | tp | Alt menü yerine düz liste |
+| Düzen › Sıra | VAR | — | Yukarı/aşağı/en üst/en alt (Düzen ve bağlam menüsünde) |
+| Düzen › Önizlemeyi kilitle | VAR | tp | |
+| Düzen › Önizleme ölçekleme (Pencereye sığdır / Tuval %100) | VAR | vt:onizlemeOlcek, tp | Görünüm menüsünde; "Çıkış (ölçeklenmiş)" seçeneği yok |
+| Düzen › Gelişmiş ses özellikleri | VAR | tp | |
+| Görünüm › Studio Mode, tuval seçimi, projektörler, durum çubuğu, güvenli alan kılavuzları | VAR | tp | |
+| Görünüm › Multiview (pencere) | VAR | sinama, it, tp | Tek düzen (üstte önizleme/program, altta 8 sahne) |
+| Görünüm › Önizleme yakınlaştırma (Ctrl+tekerlek, Ctrl+0) | VAR | vt, tp | |
+| Görünüm › Tam ekran arayüz (F11) | VAR | — | Yalnız masaüstü uygulamasında (Tauri penceresi); tarayıcı bölmesinde sınanamaz |
+| Görünüm › Kaynak simgeleri | VAR | vt:KaynaklarDock | Tür simgesi (lucide), açılıp kapanır; tercih yerel |
+| Docklar › onay kutuları, kilitle, sekme birleştir/ayır, düzeni sıfırla, ayrı pencere, özel tarayıcı dock'u | VAR | tp | |
+| Profil › liste, Yeni, Çoğalt, Yeniden adlandır, Kaldır (yedeğe), Dışa aktar, İçe aktar | VAR | it:motor_profil_… | Dışa aktarımda sır yok; içe aktarım yeni kimlikle eklenir |
+| Sahne Koleksiyonu › liste, Yeni, yönetici (çoğalt, adlandır, içe/dışa aktar, OBS JSON'dan al) | VAR | it:motor_v2_…, vt | Eşlenemeyen kaynak "eksik" yer tutucu olur |
+| Sahne Koleksiyonu › Eksik dosyaları denetle | VAR | it:motor_eksik_dosyalar_ara_ve_duzelt, tp | Medya, görsel, slayt, yerel tarayıcı sayfası; satır başına yeni yol, "Klasörde ara" |
+| Araçlar › Otomatik yapılandırma sihirbazı, Çıkış zamanlayıcısı | VAR | it:motor_sihirbaz_…, vt:cikisZamanlayicisi | Bant genişliği testi izinsiz yapılmaz (yok) |
+| Araçlar › WebSocket sunucu ayarları | VAR | it:obs_websocket_uyumlu_sunucu | Yayın Ayarları › Uzaktan denetim; 127.0.0.1 |
+| Araçlar › Betikler | DESTEKLENMİYOR | | OBS betik altyapısı (obs-scripting, Lua/Python) ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
+| Araçlar › Altyazı | KISMİ | sinama (CEA-608 baytları alıcı dosyasından çözüldü: yalnız seçilen hedefte), it:motor_api_sentetik_kaynak_ve_hedef | Araçlar › Altyazı…: yazılan satır CEA-608 kapalı altyazısı olarak canlı yayınlara (ya da seçilenlere) gömülür; `engine.caption.send` eylemiyle kısayol/Deste/otomasyondan da gönderilir. **Konuşma tanıma yok** (OBS'in aracı mikrofon sesini Windows konuşma tanımasıyla metne çevirir; burada mikrofon yakalanmaz, metin dışarıdan gelir). ş/ğ/ı → s/g/i (608 kümesinde yok), satır ≤ 128 bayt. FFmpeg libobs'un kare sonuna yazdığı SEI'yi okumaz ("late SEI"); platform oynatıcısında görünümü UNVERIFIED |
+| Araçlar › Sanal kamera ayarları | VAR | sinama (kaynak hedefi: 16:9, ortalanmış, silinince kapanır), it:motor_kayit_…_sanal_kamera | Hedef: Program / Önizleme (Studio Mode) / Sahne / **Kaynak** (Denetimler dock'u dişlisi). Kaynak hedefi kaynağı ana tuval boyutundaki özel bir tuvale en-boy korunarak sığdırır (kamera çözünürlüğü kaynağın boyutuna bağlı değil); kamera durunca ya da kaynak silinince tuval kapanır. Arayüz tarayıcıda görülmedi |
+| Yardım › Son günlüğü görüntüle, Günlük klasörü, Hakkında (sürüm, lisanslar) | VAR | it, tp | Günlük sırları ayıklanmış |
+| Yardım › Çökme raporları | VAR | it:motor_filtre_yapistir_ve_gunluk | Panelin çökme günlüğü, sırlar ayıklanmış; dışarı gönderilmez |
+| Yardım › Güncellemeleri denetle | VAR | it:guncelleme_denetimi_yerel_bildirim | Kullanıcının tanımladığı bildirim adresi (https; yalnız yerelde http), yalnız istenince, yalnız bu bilgisayardan; sürüm karşılaştırılır, sayfa tarayıcıda açılır — indirme/çalıştırma yok. Uygulamanın kendi dağıtım sunucusu olmadığı için varsayılan adres yok |
+| Güvenli kipte başlat | VAR | it:eklenti_yoneticisi_… | Motor başlangıç ekranında |
+
+## 4.3 Sahneler dock'u
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Liste, sürükle-bırak sıra, +/−, filtreler, yukarı/aşağı | VAR | it:motor_v2_…, tp | Izgara görünümü yok |
+| Studio Mode'da tıklama önizlemeye alır | VAR | tp | |
+| Bağlam: Çoğalt, Yeniden adlandır (F2), Kaldır (Del), Sıra, Filtreler, Geçişi geçersiz kıl | VAR | it, tp | |
+| Bağlam: Ekran görüntüsü | VAR | sinama, it, tp | |
+| Bağlam: Projektör (pencere) | VAR | sinama, it | Sahne tuval boyutunda; tam ekran sahne projektörü yok |
+| Bağlam: Multiview'da göster | VAR | it, birim (OBS içe aktarımı) | Sahne bağlam menüsünde (OBS'teki gibi); kaynak menüsünde OBS'te de yok |
+| Sahne başına kısayol | VAR | it:motor_kisayol_eylemleri_… | Kısayollar sayfası |
+
+## 4.4 Kaynaklar dock'u
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Göz, kilit, çoklu seçim, sürükle sıra, iç içe gruplar, filtre göstergesi, çift tıkla özellikler | VAR | vt:sahneAgaci, tp | |
+| Alt çubuk +, −, özellikler, filtreler, yukarı/aşağı | VAR | tp | |
+| Kaynak ekle (türler motordan, eklenti türleri) | VAR | it:motor_api_sentetik_…, it:eklenti_… | |
+| Bağlam: Kopyala/Yapıştır, Filtreleri kopyala/yapıştır, Yeniden adlandır, Kaldır, Sıra, Dönüşüm, Grupla/Çöz | VAR | it, tp | |
+| Bağlam: Ölçek filtresi, Karıştırma modu | VAR | sinama | Dönüşüm diyaloğunda |
+| Bağlam: Karıştırma yöntemi (Varsayılan / sRGB kapalı) | VAR | sinama, it | Dönüşüm diyaloğunda |
+| Bağlam: Deinterlace (kip + alan sırası) | VAR | sinama, it, tp | Görsel etkisi yalnız geçmeli kaynakta (UNVERIFIED: gerçek yakalama kartı yok) |
+| Bağlam: Gösterme/Gizleme geçişi | VAR | sinama, it | |
+| Bağlam: Kaynak ekran görüntüsü | VAR | sinama, it | |
+| Bağlam: Etkileşim | VAR | sinama, tp | Tarayıcı kaynağı |
+| Bağlam: Kaynak rengi (etiket) | VAR | it, tp | 8 hazır renk + özel + yok; listede satırın solunda şerit |
+| Bağlam: Kaynak projektörü | VAR | sinama, it, tp | Kaynak kendi boyutunda, pencere kapanınca motor tuvali bırakılır |
+| Bağlam: Multiview'da göster | VAR | it, birim (OBS içe aktarımı) | Sahne bağlam menüsünde (OBS'teki gibi); kaynak menüsünde OBS'te de yok |
+
+## 4.5 Önizleme etkileşimi
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Seçim + 8 tutamaç, taşı, ölçekle (Shift serbest), Alt kırp, Ctrl yapışma kapalı | VAR | vt:sahneAgaci, tp | |
+| Ok 1 px / Shift+ok 10 px, kenar/merkez yapışması, güvenli alan kılavuzları | VAR | vt, tp | Yapışma eşiği sabit (ayar yok) |
+| Döndürme tutamacı | VAR | vt:sahneAgaci, tp | Merkez etrafında (konum telafisiyle), Shift ile 15° adımlar, geri alınabilir; sınamada 90° → merkez aynı piksel |
+| Boşluk yardımcıları (mesafe çizgileri) | VAR | vt:sahneAgaci, tp | Tek öğe taşınırken tuval kenarlarına (px); kaynaklar arası mesafe yok |
+| Önizleme yakınlaştırma/kaydırma | VAR | vt:onizlemeOlcek, tp | Ctrl+tekerlek 1,25 kat (×0,25–×8), orta tuşla sürükleyerek kaydır, kaydırma çubukları; %100'de seçim isabeti doğrulandı |
+| Önizlemeyi devre dışı bırak | VAR | tp | Kare aboneliği kesilir (motor önizleme dönüştürmez); ses ölçerleri sürer |
+| Dönüşüm penceresi (konum, açı, boyut, 9 nokta hizalama, sınır türü + hizalama, kırpma) | VAR | tp | "Kırpmayı sınıra uygula" yok |
+
+## 4.6 Ses mikseri
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Kanal: ad, dB fader, tepe+RMS ölçer, tepe tutma, sessiz, izleme, dişli menüsü | VAR | sinama (ölçer), tp | |
+| Bağlam: Gizle, Filtreler, Özellikler, Gelişmiş ses, izleme türü, izler | VAR | tp | |
+| Yüzde olarak göster | VAR | vt:sesMatematik | Kanal bağlam menüsünden; tercih yerel |
+| Dikey düzen | VAR | tp | Başlıktaki düğmeyle; tercih yerel |
+| Ölçer tipi (gerçek tepe), düşüş hızı, kanal kilidi | VAR | sinama (örnek/gerçek tepe), it (profil), vt:sesMatematik | Tepe tipi profilde ve motorda (obs_volmeter_set_peak_meter_type); düşüş hızı OBS değerleri (23,53/11,76/8,57 dB/sn); kilit fader'ı kapatır |
+| Gelişmiş Ses Özellikleri tablosu (ses, mono, denge, senkron, izleme, İz 1–6, yalnız etkin kaynaklar) | VAR | sinama, it | |
+| Bas-konuş / bas-sustur | VAR | it:motor_kisayol_eylemleri_bas_konus_ve_sahne | Gecikme ms ayarı yok |
+| Solo dinle | VAR | vt:sesMatematik | Panel eki (OBS'te yok): seçilen kanal izlenir, izlenen diğerleri kapanır, bitince eski izleme türleri döner; yayına giden ses değişmez. Çalışma anı hoparlör çıkışı sınanmadı (izleme sınamada yalnız kapalı) |
+
+## 4.7 Sahne geçişleri dock'u
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Tür listesi, süre, özellikler (dişli) | VAR | sinama, it | Türler çalışma anında libobs'tan |
+| Kes, Soldur, Kaydır, İt, Rengi soldur, Luma, Stinger | VAR | sinama (tür listesi) | Stinger/Luma ayarları genel özellik formuyla |
+| Birden çok adlandırılmış geçiş (+/−, yeniden adlandır, özellikler) | VAR | it:motor_ekran_…_tbar, tp | Yerleşik Kes/Soldur silinemez; ayarlar geçişle saklanır; OBS'ten `transitions` listesi aktarılır |
+| Hareket (Move) geçişi | VAR (kendi uygulamamız) | sinama (yarıda öğe konumu iki uç arasında, sonda hedef sahne ve kare, araya giren kesme iptal eder), it:motor_ekran_goruntusu_…_tbar (tür listesi, adlandırılmış geçiş, Studio Mode), rust:egri/ara_deger, rust:move_gecisi_harekete_cevrilir | Geçiş türü "Hareket": iki sahnede aynı kaynağı gösteren öğeler konum/ölçek/açı/sınır/kırpmayla kayar (yumuşak eğri, ≈60 Hz); eşleşmeyenler yarıda değişir. Üçüncü taraf Move eklentisinin kodu kullanılmadı, ayarları (eğri türü, gecikme vb.) yok. Grup içeren sahnede yumuşak geçişe düşülür; hizalama/sınır türü farklı eşleşmeler yarıda değişir; T-bar'da yumuşak geçiş gibi davranır. OBS koleksiyonundaki `move_transition` buna çevrilir |
+| Sahne başına geçiş geçersiz kılma | VAR | it:motor_v2_… | |
+
+## 4.8 Denetimler dock'u
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Yayını başlat/durdur (ön kontrol modalı, tümü/tek hedef) | VAR | it:motor_api_sentetik_kaynak_ve_hedef | Yalnız 127.0.0.1 alıcılarıyla sınandı |
+| Kaydı başlat + Duraklat + Böl | VAR | sinama, it:motor_kayit_duraklat_bol_… | Duraklat, kodlayıcı paylaşılıyorsa reddedilir (ayrı kodlayıcı seçeneği) |
+| Tekrar arabelleği + Kaydet | VAR | sinama, it | |
+| Sanal kamera başlat | VAR | sinama, it | OBS sanal kamera sürücüsü gerekir |
+| Studio Mode, Ayarlar | VAR | tp | |
+| Backtrack | VAR | sinama (kırpma), it:remux_kuyrugu_mkv_mp4, it:motor_kayit_…_dikey_tekrar | Tuval başına tekrar arabelleği; "Klipler" dock'u: kayıt klasöründeki klipler, oynatıcı, başlangıç/bitiş, yeniden kodlamasız kırpma (anahtar kareden). Dock arayüzü tarayıcıda görülmedi |
+
+## 4.9 Studio Mode
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Önizleme · geçiş sütunu · Program, Geçiş / Kes | VAR | sinama, it, tp | Önizleme ayrı özel tuvalde (programı etkilemez) |
+| Takas (swap) | VAR | sinama, it | Düğme olarak |
+| T-bar (sürükle; uçta tamamla/geri al, ortada kalır) | VAR | sinama, it, vt:tbar, tp | Sabit geçişlerde (Kes/Stinger) reddedilir |
+| Hızlı geçiş düğmeleri | VAR | it, vt:HizliGecisler, tp | Geçiş süresince tuvalin geçişi geçici değişir, bitince geri kurulur (OBS'te ayrı geçiş kaynağı kullanılır; görünür sonuç aynı) |
+| Dikey düzen, canlı sahne düzenleme uyarısı | VAR | — | Görünüm menüsünde; uyarı önizlemedeki sahne programdayken gösterilir |
+| "Sahneyi çoğalt" seçeneği | VAR | sinama (öğe kaldırılınca program kırmızı kalır, önizleme değişir; programdaki sahne silinemez; kapanınca asıl sahne), rust:studyo_cogalt_varsayilan_acik_ve_sinirli | Ayarlar › Gelişmiş › Studio Mode: Kapalı / Sahneyi çoğalt (varsayılan, OBS gibi) / Sahneyi ve kaynak özelliklerini çoğalt. Geçiş (ve T-bar) önizleme sahnesinin o anki özel kopyasını (libobs `OBS_SCENE_DUP_PRIVATE_REFS` / `PRIVATE_COPY`) programa alır; düzenlemeler asıl sahneye kaydolur, bir sonraki geçişte programa gelir. Studio Mode kapanınca program asıl sahneye bırakılır. Arayüz tarayıcıda görülmedi |
+
+## 4.10 Durum çubuğu
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Canlı süre, kayıt süresi (duraklatıldı), CPU %, GPU %, FPS, kb/s | VAR | tp | GPU Windows performans sayaçlarından |
+| Ağdan düşen kare (sayı + %) | VAR | — | Etkin yayın hedeflerinin toplamı |
+| Geciken/atlanan kare | VAR | tp | |
+| Sağlık karesi rengi, hedef başına tablo | VAR | vt:yayinSagligi | Yeşil/sarı/kırmızı (başarısız ya da >%5 düşen kare kırmızı, yeniden bağlanma ya da >%1 sarı); tıklayınca hedef başına durum, bit hızı, düşen kare |
+
+## 4.11 Ayarlar penceresi
+
+Satır satır: `docs/OBS_SETTINGS_PARITY_MATRIX.md`. Özet: Video (taban/çıkış/ölçek filtresi/FPS/renk biçimi-uzayı-aralığı),
+Ses (örnekleme, kanallar), Çıkış (kodlayıcı, ayrı kayıt kodlayıcısı, bölme süre/boyut, kayıt biçimi), Gelişmiş ağ
+(IP'ye bağla, yeni ağ kodu, dinamik bit hızı, yeniden bağlanma), Uzaktan denetim (obs-websocket uyumlu), Kısayollar
+VAR; Erişilebilirlik (seçim kutusu + ölçer renkleri, renk körlüğü ve yüksek kontrast hazırları; vt:erisilebilirlik, tp) VAR; Genel sayfasındaki onay/tepsi seçenekleri YOK.
+
+## 4.12 Diğer pencereler
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Filtreler penceresi (sırala, göz, kopyala/yapıştır) | VAR | sinama, it | Ses/video iki ayrı liste yerine tek liste + tür etiketi |
+| Özellikler penceresi (genel özellik formu, Varsayılanlar) | VAR | it | Varsayılanlar onayla; parolalar Kimlik Yöneticisinde korunur ve yeniden uygulanır |
+| Projektörler (pencere, tam ekran monitör, sahne, kaynak) | VAR | sinama, it, tp | Sahne/kaynak projektörü yalnız pencere |
+| Multiview | VAR | sinama, it, tp | Tek düzen |
+| İstatistikler | VAR | vt:kayitSuresi, vt:istatistikTabani, tp | Disk boş alanı, kalan kayıt süresi, Sıfırla (arayüz tabanı; motor sayaçlarına dokunulmaz) |
+| Otomatik yapılandırma sihirbazı | VAR | it:motor_sihirbaz_yerel_kodlama_sinamasi | Bant genişliği testi yok (izin gerektirir) |
+| Remux penceresi | VAR | it, tp | |
+| Eksik dosyalar penceresi | VAR | it, tp | Yeni yol mutlak ve diskte olmalı; eksik eklentili kaynakta yalnız kayıt güncellenir |
+| Günlük görüntüleyici, çökme sonrası güvenli kip, çıkış zamanlayıcısı | VAR | it, vt | |
+| Betikler penceresi | DESTEKLENMİYOR | | Bkz. Araçlar › Betikler |
+
+## 4.13 SE.Live işlev paritesi
+
+| Madde | Durum | Test | Not |
+|---|---|---|---|
+| Çoklu yayın kartları, hedef başına tuval/kodlayıcı/ses izi, tek başına başlat/durdur, durum | VAR | sinama, it:multistream_… | Yalnız 127.0.0.1 alıcılarıyla sınandı; gerçek platform UNVERIFIED |
+| Yayın öncesi kontrol (GO LIVE) | VAR | it | |
+| Yayın bilgisi dock'u (başlık/kategori, platform API'si) | VAR | it:yayin_bilgisi_kick_bagli_degilken, rust:kanal_govdesi_dogrular, vitest:yayinBilgisi (sahte fetch: Twitch PATCH gövdesi/sınırları, YouTube snippet birleştirme ve yalnız-başlık yolu) | Docklar › Yayın Bilgisi: **Kick** (`PATCH /public/v1/channels`, `channel:write`), **Twitch** (Helix `PATCH /channels`, `channel:manage:broadcast`; kategori `search/categories`), **YouTube** (canlı ya da planlanmış yayın; yayın kimliği `videos.list` ile video olarak doğrulanırsa başlık/kategori/etiket `videos.update`, doğrulanmazsa yalnız başlık `liveBroadcasts.update`). Kick ve Twitch'te önceden bağlanmış hesapların yazma kapsamı yok → yeniden bağlanmak gerekir. Gerçek kanallar sınamada değiştirilmedi: çalışma anı **UNVERIFIED**; arayüz tarayıcıda görülmedi |
+| Çoklu tuval (yatay + dikey + ek tuvaller) | VAR | sinama (ek tuval kare/program/boşaltma), it:motor_ek_tuvaller, it:motor_bagli_sahneler, vitest:tuvaller | Sahne Koleksiyonu › Tuvaller…: yatay ve dikeyin yanında en çok 8 ek tuval (ad + taban boyutu, koleksiyonda saklanır); her birinin kendi sahneleri, programı, önizlemesi; hedefler, projektör, Multiview, Studio Mode ve sanal kamera seçebilir. **Bağlı sahneler** (bağlam menüsü › Bağlı sahne). Boyut değişikliği motor yeniden başlayınca uygulanır (libobs tuvali yeniden boyutlandırılamaz); silinen tuvalin nesnesi oturum sonuna dek boş kalır ve kimliği yeniden kullanılmaz. "Sınırsız" değil: 8 ek tuval sınırı (GPU yükü). Arayüz tarayıcıda görülmedi |
+| Backtrack | VAR | sinama, it | Tuval başına tekrar arabelleği + Klipler dock'u (liste, oynat, kırp) |
+| Birleşik sohbet + etkinlik dock'u | VAR | — | Mevcut StreamAxT/chatHub altyapısı |
+| Twitch Enhanced Broadcasting | DESTEKLENMİYOR | | Platform onayı/API gerektirir; arayüzde gösterilmez |

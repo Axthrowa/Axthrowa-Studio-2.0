@@ -88,3 +88,11 @@
    kopyalarını taşıyor ve kaynak ağaçtaki sabitlemeden etkilenmiyordu (`tiktok-live-connector` 2.5.0 AGPL) — bu turun
    dağıtımında 2.4.0'a indirildi (bkz. IMPLEMENTATION_REPORT). Eski `StreamAxT-v1.0.0-*.zip` arşivleri 2.5.0 içerir;
    yeniden paketlenmeden dağıtılmamalı.
+
+## OBS Yami görünümü (2026-10-05)
+
+| Bileşen | Kaynak | Lisans | Not |
+|---|---|---|---|
+| OBS "Dark" simgeleri (`src/assets/obs/`) | Kurulu OBS 32.2.2 `data/obs-studio/themes/Dark` | GPL-2.0-or-later (OBS Project) | Kullanıcının kişisel kullanım kararıyla; ürün zaten GPL-2.0-or-later (ADR-005). OBS logosu/markası kullanılmadı. |
+| Yami renk ve ölçü değerleri (`src/styles/obs-yami.css`) | `Yami.obt` | GPL-2.0-or-later | Değerler CSS'e çevrildi (QSS kopyalanmadı, kurallar yeniden yazıldı). |
+| Open Sans (`@fontsource/open-sans`) | npm | OFL-1.1 | Yalnız yazı tipi dosyası; kodla birleşmez. Lisans bekçisine gerekçesiyle eklendi. |

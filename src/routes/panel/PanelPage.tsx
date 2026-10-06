@@ -50,7 +50,7 @@ import { runObsAction, type ActionRow } from "../../lib/obsActions";
 import { resonanceLinkAllowed } from "../../lib/embedMessages";
 // Kontrol Merkezi yalnız o sekme açılınca yüklenir (ana paketi büyütmesin)
 const ControlCenter = lazy(() => import("../../components/control/ControlCenter"));
-const YayinCalismaAlani = lazy(() => import("../../components/broadcast/YayinCalismaAlani"));
+const ObsStudioPanel = lazy(() => import("../../components/panel/ObsStudioPanel"));
 import ThemeSelector from "../../components/ThemeSelector";
 import { I18nProvider } from "../../i18n";
 import { en, tr, type MsgKey } from "../../i18n/messages";
@@ -1611,8 +1611,8 @@ export default function PanelPage() {
           <ControlCenter onToast={showToast} />
         </Suspense>
       ) : yayinTab ? (
-        <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yayın çalışma alanı yükleniyor…</div>}>
-          <YayinCalismaAlani onToast={showToast} onGit={(n) => setActiveNav(n)} />
+        <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
+          <ObsStudioPanel onToast={showToast} />
         </Suspense>
       ) : musicTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">

@@ -15,15 +15,7 @@
 import { getObs } from "./obs";
 import { actionParams, actionsApi } from "./api/actions";
 
-export type ActionKind =
-  | "srcToggle"
-  | "volume"
-  | "record"
-  | "filter"
-  | "sceneNext"
-  | "scenePrev"
-  | "obsHotkey"
-  | "action";
+export type ActionKind = "srcToggle" | "volume" | "record" | "filter" | "sceneNext" | "scenePrev" | "obsHotkey" | "action";
 
 export type RecordMode = "toggle" | "start" | "stop" | "pause";
 
@@ -38,7 +30,9 @@ export const SOURCE_MODES: { id: SourceMode; label: string }[] = [
 
 /** Kaynak görünürlüğünün yeni durumu (Rust `source_enabled_after` ile aynı sözleşme). */
 export function sourceEnabledAfter(mode: unknown, currentlyEnabled: boolean): boolean {
-  const m = String(mode ?? "").trim().toLowerCase();
+  const m = String(mode ?? "")
+    .trim()
+    .toLowerCase();
   if (m === "show") return true;
   if (m === "hide") return false;
   return !currentlyEnabled;
@@ -56,6 +50,10 @@ export type ActionRow = {
   source?: string;
   /** filter: filtre adı */
   filter?: string;
+  /** engine.studio.quickTransition: adlandırılmış geçiş adı */
+  transition?: string;
+  /** engine.caption.send: altyazı metni */
+  text?: string;
   /** volume: ses girişi */
   input?: string;
   /** volume: dB farkı */
@@ -115,7 +113,9 @@ export function cycleIndex(len: number, current: number | null, forward: boolean
 
 /** Bilinmeyen kayıt kipi güvenli varsayılana (toggle) düşer. */
 export function normalizeRecordMode(raw: unknown): RecordMode {
-  const v = String(raw ?? "").trim().toLowerCase();
+  const v = String(raw ?? "")
+    .trim()
+    .toLowerCase();
   return v === "start" || v === "stop" || v === "pause" ? v : "toggle";
 }
 
@@ -157,10 +157,7 @@ export async function runObsAction(row: ActionRow): Promise<string> {
   switch (row.kind) {
     case "srcToggle": {
       const source = String(row.source).trim();
-      const scene =
-        (row.scene || "").trim() ||
-        ((await obs.call("GetCurrentProgramScene")) as { currentProgramSceneName: string })
-          .currentProgramSceneName;
+      const scene = (row.scene || "").trim() || ((await obs.call("GetCurrentProgramScene")) as { currentProgramSceneName: string }).currentProgramSceneName;
       const list = (await obs.call("GetSceneItemList", { sceneName: scene })) as {
         sceneItems: { sceneItemId: number; sourceName: string }[];
       };
@@ -248,9 +245,7 @@ export async function runObsAction(row: ActionRow): Promise<string> {
 /** Bir sahnedeki kaynak adları (boş sahne = şu an yayındaki). */
 export async function listSceneItems(scene?: string): Promise<{ scene: string; items: string[] }> {
   const obs = getObs();
-  const name =
-    (scene || "").trim() ||
-    ((await obs.call("GetCurrentProgramScene")) as { currentProgramSceneName: string }).currentProgramSceneName;
+  const name = (scene || "").trim() || ((await obs.call("GetCurrentProgramScene")) as { currentProgramSceneName: string }).currentProgramSceneName;
   const list = (await obs.call("GetSceneItemList", { sceneName: name })) as {
     sceneItems: { sourceName: string }[];
   };

@@ -40,6 +40,12 @@ pub struct HotkeyBindingIn {
   /// Filtre adı — `filter`.
   #[serde(default)]
   pub filter: String,
+  /// Adlandırılmış geçiş — `studio.quickTransition`.
+  #[serde(default)]
+  pub transition: String,
+  /// Serbest metin — `caption.send` (altyazı satırı).
+  #[serde(default)]
+  pub text: String,
   /// `record` için: toggle | start | stop | pause.
   #[serde(default)]
   pub mode: String,
@@ -67,12 +73,15 @@ pub(crate) fn eylem_parametreleri(b: &HotkeyBindingIn) -> serde_json::Value {
     "source": b.source,
     "delta": b.delta,
     "id": b.target,
+    "filter": b.filter,
+    "transition": b.transition,
+    "text": b.text,
   })
 }
 
 /// Basılı tutma eylemi mi (bas-konuş / bas-sustur): bırakma olayı da işlenir, tekrar-basış süzgeci uygulanmaz
 pub(crate) fn basili_eylem(b: &HotkeyBindingIn) -> bool {
-  b.kind == "action" && crate::actions::BASILI_EYLEMLER.contains(&b.name.trim())
+  b.kind == "action" && crate::actions::find(b.name.trim()).is_some_and(|a| crate::actions::BASILI_EYLEMLER.contains(&a.id))
 }
 
 /// `action` kısayolu kaydedilmeden önce: eylem var mı, parametreleri geçerli mi, onay gerekiyorsa verilmiş mi?

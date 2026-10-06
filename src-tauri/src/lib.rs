@@ -10,14 +10,10 @@ pub mod media;
 pub mod actions;
 pub mod destek;
 pub mod disk;
-pub mod eklenti;
-pub mod motor_koleksiyon;
-pub mod motor_obs_ice;
-pub mod motor_profil;
-pub mod motor_kopru;
 pub mod multistream;
 pub mod music;
 pub mod obs_client;
+pub mod obs_studio;
 pub mod hotkeys;
 pub mod paths;
 pub mod secret_store;
@@ -72,9 +68,6 @@ pub struct AppState {
   /// Çoklu yayın yönlendiricisi (tek kodlama → çok hedef)
   pub multistream: Arc<multistream::Router>,
   /// Yerel yayın çekirdeği (libobs, ayrı süreç) köprüsü
-  pub motor: Arc<motor_kopru::MotorKoprusu>,
-  /// Eklenti kayıt defterinin oku-değiştir-yaz işlemleri tek tek yapılsın (`<veri>/eklentiler/kayit.json`)
-  pub eklenti_kilidi: Arc<tokio::sync::Mutex<()>>,
   pub widget_rt: Arc<widget_runtime::WidgetRuntime>,
   pub emote_combo: Arc<widgets::ComboMemory>,
   pub bot_activity: bot::activity::BotActivityLog,
@@ -161,8 +154,6 @@ impl AppState {
     ));
     Self {
       multistream,
-      motor: Arc::new(motor_kopru::MotorKoprusu::default()),
-      eklenti_kilidi: Arc::new(tokio::sync::Mutex::new(())),
       music: Arc::new(music::MusicState::new(&data_dir)),
       ytdl: Arc::new(ytdl::YtdlState::new()),
       kick_auth: Arc::new(kick::KickAuth::new(&data_dir)),
@@ -377,110 +368,39 @@ fn open_in_browser(url: String) -> Result<(), String> {
 /// OBS Studio sürecini başlatır. Zaten çalışıyorsa `"already"`.
 #[tauri::command]
 fn launch_obs(path: Option<String>) -> Result<String, String> {
-  launch_obs_process(path.as_deref())
+  obs_studio::baslat(path.as_deref()).map(str::to_string)
 }
 
-fn obs_already_running() -> bool {
-  #[cfg(target_os = "windows")]
-  {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let out = std::process::Command::new("tasklist")
-      .args(["/FI", "IMAGENAME eq obs64.exe", "/NH"])
-      .creation_flags(CREATE_NO_WINDOW)
-      .output();
-    if let Ok(o) = out {
-      let s = String::from_utf8_lossy(&o.stdout).to_ascii_lowercase();
-      if s.contains("obs64.exe") {
-        return true;
+#[cfg(test)]
+mod tls_tests {
+  /// Regresyon: Kick/Twitch wss:// bağlantısı rustls istemci yapılandırması kurar; sağlayıcı yoksa bu panikler ve
+  /// `panic = "abort"` ile uygulama açılışta kapanır.
+  #[test]
+  fn wss_istemcisi_icin_kripto_saglayicisi_var() {
+    super::tls_saglayicisini_kur();
+    super::tls_saglayicisini_kur();
+    assert!(rustls::crypto::CryptoProvider::get_default().is_some());
+    let _ = rustls::ClientConfig::builder()
+      .with_root_certificates(rustls::RootCertStore::empty())
+      .with_no_client_auth();
+  }
+
+  /// Botun kullandığı yol: TCP bağlantısı kurulur, ardından tokio-tungstenite rustls yapılandırması oluşturur. Yerel
+  /// dinleyici el sıkışmayı hemen keser → hata dönmeli, panik olmamalı (dış ağa çıkılmaz).
+  #[tokio::test]
+  async fn wss_baglantisi_panik_yerine_hata_doner() {
+    super::tls_saglayicisini_kur();
+    let dinleyici = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = dinleyici.local_addr().unwrap().port();
+    let kabul = tokio::spawn(async move {
+      if let Ok((soket, _)) = dinleyici.accept().await {
+        drop(soket);
       }
-    }
-    let out2 = std::process::Command::new("tasklist")
-      .args(["/FI", "IMAGENAME eq obs.exe", "/NH"])
-      .creation_flags(CREATE_NO_WINDOW)
-      .output();
-    if let Ok(o) = out2 {
-      let s = String::from_utf8_lossy(&o.stdout).to_ascii_lowercase();
-      if s.contains("obs.exe") {
-        return true;
-      }
-    }
+    });
+    let sonuc = tokio_tungstenite::connect_async(format!("wss://127.0.0.1:{port}/")).await;
+    assert!(sonuc.is_err());
+    let _ = kabul.await;
   }
-  false
-}
-
-/// Kullanıcının seçtiği yol gerçekten OBS'in kendi yürütülebiliri mi?
-///
-/// `launch_obs` komutu ön yüzden yol alıyor; ad denetimi olmadan webview'de
-/// çalışan herhangi bir betik bu komutla diskteki HERHANGİ bir programı
-/// başlatabilirdi.
-fn is_obs_executable(path: &std::path::Path) -> bool {
-  path
-    .file_name()
-    .and_then(|n| n.to_str())
-    .map(|n| {
-      let n = n.to_ascii_lowercase();
-      n == "obs64.exe" || n == "obs32.exe" || n == "obs.exe"
-    })
-    .unwrap_or(false)
-}
-
-fn candidate_obs_paths(override_path: Option<&str>) -> Vec<PathBuf> {
-  let mut out = Vec::new();
-  if let Some(p) = override_path.map(str::trim).filter(|s| !s.is_empty()) {
-    let p = PathBuf::from(p);
-    if is_obs_executable(&p) {
-      out.push(p);
-    } else {
-      yya_warn!("[obs] özel yol OBS yürütülebiliri değil, yok sayıldı: {}", p.display());
-    }
-  }
-  #[cfg(target_os = "windows")]
-  {
-    let pf = std::env::var("ProgramFiles").unwrap_or_else(|_| r"C:\Program Files".into());
-    let pf86 =
-      std::env::var("ProgramFiles(x86)").unwrap_or_else(|_| r"C:\Program Files (x86)".into());
-    let local = std::env::var("LOCALAPPDATA").unwrap_or_default();
-    for root in [pf, pf86, local] {
-      if root.is_empty() {
-        continue;
-      }
-      out.push(PathBuf::from(&root).join(r"obs-studio\bin\64bit\obs64.exe"));
-      out.push(PathBuf::from(&root).join(r"obs-studio\bin\64bit\obs.exe"));
-    }
-  }
-  out
-}
-
-fn launch_obs_process(override_path: Option<&str>) -> Result<String, String> {
-  if obs_already_running() {
-    return Ok("already".into());
-  }
-  let candidates = candidate_obs_paths(override_path);
-  let mut last_err = "OBS bulunamadı".to_string();
-  for path in candidates {
-    if !path.is_file() {
-      continue;
-    }
-    let parent = path.parent().map(|p| p.to_path_buf());
-    let mut cmd = std::process::Command::new(&path);
-    if let Some(dir) = parent {
-      cmd.current_dir(dir);
-    }
-    #[cfg(target_os = "windows")]
-    {
-      use std::os::windows::process::CommandExt;
-      const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-      // DETACHED_PROCESS — konsolsuz, uygulama kapanınca OBS düşmesin
-      const DETACHED_PROCESS: u32 = 0x0000_0008;
-      cmd.creation_flags(CREATE_NO_WINDOW | DETACHED_PROCESS);
-    }
-    match cmd.spawn() {
-      Ok(_) => return Ok("launched".into()),
-      Err(e) => last_err = format!("{}: {e}", path.display()),
-    }
-  }
-  Err(last_err)
 }
 
 #[cfg(test)]
@@ -499,15 +419,6 @@ mod open_in_browser_tests {
     assert!(!is_safe_web_url("https://x/\na"));
   }
 
-  #[test]
-  fn obs_override_must_be_obs_itself() {
-    assert!(is_obs_executable(std::path::Path::new(r"D:\OBS\bin\64bit\obs64.exe")));
-    assert!(is_obs_executable(std::path::Path::new(r"C:\x\OBS.EXE")));
-    assert!(!is_obs_executable(std::path::Path::new(r"C:\Windows\System32\cmd.exe")));
-    assert!(!is_obs_executable(std::path::Path::new(r"C:\x\obs64.exe.bat")));
-    let adaylar = candidate_obs_paths(Some(r"C:\Windows\System32\calc.exe"));
-    assert!(adaylar.iter().all(|p| is_obs_executable(p)), "{adaylar:?}");
-  }
 }
 
 /// Spotify bağlıysa yoklar; YTMD Resonance köprüsünden gelir. Çalan kaynak
@@ -591,8 +502,47 @@ fn configure_webview_memory() {
   }
 }
 
+/// rustls için süreç geneli kripto sağlayıcısını (ring) kurar. Bağımlılık ağacında hiçbir paket sağlayıcı özelliği
+/// açmadığında rustls ilk TLS bağlantısında (Kick/Twitch wss://) panikler; `panic = "abort"` ile bu, uygulamanın
+/// açılır açılmaz kapanması demekti. İkinci çağrı zararsızdır (zaten kurulu sağlayıcı korunur).
+pub fn tls_saglayicisini_kur() {
+  let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
+/// Çökme günlüğü: `panic = "abort"` altında panik mesajı pencereli uygulamada hiçbir yere yazılmıyordu. Mesaj, konum
+/// ve iş parçacığı adı `<veri>/cokme-gunlugu.log` dosyasına eklenir (belirtece benzeyen sözcükler ve RTMP yolları
+/// gizlenir; dosya 256 KB'ı aşınca baştan başlar), ardından varsayılan kanca çalışır.
+pub fn panik_kaydini_kur(data_dir: &std::path::Path) {
+  let yol = data_dir.join("cokme-gunlugu.log");
+  let onceki = std::panic::take_hook();
+  std::panic::set_hook(Box::new(move |bilgi| {
+    let mesaj = bilgi
+      .payload()
+      .downcast_ref::<&str>()
+      .map(|s| s.to_string())
+      .or_else(|| bilgi.payload().downcast_ref::<String>().cloned())
+      .unwrap_or_else(|| "(metin olmayan panik)".into());
+    let mesaj: String = destek::Gizleyici::new(Vec::new(), None).metin(&mesaj).chars().take(2000).collect();
+    let konum = bilgi.location().map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column())).unwrap_or_default();
+    let is_parcacigi = std::thread::current().name().unwrap_or("?").to_string();
+    let satir = format!(
+      "{} sürüm={} iş={is_parcacigi} konum={konum} panik: {mesaj}\n",
+      chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+      env!("CARGO_PKG_VERSION"),
+    );
+    let buyuk = std::fs::metadata(&yol).map(|m| m.len() > 256 * 1024).unwrap_or(false);
+    let dosya = std::fs::OpenOptions::new().create(true).write(true).append(!buyuk).truncate(buyuk).open(&yol);
+    if let Ok(mut f) = dosya {
+      use std::io::Write;
+      let _ = f.write_all(satir.as_bytes());
+    }
+    onceki(bilgi);
+  }));
+}
+
 pub fn run() {
   configure_webview_memory();
+  tls_saglayicisini_kur();
 
   #[cfg(windows)]
   {
@@ -626,6 +576,8 @@ pub fn run() {
     }
   }
   let resolved = paths::resolve(root);
+  let _ = std::fs::create_dir_all(&resolved.data_dir);
+  panik_kaydini_kur(&resolved.data_dir);
   let state = AppState::new(
     resolved.resource_root,
     resolved.data_dir,
@@ -732,19 +684,7 @@ pub fn run() {
     ])
     .build(tauri::generate_context!())
     .expect("error while running tauri application")
-    .run(|app, event| {
-      // Uygulama kapanırken yayın motoru düzgün durdurulur (çıktılar biter, kayıt kapanır) ve oturum işareti
-      // silinir; aksi hâlde bir sonraki açılış bunu "temiz kapanmadı" sayardı.
-      if let tauri::RunEvent::Exit = event {
-        let state = app.state::<AppState>();
-        let motor = state.motor.clone();
-        let dizin = state.data_dir.join("motor");
-        tauri::async_runtime::block_on(async move {
-          let _ = tokio::time::timeout(std::time::Duration::from_secs(15), motor.durdur()).await;
-        });
-        eklenti::kayit::oturum_bitti(&dizin);
-      }
-    });
+    .run(|_app, _event| {});
 }
 
 #[tauri::command]

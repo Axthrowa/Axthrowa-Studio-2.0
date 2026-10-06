@@ -27,15 +27,12 @@ mod auth;
 mod botaxt;
 mod control_plane;
 mod destek_api;
-mod eklenti_api;
 mod dosya_adi;
 mod local_guard;
-mod koleksiyon_api;
-mod motor_api;
-mod profil_api;
-mod motor_sahne_api;
-mod motor_ses_api;
+mod guncelleme_api;
+mod yayin_bilgisi_api;
 mod multistream_api;
+mod obs_studio_api;
 mod otomasyon_kilidi;
 pub mod runtime_api;
 
@@ -200,13 +197,10 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(runtime_api::router())
     .merge(multistream_api::router())
     .merge(actions_api::router())
-    .merge(motor_api::router())
-    .merge(motor_sahne_api::router())
-    .merge(koleksiyon_api::router())
-    .merge(profil_api::router())
-    .merge(motor_ses_api::router())
     .merge(destek_api::router())
-    .merge(eklenti_api::router());
+    .merge(guncelleme_api::router())
+    .merge(obs_studio_api::router())
+    .merge(yayin_bilgisi_api::router());
 
   if let Some(res_dist) = resonance_dist {
     let resonance_index = res_dist.join("index.html");

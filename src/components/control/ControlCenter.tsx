@@ -37,7 +37,6 @@ import { isAudioInput, meterPercent, meterZone } from "../../lib/obsAudio";
 import { actionsApi, CATEGORY_LABEL, obsApi, quickActions, type ActionInfo, type ObsCanvas, type ObsInputLevel } from "../../lib/api/actions";
 import { ActivityFeedPanel, UniversalChatPanel } from "./UniversalChat";
 import { DeckPanel } from "./DeckPanel";
-import { MotorPanel } from "./MotorPanel";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import {
   applyPreset,
@@ -1003,8 +1002,6 @@ export default function ControlCenter({ onToast }: Props) {
         return <QuickActionsPanel onToast={onToast} />;
       case "deck":
         return <DeckPanel onToast={onToast} />;
-      case "motor":
-        return <MotorPanel onToast={onToast} />;
       case "chat":
         return <UniversalChatPanel onToast={onToast} />;
       case "activity":

@@ -13,8 +13,10 @@ use sha2::{Digest, Sha256};
 
 use super::{client, fetch_chatroom, normalize_slug, UA};
 
+/// `channel:write`: Yayın bilgisi dock'u (başlık/kategori/etiket; yalnız kullanıcı "Kick'te güncelle"yi onaylayınca).
+/// Daha önce bağlanmış hesaplarda bu kapsam yoktur — yeniden bağlanana dek yazma kapalı kalır.
 const SCOPES: &str =
-  "chat:write user:read channel:read events:subscribe moderation:ban moderation:chat_message:manage";
+  "chat:write user:read channel:read channel:write events:subscribe moderation:ban moderation:chat_message:manage";
 const TOKEN_FILE: &str = "kick-oauth.json";
 const PENDING_TTL_MS: i64 = 15 * 60 * 1000;
 /// Kick `/public/v1/chat` — Botrix gibi tek kuyruk, ~1 mesaj/sn.
@@ -167,6 +169,9 @@ struct StoredKick {
   broadcaster_user_id: u64,
   #[serde(default)]
   broadcaster_slug: String,
+  /// Belirteç yanıtındaki `scope` (boşluk ayrımlı); eski kayıtlarda boş
+  #[serde(default)]
+  granted_scope: String,
 }
 
 #[derive(Clone)]
@@ -232,7 +237,57 @@ impl KickAuth {
       "hasAppToken": has_app,
       "via": if has_user { "kick-oauth" } else { "kick-app" },
       "scopes": SCOPES,
+      "canWriteChannel": has_user && kapsam_var(&d.granted_scope, "channel:write"),
     })
+  }
+
+  /// Kullanıcı belirteci `channel:write` kapsamını içeriyor mu (Yayın bilgisi güncellemesi)
+  pub fn can_write_channel(&self) -> bool {
+    let d = self.data.read();
+    (!d.access_token.is_empty() || !d.refresh_token.is_empty()) && kapsam_var(&d.granted_scope, "channel:write")
+  }
+
+  /// Yayın bilgisi — `PATCH /public/v1/channels` (resmi belge: docs.kick.com/apis/channels; `channel:write`, başarıda
+  /// 204). Yalnız kullanıcı belirteciyle; gövde çağıran tarafta doğrulanır.
+  pub async fn update_channel(&self, govde: &Value) -> Result<()> {
+    if !self.can_write_channel() {
+      return Err(anyhow!("Kick bağlantısında channel:write izni yok — Kick'i yeniden bağlayın"));
+    }
+    let token = self.ensure_access_token().await?;
+    let res = client()?.patch("https://api.kick.com/public/v1/channels").bearer_auth(&token).json(govde).send().await?;
+    let status = res.status();
+    if status.is_success() {
+      return Ok(());
+    }
+    let body: String = res.text().await.unwrap_or_default().chars().take(300).collect();
+    Err(anyhow!("Kick kanal güncelleme {status}: {body}"))
+  }
+
+  /// Kategori arama — `GET /public/v1/categories?q=` (resmi belge: docs.kick.com/apis/categories; belgede "deprecated"
+  /// işaretli, v2 ad süzgeci tam ad ister). Dönüş: `[{id, name}]`.
+  pub async fn search_categories(&self, q: &str) -> Result<Vec<Value>> {
+    let token = match self.ensure_access_token().await {
+      Ok(t) => t,
+      Err(_) => self.ensure_app_access_token().await?,
+    };
+    let res = client()?
+      .get("https://api.kick.com/public/v1/categories")
+      .query(&[("q", q)])
+      .bearer_auth(&token)
+      .send()
+      .await?;
+    let status = res.status();
+    let body: Value = res.json().await.unwrap_or(json!({}));
+    if !status.is_success() {
+      return Err(anyhow!("Kick kategori arama {status}"));
+    }
+    Ok(body["data"]
+      .as_array()
+      .into_iter()
+      .flatten()
+      .filter_map(|c| Some(json!({"id": c["id"].as_u64()?, "name": c["name"].as_str()?})))
+      .take(25)
+      .collect())
   }
 
   pub fn has_app_credentials(&self) -> bool {
@@ -500,8 +555,12 @@ impl KickAuth {
       .unwrap_or_default()
       .to_string();
     let expires_in = tokens.get("expires_in").and_then(|v| v.as_i64()).unwrap_or(3600);
+    let scope = tokens.get("scope").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     {
       let mut d = self.data.write();
+      if !scope.is_empty() {
+        d.granted_scope = scope;
+      }
       d.client_id = client_id.to_string();
       if !client_secret.is_empty() {
         d.client_secret = client_secret.to_string();
@@ -1346,5 +1405,21 @@ mod tests {
     assert_eq!(st.get("hasAppToken").and_then(|v| v.as_bool()), Some(true));
     assert_eq!(st.get("hasUserToken").and_then(|v| v.as_bool()), Some(false));
     let _ = std::fs::remove_dir_all(&dir);
+  }
+}
+
+/// Boşluk ayrımlı kapsam listesinde `ad` var mı
+fn kapsam_var(liste: &str, ad: &str) -> bool {
+  liste.split_whitespace().any(|k| k == ad)
+}
+
+#[cfg(test)]
+mod kapsam_testleri {
+  #[test]
+  fn kapsam_tam_eslesir() {
+    assert!(super::kapsam_var("chat:write channel:write", "channel:write"));
+    assert!(!super::kapsam_var("channel:read", "channel:write"));
+    assert!(!super::kapsam_var("", "channel:write"));
+    assert!(super::SCOPES.split_whitespace().any(|k| k == "channel:write"));
   }
 }

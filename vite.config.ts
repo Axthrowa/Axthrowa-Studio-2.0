@@ -22,7 +22,8 @@ export default defineConfig({
     strictPort: true,
     host: host || false,
     hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
-    watch: { ignored: ["**/src-tauri/**"] },
+    // Derleme/çıktı klasörleri izlenmez: cargo kilitli .pdb dosyalarını tutarken izleyici EBUSY ile çöker
+    watch: { ignored: ["**/src-tauri/**", "**/motor/**", "**/cikti/**", "**/resonance/node_modules/**"] },
   },
   build: {
     target: "esnext",

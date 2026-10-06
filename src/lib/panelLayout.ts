@@ -45,7 +45,7 @@ export type PanelLayout = {
 
 export const DEFAULT_TABS: { id: NavId; labelKey: string; label: string }[] = [
   { id: "profile", labelKey: "nav.profile", label: "Dashboard" },
-  { id: "yayin", labelKey: "nav.yayin", label: "Yayın" },
+  { id: "yayin", labelKey: "nav.yayin", label: "OBS Studio" },
   { id: "control", labelKey: "nav.control", label: "Kontrol Merkezi" },
   { id: "starting", labelKey: "nav.starting", label: "Giriş" },
   { id: "ending", labelKey: "nav.ending", label: "Çıkış" },

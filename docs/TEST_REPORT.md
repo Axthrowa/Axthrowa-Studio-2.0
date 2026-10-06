@@ -131,3 +131,135 @@ canlı (alıcıda 1080×1920, 1131 kare, 0 hata) → yönlendiriciden aynı hede
 
 **Sınanmayanlar (kullanıcı kuralı):** ekran, pencere, oyun yakalama, kamera, mikrofon, masaüstü sesi — kod yolu var,
 çalışma anında `UNVERIFIED`.
+
+## OBS iş akışı paritesi (2026-09-28)
+
+Komitler: 070326b, cb8b503, 6cd90a2, 1c6f0be, a140c38, f23418e, b9aba4b.
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **35/35** (yeni: tarayıcı kaynağı — kare değişimi + WebAudio −26 dBFS + durum; yakalama türü özellikleri örneksiz; çok izli kayıt iz 1 −91 / iz 2 −21 dB; hibrit MP4 iki iz; koleksiyon değişiminde grafik temizlenir, çıktılar sürer) |
+| Motor birim | 19 (olay satırı alan sırası, yol dönüşümü, çökme kaydı modülü, JPEG) |
+| Panel birim (Rust) | **290** (koleksiyon v2 göçü, OBS içe aktarımı, profil, dönüşüm doğrulama, çift ses, abonelik, bant genişliği önerisi, güvenli başvuru, basılı eylemler) |
+| Panel entegrasyon | **30** geçti, 1 elle çalıştırılan göz ardı (yeni: `motor_v2_sahneler_gruplar_filtreler_koleksiyonlar`, `motor_profil_kodlama_paylasimi_ve_kayit`, `multistream_anahtar_goster_sil_ve_baglanti_sinamasi`, `motor_kisayol_eylemleri_bas_konus_ve_sahne`, `motor_sihirbaz_yerel_kodlama_sinamasi`) |
+| Ön yüz (vitest) | **383** (sahne ağacı/geometri, geri al, dock düzeni, ses hesapları, canlı akış satırları, projektör, komut paleti) |
+| clippy (panel + motor) | 0 uyarı |
+
+Testlerin yakaladıkları (asıl neden düzeltildi): libobs modül adını yalnız `/` ile ayırdığı için CEF önbellek yolu
+bozuluyor ve motor 0x80000003 ile duruyordu; motor olay satırları `to_value` ile alfabetik sıralanıyordu (kareler
+WebSocket'e yönlenmiyordu); "İ" küçük harfe çevrilince birleşik nokta üretiyordu (koleksiyon kimliği); paralel
+testlerde süreç geneli ortam değişkeni yarışı; panel yeni kaynakları eski v1 türüyle oluşturuyordu.
+
+Arayüz sınaması: [UX_ACCEPTANCE_TESTS](UX_ACCEPTANCE_TESTS.md).
+
+## OBS arayüz paritesi — plan §4 (2026-09-29)
+
+Komitler: b855b0f, cba0f8c, c5a5d07, ddce4f8, a281802, 892e2fa.
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **48/48** (yeni: tam çözünürlük ekran görüntüsü 1920×1080 + göreli yol reddi; sahne/kaynak ekran görüntüsü boyutları; deinterlace gidiş-dönüş + ret; karıştırma yöntemi; T-bar — sabit geçiş reddi, ortada bırakınca sürer, sona/başa bırakınca program; yeniden muxla MP4→MKV 1200→1200 kare, 20,00 s, çözme hatası 0, üzerine yazma reddi; Multiview hücre pikselleri, boş hücre siyah, yabancı tuval sahnesi reddi) |
+| Motor birim | 26 (remux çıktı biçimi, AVRational düzeni, Multiview düzeni) |
+| Panel birim (Rust) | **300** (OBS içe aktarımında deinterlace + blend_method, remux çıktı kuralları) |
+| Panel entegrasyon | **36** geçti, 1 elle çalıştırılan göz ardı (yeni: `motor_ekran_goruntusu_deinterlace_karistirma_yontemi_tbar` — ekran görüntüsü, kaynak görüntüsü, deinterlace kalıcılığı, karıştırma yöntemi, T-bar, Multiview; `remux_kuyrugu_mkv_mp4`) |
+| Ön yüz (vitest) | **399** (T-bar bırakma kuralı) |
+| clippy (panel + motor) | 0 uyarı |
+
+Tarayıcı bölmesinde (başsız sunucu, geçici veri kökü) elle: Dosya › Ekran görüntüsü → 1920×1080 PNG; sahne bağlam
+menüsünden ekran görüntüsü; kaynak menüsünde Deinterlace diyaloğu (Yadif + alt alan → menü "Deinterlace: Yadif");
+T-bar ortada bırakıldı (program değişmedi, kaydırıcı %50'de kaldı) → sona çekildi (program "Oyun", kaydırıcı sıfırlandı);
+Remux penceresi kayıt klasöründeki MKV'yi MP4'e çevirdi (ffprobe 5,0 s); Multiview canlı karesi, program kırmızı
+çerçeve; kaynak araç çubuğunda medya denetimleri ve konum.
+
+Testlerin yakaladıkları (asıl neden düzeltildi): Multiview'da iç içe sahnenin tuval dışına taşan öğeleri hücreden
+taşıyordu → ölçek filtresiyle öğe kaynak boyutunda dokuya çizdirildi (OBS multiview'unun kırpmasına eşdeğer);
+başsız sınama sunucusu ekran görüntülerini kullanıcının Videolar klasörüne yazacaktı → geçici köke yönlendirildi.
+
+### Ek (2026-09-29 → 10-01): kalan OBS arayüz maddeleri
+
+Komitler: 34cf983 … 4656405 (Sıra menüsü, mikser yüzde/dikey düzen, yalnız etkin kaynaklar, çökme raporları,
+profil klasörü, adlandırılmış/hızlı geçişler, önizleme ölçekleme ve yakınlaştırma, Erişilebilirlik renkleri,
+önizlemeyi devre dışı bırak, tam ekran arayüz, kalan kayıt süresi, kaynak rengi, döndürme tutamacı, Özellikler ›
+Varsayılanlar).
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **48/48** |
+| Panel birim (Rust) | **300** (OBS `transitions` listesinin içe aktarımı) |
+| Panel entegrasyon | **36** geçti, 1 elle çalıştırılan göz ardı (genişletilen: adlandırılmış geçiş ekle/seç/sil, hızlı geçiş + geri kurma, kaynak rengi, Varsayılanlar, çökme günlüğü uç noktası) |
+| Ön yüz (vitest) | **412** (önizleme ölçek hesapları, döndürme geometrisi, kalan kayıt süresi, erişilebilirlik renk doğrulaması, hızlı geçiş etiketi, yüzde gösterimi) |
+| clippy | 0 uyarı (`Okuma::Tamam` kutulandı) |
+
+Tarayıcı bölmesinde elle: Slide geçişi eklenip seçildi, Studio Mode'da "Slide 400 ms" hızlı geçişi programı değiştirdi
+ve tuvalin geçişi geri kuruldu; Ctrl+tekerlek ×1,25, %100'de seçim isabeti, orta tuşla kaydırma, Ctrl+0; renk körlüğü
+hazırı CSS değişkenlerine uygulandı; mikser dikey düzende ölçer aşağıdan yukarı; önizleme kapatılınca kare yok;
+3 dakikalık sınama kaydında kalan süre 40,8 GB / 5256 kbps → 18 sa 32 dk (kayıt sonra silindi); kaynak rengi şeridi;
+döndürme tutamacıyla 90° → merkez aynı piksel, Ctrl+Z geri aldı.
+
+Testlerin yakaladıkları: Geçişler dock'unda üç düğme 171 px genişlikte taşıyordu (ayrı satıra alındı); yakınlaştırılmış
+önizlemede flex ortalaması taşan sol/üst kısmı erişilemez yapıyordu (kaydırılabilirken başa hizalama); sentetik
+işaretçide `setPointerCapture` hata atınca orta tuşla kaydırma başlamıyordu (korundu).
+
+### Ek (2026-10-02 → 10-05): son OBS paritesi maddeleri
+
+Komitler: 2504f5c … 4d43a41 (bağlı sahneler, tüm docklar ayrı pencerede, sanal kamera kaynak hedefi, Araçlar ›
+Altyazı (CEA-608), Yayın Bilgisi dock'u (Kick), ek tuvaller, OBS'ten ek tuval aktarımı).
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **54/54** (yeni: sanal kamera kaynak hedefi — 200×400 yeşil kaynak 16:9 tuvalde ortada, kenar siyah, kaynak silinince tuval kapanır; altyazı — alıcı dosyasındaki GA94 SEI baytları çözülerek "SINAMA ALTYAZI 42" yalnız seçilen hedefte bulundu, diğer hedef altyazısız, boş metin / etkin olmayan hedef reddedildi; ek tuval — 640×640 tuval kendi en-boyunda kare verir, sahnesi programda, boşaltılınca sahnesi kalkar, ana tuval boşaltılamaz) |
+| Panel birim (Rust) | **306** (CEA-608 metin dönüşümü, Kick kapsam eşleşmesi, kanal güncelleme gövdesi doğrulaması, OBS `canvas_uuid` aktarımı) |
+| Panel entegrasyon | **42** (1 elle çalıştırılan göz ardı); yeni: `motor_bagli_sahneler`, `yayin_bilgisi_kick_bagli_degilken` (ağsız: 409/428/400), `motor_ek_tuvaller` (ekle → önizleme 320×320, adlandır, boyut → yeniden başlatma gerekir, sil, kimlik yeniden kullanılmaz, motor yeniden başlayınca koleksiyondan kurulur); genişletilen: sanal kamera `kaynak:` hedefi, altyazı ucu + `engine.caption.send` |
+| Ön yüz (vitest) | **430** (her dock ayrı pencereye çıkarılabilir, etiket ayrıştırma, tuval adları/kimlik kuralı) |
+| clippy | 0 uyarı |
+
+Dış ağ dalgalanması: `youtube_endscreen_probe_reports_real_cards` tam koşuda bir kez başarısız oldu (YouTube o anda bitiş
+ekranı içermeyen sayfa sürümü döndürdü); kod değişmeden iki yeniden koşuda geçti. Test kapatılmadı.
+
+Sınanmayanlar (UNVERIFIED): altyazının platform oynatıcısında görünümü (FFmpeg libobs'un kare sonuna yazdığı SEI'yi
+okumaz — "late SEI"); Kick kanal güncellemesi (gerçek kanal değiştirilmedi); yeni arayüz parçaları tarayıcı bölmesinde
+görülmedi (Altyazı, Yayın Bilgisi, Tuvaller, ayrı pencere docklar).
+
+### Ek (2026-10-05): kalan maddeler — Yayın Bilgisi (Twitch/YouTube), Sahneyi çoğalt, Hareket geçişi
+
+Komitler: 1fad182 … 5e1922b.
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **56/56**, art arda iki koşu (yeni: "Sahneyi çoğalt" — asıl sahneden öğe kaldırılınca program kırmızı kalır, önizleme siyah, programdaki sahne silinemez, Studio Mode kapanınca program asıl sahne; Hareket — 3 sn'lik geçişin yarısında öğenin sol üstü (≈491, 245) iki uç arasında, sonda hedef sahne ve kare, araya giren kesme hareketi iptal eder) |
+| Motor birim | **29** (eğri uçları/simetri, ara değer ve en kısa açı) |
+| Panel birim (Rust) | **308** (studyo_cogalt varsayılanı ve sınırı, `move_transition` → hareket aktarımı) |
+| Panel entegrasyon | **41** (1 elle çalıştırılan göz ardı); genişletilen: Hareket tür listesi + adlandırılmış geçiş + Studio Mode geçişi |
+| Ön yüz (vitest) | **435** (sahte `fetch`: Twitch PATCH gövdesi ve belge sınırları, kapsam yoksa yazma reddi; YouTube snippet birleştirme, video doğrulanınca `videos.update`, doğrulanmazsa yalnız başlık `liveBroadcasts.update`) |
+| clippy | 0 uyarı (motor + panel) |
+
+Testlerin yakaladıkları: (1) Tam koşuda bir kez, profil video değişikliğinin motoru yeniden başlattığı adım test istemcisinin
+10 sn zaman aşımını aştı — o adımlar diğer uzun testlerdeki gibi 90 sn'lik istemciye alındı (beklentiler değişmedi).
+(2) Bir sınama koşusunda önizleme karesi yük altında gecikti ve iki piksel denetimi eski kareyi okudu — hareketin ara
+konumu artık öğe durumundan okunuyor, son durumlar 3 sn'ye kadar yoklanıyor.
+
+Sınanmayanlar (UNVERIFIED): Twitch ve YouTube yayın bilgisi gerçek kanalda (yalnız sahte `fetch`); Hareket ve
+Sahneyi çoğalt arayüzü tarayıcıda görülmedi.
+
+### Ek (2026-10-05): akıcı önizleme (H.264 + WebCodecs), OBS Yami görünümü, Ses/Video Panosu (bot)
+
+Komitler: dd4f6b6, eed4e94 (panel); ec02106 (StreamAxT).
+
+| Katman | Sonuç |
+|---|---|
+| Motor `sinama` | **57/57** (yeni: canlı H.264 — `yym_canli_h264` çıktısı NVENC'le kodlar, ilk paket anahtar kare + SPS/PPS, boyut ölçeklenmiş tuval) |
+| Motor birim | **31** + 1 (paket çerçevesi biçimi, bit hızı sınırları) |
+| Panel birim (Rust) | **308** · entegrasyon **41** (1 elle; `/ws/motor` `{"video":…}` aboneliği ikili kare döndürür, tuval süzgeci) |
+| Ön yüz (vitest) | **438** (`canliVideo`: SPS'ten `avc1.PPCCLL`, çerçeve ayrıştırma; lisans bekçisi OFL-1.1 Open Sans) |
+| StreamAxT | sunucu **469**, istemci **83** (ses panosu: kova ağırlıklı seçim, bekleme, yetki, sohbet adı, katman konumu) |
+
+Canlı doğrulamalar (başsız sunucu + başsız Chrome, ayrı profil): önizleme ve program bölmeleri ≈60 kare/sn, uzun görev
+yok; Studio Mode'da seçili öğe çerçevesi yalnız önizleme bölmesinde (9 tutamaç önizlemede, 0 programda); pencere
+yakalama (WGC) motor kaynağında görüntü veriyor — simge durumuna küçültülmüş pencere siyah kalır (Windows sınırı).
+Ses panosu: yalıtılmış bot sunucusunda (127.0.0.1:3013) sentetik 1 sn 440 Hz WAV yüklendi → panodan oynat →
+`/widgets/pano` katmanında `<audio>` 0→0,89 sn çaldı, bitince `pano_bitti` ile sıra boşaldı, geçmişe yazıldı; yabancı
+kökenden yazma 403.
+
+Sınanmayanlar (UNVERIFIED): ses panosunun gerçek sohbette `!ses` ile tetiklenmesi (gerçek sohbet olayı üretilmedi;
+birim testleri var); platform kanal puanı/Bits ödülleri bağlı değil (bot `KNOWN_LIMITATIONS §10`); NVENC olmayan
+makinede x264 yedeği yalnız kod yolu olarak.

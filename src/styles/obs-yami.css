@@ -1,0 +1,446 @@
+/*
+ * OBS Studio "Yami" teması — Yayın çalışma alanına kapsamlı (.obs-yami). Renkler, ölçüler ve kurallar kurulu OBS 32.2.2'nin
+ * data/obs-studio/themes/Yami.obt dosyasından alınmıştır (Warchamp7 / OBS Project, GPL-2.0). Varsayılan yoğunluk:
+ * yazı 10pt, dolgu 4 → simge 16px, araç simgesi 14px, girdi 30px (22 + 2×4), köşe 4px. Kişisel kullanım kararı: 2026-10-05.
+ */
+.obs-yami {
+  /* OBS renk paleti */
+  --oy-blue1: #718cdc;
+  --oy-blue2: #476bd7;
+  --oy-blue3: #284cb8;
+  --oy-blue4: #213e97;
+  --oy-red1: #e85e75;
+  --oy-red2: #e33b57;
+  --oy-red3: #c01c37;
+  --oy-red5: #7d1224;
+  --oy-green1: #59d966;
+  --oy-green2: #37d247;
+  --oy-green3: #25a231;
+  --oy-green4: #1e8528;
+  --oy-green5: #17641e;
+  --oy-yellow1: #eabc48;
+  --oy-yellow2: #e5af24;
+  --oy-yellow3: #b88a16;
+  --oy-yellow5: #6e520d;
+  --oy-yellow6: #493709;
+  --oy-grey1: #5b6273;
+  --oy-grey2: #4e5566;
+  --oy-grey3: #464b59;
+  --oy-grey4: #3c404d;
+  --oy-grey5: #323540;
+  --oy-grey6: #272a33;
+  --oy-grey7: #1d1f26;
+  --oy-grey8: #13141a;
+  --oy-white3: #d2d2d2;
+  --oy-white4: #b4b4b4;
+  --oy-white5: #969696;
+
+  /* Tema rolleri */
+  --oy-bg-window: var(--oy-grey7);
+  --oy-bg-base: var(--oy-grey6);
+  --oy-bg-preview: var(--oy-grey8);
+  --oy-primary: var(--oy-blue3);
+  --oy-primary-light: var(--oy-blue2);
+  --oy-primary-lighter: var(--oy-blue1);
+  --oy-border: var(--oy-grey4);
+  --oy-input-bg: var(--oy-grey4);
+  --oy-button-bg: var(--oy-grey4);
+  --oy-button-hover: var(--oy-grey3);
+  --oy-button-down: var(--oy-grey7);
+  --oy-button-disabled: var(--oy-grey6);
+  --oy-text-muted: var(--oy-white5);
+  --oy-radius: 4px;
+  --oy-font: 10pt;
+  --oy-font-small: 8pt;
+
+  /* Tasarım sistemi değişkenleri OBS rollerine eşlenir */
+  --panel-accent: var(--oy-primary);
+  --panel-cta-ink: #fff;
+  --dt-surface-1: var(--oy-bg-base);
+  --dt-surface-2: var(--oy-button-bg);
+  --dt-surface-3: var(--oy-button-hover);
+  --dt-line: var(--oy-border);
+  --dt-line-strong: var(--oy-grey1);
+  --dt-text: #fff;
+  --dt-text-2: #fff;
+  --dt-text-3: var(--oy-text-muted);
+  --dt-live: var(--oy-red3);
+  --dt-rec: var(--oy-red2);
+  --dt-warn: var(--oy-yellow2);
+  --dt-error: var(--oy-red2);
+  --dt-ok: var(--oy-green2);
+  --dt-focus: var(--oy-primary-lighter);
+  --dt-olcer-normal: var(--oy-green2);
+  --dt-olcer-uyari: var(--oy-yellow2);
+  --dt-olcer-hata: var(--oy-red2);
+
+  background: var(--oy-bg-window);
+  color: #fff;
+  font-family: "Open Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: var(--oy-font) !important;
+}
+
+/* ── Menü çubuğu (QMenuBar) ve menüler (QMenu) ── */
+.obs-yami .dt-menu-cubugu {
+  height: auto;
+  padding: 0;
+  border-bottom: none;
+  background: var(--oy-bg-window);
+}
+.obs-yami .dt-menu-baslik {
+  padding: 4px 7px;
+  border-radius: 0;
+  color: #fff;
+  font-size: var(--oy-font);
+}
+.obs-yami .dt-menu-baslik:hover,
+.obs-yami .dt-menu-baslik[aria-expanded="true"],
+.obs-yami .dt-menu-baslik:focus-visible {
+  background: var(--oy-primary);
+}
+.dt-menu.obs-yami-menu,
+.obs-yami .dt-menu {
+  padding: 2px;
+  border: 1px solid var(--oy-border);
+  border-radius: 0;
+  background: var(--oy-bg-window);
+  box-shadow: none;
+  font-family: "Open Sans", "Segoe UI", sans-serif;
+  font-size: 10pt;
+}
+.obs-yami .dt-menu-oge,
+.dt-menu.obs-yami-menu .dt-menu-oge {
+  height: auto;
+  min-height: 24px;
+  padding: 4px 20px 4px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--oy-radius);
+  color: #fff;
+}
+.obs-yami .dt-menu-oge:hover,
+.obs-yami .dt-menu-oge:focus-visible,
+.dt-menu.obs-yami-menu .dt-menu-oge:hover {
+  background: var(--oy-primary);
+  border-color: var(--oy-primary-light);
+}
+.obs-yami .dt-menu-ayirici {
+  margin: 2px 4px;
+  background: var(--oy-border);
+}
+
+/* ── Dock (QDockWidget + OBSDock) ── */
+.obs-yami .dt-dock {
+  border: none;
+  border-radius: var(--oy-radius);
+  background: transparent;
+}
+.obs-yami .dt-dock-baslik {
+  height: auto;
+  min-height: 26px;
+  padding: 4px;
+  border-bottom: none;
+  border-radius: var(--oy-radius) var(--oy-radius) 0 0;
+  background: var(--oy-button-bg);
+  color: #fff;
+  font-size: var(--oy-font);
+  font-weight: 700;
+}
+.obs-yami .dt-dock-govde {
+  border: 1px solid var(--oy-border);
+  border-top: none;
+  background: var(--oy-bg-base);
+}
+.obs-yami .dt-dock > .dt-dock-govde:last-child,
+.obs-yami .dt-dock > .dt-arac-cubugu:last-child {
+  border-radius: 0 0 var(--oy-radius) var(--oy-radius);
+}
+/* Dock araç çubuğu (OBSDock QToolBar): 32px, üst çizgi, saydam simge düğmeleri */
+.obs-yami .dt-arac-cubugu {
+  height: 32px;
+  padding: 1px;
+  gap: 0;
+  border: 1px solid var(--oy-border);
+  border-top: 1px solid var(--oy-border);
+  background: var(--oy-bg-base);
+}
+.obs-yami .dt-arac-cubugu .dt-tool {
+  height: 26px;
+  min-width: 26px;
+  margin: 2px 1px 1px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--oy-radius);
+  background: transparent;
+}
+.obs-yami .dt-arac-cubugu .dt-tool:hover {
+  border-color: var(--oy-grey1);
+  background: transparent;
+}
+.obs-yami .dt-arac-cubugu .dt-tool:disabled {
+  background: var(--oy-grey7);
+  opacity: 1;
+}
+.obs-yami .dt-arac-cubugu .dt-tool:disabled img {
+  opacity: 0.35;
+}
+
+/* ── Düğmeler (QPushButton / QToolButton) ── */
+.obs-yami .dt-btn,
+.obs-yami .dt-btn-primary,
+.obs-yami .dt-btn-danger {
+  height: 30px;
+  padding: 4px 16px;
+  border: 1px solid var(--oy-button-bg);
+  border-radius: var(--oy-radius);
+  background: var(--oy-button-bg);
+  color: #fff;
+  font-size: var(--oy-font);
+  font-weight: 400;
+  transition: none;
+}
+.obs-yami .dt-btn:hover,
+.obs-yami .dt-btn-primary:hover,
+.obs-yami .dt-btn-danger:hover {
+  border-color: var(--oy-grey1);
+  background: var(--oy-button-hover);
+  filter: none;
+}
+.obs-yami .dt-btn:active,
+.obs-yami .dt-btn-primary:active,
+.obs-yami .dt-btn-danger:active {
+  border-color: var(--oy-button-bg);
+  background: var(--oy-button-down);
+}
+/* Basılı (checked) / etkin durum: OBS'te birincil mavi */
+.obs-yami .dt-btn-primary,
+.obs-yami .dt-btn[aria-pressed="true"],
+.obs-yami .dt-btn[data-etkin="true"] {
+  border-color: var(--oy-primary-light);
+  background: var(--oy-primary);
+}
+.obs-yami .dt-btn-primary:hover,
+.obs-yami .dt-btn[aria-pressed="true"]:hover,
+.obs-yami .dt-btn[data-etkin="true"]:hover {
+  border-color: var(--oy-primary-lighter);
+  background: var(--oy-primary-light);
+}
+.obs-yami .dt-btn-danger {
+  border-color: var(--oy-red3);
+  background: var(--oy-red5);
+}
+.obs-yami .dt-btn:disabled,
+.obs-yami .dt-btn-primary:disabled,
+.obs-yami .dt-btn-danger:disabled {
+  border-color: var(--oy-button-bg);
+  background: var(--oy-button-disabled);
+  color: var(--oy-text-muted);
+  opacity: 1;
+}
+.obs-yami .dt-tool {
+  border-radius: var(--oy-radius);
+  color: #fff;
+}
+.obs-yami .dt-tool:hover {
+  background: var(--oy-button-hover);
+}
+.obs-yami .dt-tool[aria-pressed="true"] {
+  background: var(--oy-primary);
+}
+
+/* ── Girdiler (QLineEdit / QComboBox / QSpinBox) ── */
+.obs-yami .dt-input,
+.obs-yami select.dt-input {
+  height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--oy-input-bg);
+  border-radius: var(--oy-radius);
+  background-color: var(--oy-input-bg);
+  color: #fff;
+  font-size: var(--oy-font);
+}
+.obs-yami .dt-input:hover {
+  border-color: var(--oy-grey1);
+}
+.obs-yami .dt-input:focus {
+  border-color: var(--oy-primary);
+  background-color: var(--oy-grey7);
+}
+.obs-yami .dt-form,
+.obs-yami .dt-form > label,
+.obs-yami .dt-etiket {
+  color: #fff;
+  font-size: var(--oy-font);
+}
+
+/* ── Listeler (QListWidget / SourceTreeItem) ── */
+.obs-yami .dt-row {
+  height: auto;
+  min-height: 26px;
+  margin: 0 2px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--oy-radius);
+  color: #fff;
+  font-size: var(--oy-font);
+}
+.obs-yami .dt-row:hover {
+  border-color: var(--oy-grey3);
+  background: var(--oy-grey4);
+}
+.obs-yami .dt-row[aria-selected="true"] {
+  border-color: var(--oy-primary-light);
+  background: var(--oy-primary);
+}
+.obs-yami .dt-row[aria-selected="true"]:hover {
+  border-color: var(--oy-primary-lighter);
+  background: var(--oy-primary-light);
+}
+.obs-yami .dt-row .dt-soluk {
+  color: var(--oy-white4);
+}
+.obs-yami .dt-table th {
+  background: var(--oy-button-bg);
+  color: #fff;
+}
+
+/* ── Önizleme (OBSQTDisplay) ve Studio Mode ── */
+.obs-yami .dt-onizleme-bolme {
+  border: none;
+  background: var(--oy-bg-window);
+}
+.obs-yami .dt-onizleme-etiket {
+  height: auto;
+  padding: 2px 4px;
+  color: #fff;
+  font-size: var(--oy-font);
+  font-weight: 400;
+  text-align: center;
+}
+.obs-yami .dt-onizleme-bolme[data-vurgu="program"] > .dt-onizleme-etiket,
+.obs-yami .dt-onizleme-bolme[data-vurgu="onizleme"] > .dt-onizleme-etiket {
+  box-shadow: none;
+}
+.obs-yami .dt-onizleme-alan {
+  background: var(--oy-bg-preview);
+}
+
+/* ── Ses karıştırıcı (VolumeControl / VolumeMeter / QSlider) ── */
+.obs-yami .dt-kanal {
+  gap: 2px;
+  padding: 4px 12px 6px;
+  border-bottom: 1px solid var(--oy-border);
+  background: var(--oy-bg-base);
+  font-size: var(--oy-font-small);
+}
+.obs-yami .dt-olcer-kanal {
+  height: 3px;
+  border-radius: 0;
+  /* Arka plan bölgeleri (OBS: nominal yeşil5, uyarı sarı5 −20 dB'den, hata kırmızı5 −9 dB'den; ölçek −60…0 dB) */
+  background: linear-gradient(
+    to right,
+    var(--oy-green5) 0 66.6667%,
+    var(--oy-yellow5) 66.6667% 85%,
+    var(--oy-red5) 85% 100%
+  );
+}
+.obs-yami .dt-olcer-rms,
+.obs-yami .dt-olcer-tepe {
+  /* Ön plan: konuma göre renkli (OBS gibi); genişlik ölçeri kırpar */
+  background: linear-gradient(
+      to right,
+      var(--oy-green2) 0 66.6667%,
+      var(--oy-yellow2) 66.6667% 85%,
+      var(--oy-red2) 85% 100%
+    )
+    0 0 / var(--olcer-g, 100cqw) 100% no-repeat !important;
+}
+.obs-yami .dt-olcer {
+  container-type: inline-size;
+}
+.obs-yami .dt-olcer-tepe {
+  opacity: 0.5;
+}
+.obs-yami .dt-olcer-tutma {
+  background: #fff;
+}
+.obs-yami .dt-olcek-cetveli {
+  display: flex;
+  justify-content: space-between;
+  color: var(--oy-white5);
+  font-size: 6pt;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+/* QSlider: oluk 4px (karıştırıcıda pencere renginde), dolu kısım mavi2, tutamaç 20×10 beyaz */
+.obs-yami input[type="range"].dt-fader {
+  height: 16px;
+  margin: 4px 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.obs-yami input[type="range"].dt-fader::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--oy-blue2) 0 var(--dolu, 100%), var(--oy-bg-window) var(--dolu, 100%) 100%);
+}
+.obs-yami input[type="range"].dt-fader::-webkit-slider-thumb {
+  width: 20px;
+  height: 10px;
+  margin-top: -3px;
+  border: none;
+  border-radius: var(--oy-radius);
+  background: #fff;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.obs-yami input[type="range"].dt-fader:hover::-webkit-slider-thumb {
+  background: var(--oy-white4);
+}
+.obs-yami input[type="range"].dt-fader:active::-webkit-slider-thumb {
+  background: var(--oy-white3);
+}
+/* Sessiz düğmesi kırmızı (OBS .btn-mute.checked) */
+.obs-yami [data-sessiz="true"] img {
+  filter: invert(23%) sepia(83%) saturate(3264%) hue-rotate(337deg) brightness(83%) contrast(95%);
+}
+
+/* ── Durum çubuğu (OBSBasicStatusBar) ── */
+.obs-yami .dt-durum-cubugu {
+  height: 26px;
+  margin-top: 2px;
+  gap: 0;
+  padding: 0;
+  border-top: 1px solid var(--oy-border);
+  background: var(--oy-bg-base);
+  color: #fff;
+  font-size: var(--oy-font);
+}
+.obs-yami .dt-durum-cubugu > * {
+  padding: 0 10px;
+}
+.obs-yami .dt-durum-cubugu > [data-bolum] {
+  border-left: 1px solid var(--oy-border);
+}
+
+/* ── Kaydırma çubukları (QScrollBar) ── */
+.obs-yami ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  background: var(--oy-grey6);
+}
+.obs-yami ::-webkit-scrollbar-thumb {
+  border: 3px solid var(--oy-grey6);
+  border-radius: 6px;
+  background: var(--oy-grey4);
+}
+.obs-yami ::-webkit-scrollbar-thumb:hover {
+  background: var(--oy-grey3);
+}
+
+/* ── Seçim kutusu (OBS önizleme seçimi kırmızı) ── */
+.obs-yami .dt-uyari-kutusu {
+  border-color: var(--oy-yellow1);
+  background: var(--oy-yellow6);
+}

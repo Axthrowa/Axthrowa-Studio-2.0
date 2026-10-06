@@ -23,10 +23,12 @@ pub enum ParamKind {
   OptionalScene,
   /// Ses seviyesi farkı, dB (−30…+30, sıfır olamaz)
   Db,
-  /// Yerel yayın çekirdeğindeki kaynak (ad ya da kimlik)
-  EngineSource,
-  /// Yerel yayın çekirdeğindeki sahne (ad ya da kimlik)
-  EngineScene,
+  /// OBS kaynağındaki filtrenin adı
+  Filter,
+  /// OBS'teki adlandırılmış sahne geçişi
+  Transition,
+  /// Serbest metin (ör. altyazı satırı)
+  Text,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -43,8 +45,6 @@ pub enum Requires {
   Obs,
   Multistream,
   StreamAxt,
-  /// Yerel yayın çekirdeği (motor) çalışıyor olmalı
-  Motor,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -69,11 +69,10 @@ const KAYNAK: &[ParamSpec] = &[
   ParamSpec { name: "source", kind: ParamKind::Source },
 ];
 const SEVIYE: &[ParamSpec] = &[ParamSpec { name: "input", kind: ParamKind::Input }, ParamSpec { name: "delta", kind: ParamKind::Db }];
-const MOTOR_KAYNAK: &[ParamSpec] = &[ParamSpec { name: "source", kind: ParamKind::EngineSource }];
-const MOTOR_SAHNE: &[ParamSpec] = &[ParamSpec { name: "scene", kind: ParamKind::EngineScene }];
+const FILTRE: &[ParamSpec] = &[ParamSpec { name: "source", kind: ParamKind::Source }, ParamSpec { name: "filter", kind: ParamKind::Filter }];
 
 /// Basılı tutma eylemleri: kısayol bırakılınca da çağrılır (`durum: "released"`)
-pub const BASILI_EYLEMLER: [&str; 2] = ["engine.audio.pushToTalk", "engine.audio.pushToMute"];
+pub const BASILI_EYLEMLER: [&str; 2] = ["audio.pushToTalk", "audio.pushToMute"];
 
 pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "scene.switch", label: "Sahneye geç", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: SAHNE },
@@ -93,23 +92,23 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "destination.stop", label: "Hedefi durdur", category: "outputs", perm: "broadcast.outputs", confirm: true, requires: Requires::Multistream, params: HEDEF },
   ActionSpec { id: "destination.reconnect", label: "Hedefi yeniden bağla", category: "outputs", perm: "broadcast.outputs", confirm: true, requires: Requires::Multistream, params: HEDEF },
   ActionSpec { id: "destinations.stopAll", label: "Tüm hedefleri bitir", category: "outputs", perm: "broadcast.outputs", confirm: true, requires: Requires::Multistream, params: &[] },
-  ActionSpec { id: "engine.goLive", label: "Motor: tüm hedeflerde yayına geç", category: "engine", perm: "broadcast.stream", confirm: true, requires: Requires::Motor, params: &[] },
-  ActionSpec { id: "engine.stopAll", label: "Motor: yayını bitir", category: "engine", perm: "broadcast.stream", confirm: true, requires: Requires::Motor, params: &[] },
-  ActionSpec { id: "engine.record.start", label: "Motor: kaydı başlat", category: "engine", perm: "broadcast.record", confirm: false, requires: Requires::Motor, params: &[] },
-  ActionSpec { id: "engine.record.stop", label: "Motor: kaydı durdur", category: "engine", perm: "broadcast.record", confirm: true, requires: Requires::Motor, params: &[] },
-  ActionSpec { id: "engine.replay.save", label: "Motor: tekrarı kaydet", category: "engine", perm: "broadcast.replay", confirm: false, requires: Requires::Motor, params: &[] },
-  ActionSpec { id: "engine.source.show", label: "Motor: kaynağı göster", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.source.hide", label: "Motor: kaynağı gizle", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.source.toggle", label: "Motor: kaynağı göster / gizle", category: "engine", perm: "scene.edit", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.scene.switch", label: "Motor: sahneye geç (Studio Mode'da önizlemeye)", category: "engine", perm: "scene.switch", confirm: false, requires: Requires::Motor, params: MOTOR_SAHNE },
-  ActionSpec { id: "engine.studio.transition", label: "Motor: Studio Mode geçişi (önizleme → program)", category: "engine", perm: "scene.switch", confirm: false, requires: Requires::Motor, params: &[] },
-  ActionSpec { id: "engine.audio.mute", label: "Motor: sesi kapat", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.audio.unmute", label: "Motor: sesi aç", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.audio.toggle", label: "Motor: sesi aç / kapat", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.audio.pushToTalk", label: "Motor: bas-konuş (basılıyken ses açık)", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.audio.pushToMute", label: "Motor: bas-sustur (basılıyken ses kapalı)", category: "engine", perm: "audio.control", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.media.restart", label: "Motor: medyayı baştan oynat", category: "engine", perm: "scene.switch", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
-  ActionSpec { id: "engine.media.playPause", label: "Motor: medyayı oynat / duraklat", category: "engine", perm: "scene.switch", confirm: false, requires: Requires::Motor, params: MOTOR_KAYNAK },
+  ActionSpec { id: "record.pause", label: "Kaydı duraklat", category: "recording", perm: "broadcast.record", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "record.resume", label: "Kaydı sürdür", category: "recording", perm: "broadcast.record", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "record.togglePause", label: "Kaydı duraklat / sürdür", category: "recording", perm: "broadcast.record", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "record.split", label: "Kayıt dosyasını böl", category: "recording", perm: "broadcast.record", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "virtualcam.start", label: "Sanal kamerayı başlat", category: "outputs", perm: "broadcast.outputs", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "virtualcam.stop", label: "Sanal kamerayı durdur", category: "outputs", perm: "broadcast.outputs", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "virtualcam.toggle", label: "Sanal kamerayı aç / kapat", category: "outputs", perm: "broadcast.outputs", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "filter.enable", label: "Filtreyi aç", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: FILTRE },
+  ActionSpec { id: "filter.disable", label: "Filtreyi kapat", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: FILTRE },
+  ActionSpec { id: "filter.toggle", label: "Filtreyi aç / kapat", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: FILTRE },
+  ActionSpec { id: "studio.transition", label: "Studio Mode geçişi (önizleme → program)", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "studio.quickTransition", label: "Hızlı geçiş (Studio Mode, adlandırılmış geçişle)", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: &[ParamSpec { name: "transition", kind: ParamKind::Transition }] },
+  ActionSpec { id: "caption.send", label: "Altyazı gönder (CEA-608, yayına)", category: "stream", perm: "broadcast.stream", confirm: false, requires: Requires::Obs, params: &[ParamSpec { name: "text", kind: ParamKind::Text }] },
+  ActionSpec { id: "audio.pushToTalk", label: "Bas-konuş (basılıyken ses açık)", category: "audio", perm: "audio.control", confirm: false, requires: Requires::Obs, params: GIRIS },
+  ActionSpec { id: "audio.pushToMute", label: "Bas-sustur (basılıyken ses kapalı)", category: "audio", perm: "audio.control", confirm: false, requires: Requires::Obs, params: GIRIS },
+  ActionSpec { id: "media.restart", label: "Medyayı baştan oynat", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: GIRIS },
+  ActionSpec { id: "media.playPause", label: "Medyayı oynat / duraklat", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: GIRIS },
   ActionSpec { id: "alert.pause", label: "Uyarıları duraklat", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
   ActionSpec { id: "alert.resume", label: "Uyarıları sürdür", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
   ActionSpec { id: "alert.skip", label: "Uyarıyı atla", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
@@ -119,7 +118,45 @@ pub const ACTIONS: &[ActionSpec] = &[
 ];
 
 pub fn find(id: &str) -> Option<&'static ActionSpec> {
+  let id = eski_kimlik(id).unwrap_or(id);
   ACTIONS.iter().find(|a| a.id == id)
+}
+
+/// Eski yerel yayın motoru eylemleri (`engine.*`) artık OBS'te aynı işi yapan eyleme gider; kayıtlı deste
+/// düğmeleri ve kısayollar bozulmasın.
+fn eski_kimlik(id: &str) -> Option<&'static str> {
+  Some(match id {
+    "engine.goLive" => "stream.start",
+    "engine.stopAll" => "stream.stop",
+    "engine.record.start" => "record.start",
+    "engine.record.stop" => "record.stop",
+    "engine.replay.save" => "replay.save",
+    "engine.record.pause" => "record.pause",
+    "engine.record.resume" => "record.resume",
+    "engine.record.togglePause" => "record.togglePause",
+    "engine.record.split" => "record.split",
+    "engine.virtualcam.start" => "virtualcam.start",
+    "engine.virtualcam.stop" => "virtualcam.stop",
+    "engine.virtualcam.toggle" => "virtualcam.toggle",
+    "engine.filter.enable" => "filter.enable",
+    "engine.filter.disable" => "filter.disable",
+    "engine.filter.toggle" => "filter.toggle",
+    "engine.source.show" => "source.show",
+    "engine.source.hide" => "source.hide",
+    "engine.source.toggle" => "source.toggle",
+    "engine.scene.switch" => "scene.switch",
+    "engine.studio.transition" => "studio.transition",
+    "engine.studio.quickTransition" => "studio.quickTransition",
+    "engine.caption.send" => "caption.send",
+    "engine.audio.mute" => "audio.mute",
+    "engine.audio.unmute" => "audio.unmute",
+    "engine.audio.toggle" => "audio.toggle",
+    "engine.audio.pushToTalk" => "audio.pushToTalk",
+    "engine.audio.pushToMute" => "audio.pushToMute",
+    "engine.media.restart" => "media.restart",
+    "engine.media.playPause" => "media.playPause",
+    _ => return None,
+  })
 }
 
 /// Doğrulanmış, yürütülmeye hazır eylem.
@@ -140,18 +177,20 @@ pub enum Action {
   /// `mode`: show | hide | toggle (hotkeys::source_enabled_after sözleşmesi)
   SourceVisibility { scene: Option<String>, source: String, mode: &'static str },
   AudioVolume { input: String, delta_db: f64 },
-  EngineGoLive,
-  EngineStopAll,
-  EngineRecord { start: bool },
-  EngineReplaySave,
-  EngineSourceVisibility { source: String, mode: &'static str },
-  EngineSceneSwitch { scene: String },
-  EngineStudioTransition,
-  /// `muted: None` = değiştir
-  EngineAudioMute { source: String, muted: Option<bool> },
+  /// `Some(true)` duraklat, `Some(false)` sürdür, `None` değiştir
+  RecordPause { pause: Option<bool> },
+  RecordSplit,
+  /// `Some(true)` başlat, `Some(false)` durdur, `None` değiştir
+  VirtualCam { on: Option<bool> },
+  /// `acik`: `None` = değiştir
+  Filter { source: String, filter: String, acik: Option<bool> },
+  /// `transition`: verilirse önce o geçiş seçilir (hızlı geçiş)
+  StudioTransition { transition: Option<String> },
+  Caption { text: String },
   /// Bas-konuş (`konus`) / bas-sustur; `basili`: tuş basıldı mı bırakıldı mı
-  EngineHold { source: String, konus: bool, basili: bool },
-  EngineMedia { source: String, eylem: &'static str },
+  Hold { input: String, konus: bool, basili: bool },
+  /// `eylem`: `yeniden` | `degistir`
+  Media { input: String, eylem: &'static str },
   /// StreamAxT uyarı kuyruğu denetimine iletilecek eylem adı
   Alert { action: &'static str },
 }
@@ -204,11 +243,13 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
     }
     Ok(v)
   };
+  // Eski `engine.*` ses/medya eylemleri girişi `source` adıyla taşırdı
+  let giris = || metin(params, "input").or_else(|e| metin(params, "source").map_err(|_| e));
   Ok(match spec.id {
     "scene.switch" => Action::SceneSwitch { scene: metin(params, "scene")? },
-    "audio.mute" => Action::AudioMute { input: metin(params, "input")?, muted: Some(true) },
-    "audio.unmute" => Action::AudioMute { input: metin(params, "input")?, muted: Some(false) },
-    "audio.toggle" => Action::AudioMute { input: metin(params, "input")?, muted: None },
+    "audio.mute" => Action::AudioMute { input: giris()?, muted: Some(true) },
+    "audio.unmute" => Action::AudioMute { input: giris()?, muted: Some(false) },
+    "audio.toggle" => Action::AudioMute { input: giris()?, muted: None },
     "record.start" => Action::RecordStart,
     "record.stop" => Action::RecordStop,
     "replay.save" => Action::ReplaySave,
@@ -224,26 +265,32 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
       source: metin(params, "source")?,
       mode: gorunurluk_kipi(spec.id),
     },
-    "engine.goLive" => Action::EngineGoLive,
-    "engine.stopAll" => Action::EngineStopAll,
-    "engine.record.start" => Action::EngineRecord { start: true },
-    "engine.record.stop" => Action::EngineRecord { start: false },
-    "engine.replay.save" => Action::EngineReplaySave,
-    "engine.scene.switch" => Action::EngineSceneSwitch { scene: metin(params, "scene")? },
-    "engine.studio.transition" => Action::EngineStudioTransition,
-    "engine.audio.mute" => Action::EngineAudioMute { source: metin(params, "source")?, muted: Some(true) },
-    "engine.audio.unmute" => Action::EngineAudioMute { source: metin(params, "source")?, muted: Some(false) },
-    "engine.audio.toggle" => Action::EngineAudioMute { source: metin(params, "source")?, muted: None },
-    "engine.audio.pushToTalk" | "engine.audio.pushToMute" => Action::EngineHold {
+    "record.pause" => Action::RecordPause { pause: Some(true) },
+    "record.resume" => Action::RecordPause { pause: Some(false) },
+    "record.togglePause" => Action::RecordPause { pause: None },
+    "record.split" => Action::RecordSplit,
+    "virtualcam.start" => Action::VirtualCam { on: Some(true) },
+    "virtualcam.stop" => Action::VirtualCam { on: Some(false) },
+    "virtualcam.toggle" => Action::VirtualCam { on: None },
+    "filter.enable" | "filter.disable" | "filter.toggle" => Action::Filter {
       source: metin(params, "source")?,
-      konus: spec.id == "engine.audio.pushToTalk",
+      filter: metin(params, "filter")?,
+      acik: match spec.id {
+        "filter.enable" => Some(true),
+        "filter.disable" => Some(false),
+        _ => None,
+      },
+    },
+    "studio.transition" => Action::StudioTransition { transition: None },
+    "studio.quickTransition" => Action::StudioTransition { transition: Some(metin(params, "transition")?) },
+    "caption.send" => Action::Caption { text: metin(params, "text")? },
+    "audio.pushToTalk" | "audio.pushToMute" => Action::Hold {
+      input: giris()?,
+      konus: spec.id == "audio.pushToTalk",
       basili: params.get("durum").and_then(|v| v.as_str()) != Some("released"),
     },
-    "engine.media.restart" => Action::EngineMedia { source: metin(params, "source")?, eylem: "yeniden" },
-    "engine.media.playPause" => Action::EngineMedia { source: metin(params, "source")?, eylem: "degistir" },
-    "engine.source.show" | "engine.source.hide" | "engine.source.toggle" => {
-      Action::EngineSourceVisibility { source: metin(params, "source")?, mode: gorunurluk_kipi(spec.id) }
-    }
+    "media.restart" => Action::Media { input: giris()?, eylem: "yeniden" },
+    "media.playPause" => Action::Media { input: giris()?, eylem: "degistir" },
     "alert.pause" => Action::Alert { action: "pause" },
     "alert.resume" => Action::Alert { action: "resume" },
     "alert.skip" => Action::Alert { action: "skip" },
@@ -292,7 +339,7 @@ mod tests {
     let mut gorulen = std::collections::HashSet::new();
     for a in ACTIONS {
       assert!(gorulen.insert(a.id), "yinelenen kimlik: {}", a.id);
-      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3});
+      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk", "transition": "Kes", "text": "Merhaba"});
       assert!(parse(a.id, &ornek).is_ok(), "yürütücüsüz eylem: {}", a.id);
       assert!(!a.perm.is_empty() && a.perm.contains('.'), "izin adı: {}", a.id);
     }
@@ -308,13 +355,10 @@ mod tests {
       "destination.reconnect",
       "destinations.stopAll",
       "alert.clear",
-      "engine.goLive",
-      "engine.stopAll",
-      "engine.record.stop",
     ] {
       assert!(find(id).unwrap().confirm, "{id} onay istemeli");
     }
-    for id in ["scene.switch", "audio.toggle", "replay.save", "alert.pause", "source.toggle", "audio.volume", "engine.replay.save", "engine.source.toggle"] {
+    for id in ["scene.switch", "audio.toggle", "replay.save", "alert.pause", "source.toggle", "audio.volume", "record.togglePause", "virtualcam.toggle"] {
       assert!(!find(id).unwrap().confirm, "{id} tek dokunuş olmalı");
     }
   }
@@ -333,7 +377,7 @@ mod tests {
       assert!(parse("audio.volume", &json!({"input": "Müzik", "delta": kotu})).is_err(), "{kotu}");
     }
     assert!(parse("source.toggle", &json!({"scene": "Oyun"})).unwrap_err().contains("source"));
-    assert!(parse("engine.source.hide", &json!({"source": "a\nb"})).is_err());
+    assert!(parse("filter.toggle", &json!({"source": "a\nb", "filter": "Renk"})).is_err());
   }
 
   #[test]
@@ -345,10 +389,6 @@ mod tests {
     assert_eq!(
       parse("source.toggle", &json!({"scene": "Oyun", "source": "Kamera"})).unwrap(),
       Action::SourceVisibility { scene: Some("Oyun".into()), source: "Kamera".into(), mode: "toggle" }
-    );
-    assert_eq!(
-      parse("engine.source.show", &json!({"source": "Başlık"})).unwrap(),
-      Action::EngineSourceVisibility { source: "Başlık".into(), mode: "show" }
     );
     assert_eq!(
       parse("audio.volume", &json!({"input": "Müzik", "delta": -3})).unwrap(),
@@ -381,19 +421,34 @@ mod tests {
   }
 
   #[test]
-  fn motor_ses_ve_basili_eylemler() {
-    assert_eq!(parse("engine.audio.toggle", &json!({"source": "Mikrofon"})).unwrap(), Action::EngineAudioMute { source: "Mikrofon".into(), muted: None });
+  fn basili_ve_studio_eylemleri() {
     assert_eq!(
-      parse("engine.audio.pushToTalk", &json!({"source": "Mikrofon"})).unwrap(),
-      Action::EngineHold { source: "Mikrofon".into(), konus: true, basili: true }
+      parse("audio.pushToTalk", &json!({"input": "Mikrofon"})).unwrap(),
+      Action::Hold { input: "Mikrofon".into(), konus: true, basili: true }
     );
     assert_eq!(
-      parse("engine.audio.pushToMute", &json!({"source": "Mikrofon", "durum": "released"})).unwrap(),
-      Action::EngineHold { source: "Mikrofon".into(), konus: false, basili: false }
+      parse("audio.pushToMute", &json!({"input": "Mikrofon", "durum": "released"})).unwrap(),
+      Action::Hold { input: "Mikrofon".into(), konus: false, basili: false }
     );
-    assert!(parse("engine.scene.switch", &json!({})).is_err());
-    assert_eq!(parse("engine.studio.transition", &json!({})).unwrap(), Action::EngineStudioTransition);
+    assert_eq!(parse("studio.transition", &json!({})).unwrap(), Action::StudioTransition { transition: None });
+    assert!(parse("studio.quickTransition", &json!({})).is_err());
     assert!(BASILI_EYLEMLER.iter().all(|id| find(id).is_some()));
   }
 
+  #[test]
+  fn eski_motor_eylemleri_obs_eylemine_gider() {
+    assert_eq!(find("engine.record.togglePause").unwrap().id, "record.togglePause");
+    assert_eq!(find("engine.goLive").unwrap().id, "stream.start");
+    assert!(find("engine.goLive").unwrap().confirm);
+    // Eski ses eylemleri girişi `source` alanında taşırdı
+    assert_eq!(
+      parse("engine.audio.toggle", &json!({"source": "Mikrofon"})).unwrap(),
+      Action::AudioMute { input: "Mikrofon".into(), muted: None }
+    );
+    assert_eq!(
+      parse("engine.media.restart", &json!({"source": "Klip"})).unwrap(),
+      Action::Media { input: "Klip".into(), eylem: "yeniden" }
+    );
+    assert!(find("engine.yok").is_none());
+  }
 }

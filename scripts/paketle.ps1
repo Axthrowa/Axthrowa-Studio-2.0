@@ -73,19 +73,10 @@ if ($KeepExe -and (Test-Path $destExe)) {
   Write-Host "portable exe -> $destExe"
 }
 
-# 1b) Yerel yayin cekirdegi (GPL-2.0-or-later; lisans metni yanina). Calisirken kilitliyse atlanir.
-$srcMotor = Join-Path $proj "motor\target\release\yayin-motoru.exe"
-if (Test-Path $srcMotor) {
-  $destMotor = Join-Path $portable "yayin-motoru.exe"
-  if (Get-Process yayin-motoru -ErrorAction SilentlyContinue) {
-    Write-Warning "yayin-motoru calisiyor; motor exe guncellenmedi"
-  } else {
-    Copy-Item -LiteralPath $srcMotor -Destination $destMotor -Force
-    Copy-Item -LiteralPath (Join-Path $proj "motor\LICENSE") -Destination (Join-Path $portable "yayin-motoru-LICENSE.txt") -Force
-    Write-Host "portable motor -> $destMotor"
-  }
-} else {
-  Write-Warning "motor\target\release\yayin-motoru.exe yok - motor pakete girmedi (cargo build --release, motor/)"
+# 1a) Urun lisansi (GPL-2.0-or-later) ve ucuncu taraf bildirimleri exe yaninda (ADR-005)
+foreach ($f in @(@("LICENSE", "LICENSE.txt"), @("THIRD_PARTY_NOTICES.txt", "THIRD_PARTY_NOTICES.txt"))) {
+  $kaynakDosya = Join-Path $proj $f[0]
+  if (Test-Path -LiteralPath $kaynakDosya) { Copy-Item -LiteralPath $kaynakDosya -Destination (Join-Path $portable $f[1]) -Force }
 }
 
 # 2) Web arayuzu (tam ayna - eski chunk'lar kalmasin)

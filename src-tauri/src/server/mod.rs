@@ -27,20 +27,12 @@ mod auth;
 mod botaxt;
 mod control_plane;
 mod destek_api;
-mod eklenti_api;
 mod dosya_adi;
 mod local_guard;
-mod koleksiyon_api;
-mod motor_api;
-mod remux_api;
-mod eksik_dosya_api;
 mod guncelleme_api;
 mod yayin_bilgisi_api;
-mod profil_api;
-mod motor_sahne_api;
-mod motor_ses_api;
-mod obsws;
 mod multistream_api;
+mod obs_studio_api;
 mod otomasyon_kilidi;
 pub mod runtime_api;
 
@@ -205,17 +197,9 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(runtime_api::router())
     .merge(multistream_api::router())
     .merge(actions_api::router())
-    .merge(motor_api::router())
-    .merge(motor_sahne_api::router())
-    .merge(koleksiyon_api::router())
-    .merge(profil_api::router())
-    .merge(motor_ses_api::router())
     .merge(destek_api::router())
-    .merge(eklenti_api::router())
-    .merge(obsws::router())
-    .merge(remux_api::router())
-    .merge(eksik_dosya_api::router())
     .merge(guncelleme_api::router())
+    .merge(obs_studio_api::router())
     .merge(yayin_bilgisi_api::router());
 
   if let Some(res_dist) = resonance_dist {
@@ -243,15 +227,6 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
 
   let bind_host = auth::resolve_bind_host(&state);
   let state_arc = Arc::new(state);
-  // obs-websocket uyumlu sunucu (ayarda açıksa; varsayılan kapalı)
-  {
-    let st = state_arc.clone();
-    tokio::spawn(async move {
-      if let Err(e) = obsws::uygula(st).await {
-        yya_warn!("[obs-websocket] başlatılamadı: {e}");
-      }
-    });
-  }
   let api = api.with_state(state_arc.clone());
 
   let app = if has_dist {

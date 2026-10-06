@@ -2,7 +2,7 @@
  * Bağımlılık lisans bekçisi (panel + Resonance npm ağaçları). Ürün GPL-2.0-or-later (ADR-005): bağımlılık bununla
  * uyumlu olmalı. AGPL, SSPL, GPL-2.0-only (Apache-2.0 ile birleşemez) ve tescilli lisans getiren bir güncelleme testi
  * kırar; karar ürün sahibinindir (docs/LICENSE_AND_DEPENDENCY_REVIEW.md).
- * Rust crate'leri için: `node scripts/lisans-denetimi.mjs` (cargo metadata, çevrimdışı; panel + motor).
+ * Rust crate'leri için: `node scripts/lisans-denetimi.mjs` (cargo metadata, çevrimdışı).
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";

@@ -14,9 +14,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use super::control_plane::{audit, authorize};
-use super::motor_api::Hata;
 use crate::AppState;
 
+type Hata = (StatusCode, String);
 type ApiResult = Result<Json<Value>, Hata>;
 
 const DOSYA: &str = "guncelleme.json";

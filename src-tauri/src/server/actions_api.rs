@@ -15,7 +15,6 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use super::control_plane::{audit, authorize, Actor};
-use super::motor_api;
 use crate::actions::{self, Action, ActionSpec, Requires};
 use crate::hotkeys::HotkeyBindingIn;
 use crate::AppState;
@@ -62,7 +61,6 @@ async fn hazir_mi(state: &AppState, r: Requires) -> (bool, Option<&'static str>)
   match r {
     Requires::Obs if !state.obs.is_connected() => (false, Some("OBS bağlı değil")),
     Requires::Multistream if !state.multistream.session_active() => (false, Some("Çoklu yayın oturumu kapalı")),
-    Requires::Motor if !state.motor.calisiyor().await => (false, Some("Yayın motoru çalışmıyor")),
     // StreamAxT her çağrıda yoklanmaz (liste ucu hızlı kalsın); yürütmede ulaşılamazsa hata döner
     _ => (true, None),
   }
@@ -149,10 +147,6 @@ pub(crate) async fn kisayol_eylemi(state: &AppState, id: &str, params: Value, on
   calistir(state, spec, &params, onayli, &actor, Some("hotkey")).await.map_err(|(_, e)| e)
 }
 
-fn motor_hatasi((_, e): (StatusCode, String)) -> String {
-  e
-}
-
 async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, String> {
   match action {
     Action::SceneSwitch { scene } => state.obs.set_scene(scene).await.map(|_| json!({ "scene": scene })),
@@ -199,55 +193,22 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
       let b = HotkeyBindingIn { id: "action".into(), kind: "volume".into(), input: input.clone(), delta: *delta_db, ..Default::default() };
       crate::hotkeys::run_obs_action(state, &b, "volume").await.map(|_| json!({ "input": input, "delta": delta_db }))
     }
-    Action::EngineGoLive => {
-      let s = motor_api::golive_baslat(state).await.map_err(motor_hatasi)?;
-      let ok = motor_api::basarili(&s);
-      if !s.is_empty() && ok == 0 {
-        return Err(format!("Hiçbir hedef başlatılamadı ({} hedef)", s.len()));
-      }
-      Ok(json!({ "hedefler": s.len(), "basarili": ok, "sonuc": s }))
-    }
-    Action::EngineStopAll => motor_api::golive_durdur(state).await.map(|s| json!({ "durdurulan": s.len() })).map_err(motor_hatasi),
-    Action::EngineRecord { start: true } => motor_api::kayit_baslat(state).await.map(|_| json!({ "kayit": true })).map_err(motor_hatasi),
-    Action::EngineRecord { start: false } => motor_api::kayit_durdur(state).await.map(|_| json!({ "kayit": false })).map_err(motor_hatasi),
-    Action::EngineReplaySave => motor_api::tekrar_kaydet(state).await.map(|_| json!({ "kaydedildi": true })).map_err(motor_hatasi),
-    Action::EngineSceneSwitch { scene } => motor_api::motor_sahnesine_gec(state, scene).await.map_err(motor_hatasi),
-    Action::EngineCaption { text } => motor_api::altyazi(state, text, 4.0, &[]).await.map(|h| json!({ "hedefler": h })).map_err(motor_hatasi),
-    Action::EngineQuickTransition { transition } => super::motor_sahne_api::hizli_gecis_adla(state, transition).await.map_err(motor_hatasi),
-    Action::EngineStudioTransition => super::motor_sahne_api::studyo_gecisi(state, "ana", false, None)
+    Action::RecordPause { pause } => state.obs.set_record_paused(*pause).await.map(|d| json!({ "paused": d })),
+    Action::RecordSplit => state.obs.split_recording().await.map(|_| json!({ "split": true })),
+    Action::VirtualCam { on } => state.obs.set_virtualcam(*on).await.map(|a| json!({ "active": a })),
+    Action::Filter { source, filter, acik } => state
+      .obs
+      .set_filter_enabled(source, filter, *acik)
       .await
-      .map(|p| json!({ "program": p }))
-      .map_err(motor_hatasi),
-    Action::EngineAudioMute { source, muted } => {
-      let (id, ad, sessiz) = motor_api::motor_ses_kaynagi(state, source).await.map_err(motor_hatasi)?;
-      let yeni = muted.unwrap_or(!sessiz);
-      super::motor_ses_api::ses_ayarla(state, &id, "sessiz", &json!(yeni)).await.map_err(motor_hatasi)?;
-      Ok(json!({ "kaynak": ad, "sessiz": yeni }))
-    }
-    Action::EngineHold { source, konus, basili } => {
-      let (id, ad, _) = motor_api::motor_ses_kaynagi(state, source).await.map_err(motor_hatasi)?;
+      .map(|a| json!({ "source": source, "filter": filter, "enabled": a })),
+    Action::StudioTransition { transition } => state.obs.studio_transition(transition.as_deref()).await.map(|_| json!({ "transitioned": true })),
+    Action::Caption { text } => state.obs.send_caption(text).await.map(|_| json!({ "sent": true })),
+    Action::Hold { input, konus, basili } => {
       // Bas-konuş: basılıyken açık, bırakınca kapalı; bas-sustur tersi
       let sessiz = if *konus { !basili } else { *basili };
-      super::motor_ses_api::ses_ayarla(state, &id, "sessiz", &json!(sessiz)).await.map_err(motor_hatasi)?;
-      Ok(json!({ "kaynak": ad, "sessiz": sessiz }))
+      state.obs.set_muted(input, sessiz).await.map(|_| json!({ "input": input, "muted": sessiz }))
     }
-    Action::EngineMedia { source, eylem } => {
-      let (id, ad, _) = motor_api::motor_ses_kaynagi(state, source).await.map_err(motor_hatasi)?;
-      let e = if *eylem == "degistir" { motor_api::medya_degistir_eylemi(state, &id).await.map_err(motor_hatasi)? } else { eylem };
-      super::motor_ses_api::medya(state, &id, e).await.map_err(motor_hatasi)?;
-      Ok(json!({ "kaynak": ad, "eylem": e }))
-    }
-    Action::EngineRecordPause { pause } => motor_api::kayit_duraklat(state, *pause).await.map(|d| json!({ "duraklatildi": d })).map_err(motor_hatasi),
-    Action::EngineRecordSplit => motor_api::kayit_bol(state).await.map(|_| json!({ "bolundu": true })).map_err(motor_hatasi),
-    Action::EngineVirtualCam { eylem } => motor_api::sanal_kamera(state, eylem, "ana").await.map(|a| json!({ "acik": a })).map_err(motor_hatasi),
-    Action::EngineFilter { source, filter, acik } => {
-      let (kaynak, ad, _) = motor_api::motor_ses_kaynagi(state, source).await.map_err(motor_hatasi)?;
-      super::motor_ses_api::filtre_adla_etkin(state, &kaynak, filter, *acik).await.map(|a| json!({ "kaynak": ad, "filtre": filter, "acik": a })).map_err(motor_hatasi)
-    }
-    Action::EngineSourceVisibility { source, mode } => motor_api::kaynak_gorunurlugu(state, source, mode)
-      .await
-      .map(|(ad, gorunur, n)| json!({ "kaynak": ad, "gorunur": gorunur, "oge": n }))
-      .map_err(motor_hatasi),
+    Action::Media { input, eylem } => state.obs.media_action(input, eylem).await.map(|e| json!({ "input": input, "action": e })),
   }
 }
 

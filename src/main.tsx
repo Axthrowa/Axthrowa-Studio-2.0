@@ -7,13 +7,13 @@ import { EmoteProvider } from "./lib/emotes/EmoteContext";
 import { ThemeProvider } from "./lib/theme/ThemeContext";
 import { applyPlatformTheme } from "./lib/platformTheme";
 import { oku as erisimOku, uygula as erisimUygula } from "./lib/erisilebilirlik";
-import { anaPencereyiHatirla } from "./lib/projektor";
+import { anaPencereyiHatirla } from "./lib/anaPencere";
 import "./styles/index.css";
 import "./styles/desktop.css";
 import "./styles/overlay.css";
 
 applyPlatformTheme();
-// Erişilebilirlik renkleri (ayrı dock pencereleri de bu girişten açılır)
+// Erişilebilirlik renkleri (OBS dock'ları da bu girişten açılır)
 erisimUygula(erisimOku());
 // Ana pencerenin konum/boyutu (yalnız masaüstü uygulamasının ana penceresinde)
 void anaPencereyiHatirla();

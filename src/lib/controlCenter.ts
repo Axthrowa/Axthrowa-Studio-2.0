@@ -16,7 +16,6 @@ export type PanelId =
   | "preflight"
   | "alertQueue"
   | "session"
-  | "motor"
   | "audit"
   | "notes";
 
@@ -24,7 +23,6 @@ export type PanelMeta = { id: PanelId; title: string; hint: string };
 
 export const PANELS: PanelMeta[] = [
   { id: "session", title: "Yayın oturumu", hint: "GO LIVE, OBS yönlendirme, alıcı durumu" },
-  { id: "motor", title: "Yayın motoru", hint: "Kendi yayın çekirdeği: tuvaller, kaynaklar, hedef başına kodlayıcı" },
   { id: "destinations", title: "Hedefler", hint: "Platform başına durum, başlat / durdur" },
   { id: "scenes", title: "Sahne & Ses", hint: "OBS: tek tıkla sahne geçişi, giriş susturma" },
   { id: "quickActions", title: "Hızlı eylemler", hint: "Uyarı, tekrar, kayıt, yayın — izinli ve günlüklü" },
@@ -55,9 +53,9 @@ export const PRESETS: Record<string, { label: string; panels: PanelState[] }> = 
   streamer: {
     label: "Yayıncı",
     panels: build(
-      ["session", "motor", "deck", "quickActions", "scenes", "chat", "activity", "destinations", "alertQueue", "preflight", "audit", "notes"],
-      ["session", "motor", "deck", "quickActions", "scenes", "chat", "activity", "destinations", "alertQueue", "preflight"],
-      { destinations: 2, chat: 2, motor: 2 }
+      ["session", "deck", "quickActions", "scenes", "chat", "activity", "destinations", "alertQueue", "preflight", "audit", "notes"],
+      ["session", "deck", "quickActions", "scenes", "chat", "activity", "destinations", "alertQueue", "preflight"],
+      { destinations: 2, chat: 2 }
     ),
   },
   moderator: {
@@ -71,9 +69,9 @@ export const PRESETS: Record<string, { label: string; panels: PanelState[] }> = 
   technical: {
     label: "Teknik",
     panels: build(
-      ["motor", "destinations", "preflight", "session", "scenes", "audit"],
-      ["motor", "destinations", "preflight", "session", "scenes", "audit"],
-      { destinations: 2, motor: 2 }
+      ["destinations", "preflight", "session", "scenes", "audit"],
+      ["destinations", "preflight", "session", "scenes", "audit"],
+      { destinations: 2 }
     ),
   },
   minimal: {

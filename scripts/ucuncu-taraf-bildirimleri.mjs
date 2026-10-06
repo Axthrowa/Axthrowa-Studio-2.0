@@ -94,11 +94,10 @@ function npmBilesenleri(klasor, kaynak) {
 
 const bilesenler = [
   ...rustBilesenleri(path.join(kok, 'src-tauri', 'Cargo.toml'), 'panel (Rust)'),
-  ...rustBilesenleri(path.join(kok, 'motor', 'Cargo.toml'), 'yayın motoru (Rust)'),
   ...npmBilesenleri(kok, 'panel ön yüzü (npm)'),
   ...npmBilesenleri(path.join(kok, 'resonance'), 'Resonance ön yüzü (npm)'),
 ];
-// Aynı crate panel ve motorda: tek kayıt, iki kaynak
+// Aynı bileşen birden çok kaynakta: tek kayıt
 const birlesik = new Map();
 for (const b of bilesenler) {
   const k = `${b.tur}:${b.ad}@${b.surum}`;
@@ -120,11 +119,9 @@ yaz('(GPL-2.0-or-later). Lisans metni: LICENSE.txt. Bu programın ikili sürüm�
 yaz('kaynak kodunu da aynı lisansla alma hakkına sahiptir; kaynak kodu programla birlikte dağıtılan depodan ya da');
 yaz('dağıtıcıdan talep edilerek edinilebilir.');
 yaz();
-yaz('Yayın motoru, kullanıcının bilgisayarında kurulu OBS Studio\'nun libobs kütüphanesini (GPL-2.0-or-later) çalışma');
-yaz('anında yükler; libobs ve OBS eklentileri bu pakete dahil değildir. OBS Studio, OBS Project\'in markasıdır; bu ürün');
-yaz('onunla bağlantılı değildir.');
-yaz();
-yaz('This software is based in part on the work of the Independent JPEG Group (jpeg-encoder crate, IJG lisansı).');
+yaz('Bu uygulama kullanıcının bilgisayarında kurulu OBS Studio ile obs-websocket protokolü üzerinden konuşur ve OBS\'e');
+yaz('tarayıcı dock\'u olarak eklenir; OBS Studio ve OBS eklentileri bu pakete dahil değildir. OBS Studio, OBS Project\'in');
+yaz('markasıdır; bu ürün onunla bağlantılı değildir.');
 yaz();
 yaz(`Bileşen sayısı: ${liste.length}`);
 yaz('='.repeat(100));

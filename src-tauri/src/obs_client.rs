@@ -130,6 +130,8 @@ pub struct ObsClientState {
   meters_updated_ms: AtomicI64,
   meter_demand_ms: AtomicI64,
   meters_on: AtomicBool,
+  /// Kendiliğinden bağlanma döngüsünü beklemeden uyandırır (bağlantı bilgisi değişince)
+  uyandir: tokio::sync::Notify,
 }
 
 impl Default for ObsClientState {
@@ -155,7 +157,14 @@ impl ObsClientState {
       meters_updated_ms: AtomicI64::new(0),
       meter_demand_ms: AtomicI64::new(0),
       meters_on: AtomicBool::new(false),
+      uyandir: tokio::sync::Notify::new(),
     }
+  }
+
+  /// Açık bağlantıyı kapatır ve kendiliğinden bağlanma döngüsünü hemen yeniden denemeye uyandırır.
+  pub fn yeniden_baglan(&self) {
+    self.disconnect();
+    self.uyandir.notify_one();
   }
 
   pub fn status(&self) -> ObsConnectionStatus {
@@ -429,6 +438,121 @@ impl ObsClientState {
       .set_muted(InputId::Name(input_name), muted)
       .await
       .map_err(|error| format!("OBS ses durumu değiştirilemedi: {error}"))
+  }
+
+  /// Kaydı duraklatır (`Some(true)`), sürdürür (`Some(false)`) ya da değiştirir (`None`). Dönen: duraklatıldı mı.
+  pub async fn set_record_paused(&self, pause: Option<bool>) -> Result<bool, String> {
+    let client = self.client()?;
+    let rec = client.recording();
+    let sonuc = match pause {
+      Some(true) => rec.pause().await.map(|_| true),
+      Some(false) => rec.resume().await.map(|_| false),
+      None => rec.toggle_pause().await,
+    };
+    sonuc.map_err(|error| format!("OBS kaydı duraklatılamadı/sürdürülemedi (kayıt açık mı?): {error}"))
+  }
+
+  /// Kayıt dosyasını böler (OBS'te "Otomatik dosya bölme" açık olmalı).
+  pub async fn split_recording(&self) -> Result<(), String> {
+    let client = self.client()?;
+    client
+      .recording()
+      .split_file()
+      .await
+      .map_err(|error| format!("Kayıt dosyası bölünemedi (OBS Ayarlar → Çıkış → Kayıt → Otomatik dosya bölme): {error}"))
+  }
+
+  /// Sanal kamera: `Some(true)` başlat, `Some(false)` durdur, `None` değiştir. Dönen: açık mı.
+  pub async fn set_virtualcam(&self, on: Option<bool>) -> Result<bool, String> {
+    let client = self.client()?;
+    let vc = client.virtual_cam();
+    let sonuc = match on {
+      Some(true) => vc.start().await.map(|_| true),
+      Some(false) => vc.stop().await.map(|_| false),
+      None => vc.toggle().await,
+    };
+    sonuc.map_err(|error| format!("OBS sanal kamerası değiştirilemedi: {error}"))
+  }
+
+  /// Kaynağın filtresini açar/kapatır; `acik: None` değiştirir. Dönen: filtre açık mı.
+  pub async fn set_filter_enabled(&self, source: &str, filter: &str, acik: Option<bool>) -> Result<bool, String> {
+    use obws::requests::{filters::SetEnabled, sources::SourceId};
+    let client = self.client()?;
+    let hedef = match acik {
+      Some(a) => a,
+      None => {
+        !client
+          .filters()
+          .get(SourceId::Name(source), filter)
+          .await
+          .map_err(|error| format!("«{source}» kaynağında «{filter}» filtresi bulunamadı: {error}"))?
+          .enabled
+      }
+    };
+    client
+      .filters()
+      .set_enabled(SetEnabled { source: SourceId::Name(source), filter, enabled: hedef })
+      .await
+      .map_err(|error| format!("Filtre değiştirilemedi: {error}"))?;
+    Ok(hedef)
+  }
+
+  /// Studio Mode'da önizlemeyi programa alır; `gecis` verilirse önce o geçiş seçilir (hızlı geçiş).
+  pub async fn studio_transition(&self, gecis: Option<&str>) -> Result<(), String> {
+    let client = self.client()?;
+    if !client.ui().studio_mode_enabled().await.map_err(|e| e.to_string())? {
+      return Err("OBS'te Studio Mode kapalı".into());
+    }
+    if let Some(g) = gecis {
+      client
+        .transitions()
+        .set_current(g)
+        .await
+        .map_err(|error| format!("«{g}» adlı geçiş yok: {error}"))?;
+    }
+    client
+      .transitions()
+      .trigger()
+      .await
+      .map_err(|error| format!("Studio Mode geçişi yapılamadı: {error}"))
+  }
+
+  /// CEA-608 altyazı satırını yayına gönderir (yayın açık olmalı).
+  pub async fn send_caption(&self, text: &str) -> Result<(), String> {
+    let client = self.client()?;
+    client
+      .streaming()
+      .send_caption(text)
+      .await
+      .map_err(|error| format!("Altyazı gönderilemedi (yayın açık mı?): {error}"))
+  }
+
+  /// Medya kaynağı: `"yeniden"` baştan oynatır, `"degistir"` oynat/duraklat. Dönen: uygulanan eylem.
+  pub async fn media_action(&self, input: &str, eylem: &str) -> Result<&'static str, String> {
+    use obws::common::MediaAction;
+    use obws::responses::media_inputs::MediaState;
+    let client = self.client()?;
+    let (eylem, ad) = match eylem {
+      "yeniden" => (MediaAction::Restart, "yeniden"),
+      _ => {
+        let durum = client
+          .media_inputs()
+          .status(InputId::Name(input))
+          .await
+          .map_err(|error| format!("«{input}» medya kaynağı değil ya da yok: {error}"))?;
+        match durum.state {
+          MediaState::Playing | MediaState::Opening | MediaState::Buffering => (MediaAction::Pause, "duraklat"),
+          MediaState::Paused => (MediaAction::Play, "oynat"),
+          _ => (MediaAction::Restart, "yeniden"),
+        }
+      }
+    };
+    client
+      .media_inputs()
+      .trigger_action(InputId::Name(input), eylem)
+      .await
+      .map_err(|error| format!("Medya eylemi uygulanamadı: {error}"))?;
+    Ok(ad)
   }
 
   /// Giriş ses seviyeleri ve son ölçümün yaşı (ms). İlk çağrı yüksek hacimli `InputVolumeMeters` aboneliğini
@@ -977,7 +1101,16 @@ pub async fn autoconnect_loop(app: AppHandle) {
   loop {
     if let Some(state) = app.try_state::<AppState>() {
       if !state.obs.is_connected() && !state.obs.is_connecting() {
-        let (host, port, password, _) = crate::hotkeys::obs_cfg_from_settings(&state);
+        let (host, mut port, mut password, _) = crate::hotkeys::obs_cfg_from_settings(&state);
+        // Panelde şifre girilmemişse ve OBS bu bilgisayardaysa bilgiyi OBS'in kendi obs-websocket ayarından al
+        if password.trim().is_empty() && crate::obs_studio::yerel_adres_mi(&host) {
+          if let Some(ws) = tokio::task::spawn_blocking(crate::obs_studio::websocket_ayari).await.ok().flatten().filter(|w| w.etkin) {
+            port = ws.port;
+            if ws.sifre_gerekli {
+              password = ws.sifre;
+            }
+          }
+        }
         match state.obs.connect(&host, port, &password).await {
           Ok(()) => {
             spawn_obs_event_pump(Arc::clone(&state.obs), app.clone());
@@ -988,7 +1121,16 @@ pub async fn autoconnect_loop(app: AppHandle) {
       }
     }
     // Başarısızlıkta 5, 10, 15, 20, 25 sn: kapalı OBS'i saniyede bir yoklamayalım.
-    tokio::time::sleep(Duration::from_secs(5 * (backoff.max(1)) as u64)).await;
+    let bekle = tokio::time::sleep(Duration::from_secs(5 * (backoff.max(1)) as u64));
+    match app.try_state::<AppState>() {
+      Some(state) => {
+        tokio::select! {
+          _ = bekle => {}
+          _ = state.obs.uyandir.notified() => backoff = 0,
+        }
+      }
+      None => bekle.await,
+    }
   }
 }
 

@@ -14,9 +14,9 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use super::control_plane::{audit, authorize};
-use super::motor_api::Hata;
 use crate::AppState;
 
+type Hata = (StatusCode, String);
 type ApiResult = Result<Json<Value>, Hata>;
 
 /// Kick belgesi: `custom_tags` en çok 10 öğe

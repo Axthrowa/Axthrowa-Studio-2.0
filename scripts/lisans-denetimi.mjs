@@ -1,4 +1,4 @@
-// Rust crate lisans denetimi (çevrimdışı): panelin (`src-tauri`) ve yayın motorunun (`motor`) `cargo metadata`
+// Rust crate lisans denetimi (çevrimdışı): panelin (`src-tauri`) `cargo metadata`
 // çıktısındaki her üçüncü taraf crate, GPL-2.0-or-later ürünle uyumlu bir lisansla gelmeli (ADR-005). npm ağaçları
 // vitest ile denetlenir (src/lib/licenses.test.ts).
 //   node scripts/lisans-denetimi.mjs          → sorun yoksa 0, varsa 1 ile çıkar
@@ -48,7 +48,7 @@ export function paketler(manifest) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const sorunlu = [];
-  for (const [ad, m] of [['panel', path.join(kok, 'src-tauri', 'Cargo.toml')], ['motor', path.join(kok, 'motor', 'Cargo.toml')]]) {
+  for (const [ad, m] of [['panel', path.join(kok, 'src-tauri', 'Cargo.toml')]]) {
     const liste = paketler(m);
     console.log(`${ad}: ${liste.length} crate`);
     for (const p of liste) {

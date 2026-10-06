@@ -10,15 +10,10 @@ pub mod media;
 pub mod actions;
 pub mod destek;
 pub mod disk;
-pub mod eklenti;
-pub mod gpu;
-pub mod motor_koleksiyon;
-pub mod motor_obs_ice;
-pub mod motor_profil;
-pub mod motor_kopru;
 pub mod multistream;
 pub mod music;
 pub mod obs_client;
+pub mod obs_studio;
 pub mod hotkeys;
 pub mod paths;
 pub mod secret_store;
@@ -73,9 +68,6 @@ pub struct AppState {
   /// Çoklu yayın yönlendiricisi (tek kodlama → çok hedef)
   pub multistream: Arc<multistream::Router>,
   /// Yerel yayın çekirdeği (libobs, ayrı süreç) köprüsü
-  pub motor: Arc<motor_kopru::MotorKoprusu>,
-  /// Eklenti kayıt defterinin oku-değiştir-yaz işlemleri tek tek yapılsın (`<veri>/eklentiler/kayit.json`)
-  pub eklenti_kilidi: Arc<tokio::sync::Mutex<()>>,
   pub widget_rt: Arc<widget_runtime::WidgetRuntime>,
   pub emote_combo: Arc<widgets::ComboMemory>,
   pub bot_activity: bot::activity::BotActivityLog,
@@ -162,8 +154,6 @@ impl AppState {
     ));
     Self {
       multistream,
-      motor: Arc::new(motor_kopru::MotorKoprusu::default()),
-      eklenti_kilidi: Arc::new(tokio::sync::Mutex::new(())),
       music: Arc::new(music::MusicState::new(&data_dir)),
       ytdl: Arc::new(ytdl::YtdlState::new()),
       kick_auth: Arc::new(kick::KickAuth::new(&data_dir)),
@@ -378,110 +368,7 @@ fn open_in_browser(url: String) -> Result<(), String> {
 /// OBS Studio sürecini başlatır. Zaten çalışıyorsa `"already"`.
 #[tauri::command]
 fn launch_obs(path: Option<String>) -> Result<String, String> {
-  launch_obs_process(path.as_deref())
-}
-
-fn obs_already_running() -> bool {
-  #[cfg(target_os = "windows")]
-  {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let out = std::process::Command::new("tasklist")
-      .args(["/FI", "IMAGENAME eq obs64.exe", "/NH"])
-      .creation_flags(CREATE_NO_WINDOW)
-      .output();
-    if let Ok(o) = out {
-      let s = String::from_utf8_lossy(&o.stdout).to_ascii_lowercase();
-      if s.contains("obs64.exe") {
-        return true;
-      }
-    }
-    let out2 = std::process::Command::new("tasklist")
-      .args(["/FI", "IMAGENAME eq obs.exe", "/NH"])
-      .creation_flags(CREATE_NO_WINDOW)
-      .output();
-    if let Ok(o) = out2 {
-      let s = String::from_utf8_lossy(&o.stdout).to_ascii_lowercase();
-      if s.contains("obs.exe") {
-        return true;
-      }
-    }
-  }
-  false
-}
-
-/// Kullanıcının seçtiği yol gerçekten OBS'in kendi yürütülebiliri mi?
-///
-/// `launch_obs` komutu ön yüzden yol alıyor; ad denetimi olmadan webview'de
-/// çalışan herhangi bir betik bu komutla diskteki HERHANGİ bir programı
-/// başlatabilirdi.
-fn is_obs_executable(path: &std::path::Path) -> bool {
-  path
-    .file_name()
-    .and_then(|n| n.to_str())
-    .map(|n| {
-      let n = n.to_ascii_lowercase();
-      n == "obs64.exe" || n == "obs32.exe" || n == "obs.exe"
-    })
-    .unwrap_or(false)
-}
-
-fn candidate_obs_paths(override_path: Option<&str>) -> Vec<PathBuf> {
-  let mut out = Vec::new();
-  if let Some(p) = override_path.map(str::trim).filter(|s| !s.is_empty()) {
-    let p = PathBuf::from(p);
-    if is_obs_executable(&p) {
-      out.push(p);
-    } else {
-      yya_warn!("[obs] özel yol OBS yürütülebiliri değil, yok sayıldı: {}", p.display());
-    }
-  }
-  #[cfg(target_os = "windows")]
-  {
-    let pf = std::env::var("ProgramFiles").unwrap_or_else(|_| r"C:\Program Files".into());
-    let pf86 =
-      std::env::var("ProgramFiles(x86)").unwrap_or_else(|_| r"C:\Program Files (x86)".into());
-    let local = std::env::var("LOCALAPPDATA").unwrap_or_default();
-    for root in [pf, pf86, local] {
-      if root.is_empty() {
-        continue;
-      }
-      out.push(PathBuf::from(&root).join(r"obs-studio\bin\64bit\obs64.exe"));
-      out.push(PathBuf::from(&root).join(r"obs-studio\bin\64bit\obs.exe"));
-    }
-  }
-  out
-}
-
-fn launch_obs_process(override_path: Option<&str>) -> Result<String, String> {
-  if obs_already_running() {
-    return Ok("already".into());
-  }
-  let candidates = candidate_obs_paths(override_path);
-  let mut last_err = "OBS bulunamadı".to_string();
-  for path in candidates {
-    if !path.is_file() {
-      continue;
-    }
-    let parent = path.parent().map(|p| p.to_path_buf());
-    let mut cmd = std::process::Command::new(&path);
-    if let Some(dir) = parent {
-      cmd.current_dir(dir);
-    }
-    #[cfg(target_os = "windows")]
-    {
-      use std::os::windows::process::CommandExt;
-      const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-      // DETACHED_PROCESS — konsolsuz, uygulama kapanınca OBS düşmesin
-      const DETACHED_PROCESS: u32 = 0x0000_0008;
-      cmd.creation_flags(CREATE_NO_WINDOW | DETACHED_PROCESS);
-    }
-    match cmd.spawn() {
-      Ok(_) => return Ok("launched".into()),
-      Err(e) => last_err = format!("{}: {e}", path.display()),
-    }
-  }
-  Err(last_err)
+  obs_studio::baslat(path.as_deref()).map(str::to_string)
 }
 
 #[cfg(test)]
@@ -532,15 +419,6 @@ mod open_in_browser_tests {
     assert!(!is_safe_web_url("https://x/\na"));
   }
 
-  #[test]
-  fn obs_override_must_be_obs_itself() {
-    assert!(is_obs_executable(std::path::Path::new(r"D:\OBS\bin\64bit\obs64.exe")));
-    assert!(is_obs_executable(std::path::Path::new(r"C:\x\OBS.EXE")));
-    assert!(!is_obs_executable(std::path::Path::new(r"C:\Windows\System32\cmd.exe")));
-    assert!(!is_obs_executable(std::path::Path::new(r"C:\x\obs64.exe.bat")));
-    let adaylar = candidate_obs_paths(Some(r"C:\Windows\System32\calc.exe"));
-    assert!(adaylar.iter().all(|p| is_obs_executable(p)), "{adaylar:?}");
-  }
 }
 
 /// Spotify bağlıysa yoklar; YTMD Resonance köprüsünden gelir. Çalan kaynak
@@ -806,19 +684,7 @@ pub fn run() {
     ])
     .build(tauri::generate_context!())
     .expect("error while running tauri application")
-    .run(|app, event| {
-      // Uygulama kapanırken yayın motoru düzgün durdurulur (çıktılar biter, kayıt kapanır) ve oturum işareti
-      // silinir; aksi hâlde bir sonraki açılış bunu "temiz kapanmadı" sayardı.
-      if let tauri::RunEvent::Exit = event {
-        let state = app.state::<AppState>();
-        let motor = state.motor.clone();
-        let dizin = state.data_dir.join("motor");
-        tauri::async_runtime::block_on(async move {
-          let _ = tokio::time::timeout(std::time::Duration::from_secs(15), motor.durdur()).await;
-        });
-        eklenti::kayit::oturum_bitti(&dizin);
-      }
-    });
+    .run(|_app, _event| {});
 }
 
 #[tauri::command]

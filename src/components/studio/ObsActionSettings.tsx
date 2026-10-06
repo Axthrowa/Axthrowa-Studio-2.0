@@ -108,38 +108,26 @@ function PanelEylemiAlanlari({
                     />
                   </label>
                 );
-              case "engineScene":
-                return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
-                    Motor sahnesi
-                    <input
-                      className={field}
-                      value={row.scene || ""}
-                      placeholder="Yayın sekmesindeki sahne adı"
-                      onChange={(e) => onPatch({ scene: e.target.value })}
-                    />
-                  </label>
-                );
-              case "engineFilter":
+              case "filter":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
                     Filtre adı
                     <input
                       className={field}
                       value={row.filter || ""}
-                      placeholder="Filtreler penceresindeki adı"
+                      placeholder="OBS'te kaynağın Filtreler penceresindeki adı"
                       onChange={(e) => onPatch({ filter: e.target.value })}
                     />
                   </label>
                 );
-              case "engineTransition":
+              case "transition":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
                     Geçiş adı
                     <input
                       className={field}
                       value={row.transition || ""}
-                      placeholder="Sahne Geçişleri listesindeki ad (ör. Kes, Soldur)"
+                      placeholder="OBS Sahne Geçişleri listesindeki ad (ör. Kes, Soldur)"
                       onChange={(e) => onPatch({ transition: e.target.value })}
                     />
                   </label>
@@ -165,14 +153,13 @@ function PanelEylemiAlanlari({
                   </label>
                 );
               case "source":
-              case "engineSource":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
-                    {p.kind === "engineSource" ? "Motor kaynağı" : "Kaynak adı"}
+                    Kaynak adı
                     <input
                       className={field}
                       value={row.source || ""}
-                      placeholder={p.kind === "engineSource" ? "Yayın sekmesindeki adı" : "örn. Kamera"}
+                      placeholder="örn. Kamera"
                       onChange={(e) => onPatch({ source: e.target.value })}
                     />
                   </label>

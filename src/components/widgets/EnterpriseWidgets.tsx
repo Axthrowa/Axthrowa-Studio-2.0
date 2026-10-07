@@ -575,7 +575,7 @@ export function SongRequestWidget({ config }: Cfg) {
               ? "absolute bottom-4 right-4 h-40 w-64 rounded-xl border border-white/20 shadow-lg"
               : "pointer-events-none absolute h-px w-px opacity-0"
           }
-          src={`https://www.youtube.com/embed/${vid}?autoplay=1&controls=0`}
+          src={`https://www.youtube.com/embed/${vid}?autoplay=1&controls=0&cc_load_policy=0&iv_load_policy=3`}
           allow="autoplay"
         />
       )}

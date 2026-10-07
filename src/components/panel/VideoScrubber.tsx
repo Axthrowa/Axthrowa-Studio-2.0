@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { mediaUrl } from "../../lib/api";
 import {
+  ALTYAZISIZ_PLAYER_VARS,
+  altyaziKapat,
   DEFAULT_END_MARGIN,
   EndScreenInfo,
   extractYoutubeId,
@@ -296,6 +298,8 @@ export default function VideoScrubber({
           playsinline: 1,
           rel: 0,
           iv_load_policy: 3,
+          // Sessiz başlayan oynatıcıda YouTube altyazıyı kendiliğinden açıyordu.
+          ...ALTYAZISIZ_PLAYER_VARS,
           origin: window.location.origin,
         },
         events: {
@@ -303,6 +307,7 @@ export default function VideoScrubber({
             if (cancelled) return;
             const p = ev.target;
             p.mute();
+            altyaziKapat(p);
             // Kırpma önizlemesi avuç içi kadar bir kutu. Aynı anda canlı
             // önizleme de aynı videoyu çözüyor; ikisini birden 1080p tutmak
             // panelin CPU yükünün büyük kısmıydı.
@@ -322,6 +327,7 @@ export default function VideoScrubber({
             if (cancelled) return;
             const S = window.YT.PlayerState;
             setPlaying(ev.data === S.PLAYING);
+            if (ev.data === S.PLAYING) altyaziKapat(ev.target);
             const d = Number(ev.target.getDuration?.() || 0);
             if (d > 0) {
               setDuration((prev) => (Math.abs(prev - d) > 0.5 ? d : prev));

@@ -1,5 +1,47 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_END_MARGIN, extractYoutubeId, youtubeLoopPoint } from "./youtube";
+import {
+  ALTYAZISIZ_PLAYER_VARS,
+  altyaziKapat,
+  DEFAULT_END_MARGIN,
+  extractYoutubeId,
+  youtubeLoopPoint,
+} from "./youtube";
+
+describe("altyaziKapat", () => {
+  it("altyazı izini boşaltır ve modülü kaldırır", () => {
+    const cagrilar: string[] = [];
+    const oynatici = {
+      setOption: (m: string, k: string, v: unknown) => cagrilar.push(`set ${m} ${k} ${JSON.stringify(v)}`),
+      unloadModule: (m: string) => cagrilar.push(`unload ${m}`),
+    };
+    altyaziKapat(oynatici);
+    expect(cagrilar).toEqual([
+      'set captions track {}',
+      "unload captions",
+      'set cc track {}',
+      "unload cc",
+    ]);
+  });
+
+  it("eksik ya da hata atan oynatıcıda patlamaz", () => {
+    expect(() => altyaziKapat(null)).not.toThrow();
+    expect(() => altyaziKapat({})).not.toThrow();
+    expect(() =>
+      altyaziKapat({
+        setOption: () => {
+          throw new Error("yok");
+        },
+        unloadModule: () => {
+          throw new Error("yok");
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it("oynatıcı ayarı altyazıyı yüklemez", () => {
+    expect(ALTYAZISIZ_PLAYER_VARS.cc_load_policy).toBe(0);
+  });
+});
 
 describe("extractYoutubeId", () => {
   it("watch, kısa bağlantı, embed ve shorts adreslerini çözer", () => {

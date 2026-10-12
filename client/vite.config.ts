@@ -39,6 +39,10 @@ export default defineConfig({
             if (id.includes('canvas-confetti')) {
               return 'confetti';
             }
+            // Konuşma tanıma (~5.8 MB WASM): yalnız dinleyici açılınca yüklensin; OBS katmanları taşımasın
+            if (id.includes('vosk-browser')) {
+              return 'vosk';
+            }
             return 'vendor';
           }
         }

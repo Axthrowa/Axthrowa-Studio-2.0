@@ -209,6 +209,11 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
       state.obs.set_muted(input, sessiz).await.map(|_| json!({ "input": input, "muted": sessiz }))
     }
     Action::Media { input, eylem } => state.obs.media_action(input, eylem).await.map(|e| json!({ "input": input, "action": e })),
+    Action::SesliBasKonus { basili } => {
+      // Ön yüz bunu gizli dinleyici çerçevesine (StreamAxT /sesli-dinleyici) postMessage ile iletir
+      state.broadcast_json(&json!({ "type": "sesli-ptt", "basili": basili }));
+      Ok(json!({ "basili": basili }))
+    }
   }
 }
 

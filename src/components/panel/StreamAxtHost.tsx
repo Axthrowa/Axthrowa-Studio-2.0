@@ -203,7 +203,8 @@ export default function StreamAxtHost({ onToast, tab, embed }: StreamAxtHostProp
           title="StreamAxT"
           src={frameUrl(st.url, tab, embed)}
           className="min-h-0 w-full flex-1 border-0 bg-[#090b10]"
-          allow="clipboard-write; autoplay; fullscreen"
+          // microphone: Sesli Komutlar sayfasında "Bu pencerede dinle" ve mikrofon listesi
+          allow="clipboard-write; autoplay; fullscreen; microphone"
         />
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-white/70">

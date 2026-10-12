@@ -68,6 +68,7 @@ export const CATEGORY_LABEL: Record<string, string> = {
   scene: "Sahne",
   audio: "Ses",
   engine: "Yayın motoru",
+  voice: "Sesli komut",
 };
 
 /** Kayıt defteri eyleminin parametreleri — kısayol satırındaki alanlardan (Rust `hotkeys::eylem_parametreleri`). */

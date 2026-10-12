@@ -36,6 +36,7 @@ import AppSettingsPage from "../../components/panel/AppSettingsPage";
 import SettingsSection from "../../components/panel/SettingsSection";
 import SoundBoardPanel from "../../components/panel/SoundBoardPanel";
 import StreamAxtHost from "../../components/panel/StreamAxtHost";
+import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
 import ProfileDashboard from "../../components/panel/ProfileDashboard";
 import ConnectionsHub from "../../components/panel/ConnectionsHub";
 import StreamHealthCard from "../../components/panel/StreamHealthCard";
@@ -3608,6 +3609,9 @@ export default function PanelPage() {
         </EdgePanel>
       </div>
       )}
+
+      {/* StreamAxT sesli komut dinleyicisi: sekmeden bağımsız, arka planda */}
+      <SesliDinleyiciCercevesi />
 
       {toast && (
         <div className="fixed bottom-4 right-4 z-50 rounded-xl border border-panel-accent/40 bg-panel-card/95 px-4 py-2.5 text-sm text-panel-accent shadow-glow">

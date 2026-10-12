@@ -243,17 +243,95 @@ async fn dosya_indir(url: &str, hedef: &Path) -> anyhow::Result<()> {
   Ok(())
 }
 
-/// yt-dlp yolunu döndürür, yoksa indirir.
-async fn ytdlp_hazirla(root: &Path) -> anyhow::Result<PathBuf> {
-  if let Some(p) = path_uzerinde("yt-dlp.exe") {
-    return Ok(p);
-  }
+/// Uygulamanın kendi yt-dlp kopyası bu kadar eskiyse indirmeden önce güncellenir.
+/// YouTube sık değişiyor; eski sürüm indirmenin ortasında 403 alabiliyor.
+const GUNCELLEME_ARALIGI: std::time::Duration = std::time::Duration::from_secs(3 * 24 * 3600);
+
+/// Kullanılacak yt-dlp ve kendini güncelleyip güncelleyemeyeceği.
+struct Ytdlp {
+  yol: PathBuf,
+  /// Uygulamanın araç klasöründeki resmi tek dosyalık sürüm `-U` ile kendini
+  /// günceller. PATH'teki kopya (winget/pip/scoop) bunu yapamaz; ona dokunulmaz.
+  guncellenebilir: bool,
+}
+
+/// yt-dlp'yi hazırlar. Önce uygulamanın kendi kopyası (güncel tutulabildiği
+/// için); o yoksa resmi sürüm indirilir. İndirilemezse PATH'teki kurulum
+/// kullanılır — eski olabilir ama hiç yoktan iyidir.
+///
+/// Eskiden PATH'teki kopya önceydi; winget'in kurduğu sürüm kendini
+/// güncelleyemediği için aylarca eski kaldı ve YouTube indirmeyi yarıda 403 ile
+/// kesti (2026-10-07, kullanıcı makinesi).
+async fn ytdlp_hazirla(root: &Path) -> anyhow::Result<Ytdlp> {
   let hedef = araclar_dizini(root).join("yt-dlp.exe");
   if hedef.is_file() {
-    return Ok(hedef);
+    return Ok(Ytdlp { yol: hedef, guncellenebilir: true });
   }
-  dosya_indir(YTDLP_URL, &hedef).await?;
-  Ok(hedef)
+  match dosya_indir(YTDLP_URL, &hedef).await {
+    Ok(()) => Ok(Ytdlp { yol: hedef, guncellenebilir: true }),
+    Err(e) => match path_uzerinde("yt-dlp.exe") {
+      Some(p) => Ok(Ytdlp { yol: p, guncellenebilir: false }),
+      None => Err(e),
+    },
+  }
+}
+
+/// Dosya `aralik`tan daha eskiyse (ya da yaşı okunamıyorsa) `true`.
+fn eski_mi(yol: &Path, aralik: std::time::Duration) -> bool {
+  std::fs::metadata(yol)
+    .and_then(|m| m.modified())
+    .ok()
+    .and_then(|t| t.elapsed().ok())
+    .map(|yas| yas > aralik)
+    .unwrap_or(true)
+}
+
+/// Kendi kopyamızı `yt-dlp -U` ile günceller. Başarısızlık indirmeyi
+/// durdurmaz: eldeki sürümle denemeye devam edilir.
+async fn ytdlp_guncelle(ytdlp: &Ytdlp) -> bool {
+  if !ytdlp.guncellenebilir {
+    return false;
+  }
+  let mut cmd = Command::new(&ytdlp.yol);
+  cmd.arg("-U").stdout(Stdio::null()).stderr(Stdio::null());
+  pencere_gizle(&mut cmd);
+  let tamam = matches!(
+    tokio::time::timeout(std::time::Duration::from_secs(120), cmd.status()).await,
+    Ok(Ok(s)) if s.success()
+  );
+  if tamam {
+    // Zaten güncel olsa da bir sonraki denetimi aralığın sonuna ertele.
+    if let Ok(f) = std::fs::File::options().append(true).open(&ytdlp.yol) {
+      let _ = f.set_modified(std::time::SystemTime::now());
+    }
+  }
+  tamam
+}
+
+/// yt-dlp hata metni yeniden denemeye değer mi? YouTube veri akışını yarıda
+/// reddettiğinde (403) ya da bağlantı koptuğunda yeni bir deneme imzalı
+/// adresleri yeniden aldığı için çoğu zaman geçer; `.part` kaldığı yerden sürer.
+pub fn yeniden_denenebilir(hata: &str) -> bool {
+  let h = hata.to_lowercase();
+  ["403", "forbidden", "http error 5", "timed out", "connection", "incomplete", "fragment"]
+    .iter()
+    .any(|k| h.contains(k))
+}
+
+/// Kullanıcıya gösterilecek hata metni.
+pub fn hata_aciklamasi(hata: &str) -> String {
+  let h = hata.to_lowercase();
+  if h.contains("403") || h.contains("forbidden") {
+    "YouTube indirmeyi reddetti (HTTP 403). Birkaç dakika sonra yeniden deneyin; sürerse video \
+     bölge ya da yaş kısıtlı olabilir."
+      .into()
+  } else if h.contains("private video") || h.contains("sign in") {
+    "Video gizli ya da oturum açmayı gerektiriyor; indirilemez.".into()
+  } else if h.contains("unavailable") {
+    "Video kullanılamıyor (kaldırılmış ya da bölgede engelli).".into()
+  } else {
+    hata.trim().to_string()
+  }
 }
 
 /// İndirmeden, bu makinede hazır ffmpeg'i bulur (PATH ya da uygulamanın araç klasörü).
@@ -355,7 +433,10 @@ fn guncelle(state: &crate::AppState, f: impl FnOnce(&mut DownloadState)) {
 
 async fn indir_ic(state: &Arc<crate::AppState>, url: &str) -> anyhow::Result<String> {
   let id = youtube_id(url).ok_or_else(|| anyhow::anyhow!("Geçerli bir YouTube adresi değil"))?;
-  let videolar = state.data_dir.join("assets").join("videos");
+  // Liste (`/api/videos`) ve oynatma (`/assets/videos`) kökteki klasöre bakıyor.
+  // Eskiden buraya `data_dir` yazılıyordu; taşınabilir kurulumda ikisi farklı
+  // klasör olduğu için inen video panelde hiç görünmüyordu.
+  let videolar = indirme_klasoru(&state.root);
   std::fs::create_dir_all(&videolar)?;
 
   guncelle(state, |d| {
@@ -372,27 +453,81 @@ async fn indir_ic(state: &Arc<crate::AppState>, url: &str) -> anyhow::Result<Str
     .await
     .map_err(|e| anyhow::anyhow!("yt-dlp indirilemedi: {e}"))?;
   iptal_kontrol(state)?;
+  if eski_mi(&ytdlp.yol, GUNCELLEME_ARALIGI) {
+    guncelle(state, |d| d.message = "İndirme aracı güncelleniyor…".into());
+    ytdlp_guncelle(&ytdlp).await;
+    iptal_kontrol(state)?;
+  }
   let ffmpeg = ffmpeg_hazirla(&state.data_dir).await;
   iptal_kontrol(state)?;
 
+  // YouTube yarıda reddederse (403) araç güncellenip `.part` dosyasının
+  // kaldığı yerden yeniden denenir. Paralel parça (`-N 4`) kullanılmıyor: bu
+  // makinede üç denemenin ikisinde YouTube indirmeyi yarıda kesti (2026-10-07).
+  const DENEME_SAYISI: usize = 3;
+  let mut son_hata = String::new();
+  for sira in 0..DENEME_SAYISI {
+    if sira > 0 {
+      if !yeniden_denenebilir(&son_hata) {
+        break;
+      }
+      guncelle(state, |d| {
+        d.phase = Phase::Araclar;
+        d.percent = -1.0;
+        d.message = format!(
+          "YouTube bağlantıyı kesti, yeniden deneniyor ({}/{})…",
+          sira + 1,
+          DENEME_SAYISI
+        );
+      });
+      if sira == 1 {
+        ytdlp_guncelle(&ytdlp).await;
+      }
+      tokio::time::sleep(std::time::Duration::from_secs(2 * sira as u64)).await;
+      iptal_kontrol(state)?;
+    }
+    match calistir(state, &ytdlp.yol, ffmpeg.as_deref(), &id, &videolar).await? {
+      Ok(ad) => return Ok(ad),
+      Err(hata) => son_hata = hata,
+    }
+  }
+  anyhow::bail!("İndirme başarısız — {}", hata_aciklamasi(&son_hata))
+}
+
+/// yt-dlp'yi bir kez çalıştırır. Dış `Err`: iptal ya da süreç hatası (yeniden
+/// denenmez); iç `Err`: yt-dlp'nin hata metni (yeniden denenebilir).
+async fn calistir(
+  state: &Arc<crate::AppState>,
+  ytdlp: &Path,
+  ffmpeg: Option<&Path>,
+  id: &str,
+  videolar: &Path,
+) -> anyhow::Result<Result<String, String>> {
   guncelle(state, |d| {
     d.phase = Phase::Indiriliyor;
     d.percent = 0.0;
     d.message = "Başlıyor…".into();
   });
 
-  let mut cmd = Command::new(&ytdlp);
+  let mut cmd = Command::new(ytdlp);
   cmd
     .arg("--no-playlist")
     .arg("--no-colors")
     .arg("--newline")
+    // `--print` yt-dlp'yi sessize alıyor; sessizken ilerleme satırı gelmez,
+    // çubuk "Başlıyor…"da kalır ve iptal de ancak iş bitince fark edilir.
+    .arg("--no-quiet")
+    // Sürüm uyarısı hata metninin yerine geçmesin; güncellemeyi biz yapıyoruz.
+    .arg("--no-update")
+    .arg("--retries")
+    .arg("5")
+    .arg("--fragment-retries")
+    .arg("5")
     // Adlar URL'de ve dosya sisteminde sorun çıkarmasın: ASCII'ye indir.
     .arg("--restrict-filenames")
     .arg("--windows-filenames")
-    .arg("-N")
-    .arg("4")
     .arg("-P")
-    .arg(&videolar)
+    .arg(videolar)
     .arg("-o")
     .arg("%(title).60B-%(id)s.%(ext)s")
     .arg("--progress-template")
@@ -402,7 +537,7 @@ async fn indir_ic(state: &Arc<crate::AppState>, url: &str) -> anyhow::Result<Str
     .arg("--print")
     .arg(format!("after_move:{FILE_TAG}%(filepath)s"));
 
-  if let Some(ff) = ffmpeg.as_ref().and_then(|p| p.parent()) {
+  if let Some(ff) = ffmpeg.and_then(|p| p.parent()) {
     // 1080p görüntü + ses ayrı akışlarda geliyor, birleştirmek ffmpeg istiyor.
     cmd
       .arg("--ffmpeg-location")
@@ -483,12 +618,11 @@ async fn indir_ic(state: &Arc<crate::AppState>, url: &str) -> anyhow::Result<Str
   let durum = child.wait().await?;
   let hata_metni = hata_gorevi.await.unwrap_or_default();
   if !durum.success() {
-    let ek = if hata_metni.is_empty() {
-      String::new()
+    return Ok(Err(if hata_metni.is_empty() {
+      format!("yt-dlp çıkış kodu {}", durum.code().unwrap_or(-1))
     } else {
-      format!(" — {hata_metni}")
-    };
-    anyhow::bail!("İndirme başarısız{ek}");
+      hata_metni
+    }));
   }
 
   let yol = dosya_yolu.ok_or_else(|| anyhow::anyhow!("İndirilen dosya bulunamadı"))?;
@@ -496,7 +630,12 @@ async fn indir_ic(state: &Arc<crate::AppState>, url: &str) -> anyhow::Result<Str
     .file_name()
     .map(|n| n.to_string_lossy().to_string())
     .ok_or_else(|| anyhow::anyhow!("Dosya adı okunamadı"))?;
-  Ok(ad)
+  Ok(Ok(ad))
+}
+
+/// İndirilen videoların klasörü: panelin listelediği ve sunduğu yer.
+pub fn indirme_klasoru(root: &Path) -> PathBuf {
+  root.join("assets").join("videos")
 }
 
 fn iptal_kontrol(state: &crate::AppState) -> anyhow::Result<()> {
@@ -544,6 +683,53 @@ mod tests {
     // Boyutu bilinmeyen akışlarda yt-dlp "NA" yazıyor; çubuk sıfıra düşmesin.
     assert!(parse_progress("YYAILERLEME NA NA NA").is_none());
     assert!(parse_progress("[download] Destination: video.mp4").is_none());
+  }
+
+  #[test]
+  fn bosluklu_yuzdeyi_okur() {
+    // yt-dlp yüzdeyi sağa yaslıyor: "  0.5%"
+    let (yuzde, mesaj) = parse_progress("YYAILERLEME   0.5%    6.52MiB/s 00:00").unwrap();
+    assert!((yuzde - 0.5).abs() < 1e-6);
+    assert_eq!(mesaj, "6.52MiB/s — kalan 00:00");
+  }
+
+  #[test]
+  fn yarida_reddedilen_indirme_yeniden_denenir() {
+    // Kullanıcının makinesinde gözlenen gerçek hata metni (2026-10-07).
+    assert!(yeniden_denenebilir(
+      "ERROR: unable to download video data: HTTP Error 403: Forbidden"
+    ));
+    assert!(yeniden_denenebilir("ERROR: Read timed out."));
+    assert!(!yeniden_denenebilir(
+      "ERROR: [youtube] abc: Private video. Sign in if you have been granted access"
+    ));
+    assert!(!yeniden_denenebilir("ERROR: [youtube] abc: Video unavailable"));
+  }
+
+  #[test]
+  fn hata_aciklamasi_anlasilir() {
+    assert!(
+      hata_aciklamasi("ERROR: unable to download video data: HTTP Error 403: Forbidden")
+        .contains("403")
+    );
+    assert!(hata_aciklamasi("ERROR: [youtube] x: Private video. Sign in").contains("gizli"));
+    assert_eq!(hata_aciklamasi("  başka hata "), "başka hata");
+  }
+
+  #[test]
+  fn yeni_dosya_eski_sayilmaz_olmayan_dosya_eski_sayilir() {
+    let gecici = std::env::temp_dir().join(format!("yya-ytdl-yas-{}", std::process::id()));
+    std::fs::write(&gecici, b"x").unwrap();
+    assert!(!eski_mi(&gecici, std::time::Duration::from_secs(3600)));
+    let _ = std::fs::remove_file(&gecici);
+    assert!(eski_mi(Path::new("C:/yok/yok/yt-dlp.exe"), std::time::Duration::from_secs(3600)));
+  }
+
+  #[test]
+  fn indirilen_video_listelenen_klasore_yazilir() {
+    // `/api/videos` ve `/assets/videos` `root/assets/videos`'a bakıyor.
+    let kok = Path::new("C:/YYA");
+    assert_eq!(indirme_klasoru(kok), kok.join("assets").join("videos"));
   }
 
   #[test]

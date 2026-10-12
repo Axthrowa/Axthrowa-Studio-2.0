@@ -72,7 +72,7 @@ const SEVIYE: &[ParamSpec] = &[ParamSpec { name: "input", kind: ParamKind::Input
 const FILTRE: &[ParamSpec] = &[ParamSpec { name: "source", kind: ParamKind::Source }, ParamSpec { name: "filter", kind: ParamKind::Filter }];
 
 /// Basılı tutma eylemleri: kısayol bırakılınca da çağrılır (`durum: "released"`)
-pub const BASILI_EYLEMLER: [&str; 2] = ["audio.pushToTalk", "audio.pushToMute"];
+pub const BASILI_EYLEMLER: [&str; 3] = ["audio.pushToTalk", "audio.pushToMute", "voice.pushToTalk"];
 
 pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "scene.switch", label: "Sahneye geç", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: SAHNE },
@@ -109,6 +109,7 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "audio.pushToMute", label: "Bas-sustur (basılıyken ses kapalı)", category: "audio", perm: "audio.control", confirm: false, requires: Requires::Obs, params: GIRIS },
   ActionSpec { id: "media.restart", label: "Medyayı baştan oynat", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: GIRIS },
   ActionSpec { id: "media.playPause", label: "Medyayı oynat / duraklat", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: GIRIS },
+  ActionSpec { id: "voice.pushToTalk", label: "Sesli komut: bas-konuş (basılıyken dinler)", category: "voice", perm: "voice.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
   ActionSpec { id: "alert.pause", label: "Uyarıları duraklat", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
   ActionSpec { id: "alert.resume", label: "Uyarıları sürdür", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
   ActionSpec { id: "alert.skip", label: "Uyarıyı atla", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
@@ -193,6 +194,8 @@ pub enum Action {
   Media { input: String, eylem: &'static str },
   /// StreamAxT uyarı kuyruğu denetimine iletilecek eylem adı
   Alert { action: &'static str },
+  /// StreamAxT sesli komut dinleyicisinin bas-konuş tuşu (panel gizli dinleyici çerçevesine iletir)
+  SesliBasKonus { basili: bool },
 }
 
 const AD_SINIRI: usize = 256;
@@ -289,6 +292,7 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
       konus: spec.id == "audio.pushToTalk",
       basili: params.get("durum").and_then(|v| v.as_str()) != Some("released"),
     },
+    "voice.pushToTalk" => Action::SesliBasKonus { basili: params.get("durum").and_then(|v| v.as_str()) != Some("released") },
     "media.restart" => Action::Media { input: giris()?, eylem: "yeniden" },
     "media.playPause" => Action::Media { input: giris()?, eylem: "degistir" },
     "alert.pause" => Action::Alert { action: "pause" },
@@ -361,6 +365,14 @@ mod tests {
     for id in ["scene.switch", "audio.toggle", "replay.save", "alert.pause", "source.toggle", "audio.volume", "record.togglePause", "virtualcam.toggle"] {
       assert!(!find(id).unwrap().confirm, "{id} tek dokunuş olmalı");
     }
+  }
+
+  #[test]
+  fn sesli_bas_konus_basilir_ve_birakilir() {
+    assert!(BASILI_EYLEMLER.contains(&"voice.pushToTalk"));
+    assert_eq!(parse("voice.pushToTalk", &json!({})).unwrap(), Action::SesliBasKonus { basili: true });
+    assert_eq!(parse("voice.pushToTalk", &json!({"durum": "released"})).unwrap(), Action::SesliBasKonus { basili: false });
+    assert!(!find("voice.pushToTalk").unwrap().confirm);
   }
 
   #[test]

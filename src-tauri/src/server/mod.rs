@@ -1285,7 +1285,7 @@ async fn api_logos(State(state): State<Arc<AppState>>) -> Json<Value> {
 }
 
 async fn api_videos(State(state): State<Arc<AppState>>) -> Json<Value> {
-  let dir = state.root.join("assets").join("videos");
+  let dir = crate::ytdl::indirme_klasoru(&state.root);
   Json(serde_json::json!(list_named_files(
     &dir,
     &[".mp4", ".webm", ".mov", ".mkv", ".m4v"]

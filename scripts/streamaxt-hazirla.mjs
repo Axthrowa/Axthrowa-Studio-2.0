@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * StreamAxT'i (Desktop\Projeler) Yayın Yönetim Aracı'nın "Bot" sekmesi için hazırlar.
+ * StreamAxT'i (Desktop\StreamAxT; eski yer Desktop\Projeler) Yayın Yönetim Aracı'nın "Bot" sekmesi için hazırlar.
  *
  * - Arayüzü TURKUAZ temayla derler: kaynak StreamAxT'e DOKUNULMAZ; istemci kaynağı
  *   geçici bir klasöre kopyalanır, mor/indigo/pembe tonları turkuaza çevrilir, orada derlenir.
@@ -26,7 +26,11 @@ function arg(name, def) {
 }
 const flag = (name) => process.argv.includes(`--${name}`);
 
-const kaynak = path.resolve(arg("kaynak", path.join(os.homedir(), "Desktop", "Projeler")));
+// Varsayılan: GitHub'dan çekilen Desktop\StreamAxT; yoksa eski yer Desktop\Projeler
+const varsayilanKaynak = [path.join(os.homedir(), "Desktop", "StreamAxT"), path.join(os.homedir(), "Desktop", "Projeler")].find((p) =>
+  fs.existsSync(path.join(p, "server", "package.json")),
+) ?? path.join(os.homedir(), "Desktop", "StreamAxT");
+const kaynak = path.resolve(arg("kaynak", varsayilanKaynak));
 const hedef = path.resolve(arg("hedef", path.join(root, "cikti", "portable", "streamaxt")));
 
 // ---- Renk eşlemesi -----------------------------------------------------------

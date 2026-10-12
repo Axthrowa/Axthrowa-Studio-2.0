@@ -34,6 +34,35 @@ export function extractYoutubeId(input: string): string | null {
   return null;
 }
 
+/**
+ * Oynatıcıya altyazı gösterme ayarları. `cc_load_policy: 0` tek başına yetmiyor:
+ * YouTube, izleyicinin hesap tercihinde ya da sessiz başlayan oynatıcıda
+ * altyazıyı yine açabiliyor. Asıl kapatma {@link altyaziKapat} ile yapılıyor.
+ */
+export const ALTYAZISIZ_PLAYER_VARS = { cc_load_policy: 0, cc_lang_pref: "zz" } as const;
+
+/**
+ * Oynatıcının altyazı modülünü kapatır. Belgelenmemiş ama yaygın kullanılan
+ * `unloadModule`/`setOption` çağrıları; oynatıcı desteklemiyorsa sessizce geçer.
+ * Altyazı modülü video başladıktan sonra yüklenebildiği için hem `onReady`'de hem
+ * oynatma başlayınca çağrılmalı.
+ */
+export function altyaziKapat(player: any): void {
+  if (!player) return;
+  for (const modul of ["captions", "cc"]) {
+    try {
+      player.setOption?.(modul, "track", {});
+    } catch {
+      /* desteklenmiyor */
+    }
+    try {
+      player.unloadModule?.(modul);
+    } catch {
+      /* desteklenmiyor */
+    }
+  }
+}
+
 let apiPromise: Promise<void> | null = null;
 
 /** iframe API'yi bir kez yükler; sonraki çağrılar aynı sözü paylaşır. */

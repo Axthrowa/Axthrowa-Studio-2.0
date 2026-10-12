@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import {
+  ALTYAZISIZ_PLAYER_VARS,
+  altyaziKapat,
   DEFAULT_END_MARGIN,
   EndScreenInfo,
   fetchEndScreenInfo,
@@ -307,13 +309,14 @@ export default function YoutubeBg({
           playsinline: 1,
           rel: 0,
           loop: 0,
-          cc_load_policy: 0,
+          ...ALTYAZISIZ_PLAYER_VARS,
           start: Math.max(0, Math.floor(optsRef.current.start || 0)),
           origin: window.location.origin,
         },
         events: {
           onReady: (ev: any) => {
             const p = ev.target;
+            altyaziKapat(p);
             applyQuality(p);
             reportDuration(p);
             if (!playbackActiveRef.current) {
@@ -332,6 +335,7 @@ export default function YoutubeBg({
             const p = ev.target;
             const S = window.YT.PlayerState;
             if (ev.data === S.PLAYING) {
+              altyaziKapat(p);
               applyQuality(p);
               syncAudio(p);
               reportDuration(p);

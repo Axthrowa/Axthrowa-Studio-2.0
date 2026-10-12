@@ -15,7 +15,7 @@ import { BASLANGIC, kontrolUygula, KontrolDurumu, SonUyari, SonUyarilar, uyariKi
 
 interface ClientConnection {
   ws: WebSocket;
-  type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'all';
+  type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all';
 }
 
 export class WebSocketHub {
@@ -118,6 +118,8 @@ export class WebSocketHub {
     this.setupEventForwarding();
     // Ses panosu: oynatma/durum iletileri pano katmanına ve panele (döngüsel içe aktarma olmasın diye geç yüklenir)
     void import('../modules/pano/pano.js').then((m) => m.sesPanosu.yayinciBagla((p) => this.broadcastTo(['pano', 'dashboard'], p)));
+    // Sesli komutlar: sonuç/ayar/model iletileri panele ve dinleyici sayfasına
+    void import('../modules/sesli/sesli.js').then((m) => m.sesliKomutlar.yayinciBagla((p) => this.broadcastTo(['sesli', 'dashboard'], p)));
     console.log('[StreamAxT] WebSocket Hub active on /ws');
   }
 
@@ -644,7 +646,7 @@ export class WebSocketHub {
     }
   }
 
-  broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'all'>, payload: any) {
+  broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all'>, payload: any) {
     // Yayınlanan her uyarı sunucu içi dinleyicilere de bildirilir (Hype Treni
     // eskiden tarayıcıda tam olarak bu mesajı dinliyordu; anlam korunur).
     if (payload?.type === 'alert' && payload.alert && !payload.replay) {

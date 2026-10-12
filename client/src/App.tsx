@@ -21,7 +21,8 @@ import {
   HelpCircle,
   Bell,
   BarChart3,
-  Trophy
+  Trophy,
+  Mic
 } from 'lucide-react';
 
 // Pages
@@ -78,6 +79,8 @@ import Interaction from './pages/Interaction.js';
 import Integrations from './pages/Integrations.js';
 import SoundBoard from './pages/SoundBoard.js';
 import SoundBoardWidget from './widgets/SoundBoardWidget.js';
+import SesliDinleyici from './pages/SesliDinleyici.js';
+import VoiceCommands from './pages/VoiceCommands.js';
 import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
@@ -111,6 +114,7 @@ export function App() {
   if (path === '/widgets/jumpscare') return <JumpScareWidget />;
   if (path === '/widgets/king') return <KingWidget />;
   if (path === '/widgets/pano') return <SoundBoardWidget />;
+  if (path === '/sesli-dinleyici') return <SesliDinleyici />;
   if (path === '/widgets/trivia' || path === '/trivia' || path === '/trivia-overlay') return <TriviaWidget />;
   if (path === '/widgets/viewer-counter') return <ViewerCounterWidget />;
   if (path === '/widgets/activity-feed') return <ActivityFeedWidget />;
@@ -182,6 +186,7 @@ export function App() {
     { id: 'polls', label: 'Anketler', icon: BarChart3 },
     { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk' },
     { id: 'pano', label: 'Ses / Video Panosu', icon: Volume2, badge: '!ses' },
+    { id: 'sesli', label: 'Sesli Komutlar', icon: Mic, badge: 'Yeni' },
     { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music },
     { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins },
     { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun' },
@@ -219,6 +224,7 @@ export function App() {
       case 'alerts': return <AlertsStudio />;
       case 'polls': return <PollsStudio />;
       case 'pano': return <SoundBoard />;
+      case 'sesli': return <VoiceCommands />;
       case 'songrequest': return <SongRequest />;
       case 'economy': return <Economy />;
       case 'games': return <MiniGames />;

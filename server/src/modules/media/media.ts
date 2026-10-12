@@ -17,7 +17,7 @@ import crypto from 'node:crypto';
 import { db } from '../../db/index.js';
 
 export * from './validate.js';
-import { IZINLI, imzadanTur, guvenliAd, MAKS_BOYUT, MAKS_TOPLAM, type MedyaOgesi, type MedyaTuru } from './validate.js';
+import { IZINLI, imzadanTur, guvenliAd, MAKS_BOYUT, MAKS_VIDEO, MAKS_TOPLAM, type MedyaOgesi, type MedyaTuru } from './validate.js';
 
 const KOK = path.resolve(process.cwd(), 'data', 'media');
 
@@ -82,8 +82,9 @@ class MedyaKutuphanesi {
     }
 
     if (!bayt.length) return { ok: false, hata: 'Dosya boş.' };
-    if (bayt.length > MAKS_BOYUT) {
-      return { ok: false, hata: `Dosya çok büyük (${Math.round(bayt.length / 1024 / 1024)} MB). Üst sınır ${MAKS_BOYUT / 1024 / 1024} MB.` };
+    // Tür içerikten belirlenmeden önce yalnız en geniş sınır (video); türe özgü sınır aşağıda
+    if (bayt.length > MAKS_VIDEO) {
+      return { ok: false, hata: `Dosya çok büyük (${Math.round(bayt.length / 1024 / 1024)} MB). Üst sınır video için ${MAKS_VIDEO / 1024 / 1024} MB.` };
     }
     if (this.toplamBoyut() + bayt.length > MAKS_TOPLAM) {
       return { ok: false, hata: 'Medya kütüphanesi dolu. Kullanılmayan dosyaları silin.' };
@@ -93,6 +94,9 @@ class MedyaKutuphanesi {
     const mime = imzadanTur(bayt);
     if (!mime || !IZINLI[mime]) {
       return { ok: false, hata: 'Desteklenmeyen dosya türü. PNG, JPG, GIF, WEBP, MP3, WAV, OGG, MP4 veya WEBM yükleyin.' };
+    }
+    if (IZINLI[mime].tur !== 'video' && bayt.length > MAKS_BOYUT) {
+      return { ok: false, hata: `Dosya çok büyük (${Math.round(bayt.length / 1024 / 1024)} MB). Üst sınır ${MAKS_BOYUT / 1024 / 1024} MB (video ${MAKS_VIDEO / 1024 / 1024} MB).` };
     }
 
     klasoruHazirla();

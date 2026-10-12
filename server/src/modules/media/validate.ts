@@ -24,6 +24,9 @@ export interface MedyaOgesi {
 /** Tek dosya üst sınırı (BotRix ücretsiz planla aynı). */
 export const MAKS_BOYUT = 5 * 1024 * 1024;
 
+/** Video üst sınırı (ses/video panosu: yayıncının kendi kısa videoları) */
+export const MAKS_VIDEO = 30 * 1024 * 1024;
+
 /** Kütüphane toplam üst sınırı — disk dolmasın. */
 export const MAKS_TOPLAM = 500 * 1024 * 1024;
 

@@ -190,3 +190,17 @@ Ya da `BACKUP_MANIFEST §10`'daki göç öncesi veritabanı yedeği kullanılır
    içerir; yeniden paketlenmeden dağıtılmamalı.
 4. `$(jsonset)` / `$(jsonunset)` yalnız `local`, `uservar` ve `globalvar` kapsamlarında çalışır; sonuç 8000 karakteri
    aşarsa yazılmaz ve `(json çok büyük)` döner; bozuk JSON'a yazılmaz (`(json invalid)`).
+
+## 10. SES / VİDEO PANOSU (2026-10-05)
+
+Blerp'in herkese açık sayfasındaki davranışlardan esinlenen bağımsız uygulama (kod, ad, logo ya da görsel alınmadı).
+Yayıncı kendi ses/videosunu medya kütüphanesine yükler (ses 5 MB, video 30 MB); izleyici `!ses <ad>` ile bot puanı
+harcayarak oynatır, `!sesler` listeler, moderatör `!sesgec` ile atlar. Katman: `/widgets/pano` (tarayıcı kaynağı).
+
+1. **Platform kanal puanı ödülleri ve Bits bağlı değil.** Kick ödül olayı yalnız webhook ile gelir (herkese açık adres
+   gerekir; bot Pusher kullanıyor), Twitch IRC ödül kimliğini belgelemiyor (EventSub gerekir). Ödeme yalnız bot puanı.
+2. Canlı sohbetle denenmedi (gerçek sohbet tetiklenmedi): sohbet yolu birim testleriyle, panel → katman yolu yalıtılmış
+   sunucu + başsız Chrome ile (sentetik 1 sn 440 Hz WAV) doğrulandı.
+3. Sıra bellekte tutulur; sunucu yeniden başlarsa sıradaki istekler düşer (geçmiş kaydı kalır, puan iadesi yapılmaz).
+4. Katman açık değilse istek süre sınırında (+3 sn) kendiliğinden biter; ses hiçbir yerde çalmaz.
+5. Giriş sesi kullanıcı adına göre eşleşir (platformdan bağımsız); aynı ad farklı platformda da tetikler.

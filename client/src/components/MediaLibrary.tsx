@@ -149,6 +149,7 @@ export function MediaLibrary({ onSec }: { onSec?: (oge: MedyaOgesi) => void }) {
           <span className="text-[11px] text-gray-500">
             PNG · JPG · GIF · WEBP · MP3 · WAV · OGG · MP4 · WEBM — dosya başına en fazla{' '}
             {boyutMetni(d.maksBoyut || 0)}
+            {d.maksVideo ? ` (video ${boyutMetni(d.maksVideo)})` : ''}
           </span>
         </div>
 

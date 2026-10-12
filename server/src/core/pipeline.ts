@@ -83,6 +83,9 @@ export class MessagePipeline {
     // Record Loyalty (Messages count, watch time activity, loyalty tier, points)
     economy.recordMessage(message);
 
+    // Ses panosu giriş sesi (izleyicinin günün ilk mesajı); hata sohbet akışını bozmaz
+    void import('../modules/pano/pano.js').then((m) => m.sesPanosu.girisKontrol(message)).catch(() => {});
+
     // Seviye XP'si — puandan AYRI tutulur: mağazadan alışveriş yapan izleyici
     // seviyesini kaybetmesin. Bekleme süresi spam ile seviye kasmayı engeller.
     try {

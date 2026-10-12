@@ -15,7 +15,7 @@ import { BASLANGIC, kontrolUygula, KontrolDurumu, SonUyari, SonUyarilar, uyariKi
 
 interface ClientConnection {
   ws: WebSocket;
-  type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all';
+  type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'all';
 }
 
 export class WebSocketHub {
@@ -116,10 +116,17 @@ export class WebSocketHub {
     });
 
     this.setupEventForwarding();
+    // Ses panosu: oynatma/durum iletileri pano katmanına ve panele (döngüsel içe aktarma olmasın diye geç yüklenir)
+    void import('../modules/pano/pano.js').then((m) => m.sesPanosu.yayinciBagla((p) => this.broadcastTo(['pano', 'dashboard'], p)));
     console.log('[StreamAxT] WebSocket Hub active on /ws');
   }
 
   private handleClientMessage(msg: any) {
+    if (msg.action === 'pano_bitti') {
+      // Katman oynatmayı bitirdi (aynı istek için birden çok katman bildirebilir; hizmet yinelemeyi yok sayar)
+      void import('../modules/pano/pano.js').then((m) => m.sesPanosu.bitti(String(msg.id || '')));
+      return;
+    }
     if (msg.action === 'test_alert') {
       this.triggerTestAlert(msg.eventType);
     } else if (msg.action === 'send_chat') {
@@ -637,7 +644,7 @@ export class WebSocketHub {
     }
   }
 
-  broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all'>, payload: any) {
+  broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'all'>, payload: any) {
     // Yayınlanan her uyarı sunucu içi dinleyicilere de bildirilir (Hype Treni
     // eskiden tarayıcıda tam olarak bu mesajı dinliyordu; anlam korunur).
     if (payload?.type === 'alert' && payload.alert && !payload.replay) {

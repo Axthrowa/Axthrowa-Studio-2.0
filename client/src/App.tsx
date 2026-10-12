@@ -76,6 +76,8 @@ import RankingsWidget from './widgets/RankingsWidget.js';
 import BotAdvanced from './pages/BotAdvanced.js';
 import Interaction from './pages/Interaction.js';
 import Integrations from './pages/Integrations.js';
+import SoundBoard from './pages/SoundBoard.js';
+import SoundBoardWidget from './widgets/SoundBoardWidget.js';
 import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
@@ -108,6 +110,7 @@ export function App() {
   if (path === '/widgets/lyrics') return <LyricsWidget />;
   if (path === '/widgets/jumpscare') return <JumpScareWidget />;
   if (path === '/widgets/king') return <KingWidget />;
+  if (path === '/widgets/pano') return <SoundBoardWidget />;
   if (path === '/widgets/trivia' || path === '/trivia' || path === '/trivia-overlay') return <TriviaWidget />;
   if (path === '/widgets/viewer-counter') return <ViewerCounterWidget />;
   if (path === '/widgets/activity-feed') return <ActivityFeedWidget />;
@@ -178,6 +181,7 @@ export function App() {
     { id: 'alerts', label: 'Uyarılar (Alert Box)', icon: Bell, highlight: true },
     { id: 'polls', label: 'Anketler', icon: BarChart3 },
     { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk' },
+    { id: 'pano', label: 'Ses / Video Panosu', icon: Volume2, badge: '!ses' },
     { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music },
     { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins },
     { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun' },
@@ -214,6 +218,7 @@ export function App() {
       case 'rankings': return <Rankings />;
       case 'alerts': return <AlertsStudio />;
       case 'polls': return <PollsStudio />;
+      case 'pano': return <SoundBoard />;
       case 'songrequest': return <SongRequest />;
       case 'economy': return <Economy />;
       case 'games': return <MiniGames />;

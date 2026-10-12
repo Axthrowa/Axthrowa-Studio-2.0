@@ -9,7 +9,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { wsHub } from '../../ws/server.js';
-import { medya, MAKS_BOYUT, MAKS_TOPLAM } from '../../modules/media/media.js';
+import { medya, MAKS_BOYUT, MAKS_VIDEO, MAKS_TOPLAM } from '../../modules/media/media.js';
 import { varyantlar } from '../../modules/alerts/variants.js';
 import { uyariYedegi } from '../../modules/alerts/backup.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
@@ -132,6 +132,7 @@ router.get('/media', (req: Request, res: Response) => {
     ogeler: medya.listele(tur as any),
     toplamBoyut: medya.toplamBoyut(),
     maksBoyut: MAKS_BOYUT,
+    maksVideo: MAKS_VIDEO,
     maksToplam: MAKS_TOPLAM
   });
 });

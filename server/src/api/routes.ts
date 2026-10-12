@@ -25,6 +25,7 @@ import sohbet from './rotalar/sohbet.js';
 import widgetlar from './rotalar/widgetlar.js';
 import oyunlar from './rotalar/oyunlar.js';
 import bagislar from './rotalar/bagislar.js';
+import pano from './rotalar/pano.js';
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use(sohbet);
 router.use(widgetlar);
 router.use(oyunlar);
 router.use(bagislar);
+router.use(pano);
 
 export default router;

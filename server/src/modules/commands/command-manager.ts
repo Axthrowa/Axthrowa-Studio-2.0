@@ -243,6 +243,23 @@ export class CommandManager {
       case 'redeem':
         return economy.handleRedeemCommand(message, args);
 
+      // Ses/video panosu (Blerp tarzı): !ses <ad>, !sesler, !sesgec (mod: çalanı atla)
+      case 'ses':
+      case 'blerp': {
+        const { sesPanosu } = await import('../pano/pano.js');
+        return sesPanosu.sohbetIstegi(message, args.join(' '));
+      }
+      case 'sesler': {
+        const { sesPanosu } = await import('../pano/pano.js');
+        return sesPanosu.listeMetni();
+      }
+      case 'sesgec': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const { sesPanosu } = await import('../pano/pano.js');
+        sesPanosu.kontrol('atla');
+        return '⏭️ Ses atlandı.';
+      }
+
       case 'liderlik':
       case 'top':
       case 'siralamasi':

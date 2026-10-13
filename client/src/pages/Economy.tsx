@@ -1,25 +1,17 @@
 import { useState, useEffect } from 'react';
-import { 
-  Coins, 
-  Trophy, 
-  Gamepad2, 
-  Sparkles, 
-  TrendingUp, 
-  Search, 
-  Clock, 
-  MessageSquare, 
-  Gift, 
-  Award, 
-  ShoppingBag, 
-  Sliders, 
-  Plus, 
+import {
+  Coins,
+  Trophy,
+  Sparkles,
+  Search,
+  Clock,
+  ShoppingBag,
+  Sliders,
+  Plus,
   CheckCircle2,
   Check,
   RotateCcw,
-  Volume2,
-  Bell,
-  Radio,
-  UserCheck
+  Bell
 } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 

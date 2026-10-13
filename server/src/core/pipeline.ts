@@ -1,14 +1,19 @@
 import { eventBus, ChatMessagePayload } from './event-bus.js';
 import { autoMod } from '../modules/automod/automod.js';
 import { commandManager } from '../modules/commands/command-manager.js';
-import { db } from '../db/index.js';
 import { ttsEngine } from '../modules/tts/tts.js';
 import { gamesEngine } from '../modules/games/games.js';
 import { triviaEngine } from '../modules/games/trivia-engine.js';
 import { economy } from '../modules/economy/economy.js';
+import { seviyeler } from '../modules/levels/levels.js';
+import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
+import { puanDususu } from '../modules/engagement/point-drops.js';
 import { settingsCache } from './settings-cache.js';
-import { shieldModeService } from '../modules/moderation/shield-mode.js';
+import { karaListeyiUygula } from '../modules/moderation/blacklist.js';
+import { kalkaniUygula } from '../modules/moderation/shield-enforce.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
+import { seyrekUyar } from './logger.js';
+import { aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
@@ -46,45 +51,72 @@ export class MessagePipeline {
       return;
     }
 
+    // Çapraz aktarım yankısı: botun başka platforma yazdığı metin o platformdan
+    // geri geldi. Yeniden aktarılırsa platformlar arasında döngü oluşur; komut,
+    // puan ya da seviye olarak da işlenmemeli.
+    const aktarimAcik = settingsCache.getBoolean('cross_chat_enabled', false);
+    const aktarimBicimi = settingsCache.get('cross_chat_format', '[$platform] $user: $message');
+    if (aktarimAcik && aktarimYankisiMi(aktarimBicimi, rawText)) {
+      return;
+    }
+
     // Ignore known external chat-bot accounts so their output is not reprocessed
     const u = message.user.username.toLowerCase();
     if (u === 'botrix' || u === 'nightbot' || u === 'streamlabs') {
       return;
     }
 
-    // Check Kick Shared Global Ban List
-    if (shieldModeService.isUserBanned(message.user.username)) {
-      console.warn(`[ShieldMode] Blocked message from banned user: @${message.user.username}`);
-      return;
-    }
+    // Ortak kara liste: bot yok sayar; seçilen eylem (sil / kalıcı ban)
+    // platformda uygulanır. OBS sohbet katmanından ws/server.ts gizler.
+    if (karaListeyiUygula(message)) return;
 
-    // Shield Mode Active Check
-    const shield = shieldModeService.getSettings();
-    if (shield.isActive) {
-      if (shield.subOnly && !message.user.isSub && !message.user.isBroadcaster && !message.user.isMod) {
-        return; // Silent suppress in sub-only shield mode
-      }
-      if (shield.blockLinks && /(https?:\/\/|www\.)\S+/i.test(rawText)) {
-        return; // Block links strictly in shield mode
-      }
-    }
+    // Kalkan modu: yalnız abone / link / büyük harf / emoji seli kuralları.
+    // Bot yok sayar; OBS sohbetinden ws/server.ts gizler; seçiliyse platformda silinir.
+    if (kalkaniUygula(message)) return;
 
     // Notify Chat Rescue of active conversation
     chatRescueService.recordChatMessage();
 
+    // Ilk kez yazan izleyiciyi karsila (BotRix'te 'Karsilama').
+    sohbetUyarilari.sohbetMesaji(message.user.username, message);
+
     // Record Loyalty (Messages count, watch time activity, loyalty tier, points)
     economy.recordMessage(message);
 
+    // Ses panosu giriş sesi (izleyicinin günün ilk mesajı); hata sohbet akışını bozmaz
+    void import('../modules/pano/pano.js').then((m) => m.sesPanosu.girisKontrol(message)).catch(() => {});
 
-    // 1. AutoMod Check
+    // Seviye XP'si — puandan AYRI tutulur: mağazadan alışveriş yapan izleyici
+    // seviyesini kaybetmesin. Bekleme süresi spam ile seviye kasmayı engeller.
+    try {
+      const sv = seviyeler.mesajXp(message.user.username);
+      if (sv?.atladi) {
+        eventBus.emitBotMessage({
+          platform: message.platform,
+          channel: message.channel,
+          message: `⭐ @${message.user.displayName} seviye ${sv.seviye} oldu!`
+        });
+      }
+    } catch (e) {
+      /* seviye sistemi kritik değil — mesaj işlemeye devam */
+      seyrekUyar('seviye:mesajXp', '[Seviye] Mesaj XP işlenemedi', e);
+    }
+
+
+    // 1. AutoMod
     const violation = autoMod.checkMessage(message);
     if (violation) {
-      // Send warning to chat
-      eventBus.emitBotMessage({
-        platform: message.platform,
-        channel: message.channel,
-        message: `🛡️ AutoMod: @${message.user.displayName}, ${violation.reason}`
-      });
+      // Eskiden burada SADECE sohbete uyari yaziliyordu; platformda hicbir
+      // eylem yapilmiyordu. Artik kural basina secilen eylem uygulanir
+      // (uyar / zaman asimi / mesaj sil), bypass rolleri gozetilir ve
+      // platform desteklemiyorsa uyariya dusulur.
+      await autoMod.ihlaliUygula(message, violation);
+      return;
+    }
+
+    // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin
+    // komut isleyicisinden ONCE bakilir.
+    if (puanDususu.katil(message.user.username, message.user.displayName, rawText)) {
       return;
     }
 
@@ -129,19 +161,27 @@ export class MessagePipeline {
     // 3. TTS Trigger (e.g. if !tts or normal chat if configured)
     if (message.message.startsWith('!tts ')) {
       const speechText = message.message.replace('!tts ', '').trim();
-      ttsEngine.enqueue(speechText, message.user.displayName);
+      // Roller de gonderilir: minimum rol ayari uygulanabilsin.
+      ttsEngine.enqueue(speechText, message.user.displayName, undefined, undefined, {
+        isBroadcaster: message.user.isBroadcaster,
+        isMod: message.user.isMod,
+        isVip: message.user.isVip,
+        isSub: message.user.isSub
+      });
     }
 
     // 4. Cross-Chat Relay (Instant in-memory lookup)
-    const isCrossChatEnabled = settingsCache.getBoolean('cross_chat_enabled', true);
-
-    if (isCrossChatEnabled) {
-      const format = settingsCache.get('cross_chat_format', '[$platform] $user: $message');
-
-      const relayText = format
-        .replace('$platform', message.platform.toUpperCase())
-        .replace('$user', message.user.displayName || message.user.username)
-        .replace('$message', message.message);
+    // Botun kendi mesajı aktarılmaz (Kick yankısı isSelf ile işaretli).
+    if (aktarimAcik && !message.user.isSelf) {
+      const relayText = aktarimMetni(aktarimBicimi, {
+        platform: message.platform,
+        user: message.user.displayName || message.user.username,
+        message: message.message
+      });
+      // Biçim yalnız `$message` ise ayırt edici iz yoktur; birebir yankıyı
+      // botun kendi çıktıları gibi ele.
+      this.recentBotOutputs.add(relayText);
+      setTimeout(() => this.recentBotOutputs.delete(relayText), 15000);
 
       // Emit relay message to all platforms except the origin
       eventBus.emit('cross_chat_relay', {

@@ -11,6 +11,8 @@ import { db } from '../../db/index.js';
 import { TTSSettings } from '../../db/schema.js';
 import { GoogleGenAI } from '@google/genai';
 import crypto from 'crypto';
+import { seyrekUyar } from '../../core/logger.js';
+import { kufurleriMaskele } from './filters.js';
 
 export interface TTSQueueItem {
   id: string;
@@ -120,11 +122,6 @@ export const ELEVENLABS_VOICES: VoiceOption[] = [
   { id: 'MF3mGyEYCl7XYWbV9V6O', label: 'Elli (Kadın · Genç)', language: 'en-US', gender: 'female', engine: 'elevenlabs' }
 ];
 
-const TURKISH_PROFANITIES = [
-  'amk', 'aq', 'sik', 'sikerim', 'yarrak', 'orospu', 'piç', 'pic', 'göt', 'oç',
-  'kahpe', 'puşt', 'ibne', 'amcık', 'dalyarak', 'amına', 'ananı', 'siktir', 'pezevenk'
-];
-
 export const DEFAULT_TTS_SETTINGS: TTSSettings = {
   primaryEngine: 'edge',
   fallbackChain: ['edge', 'gemini', 'elevenlabs', 'google', 'webspeech'],
@@ -202,7 +199,9 @@ export class MultiEngineTTS extends EventEmitter {
         // ayar her okunuşta "Puck"a dönüyordu; seçim hiç tutmuyordu.
         return { ...DEFAULT_TTS_SETTINGS, ...JSON.parse(row.value) } as TTSSettings;
       }
-    } catch {}
+    } catch (e) {
+      seyrekUyar('ayar:tts', '[TTS] Ayar okunamadı — varsayılan kullanılıyor', e);
+    }
     return { ...DEFAULT_TTS_SETTINGS };
   }
 
@@ -288,10 +287,7 @@ export class MultiEngineTTS extends EventEmitter {
     }
     text = text.replace(/(.)\1{4,}/g, '$1$1');
     if (settings.profanityFilter) {
-      for (const badWord of TURKISH_PROFANITIES) {
-        const regex = new RegExp(`\\b${badWord}\\b`, 'gi');
-        text = text.replace(regex, '***');
-      }
+      text = kufurleriMaskele(text);
     }
     const maxLen = settings.maxLength || 300;
     return text.slice(0, maxLen).trim();

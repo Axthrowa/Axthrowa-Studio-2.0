@@ -1,6 +1,7 @@
 import { BasePlatform, PlatformStatus } from './base.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
+import { canliDurum } from '../core/live-status.js';
 
 export class TikTokPlatform extends BasePlatform {
   readonly name = 'tiktok' as const;
@@ -28,6 +29,17 @@ export class TikTokPlatform extends BasePlatform {
       const state = await this.tiktokLiveConnection.connect();
       this.connected = true;
       console.log(`[TikTok] Connected to room ID: ${state.roomId} (@${username})`);
+
+      // TikTok kütüphanesi YALNIZ canlı odaya bağlanabiliyor: bağlantı =
+      // yayın açık. Başlangıç zamanı oda bilgisinde varsa o, yoksa bağlanma
+      // anı (tahmini) kullanılır.
+      const olusturma = Number(state?.roomInfo?.create_time) || 0;
+      canliDurum.bildir('tiktok', {
+        canli: true,
+        baslangic: olusturma > 0 ? olusturma * 1000 : Date.now(),
+        yayinId: String(state?.roomId || ''),
+        kanal: username
+      });
 
       // 1. Chat messages
       this.tiktokLiveConnection.on('chat', (data: any) => {
@@ -98,6 +110,7 @@ export class TikTokPlatform extends BasePlatform {
       this.tiktokLiveConnection.on('streamEnd', () => {
         console.log('[TikTok] Stream ended by broadcaster');
         this.connected = false;
+        canliDurum.bildir('tiktok', { canli: false, kanal: username });
       });
 
       return true;
@@ -112,10 +125,14 @@ export class TikTokPlatform extends BasePlatform {
     if (this.tiktokLiveConnection) {
       try {
         this.tiktokLiveConnection.disconnect();
-      } catch {}
+      } catch {
+        /* zaten kopmus */
+      }
       this.tiktokLiveConnection = null;
     }
     this.connected = false;
+    // Bağlantı bilerek kesildi: yayın durumu artık bilinmiyor
+    canliDurum.unut('tiktok');
   }
 
   async sendMessage(channel: string, message: string): Promise<boolean> {

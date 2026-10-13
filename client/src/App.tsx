@@ -1,18 +1,17 @@
-import { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Link2, 
-  Terminal, 
-  Clock, 
-  ShieldCheck, 
-  Music, 
-  Coins, 
-  Gift, 
-  MessageSquare, 
-  Layers, 
-  Sparkles, 
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  LayoutDashboard,
+  Link2,
+  Terminal,
+  Clock,
+  ShieldCheck,
+  Music,
+  Coins,
+  Gift,
+  MessageSquare,
+  Layers,
+  Sparkles,
   Settings as SettingsIcon,
-  Radio,
   ExternalLink,
   ChevronRight,
   Gamepad2,
@@ -74,8 +73,16 @@ import ViewerCounterWidget from './widgets/ViewerCounterWidget.js';
 import ActivityFeedWidget from './widgets/ActivityFeedWidget.js';
 import GiveawayWidget from './widgets/GiveawayWidget.js';
 import RankingsWidget from './widgets/RankingsWidget.js';
+import BotAdvanced from './pages/BotAdvanced.js';
+import Interaction from './pages/Interaction.js';
+import Integrations from './pages/Integrations.js';
+import SoundBoard from './pages/SoundBoard.js';
+import SoundBoardWidget from './widgets/SoundBoardWidget.js';
+import { ToastSaglayici, useOnay } from './ui/index.js';
+import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
 import { openLink } from './lib/openLink.js';
+import { sunucuPortu } from './lib/widget-style.js';
 
 export function App() {
   const path = window.location.pathname;
@@ -103,6 +110,7 @@ export function App() {
   if (path === '/widgets/lyrics') return <LyricsWidget />;
   if (path === '/widgets/jumpscare') return <JumpScareWidget />;
   if (path === '/widgets/king') return <KingWidget />;
+  if (path === '/widgets/pano') return <SoundBoardWidget />;
   if (path === '/widgets/trivia' || path === '/trivia' || path === '/trivia-overlay') return <TriviaWidget />;
   if (path === '/widgets/viewer-counter') return <ViewerCounterWidget />;
   if (path === '/widgets/activity-feed') return <ActivityFeedWidget />;
@@ -110,29 +118,77 @@ export function App() {
 
   // Otherwise, render full StreamAxT Dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
+  // Tarayıcı geri/ileri tuşu (B7): sekme adresteki #sekme ile eşlenir.
+  // NOT: yukarıdaki useState satırı BİLEREK değiştirilmedi — panel kabuğunun
+  // hazırlama betiği (streamaxt-hazirla.mjs) o satırı birebir arayıp gömme
+  // yamasını uyguluyor. Bu etkiler yama uygulansa da uygulanmasa da çalışır.
+  // Kaydedilmemiş form varken sekme değişimi önce sorar (tek sayfalık
+  // uygulamada `beforeunload` sekme geçişinde tetiklenmez).
+  const { sor: onayIste, eleman: onayDiyalogu } = useOnay();
+  const aktifSekme = useRef(activeTab);
+  aktifSekme.current = activeTab;
+  const sekmeyeGec = useCallback((hedef: string) => {
+    if (hedef === aktifSekme.current) return;
+    if (!kaydedilmemisVar()) {
+      setActiveTab(hedef);
+      return;
+    }
+    onayIste('Kaydedilmemiş değişiklikler', AYRILMA_SORUSU, () => {
+      kirlileriBirak();
+      setActiveTab(hedef);
+    });
+  }, [onayIste]);
+  const sekmeyeGecRef = useRef(sekmeyeGec);
+  sekmeyeGecRef.current = sekmeyeGec;
+  useEffect(() => {
+    const ilk = window.location.hash.replace('#', '');
+    if (ilk) setActiveTab(ilk);
+    const geri = () => {
+      const hedef = window.location.hash.replace('#', '') || 'dashboard';
+      if (hedef === aktifSekme.current) return;
+      if (kaydedilmemisVar()) {
+        // Adres onay gelene kadar mevcut sekmede kalsın (gömülü kabuğun
+        // hashchange dinleyicisi de bu adresi okur ve sekmeyi değiştirmez)
+        window.history.replaceState(null, '', `#${aktifSekme.current}`);
+        sekmeyeGecRef.current(hedef);
+        return;
+      }
+      setActiveTab(hedef);
+    };
+    window.addEventListener('popstate', geri);
+    return () => window.removeEventListener('popstate', geri);
+  }, []);
+  useEffect(() => {
+    const hedef = `#${activeTab}`;
+    if (window.location.hash !== hedef) window.history.pushState(null, '', hedef);
+  }, [activeTab]);
   const [focusPlatform, setFocusPlatform] = useState<string | null>(null);
 
   const navItems = [
     { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
-    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '5 Platform' },
+    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '6 Platform' },
     { id: 'multichat', label: 'Canlı Multi-Chat', icon: MessageSquare, highlight: true },
     { id: 'trivia', label: 'Bil Bakalım', icon: HelpCircle, badge: 'Canlı 🧠', highlight: true },
-    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, badge: 'Fail-Safe' },
+    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, badge: 'Yedekli' },
     { id: 'donations', label: 'BynoGame & Bağış', icon: DollarSign, badge: 'JumpScare' },
-    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, badge: 'Shield' },
-    { id: 'commands', label: 'Komutlar', icon: Terminal, badge: 'My/Default' },
+    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, badge: 'Kalkan' },
+    { id: 'commands', label: 'Komutlar', icon: Terminal, badge: 'Anahtar kelime' },
     { id: 'timers', label: 'Zamanlayıcılar', icon: Clock },
-    { id: 'automod', label: 'Bot Moderation', icon: ShieldCheck },
-    { id: 'extras', label: 'Extras', icon: Sparkles, badge: 'Clip/Level' },
-    { id: 'rankings', label: 'Rankings', icon: Trophy },
-    { id: 'alerts', label: 'Alert Box', icon: Bell, highlight: true },
-    { id: 'polls', label: 'Polls', icon: BarChart3 },
+    { id: 'automod', label: 'Bot Moderasyonu', icon: ShieldCheck },
+    { id: 'botadvanced', label: 'Gelişmiş Bot', icon: Sparkles, badge: 'Yeni' },
+    { id: 'extras', label: 'Ekstralar', icon: Sparkles, badge: 'Klip/Seviye' },
+    { id: 'rankings', label: 'Sıralamalar', icon: Trophy },
+    { id: 'alerts', label: 'Uyarılar (Alert Box)', icon: Bell, highlight: true },
+    { id: 'polls', label: 'Anketler', icon: BarChart3 },
+    { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk' },
+    { id: 'pano', label: 'Ses / Video Panosu', icon: Volume2, badge: '!ses' },
     { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music },
     { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins },
     { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun' },
     { id: 'giveaways', label: 'Çekilişler', icon: Gift },
     { id: 'overlays', label: 'OBS Overlay Stüdyo', icon: Layers },
     { id: 'ai', label: 'Gemini AI Asistan', icon: Sparkles },
+    { id: 'integrations', label: 'Entegrasyonlar', icon: Link2, badge: 'Discord' },
     { id: 'settings', label: 'Ayarlar', icon: SettingsIcon },
   ];
 
@@ -142,7 +198,7 @@ export function App() {
         <Dashboard
           onConnectPlatform={(platform) => {
             setFocusPlatform(platform);
-            setActiveTab('platforms');
+            sekmeyeGec('platforms');
           }}
         />
       );
@@ -155,10 +211,14 @@ export function App() {
       case 'commands': return <Commands />;
       case 'timers': return <Timers />;
       case 'automod': return <AutoMod />;
+      case 'botadvanced': return <BotAdvanced />;
+      case 'interaction': return <Interaction />;
+      case 'integrations': return <Integrations />;
       case 'extras': return <Extras />;
       case 'rankings': return <Rankings />;
       case 'alerts': return <AlertsStudio />;
       case 'polls': return <PollsStudio />;
+      case 'pano': return <SoundBoard />;
       case 'songrequest': return <SongRequest />;
       case 'economy': return <Economy />;
       case 'games': return <MiniGames />;
@@ -172,6 +232,9 @@ export function App() {
 
 
   return (
+    // Toast bildirimleri tum panelde kullanilabilsin (ui/index.tsx).
+    <ToastSaglayici>
+    {onayDiyalogu}
     <div className="flex min-h-screen bg-[#090b10] text-gray-200">
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-[#0d1017]/90 backdrop-blur-xl flex flex-col justify-between fixed inset-y-0 left-0 z-30">
@@ -200,7 +263,7 @@ export function App() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => sekmeyeGec(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
@@ -234,7 +297,7 @@ export function App() {
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Sistem Aktif
             </span>
-            <span className="font-mono text-purple-400">Port 3001</span>
+            <span className="font-mono text-purple-400">Port {sunucuPortu()}</span>
           </div>
           <div className="text-[10px] text-gray-500 text-center font-medium border-t border-white/5 pt-1.5">
             {BRAND.name} • Developed by <span className="text-purple-400 font-bold">{BRAND.author}</span>
@@ -272,6 +335,7 @@ export function App() {
         </main>
       </div>
     </div>
+    </ToastSaglayici>
   );
 }
 

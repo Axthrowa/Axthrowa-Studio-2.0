@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage, PlatformStatus } from '../types.js';
+import { wsAdresi } from '../lib/widget-style.js';
 
 export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all' = 'all') {
   const [connected, setConnected] = useState(false);
@@ -9,14 +10,14 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
   const [winnerEvent, setWinnerEvent] = useState<any | null>(null);
   const [ttsItem, setTtsItem] = useState<any | null>(null);
   const [lastMessage, setLastMessage] = useState<any | null>(null);
+  /** Ekip çapında uyarı kuyruğu denetimi: {action, state, alertId?} — her mesaj yeni nesne (aynı eylem tekrar gelse de) */
+  const [alertControl, setAlertControl] = useState<any | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const connect = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const port = (window.location.port === '5173' || window.location.port === '3000') ? '3001' : (window.location.port || '3001');
-    const wsUrl = `${protocol}//${window.location.hostname}:${port}/ws?type=${type}`;
+    const wsUrl = wsAdresi(type);
 
     try {
       const ws = new WebSocket(wsUrl);
@@ -40,6 +41,8 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
             setChatMessages((prev) => [...prev.slice(-150), payload.data]);
           } else if (payload.type === 'alert') {
             setActiveAlert(payload.alert || payload);
+          } else if (payload.type === 'alert_control') {
+            setAlertControl({ ...payload, receivedAt: Date.now() });
           } else if (payload.type === 'giveaway_winner') {
             setWinnerEvent(payload.winner);
           } else if (payload.type === 'tts' || payload.type === 'tts_play') {
@@ -119,6 +122,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
     sendChat,
     clearChat,
     triggerTTS,
-    lastMessage
+    lastMessage,
+    alertControl
   };
 }

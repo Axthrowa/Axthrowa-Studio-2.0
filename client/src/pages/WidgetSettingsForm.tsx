@@ -4,7 +4,9 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
-import { ANIMATIONS, FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
+import { temalar, temayiUygula } from '../lib/themes.js';
 
 const LABELS: Record<string, string> = {
   showFollow: 'Takip göster', showSub: 'Abone göster', showGiftSub: 'Hediye abone göster',
@@ -94,7 +96,15 @@ const LABELS: Record<string, string> = {
   showFollows: 'Takip bölümü', showRaids: 'Raid bölümü', showAmounts: 'Tutarları göster',
   showFooter: 'Alt notu göster', loop: 'Döngü',
   maxQueue: 'Maks. kuyruk', showStatus: 'Durum kartı', showText: 'Okunan metni göster',
-  showQueue: 'Kuyruk sayısı'
+  showQueue: 'Kuyruk sayısı',
+  // --- Uyarı kutusu derinleştirmesi ---
+  exitAnimation: 'Çıkış animasyonu',
+  messageColor: 'Alt metin rengi',
+  messageSize: 'Alt metin boyutu (px)',
+  textOffsetX: 'Metin yatay konumu (px)',
+  textOffsetY: 'Metin dikey konumu (px)', hideUserMessage: 'Kullanıcı mesajını gizle',
+  textFromMs: 'Metin görünsün (ms, başlangıç)', textToMs: 'Metin görünsün (ms, bitiş)',
+  imageMaxHeight: 'Görsel maks. yükseklik (px)'
 };
 
 const SECTIONS: Record<string, string> = {
@@ -169,7 +179,12 @@ const SECTIONS: Record<string, string> = {
   titleFollows: 'Bölümler', titleRaids: 'Bölümler', showSubs: 'Bölümler', showTips: 'Bölümler',
   showFollows: 'Bölümler', showRaids: 'Bölümler', showAmounts: 'Bölümler',
   showFooter: 'Düzen', loop: 'Animasyon',
-  maxQueue: 'Ses', showStatus: 'Düzen', showText: 'Düzen', showQueue: 'Düzen'
+  maxQueue: 'Ses', showStatus: 'Düzen', showText: 'Düzen', showQueue: 'Düzen',
+  exitAnimation: 'Animasyon',
+  messageColor: 'Metin', messageSize: 'Metin',
+  textOffsetX: 'Metin', textOffsetY: 'Metin',
+  hideUserMessage: 'Metin', textFromMs: 'Metin', textToMs: 'Metin',
+  imageMaxHeight: 'Görünüm'
 };
 
 /**
@@ -191,7 +206,10 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
 };
 
 const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
-  animation: ANIMATIONS,
+  // 37 on ayar (lib/animations.ts). Eski 9'luk liste geriye uyum icin
+  // `animKimligi()` ile eslenmeye devam ediyor.
+  animation: ANIM_SECENEKLERI,
+  exitAnimation: ANIM_SECENEKLERI,
   fontFamily: FONTS.map(f => ({ value: f, label: f })),
   usernameColorMode: [
     { value: 'user', label: 'Kullanıcı rengi' },
@@ -224,14 +242,7 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
     { value: 'side-by-side', label: 'Yan yana' },
     { value: 'text-over', label: 'Yazı üstünde' }
   ],
-  textEffect: [
-    { value: 'none', label: 'Yok' },
-    { value: 'shine', label: 'Shine' },
-    { value: 'wiggle', label: 'Wiggle' },
-    { value: 'wave', label: 'Wave' },
-    { value: 'pulse', label: 'Pulse' },
-    { value: 'shake', label: 'Shake' }
-  ]
+  textEffect: METIN_EFEKTLERI
 };
 
 /**
@@ -425,6 +436,35 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
           <option value="all">Tüm sekmeler</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+      </div>
+
+      {/* Tema kutuphanesi — BotRix widget basina 13-28 tema sunuyor, bizde
+          4-5 vardi. Tema, ayar degerlerinin hazir bir kumesidir: secilince
+          ilgili alanlar dolar, kullanici sonra tek tek degistirebilir.
+          Widget'in TANIMADIGI anahtarlar atlanir. */}
+      <div>
+        <div className="text-[10px] font-black uppercase tracking-wider text-cyan-300 border-b border-white/10 pb-1 mb-2">
+          Hazır Temalar ({temalar(ayarId).length})
+        </div>
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-40 overflow-y-auto pr-1">
+          {temalar(ayarId).map(t => (
+            <button
+              key={t.id}
+              type="button"
+              title={t.etiket}
+              onClick={() => setValues(v => temayiUygula(v, t, keys) as Record<string, any>)}
+              className="rounded-lg border border-white/10 hover:border-cyan-400 overflow-hidden text-left transition-colors"
+            >
+              <div
+                className="h-7 flex items-center justify-center"
+                style={{ background: t.onizleme.arka, borderBottom: `2px solid ${t.onizleme.vurgu}` }}
+              >
+                <span className="text-[9px] font-black" style={{ color: t.onizleme.metin }}>Aa</span>
+              </div>
+              <div className="px-1 py-0.5 text-[9px] text-gray-300 truncate">{t.etiket}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {sections.filter(s => openSection === 'all' || openSection === s).map(section => (

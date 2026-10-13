@@ -1,7 +1,16 @@
 import { db } from '../../db/index.js';
-import { ChatMessagePayload } from '../../core/event-bus.js';
+import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { parseVariables } from '../../core/variable-parser.js';
+import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
+import { randomUUID } from 'node:crypto';
 import { economy } from '../economy/economy.js';
+import { getStreamUptime, yayinAcikMi } from '../../core/variable-parser.js';
+import { sayacAl, sayacAyarla, sayacDegistir } from '../../core/variables/store.js';
+import { sayacIfadesi } from '../../core/variables/pure.js';
+import { seviyeler } from '../levels/levels.js';
+import { tahminler } from '../engagement/predictions.js';
+import { kuyruk } from '../engagement/queue.js';
+import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
 import { giveaway } from '../giveaways/giveaways.js';
 import { geminiCoHost } from '../ai/gemini.js';
@@ -10,6 +19,9 @@ import { triviaEngine } from '../games/trivia-engine.js';
 import { kingSystemService } from '../games/king-system.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { extras } from '../extras/extras.js';
+import { canliDurum } from '../../core/live-status.js';
+import { anahtarKomutuSec, erisimAciklamasi, erisimUygunMu } from './command-input.js';
+import { hataMetni, seyrekUyar } from '../../core/logger.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -59,6 +71,8 @@ export class CommandManager {
   private globalCooldowns: Map<string, CooldownEntry> = new Map();
   private commandsCache: Map<string, any> = new Map();
   private aliasesCache: Map<string, any> = new Map();
+  /** "Sohbet anahtar kelimesi" ile etkinleşen komutlar. */
+  private anahtarKomutlar: any[] = [];
   private permits: Map<string, number> = new Map();
   private clipLast = 0;
   private initialized: boolean = false;
@@ -71,10 +85,12 @@ export class CommandManager {
   reload() {
     this.commandsCache.clear();
     this.aliasesCache.clear();
+    this.anahtarKomutlar = [];
     try {
       const rows = db.prepare('SELECT * FROM commands WHERE is_enabled = 1').all() as any[];
       for (const row of rows) {
         this.commandsCache.set(row.name.toLowerCase(), row);
+        if (String(row.trigger_type || 'command') === 'keyword') this.anahtarKomutlar.push(row);
         if (row.aliases) {
           try {
             const aliases: string[] = JSON.parse(row.aliases);
@@ -83,7 +99,9 @@ export class CommandManager {
                 this.aliasesCache.set(alias.trim().toLowerCase(), row);
               }
             }
-          } catch {}
+          } catch (e) {
+            console.warn(`[Komut] !${row.name} takma adları okunamadı (bozuk kayıt):`, hataMetni(e));
+          }
         }
       }
       this.initialized = true;
@@ -105,7 +123,8 @@ export class CommandManager {
     if (!text.startsWith(prefix)) {
       // Award active chatter points
       economy.getUser(message.platform, message.user.username, message.user.displayName);
-      return null;
+      // Önek yoksa yalnız "Sohbet anahtar kelimesi" komutları bakılır
+      return this.anahtarKelimeIsle(message, text);
     }
 
     const withoutPrefix = text.slice(prefix.length).trim();
@@ -128,14 +147,77 @@ export class CommandManager {
       return null;
     }
 
-    return this.executeCustomCommand(cmdRow, args, message);
+    return this.executeCustomCommand(cmdRow, args, message, true);
+  }
+
+  /**
+   * Anahtar kelime komutları: mesajın herhangi bir yerinde bütün kelime
+   * olarak geçince çalışır (BotRix "Etkinleştirme: Sohbet anahtar kelimesi").
+   *
+   * Döngü koruması: botun kendi mesajı ASLA tetiklemez — yanıt metninde
+   * anahtar kelime geçiyorsa bot kendine sonsuza dek cevap verirdi.
+   */
+  private async anahtarKelimeIsle(message: ChatMessagePayload, text: string): Promise<string | null> {
+    this.ensureLoaded();
+    if (!this.anahtarKomutlar.length) return null;
+    if (message.user.isSelf) return null;
+    try {
+      const { platformManager } = await import('../../platforms/manager.js');
+      if (platformManager.botKullaniciAdlari().has(String(message.user.username).toLowerCase())) return null;
+    } catch {
+      /* yönetici yüklenemediyse yalnız isSelf korur */
+    }
+    const k = anahtarKomutuSec(text, this.anahtarKomutlar);
+    if (!k) return null;
+    return this.executeCustomCommand(k, [], message, false);
+  }
+
+  /** `!title` / `!game`: göster veya (mod/yayıncı) değiştir. */
+  private async yayinBilgisi(tur: 'baslik' | 'kategori', yeni: string, message: ChatMessagePayload): Promise<string> {
+    const ayricalikli = message.user.isMod || message.user.isBroadcaster;
+    const durum = canliDurum.platform(message.platform);
+
+    if (!yeni || !ayricalikli) {
+      const deger = tur === 'baslik' ? durum?.baslik : durum?.kategori;
+      if (deger) return tur === 'baslik' ? `📺 Yayın başlığı: ${deger}` : `🎮 Kategori: ${deger}`;
+      return `@${message.user.displayName}, ${tur === 'baslik' ? 'başlık' : 'kategori'} şu an bilinmiyor (yayın kapalı olabilir).`;
+    }
+
+    const { platformManager } = await import('../../platforms/manager.js');
+    const p = platformManager.getPlatform(message.platform);
+    if (tur === 'baslik') {
+      if (!p?.baslikDegistir) return `@${message.user.displayName}, ${message.platform} başlık değiştirmeyi desteklemiyor.`;
+      const r = await p.baslikDegistir(yeni);
+      return r.ok ? `✅ Başlık güncellendi: ${yeni}` : `❌ Başlık değiştirilemedi: ${r.hata}`;
+    }
+    if (!p?.kategoriDegistir) return `@${message.user.displayName}, ${message.platform} kategori değiştirmeyi desteklemiyor.`;
+    const r = await p.kategoriDegistir(yeni);
+    return r.ok ? `✅ Kategori: ${r.kategori || yeni}` : `❌ Kategori değiştirilemedi: ${r.hata}`;
+  }
+
+  /** `!accountage`: hesabın açılış tarihi platform destekliyorsa. */
+  private async hesapYasi(hedefHam: string, message: ChatMessagePayload): Promise<string> {
+    const hedef = String(hedefHam || '').replace(/^@/, '');
+    const { platformManager } = await import('../../platforms/manager.js');
+    const p: any = platformManager.getPlatform(message.platform);
+    if (typeof p?.hesapOlusturma !== 'function') {
+      return `@${message.user.displayName}, ${message.platform} hesap açılış tarihini paylaşmıyor.`;
+    }
+    const t: number | null = await p.hesapOlusturma(hedef);
+    if (!t) return `@${message.user.displayName}, ${hedef} için hesap tarihi bulunamadı.`;
+    const gun = Math.floor((Date.now() - t) / 86400000);
+    const yil = Math.floor(gun / 365);
+    const metin = yil > 0 ? `${yil} yıl ${gun % 365} gün` : `${gun} gün`;
+    return `📅 ${hedef} hesabı ${metin} önce açılmış (${new Date(t).toLocaleDateString('tr-TR')}).`;
   }
 
   private async executeBuiltIn(name: string, args: string[], message: ChatMessagePayload): Promise<string | null> {
     try {
       const disabled = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
       if (Array.isArray(disabled) && disabled.includes(name)) return null;
-    } catch {}
+    } catch (e) {
+      seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
+    }
 
     switch (name) {
       case 'puan':
@@ -160,6 +242,23 @@ export class CommandManager {
       case 'buy':
       case 'redeem':
         return economy.handleRedeemCommand(message, args);
+
+      // Ses/video panosu (Blerp tarzı): !ses <ad>, !sesler, !sesgec (mod: çalanı atla)
+      case 'ses':
+      case 'blerp': {
+        const { sesPanosu } = await import('../pano/pano.js');
+        return sesPanosu.sohbetIstegi(message, args.join(' '));
+      }
+      case 'sesler': {
+        const { sesPanosu } = await import('../pano/pano.js');
+        return sesPanosu.listeMetni();
+      }
+      case 'sesgec': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const { sesPanosu } = await import('../pano/pano.js');
+        sesPanosu.kontrol('atla');
+        return '⏭️ Ses atlandı.';
+      }
 
       case 'liderlik':
       case 'top':
@@ -241,7 +340,7 @@ export class CommandManager {
         if (!cfg.clip_enabled) return null;
         if (Date.now() - this.clipLast < (cfg.clip_cooldown || 30) * 1000) return `@${message.user.displayName}, clip komutu beklemede.`;
         this.clipLast = Date.now();
-        return (cfg.clip_message || 'Klip alındı.').replace('{user}', message.user.displayName);
+        return (cfg.clip_message || 'Klip alındı.').replace('{user}', () => message.user.displayName);
       }
 
       // Yayıncı (kanal sahibi) elle puan verir/alır.
@@ -285,19 +384,24 @@ export class CommandManager {
         const n = extras.bumpCounter(args[0] || 'count', args[1] === 'reset' ? 0 : 1) as any;
         return `🔢 ${n.name}: ${n.count}`;
       }
-      case 'watchtime':
-      case 'izleme': {
-        const u = economy.getUser(message.platform, message.user.username, message.user.displayName);
-        return `@${message.user.displayName} izleme süresi: ${u.watch_time_minutes || 0} dakika.`;
-      }
+      // NOT: Burada eskiden `watchtime`/`izleme` ve `followage` için SAHTE
+      // vakalar vardı; aşağıdaki gerçek uygulamaları GÖLGELİYORDU (switch ilk
+      // eşleşeni çalıştırır). Kaldırıldı. Tekrar olmasın diye
+      // command-manager.test.ts yinelenen `case` etiketini yakalar.
+
+      // Yayın başlığı / kategorisi. Argümansız: gösterir. Mod/yayıncı
+      // argüman verirse komutun geldiği platformda değiştirir.
       case 'title':
-        return 'Yayın başlığı panelden güncellenir.';
+      case 'baslik':
+        return this.yayinBilgisi('baslik', args.join(' ').trim(), message);
       case 'game':
-        return 'Yayın kategorisi panelden güncellenir.';
-      case 'followage':
-        return `@${message.user.displayName}, takip süren yayın kaydından hesaplanır.`;
+      case 'category':
+      case 'kategori':
+        return this.yayinBilgisi('kategori', args.join(' ').trim(), message);
+
       case 'accountage':
-        return `@${message.user.displayName}, hesap yaşın platform API'sinden gelir.`;
+      case 'hesapyasi':
+        return this.hesapYasi(args[0] || message.user.username, message);
       case 'cark':
       case 'wheel': {
         const { wsHub } = await import('../../ws/server.js');
@@ -480,36 +584,368 @@ export class CommandManager {
       case 'komutlar':
       case 'commands':
       case 'yardim':
-      case 'help':
-        return '📌 Komutlar: !puan, !liderlik, !kral, !tahtikap <puan>, !oyunlar, !sr <şarkı>, !sarki, !atla, !sor <soru>, !katil';
+      case 'help': {
+        // Sabit liste yerine gercekten TANIMLI komutlar listelenir; kullanici
+        // komut ekleyince liste kendiliginden guncellenir.
+        const ozel = db
+          .prepare('SELECT name FROM commands WHERE is_enabled = 1 ORDER BY name LIMIT 25')
+          .all() as Array<{ name: string }>;
+        const yerlesik = ['!puan', '!liderlik', '!uptime', '!izleme', '!oyunlar', '!sr', '!sor'];
+        const hepsi = [...yerlesik, ...ozel.map((c) => `!${String(c.name).replace(/^!/, '')}`)];
+        return `📌 Komutlar: ${[...new Set(hepsi)].join(', ')}`;
+      }
+
+      // ---- Topluluk bahisleri (BotRix: !bet) -------------------------------
+      case 'bahis':
+      case 'bet': {
+        const alt = (args[0] || '').toLowerCase();
+        const mod = message.user.isBroadcaster || message.user.isMod;
+
+        if (alt === 'create' || alt === 'ac') {
+          if (!mod) return null;
+          const kalan = args.slice(1).join(' ');
+          const [baslik, ...sec] = kalan.split('|').map((x) => x.trim());
+          const t = tahminler.olustur(baslik || 'Tahmin', sec.length ? sec : ['Evet', 'Hayır']);
+          if ('hata' in t) return `@${message.user.displayName}, ${t.hata}`;
+          return `🎲 Tahmin açıldı: ${t.baslik} → ${t.secenekler.map((x, i) => `${i + 1}) ${x}`).join(' ')} · Katıl: !bet <seçenek> <puan>`;
+        }
+
+        if (alt === 'result' || alt === 'sonuc') {
+          if (!mod) return null;
+          const r = tahminler.sonuclandir(args.slice(1).join(' '));
+          if (!r.ok) return `@${message.user.displayName}, ${r.hata}`;
+          return `🏆 Kazanan: ${r.secenek} · ${r.kazananlar} kişiye toplam ${r.dagitilan} puan dağıtıldı!`;
+        }
+
+        if (alt === 'lock' || alt === 'kilit') {
+          if (!mod) return null;
+          return tahminler.kilitle() ? '🔒 Bahisler kapandı.' : 'Açık tahmin yok.';
+        }
+
+        if (alt === 'cancel' || alt === 'iptal') {
+          if (!mod) return null;
+          const r = tahminler.iptal();
+          return r.ok ? `↩️ Tahmin iptal edildi, ${r.iade} puan iade edildi.` : 'Açık tahmin yok.';
+        }
+
+        if (!alt) {
+          const d = tahminler.durum();
+          if (!d.tahmin) return 'Şu an açık bir tahmin yok.';
+          return `🎲 ${d.tahmin.baslik} · ${d.tahmin.secenekler.map((x, i) => `${x}: ${d.secenekToplam[i]}p`).join(' · ')} · Havuz: ${d.havuz}`;
+        }
+
+        const r = tahminler.bahisKoy(message.user.username, message.user.displayName, alt, Number(args[1]));
+        if (!r.ok) return `@${message.user.displayName}, ${r.hata}`;
+        return `✅ @${message.user.displayName} "${r.secenek}" için ${r.puan} puan yatırdı.`;
+      }
+
+      // ---- Izleyici kuyrugu (BotRix: !joinq ailesi) ------------------------
+      case 'joinq':
+      case 'sirayagir': {
+        const r = kuyruk.katil(message.user.username, message.user.displayName, message.platform, {
+          isSub: message.user.isSub,
+          isVip: message.user.isVip,
+          isMod: message.user.isMod,
+          isBroadcaster: message.user.isBroadcaster
+        });
+        return r.ok ? `🎟️ @${message.user.displayName} kuyruğa girdi · Sıra: ${r.sira}` : `@${message.user.displayName}, ${r.hata}`;
+      }
+
+      case 'leaveq':
+      case 'siradancik':
+        return kuyruk.ayril(message.user.username)
+          ? `👋 @${message.user.displayName} kuyruktan çıktı.`
+          : `@${message.user.displayName}, kuyrukta değilsin.`;
+
+      case 'posq':
+      case 'siram': {
+        const n = kuyruk.sira(message.user.username);
+        return n > 0 ? `🎟️ @${message.user.displayName}, sıran: ${n}` : `@${message.user.displayName}, kuyrukta değilsin.`;
+      }
+
+      // NOT: `!queue` ve `!sira` ZATEN sarki istegi kuyruguna ait (yukarida,
+      // satir ~217). Izleyici kuyruguna ayri adlar verildi; aksi halde
+      // switch ilk esleseni calistirdigi icin bu dal hic calismiyordu.
+      case 'listq':
+      case 'siradakiler':
+      case 'kuyruk': {
+        const l = kuyruk.liste();
+        if (!l.length) return 'Kuyruk boş.';
+        return `🎟️ Kuyruk (${l.length}): ${l.slice(0, 10).map((k, i) => `${i + 1}. ${k.gorunenAd}`).join(' · ')}`;
+      }
+
+      case 'openq':
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        kuyruk.ac();
+        return '🎟️ Kuyruk açıldı! Katılmak için: !joinq';
+
+      case 'closeq':
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        kuyruk.kapat();
+        return '🔒 Kuyruk yeni katılımlara kapatıldı.';
+
+      case 'nextq': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const k = kuyruk.sonraki();
+        return k ? `➡️ Sıradaki: @${k.gorunenAd}` : 'Kuyruk boş.';
+      }
+
+      case 'removeq': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const hedef = (args[0] || '').replace(/^@/, '');
+        if (!hedef) return 'Kullanım: !removeq <kullanıcı>';
+        return kuyruk.ayril(hedef) ? `🗑️ ${hedef} kuyruktan çıkarıldı.` : `${hedef} kuyrukta değil.`;
+      }
+
+      case 'clearq': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const n = kuyruk.temizle();
+        return `🧹 Kuyruk temizlendi (${n} kişi).`;
+      }
+
+      // ---- Puan dususu (BotRix: !pdrops) ----------------------------------
+      case 'pdrops':
+      case 'puandususu': {
+        const ayar = puanDususu.ayarOku();
+        const yetkili = message.user.isBroadcaster || (message.user.isMod && ayar.modBaslatabilir);
+        const alt = (args[0] || 'status').toLowerCase();
+
+        if (alt === 'status' || alt === 'durum') {
+          const d = puanDususu.durum();
+          return d.aktif
+            ? `🎁 Puan düşüşü açık! "${d.anahtar}" yaz · ${d.katilanlar.length} kişi · ${d.kalanSaniye} sn kaldı`
+            : 'Şu an açık bir puan düşüşü yok.';
+        }
+
+        if (!yetkili) return null;
+
+        if (alt === 'start' || alt === 'basla') {
+          const r = puanDususu.baslat();
+          if (!r.ok) return `@${message.user.displayName}, ${r.hata}`;
+          return `🎁 PUAN DÜŞÜŞÜ! İlk ${ayar.maksKisi || '∞'} kişi "${ayar.anahtar}" yazsın · ${ayar.toplamPuan} puan dağıtılacak!`;
+        }
+
+        if (alt === 'stop' || alt === 'dur') {
+          return puanDususu.durdur().iptal ? '🛑 Puan düşüşü iptal edildi.' : 'Açık düşüş yok.';
+        }
+
+        return null;
+      }
+
+      // ---- Seviye sistemi ------------------------------------------------
+      case 'seviye2':
+      case 'xp': {
+        const hedef = (args[0] || message.user.username).replace(/^@/, '');
+        const k = seviyeler.kullanici(hedef);
+        if (!seviyeler.ayarOku().aktif) return `@${message.user.displayName}, seviye sistemi kapalı.`;
+        return `⭐ ${k.displayName} · Seviye ${k.seviye} · ${k.buSeviyedeXp}/${k.sonrakiIcinXp} XP (%${k.yuzde})`;
+      }
+
+      case 'seviyeler':
+      case 'toplevel': {
+        const liste = seviyeler.siralama(5);
+        if (!liste.length) return 'Henüz seviye kaydı yok.';
+        return `🏆 Seviye sıralaması: ${liste.map((u, i) => `${i + 1}. ${u.displayName} (Sv.${u.seviye})`).join(' · ')}`;
+      }
+
+      // ---- BotRix karsiligi olan yerlesik komutlar (GAP §2.1) -------------
+      case 'uptime':
+      case 'yayinsuresi':
+        // Yayın kapalıyken "X önce başladı" demek yanlış bilgiydi
+        if (yayinAcikMi() === false) return '📴 Yayın şu an kapalı.';
+        return `⏱️ Yayın ${getStreamUptime()} önce başladı.`;
+
+      case 'watchtime':
+      case 'izleme': {
+        const hedef = (args[0] || message.user.username).replace(/^@/, '');
+        const r = db
+          .prepare('SELECT display_name, watch_time_minutes FROM economy WHERE LOWER(username) = LOWER(?)')
+          .get(hedef) as { display_name?: string; watch_time_minutes?: number } | undefined;
+        if (!r) return `@${message.user.displayName}, ${hedef} icin izleme kaydi yok.`;
+        const dk = Number(r.watch_time_minutes) || 0;
+        const sa = Math.floor(dk / 60);
+        return `⏳ ${r.display_name || hedef} bu kanali ${sa > 0 ? `${sa} saat ` : ''}${dk % 60} dakika izledi.`;
+      }
+
+      case 'followage':
+      case 'takipsuresi': {
+        const hedef = (args[0] || message.user.username).replace(/^@/, '');
+        const r = db
+          .prepare(
+            "SELECT timestamp FROM stream_events WHERE event_type = 'follow' AND LOWER(username) = LOWER(?) ORDER BY timestamp ASC LIMIT 1"
+          )
+          .get(hedef) as { timestamp?: number } | undefined;
+        if (!r?.timestamp) {
+          return `@${message.user.displayName}, ${hedef} icin takip kaydi bulunamadi.`;
+        }
+        const gun = Math.floor((Date.now() - Number(r.timestamp)) / 86400000);
+        return `💜 ${hedef} bu kanali ${gun} gundur takip ediyor.`;
+      }
+
+      case 'so':
+      case 'promo': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const kanal = (args[0] || '').replace(/^@/, '').trim();
+        if (!kanal) return `@${message.user.displayName}, kullanim: !so <kanal>`;
+        const adresler: Record<string, string> = {
+          kick: 'https://kick.com',
+          twitch: 'https://twitch.tv',
+          youtube: 'https://youtube.com/@'
+        };
+        const kok = adresler[String(message.platform).toLowerCase()] || 'https://kick.com';
+        // Overlay'deki Shoutout widget'ini da tetikle
+        try {
+          eventBus.emit('widget_update', { type: 'shoutout', data: { channel: kanal, platform: message.platform } });
+        } catch (e) {
+          seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e);
+        }
+        return `📢 ${kanal} kanalina goz atin: ${kok}/${kanal}`;
+      }
+
+      // `sayac` burada da vardı ama yukarıdaki `count`/`sayac` onu gölgeliyordu
+      case 'editcounter':
+      case 'sayacduzenle': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').trim();
+        if (!ad) return `@${message.user.displayName}, kullanim: !editcounter <ad> <deger>`;
+        if (args[1] === undefined) return `🔢 ${ad}: ${sayacAl(ad)}`;
+        const ifade = sayacIfadesi(args[1]);
+        const yeniDeger =
+          ifade.tur === 'fark' ? sayacDegistir(ad, ifade.deger) : sayacAyarla(ad, ifade.deger);
+        return `🔢 ${ad}: ${yeniDeger}`;
+      }
+
+      case 'addcom':
+      case 'komutekle': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').replace(/^!/, '').trim().toLowerCase();
+        const yanit = args.slice(1).join(' ').trim();
+        if (!ad || !yanit) return `@${message.user.displayName}, kullanim: !addcom !merhaba Selam $(sender)`;
+        const var_ = db.prepare('SELECT id FROM commands WHERE LOWER(name) = ?').get(ad);
+        if (var_) return `@${message.user.displayName}, !${ad} zaten var. !editcom kullan.`;
+        db.prepare(
+          'INSERT INTO commands (id, name, response, user_level, cooldown, is_enabled) VALUES (?, ?, ?, ?, ?, 1)'
+        ).run(randomUUID(), ad, yanit, 'everyone', 5);
+        this.reload();
+        return `✅ !${ad} komutu eklendi.`;
+      }
+
+      case 'editcom':
+      case 'komutduzenle': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').replace(/^!/, '').trim().toLowerCase();
+        const yanit = args.slice(1).join(' ').trim();
+        if (!ad || !yanit) return `@${message.user.displayName}, kullanim: !editcom !merhaba Yeni yanit`;
+        const sonuc = db.prepare('UPDATE commands SET response = ? WHERE LOWER(name) = ?').run(yanit, ad);
+        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadi.`;
+        this.reload();
+        return `✅ !${ad} guncellendi.`;
+      }
+
+      case 'delcom':
+      case 'komutsil': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const ad = (args[0] || '').replace(/^!/, '').trim().toLowerCase();
+        if (!ad) return `@${message.user.displayName}, kullanim: !delcom merhaba`;
+        const sonuc = db.prepare('DELETE FROM commands WHERE LOWER(name) = ?').run(ad);
+        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadi.`;
+        this.reload();
+        return `🗑️ !${ad} silindi.`;
+      }
 
       default:
         return null;
     }
   }
 
-  private async executeCustomCommand(cmd: any, args: string[], message: ChatMessagePayload): Promise<string | null> {
-    // Check permission level
+  /**
+   * @param acikCagri `!komut` ile mi çağrıldı? Anahtar kelimeyle
+   *   tetiklenince reddetmeler SESSİZ olur — sohbette bir kelime yazan
+   *   izleyiciye "yetkin yok" diye cevap verilmez.
+   */
+  private async executeCustomCommand(
+    cmd: any,
+    args: string[],
+    message: ChatMessagePayload,
+    acikCagri = true
+  ): Promise<string | null> {
+    // 1) Yetki
     if (!this.hasPermission(cmd.user_level, message)) {
+      if (!acikCagri) return null;
       return `@${message.user.displayName}, bu komutu kullanma yetkiniz yok (${cmd.user_level}).`;
     }
 
-    // Check cooldown
-    const cdKey = `${cmd.id}_${message.user.id}`;
-    const globalKey = `${cmd.id}_global`;
-    const now = Date.now();
-
-    const cd = cmd.cooldown || 5;
-    const existingCd = this.globalCooldowns.get(globalKey);
-    if (existingCd && existingCd.expiresAt > now && !message.user.isBroadcaster && !message.user.isMod) {
-      return null; // Silent cooldown ignore
+    // 1b) Erişim kipi: her zaman / yalnız yayında / yalnız yayın kapalıyken
+    const kip = String(cmd.access_mode || 'always');
+    if (!erisimUygunMu(kip, canliDurum.genel().canli)) {
+      return acikCagri ? `@${message.user.displayName}, ${erisimAciklamasi(kip)}.` : null;
     }
 
-    this.globalCooldowns.set(globalKey, { expiresAt: now + cd * 1000 });
-    this.userCooldowns.set(cdKey, { expiresAt: now + cd * 1000 });
+    // 1c) Seviye şartı (Seviye / XP sistemi açıksa)
+    const minSeviye = Math.max(0, Number(cmd.min_level) || 0);
+    if (minSeviye > 0 && !message.user.isBroadcaster && seviyeler.ayarOku().aktif) {
+      const sv = seviyeler.kullanici(message.user.username).seviye;
+      if (sv < minSeviye) {
+        return acikCagri
+          ? `@${message.user.displayName}, bu komut için seviye ${minSeviye} gerekiyor (seninki ${sv}).`
+          : null;
+      }
+    }
 
-    // Parse variables in response template
-    const parsedResponse = await parseVariables(cmd.response, {
+    const ayricalikli = message.user.isBroadcaster || message.user.isMod;
+
+    // 2) Platform filtresi — komut yalnız secili platformlarda calisir.
+    //    Bos liste "tum platformlar" demektir (geriye uyum).
+    const platformlar = String(cmd.platforms || '').trim();
+    if (platformlar) {
+      const izinli = platformlar.split(',').map((p: string) => p.trim().toLowerCase()).filter(Boolean);
+      if (izinli.length && !izinli.includes(String(message.platform).toLowerCase())) {
+        return null;
+      }
+    }
+
+    // 3) Bekleme suresi. `cooldown_mode` = 'global' | 'user'
+    const now = Date.now();
+    const cdKey = `${cmd.id}_${message.user.username}`;
+    const globalKey = `${cmd.id}_global`;
+    const beklemeKipi = String(cmd.cooldown_mode || 'global');
+    // Eskiden `Number(cmd.cooldown) || 5` idi: kayıtlı 0 bile 5 sn'ye
+    // dönüyordu, "beklemesiz komut" yazılamıyordu. Artık 0 = beklemesiz.
+    // Anahtar kelime tetiklemesinde sel olmasın diye en az 3 sn uygulanır.
+    const hamBekleme = Number(cmd.cooldown);
+    const tabanSn = Number.isFinite(hamBekleme) && hamBekleme >= 0 ? hamBekleme : 5;
+    const genelSn = acikCagri ? tabanSn : Math.max(3, tabanSn);
+    const kisiSn = Number(cmd.user_cooldown) || genelSn;
+
+    if (!ayricalikli) {
+      if (beklemeKipi === 'user') {
+        const mevcut = this.userCooldowns.get(cdKey);
+        if (mevcut && mevcut.expiresAt > now) return null;
+      } else {
+        const mevcut = this.globalCooldowns.get(globalKey);
+        if (mevcut && mevcut.expiresAt > now) return null;
+      }
+    }
+
+    // 4) Puan maliyeti — bekleme yazilmadan ONCE tahsil edilir ki yetersiz
+    //    bakiyede komut bekleme suresini tuketmesin.
+    // Anahtar kelimeyle tetiklenince puan ALINMAZ: izleyici yalnız bir kelime
+    // yazdı diye ücretlendirilmemeli. `!komut` biçimi normal ücretlenir.
+    const maliyet = acikCagri ? Math.max(0, Number(cmd.cost_points) || 0) : 0;
+    if (maliyet > 0 && !message.user.isBroadcaster) {
+      const bakiye = economy.getUserPoints(message.user.username);
+      if (bakiye < maliyet) {
+        return `@${message.user.displayName}, bu komut ${maliyet} puan gerektiriyor (bakiyen: ${bakiye}).`;
+      }
+      economy.addPoints(message.user.username, -maliyet);
+    }
+
+    this.globalCooldowns.set(globalKey, { expiresAt: now + genelSn * 1000 });
+    this.userCooldowns.set(cdKey, { expiresAt: now + kisiSn * 1000 });
+
+    // 5) Degiskenler: once ESKI `{user}` bicimi (geriye uyum), sonra yeni
+    //    `$(...)` motoru. Eski sablonlar oldugu gibi calismaya devam eder.
+    const eskiBicim = await parseVariables(cmd.response, {
       message,
       commandName: cmd.name,
       args,
@@ -518,7 +954,8 @@ export class CommandManager {
       }
     });
 
-    return parsedResponse;
+    const ctx = baglamOlustur(message, args, cmd.name);
+    return await degiskenleriCoz(eskiBicim, ctx);
   }
 
   private hasPermission(level: string, message: ChatMessagePayload): boolean {

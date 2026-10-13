@@ -1,4 +1,6 @@
 import { db } from '../db/index.js';
+import { sifrele } from './security/vault.js';
+import { gizliMi } from './security/redact.js';
 
 class SettingsCache {
   private cache: Map<string, string> = new Map();
@@ -33,10 +35,12 @@ class SettingsCache {
   set(key: string, value: string) {
     this.cache.set(key, value);
     try {
+      // Sır anahtarları (kick_client_secret, *_api_key…) diskte şifreli (S6);
+      // önbellek düz metni tutar, okuma sarmalayıcısı diskten çözer.
       db.prepare(`
         INSERT INTO bot_settings (key, value) VALUES (?, ?)
         ON CONFLICT(key) DO UPDATE SET value = excluded.value
-      `).run(key, value);
+      `).run(key, gizliMi(key) ? String(sifrele(value)) : value);
     } catch (err) {
       console.error('[SettingsCache] Error saving key:', key, err);
     }

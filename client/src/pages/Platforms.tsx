@@ -1,12 +1,25 @@
 import { useState, useEffect } from 'react';
 import { openLink } from '../lib/openLink.js';
 import { ChannelConfig } from '../types.js';
-import { 
-  Save, Check, RefreshCw, Key, MessageSquare, Hash, 
-  ShieldCheck, Radio, Send, ExternalLink, Zap, AlertCircle, CheckCircle2,
-  Sparkles, Lock, ArrowRight, HelpCircle, Terminal, Copy
+import {
+  Save,
+  Check,
+  RefreshCw,
+  Key,
+  MessageSquare,
+  Hash,
+  Send,
+  ExternalLink,
+  Zap,
+  AlertCircle,
+  CheckCircle2,
+  Sparkles,
+  Lock,
+  HelpCircle,
+  Copy
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
+import { sunucuPortu, wsAdresi } from '../lib/widget-style.js';
 
 interface KickVerificationResult {
   success: boolean;
@@ -56,47 +69,44 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     loadPlatforms();
 
     // Listen for Kick OAuth popup message
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'KICK_AUTH_SUCCESS') {
-        const receivedToken = event.data.token || event.data.code;
-        if (receivedToken) {
-          setKickTokenInput(receivedToken);
-          setKickFeedback({
-            type: 'success',
-            text: event.data.token
-              ? 'Kick Access Token başarıyla oluşturuldu ve bağlandı! Bot artık sohbete yazabilir.'
-              : 'Kick OAuth kodu alındı! "Kick API Bağla ve Aktifleştir" butonuna tıklayarak işlemi tamamlayabilirsiniz.'
-          });
-          setTimeout(() => setKickFeedback(null), 7000);
-          loadPlatforms();
-        }
+    // Sunucu artık ham token GÖNDERMİYOR (güvenlik): başarıda token zaten
+    // kaydedilmiştir, maskeli değer platform listesinden okunur. Yalnız
+    // değişim başarısızsa eski elle bağlama için yetki kodu gelir.
+    const kickYetkiSonucu = (veri: any) => {
+      if (veri?.ok) {
+        setKickFeedback({
+          type: 'success',
+          text: 'Kick yetkilendirmesi başarılı — token kaydedildi ve bağlanıldı. Bot artık sohbete yazabilir.'
+        });
+      } else if (veri?.code) {
+        setKickTokenInput(String(veri.code));
+        setKickFeedback({
+          type: 'success',
+          text: 'Kick OAuth kodu alındı! "Kick API Bağla ve Aktifleştir" butonuna tıklayarak işlemi tamamlayabilirsiniz.'
+        });
+      } else {
+        return;
       }
+      setTimeout(() => setKickFeedback(null), 7000);
+      loadPlatforms();
+    };
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'KICK_AUTH_SUCCESS') kickYetkiSonucu(event.data);
     };
     window.addEventListener('message', handleMessage);
 
     // Also connect to WebSocket to receive OAuth events from incognito/private windows
     let ws: WebSocket | null = null;
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.hostname}:3001/ws?type=dashboard`;
+      // Eskiden 3001'e sabitti: sunucu başka portta çalışınca gizli pencereden
+      // yapılan Kick yetkilendirmesi panele hiç ulaşmıyordu
+      const wsUrl = wsAdresi('dashboard');
       ws = new WebSocket(wsUrl);
       ws.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          if (payload.type === 'kick_auth_success') {
-            const receivedToken = payload.token || payload.code;
-            if (receivedToken) {
-              setKickTokenInput(receivedToken);
-              setKickFeedback({
-                type: 'success',
-                text: payload.token
-                  ? 'Kick Access Token başarıyla oluşturuldu ve bağlandı! Bot artık sohbete yazabilir.'
-                  : 'Kick OAuth kodu alındı! "Kick API Bağla ve Aktifleştir" butonuna tıklayarak işlemi tamamlayabilirsiniz.'
-              });
-              setTimeout(() => setKickFeedback(null), 7000);
-              loadPlatforms();
-            }
-          }
+          if (payload.type === 'kick_auth_success') kickYetkiSonucu(payload);
         } catch {}
       };
     } catch {}
@@ -147,6 +157,16 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     } catch {}
   };
 
+  // Trovo'nun her ucu Client-ID ister (sohbeti OKUMAK dahil). Kanal
+  // tablosunda yeri yok; bot_settings'e `trovo_client_id` olarak yazılır.
+  const [trovoClientId, setTrovoClientId] = useState('');
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((d) => setTrovoClientId(String(d?.trovo_client_id || '')))
+      .catch(() => {});
+  }, []);
+
   const handleChange = (platform: string, field: string, value: any) => {
     setChannels(prev => ({
       ...prev,
@@ -166,8 +186,21 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       return;
     }
 
+    if (platform === 'trovo' && !trovoClientId.trim()) {
+      alert('Trovo için Client-ID gerekli (developer.trovo.live → uygulamanız).');
+      return;
+    }
+
     setLoading(true);
     try {
+      if (platform === 'trovo') {
+        // Bağlanmadan ÖNCE yazılmalı: adaptör connect() içinde okuyor
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trovo_client_id: trovoClientId.trim() })
+        });
+      }
       const res = await fetch('/api/platforms/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -368,6 +401,16 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       nameLabel: 'TikTok Kullanıcı Adı (@ olmadan, örn: yayinci)',
       tokenLabel: 'Şifre/Token gerekmez (Açık canlı yayın bağlantısı)',
       helpText: 'TikTok canlı yayınınız başladığında bot otomatik bağlanır ve hediyeleri ekrana basar.'
+    },
+    {
+      key: 'trovo',
+      name: 'Trovo',
+      badgeColor: 'bg-[#19d66c] text-black font-black',
+      description: 'Trovo sohbeti, takip, abone, hediye abone, spell ve raid olayları.',
+      nameLabel: 'Trovo Kullanıcı Adı (kanal linkinin son kısmı, örn: leafinsummer)',
+      tokenLabel: 'OAuth Erişim Jetonu — YALNIZ mesaj göndermek için gerekir',
+      helpText:
+        'Sohbeti OKUMAK için yalnız Client-ID yeterli, jeton gerekmez. Mesaj GÖNDERMEK için chat_send_self izinli bir OAuth jetonu gerekir.'
     }
   ];
 
@@ -566,7 +609,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 </div>
                 <ol className="list-decimal list-inside space-y-1 text-gray-300 text-[11px] leading-relaxed">
                   <li>Yukarıdaki linkten Kick Developer Portal'a gidin ve <b>"Create App"</b> butonuna basın.</li>
-                  <li>Redirect URI alanına şunu girin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-[#53fc18] font-mono select-all">http://localhost:3001/api/auth/kick/callback</code></li>
+                  <li>Redirect URI alanına şunu girin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-[#53fc18] font-mono select-all">{`http://localhost:${sunucuPortu()}/api/auth/kick/callback`}</code></li>
                   <li>Oluşan <b>Client ID</b> ve <b>Client Secret</b> değerlerini yukarıdaki kutulara yapıştırın.</li>
                   <li>Aşağıdaki butonlardan biriyle yetkilendirmeyi tamamlayın:</li>
                 </ol>
@@ -763,7 +806,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
             </div>
 
             <div>
-              <div className="text-gray-400 text-[11px]">Bot Chat Durumu</div>
+              <div className="text-gray-400 text-[11px]">Bot Sohbet Durumu</div>
               <div className="font-bold text-xs">
                 {kickResult.canSendChat ? (
                   <span className="text-[#53fc18] flex items-center gap-1">
@@ -865,6 +908,24 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                       />
                     </div>
+
+                    {p.key === 'trovo' && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-300 mb-1 flex items-center gap-1.5">
+                          <Key className="w-3.5 h-3.5 text-gray-400" />
+                          Trovo Client-ID (zorunlu)
+                        </label>
+                        <input
+                          type="text"
+                          value={trovoClientId}
+                          onChange={e => setTrovoClientId(e.target.value)}
+                          placeholder="developer.trovo.live → uygulamanızın Client ID'si"
+                          autoComplete="off"
+                          spellCheck={false}
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    )}
 
                     <p className="text-[11px] text-gray-500 italic">
                       ℹ️ {p.helpText}

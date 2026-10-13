@@ -55,9 +55,9 @@ export function Rankings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-white flex items-center gap-2"><Trophy className="w-6 h-6 text-amber-400" /> Rankings</h1>
+        <h1 className="text-2xl font-black text-white flex items-center gap-2"><Trophy className="w-6 h-6 text-amber-400" /> Sıralamalar</h1>
         <p className="text-sm text-gray-400">
-          Watchtime, puan ve mesaj sıralamaları. Overlay: /widgets/rankings
+          İzleme süresi, puan ve mesaj sıralamaları. OBS adresi: /widgets/rankings
           {updatedAt > 0 && (
             <span className="ml-2 text-emerald-400">
               · canlı ({new Date(updatedAt).toLocaleTimeString('tr-TR')})
@@ -66,9 +66,9 @@ export function Rankings() {
         </p>
       </div>
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
-        <button onClick={() => setSort('points')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'points' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Points</button>
-        <button onClick={() => setSort('watch_time_minutes')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'watch_time_minutes' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Watchtime</button>
-        <button onClick={() => setSort('messages_count')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'messages_count' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Messages</button>
+        <button onClick={() => setSort('points')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'points' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Puan</button>
+        <button onClick={() => setSort('watch_time_minutes')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'watch_time_minutes' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>İzleme süresi</button>
+        <button onClick={() => setSort('messages_count')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'messages_count' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Mesaj</button>
       </div>
       <div className="glass-panel rounded-2xl overflow-hidden">
         <table className="w-full text-sm">

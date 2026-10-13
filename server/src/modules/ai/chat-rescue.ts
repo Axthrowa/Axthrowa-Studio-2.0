@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { db } from '../../db/index.js';
 import { ChatRescueSettings } from '../../db/schema.js';
 import { geminiCoHost } from './gemini.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 const PERSONALITY_TEMPLATES: Record<string, string[]> = {
   friendly: [
@@ -43,7 +44,9 @@ export class ChatRescueService extends EventEmitter {
       if (row?.value) {
         return JSON.parse(row.value);
       }
-    } catch {}
+    } catch (e) {
+      seyrekUyar('ayar:chat_rescue_settings', '[Ayar] Sohbet kurtarma ayarı okunamadı — varsayılan kullanılıyor', e);
+    }
 
     return {
       isEnabled: true,

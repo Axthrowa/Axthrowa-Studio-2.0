@@ -52,8 +52,8 @@ export function Extras() {
     <div className="space-y-6">
       <div className="flex justify-between">
         <div>
-          <h1 className="text-2xl font-black text-white">Extras</h1>
-          <p className="text-sm text-gray-400">Chat alerts, clip command, level system, quotes & counters.</p>
+          <h1 className="text-2xl font-black text-white">Ekstralar</h1>
+          <p className="text-sm text-gray-400">Sohbet uyarıları, klip komutu, seviye sistemi, alıntılar ve sayaçlar.</p>
         </div>
         <button onClick={save} className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 ${saved ? 'bg-emerald-600' : 'bg-purple-600'} text-white`}>
           {saved ? <Check className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />} Kaydet
@@ -62,7 +62,7 @@ export function Extras() {
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
         {(['alerts', 'clip', 'levels', 'quotes'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === t ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>
-            {t === 'alerts' ? 'Chat Alerts' : t === 'clip' ? 'Clip Command' : t === 'levels' ? 'Level System' : 'Quotes & Counters'}
+            {t === 'alerts' ? 'Sohbet Uyarıları' : t === 'clip' ? 'Klip Komutu' : t === 'levels' ? 'Seviye Sistemi' : 'Alıntı & Sayaç'}
           </button>
         ))}
       </div>
@@ -85,7 +85,7 @@ export function Extras() {
       )}
       {tab === 'levels' && (
         <div className="glass-panel p-6 rounded-2xl space-y-3">
-          <label className="flex justify-between text-xs font-bold">Level sistemi <input type="checkbox" checked={s.levels_enabled} onChange={e => setS({ ...s, levels_enabled: e.target.checked })} /></label>
+          <label className="flex justify-between text-xs font-bold">Seviye sistemi <input type="checkbox" checked={s.levels_enabled} onChange={e => setS({ ...s, levels_enabled: e.target.checked })} /></label>
           <label className="text-xs font-bold space-y-1">Mesaj başına XP<input type="number" value={s.xp_per_message} onChange={e => setS({ ...s, xp_per_message: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Dakika başına XP<input type="number" value={s.xp_per_minute} onChange={e => setS({ ...s, xp_per_minute: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="flex justify-between text-xs font-bold">Level atlayınca duyur <input type="checkbox" checked={s.announce_levelup} onChange={e => setS({ ...s, announce_levelup: e.target.checked })} /></label>

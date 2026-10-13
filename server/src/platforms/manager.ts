@@ -4,7 +4,9 @@ import { kickPlatform } from './kick.js';
 import { youtubePlatform } from './youtube.js';
 import { discordPlatform } from './discord.js';
 import { tiktokPlatform } from './tiktok.js';
+import { trovoPlatform } from './trovo.js';
 import { eventBus, BotMessagePayload } from '../core/event-bus.js';
+import { seyrekUyar } from '../core/logger.js';
 
 export class PlatformManager {
   private platforms: Map<string, BasePlatform> = new Map();
@@ -15,6 +17,7 @@ export class PlatformManager {
     this.register(youtubePlatform);
     this.register(discordPlatform);
     this.register(tiktokPlatform);
+    this.register(trovoPlatform);
 
     this.setupMessageRouting();
   }
@@ -25,6 +28,27 @@ export class PlatformManager {
 
   getPlatform(name: string): BasePlatform | undefined {
     return this.platforms.get(name);
+  }
+
+  /** Tüm kayıtlı adaptörler (yoklayıcı ve yetenek sorguları için). */
+  tumu(): BasePlatform[] {
+    return [...this.platforms.values()];
+  }
+
+  /**
+   * Bağlı platformlardaki BOT hesaplarının adları (küçük harf).
+   * Anahtar kelime komutunun kendi yanıtıyla yeniden tetiklenmemesi için.
+   */
+  botKullaniciAdlari(): Set<string> {
+    const k = new Set<string>();
+    for (const p of this.platforms.values()) {
+      const fn = (p as any).botKullaniciAdi;
+      if (typeof fn === 'function' && p.isConnected()) {
+        const ad = String(fn.call(p) || '').toLowerCase();
+        if (ad) k.add(ad);
+      }
+    }
+    return k;
   }
 
   getAllStatuses(): Record<string, any> {
@@ -101,7 +125,9 @@ export class PlatformManager {
         if (name !== originPlatform && p.isConnected()) {
           try {
             await p.sendMessage('', text);
-          } catch {}
+          } catch (e) {
+            seyrekUyar(`aktarim:${name}`, `[Sohbet aktarımı] ${name} kanalına iletilemedi`, e);
+          }
         }
       }
     });

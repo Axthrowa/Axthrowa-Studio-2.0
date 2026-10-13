@@ -1,0 +1,115 @@
+/**
+ * StreamAxT — ekip çapında uyarı kuyruğu denetimi (saf)
+ * Developed by AxthrowA
+ *
+ * Kuyruğun kendisi her OBS tarayıcı kaynağında (AlertBox widget'ı) çalışır; sunucu yalnız DENETİM durumunu
+ * (duraklatıldı mı, sessiz mi) ve komutları (atla, temizle, yeniden oynat) tutar ve yayınlar. Böylece
+ * Mod A bir uyarıyı atladığında Mod B'nin paneli ve tüm OBS kaynakları anında aynı durumu görür.
+ *
+ * İyimser kilit: istemci gördüğü `version`'ı gönderir; arada başka biri değiştirdiyse istek reddedilir ve
+ * güncel durum döner (çakışan iki moderatör birbirinin eylemini habersizce geri almasın).
+ *
+ * Ayrıca: uyarı kimlikleri eskiden ön ayar kimliğiydi (`alert-follow`, türe göre SABİT); widget aynı kimliği
+ * tekrar sayıp attığı için bir OBS oturumunda her türün yalnız İLK uyarısı oynuyordu. Kimlik artık olay başına
+ * benzersiz (`uyariKimligi`).
+ */
+
+export type KontrolEylemi = 'pause' | 'resume' | 'mute' | 'unmute' | 'skip' | 'clear' | 'replay';
+
+export const EYLEMLER: KontrolEylemi[] = ['pause', 'resume', 'mute', 'unmute', 'skip', 'clear', 'replay'];
+
+export interface KontrolDurumu {
+  /** Duraklatılmışken ekrandaki uyarı biter, sıradaki başlamaz */
+  paused: boolean;
+  /** Uyarı sesleri kapalı (görsel sürer) */
+  muted: boolean;
+  version: number;
+  updatedAt: number;
+  updatedBy: string;
+  lastAction: KontrolEylemi | null;
+}
+
+export const BASLANGIC: KontrolDurumu = {
+  paused: false,
+  muted: false,
+  version: 0,
+  updatedAt: 0,
+  updatedBy: '',
+  lastAction: null
+};
+
+export type Sonuc =
+  | { ok: true; durum: KontrolDurumu }
+  | { ok: false; kod: 'conflict' | 'invalid'; mesaj: string; durum: KontrolDurumu };
+
+/**
+ * Eylemi uygular. `beklenenSurum` verilmezse kilit uygulanmaz (tek kullanıcı / kısayol).
+ */
+export function kontrolUygula(
+  durum: KontrolDurumu,
+  eylem: string,
+  kim: string,
+  beklenenSurum?: number | null,
+  simdi = Date.now()
+): Sonuc {
+  if (!EYLEMLER.includes(eylem as KontrolEylemi)) {
+    return { ok: false, kod: 'invalid', mesaj: 'Geçersiz eylem', durum };
+  }
+  if (beklenenSurum !== undefined && beklenenSurum !== null && Number(beklenenSurum) !== durum.version) {
+    return {
+      ok: false,
+      kod: 'conflict',
+      mesaj: `Başka biri az önce değiştirdi (${durum.updatedBy || 'bilinmiyor'}: ${durum.lastAction ?? '—'})`,
+      durum
+    };
+  }
+  const e = eylem as KontrolEylemi;
+  const yeni: KontrolDurumu = {
+    ...durum,
+    version: durum.version + 1,
+    updatedAt: simdi,
+    updatedBy: String(kim || 'bilinmiyor').slice(0, 60),
+    lastAction: e
+  };
+  if (e === 'pause') yeni.paused = true;
+  if (e === 'resume') yeni.paused = false;
+  if (e === 'mute') yeni.muted = true;
+  if (e === 'unmute') yeni.muted = false;
+  return { ok: true, durum: yeni };
+}
+
+/** Olay başına benzersiz uyarı kimliği (widget tekrar önleme bunu kullanır). */
+export function uyariKimligi(tur: string, simdi = Date.now(), rastgele = Math.random): string {
+  const tr = String(tur || 'alert').replace(/[^a-z0-9_]/gi, '').slice(0, 20) || 'alert';
+  return `${tr}-${simdi.toString(36)}-${Math.floor(rastgele() * 1e9).toString(36)}`;
+}
+
+export interface SonUyari {
+  id: string;
+  eventType: string;
+  title: string;
+  message: string;
+  at: number;
+  isTest: boolean;
+  /** Yeniden oynatma için widget'a giden veri */
+  alert: Record<string, unknown>;
+}
+
+/** Son uyarılar halkası (yeniden oynatma listesi). */
+export class SonUyarilar {
+  private liste: SonUyari[] = [];
+  constructor(private tavan = 50) {}
+
+  ekle(u: SonUyari): void {
+    this.liste.unshift(u);
+    if (this.liste.length > this.tavan) this.liste.length = this.tavan;
+  }
+
+  bul(id: string): SonUyari | undefined {
+    return this.liste.find((x) => x.id === id);
+  }
+
+  hepsi(): SonUyari[] {
+    return [...this.liste];
+  }
+}

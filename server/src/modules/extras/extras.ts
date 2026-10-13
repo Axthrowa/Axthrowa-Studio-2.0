@@ -6,6 +6,7 @@ import { db } from '../../db/index.js';
 import { eventBus } from '../../core/event-bus.js';
 import { v4 as uuidv4 } from 'uuid';
 import { settingsCache } from '../../core/settings-cache.js';
+import { hataMetni } from '../../core/logger.js';
 
 const KEY = 'extras_settings';
 
@@ -45,7 +46,11 @@ export function getExtrasSettings() {
 export function saveExtrasSettings(patch: Record<string, any>) {
   const next = { ...getExtrasSettings(), ...patch };
   db.prepare(`INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).run(KEY, JSON.stringify(next));
-  try { settingsCache.reload(); } catch {}
+  try {
+    settingsCache.reload();
+  } catch (e) {
+    console.warn('[Ayar] Önbellek yenilenemedi — değişiklik yeniden başlatmada geçerli olur:', hataMetni(e));
+  }
   return next;
 }
 

@@ -41,7 +41,12 @@ export function GoalWidget(_props?: { embedded?: boolean; previewMode?: boolean 
       setCurrent(v => v + (amount || 0));
     }
     if (s.type === 'follower' && type === 'follow') setCurrent(v => v + 1);
-    if (s.type === 'sub' && (type === 'subscription' || type === 'gifted_sub' || type === 'gift_sub')) setCurrent(v => v + 1);
+    // Sunucunun abonelik uyarı türü 'sub'; eskiden listede yoktu ve normal
+    // abonelikler hedefe HİÇ eklenmiyordu. Hediye paketi adediyle sayılır.
+    if (s.type === 'sub' && (type === 'sub' || type === 'subscription')) setCurrent(v => v + 1);
+    if (s.type === 'sub' && (type === 'gift_sub' || type === 'gifted_sub')) {
+      setCurrent(v => v + Math.max(1, Number(ev?.count) || 1));
+    }
     if (s.type === 'kicks' && type === 'kicks') setCurrent(v => v + (amount || 1));
   }, [lastMessage, s.type]);
 

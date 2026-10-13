@@ -1,22 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
-import { ChatBoxWidget } from './ChatBoxWidget.js';
-import { AlertBoxWidget } from './AlertBoxWidget.js';
-import { EmoteComboWidget } from './EmoteComboWidget.js';
-import { SubathonWidget } from './SubathonWidget.js';
-import { EventLabelsWidget } from './EventLabelsWidget.js';
-import { NowPlayingWidget } from './NowPlayingWidget.js';
-import { TheCupWidget } from './TheCupWidget.js';
-import { PollsWidget } from './PollsWidget.js';
-import { ShoutoutWidget } from './ShoutoutWidget.js';
-import { PinnedMessageWidget } from './PinnedMessageWidget.js';
-import { GoalWidget } from './GoalWidget.js';
-import { WheelWidget } from './WheelWidget.js';
-import { HypeTrainWidget } from './HypeTrainWidget.js';
-import LyricsWidget from './LyricsWidget.js';
+import { OverlayKatmanlari } from './OverlayLayers.js';
 import JumpScareWidget from './JumpScareWidget.js';
-import KingWidget from './KingWidget.js';
-import TriviaWidget from './TriviaWidget.js';
 
 export interface WidgetLayoutItem {
   enabled: boolean;
@@ -255,27 +240,6 @@ export function UnifiedOverlayWidget() {
     ? 1 
     : Math.min(scaleX, scaleY);
 
-  const getWidgetStyle = (item: WidgetLayoutItem | undefined, defaultZIndex = 50): React.CSSProperties => {
-    if (!item) return { display: 'none' };
-    const x = typeof item.x === 'number' ? item.x : 0;
-    const y = typeof item.y === 'number' ? item.y : 0;
-    const width = item.width || 300;
-    const height = item.height || 200;
-    const scale = typeof item.scale === 'number' ? item.scale : 1;
-
-    return {
-      position: 'absolute',
-      left: `${x}px`,
-      top: `${y}px`,
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `scale(${scale})`,
-      transformOrigin: 'top left',
-      zIndex: defaultZIndex,
-      pointerEvents: 'none'
-    };
-  };
-
   return (
     <div
       style={{
@@ -321,116 +285,15 @@ export function UnifiedOverlayWidget() {
         </div>
       )}
 
-      {/* 1. Event Labels Bar */}
-      {config.eventLabels?.enabled && (
-        <div style={getWidgetStyle(config.eventLabels, 100)}>
-          <EventLabelsWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
+      {/* Katmanlar TEK kaynaktan gelir (OverlayLayers.tsx): Overlay Stüdyo
+          önizlemesi de aynı bileşeni kullanır, böylece "önizlemede başka,
+          OBS'te başka görünüyor" sorunu yapısal olarak imkânsızlaşır. */}
+      <OverlayKatmanlari config={config as any} onizleme={isTestMode} />
 
-      {/* 2. Goal Progress Bar */}
-      {config.goals?.enabled && (
-        <div style={getWidgetStyle(config.goals, 90)}>
-          <GoalWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 3. Subathon Timer */}
-      {config.subathon?.enabled && (
-        <div style={getWidgetStyle(config.subathon, 85)}>
-          <SubathonWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 4. Alert Box Notifications */}
-      {config.alerts?.enabled && (
-        <div style={getWidgetStyle(config.alerts, 200)}>
-          <AlertBoxWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 5. Chat Box Overlay */}
-      {config.chat?.enabled && (
-        <div style={getWidgetStyle(config.chat, 70)}>
-          <ChatBoxWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 6. Emote Combo */}
-      {config.emoteCombo?.enabled && (
-        <div style={getWidgetStyle(config.emoteCombo, 150)}>
-          <EmoteComboWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 7. Now Playing Song Card */}
-      {config.nowPlaying?.enabled && (
-        <div style={getWidgetStyle(config.nowPlaying, 80)}>
-          <NowPlayingWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 8. The Cup Physics Jar */}
-      {config.theCup?.enabled && (
-        <div style={getWidgetStyle(config.theCup, 75)}>
-          <TheCupWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 9. Live Polls */}
-      {config.polls?.enabled && (
-        <div style={getWidgetStyle(config.polls, 88)}>
-          <PollsWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 10. Wheel Of Fortune */}
-      {config.wheel?.enabled && (
-        <div style={getWidgetStyle(config.wheel, 120)}>
-          <WheelWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 11. Hype Train */}
-      {config.hypeTrain?.enabled && (
-        <div style={getWidgetStyle(config.hypeTrain, 130)}>
-          <HypeTrainWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
-
-      {/* 12. Shoutout Spotlight & Pinned Messages */}
-      <div style={{ position: 'absolute', top: '35%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 180 }}>
-        <ShoutoutWidget />
-      </div>
-      <div style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 110 }}>
-        <PinnedMessageWidget />
-      </div>
-
-      {/* 13. Widget Lyrics (Canlı Şarkı Sözleri) */}
-      {config.lyrics?.enabled && (
-        <div style={getWidgetStyle(config.lyrics, 90)}>
-          <LyricsWidget />
-        </div>
-      )}
-
-      {/* 14. Tahtın Kralı (King System) */}
-      {config.king?.enabled && (
-        <div style={getWidgetStyle(config.king, 95)}>
-          <KingWidget />
-        </div>
-      )}
-
-      {/* 15. JumpScare Overlay Katmanı */}
       {config.jumpScare?.enabled && (
         <JumpScareWidget />
       )}
 
-      {/* 16. Bil Bakalım Trivia Bilgi Yarışması */}
-      {config.trivia?.enabled && (
-        <div style={getWidgetStyle(config.trivia, 170)}>
-          <TriviaWidget embedded={true} previewMode={isTestMode} />
-        </div>
-      )}
     </div>
   );
 }

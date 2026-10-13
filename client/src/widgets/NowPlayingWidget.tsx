@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { NOW_PLAYING_DEFAULTS } from '../lib/widget-defaults.js';
+import { wsAdresi } from '../lib/widget-style.js';
 
 interface SongItem {
   title: string;
@@ -56,14 +57,22 @@ export function NowPlayingWidget({ embedded = false, previewMode = false }: NowP
       })
       .catch(() => {});
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const port =
-      window.location.port === '5173' || window.location.port === '3000' ? '3001' : window.location.port || '3001';
-    const ws = new WebSocket(`${protocol}//${window.location.hostname}:${port}/ws?type=all`);
+    const ws = new WebSocket(wsAdresi());
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        if (payload.type === 'song_started' && payload.song) setSong(payload.song);
+        if (payload.type === 'song_started' && payload.song) {
+          setSong(payload.song);
+          // Test şarkısı birkaç saniye görünür, sonra çalan gerçek şarkıya dönülür
+          if (payload.test) {
+            setTimeout(() => {
+              fetch('/api/songrequest/current')
+                .then((r) => r.json())
+                .then((d) => setSong(d && d.title ? d : null))
+                .catch(() => setSong(null));
+            }, 8000);
+          }
+        }
         if (payload.type === 'song_ended' && s.hideWhenIdle) setSong(null);
       } catch {
         /* bozuk mesaj */

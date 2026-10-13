@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Giveaway } from '../types.js';
-import { Gift, Sparkles, Trophy, Plus, Ticket, Users } from 'lucide-react';
+import { Gift, Trophy, Plus, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 
@@ -42,7 +42,7 @@ export function Giveaways() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/giveaways/create', {
+    const res = await fetch('/api/giveaways/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -58,6 +58,9 @@ export function Giveaways() {
         minWatchMinutes: minWatch
       })
     });
+    // Sunucu ek ayarları yazamazsa artık söylüyor (eskiden sessizdi)
+    const veri = await res.json().catch(() => null);
+    if (veri?.uyari) alert(veri.uyari);
     setIsCreating(false);
     setTitle('');
     loadGiveaways();
@@ -247,6 +250,34 @@ export function Giveaways() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Geçmiş çekilişler — sunucu son 10'u döndürüyordu ama sayfa hiç göstermiyordu */}
+      {pastGiveaways.length > 0 && (
+        <div className="glass-panel p-5 rounded-2xl space-y-3">
+          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-yellow-400" /> Geçmiş Çekilişler
+          </h2>
+          <div className="divide-y divide-white/5">
+            {pastGiveaways.map((g) => (
+              <div key={g.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <div className="font-semibold text-white truncate">{g.title}</div>
+                  <div className="text-[11px] text-gray-500">
+                    {new Date(g.created_at).toLocaleString('tr-TR')} · {g.keyword}
+                  </div>
+                </div>
+                <div className="shrink-0 text-xs font-bold">
+                  {g.winner ? (
+                    <span className="text-yellow-300">🏆 @{g.winner}</span>
+                  ) : (
+                    <span className="text-gray-500">kazanan yok</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

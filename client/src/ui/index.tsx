@@ -1,0 +1,369 @@
+/**
+ * StreamAxT — tasarım sistemi
+ * Developed by AxthrowA
+ *
+ * Denetimde bulundu (CURRENT_SYSTEM_AUDIT §15): ortak bileşen yoktu, her
+ * sayfa kendi Tailwind sınıflarını tekrarlıyordu — `bg-purple-600
+ * hover:bg-purple-500` deseni **47 farklı yerde** elle yazılmıştı. Toast
+ * bildirimi, onay diyaloğu ve alan seviyesinde form hatası hiç yoktu;
+ * silme işlemleri doğrudan yapılıyordu.
+ *
+ * Kural: aynı işi yapan ikinci bir bileşen yazılmaz. Mevcut sayfalar
+ * kademeli taşınır — tek seferde 2.500 satırlık sayfa yeniden yazılmaz.
+ */
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ReactNode
+} from 'react';
+import { kirliIsaretle } from '../lib/kaydedilmemis.js';
+
+// ---- Buton -----------------------------------------------------------------
+
+type ButonTonu = 'birincil' | 'ikincil' | 'tehlike' | 'basari' | 'sade';
+
+const TON: Record<ButonTonu, string> = {
+  birincil: 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20',
+  ikincil: 'bg-white/5 hover:bg-white/10 text-gray-100 border border-white/10',
+  tehlike: 'bg-red-600 hover:bg-red-500 text-white',
+  basari: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+  sade: 'bg-transparent hover:bg-white/5 text-gray-300'
+};
+
+export function Buton({
+  ton = 'birincil',
+  ikon,
+  children,
+  className = '',
+  ...p
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { ton?: ButonTonu; ikon?: ReactNode }) {
+  return (
+    <button
+      {...p}
+      className={`px-3 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TON[ton]} ${className}`}
+    >
+      {ikon}
+      {children}
+    </button>
+  );
+}
+
+// ---- Form alanı ------------------------------------------------------------
+
+export function Alan({
+  etiket,
+  ipucu,
+  hata,
+  children
+}: {
+  etiket: string;
+  ipucu?: string;
+  hata?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-[11px] font-bold text-gray-300 mb-1">{etiket}</span>
+      {children}
+      {/* Hata alan SEVİYESİNDE gösterilir — eskiden hiç gösterilmiyordu */}
+      {hata ? (
+        <span className="block text-[10px] text-red-400 mt-1">{hata}</span>
+      ) : ipucu ? (
+        <span className="block text-[10px] text-gray-500 mt-1">{ipucu}</span>
+      ) : null}
+    </label>
+  );
+}
+
+const GIRDI_SINIF =
+  'w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors';
+
+export function Girdi({ hataVar, className = '', ...p }: React.InputHTMLAttributes<HTMLInputElement> & { hataVar?: boolean }) {
+  return <input {...p} className={`${GIRDI_SINIF} ${hataVar ? 'border-red-500/60' : ''} ${className}`} />;
+}
+
+export function AlanMetni({ className = '', ...p }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...p} className={`${GIRDI_SINIF} min-h-[70px] ${className}`} />;
+}
+
+export function Secim({
+  secenekler,
+  className = '',
+  ...p
+}: React.SelectHTMLAttributes<HTMLSelectElement> & { secenekler: Array<{ value: string; label: string }> }) {
+  return (
+    <select {...p} className={`${GIRDI_SINIF} ${className}`}>
+      {secenekler.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export function Anahtar({
+  acik,
+  onChange,
+  etiket
+}: {
+  acik: boolean;
+  onChange: (v: boolean) => void;
+  etiket?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={acik}
+      onClick={() => onChange(!acik)}
+      className="inline-flex items-center gap-2 group"
+    >
+      <span
+        className={`w-9 h-5 rounded-full transition-colors relative ${acik ? 'bg-emerald-500' : 'bg-white/15'}`}
+      >
+        <span
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${acik ? 'left-[18px]' : 'left-0.5'}`}
+        />
+      </span>
+      {etiket && <span className="text-[11px] font-bold text-gray-300 group-hover:text-white">{etiket}</span>}
+    </button>
+  );
+}
+
+// ---- Kart ve durumlar ------------------------------------------------------
+
+export function Kart({
+  baslik,
+  aciklama,
+  sag,
+  children,
+  className = ''
+}: {
+  baslik?: string;
+  aciklama?: string;
+  sag?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`bg-black/30 border border-white/10 rounded-2xl p-4 space-y-3 ${className}`}>
+      {(baslik || sag) && (
+        <header className="flex items-start justify-between gap-3 pb-2 border-b border-white/10">
+          <div>
+            {baslik && <h3 className="text-sm font-extrabold text-white">{baslik}</h3>}
+            {aciklama && <p className="text-[11px] text-gray-400 mt-0.5">{aciklama}</p>}
+          </div>
+          {sag}
+        </header>
+      )}
+      {children}
+    </section>
+  );
+}
+
+export function BosDurum({ baslik, aciklama, eylem }: { baslik: string; aciklama?: string; eylem?: ReactNode }) {
+  return (
+    <div className="text-center py-8 px-4">
+      <p className="text-sm font-bold text-gray-300">{baslik}</p>
+      {aciklama && <p className="text-[11px] text-gray-500 mt-1">{aciklama}</p>}
+      {eylem && <div className="mt-3 inline-block">{eylem}</div>}
+    </div>
+  );
+}
+
+export function HataDurumu({ mesaj, yenidenDene }: { mesaj: string; yenidenDene?: () => void }) {
+  return (
+    <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
+      <span className="text-[11px] text-red-200">{mesaj}</span>
+      {yenidenDene && (
+        <Buton ton="ikincil" onClick={yenidenDene}>
+          Yeniden dene
+        </Buton>
+      )}
+    </div>
+  );
+}
+
+export function Iskelet({ satir = 3 }: { satir?: number }) {
+  return (
+    <div className="space-y-2 animate-pulse">
+      {Array.from({ length: satir }).map((_, i) => (
+        <div key={i} className="h-8 bg-white/5 rounded-lg" />
+      ))}
+    </div>
+  );
+}
+
+// ---- Toast -----------------------------------------------------------------
+
+type ToastTuru = 'bilgi' | 'basari' | 'hata';
+interface Toast {
+  id: number;
+  tur: ToastTuru;
+  metin: string;
+}
+
+const ToastBaglam = createContext<{ toast: (metin: string, tur?: ToastTuru) => void }>({
+  toast: () => {}
+});
+
+export function useToast() {
+  return useContext(ToastBaglam).toast;
+}
+
+const TOAST_RENK: Record<ToastTuru, string> = {
+  bilgi: 'bg-slate-800 border-white/15 text-gray-100',
+  basari: 'bg-emerald-600/90 border-emerald-400/40 text-white',
+  hata: 'bg-red-600/90 border-red-400/40 text-white'
+};
+
+export function ToastSaglayici({ children }: { children: ReactNode }) {
+  const [liste, setListe] = useState<Toast[]>([]);
+
+  const toast = useCallback((metin: string, tur: ToastTuru = 'bilgi') => {
+    const id = Date.now() + Math.random();
+    setListe((p) => [...p, { id, tur, metin }]);
+    setTimeout(() => setListe((p) => p.filter((t) => t.id !== id)), 4000);
+  }, []);
+
+  const deger = useMemo(() => ({ toast }), [toast]);
+
+  return (
+    <ToastBaglam.Provider value={deger}>
+      {children}
+      <div className="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none">
+        {liste.map((t) => (
+          <div
+            key={t.id}
+            className={`px-4 py-2.5 rounded-xl border shadow-2xl text-xs font-bold max-w-sm animate-fadeIn ${TOAST_RENK[t.tur]}`}
+          >
+            {t.metin}
+          </div>
+        ))}
+      </div>
+    </ToastBaglam.Provider>
+  );
+}
+
+// ---- Onay diyaloğu ---------------------------------------------------------
+
+export function OnayDiyalogu({
+  acik,
+  baslik,
+  mesaj,
+  onayMetni = 'Evet, devam et',
+  tehlikeli = false,
+  onOnay,
+  onIptal
+}: {
+  acik: boolean;
+  baslik: string;
+  mesaj: string;
+  onayMetni?: string;
+  tehlikeli?: boolean;
+  onOnay: () => void;
+  onIptal: () => void;
+}) {
+  // Escape ile kapanabilmeli
+  useEffect(() => {
+    if (!acik) return;
+    const f = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onIptal();
+    };
+    window.addEventListener('keydown', f);
+    return () => window.removeEventListener('keydown', f);
+  }, [acik, onIptal]);
+
+  if (!acik) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-[#14161f] border border-white/15 rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl">
+        <h3 className="text-base font-extrabold text-white">{baslik}</h3>
+        <p className="text-xs text-gray-300 leading-relaxed">{mesaj}</p>
+        <div className="flex justify-end gap-2 pt-1">
+          <Buton ton="ikincil" onClick={onIptal}>
+            Vazgeç
+          </Buton>
+          <Buton ton={tehlikeli ? 'tehlike' : 'birincil'} onClick={onOnay}>
+            {onayMetni}
+          </Buton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Onay diyaloğunu tek satırda kullanmak için. */
+export function useOnay() {
+  const [durum, setDurum] = useState<{
+    acik: boolean;
+    baslik: string;
+    mesaj: string;
+    tehlikeli: boolean;
+    is: () => void;
+  }>({ acik: false, baslik: '', mesaj: '', tehlikeli: false, is: () => {} });
+
+  const sor = useCallback((baslik: string, mesaj: string, is: () => void, tehlikeli = true) => {
+    setDurum({ acik: true, baslik, mesaj, tehlikeli, is });
+  }, []);
+
+  const eleman = (
+    <OnayDiyalogu
+      acik={durum.acik}
+      baslik={durum.baslik}
+      mesaj={durum.mesaj}
+      tehlikeli={durum.tehlikeli}
+      onIptal={() => setDurum((d) => ({ ...d, acik: false }))}
+      onOnay={() => {
+        durum.is();
+        setDurum((d) => ({ ...d, acik: false }));
+      }}
+    />
+  );
+
+  return { sor, eleman };
+}
+
+// ---- Kaydedilmemiş değişiklik uyarısı --------------------------------------
+
+/**
+ * Kaydedilmemiş değişiklik varken kalıcı şerit gösterir; sekme değişiminde
+ * (App → gecisOnayla) ve sayfa kapanırken/yenilenirken sorar.
+ */
+export function KaydedilmemisUyari({ varMi, onKaydet }: { varMi: boolean; onKaydet?: () => void }) {
+  const kimlik = useId();
+  useEffect(() => {
+    kirliIsaretle(kimlik, varMi);
+    return () => kirliIsaretle(kimlik, false);
+  }, [kimlik, varMi]);
+
+  useEffect(() => {
+    if (!varMi) return;
+    const f = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', f);
+    return () => window.removeEventListener('beforeunload', f);
+  }, [varMi]);
+
+  if (!varMi) return null;
+
+  return (
+    <div className="sticky top-2 z-40 bg-amber-500/15 border border-amber-500/40 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
+      <span className="text-[11px] font-bold text-amber-200">Kaydedilmemiş değişiklikleriniz var.</span>
+      {onKaydet && (
+        <Buton ton="basari" onClick={onKaydet}>
+          Kaydet
+        </Buton>
+      )}
+    </div>
+  );
+}

@@ -514,7 +514,7 @@ export default function TTSManager() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input
                   type="password"
-                  placeholder="ElevenLabs API Key"
+                  placeholder="ElevenLabs API anahtarı"
                   value={settings.elevenlabsApiKey || ''}
                   onChange={e => setSettings({ ...settings, elevenlabsApiKey: e.target.value })}
                   className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none"

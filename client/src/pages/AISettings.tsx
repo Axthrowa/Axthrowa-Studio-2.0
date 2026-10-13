@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Bot, Save, Check, Send, User, MessageSquarePlus, Zap, Clock, Smile, Flame, BookOpen, Crown } from 'lucide-react';
+import { Sparkles, Bot, Save, Check, Send, User, MessageSquarePlus, Zap } from 'lucide-react';
+import { KaydedilmemisUyari, useToast } from '../ui/index.js';
+import { useKirliTakip } from '../hooks/useKirliTakip.js';
 
 interface ChatRescueSettings {
   isEnabled: boolean;
@@ -16,6 +18,11 @@ export function AISettings() {
   const [prompt, setPrompt] = useState('');
   const [enabled, setEnabled] = useState(true);
   const [saved, setSaved] = useState(false);
+  // Anahtar sunucuda maskelenerek geliyor; panel gerçek değeri hiç görmez.
+  const [anahtarKayitli, setAnahtarKayitli] = useState(false);
+  const [aktifModel, setAktifModel] = useState('');
+  const [durum, setDurum] = useState<any>(null);
+  const [durumYukleniyor, setDurumYukleniyor] = useState(false);
 
   // Chat Rescue State
   const [rescue, setRescue] = useState<ChatRescueSettings>({
@@ -35,14 +42,23 @@ export function AISettings() {
     { role: 'bot', text: 'Merhaba! Ben StreamAxT AI yayın asistanınım. Sohbetteki izleyicilerin sorularına senin belirlediğin kişilikle yanıt verebilirim!' }
   ]);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
+  const gemini = useKirliTakip({ apiKey, prompt, enabled });
+  const kurtarma = useKirliTakip(rescue);
+  const kirli = gemini.kirli || kurtarma.kirli;
+  const geminiTaban = gemini.taban;
+  const kurtarmaTaban = kurtarma.taban;
 
   useEffect(() => {
     fetch('/api/settings')
       .then(r => r.json())
       .then(d => {
-        setApiKey(d.gemini_api_key || '');
-        setPrompt(d.gemini_prompt || '');
-        setEnabled(d.gemini_enabled !== 'false');
+        const yuklenen = { apiKey: d.gemini_api_key || '', prompt: d.gemini_prompt || '', enabled: d.gemini_enabled !== 'false' };
+        setApiKey(yuklenen.apiKey);
+        setAnahtarKayitli(Boolean(d.gemini_api_keyVar));
+        setPrompt(yuklenen.prompt);
+        setEnabled(yuklenen.enabled);
+        geminiTaban(yuklenen);
       })
       .catch(() => {});
 
@@ -51,14 +67,15 @@ export function AISettings() {
       .then(d => {
         if (d && typeof d.isEnabled === 'boolean') {
           setRescue(d);
+          kurtarmaTaban(d);
         }
       })
       .catch(() => {});
-  }, []);
+  }, [geminiTaban, kurtarmaTaban]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await Promise.all([
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const [ayarYaniti, kurtarmaYaniti] = await Promise.all([
       fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -67,14 +84,22 @@ export function AISettings() {
           gemini_prompt: prompt,
           gemini_enabled: enabled ? 'true' : 'false'
         })
-      }),
+      }).catch(() => null),
       fetch('/api/chat-rescue/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(rescue)
-      })
+      }).catch(() => null)
     ]);
-
+    // Eskiden yanıtlara bakılmadan "Kaydedildi" gösteriliyordu
+    if (!ayarYaniti?.ok || !kurtarmaYaniti?.ok) {
+      toast(!ayarYaniti?.ok ? 'Yapay zekâ ayarları kaydedilemedi.' : 'Sohbet kurtarma ayarları kaydedilemedi.', 'hata');
+      if (ayarYaniti?.ok) geminiTaban({ apiKey, prompt, enabled });
+      if (kurtarmaYaniti?.ok) kurtarmaTaban(rescue);
+      return;
+    }
+    geminiTaban({ apiKey, prompt, enabled });
+    kurtarmaTaban(rescue);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -96,39 +121,63 @@ export function AISettings() {
     }
   };
 
+  /**
+   * Asistana GERÇEKTEN sorar.
+   *
+   * Bu kutu daha önce sunucuya hiç gitmiyordu: `setTimeout` ile sabit bir
+   * cümle gösteriyordu, bu yüzden API anahtarı doğru olsa bile "hep aynı
+   * yanıtı veriyor" görünüyordu. Artık `POST /api/ai/ask` çağrılıyor.
+   */
   const handleTestChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testInput.trim() || loading) return;
 
     const userMessage = testInput.trim();
     setTestInput('');
-    setChatLog(prev => [...prev, { role: 'user', text: userMessage }]);
+    setChatLog(prev => [...prev, { role: 'user', text: userMessage }, { role: 'bot', text: 'Düşünüyor...' }]);
     setLoading(true);
 
+    const yaz = (text: string) =>
+      setChatLog(prev => [...prev.filter(m => m.text !== 'Düşünüyor...'), { role: 'bot', text }]);
+
     try {
-      setChatLog(prev => [...prev, { role: 'bot', text: 'Düşünüyor...' }]);
-      setTimeout(() => {
-        setChatLog(prev => {
-          const filtered = prev.filter(m => m.text !== 'Düşünüyor...');
-          return [
-            ...filtered,
-            {
-              role: 'bot',
-              text: apiKey
-                ? `Harika bir soru! Canlı yayında "${userMessage}" konusunu konuşmak süper oldu! 🎮🔥`
-                : 'Lütfen önce geçerli bir Google Gemini API anahtarı kaydedin!'
-            }
-          ];
-        });
-        setLoading(false);
-      }, 800);
-    } catch {
+      const res = await fetch('/api/ai/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userMessage, sender: 'Yayıncı' })
+      });
+      const d = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        yaz(`⚠️ Sunucu hatası (${res.status}): ${d?.error || 'bilinmeyen'}`);
+      } else {
+        yaz(d?.cevap || '⚠️ Boş yanıt geldi.');
+        if (d?.model) setAktifModel(d.model);
+      }
+    } catch (err: any) {
+      yaz(`⚠️ StreamAxT sunucusuna ulaşılamadı: ${String(err?.message || err)}`);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  /** Anahtarı ve modeli sunucuya doğrulatır — üretim kotası harcamaz. */
+  const durumuYenile = async () => {
+    setDurumYukleniyor(true);
+    try {
+      const d = await fetch('/api/ai/status').then(r => r.json());
+      setDurum(d);
+      if (d?.model) setAktifModel(d.model);
+    } catch {
+      setDurum({ hazir: false, hata: 'Sunucuya ulaşılamadı' });
+    } finally {
+      setDurumYukleniyor(false);
     }
   };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       <div>
         <h1 className="text-2xl font-black text-white flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-purple-400" />
@@ -265,6 +314,53 @@ export function AISettings() {
               <p className="text-[11px] text-gray-500 mt-1">
                 Google AI Studio üzerinden ücretsiz API anahtarınızı alabilirsiniz: <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">aistudio.google.com</a>
               </p>
+
+              {/* Anahtar sunucuda MASKELENIR; panel gercek degeri hic gormez.
+                  Kutuyu bos birakip kaydetmek kayitli anahtari SILMEZ. */}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {anahtarKayitli && (
+                  <span className="text-[10px] px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
+                    ✓ Anahtar kayıtlı (güvenlik için maskeli gösterilir)
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={durumuYenile}
+                  disabled={durumYukleniyor}
+                  className="text-[10px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-bold disabled:opacity-50"
+                >
+                  {durumYukleniyor ? 'Deneniyor…' : 'Bağlantıyı sına'}
+                </button>
+                {aktifModel && (
+                  <span className="text-[10px] px-2 py-1 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
+                    model: {aktifModel}
+                  </span>
+                )}
+              </div>
+
+              {durum && (
+                <div
+                  className={`mt-2 text-[11px] rounded-xl px-3 py-2 border ${
+                    durum.hazir
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                      : 'bg-red-500/10 border-red-500/30 text-red-200'
+                  }`}
+                >
+                  {durum.hazir ? (
+                    <>
+                      Bağlantı çalışıyor. Hesabınızda <strong>{durum.modeller?.length ?? 0}</strong> model açık,
+                      kullanılan: <strong className="font-mono">{durum.model}</strong>.
+                      {durum.kotasiDolan?.length > 0 && (
+                        <span className="block mt-1 text-amber-300">
+                          Kotası dolduğu için atlanan: {durum.kotasiDolan.join(', ')}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>Bağlantı kurulamadı: {durum.hata || 'bilinmeyen sebep'}</>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

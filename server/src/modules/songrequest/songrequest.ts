@@ -1,7 +1,7 @@
 import { db } from '../../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import { ChatMessagePayload } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
 
@@ -13,9 +13,26 @@ export interface SongItem {
   requestedBy: string;
   platform: string;
   thumbnail?: string;
-  sourceType?: 'youtube' | 'spotify' | 'ytmusic';
   createdAt: number;
   isPlayed: boolean;
+}
+
+/**
+ * Adresi / protokol URI'sini (spotify:, https:) kabuk KULLANMADAN açar.
+ *
+ * Eskiden `exec('start "" "..."')` cmd.exe üzerinden çalışıyordu; cmd
+ * `%DEĞİŞKEN%` kalıplarını tırnak içinde bile genişletir ve şarkı adı izleyiciden
+ * geliyor. explorer.exe bağımsız değişkeni olduğu gibi kabuğa iletir.
+ */
+function sistemdeAc(hedef: string): void {
+  if (!/^(https:\/\/|spotify:)[^\s"]+$/i.test(hedef)) {
+    console.warn('[SongRequest] Açılmayan hedef reddedildi');
+    return;
+  }
+  const komut = process.platform === 'win32' ? 'explorer.exe' : 'xdg-open';
+  const cocuk = spawn(komut, [hedef], { detached: true, stdio: 'ignore', windowsHide: true });
+  cocuk.on('error', (e) => console.error('[SongRequest] Masaüstü oynatıcı açılamadı:', e.message));
+  cocuk.unref();
 }
 
 export class SongRequestEngine {
@@ -35,13 +52,11 @@ export class SongRequestEngine {
     let title = rawQuery;
     let thumbnailUrl = '';
     let videoUrl = '';
-    let sourceType: 'youtube' | 'spotify' | 'ytmusic' = 'youtube';
 
     // 1. Check if query is a Spotify Track URL or URI
     const spotifyMatch = rawQuery.match(/(?:https?:\/\/open\.spotify\.com\/track\/|spotify:track:)([a-zA-Z0-9]+)/);
     if (spotifyMatch) {
       const trackId = spotifyMatch[1];
-      sourceType = 'spotify';
       videoUrl = `https://open.spotify.com/track/${trackId}`;
       
       // Fast oEmbed for Spotify title
@@ -63,7 +78,6 @@ export class SongRequestEngine {
       const ytMusicMatch = rawQuery.match(/v=([a-zA-Z0-9_-]{11})/);
       if (ytMusicMatch) {
         videoId = ytMusicMatch[1];
-        sourceType = 'ytmusic';
         videoUrl = `https://music.youtube.com/watch?v=${videoId}`;
         thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       }
@@ -131,7 +145,9 @@ export class SongRequestEngine {
         if (oembed.data?.title) {
           title = oembed.data.title;
         }
-      } catch {}
+      } catch {
+        /* başlık isteğe bağlı: oEmbed yanıt vermezse sorgu metni başlık kalır */
+      }
     }
 
     const songId = uuidv4();
@@ -170,7 +186,7 @@ export class SongRequestEngine {
         }
 
         console.log(`[SongRequest] Opening in Spotify Desktop: ${spotifyUri}`);
-        exec(`start "" "${spotifyUri}"`, { windowsHide: true });
+        sistemdeAc(spotifyUri);
         return true;
       } 
       else if (player === 'ytmusic') {
@@ -186,8 +202,8 @@ export class SongRequestEngine {
         }
 
         console.log(`[SongRequest] Opening in YouTube Music: ${ytMusicUrl}`);
-        // Windows start command opens YouTube Music in default browser or desktop PWA app
-        exec(`start "" "${ytMusicUrl}"`, { windowsHide: true });
+        // Varsayılan tarayıcıda ya da YouTube Music masaüstü uygulamasında açılır
+        sistemdeAc(ytMusicUrl);
         return true;
       }
     } catch (err: any) {

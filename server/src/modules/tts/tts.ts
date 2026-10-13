@@ -7,6 +7,14 @@ import { EventEmitter } from 'events';
 import { db } from '../../db/index.js';
 import { multiEngineTTS, TTSQueueItem } from './tts-engine.js';
 import { TTSSettings } from '../../db/schema.js';
+import {
+  metniHazirla,
+  rolYeterli,
+  TTSBekleme,
+  VARSAYILAN_FILTRE,
+  type KullaniciRol,
+  type TTSFiltreAyarlari
+} from './filters.js';
 
 export interface TTSItem {
   id: string;
@@ -43,6 +51,8 @@ function toPlayable(item: TTSQueueItem): TTSItem {
 }
 
 class TTSEngine extends EventEmitter {
+  private bekleme = new TTSBekleme();
+
   constructor() {
     super();
     multiEngineTTS.on('tts_queued', (item: TTSQueueItem) => {
@@ -50,14 +60,58 @@ class TTSEngine extends EventEmitter {
     });
   }
 
-  enqueue(text: string, user: string, voice?: string, override?: Partial<TTSSettings>): TTSItem | null {
+  /** Filtre ayarlarini oku (BotRix TTS > Gelismis ayarlar karsiligi). */
+  filtreAyarlari(): TTSFiltreAyarlari {
+    try {
+      const r = db.prepare("SELECT value FROM bot_settings WHERE key = 'tts_filters'").get() as
+        | { value: string }
+        | undefined;
+      if (r?.value) return { ...VARSAYILAN_FILTRE, ...JSON.parse(r.value) };
+    } catch {
+      /* bozuk JSON */
+    }
+    return { ...VARSAYILAN_FILTRE };
+  }
+
+  filtreYaz(yeni: Partial<TTSFiltreAyarlari>): TTSFiltreAyarlari {
+    const birlesik = { ...this.filtreAyarlari(), ...yeni };
+    db.prepare(
+      "INSERT INTO bot_settings (key, value) VALUES ('tts_filters', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+    ).run(JSON.stringify(birlesik));
+    return birlesik;
+  }
+
+  /**
+   * Kuyruga ekler.
+   *
+   * `roller` verilirse minimum rol kontrolu yapilir. Filtreler (link, emoji,
+   * sayi, sembol, tekrar, karakter siniri, kara liste, bekleme) burada
+   * uygulanir — eskiden sohbete yazilan HER SEY oldugu gibi okunuyordu.
+   */
+  enqueue(
+    text: string,
+    user: string,
+    voice?: string,
+    override?: Partial<TTSSettings>,
+    roller?: KullaniciRol
+  ): TTSItem | null {
     const enabledRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'tts_enabled'").get() as { value: string } | undefined;
     if (enabledRow?.value === 'false') return null;
+
+    const filtre = this.filtreAyarlari();
+
+    if (roller && !rolYeterli(roller, filtre.minRol)) return null;
+    if (!this.bekleme.hazirMi(user, filtre.beklemeSn)) return null;
+
+    const hazir = metniHazirla(text, user, filtre);
+    if (!hazir) return null;
+
+    this.bekleme.isaretle(user);
 
     const settings = multiEngineTTS.getSettings();
     const selectedVoice = voice || settings.edgeVoice || 'tr-TR-AhmetNeural';
 
-    multiEngineTTS.synthesizeWithFallback(text, user, {
+    multiEngineTTS.synthesizeWithFallback(hazir.metin, user, {
       ...override,
       edgeVoice: selectedVoice
     }).catch((err) => {
@@ -66,7 +120,7 @@ class TTSEngine extends EventEmitter {
 
     return {
       id: `pending-${Date.now()}`,
-      text,
+      text: hazir.metin,
       voice: selectedVoice,
       user,
       language: settings.language,

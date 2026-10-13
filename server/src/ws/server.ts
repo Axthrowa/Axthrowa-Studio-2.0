@@ -1,23 +1,84 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import { izinliHostMu, kokenKabulEdilir } from '../core/security/origin-guard.js';
+import { arayuzAdresleri, ekIzinliHostlar } from '../core/security/host-list.js';
 import { Server as HttpServer } from 'http';
-import { eventBus, ChatMessagePayload, FollowPayload, SubPayload, TipPayload, RaidPayload, TikTokGiftPayload, BotMessagePayload } from '../core/event-bus.js';
+import { hediyeAdedi, eventBus, ChatMessagePayload, FollowPayload, SubPayload, TipPayload, RaidPayload, TikTokGiftPayload, BotMessagePayload } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { ttsEngine, TTSItem } from '../modules/tts/tts.js';
 import { songRequest } from '../modules/songrequest/songrequest.js';
 import { platformManager } from '../platforms/manager.js';
 import { economy } from '../modules/economy/economy.js';
+import { varyantlar } from '../modules/alerts/variants.js';
+import { hataMetni, seyrekUyar } from '../core/logger.js';
+import { shieldModeService } from '../modules/moderation/shield-mode.js';
+import { BASLANGIC, kontrolUygula, KontrolDurumu, SonUyari, SonUyarilar, uyariKimligi } from '../modules/alerts/control.js';
 
 interface ClientConnection {
   ws: WebSocket;
-  type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all';
+  type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'all';
 }
 
 export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
+  /** Ekip çapında uyarı kuyruğu denetimi (modules/alerts/control.ts) */
+  private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
+  private sonUyarilar = new SonUyarilar(50);
+
+  uyariKontrolDurumu(): { state: KontrolDurumu; recent: Omit<SonUyari, 'alert'>[] } {
+    return {
+      state: this.uyariKontrol,
+      recent: this.sonUyarilar.hepsi().map(({ alert: _a, ...geri }) => geri)
+    };
+  }
+
+  /**
+   * Denetim eylemini uygular ve tüm uyarı widget'larına / panellere yayınlar.
+   * `replay`: son uyarılardan birini YENİ kimlikle yeniden oynatır (hedef, hype treni gibi sayaçlara işlemez).
+   */
+  uyariKontrolEt(eylem: string, kim: string, surum?: number | null, alertId?: string) {
+    let tekrar: SonUyari | undefined;
+    if (eylem === 'replay') {
+      tekrar = alertId ? this.sonUyarilar.bul(String(alertId)) : undefined;
+      if (!tekrar) return { ok: false as const, kod: 'invalid' as const, mesaj: 'Yeniden oynatılacak uyarı bulunamadı', durum: this.uyariKontrol };
+    }
+    const sonuc = kontrolUygula(this.uyariKontrol, eylem, kim, surum);
+    if (!sonuc.ok) return sonuc;
+    this.uyariKontrol = sonuc.durum;
+    this.broadcastTo(['dashboard', 'alertbox', 'all'], {
+      type: 'alert_control',
+      action: eylem,
+      state: this.uyariKontrol,
+      ...(alertId ? { alertId: String(alertId) } : {})
+    });
+    if (tekrar) {
+      this.broadcastTo(['dashboard', 'alertbox', 'all'], {
+        type: 'alert',
+        subType: tekrar.eventType,
+        replay: true,
+        alert: { ...tekrar.alert, id: uyariKimligi(`replay${tekrar.eventType}`), isReplay: true }
+      });
+    }
+    return sonuc;
+  }
 
   init(server: HttpServer) {
-    this.wss = new WebSocketServer({ server, path: '/ws' });
+    // Köken + Host doğrulaması (Cross-Site WebSocket Hijacking). Eskiden YOKTU:
+    // herhangi bir web sitesi bağlanıp bota sohbet mesajı yazdırabiliyor,
+    // TTS okutabiliyor, canlı sohbeti dinleyebiliyordu. Tarayıcılar WebSocket
+    // el sıkışmasında Origin'i her zaman gönderir; tarayıcı dışı istemciler
+    // (Origin yok) etkilenmez.
+    this.wss = new WebSocketServer({
+      server,
+      path: '/ws',
+      verifyClient: (info: { origin?: string; req: { headers: Record<string, any> } }) => {
+        const host = info.req.headers.host as string | undefined;
+        const tamam =
+          izinliHostMu(host, arayuzAdresleri(), ekIzinliHostlar()) && kokenKabulEdilir(info.origin, host);
+        if (!tamam) console.warn(`[Guvenlik] WebSocket reddedildi: origin=${info.origin} host=${host}`);
+        return tamam;
+      }
+    });
 
     this.wss.on('connection', (ws: WebSocket, req) => {
       const url = new URL(req.url || '', `http://${req.headers.host}`);
@@ -55,10 +116,17 @@ export class WebSocketHub {
     });
 
     this.setupEventForwarding();
+    // Ses panosu: oynatma/durum iletileri pano katmanına ve panele (döngüsel içe aktarma olmasın diye geç yüklenir)
+    void import('../modules/pano/pano.js').then((m) => m.sesPanosu.yayinciBagla((p) => this.broadcastTo(['pano', 'dashboard'], p)));
     console.log('[StreamAxT] WebSocket Hub active on /ws');
   }
 
   private handleClientMessage(msg: any) {
+    if (msg.action === 'pano_bitti') {
+      // Katman oynatmayı bitirdi (aynı istek için birden çok katman bildirebilir; hizmet yinelemeyi yok sayar)
+      void import('../modules/pano/pano.js').then((m) => m.sesPanosu.bitti(String(msg.id || '')));
+      return;
+    }
     if (msg.action === 'test_alert') {
       this.triggerTestAlert(msg.eventType);
     } else if (msg.action === 'send_chat') {
@@ -80,9 +148,15 @@ export class WebSocketHub {
   private setupEventForwarding() {
     // 1. Chat Event -> Send to Dashboard & ChatBox Overlay
     eventBus.on('chat', (payload: ChatMessagePayload) => {
+      // Ortak kara listedeki kullanıcı: panelde işaretli görünür, OBS sohbet
+      // widget'ları göstermez. Eskiden liste yalnız botun işleme hattındaydı;
+      // mesajlar yayında görünmeye devam ediyordu.
+      const karaListede = !!shieldModeService.karaListeKaydi(payload.user?.username, payload.platform);
+      // Kalkan kuralına takılan mesaj da OBS'te gösterilmez (panelde işaretli görünür)
+      const kalkanda = !karaListede && payload.user ? shieldModeService.ihlal(payload) : null;
       this.broadcastTo(['dashboard', 'chatbox', 'all'], {
         type: 'chat',
-        data: payload
+        data: karaListede ? { ...payload, karaListede: true } : kalkanda ? { ...payload, kalkanda } : payload
       });
     });
 
@@ -138,7 +212,7 @@ export class WebSocketHub {
 
     // 2. Follow Event -> AlertBox & Dashboard & Goals
     eventBus.on('follow', (payload: FollowPayload) => {
-      const alertData = this.buildAlertPayload('follow', { user: payload.displayName || payload.username });
+      const alertData = this.buildAlertPayload('follow', { user: payload.displayName || payload.username }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
         type: 'alert',
         subType: 'follow',
@@ -152,16 +226,24 @@ export class WebSocketHub {
       // Record in Loyalty Engine
       try {
         economy.recordSub(payload.username, payload.platform, payload.isGift, 1, payload.recipient);
-      } catch {}
+      } catch (e) {
+        console.warn('[Ekonomi] Abonelik sadakat kaydına işlenemedi:', hataMetni(e));
+      }
 
-      const alertData = this.buildAlertPayload('sub', {
+      // Hediye abonelik KENDİ türüyle gösterilir: Alert Box'taki "Hediye
+      // Abone" ayarı ve varyantları eskiden yalnız test düğmesinde
+      // çalışıyordu, gerçek hediyeler düz abone uyarısı olarak çıkıyordu.
+      const hediye = !!payload.isGift;
+      const tur = hediye ? 'gift_sub' : 'sub';
+      const alertData = this.buildAlertPayload(tur, {
         user: payload.displayName || payload.username,
         tier: payload.tier,
-        months: payload.months
-      });
+        months: payload.months,
+        ...(hediye ? { count: hediyeAdedi(payload) } : {})
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
         type: 'alert',
-        subType: 'sub',
+        subType: tur,
         data: payload,
         alert: alertData
       });
@@ -178,14 +260,16 @@ export class WebSocketHub {
       // Record in Loyalty Engine
       try {
         economy.recordTip(payload.username, payload.platform, payload.amount);
-      } catch {}
+      } catch (e) {
+        console.warn('[Ekonomi] Bağış sadakat kaydına işlenemedi:', hataMetni(e));
+      }
 
       const alertData = this.buildAlertPayload('tip', {
         user: payload.displayName || payload.username,
         amount: payload.amount,
         currency: payload.currency,
         message: payload.message || ''
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
         type: 'alert',
         subType: 'tip',
@@ -205,12 +289,54 @@ export class WebSocketHub {
       }
     });
 
+    // 4.5 KICKs — Kick'in kendi para birimi. Veri yolunda karsiligi YOKTU:
+    // `alert_presets` tablosunda satiri vardi ama gercek yayinda hic
+    // tetiklenmiyordu.
+    eventBus.on('kicks', (payload: any) => {
+      try {
+        // KICKs de bagis sayilir: ekonomi ve hedefler beslensin
+        economy.recordTip(payload.username, 'kick', Number(payload.amount) || 0);
+      } catch (e) {
+        console.warn('[Ekonomi] KICKs sadakat kaydına işlenemedi:', hataMetni(e));
+      }
+
+      const alertData = this.buildAlertPayload('kicks', {
+        user: payload.displayName || payload.username,
+        amount: payload.amount
+      }, (payload as any)?.isTest === true);
+      this.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
+        type: 'alert',
+        subType: 'kicks',
+        data: payload,
+        alert: alertData
+      });
+
+      this.broadcastTo(['all'], {
+        type: 'cup_drop',
+        data: { type: 'kicks', user: payload.displayName || payload.username, amount: payload.amount }
+      });
+    });
+
+    // 4.6 Host
+    eventBus.on('host', (payload: any) => {
+      const alertData = this.buildAlertPayload('host', {
+        user: payload.displayName || payload.username,
+        viewers: payload.viewers
+      }, (payload as any)?.isTest === true);
+      this.broadcastTo(['dashboard', 'alertbox', 'all'], {
+        type: 'alert',
+        subType: 'host',
+        data: payload,
+        alert: alertData
+      });
+    });
+
     // 5. Raid Event -> AlertBox & Dashboard
     eventBus.on('raid', (payload: RaidPayload) => {
       const alertData = this.buildAlertPayload('raid', {
         user: payload.displayName || payload.username,
         viewers: payload.viewers
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'all'], {
         type: 'alert',
         subType: 'raid',
@@ -223,14 +349,16 @@ export class WebSocketHub {
     eventBus.on('gift_tiktok', (payload: TikTokGiftPayload) => {
       try {
         economy.recordTip(payload.username, payload.platform, (payload.diamonds || 10) * 0.1);
-      } catch {}
+      } catch (e) {
+        console.warn('[Ekonomi] TikTok hediyesi sadakat kaydına işlenemedi:', hataMetni(e));
+      }
 
       const alertData = this.buildAlertPayload('gift_tiktok', {
         user: payload.displayName || payload.username,
         giftName: payload.giftName,
         count: payload.count,
         diamonds: payload.diamonds
-      });
+      }, (payload as any)?.isTest === true);
       this.broadcastTo(['dashboard', 'alertbox', 'all'], {
         type: 'alert',
         subType: 'gift_tiktok',
@@ -284,6 +412,42 @@ export class WebSocketHub {
 
     if (preset && !preset.is_enabled && !isTest) return null;
 
+    // Varyant secimi: ayni olay her geldiginde farkli gorsel/ses gosterilsin
+    // ve tutara gore daha gorkemli varyant secilebilsin. Varyant yoksa
+    // preset oldugu gibi kullanilir (geriye uyum).
+    try {
+      // Abonelikte eşik AY sayısıdır (panel "ay sayısı" diyor); eskiden
+      // months hiç okunmuyordu, abone varyant eşikleri hiç tutmuyordu.
+      const deger =
+        Number(variables?.amount ?? variables?.viewers ?? variables?.count ?? variables?.months ?? 0) || 0;
+      const v = varyantlar.sec(eventType, deger);
+      if (v) {
+        // Temel preset YOKSA (olay için hiç kayıt açılmamışsa) eskiden
+        // `preset.title_template` null üzerinde patlıyor, hata yakalanıp
+        // varyant SESSİZCE atlanıyordu. Artık varyant tek başına da çalışır;
+        // eksik alanlar aşağıdaki varsayılanlardan tamamlanır.
+        const taban = preset || {};
+        preset = {
+          ...taban,
+          event_type: eventType,
+          title_template: v.baslikSablonu || taban.title_template || '',
+          message_template: v.mesajSablonu || taban.message_template || '',
+          image_url: v.gorselUrl || taban.image_url || '',
+          sound_url: v.sesUrl || taban.sound_url || '',
+          sound_volume: v.sesSeviyesi ?? taban.sound_volume,
+          duration_ms: v.sureMs || taban.duration_ms,
+          animation: v.animasyon || taban.animation,
+          accent_color: v.vurguRengi || taban.accent_color,
+          text_color: v.metinRengi || taban.text_color,
+          is_enabled: taban.is_enabled ?? 1,
+          variant_id: v.id,
+          variant_name: v.ad
+        };
+      }
+    } catch (e) {
+      console.warn('[AlertBox] Varyant secimi basarisiz:', e);
+    }
+
     if (!preset) {
       const defaults: Record<string, any> = {
         follow: { title: 'YENİ TAKİPÇİ!', message: '{user} aileye katıldı!', color: '#8b5cf6', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif' },
@@ -317,12 +481,16 @@ export class WebSocketHub {
 
     for (const [key, val] of Object.entries(variables)) {
       const reg = new RegExp(`\\{${key}\\}`, 'gi');
-      title = title.replace(reg, String(val));
-      message = message.replace(reg, String(val));
+      // İşlevle yerine koy: izleyici adı/mesajındaki `$&` kalıpları metni bozmasın
+      title = title.replace(reg, () => String(val));
+      message = message.replace(reg, () => String(val));
     }
 
     return {
-      id: preset.id,
+      // Olay başına benzersiz: ön ayar kimliği türe göre sabitti, widget ikinci uyarıyı "tekrar" sayıp atıyordu
+      id: uyariKimligi(eventType),
+      presetId: preset.id,
+      isTest,
       eventType: preset.event_type,
       title,
       message,
@@ -339,7 +507,12 @@ export class WebSocketHub {
     };
   }
 
-  triggerTestAlert(eventType: string = 'follow') {
+  /**
+   * Test uyarısı. `deger` verilirse sabit örnek tutar yerine o kullanılır —
+   * tutara göre seçilen varyantlar (ör. 500+ bağış) panelden denenebilsin.
+   */
+  triggerTestAlert(eventType: string = 'follow', deger?: number) {
+    const d = Number.isFinite(Number(deger)) && Number(deger) > 0 ? Number(deger) : undefined;
     const mockUsers = ['ProGamer34', 'StreamQueen', 'ApexLegend', 'YildizKullanici', 'GamerBoy'];
     const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
 
@@ -357,7 +530,8 @@ export class WebSocketHub {
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
         alertData = this.buildAlertPayload('follow', { user: randomUser }, true);
         eventBus.emitFollow(dataPayload);
@@ -371,11 +545,12 @@ export class WebSocketHub {
           username: randomUser,
           displayName: randomUser,
           tier: 'Tier 1',
-          months: 3,
+          months: d ?? 3,
           isGift: false,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
-        alertData = this.buildAlertPayload('sub', { user: randomUser, tier: 'Tier 1', months: 3 }, true);
+        alertData = this.buildAlertPayload('sub', { user: randomUser, tier: 'Tier 1', months: d ?? 3 }, true);
         eventBus.emitSub(dataPayload);
         veriYolunaBasildi = true;
         break;
@@ -386,12 +561,13 @@ export class WebSocketHub {
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
-          amount: 50,
+          amount: d ?? 50,
           currency: '₺',
           message: 'Harika yayınlar, seviliyorsun!',
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
-        alertData = this.buildAlertPayload('tip', { user: randomUser, amount: 50, currency: '₺', message: 'Harika yayınlar, seviliyorsun!' }, true);
+        alertData = this.buildAlertPayload('tip', { user: randomUser, amount: d ?? 50, currency: '₺', message: 'Harika yayınlar, seviliyorsun!' }, true);
         eventBus.emitTip(dataPayload);
         veriYolunaBasildi = true;
         break;
@@ -402,10 +578,11 @@ export class WebSocketHub {
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
-          viewers: 128,
-          timestamp: Date.now()
+          viewers: d ?? 128,
+          timestamp: Date.now(),
+          isTest: true
         };
-        alertData = this.buildAlertPayload('raid', { user: randomUser, viewers: 128 }, true);
+        alertData = this.buildAlertPayload('raid', { user: randomUser, viewers: d ?? 128 }, true);
         eventBus.emitRaid(dataPayload);
         veriYolunaBasildi = true;
         break;
@@ -419,7 +596,8 @@ export class WebSocketHub {
           giftName: 'Asa & Taç',
           count: 5,
           diamonds: 500,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          isTest: true
         };
         alertData = this.buildAlertPayload('gift_tiktok', { user: randomUser, giftName: 'Asa & Taç', count: 5, diamonds: 500 }, true);
         eventBus.emitTikTokGift(dataPayload);
@@ -427,16 +605,16 @@ export class WebSocketHub {
         break;
 
       case 'gift_sub':
-        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, count: 5, timestamp: Date.now() };
-        alertData = this.buildAlertPayload('gift_sub', { user: randomUser, count: 5 }, true);
+        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, count: d ?? 5, timestamp: Date.now(), isTest: true };
+        alertData = this.buildAlertPayload('gift_sub', { user: randomUser, count: d ?? 5 }, true);
         break;
       case 'host':
-        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, viewers: 42, timestamp: Date.now() };
-        alertData = this.buildAlertPayload('host', { user: randomUser, viewers: 42 }, true);
+        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, viewers: d ?? 42, timestamp: Date.now(), isTest: true };
+        alertData = this.buildAlertPayload('host', { user: randomUser, viewers: d ?? 42 }, true);
         break;
       case 'kicks':
-        dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, amount: 100, timestamp: Date.now() };
-        alertData = this.buildAlertPayload('kicks', { user: randomUser, amount: 100 }, true);
+        dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, amount: d ?? 100, timestamp: Date.now(), isTest: true };
+        alertData = this.buildAlertPayload('kicks', { user: randomUser, amount: d ?? 100 }, true);
         break;
     }
 
@@ -466,7 +644,30 @@ export class WebSocketHub {
     }
   }
 
-  broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all'>, payload: any) {
+  broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'all'>, payload: any) {
+    // Yayınlanan her uyarı sunucu içi dinleyicilere de bildirilir (Hype Treni
+    // eskiden tarayıcıda tam olarak bu mesajı dinliyordu; anlam korunur).
+    if (payload?.type === 'alert' && payload.alert && !payload.replay) {
+      const a = payload.alert;
+      this.sonUyarilar.ekle({
+        id: String(a.id || uyariKimligi(payload.subType)),
+        eventType: String(payload.subType || a.eventType || 'alert'),
+        title: String(a.title || ''),
+        message: String(a.message || ''),
+        at: Date.now(),
+        isTest: !!a.isTest,
+        alert: a
+      });
+    }
+    // Yeniden oynatma sayaçlara (hype treni, hedef) ikinci kez işlemez
+    if (payload?.type === 'alert' && !payload.replay) {
+      try {
+        eventBus.emit('uyari_yayinlandi', { subType: payload.subType, data: payload.data });
+      } catch (e) {
+        /* dinleyici hatası yayını bozmasın — ama sessiz de kalmasın */
+        seyrekUyar('ws:uyari_yayinlandi', '[WS] Uyarı dinleyicisi hata verdi', e);
+      }
+    }
     const raw = JSON.stringify(payload);
     for (const client of this.clients) {
       if (types.includes(client.type) || types.includes('all') || client.type === 'all') {

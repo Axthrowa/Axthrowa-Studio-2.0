@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
 import { db } from '../../db/index.js';
 import { TriviaQuestion, TriviaCategory, TriviaScore } from '../../db/schema.js';
-import { eventBus, ChatMessagePayload } from '../../core/event-bus.js';
+import { eventBus } from '../../core/event-bus.js';
 import { economy } from '../economy/economy.js';
 import { wsHub } from '../../ws/server.js';
-import { v4 as uuidv4 } from 'uuid';
+import { hataMetni } from '../../core/logger.js';
 
 export interface VoteDistribution {
   A: { count: number; percent: number };
@@ -321,7 +321,9 @@ export class TriviaEngine extends EventEmitter {
       // Award points in StreamAxT economy
       try {
         economy.addPoints(v.username, totalEarned);
-      } catch {}
+      } catch (e) {
+        console.warn(`[Trivia] ${v.username} için ${totalEarned} puan eklenemedi:`, hataMetni(e));
+      }
 
       // Update DB score
       this.updateScoreInDb(v.username, v.displayName, v.platform, {
@@ -419,7 +421,9 @@ export class TriviaEngine extends EventEmitter {
       const bonus = bonusPrizes[idx] || 50;
       try {
         economy.addPoints(player.username, bonus);
-      } catch {}
+      } catch (e) {
+        console.warn(`[Trivia] ${player.username} için ${bonus} kürsü puanı eklenemedi:`, hataMetni(e));
+      }
       player.score += bonus;
     });
 

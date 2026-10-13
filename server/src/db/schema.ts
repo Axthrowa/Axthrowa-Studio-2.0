@@ -1,162 +1,7 @@
-export interface ChannelConfig {
-  id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
-  channelName: string;
-  accountId?: string;
-  token?: string;
-  refreshToken?: string;
-  isActive: boolean;
-  createdAt: number;
-}
-
-export interface CustomCommand {
-  id: string;
-  name: string;
-  response: string;
-  userLevel: 'everyone' | 'sub' | 'vip' | 'mod' | 'broadcaster';
-  cooldown: number; // in seconds
-  aliases?: string[];
-  isEnabled: boolean;
-  useCount: number;
-  description?: string;
-}
-
-export interface TimerConfig {
-  id: string;
-  name: string;
-  messages: string[];
-  intervalMinutes: number;
-  minChatLines: number;
-  isEnabled: boolean;
-  lastRunAt?: number;
-}
-
-export interface AutoModSettings {
-  capsEnabled: boolean;
-  capsMinLength: number;
-  capsMaxPercent: number;
-  emotesEnabled: boolean;
-  emotesMax: number;
-  linksEnabled: boolean;
-  linksWhitelist: string[];
-  symbolsEnabled: boolean;
-  symbolsMaxPercent: number;
-  blacklistWords: string[];
-  aiModerationEnabled: boolean;
-  aiToxicityThreshold: number; // 1 to 10
-}
-
-export interface EconomyUser {
-  id: string;
-  platform: string;
-  username: string;
-  displayName: string;
-  points: number;
-  watchTimeMinutes: number;
-  messagesCount: number;
-  subsCount: number;
-  giftedSubsCount: number;
-  tipsAmount: number;
-  loyaltyTier: string;
-  lastActive: number;
-}
-
-export interface LoyaltyReward {
-  id: string;
-  title: string;
-  cost: number;
-  rewardType: 'tts' | 'sound' | 'gif' | 'vip' | 'priority_song';
-  payload?: string;
-  isEnabled: boolean;
-}
-
-export interface Poll {
-  id: string;
-  title: string;
-  options: string[];
-  isActive: boolean;
-  createdAt: number;
-  closedAt?: number;
-}
-
-export interface PinnedMessage {
-  id: string;
-  platform: string;
-  username: string;
-  displayName: string;
-  message: string;
-  color?: string;
-  createdAt: number;
-}
-
-export interface ChatOverlaySettings {
-  maxMessages: number;
-  fontSize: number;
-  showPlatformLogo: boolean;
-  showBadges: boolean;
-  showTimestamp: boolean;
-  highlightSpecial: boolean;
-  fadeMessages: boolean;
-  fadeTimeout: number; // in seconds
-  smoothMask: boolean;
-  textShadow: boolean;
-  transparentBg: boolean;
-}
-
-export interface SongQueueItem {
-  id: string;
-  title: string;
-  url: string;
-  duration: number; // in seconds
-  requestedBy: string;
-  platform: string;
-  thumbnail?: string;
-  createdAt: number;
-  isPlayed: boolean;
-}
-
-export interface Giveaway {
-  id: string;
-  title: string;
-  keyword: string;
-  isActive: boolean;
-  subBonusMultiplier: number;
-  costPoints: number;
-  winner?: string;
-  winnerPlatform?: string;
-  createdAt: number;
-  closedAt?: number;
-}
-
-export interface GiveawayEntry {
-  id: string;
-  giveawayId: string;
-  username: string;
-  platform: string;
-  tickets: number;
-  enteredAt: number;
-}
-
-export interface AlertPreset {
-  id: string;
-  eventType: 'follow' | 'sub' | 'gift' | 'tip' | 'raid' | 'kick' | 'gift_tiktok';
-  titleTemplate: string;
-  messageTemplate: string;
-  soundUrl: string;
-  imageUrl: string;
-  durationMs: number;
-  fontFamily: string;
-  textColor: string;
-  accentColor: string;
-  animation: 'fade' | 'bounce' | 'slide' | 'zoom';
-  soundVolume: number;
-  isEnabled: boolean;
-}
-
 export interface StreamEvent {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
-  eventType: 'chat' | 'follow' | 'sub' | 'tip' | 'raid' | 'gift';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
+  eventType: 'chat' | 'follow' | 'sub' | 'gift' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid';
   username: string;
   displayName?: string;
   message?: string;
@@ -175,14 +20,6 @@ export interface AuditLog {
   target?: string;
   details?: string;
   severity?: 'info' | 'warn' | 'danger';
-}
-
-export interface ViewerNote {
-  username: string;
-  note: string;
-  tags?: string[];
-  sentiment?: 'positive' | 'neutral' | 'negative';
-  updatedAt: number;
 }
 
 export interface KingState {
@@ -217,28 +54,6 @@ export interface TTSSettings {
   googleForMale?: boolean;
 }
 
-export interface Donation {
-  id: string;
-  donorName: string;
-  amount: number;
-  currency: string;
-  message?: string;
-  platform: 'bynogame' | 'webhook' | 'kofi' | 'custom';
-  createdAt: number;
-  alertShown: boolean;
-  jumpscareTriggered: boolean;
-}
-
-export interface JumpScareSettings {
-  isEnabled: boolean;
-  minAmount: number;
-  mediaType: 'video' | 'image' | 'audio';
-  mediaUrl: string;
-  audioUrl?: string;
-  durationMs: number;
-  volume: number;
-}
-
 export interface ShieldModeSettings {
   isActive: boolean;
   activatedAt?: number;
@@ -249,6 +64,16 @@ export interface ShieldModeSettings {
   blockEmotes: boolean;
   followerOnly: boolean;
   subOnly: boolean;
+  /**
+   * Ortak kara listedeki kullanıcı yazınca: yok say (varsayılan, eski
+   * davranış) / mesajı platformda sil / platformda kalıcı banla.
+   */
+  karaListeEylemi?: 'yoksay' | 'sil' | 'ban';
+  /**
+   * Kalkan açıkken kurala uymayan mesaj platformda da silinsin mi (destekleyen
+   * platformda). Varsayılan kapalı: eskiden kalkan yalnız botun yok saymasıydı.
+   */
+  platformdaSil?: boolean;
 }
 
 export interface ChatRescueSettings {

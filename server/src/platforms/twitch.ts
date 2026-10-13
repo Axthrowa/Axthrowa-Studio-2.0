@@ -1,7 +1,9 @@
 import WebSocket from 'ws';
-import { BasePlatform, PlatformStatus } from './base.js';
+import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
+import { TwitchHelix } from './twitch-helix.js';
+import type { YayinBilgisi } from '../core/live-status-math.js';
 
 export class TwitchPlatform extends BasePlatform {
   readonly name = 'twitch' as const;
@@ -10,6 +12,17 @@ export class TwitchPlatform extends BasePlatform {
   private currentChannel: string = '';
   private botToken: string = '';
   private botUsername: string = '';
+  /**
+   * Helix: moderasyon, yayın durumu, başlık/kategori. IRC ile /timeout
+   * Şubat 2023'te kaldırıldı; bunlar yalnız Helix ile yapılabiliyor.
+   * Client-ID ayrıca istenmez, jeton doğrulamasından öğrenilir.
+   */
+  private helix = new TwitchHelix(() => this.botToken);
+
+  /** Bot hesabının kullanıcı adı (anahtar kelime komutlarının kendini tetiklemesini önlemek için). */
+  botKullaniciAdi(): string {
+    return this.botToken ? this.botUsername.toLowerCase() : '';
+  }
 
   async connect(): Promise<boolean> {
     const channelRow = db.prepare("SELECT * FROM channels WHERE platform = 'twitch' AND is_active = 1 LIMIT 1").get() as any;
@@ -22,6 +35,7 @@ export class TwitchPlatform extends BasePlatform {
     this.currentChannel = channel;
     this.botToken = channelRow.token || '';
     this.botUsername = channelRow.account_id || `justinfan${Math.floor(Math.random() * 80000 + 10000)}`;
+    this.helix.unut();
 
     return new Promise((resolve) => {
       try {
@@ -127,6 +141,9 @@ export class TwitchPlatform extends BasePlatform {
         });
       }
 
+      // Zaman aşımı için kullanıcı kimliği gerekir; sohbetten öğrenilir
+      if (tags['user-id']) this.helix.kimlikOgren(tags['login'] || username, tags['user-id']);
+
       eventBus.emitChat({
         id: tags['id'] || String(Date.now()),
         platform: 'twitch',
@@ -179,6 +196,7 @@ export class TwitchPlatform extends BasePlatform {
           tier: 'Tier 1',
           months: 1,
           isGift: true,
+          count: 1,
           recipient: tags['msg-param-recipient-display-name'] || 'İzleyici',
           timestamp: Date.now()
         });
@@ -229,6 +247,73 @@ export class TwitchPlatform extends BasePlatform {
       console.error('[Twitch] Failed to send message:', err);
       return false;
     }
+  }
+
+  // ------------------------------------------------ Helix: moderasyon ------
+
+  async timeoutUser(username: string, saniye: number, sebep?: string): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.yasakla(this.currentChannel, username, saniye, sebep);
+    if (!r.ok) console.warn(`[Twitch] timeout başarısız (${username}):`, r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  /** Kalıcı ban: Helix `POST /moderation/bans`, `duration` verilmez. */
+  async banUser(username: string, sebep?: string): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.yasakla(this.currentChannel, username, undefined, sebep || 'Moderatör');
+    if (!r.ok) console.warn(`[Twitch] ban başarısız (${username}):`, r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  async unbanUser(username: string): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.yasakKaldir(this.currentChannel, username);
+    if (!r.ok) console.warn(`[Twitch] ban kaldırma başarısız (${username}):`, r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  async deleteMessage(messageId: string): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.mesajSil(this.currentChannel, messageId);
+    if (!r.ok) console.warn('[Twitch] mesaj silme başarısız:', r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  /** Sohbet modları (yavaş / takipçi / abone / emote / benzersiz). Gövde önceden doğrulanmış olmalı. */
+  async sohbetModu(govde: Record<string, boolean | number>): Promise<ModerasyonSonucu> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.sohbetModlari(this.currentChannel, govde);
+    if (!r.ok) console.warn('[Twitch] sohbet modu değiştirilemedi:', r.hata);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  /** `!accountage` için. */
+  async hesapOlusturma(login: string): Promise<number | null> {
+    if (!this.botToken) return null;
+    return this.helix.hesapOlusturma(login);
+  }
+
+  // ------------------------------------------- Helix: yayın ve kanal -------
+
+  async yayinDurumu(): Promise<YayinBilgisi | null> {
+    // Anonim IRC okuyucusunun jetonu yok: durum bilinemez (null = değiştirme)
+    if (!this.connected || !this.currentChannel || !this.botToken) return null;
+    const r = await this.helix.yayin(this.currentChannel);
+    if (!r.ok) return null;
+    return { ...r.veri, kanal: this.currentChannel };
+  }
+
+  async baslikDegistir(baslik: string): Promise<ModerasyonSonucu> {
+    const r = await this.helix.kanalGuncelle(this.currentChannel, { baslik });
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  async kategoriDegistir(kategori: string): Promise<ModerasyonSonucu & { kategori?: string }> {
+    const k = await this.helix.kategoriBul(kategori);
+    if (!k.ok) return { ok: false, hata: k.hata };
+    const r = await this.helix.kanalGuncelle(this.currentChannel, { kategoriId: k.veri.id });
+    return r.ok ? { ok: true, kategori: k.veri.ad } : { ok: false, hata: r.hata };
   }
 
   isConnected(): boolean {

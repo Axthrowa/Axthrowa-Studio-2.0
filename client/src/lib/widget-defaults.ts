@@ -8,18 +8,6 @@ export const FONTS = [
   'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito'
 ];
 
-export const ANIMATIONS = [
-  { value: 'none', label: 'Yok' },
-  { value: 'fade', label: 'Fade' },
-  { value: 'slide', label: 'Slide' },
-  { value: 'slide-left', label: 'Slide Left' },
-  { value: 'slide-right', label: 'Slide Right' },
-  { value: 'slide-up', label: 'Slide Up' },
-  { value: 'bounce', label: 'Bounce' },
-  { value: 'zoom', label: 'Zoom' },
-  { value: 'pulse', label: 'Pulse' }
-];
-
 export const ACTIVITY_DEFAULTS = {
   showFollow: true,
   showSub: true,
@@ -244,20 +232,53 @@ export const WHEEL_DEFAULTS = {
   animation: 'ease-out'
 };
 
+/**
+ * Uyarı kutusu — BotRix'in uyarı sayfasındaki derinliğe göre genişletildi
+ * (BOTRIX_ALERT_MATRIX §2). Eskiden 13 ayar vardı; metin katmanı, konum,
+ * görünüm penceresi ve animasyon süresi hiç ayarlanamıyordu.
+ */
 export const ALERT_ADVANCED_DEFAULTS = {
+  // Kuyruk
   queueEnabled: true,
   gapMs: 800,
+  skipEnabled: true,
+
+  // Ses
   ttsEnabled: false,
   ttsReadMessage: true,
   globalVolume: 0.7,
+
+  // Yerleşim
   layoutMode: 'stacked',
+  fontFamily: 'Plus Jakarta Sans',
+
+  // Animasyon
   animation: 'bounce',
+  animationDuration: 500,
+  exitAnimation: 'fade',
   textEffect: 'shine',
+
+  // Metin katmanları — BotRix'te üst ve alt metnin rengi AYRI ayarlanıyor
+  titleColor: '#3EEDFE',
+  messageColor: '#ffffff',
+  titleSize: 36,
+  messageSize: 18,
+  textShadow: 80,
+  textOffsetX: 0,
+  textOffsetY: 0,
+  hideUserMessage: false,
+
+  // Metin görünüm penceresi (ms) — görsel/ses ile metin senkronizasyonu
+  textFromMs: 0,
+  textToMs: 0,
+
+  // Görsel
+  imageMaxHeight: 192,
+
+  // Eşikler
   minTipAmount: 0,
   minKicks: 0,
-  skipEnabled: true,
-  confetti: true,
-  fontFamily: 'Plus Jakarta Sans'
+  confetti: true
 };
 
 export const GIVEAWAY_DEFAULTS = {
@@ -294,24 +315,23 @@ export const GIVEAWAY_DEFAULTS = {
  * Subathon sayacı — olay başına eklenecek süreler panelden ayarlanır.
  * `tipMinutes` her `tipPerAmount` birim bağış için eklenir (ör. 10₺ başına 2 dk).
  */
+/**
+ * Subathon — YALNIZ görünüm ayarları.
+ *
+ * Süre kuralları (abone / hediye abone / bağış / KICKs kaç dakika ekler)
+ * artık SUNUCUDA tutuluyor: `/api/subathon/settings`. Sayaç tarayıcıda
+ * yaşarken iki OBS kaynağı iki farklı süre gösteriyordu ve KICKs hiç
+ * işlenmiyordu. Kurallar Overlay Stüdyo > Subathon panelinden ayarlanır.
+ */
 export const SUBATHON_DEFAULTS = {
   title: 'SUBATHON',
-  startMinutes: 120,
-  subMinutes: 5,
-  giftSubMinutes: 5,
-  tipMinutes: 2,
-  tipPerAmount: 10,
-  kicksMinutes: 1,
-  kicksPerAmount: 100,
-  maxHours: 0,
   notifyMs: 4000,
   showTotalAdded: true,
+  hideWhenIdle: false,
   accentColor: '#22d3ee',
   accentColor2: '#34d399'
 };
 
-
-/** Bil Bakalım katmanı — kart görünümü ve ses. */
 export const TRIVIA_DEFAULTS = {
   maxWidth: 672,
   radius: 24,
@@ -696,7 +716,3 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'audio-player': AUDIO_PLAYER_DEFAULTS
 };
 
-export function parseBool(v: string | null, fallback: boolean) {
-  if (v === null) return fallback;
-  return v !== '0' && v !== 'false';
-}

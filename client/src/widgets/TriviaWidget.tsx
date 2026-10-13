@@ -1,24 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { TRIVIA_DEFAULTS } from '../lib/widget-defaults.js';
-import { 
-  Trophy, 
-  Clock, 
-  Sparkles, 
-  CheckCircle2, 
-  XCircle, 
-  Zap, 
-  Flame, 
-  Lightbulb, 
-  Compass, 
-  Gamepad2, 
-  Film, 
-  Atom, 
-  BookOpen, 
-  Volume2, 
-  VolumeX, 
+import { wsAdresi } from '../lib/widget-style.js';
+import {
+  Trophy,
+  Clock,
+  Sparkles,
+  CheckCircle2,
+  XCircle,
+  Zap,
+  Flame,
+  Lightbulb,
+  Compass,
+  Gamepad2,
+  Film,
+  Atom,
+  BookOpen,
   HelpCircle,
-  Medal,
   Users,
   Activity,
   HeartPulse,
@@ -162,7 +160,6 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
   const [state, setState] = useState<TriviaState | null>(previewMode ? SAMPLE_QUESTION : null);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const lastStatusRef = useRef<string>('idle');
 
   // Check URL query parameters
   useEffect(() => {
@@ -249,9 +246,7 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
     let reconnectTimeout: any = null;
 
     const connect = () => {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const port = (window.location.port === '5173' || window.location.port === '3000') ? '3001' : (window.location.port || '3001');
-      const wsUrl = `${protocol}//${window.location.hostname}:${port}/ws?type=trivia`;
+      const wsUrl = wsAdresi('trivia');
 
       try {
         ws = new WebSocket(wsUrl);

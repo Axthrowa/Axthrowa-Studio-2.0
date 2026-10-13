@@ -2,6 +2,7 @@ import { db } from '../../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { ttsEngine } from '../tts/tts.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 interface ActiveDuel {
   challenger: string;
@@ -45,7 +46,10 @@ export class EconomyEngine {
             cached.data.messages_count || 0, cached.data.subs_count || 0, cached.data.gifted_subs_count || 0,
             cached.data.tips_amount || 0, cached.data.loyalty_tier || '🥉 Çaylak', cached.data.id
           );
-        } catch {}
+        } catch (e) {
+          // Veri bellekte duruyor; toplu yazım (flushAll) yeniden dener
+          seyrekUyar('ekonomi:yaz', '[Ekonomi] Kullanıcı kaydı diske yazılamadı (bellekte duruyor)', e, 30_000);
+        }
       }
       return cached.data;
     }
@@ -258,8 +262,9 @@ export class EconomyEngine {
           d.id,
         );
         cached.lastDbUpdate = now;
-      } catch {
-        /* tek kullanıcı yazılamazsa diğerleri sürsün */
+      } catch (e) {
+        /* tek kullanıcı yazılamazsa diğerleri sürsün — ama sessiz kalmasın */
+        seyrekUyar('ekonomi:toplu', '[Ekonomi] Toplu kayıtta bir kullanıcı yazılamadı', e, 30_000);
       }
     }
   }

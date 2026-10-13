@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { wsAdresi } from '../lib/widget-style.js';
 
 export function useWidgetSettings<T extends Record<string, any>>(widgetId: string, defaults?: T) {
   const base = { ...(WIDGET_DEFAULTS[widgetId] || {}), ...(defaults || {}) } as T;
@@ -23,9 +24,7 @@ export function useWidgetSettings<T extends Record<string, any>>(widgetId: strin
       .then(d => setSettings({ ...base, ...d, ...fromUrl }))
       .catch(() => setSettings({ ...base, ...fromUrl }));
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const port = (window.location.port === '5173' || window.location.port === '3000') ? '3001' : (window.location.port || '3001');
-    const ws = new WebSocket(`${protocol}//${window.location.hostname}:${port}/ws?type=all`);
+    const ws = new WebSocket(wsAdresi());
     ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data);

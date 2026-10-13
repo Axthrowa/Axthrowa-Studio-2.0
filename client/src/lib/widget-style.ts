@@ -66,10 +66,16 @@ export function onizlemeKipi(prop?: boolean): boolean {
   return new URLSearchParams(window.location.search).get('preview') === '1';
 }
 
-/** Overlay WebSocket adresi (vite geliştirme portlarını 3001'e çevirir). */
-export function wsAdresi(): string {
+/**
+ * Sunucunun portu: sayfa sunucunun kendisinden açıldığı için onun portudur;
+ * yalnız vite geliştirme portları (5173/3000) varsayılan 3001'e çevrilir.
+ */
+export function sunucuPortu(konum: { port: string } = window.location): string {
+  return konum.port === '5173' || konum.port === '3000' ? '3001' : konum.port || '3001';
+}
+
+/** Overlay WebSocket adresi. */
+export function wsAdresi(tur = 'all'): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const port =
-    window.location.port === '5173' || window.location.port === '3000' ? '3001' : window.location.port || '3001';
-  return `${protocol}//${window.location.hostname}:${port}/ws?type=all`;
+  return `${protocol}//${window.location.hostname}:${sunucuPortu()}/ws?type=${tur}`;
 }

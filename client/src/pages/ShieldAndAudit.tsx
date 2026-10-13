@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldAlert, 
-  ShieldCheck, 
-  Trash2, 
-  UserX, 
-  History, 
-  RefreshCw, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Info, 
+import {
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  UserX,
+  History,
+  RefreshCw,
   Lock,
-  Plus,
-  Sliders,
-  Radio
+  Plus
 } from 'lucide-react';
 
 interface ShieldSettings {
@@ -25,7 +20,47 @@ interface ShieldSettings {
   blockEmotes: boolean;
   followerOnly: boolean;
   subOnly: boolean;
+  karaListeEylemi?: KaraListeEylemi;
+  platformdaSil?: boolean;
+  /** Sunucu: bu etkinleştirmeden beri engellenen mesaj */
+  engellenenMesaj?: number;
+  /** Sunucu: uygulanamayan ayar → gerekçe */
+  desteklenmeyen?: Partial<Record<'followerOnly' | 'minAccountAgeDays', string>>;
 }
+
+type KalkanKurali = 'subOnly' | 'blockLinks' | 'blockCaps' | 'blockEmotes' | 'platformdaSil' | 'autoClearRaidMessages';
+
+const KALKAN_KURALLARI: Array<{ id: KalkanKurali; ad: string; aciklama: string }> = [
+  { id: 'blockLinks', ad: 'Link engeli', aciklama: 'Adres içeren her mesaj (normal moddaki izinli alan adları kalkanda geçmez).' },
+  { id: 'blockCaps', ad: 'Büyük harf engeli', aciklama: "En az 8 harfin %70'i büyük harfse." },
+  { id: 'blockEmotes', ad: 'Emoji seli engeli', aciklama: "3'ten fazla emoji ya da emote." },
+  { id: 'subOnly', ad: 'Yalnız aboneler', aciklama: 'Abone, VIP, moderatör ve yayıncı dışındaki herkesin mesajı.' },
+  { id: 'platformdaSil', ad: 'Platformda da sil', aciklama: "Takılan mesaj platformda da silinir (Kick, Twitch, YouTube, Trovo, Discord). Kapalıyken yalnız bot yok sayar ve OBS'te gizlenir." },
+  { id: 'autoClearRaidMessages', ad: 'Açarken OBS sohbetini temizle', aciklama: 'Kalkan açılınca OBS sohbet katmanı boşaltılır (platform sohbetine dokunulmaz).' }
+];
+
+const DESTEKLENMEYEN_AD: Record<'followerOnly' | 'minAccountAgeDays', string> = {
+  followerOnly: 'Yalnız takipçiler',
+  minAccountAgeDays: 'En az hesap yaşı'
+};
+
+type KaraListeEylemi = 'yoksay' | 'sil' | 'ban';
+
+const KARA_LISTE_EYLEMLERI: Array<{ id: KaraListeEylemi; ad: string; aciklama: string }> = [
+  { id: 'yoksay', ad: 'Yalnız yok say', aciklama: 'Bot komut/puan/TTS işlemez; mesaj OBS sohbetinde gösterilmez. Platformda bir şey yapılmaz.' },
+  { id: 'sil', ad: 'Mesajını sil', aciklama: 'Ayrıca mesaj platformda silinir (Kick, Twitch, YouTube, Trovo, Discord).' },
+  { id: 'ban', ad: 'Kalıcı banla', aciklama: 'Ayrıca kişi o platformda KALICI banlanır (Kick, Twitch, YouTube, Trovo, Discord). Desteklemeyen platformda (TikTok) yalnız yok sayılır.' }
+];
+
+const KARA_LISTE_PLATFORMLARI: Array<{ id: string; ad: string }> = [
+  { id: 'kick', ad: 'Kick' },
+  { id: 'twitch', ad: 'Twitch' },
+  { id: 'youtube', ad: 'YouTube' },
+  { id: 'trovo', ad: 'Trovo' },
+  { id: 'tiktok', ad: 'TikTok' },
+  { id: 'discord', ad: 'Discord' },
+  { id: 'tum', ad: 'Tüm platformlar' }
+];
 
 interface AuditLog {
   id: string;
@@ -42,6 +77,7 @@ interface SharedBan {
   reason: string;
   added_by: string;
   added_at: number;
+  platform?: string;
 }
 
 export default function ShieldAndAudit() {
@@ -61,7 +97,10 @@ export default function ShieldAndAudit() {
   const [loading, setLoading] = useState(true);
   const [newBanUser, setNewBanUser] = useState('');
   const [newBanReason, setNewBanReason] = useState('Spam/Bot Saldırısı');
+  const [newBanPlatform, setNewBanPlatform] = useState('kick');
   const [actionFilter, setActionFilter] = useState('');
+  const [eylemNotu, setEylemNotu] = useState<{ ok: boolean; text: string } | null>(null);
+  const [kuralNotu, setKuralNotu] = useState<{ ok: boolean; text: string } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -109,7 +148,7 @@ export default function ShieldAndAudit() {
       const res = await fetch('/api/moderation/shared-bans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: newBanUser, reason: newBanReason, addedBy: 'Yayıncı' })
+        body: JSON.stringify({ username: newBanUser, reason: newBanReason, addedBy: 'Yayıncı', platform: newBanPlatform })
       });
       if (res.ok) {
         setNewBanUser('');
@@ -118,9 +157,52 @@ export default function ShieldAndAudit() {
     } catch {}
   };
 
+  // Kalkan kuralları anında kaydedilir (4. tur: eskiden bu ayarlar hiçbir yerde uygulanmıyordu)
+  const kuralKaydet = async (id: KalkanKurali, deger: boolean) => {
+    if (id === 'platformdaSil' && deger && !confirm('Kalkan açıkken kurallara takılan mesajlar platformda SİLİNECEK. Emin misiniz?')) return;
+    setKuralNotu(null);
+    try {
+      const res = await fetch('/api/moderation/shield/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [id]: deger })
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d?.settings) {
+        setShield((s) => ({ ...s, ...d.settings }));
+        setKuralNotu({ ok: true, text: 'Kaydedildi.' });
+      } else {
+        setKuralNotu({ ok: false, text: d?.error || `Kaydedilemedi (HTTP ${res.status})` });
+      }
+    } catch {
+      setKuralNotu({ ok: false, text: 'Sunucuya ulaşılamadı' });
+    }
+  };
+
+  const karaListeEylemiKaydet = async (eylem: KaraListeEylemi) => {
+    if (eylem === 'ban' && !confirm('Kara listedeki kişi yazınca o platformda KALICI banlanacak. Emin misiniz?')) return;
+    setEylemNotu(null);
+    try {
+      const res = await fetch('/api/moderation/shield/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ karaListeEylemi: eylem })
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d?.settings) {
+        setShield(d.settings);
+        setEylemNotu({ ok: true, text: 'Kara liste eylemi kaydedildi.' });
+      } else {
+        setEylemNotu({ ok: false, text: d?.error || `Kaydedilemedi (HTTP ${res.status})` });
+      }
+    } catch {
+      setEylemNotu({ ok: false, text: 'Sunucuya ulaşılamadı' });
+    }
+  };
+
   const handleRemoveBan = async (username: string) => {
     try {
-      await fetch(`/api/moderation/shared-bans/${username}`, {
+      await fetch(`/api/moderation/shared-bans/${encodeURIComponent(username)}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ removedBy: 'Yayıncı' })
@@ -164,7 +246,9 @@ export default function ShieldAndAudit() {
               Tek Tıkla Raid & Bot Saldırı Kalkanı
             </h1>
             <p className="text-gray-300 text-sm max-w-2xl">
-              Raid, spam veya kötü niyetli bot saldırısı başladığında tek tıkla kalkanı kaldırın. Sohbet anında temizlenir, katı link/caps kısıtlamaları devreye girer ve kanal korumaya alınır.
+              Raid, spam ya da bot saldırısında tek tıkla açın: aşağıdaki kurallara takılan mesajları bot yok sayar ve
+              OBS sohbetinde gösterilmez; isterseniz platformda da silinir. Platformun kendi sohbet modları (yalnız
+              takipçi, yavaş mod) buradan değiştirilmez.
             </p>
           </div>
 
@@ -182,26 +266,119 @@ export default function ShieldAndAudit() {
         </div>
       </div>
 
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-md font-bold text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            Kalkan kuralları
+          </h2>
+          {shield.isActive && (
+            <span className="text-xs font-bold text-amber-200">
+              Açıldığından beri {shield.engellenenMesaj ?? 0} mesaj engellendi
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-400">
+          Yalnız kalkan açıkken uygulanır; yayıncı ve moderatörler muaftır. Değişiklik anında kaydedilir.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+          {KALKAN_KURALLARI.map((k) => (
+            <label
+              key={k.id}
+              className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-950/60 p-3 cursor-pointer hover:border-slate-600"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={!!shield[k.id]}
+                onChange={(e) => void kuralKaydet(k.id, e.target.checked)}
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-bold text-white">{k.ad}</span>
+                <span className="block text-[11px] text-gray-400 leading-snug">{k.aciklama}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {shield.desteklenmeyen && Object.keys(shield.desteklenmeyen).length > 0 && (
+          <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 space-y-1">
+            {(Object.entries(shield.desteklenmeyen) as Array<['followerOnly' | 'minAccountAgeDays', string]>).map(([id, neden]) => (
+              <p key={id} className="text-[11px] text-gray-400">
+                <span className="font-bold text-gray-300">{DESTEKLENMEYEN_AD[id] ?? id}</span> — desteklenmiyor: {neden}
+              </p>
+            ))}
+          </div>
+        )}
+        {kuralNotu && (
+          <p className={`text-[11px] font-semibold ${kuralNotu.ok ? 'text-emerald-400' : 'text-red-300'}`}>{kuralNotu.text}</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Kick Shared Global Ban List (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
             <h2 className="text-md font-bold text-white flex items-center gap-2">
               <UserX className="w-5 h-5 text-red-400" />
-              Kick Ortak Kara Listesi (Shared Bans)
+              Ortak Kara Liste
             </h2>
             <p className="text-xs text-gray-400">
-              Bu listedeki kullanıcılar chate geldiklerinde mesajları bot tarafından otomatik filtrelenir ve engellenir.
+              Listedeki kişi seçilen platformda yazınca bot onu yok sayar (komut, puan, TTS yok) ve mesajı OBS
+              sohbetinde gösterilmez. Aşağıda seçilen eylem ayrıca platformda uygulanır.
             </p>
 
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-gray-300">Listedeki kişi yazınca</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {KARA_LISTE_EYLEMLERI.map((e) => {
+                  const secili = (shield.karaListeEylemi || 'yoksay') === e.id;
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      title={e.aciklama}
+                      onClick={() => !secili && void karaListeEylemiKaydet(e.id)}
+                      className={`text-[11px] font-bold px-2 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                        secili
+                          ? e.id === 'ban'
+                            ? 'bg-red-600 border-red-500 text-white'
+                            : 'bg-indigo-600 border-indigo-500 text-white'
+                          : 'bg-slate-950 border-slate-700 text-gray-300 hover:border-slate-500'
+                      }`}
+                    >
+                      {e.ad}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-gray-500">
+                {KARA_LISTE_EYLEMLERI.find((e) => e.id === (shield.karaListeEylemi || 'yoksay'))?.aciklama}
+              </p>
+              {eylemNotu && (
+                <p className={`text-[11px] font-semibold ${eylemNotu.ok ? 'text-emerald-400' : 'text-red-300'}`}>{eylemNotu.text}</p>
+              )}
+            </div>
+
             <form onSubmit={handleAddBan} className="space-y-3">
-              <input
-                type="text"
-                placeholder="Kick Kullanıcı Adı"
-                value={newBanUser}
-                onChange={e => setNewBanUser(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-red-500 focus:outline-none"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Kullanıcı adı"
+                  value={newBanUser}
+                  onChange={e => setNewBanUser(e.target.value)}
+                  className="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-red-500 focus:outline-none"
+                />
+                <select
+                  value={newBanPlatform}
+                  onChange={e => setNewBanPlatform(e.target.value)}
+                  title="Kayıt yalnız bu platformda geçerli olur: başka platformdaki aynı adlı kişi etkilenmez"
+                  className="bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-white text-xs focus:border-red-500 focus:outline-none"
+                >
+                  {KARA_LISTE_PLATFORMLARI.map((p) => (
+                    <option key={p.id} value={p.id}>{p.ad}</option>
+                  ))}
+                </select>
+              </div>
               <input
                 type="text"
                 placeholder="Engelleme Sebebi"
@@ -228,6 +405,9 @@ export default function ShieldAndAudit() {
                     <div>
                       <div className="font-bold text-white text-sm flex items-center gap-1.5">
                         <span className="text-red-400">@{b.username}</span>
+                        <span className="text-[10px] font-semibold text-gray-400 bg-slate-800 rounded px-1.5 py-0.5">
+                          {KARA_LISTE_PLATFORMLARI.find((p) => p.id === (b.platform || 'kick'))?.ad || b.platform}
+                        </span>
                       </div>
                       <div className="text-xs text-gray-400 line-clamp-1">{b.reason}</div>
                     </div>
@@ -262,6 +442,12 @@ export default function ShieldAndAudit() {
                 <option value="SHIELD_MODE_ACTIVATED">Kalkan Açıldı</option>
                 <option value="SHIELD_MODE_DEACTIVATED">Kalkan Kapandı</option>
                 <option value="SHARED_BAN_ADDED">Kara Liste Ekleme</option>
+                <option value="SHARED_BAN_REMOVED">Kara Listeden Çıkarma</option>
+                <option value="SHARED_BAN_ENFORCED">Kara Liste Banı</option>
+                <option value="SHARED_BAN_FAILED">Kara Liste Banı (başarısız)</option>
+                <option value="MANUAL_TIMEOUT">Elle Zaman Aşımı</option>
+                <option value="MANUAL_BAN">Elle Kalıcı Ban</option>
+                <option value="MANUAL_UNBAN">Ban Kaldırma</option>
                 <option value="KING_CROWNED">Kral Değişimi</option>
                 <option value="VIEWER_NOTE_SAVED">Yayıncı Notu</option>
                 <option value="TTS_SETTINGS_UPDATED">TTS Değişikliği</option>

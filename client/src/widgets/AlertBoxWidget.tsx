@@ -3,6 +3,19 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ALERT_ADVANCED_DEFAULTS } from '../lib/widget-defaults.js';
+import {
+  BOS_DURUM,
+  GorulenKimlikler,
+  atla,
+  ilerlet,
+  kuyrugaEkle,
+  temizle,
+  metinPenceresiAcik,
+  sonrakiMetinSiniri,
+  sonrakiTik,
+  type KuyrukDurumu
+} from '../lib/alertQueue.js';
+import { animStili, type AnimAsamasi } from '../lib/animations.js';
 
 interface AlertItem {
   id: string;
@@ -52,18 +65,18 @@ function playSynthesizedChime(volume: number = 0.7) {
 
 export function AlertBoxWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
   const advanced = useWidgetSettings('alert-box', ALERT_ADVANCED_DEFAULTS);
-  const { activeAlert, setActiveAlert } = useWebSocket('alertbox');
-  const [currentAlert, setCurrentAlert] = useState<AlertItem | null>(null);
-  const [visible, setVisible] = useState(false);
+  const { activeAlert, setActiveAlert, alertControl } = useWebSocket('alertbox');
+  /** Ekip denetimi (duraklat / sustur); OBS kaynağı yeniden yüklense de sunucudan okunur */
+  const [denetim, setDenetim] = useState({ paused: false, muted: false });
+  const denetimRef = useRef(denetim);
+  denetimRef.current = denetim;
+  const [kuyruk, setKuyruk] = useState<KuyrukDurumu>(BOS_DURUM);
+  const gorulenler = useRef(new GorulenKimlikler(200));
   const [imgError, setImgError] = useState(false);
-  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showHelper, setShowHelper] = useState(!embedded);
 
   const params = new URLSearchParams(window.location.search);
   const isPreview = previewMode || params.get('preview') === '1' || params.get('test') === '1';
-
-  const alertQueue = useRef<AlertItem[]>([]);
-  const isProcessing = useRef(false);
 
   // Auto-hide helper indicator after 6 seconds
   useEffect(() => {
@@ -74,7 +87,6 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
   // Listen for audio unlock clicks
   const unlockAudio = () => {
-    setAudioUnlocked(true);
     setShowHelper(false);
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -127,41 +139,53 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     };
   };
 
+  /**
+   * Kuyruk artik saf bir DURUM MAKINESI (lib/alertQueue.ts).
+   *
+   * Eskiden `alertQueue.current` dizisi + `isProcessing` bayragi + ic ice
+   * `setTimeout` vardi: arka arkaya gelen iki olay birbirini eziyordu ve
+   * WebSocket yeniden baglandiginda ayni uyari iki kez oynuyordu.
+   */
   const enqueueAlert = (item: AlertItem) => {
     if (item.eventType === 'tip' && advanced.minTipAmount && Number((item as any).amount || 0) < advanced.minTipAmount) return;
     if (item.eventType === 'kicks' && advanced.minKicks && Number((item as any).amount || 0) < advanced.minKicks) return;
-    if (!advanced.queueEnabled) {
-      alertQueue.current = [item];
-    } else {
-      alertQueue.current.push(item);
-    }
-    processNextAlert();
+
+    // Ayni uyariyi iki kez oynatma
+    if (gorulenler.current.gorduk(item.id)) return;
+    gorulenler.current.ekle(item.id);
+
+    const animMs = Math.max(0, Number(advanced.animationDuration) || 500);
+    setKuyruk((d) =>
+      kuyrugaEkle(
+        d,
+        {
+          id: item.id,
+          tur: item.eventType,
+          veri: item,
+          sureMs: item.durationMs || 5000,
+          animMs
+        },
+        Boolean(advanced.queueEnabled),
+        Date.now(),
+        denetimRef.current.paused
+      )
+    );
+    // Ses/konfeti burada ÇALINMIYOR: kuyrukta bekleyen uyarının sesi, önündeki
+    // uyarı ekrandayken çalıyordu (görsel ile ses kayıyordu). Aşağıdaki etki,
+    // uyarı gerçekten ekrana geldiğinde çalar.
   };
 
-  useEffect(() => {
-    if (activeAlert) {
-      const normalized = normalizeAlert(activeAlert);
-      enqueueAlert(normalized);
-    }
-  }, [activeAlert]);
-
-  const processNextAlert = () => {
-    if (isProcessing.current || alertQueue.current.length === 0) return;
-
-    isProcessing.current = true;
-    const alert = alertQueue.current.shift()!;
+  /** Ses ve konfeti — gorsel asamadan bagimsiz, olay gelir gelmez. */
+  const oynat = (alert: AlertItem) => {
     setImgError(false);
-    setCurrentAlert(alert);
-    setVisible(true);
 
-    // Play alert sound with synthesized fallback
-    if (alert.soundUrl) {
+    if (denetimRef.current.muted) {
+      // Uyarılar sessize alındı: görsel sürer, ses çalınmaz
+    } else if (alert.soundUrl) {
       try {
         const audio = new Audio(alert.soundUrl);
         audio.volume = Math.max(0, Math.min(1, (alert.soundVolume ?? 0.7) * (advanced.globalVolume ?? 1)));
-        audio.play().catch(() => {
-          playSynthesizedChime(alert.soundVolume);
-        });
+        audio.play().catch(() => playSynthesizedChime(alert.soundVolume));
       } catch {
         playSynthesizedChime(alert.soundVolume);
       }
@@ -169,28 +193,78 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       playSynthesizedChime(alert.soundVolume);
     }
 
-    // Trigger confetti for celebration events
     if (advanced.confetti && ['sub', 'tip', 'raid', 'gift_tiktok', 'follow', 'gift_sub', 'kicks', 'host'].includes(alert.eventType)) {
       try {
-        confetti({
-          particleCount: alert.eventType === 'follow' ? 50 : 90,
-          spread: 80,
-          origin: { y: 0.6 }
-        });
-      } catch {}
+        confetti({ particleCount: alert.eventType === 'follow' ? 50 : 90, spread: 80, origin: { y: 0.6 } });
+      } catch {
+        /* konfeti yoksa sorun degil */
+      }
     }
-
-    // Duration timer with fade out
-    setTimeout(() => {
-      setVisible(false);
-      setTimeout(() => {
-        setCurrentAlert(null);
-        isProcessing.current = false;
-        setActiveAlert(null);
-        processNextAlert();
-      }, 500);
-    }, alert.durationMs || 5000);
   };
+
+  // Açılışta güncel denetim durumu (OBS kaynağı yayın ortasında yeniden yüklenebilir)
+  useEffect(() => {
+    fetch('/api/alerts/control')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.state) setDenetim({ paused: !!d.state.paused, muted: !!d.state.muted });
+      })
+      .catch(() => {});
+  }, []);
+
+  // Panelden / moderatörden gelen denetim komutları
+  useEffect(() => {
+    if (!alertControl) return;
+    const s = alertControl.state || {};
+    setDenetim({ paused: !!s.paused, muted: !!s.muted });
+    if (alertControl.action === 'skip' && advanced.skipEnabled !== false) {
+      setKuyruk((d) => atla(d));
+    } else if (alertControl.action === 'clear') {
+      setKuyruk((d) => temizle(d));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alertControl]);
+
+  useEffect(() => {
+    if (activeAlert) enqueueAlert(normalizeAlert(activeAlert));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAlert]);
+
+  // Uyarı ekrana gelince (aktif değişince) ses ve konfeti
+  const sonCalinan = useRef<string>('');
+  useEffect(() => {
+    const oge = kuyruk.aktif;
+    if (!oge || sonCalinan.current === oge.id) return;
+    sonCalinan.current = oge.id;
+    oynat(oge.veri as AlertItem);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kuyruk.aktif?.id]);
+
+  // Metin görünüm penceresi sınırında yeniden çiz (ör. 1500 ms'de metin belirsin)
+  const [, setMetinSaati] = useState(0);
+  useEffect(() => {
+    if (!kuyruk.aktif) return;
+    const gecen = Date.now() - kuyruk.aktifBaslangic;
+    const kalan = sonrakiMetinSiniri(gecen, Number(advanced.textFromMs) || 0, Number(advanced.textToMs) || 0);
+    if (kalan === null) return;
+    const t = setTimeout(() => setMetinSaati((x) => x + 1), kalan + 5);
+    return () => clearTimeout(t);
+  });
+
+  // Durum makinesini tam gerektiginde ilerlet — surekli setInterval yok.
+  useEffect(() => {
+    const bekle = sonrakiTik(kuyruk);
+    if (bekle === null) return;
+    const t = setTimeout(() => {
+      setKuyruk((d) => {
+        const yeni = ilerlet(d, Number(advanced.gapMs) || 0, Date.now(), denetimRef.current.paused);
+        if (yeni.aktif === null && d.aktif !== null) setActiveAlert(null);
+        return yeni;
+      });
+    }, bekle);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kuyruk, advanced.gapMs, denetim.paused]);
 
   // Mock alert for preview / OBS setup mode
   const mockPreviewAlert: AlertItem = {
@@ -209,48 +283,47 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     soundVolume: 0.7
   };
 
-  const displayAlert = currentAlert || (isPreview ? mockPreviewAlert : null);
-  const isDisplayVisible = Boolean(currentAlert ? visible : isPreview);
+  const aktifUyari = (kuyruk.aktif?.veri as AlertItem | undefined) || null;
+  const displayAlert = aktifUyari || (isPreview ? mockPreviewAlert : null);
+  const asama: AnimAsamasi = aktifUyari
+    ? kuyruk.asama === 'entering'
+      ? 'visible' // giris: hedef duruma gecis (CSS animasyonu calissin)
+      : kuyruk.asama === 'exiting'
+        ? 'exiting'
+        : 'visible'
+    : isPreview
+      ? 'visible'
+      : 'hidden';
 
-  // Animation CSS helper
-  const getAnimationClass = (anim: string, isVis: boolean) => {
-    if (!isVis) {
-      switch (anim) {
-        case 'slide':
-        case 'slide-up': return 'opacity-0 translate-y-12';
-        case 'slide-down': return 'opacity-0 -translate-y-12';
-        case 'slide-left': return 'opacity-0 translate-x-16';
-        case 'slide-right': return 'opacity-0 -translate-x-16';
-        case 'zoom': return 'opacity-0 scale-50';
-        case 'flip': return 'opacity-0 [transform:rotateX(75deg)] scale-90';
-        case 'glitch': return 'opacity-0 scale-95 filter hue-rotate-90';
-        case 'bounce':
-        default: return 'opacity-0 scale-85 translate-y-6';
-      }
-    }
-    switch (anim) {
-      case 'slide':
-      case 'slide-up':
-      case 'slide-down':
-      case 'slide-left':
-      case 'slide-right': return 'opacity-100 translate-y-0 translate-x-0 transition-transform duration-500';
-      case 'zoom': return 'opacity-100 scale-100 transition-all duration-500';
-      case 'flip': return 'opacity-100 [transform:rotateX(0deg)] scale-100 transition-transform duration-500';
-      case 'glitch': return 'opacity-100 scale-100 transition-all duration-300';
-      case 'bounce':
-      default: return 'opacity-100 scale-100 translate-y-0 animate-[bounce_1s_ease-in-out_1]';
-    }
+  /**
+   * Metin katmani gorunur mu?
+   *
+   * BotRix'te "Metin gorunumu ms - ms" araligi var: gorsel/ses ile metnin
+   * senkronize edilmesini saglar. 0-0 ise her zaman gorunur.
+   */
+  const metinGorunur = () => {
+    // Önizlemede (aktif uyarı yok) metin hep görünür
+    if (!kuyruk.aktif) return true;
+    return metinPenceresiAcik(
+      Date.now() - kuyruk.aktifBaslangic,
+      Number(advanced.textFromMs) || 0,
+      Number(advanced.textToMs) || 0
+    );
   };
 
-  // Text effect CSS helper
+  /** İşletim sisteminde "hareketi azalt" açıksa animasyonlar sadeleşir. */
+  const azaltilmisHareket =
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+  // Metin efekti — CSS sinifi
   const getTextEffectClass = (fx?: string) => {
     switch (fx) {
       case 'wiggle': return 'animate-[pulse_1s_ease-in-out_infinite]';
       case 'wave': return 'tracking-widest animate-pulse';
       case 'shine': return 'drop-shadow-[0_0_15px_rgba(62,237,254,0.85)]';
-      case 'pulse': return 'animate-pulse';
-      case 'shake': return 'animate-[bounce_0.8s_infinite]';
-      default: return 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]';
+      case 'skew': return '[transform:skewX(-8deg)]';
+      case 'elastic': return 'animate-[bounce_1.2s_ease-in-out_infinite]';
+      default: return '';
     }
   };
 
@@ -269,7 +342,14 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
       {displayAlert && (
         <div
-          className={`transition-all duration-500 transform ${getAnimationClass(displayAlert.animation, isDisplayVisible)} p-4 max-w-full ${
+          style={animStili(
+            asama === 'exiting' ? (advanced.exitAnimation || displayAlert.animation) : displayAlert.animation,
+            asama,
+            Math.max(0, Number(advanced.animationDuration) || 500),
+            0,
+            azaltilmisHareket
+          )}
+          className={`p-4 max-w-full ${
             displayAlert.layoutMode === 'side-by-side'
               ? 'flex flex-row items-center justify-center gap-5 text-left'
               : displayAlert.layoutMode === 'text-over'
@@ -284,7 +364,8 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
                 src={displayAlert.imageUrl}
                 alt="Alert GIF"
                 onError={() => setImgError(true)}
-                className="max-h-48 object-contain rounded-2xl mx-auto"
+                style={{ maxHeight: `${Math.max(40, Number(advanced.imageMaxHeight) || 192)}px` }}
+                className="object-contain rounded-2xl mx-auto"
               />
             </div>
           ) : (
@@ -296,21 +377,44 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
             </div>
           )}
 
-          {/* Alert Content Box */}
-          <div className={displayAlert.layoutMode === 'text-over' ? 'absolute inset-0 flex flex-col items-center justify-center p-3 bg-black/60 rounded-2xl' : ''}>
-            {/* Alert Title */}
+          {/* Metin katmani.
+              BotRix'te ust ve alt metnin rengi, boyutu ve konumu AYRI
+              ayarlaniyor; ayrica metnin gorunecegi ms araligi var. Bizde
+              tek renk ve sabit boyut vardi. */}
+          <div
+            className={
+              displayAlert.layoutMode === 'text-over'
+                ? 'absolute inset-0 flex flex-col items-center justify-center p-3 bg-black/60 rounded-2xl'
+                : ''
+            }
+            style={{
+              transform: `translate(${Number(advanced.textOffsetX) || 0}px, ${Number(advanced.textOffsetY) || 0}px)`,
+              opacity: metinGorunur() ? 1 : 0,
+              transition: 'opacity 200ms ease',
+              fontFamily: advanced.fontFamily
+            }}
+          >
+            {/* Ust metin (baslik) */}
             <div
-              className={`text-2xl md:text-4xl font-black uppercase tracking-wider font-display mb-1 ${getTextEffectClass(displayAlert.textEffect)}`}
-              style={{ color: displayAlert.accentColor || '#3EEDFE' }}
+              className={`font-black uppercase tracking-wider font-display mb-1 ${getTextEffectClass(displayAlert.textEffect)}`}
+              style={{
+                color: (advanced.titleColor as string) || displayAlert.accentColor || '#3EEDFE',
+                fontSize: `${Math.max(10, Number(advanced.titleSize) || 36)}px`,
+                textShadow: `0 4px 12px rgba(0,0,0,${Math.max(0, Math.min(100, Number(advanced.textShadow) ?? 80)) / 100})`
+              }}
             >
               {displayAlert.title}
             </div>
 
-            {/* Alert Sub-Message */}
-            {displayAlert.message && (
+            {/* Alt metin (izleyici mesaji) */}
+            {displayAlert.message && !advanced.hideUserMessage && (
               <div
-                className="text-sm md:text-lg font-bold drop-shadow-[0_3px_8px_rgba(0,0,0,0.9)] bg-black/80 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-md shadow-xl mt-1"
-                style={{ color: displayAlert.textColor || '#ffffff' }}
+                className="font-bold bg-black/80 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-md shadow-xl mt-1"
+                style={{
+                  color: (advanced.messageColor as string) || displayAlert.textColor || '#ffffff',
+                  fontSize: `${Math.max(9, Number(advanced.messageSize) || 18)}px`,
+                  textShadow: `0 3px 8px rgba(0,0,0,${Math.max(0, Math.min(100, Number(advanced.textShadow) ?? 80)) / 100})`
+                }}
               >
                 {displayAlert.message}
               </div>

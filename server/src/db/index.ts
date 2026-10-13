@@ -1,22 +1,10 @@
 import { DatabaseSync } from 'node:sqlite';
+import { satiriCoz } from '../core/security/vault.js';
 import path from 'path';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
 import { syncTriviaBank } from '../modules/games/trivia-sync.js';
-import { 
-  ChannelConfig, 
-  CustomCommand, 
-  TimerConfig, 
-  AutoModSettings, 
-  EconomyUser, 
-  SongQueueItem, 
-  Giveaway, 
-  GiveawayEntry, 
-  AlertPreset, 
-  StreamEvent,
-  TriviaQuestion,
-  TriviaScore
-} from './schema.js';
+import { gocleriUygula } from './migrations.js';
+import { hataMetni } from '../core/logger.js';
 
 const dataDir = path.resolve(process.cwd(), 'data');
 if (!fs.existsSync(dataDir)) {
@@ -34,6 +22,32 @@ db.exec('PRAGMA mmap_size = 33554432;'); // 32 MB memory-mapped I/O
 db.exec('PRAGMA temp_store = MEMORY;');
 db.exec('PRAGMA wal_autocheckpoint = 100;'); // Keeps WAL file compact
 db.exec('PRAGMA busy_timeout = 5000;');
+
+// S6 — şifreli sırlar (`dpapi:v1:...`) TEK NOKTADAN, okurken çözülür:
+// 29 ayrı okuma yerine dokunmadan tüm `get/all/iterate` sonuçlarındaki
+// önekli değerler düz metne çevrilir. Öneksiz değerler AYNEN geçer
+// (geriye uyum). Bkz. core/security/vault.ts
+const asilPrepare = db.prepare.bind(db);
+/** Şifre ÇÖZMEDEN okuma — yalnız sır geçişi (vault-migrate) için. */
+export function hamSorgu(sql: string) {
+  return asilPrepare(sql);
+}
+{
+  (db as any).prepare = (sql: string) => {
+    const st: any = asilPrepare(sql);
+    const asilGet = st.get.bind(st);
+    const asilAll = st.all.bind(st);
+    st.get = (...a: any[]) => satiriCoz(asilGet(...a));
+    st.all = (...a: any[]) => (asilAll(...a) as any[]).map((r) => satiriCoz(r));
+    if (typeof st.iterate === 'function') {
+      const asilIterate = st.iterate.bind(st);
+      st.iterate = function* (...a: any[]) {
+        for (const r of asilIterate(...a)) yield satiriCoz(r);
+      };
+    }
+    return st;
+  };
+}
 db.exec('PRAGMA optimize;');
 
 // Initialize tables
@@ -217,6 +231,8 @@ db.exec(`
 `);
 
 // Safe column migrations for existing SQLite databases
+// Sütun zaten varsa ALTER hata verir: bu satırlardaki boş catch BİLİNÇLİ.
+// Yeni sütunlar buraya değil, sürümlü db/migrations.ts'ye eklenir.
 try { db.exec('ALTER TABLE economy ADD COLUMN messages_count INTEGER NOT NULL DEFAULT 0;'); } catch {}
 try { db.exec('ALTER TABLE economy ADD COLUMN subs_count INTEGER NOT NULL DEFAULT 0;'); } catch {}
 try { db.exec('ALTER TABLE economy ADD COLUMN gifted_subs_count INTEGER NOT NULL DEFAULT 0;'); } catch {}
@@ -347,12 +363,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_trivia_scores_total ON trivia_scores(total_score DESC);
 `);
 
+// Surumlu gocler: yeni tablo ve sutunlar buradan gelir (db/migrations.ts).
+// Yikici gocler yasak; yalniz CREATE IF NOT EXISTS ve varsayilanli ADD COLUMN.
+gocleriUygula(db);
+
 // Seed default settings if empty
 const settingsCount = db.prepare('SELECT COUNT(*) as cnt FROM bot_settings').get() as { cnt: number };
 if (settingsCount.cnt === 0) {
   const defaultSettings: Record<string, string> = {
     prefix: '!',
-    cross_chat_enabled: 'true',
+    // Varsayılan KAPALI: açıkken her izleyici mesajı bot hesabıyla diğer tüm
+    // bağlı platformlara yazılır; yayıncı bunu bilerek seçmeli.
+    cross_chat_enabled: 'false',
     cross_chat_format: '[$platform] $user: $message',
     tts_enabled: 'true',
     tts_voice: 'tr-TR-AhmetNeural',
@@ -524,7 +546,9 @@ const extraAlerts = [
 for (const a of extraAlerts) {
   try {
     db.prepare(`INSERT OR IGNORE INTO alert_presets (id, event_type, title_template, message_template, sound_url, image_url, duration_ms, font_family, text_color, accent_color, animation, sound_volume, is_enabled) VALUES (?, ?, ?, ?, '', '', 6000, 'Plus Jakarta Sans', '#ffffff', ?, 'bounce', 0.7, 1)`).run(a.id, a.eventType, a.title, a.msg, a.color);
-  } catch {}
+  } catch (e) {
+    console.warn('[DB] Varsayılan uyarı şablonu eklenemedi:', a.id, hataMetni(e));
+  }
 }
 
 // Seed sample announcement timer

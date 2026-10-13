@@ -7,7 +7,7 @@ export interface PlatformStatus {
 
 export interface ChannelConfig {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel_name: string;
   account_id?: string;
   token?: string;
@@ -25,6 +25,15 @@ export interface CustomCommand {
   is_enabled: number;
   use_count: number;
   description?: string;
+  /** BotRix komut formu alanları (sunucu: command-input.ts) */
+  cooldown_mode?: 'global' | 'user';
+  user_cooldown?: number;
+  cost_points?: number;
+  min_level?: number;
+  /** Virgüllü; boş = tüm platformlar */
+  platforms?: string;
+  trigger_type?: 'command' | 'keyword';
+  access_mode?: 'always' | 'online' | 'offline';
 }
 
 export interface TimerConfig {
@@ -50,16 +59,6 @@ export interface AutoModSettings {
   blacklist_words: string[];
   ai_moderation_enabled: number;
   ai_toxicity_threshold: number;
-}
-
-export interface EconomyUser {
-  id: string;
-  platform: string;
-  username: string;
-  display_name: string;
-  points: number;
-  watch_time_minutes: number;
-  last_active: number;
 }
 
 export interface SongItem {
@@ -103,7 +102,7 @@ export interface AlertPreset {
 
 export interface StreamEvent {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   event_type: 'chat' | 'follow' | 'sub' | 'tip' | 'raid' | 'gift';
   username: string;
   display_name?: string;
@@ -116,7 +115,7 @@ export interface StreamEvent {
 
 export interface ChatMessage {
   id: string;
-  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok';
+  platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   channel: string;
   user: {
     id: string;
@@ -133,4 +132,8 @@ export interface ChatMessage {
   };
   message: string;
   timestamp: number;
+  /** Ortak kara listedeki kullanıcı: panelde işaretli, OBS katmanında gizli. */
+  karaListede?: boolean;
+  /** Açık kalkanın kuralına takıldı (abone/link/caps/emoji): panelde işaretli, OBS katmanında gizli. */
+  kalkanda?: 'abone' | 'link' | 'caps' | 'emoji';
 }

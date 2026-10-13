@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  DollarSign, 
-  Copy, 
-  Check, 
-  ExternalLink, 
-  Skull, 
-  Sliders, 
-  Play, 
-  Save, 
-  Radio, 
-  CheckCircle2, 
-  Sparkles, 
-  Volume2, 
-  HelpCircle,
-  Clock,
-  ArrowRight
+import {
+  DollarSign,
+  Copy,
+  Check,
+  Skull,
+  Play,
+  Save,
+  Clock
 } from 'lucide-react';
 
 interface JumpScareSettings {

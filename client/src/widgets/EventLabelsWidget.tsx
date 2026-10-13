@@ -23,7 +23,8 @@ export function EventLabelsWidget(_props?: { embedded?: boolean; previewMode?: b
     const type = lastMessage.subType || ev?.event_type || lastMessage.type;
     const name = ev?.displayName || ev?.display_name || ev?.username || lastMessage.payload?.user?.displayName;
     if (type === 'follow' && name) setLastFollower(name);
-    if ((type === 'subscription' || type === 'gifted_sub' || type === 'gift_sub') && name) setLastSub(name);
+    // 'sub' sunucunun gerçek abonelik türü — eskiden listede yoktu
+    if ((type === 'sub' || type === 'subscription' || type === 'gifted_sub' || type === 'gift_sub') && name) setLastSub(name);
     if ((type === 'donation' || type === 'tip' || lastMessage.type === 'donation') && name) {
       const amount = Number(ev?.amount ?? lastMessage.payload?.amount ?? 0);
       const currency = ev?.currency || lastMessage.payload?.currency || 'TL';

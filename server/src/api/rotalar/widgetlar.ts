@@ -65,7 +65,7 @@ router.post('/subathon/add', (req: Request, res: Response) => {
 });
 
 // 18. All-in-One Overlay Settings (Single OBS URL: /widgets/overlay)
-function normalizeAllInOneConfig(cfg: any) {
+export function normalizeAllInOneConfig(cfg: any) {
   const defaults = {
     canvasWidth: 1920,
     canvasHeight: 1080,
@@ -103,21 +103,26 @@ function normalizeAllInOneConfig(cfg: any) {
   return result;
 }
 
-router.get('/overlay/all-in-one', (req: Request, res: Response) => {
+/** Hepsi-bir-arada katman ayarı (bozuksa varsayılan). Sesli komutlar da kullanır. */
+export function overlayAyariOku(): any {
   const row = db.prepare("SELECT config_json FROM all_in_one_overlay_settings WHERE id = 'default'").get() as any;
   if (row?.config_json) {
     try {
-      const parsed = JSON.parse(row.config_json);
-      return res.json(normalizeAllInOneConfig(parsed));
+      return normalizeAllInOneConfig(JSON.parse(row.config_json));
     } catch (e) {
       seyrekUyar('overlay:all-in-one', '[Overlay] Hepsi-bir-arada ayarı bozuk — varsayılan kullanılıyor', e);
     }
   }
-  res.json(normalizeAllInOneConfig(null));
+  return normalizeAllInOneConfig(null);
+}
+
+router.get('/overlay/all-in-one', (req: Request, res: Response) => {
+  res.json(overlayAyariOku());
 });
 
-router.post('/overlay/all-in-one', (req: Request, res: Response) => {
-  const config = normalizeAllInOneConfig(req.body);
+/** Ayarı kaydeder ve /widgets/overlay açık olan her OBS'e canlı yollar. */
+export function overlayAyariYaz(girdi: any): any {
+  const config = normalizeAllInOneConfig(girdi);
   const configJson = JSON.stringify(config);
   const now = Date.now();
 
@@ -133,15 +138,17 @@ router.post('/overlay/all-in-one', (req: Request, res: Response) => {
     type: 'all_in_one_overlay_settings',
     config
   });
+  return config;
+}
 
+router.post('/overlay/all-in-one', (req: Request, res: Response) => {
+  const config = overlayAyariYaz(req.body);
   res.json({ success: true, config, message: 'All-in-One Overlay ayarları kaydedildi ve OBS güncellendi!' });
 });
 
 // 18. Universal Widget Test Trigger Endpoint
-router.post('/widgets/test/:widgetName', (req: Request, res: Response) => {
-  const { widgetName } = req.params;
-  const body = req.body || {};
-
+/** Widget test tetikleyicisi (Overlay Studio "Test" düğmesi ve sesli komutlar). Gerçek durum değişmez. */
+export function widgetTesti(widgetName: string, body: any = {}): void {
   switch (widgetName) {
     case 'emote-combo':
     case 'on-screen-emotes':
@@ -244,7 +251,11 @@ router.post('/widgets/test/:widgetName', (req: Request, res: Response) => {
       wsHub.triggerTestAlert(body.eventType || 'follow');
       break;
   }
+}
 
+router.post('/widgets/test/:widgetName', (req: Request, res: Response) => {
+  const { widgetName } = req.params;
+  widgetTesti(String(widgetName), req.body || {});
   res.json({ success: true, widget: widgetName, message: `${widgetName} testi tetiklendi!` });
 });
 

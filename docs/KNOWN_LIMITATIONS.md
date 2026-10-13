@@ -204,3 +204,24 @@ harcayarak oynatır, `!sesler` listeler, moderatör `!sesgec` ile atlar. Katman:
 3. Sıra bellekte tutulur; sunucu yeniden başlarsa sıradaki istekler düşer (geçmiş kaydı kalır, puan iadesi yapılmaz).
 4. Katman açık değilse istek süre sınırında (+3 sn) kendiliğinden biter; ses hiçbir yerde çalmaz.
 5. Giriş sesi kullanıcı adına göre eşleşir (platformdan bağımsız); aynı ad farklı platformda da tetikler.
+
+## 11. SESLİ KOMUTLAR (2026-10-12)
+
+Yayıncı mikrofona konuşarak botu ve Overlay Studio'yu yönetir ("bot, sohbeti temizle"). Tanıma tarayıcıda yerel
+(vosk-browser 0.0.8, Apache-2.0, WASM); ses bilgisayardan çıkmaz. Model (Vosk küçük Türkçe, `vosk-model-small-tr-0.3`,
+Apache-2.0, ~37 MB) pakete GİRMEZ: yayıncı "Modeli indir" deyince alphacephei.com'dan bir kez indirilir ve
+`data/sesli/model.tar.gz` olarak saklanır.
+
+1. **Doğruluk:** küçük model (2020) kısa sözcükleri kaçırabilir. Varsayılan "yalnız komut ifadelerini tanı"
+   (Vosk dilbilgisi) ile sınamada ("bot sohbeti temizle", "bot anketi aç") doğru tanındı; serbest tanımada "aç" düştü.
+   Sınama Google TTS ile üretilmiş sentetik Türkçe sesle, başsız Chrome'un sahte mikrofonuyla yapıldı — gerçek
+   mikrofon, oda gürültüsü ve farklı aksanlarla DENENMEDİ.
+2. **Mikrofonu tek pencere tutar** (Web Locks). Panelde başka sekmeye geçince dinleme sürer (pencere açık kaldıkça);
+   ayrı kullanımda `/sesli-dinleyici?otomatik=1` OBS'te özel tarayıcı dock'u olarak açılabilir. OBS'in CEF dock'unda
+   mikrofon izni OBS sürümüne bağlıdır (denenmedi).
+3. Tarayıcı ses bağlamını kullanıcı etkileşimi olmadan başlatmayabilir; o durumda ilk tık/tuşta dinleme başlar.
+4. **Bot komutu eylemi** yayıncı adına çalışır ve yanıt GERÇEK sohbete gider (gerçek sohbetle denenmedi; yalıtılmış
+   sunucuda platform bağlantısı yokken sınandı).
+5. Genel (oyun içi) bas-konuş kısayolu yalnız Yayın Yönetim Aracı'nda; tek başına StreamAxT'te bas-konuş, sayfadaki
+   düğmeyle.
+6. Ses panosuna öğe eklenince tanıyıcı ifade listesi en geç 60 sn'de yenilenir (komut değişikliğinde anında).

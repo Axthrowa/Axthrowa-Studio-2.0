@@ -264,3 +264,20 @@ bırakılır. Kopukluk panelde Kick kartında uyarı olarak görünür (eskiden 
   olmayan ölü alanlar kaldırıldı; (g) sohbet katmanı önizlemede boştu → örnek mesajlar; Kick emote'ları resim; avatar
   alanı; ayar değişince son mesaj ikinci kez ekleniyordu (sohbet, etkinlik akışı, emote kombo, hedef).
 - Sayfa dili `tr` (CSS büyük harf "TAKİPÇİ"; eskiden "TAKIPÇI").
+
+## 13. OVERLAY STÜDYO "OBS GÖRÜNÜMÜ", YENİDEN BAĞLANAN WIDGET'LAR, TEMBEL YÜKLEME (2026-10-14, 2. tur)
+
+- Tuvalde **"Örnek verilerle / OBS'te görüneceği gibi"** anahtarı. Örnek kipinde her bileşen örnek içerikle, kapalı
+  katmanlar soluk görünür (yerleşim için). OBS kipinde tuval OBS'in o an çizdiğinin aynısıdır: kapalı katman yok,
+  örnek veri yalnız "OBS Test Modu" açıksa. "Önizlemede var, OBS'te yok" farkı çoğunlukla bu örnek verilerdi.
+- Jenerik, hype treni, şu an çalan, sabit mesaj, shoutout, subathon, bağış kupası ve sadakat ödülü widget'ları
+  StreamAxT yeniden başlayınca bir daha bağlanmıyordu (OBS kaynağı yenilenene kadar ölü) → `lib/kaliciSoket.ts`.
+- "Şu An Çalan" widget'ının istediği `GET /api/songrequest/current` yoktu (404) → eklendi.
+- Sayfalar ve widget'lar tembel yüklenir: OBS'teki her widget ana paketin tamamını (626 KB) değil ~26 KB + kendi
+  parçasını indirir.
+- `http-cache-semantics` 4.3.0 (GHSA-ch52-4w7c-c8xp; `tiktok-live-connector@2.4.0` → `got` zinciri). Bot süreci
+  `release/app` ve gömülü kopyanın kendi `node_modules`'unu kullanır; ikisinde de elle güncellendi.
+- Kalan: `vosk-browser@0.0.8` içindeki `uuid@9` için orta önemde uyarı (v3/v5/v6 + `buf` kullanımı; tanıyıcı v4
+  kullanıyor) — üst sürümde düzeltme yok.
+- Widget taraması (yalıtılmış örnek, 31 sayfa): çalışma anı hatası yok. Çekiliş, anket, hype treni, jumpscare,
+  trivia, shoutout, sabit mesaj, ödül ve şu an çalan widget'ları olay yokken BİLEREK boştur.

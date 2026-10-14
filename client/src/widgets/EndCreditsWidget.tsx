@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { END_CREDITS_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, onizlemeKipi , wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 export interface EndCreditsWidgetProps {
   embedded?: boolean;
@@ -55,7 +56,7 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
     yukle();
     // Widget "Test" düğmesi ve yayın sonu komutu `credits_start` yayınlar;
     // eskiden dinlenmiyordu, jenerik yalnız sayfa açılışında bir kez akıyordu.
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (ev) => {
       try {
         const m = JSON.parse(ev.data);

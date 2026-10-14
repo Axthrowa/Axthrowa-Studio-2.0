@@ -406,6 +406,8 @@ export function OverlayStudio() {
   // All-in-One Single OBS Overlay State
   const [allInOne, setAllInOne] = useState<AllInOneConfig>(DEFAULT_ALL_IN_ONE_CONFIG);
   const [selectedCanvasWidget, setSelectedCanvasWidget] = useState<string>('chat');
+  /** Tuval OBS'te görüneceği gibi mi (true) yoksa örnek verilerle mi çizilsin. */
+  const [obsGorunumu, setObsGorunumu] = useState(false);
   /** Seçili katmanın kendi ayar kaydı (hedef çubuğunda türe göre). */
   const seciliAyarId =
     selectedCanvasWidget === 'goals' ? hedefWidgetKimligi(allInOne.goals?.type) : KATMAN_AYAR_ID[selectedCanvasWidget];
@@ -1081,6 +1083,40 @@ export function OverlayStudio() {
                 </span>
               </div>
 
+              {/* Önizleme kipi: örnek veri mi, OBS'in o an gösterdiği mi? Kullanıcı
+                  "önizlemede görünenler OBS'te görünmüyor" dedi: tuval her bileşeni
+                  örnek veriyle (ve kapalı katmanları soluk) gösteriyordu; OBS ise
+                  yalnız AÇIK katmanları, gerçek olay geldikçe çiziyor. */}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+                <div role="tablist" aria-label="Önizleme kipi" className="flex gap-1">
+                  {([
+                    [false, 'Örnek verilerle', 'Her bileşeni örnek içerikle gösterir (yerleşim için)'],
+                    [true, "OBS'te görüneceği gibi", "OBS'in şu an gösterdiğinin aynısı: kapalı katmanlar yok, örnekler yalnız OBS Test Modu açıksa"]
+                  ] as const).map(([deger, ad, ipucu]) => (
+                    <button
+                      key={ad}
+                      type="button"
+                      role="tab"
+                      aria-selected={obsGorunumu === deger}
+                      title={ipucu}
+                      onClick={() => setObsGorunumu(deger)}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+                        obsGorunumu === deger ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {ad}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-400 max-w-md">
+                  {obsGorunumu
+                    ? allInOne.testMode
+                      ? 'OBS Test Modu açık: OBS de örnek verileri gösteriyor.'
+                      : 'Gerçek veri: uyarı, anket, çark gibi bileşenler olay geldiğinde görünür.'
+                    : 'Örnekler yalnız burada; OBS’te de görmek için “OBS Test Modunu Aç”.'}
+                </p>
+              </div>
+
               {/* 16:9 Screen Simulation Box (Interactive Drag Canvas) */}
               <div 
                 ref={canvasRef}
@@ -1119,10 +1155,12 @@ export function OverlayStudio() {
                 >
                   <OverlayKatmanlari
                     config={allInOne as any}
-                    onizleme
+                    onizleme={obsGorunumu ? Boolean(allInOne.testMode) : true}
                     sarmala={(katman, icerik, stil) => {
                       const item = (allInOne as any)[katman.anahtar];
                       const secili = selectedCanvasWidget === katman.anahtar;
+                      // OBS görünümü: kapalı katman OBS'te hiç çizilmez, burada da yok
+                      if (obsGorunumu && !item?.enabled) return null;
                       return (
                         <div
                           onPointerDown={(e) => handleWidgetPointerDown(e, katman.anahtar)}

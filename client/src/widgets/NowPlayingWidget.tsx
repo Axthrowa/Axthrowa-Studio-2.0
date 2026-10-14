@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { NOW_PLAYING_DEFAULTS } from '../lib/widget-defaults.js';
 import { wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 interface SongItem {
   title: string;
@@ -57,7 +58,14 @@ export function NowPlayingWidget({ embedded = false, previewMode = false }: NowP
       })
       .catch(() => {});
 
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
+    // Kopukken başlayan şarkı: bağlantı gelince çalanı yeniden oku
+    ws.onyenidenbaglandi = () => {
+      fetch('/api/songrequest/current')
+        .then((r) => r.json())
+        .then((d) => setSong(d && d.title ? d : null))
+        .catch(() => {});
+    };
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);

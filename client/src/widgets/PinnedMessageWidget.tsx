@@ -12,6 +12,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { PINNED_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, yatay, dikey, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 interface PinnedItem {
   id: string;
@@ -50,7 +51,7 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
       })
       .catch(() => {});
 
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);

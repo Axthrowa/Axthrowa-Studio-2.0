@@ -24,6 +24,13 @@ router.get('/songrequest/queue', (req: Request, res: Response) => {
   res.json({ current, queue });
 });
 
+// "Şu An Çalan" OBS widget'ı bu ucu istiyordu ama yoktu (404): çalan şarkı
+// OBS'te yalnız `song_started` olayı anında görünüyor, sayfa yenilenince
+// ya da sonradan açılınca kayboluyordu.
+router.get('/songrequest/current', (req: Request, res: Response) => {
+  res.json(songRequest.getCurrentSong() || null);
+});
+
 router.post('/songrequest/skip', (req: Request, res: Response) => {
   const result = songRequest.skipSong(true);
   res.json(result);

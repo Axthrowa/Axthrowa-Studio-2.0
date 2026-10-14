@@ -12,6 +12,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { THE_CUP_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, yatay, emojiListesi, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 interface DroppedItem {
   id: string;
@@ -84,7 +85,7 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
 
   useEffect(() => {
     if (onizleme) return;
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
 
     ws.onmessage = (event) => {
       try {

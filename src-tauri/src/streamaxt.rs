@@ -155,8 +155,14 @@ fn tail_log(dir: &Path) -> String {
   lines.into_iter().rev().collect::<Vec<_>>().join("\n")
 }
 
-/// Sunucuyu başlat (zaten ayaktaysa hiçbir şey yapmaz).
+/// Aynı anda iki `start` (açılıştaki otomatik başlatma + arayüz) ikinci bir
+/// kopya başlatıyordu: o kopya `EADDRINUSE` ile çöküyor, panel de ilk kopyanın
+/// izini kaybediyordu (günlükte "address already in use 127.0.0.1:3001").
+static START_LOCK: Mutex<()> = Mutex::new(());
+
+/// Sunucuyu başlat (zaten ayaktaysa ya da açılıyorsa hiçbir şey yapmaz).
 pub fn start() -> Result<Value, String> {
+  let _kilit = START_LOCK.lock().unwrap_or_else(|e| e.into_inner());
   let port = port();
   let dir = find_dir().ok_or_else(|| {
     "StreamAxT klasörü bulunamadı (uygulamanın yanında `streamaxt` olmalı).".to_string()
@@ -165,6 +171,25 @@ pub fn start() -> Result<Value, String> {
   if healthy(port) {
     return Ok(status());
   }
+  // Kendi kopyamız hâlâ açılıyor: ikincisini başlatma, onu bekle
+  if own_child_alive().is_none() {
+    spawn_child(&dir, port)?;
+  }
+
+  let t0 = Instant::now();
+  while t0.elapsed() < Duration::from_secs(12) {
+    if healthy(port) {
+      return Ok(status());
+    }
+    if own_child_alive().is_none() {
+      return Err(format!("StreamAxT hemen kapandı:\n{}", tail_log(&dir)));
+    }
+    std::thread::sleep(Duration::from_millis(250));
+  }
+  Err(format!("StreamAxT 12 sn içinde yanıt vermedi:\n{}", tail_log(&dir)))
+}
+
+fn spawn_child(dir: &Path, port: u16) -> Result<(), String> {
   let node = find_node().ok_or_else(|| "Node.js 22+ bulunamadı — nodejs.org üzerinden kurun.".to_string())?;
 
   let log_path = dir.join("streamaxt.log");
@@ -181,7 +206,7 @@ pub fn start() -> Result<Value, String> {
   let mut cmd = Command::new(node);
   cmd
     .arg("dist/index.js")
-    .current_dir(&dir)
+    .current_dir(dir)
     .env("PORT", port.to_string())
     .stdin(Stdio::null())
     .stdout(Stdio::from(log))
@@ -196,18 +221,7 @@ pub fn start() -> Result<Value, String> {
   if let Ok(mut g) = CHILD.lock() {
     *g = Some(child);
   }
-
-  let t0 = Instant::now();
-  while t0.elapsed() < Duration::from_secs(12) {
-    if healthy(port) {
-      return Ok(status());
-    }
-    if own_child_alive().is_none() {
-      return Err(format!("StreamAxT hemen kapandı:\n{}", tail_log(&dir)));
-    }
-    std::thread::sleep(Duration::from_millis(250));
-  }
-  Err(format!("StreamAxT 12 sn içinde yanıt vermedi:\n{}", tail_log(&dir)))
+  Ok(())
 }
 
 fn kill_tree(pid: u32) {

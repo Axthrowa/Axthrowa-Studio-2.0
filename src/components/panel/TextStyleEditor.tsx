@@ -7,6 +7,9 @@ import {
   TEXT_STYLE_LABELS,
   TextStyle,
   TextStyleKey,
+  etkinVurguRengi,
+  etkinYaziRengi,
+  hex6,
 } from "../../lib/textStyles";
 import { OverlaySettings } from "../../lib/api";
 import { CreditSection, sectionsFromSettings } from "../overlay/CreditsRoller";
@@ -21,12 +24,17 @@ function StyleRow({
   label,
   st,
   defaultFont,
+  renk,
+  vurgu,
   onPatch,
   extra,
 }: {
   label: string;
   st: TextStyle;
   defaultFont?: string;
+  /** Ekranda kullanılan gerçek renkler (şablondan gelen dahil). */
+  renk: string;
+  vurgu: string;
   onPatch: (partial: TextStyle) => void;
   extra?: ReactNode;
 }) {
@@ -82,7 +90,7 @@ function StyleRow({
           <input
             type="color"
             className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-[#12151e] p-0.5 text-white"
-            value={st.color || "#ffffff"}
+            value={renk}
             onChange={(e) => onPatch({ color: e.target.value })}
           />
         </label>
@@ -91,7 +99,7 @@ function StyleRow({
           <input
             type="color"
             className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-[#12151e] p-0.5 text-white"
-            value={st.accentColor || "#7c5cff"}
+            value={vurgu}
             onChange={(e) => onPatch({ accentColor: e.target.value })}
           />
         </label>
@@ -164,6 +172,8 @@ export default function TextStyleEditor({ settings, onChange, includeCredits }: 
         label="Geri sayım / rozet"
         st={{ ...cdSt, size: cdSize }}
         defaultFont={settings.font}
+        renk={etkinYaziRengi("countdown", settings)}
+        vurgu={etkinVurguRengi("countdown", settings)}
         onPatch={(p) => patchKey("countdown", p)}
         extra={
           <label className="mb-1 block text-[10px] text-panel-muted">
@@ -190,6 +200,8 @@ export default function TextStyleEditor({ settings, onChange, includeCredits }: 
               label={TEXT_STYLE_LABELS[key]}
               st={{ ...st, size }}
               defaultFont={settings.font}
+              renk={etkinYaziRengi(key, settings)}
+              vurgu={etkinVurguRengi(key, settings)}
               onPatch={(p) => patchKey(key, p)}
             />
             {key === "ticker" && (
@@ -270,12 +282,16 @@ export default function TextStyleEditor({ settings, onChange, includeCredits }: 
                 label="Başlık stili"
                 st={sec.titleStyle || {}}
                 defaultFont={settings.font}
+                renk={hex6(sec.titleStyle?.color) || etkinYaziRengi("credits", settings)}
+                vurgu={hex6(sec.titleStyle?.accentColor) || etkinVurguRengi("credits", settings)}
                 onPatch={(p) => patchSectionStyle(i, "titleStyle", p)}
               />
               <StyleRow
                 label="Satır stili"
                 st={sec.bodyStyle || {}}
                 defaultFont={settings.font}
+                renk={hex6(sec.bodyStyle?.color) || etkinYaziRengi("credits", settings)}
+                vurgu={hex6(sec.bodyStyle?.accentColor) || etkinVurguRengi("credits", settings)}
                 onPatch={(p) => patchSectionStyle(i, "bodyStyle", p)}
               />
               <button

@@ -65,3 +65,47 @@ export const TEXT_STYLE_LABELS: Record<TextStyleKey, string> = {
   ticker: "Alt not",
   credits: "Jenerik",
 };
+
+/** `<input type="color">` yalnız `#rrggbb` kabul eder; "#fff" gibi kısa biçim siyah görünüyordu. */
+export function hex6(renk?: string | null): string | undefined {
+  const r = String(renk ?? "").trim();
+  if (/^#[0-9a-f]{6}$/i.test(r)) return r.toLowerCase();
+  const m = r.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i);
+  if (m) return `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}`.toLowerCase();
+  return undefined;
+}
+
+type RenkAyarlari = {
+  textStyles?: Partial<Record<TextStyleKey, TextStyle>> | Record<string, TextStyle>;
+  textColor?: string;
+  eyebrowColor?: string;
+  subColor?: string;
+  countdownColor?: string;
+  tickerColor?: string;
+  accent?: string;
+};
+
+/** Yazı rengi ayarlanmadıysa ekranda kullanılan eski (şablon) renk alanı. */
+const YEDEK_RENK: Partial<Record<TextStyleKey, keyof RenkAyarlari>> = {
+  eyebrow: "eyebrowColor",
+  title: "textColor",
+  sub: "subColor",
+  countdown: "countdownColor",
+  ticker: "tickerColor",
+};
+
+/**
+ * Ekranda GERÇEKTEN kullanılan yazı rengi (OverlayShell `textProps` ile aynı
+ * öncelik). Renk seçici eskiden hep beyazı gösteriyordu: şablon yazıyı sarı
+ * yapmışsa beyaz seçmek "değişiklik yok" sayılıp uygulanmıyordu.
+ */
+export function etkinYaziRengi(key: TextStyleKey, s: RenkAyarlari): string {
+  const st = ((s.textStyles || {}) as Record<string, TextStyle>)[key] || {};
+  const yedek = YEDEK_RENK[key];
+  return hex6(st.color) || hex6(yedek ? (s[yedek] as string | undefined) : undefined) || "#ffffff";
+}
+
+export function etkinVurguRengi(key: TextStyleKey, s: RenkAyarlari): string {
+  const st = ((s.textStyles || {}) as Record<string, TextStyle>)[key] || {};
+  return hex6(st.accentColor) || hex6(s.accent) || "#7c5cff";
+}

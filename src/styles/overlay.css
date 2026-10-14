@@ -747,7 +747,6 @@ img.chat-badge {
 }
 [data-fx="retro"] {
   position: relative;
-  color: #fff !important;
   letter-spacing: 0.08em;
   text-shadow:
     3px 3px 0 #000,
@@ -763,7 +762,7 @@ img.chat-badge {
 [data-fx="retro"] .cd-sep,
 [data-fx="retro"] .cd-fixed,
 [data-fx="retro"] .live-text {
-  color: #fff !important;
+  color: inherit;
   letter-spacing: 0.08em;
   text-shadow:
     3px 3px 0 #000,
@@ -775,7 +774,6 @@ img.chat-badge {
   -webkit-text-stroke: 0;
 }
 [data-fx="neon"] {
-  color: #fff;
   text-shadow:
     0 0 4px #fff,
     0 0 10px var(--accent),
@@ -786,7 +784,7 @@ img.chat-badge {
 [data-fx="neon"] .cd-sep,
 [data-fx="neon"] .cd-fixed,
 [data-fx="neon"] .live-text {
-  color: #fff;
+  color: inherit;
   text-shadow:
     0 0 4px #fff,
     0 0 10px var(--accent),
@@ -845,7 +843,7 @@ img.chat-badge {
 }
 /* Chrome: sadece metin çocuklarında — kutulu sayaçta parent'ı şeffaf yapma */
 [data-fx="chrome"]:not(.countdown):not(.live-badge) {
-  background: linear-gradient(180deg, #fff 10%, #9aa0b4 45%, #fff 55%, #6b7280 90%);
+  background: linear-gradient(180deg, #fff 10%, var(--fx-mid, #9aa0b4) 45%, #fff 55%, var(--fx-dark, #6b7280) 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -856,7 +854,7 @@ img.chat-badge {
 [data-fx="chrome"] .cd-sep,
 [data-fx="chrome"] .cd-fixed,
 [data-fx="chrome"] .live-text {
-  background: linear-gradient(180deg, #fff 10%, #9aa0b4 45%, #fff 55%, #6b7280 90%);
+  background: linear-gradient(180deg, #fff 10%, var(--fx-mid, #9aa0b4) 45%, #fff 55%, var(--fx-dark, #6b7280) 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1209,4 +1207,20 @@ img.chat-badge {
   50% {
     opacity: 0.4;
   }
+}
+
+/* Önizlemede yerinde yazı düzenleme (YerindeMetin) — OBS çıktısında sınıf yok */
+.dragging-ready .yerinde-metin:hover {
+  outline: 1px dashed rgba(255, 255, 255, 0.35);
+  outline-offset: 6px;
+  border-radius: 6px;
+}
+.yerinde-metin.duzenleniyor {
+  outline: 2px solid var(--accent, #7c5cff);
+  outline-offset: 6px;
+  border-radius: 6px;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+  caret-color: var(--fx-mid, #fff);
 }

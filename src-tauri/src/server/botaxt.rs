@@ -1,8 +1,9 @@
 //! Botaxt Modül 2–8 HTTP handlers.
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::extract::{Path, Query, State};
+use axum::extract::{ConnectInfo, Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -1286,24 +1287,91 @@ struct RemoteCreds {
   password: String,
 }
 
+/// İlk yönetici YALNIZ bu bilgisayardan kurulur. Eskiden uç herkese açıktı:
+/// uzak erişim (LAN) açıkken ve henüz yönetici yokken ağdaki herhangi biri
+/// tüm yetkili (`["*"]`) ilk yöneticiyi kendisi oluşturup paneli ele geçirebilirdi.
 async fn api_remote_setup(
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
   State(state): State<Arc<AppState>>,
   Json(body): Json<RemoteCreds>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
+  if !addr.ip().is_loopback() {
+    return Err((
+      StatusCode::FORBIDDEN,
+      "İlk yönetici yalnız bu bilgisayardaki panelden kurulabilir".into(),
+    ));
+  }
   crate::db::botaxt_api::remote_setup(&state.db, &body.username, &body.password)
     .await
     .map(Json)
     .map_err(map_err)
 }
 
+/// Uzak giriş denemesi sınırı: adres başına `GIRIS_SINIRI` başarısız deneme /
+/// `GIRIS_PENCERESI_MS`. Eskiden sınırsızdı (kısa parolalar ağdan kaba kuvvetle bulunabilirdi).
+const GIRIS_SINIRI: u32 = 8;
+const GIRIS_PENCERESI_MS: u64 = 10 * 60 * 1000;
+
+#[derive(Default)]
+struct GirisDenemeleri(std::collections::HashMap<std::net::IpAddr, (u32, u64)>);
+
+impl GirisDenemeleri {
+  /// Bu adres şu an engelli mi? (süresi dolan kayıt temizlenir)
+  fn engelli(&mut self, ip: std::net::IpAddr, simdi_ms: u64) -> bool {
+    match self.0.get(&ip) {
+      Some(&(_, bas)) if simdi_ms.saturating_sub(bas) > GIRIS_PENCERESI_MS => {
+        self.0.remove(&ip);
+        false
+      }
+      Some(&(n, _)) => n >= GIRIS_SINIRI,
+      None => false,
+    }
+  }
+  fn basarisiz(&mut self, ip: std::net::IpAddr, simdi_ms: u64) {
+    let e = self.0.entry(ip).or_insert((0, simdi_ms));
+    e.0 += 1;
+    // Bellek sınırı: çok sayıda farklı adresten deneme tabloyu şişirmesin
+    if self.0.len() > 4096 {
+      self.0.retain(|_, (_, bas)| simdi_ms.saturating_sub(*bas) <= GIRIS_PENCERESI_MS);
+    }
+  }
+  fn basarili(&mut self, ip: std::net::IpAddr) {
+    self.0.remove(&ip);
+  }
+}
+
+static GIRIS_DENEMELERI: std::sync::LazyLock<parking_lot::Mutex<GirisDenemeleri>> =
+  std::sync::LazyLock::new(Default::default);
+
+fn simdi_ms() -> u64 {
+  std::time::SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .map(|d| d.as_millis() as u64)
+    .unwrap_or(0)
+}
+
 async fn api_remote_login(
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
   State(state): State<Arc<AppState>>,
   Json(body): Json<RemoteCreds>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::remote_login(&state.db, &body.username, &body.password)
-    .await
-    .map(Json)
-    .map_err(map_err)
+  let ip = addr.ip();
+  if GIRIS_DENEMELERI.lock().engelli(ip, simdi_ms()) {
+    return Err((
+      StatusCode::TOO_MANY_REQUESTS,
+      "Çok fazla başarısız deneme — 10 dakika sonra tekrar deneyin".into(),
+    ));
+  }
+  match crate::db::botaxt_api::remote_login(&state.db, &body.username, &body.password).await {
+    Ok(v) => {
+      GIRIS_DENEMELERI.lock().basarili(ip);
+      Ok(Json(v))
+    }
+    Err(e) => {
+      GIRIS_DENEMELERI.lock().basarisiz(ip, simdi_ms());
+      Err(map_err(e))
+    }
+  }
 }
 
 async fn api_remote_logout(
@@ -1568,4 +1636,36 @@ async fn api_remote_settings_patch(
     }));
   }
   Ok(Json(json!({ "ok": true })))
+}
+
+#[cfg(test)]
+mod giris_sinir_testleri {
+  use super::*;
+
+  #[test]
+  fn sinir_dolunca_engeller_pencere_bitince_acar() {
+    let ip: std::net::IpAddr = "192.168.1.50".parse().unwrap();
+    let mut g = GirisDenemeleri::default();
+    for _ in 0..GIRIS_SINIRI {
+      assert!(!g.engelli(ip, 1_000));
+      g.basarisiz(ip, 1_000);
+    }
+    assert!(g.engelli(ip, 2_000));
+    // Pencere geçince yeniden denenebilir
+    assert!(!g.engelli(ip, 1_000 + GIRIS_PENCERESI_MS + 1));
+  }
+
+  #[test]
+  fn basarili_giris_sayaci_sifirlar_ve_adresler_ayri() {
+    let a: std::net::IpAddr = "10.0.0.1".parse().unwrap();
+    let b: std::net::IpAddr = "10.0.0.2".parse().unwrap();
+    let mut g = GirisDenemeleri::default();
+    for _ in 0..GIRIS_SINIRI {
+      g.basarisiz(a, 0);
+    }
+    assert!(g.engelli(a, 1));
+    assert!(!g.engelli(b, 1));
+    g.basarili(a);
+    assert!(!g.engelli(a, 2));
+  }
 }

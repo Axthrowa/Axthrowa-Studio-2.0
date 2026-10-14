@@ -2344,7 +2344,8 @@ fn verify_password(stored: &str, password: &str) -> bool {
   hasher.update(password.as_bytes());
   let dig = hasher.finalize();
   let hex: String = dig.iter().map(|b| format!("{b:02x}")).collect();
-  hex == expect
+  // Sabit süreli karşılaştırma: zamanlama farkından özet tahmin edilmesin
+  hex.len() == expect.len() && hex.bytes().zip(expect.bytes()).fold(0u8, |acc, (a, b)| acc | (a ^ b)) == 0
 }
 
 pub async fn remote_setup(pool: &SqlitePool, username: &str, password: &str) -> Result<Value> {
@@ -2358,8 +2359,9 @@ pub async fn remote_setup(pool: &SqlitePool, username: &str, password: &str) -> 
   if count > 0 {
     bail!("Yönetici zaten tanımlı");
   }
-  if username.trim().is_empty() || password.len() < 4 {
-    bail!("Kullanıcı adı / şifre geçersiz");
+  // En az 8 karakter: uzak (LAN) girişe açık hesap; 4 karakter ağdan kaba kuvvetle bulunabiliyordu
+  if username.trim().is_empty() || password.chars().count() < 8 {
+    bail!("Kullanıcı adı boş olamaz, şifre en az 8 karakter olmalı");
   }
   let id = uuid::Uuid::new_v4().to_string();
   let now = chrono_now();

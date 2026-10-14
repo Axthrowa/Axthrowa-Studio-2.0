@@ -1,40 +1,44 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import PanelPage from "./routes/panel/PanelPage";
-import StartingPage from "./routes/starting/StartingPage";
-import EndingPage from "./routes/ending/EndingPage";
-import BrbPage from "./routes/brb/BrbPage";
-import ChatPage from "./routes/chat/ChatPage";
-import SfxPage from "./routes/sfx/SfxPage";
-import GoalPage from "./routes/widgets/GoalPage";
-import LabelPage from "./routes/widgets/LabelPage";
-import PollPage from "./routes/widgets/PollPage";
-import ActivityFeedPage from "./routes/widgets/ActivityFeedPage";
-import SubathonPage from "./routes/widgets/SubathonPage";
-import ViewerCountPage from "./routes/widgets/ViewerCountPage";
-import EmoteComboPage from "./routes/widgets/EmoteComboPage";
-import ShoutoutPage from "./routes/widgets/ShoutoutPage";
-import WheelPage from "./routes/widgets/WheelPage";
-import HypeTrainPage from "./routes/widgets/HypeTrainPage";
-import NowPlayingWidgetPage from "./routes/widgets/NowPlayingWidgetPage";
-import RedeemOverlayPage from "./routes/widgets/RedeemOverlayPage";
-import GiveawayPage from "./routes/widgets/GiveawayPage";
-import CupPage from "./routes/widgets/CupPage";
-import OnScreenEmotesPage from "./routes/widgets/OnScreenEmotesPage";
-import TtsPage from "./routes/widgets/TtsPage";
-import EndCreditsWidgetPage from "./routes/widgets/EndCreditsWidgetPage";
-import OAuthCallbackPage from "./routes/oauth/OAuthCallbackPage";
-import WidgetOverlay from "./routes/widgets/WidgetOverlay";
-import OverlayAlertsPage from "./routes/overlay/OverlayAlertsPage";
-import OverlayWidgetRedirect from "./routes/overlay/OverlayWidgetRedirect";
-import MasterOverlay from "./routes/overlay/MasterOverlay";
-import RemoteLoginPage from "./routes/remote/RemoteLoginPage";
-import LoginPage from "./auth/LoginPage";
-import ObsDockSayfasi from "./routes/ObsDockSayfasi";
+const PanelPage = lazy(() => import("./routes/panel/PanelPage"));
+const StartingPage = lazy(() => import("./routes/starting/StartingPage"));
+const EndingPage = lazy(() => import("./routes/ending/EndingPage"));
+const BrbPage = lazy(() => import("./routes/brb/BrbPage"));
+const ChatPage = lazy(() => import("./routes/chat/ChatPage"));
+const SfxPage = lazy(() => import("./routes/sfx/SfxPage"));
+const GoalPage = lazy(() => import("./routes/widgets/GoalPage"));
+const LabelPage = lazy(() => import("./routes/widgets/LabelPage"));
+const PollPage = lazy(() => import("./routes/widgets/PollPage"));
+const ActivityFeedPage = lazy(() => import("./routes/widgets/ActivityFeedPage"));
+const SubathonPage = lazy(() => import("./routes/widgets/SubathonPage"));
+const ViewerCountPage = lazy(() => import("./routes/widgets/ViewerCountPage"));
+const EmoteComboPage = lazy(() => import("./routes/widgets/EmoteComboPage"));
+const ShoutoutPage = lazy(() => import("./routes/widgets/ShoutoutPage"));
+const WheelPage = lazy(() => import("./routes/widgets/WheelPage"));
+const HypeTrainPage = lazy(() => import("./routes/widgets/HypeTrainPage"));
+const NowPlayingWidgetPage = lazy(() => import("./routes/widgets/NowPlayingWidgetPage"));
+const RedeemOverlayPage = lazy(() => import("./routes/widgets/RedeemOverlayPage"));
+const GiveawayPage = lazy(() => import("./routes/widgets/GiveawayPage"));
+const CupPage = lazy(() => import("./routes/widgets/CupPage"));
+const OnScreenEmotesPage = lazy(() => import("./routes/widgets/OnScreenEmotesPage"));
+const TtsPage = lazy(() => import("./routes/widgets/TtsPage"));
+const EndCreditsWidgetPage = lazy(() => import("./routes/widgets/EndCreditsWidgetPage"));
+const OAuthCallbackPage = lazy(() => import("./routes/oauth/OAuthCallbackPage"));
+const WidgetOverlay = lazy(() => import("./routes/widgets/WidgetOverlay"));
+const OverlayAlertsPage = lazy(() => import("./routes/overlay/OverlayAlertsPage"));
+const OverlayWidgetRedirect = lazy(() => import("./routes/overlay/OverlayWidgetRedirect"));
+const MasterOverlay = lazy(() => import("./routes/overlay/MasterOverlay"));
+const RemoteLoginPage = lazy(() => import("./routes/remote/RemoteLoginPage"));
+const LoginPage = lazy(() => import("./auth/LoginPage"));
+const ObsDockSayfasi = lazy(() => import("./routes/ObsDockSayfasi"));
 
 export default function App() {
   const loc = useLocation();
   void loc;
+  // Her sayfa kendi parçasını yükler: OBS katmanları (giriş/mola/sohbet…) panelin
+  // tamamını (~1,3 MB) indirmesin. Yüklenirken saydam (OBS'te boş kare yok).
   return (
+    <Suspense fallback={null}>
     <Routes>
       <Route path="/" element={<PanelPage />} />
       <Route path="/panel" element={<PanelPage />} />
@@ -88,5 +92,6 @@ export default function App() {
       <Route path="/credits" element={<EndCreditsWidgetPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }

@@ -46,6 +46,7 @@ import ProfileSwitcher from "../../components/panel/ProfileSwitcher";
 import PanelTimer from "../../components/panel/PanelTimer";
 import CloseRequestModal from "../../components/panel/CloseRequestModal";
 import EdgePanel from "../../components/panel/EdgePanel";
+import DashboardUstSerit, { useDashboardBolumu } from "../../components/panel/DashboardUstSerit";
 import TemplatePicker from "../../components/panel/TemplatePicker";
 import { runObsAction, type ActionRow } from "../../lib/obsActions";
 import { resonanceLinkAllowed } from "../../lib/embedMessages";
@@ -242,6 +243,7 @@ export default function PanelPage() {
   const [server, setServer] = useState<any>(null);
   const [toast, setToast] = useState("");
   const [obsConnected, setObsConnected] = useState(false);
+  const [dashBolum, setDashBolum] = useDashboardBolumu();
   const [masterBusy, setMasterBusy] = useState(false);
   const [liveOn, setLiveOn] = useState(false);
   const [scenes, setScenes] = useState<string[]>([]);
@@ -264,17 +266,19 @@ export default function PanelPage() {
    * Ayar `localStorage`'da: bu bir panel tercihi, overlay ayarı değil —
    * `settings` içine koymak onu OBS'e de yayınlardı.
    */
-  // Yan paneller kenara gizlensin mi? (varsayılan: gizli — önizleme tam genişlik)
+  // Yan paneller kenara gizlensin mi? (varsayılan: gizli — önizleme tam genişlik).
+  // Anahtar v2: kullanıcı "fare yaklaşınca açılsın" istedi; eski "sabit" kaydı
+  // (çoğu zaman yanlışlıkla basılmış) bir kez yok sayılır, düğme yine çalışır.
   const [panelsPinned, setPanelsPinned] = useState(() => {
     try {
-      return localStorage.getItem("panel.yanPanelSabit") === "1";
+      return localStorage.getItem("panel.yanPanelSabit.v2") === "1";
     } catch {
       return false;
     }
   });
   useEffect(() => {
     try {
-      localStorage.setItem("panel.yanPanelSabit", panelsPinned ? "1" : "0");
+      localStorage.setItem("panel.yanPanelSabit.v2", panelsPinned ? "1" : "0");
     } catch {
       /* depolama kapalı */
     }
@@ -1572,23 +1576,33 @@ export default function PanelPage() {
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4"
         >
-          <ConnectionsHub
-            onToast={showToast}
-            obs={settings.obs}
-            onObsPatch={(patch) => update({ obs: patch })}
-            onObsConnected={() => void refreshObsLists()}
+          <DashboardUstSerit
+            bolum={dashBolum}
+            onBolum={setDashBolum}
+            obsBagli={obsConnected}
             master={{
               live: liveOn,
               busy: masterBusy,
               onToggle: () => void runMasterStream(),
             }}
           />
-          <StreamHealthCard />
+          {dashBolum === "baglantilar" && (
+            <ConnectionsHub
+              onToast={showToast}
+              obs={settings.obs}
+              onObsPatch={(patch) => update({ obs: patch })}
+              onObsConnected={() => void refreshObsLists()}
+            />
+          )}
+          {dashBolum === "genel" && <StreamHealthCard />}
+          {/* Sekme değişse de bağlı kalır: sadakat sayacı, metrikler ve oturum kapatma sürer */}
           <ProfileDashboard
             onToast={showToast}
             onEndLive={endLiveFromProfile}
             streamLive={liveOn}
+            bolum={dashBolum}
           />
+          {dashBolum === "obs" && (
           <div className="mx-4 mb-3">
             <ObsControlHub
               onToast={showToast}
@@ -1606,6 +1620,7 @@ export default function PanelPage() {
               }}
             />
           </div>
+          )}
         </motion.div>
       ) : controlTab ? (
         <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>

@@ -17,6 +17,7 @@ import { aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
 import { sonMesajlar } from '../modules/moderation/son-mesajlar.js';
 import { SeslenmeSiniri, seslenmeAyikla } from '../modules/ai/seslenme.js';
 import { geminiCoHost } from '../modules/ai/gemini.js';
+import { toplulukMesaji } from '../modules/community/topluluk.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
@@ -146,6 +147,16 @@ export class MessagePipeline {
       // platform desteklemiyorsa uyariya dusulur.
       await autoMod.ihlaliUygula(message, violation);
       return;
+    }
+
+    // 1.2 Topluluk: kappagen (overlay), emote bingo, emote piramidi.
+    // Yanıt varsa sohbete yazılır; mesajın geri kalan işlenişi sürer.
+    try {
+      for (const yanit of toplulukMesaji(message, (puan, kim) => economy.addPoints(kim, puan))) {
+        eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: yanit });
+      }
+    } catch (e) {
+      seyrekUyar('topluluk:mesaj', '[Topluluk] Mesaj işlenemedi', e);
     }
 
     // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin

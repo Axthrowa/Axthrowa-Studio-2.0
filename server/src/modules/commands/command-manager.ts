@@ -28,6 +28,11 @@ import { klipSuresi } from '../clips/klip-saf.js';
 import { kendiMesajlari, nukeArgumanlari, nukeHedefleri, sonMesajlar } from '../moderation/son-mesajlar.js';
 import { sureyiYaz } from '../automod/enforcement.js';
 import { rastgeleIzleyici } from '../../core/variables/registry.js';
+import { kickbotCevir } from '../../core/variables/kickbot-uyum.js';
+import { duzenliler } from '../community/regulars.js';
+import { votekick, bingo, ayarSayi, kappagenGonder, metindenEmoteler } from '../community/topluluk.js';
+import { emoteAdlari } from '../community/oyunlar.js';
+import { yediTv } from '../emotes/yedi-tv.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -133,6 +138,28 @@ export class CommandManager {
     }
   }
 
+  /** Yerleşik komut yanıtlarının son zamanı ve metni: kişi + komut */
+  private yerlesikSonYanit = new Map<string, { zaman: number; metin: string }>();
+
+  /**
+   * Yerleşik komutların bekleme süresi yoktu: bir izleyici aynı komutu
+   * art arda yazıp botu sohbette sele zorlayabiliyordu. Komut YİNE çalışır;
+   * yalnız 3 sn içinde AYNI yanıtın tekrarı yazılmaz. Farklı yanıt (ör.
+   * "gönderildi" ardından "yetersiz bakiye") her zaman yazılır — yapılan
+   * işlemin onayı yutulmaz. Mod ve yayıncı muaf. '' döner: özel komuta düşülmez.
+   */
+  private yerlesikSeli(ad: string, message: ChatMessagePayload, sonuc: string): string {
+    if (!sonuc || message.user.isMod || message.user.isBroadcaster) return sonuc;
+    const k = `${message.platform}:${message.user.username.toLowerCase()}:${ad}`;
+    const simdi = Date.now();
+    const son = this.yerlesikSonYanit.get(k);
+    if (son && son.metin === sonuc && simdi - son.zaman < 3000) return '';
+    this.yerlesikSonYanit.delete(k);
+    this.yerlesikSonYanit.set(k, { zaman: simdi, metin: sonuc });
+    if (this.yerlesikSonYanit.size > 2000) this.yerlesikSonYanit.delete(this.yerlesikSonYanit.keys().next().value as string);
+    return sonuc;
+  }
+
   async processMessage(message: ChatMessagePayload): Promise<string | null> {
     const text = message.message.trim();
     const prefix = settingsCache.get('prefix', '!');
@@ -159,14 +186,14 @@ export class CommandManager {
     const adaylar = [...new Set([ham.toLowerCase(), ham.toLocaleLowerCase('tr-TR')])];
     for (const ad of adaylar) {
       const builtInResult = await this.executeBuiltIn(ad, args, message);
-      if (builtInResult !== null) return builtInResult;
+      if (builtInResult !== null) return this.yerlesikSeli(ad, message, builtInResult);
       const cmdRow = this.commandsCache.get(ad) || this.aliasesCache.get(ad);
       if (cmdRow) return this.executeCustomCommand(cmdRow, args, message, true);
     }
     const katli = trKatla(ham);
     if (!adaylar.includes(katli)) {
       const builtInResult = await this.executeBuiltIn(katli, args, message);
-      if (builtInResult !== null) return builtInResult;
+      if (builtInResult !== null) return this.yerlesikSeli(katli, message, builtInResult);
     }
     const katliKomut = this.katliCache.get(katli);
     if (katliKomut) return this.executeCustomCommand(katliKomut, args, message, true);
@@ -952,7 +979,8 @@ export class CommandManager {
           }
         } else {
           if (typeof p?.deleteMessage !== 'function') return `@${message.user.displayName}, ${message.platform} mesaj silmeyi desteklemiyor.`;
-          for (const h of hedefler) {
+          // Tek komutla en çok 100 silme isteği (platform hız sınırına takılmasın)
+          for (const h of hedefler.slice(-100)) {
             const r = await p.deleteMessage(h.id);
             if (r?.ok) {
               silinen++;
@@ -981,6 +1009,129 @@ export class CommandManager {
         return null;
       }
 
+      // Düzenli izleyiciler (Nightbot "regulars"): !regulars add|remove|list @kişi
+      case 'regulars':
+      case 'duzenli': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const alt = (args[0] || 'list').toLowerCase();
+        const hedef = (args[1] || '').replace(/^@+/, '');
+        if (alt === 'add' || alt === 'ekle') {
+          const r = duzenliler.ekle(message.platform, hedef, message.user.username);
+          if (r === 'gecersiz') return 'Kullanım: !regulars add @kullanıcı';
+          return r === 'zaten' ? `@${hedef} zaten düzenli izleyici.` : `✅ @${hedef} düzenli izleyicilere eklendi.`;
+        }
+        if (alt === 'remove' || alt === 'delete' || alt === 'sil' || alt === 'cikar') {
+          if (!hedef) return 'Kullanım: !regulars remove @kullanıcı';
+          return duzenliler.cikar(message.platform, hedef) ? `🗑️ @${hedef} düzenli izleyicilerden çıkarıldı.` : `@${hedef} listede yok.`;
+        }
+        const liste = duzenliler.listele(message.platform).map((r) => r.username);
+        return liste.length
+          ? `Düzenli izleyiciler (${liste.length}): ${liste.slice(0, 25).join(', ')}${liste.length > 25 ? ' …' : ''}`
+          : 'Henüz düzenli izleyici yok. Eklemek için: !regulars add @kullanıcı';
+      }
+
+      // Oylu susturma (StreamElements !votekick) — ayar votekick_enabled (varsayılan kapalı)
+      case 'votekick':
+      case 'oylasustur': {
+        if (!settingsCache.getBoolean('votekick_enabled', false)) return null;
+        const ilk = (args[0] || '').toLowerCase();
+        if ((ilk === 'iptal' || ilk === 'cancel') && (message.user.isMod || message.user.isBroadcaster)) {
+          const h = votekick.iptal();
+          return h ? `🛑 @${h} için oylama iptal edildi.` : 'Açık oylama yok.';
+        }
+        const simdi = Date.now();
+        votekick.zamanAsimi(simdi);
+        const hedefAd = (args[0] || '').replace(/^@+/, '').toLowerCase();
+        // Yeni oylama açılırken hedef korunur: son 3 dk'da yazmış olmalı, mod/yayıncı/bot olamaz
+        if (hedefAd && !votekick.durum()) {
+          const { platformManager } = await import('../../platforms/manager.js');
+          if ([...platformManager.botKullaniciAdlari()].some((b) => b.toLowerCase() === hedefAd)) {
+            return `@${message.user.displayName}, bota oylama açılamaz.`;
+          }
+          const sonMesaj = [...sonMesajlar.tumu()]
+            .reverse()
+            .find((m) => m.platform === message.platform && m.kullanici.toLowerCase() === hedefAd && simdi - m.zaman < 180_000);
+          if (!sonMesaj) return `@${message.user.displayName}, @${hedefAd} son 3 dakikada yazmamış; oylama açılamaz.`;
+          if (sonMesaj.muaf) return `@${message.user.displayName}, moderatör/yayıncı için oylama açılamaz.`;
+        }
+        const r = votekick.oyVer(message.platform, message.user.username, args[0], simdi);
+        const sure = ayarSayi('votekick_timeout', 300, 10, 86_400);
+        // (iç switch yerine if: yerleşik komut etiketi testi `case` adlarını sayar)
+        if (r.tur === 'gecersiz') {
+          return `Kullanım: !votekick @kullanıcı — ${ayarSayi('votekick_threshold', 5, 1, 100)} oy toplanırsa ${sureyiYaz(sure)} susturulur.`;
+        }
+        if (r.tur === 'baska-oylama') return `Şu an @${r.hedef} için oylama açık; oy vermek için !votekick yaz.`;
+        if (r.tur === 'bekleme') return `@${r.hedef} için yeni oylama ${Math.ceil(r.kalanMs / 60_000)} dk sonra açılabilir.`;
+        if (r.tur === 'zaten-oy') return null;
+        if (r.tur === 'oy') return `🗳️ @${r.hedef}: ${r.oy}/${r.esik} oy.`;
+        if (r.tur === 'basladi') {
+          const pencere = ayarSayi('votekick_window', 60, 10, 600);
+          const zamanlayici = setTimeout(() => {
+            const kapanan = votekick.zamanAsimi(Date.now());
+            if (kapanan) {
+              eventBus.emitBotMessage({
+                platform: message.platform,
+                channel: message.channel,
+                message: `⌛ @${kapanan} için oylama yetersiz oyla kapandı.`
+              });
+            }
+          }, pencere * 1000 + 50);
+          zamanlayici.unref?.();
+          return `🗳️ @${message.user.displayName}, @${r.hedef} için susturma oylaması başlattı (${r.oy}/${r.esik}). Katılmak için ${pencere} sn içinde !votekick yaz.`;
+        }
+        // r.tur === 'tamam'
+        const { platformManager } = await import('../../platforms/manager.js');
+        const p: any = platformManager.getPlatform(message.platform);
+        if (typeof p?.timeoutUser !== 'function') return `${message.platform} zaman aşımını desteklemiyor.`;
+        const t = await p.timeoutUser(r.hedef, sure, `!votekick (${r.oy} oy)`);
+        return t?.ok
+          ? `🔨 Topluluk karar verdi: @${r.hedef} ${sureyiYaz(sure)} susturuldu (${r.oy} oy).`
+          : `Oylama tamamlandı ama susturulamadı: ${t?.hata || 'bilinmeyen hata'}`;
+      }
+
+      // Emote bingo: !bingo start [emote …] [ödül] · !bingo stop · !bingo
+      case 'bingo': {
+        const alt = (args[0] || '').toLowerCase();
+        const yetkili = message.user.isMod || message.user.isBroadcaster;
+        if ((alt === 'start' || alt === 'baslat') && yetkili) {
+          const girilen = args.slice(1).map((a) => emoteAdlari(a));
+          const odul = girilen.length && /^\d+$/.test(girilen[girilen.length - 1]) ? Number(girilen.pop()) : 0;
+          const secenekler = girilen.length ? girilen : [...yediTv.adlar()].sort(() => Math.random() - 0.5).slice(0, 8);
+          const r = bingo.baslat(secenekler, odul, Date.now());
+          if (!r.ok) return `Bingo başlamadı: ${r.sebep}. Örnek: !bingo start KEKW PogU LUL 500`;
+          const d = bingo.durum();
+          return `🎲 EMOTE BINGO! Gizli emote şunlardan biri: ${d?.secenekler.join(' ')} — ilk bilen kazanır${d?.odul ? ` (${d.odul} puan)` : ''}!`;
+        }
+        if ((alt === 'stop' || alt === 'durdur') && yetkili) {
+          const g = bingo.durdur();
+          return g ? `🛑 Bingo bitti. Gizli emote: ${g}` : 'Açık bingo yok.';
+        }
+        const d = bingo.durum();
+        return d ? `🎲 Bingo sürüyor: ${d.secenekler.join(' ')}` : 'Şu an bingo yok.';
+      }
+
+      // Kappagen: overlay'de emote patlaması. Mod ücretsiz; izleyici kappagen_cost puan öder (0 = yalnız mod)
+      case 'kappagen':
+      case 'emotepatlat': {
+        const yetkili = message.user.isMod || message.user.isBroadcaster;
+        const ucret = ayarSayi('kappagen_cost', 0, 0, 1_000_000);
+        if (!yetkili && ucret <= 0) return null;
+        let emoteler = metindenEmoteler(args.join(' '), 5);
+        if (!emoteler.length) {
+          const h = yediTv.harita();
+          const adlar = [...h.keys()].sort(() => Math.random() - 0.5).slice(0, 5);
+          emoteler = adlar.length ? adlar.map((ad) => ({ ad, url: h.get(ad) })) : [{ ad: '🎉' }, { ad: '🔥' }, { ad: '💜' }];
+        }
+        if (!yetkili) {
+          if (economy.getUserPoints(message.user.username) < ucret) {
+            return `@${message.user.displayName}, kappagen için ${ucret} puan gerekli.`;
+          }
+          economy.removePoints(message.user.username, ucret);
+        }
+        kappagenGonder(emoteler, true);
+        return null;
+      }
+
       // Sohbetten rastgele bir kazanan (son aktif izleyiciler)
       case 'winner':
       case 'kazanan': {
@@ -995,7 +1146,8 @@ export class CommandManager {
       case 'gonder': {
         const hedef = (args[0] || '').replace(/^@/, '').trim();
         const miktar = Math.floor(Number(args[1]));
-        if (!hedef || !Number.isFinite(miktar) || miktar <= 0) {
+        // Ad doğrulanır: rastgele metinle (boşluk, işaret) yeni izleyici kaydı açılmasın
+        if (!/^[\p{L}\p{N}_.-]{1,40}$/u.test(hedef) || !Number.isFinite(miktar) || miktar <= 0) {
           return `@${message.user.displayName}, kullanım: !puangonder @kullanıcı 100`;
         }
         if (hedef.toLowerCase() === message.user.username.toLowerCase()) {
@@ -1198,7 +1350,9 @@ export class CommandManager {
 
     // 5) Degiskenler: once ESKI `{user}` bicimi (geriye uyum), sonra yeni
     //    `$(...)` motoru. Eski sablonlar oldugu gibi calismaya devam eder.
-    const eskiBicim = await parseVariables(cmd.response, {
+    // `{{...}}` (KickBot) söz dizimi eski `{user}` ayrıştırıcısından ÖNCE çevrilir;
+    // yoksa `{{username}}` içindeki `{username}` yarım yerleştirilir.
+    const eskiBicim = await parseVariables(kickbotCevir(cmd.response), {
       message,
       commandName: cmd.name,
       args,
@@ -1222,6 +1376,9 @@ export class CommandManager {
         return message.user.isVip || message.user.isMod;
       case 'sub':
         return message.user.isSub || message.user.isMod || message.user.isVip;
+      // Nightbot "regular": elle eklenen güvenilir izleyici (+ VIP, mod)
+      case 'regular':
+        return message.user.isMod || message.user.isVip || duzenliler.mi(message.platform, message.user.username);
       case 'everyone':
       default:
         return true;

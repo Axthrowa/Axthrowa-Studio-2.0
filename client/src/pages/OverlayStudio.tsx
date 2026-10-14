@@ -173,8 +173,8 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
     aciklama: 'Şarkı isteği kuyruğunda çalan parçayı kapak ve ekolayzerle canlı gösterir.'
   },
   'on-screen-emotes': {
-    baslik: 'Ekranda Emojiler',
-    aciklama: 'Sohbette gönderilen emojileri ekranda uçurur; etkileşimi görünür kılar.'
+    baslik: 'Ekranda Emojiler (Kappagen)',
+    aciklama: "Sohbetteki Kick, 7TV ve emoji emote'larını ekranda uçurur; !kappagen ile ortadan patlatır."
   },
   'pinned-messages': {
     baslik: 'Sabitlenmiş Mesajlar',

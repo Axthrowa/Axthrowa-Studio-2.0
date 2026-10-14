@@ -88,3 +88,14 @@ export function ffmpegArgumanlari(girdi: string, cikti: string, sure: number): s
     cikti
   ];
 }
+
+/**
+ * ffmpeg hata satırı sohbete yazılır: içindeki adresler (yayın akışı
+ * belirteci taşıyabilir) ve disk yolları atılır.
+ */
+export function hataSatiriTemizle(metin: string): string {
+  return String(metin || '')
+    .replace(/[a-z][a-z0-9+.-]*:\/\/\S+/gi, '<adres>')
+    .replace(/[A-Za-z]:[\\/][^\s:]*/g, '<yol>')
+    .slice(0, 120);
+}

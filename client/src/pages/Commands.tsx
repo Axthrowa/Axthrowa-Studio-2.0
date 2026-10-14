@@ -392,6 +392,7 @@ export function Commands() {
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                   >
                     <option value="everyone">Herkes (Everyone)</option>
+                    <option value="regular">Düzenli izleyiciler (!regulars ile eklenenler + VIP + mod)</option>
                     <option value="sub">Aboneler (Subscriber)</option>
                     <option value="vip">VIP</option>
                     <option value="mod">Moderatörler</option>

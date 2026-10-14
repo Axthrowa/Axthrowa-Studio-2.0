@@ -3,7 +3,20 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { ffmpegArgumanlari, klipAdiGecerliMi, klipDosyaAdi, klipSuresi, varyantSec } from './klip-saf.js';
+import { ffmpegArgumanlari, hataSatiriTemizle, klipAdiGecerliMi, klipDosyaAdi, klipSuresi, varyantSec } from './klip-saf.js';
+
+describe('hataSatiriTemizle', () => {
+  it('akış adresini (belirteçli) ve disk yolunu sohbete sızdırmaz', () => {
+    const r = hataSatiriTemizle(
+      'https://abc.live-video.net/v1/playlist/XYZ.m3u8?token=gizli123: Server returned 403 Forbidden C:\\Users\\Ax\\data\\klipler\\a.mp4'
+    );
+    expect(r).not.toContain('gizli123');
+    expect(r).not.toContain('Users');
+    expect(r).toContain('403 Forbidden');
+    expect(hataSatiriTemizle('x'.repeat(500))).toHaveLength(120);
+    expect(hataSatiriTemizle(undefined as any)).toBe('');
+  });
+});
 
 describe('klipSuresi', () => {
   it('varsayılan, sınırlar', () => {

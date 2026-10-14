@@ -130,6 +130,18 @@ export const GOAL_DEFAULTS = {
   textTransform: 'uppercase'
 };
 
+/** Kappagen / Ekranda Emojiler */
+export const KAPPAGEN_DEFAULTS = {
+  fromChat: true,
+  size: 64,
+  durationMs: 3500,
+  maxOnScreen: 60,
+  burstCopies: 4,
+  spin: true,
+  shadow: true,
+  paused: false
+};
+
 export const EMOTE_COMBO_DEFAULTS = {
   minCombo: 3,
   timeoutMs: 5000,
@@ -694,6 +706,7 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'subscriber-goal': { ...GOAL_DEFAULTS, title: 'Abone Hedefi', type: 'sub', barColor: '#ec4899', target: 250, currency: '' },
   'kicks-goal': { ...GOAL_DEFAULTS, title: 'KICKs Hedefi', type: 'kicks', barColor: '#53fc18', target: 500, currency: 'KICK' },
   'emote-combo': EMOTE_COMBO_DEFAULTS,
+  'on-screen-emotes': KAPPAGEN_DEFAULTS,
   'event-labels': LABELS_DEFAULTS,
   polls: POLL_DEFAULTS,
   'wheel-of-fortune': WHEEL_DEFAULTS,

@@ -13,7 +13,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
-import { ffmpegArgumanlari, klipAdiGecerliMi, klipDosyaAdi, varyantSec } from './klip-saf.js';
+import { ffmpegArgumanlari, hataSatiriTemizle, klipAdiGecerliMi, klipDosyaAdi, varyantSec } from './klip-saf.js';
 import { hataMetni } from '../../core/logger.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -35,16 +35,29 @@ function ffmpegKomutu(): string {
   return String(process.env.STREAMAXT_FFMPEG || '').trim() || 'ffmpeg';
 }
 
-let ffmpegVarOnbellek: boolean | null = null;
+// "Yok" sonucu 1 dk tutulur: ffmpeg sonradan kurulursa yeniden başlatmadan görülür
+let ffmpegVarOnbellek: { var: boolean; zaman: number } | null = null;
 export function ffmpegVarMi(): Promise<boolean> {
-  if (ffmpegVarOnbellek !== null) return Promise.resolve(ffmpegVarOnbellek);
+  const o = ffmpegVarOnbellek;
+  if (o && (o.var || Date.now() - o.zaman < 60_000)) return Promise.resolve(o.var);
+  const kaydet = (v: boolean) => {
+    ffmpegVarOnbellek = { var: v, zaman: Date.now() };
+    return v;
+  };
   return new Promise((coz) => {
     try {
       const p = spawn(ffmpegKomutu(), ['-version'], { windowsHide: true, stdio: 'ignore' });
-      p.on('error', () => coz((ffmpegVarOnbellek = false)));
-      p.on('exit', (kod) => coz((ffmpegVarOnbellek = kod === 0)));
+      const zaman = setTimeout(() => p.kill('SIGKILL'), 10_000);
+      p.on('error', () => {
+        clearTimeout(zaman);
+        coz(kaydet(false));
+      });
+      p.on('exit', (kod) => {
+        clearTimeout(zaman);
+        coz(kaydet(kod === 0));
+      });
     } catch {
-      coz((ffmpegVarOnbellek = false));
+      coz(kaydet(false));
     }
   });
 }
@@ -82,12 +95,31 @@ class KlipYoneticisi {
     bildir: (metin: string, dosya?: string) => void
   ): Promise<{ ok: true } | { ok: false; sebep: 'mesgul' | 'ffmpeg-yok' | 'yayin-yok' | 'hata'; hata?: string }> {
     if (this.calisiyor) return { ok: false, sebep: 'mesgul' };
+    // Bayrak HEMEN alınır: aşağıdaki beklemeler sırasında gelen ikinci !clip
+    // ikinci bir ffmpeg açmasın. Başlatılamazsa bırakılır.
+    this.calisiyor = true;
+    let basladi = false;
+    try {
+      const r = await this.hazirlaVeBaslat(platform, kim, sure, bildir);
+      basladi = r.ok;
+      return r;
+    } finally {
+      if (!basladi) this.calisiyor = false;
+    }
+  }
+
+  private async hazirlaVeBaslat(
+    platform: string,
+    kim: string,
+    sure: number,
+    bildir: (metin: string, dosya?: string) => void
+  ): Promise<{ ok: true } | { ok: false; sebep: 'mesgul' | 'ffmpeg-yok' | 'yayin-yok' | 'hata'; hata?: string }> {
     if (!(await ffmpegVarMi())) return { ok: false, sebep: 'ffmpeg-yok' };
     let ana: string | null;
     try {
       ana = await hlsAdresi(platform);
     } catch (e) {
-      return { ok: false, sebep: 'hata', hata: hataMetni(e) };
+      return { ok: false, sebep: 'hata', hata: hataSatiriTemizle(hataMetni(e)) };
     }
     if (!ana) return { ok: false, sebep: 'yayin-yok' };
 
@@ -103,7 +135,6 @@ class KlipYoneticisi {
     fs.mkdirSync(klipKlasoru(), { recursive: true });
     const dosya = klipDosyaAdi(kim, new Date(), sure);
     const hedef = path.join(klipKlasoru(), dosya);
-    this.calisiyor = true;
     const p = spawn(ffmpegKomutu(), ['-user_agent', UA, ...ffmpegArgumanlari(girdi, hedef, sure)], {
       windowsHide: true,
       stdio: ['ignore', 'ignore', 'pipe']
@@ -114,7 +145,7 @@ class KlipYoneticisi {
     p.on('error', (e) => {
       clearTimeout(zamanAsimi);
       this.calisiyor = false;
-      bildir(`❌ Klip alınamadı: ${hataMetni(e)}`);
+      bildir(`❌ Klip alınamadı: ${hataSatiriTemizle(hataMetni(e))}`);
     });
     p.on('exit', (kod) => {
       clearTimeout(zamanAsimi);
@@ -133,7 +164,7 @@ class KlipYoneticisi {
         } catch {
           /* yok */
         }
-        bildir(`❌ Klip alınamadı (ffmpeg ${kod ?? 'durduruldu'})${hataCiktisi ? `: ${hataCiktisi.trim().split('\n').pop()?.slice(0, 120)}` : ''}`);
+        bildir(`❌ Klip alınamadı (ffmpeg ${kod ?? 'durduruldu'})${hataCiktisi ? `: ${hataSatiriTemizle(hataCiktisi.trim().split('\n').pop() || '')}` : ''}`);
       }
     });
     return { ok: true };
@@ -164,8 +195,13 @@ class KlipYoneticisi {
   sil(dosya: string): boolean {
     const p = this.yol(dosya);
     if (!p) return false;
-    fs.unlinkSync(p);
-    return true;
+    try {
+      fs.unlinkSync(p);
+      return true;
+    } catch {
+      // Dosya açık olabilir (oynatılıyor/indiriliyor): rota 404 döner, sunucu düşmez
+      return false;
+    }
   }
 }
 

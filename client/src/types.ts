@@ -19,7 +19,7 @@ export interface CustomCommand {
   id: string;
   name: string;
   response: string;
-  user_level: 'everyone' | 'sub' | 'vip' | 'mod' | 'broadcaster';
+  user_level: 'everyone' | 'regular' | 'sub' | 'vip' | 'mod' | 'broadcaster';
   cooldown: number;
   aliases: string;
   is_enabled: number;

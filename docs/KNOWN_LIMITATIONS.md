@@ -303,4 +303,43 @@ UNVERIFIED (gerçek platformda sınanmadı — gerçek yayın/sohbet tetiklenmed
 - `!nuke`/`!vanish`'in gerçek Kick token'ıyla silme/zaman aşımı yapması.
 - AI seslenmenin gerçek Gemini yanıtı; yayın başladı duyurusunun gerçek yayın açılışında gönderilmesi.
 
-Eklenmeyenler: regulars kullanıcı düzeyi, `!votekick`, emote bingo/piramit, kappagen, 7TV, `{{...}}` söz dizimi uyumu.
+Bu turda eklenmeyenler 4. turda eklendi (bkz. §15).
+
+## 15. TOPLULUK ÖZELLİKLERİ + SAĞLAMLAŞTIRMA (2026-10-14, 4. tur)
+
+Eklenenler (birim + yerel uçtan uca sınama 20/20; önceki tur sınaması da 19/19, klip dahil):
+- **Düzenli izleyiciler** (Nightbot "regular"): `!regulars add|remove|list`, komut yetkisi `regular`
+  (düzenli + VIP + mod), AutoMod "Düzenli" muafiyeti, Ekstralar → Topluluk'ta liste. Göç #8 yalnız yeni
+  `regulars` tablosu ekler. Nightbot içe aktarımında `regular` artık `sub`'a değil `regular`'a eşlenir.
+- **`!votekick`** (StreamElements): varsayılan KAPALI. Mod/yayıncı/bot ve son 3 dk yazmamış kişi hedef alınamaz;
+  aynı hedefe 5 dk içinde yeni oylama açılmaz; süre dolunca "yetersiz oy" duyurulur.
+- **Emote piramidi** (varsayılan kapalı) ve **emote bingo** (`!bingo start … [ödül]`, mod).
+- **Kappagen**: "Ekranda Emojiler" overlay'i eskiden yalnız Emote Combo'yu açıyordu; artık gerçek uçan emote
+  katmanı (`/widgets/kappagen`). Sohbetteki Kick/7TV/emoji emote'ları uçar, `!kappagen` patlatır (mod; izleyici
+  için puan ücreti ayarlanabilir). Saniyede ~25 emote sınırı.
+- **7TV**: kanal seti (Kick kullanıcı kimliğiyle) + genel set, sohbet katmanında görsel, kappagen ve bingo'da.
+  Bu kanalın 7TV hesabı yok (API "user not found") → yalnız genel set (45 emote) kullanılıyor.
+- **`{{...}}` uyumu** (KickBot belgeleri): `{{sender.*}}`, `{{taggedUser.*}}`, `{{streamer.*}}`, `{{stream.*}}`,
+  `randomRange`, `randomItem`, `randomItemPercentage`, `request(https://…)` → `$(...)`. Tanınmayan olduğu gibi kalır.
+
+Sağlamlaştırma (gerçek hatalar):
+- **DNS gecikmesi**: bu ağda ailesiz DNS sorgusu 4–12 sn sürüyordu (AAAA bekleniyor); hava durumu 5 sn sınırında
+  zaman aşımına düşüyor, Kick/7TV istekleri saniyelerce gecikiyordu. IPv4 öncelikli çözümleme (yalnız IPv6
+  alan adına geri düşer) genel http/https ajanlarına ve güvenli `$(urlfetch)` isteğine takıldı; SSRF denetimi
+  aynen sürüyor. Ölçüm: hava durumu 5011 ms (zaman aşımı) → 221 ms, 7TV ~15 sn → 1,4 sn.
+- AutoMod: CAPS kuralı emote adlarını (`KEKW`, Kick işaretlemesi) büyük harf sayıyordu; "çok fazla emote" kuralı
+  yalnız Unicode emojiyi sayıp Kick/7TV emote selini hiç görmüyordu. İkisi düzeltildi. AutoMod kayıt ucu bilinmeyen
+  eylem/rolü artık kaydetmiyor; zaman aşımı ve mesaj uzunluğu sınırlı.
+- Yerleşik komutlarda bekleme yoktu: aynı izleyicinin 3 sn içindeki AYNI yanıtı yazılmaz (komut yine çalışır,
+  farklı yanıt — ör. işlem onayı — her zaman yazılır; mod/yayıncı muaf).
+- `!clip`: eşzamanlı iki istek iki ffmpeg açabiliyordu (bayrak beklemelerden sonra alınıyordu); ffmpeg "yok"
+  sonucu süresiz önbellekleniyordu; açık dosyayı silmek istisna fırlatıyordu; sohbete yazılan ffmpeg hata satırı
+  akış adresini (belirteç taşıyabilir) ve disk yolunu sızdırabilirdi — hepsi düzeltildi.
+- `!puangonder` hedef adını doğrulamıyordu (rastgele metinle izleyici kaydı açılabiliyordu); `!nuke` silmede
+  üst sınır yoktu (100). Kick profil sorgusu başarısız olunca önbelleğe alınmıyordu (1 dk olumsuz önbellek).
+- Panel sohbetinde `constructor`, `toString` gibi kelimeler bozuk emote görseline dönüşüyordu (sözlük
+  prototip anahtarı) — düzeltildi; sabit 7TV sözlüğü artık yalnız çevrimdışı yedek.
+
+UNVERIFIED (gerçek platformda denenmedi): `!votekick`'in gerçek Kick belirteciyle susturması; 7TV hesabı olan
+bir kanalın kanal seti; kappagen'in OBS tarayıcı kaynağındaki görünümü (yalnız tarayıcı DOM'unda doğrulandı).
+Eklenmeyen: Twitch/BTTV/FFZ emote setleri (yalnız 7TV).

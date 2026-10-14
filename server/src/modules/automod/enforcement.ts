@@ -42,6 +42,8 @@ export interface KullaniciRolleri {
   isVip?: boolean;
   isSub?: boolean;
   isOg?: boolean;
+  /** !regulars ile eklenmiş düzenli izleyici */
+  isRegular?: boolean;
 }
 
 /** Uygulanacak somut adımlar. */
@@ -64,6 +66,7 @@ export function bypassEder(user: KullaniciRolleri, bypass: Rol[] = []): boolean 
   if (küme.has('vip') && user.isVip) return true;
   if (küme.has('sub') && user.isSub) return true;
   if (küme.has('og') && user.isOg) return true;
+  if (küme.has('regular') && user.isRegular) return true;
   return false;
 }
 

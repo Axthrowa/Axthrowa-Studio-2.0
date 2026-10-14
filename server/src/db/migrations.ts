@@ -122,6 +122,22 @@ export const GOCLER: Gocler[] = [
       // Listesi" diyordu). 'tum' = bütün platformlar.
       sutunEkle(db, 'kick_shared_bans', 'platform', "TEXT NOT NULL DEFAULT 'kick'");
     }
+  },
+  {
+    version: 8,
+    name: 'düzenli izleyiciler (regulars)',
+    up(db) {
+      // Yalnız yeni tablo; mevcut veriye dokunulmaz.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS regulars (
+          platform   TEXT NOT NULL,
+          username   TEXT NOT NULL,
+          added_by   TEXT NOT NULL DEFAULT '',
+          created_at INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (platform, username)
+        )
+      `);
+    }
   }
 ];
 

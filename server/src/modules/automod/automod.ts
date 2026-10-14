@@ -12,6 +12,10 @@ import {
 import { TekrarIzleyici } from './repeat.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { kelimeEslesmesi, kelimeListesiDerle, zalgoMu, type KelimeKurali } from './kelime-kurali.js';
+import { duzenliler } from '../community/regulars.js';
+import { settingsCache } from '../../core/settings-cache.js';
+import { emoteleriAyikla } from '../emotes/ayikla.js';
+import { yediTv } from '../emotes/yedi-tv.js';
 
 export interface AutoModViolation {
   rule: 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'zalgo' | 'length' | 'ai_toxic';
@@ -143,12 +147,21 @@ export class AutoModEngine {
       }
     }
 
+    // Emote'lar (Kick işaretlemesi + 7TV adları) CAPS'e sayılmaz, emote sayısına sayılır
+    const yediHarita = settingsCache.getBoolean('seventv_enabled', true) ? yediTv.harita() : new Map<string, string>();
+    const emoteler = emoteleriAyikla(text, yediHarita, 500);
+    const emotesizMetin = text
+      .replace(/\[emote:\d+:[^\]]*\]/g, ' ')
+      .split(/\s+/)
+      .filter((k) => k && !yediHarita.has(k))
+      .join(' ');
+
     // 3. Excessive Caps Filter
-    if (row.caps_enabled && text.length >= row.caps_min_length && !(advanced.caps_exclude_subs && message.user.isSub)) {
+    if (row.caps_enabled && emotesizMetin.length >= row.caps_min_length && !(advanced.caps_exclude_subs && message.user.isSub)) {
       let upperCount = 0;
       let letterCount = 0;
 
-      for (const char of text) {
+      for (const char of emotesizMetin) {
         if (/[a-zA-ZğüşıöçĞÜŞİÖÇ]/.test(char)) {
           letterCount++;
           if (char === char.toUpperCase()) {
@@ -170,14 +183,13 @@ export class AutoModEngine {
 
     // 4. Excessive Emotes Filter
     if (row.emotes_enabled && !(advanced.emotes_exclude_subs && message.user.isSub)) {
-      // Check unicode emojis
-      const emojiRegex = /(\p{Extended_Pictographic}|\p{Emoji_Presentation})/gu;
-      const emojis = text.match(emojiRegex);
-      const emojiCount = emojis ? emojis.length : 0;
+      // Unicode emoji + Kick emote'u + 7TV emote'u (eskiden yalnız Unicode sayılıyordu;
+      // Kick emote seli bu kurala hiç takılmıyordu)
+      const emojiCount = emoteler.length;
       if (emojiCount > row.emotes_max) {
         return {
           rule: 'emotes',
-          reason: advanced.emotes_warning || `Çok fazla emoji kullanımı (${emojiCount}/${row.emotes_max}).`
+          reason: advanced.emotes_warning || `Çok fazla emote/emoji kullanımı (${emojiCount}/${row.emotes_max}).`
         };
       }
     }
@@ -224,7 +236,8 @@ export class AutoModEngine {
     const ayar = kuralAyariOku(kaynak, kural, violation.reason);
 
     // Rol muafiyeti — BotRix'te her kuralin kendi bypass listesi var
-    if (bypassEder(message.user as any, ayar.bypass)) return;
+    const roller = { ...message.user, isRegular: duzenliler.mi(message.platform, message.user.username) };
+    if (bypassEder(roller as any, ayar.bypass)) return;
 
     const plan = eylemPlani(ayar, message.platform);
 

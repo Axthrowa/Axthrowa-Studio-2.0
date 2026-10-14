@@ -6,6 +6,7 @@
 
 // Günlük: zaman damgası + seviye + sır maskeleme (B5) — İLK içe aktarma kalmalı
 import './core/logger-init.js';
+import { hizliDnsKur } from './core/dns-hizli.js';
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
@@ -38,6 +39,8 @@ import { sirlariHazirla } from './core/security/vault-migrate.js';
 import { sunucuPortu } from './core/security/oauth-state.js';
 
 dotenv.config();
+// Dış istekler (Kick, 7TV, hava durumu…) IPv4 öncelikli çözülsün — bkz. core/dns-hizli.ts
+hizliDnsKur();
 
 // S6: şifreli sırları toplu çöz (tek PowerShell çağrısı), düz kalanları şifrele.
 // Platformlar bağlanmadan ÖNCE çalışır.

@@ -56,6 +56,7 @@ const GoalWidget = lazy(() => import('./widgets/GoalWidget.js'));
 const WheelWidget = lazy(() => import('./widgets/WheelWidget.js'));
 const AudioPlayerWidget = lazy(() => import('./widgets/AudioPlayerWidget.js'));
 const EmoteComboWidget = lazy(() => import('./widgets/EmoteComboWidget.js'));
+const KappagenWidget = lazy(() => import('./widgets/KappagenWidget.js'));
 const SubathonWidget = lazy(() => import('./widgets/SubathonWidget.js'));
 const HypeTrainWidget = lazy(() => import('./widgets/HypeTrainWidget.js'));
 const EventLabelsWidget = lazy(() => import('./widgets/EventLabelsWidget.js'));
@@ -122,7 +123,8 @@ export function App() {
   if (path === '/widgets/trivia' || path === '/trivia' || path === '/trivia-overlay') return obsSayfasi(<TriviaWidget />);
   if (path === '/widgets/viewer-counter') return obsSayfasi(<ViewerCounterWidget />);
   if (path === '/widgets/activity-feed') return obsSayfasi(<ActivityFeedWidget />);
-  if (path === '/widgets/emotes' || path === '/widgets/on-screen-emotes') return obsSayfasi(<EmoteComboWidget />);
+  // Eskiden Emote Combo'yu açıyordu; artık gerçek uçan emote (kappagen) katmanı
+  if (path === '/widgets/emotes' || path === '/widgets/on-screen-emotes' || path === '/widgets/kappagen') return obsSayfasi(<KappagenWidget />);
 
   // Otherwise, render full StreamAxT Dashboard
   const [activeTab, setActiveTab] = useState('dashboard');

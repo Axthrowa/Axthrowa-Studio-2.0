@@ -51,6 +51,8 @@ const LABELS: Record<string, string> = {
   autoClose: 'Otomatik kapat', overlayTitle: 'Overlay başlığı', accentColor: 'Vurgu rengi',
   showKeyword: 'Kelimeyi göster', showEntries: 'Katılımcı sayısı',
   // --- 2026-09 revizyonu: ayar sistemine yeni bağlanan widget'lar ---
+  fromChat: "Sohbetteki emote'lar uçsun", durationMs: 'Uçuş süresi (ms)', maxOnScreen: 'Ekranda en çok',
+  burstCopies: '!kappagen kopya sayısı', spin: 'Dönerek uç', shadow: 'Gölge',
   theme: 'Tema', position: 'Ekran konumu', label: 'Etiket', icon: 'İkon',
   maxWidth: 'Maks. genişlik', minWidth: 'Min. genişlik', paddingY: 'Dikey dolgu',
   radius: 'Köşe yuvarlaklığı', bgColor: 'Arka plan rengi', bgOpacity: 'Arka plan opaklığı',
@@ -305,7 +307,6 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
 const AYAR_TAKMA: Record<string, string> = {
   'cloud-tts': 'audio-player',
   tts: 'audio-player',
-  'on-screen-emotes': 'emote-combo',
   'trivia-quiz': 'trivia'
 };
 

@@ -34,7 +34,8 @@ export function seviyeCevir(nb: string | undefined): string {
   if (s === 'owner') return 'broadcaster';
   if (s === 'moderator') return 'mod';
   if (s === 'vip') return 'vip';
-  if (s === 'subscriber' || s === 'regular') return 'sub';
+  if (s === 'regular') return 'regular';
+  if (s === 'subscriber') return 'sub';
   return 'everyone';
 }
 

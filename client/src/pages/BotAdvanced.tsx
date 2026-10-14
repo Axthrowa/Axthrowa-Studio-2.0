@@ -513,11 +513,11 @@ function ModerasyonPaneli() {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="text-[10px] font-bold text-gray-400">Muaf roller:</span>
-                  {['sub', 'vip', 'og'].map((rol) => (
+                  {['regular', 'sub', 'vip', 'og'].map((rol) => (
                     <Anahtar
                       key={rol}
                       acik={bypass.includes(rol)}
-                      etiket={rol === 'sub' ? 'Abone' : rol.toUpperCase()}
+                      etiket={rol === 'sub' ? 'Abone' : rol === 'regular' ? 'Düzenli' : rol.toUpperCase()}
                       onChange={(v) => {
                         const yeni = v ? [...bypass, rol] : bypass.filter((x) => x !== rol);
                         setAyar({ ...ayar, [`${kural}_bypass`]: JSON.stringify([...new Set([...yeni, 'mod', 'broadcaster'])]) });

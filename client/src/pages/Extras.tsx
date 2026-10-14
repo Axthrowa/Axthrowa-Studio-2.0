@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, Check } from 'lucide-react';
 import { KlipListesi } from '../components/KlipListesi.js';
+import { ToplulukAyarlari } from '../components/ToplulukAyarlari.js';
 
 const DEFAULTS = {
   chat_alerts_enabled: true,
@@ -35,7 +36,7 @@ export function Extras() {
   const [newQuote, setNewQuote] = useState('');
   const [newCounter, setNewCounter] = useState('ölüm');
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<'alerts' | 'clip' | 'levels' | 'quotes'>('alerts');
+  const [tab, setTab] = useState<'alerts' | 'clip' | 'levels' | 'quotes' | 'topluluk'>('alerts');
 
   useEffect(() => {
     fetch('/api/extras').then(r => r.json()).then(d => {
@@ -56,16 +57,16 @@ export function Extras() {
       <div className="flex justify-between">
         <div>
           <h1 className="text-2xl font-black text-white">Ekstralar</h1>
-          <p className="text-sm text-gray-400">Sohbet uyarıları, klip komutu, seviye sistemi, alıntılar ve sayaçlar.</p>
+          <p className="text-sm text-gray-400">Sohbet uyarıları, klip komutu, seviye sistemi, alıntılar, sayaçlar ve topluluk oyunları.</p>
         </div>
         <button onClick={save} className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 ${saved ? 'bg-emerald-600' : 'bg-purple-600'} text-white`}>
           {saved ? <Check className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />} Kaydet
         </button>
       </div>
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
-        {(['alerts', 'clip', 'levels', 'quotes'] as const).map(t => (
+        {(['alerts', 'clip', 'levels', 'quotes', 'topluluk'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === t ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>
-            {t === 'alerts' ? 'Sohbet Uyarıları' : t === 'clip' ? 'Klip Komutu' : t === 'levels' ? 'Seviye Sistemi' : 'Alıntı & Sayaç'}
+            {t === 'alerts' ? 'Sohbet Uyarıları' : t === 'clip' ? 'Klip Komutu' : t === 'levels' ? 'Seviye Sistemi' : t === 'quotes' ? 'Alıntı & Sayaç' : 'Topluluk'}
           </button>
         ))}
       </div>
@@ -104,6 +105,7 @@ export function Extras() {
           <label className="text-xs font-bold space-y-1">Level-up mesajı<input value={s.levelup_message} onChange={e => setS({ ...s, levelup_message: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
         </div>
       )}
+      {tab === 'topluluk' && <ToplulukAyarlari />}
       {tab === 'quotes' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
           <div className="flex gap-2">

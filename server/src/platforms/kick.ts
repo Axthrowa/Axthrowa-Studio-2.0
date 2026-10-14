@@ -777,7 +777,8 @@ export class KickPlatform extends BasePlatform {
     const s = String(slug || '').replace(/^@/, '').trim().toLowerCase();
     if (!/^[a-z0-9_-]{1,40}$/.test(s)) return null;
     const o = this.profilOnbellek.get(s);
-    if (o && Date.now() - o.zaman < 5 * 60_000) return o.veri;
+    // Başarısız sorgu da 1 dk tutulur: sohbetten tekrarlanan $(kick …) Kick'e yağmaz
+    if (o && Date.now() - o.zaman < (o.veri ? 5 * 60_000 : 60_000)) return o.veri;
     try {
       const r = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(s)}`, {
         headers: {
@@ -790,6 +791,8 @@ export class KickPlatform extends BasePlatform {
       if (this.profilOnbellek.size > 300) this.profilOnbellek.delete(this.profilOnbellek.keys().next().value as string);
       return r.data;
     } catch {
+      this.profilOnbellek.set(s, { zaman: Date.now(), veri: null });
+      if (this.profilOnbellek.size > 300) this.profilOnbellek.delete(this.profilOnbellek.keys().next().value as string);
       return null;
     }
   }

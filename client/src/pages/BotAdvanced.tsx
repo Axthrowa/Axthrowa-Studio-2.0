@@ -306,7 +306,8 @@ const OLAY_ADLARI: Record<string, string> = {
   kicks: 'KICKs',
   host: 'Host',
   raid: 'Raid',
-  welcome: 'Karşılama (ilk kez yazan)'
+  welcome: 'Karşılama (ilk kez yazan)',
+  stream_online: 'Yayın başladı (sohbete duyuru)'
 };
 
 const ESIK_ETIKETI: Record<string, string> = {

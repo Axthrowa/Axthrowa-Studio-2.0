@@ -11,6 +11,7 @@ import { db } from '../../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { wsHub } from '../../ws/server.js';
 import { autoMod } from '../../modules/automod/automod.js';
+import { kelimeListesiDerle } from '../../modules/automod/kelime-kurali.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { KALKAN_DESTEKLENMEYEN } from '../../modules/moderation/shield-rules.js';
 import { elleModerasyonCoz, kalkanAyariniCoz, MODERASYON_PLATFORMLARI, type ElleEylem } from '../../modules/moderation/moderation-input.js';
@@ -116,11 +117,20 @@ router.post('/automod', (req: Request, res: Response) => {
     }
   }
 
-  autoMod.reload();
   if (advanced) {
     db.prepare(`INSERT INTO bot_settings (key, value) VALUES ('automod_advanced', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).run(JSON.stringify(advanced));
   }
-  res.json({ success: true });
+  // Gelişmiş ayarlar yazıldıktan SONRA tazele (eskiden önce tazeleniyordu; yeni ayar 1 dk gecikiyordu)
+  autoMod.reload();
+  // Derlenemeyen / riskli (felaket geri izlemeli) kara liste kalıpları panelde gösterilsin
+  let gecersizKaliplar: string[] = [];
+  try {
+    const r = db.prepare('SELECT blacklist_words FROM automod_settings WHERE id = 1').get() as any;
+    gecersizKaliplar = kelimeListesiDerle(JSON.parse(r?.blacklist_words || '[]')).gecersiz;
+  } catch {
+    /* bozuk kayıt */
+  }
+  res.json({ success: true, gecersizKaliplar });
 });
 
 // 16. Chat Clear Action (One-click)

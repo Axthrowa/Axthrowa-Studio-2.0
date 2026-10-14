@@ -23,6 +23,11 @@ import { canliDurum } from '../../core/live-status.js';
 import { anahtarKomutuSec, erisimAciklamasi, erisimUygunMu } from './command-input.js';
 import { hataMetni, seyrekUyar } from '../../core/logger.js';
 import { trKatla } from '../../core/text.js';
+import { klipYoneticisi } from '../clips/klip.js';
+import { klipSuresi } from '../clips/klip-saf.js';
+import { kendiMesajlari, nukeArgumanlari, nukeHedefleri, sonMesajlar } from '../moderation/son-mesajlar.js';
+import { sureyiYaz } from '../automod/enforcement.js';
+import { rastgeleIzleyici } from '../../core/variables/registry.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -358,7 +363,27 @@ export class CommandManager {
         if (!cfg.clip_enabled) return null;
         if (Date.now() - this.clipLast < (cfg.clip_cooldown || 30) * 1000) return `@${message.user.displayName}, clip komutu beklemede.`;
         this.clipLast = Date.now();
-        // Bu komut platformda klip OLUŞTURMAZ. Eskiden "Klip alındı — yayıncı
+        // Gerçek klip: canlı yayının son ~30 sn'si + istenen süreye kadar ileri
+        // (yerel ffmpeg, data/klipler). Kayıt arka planda; bitince sohbete haber.
+        const sure = klipSuresi(args[0], Number(cfg.clip_default_sec) || 30, Number(cfg.clip_max_sec) || 60);
+        const dn = message.user.displayName;
+        const klip = await klipYoneticisi.baslat(message.platform, dn, sure, (metin, dosya) => {
+          eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: `@${dn} ${metin}` });
+          if (!dosya) return;
+          try {
+            db.prepare(`
+              INSERT INTO stream_events (id, platform, event_type, username, display_name, message, metadata, timestamp)
+              VALUES (?, ?, 'klip', ?, ?, ?, ?, ?)
+            `).run(randomUUID(), message.platform, message.user.username, dn, `🎬 Klip (${sure} sn) — ${dn}`, JSON.stringify({ dosya }), Date.now());
+          } catch (e) {
+            seyrekUyar('komut:clip', '[Komut] Klip kaydı olaylara yazılamadı', e);
+          }
+        });
+        if (klip.ok) return `🎬 @${dn} son ${sure} sn kaydediliyor…`;
+        if (klip.sebep === 'mesgul') return `@${dn}, şu an başka bir klip kaydediliyor; birkaç saniye sonra tekrar dene.`;
+        if (klip.sebep === 'yayin-yok') return `@${dn}, klip yalnız yayın açıkken alınabilir.`;
+        // ffmpeg yok ya da kayıt başlatılamadı → anı işaretle (eski davranış)
+        // Bu yolda platformda klip OLUŞTURULMAZ. Eskiden "Klip alındı — yayıncı
         // panosundan paylaşılabilir" deniyordu ama hiçbir yere kayıt düşmüyordu.
         // Artık an, panelin "Son Etkinlikler" listesine işaretlenir; yayıncı
         // kayıttan/VOD'dan keser.
@@ -628,6 +653,10 @@ export class CommandManager {
       case 'commands':
       case 'yardim':
       case 'help': {
+        // Nightbot biçimi: !commands add|edit|delete !ad yanıt (mod)
+        const altKomut: Record<string, string> = { add: 'addcom', ekle: 'addcom', edit: 'editcom', duzenle: 'editcom', delete: 'delcom', del: 'delcom', remove: 'delcom', sil: 'delcom' };
+        const yonlen = altKomut[trKatla(args[0] || '')];
+        if (yonlen) return this.executeBuiltIn(yonlen, args.slice(1), message);
         // Sabit liste yerine gercekten TANIMLI komutlar listelenir; kullanici
         // komut ekleyince liste kendiliginden guncellenir.
         const ozel = db
@@ -894,6 +923,187 @@ export class CommandManager {
         if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadı.`;
         this.reload();
         return `🗑️ !${ad} silindi.`;
+      }
+
+      // ---- Yaygın botlarda gözlenen, StreamAxT'de eksik komutlar (2026-10) ----
+
+      // Toplu moderasyon: son 3 dk'da kalıba uyan mesajları sil / yazanları sustur
+      case 'nuke': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const { kalip, sureSn } = nukeArgumanlari(args);
+        if (!kalip) {
+          return 'Kullanım: !nuke <kelime | test* | ~/regex/> [saniye] — saniye verirsen yazanlar susturulur, vermezsen mesajlar silinir.';
+        }
+        const { hedefler, gecersiz } = nukeHedefleri(sonMesajlar.tumu(), kalip, Date.now(), undefined, message.platform);
+        if (gecersiz) return `@${message.user.displayName}, kalıp geçersiz ya da riskli (iç içe niceleyici).`;
+        if (!hedefler.length) return `🧹 Son 3 dakikada "${kalip}" ile eşleşen mesaj yok.`;
+        const { platformManager } = await import('../../platforms/manager.js');
+        const p: any = platformManager.getPlatform(message.platform);
+        const kisiler = new Set<string>();
+        let silinen = 0;
+        let hata = '';
+        if (sureSn > 0) {
+          if (typeof p?.timeoutUser !== 'function') return `@${message.user.displayName}, ${message.platform} zaman aşımını desteklemiyor.`;
+          for (const k of new Set(hedefler.map((h) => h.kullanici))) {
+            if (kisiler.size >= 20) break;
+            const r = await p.timeoutUser(k, sureSn, `!nuke: ${kalip}`.slice(0, 100));
+            if (r?.ok) kisiler.add(k);
+            else hata = r?.hata || hata;
+          }
+        } else {
+          if (typeof p?.deleteMessage !== 'function') return `@${message.user.displayName}, ${message.platform} mesaj silmeyi desteklemiyor.`;
+          for (const h of hedefler) {
+            const r = await p.deleteMessage(h.id);
+            if (r?.ok) {
+              silinen++;
+              kisiler.add(h.kullanici);
+            } else hata = r?.hata || hata;
+          }
+        }
+        sonMesajlar.cikar(new Set(hedefler.map((h) => h.id)));
+        const ek = hata ? ` (bazıları uygulanamadı: ${hata})` : '';
+        return sureSn > 0
+          ? `🧹 !nuke: ${kisiler.size} kişi ${sureyiYaz(sureSn)} susturuldu.${ek}`
+          : `🧹 !nuke: ${silinen} mesaj silindi (${kisiler.size} kişi).${ek}`;
+      }
+
+      // İzleyici kendi son mesajlarını sildirir
+      case 'vanish':
+      case 'kaybol': {
+        if (message.user.isMod || message.user.isBroadcaster) return null;
+        const { platformManager } = await import('../../platforms/manager.js');
+        const p: any = platformManager.getPlatform(message.platform);
+        if (typeof p?.deleteMessage !== 'function') return null;
+        const kendi = kendiMesajlari(sonMesajlar.tumu(), message.user.username, message.platform, Date.now());
+        for (const m of kendi) await p.deleteMessage(m.id);
+        if (message.id) await p.deleteMessage(String(message.id));
+        sonMesajlar.cikar(new Set(kendi.map((m) => m.id)));
+        return null;
+      }
+
+      // Sohbetten rastgele bir kazanan (son aktif izleyiciler)
+      case 'winner':
+      case 'kazanan': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const kazanan = rastgeleIzleyici();
+        return kazanan ? `🎉 Kazanan: @${kazanan}!` : 'Sohbette henüz seçilebilecek izleyici yok.';
+      }
+
+      // İzleyiciden izleyiciye puan gönderme
+      case 'puangonder':
+      case 'transfer':
+      case 'gonder': {
+        const hedef = (args[0] || '').replace(/^@/, '').trim();
+        const miktar = Math.floor(Number(args[1]));
+        if (!hedef || !Number.isFinite(miktar) || miktar <= 0) {
+          return `@${message.user.displayName}, kullanım: !puangonder @kullanıcı 100`;
+        }
+        if (hedef.toLowerCase() === message.user.username.toLowerCase()) {
+          return `@${message.user.displayName}, kendine puan gönderemezsin.`;
+        }
+        if (miktar > 1_000_000) return `@${message.user.displayName}, tek seferde en çok 1.000.000 puan gönderilebilir.`;
+        const bakiye = economy.getUserPoints(message.user.username);
+        if (bakiye < miktar) return `@${message.user.displayName}, yetersiz puan (bakiye: ${bakiye}).`;
+        economy.removePoints(message.user.username, miktar);
+        economy.addPoints(hedef, miktar);
+        return `💸 @${message.user.displayName} → @${hedef}: ${miktar} puan gönderildi.`;
+      }
+
+      // Şarkı kuyruğu: sıram / yanlış şarkı / şarkı sil
+      case 'when':
+      case 'sarkisiram': {
+        const satirlar = db
+          .prepare('SELECT requested_by FROM song_queue WHERE is_played = 0 ORDER BY created_at ASC')
+          .all() as Array<{ requested_by: string }>;
+        const sira = satirlar.findIndex((s) => String(s.requested_by).toLowerCase() === message.user.username.toLowerCase());
+        if (sira < 0) return `@${message.user.displayName}, kuyrukta şarkın yok.`;
+        return sira === 0
+          ? `@${message.user.displayName}, şarkın şu an çalıyor 🎵`
+          : `@${message.user.displayName}, şarkın kuyrukta ${sira + 1}. sırada (önünde ${sira} şarkı var).`;
+      }
+
+      case 'wrongsong':
+      case 'yanlissarki': {
+        const satirlar = db
+          .prepare('SELECT id, title, requested_by FROM song_queue WHERE is_played = 0 ORDER BY created_at ASC')
+          .all() as Array<{ id: string; title: string; requested_by: string }>;
+        const benim = satirlar
+          .map((s, i) => ({ ...s, i }))
+          .filter((s) => String(s.requested_by).toLowerCase() === message.user.username.toLowerCase());
+        const son = benim[benim.length - 1];
+        if (!son) return `@${message.user.displayName}, kuyrukta şarkın yok.`;
+        if (son.i === 0) return `@${message.user.displayName}, şarkın şu an çalıyor; atlamak için !skip.`;
+        db.prepare('DELETE FROM song_queue WHERE id = ?').run(son.id);
+        return `🗑️ @${message.user.displayName}, "${son.title}" kuyruktan çıkarıldı.`;
+      }
+
+      case 'removesong':
+      case 'sarkisil': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const hedef = (args[0] || '').trim();
+        if (!hedef) return 'Kullanım: !removesong <sıra no | @kullanıcı>';
+        const satirlar = db
+          .prepare('SELECT id, title, requested_by FROM song_queue WHERE is_played = 0 ORDER BY created_at ASC')
+          .all() as Array<{ id: string; title: string; requested_by: string }>;
+        if (/^\d+$/.test(hedef)) {
+          const s = satirlar[Number(hedef) - 1];
+          if (!s) return `Kuyrukta ${hedef}. sıra yok.`;
+          if (Number(hedef) === 1) return 'Çalan şarkı için !skip kullan.';
+          db.prepare('DELETE FROM song_queue WHERE id = ?').run(s.id);
+          return `🗑️ ${hedef}. sıradaki "${s.title}" çıkarıldı.`;
+        }
+        const kim = hedef.replace(/^@/, '').toLowerCase();
+        const silinecek = satirlar.slice(1).filter((s) => String(s.requested_by).toLowerCase() === kim);
+        for (const s of silinecek) db.prepare('DELETE FROM song_queue WHERE id = ?').run(s.id);
+        return silinecek.length ? `🗑️ @${kim} kullanıcısının ${silinecek.length} şarkısı çıkarıldı.` : `@${kim} kuyrukta şarkısı yok.`;
+      }
+
+      // Uyarı denemeleri (OBS'te ve sohbette örnek uyarı)
+      case 'followtest':
+      case 'subtest':
+      case 'tiptest':
+      case 'raidtest': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const tur = name.replace('test', '');
+        const { widgetTesti } = await import('../../api/rotalar/widgetlar.js');
+        widgetTesti(tur, { username: 'TestIzleyici', amount: 50, currency: 'TL', viewers: 25 });
+        return null;
+      }
+
+      // Uyarı kutusunu sohbetten yönet
+      case 'alerts':
+      case 'uyarilar': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const esle: Record<string, string> = {
+          mute: 'mute', sustur: 'mute', unmute: 'unmute', ac: 'unmute', skip: 'skip', atla: 'skip',
+          pause: 'pause', duraklat: 'pause', resume: 'resume', devam: 'resume'
+        };
+        const eylem = esle[trKatla(args[0] || '')];
+        if (!eylem) return 'Kullanım: !alerts mute | unmute | skip | pause | resume';
+        const { wsHub } = await import('../../ws/server.js');
+        const r = wsHub.uyariKontrolEt(eylem, message.user.displayName);
+        const ad: Record<string, string> = {
+          mute: '🔇 Uyarı sesi kapatıldı', unmute: '🔊 Uyarı sesi açıldı', skip: '⏭️ Uyarı atlandı',
+          pause: '⏸️ Uyarılar duraklatıldı', resume: '▶️ Uyarılar devam ediyor'
+        };
+        return r.ok ? ad[eylem] : `Uyarı denetimi uygulanamadı: ${(r as any).mesaj}`;
+      }
+
+      // Botu geçici sustur (komut yanıtları ve otomatik mesajlar sohbete gitmez)
+      case 'bot': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const alt = trKatla(args[0] || '');
+        if (alt === 'mute' || alt === 'sustur') {
+          eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: '🔇 Bot susturuldu — açmak için !bot unmute', sessizdeBile: true });
+          settingsCache.set('bot_sessiz', '1');
+          return null;
+        }
+        if (alt === 'unmute' || alt === 'ac') {
+          settingsCache.set('bot_sessiz', '0');
+          eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: '🔊 Bot yeniden konuşuyor.', sessizdeBile: true });
+          return null;
+        }
+        return 'Kullanım: !bot mute | unmute';
       }
 
       default:

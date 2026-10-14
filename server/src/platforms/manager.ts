@@ -7,6 +7,7 @@ import { tiktokPlatform } from './tiktok.js';
 import { trovoPlatform } from './trovo.js';
 import { eventBus, BotMessagePayload } from '../core/event-bus.js';
 import { seyrekUyar } from '../core/logger.js';
+import { settingsCache } from '../core/settings-cache.js';
 
 export class PlatformManager {
   private platforms: Map<string, BasePlatform> = new Map();
@@ -85,6 +86,8 @@ export class PlatformManager {
   private setupMessageRouting() {
     // 1. Route bot replies
     eventBus.on('bot_message', async (payload: BotMessagePayload) => {
+      // `!bot mute`: yanıtlar ve otomatik mesajlar sohbete GİTMEZ (panelde görünmeye devam eder)
+      if (!payload.sessizdeBile && settingsCache.getBoolean('bot_sessiz', false)) return;
       // Gönderim sonucu eskiden yutuluyordu: sohbete yazılamadığında panelde
       // hiçbir şey görünmüyor, kullanıcı "mesaj gitmiyor" diyordu. Artık her
       // başarısızlık sebebiyle birlikte panele bildirilir.

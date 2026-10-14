@@ -14,9 +14,13 @@ import { kalkaniUygula } from '../modules/moderation/shield-enforce.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
 import { seyrekUyar } from './logger.js';
 import { aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
+import { sonMesajlar } from '../modules/moderation/son-mesajlar.js';
+import { SeslenmeSiniri, seslenmeAyikla } from '../modules/ai/seslenme.js';
+import { geminiCoHost } from '../modules/ai/gemini.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
+  private seslenmeSiniri = new SeslenmeSiniri();
 
   constructor() {
     this.setupListeners();
@@ -59,6 +63,17 @@ export class MessagePipeline {
     if (aktarimAcik && aktarimYankisiMi(aktarimBicimi, rawText)) {
       return;
     }
+
+    // !nuke / !vanish için son mesajlar (yayıncı, mod ve botun kendisi muaf)
+    sonMesajlar.ekle({
+      id: String(message.id || ''),
+      platform: message.platform,
+      kullanici: message.user.username,
+      gorunenAd: message.user.displayName || message.user.username,
+      metin: rawText,
+      zaman: Date.now(),
+      muaf: Boolean(message.user.isBroadcaster || message.user.isMod || message.user.isSelf)
+    });
 
     // Ignore known external chat-bot accounts so their output is not reprocessed
     const u = message.user.username.toLowerCase();
@@ -159,6 +174,23 @@ export class MessagePipeline {
         message: commandReply
       });
       return;
+    }
+
+    // 3.5 Yapay zekâya seslenme: "@BotAdı soru" (ayar: ai_mention_enabled)
+    if (!message.user.isSelf && rawText.startsWith('@') && settingsCache.getBoolean('ai_mention_enabled', false)) {
+      const { platformManager } = await import('../platforms/manager.js');
+      const soru = seslenmeAyikla(rawText, platformManager.botKullaniciAdlari());
+      if (soru && this.seslenmeSiniri.izinVer(message.user.username)) {
+        const cevap = await geminiCoHost.ask(soru, message.user.displayName);
+        if (cevap?.trim()) {
+          eventBus.emitBotMessage({
+            platform: message.platform,
+            channel: message.channel,
+            message: `@${message.user.displayName} ${cevap}`
+          });
+        }
+        return;
+      }
     }
 
     // 3. TTS Trigger (e.g. if !tts or normal chat if configured)

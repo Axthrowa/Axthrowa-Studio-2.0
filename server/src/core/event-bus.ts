@@ -109,6 +109,8 @@ export interface BotMessagePayload {
   channel?: string;
   message: string;
   replyToId?: string;
+  /** `!bot mute` açıkken bile gönderilsin (susturma/açma onayı). */
+  sessizdeBile?: boolean;
 }
 
 class UniversalEventBus extends EventEmitter {

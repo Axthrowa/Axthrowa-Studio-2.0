@@ -22,6 +22,8 @@ type Adv = {
   symbols_timeout: number; symbols_min_length: number; symbols_exclude_subs: boolean; symbols_warning: string; symbols_action: string;
   blacklist_timeout: number; blacklist_exclude_subs: boolean; blacklist_warning: string; blacklist_action: string;
   name_enabled: boolean; name_words: string[]; name_regex: string; name_timeout: number; name_warning: string;
+  zalgo_enabled: boolean; zalgo_action: string; zalgo_timeout: number; zalgo_warning: string;
+  length_enabled: boolean; length_max: number; length_action: string; length_timeout: number; length_warning: string;
 };
 
 const ADV_DEFAULT: Adv = {
@@ -30,7 +32,9 @@ const ADV_DEFAULT: Adv = {
   emotes_timeout: 20, emotes_exclude_subs: false, emotes_warning: 'Emote spam yapma.', emotes_action: 'delete',
   symbols_timeout: 20, symbols_min_length: 8, symbols_exclude_subs: false, symbols_warning: 'Sembol spam yasak.', symbols_action: 'delete',
   blacklist_timeout: 300, blacklist_exclude_subs: false, blacklist_warning: 'Yasaklı kelime kullanıldı.', blacklist_action: 'timeout',
-  name_enabled: false, name_words: [], name_regex: '', name_timeout: 600, name_warning: 'Kullanıcı adın kurala uymuyor.'
+  name_enabled: false, name_words: [], name_regex: '', name_timeout: 600, name_warning: 'Kullanıcı adın kurala uymuyor.',
+  zalgo_enabled: false, zalgo_action: 'delete_warn', zalgo_timeout: 60, zalgo_warning: 'Bozuk (Zalgo) yazı kullanımı yasaktır.',
+  length_enabled: false, length_max: 400, length_action: 'delete', length_timeout: 60, length_warning: 'Mesaj çok uzun.'
 };
 
 const TABS = [
@@ -68,6 +72,8 @@ export function AutoMod() {
   const [tab, setTab] = useState('caps');
   const [kural, setKural] = useState<Record<Kural, KuralEylemi> | null>(null);
   const [newWord, setNewWord] = useState('');
+  /** Kayıtta reddedilen (geçersiz/riskli) kara liste kalıpları. */
+  const [gecersiz, setGecersiz] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [newNameWord, setNewNameWord] = useState('');
   const [saved, setSaved] = useState(false);
@@ -114,12 +120,27 @@ export function AutoMod() {
       toast(`Moderasyon ayarları kaydedilemedi${hata?.error ? `: ${hata.error}` : ''}`, 'hata');
       return;
     }
+    const yanit = await res.json().catch(() => null);
+    setGecersiz(Array.isArray(yanit?.gecersizKaliplar) ? yanit.gecersizKaliplar : []);
     taban({ settings, adv, kural });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
   if (!settings || !kural) return <div className="p-8 text-center text-gray-500">Yükleniyor...</div>;
+
+  const ekKural = (on: 'zalgo' | 'length', baslik: string, aciklama: string) => (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
+      <label className="flex justify-between text-xs font-bold">{baslik} <input type="checkbox" checked={!!(adv as any)[on + '_enabled']} onChange={e => setAdv(a => ({ ...a, [on + '_enabled']: e.target.checked } as any))} /></label>
+      <p className="text-[11px] text-gray-500">{aciklama}</p>
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        {on === 'length' && <label className="space-y-1">En çok karakter<input type="number" min={20} max={2000} value={adv.length_max} onChange={e => setAdv(a => ({ ...a, length_max: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-lg p-1.5" /></label>}
+        <label className="space-y-1">Eylem<select value={(adv as any)[on + '_action']} onChange={e => setAdv(a => ({ ...a, [on + '_action']: e.target.value } as any))} className="w-full bg-black/40 border border-white/10 rounded-lg p-1.5"><option value="warn">Uyar</option><option value="delete">Sil</option><option value="delete_warn">Sil + uyar</option><option value="timeout_warn">Sustur + uyar</option></select></label>
+        <label className="space-y-1">Susturma (sn)<input type="number" min={30} max={86400} value={(adv as any)[on + '_timeout']} onChange={e => setAdv(a => ({ ...a, [on + '_timeout']: +e.target.value } as any))} className="w-full bg-black/40 border border-white/10 rounded-lg p-1.5" /></label>
+      </div>
+      <input value={(adv as any)[on + '_warning']} onChange={e => setAdv(a => ({ ...a, [on + '_warning']: e.target.value } as any))} className="w-full bg-black/40 border border-white/10 rounded-lg p-1.5 text-xs" placeholder="Uyarı mesajı" />
+    </div>
+  );
 
   const kuralDegis = (r: Kural, yama: Partial<KuralEylemi>) => setKural({ ...kural, [r]: { ...kural[r], ...yama } });
 
@@ -263,9 +284,13 @@ export function AutoMod() {
             <input value={newWord} onChange={e => setNewWord(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWord.trim()) { setSettings({ ...settings, blacklist_words: [...settings.blacklist_words, newWord.trim()] }); setNewWord(''); } }} placeholder="yasaklı kelime" className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm" />
             <button type="button" onClick={() => { if (newWord.trim()) setSettings({ ...settings, blacklist_words: [...settings.blacklist_words, newWord.trim()] }); setNewWord(''); }} className="px-4 py-2 bg-red-600 rounded-xl text-xs font-bold">Ekle</button>
           </div>
+          <p className="text-[11px] text-gray-500">Yazım: <code>kelime</code> (Türkçe harf ve büyük/küçük fark etmez) · <code>test*</code> joker (testing, testçi…) · <code>~/desen/i</code> düzenli ifade. İç içe niceleyicili riskli desenler (<code>(a+)+</code>) kayıtta reddedilir.</p>
+          {gecersiz.length > 0 && <p className="text-[11px] rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-amber-200">Uygulanmayan (geçersiz ya da riskli) kalıplar: {gecersiz.join(', ')}</p>}
           <div className="flex flex-wrap gap-2">{settings.blacklist_words.map(word => (
             <span key={word} className="px-3 py-1.5 rounded-xl bg-red-500/15 text-red-300 text-xs font-bold flex items-center gap-2">{word}<button onClick={() => setSettings({ ...settings, blacklist_words: settings.blacklist_words.filter(w => w !== word) })}><X className="w-3.5 h-3.5" /></button></span>
           ))}</div>
+          {ekKural('zalgo', 'Zalgo (bozuk) yazı filtresi', 'Harflerin üstüne/altına yığılmış işaretlerle sohbeti bozan mesajlar.')}
+          {ekKural('length', 'Mesaj uzunluğu sınırı', 'Belirlenen karakter sayısından uzun mesajlar.')}
         </div>
       )}
 

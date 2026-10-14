@@ -11,16 +11,20 @@ import {
 } from './enforcement.js';
 import { TekrarIzleyici } from './repeat.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { kelimeEslesmesi, kelimeListesiDerle, zalgoMu, type KelimeKurali } from './kelime-kurali.js';
 
 export interface AutoModViolation {
-  rule: 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'ai_toxic';
+  rule: 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'zalgo' | 'length' | 'ai_toxic';
   reason: string;
   matchedText?: string;
 }
 
 export class AutoModEngine {
   private cachedSettings: any = null;
-  private blacklistCache: string[] = [];
+  /** Derlenmiş kara liste: düz, joker (`*`) ve `~/regex/` girdileri. */
+  private blacklistCache: KelimeKurali[] = [];
+  /** `automod_advanced` — eskiden HER mesajda veritabanından okunuyordu. */
+  private advancedCache: any = {};
   private whitelistCache: string[] = [];
   private lastLoadTime: number = 0;
   private tekrar = new TekrarIzleyici();
@@ -30,11 +34,20 @@ export class AutoModEngine {
       const row = db.prepare('SELECT * FROM automod_settings WHERE id = 1').get() as any;
       if (row) {
         this.cachedSettings = row;
-        this.blacklistCache = JSON.parse(row.blacklist_words || '[]').filter((w: string) => Boolean(w && w.trim())).map((w: string) => w.trim().toLowerCase());
+        const { kurallar, gecersiz } = kelimeListesiDerle(JSON.parse(row.blacklist_words || '[]'));
+        this.blacklistCache = kurallar;
+        if (gecersiz.length) seyrekUyar('automod:gecersiz-kalip', `[AutoMod] Geçersiz/riskli kara liste kalıbı yok sayıldı: ${gecersiz.slice(0, 3).join(', ')}`, undefined, 600_000);
         this.whitelistCache = JSON.parse(row.links_whitelist || '[]').filter((w: string) => Boolean(w && w.trim())).map((w: string) => w.trim().toLowerCase());
       }
     } catch {
       this.cachedSettings = null;
+    }
+    try {
+      const adv = db.prepare("SELECT value FROM bot_settings WHERE key = 'automod_advanced'").get() as { value: string } | undefined;
+      this.advancedCache = adv?.value ? JSON.parse(adv.value) : {};
+    } catch (e) {
+      this.advancedCache = {};
+      seyrekUyar('ayar:automod_advanced', '[AutoMod] Gelişmiş ayar okunamadı — varsayılan kullanılıyor', e);
     }
   }
 
@@ -55,13 +68,7 @@ export class AutoModEngine {
     const row = this.getSettings();
     if (!row) return null;
 
-    let advanced: any = {};
-    try {
-      const adv = db.prepare("SELECT value FROM bot_settings WHERE key = 'automod_advanced'").get() as { value: string } | undefined;
-      advanced = adv?.value ? JSON.parse(adv.value) : {};
-    } catch (e) {
-      seyrekUyar('ayar:automod_advanced', '[AutoMod] Gelişmiş ayar okunamadı — varsayılan kullanılıyor', e);
-    }
+    const advanced: any = this.advancedCache || {};
 
     if (advanced.caps_exclude_subs && message.user.isSub) { /* skip later per-rule */ }
     if (advanced.name_enabled) {
@@ -95,16 +102,25 @@ export class AutoModEngine {
 
     // 1. Fast Blacklisted Words Filter (in-memory)
     if (!(advanced.blacklist_exclude_subs && message.user.isSub)) {
-    const lowerText = text.toLowerCase();
-    for (const badWord of this.blacklistCache) {
-      if (lowerText.includes(badWord)) {
-        return {
-          rule: 'blacklist',
-          reason: advanced.blacklist_warning || 'Yasaklı kelime kullanımı tespit edildi.',
-          matchedText: badWord
-        };
-      }
+    const eslesen = kelimeEslesmesi(this.blacklistCache, text);
+    if (eslesen) {
+      return {
+        rule: 'blacklist',
+        reason: advanced.blacklist_warning || 'Yasaklı kelime kullanımı tespit edildi.',
+        matchedText: eslesen
+      };
     }
+    }
+
+    // 1.1 Zalgo yazı (yığılmış birleşik işaretler) — sohbeti bozar, okunmaz
+    if (advanced.zalgo_enabled && zalgoMu(text)) {
+      return { rule: 'zalgo', reason: advanced.zalgo_warning || 'Bozuk (Zalgo) yazı kullanımı yasaktır.' };
+    }
+
+    // 1.2 Mesaj uzunluğu sınırı
+    const uzunlukSiniri = Math.min(2000, Math.max(20, Number(advanced.length_max) || 400));
+    if (advanced.length_enabled && [...text].length > uzunlukSiniri) {
+      return { rule: 'length', reason: advanced.length_warning || `Mesaj çok uzun (en çok ${uzunlukSiniri} karakter).` };
     }
 
     // 2. Links / URL Protection
@@ -203,7 +219,9 @@ export class AutoModEngine {
   async ihlaliUygula(message: ChatMessagePayload, violation: AutoModViolation): Promise<void> {
     const row = this.getSettings();
     const kural = (violation.rule === 'ai_toxic' ? 'blacklist' : violation.rule) as KuralAdi;
-    const ayar = kuralAyariOku(row, kural, violation.reason);
+    // Zalgo ve uzunluk kuralının eylem ayarları gelişmiş ayarlarda (göçsüz)
+    const kaynak = kural === 'zalgo' || kural === 'length' ? { ...row, ...this.advancedCache } : row;
+    const ayar = kuralAyariOku(kaynak, kural, violation.reason);
 
     // Rol muafiyeti — BotRix'te her kuralin kendi bypass listesi var
     if (bypassEder(message.user as any, ayar.bypass)) return;

@@ -22,6 +22,9 @@ export const EXTRAS_DEFAULTS = {
   clip_enabled: true,
   clip_command: '!clip',
   clip_cooldown: 30,
+  /** !clip saniye verilmezse ve en çok kaç saniye (gerçek klip, ffmpeg). */
+  clip_default_sec: 30,
+  clip_max_sec: 60,
   clip_message: '📌 @{user} klip anını işaretledi ({zaman}) — yayıncı panelden görecek.',
   levels_enabled: true,
   xp_per_message: 5,
@@ -103,24 +106,34 @@ export function initExtras() {
   `);
 
   const s = () => getExtrasSettings();
+  // Yeni sohbet uyarıları (Gelişmiş Bot > Sohbet uyarıları) aynı olayda açıksa eski
+  // sistem SUSAR — ikisi birden açıkken her takipte sohbete iki mesaj gidiyordu.
+  const yeniAcik = (olay: string): boolean => {
+    try {
+      const r = db.prepare("SELECT value FROM bot_settings WHERE key = 'chat_alert_settings'").get() as { value: string } | undefined;
+      return Boolean(r?.value && JSON.parse(r.value)?.[olay]?.aktif);
+    } catch {
+      return false;
+    }
+  };
 
   eventBus.on('follow', (p: any) => {
     const cfg = s();
-    if (cfg.chat_alerts_enabled) announce(p.platform, p.channel, tpl(cfg.chat_alert_follow, { user: p.displayName || p.username }));
+    if (cfg.chat_alerts_enabled && !yeniAcik('follow')) announce(p.platform, p.channel, tpl(cfg.chat_alert_follow, { user: p.displayName || p.username }));
   });
   eventBus.on('sub', (p: any) => {
     const cfg = s();
-    if (!cfg.chat_alerts_enabled) return;
+    if (!cfg.chat_alerts_enabled || yeniAcik(p.isGift ? 'gift_sub' : Number(p.months) > 1 ? 'resub' : 'sub')) return;
     const msg = p.isGift ? cfg.chat_alert_gift_sub : cfg.chat_alert_sub;
     announce(p.platform, p.channel, tpl(msg, { user: p.displayName || p.username, count: p.months || 1, tier: p.tier }));
   });
   eventBus.on('tip', (p: any) => {
     const cfg = s();
-    if (cfg.chat_alerts_enabled) announce(p.platform, p.channel, tpl(cfg.chat_alert_tip, { user: p.displayName || p.username, amount: p.amount, currency: p.currency }));
+    if (cfg.chat_alerts_enabled && !yeniAcik('tip')) announce(p.platform, p.channel, tpl(cfg.chat_alert_tip, { user: p.displayName || p.username, amount: p.amount, currency: p.currency }));
   });
   eventBus.on('raid', (p: any) => {
     const cfg = s();
-    if (cfg.chat_alerts_enabled) announce(p.platform, p.channel, tpl(cfg.chat_alert_raid, { user: p.displayName || p.username, viewers: p.viewers }));
+    if (cfg.chat_alerts_enabled && !yeniAcik('raid')) announce(p.platform, p.channel, tpl(cfg.chat_alert_raid, { user: p.displayName || p.username, viewers: p.viewers }));
   });
 
   console.log('[Extras] Chat alerts, quotes and counters ready.');

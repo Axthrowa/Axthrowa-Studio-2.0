@@ -18,7 +18,7 @@ import { db } from '../../db/index.js';
 import { hediyeAdedi, eventBus } from '../../core/event-bus.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
 
-export type SohbetOlayi = 'follow' | 'sub' | 'resub' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'welcome';
+export type SohbetOlayi = 'follow' | 'sub' | 'resub' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'welcome' | 'stream_online';
 
 export interface OlayKurali {
   aktif: boolean;
@@ -48,7 +48,9 @@ export const VARSAYILAN_CHAT_ALERT: ChatAlertAyarlari = {
   host: K('🚀 $(sender) $(v1) izleyiciyle kanalı host etti!', 0),
   raid: K('🚀 $(sender) $(v1) izleyiciyle raid yaptı!', 0),
   // İlk kez yazan izleyiciyi karşılama — BotRix'te premium
-  welcome: K('👋 Aramıza hoş geldin $(sender)!', 0, false, 0)
+  welcome: K('👋 Aramıza hoş geldin $(sender)!', 0, false, 0),
+  // Yayın başlayınca sohbete duyuru (yaygın botlarda 'Live Announcement')
+  stream_online: K('🔴 Yayın başladı! $(title) — gel izle: $(platformurl)', 0, false, 0)
 };
 
 const AYAR_ANAHTARI = 'chat_alert_settings';
@@ -146,7 +148,19 @@ class SohbetUyarilari {
     void this.gonder('welcome', p, 0);
   }
 
+  /** Aynı yayın için duyuru bir kez (bot yeniden başlasa da). */
+  private duyurulanYayinlar = new Set<string>();
+
   baglaOlaylar() {
+    // Bot yayın ORTASINDA açıldıysa (ilk gözlem) duyurma: yeniden başlatma sohbete tekrar 'yayın başladı' yazmasın
+    eventBus.on('stream_online', (p: any) => {
+      if (p?.ilkGozlem) return;
+      const kimlik = `${p?.platform}:${p?.yayinId || p?.baslangic || ''}`;
+      if (this.duyurulanYayinlar.has(kimlik)) return;
+      this.duyurulanYayinlar.add(kimlik);
+      void this.gonder('stream_online', { platform: p?.platform, channel: p?.channel, username: p?.channel, displayName: p?.channel }, 0);
+    });
+
     eventBus.on('follow', (p: any) => void this.gonder('follow', p, 0));
 
     eventBus.on('sub', (p: any) => {

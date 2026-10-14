@@ -16,7 +16,7 @@ import { yetenek } from '../../platforms/capabilities.js';
 
 export type IhlalEylemi = 'warn' | 'timeout' | 'timeout_warn' | 'delete' | 'delete_warn';
 
-export type KuralAdi = 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat';
+export type KuralAdi = 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'zalgo' | 'length';
 
 /** BotRix'teki on bir kademe (BOTRIX_UI_INVENTORY §6.1). */
 export const TIMEOUT_KADEMELERI = [30, 60, 120, 300, 900, 1800, 3600, 7200, 18000, 43200, 86400] as const;
@@ -115,7 +115,7 @@ export function kuralAyariOku(row: any, kural: KuralAdi, varsayilanMesaj: string
   try {
     const ham = row?.[`${kural}_bypass`];
     if (ham) {
-      const p = JSON.parse(ham);
+      const p = Array.isArray(ham) ? ham : JSON.parse(ham);
       if (Array.isArray(p)) bypass = p as Rol[];
     }
   } catch {

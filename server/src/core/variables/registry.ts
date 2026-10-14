@@ -22,6 +22,7 @@ import { SINIR, type DegiskenBaglam, type DegiskenTanimi } from './types.js';
 import { noktaliBol } from './resolve.js';
 import { sayi, sureMetni, matematik, jsonYolu, jsonYoluYaz, jsonYoluSil, jsonDegeri, JSON_DEGISKEN_SINIRI } from './pure.js';
 import { canliDurum } from '../live-status.js';
+import { agirlikliSec, havaMetni, ifSonucu, kickAlaniCoz, kickProfilAlani } from './ek-saf.js';
 
 export { matematik, jsonYolu } from './pure.js';
 
@@ -54,7 +55,7 @@ export function yayinDegistiriciAyarla(fn: YayinDegistirici) {
 }
 
 /** Sohbette son görülen kullanıcılardan rastgele biri. */
-function rastgeleIzleyici(): string {
+export function rastgeleIzleyici(): string {
   const r = db
     .prepare('SELECT display_name, username FROM economy ORDER BY last_active DESC LIMIT 50')
     .all() as Array<{ display_name?: string; username: string }>;
@@ -253,6 +254,31 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       const s = noktaliBol(h).filter(Boolean);
       return s.length ? s[Math.floor(Math.random() * s.length)] : '';
     }),
+    tanim('pickw', 'random', 'Ağırlıklı rastgele seçim. $(pickw kazandın:10;kaybettin:90)', (h) => agirlikliSec(noktaliBol(h)), {
+      ornek: '🎰 $(pickw JACKPOT:5;Az kalsın:35;Kaybettin:60)'
+    }),
+    tanim('if', 'text', 'Koşullu yanıt: $(if koşul;doğruysa;yanlışsa). Op: == != > < >= <= ~= (içerir)', (h) => ifSonucu(noktaliBol(h)), {
+      ornek: '$(if $(1) == evet;Harika!;Tamam, sonra)'
+    }),
+    tanim('weather', 'web', 'Hava durumu (Open-Meteo). $(weather İstanbul)', (h) => havaDurumu(h), {
+      ag: true,
+      ornek: '$(weather $(query))'
+    }),
+    tanim(
+      'kick',
+      'user',
+      `Kick profilinden bilgi: $(kick alan [kullanıcı]). Alan: bio, instagram, twitter, youtube, discord, tiktok, facebook, takipci, url`,
+      async (h, c) => {
+        const [alanHam = '', kimHam = ''] = h.trim().split(/\s+/);
+        const alan = kickAlaniCoz(alanHam);
+        if (!alan) return '(kick: bilinmeyen alan)';
+        const kim = atSil(kimHam) || c.user.username;
+        const { kickPlatform } = await import('../../platforms/kick.js');
+        const kanal = await kickPlatform.profil(kim);
+        return kanal ? kickProfilAlani(kanal, alan, kim) : '';
+      },
+      { ag: true, ornek: '@$(touser) hesapları: IG $(kick instagram $(touser)) · $(kick url $(touser))' }
+    ),
     tanim('repeat', 'text', `Metni tekrarlar (en fazla ${SINIR.tekrar})`, (h) => {
       const bosluk = h.trim().search(/\s/);
       if (bosluk === -1) return '';
@@ -463,4 +489,35 @@ export function degiskenKatalogu() {
   }
   for (const g of Object.values(gruplar)) g.sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
   return gruplar;
+}
+
+// ---- Hava durumu (Open-Meteo: anahtarsız; konum başına 10 dk önbellek) --------
+const havaOnbellek = new Map<string, { zaman: number; metin: string }>();
+
+async function havaDurumu(ham: string): Promise<string> {
+  const yer = String(ham || '').trim().slice(0, 60);
+  if (!yer) return '(weather: konum yazın — ör. $(weather İstanbul))';
+  const anahtar = yer.toLocaleLowerCase('tr-TR');
+  const o = havaOnbellek.get(anahtar);
+  if (o && Date.now() - o.zaman < 10 * 60_000) return o.metin;
+  try {
+    const geo = JSON.parse(
+      await guvenliGetir(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(yer)}&count=1&language=tr&format=json`)
+    );
+    const k = geo?.results?.[0];
+    if (!k || !Number.isFinite(Number(k.latitude))) return `(weather: "${yer}" bulunamadı)`;
+    const hava = JSON.parse(
+      await guvenliGetir(
+        `https://api.open-meteo.com/v1/forecast?latitude=${Number(k.latitude)}&longitude=${Number(k.longitude)}` +
+          '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto'
+      )
+    );
+    if (!hava?.current) return '(weather: veri alınamadı)';
+    const metin = havaMetni(k, hava.current);
+    havaOnbellek.set(anahtar, { zaman: Date.now(), metin });
+    if (havaOnbellek.size > 200) havaOnbellek.delete(havaOnbellek.keys().next().value as string);
+    return metin;
+  } catch {
+    return '(weather: hava durumu servisine ulaşılamadı)';
+  }
 }

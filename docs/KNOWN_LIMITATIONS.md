@@ -281,3 +281,26 @@ bırakılır. Kopukluk panelde Kick kartında uyarı olarak görünür (eskiden 
   kullanıyor) — üst sürümde düzeltme yok.
 - Widget taraması (yalıtılmış örnek, 31 sayfa): çalışma anı hatası yok. Çekiliş, anket, hype treni, jumpscare,
   trivia, shoutout, sabit mesaj, ödül ve şu an çalan widget'ları olay yokken BİLEREK boştur.
+
+## 14. RAKİP BOT İNCELEMESİ → YENİ ÖZELLİKLER (2026-10-14, 3. tur)
+
+Kaynak sınıflandırması: yalnız **herkese açık belgeler** ve gözlemlenen davranış okundu (KickBot docs, Nightbot docs,
+StreamElements docs, BotRix docs). Rakiplerin kodu/markası/görselleri kopyalanmadı; giriş yapılmadı.
+
+Eklenenler (birim + yerel uçtan uca sınamayla doğrulandı, sahte Kick sunucusu + sentetik HLS):
+- `!nuke <kalıp> [süre]` (riskli regex reddedilir), `!vanish`, `!winner`, `!puangonder`, `!when`, `!wrongsong`,
+  `!removesong`, `!followtest/!subtest/!tiptest/!raidtest`, `!alerts pause|resume`, `!bot mute|unmute`,
+  `!commands add|edit|delete`.
+- Değişkenler: `$(if a > b;evet;hayır)`, `$(pickw a:70;b:30)`, `$(weather şehir)` (Open-Meteo, anahtarsız),
+  `$(kick alan)` (herkese açık kanal profili).
+- AutoMod: kara liste `*` joker ve `~/regex/flags`, zalgo ve uzunluk kuralları.
+- `!clip [sn]`: yayının HLS akışından ffmpeg ile yerel mp4 (yeniden kodlamasız). Platforma yüklenmez.
+- AI'ya @bot ile seslenme (kişi başı 30 sn, genel 4 sn sınırı; varsayılan kapalı).
+- "Yayın başladı" sohbet duyurusu (varsayılan kapalı).
+
+UNVERIFIED (gerçek platformda sınanmadı — gerçek yayın/sohbet tetiklenmedi):
+- Gerçek Kick yayını açıkken `!clip` (yalnız sentetik HLS ile 15 sn klip doğrulandı).
+- `!nuke`/`!vanish`'in gerçek Kick token'ıyla silme/zaman aşımı yapması.
+- AI seslenmenin gerçek Gemini yanıtı; yayın başladı duyurusunun gerçek yayın açılışında gönderilmesi.
+
+Eklenmeyenler: regulars kullanıcı düzeyi, `!votekick`, emote bingo/piramit, kappagen, 7TV, `{{...}}` söz dizimi uyumu.

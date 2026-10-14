@@ -769,6 +769,31 @@ export class KickPlatform extends BasePlatform {
     }
   }
 
+  /** Kanal sayfası önbelleği (`$(kick alan kullanıcı)` aynı kişi için tekrar sorgulamasın). */
+  private profilOnbellek: Map<string, { zaman: number; veri: any }> = new Map();
+
+  /** Herkese açık kanal sayfası (biyografi, sosyal hesaplar, takipçi). 5 dk önbellek. */
+  async profil(slug: string): Promise<any | null> {
+    const s = String(slug || '').replace(/^@/, '').trim().toLowerCase();
+    if (!/^[a-z0-9_-]{1,40}$/.test(s)) return null;
+    const o = this.profilOnbellek.get(s);
+    if (o && Date.now() - o.zaman < 5 * 60_000) return o.veri;
+    try {
+      const r = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(s)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json'
+        },
+        timeout: 6000
+      });
+      this.profilOnbellek.set(s, { zaman: Date.now(), veri: r.data });
+      if (this.profilOnbellek.size > 300) this.profilOnbellek.delete(this.profilOnbellek.keys().next().value as string);
+      return r.data;
+    } catch {
+      return null;
+    }
+  }
+
   /** Botun Kick kullanici adi — anahtar kelime komutu kendini tetiklemesin. */
   botKullaniciAdi(): string {
     return (this.botUsername || '').toLowerCase();

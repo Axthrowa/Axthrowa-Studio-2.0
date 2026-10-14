@@ -112,6 +112,9 @@ export interface BotMessagePayload {
 }
 
 class UniversalEventBus extends EventEmitter {
+  /** Budama sıklığı için kayıt sayacı (bkz. logEvent). */
+  private eklemeSayaci = 0;
+
   constructor() {
     super();
     this.setMaxListeners(50);
@@ -263,12 +266,23 @@ class UniversalEventBus extends EventEmitter {
         event.timestamp
       );
 
-      // Keep only last 1000 events to prevent unbounded table growth
-      db.prepare(`
-        DELETE FROM stream_events WHERE id NOT IN (
-          SELECT id FROM stream_events ORDER BY timestamp DESC LIMIT 1000
-        )
-      `).run();
+      // Tablo sınırsız büyümesin. Eskiden TEK sınır (son 1000 kayıt) vardı ve
+      // her sohbet mesajı da buraya yazıldığı için hareketli bir sohbette
+      // takip/abone/bağış kayıtları dakikalar içinde siliniyordu (olay akışı,
+      // kapanış jeneriği boş kalıyordu). Sohbet ve olaylar ayrı budanır; her
+      // eklemede değil, 50 eklemede bir.
+      if (++this.eklemeSayaci % 50 === 0) {
+        db.prepare(`
+          DELETE FROM stream_events WHERE event_type = 'chat' AND id NOT IN (
+            SELECT id FROM stream_events WHERE event_type = 'chat' ORDER BY timestamp DESC LIMIT 2000
+          )
+        `).run();
+        db.prepare(`
+          DELETE FROM stream_events WHERE event_type <> 'chat' AND id NOT IN (
+            SELECT id FROM stream_events WHERE event_type <> 'chat' ORDER BY timestamp DESC LIMIT 1000
+          )
+        `).run();
+      }
     } catch (err) {
       console.error('Failed to log stream event:', err);
     }

@@ -2,6 +2,7 @@ import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { economy } from '../economy/economy.js';
 import { db } from '../../db/index.js';
 import { triviaEngine } from './trivia-engine.js';
+import { kelimeTuttuMu, serbestCevapDogruMu } from './cevap-eslestir.js';
 
 // --- TYPES ---
 type PlatformType = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo' | 'all';
@@ -102,7 +103,7 @@ const TRIVIA_QUESTIONS: TriviaQuestion[] = [
 ];
 
 const ANAGRAM_WORDS: Array<{ word: string; scrambled: string; hint: string }> = [
-  { word: 'yayin', scrambled: 'Y - N - A - I', hint: 'Canlı yapılan şey' },
+  { word: 'yayin', scrambled: 'Y - N - A - Y - I', hint: 'Canlı yapılan şey' },
   { word: 'yayinci', scrambled: 'Y - A - Y - I - N - C - I', hint: 'Ekrandaki kişi' },
   { word: 'kulaklik', scrambled: 'K - U - L - A - K - L - I - K', hint: 'Ses dinleme ekipmanı' },
   { word: 'klavye', scrambled: 'K - L - A - V - Y - E', hint: 'Yazı yazma aygıtı' },
@@ -535,13 +536,13 @@ export class GamesEngine {
 
   // Check incoming chat messages for trivia / anagram answers
   checkChatMessage(message: ChatMessagePayload): string | null {
-    const raw = (message.message || '').trim().toLowerCase();
     const now = Date.now();
 
     // 1. Check Trivia
     if (this.activeTrivia && now < this.activeTrivia.expiresAt) {
       const q = this.activeTrivia.question;
-      const isCorrect = q.answers.some(a => raw.includes(a) || raw === a);
+      // Türkçe duyarlı, tam kelime ("au" cevabı "aura" yazana verilmez)
+      const isCorrect = serbestCevapDogruMu(message.message || '', q.answers);
       if (isCorrect) {
         this.activeTrivia = null;
         economy.addPoints(message.user.username, q.reward);
@@ -554,7 +555,8 @@ export class GamesEngine {
     // 2. Check Anagram
     if (this.activeAnagram && now < this.activeAnagram.expiresAt) {
       const target = this.activeAnagram.word;
-      if (raw === target || raw.startsWith(target)) {
+      // Kelimeler ASCII tutuluyor ("yayin"); "yayın" yazan da bilsin
+      if (kelimeTuttuMu(message.message || '', target)) {
         const reward = this.activeAnagram.reward;
         this.activeAnagram = null;
         economy.addPoints(message.user.username, reward);

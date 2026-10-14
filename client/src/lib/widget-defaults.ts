@@ -716,3 +716,14 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'audio-player': AUDIO_PLAYER_DEFAULTS
 };
 
+
+/**
+ * Tek tuvaldeki hedef çubuğunun türü (yerleşim ayarı `goals.type`) → ayarları
+ * kullanılan hedef widget'ı. Stüdyo formu ve OBS çıktısı AYNI kimliği kullanır.
+ */
+export function hedefWidgetKimligi(tur?: unknown): string {
+  if (tur === 'sub') return 'subscriber-goal';
+  if (tur === 'kicks') return 'kicks-goal';
+  if (tur === 'tip' || tur === 'donation') return 'donation-goal';
+  return 'follower-goal';
+}

@@ -131,8 +131,18 @@ router.post('/settings', (req: Request, res: Response) => {
 });
 
 // 11. Recent Stream Events Feed
+// Varsayılan olarak SOHBET HARİÇ: "Canlı Yayın Olay Akışı" ve kapanış jeneriği
+// takip/abone/bağış/klip ister; her sohbet mesajı da bu tabloya yazıldığı için
+// eskiden son 50 kaydın hepsi sohbetti. `?sohbet=1` eski davranış.
 router.get('/events', (req: Request, res: Response) => {
-  const events = db.prepare('SELECT * FROM stream_events ORDER BY timestamp DESC LIMIT 50').all();
+  const sohbetDahil = req.query.sohbet === '1';
+  const events = db
+    .prepare(
+      sohbetDahil
+        ? 'SELECT * FROM stream_events ORDER BY timestamp DESC LIMIT 50'
+        : "SELECT * FROM stream_events WHERE event_type <> 'chat' ORDER BY timestamp DESC LIMIT 50"
+    )
+    .all();
   res.json(events);
 });
 

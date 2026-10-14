@@ -103,6 +103,25 @@ export class MessagePipeline {
     }
 
 
+    // 0.9 Bil Bakalım oyu — AutoMod'dan ÖNCE: "GALATASARAY", "NOBEL KİMYA" gibi
+    // büyük harfle yazılan doğru cevap eskiden oy yerine CAPS uyarısı alıyordu.
+    // Yalnız geçerli bir şık/seçenek metni kabul edilir (kara liste ve kalkan
+    // yukarıda zaten uygulandı), dolayısıyla moderasyon delinmez.
+    if (!message.user.isSelf && triviaEngine.getState().status === 'question_active') {
+      const voteResult = triviaEngine.submitVote(
+        {
+          username: message.user.username,
+          displayName: message.user.displayName,
+          platform: message.platform
+        },
+        message.message
+      );
+      if (voteResult.accepted) {
+        // Vote registered and overlay updated in real time. Skip command execution for answer letters.
+        return;
+      }
+    }
+
     // 1. AutoMod
     const violation = autoMod.checkMessage(message);
     if (violation) {
@@ -118,22 +137,6 @@ export class MessagePipeline {
     // komut isleyicisinden ONCE bakilir.
     if (puanDususu.katil(message.user.username, message.user.displayName, rawText)) {
       return;
-    }
-
-    // 1.5 Bil Bakalım Live Question Vote Check
-    if (triviaEngine.getState().status === 'question_active') {
-      const voteResult = triviaEngine.submitVote(
-        {
-          username: message.user.username,
-          displayName: message.user.displayName,
-          platform: message.platform
-        },
-        message.message
-      );
-      if (voteResult.accepted) {
-        // Vote registered and overlay updated in real time. Skip command execution for answer letters.
-        return;
-      }
     }
 
     // 2. Chat Minigames Check (Live Trivia & Anagram unscramble answers)

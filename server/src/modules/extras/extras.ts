@@ -22,7 +22,7 @@ export const EXTRAS_DEFAULTS = {
   clip_enabled: true,
   clip_command: '!clip',
   clip_cooldown: 30,
-  clip_message: 'Klip alındı — yayıncı panosundan paylaşılabilir.',
+  clip_message: '📌 @{user} klip anını işaretledi ({zaman}) — yayıncı panelden görecek.',
   levels_enabled: true,
   xp_per_message: 5,
   xp_per_minute: 2,

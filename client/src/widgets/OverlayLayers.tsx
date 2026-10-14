@@ -31,6 +31,7 @@ import { HypeTrainWidget } from './HypeTrainWidget.js';
 import LyricsWidget from './LyricsWidget.js';
 import KingWidget from './KingWidget.js';
 import TriviaWidget from './TriviaWidget.js';
+import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 
 export interface WidgetLayoutItem {
   enabled?: boolean;
@@ -66,7 +67,8 @@ export interface KatmanTanimi {
   z: number;
   /** Varsayılan yerleşim; kayıtlı ayar yoksa kullanılır. */
   varsayilan: { x: number; y: number; width: number; height: number };
-  ciz: (onizleme: boolean) => ReactNode;
+  /** `item`: bu katmanın yerleşim ayarı (ör. hedef türü). */
+  ciz: (onizleme: boolean, item?: WidgetLayoutItem) => ReactNode;
 }
 
 /**
@@ -86,7 +88,7 @@ export const KATMANLAR: KatmanTanimi[] = [
     etiket: '🎯 Hedef Çubuğu',
     z: 90,
     varsayilan: { x: 1480, y: 140, width: 400, height: 90 },
-    ciz: (o) => <GoalWidget embedded previewMode={o} />
+    ciz: (o, item) => <GoalWidget embedded previewMode={o} widgetId={hedefWidgetKimligi(item?.type)} />
   },
   {
     anahtar: 'subathon',
@@ -227,7 +229,7 @@ export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala
         if (!item?.enabled && !sarmala) return null; // OBS: kapalı katman hiç çizilmez
 
         const stil = katmanStili(item, katman.varsayilan, katman.z, olcek);
-        const icerik = katman.ciz(onizleme);
+        const icerik = katman.ciz(onizleme, item);
 
         if (sarmala) return <span key={katman.anahtar}>{sarmala(katman, icerik, stil)}</span>;
 

@@ -22,6 +22,7 @@ import { extras } from '../extras/extras.js';
 import { canliDurum } from '../../core/live-status.js';
 import { anahtarKomutuSec, erisimAciklamasi, erisimUygunMu } from './command-input.js';
 import { hataMetni, seyrekUyar } from '../../core/logger.js';
+import { trKatla } from '../../core/text.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -66,11 +67,17 @@ function parseTriviaCategory(raw: string): string {
   return 'all';
 }
 
+/** Eski varsayılan `!clip` yanıtı — klip alınmadığı hâlde "alındı" diyordu. */
+const ESKI_KLIP_MESAJI = 'Klip alındı — yayıncı panosundan paylaşılabilir.';
+const KLIP_MESAJI = '📌 @{user} klip anını işaretledi ({zaman}) — yayıncı panelden görecek.';
+
 export class CommandManager {
   private userCooldowns: Map<string, CooldownEntry> = new Map();
   private globalCooldowns: Map<string, CooldownEntry> = new Map();
   private commandsCache: Map<string, any> = new Map();
   private aliasesCache: Map<string, any> = new Map();
+  /** Ad ve takma adların Türkçe→ASCII katlanmış hâli ("!şarkı" = "!sarki"). */
+  private katliCache: Map<string, any> = new Map();
   /** "Sohbet anahtar kelimesi" ile etkinleşen komutlar. */
   private anahtarKomutlar: any[] = [];
   private permits: Map<string, number> = new Map();
@@ -85,11 +92,15 @@ export class CommandManager {
   reload() {
     this.commandsCache.clear();
     this.aliasesCache.clear();
+    this.katliCache.clear();
     this.anahtarKomutlar = [];
     try {
       const rows = db.prepare('SELECT * FROM commands WHERE is_enabled = 1').all() as any[];
       for (const row of rows) {
         this.commandsCache.set(row.name.toLowerCase(), row);
+        // Türkçe küçük harfle de bul ("İstek" kaydı "!istek" ile çalışsın)
+        if (!this.commandsCache.has(row.name.toLocaleLowerCase('tr-TR'))) this.commandsCache.set(row.name.toLocaleLowerCase('tr-TR'), row);
+        if (!this.katliCache.has(trKatla(row.name))) this.katliCache.set(trKatla(row.name), row);
         if (String(row.trigger_type || 'command') === 'keyword') this.anahtarKomutlar.push(row);
         if (row.aliases) {
           try {
@@ -97,6 +108,7 @@ export class CommandManager {
             for (const alias of aliases) {
               if (alias && alias.trim()) {
                 this.aliasesCache.set(alias.trim().toLowerCase(), row);
+                if (!this.katliCache.has(trKatla(alias))) this.katliCache.set(trKatla(alias), row);
               }
             }
           } catch (e) {
@@ -131,23 +143,29 @@ export class CommandManager {
     if (!withoutPrefix) return null;
 
     const parts = withoutPrefix.split(/\s+/);
-    const commandName = parts[0].toLowerCase();
     const args = parts.slice(1);
-
-    // 1. Check Built-in Commands First
-    const builtInResult = await this.executeBuiltIn(commandName, args, message);
-    if (builtInResult !== null) {
-      return builtInResult;
-    }
-
-    // 2. Check Custom Commands in Memory (Ultra-fast O(1) lookup)
     this.ensureLoaded();
-    const cmdRow = this.commandsCache.get(commandName) || this.aliasesCache.get(commandName);
-    if (!cmdRow) {
-      return null;
-    }
 
-    return this.executeCustomCommand(cmdRow, args, message, true);
+    // Komut adı adayları. Yerleşik adlar ASCII ("sarki", "sira", "yazitura");
+    // izleyici "!şarkı", "!sıra", "!YAZITURA", "!İzleme" yazınca eskiden bot
+    // SESSİZ kalıyordu. Önce birebir (eski davranış, özel komut gölgelenmesin),
+    // sonra Türkçe küçük harf, en son ASCII'ye katlanmış ad denenir.
+    const ham = parts[0];
+    const adaylar = [...new Set([ham.toLowerCase(), ham.toLocaleLowerCase('tr-TR')])];
+    for (const ad of adaylar) {
+      const builtInResult = await this.executeBuiltIn(ad, args, message);
+      if (builtInResult !== null) return builtInResult;
+      const cmdRow = this.commandsCache.get(ad) || this.aliasesCache.get(ad);
+      if (cmdRow) return this.executeCustomCommand(cmdRow, args, message, true);
+    }
+    const katli = trKatla(ham);
+    if (!adaylar.includes(katli)) {
+      const builtInResult = await this.executeBuiltIn(katli, args, message);
+      if (builtInResult !== null) return builtInResult;
+    }
+    const katliKomut = this.katliCache.get(katli);
+    if (katliKomut) return this.executeCustomCommand(katliKomut, args, message, true);
+    return null;
   }
 
   /**
@@ -340,7 +358,32 @@ export class CommandManager {
         if (!cfg.clip_enabled) return null;
         if (Date.now() - this.clipLast < (cfg.clip_cooldown || 30) * 1000) return `@${message.user.displayName}, clip komutu beklemede.`;
         this.clipLast = Date.now();
-        return (cfg.clip_message || 'Klip alındı.').replace('{user}', () => message.user.displayName);
+        // Bu komut platformda klip OLUŞTURMAZ. Eskiden "Klip alındı — yayıncı
+        // panosundan paylaşılabilir" deniyordu ama hiçbir yere kayıt düşmüyordu.
+        // Artık an, panelin "Son Etkinlikler" listesine işaretlenir; yayıncı
+        // kayıttan/VOD'dan keser.
+        const zaman = yayinAcikMi() === false ? '' : getStreamUptime();
+        try {
+          db.prepare(`
+            INSERT INTO stream_events (id, platform, event_type, username, display_name, message, timestamp)
+            VALUES (?, ?, 'klip', ?, ?, ?, ?)
+          `).run(
+            randomUUID(),
+            message.platform,
+            message.user.username,
+            message.user.displayName,
+            `📌 Klip anı — ${message.user.displayName}${zaman ? ` (yayın başlayalı ${zaman})` : ''}`,
+            Date.now()
+          );
+        } catch (e) {
+          seyrekUyar('komut:clip', '[Komut] Klip anı kaydedilemedi', e);
+        }
+        // Eski varsayılanlar (biri hiç doldurulmayan `{url}` içeriyordu) yeni metne döner
+        const eskiMi = !cfg.clip_message || cfg.clip_message === ESKI_KLIP_MESAJI || cfg.clip_message.includes('{url}');
+        const sablon = eskiMi ? KLIP_MESAJI : cfg.clip_message;
+        return sablon
+          .replace('{user}', () => message.user.displayName)
+          .replace('{zaman}', () => zaman || 'yayın kapalı');
       }
 
       // Yayıncı (kanal sahibi) elle puan verir/alır.
@@ -353,7 +396,7 @@ export class CommandManager {
         const target = (args[0] || '').replace('@', '').trim();
         const amount = parseInt(args[1], 10);
         if (!target || isNaN(amount) || amount === 0) {
-          return 'Kullanım: !puanver @kullanici 100  (eksi vermek için: !puanver @kullanici -50)';
+          return 'Kullanım: !puanver @kullanıcı 100  (eksi vermek için: !puanver @kullanıcı -50)';
         }
         const { user, total } = economy.grantPoints(target, amount);
         const yon = amount > 0 ? `+${amount}` : String(amount);
@@ -761,10 +804,10 @@ export class CommandManager {
         const r = db
           .prepare('SELECT display_name, watch_time_minutes FROM economy WHERE LOWER(username) = LOWER(?)')
           .get(hedef) as { display_name?: string; watch_time_minutes?: number } | undefined;
-        if (!r) return `@${message.user.displayName}, ${hedef} icin izleme kaydi yok.`;
+        if (!r) return `@${message.user.displayName}, ${hedef} için izleme kaydı yok.`;
         const dk = Number(r.watch_time_minutes) || 0;
         const sa = Math.floor(dk / 60);
-        return `⏳ ${r.display_name || hedef} bu kanali ${sa > 0 ? `${sa} saat ` : ''}${dk % 60} dakika izledi.`;
+        return `⏳ ${r.display_name || hedef} bu kanalı ${sa > 0 ? `${sa} saat ` : ''}${dk % 60} dakika izledi.`;
       }
 
       case 'followage':
@@ -776,10 +819,10 @@ export class CommandManager {
           )
           .get(hedef) as { timestamp?: number } | undefined;
         if (!r?.timestamp) {
-          return `@${message.user.displayName}, ${hedef} icin takip kaydi bulunamadi.`;
+          return `@${message.user.displayName}, ${hedef} için takip kaydı bulunamadı.`;
         }
         const gun = Math.floor((Date.now() - Number(r.timestamp)) / 86400000);
-        return `💜 ${hedef} bu kanali ${gun} gundur takip ediyor.`;
+        return `💜 ${hedef} bu kanalı ${gun} gündür takip ediyor.`;
       }
 
       case 'so':
@@ -799,7 +842,7 @@ export class CommandManager {
         } catch (e) {
           seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e);
         }
-        return `📢 ${kanal} kanalina goz atin: ${kok}/${kanal}`;
+        return `📢 ${kanal} kanalına göz atın: ${kok}/${kanal}`;
       }
 
       // `sayac` burada da vardı ama yukarıdaki `count`/`sayac` onu gölgeliyordu
@@ -837,9 +880,9 @@ export class CommandManager {
         const yanit = args.slice(1).join(' ').trim();
         if (!ad || !yanit) return `@${message.user.displayName}, kullanim: !editcom !merhaba Yeni yanit`;
         const sonuc = db.prepare('UPDATE commands SET response = ? WHERE LOWER(name) = ?').run(yanit, ad);
-        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadi.`;
+        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadı.`;
         this.reload();
-        return `✅ !${ad} guncellendi.`;
+        return `✅ !${ad} güncellendi.`;
       }
 
       case 'delcom':
@@ -848,7 +891,7 @@ export class CommandManager {
         const ad = (args[0] || '').replace(/^!/, '').trim().toLowerCase();
         if (!ad) return `@${message.user.displayName}, kullanim: !delcom merhaba`;
         const sonuc = db.prepare('DELETE FROM commands WHERE LOWER(name) = ?').run(ad);
-        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadi.`;
+        if (!sonuc.changes) return `@${message.user.displayName}, !${ad} bulunamadı.`;
         this.reload();
         return `🗑️ !${ad} silindi.`;
       }

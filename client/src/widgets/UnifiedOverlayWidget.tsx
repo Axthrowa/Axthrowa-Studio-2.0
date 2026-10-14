@@ -208,8 +208,8 @@ export function UnifiedOverlayWidget() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Load initial config from API
-  useEffect(() => {
+  // Load config from API (ilk açılışta ve her yeniden bağlanmada — bkz. aşağı)
+  const yerlesimiOku = () =>
     fetch('/api/overlay/all-in-one')
       .then(res => res.json())
       .then(data => {
@@ -218,6 +218,8 @@ export function UnifiedOverlayWidget() {
         }
       })
       .catch(() => {});
+  useEffect(() => {
+    void yerlesimiOku();
   }, []);
 
   // Listen to live WebSocket config updates
@@ -225,6 +227,10 @@ export function UnifiedOverlayWidget() {
     if (!lastMessage) return;
     if (lastMessage.type === 'all_in_one_overlay_settings' && lastMessage.config) {
       setConfig(prev => ({ ...prev, ...lastMessage.config }));
+    } else if (lastMessage.type === 'init') {
+      // Sunucu yeniden başladı / bağlantı geri geldi: kopukken kaydedilen
+      // yerleşim de OBS'e yansısın (eskiden sayfa yenilenene kadar eski kalıyordu)
+      void yerlesimiOku();
     }
   }, [lastMessage]);
 

@@ -189,6 +189,11 @@ export class WebSocketHub {
       });
     });
 
+    // 1.1 Platform bağlantı durumu değişti (ör. Kick sohbet okuma koptu/geldi)
+    eventBus.on('platform_status_changed', () => {
+      this.broadcastTo(['dashboard', 'all'], { type: 'platform_statuses', data: platformManager.getAllStatuses() });
+    });
+
     // 1.2 Gönderim hatası -> sohbet akışında kırmızı sistem satırı olarak görünür
     eventBus.on('bot_send_error', ({ platform, reason }: { platform: string; reason: string }) => {
       const errMsg: ChatMessagePayload = {

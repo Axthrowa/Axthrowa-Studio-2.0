@@ -17,7 +17,7 @@ const DEFAULTS = {
   clip_enabled: true,
   clip_command: '!clip',
   clip_cooldown: 30,
-  clip_message: 'Klip alındı: {url}',
+  clip_message: '📌 @{user} klip anını işaretledi ({zaman}) — yayıncı panelden görecek.',
   levels_enabled: true,
   xp_per_message: 5,
   xp_per_minute: 2,
@@ -81,6 +81,7 @@ export function Extras() {
           <label className="text-xs font-bold space-y-1">Komut<input value={s.clip_command} onChange={e => setS({ ...s, clip_command: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Cooldown (sn)<input type="number" value={s.clip_cooldown} onChange={e => setS({ ...s, clip_cooldown: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Mesaj<input value={s.clip_message} onChange={e => setS({ ...s, clip_message: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <p className="text-[11px] text-gray-400">Değişkenler: <code>{"{user}"}</code> yazan izleyici, <code>{"{zaman}"}</code> yayın süresi. Komut platformda klip oluşturmaz; anı panelin <b>Son Etkinlikler</b> listesine işaretler.</p>
         </div>
       )}
       {tab === 'levels' && (

@@ -5,6 +5,7 @@ import { eventBus } from '../../core/event-bus.js';
 import { economy } from '../economy/economy.js';
 import { wsHub } from '../../ws/server.js';
 import { hataMetni } from '../../core/logger.js';
+import { sikCoz } from './cevap-eslestir.js';
 
 export interface VoteDistribution {
   A: { count: number; percent: number };
@@ -273,7 +274,7 @@ export class TriviaEngine extends EventEmitter {
       answerMs: number;
     }> = [];
 
-    const wrongVoters: string[] = [];
+    const wrongVoters: Array<{ username: string; displayName: string; platform: string }> = [];
 
     for (const [uname, vote] of this.votes.entries()) {
       if (vote.option === correctOpt) {
@@ -284,7 +285,7 @@ export class TriviaEngine extends EventEmitter {
           answerMs: vote.answerMs
         });
       } else {
-        wrongVoters.push(uname);
+        wrongVoters.push({ username: uname, displayName: vote.displayName, platform: vote.platform });
       }
     }
 
@@ -360,9 +361,10 @@ export class TriviaEngine extends EventEmitter {
       });
     }
 
-    // Process wrong voters: reset streak
-    for (const wrongUname of wrongVoters) {
-      this.updateScoreInDb(wrongUname, wrongUname, 'stream', {
+    // Process wrong voters: reset streak (görünen ad ve platform korunur;
+    // eskiden ad yerine kullanıcı adı, platform yerine 'stream' yazılıyordu)
+    for (const w of wrongVoters) {
+      this.updateScoreInDb(w.username, w.displayName, w.platform, {
         addPoints: 0,
         isCorrect: false,
         answerMs: 0,
@@ -518,29 +520,10 @@ export class TriviaEngine extends EventEmitter {
     }
   }
 
+  /** Harf/rakam ya da seçenek metni; Türkçe duyarlı (bkz. cevap-eslestir.ts). */
   private parseOption(text: string): 'A' | 'B' | 'C' | 'D' | null {
-    const raw = text.trim().toLowerCase();
-
-    // 1. Direct single letter or number check
-    if (raw === 'a' || raw === '1' || raw.startsWith('a ') || raw.startsWith('1 ') || raw === 'a şıkkı' || raw === 'a şıkkı') return 'A';
-    if (raw === 'b' || raw === '2' || raw.startsWith('b ') || raw.startsWith('2 ') || raw === 'b şıkkı' || raw === 'b şıkkı') return 'B';
-    if (raw === 'c' || raw === '3' || raw.startsWith('c ') || raw.startsWith('3 ') || raw === 'c şıkkı' || raw === 'c şıkkı') return 'C';
-    if (raw === 'd' || raw === '4' || raw.startsWith('d ') || raw.startsWith('4 ') || raw === 'd şıkkı' || raw === 'd şıkkı') return 'D';
-
-    // 2. Full text matching against options
-    if (this.currentQuestion) {
-      const optA = this.currentQuestion.optionA.trim().toLowerCase();
-      const optB = this.currentQuestion.optionB.trim().toLowerCase();
-      const optC = this.currentQuestion.optionC.trim().toLowerCase();
-      const optD = this.currentQuestion.optionD.trim().toLowerCase();
-
-      if (raw === optA || (optA.length > 3 && raw.includes(optA))) return 'A';
-      if (raw === optB || (optB.length > 3 && raw.includes(optB))) return 'B';
-      if (raw === optC || (optC.length > 3 && raw.includes(optC))) return 'C';
-      if (raw === optD || (optD.length > 3 && raw.includes(optD))) return 'D';
-    }
-
-    return null;
+    const q = this.currentQuestion;
+    return sikCoz(text, q ? { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD } : undefined);
   }
 
   private calculateDistribution(): VoteDistribution {

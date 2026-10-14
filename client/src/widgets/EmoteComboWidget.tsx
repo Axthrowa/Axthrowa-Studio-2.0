@@ -16,8 +16,12 @@ export function EmoteComboWidget(_props?: { embedded?: boolean; previewMode?: bo
   const [floats, setFloats] = useState<Array<{ id: number; emote: string; x: number }>>([]);
   const last = useRef<{ emote: string; at: number } | null>(null);
 
+  const islenen = useRef<unknown>(null);
   useEffect(() => {
     if (!lastMessage) return;
+    // Etki ayar (`s`) değişince de çalışır: aynı ileti ikinci kez sayılmasın
+    if (islenen.current === lastMessage) return;
+    islenen.current = lastMessage;
     // `emote_used`: widget "Test" düğmesi ve sunucu olayları (eskiden dinlenmiyordu)
     const dogrudan = lastMessage.type === 'emote_used' ? String(lastMessage.emote || lastMessage.data?.emote || '') : '';
     if (lastMessage.type !== 'chat' && !dogrudan) return;

@@ -2,10 +2,10 @@
  * StreamAxT Goal overlay — donation / follower / sub / kicks
  * Developed by AxthrowA
  */
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
-import { GOAL_DEFAULTS } from '../lib/widget-defaults.js';
+import type { GOAL_DEFAULTS } from '../lib/widget-defaults.js';
 
 function widgetIdFromPath() {
   const params = new URLSearchParams(window.location.search);
@@ -21,9 +21,14 @@ function widgetIdFromPath() {
   return 'donation-goal';
 }
 
-export function GoalWidget(_props?: { embedded?: boolean; previewMode?: boolean }) {
-  const widgetId = widgetIdFromPath();
-  const s = useWidgetSettings(widgetId, GOAL_DEFAULTS as any);
+export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; widgetId?: string }) {
+  // Tek tuvalde (/widgets/overlay) adres hedef türünü söylemez; tür yerleşim
+  // ayarından gelir. Eskiden burada hep "donation-goal" seçiliyordu, stüdyo ise
+  // "follower-goal" ayarlarını düzenliyordu: değişiklik OBS'e hiç yansımıyordu.
+  const widgetId = props?.widgetId || widgetIdFromPath();
+  // Varsayılanlar türe özgü kayıttan gelir (WIDGET_DEFAULTS). Genel
+  // GOAL_DEFAULTS onların ÜSTÜNE yazılınca takipçi hedefi bağışları sayıyordu.
+  const s = useWidgetSettings<typeof GOAL_DEFAULTS & Record<string, any>>(widgetId);
   const { lastMessage } = useWebSocket('all');
   const [current, setCurrent] = useState(Number(s.current) || 0);
   const [reached, setReached] = useState(false);
@@ -32,8 +37,12 @@ export function GoalWidget(_props?: { embedded?: boolean; previewMode?: boolean 
     setCurrent(Number(s.current) || 0);
   }, [s.current]);
 
+  const islenen = useRef<unknown>(null);
   useEffect(() => {
     if (!lastMessage) return;
+    // Etki hedef türü değişince de çalışır: aynı olay ikinci kez sayılmasın
+    if (islenen.current === lastMessage) return;
+    islenen.current = lastMessage;
     const ev = lastMessage.data || lastMessage.payload?.event || lastMessage.payload || {};
     const type = lastMessage.subType || ev?.event_type || lastMessage.type;
     const amount = Number(ev?.amount ?? lastMessage.payload?.amount ?? 0);

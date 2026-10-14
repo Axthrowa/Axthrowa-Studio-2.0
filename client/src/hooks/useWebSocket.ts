@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { ChatMessage, PlatformStatus } from '../types.js';
 import { wsAdresi } from '../lib/widget-style.js';
 
@@ -15,8 +16,11 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  /** Bileşen kapandı: kapanış olayı yeniden bağlanmayı başlatmasın (sızıntı). */
+  const kapandiRef = useRef(false);
 
   const connect = useCallback(() => {
+    if (kapandiRef.current) return;
     const wsUrl = wsAdresi(type);
 
     try {
@@ -31,12 +35,17 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
       ws.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          setLastMessage(payload);
+          // Arka arkaya gelen iletiler tek render'da birleşirse `lastMessage`
+          // dinleyicileri yalnız SONUNCUYU görür (oy/uyarı/ayar iletisi
+          // kaybolur). Her ileti kendi render'ını alsın.
+          flushSync(() => setLastMessage(payload));
 
           if (payload.type === 'init') {
             if (payload.data?.platformStatuses) {
               setPlatformStatuses(payload.data.platformStatuses);
             }
+          } else if (payload.type === 'platform_statuses' && payload.data) {
+            setPlatformStatuses(payload.data);
           } else if (payload.type === 'chat') {
             setChatMessages((prev) => [...prev.slice(-150), payload.data]);
           } else if (payload.type === 'alert') {
@@ -58,20 +67,22 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
       ws.onclose = () => {
         setConnected(false);
         wsRef.current = null;
-        reconnectTimeoutRef.current = setTimeout(connect, 3000);
+        if (!kapandiRef.current) reconnectTimeoutRef.current = setTimeout(connect, 3000);
       };
 
       ws.onerror = () => {
         setConnected(false);
       };
     } catch {
-      reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      if (!kapandiRef.current) reconnectTimeoutRef.current = setTimeout(connect, 3000);
     }
   }, [type]);
 
   useEffect(() => {
+    kapandiRef.current = false;
     connect();
     return () => {
+      kapandiRef.current = true;
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (wsRef.current) wsRef.current.close();
     };

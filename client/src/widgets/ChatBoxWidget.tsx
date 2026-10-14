@@ -2,10 +2,11 @@
  * StreamAxT Chat Overlay
  * Developed by AxthrowA
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { CHAT_DEFAULTS } from '../lib/widget-defaults.js';
+import { ChatMessageContent } from '../components/ChatMessageContent.js';
 
 interface OverlayMsg {
   id: string;
@@ -23,13 +24,27 @@ interface OverlayMsg {
 const PLATFORM_COLORS: Record<string, string> = { twitch: '#9146ff', kick: '#53fc18', youtube: '#ff0000', tiktok: '#fe2c55' };
 const PLATFORM_ICONS: Record<string, string> = { twitch: '🟣', kick: '🟢', youtube: '🔴', tiktok: '🎵' };
 
-export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boolean }) {
+/**
+ * Önizleme örnekleri: stüdyo tuvali ve OBS test kipi boş bir kutu yerine
+ * gerçek bileşenin bu ayarlarla NASIL görüneceğini göstersin.
+ */
+const ORNEK_MESAJLAR: OverlayMsg[] = [
+  { id: 'o1', platform: 'kick', user: 'Kaan', color: '#53fc18', text: 'Selamlar! Harika yayın oluyor.', badges: ['🛡️'], ts: '14:22', special: true, created: 0 },
+  { id: 'o2', platform: 'twitch', user: 'Ayse', color: '#f59e0b', text: 'Boss savaşında bol şans 🔥', badges: ['⭐'], ts: '14:23', special: true, created: 0 },
+  { id: 'o3', platform: 'youtube', user: 'Murat', color: '#f87171', text: '!ses alkış', badges: [], ts: '14:24', created: 0 }
+];
+
+export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('chat-overlay', CHAT_DEFAULTS);
   const { lastMessage } = useWebSocket('chatbox');
   const [messages, setMessages] = useState<OverlayMsg[]>([]);
+  /** Bu etki ayar (`s`) değişince de çalışır: aynı ileti İKİNCİ KEZ eklenmesin. */
+  const islenen = useRef<unknown>(null);
 
   useEffect(() => {
     if (!lastMessage || lastMessage.type !== 'chat') return;
+    if (islenen.current === lastMessage) return;
+    islenen.current = lastMessage;
     const p = lastMessage.data || lastMessage.payload;
     // Ortak kara listedeki kullanıcının ve kalkana takılan mesaj yayında gösterilmez
     if (!p || p.karaListede || p.kalkanda) return;
@@ -40,7 +55,8 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
     if (s.hideCommands && (p.message || '').trim().startsWith('!')) return;
     if (s.hideBots && (user?.isBot || username.includes('bot'))) return;
     if (s.hideBroadcaster && user?.isBroadcaster) return;
-    if (s.hideEmoteOnly && !p.message?.replace(/:\w+:/g, '').trim()) return;
+    // Kick emote'u `[emote:123:ad]` biçiminde gelir; eski `:ad:` deseni onu tanımıyordu
+    if (s.hideEmoteOnly && !String(p.message || '').replace(/\[emote:\d+:[^\]]+\]|:\w+:/g, '').trim()) return;
 
     const badges: string[] = [];
     if (user?.isMod) badges.push('🛡️');
@@ -62,7 +78,8 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
         color,
         text: p.message,
         badges,
-        avatar: user?.avatar,
+        // Sunucu yükü `avatarUrl` taşır; eski `avatar` alanı hiç dolu gelmiyordu
+        avatar: user?.avatarUrl || user?.avatar,
         ts: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
         special: Boolean(user?.isSub || user?.isMod || user?.isBroadcaster),
         created: Date.now()
@@ -81,7 +98,8 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
     return () => clearInterval(t);
   }, [s.fadeMessages, s.fadeTimeout]);
 
-  const list = s.reverse ? [...messages].reverse() : messages;
+  const kaynak = props?.previewMode && messages.length === 0 ? ORNEK_MESAJLAR : messages;
+  const list = s.reverse ? [...kaynak].reverse() : kaynak;
   const msgBg = s.messageBgColor.length === 7
     ? `${s.messageBgColor}${Math.round(s.messageBgOpacity * 255).toString(16).padStart(2, '0')}`
     : 'transparent';
@@ -119,7 +137,7 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
             WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined
           }}>
             <span style={{ color: msg.color, fontWeight: 800 }}>{msg.user}: </span>
-            {msg.text}
+            <ChatMessageContent message={msg.text} size={Math.round(Number(s.fontSize) * 1.3) || 24} />
           </p>
         </div>
       ))}

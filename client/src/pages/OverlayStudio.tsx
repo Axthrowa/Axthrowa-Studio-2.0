@@ -39,38 +39,13 @@ import {
   Settings2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { PlatformLogo } from '../components/PlatformLogo.js';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { OverlayKatmanlari } from '../widgets/OverlayLayers.js';
+import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
+import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
+import { ayarKanalinaKatil, YERLESIM_KIMLIGI } from '../lib/ayarKanali.js';
 import { SubathonPanel } from '../components/SubathonPanel.js';
 
-interface ChatOverlayConfig {
-  maxMessages: number;
-  fontSize: number;
-  showPlatformLogo: boolean;
-  showBadges: boolean;
-  showTimestamp: boolean;
-  highlightSpecial: boolean;
-  fadeMessages: boolean;
-  fadeTimeout: number;
-  smoothMask: boolean;
-  textShadow: boolean;
-  transparentBg: boolean;
-}
-
-const DEFAULT_CHAT_CONFIG: ChatOverlayConfig = {
-  maxMessages: 40,
-  fontSize: 22,
-  showPlatformLogo: true,
-  showBadges: true,
-  showTimestamp: true,
-  highlightSpecial: true,
-  fadeMessages: true,
-  fadeTimeout: 17,
-  smoothMask: true,
-  textShadow: true,
-  transparentBg: true
-};
 
 export interface WidgetLayoutItem {
   enabled: boolean;
@@ -431,6 +406,65 @@ export function OverlayStudio() {
   // All-in-One Single OBS Overlay State
   const [allInOne, setAllInOne] = useState<AllInOneConfig>(DEFAULT_ALL_IN_ONE_CONFIG);
   const [selectedCanvasWidget, setSelectedCanvasWidget] = useState<string>('chat');
+  /** Seçili katmanın kendi ayar kaydı (hedef çubuğunda türe göre). */
+  const seciliAyarId =
+    selectedCanvasWidget === 'goals' ? hedefWidgetKimligi(allInOne.goals?.type) : KATMAN_AYAR_ID[selectedCanvasWidget];
+
+  /**
+   * Kullanıcı bildirdi: "Overlay Stüdyo'da yaptığım değişiklikler OBS'e
+   * yansımıyor." Konum/boyut/aç-kapa yalnız "Kaydet"e basınca gidiyordu; hemen
+   * yanındaki bileşen ayarları ise kendiliğinden kaydediliyordu — kullanıcı
+   * ikisinin de kaydedildiğini sanıyordu. Artık yerleşim de kendiliğinden
+   * kaydedilir (sürükleme bitince) ve sunucu OBS'e anında yayınlar.
+   */
+  type YerlesimDurumu = 'kaydedildi' | 'bekliyor' | 'kaydediliyor' | 'hata';
+  const [yerlesimDurumu, setYerlesimDurumu] = useState<YerlesimDurumu>('kaydedildi');
+  /** Sunucudaki yerleşim okunmadan otomatik kayıt YAPILMAZ (varsayılanlar kayıtlı ayarın üstüne yazılmasın). */
+  const yerlesimYuklendi = useRef(false);
+  /** Sunucuyla eşit olan son yerleşim (JSON) — aynısını yeniden göndermemek için. */
+  const sonKaydedilen = useRef('');
+  /** Kendi kaydımızın sunucudan geri yankısı, o arada yapılan yeni düzenlemeyi ezmesin. */
+  const sonKendiKaydi = useRef(0);
+
+  const yerlesimiKaydet = async (veri: AllInOneConfig): Promise<boolean> => {
+    const json = JSON.stringify(veri);
+    sonKendiKaydi.current = Date.now();
+    setYerlesimDurumu('kaydediliyor');
+    try {
+      const r = await fetch('/api/overlay/all-in-one', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: json
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      sonKaydedilen.current = json;
+      setYerlesimDurumu('kaydedildi');
+      return true;
+    } catch {
+      setYerlesimDurumu('hata');
+      return false;
+    }
+  };
+
+  // Yerleşimi başka bir yer değiştirdi (sesli komut, başka panel sekmesi):
+  // stüdyodaki eski hâl, sonraki otomatik kayıtta onun üstüne yazmasın.
+  useEffect(
+    () =>
+      ayarKanalinaKatil({
+        widgetId: YERLESIM_KIMLIGI,
+        ayar: (config) => {
+          if (!config || typeof config !== 'object' || !(config as any).chat) return;
+          if (Date.now() - sonKendiKaydi.current < 2000) return; // kendi kaydımızın yankısı
+          setAllInOne((prev) => {
+            const yeni = { ...prev, ...(config as Partial<AllInOneConfig>) };
+            sonKaydedilen.current = JSON.stringify(yeni);
+            return yeni;
+          });
+        },
+        tazele: () => {}
+      }),
+    []
+  );
 
   // Canvas interactive drag-and-drop state
   const canvasRef = useRef<HTMLDivElement | null>(null);
@@ -451,6 +485,18 @@ export function OverlayStudio() {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const dragStartRef = useRef<{ pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
+
+  // Otomatik kayıt: değişiklikten 400 ms sonra; sürükleme sırasında bekler
+  useEffect(() => {
+    if (!yerlesimYuklendi.current) return;
+    const json = JSON.stringify(allInOne);
+    if (json === sonKaydedilen.current) return;
+    setYerlesimDurumu('bekliyor');
+    if (isDragging || isResizing) return;
+    const t = setTimeout(() => void yerlesimiKaydet(allInOne), 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allInOne, isDragging, isResizing]);
 
   const handleWidgetPointerDown = (e: React.PointerEvent, widgetKey: string) => {
     e.stopPropagation();
@@ -563,11 +609,7 @@ export function OverlayStudio() {
     const updated = { ...allInOne, testMode: nextVal };
     setAllInOne(updated);
     try {
-      await fetch('/api/overlay/all-in-one', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-      });
+      if (!(await yerlesimiKaydet(updated))) throw new Error('kaydedilemedi');
       setTestNotification(
         nextVal
           ? '👁️ OBS Test/Önizleme Modu AÇILDI! (OBS ekranında tüm bileşenler örnek verilerle görünür)'
@@ -576,9 +618,6 @@ export function OverlayStudio() {
       setTimeout(() => setTestNotification(null), 4500);
     } catch {}
   };
-
-  // Chat Overlay Configuration State (Image 1)
-  const [chatConfig, setChatConfig] = useState<ChatOverlayConfig>(DEFAULT_CHAT_CONFIG);
 
   // Widget Gallery State (Image 2)
   const [searchQuery, setSearchQuery] = useState('');
@@ -596,21 +635,19 @@ export function OverlayStudio() {
   useEffect(() => {
     // Fetch All-in-One settings
     fetch('/api/overlay/all-in-one')
-      .then(r => r.json())
-      .then(d => {
-        if (d && typeof d === 'object' && d.chat) {
-          setAllInOne(prev => ({ ...prev, ...d }));
-        }
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
       })
-      .catch(() => {});
-
-    // Fetch Chat Settings
-    fetch('/api/settings/chat-overlay')
-      .then(r => r.json())
       .then(d => {
-        if (d) setChatConfig(prev => ({ ...prev, ...d }));
+        setAllInOne(prev => {
+          const yeni = d && typeof d === 'object' && d.chat ? { ...prev, ...d } : prev;
+          sonKaydedilen.current = JSON.stringify(yeni);
+          return yeni;
+        });
+        yerlesimYuklendi.current = true;
       })
-      .catch(() => {});
+      .catch(() => setYerlesimDurumu('hata'));
 
     // Fetch Alerts
     fetch('/api/alerts')
@@ -629,25 +666,15 @@ export function OverlayStudio() {
   };
 
   const handleSaveAllInOne = async () => {
-    await fetch('/api/overlay/all-in-one', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(allInOne)
-    });
-    confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-    setTestNotification('✨ All-in-One OBS ayarları kaydedildi ve canlı OBS yayınına uygulandı!');
+    yerlesimYuklendi.current = true;
+    const ok = await yerlesimiKaydet(allInOne);
+    if (ok) confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
+    setTestNotification(
+      ok
+        ? '✨ Yerleşim kaydedildi ve OBS\'teki overlay\'e uygulandı!'
+        : '❌ Kaydedilemedi — StreamAxT çalışıyor mu? Tekrar deneyin.'
+    );
     setTimeout(() => setTestNotification(null), 4000);
-  };
-
-  const handleSaveChatSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch('/api/settings/chat-overlay', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(chatConfig)
-    });
-    setTestNotification('💾 Chat Overlay ayarları başarıyla kaydedildi!');
-    setTimeout(() => setTestNotification(null), 3500);
   };
 
   // Trigger test for specific widget via API
@@ -1033,13 +1060,25 @@ export function OverlayStudio() {
                     Bileşenleri farenizle tutup sürükleyerek konumlandırın, sağ alttaki tutamaçla boyutlandırın.
                   </p>
                 </div>
-                <button
-                  onClick={handleSaveAllInOne}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-600/30"
+                <span
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border ${
+                    yerlesimDurumu === 'hata'
+                      ? 'bg-red-500/15 border-red-500/40 text-red-300'
+                      : yerlesimDurumu === 'kaydedildi'
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                        : 'bg-white/5 border-white/10 text-gray-300'
+                  }`}
+                  title="Tuvaldeki konum/boyut değişiklikleri kendiliğinden kaydedilir ve OBS'teki overlay'e anında yansır"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>Ayarları Kaydet & OBS'e Yansıt</span>
-                </button>
+                  <span>
+                    {yerlesimDurumu === 'kaydediliyor' || yerlesimDurumu === 'bekliyor'
+                      ? 'Kaydediliyor…'
+                      : yerlesimDurumu === 'hata'
+                        ? 'Kaydedilemedi'
+                        : 'OBS ile eşit'}
+                  </span>
+                </span>
               </div>
 
               {/* 16:9 Screen Simulation Box (Interactive Drag Canvas) */}
@@ -1295,86 +1334,12 @@ export function OverlayStudio() {
                           <span className="text-[10px] text-gray-400 font-mono">OBS Bildirimleri</span>
                         </div>
 
-                        {/* Layout Mode */}
-                        <div>
-                          <label className="text-[10px] text-gray-400 block mb-1 font-bold">Düzen Modu (Layout)</label>
-                          <select
-                            value={cur.layoutMode || 'stacked'}
-                            onChange={e => updateCur({ layoutMode: e.target.value })}
-                            className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                          >
-                            <option value="stacked">Resim Üstte, Metin Altta (Stacked)</option>
-                            <option value="side-by-side">Resim Solda, Metin Sağda (Side by Side)</option>
-                            <option value="text-over">Metin Resmin Üzerinde (Text Over)</option>
-                          </select>
-                        </div>
-
-                        {/* Entrance Animation */}
-                        <div>
-                          <label className="text-[10px] text-gray-400 block mb-1 font-bold">Giriş Animasyonu</label>
-                          <select
-                            value={cur.animation || 'bounce'}
-                            onChange={e => updateCur({ animation: e.target.value })}
-                            className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                          >
-                            <option value="bounce">Zıplayarak Giriş (Bounce)</option>
-                            <option value="slide">Yukarıdan Kayarak (Slide In)</option>
-                            <option value="zoom">Büyüyerek Açılma (Zoom)</option>
-                            <option value="flip">3D Takla (Flip)</option>
-                            <option value="glitch">Siber Glitch (Glitch)</option>
-                            <option value="fade">Yumuşak Belirme (Fade In)</option>
-                          </select>
-                        </div>
-
-                        {/* Text Effect */}
-                        <div>
-                          <label className="text-[10px] text-gray-400 block mb-1 font-bold">Metin Animasyon Efekti</label>
-                          <select
-                            value={cur.textEffect || 'wiggle'}
-                            onChange={e => updateCur({ textEffect: e.target.value })}
-                            className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                          >
-                            <option value="wiggle">Kıpırdayan Harfler (Wiggle)</option>
-                            <option value="wave">Dalgalı Metin (Wave)</option>
-                            <option value="shine">Işıltılı Parlama (Shine)</option>
-                            <option value="pulse">Nabız Gibi Büyüyüp Küçülme (Pulse)</option>
-                            <option value="shake">Titreyen Metin (Shake)</option>
-                          </select>
-                        </div>
-
-                        {/* Duration Slider */}
-                        <div>
-                          <div className="flex items-center justify-between text-[10px] mb-1">
-                            <span className="text-gray-400 font-bold">Bildirim Süresi</span>
-                            <span className="font-mono text-amber-300 font-bold">{((cur.durationMs || 5000) / 1000).toFixed(1)} sn</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="2000"
-                            max="15000"
-                            step="500"
-                            value={cur.durationMs || 5000}
-                            onChange={e => updateCur({ durationMs: parseInt(e.target.value, 10) || 5000 })}
-                            className="w-full accent-amber-500 cursor-pointer h-1.5 bg-gray-700 rounded-lg"
-                          />
-                        </div>
-
-                        {/* Sound Volume Slider */}
-                        <div>
-                          <div className="flex items-center justify-between text-[10px] mb-1">
-                            <span className="text-gray-400 font-bold">Bildirim Ses Seviyesi</span>
-                            <span className="font-mono text-amber-300 font-bold">{Math.round((cur.soundVolume ?? 0.7) * 100)}%</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={cur.soundVolume ?? 0.7}
-                            onChange={e => updateCur({ soundVolume: parseFloat(e.target.value) || 0.7 })}
-                            className="w-full accent-amber-500 cursor-pointer h-1.5 bg-gray-700 rounded-lg"
-                          />
-                        </div>
+                        {/* Düzen, animasyon, süre ve ses eskiden burada AYRI alanlardı ama hiçbir
+                            bileşen onları okumuyordu (OBS'e yansımıyordu). Gerçek ayarlar aşağıdaki
+                            "Seçili Bileşen Ayarları"nda; OBS ile önizleme aynı kaydı kullanır. */}
+                        <p className="text-[10px] text-gray-400 leading-relaxed">
+                          Düzen, animasyon, yazı efekti ve ses düzeyi aşağıdaki <b className="text-cyan-300">Seçili Bileşen Ayarları</b> bölümünden değişir ve anında OBS'e gider.
+                        </p>
 
                         {/* Quick Test Trigger Buttons */}
                         <div className="pt-2 border-t border-white/5 space-y-1.5">
@@ -1409,81 +1374,32 @@ export function OverlayStudio() {
                       </div>
                     )}
 
-                    {/* Specific Goal Settings */}
+                    {/* Hedef türü: tuvaldeki hedef çubuğunun HANGİ hedefi göstereceği. Başlık, hedef ve
+                        mevcut değer o hedefin kendi ayarlarındadır (aşağıda) — eskiden buradaki kopya
+                        alanlar hiçbir yere bağlı değildi. */}
                     {selectedCanvasWidget === 'goals' && (
-                      <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-2 text-xs">
-                        <div>
-                          <label className="text-[10px] text-gray-400 block mb-0.5">Hedef Başlığı</label>
-                          <input
-                            type="text"
-                            value={cur.title || ''}
-                            onChange={e => updateCur({ title: e.target.value })}
-                            className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="text-[10px] text-gray-400 block mb-0.5">Hedef Miktar</label>
-                            <input
-                              type="number"
-                              value={cur.target || 100}
-                              onChange={e => updateCur({ target: parseInt(e.target.value, 10) || 100 })}
-                              className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-gray-400 block mb-0.5">Mevcut Değer</label>
-                            <input
-                              type="number"
-                              value={cur.current || 0}
-                              onChange={e => updateCur({ current: parseInt(e.target.value, 10) || 0 })}
-                              className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                            />
-                          </div>
-                        </div>
+                      <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-1.5 text-xs">
+                        <label className="text-[10px] text-gray-400 block font-bold">Gösterilecek hedef</label>
+                        <select
+                          value={hedefWidgetKimligi(cur.type)}
+                          onChange={e => updateCur({ type: ({ 'follower-goal': 'follower', 'subscriber-goal': 'sub', 'donation-goal': 'tip', 'kicks-goal': 'kicks' } as Record<string, string>)[e.target.value] })}
+                          className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                        >
+                          <option value="follower-goal">Takipçi hedefi</option>
+                          <option value="subscriber-goal">Abone hedefi</option>
+                          <option value="donation-goal">Bağış hedefi</option>
+                          <option value="kicks-goal">KICKs hedefi</option>
+                        </select>
+                        <p className="text-[10px] text-gray-500">Başlık, hedef miktarı ve mevcut değer aşağıdaki ayarlardadır.</p>
                       </div>
                     )}
 
-                    {/* Specific Chat Settings */}
-                    {selectedCanvasWidget === 'chat' && (
-                      <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-2 text-xs">
-                        <div>
-                          <label className="text-[10px] text-gray-400 block mb-0.5">Yazı Boyutu (px)</label>
-                          <input
-                            type="number"
-                            value={cur.fontSize || 18}
-                            onChange={e => updateCur({ fontSize: parseInt(e.target.value, 10) || 18 })}
-                            className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                          />
-                        </div>
-                        <div className="flex items-center gap-4 pt-1">
-                          <label className="flex items-center gap-1.5 cursor-pointer text-gray-300 text-[11px]">
-                            <input
-                              type="checkbox"
-                              checked={cur.transparent !== false}
-                              onChange={e => updateCur({ transparent: e.target.checked })}
-                              className="accent-purple-600 rounded"
-                            />
-                            <span>Şeffaf Arka Plan</span>
-                          </label>
-                          <label className="flex items-center gap-1.5 cursor-pointer text-gray-300 text-[11px]">
-                            <input
-                              type="checkbox"
-                              checked={cur.mask !== false}
-                              onChange={e => updateCur({ mask: e.target.checked })}
-                              className="accent-purple-600 rounded"
-                            />
-                            <span>Yumuşak Maske</span>
-                          </label>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })()}
 
               {/* Seçili bileşenin KENDİ ayarları — değişiklik anında OBS'e gider. */}
-              {KATMAN_AYAR_ID[selectedCanvasWidget] && (
+              {seciliAyarId && (
                 <div className="pt-1">
                   <div className="flex items-center justify-between pb-2">
                     <h4 className="text-[11px] font-black uppercase tracking-wider text-cyan-300">
@@ -1492,8 +1408,8 @@ export function OverlayStudio() {
                     <span className="text-[10px] text-emerald-400">otomatik kaydedilir</span>
                   </div>
                   <WidgetSettingsForm
-                    key={KATMAN_AYAR_ID[selectedCanvasWidget]}
-                    widgetId={KATMAN_AYAR_ID[selectedCanvasWidget]}
+                    key={seciliAyarId}
+                    widgetId={seciliAyarId}
                     baseUrl={baseUrl}
                   />
                 </div>
@@ -1504,8 +1420,17 @@ export function OverlayStudio() {
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Değişiklikleri OBS'e Uygula</span>
+                <span>Şimdi Kaydet</span>
               </button>
+              <p className={`text-[10px] text-center ${yerlesimDurumu === 'hata' ? 'text-red-400' : 'text-gray-500'}`}>
+                {yerlesimDurumu === 'kaydediliyor'
+                  ? 'Kaydediliyor…'
+                  : yerlesimDurumu === 'bekliyor'
+                    ? 'Değişiklik birazdan kaydedilecek…'
+                    : yerlesimDurumu === 'hata'
+                      ? 'Kaydedilemedi — StreamAxT çalışıyor mu? Tekrar deneyin.'
+                      : 'Konum ve boyut değişiklikleri kendiliğinden kaydedilir ve OBS\'e yansır.'}
+              </p>
             </div>
           </div>
         </div>
@@ -1769,155 +1694,10 @@ export function OverlayStudio() {
               </span>
             </div>
 
-            <form onSubmit={handleSaveChatSettings} className="space-y-4">
-              {/* Maks. Mesaj */}
-              <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">
-                  Maks. mesaj
-                </label>
-                <input
-                  type="number"
-                  min="5"
-                  max="100"
-                  value={chatConfig.maxMessages}
-                  onChange={e => setChatConfig({ ...chatConfig, maxMessages: parseInt(e.target.value, 10) || 40 })}
-                  className="w-full bg-[#12141a] border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white font-mono focus:border-purple-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Yazı boyutu (px) */}
-              <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">
-                  Yazı boyutu (px)
-                </label>
-                <input
-                  type="number"
-                  min="10"
-                  max="40"
-                  value={chatConfig.fontSize}
-                  onChange={e => setChatConfig({ ...chatConfig, fontSize: parseInt(e.target.value, 10) || 22 })}
-                  className="w-full bg-[#12141a] border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white font-mono focus:border-purple-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Checkboxes List (Replication of Image 1) */}
-              <div className="space-y-3 pt-2">
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.showPlatformLogo}
-                    onChange={e => setChatConfig({ ...chatConfig, showPlatformLogo: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Platform logosu (Twitch / Kick / YouTube)</span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.showBadges}
-                    onChange={e => setChatConfig({ ...chatConfig, showBadges: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Sohbet rozetleri (mod / abone / VIP)</span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.showTimestamp}
-                    onChange={e => setChatConfig({ ...chatConfig, showTimestamp: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Saat göster</span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.highlightSpecial}
-                    onChange={e => setChatConfig({ ...chatConfig, highlightSpecial: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Super Chat / abonelik / raid vurgusu</span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.fadeMessages}
-                    onChange={e => setChatConfig({ ...chatConfig, fadeMessages: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Mesajlar zamanla kaybolsun</span>
-                </label>
-              </div>
-
-              {/* Slider: Kaybolma süresi (saniye) */}
-              <div className="pt-2 pl-7 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">Kaybolma süresi (saniye)</span>
-                  <div className="flex items-center gap-1 bg-[#12141a] border border-white/10 px-2.5 py-1 rounded-lg">
-                    <span className="text-xs font-mono font-bold text-white">{chatConfig.fadeTimeout}</span>
-                    <span className="text-[10px] text-gray-400">sn</span>
-                  </div>
-                </div>
-                <input
-                  type="range"
-                  min="3"
-                  max="60"
-                  value={chatConfig.fadeTimeout}
-                  onChange={e => setChatConfig({ ...chatConfig, fadeTimeout: parseInt(e.target.value, 10) || 17 })}
-                  className="w-full accent-purple-500 cursor-pointer h-1.5 bg-gray-700 rounded-lg"
-                />
-                <p className="text-[11px] text-gray-500">
-                  Süre dolunca mesaj solar ve listeden çıkar (varsayılan 12 sn).
-                </p>
-              </div>
-
-              {/* Bottom Checkboxes */}
-              <div className="space-y-3 pt-3 border-t border-white/10">
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.smoothMask}
-                    onChange={e => setChatConfig({ ...chatConfig, smoothMask: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Liste üstü yumuşak maske (eski mesajlar soluk)</span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.textShadow}
-                    onChange={e => setChatConfig({ ...chatConfig, textShadow: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Yazı gölgesi (OBS'te okunurluk)</span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer text-xs font-bold text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={chatConfig.transparentBg}
-                    onChange={e => setChatConfig({ ...chatConfig, transparentBg: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 text-purple-600 focus:ring-purple-500 accent-purple-600"
-                  />
-                  <span>Şeffaf arka plan</span>
-                </label>
-              </div>
-
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Ayarları Kaydet ve OBS'e Senkronize Et</span>
-                </button>
-              </div>
-            </form>
+            {/* Eskiden burada ayrı bir form vardı ve `chat_overlay_settings` kaydına yazıyordu;
+                OBS'teki sohbet bileşeni o kaydı HİÇ okumuyordu ("önizlemede başka, OBS'te başka").
+                Artık gerçek bileşenin kendi ayarları: değişiklik kendiliğinden kaydedilir ve OBS'e gider. */}
+            <WidgetSettingsForm widgetId="chat-overlay" baseUrl={baseUrl} />
           </div>
 
           {/* Right: Live Chatbox Simulation */}
@@ -1926,78 +1706,17 @@ export function OverlayStudio() {
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <Play className="w-4 h-4 text-emerald-400" />
-                  Canlı ChatBox Simülatörü
+                  Canlı Önizleme (OBS ile aynı bileşen)
                 </h3>
                 <span className="text-[10px] text-gray-400 font-mono">OBS Önizleme (400x550)</span>
               </div>
 
-              {/* Chat Simulation Canvas */}
-              <div 
-                className="mt-4 rounded-2xl border border-white/10 overflow-hidden relative"
-                style={{
-                  height: 380,
-                  backgroundColor: chatConfig.transparentBg ? 'rgba(10, 12, 18, 0.7)' : '#0f1117',
-                  backgroundImage: chatConfig.transparentBg ? 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)' : 'none',
-                  backgroundSize: '16px 16px',
-                  maskImage: chatConfig.smoothMask 
-                    ? 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 15%, black 100%)' 
-                    : 'none',
-                  WebkitMaskImage: chatConfig.smoothMask 
-                    ? 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 15%, black 100%)' 
-                    : 'none'
-                }}
+              {/* GERÇEK sohbet bileşeni (OBS'tekiyle aynı kod ve ayarlar); sohbet boşken örnek mesajlar */}
+              <div
+                className="mt-4 rounded-2xl border border-white/10 overflow-hidden relative bg-[#07090e]"
+                style={{ height: 420, backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '16px 16px' }}
               >
-                <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2.5 flex flex-col justify-end">
-                  {/* Sample Message 1 */}
-                  <div className="flex items-start gap-2 animate-fadeIn" style={{ fontSize: `${chatConfig.fontSize}px` }}>
-                    {chatConfig.showPlatformLogo && <PlatformLogo platform="kick" size={18} showLabel={false} />}
-                    {chatConfig.showBadges && (
-                      <span className="px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300 text-[10px] font-black uppercase">
-                        MOD
-                      </span>
-                    )}
-                    <span className="font-black text-[#53fc18]" style={{ textShadow: chatConfig.textShadow ? '0 1px 3px rgba(0,0,0,0.9)' : 'none' }}>
-                      Kaan:
-                    </span>
-                    <span className="text-white font-medium" style={{ textShadow: chatConfig.textShadow ? '0 1px 3px rgba(0,0,0,0.9)' : 'none' }}>
-                      Selamlar! Harika yayın oluyor.
-                    </span>
-                    {chatConfig.showTimestamp && <span className="text-[10px] text-gray-500 self-center">14:22</span>}
-                  </div>
-
-                  {/* Sample Message 2 (Special Event) */}
-                  <div 
-                    className={`flex items-start gap-2 p-2 rounded-xl transition-all ${
-                      chatConfig.highlightSpecial ? 'bg-gradient-to-r from-amber-500/20 to-transparent border-l-4 border-amber-400' : ''
-                    }`}
-                    style={{ fontSize: `${chatConfig.fontSize}px` }}
-                  >
-                    {chatConfig.showPlatformLogo && <PlatformLogo platform="twitch" size={18} showLabel={false} />}
-                    {chatConfig.showBadges && (
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 text-[10px] font-black uppercase">
-                        SUB
-                      </span>
-                    )}
-                    <span className="font-black text-amber-400" style={{ textShadow: chatConfig.textShadow ? '0 1px 3px rgba(0,0,0,0.9)' : 'none' }}>
-                      Ayşe:
-                    </span>
-                    <span className="text-amber-200 font-bold" style={{ textShadow: chatConfig.textShadow ? '0 1px 3px rgba(0,0,0,0.9)' : 'none' }}>
-                      ⭐ 3. ayında abone oldu! "Nice yayınlara!"
-                    </span>
-                  </div>
-
-                  {/* Sample Message 3 */}
-                  <div className="flex items-start gap-2 animate-fadeIn" style={{ fontSize: `${chatConfig.fontSize}px` }}>
-                    {chatConfig.showPlatformLogo && <PlatformLogo platform="youtube" size={18} showLabel={false} />}
-                    <span className="font-black text-red-400" style={{ textShadow: chatConfig.textShadow ? '0 1px 3px rgba(0,0,0,0.9)' : 'none' }}>
-                      Murat:
-                    </span>
-                    <span className="text-white font-medium" style={{ textShadow: chatConfig.textShadow ? '0 1px 3px rgba(0,0,0,0.9)' : 'none' }}>
-                      Boss savaşında bol şans 🔥
-                    </span>
-                    {chatConfig.showTimestamp && <span className="text-[10px] text-gray-500 self-center">14:24</span>}
-                  </div>
-                </div>
+                <ChatBoxWidget embedded previewMode />
               </div>
             </div>
 

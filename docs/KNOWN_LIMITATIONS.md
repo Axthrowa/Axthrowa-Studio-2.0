@@ -225,3 +225,42 @@ Apache-2.0, ~37 MB) pakete GİRMEZ: yayıncı "Modeli indir" deyince alphacephei
 5. Genel (oyun içi) bas-konuş kısayolu yalnız Yayın Yönetim Aracı'nda; tek başına StreamAxT'te bas-konuş, sayfadaki
    düğmeyle.
 6. Ses panosuna öğe eklenince tanıyıcı ifade listesi en geç 60 sn'de yenilenir (komut değişikliğinde anında).
+
+## 12. KICK SOHBET OKUMA + OVERLAY STÜDYO ONARIMI (2026-10-14)
+
+**Belirti:** bot Kick'e yazabiliyor ama sohbeti okuyamıyordu; komutlar ve bilgi yarışması cevapları bota hiç
+ulaşmıyordu. Günlükte `[Kick Pusher] … App key … not in this cluster` (kod 4001).
+
+**Sebep:** Kick sabit Pusher anahtarını kapattı. Web istemcisi artık önce `POST web.kick.com/api/v1/realtime/connection`
+ile bağlantı pazarlığı yapıp sunucunun verdiği sağlayıcıya (2026-10-14'te yalnız **Centrifugo**) bağlanıyor. Bot da
+aynısını yapıyor (`platforms/kick-realtime*.ts`): oturumsuz belirteç (`…/realtime/auth/connection`), Origin başlığı
+gönderilmez, kanallar `chatrooms.<oda>.v2` + `chatrooms.<oda>` + `channel.<kanal>`, `{}` yoklamasına yanıt, belirteç
+süresi dolmadan `refresh`, kopunca 1→60 sn artan beklemeyle yeniden bağlanma, sessiz (yarı açık) soket ping+10 sn'de
+bırakılır. Kopukluk panelde Kick kartında uyarı olarak görünür (eskiden "Bağlı" görünüp sessizce okumuyordu).
+
+1. Protokol **resmi belge değil**, Kick'in herkese açık web istemcisinin davranışından gözlendi (OBSERVED, 2026-10-14):
+   Kick bunu yine değiştirebilir. Pazarlık Pusher önerirse o da desteklenir. Resmi alternatif (webhook) herkese açık
+   bir adres gerektirdiği için masaüstü botta kullanılmıyor.
+2. Doğrulama: yalıtılmış sunucu + yerel sahte Centrifugo ile uçtan uca 19/19 (komutlar, yarışma oyları, kopma,
+   yenileme, sessiz soket) ve 70 komutluk tarama; gerçek Kick'e yalnız OKUMA bağlantısı (`realtime.us-east-1…`) kuruldu.
+   Gerçek sohbete sınama mesajı YAZILMADI.
+3. Takip/abone/hediye olay adları Pusher dönemindekilerle aynı varsayıldı (`App\Events\…`); yeni sağlayıcıda canlı
+   yayında DOĞRULANMADI.
+
+**Aynı turda düzeltilenler:**
+- Komutlar Türkçe yazılınca (`!şarkı`, `!sıra`, `!katıl`, `!YAZITURA`, `!İzleme`) bot sessiz kalıyordu → katlanmış adla
+  da eşleşir (birebir ad önce, özel komut gölgelenmez).
+- Bilgi yarışması: Türkçe büyük/küçük harf (`İSTANBUL`), "A)", "cevap b", "C şıkkı", @etiket, emote; büyük harfle
+  yazılan doğru cevap artık CAPS uyarısı yerine oy (kara liste ve kalkan önce uygulanır); kısa serbest cevap kelime
+  içinde aranmaz ("au" ≠ "aura"); yanlış oy verenin adı/platformu korunur; "yayin" bulmacasının karışık hâli eksikti.
+- Kick'e 500 karakteri aşan mesaj parçalanarak gider (eskiden reddedilip kayboluyordu).
+- `!clip` platformda klip oluşturmaz; eskiden "Klip alındı" diyordu. Artık anı "Son Etkinlikler"e işaretler ve bunu söyler.
+- **Overlay Stüdyo ↔ OBS:** (a) konum/boyut/aç-kapa kendiliğinden kaydedilir (eskiden yalnız "Kaydet" ile);
+  (b) widget ayar soketi kopunca yeniden bağlanır ve ayarları tazeler — StreamAxT yeniden başlayınca OBS'teki kaynak
+  bir daha güncellenmiyordu; (c) OBS sayfası yeniden bağlanınca yeni sürüm varsa kendini yeniler; (d) "Sohbet Görünümü"
+  sekmesi OBS'in hiç okumadığı ayrı bir kayda yazıyordu ve elle çizilmiş maket gösteriyordu → gerçek bileşen + gerçek
+  ayarlar (`/api/settings/chat-overlay` geriye dönük olarak aynı kayda yönlendirildi); (e) hedef çubuğu tuvalde hep
+  "bağış" hedefiydi, stüdyo "takipçi" hedefini düzenliyordu → tür yerleşimden; (f) panelde hiçbir bileşene bağlı
+  olmayan ölü alanlar kaldırıldı; (g) sohbet katmanı önizlemede boştu → örnek mesajlar; Kick emote'ları resim; avatar
+  alanı; ayar değişince son mesaj ikinci kez ekleniyordu (sohbet, etkinlik akışı, emote kombo, hedef).
+- Sayfa dili `tr` (CSS büyük harf "TAKİPÇİ"; eskiden "TAKIPÇI").

@@ -259,42 +259,51 @@ router.post('/widgets/test/:widgetName', (req: Request, res: Response) => {
   res.json({ success: true, widget: widgetName, message: `${widgetName} testi tetiklendi!` });
 });
 
-router.get('/widgets/:widgetId/settings', (req: Request, res: Response) => {
-  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
-  const key = `widget_settings_${req.params.widgetId}`;
+/** Bir widget'ın kayıtlı ayarı (yoksa / bozuksa boş nesne). */
+export function widgetAyariOku(widgetId: string): Record<string, unknown> {
   try {
-    const row = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(key) as { value: string } | undefined;
-    res.json(row?.value ? JSON.parse(row.value) : {});
+    const row = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(`widget_settings_${widgetId}`) as { value: string } | undefined;
+    return row?.value ? JSON.parse(row.value) : {};
   } catch {
-    res.json({});
+    return {};
   }
-});
+}
 
-router.post('/widgets/:widgetId/settings', (req: Request, res: Response) => {
-  // B2: kimlik, boyut, derinlik, prototip kirletme ve tür denetimi
-  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
-  const key = `widget_settings_${req.params.widgetId}`;
-  const currentRaw = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(key) as { value: string } | undefined;
-  let current: Record<string, unknown> = {};
-  try {
-    current = currentRaw?.value ? JSON.parse(currentRaw.value) : {};
-  } catch {
-    current = {}; // bozuk kayıt: yeni ayar temiz başlar
-  }
-  const temiz = widgetAyariniTemizle(req.body || {}, current);
-  if (!temiz.ok) return res.status(400).json({ error: temiz.hata });
-  if (temiz.uyarilar.length) {
-    console.warn(`[Widget] ${req.params.widgetId} ayarında düzeltme:`, temiz.uyarilar.slice(0, 5).join(' · '));
-    // Yanıt gövdesi değişmesin (panel ayar nesnesi bekliyor); uyarı başlıkta
-    res.setHeader('X-StreamAxT-Uyari', encodeURIComponent(temiz.uyarilar.slice(0, 3).join(' | ')));
-  }
+/**
+ * Widget ayarını doğrulayıp birleştirerek yazar ve OBS'teki katmanlara yayınlar.
+ * B2: kimlik, boyut, derinlik, prototip kirletme ve tür denetimi.
+ */
+export function widgetAyariYaz(
+  widgetId: string,
+  govde: unknown
+): { ok: true; deger: Record<string, unknown>; uyarilar: string[] } | { ok: false; hata: string } {
+  if (!WIDGET_KIMLIGI.test(String(widgetId))) return { ok: false, hata: 'Geçersiz widget kimliği' };
+  const current = widgetAyariOku(widgetId); // bozuk kayıt: yeni ayar temiz başlar
+  const temiz = widgetAyariniTemizle(govde || {}, current);
+  if (!temiz.ok) return { ok: false, hata: temiz.hata };
   const updated = { ...current, ...temiz.deger };
   db.prepare(`
     INSERT INTO bot_settings (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
-  `).run(key, JSON.stringify(updated));
-  wsHub.broadcastTo(['all'], { type: 'widget_settings', widgetId: req.params.widgetId, settings: updated });
-  res.json(updated);
+  `).run(`widget_settings_${widgetId}`, JSON.stringify(updated));
+  wsHub.broadcastTo(['all'], { type: 'widget_settings', widgetId, settings: updated });
+  return { ok: true, deger: updated, uyarilar: temiz.uyarilar };
+}
+
+router.get('/widgets/:widgetId/settings', (req: Request, res: Response) => {
+  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
+  res.json(widgetAyariOku(String(req.params.widgetId)));
+});
+
+router.post('/widgets/:widgetId/settings', (req: Request, res: Response) => {
+  const sonuc = widgetAyariYaz(String(req.params.widgetId), req.body);
+  if (!sonuc.ok) return res.status(400).json({ error: sonuc.hata });
+  if (sonuc.uyarilar.length) {
+    console.warn(`[Widget] ${req.params.widgetId} ayarında düzeltme:`, sonuc.uyarilar.slice(0, 5).join(' · '));
+    // Yanıt gövdesi değişmesin (panel ayar nesnesi bekliyor); uyarı başlıkta
+    res.setHeader('X-StreamAxT-Uyari', encodeURIComponent(sonuc.uyarilar.slice(0, 3).join(' | ')));
+  }
+  res.json(sonuc.deger);
 });
 
 export default router;

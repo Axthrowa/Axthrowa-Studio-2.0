@@ -38,13 +38,95 @@ export function matematik(ifade: string): string {
   if (!/^[\d\s+\-*/%().,]+$/.test(temiz)) return '(math geçersiz)';
   if (temiz.length > 120) return '(math çok uzun)';
   try {
-    // eslint-disable-next-line no-new-func
-    const sonuc = Function(`"use strict";return (${temiz.replace(/,/g, '.')})`)();
-    if (typeof sonuc !== 'number' || !Number.isFinite(sonuc)) return '(math geçersiz)';
+    const sonuc = ifadeHesapla(temiz.replace(/,/g, '.'));
+    if (!Number.isFinite(sonuc)) return '(math geçersiz)';
     return sayi(sonuc);
   } catch {
     return '(math geçersiz)';
   }
+}
+
+/**
+ * Dört işlem, mod, üs (**), parantez ve tekli eksi için özyinelemeli
+ * çözümleyici. Eskiden beyaz listeden sonra `Function(...)` ile
+ * değerlendiriliyordu; artık hiçbir kod çalıştırılmaz. Hatalı ifadede fırlatır.
+ */
+export function ifadeHesapla(ifade: string): number {
+  const s = ifade.replace(/\s+/g, '');
+  let i = 0;
+  let derinlik = 0;
+  const hata = () => {
+    throw new Error('geçersiz ifade');
+  };
+  const sayiOku = (): number => {
+    const m = /^\d+(\.\d+)?|^\.\d+/.exec(s.slice(i));
+    if (!m) return hata();
+    i += m[0].length;
+    return Number(m[0]);
+  };
+  const birim = (): number => {
+    if (s[i] === '-') {
+      i++;
+      return -birim();
+    }
+    if (s[i] === '+') {
+      i++;
+      return birim();
+    }
+    if (s[i] === '(') {
+      if (++derinlik > 20) hata();
+      i++;
+      const v = toplam();
+      if (s[i] !== ')') hata();
+      i++;
+      derinlik--;
+      return v;
+    }
+    return sayiOku();
+  };
+  const us = (): number => {
+    const taban = birim();
+    if (s.startsWith('**', i)) {
+      i += 2;
+      return Math.pow(taban, us());
+    }
+    return taban;
+  };
+  const carpim = (): number => {
+    let v = us();
+    for (;;) {
+      const c = s[i];
+      if (c === '*' && s[i + 1] !== '*') {
+        i++;
+        v *= us();
+      } else if (c === '/') {
+        i++;
+        const b = us();
+        if (b === 0) hata();
+        v /= b;
+      } else if (c === '%') {
+        i++;
+        const b = us();
+        if (b === 0) hata();
+        v %= b;
+      } else return v;
+    }
+  };
+  const toplam = (): number => {
+    let v = carpim();
+    for (;;) {
+      if (s[i] === '+') {
+        i++;
+        v += carpim();
+      } else if (s[i] === '-') {
+        i++;
+        v -= carpim();
+      } else return v;
+    }
+  };
+  const v = toplam();
+  if (i !== s.length) hata();
+  return v;
 }
 
 /** JSON yolundan değer okur: `profile.coins`, `items[0].name`. */

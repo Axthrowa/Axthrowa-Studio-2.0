@@ -1,5 +1,5 @@
 import { db } from '../../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { EventEmitter } from 'events';
 import { AuditLog, ShieldModeSettings } from '../../db/schema.js';
 import { seyrekUyar } from '../../core/logger.js';

@@ -26,7 +26,6 @@ export interface HypeTrainWidgetProps {
   previewMode?: boolean;
 }
 
-type Ayar = typeof HYPE_TRAIN_DEFAULTS;
 
 /** Seviye hedefi kademeli büyür: taban * büyüme^(seviye-1). */
 export function seviyeHedefi(seviye: number, taban: number, buyume: number): number {

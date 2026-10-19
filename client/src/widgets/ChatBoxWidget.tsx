@@ -9,6 +9,7 @@ import { CHAT_DEFAULTS } from '../lib/widget-defaults.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
+import { onizlemeKipi } from '../lib/widget-style.js';
 
 interface OverlayMsg {
   id: string;
@@ -104,7 +105,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     return () => clearInterval(t);
   }, [s.fadeMessages, s.fadeTimeout]);
 
-  const kaynak = props?.previewMode && messages.length === 0 ? ORNEK_MESAJLAR : messages;
+  const kaynak = onizlemeKipi(props?.previewMode) && messages.length === 0 ? ORNEK_MESAJLAR : messages;
   const list = s.reverse ? [...kaynak].reverse() : kaynak;
   const msgBg = s.messageBgColor.length === 7
     ? `${s.messageBgColor}${Math.round(s.messageBgOpacity * 255).toString(16).padStart(2, '0')}`

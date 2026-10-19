@@ -48,7 +48,7 @@ const LABELS: Record<string, string> = {
   maxEntries: 'Maks. katılım (0=sınırsız)', costPoints: 'Puan maliyeti', subBonusMultiplier: 'Abone çarpanı',
   followerOnly: 'Sadece takipçi', subOnly: 'Sadece abone', minWatchMinutes: 'Min. izleme (dk)',
   minMessages: 'Min. mesaj', announceChat: 'Sohbette duyur', duplicatePrevent: 'Çift katılımı engelle',
-  autoClose: 'Otomatik kapat', overlayTitle: 'Overlay başlığı', accentColor: 'Vurgu rengi',
+  autoClose: 'Otomatik kapat', overlayTitle: 'Overlay başlığı', winnerShowSec: 'Kazanan gösterim süresi (sn, 0 = kalıcı)', accentColor: 'Vurgu rengi',
   showKeyword: 'Kelimeyi göster', showEntries: 'Katılımcı sayısı',
   // --- 2026-09 revizyonu: ayar sistemine yeni bağlanan widget'lar ---
   fromChat: "Sohbetteki emote'lar uçsun", durationMs: 'Uçuş süresi (ms)', maxOnScreen: 'Ekranda en çok',
@@ -153,7 +153,7 @@ const SECTIONS: Record<string, string> = {
   keyword: 'Çekiliş', durationMinutes: 'Çekiliş', winnerCount: 'Çekiliş', maxEntries: 'Çekiliş',
   costPoints: 'Çekiliş', subBonusMultiplier: 'Çekiliş', followerOnly: 'Çekiliş', subOnly: 'Çekiliş',
   minWatchMinutes: 'Çekiliş', minMessages: 'Çekiliş', announceChat: 'Çekiliş', duplicatePrevent: 'Çekiliş',
-  autoClose: 'Çekiliş', overlayTitle: 'Çekiliş', showKeyword: 'Çekiliş', showEntries: 'Çekiliş', showTimer: 'Çekiliş',
+  autoClose: 'Çekiliş', overlayTitle: 'Çekiliş', winnerShowSec: 'Çekiliş', showKeyword: 'Çekiliş', showEntries: 'Çekiliş', showTimer: 'Çekiliş',
   command: 'Komut', paused: 'Kontrol', separator: 'Şablon',
   // --- 2026-09 revizyonu ---
   theme: 'Tema', position: 'Düzen', label: 'Genel', icon: 'Genel', maxWidth: 'Düzen',

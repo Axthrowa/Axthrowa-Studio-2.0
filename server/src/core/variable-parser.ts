@@ -3,6 +3,8 @@ import { ChatMessagePayload } from './event-bus.js';
 import { kullaniciDegerleriniYerlestir } from './legacy-vars.js';
 import { kacisiGeriAl, veriKacisla } from './variables/resolve.js';
 import { guvenliGetir } from './variables/net.js';
+import { matematik } from './variables/pure.js';
+import { kosulDegerlendir } from './variables/ek-saf.js';
 
 import { canliDurum, sureMetni } from './live-status.js';
 
@@ -137,15 +139,12 @@ export async function parseVariables(
   let ifMatch;
   while ((ifMatch = ifRegex.exec(result)) !== null) {
     const [full, cond, thenVal, elseVal] = ifMatch;
-    let evalCondition = false;
-    try {
-      // Clean condition
-      const cleanCond = cond.replace(/[^0-9><=!&|.]/g, '');
-      // eslint-disable-next-line no-eval
-      evalCondition = Boolean(Function(`"use strict"; return (${cleanCond});`)());
-    } catch {
-      /* geçersiz koşul (ör. "5 >") yanlış sayılır — kullanıcı girdisi, günlüğe yazılmaz */
-    }
+    // Kod değerlendirmesi yok: && / || ile bağlı karşılaştırmalar güvenli değerlendirilir
+    // (eskiden süzülmüş metin `Function(...)` ile çalıştırılıyordu)
+    const temiz = cond.replace(/[^0-9><=!&|.\s-]/g, '');
+    const evalCondition = temiz
+      .split('||')
+      .some((ve) => ve.split('&&').every((p) => /^\s*-?\d+(\.\d+)?\s*(==|!=|>=|<=|>|<)\s*-?\d+(\.\d+)?\s*$/.test(p) && kosulDegerlendir(p)));
     result = result.replace(full, evalCondition ? thenVal : elseVal);
   }
 
@@ -154,14 +153,9 @@ export async function parseVariables(
   let mathMatch;
   while ((mathMatch = mathRegex.exec(result)) !== null) {
     const expr = mathMatch[1] || mathMatch[2] || '';
-    try {
-      const sanitized = expr.replace(/[^0-9+\-*/().%]/g, '');
-      // eslint-disable-next-line no-eval
-      const evalResult = Function(`"use strict"; return (${sanitized});`)();
-      result = result.replace(mathMatch[0], String(evalResult));
-    } catch {
-      result = result.replace(mathMatch[0], '[Hesap Hatası]');
-    }
+    // Kod değerlendirmesi yok: güvenli çözümleyici (core/variables/pure.ts)
+    const sonuc = matematik(expr.replace(/[^0-9+\-*/().%,\s]/g, ''));
+    result = result.replace(mathMatch[0], sonuc === '(math geçersiz)' || sonuc === '(math çok uzun)' ? '[Hesap Hatası]' : sonuc);
   }
 
   // URL Fetch: $(urlfetch <url>)

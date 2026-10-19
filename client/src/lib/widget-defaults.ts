@@ -325,6 +325,7 @@ export const GIVEAWAY_DEFAULTS = {
   duplicatePrevent: true,
   autoClose: true,
   overlayTitle: 'ÇEKİLİŞ',
+  winnerShowSec: 12,
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 18,
   fontColor: '#ffffff',

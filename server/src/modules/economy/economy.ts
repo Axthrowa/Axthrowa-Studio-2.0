@@ -1,5 +1,5 @@
 import { db } from '../../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { ttsEngine } from '../tts/tts.js';
 import { seyrekUyar } from '../../core/logger.js';

@@ -23,14 +23,12 @@
     "express": "^4.21.2",
     "pusher-js": "^8.4.0-rc2",
     "tiktok-live-connector": "2.4.0",
-    "uuid": "^11.0.5",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.4",
-    "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.14",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",

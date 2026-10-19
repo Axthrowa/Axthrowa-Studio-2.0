@@ -113,6 +113,9 @@ router.get('/lyrics/current', async (req: Request, res: Response) => {
   const soz = await sozleriGetir(title, artist, calan?.duration || 0);
   res.json({
     ...soz,
+    // Başlıkta çalan parçanın özgün adı (lrclib Türkçe karakterleri düşürebiliyor)
+    title: elle ? soz.title : calan?.title || soz.title,
+    artist: elle ? soz.artist : calan?.artist || soz.artist,
     kaynak: elle ? 'elle' : calan ? calan.source : 'istek',
     // Senkron için: ilerleme + örnekleme anı (widget aradaki süreyi ekler)
     progressMs: calan?.progress ?? null,

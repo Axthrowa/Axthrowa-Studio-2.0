@@ -4,7 +4,7 @@
  */
 import { db } from '../../db/index.js';
 import { eventBus } from '../../core/event-bus.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { settingsCache } from '../../core/settings-cache.js';
 import { hataMetni } from '../../core/logger.js';
 

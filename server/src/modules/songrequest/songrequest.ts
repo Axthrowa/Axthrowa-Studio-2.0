@@ -1,5 +1,5 @@
 import { db } from '../../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import axios from 'axios';
 import { spawn } from 'child_process';
 import { ChatMessagePayload } from '../../core/event-bus.js';

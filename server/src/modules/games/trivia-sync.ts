@@ -5,7 +5,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { TRIVIA_SEED_QUESTIONS } from './trivia-data.js';
 import { TRIVIA_EXTRA_QUESTIONS } from './trivia-extra.js';
 import { bankayiDenetle, copSoruMu } from './soru-kalite.js';

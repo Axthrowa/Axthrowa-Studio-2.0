@@ -8,7 +8,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { wsHub } from '../../ws/server.js';
 import { autoMod } from '../../modules/automod/automod.js';
 import { kelimeListesiDerle } from '../../modules/automod/kelime-kurali.js';

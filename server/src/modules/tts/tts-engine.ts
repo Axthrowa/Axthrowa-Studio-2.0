@@ -5,7 +5,7 @@
 
 import { WebSocket as WsClient } from 'ws';
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { EventEmitter } from 'events';
 import { db } from '../../db/index.js';
 import { TTSSettings } from '../../db/schema.js';

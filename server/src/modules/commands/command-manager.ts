@@ -92,6 +92,8 @@ export class CommandManager {
   private anahtarKomutlar: any[] = [];
   private permits: Map<string, number> = new Map();
   private clipLast = 0;
+  /** Şans çarkının son çevrilişi (izleyici seli için genel bekleme) */
+  private carkSon = 0;
   private initialized: boolean = false;
 
   isPermitted(username: string) {
@@ -371,6 +373,8 @@ export class CommandManager {
       case 'anket': {
         const poll = db.prepare('SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1').get() as any;
         if (!poll) return `@${message.user.displayName}, aktif anket yok.`;
+        // Süresi dolmuş ankete oy yok (kapatıcı 5 sn'de bir kapatır; arada gelen oy sayılmasın)
+        if (Number(poll.ends_at) > 0 && Date.now() > Number(poll.ends_at)) return `@${message.user.displayName}, anket sona erdi.`;
         const choice = parseInt(args[0], 10);
         const opts = JSON.parse(poll.options || '[]');
         if (!choice || choice < 1 || choice > opts.length) return `@${message.user.displayName}, ${poll.command || '!oy'} 1-${opts.length} yaz.`;
@@ -499,9 +503,24 @@ export class CommandManager {
         return this.hesapYasi(args[0] || message.user.username, message);
       case 'cark':
       case 'wheel': {
+        // İzleyici çevirebilir; art arda çevirme seli olmasın diye genel bekleme
+        const bekleme = Math.min(600, Math.max(0, Number(settingsCache.get('wheel_cooldown', '30')) || 0)) * 1000;
+        const yetkili = message.user.isMod || message.user.isBroadcaster;
+        if (!yetkili && Date.now() - this.carkSon < bekleme) {
+          return `@${message.user.displayName}, çark ${Math.ceil((bekleme - (Date.now() - this.carkSon)) / 1000)} sn sonra yeniden çevrilebilir.`;
+        }
+        this.carkSon = Date.now();
+        const { carkCevir } = await import('../engagement/cark.js');
+        const sonuc = carkCevir();
         const { wsHub } = await import('../../ws/server.js');
-        wsHub.broadcastTo(['all', 'wheel'], { type: 'wheel_spin', payload: { index: Math.floor(Math.random() * 8) } });
-        return `🎡 Şans çarkı çevrildi!`;
+        wsHub.broadcastTo(['all', 'wheel'], { type: 'wheel_spin', payload: { index: sonuc.index, label: sonuc.etiket } });
+        if (sonuc.etiket) {
+          const zamanlayici = setTimeout(() => {
+            eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: `🎡 Çark durdu: ${sonuc.etiket}!` });
+          }, sonuc.donusMs + 300);
+          zamanlayici.unref?.();
+        }
+        return `🎡 @${message.user.displayName} şans çarkını çevirdi!`;
       }
 
       case 'sor':

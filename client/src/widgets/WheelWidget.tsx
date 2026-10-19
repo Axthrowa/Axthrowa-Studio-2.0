@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { WHEEL_DEFAULTS } from '../lib/widget-defaults.js';
+import { onizlemeKipi } from '../lib/widget-style.js';
 
 type Segment = { label: string; color: string; weight?: number };
 
@@ -72,6 +73,20 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
   const timer = useRef<NodeJS.Timeout | null>(null);
+  const onizleme = onizlemeKipi(_props?.previewMode === true);
+  // Görünürlük: otomatik gizlemede yalnız çevrilince ya da ayar değişince belirir
+  const [gorunur, setGorunur] = useState(false);
+  const gizleZamani = useRef<NodeJS.Timeout | null>(null);
+  const gizlemeyiPlanla = (ekMs = 0) => {
+    if (gizleZamani.current) clearTimeout(gizleZamani.current);
+    const sn = Number(s.hideAfterSec);
+    if (!(sn > 0)) return;
+    gizleZamani.current = setTimeout(() => setGorunur(false), ekMs + sn * 1000);
+  };
+  const goster = (ekMs = 0) => {
+    setGorunur(true);
+    gizlemeyiPlanla(ekMs);
+  };
 
   const segments: Segment[] = (s.segments && s.segments.length ? s.segments : WHEEL_DEFAULTS.segments) as Segment[];
   const slice = 360 / segments.length;
@@ -79,15 +94,33 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
+      if (gizleZamani.current) clearTimeout(gizleZamani.current);
     },
     []
   );
+
+  // "Ayarlandığında ekranda belirsin": dilimler/görünüm panelden değişince kısa süre gösterilir
+  const ayarImzasi = JSON.stringify([s.segments, s.size, s.borderColor, s.pointerColor, s.fontColor]);
+  const ilkImza = useRef<string | null>(null);
+  useEffect(() => {
+    if (ilkImza.current === null) {
+      ilkImza.current = ayarImzasi;
+      return;
+    }
+    if (ilkImza.current !== ayarImzasi) {
+      ilkImza.current = ayarImzasi;
+      goster();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ayarImzasi]);
 
   const spinTo = (index: number) => {
     if (spinning) return;
     const guvenli = ((index % segments.length) + segments.length) % segments.length;
     setSpinning(true);
     setWinner(null);
+    // Çark görünür olur; sonuçtan `hideAfterSec` sn sonra kaybolur
+    goster(s.spinMs || 4500);
     setRotation((mevcut) => mevcut + donusFarki(mevcut, guvenli, segments.length, s.extraSpins || 6));
     if (s.soundEnabled) {
       try {
@@ -106,12 +139,17 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   useEffect(() => {
     if (!lastMessage) return;
     if (lastMessage.type === 'wheel_spin' || lastMessage.type === 'spin_wheel') {
-      const gelen = lastMessage.payload?.index ?? lastMessage.data?.index ?? lastMessage.winnerIndex;
+      const etiket = lastMessage.payload?.label;
+      // Sunucu kazananı adıyla da yollar: panel ayarı yeni kaydedildiyse sıra kaymasın
+      const adla = etiket ? segments.findIndex((x) => x.label === etiket) : -1;
+      const gelen = adla >= 0 ? adla : (lastMessage.payload?.index ?? lastMessage.data?.index ?? lastMessage.winnerIndex);
       spinTo(typeof gelen === 'number' ? gelen : agirlikliSec(segments));
     }
   }, [lastMessage]);
 
   const boyut = Number(s.size) || 300;
+  const otomatikGizle = s.autoHide !== false;
+  if (!onizleme && otomatikGizle && !gorunur && !spinning) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16 }}>
@@ -188,7 +226,8 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
         <div style={{ color: '#fff', fontWeight: 800, fontSize: 20, textShadow: '0 2px 6px #000' }}>🎉 {winner}</div>
       )}
 
-      {_props?.previewMode !== false && (
+      {/* Çevir düğmesi yalnız panel önizlemesinde (eskiden OBS'te de görünüyordu) */}
+      {onizleme && (
         <button
           type="button"
           disabled={spinning}

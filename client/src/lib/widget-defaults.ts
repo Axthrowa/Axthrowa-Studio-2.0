@@ -205,6 +205,8 @@ export const POLL_DEFAULTS = {
   showPercent: true,
   showVotes: true,
   hideUntilEnd: false,
+  /** Anket bittikten kaç sn sonra kaybolsun (0 = kalsın) */
+  hideAfterSec: 8,
   backgroundColor: '#000000',
   backgroundOpacity: 0.9,
   borderColor: '#10b981',
@@ -230,6 +232,10 @@ export const WHEEL_DEFAULTS = {
   ],
   spinMs: 4500,
   extraSpins: 6,
+  /** Yalnız çevrilince / ayar değişince görünsün */
+  autoHide: true,
+  /** Sonuçtan kaç sn sonra kaybolsun (0 = kalsın) */
+  hideAfterSec: 10,
   pointerColor: '#ef4444',
   borderColor: '#a855f7',
   fontFamily: 'Plus Jakarta Sans',
@@ -353,7 +359,11 @@ export const TRIVIA_DEFAULTS = {
   borderOpacity: 0.1,
   shadowColor: '#000000',
   shadowOpacity: 0.85,
-  soundEnabled: true
+  soundEnabled: true,
+  /** Doğru cevap gösterildikten kaç sn sonra kaybolsun (0 = kaybolmasın) */
+  hideDelaySec: 3,
+  /** Turnuva kürsüsü kaç sn ekranda kalsın (0 = kalsın) */
+  podiumHideSec: 8
 };
 
 
@@ -437,7 +447,12 @@ export const THE_CUP_DEFAULTS = {
   showLabel: true,
   showCount: true,
   showGlare: true,
-  animateItems: true
+  animateItems: true,
+  /** Kupayı dolduran olaylar (karar sunucuda: modules/engagement/kupa.ts) */
+  fromTip: true,
+  fromSub: true,
+  fromGift: true,
+  fromKicks: true
 };
 
 /** Sabitlenmiş mesaj — tema, konum, otomatik gizleme. */

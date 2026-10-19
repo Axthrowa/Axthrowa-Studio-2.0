@@ -1,7 +1,9 @@
 {
   "name": "streamaxt-workspace",
   "version": "1.0.0",
-  "engines": { "node": ">=22.5.0" },
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "private": true,
   "workspaces": [
     "server",
@@ -11,8 +13,9 @@
     "dev": "npm run dev --workspaces",
     "dev:server": "npm run dev --workspace=server",
     "dev:client": "npm run dev --workspace=client",
-    "build": "npm run build --workspaces",
-    "start": "npm run start --workspace=server"
+    "build": "npm run build --workspaces && npm run build:resonance",
+    "start": "npm run start --workspace=server",
+    "build:resonance": "npm --prefix resonance run build"
   },
   "keywords": [
     "streamaxt",
@@ -26,4 +29,3 @@
   "author": "Axthrowa",
   "license": "MIT"
 }
-

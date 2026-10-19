@@ -138,6 +138,14 @@ export const GOCLER: Gocler[] = [
         )
       `);
     }
+  },
+  {
+    version: 9,
+    name: 'zamanlayıcı — yalnız yayındayken',
+    up(db) {
+      // Eklemeli; varsayılan 0 = eski davranış (yayın kapalıyken de yazar)
+      sutunEkle(db, 'timers', 'only_live', 'INTEGER NOT NULL DEFAULT 0');
+    }
   }
 ];
 

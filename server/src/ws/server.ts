@@ -12,10 +12,23 @@ import { varyantlar } from '../modules/alerts/variants.js';
 import { hataMetni, seyrekUyar } from '../core/logger.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { BASLANGIC, kontrolUygula, KontrolDurumu, SonUyari, SonUyarilar, uyariKimligi } from '../modules/alerts/control.js';
+import { kupa } from '../modules/engagement/kupa.js';
 
 interface ClientConnection {
   ws: WebSocket;
   type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all';
+}
+
+/**
+ * Köken + Host doğrulaması (Cross-Site WebSocket Hijacking). Tarayıcılar el
+ * sıkışmasında Origin'i her zaman gönderir; tarayıcı dışı istemciler (Origin
+ * yok) etkilenmez.
+ */
+export function kokenDogrula(info: { origin?: string; req: { headers: Record<string, any> } }): boolean {
+  const host = info.req.headers.host as string | undefined;
+  const tamam = izinliHostMu(host, arayuzAdresleri(), ekIzinliHostlar()) && kokenKabulEdilir(info.origin, host);
+  if (!tamam) console.warn(`[Guvenlik] WebSocket reddedildi: origin=${info.origin} host=${host}`);
+  return tamam;
 }
 
 export class WebSocketHub {
@@ -62,23 +75,43 @@ export class WebSocketHub {
     return sonuc;
   }
 
+  /** /ws dışındaki WebSocket yolları (ör. Resonance /ws/overlay-sync) */
+  private ekYollar = new Map<string, WebSocketServer>();
+
+  /** Ek bir yol için WebSocket sunucusu (köken doğrulaması aynı). */
+  ekYol(yol: string): WebSocketServer {
+    const mevcut = this.ekYollar.get(yol);
+    if (mevcut) return mevcut;
+    const w = new WebSocketServer({ noServer: true, verifyClient: kokenDogrula });
+    w.on('error', () => {});
+    this.ekYollar.set(yol, w);
+    return w;
+  }
+
   init(server: HttpServer) {
     // Köken + Host doğrulaması (Cross-Site WebSocket Hijacking). Eskiden YOKTU:
     // herhangi bir web sitesi bağlanıp bota sohbet mesajı yazdırabiliyor,
     // TTS okutabiliyor, canlı sohbeti dinleyebiliyordu. Tarayıcılar WebSocket
     // el sıkışmasında Origin'i her zaman gönderir; tarayıcı dışı istemciler
     // (Origin yok) etkilenmez.
-    this.wss = new WebSocketServer({
-      server,
-      path: '/ws',
-      verifyClient: (info: { origin?: string; req: { headers: Record<string, any> } }) => {
-        const host = info.req.headers.host as string | undefined;
-        const tamam =
-          izinliHostMu(host, arayuzAdresleri(), ekIzinliHostlar()) && kokenKabulEdilir(info.origin, host);
-        if (!tamam) console.warn(`[Guvenlik] WebSocket reddedildi: origin=${info.origin} host=${host}`);
-        return tamam;
+    this.wss = new WebSocketServer({ noServer: true, verifyClient: kokenDogrula });
+
+    // Yükseltme istekleri yola göre dağıtılır. `ws` aynı HTTP sunucusuna
+    // `path` ile bağlanan ikinci bir sunucuyu desteklemiyor: eşleşmeyen yolu
+    // 400 ile kesiyor. Resonance'ın /ws/overlay-sync yolu bu yüzden buradan.
+    server.on('upgrade', (req, socket, head) => {
+      const yol = String(req.url || '').split('?')[0];
+      const hedef = yol === '/ws' ? this.wss : this.ekYollar.get(yol);
+      if (!hedef) {
+        socket.destroy();
+        return;
       }
+      hedef.handleUpgrade(req, socket, head, (ws) => hedef.emit('connection', ws, req));
     });
+
+    // HTTP sunucusunun hatası (ör. EADDRINUSE) buraya da yansır; dinleyici yoksa
+    // Node süreci "Unhandled 'error' event" ile çökertiyordu. Asıl işleme app.ts'te.
+    this.wss.on('error', () => {});
 
     this.wss.on('connection', (ws: WebSocket, req) => {
       const url = new URL(req.url || '', `http://${req.headers.host}`);
@@ -255,11 +288,8 @@ export class WebSocketHub {
         alert: alertData
       });
 
-      // Subathon / Hype Train / The Cup triggers
-      this.broadcastTo(['all'], {
-        type: 'cup_drop',
-        data: { type: 'sub', user: payload.displayName || payload.username, tier: payload.tier }
-      });
+      // Bağış Kupası: hediye abonelik adediyle düşer (eskiden düz "sub" sayılıyordu)
+      this.kupayaDusur(tur, { user: payload.displayName || payload.username, count: hediye ? hediyeAdedi(payload) : 1 });
     });
 
     // 4. Tip / SuperChat Event -> AlertBox & Dashboard & Goals & Loyalty Tracking
@@ -285,10 +315,7 @@ export class WebSocketHub {
       });
 
       // The Cup drop & subathon
-      this.broadcastTo(['all'], {
-        type: 'cup_drop',
-        data: { type: 'tip', user: payload.displayName || payload.username, amount: payload.amount, currency: payload.currency }
-      });
+      this.kupayaDusur('tip', { user: payload.displayName || payload.username, amount: payload.amount });
 
       // Also trigger TTS if tip contains message
       if (payload.message) {
@@ -318,10 +345,7 @@ export class WebSocketHub {
         alert: alertData
       });
 
-      this.broadcastTo(['all'], {
-        type: 'cup_drop',
-        data: { type: 'kicks', user: payload.displayName || payload.username, amount: payload.amount }
-      });
+      this.kupayaDusur('kicks', { user: payload.displayName || payload.username, amount: payload.amount });
     });
 
     // 4.6 Host
@@ -373,10 +397,7 @@ export class WebSocketHub {
         alert: alertData
       });
 
-      this.broadcastTo(['all'], {
-        type: 'cup_drop',
-        data: { type: 'gift_tiktok', user: payload.displayName || payload.username, giftName: payload.giftName, count: payload.count }
-      });
+      this.kupayaDusur('gift_tiktok', { user: payload.displayName || payload.username, count: payload.count });
     });
 
     // 7. TTS Queued Event -> OBS Audio Player & Dashboard
@@ -638,16 +659,25 @@ export class WebSocketHub {
       // yolundan geçen türlerde bu yayın zaten yapılıyor; burada yalnız
       // test amaçlı gift_sub / kicks için ekleniyor.
       if (eventType === 'gift_sub' || eventType === 'kicks') {
-        this.broadcastTo(['all'], {
-          type: 'cup_drop',
-          data: {
-            type: eventType,
-            user: dataPayload?.displayName || dataPayload?.username,
-            count: dataPayload?.count,
-            amount: dataPayload?.amount
-          }
+        this.kupayaDusur(eventType, {
+          user: dataPayload?.displayName || dataPayload?.username,
+          count: dataPayload?.count,
+          amount: dataPayload?.amount
         });
       }
+    }
+  }
+
+  /**
+   * Bağış Kupası: kurallar (hangi olaylar, eşikler) ve kalıcı durum sunucuda
+   * (modules/engagement/kupa.ts); widget yalnız düşen adedi çizer.
+   */
+  kupayaDusur(tur: string, veri: { user?: string; amount?: number; count?: number }) {
+    try {
+      const adet = kupa.dus(tur, veri);
+      if (adet) this.broadcastTo(['all'], { type: 'cup_drop', data: { type: tur, adet, user: veri.user, amount: veri.amount } });
+    } catch (e) {
+      seyrekUyar('kupa:dus', '[Kupa] Olay işlenemedi', e);
     }
   }
 

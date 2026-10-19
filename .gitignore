@@ -34,3 +34,6 @@ desktop.ini
 .DS_Store
 .idea/
 .vscode/
+
+# Resonance derleme çıktısı (npm run build:resonance)
+resonance/dist/

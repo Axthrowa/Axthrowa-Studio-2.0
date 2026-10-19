@@ -1624,18 +1624,29 @@ export function OverlayStudio() {
 
                   {/* Dynamic controls according to widget */}
                   {selectedWidgetModal.id === 'the-cup' && (
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => triggerWidgetTest('the-cup', { tokenType: 'coin', count: 5 })}
-                        className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
-                      >
-                        🪙 5x Altın Jeton Düşür
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'coin', count: 3 })} className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold">
+                        🪙 3 bağış
                       </button>
-                      <button 
-                        onClick={() => triggerWidgetTest('the-cup', { tokenType: 'bits', count: 10 })}
-                        className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'sub', count: 2 })} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold">
+                        ⭐ 2 abone
+                      </button>
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'gift', count: 5 })} className="px-3 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold">
+                        🎁 5 hediye abone
+                      </button>
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'kicks', count: 3 })} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold">
+                        🟢 3 KICKs
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Kupanın içi tamamen boşaltılsın mı?')) return;
+                          await fetch('/api/cup/reset', { method: 'POST' }).catch(() => {});
+                          setModalActionStatus('🗑️ Kupa sıfırlandı');
+                          setTimeout(() => setModalActionStatus(null), 2500);
+                        }}
+                        className="px-3 py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-xl text-xs font-bold"
                       >
-                        💎 10x Bits Jetonu Düşür
+                        🗑️ Kupayı sıfırla
                       </button>
                     </div>
                   )}

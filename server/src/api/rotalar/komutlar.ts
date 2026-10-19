@@ -9,6 +9,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { timerManager } from '../../modules/timers/timers.js';
+import { aralikMs, mesajlariAyikla, minSatir } from '../../modules/timers/zamanlama.js';
 import { commandManager } from '../../modules/commands/command-manager.js';
 import { extras } from '../../modules/extras/extras.js';
 import { komutGirdisiniCoz } from '../../modules/commands/command-input.js';
@@ -97,14 +98,39 @@ router.get('/timers', (req: Request, res: Response) => {
   res.json(rows);
 });
 
+// Panel için: her zamanlayıcının sıradaki gönderime kalan süresi
+router.get('/timers/durum', (req: Request, res: Response) => {
+  res.json(timerManager.durumlar());
+});
+
+/**
+ * Gövde doğrulaması. Eskiden sayılar olduğu gibi yazılıyordu: "abc" süre
+ * `setInterval(NaN)` ile sohbete aralıksız mesaj seli yağdırabiliyordu.
+ */
+function zamanlayiciGovdesi(b: any) {
+  const mesajlar = mesajlariAyikla(b?.messages);
+  const ad = String(b?.name ?? '').trim().slice(0, 80);
+  if (!ad) return { hata: 'Ad gerekli.' } as const;
+  if (!mesajlar.length) return { hata: 'En az bir mesaj gerekli.' } as const;
+  return {
+    ad,
+    mesajlar,
+    aralik: aralikMs(b?.intervalMinutes) / 60_000,
+    satir: minSatir(b?.minChatLines),
+    acik: b?.isEnabled === false || b?.isEnabled === 0 ? 0 : 1,
+    yalnizYayinda: b?.onlyLive ? 1 : 0
+  } as const;
+}
+
 router.post('/timers', (req: Request, res: Response) => {
-  const { name, messages, intervalMinutes = 15, minChatLines = 5, isEnabled = true } = req.body;
+  const g = zamanlayiciGovdesi(req.body);
+  if ('hata' in g) return res.status(400).json({ error: g.hata });
   const id = `timer-${Date.now()}`;
 
   db.prepare(`
-    INSERT INTO timers (id, name, messages, interval_minutes, min_chat_lines, is_enabled)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, name, JSON.stringify(messages), intervalMinutes, minChatLines, isEnabled ? 1 : 0);
+    INSERT INTO timers (id, name, messages, interval_minutes, min_chat_lines, is_enabled, only_live)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, g.ad, JSON.stringify(g.mesajlar), g.aralik, g.satir, g.acik, g.yalnizYayinda);
 
   timerManager.reload();
   res.json({ success: true, id });
@@ -112,16 +138,17 @@ router.post('/timers', (req: Request, res: Response) => {
 
 router.put('/timers/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, messages, intervalMinutes, minChatLines, isEnabled } = req.body;
+  const g = zamanlayiciGovdesi(req.body);
+  if ('hata' in g) return res.status(400).json({ error: g.hata });
 
-  db.prepare(`
-    UPDATE timers 
-    SET name = ?, messages = ?, interval_minutes = ?, min_chat_lines = ?, is_enabled = ?
+  const r = db.prepare(`
+    UPDATE timers
+    SET name = ?, messages = ?, interval_minutes = ?, min_chat_lines = ?, is_enabled = ?, only_live = ?
     WHERE id = ?
-  `).run(name, JSON.stringify(messages), intervalMinutes, minChatLines, isEnabled ? 1 : 0, String(id));
+  `).run(g.ad, JSON.stringify(g.mesajlar), g.aralik, g.satir, g.acik, g.yalnizYayinda, String(id));
 
   timerManager.reload();
-  res.json({ success: true });
+  res.status(Number(r.changes) ? 200 : 404).json({ success: Number(r.changes) > 0 });
 });
 
 router.delete('/timers/:id', (req: Request, res: Response) => {

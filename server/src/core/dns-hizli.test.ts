@@ -2,10 +2,9 @@
  * StreamAxT — IPv4 öncelikli DNS testleri (ağsız: yalnız yerel adlar)
  * Developed by AxthrowA
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import dns from 'dns';
-import https from 'https';
-import { hizliDnsKur, ipv4OncelikliLookup } from './dns-hizli.js';
+import { hizliDnsKur, ipv4OncelikliLookup, ipv4OncelikliYap } from './dns-hizli.js';
 
 const coz = (ad: string, secenek: any) =>
   new Promise<{ hata: any; adres: any; aile?: number }>((r) => ipv4OncelikliLookup(ad, secenek, (hata, adres, aile) => r({ hata, adres, aile })));
@@ -31,22 +30,18 @@ describe('ipv4OncelikliLookup', () => {
 
   it('IPv4 bulunamazsa ailesiz çözümlemeye düşer (yalnız IPv6 alan adı)', async () => {
     const cagrilar: any[] = [];
-    const casus = vi.spyOn(dns, 'lookup').mockImplementation(((_ad: string, s: any, cb: any) => {
+    const sahte = (_ad: string, s: any, cb: any) => {
       cagrilar.push(s.family);
       if (s.family === 4) cb(Object.assign(new Error('yok'), { code: 'ENOTFOUND' }), '', 0);
       else cb(null, '2001:db8::1', 6);
-    }) as any);
-    try {
-      const r = await coz('yalniz-v6.example', {});
-      expect(r).toEqual({ hata: null, adres: '2001:db8::1', aile: 6 });
-      expect(cagrilar).toEqual([4, undefined]);
-    } finally {
-      casus.mockRestore();
-    }
+    };
+    const r = await new Promise<any>((coz) => ipv4OncelikliYap(sahte)('yalniz-v6.example', {}, (hata, adres, aile) => coz({ hata, adres, aile })));
+    expect(r).toEqual({ hata: null, adres: '2001:db8::1', aile: 6 });
+    expect(cagrilar).toEqual([4, undefined]);
   });
 
-  it('genel https ajanına takılır', () => {
+  it('süreç geneli dns.lookup sarılır', () => {
     hizliDnsKur();
-    expect((https.globalAgent as any).options.lookup).toBe(ipv4OncelikliLookup);
+    expect(dns.lookup).toBe(ipv4OncelikliLookup);
   });
 });

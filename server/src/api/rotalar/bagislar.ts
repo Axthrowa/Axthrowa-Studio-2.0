@@ -122,10 +122,7 @@ const processDonation = (donorName: string, amount: number, currency: string = '
     alert: alertData
   });
 
-  wsHub.broadcastTo(['all'], {
-    type: 'cup_drop',
-    data: { type: 'tip', user: safeName, amount: numAmount, currency: safeCurrency }
-  });
+  wsHub.kupayaDusur('tip', { user: safeName, amount: numAmount });
 
   try {
     economyService.recordTip(safeName, 'kick', numAmount);

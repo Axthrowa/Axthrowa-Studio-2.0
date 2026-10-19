@@ -14,6 +14,8 @@ import { subathon } from '../../modules/subathon/subathon.js';
 import { hypeTreni } from '../../modules/hype/hype-train.js';
 import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../../modules/widgets/settings-validate.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { kupa } from '../../modules/engagement/kupa.js';
+import { carkCevir } from '../../modules/engagement/cark.js';
 
 const router = Router();
 
@@ -29,6 +31,14 @@ router.get('/hype-train', (_req: Request, res: Response) => res.json(hypeTreni.d
 router.post('/hype-train/reset', (_req: Request, res: Response) => {
   hypeTreni.sifirla();
   res.json(hypeTreni.durum());
+});
+
+// Bağış Kupası — durum sunucuda (OBS yenilenince içi korunur)
+router.get('/cup', (_req: Request, res: Response) => res.json({ ogeler: kupa.liste() }));
+router.post('/cup/reset', (_req: Request, res: Response) => {
+  kupa.sifirla();
+  wsHub.broadcastTo(['all'], { type: 'cup_clear' });
+  res.json({ success: true, ogeler: [] });
 });
 
 router.post('/subathon/settings', (req: Request, res: Response) => {
@@ -159,12 +169,12 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     case 'the-cup':
-      wsHub.broadcastTo(['all'], {
-        type: 'cup_drop',
-        tokenType: body.tokenType || 'coin',
-        count: body.count || 5,
-        username: body.username || 'TestBağışçı'
-      });
+      {
+        // Test de gerçek kuralları ve kalıcı durumu kullanır (panelden "Sıfırla" ile boşaltılır)
+        const tur = ({ coin: 'tip', bits: 'kicks', kicks: 'kicks', sub: 'sub', gift: 'gift_sub' } as Record<string, string>)[String(body.tokenType || 'coin')] || 'tip';
+        const adet = Math.min(20, Math.max(1, Number(body.count) || 5));
+        for (let i = 0; i < adet; i++) wsHub.kupayaDusur(tur, { user: 'Test', amount: 1_000_000, count: 1 });
+      }
       break;
     // NOT: Aşağıdaki üç test eskiden widget'ın HİÇ dinlemediği mesajları
     // yayınlıyordu (hype_train_progress, subathon_update, now_playing):
@@ -218,10 +228,11 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       break;
     case 'wheel':
     case 'wheel-of-fortune':
-      wsHub.broadcastTo(['all'], {
-        type: 'spin_wheel',
-        winnerIndex: Math.floor(Math.random() * 8)
-      });
+      {
+        // Panelde kayıtlı dilimler ve ağırlıklarıyla (eskiden sabit 0–7)
+        const sonuc = carkCevir();
+        wsHub.broadcastTo(['all'], { type: 'wheel_spin', payload: { index: sonuc.index, label: sonuc.etiket } });
+      }
       break;
     case 'tts':
     case 'cloud-tts':

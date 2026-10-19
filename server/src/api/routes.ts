@@ -29,6 +29,7 @@ import pano from './rotalar/pano.js';
 import sesli from './rotalar/sesli.js';
 import klipler from './rotalar/klipler.js';
 import topluluk from './rotalar/topluluk.js';
+import muzik from './rotalar/muzik.js';
 
 const router = Router();
 
@@ -49,5 +50,6 @@ router.use(pano);
 router.use(sesli);
 router.use(klipler);
 router.use(topluluk);
+router.use(muzik);
 
 export default router;

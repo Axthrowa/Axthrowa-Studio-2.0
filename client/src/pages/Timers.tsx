@@ -6,9 +6,20 @@ export function Timers() {
   const [timers, setTimers] = useState<TimerConfig[]>([]);
   const [editingTimer, setEditingTimer] = useState<any | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [durumlar, setDurumlar] = useState<Record<string, { kalanSn: number; satir: number; minSatir: number }>>({});
+  const [hata, setHata] = useState('');
 
   useEffect(() => {
     loadTimers();
+    // Sıradaki mesaja kalan süre (sunucudaki gerçek sayaçtan)
+    const oku = () =>
+      fetch('/api/timers/durum')
+        .then((r) => r.json())
+        .then((l: any[]) => setDurumlar(Object.fromEntries((Array.isArray(l) ? l : []).map((d) => [d.id, d]))))
+        .catch(() => {});
+    oku();
+    const t = setInterval(oku, 5000);
+    return () => clearInterval(t);
   }, []);
 
   const loadTimers = () => {
@@ -31,23 +42,21 @@ export function Timers() {
       messages: messagesArray,
       intervalMinutes: editingTimer.interval_minutes,
       minChatLines: editingTimer.min_chat_lines,
-      isEnabled: editingTimer.is_enabled !== 0
+      isEnabled: editingTimer.is_enabled !== 0,
+      onlyLive: Number(editingTimer.only_live) === 1
     };
 
-    if (isNew) {
-      await fetch('/api/timers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } else {
-      await fetch(`/api/timers/${editingTimer.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+    const r = await fetch(isNew ? '/api/timers' : `/api/timers/${editingTimer.id}`, {
+      method: isNew ? 'POST' : 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(() => null);
+    if (!r?.ok) {
+      const d = await r?.json().catch(() => null);
+      setHata(d?.error || 'Kaydedilemedi.');
+      return;
     }
-
+    setHata('');
     setEditingTimer(null);
     loadTimers();
   };
@@ -78,7 +87,8 @@ export function Timers() {
               messagesText: '',
               interval_minutes: 15,
               min_chat_lines: 5,
-              is_enabled: 1
+              is_enabled: 1,
+              only_live: 0
             });
           }}
           className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all"
@@ -115,7 +125,16 @@ export function Timers() {
                   <div className="flex items-center space-x-4 text-xs text-gray-400">
                     <span>Aralık: <b className="text-white">{t.interval_minutes} dakika</b></span>
                     <span>Asgari Sohbet: <b className="text-white">{t.min_chat_lines} satır</b></span>
+                    {Number((t as any).only_live) === 1 && <span className="text-amber-300">Yalnız yayındayken</span>}
                   </div>
+                  {t.is_enabled && durumlar[t.id] && (
+                    <div className="text-[11px] text-gray-400">
+                      {durumlar[t.id].kalanSn > 0
+                        ? `Sıradaki mesaj: ${Math.floor(durumlar[t.id].kalanSn / 60)} dk ${durumlar[t.id].kalanSn % 60} sn sonra`
+                        : `Süre doldu — ${Math.max(0, durumlar[t.id].minSatir - durumlar[t.id].satir)} sohbet satırı daha bekleniyor`}
+                      {` · son mesajdan beri ${durumlar[t.id].satir} satır`}
+                    </div>
+                  )}
 
                   <div className="mt-3 bg-black/40 border border-white/5 p-3 rounded-xl space-y-1 text-xs text-gray-300">
                     <span className="font-semibold text-gray-400 flex items-center gap-1 mb-1">
@@ -201,7 +220,7 @@ export function Timers() {
                   <input
                     type="number"
                     min="1"
-                    max="180"
+                    max="1440"
                     value={editingTimer.interval_minutes}
                     onChange={e => setEditingTimer({ ...editingTimer, interval_minutes: parseInt(e.target.value, 10) })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
@@ -221,6 +240,21 @@ export function Timers() {
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2 text-xs font-bold text-gray-300">
+                <label className="flex items-center justify-between">
+                  Açık
+                  <input type="checkbox" checked={editingTimer.is_enabled !== 0} onChange={e => setEditingTimer({ ...editingTimer, is_enabled: e.target.checked ? 1 : 0 })} />
+                </label>
+                <label className="flex items-center justify-between">
+                  Yalnız yayın açıkken gönder
+                  <input type="checkbox" checked={Number(editingTimer.only_live) === 1} onChange={e => setEditingTimer({ ...editingTimer, only_live: e.target.checked ? 1 : 0 })} />
+                </label>
+                <p className="text-[11px] font-normal text-gray-500">
+                  Süre dolduğunda son mesajdan beri en az bu kadar sohbet satırı gelmişse hemen gönderilir; gelmemişse satır sayısı tamamlandığı anda gönderilir. Mesajlarda <code>$(...)</code> değişkenleri kullanılabilir.
+                </p>
+                {hata && <p className="text-red-300 font-normal">{hata}</p>}
               </div>
 
               <div className="pt-3 border-t border-white/10 flex justify-end space-x-2">

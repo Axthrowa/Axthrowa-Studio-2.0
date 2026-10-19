@@ -343,3 +343,37 @@ Sağlamlaştırma (gerçek hatalar):
 UNVERIFIED (gerçek platformda denenmedi): `!votekick`'in gerçek Kick belirteciyle susturması; 7TV hesabı olan
 bir kanalın kanal seti; kappagen'in OBS tarayıcı kaynağındaki görünümü (yalnız tarayıcı DOM'unda doğrulandı).
 Eklenmeyen: Twitch/BTTV/FFZ emote setleri (yalnız 7TV).
+
+## 16. KARARLILIK, MÜZİK (RESONANCE), WIDGET GALERİSİ (2026-10-19, 5. tur)
+
+- **Kendi kendine kapanma:** günlükte iki neden görüldü: 3001 portu doluyken açılış (`EADDRINUSE`) ve
+  açılışta "database is locked". `index.ts` artık bir gözcü: uygulamayı (`app.ts`) alt süreç olarak açar,
+  çökünce 3/6/12…30 sn bekleyip yeniden başlatır, 10 dakikada 8 çökmede vazgeçer. Port başka bir StreamAxT'deyse
+  çıkış kodu 2 (yeniden başlatılmaz). SQLite 15 sn kilit beklemesiyle açılıyor. `STREAMAXT_GOZCU=kapali` gözcüyü kapatır.
+- **Yavaş ağ:** bu makinede IPv6/IPv4 belirtilmemiş DNS sorguları 4–12 sn sürüyordu (Kick/Discord/Gemini zaman
+  aşımı). `core/dns-hizli.ts` süreç genelinde önce IPv4 sorgular.
+- **Gemini çalışmıyor — KOD DEĞİL ANAHTAR:** kayıtlı anahtar `AQ.` ile başlıyor; Google yanıtı
+  `API_KEY_SERVICE_BLOCKED` / `ACCESS_TOKEN_TYPE_UNSUPPORTED`. Bu anahtar Generative Language API'ye kapalı.
+  Çözüm: AI Studio'dan yeni (`AIza…`) anahtar ya da anahtar kısıtlamalarına "Generative Language API" eklemek.
+  Panel artık bu nedeni açıkça gösteriyor; sohbete kısa hata yazılır, kurtarıcı ⚠️ yanıtları yutmaz.
+- **Discord duyurusu:** gömülü veritabanında hiç webhook kayıtlı DEĞİLDİ (kaydetme hiç tamamlanmamış).
+  Gönderimde 15 sn zaman aşımı, ağ hatasında 1 yeniden deneme, 401/404/429 için açık mesajlar eklendi.
+- **Zamanlayıcılar:** 5 sn tik, zamanlayıcı başına satır sayacı, `only_live` (göç #9, geri uyumlu), değişkenler
+  çözülüyor; panelde geri sayım ve son hata görünüyor.
+- **`!sr` → Spotify:** PKCE bağlantısı (`user-modify-playback-state`) ile istek Spotify kuyruğuna eklenir ya da
+  hemen çalar (`sr_spotify_mod`). Spotify Premium ve açık bir cihaz gerekir; `!skip` Spotify'da sonrakine geçer.
+- **Resonance:** "Şu an çalan" kartının yerine Resonance kaplaması (`/resonance/overlay`). Ayrıca tek başına
+  çalışan sürüm: `resonance-bagimsiz.js` (127.0.0.1:8850, Spotify yönlendirme adresi
+  `http://127.0.0.1:8850/api/player/spotify/callback`), sırlar DPAPI ile şifreli.
+- **Bil Bakalım:** sohbet iletisi yalnız soru + şıklar. Soru bankası denetleyicisi (`soru-kalite.ts`) ilk açılışta
+  bir kez çalışır: gerçek bankada ~305 bozuk soru ayıklandı, ~1176 şık onarıldı.
+- **Widget'lar:** beta etiketleri kaldırıldı; tüm widget'lara ipucu eklendi. Bil Bakalım/anket/çark/çekiliş
+  ayarlanabilir sürede kaybolur; kupa rastgele yığılır ve sıfırlanabilir (bağış/abone/hediye/KICKs); hype treni
+  sıfırdan başlar ve olay seçilebilir; tahtın kralı yayıncıyı dışarıda bırakabilir; emote kombo görseli gösterir;
+  canlı sohbet özgün platform logoları ve Kick abone rozetleri; event labels okunur ve ayarlanabilir;
+  canlı sözler çalan parçaya ve ilerlemeye göre senkron. 29 widget tarayıcıda önizleme kipinde açıldı.
+- **Güvenlik:** değişken/koşul hesaplamasındaki `Function()` kaldırıldı (özyinelemeli ayrıştırıcı);
+  `uuid` yerine `crypto.randomUUID`; anket/sabit ileti/zamanlayıcı gövdeleri doğrulanıyor.
+
+UNVERIFIED (gerçek platformda denenmedi): Spotify Premium'da gerçek çalma, gerçek Kick sohbetinden `!sr`,
+gerçek Discord webhook gönderimi, gerçek bir şarkıda sözlerin senkronu, yeni bir Gemini anahtarıyla yanıt.

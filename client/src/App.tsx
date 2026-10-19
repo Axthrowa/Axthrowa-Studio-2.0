@@ -60,7 +60,7 @@ const KappagenWidget = lazy(() => import('./widgets/KappagenWidget.js'));
 const SubathonWidget = lazy(() => import('./widgets/SubathonWidget.js'));
 const HypeTrainWidget = lazy(() => import('./widgets/HypeTrainWidget.js'));
 const EventLabelsWidget = lazy(() => import('./widgets/EventLabelsWidget.js'));
-const NowPlayingWidget = lazy(() => import('./widgets/NowPlayingWidget.js'));
+const ResonanceWidget = lazy(() => import('./widgets/ResonanceWidget.js'));
 const PollsWidget = lazy(() => import('./widgets/PollsWidget.js'));
 const ShoutoutWidget = lazy(() => import('./widgets/ShoutoutWidget.js'));
 const TheCupWidget = lazy(() => import('./widgets/TheCupWidget.js'));
@@ -108,7 +108,8 @@ export function App() {
   if (path === '/widgets/subathon') return obsSayfasi(<SubathonWidget />);
   if (path === '/widgets/hype-train') return obsSayfasi(<HypeTrainWidget />);
   if (path === '/widgets/event-labels') return obsSayfasi(<EventLabelsWidget />);
-  if (path === '/widgets/now-playing') return obsSayfasi(<NowPlayingWidget />);
+  // "Şu An Çalan" artık Resonance (eski adres de onu gösterir)
+  if (path === '/widgets/now-playing' || path === '/widgets/resonance') return obsSayfasi(<ResonanceWidget />);
   if (path === '/widgets/polls') return obsSayfasi(<PollsWidget />);
   if (path === '/widgets/shoutout') return obsSayfasi(<ShoutoutWidget />);
   if (path === '/widgets/the-cup') return obsSayfasi(<TheCupWidget />);

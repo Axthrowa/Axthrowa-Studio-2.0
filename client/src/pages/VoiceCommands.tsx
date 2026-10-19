@@ -85,7 +85,7 @@ const WIDGETLAR = [
   { value: 'hypeTrain', label: 'Hype treni' }
 ];
 
-const TEST_WIDGETLARI = ['wheel', 'emote-combo', 'the-cup', 'hype-train', 'subathon', 'now-playing', 'shoutout', 'credits', 'jumpscare', 'viewer-counter', 'tts'].map((v) => ({
+const TEST_WIDGETLARI = ['wheel', 'emote-combo', 'the-cup', 'hype-train', 'subathon', 'shoutout', 'credits', 'jumpscare', 'viewer-counter', 'tts'].map((v) => ({
   value: v,
   label: v
 }));

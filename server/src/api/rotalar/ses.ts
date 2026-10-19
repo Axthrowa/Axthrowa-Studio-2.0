@@ -8,12 +8,12 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import axios from 'axios';
 import { songRequest } from '../../modules/songrequest/songrequest.js';
 import { multiEngineTTS } from '../../modules/tts/tts-engine.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { ttsEngine } from '../../modules/tts/tts.js';
-import { seyrekUyar } from '../../core/logger.js';
+import { muzikHost } from '../../modules/muzik/index.js';
+import { sozleriGetir } from '../../modules/muzik/sozler.js';
 
 const router = Router();
 
@@ -99,87 +99,26 @@ router.post('/tts/clear', (req: Request, res: Response) => {
   res.json({ success: true, message: 'TTS kuyruğu temizlendi' });
 });
 
-// 7. Widget Lyrics API (Syncs with Song Request or queries lyrics)
+// 7. Canlı şarkı sözleri: GERÇEKTEN çalan parça (Spotify/YTMD), yoksa istek kuyruğu.
+// İlerleme bilgisi de döner: widget zaman damgalı sözleri şarkıyla senkron gösterir.
 router.get('/lyrics/current', async (req: Request, res: Response) => {
-  const currentSong = songRequest.getCurrentSong();
-  const queryTitle = (req.query.title as string) || (currentSong ? currentSong.title : '');
-
-  if (!queryTitle) {
-    return res.json({
-      title: 'Şu an şarkı çalmıyor',
-      artist: '',
-      synced: false,
-      lines: [
-        { time: 0, text: '🎵 Şarkı isteğinde bulunun veya bir parça başlatın' },
-        { time: 5, text: '✨ Sözler canlı olarak burada akacaktır' }
-      ]
-    });
+  const calan = muzikHost.simdiCalan();
+  const istek = songRequest.getCurrentSong();
+  const elle = String(req.query.title || '').slice(0, 200);
+  const title = elle || calan?.title || istek?.title || '';
+  const artist = elle ? String(req.query.artist || '').slice(0, 200) : calan?.artist || '';
+  if (!title) {
+    return res.json({ title: '', artist: '', synced: false, bulundu: false, lines: [], kaynak: null });
   }
-
-  // Clean title for search: remove (Official Video), [MV], feat, etc.
-  const cleanTitle = queryTitle
-    .replace(/\(.*?\)/g, '')
-    .replace(/\[.*?\]/g, '')
-    .replace(/official video/gi, '')
-    .replace(/lyric video/gi, '')
-    .replace(/audio/gi, '')
-    .trim();
-
-  try {
-    // Try lrclib.net free open API for synced lyrics
-    const lrcResp = await axios.get(`https://lrclib.net/api/search?q=${encodeURIComponent(cleanTitle)}`, { timeout: 3500 });
-    if (lrcResp.data && lrcResp.data.length > 0) {
-      const best = lrcResp.data[0];
-      if (best.syncedLyrics) {
-        // Parse LRC format: [mm:ss.xx] text
-        const lrcLines: { time: number; text: string }[] = [];
-        const lines = best.syncedLyrics.split('\n');
-        for (const line of lines) {
-          const match = line.match(/\[(\d+):(\d+\.?\d*)\](.*)/);
-          if (match) {
-            const mins = parseInt(match[1], 10);
-            const secs = parseFloat(match[2]);
-            const text = match[3].trim();
-            if (text) {
-              lrcLines.push({ time: mins * 60 + secs, text });
-            }
-          }
-        }
-        if (lrcLines.length > 0) {
-          return res.json({
-            title: best.trackName || cleanTitle,
-            artist: best.artistName || '',
-            synced: true,
-            lines: lrcLines
-          });
-        }
-      } else if (best.plainLyrics) {
-        const plainLines = best.plainLyrics.split('\n').filter(Boolean).map((t: string, i: number) => ({
-          time: i * 4,
-          text: t.trim()
-        }));
-        return res.json({
-          title: best.trackName || cleanTitle,
-          artist: best.artistName || '',
-          synced: false,
-          lines: plainLines
-        });
-      }
-    }
-  } catch (err) {
-    // Ağ/servis hatası: aşağıdaki "söz bulunamadı" yanıtına düşülür
-    seyrekUyar('sarki-sozu', '[Şarkı sözü] Söz servisine ulaşılamadı', err, 300_000);
-  }
-
-  // Graceful fallback lines
+  const soz = await sozleriGetir(title, artist, calan?.duration || 0);
   res.json({
-    title: cleanTitle,
-    artist: '',
-    synced: false,
-    lines: [
-      { time: 0, text: `🎶 ${cleanTitle}` },
-      { time: 4, text: 'Sözler hazırlanıyor...' }
-    ]
+    ...soz,
+    kaynak: elle ? 'elle' : calan ? calan.source : 'istek',
+    // Senkron için: ilerleme + örnekleme anı (widget aradaki süreyi ekler)
+    progressMs: calan?.progress ?? null,
+    updatedAt: calan?.updatedAt ?? null,
+    isPlaying: calan?.isPlaying ?? null,
+    durationMs: calan?.duration ?? null
   });
 });
 

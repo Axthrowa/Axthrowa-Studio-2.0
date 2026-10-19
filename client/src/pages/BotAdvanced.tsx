@@ -319,6 +319,51 @@ const ESIK_ETIKETI: Record<string, string> = {
   resub: 'Minimum ay'
 };
 
+/** Temalı mesajlar: Star Wars, Harry Potter… — her olayda farklı mesaj */
+function TemaSecici() {
+  const toast = useToast();
+  const [d, setD] = useState<{ tema: string; temalar: Record<string, string>; ornekler: Record<string, Record<string, string[]>> } | null>(null);
+  useEffect(() => {
+    al<any>('/api/chat-alerts/tema').then(setD).catch(() => {});
+  }, []);
+  if (!d) return null;
+  const ornek = d.tema !== 'yok' && d.tema !== 'karisik' ? d.ornekler[d.tema] : null;
+  return (
+    <Kart
+      baslik="Temalı eğlenceli mesajlar"
+      aciklama="Bir tema seçince her olayda o temadan FARKLI bir mesaj gider (aynısı art arda gelmez). 'Tema yok' seçiliyse aşağıdaki kendi şablonların ve ek mesajların kullanılır. Olayların açık/kapalı ve eşik ayarları her iki durumda da geçerlidir."
+    >
+      <select
+        value={d.tema}
+        onChange={(e) =>
+          yolla<any>('/api/chat-alerts/tema', { tema: e.target.value })
+            .then((r) => {
+              setD({ ...d, tema: r.tema });
+              toast('Tema kaydedildi.', 'basari');
+            })
+            .catch(() => toast('Kaydedilemedi.', 'hata'))
+        }
+        className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm"
+      >
+        {Object.entries(d.temalar).map(([id, ad]) => (
+          <option key={id} value={id}>
+            {ad}
+          </option>
+        ))}
+      </select>
+      {ornek && (
+        <div className="mt-3 space-y-1 text-[11px] text-gray-300 max-h-48 overflow-y-auto">
+          {Object.entries(OLAY_ADLARI).map(([olay, ad]) => (
+            <p key={olay}>
+              <b className="text-gray-400">{ad}:</b> {ornek[olay]?.[0]}
+            </p>
+          ))}
+        </div>
+      )}
+    </Kart>
+  );
+}
+
 function SohbetUyariPaneli() {
   const toast = useToast();
   const [k, setK] = useState<any>(null);
@@ -340,6 +385,7 @@ function SohbetUyariPaneli() {
 
   return (
     <div className="space-y-3">
+      <TemaSecici />
       <Kart
         baslik="Sohbete yazılan olay mesajları"
         aciklama="Görsel overlay'den bağımsızdır: olay olduğunda bot sohbete metin yazar. Şablonlarda tüm değişkenler çalışır."
@@ -362,6 +408,12 @@ function SohbetUyariPaneli() {
                   value={kural.sablon}
                   onChange={(e) => setK({ ...k, [olay]: { ...kural, sablon: e.target.value } })}
                   placeholder="$(sender) ..."
+                />
+                <AlanMetni
+                  value={(kural.varyantlar || []).join('\n')}
+                  onChange={(e) => setK({ ...k, [olay]: { ...kural, varyantlar: e.target.value.split('\n') } })}
+                  placeholder="Ek mesajlar (her satıra bir tane) — olay her geldiğinde bunlardan biri rastgele seçilir"
+                  rows={2}
                 />
                 <div className="grid grid-cols-2 gap-2">
                   {ESIK_ETIKETI[olay] && (

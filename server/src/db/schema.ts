@@ -32,6 +32,8 @@ export interface KingState {
   reignSeconds: number;
   title: string;
   history?: string; // JSON array of past kings
+  /** Tahtta izleyici yok (kurucu yer tutucu ya da yalnız-izleyici kipinde yayıncı) */
+  bos?: boolean;
 }
 
 export interface TTSSettings {

@@ -252,10 +252,11 @@ export class KickPlatform extends BasePlatform {
       );
 
       const identity = sender.identity || {};
-      const rawBadges = [
+      // Abone rozeti: kanalın kendi rozet görseli (aya göre) eklenir
+      const rawBadges = this.aboneRozetiEkle([
         ...(identity.badges || []),
         ...(identity.badges_v2 || [])
-      ];
+      ], channelSlug);
 
       const badges: string[] = (identity.badges || []).map((b: any) => b.type);
       const isBroadcaster = badges.includes('broadcaster') || senderName.toLowerCase() === channelSlug.toLowerCase();
@@ -773,6 +774,35 @@ export class KickPlatform extends BasePlatform {
   private profilOnbellek: Map<string, { zaman: number; veri: any }> = new Map();
 
   /** Herkese açık kanal sayfası (biyografi, sosyal hesaplar, takipçi). 5 dk önbellek. */
+  /** Kanalın abone rozetleri (ay → görsel); kanal bilgisinden, 30 dk önbellekli */
+  private aboneRozetleri: { kanal: string; zaman: number; liste: Array<{ ay: number; src: string }> } = { kanal: '', zaman: 0, liste: [] };
+
+  private aboneRozetiEkle(rozetler: any[], kanal: string): any[] {
+    const k = String(kanal || '').toLowerCase();
+    const o = this.aboneRozetleri;
+    if (k && (o.kanal !== k || Date.now() - o.zaman > 30 * 60_000)) {
+      this.aboneRozetleri = { kanal: k, zaman: Date.now(), liste: o.kanal === k ? o.liste : [] };
+      void this.profil(k)
+        .then((veri) => {
+          const liste = (Array.isArray(veri?.subscriber_badges) ? veri.subscriber_badges : [])
+            .map((r: any) => ({ ay: Number(r?.months) || 0, src: String(r?.badge_image?.src || '') }))
+            .filter((r: { src: string }) => /^https:\/\/files\.kick\.com\//.test(r.src))
+            .sort((a: { ay: number }, b: { ay: number }) => a.ay - b.ay);
+          this.aboneRozetleri = { kanal: k, zaman: Date.now(), liste };
+        })
+        .catch(() => {});
+    }
+    const liste = this.aboneRozetleri.liste;
+    if (!liste.length) return rozetler;
+    return rozetler.map((r) => {
+      if (!r || typeof r !== 'object' || r.type !== 'subscriber' || r.image_url) return r;
+      const ay = Number(r.count) || 1;
+      let secilen = liste[0];
+      for (const x of liste) if (x.ay <= ay) secilen = x;
+      return { ...r, image_url: secilen.src };
+    });
+  }
+
   async profil(slug: string): Promise<any | null> {
     const s = String(slug || '').replace(/^@/, '').trim().toLowerCase();
     if (!/^[a-z0-9_-]{1,40}$/.test(s)) return null;

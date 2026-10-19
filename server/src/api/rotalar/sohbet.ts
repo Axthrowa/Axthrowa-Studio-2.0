@@ -13,6 +13,7 @@ import { widgetAyariOku, widgetAyariYaz } from './widgetlar.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { geminiCoHost } from '../../modules/ai/gemini.js';
 import { sohbetUyarilari } from '../../modules/chat-alerts/chat-alerts.js';
+import { TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
 import { seyrekUyar } from '../../core/logger.js';
 
 const router = Router();
@@ -20,6 +21,14 @@ const router = Router();
 // 9.0 Sohbet tarafi olay mesajlari
 router.get('/chat-alerts', (req: Request, res: Response) => {
   res.json(sohbetUyarilari.ayarOku());
+});
+
+// Temalı mesajlar (Star Wars, Harry Potter…): seçim ve örnekler
+router.get('/chat-alerts/tema', (_req: Request, res: Response) => {
+  res.json({ tema: sohbetUyarilari.temaOku(), temalar: TEMA_ADLARI, ornekler: TEMA_MESAJLARI });
+});
+router.post('/chat-alerts/tema', (req: Request, res: Response) => {
+  res.json({ tema: sohbetUyarilari.temaYaz(String(req.body?.tema || 'yok')) });
 });
 
 router.post('/chat-alerts', (req: Request, res: Response) => {
@@ -99,7 +108,13 @@ router.get('/pinned', (req: Request, res: Response) => {
 });
 
 router.post('/pinned', (req: Request, res: Response) => {
-  const { platform, username, displayName, message, color } = req.body;
+  // Doğrulama: boş mesaj sabitlenmez, uzunluk ve renk biçimi sınırlı
+  const message = String(req.body?.message ?? '').trim().slice(0, 500);
+  if (!message) return res.status(400).json({ success: false, error: 'Sabitlenecek mesaj boş.' });
+  const platform = /^(kick|twitch|youtube|tiktok|discord|trovo)$/.test(String(req.body?.platform)) ? String(req.body.platform) : 'kick';
+  const username = String(req.body?.username ?? '').slice(0, 60);
+  const displayName = String(req.body?.displayName ?? '').slice(0, 60);
+  const color = /^#[0-9a-f]{3,8}$/i.test(String(req.body?.color)) ? String(req.body.color) : '#8b5cf6';
   const id = `pin-${Date.now()}`;
   db.prepare('DELETE FROM pinned_messages').run();
   db.prepare(`

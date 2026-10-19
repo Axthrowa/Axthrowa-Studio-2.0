@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { satiriCoz } from '../core/security/vault.js';
 import path from 'path';
 import fs from 'fs';
-import { syncTriviaBank } from '../modules/games/trivia-sync.js';
+import { syncTriviaBank, triviaBankasiniOnar } from '../modules/games/trivia-sync.js';
 import { gocleriUygula } from './migrations.js';
 import { hataMetni } from '../core/logger.js';
 
@@ -735,6 +735,11 @@ try {
   const result = syncTriviaBank(db);
   if (result.added > 0) {
     console.log(`[Database] Synced ${result.added} new trivia questions (total ${result.total}).`);
+  }
+  // Soru bankası kalite onarımı (yeni soru geldiyse ya da kurallar değiştiyse)
+  const onarim = triviaBankasiniOnar(db, result.added > 0);
+  if (onarim.onarildi || onarim.atildi) {
+    console.log(`[Bil Bakalım] Soru bankası onarıldı: ${onarim.onarildi} soru düzeltildi, ${onarim.atildi} bozuk soru çıkarıldı.`);
   }
 } catch (err) {
   console.warn('[Database] Error checking or seeding trivia questions:', err);

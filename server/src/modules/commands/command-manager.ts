@@ -666,6 +666,7 @@ export class CommandManager {
       case 'taht':
       case 'king': {
         const state = kingSystemService.getKingState();
+        if (state.bos) return '👑 Taht şu an boş! Kapmak için: !tahtikap <puan>';
         const mins = Math.floor(state.reignSeconds / 60);
         return `👑 Tahtın Sahibi: @${state.displayName} (${state.pointsBid} puan) | Hüküm Süresi: ${mins} dakika | Tahtı kapmak için: !tahtikap <puan>`;
       }
@@ -681,7 +682,9 @@ export class CommandManager {
           message.user.username,
           message.user.displayName,
           bid,
-          message.user.avatarUrl
+          message.user.avatarUrl,
+          undefined,
+          message.user.isBroadcaster
         );
         return res.message;
       }

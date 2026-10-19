@@ -46,8 +46,10 @@ class HypeTreni {
       const k = r?.value ? JSON.parse(r.value) : {};
       const a = { ...HYPE_VARSAYILAN } as any;
       for (const alan of Object.keys(HYPE_VARSAYILAN)) {
-        const n = Number(k[alan]);
-        if (k[alan] !== undefined && k[alan] !== '' && Number.isFinite(n)) a[alan] = n;
+        const v = k[alan];
+        if (v === undefined || v === '') continue;
+        if (typeof (HYPE_VARSAYILAN as any)[alan] === 'boolean') a[alan] = v !== false && v !== 'false' && v !== 0;
+        else if (Number.isFinite(Number(v))) a[alan] = Number(v);
       }
       return a;
     } catch {
@@ -76,6 +78,13 @@ class HypeTreni {
     const a = this.ayarOku();
     const eklenen = olayPuani(subType, data, a);
     if (eklenen <= 0) return 0;
+    // Otomatik başlama kapalıysa tren yalnız panelden başlatılınca dolar
+    if (!this.aktif && !a.autoStart) return 0;
+    // Süresi dolmuş tren her zaman sıfırdan başlar (eski seviye/puan taşınmaz)
+    if (!this.aktif || Date.now() > this.bitisAni) {
+      this.seviye = 1;
+      this.puan = 0;
+    }
 
     const ad = data?.displayName || data?.username || 'İzleyici';
     const sonuc = seviyeIlerlet(this.seviye, this.puan, eklenen, a);
@@ -90,6 +99,19 @@ class HypeTreni {
 
     this.yayinla();
     return eklenen;
+  }
+
+  /** Panelden "Başlat": tren SIFIRDAN (1. seviye, 0 puan) başlar ve süre işler. */
+  baslat() {
+    const a = this.ayarOku();
+    if (this.zaman) clearTimeout(this.zaman);
+    this.aktif = true;
+    this.seviye = 1;
+    this.puan = 0;
+    this.sonDestek = null;
+    this.bitisAni = Date.now() + Math.max(10, a.windowSeconds) * 1000;
+    this.zaman = setTimeout(() => this.sifirla(), Math.max(10, a.windowSeconds) * 1000);
+    this.yayinla();
   }
 
   sifirla() {

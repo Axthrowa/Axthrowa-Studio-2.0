@@ -15,6 +15,7 @@ import { hypeTreni } from '../../modules/hype/hype-train.js';
 import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../../modules/widgets/settings-validate.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { kupa } from '../../modules/engagement/kupa.js';
+import { etiketVerisi } from '../../modules/widgets/olay-etiketleri.js';
 import { carkCevir } from '../../modules/engagement/cark.js';
 
 const router = Router();
@@ -31,6 +32,20 @@ router.get('/hype-train', (_req: Request, res: Response) => res.json(hypeTreni.d
 router.post('/hype-train/reset', (_req: Request, res: Response) => {
   hypeTreni.sifirla();
   res.json(hypeTreni.durum());
+});
+router.post('/hype-train/start', (_req: Request, res: Response) => {
+  hypeTreni.baslat();
+  res.json(hypeTreni.durum());
+});
+
+// Olay Etiketleri — son olaylar veritabanından (sayfa açılınca "—" kalmasın)
+router.get('/event-labels', (_req: Request, res: Response) => {
+  try {
+    res.json(etiketVerisi());
+  } catch (e) {
+    seyrekUyar('etiket:oku', '[Etiketler] Son olaylar okunamadı', e);
+    res.json({});
+  }
 });
 
 // Bağış Kupası — durum sunucuda (OBS yenilenince içi korunur)

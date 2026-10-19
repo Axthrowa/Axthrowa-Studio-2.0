@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertPreset } from '../types.js';
 import {
   Layers,
@@ -45,6 +45,7 @@ import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 import { ayarKanalinaKatil, YERLESIM_KIMLIGI } from '../lib/ayarKanali.js';
 import { SubathonPanel } from '../components/SubathonPanel.js';
+import { OBS_EKLEME, WIDGET_IPUCLARI } from '../lib/widget-ipuclari.js';
 
 
 export interface WidgetLayoutItem {
@@ -169,8 +170,8 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
     aciklama: 'İzleyiciler sadakat puanıyla ödül alır: ses, TTS, VIP rolü ve özel uyarılar.'
   },
   'now-playing': {
-    baslik: 'Şu An Çalan',
-    aciklama: 'Şarkı isteği kuyruğunda çalan parçayı kapak ve ekolayzerle canlı gösterir.'
+    baslik: 'Resonance — Şu An Çalan',
+    aciklama: 'Spotify ya da YouTube Music’te gerçekten çalan şarkıyı kapak ve ilerlemeyle gösterir; görünümü Resonance’ta seçilir.'
   },
   'on-screen-emotes': {
     baslik: 'Ekranda Emojiler (Kappagen)',
@@ -248,7 +249,6 @@ const KATMAN_AYAR_ID: Record<string, string> = {
   polls: 'polls',
   wheel: 'wheel-of-fortune',
   emoteCombo: 'emote-combo',
-  nowPlaying: 'now-playing',
   theCup: 'the-cup',
   hypeTrain: 'hype-train',
   lyrics: 'lyrics',
@@ -475,15 +475,25 @@ export function OverlayStudio() {
    * piksel OBS'teki ayni pikseldir. Genislik degistikce yeniden olculur.
    */
   const [tuvalOlcek, setTuvalOlcek] = useState(1);
-  useEffect(() => {
-    const el = canvasRef.current;
+  /**
+   * Gözlemci tuval öğesi HER oluştuğunda bağlanır (geri çağrılı ref).
+   * Eskiden `useEffect(..., [])` yalnız ilk açılışta bağlıyordu: sekme
+   * değişip tuval yeniden oluşunca ölçek güncellenmiyor, 1920 piksellik
+   * tuvalin yalnız sol üst köşesi görünüyordu ("önizleme tam göstermiyor").
+   */
+  const tuvalGozlemci = useRef<ResizeObserver | null>(null);
+  const tuvalRef = useCallback((el: HTMLDivElement | null) => {
+    canvasRef.current = el;
+    tuvalGozlemci.current?.disconnect();
+    tuvalGozlemci.current = null;
     if (!el) return;
-    const guncelle = () => setTuvalOlcek((el.clientWidth || 1920) / 1920);
+    const guncelle = () => setTuvalOlcek(Math.max(0.05, (el.clientWidth || 1920) / 1920));
     guncelle();
-    const gozlemci = new ResizeObserver(guncelle);
-    gozlemci.observe(el);
-    return () => gozlemci.disconnect();
+    const g = new ResizeObserver(guncelle);
+    g.observe(el);
+    tuvalGozlemci.current = g;
   }, []);
+  useEffect(() => () => tuvalGozlemci.current?.disconnect(), []);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const dragStartRef = useRef<{ pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
@@ -702,182 +712,151 @@ export function OverlayStudio() {
       id: 'activity-feed',
       category: 'On-Stream',
       icon: Layers,
-      url: `${baseUrl}/widgets/activity-feed`,
-      beta: false
+      url: `${baseUrl}/widgets/activity-feed`
     },
     {
       id: 'alert-box',
       category: 'On-Stream',
       icon: Bell,
-      url: `${baseUrl}/widgets/alertbox`,
-      beta: false
+      url: `${baseUrl}/widgets/alertbox`
     },
     {
       id: 'chat-overlay',
       category: 'Engagement',
       icon: MessageSquare,
-      url: `${baseUrl}/widgets/chatbox`,
-      beta: false
+      url: `${baseUrl}/widgets/chatbox`
     },
     {
       id: 'cloud-tts',
       category: 'Audio & AI',
       icon: Cloud,
-      url: `${baseUrl}/widgets/audio-player`,
-      beta: true,
-      badge: 'BETA V3'
+      url: `${baseUrl}/widgets/audio-player`
     },
     {
       id: 'donation-goal',
       category: 'Goals',
       icon: DollarSign,
-      url: `${baseUrl}/widgets/donation-goal`,
-      beta: false
+      url: `${baseUrl}/widgets/donation-goal`
     },
     {
       id: 'emote-combo',
       category: 'Engagement',
       icon: Smile,
-      url: `${baseUrl}/widgets/emote-combo`,
-      beta: false
+      url: `${baseUrl}/widgets/emote-combo`
     },
     {
       id: 'end-credits',
       category: 'On-Stream',
       icon: Film,
-      url: `${baseUrl}/widgets/credits`,
-      beta: true,
-      badge: 'BETA'
+      url: `${baseUrl}/widgets/credits`
     },
     {
       id: 'event-labels',
       category: 'On-Stream',
       icon: Tag,
-      url: `${baseUrl}/widgets/event-labels`,
-      beta: false
+      url: `${baseUrl}/widgets/event-labels`
     },
     {
       id: 'follower-goal',
       category: 'Goals',
       icon: TrendingUp,
-      url: `${baseUrl}/widgets/follower-goal`,
-      beta: false
+      url: `${baseUrl}/widgets/follower-goal`
     },
     {
       id: 'giveaways',
       category: 'Engagement',
       icon: Gift,
-      url: `${baseUrl}/widgets/giveaways`,
-      beta: false
+      url: `${baseUrl}/widgets/giveaways`
     },
     {
       id: 'hype-train',
       category: 'Engagement',
       icon: Train,
-      url: `${baseUrl}/widgets/hype-train`,
-      beta: true,
-      badge: 'BETA'
+      url: `${baseUrl}/widgets/hype-train`
     },
     {
       id: 'loyalty-redemptions',
       category: 'Engagement',
       icon: Trophy,
-      url: `${baseUrl}/widgets/loyalty-redeem`,
-      beta: false
+      url: `${baseUrl}/widgets/loyalty-redeem`
     },
     {
       id: 'now-playing',
       category: 'Audio & AI',
       icon: Music,
-      url: `${baseUrl}/widgets/now-playing`,
-      beta: false
+      url: `${baseUrl}/resonance/overlay`
     },
     {
       id: 'on-screen-emotes',
       category: 'Engagement',
       icon: Smile,
-      url: `${baseUrl}/widgets/emotes`,
-      beta: false
+      url: `${baseUrl}/widgets/emotes`
     },
     {
       id: 'pinned-messages',
       category: 'On-Stream',
       icon: Pin,
-      url: `${baseUrl}/widgets/pinned`,
-      beta: true,
-      badge: 'BETA'
+      url: `${baseUrl}/widgets/pinned`
     },
     {
       id: 'polls',
       category: 'Engagement',
       icon: BarChart3,
-      url: `${baseUrl}/widgets/polls`,
-      beta: false
+      url: `${baseUrl}/widgets/polls`
     },
     {
       id: 'shoutout',
       category: 'On-Stream',
       icon: Megaphone,
-      url: `${baseUrl}/widgets/shoutout`,
-      beta: false
+      url: `${baseUrl}/widgets/shoutout`
     },
     {
       id: 'subathon',
       category: 'Goals',
       icon: Hourglass,
-      url: `${baseUrl}/widgets/subathon`,
-      beta: true,
-      badge: 'BETA V2'
+      url: `${baseUrl}/widgets/subathon`
     },
     {
       id: 'subscriber-goal',
       category: 'Goals',
       icon: Target,
-      url: `${baseUrl}/widgets/subscriber-goal`,
-      beta: false
+      url: `${baseUrl}/widgets/subscriber-goal`
     },
     {
       id: 'the-cup',
       category: 'Engagement',
       icon: Wine,
-      url: `${baseUrl}/widgets/the-cup`,
-      beta: false
+      url: `${baseUrl}/widgets/the-cup`
     },
     {
       id: 'tts',
       category: 'Audio & AI',
       icon: Volume2,
-      url: `${baseUrl}/widgets/audio-player`,
-      beta: false
+      url: `${baseUrl}/widgets/audio-player`
     },
     {
       id: 'viewer-counter',
       category: 'On-Stream',
       icon: Users,
-      url: `${baseUrl}/widgets/viewer-counter`,
-      beta: false
+      url: `${baseUrl}/widgets/viewer-counter`
     },
     {
       id: 'trivia-quiz',
       category: 'Engagement',
       icon: HelpCircle,
-      url: `${baseUrl}/widgets/trivia`,
-      beta: false,
-      badge: 'YENİ 🧠'
+      url: `${baseUrl}/widgets/trivia`
     },
     {
       id: 'wheel-of-fortune',
       category: 'Engagement',
       icon: Disc,
-      url: `${baseUrl}/widgets/wheel`,
-      beta: false
+      url: `${baseUrl}/widgets/wheel`
     },
     {
       id: 'kicks-goal',
       category: 'Goals',
       icon: Gem,
-      url: `${baseUrl}/widgets/kicks-goal`,
-      beta: false
+      url: `${baseUrl}/widgets/kicks-goal`
     },
     // Ayar sistemine yeni bağlanan dört widget galeride hiç görünmüyordu:
     // OBS adresleri vardı ama panelden ayarlanamıyorlardı.
@@ -885,30 +864,25 @@ export function OverlayStudio() {
       id: 'rankings',
       category: 'On-Stream',
       icon: Trophy,
-      url: `${baseUrl}/widgets/rankings`,
-      beta: false
+      url: `${baseUrl}/widgets/rankings`
     },
     {
       id: 'lyrics',
       category: 'On-Stream',
       icon: Disc,
-      url: `${baseUrl}/widgets/lyrics`,
-      beta: true,
-      badge: 'BETA'
+      url: `${baseUrl}/widgets/lyrics`
     },
     {
       id: 'king',
       category: 'Engagement',
       icon: Gem,
-      url: `${baseUrl}/widgets/king`,
-      beta: false
+      url: `${baseUrl}/widgets/king`
     },
     {
       id: 'jumpscare',
       category: 'Alerts',
       icon: Eye,
-      url: `${baseUrl}/widgets/jumpscare`,
-      beta: false
+      url: `${baseUrl}/widgets/jumpscare`
     }
   ];
 
@@ -1119,11 +1093,12 @@ export function OverlayStudio() {
 
               {/* 16:9 Screen Simulation Box (Interactive Drag Canvas) */}
               <div 
-                ref={canvasRef}
+                ref={tuvalRef}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="relative w-full aspect-video bg-[#07090e] rounded-2xl border border-white/20 overflow-hidden shadow-2xl select-none cursor-default"
-                style={{ touchAction: 'none' }}
+                className="relative w-full aspect-video bg-[#07090e] rounded-2xl border border-white/20 overflow-hidden shadow-2xl select-none cursor-default mx-auto"
+                // Pencere alçakken tuval ekrandan taşmasın: yükseklik görünür alana sığar, 16:9 korunur
+                style={{ touchAction: 'none', maxWidth: 'max(320px, calc((100vh - 180px) * 16 / 9))' }}
               >
                 {/* Background Stream Grid Pattern & Aspect Ratio Watermark */}
                 <div 
@@ -1525,11 +1500,6 @@ export function OverlayStudio() {
                   onClick={() => setSelectedWidgetModal(widget)}
                   className="glass-panel p-5 rounded-2xl border border-white/10 hover:border-purple-500/50 bg-[#12141a]/90 hover:bg-[#181b24] transition-all flex flex-col justify-between group cursor-pointer relative"
                 >
-                  {widget.beta && (
-                    <span className="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[9px] font-black bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                      {widget.badge || 'BETA'}
-                    </span>
-                  )}
 
                   <div>
                     <div className="w-10 h-10 rounded-xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-3 group-hover:scale-110 transition-transform">
@@ -1543,6 +1513,9 @@ export function OverlayStudio() {
                     <p className="text-xs text-gray-400 mt-1 line-clamp-3 leading-relaxed">
                       {widget.description}
                     </p>
+                    {WIDGET_IPUCLARI[widget.id]?.[0] && (
+                      <p className="text-[11px] text-purple-200/80 mt-2 leading-snug line-clamp-2">💡 {WIDGET_IPUCLARI[widget.id][0]}</p>
+                    )}
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs">
@@ -1575,11 +1548,6 @@ export function OverlayStudio() {
                     <div>
                       <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                         {selectedWidgetModal.title}
-                        {selectedWidgetModal.beta && (
-                          <span className="text-[9px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded font-black">
-                            {selectedWidgetModal.badge || 'BETA'}
-                          </span>
-                        )}
                       </h3>
                       <span className="text-xs text-gray-400">{KATEGORI_ADI[selectedWidgetModal.category] || selectedWidgetModal.category}</span>
                     </div>
@@ -1596,7 +1564,29 @@ export function OverlayStudio() {
                   {selectedWidgetModal.description}
                 </p>
 
-                <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
+                {/* Nasıl çalışır? */}
+                {WIDGET_IPUCLARI[selectedWidgetModal.id] && (
+                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 space-y-1.5">
+                    <h4 className="text-xs font-bold text-purple-200">💡 Nasıl çalışır?</h4>
+                    <ul className="text-[11px] text-gray-300 space-y-1 list-disc pl-4">
+                      {WIDGET_IPUCLARI[selectedWidgetModal.id].map((m) => (
+                        <li key={m}>{m}</li>
+                      ))}
+                      <li className="text-gray-400">{OBS_EKLEME}</li>
+                    </ul>
+                  </div>
+                )}
+
+                {selectedWidgetModal.id === 'now-playing' ? (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-gray-300 space-y-2">
+                    <p>Görünüm (tema, renk, animasyon, kapak biçimi) Resonance’ın kendi ekranında ayarlanır; OBS adresi aynı kalır.</p>
+                    <a href="/resonance/" target="_blank" rel="noreferrer" className="inline-block px-3 py-2 rounded-xl bg-emerald-600 text-white font-bold">
+                      🎵 Resonance’ı aç
+                    </a>
+                  </div>
+                ) : (
+                  <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
+                )}
 
                 {/* Standalone OBS URL Box */}
                 <div className="space-y-1.5">
@@ -1668,8 +1658,28 @@ export function OverlayStudio() {
                   )}
 
                   {selectedWidgetModal.id === 'hype-train' && (
-                    <div className="flex items-center gap-2">
-                      <button 
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/hype-train/start', { method: 'POST' }).catch(() => {});
+                          setModalActionStatus('🚂 Tren sıfırdan başlatıldı');
+                          setTimeout(() => setModalActionStatus(null), 2500);
+                        }}
+                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"
+                      >
+                        ▶ Treni başlat (sıfırdan)
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/hype-train/reset', { method: 'POST' }).catch(() => {});
+                          setModalActionStatus('⏹ Tren durduruldu');
+                          setTimeout(() => setModalActionStatus(null), 2500);
+                        }}
+                        className="px-3 py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-xl text-xs font-bold"
+                      >
+                        ⏹ Durdur / sıfırla
+                      </button>
+                      <button
                         onClick={() => triggerWidgetTest('hype-train', { level: 2, percent: 80, secondsLeft: 240 })}
                         className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
                       >

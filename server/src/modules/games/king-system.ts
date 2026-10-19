@@ -4,7 +4,23 @@ import { KingState } from '../../db/schema.js';
 import economyService from '../economy/economy.js';
 import { hataMetni } from '../../core/logger.js';
 
+/** Tahtı yalnız izleyiciler mi kapabilir? (Kral widget ayarı; varsayılan evet) */
+export function yalnizIzleyici(): boolean {
+  try {
+    const r = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get('widget_settings_king') as { value?: string } | undefined;
+    const v = JSON.parse(r?.value || '{}')?.onlyViewers;
+    return v !== false && v !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+/** Kurucu yer tutucu: taht hiç kapılmadı ya da sıfırlandı */
+const KURUCU = 'Yayıncı';
+
 export class KingSystemService extends EventEmitter {
+  /** Tahtı kapan kişi yayıncıysa (yalnız-izleyici kipinde boş sayılır) */
+  private yayinciKral = false;
   private updateTimer: NodeJS.Timeout | null = null;
 
   constructor() {
@@ -25,7 +41,8 @@ export class KingSystemService extends EventEmitter {
         crownTime: row.crown_time,
         reignSeconds: reign,
         title: row.title || 'Yayın Hükümdarı',
-        history: row.history || '[]'
+        history: row.history || '[]',
+        bos: row.current_king === KURUCU || (this.yayinciKral && yalnizIzleyici())
       };
     }
 
@@ -38,7 +55,8 @@ export class KingSystemService extends EventEmitter {
       crownTime: Date.now(),
       reignSeconds: 0,
       title: 'Tahtın Kurucusu',
-      history: '[]'
+      history: '[]',
+      bos: true
     };
   }
 
@@ -50,7 +68,22 @@ export class KingSystemService extends EventEmitter {
     }, 15000);
   }
 
-  async claimThrone(username: string, displayName: string, pointsBid: number, avatarUrl?: string, title?: string): Promise<{ success: boolean; message: string; state?: KingState }> {
+  async claimThrone(
+    username: string,
+    displayName: string,
+    pointsBid: number,
+    avatarUrl?: string,
+    title?: string,
+    yayinci = false
+  ): Promise<{ success: boolean; message: string; state?: KingState }> {
+    if (!Number.isFinite(pointsBid) || pointsBid <= 0 || pointsBid > 1e12) {
+      return { success: false, message: '⚠️ Geçersiz puan.' };
+    }
+    pointsBid = Math.floor(pointsBid);
+    // Ayar: taht yalnız izleyicilerin (yayıncı kendini tahta oturtamaz)
+    if (yayinci && yalnizIzleyici()) {
+      return { success: false, message: '👑 Taht yalnız izleyiciler için — yayıncı tahta çıkamaz.' };
+    }
     const current = this.getKingState();
 
     if (username.toLowerCase() === current.currentKing.toLowerCase()) {
@@ -114,6 +147,7 @@ export class KingSystemService extends EventEmitter {
         history = excluded.history
     `).run(username, displayName || username, avatarUrl || '', pointsBid, now, newTitle, JSON.stringify(history));
 
+    this.yayinciKral = yayinci;
     const updatedState = this.getKingState();
     this.emit('king_crowned', updatedState);
 
@@ -137,6 +171,7 @@ export class KingSystemService extends EventEmitter {
       WHERE id = 'current'
     `).run(now);
 
+    this.yayinciKral = false;
     const state = this.getKingState();
     this.emit('king_reset', state);
     return state;

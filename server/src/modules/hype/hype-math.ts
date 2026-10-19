@@ -16,6 +16,14 @@ export interface HypeAyari {
   pointsTip: number;
   pointsKicks: number;
   pointsFollow: number;
+  /** Treni hangi olaylar besler (panelden seçilir) */
+  fromSub: boolean;
+  fromGift: boolean;
+  fromTip: boolean;
+  fromKicks: boolean;
+  fromFollow: boolean;
+  /** Kapalıysa tren yalnız panelden "Başlat" ile başlar */
+  autoStart: boolean;
 }
 
 /** Widget varsayılanlarıyla aynı (client/src/lib/widget-defaults.ts HYPE_TRAIN_DEFAULTS). */
@@ -28,7 +36,13 @@ export const HYPE_VARSAYILAN: HypeAyari = {
   pointsGiftSub: 100,
   pointsTip: 10,
   pointsKicks: 1,
-  pointsFollow: 5
+  pointsFollow: 5,
+  fromSub: true,
+  fromGift: true,
+  fromTip: true,
+  fromKicks: true,
+  fromFollow: false,
+  autoStart: true
 };
 
 /** Seviye hedefi kademeli büyür: taban * büyüme^(seviye-1). */
@@ -44,11 +58,13 @@ export function olayPuani(subType: string, data: any, s: Partial<HypeAyari>): nu
   const d = data || {};
   const adet = Math.max(1, Number(d.count || 1));
   const tutar = Math.max(0, Number(d.amount || 0));
-  if (subType === 'sub') return Math.max(0, Number(s.pointsSub) || 0);
-  if (subType === 'gift_sub') return Math.max(0, Number(s.pointsGiftSub) || 0) * adet;
-  if (subType === 'tip') return Math.round(Math.max(0, Number(s.pointsTip) || 0) * tutar);
-  if (subType === 'kicks') return Math.round(Math.max(0, Number(s.pointsKicks) || 0) * tutar);
-  if (subType === 'follow' || subType === 'follower') return Math.max(0, Number(s.pointsFollow) || 0);
+  // Seçilmeyen olay treni beslemez (verilmemişse açık sayılır; takip varsayılan kapalı)
+  const acik = (v: unknown, varsayilan = true) => (v === undefined ? varsayilan : v !== false);
+  if (subType === 'sub') return acik(s.fromSub) ? Math.max(0, Number(s.pointsSub) || 0) : 0;
+  if (subType === 'gift_sub') return acik(s.fromGift) ? Math.max(0, Number(s.pointsGiftSub) || 0) * adet : 0;
+  if (subType === 'tip') return acik(s.fromTip) ? Math.round(Math.max(0, Number(s.pointsTip) || 0) * tutar) : 0;
+  if (subType === 'kicks') return acik(s.fromKicks) ? Math.round(Math.max(0, Number(s.pointsKicks) || 0) * tutar) : 0;
+  if (subType === 'follow' || subType === 'follower') return acik(s.fromFollow, false) ? Math.max(0, Number(s.pointsFollow) || 0) : 0;
   return 0;
 }
 

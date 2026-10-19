@@ -22,7 +22,7 @@ import { AlertBoxWidget } from './AlertBoxWidget.js';
 import { EmoteComboWidget } from './EmoteComboWidget.js';
 import { SubathonWidget } from './SubathonWidget.js';
 import { EventLabelsWidget } from './EventLabelsWidget.js';
-import { NowPlayingWidget } from './NowPlayingWidget.js';
+import { ResonanceWidget } from './ResonanceWidget.js';
 import { TheCupWidget } from './TheCupWidget.js';
 import { PollsWidget } from './PollsWidget.js';
 import { GoalWidget } from './GoalWidget.js';
@@ -120,10 +120,10 @@ export const KATMANLAR: KatmanTanimi[] = [
   },
   {
     anahtar: 'nowPlaying',
-    etiket: '🎵 Şu An Çalan',
+    etiket: '🎵 Şu An Çalan (Resonance)',
     z: 65,
     varsayilan: { x: 40, y: 80, width: 380, height: 90 },
-    ciz: (o) => <NowPlayingWidget embedded previewMode={o} />
+    ciz: () => <ResonanceWidget embedded />
   },
   {
     anahtar: 'theCup',

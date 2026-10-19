@@ -223,6 +223,13 @@ export function MultiChat() {
             <Trash2 className="w-3.5 h-3.5" />
             <span>{confirmClear ? 'Emin misiniz? (Tıkla)' : 'Sohbeti Temizle'}</span>
           </button>
+          <button
+            onClick={() => void fetch('/api/pinned', { method: 'DELETE' })}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold border bg-white/5 hover:bg-white/10 border-white/10 text-gray-300"
+            title="OBS'teki sabitlenmiş mesajı kaldır (mesajların yanındaki 📌 ile sabitlenir)"
+          >
+            📌 Sabiti kaldır
+          </button>
 
           {/* Filter Tabs */}
           <div className="flex items-center space-x-1.5 bg-black/40 border border-white/10 p-1 rounded-xl text-xs font-bold">
@@ -299,6 +306,27 @@ export function MultiChat() {
                     <span className="text-[10px] text-gray-500">
                       {new Date(msg.timestamp).toLocaleTimeString('tr-TR')}
                     </span>
+                    {/* OBS "Sabitlenmiş Mesajlar" widget'ına gönder (eskiden panelde bunu yapan bir düğme yoktu) */}
+                    <button
+                      type="button"
+                      title="OBS'te sabitle (Sabitlenmiş Mesajlar widget'ı)"
+                      onClick={() =>
+                        void fetch('/api/pinned', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            platform: msg.platform,
+                            username: msg.user.username,
+                            displayName: msg.user.displayName || msg.user.username,
+                            message: msg.message,
+                            color: msg.user.color
+                          })
+                        })
+                      }
+                      className="text-[11px] opacity-40 hover:opacity-100 transition-opacity"
+                    >
+                      📌
+                    </button>
                   </div>
 
                   <div className="text-gray-200 text-sm font-medium break-words leading-relaxed">

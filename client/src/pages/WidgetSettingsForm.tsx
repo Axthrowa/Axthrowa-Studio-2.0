@@ -106,7 +106,16 @@ const LABELS: Record<string, string> = {
   textOffsetX: 'Metin yatay konumu (px)',
   textOffsetY: 'Metin dikey konumu (px)', hideUserMessage: 'Kullanıcı mesajını gizle',
   textFromMs: 'Metin görünsün (ms, başlangıç)', textToMs: 'Metin görünsün (ms, bitiş)',
-  imageMaxHeight: 'Görsel maks. yükseklik (px)'
+  imageMaxHeight: 'Görsel maks. yükseklik (px)',
+  // --- Görünürlük / olay seçimi (2026-10) ---
+  hideDelaySec: 'Cevaptan sonra kaybolma (sn, 0 = kalsın)', podiumHideSec: 'Kürsü ekranda kalma (sn, 0 = kalsın)',
+  hideAfterSec: 'Bitince kaybolma (sn, 0 = kalsın)', autoHide: 'Yalnız kullanılınca görünsün',
+  fromTip: 'Bağışlar sayılsın', fromSub: 'Aboneler sayılsın', fromGift: 'Hediye abonelikler sayılsın',
+  fromKicks: 'KICKs sayılsın', fromFollow: 'Takipler sayılsın', autoStart: 'Olay gelince kendiliğinden başlasın',
+  onlyViewers: 'Yalnız izleyiciler (yayıncı tahta çıkamaz/gösterilmez)', emptyText: 'Taht boşken yazı',
+  labelFollow: 'Takipçi başlığı', labelSub: 'Abone başlığı', labelTip: 'Bağış başlığı', labelTop: 'En büyük bağış başlığı',
+  labelRaid: 'Raid başlığı', labelKicks: 'KICKs başlığı', emptyValue: 'Veri yokken', labelColor: 'Başlık rengi',
+  notFoundText: 'Söz bulunamayınca yazı'
 };
 
 const SECTIONS: Record<string, string> = {
@@ -186,7 +195,12 @@ const SECTIONS: Record<string, string> = {
   messageColor: 'Metin', messageSize: 'Metin',
   textOffsetX: 'Metin', textOffsetY: 'Metin',
   hideUserMessage: 'Metin', textFromMs: 'Metin', textToMs: 'Metin',
-  imageMaxHeight: 'Görünüm'
+  imageMaxHeight: 'Görünüm',
+  hideDelaySec: 'Görünürlük', podiumHideSec: 'Görünürlük', hideAfterSec: 'Görünürlük', autoHide: 'Görünürlük',
+  fromTip: 'Olaylar', fromSub: 'Olaylar', fromGift: 'Olaylar', fromKicks: 'Olaylar', fromFollow: 'Olaylar',
+  autoStart: 'Olaylar', onlyViewers: 'Genel', emptyText: 'Genel',
+  labelFollow: 'Başlıklar', labelSub: 'Başlıklar', labelTip: 'Başlıklar', labelTop: 'Başlıklar', labelRaid: 'Başlıklar',
+  labelKicks: 'Başlıklar', emptyValue: 'Başlıklar', labelColor: 'Tipografi'
 };
 
 /**
@@ -255,13 +269,15 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
 const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({ value, label }));
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
+  'event-labels': {
+    layout: tema(['row', 'Yan yana'], ['column', 'Alt alta']),
+    animation: [...ANIM_SECENEKLERI, { value: 'marquee', label: 'Kayan yazı' }]
+  },
   'viewer-counter': {
     theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['capsule', 'Kapsül']),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana'])
   },
-  'now-playing': {
-    theme: tema(['base', 'Temel'], ['glass', 'Cam'], ['pill', 'Hap'], ['minimal', 'Minimal'], ['neon', 'Neon'])
-  },
+
   'the-cup': {
     theme: tema(['glass', 'Cam'], ['neon', 'Neon'], ['wood', 'Ahşap'], ['minimal', 'Minimal'], ['crystal', 'Kristal'])
   },
@@ -329,7 +345,6 @@ const PATH_MAP: Record<string, string> = {
   shoutout: '/widgets/shoutout',
   polls: '/widgets/polls',
   'hype-train': '/widgets/hype-train',
-  'now-playing': '/widgets/now-playing',
   'pinned-messages': '/widgets/pinned',
   'end-credits': '/widgets/credits',
   'wheel-of-fortune': '/widgets/wheel',

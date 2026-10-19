@@ -7,6 +7,8 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { CHAT_DEFAULTS } from '../lib/widget-defaults.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
+import { PlatformLogo } from '../components/PlatformLogo.js';
+import { PlatformBadges } from '../components/PlatformBadge.js';
 
 interface OverlayMsg {
   id: string;
@@ -14,7 +16,8 @@ interface OverlayMsg {
   user: string;
   color: string;
   text: string;
-  badges: string[];
+  /** Platformun gönderdiği rozet ve rol bilgisi (özgün rozet görselleri için) */
+  rozet: { rawBadges?: any[]; badges?: string[]; isBroadcaster?: boolean; isMod?: boolean; isVip?: boolean; isSub?: boolean };
   avatar?: string;
   ts: string;
   special?: boolean;
@@ -22,16 +25,15 @@ interface OverlayMsg {
 }
 
 const PLATFORM_COLORS: Record<string, string> = { twitch: '#9146ff', kick: '#53fc18', youtube: '#ff0000', tiktok: '#fe2c55' };
-const PLATFORM_ICONS: Record<string, string> = { twitch: '🟣', kick: '🟢', youtube: '🔴', tiktok: '🎵' };
 
 /**
  * Önizleme örnekleri: stüdyo tuvali ve OBS test kipi boş bir kutu yerine
  * gerçek bileşenin bu ayarlarla NASIL görüneceğini göstersin.
  */
 const ORNEK_MESAJLAR: OverlayMsg[] = [
-  { id: 'o1', platform: 'kick', user: 'Kaan', color: '#53fc18', text: 'Selamlar! Harika yayın oluyor.', badges: ['🛡️'], ts: '14:22', special: true, created: 0 },
-  { id: 'o2', platform: 'twitch', user: 'Ayse', color: '#f59e0b', text: 'Boss savaşında bol şans 🔥', badges: ['⭐'], ts: '14:23', special: true, created: 0 },
-  { id: 'o3', platform: 'youtube', user: 'Murat', color: '#f87171', text: '!ses alkış', badges: [], ts: '14:24', created: 0 }
+  { id: 'o1', platform: 'kick', user: 'Kaan', color: '#53fc18', text: 'Selamlar! Harika yayın oluyor.', rozet: { isMod: true }, ts: '14:22', special: true, created: 0 },
+  { id: 'o2', platform: 'twitch', user: 'Ayse', color: '#f59e0b', text: 'Boss savaşında bol şans 🔥', rozet: { isSub: true }, ts: '14:23', special: true, created: 0 },
+  { id: 'o3', platform: 'youtube', user: 'Murat', color: '#f87171', text: '!ses alkış', rozet: {}, ts: '14:24', created: 0 }
 ];
 
 export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
@@ -58,11 +60,15 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     // Kick emote'u `[emote:123:ad]` biçiminde gelir; eski `:ad:` deseni onu tanımıyordu
     if (s.hideEmoteOnly && !String(p.message || '').replace(/\[emote:\d+:[^\]]+\]|:\w+:/g, '').trim()) return;
 
-    const badges: string[] = [];
-    if (user?.isMod) badges.push('🛡️');
-    if (user?.isSub) badges.push('⭐');
-    if (user?.isVip) badges.push('💎');
-    if (user?.isBroadcaster) badges.push('👑');
+    // Rozetler emoji yerine platformun ÖZGÜN rozetleriyle çizilir (PlatformBadges)
+    const rozet = {
+      rawBadges: Array.isArray(user?.rawBadges) ? user.rawBadges : [],
+      badges: Array.isArray(user?.badges) ? user.badges : [],
+      isBroadcaster: Boolean(user?.isBroadcaster),
+      isMod: Boolean(user?.isMod),
+      isVip: Boolean(user?.isVip),
+      isSub: Boolean(user?.isSub)
+    };
 
     const color = s.usernameColorMode === 'platform'
       ? (PLATFORM_COLORS[p.platform] || '#fff')
@@ -77,7 +83,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         user: user?.displayName || user?.username || 'anon',
         color,
         text: p.message,
-        badges,
+        rozet,
         // Sunucu yükü `avatarUrl` taşır; eski `avatar` alanı hiç dolu gelmiyordu
         avatar: user?.avatarUrl || user?.avatar,
         ts: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
@@ -124,9 +130,17 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
           {s.showAvatars && msg.avatar && (
             <img src={msg.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', marginTop: 2 }} />
           )}
-          {s.showPlatformLogo && <span>{PLATFORM_ICONS[msg.platform] || '💬'}</span>}
+          {s.showPlatformLogo && (
+            <span style={{ color: PLATFORM_COLORS[msg.platform] || '#cbd5e1', display: 'inline-flex', marginTop: 3, flexShrink: 0 }} title={msg.platform}>
+              <PlatformLogo platform={msg.platform} size={Math.round(Number(s.fontSize) * 0.95) || 16} />
+            </span>
+          )}
           {s.showTimestamp && <span style={{ color: '#64748b', fontSize: s.fontSize * 0.65, marginTop: 4 }}>{msg.ts}</span>}
-          {s.showBadges && msg.badges.map(b => <span key={b}>{b}</span>)}
+          {s.showBadges && (
+            <span style={{ display: 'inline-flex', gap: 3, marginTop: 2, flexShrink: 0 }}>
+              <PlatformBadges platform={msg.platform as any} user={msg.rozet as any} size={Math.round(Number(s.fontSize) * 1.05) || 18} />
+            </span>
+          )}
           <p style={{
             fontSize: s.fontSize,
             fontWeight: s.fontWeight,

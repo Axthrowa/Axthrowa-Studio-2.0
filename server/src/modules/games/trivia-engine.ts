@@ -6,6 +6,7 @@ import { economy } from '../economy/economy.js';
 import { wsHub } from '../../ws/server.js';
 import { hataMetni } from '../../core/logger.js';
 import { sikCoz } from './cevap-eslestir.js';
+import { cevapMesaji, soruMesaji } from './trivia-mesaj.js';
 
 export interface VoteDistribution {
   A: { count: number; percent: number };
@@ -206,7 +207,7 @@ export class TriviaEngine extends EventEmitter {
     const catName = category === 'all' ? 'Karışık Kategoriler' : category;
     eventBus.emitBotMessage({
       platform: 'all',
-      message: `🏆 BİL BAKALIM YARIŞMASI BAŞLIYOR! 🏆\nKategori: ${catName} | Toplam: ${totalQuestions} Soru | Soru Süresi: ${durationSec} sn\nHazır olun, ilk soru geliyor! 🚀`
+      message: `🏆 Bil Bakalım başlıyor: ${totalQuestions} soru (${catName}). Cevap için sohbete A, B, C ya da D yaz!`
     });
 
     setTimeout(() => {
@@ -545,76 +546,23 @@ export class TriviaEngine extends EventEmitter {
     };
   }
 
+  /** Sohbete YALNIZ soru ve şıklar (kategori/süre/ödül overlay'de) */
   private broadcastQuestionToChat() {
     if (!this.currentQuestion) return;
-    const q = this.currentQuestion;
-    const roundPrefix = this.mode === 'tournament' ? `[Soru ${this.tournamentCurrentIndex}/${this.tournamentTotalQuestions}] ` : '';
-
-    const categoryIcons: Record<string, string> = {
-      'Genel Kültür': '💡',
-      'Bilgi': '🔬',
-      'Bilim': '🧪',
-      'Oyun': '🎮',
-      'Oyunlar': '🎲',
-      'Film ve Dizi': '🎬',
-      'Sinema TV': '🎥',
-      'Coğrafya': '🌍',
-      'Tarih': '📜',
-      'Osmanlı Tarihi': '🕌',
-      'Spor': '⚽',
-      'Basketbol': '🏀',
-      'Sanat': '🎨',
-      'Tıbbi Terimler': '🩺',
-      'Azerbaycan Türkçesi': '🇦🇿',
-      'Gündem 2000/26': '📰',
-      'Ekonomi': '📈',
-      'Türk Mutfağı': '🍲',
-      'Teknoloji': '💻',
-      'İz Bırakanlar': '🌟',
-      'Geçmişten Günümüze': '⏳',
-      '4 İşlem': '🔢',
-      'Yazım Yanlışları': '✍️',
-      'Söz ve Deyiş': '💬'
-    };
-    const icon = categoryIcons[q.category] || '🧠';
-
-    const msg = 
-      `╔════════════ 🧠 BİL BAKALIM ════════════╗\n` +
-      `║ ${icon} ${roundPrefix}Kategori: ${q.category} | Süre: ${this.durationSeconds}sn | Ödül: ${q.points} Puan\n` +
-      `║ Soru: ${q.question}\n` +
-      `║ 🇦 ${q.optionA}    🇧 ${q.optionB}\n` +
-      `║ 🇨 ${q.optionC}    🇩 ${q.optionD}\n` +
-      `╚════════════════════════════════════════════╝\n` +
-      `💡 Cevap vermek için sohbete sadece A, B, C veya D yazın!`;
-
-    eventBus.emitBotMessage({ platform: 'all', message: msg });
+    const sira = this.mode === 'tournament' ? { no: this.tournamentCurrentIndex, toplam: this.tournamentTotalQuestions } : undefined;
+    eventBus.emitBotMessage({ platform: 'all', message: soruMesaji(this.currentQuestion as any, sira) });
   }
 
   private broadcastAnswerToChat() {
     if (!this.currentQuestion) return;
     const q = this.currentQuestion;
-    const optLetter = q.correctOption;
-    const optText = (q as any)[`option${optLetter}`] || '';
-
-    let msg = `⏰ SÜRE DOLDU! Doğru Cevap: [ ${optLetter} ] ${optText} ✅\n`;
-
-    if (q.explanation) {
-      msg += `📌 Bilgi Notu: ${q.explanation}\n`;
-    }
-
-    if (this.lastQuestionWinners.length > 0) {
-      const fastest = this.lastQuestionWinners[0];
-      const sec = (fastest.answerMs / 1000).toFixed(1);
-      msg += `🏆 En Hızlı Bilen: @${fastest.displayName} (+${fastest.earnedPoints} Puan - ${sec} sn) | Toplam ${this.lastQuestionWinners.length} kişi bildi!`;
-
-      if (fastest.streak >= 2) {
-        msg += ` 🔥 (${fastest.streak} soru serisi!)`;
-      }
-    } else {
-      msg += `😢 Maalesef bu soruyu kimse doğru bilemedi!`;
-    }
-
-    eventBus.emitBotMessage({ platform: 'all', message: msg });
+    const harf = String(q.correctOption || '');
+    const metin = (q as any)[`option${harf}`] || '';
+    const ilk = this.lastQuestionWinners[0];
+    eventBus.emitBotMessage({
+      platform: 'all',
+      message: cevapMesaji(harf, metin, ilk ? { ad: ilk.displayName, puan: ilk.earnedPoints, kisi: this.lastQuestionWinners.length } : undefined)
+    });
   }
 
   private broadcastWs(type: string, data: any) {

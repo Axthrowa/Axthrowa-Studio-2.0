@@ -377,3 +377,7 @@ Eklenmeyen: Twitch/BTTV/FFZ emote setleri (yalnız 7TV).
 
 UNVERIFIED (gerçek platformda denenmedi): Spotify Premium'da gerçek çalma, gerçek Kick sohbetinden `!sr`,
 gerçek Discord webhook gönderimi, gerçek bir şarkıda sözlerin senkronu, yeni bir Gemini anahtarıyla yanıt.
+
+**Bağımlılık taraması (2026-10-21):** `npm audit` (geliştirme dahil) 0 bulgu. vosk-browser'ın `uuid@9` bağımlılığı
+`overrides` ile 11.1.1'e çekildi — vosk-browser kendi uuid kopyasını `vosk.js` içine gömdüğü ve yalnız `v4` çağırdığı için
+(GHSA-w5hq-g745-h8pq yalnız v3/v5/v6) çalışma anı etkisi yok. Resonance'ın vite ve source-map-js'i güncellendi.

@@ -158,7 +158,14 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Health check
 app.get('/health', (req, res) => {
   // `uygulama` imzası: ikinci kopya portu dolu bulunca karşıdakinin StreamAxT olup olmadığını anlar
-  res.json({ status: 'ok', uygulama: 'streamaxt', time: new Date().toISOString() });
+  // `gozcuPid`: dışarıdan durduran (Yayın Yönetim Aracı) yalnız portu dinleyen uygulamayı
+  // öldürürse gözcü çökme sanıp yeniden başlatır — ağacı gözcüden kapatabilsin diye.
+  res.json({
+    status: 'ok',
+    uygulama: 'streamaxt',
+    gozcuPid: process.env.STREAMAXT_COCUK === '1' ? process.ppid : null,
+    time: new Date().toISOString()
+  });
 });
 
 // Setup WebSockets

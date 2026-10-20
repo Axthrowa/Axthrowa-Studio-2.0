@@ -125,6 +125,10 @@ kapıları, npm bağımlılıkları. `cargo clippy --all-targets` uyarısız; TS
 (`dosya_adi`) ve uzantı zorlaması, ön yüzde `innerHTML`/`dangerouslySetInnerHTML`/`eval` yok,
 Tauri uzak yetenek yalnız `127.0.0.1:8843`, projektör pencereleri IPC'siz.
 
-Kalan risk: ffmpeg/yt-dlp resmi GitHub sürümlerinden HTTPS ile indiriliyor ama SHA-256 doğrulaması
-yok; `cargo audit` makinede kurulu değil (kurulması crates.io'dan araç indirmek demek — sorulmadan yapılmadı).
+Ek (aynı gün): ffmpeg/yt-dlp indirmeleri artık aynı sürümün SHA-256 listesiyle doğrulanıyor
+(tutmazsa dosya silinir, kurulmaz; gerçek yt-dlp.exe ile özet eşleşmesi denendi). `cargo audit` (0.22.2):
+rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10'a güncellendi (RUSTSEC-2026-0346..0349, -0381, -0382).
+Kalan uyarılar: webpki-roots 0.26.11 yalnız 1.0.10'a köprü (sürüm adına göre uyarı); rsa (RUSTSEC-2023-0071)
+yalnız kilit dosyasında — sqlx-mysql derlenmiyor; unic-*/proc-macro-error/glib "bakımsız" uyarıları Tauri ağacından,
+açık değil. Gömülü StreamAxT'te follow-redirects 1.16.1'e çıkarıldı; vosk-browser içindeki uuid'in düzeltmesi yok.
 Ölü kod: Tauri öncesi bağımsız HTML aracı `legacy/` kaldırıldı (git geçmişinde duruyor).

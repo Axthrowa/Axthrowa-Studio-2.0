@@ -140,7 +140,7 @@ async fn try_endpoint(url: &str, slug: &str) -> Result<(String, Option<Value>)> 
 /// Windows'ta curl.exe Schannel kullanır — Cloudflare rustls JA3'ü engellerken curl genelde 200 verir.
 async fn try_curl(url: &str, slug: &str) -> Result<(String, Option<Value>)> {
   let referer = format!("https://kick.com/{slug}");
-  let mut cmd = tokio::process::Command::new("curl.exe");
+  let mut cmd = tokio::process::Command::new(crate::sistem_araci::yol("curl.exe"));
   cmd.args([
     "-sS",
     "-L",

@@ -4,7 +4,7 @@
 
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Activity, Bot, Eraser, MessageCircle, Radio, Users } from "lucide-react";
+import { Bot, Eraser, MessageCircle, Radio, Users } from "lucide-react";
 import { API_BASE, fetchSettings, patchSettings, type OverlaySettings } from "../../lib/api";
 import {
   botaxtApi,

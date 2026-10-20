@@ -54,6 +54,18 @@ pub fn is_media_file(path: &Path) -> bool {
   mime_for(path) != "application/octet-stream"
 }
 
+/// Yalnız bu makinenin diski: `C:\…` (ve `\\?\C:\…`). UNC (`\\sunucu\…`),
+/// `\\?\UNC\…` ve aygıt ad alanı (`\\.\…`) ağ ya da aygıt erişimi demektir.
+/// Windows dışında yalnız kökten başlayan yollar.
+pub fn yerel_disk_yolu(path: &Path) -> bool {
+  use std::path::{Component, Prefix};
+  match path.components().next() {
+    Some(Component::Prefix(p)) => matches!(p.kind(), Prefix::Disk(_) | Prefix::VerbatimDisk(_)),
+    Some(Component::RootDir) => !cfg!(windows),
+    _ => false,
+  }
+}
+
 pub fn sanitize_path(raw: &str) -> Result<PathBuf> {
   let trimmed = raw.trim();
   if trimmed.is_empty() {
@@ -94,6 +106,12 @@ pub fn sanitize_path(raw: &str) -> Result<PathBuf> {
   }
   if !path.is_absolute() {
     return Err(anyhow!("mutlak yol gerekli: {decoded}"));
+  }
+  // GÜVENLİK: `\\sunucu\paylasim\x.png` (UNC) yolları reddedilir. `/media/file` GET olduğu için
+  // köken denetimine girmez; yayıncının açtığı herhangi bir site `<img src=…?path=\\saldirgan\x>`
+  // ile Windows'u saldırgan sunucuya SMB bağlantısı açmaya — NTLM özetini göndermeye — zorlayabiliyordu.
+  if !yerel_disk_yolu(&path) {
+    return Err(anyhow!("yalnız yerel disk yolları sunulur"));
   }
   // Varlık denetiminden ÖNCE: medya dışı dosyaların var olup olmadığı da
   // dışarıya sızmasın.
@@ -248,6 +266,21 @@ pub fn stream_file_response(
 mod tests {
   use super::*;
   use std::io::Write;
+
+  #[cfg(windows)]
+  #[test]
+  fn unc_ve_aygit_yollari_reddedilir() {
+    assert!(yerel_disk_yolu(Path::new(r"C:\Videolar\a.mp4")));
+    assert!(yerel_disk_yolu(Path::new(r"\\?\C:\Videolar\a.mp4")));
+    assert!(!yerel_disk_yolu(Path::new(r"\\saldirgan\pay\a.png")));
+    assert!(!yerel_disk_yolu(Path::new(r"\\?\UNC\saldirgan\pay\a.png")));
+    assert!(!yerel_disk_yolu(Path::new(r"\\.\pipe\a.png")));
+    assert!(!yerel_disk_yolu(Path::new(r"\Videolar\a.mp4")));
+    for kotu in [r"\\saldirgan\pay\a.png", "%5C%5Csaldirgan%5Cpay%5Ca.png", "//saldirgan/pay/a.png"] {
+      let hata = sanitize_path(kotu).unwrap_err().to_string();
+      assert!(hata.contains("yerel disk") || hata.contains("mutlak"), "{kotu}: {hata}");
+    }
+  }
 
   fn temp_file(name: &str, bytes: usize) -> PathBuf {
     let dir = std::env::temp_dir().join("yayin-media-test");

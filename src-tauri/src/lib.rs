@@ -31,6 +31,7 @@ pub mod widgets;
 pub mod audio_brand;
 #[cfg(windows)]
 pub mod single_instance;
+pub mod sistem_araci;
 
 use std::path::PathBuf;
 use std::sync::Arc;

@@ -356,7 +356,7 @@ async fn ffmpeg_hazirla(root: &Path) -> Option<PathBuf> {
   std::fs::create_dir_all(&kok).ok()?;
   // Windows 10 1803'ten beri bsdtar (`tar.exe`) sistemde hazır ve zip açıyor;
   // yalnızca bunun için ayrı bir arşiv bağımlılığı eklemeye değmez.
-  let mut cmd = Command::new("tar");
+  let mut cmd = Command::new(crate::sistem_araci::yol("tar.exe"));
   cmd.arg("-xf").arg(&zip).current_dir(&kok);
   pencere_gizle(&mut cmd);
   let cikti = cmd.status().await.ok()?;

@@ -107,3 +107,24 @@ Rapor hiçbir parola, anahtar, token ya da çerez değeri içermez.
 - Otomatik yapılandırma platform sunucusuna bağlanmaz; kodlama sınaması geçici dosyayı siler.
 - Oyun yakalama örneği sınamada hiç oluşturulmadı (çalışan oyuna kanca atma riski); tür özellikleri örneksiz okundu.
 - Motor kendi CEF alt süreçlerini kapatır; kullanıcının OBS süreçlerine dokunulmaz.
+
+## Tarama turu (2026-10-20)
+
+Kapsam: yerel sunucu (axum) uçları, Tauri yetenekleri/CSP, alt süreç çağrıları, ön yüz XSS
+kapıları, npm bağımlılıkları. `cargo clippy --all-targets` uyarısız; TS `noUnusedLocals` açık.
+
+| Bulgu | Önem | Durum |
+|---|---|---|
+| `/media/file` UNC yolu (`\sunucu\pay\x.png`, `\?\UNC\…`) kabul ediyordu. Uç GET olduğundan köken denetimine girmez: yayıncının açtığı herhangi bir site `<img>` ile Windows'u saldırgan sunucuya SMB bağlantısı açmaya ve **NTLM özetini göndermeye** zorlayabiliyordu. | Yüksek | Düzeltildi: yalnız yerel disk (`media::yerel_disk_yolu`), test + başsız sunucuda HTTP 400 doğrulandı |
+| `curl.exe`, `powershell`, `reg`, `tasklist`, `taskkill`, `netstat`, `tar` çıplak adla çağrılıyordu; Windows önce uygulama klasörüne bakar (taşınabilir klasöre bırakılan sahte exe çalışırdı). | Orta | Düzeltildi: `sistem_araci::yol` (System32 tam yolu) |
+| Harici StreamAxT "zorla durdur": artık gözcülü; yalnız portu dinleyen süreç öldürülünce gözcü yeniden başlatıyordu. | İşlev | Düzeltildi: `/health` `gozcuPid` → ağaç gözcüden kapatılır (yalnız `node.exe` ise) |
+| npm: `source-map-js` (yüksek), `braces`, `postcss-selector-parser` — yalnız derleme zamanı, pakete girmez. | Düşük | `source-map-js` düzeltildi; diğer ikisi `--force` (kırıcı tailwind zinciri) ister, bırakıldı |
+
+İncelenip sorun bulunmayanlar: Host/köken koruması (`local_guard`), LAN Bearer, CORS beyaz listesi,
+`open-external` izin listesi + http(s) zorunluluğu, yt-dlp'ye yalnız video kimliği, yükleme adları
+(`dosya_adi`) ve uzantı zorlaması, ön yüzde `innerHTML`/`dangerouslySetInnerHTML`/`eval` yok,
+Tauri uzak yetenek yalnız `127.0.0.1:8843`, projektör pencereleri IPC'siz.
+
+Kalan risk: ffmpeg/yt-dlp resmi GitHub sürümlerinden HTTPS ile indiriliyor ama SHA-256 doğrulaması
+yok; `cargo audit` makinede kurulu değil (kurulması crates.io'dan araç indirmek demek — sorulmadan yapılmadı).
+Ölü kod: Tauri öncesi bağımsız HTML aracı `legacy/` kaldırıldı (git geçmişinde duruyor).

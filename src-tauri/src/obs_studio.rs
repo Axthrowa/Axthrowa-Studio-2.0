@@ -98,7 +98,7 @@ pub fn aday_yollar(ozel: Option<&str>) -> Vec<PathBuf> {
 fn kayit_defteri_kurulumu() -> Option<PathBuf> {
   use std::os::windows::process::CommandExt;
   const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-  let out = std::process::Command::new("reg")
+  let out = std::process::Command::new(crate::sistem_araci::yol("reg.exe"))
     .args(["query", r"HKLM\SOFTWARE\OBS Studio", "/ve"])
     .creation_flags(CREATE_NO_WINDOW)
     .output()
@@ -121,7 +121,7 @@ pub fn calisiyor() -> bool {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     for ad in ["obs64.exe", "obs.exe"] {
-      let out = std::process::Command::new("tasklist")
+      let out = std::process::Command::new(crate::sistem_araci::yol("tasklist.exe"))
         .args(["/FI", &format!("IMAGENAME eq {ad}"), "/NH"])
         .creation_flags(CREATE_NO_WINDOW)
         .output();

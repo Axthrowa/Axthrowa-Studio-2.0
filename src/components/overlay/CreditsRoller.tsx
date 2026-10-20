@@ -21,7 +21,12 @@ function styleFrom(st: TextStyle | undefined, fallbackFont?: string): CSSPropert
   const style: CSSProperties = {};
   if (fontId && FONT_STACKS[fontId]) style.fontFamily = FONT_STACKS[fontId];
   if (st?.size) style.fontSize = `${(st.size / 100) * 1.15}em`;
-  if (st?.color) style.color = st.color;
+  if (st?.color) {
+    style.color = st.color;
+    // Metalik efekt geçişi seçilen renkten türer (bkz. OverlayShell textProps)
+    (style as any)["--fx-mid"] = st.color;
+    (style as any)["--fx-dark"] = `color-mix(in srgb, ${st.color} 55%, #000)`;
+  }
   if (st?.accentColor) (style as any)["--accent"] = st.accentColor;
   return style;
 }

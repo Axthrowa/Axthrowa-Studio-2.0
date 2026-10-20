@@ -63,21 +63,47 @@ pub fn find_in_path(path_var: &str, exe: &str) -> Option<PathBuf> {
 
 /// Sunucu ayakta mı? (`/health` "ok" dönüyorsa)
 pub fn healthy(port: u16) -> bool {
+  health_body(port).map(|b| b.contains("\"status\":\"ok\"")).unwrap_or(false)
+}
+
+/// `/health` yanıtının tamamı (başlıklar dahil); bağlanılamazsa `None`.
+fn health_body(port: u16) -> Option<String> {
   let addr: SocketAddr = ([127, 0, 0, 1], port).into();
-  let Ok(mut s) = TcpStream::connect_timeout(&addr, Duration::from_millis(400)) else {
-    return false;
-  };
+  let mut s = TcpStream::connect_timeout(&addr, Duration::from_millis(400)).ok()?;
   let _ = s.set_read_timeout(Some(Duration::from_millis(800)));
   let _ = s.set_write_timeout(Some(Duration::from_millis(800)));
-  if s
-    .write_all(b"GET /health HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")
-    .is_err()
-  {
-    return false;
-  }
+  s.write_all(b"GET /health HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")
+    .ok()?;
   let mut buf = String::new();
   let _ = s.read_to_string(&mut buf);
-  buf.contains("\"status\":\"ok\"")
+  Some(buf)
+}
+
+/// StreamAxT gözcülü çalışır: portu dinleyen süreç UYGULAMADIR, onu başlatan gözcü
+/// çökme sanıp yeniden açar. `/health` gözcünün PID'ini (`gozcuPid`) bildirir;
+/// harici örneği durdururken ağaç o PID'den öldürülür.
+pub fn parse_gozcu_pid(health: &str) -> Option<u32> {
+  let govde = &health[health.find('{')?..];
+  let v: Value = serde_json::from_str(govde.trim()).ok()?;
+  if v.get("uygulama").and_then(Value::as_str) != Some("streamaxt") {
+    return None;
+  }
+  v.get("gozcuPid").and_then(Value::as_u64).and_then(|p| u32::try_from(p).ok()).filter(|p| *p > 4)
+}
+
+/// PID bir `node.exe` süreci mi (yanlış süreci öldürmemek için son denetim).
+fn node_sureci_mi(pid: u32) -> bool {
+  let mut cmd = Command::new(crate::sistem_araci::yol("tasklist.exe"));
+  cmd.args(["/FI", &format!("PID eq {pid}"), "/NH", "/FO", "CSV"]);
+  #[cfg(windows)]
+  {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(CREATE_NO_WINDOW);
+  }
+  cmd
+    .output()
+    .map(|o| String::from_utf8_lossy(&o.stdout).to_ascii_lowercase().contains("\"node.exe\""))
+    .unwrap_or(false)
 }
 
 /// Windows: çocuğu bir "job"a bağla; uygulama nasıl ölürse ölsün (çökme, görev
@@ -155,8 +181,14 @@ fn tail_log(dir: &Path) -> String {
   lines.into_iter().rev().collect::<Vec<_>>().join("\n")
 }
 
-/// Sunucuyu başlat (zaten ayaktaysa hiçbir şey yapmaz).
+/// Aynı anda iki `start` (açılıştaki otomatik başlatma + arayüz) ikinci bir
+/// kopya başlatıyordu: o kopya `EADDRINUSE` ile çöküyor, panel de ilk kopyanın
+/// izini kaybediyordu (günlükte "address already in use 127.0.0.1:3001").
+static START_LOCK: Mutex<()> = Mutex::new(());
+
+/// Sunucuyu başlat (zaten ayaktaysa ya da açılıyorsa hiçbir şey yapmaz).
 pub fn start() -> Result<Value, String> {
+  let _kilit = START_LOCK.lock().unwrap_or_else(|e| e.into_inner());
   let port = port();
   let dir = find_dir().ok_or_else(|| {
     "StreamAxT klasörü bulunamadı (uygulamanın yanında `streamaxt` olmalı).".to_string()
@@ -165,6 +197,25 @@ pub fn start() -> Result<Value, String> {
   if healthy(port) {
     return Ok(status());
   }
+  // Kendi kopyamız hâlâ açılıyor: ikincisini başlatma, onu bekle
+  if own_child_alive().is_none() {
+    spawn_child(&dir, port)?;
+  }
+
+  let t0 = Instant::now();
+  while t0.elapsed() < Duration::from_secs(12) {
+    if healthy(port) {
+      return Ok(status());
+    }
+    if own_child_alive().is_none() {
+      return Err(format!("StreamAxT hemen kapandı:\n{}", tail_log(&dir)));
+    }
+    std::thread::sleep(Duration::from_millis(250));
+  }
+  Err(format!("StreamAxT 12 sn içinde yanıt vermedi:\n{}", tail_log(&dir)))
+}
+
+fn spawn_child(dir: &Path, port: u16) -> Result<(), String> {
   let node = find_node().ok_or_else(|| "Node.js 22+ bulunamadı — nodejs.org üzerinden kurun.".to_string())?;
 
   let log_path = dir.join("streamaxt.log");
@@ -181,7 +232,7 @@ pub fn start() -> Result<Value, String> {
   let mut cmd = Command::new(node);
   cmd
     .arg("dist/index.js")
-    .current_dir(&dir)
+    .current_dir(dir)
     .env("PORT", port.to_string())
     .stdin(Stdio::null())
     .stdout(Stdio::from(log))
@@ -196,25 +247,14 @@ pub fn start() -> Result<Value, String> {
   if let Ok(mut g) = CHILD.lock() {
     *g = Some(child);
   }
-
-  let t0 = Instant::now();
-  while t0.elapsed() < Duration::from_secs(12) {
-    if healthy(port) {
-      return Ok(status());
-    }
-    if own_child_alive().is_none() {
-      return Err(format!("StreamAxT hemen kapandı:\n{}", tail_log(&dir)));
-    }
-    std::thread::sleep(Duration::from_millis(250));
-  }
-  Err(format!("StreamAxT 12 sn içinde yanıt vermedi:\n{}", tail_log(&dir)))
+  Ok(())
 }
 
 fn kill_tree(pid: u32) {
   #[cfg(windows)]
   {
     use std::os::windows::process::CommandExt;
-    let _ = Command::new("taskkill")
+    let _ = Command::new(crate::sistem_araci::yol("taskkill.exe"))
       .args(["/PID", &pid.to_string(), "/T", "/F"])
       .creation_flags(CREATE_NO_WINDOW)
       .stdout(Stdio::null())
@@ -245,7 +285,7 @@ pub fn parse_listening_pid(netstat: &str, port: u16) -> Option<u32> {
 }
 
 fn external_pid(port: u16) -> Option<u32> {
-  let mut cmd = Command::new("netstat");
+  let mut cmd = Command::new(crate::sistem_araci::yol("netstat.exe"));
   cmd.args(["-ano", "-p", "tcp"]);
   #[cfg(windows)]
   {
@@ -269,6 +309,13 @@ pub fn stop(force: bool) -> Result<Value, String> {
     let _ = c.wait();
   } else if force {
     if let Some(pid) = external_pid(port()) {
+      // Gözcü varsa önce onu (ağaçla birlikte uygulamayı da) kapat; yoksa yalnız uygulama
+      // ölür ve gözcü birkaç saniye içinde yeniden başlatır.
+      if let Some(gozcu) = health_body(port()).as_deref().and_then(parse_gozcu_pid) {
+        if gozcu != pid && node_sureci_mi(gozcu) {
+          kill_tree(gozcu);
+        }
+      }
       kill_tree(pid);
     }
   }
@@ -319,6 +366,18 @@ pub async fn streamaxt_stop(force: Option<bool>) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn gozcu_pid_health_yanitindan_okunur() {
+    let yanit = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"streamaxt\",\"gozcuPid\":4321}";
+    assert_eq!(parse_gozcu_pid(yanit), Some(4321));
+    // Gözcüsüz (STREAMAXT_GOZCU=kapali) ya da başka bir uygulama: PID yok
+    assert_eq!(parse_gozcu_pid("\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"streamaxt\",\"gozcuPid\":null}"), None);
+    assert_eq!(parse_gozcu_pid("\r\n\r\n{\"status\":\"ok\",\"gozcuPid\":4321}"), None);
+    // Sistem süreçleri (0/4) asla hedef olmaz
+    assert_eq!(parse_gozcu_pid("\r\n\r\n{\"uygulama\":\"streamaxt\",\"gozcuPid\":4}"), None);
+    assert_eq!(parse_gozcu_pid("bozuk"), None);
+  }
 
   #[test]
   fn netstat_dinleyen_pid_bulunur() {

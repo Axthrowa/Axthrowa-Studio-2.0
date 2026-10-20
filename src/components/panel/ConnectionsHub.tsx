@@ -342,7 +342,7 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
   };
 
   return (
-    <div className="mx-4 mb-3 mt-1.5 grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_17rem_minmax(0,1fr)]">
+    <div className={`mx-4 mb-3 mt-1.5 grid gap-3.5 ${master ? "lg:grid-cols-[minmax(0,1fr)_17rem_minmax(0,1fr)]" : "lg:grid-cols-2"}`}>
       <section className="relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
         <div>
           <header className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
@@ -433,9 +433,7 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
             {master.live ? "OBS + Platform Yayında" : "Tek Tıkla Canlıya Geç"}
           </span>
         </button>
-      ) : (
-        <div />
-      )}
+      ) : null}
 
       <section className="relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
         <div>

@@ -40,6 +40,8 @@ import {
   subscribeCreditsSession,
 } from "../../lib/creditsSession";
 import { readStartingCountdownEnd, STARTING_END_STORAGE_KEY } from "../../lib/streamAutomation";
+import { esikAsildi, suruklenmisKonum, type Konum } from "../../lib/surukle";
+import YerindeMetin from "./YerindeMetin";
 
 type Props = {
   screen: ScreenId;
@@ -114,6 +116,8 @@ export default function OverlayShell({
   }, []);
   const wrapRef = useRef<HTMLDivElement>(null);
   const dragKey = useRef<string | null>(null);
+  /** Sürüklemenin başlangıcı: öğenin konumu + imlecin ilk yeri (göreli hareket için). */
+  const dragStart = useRef<{ bas: Konum; px: number; py: number; moved: boolean; son: Konum } | null>(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const [localPositions, setLocalPositions] = useState(settings.positions || {});
@@ -301,6 +305,10 @@ export default function OverlayShell({
     const color = st.color || fallbackColor;
     if (color) {
       style.color = color;
+      // Metalik efekt yazıyı geçişle boyar (renk şeffaf); geçiş seçilen renkten
+      // türer, yoksa renk değiştirmek hiçbir şey yapmıyordu.
+      (style as any)["--fx-mid"] = color;
+      (style as any)["--fx-dark"] = `color-mix(in srgb, ${color} 55%, #000)`;
       if (key === "countdown") (style as any)["--countdown-color"] = color;
       if (key === "title") (style as any)["--title-color"] = color;
       if (key === "eyebrow") (style as any)["--eyebrow-color"] = color;
@@ -881,29 +889,14 @@ export default function OverlayShell({
     }
   }, [audioNode, videoNode, videoBitisiyleBitir, settings.audioLoop, settings.bgVideoStart, settings.bgVideoEnd]);
 
-  const pctFromEvent = useCallback((e: { clientX: number; clientY: number }) => {
-    const rect = wrapRef.current?.getBoundingClientRect();
-    if (!rect || rect.width < 1 || rect.height < 1) return { x: 50, y: 50 };
-    let x = clamp(((e.clientX - rect.left) / rect.width) * 100, 2, 98);
-    let y = clamp(((e.clientY - rect.top) / rect.height) * 100, 2, 98);
-    const g: { v?: number; h?: number } = {};
-    if (Math.abs(x - 50) < 1.2) {
-      x = 50;
-      g.v = 50;
-    }
-    if (Math.abs(y - 50) < 1.2) {
-      y = 50;
-      g.h = 50;
-    }
-    setGuides(g);
-    return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
-  }, []);
-
-  const onPointerDown = (key: string) => (e: REPointerEvent) => {
+  const onPointerDown = (key: string, bas: Konum) => (e: REPointerEvent) => {
     if (!edit) return;
+    // Yerinde yazı düzenlerken imleç metni seçsin, öğe sürüklenmesin
+    if ((e.target as HTMLElement).closest?.('[contenteditable="true"]')) return;
     e.preventDefault();
     e.stopPropagation();
     dragKey.current = key;
+    dragStart.current = { bas, px: e.clientX, py: e.clientY, moved: false, son: bas };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
@@ -925,10 +918,18 @@ export default function OverlayShell({
       setLocalSizes((prev: any) => ({ ...(prev || {}), [key]: next }));
       return;
     }
-    if (!dragKey.current) return;
+    if (!dragKey.current || !dragStart.current) return;
     const key = dragKey.current;
-    const { x, y } = pctFromEvent(e);
-    setLocalPositions((prev: any) => ({ ...(prev || {}), [key]: { x, y } }));
+    const st = dragStart.current;
+    const dx = e.clientX - st.px;
+    const dy = e.clientY - st.py;
+    if (!st.moved && !esikAsildi(dx, dy)) return;
+    st.moved = true;
+    const rect = wrapRef.current?.getBoundingClientRect();
+    const { konum, kilavuz } = suruklenmisKonum(st.bas, dx, dy, rect?.width || 0, rect?.height || 0);
+    st.son = konum;
+    setGuides(kilavuz);
+    setLocalPositions((prev: any) => ({ ...(prev || {}), [key]: konum }));
   };
 
   const persistSizes = async (sizes: Record<string, number>) => {
@@ -967,10 +968,13 @@ export default function OverlayShell({
     }
     if (!dragKey.current) return;
     const key = dragKey.current;
+    const st = dragStart.current;
     dragKey.current = null;
+    dragStart.current = null;
     setGuides({});
-    const { x, y } = pctFromEvent(e);
-    const positions = { ...(settingsRef.current.positions || {}), ...(localPositions || {}), [key]: { x, y } };
+    // Sürüklemeden bırakılan tık konumu DEĞİŞTİRMEZ (eskiden öğe tıklanan yere atlıyordu)
+    if (!st?.moved) return;
+    const positions = { ...(settingsRef.current.positions || {}), ...(localPositions || {}), [key]: st.son };
     setLocalPositions(positions);
     if (onPositionsPersist) {
       onPositionsPersist(positions);
@@ -980,6 +984,21 @@ export default function OverlayShell({
     try {
       await patchSettings(screen, { positions });
       await saveSettings(screen, { ...settingsRef.current, positions });
+    } catch {
+      /* */
+    }
+  };
+
+  /** Önizlemede yerinde düzenlenen yazıyı kaydeder (panelde canlı yama, aksi hâlde sunucu). */
+  const metniKaydet = async (alan: "eyebrow" | "title" | "sub" | "ticker" | "liveText", deger: string) => {
+    if (onLivePatch) {
+      onLivePatch({ [alan]: deger });
+      return;
+    }
+    setSynced((s: any) => ({ ...s, [alan]: deger }));
+    try {
+      await patchSettings(screen, { [alan]: deger });
+      await saveSettings(screen, { ...settingsRef.current, [alan]: deger });
     } catch {
       /* */
     }
@@ -1017,7 +1036,7 @@ export default function OverlayShell({
         key={key}
         className={`draggable ${edit ? "dragging-ready" : ""}`}
         data-key={key}
-        onPointerDown={onPointerDown(key)}
+        onPointerDown={onPointerDown(key, pos)}
         style={{
           left: `${pos.x}%`,
           top: `${pos.y}%`,
@@ -1112,7 +1131,9 @@ export default function OverlayShell({
         return (
           <div className="live-badge" style={cdProps.style} data-fx={cdProps["data-fx"]} data-anim={cdProps["data-anim"]}>
             <span className="dot" />
-            <span className="live-text">{s.liveText || "CANLI YAYINDA"}</span>
+            <span className="live-text">
+              <YerindeMetin deger={s.liveText || "CANLI YAYINDA"} aktif={edit} onKaydet={(v) => void metniKaydet("liveText", v)} />
+            </span>
           </div>
         );
       }
@@ -1360,7 +1381,7 @@ export default function OverlayShell({
           renderDraggable(
             "eyebrow",
             <p className="eyebrow" {...textProps("eyebrow")}>
-              {s.eyebrow}
+              <YerindeMetin deger={s.eyebrow} aktif={edit} onKaydet={(v) => void metniKaydet("eyebrow", v)} bosOlabilir />
             </p>,
             s.positions?.eyebrow || { x: 50, y: 36 }
           )}
@@ -1369,7 +1390,7 @@ export default function OverlayShell({
           renderDraggable(
             "title",
             <h1 className="stream-title" {...textProps("title")}>
-              {s.title}
+              <YerindeMetin deger={s.title} aktif={edit} onKaydet={(v) => void metniKaydet("title", v)} />
             </h1>,
             s.positions?.title || { x: 50, y: 44 }
           )}
@@ -1378,7 +1399,7 @@ export default function OverlayShell({
           renderDraggable(
             "sub",
             <p className="stream-sub" {...textProps("sub")}>
-              {s.sub}
+              <YerindeMetin deger={s.sub} aktif={edit} onKaydet={(v) => void metniKaydet("sub", v)} bosOlabilir />
             </p>,
             s.positions?.sub || { x: 50, y: 52 }
           )}
@@ -1437,7 +1458,7 @@ export default function OverlayShell({
                   }}
                 >
                   <span className="ticker-fx" style={tp.style} data-fx={tp["data-fx"]} data-anim={tp["data-anim"]}>
-                    {s.ticker}
+                    <YerindeMetin deger={s.ticker} aktif={edit} onKaydet={(v) => void metniKaydet("ticker", v)} bosOlabilir />
                   </span>
                 </p>
               </div>,

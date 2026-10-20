@@ -4,7 +4,7 @@
 
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Activity, Bot, Eraser, MessageCircle, Radio, Users } from "lucide-react";
+import { Bot, Eraser, MessageCircle, Radio, Users } from "lucide-react";
 import { API_BASE, fetchSettings, patchSettings, type OverlaySettings } from "../../lib/api";
 import {
   botaxtApi,
@@ -22,10 +22,16 @@ import { useChatHub } from "../../lib/useChatHub";
 import ChatFeed from "../chat/ChatFeed";
 import { clearPlatformChats, clearResultToast } from "../../lib/clearPlatformChats";
 
+/** Dashboard alt sekmeleri (PanelPage). Bileşen sekme değişse de BAĞLI kalır:
+ *  sadakat sayacı, yayın metrikleri ve oturum kapatma arka planda sürmeli. */
+export type DashboardBolumu = "genel" | "baglantilar" | "obs" | "gecmis" | "gelismis";
+
 type Props = {
   onToast: (m: string) => void;
   onEndLive?: () => Promise<void> | void;
   streamLive?: boolean;
+  /** Hangi bölüm çizilsin; verilmezse hepsi (eski görünüm). */
+  bolum?: DashboardBolumu;
 };
 
 type KickLiveStatus = {
@@ -64,7 +70,8 @@ export function canPlayDirectly(url: string, probe?: (t: string) => string): boo
   return !!(can("application/vnd.apple.mpegurl") || can("application/x-mpegURL"));
 }
 
-export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Props) {
+export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum }: Props) {
+  const goster = (b: DashboardBolumu) => !bolum || bolum === b;
   const [data, setData] = useState<DashboardSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -279,6 +286,8 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
     }
   };
 
+  if (!goster("genel") && !goster("gecmis") && !goster("gelismis")) return null;
+
   if (!data && !err) {
     return (
       <div className="px-4 py-3 text-xs text-panel-muted">Dashboard yükleniyor…</div>
@@ -286,7 +295,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
   }
 
   return (
-    <div className="mx-4 mb-2 mt-1 space-y-2">
+    <div className="mx-4 mb-2 mt-1 space-y-3">
       {err && !data && (
         <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
           Dashboard API: {err}{" "}
@@ -296,98 +305,86 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
         </div>
       )}
 
-      <header className="flex flex-wrap items-end justify-between gap-2 rounded-xl border border-panel-border/80 bg-panel-card/75 px-3 py-2.5">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-panel-accent">Profil</p>
-          <h2 className="font-display text-lg font-semibold text-white">
-            {data?.channel_name || "Yayıncı"}
-          </h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {/* Düğme her zaman görünür: çıkış ekranına geçiş oturumdan bağımsız. */}
-          <button
-            type="button"
-            disabled={busy}
-            className="yya-btn-danger"
-            onClick={() => void onEnd()}
-            title={
-              data?.active_session
-                ? "Yayını bitir: çıkış ekranına geç ve OBS yayınını durdur"
-                : "Çıkış ekranına geç ve OBS yayınını durdur"
-            }
-          >
-            Yayını bitir
-          </button>
-          <button type="button" className="yya-btn-ghost" onClick={() => void refresh()}>
-            Yenile
-          </button>
-        </div>
-      </header>
-
-      <section className="grid gap-2">
-        <div className="yya-card space-y-3 p-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-panel-accent">
-                Canlı durum
-              </p>
+      {goster("genel") && (
+        <>
+          {/* Canlı durum + TEK istatistik ızgarası (eskiden iki ızgara aynı sayıları
+              tekrar ediyordu: anlık izleyici ve oturum aboneleri iki kez). */}
+          <section className="yya-card space-y-3 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-panel-accent">Canlı durum</p>
+                <h2 className="font-display text-base font-semibold text-white">
+                  {data?.channel_name || "Yayıncı"}
+                </h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    streamHealthy
+                      ? "border-panel-accent/40 bg-panel-accent/10 text-panel-accent"
+                      : "border-amber-400/30 bg-amber-500/10 text-amber-200"
+                  }`}
+                >
+                  {streamHealthy
+                    ? "● Her şey düzgün çalışıyor"
+                    : data?.active_session
+                      ? "● Bağlantı kontrol ediliyor"
+                      : "○ Yayın kapalı"}
+                </span>
+                {/* Düğme her zaman görünür: çıkış ekranına geçiş oturumdan bağımsız. */}
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="yya-btn-danger h-8 px-3 text-xs"
+                  onClick={() => void onEnd()}
+                  title={
+                    data?.active_session
+                      ? "Yayını bitir: çıkış ekranına geç ve OBS yayınını durdur"
+                      : "Çıkış ekranına geç ve OBS yayınını durdur"
+                  }
+                >
+                  Çıkış ekranına geç
+                </button>
+                <button type="button" className="yya-btn-ghost h-8 px-3 text-xs" onClick={() => void refresh()}>
+                  Yenile
+                </button>
+              </div>
             </div>
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                streamHealthy
-                  ? "border-panel-accent/40 bg-panel-accent/10 text-panel-accent"
-                  : "border-amber-400/30 bg-amber-500/10 text-amber-200"
-              }`}
-            >
-              {streamHealthy
-                ? "● Her şey düzgün çalışıyor"
-                : data?.active_session
-                  ? "● Bağlantı kontrol ediliyor"
-                  : "○ Yayın kapalı"}
-            </span>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <HealthBadge
-              icon={<Bot className="h-4 w-4" />}
-              label="Bot"
-              ok={botEnabled}
-              value={botEnabled ? "Aktif" : "Kapalı"}
-            />
-            <HealthBadge
-              icon={<MessageCircle className="h-4 w-4" />}
-              label="Sohbet"
-              ok={chatConnected}
-              value={chatConnected ? "Bağlı" : "Bağlı değil"}
-            />
-            <HealthBadge
-              icon={<Radio className="h-4 w-4" />}
-              label="Kick yayını"
-              ok={liveStatus.live}
-              value={liveStatus.live ? "Canlı" : "Çevrimdışı"}
-            />
-          </div>
-          <div>
-            <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
-              <Activity className="h-4 w-4 text-panel-accent" />
-              Anlık istatistikler
-            </h4>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat label="Anlık izleyici" value={String(currentViewers)} />
-              <Stat
-                label="Chatte aktif"
-                value={String(data?.active_chatters || 0)}
-                hint="son 5 dakika"
+            <div className="grid gap-2 sm:grid-cols-3">
+              <HealthBadge
+                icon={<Bot className="h-4 w-4" />}
+                label="Bot"
+                ok={botEnabled}
+                value={botEnabled ? "Aktif" : "Kapalı"}
               />
-              <Stat
-                label="Oturum izleyicisi"
-                value={String(data?.session_viewers || 0)}
-                hint="chatte görülen tekil kişi"
+              <HealthBadge
+                icon={<MessageCircle className="h-4 w-4" />}
+                label="Sohbet"
+                ok={chatConnected}
+                value={chatConnected ? "Bağlı" : "Bağlı değil"}
               />
-              <Stat label="Oturum aboneleri" value={String(data?.session_subs || 0)} />
+              <HealthBadge
+                icon={<Radio className="h-4 w-4" />}
+                label="Kick yayını"
+                ok={liveStatus.live}
+                value={liveStatus.live ? "Canlı" : "Çevrimdışı"}
+              />
             </div>
-          </div>
-        </div>
-      </section>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <Stat label="Anlık izleyici" value={String(currentViewers)} hint="Kick" />
+              <Stat label="Chatte aktif" value={String(data?.active_chatters || 0)} hint="son 5 dakika" />
+              <Stat label="Chat hızı" value={`${(data?.chat_rpm || 0).toFixed(1)}/dk`} hint="mesaj / dakika" />
+              <Stat
+                label="Oturum"
+                value={data?.active_session ? "Canlı" : "Kapalı"}
+                hint={data?.active_session ? fmtTs(data.active_session.started_at) : "Başlatınca kayıt tutulur"}
+              />
+              <Stat label="Oturum izleyicisi" value={String(data?.session_viewers || 0)} hint="chatte görülen tekil kişi" />
+              <Stat label="Oturum takip" value={String(data?.session_followers || 0)} />
+              <Stat label="Oturum abone" value={String(data?.session_subs || 0)} />
+              <Stat label="Oturum chat" value={String(data?.session_chat || 0)} />
+            </div>
+          </section>
 
       <section className="yya-card overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-panel-border px-4 py-3">
@@ -490,49 +487,36 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
         </div>
       )}
 
-      {data && (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="İzleyici" value={String(currentViewers)} hint="Kick anlık" />
-            <Stat
-              label="Chat hızı"
-              value={`${data.chat_rpm.toFixed(1)}/dk`}
-              hint="mesaj / dakika"
-            />
-            <Stat label="Oturum takip" value={String(data.session_followers)} />
-            <Stat label="Oturum abone" value={String(data.session_subs)} />
-            <Stat label="Oturum chat" value={String(data.session_chat)} />
-            <Stat label="Sadakat kullanıcı" value={String(data.loyalty_users)} />
-            <Stat label="Komutlar" value={String(data.commands)} />
-            <Stat
-              label="Oturum"
-              value={data.active_session ? "Canlı" : "Kapalı"}
-              hint={
-                data.active_session
-                  ? fmtTs(data.active_session.started_at)
-                  : "Başlatınca kayıt tutulur"
-              }
-            />
-          </div>
-
-          <section className="grid gap-4 lg:grid-cols-2">
-            <div className="yya-card space-y-3">
+          {data && (
+            <section className="yya-card space-y-3">
               <h3 className="font-display text-sm font-semibold text-white">Son olaylar</h3>
               <EventList events={data.recent_events} />
-            </div>
-            <div className="yya-card space-y-3">
-              <h3 className="font-display text-sm font-semibold text-white">Yayın geçmişi</h3>
-              <SessionList sessions={data.sessions} />
-            </div>
-          </section>
+            </section>
+          )}
+        </>
+      )}
 
+      {goster("gecmis") && data && (
+        <>
+          <section className="yya-card space-y-3">
+            <h3 className="font-display text-sm font-semibold text-white">Yayın geçmişi</h3>
+            <SessionList sessions={data.sessions} />
+          </section>
           <section className="yya-card space-y-3">
             <h3 className="font-display text-sm font-semibold text-white">
               Önceki yayınlar — izleyici zirvesi
             </h3>
             <SessionSparkline sessions={data.sessions} />
           </section>
+        </>
+      )}
 
+      {goster("gelismis") && data && (
+        <>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Stat label="Sadakat kullanıcısı" value={String(data.loyalty_users)} />
+            <Stat label="Komutlar" value={String(data.commands)} />
+          </div>
           <section className="grid gap-4 lg:grid-cols-2">
             <div className="yya-card space-y-3">
               <h3 className="font-display text-sm font-semibold text-white">Yerel SQLite</h3>
@@ -602,6 +586,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
                 Yerel ağ / Tailscale:{" "}
                 <code className="text-panel-accent">POST …/remote/login</code>
               </p>
+              <p className="text-[11px] text-panel-muted">
+                Yalnız Ayarlar'da uzak erişim açıksa kullanılır. İlk yönetici yalnız bu bilgisayardan kurulur; şifre en az 8 karakter. 10 dakikada 8 hatalı girişten sonra o adres beklemeye alınır.
+              </p>
               <input
                 className="yya-input"
                 placeholder="kullanıcı"
@@ -611,7 +598,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive }: Pro
               <input
                 className="yya-input"
                 type="password"
-                placeholder="şifre"
+                placeholder="şifre (en az 8 karakter)"
                 value={remotePass}
                 onChange={(e) => setRemotePass(e.target.value)}
               />

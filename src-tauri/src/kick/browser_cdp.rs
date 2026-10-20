@@ -1059,7 +1059,7 @@ pub async fn close_kick_browser_cdp(data_dir: &Path) {
       "$p = '{}'; Get-CimInstance Win32_Process -Filter \"name='msedge.exe'\" | Where-Object {{ $_.CommandLine -and $_.CommandLine.Contains($p) }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }}",
       profile_s.replace('\'', "''")
     );
-    let mut cmd = Command::new("powershell");
+    let mut cmd = Command::new(crate::sistem_araci::yol("powershell.exe"));
     cmd.args([
       "-NoProfile",
       "-ExecutionPolicy",

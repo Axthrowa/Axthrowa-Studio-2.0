@@ -343,7 +343,7 @@ impl KickBotSession {
     let body = dir.join(format!("yya-kick-body-{}.txt", now_ms()));
     let jar = dir.join(format!("yya-kick-jar-{}.txt", now_ms()));
 
-    let mut cmd = tokio::process::Command::new("curl.exe");
+    let mut cmd = tokio::process::Command::new(crate::sistem_araci::yol("curl.exe"));
     cmd.args([
       "-sS",
       "-L",
@@ -833,7 +833,7 @@ impl KickBotSession {
     args.push(format!("@{body_path}"));
     args.push(url.to_string());
 
-    let mut cmd = tokio::process::Command::new("curl.exe");
+    let mut cmd = tokio::process::Command::new(crate::sistem_araci::yol("curl.exe"));
     cmd.args(&args);
     #[cfg(windows)]
     {

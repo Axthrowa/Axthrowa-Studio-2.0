@@ -107,3 +107,37 @@ Rapor hiçbir parola, anahtar, token ya da çerez değeri içermez.
 - Otomatik yapılandırma platform sunucusuna bağlanmaz; kodlama sınaması geçici dosyayı siler.
 - Oyun yakalama örneği sınamada hiç oluşturulmadı (çalışan oyuna kanca atma riski); tür özellikleri örneksiz okundu.
 - Motor kendi CEF alt süreçlerini kapatır; kullanıcının OBS süreçlerine dokunulmaz.
+
+## Tarama turu (2026-10-20)
+
+Kapsam: yerel sunucu (axum) uçları, Tauri yetenekleri/CSP, alt süreç çağrıları, ön yüz XSS
+kapıları, npm bağımlılıkları. `cargo clippy --all-targets` uyarısız; TS `noUnusedLocals` açık.
+
+| Bulgu | Önem | Durum |
+|---|---|---|
+| `/media/file` UNC yolu (`\sunucu\pay\x.png`, `\?\UNC\…`) kabul ediyordu. Uç GET olduğundan köken denetimine girmez: yayıncının açtığı herhangi bir site `<img>` ile Windows'u saldırgan sunucuya SMB bağlantısı açmaya ve **NTLM özetini göndermeye** zorlayabiliyordu. | Yüksek | Düzeltildi: yalnız yerel disk (`media::yerel_disk_yolu`), test + başsız sunucuda HTTP 400 doğrulandı |
+| `curl.exe`, `powershell`, `reg`, `tasklist`, `taskkill`, `netstat`, `tar` çıplak adla çağrılıyordu; Windows önce uygulama klasörüne bakar (taşınabilir klasöre bırakılan sahte exe çalışırdı). | Orta | Düzeltildi: `sistem_araci::yol` (System32 tam yolu) |
+| Harici StreamAxT "zorla durdur": artık gözcülü; yalnız portu dinleyen süreç öldürülünce gözcü yeniden başlatıyordu. | İşlev | Düzeltildi: `/health` `gozcuPid` → ağaç gözcüden kapatılır (yalnız `node.exe` ise) |
+| npm: `source-map-js` (yüksek), `braces`, `postcss-selector-parser` — yalnız derleme zamanı, pakete girmez. | Düşük | `source-map-js` düzeltildi; diğer ikisi `--force` (kırıcı tailwind zinciri) ister, bırakıldı |
+
+İncelenip sorun bulunmayanlar: Host/köken koruması (`local_guard`), LAN Bearer, CORS beyaz listesi,
+`open-external` izin listesi + http(s) zorunluluğu, yt-dlp'ye yalnız video kimliği, yükleme adları
+(`dosya_adi`) ve uzantı zorlaması, ön yüzde `innerHTML`/`dangerouslySetInnerHTML`/`eval` yok,
+Tauri uzak yetenek yalnız `127.0.0.1:8843`, projektör pencereleri IPC'siz.
+
+Ek (aynı gün): ffmpeg/yt-dlp indirmeleri artık aynı sürümün SHA-256 listesiyle doğrulanıyor
+(tutmazsa dosya silinir, kurulmaz; gerçek yt-dlp.exe ile özet eşleşmesi denendi). `cargo audit` (0.22.2):
+rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10'a güncellendi (RUSTSEC-2026-0346..0349, -0381, -0382).
+Kalan uyarılar: webpki-roots 0.26.11 yalnız 1.0.10'a köprü (sürüm adına göre uyarı); rsa (RUSTSEC-2023-0071)
+yalnız kilit dosyasında — sqlx-mysql derlenmiyor; unic-*/proc-macro-error/glib "bakımsız" uyarıları Tauri ağacından,
+açık değil. Gömülü StreamAxT'te follow-redirects 1.16.1'e çıkarıldı; vosk-browser içindeki uuid'in düzeltmesi yok.
+Ölü kod: Tauri öncesi bağımsız HTML aracı `legacy/` kaldırıldı (git geçmişinde duruyor).
+
+### Kalanların kapatılması (2026-10-21)
+
+- `cargo audit` artık açık bildirmiyor. İki uyarı gerekçesiyle `src-tauri/.cargo/audit.toml`'da: webpki-roots 0.26.11
+  (tokio-tungstenite 0.29/0.30 ister, yalnız düzeltilmiş 1.0.10'a köprü) ve rsa (yalnız kilitte, sqlx-mysql derlenmez).
+  Kalan 7 "bakımsız/unsound" bildirimi Tauri'nin bağımlılıkları (unic-*, proc-macro-error, Linux'a özgü glib) — düzeltilmiş sürüm yok.
+- npm: `postcss-selector-parser` 7.1.7'ye zorlandı (`overrides`); üretilen CSS bayt bayt aynı. vite 6.4.4 (panel) ve
+  Resonance vite güncellendi (GHSA-698v-4r3x-3vcv, yalnız geliştirme sunucusu). Yalnız `braces` kaldı: tüm sürümleri
+  etkilenmiş, düzeltmesi Tailwind 4 göçü; yalnız derlemede kendi glob desenlerimizi işler, pakete girmez.

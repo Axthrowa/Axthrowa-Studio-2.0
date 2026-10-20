@@ -1,0 +1,10 @@
+# cargo audit için bilinçli istisnalar (gerekçeleriyle). Yeni sürüm çıkınca yeniden değerlendir.
+[advisories]
+ignore = [
+  # webpki-roots 0.26.11: tokio-tungstenite (0.29 ve 0.30) bu sürümü ister ama 0.26.11 yalnız
+  # webpki-roots 1.x'e köprüdür; sertifika listesi 1.0.10'dan (düzeltilmiş) gelir. Uyarı sürüm adına göre.
+  "RUSTSEC-2026-0381",
+  # rsa (Marvin): yalnız Cargo.lock'ta, sqlx-mysql üzerinden; proje yalnız sqlite özelliğiyle derlenir,
+  # sqlx-mysql/rsa ikiliye girmez (`cargo tree -i rsa --target all` boş).
+  "RUSTSEC-2023-0071",
+]

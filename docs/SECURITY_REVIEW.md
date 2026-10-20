@@ -132,3 +132,12 @@ Kalan uyarılar: webpki-roots 0.26.11 yalnız 1.0.10'a köprü (sürüm adına g
 yalnız kilit dosyasında — sqlx-mysql derlenmiyor; unic-*/proc-macro-error/glib "bakımsız" uyarıları Tauri ağacından,
 açık değil. Gömülü StreamAxT'te follow-redirects 1.16.1'e çıkarıldı; vosk-browser içindeki uuid'in düzeltmesi yok.
 Ölü kod: Tauri öncesi bağımsız HTML aracı `legacy/` kaldırıldı (git geçmişinde duruyor).
+
+### Kalanların kapatılması (2026-10-21)
+
+- `cargo audit` artık açık bildirmiyor. İki uyarı gerekçesiyle `src-tauri/.cargo/audit.toml`'da: webpki-roots 0.26.11
+  (tokio-tungstenite 0.29/0.30 ister, yalnız düzeltilmiş 1.0.10'a köprü) ve rsa (yalnız kilitte, sqlx-mysql derlenmez).
+  Kalan 7 "bakımsız/unsound" bildirimi Tauri'nin bağımlılıkları (unic-*, proc-macro-error, Linux'a özgü glib) — düzeltilmiş sürüm yok.
+- npm: `postcss-selector-parser` 7.1.7'ye zorlandı (`overrides`); üretilen CSS bayt bayt aynı. vite 6.4.4 (panel) ve
+  Resonance vite güncellendi (GHSA-698v-4r3x-3vcv, yalnız geliştirme sunucusu). Yalnız `braces` kaldı: tüm sürümleri
+  etkilenmiş, düzeltmesi Tailwind 4 göçü; yalnız derlemede kendi glob desenlerimizi işler, pakete girmez.

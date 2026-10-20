@@ -5,6 +5,8 @@ import { eventBus } from '../../core/event-bus.js';
 import { economy } from '../economy/economy.js';
 import { wsHub } from '../../ws/server.js';
 import { hataMetni } from '../../core/logger.js';
+import { sikCoz } from './cevap-eslestir.js';
+import { cevapMesaji, soruMesaji } from './trivia-mesaj.js';
 
 export interface VoteDistribution {
   A: { count: number; percent: number };
@@ -205,7 +207,7 @@ export class TriviaEngine extends EventEmitter {
     const catName = category === 'all' ? 'Karışık Kategoriler' : category;
     eventBus.emitBotMessage({
       platform: 'all',
-      message: `🏆 BİL BAKALIM YARIŞMASI BAŞLIYOR! 🏆\nKategori: ${catName} | Toplam: ${totalQuestions} Soru | Soru Süresi: ${durationSec} sn\nHazır olun, ilk soru geliyor! 🚀`
+      message: `🏆 Bil Bakalım başlıyor: ${totalQuestions} soru (${catName}). Cevap için sohbete A, B, C ya da D yaz!`
     });
 
     setTimeout(() => {
@@ -273,7 +275,7 @@ export class TriviaEngine extends EventEmitter {
       answerMs: number;
     }> = [];
 
-    const wrongVoters: string[] = [];
+    const wrongVoters: Array<{ username: string; displayName: string; platform: string }> = [];
 
     for (const [uname, vote] of this.votes.entries()) {
       if (vote.option === correctOpt) {
@@ -284,7 +286,7 @@ export class TriviaEngine extends EventEmitter {
           answerMs: vote.answerMs
         });
       } else {
-        wrongVoters.push(uname);
+        wrongVoters.push({ username: uname, displayName: vote.displayName, platform: vote.platform });
       }
     }
 
@@ -360,9 +362,10 @@ export class TriviaEngine extends EventEmitter {
       });
     }
 
-    // Process wrong voters: reset streak
-    for (const wrongUname of wrongVoters) {
-      this.updateScoreInDb(wrongUname, wrongUname, 'stream', {
+    // Process wrong voters: reset streak (görünen ad ve platform korunur;
+    // eskiden ad yerine kullanıcı adı, platform yerine 'stream' yazılıyordu)
+    for (const w of wrongVoters) {
+      this.updateScoreInDb(w.username, w.displayName, w.platform, {
         addPoints: 0,
         isCorrect: false,
         answerMs: 0,
@@ -518,29 +521,10 @@ export class TriviaEngine extends EventEmitter {
     }
   }
 
+  /** Harf/rakam ya da seçenek metni; Türkçe duyarlı (bkz. cevap-eslestir.ts). */
   private parseOption(text: string): 'A' | 'B' | 'C' | 'D' | null {
-    const raw = text.trim().toLowerCase();
-
-    // 1. Direct single letter or number check
-    if (raw === 'a' || raw === '1' || raw.startsWith('a ') || raw.startsWith('1 ') || raw === 'a şıkkı' || raw === 'a şıkkı') return 'A';
-    if (raw === 'b' || raw === '2' || raw.startsWith('b ') || raw.startsWith('2 ') || raw === 'b şıkkı' || raw === 'b şıkkı') return 'B';
-    if (raw === 'c' || raw === '3' || raw.startsWith('c ') || raw.startsWith('3 ') || raw === 'c şıkkı' || raw === 'c şıkkı') return 'C';
-    if (raw === 'd' || raw === '4' || raw.startsWith('d ') || raw.startsWith('4 ') || raw === 'd şıkkı' || raw === 'd şıkkı') return 'D';
-
-    // 2. Full text matching against options
-    if (this.currentQuestion) {
-      const optA = this.currentQuestion.optionA.trim().toLowerCase();
-      const optB = this.currentQuestion.optionB.trim().toLowerCase();
-      const optC = this.currentQuestion.optionC.trim().toLowerCase();
-      const optD = this.currentQuestion.optionD.trim().toLowerCase();
-
-      if (raw === optA || (optA.length > 3 && raw.includes(optA))) return 'A';
-      if (raw === optB || (optB.length > 3 && raw.includes(optB))) return 'B';
-      if (raw === optC || (optC.length > 3 && raw.includes(optC))) return 'C';
-      if (raw === optD || (optD.length > 3 && raw.includes(optD))) return 'D';
-    }
-
-    return null;
+    const q = this.currentQuestion;
+    return sikCoz(text, q ? { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD } : undefined);
   }
 
   private calculateDistribution(): VoteDistribution {
@@ -562,76 +546,23 @@ export class TriviaEngine extends EventEmitter {
     };
   }
 
+  /** Sohbete YALNIZ soru ve şıklar (kategori/süre/ödül overlay'de) */
   private broadcastQuestionToChat() {
     if (!this.currentQuestion) return;
-    const q = this.currentQuestion;
-    const roundPrefix = this.mode === 'tournament' ? `[Soru ${this.tournamentCurrentIndex}/${this.tournamentTotalQuestions}] ` : '';
-
-    const categoryIcons: Record<string, string> = {
-      'Genel Kültür': '💡',
-      'Bilgi': '🔬',
-      'Bilim': '🧪',
-      'Oyun': '🎮',
-      'Oyunlar': '🎲',
-      'Film ve Dizi': '🎬',
-      'Sinema TV': '🎥',
-      'Coğrafya': '🌍',
-      'Tarih': '📜',
-      'Osmanlı Tarihi': '🕌',
-      'Spor': '⚽',
-      'Basketbol': '🏀',
-      'Sanat': '🎨',
-      'Tıbbi Terimler': '🩺',
-      'Azerbaycan Türkçesi': '🇦🇿',
-      'Gündem 2000/26': '📰',
-      'Ekonomi': '📈',
-      'Türk Mutfağı': '🍲',
-      'Teknoloji': '💻',
-      'İz Bırakanlar': '🌟',
-      'Geçmişten Günümüze': '⏳',
-      '4 İşlem': '🔢',
-      'Yazım Yanlışları': '✍️',
-      'Söz ve Deyiş': '💬'
-    };
-    const icon = categoryIcons[q.category] || '🧠';
-
-    const msg = 
-      `╔════════════ 🧠 BİL BAKALIM ════════════╗\n` +
-      `║ ${icon} ${roundPrefix}Kategori: ${q.category} | Süre: ${this.durationSeconds}sn | Ödül: ${q.points} Puan\n` +
-      `║ Soru: ${q.question}\n` +
-      `║ 🇦 ${q.optionA}    🇧 ${q.optionB}\n` +
-      `║ 🇨 ${q.optionC}    🇩 ${q.optionD}\n` +
-      `╚════════════════════════════════════════════╝\n` +
-      `💡 Cevap vermek için sohbete sadece A, B, C veya D yazın!`;
-
-    eventBus.emitBotMessage({ platform: 'all', message: msg });
+    const sira = this.mode === 'tournament' ? { no: this.tournamentCurrentIndex, toplam: this.tournamentTotalQuestions } : undefined;
+    eventBus.emitBotMessage({ platform: 'all', message: soruMesaji(this.currentQuestion as any, sira) });
   }
 
   private broadcastAnswerToChat() {
     if (!this.currentQuestion) return;
     const q = this.currentQuestion;
-    const optLetter = q.correctOption;
-    const optText = (q as any)[`option${optLetter}`] || '';
-
-    let msg = `⏰ SÜRE DOLDU! Doğru Cevap: [ ${optLetter} ] ${optText} ✅\n`;
-
-    if (q.explanation) {
-      msg += `📌 Bilgi Notu: ${q.explanation}\n`;
-    }
-
-    if (this.lastQuestionWinners.length > 0) {
-      const fastest = this.lastQuestionWinners[0];
-      const sec = (fastest.answerMs / 1000).toFixed(1);
-      msg += `🏆 En Hızlı Bilen: @${fastest.displayName} (+${fastest.earnedPoints} Puan - ${sec} sn) | Toplam ${this.lastQuestionWinners.length} kişi bildi!`;
-
-      if (fastest.streak >= 2) {
-        msg += ` 🔥 (${fastest.streak} soru serisi!)`;
-      }
-    } else {
-      msg += `😢 Maalesef bu soruyu kimse doğru bilemedi!`;
-    }
-
-    eventBus.emitBotMessage({ platform: 'all', message: msg });
+    const harf = String(q.correctOption || '');
+    const metin = (q as any)[`option${harf}`] || '';
+    const ilk = this.lastQuestionWinners[0];
+    eventBus.emitBotMessage({
+      platform: 'all',
+      message: cevapMesaji(harf, metin, ilk ? { ad: ilk.displayName, puan: ilk.earnedPoints, kisi: this.lastQuestionWinners.length } : undefined)
+    });
   }
 
   private broadcastWs(type: string, data: any) {

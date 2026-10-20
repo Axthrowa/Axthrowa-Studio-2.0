@@ -2,7 +2,7 @@
  * StreamAxT Activity Feed overlay
  * Developed by AxthrowA
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ACTIVITY_DEFAULTS } from '../lib/widget-defaults.js';
@@ -37,8 +37,12 @@ export function ActivityFeedWidget() {
   const { lastMessage } = useWebSocket('all');
   const [items, setItems] = useState<FeedItem[]>([]);
 
+  const islenen = useRef<unknown>(null);
   useEffect(() => {
     if (!lastMessage || s.paused) return;
+    // Etki ayar (`s`) değişince de çalışır: aynı ileti ikinci kez sayılmasın
+    if (islenen.current === lastMessage) return;
+    islenen.current = lastMessage;
     const ev = lastMessage.data || lastMessage.payload?.event || lastMessage.payload || {};
     const type = lastMessage.subType || ev?.event_type || (lastMessage.type === 'alert' ? lastMessage.subType : lastMessage.type);
     const flag = TYPE_MAP[type];

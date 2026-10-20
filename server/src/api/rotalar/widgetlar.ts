@@ -14,6 +14,9 @@ import { subathon } from '../../modules/subathon/subathon.js';
 import { hypeTreni } from '../../modules/hype/hype-train.js';
 import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../../modules/widgets/settings-validate.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { kupa } from '../../modules/engagement/kupa.js';
+import { etiketVerisi } from '../../modules/widgets/olay-etiketleri.js';
+import { carkCevir } from '../../modules/engagement/cark.js';
 
 const router = Router();
 
@@ -29,6 +32,28 @@ router.get('/hype-train', (_req: Request, res: Response) => res.json(hypeTreni.d
 router.post('/hype-train/reset', (_req: Request, res: Response) => {
   hypeTreni.sifirla();
   res.json(hypeTreni.durum());
+});
+router.post('/hype-train/start', (_req: Request, res: Response) => {
+  hypeTreni.baslat();
+  res.json(hypeTreni.durum());
+});
+
+// Olay Etiketleri — son olaylar veritabanından (sayfa açılınca "—" kalmasın)
+router.get('/event-labels', (_req: Request, res: Response) => {
+  try {
+    res.json(etiketVerisi());
+  } catch (e) {
+    seyrekUyar('etiket:oku', '[Etiketler] Son olaylar okunamadı', e);
+    res.json({});
+  }
+});
+
+// Bağış Kupası — durum sunucuda (OBS yenilenince içi korunur)
+router.get('/cup', (_req: Request, res: Response) => res.json({ ogeler: kupa.liste() }));
+router.post('/cup/reset', (_req: Request, res: Response) => {
+  kupa.sifirla();
+  wsHub.broadcastTo(['all'], { type: 'cup_clear' });
+  res.json({ success: true, ogeler: [] });
 });
 
 router.post('/subathon/settings', (req: Request, res: Response) => {
@@ -159,12 +184,12 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     case 'the-cup':
-      wsHub.broadcastTo(['all'], {
-        type: 'cup_drop',
-        tokenType: body.tokenType || 'coin',
-        count: body.count || 5,
-        username: body.username || 'TestBağışçı'
-      });
+      {
+        // Test de gerçek kuralları ve kalıcı durumu kullanır (panelden "Sıfırla" ile boşaltılır)
+        const tur = ({ coin: 'tip', bits: 'kicks', kicks: 'kicks', sub: 'sub', gift: 'gift_sub' } as Record<string, string>)[String(body.tokenType || 'coin')] || 'tip';
+        const adet = Math.min(20, Math.max(1, Number(body.count) || 5));
+        for (let i = 0; i < adet; i++) wsHub.kupayaDusur(tur, { user: 'Test', amount: 1_000_000, count: 1 });
+      }
       break;
     // NOT: Aşağıdaki üç test eskiden widget'ın HİÇ dinlemediği mesajları
     // yayınlıyordu (hype_train_progress, subathon_update, now_playing):
@@ -218,10 +243,11 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       break;
     case 'wheel':
     case 'wheel-of-fortune':
-      wsHub.broadcastTo(['all'], {
-        type: 'spin_wheel',
-        winnerIndex: Math.floor(Math.random() * 8)
-      });
+      {
+        // Panelde kayıtlı dilimler ve ağırlıklarıyla (eskiden sabit 0–7)
+        const sonuc = carkCevir();
+        wsHub.broadcastTo(['all'], { type: 'wheel_spin', payload: { index: sonuc.index, label: sonuc.etiket } });
+      }
       break;
     case 'tts':
     case 'cloud-tts':
@@ -259,42 +285,51 @@ router.post('/widgets/test/:widgetName', (req: Request, res: Response) => {
   res.json({ success: true, widget: widgetName, message: `${widgetName} testi tetiklendi!` });
 });
 
-router.get('/widgets/:widgetId/settings', (req: Request, res: Response) => {
-  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
-  const key = `widget_settings_${req.params.widgetId}`;
+/** Bir widget'ın kayıtlı ayarı (yoksa / bozuksa boş nesne). */
+export function widgetAyariOku(widgetId: string): Record<string, unknown> {
   try {
-    const row = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(key) as { value: string } | undefined;
-    res.json(row?.value ? JSON.parse(row.value) : {});
+    const row = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(`widget_settings_${widgetId}`) as { value: string } | undefined;
+    return row?.value ? JSON.parse(row.value) : {};
   } catch {
-    res.json({});
+    return {};
   }
-});
+}
 
-router.post('/widgets/:widgetId/settings', (req: Request, res: Response) => {
-  // B2: kimlik, boyut, derinlik, prototip kirletme ve tür denetimi
-  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
-  const key = `widget_settings_${req.params.widgetId}`;
-  const currentRaw = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(key) as { value: string } | undefined;
-  let current: Record<string, unknown> = {};
-  try {
-    current = currentRaw?.value ? JSON.parse(currentRaw.value) : {};
-  } catch {
-    current = {}; // bozuk kayıt: yeni ayar temiz başlar
-  }
-  const temiz = widgetAyariniTemizle(req.body || {}, current);
-  if (!temiz.ok) return res.status(400).json({ error: temiz.hata });
-  if (temiz.uyarilar.length) {
-    console.warn(`[Widget] ${req.params.widgetId} ayarında düzeltme:`, temiz.uyarilar.slice(0, 5).join(' · '));
-    // Yanıt gövdesi değişmesin (panel ayar nesnesi bekliyor); uyarı başlıkta
-    res.setHeader('X-StreamAxT-Uyari', encodeURIComponent(temiz.uyarilar.slice(0, 3).join(' | ')));
-  }
+/**
+ * Widget ayarını doğrulayıp birleştirerek yazar ve OBS'teki katmanlara yayınlar.
+ * B2: kimlik, boyut, derinlik, prototip kirletme ve tür denetimi.
+ */
+export function widgetAyariYaz(
+  widgetId: string,
+  govde: unknown
+): { ok: true; deger: Record<string, unknown>; uyarilar: string[] } | { ok: false; hata: string } {
+  if (!WIDGET_KIMLIGI.test(String(widgetId))) return { ok: false, hata: 'Geçersiz widget kimliği' };
+  const current = widgetAyariOku(widgetId); // bozuk kayıt: yeni ayar temiz başlar
+  const temiz = widgetAyariniTemizle(govde || {}, current);
+  if (!temiz.ok) return { ok: false, hata: temiz.hata };
   const updated = { ...current, ...temiz.deger };
   db.prepare(`
     INSERT INTO bot_settings (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
-  `).run(key, JSON.stringify(updated));
-  wsHub.broadcastTo(['all'], { type: 'widget_settings', widgetId: req.params.widgetId, settings: updated });
-  res.json(updated);
+  `).run(`widget_settings_${widgetId}`, JSON.stringify(updated));
+  wsHub.broadcastTo(['all'], { type: 'widget_settings', widgetId, settings: updated });
+  return { ok: true, deger: updated, uyarilar: temiz.uyarilar };
+}
+
+router.get('/widgets/:widgetId/settings', (req: Request, res: Response) => {
+  if (!WIDGET_KIMLIGI.test(String(req.params.widgetId))) return res.status(400).json({ error: 'Geçersiz widget kimliği' });
+  res.json(widgetAyariOku(String(req.params.widgetId)));
+});
+
+router.post('/widgets/:widgetId/settings', (req: Request, res: Response) => {
+  const sonuc = widgetAyariYaz(String(req.params.widgetId), req.body);
+  if (!sonuc.ok) return res.status(400).json({ error: sonuc.hata });
+  if (sonuc.uyarilar.length) {
+    console.warn(`[Widget] ${req.params.widgetId} ayarında düzeltme:`, sonuc.uyarilar.slice(0, 5).join(' · '));
+    // Yanıt gövdesi değişmesin (panel ayar nesnesi bekliyor); uyarı başlıkta
+    res.setHeader('X-StreamAxT-Uyari', encodeURIComponent(sonuc.uyarilar.slice(0, 3).join(' | ')));
+  }
+  res.json(sonuc.deger);
 });
 
 export default router;

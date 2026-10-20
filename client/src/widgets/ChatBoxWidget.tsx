@@ -2,10 +2,14 @@
  * StreamAxT Chat Overlay
  * Developed by AxthrowA
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { CHAT_DEFAULTS } from '../lib/widget-defaults.js';
+import { ChatMessageContent } from '../components/ChatMessageContent.js';
+import { PlatformLogo } from '../components/PlatformLogo.js';
+import { PlatformBadges } from '../components/PlatformBadge.js';
+import { onizlemeKipi } from '../lib/widget-style.js';
 
 interface OverlayMsg {
   id: string;
@@ -13,7 +17,8 @@ interface OverlayMsg {
   user: string;
   color: string;
   text: string;
-  badges: string[];
+  /** Platformun gönderdiği rozet ve rol bilgisi (özgün rozet görselleri için) */
+  rozet: { rawBadges?: any[]; badges?: string[]; isBroadcaster?: boolean; isMod?: boolean; isVip?: boolean; isSub?: boolean };
   avatar?: string;
   ts: string;
   special?: boolean;
@@ -21,15 +26,28 @@ interface OverlayMsg {
 }
 
 const PLATFORM_COLORS: Record<string, string> = { twitch: '#9146ff', kick: '#53fc18', youtube: '#ff0000', tiktok: '#fe2c55' };
-const PLATFORM_ICONS: Record<string, string> = { twitch: '🟣', kick: '🟢', youtube: '🔴', tiktok: '🎵' };
 
-export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boolean }) {
+/**
+ * Önizleme örnekleri: stüdyo tuvali ve OBS test kipi boş bir kutu yerine
+ * gerçek bileşenin bu ayarlarla NASIL görüneceğini göstersin.
+ */
+const ORNEK_MESAJLAR: OverlayMsg[] = [
+  { id: 'o1', platform: 'kick', user: 'Kaan', color: '#53fc18', text: 'Selamlar! Harika yayın oluyor.', rozet: { isMod: true }, ts: '14:22', special: true, created: 0 },
+  { id: 'o2', platform: 'twitch', user: 'Ayse', color: '#f59e0b', text: 'Boss savaşında bol şans 🔥', rozet: { isSub: true }, ts: '14:23', special: true, created: 0 },
+  { id: 'o3', platform: 'youtube', user: 'Murat', color: '#f87171', text: '!ses alkış', rozet: {}, ts: '14:24', created: 0 }
+];
+
+export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('chat-overlay', CHAT_DEFAULTS);
   const { lastMessage } = useWebSocket('chatbox');
   const [messages, setMessages] = useState<OverlayMsg[]>([]);
+  /** Bu etki ayar (`s`) değişince de çalışır: aynı ileti İKİNCİ KEZ eklenmesin. */
+  const islenen = useRef<unknown>(null);
 
   useEffect(() => {
     if (!lastMessage || lastMessage.type !== 'chat') return;
+    if (islenen.current === lastMessage) return;
+    islenen.current = lastMessage;
     const p = lastMessage.data || lastMessage.payload;
     // Ortak kara listedeki kullanıcının ve kalkana takılan mesaj yayında gösterilmez
     if (!p || p.karaListede || p.kalkanda) return;
@@ -40,13 +58,18 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
     if (s.hideCommands && (p.message || '').trim().startsWith('!')) return;
     if (s.hideBots && (user?.isBot || username.includes('bot'))) return;
     if (s.hideBroadcaster && user?.isBroadcaster) return;
-    if (s.hideEmoteOnly && !p.message?.replace(/:\w+:/g, '').trim()) return;
+    // Kick emote'u `[emote:123:ad]` biçiminde gelir; eski `:ad:` deseni onu tanımıyordu
+    if (s.hideEmoteOnly && !String(p.message || '').replace(/\[emote:\d+:[^\]]+\]|:\w+:/g, '').trim()) return;
 
-    const badges: string[] = [];
-    if (user?.isMod) badges.push('🛡️');
-    if (user?.isSub) badges.push('⭐');
-    if (user?.isVip) badges.push('💎');
-    if (user?.isBroadcaster) badges.push('👑');
+    // Rozetler emoji yerine platformun ÖZGÜN rozetleriyle çizilir (PlatformBadges)
+    const rozet = {
+      rawBadges: Array.isArray(user?.rawBadges) ? user.rawBadges : [],
+      badges: Array.isArray(user?.badges) ? user.badges : [],
+      isBroadcaster: Boolean(user?.isBroadcaster),
+      isMod: Boolean(user?.isMod),
+      isVip: Boolean(user?.isVip),
+      isSub: Boolean(user?.isSub)
+    };
 
     const color = s.usernameColorMode === 'platform'
       ? (PLATFORM_COLORS[p.platform] || '#fff')
@@ -61,8 +84,9 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
         user: user?.displayName || user?.username || 'anon',
         color,
         text: p.message,
-        badges,
-        avatar: user?.avatar,
+        rozet,
+        // Sunucu yükü `avatarUrl` taşır; eski `avatar` alanı hiç dolu gelmiyordu
+        avatar: user?.avatarUrl || user?.avatar,
         ts: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
         special: Boolean(user?.isSub || user?.isMod || user?.isBroadcaster),
         created: Date.now()
@@ -81,7 +105,8 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
     return () => clearInterval(t);
   }, [s.fadeMessages, s.fadeTimeout]);
 
-  const list = s.reverse ? [...messages].reverse() : messages;
+  const kaynak = onizlemeKipi(props?.previewMode) && messages.length === 0 ? ORNEK_MESAJLAR : messages;
+  const list = s.reverse ? [...kaynak].reverse() : kaynak;
   const msgBg = s.messageBgColor.length === 7
     ? `${s.messageBgColor}${Math.round(s.messageBgOpacity * 255).toString(16).padStart(2, '0')}`
     : 'transparent';
@@ -106,9 +131,17 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
           {s.showAvatars && msg.avatar && (
             <img src={msg.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', marginTop: 2 }} />
           )}
-          {s.showPlatformLogo && <span>{PLATFORM_ICONS[msg.platform] || '💬'}</span>}
+          {s.showPlatformLogo && (
+            <span style={{ color: PLATFORM_COLORS[msg.platform] || '#cbd5e1', display: 'inline-flex', marginTop: 3, flexShrink: 0 }} title={msg.platform}>
+              <PlatformLogo platform={msg.platform} size={Math.round(Number(s.fontSize) * 0.95) || 16} />
+            </span>
+          )}
           {s.showTimestamp && <span style={{ color: '#64748b', fontSize: s.fontSize * 0.65, marginTop: 4 }}>{msg.ts}</span>}
-          {s.showBadges && msg.badges.map(b => <span key={b}>{b}</span>)}
+          {s.showBadges && (
+            <span style={{ display: 'inline-flex', gap: 3, marginTop: 2, flexShrink: 0 }}>
+              <PlatformBadges platform={msg.platform as any} user={msg.rozet as any} size={Math.round(Number(s.fontSize) * 1.05) || 18} />
+            </span>
+          )}
           <p style={{
             fontSize: s.fontSize,
             fontWeight: s.fontWeight,
@@ -119,7 +152,7 @@ export function ChatBoxWidget(_props?: { embedded?: boolean; previewMode?: boole
             WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined
           }}>
             <span style={{ color: msg.color, fontWeight: 800 }}>{msg.user}: </span>
-            {msg.text}
+            <ChatMessageContent message={msg.text} size={Math.round(Number(s.fontSize) * 1.3) || 24} />
           </p>
         </div>
       ))}

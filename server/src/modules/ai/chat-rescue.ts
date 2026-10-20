@@ -104,7 +104,8 @@ export class ChatRescueService extends EventEmitter {
         }
 
         const aiReply = await geminiCoHost.ask(promptText, 'Yayıncı');
-        if (aiReply && !aiReply.includes('hata') && !aiReply.includes('devre dışı')) {
+        // `ask` hata durumunda "⚠️ …" metni döndürür; o metin sohbete gitmesin
+        if (aiReply && !aiReply.startsWith('⚠️') && !aiReply.includes('devre dışı')) {
           message = aiReply;
         }
       } catch (err) {

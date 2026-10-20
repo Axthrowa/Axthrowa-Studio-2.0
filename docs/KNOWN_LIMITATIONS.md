@@ -225,3 +225,159 @@ Apache-2.0, ~37 MB) pakete GİRMEZ: yayıncı "Modeli indir" deyince alphacephei
 5. Genel (oyun içi) bas-konuş kısayolu yalnız Yayın Yönetim Aracı'nda; tek başına StreamAxT'te bas-konuş, sayfadaki
    düğmeyle.
 6. Ses panosuna öğe eklenince tanıyıcı ifade listesi en geç 60 sn'de yenilenir (komut değişikliğinde anında).
+
+## 12. KICK SOHBET OKUMA + OVERLAY STÜDYO ONARIMI (2026-10-14)
+
+**Belirti:** bot Kick'e yazabiliyor ama sohbeti okuyamıyordu; komutlar ve bilgi yarışması cevapları bota hiç
+ulaşmıyordu. Günlükte `[Kick Pusher] … App key … not in this cluster` (kod 4001).
+
+**Sebep:** Kick sabit Pusher anahtarını kapattı. Web istemcisi artık önce `POST web.kick.com/api/v1/realtime/connection`
+ile bağlantı pazarlığı yapıp sunucunun verdiği sağlayıcıya (2026-10-14'te yalnız **Centrifugo**) bağlanıyor. Bot da
+aynısını yapıyor (`platforms/kick-realtime*.ts`): oturumsuz belirteç (`…/realtime/auth/connection`), Origin başlığı
+gönderilmez, kanallar `chatrooms.<oda>.v2` + `chatrooms.<oda>` + `channel.<kanal>`, `{}` yoklamasına yanıt, belirteç
+süresi dolmadan `refresh`, kopunca 1→60 sn artan beklemeyle yeniden bağlanma, sessiz (yarı açık) soket ping+10 sn'de
+bırakılır. Kopukluk panelde Kick kartında uyarı olarak görünür (eskiden "Bağlı" görünüp sessizce okumuyordu).
+
+1. Protokol **resmi belge değil**, Kick'in herkese açık web istemcisinin davranışından gözlendi (OBSERVED, 2026-10-14):
+   Kick bunu yine değiştirebilir. Pazarlık Pusher önerirse o da desteklenir. Resmi alternatif (webhook) herkese açık
+   bir adres gerektirdiği için masaüstü botta kullanılmıyor.
+2. Doğrulama: yalıtılmış sunucu + yerel sahte Centrifugo ile uçtan uca 19/19 (komutlar, yarışma oyları, kopma,
+   yenileme, sessiz soket) ve 70 komutluk tarama; gerçek Kick'e yalnız OKUMA bağlantısı (`realtime.us-east-1…`) kuruldu.
+   Gerçek sohbete sınama mesajı YAZILMADI.
+3. Takip/abone/hediye olay adları Pusher dönemindekilerle aynı varsayıldı (`App\Events\…`); yeni sağlayıcıda canlı
+   yayında DOĞRULANMADI.
+
+**Aynı turda düzeltilenler:**
+- Komutlar Türkçe yazılınca (`!şarkı`, `!sıra`, `!katıl`, `!YAZITURA`, `!İzleme`) bot sessiz kalıyordu → katlanmış adla
+  da eşleşir (birebir ad önce, özel komut gölgelenmez).
+- Bilgi yarışması: Türkçe büyük/küçük harf (`İSTANBUL`), "A)", "cevap b", "C şıkkı", @etiket, emote; büyük harfle
+  yazılan doğru cevap artık CAPS uyarısı yerine oy (kara liste ve kalkan önce uygulanır); kısa serbest cevap kelime
+  içinde aranmaz ("au" ≠ "aura"); yanlış oy verenin adı/platformu korunur; "yayin" bulmacasının karışık hâli eksikti.
+- Kick'e 500 karakteri aşan mesaj parçalanarak gider (eskiden reddedilip kayboluyordu).
+- `!clip` platformda klip oluşturmaz; eskiden "Klip alındı" diyordu. Artık anı "Son Etkinlikler"e işaretler ve bunu söyler.
+- **Overlay Stüdyo ↔ OBS:** (a) konum/boyut/aç-kapa kendiliğinden kaydedilir (eskiden yalnız "Kaydet" ile);
+  (b) widget ayar soketi kopunca yeniden bağlanır ve ayarları tazeler — StreamAxT yeniden başlayınca OBS'teki kaynak
+  bir daha güncellenmiyordu; (c) OBS sayfası yeniden bağlanınca yeni sürüm varsa kendini yeniler; (d) "Sohbet Görünümü"
+  sekmesi OBS'in hiç okumadığı ayrı bir kayda yazıyordu ve elle çizilmiş maket gösteriyordu → gerçek bileşen + gerçek
+  ayarlar (`/api/settings/chat-overlay` geriye dönük olarak aynı kayda yönlendirildi); (e) hedef çubuğu tuvalde hep
+  "bağış" hedefiydi, stüdyo "takipçi" hedefini düzenliyordu → tür yerleşimden; (f) panelde hiçbir bileşene bağlı
+  olmayan ölü alanlar kaldırıldı; (g) sohbet katmanı önizlemede boştu → örnek mesajlar; Kick emote'ları resim; avatar
+  alanı; ayar değişince son mesaj ikinci kez ekleniyordu (sohbet, etkinlik akışı, emote kombo, hedef).
+- Sayfa dili `tr` (CSS büyük harf "TAKİPÇİ"; eskiden "TAKIPÇI").
+
+## 13. OVERLAY STÜDYO "OBS GÖRÜNÜMÜ", YENİDEN BAĞLANAN WIDGET'LAR, TEMBEL YÜKLEME (2026-10-14, 2. tur)
+
+- Tuvalde **"Örnek verilerle / OBS'te görüneceği gibi"** anahtarı. Örnek kipinde her bileşen örnek içerikle, kapalı
+  katmanlar soluk görünür (yerleşim için). OBS kipinde tuval OBS'in o an çizdiğinin aynısıdır: kapalı katman yok,
+  örnek veri yalnız "OBS Test Modu" açıksa. "Önizlemede var, OBS'te yok" farkı çoğunlukla bu örnek verilerdi.
+- Jenerik, hype treni, şu an çalan, sabit mesaj, shoutout, subathon, bağış kupası ve sadakat ödülü widget'ları
+  StreamAxT yeniden başlayınca bir daha bağlanmıyordu (OBS kaynağı yenilenene kadar ölü) → `lib/kaliciSoket.ts`.
+- "Şu An Çalan" widget'ının istediği `GET /api/songrequest/current` yoktu (404) → eklendi.
+- Sayfalar ve widget'lar tembel yüklenir: OBS'teki her widget ana paketin tamamını (626 KB) değil ~26 KB + kendi
+  parçasını indirir.
+- `http-cache-semantics` 4.3.0 (GHSA-ch52-4w7c-c8xp; `tiktok-live-connector@2.4.0` → `got` zinciri). Bot süreci
+  `release/app` ve gömülü kopyanın kendi `node_modules`'unu kullanır; ikisinde de elle güncellendi.
+- Kalan: `vosk-browser@0.0.8` içindeki `uuid@9` için orta önemde uyarı (v3/v5/v6 + `buf` kullanımı; tanıyıcı v4
+  kullanıyor) — üst sürümde düzeltme yok.
+- Widget taraması (yalıtılmış örnek, 31 sayfa): çalışma anı hatası yok. Çekiliş, anket, hype treni, jumpscare,
+  trivia, shoutout, sabit mesaj, ödül ve şu an çalan widget'ları olay yokken BİLEREK boştur.
+
+## 14. RAKİP BOT İNCELEMESİ → YENİ ÖZELLİKLER (2026-10-14, 3. tur)
+
+Kaynak sınıflandırması: yalnız **herkese açık belgeler** ve gözlemlenen davranış okundu (KickBot docs, Nightbot docs,
+StreamElements docs, BotRix docs). Rakiplerin kodu/markası/görselleri kopyalanmadı; giriş yapılmadı.
+
+Eklenenler (birim + yerel uçtan uca sınamayla doğrulandı, sahte Kick sunucusu + sentetik HLS):
+- `!nuke <kalıp> [süre]` (riskli regex reddedilir), `!vanish`, `!winner`, `!puangonder`, `!when`, `!wrongsong`,
+  `!removesong`, `!followtest/!subtest/!tiptest/!raidtest`, `!alerts pause|resume`, `!bot mute|unmute`,
+  `!commands add|edit|delete`.
+- Değişkenler: `$(if a > b;evet;hayır)`, `$(pickw a:70;b:30)`, `$(weather şehir)` (Open-Meteo, anahtarsız),
+  `$(kick alan)` (herkese açık kanal profili).
+- AutoMod: kara liste `*` joker ve `~/regex/flags`, zalgo ve uzunluk kuralları.
+- `!clip [sn]`: yayının HLS akışından ffmpeg ile yerel mp4 (yeniden kodlamasız). Platforma yüklenmez.
+- AI'ya @bot ile seslenme (kişi başı 30 sn, genel 4 sn sınırı; varsayılan kapalı).
+- "Yayın başladı" sohbet duyurusu (varsayılan kapalı).
+
+UNVERIFIED (gerçek platformda sınanmadı — gerçek yayın/sohbet tetiklenmedi):
+- Gerçek Kick yayını açıkken `!clip` (yalnız sentetik HLS ile 15 sn klip doğrulandı).
+- `!nuke`/`!vanish`'in gerçek Kick token'ıyla silme/zaman aşımı yapması.
+- AI seslenmenin gerçek Gemini yanıtı; yayın başladı duyurusunun gerçek yayın açılışında gönderilmesi.
+
+Bu turda eklenmeyenler 4. turda eklendi (bkz. §15).
+
+## 15. TOPLULUK ÖZELLİKLERİ + SAĞLAMLAŞTIRMA (2026-10-14, 4. tur)
+
+Eklenenler (birim + yerel uçtan uca sınama 20/20; önceki tur sınaması da 19/19, klip dahil):
+- **Düzenli izleyiciler** (Nightbot "regular"): `!regulars add|remove|list`, komut yetkisi `regular`
+  (düzenli + VIP + mod), AutoMod "Düzenli" muafiyeti, Ekstralar → Topluluk'ta liste. Göç #8 yalnız yeni
+  `regulars` tablosu ekler. Nightbot içe aktarımında `regular` artık `sub`'a değil `regular`'a eşlenir.
+- **`!votekick`** (StreamElements): varsayılan KAPALI. Mod/yayıncı/bot ve son 3 dk yazmamış kişi hedef alınamaz;
+  aynı hedefe 5 dk içinde yeni oylama açılmaz; süre dolunca "yetersiz oy" duyurulur.
+- **Emote piramidi** (varsayılan kapalı) ve **emote bingo** (`!bingo start … [ödül]`, mod).
+- **Kappagen**: "Ekranda Emojiler" overlay'i eskiden yalnız Emote Combo'yu açıyordu; artık gerçek uçan emote
+  katmanı (`/widgets/kappagen`). Sohbetteki Kick/7TV/emoji emote'ları uçar, `!kappagen` patlatır (mod; izleyici
+  için puan ücreti ayarlanabilir). Saniyede ~25 emote sınırı.
+- **7TV**: kanal seti (Kick kullanıcı kimliğiyle) + genel set, sohbet katmanında görsel, kappagen ve bingo'da.
+  Bu kanalın 7TV hesabı yok (API "user not found") → yalnız genel set (45 emote) kullanılıyor.
+- **`{{...}}` uyumu** (KickBot belgeleri): `{{sender.*}}`, `{{taggedUser.*}}`, `{{streamer.*}}`, `{{stream.*}}`,
+  `randomRange`, `randomItem`, `randomItemPercentage`, `request(https://…)` → `$(...)`. Tanınmayan olduğu gibi kalır.
+
+Sağlamlaştırma (gerçek hatalar):
+- **DNS gecikmesi**: bu ağda ailesiz DNS sorgusu 4–12 sn sürüyordu (AAAA bekleniyor); hava durumu 5 sn sınırında
+  zaman aşımına düşüyor, Kick/7TV istekleri saniyelerce gecikiyordu. IPv4 öncelikli çözümleme (yalnız IPv6
+  alan adına geri düşer) genel http/https ajanlarına ve güvenli `$(urlfetch)` isteğine takıldı; SSRF denetimi
+  aynen sürüyor. Ölçüm: hava durumu 5011 ms (zaman aşımı) → 221 ms, 7TV ~15 sn → 1,4 sn.
+- AutoMod: CAPS kuralı emote adlarını (`KEKW`, Kick işaretlemesi) büyük harf sayıyordu; "çok fazla emote" kuralı
+  yalnız Unicode emojiyi sayıp Kick/7TV emote selini hiç görmüyordu. İkisi düzeltildi. AutoMod kayıt ucu bilinmeyen
+  eylem/rolü artık kaydetmiyor; zaman aşımı ve mesaj uzunluğu sınırlı.
+- Yerleşik komutlarda bekleme yoktu: aynı izleyicinin 3 sn içindeki AYNI yanıtı yazılmaz (komut yine çalışır,
+  farklı yanıt — ör. işlem onayı — her zaman yazılır; mod/yayıncı muaf).
+- `!clip`: eşzamanlı iki istek iki ffmpeg açabiliyordu (bayrak beklemelerden sonra alınıyordu); ffmpeg "yok"
+  sonucu süresiz önbellekleniyordu; açık dosyayı silmek istisna fırlatıyordu; sohbete yazılan ffmpeg hata satırı
+  akış adresini (belirteç taşıyabilir) ve disk yolunu sızdırabilirdi — hepsi düzeltildi.
+- `!puangonder` hedef adını doğrulamıyordu (rastgele metinle izleyici kaydı açılabiliyordu); `!nuke` silmede
+  üst sınır yoktu (100). Kick profil sorgusu başarısız olunca önbelleğe alınmıyordu (1 dk olumsuz önbellek).
+- Panel sohbetinde `constructor`, `toString` gibi kelimeler bozuk emote görseline dönüşüyordu (sözlük
+  prototip anahtarı) — düzeltildi; sabit 7TV sözlüğü artık yalnız çevrimdışı yedek.
+
+UNVERIFIED (gerçek platformda denenmedi): `!votekick`'in gerçek Kick belirteciyle susturması; 7TV hesabı olan
+bir kanalın kanal seti; kappagen'in OBS tarayıcı kaynağındaki görünümü (yalnız tarayıcı DOM'unda doğrulandı).
+Eklenmeyen: Twitch/BTTV/FFZ emote setleri (yalnız 7TV).
+
+## 16. KARARLILIK, MÜZİK (RESONANCE), WIDGET GALERİSİ (2026-10-19, 5. tur)
+
+- **Kendi kendine kapanma:** günlükte iki neden görüldü: 3001 portu doluyken açılış (`EADDRINUSE`) ve
+  açılışta "database is locked". `index.ts` artık bir gözcü: uygulamayı (`app.ts`) alt süreç olarak açar,
+  çökünce 3/6/12…30 sn bekleyip yeniden başlatır, 10 dakikada 8 çökmede vazgeçer. Port başka bir StreamAxT'deyse
+  çıkış kodu 2 (yeniden başlatılmaz). SQLite 15 sn kilit beklemesiyle açılıyor. `STREAMAXT_GOZCU=kapali` gözcüyü kapatır.
+- **Yavaş ağ:** bu makinede IPv6/IPv4 belirtilmemiş DNS sorguları 4–12 sn sürüyordu (Kick/Discord/Gemini zaman
+  aşımı). `core/dns-hizli.ts` süreç genelinde önce IPv4 sorgular.
+- **Gemini çalışmıyor — KOD DEĞİL ANAHTAR:** kayıtlı anahtar `AQ.` ile başlıyor; Google yanıtı
+  `API_KEY_SERVICE_BLOCKED` / `ACCESS_TOKEN_TYPE_UNSUPPORTED`. Bu anahtar Generative Language API'ye kapalı.
+  Çözüm: AI Studio'dan yeni (`AIza…`) anahtar ya da anahtar kısıtlamalarına "Generative Language API" eklemek.
+  Panel artık bu nedeni açıkça gösteriyor; sohbete kısa hata yazılır, kurtarıcı ⚠️ yanıtları yutmaz.
+- **Discord duyurusu:** gömülü veritabanında hiç webhook kayıtlı DEĞİLDİ (kaydetme hiç tamamlanmamış).
+  Gönderimde 15 sn zaman aşımı, ağ hatasında 1 yeniden deneme, 401/404/429 için açık mesajlar eklendi.
+- **Zamanlayıcılar:** 5 sn tik, zamanlayıcı başına satır sayacı, `only_live` (göç #9, geri uyumlu), değişkenler
+  çözülüyor; panelde geri sayım ve son hata görünüyor.
+- **`!sr` → Spotify:** PKCE bağlantısı (`user-modify-playback-state`) ile istek Spotify kuyruğuna eklenir ya da
+  hemen çalar (`sr_spotify_mod`). Spotify Premium ve açık bir cihaz gerekir; `!skip` Spotify'da sonrakine geçer.
+- **Resonance:** "Şu an çalan" kartının yerine Resonance kaplaması (`/resonance/overlay`). Ayrıca tek başına
+  çalışan sürüm: `resonance-bagimsiz.js` (127.0.0.1:8850, Spotify yönlendirme adresi
+  `http://127.0.0.1:8850/api/player/spotify/callback`), sırlar DPAPI ile şifreli.
+- **Bil Bakalım:** sohbet iletisi yalnız soru + şıklar. Soru bankası denetleyicisi (`soru-kalite.ts`) ilk açılışta
+  bir kez çalışır: gerçek bankada ~305 bozuk soru ayıklandı, ~1176 şık onarıldı.
+- **Widget'lar:** beta etiketleri kaldırıldı; tüm widget'lara ipucu eklendi. Bil Bakalım/anket/çark/çekiliş
+  ayarlanabilir sürede kaybolur; kupa rastgele yığılır ve sıfırlanabilir (bağış/abone/hediye/KICKs); hype treni
+  sıfırdan başlar ve olay seçilebilir; tahtın kralı yayıncıyı dışarıda bırakabilir; emote kombo görseli gösterir;
+  canlı sohbet özgün platform logoları ve Kick abone rozetleri; event labels okunur ve ayarlanabilir;
+  canlı sözler çalan parçaya ve ilerlemeye göre senkron. 29 widget tarayıcıda önizleme kipinde açıldı.
+- **Güvenlik:** değişken/koşul hesaplamasındaki `Function()` kaldırıldı (özyinelemeli ayrıştırıcı);
+  `uuid` yerine `crypto.randomUUID`; anket/sabit ileti/zamanlayıcı gövdeleri doğrulanıyor.
+
+UNVERIFIED (gerçek platformda denenmedi): Spotify Premium'da gerçek çalma, gerçek Kick sohbetinden `!sr`,
+gerçek Discord webhook gönderimi, gerçek bir şarkıda sözlerin senkronu, yeni bir Gemini anahtarıyla yanıt.
+
+**Bağımlılık taraması (2026-10-21):** `npm audit` (geliştirme dahil) 0 bulgu. vosk-browser'ın `uuid@9` bağımlılığı
+`overrides` ile 11.1.1'e çekildi — vosk-browser kendi uuid kopyasını `vosk.js` içine gömdüğü ve yalnız `v4` çağırdığı için
+(GHSA-w5hq-g745-h8pq yalnız v3/v5/v6) çalışma anı etkisi yok. Resonance'ın vite ve source-map-js'i güncellendi.

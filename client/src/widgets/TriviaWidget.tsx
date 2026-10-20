@@ -349,7 +349,27 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
     }
   }, [onizleme]);
 
-  if (!state || (state.status === 'idle' && !previewMode)) {
+  // Görünürlük: soru açılınca belirir; doğru cevap gösterildikten `hideDelaySec`
+  // (kürsüden `podiumHideSec`) saniye sonra kaybolur, yeni soruyla yeniden gelir.
+  const [gizli, setGizli] = useState(false);
+  const durumAnahtari = state ? `${state.status}:${state.question?.id ?? state.question?.question ?? ''}` : '';
+  useEffect(() => {
+    if (!state || onizleme) return;
+    if (state.status === 'question_active') {
+      setGizli(false);
+      return;
+    }
+    const bitti = state.status === 'revealing_answer' || state.status === 'round_ended' || state.status === 'podium';
+    if (!bitti) return;
+    setGizli(false);
+    const sn = state.status === 'podium' ? Number(ayar.podiumHideSec) : Number(ayar.hideDelaySec);
+    if (!(sn > 0)) return; // 0 = kendiliğinden kaybolma
+    const t = setTimeout(() => setGizli(true), sn * 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [durumAnahtari, ayar.hideDelaySec, ayar.podiumHideSec, onizleme]);
+
+  if (!state || (state.status === 'idle' && !previewMode) || (gizli && !onizleme)) {
     return null;
   }
 

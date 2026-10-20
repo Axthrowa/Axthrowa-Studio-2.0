@@ -1,9 +1,11 @@
 import { db } from '../../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import axios from 'axios';
 import { spawn } from 'child_process';
 import { ChatMessagePayload } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
+import { muzikHost } from '../muzik/index.js';
+import { parcaKimligi } from '../muzik/spotify-saf.js';
 
 export interface SongItem {
   id: string;
@@ -37,6 +39,68 @@ function sistemdeAc(hedef: string): void {
 
 export class SongRequestEngine {
   private currentSong: SongItem | null = null;
+
+  constructor() {
+    // Spotify'da istek şarkısı çalmaya başlayınca kuyruk ilerler: ondan önce
+    // istenip çalınmış şarkılar "çalındı" sayılır, "şu an çalan" o olur.
+    muzikHost.parcaDegisince((c) => {
+      if (!c?.trackId) return;
+      try {
+        const satir = db
+          .prepare('SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1')
+          .get(`%/track/${c.trackId}`) as { created_at: number } | undefined;
+        if (!satir) return;
+        db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ?').run(satir.created_at);
+        this.currentSong = null;
+        this.skipVotes.clear();
+      } catch {
+        /* kuyruk eşlemesi kritik değil */
+      }
+    });
+  }
+
+  /** Spotify Web API ile otomatik çalma açık ve hesap bağlı mı? */
+  spotifyOtomatikMi(): boolean {
+    return muzikHost.spotifyBagliMi() && settingsCache.get('sr_spotify_api', 'true') !== 'false';
+  }
+
+  /**
+   * Şarkıyı Spotify'da bulup otomatik çalar: varsayılan olarak Spotify'ın
+   * kendi sırasına eklenir (mevcut şarkı bitince çalar); `sr_spotify_mod =
+   * hemen` ise hemen başlar. Yayıncının müdahalesi gerekmez.
+   * Not: Spotify oynatma kontrolü Premium hesap ve açık bir cihaz ister.
+   */
+  private async spotifyIstegi(message: ChatMessagePayload, rawQuery: string): Promise<string> {
+    const kim = message.user.displayName;
+    let sorgu = rawQuery;
+    // YouTube linki verildiyse başlığıyla Spotify'da aranır
+    const yt = rawQuery.match(/(?:youtube\.com\/\S*?[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (yt) {
+      try {
+        const o = await axios.get(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${yt[1]}&format=json`, { timeout: 4000 });
+        sorgu = String(o.data?.title || '').replace(/\((official|resmi)[^)]*\)|\[[^\]]*\]/gi, '').trim() || rawQuery;
+      } catch {
+        return `@${kim}, YouTube başlığı alınamadı; şarkı adını yazarak dene: !sr Teoman Paramparça`;
+      }
+    }
+    try {
+      const id = parcaKimligi(rawQuery);
+      const p = id ? await muzikHost.parcaBilgisi(id) : await muzikHost.parcaAra(sorgu);
+      if (!p) return `@${kim}, Spotify'da "${sorgu.slice(0, 60)}" bulunamadı.`;
+      const hemen = settingsCache.get('sr_spotify_mod', 'sira') === 'hemen';
+      await muzikHost.parcayiCal(p.uri, hemen);
+      const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
+      db.prepare(`
+        INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+      `).run(uuidv4(), baslik.slice(0, 200), `https://open.spotify.com/track/${p.id}`, 180, kim, message.platform, p.albumArt, Date.now());
+      return hemen
+        ? `🎵 @${kim}, "${baslik}" şimdi Spotify'da çalıyor!`
+        : `🎵 @${kim}, "${baslik}" Spotify sırasına eklendi — sıradaki şarkılardan sonra kendiliğinden çalacak.`;
+    } catch (e: any) {
+      return `@${kim}, şarkı Spotify'a eklenemedi: ${String(e?.message || e).slice(0, 120)}`;
+    }
+  }
   private skipVotes: Set<string> = new Set();
   private requiredVotes: number = 3;
   // In-memory cache for fast search responses (0ms on repeated songs)
@@ -47,6 +111,10 @@ export class SongRequestEngine {
     if (!rawQuery) {
       return `@${message.user.displayName}, bir şarkı ismi, YouTube, Spotify veya YouTube Music linki girmelisin! Örnek: !sr Teoman Paramparça`;
     }
+    if (rawQuery.length > 300) return `@${message.user.displayName}, istek çok uzun.`;
+
+    // Spotify hesabı bağlıysa şarkı doğrudan Spotify'da çalınır
+    if (this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);
 
     let videoId = '';
     let title = rawQuery;
@@ -248,6 +316,7 @@ export class SongRequestEngine {
     }
 
     if (force) {
+      if (this.spotifyOtomatikMi()) void muzikHost.komut('next', 'spotify').catch(() => {});
       db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(current.id);
       this.currentSong = null;
       this.skipVotes.clear();
@@ -267,6 +336,7 @@ export class SongRequestEngine {
     if (userTag) {
       this.skipVotes.add(userTag.toLowerCase());
       if (this.skipVotes.size >= this.requiredVotes) {
+        if (this.spotifyOtomatikMi()) void muzikHost.komut('next', 'spotify').catch(() => {});
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(current.id);
         this.currentSong = null;
         this.skipVotes.clear();

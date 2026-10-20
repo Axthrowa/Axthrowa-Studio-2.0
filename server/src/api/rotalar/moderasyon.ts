@@ -8,9 +8,10 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { wsHub } from '../../ws/server.js';
 import { autoMod } from '../../modules/automod/automod.js';
+import { kelimeListesiDerle } from '../../modules/automod/kelime-kurali.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { KALKAN_DESTEKLENMEYEN } from '../../modules/moderation/shield-rules.js';
 import { elleModerasyonCoz, kalkanAyariniCoz, MODERASYON_PLATFORMLARI, type ElleEylem } from '../../modules/moderation/moderation-input.js';
@@ -18,6 +19,9 @@ import { sohbetModuGovdesi } from '../../platforms/twitch-rules.js';
 import { platformManager } from '../../platforms/manager.js';
 import { yetenek } from '../../platforms/capabilities.js';
 import { chatRescueService } from '../../modules/ai/chat-rescue.js';
+
+const GECERLI_EYLEMLER = new Set(['warn', 'timeout', 'timeout_warn', 'delete', 'delete_warn']);
+const GECERLI_MUAF = new Set(['regular', 'sub', 'vip', 'og', 'mod', 'broadcaster']);
 
 const router = Router();
 
@@ -100,27 +104,38 @@ router.post('/automod', (req: Request, res: Response) => {
   for (const k of kurallar) {
     const a = eylemler[k];
     if (!a) continue;
-    if (a.action !== undefined) {
+    // Bilinmeyen eylem/rol kaydedilmez (eskiden her metin olduğu gibi yazılıyordu)
+    if (a.action !== undefined && GECERLI_EYLEMLER.has(String(a.action))) {
       db.prepare(`UPDATE automod_settings SET ${k}_action = ? WHERE id = 1`).run(String(a.action));
     }
     if (a.timeout !== undefined) {
-      db.prepare(`UPDATE automod_settings SET ${k}_timeout = ? WHERE id = 1`).run(Number(a.timeout) || 60);
+      db.prepare(`UPDATE automod_settings SET ${k}_timeout = ? WHERE id = 1`).run(
+        Math.min(1_209_600, Math.max(1, Math.floor(Number(a.timeout)) || 60))
+      );
     }
     if (a.message !== undefined) {
-      db.prepare(`UPDATE automod_settings SET ${k}_message = ? WHERE id = 1`).run(String(a.message));
+      db.prepare(`UPDATE automod_settings SET ${k}_message = ? WHERE id = 1`).run(String(a.message).slice(0, 500));
     }
     if (a.bypass !== undefined) {
-      db.prepare(`UPDATE automod_settings SET ${k}_bypass = ? WHERE id = 1`).run(
-        JSON.stringify(Array.isArray(a.bypass) ? a.bypass : [])
-      );
+      const roller = Array.isArray(a.bypass) ? a.bypass.map(String).filter((r: string) => GECERLI_MUAF.has(r)) : [];
+      db.prepare(`UPDATE automod_settings SET ${k}_bypass = ? WHERE id = 1`).run(JSON.stringify([...new Set(roller)]));
     }
   }
 
-  autoMod.reload();
   if (advanced) {
     db.prepare(`INSERT INTO bot_settings (key, value) VALUES ('automod_advanced', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).run(JSON.stringify(advanced));
   }
-  res.json({ success: true });
+  // Gelişmiş ayarlar yazıldıktan SONRA tazele (eskiden önce tazeleniyordu; yeni ayar 1 dk gecikiyordu)
+  autoMod.reload();
+  // Derlenemeyen / riskli (felaket geri izlemeli) kara liste kalıpları panelde gösterilsin
+  let gecersizKaliplar: string[] = [];
+  try {
+    const r = db.prepare('SELECT blacklist_words FROM automod_settings WHERE id = 1').get() as any;
+    gecersizKaliplar = kelimeListesiDerle(JSON.parse(r?.blacklist_words || '[]')).gecersiz;
+  } catch {
+    /* bozuk kayıt */
+  }
+  res.json({ success: true, gecersizKaliplar });
 });
 
 // 16. Chat Clear Action (One-click)

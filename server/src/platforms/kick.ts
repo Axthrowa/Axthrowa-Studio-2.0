@@ -1,12 +1,14 @@
-import Pusher from 'pusher-js';
 import axios from 'axios';
 import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
+import { KickRealtime } from './kick-realtime.js';
+import { abonelikKanallari } from './kick-realtime-protokol.js';
 import { kickZamani, type YayinBilgisi } from '../core/live-status-math.js';
 import { sifreleHepsi } from '../core/security/vault.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { settingsCache } from '../core/settings-cache.js';
 import { hataMetni } from '../core/logger.js';
+import { mesajiParcala } from '../core/text.js';
 
 export interface KickChannelVerification {
   success: boolean;
@@ -21,7 +23,8 @@ export interface KickChannelVerification {
 
 export class KickPlatform extends BasePlatform {
   readonly name = 'kick' as const;
-  private pusher: Pusher | null = null;
+  /** Canlı sohbet (okuma) bağlantısı — gönderim resmi API'den ayrıdır. */
+  private realtime = new KickRealtime();
   private connected: boolean = false;
   private currentChannel: string = '';
   private chatroomId: number | null = null;
@@ -131,90 +134,15 @@ export class KickPlatform extends BasePlatform {
         }
       }
 
-      // 3. Connect to Kick Pusher WebSocket with official public app key
-      this.pusher = new Pusher('32cbd69e4b950bf97679', {
-        cluster: 'us2',
-        wsHost: 'ws-us2.pusher.com',
-        wsPort: 443,
-        wssPort: 443,
-        forceTLS: true,
-        enabledTransports: ['ws', 'wss']
-      });
-
-      this.pusher.connection.bind('connected', () => {
-        this.connected = true;
-        console.log(`[Kick Pusher] Successfully connected to live WebSocket cluster for @${channelSlug}!`);
-      });
-
-      this.pusher.connection.bind('error', (err: any) => {
-        console.warn('[Kick Pusher] Connection warning/error:', err?.message || err);
-      });
-
-      const channel = this.pusher.subscribe(`chatrooms.${this.chatroomId}.v2`);
-
-      // 4. Listen to Chat Messages (support multiple event name variations)
-      channel.bind('App\\Events\\ChatMessageEvent', (data: any) => {
-        this.handleChatMessage(data, channelSlug);
-      });
-
-      channel.bind('ChatMessageEvent', (data: any) => {
-        this.handleChatMessage(data, channelSlug);
-      });
-
-      channel.bind_global((eventName: string, data: any) => {
-        if (eventName && eventName.includes('ChatMessageEvent')) {
-          this.handleChatMessage(data, channelSlug);
-          return;
-        }
-        // KICKs ve host olaylari icin ADI degisebilen olaylari burada
-        // yakaliyoruz: Kick bu olaylarin adini gecmiste degistirdi ve sabit
-        // `bind` kullanmak sessizce calismamaya yol aciyordu.
-        this.handleGlobalEvent(eventName, data, channelSlug);
-      });
-
-      // 5. Listen to Follows
-      channel.bind('App\\Events\\FollowersUpdated', (data: any) => {
-        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-        if (parsed?.username) {
-          eventBus.emitFollow({
-            platform: 'kick',
-            channel: channelSlug,
-            username: parsed.username,
-            displayName: parsed.username,
-            timestamp: Date.now()
-          });
-        }
-      });
-
-      // 6. Listen to Subscriptions
-      channel.bind('App\\Events\\SubscriptionEvent', (data: any) => {
-        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-        eventBus.emitSub({
-          platform: 'kick',
-          channel: channelSlug,
-          username: parsed?.username || 'Gizli Abone',
-          tier: 'Tier 1',
-          months: parsed?.months || 1,
-          isGift: false,
-          timestamp: Date.now()
-        });
-      });
-
-      // 7. Listen to Gifted Subscriptions
-      channel.bind('App\\Events\\GiftedSubscriptionsEvent', (data: any) => {
-        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-        eventBus.emitSub({
-          platform: 'kick',
-          channel: channelSlug,
-          username: parsed?.gifter_username || 'Gizli Bağışçı',
-          tier: 'Tier 1',
-          months: 1,
-          isGift: true,
-          count: Number(parsed?.gifted_usernames?.length) || 1,
-          recipient: `${parsed?.gifted_usernames?.length || 1} izleyiciye`,
-          timestamp: Date.now()
-        });
-      });
+      // 3. Canlı sohbeti dinle. Eskiden sabit bir Pusher anahtarı vardı; Kick
+      //    onu kapatınca (Ekim 2026) bot sohbeti OKUYAMAZ oldu ve komutlar /
+      //    bilgi yarışması cevapları hiç gelmedi. Artık Kick'in kendi
+      //    bağlantı pazarlığı kullanılıyor (bkz. kick-realtime-protokol.ts).
+      const kanalId = Number(res.data?.id);
+      this.realtime.removeAllListeners();
+      this.realtime.on('olay', (_kanal: string, olay: string, veri: unknown) => this.olayIsle(olay, veri, channelSlug));
+      this.realtime.on('durum', () => eventBus.emit('platform_status_changed', { platform: 'kick' }));
+      this.realtime.baslat(abonelikKanallari(this.chatroomId, Number.isFinite(kanalId) ? kanalId : null));
 
       this.connected = true;
       console.log(`[Kick] Connected successfully to channel: ${channelSlug} (Chatroom #${this.chatroomId}, Broadcaster ID: ${this.broadcasterUserId})`);
@@ -224,6 +152,78 @@ export class KickPlatform extends BasePlatform {
       this.connected = false;
       return false;
     }
+  }
+
+  /** Son birkaç saniyede işlenen sohbet-dışı olaylar (aynı olay birden çok kanaldan gelebilir). */
+  private sonOlaylar: Map<string, number> = new Map();
+
+  private olayTekrariMi(olay: string, veri: unknown): boolean {
+    const an = Date.now();
+    for (const [k, t] of this.sonOlaylar) if (an - t > 5000) this.sonOlaylar.delete(k);
+    let imza = '';
+    try {
+      imza = JSON.stringify(veri).slice(0, 300);
+    } catch {
+      imza = String(veri);
+    }
+    const anahtar = `${olay}|${imza}`;
+    if (this.sonOlaylar.has(anahtar)) return true;
+    this.sonOlaylar.set(anahtar, an);
+    return false;
+  }
+
+  /** Kick gerçek zamanlı olayını ilgili işleyiciye yönlendirir. */
+  private olayIsle(olay: string, veri: unknown, channelSlug: string) {
+    if (!olay) return;
+    if (olay.includes('ChatMessageEvent')) {
+      this.handleChatMessage(veri, channelSlug); // kendi kimlik elemesi var
+      return;
+    }
+    if (this.olayTekrariMi(olay, veri)) return;
+    const parsed: any = veri && typeof veri === 'object' ? veri : {};
+
+    if (olay === 'App\\Events\\FollowersUpdated') {
+      if (parsed?.username) {
+        eventBus.emitFollow({
+          platform: 'kick',
+          channel: channelSlug,
+          username: parsed.username,
+          displayName: parsed.username,
+          timestamp: Date.now()
+        });
+      }
+      return;
+    }
+    if (olay === 'App\\Events\\SubscriptionEvent') {
+      eventBus.emitSub({
+        platform: 'kick',
+        channel: channelSlug,
+        username: parsed?.username || 'Gizli Abone',
+        tier: 'Tier 1',
+        months: parsed?.months || 1,
+        isGift: false,
+        timestamp: Date.now()
+      });
+      return;
+    }
+    if (olay === 'App\\Events\\GiftedSubscriptionsEvent') {
+      eventBus.emitSub({
+        platform: 'kick',
+        channel: channelSlug,
+        username: parsed?.gifter_username || 'Gizli Bağışçı',
+        tier: 'Tier 1',
+        months: 1,
+        isGift: true,
+        count: Number(parsed?.gifted_usernames?.length) || 1,
+        recipient: `${parsed?.gifted_usernames?.length || 1} izleyiciye`,
+        timestamp: Date.now()
+      });
+      return;
+    }
+    // KICKs ve host olaylari icin ADI degisebilen olaylari burada
+    // yakaliyoruz: Kick bu olaylarin adini gecmiste degistirdi ve sabit
+    // eslesme kullanmak sessizce calismamaya yol aciyordu.
+    this.handleGlobalEvent(olay, veri, channelSlug);
   }
 
   private handleChatMessage(raw: any, channelSlug: string) {
@@ -252,10 +252,11 @@ export class KickPlatform extends BasePlatform {
       );
 
       const identity = sender.identity || {};
-      const rawBadges = [
+      // Abone rozeti: kanalın kendi rozet görseli (aya göre) eklenir
+      const rawBadges = this.aboneRozetiEkle([
         ...(identity.badges || []),
         ...(identity.badges_v2 || [])
-      ];
+      ], channelSlug);
 
       const badges: string[] = (identity.badges || []).map((b: any) => b.type);
       const isBroadcaster = badges.includes('broadcaster') || senderName.toLowerCase() === channelSlug.toLowerCase();
@@ -362,11 +363,13 @@ export class KickPlatform extends BasePlatform {
   }
 
   async disconnect(): Promise<void> {
-    if (this.pusher) {
-      this.pusher.disconnect();
-      this.pusher = null;
-    }
+    this.realtime.durdur();
     this.connected = false;
+  }
+
+  /** Sohbet okuma bağlantısının durumu (panel teşhisi için). */
+  sohbetOkumaDurumu() {
+    return this.realtime.durum();
   }
 
   async refreshKickToken(forceClientCredentials = false): Promise<boolean> {
@@ -767,15 +770,78 @@ export class KickPlatform extends BasePlatform {
     }
   }
 
+  /** Kanal sayfası önbelleği (`$(kick alan kullanıcı)` aynı kişi için tekrar sorgulamasın). */
+  private profilOnbellek: Map<string, { zaman: number; veri: any }> = new Map();
+
+  /** Herkese açık kanal sayfası (biyografi, sosyal hesaplar, takipçi). 5 dk önbellek. */
+  /** Kanalın abone rozetleri (ay → görsel); kanal bilgisinden, 30 dk önbellekli */
+  private aboneRozetleri: { kanal: string; zaman: number; liste: Array<{ ay: number; src: string }> } = { kanal: '', zaman: 0, liste: [] };
+
+  private aboneRozetiEkle(rozetler: any[], kanal: string): any[] {
+    const k = String(kanal || '').toLowerCase();
+    const o = this.aboneRozetleri;
+    if (k && (o.kanal !== k || Date.now() - o.zaman > 30 * 60_000)) {
+      this.aboneRozetleri = { kanal: k, zaman: Date.now(), liste: o.kanal === k ? o.liste : [] };
+      void this.profil(k)
+        .then((veri) => {
+          const liste = (Array.isArray(veri?.subscriber_badges) ? veri.subscriber_badges : [])
+            .map((r: any) => ({ ay: Number(r?.months) || 0, src: String(r?.badge_image?.src || '') }))
+            .filter((r: { src: string }) => /^https:\/\/files\.kick\.com\//.test(r.src))
+            .sort((a: { ay: number }, b: { ay: number }) => a.ay - b.ay);
+          this.aboneRozetleri = { kanal: k, zaman: Date.now(), liste };
+        })
+        .catch(() => {});
+    }
+    const liste = this.aboneRozetleri.liste;
+    if (!liste.length) return rozetler;
+    return rozetler.map((r) => {
+      if (!r || typeof r !== 'object' || r.type !== 'subscriber' || r.image_url) return r;
+      const ay = Number(r.count) || 1;
+      let secilen = liste[0];
+      for (const x of liste) if (x.ay <= ay) secilen = x;
+      return { ...r, image_url: secilen.src };
+    });
+  }
+
+  async profil(slug: string): Promise<any | null> {
+    const s = String(slug || '').replace(/^@/, '').trim().toLowerCase();
+    if (!/^[a-z0-9_-]{1,40}$/.test(s)) return null;
+    const o = this.profilOnbellek.get(s);
+    // Başarısız sorgu da 1 dk tutulur: sohbetten tekrarlanan $(kick …) Kick'e yağmaz
+    if (o && Date.now() - o.zaman < (o.veri ? 5 * 60_000 : 60_000)) return o.veri;
+    try {
+      const r = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(s)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json'
+        },
+        timeout: 6000
+      });
+      this.profilOnbellek.set(s, { zaman: Date.now(), veri: r.data });
+      if (this.profilOnbellek.size > 300) this.profilOnbellek.delete(this.profilOnbellek.keys().next().value as string);
+      return r.data;
+    } catch {
+      this.profilOnbellek.set(s, { zaman: Date.now(), veri: null });
+      if (this.profilOnbellek.size > 300) this.profilOnbellek.delete(this.profilOnbellek.keys().next().value as string);
+      return null;
+    }
+  }
+
   /** Botun Kick kullanici adi — anahtar kelime komutu kendini tetiklemesin. */
   botKullaniciAdi(): string {
     return (this.botUsername || '').toLowerCase();
   }
 
   async sendMessage(channel: string, message: string): Promise<boolean> {
-    const res = await this.sendKickMessage(channel, message);
-    this.lastSendError = res.success ? '' : res.message;
-    return res.success;
+    // Kick bir mesajda en çok 500 karakter kabul eder; uzun yanıt (açıklamalı
+    // yarışma cevabı, uzun özel komut) eskiden REDDEDİLİP sessizce kayboluyordu.
+    const parcalar = mesajiParcala(message, 500);
+    for (const parca of parcalar.length ? parcalar : [message]) {
+      const res = await this.sendKickMessage(channel, parca);
+      this.lastSendError = res.success ? '' : res.message;
+      if (!res.success) return false;
+    }
+    return true;
   }
 
   async verifyChannel(channelSlug: string, token?: string): Promise<KickChannelVerification> {
@@ -834,9 +900,18 @@ export class KickPlatform extends BasePlatform {
   }
 
   getStatus(): PlatformStatus {
+    // "Bağlı" görünüp sohbeti okuyamamak (Ekim 2026'daki gibi) sessiz kalmasın
+    const okuma = this.realtime.durum();
+    const hata =
+      this.connected && okuma.durum !== 'bagli'
+        ? okuma.durum === 'baglaniyor'
+          ? 'Sohbet bağlantısı kuruluyor…'
+          : `Sohbet okunamıyor${okuma.hata ? `: ${okuma.hata}` : ''} — yeniden deneniyor`
+        : undefined;
     return {
       connected: this.connected,
-      channel: this.currentChannel
+      channel: this.currentChannel,
+      ...(hata ? { error: hata } : {})
     };
   }
 }

@@ -17,8 +17,9 @@
 import { db } from '../../db/index.js';
 import { hediyeAdedi, eventBus } from '../../core/event-bus.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
+import { rastgeleFarkli, temaAdaylari, TEMA_ADLARI } from './temalar.js';
 
-export type SohbetOlayi = 'follow' | 'sub' | 'resub' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'welcome';
+export type SohbetOlayi = 'follow' | 'sub' | 'resub' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'welcome' | 'stream_online';
 
 export interface OlayKurali {
   aktif: boolean;
@@ -27,6 +28,8 @@ export interface OlayKurali {
   minDeger: number;
   /** Aynı olay için art arda mesaj yağmasını engeller (saniye). */
   beklemeSn: number;
+  /** Ek şablonlar: olay her geldiğinde şablon + bunlardan rastgele biri gider */
+  varyantlar?: string[];
 }
 
 export type ChatAlertAyarlari = Record<SohbetOlayi, OlayKurali>;
@@ -48,10 +51,13 @@ export const VARSAYILAN_CHAT_ALERT: ChatAlertAyarlari = {
   host: K('🚀 $(sender) $(v1) izleyiciyle kanalı host etti!', 0),
   raid: K('🚀 $(sender) $(v1) izleyiciyle raid yaptı!', 0),
   // İlk kez yazan izleyiciyi karşılama — BotRix'te premium
-  welcome: K('👋 Aramıza hoş geldin $(sender)!', 0, false, 0)
+  welcome: K('👋 Aramıza hoş geldin $(sender)!', 0, false, 0),
+  // Yayın başlayınca sohbete duyuru (yaygın botlarda 'Live Announcement')
+  stream_online: K('🔴 Yayın başladı! $(title) — gel izle: $(platformurl)', 0, false, 0)
 };
 
 const AYAR_ANAHTARI = 'chat_alert_settings';
+const TEMA_ANAHTARI = 'chat_alert_tema';
 
 /** Eşik kontrolü: değer yoksa 0 sayılır. */
 export function esikGecer(kural: OlayKurali, deger: number): boolean {
@@ -60,6 +66,35 @@ export function esikGecer(kural: OlayKurali, deger: number): boolean {
 
 class SohbetUyarilari {
   private sonGonderim = new Map<SohbetOlayi, number>();
+  /** Son gönderilen şablon (aynısı art arda gelmesin) */
+  private sonSablon = new Map<SohbetOlayi, string>();
+
+  /** Seçili tema ('yok' = kendi şablonların) */
+  temaOku(): string {
+    try {
+      const r = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(TEMA_ANAHTARI) as { value?: string } | undefined;
+      const t = String(r?.value || 'yok');
+      return t in TEMA_ADLARI ? t : 'yok';
+    } catch {
+      return 'yok';
+    }
+  }
+
+  temaYaz(tema: string): string {
+    const t = tema in TEMA_ADLARI ? tema : 'yok';
+    db.prepare('INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(TEMA_ANAHTARI, t);
+    return t;
+  }
+
+  /** Bu olay için gönderilecek şablon: tema seçiliyse temadan, değilse şablon + varyantlar */
+  sablonSec(olay: SohbetOlayi, kural: OlayKurali): string | undefined {
+    const tema = this.temaOku();
+    let adaylar = tema !== 'yok' ? temaAdaylari(tema, olay) : [];
+    if (!adaylar.length) adaylar = [kural.sablon, ...(Array.isArray(kural.varyantlar) ? kural.varyantlar : [])].map((x) => String(x || '').trim()).filter(Boolean);
+    const secilen = rastgeleFarkli(adaylar, this.sonSablon.get(olay));
+    if (secilen) this.sonSablon.set(olay, secilen);
+    return secilen;
+  }
   /** Karşılama için: bu yayında kim konuştu? */
   private gorulenler = new Set<string>();
 
@@ -86,6 +121,14 @@ class SohbetUyarilari {
     const mevcut = this.ayarOku();
     for (const k of Object.keys(yeni) as SohbetOlayi[]) {
       if (mevcut[k] && yeni[k]) mevcut[k] = { ...mevcut[k], ...yeni[k] };
+      // Varyantlar: metin listesi, en çok 20 × 400 karakter
+      if (mevcut[k] && yeni[k] && 'varyantlar' in (yeni[k] as object)) {
+        const v = (yeni[k] as any).varyantlar;
+        mevcut[k].varyantlar = (Array.isArray(v) ? v : String(v || '').split(/\r?\n/))
+          .map((x: unknown) => String(x ?? '').trim().slice(0, 400))
+          .filter(Boolean)
+          .slice(0, 20);
+      }
     }
     db.prepare(
       'INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
@@ -95,7 +138,7 @@ class SohbetUyarilari {
 
   private async gonder(olay: SohbetOlayi, p: any, deger: number, ekArgs: string[] = []) {
     const kural = this.ayarOku()[olay];
-    if (!kural?.aktif || !kural.sablon?.trim()) return;
+    if (!kural?.aktif) return;
     if (!esikGecer(kural, deger)) return;
 
     const simdi = Date.now();
@@ -123,7 +166,9 @@ class SohbetUyarilari {
 
     try {
       const ctx = baglamOlustur(sahteMesaj, ekArgs, `chatalert:${olay}`);
-      const metin = await degiskenleriCoz(kural.sablon, ctx);
+      const sablon = this.sablonSec(olay, kural);
+      if (!sablon) return;
+      const metin = await degiskenleriCoz(sablon, ctx);
       if (!metin.trim()) return;
 
       eventBus.emitBotMessage({
@@ -146,7 +191,19 @@ class SohbetUyarilari {
     void this.gonder('welcome', p, 0);
   }
 
+  /** Aynı yayın için duyuru bir kez (bot yeniden başlasa da). */
+  private duyurulanYayinlar = new Set<string>();
+
   baglaOlaylar() {
+    // Bot yayın ORTASINDA açıldıysa (ilk gözlem) duyurma: yeniden başlatma sohbete tekrar 'yayın başladı' yazmasın
+    eventBus.on('stream_online', (p: any) => {
+      if (p?.ilkGozlem) return;
+      const kimlik = `${p?.platform}:${p?.yayinId || p?.baslangic || ''}`;
+      if (this.duyurulanYayinlar.has(kimlik)) return;
+      this.duyurulanYayinlar.add(kimlik);
+      void this.gonder('stream_online', { platform: p?.platform, channel: p?.channel, username: p?.channel, displayName: p?.channel }, 0);
+    });
+
     eventBus.on('follow', (p: any) => void this.gonder('follow', p, 0));
 
     eventBus.on('sub', (p: any) => {
@@ -161,7 +218,7 @@ class SohbetUyarilari {
     });
 
     eventBus.on('tip', (p: any) =>
-      void this.gonder('tip', p, Number(p?.amount) || 0, [`${p?.amount || 0}${p?.currency || ''}`])
+      void this.gonder('tip', p, Number(p?.amount) || 0, [`${p?.amount || 0} ${p?.currency || ''}`.trim()])
     );
 
     eventBus.on('kicks', (p: any) =>

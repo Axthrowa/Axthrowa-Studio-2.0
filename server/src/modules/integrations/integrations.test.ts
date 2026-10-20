@@ -46,7 +46,7 @@ describe('seviyeCevir', () => {
     expect(seviyeCevir('moderator')).toBe('mod');
     expect(seviyeCevir('vip')).toBe('vip');
     expect(seviyeCevir('subscriber')).toBe('sub');
-    expect(seviyeCevir('regular')).toBe('sub');
+    expect(seviyeCevir('regular')).toBe('regular');
     expect(seviyeCevir('everyone')).toBe('everyone');
   });
 

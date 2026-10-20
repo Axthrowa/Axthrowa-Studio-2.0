@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { db } from '../../db/index.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { anahtarSorunu } from './gemini-hata.js';
 
 /**
  * Sozu verilen sure icinde bitmezse vazgec.
@@ -86,6 +87,8 @@ class GeminiCoHost {
 
   /** Hesapta bulunan model listesi (5 dakika onbellekli). */
   private modelOnbellek: { liste: string[]; zaman: number } = { liste: [], zaman: 0 };
+  /** Son model listeleme hatası (Google gövdesi) — anahtar sorununu açıklamak için */
+  private sonListeHatasi = '';
 
   private static readonly MODEL_CANDIDATES = [
     'gemini-3.6-flash',
@@ -113,9 +116,13 @@ class GeminiCoHost {
     try {
       const r = await fetch(
         'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(apiKey),
-        { signal: AbortSignal.timeout(8000) }
+        { signal: AbortSignal.timeout(10000) }
       );
-      if (!r.ok) return [];
+      if (!r.ok) {
+        this.sonListeHatasi = `${r.status} ${(await r.text().catch(() => '')).slice(0, 2000)}`;
+        return [];
+      }
+      this.sonListeHatasi = '';
       const j: any = await r.json();
       const liste = (j.models || [])
         .filter((m: any) => (m.supportedGenerationMethods || []).includes('generateContent'))
@@ -123,7 +130,8 @@ class GeminiCoHost {
         .filter(Boolean);
       if (liste.length) this.modelOnbellek = { liste, zaman: Date.now() };
       return liste;
-    } catch {
+    } catch (e) {
+      this.sonListeHatasi = String((e as Error)?.message || e);
       return [];
     }
   }
@@ -240,7 +248,9 @@ class GeminiCoHost {
         model: '',
         modeller: [],
         kotasiDolan: [...this.kotasiDolan.keys()].filter((m) => this.kotaKapali(m)),
-        hata: "Anahtar reddedildi veya Google'a ulaşılamadı."
+        hata:
+          anahtarSorunu(this.sonListeHatasi, apiKey) ||
+          (this.sonListeHatasi ? `Google'a ulaşılamadı: ${this.sonListeHatasi.slice(0, 160)}` : "Google'a ulaşılamadı.")
       };
     }
 
@@ -319,7 +329,10 @@ class GeminiCoHost {
         const sebep = String(fbError?.message || fbError).slice(0, 200);
         if (/yanit vermedi|timeout/i.test(sebep)) return '⚠️ Gemini zamanında yanıt vermedi. Biraz sonra tekrar dene.';
         if (/quota|429/i.test(sebep)) return '⚠️ Gemini kotası doldu (429). Google AI Studio’dan kullanım/faturalandırmayı kontrol et.';
-        if (/API key|401|403|permission/i.test(sebep)) return '⚠️ Gemini API anahtarı reddedildi. Ayarlar → Gemini AI Asistan’dan anahtarı yenile.';
+        // Ayrıntı sohbete yazılmaz (izleyici görür); panel durum ekranı tam nedeni gösterir
+        if (anahtarSorunu(String(fbError?.message || fbError), this.currentKey)) {
+          return '⚠️ Gemini anahtarı çalışmıyor — yayıncı panelde AI Ayarları’ndaki açıklamaya bakmalı.';
+        }
         if (/404|not found|no longer available/i.test(sebep)) return `⚠️ Gemini modeli bu hesaba kapalı: ${sebep}`;
         return `⚠️ Gemini’ye ulaşılamadı: ${sebep}`;
       }

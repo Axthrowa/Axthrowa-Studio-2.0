@@ -23,7 +23,7 @@
  */
 import { trKatla, kacisla } from '../../core/text.js';
 
-export const ROLLER = ['everyone', 'sub', 'vip', 'mod', 'broadcaster'] as const;
+export const ROLLER = ['everyone', 'regular', 'sub', 'vip', 'mod', 'broadcaster'] as const;
 export const PLATFORMLAR = ['kick', 'twitch', 'youtube', 'tiktok', 'discord', 'trovo'] as const;
 export const TETIKLEYICILER = ['command', 'keyword'] as const;
 export const ERISIM_KIPLERI = ['always', 'online', 'offline'] as const;

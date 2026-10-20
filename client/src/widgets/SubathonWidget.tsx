@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SUBATHON_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 export interface SubathonWidgetProps {
   embedded?: boolean;
@@ -86,7 +87,14 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
       .then((d) => d && durumuUygula(d))
       .catch(() => {});
 
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
+    // Kopukken kaçan süre/ekleme: bağlantı gelince sayacı sunucudan tazele
+    ws.onyenidenbaglandi = () => {
+      fetch('/api/subathon')
+        .then((r) => r.json())
+        .then((d) => d && durumuUygula(d))
+        .catch(() => {});
+    };
     ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data);

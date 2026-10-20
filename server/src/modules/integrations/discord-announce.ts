@@ -114,8 +114,8 @@ class DiscordDuyurulari {
     const govde = etiketOneki(kural.etiket) + metin;
     if (!govde.trim()) return { ok: false, hata: 'Boş mesaj.' };
 
-    try {
-      const r = await fetch(kural.webhook, {
+    const istek = () =>
+      fetch(kural.webhook, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,15 +124,30 @@ class DiscordDuyurulari {
           // Discord'da @here de "everyone" izniyle çalışır (allowed_mentions)
           allowed_mentions: kural.etiket === 'yok' ? { parse: [] } : { parse: ['everyone'] }
         }),
-        signal: AbortSignal.timeout(8000)
+        // 8 sn yetmiyordu: bazı ağlarda yalnız DNS 4–12 sn sürüyordu (core/dns-hizli.ts)
+        signal: AbortSignal.timeout(15000)
       });
 
-      if (!r.ok) return { ok: false, hata: `Discord ${r.status}` };
-      this.sonGonderim.set(kaynak, Date.now());
-      return { ok: true };
-    } catch (e: any) {
-      return { ok: false, hata: String(e?.message || e).slice(0, 120) };
+    // Ağ hatasında (yanıt hiç gelmedi) bir kez daha denenir; Discord yanıt
+    // verdiyse (4xx/5xx) tekrar denenmez — çift mesaj riski olmasın.
+    for (let deneme = 1; deneme <= 2; deneme++) {
+      try {
+        const r = await istek();
+        if (r.status === 429) return { ok: false, hata: 'Discord hız sınırı (429) — biraz sonra tekrar dene.' };
+        if (r.status === 401 || r.status === 404) {
+          return { ok: false, hata: `Discord ${r.status}: webhook silinmiş ya da adres yanlış — kanaldan yeni webhook kopyala.` };
+        }
+        if (!r.ok) return { ok: false, hata: `Discord ${r.status}` };
+        this.sonGonderim.set(kaynak, Date.now());
+        return { ok: true };
+      } catch (e: any) {
+        if (deneme === 2) {
+          const m = String(e?.message || e);
+          return { ok: false, hata: /timeout|aborted/i.test(m) ? "Discord'a 15 sn içinde ulaşılamadı (ağ/DNS)." : m.slice(0, 120) };
+        }
+      }
     }
+    return { ok: false, hata: 'Gönderilemedi.' };
   }
 
   private sonYayinAnahtari(kaynak: DuyuruKaynagi) {

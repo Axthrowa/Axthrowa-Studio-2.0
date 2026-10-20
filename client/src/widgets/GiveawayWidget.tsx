@@ -1,32 +1,64 @@
 /**
  * StreamAxT Giveaway overlay
  * Developed by AxthrowA
+ *
+ * Çekiliş açıkken başlık, katılım kelimesi ve katılımcı sayısını gösterir;
+ * kazanan çekilince `winnerShowSec` saniye kazananı gösterip kaybolur
+ * (eskiden kazanan ekranda sonsuza dek kalıyordu ve önizleme örneği yoktu).
  */
-import { useEffect, useState } from 'react';
-import { useWebSocket } from '../hooks/useWebSocket.js';
+import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { GIVEAWAY_DEFAULTS } from '../lib/widget-defaults.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
+import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 
-export function GiveawayWidget() {
+export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('giveaways', GIVEAWAY_DEFAULTS);
-  const { lastMessage } = useWebSocket('all');
-  const [active, setActive] = useState<any>(null);
-  const [entries, setEntries] = useState(0);
+  const onizleme = onizlemeKipi(props?.previewMode);
+  const [active, setActive] = useState<any>(onizleme ? { title: 'Steam hediye kartı', keyword: s.keyword } : null);
+  const [entries, setEntries] = useState(onizleme ? 37 : 0);
   const [winner, setWinner] = useState<string | null>(null);
+  const ayar = useRef(s);
+  ayar.current = s;
 
-  const load = () => {
-    fetch('/api/giveaways').then(r => r.json()).then(d => {
-      setActive(d.active);
-      setEntries((d.entries || []).length);
-    }).catch(() => {});
-  };
-
-  useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t); }, []);
   useEffect(() => {
-    if (!lastMessage) return;
-    if (lastMessage.type === 'giveaway_winner') setWinner(lastMessage.payload?.winner || lastMessage.winner?.winner);
-    if (lastMessage.type === 'giveaway_join') load();
-  }, [lastMessage]);
+    if (onizleme) return;
+    const load = () =>
+      fetch('/api/giveaways')
+        .then((r) => r.json())
+        .then((d) => {
+          setActive(d.active || null);
+          setEntries((d.entries || []).length);
+        })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 4000);
+    let gizle: ReturnType<typeof setTimeout> | null = null;
+    const ws = new KaliciSoket(wsAdresi());
+    ws.onyenidenbaglandi = load;
+    ws.onmessage = (e) => {
+      let m: any;
+      try {
+        m = JSON.parse(String(e.data));
+      } catch {
+        return;
+      }
+      if (m?.type === 'giveaway_winner') {
+        const ad = m.payload?.winner || m.winner?.winner || m.winner;
+        if (typeof ad !== 'string') return;
+        setWinner(ad);
+        if (gizle) clearTimeout(gizle);
+        const sn = Number(ayar.current.winnerShowSec);
+        if (sn > 0) gizle = setTimeout(() => setWinner(null), sn * 1000);
+      }
+      if (m?.type === 'giveaway_join') load();
+    };
+    return () => {
+      clearInterval(t);
+      if (gizle) clearTimeout(gizle);
+      ws.close();
+    };
+  }, [onizleme]);
 
   if (!active && !winner) return null;
   const bg = `${s.backgroundColor}${Math.round(s.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
@@ -38,7 +70,7 @@ export function GiveawayWidget() {
       <div style={{ fontSize: s.fontSize, fontWeight: 900, color: s.accentColor }}>{s.overlayTitle}</div>
       {active && <div style={{ fontWeight: 800, marginTop: 8 }}>{active.title}</div>}
       {s.showKeyword && active && <div style={{ marginTop: 8, opacity: 0.8 }}>Katıl: {active.keyword || s.keyword}</div>}
-      {s.showEntries && <div style={{ marginTop: 6 }}>{entries} katılımcı</div>}
+      {s.showEntries && active && <div style={{ marginTop: 6 }}>{entries} katılımcı</div>}
       {winner && <div style={{ marginTop: 12, fontSize: 22, fontWeight: 900 }}>🎉 {winner}</div>}
     </div>
   );

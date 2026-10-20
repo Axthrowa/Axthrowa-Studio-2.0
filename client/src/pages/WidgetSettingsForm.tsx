@@ -48,9 +48,11 @@ const LABELS: Record<string, string> = {
   maxEntries: 'Maks. katılım (0=sınırsız)', costPoints: 'Puan maliyeti', subBonusMultiplier: 'Abone çarpanı',
   followerOnly: 'Sadece takipçi', subOnly: 'Sadece abone', minWatchMinutes: 'Min. izleme (dk)',
   minMessages: 'Min. mesaj', announceChat: 'Sohbette duyur', duplicatePrevent: 'Çift katılımı engelle',
-  autoClose: 'Otomatik kapat', overlayTitle: 'Overlay başlığı', accentColor: 'Vurgu rengi',
+  autoClose: 'Otomatik kapat', overlayTitle: 'Overlay başlığı', winnerShowSec: 'Kazanan gösterim süresi (sn, 0 = kalıcı)', accentColor: 'Vurgu rengi',
   showKeyword: 'Kelimeyi göster', showEntries: 'Katılımcı sayısı',
   // --- 2026-09 revizyonu: ayar sistemine yeni bağlanan widget'lar ---
+  fromChat: "Sohbetteki emote'lar uçsun", durationMs: 'Uçuş süresi (ms)', maxOnScreen: 'Ekranda en çok',
+  burstCopies: '!kappagen kopya sayısı', spin: 'Dönerek uç', shadow: 'Gölge',
   theme: 'Tema', position: 'Ekran konumu', label: 'Etiket', icon: 'İkon',
   maxWidth: 'Maks. genişlik', minWidth: 'Min. genişlik', paddingY: 'Dikey dolgu',
   radius: 'Köşe yuvarlaklığı', bgColor: 'Arka plan rengi', bgOpacity: 'Arka plan opaklığı',
@@ -104,7 +106,16 @@ const LABELS: Record<string, string> = {
   textOffsetX: 'Metin yatay konumu (px)',
   textOffsetY: 'Metin dikey konumu (px)', hideUserMessage: 'Kullanıcı mesajını gizle',
   textFromMs: 'Metin görünsün (ms, başlangıç)', textToMs: 'Metin görünsün (ms, bitiş)',
-  imageMaxHeight: 'Görsel maks. yükseklik (px)'
+  imageMaxHeight: 'Görsel maks. yükseklik (px)',
+  // --- Görünürlük / olay seçimi (2026-10) ---
+  hideDelaySec: 'Cevaptan sonra kaybolma (sn, 0 = kalsın)', podiumHideSec: 'Kürsü ekranda kalma (sn, 0 = kalsın)',
+  hideAfterSec: 'Bitince kaybolma (sn, 0 = kalsın)', autoHide: 'Yalnız kullanılınca görünsün',
+  fromTip: 'Bağışlar sayılsın', fromSub: 'Aboneler sayılsın', fromGift: 'Hediye abonelikler sayılsın',
+  fromKicks: 'KICKs sayılsın', fromFollow: 'Takipler sayılsın', autoStart: 'Olay gelince kendiliğinden başlasın',
+  onlyViewers: 'Yalnız izleyiciler (yayıncı tahta çıkamaz/gösterilmez)', emptyText: 'Taht boşken yazı',
+  labelFollow: 'Takipçi başlığı', labelSub: 'Abone başlığı', labelTip: 'Bağış başlığı', labelTop: 'En büyük bağış başlığı',
+  labelRaid: 'Raid başlığı', labelKicks: 'KICKs başlığı', emptyValue: 'Veri yokken', labelColor: 'Başlık rengi',
+  notFoundText: 'Söz bulunamayınca yazı'
 };
 
 const SECTIONS: Record<string, string> = {
@@ -142,7 +153,7 @@ const SECTIONS: Record<string, string> = {
   keyword: 'Çekiliş', durationMinutes: 'Çekiliş', winnerCount: 'Çekiliş', maxEntries: 'Çekiliş',
   costPoints: 'Çekiliş', subBonusMultiplier: 'Çekiliş', followerOnly: 'Çekiliş', subOnly: 'Çekiliş',
   minWatchMinutes: 'Çekiliş', minMessages: 'Çekiliş', announceChat: 'Çekiliş', duplicatePrevent: 'Çekiliş',
-  autoClose: 'Çekiliş', overlayTitle: 'Çekiliş', showKeyword: 'Çekiliş', showEntries: 'Çekiliş', showTimer: 'Çekiliş',
+  autoClose: 'Çekiliş', overlayTitle: 'Çekiliş', winnerShowSec: 'Çekiliş', showKeyword: 'Çekiliş', showEntries: 'Çekiliş', showTimer: 'Çekiliş',
   command: 'Komut', paused: 'Kontrol', separator: 'Şablon',
   // --- 2026-09 revizyonu ---
   theme: 'Tema', position: 'Düzen', label: 'Genel', icon: 'Genel', maxWidth: 'Düzen',
@@ -184,7 +195,12 @@ const SECTIONS: Record<string, string> = {
   messageColor: 'Metin', messageSize: 'Metin',
   textOffsetX: 'Metin', textOffsetY: 'Metin',
   hideUserMessage: 'Metin', textFromMs: 'Metin', textToMs: 'Metin',
-  imageMaxHeight: 'Görünüm'
+  imageMaxHeight: 'Görünüm',
+  hideDelaySec: 'Görünürlük', podiumHideSec: 'Görünürlük', hideAfterSec: 'Görünürlük', autoHide: 'Görünürlük',
+  fromTip: 'Olaylar', fromSub: 'Olaylar', fromGift: 'Olaylar', fromKicks: 'Olaylar', fromFollow: 'Olaylar',
+  autoStart: 'Olaylar', onlyViewers: 'Genel', emptyText: 'Genel',
+  labelFollow: 'Başlıklar', labelSub: 'Başlıklar', labelTip: 'Başlıklar', labelTop: 'Başlıklar', labelRaid: 'Başlıklar',
+  labelKicks: 'Başlıklar', emptyValue: 'Başlıklar', labelColor: 'Tipografi'
 };
 
 /**
@@ -253,13 +269,15 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
 const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({ value, label }));
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
+  'event-labels': {
+    layout: tema(['row', 'Yan yana'], ['column', 'Alt alta']),
+    animation: [...ANIM_SECENEKLERI, { value: 'marquee', label: 'Kayan yazı' }]
+  },
   'viewer-counter': {
     theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['capsule', 'Kapsül']),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana'])
   },
-  'now-playing': {
-    theme: tema(['base', 'Temel'], ['glass', 'Cam'], ['pill', 'Hap'], ['minimal', 'Minimal'], ['neon', 'Neon'])
-  },
+
   'the-cup': {
     theme: tema(['glass', 'Cam'], ['neon', 'Neon'], ['wood', 'Ahşap'], ['minimal', 'Minimal'], ['crystal', 'Kristal'])
   },
@@ -305,7 +323,6 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
 const AYAR_TAKMA: Record<string, string> = {
   'cloud-tts': 'audio-player',
   tts: 'audio-player',
-  'on-screen-emotes': 'emote-combo',
   'trivia-quiz': 'trivia'
 };
 
@@ -328,7 +345,6 @@ const PATH_MAP: Record<string, string> = {
   shoutout: '/widgets/shoutout',
   polls: '/widgets/polls',
   'hype-train': '/widgets/hype-train',
-  'now-playing': '/widgets/now-playing',
   'pinned-messages': '/widgets/pinned',
   'end-credits': '/widgets/credits',
   'wheel-of-fortune': '/widgets/wheel',

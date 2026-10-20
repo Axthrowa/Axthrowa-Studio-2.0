@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { satiriCoz } from '../core/security/vault.js';
 import path from 'path';
 import fs from 'fs';
-import { syncTriviaBank } from '../modules/games/trivia-sync.js';
+import { syncTriviaBank, triviaBankasiniOnar } from '../modules/games/trivia-sync.js';
 import { gocleriUygula } from './migrations.js';
 import { hataMetni } from '../core/logger.js';
 
@@ -12,7 +12,10 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const dbPath = path.join(dataDir, 'streamaxt.sqlite');
-const db = new DatabaseSync(dbPath);
+// Kilit beklemesi İLK iş: başka bir kopya veritabanını tutarken açılış hemen
+// "database is locked" ile çöküyordu (journal_mode PRAGMA'sı beklemeden önce koşuyordu).
+const db = new DatabaseSync(dbPath, { timeout: 15000 } as any);
+db.exec('PRAGMA busy_timeout = 15000;');
 
 // High-performance SQLite configuration for ultra-low latency bot operations
 db.exec('PRAGMA journal_mode = WAL;');
@@ -21,7 +24,7 @@ db.exec('PRAGMA cache_size = -8000;'); // 8 MB optimized cache (saves ~56MB RAM)
 db.exec('PRAGMA mmap_size = 33554432;'); // 32 MB memory-mapped I/O
 db.exec('PRAGMA temp_store = MEMORY;');
 db.exec('PRAGMA wal_autocheckpoint = 100;'); // Keeps WAL file compact
-db.exec('PRAGMA busy_timeout = 5000;');
+// busy_timeout yukarıda (açılışta) ayarlandı
 
 // S6 — şifreli sırlar (`dpapi:v1:...`) TEK NOKTADAN, okurken çözülür:
 // 29 ayrı okuma yerine dokunmadan tüm `get/all/iterate` sonuçlarındaki
@@ -732,6 +735,11 @@ try {
   const result = syncTriviaBank(db);
   if (result.added > 0) {
     console.log(`[Database] Synced ${result.added} new trivia questions (total ${result.total}).`);
+  }
+  // Soru bankası kalite onarımı (yeni soru geldiyse ya da kurallar değiştiyse)
+  const onarim = triviaBankasiniOnar(db, result.added > 0);
+  if (onarim.onarildi || onarim.atildi) {
+    console.log(`[Bil Bakalım] Soru bankası onarıldı: ${onarim.onarildi} soru düzeltildi, ${onarim.atildi} bozuk soru çıkarıldı.`);
   }
 } catch (err) {
   console.warn('[Database] Error checking or seeding trivia questions:', err);

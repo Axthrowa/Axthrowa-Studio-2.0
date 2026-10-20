@@ -16,8 +16,10 @@ import { tahminler } from '../../modules/engagement/predictions.js';
 import { kuyruk } from '../../modules/engagement/queue.js';
 import { puanDususu } from '../../modules/engagement/point-drops.js';
 import { hataMetni } from '../../core/logger.js';
+import { anketKapaticiyiBaslat } from '../../modules/engagement/anket-kapatici.js';
 
 const router = Router();
+anketKapaticiyiBaslat();
 
 // Modül olaylarını açık panellere ve OBS kaynaklarına yayınla
 kingSystemService.on('king_crowned', (state) => {
@@ -119,8 +121,14 @@ router.get('/polls/active', (req: Request, res: Response) => {
 });
 
 router.post('/polls/create', (req: Request, res: Response) => {
-  const { title, options, durationSeconds = 60, command = '!oy' } = req.body;
-  if (!title || !options || options.length < 2) {
+  const title = String(req.body?.title ?? '').trim().slice(0, 200);
+  const options: string[] = Array.isArray(req.body?.options)
+    ? req.body.options.map((o: unknown) => String(o ?? '').trim().slice(0, 100)).filter(Boolean).slice(0, 10)
+    : [];
+  // NaN/negatif süre anketi anında kapatıyor ya da hiç kapatmıyordu
+  const durationSeconds = Math.min(3600, Math.max(10, Math.floor(Number(req.body?.durationSeconds)) || 60));
+  const command = /^![\p{L}\p{N}_]{1,20}$/u.test(String(req.body?.command || '')) ? String(req.body.command) : '!oy';
+  if (!title || options.length < 2) {
     return res.status(400).json({ error: 'Başlık ve en az 2 seçenek gerekli.' });
   }
 

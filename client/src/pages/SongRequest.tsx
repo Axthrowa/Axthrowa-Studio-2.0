@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SpotifyBaglanti } from '../components/SpotifyBaglanti.js';
 import { SongItem } from '../types.js';
 import {
   Music,
@@ -101,6 +102,8 @@ export function SongRequest() {
           </p>
         </div>
       </div>
+
+      <SpotifyBaglanti />
 
       {/* Desktop Player Integration Selector Card */}
       <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">

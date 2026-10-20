@@ -1,4 +1,5 @@
 import React from 'react';
+import { useYediTvHaritasi } from '../lib/yediTv.js';
 
 interface ChatMessageContentProps {
   message: string;
@@ -69,6 +70,8 @@ export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({
   className = '',
   size = 24
 }) => {
+  // Kanalın ve 7TV genel setinin canlı listesi (sabit sözlük çevrimdışı yedek)
+  const yediTv = useYediTvHaritasi();
   if (!message) return null;
 
   // Tokenize string while preserving Kick emotes [emote:id:name], Discord emojis <:name:id>, and words
@@ -125,7 +128,7 @@ export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({
         }
 
         // 3. Check for Global 7TV / Twitch / BTTV emotes in plain text words
-        const emoteUrl = GLOBAL_EMOTES[part];
+        const emoteUrl = yediTv.get(part) || (Object.prototype.hasOwnProperty.call(GLOBAL_EMOTES, part) ? GLOBAL_EMOTES[part] : undefined);
         if (emoteUrl) {
           return (
             <img

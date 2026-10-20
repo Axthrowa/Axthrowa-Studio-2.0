@@ -12,6 +12,7 @@ import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { LOYALTY_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, dikey, sayiYaz, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 interface RedemptionEvent {
   user: string;
@@ -74,7 +75,7 @@ export function LoyaltyStoreWidget({ embedded = false, previewMode = false }: Lo
 
   useEffect(() => {
     if (onizleme) return;
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (e) => {
       try {
         const payload = JSON.parse(e.data);

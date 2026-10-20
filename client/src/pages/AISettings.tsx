@@ -17,6 +17,8 @@ export function AISettings() {
   const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [enabled, setEnabled] = useState(true);
+  /** Sohbette "@BotAdı soru" yazılınca yapay zekâ yanıtlasın mı (varsayılan kapalı). */
+  const [seslenme, setSeslenme] = useState(false);
   const [saved, setSaved] = useState(false);
   // Anahtar sunucuda maskelenerek geliyor; panel gerçek değeri hiç görmez.
   const [anahtarKayitli, setAnahtarKayitli] = useState(false);
@@ -43,7 +45,7 @@ export function AISettings() {
   ]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
-  const gemini = useKirliTakip({ apiKey, prompt, enabled });
+  const gemini = useKirliTakip({ apiKey, prompt, enabled, seslenme });
   const kurtarma = useKirliTakip(rescue);
   const kirli = gemini.kirli || kurtarma.kirli;
   const geminiTaban = gemini.taban;
@@ -53,7 +55,8 @@ export function AISettings() {
     fetch('/api/settings')
       .then(r => r.json())
       .then(d => {
-        const yuklenen = { apiKey: d.gemini_api_key || '', prompt: d.gemini_prompt || '', enabled: d.gemini_enabled !== 'false' };
+        const yuklenen = { apiKey: d.gemini_api_key || '', prompt: d.gemini_prompt || '', enabled: d.gemini_enabled !== 'false', seslenme: d.ai_mention_enabled === 'true' };
+        setSeslenme(yuklenen.seslenme);
         setApiKey(yuklenen.apiKey);
         setAnahtarKayitli(Boolean(d.gemini_api_keyVar));
         setPrompt(yuklenen.prompt);
@@ -82,7 +85,8 @@ export function AISettings() {
         body: JSON.stringify({
           gemini_api_key: apiKey,
           gemini_prompt: prompt,
-          gemini_enabled: enabled ? 'true' : 'false'
+          gemini_enabled: enabled ? 'true' : 'false',
+          ai_mention_enabled: seslenme ? 'true' : 'false'
         })
       }).catch(() => null),
       fetch('/api/chat-rescue/settings', {
@@ -94,11 +98,11 @@ export function AISettings() {
     // Eskiden yanıtlara bakılmadan "Kaydedildi" gösteriliyordu
     if (!ayarYaniti?.ok || !kurtarmaYaniti?.ok) {
       toast(!ayarYaniti?.ok ? 'Yapay zekâ ayarları kaydedilemedi.' : 'Sohbet kurtarma ayarları kaydedilemedi.', 'hata');
-      if (ayarYaniti?.ok) geminiTaban({ apiKey, prompt, enabled });
+      if (ayarYaniti?.ok) geminiTaban({ apiKey, prompt, enabled, seslenme });
       if (kurtarmaYaniti?.ok) kurtarmaTaban(rescue);
       return;
     }
-    geminiTaban({ apiKey, prompt, enabled });
+    geminiTaban({ apiKey, prompt, enabled, seslenme });
     kurtarmaTaban(rescue);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -299,6 +303,13 @@ export function AISettings() {
                 <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
               </label>
             </div>
+
+            <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
+              <input type="checkbox" checked={seslenme} onChange={e => setSeslenme(e.target.checked)} className="mt-0.5 accent-purple-600" />
+              <span className="text-xs text-gray-300">
+                <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla başlarsa (ör. <code>@StreamAxTBot bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
+              </span>
+            </label>
 
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-1">

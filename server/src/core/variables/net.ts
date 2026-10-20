@@ -26,6 +26,7 @@ import dns from 'node:dns';
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
+import { ipv4OncelikliLookup } from '../dns-hizli.js';
 import { SINIR } from './types.js';
 
 /** Engellenen ana makine adları. */
@@ -144,7 +145,8 @@ export function guvenliLookup(
   secenek: dns.LookupOptions,
   geriDon: (hata: NodeJS.ErrnoException | null, adres: string | dns.LookupAddress[], aile?: number) => void
 ): void {
-  dns.lookup(hostname, { ...secenek, all: true }, (hata, adresler) => {
+  // IPv4 öncelikli (bkz. core/dns-hizli.ts); her adres yine aşağıda denetlenir
+  ipv4OncelikliLookup(hostname, { ...secenek, all: true }, (hata, adresler) => {
     if (hata) return geriDon(hata, '', undefined);
     const liste = adresler as dns.LookupAddress[];
     const yasak = liste.find((a) => yasakIpMi(a.address));

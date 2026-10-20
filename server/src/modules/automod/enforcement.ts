@@ -16,7 +16,7 @@ import { yetenek } from '../../platforms/capabilities.js';
 
 export type IhlalEylemi = 'warn' | 'timeout' | 'timeout_warn' | 'delete' | 'delete_warn';
 
-export type KuralAdi = 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat';
+export type KuralAdi = 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'zalgo' | 'length';
 
 /** BotRix'teki on bir kademe (BOTRIX_UI_INVENTORY §6.1). */
 export const TIMEOUT_KADEMELERI = [30, 60, 120, 300, 900, 1800, 3600, 7200, 18000, 43200, 86400] as const;
@@ -42,6 +42,8 @@ export interface KullaniciRolleri {
   isVip?: boolean;
   isSub?: boolean;
   isOg?: boolean;
+  /** !regulars ile eklenmiş düzenli izleyici */
+  isRegular?: boolean;
 }
 
 /** Uygulanacak somut adımlar. */
@@ -64,6 +66,7 @@ export function bypassEder(user: KullaniciRolleri, bypass: Rol[] = []): boolean 
   if (küme.has('vip') && user.isVip) return true;
   if (küme.has('sub') && user.isSub) return true;
   if (küme.has('og') && user.isOg) return true;
+  if (küme.has('regular') && user.isRegular) return true;
   return false;
 }
 
@@ -115,7 +118,7 @@ export function kuralAyariOku(row: any, kural: KuralAdi, varsayilanMesaj: string
   try {
     const ham = row?.[`${kural}_bypass`];
     if (ham) {
-      const p = JSON.parse(ham);
+      const p = Array.isArray(ham) ? ham : JSON.parse(ham);
       if (Array.isArray(p)) bypass = p as Rol[];
     }
   } catch {

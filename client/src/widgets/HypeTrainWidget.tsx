@@ -19,13 +19,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { HYPE_TRAIN_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, sureYaz, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 export interface HypeTrainWidgetProps {
   embedded?: boolean;
   previewMode?: boolean;
 }
 
-type Ayar = typeof HYPE_TRAIN_DEFAULTS;
 
 /** Seviye hedefi kademeli büyür: taban * büyüme^(seviye-1). */
 export function seviyeHedefi(seviye: number, taban: number, buyume: number): number {
@@ -71,7 +71,7 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
   useEffect(() => {
     if (onizleme) return;
     gercegiYukle();
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);

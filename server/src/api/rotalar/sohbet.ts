@@ -9,9 +9,11 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { wsHub } from '../../ws/server.js';
+import { widgetAyariOku, widgetAyariYaz } from './widgetlar.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { geminiCoHost } from '../../modules/ai/gemini.js';
 import { sohbetUyarilari } from '../../modules/chat-alerts/chat-alerts.js';
+import { TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
 import { seyrekUyar } from '../../core/logger.js';
 
 const router = Router();
@@ -19,6 +21,14 @@ const router = Router();
 // 9.0 Sohbet tarafi olay mesajlari
 router.get('/chat-alerts', (req: Request, res: Response) => {
   res.json(sohbetUyarilari.ayarOku());
+});
+
+// Temalı mesajlar (Star Wars, Harry Potter…): seçim ve örnekler
+router.get('/chat-alerts/tema', (_req: Request, res: Response) => {
+  res.json({ tema: sohbetUyarilari.temaOku(), temalar: TEMA_ADLARI, ornekler: TEMA_MESAJLARI });
+});
+router.post('/chat-alerts/tema', (req: Request, res: Response) => {
+  res.json({ tema: sohbetUyarilari.temaYaz(String(req.body?.tema || 'yok')) });
 });
 
 router.post('/chat-alerts', (req: Request, res: Response) => {
@@ -53,45 +63,42 @@ router.get('/ai/status', async (req: Request, res: Response) => {
   }
 });
 
-// 12. Chat Overlay Settings (Image 1 Specifications)
+// 12. Chat Overlay Settings
+//
+// Bu uç eskiden `chat_overlay_settings` adlı AYRI bir kayda yazıyordu; OBS'teki
+// sohbet bileşeni ise `widget_settings_chat-overlay` kaydını okuyor. Overlay
+// Stüdyo'nun sohbet sekmesinde yapılan değişiklikler bu yüzden OBS'e hiç
+// yansımıyordu. Artık tek kayıt var: eski uç, geriye dönük uyumluluk için o
+// kaydı okur/yazar (eski kaydın değerleri yalnız okumada taban olarak kalır).
+const ESKI_SOHBET_VARSAYILANI = {
+  maxMessages: 40,
+  fontSize: 22,
+  showPlatformLogo: true,
+  showBadges: true,
+  showTimestamp: true,
+  highlightSpecial: true,
+  fadeMessages: true,
+  fadeTimeout: 17,
+  smoothMask: true,
+  textShadow: true,
+  transparentBg: true
+};
+
 router.get('/settings/chat-overlay', (req: Request, res: Response) => {
-  const row = db.prepare("SELECT value FROM bot_settings WHERE key = 'chat_overlay_settings'").get() as any;
-  const defaultSettings = {
-    maxMessages: 40,
-    fontSize: 22,
-    showPlatformLogo: true,
-    showBadges: true,
-    showTimestamp: true,
-    highlightSpecial: true,
-    fadeMessages: true,
-    fadeTimeout: 17,
-    smoothMask: true,
-    textShadow: true,
-    transparentBg: true
-  };
+  let eski: Record<string, unknown> = {};
   try {
-    const parsed = row ? JSON.parse(row.value) : defaultSettings;
-    res.json({ ...defaultSettings, ...parsed });
+    const row = db.prepare("SELECT value FROM bot_settings WHERE key = 'chat_overlay_settings'").get() as any;
+    eski = row ? JSON.parse(row.value) : {};
   } catch {
-    res.json(defaultSettings);
+    eski = {};
   }
+  res.json({ ...ESKI_SOHBET_VARSAYILANI, ...eski, ...widgetAyariOku('chat-overlay') });
 });
 
 router.post('/settings/chat-overlay', (req: Request, res: Response) => {
-  const settings = req.body;
-  const val = JSON.stringify(settings);
-  db.prepare(`
-    INSERT INTO bot_settings (key, value) VALUES ('chat_overlay_settings', ?)
-    ON CONFLICT(key) DO UPDATE SET value = excluded.value
-  `).run(val);
-
-  // Broadcast to all chatbox widgets instantly
-  wsHub.broadcastTo(['chatbox', 'all'], {
-    type: 'chat_settings',
-    data: settings
-  });
-
-  res.json({ success: true, settings });
+  const sonuc = widgetAyariYaz('chat-overlay', req.body);
+  if (!sonuc.ok) return res.status(400).json({ success: false, error: sonuc.hata });
+  res.json({ success: true, settings: sonuc.deger });
 });
 
 // 15. Pinned Messages (OBS Pinned Message Overlay)
@@ -101,7 +108,13 @@ router.get('/pinned', (req: Request, res: Response) => {
 });
 
 router.post('/pinned', (req: Request, res: Response) => {
-  const { platform, username, displayName, message, color } = req.body;
+  // Doğrulama: boş mesaj sabitlenmez, uzunluk ve renk biçimi sınırlı
+  const message = String(req.body?.message ?? '').trim().slice(0, 500);
+  if (!message) return res.status(400).json({ success: false, error: 'Sabitlenecek mesaj boş.' });
+  const platform = /^(kick|twitch|youtube|tiktok|discord|trovo)$/.test(String(req.body?.platform)) ? String(req.body.platform) : 'kick';
+  const username = String(req.body?.username ?? '').slice(0, 60);
+  const displayName = String(req.body?.displayName ?? '').slice(0, 60);
+  const color = /^#[0-9a-f]{3,8}$/i.test(String(req.body?.color)) ? String(req.body.color) : '#8b5cf6';
   const id = `pin-${Date.now()}`;
   db.prepare('DELETE FROM pinned_messages').run();
   db.prepare(`

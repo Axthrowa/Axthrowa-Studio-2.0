@@ -8,7 +8,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { wsHub } from '../../ws/server.js';
 import economyService from '../../modules/economy/economy.js';
 import { ttsEngine } from '../../modules/tts/tts.js';
@@ -122,10 +122,7 @@ const processDonation = (donorName: string, amount: number, currency: string = '
     alert: alertData
   });
 
-  wsHub.broadcastTo(['all'], {
-    type: 'cup_drop',
-    data: { type: 'tip', user: safeName, amount: numAmount, currency: safeCurrency }
-  });
+  wsHub.kupayaDusur('tip', { user: safeName, amount: numAmount });
 
   try {
     economyService.recordTip(safeName, 'kick', numAmount);

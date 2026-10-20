@@ -22,6 +22,8 @@ interface KingState {
   crownTime?: number;
   reignSeconds?: number;
   title?: string;
+  /** Tahtta izleyici yok (sunucu söyler) */
+  bos?: boolean;
 }
 
 export interface KingWidgetProps {
@@ -101,8 +103,13 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
     };
   }, [onizleme]);
 
-  if (!king && s.hideWhenEmpty) return null;
+  // Taht boşken (hiç kapılmadı / yalnız-izleyici kipinde yayıncı) yayıncı gösterilmez
+  const bos = !king || Boolean(king.bos);
+  if (bos && (s.hideWhenEmpty || !king)) return null;
   if (!king) return null;
+  const gorunen: KingState = bos
+    ? { ...king, displayName: String(s.emptyText || 'Taht boş — !tahtikap <puan>'), avatarUrl: '', pointsBid: 0 }
+    : king;
 
   const tema = String(s.theme || 'royal');
   const temaStili: Record<string, React.CSSProperties> = {
@@ -166,10 +173,10 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
 
         {s.showAvatar && (
           <div className="relative flex-shrink-0">
-            {king.avatarUrl ? (
+            {gorunen.avatarUrl ? (
               <img
-                src={king.avatarUrl}
-                alt={king.displayName}
+                src={gorunen.avatarUrl}
+                alt={gorunen.displayName}
                 className="rounded-xl object-cover"
                 style={{ width: avatar, height: avatar, border: `2px solid ${s.accentColor}` }}
               />
@@ -208,10 +215,10 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
           )}
 
           <div className="font-black leading-tight truncate" style={{ fontSize: boy }}>
-            {king.displayName || king.currentKing}
+            {gorunen.displayName || gorunen.currentKing}
           </div>
 
-          {(s.showPoints || s.showReign) && (
+          {!bos && (s.showPoints || s.showReign) && (
             <div
               className="flex items-center gap-3 mt-0.5 font-medium"
               style={{ fontSize: Math.max(9, boy * 0.6), opacity: 0.85 }}
@@ -225,7 +232,7 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
                     color: s.accentColor
                   }}
                 >
-                  💎 {sayiYaz(Number(king.pointsBid) || 0)} {s.pointsLabel}
+                  💎 {sayiYaz(Number(gorunen.pointsBid) || 0)} {s.pointsLabel}
                 </span>
               )}
               {s.showReign && (

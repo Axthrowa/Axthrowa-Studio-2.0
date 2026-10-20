@@ -5,9 +5,13 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import { TRIVIA_SEED_QUESTIONS } from './trivia-data.js';
 import { TRIVIA_EXTRA_QUESTIONS } from './trivia-extra.js';
+import { bankayiDenetle, copSoruMu } from './soru-kalite.js';
+
+/** Kalite kuralları değişince bu artar: banka bir kez daha denetlenir */
+export const KALITE_SURUMU = '1';
 
 export interface TriviaSyncResult {
   added: number;
@@ -36,6 +40,8 @@ function insertIfNew(
   }
 ): boolean {
   if (!item.question || !item.optionA) return false;
+  // Anlamsız şablon soruları ("… bilgisi #72" vb.) hiç içe aktarılmaz
+  if (copSoruMu(item)) return false;
   const exists = check.get(item.question);
   if (exists) return false;
   insert.run(
@@ -182,6 +188,36 @@ function importSqliteBank(database: DatabaseSync, check: any, insert: any): numb
     console.warn('[TriviaSync] SQLite import skipped:', err);
   }
   return added;
+}
+
+/**
+ * Soru bankasını denetler ve onarır (bkz. soru-kalite.ts): yer tutucu
+ * çeldiriciler değiştirilir, onarılamayan anlamsız sorular atılır, dört işlem
+ * soruları düzeltilir. Yalnız yeni soru eklendiğinde ya da kural sürümü
+ * değiştiğinde çalışır.
+ */
+export function triviaBankasiniOnar(database: DatabaseSync, zorla = false): { onarildi: number; atildi: number } {
+  const surum = (database.prepare("SELECT value FROM bot_settings WHERE key = 'trivia_kalite_surum'").get() as { value?: string } | undefined)?.value;
+  if (!zorla && surum === KALITE_SURUMU) return { onarildi: 0, atildi: 0 };
+  const banka = database
+    .prepare('SELECT id, category, question, option_a AS optionA, option_b AS optionB, option_c AS optionC, option_d AS optionD, correct_option AS correctOption FROM trivia_questions')
+    .all() as any[];
+  const sonuc = bankayiDenetle(banka);
+  const guncelle = database.prepare('UPDATE trivia_questions SET option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ? WHERE id = ?');
+  const sil = database.prepare('DELETE FROM trivia_questions WHERE id = ?');
+  database.exec('BEGIN');
+  try {
+    for (const q of sonuc.onarilan) guncelle.run(q.optionA, q.optionB, q.optionC, q.optionD, q.correctOption, String(q.id));
+    for (const q of sonuc.atilacak) sil.run(String(q.id));
+    database
+      .prepare("INSERT INTO bot_settings (key, value) VALUES ('trivia_kalite_surum', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+      .run(KALITE_SURUMU);
+    database.exec('COMMIT');
+  } catch (e) {
+    try { database.exec('ROLLBACK'); } catch {}
+    throw e;
+  }
+  return { onarildi: sonuc.onarilan.length, atildi: sonuc.atilacak.length };
 }
 
 export function syncTriviaBank(database: DatabaseSync): TriviaSyncResult {

@@ -4,6 +4,8 @@
  */
 import { useEffect, useState } from 'react';
 import { Sparkles, Check } from 'lucide-react';
+import { KlipListesi } from '../components/KlipListesi.js';
+import { ToplulukAyarlari } from '../components/ToplulukAyarlari.js';
 
 const DEFAULTS = {
   chat_alerts_enabled: true,
@@ -17,7 +19,9 @@ const DEFAULTS = {
   clip_enabled: true,
   clip_command: '!clip',
   clip_cooldown: 30,
-  clip_message: 'Klip alındı: {url}',
+  clip_default_sec: 30,
+  clip_max_sec: 60,
+  clip_message: '📌 @{user} klip anını işaretledi ({zaman}) — yayıncı panelden görecek.',
   levels_enabled: true,
   xp_per_message: 5,
   xp_per_minute: 2,
@@ -32,7 +36,7 @@ export function Extras() {
   const [newQuote, setNewQuote] = useState('');
   const [newCounter, setNewCounter] = useState('ölüm');
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<'alerts' | 'clip' | 'levels' | 'quotes'>('alerts');
+  const [tab, setTab] = useState<'alerts' | 'clip' | 'levels' | 'quotes' | 'topluluk'>('alerts');
 
   useEffect(() => {
     fetch('/api/extras').then(r => r.json()).then(d => {
@@ -53,22 +57,25 @@ export function Extras() {
       <div className="flex justify-between">
         <div>
           <h1 className="text-2xl font-black text-white">Ekstralar</h1>
-          <p className="text-sm text-gray-400">Sohbet uyarıları, klip komutu, seviye sistemi, alıntılar ve sayaçlar.</p>
+          <p className="text-sm text-gray-400">Sohbet uyarıları, klip komutu, seviye sistemi, alıntılar, sayaçlar ve topluluk oyunları.</p>
         </div>
         <button onClick={save} className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 ${saved ? 'bg-emerald-600' : 'bg-purple-600'} text-white`}>
           {saved ? <Check className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />} Kaydet
         </button>
       </div>
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
-        {(['alerts', 'clip', 'levels', 'quotes'] as const).map(t => (
+        {(['alerts', 'clip', 'levels', 'quotes', 'topluluk'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === t ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>
-            {t === 'alerts' ? 'Sohbet Uyarıları' : t === 'clip' ? 'Klip Komutu' : t === 'levels' ? 'Seviye Sistemi' : 'Alıntı & Sayaç'}
+            {t === 'alerts' ? 'Sohbet Uyarıları' : t === 'clip' ? 'Klip Komutu' : t === 'levels' ? 'Seviye Sistemi' : t === 'quotes' ? 'Alıntı & Sayaç' : 'Topluluk'}
           </button>
         ))}
       </div>
 
       {tab === 'alerts' && (
         <div className="glass-panel p-6 rounded-2xl space-y-3">
+          <p className="text-[11px] rounded-lg border border-white/10 bg-black/30 p-2 text-gray-300">
+            Basit sohbet uyarıları. Daha ayrıntılı sürüm (eşik, bekleme, karşılama, yayın başladı duyurusu) <b>Gelişmiş Bot → Sohbet uyarıları</b>'nda; orada bir olay açıksa buradaki mesaj o olay için gönderilmez (çift mesaj olmasın).
+          </p>
           <label className="flex justify-between text-xs font-bold">Chat alerts açık <input type="checkbox" checked={s.chat_alerts_enabled} onChange={e => setS({ ...s, chat_alerts_enabled: e.target.checked })} /></label>
           {(['chat_alert_follow','chat_alert_sub','chat_alert_gift_sub','chat_alert_tip','chat_alert_raid','chat_alert_host','chat_alert_kicks'] as const).map(k => (
             <label key={k} className="text-xs font-bold space-y-1">{k.replace('chat_alert_', '')}<input value={(s as any)[k]} onChange={e => setS({ ...s, [k]: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
@@ -81,6 +88,12 @@ export function Extras() {
           <label className="text-xs font-bold space-y-1">Komut<input value={s.clip_command} onChange={e => setS({ ...s, clip_command: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Cooldown (sn)<input type="number" value={s.clip_cooldown} onChange={e => setS({ ...s, clip_cooldown: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Mesaj<input value={s.clip_message} onChange={e => setS({ ...s, clip_message: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-xs font-bold space-y-1">Varsayılan süre (sn)<input type="number" min={10} max={600} value={s.clip_default_sec} onChange={e => setS({ ...s, clip_default_sec: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+            <label className="text-xs font-bold space-y-1">En uzun süre (sn)<input type="number" min={10} max={600} value={s.clip_max_sec} onChange={e => setS({ ...s, clip_max_sec: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          </div>
+          <p className="text-[11px] text-gray-400"><code>!clip</code> ya da <code>!clip 45</code>: yayının son ~30 saniyesinden başlayıp istenen süreye kadar <b>gerçek video klip</b> kaydeder (yeniden kodlamadan, bilgisayarında kalır, platforma yüklenmez). Yayın kapalıyken çalışmaz. ffmpeg yoksa yalnız anı işaretler; o zaman yukarıdaki mesaj kullanılır (<code>{"{user}"}</code>, <code>{"{zaman}"}</code>).</p>
+          <KlipListesi />
         </div>
       )}
       {tab === 'levels' && (
@@ -92,6 +105,7 @@ export function Extras() {
           <label className="text-xs font-bold space-y-1">Level-up mesajı<input value={s.levelup_message} onChange={e => setS({ ...s, levelup_message: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
         </div>
       )}
+      {tab === 'topluluk' && <ToplulukAyarlari />}
       {tab === 'quotes' && (
         <div className="glass-panel p-6 rounded-2xl space-y-4">
           <div className="flex gap-2">

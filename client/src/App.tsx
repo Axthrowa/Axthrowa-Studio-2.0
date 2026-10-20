@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense, type ReactNode } from 'react';
 import {
   LayoutDashboard,
   Link2,
@@ -26,61 +26,62 @@ import {
 } from 'lucide-react';
 
 // Pages
-import Dashboard from './pages/Dashboard.js';
-import Platforms from './pages/Platforms.js';
-import Commands from './pages/Commands.js';
-import Timers from './pages/Timers.js';
-import AutoMod from './pages/AutoMod.js';
-import SongRequest from './pages/SongRequest.js';
-import Economy from './pages/Economy.js';
-import MiniGames from './pages/MiniGames.js';
-import TriviaStudio from './pages/TriviaStudio.js';
-import Giveaways from './pages/Giveaways.js';
-import MultiChat from './pages/MultiChat.js';
-import OverlayStudio from './pages/OverlayStudio.js';
-import AISettings from './pages/AISettings.js';
-import Settings from './pages/Settings.js';
-import TTSManager from './pages/TTSManager.js';
-import ShieldAndAudit from './pages/ShieldAndAudit.js';
-import DonationsAndJumpScare from './pages/DonationsAndJumpScare.js';
-import AlertsStudio from './pages/AlertsStudio.js';
-import PollsStudio from './pages/PollsStudio.js';
-import Extras from './pages/Extras.js';
-import Rankings from './pages/Rankings.js';
+const Dashboard = lazy(() => import('./pages/Dashboard.js'));
+const Platforms = lazy(() => import('./pages/Platforms.js'));
+const Commands = lazy(() => import('./pages/Commands.js'));
+const Timers = lazy(() => import('./pages/Timers.js'));
+const AutoMod = lazy(() => import('./pages/AutoMod.js'));
+const SongRequest = lazy(() => import('./pages/SongRequest.js'));
+const Economy = lazy(() => import('./pages/Economy.js'));
+const MiniGames = lazy(() => import('./pages/MiniGames.js'));
+const TriviaStudio = lazy(() => import('./pages/TriviaStudio.js'));
+const Giveaways = lazy(() => import('./pages/Giveaways.js'));
+const MultiChat = lazy(() => import('./pages/MultiChat.js'));
+const OverlayStudio = lazy(() => import('./pages/OverlayStudio.js'));
+const AISettings = lazy(() => import('./pages/AISettings.js'));
+const Settings = lazy(() => import('./pages/Settings.js'));
+const TTSManager = lazy(() => import('./pages/TTSManager.js'));
+const ShieldAndAudit = lazy(() => import('./pages/ShieldAndAudit.js'));
+const DonationsAndJumpScare = lazy(() => import('./pages/DonationsAndJumpScare.js'));
+const AlertsStudio = lazy(() => import('./pages/AlertsStudio.js'));
+const PollsStudio = lazy(() => import('./pages/PollsStudio.js'));
+const Extras = lazy(() => import('./pages/Extras.js'));
+const Rankings = lazy(() => import('./pages/Rankings.js'));
 
 // OBS Widgets
-import TriviaWidget from './widgets/TriviaWidget.js';
-import AlertBoxWidget from './widgets/AlertBoxWidget.js';
-import ChatBoxWidget from './widgets/ChatBoxWidget.js';
-import GoalWidget from './widgets/GoalWidget.js';
-import WheelWidget from './widgets/WheelWidget.js';
-import AudioPlayerWidget from './widgets/AudioPlayerWidget.js';
-import EmoteComboWidget from './widgets/EmoteComboWidget.js';
-import SubathonWidget from './widgets/SubathonWidget.js';
-import HypeTrainWidget from './widgets/HypeTrainWidget.js';
-import EventLabelsWidget from './widgets/EventLabelsWidget.js';
-import NowPlayingWidget from './widgets/NowPlayingWidget.js';
-import PollsWidget from './widgets/PollsWidget.js';
-import ShoutoutWidget from './widgets/ShoutoutWidget.js';
-import TheCupWidget from './widgets/TheCupWidget.js';
-import EndCreditsWidget from './widgets/EndCreditsWidget.js';
-import PinnedMessageWidget from './widgets/PinnedMessageWidget.js';
-import LoyaltyStoreWidget from './widgets/LoyaltyStoreWidget.js';
-import LyricsWidget from './widgets/LyricsWidget.js';
-import JumpScareWidget from './widgets/JumpScareWidget.js';
-import KingWidget from './widgets/KingWidget.js';
-import { UnifiedOverlayWidget } from './widgets/UnifiedOverlayWidget.js';
-import ViewerCounterWidget from './widgets/ViewerCounterWidget.js';
-import ActivityFeedWidget from './widgets/ActivityFeedWidget.js';
-import GiveawayWidget from './widgets/GiveawayWidget.js';
-import RankingsWidget from './widgets/RankingsWidget.js';
-import BotAdvanced from './pages/BotAdvanced.js';
-import Interaction from './pages/Interaction.js';
-import Integrations from './pages/Integrations.js';
-import SoundBoard from './pages/SoundBoard.js';
-import SoundBoardWidget from './widgets/SoundBoardWidget.js';
-import SesliDinleyici from './pages/SesliDinleyici.js';
-import VoiceCommands from './pages/VoiceCommands.js';
+const TriviaWidget = lazy(() => import('./widgets/TriviaWidget.js'));
+const AlertBoxWidget = lazy(() => import('./widgets/AlertBoxWidget.js'));
+const ChatBoxWidget = lazy(() => import('./widgets/ChatBoxWidget.js'));
+const GoalWidget = lazy(() => import('./widgets/GoalWidget.js'));
+const WheelWidget = lazy(() => import('./widgets/WheelWidget.js'));
+const AudioPlayerWidget = lazy(() => import('./widgets/AudioPlayerWidget.js'));
+const EmoteComboWidget = lazy(() => import('./widgets/EmoteComboWidget.js'));
+const KappagenWidget = lazy(() => import('./widgets/KappagenWidget.js'));
+const SubathonWidget = lazy(() => import('./widgets/SubathonWidget.js'));
+const HypeTrainWidget = lazy(() => import('./widgets/HypeTrainWidget.js'));
+const EventLabelsWidget = lazy(() => import('./widgets/EventLabelsWidget.js'));
+const ResonanceWidget = lazy(() => import('./widgets/ResonanceWidget.js'));
+const PollsWidget = lazy(() => import('./widgets/PollsWidget.js'));
+const ShoutoutWidget = lazy(() => import('./widgets/ShoutoutWidget.js'));
+const TheCupWidget = lazy(() => import('./widgets/TheCupWidget.js'));
+const EndCreditsWidget = lazy(() => import('./widgets/EndCreditsWidget.js'));
+const PinnedMessageWidget = lazy(() => import('./widgets/PinnedMessageWidget.js'));
+const LoyaltyStoreWidget = lazy(() => import('./widgets/LoyaltyStoreWidget.js'));
+const LyricsWidget = lazy(() => import('./widgets/LyricsWidget.js'));
+const JumpScareWidget = lazy(() => import('./widgets/JumpScareWidget.js'));
+const KingWidget = lazy(() => import('./widgets/KingWidget.js'));
+const UnifiedOverlayWidget = lazy(() => import('./widgets/UnifiedOverlayWidget.js').then((m) => ({ default: m.UnifiedOverlayWidget })));
+const ViewerCounterWidget = lazy(() => import('./widgets/ViewerCounterWidget.js'));
+const ActivityFeedWidget = lazy(() => import('./widgets/ActivityFeedWidget.js'));
+const GiveawayWidget = lazy(() => import('./widgets/GiveawayWidget.js'));
+const RankingsWidget = lazy(() => import('./widgets/RankingsWidget.js'));
+const BotAdvanced = lazy(() => import('./pages/BotAdvanced.js'));
+const Interaction = lazy(() => import('./pages/Interaction.js'));
+const Integrations = lazy(() => import('./pages/Integrations.js'));
+const SoundBoard = lazy(() => import('./pages/SoundBoard.js'));
+const SoundBoardWidget = lazy(() => import('./widgets/SoundBoardWidget.js'));
+const SesliDinleyici = lazy(() => import('./pages/SesliDinleyici.js'));
+const VoiceCommands = lazy(() => import('./pages/VoiceCommands.js'));
 import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
@@ -90,35 +91,41 @@ import { sunucuPortu } from './lib/widget-style.js';
 export function App() {
   const path = window.location.pathname;
 
+  // OBS sayfaları yalnız kendi widget'ının kodunu yükler (panelin tamamını değil);
+  // yüklenirken saydam kalır.
+  const obsSayfasi = (icerik: ReactNode) => <Suspense fallback={null}>{icerik}</Suspense>;
+
   // Render standalone OBS widgets when visiting /widgets/*
-  if (path === '/widgets/overlay' || path === '/overlay') return <UnifiedOverlayWidget />;
-  if (path === '/widgets/alertbox') return <AlertBoxWidget />;
-  if (path === '/widgets/chatbox') return <ChatBoxWidget />;
-  if (path === '/widgets/goals' || path === '/widgets/donation-goal' || path === '/widgets/follower-goal' || path === '/widgets/subscriber-goal' || path === '/widgets/kicks-goal') return <GoalWidget />;
-  if (path === '/widgets/giveaways') return <GiveawayWidget />;
-  if (path === '/widgets/rankings') return <RankingsWidget />;
-  if (path === '/widgets/wheel') return <WheelWidget />;
-  if (path === '/widgets/audio-player') return <AudioPlayerWidget />;
-  if (path === '/widgets/emote-combo') return <EmoteComboWidget />;
-  if (path === '/widgets/subathon') return <SubathonWidget />;
-  if (path === '/widgets/hype-train') return <HypeTrainWidget />;
-  if (path === '/widgets/event-labels') return <EventLabelsWidget />;
-  if (path === '/widgets/now-playing') return <NowPlayingWidget />;
-  if (path === '/widgets/polls') return <PollsWidget />;
-  if (path === '/widgets/shoutout') return <ShoutoutWidget />;
-  if (path === '/widgets/the-cup') return <TheCupWidget />;
-  if (path === '/widgets/credits') return <EndCreditsWidget />;
-  if (path === '/widgets/pinned') return <PinnedMessageWidget />;
-  if (path === '/widgets/loyalty-redeem') return <LoyaltyStoreWidget />;
-  if (path === '/widgets/lyrics') return <LyricsWidget />;
-  if (path === '/widgets/jumpscare') return <JumpScareWidget />;
-  if (path === '/widgets/king') return <KingWidget />;
-  if (path === '/widgets/pano') return <SoundBoardWidget />;
-  if (path === '/sesli-dinleyici') return <SesliDinleyici />;
-  if (path === '/widgets/trivia' || path === '/trivia' || path === '/trivia-overlay') return <TriviaWidget />;
-  if (path === '/widgets/viewer-counter') return <ViewerCounterWidget />;
-  if (path === '/widgets/activity-feed') return <ActivityFeedWidget />;
-  if (path === '/widgets/emotes' || path === '/widgets/on-screen-emotes') return <EmoteComboWidget />;
+  if (path === '/widgets/overlay' || path === '/overlay') return obsSayfasi(<UnifiedOverlayWidget />);
+  if (path === '/widgets/alertbox') return obsSayfasi(<AlertBoxWidget />);
+  if (path === '/widgets/chatbox') return obsSayfasi(<ChatBoxWidget />);
+  if (path === '/widgets/goals' || path === '/widgets/donation-goal' || path === '/widgets/follower-goal' || path === '/widgets/subscriber-goal' || path === '/widgets/kicks-goal') return obsSayfasi(<GoalWidget />);
+  if (path === '/widgets/giveaways') return obsSayfasi(<GiveawayWidget />);
+  if (path === '/widgets/rankings') return obsSayfasi(<RankingsWidget />);
+  if (path === '/widgets/wheel') return obsSayfasi(<WheelWidget />);
+  if (path === '/widgets/audio-player') return obsSayfasi(<AudioPlayerWidget />);
+  if (path === '/widgets/emote-combo') return obsSayfasi(<EmoteComboWidget />);
+  if (path === '/widgets/subathon') return obsSayfasi(<SubathonWidget />);
+  if (path === '/widgets/hype-train') return obsSayfasi(<HypeTrainWidget />);
+  if (path === '/widgets/event-labels') return obsSayfasi(<EventLabelsWidget />);
+  // "Şu An Çalan" artık Resonance (eski adres de onu gösterir)
+  if (path === '/widgets/now-playing' || path === '/widgets/resonance') return obsSayfasi(<ResonanceWidget />);
+  if (path === '/widgets/polls') return obsSayfasi(<PollsWidget />);
+  if (path === '/widgets/shoutout') return obsSayfasi(<ShoutoutWidget />);
+  if (path === '/widgets/the-cup') return obsSayfasi(<TheCupWidget />);
+  if (path === '/widgets/credits') return obsSayfasi(<EndCreditsWidget />);
+  if (path === '/widgets/pinned') return obsSayfasi(<PinnedMessageWidget />);
+  if (path === '/widgets/loyalty-redeem') return obsSayfasi(<LoyaltyStoreWidget />);
+  if (path === '/widgets/lyrics') return obsSayfasi(<LyricsWidget />);
+  if (path === '/widgets/jumpscare') return obsSayfasi(<JumpScareWidget />);
+  if (path === '/widgets/king') return obsSayfasi(<KingWidget />);
+  if (path === '/widgets/pano') return obsSayfasi(<SoundBoardWidget />);
+  if (path === '/sesli-dinleyici') return obsSayfasi(<SesliDinleyici />);
+  if (path === '/widgets/trivia' || path === '/trivia' || path === '/trivia-overlay') return obsSayfasi(<TriviaWidget />);
+  if (path === '/widgets/viewer-counter') return obsSayfasi(<ViewerCounterWidget />);
+  if (path === '/widgets/activity-feed') return obsSayfasi(<ActivityFeedWidget />);
+  // Eskiden Emote Combo'yu açıyordu; artık gerçek uçan emote (kappagen) katmanı
+  if (path === '/widgets/emotes' || path === '/widgets/on-screen-emotes' || path === '/widgets/kappagen') return obsSayfasi(<KappagenWidget />);
 
   // Otherwise, render full StreamAxT Dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -337,7 +344,9 @@ export function App() {
 
         {/* Page Content */}
         <main className="flex-1 p-8 overflow-y-auto">
-          {renderActivePage()}
+          <Suspense fallback={<div className="p-8 text-sm text-gray-400 animate-pulse">Yükleniyor…</div>}>
+            {renderActivePage()}
+          </Suspense>
         </main>
       </div>
     </div>

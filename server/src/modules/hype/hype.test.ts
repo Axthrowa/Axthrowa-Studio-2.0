@@ -20,7 +20,15 @@ describe('olayPuani', () => {
     expect(olayPuani('gift_sub', { count: 5 }, a)).toBe(500);
     expect(olayPuani('tip', { amount: 25 }, a)).toBe(250);
     expect(olayPuani('kicks', { amount: 40 }, a)).toBe(40);
-    expect(olayPuani('follow', {}, a)).toBe(5);
+    // Takip varsayılan olarak treni beslemez (yalnız abone/hediye/bağış/KICKs)
+    expect(olayPuani('follow', {}, a)).toBe(0);
+    expect(olayPuani('follow', {}, { ...a, fromFollow: true })).toBe(5);
+  });
+  it('panelde seçilmeyen olay treni beslemez', () => {
+    expect(olayPuani('sub', {}, { ...a, fromSub: false })).toBe(0);
+    expect(olayPuani('gift_sub', { count: 3 }, { ...a, fromGift: false })).toBe(0);
+    expect(olayPuani('tip', { amount: 10 }, { ...a, fromTip: false })).toBe(0);
+    expect(olayPuani('kicks', { amount: 10 }, { ...a, fromKicks: false })).toBe(0);
   });
   it('bilinmeyen olay puan vermez', () => {
     expect(olayPuani('raid', { viewers: 100 }, a)).toBe(0);

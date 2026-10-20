@@ -130,6 +130,18 @@ export const GOAL_DEFAULTS = {
   textTransform: 'uppercase'
 };
 
+/** Kappagen / Ekranda Emojiler */
+export const KAPPAGEN_DEFAULTS = {
+  fromChat: true,
+  size: 64,
+  durationMs: 3500,
+  maxOnScreen: 60,
+  burstCopies: 4,
+  spin: true,
+  shadow: true,
+  paused: false
+};
+
 export const EMOTE_COMBO_DEFAULTS = {
   minCombo: 3,
   timeoutMs: 5000,
@@ -157,28 +169,39 @@ export const EMOTE_COMBO_DEFAULTS = {
 };
 
 export const LABELS_DEFAULTS = {
-  template: 'Son takip: {lastFollower}  |  Son abone: {lastSub}  |  Son bağış: {lastTip}  |  Top bağış: {topTipper}',
   showFollow: true,
   showSub: true,
   showTip: true,
   showTop: true,
   showRaid: false,
-  separator: '  |  ',
+  showKicks: false,
+  labelFollow: 'Son takipçi:',
+  labelSub: 'Son abone:',
+  labelTip: 'Son bağış:',
+  labelTop: 'En büyük bağış:',
+  labelRaid: 'Son raid:',
+  labelKicks: 'Son KICKs:',
+  emptyValue: '—',
+  separator: '•',
+  layout: 'row',
+  align: 'left',
   fontFamily: 'Plus Jakarta Sans',
-  fontSize: 16,
-  fontWeight: 700,
-  fontColor: '#e2e8f0',
-  letterSpacing: 0.5,
+  fontSize: 18,
+  fontWeight: 800,
+  fontColor: '#ffffff',
+  labelColor: '#a5b4fc',
+  letterSpacing: 0.3,
   textTransform: 'none',
-  outlineEnabled: true,
+  textShadow: true,
+  outlineEnabled: false,
   outlineColor: '#000000',
-  outlineWidth: 2,
-  animation: 'marquee',
+  outlineWidth: 1,
+  animation: 'fade',
   marqueeSpeed: 40,
-  backgroundColor: '#000000',
-  backgroundOpacity: 0.85,
-  borderRadius: 16,
-  height: 44,
+  backgroundColor: '#0b0d13',
+  backgroundOpacity: 0.8,
+  borderRadius: 14,
+  height: 48,
   paddingX: 20
 };
 
@@ -193,6 +216,8 @@ export const POLL_DEFAULTS = {
   showPercent: true,
   showVotes: true,
   hideUntilEnd: false,
+  /** Anket bittikten kaç sn sonra kaybolsun (0 = kalsın) */
+  hideAfterSec: 8,
   backgroundColor: '#000000',
   backgroundOpacity: 0.9,
   borderColor: '#10b981',
@@ -218,6 +243,10 @@ export const WHEEL_DEFAULTS = {
   ],
   spinMs: 4500,
   extraSpins: 6,
+  /** Yalnız çevrilince / ayar değişince görünsün */
+  autoHide: true,
+  /** Sonuçtan kaç sn sonra kaybolsun (0 = kalsın) */
+  hideAfterSec: 10,
   pointerColor: '#ef4444',
   borderColor: '#a855f7',
   fontFamily: 'Plus Jakarta Sans',
@@ -296,6 +325,7 @@ export const GIVEAWAY_DEFAULTS = {
   duplicatePrevent: true,
   autoClose: true,
   overlayTitle: 'ÇEKİLİŞ',
+  winnerShowSec: 12,
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 18,
   fontColor: '#ffffff',
@@ -341,7 +371,11 @@ export const TRIVIA_DEFAULTS = {
   borderOpacity: 0.1,
   shadowColor: '#000000',
   shadowOpacity: 0.85,
-  soundEnabled: true
+  soundEnabled: true,
+  /** Doğru cevap gösterildikten kaç sn sonra kaybolsun (0 = kaybolmasın) */
+  hideDelaySec: 3,
+  /** Turnuva kürsüsü kaç sn ekranda kalsın (0 = kalsın) */
+  podiumHideSec: 8
 };
 
 
@@ -373,30 +407,6 @@ export const VIEWER_COUNTER_DEFAULTS = {
 };
 
 
-/** Şu an çalan şarkı kartı — tasarım, kapak, ekolayzer, renkler. */
-export const NOW_PLAYING_DEFAULTS = {
-  theme: 'base',
-  label: 'ŞU AN ÇALAN',
-  align: 'left',
-  fontFamily: 'Plus Jakarta Sans',
-  fontSize: 12,
-  textColor: '#ffffff',
-  accentColor: '#22d3ee',
-  accentColor2: '#34d399',
-  bgColor: '#000000',
-  bgOpacity: 0.85,
-  radius: 16,
-  paddingX: 14,
-  paddingY: 12,
-  maxWidth: 384,
-  coverSize: 48,
-  showCover: true,
-  showLabel: true,
-  showRequester: true,
-  showEqualizer: true,
-  marquee: false,
-  hideWhenIdle: true
-};
 
 /** Bağış Kupası — tema, kap boyutu, emoji setleri ve eşikler. */
 export const THE_CUP_DEFAULTS = {
@@ -425,7 +435,12 @@ export const THE_CUP_DEFAULTS = {
   showLabel: true,
   showCount: true,
   showGlare: true,
-  animateItems: true
+  animateItems: true,
+  /** Kupayı dolduran olaylar (karar sunucuda: modules/engagement/kupa.ts) */
+  fromTip: true,
+  fromSub: true,
+  fromGift: true,
+  fromKicks: true
 };
 
 /** Sabitlenmiş mesaj — tema, konum, otomatik gizleme. */
@@ -534,6 +549,14 @@ export const HYPE_TRAIN_DEFAULTS = {
   pointsTip: 10,
   pointsKicks: 1,
   pointsFollow: 5,
+  /** Treni besleyen olaylar (karar sunucuda: modules/hype/hype-math.ts) */
+  fromSub: true,
+  fromGift: true,
+  fromTip: true,
+  fromKicks: true,
+  fromFollow: false,
+  /** Kapalıysa tren yalnız panelden "Başlat" ile başlar */
+  autoStart: true,
   showTimer: true,
   showLevel: true,
   showPercent: true,
@@ -559,8 +582,9 @@ export const LYRICS_DEFAULTS = {
   paddingY: 20,
   maxWidth: 896,
   lineMs: 4500,
-  refreshSeconds: 12,
+  refreshSeconds: 5,
   idleText: '🎵 Müzik ritmini dinliyor...',
+  notFoundText: 'Bu şarkının sözleri bulunamadı',
   showTrack: true,
   showPrev: true,
   showNext: true,
@@ -589,7 +613,10 @@ export const KING_DEFAULTS = {
   showPoints: true,
   showReign: true,
   showTitle: true,
-  hideWhenEmpty: false
+  hideWhenEmpty: false,
+  /** Taht yalnız izleyiciler için: yayıncı tahta çıkamaz ve gösterilmez */
+  onlyViewers: true,
+  emptyText: 'Taht boş — !tahtikap <puan>'
 };
 
 /** JumpScare — varsayılan medya, süre ve tetikleme eşiği. */
@@ -694,6 +721,7 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'subscriber-goal': { ...GOAL_DEFAULTS, title: 'Abone Hedefi', type: 'sub', barColor: '#ec4899', target: 250, currency: '' },
   'kicks-goal': { ...GOAL_DEFAULTS, title: 'KICKs Hedefi', type: 'kicks', barColor: '#53fc18', target: 500, currency: 'KICK' },
   'emote-combo': EMOTE_COMBO_DEFAULTS,
+  'on-screen-emotes': KAPPAGEN_DEFAULTS,
   'event-labels': LABELS_DEFAULTS,
   polls: POLL_DEFAULTS,
   'wheel-of-fortune': WHEEL_DEFAULTS,
@@ -702,7 +730,6 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   subathon: SUBATHON_DEFAULTS,
   trivia: TRIVIA_DEFAULTS,
   'viewer-counter': VIEWER_COUNTER_DEFAULTS,
-  'now-playing': NOW_PLAYING_DEFAULTS,
   'the-cup': THE_CUP_DEFAULTS,
   'pinned-messages': PINNED_DEFAULTS,
   shoutout: SHOUTOUT_DEFAULTS,
@@ -716,3 +743,14 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'audio-player': AUDIO_PLAYER_DEFAULTS
 };
 
+
+/**
+ * Tek tuvaldeki hedef çubuğunun türü (yerleşim ayarı `goals.type`) → ayarları
+ * kullanılan hedef widget'ı. Stüdyo formu ve OBS çıktısı AYNI kimliği kullanır.
+ */
+export function hedefWidgetKimligi(tur?: unknown): string {
+  if (tur === 'sub') return 'subscriber-goal';
+  if (tur === 'kicks') return 'kicks-goal';
+  if (tur === 'tip' || tur === 'donation') return 'donation-goal';
+  return 'follower-goal';
+}

@@ -2,21 +2,26 @@
  * StreamAxT Bağış Kupası widget
  * Developed by AxthrowA
  *
- * Eski sürümde hiç ayarı yoktu: kap boyutu, renkler ve emoji setleri koda
- * gömülüydü, üstelik `payload.type === 'alert'` her uyarıda kupaya öğe
- * atıyordu (takip bile kupayı dolduruyordu). Artık olay türü ayrıştırılıyor,
- * eşikler (min. bağış / min. KICKs) uygulanıyor ve panelden "Kupayı boşalt"
- * için `cup_clear` yayını dinleniyor.
+ * Kupaya bağış, abone, hediye abonelik ve KICKs düşer; hangilerinin sayılacağı
+ * ve eşikler panelden seçilir, karar ve kalıcı durum SUNUCUDADIR
+ * (modules/engagement/kupa.ts): OBS sayfası yenilense de kupa dolu kalır,
+ * panelden "Kupayı sıfırla" ile boşaltılır.
+ *
+ * Öğeler eskiden flex satırlarına dizildiği için simetrik duruyordu. Artık her
+ * öğe rastgele bir yatay konuma düşer ve altındaki yığının üstüne, rastgele
+ * açıyla yerleşir. Konum öğe kimliğinden tohumlanır: yenilemede aynı kalır.
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { THE_CUP_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, yatay, emojiListesi, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
-interface DroppedItem {
+interface Oge {
   id: string;
-  emoji: string;
-  size: number;
+  tur: string;
+  /** Yeni düştü: yukarıdan düşme animasyonu */
+  yeni?: boolean;
 }
 
 export interface TheCupWidgetProps {
@@ -35,19 +40,59 @@ export function emojiSeti(
   return emojiListesi(s.emojiTip, ['🪙', '💰', '💵']);
 }
 
-/**
- * Olay kupaya düşmeli mi? Takip/raid/host kupayı doldurmaz; bağış ve KICKs
- * panelde verilen alt sınırın altındaysa da sayılmaz.
- */
-export function kupayaDuser(
-  tur: string,
-  tutar: number,
-  esik: { minTipAmount?: number; minKicks?: number }
-): boolean {
-  if (tur === 'tip') return Number(tutar || 0) >= Math.max(0, Number(esik.minTipAmount) || 0);
-  if (tur === 'kicks') return Number(tutar || 0) >= Math.max(0, Number(esik.minKicks) || 0);
-  return tur === 'sub' || tur === 'gift_sub' || tur === 'gift_tiktok';
+/** Dizeden kararlı sözde rastgele sayı üreteci (mulberry32) */
+export function tohumlu(metin: string): () => number {
+  let h = 2166136261;
+  for (let i = 0; i < metin.length; i++) h = Math.imul(h ^ metin.charCodeAt(i), 16777619);
+  return () => {
+    h = (h + 0x6d2b79f5) | 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
+
+export interface Yerlesim {
+  x: number;
+  /** Alttan uzaklık */
+  y: number;
+  boyut: number;
+  aci: number;
+  emoji: string;
+}
+
+/**
+ * Yığın yerleşimi: kupa tabanı sütunlara bölünür; her öğe rastgele bir x'e
+ * düşer ve kapladığı sütunların en yükseğinin üstüne (biraz iç içe) oturur.
+ */
+export function yigin(
+  ogeler: Array<{ id: string; tur: string }>,
+  genislik: number,
+  s: { itemSize?: number; itemSizeVary?: number } & Parameters<typeof emojiSeti>[1]
+): Yerlesim[] {
+  const SUTUN = 4;
+  const n = Math.max(1, Math.floor(genislik / SUTUN));
+  const yukseklik = new Array<number>(n).fill(0);
+  const taban = Math.max(8, Number(s.itemSize) || 24);
+  const oynak = Math.max(0, Number(s.itemSizeVary) || 0);
+  return ogeler.map((o) => {
+    const r = tohumlu(o.id);
+    const set = emojiSeti(o.tur, s);
+    const boyut = taban + Math.floor(r() * (oynak + 1));
+    const x = r() * Math.max(0, genislik - boyut);
+    const bas = Math.max(0, Math.floor(x / SUTUN));
+    const son = Math.min(n - 1, Math.ceil((x + boyut) / SUTUN));
+    let ust = 0;
+    for (let c = bas; c <= son; c++) ust = Math.max(ust, yukseklik[c]);
+    // Öğeler biraz iç içe geçer (yığın doğal görünsün)
+    const y = Math.max(0, ust - boyut * (0.15 + r() * 0.2));
+    for (let c = bas; c <= son; c++) yukseklik[c] = y + boyut * 0.8;
+    return { x, y, boyut, aci: Math.round((r() - 0.5) * 70), emoji: set[Math.floor(r() * set.length) % set.length] };
+  });
+}
+
+let sayac = 0;
+const yeniKimlik = () => `${Date.now().toString(36)}-${(sayac++).toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWidgetProps) {
   const s = useWidgetSettings('the-cup', THE_CUP_DEFAULTS);
@@ -55,70 +100,50 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
   const ayarRef = useRef(s);
   ayarRef.current = s;
 
-  const [items, setItems] = useState<DroppedItem[]>(
-    onizleme
-      ? ['🪙', '💎', '⭐', '🪙', '👑', '💎', '🎁', '🪙'].map((emoji, i) => ({
-          id: `o${i}`,
-          emoji,
-          size: 24 + (i % 3) * 2
-        }))
-      : []
+  const [ogeler, setOgeler] = useState<Oge[]>(
+    onizleme ? ['tip', 'kicks', 'sub', 'tip', 'gift_sub', 'kicks', 'tip', 'sub', 'tip', 'gift_sub'].map((tur, i) => ({ id: `o${i}`, tur })) : []
   );
-
-  const ekle = (tur: string) => {
-    const a = ayarRef.current;
-    const set = emojiSeti(tur, a);
-    const emoji = set[Math.floor(Math.random() * set.length)];
-    const taban = Math.max(8, Number(a.itemSize) || 24);
-    const oynak = Math.max(0, Number(a.itemSizeVary) || 0);
-    const tavan = Math.max(1, Number(a.maxItems) || 45);
-    setItems((prev) => [
-      ...prev.slice(-(tavan - 1)),
-      {
-        id: `${Date.now()}-${Math.random()}`,
-        emoji,
-        size: taban + Math.floor(Math.random() * (oynak + 1))
-      }
-    ]);
-  };
 
   useEffect(() => {
     if (onizleme) return;
-    const ws = new WebSocket(wsAdresi());
-
+    // Kalıcı durum: sayfa yenilense de kupa dolu kalır
+    const yukle = () =>
+      fetch('/api/cup')
+        .then((r) => r.json())
+        .then((d) => {
+          if (Array.isArray(d?.ogeler)) setOgeler(d.ogeler.map((tur: string, i: number) => ({ id: `k${i}`, tur })));
+        })
+        .catch(() => {});
+    void yukle();
+    const ws = new KaliciSoket(wsAdresi());
+    ws.onyenidenbaglandi = () => void yukle();
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-
         if (payload.type === 'cup_clear' || payload.type === 'the_cup_clear') {
-          setItems([]);
+          setOgeler([]);
           return;
         }
-
-        // YALNIZ `cup_drop` dinlenir. Sunucu destek olaylarında hem `alert`
-        // hem `cup_drop` yayınlıyor; ikisi birden dinlendiğinde tek bağış
-        // kupaya iki öğe atıyordu. Hangi olayın kupaya sayıldığına sunucu
-        // karar verir, eşikleri burada uygularız.
         if (payload.type !== 'cup_drop' && payload.type !== 'the_cup_drop') return;
-
+        // Hangi olayın kaç öğe düşüreceğine sunucu karar verir (kurallar, eşikler)
         const d = payload.data || {};
-        const tur = String(d.type || payload.tokenType || 'tip');
-        if (!kupayaDuser(tur, Number(d.amount || 0), ayarRef.current)) return;
-        const adet = tur === 'gift_sub' ? Math.min(20, Math.max(1, Number(d.count || 1))) : 1;
-        for (let i = 0; i < adet; i++) ekle(tur);
+        const adet = Math.min(20, Math.max(1, Number(d.adet) || 1));
+        const tur = String(d.type || 'tip');
+        const tavan = Math.max(5, Number(ayarRef.current.maxItems) || 45);
+        setOgeler((onceki) => [...onceki, ...Array.from({ length: adet }, () => ({ id: yeniKimlik(), tur, yeni: true }))].slice(-tavan));
       } catch {
         /* bozuk mesaj */
       }
     };
-
     return () => ws.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onizleme]);
 
   const tema = String(s.theme || 'glass');
   const genislik = Number(s.cupWidth) || 192;
   const yukseklik = Number(s.cupHeight) || 256;
   const kenar = Math.max(0, Number(s.borderWidth) || 0);
+  const ic = Math.max(20, genislik - kenar * 2 - 12);
+  const yerlesim = useMemo(() => yigin(ogeler, ic, s), [ogeler, ic, s]);
 
   const temaStili: Record<string, React.CSSProperties> = {
     glass: {
@@ -159,6 +184,7 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
       }
       style={{ justifyContent: yatay(s.align), fontFamily: s.fontFamily }}
     >
+      <style>{`@keyframes axt-kupa-dus { from { transform: translateY(-${yukseklik}px) rotate(var(--aci0)); opacity: .2 } 70% { opacity: 1 } to { transform: translateY(0) rotate(var(--aci)); } }`}</style>
       <div className="relative flex flex-col items-center">
         <div
           className="relative overflow-hidden"
@@ -182,16 +208,31 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
             />
           )}
 
-          <div className="absolute inset-0 flex flex-wrap-reverse content-start p-3 gap-1 overflow-hidden">
-            {items.map((item) => (
-              <span
-                key={item.id}
-                style={{ fontSize: `${item.size}px`, lineHeight: 1 }}
-                className={s.animateItems ? 'animate-bounce' : undefined}
-              >
-                {item.emoji}
-              </span>
-            ))}
+          <div className="absolute" style={{ left: 6, right: 6, bottom: 6, top: 0 }}>
+            {ogeler.map((o, i) => {
+              const y = yerlesim[i];
+              if (!y) return null;
+              return (
+                <span
+                  key={o.id}
+                  style={
+                    {
+                      position: 'absolute',
+                      left: y.x,
+                      bottom: y.y,
+                      fontSize: `${y.boyut}px`,
+                      lineHeight: 1,
+                      transform: `rotate(${y.aci}deg)`,
+                      '--aci': `${y.aci}deg`,
+                      '--aci0': `${-y.aci}deg`,
+                      animation: o.yeni && s.animateItems !== false ? 'axt-kupa-dus 750ms cubic-bezier(.45,.05,.75,1.2) both' : undefined
+                    } as React.CSSProperties
+                  }
+                >
+                  {y.emoji}
+                </span>
+              );
+            })}
           </div>
         </div>
 
@@ -207,7 +248,7 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
           >
             {s.showLabel && s.title}
             {s.showLabel && s.showCount ? ' ' : ''}
-            {s.showCount && `(${items.length} Öğe)`}
+            {s.showCount && `(${ogeler.length} Öğe)`}
           </div>
         )}
       </div>

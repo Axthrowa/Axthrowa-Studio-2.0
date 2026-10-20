@@ -14,9 +14,14 @@ import { kalkaniUygula } from '../modules/moderation/shield-enforce.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
 import { seyrekUyar } from './logger.js';
 import { aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
+import { sonMesajlar } from '../modules/moderation/son-mesajlar.js';
+import { SeslenmeSiniri, seslenmeAyikla } from '../modules/ai/seslenme.js';
+import { geminiCoHost } from '../modules/ai/gemini.js';
+import { toplulukMesaji } from '../modules/community/topluluk.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
+  private seslenmeSiniri = new SeslenmeSiniri();
 
   constructor() {
     this.setupListeners();
@@ -59,6 +64,17 @@ export class MessagePipeline {
     if (aktarimAcik && aktarimYankisiMi(aktarimBicimi, rawText)) {
       return;
     }
+
+    // !nuke / !vanish için son mesajlar (yayıncı, mod ve botun kendisi muaf)
+    sonMesajlar.ekle({
+      id: String(message.id || ''),
+      platform: message.platform,
+      kullanici: message.user.username,
+      gorunenAd: message.user.displayName || message.user.username,
+      metin: rawText,
+      zaman: Date.now(),
+      muaf: Boolean(message.user.isBroadcaster || message.user.isMod || message.user.isSelf)
+    });
 
     // Ignore known external chat-bot accounts so their output is not reprocessed
     const u = message.user.username.toLowerCase();
@@ -103,25 +119,11 @@ export class MessagePipeline {
     }
 
 
-    // 1. AutoMod
-    const violation = autoMod.checkMessage(message);
-    if (violation) {
-      // Eskiden burada SADECE sohbete uyari yaziliyordu; platformda hicbir
-      // eylem yapilmiyordu. Artik kural basina secilen eylem uygulanir
-      // (uyar / zaman asimi / mesaj sil), bypass rolleri gozetilir ve
-      // platform desteklemiyorsa uyariya dusulur.
-      await autoMod.ihlaliUygula(message, violation);
-      return;
-    }
-
-    // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin
-    // komut isleyicisinden ONCE bakilir.
-    if (puanDususu.katil(message.user.username, message.user.displayName, rawText)) {
-      return;
-    }
-
-    // 1.5 Bil Bakalım Live Question Vote Check
-    if (triviaEngine.getState().status === 'question_active') {
+    // 0.9 Bil Bakalım oyu — AutoMod'dan ÖNCE: "GALATASARAY", "NOBEL KİMYA" gibi
+    // büyük harfle yazılan doğru cevap eskiden oy yerine CAPS uyarısı alıyordu.
+    // Yalnız geçerli bir şık/seçenek metni kabul edilir (kara liste ve kalkan
+    // yukarıda zaten uygulandı), dolayısıyla moderasyon delinmez.
+    if (!message.user.isSelf && triviaEngine.getState().status === 'question_active') {
       const voteResult = triviaEngine.submitVote(
         {
           username: message.user.username,
@@ -134,6 +136,33 @@ export class MessagePipeline {
         // Vote registered and overlay updated in real time. Skip command execution for answer letters.
         return;
       }
+    }
+
+    // 1. AutoMod
+    const violation = autoMod.checkMessage(message);
+    if (violation) {
+      // Eskiden burada SADECE sohbete uyari yaziliyordu; platformda hicbir
+      // eylem yapilmiyordu. Artik kural basina secilen eylem uygulanir
+      // (uyar / zaman asimi / mesaj sil), bypass rolleri gozetilir ve
+      // platform desteklemiyorsa uyariya dusulur.
+      await autoMod.ihlaliUygula(message, violation);
+      return;
+    }
+
+    // 1.2 Topluluk: kappagen (overlay), emote bingo, emote piramidi.
+    // Yanıt varsa sohbete yazılır; mesajın geri kalan işlenişi sürer.
+    try {
+      for (const yanit of toplulukMesaji(message, (puan, kim) => economy.addPoints(kim, puan))) {
+        eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: yanit });
+      }
+    } catch (e) {
+      seyrekUyar('topluluk:mesaj', '[Topluluk] Mesaj işlenemedi', e);
+    }
+
+    // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin
+    // komut isleyicisinden ONCE bakilir.
+    if (puanDususu.katil(message.user.username, message.user.displayName, rawText)) {
+      return;
     }
 
     // 2. Chat Minigames Check (Live Trivia & Anagram unscramble answers)
@@ -156,6 +185,23 @@ export class MessagePipeline {
         message: commandReply
       });
       return;
+    }
+
+    // 3.5 Yapay zekâya seslenme: "@BotAdı soru" (ayar: ai_mention_enabled)
+    if (!message.user.isSelf && rawText.startsWith('@') && settingsCache.getBoolean('ai_mention_enabled', false)) {
+      const { platformManager } = await import('../platforms/manager.js');
+      const soru = seslenmeAyikla(rawText, platformManager.botKullaniciAdlari());
+      if (soru && this.seslenmeSiniri.izinVer(message.user.username)) {
+        const cevap = await geminiCoHost.ask(soru, message.user.displayName);
+        if (cevap?.trim()) {
+          eventBus.emitBotMessage({
+            platform: message.platform,
+            channel: message.channel,
+            message: `@${message.user.displayName} ${cevap}`
+          });
+        }
+        return;
+      }
     }
 
     // 3. TTS Trigger (e.g. if !tts or normal chat if configured)

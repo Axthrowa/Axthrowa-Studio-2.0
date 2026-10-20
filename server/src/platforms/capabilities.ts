@@ -35,7 +35,7 @@ export type OlayTuru =
   | 'stream_online'
   | 'stream_offline';
 
-export type Rol = 'everyone' | 'sub' | 'vip' | 'og' | 'mod' | 'broadcaster';
+export type Rol = 'everyone' | 'regular' | 'sub' | 'vip' | 'og' | 'mod' | 'broadcaster';
 
 export interface PlatformYetenekleri {
   sohbet: { oku: boolean; gonder: boolean };

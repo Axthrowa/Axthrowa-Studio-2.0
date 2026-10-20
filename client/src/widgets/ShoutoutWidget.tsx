@@ -12,6 +12,7 @@ import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SHOUTOUT_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, dikey, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 interface ShoutoutData {
   channel: string;
@@ -65,7 +66,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
       });
     }
 
-    const ws = new WebSocket(wsAdresi());
+    const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);

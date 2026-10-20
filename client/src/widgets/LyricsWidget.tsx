@@ -37,6 +37,14 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
   const [artist, setArtist] = useState(onizleme ? 'StreamAxT' : '');
   const [lines, setLines] = useState<LyricLine[]>(onizleme ? ORNEK : []);
   const [aktif, setAktif] = useState(0);
+  // Senkron: sunucunun verdiği ilerleme (ms) + örnekleme anı; aradaki süre eklenir
+  const [senkron, setSenkron] = useState<{ synced: boolean; progressMs: number | null; updatedAt: number | null; isPlaying: boolean }>({
+    synced: false,
+    progressMs: null,
+    updatedAt: null,
+    isPlaying: false
+  });
+  const [bulunamadi, setBulunamadi] = useState(false);
 
   useEffect(() => {
     if (onizleme) return;
@@ -47,7 +55,7 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
         const res = await fetch('/api/lyrics/current');
         if (!res.ok || iptal) return;
         const data = await res.json();
-        const yeniBaslik = data.title || 'Şarkı Sözleri';
+        const yeniBaslik = data.title || String(s.idleText || 'Şarkı Sözleri');
         setSongTitle((oncekiBaslik) => {
           // Parça değiştiyse satır sayacı başa döner.
           if (oncekiBaslik !== yeniBaslik) setAktif(0);
@@ -55,13 +63,21 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
         });
         setArtist(data.artist || '');
         setLines(Array.isArray(data.lines) ? data.lines : []);
+        setBulunamadi(Boolean(data.title) && data.bulundu === false);
+        setSenkron({
+          synced: Boolean(data.synced),
+          progressMs: typeof data.progressMs === 'number' ? data.progressMs : null,
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : null,
+          isPlaying: Boolean(data.isPlaying)
+        });
       } catch {
         /* sunucu yok */
       }
     };
 
     cek();
-    const t = setInterval(cek, Math.max(3, Number(s.refreshSeconds) || 12) * 1000);
+    // Parça değişimini çabuk yakalamak için en çok 5 sn'de bir (sözler sunucuda önbellekli)
+    const t = setInterval(cek, Math.min(5, Math.max(2, Number(s.refreshSeconds) || 5)) * 1000);
     return () => {
       iptal = true;
       clearInterval(t);
@@ -70,19 +86,36 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
 
   useEffect(() => {
     if (lines.length <= 1) return;
+    // Zaman damgalı söz + çaların ilerlemesi biliniyorsa: şarkıyla SENKRON
+    if (senkron.synced && senkron.progressMs !== null && senkron.updatedAt !== null) {
+      const hesapla = () => {
+        const gecen = senkron.isPlaying ? Date.now() - (senkron.updatedAt as number) : 0;
+        const konum = ((senkron.progressMs as number) + gecen) / 1000;
+        let i = 0;
+        for (let k = 0; k < lines.length; k++) {
+          if (lines[k].time <= konum) i = k;
+          else break;
+        }
+        setAktif(i);
+      };
+      hesapla();
+      const t = setInterval(hesapla, 250);
+      return () => clearInterval(t);
+    }
+    // İlerleme yoksa (istek kuyruğu / düz söz): sabit aralıkla döner
     const t = setInterval(
       () => setAktif((p) => (p + 1) % lines.length),
       Math.max(500, Number(s.lineMs) || 4500)
     );
     return () => clearInterval(t);
-  }, [lines, s.lineMs]);
+  }, [lines, s.lineMs, senkron]);
 
   const bos = lines.length === 0;
   if (bos && s.hideWhenIdle) return null;
 
   // Boş listede modulo NaN üretiyordu; artık güvenli okuma.
   const satir = (i: number) => (lines.length ? lines[((i % lines.length) + lines.length) % lines.length]?.text || '' : '');
-  const suAn = bos ? String(s.idleText) : satir(aktif);
+  const suAn = bos ? (bulunamadi ? String(s.notFoundText || 'Bu şarkının sözleri bulunamadı') : String(s.idleText)) : satir(aktif);
   const sonraki = bos ? '' : satir(aktif + 1);
   const onceki = bos ? '' : satir(aktif - 1);
 

@@ -30,6 +30,11 @@ const YTDLP_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/downlo
 const FFMPEG_URL: &str =
   "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
 
+/// Aynı sürümlerin yayımladığı SHA-256 listeleri (`<özet>  <dosya adı>` satırları).
+const YTDLP_OZET_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS";
+const FFMPEG_OZET_URL: &str =
+  "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/checksums.sha256";
+
 /// İlerleme satırlarını yt-dlp'nin diğer çıktısından ayırmak için ön ek.
 const PROGRESS_TAG: &str = "YYAILERLEME";
 /// Tamamlanan dosyanın yolunu taşıyan satırın ön eki.
@@ -218,8 +223,25 @@ fn path_uzerinde(ad: &str) -> Option<PathBuf> {
     .find(|p| p.is_file())
 }
 
-async fn dosya_indir(url: &str, hedef: &Path) -> anyhow::Result<()> {
+/// `sha256sum` biçimli listede `ad` dosyasının özeti (küçük harf onaltılık).
+fn ozet_bul(liste: &str, ad: &str) -> Option<String> {
+  liste.lines().find_map(|satir| {
+    let (ozet, dosya) = satir.trim().split_once(char::is_whitespace)?;
+    let dosya = dosya.trim().trim_start_matches('*');
+    (dosya == ad && ozet.len() == 64 && ozet.bytes().all(|b| b.is_ascii_hexdigit()))
+      .then(|| ozet.to_ascii_lowercase())
+  })
+}
+
+/// İndirir; SHA-256 özeti `ozet_url` listesindekiyle tutmazsa dosyayı siler ve hata döner.
+/// İndirilen exe/zip sonra ÇALIŞTIRILDIĞI için bozuk ya da değiştirilmiş dosya kurulmamalı.
+async fn dosya_indir(url: &str, ozet_url: &str, hedef: &Path) -> anyhow::Result<()> {
   use futures_util::StreamExt;
+  use sha2::{Digest, Sha256};
+
+  let ad = url.rsplit('/').next().unwrap_or_default();
+  let liste = reqwest::get(ozet_url).await?.error_for_status()?.text().await?;
+  let beklenen = ozet_bul(&liste, ad).ok_or_else(|| anyhow::anyhow!("{ad} için SHA-256 özeti bulunamadı"))?;
 
   let res = reqwest::get(url).await?.error_for_status()?;
   if let Some(dir) = hedef.parent() {
@@ -230,15 +252,23 @@ async fn dosya_indir(url: &str, hedef: &Path) -> anyhow::Result<()> {
   let gecici = hedef.with_extension("indiriliyor");
   let mut dosya = tokio::fs::File::create(&gecici).await?;
   let mut akis = res.bytes_stream();
+  let mut sha = Sha256::new();
   while let Some(parca) = akis.next().await {
     use tokio::io::AsyncWriteExt;
-    dosya.write_all(&parca?).await?;
+    let parca = parca?;
+    sha.update(&parca);
+    dosya.write_all(&parca).await?;
   }
   {
     use tokio::io::AsyncWriteExt;
     dosya.flush().await?;
   }
   drop(dosya);
+  let gelen: String = sha.finalize().iter().map(|b| format!("{b:02x}")).collect();
+  if gelen != beklenen {
+    let _ = std::fs::remove_file(&gecici);
+    anyhow::bail!("{ad} SHA-256 tutmadı (beklenen {beklenen}, gelen {gelen}) — dosya kurulmadı");
+  }
   std::fs::rename(&gecici, hedef)?;
   Ok(())
 }
@@ -267,7 +297,7 @@ async fn ytdlp_hazirla(root: &Path) -> anyhow::Result<Ytdlp> {
   if hedef.is_file() {
     return Ok(Ytdlp { yol: hedef, guncellenebilir: true });
   }
-  match dosya_indir(YTDLP_URL, &hedef).await {
+  match dosya_indir(YTDLP_URL, YTDLP_OZET_URL, &hedef).await {
     Ok(()) => Ok(Ytdlp { yol: hedef, guncellenebilir: true }),
     Err(e) => match path_uzerinde("yt-dlp.exe") {
       Some(p) => Ok(Ytdlp { yol: p, guncellenebilir: false }),
@@ -352,7 +382,7 @@ async fn ffmpeg_hazirla(root: &Path) -> Option<PathBuf> {
     return Some(p);
   }
   let zip = araclar_dizini(root).join("ffmpeg.zip");
-  dosya_indir(FFMPEG_URL, &zip).await.ok()?;
+  dosya_indir(FFMPEG_URL, FFMPEG_OZET_URL, &zip).await.ok()?;
   std::fs::create_dir_all(&kok).ok()?;
   // Windows 10 1803'ten beri bsdtar (`tar.exe`) sistemde hazır ve zip açıyor;
   // yalnızca bunun için ayrı bir arşiv bağımlılığı eklemeye değmez.
@@ -648,6 +678,17 @@ fn iptal_kontrol(state: &crate::AppState) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn ozet_listesinden_dogru_dosya_secilir() {
+    let a = "a".repeat(64);
+    let b = "B".repeat(64);
+    let liste = format!("{a}  yt-dlp\n{b}  yt-dlp.exe\nkisa  ffmpeg.zip\n{a} *ffmpeg.zip\n");
+    assert_eq!(ozet_bul(&liste, "yt-dlp.exe"), Some("b".repeat(64)));
+    assert_eq!(ozet_bul(&liste, "ffmpeg.zip"), Some(a.clone()));
+    assert_eq!(ozet_bul(&liste, "yok.exe"), None);
+    assert_eq!(ozet_bul("bozuk satir\n", "yt-dlp.exe"), None);
+  }
 
   #[test]
   fn youtube_id_yaygin_bicimleri_tanir() {

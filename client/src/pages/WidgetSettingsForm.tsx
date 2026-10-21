@@ -29,7 +29,8 @@ const LABELS: Record<string, string> = {
   highlightSpecial: 'Özel mesaj vurgusu', fadeMessages: 'Mesajlar kaybolsun', fadeTimeout: 'Kaybolma (sn)',
   smoothMask: 'Yumuşak maske', textShadow: 'Yazı gölgesi', transparentBg: 'Şeffaf arka plan',
   hideCommands: 'Komutları gizle', hideBots: 'Botları gizle', hideEmoteOnly: 'Sadece emote gizle',
-  ignoreList: 'Yoksay listesi', align: 'Hizalama', reverse: 'Ters sıra',
+  ignoreList: 'Yoksay listesi', align: 'Hizalama', reverse: 'Yeni mesajlar üstte',
+  messageSound: 'Yeni mesaj sesi', messageSoundVolume: 'Ses düzeyi',
   messageBgColor: 'Mesaj arka planı', messageBgOpacity: 'Mesaj opaklığı', highlightColor: 'Vurgu rengi',
   hideBroadcaster: 'Yayıncıyı gizle', title: 'Başlık', endingTitle: 'Bitiş başlığı', current: 'Mevcut',
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
@@ -141,6 +142,7 @@ const SECTIONS: Record<string, string> = {
   showAvatars: 'Düzen', highlightSpecial: 'Düzen', fadeMessages: 'Düzen', fadeTimeout: 'Düzen',
   hideCommands: 'Düzen', hideBots: 'Düzen', hideEmoteOnly: 'Düzen', ignoreList: 'Düzen', align: 'Düzen',
   reverse: 'Düzen', hideBroadcaster: 'Düzen', layout: 'Düzen', showRemaining: 'Düzen', showPercent: 'Düzen',
+  messageSound: 'Düzen', messageSoundVolume: 'Düzen',
   decimals: 'Düzen', prefix: 'Düzen', suffix: 'Düzen', height: 'Düzen', paddingX: 'Düzen',
   showVotes: 'Düzen', hideUntilEnd: 'Düzen', layoutMode: 'Düzen', queueEnabled: 'Gelişmiş',
   gapMs: 'Gelişmiş', ttsEnabled: 'Gelişmiş', ttsReadMessage: 'Gelişmiş', textEffect: 'Gelişmiş',
@@ -269,6 +271,10 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
 const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({ value, label }));
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
+  'chat-overlay': {
+    layout: tema(['column', 'Alt alta'], ['row', 'Yan yana (tek satır)']),
+    animation: [...ANIM_SECENEKLERI, { value: 'daktilo', label: 'Daktilo' }]
+  },
   'event-labels': {
     layout: tema(['row', 'Yan yana'], ['column', 'Alt alta']),
     animation: [...ANIM_SECENEKLERI, { value: 'marquee', label: 'Kayan yazı' }]

@@ -195,6 +195,17 @@ export class WebSocketHub {
       });
     });
 
+    // 1.0 Moderasyon: silinen ileti / yasaklanan kullanıcı / temizlenen sohbet
+    eventBus.on('chat_deleted', (veri: { platform: string; id: string }) => {
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_deleted', data: veri });
+    });
+    eventBus.on('chat_user_removed', (veri: { platform: string; username: string }) => {
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_user_removed', data: veri });
+    });
+    eventBus.on('chat_cleared', () => {
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
+    });
+
     // 1.1 Bot Message Event -> Forward as Chat Message to Dashboard & ChatBox Overlay
     eventBus.on('bot_message', (payload: BotMessagePayload) => {
       const botPlatform = payload.platform === 'all' ? 'kick' : payload.platform;

@@ -10,9 +10,33 @@ import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
 import { onizlemeKipi } from '../lib/widget-style.js';
+import { iletiCikar, iletiEkle } from '../lib/sohbetListesi.js';
+
+/** Yeni ileti sesi: dosya gerektirmeyen kısa bir "tık" (WebAudio). */
+let sesBaglami: AudioContext | null = null;
+function tikla(ses: number) {
+  try {
+    sesBaglami ??= new AudioContext();
+    const c = sesBaglami;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(Math.max(0, Math.min(1, ses)) * 0.3, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.12);
+    o.connect(g).connect(c.destination);
+    o.start();
+    o.stop(c.currentTime + 0.13);
+  } catch {
+    /* ses aygıtı yoksa sessiz geç */
+  }
+}
 
 interface OverlayMsg {
   id: string;
+  /** Platformun ileti kimliği (moderatör silince kaldırmak için) */
+  kaynakId?: string;
+  /** Küçük harf kullanıcı adı (yasaklanınca iletilerini kaldırmak için) */
+  kullanici?: string;
   platform: string;
   user: string;
   color: string;
@@ -45,8 +69,21 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   const islenen = useRef<unknown>(null);
 
   useEffect(() => {
-    if (!lastMessage || lastMessage.type !== 'chat') return;
-    if (islenen.current === lastMessage) return;
+    if (!lastMessage || islenen.current === lastMessage) return;
+    // Panelden/komutla sohbet temizlenince ya da moderatör iletiyi silince/kullanıcıyı
+    // yasaklayınca OBS katmanı da güncellenir (eskiden yalnız 'chat' dinleniyordu).
+    if (lastMessage.type === 'clear_chat') {
+      islenen.current = lastMessage;
+      setMessages([]);
+      return;
+    }
+    if (lastMessage.type === 'chat_deleted' || lastMessage.type === 'chat_user_removed') {
+      islenen.current = lastMessage;
+      const d = lastMessage.data || {};
+      setMessages((prev) => iletiCikar(prev, { platform: d.platform, id: d.id ? String(d.id) : undefined, kullanici: d.username }));
+      return;
+    }
+    if (lastMessage.type !== 'chat') return;
     islenen.current = lastMessage;
     const p = lastMessage.data || lastMessage.payload;
     // Ortak kara listedeki kullanıcının ve kalkana takılan mesaj yayında gösterilmez
@@ -80,6 +117,8 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     setMessages(prev => {
       const next: OverlayMsg = {
         id: `${Date.now()}-${Math.random()}`,
+        kaynakId: p.id ? String(p.id) : undefined,
+        kullanici: username || undefined,
         platform: p.platform,
         user: user?.displayName || user?.username || 'anon',
         color,
@@ -91,9 +130,9 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         special: Boolean(user?.isSub || user?.isMod || user?.isBroadcaster),
         created: Date.now()
       };
-      const list = s.reverse ? [next, ...prev] : [...prev, next];
-      return list.slice(-s.maxMessages);
+      return iletiEkle(prev, next, s.maxMessages);
     });
+    if (s.messageSound && !onizlemeKipi(props?.previewMode)) tikla(Number(s.messageSoundVolume) || 0.4);
   }, [lastMessage, s]);
 
   useEffect(() => {
@@ -106,20 +145,32 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   }, [s.fadeMessages, s.fadeTimeout]);
 
   const kaynak = onizlemeKipi(props?.previewMode) && messages.length === 0 ? ORNEK_MESAJLAR : messages;
+  // Liste eskiden yeniye; "yeni mesajlar üstte" yalnız çizimde ters çevirir
   const list = s.reverse ? [...kaynak].reverse() : kaynak;
+  const yanYana = s.layout === 'row';
   const msgBg = s.messageBgColor.length === 7
     ? `${s.messageBgColor}${Math.round(s.messageBgOpacity * 255).toString(16).padStart(2, '0')}`
     : 'transparent';
 
   return (
-    <div className="flex flex-col justify-end gap-1 p-4 h-full" style={{
+    <div className="flex gap-1 p-4 h-full" style={{
       fontFamily: s.fontFamily,
       gap: s.gap,
+      // Alt alta: yeni mesaj altta ise kutunun dibine, üstte ise tepesine dayanır.
+      // Yan yana: tek satır, en yeni sağda; eskiler soldan taşar.
+      flexDirection: yanYana ? 'row' : 'column',
+      justifyContent: yanYana ? 'flex-end' : s.reverse ? 'flex-start' : 'flex-end',
+      alignItems: yanYana ? 'center' : undefined,
+      overflow: 'hidden',
       background: s.transparentBg ? 'transparent' : '#0a0a0a',
-      maskImage: s.smoothMask ? 'linear-gradient(to bottom, transparent 0%, black 18%)' : undefined
+      maskImage: s.smoothMask
+        ? `linear-gradient(to ${yanYana ? 'right' : s.reverse ? 'top' : 'bottom'}, transparent 0%, black 18%)`
+        : undefined
     }}>
       {list.map(msg => (
         <div key={msg.id} className={`axt-anim-${s.animation} flex items-start`} style={{
+          flexShrink: 0,
+          whiteSpace: yanYana ? 'nowrap' : undefined,
           gap: 8,
           justifyContent: s.align === 'center' ? 'center' : s.align === 'right' ? 'flex-end' : 'flex-start',
           background: s.transparentBg ? 'transparent' : msgBg,

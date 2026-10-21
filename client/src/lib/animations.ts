@@ -158,3 +158,42 @@ export const METIN_EFEKTLERI = [
   { value: 'skew', label: 'Eğilme' },
   { value: 'elastic', label: 'Esneme' }
 ];
+
+/**
+ * Tüm ön ayarlar için `.axt-anim-<id>` giriş sınıfları.
+ *
+ * Sohbet, aktivite akışı, emote kombo, etkinlik etiketleri, çekiliş, hedef ve anket
+ * widget'ları `axt-anim-${ayar}` sınıfını kullanıyor; panel 38 ön ayar sunduğu hâlde
+ * CSS'te yalnız birkaç eski ad vardı — "Kayarak · sağdan" seçilince hiçbir şey olmuyordu.
+ * Sınıflar ön ayarların kendisinden üretilir; ek olarak sohbete özgü "daktilo".
+ */
+export function animasyonCss(sureMs = 450): string {
+  const satirlar: string[] = [];
+  for (const a of ANIM_ON_AYARLARI) {
+    if (a.id === 'none') {
+      satirlar.push('.axt-anim-none{animation:none}');
+      continue;
+    }
+    const from = `opacity:${a.from.opacity ?? 1};transform:${a.from.transform ?? 'none'}`;
+    satirlar.push(
+      `@keyframes axt-on-${a.id}{from{${from}}to{opacity:1;transform:none}}`,
+      `.axt-anim-${a.id}{animation:axt-on-${a.id} ${sureMs}ms ${a.easing || 'ease'} both}`
+    );
+  }
+  satirlar.push(
+    '@keyframes axt-on-daktilo{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}',
+    // "Hareketi azalt" burada uygulanmaz: katman İZLEYİCİYE gösterilir, yayın bilgisayarının
+    // ayarı (OBS tarayıcısı Windows'tan alabilir) yayındaki animasyonları kapatmamalı.
+    '.axt-anim-daktilo{animation:axt-on-daktilo 900ms steps(28,end) both}'
+  );
+  return satirlar.join('\n');
+}
+
+/** Sınıfları belgeye bir kez ekler (main.tsx). */
+export function animasyonStiliniEkle(): void {
+  if (typeof document === 'undefined' || document.getElementById('axt-anim-on-ayarlari')) return;
+  const el = document.createElement('style');
+  el.id = 'axt-anim-on-ayarlari';
+  el.textContent = animasyonCss();
+  document.head.appendChild(el);
+}

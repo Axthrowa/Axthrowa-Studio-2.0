@@ -346,12 +346,12 @@ server.listen(PORT, HOST, async () => {
   // bagisla da besleniyor).
   eventBus.on('sub', (p: any) => {
     const a = seviyeler.ayarOku();
-    if (!a.aktif) return;
+    if (!a.aktif || (p as any)?.isTest === true) return; // test uyarısı sahte kullanıcıya XP vermesin
     seviyeler.xpEkle(p?.username, p?.isGift ? a.hediyeAboneXp : a.aboneXp);
   });
   eventBus.on('tip', (p: any) => {
     const a = seviyeler.ayarOku();
-    if (!a.aktif || a.bagisXp <= 0) return;
+    if (!a.aktif || a.bagisXp <= 0 || (p as any)?.isTest === true) return;
     const adet = Math.floor(Math.max(0, Number(p?.amount) || 0) / Math.max(1, a.bagisBirimi));
     if (adet > 0) seviyeler.xpEkle(p?.username, adet * a.bagisXp);
   });

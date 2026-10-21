@@ -62,6 +62,8 @@ function tpl(template: string, vars: Record<string, any>) {
 }
 
 function announce(platform: string, channel: string | undefined, message: string) {
+  // Test uyarıları 'test' kanalıyla gelir: gerçek sohbete sahte olay duyurusu yazılmaz
+  if (channel === 'test') return;
   eventBus.emitBotMessage({ platform: platform as any, channel, message });
 }
 

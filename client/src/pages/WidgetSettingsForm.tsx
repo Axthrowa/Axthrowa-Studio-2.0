@@ -116,13 +116,13 @@ const LABELS: Record<string, string> = {
   fromKicks: 'KICKs sayılsın', fromFollow: 'Takipler sayılsın', autoStart: 'Olay gelince kendiliğinden başlasın',
   onlyViewers: 'Yalnız izleyiciler (yayıncı tahta çıkamaz/gösterilmez)', emptyText: 'Taht boşken yazı',
   labelFollow: 'Takipçi başlığı', labelSub: 'Abone başlığı', labelTip: 'Bağış başlığı', labelTop: 'En büyük bağış başlığı',
-  labelRaid: 'Raid başlığı', labelKicks: 'KICKs başlığı', emptyValue: 'Veri yokken', labelColor: 'Başlık rengi',
+  labelRaid: 'Raid başlığı', labelKicks: 'KICKs başlığı', labelFollowers: 'Takipçi sayısı başlığı', showFollowers: 'Takipçi sayısı göster', emptyValue: 'Veri yokken', labelColor: 'Başlık rengi',
   notFoundText: 'Söz bulunamayınca yazı'
 };
 
 const SECTIONS: Record<string, string> = {
   showFollow: 'Olaylar', showSub: 'Olaylar', showGiftSub: 'Olaylar', showTip: 'Olaylar', showRaid: 'Olaylar',
-  showHost: 'Olaylar', showKicks: 'Olaylar', showBits: 'Olaylar', showTop: 'Olaylar',
+  showHost: 'Olaylar', showKicks: 'Olaylar', showFollowers: 'Olaylar', showBits: 'Olaylar', showTop: 'Olaylar',
   templateFollow: 'Şablon', templateSub: 'Şablon', templateGiftSub: 'Şablon', templateTip: 'Şablon',
   templateRaid: 'Şablon', templateHost: 'Şablon', templateKicks: 'Şablon', template: 'Şablon',
   subTemplate: 'Şablon',
@@ -203,7 +203,7 @@ const SECTIONS: Record<string, string> = {
   fromTip: 'Olaylar', fromSub: 'Olaylar', fromGift: 'Olaylar', fromKicks: 'Olaylar', fromFollow: 'Olaylar',
   autoStart: 'Olaylar', onlyViewers: 'Genel', emptyText: 'Genel',
   labelFollow: 'Başlıklar', labelSub: 'Başlıklar', labelTip: 'Başlıklar', labelTop: 'Başlıklar', labelRaid: 'Başlıklar',
-  labelKicks: 'Başlıklar', emptyValue: 'Başlıklar', labelColor: 'Tipografi'
+  labelKicks: 'Başlıklar', labelFollowers: 'Başlıklar', emptyValue: 'Başlıklar', labelColor: 'Tipografi'
 };
 
 /**

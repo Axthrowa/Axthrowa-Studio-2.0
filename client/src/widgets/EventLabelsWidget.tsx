@@ -22,6 +22,8 @@ interface Veri {
   enBuyukBagis: { ad: string; tutar: number; birim: string } | null;
   sonRaid: { ad: string; izleyici: number } | null;
   sonKicks: { ad: string; tutar: number } | null;
+  /** Kick kanalının takipçi sayısı (sunucudan; yeni takipte +1) */
+  takipciSayisi?: number | null;
 }
 
 const BOS: Veri = { sonTakip: null, sonAbone: null, sonBagis: null, enBuyukBagis: null, sonRaid: null, sonKicks: null };
@@ -31,7 +33,8 @@ const ORNEK: Veri = {
   sonBagis: { ad: 'ProPlayer', tutar: 50, birim: 'TL' },
   enBuyukBagis: { ad: 'Can_99', tutar: 250, birim: 'TL' },
   sonRaid: { ad: 'YayinUstasi', izleyici: 42 },
-  sonKicks: { ad: 'Ece_Star', tutar: 100 }
+  sonKicks: { ad: 'Ece_Star', tutar: 100 },
+  takipciSayisi: 1234
 };
 
 const sayi = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
@@ -64,7 +67,7 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
       if (!ad) return;
       const tur = String(m.subType || '');
       setV((o) => {
-        if (tur === 'follow') return { ...o, sonTakip: ad };
+        if (tur === 'follow') return { ...o, sonTakip: ad, takipciSayisi: typeof o.takipciSayisi === 'number' ? o.takipciSayisi + 1 : o.takipciSayisi };
         if (tur === 'sub' || tur === 'gift_sub') return { ...o, sonAbone: ad };
         if (tur === 'tip') {
           const b = { ad, tutar: Number(d.amount) || 0, birim: String(d.currency || 'TL') };
@@ -85,6 +88,7 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
   if (s.showTip) parcalar.push({ anahtar: 't', baslik: s.labelTip, deger: v.sonBagis ? `${v.sonBagis.ad} (${sayi(v.sonBagis.tutar)} ${v.sonBagis.birim})` : bosDeger });
   if (s.showTop) parcalar.push({ anahtar: 'b', baslik: s.labelTop, deger: v.enBuyukBagis ? `${v.enBuyukBagis.ad} (${sayi(v.enBuyukBagis.tutar)} ${v.enBuyukBagis.birim})` : bosDeger });
   if (s.showRaid) parcalar.push({ anahtar: 'r', baslik: s.labelRaid, deger: v.sonRaid ? `${v.sonRaid.ad} (${v.sonRaid.izleyici} izleyici)` : bosDeger });
+  if (s.showFollowers) parcalar.push({ anahtar: 'n', baslik: s.labelFollowers, deger: typeof v.takipciSayisi === 'number' ? v.takipciSayisi.toLocaleString('tr-TR') : bosDeger });
   if (s.showKicks) parcalar.push({ anahtar: 'k', baslik: s.labelKicks, deger: v.sonKicks ? `${v.sonKicks.ad} (${v.sonKicks.tutar} KICKs)` : bosDeger });
 
   const bg = `${s.backgroundColor}${Math.round(Number(s.backgroundOpacity) * 255).toString(16).padStart(2, '0')}`;

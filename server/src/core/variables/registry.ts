@@ -151,9 +151,13 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       },
       { yazar: true, ornek: '$(setcategory $(query))' }
     ),
-    tanim('followers', 'channel', 'Takipçi sayısı', () => {
+    tanim('followers', 'channel', 'Takipçi sayısı', async () => {
+      // Eskiden kurulumdan beri kaydedilen takip olaylarını (testler dahil) sayıyordu
+      const { takipciSayisi } = await import('../../modules/widgets/takipci-sayisi.js');
+      const gercek = await takipciSayisi();
+      if (typeof gercek === 'number') return String(gercek);
       const r = db
-        .prepare("SELECT COUNT(*) c FROM stream_events WHERE event_type = 'follow'")
+        .prepare("SELECT COUNT(*) c FROM stream_events WHERE event_type = 'follow' AND (metadata IS NULL OR metadata NOT LIKE '%\"isTest\":true%')")
         .get() as { c: number };
       return String(r?.c ?? 0);
     }),

@@ -3,6 +3,7 @@ import { economy } from '../economy/economy.js';
 import { db } from '../../db/index.js';
 import { triviaEngine } from './trivia-engine.js';
 import { kelimeTuttuMu, serbestCevapDogruMu } from './cevap-eslestir.js';
+import { bahisOku } from './bahis.js';
 
 // --- TYPES ---
 type PlatformType = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo' | 'all';
@@ -203,15 +204,22 @@ export class GamesEngine {
     };
   }
 
+  /** İptal edilen lobide katılırken çekilen bahisleri geri verir. */
+  private bahisleriIadeEt(katilimcilar: Map<string, { amount: number }>) {
+    for (const [ad, k] of katilimcilar) economy.addPoints(ad, k.amount);
+  }
+
   cancelLobby(type: 'heist' | 'race' | 'trivia' | 'anagram'): boolean {
     if (type === 'heist' && this.activeHeist) {
       if (this.activeHeist.timer) clearTimeout(this.activeHeist.timer);
+      this.bahisleriIadeEt(this.activeHeist.participants);
       this.activeHeist = null;
       eventBus.emitBotMessage({ platform: 'all', message: '❌ Aktif banka soygunu yayıncı tarafından iptal edildi.' });
       return true;
     }
     if (type === 'race' && this.activeRace) {
       if (this.activeRace.timer) clearTimeout(this.activeRace.timer);
+      this.bahisleriIadeEt(this.activeRace.participants);
       this.activeRace = null;
       eventBus.emitBotMessage({ platform: 'all', message: '❌ Aktif sokak yarışı yayıncı tarafından iptal edildi.' });
       return true;
@@ -269,38 +277,28 @@ export class GamesEngine {
       return `@${message.user.displayName}, Banka Soygunu şu anda devre dışı bırakılmış. ⏸️`;
     }
     const user = economy.getUser(message.platform, message.user.username, message.user.displayName);
-    const amountStr = args[0]?.toLowerCase();
-
-    let amount = 50;
-    if (amountStr === 'hepsi' || amountStr === 'all') {
-      amount = Math.max(10, user.points);
-    } else if (amountStr) {
-      amount = parseInt(amountStr, 10);
-    }
-
-    if (isNaN(amount) || amount <= 0) {
-      return `@${message.user.displayName}, soygun için miktar belirlemelisin! Örnek: !soygun 50 veya !soygun hepsi`;
-    }
-
-    if (amount < (this.settings.heist.minBet || 20)) {
-      return `@${message.user.displayName}, minimum soygun bahsi: ${this.settings.heist.minBet || 20} Puan!`;
-    }
-    if (amount > (this.settings.heist.maxBet || 5000)) {
-      return `@${message.user.displayName}, maksimum soygun bahsi: ${this.settings.heist.maxBet || 5000} Puan!`;
-    }
-
-    if (user.points < amount) {
-      return `@${message.user.displayName}, yeterli puanın yok! Bakiyen: ${user.points} 💰`;
-    }
+    const bahis = bahisOku(args[0], user.points, {
+      kisi: message.user.displayName,
+      ornek: 'soygun için miktar belirlemelisin! Örnek: !soygun 50 veya !soygun hepsi',
+      ad: 'soygun bahsi',
+      varsayilan: 50,
+      min: this.settings.heist.minBet || 20,
+      max: this.settings.heist.maxBet || 5000,
+      hepsiEnAz: 10
+    });
+    if ('hata' in bahis) return bahis.hata;
+    const amount = bahis.miktar;
 
     const username = message.user.username.toLowerCase();
+    if (this.activeHeist?.participants.has(username)) {
+      return `@${message.user.displayName}, zaten bu soygun çetesindesin! Hazırda bekle! 🥷`;
+    }
+    // Bahis katılırken çekilir: sonuçta çekilseydi, bekleme sırasında puanını harcayan
+    // izleyici kaybedince bakiye 0'da durur ve hiçbir şey kaybetmezdi.
+    economy.removePoints(username, amount);
 
     // If heist is already running in countdown
     if (this.activeHeist) {
-      if (this.activeHeist.participants.has(username)) {
-        return `@${message.user.displayName}, zaten bu soygun çetesindesin! Hazırda bekle! 🥷`;
-      }
-
       this.activeHeist.participants.set(username, { displayName: message.user.displayName, amount });
       const totalCount = this.activeHeist.participants.size;
       return `🥷 @${message.user.displayName}, ${amount} puan ile soygun çetesine katıldı! (Toplam: ${totalCount} Kişi) Katılmak için: !soygun <miktar>`;
@@ -346,10 +344,10 @@ export class GamesEngine {
       const survived = Math.random() < successRate;
       if (survived) {
         const winAmount = Math.round(info.amount * target.multiplier);
-        economy.addPoints(uname, winAmount);
+        // Bahis katılırken çekildi: geri ver + kazanç
+        economy.addPoints(uname, info.amount + winAmount);
         winners.push(`@${info.displayName} (+${winAmount})`);
       } else {
-        economy.removePoints(uname, info.amount);
         losers.push(`@${info.displayName}`);
       }
     }
@@ -378,36 +376,26 @@ export class GamesEngine {
       return `@${message.user.displayName}, Sokak Yarışı şu anda devre dışı bırakılmış. ⏸️`;
     }
     const user = economy.getUser(message.platform, message.user.username, message.user.displayName);
-    const amountStr = args[0]?.toLowerCase();
-
-    let amount = 50;
-    if (amountStr === 'hepsi' || amountStr === 'all') {
-      amount = Math.max(10, user.points);
-    } else if (amountStr) {
-      amount = parseInt(amountStr, 10);
-    }
-
-    if (isNaN(amount) || amount <= 0) {
-      return `@${message.user.displayName}, yarışa katılmak için bahis belirle! Örnek: !yaris 50`;
-    }
-
-    if (amount < (this.settings.race.minBet || 20)) {
-      return `@${message.user.displayName}, minimum yarış bahsi: ${this.settings.race.minBet || 20} Puan!`;
-    }
-    if (amount > (this.settings.race.maxBet || 5000)) {
-      return `@${message.user.displayName}, maksimum yarış bahsi: ${this.settings.race.maxBet || 5000} Puan!`;
-    }
-
-    if (user.points < amount) {
-      return `@${message.user.displayName}, yeterli puanın yok! Bakiyen: ${user.points} 💰`;
-    }
+    const bahis = bahisOku(args[0], user.points, {
+      kisi: message.user.displayName,
+      ornek: 'yarışa katılmak için bahis belirle! Örnek: !yaris 50',
+      ad: 'yarış bahsi',
+      varsayilan: 50,
+      min: this.settings.race.minBet || 20,
+      max: this.settings.race.maxBet || 5000,
+      hepsiEnAz: 10
+    });
+    if ('hata' in bahis) return bahis.hata;
+    const amount = bahis.miktar;
 
     const username = message.user.username.toLowerCase();
+    if (this.activeRace?.participants.has(username)) {
+      return `@${message.user.displayName}, zaten yarış çizgisindesin! Gaz pedalını hazırla! 🏎️`;
+    }
+    // Bahis katılırken çekilir (bkz. soygun); ödül havuzu gerçekten çekilen puanlardan oluşur.
+    economy.removePoints(username, amount);
 
     if (this.activeRace) {
-      if (this.activeRace.participants.has(username)) {
-        return `@${message.user.displayName}, zaten yarış çizgisindesin! Gaz pedalını hazırla! 🏎️`;
-      }
       this.activeRace.participants.set(username, { displayName: message.user.displayName, amount });
       return `🏁 @${message.user.displayName} ${amount} puan ile piste çıktı! (Toplam: ${this.activeRace.participants.size} Yarışçı) Katılmak için: !yaris <miktar>`;
     }
@@ -443,14 +431,14 @@ export class GamesEngine {
       const solo = drivers[0];
       const win = Math.random() >= 0.45;
       if (win) {
-        economy.addPoints(solo.username, solo.amount);
+        // Bahis katılırken çekildi: geri ver + aynı miktar kazanç
+        economy.addPoints(solo.username, solo.amount * 2);
         eventBus.emitBotMessage({
           platform: race.platform,
           channel: race.channel,
           message: `🏎️💨 @${solo.displayName} pist rekorunu kırdı ve yarışı 1. bitirdi! +${solo.amount} Puan kazandı! 🏆`
         });
       } else {
-        economy.removePoints(solo.username, solo.amount);
         eventBus.emitBotMessage({
           platform: race.platform,
           channel: race.channel,
@@ -473,9 +461,7 @@ export class GamesEngine {
     const prize1 = Math.round(totalPool * 0.65);
     const prize2 = Math.round(totalPool * 0.35);
 
-    for (const d of drivers) {
-      economy.removePoints(d.username, d.amount);
-    }
+    // Bahisler katılırken çekildi; havuz yalnız dağıtılır.
     economy.addPoints(first.username, prize1);
     economy.addPoints(second.username, prize2);
 
@@ -715,27 +701,15 @@ export class GamesEngine {
 
     const normalizedChoice = choice === 'yazı' ? 'yazi' : choice;
 
-    let amount = 50;
-    if (amountStr === 'hepsi' || amountStr === 'all') {
-      amount = user.points;
-    } else if (amountStr) {
-      amount = parseInt(amountStr, 10);
-    }
-
-    if (isNaN(amount) || amount <= 0) {
-      return `@${message.user.displayName}, lütfen geçerli bir bahis gir! Örnek: !yazitura tura 50`;
-    }
-
-    if (amount < (this.settings.coinflip.minBet || 10)) {
-      return `@${message.user.displayName}, minimum bahis: ${this.settings.coinflip.minBet || 10} Puan!`;
-    }
-    if (amount > (this.settings.coinflip.maxBet || 2500)) {
-      return `@${message.user.displayName}, maksimum bahis: ${this.settings.coinflip.maxBet || 2500} Puan!`;
-    }
-
-    if (user.points < amount) {
-      return `@${message.user.displayName}, yeterli puanın yok! Bakiyen: ${user.points} 💰`;
-    }
+    const bahis = bahisOku(amountStr, user.points, {
+      kisi: message.user.displayName,
+      ornek: 'lütfen geçerli bir bahis gir! Örnek: !yazitura tura 50',
+      varsayilan: 50,
+      min: this.settings.coinflip.minBet || 10,
+      max: this.settings.coinflip.maxBet || 2500
+    });
+    if ('hata' in bahis) return bahis.hata;
+    const amount = bahis.miktar;
 
     const outcome = Math.random() >= 0.5 ? 'yazi' : 'tura';
     const won = outcome === normalizedChoice;
@@ -757,29 +731,16 @@ export class GamesEngine {
       return `@${message.user.displayName}, Zar oyunu şu anda devre dışı bırakılmış. ⏸️`;
     }
     const user = economy.getUser(message.platform, message.user.username, message.user.displayName);
-    const amountStr = args[0]?.toLowerCase();
-
-    let amount = 50;
-    if (amountStr === 'hepsi' || amountStr === 'all') {
-      amount = user.points;
-    } else if (amountStr) {
-      amount = parseInt(amountStr, 10);
-    }
-
-    if (isNaN(amount) || amount <= 0) {
-      return `@${message.user.displayName}, zar bahsi için miktar belirle! Örnek: !zar 50`;
-    }
-
-    if (amount < (this.settings.dice.minBet || 10)) {
-      return `@${message.user.displayName}, minimum zar bahsi: ${this.settings.dice.minBet || 10} Puan!`;
-    }
-    if (amount > (this.settings.dice.maxBet || 2500)) {
-      return `@${message.user.displayName}, maksimum zar bahsi: ${this.settings.dice.maxBet || 2500} Puan!`;
-    }
-
-    if (user.points < amount) {
-      return `@${message.user.displayName}, yeterli puanın yok! Bakiyen: ${user.points} 💰`;
-    }
+    const bahis = bahisOku(args[0], user.points, {
+      kisi: message.user.displayName,
+      ornek: 'zar bahsi için miktar belirle! Örnek: !zar 50',
+      ad: 'zar bahsi',
+      varsayilan: 50,
+      min: this.settings.dice.minBet || 10,
+      max: this.settings.dice.maxBet || 2500
+    });
+    if ('hata' in bahis) return bahis.hata;
+    const amount = bahis.miktar;
 
     const userD1 = Math.floor(Math.random() * 6) + 1;
     const userD2 = Math.floor(Math.random() * 6) + 1;

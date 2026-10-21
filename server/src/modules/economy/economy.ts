@@ -3,6 +3,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { ttsEngine } from '../tts/tts.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { bahisOku } from '../games/bahis.js';
 
 interface ActiveDuel {
   challenger: string;
@@ -270,6 +271,33 @@ export class EconomyEngine {
   }
 
   /**
+   * Tabloyu doğrudan değiştiren toplu işlem (ör. puan sıfırlama) için: önce bellektekileri
+   * yazar, işlemi çalıştırır, sonra önbelleği boşaltır. Yoksa sonraki toplu yazım eski
+   * bakiyeleri geri yazıp işlemi sessizce geri alıyordu.
+   */
+  tabloyuDegistir(islem: () => void) {
+    this.flushAll();
+    islem();
+    this.userCache.clear();
+  }
+
+  /**
+   * Market talebinin durumunu değiştirir; iadede puanı önbellek üzerinden geri verir
+   * (doğrudan SQL ile verilen iade, sonraki toplu yazımda önbellekteki eski bakiyeyle eziliyordu).
+   */
+  talepDurumu(id: string, status: string): { ok: true } | { ok: false; kod: number; hata: string } {
+    if (status !== 'completed' && status !== 'refunded') {
+      return { ok: false, kod: 400, hata: 'Durum yalnız completed ya da refunded olabilir' };
+    }
+    const item = db.prepare('SELECT * FROM loyalty_redemptions WHERE id = ?').get(id) as any;
+    if (!item) return { ok: false, kod: 404, hata: 'Talep bulunamadı' };
+    if (item.status === 'refunded') return { ok: false, kod: 409, hata: 'Talep zaten iade edildi' };
+    if (status === 'refunded') this.addPoints(String(item.username), Number(item.cost) || 0);
+    db.prepare('UPDATE loyalty_redemptions SET status = ? WHERE id = ?').run(status, id);
+    return { ok: true };
+  }
+
+  /**
    * Yayıncının elle puan vermesi/alması. Dönen değer yeni bakiye.
    * Yetki denetimi komut katmanında yapılır.
    */
@@ -410,22 +438,12 @@ export class EconomyEngine {
 
   handleRoulette(message: ChatMessagePayload, args: string[]): string {
     const user = this.getUser(message.platform, message.user.username, message.user.displayName);
-    const amountStr = args[0]?.toLowerCase();
-
-    let amount = 0;
-    if (amountStr === 'hepsi' || amountStr === 'all') {
-      amount = user.points;
-    } else {
-      amount = parseInt(amountStr, 10);
-    }
-
-    if (isNaN(amount) || amount <= 0) {
-      return `@${message.user.displayName}, geçerli bir bahis miktarı girmelisin! Örnek: !rulet 50 veya !rulet hepsi`;
-    }
-
-    if (user.points < amount) {
-      return `@${message.user.displayName}, yeterli puanın yok! Bakiyen: ${user.points}`;
-    }
+    const bahis = bahisOku(args[0], user.points, {
+      kisi: message.user.displayName,
+      ornek: 'geçerli bir bahis miktarı girmelisin! Örnek: !rulet 50 veya !rulet hepsi'
+    });
+    if ('hata' in bahis) return bahis.hata;
+    const amount = bahis.miktar;
 
     const won = Math.random() >= 0.5;
     if (won) {
@@ -502,6 +520,16 @@ export class EconomyEngine {
 
     if (this.activeDuels.has(reverseKey)) {
       const duel = this.activeDuels.get(reverseKey)!;
+      // Bakiyeler DÜELLONUN miktarıyla denetlenir: yukarıdaki denetim kabul edenin yazdığı
+      // miktarla yapılıyordu; "!duello @x 1" ile 5000'lik düello kabul edilip kaybedince
+      // bakiye 0'da duruyordu (bedava bahis).
+      if (this.getUserPoints(message.user.username) < duel.amount) {
+        return `@${message.user.displayName}, bu düello ${duel.amount} puanlık; yeterli puanın yok!`;
+      }
+      if (this.getUserPoints(duel.challenger) < duel.amount) {
+        this.activeDuels.delete(reverseKey);
+        return `@${message.user.displayName}, @${duel.challenger} artık ${duel.amount} puana sahip değil; düello iptal.`;
+      }
       this.activeDuels.delete(reverseKey);
 
       const challengerWins = Math.random() >= 0.5;

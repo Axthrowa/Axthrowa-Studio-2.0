@@ -125,22 +125,8 @@ router.get('/economy/redemptions', (req: Request, res: Response) => {
 router.post('/economy/redemptions/:id/status', (req: Request, res: Response) => {
   const id = String(req.params.id);
   const status = String(req.body.status || ''); // 'completed' | 'refunded'
-
-  const item = db.prepare('SELECT * FROM loyalty_redemptions WHERE id = ?').get(id) as any;
-  if (!item) {
-    return res.status(404).json({ success: false, error: 'Talep bulunamadı' });
-  }
-
-  if (status === 'refunded' && item.status !== 'refunded') {
-    // Refund points to user
-    db.prepare(`
-      UPDATE economy 
-      SET points = points + ? 
-      WHERE platform = ? AND LOWER(username) = LOWER(?)
-    `).run(Number(item.cost) || 0, String(item.platform), String(item.username));
-  }
-
-  db.prepare('UPDATE loyalty_redemptions SET status = ? WHERE id = ?').run(status, id);
+  const sonuc = economyService.talepDurumu(id, status);
+  if (!sonuc.ok) return res.status(sonuc.kod).json({ success: false, error: sonuc.hata });
 
   wsHub.broadcastTo(['all', 'dashboard'], {
     type: 'loyalty_redemption_updated',

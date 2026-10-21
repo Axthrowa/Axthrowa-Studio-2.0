@@ -103,6 +103,10 @@ pub async fn resolve_channels(state: &AppState) -> ChannelConfig {
 
 pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()> {
   let channel_id = default_channel_id(&state.db).await?;
+  // Bot sekmesi StreamAxT: eski botun filtre (Kick timeout/ban), puan, oyun, market (!buy →
+  // ekranda uyarı), mod komutları ve özel komutları YALNIZ `YYA_LEGACY_BOT=1` iken çalışır.
+  // Yanıtlar zaten susturulmuştu ama bu yan etkiler görünmeden sürüyordu.
+  let eski_bot = legacy_replies_enabled();
 
   if msg.kind == "chat" {
     log_chat(&state, &msg.platform, &msg.user_name, &msg.text);
@@ -119,7 +123,7 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
   .await?;
 
   // 1) Moderasyon — ihlalde uyarı/timeout/ban + pipeline kes
-  if msg.kind == "chat" {
+  if msg.kind == "chat" && eski_bot {
     if let Some(hit) = check_filters(&state, &msg).await? {
       let _ = send_reply(&state, &msg, &hit.reply).await;
       // chat overlay'e silindi işareti
@@ -152,7 +156,7 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
     if msg.is_sub && settings.sub_multiplier > 1.0 {
       pts = ((pts as f64) * settings.sub_multiplier).round() as i64;
     }
-    if pts != 0 {
+    if pts != 0 && eski_bot {
       let _ = adjust_loyalty(&state.db, &msg.user_key, pts, "chat_message").await;
     }
     let now = chrono_now();
@@ -180,7 +184,9 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
     .bind(&channel_id)
     .execute(&state.db)
     .await;
-    if let Ok(settings) = get_bot_settings(&state.db).await {
+    if !eski_bot {
+      // karşılama yanıtı yalnız eski botta
+    } else if let Ok(settings) = get_bot_settings(&state.db).await {
       let msgs: i64 = sqlx::query_scalar(
         "SELECT messages FROM loyalty_users WHERE channel_id = ? AND user_key = ?",
       )
@@ -324,17 +330,19 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
       settings.prefix.clone()
     };
 
-    if let Some(reply) = try_handle_mod_commands(&state, &msg, &prefix).await? {
-      send_reply(&state, &msg, &reply).await?;
-      return Ok(());
-    }
-    if let Some(reply) = try_handle_game(&state, &msg, &prefix).await? {
-      send_reply(&state, &msg, &reply).await?;
-      return Ok(());
-    }
-    if let Some(reply) = try_handle_shop(&state, &msg, &prefix).await? {
-      send_reply(&state, &msg, &reply).await?;
-      return Ok(());
+    if eski_bot {
+      if let Some(reply) = try_handle_mod_commands(&state, &msg, &prefix).await? {
+        send_reply(&state, &msg, &reply).await?;
+        return Ok(());
+      }
+      if let Some(reply) = try_handle_game(&state, &msg, &prefix).await? {
+        send_reply(&state, &msg, &reply).await?;
+        return Ok(());
+      }
+      if let Some(reply) = try_handle_shop(&state, &msg, &prefix).await? {
+        send_reply(&state, &msg, &reply).await?;
+        return Ok(());
+      }
     }
     // Widget runtime: !oy / !katil / !sr (extras_json.runtime_commands ile kapatılabilir)
     if let Some(reply) = crate::server::runtime_api::handle_runtime_chat(
@@ -347,6 +355,9 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
     .await
     {
       send_reply(&state, &msg, &reply).await?;
+      return Ok(());
+    }
+    if !eski_bot {
       return Ok(());
     }
     let mut vars = crate::bot::chatbot::CommandTemplateVars::from_state(&state);

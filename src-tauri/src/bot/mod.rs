@@ -44,10 +44,15 @@ pub fn spawn_bot_runtime(state: AppState) {
   tauri::async_runtime::spawn(async move {
     bot_supervisor(st).await;
   });
-  let st2 = state.clone();
-  tauri::async_runtime::spawn(async move {
-    loyalty_tick_loop(st2).await;
-  });
+  // İzleme puanı ve zamanlayıcılar yalnız eski botta (bkz. pipeline::legacy_replies_enabled):
+  // StreamAxT kendi zamanlayıcılarını ve puanlarını yürütür.
+  let eski_bot = pipeline::legacy_replies_enabled();
+  if eski_bot {
+    let st2 = state.clone();
+    tauri::async_runtime::spawn(async move {
+      loyalty_tick_loop(st2).await;
+    });
+  }
   // Kick chat: kayıtlı slug + token varsa tarayıcı girişi olmadan bağlan
   let st3 = state.clone();
   tauri::async_runtime::spawn(async move {
@@ -63,10 +68,12 @@ pub fn spawn_bot_runtime(state: AppState) {
     }
   });
   // Zamanlayıcılar: tablo ve panel vardı ama satırları çalıştıran döngü yoktu.
-  let st_timers = state.clone();
-  tauri::async_runtime::spawn(async move {
-    timers::timer_tick_loop(st_timers).await;
-  });
+  if eski_bot {
+    let st_timers = state.clone();
+    tauri::async_runtime::spawn(async move {
+      timers::timer_tick_loop(st_timers).await;
+    });
+  }
   let st4 = state.clone();
   tauri::async_runtime::spawn(async move {
     tokio::time::sleep(Duration::from_millis(350)).await;

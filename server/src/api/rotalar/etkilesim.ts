@@ -38,13 +38,14 @@ router.get('/giveaways', (req: Request, res: Response) => {
 });
 
 router.post('/giveaways/create', (req: Request, res: Response) => {
-  const { title, keyword = '!katil', subBonusMultiplier = 2.0, costPoints = 0, durationMinutes = 10, winnerCount = 1, maxEntries = 0, followerOnly = false, subOnly = false, minWatchMinutes = 0 } = req.body;
+  const { title, keyword = '!katil', subBonusMultiplier = 2.0, costPoints = 0, durationMinutes = 10, winnerCount = 1, maxEntries = 0, subOnly = false, minWatchMinutes = 0 } = req.body;
   const created = giveaway.createGiveaway(title, keyword, subBonusMultiplier, costPoints);
   let uyari: string | undefined;
   if (created?.id) {
     try {
       db.prepare('UPDATE giveaways SET duration_minutes=?, winner_count=?, max_entries=?, follower_only=?, sub_only=?, min_watch_minutes=? WHERE id=?')
-        .run(durationMinutes, winnerCount, maxEntries, followerOnly ? 1 : 0, subOnly ? 1 : 0, minWatchMinutes, created.id);
+        // "Yalnız takipçi" yok: Kick sohbet iletisi takip durumunu taşımaz, doğrulanamazdı (sütun 0 kalır)
+        .run(durationMinutes, winnerCount, maxEntries, 0, subOnly ? 1 : 0, minWatchMinutes, created.id);
     } catch (e) {
       // Eskiden sessizdi: süre, kazanan sayısı ve katılım şartları kaybolur,
       // çekiliş varsayılanlarla açılırdı — yayıncı fark etmezdi.

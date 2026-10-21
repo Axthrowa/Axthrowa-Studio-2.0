@@ -4,10 +4,33 @@ import { ChatMessagePayload } from '../../core/event-bus.js';
 import { economy } from '../economy/economy.js';
 
 export interface GiveawayWinner {
+  /** Tüm kazananlar virgülle (eski istemciler tek ad bekliyordu; tek kazananda aynı) */
   winner: string;
+  winners: string[];
   platform: string;
   totalTickets: number;
   participantsCount: number;
+}
+
+/** Katılımın kapandığı an (ms); süre yoksa null. */
+export function katilimBitisi(g: { created_at?: number; duration_minutes?: number }): number | null {
+  const dk = Number(g?.duration_minutes) || 0;
+  return dk > 0 && Number(g?.created_at) ? Number(g.created_at) + dk * 60_000 : null;
+}
+
+/** Bilet ağırlıklı, tekrarsız `adet` kazanan (katılımcıdan fazlası istenirse hepsi). */
+export function kazananlariSec<T extends { tickets?: number }>(katilimcilar: T[], adet: number, rastgele = Math.random): T[] {
+  const havuz = katilimcilar.map((k) => ({ k, b: Math.max(1, Number(k.tickets) || 1) }));
+  const sonuc: T[] = [];
+  const n = Math.min(Math.max(1, Math.floor(adet)), havuz.length);
+  while (sonuc.length < n) {
+    const toplam = havuz.reduce((t, x) => t + x.b, 0);
+    let r = rastgele() * toplam;
+    const i = Math.max(0, havuz.findIndex((x) => (r -= x.b) < 0));
+    sonuc.push(havuz[i].k);
+    havuz.splice(i, 1);
+  }
+  return sonuc;
 }
 
 export class GiveawayEngine {
@@ -40,6 +63,13 @@ export class GiveawayEngine {
       return `@${message.user.displayName}, zaten bu çekilişe katıldın! 🎟️`;
     }
 
+    // Katılım süresi (dk): dolunca yeni katılım alınmaz; çekiliş açık kalır ki kazanan çekilebilsin.
+    // Eskiden ayar kaydediliyor ama hiç okunmuyordu — saatler sonra da katılınabiliyordu.
+    const bitis = katilimBitisi(active);
+    if (bitis && Date.now() > bitis) {
+      return `@${message.user.displayName}, "${active.title}" çekilişinin katılım süresi doldu.`;
+    }
+
     if (active.sub_only && !message.user.isSub) {
       return `@${message.user.displayName}, bu çekiliş yalnızca abonelere açık.`;
     }
@@ -64,9 +94,11 @@ export class GiveawayEngine {
     }
 
     // Calculate tickets (subscriber bonus)
+    // En az 1 bilet: çarpan 0–0.49 iken abone 0 bilet alıyor, yalnız abonelere açık çekilişte
+    // havuz boş kalıp çekiliş hata veriyordu.
     let tickets = 1;
     if (message.user.isSub) {
-      tickets = Math.round(active.sub_bonus_multiplier);
+      tickets = Math.max(1, Math.round(Number(active.sub_bonus_multiplier) || 1));
     }
 
     const entryId = uuidv4();
@@ -85,25 +117,20 @@ export class GiveawayEngine {
     const entries = db.prepare('SELECT * FROM giveaway_entries WHERE giveaway_id = ?').all(active.id) as any[];
     if (!entries || entries.length === 0) return null;
 
-    // Build ticket pool
-    const ticketPool: Array<{ username: string; platform: string }> = [];
-    for (const entry of entries) {
-      for (let i = 0; i < entry.tickets; i++) {
-        ticketPool.push({ username: entry.username, platform: entry.platform });
-      }
-    }
-
-    const randomIndex = Math.floor(Math.random() * ticketPool.length);
-    const selected = ticketPool[randomIndex];
+    // "Kazanan sayısı" kadar FARKLI kişi, bilet ağırlıklı (eskiden ayar okunmuyordu: hep 1 kazanan)
+    const secilenler = kazananlariSec(entries, Number(active.winner_count) || 1);
+    const toplamBilet = entries.reduce((t, e) => t + Math.max(1, Number(e.tickets) || 1), 0);
+    const adlar = secilenler.map((s) => s.username);
 
     // Close giveaway and record winner
     db.prepare('UPDATE giveaways SET is_active = 0, winner = ?, winner_platform = ?, closed_at = ? WHERE id = ?')
-      .run(selected.username, selected.platform, Date.now(), active.id);
+      .run(adlar.join(', '), secilenler[0].platform, Date.now(), active.id);
 
     return {
-      winner: selected.username,
-      platform: selected.platform,
-      totalTickets: ticketPool.length,
+      winner: adlar.join(', '),
+      winners: adlar,
+      platform: secilenler[0].platform,
+      totalTickets: toplamBilet,
       participantsCount: entries.length
     };
   }

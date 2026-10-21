@@ -15,9 +15,17 @@ import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('giveaways', GIVEAWAY_DEFAULTS);
   const onizleme = onizlemeKipi(props?.previewMode);
-  const [active, setActive] = useState<any>(onizleme ? { title: 'Steam hediye kartı', keyword: s.keyword } : null);
+  const [active, setActive] = useState<any>(onizleme ? { title: 'Steam hediye kartı', keyword: s.keyword, created_at: Date.now(), duration_minutes: 5 } : null);
   const [entries, setEntries] = useState(onizleme ? 37 : 0);
   const [winner, setWinner] = useState<string | null>(null);
+  // Katılım geri sayımı (Çekilişler sayfasındaki "Süre"); her saniye yeniden çizilir
+  const [, setTik] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTik((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const bitis = active && Number(active.duration_minutes) > 0 ? Number(active.created_at) + Number(active.duration_minutes) * 60_000 : 0;
+  const kalanSn = bitis ? Math.max(0, Math.round((bitis - Date.now()) / 1000)) : null;
   const ayar = useRef(s);
   ayar.current = s;
 
@@ -71,6 +79,11 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
       {active && <div style={{ fontWeight: 800, marginTop: 8 }}>{active.title}</div>}
       {s.showKeyword && active && <div style={{ marginTop: 8, opacity: 0.8 }}>Katıl: {active.keyword || s.keyword}</div>}
       {s.showEntries && active && <div style={{ marginTop: 6 }}>{entries} katılımcı</div>}
+      {s.showTimer && active && kalanSn !== null && (
+        <div style={{ marginTop: 6, opacity: 0.85 }}>
+          {kalanSn > 0 ? `⏳ ${Math.floor(kalanSn / 60)}:${String(kalanSn % 60).padStart(2, "0")}` : "Katılım kapandı"}
+        </div>
+      )}
       {winner && <div style={{ marginTop: 12, fontSize: 22, fontWeight: 900 }}>🎉 {winner}</div>}
     </div>
   );

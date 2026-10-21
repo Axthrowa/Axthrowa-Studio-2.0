@@ -318,20 +318,10 @@ export const ALERT_ADVANCED_DEFAULTS = {
   confetti: true
 };
 
+// Çekiliş KURALLARI (süre, kazanan sayısı, şartlar) Çekilişler sayfasında; bunlar yalnız katman görünümü.
+// Eskiden kurallar burada da vardı ama hiçbir yerde okunmuyordu.
 export const GIVEAWAY_DEFAULTS = {
   keyword: '!katil',
-  durationMinutes: 10,
-  winnerCount: 1,
-  maxEntries: 0,
-  costPoints: 0,
-  subBonusMultiplier: 2,
-  followerOnly: false,
-  subOnly: false,
-  minWatchMinutes: 0,
-  minMessages: 0,
-  announceChat: true,
-  duplicatePrevent: true,
-  autoClose: true,
   overlayTitle: 'ÇEKİLİŞ',
   winnerShowSec: 12,
   fontFamily: 'Plus Jakarta Sans',
@@ -344,8 +334,7 @@ export const GIVEAWAY_DEFAULTS = {
   animation: 'fade',
   showKeyword: true,
   showEntries: true,
-  showTimer: true,
-  confetti: true
+  showTimer: true
 };
 
 

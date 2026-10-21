@@ -18,7 +18,6 @@ export function Giveaways() {
   const [durationMinutes, setDurationMinutes] = useState(10);
   const [winnerCount, setWinnerCount] = useState(1);
   const [maxEntries, setMaxEntries] = useState(0);
-  const [followerOnly, setFollowerOnly] = useState(false);
   const [subOnly, setSubOnly] = useState(false);
   const [minWatch, setMinWatch] = useState(0);
   const baseUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port || '5173'}`;
@@ -53,7 +52,6 @@ export function Giveaways() {
         durationMinutes,
         winnerCount,
         maxEntries,
-        followerOnly,
         subOnly,
         minWatchMinutes: minWatch
       })
@@ -132,7 +130,7 @@ export function Giveaways() {
           {winner && (
             <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border border-yellow-500/50 p-4 rounded-xl text-center animate-in zoom-in-95">
               <div className="text-yellow-400 font-extrabold text-xs tracking-wider uppercase">🎉 TEBRİKLER! ÇEKİLİŞİ KAZANAN 🎉</div>
-              <div className="text-3xl font-black text-white mt-1">@{winner.winner}</div>
+              <div className="text-3xl font-black text-white mt-1">@{(winner.winners?.length ? winner.winners : [winner.winner]).join(', @')}</div>
               <div className="text-xs text-gray-300 mt-1">
                 {winner.participantsCount} katılımcı ve {winner.totalTickets} bilet arasından seçildi!
               </div>
@@ -226,11 +224,10 @@ export function Giveaways() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <label className="text-xs font-bold">Puan maliyeti<input type="number" value={costPoints} onChange={e => setCostPoints(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
-                <label className="text-xs font-bold">Süre (dk)<input type="number" value={durationMinutes} onChange={e => setDurationMinutes(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
+                <label className="text-xs font-bold">Katılım süresi (dk, 0 = süresiz)<input type="number" min={0} value={durationMinutes} onChange={e => setDurationMinutes(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
                 <label className="text-xs font-bold">Kazanan sayısı<input type="number" value={winnerCount} onChange={e => setWinnerCount(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
                 <label className="text-xs font-bold">Max katılım (0=∞)<input type="number" value={maxEntries} onChange={e => setMaxEntries(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
                 <label className="text-xs font-bold">Min izleme (dk)<input type="number" value={minWatch} onChange={e => setMinWatch(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
-                <label className="text-xs font-bold flex items-center gap-2 mt-5"><input type="checkbox" checked={followerOnly} onChange={e => setFollowerOnly(e.target.checked)} /> Sadece takipçi</label>
                 <label className="text-xs font-bold flex items-center gap-2"><input type="checkbox" checked={subOnly} onChange={e => setSubOnly(e.target.checked)} /> Sadece abone</label>
               </div>
 

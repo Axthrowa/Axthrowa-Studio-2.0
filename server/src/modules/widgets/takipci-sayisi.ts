@@ -30,6 +30,8 @@ export async function takipciSayisi(): Promise<number | null> {
       durum.bekleyen = null;
     }
   })();
-  await durum.bekleyen;
+  // Eski değer varken beklenmez (yenileme arka planda): kick.com yavaşsa etiket isteği
+  // dakikada bir 6 sn'ye kadar takılıyordu. Yalnız ilk istek sonucu bekler.
+  if (durum.an === 0) await durum.bekleyen;
   return durum.deger;
 }

@@ -83,6 +83,24 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
       setMessages((prev) => iletiCikar(prev, { platform: d.platform, id: d.id ? String(d.id) : undefined, kullanici: d.username }));
       return;
     }
+    if (lastMessage.type === 'chat_event') {
+      islenen.current = lastMessage;
+      const d = lastMessage.data || {};
+      if ((d.tur === 'bagis' && !s.showDonations) || (d.tur === 'odul' && !s.showRedemptions)) return;
+      const olay: OverlayMsg = {
+        id: `${Date.now()}-${Math.random()}`,
+        platform: 'olay',
+        user: `${d.tur === 'bagis' ? '💸' : '🎁'} ${d.kullanici || ''}`,
+        color: s.highlightColor,
+        text: String(d.metin || ''),
+        rozet: {},
+        ts: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        special: true,
+        created: Date.now()
+      };
+      setMessages((prev) => iletiEkle(prev, olay, s.maxMessages));
+      return;
+    }
     if (lastMessage.type !== 'chat') return;
     islenen.current = lastMessage;
     const p = lastMessage.data || lastMessage.payload;
@@ -148,6 +166,8 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   // Liste eskiden yeniye; "yeni mesajlar üstte" yalnız çizimde ters çevirir
   const list = s.reverse ? [...kaynak].reverse() : kaynak;
   const yanYana = s.layout === 'row';
+  // Balon: eskiden yalnız "şeffaf arka plan" kapalıyken (kutu da siyahken) çiziliyordu
+  const balon = !s.transparentBg || Boolean(s.messageBubbles);
   const msgBg = s.messageBgColor.length === 7
     ? `${s.messageBgColor}${Math.round(s.messageBgOpacity * 255).toString(16).padStart(2, '0')}`
     : 'transparent';
@@ -173,9 +193,9 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
           whiteSpace: yanYana ? 'nowrap' : undefined,
           gap: 8,
           justifyContent: s.align === 'center' ? 'center' : s.align === 'right' ? 'flex-end' : 'flex-start',
-          background: s.transparentBg ? 'transparent' : msgBg,
+          background: balon ? msgBg : 'transparent',
           borderRadius: s.borderRadius,
-          padding: s.transparentBg ? 0 : '6px 10px',
+          padding: balon ? '6px 10px' : 0,
           borderLeft: s.highlightSpecial && msg.special ? `3px solid ${s.highlightColor}` : undefined,
           textShadow: s.textShadow ? '0 2px 8px #000' : undefined
         }}>

@@ -327,6 +327,7 @@ export class WebSocketHub {
 
       // The Cup drop & subathon
       this.kupayaDusur('tip', { user: payload.displayName || payload.username, amount: payload.amount });
+      this.sohbetOlayi('bagis', payload.displayName || payload.username, `${payload.amount} ${payload.currency || ''} bağışladı${payload.message ? ': ' + payload.message : ''}`);
 
       // Also trigger TTS if tip contains message
       if (payload.message) {
@@ -425,6 +426,7 @@ export class WebSocketHub {
         type: 'loyalty_redeemed',
         data
       });
+      this.sohbetOlayi('odul', data?.user, `"${data?.rewardTitle || 'ödül'}" ödülünü aldı`);
     });
 
     // 9. Emote Used Event -> Emote Combo & Floating Emotes Widget
@@ -690,6 +692,11 @@ export class WebSocketHub {
     } catch (e) {
       seyrekUyar('kupa:dus', '[Kupa] Olay işlenemedi', e);
     }
+  }
+
+  /** Sohbet katmanında bağış / puan ödülü satırı (widget ayarı açıksa gösterir). */
+  sohbetOlayi(tur: 'bagis' | 'odul', kullanici: string, metin: string) {
+    this.broadcastTo(['chatbox'], { type: 'chat_event', data: { tur, kullanici: String(kullanici || '').slice(0, 60), metin: String(metin || '').slice(0, 200) } });
   }
 
   broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all'>, payload: any) {

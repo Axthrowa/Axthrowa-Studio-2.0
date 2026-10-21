@@ -40,7 +40,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
-import { OverlayKatmanlari } from '../widgets/OverlayLayers.js';
+import { KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
+import { enBuyukBoyut, hizala, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 import { ayarKanalinaKatil, YERLESIM_KIMLIGI } from '../lib/ayarKanali.js';
@@ -495,6 +496,7 @@ export function OverlayStudio() {
   }, []);
   useEffect(() => () => tuvalGozlemci.current?.disconnect(), []);
   const [isDragging, setIsDragging] = useState(false);
+  const [kilavuz, setKilavuz] = useState<Kilavuzlar>({ dikey: [], yatay: [] });
   const [isResizing, setIsResizing] = useState(false);
   const dragStartRef = useRef<{ pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
 
@@ -555,10 +557,23 @@ export function OverlayStudio() {
 
     if (isDragging) {
       const curItem = (allInOne as any)[selectedCanvasWidget];
-      const w = curItem?.width || 300;
-      const h = curItem?.height || 200;
-      const newX = Math.round(Math.max(0, Math.min(1920 - w, dragStartRef.current.widgetX + deltaX)));
-      const newY = Math.round(Math.max(0, Math.min(1080 - h, dragStartRef.current.widgetY + deltaY)));
+      const kutu: Kutu = { x: 0, y: 0, width: curItem?.width || 300, height: curItem?.height || 200, scale: curItem?.scale };
+      const hamX = dragStartRef.current.widgetX + deltaX;
+      const hamY = dragStartRef.current.widgetY + deltaY;
+      let newX: number;
+      let newY: number;
+      if (e.altKey) {
+        ({ x: newX, y: newY } = sinirla(hamX, hamY, kutu));
+        setKilavuz({ dikey: [], yatay: [] });
+      } else {
+        // Yalnız tuvalde görünen (açık) diğer katmanlara yapış
+        const digerleri = KATMANLAR.map((k) => (allInOne as any)[k.anahtar])
+          .filter((it, i) => it?.enabled && KATMANLAR[i].anahtar !== selectedCanvasWidget) as Kutu[];
+        const yap = yapistir(hamX, hamY, kutu, digerleri);
+        newX = yap.x;
+        newY = yap.y;
+        setKilavuz(yap.kilavuz);
+      }
       setAllInOne(prev => ({
         ...prev,
         [selectedCanvasWidget]: {
@@ -568,8 +583,12 @@ export function OverlayStudio() {
         }
       }));
     } else if (isResizing) {
-      const newW = Math.round(Math.max(100, Math.min(1920 - dragStartRef.current.widgetX, dragStartRef.current.origW + deltaX)));
-      const newH = Math.round(Math.max(40, Math.min(1080 - dragStartRef.current.widgetY, dragStartRef.current.origH + deltaY)));
+      const curItem = (allInOne as any)[selectedCanvasWidget];
+      const olcek = typeof curItem?.scale === 'number' && curItem.scale > 0 ? curItem.scale : 1;
+      const enBuyuk = enBuyukBoyut({ x: dragStartRef.current.widgetX, y: dragStartRef.current.widgetY, width: 0, height: 0, scale: olcek });
+      // Fare hareketi görünen boyutu değiştirir; ölçeksiz boyuta çevir
+      const newW = Math.round(Math.max(100, Math.min(enBuyuk.width, dragStartRef.current.origW + deltaX / olcek)));
+      const newH = Math.round(Math.max(40, Math.min(enBuyuk.height, dragStartRef.current.origH + deltaY / olcek)));
       setAllInOne(prev => ({
         ...prev,
         [selectedCanvasWidget]: {
@@ -584,28 +603,40 @@ export function OverlayStudio() {
   const handlePointerUp = () => {
     setIsDragging(false);
     setIsResizing(false);
+    setKilavuz({ dikey: [], yatay: [] });
     dragStartRef.current = null;
   };
 
-  const handleCenterHorizontal = (widgetKey: string) => {
-    const item = (allInOne as any)[widgetKey];
+  /** Seçili katmanı tuvale göre hizalar (görünen, yani ölçekli boyuta göre). */
+  const hizalaSecili = (yon: Yon) => {
+    const item = (allInOne as any)[selectedCanvasWidget];
     if (!item) return;
-    const newX = Math.round((1920 - (item.width || 300)) / 2);
-    setAllInOne(prev => ({
-      ...prev,
-      [widgetKey]: { ...(prev as any)[widgetKey], x: newX }
-    }));
+    const yeni = hizala({ x: item.x ?? 0, y: item.y ?? 0, width: item.width || 300, height: item.height || 200, scale: item.scale }, yon);
+    setAllInOne(prev => ({ ...prev, [selectedCanvasWidget]: { ...(prev as any)[selectedCanvasWidget], ...yeni } }));
   };
 
-  const handleCenterVertical = (widgetKey: string) => {
-    const item = (allInOne as any)[widgetKey];
-    if (!item) return;
-    const newY = Math.round((1080 - (item.height || 200)) / 2);
-    setAllInOne(prev => ({
-      ...prev,
-      [widgetKey]: { ...(prev as any)[widgetKey], y: newY }
-    }));
-  };
+  // Ok tuşları seçili katmanı 1 px (Shift ile 10 px) kaydırır; yazı alanındayken değil
+  useEffect(() => {
+    const tus = (e: KeyboardEvent) => {
+      const yon = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (!yon) return;
+      const hedef = e.target as HTMLElement | null;
+      if (hedef && (hedef.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(hedef.tagName))) return;
+      if (!canvasRef.current) return; // tuval görünmüyorsa (başka sekme) dokunma
+      e.preventDefault();
+      const adim = e.shiftKey ? 10 : 1;
+      setAllInOne(prev => {
+        const item = (prev as any)[selectedCanvasWidget];
+        if (!item) return prev;
+        const yeni = sinirla((item.x ?? 0) + yon[0] * adim, (item.y ?? 0) + yon[1] * adim, {
+          x: 0, y: 0, width: item.width || 300, height: item.height || 200, scale: item.scale
+        });
+        return { ...prev, [selectedCanvasWidget]: { ...item, ...yeni } };
+      });
+    };
+    window.addEventListener('keydown', tus);
+    return () => window.removeEventListener('keydown', tus);
+  }, [selectedCanvasWidget]);
 
   const handleResetWidget = (widgetKey: string) => {
     const defItem = (DEFAULT_ALL_IN_ONE_CONFIG as any)[widgetKey];
@@ -1171,6 +1202,12 @@ export function OverlayStudio() {
                       );
                     }}
                   />
+                  {kilavuz.dikey.map((x) => (
+                    <div key={'d' + x} style={{ position: 'absolute', left: x - 1, top: 0, width: 2, height: 1080, background: '#f472b6', zIndex: 9999, pointerEvents: 'none' }} />
+                  ))}
+                  {kilavuz.yatay.map((y) => (
+                    <div key={'y' + y} style={{ position: 'absolute', top: y - 1, left: 0, height: 2, width: 1920, background: '#f472b6', zIndex: 9999, pointerEvents: 'none' }} />
+                  ))}
                 </div>
 
               </div>
@@ -1314,19 +1351,24 @@ export function OverlayStudio() {
                       </div>
 
                       {/* Alignment Action Buttons */}
-                      <div className="grid grid-cols-3 gap-1.5 pt-1">
-                        <button
-                          onClick={() => handleCenterHorizontal(selectedCanvasWidget)}
-                          className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-gray-200 transition-colors"
-                        >
-                          ↔️ Yatay Ortala
-                        </button>
-                        <button
-                          onClick={() => handleCenterVertical(selectedCanvasWidget)}
-                          className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-gray-200 transition-colors"
-                        >
-                          ↕️ Dikey Ortala
-                        </button>
+                      <div className="grid grid-cols-3 gap-1.5 pt-1" role="group" aria-label="Hizalama">
+                        {([
+                          ['sol', '⇤ Sola'], ['yatayOrta', '↔️ Yatay orta'], ['sag', 'Sağa ⇥'],
+                          ['ust', '⤒ Üste'], ['dikeyOrta', '↕️ Dikey orta'], ['alt', 'Alta ⤓']
+                        ] as Array<[Yon, string]>).map(([yon, etiket]) => (
+                          <button
+                            key={yon}
+                            onClick={() => hizalaSecili(yon)}
+                            className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-gray-200 transition-colors"
+                          >
+                            {etiket}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-gray-500 leading-snug">
+                        Sürüklerken kenarlara, ortaya ve diğer katmanlara yapışır (Alt basılı: serbest). Ok tuşları 1 px, Shift+ok 10 px kaydırır.
+                      </p>
+                      <div className="grid grid-cols-1 gap-1.5">
                         <button
                           onClick={() => handleResetWidget(selectedCanvasWidget)}
                           className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-amber-300 transition-colors"

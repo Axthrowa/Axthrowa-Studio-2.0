@@ -29,7 +29,9 @@ const LABELS: Record<string, string> = {
   highlightSpecial: 'Özel mesaj vurgusu', fadeMessages: 'Mesajlar kaybolsun', fadeTimeout: 'Kaybolma (sn)',
   smoothMask: 'Yumuşak maske', textShadow: 'Yazı gölgesi', transparentBg: 'Şeffaf arka plan',
   hideCommands: 'Komutları gizle', hideBots: 'Botları gizle', hideEmoteOnly: 'Sadece emote gizle',
-  ignoreList: 'Yoksay listesi', align: 'Hizalama', reverse: 'Ters sıra',
+  ignoreList: 'Yoksay listesi', align: 'Hizalama', reverse: 'Yeni mesajlar üstte',
+  messageSound: 'Yeni mesaj sesi', messageSoundVolume: 'Ses düzeyi',
+  messageBubbles: 'Mesaj balonları', showDonations: 'Bağışları sohbette göster', showRedemptions: 'Puan ödüllerini sohbette göster',
   messageBgColor: 'Mesaj arka planı', messageBgOpacity: 'Mesaj opaklığı', highlightColor: 'Vurgu rengi',
   hideBroadcaster: 'Yayıncıyı gizle', title: 'Başlık', endingTitle: 'Bitiş başlığı', current: 'Mevcut',
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
@@ -114,13 +116,13 @@ const LABELS: Record<string, string> = {
   fromKicks: 'KICKs sayılsın', fromFollow: 'Takipler sayılsın', autoStart: 'Olay gelince kendiliğinden başlasın',
   onlyViewers: 'Yalnız izleyiciler (yayıncı tahta çıkamaz/gösterilmez)', emptyText: 'Taht boşken yazı',
   labelFollow: 'Takipçi başlığı', labelSub: 'Abone başlığı', labelTip: 'Bağış başlığı', labelTop: 'En büyük bağış başlığı',
-  labelRaid: 'Raid başlığı', labelKicks: 'KICKs başlığı', emptyValue: 'Veri yokken', labelColor: 'Başlık rengi',
+  labelRaid: 'Raid başlığı', labelKicks: 'KICKs başlığı', labelFollowers: 'Takipçi sayısı başlığı', showFollowers: 'Takipçi sayısı göster', emptyValue: 'Veri yokken', labelColor: 'Başlık rengi',
   notFoundText: 'Söz bulunamayınca yazı'
 };
 
 const SECTIONS: Record<string, string> = {
   showFollow: 'Olaylar', showSub: 'Olaylar', showGiftSub: 'Olaylar', showTip: 'Olaylar', showRaid: 'Olaylar',
-  showHost: 'Olaylar', showKicks: 'Olaylar', showBits: 'Olaylar', showTop: 'Olaylar',
+  showHost: 'Olaylar', showKicks: 'Olaylar', showFollowers: 'Olaylar', showBits: 'Olaylar', showTop: 'Olaylar',
   templateFollow: 'Şablon', templateSub: 'Şablon', templateGiftSub: 'Şablon', templateTip: 'Şablon',
   templateRaid: 'Şablon', templateHost: 'Şablon', templateKicks: 'Şablon', template: 'Şablon',
   subTemplate: 'Şablon',
@@ -141,6 +143,7 @@ const SECTIONS: Record<string, string> = {
   showAvatars: 'Düzen', highlightSpecial: 'Düzen', fadeMessages: 'Düzen', fadeTimeout: 'Düzen',
   hideCommands: 'Düzen', hideBots: 'Düzen', hideEmoteOnly: 'Düzen', ignoreList: 'Düzen', align: 'Düzen',
   reverse: 'Düzen', hideBroadcaster: 'Düzen', layout: 'Düzen', showRemaining: 'Düzen', showPercent: 'Düzen',
+  messageSound: 'Düzen', messageSoundVolume: 'Düzen', showDonations: 'Düzen', showRedemptions: 'Düzen', messageBubbles: 'Görünüm',
   decimals: 'Düzen', prefix: 'Düzen', suffix: 'Düzen', height: 'Düzen', paddingX: 'Düzen',
   showVotes: 'Düzen', hideUntilEnd: 'Düzen', layoutMode: 'Düzen', queueEnabled: 'Gelişmiş',
   gapMs: 'Gelişmiş', ttsEnabled: 'Gelişmiş', ttsReadMessage: 'Gelişmiş', textEffect: 'Gelişmiş',
@@ -200,7 +203,7 @@ const SECTIONS: Record<string, string> = {
   fromTip: 'Olaylar', fromSub: 'Olaylar', fromGift: 'Olaylar', fromKicks: 'Olaylar', fromFollow: 'Olaylar',
   autoStart: 'Olaylar', onlyViewers: 'Genel', emptyText: 'Genel',
   labelFollow: 'Başlıklar', labelSub: 'Başlıklar', labelTip: 'Başlıklar', labelTop: 'Başlıklar', labelRaid: 'Başlıklar',
-  labelKicks: 'Başlıklar', emptyValue: 'Başlıklar', labelColor: 'Tipografi'
+  labelKicks: 'Başlıklar', labelFollowers: 'Başlıklar', emptyValue: 'Başlıklar', labelColor: 'Tipografi'
 };
 
 /**
@@ -269,6 +272,10 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
 const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({ value, label }));
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
+  'chat-overlay': {
+    layout: tema(['column', 'Alt alta'], ['row', 'Yan yana (tek satır)']),
+    animation: [...ANIM_SECENEKLERI, { value: 'daktilo', label: 'Daktilo' }]
+  },
   'event-labels': {
     layout: tema(['row', 'Yan yana'], ['column', 'Alt alta']),
     animation: [...ANIM_SECENEKLERI, { value: 'marquee', label: 'Kayan yazı' }]

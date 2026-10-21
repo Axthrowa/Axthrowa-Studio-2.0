@@ -188,9 +188,18 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     tema('slot', 'Slot Makinesi', { borderColor: '#334155', fontColor: '#f8fafc', pointerColor: P.amber }, { arka: '#1e293b', vurgu: P.amber, metin: '#f8fafc' })
   ],
   'chat-overlay': [
-    tema('baloncuk', 'Baloncuk', { messageBgColor: '#1e293b', messageBgOpacity: 0.9, borderRadius: 22 }, { arka: '#1e293b', vurgu: P.turkuaz, metin: P.beyaz }),
-    tema('yanmenu', 'Yan Şerit', { messageBgColor: P.siyah, messageBgOpacity: 0.55, borderRadius: 4 }, { arka: 'rgba(0,0,0,.55)', vurgu: P.mor, metin: P.beyaz }),
-    tema('seffaf', 'Tamamen Şeffaf', { transparentBg: true, messageBgOpacity: 0, textShadow: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz })
+    tema('baloncuk', 'Baloncuk', { messageBubbles: true, messageBgColor: '#1e293b', messageBgOpacity: 0.9, borderRadius: 22 }, { arka: '#1e293b', vurgu: P.turkuaz, metin: P.beyaz }),
+    tema('yanmenu', 'Yan Şerit', { messageBubbles: true, messageBgColor: P.siyah, messageBgOpacity: 0.55, borderRadius: 4 }, { arka: 'rgba(0,0,0,.55)', vurgu: P.mor, metin: P.beyaz }),
+    tema('seffaf', 'Tamamen Şeffaf', { transparentBg: true, messageBgOpacity: 0, textShadow: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz }),
+    // BotRix'te 24 hazır sohbet tasarımı gözlemlendi; bizdekiler kendi renk/ayar birleşimlerimiz
+    tema('neon', 'Neon', { messageBubbles: true, messageBgColor: '#0b0420', messageBgOpacity: 0.85, borderRadius: 10, textColor: P.beyaz, highlightColor: P.pembe, highlightSpecial: true, outlineEnabled: false, textShadow: true }, { arka: '#0b0420', vurgu: P.pembe, metin: P.beyaz }),
+    tema('karbon', 'Karbon', { messageBubbles: true, messageBgColor: '#111827', messageBgOpacity: 0.92, borderRadius: 6, textColor: '#e5e7eb', highlightColor: P.gri, textShadow: false }, { arka: '#111827', vurgu: P.gri, metin: '#e5e7eb' }),
+    tema('beyazkart', 'Beyaz Kart', { messageBubbles: true, messageBgColor: P.beyaz, messageBgOpacity: 0.95, borderRadius: 14, textColor: '#111827', usernameColorMode: 'user', textShadow: false, outlineEnabled: false }, { arka: P.beyaz, vurgu: P.mor, metin: '#111827' }),
+    tema('hacker', 'Hacker', { messageBubbles: true, messageBgColor: P.siyah, messageBgOpacity: 0.8, borderRadius: 0, textColor: P.kick, fontFamily: 'Consolas, monospace', usernameColorMode: 'custom', customUsernameColor: P.kick, textShadow: false }, { arka: P.siyah, vurgu: P.kick, metin: P.kick }),
+    tema('gunbatimi', 'Gün Batımı', { messageBubbles: true, messageBgColor: '#7c2d12', messageBgOpacity: 0.75, borderRadius: 16, textColor: '#fff7ed', highlightColor: P.amber, highlightSpecial: true }, { arka: 'linear-gradient(135deg,#7c2d12,#be185d)', vurgu: P.amber, metin: '#fff7ed' }),
+    tema('pastel', 'Pastel', { messageBubbles: true, messageBgColor: '#fce7f3', messageBgOpacity: 0.92, borderRadius: 18, textColor: '#4c1d95', usernameColorMode: 'custom', customUsernameColor: '#be185d', textShadow: false }, { arka: '#fce7f3', vurgu: '#be185d', metin: '#4c1d95' }),
+    tema('cam', 'Buzlu Cam', { messageBubbles: true, messageBgColor: P.beyaz, messageBgOpacity: 0.12, borderRadius: 12, textColor: P.beyaz, textShadow: true }, { arka: 'rgba(255,255,255,.12)', vurgu: P.turkuaz, metin: P.beyaz }),
+    tema('kickyesili', 'Kick Yeşili', { messageBubbles: true, messageBgColor: '#0f1a0a', messageBgOpacity: 0.88, borderRadius: 8, textColor: P.beyaz, highlightColor: P.kick, highlightSpecial: true }, { arka: '#0f1a0a', vurgu: P.kick, metin: P.beyaz })
   ],
   polls: [
     tema('savas', 'Düello', { barColor: P.kirmizi, barBackground: '#1e40af', showVotes: true }, { arka: '#1e293b', vurgu: P.kirmizi, metin: P.beyaz }),

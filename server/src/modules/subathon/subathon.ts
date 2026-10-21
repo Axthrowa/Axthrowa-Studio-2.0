@@ -219,7 +219,8 @@ class SubathonMotoru {
 
     eventBus.on('sub', (p: any) => {
       const a = ayar();
-      if (!a.aktif) return;
+      // Test uyarısı açık subathon'a gerçek süre eklemesin
+      if (!a.aktif || (p as any)?.isTest === true) return;
       const ad = p?.displayName || p?.username || 'İzleyici';
       if (p?.isGift) {
         // Kick'te hediye abonelik birden çok kişiye olabilir
@@ -233,7 +234,7 @@ class SubathonMotoru {
 
     eventBus.on('tip', (p: any) => {
       const a = ayar();
-      if (!a.aktif) return;
+      if (!a.aktif || (p as any)?.isTest === true) return;
       const dk = birimDakikasi(p?.amount, a.bagisDakika, a.bagisBirimi);
       if (dk > 0) {
         const ad = p?.displayName || p?.username || 'İzleyici';
@@ -243,7 +244,7 @@ class SubathonMotoru {
 
     eventBus.on('kicks', (p: any) => {
       const a = ayar();
-      if (!a.aktif) return;
+      if (!a.aktif || (p as any)?.isTest === true) return;
       const dk = birimDakikasi(p?.amount, a.kicksDakika, a.kicksBirimi);
       if (dk > 0) {
         const ad = p?.displayName || p?.username || 'İzleyici';

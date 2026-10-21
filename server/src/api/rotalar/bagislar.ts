@@ -106,6 +106,7 @@ const processDonation = (donorName: string, amount: number, currency: string = '
     message: safeMessage
   }, true);
 
+  wsHub.sohbetOlayi('bagis', safeName, `${numAmount} ${safeCurrency} bağışladı${safeMessage ? ': ' + safeMessage : ''}`);
   wsHub.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
     type: 'alert',
     subType: 'tip',

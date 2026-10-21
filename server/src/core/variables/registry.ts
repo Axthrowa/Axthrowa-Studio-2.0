@@ -103,6 +103,15 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
     tanim('touser', 'user', '$(toname) ile aynı', (h, c) =>
       atSil(c.args[0] || '') || yedekli(h, c.user.displayName || c.user.username)
     ),
+    // Nightbot uyumluluğu: oradan kopyalanan komutlar ham "$(user)" yazmasın
+    tanim('user', 'user', '$(sender) ile aynı (Nightbot adı)', (_h, c) => c.user.displayName || c.user.username),
+    tanim('userlevel', 'user', 'owner / moderator / vip / subscriber / everyone (Nightbot adı)', (_h, c) =>
+      c.user.isBroadcaster ? 'owner' : c.user.isMod ? 'moderator' : c.user.isVip ? 'vip' : c.user.isSub ? 'subscriber' : 'everyone'
+    ),
+    tanim('querystring', 'text', 'Komuttan sonraki metin, adrese uygun kodlanmış (Nightbot adı)', (h, c) =>
+      encodeURIComponent(yedekli(h, c.rawArgs))
+    ),
+    tanim('command', 'text', 'Çalışan komutun adı (Nightbot adı)', (_h, c) => (c.commandName || '').replace(/^!/, '')),
     ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) =>
       tanim(`v${i}`, 'text', `${i}. kelime`, (h, c) => yedekli(h, c.args[i - 1] || ''))
     ),
@@ -151,9 +160,13 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       },
       { yazar: true, ornek: '$(setcategory $(query))' }
     ),
-    tanim('followers', 'channel', 'Takipçi sayısı', () => {
+    tanim('followers', 'channel', 'Takipçi sayısı', async () => {
+      // Eskiden kurulumdan beri kaydedilen takip olaylarını (testler dahil) sayıyordu
+      const { takipciSayisi } = await import('../../modules/widgets/takipci-sayisi.js');
+      const gercek = await takipciSayisi();
+      if (typeof gercek === 'number') return String(gercek);
       const r = db
-        .prepare("SELECT COUNT(*) c FROM stream_events WHERE event_type = 'follow'")
+        .prepare("SELECT COUNT(*) c FROM stream_events WHERE event_type = 'follow' AND (metadata IS NULL OR metadata NOT LIKE '%\"isTest\":true%')")
         .get() as { c: number };
       return String(r?.c ?? 0);
     }),

@@ -195,6 +195,17 @@ export class WebSocketHub {
       });
     });
 
+    // 1.0 Moderasyon: silinen ileti / yasaklanan kullanıcı / temizlenen sohbet
+    eventBus.on('chat_deleted', (veri: { platform: string; id: string }) => {
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_deleted', data: veri });
+    });
+    eventBus.on('chat_user_removed', (veri: { platform: string; username: string }) => {
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_user_removed', data: veri });
+    });
+    eventBus.on('chat_cleared', () => {
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
+    });
+
     // 1.1 Bot Message Event -> Forward as Chat Message to Dashboard & ChatBox Overlay
     eventBus.on('bot_message', (payload: BotMessagePayload) => {
       const botPlatform = payload.platform === 'all' ? 'kick' : payload.platform;
@@ -265,7 +276,8 @@ export class WebSocketHub {
     eventBus.on('sub', (payload: SubPayload) => {
       // Record in Loyalty Engine
       try {
-        economy.recordSub(payload.username, payload.platform, payload.isGift, 1, payload.recipient);
+        // Test uyarısı sahte kullanıcıya puan/abone sayısı yazmasın
+        if (!(payload as any)?.isTest) economy.recordSub(payload.username, payload.platform, payload.isGift, 1, payload.recipient);
       } catch (e) {
         console.warn('[Ekonomi] Abonelik sadakat kaydına işlenemedi:', hataMetni(e));
       }
@@ -296,7 +308,7 @@ export class WebSocketHub {
     eventBus.on('tip', (payload: TipPayload) => {
       // Record in Loyalty Engine
       try {
-        economy.recordTip(payload.username, payload.platform, payload.amount);
+        if (!(payload as any)?.isTest) economy.recordTip(payload.username, payload.platform, payload.amount);
       } catch (e) {
         console.warn('[Ekonomi] Bağış sadakat kaydına işlenemedi:', hataMetni(e));
       }
@@ -316,6 +328,7 @@ export class WebSocketHub {
 
       // The Cup drop & subathon
       this.kupayaDusur('tip', { user: payload.displayName || payload.username, amount: payload.amount });
+      this.sohbetOlayi('bagis', payload.displayName || payload.username, `${payload.amount} ${payload.currency || ''} bağışladı${payload.message ? ': ' + payload.message : ''}`);
 
       // Also trigger TTS if tip contains message
       if (payload.message) {
@@ -329,7 +342,7 @@ export class WebSocketHub {
     eventBus.on('kicks', (payload: any) => {
       try {
         // KICKs de bagis sayilir: ekonomi ve hedefler beslensin
-        economy.recordTip(payload.username, 'kick', Number(payload.amount) || 0);
+        if (!(payload as any)?.isTest) economy.recordTip(payload.username, 'kick', Number(payload.amount) || 0);
       } catch (e) {
         console.warn('[Ekonomi] KICKs sadakat kaydına işlenemedi:', hataMetni(e));
       }
@@ -414,6 +427,7 @@ export class WebSocketHub {
         type: 'loyalty_redeemed',
         data
       });
+      this.sohbetOlayi('odul', data?.user, `"${data?.rewardTitle || 'ödül'}" ödülünü aldı`);
     });
 
     // 9. Emote Used Event -> Emote Combo & Floating Emotes Widget
@@ -679,6 +693,11 @@ export class WebSocketHub {
     } catch (e) {
       seyrekUyar('kupa:dus', '[Kupa] Olay işlenemedi', e);
     }
+  }
+
+  /** Sohbet katmanında bağış / puan ödülü satırı (widget ayarı açıksa gösterir). */
+  sohbetOlayi(tur: 'bagis' | 'odul', kullanici: string, metin: string) {
+    this.broadcastTo(['chatbox'], { type: 'chat_event', data: { tur, kullanici: String(kullanici || '').slice(0, 60), metin: String(metin || '').slice(0, 200) } });
   }
 
   broadcastTo(types: Array<'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all'>, payload: any) {

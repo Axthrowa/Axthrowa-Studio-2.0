@@ -133,7 +133,7 @@ class UniversalEventBus extends EventEmitter {
       message: payload.message,
       avatarUrl: payload.user.avatarUrl,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   emitFollow(payload: FollowPayload) {
@@ -145,7 +145,7 @@ class UniversalEventBus extends EventEmitter {
       username: payload.username,
       displayName: payload.displayName || payload.username,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   emitSub(payload: SubPayload) {
@@ -158,7 +158,7 @@ class UniversalEventBus extends EventEmitter {
       displayName: payload.displayName || payload.username,
       message: `${payload.tier} - ${payload.months} Ay`,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   emitTip(payload: TipPayload) {
@@ -173,7 +173,7 @@ class UniversalEventBus extends EventEmitter {
       currency: payload.currency,
       message: payload.message,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   /**
@@ -193,7 +193,7 @@ class UniversalEventBus extends EventEmitter {
       currency: 'KICK',
       message: payload.message,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   emitHost(payload: HostPayload) {
@@ -207,7 +207,7 @@ class UniversalEventBus extends EventEmitter {
       amount: payload.viewers,
       message: `${payload.viewers} izleyiciyle host`,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   emitRaid(payload: RaidPayload) {
@@ -221,7 +221,7 @@ class UniversalEventBus extends EventEmitter {
       amount: payload.viewers,
       message: `${payload.viewers} izleyiciyle raid`,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   emitTikTokGift(payload: TikTokGiftPayload) {
@@ -237,7 +237,7 @@ class UniversalEventBus extends EventEmitter {
       currency: 'Diamonds',
       avatarUrl: payload.avatarUrl,
       timestamp: payload.timestamp
-    });
+    }, (payload as any)?.isTest === true);
   }
 
   /** Sohbete yazma denemesi başarısız oldu — panele sebebiyle bildir. */
@@ -249,7 +249,10 @@ class UniversalEventBus extends EventEmitter {
     this.emit('bot_message', payload);
   }
 
-  private logEvent(event: StreamEvent) {
+  private logEvent(event: StreamEvent, test = false) {
+    // Test uyarısı kayda "isTest" işaretiyle düşer: son takipçi/abone etiketleri ve
+    // $(followers) gibi sayımlar sahte test adlarını gerçek olay saymasın.
+    if (test) event = { ...event, metadata: { ...(event.metadata || {}), isTest: true } };
     try {
       db.prepare(`
         INSERT INTO stream_events (id, platform, event_type, username, display_name, message, amount, currency, avatar_url, metadata, timestamp)

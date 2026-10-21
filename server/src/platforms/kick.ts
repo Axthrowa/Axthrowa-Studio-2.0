@@ -220,6 +220,22 @@ export class KickPlatform extends BasePlatform {
       });
       return;
     }
+    // Moderasyon: silinen ileti / yasaklanan kullanıcı / temizlenen sohbet OBS sohbet
+    // katmanından da kalkmalı (eskiden yakalanmıyordu; silinen ileti yayında kalıyordu).
+    if (olay === 'App\\Events\\MessageDeletedEvent') {
+      const id = parsed?.message?.id;
+      if (id) eventBus.emit('chat_deleted', { platform: 'kick', channel: channelSlug, id: String(id) });
+      return;
+    }
+    if (olay === 'App\\Events\\UserBannedEvent') {
+      const ad = parsed?.user?.username || parsed?.user?.slug;
+      if (ad) eventBus.emit('chat_user_removed', { platform: 'kick', channel: channelSlug, username: String(ad) });
+      return;
+    }
+    if (olay === 'App\\Events\\ChatroomClearEvent') {
+      eventBus.emit('chat_cleared', { platform: 'kick', channel: channelSlug });
+      return;
+    }
     // KICKs ve host olaylari icin ADI degisebilen olaylari burada
     // yakaliyoruz: Kick bu olaylarin adini gecmiste degistirdi ve sabit
     // eslesme kullanmak sessizce calismamaya yol aciyordu.

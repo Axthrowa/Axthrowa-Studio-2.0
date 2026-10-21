@@ -16,6 +16,7 @@ import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../../modules/widgets/sett
 import { seyrekUyar } from '../../core/logger.js';
 import { kupa } from '../../modules/engagement/kupa.js';
 import { etiketVerisi } from '../../modules/widgets/olay-etiketleri.js';
+import { takipciSayisi } from '../../modules/widgets/takipci-sayisi.js';
 import { carkCevir } from '../../modules/engagement/cark.js';
 
 const router = Router();
@@ -39,9 +40,9 @@ router.post('/hype-train/start', (_req: Request, res: Response) => {
 });
 
 // Olay Etiketleri — son olaylar veritabanından (sayfa açılınca "—" kalmasın)
-router.get('/event-labels', (_req: Request, res: Response) => {
+router.get('/event-labels', async (_req: Request, res: Response) => {
   try {
-    res.json(etiketVerisi());
+    res.json({ ...etiketVerisi(), takipciSayisi: await takipciSayisi() });
   } catch (e) {
     seyrekUyar('etiket:oku', '[Etiketler] Son olaylar okunamadı', e);
     res.json({});

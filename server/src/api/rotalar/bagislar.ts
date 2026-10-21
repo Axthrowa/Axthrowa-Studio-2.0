@@ -171,7 +171,7 @@ const handleBynoWebhook = (req: Request, res: Response) => {
 };
 
 router.post('/donations/bynogame', handleBynoWebhook);
-router.get('/donations/bynogame', handleBynoWebhook);
+// GET yok: köken denetimi yalnız yazma yöntemlerinde; GET'i her site <img> ile tetikleyip sahte bağış (TTS, jumpscare) yaratabiliyordu.
 
 router.post('/donations/webhook', (req: Request, res: Response) => {
   try {

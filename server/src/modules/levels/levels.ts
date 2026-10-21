@@ -13,6 +13,7 @@
  */
 import { db } from '../../db/index.js';
 import { seviyeHesapla } from './curve.js';
+import { economy } from '../economy/economy.js';
 
 export { seviyeMaliyeti, seviyeHesapla } from './curve.js';
 
@@ -155,7 +156,8 @@ class SeviyeMotoru {
       db.prepare('UPDATE economy SET xp = 0, level = 0').run();
     }
     if (neyi === 'puan' || neyi === 'ikisi') {
-      db.prepare('UPDATE economy SET points = 0').run();
+      // Ekonomi önbelleği üzerinden: doğrudan UPDATE, sonraki toplu yazımda eski bakiyelerle eziliyordu.
+      economy.tabloyuDegistir(() => db.prepare('UPDATE economy SET points = 0').run());
     }
     const r = db.prepare('SELECT COUNT(*) c FROM economy').get() as { c: number };
     this.sonMesajXp.clear();

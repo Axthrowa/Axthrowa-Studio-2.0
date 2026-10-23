@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { NowPlayingWidget } from '../components/widget/NowPlayingWidget'
+import { Lyrics } from '../components/widget/Lyrics'
 import { useConfig, DEFAULT_CONFIG } from '../context/ConfigContext'
 import { useNowPlaying } from '../hooks/useNowPlaying'
 import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
 import { hostBaseUrl, loadOverlayConfig } from '../lib/hostBridge'
 
-export default function Overlay() {
+/** `lyricsOnly`: /resonance/lyrics — yalnız senkron sözler (ayrı OBS kaynağı). */
+export default function Overlay({ lyricsOnly = false }) {
   const [params] = useSearchParams()
   const profileId = params.get('profile')
   const { profiles } = useConfig()
@@ -171,8 +173,8 @@ export default function Overlay() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-transparent">
-      <div ref={boxRef} className="inline-flex min-h-[1px] min-w-[1px]">
-        {config && (
+      <div ref={boxRef} className="inline-flex min-h-[1px] min-w-[1px] flex-col items-center">
+        {config && !lyricsOnly && (
           <NowPlayingWidget
             track={track}
             isPlaying={isPlaying}
@@ -180,6 +182,9 @@ export default function Overlay() {
             config={config}
             onVisibilityChange={onVisibilityChange}
           />
+        )}
+        {config && (lyricsOnly || config.showLyrics) && isPlaying && (
+          <Lyrics track={track} progressMs={progressMs} config={config} />
         )}
       </div>
     </div>

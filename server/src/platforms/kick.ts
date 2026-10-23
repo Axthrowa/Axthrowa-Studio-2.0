@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { KickRealtime } from './kick-realtime.js';
-import { abonelikKanallari } from './kick-realtime-protokol.js';
+import { abonelikKanallari, kickAnketi } from './kick-realtime-protokol.js';
 import { kickZamani, type YayinBilgisi } from '../core/live-status-math.js';
 import { sifreleHepsi } from '../core/security/vault.js';
 import { eventBus } from '../core/event-bus.js';
@@ -234,6 +234,16 @@ export class KickPlatform extends BasePlatform {
     }
     if (olay === 'App\\Events\\ChatroomClearEvent') {
       eventBus.emit('chat_cleared', { platform: 'kick', channel: channelSlug });
+      return;
+    }
+    // Kick panelinden başlatılan anket: OBS anket katmanı da açılsın ve oylar canlı aksın
+    if (olay === 'App\\Events\\PollUpdateEvent') {
+      const anket = kickAnketi(parsed);
+      if (anket) eventBus.emit('anket_katmani', { type: 'poll_update', poll: anket });
+      return;
+    }
+    if (olay === 'App\\Events\\PollDeleteEvent') {
+      eventBus.emit('anket_katmani', { type: 'poll_ended' });
       return;
     }
     // KICKs ve host olaylari icin ADI degisebilen olaylari burada

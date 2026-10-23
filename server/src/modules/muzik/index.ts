@@ -24,5 +24,7 @@ export const muzikHost = new MuzikHost(
       settingsCache.set(k, v);
     }
   },
-  (m) => ozelYayin?.(m)
+  (m) => ozelYayin?.(m),
+  // Yayın Yönetim Aracı'nın Resonance host'u (bot kendi Spotify'ı bağlı değilken); kapalıysa 15 sn'de bir dener
+  () => process.env.STREAMAXT_MUZIK_HOST ?? settingsCache.get('muzik_harici_host', 'http://127.0.0.1:8843')
 );

@@ -61,7 +61,7 @@ export class SongRequestEngine {
 
   /** Spotify Web API ile otomatik çalma açık ve hesap bağlı mı? */
   spotifyOtomatikMi(): boolean {
-    return muzikHost.spotifyBagliMi() && settingsCache.get('sr_spotify_api', 'true') !== 'false';
+    return muzikHost.spotifyKullanilabilir() && settingsCache.get('sr_spotify_api', 'true') !== 'false';
   }
 
   /**
@@ -83,11 +83,33 @@ export class SongRequestEngine {
         return `@${kim}, YouTube başlığı alınamadı; şarkı adını yazarak dene: !sr Teoman Paramparça`;
       }
     }
+    const hemen = settingsCache.get('sr_spotify_mod', 'sira') === 'hemen';
+    // Spotify Yayın Yönetim Aracı'nda bağlı: arama ve sıraya ekleme orada yapılır
+    if (!muzikHost.spotifyBagliMi()) {
+      try {
+        const id = parcaKimligi(rawQuery);
+        if (id) {
+          const o = await axios.get(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${id}`)}`, { timeout: 4000 });
+          sorgu = String(o.data?.title || '') || sorgu;
+        }
+        const p = await muzikHost.hariciIstek(sorgu, !hemen);
+        const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
+        const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
+        db.prepare(`
+          INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+        `).run(uuidv4(), baslik.slice(0, 200), parca ? `https://open.spotify.com/track/${parca}` : '', 180, kim, message.platform, '', Date.now());
+        return hemen
+          ? `🎵 @${kim}, "${baslik}" şimdi Spotify'da çalıyor!`
+          : `🎵 @${kim}, "${baslik}" Spotify sırasına eklendi — sıradaki şarkılardan sonra kendiliğinden çalacak.`;
+      } catch (e: any) {
+        return `@${kim}, şarkı Spotify'a eklenemedi: ${String(e?.message || e).slice(0, 120)}`;
+      }
+    }
     try {
       const id = parcaKimligi(rawQuery);
       const p = id ? await muzikHost.parcaBilgisi(id) : await muzikHost.parcaAra(sorgu);
       if (!p) return `@${kim}, Spotify'da "${sorgu.slice(0, 60)}" bulunamadı.`;
-      const hemen = settingsCache.get('sr_spotify_mod', 'sira') === 'hemen';
       await muzikHost.parcayiCal(p.uri, hemen);
       const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
       db.prepare(`

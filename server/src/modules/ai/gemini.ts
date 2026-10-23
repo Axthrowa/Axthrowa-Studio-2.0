@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { db } from '../../db/index.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { anahtarSorunu } from './gemini-hata.js';
+import { metinUret, saglayiciDurumu, seciliSaglayici, saglayiciAyari } from './saglayicilar.js';
 
 /**
  * Sozu verilen sure icinde bitmezse vazgec.
@@ -215,6 +216,8 @@ class GeminiCoHost {
 
   /** Su an kullanilan model (panelde gostermek icin). */
   aktifModel(): string {
+    const saglayici = seciliSaglayici();
+    if (saglayici) return `${saglayiciAyari(saglayici).tanim.ad} · ${saglayiciAyari(saglayici).model}`;
     return (
       this.workingModel ||
       (db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_model_resolved'").get() as { value: string } | undefined)?.value ||
@@ -234,6 +237,8 @@ class GeminiCoHost {
     kotasiDolan: string[];
     hata?: string;
   }> {
+    const saglayici = seciliSaglayici();
+    if (saglayici) return { ...(await saglayiciDurumu(saglayici)), kotasiDolan: [] };
     const keyRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_api_key'").get() as { value: string } | undefined;
     const apiKey = keyRow?.value || process.env.GEMINI_API_KEY || '';
     if (!apiKey) {
@@ -259,10 +264,53 @@ class GeminiCoHost {
     return { hazir: true, anahtarVar: true, model, modeller, kotasiDolan: [...this.kotasiDolan.keys()].filter((m) => this.kotaKapali(m)) };
   }
 
+  /** Önceki mesajlar da gönderilir: asistan konuşmayı hatırlasın. */
+  private istemHazirla(prompt: string, senderName: string): string {
+    const gecmis = this.conversationHistory
+      .slice(-6)
+      .map((h) => `${h.role}: ${h.text}`)
+      .join('\n');
+    return gecmis
+      ? `[Önceki konuşma]\n${gecmis}\n\n${senderName} diyor ki: "${prompt}"`
+      : `${senderName} diyor ki: "${prompt}"`;
+  }
+
+  private gecmiseEkle(senderName: string, prompt: string, reply: string) {
+    this.conversationHistory.push({ role: senderName, text: prompt });
+    this.conversationHistory.push({ role: 'AxBot', text: reply });
+    if (this.conversationHistory.length > 10) this.conversationHistory = this.conversationHistory.slice(-10);
+  }
+
+  /** Duygu/zehirlilik gibi yardımcı istekler: seçili sağlayıcı varsa ona, yoksa Gemini'ye. */
+  private async yardimciUret(metin: string, ms: number, etiket: string): Promise<string | null> {
+    const saglayici = seciliSaglayici();
+    if (saglayici) return metinUret(saglayici, 'Kısa ve yalnız istenen biçimde yanıt ver.', metin, ms);
+    const client = this.initClient();
+    if (!client) return null;
+    const model = await this.resolveModel(client);
+    const r = await zamanAsimiyla(client.models.generateContent({ model, contents: [{ role: 'user', parts: [{ text: metin }] }] }), ms, etiket);
+    return r.text?.trim() || '';
+  }
+
   async ask(prompt: string, senderName: string = 'İzleyici'): Promise<string> {
     const enabledRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_enabled'").get() as { value: string } | undefined;
     if (enabledRow?.value === 'false') {
       return 'Yapay zeka asistanı şu an devre dışı.';
+    }
+
+    const promptRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_prompt'").get() as { value: string } | undefined;
+    const systemInstruction = promptRow?.value || 'Sen neşeli, esprili ve zeki bir canlı yayın botusun. Cevapların kısa, dinamik ve canlı yayın sohbetine uygun olsun (en fazla 2-3 cümle).';
+
+    // Gemini dışında bir sağlayıcı seçildiyse (OpenAI, Claude, Groq…) aynı yönerge ve geçmişle ona sorulur
+    const saglayici = seciliSaglayici();
+    if (saglayici) {
+      try {
+        const reply = (await metinUret(saglayici, systemInstruction, this.istemHazirla(prompt, senderName), URETIM_ZAMAN_ASIMI)) || 'Hmm, bir şey diyemedim!';
+        this.gecmiseEkle(senderName, prompt, reply);
+        return reply;
+      } catch (e: any) {
+        return `⚠️ ${String(e?.message || e).slice(0, 160)}`;
+      }
     }
 
     const client = this.initClient();
@@ -270,19 +318,10 @@ class GeminiCoHost {
       return '⚠️ Gemini API anahtarı henüz girilmemiş. Lütfen StreamAxT panelinden bir API anahtarı ekleyin!';
     }
 
-    const promptRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_prompt'").get() as { value: string } | undefined;
-    const systemInstruction = promptRow?.value || 'Sen neşeli, esprili ve zeki bir canlı yayın botusun. Cevapların kısa, dinamik ve canlı yayın sohbetine uygun olsun (en fazla 2-3 cümle).';
-
     try {
       // Önceki mesajlar da gönderilir: asistan konuşmayı hatırlasın (geçmiş
       // tutuluyordu ama isteme HİÇ eklenmiyordu, her soru sıfırdan soruluyordu).
-      const gecmis = this.conversationHistory
-        .slice(-6)
-        .map((h) => `${h.role}: ${h.text}`)
-        .join('\n');
-      const formattedPrompt = gecmis
-        ? `[Önceki konuşma]\n${gecmis}\n\n${senderName} diyor ki: "${prompt}"`
-        : `${senderName} diyor ki: "${prompt}"`;
+      const formattedPrompt = this.istemHazirla(prompt, senderName);
 
       const model = await this.resolveModel(client);
       const response = await zamanAsimiyla(
@@ -297,14 +336,7 @@ class GeminiCoHost {
       );
 
       const reply = response.text?.trim() || 'Hmm, bir şey diyemedim!';
-
-      // Keep recent history
-      this.conversationHistory.push({ role: senderName, text: prompt });
-      this.conversationHistory.push({ role: 'StreamAxT', text: reply });
-      if (this.conversationHistory.length > 10) {
-        this.conversationHistory = this.conversationHistory.slice(-10);
-      }
-
+      this.gecmiseEkle(senderName, prompt, reply);
       return reply;
     } catch (error: any) {
       const msg = String(error?.message || error);
@@ -353,8 +385,7 @@ class GeminiCoHost {
     username: string,
     messages: string[],
   ): Promise<{ sentiment: 'positive' | 'neutral' | 'negative'; score: number; summary: string } | null> {
-    const client = this.initClient();
-    if (!client || !messages.length) return null;
+    if (!messages.length) return null;
 
     const list = messages.map((m, i) => `${i + 1}. ${m}`).join('\n');
     const prompt =
@@ -366,16 +397,8 @@ class GeminiCoHost {
       `{"durum":"olumlu|notr|olumsuz","guven":0.0-1.0,"ozet":"en fazla 15 kelimelik Türkçe değerlendirme"}`;
 
     try {
-      const model = await this.resolveModel(client);
-      const response = await zamanAsimiyla(
-        client.models.generateContent({
-          model,
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        }),
-        20000,
-        'Gemini duygu analizi'
-      );
-      const raw = response.text?.trim() || '';
+      const raw = await this.yardimciUret(prompt, 20000, 'Gemini duygu analizi');
+      if (raw === null) return null;
       const m = raw.match(/\{[\s\S]*\}/);
       if (!m) return null;
       const out = JSON.parse(m[0]);
@@ -396,24 +419,15 @@ class GeminiCoHost {
   }
 
   async evaluateToxicity(text: string): Promise<boolean> {
-    const client = this.initClient();
-    if (!client) return false;
-
     try {
-      const model = await this.resolveModel(client);
       // Sohbet mesajı başına çalışabilir: kısa tutulur, asılı kalan istek
       // mesaj işlemeyi biriktirmesin.
-      const resp = await zamanAsimiyla(client.models.generateContent({
-        model,
-        contents: [{
-          role: 'user',
-          parts: [{
-            text: `Aşağıdaki canlı yayın mesajını analiz et. Mesaj açık bir nefret söylemi, ağır hakaret, ırkçılık veya taciz içeriyor mu? SADECE tek kelimeyle EVET veya HAYIR şeklinde cevap ver.\n\nMesaj: "${text}"`
-          }]
-        }]
-      }), 10000, 'Gemini zehirlilik denetimi');
-      const answer = resp.text?.trim().toUpperCase();
-      return answer === 'EVET';
+      const answer = await this.yardimciUret(
+        `Aşağıdaki canlı yayın mesajını analiz et. Mesaj açık bir nefret söylemi, ağır hakaret, ırkçılık veya taciz içeriyor mu? SADECE tek kelimeyle EVET veya HAYIR şeklinde cevap ver.\n\nMesaj: "${text}"`,
+        10000,
+        'Gemini zehirlilik denetimi'
+      );
+      return String(answer || '').trim().toUpperCase().startsWith('EVET');
     } catch {
       return false;
     }

@@ -205,6 +205,7 @@ export class WebSocketHub {
     eventBus.on('chat_cleared', () => {
       this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
     });
+    eventBus.on('anket_katmani', (ileti: Record<string, unknown>) => this.broadcastTo(['all'], ileti));
 
     // 1.1 Bot Message Event -> Forward as Chat Message to Dashboard & ChatBox Overlay
     eventBus.on('bot_message', (payload: BotMessagePayload) => {

@@ -258,7 +258,8 @@ export class WebSocketHub {
         message: reason,
         timestamp: Date.now()
       };
-      this.broadcastTo(['dashboard', 'all'], { type: 'chat', data: errMsg });
+      // Yalnız panel: 'all' her istemciye (OBS sohbet katmanı dahil) gider, iç hata yayında görünüyordu
+      this.broadcastTo(['dashboard'], { type: 'chat', data: errMsg });
     });
 
     // 2. Follow Event -> AlertBox & Dashboard & Goals

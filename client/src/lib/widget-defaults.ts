@@ -74,13 +74,16 @@ export const CHAT_DEFAULTS = {
   showTimestamp: true,
   showAvatars: true,
   highlightSpecial: true,
-  fadeMessages: true,
+  // Kapalı: iletiler 17 sn sonra kayboluyor, OBS'te sohbet çoğu zaman boş görünüyordu.
+  // Eskiler "en fazla mesaj" sınırıyla düşer.
+  fadeMessages: false,
   fadeTimeout: 17,
   smoothMask: true,
   textShadow: true,
   transparentBg: true,
   hideCommands: true,
   hideBots: true,
+  showOwnBot: true,
   hideEmoteOnly: false,
   ignoreList: '',
   animation: 'fade',

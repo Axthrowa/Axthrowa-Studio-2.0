@@ -218,10 +218,10 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       { yazar: true }
     ),
     tanim('currency', 'loyalty', 'Puan biriminin adı', () => settingsCache.get('currency_name', 'Puan')),
-    tanim('level', 'loyalty', 'Kullanıcının seviyesi', (h, c) => String(seviyeler.kullanici(atSil(h) || c.user.username).seviye)),
-    tanim('xp', 'loyalty', 'Kullanıcının toplam XP değeri', (h, c) => String(seviyeler.kullanici(atSil(h) || c.user.username).xp)),
+    tanim('level', 'loyalty', 'Kullanıcının seviyesi', (h, c) => String(seviyeler.kullanici(cuzdanAdi(c.platform, atSil(h) || c.user.username)).seviye)),
+    tanim('xp', 'loyalty', 'Kullanıcının toplam XP değeri', (h, c) => String(seviyeler.kullanici(cuzdanAdi(c.platform, atSil(h) || c.user.username)).xp)),
     tanim('nextlvl', 'loyalty', 'Sonraki seviye için gereken XP', (h, c) =>
-      String(seviyeler.kullanici(atSil(h) || c.user.username).sonrakiIcinXp)
+      String(seviyeler.kullanici(cuzdanAdi(c.platform, atSil(h) || c.user.username)).sonrakiIcinXp)
     ),
 
     // ---- Sayaçlar -----------------------------------------------------------

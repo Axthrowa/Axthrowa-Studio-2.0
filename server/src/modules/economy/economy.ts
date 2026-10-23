@@ -43,9 +43,10 @@ export class EconomyEngine {
     const cached = this.userCache.get(cleanUser);
 
     if (cached) {
+      // Her harekette: toplu yazım lastDbUpdate'i sıfırladığı için 3 dk koşulunun içinde güncellenmiyordu
+      cached.data.last_active = now;
       if (now - cached.lastDbUpdate > 180000) { // Update SQLite once every 3 mins per user
         cached.lastDbUpdate = now;
-        cached.data.last_active = now;
         if (displayName) cached.data.display_name = displayName;
         try {
           db.prepare(`
@@ -389,9 +390,6 @@ export class EconomyEngine {
       return `@${message.user.displayName}, bu ödül için yeterli puanın yok! Gereken: ${reward.cost} Puan | Bakiyen: ${user.points} 💰`;
     }
 
-    // Deduct points
-    this.removePoints(cuzdanAdi(message.platform, message.user.username), reward.cost);
-
     const payloadText = args.slice(1).join(' ').trim();
     const redemptionId = `red_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
@@ -413,11 +411,14 @@ export class EconomyEngine {
         Date.now()
       );
     } catch (e) {
+      // Kayıt yoksa iade de yapılamaz: puan düşülmeden vazgeçilir
       console.warn('[Economy] Could not save redemption row:', e);
+      return `@${message.user.displayName}, ödül şu anda alınamadı, puanın düşülmedi. Biraz sonra tekrar dene.`;
     }
+    this.removePoints(cuzdanAdi(message.platform, message.user.username), reward.cost);
 
-    // 2. Automated Action: TTS Voice
-    if (reward.reward_type === 'tts' || payloadText) {
+    // 2. Automated Action: TTS Voice — yalnız TTS ödülü okunur (özel talep metni yayında sesli okunmasın)
+    if (reward.reward_type === 'tts') {
       const speech = payloadText || `${message.user.displayName}, ${reward.title} ödülünü aldı!`;
       ttsEngine.enqueue(speech, message.user.displayName);
     }

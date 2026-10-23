@@ -857,7 +857,7 @@ export class CommandManager {
       case 'seviye2':
       case 'xp': {
         const hedef = (args[0] || message.user.username).replace(/^@/, '');
-        const k = seviyeler.kullanici(hedef);
+        const k = seviyeler.kullanici(cuzdanAdi(message.platform, hedef));
         if (!seviyeler.ayarOku().aktif) return `@${message.user.displayName}, seviye sistemi kapalı.`;
         return `⭐ ${k.displayName} · Seviye ${k.seviye} · ${k.buSeviyedeXp}/${k.sonrakiIcinXp} XP (%${k.yuzde})`;
       }
@@ -1311,7 +1311,7 @@ export class CommandManager {
     // 1c) Seviye şartı (Seviye / XP sistemi açıksa)
     const minSeviye = Math.max(0, Number(cmd.min_level) || 0);
     if (minSeviye > 0 && !message.user.isBroadcaster && seviyeler.ayarOku().aktif) {
-      const sv = seviyeler.kullanici(message.user.username).seviye;
+      const sv = seviyeler.kullanici(cuzdanAdi(message.platform, message.user.username)).seviye;
       if (sv < minSeviye) {
         return acikCagri
           ? `@${message.user.displayName}, bu komut için seviye ${minSeviye} gerekiyor (seninki ${sv}).`

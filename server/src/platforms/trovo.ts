@@ -68,6 +68,8 @@ export class TrovoPlatform extends BasePlatform {
    * uid'sini de istiyor (`/channels/{c}/messages/{m}/users/{u}`).
    */
   private mesajSahipleri = new Map<string, string>();
+  /** Trovo bağlanınca son mesajların geçmişini yollar; bundan eskiler yeniden işlenmez. */
+  private baglandiAn = 0;
 
   // ------------------------------------------------------------- yardımcı --
 
@@ -222,6 +224,7 @@ export class TrovoPlatform extends BasePlatform {
             return;
           }
           this.connected = true;
+          this.baglandiAn = Date.now();
           this.sonHata = '';
           this.deneme = 0;
           console.log(`[Trovo] Bağlandı: ${this.currentChannel} (${this.channelId})`);
@@ -305,6 +308,8 @@ export class TrovoPlatform extends BasePlatform {
     if (!kullanici) return;
 
     const zaman = Number(c.send_time) ? Number(c.send_time) * 1000 : Date.now();
+    // Geçmiş: her yeniden bağlanmada komutlar, puanlar ve uyarılar ikinci kez çalışıyordu (5 sn saat payı)
+    if (zaman < this.baglandiAn - 5_000) return;
     const kanal = this.currentChannel;
 
     switch (olay.tur) {

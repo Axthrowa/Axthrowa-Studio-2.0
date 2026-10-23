@@ -28,6 +28,7 @@ import { db } from '../../db/index.js';
 import { cuzdanAdi, economy } from './economy.js';
 import { gamesEngine } from '../games/games.js';
 import { seviyeler } from '../levels/levels.js';
+import { ttsEngine } from '../tts/tts.js';
 
 const mesaj = (ad: string) =>
   ({
@@ -144,5 +145,41 @@ describe('önbellek toplu yazımından sonra', () => {
     economy.flushAll();
     expect(diskteki('ali')).toBe(0);
     expect(economy.getUserPoints('ali')).toBe(0);
+  });
+});
+
+describe('izleme süresi', () => {
+  it('sıralama sayfası sık sık toplu yazım yapsa da sohbet eden izleyici aktif sayılır', () => {
+    vi.setSystemTime(1_000_000_000);
+    economy.getUser('kick', 'ali', 'ali');
+    for (let dk = 1; dk <= 15; dk++) {
+      vi.setSystemTime(1_000_000_000 + dk * 60_000);
+      economy.getUser('kick', 'ali', 'ali'); // sohbet
+      economy.flushAll(); // Sıralama sayfası 5 sn'de bir yazar
+    }
+    expect(economy.recordWatchTime(5)).toBe(1);
+  });
+});
+
+describe('seviye XP cüzdanı', () => {
+  it('Twitch izleyicisinin XP’si aynı adlı Kick izleyicisine yazılmaz', () => {
+    economy.getUser('kick', 'ali', 'ali');
+    economy.getUser('twitch', 'ali', 'ali');
+    seviyeler.xpEkle(cuzdanAdi('twitch', 'ali'), 40);
+    expect(seviyeler.kullanici('twitch:ali').xp).toBe(40);
+    expect(seviyeler.kullanici('ali').xp).toBe(0);
+  });
+});
+
+describe('market TTS', () => {
+  it('özel talebin metni yayında okunmaz, TTS ödülününki okunur', () => {
+    const oku = vi.spyOn(ttsEngine, 'enqueue');
+    bakiyeYap('ali', 1000);
+    db.prepare("INSERT INTO loyalty_rewards (id, title, cost, reward_type) VALUES ('reward-talep', 'Talep', 10, 'custom')").run();
+    db.prepare("INSERT INTO loyalty_rewards (id, title, cost, reward_type) VALUES ('reward-oku', 'Oku', 10, 'tts')").run();
+    economy.handleRedeemCommand(mesaj('ali'), ['talep', 'bunu', 'oku']);
+    expect(oku).not.toHaveBeenCalled();
+    economy.handleRedeemCommand(mesaj('ali'), ['oku', 'merhaba']);
+    expect(oku).toHaveBeenCalledWith('merhaba', 'ali');
   });
 });

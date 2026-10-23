@@ -67,6 +67,15 @@ function flattenDonationPayload(raw: any): Record<string, any> {
   return { ...nested, ...raw };
 }
 
+/** "1.250,50" → 1250.5, "1,250.50" → 1250.5, "12,5 TL" → 12.5. Eskiden ilk ikisi NaN → 0 TL bağış oluyordu. */
+export function tutarOku(ham: unknown): number {
+  let s = String(ham ?? '').replace(/[^\d.,-]/g, '');
+  if (s.includes(',')) {
+    s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  }
+  return Number(s) || 0;
+}
+
 function parseIncomingDonation(raw: any, query: any = {}) {
   const body = flattenDonationPayload({ ...query, ...(raw || {}) });
   const donorName = String(
@@ -78,7 +87,7 @@ function parseIncomingDonation(raw: any, query: any = {}) {
   const amountRaw = pickDonationField(body, [
     'amount', 'total', 'donation', 'donation_amount', 'tutar', 'price', 'mc_gross', 'sum'
   ]);
-  const amount = Number(String(amountRaw ?? '0').replace(',', '.').replace(/[^\d.-]/g, '')) || 0;
+  const amount = tutarOku(amountRaw);
   const currency = String(pickDonationField(body, ['currency', 'para_birimi', 'mc_currency']) || 'TL');
   const message = String(
     pickDonationField(body, ['message', 'user_message', 'mesaj', 'note', 'comment', 'msg']) || ''
@@ -177,6 +186,10 @@ router.post('/donations/bynogame', handleBynoWebhook);
 router.post('/donations/webhook', (req: Request, res: Response) => {
   try {
     const parsed = parseIncomingDonation(req.body, req.query);
+    // BynoGame ucuyla aynı kural: tutarsız bağış yayına "0 TL" uyarısı ve TTS olarak düşmesin
+    if (!parsed.amount || parsed.amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Geçersiz bağış tutarı' });
+    }
     const result = processDonation(parsed.donorName, parsed.amount, parsed.currency, parsed.message, parsed.platform || 'custom');
     res.json({ success: true, result });
   } catch (err: any) {

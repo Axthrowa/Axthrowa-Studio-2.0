@@ -105,7 +105,7 @@ export class MessagePipeline {
     // Seviye XP'si — puandan AYRI tutulur: mağazadan alışveriş yapan izleyici
     // seviyesini kaybetmesin. Bekleme süresi spam ile seviye kasmayı engeller.
     try {
-      const sv = seviyeler.mesajXp(message.user.username);
+      const sv = seviyeler.mesajXp(cuzdanAdi(message.platform, message.user.username));
       if (sv?.atladi) {
         eventBus.emitBotMessage({
           platform: message.platform,

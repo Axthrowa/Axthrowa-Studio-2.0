@@ -68,6 +68,7 @@ const EndCreditsWidget = lazy(() => import('./widgets/EndCreditsWidget.js'));
 const PinnedMessageWidget = lazy(() => import('./widgets/PinnedMessageWidget.js'));
 const LoyaltyStoreWidget = lazy(() => import('./widgets/LoyaltyStoreWidget.js'));
 const LyricsWidget = lazy(() => import('./widgets/LyricsWidget.js'));
+const MuzikVideoWidget = lazy(() => import('./widgets/MuzikVideoWidget.js'));
 const JumpScareWidget = lazy(() => import('./widgets/JumpScareWidget.js'));
 const KingWidget = lazy(() => import('./widgets/KingWidget.js'));
 const UnifiedOverlayWidget = lazy(() => import('./widgets/UnifiedOverlayWidget.js').then((m) => ({ default: m.UnifiedOverlayWidget })));
@@ -117,6 +118,7 @@ export function App() {
   if (path === '/widgets/pinned') return obsSayfasi(<PinnedMessageWidget />);
   if (path === '/widgets/loyalty-redeem') return obsSayfasi(<LoyaltyStoreWidget />);
   if (path === '/widgets/lyrics') return obsSayfasi(<LyricsWidget />);
+  if (path === '/widgets/muzik-video') return obsSayfasi(<MuzikVideoWidget />);
   if (path === '/widgets/jumpscare') return obsSayfasi(<JumpScareWidget />);
   if (path === '/widgets/king') return obsSayfasi(<KingWidget />);
   if (path === '/widgets/pano') return obsSayfasi(<SoundBoardWidget />);

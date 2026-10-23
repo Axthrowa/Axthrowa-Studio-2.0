@@ -43,6 +43,7 @@ import { JumpScareWidget } from './JumpScareWidget.js';
 import { EndCreditsWidget } from './EndCreditsWidget.js';
 import { AudioPlayerWidget } from './AudioPlayerWidget.js';
 import { SoundBoardWidget } from './SoundBoardWidget.js';
+import { MuzikVideoWidget } from './MuzikVideoWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 
 export interface WidgetLayoutItem {
@@ -82,7 +83,8 @@ export type KatmanAnahtari =
   | 'jumpScare'
   | 'endCredits'
   | 'tts'
-  | 'soundBoard';
+  | 'soundBoard'
+  | 'muzikVideo';
 
 export interface KatmanTanimi {
   anahtar: KatmanAnahtari;
@@ -282,6 +284,13 @@ export const KATMANLAR: KatmanTanimi[] = [
     z: 11,
     varsayilan: { x: 340, y: 1040, width: 320, height: 40 },
     ciz: (o) => <SoundBoardWidget previewMode={o} />
+  },
+  {
+    anahtar: 'muzikVideo',
+    etiket: 'Şarkı Klipleri',
+    z: 56,
+    varsayilan: { x: 1280, y: 700, width: 600, height: 340 },
+    ciz: (o) => <MuzikVideoWidget embedded previewMode={o} />
   }
 ];
 
@@ -315,7 +324,8 @@ export const GALERI_KATMANI: Record<string, { anahtar: KatmanAnahtari; ek?: Reco
   'on-screen-emotes': { anahtar: 'kappagen' },
   'end-credits': { anahtar: 'endCredits' },
   tts: { anahtar: 'tts' },
-  'cloud-tts': { anahtar: 'tts' }
+  'cloud-tts': { anahtar: 'tts' },
+  'muzik-video': { anahtar: 'muzikVideo' }
 };
 
 /**

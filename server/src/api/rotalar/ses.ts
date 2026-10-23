@@ -31,6 +31,11 @@ router.get('/songrequest/current', (req: Request, res: Response) => {
   res.json(songRequest.getCurrentSong() || null);
 });
 
+// Şarkı Klipleri widget'ı: video bitti → sıradakine geç (yalnız bitti denen şarkı hâlâ çalıyorsa)
+router.post('/songrequest/bitti', (req: Request, res: Response) => {
+  res.json({ success: songRequest.klipBitti(String(req.body?.id || '')) });
+});
+
 router.post('/songrequest/skip', (req: Request, res: Response) => {
   const result = songRequest.skipSong(true);
   res.json(result);

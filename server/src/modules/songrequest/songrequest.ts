@@ -59,8 +59,24 @@ export class SongRequestEngine {
     });
   }
 
+  /** Şarkı Klipleri widget'ı kipi: istekler YouTube'da aranır, OBS'te video olarak çalar. */
+  videoKipi(): boolean {
+    return settingsCache.get('sr_hedef', 'spotify') === 'video';
+  }
+
+  /** Klip widget'ı parçayı bitirdi: yalnız hâlâ çalan oysa geçilir (iki OBS kaynağı aynı şarkıyı iki kez atlatmasın). */
+  klipBitti(id: string): boolean {
+    const simdiki = this.getCurrentSong();
+    if (!simdiki || simdiki.id !== id) return false;
+    db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(simdiki.id);
+    this.currentSong = null;
+    this.skipVotes.clear();
+    return true;
+  }
+
   /** Spotify Web API ile otomatik çalma açık ve hesap bağlı mı? */
   spotifyOtomatikMi(): boolean {
+    if (this.videoKipi()) return false;
     return muzikHost.spotifyKullanilabilir() && settingsCache.get('sr_spotify_api', 'true') !== 'false';
   }
 
@@ -138,6 +154,9 @@ export class SongRequestEngine {
     // Spotify hesabı bağlıysa şarkı doğrudan Spotify'da çalınır
     if (this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);
 
+    const videoKipi = this.videoKipi();
+    // Video kipinde Spotify linki başlığıyla YouTube'da aranır
+    let aramaSorgusu = rawQuery;
     let videoId = '';
     let title = rawQuery;
     let thumbnailUrl = '';
@@ -160,8 +179,14 @@ export class SongRequestEngine {
         title = `Spotify Track (${trackId})`;
       }
 
-      // Auto open in Spotify Desktop if configured
-      this.checkAndAutoOpenDesktop('spotify', title, `spotify:track:${trackId}`);
+      if (videoKipi) {
+        aramaSorgusu = title;
+        videoUrl = '';
+        thumbnailUrl = '';
+      } else {
+        // Auto open in Spotify Desktop if configured
+        this.checkAndAutoOpenDesktop('spotify', title, `spotify:track:${trackId}`);
+      }
     } 
     // 2. Check if query is YouTube Music URL
     else if (rawQuery.includes('music.youtube.com/watch')) {
@@ -184,7 +209,7 @@ export class SongRequestEngine {
 
     // 4. If query is a text search (not a direct URL), check fast cache or search
     if (!videoUrl && !videoId) {
-      const cacheKey = rawQuery.toLowerCase();
+      const cacheKey = aramaSorgusu.toLowerCase();
       if (this.searchCache.has(cacheKey)) {
         const cached = this.searchCache.get(cacheKey)!;
         videoId = cached.videoId;
@@ -193,7 +218,7 @@ export class SongRequestEngine {
         videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
       } else {
         try {
-          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(rawQuery)}`;
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(aramaSorgusu)}`;
           const res = await axios.get(searchUrl, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -246,9 +271,9 @@ export class SongRequestEngine {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).run(songId, title, videoUrl, 180, message.user.displayName, message.platform, thumbnailUrl, Date.now());
 
-    // Auto open desktop player if enabled
+    // Auto open desktop player if enabled (video kipinde klip OBS'te çalar)
     const desktopTarget = settingsCache.get('sr_desktop_target', 'none');
-    if (desktopTarget === 'spotify' || desktopTarget === 'ytmusic') {
+    if (!videoKipi && (desktopTarget === 'spotify' || desktopTarget === 'ytmusic')) {
       this.openDesktopPlayer(desktopTarget as any, title, videoUrl);
     }
 

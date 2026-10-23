@@ -234,6 +234,10 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
     baslik: 'Yayın Kralı',
     aciklama: 'Tahtı puanıyla satın alan izleyiciyi ve saltanat süresini gösterir.'
   },
+  'muzik-video': {
+    baslik: 'Şarkı Klipleri',
+    aciklama: 'İzleyici şarkı isteklerini YouTube klibiyle sırayla oynatır; bitince sıradaki istek başlar.'
+  },
   jumpscare: {
     baslik: 'JumpScare',
     aciklama: 'Bağış eşiği aşılınca tam ekran korku medyası oynatır; eşik ve süre ayarlanır.'
@@ -916,6 +920,12 @@ export function OverlayStudio() {
       category: 'On-Stream',
       icon: Disc,
       url: `${baseUrl}/widgets/lyrics`
+    },
+    {
+      id: 'muzik-video',
+      category: 'On-Stream',
+      icon: Disc,
+      url: `${baseUrl}/widgets/muzik-video`
     },
     {
       id: 'king',

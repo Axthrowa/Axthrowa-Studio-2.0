@@ -72,7 +72,7 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
               StreamAxT Kontrol Merkezi
             </h1>
             <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs px-2.5 py-0.5 rounded-full font-bold">
-              v1.1.0 Pro
+              v1.1.1 Pro
             </span>
           </div>
           <p className="text-sm text-gray-400">

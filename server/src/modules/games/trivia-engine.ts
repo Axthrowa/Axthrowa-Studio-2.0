@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { db } from '../../db/index.js';
 import { TriviaQuestion, TriviaCategory, TriviaScore } from '../../db/schema.js';
 import { eventBus } from '../../core/event-bus.js';
-import { economy } from '../economy/economy.js';
+import { cuzdanAdi, economy } from '../economy/economy.js';
 import { wsHub } from '../../ws/server.js';
 import { hataMetni } from '../../core/logger.js';
 import { sikCoz } from './cevap-eslestir.js';
@@ -322,7 +322,7 @@ export class TriviaEngine extends EventEmitter {
 
       // Award points in StreamAxT economy
       try {
-        economy.addPoints(v.username, totalEarned);
+        economy.addPoints(cuzdanAdi(v.platform, v.username), totalEarned);
       } catch (e) {
         console.warn(`[Trivia] ${v.username} için ${totalEarned} puan eklenemedi:`, hataMetni(e));
       }
@@ -423,7 +423,7 @@ export class TriviaEngine extends EventEmitter {
     podiumWinners.forEach((player, idx) => {
       const bonus = bonusPrizes[idx] || 50;
       try {
-        economy.addPoints(player.username, bonus);
+        economy.addPoints(cuzdanAdi(player.platform, player.username), bonus);
       } catch (e) {
         console.warn(`[Trivia] ${player.username} için ${bonus} kürsü puanı eklenemedi:`, hataMetni(e));
       }

@@ -173,7 +173,9 @@ export class YouTubePlatform extends BasePlatform {
       if (this.nextPageToken) params.pageToken = this.nextPageToken;
       const res = await axios.get(`${API}/liveChat/messages`, { params, timeout: 8000 });
       this.nextPageToken = res.data?.nextPageToken || this.nextPageToken;
-      sonraki = Math.max(5000, Number(res.data?.pollingIntervalMillis) || 6000);
+      // En az 15 sn: her sorgu 5 kota birimi, günlük 10.000 → 5 sn aralıkla kota ~2,8 saatte bitiyordu.
+      // shortcut: 15 sn ~8 saatlik yayına yeter; daha uzun yayınlar için kota artırımı gerekir.
+      sonraki = Math.max(15_000, Number(res.data?.pollingIntervalMillis) || 15_000);
       this.sonHata = '';
 
       const items: any[] = res.data?.items || [];

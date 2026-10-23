@@ -13,7 +13,7 @@
 import crypto from 'node:crypto';
 import { db } from '../../db/index.js';
 import { medya } from '../media/media.js';
-import { economy } from '../economy/economy.js';
+import { cuzdanAdi, economy } from '../economy/economy.js';
 import type { ChatMessagePayload } from '../../core/event-bus.js';
 import {
   ayarlariDuzelt,
@@ -304,14 +304,14 @@ export class SesPanosu {
     }
     const bedel = ayricalikli && a.modlarUcretsiz ? 0 : bulunan.tur === 'oge' ? oge.maliyet : bulunan.kova.maliyet;
     if (bedel > 0) {
-      const bakiye = economy.getUserPoints(m.user.username);
+      const bakiye = economy.getUserPoints(cuzdanAdi(m.platform, m.user.username));
       if (bakiye < bedel) return `@${kim}, yeterli puanın yok: gereken ${bedel}, bakiyen ${bakiye}.`;
-      economy.removePoints(m.user.username, bedel);
+      economy.removePoints(cuzdanAdi(m.platform, m.user.username), bedel);
     }
     this.genelSon = simdi;
     this.hedefSon.set(hedefId, simdi);
     this.kullaniciSon.set(kullaniciAnahtar, simdi);
-    const sira = this.siraya(oge, kim, m.platform, bedel, 'komut', m.user.username);
+    const sira = this.siraya(oge, kim, m.platform, bedel, 'komut', cuzdanAdi(m.platform, m.user.username));
     const sonek = bedel > 0 ? ` (−${bedel} puan)` : '';
     return sira > 0 ? `🔊 ${kim} → "${oge.ad}" sıraya alındı (${sira}. sırada)${sonek}` : `🔊 ${kim} → "${oge.ad}"${sonek}`;
   }

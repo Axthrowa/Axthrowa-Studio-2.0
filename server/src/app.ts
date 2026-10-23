@@ -359,6 +359,7 @@ server.listen(PORT, HOST, async () => {
   // Connect active streaming platforms
   try {
     await platformManager.connectAll();
+    platformManager.bekciyiBaslat();
   } catch (err) {
     console.error('Error connecting platforms:', err);
   }

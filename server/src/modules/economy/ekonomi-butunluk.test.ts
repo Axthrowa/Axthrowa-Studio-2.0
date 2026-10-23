@@ -25,7 +25,7 @@ vi.mock('../games/trivia-engine.js', () => ({ triviaEngine: { stopGame: () => {}
 
 // vi.mock çağrıları içe aktarmalardan önceye taşınır: bunlar sahte veritabanını görür.
 import { db } from '../../db/index.js';
-import { economy } from './economy.js';
+import { cuzdanAdi, economy } from './economy.js';
 import { gamesEngine } from '../games/games.js';
 import { seviyeler } from '../levels/levels.js';
 
@@ -90,6 +90,24 @@ describe('soygun/yarış bahsi katılırken çekilir', () => {
     gamesEngine.handleRace(mesaj('veli'), ['300']);
     vi.advanceTimersByTime(60_000);
     expect(economy.getUserPoints('ali') + economy.getUserPoints('veli')).toBe(600);
+  });
+});
+
+describe('cüzdan platforma göre ayrılır', () => {
+  it('Discord’daki aynı adlı kişi Kick izleyicisinin puanını harcayamaz', () => {
+    bakiyeYap('ali', 5000); // Kick
+    const discordAli = { ...mesaj('ali'), platform: 'discord' };
+    expect(economy.getUser('discord', 'ali', 'ali').points).toBe(100); // ayrı, yeni cüzdan (başlangıç puanı)
+    gamesEngine.handleHeist(discordAli, ['hepsi']);
+    expect(economy.getUserPoints('ali')).toBe(5000);
+    expect(economy.getUserPoints('discord:ali')).toBe(0);
+  });
+
+  it('cuzdanAdi: Kick düz ad, diğerleri platform önekli, önekli ad değişmez', () => {
+    expect(cuzdanAdi('kick', '@Ali')).toBe('ali');
+    expect(cuzdanAdi(undefined, 'Ali')).toBe('ali');
+    expect(cuzdanAdi('discord', 'Ali')).toBe('discord:ali');
+    expect(cuzdanAdi('twitch', 'twitch:ali')).toBe('twitch:ali');
   });
 });
 

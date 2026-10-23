@@ -388,7 +388,20 @@ export class KickPlatform extends BasePlatform {
     return this.realtime.durum();
   }
 
-  async refreshKickToken(forceClientCredentials = false): Promise<boolean> {
+  /**
+   * Aynı anda 401 alan gönderimler TEK yenilemeyi paylaşır: yenileme belirteci tek kullanımlıksa
+   * ikinci istek reddedilip o mesaj düşüyordu.
+   */
+  private suranYenileme: Promise<boolean> | null = null;
+
+  refreshKickToken(forceClientCredentials = false): Promise<boolean> {
+    this.suranYenileme ??= this.belirteciYenile(forceClientCredentials).finally(() => {
+      this.suranYenileme = null;
+    });
+    return this.suranYenileme;
+  }
+
+  private async belirteciYenile(forceClientCredentials: boolean): Promise<boolean> {
     try {
       const row = db.prepare("SELECT token, refresh_token FROM channels WHERE platform = 'kick'").get() as any;
       const clientId = settingsCache.get('kick_client_id') || '';

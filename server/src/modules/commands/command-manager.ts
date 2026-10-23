@@ -3,7 +3,7 @@ import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { parseVariables } from '../../core/variable-parser.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
 import { randomUUID } from 'node:crypto';
-import { economy } from '../economy/economy.js';
+import { cuzdanAdi, economy } from '../economy/economy.js';
 import { getStreamUptime, yayinAcikMi } from '../../core/variable-parser.js';
 import { sayacAl, sayacAyarla, sayacDegistir } from '../../core/variables/store.js';
 import { sayacIfadesi } from '../../core/variables/pure.js';
@@ -454,7 +454,7 @@ export class CommandManager {
         if (!target || isNaN(amount) || amount === 0) {
           return 'Kullanım: !puanver @kullanıcı 100  (eksi vermek için: !puanver @kullanıcı -50)';
         }
-        const { user, total } = economy.grantPoints(target, amount);
+        const { user, total } = economy.grantPoints(cuzdanAdi(message.platform, target), amount);
         const yon = amount > 0 ? `+${amount}` : String(amount);
         return `💰 @${user} için ${yon} puan işlendi. Yeni bakiye: ${total}`;
       }
@@ -679,7 +679,7 @@ export class CommandManager {
           return `@${message.user.displayName}, tahtı kapmak için puan girmelisiniz: !tahtikap <puan>`;
         }
         const res = await kingSystemService.claimThrone(
-          message.user.username,
+          cuzdanAdi(message.platform, message.user.username),
           message.user.displayName,
           bid,
           message.user.avatarUrl,
@@ -755,7 +755,7 @@ export class CommandManager {
           return `🎲 ${d.tahmin.baslik} · ${d.tahmin.secenekler.map((x, i) => `${x}: ${d.secenekToplam[i]}p`).join(' · ')} · Havuz: ${d.havuz}`;
         }
 
-        const r = tahminler.bahisKoy(message.user.username, message.user.displayName, alt, Number(args[1]));
+        const r = tahminler.bahisKoy(cuzdanAdi(message.platform, message.user.username), message.user.displayName, alt, Number(args[1]));
         if (!r.ok) return `@${message.user.displayName}, ${r.hata}`;
         return `✅ @${message.user.displayName} "${r.secenek}" için ${r.puan} puan yatırdı.`;
       }
@@ -1145,10 +1145,10 @@ export class CommandManager {
           emoteler = adlar.length ? adlar.map((ad) => ({ ad, url: h.get(ad) })) : [{ ad: '🎉' }, { ad: '🔥' }, { ad: '💜' }];
         }
         if (!yetkili) {
-          if (economy.getUserPoints(message.user.username) < ucret) {
+          if (economy.getUserPoints(cuzdanAdi(message.platform, message.user.username)) < ucret) {
             return `@${message.user.displayName}, kappagen için ${ucret} puan gerekli.`;
           }
-          economy.removePoints(message.user.username, ucret);
+          economy.removePoints(cuzdanAdi(message.platform, message.user.username), ucret);
         }
         kappagenGonder(emoteler, true);
         return null;
@@ -1176,10 +1176,10 @@ export class CommandManager {
           return `@${message.user.displayName}, kendine puan gönderemezsin.`;
         }
         if (miktar > 1_000_000) return `@${message.user.displayName}, tek seferde en çok 1.000.000 puan gönderilebilir.`;
-        const bakiye = economy.getUserPoints(message.user.username);
+        const bakiye = economy.getUserPoints(cuzdanAdi(message.platform, message.user.username));
         if (bakiye < miktar) return `@${message.user.displayName}, yetersiz puan (bakiye: ${bakiye}).`;
-        economy.removePoints(message.user.username, miktar);
-        economy.addPoints(hedef, miktar);
+        economy.removePoints(cuzdanAdi(message.platform, message.user.username), miktar);
+        economy.addPoints(cuzdanAdi(message.platform, hedef), miktar);
         return `💸 @${message.user.displayName} → @${hedef}: ${miktar} puan gönderildi.`;
       }
 
@@ -1360,11 +1360,11 @@ export class CommandManager {
     // yazdı diye ücretlendirilmemeli. `!komut` biçimi normal ücretlenir.
     const maliyet = acikCagri ? Math.max(0, Number(cmd.cost_points) || 0) : 0;
     if (maliyet > 0 && !message.user.isBroadcaster) {
-      const bakiye = economy.getUserPoints(message.user.username);
+      const bakiye = economy.getUserPoints(cuzdanAdi(message.platform, message.user.username));
       if (bakiye < maliyet) {
         return `@${message.user.displayName}, bu komut ${maliyet} puan gerektiriyor (bakiyen: ${bakiye}).`;
       }
-      economy.addPoints(message.user.username, -maliyet);
+      economy.addPoints(cuzdanAdi(message.platform, message.user.username), -maliyet);
     }
 
     this.globalCooldowns.set(globalKey, { expiresAt: now + genelSn * 1000 });

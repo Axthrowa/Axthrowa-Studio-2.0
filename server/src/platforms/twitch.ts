@@ -89,6 +89,12 @@ export class TwitchPlatform extends BasePlatform {
     for (const line of lines) {
       if (!line) continue;
 
+      // Twitch bakımdan önce RECONNECT yollar: bağlantı kapatılır, bekçi yeniden bağlar
+      if (/^(@\S+ )?:tmi\.twitch\.tv RECONNECT\b/.test(line)) {
+        this.ws?.close();
+        continue;
+      }
+
       // Handle PING/PONG keepalive
       if (line.startsWith('PING')) {
         this.ws?.send(line.replace('PING', 'PONG'));

@@ -1,5 +1,5 @@
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
-import { economy } from '../economy/economy.js';
+import { cuzdanAdi, economy } from '../economy/economy.js';
 import { db } from '../../db/index.js';
 import { triviaEngine } from './trivia-engine.js';
 import { kelimeTuttuMu, serbestCevapDogruMu } from './cevap-eslestir.js';
@@ -289,7 +289,7 @@ export class GamesEngine {
     if ('hata' in bahis) return bahis.hata;
     const amount = bahis.miktar;
 
-    const username = message.user.username.toLowerCase();
+    const username = cuzdanAdi(message.platform, message.user.username);
     if (this.activeHeist?.participants.has(username)) {
       return `@${message.user.displayName}, zaten bu soygun çetesindesin! Hazırda bekle! 🥷`;
     }
@@ -388,7 +388,7 @@ export class GamesEngine {
     if ('hata' in bahis) return bahis.hata;
     const amount = bahis.miktar;
 
-    const username = message.user.username.toLowerCase();
+    const username = cuzdanAdi(message.platform, message.user.username);
     if (this.activeRace?.participants.has(username)) {
       return `@${message.user.displayName}, zaten yarış çizgisindesin! Gaz pedalını hazırla! 🏎️`;
     }
@@ -531,7 +531,7 @@ export class GamesEngine {
       const isCorrect = serbestCevapDogruMu(message.message || '', q.answers);
       if (isCorrect) {
         this.activeTrivia = null;
-        economy.addPoints(message.user.username, q.reward);
+        economy.addPoints(cuzdanAdi(message.platform, message.user.username), q.reward);
         return `🎉 TEBRİKLER @${message.user.displayName}! Doğru cevabı ilk sen verdin ve ${q.reward} Puan kazandın! 🧠🏆`;
       }
     } else if (this.activeTrivia && now >= this.activeTrivia.expiresAt) {
@@ -545,7 +545,7 @@ export class GamesEngine {
       if (kelimeTuttuMu(message.message || '', target)) {
         const reward = this.activeAnagram.reward;
         this.activeAnagram = null;
-        economy.addPoints(message.user.username, reward);
+        economy.addPoints(cuzdanAdi(message.platform, message.user.username), reward);
         return `🎉 BİLDİN @${message.user.displayName}! Doğru kelime "${target.toUpperCase()}" idi! +${reward} Puan kazandın! 🔤✨`;
       }
     } else if (this.activeAnagram && now >= this.activeAnagram.expiresAt) {
@@ -560,7 +560,7 @@ export class GamesEngine {
     if (!this.settings.enabledGames.fishing) {
       return `@${message.user.displayName}, Balık Tutma oyunu şu anda devre dışı bırakılmış. ⏸️`;
     }
-    const username = message.user.username.toLowerCase();
+    const username = cuzdanAdi(message.platform, message.user.username);
     const now = Date.now();
     const cdMs = (this.settings.fishing.cooldownSeconds || 45) * 1000;
     const lastTime = this.fishCooldowns.get(username) || 0;
@@ -607,29 +607,29 @@ export class GamesEngine {
       return `@${message.user.displayName}, kasa açmak için ${cost} puana ihtiyacın var! Bakiyen: ${user.points} 💰`;
     }
 
-    economy.removePoints(message.user.username, cost);
+    economy.removePoints(cuzdanAdi(message.platform, message.user.username), cost);
     const roll = Math.random() * 100;
 
     if (roll < 50) {
       // Common
       const prize = Math.round(cost * 0.35);
-      economy.addPoints(message.user.username, prize);
+      economy.addPoints(cuzdanAdi(message.platform, message.user.username), prize);
       return `📦 [KASA AÇILDI] ⚪ Sıradan Drop: @${message.user.displayName} [Paslı Çakı | Sahada Test Edilmiş] çıkardı! (+${prize} Puan) 💸`;
     } else if (roll < 80) {
       // Rare
       const prize = Math.round(cost * 1.5);
-      economy.addPoints(message.user.username, prize);
+      economy.addPoints(cuzdanAdi(message.platform, message.user.username), prize);
       return `📦 [KASA AÇILDI] 🔵 Nadir Drop: @${message.user.displayName} [AK-47 | Neon Devrimi] çıkardı! (+${prize} Puan)! ✨`;
     } else if (roll < 95) {
       // Epic
       const prize = Math.round(cost * 3.5);
-      economy.addPoints(message.user.username, prize);
+      economy.addPoints(cuzdanAdi(message.platform, message.user.username), prize);
       return `📦 [KASA AÇILDI] 🟣 EPİK DROP! @${message.user.displayName} [AWP | Ejderha Ateşi] düşürdü! (+${prize} Puan) 🐉🔥`;
     } else {
       // Legendary Gold
       const mult = this.settings.lootbox.jackpotMultiplier || 10;
       const prize = cost * mult;
-      economy.addPoints(message.user.username, prize);
+      economy.addPoints(cuzdanAdi(message.platform, message.user.username), prize);
       return `📦✨ [ALTIN DROP!] 🟡 EFSANEVİ BIÇAK! @${message.user.displayName} kasadan [★ KARAMBİT | FADE (Fabrikadan Yeni Çıkmış)] çıkardı! TAM +${prize} PUAN! 🏆👑`;
     }
   }
@@ -639,7 +639,7 @@ export class GamesEngine {
     if (!this.settings.enabledGames.bomb) {
       return `@${message.user.displayName}, Bomba İmha oyunu şu anda devre dışı bırakılmış. ⏸️`;
     }
-    const username = message.user.username.toLowerCase();
+    const username = cuzdanAdi(message.platform, message.user.username);
     const action = args[0]?.toLowerCase();
 
     // If cutting a wire
@@ -715,11 +715,11 @@ export class GamesEngine {
     const won = outcome === normalizedChoice;
 
     if (won) {
-      economy.addPoints(message.user.username, amount);
+      economy.addPoints(cuzdanAdi(message.platform, message.user.username), amount);
       const newTotal = user.points + amount;
       return `🪙 Para havaya atıldı... Döndü ve [${outcome.toUpperCase()}] GELDİ! 🎉 @${message.user.displayName} kazandı (+${amount} Puan)! Yeni bakiyen: ${newTotal} 💰`;
     } else {
-      economy.removePoints(message.user.username, amount);
+      economy.removePoints(cuzdanAdi(message.platform, message.user.username), amount);
       const newTotal = Math.max(0, user.points - amount);
       return `🪙 Para havaya atıldı... [${outcome.toUpperCase()}] geldi! 😢 @${message.user.displayName} kaybetti (-${amount} Puan). Yeni bakiyen: ${newTotal} 💸`;
     }
@@ -751,10 +751,10 @@ export class GamesEngine {
     const botTotal = botD1 + botD2;
 
     if (userTotal > botTotal) {
-      economy.addPoints(message.user.username, amount);
+      economy.addPoints(cuzdanAdi(message.platform, message.user.username), amount);
       return `🎲 ZAR DÜELLOSU: @${message.user.displayName} [${userD1}+${userD2} = ${userTotal}] attı! Bot [${botD1}+${botD2} = ${botTotal}] attı. 🎉 KAZANDIN (+${amount} Puan)!`;
     } else if (userTotal < botTotal) {
-      economy.removePoints(message.user.username, amount);
+      economy.removePoints(cuzdanAdi(message.platform, message.user.username), amount);
       return `🎲 ZAR DÜELLOSU: @${message.user.displayName} [${userD1}+${userD2} = ${userTotal}] attı! Bot [${botD1}+${botD2} = ${botTotal}] attı. 💀 KAYBETTİN (-${amount} Puan)!`;
     } else {
       return `🎲 ZAR DÜELLOSU: İki taraf da [${userTotal}] attı! BERABERE! Puanın iade edildi. 🤝`;

@@ -1,7 +1,7 @@
 import { db } from '../../db/index.js';
 import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload } from '../../core/event-bus.js';
-import { economy } from '../economy/economy.js';
+import { cuzdanAdi, economy } from '../economy/economy.js';
 
 export interface GiveawayWinner {
   /** Tüm kazananlar virgülle (eski istemciler tek ad bekliyordu; tek kazananda aynı) */
@@ -90,7 +90,7 @@ export class GiveawayEngine {
       if (user.points < active.cost_points) {
         return `@${message.user.displayName}, çekilişe katılmak için ${active.cost_points} puana ihtiyacın var! (Mevcut: ${user.points})`;
       }
-      economy.removePoints(message.user.username, active.cost_points);
+      economy.removePoints(cuzdanAdi(message.platform, message.user.username), active.cost_points);
     }
 
     // Calculate tickets (subscriber bonus)

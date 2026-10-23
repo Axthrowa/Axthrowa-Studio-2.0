@@ -4,7 +4,7 @@ import { commandManager } from '../modules/commands/command-manager.js';
 import { ttsEngine } from '../modules/tts/tts.js';
 import { gamesEngine } from '../modules/games/games.js';
 import { triviaEngine } from '../modules/games/trivia-engine.js';
-import { economy } from '../modules/economy/economy.js';
+import { cuzdanAdi, economy } from '../modules/economy/economy.js';
 import { seviyeler } from '../modules/levels/levels.js';
 import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { puanDususu } from '../modules/engagement/point-drops.js';
@@ -152,7 +152,7 @@ export class MessagePipeline {
     // 1.2 Topluluk: kappagen (overlay), emote bingo, emote piramidi.
     // Yanıt varsa sohbete yazılır; mesajın geri kalan işlenişi sürer.
     try {
-      for (const yanit of toplulukMesaji(message, (puan, kim) => economy.addPoints(kim, puan))) {
+      for (const yanit of toplulukMesaji(message, (puan, kim) => economy.addPoints(cuzdanAdi(message.platform, kim), puan))) {
         eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: yanit });
       }
     } catch (e) {
@@ -161,7 +161,7 @@ export class MessagePipeline {
 
     // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin
     // komut isleyicisinden ONCE bakilir.
-    if (puanDususu.katil(message.user.username, message.user.displayName, rawText)) {
+    if (puanDususu.katil(cuzdanAdi(message.platform, message.user.username), message.user.displayName, rawText)) {
       return;
     }
 

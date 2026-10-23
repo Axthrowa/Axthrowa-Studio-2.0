@@ -13,6 +13,17 @@ interface ActiveDuel {
   createdAt: number;
 }
 
+/**
+ * Puan cüzdanının anahtarı. Eskiden cüzdan yalnız kullanıcı adıyla tutuluyordu: Discord'da ya da
+ * Twitch'te adı "ali" olan biri Kick'teki "ali"nin puanını harcayabiliyordu (!puangonder, !market…).
+ * Kick (ve platformsuz çağrılar) düz ad kullanır — mevcut veriler değişmez; diğerleri "platform:ad".
+ */
+export function cuzdanAdi(platform: string | undefined | null, ad: string): string {
+  const a = String(ad || '').replace(/^@+/, '').trim().toLowerCase();
+  if (!a || a.includes(':')) return a;
+  return !platform || platform === 'kick' || platform === 'all' ? a : `${platform}:${a}`;
+}
+
 export class EconomyEngine {
   private activeDuels: Map<string, ActiveDuel> = new Map();
   private userCache: Map<string, { data: any; lastDbUpdate: number }> = new Map();
@@ -27,7 +38,7 @@ export class EconomyEngine {
   }
 
   getUser(platform: string, username: string, displayName?: string) {
-    const cleanUser = username.toLowerCase();
+    const cleanUser = cuzdanAdi(platform, username);
     const now = Date.now();
     const cached = this.userCache.get(cleanUser);
 
@@ -379,7 +390,7 @@ export class EconomyEngine {
     }
 
     // Deduct points
-    this.removePoints(message.user.username, reward.cost);
+    this.removePoints(cuzdanAdi(message.platform, message.user.username), reward.cost);
 
     const payloadText = args.slice(1).join(' ').trim();
     const redemptionId = `red_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -392,7 +403,8 @@ export class EconomyEngine {
       `).run(
         redemptionId,
         message.platform,
-        message.user.username,
+        // İade bu adla yapılır: cüzdan adı (Discord/Twitch iadesi Kick cüzdanına düşmesin)
+        cuzdanAdi(message.platform, message.user.username),
         message.user.displayName,
         reward.id,
         reward.title,
@@ -447,10 +459,10 @@ export class EconomyEngine {
 
     const won = Math.random() >= 0.5;
     if (won) {
-      const newTotal = this.addPoints(message.user.username, amount);
+      const newTotal = this.addPoints(cuzdanAdi(message.platform, message.user.username), amount);
       return `🎉 @${message.user.displayName}, ruleti KAZANDIN! +${amount} puan kazandın! Yeni bakiyen: ${newTotal} 💰`;
     } else {
-      const newTotal = this.removePoints(message.user.username, amount);
+      const newTotal = this.removePoints(cuzdanAdi(message.platform, message.user.username), amount);
       return `💀 @${message.user.displayName}, ruleti KAYBETTİN! -${amount} puan gitti. Yeni bakiyen: ${newTotal} 💸`;
     }
   }
@@ -477,17 +489,17 @@ export class EconomyEngine {
     // Bahis her durumda çekilir; ikramiye bahsin KATI olarak geri ödenir.
     // Eskiden bahis hiç düşülmüyordu: iki simge tutturmak bile bedava kârdı ve
     // sohbette yazılan kazanç gerçek bakiyeyle tutmuyordu.
-    this.removePoints(message.user.username, amount);
+    this.removePoints(cuzdanAdi(message.platform, message.user.username), amount);
     if (s1 === s2 && s2 === s3) {
       const payout = amount * 5;
-      const newTotal = this.addPoints(message.user.username, payout);
+      const newTotal = this.addPoints(cuzdanAdi(message.platform, message.user.username), payout);
       return `${machineView} 💥 BÜYÜK İKRAMİYE! @${message.user.displayName} üçünü de tutturdu, net +${payout - amount} puan! Bakiye: ${newTotal} 🤑`;
     } else if (s1 === s2 || s2 === s3 || s1 === s3) {
       const payout = amount * 2;
-      const newTotal = this.addPoints(message.user.username, payout);
+      const newTotal = this.addPoints(cuzdanAdi(message.platform, message.user.username), payout);
       return `${machineView} ✨ Tebrikler @${message.user.displayName}, ikisini tutturdun! Net +${payout - amount} puan. Bakiye: ${newTotal}`;
     } else {
-      const newTotal = this.getUserPoints(message.user.username);
+      const newTotal = this.getUserPoints(cuzdanAdi(message.platform, message.user.username));
       return `${machineView} 😢 Ah be @${message.user.displayName}, tutturamadın! -${amount} puan. Bakiye: ${newTotal}`;
     }
   }
@@ -501,8 +513,8 @@ export class EconomyEngine {
       return `@${message.user.displayName}, düello başlatmak için: !duello @hedef_kisi <miktar>`;
     }
 
-    const targetUserClean = targetTag.replace('@', '').toLowerCase();
-    if (targetUserClean === message.user.username.toLowerCase()) {
+    const targetUserClean = cuzdanAdi(message.platform, targetTag);
+    if (targetUserClean === cuzdanAdi(message.platform, message.user.username)) {
       return `@${message.user.displayName}, kendine meydan okuyamazsın! 😄`;
     }
 
@@ -515,15 +527,15 @@ export class EconomyEngine {
       return `@${message.user.displayName}, meydan okuduğun kişinin (${targetTag}) yeterli puanı yok!`;
     }
 
-    const duelKey = `${message.platform}_${targetUserClean}_${message.user.username.toLowerCase()}`;
-    const reverseKey = `${message.platform}_${message.user.username.toLowerCase()}_${targetUserClean}`;
+    const duelKey = `${message.platform}_${targetUserClean}_${cuzdanAdi(message.platform, message.user.username)}`;
+    const reverseKey = `${message.platform}_${cuzdanAdi(message.platform, message.user.username)}_${targetUserClean}`;
 
     if (this.activeDuels.has(reverseKey)) {
       const duel = this.activeDuels.get(reverseKey)!;
       // Bakiyeler DÜELLONUN miktarıyla denetlenir: yukarıdaki denetim kabul edenin yazdığı
       // miktarla yapılıyordu; "!duello @x 1" ile 5000'lik düello kabul edilip kaybedince
       // bakiye 0'da duruyordu (bedava bahis).
-      if (this.getUserPoints(message.user.username) < duel.amount) {
+      if (this.getUserPoints(cuzdanAdi(message.platform, message.user.username)) < duel.amount) {
         return `@${message.user.displayName}, bu düello ${duel.amount} puanlık; yeterli puanın yok!`;
       }
       if (this.getUserPoints(duel.challenger) < duel.amount) {
@@ -535,17 +547,17 @@ export class EconomyEngine {
       const challengerWins = Math.random() >= 0.5;
       if (challengerWins) {
         this.addPoints(duel.challenger, duel.amount);
-        this.removePoints(message.user.username, duel.amount);
+        this.removePoints(cuzdanAdi(message.platform, message.user.username), duel.amount);
         return `⚔️ DÜELLO BİTTİ! @${duel.challenger} ile @${message.user.displayName} arasındaki kılıç savaşını @${duel.challenger} kazandı ve ${duel.amount * 2} puanı kaptı! 🏆`;
       } else {
-        this.addPoints(message.user.username, duel.amount);
+        this.addPoints(cuzdanAdi(message.platform, message.user.username), duel.amount);
         this.removePoints(duel.challenger, duel.amount);
         return `⚔️ DÜELLO BİTTİ! @${message.user.displayName}, @${duel.challenger} karşısında galip geldi ve ${duel.amount * 2} puanı kaptı! 🏆`;
       }
     }
 
     this.activeDuels.set(duelKey, {
-      challenger: message.user.username,
+      challenger: cuzdanAdi(message.platform, message.user.username),
       target: targetUserClean,
       amount,
       platform: message.platform,

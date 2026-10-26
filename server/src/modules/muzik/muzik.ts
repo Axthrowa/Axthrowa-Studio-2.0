@@ -56,10 +56,77 @@ export class MuzikHost {
   private sonrakiYoklama = 0;
   private parcaDinleyicileri: Array<(c: CalanSarki | null, onceki: CalanSarki | null) => void> = [];
 
+  /**
+   * Bot Yayın Yönetim Aracı'na gömülüyken Spotify çoğunlukla ORADA bağlı: bot kendi
+   * bağlantısı yokken o host'un çalan şarkısını okur, !sr isteğini oraya iletir.
+   * Eskiden ikinci bir Spotify bağlantısı gerekiyordu; yoksa sözler boş, !sr çalmıyordu.
+   */
+  private harici = { spotify: false, sonraki: 0 };
+
   constructor(
     private depo: MuzikDeposu,
-    private yayinla: (mesaj: unknown) => void
+    private yayinla: (mesaj: unknown) => void,
+    /** Harici host kökü (yalnız 127.0.0.1/localhost kabul edilir); boş = kapalı */
+    private hariciKok: () => string = () => ''
   ) {}
+
+  private hariciAdres(): string {
+    const k = String(this.hariciKok() || '').trim().replace(/\/+$/, '');
+    try {
+      const u = new URL(k);
+      return u.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(u.hostname) ? k : '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** Kendi bağlantısı ya da harici host üzerinden Spotify kullanılabilir mi */
+  spotifyKullanilabilir(): boolean {
+    return this.spotifyBagliMi() || this.harici.spotify;
+  }
+
+  private async hariciYokla(): Promise<void> {
+    const adres = this.hariciAdres();
+    if (!adres || Date.now() < this.harici.sonraki) return;
+    try {
+      const r = await axios.get(`${adres}/api/player/status`, { timeout: 2000 });
+      this.harici.spotify = Boolean(r.data?.spotify?.connected);
+      const np = r.data?.nowPlaying;
+      this.calaniGuncelle(
+        np?.title
+          ? {
+              title: String(np.title),
+              artist: String(np.artist || ''),
+              album: String(np.album || ''),
+              albumArt: String(np.albumArt || ''),
+              isPlaying: Boolean(np.isPlaying),
+              progress: Number(np.progress) || 0,
+              duration: Number(np.duration) || 0,
+              source: String(np.source || 'spotify'),
+              updatedAt: Number(np.updatedAt) || Date.now()
+            }
+          : null,
+        'spotify'
+      );
+    } catch {
+      // Host kapalı (bağımsız kurulum): sık deneme
+      this.harici.spotify = false;
+      this.harici.sonraki = Date.now() + 15_000;
+    }
+  }
+
+  /** Şarkıyı harici host'ta arar; `sira` ise Spotify sırasına ekler, değilse hemen çalar. */
+  async hariciIstek(sorgu: string, sira: boolean): Promise<{ title: string; artist: string; uri: string }> {
+    const adres = this.hariciAdres();
+    if (!adres || !this.harici.spotify) throw new Error('Spotify bağlı değil');
+    try {
+      const r = await axios.post(`${adres}/api/player/request`, { query: sorgu.slice(0, 200), queue: sira }, { timeout: 10_000 });
+      setTimeout(() => void this.hariciYokla().catch(() => {}), 1500).unref?.();
+      return { title: String(r.data?.title || sorgu), artist: String(r.data?.artist || ''), uri: String(r.data?.id || '') };
+    } catch (e: any) {
+      throw new Error(String(e?.response?.data || e?.message || e).slice(0, 160));
+    }
+  }
 
   // ─── Durum ────────────────────────────────────────────────────────────
 
@@ -108,6 +175,8 @@ export class MuzikHost {
         port: this.depo.oku(A.ytmdPort) || '9863'
       },
       note: this.not || null,
+      // Spotify Yayın Yönetim Aracı'nda bağlıysa bot onu kullanır
+      harici: { spotify: this.harici.spotify },
       nowPlaying: this.simdiCalan()
     };
   }
@@ -284,6 +353,7 @@ export class MuzikHost {
   yoklamayiBaslat() {
     if (this.yoklayici) return;
     this.yoklayici = setInterval(async () => {
+      if (!this.spotifyBagliMi() && !this.ytmdBagliMi()) return this.hariciYokla();
       if (!this.spotifyBagliMi() || Date.now() < this.sonrakiYoklama) return;
       try {
         await this.spotifyYokla();
@@ -410,6 +480,11 @@ export class MuzikHost {
     const tercih = kaynak || this.kaynak();
     const sira = tercih === 'youtube-music' ? ['youtube-music', 'spotify'] : ['spotify', 'youtube-music'];
     let son: Error | null = null;
+    const adres = this.hariciAdres();
+    if (!this.spotifyBagliMi() && !this.ytmdBagliMi() && adres && this.harici.spotify) {
+      await axios.post(`${adres}/api/player/command`, { action: eylem, source: 'spotify' }, { timeout: 5000 });
+      return;
+    }
     for (const k of sira) {
       const bagli = k === 'spotify' ? this.spotifyBagliMi() : this.ytmdBagliMi();
       if (!bagli) continue;

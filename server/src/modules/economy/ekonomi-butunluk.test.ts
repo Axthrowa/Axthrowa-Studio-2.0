@@ -17,6 +17,9 @@ vi.mock('../../db/index.js', async () => {
       payload TEXT, is_enabled INTEGER NOT NULL DEFAULT 1);
     CREATE TABLE loyalty_redemptions (id TEXT PRIMARY KEY, platform TEXT, username TEXT, display_name TEXT, reward_id TEXT,
       reward_title TEXT, cost INTEGER, custom_input TEXT, status TEXT, created_at INTEGER);
+    CREATE TABLE giveaways (id TEXT PRIMARY KEY, title TEXT, keyword TEXT, is_active INTEGER DEFAULT 1, sub_bonus_multiplier REAL DEFAULT 2,
+      cost_points INTEGER DEFAULT 0, winner TEXT, winner_platform TEXT, created_at INTEGER, closed_at INTEGER);
+    CREATE TABLE giveaway_entries (id TEXT PRIMARY KEY, giveaway_id TEXT, username TEXT, platform TEXT, tickets INTEGER DEFAULT 1, entered_at INTEGER);
   `);
   return { db };
 });
@@ -25,9 +28,11 @@ vi.mock('../games/trivia-engine.js', () => ({ triviaEngine: { stopGame: () => {}
 
 // vi.mock çağrıları içe aktarmalardan önceye taşınır: bunlar sahte veritabanını görür.
 import { db } from '../../db/index.js';
-import { economy } from './economy.js';
+import { cuzdanAdi, economy } from './economy.js';
 import { gamesEngine } from '../games/games.js';
 import { seviyeler } from '../levels/levels.js';
+import { ttsEngine } from '../tts/tts.js';
+import { giveaway } from '../giveaways/giveaways.js';
 
 const mesaj = (ad: string) =>
   ({
@@ -93,6 +98,24 @@ describe('soygun/yarış bahsi katılırken çekilir', () => {
   });
 });
 
+describe('cüzdan platforma göre ayrılır', () => {
+  it('Discord’daki aynı adlı kişi Kick izleyicisinin puanını harcayamaz', () => {
+    bakiyeYap('ali', 5000); // Kick
+    const discordAli = { ...mesaj('ali'), platform: 'discord' };
+    expect(economy.getUser('discord', 'ali', 'ali').points).toBe(100); // ayrı, yeni cüzdan (başlangıç puanı)
+    gamesEngine.handleHeist(discordAli, ['hepsi']);
+    expect(economy.getUserPoints('ali')).toBe(5000);
+    expect(economy.getUserPoints('discord:ali')).toBe(0);
+  });
+
+  it('cuzdanAdi: Kick düz ad, diğerleri platform önekli, önekli ad değişmez', () => {
+    expect(cuzdanAdi('kick', '@Ali')).toBe('ali');
+    expect(cuzdanAdi(undefined, 'Ali')).toBe('ali');
+    expect(cuzdanAdi('discord', 'Ali')).toBe('discord:ali');
+    expect(cuzdanAdi('twitch', 'twitch:ali')).toBe('twitch:ali');
+  });
+});
+
 describe('düello', () => {
   it('düellonun miktarı kabul edenin yazdığıyla değil, kendi miktarıyla denetlenir', () => {
     bakiyeYap('ali', 5000);
@@ -126,5 +149,52 @@ describe('önbellek toplu yazımından sonra', () => {
     economy.flushAll();
     expect(diskteki('ali')).toBe(0);
     expect(economy.getUserPoints('ali')).toBe(0);
+  });
+});
+
+describe('izleme süresi', () => {
+  it('sıralama sayfası sık sık toplu yazım yapsa da sohbet eden izleyici aktif sayılır', () => {
+    vi.setSystemTime(1_000_000_000);
+    economy.getUser('kick', 'ali', 'ali');
+    for (let dk = 1; dk <= 15; dk++) {
+      vi.setSystemTime(1_000_000_000 + dk * 60_000);
+      economy.getUser('kick', 'ali', 'ali'); // sohbet
+      economy.flushAll(); // Sıralama sayfası 5 sn'de bir yazar
+    }
+    expect(economy.recordWatchTime(5)).toBe(1);
+  });
+});
+
+describe('seviye XP cüzdanı', () => {
+  it('Twitch izleyicisinin XP’si aynı adlı Kick izleyicisine yazılmaz', () => {
+    economy.getUser('kick', 'ali', 'ali');
+    economy.getUser('twitch', 'ali', 'ali');
+    seviyeler.xpEkle(cuzdanAdi('twitch', 'ali'), 40);
+    expect(seviyeler.kullanici('twitch:ali').xp).toBe(40);
+    expect(seviyeler.kullanici('ali').xp).toBe(0);
+  });
+});
+
+describe('market TTS', () => {
+  it('özel talebin metni yayında okunmaz, TTS ödülününki okunur', () => {
+    const oku = vi.spyOn(ttsEngine, 'enqueue');
+    bakiyeYap('ali', 1000);
+    db.prepare("INSERT INTO loyalty_rewards (id, title, cost, reward_type) VALUES ('reward-talep', 'Talep', 10, 'custom')").run();
+    db.prepare("INSERT INTO loyalty_rewards (id, title, cost, reward_type) VALUES ('reward-oku', 'Oku', 10, 'tts')").run();
+    economy.handleRedeemCommand(mesaj('ali'), ['talep', 'bunu', 'oku']);
+    expect(oku).not.toHaveBeenCalled();
+    economy.handleRedeemCommand(mesaj('ali'), ['oku', 'merhaba']);
+    expect(oku).toHaveBeenCalledWith('merhaba', 'ali');
+  });
+});
+
+describe('ücretli çekiliş', () => {
+  it('kazanan çekilmeden yenisi açılırsa katılım puanları iade edilir', () => {
+    bakiyeYap('ali', 500);
+    const g = giveaway.createGiveaway('Eski', '!katil', 1, 100);
+    economy.removePoints('ali', 100); // katılımda düşülen
+    db.prepare("INSERT INTO giveaway_entries (id, giveaway_id, username, platform, entered_at) VALUES ('e1', ?, 'ali', 'kick', 1)").run(g.id);
+    giveaway.createGiveaway('Yeni', '!katil', 1, 0);
+    expect(economy.getUserPoints('ali')).toBe(500);
   });
 });

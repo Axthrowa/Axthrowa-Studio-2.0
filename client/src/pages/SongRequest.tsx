@@ -52,9 +52,10 @@ export function SongRequest() {
       await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sr_desktop_target: target })
+        // OBS seçilince istekler Şarkı Klipleri widget'ında YouTube videosu olarak çalar
+        body: JSON.stringify({ sr_desktop_target: target, sr_hedef: target === 'none' ? 'video' : 'spotify' })
       });
-      setStatusMsg(`Otomatik Masaüstü Oynatıcı: ${target === 'spotify' ? 'Spotify Desktop' : target === 'ytmusic' ? 'YouTube Music' : 'Kapalı (OBS Web Player)'}`);
+      setStatusMsg(`Otomatik Masaüstü Oynatıcı: ${target === 'spotify' ? 'Spotify Desktop' : target === 'ytmusic' ? 'YouTube Music' : 'OBS Şarkı Klipleri (YouTube video)'}`);
       setTimeout(() => setStatusMsg(null), 4000);
     } catch {}
   };
@@ -113,7 +114,7 @@ export function SongRequest() {
           </div>
           <div>
             <div className="font-bold text-white text-sm">Otomatik Masaüstü Oynatıcı Modu</div>
-            <div className="text-xs text-gray-400">Yeni şarkı sıraya girdiğinde veya çaldığında masaüstü uygulamasında otomatik aç</div>
+            <div className="text-xs text-gray-400">İstekler nerede çalsın? OBS Şarkı Klipleri: istek YouTube'da bulunur ve OBS'teki Şarkı Klipleri widget'ında video olarak oynar (<code>/widgets/muzik-video</code>).</div>
           </div>
         </div>
 
@@ -126,7 +127,7 @@ export function SongRequest() {
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            OBS Web Player
+            OBS Şarkı Klipleri
           </button>
           <button
             onClick={() => handleDesktopSettingChange('spotify')}

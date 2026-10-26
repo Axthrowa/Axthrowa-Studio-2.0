@@ -3,11 +3,9 @@ import {
   LayoutDashboard,
   Link2,
   Terminal,
-  Clock,
   ShieldCheck,
   Music,
   Coins,
-  Gift,
   MessageSquare,
   Layers,
   Sparkles,
@@ -15,18 +13,13 @@ import {
   ExternalLink,
   ChevronRight,
   Gamepad2,
-  Volume2,
-  ShieldAlert,
-  DollarSign,
-  HelpCircle,
-  Bell,
-  BarChart3,
-  Trophy,
-  Mic
+  BarChart3
 } from 'lucide-react';
 
 // Pages
 const Dashboard = lazy(() => import('./pages/Dashboard.js'));
+const HizliKurulum = lazy(() => import('./pages/HizliKurulum.js'));
+import { DurumSeridi } from './components/DurumSeridi.js';
 const Platforms = lazy(() => import('./pages/Platforms.js'));
 const Commands = lazy(() => import('./pages/Commands.js'));
 const Timers = lazy(() => import('./pages/Timers.js'));
@@ -68,6 +61,7 @@ const EndCreditsWidget = lazy(() => import('./widgets/EndCreditsWidget.js'));
 const PinnedMessageWidget = lazy(() => import('./widgets/PinnedMessageWidget.js'));
 const LoyaltyStoreWidget = lazy(() => import('./widgets/LoyaltyStoreWidget.js'));
 const LyricsWidget = lazy(() => import('./widgets/LyricsWidget.js'));
+const MuzikVideoWidget = lazy(() => import('./widgets/MuzikVideoWidget.js'));
 const JumpScareWidget = lazy(() => import('./widgets/JumpScareWidget.js'));
 const KingWidget = lazy(() => import('./widgets/KingWidget.js'));
 const UnifiedOverlayWidget = lazy(() => import('./widgets/UnifiedOverlayWidget.js').then((m) => ({ default: m.UnifiedOverlayWidget })));
@@ -117,6 +111,7 @@ export function App() {
   if (path === '/widgets/pinned') return obsSayfasi(<PinnedMessageWidget />);
   if (path === '/widgets/loyalty-redeem') return obsSayfasi(<LoyaltyStoreWidget />);
   if (path === '/widgets/lyrics') return obsSayfasi(<LyricsWidget />);
+  if (path === '/widgets/muzik-video') return obsSayfasi(<MuzikVideoWidget />);
   if (path === '/widgets/jumpscare') return obsSayfasi(<JumpScareWidget />);
   if (path === '/widgets/king') return obsSayfasi(<KingWidget />);
   if (path === '/widgets/pano') return obsSayfasi(<SoundBoardWidget />);
@@ -174,38 +169,40 @@ export function App() {
     if (window.location.hash !== hedef) window.history.pushState(null, '', hedef);
   }, [activeTab]);
   const [focusPlatform, setFocusPlatform] = useState<string | null>(null);
+  const sonAltSayfa = useRef<Record<string, string>>({});
 
+  // Sayfa adları (alt sekme ve başlık). Kimlikler adres (#overlays…) ve gömülü YYA için AYNI kalmalı.
+  const sayfaAdlari: Record<string, string> = {
+    dashboard: 'Genel Bakış', kurulum: 'Hızlı Kurulum', multichat: 'Canlı Multi-Chat',
+    overlays: 'Overlay Stüdyo', alerts: 'Uyarılar', pano: 'Ses / Video Panosu', tts: 'TTS',
+    songrequest: 'Şarkı İsteği', polls: 'Anketler', giveaways: 'Çekilişler', interaction: 'Tahmin & Kuyruk',
+    trivia: 'Bil Bakalım', games: 'Chat Oyunları', economy: 'Sadakat & Market', rankings: 'Sıralamalar',
+    donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar',
+    extras: 'Klip & Seviye', automod: 'Bot Moderasyonu', shield: 'Kalkan & Denetim', ai: 'Yapay Zekâ',
+    platforms: 'Platformlar', integrations: 'Discord & Entegrasyonlar', settings: 'Genel Ayarlar', botadvanced: 'Gelişmiş Bot'
+  };
+
+  // Aynı konudaki sayfalar tek ana sekmede: 27 menü satırı 12'ye indi, sayfalar alt sekme oldu
   const navItems = [
-    { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
-    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '6 Platform' },
-    { id: 'multichat', label: 'Canlı Multi-Chat', icon: MessageSquare, highlight: true },
-    { id: 'trivia', label: 'Bil Bakalım', icon: HelpCircle, badge: 'Canlı 🧠', highlight: true },
-    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, badge: 'Yedekli' },
-    { id: 'donations', label: 'BynoGame & Bağış', icon: DollarSign, badge: 'JumpScare' },
-    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, badge: 'Kalkan' },
-    { id: 'commands', label: 'Komutlar', icon: Terminal, badge: 'Anahtar kelime' },
-    { id: 'timers', label: 'Zamanlayıcılar', icon: Clock },
-    { id: 'automod', label: 'Bot Moderasyonu', icon: ShieldCheck },
-    { id: 'botadvanced', label: 'Gelişmiş Bot', icon: Sparkles, badge: 'Yeni' },
-    { id: 'extras', label: 'Ekstralar', icon: Sparkles, badge: 'Klip/Seviye' },
-    { id: 'rankings', label: 'Sıralamalar', icon: Trophy },
-    { id: 'alerts', label: 'Uyarılar (Alert Box)', icon: Bell, highlight: true },
-    { id: 'polls', label: 'Anketler', icon: BarChart3 },
-    { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk' },
-    { id: 'pano', label: 'Ses / Video Panosu', icon: Volume2, badge: '!ses' },
-    { id: 'sesli', label: 'Sesli Komutlar', icon: Mic, badge: 'Yeni' },
-    { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music },
-    { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins },
-    { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun' },
-    { id: 'giveaways', label: 'Çekilişler', icon: Gift },
-    { id: 'overlays', label: 'OBS Overlay Stüdyo', icon: Layers },
-    { id: 'ai', label: 'Gemini AI Asistan', icon: Sparkles },
-    { id: 'integrations', label: 'Entegrasyonlar', icon: Link2, badge: 'Discord' },
-    { id: 'settings', label: 'Ayarlar', icon: SettingsIcon },
+    { id: 'genel', label: 'Genel Bakış', icon: LayoutDashboard, grup: 'Yayın sırasında', alt: ['dashboard', 'kurulum'] },
+    { id: 'sohbet', label: 'Canlı Sohbet', icon: MessageSquare, grup: 'Yayın sırasında', alt: ['multichat'] },
+    { id: 'obs', label: 'OBS & Uyarılar', icon: Layers, grup: 'Yayın sırasında', alt: ['overlays', 'alerts', 'pano', 'tts'] },
+    { id: 'muzik', label: 'Müzik', icon: Music, grup: 'Yayın sırasında', alt: ['songrequest'] },
+    { id: 'etkinlik', label: 'Anket & Çekiliş', icon: BarChart3, grup: 'Yayın sırasında', alt: ['polls', 'giveaways', 'interaction'] },
+    { id: 'oyun', label: 'Oyunlar', icon: Gamepad2, grup: 'Etkileşim', alt: ['trivia', 'games'] },
+    { id: 'ekonomi', label: 'Puan & Bağış', icon: Coins, grup: 'Etkileşim', alt: ['economy', 'rankings', 'donations'] },
+    { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'sesli', 'extras'] },
+    { id: 'moderasyon', label: 'Moderasyon', icon: ShieldCheck, grup: 'Kurulum & Ayarlar', alt: ['automod', 'shield'] },
+    { id: 'yapayzeka', label: 'Yapay Zekâ', icon: Sparkles, grup: 'Kurulum & Ayarlar', alt: ['ai'] },
+    { id: 'baglanti', label: 'Bağlantılar', icon: Link2, grup: 'Kurulum & Ayarlar', alt: ['platforms', 'integrations'] },
+    { id: 'ayarlar', label: 'Ayarlar', icon: SettingsIcon, grup: 'Kurulum & Ayarlar', alt: ['settings', 'botadvanced'] },
   ];
+  const aktifMerkez = navItems.find((m) => m.alt.includes(activeTab));
+  if (aktifMerkez) sonAltSayfa.current[aktifMerkez.id] = activeTab;
 
   const renderActivePage = () => {
     switch (activeTab) {
+      case 'kurulum': return <HizliKurulum git={sekmeyeGec} />;
       case 'dashboard': return (
         <Dashboard
           onConnectPlatform={(platform) => {
@@ -269,35 +266,34 @@ export function App() {
 
           {/* Navigation Items */}
           <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-            {navItems.map((item) => {
+            {navItems.map((item, i) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = aktifMerkez?.id === item.id;
+              const grupBasi = i === 0 || navItems[i - 1].grup !== item.grup;
 
               return (
+                <div key={item.id}>
+                {grupBasi && (
+                  <div className="px-3.5 pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-gray-500">{item.grup}</div>
+                )}
                 <button
-                  key={item.id}
-                  onClick={() => sekmeyeGec(item.id)}
+                  onClick={() => sekmeyeGec(sonAltSayfa.current[item.id] || item.alt[0])}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                      : item.highlight
-                      ? 'bg-white/[0.04] text-purple-300 hover:bg-white/[0.08]'
                       : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.highlight ? 'text-purple-400' : 'text-gray-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     <span>{item.label}</span>
                   </div>
-
-                  {item.badge && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-purple-500/20 text-purple-300'
-                    }`}>
-                      {item.badge}
-                    </span>
+                  {item.alt.length > 1 && (
+                    <span className={`text-[10px] font-extrabold ${isActive ? 'text-white/70' : 'text-gray-600'}`}>{item.alt.length}</span>
                   )}
                 </button>
+                </div>
               );
             })}
           </nav>
@@ -326,12 +322,17 @@ export function App() {
             <span className="font-bold text-white">{BRAND.name}</span>
             <span className="text-[10px] text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold">by {BRAND.author}</span>
             <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
-            <span className="text-white font-bold capitalize">
-              {navItems.find(n => n.id === activeTab)?.label}
-            </span>
+            <span className="text-white font-bold">{aktifMerkez?.label || sayfaAdlari[activeTab]}</span>
+            {aktifMerkez && aktifMerkez.alt.length > 1 && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                <span className="text-purple-300 font-bold">{sayfaAdlari[activeTab]}</span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
+            <DurumSeridi git={sekmeyeGec} />
             <button
               type="button"
               onClick={() => openLink(`${window.location.origin}/widgets/alertbox`)}
@@ -344,6 +345,24 @@ export function App() {
 
         {/* Page Content */}
         <main className="flex-1 p-8 overflow-y-auto">
+          {aktifMerkez && aktifMerkez.alt.length > 1 && (
+            <div role="tablist" aria-label={aktifMerkez.label} className="mb-6 flex flex-wrap gap-1.5 border-b border-white/10 pb-3">
+              {aktifMerkez.alt.map((alt) => (
+                <button
+                  key={alt}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === alt}
+                  onClick={() => sekmeyeGec(alt)}
+                  className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                    activeTab === alt ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] hover:text-white'
+                  }`}
+                >
+                  {sayfaAdlari[alt]}
+                </button>
+              ))}
+            </div>
+          )}
           <Suspense fallback={<div className="p-8 text-sm text-gray-400 animate-pulse">Yükleniyor…</div>}>
             {renderActivePage()}
           </Suspense>

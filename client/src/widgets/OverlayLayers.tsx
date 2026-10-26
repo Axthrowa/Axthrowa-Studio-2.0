@@ -31,6 +31,19 @@ import { HypeTrainWidget } from './HypeTrainWidget.js';
 import LyricsWidget from './LyricsWidget.js';
 import KingWidget from './KingWidget.js';
 import TriviaWidget from './TriviaWidget.js';
+import { ActivityFeedWidget } from './ActivityFeedWidget.js';
+import { GiveawayWidget } from './GiveawayWidget.js';
+import { PinnedMessageWidget } from './PinnedMessageWidget.js';
+import { ShoutoutWidget } from './ShoutoutWidget.js';
+import { ViewerCounterWidget } from './ViewerCounterWidget.js';
+import { RankingsWidget } from './RankingsWidget.js';
+import { LoyaltyStoreWidget } from './LoyaltyStoreWidget.js';
+import { KappagenWidget } from './KappagenWidget.js';
+import { JumpScareWidget } from './JumpScareWidget.js';
+import { EndCreditsWidget } from './EndCreditsWidget.js';
+import { AudioPlayerWidget } from './AudioPlayerWidget.js';
+import { SoundBoardWidget } from './SoundBoardWidget.js';
+import { MuzikVideoWidget } from './MuzikVideoWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 
 export interface WidgetLayoutItem {
@@ -58,7 +71,20 @@ export type KatmanAnahtari =
   | 'hypeTrain'
   | 'lyrics'
   | 'king'
-  | 'trivia';
+  | 'trivia'
+  | 'activityFeed'
+  | 'giveaway'
+  | 'pinned'
+  | 'shoutout'
+  | 'viewerCounter'
+  | 'rankings'
+  | 'loyalty'
+  | 'kappagen'
+  | 'jumpScare'
+  | 'endCredits'
+  | 'tts'
+  | 'soundBoard'
+  | 'muzikVideo';
 
 export interface KatmanTanimi {
   anahtar: KatmanAnahtari;
@@ -67,6 +93,8 @@ export interface KatmanTanimi {
   z: number;
   /** Varsayılan yerleşim; kayıtlı ayar yoksa kullanılır. */
   varsayilan: { x: number; y: number; width: number; height: number };
+  /** Tuvalin tamamını kaplar (JumpScare, ekranda emote): stüdyoda seçili değilken çizilmez, tıklamayı yutmaz. */
+  tamEkran?: boolean;
   /** `item`: bu katmanın yerleşim ayarı (ör. hedef türü). */
   ciz: (onizleme: boolean, item?: WidgetLayoutItem) => ReactNode;
 }
@@ -173,8 +201,136 @@ export const KATMANLAR: KatmanTanimi[] = [
     z: 76,
     varsayilan: { x: 660, y: 700, width: 600, height: 320 },
     ciz: (o) => <TriviaWidget embedded previewMode={o} />
+  },
+  // Galerideki diğer widget'lar da tek URL'ye eklenebilsin (varsayılan kapalı)
+  {
+    anahtar: 'activityFeed',
+    etiket: 'Etkinlik Akışı',
+    z: 62,
+    varsayilan: { x: 1500, y: 300, width: 380, height: 360 },
+    ciz: (o) => <ActivityFeedWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'giveaway',
+    etiket: 'Çekiliş',
+    z: 84,
+    varsayilan: { x: 660, y: 380, width: 600, height: 300 },
+    ciz: (o) => <GiveawayWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'pinned',
+    etiket: 'Sabit Mesaj',
+    z: 72,
+    varsayilan: { x: 560, y: 820, width: 800, height: 110 },
+    ciz: (o) => <PinnedMessageWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'shoutout',
+    etiket: 'Shoutout',
+    z: 83,
+    varsayilan: { x: 1460, y: 680, width: 420, height: 220 },
+    ciz: (o) => <ShoutoutWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'viewerCounter',
+    etiket: 'İzleyici Sayacı',
+    z: 66,
+    varsayilan: { x: 1660, y: 20, width: 220, height: 60 },
+    ciz: (o) => <ViewerCounterWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'rankings',
+    etiket: 'Sıralama',
+    z: 61,
+    varsayilan: { x: 40, y: 300, width: 360, height: 420 },
+    ciz: (o) => <RankingsWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'loyalty',
+    etiket: 'Ödül Kullanımları',
+    z: 81,
+    varsayilan: { x: 660, y: 60, width: 600, height: 160 },
+    ciz: (o) => <LoyaltyStoreWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'kappagen',
+    etiket: 'Ekranda Emote',
+    tamEkran: true,
+    z: 95,
+    varsayilan: { x: 0, y: 0, width: 1920, height: 1080 },
+    ciz: (o) => <KappagenWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'jumpScare',
+    etiket: 'JumpScare',
+    tamEkran: true,
+    z: 120,
+    varsayilan: { x: 0, y: 0, width: 1920, height: 1080 },
+    ciz: (o) => <JumpScareWidget previewMode={o} />
+  },
+  {
+    anahtar: 'endCredits',
+    etiket: 'Kapanış Jeneriği',
+    z: 58,
+    varsayilan: { x: 560, y: 120, width: 800, height: 840 },
+    ciz: (o) => <EndCreditsWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'tts',
+    etiket: 'TTS / Ses Oynatıcı',
+    z: 10,
+    varsayilan: { x: 0, y: 1040, width: 320, height: 40 },
+    ciz: () => <AudioPlayerWidget embedded />
+  },
+  {
+    anahtar: 'soundBoard',
+    etiket: 'Ses Panosu',
+    z: 11,
+    varsayilan: { x: 340, y: 1040, width: 320, height: 40 },
+    ciz: (o) => <SoundBoardWidget previewMode={o} />
+  },
+  {
+    anahtar: 'muzikVideo',
+    etiket: 'Şarkı Klipleri',
+    z: 56,
+    varsayilan: { x: 1280, y: 700, width: 600, height: 340 },
+    ciz: (o) => <MuzikVideoWidget embedded previewMode={o} />
   }
 ];
+
+/** Galeri widget kimliği → tek URL katmanı (hedef türleri aynı katmanı paylaşır). */
+export const GALERI_KATMANI: Record<string, { anahtar: KatmanAnahtari; ek?: Record<string, unknown> }> = {
+  'chat-overlay': { anahtar: 'chat' },
+  'alert-box': { anahtar: 'alerts' },
+  'follower-goal': { anahtar: 'goals', ek: { type: 'follower' } },
+  'subscriber-goal': { anahtar: 'goals', ek: { type: 'sub' } },
+  'donation-goal': { anahtar: 'goals', ek: { type: 'tip' } },
+  'kicks-goal': { anahtar: 'goals', ek: { type: 'kicks' } },
+  subathon: { anahtar: 'subathon' },
+  'trivia-quiz': { anahtar: 'trivia' },
+  'event-labels': { anahtar: 'eventLabels' },
+  polls: { anahtar: 'polls' },
+  'wheel-of-fortune': { anahtar: 'wheel' },
+  'emote-combo': { anahtar: 'emoteCombo' },
+  'the-cup': { anahtar: 'theCup' },
+  'hype-train': { anahtar: 'hypeTrain' },
+  'now-playing': { anahtar: 'nowPlaying' },
+  lyrics: { anahtar: 'lyrics' },
+  king: { anahtar: 'king' },
+  jumpscare: { anahtar: 'jumpScare' },
+  'activity-feed': { anahtar: 'activityFeed' },
+  giveaways: { anahtar: 'giveaway' },
+  'pinned-messages': { anahtar: 'pinned' },
+  shoutout: { anahtar: 'shoutout' },
+  'viewer-counter': { anahtar: 'viewerCounter' },
+  rankings: { anahtar: 'rankings' },
+  'loyalty-redemptions': { anahtar: 'loyalty' },
+  'on-screen-emotes': { anahtar: 'kappagen' },
+  'end-credits': { anahtar: 'endCredits' },
+  tts: { anahtar: 'tts' },
+  'cloud-tts': { anahtar: 'tts' },
+  'muzik-video': { anahtar: 'muzikVideo' }
+};
 
 /**
  * Bir katmanın mutlak yerleşim stili.

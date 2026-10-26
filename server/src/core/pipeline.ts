@@ -4,7 +4,7 @@ import { commandManager } from '../modules/commands/command-manager.js';
 import { ttsEngine } from '../modules/tts/tts.js';
 import { gamesEngine } from '../modules/games/games.js';
 import { triviaEngine } from '../modules/games/trivia-engine.js';
-import { economy } from '../modules/economy/economy.js';
+import { cuzdanAdi, economy } from '../modules/economy/economy.js';
 import { seviyeler } from '../modules/levels/levels.js';
 import { sohbetUyarilari } from '../modules/chat-alerts/chat-alerts.js';
 import { puanDususu } from '../modules/engagement/point-drops.js';
@@ -105,7 +105,7 @@ export class MessagePipeline {
     // Seviye XP'si — puandan AYRI tutulur: mağazadan alışveriş yapan izleyici
     // seviyesini kaybetmesin. Bekleme süresi spam ile seviye kasmayı engeller.
     try {
-      const sv = seviyeler.mesajXp(message.user.username);
+      const sv = seviyeler.mesajXp(cuzdanAdi(message.platform, message.user.username));
       if (sv?.atladi) {
         eventBus.emitBotMessage({
           platform: message.platform,
@@ -152,7 +152,7 @@ export class MessagePipeline {
     // 1.2 Topluluk: kappagen (overlay), emote bingo, emote piramidi.
     // Yanıt varsa sohbete yazılır; mesajın geri kalan işlenişi sürer.
     try {
-      for (const yanit of toplulukMesaji(message, (puan, kim) => economy.addPoints(kim, puan))) {
+      for (const yanit of toplulukMesaji(message, (puan, kim) => economy.addPoints(cuzdanAdi(message.platform, kim), puan))) {
         eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: yanit });
       }
     } catch (e) {
@@ -161,7 +161,7 @@ export class MessagePipeline {
 
     // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin
     // komut isleyicisinden ONCE bakilir.
-    if (puanDususu.katil(message.user.username, message.user.displayName, rawText)) {
+    if (puanDususu.katil(cuzdanAdi(message.platform, message.user.username), message.user.displayName, rawText)) {
       return;
     }
 
@@ -190,7 +190,7 @@ export class MessagePipeline {
     // 3.5 Yapay zekâya seslenme: "@BotAdı soru" (ayar: ai_mention_enabled)
     if (!message.user.isSelf && rawText.startsWith('@') && settingsCache.getBoolean('ai_mention_enabled', false)) {
       const { platformManager } = await import('../platforms/manager.js');
-      const soru = seslenmeAyikla(rawText, platformManager.botKullaniciAdlari());
+      const soru = seslenmeAyikla(rawText, new Set([...platformManager.botKullaniciAdlari(), 'axbot']));
       if (soru && this.seslenmeSiniri.izinVer(message.user.username)) {
         const cevap = await geminiCoHost.ask(soru, message.user.displayName);
         if (cevap?.trim()) {

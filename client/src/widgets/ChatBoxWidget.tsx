@@ -67,6 +67,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   const [messages, setMessages] = useState<OverlayMsg[]>([]);
   /** Bu etki ayar (`s`) değişince de çalışır: aynı ileti İKİNCİ KEZ eklenmesin. */
   const islenen = useRef<unknown>(null);
+  const canliGeldi = useRef(false);
 
   useEffect(() => {
     if (!lastMessage || islenen.current === lastMessage) return;
@@ -110,8 +111,15 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     const username = (user?.username || '').toLowerCase();
     const ignored = (s.ignoreList || '').split(',').map((x: string) => x.trim().toLowerCase()).filter(Boolean);
     if (ignored.includes(username)) return;
+    // Seçilmeyen platformun sohbeti katmanda gösterilmez
+    if ((s as Record<string, unknown>)[`${p.platform}Goster`] === false) return;
     if (s.hideCommands && (p.message || '').trim().startsWith('!')) return;
-    if (s.hideBots && (user?.isBot || username.includes('bot'))) return;
+    // Panel iç hata iletisi (Gönderilemedi…) yayına çıkmaz
+    if (user?.id === 'streamaxt_system') return;
+    // "Botları gizle" başka botlar içindir; kendi botumuzun yanıtları (yapay zekâ, bilgi yarışması,
+    // zamanlayıcılar) ayrı seçenekle görünür — eskiden bot adı ("…_Bot") yüzünden hep gizleniyordu
+    const kendiBot = user?.id === 'streamaxt_bot';
+    if (kendiBot ? !s.showOwnBot : s.hideBots && (user?.isBot || username.includes('bot'))) return;
     if (s.hideBroadcaster && user?.isBroadcaster) return;
     // Kick emote'u `[emote:123:ad]` biçiminde gelir; eski `:ad:` deseni onu tanımıyordu
     if (s.hideEmoteOnly && !String(p.message || '').replace(/\[emote:\d+:[^\]]+\]|:\w+:/g, '').trim()) return;
@@ -150,6 +158,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
       };
       return iletiEkle(prev, next, s.maxMessages);
     });
+    canliGeldi.current = true;
     if (s.messageSound && !onizlemeKipi(props?.previewMode)) tikla(Number(s.messageSoundVolume) || 0.4);
   }, [lastMessage, s]);
 
@@ -162,7 +171,9 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     return () => clearInterval(t);
   }, [s.fadeMessages, s.fadeTimeout]);
 
-  const kaynak = onizlemeKipi(props?.previewMode) && messages.length === 0 ? ORNEK_MESAJLAR : messages;
+  // Stüdyo önizlemesi: örnekler yalnız henüz hiç canlı ileti gelmemişken (kaybolan iletinin yerine
+  // örnekler geri gelince canlı sohbet görünmüyor sanılıyordu)
+  const kaynak = onizlemeKipi(props?.previewMode) && messages.length === 0 && !canliGeldi.current ? ORNEK_MESAJLAR : messages;
   // Liste eskiden yeniye; "yeni mesajlar üstte" yalnız çizimde ters çevirir
   const list = s.reverse ? [...kaynak].reverse() : kaynak;
   const yanYana = s.layout === 'row';

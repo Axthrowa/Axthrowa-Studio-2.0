@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
-import { KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
+import { GALERI_KATMANI, KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
 import { enBuyukBoyut, hizala, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
@@ -234,10 +234,35 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
     baslik: 'Yayın Kralı',
     aciklama: 'Tahtı puanıyla satın alan izleyiciyi ve saltanat süresini gösterir.'
   },
+  'muzik-video': {
+    baslik: 'Şarkı Klipleri',
+    aciklama: 'İzleyici şarkı isteklerini YouTube klibiyle sırayla oynatır; bitince sıradaki istek başlar.'
+  },
   jumpscare: {
     baslik: 'JumpScare',
     aciklama: 'Bağış eşiği aşılınca tam ekran korku medyası oynatır; eşik ve süre ayarlanır.'
   }
+};
+
+/** Galeri kimliği → sunucudaki test adı (widgets/test/:ad). Listede olmayanın ayrı testi yok, önizlemesi var. */
+const TEST_ADI: Record<string, string> = {
+  'activity-feed': 'activity-feed',
+  'alert-box': 'alert-box',
+  'emote-combo': 'emote-combo',
+  'on-screen-emotes': 'on-screen-emotes',
+  'the-cup': 'the-cup',
+  'hype-train': 'hype-train',
+  subathon: 'subathon',
+  shoutout: 'shoutout',
+  'end-credits': 'credits',
+  'wheel-of-fortune': 'wheel',
+  tts: 'tts',
+  'cloud-tts': 'cloud-tts',
+  jumpscare: 'jumpscare',
+  'viewer-counter': 'viewer-counter',
+  polls: 'polls',
+  giveaways: 'giveaways',
+  'loyalty-redemptions': 'loyalty-redemptions'
 };
 
 const KATMAN_AYAR_ID: Record<string, string> = {
@@ -702,6 +727,20 @@ export function OverlayStudio() {
       .catch(() => {});
   }, []);
 
+  /** Galerideki widget'ı tek OBS URL'sine ekler (katmanı açar) ve stüdyoda seçer. */
+  const tekUrlyeEkle = (widgetId: string) => {
+    const g = GALERI_KATMANI[widgetId];
+    if (!g) return;
+    const tanim = KATMANLAR.find((k) => k.anahtar === g.anahtar);
+    setAllInOne((prev) => ({
+      ...prev,
+      [g.anahtar]: { scale: 1, ...tanim?.varsayilan, ...(prev as any)[g.anahtar], ...g.ek, enabled: true }
+    }));
+    setSelectedCanvasWidget(g.anahtar);
+    setSelectedWidgetModal(null);
+    setActiveTab('all_in_one');
+  };
+
   const copyToClipboard = (url: string) => {
     navigator.clipboard.writeText(url);
     setCopiedUrl(url);
@@ -902,6 +941,12 @@ export function OverlayStudio() {
       category: 'On-Stream',
       icon: Disc,
       url: `${baseUrl}/widgets/lyrics`
+    },
+    {
+      id: 'muzik-video',
+      category: 'On-Stream',
+      icon: Disc,
+      url: `${baseUrl}/widgets/muzik-video`
     },
     {
       id: 'king',
@@ -1167,13 +1212,19 @@ export function OverlayStudio() {
                       const secili = selectedCanvasWidget === katman.anahtar;
                       // OBS görünümü: kapalı katman OBS'te hiç çizilmez, burada da yok
                       if (obsGorunumu && !item?.enabled) return null;
+                      // Düzenleme görünümü: kapalı katman yalnız seçiliyken (konumlandırmak için) soluk çizilir;
+                      // tam ekran katmanlar (JumpScare, ekranda emote) seçili değilken çizilmez. Eskiden 28
+                      // katmanın hepsi çiziliyor, açık JumpScare tuvali kaplayıp tüm tıklamaları yutuyordu.
+                      if (!obsGorunumu && !secili && (!item?.enabled || katman.tamEkran)) return null;
+                      const tiklanir = !katman.tamEkran || secili;
                       return (
                         <div
-                          onPointerDown={(e) => handleWidgetPointerDown(e, katman.anahtar)}
+                          onPointerDown={tiklanir ? (e) => handleWidgetPointerDown(e, katman.anahtar) : undefined}
                           title={katman.etiket}
                           style={{
                             ...stil,
                             cursor: 'move',
+                            pointerEvents: tiklanir ? undefined : 'none',
                             // Kapalı katman tuvalde soluk görünür ki
                             // konumlandırılabilsin; OBS'te hiç çizilmez.
                             opacity: item?.enabled ? 1 : 0.3,
@@ -1250,20 +1301,27 @@ export function OverlayStudio() {
                   <option value="lyrics">🎶 Canlı Şarkı Sözleri (Lyrics)</option>
                   <option value="king">👑 Tahtın Kralı (King System)</option>
                   <option value="jumpScare">💀 JumpScare Katmanı</option>
+                  {KATMANLAR.slice(KATMANLAR.findIndex((k) => k.anahtar === 'activityFeed')).filter((k) => k.anahtar !== 'jumpScare').map((k) => (
+                    <option key={k.anahtar} value={k.anahtar}>
+                      ➕ {k.etiket}
+                    </option>
+                  ))}
                 </select>
               </div>
 
 
               {/* Selected Widget Card */}
               {(() => {
-                const cur = (allInOne as any)[selectedCanvasWidget];
+                // Yeni katmanların kayıtlı yerleşimi yoksa varsayılanından başlanır
+                const tanim = KATMANLAR.find((k) => k.anahtar === selectedCanvasWidget);
+                const cur = (allInOne as any)[selectedCanvasWidget] || (tanim ? { enabled: false, scale: 1, ...tanim.varsayilan } : null);
                 if (!cur) return null;
 
                 const updateCur = (patch: any) => {
                   setAllInOne(prev => ({
                     ...prev,
                     [selectedCanvasWidget]: {
-                      ...(prev as any)[selectedCanvasWidget],
+                      ...((prev as any)[selectedCanvasWidget] || cur),
                       ...patch
                     }
                   }));
@@ -1562,6 +1620,33 @@ export function OverlayStudio() {
 
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs">
                     <span className="text-[10px] font-medium text-gray-500">{KATEGORI_ADI[widget.category] || widget.category}</span>
+                    <div className="flex items-center gap-1">
+                    {TEST_ADI[widget.id] && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void triggerWidgetTest(TEST_ADI[widget.id]);
+                        }}
+                        className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-purple-300 transition-colors text-[11px] font-bold"
+                        title="Hızlı test: OBS'te örnek göster"
+                        aria-label="Hızlı test"
+                      >
+                        ▶
+                      </button>
+                    )}
+                    {GALERI_KATMANI[widget.id] && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          tekUrlyeEkle(widget.id);
+                        }}
+                        className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-emerald-300 transition-colors"
+                        title="Tek OBS URL'sine ekle"
+                        aria-label="Tek OBS URL'sine ekle"
+                      >
+                        <Monitor className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1572,6 +1657,7 @@ export function OverlayStudio() {
                     >
                       {copiedUrl === widget.url ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1648,11 +1734,30 @@ export function OverlayStudio() {
                       <span>{copiedUrl === selectedWidgetModal.url ? 'Kopyalandı' : 'Kopyala'}</span>
                     </button>
                   </div>
+                  {GALERI_KATMANI[selectedWidgetModal.id] && (
+                    <button
+                      onClick={() => tekUrlyeEkle(selectedWidgetModal.id)}
+                      className="mt-2 w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
+                    >
+                      <Monitor className="w-4 h-4" />
+                      <span>Tek OBS URL'sine ekle (ayrı kaynak gerekmez)</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Widget Specific Action & Test Panel */}
                 <div className="p-4 bg-black/40 rounded-xl border border-white/5 space-y-3">
                   <h4 className="text-xs font-bold text-gray-200">Canlı İşlev & Test Kontrolleri</h4>
+                  {TEST_ADI[selectedWidgetModal.id] ? (
+                    <button
+                      onClick={() => triggerWidgetTest(TEST_ADI[selectedWidgetModal.id])}
+                      className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
+                    >
+                      ▶ Hızlı test (OBS'te örnek göster)
+                    </button>
+                  ) : (
+                    <p className="text-[11px] text-gray-500">Bu widget gerçek olayla çalışır; örnek görünüm yukarıdaki önizlemede.</p>
+                  )}
 
                   {/* Dynamic controls according to widget */}
                   {selectedWidgetModal.id === 'the-cup' && (

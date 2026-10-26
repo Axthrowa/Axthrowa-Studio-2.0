@@ -17,6 +17,8 @@ import { kupa } from '../modules/engagement/kupa.js';
 interface ClientConnection {
   ws: WebSocket;
   type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all';
+  /** OBS tarayıcı kaynağı mı (kullanıcı aracısında "OBS/" geçer) — panel durum şeridi için */
+  obs?: boolean;
 }
 
 /**
@@ -34,6 +36,27 @@ export function kokenDogrula(info: { origin?: string; req: { headers: Record<str
 export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
+
+  /** Shoutout widget'ı: izleyici eşiğini aşan raid/host'ta gelen yayıncı otomatik tanıtılır (BotRix'teki seçenek; 0 = kapalı) */
+  private raidShoutout(payload: { username?: string; platform?: string; viewers?: number; isTest?: boolean }) {
+    if (payload?.isTest || !payload?.username) return;
+    try {
+      const ham = (db.prepare("SELECT value FROM bot_settings WHERE key = 'widget_settings_shoutout'").get() as { value?: string } | undefined)?.value;
+      const esik = Number(ham ? JSON.parse(ham).raidOtomatikEsik : 0) || 0;
+      if (esik > 0 && Number(payload.viewers) > esik) {
+        eventBus.emit('widget_update', { type: 'shoutout', data: { channel: payload.username, platform: payload.platform } });
+      }
+    } catch {
+      /* bozuk ayar: otomatik shoutout atlanır */
+    }
+  }
+
+  /** Şu an bağlı OBS tarayıcı kaynağı sayısı */
+  obsKaynakSayisi(): number {
+    let n = 0;
+    for (const c of this.clients) if (c.obs) n++;
+    return n;
+  }
   /** Ekip çapında uyarı kuyruğu denetimi (modules/alerts/control.ts) */
   private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
   private sonUyarilar = new SonUyarilar(50);
@@ -117,7 +140,7 @@ export class WebSocketHub {
       const url = new URL(req.url || '', `http://${req.headers.host}`);
       const type = (url.searchParams.get('type') || 'all') as any;
 
-      const clientConn: ClientConnection = { ws, type };
+      const clientConn: ClientConnection = { ws, type, obs: /\bOBS\//.test(String(req.headers['user-agent'] || '')) };
       this.clients.add(clientConn);
 
       // Send initial state
@@ -205,6 +228,7 @@ export class WebSocketHub {
     eventBus.on('chat_cleared', () => {
       this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
     });
+    eventBus.on('anket_katmani', (ileti: Record<string, unknown>) => this.broadcastTo(['all'], ileti));
 
     // 1.1 Bot Message Event -> Forward as Chat Message to Dashboard & ChatBox Overlay
     eventBus.on('bot_message', (payload: BotMessagePayload) => {
@@ -215,8 +239,8 @@ export class WebSocketHub {
         channel: payload.channel || 'stream',
         user: {
           id: 'streamaxt_bot',
-          username: 'StreamAxT_Bot',
-          displayName: '🤖 StreamAxT Bot',
+          username: 'AxBot',
+          displayName: '🤖 AxBot',
           color: '#53fc18',
           badges: ['moderator'],
           isBroadcaster: false,
@@ -246,7 +270,7 @@ export class WebSocketHub {
         channel: 'stream',
         user: {
           id: 'streamaxt_system',
-          username: 'StreamAxT',
+          username: 'AxBot',
           displayName: '⚠️ Gönderilemedi',
           color: '#f87171',
           badges: [],
@@ -258,7 +282,8 @@ export class WebSocketHub {
         message: reason,
         timestamp: Date.now()
       };
-      this.broadcastTo(['dashboard', 'all'], { type: 'chat', data: errMsg });
+      // Yalnız panel: 'all' her istemciye (OBS sohbet katmanı dahil) gider, iç hata yayında görünüyordu
+      this.broadcastTo(['dashboard'], { type: 'chat', data: errMsg });
     });
 
     // 2. Follow Event -> AlertBox & Dashboard & Goals
@@ -373,6 +398,8 @@ export class WebSocketHub {
         data: payload,
         alert: alertData
       });
+      // Kick raid'leri "host" olayı olarak gelir
+      this.raidShoutout(payload);
     });
 
     // 5. Raid Event -> AlertBox & Dashboard
@@ -387,6 +414,7 @@ export class WebSocketHub {
         data: payload,
         alert: alertData
       });
+      this.raidShoutout(payload);
     });
 
     // 6. TikTok Gift Event -> AlertBox & Dashboard

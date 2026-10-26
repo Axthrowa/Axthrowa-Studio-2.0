@@ -46,7 +46,8 @@ export function etiketleriCikar(satirlar: Satir[]): EtiketVerisi {
     else if (t === 'tip' || t === 'donation') {
       const b = { ad: ad(s), tutar: Number(s.amount) || 0, birim: String(s.currency || 'TL') };
       if (!v.sonBagis) v.sonBagis = b;
-      if (!v.enBuyukBagis || b.tutar > v.enBuyukBagis.tutar) v.enBuyukBagis = b;
+      // Kur uydurulmaz: yalnız son bağışla aynı para birimindekiler karşılaştırılır (50 USD, 100 TL'nin gerisinde kalıyordu)
+      if (b.birim === v.sonBagis.birim && (!v.enBuyukBagis || b.tutar > v.enBuyukBagis.tutar)) v.enBuyukBagis = b;
     } else if (t === 'raid' && !v.sonRaid) v.sonRaid = { ad: ad(s), izleyici: Number(meta?.viewers ?? s.amount) || 0 };
     else if (t === 'kicks' && !v.sonKicks) v.sonKicks = { ad: ad(s), tutar: Number(s.amount) || 0 };
   }

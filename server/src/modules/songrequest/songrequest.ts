@@ -44,11 +44,23 @@ export class SongRequestEngine {
     // Spotify'da istek şarkısı çalmaya başlayınca kuyruk ilerler: ondan önce
     // istenip çalınmış şarkılar "çalındı" sayılır, "şu an çalan" o olur.
     muzikHost.parcaDegisince((c) => {
-      if (!c?.trackId) return;
+      if (!c?.title) return;
       try {
-        const satir = db
-          .prepare('SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1')
-          .get(`%/track/${c.trackId}`) as { created_at: number } | undefined;
+        // Yayın Yönetim Aracı'nın çalan bilgisinde parça kimliği yok: o zaman başlıkla eşlenir
+        // (kayıt "Şarkı — Sanatçı" biçiminde); eskiden bu istekler kuyrukta hep açık kalıyordu
+        const satir = (
+          c.trackId
+            ? db.prepare('SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1').get(`%/track/${c.trackId}`)
+            : // Tam başlık ya da "başlık — sanatçı"; önek/LIKE eşlemesi "Hey" çalınca "Hey Jude"u da yakalıyordu
+              (db
+                .prepare("SELECT created_at, title FROM song_queue WHERE is_played = 0 AND url LIKE '%open.spotify.com%' ORDER BY created_at ASC")
+                .all() as Array<{ created_at: number; title: string }>)
+                .find((r) => {
+                  const t = String(r.title).toLocaleLowerCase('tr');
+                  const a = c.title.toLocaleLowerCase('tr');
+                  return t === a || t.startsWith(`${a} — `);
+                })
+        ) as { created_at: number } | undefined;
         if (!satir) return;
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ?').run(satir.created_at);
         this.currentSong = null;
@@ -59,9 +71,36 @@ export class SongRequestEngine {
     });
   }
 
+  /** Şarkı Klipleri widget'ı kipi: istekler YouTube'da aranır, OBS'te video olarak çalar. */
+  videoKipi(): boolean {
+    return settingsCache.get('sr_hedef', 'spotify') === 'video';
+  }
+
+  /** Klip widget'ı parçayı bitirdi: yalnız hâlâ çalan oysa geçilir (iki OBS kaynağı aynı şarkıyı iki kez atlatmasın). */
+  klipBitti(id: string): boolean {
+    const simdiki = this.ilkKlip();
+    if (!simdiki || simdiki.id !== id) return false;
+    db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(simdiki.id);
+    if (this.currentSong?.id === id) this.currentSong = null;
+    this.skipVotes.clear();
+    return true;
+  }
+
+  /**
+   * Kuyruktaki ilk YouTube isteği. Video kipine geçmeden önce eklenmiş bir Spotify isteği
+   * kuyruğun başında kalınca widget onu çalamıyor ve hiç ilerlemiyordu.
+   */
+  ilkKlip(): { id: string; title: string; url: string; requestedBy: string } | null {
+    const r = db
+      .prepare("SELECT id, title, url, requested_by FROM song_queue WHERE is_played = 0 AND (url LIKE '%youtube.com/%' OR url LIKE '%youtu.be/%') ORDER BY created_at ASC LIMIT 1")
+      .get() as { id: string; title: string; url: string; requested_by: string } | undefined;
+    return r ? { id: r.id, title: r.title, url: r.url, requestedBy: r.requested_by } : null;
+  }
+
   /** Spotify Web API ile otomatik çalma açık ve hesap bağlı mı? */
   spotifyOtomatikMi(): boolean {
-    return muzikHost.spotifyBagliMi() && settingsCache.get('sr_spotify_api', 'true') !== 'false';
+    if (this.videoKipi()) return false;
+    return muzikHost.spotifyKullanilabilir() && settingsCache.get('sr_spotify_api', 'true') !== 'false';
   }
 
   /**
@@ -83,11 +122,33 @@ export class SongRequestEngine {
         return `@${kim}, YouTube başlığı alınamadı; şarkı adını yazarak dene: !sr Teoman Paramparça`;
       }
     }
+    const hemen = settingsCache.get('sr_spotify_mod', 'sira') === 'hemen';
+    // Spotify Yayın Yönetim Aracı'nda bağlı: arama ve sıraya ekleme orada yapılır
+    if (!muzikHost.spotifyBagliMi()) {
+      try {
+        const id = parcaKimligi(rawQuery);
+        if (id) {
+          const o = await axios.get(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${id}`)}`, { timeout: 4000 });
+          sorgu = String(o.data?.title || '') || sorgu;
+        }
+        const p = await muzikHost.hariciIstek(sorgu, !hemen);
+        const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
+        const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
+        db.prepare(`
+          INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+        `).run(uuidv4(), baslik.slice(0, 200), parca ? `https://open.spotify.com/track/${parca}` : '', 180, kim, message.platform, '', Date.now());
+        return hemen
+          ? `🎵 @${kim}, "${baslik}" şimdi Spotify'da çalıyor!`
+          : `🎵 @${kim}, "${baslik}" Spotify sırasına eklendi — sıradaki şarkılardan sonra kendiliğinden çalacak.`;
+      } catch (e: any) {
+        return `@${kim}, şarkı Spotify'a eklenemedi: ${String(e?.message || e).slice(0, 120)}`;
+      }
+    }
     try {
       const id = parcaKimligi(rawQuery);
       const p = id ? await muzikHost.parcaBilgisi(id) : await muzikHost.parcaAra(sorgu);
       if (!p) return `@${kim}, Spotify'da "${sorgu.slice(0, 60)}" bulunamadı.`;
-      const hemen = settingsCache.get('sr_spotify_mod', 'sira') === 'hemen';
       await muzikHost.parcayiCal(p.uri, hemen);
       const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
       db.prepare(`
@@ -116,6 +177,9 @@ export class SongRequestEngine {
     // Spotify hesabı bağlıysa şarkı doğrudan Spotify'da çalınır
     if (this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);
 
+    const videoKipi = this.videoKipi();
+    // Video kipinde Spotify linki başlığıyla YouTube'da aranır
+    let aramaSorgusu = rawQuery;
     let videoId = '';
     let title = rawQuery;
     let thumbnailUrl = '';
@@ -138,8 +202,14 @@ export class SongRequestEngine {
         title = `Spotify Track (${trackId})`;
       }
 
-      // Auto open in Spotify Desktop if configured
-      this.checkAndAutoOpenDesktop('spotify', title, `spotify:track:${trackId}`);
+      if (videoKipi) {
+        aramaSorgusu = title;
+        videoUrl = '';
+        thumbnailUrl = '';
+      } else {
+        // Auto open in Spotify Desktop if configured
+        this.checkAndAutoOpenDesktop('spotify', title, `spotify:track:${trackId}`);
+      }
     } 
     // 2. Check if query is YouTube Music URL
     else if (rawQuery.includes('music.youtube.com/watch')) {
@@ -162,7 +232,7 @@ export class SongRequestEngine {
 
     // 4. If query is a text search (not a direct URL), check fast cache or search
     if (!videoUrl && !videoId) {
-      const cacheKey = rawQuery.toLowerCase();
+      const cacheKey = aramaSorgusu.toLowerCase();
       if (this.searchCache.has(cacheKey)) {
         const cached = this.searchCache.get(cacheKey)!;
         videoId = cached.videoId;
@@ -171,7 +241,7 @@ export class SongRequestEngine {
         videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
       } else {
         try {
-          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(rawQuery)}`;
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(aramaSorgusu)}`;
           const res = await axios.get(searchUrl, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -224,9 +294,9 @@ export class SongRequestEngine {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).run(songId, title, videoUrl, 180, message.user.displayName, message.platform, thumbnailUrl, Date.now());
 
-    // Auto open desktop player if enabled
+    // Auto open desktop player if enabled (video kipinde klip OBS'te çalar)
     const desktopTarget = settingsCache.get('sr_desktop_target', 'none');
-    if (desktopTarget === 'spotify' || desktopTarget === 'ytmusic') {
+    if (!videoKipi && (desktopTarget === 'spotify' || desktopTarget === 'ytmusic')) {
       this.openDesktopPlayer(desktopTarget as any, title, videoUrl);
     }
 

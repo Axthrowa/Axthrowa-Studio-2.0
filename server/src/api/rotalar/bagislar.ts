@@ -67,6 +67,15 @@ function flattenDonationPayload(raw: any): Record<string, any> {
   return { ...nested, ...raw };
 }
 
+/** "1.250,50" → 1250.5, "1,250.50" → 1250.5, "12,5 TL" → 12.5. Eskiden ilk ikisi NaN → 0 TL bağış oluyordu. */
+export function tutarOku(ham: unknown): number {
+  let s = String(ham ?? '').replace(/[^\d.,-]/g, '');
+  if (s.includes(',')) {
+    s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  }
+  return Number(s) || 0;
+}
+
 function parseIncomingDonation(raw: any, query: any = {}) {
   const body = flattenDonationPayload({ ...query, ...(raw || {}) });
   const donorName = String(
@@ -78,7 +87,7 @@ function parseIncomingDonation(raw: any, query: any = {}) {
   const amountRaw = pickDonationField(body, [
     'amount', 'total', 'donation', 'donation_amount', 'tutar', 'price', 'mc_gross', 'sum'
   ]);
-  const amount = Number(String(amountRaw ?? '0').replace(',', '.').replace(/[^\d.-]/g, '')) || 0;
+  const amount = tutarOku(amountRaw);
   const currency = String(pickDonationField(body, ['currency', 'para_birimi', 'mc_currency']) || 'TL');
   const message = String(
     pickDonationField(body, ['message', 'user_message', 'mesaj', 'note', 'comment', 'msg']) || ''
@@ -87,7 +96,7 @@ function parseIncomingDonation(raw: any, query: any = {}) {
   return { donorName, amount, currency, message, platform };
 }
 
-const processDonation = (donorName: string, amount: number, currency: string = 'TL', message: string = '', platform: string = 'bynogame') => {
+const processDonation = (donorName: string, amount: number, currency: string = 'TL', message: string = '', platform: string = 'bynogame', test = false) => {
   const donationId = uuidv4();
   const numAmount = Math.max(0, Number(amount) || 0);
   const safeName = donorName || 'Gizli Bağışçı';
@@ -98,6 +107,12 @@ const processDonation = (donorName: string, amount: number, currency: string = '
     INSERT INTO donations (id, donor_name, amount, currency, message, platform, created_at, alert_shown, jumpscare_triggered)
     VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)
   `).run(donationId, safeName, numAmount, safeCurrency, safeMessage, platform, Date.now());
+
+  // Olay kaydı: eskiden yalnız donations tablosuna yazılıyordu; "Son bağış" etiketi, kapanış jeneriği
+  // ve olay akışı BynoGame/webhook bağışlarını hiç görmüyordu. Simülasyon test işaretli (etiketlere yazılmaz).
+  db.prepare(
+    'INSERT INTO stream_events (id, platform, event_type, username, display_name, message, amount, currency, metadata, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(uuidv4(), platform, 'tip', safeName, safeName, safeMessage || null, numAmount, safeCurrency, test ? JSON.stringify({ isTest: true }) : null, Date.now());
 
   const alertData = wsHub.buildAlertPayload('tip', {
     user: safeName,
@@ -177,6 +192,10 @@ router.post('/donations/bynogame', handleBynoWebhook);
 router.post('/donations/webhook', (req: Request, res: Response) => {
   try {
     const parsed = parseIncomingDonation(req.body, req.query);
+    // BynoGame ucuyla aynı kural: tutarsız bağış yayına "0 TL" uyarısı ve TTS olarak düşmesin
+    if (!parsed.amount || parsed.amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Geçersiz bağış tutarı' });
+    }
     const result = processDonation(parsed.donorName, parsed.amount, parsed.currency, parsed.message, parsed.platform || 'custom');
     res.json({ success: true, result });
   } catch (err: any) {
@@ -187,7 +206,7 @@ router.post('/donations/webhook', (req: Request, res: Response) => {
 router.post('/donations/simulate', (req: Request, res: Response) => {
   try {
     const { donorName = 'Cömertİzleyici', amount = 100, currency = 'TL', message = 'Harika yayın, devamını dilerim!', platform = 'bynogame' } = req.body || {};
-    const result = processDonation(String(donorName), Number(amount), String(currency), String(message || ''), String(platform));
+    const result = processDonation(String(donorName), Number(amount), String(currency), String(message || ''), String(platform), true);
     res.json({ success: true, result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'Simülasyon başarısız' });

@@ -11,7 +11,7 @@
  * `{...}` biçimi geriye uyum için `variable-parser.ts`'te korunuyor.
  */
 import { db } from '../../db/index.js';
-import { economy } from '../../modules/economy/economy.js';
+import { cuzdanAdi, economy } from '../../modules/economy/economy.js';
 import { seviyeler } from '../../modules/levels/levels.js';
 import { getStreamUptime } from '../variable-parser.js';
 import { settingsCache } from '../settings-cache.js';
@@ -183,11 +183,11 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
 
     // ---- Sadakat ------------------------------------------------------------
     tanim('points', 'loyalty', 'Kullanıcının puanı', (h, c) => {
-      const hedef = atSil(h) || c.user.username;
+      const hedef = cuzdanAdi(c.platform, atSil(h) || c.user.username);
       return String(economy.getUserPoints(hedef));
     }),
     tanim('puan', 'loyalty', '$(points) ile aynı', (h, c) => {
-      const hedef = atSil(h) || c.user.username;
+      const hedef = cuzdanAdi(c.platform, atSil(h) || c.user.username);
       return String(economy.getUserPoints(hedef));
     }),
     tanim(
@@ -196,7 +196,7 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       'Puan ekler/çıkarır. $(addPoints 100) veya $(addPoints @kisi -50)',
       (h, c) => {
         const p = h.trim().split(/\s+/);
-        const hedef = p.length > 1 ? atSil(p[0]) : c.user.username;
+        const hedef = cuzdanAdi(c.platform, p.length > 1 ? atSil(p[0]) : c.user.username);
         const miktar = Number(p[p.length - 1]);
         if (!Number.isFinite(miktar)) return '-1';
         return String(economy.addPoints(hedef, miktar));
@@ -209,7 +209,7 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       'Puanı tam değere ayarlar',
       (h, c) => {
         const p = h.trim().split(/\s+/);
-        const hedef = p.length > 1 ? atSil(p[0]) : c.user.username;
+        const hedef = cuzdanAdi(c.platform, p.length > 1 ? atSil(p[0]) : c.user.username);
         const deger = Math.max(0, Number(p[p.length - 1]));
         if (!Number.isFinite(deger)) return '-1';
         const suAn = economy.getUserPoints(hedef);
@@ -218,10 +218,10 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       { yazar: true }
     ),
     tanim('currency', 'loyalty', 'Puan biriminin adı', () => settingsCache.get('currency_name', 'Puan')),
-    tanim('level', 'loyalty', 'Kullanıcının seviyesi', (h, c) => String(seviyeler.kullanici(atSil(h) || c.user.username).seviye)),
-    tanim('xp', 'loyalty', 'Kullanıcının toplam XP değeri', (h, c) => String(seviyeler.kullanici(atSil(h) || c.user.username).xp)),
+    tanim('level', 'loyalty', 'Kullanıcının seviyesi', (h, c) => String(seviyeler.kullanici(cuzdanAdi(c.platform, atSil(h) || c.user.username)).seviye)),
+    tanim('xp', 'loyalty', 'Kullanıcının toplam XP değeri', (h, c) => String(seviyeler.kullanici(cuzdanAdi(c.platform, atSil(h) || c.user.username)).xp)),
     tanim('nextlvl', 'loyalty', 'Sonraki seviye için gereken XP', (h, c) =>
-      String(seviyeler.kullanici(atSil(h) || c.user.username).sonrakiIcinXp)
+      String(seviyeler.kullanici(cuzdanAdi(c.platform, atSil(h) || c.user.username)).sonrakiIcinXp)
     ),
 
     // ---- Sayaçlar -----------------------------------------------------------

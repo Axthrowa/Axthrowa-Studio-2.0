@@ -27,6 +27,15 @@ describe('etiketleriCikar', () => {
     expect(v.sonRaid).toEqual({ ad: 'Kanal', izleyici: 42 });
     expect(v.sonKicks).toEqual({ ad: 'K', tutar: 100 });
   });
+  it('en büyük bağış farklı para birimlerini karıştırmaz', () => {
+    const v = etiketleriCikar([
+      s('tip', 'Ali', 100),
+      { ...s('tip', 'Yabanci', 500), currency: 'USD' },
+      s('tip', 'Veli', 80)
+    ]);
+    expect(v.enBuyukBagis).toEqual({ ad: 'Ali', tutar: 100, birim: 'TL' });
+  });
+
   it('test uyarıları ve bozuk metadata', () => {
     const v = etiketleriCikar([s('follow', 'Test', null, JSON.stringify({ isTest: true })), s('follow', 'Gercek', null, '{bozuk')]);
     expect(v.sonTakip).toBe('Gercek');

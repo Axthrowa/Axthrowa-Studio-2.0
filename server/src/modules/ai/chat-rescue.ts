@@ -81,9 +81,15 @@ export class ChatRescueService extends EventEmitter {
       const idleThresholdMs = (settings.inactivityMinutes || 5) * 60 * 1000;
       const elapsed = Date.now() - this.lastMessageTime;
 
-      if (elapsed >= idleThresholdMs) {
-        await this.triggerRescue('auto');
+      if (elapsed < idleThresholdMs) return;
+      // Yayın kapalıyken 5 dakikada bir yapay zekâ çağrılıp kota harcanıyordu (zamanlayıcılarla aynı kural)
+      try {
+        const { canliDurum } = await import('../../core/live-status.js');
+        if (canliDurum.genel().canli === false) return;
+      } catch {
+        /* canlı durumu okunamazsa zamanlayıcılar gibi devam */
       }
+      await this.triggerRescue('auto');
     }, 60000); // Check every 60s
   }
 
@@ -94,20 +100,19 @@ export class ChatRescueService extends EventEmitter {
     let message = '';
     const personality = settings.personality || 'friendly';
 
-    // Try Gemini AI first if configured
-    const keyRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_api_key'").get() as { value: string } | undefined;
-    if (keyRow?.value) {
+    // Seçili yapay zekâ (Gemini, OpenAI, Claude…); anahtar yoksa null döner ve şablona düşülür.
+    // Panelde yapay zekâ kapalıysa çağrılmaz (ask() bu kontrolü yapıyordu, yardımcı yol yapmıyor)
+    const aiKapali = (db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_enabled'").get() as { value?: string } | undefined)?.value === 'false';
+    if (!aiKapali) {
       try {
         let promptText = `Canlı yayın sohbeti durgunlaştı ve izleyiciler sessiz. Sen '${personality}' kişiliğinde bir asistansın. İzleyicilerin sohbete katılması için ilgi çekici, neşeli, merak uyandıran tek bir soru veya konu başlatıcı cümle yaz (maksimum 2 cümle).`;
         if (personality === 'custom' && settings.customPrompt) {
           promptText = `${settings.customPrompt}\n\nCanlı yayın sohbetini canlandırmak için tek bir ilgi çekici soru/konu yaz.`;
         }
 
-        const aiReply = await geminiCoHost.ask(promptText, 'Yayıncı');
-        // `ask` hata durumunda "⚠️ …" metni döndürür; o metin sohbete gitmesin
-        if (aiReply && !aiReply.startsWith('⚠️') && !aiReply.includes('devre dışı')) {
-          message = aiReply;
-        }
+        // `ask` değil: kurtarma yönergesi asistanın konuşma geçmişine (izleyici !ai bağlamına) yazılmasın
+        const aiReply = await geminiCoHost.yardimciUret(promptText, 20000, 'Sohbet kurtarma');
+        if (aiReply) message = aiReply.trim();
       } catch (err) {
         console.warn('[ChatRescue] Gemini fallback to template:', err);
       }

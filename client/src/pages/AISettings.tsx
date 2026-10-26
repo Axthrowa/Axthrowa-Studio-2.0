@@ -13,8 +13,27 @@ interface ChatRescueSettings {
   lastRescuedAt?: number;
 }
 
+const AI_SAGLAYICILARI: Array<{ id: string; ad: string; model: string; ornek?: string; adres?: string; anahtarsiz?: boolean }> = [
+  { id: 'gemini', ad: 'Google Gemini', model: '' },
+  { id: 'openai', ad: 'OpenAI (ChatGPT)', model: 'gpt-4o-mini', ornek: 'sk-...', adres: 'https://platform.openai.com/api-keys' },
+  { id: 'anthropic', ad: 'Anthropic Claude', model: 'claude-haiku-5-5', ornek: 'sk-ant-...', adres: 'https://console.anthropic.com/settings/keys' },
+  { id: 'groq', ad: 'Groq', model: 'llama-3.3-70b-versatile', ornek: 'gsk_...', adres: 'https://console.groq.com/keys' },
+  { id: 'openrouter', ad: 'OpenRouter', model: 'openrouter/auto', ornek: 'sk-or-...', adres: 'https://openrouter.ai/keys' },
+  { id: 'deepseek', ad: 'DeepSeek', model: 'deepseek-chat', ornek: 'sk-...', adres: 'https://platform.deepseek.com/api_keys' },
+  { id: 'mistral', ad: 'Mistral', model: 'mistral-small-latest', adres: 'https://console.mistral.ai/api-keys' },
+  { id: 'xai', ad: 'xAI Grok', model: 'grok-3-mini', ornek: 'xai-...', adres: 'https://console.x.ai' },
+  { id: 'ollama', ad: 'Ollama (yerel, anahtarsız)', model: 'llama3.2', anahtarsiz: true },
+  { id: 'custom', ad: 'Özel (OpenAI uyumlu adres)', model: '' }
+];
+
 export function AISettings() {
   const [apiKey, setApiKey] = useState('');
+  // Gemini dışındaki sağlayıcılar (sunucu: modules/ai/saglayicilar.ts)
+  const [saglayici, setSaglayici] = useState('gemini');
+  const [saglayiciAnahtar, setSaglayiciAnahtar] = useState('');
+  const [saglayiciModel, setSaglayiciModel] = useState('');
+  const [ozelAdres, setOzelAdres] = useState('');
+  const [kayitliAyarlar, setKayitliAyarlar] = useState<Record<string, string>>({});
   const [prompt, setPrompt] = useState('');
   const [enabled, setEnabled] = useState(true);
   /** Sohbette "@BotAdı soru" yazılınca yapay zekâ yanıtlasın mı (varsayılan kapalı). */
@@ -59,6 +78,12 @@ export function AISettings() {
         setSeslenme(yuklenen.seslenme);
         setApiKey(yuklenen.apiKey);
         setAnahtarKayitli(Boolean(d.gemini_api_keyVar));
+        setKayitliAyarlar(d || {});
+        const s0 = d.ai_provider || 'gemini';
+        setSaglayici(s0);
+        setSaglayiciAnahtar(d[`ai_${s0}_api_key`] || '');
+        setSaglayiciModel(d[`ai_${s0}_model`] || '');
+        setOzelAdres(d.ai_custom_base_url || '');
         setPrompt(yuklenen.prompt);
         setEnabled(yuklenen.enabled);
         geminiTaban(yuklenen);
@@ -86,6 +111,11 @@ export function AISettings() {
           gemini_api_key: apiKey,
           gemini_prompt: prompt,
           gemini_enabled: enabled ? 'true' : 'false',
+          ai_provider: saglayici,
+          ...(saglayici !== 'gemini'
+            ? { [`ai_${saglayici}_api_key`]: saglayiciAnahtar, [`ai_${saglayici}_model`]: saglayiciModel }
+            : {}),
+          ...(saglayici === 'custom' ? { ai_custom_base_url: ozelAdres } : {}),
           ai_mention_enabled: seslenme ? 'true' : 'false'
         })
       }).catch(() => null),
@@ -185,10 +215,10 @@ export function AISettings() {
       <div>
         <h1 className="text-2xl font-black text-white flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-purple-400" />
-          Yapay Zeka & Sohbet Kurtarma (Gemini AI & Chat Rescue)
+          Yapay Zekâ & Sohbet Kurtarma
         </h1>
         <p className="text-sm text-gray-400">
-          Google Gemini ile akıllı komut yanıtları verin ve durgun geçen anlarda sohbeti otomatik canlandıracak konular açın.
+          Gemini, ChatGPT, Claude ve diğer yapay zekâlarla akıllı komut yanıtları verin ve durgun geçen anlarda sohbeti otomatik canlandıracak konular açın.
         </p>
       </div>
 
@@ -290,7 +320,7 @@ export function AISettings() {
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <span className="font-bold text-white text-base flex items-center gap-2">
                 <Bot className="w-5 h-5 text-purple-400" />
-                Gemini Yapılandırması
+                Yapay Zekâ Yapılandırması
               </span>
 
               <label className="relative inline-flex items-center cursor-pointer">
@@ -307,11 +337,68 @@ export function AISettings() {
             <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
               <input type="checkbox" checked={seslenme} onChange={e => setSeslenme(e.target.checked)} className="mt-0.5 accent-purple-600" />
               <span className="text-xs text-gray-300">
-                <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla başlarsa (ör. <code>@StreamAxTBot bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
+                <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla (AxBot ya da bot hesabının adı) başlarsa (ör. <code>@AxBot bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
               </span>
             </label>
 
             <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Yapay zekâ sağlayıcısı</label>
+              <select
+                value={saglayici}
+                onChange={(e) => {
+                  const y = e.target.value;
+                  setSaglayici(y);
+                  setSaglayiciAnahtar(kayitliAyarlar[`ai_${y}_api_key`] || '');
+                  setSaglayiciModel(kayitliAyarlar[`ai_${y}_model`] || '');
+                }}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+              >
+                {AI_SAGLAYICILARI.map((p) => (
+                  <option key={p.id} value={p.id}>{p.ad}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1">Kaydedip "Bağlantıyı sına" ile anahtarı ve modelleri denetleyebilirsin. Bilgi yarışması soru üretimi yalnız Gemini ile çalışır.</p>
+            </div>
+
+            {saglayici !== 'gemini' && (() => {
+              const p = AI_SAGLAYICILARI.find((x) => x.id === saglayici)!;
+              return (
+                <div className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                  {saglayici === 'custom' && (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-300 mb-1">API adresi (OpenAI uyumlu, /v1 ile)</label>
+                      <input value={ozelAdres} onChange={(e) => setOzelAdres(e.target.value)} placeholder="http://127.0.0.1:1234/v1"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono" />
+                    </div>
+                  )}
+                  {!p.anahtarsiz && (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-300 mb-1">{p.ad} API anahtarı</label>
+                      <input type="password" value={saglayiciAnahtar} onChange={(e) => setSaglayiciAnahtar(e.target.value)} placeholder={p.ornek}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono" />
+                      {kayitliAyarlar[`ai_${saglayici}_api_keyVar`] && (
+                        <span className="mt-1 inline-block text-[10px] px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">✓ Anahtar kayıtlı (maskeli)</span>
+                      )}
+                      {p.adres && (
+                        <p className="text-[11px] text-gray-500 mt-1">Anahtar al: <a href={p.adres} target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">{p.adres.replace('https://', '')}</a></p>
+                      )}
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">Model</label>
+                    <input value={saglayiciModel} onChange={(e) => setSaglayiciModel(e.target.value)} placeholder={p.model || 'model adı'}
+                      list="ai-modeller"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono" />
+                    <datalist id="ai-modeller">
+                      {(durum?.modeller || []).map((m: string) => <option key={m} value={m} />)}
+                    </datalist>
+                    <p className="text-[11px] text-gray-500 mt-1">Boş bırakılırsa: {p.model || '—'}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className={saglayici === 'gemini' ? '' : 'hidden'}>
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Google Gemini API Anahtarı
               </label>

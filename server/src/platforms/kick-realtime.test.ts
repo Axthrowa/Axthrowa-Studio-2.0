@@ -15,6 +15,7 @@ import {
   BELIRTEC_DOLDU,
   cerceveCoz,
   guvenliRealtimeUrl,
+  kickAnketi,
   pazarlikGovdesi,
   satirlar,
   sessizlikSiniriMs,
@@ -139,5 +140,15 @@ describe('zamanlama ve kanallar', () => {
 
   it('yeniden deneme artarak 60 sn’de durur', () => {
     expect([0, 1, 2, 3, 4, 5, 9].map(yenidenDenemeMs)).toEqual([1000, 2000, 5000, 10000, 30000, 60000, 60000]);
+  });
+});
+
+describe('Kick anketi', () => {
+  it('PollUpdateEvent katman biçimine çevrilir (süre saniye)', () => {
+    const a = kickAnketi({ poll: { title: 'Hangi oyun?', options: [{ id: 0, label: 'CS2', votes: 3 }, { id: 1, label: 'LoL', votes: 1 }], duration: 60, remaining: 30 } }, 1000);
+    expect(a).toEqual({ question: 'Hangi oyun?', options: ['CS2', 'LoL'], votes: { '1': 3, '2': 1 }, endsAt: 31_000 });
+  });
+  it('seçeneksiz veri yok sayılır', () => {
+    expect(kickAnketi({ poll: { title: 'x', options: [] } })).toBeNull();
   });
 });

@@ -24,7 +24,7 @@ import { commandManager } from './modules/commands/command-manager.js';
 import { timerManager } from './modules/timers/timers.js';
 import { setStreamStartTime } from './core/variable-parser.js';
 import { extras } from './modules/extras/extras.js';
-import { economy } from './modules/economy/economy.js';
+import { cuzdanAdi, economy } from './modules/economy/economy.js';
 import { subathon } from './modules/subathon/subathon.js';
 import { hypeTreni } from './modules/hype/hype-train.js';
 import { seviyeler } from './modules/levels/levels.js';
@@ -347,18 +347,19 @@ server.listen(PORT, HOST, async () => {
   eventBus.on('sub', (p: any) => {
     const a = seviyeler.ayarOku();
     if (!a.aktif || (p as any)?.isTest === true) return; // test uyarısı sahte kullanıcıya XP vermesin
-    seviyeler.xpEkle(p?.username, p?.isGift ? a.hediyeAboneXp : a.aboneXp);
+    seviyeler.xpEkle(cuzdanAdi(p?.platform, p?.username), p?.isGift ? a.hediyeAboneXp : a.aboneXp);
   });
   eventBus.on('tip', (p: any) => {
     const a = seviyeler.ayarOku();
     if (!a.aktif || a.bagisXp <= 0 || (p as any)?.isTest === true) return;
     const adet = Math.floor(Math.max(0, Number(p?.amount) || 0) / Math.max(1, a.bagisBirimi));
-    if (adet > 0) seviyeler.xpEkle(p?.username, adet * a.bagisXp);
+    if (adet > 0) seviyeler.xpEkle(cuzdanAdi(p?.platform, p?.username), adet * a.bagisXp);
   });
 
   // Connect active streaming platforms
   try {
     await platformManager.connectAll();
+    platformManager.bekciyiBaslat();
   } catch (err) {
     console.error('Error connecting platforms:', err);
   }

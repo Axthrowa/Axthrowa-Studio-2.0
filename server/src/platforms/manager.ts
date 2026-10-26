@@ -8,6 +8,8 @@ import { trovoPlatform } from './trovo.js';
 import { eventBus, BotMessagePayload } from '../core/event-bus.js';
 import { seyrekUyar } from '../core/logger.js';
 import { settingsCache } from '../core/settings-cache.js';
+import { db } from '../db/index.js';
+import { BEKCI_PLATFORMLARI, denenmeli, type BekciDurumu } from './bekci.js';
 
 export class PlatformManager {
   private platforms: Map<string, BasePlatform> = new Map();
@@ -68,6 +70,38 @@ export class PlatformManager {
       } catch (err: any) {
         console.warn(`[StreamAxT] Could not connect platform ${name}:`, err?.message || err);
       }
+    }
+  }
+
+  /**
+   * Twitch ve TikTok kopunca kendileri yeniden bağlanmıyordu: Twitch bakımda bağlantıyı kapatınca,
+   * TikTok'ta bot yayından önce açılınca sohbet uygulama yeniden başlayana kadar gelmiyordu.
+   * Dakikada bir: ayarda etkin ama bağlı olmayanı, artan beklemeyle yeniden bağlar.
+   */
+  private bekciDurumu = new Map<string, BekciDurumu>();
+
+  bekciyiBaslat() {
+    setInterval(() => void this.bekciTuru(), 60_000).unref?.();
+  }
+
+  async bekciTuru(simdi = Date.now()) {
+    for (const ad of BEKCI_PLATFORMLARI) {
+      const p = this.platforms.get(ad);
+      const etkin = db.prepare('SELECT 1 FROM channels WHERE platform = ? AND is_active = 1').get(ad);
+      if (!p || !etkin || p.isConnected()) {
+        this.bekciDurumu.delete(ad);
+        continue;
+      }
+      const d = this.bekciDurumu.get(ad);
+      if (!denenmeli(d, simdi)) continue;
+      let ok = false;
+      try {
+        ok = await this.reconnect(ad);
+      } catch (e) {
+        seyrekUyar(`bekci:${ad}`, `[Bekçi] ${ad} yeniden bağlanamadı`, e, 10 * 60_000);
+      }
+      if (ok) this.bekciDurumu.delete(ad);
+      else this.bekciDurumu.set(ad, { hata: d ? d.hata + 1 : 0, sonDeneme: simdi });
     }
   }
 

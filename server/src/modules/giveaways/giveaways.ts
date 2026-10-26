@@ -1,7 +1,7 @@
 import { db } from '../../db/index.js';
 import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload } from '../../core/event-bus.js';
-import { economy } from '../economy/economy.js';
+import { cuzdanAdi, economy } from '../economy/economy.js';
 
 export interface GiveawayWinner {
   /** Tüm kazananlar virgülle (eski istemciler tek ad bekliyordu; tek kazananda aynı) */
@@ -39,6 +39,12 @@ export class GiveawayEngine {
   }
 
   createGiveaway(title: string, keyword: string = '!katil', subBonusMultiplier: number = 2.0, costPoints: number = 0): any {
+    // Kazanan çekilmeden kapanan ücretli çekilişin katılım puanları iade edilir (eskiden kayboluyordu)
+    const onceki = this.getActiveGiveaway();
+    if (onceki && Number(onceki.cost_points) > 0) {
+      const katilanlar = db.prepare('SELECT username, platform FROM giveaway_entries WHERE giveaway_id = ?').all(onceki.id) as Array<{ username: string; platform: string }>;
+      for (const k of katilanlar) economy.addPoints(cuzdanAdi(k.platform, k.username), Number(onceki.cost_points));
+    }
     // Close any previous active giveaway
     db.prepare('UPDATE giveaways SET is_active = 0, closed_at = ? WHERE is_active = 1').run(Date.now());
 
@@ -90,7 +96,7 @@ export class GiveawayEngine {
       if (user.points < active.cost_points) {
         return `@${message.user.displayName}, çekilişe katılmak için ${active.cost_points} puana ihtiyacın var! (Mevcut: ${user.points})`;
       }
-      economy.removePoints(message.user.username, active.cost_points);
+      economy.removePoints(cuzdanAdi(message.platform, message.user.username), active.cost_points);
     }
 
     // Calculate tickets (subscriber bonus)

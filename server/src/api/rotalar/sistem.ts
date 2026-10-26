@@ -134,16 +134,38 @@ router.post('/settings', (req: Request, res: Response) => {
 // Varsayılan olarak SOHBET HARİÇ: "Canlı Yayın Olay Akışı" ve kapanış jeneriği
 // takip/abone/bağış/klip ister; her sohbet mesajı da bu tabloya yazıldığı için
 // eskiden son 50 kaydın hepsi sohbetti. `?sohbet=1` eski davranış.
+// `?saat=N`: yalnız son N saatin olayları (en çok 500) — kapanış jeneriği bunu kullanır; eskiden
+// son 50 olayı tarihe bakmadan alıyor, dünkü yayının takipçileri de jeneriğe düşüyordu.
 router.get('/events', (req: Request, res: Response) => {
   const sohbetDahil = req.query.sohbet === '1';
+  const saat = Math.min(168, Math.max(0, Number(req.query.saat) || 0));
+  const kosul = [sohbetDahil ? '' : "event_type <> 'chat'", saat ? 'timestamp >= ?' : ''].filter(Boolean);
   const events = db
-    .prepare(
-      sohbetDahil
-        ? 'SELECT * FROM stream_events ORDER BY timestamp DESC LIMIT 50'
-        : "SELECT * FROM stream_events WHERE event_type <> 'chat' ORDER BY timestamp DESC LIMIT 50"
-    )
-    .all();
+    .prepare(`SELECT * FROM stream_events ${kosul.length ? 'WHERE ' + kosul.join(' AND ') : ''} ORDER BY timestamp DESC LIMIT ${saat ? 500 : 50}`)
+    .all(...(saat ? [Date.now() - saat * 3_600_000] : []));
   res.json(events);
+});
+
+/**
+ * Panel durum şeridi ve Hızlı Kurulum: neyin çalıştığı tek bakışta (ağa çıkmaz, ucuz).
+ * Bu turdaki sorunların çoğu (Spotify YYA'da bağlı, anket katmanı kapalı) burada görünür olsun diye.
+ */
+router.get('/durum-ozeti', async (_req: Request, res: Response) => {
+  const durumlar = platformManager.getAllStatuses() as Record<string, { connected?: boolean }>;
+  const { muzikHost } = await import('../../modules/muzik/index.js');
+  const { wsHub } = await import('../../ws/server.js');
+  const { seciliSaglayici, saglayiciAyari } = await import('../../modules/ai/saglayicilar.js');
+  const m = muzikHost.durum();
+  const saglayici = seciliSaglayici();
+  const aiHazir = saglayici
+    ? Boolean(saglayiciAyari(saglayici).anahtar || saglayiciAyari(saglayici).tanim.anahtarsiz)
+    : Boolean(settingsCache.get('gemini_api_key', '') || process.env.GEMINI_API_KEY);
+  res.json({
+    platformlar: Object.keys(durumlar).filter((k) => durumlar[k]?.connected),
+    muzik: m.spotify.connected ? 'spotify' : m.harici.spotify ? 'yya-spotify' : m.ytmd.connected ? 'ytmd' : null,
+    obsKaynak: wsHub.obsKaynakSayisi(),
+    ai: { saglayici: saglayici || 'gemini', hazir: aiHazir }
+  });
 });
 
 export default router;

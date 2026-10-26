@@ -187,3 +187,31 @@ export function yenidenDenemeMs(deneme: number): number {
   const adimlar = [1_000, 2_000, 5_000, 10_000, 30_000, 60_000];
   return adimlar[Math.min(Math.max(0, deneme), adimlar.length - 1)];
 }
+
+/** Anket katmanının anladığı biçim (PollsWidget `anketAyikla`). */
+export interface KatmanAnketi {
+  question: string;
+  options: string[];
+  votes: Record<string, number>;
+  endsAt: number;
+}
+
+/**
+ * Kick'in kendi anketi: `App\Events\PollUpdateEvent` verisi
+ * `{poll:{title, options:[{id,label,votes}], duration, remaining}}` (süreler saniye).
+ * Kick panelinden başlatılan anket bot katmanına hiç ulaşmıyordu.
+ */
+export function kickAnketi(veri: unknown, simdi = Date.now()): KatmanAnketi | null {
+  const p = (veri as any)?.poll;
+  if (!p || !Array.isArray(p.options) || p.options.length < 2) return null;
+  const options = p.options.map((o: any) => String(o?.label ?? ''));
+  const votes: Record<string, number> = {};
+  p.options.forEach((o: any, i: number) => (votes[String(i + 1)] = Number(o?.votes) || 0));
+  const kalan = Number(p.remaining ?? p.duration);
+  return {
+    question: String(p.title || ''),
+    options,
+    votes,
+    endsAt: simdi + (Number.isFinite(kalan) && kalan > 0 ? kalan : 0) * 1000
+  };
+}

@@ -265,6 +265,23 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
     case 'viewer-counter':
       wsHub.broadcastTo(['all'], { type: 'viewer_count', kick: 128, twitch: 64, youtube: 42, total: 234 });
       break;
+    // Aşağıdakiler eskiden varsayılana düşüp ilgisiz bir takipçi uyarısı gösteriyordu.
+    // Yalnız katmana örnek gider; veritabanındaki anket/çekiliş/talep değişmez.
+    case 'polls':
+      wsHub.broadcastTo(['all'], {
+        type: 'poll_update',
+        poll: { question: 'Test anketi: hangi oyun?', options: ['CS2', 'Valorant', 'Minecraft'], votes: { 1: 6, 2: 3, 3: 1 }, endsAt: Date.now() + 20_000 }
+      });
+      break;
+    case 'giveaways':
+      wsHub.broadcastTo(['all'], { type: 'giveaway_winner', payload: { winner: body.username || 'TestIzleyici' } });
+      break;
+    case 'loyalty-redemptions':
+      wsHub.broadcastTo(['all'], {
+        type: 'loyalty_redeemed',
+        data: { id: `test-${Date.now()}`, user: body.username || 'TestIzleyici', rewardTitle: 'Test ödülü', rewardType: 'custom', cost: 500, timestamp: Date.now() }
+      });
+      break;
     case 'activity-feed':
     case 'alert-box':
     case 'follow':

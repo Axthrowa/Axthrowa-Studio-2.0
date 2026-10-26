@@ -28,7 +28,13 @@ router.get('/songrequest/queue', (req: Request, res: Response) => {
 // OBS'te yalnız `song_started` olayı anında görünüyor, sayfa yenilenince
 // ya da sonradan açılınca kayboluyordu.
 router.get('/songrequest/current', (req: Request, res: Response) => {
-  res.json(songRequest.getCurrentSong() || null);
+  // ?video=1: Şarkı Klipleri widget'ı için kuyruktaki ilk YouTube isteği
+  res.json((req.query.video === '1' ? songRequest.ilkKlip() : songRequest.getCurrentSong()) || null);
+});
+
+// Şarkı Klipleri widget'ı: video bitti → sıradakine geç (yalnız bitti denen şarkı hâlâ çalıyorsa)
+router.post('/songrequest/bitti', (req: Request, res: Response) => {
+  res.json({ success: songRequest.klipBitti(String(req.body?.id || '')) });
 });
 
 router.post('/songrequest/skip', (req: Request, res: Response) => {

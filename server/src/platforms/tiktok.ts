@@ -107,6 +107,11 @@ export class TikTokPlatform extends BasePlatform {
       });
 
       // 4. Stream End
+      // Ağ kopunca panel "bağlı" gösterip mesaj almıyordu; bekçi bağlı değil görünce yeniden dener
+      this.tiktokLiveConnection.on('disconnected', () => {
+        this.connected = false;
+      });
+
       this.tiktokLiveConnection.on('streamEnd', () => {
         console.log('[TikTok] Stream ended by broadcaster');
         this.connected = false;

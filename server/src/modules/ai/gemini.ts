@@ -417,21 +417,6 @@ class GeminiCoHost {
       return null;
     }
   }
-
-  async evaluateToxicity(text: string): Promise<boolean> {
-    try {
-      // Sohbet mesajı başına çalışabilir: kısa tutulur, asılı kalan istek
-      // mesaj işlemeyi biriktirmesin.
-      const answer = await this.yardimciUret(
-        `Aşağıdaki canlı yayın mesajını analiz et. Mesaj açık bir nefret söylemi, ağır hakaret, ırkçılık veya taciz içeriyor mu? SADECE tek kelimeyle EVET veya HAYIR şeklinde cevap ver.\n\nMesaj: "${text}"`,
-        10000,
-        'Gemini zehirlilik denetimi'
-      );
-      return String(answer || '').trim().toUpperCase().startsWith('EVET');
-    } catch {
-      return false;
-    }
-  }
 }
 
 export const geminiCoHost = new GeminiCoHost();

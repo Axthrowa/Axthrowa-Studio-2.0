@@ -22,7 +22,8 @@ export const SURUMLER: Surum[] = [
       "!sr, Yayın Yönetim Aracı'ndaki Spotify bağlantısıyla Spotify sırasına ekler",
       'Resonance içinde senkron şarkı sözleri (/resonance/lyrics)',
       'Yapay zekâ: Gemini yanında OpenAI, Claude, Groq, OpenRouter, DeepSeek, Mistral, xAI, Ollama ve özel adres',
-      'Çıkış jeneriği yalnız o yayında gelen abone/destekçi/takipçileri gösterir (açılıp kapatılabilir)'
+      'Çıkış jeneriği yalnız o yayında gelen abone/destekçi/takipçileri gösterir (açılıp kapatılabilir)',
+      'Düzeltmeler: etkinlik akışında abonelikler, şarkı kuyruğu eşleme, çalışmayan "AI toksisite" ayarı kaldırıldı'
     ]
   },
   {

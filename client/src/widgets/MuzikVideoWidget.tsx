@@ -61,7 +61,7 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
     if (onizleme) return;
     let iptal = false;
     const cek = () =>
-      fetch('/api/songrequest/current')
+      fetch('/api/songrequest/current?video=1')
         .then((r) => r.json())
         .then((d) => {
           if (iptal) return;

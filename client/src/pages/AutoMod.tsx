@@ -11,7 +11,7 @@
  */
 import { useState, useEffect } from 'react';
 import { AutoModSettings } from '../types.js';
-import { Shield, Check, Plus, X, Sparkles, Link, Type, Smile, Ban, Hash, User } from 'lucide-react';
+import { Shield, Check, Plus, X, Link, Type, Smile, Ban, Hash, User } from 'lucide-react';
 import { KaydedilmemisUyari, useToast } from '../ui/index.js';
 import { useKirliTakip } from '../hooks/useKirliTakip.js';
 
@@ -311,11 +311,6 @@ export function AutoMod() {
         </div>
       )}
 
-      <div className="glass-panel p-6 rounded-2xl space-y-4">
-        <div className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-400" /><h2 className="font-bold">Gemini AI Moderasyon</h2></div>
-        <label className="flex justify-between text-xs">AI toksisite filtresi <input type="checkbox" checked={settings.ai_moderation_enabled !== 0} onChange={e => setSettings({ ...settings, ai_moderation_enabled: e.target.checked ? 1 : 0 })} /></label>
-        <label className="text-xs space-y-1">Eşik ({settings.ai_toxicity_threshold})<input type="range" min={1} max={10} value={settings.ai_toxicity_threshold} onChange={e => setSettings({ ...settings, ai_toxicity_threshold: +e.target.value })} className="w-full" /></label>
-      </div>
     </div>
   );
 }

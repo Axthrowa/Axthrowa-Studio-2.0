@@ -44,11 +44,17 @@ export class SongRequestEngine {
     // Spotify'da istek şarkısı çalmaya başlayınca kuyruk ilerler: ondan önce
     // istenip çalınmış şarkılar "çalındı" sayılır, "şu an çalan" o olur.
     muzikHost.parcaDegisince((c) => {
-      if (!c?.trackId) return;
+      if (!c?.title) return;
       try {
-        const satir = db
-          .prepare('SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1')
-          .get(`%/track/${c.trackId}`) as { created_at: number } | undefined;
+        // Yayın Yönetim Aracı'nın çalan bilgisinde parça kimliği yok: o zaman başlıkla eşlenir
+        // (kayıt "Şarkı — Sanatçı" biçiminde); eskiden bu istekler kuyrukta hep açık kalıyordu
+        const satir = (
+          c.trackId
+            ? db.prepare('SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1').get(`%/track/${c.trackId}`)
+            : db
+                .prepare("SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE '%open.spotify.com%' AND LOWER(title) LIKE ? ORDER BY created_at ASC LIMIT 1")
+                .get(`${c.title.toLowerCase()}%`)
+        ) as { created_at: number } | undefined;
         if (!satir) return;
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ?').run(satir.created_at);
         this.currentSong = null;
@@ -66,12 +72,23 @@ export class SongRequestEngine {
 
   /** Klip widget'ı parçayı bitirdi: yalnız hâlâ çalan oysa geçilir (iki OBS kaynağı aynı şarkıyı iki kez atlatmasın). */
   klipBitti(id: string): boolean {
-    const simdiki = this.getCurrentSong();
+    const simdiki = this.ilkKlip();
     if (!simdiki || simdiki.id !== id) return false;
     db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(simdiki.id);
-    this.currentSong = null;
+    if (this.currentSong?.id === id) this.currentSong = null;
     this.skipVotes.clear();
     return true;
+  }
+
+  /**
+   * Kuyruktaki ilk YouTube isteği. Video kipine geçmeden önce eklenmiş bir Spotify isteği
+   * kuyruğun başında kalınca widget onu çalamıyor ve hiç ilerlemiyordu.
+   */
+  ilkKlip(): { id: string; title: string; url: string; requestedBy: string } | null {
+    const r = db
+      .prepare("SELECT id, title, url, requested_by FROM song_queue WHERE is_played = 0 AND (url LIKE '%youtube.com/%' OR url LIKE '%youtu.be/%') ORDER BY created_at ASC LIMIT 1")
+      .get() as { id: string; title: string; url: string; requested_by: string } | undefined;
+    return r ? { id: r.id, title: r.title, url: r.url, requestedBy: r.requested_by } : null;
   }
 
   /** Spotify Web API ile otomatik çalma açık ve hesap bağlı mı? */

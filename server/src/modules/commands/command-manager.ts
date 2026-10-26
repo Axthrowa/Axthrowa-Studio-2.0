@@ -503,11 +503,27 @@ export class CommandManager {
         return this.hesapYasi(args[0] || message.user.username, message);
       case 'cark':
       case 'wheel': {
-        // İzleyici çevirebilir; art arda çevirme seli olmasın diye genel bekleme
-        const bekleme = Math.min(600, Math.max(0, Number(settingsCache.get('wheel_cooldown', '30')) || 0)) * 1000;
+        // İzleyici çevirebilir; art arda çevirme seli olmasın diye genel bekleme. Bekleme ve puan maliyeti
+        // çark widget'ının ayarlarından (eskiden `wheel_cooldown`un panelde ayarı yoktu)
+        let carkAyar: { cevirmeBeklemeSn?: unknown; cevirmeMaliyeti?: unknown } = {};
+        try {
+          // Doğrudan veritabanından: widget ayarı kaydedilince ayar önbelleği yenilenmiyor
+          carkAyar = JSON.parse((db.prepare("SELECT value FROM bot_settings WHERE key = 'widget_settings_wheel-of-fortune'").get() as { value?: string } | undefined)?.value || '{}');
+        } catch {
+          /* bozuk ayar: varsayılanlar */
+        }
+        const beklemeSn = carkAyar.cevirmeBeklemeSn ?? settingsCache.get('wheel_cooldown', '30');
+        const bekleme = Math.min(3600, Math.max(0, Number(beklemeSn) || 0)) * 1000;
+        const maliyet = Math.max(0, Math.floor(Number(carkAyar.cevirmeMaliyeti) || 0));
         const yetkili = message.user.isMod || message.user.isBroadcaster;
         if (!yetkili && Date.now() - this.carkSon < bekleme) {
           return `@${message.user.displayName}, çark ${Math.ceil((bekleme - (Date.now() - this.carkSon)) / 1000)} sn sonra yeniden çevrilebilir.`;
+        }
+        if (!yetkili && maliyet > 0) {
+          const cuzdan = cuzdanAdi(message.platform, message.user.username);
+          const bakiye = economy.getUserPoints(cuzdan);
+          if (bakiye < maliyet) return `@${message.user.displayName}, çarkı çevirmek ${maliyet} puan (bakiyen: ${bakiye}).`;
+          economy.removePoints(cuzdan, maliyet);
         }
         this.carkSon = Date.now();
         const { carkCevir } = await import('../engagement/cark.js');

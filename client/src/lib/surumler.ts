@@ -11,6 +11,18 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.3.4',
+    ad: 'Kıyas',
+    tarih: '2026-10-26',
+    notlar: [
+      'BynoGame/webhook bağışları olay kaydına yazılır: "Son bağış", "En büyük bağış" etiketleri ve kapanış jeneriği artık görür',
+      'Kapanış jeneriği yalnız son N saati tarar (varsayılan 12), hediye abonelikleri sayar, test uyarılarını almaz',
+      'Sohbet katmanında platform seçimi (Kick, Twitch, YouTube, TikTok, Trovo, Discord)',
+      "Shoutout: belirli izleyici sayısının üstündeki raid/host'ta gelen yayıncı otomatik gösterilir",
+      '!cark için bekleme süresi ve puan maliyeti widget ayarlarından ayarlanır'
+    ]
+  },
+  {
     surum: '1.3.3',
     ad: 'Net Görüntü',
     tarih: '2026-10-26',

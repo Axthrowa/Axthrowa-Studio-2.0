@@ -8,7 +8,7 @@
  * isimler yalnız `?preview=1` kipinde çıkar, boş bölüm gizlenir ve kaydırma
  * süresi ayardan gelir.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { END_CREDITS_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, onizlemeKipi , wsAdresi } from '../lib/widget-style.js';
@@ -45,11 +45,13 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
   const [events, setEvents] = useState<Olay[]>(onizleme ? ORNEK : []);
   // Kaydırmayı baştan başlatmak için anahtar (credits_start gelince artar)
   const [tur, setTur] = useState(0);
+  const ayarRef = useRef(s);
+  ayarRef.current = s;
 
   useEffect(() => {
     if (onizleme) return;
     const yukle = () =>
-      fetch('/api/events')
+      fetch(`/api/events?saat=${Math.max(1, Number(ayarRef.current.taranacakSaat) || 12)}`)
         .then((r) => r.json())
         .then((d) => setEvents(Array.isArray(d) ? d : []))
         .catch(() => {});
@@ -72,7 +74,9 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
   }, [onizleme]);
 
   const tavan = Math.max(1, Number(s.maxPerSection) || 15);
-  const sec = (tur: string) => events.filter((e) => e.event_type === tur).slice(0, tavan);
+  // Test uyarıları jeneriğe girmez; hediye abonelikler abonelerle birlikte sayılır
+  const gercek = events.filter((e) => !String((e as any).metadata || '').includes('"isTest":true'));
+  const sec = (tur: string) => gercek.filter((e) => e.event_type === tur || (tur === 'sub' && e.event_type === 'gift_sub')).slice(0, tavan);
 
   const bolumler = [
     { ac: !!s.showSubs, baslik: `⭐ ${s.titleSubs}`, renk: s.accentColor2, veri: sec('sub'), tutar: false },

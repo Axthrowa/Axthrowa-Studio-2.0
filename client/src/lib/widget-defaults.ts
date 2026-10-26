@@ -103,7 +103,14 @@ export const CHAT_DEFAULTS = {
   outlineColor: '#000000',
   outlineWidth: 1,
   highlightColor: '#7c3aed',
-  hideBroadcaster: false
+  hideBroadcaster: false,
+  // Hangi platformların sohbeti görünsün (BotRix "Platformlar" seçimi karşılığı)
+  kickGoster: true,
+  twitchGoster: true,
+  youtubeGoster: true,
+  tiktokGoster: true,
+  trovoGoster: true,
+  discordGoster: true
 };
 
 export const GOAL_DEFAULTS = {
@@ -240,6 +247,10 @@ export const POLL_DEFAULTS = {
 };
 
 export const WHEEL_DEFAULTS = {
+  /** !cark bekleme süresi (sn, herkes için ortak; mod/yayıncı muaf) */
+  cevirmeBeklemeSn: 30,
+  /** !cark puan maliyeti (0 = ücretsiz; mod/yayıncı muaf) */
+  cevirmeMaliyeti: 0,
   size: 300,
   maxLabel: 14,
   segments: [
@@ -471,6 +482,8 @@ export const PINNED_DEFAULTS = {
 /** Shoutout — tema, süre, konfeti ve gösterilecek alanlar. */
 export const SHOUTOUT_DEFAULTS = {
   label: 'YAYINCI TAVSİYESİ',
+  /** Bu sayıdan fazla izleyiciyle raid gelirse otomatik göster (0 = kapalı) */
+  raidOtomatikEsik: 0,
   theme: 'card',
   position: 'center',
   fontFamily: 'Plus Jakarta Sans',
@@ -684,6 +697,8 @@ export const END_CREDITS_DEFAULTS = {
   titleTips: 'DESTEKÇİLERİMİZ & BAĞIŞLAR',
   titleFollows: 'YENİ TAKİPÇİLER',
   titleRaids: 'RAID GÖNDERENLER',
+  /** Jenerik son kaç saatin olaylarını tarar (BotRix "Taranacak saat") */
+  taranacakSaat: 12,
   showSubs: true,
   showTips: true,
   showFollows: true,

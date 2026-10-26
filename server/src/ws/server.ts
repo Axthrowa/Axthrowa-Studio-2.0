@@ -37,6 +37,20 @@ export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
 
+  /** Shoutout widget'ı: izleyici eşiğini aşan raid/host'ta gelen yayıncı otomatik tanıtılır (BotRix'teki seçenek; 0 = kapalı) */
+  private raidShoutout(payload: { username?: string; platform?: string; viewers?: number; isTest?: boolean }) {
+    if (payload?.isTest || !payload?.username) return;
+    try {
+      const ham = (db.prepare("SELECT value FROM bot_settings WHERE key = 'widget_settings_shoutout'").get() as { value?: string } | undefined)?.value;
+      const esik = Number(ham ? JSON.parse(ham).raidOtomatikEsik : 0) || 0;
+      if (esik > 0 && Number(payload.viewers) > esik) {
+        eventBus.emit('widget_update', { type: 'shoutout', data: { channel: payload.username, platform: payload.platform } });
+      }
+    } catch {
+      /* bozuk ayar: otomatik shoutout atlanır */
+    }
+  }
+
   /** Şu an bağlı OBS tarayıcı kaynağı sayısı */
   obsKaynakSayisi(): number {
     let n = 0;
@@ -384,6 +398,8 @@ export class WebSocketHub {
         data: payload,
         alert: alertData
       });
+      // Kick raid'leri "host" olayı olarak gelir
+      this.raidShoutout(payload);
     });
 
     // 5. Raid Event -> AlertBox & Dashboard
@@ -398,6 +414,7 @@ export class WebSocketHub {
         data: payload,
         alert: alertData
       });
+      this.raidShoutout(payload);
     });
 
     // 6. TikTok Gift Event -> AlertBox & Dashboard

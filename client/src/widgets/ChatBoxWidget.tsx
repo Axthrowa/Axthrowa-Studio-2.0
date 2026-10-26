@@ -111,6 +111,8 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     const username = (user?.username || '').toLowerCase();
     const ignored = (s.ignoreList || '').split(',').map((x: string) => x.trim().toLowerCase()).filter(Boolean);
     if (ignored.includes(username)) return;
+    // Seçilmeyen platformun sohbeti katmanda gösterilmez
+    if ((s as Record<string, unknown>)[`${p.platform}Goster`] === false) return;
     if (s.hideCommands && (p.message || '').trim().startsWith('!')) return;
     // Panel iç hata iletisi (Gönderilemedi…) yayına çıkmaz
     if (user?.id === 'streamaxt_system') return;

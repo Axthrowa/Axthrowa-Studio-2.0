@@ -96,7 +96,7 @@ function parseIncomingDonation(raw: any, query: any = {}) {
   return { donorName, amount, currency, message, platform };
 }
 
-const processDonation = (donorName: string, amount: number, currency: string = 'TL', message: string = '', platform: string = 'bynogame') => {
+const processDonation = (donorName: string, amount: number, currency: string = 'TL', message: string = '', platform: string = 'bynogame', test = false) => {
   const donationId = uuidv4();
   const numAmount = Math.max(0, Number(amount) || 0);
   const safeName = donorName || 'Gizli Bağışçı';
@@ -107,6 +107,12 @@ const processDonation = (donorName: string, amount: number, currency: string = '
     INSERT INTO donations (id, donor_name, amount, currency, message, platform, created_at, alert_shown, jumpscare_triggered)
     VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)
   `).run(donationId, safeName, numAmount, safeCurrency, safeMessage, platform, Date.now());
+
+  // Olay kaydı: eskiden yalnız donations tablosuna yazılıyordu; "Son bağış" etiketi, kapanış jeneriği
+  // ve olay akışı BynoGame/webhook bağışlarını hiç görmüyordu. Simülasyon test işaretli (etiketlere yazılmaz).
+  db.prepare(
+    'INSERT INTO stream_events (id, platform, event_type, username, display_name, message, amount, currency, metadata, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(uuidv4(), platform, 'tip', safeName, safeName, safeMessage || null, numAmount, safeCurrency, test ? JSON.stringify({ isTest: true }) : null, Date.now());
 
   const alertData = wsHub.buildAlertPayload('tip', {
     user: safeName,
@@ -200,7 +206,7 @@ router.post('/donations/webhook', (req: Request, res: Response) => {
 router.post('/donations/simulate', (req: Request, res: Response) => {
   try {
     const { donorName = 'Cömertİzleyici', amount = 100, currency = 'TL', message = 'Harika yayın, devamını dilerim!', platform = 'bynogame' } = req.body || {};
-    const result = processDonation(String(donorName), Number(amount), String(currency), String(message || ''), String(platform));
+    const result = processDonation(String(donorName), Number(amount), String(currency), String(message || ''), String(platform), true);
     res.json({ success: true, result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'Simülasyon başarısız' });

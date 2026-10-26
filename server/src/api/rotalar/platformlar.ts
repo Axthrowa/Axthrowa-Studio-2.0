@@ -172,7 +172,7 @@ router.post('/platforms/kick/verify', async (req: Request, res: Response) => {
 router.post('/platforms/kick/test-message', async (req: Request, res: Response) => {
   const { message, channel } = req.body;
   const channelName = channel || kickPlatform.getStatus().channel || '';
-  const testMsg = message || '🟢 [StreamAxT] Kick API & Chat bağlantısı başarıyla doğrulandı! Bot aktif.';
+  const testMsg = message || '🟢 [AxBot] Kick API & Chat bağlantısı başarıyla doğrulandı! Bot aktif.';
   const result = await kickPlatform.sendKickMessage(channelName, testMsg);
   res.json(result);
 });

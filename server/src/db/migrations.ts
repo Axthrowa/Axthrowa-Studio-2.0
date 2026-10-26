@@ -146,6 +146,19 @@ export const GOCLER: Gocler[] = [
       // Eklemeli; varsayılan 0 = eski davranış (yayın kapalıyken de yazar)
       sutunEkle(db, 'timers', 'only_live', 'INTEGER NOT NULL DEFAULT 0');
     }
+  },
+  {
+    version: 10,
+    name: 'bot adı AxBot — varsayılan yapay zekâ yönergesi',
+    up(db) {
+      // Yalnız hiç değiştirilmemiş varsayılan yönerge güncellenir; elle yazılana dokunulmaz
+      const tablo = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'bot_settings'").get();
+      if (!tablo) return;
+      db.prepare("UPDATE bot_settings SET value = ? WHERE key = 'gemini_prompt' AND value = ?").run(
+        'Sen AxBot adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.',
+        'Sen StreamAxT adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.'
+      );
+    }
   }
 ];
 

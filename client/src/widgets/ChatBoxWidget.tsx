@@ -115,7 +115,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     // Panel iç hata iletisi (Gönderilemedi…) yayına çıkmaz
     if (user?.id === 'streamaxt_system') return;
     // "Botları gizle" başka botlar içindir; kendi botumuzun yanıtları (yapay zekâ, bilgi yarışması,
-    // zamanlayıcılar) ayrı seçenekle görünür — eskiden "StreamAxT_Bot" adı yüzünden hep gizleniyordu
+    // zamanlayıcılar) ayrı seçenekle görünür — eskiden bot adı ("…_Bot") yüzünden hep gizleniyordu
     const kendiBot = user?.id === 'streamaxt_bot';
     if (kendiBot ? !s.showOwnBot : s.hideBots && (user?.isBot || username.includes('bot'))) return;
     if (s.hideBroadcaster && user?.isBroadcaster) return;

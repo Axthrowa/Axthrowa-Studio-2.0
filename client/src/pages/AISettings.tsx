@@ -337,7 +337,7 @@ export function AISettings() {
             <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
               <input type="checkbox" checked={seslenme} onChange={e => setSeslenme(e.target.checked)} className="mt-0.5 accent-purple-600" />
               <span className="text-xs text-gray-300">
-                <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla başlarsa (ör. <code>@StreamAxTBot bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
+                <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla (AxBot ya da bot hesabının adı) başlarsa (ör. <code>@AxBot bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
               </span>
             </label>
 

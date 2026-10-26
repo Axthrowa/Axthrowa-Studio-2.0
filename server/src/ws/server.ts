@@ -216,8 +216,8 @@ export class WebSocketHub {
         channel: payload.channel || 'stream',
         user: {
           id: 'streamaxt_bot',
-          username: 'StreamAxT_Bot',
-          displayName: '🤖 StreamAxT Bot',
+          username: 'AxBot',
+          displayName: '🤖 AxBot',
           color: '#53fc18',
           badges: ['moderator'],
           isBroadcaster: false,
@@ -247,7 +247,7 @@ export class WebSocketHub {
         channel: 'stream',
         user: {
           id: 'streamaxt_system',
-          username: 'StreamAxT',
+          username: 'AxBot',
           displayName: '⚠️ Gönderilemedi',
           color: '#f87171',
           badges: [],

@@ -17,6 +17,7 @@ import { kuyruk } from '../../modules/engagement/queue.js';
 import { puanDususu } from '../../modules/engagement/point-drops.js';
 import { hataMetni } from '../../core/logger.js';
 import { anketKapaticiyiBaslat } from '../../modules/engagement/anket-kapatici.js';
+import { overlayAyariOku, overlayAyariYaz } from './widgetlar.js';
 
 const router = Router();
 anketKapaticiyiBaslat();
@@ -141,6 +142,15 @@ router.post('/polls/create', (req: Request, res: Response) => {
     INSERT INTO polls (id, title, options, is_active, created_at, duration_seconds, ends_at, command)
     VALUES (?, ?, ?, 1, ?, ?, ?, ?)
   `).run(id, title, JSON.stringify(options), Date.now(), durationSeconds, endsAt, command);
+
+  // Tek URL yerleşiminde anket katmanı kapalıysa anket OBS'te hiç görünmüyordu: başlayınca açılır
+  // (widget anket yokken kendini gizler, açık kalması zararsız)
+  try {
+    const yerlesim = overlayAyariOku();
+    if (!yerlesim?.polls?.enabled) overlayAyariYaz({ ...yerlesim, polls: { ...yerlesim.polls, enabled: true } });
+  } catch (e) {
+    console.warn('[Anket] Katman açılamadı:', hataMetni(e));
+  }
 
   wsHub.broadcastTo(['all'], {
     type: 'poll_started',

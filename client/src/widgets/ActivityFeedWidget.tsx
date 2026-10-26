@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ACTIVITY_DEFAULTS } from '../lib/widget-defaults.js';
+import { onizlemeKipi } from '../lib/widget-style.js';
 
 interface FeedItem {
   id: string;
@@ -17,7 +18,10 @@ interface FeedItem {
 
 const TYPE_MAP: Record<string, string> = {
   follow: 'showFollow',
+  // Sunucu abonelik uyarısını 'sub' diye yollar; eskiden yalnız 'subscription' tanındığı için abonelikler akışa hiç düşmüyordu
+  sub: 'showSub',
   subscription: 'showSub',
+  gift_tiktok: 'showTip',
   gifted_sub: 'showGiftSub',
   gift_sub: 'showGiftSub',
   donation: 'showTip',
@@ -32,10 +36,16 @@ function tpl(template: string, vars: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
 }
 
-export function ActivityFeedWidget() {
+const ORNEK: FeedItem[] = [
+  { id: 'o1', type: 'follow', icon: '💜', text: 'KralGamer takip etti', time: '21:04' },
+  { id: 'o2', type: 'sub', icon: '⭐', text: 'AyseLive abone oldu', time: '21:06' },
+  { id: 'o3', type: 'tip', icon: '💰', text: 'Can_99 50 TL bağışladı', time: '21:09' }
+];
+
+export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean; previewMode?: boolean } = {}) {
   const s = useWidgetSettings('activity-feed', ACTIVITY_DEFAULTS);
   const { lastMessage } = useWebSocket('all');
-  const [items, setItems] = useState<FeedItem[]>([]);
+  const [items, setItems] = useState<FeedItem[]>(() => (onizlemeKipi(previewMode) ? ORNEK : []));
 
   const islenen = useRef<unknown>(null);
   useEffect(() => {
@@ -54,18 +64,18 @@ export function ActivityFeedWidget() {
     const viewers = ev?.viewers ?? lastMessage.payload?.viewers ?? '';
     const count = ev?.count ?? lastMessage.payload?.count ?? amount;
     const icons: Record<string, string> = {
-      follow: s.iconFollow, subscription: s.iconSub, gifted_sub: s.iconGiftSub || s.iconSub,
+      follow: s.iconFollow, sub: s.iconSub, gift_tiktok: s.iconTip, subscription: s.iconSub, gifted_sub: s.iconGiftSub || s.iconSub,
       gift_sub: s.iconGiftSub || s.iconSub, donation: s.iconTip, tip: s.iconTip, raid: s.iconRaid,
       host: s.iconHost, kicks: s.iconKicks, bits: s.iconTip
     };
     const templates: Record<string, string> = {
-      follow: s.templateFollow, subscription: s.templateSub, gifted_sub: s.templateGiftSub,
+      follow: s.templateFollow, sub: s.templateSub, gift_tiktok: s.templateTip, subscription: s.templateSub, gifted_sub: s.templateGiftSub,
       gift_sub: s.templateGiftSub, donation: s.templateTip, tip: s.templateTip, raid: s.templateRaid,
       host: s.templateHost, kicks: s.templateKicks, bits: s.templateKicks
     };
     const text = tpl(templates[type] || '{user}', { user, amount, currency, viewers, count });
     setItems(prev => {
-      const next = { id: `${Date.now()}`, type, icon: icons[type] || '✨', text, time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
+      const next = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, type, icon: icons[type] || '✨', text, time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
       const list = s.newestFirst ? [next, ...prev] : [...prev, next];
       return list.slice(0, s.maxItems);
     });

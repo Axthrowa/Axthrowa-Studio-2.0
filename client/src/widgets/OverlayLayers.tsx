@@ -206,7 +206,7 @@ export const KATMANLAR: KatmanTanimi[] = [
     etiket: 'Etkinlik Akışı',
     z: 62,
     varsayilan: { x: 1500, y: 300, width: 380, height: 360 },
-    ciz: () => <ActivityFeedWidget />
+    ciz: (o) => <ActivityFeedWidget embedded previewMode={o} />
   },
   {
     anahtar: 'giveaway',

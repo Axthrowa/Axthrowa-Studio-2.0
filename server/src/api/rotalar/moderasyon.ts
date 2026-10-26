@@ -39,8 +39,8 @@ chatRescueService.on('rescue_triggered', (data) => {
     id: uuidv4(),
     platform: 'streamaxt',
     user: {
-      username: 'StreamAxT',
-      displayName: '🤖 StreamAxT (Sohbet Kurtarma)',
+      username: 'AxBot',
+      displayName: '🤖 AxBot (Sohbet Kurtarma)',
       roles: ['bot', 'mod'],
       badges: ['bot']
     },

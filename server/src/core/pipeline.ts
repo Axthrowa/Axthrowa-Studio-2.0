@@ -190,7 +190,7 @@ export class MessagePipeline {
     // 3.5 Yapay zekâya seslenme: "@BotAdı soru" (ayar: ai_mention_enabled)
     if (!message.user.isSelf && rawText.startsWith('@') && settingsCache.getBoolean('ai_mention_enabled', false)) {
       const { platformManager } = await import('../platforms/manager.js');
-      const soru = seslenmeAyikla(rawText, platformManager.botKullaniciAdlari());
+      const soru = seslenmeAyikla(rawText, new Set([...platformManager.botKullaniciAdlari(), 'axbot']));
       if (soru && this.seslenmeSiniri.izinVer(message.user.username)) {
         const cevap = await geminiCoHost.ask(soru, message.user.displayName);
         if (cevap?.trim()) {

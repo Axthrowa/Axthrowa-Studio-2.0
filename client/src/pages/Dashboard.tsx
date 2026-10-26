@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { GUNCEL_SURUM } from '../lib/surumler.js';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { StreamEvent } from '../types.js';
 import { 
@@ -72,9 +73,17 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
               StreamAxT Kontrol Merkezi
             </h1>
             <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs px-2.5 py-0.5 rounded-full font-bold">
-              v1.1.1 Pro
+              v{GUNCEL_SURUM.surum} · {GUNCEL_SURUM.ad}
             </span>
           </div>
+          <details className="mb-1 text-xs text-gray-400">
+            <summary className="cursor-pointer text-purple-300 font-bold">Bu sürümde neler var?</summary>
+            <ul className="mt-1 list-disc pl-5 space-y-0.5">
+              {GUNCEL_SURUM.notlar.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          </details>
           <p className="text-sm text-gray-400">
             Altı platformlu yayın asistanınız devrede. Bir platform kutusuna tıklayarak bağlama ekranını açın.
           </p>

@@ -17,6 +17,8 @@ import { kupa } from '../modules/engagement/kupa.js';
 interface ClientConnection {
   ws: WebSocket;
   type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all';
+  /** OBS tarayıcı kaynağı mı (kullanıcı aracısında "OBS/" geçer) — panel durum şeridi için */
+  obs?: boolean;
 }
 
 /**
@@ -34,6 +36,13 @@ export function kokenDogrula(info: { origin?: string; req: { headers: Record<str
 export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
+
+  /** Şu an bağlı OBS tarayıcı kaynağı sayısı */
+  obsKaynakSayisi(): number {
+    let n = 0;
+    for (const c of this.clients) if (c.obs) n++;
+    return n;
+  }
   /** Ekip çapında uyarı kuyruğu denetimi (modules/alerts/control.ts) */
   private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
   private sonUyarilar = new SonUyarilar(50);
@@ -117,7 +126,7 @@ export class WebSocketHub {
       const url = new URL(req.url || '', `http://${req.headers.host}`);
       const type = (url.searchParams.get('type') || 'all') as any;
 
-      const clientConn: ClientConnection = { ws, type };
+      const clientConn: ClientConnection = { ws, type, obs: /\bOBS\//.test(String(req.headers['user-agent'] || '')) };
       this.clients.add(clientConn);
 
       // Send initial state

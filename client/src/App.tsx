@@ -22,11 +22,14 @@ import {
   Bell,
   BarChart3,
   Trophy,
-  Mic
+  Mic,
+  Rocket
 } from 'lucide-react';
 
 // Pages
 const Dashboard = lazy(() => import('./pages/Dashboard.js'));
+const HizliKurulum = lazy(() => import('./pages/HizliKurulum.js'));
+import { DurumSeridi } from './components/DurumSeridi.js';
 const Platforms = lazy(() => import('./pages/Platforms.js'));
 const Commands = lazy(() => import('./pages/Commands.js'));
 const Timers = lazy(() => import('./pages/Timers.js'));
@@ -177,37 +180,40 @@ export function App() {
   }, [activeTab]);
   const [focusPlatform, setFocusPlatform] = useState<string | null>(null);
 
+  // Menü üç gruba ayrıldı: 25+ düz satır yeni kullanıcı için okunmuyordu
   const navItems = [
-    { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
-    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '6 Platform' },
-    { id: 'multichat', label: 'Canlı Multi-Chat', icon: MessageSquare, highlight: true },
-    { id: 'trivia', label: 'Bil Bakalım', icon: HelpCircle, badge: 'Canlı 🧠', highlight: true },
-    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, badge: 'Yedekli' },
-    { id: 'donations', label: 'BynoGame & Bağış', icon: DollarSign, badge: 'JumpScare' },
-    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, badge: 'Kalkan' },
-    { id: 'commands', label: 'Komutlar', icon: Terminal, badge: 'Anahtar kelime' },
-    { id: 'timers', label: 'Zamanlayıcılar', icon: Clock },
-    { id: 'automod', label: 'Bot Moderasyonu', icon: ShieldCheck },
-    { id: 'botadvanced', label: 'Gelişmiş Bot', icon: Sparkles, badge: 'Yeni' },
-    { id: 'extras', label: 'Ekstralar', icon: Sparkles, badge: 'Klip/Seviye' },
-    { id: 'rankings', label: 'Sıralamalar', icon: Trophy },
-    { id: 'alerts', label: 'Uyarılar (Alert Box)', icon: Bell, highlight: true },
-    { id: 'polls', label: 'Anketler', icon: BarChart3 },
-    { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk' },
-    { id: 'pano', label: 'Ses / Video Panosu', icon: Volume2, badge: '!ses' },
-    { id: 'sesli', label: 'Sesli Komutlar', icon: Mic, badge: 'Yeni' },
-    { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music },
-    { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins },
-    { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun' },
-    { id: 'giveaways', label: 'Çekilişler', icon: Gift },
-    { id: 'overlays', label: 'OBS Overlay Stüdyo', icon: Layers },
-    { id: 'ai', label: 'Gemini AI Asistan', icon: Sparkles },
-    { id: 'integrations', label: 'Entegrasyonlar', icon: Link2, badge: 'Discord' },
-    { id: 'settings', label: 'Ayarlar', icon: SettingsIcon },
+    { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard, grup: 'Yayın sırasında' },
+    { id: 'multichat', label: 'Canlı Multi-Chat', icon: MessageSquare, highlight: true, grup: 'Yayın sırasında' },
+    { id: 'alerts', label: 'Uyarılar (Alert Box)', icon: Bell, highlight: true, grup: 'Yayın sırasında' },
+    { id: 'overlays', label: 'OBS Overlay Stüdyo', icon: Layers, grup: 'Yayın sırasında' },
+    { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music, grup: 'Yayın sırasında' },
+    { id: 'polls', label: 'Anketler', icon: BarChart3, grup: 'Yayın sırasında' },
+    { id: 'giveaways', label: 'Çekilişler', icon: Gift, grup: 'Yayın sırasında' },
+    { id: 'pano', label: 'Ses / Video Panosu', icon: Volume2, badge: '!ses', grup: 'Yayın sırasında' },
+    { id: 'trivia', label: 'Bil Bakalım', icon: HelpCircle, badge: 'Canlı 🧠', highlight: true, grup: 'Etkileşim & Eğlence' },
+    { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun', grup: 'Etkileşim & Eğlence' },
+    { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins, grup: 'Etkileşim & Eğlence' },
+    { id: 'rankings', label: 'Sıralamalar', icon: Trophy, grup: 'Etkileşim & Eğlence' },
+    { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk', grup: 'Etkileşim & Eğlence' },
+    { id: 'commands', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim & Eğlence' },
+    { id: 'timers', label: 'Zamanlayıcılar', icon: Clock, grup: 'Etkileşim & Eğlence' },
+    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, grup: 'Etkileşim & Eğlence' },
+    { id: 'sesli', label: 'Sesli Komutlar', icon: Mic, grup: 'Etkileşim & Eğlence' },
+    { id: 'donations', label: 'BynoGame & Bağış', icon: DollarSign, badge: 'JumpScare', grup: 'Etkileşim & Eğlence' },
+    { id: 'extras', label: 'Ekstralar', icon: Sparkles, badge: 'Klip/Seviye', grup: 'Etkileşim & Eğlence' },
+    { id: 'kurulum', label: 'Hızlı Kurulum', icon: Rocket, highlight: true, grup: 'Kurulum & Ayarlar' },
+    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '6 Platform', grup: 'Kurulum & Ayarlar' },
+    { id: 'ai', label: 'Yapay Zekâ Asistanı', icon: Sparkles, grup: 'Kurulum & Ayarlar' },
+    { id: 'automod', label: 'Bot Moderasyonu', icon: ShieldCheck, grup: 'Kurulum & Ayarlar' },
+    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, grup: 'Kurulum & Ayarlar' },
+    { id: 'botadvanced', label: 'Gelişmiş Bot', icon: Sparkles, grup: 'Kurulum & Ayarlar' },
+    { id: 'integrations', label: 'Entegrasyonlar', icon: Link2, badge: 'Discord', grup: 'Kurulum & Ayarlar' },
+    { id: 'settings', label: 'Ayarlar', icon: SettingsIcon, grup: 'Kurulum & Ayarlar' },
   ];
 
   const renderActivePage = () => {
     switch (activeTab) {
+      case 'kurulum': return <HizliKurulum git={sekmeyeGec} />;
       case 'dashboard': return (
         <Dashboard
           onConnectPlatform={(platform) => {
@@ -271,13 +277,17 @@ export function App() {
 
           {/* Navigation Items */}
           <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-            {navItems.map((item) => {
+            {navItems.map((item, i) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const grupBasi = i === 0 || navItems[i - 1].grup !== item.grup;
 
               return (
+                <div key={item.id}>
+                {grupBasi && (
+                  <div className="px-3.5 pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-gray-500">{item.grup}</div>
+                )}
                 <button
-                  key={item.id}
                   onClick={() => sekmeyeGec(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
@@ -300,6 +310,7 @@ export function App() {
                     </span>
                   )}
                 </button>
+                </div>
               );
             })}
           </nav>
@@ -334,6 +345,7 @@ export function App() {
           </div>
 
           <div className="flex items-center space-x-4">
+            <DurumSeridi git={sekmeyeGec} />
             <button
               type="button"
               onClick={() => openLink(`${window.location.origin}/widgets/alertbox`)}

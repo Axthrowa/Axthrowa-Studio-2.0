@@ -244,6 +244,27 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   }
 };
 
+/** Galeri kimliği → sunucudaki test adı (widgets/test/:ad). Listede olmayanın ayrı testi yok, önizlemesi var. */
+const TEST_ADI: Record<string, string> = {
+  'activity-feed': 'activity-feed',
+  'alert-box': 'alert-box',
+  'emote-combo': 'emote-combo',
+  'on-screen-emotes': 'on-screen-emotes',
+  'the-cup': 'the-cup',
+  'hype-train': 'hype-train',
+  subathon: 'subathon',
+  shoutout: 'shoutout',
+  'end-credits': 'credits',
+  'wheel-of-fortune': 'wheel',
+  tts: 'tts',
+  'cloud-tts': 'cloud-tts',
+  jumpscare: 'jumpscare',
+  'viewer-counter': 'viewer-counter',
+  polls: 'polls',
+  giveaways: 'giveaways',
+  'loyalty-redemptions': 'loyalty-redemptions'
+};
+
 const KATMAN_AYAR_ID: Record<string, string> = {
   chat: 'chat-overlay',
   alerts: 'alert-box',
@@ -1594,6 +1615,19 @@ export function OverlayStudio() {
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs">
                     <span className="text-[10px] font-medium text-gray-500">{KATEGORI_ADI[widget.category] || widget.category}</span>
                     <div className="flex items-center gap-1">
+                    {TEST_ADI[widget.id] && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void triggerWidgetTest(TEST_ADI[widget.id]);
+                        }}
+                        className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-purple-300 transition-colors text-[11px] font-bold"
+                        title="Hızlı test: OBS'te örnek göster"
+                        aria-label="Hızlı test"
+                      >
+                        ▶
+                      </button>
+                    )}
                     {GALERI_KATMANI[widget.id] && (
                       <button
                         onClick={(e) => {
@@ -1708,6 +1742,16 @@ export function OverlayStudio() {
                 {/* Widget Specific Action & Test Panel */}
                 <div className="p-4 bg-black/40 rounded-xl border border-white/5 space-y-3">
                   <h4 className="text-xs font-bold text-gray-200">Canlı İşlev & Test Kontrolleri</h4>
+                  {TEST_ADI[selectedWidgetModal.id] ? (
+                    <button
+                      onClick={() => triggerWidgetTest(TEST_ADI[selectedWidgetModal.id])}
+                      className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
+                    >
+                      ▶ Hızlı test (OBS'te örnek göster)
+                    </button>
+                  ) : (
+                    <p className="text-[11px] text-gray-500">Bu widget gerçek olayla çalışır; örnek görünüm yukarıdaki önizlemede.</p>
+                  )}
 
                   {/* Dynamic controls according to widget */}
                   {selectedWidgetModal.id === 'the-cup' && (

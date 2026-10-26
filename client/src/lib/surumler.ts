@@ -11,6 +11,18 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.3.0',
+    ad: 'Pusula',
+    tarih: '2026-10-26',
+    notlar: [
+      'Hızlı Kurulum: platform → müzik → OBS → test uyarısı → yapay zekâ, durumlar canlı',
+      'Başlıkta durum şeridi: Platform, Müzik, OBS, Yapay zekâ (tıklayınca ilgili sayfa)',
+      'Menü üç gruba ayrıldı: Yayın sırasında, Etkileşim & Eğlence, Kurulum & Ayarlar',
+      "Galeride her widget'a hızlı test; anket, çekiliş ve ödül widget'larının gerçek testi",
+      "Spotify kartı, Yayın Yönetim Aracı'ndaki bağlantıyı gösterir (ikinci bağlantı gerekmez)"
+    ]
+  },
+  {
     surum: '1.2.0',
     ad: 'Tek Sahne',
     tarih: '2026-10-26',

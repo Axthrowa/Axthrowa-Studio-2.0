@@ -146,4 +146,26 @@ router.get('/events', (req: Request, res: Response) => {
   res.json(events);
 });
 
+/**
+ * Panel durum şeridi ve Hızlı Kurulum: neyin çalıştığı tek bakışta (ağa çıkmaz, ucuz).
+ * Bu turdaki sorunların çoğu (Spotify YYA'da bağlı, anket katmanı kapalı) burada görünür olsun diye.
+ */
+router.get('/durum-ozeti', async (_req: Request, res: Response) => {
+  const durumlar = platformManager.getAllStatuses() as Record<string, { connected?: boolean }>;
+  const { muzikHost } = await import('../../modules/muzik/index.js');
+  const { wsHub } = await import('../../ws/server.js');
+  const { seciliSaglayici, saglayiciAyari } = await import('../../modules/ai/saglayicilar.js');
+  const m = muzikHost.durum();
+  const saglayici = seciliSaglayici();
+  const aiHazir = saglayici
+    ? Boolean(saglayiciAyari(saglayici).anahtar || saglayiciAyari(saglayici).tanim.anahtarsiz)
+    : Boolean(settingsCache.get('gemini_api_key', '') || process.env.GEMINI_API_KEY);
+  res.json({
+    platformlar: Object.keys(durumlar).filter((k) => durumlar[k]?.connected),
+    muzik: m.spotify.connected ? 'spotify' : m.harici.spotify ? 'yya-spotify' : m.ytmd.connected ? 'ytmd' : null,
+    obsKaynak: wsHub.obsKaynakSayisi(),
+    ai: { saglayici: saglayici || 'gemini', hazir: aiHazir }
+  });
+});
+
 export default router;

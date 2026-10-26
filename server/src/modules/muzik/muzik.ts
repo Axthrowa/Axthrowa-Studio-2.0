@@ -175,6 +175,8 @@ export class MuzikHost {
         port: this.depo.oku(A.ytmdPort) || '9863'
       },
       note: this.not || null,
+      // Spotify Yayın Yönetim Aracı'nda bağlıysa bot onu kullanır
+      harici: { spotify: this.harici.spotify },
       nowPlaying: this.simdiCalan()
     };
   }

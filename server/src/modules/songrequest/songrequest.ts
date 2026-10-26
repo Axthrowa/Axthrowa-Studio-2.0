@@ -51,9 +51,15 @@ export class SongRequestEngine {
         const satir = (
           c.trackId
             ? db.prepare('SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1').get(`%/track/${c.trackId}`)
-            : db
-                .prepare("SELECT created_at FROM song_queue WHERE is_played = 0 AND url LIKE '%open.spotify.com%' AND LOWER(title) LIKE ? ORDER BY created_at ASC LIMIT 1")
-                .get(`${c.title.toLowerCase()}%`)
+            : // Tam başlık ya da "başlık — sanatçı"; önek/LIKE eşlemesi "Hey" çalınca "Hey Jude"u da yakalıyordu
+              (db
+                .prepare("SELECT created_at, title FROM song_queue WHERE is_played = 0 AND url LIKE '%open.spotify.com%' ORDER BY created_at ASC")
+                .all() as Array<{ created_at: number; title: string }>)
+                .find((r) => {
+                  const t = String(r.title).toLocaleLowerCase('tr');
+                  const a = c.title.toLocaleLowerCase('tr');
+                  return t === a || t.startsWith(`${a} — `);
+                })
         ) as { created_at: number } | undefined;
         if (!satir) return;
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ?').run(satir.created_at);

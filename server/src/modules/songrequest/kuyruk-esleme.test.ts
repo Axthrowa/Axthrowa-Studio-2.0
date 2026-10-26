@@ -40,4 +40,14 @@ describe('şarkı kuyruğu eşleme', () => {
     );
     expect(acik()).toEqual(['b']);
   });
+
+  it('kısa başlık, onunla başlayan başka şarkıyı yakalamaz', () => {
+    ekle('a', 'Birinci — X', 'https://open.spotify.com/track/aaaaaaaaaaaaaaaaaaaaaa', 1);
+    ekle('b', 'Hey Jude — Beatles', 'https://open.spotify.com/track/bbbbbbbbbbbbbbbbbbbbbb', 2);
+    (muzikHost as any).calaniGuncelle(
+      { title: 'Hey', artist: 'Y', album: '', albumArt: '', isPlaying: true, progress: 0, duration: 1, source: 'spotify', updatedAt: 2 },
+      'spotify'
+    );
+    expect(acik()).toEqual(['a', 'b']);
+  });
 });

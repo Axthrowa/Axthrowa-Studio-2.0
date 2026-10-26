@@ -11,6 +11,16 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.3.1',
+    ad: 'Can Simidi',
+    tarih: '2026-10-26',
+    notlar: [
+      'Sohbet Kurtarma mesajı artık gerçekten sohbete yazılıyor; yayın kapalıyken çalışmıyor (yapay zekâ kotası boşa gitmez)',
+      'Sohbet Kurtarma seçili yapay zekâyı kullanır, !ai konuşma geçmişini kirletmez, yapay zekâ kapalıysa çağırmaz',
+      'Kazanan çekilmeden yeni çekiliş açılırsa ücretli katılım puanları iade edilir'
+    ]
+  },
+  {
     surum: '1.3.0',
     ad: 'Pusula',
     tarih: '2026-10-26',

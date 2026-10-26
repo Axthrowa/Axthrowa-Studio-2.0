@@ -282,7 +282,7 @@ class GeminiCoHost {
   }
 
   /** Duygu/zehirlilik gibi yardımcı istekler: seçili sağlayıcı varsa ona, yoksa Gemini'ye. */
-  private async yardimciUret(metin: string, ms: number, etiket: string): Promise<string | null> {
+  async yardimciUret(metin: string, ms: number, etiket: string): Promise<string | null> {
     const saglayici = seciliSaglayici();
     if (saglayici) return metinUret(saglayici, 'Kısa ve yalnız istenen biçimde yanıt ver.', metin, ms);
     const client = this.initClient();

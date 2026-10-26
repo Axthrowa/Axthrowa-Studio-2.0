@@ -8,7 +8,6 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import { randomUUID as uuidv4 } from 'crypto';
 import { wsHub } from '../../ws/server.js';
 import { autoMod } from '../../modules/automod/automod.js';
 import { kelimeListesiDerle } from '../../modules/automod/kelime-kurali.js';
@@ -19,6 +18,7 @@ import { sohbetModuGovdesi } from '../../platforms/twitch-rules.js';
 import { platformManager } from '../../platforms/manager.js';
 import { yetenek } from '../../platforms/capabilities.js';
 import { chatRescueService } from '../../modules/ai/chat-rescue.js';
+import { eventBus } from '../../core/event-bus.js';
 
 const GECERLI_EYLEMLER = new Set(['warn', 'timeout', 'timeout_warn', 'delete', 'delete_warn']);
 const GECERLI_MUAF = new Set(['regular', 'sub', 'vip', 'og', 'mod', 'broadcaster']);
@@ -33,20 +33,9 @@ shieldModeService.on('deactivated', (data) => {
   wsHub.broadcastTo(['all'], { type: 'shield_mode_update', active: false, moderator: data.moderator });
 });
 
+// Eskiden 'chat_message' türüyle yayınlanıyordu; onu dinleyen hiçbir şey yoktu, mesaj hiçbir yerde görünmüyordu
 chatRescueService.on('rescue_triggered', (data) => {
-  wsHub.broadcastTo(['all'], {
-    type: 'chat_message',
-    id: uuidv4(),
-    platform: 'streamaxt',
-    user: {
-      username: 'AxBot',
-      displayName: '🤖 AxBot (Sohbet Kurtarma)',
-      roles: ['bot', 'mod'],
-      badges: ['bot']
-    },
-    message: data.message,
-    timestamp: Date.now()
-  });
+  eventBus.emitBotMessage({ platform: 'all', message: data.message });
 });
 
 // 5. AutoMod Settings

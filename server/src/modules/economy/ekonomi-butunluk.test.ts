@@ -17,6 +17,9 @@ vi.mock('../../db/index.js', async () => {
       payload TEXT, is_enabled INTEGER NOT NULL DEFAULT 1);
     CREATE TABLE loyalty_redemptions (id TEXT PRIMARY KEY, platform TEXT, username TEXT, display_name TEXT, reward_id TEXT,
       reward_title TEXT, cost INTEGER, custom_input TEXT, status TEXT, created_at INTEGER);
+    CREATE TABLE giveaways (id TEXT PRIMARY KEY, title TEXT, keyword TEXT, is_active INTEGER DEFAULT 1, sub_bonus_multiplier REAL DEFAULT 2,
+      cost_points INTEGER DEFAULT 0, winner TEXT, winner_platform TEXT, created_at INTEGER, closed_at INTEGER);
+    CREATE TABLE giveaway_entries (id TEXT PRIMARY KEY, giveaway_id TEXT, username TEXT, platform TEXT, tickets INTEGER DEFAULT 1, entered_at INTEGER);
   `);
   return { db };
 });
@@ -29,6 +32,7 @@ import { cuzdanAdi, economy } from './economy.js';
 import { gamesEngine } from '../games/games.js';
 import { seviyeler } from '../levels/levels.js';
 import { ttsEngine } from '../tts/tts.js';
+import { giveaway } from '../giveaways/giveaways.js';
 
 const mesaj = (ad: string) =>
   ({
@@ -181,5 +185,16 @@ describe('market TTS', () => {
     expect(oku).not.toHaveBeenCalled();
     economy.handleRedeemCommand(mesaj('ali'), ['oku', 'merhaba']);
     expect(oku).toHaveBeenCalledWith('merhaba', 'ali');
+  });
+});
+
+describe('ücretli çekiliş', () => {
+  it('kazanan çekilmeden yenisi açılırsa katılım puanları iade edilir', () => {
+    bakiyeYap('ali', 500);
+    const g = giveaway.createGiveaway('Eski', '!katil', 1, 100);
+    economy.removePoints('ali', 100); // katılımda düşülen
+    db.prepare("INSERT INTO giveaway_entries (id, giveaway_id, username, platform, entered_at) VALUES ('e1', ?, 'ali', 'kick', 1)").run(g.id);
+    giveaway.createGiveaway('Yeni', '!katil', 1, 0);
+    expect(economy.getUserPoints('ali')).toBe(500);
   });
 });

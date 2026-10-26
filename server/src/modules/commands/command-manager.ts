@@ -503,6 +503,13 @@ export class CommandManager {
         return this.hesapYasi(args[0] || message.user.username, message);
       case 'cark':
       case 'wheel': {
+        // Dilimler hiç kaydedilmemişse sonuç adı boş kalıyor, sohbete sonuç yazılmıyordu (ve maliyet boşa gidiyordu)
+        const { carkAyari } = await import('../engagement/cark.js');
+        if (!carkAyari().dilimler.length) {
+          return message.user.isBroadcaster || message.user.isMod
+            ? "🎡 Çark henüz ayarlanmadı: Overlay Stüdyo → Şans Çarkı'ndan dilimleri kaydet."
+            : null;
+        }
         // İzleyici çevirebilir; art arda çevirme seli olmasın diye genel bekleme. Bekleme ve puan maliyeti
         // çark widget'ının ayarlarından (eskiden `wheel_cooldown`un panelde ayarı yoktu)
         let carkAyar: { cevirmeBeklemeSn?: unknown; cevirmeMaliyeti?: unknown } = {};

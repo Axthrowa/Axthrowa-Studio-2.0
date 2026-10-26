@@ -3,11 +3,9 @@ import {
   LayoutDashboard,
   Link2,
   Terminal,
-  Clock,
   ShieldCheck,
   Music,
   Coins,
-  Gift,
   MessageSquare,
   Layers,
   Sparkles,
@@ -15,15 +13,7 @@ import {
   ExternalLink,
   ChevronRight,
   Gamepad2,
-  Volume2,
-  ShieldAlert,
-  DollarSign,
-  HelpCircle,
-  Bell,
-  BarChart3,
-  Trophy,
-  Mic,
-  Rocket
+  BarChart3
 } from 'lucide-react';
 
 // Pages
@@ -179,37 +169,36 @@ export function App() {
     if (window.location.hash !== hedef) window.history.pushState(null, '', hedef);
   }, [activeTab]);
   const [focusPlatform, setFocusPlatform] = useState<string | null>(null);
+  const sonAltSayfa = useRef<Record<string, string>>({});
 
-  // Menü üç gruba ayrıldı: 25+ düz satır yeni kullanıcı için okunmuyordu
+  // Sayfa adları (alt sekme ve başlık). Kimlikler adres (#overlays…) ve gömülü YYA için AYNI kalmalı.
+  const sayfaAdlari: Record<string, string> = {
+    dashboard: 'Genel Bakış', kurulum: 'Hızlı Kurulum', multichat: 'Canlı Multi-Chat',
+    overlays: 'Overlay Stüdyo', alerts: 'Uyarılar', pano: 'Ses / Video Panosu', tts: 'TTS',
+    songrequest: 'Şarkı İsteği', polls: 'Anketler', giveaways: 'Çekilişler', interaction: 'Tahmin & Kuyruk',
+    trivia: 'Bil Bakalım', games: 'Chat Oyunları', economy: 'Sadakat & Market', rankings: 'Sıralamalar',
+    donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar',
+    extras: 'Klip & Seviye', automod: 'Bot Moderasyonu', shield: 'Kalkan & Denetim', ai: 'Yapay Zekâ',
+    platforms: 'Platformlar', integrations: 'Discord & Entegrasyonlar', settings: 'Genel Ayarlar', botadvanced: 'Gelişmiş Bot'
+  };
+
+  // Aynı konudaki sayfalar tek ana sekmede: 27 menü satırı 12'ye indi, sayfalar alt sekme oldu
   const navItems = [
-    { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard, grup: 'Yayın sırasında' },
-    { id: 'multichat', label: 'Canlı Multi-Chat', icon: MessageSquare, highlight: true, grup: 'Yayın sırasında' },
-    { id: 'alerts', label: 'Uyarılar (Alert Box)', icon: Bell, highlight: true, grup: 'Yayın sırasında' },
-    { id: 'overlays', label: 'OBS Overlay Stüdyo', icon: Layers, grup: 'Yayın sırasında' },
-    { id: 'songrequest', label: 'Şarkı İsteği (SR)', icon: Music, grup: 'Yayın sırasında' },
-    { id: 'polls', label: 'Anketler', icon: BarChart3, grup: 'Yayın sırasında' },
-    { id: 'giveaways', label: 'Çekilişler', icon: Gift, grup: 'Yayın sırasında' },
-    { id: 'pano', label: 'Ses / Video Panosu', icon: Volume2, badge: '!ses', grup: 'Yayın sırasında' },
-    { id: 'trivia', label: 'Bil Bakalım', icon: HelpCircle, badge: 'Canlı 🧠', highlight: true, grup: 'Etkileşim & Eğlence' },
-    { id: 'games', label: 'Chat Oyunları', icon: Gamepad2, badge: '10 Oyun', grup: 'Etkileşim & Eğlence' },
-    { id: 'economy', label: 'Sadakat & Ekonomi', icon: Coins, grup: 'Etkileşim & Eğlence' },
-    { id: 'rankings', label: 'Sıralamalar', icon: Trophy, grup: 'Etkileşim & Eğlence' },
-    { id: 'interaction', label: 'Etkileşim', icon: BarChart3, badge: 'Tahmin/Kuyruk', grup: 'Etkileşim & Eğlence' },
-    { id: 'commands', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim & Eğlence' },
-    { id: 'timers', label: 'Zamanlayıcılar', icon: Clock, grup: 'Etkileşim & Eğlence' },
-    { id: 'tts', label: '5-Motorlu TTS', icon: Volume2, grup: 'Etkileşim & Eğlence' },
-    { id: 'sesli', label: 'Sesli Komutlar', icon: Mic, grup: 'Etkileşim & Eğlence' },
-    { id: 'donations', label: 'BynoGame & Bağış', icon: DollarSign, badge: 'JumpScare', grup: 'Etkileşim & Eğlence' },
-    { id: 'extras', label: 'Ekstralar', icon: Sparkles, badge: 'Klip/Seviye', grup: 'Etkileşim & Eğlence' },
-    { id: 'kurulum', label: 'Hızlı Kurulum', icon: Rocket, highlight: true, grup: 'Kurulum & Ayarlar' },
-    { id: 'platforms', label: 'Platformlar', icon: Link2, badge: '6 Platform', grup: 'Kurulum & Ayarlar' },
-    { id: 'ai', label: 'Yapay Zekâ Asistanı', icon: Sparkles, grup: 'Kurulum & Ayarlar' },
-    { id: 'automod', label: 'Bot Moderasyonu', icon: ShieldCheck, grup: 'Kurulum & Ayarlar' },
-    { id: 'shield', label: 'Kalkan & Denetim', icon: ShieldAlert, grup: 'Kurulum & Ayarlar' },
-    { id: 'botadvanced', label: 'Gelişmiş Bot', icon: Sparkles, grup: 'Kurulum & Ayarlar' },
-    { id: 'integrations', label: 'Entegrasyonlar', icon: Link2, badge: 'Discord', grup: 'Kurulum & Ayarlar' },
-    { id: 'settings', label: 'Ayarlar', icon: SettingsIcon, grup: 'Kurulum & Ayarlar' },
+    { id: 'genel', label: 'Genel Bakış', icon: LayoutDashboard, grup: 'Yayın sırasında', alt: ['dashboard', 'kurulum'] },
+    { id: 'sohbet', label: 'Canlı Sohbet', icon: MessageSquare, grup: 'Yayın sırasında', alt: ['multichat'] },
+    { id: 'obs', label: 'OBS & Uyarılar', icon: Layers, grup: 'Yayın sırasında', alt: ['overlays', 'alerts', 'pano', 'tts'] },
+    { id: 'muzik', label: 'Müzik', icon: Music, grup: 'Yayın sırasında', alt: ['songrequest'] },
+    { id: 'etkinlik', label: 'Anket & Çekiliş', icon: BarChart3, grup: 'Yayın sırasında', alt: ['polls', 'giveaways', 'interaction'] },
+    { id: 'oyun', label: 'Oyunlar', icon: Gamepad2, grup: 'Etkileşim', alt: ['trivia', 'games'] },
+    { id: 'ekonomi', label: 'Puan & Bağış', icon: Coins, grup: 'Etkileşim', alt: ['economy', 'rankings', 'donations'] },
+    { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'sesli', 'extras'] },
+    { id: 'moderasyon', label: 'Moderasyon', icon: ShieldCheck, grup: 'Kurulum & Ayarlar', alt: ['automod', 'shield'] },
+    { id: 'yapayzeka', label: 'Yapay Zekâ', icon: Sparkles, grup: 'Kurulum & Ayarlar', alt: ['ai'] },
+    { id: 'baglanti', label: 'Bağlantılar', icon: Link2, grup: 'Kurulum & Ayarlar', alt: ['platforms', 'integrations'] },
+    { id: 'ayarlar', label: 'Ayarlar', icon: SettingsIcon, grup: 'Kurulum & Ayarlar', alt: ['settings', 'botadvanced'] },
   ];
+  const aktifMerkez = navItems.find((m) => m.alt.includes(activeTab));
+  if (aktifMerkez) sonAltSayfa.current[aktifMerkez.id] = activeTab;
 
   const renderActivePage = () => {
     switch (activeTab) {
@@ -279,7 +268,7 @@ export function App() {
           <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
             {navItems.map((item, i) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = aktifMerkez?.id === item.id;
               const grupBasi = i === 0 || navItems[i - 1].grup !== item.grup;
 
               return (
@@ -288,26 +277,20 @@ export function App() {
                   <div className="px-3.5 pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-gray-500">{item.grup}</div>
                 )}
                 <button
-                  onClick={() => sekmeyeGec(item.id)}
+                  onClick={() => sekmeyeGec(sonAltSayfa.current[item.id] || item.alt[0])}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                      : item.highlight
-                      ? 'bg-white/[0.04] text-purple-300 hover:bg-white/[0.08]'
                       : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.highlight ? 'text-purple-400' : 'text-gray-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                     <span>{item.label}</span>
                   </div>
-
-                  {item.badge && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-purple-500/20 text-purple-300'
-                    }`}>
-                      {item.badge}
-                    </span>
+                  {item.alt.length > 1 && (
+                    <span className={`text-[10px] font-extrabold ${isActive ? 'text-white/70' : 'text-gray-600'}`}>{item.alt.length}</span>
                   )}
                 </button>
                 </div>
@@ -339,9 +322,13 @@ export function App() {
             <span className="font-bold text-white">{BRAND.name}</span>
             <span className="text-[10px] text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold">by {BRAND.author}</span>
             <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
-            <span className="text-white font-bold capitalize">
-              {navItems.find(n => n.id === activeTab)?.label}
-            </span>
+            <span className="text-white font-bold">{aktifMerkez?.label || sayfaAdlari[activeTab]}</span>
+            {aktifMerkez && aktifMerkez.alt.length > 1 && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                <span className="text-purple-300 font-bold">{sayfaAdlari[activeTab]}</span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
@@ -358,6 +345,24 @@ export function App() {
 
         {/* Page Content */}
         <main className="flex-1 p-8 overflow-y-auto">
+          {aktifMerkez && aktifMerkez.alt.length > 1 && (
+            <div role="tablist" aria-label={aktifMerkez.label} className="mb-6 flex flex-wrap gap-1.5 border-b border-white/10 pb-3">
+              {aktifMerkez.alt.map((alt) => (
+                <button
+                  key={alt}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === alt}
+                  onClick={() => sekmeyeGec(alt)}
+                  className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                    activeTab === alt ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] hover:text-white'
+                  }`}
+                >
+                  {sayfaAdlari[alt]}
+                </button>
+              ))}
+            </div>
+          )}
           <Suspense fallback={<div className="p-8 text-sm text-gray-400 animate-pulse">Yükleniyor…</div>}>
             {renderActivePage()}
           </Suspense>

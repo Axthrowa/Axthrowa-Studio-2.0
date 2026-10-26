@@ -11,6 +11,18 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.0',
+    ad: 'Düzen',
+    tarih: '2026-10-26',
+    notlar: [
+      'Menü sadeleşti: 27 satır 12 ana sekmede toplandı; aynı konudaki sayfalar ana sekmenin içinde alt sekme',
+      'Ana sekme, en son açtığın alt sayfayı hatırlar; başlıkta "Ana sekme › Alt sayfa" görünür',
+      "Çark dilimleri kaydedilmemişse !cark çevrilmez ve puan düşmez (yayıncıya nasıl ayarlanacağı söylenir)",
+      'Kapanış jeneriği KICKs gönderenleri destekçilerde gösterir',
+      '"En büyük bağış" farklı para birimlerini karıştırmaz'
+    ]
+  },
+  {
     surum: '1.3.4',
     ad: 'Kıyas',
     tarih: '2026-10-26',

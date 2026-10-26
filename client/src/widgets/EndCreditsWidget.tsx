@@ -76,7 +76,11 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
   const tavan = Math.max(1, Number(s.maxPerSection) || 15);
   // Test uyarıları jeneriğe girmez; hediye abonelikler abonelerle birlikte sayılır
   const gercek = events.filter((e) => !String((e as any).metadata || '').includes('"isTest":true'));
-  const sec = (tur: string) => gercek.filter((e) => e.event_type === tur || (tur === 'sub' && e.event_type === 'gift_sub')).slice(0, tavan);
+  // Hediye abonelikler abonelerle, KICKs destekçilerle birlikte sayılır
+  const sec = (tur: string) =>
+    gercek
+      .filter((e) => e.event_type === tur || (tur === 'sub' && e.event_type === 'gift_sub') || (tur === 'tip' && e.event_type === 'kicks'))
+      .slice(0, tavan);
 
   const bolumler = [
     { ac: !!s.showSubs, baslik: `⭐ ${s.titleSubs}`, renk: s.accentColor2, veri: sec('sub'), tutar: false },
@@ -132,7 +136,7 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
               {b.veri.map((e, i) => (
                 <div key={`${e.username || e.display_name}-${i}`}>
                   {e.display_name || e.username}
-                  {b.tutar && s.showAmounts && e.amount ? ` (${e.amount} ${e.currency || '₺'})` : ''}
+                  {b.tutar && s.showAmounts && e.amount ? ` (${e.amount} ${e.currency || (e.event_type === 'kicks' ? 'KICKs' : '₺')})` : ''}
                 </div>
               ))}
             </div>

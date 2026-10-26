@@ -14,7 +14,7 @@ const ACTIVE_KEY = 'resonance_active_profile'
  * kullanıcının seçtiği temayı varsayılanla ezer.
  */
 function saltOkunurSayfa() {
-  return window.location.pathname.replace(/\/+$/, '').endsWith('/overlay')
+  return /\/(overlay|lyrics)$/.test(window.location.pathname.replace(/\/+$/, ''))
 }
 
 export const DEFAULT_CONFIG = {
@@ -40,6 +40,10 @@ export const DEFAULT_CONFIG = {
   songChangeOnly: false,
   songChangeVisibleDuration: 5,
   hideVisualizer: false,
+  /** Senkron şarkı sözlerini kartın altında göster. */
+  showLyrics: false,
+  /** Sözleri kaydır (ms; + ileri). */
+  lyricsOffsetMs: 0,
 }
 
 function makeProfile(name) {

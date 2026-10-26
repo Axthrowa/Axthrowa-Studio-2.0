@@ -78,6 +78,11 @@ export class SongRequestEngine {
 
   /** Klip widget'ı parçayı bitirdi: yalnız hâlâ çalan oysa geçilir (iki OBS kaynağı aynı şarkıyı iki kez atlatmasın). */
   klipBitti(id: string): boolean {
+    if (this.djParca && this.djParca.id === id) {
+      this.sonDjUrller = [this.djParca.url, ...this.sonDjUrller].slice(0, 5);
+      this.djParca = null;
+      return true;
+    }
     const simdiki = this.ilkKlip();
     if (!simdiki || simdiki.id !== id) return false;
     db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(simdiki.id);
@@ -90,6 +95,46 @@ export class SongRequestEngine {
    * Kuyruktaki ilk YouTube isteği. Video kipine geçmeden önce eklenmiş bir Spotify isteği
    * kuyruğun başında kalınca widget onu çalamıyor ve hiç ilerlemiyordu.
    */
+  /** Kuyruk boşken çalan "Otomatik DJ" parçası ve son çalınanlar (art arda aynısı gelmesin) */
+  private djParca: { id: string; title: string; url: string; requestedBy: string } | null = null;
+  private sonDjUrller: string[] = [];
+
+  /**
+   * Şarkı Klipleri widget'ının çalacağı sıradaki parça: önce bekleyen istek; kuyruk boşsa
+   * (ayar açıksa) daha önce istenmiş kliplerden rastgele biri. Yeni istek gelince DJ'in yerine geçer.
+   */
+  klipSirasi(): { id: string; title: string; url: string; requestedBy: string } | null {
+    const istek = this.ilkKlip();
+    if (istek) {
+      this.djParca = null;
+      return istek;
+    }
+    if (settingsCache.get('sr_bos_rastgele', 'true') === 'false') return null;
+    if (this.djParca) return this.djParca;
+    const gecmis = db
+      .prepare("SELECT title, url FROM song_queue WHERE is_played = 1 AND (url LIKE '%youtube.com/%' OR url LIKE '%youtu.be/%') ORDER BY created_at DESC LIMIT 200")
+      .all() as Array<{ title: string; url: string }>;
+    const tekil = [...new Map(gecmis.map((g) => [g.url, g])).values()];
+    const adaylar = tekil.length > this.sonDjUrller.length ? tekil.filter((g) => !this.sonDjUrller.includes(g.url)) : tekil;
+    if (!adaylar.length) return null;
+    const s = adaylar[Math.floor(Math.random() * adaylar.length)];
+    this.djParca = { id: `dj-${uuidv4()}`, title: s.title, url: s.url, requestedBy: 'Otomatik DJ' };
+    return this.djParca;
+  }
+
+  /** Video kipinde istek gelince tek OBS URL'sindeki Şarkı Klipleri katmanı kapalıysa açılır (yoksa istekler hiç çalmıyordu) */
+  private async klipKatmaniniAc() {
+    try {
+      const { overlayAyariOku, overlayAyariYaz } = await import('../../api/rotalar/widgetlar.js');
+      const y = overlayAyariOku();
+      if (!y?.muzikVideo?.enabled) {
+        overlayAyariYaz({ ...y, muzikVideo: { x: 1280, y: 700, width: 600, height: 340, scale: 1, ...y?.muzikVideo, enabled: true } });
+      }
+    } catch (e) {
+      console.warn('[SongRequest] Şarkı Klipleri katmanı açılamadı:', (e as Error)?.message || e);
+    }
+  }
+
   ilkKlip(): { id: string; title: string; url: string; requestedBy: string } | null {
     const r = db
       .prepare("SELECT id, title, url, requested_by FROM song_queue WHERE is_played = 0 AND (url LIKE '%youtube.com/%' OR url LIKE '%youtu.be/%') ORDER BY created_at ASC LIMIT 1")
@@ -293,6 +338,7 @@ export class SongRequestEngine {
       INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).run(songId, title, videoUrl, 180, message.user.displayName, message.platform, thumbnailUrl, Date.now());
+    if (videoKipi) void this.klipKatmaniniAc();
 
     // Auto open desktop player if enabled (video kipinde klip OBS'te çalar)
     const desktopTarget = settingsCache.get('sr_desktop_target', 'none');

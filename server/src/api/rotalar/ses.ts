@@ -29,7 +29,7 @@ router.get('/songrequest/queue', (req: Request, res: Response) => {
 // ya da sonradan açılınca kayboluyordu.
 router.get('/songrequest/current', (req: Request, res: Response) => {
   // ?video=1: Şarkı Klipleri widget'ı için kuyruktaki ilk YouTube isteği
-  res.json((req.query.video === '1' ? songRequest.ilkKlip() : songRequest.getCurrentSong()) || null);
+  res.json((req.query.video === '1' ? songRequest.klipSirasi() : songRequest.getCurrentSong()) || null);
 });
 
 // Şarkı Klipleri widget'ı: video bitti → sıradakine geç (yalnız bitti denen şarkı hâlâ çalıyorsa)

@@ -15,6 +15,8 @@ export function SongRequest() {
   const [current, setCurrent] = useState<SongItem | null>(null);
   const [queue, setQueue] = useState<SongItem[]>([]);
   const [desktopTarget, setDesktopTarget] = useState<string>('none');
+  // Kuyruk boşken Otomatik DJ (önceki isteklerden rastgele klip)
+  const [rastgele, setRastgele] = useState(true);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -42,6 +44,7 @@ export function SongRequest() {
         if (d.sr_desktop_target) {
           setDesktopTarget(d.sr_desktop_target);
         }
+        setRastgele(d.sr_bos_rastgele !== 'false');
       })
       .catch(() => {});
   };
@@ -153,6 +156,28 @@ export function SongRequest() {
           </button>
         </div>
       </div>
+
+      {desktopTarget === 'none' && (
+        <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={rastgele}
+            onChange={(e) => {
+              setRastgele(e.target.checked);
+              void fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sr_bos_rastgele: e.target.checked ? 'true' : 'false' })
+              }).catch(() => {});
+            }}
+            className="mt-0.5 accent-purple-600"
+          />
+          <span className="text-xs text-gray-300">
+            <b className="text-white">Kuyruk boşken rastgele çal (Otomatik DJ)</b> — sırada istek yoksa Şarkı Klipleri daha önce
+            istenmiş kliplerden rastgele çalmaya devam eder; yeni bir !sr gelince ona geçer. İstekler sırayla, sen müdahale etmeden çalar.
+          </span>
+        </label>
+      )}
 
       {statusMsg && (
         <div className="p-3 rounded-xl bg-purple-900/40 border border-purple-500/40 text-xs font-bold text-purple-200 flex items-center gap-2 animate-fadeIn">

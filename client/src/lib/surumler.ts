@@ -19,7 +19,7 @@ export const SURUMLER: Surum[] = [
       "Tüm widget'lar tek OBS URL'sine eklenebilir; galeride \"Tek URL'ye ekle\" düğmesi",
       "Yeni Şarkı Klipleri widget'ı: !sr istekleri YouTube klibiyle OBS'te sırayla çalar",
       'Anket başlayınca tek URL katmanı kendiliğinden açılır; Kick panelinden başlatılan anket de görünür',
-      "!sr, Yayın Yönetim Aracı'ndaki Spotify bağlantısıyla Spotify sırasına ekler",
+      "!sr, Yayın Yönetim Aracı'ndaki Spotify bağlantısını kullanır (sıraya ekleme yeni YYA exe'si ister; eski exe'de hemen çalar)",
       'Resonance içinde senkron şarkı sözleri (/resonance/lyrics)',
       'Yapay zekâ: Gemini yanında OpenAI, Claude, Groq, OpenRouter, DeepSeek, Mistral, xAI, Ollama ve özel adres',
       'Çıkış jeneriği yalnız o yayında gelen abone/destekçi/takipçileri gösterir (açılıp kapatılabilir)',

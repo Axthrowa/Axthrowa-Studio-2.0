@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.3.3',
+    ad: 'Net Görüntü',
+    tarih: '2026-10-26',
+    notlar: [
+      "Overlay Stüdyo önizlemesi: açık JumpScare katmanı tuvali kaplayıp tıklamaları yutuyordu; tam ekran katmanlar artık yalnız seçiliyken çizilir",
+      'Kapalı katmanlar tuvali doldurmaz; yalnız seçilince (konumlandırmak için) soluk görünür'
+    ]
+  },
+  {
     surum: '1.3.2',
     ad: 'İnce Ayar',
     tarih: '2026-10-26',

@@ -93,6 +93,8 @@ export interface KatmanTanimi {
   z: number;
   /** Varsayılan yerleşim; kayıtlı ayar yoksa kullanılır. */
   varsayilan: { x: number; y: number; width: number; height: number };
+  /** Tuvalin tamamını kaplar (JumpScare, ekranda emote): stüdyoda seçili değilken çizilmez, tıklamayı yutmaz. */
+  tamEkran?: boolean;
   /** `item`: bu katmanın yerleşim ayarı (ör. hedef türü). */
   ciz: (onizleme: boolean, item?: WidgetLayoutItem) => ReactNode;
 }
@@ -253,6 +255,7 @@ export const KATMANLAR: KatmanTanimi[] = [
   {
     anahtar: 'kappagen',
     etiket: 'Ekranda Emote',
+    tamEkran: true,
     z: 95,
     varsayilan: { x: 0, y: 0, width: 1920, height: 1080 },
     ciz: (o) => <KappagenWidget embedded previewMode={o} />
@@ -260,6 +263,7 @@ export const KATMANLAR: KatmanTanimi[] = [
   {
     anahtar: 'jumpScare',
     etiket: 'JumpScare',
+    tamEkran: true,
     z: 120,
     varsayilan: { x: 0, y: 0, width: 1920, height: 1080 },
     ciz: (o) => <JumpScareWidget previewMode={o} />

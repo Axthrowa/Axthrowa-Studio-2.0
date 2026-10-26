@@ -1212,13 +1212,19 @@ export function OverlayStudio() {
                       const secili = selectedCanvasWidget === katman.anahtar;
                       // OBS görünümü: kapalı katman OBS'te hiç çizilmez, burada da yok
                       if (obsGorunumu && !item?.enabled) return null;
+                      // Düzenleme görünümü: kapalı katman yalnız seçiliyken (konumlandırmak için) soluk çizilir;
+                      // tam ekran katmanlar (JumpScare, ekranda emote) seçili değilken çizilmez. Eskiden 28
+                      // katmanın hepsi çiziliyor, açık JumpScare tuvali kaplayıp tüm tıklamaları yutuyordu.
+                      if (!obsGorunumu && !secili && (!item?.enabled || katman.tamEkran)) return null;
+                      const tiklanir = !katman.tamEkran || secili;
                       return (
                         <div
-                          onPointerDown={(e) => handleWidgetPointerDown(e, katman.anahtar)}
+                          onPointerDown={tiklanir ? (e) => handleWidgetPointerDown(e, katman.anahtar) : undefined}
                           title={katman.etiket}
                           style={{
                             ...stil,
                             cursor: 'move',
+                            pointerEvents: tiklanir ? undefined : 'none',
                             // Kapalı katman tuvalde soluk görünür ki
                             // konumlandırılabilsin; OBS'te hiç çizilmez.
                             opacity: item?.enabled ? 1 : 0.3,

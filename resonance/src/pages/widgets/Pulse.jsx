@@ -9,6 +9,7 @@ import { OptionGrid } from '../../components/ui/OptionGrid'
 import { ToggleRow } from '../../components/ui/Toggle'
 import { Slider } from '../../components/ui/Slider'
 import { NowPlayingWidget } from '../../components/widget/NowPlayingWidget'
+import { Lyrics } from '../../components/widget/Lyrics'
 import { TransportBar } from '../../components/widget/TransportBar'
 import { SquarePreview, VinylPreview, NonePreview } from '../../components/widget/SkinPreviews'
 import { SKIN_REGISTRY } from '../../components/widget/skins'
@@ -211,6 +212,11 @@ export default function Pulse() {
           demoVisible={demoVisible}
         />
       </div>
+      {config.showLyrics && (
+        <div className="mt-2 flex justify-center rounded-2xl bg-black/60 p-4">
+          <Lyrics track={track} progressMs={progressMs} config={config} preview />
+        </div>
+      )}
       <TransportBar isPlaying={isPlaying} musicService={liveSource} />
       {!track && (
         <p className="mt-2 text-center text-xs text-[var(--color-text-muted)]">
@@ -341,6 +347,26 @@ export default function Pulse() {
             checked={config.coverBlur}
             onChange={(v) => set({ coverBlur: v })}
           />
+          <ToggleRow
+            title={t('pulse.lyrics')}
+            description={t('pulse.lyricsDesc')}
+            checked={config.showLyrics === true}
+            onChange={(v) => set({ showLyrics: v })}
+          />
+          <div className="mt-2">
+            <SubLabel>{t('pulse.lyricsOffset')}</SubLabel>
+            <Slider
+              value={Math.round((Number(config.lyricsOffsetMs) || 0) / 100) / 10}
+              min={-5}
+              max={5}
+              step={0.5}
+              suffix={t('pulse.seconds')}
+              onChange={(v) => set({ lyricsOffsetMs: Math.round(v * 1000) })}
+            />
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              {t('pulse.lyricsUrl')} {`${window.location.origin}/resonance/lyrics`}
+            </p>
+          </div>
         </div>
       </Section>
 

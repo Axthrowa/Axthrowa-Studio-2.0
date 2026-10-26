@@ -35,6 +35,7 @@ import { clearNotice, pushNotice } from "../../lib/notices";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
 import { useObsSourceActive } from "../../lib/obsSourceActive";
 import {
+  canliOturum,
   getCreditsSession,
   mergeAutoCreditSections,
   subscribeCreditsSession,
@@ -358,8 +359,13 @@ export default function OverlayShell({
   const creditSections = useMemo(() => {
     const base = sectionsFromSettings(settings);
     if (screen !== "ending" || settings.creditsAuto === false) return base;
-    return mergeAutoCreditSections(base, liveCredits, true);
-  }, [settings.creditsSections, settings.credits, settings.creditsAuto, screen, liveCredits]);
+    return mergeAutoCreditSections(
+      base,
+      canliOturum(settings.creditsLive, liveCredits),
+      true,
+      settings.creditsOnlyLive !== false
+    );
+  }, [settings.creditsSections, settings.credits, settings.creditsAuto, settings.creditsOnlyLive, settings.creditsLive, screen, liveCredits]);
   const cdStyle = settings.countdownStyle || "boxes";
 
   useEffect(() => {
@@ -1468,6 +1474,7 @@ export default function OverlayShell({
 
         {showCredits &&
           s.creditsEnabled !== false &&
+          creditSections.length > 0 &&
           renderDraggable(
             "credits",
             <CreditsRoller

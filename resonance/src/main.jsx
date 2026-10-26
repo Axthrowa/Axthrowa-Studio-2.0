@@ -70,6 +70,7 @@ function renderApp() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/callback" element={<Callback />} />
                         <Route path="/overlay" element={<Overlay />} />
+                        <Route path="/lyrics" element={<Overlay lyricsOnly />} />
 
                         <Route path="/dashboard" element={<DashboardLayout />}>
                           <Route path="home" element={<Home />} />

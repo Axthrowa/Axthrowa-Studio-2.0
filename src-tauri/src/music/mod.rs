@@ -833,8 +833,9 @@ impl MusicState {
     }
   }
 
-  /// Arama + URI ile çal (chat !istek).
-  pub async fn spotify_search_play(&self, query: &str) -> Result<(String, String, String)> {
+  /// Arama + URI ile çal (chat !istek). `queue`: hemen çalmak yerine Spotify sırasına ekler
+  /// (gömülü botun !sr isteği çalan şarkıyı kesmesin).
+  pub async fn spotify_search_play(&self, query: &str, queue: bool) -> Result<(String, String, String)> {
     let q = query.trim();
     if q.is_empty() {
       return Err(anyhow!("boş arama"));
@@ -871,13 +872,24 @@ impl MusicState {
       .unwrap_or("")
       .to_string();
 
-    let play = self
-      .client
-      .put("https://api.spotify.com/v1/me/player/play")
-      .bearer_auth(&token)
-      .json(&json!({ "uris": [uri] }))
-      .send()
-      .await?;
+    let play = if queue {
+      self
+        .client
+        .post("https://api.spotify.com/v1/me/player/queue")
+        .bearer_auth(&token)
+        .query(&[("uri", uri.as_str())])
+        .header(reqwest::header::CONTENT_LENGTH, "0")
+        .send()
+        .await?
+    } else {
+      self
+        .client
+        .put("https://api.spotify.com/v1/me/player/play")
+        .bearer_auth(&token)
+        .json(&json!({ "uris": [uri] }))
+        .send()
+        .await?
+    };
     match play.status().as_u16() {
       200 | 202 | 204 => Ok((title, artist, uri)),
       403 => Err(anyhow!(
@@ -930,6 +942,7 @@ impl MusicState {
     &self,
     query: &str,
     video_id: Option<&str>,
+    queue: bool,
   ) -> Result<(String, String, String)> {
     if let Some(vid) = video_id.map(str::trim).filter(|s| !s.is_empty()) {
       if !self.ytmd.read().token.is_empty() {
@@ -938,7 +951,7 @@ impl MusicState {
       }
     }
     if self.spotify_connected() {
-      return self.spotify_search_play(query).await;
+      return self.spotify_search_play(query, queue).await;
     }
     if !self.ytmd.read().token.is_empty() {
       return Err(anyhow!(

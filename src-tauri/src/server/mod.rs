@@ -1518,6 +1518,9 @@ struct RequestBody {
   query: String,
   #[serde(default)]
   video_id: Option<String>,
+  /// true: Spotify sırasına ekle (StreamAxT !sr), false: hemen çal
+  #[serde(default)]
+  queue: bool,
 }
 
 async fn api_player_request(
@@ -1526,7 +1529,7 @@ async fn api_player_request(
 ) -> Result<Json<Value>, (StatusCode, String)> {
   let (title, artist, id) = state
     .music
-    .request_track(&body.query, body.video_id.as_deref())
+    .request_track(&body.query, body.video_id.as_deref(), body.queue)
     .await
     .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
   if state.music.spotify_connected() {

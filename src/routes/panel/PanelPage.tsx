@@ -119,6 +119,7 @@ import AppAlertModal from "../../components/ui/AppAlertModal";
 import {
   clearCreditsSession,
   creditsSessionCounts,
+  getCreditsSession,
   subscribeCreditsSession,
 } from "../../lib/creditsSession";
 
@@ -396,7 +397,8 @@ export default function PanelPage() {
   );
 
   const persistNow = useCallback(async (s: ScreenId, data: OverlaySettings) => {
-    await saveSettings(s, data);
+    // Çıkış ayarının tamamı kaydedilirken canlı jenerik listesi panelin güncel oturumundan yazılır (bayatı ezmesin)
+    await saveSettings(s, s === "ending" ? { ...data, creditsLive: getCreditsSession() } : data);
   }, []);
 
   const scheduleSave = useCallback(
@@ -3029,6 +3031,14 @@ export default function PanelPage() {
                       onChange={(e) => update({ creditsAuto: e.target.checked })}
                     />
                     Abone / takip / bağış otomatik ekle
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-white">
+                    <input
+                      type="checkbox"
+                      checked={settings.creditsOnlyLive !== false}
+                      onChange={(e) => update({ creditsOnlyLive: e.target.checked })}
+                    />
+                    Yalnız bu yayında gelenleri göster (hiçbiri yoksa jenerik açılmaz)
                   </label>
                   <div className="rounded-md border border-panel-border/60 bg-black/20 px-2 py-2 text-[11px] text-panel-muted">
                     Bu oturum:{" "}

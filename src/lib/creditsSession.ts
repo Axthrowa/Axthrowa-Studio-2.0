@@ -1,4 +1,5 @@
 import { CreditSection } from "../components/overlay/CreditsRoller";
+import { patchSettings } from "./api";
 
 export type CreditsBucket = "donors" | "subscribers" | "followers";
 
@@ -33,6 +34,19 @@ function load(): CreditsSession {
 }
 
 let state: CreditsSession = load();
+let paylasZamani: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Liste yalnız panelin sessionStorage'ındaydı; OBS'teki çıkış sayfası ayrı bir tarayıcı
+ * olduğu için jeneriği hep boş görüyordu. Çıkış ayarına `creditsLive` olarak yazılır,
+ * overlay-sync ile OBS sayfasına ulaşır.
+ */
+function sunucuyaPaylas() {
+  if (paylasZamani) clearTimeout(paylasZamani);
+  paylasZamani = setTimeout(() => {
+    void patchSettings("ending", { creditsLive: getCreditsSession() }).catch(() => {});
+  }, 400);
+}
 
 function persist() {
   try {
@@ -60,6 +74,15 @@ export function getCreditsSession(): CreditsSession {
 export function clearCreditsSession() {
   state = empty();
   persist();
+  sunucuyaPaylas();
+}
+
+/** Ayardan gelen `creditsLive` (OBS sayfası) ile yerel oturumu birleştirir. */
+export function canliOturum(ayar: unknown, yerel: CreditsSession): CreditsSession {
+  const a = (ayar && typeof ayar === "object" ? ayar : {}) as Record<string, unknown>;
+  const liste = (k: CreditsBucket) =>
+    mergeLines(Array.isArray(a[k]) ? (a[k] as unknown[]).map(String) : [], yerel[k]);
+  return { donors: liste("donors"), subscribers: liste("subscribers"), followers: liste("followers") };
 }
 
 export function subscribeCreditsSession(cb: () => void) {
@@ -85,6 +108,7 @@ export function pushCredit(bucket: CreditsBucket, name: string) {
     [bucket]: [...list, line].slice(-MAX_PER),
   };
   persist();
+  sunucuyaPaylas();
 }
 
 const TITLE_MATCH: Record<CreditsBucket, RegExp[]> = {
@@ -125,9 +149,20 @@ function mergeLines(manual: string[], auto: string[]): string[] {
 export function mergeAutoCreditSections(
   base: CreditSection[],
   session: CreditsSession,
-  enabled = true
+  enabled = true,
+  yalnizCanli = false
 ): CreditSection[] {
   if (!enabled) return base;
+  if (yalnizCanli) {
+    // Yalnız bu yayında gelen türler: elle yazılan başlık/stil korunur, satırlar yalnız canlı isimler.
+    // Hiçbiri gelmediyse boş liste döner ve jenerik hiç açılmaz.
+    return (Object.keys(DEFAULT_TITLES) as CreditsBucket[]).flatMap((bucket) => {
+      const auto = mergeLines([], session[bucket] || []);
+      if (!auto.length) return [];
+      const elle = base[findSectionIndex(base, bucket)];
+      return [{ ...(elle || { title: DEFAULT_TITLES[bucket] }), lines: auto }];
+    });
+  }
   const sections = base.map((s) => ({
     ...s,
     lines: [...(s.lines || [])],

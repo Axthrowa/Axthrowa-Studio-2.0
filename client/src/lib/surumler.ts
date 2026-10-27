@@ -17,7 +17,10 @@ export const SURUMLER: Surum[] = [
     notlar: [
       "!sr isteği Spotify'da sıraya eklenip sonrakine geçilerek başlar (doğrudan \"çal\" komutu masaüstünü durduruyordu; yeni YYA exe'si ister)",
       'Spotify aramasında şarkı adı sorguyla eşleşen sonuç seçilir ("Tame Impala Loser" artık "Dracula" getirmez)',
-      '"Resonance müzik çalarını aç" Yayın Yönetim Aracı içinde Müzik sekmesini açar'
+      '"Resonance müzik çalarını aç" Yayın Yönetim Aracı içinde Müzik sekmesini açar',
+      "Emote Kombo: gelen emote'lar uçup büyük emote'ta toplanır, büyük emote kombo büyüdükçe irileşir; kombo bitince emote'lar etrafa dağılıp kaybolur (ayarlardan kapatılabilir)",
+      'Hazır temalara 14 oyun & film teması (Retro Arcade, Siberpunk, Fantastik RPG, Korku, Vahşi Batı, Kara Film, Çizgi Roman…) ve yazı tipleri',
+      'Temalar artık hedef barı gibi kendi renk alanlarını kullanan widget\'lara da uygulanır (önceden bar rengi değişmiyordu)'
     ]
   },
   {

@@ -60,6 +60,21 @@ export function sureYaz(toplamSaniye: number): string {
 }
 
 /** Önizleme kipi: prop ya da adres satırındaki ?preview=1. */
+/**
+ * Widget yazı tipini Google Fonts'tan yükler (OBS tarayıcısında kurulu olmayabilir).
+ * Yalnız FONTS listesindeki adlar: ayardan gelen keyfi değer adrese yazılmaz.
+ */
+export function fontuYukle(ad: string | undefined, liste: readonly string[]): void {
+  if (!ad || !liste.includes(ad) || typeof document === 'undefined') return;
+  const id = 'axt-font-' + ad.replace(/s+/g, '-');
+  if (document.getElementById(id)) return;
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(ad).replace(/%20/g, '+')}&display=swap`;
+  document.head.appendChild(link);
+}
+
 export function onizlemeKipi(prop?: boolean): boolean {
   if (prop) return true;
   if (typeof window === 'undefined') return false;

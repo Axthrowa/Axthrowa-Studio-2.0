@@ -44,6 +44,7 @@ const LABELS: Record<string, string> = {
   textTransform: 'Metin dönüşümü', minCombo: 'Min. combo', timeoutMs: 'Combo zaman aşımı (ms)',
   displayMs: 'Gösterim (ms)', size: 'Emote boyutu', showFloating: 'Uçan emote', showPopup: 'Popup göster',
   confetti: 'Konfeti', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
+  gatherMode: "Gelen emote'lar büyük emote'ta toplansın", burstOnEnd: "Kombo bitince emote'lar etrafa dağılıp kaybolsun",
   showTop: 'Top bağışçı', separator: 'Ayırıcı', marqueeSpeed: 'Kayan yazı hızı', height: 'Yükseklik',
   paddingX: 'Yatay dolgu', command: 'Komut', titleColor: 'Başlık rengi', showVotes: 'Oy sayısı',
   hideUntilEnd: 'Bitene kadar gizle', spinMs: 'Dönüş süresi (ms)', extraSpins: 'Ek tur',

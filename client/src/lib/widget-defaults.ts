@@ -5,7 +5,9 @@
 
 export const FONTS = [
   'Plus Jakarta Sans', 'Inter', 'Roboto', 'Montserrat', 'Oswald', 'Poppins',
-  'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito'
+  'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito',
+  // Oyun & film temalarının yazı tipleri (Google Fonts, OFL)
+  'Press Start 2P', 'VT323', 'Audiowide', 'Black Ops One', 'Cinzel', 'Special Elite', 'Creepster', 'Rye', 'Bebas Neue'
 ];
 
 export const ACTIVITY_DEFAULTS = {
@@ -181,7 +183,9 @@ export const EMOTE_COMBO_DEFAULTS = {
   borderColor: '#fbbf24',
   template: 'x{count} COMBO!',
   subTemplate: '{emote} ÇILGINLIĞI!',
-  onlyKnownEmotes: false
+  onlyKnownEmotes: false,
+  gatherMode: true,
+  burstOnEnd: true
 };
 
 export const LABELS_DEFAULTS = {

@@ -177,6 +177,91 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
     'Altın',
     { theme: 'neon', bgColor: '#1c1917', bgOpacity: 0.9, accentColor: P.amber, textColor: '#fef3c7', radius: 14 },
     { arka: '#1c1917', vurgu: P.amber, metin: '#fef3c7', kenar: P.amber }
+  ),
+  // Oyun & film temaları: tür çağrışımlı kendi renk/yazı tipi birleşimlerimiz (marka, logo, görsel yok)
+  tema(
+    'arcade',
+    '🎮 Retro Arcade',
+    { theme: 'neon', bgColor: '#0d0221', bgOpacity: 0.92, accentColor: '#00f0ff', accentColor2: '#ff2a6d', textColor: '#ffffff', radius: 0, fontFamily: 'Press Start 2P' },
+    { arka: 'linear-gradient(135deg,#0d0221,#ff2a6d)', vurgu: '#00f0ff', metin: '#ffffff', kenar: '#00f0ff' }
+  ),
+  tema(
+    'piksel',
+    '🎮 Piksel Macera',
+    { theme: 'neon', bgColor: '#22301a', bgOpacity: 0.92, accentColor: '#7cc242', accentColor2: '#8b5a2b', textColor: '#f1f8e9', radius: 0, fontFamily: 'VT323' },
+    { arka: 'linear-gradient(135deg,#22301a,#8b5a2b)', vurgu: '#7cc242', metin: '#f1f8e9', kenar: '#7cc242' }
+  ),
+  tema(
+    'siberpunk',
+    '🎮 Siberpunk',
+    { theme: 'neon', bgColor: '#0a0014', bgOpacity: 0.92, accentColor: '#fcee0a', accentColor2: '#00f0ff', textColor: '#ffffff', radius: 2, fontFamily: 'Audiowide' },
+    { arka: 'linear-gradient(135deg,#0a0014,#00f0ff)', vurgu: '#fcee0a', metin: '#ffffff', kenar: '#fcee0a' }
+  ),
+  tema(
+    'taktik',
+    '🎮 Taktik / Battle Royale',
+    { theme: 'neon', bgColor: '#1b1f14', bgOpacity: 0.92, accentColor: '#c5b358', accentColor2: '#ff6b00', textColor: '#e8e4d0', radius: 2, fontFamily: 'Black Ops One' },
+    { arka: 'linear-gradient(135deg,#1b1f14,#ff6b00)', vurgu: '#c5b358', metin: '#e8e4d0', kenar: '#c5b358' }
+  ),
+  tema(
+    'fantastik',
+    '🎮 Fantastik RPG',
+    { theme: 'neon', bgColor: '#1a1208', bgOpacity: 0.92, accentColor: '#d4af37', accentColor2: '#7b1e1e', textColor: '#f3e5c0', radius: 10, fontFamily: 'Cinzel' },
+    { arka: 'linear-gradient(135deg,#1a1208,#7b1e1e)', vurgu: '#d4af37', metin: '#f3e5c0', kenar: '#d4af37' }
+  ),
+  tema(
+    'yaris',
+    '🎮 Yarış',
+    { theme: 'neon', bgColor: '#0f0f0f', bgOpacity: 0.92, accentColor: '#ff1e1e', accentColor2: '#3f3f46', textColor: '#ffffff', radius: 4, fontFamily: 'Russo One' },
+    { arka: 'linear-gradient(135deg,#0f0f0f,#3f3f46)', vurgu: '#ff1e1e', metin: '#ffffff', kenar: '#ff1e1e' }
+  ),
+  tema(
+    'zombi',
+    '🎮 Zombi Kıyameti',
+    { theme: 'neon', bgColor: '#121a0c', bgOpacity: 0.92, accentColor: '#8bc34a', accentColor2: '#7f1d1d', textColor: '#dcedc8', radius: 4, fontFamily: 'Special Elite' },
+    { arka: 'linear-gradient(135deg,#121a0c,#7f1d1d)', vurgu: '#8bc34a', metin: '#dcedc8', kenar: '#8bc34a' }
+  ),
+  tema(
+    'uzay',
+    '🎬 Uzay Destanı',
+    { theme: 'neon', bgColor: '#020818', bgOpacity: 0.92, accentColor: '#4fc3f7', accentColor2: '#312e81', textColor: '#e3f2fd', radius: 6, fontFamily: 'Orbitron' },
+    { arka: 'linear-gradient(135deg,#020818,#312e81)', vurgu: '#4fc3f7', metin: '#e3f2fd', kenar: '#4fc3f7' }
+  ),
+  tema(
+    'korku',
+    '🎬 Korku',
+    { theme: 'neon', bgColor: '#0a0000', bgOpacity: 0.92, accentColor: '#dc2626', accentColor2: '#450a0a', textColor: '#fde8e8', radius: 4, fontFamily: 'Creepster' },
+    { arka: 'linear-gradient(135deg,#0a0000,#450a0a)', vurgu: '#dc2626', metin: '#fde8e8', kenar: '#dc2626' }
+  ),
+  tema(
+    'vahsibati',
+    '🎬 Vahşi Batı',
+    { theme: 'neon', bgColor: '#3e2412', bgOpacity: 0.92, accentColor: '#e0a458', accentColor2: '#8c1c13', textColor: '#fbe9d0', radius: 4, fontFamily: 'Rye' },
+    { arka: 'linear-gradient(135deg,#3e2412,#8c1c13)', vurgu: '#e0a458', metin: '#fbe9d0', kenar: '#e0a458' }
+  ),
+  tema(
+    'noir',
+    '🎬 Kara Film',
+    { theme: 'neon', bgColor: '#0b0b0b', bgOpacity: 0.92, accentColor: '#e5e5e5', accentColor2: '#404040', textColor: '#f5f5f5', radius: 0, fontFamily: 'Special Elite' },
+    { arka: 'linear-gradient(135deg,#0b0b0b,#404040)', vurgu: '#e5e5e5', metin: '#f5f5f5', kenar: '#e5e5e5' }
+  ),
+  tema(
+    'gala',
+    '🎬 Sinema Galası',
+    { theme: 'neon', bgColor: '#2a0505', bgOpacity: 0.92, accentColor: '#e6b422', accentColor2: '#991b1b', textColor: '#fff8e1', radius: 8, fontFamily: 'Bebas Neue' },
+    { arka: 'linear-gradient(135deg,#2a0505,#991b1b)', vurgu: '#e6b422', metin: '#fff8e1', kenar: '#e6b422' }
+  ),
+  tema(
+    'cizgiroman',
+    '🎬 Çizgi Roman',
+    { theme: 'neon', bgColor: '#1e3a8a', bgOpacity: 0.92, accentColor: '#facc15', accentColor2: '#dc2626', textColor: '#ffffff', radius: 6, fontFamily: 'Bangers', outlineEnabled: true, outlineColor: '#000000' },
+    { arka: 'linear-gradient(135deg,#1e3a8a,#dc2626)', vurgu: '#facc15', metin: '#ffffff', kenar: '#facc15' }
+  ),
+  tema(
+    'anime',
+    '🎬 Anime',
+    { theme: 'neon', bgColor: '#1a0f2e', bgOpacity: 0.92, accentColor: '#ff6ec7', accentColor2: '#7df9ff', textColor: '#ffffff', radius: 18, fontFamily: 'Poppins' },
+    { arka: 'linear-gradient(135deg,#1a0f2e,#7df9ff)', vurgu: '#ff6ec7', metin: '#ffffff', kenar: '#ff6ec7' }
   )
 ];
 
@@ -229,7 +314,21 @@ export function temayiUygula(
   const yeni = { ...mevcut };
   for (const [k, v] of Object.entries(tema.degerler)) {
     if (izinli.has(k)) yeni[k] = v;
+    // Genel anahtarı widget kendi adıyla tanıyor (hedef barı: barColor/backgroundColor/fontColor);
+    // tema o alanı ayrıca belirttiyse ona dokunulmaz
+    for (const es of ESANLAMLI[k] || []) {
+      if (izinli.has(es) && !(es in tema.degerler)) yeni[es] = v;
+    }
   }
   return yeni;
 }
+
+/** Genel tema anahtarı → widget'ların aynı anlamdaki kendi anahtarları. */
+const ESANLAMLI: Record<string, string[]> = {
+  bgColor: ['backgroundColor', 'messageBgColor', 'cardColor'],
+  bgOpacity: ['backgroundOpacity', 'messageBgOpacity', 'cardOpacity'],
+  accentColor: ['barColor', 'borderColor', 'highlightColor', 'pointerColor', 'titleColor', 'labelColor'],
+  textColor: ['fontColor', 'messageColor'],
+  radius: ['borderRadius']
+};
 

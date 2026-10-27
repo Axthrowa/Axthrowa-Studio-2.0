@@ -141,9 +141,15 @@ export class SongRequestEngine {
       this.currentSong = null;
       eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `🎶 Şimdi çalıyor: "${baslik}" — isteyen @${bekleyen.requested_by}` });
     } catch (e: any) {
-      // Bulunamayan/çalınamayan istek kuyruğu tıkamasın
+      const hata = String(e?.message || e);
+      // Spotify kapalı / cihaz yok / bağlantı: istek kaybolmaz, 30 sn sonra yeniden denenir
+      if (!/sonuç yok|track URI yok|boş arama/i.test(hata)) {
+        this.hariciSiraBekle = Date.now() + 30_000;
+        return;
+      }
+      // Spotify'da bulunamayan istek kuyruğu tıkamasın
       db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(bekleyen.id);
-      eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `⚠️ İstek çalınamadı: ${String(e?.message || e).slice(0, 100)}` });
+      eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `⚠️ İstek Spotify'da bulunamadı: ${hata.slice(0, 100)}` });
     }
   }
 
@@ -180,6 +186,9 @@ export class SongRequestEngine {
    * (ayar açıksa) daha önce istenmiş kliplerden rastgele biri. Yeni istek gelince DJ'in yerine geçer.
    */
   klipSirasi(): { id: string; title: string; url: string; requestedBy: string } | null {
+    // Kip Spotify'dan videoya geçtiyse bekleyen Spotify istekleri artık çalınamaz: kuyrukta takılı kalmasın
+    // (yalnız video kipinde: katman OBS'te açık kalsa da Spotify kipindeki istekler silinmez)
+    if (this.videoKipi()) db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND url LIKE ?').run(`${BEKLEYEN}%`);
     const istek = this.ilkKlip();
     if (istek) {
       this.djParca = null;
@@ -306,6 +315,12 @@ export class SongRequestEngine {
       return `@${message.user.displayName}, bir şarkı ismi, YouTube, Spotify veya YouTube Music linki girmelisin! Örnek: !sr Teoman Paramparça`;
     }
     if (rawQuery.length > 300) return `@${message.user.displayName}, istek çok uzun.`;
+    // Kişi başına sırada bekleyen istek sınırı (0 = sınırsız; yayıncı/mod muaf) — tek kişi kuyruğu dolduramasın
+    const sinir = Math.max(0, Math.floor(Number(settingsCache.get('sr_kisi_basina', '2')) || 0));
+    if (sinir > 0 && !message.user.isBroadcaster && !message.user.isMod) {
+      const bekleyenim = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND LOWER(requested_by) = LOWER(?)').get(message.user.displayName) as { n: number }).n;
+      if (bekleyenim >= sinir) return `@${message.user.displayName}, sırada en fazla ${sinir} isteğin olabilir; biri çalınca yenisini iste.`;
+    }
 
     // Spotify hesabı bağlıysa şarkı doğrudan Spotify'da çalınır
     if (this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);

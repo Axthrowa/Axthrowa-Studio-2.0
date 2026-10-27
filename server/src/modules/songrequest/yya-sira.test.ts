@@ -20,6 +20,7 @@ import { songRequest, sirasiGeldi } from './songrequest.js';
 // Sahte Yayın Yönetim Aracı: Spotify orada bağlı, "şu an çalan" testten ayarlanır
 const calan = { title: 'Şarkı A', artist: 'X', isPlaying: true, progress: 10_000, duration: 200_000, source: 'spotify', updatedAt: Date.now() };
 const istekler: any[] = [];
+const durum = { hata: '' };
 let sunucu: http.Server;
 beforeAll(async () => {
   sunucu = http.createServer((req, res) => {
@@ -29,6 +30,10 @@ beforeAll(async () => {
       res.setHeader('Content-Type', 'application/json');
       if (req.url === '/api/player/status') return res.end(JSON.stringify({ spotify: { connected: true }, nowPlaying: calan }));
       if (req.url === '/api/player/request') {
+        if (durum.hata) {
+          res.statusCode = 502;
+          return res.end(durum.hata);
+        }
         const b = JSON.parse(g);
         istekler.push(b);
         return res.end(JSON.stringify({ ok: true, title: 'Paramparça', artist: 'Teoman', id: 'spotify:track:0123456789abcdefghijkl' }));
@@ -62,6 +67,17 @@ describe('YYA Spotify sırası (bot tarafında)', () => {
     expect(istekler).toEqual([{ query: 'teoman', queue: false }]);
     const satir = db.prepare('SELECT title, url FROM song_queue').get() as any;
     expect(satir).toEqual({ title: 'Paramparça — Teoman', url: 'https://open.spotify.com/track/0123456789abcdefghijkl' });
+  });
+
+  it('Spotify kapalıyken istek kaybolmaz, sınır aşılınca yeni istek reddedilir', async () => {
+    db.exec('DELETE FROM song_queue');
+    durum.hata = 'Aktif Spotify cihazı yok — Spotify\'da bir şey çalmaya başlatın';
+    await songRequest.handleSongRequest(mesaj, ['birinci']);
+    await songRequest.hariciSiraDenetle(Date.now() + 60_000, true);
+    expect((db.prepare("SELECT COUNT(*) n FROM song_queue WHERE is_played = 0").get() as any).n).toBe(1);
+    await songRequest.handleSongRequest(mesaj, ['ikinci']);
+    expect(await songRequest.handleSongRequest(mesaj, ['ucuncu'])).toContain('en fazla 2');
+    durum.hata = '';
   });
 
   it('sirasiGeldi: duraklatılmış şarkının ortasında beklenir', () => {

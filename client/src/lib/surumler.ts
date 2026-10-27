@@ -11,6 +11,16 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.2',
+    ad: 'Sağlam Sıra',
+    tarih: '2026-10-27',
+    notlar: [
+      'Spotify kapalıyken gelen istek kaybolmaz; 30 sn sonra yeniden denenir (yalnız Spotify\'da bulunamayan istek kapanır)',
+      'Kişi başına istek sınırı (varsayılan 2, Şarkı İsteği sayfasından ayarlanır; yayıncı ve mod muaf)',
+      'Video kipine geçince bekleyen Spotify istekleri kuyrukta takılı kalmaz'
+    ]
+  },
+  {
     surum: '1.4.1',
     ad: 'Sıradaki',
     tarih: '2026-10-27',

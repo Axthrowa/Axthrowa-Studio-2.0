@@ -17,6 +17,8 @@ export function SongRequest() {
   const [desktopTarget, setDesktopTarget] = useState<string>('none');
   // Kuyruk boşken Otomatik DJ (önceki isteklerden rastgele klip)
   const [rastgele, setRastgele] = useState(true);
+  // Kişi başına sırada bekleyen istek sınırı (0 = sınırsız)
+  const [kisiBasina, setKisiBasina] = useState(2);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -45,6 +47,7 @@ export function SongRequest() {
           setDesktopTarget(d.sr_desktop_target);
         }
         setRastgele(d.sr_bos_rastgele !== 'false');
+        if (d.sr_kisi_basina !== undefined) setKisiBasina(Number(d.sr_kisi_basina) || 0);
       })
       .catch(() => {});
   };
@@ -156,6 +159,29 @@ export function SongRequest() {
           </button>
         </div>
       </div>
+
+      <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-center justify-between gap-3">
+        <span className="text-xs text-gray-300">
+          <b className="text-white">Kişi başına istek sınırı</b> — bir izleyicinin sırada aynı anda kaç isteği olabilir (0 = sınırsız; yayıncı ve modlar muaf)
+        </span>
+        <input
+          type="number"
+          min={0}
+          max={20}
+          value={kisiBasina}
+          onChange={(e) => {
+            const n = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)));
+            setKisiBasina(n);
+            void fetch('/api/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sr_kisi_basina: String(n) })
+            }).catch(() => {});
+          }}
+          className="w-20 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+          aria-label="Kişi başına istek sınırı"
+        />
+      </label>
 
       {desktopTarget === 'none' && (
         <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">

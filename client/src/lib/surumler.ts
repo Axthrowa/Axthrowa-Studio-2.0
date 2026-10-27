@@ -11,6 +11,16 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.7',
+    ad: 'Sıra + Sonraki',
+    tarih: '2026-10-27',
+    notlar: [
+      "!sr isteği Spotify'da sıraya eklenip sonrakine geçilerek başlar (doğrudan \"çal\" komutu masaüstünü durduruyordu; yeni YYA exe'si ister)",
+      'Spotify aramasında şarkı adı sorguyla eşleşen sonuç seçilir ("Tame Impala Loser" artık "Dracula" getirmez)',
+      '"Resonance müzik çalarını aç" Yayın Yönetim Aracı içinde Müzik sekmesini açar'
+    ]
+  },
+  {
     surum: '1.4.6',
     ad: 'Doğru Cihaz',
     tarih: '2026-10-27',

@@ -147,7 +147,12 @@ export function SpotifyBaglanti() {
       {(mesaj || d?.note) && <p className="text-[11px] text-amber-200">{mesaj || d?.note}</p>}
       <a
         href="/resonance/"
-        onClick={(e) => { e.preventDefault(); openLink(`${window.location.origin}/resonance/`); }}
+        onClick={(e) => {
+          e.preventDefault();
+          // Yayın Yönetim Aracı içindeyken uygulamanın kendi Müzik (Resonance) sekmesi açılır
+          if (window.parent !== window) window.parent.postMessage({ type: 'streamaxt:open-music' }, '*');
+          else openLink(`${window.location.origin}/resonance/`);
+        }}
         className="text-[11px] text-emerald-300 underline"
       >
         Resonance müzik çalarını aç (Spotify / YouTube Music, OBS "şu an çalan") <ExternalLink className="inline w-3 h-3" />

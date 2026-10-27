@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.8',
+    ad: 'Gerçek Sohbet',
+    tarih: '2026-10-27',
+    notlar: [
+      'Canlı sohbette botun mesajı yerel "AxBot" kopyası olarak değil, sohbete gerçekten düşen hâliyle (platformdaki bot hesabının adıyla) görünür',
+      "Yayın Yönetim Aracı taşınabilir kurulumda veritabanını dosyaya yazar (Dashboard 'no such table: app_meta' hatası; yeni YYA exe'si ister)"
+    ]
+  },
+  {
     surum: '1.4.7',
     ad: 'Sıra + Sonraki',
     tarih: '2026-10-27',

@@ -2,7 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { izinliHostMu, kokenKabulEdilir } from '../core/security/origin-guard.js';
 import { arayuzAdresleri, ekIzinliHostlar } from '../core/security/host-list.js';
 import { Server as HttpServer } from 'http';
-import { hediyeAdedi, eventBus, ChatMessagePayload, FollowPayload, SubPayload, TipPayload, RaidPayload, TikTokGiftPayload, BotMessagePayload } from '../core/event-bus.js';
+import { hediyeAdedi, eventBus, ChatMessagePayload, FollowPayload, SubPayload, TipPayload, RaidPayload, TikTokGiftPayload } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { ttsEngine, TTSItem } from '../modules/tts/tts.js';
 import { songRequest } from '../modules/songrequest/songrequest.js';
@@ -230,32 +230,8 @@ export class WebSocketHub {
     });
     eventBus.on('anket_katmani', (ileti: Record<string, unknown>) => this.broadcastTo(['all'], ileti));
 
-    // 1.1 Bot Message Event -> Forward as Chat Message to Dashboard & ChatBox Overlay
-    eventBus.on('bot_message', (payload: BotMessagePayload) => {
-      const botPlatform = payload.platform === 'all' ? 'kick' : payload.platform;
-      const botMsg: ChatMessagePayload = {
-        id: 'bot_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-        platform: botPlatform as any,
-        channel: payload.channel || 'stream',
-        user: {
-          id: 'streamaxt_bot',
-          username: 'AxBot',
-          displayName: '🤖 AxBot',
-          color: '#53fc18',
-          badges: ['moderator'],
-          isBroadcaster: false,
-          isMod: true,
-          isSub: false,
-          isVip: false
-        },
-        message: payload.message,
-        timestamp: Date.now()
-      };
-      this.broadcastTo(['dashboard', 'chatbox', 'all'], {
-        type: 'chat',
-        data: botMsg
-      });
-    });
+    // Botun gönderdiği ileti burada yansıtılmaz: sohbette platformdan geri okunan hâli (isSelf) görünür,
+    // böylece panelde yalnız gerçekten sohbete düşen iletiler ve platformdaki bot adı görünür.
 
     // 1.1 Platform bağlantı durumu değişti (ör. Kick sohbet okuma koptu/geldi)
     eventBus.on('platform_status_changed', () => {

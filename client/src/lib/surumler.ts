@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.6',
+    ad: 'Doğru Cihaz',
+    tarih: '2026-10-27',
+    notlar: [
+      "!sr isteği Spotify'da bu bilgisayardaki masaüstü uygulamasında çalar (başka/hayalet cihaza gidip masaüstünü durdurmaz; yeni YYA exe'si ister)",
+      '"Resonance müzik çalarını aç" bağlantısı Yayın Yönetim Aracı içinde de açılır'
+    ]
+  },
+  {
     surum: '1.4.5',
     ad: 'Güncel',
     tarih: '2026-10-27',

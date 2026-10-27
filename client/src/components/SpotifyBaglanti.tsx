@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink, Music2, Unplug } from 'lucide-react';
+import { openLink } from '../lib/openLink.js';
 
 interface Durum {
   spotify: { connected: boolean; clientId: string; displayName: string };
@@ -144,7 +145,11 @@ export function SpotifyBaglanti() {
         </p>
       )}
       {(mesaj || d?.note) && <p className="text-[11px] text-amber-200">{mesaj || d?.note}</p>}
-      <a href="/resonance/" target="_blank" rel="noreferrer" className="text-[11px] text-emerald-300 underline">
+      <a
+        href="/resonance/"
+        onClick={(e) => { e.preventDefault(); openLink(`${window.location.origin}/resonance/`); }}
+        className="text-[11px] text-emerald-300 underline"
+      >
         Resonance müzik çalarını aç (Spotify / YouTube Music, OBS "şu an çalan") <ExternalLink className="inline w-3 h-3" />
       </a>
     </div>

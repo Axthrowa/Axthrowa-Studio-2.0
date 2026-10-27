@@ -28,7 +28,7 @@ vi.mock('../games/trivia-engine.js', () => ({ triviaEngine: { stopGame: () => {}
 
 // vi.mock çağrıları içe aktarmalardan önceye taşınır: bunlar sahte veritabanını görür.
 import { db } from '../../db/index.js';
-import { cuzdanAdi, economy } from './economy.js';
+import { cuzdanAdi, DUELLO_SURESI_MS, economy } from './economy.js';
 import { gamesEngine } from '../games/games.js';
 import { seviyeler } from '../levels/levels.js';
 import { ttsEngine } from '../tts/tts.js';
@@ -125,6 +125,15 @@ describe('düello', () => {
     expect(economy.handleDuel(mesaj('veli'), ['@ali', '1'])).toContain('yeterli puanın yok');
     expect(economy.getUserPoints('ali')).toBe(5000);
     expect(economy.getUserPoints('veli')).toBe(10);
+  });
+
+  it('süresi geçmiş davet kabul edilmez, yeni davet olur', () => {
+    bakiyeYap('ali', 5000);
+    bakiyeYap('veli', 5000);
+    economy.handleDuel(mesaj('ali'), ['@veli', '5000']);
+    vi.advanceTimersByTime(DUELLO_SURESI_MS + 1);
+    expect(economy.handleDuel(mesaj('veli'), ['@ali', '5'])).toContain('MEYDAN OKUMA');
+    expect(economy.getUserPoints('veli')).toBe(5000);
   });
 });
 

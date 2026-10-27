@@ -52,8 +52,9 @@ export class DiscordPlatform extends BasePlatform {
       });
 
       this.client.on('messageCreate', (message) => {
-        // Ignore bot messages
-        if (message.author.bot) return;
+        // Başka botlar yok sayılır; kendi mesajımız panelde görünsün diye isSelf ile geçer
+        const kendi = message.author.id === this.client?.user?.id;
+        if (message.author.bot && !kendi) return;
 
         // Only listen in designated channel if configured
         if (this.currentChannelId && message.channelId !== this.currentChannelId) {
@@ -77,7 +78,8 @@ export class DiscordPlatform extends BasePlatform {
             isSub: false,
             isVip: false,
             isBroadcaster: message.author.id === message.guild?.ownerId,
-            avatarUrl: message.author.displayAvatarURL()
+            avatarUrl: message.author.displayAvatarURL(),
+            isSelf: kendi
           },
           message: message.content,
           timestamp: message.createdTimestamp

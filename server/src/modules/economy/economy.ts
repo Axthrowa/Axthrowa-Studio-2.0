@@ -24,6 +24,8 @@ export function cuzdanAdi(platform: string | undefined | null, ad: string): stri
   return !platform || platform === 'kick' || platform === 'all' ? a : `${platform}:${a}`;
 }
 
+export const DUELLO_SURESI_MS = 120_000;
+
 export class EconomyEngine {
   private activeDuels: Map<string, ActiveDuel> = new Map();
   private userCache: Map<string, { data: any; lastDbUpdate: number }> = new Map();
@@ -530,6 +532,10 @@ export class EconomyEngine {
 
     const duelKey = `${message.platform}_${targetUserClean}_${cuzdanAdi(message.platform, message.user.username)}`;
     const reverseKey = `${message.platform}_${cuzdanAdi(message.platform, message.user.username)}_${targetUserClean}`;
+
+    // Davet 2 dk geçerli: eski bir daveti saatler sonra "!duello @x 5" yazan, istemediği 5000'lik düelloya girmesin
+    const eski = this.activeDuels.get(reverseKey);
+    if (eski && Date.now() - eski.createdAt > DUELLO_SURESI_MS) this.activeDuels.delete(reverseKey);
 
     if (this.activeDuels.has(reverseKey)) {
       const duel = this.activeDuels.get(reverseKey)!;

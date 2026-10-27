@@ -247,7 +247,18 @@ export class TwitchPlatform extends BasePlatform {
     }
 
     try {
+      // Satır sonu IRC'de yeni komut demek: çok satırlı yanıt (yapay zekâ) kesilir, kalanı ham komut olarak giderdi
+      message = message.replace(/[\r\n]+/g, ' ').trim();
       this.ws.send(`PRIVMSG #${channel} :${message}`);
+      // Twitch IRC gönderene kendi mesajını geri yollamaz; panelde görünsün diye bot hesabının adıyla yansıtılır
+      eventBus.emitChat({
+        id: `self-${Date.now()}`,
+        platform: 'twitch',
+        channel,
+        user: { id: this.botUsername, username: this.botUsername.toLowerCase(), displayName: this.botUsername, badges: [], isMod: true, isSub: false, isVip: false, isBroadcaster: false, isSelf: true },
+        message,
+        timestamp: Date.now()
+      });
       return true;
     } catch (err) {
       console.error('[Twitch] Failed to send message:', err);

@@ -11,6 +11,18 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.9',
+    ad: 'Denetim',
+    tarih: '2026-10-27',
+    notlar: [
+      'Bağış simülasyonu artık sadakat puanı vermez (her deneme 5000 puan yazıyordu)',
+      'Kapatılan bağış uyarısı gerçek BynoGame/webhook bağışlarında da kapalı kalır',
+      'Twitch ve Discord: botun mesajları panel sohbetinde bot hesabının adıyla görünür',
+      "Twitch: çok satırlı bot yanıtı (yapay zekâ) tek satır olarak gider, kesilmez",
+      'Düello daveti 2 dakika geçerli; eski davet saatler sonra istemeden kabul edilmez'
+    ]
+  },
+  {
     surum: '1.4.8',
     ad: 'Gerçek Sohbet',
     tarih: '2026-10-27',

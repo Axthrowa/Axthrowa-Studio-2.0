@@ -54,13 +54,15 @@ describe('şarkı kuyruğu eşleme', () => {
     expect(acik()).toEqual(['b']);
   });
 
-  it('kısa başlık, onunla başlayan başka şarkıyı yakalamaz', () => {
+  it('kısa başlık, onunla başlayan isteği "çalıyor" saymaz; bekleyen istek açık kalır', () => {
+    // YYA kipinde istek ancak çalmaya başlayınca çözülür: çalanla eşleşmeyen çözülmüş istek bitmiştir
     ekle('a', 'Birinci — X', 'https://open.spotify.com/track/aaaaaaaaaaaaaaaaaaaaaa', 1);
     ekle('b', 'Hey Jude — Beatles', 'https://open.spotify.com/track/bbbbbbbbbbbbbbbbbbbbbb', 2);
+    ekle('c', 'teoman', 'spotify-istek:teoman', 3);
     (muzikHost as any).calaniGuncelle(
       { title: 'Hey', artist: 'Y', album: '', albumArt: '', isPlaying: true, progress: 0, duration: 1, source: 'spotify', updatedAt: 2 },
       'spotify'
     );
-    expect(acik()).toEqual(['a', 'b']);
+    expect(acik()).toEqual(['c']);
   });
 });

@@ -11,6 +11,17 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.1',
+    ad: 'Sıradaki',
+    tarih: '2026-10-27',
+    notlar: [
+      "!sr isteği çalan şarkıyı kesmez: Yayın Yönetim Aracı'ndaki Spotify'da istekler bot tarafında sıraya alınır, çalan şarkı bitmek üzereyken sıradaki başlar",
+      'Sırada istek yoksa Spotify kendi akışıyla (rastgele/otomatik) çalmaya devam eder; istek başlayınca sohbete "Şimdi çalıyor" yazılır',
+      'Şarkı Klipleri: video kipinde katman kendiliğinden açılır; kuyruk boşken Otomatik DJ önceki isteklerden rastgele çalar',
+      'Atlamada sırada istek varsa doğrudan o başlar; Spotify API kipinde masaüstü uygulaması ayrıca açılmaz'
+    ]
+  },
+  {
     surum: '1.4.0',
     ad: 'Düzen',
     tarih: '2026-10-26',

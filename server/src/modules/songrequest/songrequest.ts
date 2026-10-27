@@ -2,7 +2,23 @@ import { db } from '../../db/index.js';
 import { randomUUID as uuidv4 } from 'crypto';
 import axios from 'axios';
 import { spawn } from 'child_process';
-import { ChatMessagePayload } from '../../core/event-bus.js';
+import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
+import type { CalanSarki } from '../muzik/spotify-saf.js';
+
+/** Bot tarafında bekleyen, YYA'daki Spotify'a sırası gelince iletilecek istek (url öneki) */
+const BEKLEYEN = 'spotify-istek:';
+
+/**
+ * Sıradaki istek şimdi başlatılmalı mı: hiçbir şey çalmıyorsa, çalan şarkının bitmesine
+ * 3 sn kaldıysa ya da şarkı sonuna gelip durduysa. Ortasında duraklatılmışsa beklenir.
+ */
+export function sirasiGeldi(c: CalanSarki | null, simdi: number): boolean {
+  if (!c) return true;
+  if (!(c.duration > 0)) return !c.isPlaying;
+  const konum = c.progress + (c.isPlaying ? Math.max(0, simdi - (Number(c.updatedAt) || simdi)) : 0);
+  const kalan = c.duration - konum;
+  return c.isPlaying ? kalan <= 3000 : kalan <= 2000;
+}
 import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';
 import { parcaKimligi } from '../muzik/spotify-saf.js';
@@ -61,6 +77,23 @@ export class SongRequestEngine {
                   return t === a || t.startsWith(`${a} — `);
                 })
         ) as { created_at: number } | undefined;
+        // YYA kipinde istekler ancak çalmaya başlayınca çözülür: çalandan başka çözülmüş istek bitmiştir
+        // (Spotify kendi rastgele şarkısına geçtiğinde de kuyrukta açık kalmasın)
+        if (!muzikHost.spotifyBagliMi()) {
+          const a = c.title.toLocaleLowerCase('tr');
+          const acik = db
+            .prepare("SELECT id, title FROM song_queue WHERE is_played = 0 AND url LIKE '%open.spotify.com/track/%'")
+            .all() as Array<{ id: string; title: string }>;
+          let istekCaliyor = false;
+          for (const r of acik) {
+            const t = String(r.title).toLocaleLowerCase('tr');
+            if (t === a || t.startsWith(`${a} — `)) istekCaliyor = true;
+            else db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(r.id);
+          }
+          this.currentSong = null;
+          // Bitiş anı kaçtıysa Spotify kendi şarkısına geçmiştir: bekleyen istek hemen başlar
+          if (!istekCaliyor && Date.now() > this.hariciSiraBekle) void this.hariciSiraDenetle(Date.now(), true);
+        }
         if (!satir) return;
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ?').run(satir.created_at);
         this.currentSong = null;
@@ -69,6 +102,49 @@ export class SongRequestEngine {
         /* kuyruk eşlemesi kritik değil */
       }
     });
+    setInterval(() => void this.hariciSiraDenetle(), 2000).unref?.();
+  }
+
+  /** Spotify'da atla: YYA kipinde sırada istek varsa doğrudan o başlar, yoksa Spotify'ın sonraki şarkısı */
+  private async spotifyAtla() {
+    const bekleyen = !muzikHost.spotifyBagliMi() && db.prepare('SELECT 1 FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`);
+    if (bekleyen) return this.hariciSiraDenetle(Date.now(), true);
+    await muzikHost.komut('next', 'spotify').catch(() => {});
+  }
+
+  /** Aynı isteği iki kez göndermemek için (YYA'nın çalan bilgisi birkaç sn sonra güncellenir) */
+  private hariciSiraBekle = 0;
+
+  /**
+   * YYA'daki Spotify'da sıra: istekler hemen gönderilmez (eski YYA exe'si "sıraya ekle"yi tanımıyor,
+   * çalan şarkıyı kesiyordu). Çalan şarkı bitmek üzereyken sıradaki istek başlatılır; istek yoksa
+   * Spotify kendi akışıyla (rastgele/otomatik) çalmaya devam eder.
+   */
+  async hariciSiraDenetle(simdi = Date.now(), zorla = false): Promise<void> {
+    if (muzikHost.spotifyBagliMi() || !this.spotifyOtomatikMi()) return;
+    if (!zorla && simdi < this.hariciSiraBekle) return;
+    const bekleyen = db
+      .prepare('SELECT id, url, requested_by, platform FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1')
+      .get(`${BEKLEYEN}%`) as { id: string; url: string; requested_by: string; platform: string } | undefined;
+    if (!bekleyen) return;
+    if (!zorla && !sirasiGeldi(muzikHost.simdiCalan(), simdi)) return;
+    this.hariciSiraBekle = simdi + 8000;
+    try {
+      const p = await muzikHost.hariciIstek(bekleyen.url.slice(BEKLEYEN.length), false);
+      const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
+      const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
+      db.prepare('UPDATE song_queue SET title = ?, url = ? WHERE id = ?').run(
+        baslik.slice(0, 200),
+        parca ? `https://open.spotify.com/track/${parca}` : 'https://open.spotify.com/',
+        bekleyen.id
+      );
+      this.currentSong = null;
+      eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `🎶 Şimdi çalıyor: "${baslik}" — isteyen @${bekleyen.requested_by}` });
+    } catch (e: any) {
+      // Bulunamayan/çalınamayan istek kuyruğu tıkamasın
+      db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(bekleyen.id);
+      eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `⚠️ İstek çalınamadı: ${String(e?.message || e).slice(0, 100)}` });
+    }
   }
 
   /** Şarkı Klipleri widget'ı kipi: istekler YouTube'da aranır, OBS'te video olarak çalar. */
@@ -176,7 +252,19 @@ export class SongRequestEngine {
           const o = await axios.get(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${id}`)}`, { timeout: 4000 });
           sorgu = String(o.data?.title || '') || sorgu;
         }
-        const p = await muzikHost.hariciIstek(sorgu, !hemen);
+        if (!hemen) {
+          db.prepare(`
+            INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+          `).run(uuidv4(), sorgu.slice(0, 200), `${BEKLEYEN}${sorgu.slice(0, 200)}`, 180, kim, message.platform, '', Date.now());
+          const sira = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`) as { n: number }).n;
+          const bos = sira === 1 && sirasiGeldi(muzikHost.simdiCalan(), Date.now());
+          void this.hariciSiraDenetle();
+          return bos
+            ? `🎵 @${kim}, "${sorgu}" şimdi çalıyor.`
+            : `🎵 @${kim}, "${sorgu}" sıraya alındı (${sira}. sırada) — çalan şarkı bitince kendiliğinden çalacak.`;
+        }
+        const p = await muzikHost.hariciIstek(sorgu, false);
         const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
         const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
         db.prepare(`
@@ -408,7 +496,7 @@ export class SongRequestEngine {
     if (this.currentSong && !this.currentSong.isPlayed) {
       return this.currentSong;
     }
-    const row = db.prepare('SELECT * FROM song_queue WHERE is_played = 0 ORDER BY created_at ASC LIMIT 1').get() as any;
+    const row = db.prepare(`SELECT * FROM song_queue WHERE is_played = 0 AND url NOT LIKE '${BEKLEYEN}%' ORDER BY created_at ASC LIMIT 1`).get() as any;
     if (!row) return null;
 
     this.currentSong = {
@@ -432,12 +520,12 @@ export class SongRequestEngine {
     }
 
     if (force) {
-      if (this.spotifyOtomatikMi()) void muzikHost.komut('next', 'spotify').catch(() => {});
+      if (this.spotifyOtomatikMi()) void this.spotifyAtla();
       db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(current.id);
       this.currentSong = null;
       this.skipVotes.clear();
       const next = this.getCurrentSong();
-      if (next) {
+      if (next && !this.spotifyOtomatikMi()) {
         const desktopTarget = settingsCache.get('sr_desktop_target', 'none');
         if (desktopTarget === 'spotify' || desktopTarget === 'ytmusic') {
           this.openDesktopPlayer(desktopTarget as any, next.title, next.url);
@@ -452,12 +540,12 @@ export class SongRequestEngine {
     if (userTag) {
       this.skipVotes.add(userTag.toLowerCase());
       if (this.skipVotes.size >= this.requiredVotes) {
-        if (this.spotifyOtomatikMi()) void muzikHost.komut('next', 'spotify').catch(() => {});
+        if (this.spotifyOtomatikMi()) void this.spotifyAtla();
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(current.id);
         this.currentSong = null;
         this.skipVotes.clear();
         const next = this.getCurrentSong();
-        if (next) {
+        if (next && !this.spotifyOtomatikMi()) {
           const desktopTarget = settingsCache.get('sr_desktop_target', 'none');
           if (desktopTarget === 'spotify' || desktopTarget === 'ytmusic') {
             this.openDesktopPlayer(desktopTarget as any, next.title, next.url);

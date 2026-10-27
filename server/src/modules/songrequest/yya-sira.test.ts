@@ -20,7 +20,7 @@ import { songRequest, sirasiGeldi } from './songrequest.js';
 // Sahte Yayın Yönetim Aracı: Spotify orada bağlı, "şu an çalan" testten ayarlanır
 const calan = { title: 'Şarkı A', artist: 'X', isPlaying: true, progress: 10_000, duration: 200_000, source: 'spotify', updatedAt: Date.now() };
 const istekler: any[] = [];
-const durum = { hata: '' };
+const durum = { hata: '', ytmd: false };
 let sunucu: http.Server;
 beforeAll(async () => {
   sunucu = http.createServer((req, res) => {
@@ -28,7 +28,7 @@ beforeAll(async () => {
     req.on('data', (c) => (g += c));
     req.on('end', () => {
       res.setHeader('Content-Type', 'application/json');
-      if (req.url === '/api/player/status') return res.end(JSON.stringify({ spotify: { connected: true }, nowPlaying: calan }));
+      if (req.url === '/api/player/status') return res.end(JSON.stringify({ spotify: { connected: !durum.ytmd }, ytmd: { connected: durum.ytmd }, nowPlaying: calan }));
       if (req.url === '/api/player/request') {
         if (durum.hata) {
           res.statusCode = 502;
@@ -78,6 +78,28 @@ describe('YYA Spotify sırası (bot tarafında)', () => {
     await songRequest.handleSongRequest(mesaj, ['ikinci']);
     expect(await songRequest.handleSongRequest(mesaj, ['ucuncu'])).toContain('en fazla 2');
     durum.hata = '';
+  });
+
+  it('YouTube Music açıksa istek oraya, video kimliğiyle sırayla gider', async () => {
+    db.exec('DELETE FROM song_queue');
+    istekler.length = 0;
+    durum.ytmd = true;
+    calan.source = 'youtube-music';
+    calan.progress = 10_000;
+    calan.updatedAt = Date.now();
+    await (muzikHost as any).hariciYokla();
+    expect(muzikHost.hariciHedef()).toBe('ytmd');
+    const mod = { ...mesaj, user: { ...mesaj.user, isMod: true } };
+    expect(await songRequest.handleSongRequest(mod, ['https://youtu.be/abcdefghijk'])).toContain('sıraya alındı');
+    expect(istekler).toEqual([]);
+    calan.progress = 199_000;
+    calan.updatedAt = Date.now();
+    await (muzikHost as any).hariciYokla();
+    await songRequest.hariciSiraDenetle(Date.now() + 60_000, false);
+    expect(istekler[0]).toMatchObject({ video_id: 'abcdefghijk', queue: false });
+    expect((db.prepare('SELECT url FROM song_queue').get() as any).url).toBe('https://music.youtube.com/watch?v=abcdefghijk');
+    durum.ytmd = false;
+    calan.source = 'spotify';
   });
 
   it('sirasiGeldi: duraklatılmış şarkının ortasında beklenir', () => {

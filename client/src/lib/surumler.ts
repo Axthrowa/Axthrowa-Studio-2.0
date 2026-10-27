@@ -11,6 +11,16 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.4',
+    ad: 'Her Çalarda',
+    tarih: '2026-10-27',
+    notlar: [
+      "!sr istekleri hangi program açıksa (Spotify ya da YouTube Music Desktop) onda sıraya girer, çalan şarkı bitince kendiliğinden çalar",
+      'Bot, isteği işlemeden önce Yayın Yönetim Aracı müzik durumunu tazeler (açılışta gelen ilk istek kaybolmaz)',
+      'Yeni istek başlarken önceki/takılı kayıtlar kapanır; "Hemen çal" seçeneğinin çalan şarkıyı kestiği açıkça yazar'
+    ]
+  },
+  {
     surum: '1.4.3',
     ad: 'Ücretsiz Zekâ',
     tarih: '2026-10-27',

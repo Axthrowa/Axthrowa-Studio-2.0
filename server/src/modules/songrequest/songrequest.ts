@@ -92,7 +92,7 @@ export class SongRequestEngine {
           }
           this.currentSong = null;
           // Bitiş anı kaçtıysa Spotify kendi şarkısına geçmiştir: bekleyen istek hemen başlar
-          if (!istekCaliyor && Date.now() > this.hariciSiraBekle) void this.hariciSiraDenetle(Date.now(), true);
+          if (!istekCaliyor && Date.now() - this.sonBaslatma > 15_000 && Date.now() > this.hariciSiraBekle) void this.hariciSiraDenetle(Date.now(), true);
         }
         if (!satir) return;
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ?').run(satir.created_at);
@@ -112,6 +112,43 @@ export class SongRequestEngine {
     await muzikHost.komut('next', 'spotify').catch(() => {});
   }
 
+  /** Bekleyen isteği sıraya aldıktan sonraki cevap; "hemen" kipinde çalanın yerine hemen başlar */
+  private siraYaniti(kim: string, ad: string, hemen: boolean): string {
+    const sira = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`) as { n: number }).n;
+    const bos = hemen || (sira === 1 && sirasiGeldi(muzikHost.simdiCalan(), Date.now()));
+    void this.hariciSiraDenetle(Date.now(), hemen);
+    return bos
+      ? `🎵 @${kim}, "${ad}" şimdi çalıyor.`
+      : `🎵 @${kim}, "${ad}" sıraya alındı (${sira}. sırada) — çalan şarkı bitince kendiliğinden çalacak.`;
+  }
+
+  /** YouTube'da ilk video (önbellekli) */
+  private async youtubeAra(sorgu: string): Promise<{ videoId: string; title: string; thumbnail?: string } | null> {
+    const anahtar = sorgu.toLowerCase();
+    const onbellekte = this.searchCache.get(anahtar);
+    if (onbellekte) return onbellekte;
+    try {
+      const res = await axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(sorgu)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8'
+        },
+        timeout: 2500
+      });
+      const vid = res.data.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/)?.[1];
+      if (!vid) return null;
+      const b = { videoId: vid, title: res.data.match(/"title":\{"runs":\[\{"text":"([^"]+)"/)?.[1] || sorgu, thumbnail: `https://img.youtube.com/vi/${vid}/hqdefault.jpg` };
+      this.searchCache.set(anahtar, b);
+      return b;
+    } catch (err: any) {
+      console.warn('[SongRequest] YouTube araması başarısız:', err?.message || err);
+      return null;
+    }
+  }
+
+  /** Son istek başlatma anı: o andan sonraki parça değişimi bizim isteğimizdir */
+  private sonBaslatma = 0;
+
   /** Aynı isteği iki kez göndermemek için (YYA'nın çalan bilgisi birkaç sn sonra güncellenir) */
   private hariciSiraBekle = 0;
 
@@ -130,14 +167,20 @@ export class SongRequestEngine {
     if (!zorla && !sirasiGeldi(muzikHost.simdiCalan(), simdi)) return;
     this.hariciSiraBekle = simdi + 8000;
     try {
-      const p = await muzikHost.hariciIstek(bekleyen.url.slice(BEKLEYEN.length), false);
-      const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
+      const icerik = bekleyen.url.slice(BEKLEYEN.length);
+      // YouTube Music isteği: "yt=<videoId> <başlık>"
+      const yt = icerik.match(/^yt=([a-zA-Z0-9_-]{11}) (.*)$/s);
+      const p = yt ? await muzikHost.hariciIstek(yt[2], false, yt[1]) : await muzikHost.hariciIstek(icerik, false);
+      const baslik = yt ? yt[2] : p.artist ? `${p.title} — ${p.artist}` : p.title;
       const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
+      // Bundan önceki her şey bitti sayılır (çalınmış istekler, takılı eski kayıtlar)
+      db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND id <> ? AND url NOT LIKE ?').run(bekleyen.id, `${BEKLEYEN}%`);
       db.prepare('UPDATE song_queue SET title = ?, url = ? WHERE id = ?').run(
         baslik.slice(0, 200),
-        parca ? `https://open.spotify.com/track/${parca}` : 'https://open.spotify.com/',
+        yt ? `https://music.youtube.com/watch?v=${yt[1]}` : parca ? `https://open.spotify.com/track/${parca}` : 'https://open.spotify.com/',
         bekleyen.id
       );
+      this.sonBaslatma = Date.now();
       this.currentSong = null;
       eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `🎶 Şimdi çalıyor: "${baslik}" — isteyen @${bekleyen.requested_by}` });
     } catch (e: any) {
@@ -230,7 +273,7 @@ export class SongRequestEngine {
   /** Spotify Web API ile otomatik çalma açık ve hesap bağlı mı? */
   spotifyOtomatikMi(): boolean {
     if (this.videoKipi()) return false;
-    return muzikHost.spotifyKullanilabilir() && settingsCache.get('sr_spotify_api', 'true') !== 'false';
+    return (muzikHost.spotifyBagliMi() || muzikHost.hariciHedef() !== null) && settingsCache.get('sr_spotify_api', 'true') !== 'false';
   }
 
   /**
@@ -249,11 +292,25 @@ export class SongRequestEngine {
         const o = await axios.get(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${yt[1]}&format=json`, { timeout: 4000 });
         sorgu = String(o.data?.title || '').replace(/\((official|resmi)[^)]*\)|\[[^\]]*\]/gi, '').trim() || rawQuery;
       } catch {
-        return `@${kim}, YouTube başlığı alınamadı; şarkı adını yazarak dene: !sr Teoman Paramparça`;
+        // YouTube Music'e video kimliği yeter; başlık yalnız Spotify araması için gerekli
+        if (muzikHost.spotifyBagliMi() || muzikHost.hariciHedef() !== 'ytmd') {
+          return `@${kim}, YouTube başlığı alınamadı; şarkı adını yazarak dene: !sr Teoman Paramparça`;
+        }
       }
     }
     const hemen = settingsCache.get('sr_spotify_mod', 'sira') === 'hemen';
-    // Spotify Yayın Yönetim Aracı'nda bağlı: arama ve sıraya ekleme orada yapılır
+    // Spotify / YouTube Music Yayın Yönetim Aracı'nda bağlı: istek bot tarafında sıralanır
+    if (!muzikHost.spotifyBagliMi() && muzikHost.hariciHedef() === 'ytmd') {
+      const id = rawQuery.match(/(?:[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1];
+      const b = id ? { videoId: id, title: sorgu } : await this.youtubeAra(sorgu);
+      if (!b) return `@${kim}, YouTube'da "${sorgu.slice(0, 60)}" bulunamadı.`;
+      const baslik = b.title.slice(0, 200);
+      db.prepare(`
+        INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+      `).run(uuidv4(), baslik, `${BEKLEYEN}yt=${b.videoId} ${baslik}`, 180, kim, message.platform, '', Date.now());
+      return this.siraYaniti(kim, baslik, hemen);
+    }
     if (!muzikHost.spotifyBagliMi()) {
       try {
         const id = parcaKimligi(rawQuery);
@@ -266,12 +323,7 @@ export class SongRequestEngine {
             INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
           `).run(uuidv4(), sorgu.slice(0, 200), `${BEKLEYEN}${sorgu.slice(0, 200)}`, 180, kim, message.platform, '', Date.now());
-          const sira = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`) as { n: number }).n;
-          const bos = sira === 1 && sirasiGeldi(muzikHost.simdiCalan(), Date.now());
-          void this.hariciSiraDenetle();
-          return bos
-            ? `🎵 @${kim}, "${sorgu}" şimdi çalıyor.`
-            : `🎵 @${kim}, "${sorgu}" sıraya alındı (${sira}. sırada) — çalan şarkı bitince kendiliğinden çalacak.`;
+          return this.siraYaniti(kim, sorgu, false);
         }
         const p = await muzikHost.hariciIstek(sorgu, false);
         const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
@@ -322,7 +374,8 @@ export class SongRequestEngine {
       if (bekleyenim >= sinir) return `@${message.user.displayName}, sırada en fazla ${sinir} isteğin olabilir; biri çalınca yenisini iste.`;
     }
 
-    // Spotify hesabı bağlıysa şarkı doğrudan Spotify'da çalınır
+    await muzikHost.hariciTazele();
+    // Spotify / YouTube Music bağlıysa şarkı doğrudan o programda çalınır
     if (this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);
 
     const videoKipi = this.videoKipi();
@@ -380,43 +433,12 @@ export class SongRequestEngine {
 
     // 4. If query is a text search (not a direct URL), check fast cache or search
     if (!videoUrl && !videoId) {
-      const cacheKey = aramaSorgusu.toLowerCase();
-      if (this.searchCache.has(cacheKey)) {
-        const cached = this.searchCache.get(cacheKey)!;
-        videoId = cached.videoId;
-        title = cached.title;
-        thumbnailUrl = cached.thumbnail || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      const b = await this.youtubeAra(aramaSorgusu);
+      if (b) {
+        videoId = b.videoId;
+        title = b.title;
+        thumbnailUrl = b.thumbnail || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-      } else {
-        try {
-          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(aramaSorgusu)}`;
-          const res = await axios.get(searchUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8'
-            },
-            timeout: 2500
-          });
-
-          // Match first watch video
-          const vidMatch = res.data.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/);
-          if (vidMatch) {
-            videoId = vidMatch[1];
-            videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-            thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-
-            // Try fast title extraction from HTML
-            const titleMatch = res.data.match(/"title":\{"runs":\[\{"text":"([^"]+)"/);
-            if (titleMatch && titleMatch[1]) {
-              title = titleMatch[1];
-            }
-
-            // Cache result for 0ms future queries
-            this.searchCache.set(cacheKey, { videoId, title, thumbnail: thumbnailUrl });
-          }
-        } catch (err: any) {
-          console.warn('[SongRequest] Fast search fallback error:', err?.message || err);
-        }
       }
     }
 

@@ -132,8 +132,8 @@ export function SpotifyBaglanti() {
         <label className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/30 p-2">
           Nasıl?
           <select value={mod} onChange={(e) => { setMod(e.target.value); void ayar('sr_spotify_mod', e.target.value); }} className="bg-black/50 rounded-lg p-1 text-xs">
-            <option value="sira">Spotify sırasına ekle (şarkı bitince çalar)</option>
-            <option value="hemen">Hemen çal</option>
+            <option value="sira">Sıraya ekle — çalan şarkı bitince çalar (önerilen)</option>
+            <option value="hemen">Hemen çal — çalan şarkıyı keser</option>
           </select>
         </label>
       </div>

@@ -8,6 +8,7 @@ import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
+import { CARK_PALETLERI } from '../widgets/WheelWidget.js';
 
 const LABELS: Record<string, string> = {
   showFollow: 'Takip göster', showSub: 'Abone göster', showGiftSub: 'Hediye abone göster',
@@ -40,7 +41,7 @@ const LABELS: Record<string, string> = {
   messageBgColor: 'Mesaj arka planı', messageBgOpacity: 'Mesaj opaklığı', highlightColor: 'Vurgu rengi',
   hideBroadcaster: 'Yayıncıyı gizle', title: 'Başlık', endingTitle: 'Bitiş başlığı', current: 'Mevcut',
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
-  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu',
+  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', palette: 'Renk paleti',
   timeFontFamily: 'Süre yazı tipi', timeFontSize: 'Süre boyutu (px)', showRules: 'Kuralları göster', barColor2: 'Bar 2. renk (geçiş)',
   barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Dolgu ucundaki simge (emoji)', layout: 'Düzen', showRemaining: 'Kalan göster',
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
@@ -231,7 +232,7 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
   subathon: { title: 'Genel', theme: 'Görünüm', icon: 'Görünüm', timeFontFamily: 'Tipografi', timeFontSize: 'Tipografi', showRules: 'Düzen', showStatus: 'Düzen' },
   'viewer-counter': { title: 'Genel' },
   trivia: { title: 'Genel' },
-  'wheel-of-fortune': { size: 'Görünüm' },
+  'wheel-of-fortune': { size: 'Görünüm', palette: 'Görünüm' },
   'audio-player': { label: 'Genel' }
 };
 
@@ -298,7 +299,7 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     animation: [...ANIM_SECENEKLERI, { value: 'marquee', label: 'Kayan yazı' }]
   },
   'viewer-counter': {
-    theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['capsule', 'Kapsül']),
+    theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['capsule', 'Kapsül'], ['velvet', 'Kadife'], ['ticker', 'Borsa bandı'], ['holochip', 'Holografik'], ['splitflap', 'Çevirmeli tabela']),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana'])
   },
 
@@ -332,6 +333,9 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
   'loyalty-redemptions': {
     theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
+  },
+  'wheel-of-fortune': {
+    palette: Object.entries(CARK_PALETLERI).map(([value, p]) => ({ value, label: p.ad }))
   },
   scoreboard: {
     theme: tema(['split', 'Yan yana kartlar'], ['stacked', 'Alt alta liste'], ['minimal', 'Minimal (yalnız yazı)'])

@@ -23,7 +23,7 @@ export function ScoreboardWidget({ previewMode = false }: { embedded?: boolean; 
 
   useEffect(() => {
     if (onizleme) return;
-    const oku = () => fetch('/api/skor-tablosu').then((r) => r.json()).then(setT).catch(() => {});
+    const oku = () => fetch('/api/skor-tablosu').then((r) => r.json()).then((d) => Array.isArray(d?.takimlar) && setT(d)).catch(() => {});
     oku();
     const ws = new KaliciSoket(wsAdresi());
     ws.onyenidenbaglandi = oku;

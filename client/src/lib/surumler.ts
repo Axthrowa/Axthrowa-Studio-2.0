@@ -11,6 +11,22 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.6.0',
+    ad: 'Tek Bot',
+    tarih: '2026-10-28',
+    notlar: [
+      'Widget ayarları penceresinde canlı önizleme: ayar değişince OBS görünümü yanında güncellenir (uyarı kutusunda "Örnek göster")',
+      'Yeni komutlar: !cevir (yapay zekâ ile çeviri), !lurk / !unlurk, !hatirlat 15dk <not>, !emotecount, !chatstats',
+      'Moderatör komutları: !timer ac|kapat, !modul ac|kapat (oyunlar, sarki, yapayzeka, bilgi, market), !nukeusername, !srclear, !skortablo',
+      'Twitch: !marker (yayın işareti) ve !commercial (reklam)',
+      "Yeni widget'lar: Kelime Bulutu (sohbette en çok geçenler) ve Skor Tablosu (2-6 takım, sohbetten güncellenir)",
+      'Kelime bulutu penceresinde sohbet istatistikleri: en çok yazanlar, saatlere göre yoğunluk, popüler kelimeler',
+      'Değişkenler: $(lastfm kullanıcı) son dinlenen şarkı, $(steam kullanıcı oyun|durum|ad) — Entegrasyonlar › Oyun & Müzik Profilleri',
+      'Şans çarkı: 28 renk paleti ve tema (gökkuşağı, tek renk tonları, slot, kart oyunu, neon, matrix, vegas…)',
+      'Sohbet katmanına 12, ankete 11 yeni tema; izleyici sayacına Kadife, Borsa bandı, Holografik, Çevirmeli tabela görünümleri'
+    ]
+  },
+  {
     surum: '1.5.0',
     ad: 'Tema Atölyesi',
     tarih: '2026-10-28',

@@ -5,7 +5,9 @@ import { useEffect, useState } from 'react';
 
 export function SohbetIstatistikPaneli() {
   const [o, setO] = useState<any>(null);
-  const oku = () => fetch('/api/sohbet-istatistik').then((r) => r.json()).then(setO).catch(() => {});
+  // Eski sunucu ya da hata yanıtı paneli bozmasın: yalnız beklenen biçim kabul edilir
+  const kabul = (d: any) => Array.isArray(d?.saatler) && setO(d);
+  const oku = () => fetch('/api/sohbet-istatistik').then((r) => r.json()).then(kabul).catch(() => {});
   useEffect(() => {
     void oku();
     const t = setInterval(oku, 5000);
@@ -19,7 +21,7 @@ export function SohbetIstatistikPaneli() {
         <h4 className="font-bold text-cyan-200">📊 Sohbet istatistikleri (bu oturum)</h4>
         <button
           type="button"
-          onClick={() => void fetch('/api/sohbet-istatistik/sifirla', { method: 'POST' }).then((r) => r.json()).then(setO)}
+          onClick={() => void fetch('/api/sohbet-istatistik/sifirla', { method: 'POST' }).then((r) => r.json()).then(kabul)}
           className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-bold"
         >
           Sıfırla
@@ -58,11 +60,14 @@ interface Tablo {
 export function SkorTablosuPaneli() {
   const [t, setT] = useState<Tablo | null>(null);
   useEffect(() => {
-    fetch('/api/skor-tablosu').then((r) => r.json()).then(setT).catch(() => {});
+    fetch('/api/skor-tablosu').then((r) => r.json()).then((d) => Array.isArray(d?.takimlar) && setT(d)).catch(() => {});
   }, []);
   const kaydet = (yeni: Tablo) => {
     setT(yeni);
-    void fetch('/api/skor-tablosu', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(yeni) }).then((r) => r.json()).then(setT);
+    void fetch('/api/skor-tablosu', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(yeni) })
+      .then((r) => r.json())
+      .then((d) => Array.isArray(d?.takimlar) && setT(d))
+      .catch(() => {});
   };
   if (!t) return null;
   const takim = (i: number, yama: Partial<Tablo['takimlar'][number]>) => kaydet({ ...t, takimlar: t.takimlar.map((x, j) => (j === i ? { ...x, ...yama } : x)) });

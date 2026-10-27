@@ -263,6 +263,8 @@ export const WHEEL_DEFAULTS = {
   cevirmeBeklemeSn: 30,
   /** !cark puan maliyeti (0 = ücretsiz; mod/yayıncı muaf) */
   cevirmeMaliyeti: 0,
+  /** Renk paleti: custom = dilimlerin kendi rengi */
+  palette: 'custom',
   size: 300,
   maxLabel: 14,
   segments: [

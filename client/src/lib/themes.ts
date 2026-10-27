@@ -374,7 +374,41 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
   'wheel-of-fortune': [
     tema('gokkusagi', 'Gökkuşağı', { borderColor: P.beyaz, fontColor: P.beyaz, outlineEnabled: true }, { arka: 'conic-gradient(red,orange,yellow,green,blue,violet,red)', vurgu: P.beyaz, metin: P.beyaz }),
     tema('vegas', 'Vegas', { borderColor: P.amber, fontColor: P.beyaz, pointerColor: P.kirmizi, outlineEnabled: true }, { arka: '#7f1d1d', vurgu: P.amber, metin: P.beyaz }),
-    tema('slot', 'Slot Makinesi', { borderColor: '#334155', fontColor: '#f8fafc', pointerColor: P.amber }, { arka: '#1e293b', vurgu: P.amber, metin: '#f8fafc' })
+    tema('slot', 'Slot Makinesi', { borderColor: '#334155', fontColor: '#f8fafc', pointerColor: P.amber, palette: 'slot' }, { arka: '#1e293b', vurgu: P.amber, metin: '#f8fafc' }),
+    // Her renk paleti bir tema: çerçeve ve ibre palete uyar (palet: WheelWidget CARK_PALETLERI)
+    ...(
+      [
+        ['rainbow', '🌈 Gökkuşağı', '#ffffff', '#ef4444'],
+        ['red', 'Kırmızı', '#fecaca', '#fbbf24'],
+        ['green', 'Yeşil', '#bbf7d0', '#fbbf24'],
+        ['blue', 'Mavi', '#bfdbfe', '#f43f5e'],
+        ['yellow', 'Sarı', '#fef9c3', '#1f2937'],
+        ['cyan', 'Turkuaz', '#a5f3fc', '#f43f5e'],
+        ['magenta', 'Macenta', '#f5d0fe', '#22d3ee'],
+        ['orange', 'Turuncu', '#fed7aa', '#1f2937'],
+        ['purple', 'Mor', '#ddd6fe', '#fbbf24'],
+        ['pink', 'Pembe', '#fbcfe8', '#22d3ee'],
+        ['brown', 'Kahve', '#e7c9a9', '#facc15'],
+        ['white', 'Beyaz', '#94a3b8', '#ef4444'],
+        ['confetti', '🎉 Konfeti', '#ffffff', '#f43f5e'],
+        ['kart', '🃏 Kart Oyunu', '#111827', '#111827'],
+        ['kagit', '✂️ Kâğıt İşi', '#a8a29e', '#ef4444'],
+        ['piksel', '🟩 Piksel Macera', '#1f2937', '#facc15'],
+        ['noir', '🖤 Kara Lüks', '#ca8a04', '#ca8a04'],
+        ['candy', '🍬 Şeker', '#ffffff', '#fb7185'],
+        ['aurora', '🌌 Kutup Işığı', '#a5f3fc', '#f0abfc'],
+        ['slate', 'Arduvaz', '#94a3b8', '#22d3ee'],
+        ['inferno', '🔥 Cehennem', '#facc15', '#facc15'],
+        ['neon', '💡 Neon Işıltı', '#ffffff', '#ff2bd6'],
+        ['carnival', '🎪 Karnaval', '#facc15', '#dc2626'],
+        ['hacker', '💻 Hacker', '#22c55e', '#22c55e'],
+        ['retro8', '👾 Retro 8-bit', '#ffffff', '#ffec27'],
+        ['vegas', '🎰 Vegas', '#facc15', '#facc15'],
+        ['matrix', '🟢 Matrix', '#00ff41', '#00ff41']
+      ] as const
+    ).map(([palet, ad, kenar, ibre]) =>
+      tema(`p-${palet}`, ad, { palette: palet, borderColor: kenar, pointerColor: ibre, outlineEnabled: true, outlineColor: '#000000' }, { arka: palet === 'white' ? '#e2e8f0' : '#1e293b', vurgu: ibre, metin: kenar })
+    )
   ],
   'chat-overlay': [
     tema('baloncuk', 'Baloncuk', { messageBubbles: true, messageBgColor: '#1e293b', messageBgOpacity: 0.9, borderRadius: 22 }, { arka: '#1e293b', vurgu: P.turkuaz, metin: P.beyaz }),
@@ -388,11 +422,33 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     tema('gunbatimi', 'Gün Batımı', { messageBubbles: true, messageBgColor: '#7c2d12', messageBgOpacity: 0.75, borderRadius: 16, textColor: '#fff7ed', highlightColor: P.amber, highlightSpecial: true }, { arka: 'linear-gradient(135deg,#7c2d12,#be185d)', vurgu: P.amber, metin: '#fff7ed' }),
     tema('pastel', 'Pastel', { messageBubbles: true, messageBgColor: '#fce7f3', messageBgOpacity: 0.92, borderRadius: 18, textColor: '#4c1d95', usernameColorMode: 'custom', customUsernameColor: '#be185d', textShadow: false }, { arka: '#fce7f3', vurgu: '#be185d', metin: '#4c1d95' }),
     tema('cam', 'Buzlu Cam', { messageBubbles: true, messageBgColor: P.beyaz, messageBgOpacity: 0.12, borderRadius: 12, textColor: P.beyaz, textShadow: true }, { arka: 'rgba(255,255,255,.12)', vurgu: P.turkuaz, metin: P.beyaz }),
+    tema('aurora', 'Kutup Işığı', { messageBubbles: true, messageBgColor: '#0f172a', messageBgOpacity: 0.7, borderRadius: 14, textColor: '#e0f2fe', highlightColor: '#2dd4bf', highlightSpecial: true, textShadow: true }, { arka: 'linear-gradient(135deg,#0f766e,#6366f1)', vurgu: '#2dd4bf', metin: '#e0f2fe' }),
+    tema('pasta', 'Pasta', { messageBubbles: true, messageBgColor: '#fff1f2', messageBgOpacity: 0.95, borderRadius: 20, textColor: '#831843', usernameColorMode: 'custom', customUsernameColor: '#db2777', textShadow: false }, { arka: '#fff1f2', vurgu: '#db2777', metin: '#831843' }),
+    tema('akis', 'Akış Çizgisi', { messageBubbles: true, messageBgColor: '#000000', messageBgOpacity: 0.6, borderRadius: 2, textColor: P.beyaz, highlightColor: P.turkuaz, highlightSpecial: true, gap: 4 }, { arka: 'rgba(0,0,0,.6)', vurgu: P.turkuaz, metin: P.beyaz }),
+    tema('neonkart', 'Neon Kartlar', { messageBubbles: true, messageBgColor: '#12002b', messageBgOpacity: 0.9, borderRadius: 12, textColor: P.beyaz, highlightColor: '#22d3ee', highlightSpecial: true, textShadow: true }, { arka: '#12002b', vurgu: '#22d3ee', metin: P.beyaz, kenar: '#ff2bd6' }),
+    tema('pikselsohbet', 'Piksel Macera', { messageBubbles: true, messageBgColor: '#1f2937', messageBgOpacity: 0.9, borderRadius: 0, textColor: '#f1f8e9', fontFamily: 'VT323', fontSize: 26, highlightColor: '#7cc242' }, { arka: '#1f2937', vurgu: '#7cc242', metin: '#f1f8e9' }),
+    tema('yuvarlak', 'Yuvarlak', { messageBubbles: true, messageBgColor: '#1e293b', messageBgOpacity: 0.85, borderRadius: 999, textColor: P.beyaz, gap: 8 }, { arka: '#1e293b', vurgu: P.mor, metin: P.beyaz }),
+    tema('gokyuzu', 'Gökyüzü', { messageBubbles: true, messageBgColor: '#e0f2fe', messageBgOpacity: 0.92, borderRadius: 16, textColor: '#0c4a6e', usernameColorMode: 'custom', customUsernameColor: '#0284c7', textShadow: false }, { arka: '#e0f2fe', vurgu: '#0284c7', metin: '#0c4a6e' }),
+    tema('pencerecami', 'Pencere Camı', { messageBubbles: true, messageBgColor: '#ffffff', messageBgOpacity: 0.18, borderRadius: 6, textColor: P.beyaz, textShadow: true }, { arka: 'rgba(255,255,255,.18)', vurgu: P.beyaz, metin: P.beyaz, kenar: 'rgba(255,255,255,.5)' }),
+    tema('mesajlasma', 'Mesajlaşma Uygulaması', { messageBubbles: true, messageBgColor: '#dcf8c6', messageBgOpacity: 0.97, borderRadius: 14, textColor: '#111b21', usernameColorMode: 'custom', customUsernameColor: '#075e54', textShadow: false }, { arka: '#dcf8c6', vurgu: '#075e54', metin: '#111b21' }),
+    tema('retro', 'Retro', { messageBubbles: true, messageBgColor: '#2b1d0e', messageBgOpacity: 0.9, borderRadius: 4, textColor: '#fde68a', fontFamily: 'Special Elite', highlightColor: '#f97316' }, { arka: '#2b1d0e', vurgu: '#f97316', metin: '#fde68a' }),
+    tema('kadife', 'Kadife', { messageBubbles: true, messageBgColor: '#3b0a1f', messageBgOpacity: 0.88, borderRadius: 14, textColor: '#fce7f3', highlightColor: '#e11d48', highlightSpecial: true }, { arka: 'linear-gradient(135deg,#3b0a1f,#7f1d1d)', vurgu: '#e11d48', metin: '#fce7f3' }),
     tema('kickyesili', 'Kick Yeşili', { messageBubbles: true, messageBgColor: '#0f1a0a', messageBgOpacity: 0.88, borderRadius: 8, textColor: P.beyaz, highlightColor: P.kick, highlightSpecial: true }, { arka: '#0f1a0a', vurgu: P.kick, metin: P.beyaz })
   ],
   polls: [
     tema('savas', 'Düello', { barColor: P.kirmizi, barBackground: '#1e40af', showVotes: true }, { arka: '#1e293b', vurgu: P.kirmizi, metin: P.beyaz }),
-    tema('yayin', 'Yayın Bandı', { barColor: P.turkuaz, barBackground: '#0f172a', borderRadius: 4 }, { arka: '#0f172a', vurgu: P.turkuaz, metin: P.beyaz })
+    tema('yayin', 'Yayın Bandı', { barColor: P.turkuaz, barBackground: '#0f172a', borderRadius: 4 }, { arka: '#0f172a', vurgu: P.turkuaz, metin: P.beyaz }),
+    tema('kompakt', 'Kompakt Kapışma', { barColor: '#f97316', barBackground: '#1e3a8a', borderRadius: 6, fontSize: 12, backgroundOpacity: 0.85 }, { arka: '#1e3a8a', vurgu: '#f97316', metin: P.beyaz }),
+    tema('platform', 'Platform Rengi', { barColor: P.kick, barBackground: '#0f1a0a', titleColor: P.kick, borderColor: P.kick }, { arka: '#0f1a0a', vurgu: P.kick, metin: P.beyaz }),
+    tema('baloncuk', 'Baloncuklar', { barColor: '#38bdf8', barBackground: '#0c4a6e', borderRadius: 24, titleColor: '#bae6fd', borderColor: '#38bdf8' }, { arka: '#0c4a6e', vurgu: '#38bdf8', metin: P.beyaz }),
+    tema('beyaz', 'Beyaz', { backgroundColor: '#ffffff', backgroundOpacity: 0.95, fontColor: '#111827', titleColor: '#4f46e5', barColor: '#4f46e5', barBackground: '#e5e7eb', borderColor: '#e5e7eb' }, { arka: '#ffffff', vurgu: '#4f46e5', metin: '#111827' }),
+    tema('pasta', 'Pasta', { backgroundColor: '#fff1f2', backgroundOpacity: 0.95, fontColor: '#831843', titleColor: '#db2777', barColor: '#f472b6', barBackground: '#fce7f3', borderColor: '#f9a8d4', borderRadius: 22 }, { arka: '#fff1f2', vurgu: '#db2777', metin: '#831843' }),
+    tema('hacker', 'Hacker', { backgroundColor: '#000000', fontColor: '#22c55e', titleColor: '#4ade80', barColor: '#16a34a', barBackground: '#052e16', borderColor: '#16a34a', borderRadius: 0, fontFamily: 'VT323', fontSize: 18 }, { arka: '#000000', vurgu: '#22c55e', metin: '#22c55e' }),
+    tema('neon', 'Neon', { backgroundColor: '#0b0420', fontColor: P.beyaz, titleColor: '#ff2bd6', barColor: '#ff2bd6', barBackground: '#1e0b3a', borderColor: '#22d3ee' }, { arka: '#0b0420', vurgu: '#ff2bd6', metin: P.beyaz, kenar: '#22d3ee' }),
+    tema('yuvarlak', 'Yuvarlak', { borderRadius: 28, barColor: P.mor, barBackground: '#1e1b4b', titleColor: '#c4b5fd', borderColor: P.mor }, { arka: '#1e1b4b', vurgu: P.mor, metin: P.beyaz }),
+    tema('isinkilici', 'Işın Kılıcı', { backgroundColor: '#020617', barColor: '#38bdf8', barBackground: '#0f172a', titleColor: '#e0f2fe', borderColor: '#38bdf8', borderRadius: 999, fontFamily: 'Orbitron' }, { arka: '#020617', vurgu: '#38bdf8', metin: '#e0f2fe' }),
+    tema('kapisma', 'Kapışma', { barColor: '#dc2626', barBackground: '#1d4ed8', titleColor: '#fde047', borderColor: '#fde047', fontFamily: 'Russo One' }, { arka: 'linear-gradient(90deg,#dc2626,#1d4ed8)', vurgu: '#fde047', metin: P.beyaz }),
+    tema('minimalanket', 'Minimal', { backgroundOpacity: 0, borderColor: '#ffffff', barColor: '#ffffff', barBackground: '#ffffff33', titleColor: '#ffffff', outlineEnabled: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz })
   ]
 };
 

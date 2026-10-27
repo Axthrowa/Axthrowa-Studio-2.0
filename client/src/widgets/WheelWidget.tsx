@@ -14,6 +14,47 @@ import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { WHEEL_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi } from '../lib/widget-style.js';
 
+/** Çark renk paletleri: "custom" dilimlerin kendi rengini kullanır, diğerleri sırayla döner */
+export const CARK_PALETLERI: Record<string, { ad: string; renkler: string[] }> = {
+  custom: { ad: 'Dilim renkleri (özel)', renkler: [] },
+  rainbow: { ad: 'Gökkuşağı', renkler: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'] },
+  red: { ad: 'Kırmızı tonları', renkler: ['#7f1d1d', '#b91c1c', '#ef4444', '#f87171'] },
+  green: { ad: 'Yeşil tonları', renkler: ['#14532d', '#15803d', '#22c55e', '#86efac'] },
+  blue: { ad: 'Mavi tonları', renkler: ['#1e3a8a', '#1d4ed8', '#3b82f6', '#93c5fd'] },
+  yellow: { ad: 'Sarı tonları', renkler: ['#713f12', '#a16207', '#eab308', '#fde047'] },
+  cyan: { ad: 'Turkuaz tonları', renkler: ['#164e63', '#0e7490', '#06b6d4', '#67e8f9'] },
+  magenta: { ad: 'Macenta tonları', renkler: ['#701a75', '#a21caf', '#d946ef', '#f0abfc'] },
+  orange: { ad: 'Turuncu tonları', renkler: ['#7c2d12', '#c2410c', '#f97316', '#fdba74'] },
+  purple: { ad: 'Mor tonları', renkler: ['#3b0764', '#6d28d9', '#8b5cf6', '#c4b5fd'] },
+  pink: { ad: 'Pembe tonları', renkler: ['#831843', '#be185d', '#ec4899', '#f9a8d4'] },
+  brown: { ad: 'Kahve tonları', renkler: ['#3f2412', '#6b3f1d', '#92582a', '#c08a5b'] },
+  white: { ad: 'Beyaz / gri', renkler: ['#f8fafc', '#e2e8f0', '#cbd5e1', '#f1f5f9'] },
+  slot: { ad: 'Slot makinesi', renkler: ['#b91c1c', '#111827', '#ca8a04', '#111827'] },
+  confetti: { ad: 'Konfeti', renkler: ['#f472b6', '#38bdf8', '#facc15', '#4ade80', '#c084fc', '#fb923c'] },
+  kart: { ad: 'Kart oyunu', renkler: ['#dc2626', '#facc15', '#16a34a', '#2563eb'] },
+  kagit: { ad: 'Kâğıt işi (pastel)', renkler: ['#fde68a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#ddd6fe'] },
+  piksel: { ad: 'Piksel macera', renkler: ['#5b8731', '#8b5a2b', '#3b82f6', '#facc15'] },
+  noir: { ad: 'Kara lüks', renkler: ['#0a0a0a', '#262626', '#a16207', '#404040'] },
+  candy: { ad: 'Şeker', renkler: ['#fb7185', '#f9a8d4', '#a5f3fc', '#fde68a', '#c4b5fd'] },
+  aurora: { ad: 'Kutup ışığı', renkler: ['#0f766e', '#14b8a6', '#6366f1', '#a855f7', '#22d3ee'] },
+  slate: { ad: 'Arduvaz', renkler: ['#1e293b', '#334155', '#475569', '#64748b'] },
+  inferno: { ad: 'Cehennem ateşi', renkler: ['#450a0a', '#b91c1c', '#ea580c', '#facc15'] },
+  neon: { ad: 'Neon ışıltı', renkler: ['#ff2bd6', '#22d3ee', '#a3e635', '#fcee0a'] },
+  carnival: { ad: 'Karnaval', renkler: ['#dc2626', '#fef3c7', '#2563eb', '#fef3c7'] },
+  hacker: { ad: 'Hacker', renkler: ['#022c22', '#14532d', '#22c55e', '#052e16'] },
+  retro8: { ad: 'Retro 8-bit', renkler: ['#ff004d', '#ffa300', '#00e436', '#29adff', '#83769c'] },
+  vegas: { ad: 'Vegas', renkler: ['#7f1d1d', '#ca8a04', '#111827', '#ca8a04'] },
+  matrix: { ad: 'Matrix', renkler: ['#000000', '#003b00', '#008f11', '#00ff41'] }
+};
+
+/** Açık dilimlerde yazı koyu olsun (beyaz/pastel paletler okunur kalsın) */
+export function acikRenkMi(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return false;
+  const n = parseInt(m[1], 16);
+  return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 170;
+}
+
 type Segment = { label: string; color: string; weight?: number };
 
 const R = 92; // çark yarıçapı (viewBox 200x200)
@@ -68,6 +109,8 @@ export function donusFarki(mevcut: number, index: number, dilimSayisi: number, t
 
 export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('wheel-of-fortune', WHEEL_DEFAULTS);
+  const palet = CARK_PALETLERI[String(s.palette || 'custom')]?.renkler || [];
+  const dilimRengi = (i: number, kendi: string) => (palet.length ? palet[i % palet.length] : kendi);
   const { lastMessage } = useWebSocket('all');
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -195,7 +238,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
             const etiket = kisalt(String(seg.label), Number(s.maxLabel) || 14);
             return (
               <g key={i}>
-                <path d={dilimYolu(bas, bit)} fill={seg.color} stroke={s.borderColor} strokeWidth={0.6} />
+                <path d={dilimYolu(bas, bit)} fill={dilimRengi(i, seg.color)} stroke={s.borderColor} strokeWidth={0.6} />
                 <text
                   x={yazi.x}
                   y={yazi.y}
@@ -205,7 +248,8 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
                   style={{
                     fontFamily: s.fontFamily,
                     fontSize: Number(s.fontSize) || 12,
-                    fill: s.fontColor,
+                    // Palet açık renkliyse (beyaz, pastel) yazı koyulaşır; özel renklerde ayar geçerli
+                    fill: palet.length && acikRenkMi(dilimRengi(i, seg.color)) ? '#111827' : s.fontColor,
                     fontWeight: 800,
                     paintOrder: 'stroke',
                     stroke: s.outlineEnabled ? s.outlineColor : 'none',

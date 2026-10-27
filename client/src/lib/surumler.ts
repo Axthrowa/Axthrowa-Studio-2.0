@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.10',
+    ad: 'Kalıcı Bağ',
+    tarih: '2026-10-27',
+    notlar: [
+      'Twitch: yeniden bağlanınca eski bağlantının geç kapanışı yeni bağlantıyı kopmuş göstermez (bot mesajları gitmiyor, bekçi her dakika yeniden bağlıyordu)',
+      "Yayın Yönetim Aracı: kısıtlı yetkili uzak kullanıcı yalnız izinli uçlara erişir; Kick oturum dosyaları yarım yazılmaz (yeni YYA exe'si ister)"
+    ]
+  },
+  {
     surum: '1.4.9',
     ad: 'Denetim',
     tarih: '2026-10-27',

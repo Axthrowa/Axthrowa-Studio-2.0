@@ -39,10 +39,11 @@ export class TwitchPlatform extends BasePlatform {
 
     return new Promise((resolve) => {
       try {
-        this.ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        this.ws = ws;
 
-        this.ws.on('open', () => {
-          if (!this.ws) return;
+        ws.on('open', () => {
+          if (this.ws !== ws) return;
 
           // Request Twitch IRC capabilities (tags for badges, sub info, etc.)
           this.ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
@@ -62,18 +63,20 @@ export class TwitchPlatform extends BasePlatform {
           resolve(true);
         });
 
-        this.ws.on('message', (data: WebSocket.Data) => {
+        ws.on('message', (data: WebSocket.Data) => {
           this.handleIrcMessage(data.toString());
         });
 
-        this.ws.on('close', () => {
+        ws.on('close', () => {
+          // Yeniden bağlanınca eski soketin geç gelen kapanışı yeni bağlantıyı kopmuş göstermesin
+          if (this.ws !== ws) return;
           this.connected = false;
           console.log('[Twitch] Disconnected');
         });
 
-        this.ws.on('error', (err) => {
+        ws.on('error', (err) => {
           console.error('[Twitch] WebSocket error:', err.message);
-          this.connected = false;
+          if (this.ws === ws) this.connected = false;
           resolve(false);
         });
       } catch (err) {

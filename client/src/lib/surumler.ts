@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.5',
+    ad: 'Güncel',
+    tarih: '2026-10-27',
+    notlar: [
+      'Yapay zekâ "Güncel bilgi: internette ara" seçeneği: haber, maç skoru gibi sorularda internette arar (Groq: groq/compound, Gemini: Google Arama)',
+      'Yapay zekâ bugünün tarihini bilir'
+    ]
+  },
+  {
     surum: '1.4.4',
     ad: 'Her Çalarda',
     tarih: '2026-10-27',

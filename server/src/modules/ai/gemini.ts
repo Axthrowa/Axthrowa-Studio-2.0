@@ -26,6 +26,11 @@ async function zamanAsimiyla<T>(is: Promise<T>, ms: number, etiket: string): Pro
 /** Tek bir uretim cagrisi icin ust sinir. */
 const URETIM_ZAMAN_ASIMI = 25000;
 
+/** "Güncel bilgi: internette ara" açık mı (haber, skor; Gemini'de Google Arama, Groq'ta compound) */
+function webAramaAcik(): boolean {
+  return (db.prepare("SELECT value FROM bot_settings WHERE key = 'ai_web_arama'").get() as { value?: string } | undefined)?.value === 'true';
+}
+
 class GeminiCoHost {
   private aiInstance: GoogleGenAI | null = null;
   private currentKey: string = '';
@@ -299,7 +304,12 @@ class GeminiCoHost {
     }
 
     const promptRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_prompt'").get() as { value: string } | undefined;
-    const systemInstruction = promptRow?.value || 'Sen neşeli, esprili ve zeki bir canlı yayın botusun. Cevapların kısa, dinamik ve canlı yayın sohbetine uygun olsun (en fazla 2-3 cümle).';
+    const webArama = webAramaAcik();
+    // Model bugünü bilmez: "bugünkü maç", "son haber" sorularında tarih gerekir
+    const systemInstruction =
+      (promptRow?.value || 'Sen neşeli, esprili ve zeki bir canlı yayın botusun. Cevapların kısa, dinamik ve canlı yayın sohbetine uygun olsun (en fazla 2-3 cümle).') +
+      ` Bugünün tarihi: ${new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })}.` +
+      (webArama ? ' Güncel haber, skor ve sonuç sorularında internette arayıp kısa ve doğru cevap ver; bulamazsan uydurma.' : '');
 
     // Gemini dışında bir sağlayıcı seçildiyse (OpenAI, Claude, Groq…) aynı yönerge ve geçmişle ona sorulur
     const saglayici = seciliSaglayici();
@@ -329,7 +339,8 @@ class GeminiCoHost {
           model,
           contents: [
             { role: 'user', parts: [{ text: `[Yönerge: ${systemInstruction}]\n\n${formattedPrompt}` }] }
-          ]
+          ],
+          ...(webArama ? { config: { tools: [{ googleSearch: {} }] } } : {})
         }),
         URETIM_ZAMAN_ASIMI,
         'Gemini'

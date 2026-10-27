@@ -33,6 +33,7 @@ export function AISettings() {
   const [saglayiciAnahtar, setSaglayiciAnahtar] = useState('');
   const [saglayiciModel, setSaglayiciModel] = useState('');
   const [ozelAdres, setOzelAdres] = useState('');
+  const [webArama, setWebArama] = useState(false);
   const [kayitliAyarlar, setKayitliAyarlar] = useState<Record<string, string>>({});
   const [prompt, setPrompt] = useState('');
   const [enabled, setEnabled] = useState(true);
@@ -84,6 +85,7 @@ export function AISettings() {
         setSaglayiciAnahtar(d[`ai_${s0}_api_key`] || '');
         setSaglayiciModel(d[`ai_${s0}_model`] || '');
         setOzelAdres(d.ai_custom_base_url || '');
+        setWebArama(d.ai_web_arama === 'true');
         setPrompt(yuklenen.prompt);
         setEnabled(yuklenen.enabled);
         geminiTaban(yuklenen);
@@ -112,6 +114,7 @@ export function AISettings() {
           gemini_prompt: prompt,
           gemini_enabled: enabled ? 'true' : 'false',
           ai_provider: saglayici,
+          ai_web_arama: webArama ? 'true' : 'false',
           ...(saglayici !== 'gemini'
             ? { [`ai_${saglayici}_api_key`]: saglayiciAnahtar, [`ai_${saglayici}_model`]: saglayiciModel }
             : {}),
@@ -359,6 +362,15 @@ export function AISettings() {
               </select>
               <p className="text-[11px] text-gray-500 mt-1">Kaydedip "Bağlantıyı sına" ile anahtarı ve modelleri denetleyebilirsin. Bilgi yarışması soru üretimi yalnız Gemini ile çalışır.</p>
             </div>
+
+            <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
+              <input type="checkbox" checked={webArama} onChange={(e) => setWebArama(e.target.checked)} className="mt-0.5 accent-purple-600" />
+              <span className="text-xs text-gray-300">
+                <b className="text-white">Güncel bilgi: internette ara</b> — güncel haber, maç skoru, sonuç gibi sorularda yapay zekâ internette arar.
+                Groq'ta <code>groq/compound</code> modeli (Model kutusu boşsa), Gemini'de Google Arama kullanılır. Cevap birkaç saniye daha uzun sürer;
+                ücretsiz katmanın günlük arama sınırı sağlayıcı panelinde görünür.
+              </span>
+            </label>
 
             {saglayici !== 'gemini' && (() => {
               const p = AI_SAGLAYICILARI.find((x) => x.id === saglayici)!;

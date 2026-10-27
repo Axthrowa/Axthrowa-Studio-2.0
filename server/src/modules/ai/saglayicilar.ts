@@ -60,7 +60,8 @@ export function saglayiciAyari(ad: string) {
     tanim: t,
     kok: kokAdresi(ad),
     anahtar: ayar(`ai_${ad}_api_key`),
-    model: ayar(`ai_${ad}_model`) || t.model
+    // "Güncel bilgi" açıksa Groq'ta internette arayabilen compound modeli (model elle girilmediyse)
+    model: ayar(`ai_${ad}_model`) || (ad === 'groq' && ayar('ai_web_arama') === 'true' ? 'groq/compound' : t.model)
   };
 }
 

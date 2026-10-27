@@ -333,6 +333,9 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
+  scoreboard: {
+    theme: tema(['split', 'Yan yana kartlar'], ['stacked', 'Alt alta liste'], ['minimal', 'Minimal (yalnız yazı)'])
+  },
   subathon: {
     theme: tema(['card', 'Kart'], ['minimal', 'Minimal (yalnız süre)'], ['digital', 'Dijital saat (LCD)'], ['flip', 'Çevirmeli kartlar'], ['neon', 'Neon'], ['pill', 'Tek satır hap']),
     timeFontFamily: FONTS.map(f => ({ value: f, label: f }))
@@ -369,6 +372,8 @@ const PATH_MAP: Record<string, string> = {
   'event-labels': '/widgets/event-labels',
   subathon: '/widgets/subathon',
   'the-cup': '/widgets/the-cup',
+  'word-cloud': '/widgets/word-cloud',
+  scoreboard: '/widgets/scoreboard',
   'viewer-counter': '/widgets/viewer-counter',
   shoutout: '/widgets/shoutout',
   polls: '/widgets/polls',

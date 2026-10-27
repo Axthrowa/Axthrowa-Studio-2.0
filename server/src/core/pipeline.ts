@@ -1,3 +1,4 @@
+import { sohbetIstatistik } from '../modules/community/sohbet-istatistik.js';
 import { eventBus, ChatMessagePayload } from './event-bus.js';
 import { autoMod } from '../modules/automod/automod.js';
 import { commandManager } from '../modules/commands/command-manager.js';
@@ -89,6 +90,9 @@ export class MessagePipeline {
     // Kalkan modu: yalnız abone / link / büyük harf / emoji seli kuralları.
     // Bot yok sayar; OBS sohbetinden ws/server.ts gizler; seçiliyse platformda silinir.
     if (kalkaniUygula(message)) return;
+
+    // Kelime bulutu, !emotecount, !chatstats (botun kendi mesajı sayılmaz)
+    if (!message.user.isSelf) sohbetIstatistik.ekle(message.user.username, message.user.displayName, rawText);
 
     // Notify Chat Rescue of active conversation
     chatRescueService.recordChatMessage();

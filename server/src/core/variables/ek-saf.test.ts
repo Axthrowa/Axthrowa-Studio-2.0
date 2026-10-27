@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { agirlikliSec, havaKoduMetni, havaMetni, ifSonucu, kickAlaniCoz, kickProfilAlani, kosulDegerlendir } from './ek-saf.js';
+import { agirlikliSec, havaKoduMetni, havaMetni, ifSonucu, kickAlaniCoz, kickProfilAlani, kosulDegerlendir, steamAlani } from './ek-saf.js';
 
 describe('$(if)', () => {
   it('metin karşılaştırması Türkçe katlanır', () => {
@@ -75,5 +75,15 @@ describe('$(kick alan)', () => {
     expect(kickProfilAlani(kanal, 'takipci', 'axthrowa')).toBe('24');
     expect(kickProfilAlani(kanal, 'url', 'AxthrowA')).toBe('https://kick.com/axthrowa');
     expect(kickProfilAlani(kanal, 'twitter', 'axthrowa')).toBe('');
+  });
+});
+
+describe('steamAlani', () => {
+  const xml = '<profile><steamID><![CDATA[Gabe]]></steamID><onlineState>in-game</onlineState><gameName><![CDATA[Counter-Strike 2]]></gameName></profile>';
+  it('CDATA ve düz alanları okur, olmayan alan boş', () => {
+    expect(steamAlani(xml, 'steamID')).toBe('Gabe');
+    expect(steamAlani(xml, 'onlineState')).toBe('in-game');
+    expect(steamAlani(xml, 'gameName')).toBe('Counter-Strike 2');
+    expect(steamAlani(xml, 'yok')).toBe('');
   });
 });

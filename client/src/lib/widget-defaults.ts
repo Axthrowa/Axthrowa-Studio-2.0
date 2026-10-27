@@ -397,6 +397,35 @@ export const SUBATHON_DEFAULTS = {
   showStatus: true
 };
 
+/** Kelime bulutu — sohbette en çok geçen sözcükler */
+export const WORD_CLOUD_DEFAULTS = {
+  maxWords: 40,
+  minCount: 2,
+  minSize: 16,
+  maxSize: 72,
+  verticalRatio: 0.2,
+  colors: '#22d3ee,#a78bfa,#f472b6,#fbbf24,#34d399,#ffffff',
+  fontFamily: 'Montserrat',
+  bgColor: '#000000',
+  bgOpacity: 0,
+  radius: 16,
+  textShadow: true,
+  refreshSec: 5
+};
+
+/** Skor tablosu — takım adları/skorlar `!skortablo` ya da panelden */
+export const SCOREBOARD_DEFAULTS = {
+  theme: 'split',
+  showTitle: true,
+  fontFamily: 'Russo One',
+  fontSize: 48,
+  textColor: '#ffffff',
+  accentColor: '#22d3ee',
+  bgColor: '#000000',
+  bgOpacity: 0.75,
+  radius: 16
+};
+
 export const TRIVIA_DEFAULTS = {
   maxWidth: 672,
   radius: 24,
@@ -770,6 +799,8 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   trivia: TRIVIA_DEFAULTS,
   'viewer-counter': VIEWER_COUNTER_DEFAULTS,
   'the-cup': THE_CUP_DEFAULTS,
+  'word-cloud': WORD_CLOUD_DEFAULTS,
+  scoreboard: SCOREBOARD_DEFAULTS,
   'pinned-messages': PINNED_DEFAULTS,
   shoutout: SHOUTOUT_DEFAULTS,
   rankings: RANKINGS_DEFAULTS,

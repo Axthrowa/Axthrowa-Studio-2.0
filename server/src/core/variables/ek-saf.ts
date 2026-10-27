@@ -167,3 +167,13 @@ export function kickProfilAlani(kanal: any, alan: KickProfilAlani, slug: string)
       return String(u[alan] || '').trim();
   }
 }
+
+/** Steam profil XML'inden bir alan: `<gameName><![CDATA[Counter-Strike 2]]></gameName>` ya da düz `<onlineState>in-game</onlineState>` */
+export function steamAlani(xml: string, etiket: string): string {
+  const bas = xml.indexOf(`<${etiket}>`);
+  if (bas < 0) return '';
+  const son = xml.indexOf(`</${etiket}>`, bas);
+  if (son < 0) return '';
+  const ic = xml.slice(bas + etiket.length + 2, son).trim();
+  return (ic.startsWith('<![CDATA[') && ic.endsWith(']]>') ? ic.slice(9, -3) : ic).trim();
+}

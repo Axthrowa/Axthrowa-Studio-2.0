@@ -329,6 +329,16 @@ export class TwitchPlatform extends BasePlatform {
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };
   }
 
+  async isaretKoy(aciklama: string): Promise<ModerasyonSonucu> {
+    const r = await this.helix.isaretKoy(this.currentChannel, aciklama);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  async reklamBaslat(saniye: number): Promise<ModerasyonSonucu> {
+    const r = await this.helix.reklamBaslat(this.currentChannel, saniye);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
   async kategoriDegistir(kategori: string): Promise<ModerasyonSonucu & { kategori?: string }> {
     const k = await this.helix.kategoriBul(kategori);
     if (!k.ok) return { ok: false, hata: k.hata };

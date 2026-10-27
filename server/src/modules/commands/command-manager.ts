@@ -14,6 +14,9 @@ import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
 import { giveaway } from '../giveaways/giveaways.js';
 import { anketBaslat, anketBitir, anketKomutuCoz, anketSonucMetni } from '../engagement/anket.js';
+import { sohbetIstatistik } from '../community/sohbet-istatistik.js';
+import { hatirlatmaKur, kisaSure, lurkBasla, lurkBitir, skorKomutu, skorMetni, skorOku, skorYaz, sureCoz } from '../community/sohbet-araclari.js';
+import { kelimeKuraliDerle, kelimeEslesmesi } from '../automod/kelime-kurali.js';
 import { geminiCoHost } from '../ai/gemini.js';
 import { gamesEngine } from '../games/games.js';
 import { triviaEngine } from '../games/trivia-engine.js';
@@ -81,6 +84,15 @@ function parseTriviaCategory(raw: string): string {
 /** Eski varsayılan `!clip` yanıtı — klip alınmadığı hâlde "alındı" diyordu. */
 const ESKI_KLIP_MESAJI = 'Klip alındı — yayıncı panosundan paylaşılabilir.';
 const KLIP_MESAJI = '📌 @{user} klip anını işaretledi ({zaman}) — yayıncı panelden görecek.';
+
+/** `!modul kapat <ad>`: bu adlardaki yerleşik komutlar yanıt vermez */
+export const MODULLER: Record<string, string[]> = {
+  oyunlar: ['slot', 'slots', 'rulet', 'roulette', 'duello', 'duel', 'soygun', 'heist', 'yaris', 'race', 'drag', 'balik', 'avla', 'fish', 'kasaac', 'kasa', 'case', 'bomba', 'c4', 'kes', 'cut', 'yazitura', 'cf', 'coinflip', 'zar', 'dice', 'kral', 'taht', 'king', 'tahtikap', 'claimthrone', 'claimking', 'cark', 'wheel'],
+  sarki: ['sr', 'songrequest', 'sarkiiste'],
+  yapayzeka: ['sor', 'ask', 'ai', 'cevir', 'translate', 'tr'],
+  bilgi: ['soru', 'trivia', 'bilgi', 'bilgiyarismasi', 'yarisma', 'kelime', 'anagram'],
+  market: ['market', 'magaza', 'store', 'shop', 'al', 'buy', 'redeem']
+};
 
 export class CommandManager {
   private userCooldowns: Map<string, CooldownEntry> = new Map();
@@ -281,6 +293,8 @@ export class CommandManager {
     } catch (e) {
       seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
     }
+    const modul = Object.entries(MODULLER).find(([, adlar]) => adlar.includes(name))?.[0];
+    if (modul && settingsCache.getBoolean(`modul_kapali_${modul}`, false)) return null;
 
     switch (name) {
       case 'puan':
@@ -429,6 +443,173 @@ export class CommandManager {
         if (!message.user.isMod && !message.user.isBroadcaster) return null;
         const sonuc = await anketBitir();
         return sonuc ? anketSonucMetni(sonuc) : `@${message.user.displayName}, açık anket yok.`;
+      }
+
+      // ── Sohbet araçları ──────────────────────────────────────────────────
+      case 'cevir':
+      case 'translate':
+      case 'tr': {
+        const metin = args.join(' ').trim().slice(0, 400);
+        if (!metin) return 'Kullanım: !cevir <metin> (Türkçeyse İngilizceye, değilse Türkçeye çevrilir) · !cevir de <metin> (istenen dile)';
+        const dil = /^[a-z]{2}$/i.test(args[0] || '') && args.length > 1 ? args[0].toLowerCase() : '';
+        const kaynak = dil ? args.slice(1).join(' ') : metin;
+        const istem = dil
+          ? `Aşağıdaki metni "${dil}" dil koduna karşılık gelen dile çevir. Yalnız çeviriyi yaz, açıklama ekleme.\n\n${kaynak}`
+          : `Aşağıdaki metin Türkçeyse İngilizceye, değilse Türkçeye çevir. Yalnız çeviriyi yaz, açıklama ekleme.\n\n${kaynak}`;
+        try {
+          const c = await geminiCoHost.yardimciUret(istem, 20_000, 'çeviri');
+          if (!c) return `@${message.user.displayName}, çeviri için Yapay Zekâ sayfasından bir sağlayıcı bağlanmalı.`;
+          return `🌐 ${c.replace(/\s+/g, ' ').slice(0, 450)}`;
+        } catch (e: any) {
+          return `@${message.user.displayName}, çeviri yapılamadı: ${String(e?.message || e).slice(0, 120)}`;
+        }
+      }
+
+      case 'lurk':
+        lurkBasla(message.user.username);
+        return `👀 ${message.user.displayName} arka planda izlemeye geçti. İyi seyirler!`;
+
+      case 'unlurk': {
+        const sn = lurkBitir(message.user.username);
+        return sn === null ? `👋 Hoş geldin ${message.user.displayName}!` : `👋 ${message.user.displayName} geri döndü (${kisaSure(sn)} arka plandaydı).`;
+      }
+
+      case 'hatirlat':
+      case 'remindme': {
+        const sn = sureCoz(args[0] || '');
+        const not = args.slice(1).join(' ').trim().slice(0, 200);
+        if (!sn || !not) return 'Kullanım: !hatirlat <süre> <not> (örn: !hatirlat 15dk su iç · !hatirlat 1sa30dk mola)';
+        const dn = message.user.displayName;
+        const hata = hatirlatmaKur(message.user.username, sn, () =>
+          eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: `⏰ @${dn} hatırlatma: ${not}` })
+        );
+        return hata ? `@${dn}, ${hata}.` : `⏰ @${dn}, ${kisaSure(sn)} sonra hatırlatacağım.`;
+      }
+
+      case 'timer':
+      case 'zamanlayici': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const islem = trKatla(args[0] || '');
+        const ad = args.slice(1).join(' ').trim();
+        const liste = db.prepare('SELECT name, is_enabled FROM timers ORDER BY name').all() as Array<{ name: string; is_enabled: number }>;
+        if (!['ac', 'kapat', 'on', 'off'].includes(islem) || !ad) {
+          if (!liste.length) return 'Hiç zamanlayıcı yok (Zamanlayıcılar sayfasından ekle).';
+          return '⏱️ Zamanlayıcılar: ' + liste.map((t) => `${t.name} ${t.is_enabled ? '✅' : '⛔'}`).join(' · ') + ' — !timer ac|kapat <ad>';
+        }
+        const hedef = liste.find((t) => trKatla(t.name) === trKatla(ad)) || liste.find((t) => trKatla(t.name).startsWith(trKatla(ad)));
+        if (!hedef) return `@${message.user.displayName}, "${ad}" adlı zamanlayıcı yok.`;
+        const acik = islem === 'ac' || islem === 'on';
+        db.prepare('UPDATE timers SET is_enabled = ? WHERE name = ?').run(acik ? 1 : 0, hedef.name);
+        const { timerManager } = await import('../timers/timers.js');
+        timerManager.reload();
+        return `⏱️ "${hedef.name}" zamanlayıcısı ${acik ? 'açıldı' : 'kapatıldı'}.`;
+      }
+
+      case 'modul':
+      case 'module': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const islem = trKatla(args[0] || '');
+        const ad = trKatla(args[1] || '');
+        const durum = () => Object.keys(MODULLER).map((m) => `${m} ${settingsCache.getBoolean(`modul_kapali_${m}`, false) ? '⛔' : '✅'}`).join(' · ');
+        if (!['ac', 'kapat', 'on', 'off'].includes(islem) || !(ad in MODULLER)) return `🧩 Modüller: ${durum()} — !modul ac|kapat <ad>`;
+        const kapali = islem === 'kapat' || islem === 'off';
+        settingsCache.set(`modul_kapali_${ad}`, kapali ? 'true' : 'false');
+        return `🧩 "${ad}" modülü ${kapali ? 'kapatıldı (komutları yanıt vermez)' : 'açıldı'}.`;
+      }
+
+      case 'nukeusername':
+      case 'adnuke': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const kalip = (args[0] || '').trim();
+        const ceza = (args[1] || '').toLowerCase();
+        const kural = kalip ? kelimeKuraliDerle(kalip) : null;
+        if (!kural) return 'Kullanım: !nukeusername <ad | bot* | ~/regex/> [saniye | ban] — son 10 dakikada yazanlardan adı uyanlara uygulanır.';
+        const simdi = Date.now();
+        const adaylar = new Map<string, boolean>();
+        for (const m of sonMesajlar.tumu()) {
+          if (m.platform !== message.platform || simdi - m.zaman > 10 * 60_000) continue;
+          if (kelimeEslesmesi([kural], m.kullanici)) adaylar.set(m.kullanici, (adaylar.get(m.kullanici) ?? false) || m.muaf);
+        }
+        const hedefler = [...adaylar].filter(([, muaf]) => !muaf).map(([k]) => k).slice(0, 25);
+        if (!hedefler.length) return `🧹 Son 10 dakikada adı "${kalip}" ile eşleşen kimse yazmamış.`;
+        const { platformManager } = await import('../../platforms/manager.js');
+        const p: any = platformManager.getPlatform(message.platform);
+        const ban = ceza === 'ban';
+        const sure = ban ? 0 : Math.min(1_209_600, Math.max(1, Number(ceza) || 600));
+        if (typeof (ban ? p?.banUser : p?.timeoutUser) !== 'function') return `@${message.user.displayName}, ${message.platform} bunu desteklemiyor.`;
+        let tamam = 0;
+        let hata = '';
+        for (const k of hedefler) {
+          const r = ban ? await p.banUser(k, `!nukeusername: ${kalip}`) : await p.timeoutUser(k, sure, `!nukeusername: ${kalip}`);
+          if (r?.ok) tamam++;
+          else hata = r?.hata || hata;
+        }
+        return `🧹 !nukeusername: ${tamam} hesap ${ban ? 'banlandı' : `${sureyiYaz(sure)} susturuldu`}.${hata ? ` (bazıları uygulanamadı: ${hata})` : ''}`;
+      }
+
+      case 'srclear':
+      case 'sirabosalt': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const calan = songRequest.getCurrentSong();
+        const r = db.prepare('DELETE FROM song_queue WHERE is_played = 0 AND id != ?').run(calan?.id ?? '');
+        return `🎵 Şarkı sırası temizlendi (${Number(r.changes) || 0} istek silindi${calan ? '; çalan şarkı sürüyor' : ''}).`;
+      }
+
+      case 'emotecount':
+      case 'kackez': {
+        const s = (args[0] || '').trim();
+        if (!s) return 'Kullanım: !emotecount <emote ya da kelime>';
+        return `📈 "${s}" bu oturumda ${sohbetIstatistik.say(s)} mesajda geçti.`;
+      }
+
+      case 'chatstats':
+      case 'sohbetistatistik': {
+        if (trKatla(args[0] || '') === 'sifirla' && (message.user.isMod || message.user.isBroadcaster)) {
+          sohbetIstatistik.sifirla();
+          return '📊 Sohbet istatistikleri sıfırlandı.';
+        }
+        const o = sohbetIstatistik.ozet();
+        if (!o.mesajSayisi) return '📊 Bu oturumda henüz mesaj sayılmadı.';
+        const top = o.enCokYazanlar.slice(0, 3).map((k, i) => `${i + 1}. ${k.ad} (${k.sayi})`).join(' ');
+        const kelime = o.bulut.slice(0, 3).map((b) => b.sozcuk).join(', ');
+        return `📊 ${o.mesajSayisi} mesaj, ${o.kisiSayisi} kişi · En çok yazanlar: ${top}${kelime ? ` · Popüler: ${kelime}` : ''}`;
+      }
+
+      case 'skortablo':
+      case 'takimskor': {
+        const t = skorOku();
+        const yetkili = message.user.isMod || message.user.isBroadcaster;
+        if (!args.length || !yetkili) return skorMetni(t);
+        let yeni: typeof t | null;
+        if (trKatla(args[0]) === 'sifirla') yeni = { ...t, takimlar: t.takimlar.map((x) => ({ ...x, skor: 0 })) };
+        else if (trKatla(args[0]) === 'ad' && args[1] && args[2]) {
+          const i = Number(args[1]) - 1;
+          yeni = i >= 0 && i < t.takimlar.length ? { ...t, takimlar: t.takimlar.map((x, j) => (j === i ? { ...x, ad: args.slice(2).join(' ') } : x)) } : null;
+        } else yeni = skorKomutu(t, args[0], args[1] || '+1');
+        if (!yeni) return 'Kullanım: !skortablo <takım no|adı> [+N|-N|=N] · !skortablo ad <no> <yeni ad> · !skortablo sifirla';
+        const kayit = skorYaz(yeni);
+        const { wsHub } = await import('../../ws/server.js');
+        wsHub.broadcastTo(['all'], { type: 'skor_tablosu', data: kayit });
+        return skorMetni(kayit);
+      }
+
+      case 'marker':
+      case 'isaret': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        if (message.platform !== 'twitch') return 'İşaret (marker) yalnız Twitch\'te var.';
+        const { platformManager } = await import('../../platforms/manager.js');
+        const r = await (platformManager.getPlatform('twitch') as any)?.isaretKoy?.(args.join(' ') || `${message.user.displayName} işareti`);
+        return r?.ok ? '📍 Yayına işaret kondu.' : `İşaret konamadı: ${r?.hata || 'Twitch bağlı değil'}`;
+      }
+
+      case 'commercial':
+      case 'reklam': {
+        if (!message.user.isBroadcaster && !message.user.isMod) return null;
+        if (message.platform !== 'twitch') return 'Reklam komutu yalnız Twitch\'te var.';
+        const sn = Number(args[0]) || 30;
+        const { platformManager } = await import('../../platforms/manager.js');
+        const r = await (platformManager.getPlatform('twitch') as any)?.reklamBaslat?.(sn);
+        return r?.ok ? `📺 ${Math.min(180, Math.max(30, Math.round(sn / 30) * 30))} sn reklam başladı. Birazdan dönüyoruz!` : `Reklam başlatılamadı: ${r?.hata || 'Twitch bağlı değil'}`;
       }
 
       case 'oy':

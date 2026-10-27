@@ -34,7 +34,7 @@ const SEKMELER: Array<{ id: Sekme; etiket: string }> = [
   { id: 'discord', etiket: 'Discord Duyuruları' },
   { id: 'nightbot', etiket: "Nightbot'tan İçe Aktar" },
   { id: 'yedek', etiket: 'Uyarı Yedeği' },
-  { id: 'lol', etiket: 'League of Legends' }
+  { id: 'lol', etiket: 'Oyun & Müzik Profilleri' }
 ];
 
 const LOL_BOLGELERI: Array<{ value: string; label: string }> = [
@@ -513,6 +513,60 @@ function YedekPaneli() {
   );
 }
 
+// ------------------------------------------------------ Last.fm / Steam ---
+
+/** `$(lastfm kullanıcı)` için Last.fm API anahtarı; `$(steam ...)` anahtarsız (herkese açık profil) */
+function ProfilPaneli() {
+  const toast = useToast();
+  const [kayitli, setKayitli] = useState('');
+  const [anahtar, setAnahtar] = useState('');
+  const [sablon, setSablon] = useState('$(steam gabelogannewell oyun)');
+  const [sonuc, setSonuc] = useState('');
+
+  useEffect(() => {
+    al<Record<string, string>>('/api/settings').then((a) => setKayitli(String(a?.lastfm_api_key || ''))).catch(() => {});
+  }, []);
+
+  const kaydet = async () => {
+    if (!anahtar.trim()) return;
+    try {
+      await yolla('/api/settings', { lastfm_api_key: anahtar.trim() });
+      setAnahtar('');
+      setKayitli('••••');
+      toast('Last.fm anahtarı kaydedildi.', 'basari');
+    } catch (e: any) {
+      toast(String(e.message), 'hata');
+    }
+  };
+
+  const dene = async () => {
+    try {
+      const r = await yolla<any>('/api/variables/preview', { template: sablon });
+      setSonuc(String(r?.sonuc ?? r?.result ?? r?.output ?? JSON.stringify(r)));
+    } catch (e: any) {
+      setSonuc(String(e.message));
+    }
+  };
+
+  return (
+    <Kart baslik="Last.fm ve Steam" aciklama="Komutlarda $(lastfm kullanıcı) son dinlenen şarkıyı, $(steam kullanıcı oyun|durum|ad) Steam profilini yazar.">
+      <div className="space-y-4">
+        <Alan etiket="Last.fm API anahtarı" ipucu={kayitli ? 'Kayıtlı. Değiştirmek için yenisini yazın.' : 'last.fm/api/account/create üzerinden ücretsiz alınır. Steam için anahtar gerekmez (profil herkese açık olmalı).'}>
+          <Girdi type="password" autoComplete="off" value={anahtar} onChange={(e) => setAnahtar(e.target.value)} placeholder={kayitli ? 'Kayıtlı anahtar korunuyor' : 'Last.fm API key'} />
+        </Alan>
+        <Buton onClick={() => void kaydet()} ikon={<Save className="w-4 h-4" />}>Kaydet</Buton>
+        <Alan etiket="Dene" ipucu="Örnek: $(lastfm kullaniciadi) · $(steam kullaniciadi durum)">
+          <div className="flex gap-2">
+            <Girdi value={sablon} onChange={(e) => setSablon(e.target.value)} />
+            <Buton ton="ikincil" onClick={() => void dene()} ikon={<Play className="w-4 h-4" />}>Dene</Buton>
+          </div>
+        </Alan>
+        {sonuc && <p className="text-xs text-gray-200 bg-black/30 rounded-lg px-3 py-2">{sonuc}</p>}
+      </div>
+    </Kart>
+  );
+}
+
 // ------------------------------------------------------- League of Legends ---
 
 /**
@@ -653,7 +707,12 @@ export function Integrations() {
       {sekme === 'discord' && <DiscordPaneli />}
       {sekme === 'nightbot' && <NightbotPaneli />}
       {sekme === 'yedek' && <YedekPaneli />}
-      {sekme === 'lol' && <LolPaneli />}
+      {sekme === 'lol' && (
+        <div className="space-y-4">
+          <LolPaneli />
+          <ProfilPaneli />
+        </div>
+      )}
     </div>
   );
 }

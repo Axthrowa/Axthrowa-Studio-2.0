@@ -40,6 +40,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
+import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
+import { SohbetIstatistikPaneli, SkorTablosuPaneli } from '../components/SohbetAraclariPaneli.js';
 import { GALERI_KATMANI, KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
 import { enBuyukBoyut, hizala, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
@@ -197,6 +199,14 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   'subscriber-goal': {
     baslik: 'Abone Hedefi',
     aciklama: 'Abone hedefi belirleyin; izleyiciler hedefe ulaşmanıza yardım etsin.'
+  },
+  'word-cloud': {
+    baslik: 'Kelime Bulutu',
+    aciklama: 'Sohbette en çok konuşulanlar, sıklığa göre büyüyen sözcüklerle OBS’te.'
+  },
+  scoreboard: {
+    baslik: 'Skor Tablosu',
+    aciklama: 'İki ya da daha çok takımın skoru; moderatörler sohbetten günceller.'
   },
   'the-cup': {
     baslik: 'Bağış Kupası',
@@ -903,6 +913,18 @@ export function OverlayStudio() {
       category: 'Engagement',
       icon: Wine,
       url: `${baseUrl}/widgets/the-cup`
+    },
+    {
+      id: 'word-cloud',
+      category: 'Engagement',
+      icon: Cloud,
+      url: `${baseUrl}/widgets/word-cloud`
+    },
+    {
+      id: 'scoreboard',
+      category: 'Engagement',
+      icon: Trophy,
+      url: `${baseUrl}/widgets/scoreboard`
     },
     {
       id: 'tts',
@@ -1679,7 +1701,7 @@ export function OverlayStudio() {
                 if (e.target === e.currentTarget) setSelectedWidgetModal(null);
               }}
             >
-              <div className="bg-[#14161f] border border-white/15 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl animate-fadeIn max-h-[90vh] overflow-y-auto">
+              <div className="bg-[#14161f] border border-white/15 rounded-2xl max-w-6xl w-full p-6 space-y-5 shadow-2xl animate-fadeIn max-h-[92vh] overflow-y-auto">
                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
@@ -1725,7 +1747,13 @@ export function OverlayStudio() {
                     </a>
                   </div>
                 ) : (
-                  <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
+                  // Ayarlar solda, önizleme sağda (kaydırırken görünür kalır)
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                    <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
+                    <div className="lg:sticky lg:top-0">
+                      <WidgetOnizleme url={selectedWidgetModal.url} testTuru={selectedWidgetModal.id === 'alert-box' ? 'follow' : undefined} />
+                    </div>
+                  </div>
                 )}
 
                 {/* Standalone OBS URL Box */}
@@ -1772,7 +1800,9 @@ export function OverlayStudio() {
                   )}
 
                   {/* Dynamic controls according to widget */}
-                  {selectedWidgetModal.id === 'the-cup' && (
+                  {selectedWidgetModal.id === 'word-cloud' && <SohbetIstatistikPaneli />}
+                {selectedWidgetModal.id === 'scoreboard' && <SkorTablosuPaneli />}
+                {selectedWidgetModal.id === 'the-cup' && (
                     <div className="flex flex-wrap items-center gap-2">
                       <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'coin', count: 3 })} className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold">
                         🪙 3 bağış

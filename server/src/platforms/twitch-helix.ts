@@ -232,4 +232,18 @@ export class TwitchHelix {
     if (deg.kategoriId) govde.game_id = deg.kategoriId;
     return this.istek('PATCH', `/channels?broadcaster_id=${yayinci.veri}`, govde, 'channel:manage:broadcast');
   }
+
+  /** Yayın işareti (`!marker`): yayın açıkken VOD'a not düşer. Jeton yayıncının ya da editörün olmalı. */
+  async isaretKoy(kanal: string, aciklama: string): Promise<HelixSonuc> {
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    return this.istek('POST', '/streams/markers', { user_id: yayinci.veri, description: aciklama.slice(0, 140) }, 'channel:manage:broadcast');
+  }
+
+  /** Reklam (`!commercial`): 30-180 sn. Twitch yalnız yayıncının jetonuyla ve yayın açıkken başlatır. */
+  async reklamBaslat(kanal: string, saniye: number): Promise<HelixSonuc> {
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    return this.istek('POST', '/channels/commercial', { broadcaster_id: yayinci.veri, length: Math.min(180, Math.max(30, Math.round(saniye / 30) * 30)) }, 'channel:edit:commercial');
+  }
 }

@@ -17,7 +17,7 @@ const AI_SAGLAYICILARI: Array<{ id: string; ad: string; model: string; ornek?: s
   { id: 'gemini', ad: 'Google Gemini', model: '' },
   { id: 'openai', ad: 'OpenAI (ChatGPT)', model: 'gpt-4o-mini', ornek: 'sk-...', adres: 'https://platform.openai.com/api-keys' },
   { id: 'anthropic', ad: 'Anthropic Claude', model: 'claude-haiku-5-5', ornek: 'sk-ant-...', adres: 'https://console.anthropic.com/settings/keys' },
-  { id: 'groq', ad: 'Groq', model: 'llama-3.3-70b-versatile', ornek: 'gsk_...', adres: 'https://console.groq.com/keys' },
+  { id: 'groq', ad: 'Groq (ücretsiz katman)', model: 'openai/gpt-oss-120b', ornek: 'gsk_...', adres: 'https://console.groq.com/keys' },
   { id: 'openrouter', ad: 'OpenRouter', model: 'openrouter/auto', ornek: 'sk-or-...', adres: 'https://openrouter.ai/keys' },
   { id: 'deepseek', ad: 'DeepSeek', model: 'deepseek-chat', ornek: 'sk-...', adres: 'https://platform.deepseek.com/api_keys' },
   { id: 'mistral', ad: 'Mistral', model: 'mistral-small-latest', adres: 'https://console.mistral.ai/api-keys' },

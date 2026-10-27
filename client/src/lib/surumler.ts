@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.3',
+    ad: 'Ücretsiz Zekâ',
+    tarih: '2026-10-27',
+    notlar: [
+      "Groq varsayılan modeli openai/gpt-oss-120b (eski llama-3.3-70b-versatile 16 Ağustos 2026'da kapatıldı)",
+      'OpenAI uyumlu sağlayıcılarda yanıt sınırı 1024 jeton (düşünen modeller boş cevap vermesin)'
+    ]
+  },
+  {
     surum: '1.4.2',
     ad: 'Sağlam Sıra',
     tarih: '2026-10-27',

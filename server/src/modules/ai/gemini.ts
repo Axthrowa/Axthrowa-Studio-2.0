@@ -26,7 +26,7 @@ async function zamanAsimiyla<T>(is: Promise<T>, ms: number, etiket: string): Pro
 /** Tek bir uretim cagrisi icin ust sinir. */
 const URETIM_ZAMAN_ASIMI = 25000;
 
-/** "Güncel bilgi: internette ara" açık mı (haber, skor; Gemini'de Google Arama, Groq'ta compound) */
+/** "Güncel bilgi: internette ara" açık mı (haber, skor; Gemini'de Google Arama, Groq'ta gpt-oss browser_search) */
 function webAramaAcik(): boolean {
   return (db.prepare("SELECT value FROM bot_settings WHERE key = 'ai_web_arama'").get() as { value?: string } | undefined)?.value === 'true';
 }

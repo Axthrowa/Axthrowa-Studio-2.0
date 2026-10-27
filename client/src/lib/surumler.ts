@@ -11,6 +11,22 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.5.0',
+    ad: 'Tema Atölyesi',
+    tarih: '2026-10-28',
+    notlar: [
+      'Hedef çubuğu: 25 oyun/film/mevsim teması (Cadılar Bayramı, Retro Arcade, Siberpunk, Fantastik RPG, Uzay, Korku…); renk geçişli/çizgili/parlak dolgu, çerçeve, dolgu ucunda simge',
+      'Hedef çubuğu yazıları okunur: koyu gölge, binlik ayırıcı (46.700 / 50.000)',
+      'Subathon sayacı: 6 görünüm (kart, minimal, dijital saat, çevirmeli kartlar, neon, tek satır) ve 18 tema',
+      'Uyarı kutusu ayarlarında her olay (takip, abone, hediye abone, bağış, raid, KICKs, host) için ayrı GIF ve ses',
+      'Sohbetten anket: !anketac [süre] Soru | A | B (yayıncı ve moderatörler) · !anketbitir; süre dolunca sonuç sohbete yazılır',
+      'Sohbetten çekiliş: !cekilis [dk] [ödül] · !cekilisbitir (kazananı çeker) · !cekilisiptal (yayıncı ve moderatörler)',
+      'Bağış kupası: simgeler kupaya homojen dolar (bir yerde kule, yanında boşluk kalmaz)',
+      'Widget ayarları penceresi boşluğa tıklayınca ya da Esc ile kapanır',
+      "Yapay zekâ: Groq'ta \"güncel bilgi\" kaldırılan groq/compound yerine gpt-oss internet aramasıyla çalışır (\"model bulunamadı\" hatası)"
+    ]
+  },
+  {
     surum: '1.4.11',
     ad: 'Dengeli Masa',
     tarih: '2026-10-27',

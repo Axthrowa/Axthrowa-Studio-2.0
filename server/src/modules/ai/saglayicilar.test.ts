@@ -7,7 +7,7 @@ vi.mock('../../db/index.js', () => ({
   db: { prepare: () => ({ get: (k: string) => (k in ayarlar ? { value: ayarlar[k] } : undefined) }) }
 }));
 
-import { metinUret, saglayiciAyari, saglayiciDurumu, seciliSaglayici } from './saglayicilar.js';
+import { groqAramaAraci, metinUret, saglayiciAyari, saglayiciDurumu, seciliSaglayici } from './saglayicilar.js';
 
 // Sahte OpenAI uyumlu sunucu
 let sunucu: http.Server;
@@ -58,10 +58,13 @@ describe('AI sağlayıcıları', () => {
     ayarlar.ai_custom_api_key = 'test-anahtar';
   });
 
-  it('Güncel bilgi açıkken Groq internette arayan modeli kullanır (elle model girilmediyse)', () => {
-    expect(saglayiciAyari('groq').model).toBe('openai/gpt-oss-120b');
+  it('Güncel bilgi açıkken Groq gpt-oss yerleşik aramasını ister (kaldırılan groq/compound değil)', () => {
+    expect(groqAramaAraci('groq', 'openai/gpt-oss-120b')).toEqual({});
     ayarlar.ai_web_arama = 'true';
-    expect(saglayiciAyari('groq').model).toBe('groq/compound');
+    expect(saglayiciAyari('groq').model).toBe('openai/gpt-oss-120b');
+    expect(groqAramaAraci('groq', 'openai/gpt-oss-120b')).toEqual({ tools: [{ type: 'browser_search' }] });
+    expect(groqAramaAraci('groq', 'benim-modelim')).toEqual({});
+    expect(groqAramaAraci('openai', 'openai/gpt-oss-120b')).toEqual({});
     ayarlar.ai_groq_model = 'benim-modelim';
     expect(saglayiciAyari('groq').model).toBe('benim-modelim');
     delete ayarlar.ai_web_arama;

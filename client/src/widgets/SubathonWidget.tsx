@@ -133,72 +133,128 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
   if (!durum.aktif && s.hideWhenIdle) return null;
 
   const a = durum.ayar;
+  const tema = String(s.theme || 'card');
+  const vurgu = s.accentColor;
+  const metinRengi = s.textColor || '#ffffff';
+  const sure = sureYaz(kalan);
+  const sureBoy = Math.max(16, Number(s.timeFontSize) || 56) * (embedded ? 0.7 : 1);
+  const golge = '0 3px 6px rgba(0,0,0,.95), 0 0 14px rgba(0,0,0,.6)';
+
+  // Süre gösterimi temaya göre: düz yazı, LCD hücreleri ya da çevirmeli kartlar
+  const sureGosterimi =
+    tema === 'flip' || tema === 'digital' ? (
+      <div className="flex items-center gap-1 my-1" style={{ fontFamily: s.timeFontFamily }}>
+        {sure.split('').map((c, i) =>
+          c === ':' ? (
+            <span key={i} style={{ fontSize: sureBoy * 0.8, color: vurgu, fontWeight: 900, textShadow: golge }}>:</span>
+          ) : (
+            <span
+              key={i}
+              className="relative inline-flex items-center justify-center font-black"
+              style={
+                tema === 'flip'
+                  ? {
+                      width: sureBoy * 0.72,
+                      height: sureBoy * 1.15,
+                      fontSize: sureBoy,
+                      borderRadius: 8,
+                      color: metinRengi,
+                      background: `linear-gradient(180deg, ${rgba(s.bgColor, 1)} 0 49%, ${rgba('#000000', 1)} 49% 51%, ${rgba(s.bgColor, 0.85)} 51%)`,
+                      boxShadow: `0 4px 10px rgba(0,0,0,.6), inset 0 0 0 1px ${rgba(vurgu, 0.5)}`
+                    }
+                  : {
+                      width: sureBoy * 0.66,
+                      height: sureBoy * 1.1,
+                      fontSize: sureBoy,
+                      borderRadius: 4,
+                      color: vurgu,
+                      background: rgba('#000000', 0.75),
+                      textShadow: `0 0 10px ${vurgu}, 0 0 22px ${rgba(vurgu, 0.6)}`,
+                      boxShadow: `inset 0 0 12px ${rgba(vurgu, 0.18)}`
+                    }
+              }
+            >
+              {c}
+            </span>
+          )
+        )}
+      </div>
+    ) : (
+      <div
+        className="font-black tracking-tight my-1"
+        style={{
+          fontFamily: s.timeFontFamily,
+          fontSize: sureBoy,
+          lineHeight: 1.05,
+          color: metinRengi,
+          textShadow: tema === 'neon' ? `0 0 8px ${vurgu}, 0 0 22px ${vurgu}, 0 0 42px ${rgba(vurgu, 0.7)}` : golge
+        }}
+      >
+        {sure}
+      </div>
+    );
+
+  const durumSatiri = s.showStatus !== false && (
+    <div className="flex items-center gap-2 mb-1">
+      <span className={`w-2.5 h-2.5 rounded-full ${durum.aktif ? 'animate-ping' : ''}`} style={{ background: durum.aktif ? '#34d399' : '#6b7280' }} />
+      <h2 className="font-black uppercase tracking-widest" style={{ color: vurgu, fontFamily: s.fontFamily, fontSize: 12, textShadow: golge }}>
+        {s.icon ? `${s.icon} ` : ''}
+        {s.title} {durum.aktif ? 'CANLI SAYAÇ' : 'DURAKLADI'}
+      </h2>
+    </div>
+  );
+
+  // Kurallar sunucudaki AYARDAN okunur; widget'ın kendi kopyası yok.
+  const kurallar = s.showRules !== false && (
+    <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold" style={{ color: rgba(metinRengi, 0.8), textShadow: golge }}>
+      <span>Abone: <strong style={{ color: vurgu }}>+{a.aboneDakika} dk</strong></span>
+      <span>•</span>
+      <span>Hediye abone: <strong className="text-amber-300">+{a.hediyeAboneDakika} dk</strong></span>
+      <span>•</span>
+      <span>Bağış: <strong className="text-emerald-300">+{a.bagisDakika} dk / {a.bagisBirimi}</strong></span>
+      <span>•</span>
+      <span>KICKs: <strong style={{ color: '#53fc18' }}>+{a.kicksDakika} dk / {a.kicksBirimi}</strong></span>
+    </div>
+  );
+
+  const kutuStili: React.CSSProperties =
+    tema === 'minimal'
+      ? {}
+      : tema === 'neon'
+        ? { background: rgba(s.bgColor, s.bgOpacity), border: `2px solid ${vurgu}`, borderRadius: Number(s.radius), boxShadow: `0 0 18px ${vurgu}, inset 0 0 18px ${rgba(vurgu, 0.35)}` }
+        : { background: rgba(s.bgColor, s.bgOpacity), border: `2px solid ${vurgu}`, borderRadius: Number(s.radius), boxShadow: `0 10px 35px ${rgba(vurgu, 0.33)}` };
 
   return (
     <div
       className={
         embedded
-          ? 'w-full h-full bg-transparent p-0 flex flex-col justify-start items-center gap-2 select-none font-sans'
-          : 'w-screen h-screen bg-transparent p-6 flex flex-col justify-start items-center gap-2 select-none font-sans'
+          ? 'w-full h-full bg-transparent p-0 flex flex-col justify-start items-center gap-2 select-none'
+          : 'w-screen h-screen bg-transparent p-6 flex flex-col justify-start items-center gap-2 select-none'
       }
+      style={{ fontFamily: s.fontFamily }}
     >
-      <div
-        className={`backdrop-blur-xl border-2 p-4 rounded-2xl flex flex-col items-center ${
-          embedded ? 'w-full justify-center' : 'min-w-[320px]'
-        }`}
-        style={{
-          background: rgba('#000000', 0.85),
-          borderColor: s.accentColor,
-          boxShadow: `0 10px 35px ${rgba(s.accentColor, 0.33)}`
-        }}
-      >
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${durum.aktif ? 'animate-ping' : ''}`}
-            style={{ background: durum.aktif ? '#34d399' : '#6b7280' }}
-          />
-          <h2 className="text-[11px] font-black uppercase tracking-widest font-mono" style={{ color: s.accentColor }}>
-            {s.title} {durum.aktif ? 'CANLI SAYAÇ' : 'DURAKLADI'}
-          </h2>
+      {tema === 'pill' ? (
+        <div className="flex items-center gap-3 px-5 py-2" style={{ ...kutuStili, borderRadius: 999 }}>
+          <span style={{ fontSize: sureBoy * 0.55 }}>{s.icon || '⏳'}</span>
+          <span className="font-black uppercase tracking-widest" style={{ color: vurgu, fontSize: Math.max(11, sureBoy * 0.28), textShadow: golge }}>{s.title}</span>
+          <span className="font-black" style={{ fontFamily: s.timeFontFamily, fontSize: sureBoy * 0.6, color: metinRengi, textShadow: golge }}>{sure}</span>
         </div>
-
-        <div
-          className={`${
-            embedded ? 'text-3xl lg:text-4xl' : 'text-5xl md:text-6xl'
-          } font-black font-mono tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] my-1`}
-        >
-          {sureYaz(kalan)}
+      ) : (
+        <div className={`p-4 flex flex-col items-center ${tema === 'minimal' ? '' : 'backdrop-blur-xl'} ${embedded ? 'w-full justify-center' : 'min-w-[320px]'}`} style={kutuStili}>
+          {durumSatiri}
+          {sureGosterimi}
+          {kurallar}
+          {s.showTotalAdded && durum.eklenenSaniye > 0 && (
+            <div className="mt-1 text-[10px]" style={{ color: rgba(metinRengi, 0.6), textShadow: golge }}>Bu yayında eklenen: {sureYaz(durum.eklenenSaniye)}</div>
+          )}
         </div>
-
-        {/* Kurallar sunucudaki AYARDAN okunur; widget'ın kendi kopyası yok. */}
-        <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-0.5 text-[11px] text-gray-400 font-medium">
-          <span>
-            Abone: <strong style={{ color: s.accentColor }}>+{a.aboneDakika} dk</strong>
-          </span>
-          <span>•</span>
-          <span>
-            Hediye abone: <strong className="text-amber-300">+{a.hediyeAboneDakika} dk</strong>
-          </span>
-          <span>•</span>
-          <span>
-            Bağış: <strong className="text-emerald-300">+{a.bagisDakika} dk / {a.bagisBirimi}</strong>
-          </span>
-          <span>•</span>
-          <span>
-            KICKs: <strong style={{ color: '#53fc18' }}>+{a.kicksDakika} dk / {a.kicksBirimi}</strong>
-          </span>
-        </div>
-
-        {s.showTotalAdded && durum.eklenenSaniye > 0 && (
-          <div className="mt-1 text-[10px] text-gray-500">Bu yayında eklenen: {sureYaz(durum.eklenenSaniye)}</div>
-        )}
-      </div>
+      )}
 
       {/* Bildirim kartın ALTINDA, akışın içinde — sayacı kapatmaz. */}
       {bildirim && (
         <div
           className="px-4 py-1.5 rounded-full text-xs font-black text-white shadow-xl animate-bounce"
-          style={{ background: `linear-gradient(90deg, ${s.accentColor}, ${s.accentColor2})` }}
+          style={{ background: `linear-gradient(90deg, ${vurgu}, ${s.accentColor2})`, textShadow: golge }}
         >
           🎉 {bildirim}
         </div>

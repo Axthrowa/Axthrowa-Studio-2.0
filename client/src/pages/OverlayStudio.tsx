@@ -691,6 +691,12 @@ export function OverlayStudio() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [selectedWidgetModal, setSelectedWidgetModal] = useState<any | null>(null);
+  useEffect(() => {
+    if (!selectedWidgetModal) return;
+    const kapat = (e: KeyboardEvent) => e.key === 'Escape' && setSelectedWidgetModal(null);
+    window.addEventListener('keydown', kapat);
+    return () => window.removeEventListener('keydown', kapat);
+  }, [selectedWidgetModal]);
   const [modalActionStatus, setModalActionStatus] = useState<string | null>(null);
 
   // AlertBox State
@@ -1666,7 +1672,13 @@ export function OverlayStudio() {
 
           {/* Interactive Widget Settings & Test Modal */}
           {selectedWidgetModal && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            // Ayarlar kendiliğinden kaydedilir: boşluğa tıklamak kapatır (içerideki seçimden sürükleyip dışarıda bırakmak kapatmaz)
+            <div
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+              onMouseDown={(e) => {
+                if (e.target === e.currentTarget) setSelectedWidgetModal(null);
+              }}
+            >
               <div className="bg-[#14161f] border border-white/15 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl animate-fadeIn max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
                   <div className="flex items-center gap-3">

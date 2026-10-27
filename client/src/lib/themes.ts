@@ -265,8 +265,112 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
   )
 ];
 
+/**
+ * Hedef çubuğu temaları: dolgu stili, iki renk, çerçeve ve dolgunun ucundaki simge birlikte değişir.
+ * Kendi renk/emoji birleşimlerimiz (oyun/film türü çağrışımı; marka, logo ya da görsel yok).
+ * Yazılar hepsinde gölgeli ve geniş harf aralıklı: renkli sahnede de okunur.
+ */
+function hedefTema(
+  id: string,
+  etiket: string,
+  renk: string,
+  renk2: string,
+  simge: string,
+  ek: Record<string, unknown> = {}
+): TemaTanimi {
+  return tema(
+    id,
+    etiket,
+    {
+      barStyle: 'gradient',
+      barColor: renk,
+      barColor2: renk2,
+      barBackground: '#1a1a1a',
+      barBorderColor: '#ffffff',
+      barBorderWidth: 3,
+      barIcon: simge,
+      barHeight: 26,
+      barRadius: 999,
+      fontColor: '#ffffff',
+      fontWeight: 900,
+      fontSize: 18,
+      letterSpacing: 2,
+      textTransform: 'uppercase',
+      textShadow: true,
+      backgroundOpacity: 0,
+      showGlow: true,
+      ...ek
+    },
+    { arka: `linear-gradient(90deg,${renk},${renk2})`, vurgu: renk2, metin: '#ffffff', kenar: String(ek.barBorderColor || '#ffffff') }
+  );
+}
+
+const HEDEF_TEMALARI: TemaTanimi[] = [
+  hedefTema('h-cadilar', '🎃 Cadılar Bayramı', '#6d28d9', '#f97316', '🎃', { fontFamily: 'Montserrat' }),
+  hedefTema('h-hayalet', '👻 Hayalet', '#7c3aed', '#c084fc', '👻', { fontFamily: 'Montserrat' }),
+  hedefTema('h-korku', '🩸 Korku Gecesi', '#450a0a', '#dc2626', '🩸', { fontFamily: 'Creepster', barBorderColor: '#7f1d1d', letterSpacing: 3 }),
+  hedefTema('h-zombi', '🧟 Zombi', '#365314', '#84cc16', '🧟', { fontFamily: 'Special Elite', barBorderColor: '#a3e635', barStyle: 'striped' }),
+  hedefTema('h-arcade', '👾 Retro Arcade', '#ff2a6d', '#00f0ff', '👾', { fontFamily: 'Press Start 2P', fontSize: 12, barRadius: 0, barBorderColor: '#00f0ff', barStyle: 'striped' }),
+  hedefTema('h-piksel', '⛏️ Piksel Madenci', '#5b8731', '#8b5a2b', '⛏️', { fontFamily: 'VT323', fontSize: 22, barRadius: 0, barBorderColor: '#3b2a1a', barBackground: '#2b2b2b' }),
+  hedefTema('h-siberpunk', '⚡ Siberpunk', '#fcee0a', '#00f0ff', '⚡', { fontFamily: 'Audiowide', barRadius: 4, barBorderColor: '#fcee0a', barStyle: 'glossy' }),
+  hedefTema('h-taktik', '🎯 Taktik', '#4d5d2a', '#ff6b00', '🎯', { fontFamily: 'Black Ops One', barRadius: 2, barBorderColor: '#c5b358' }),
+  hedefTema('h-fantastik', '🗡️ Fantastik RPG', '#7b1e1e', '#d4af37', '🗡️', { fontFamily: 'Cinzel', barBorderColor: '#d4af37', barRadius: 8 }),
+  hedefTema('h-ejderha', '🐉 Ejderha Ateşi', '#991b1b', '#fbbf24', '🐉', { fontFamily: 'Cinzel', barBorderColor: '#fbbf24', barStyle: 'glossy' }),
+  hedefTema('h-yaris', '🏎️ Yarış', '#dc2626', '#f5f5f5', '🏎️', { fontFamily: 'Russo One', barRadius: 4, barStyle: 'striped', barBorderColor: '#e5e5e5' }),
+  hedefTema('h-futbol', '⚽ Futbol', '#15803d', '#4ade80', '⚽', { fontFamily: 'Oswald', barBorderColor: '#ffffff', barStyle: 'striped' }),
+  hedefTema('h-uzay', '🚀 Uzay Destanı', '#312e81', '#4fc3f7', '🚀', { fontFamily: 'Orbitron', barBorderColor: '#93c5fd', barStyle: 'glossy' }),
+  hedefTema('h-vahsibati', '🤠 Vahşi Batı', '#8c1c13', '#e0a458', '🤠', { fontFamily: 'Rye', barBorderColor: '#e0a458', barRadius: 6 }),
+  hedefTema('h-noir', '🎬 Kara Film', '#404040', '#e5e5e5', '🎬', { fontFamily: 'Special Elite', barBorderColor: '#e5e5e5', barRadius: 0 }),
+  hedefTema('h-gala', '🍿 Sinema Galası', '#991b1b', '#e6b422', '🍿', { fontFamily: 'Bebas Neue', fontSize: 22, barBorderColor: '#e6b422', barStyle: 'glossy' }),
+  hedefTema('h-cizgiroman', '💥 Çizgi Roman', '#dc2626', '#facc15', '💥', { fontFamily: 'Bangers', fontSize: 22, barBorderColor: '#000000', outlineEnabled: true, outlineColor: '#000000', outlineWidth: 1 }),
+  hedefTema('h-anime', '🌸 Anime', '#ff6ec7', '#7df9ff', '🌸', { fontFamily: 'Poppins', barBorderColor: '#ffffff', barStyle: 'glossy' }),
+  hedefTema('h-okyanus', '🐠 Okyanus', '#0369a1', '#2dd4bf', '🐠', { fontFamily: 'Nunito', barBorderColor: '#a5f3fc' }),
+  hedefTema('h-lav', '🌋 Lav', '#7c2d12', '#facc15', '🌋', { fontFamily: 'Anton', barBorderColor: '#fb923c', barStyle: 'striped' }),
+  hedefTema('h-kis', '❄️ Kış', '#1e3a8a', '#e0f2fe', '❄️', { fontFamily: 'Nunito', barBorderColor: '#e0f2fe', barStyle: 'glossy' }),
+  hedefTema('h-yilbasi', '🎄 Yılbaşı', '#b91c1c', '#16a34a', '🎄', { fontFamily: 'Montserrat', barBorderColor: '#fde68a', barStyle: 'striped' }),
+  hedefTema('h-altin', '🏆 Altın Kupa', '#a16207', '#fde047', '🏆', { fontFamily: 'Oswald', barBorderColor: '#fef08a', barStyle: 'glossy' }),
+  hedefTema('h-kick', '💚 Yeşil Neon', '#14532d', '#53fc18', '💚', { fontFamily: 'Russo One', barBorderColor: '#53fc18' }),
+  hedefTema('h-sade', 'Sade (okunaklı)', '#10b981', '#10b981', '', { barStyle: 'flat', barBorderWidth: 0, barHeight: 20, fontFamily: 'Inter', fontSize: 16, letterSpacing: 1, backgroundOpacity: 0.85 })
+];
+
+/** Subathon sayacı temaları: görünüm (kart/dijital/çevirmeli/neon/hap), renkler, yazı tipleri ve simge birlikte. */
+function sayacTema(id: string, etiket: string, gorunum: string, vurgu: string, vurgu2: string, arka: string, simge: string, ek: Record<string, unknown> = {}): TemaTanimi {
+  return tema(
+    id,
+    etiket,
+    { theme: gorunum, accentColor: vurgu, accentColor2: vurgu2, bgColor: arka, bgOpacity: 0.9, textColor: '#ffffff', icon: simge, radius: 16, ...ek },
+    { arka: `linear-gradient(135deg,${arka},${vurgu2})`, vurgu, metin: '#ffffff', kenar: vurgu }
+  );
+}
+
+const SAYAC_TEMALARI: TemaTanimi[] = [
+  sayacTema('s-dijital', '📟 Dijital Saat', 'digital', '#39ff14', '#16a34a', '#030a03', '⏱️', { timeFontFamily: 'VT323', timeFontSize: 64, radius: 6 }),
+  sayacTema('s-flip', '🗓️ Çevirmeli Kartlar', 'flip', '#f8fafc', '#94a3b8', '#1f2937', '⏳', { timeFontFamily: 'Oswald', timeFontSize: 56 }),
+  sayacTema('s-neon', '💡 Neon', 'neon', '#ff2bd6', '#22d3ee', '#0b0420', '✨', { timeFontFamily: 'Audiowide', timeFontSize: 56 }),
+  sayacTema('s-hap', '💊 Tek Satır', 'pill', '#22d3ee', '#34d399', '#000000', '⏳', { timeFontFamily: 'Orbitron', timeFontSize: 48 }),
+  sayacTema('s-minimal', 'Minimal (yalnız süre)', 'minimal', '#ffffff', '#94a3b8', '#000000', '', { timeFontFamily: 'Bebas Neue', timeFontSize: 80, showRules: false }),
+  sayacTema('s-arcade', '👾 Retro Arcade', 'digital', '#00f0ff', '#ff2a6d', '#0d0221', '👾', { fontFamily: 'Press Start 2P', timeFontFamily: 'Press Start 2P', timeFontSize: 36, radius: 0 }),
+  sayacTema('s-siberpunk', '⚡ Siberpunk', 'neon', '#fcee0a', '#00f0ff', '#0a0014', '⚡', { fontFamily: 'Audiowide', timeFontFamily: 'Orbitron', radius: 2 }),
+  sayacTema('s-bomba', '💣 Saatli Bomba', 'digital', '#ef4444', '#7f1d1d', '#0a0000', '💣', { timeFontFamily: 'VT323', timeFontSize: 68, radius: 4 }),
+  sayacTema('s-taktik', '🎯 Taktik', 'card', '#c5b358', '#ff6b00', '#1b1f14', '🎯', { fontFamily: 'Black Ops One', timeFontFamily: 'Black Ops One', radius: 2 }),
+  sayacTema('s-fantastik', '🗡️ Fantastik RPG', 'card', '#d4af37', '#7b1e1e', '#1a1208', '📜', { fontFamily: 'Cinzel', timeFontFamily: 'Cinzel', radius: 10 }),
+  sayacTema('s-uzay', '🚀 Uzay Görevi', 'flip', '#4fc3f7', '#312e81', '#020818', '🚀', { fontFamily: 'Orbitron', timeFontFamily: 'Orbitron' }),
+  sayacTema('s-korku', '🩸 Korku', 'neon', '#dc2626', '#450a0a', '#0a0000', '🕯️', { fontFamily: 'Creepster', timeFontFamily: 'Creepster', timeFontSize: 64 }),
+  sayacTema('s-cadilar', '🎃 Cadılar Bayramı', 'card', '#f97316', '#6d28d9', '#1a0b2e', '🎃', { fontFamily: 'Montserrat', timeFontFamily: 'Bangers', timeFontSize: 64 }),
+  sayacTema('s-vahsibati', '🤠 Vahşi Batı', 'card', '#e0a458', '#8c1c13', '#3e2412', '🤠', { fontFamily: 'Rye', timeFontFamily: 'Rye', radius: 4 }),
+  sayacTema('s-gala', '🎬 Sinema', 'flip', '#e6b422', '#991b1b', '#2a0505', '🎬', { fontFamily: 'Bebas Neue', timeFontFamily: 'Bebas Neue', timeFontSize: 64 }),
+  sayacTema('s-cizgiroman', '💥 Çizgi Roman', 'card', '#facc15', '#dc2626', '#1e3a8a', '💥', { fontFamily: 'Bangers', timeFontFamily: 'Bangers', timeFontSize: 64 }),
+  sayacTema('s-anime', '🌸 Anime', 'pill', '#ff6ec7', '#7df9ff', '#1a0f2e', '🌸', { fontFamily: 'Poppins', timeFontFamily: 'Poppins' }),
+  sayacTema('s-yilbasi', '🎄 Yılbaşı', 'card', '#fde68a', '#16a34a', '#7f1d1d', '🎄', { fontFamily: 'Montserrat', timeFontFamily: 'Oswald' })
+];
+
 /** Widget'a özel ek temalar. */
 export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
+  subathon: SAYAC_TEMALARI,
+  'donation-goal': HEDEF_TEMALARI,
+  'follower-goal': HEDEF_TEMALARI,
+  'subscriber-goal': HEDEF_TEMALARI,
+  'kicks-goal': HEDEF_TEMALARI,
   'wheel-of-fortune': [
     tema('gokkusagi', 'Gökkuşağı', { borderColor: P.beyaz, fontColor: P.beyaz, outlineEnabled: true }, { arka: 'conic-gradient(red,orange,yellow,green,blue,violet,red)', vurgu: P.beyaz, metin: P.beyaz }),
     tema('vegas', 'Vegas', { borderColor: P.amber, fontColor: P.beyaz, pointerColor: P.kirmizi, outlineEnabled: true }, { arka: '#7f1d1d', vurgu: P.amber, metin: P.beyaz }),
@@ -296,7 +400,7 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
 export function temalar(widgetId: string): TemaTanimi[] {
   const ozel = WIDGET_TEMALARI[widgetId] || [];
   const genel = GENEL_TEMALAR.filter((t) => !t.widgetlar || t.widgetlar.includes(widgetId));
-  return [...genel, ...ozel];
+  return [...ozel, ...genel]; // Widget'a özel temalar önce: hedef çubuğunda asıl seçenekler onlar
 }
 
 /**

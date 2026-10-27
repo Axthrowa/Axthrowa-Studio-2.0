@@ -66,7 +66,7 @@ export function sureYaz(toplamSaniye: number): string {
  */
 export function fontuYukle(ad: string | undefined, liste: readonly string[]): void {
   if (!ad || !liste.includes(ad) || typeof document === 'undefined') return;
-  const id = 'axt-font-' + ad.replace(/s+/g, '-');
+  const id = 'axt-font-' + ad.replace(/\s+/g, '-');
   if (document.getElementById(id)) return;
   const link = document.createElement('link');
   link.id = id;

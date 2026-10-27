@@ -37,8 +37,14 @@ export function anketKapaticiyiBaslat(): void {
       const kapanan = suresiDolanlariKapat();
       if (!kapanan.length) return;
       const { wsHub } = await import('../../ws/server.js');
+      const { eventBus } = await import('../../core/event-bus.js');
+      const { anketSonucMetni } = await import('./anket.js');
       for (const p of kapanan) {
         wsHub.broadcastTo(['all'], { type: 'poll_ended', poll: { ...p, question: p.title, endsAt: Date.now() } });
+        // Süre dolunca sonuç sohbete de yazılır (eskiden yalnız OBS'te görünüyordu)
+        const oylar = p.options.map(() => 0);
+        for (const v of p.votes as Array<{ option_index: number; count: number }>) if (v.option_index < oylar.length) oylar[v.option_index] = Number(v.count) || 0;
+        eventBus.emitBotMessage({ platform: 'all', channel: '', message: anketSonucMetni({ title: p.title, options: p.options, oylar }) });
       }
     } catch {
       /* tablo yoksa ya da DB meşgulse bir sonraki turda */

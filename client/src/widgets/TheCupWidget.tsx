@@ -62,8 +62,9 @@ export interface Yerlesim {
 }
 
 /**
- * Yığın yerleşimi: kupa tabanı sütunlara bölünür; her öğe rastgele bir x'e
- * düşer ve kapladığı sütunların en yükseğinin üstüne (biraz iç içe) oturur.
+ * Yığın yerleşimi: kupa tabanı sütunlara bölünür; her öğe yığının EN ALÇAK yerine düşer (sıvı gibi
+ * katman katman dolar) ve kapladığı sütunların en yükseğinin üstüne biraz iç içe oturur. Eskiden x
+ * rastgeleydi: bir yerde kule, yanında boşluk oluşuyordu.
  */
 export function yigin(
   ogeler: Array<{ id: string; tur: string }>,
@@ -79,11 +80,23 @@ export function yigin(
     const r = tohumlu(o.id);
     const set = emojiSeti(o.tur, s);
     const boyut = taban + Math.floor(r() * (oynak + 1));
-    const x = r() * Math.max(0, genislik - boyut);
+    const enGenis = Math.max(0, genislik - boyut);
+    const tepe = (x: number) => {
+      let u = 0;
+      for (let c = Math.max(0, Math.floor(x / SUTUN)); c <= Math.min(n - 1, Math.ceil((x + boyut) / SUTUN)); c++) u = Math.max(u, yukseklik[c]);
+      return u;
+    };
+    // Tüm konumlar denenir; eşit alçaklıkta olanlardan (yarım öğe payıyla) biri tohumla seçilir — düzenli ama ızgara gibi değil
+    const adaylar: Array<{ x: number; u: number }> = [];
+    for (let x = 0; x <= enGenis; x += SUTUN) adaylar.push({ x, u: tepe(x) });
+    if (!adaylar.length) adaylar.push({ x: 0, u: tepe(0) });
+    const enAlcak = Math.min(...adaylar.map((a) => a.u));
+    const uygun = adaylar.filter((a) => a.u <= enAlcak + boyut * 0.5);
+    const secilen = uygun[Math.floor(r() * uygun.length) % uygun.length];
+    const x = Math.min(enGenis, secilen.x + r() * SUTUN);
     const bas = Math.max(0, Math.floor(x / SUTUN));
     const son = Math.min(n - 1, Math.ceil((x + boyut) / SUTUN));
-    let ust = 0;
-    for (let c = bas; c <= son; c++) ust = Math.max(ust, yukseklik[c]);
+    const ust = tepe(x);
     // Öğeler biraz iç içe geçer (yığın doğal görünsün)
     const y = Math.max(0, ust - boyut * (0.15 + r() * 0.2));
     for (let c = bas; c <= son; c++) yukseklik[c] = y + boyut * 0.8;

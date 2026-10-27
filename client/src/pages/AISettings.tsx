@@ -367,7 +367,7 @@ export function AISettings() {
               <input type="checkbox" checked={webArama} onChange={(e) => setWebArama(e.target.checked)} className="mt-0.5 accent-purple-600" />
               <span className="text-xs text-gray-300">
                 <b className="text-white">Güncel bilgi: internette ara</b> — güncel haber, maç skoru, sonuç gibi sorularda yapay zekâ internette arar.
-                Groq'ta <code>groq/compound</code> modeli (Model kutusu boşsa), Gemini'de Google Arama kullanılır. Cevap birkaç saniye daha uzun sürer;
+                Groq'ta gpt-oss modellerinin yerleşik internet araması, Gemini'de Google Arama kullanılır. Cevap birkaç saniye daha uzun sürer;
                 ücretsiz katmanın günlük arama sınırı sağlayıcı panelinde görünür.
               </span>
             </label>

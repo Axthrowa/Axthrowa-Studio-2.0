@@ -13,6 +13,7 @@ import { kuyruk } from '../engagement/queue.js';
 import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
 import { giveaway } from '../giveaways/giveaways.js';
+import { anketBaslat, anketBitir, anketKomutuCoz, anketSonucMetni } from '../engagement/anket.js';
 import { geminiCoHost } from '../ai/gemini.js';
 import { gamesEngine } from '../games/games.js';
 import { triviaEngine } from '../games/trivia-engine.js';
@@ -263,6 +264,16 @@ export class CommandManager {
     return `📅 ${hedef} hesabı ${metin} önce açılmış (${new Date(t).toLocaleDateString('tr-TR')}).`;
   }
 
+  /** `!anketac [süre] Soru | A | B` → anket açılır, seçenekler sohbete yazılır */
+  private async anketAc(args: string[]): Promise<string> {
+    const c = anketKomutuCoz(args);
+    if ('hata' in c) return c.hata;
+    const r = await anketBaslat({ title: c.soru, options: c.secenekler, durationSeconds: c.sure });
+    if (!r.ok) return r.hata;
+    const liste = r.options.map((o, i) => `${i + 1}) ${o}`).join('  ');
+    return `📊 ANKET: ${r.title} — ${liste} · Oy vermek için ${r.command} <numara> (${r.durationSeconds} sn)`;
+  }
+
   private async executeBuiltIn(name: string, args: string[], message: ChatMessagePayload): Promise<string | null> {
     try {
       const disabled = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
@@ -368,9 +379,63 @@ export class CommandManager {
       case 'join':
         return giveaway.handleJoin(message);
 
+      // Yayıncı/mod: !cekilis [dk] [ödül]  ·  !cekilisbitir (kazananı çeker)  ·  !cekilisiptal
+      case 'cekilis':
+      case 'cekilisac':
+      case 'giveaway': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return `@${message.user.displayName}, çekilişi yalnız yayıncı ve moderatörler açabilir. Katılmak için: !katil`;
+        let sozcukler = [...args];
+        let dakika = 10;
+        if (/^\d{1,3}$/.test(sozcukler[0] || '')) {
+          dakika = Math.min(600, Math.max(0, Number(sozcukler[0])));
+          sozcukler = sozcukler.slice(1);
+        }
+        const odul = sozcukler.join(' ').trim().slice(0, 120) || 'Çekiliş';
+        const r = giveaway.baslat({ title: odul, durationMinutes: dakika });
+        if (!r.giveaway) return `@${message.user.displayName}, çekiliş açılamadı.`;
+        const { wsHub } = await import('../../ws/server.js');
+        wsHub.broadcastTo(['all'], { type: 'giveaway_started', giveaway: r.giveaway });
+        return `🎉 ÇEKİLİŞ BAŞLADI: "${odul}" — katılmak için !katil yaz!${dakika > 0 ? ` (${dakika} dk)` : ''}`;
+      }
+
+      case 'cekilisbitir':
+      case 'cekiliscek': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const acik = giveaway.getActiveGiveaway();
+        if (!acik) return `@${message.user.displayName}, açık çekiliş yok.`;
+        const kazanan = giveaway.pickWinner();
+        if (!kazanan) return `@${message.user.displayName}, "${acik.title}" çekilişine henüz kimse katılmadı.`;
+        const { wsHub } = await import('../../ws/server.js');
+        wsHub.broadcastTo(['wheel', 'dashboard', 'all'], { type: 'giveaway_winner', winner: kazanan });
+        return `🏆 "${acik.title}" çekilişinin kazananı: ${kazanan.winners.map((w) => '@' + w).join(', ')}! (${kazanan.participantsCount} katılımcı) 🎉`;
+      }
+
+      case 'cekilisiptal': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const kapanan = giveaway.iptal();
+        return kapanan ? `🛑 "${kapanan.title}" çekilişi iptal edildi${Number(kapanan.cost_points) > 0 ? '; katılım puanları iade edildi' : ''}.` : `@${message.user.displayName}, açık çekiliş yok.`;
+      }
+
+      // Yayıncı/mod: !anketac [süre] Soru | A | B  ·  !anketbitir
+      case 'anketac':
+      case 'poll': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return `@${message.user.displayName}, anketi yalnız yayıncı ve moderatörler açabilir.`;
+        return await this.anketAc(args);
+      }
+
+      case 'anketbitir':
+      case 'anketkapat':
+      case 'endpoll': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return null;
+        const sonuc = await anketBitir();
+        return sonuc ? anketSonucMetni(sonuc) : `@${message.user.displayName}, açık anket yok.`;
+      }
+
       case 'oy':
       case 'vote':
       case 'anket': {
+        // Mod "!anket Soru | A | B" yazarsa oy değil yeni anket
+        if (name === 'anket' && args.join(' ').includes('|') && (message.user.isMod || message.user.isBroadcaster)) return await this.anketAc(args);
         const poll = db.prepare('SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1').get() as any;
         if (!poll) return `@${message.user.displayName}, aktif anket yok.`;
         // Süresi dolmuş ankete oy yok (kapatıcı 5 sn'de bir kapatır; arada gelen oy sayılmasın)

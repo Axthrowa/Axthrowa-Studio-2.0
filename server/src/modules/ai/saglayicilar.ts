@@ -60,9 +60,16 @@ export function saglayiciAyari(ad: string) {
     tanim: t,
     kok: kokAdresi(ad),
     anahtar: ayar(`ai_${ad}_api_key`),
-    // "Güncel bilgi" açıksa Groq'ta internette arayabilen compound modeli (model elle girilmediyse)
-    model: ayar(`ai_${ad}_model`) || (ad === 'groq' && ayar('ai_web_arama') === 'true' ? 'groq/compound' : t.model)
+    model: ayar(`ai_${ad}_model`) || t.model
   };
+}
+
+/**
+ * "Güncel bilgi" açıkken Groq'ta gpt-oss modellerinin yerleşik internet araması. Eskiden `groq/compound`
+ * modeline geçiliyordu; o model hesaplardan kaldırıldı ("does not exist or you do not have access").
+ */
+export function groqAramaAraci(ad: string, model: string): { tools?: { type: string }[] } {
+  return ad === 'groq' && model.startsWith('openai/gpt-oss') && ayar('ai_web_arama') === 'true' ? { tools: [{ type: 'browser_search' }] } : {};
 }
 
 function hataMetni(e: any, ad: string): string {
@@ -95,6 +102,7 @@ export async function metinUret(ad: string, sistem: string, kullanici: string, z
       `${a.kok}/chat/completions`,
       {
         model: a.model,
+        ...groqAramaAraci(ad, a.model),
         // Düşünen modeller (gpt-oss) düşünme jetonlarını da bu sınırdan harcar; 400 boş cevap bırakabiliyordu
         max_tokens: 1024,
         messages: [

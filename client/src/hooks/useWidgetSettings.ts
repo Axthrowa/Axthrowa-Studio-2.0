@@ -48,6 +48,7 @@ export function useWidgetSettings<T extends Record<string, any>>(widgetId: strin
   }, [widgetId]);
 
   useEffect(() => fontuYukle(settings.fontFamily, FONTS), [settings.fontFamily]);
+  useEffect(() => fontuYukle((settings as Record<string, any>).timeFontFamily, FONTS), [(settings as Record<string, any>).timeFontFamily]);
 
   return settings;
 }

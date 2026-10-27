@@ -3,7 +3,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { ttsEngine } from '../tts/tts.js';
 import { seyrekUyar } from '../../core/logger.js';
-import { bahisOku } from '../games/bahis.js';
+import { bahisOku, SLOT_UCLU_CARPAN, SLOT_IKILI_CARPAN } from '../games/bahis.js';
 
 interface ActiveDuel {
   challenger: string;
@@ -494,11 +494,11 @@ export class EconomyEngine {
     // sohbette yazılan kazanç gerçek bakiyeyle tutmuyordu.
     this.removePoints(cuzdanAdi(message.platform, message.user.username), amount);
     if (s1 === s2 && s2 === s3) {
-      const payout = amount * 5;
+      const payout = Math.floor(amount * SLOT_UCLU_CARPAN);
       const newTotal = this.addPoints(cuzdanAdi(message.platform, message.user.username), payout);
       return `${machineView} 💥 BÜYÜK İKRAMİYE! @${message.user.displayName} üçünü de tutturdu, net +${payout - amount} puan! Bakiye: ${newTotal} 🤑`;
     } else if (s1 === s2 || s2 === s3 || s1 === s3) {
-      const payout = amount * 2;
+      const payout = Math.floor(amount * SLOT_IKILI_CARPAN);
       const newTotal = this.addPoints(cuzdanAdi(message.platform, message.user.username), payout);
       return `${machineView} ✨ Tebrikler @${message.user.displayName}, ikisini tutturdun! Net +${payout - amount} puan. Bakiye: ${newTotal}`;
     } else {

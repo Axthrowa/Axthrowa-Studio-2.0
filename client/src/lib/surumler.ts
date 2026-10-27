@@ -11,6 +11,17 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.4.11',
+    ad: 'Dengeli Masa',
+    tarih: '2026-10-27',
+    notlar: [
+      'Şans oyunları dengeli: ortalamada bahsin %92-96 kadarı geri döner (eskiden slot %116, kasa açma %165, soygun ~%200 veriyordu; oynayarak sınırsız puan basılıyordu)',
+      'Slot: üçlü 6 kat, ikili 1,5 kat · Kasa açma: efsanevi %2 · Bomba: doğru kablo 2,85 kat · Tek kişilik yarış %48 kazanma',
+      'Soygun: hedefe göre %25-60 başarı, kâr 0,5-2,2 kat; ekip bonusu kişi başı %2 (en çok 3 kişi)',
+      'Yazı-tura, zar, rulet ve düello zaten adil (yarı yarıya); değişmedi'
+    ]
+  },
+  {
     surum: '1.4.10',
     ad: 'Kalıcı Bağ',
     tarih: '2026-10-27',

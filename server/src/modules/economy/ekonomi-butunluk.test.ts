@@ -72,9 +72,9 @@ describe('soygun/yarış bahsi katılırken çekilir', () => {
   it('kazanan bahsini ve kazancını alır', () => {
     bakiyeYap('ali', 500);
     gamesEngine.handleHeist(mesaj('ali'), ['500']);
-    vi.spyOn(Math, 'random').mockReturnValue(0); // ilk hedef (x1.6), herkes kaçar
+    vi.spyOn(Math, 'random').mockReturnValue(0); // ilk hedef (kâr x0.5), herkes kaçar
     vi.advanceTimersByTime(60_000);
-    expect(economy.getUserPoints('ali')).toBe(500 + 800);
+    expect(economy.getUserPoints('ali')).toBe(500 + 250);
   });
 
   it('iptal edilen lobi bahisleri iade eder', () => {

@@ -204,7 +204,7 @@ export function MiniGames() {
       id: 'bomba',
       title: 'Bomba İmha',
       command: '!bomba <miktar>',
-      desc: 'Saatli bomba masada! Kırmızı mı mavi mi? Doğru kabloyu kesen bahsi 2 katına çıkarır, yanlış kabloda bomba patlar.',
+      desc: 'Saatli bomba masada! Kırmızı mı mavi mi? Doğru kabloyu (üçte bir şans) kesen bahsinin 2,85 katını alır, yanlış kabloda bomba patlar.',
       icon: ShieldAlert,
       color: 'from-red-600 to-rose-600',
       borderColor: 'border-red-500/30'
@@ -213,7 +213,7 @@ export function MiniGames() {
       id: 'zar',
       title: 'Zar Atma',
       command: '!zar <miktar>',
-      desc: 'İzleyici zarları sallar. 7 ve üzeri gelirse bahsi kazanır, düşük gelirse puan kasaya geçer.',
+      desc: 'İzleyici ve bot iki zar atar. Yüksek atan kazanır, eşitlikte bahis iade edilir.',
       icon: Dice5,
       color: 'from-violet-600 to-purple-600',
       borderColor: 'border-violet-500/30'

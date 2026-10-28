@@ -1,6 +1,6 @@
 [package]
 name = "yayin-yonetim-araci"
-version = "1.2.1"
+version = "1.2.2"
 description = "Yayın Yönetim Aracı — OBS Overlay Desktop"
 authors = ["axthrowa"]
 license = "GPL-2.0-or-later"

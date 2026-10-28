@@ -59,7 +59,7 @@ try {
     "tailwind.config.js", "postcss.config.js", "index.html",
     "src-tauri\Cargo.toml", "src-tauri\Cargo.lock", "src-tauri\tauri.conf.json", "src-tauri\build.rs",
     "resonance\package.json", "resonance\package-lock.json", "resonance\vite.config.js",
-    "resonance\vitest.config.js", "resonance\index.html", "resonance\server.cjs"
+    "resonance\vitest.config.js", "resonance\index.html"
   )
   foreach ($f in $dosyalar) {
     $src = Join-Path $proj $f

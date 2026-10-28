@@ -114,7 +114,7 @@ impl KickBotSession {
     self.vault_ram_secrets();
     let meta = Self::metadata_only(&self.data.read());
     if let Ok(text) = serde_json::to_string_pretty(&meta) {
-      let _ = std::fs::write(&self.path, text);
+      let _ = crate::settings::write_atomic(&self.path, &text);
     }
   }
 

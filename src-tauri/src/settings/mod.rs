@@ -130,7 +130,7 @@ impl AppSettings {
 }
 
 /// Önce .tmp'ye yaz, sonra taşı — yazma sırasında çökme yarım JSON bırakmasın.
-fn write_atomic(path: &Path, contents: &str) -> Result<()> {
+pub(crate) fn write_atomic(path: &Path, contents: &str) -> Result<()> {
   let tmp = path.with_extension("tmp");
   fs::write(&tmp, contents)?;
   match fs::rename(&tmp, path) {

@@ -28,6 +28,7 @@ import MusicPanel from "../../components/panel/MusicPanel";
 import VideoTrimBar from "../../components/panel/VideoTrimBar";
 import VideoScrubber from "../../components/panel/VideoScrubber";
 import TextStyleEditor from "../../components/panel/TextStyleEditor";
+import BotSessions from "../../components/panel/BotSessions";
 import CopyUrl from "../../components/ui/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
@@ -114,6 +115,8 @@ import { useCreditsCollector } from "../../lib/useCreditsCollector";
 import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec } from "../../lib/globalHotkeys";
 import { useVideoDownload } from "../../lib/useVideoDownload";
 import { clearNotice, pushNotice, useNotices } from "../../lib/notices";
+import { yayinSagligiIzle } from "../../lib/yayinSagligi";
+import { getStreamHealth } from "../../lib/obs";
 import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
 import AppAlertModal from "../../components/ui/AppAlertModal";
 import {
@@ -170,9 +173,24 @@ const ROL_AD: Record<SceneRole, string> = { starting: "Giriş", ending: "Çıkı
 
 export default function PanelPage() {
   const { connect: obsConnect, connected: obsCtxConnected } = useObs();
+  // Yayın sağlığı uyarıları: hangi sekme açık olursa olsun (pencere arkadayken de) izlenir
+  useEffect(
+    () =>
+      yayinSagligiIzle(
+        async () => (isObsConnected() ? getStreamHealth() : null),
+        (u) => ("temizle" in u ? clearNotice(u.id) : pushNotice({ id: u.id, level: u.seviye, text: u.metin, hint: u.ipucu })),
+        () => localStorage.getItem("yya.saglikSesi") !== "0"
+      ),
+    []
+  );
   const [screen, setScreen] = useState<ScreenId>("starting");
   // Müzik / Ayarlar ekran ayarlarından bağımsız; ScreenId şemasını kirletmez.
   const [activeNav, setActiveNav] = useState<NavId | ScreenId>("profile");
+  // Bot sekmesinde açılacak StreamAxT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
+  const [botSekme, setBotSekme] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (activeNav !== "bot") setBotSekme(undefined);
+  }, [activeNav]);
   const [layout, setLayout] = useState<PanelLayout>(() => loadPanelLayout());
   const [prefs, setPrefs] = useState<AppPrefs>(() => loadAppPrefs());
   const [editLayout, setEditLayout] = useState(false);
@@ -1596,6 +1614,16 @@ export default function PanelPage() {
               onObsConnected={() => void refreshObsLists()}
             />
           )}
+          {dashBolum === "genel" && (
+            <div className="mx-4 mb-3">
+              <BotSessions
+                onAc={() => {
+                  setBotSekme("platforms");
+                  setActiveNav("bot");
+                }}
+              />
+            </div>
+          )}
           {dashBolum === "genel" && <StreamHealthCard />}
           {/* Sekme değişse de bağlı kalır: sadakat sayacı, metrikler ve oturum kapatma sürer */}
           <ProfileDashboard
@@ -1647,7 +1675,7 @@ export default function PanelPage() {
         </div>
       ) : botTab ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <StreamAxtHost onToast={showToast} onOpenMusic={() => setActiveNav("music")} />
+          <StreamAxtHost key={botSekme || "bot"} onToast={showToast} tab={botSekme} onOpenMusic={() => setActiveNav("music")} />
         </div>
       ) : chatTab && !chatOverlaySettings ? (
         // Canlı Chat = StreamAxT'nin Multi-Chat'i (çapraz sohbet, izleyici kartları).
@@ -1740,21 +1768,14 @@ export default function PanelPage() {
               <Field label={tt("field.sub")} value={settings.sub || ""} onChange={(v) => update({ sub: v })} />
               <Field label={tt("field.badge")} value={settings.liveText || ""} onChange={(v) => update({ liveText: v })} />
               <Field label={tt("field.ticker")} value={settings.ticker || ""} onChange={(v) => update({ ticker: v })} />
-                </SettingsSection>
-              )}
-
-              {!sectionHidden("yaziStilleri") && (
-                <SettingsSection id="yaziStilleri" title={tt("sec.yaziStilleri")} style={secOrder("yaziStilleri")}>
-              <TextStyleEditor
-                settings={settings}
-                onChange={update}
-                includeCredits={screen === "ending"}
-              />
+              {/* Yazı stilleri ait oldukları ayarın altında (eskiden ayrı "Yazı stilleri" bölümündeydi) */}
+              <TextStyleEditor settings={settings} onChange={update} sadece={["eyebrow", "title", "sub", "ticker"]} />
                 </SettingsSection>
               )}
 
               {!sectionHidden("geriSayim") && (
                 <SettingsSection id="geriSayim" title={tt("sec.geriSayim")} style={secOrder("geriSayim")}>
+              <TextStyleEditor settings={settings} onChange={update} sadece={["countdown"]} />
               <Field
                 label="Geri sayım (datetime-local)"
                 value={settings.targetDate || ""}
@@ -3018,6 +3039,7 @@ export default function PanelPage() {
 
               {screen === "ending" && !sectionHidden("jenerik") && (
                 <SettingsSection id="jenerik" title={tt("sec.jenerik")} style={secOrder("jenerik")}>
+                  <TextStyleEditor settings={settings} onChange={update} includeCredits sadece={["credits"]} />
                   <h3 className="text-sm font-semibold">Otomatik jenerik</h3>
                   <p className="text-[11px] text-panel-muted">
                     Panel açıkken Twitch/Kick/YouTube abone, bağış (Super Chat / bits) ve

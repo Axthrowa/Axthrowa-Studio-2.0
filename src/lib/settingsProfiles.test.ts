@@ -206,3 +206,14 @@ describe("chooseSoundboard", () => {
     expect(chooseSoundboard([], [pad])).toEqual([]);
   });
 });
+
+describe("profil OBS sahnesi", () => {
+  it("ayarlanır, kaydedilip yeniden okununca korunur, boş metin kaldırır", async () => {
+    const { ensureState, setProfileScene } = await import("./settingsProfiles");
+    const s = ensureState({ activeId: "a", profiles: [{ id: "a", name: "A" }, { id: "b", name: "B" }] });
+    const ayarli = setProfileScene(s, "b", "  Oyun Sahnesi ");
+    expect(ayarli.profiles.find((p) => p.id === "b")?.obsSahne).toBe("Oyun Sahnesi");
+    expect(ensureState(JSON.parse(JSON.stringify(ayarli))).profiles.find((p) => p.id === "b")?.obsSahne).toBe("Oyun Sahnesi");
+    expect(setProfileScene(ayarli, "b", "").profiles.find((p) => p.id === "b")?.obsSahne).toBeUndefined();
+  });
+});

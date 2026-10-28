@@ -2,7 +2,8 @@
  * Uygulama ayarları — AxthrowA
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Guncelleme, YedekPaneli } from "./GuncellemeYedek";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
@@ -22,6 +23,7 @@ import { API_BASE } from "../../lib/api";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
+import { streamaxtBase } from "../../lib/streamaxt";
 
 type Tab = "general" | "help" | "about";
 
@@ -359,6 +361,10 @@ export default function AppSettingsPage({
           </div>
 
           <hr className="border-white/[0.08]" />
+          <Guncelleme />
+          <hr className="border-white/[0.08]" />
+          <YedekPaneli />
+          <hr className="border-white/[0.08]" />
           <DestekPaketi />
         </div>
       )}
@@ -396,6 +402,7 @@ export default function AppSettingsPage({
             <div>
               <h2 className="font-display text-xl font-bold tracking-tight text-white">{t("brand.title")}</h2>
               <p className="text-base font-bold text-panel-accent">{t("about.credit")}</p>
+              <SurumSatiri />
             </div>
           </div>
 
@@ -462,5 +469,27 @@ function DestekPaketi() {
       )}
       {hata && <p className="text-xs text-red-300">{hata}</p>}
     </div>
+  );
+}
+
+/** Yayın Yönetim Aracı ve gömülü StreamAxT sürümü (bot kapalıysa yalnız YYA) */
+function SurumSatiri() {
+  const [bot, setBot] = useState<string | null>(null);
+  useEffect(() => {
+    streamaxtBase()
+      .then((b) => fetch(`${b}/health`))
+      .then((r) => r.json())
+      .then((d) => setBot(typeof d?.surum === "string" ? d.surum : null))
+      .catch(() => {});
+  }, []);
+  return (
+    <p className="mt-1 text-xs text-panel-muted">
+      Sürüm <b className="text-white">v{__YYA_SURUM__}</b>
+      {bot && (
+        <>
+          {" "}· StreamAxT <b className="text-white">v{bot}</b>
+        </>
+      )}
+    </p>
   );
 }

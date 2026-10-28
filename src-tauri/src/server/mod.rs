@@ -29,7 +29,8 @@ mod control_plane;
 mod destek_api;
 mod dosya_adi;
 mod local_guard;
-mod guncelleme_api;
+pub mod guncelleme_api;
+pub mod yedek_api;
 mod yayin_bilgisi_api;
 mod multistream_api;
 mod obs_studio_api;
@@ -199,6 +200,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(actions_api::router())
     .merge(destek_api::router())
     .merge(guncelleme_api::router())
+    .merge(yedek_api::router())
     .merge(obs_studio_api::router())
     .merge(yayin_bilgisi_api::router());
 

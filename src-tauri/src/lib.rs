@@ -26,6 +26,7 @@ pub mod commands;
 pub mod bot;
 pub mod widget_runtime;
 pub mod widgets;
+pub mod yedek;
 
 #[cfg(windows)]
 pub mod audio_brand;
@@ -581,6 +582,22 @@ pub fn run() {
   let resolved = paths::resolve(root);
   let _ = std::fs::create_dir_all(&resolved.data_dir);
   panik_kaydini_kur(&resolved.data_dir);
+  // Bekleyen geri yükleme / eski klasörden taşıma: veritabanları açılmadan ÖNCE
+  match yedek::bekleyeni_uygula(
+    &resolved.data_dir,
+    yedek::bot_veri_klasoru().as_deref(),
+    &resolved.resource_root.join("assets"),
+  ) {
+    Ok(Some(m)) => {
+      yya_log!("{m}");
+      let _ = server::yedek_api::SON_UYGULANAN.set(m);
+    }
+    Ok(None) => {}
+    Err(e) => {
+      yya_warn!("bekleyen geri yükleme uygulanamadı: {e:#}");
+      let _ = server::yedek_api::SON_UYGULANAN.set(format!("Geri yükleme başarısız: {e:#}"));
+    }
+  }
   let state = AppState::new(
     resolved.resource_root,
     resolved.data_dir,
@@ -592,6 +609,25 @@ pub fn run() {
   tauri::async_runtime::spawn(async move {
     if let Err(e) = server::serve(state_for_server).await {
       yya_warn!("HTTP server error: {e}");
+    }
+  });
+
+  // Açılışta güncelleme denetimi (bildirim adresi tanımlıysa; sessiz)
+  let state_for_update = Arc::new(state.clone());
+  tauri::async_runtime::spawn(async move {
+    tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+    server::guncelleme_api::acilista_denetle(state_for_update).await;
+  });
+
+  // Günlük otomatik yedek (açılıştan 2 dk sonra, sonra 6 saatte bir denetlenir)
+  let state_for_backup = state.clone();
+  tauri::async_runtime::spawn(async move {
+    tokio::time::sleep(std::time::Duration::from_secs(120)).await;
+    loop {
+      if let Err(e) = yedek::gerekirse_yedekle(&state_for_backup.data_dir, &state_for_backup.db, yedek::bot_veri_klasoru().as_deref(), 24 * 3600 * 1000).await {
+        yya_warn!("otomatik yedek alınamadı: {e:#}");
+      }
+      tokio::time::sleep(std::time::Duration::from_secs(6 * 3600)).await;
     }
   });
 

@@ -1,5 +1,6 @@
 import OBSWebSocket from "obs-websocket-js";
 import { isAudioInput } from "./obsAudio";
+import { yayinBilerekDurduruluyor } from "./yayinSagligi";
 
 export type ObsConnection = {
   host: string;
@@ -202,6 +203,7 @@ export async function toggleAudioInputsMuted(
 }
 
 export async function stopStream() {
+  yayinBilerekDurduruluyor();
   const client = getObs();
   // Zaten kapalıysa hata fırlatmasın — tekrar denemelerde gürültü olmasın.
   try {

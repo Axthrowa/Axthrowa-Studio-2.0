@@ -23,7 +23,7 @@ export interface SaglayiciTanimi {
 export const SAGLAYICILAR: Record<string, SaglayiciTanimi> = {
   openai: { ad: 'OpenAI (ChatGPT)', kok: 'https://api.openai.com/v1', model: 'gpt-4o-mini', tur: 'openai' },
   anthropic: { ad: 'Anthropic Claude', kok: 'https://api.anthropic.com/v1', model: 'claude-haiku-5-5', tur: 'anthropic' },
-  groq: { ad: 'Groq', kok: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile', tur: 'openai' },
+  groq: { ad: 'Groq', kok: 'https://api.groq.com/openai/v1', model: 'openai/gpt-oss-120b', tur: 'openai' },
   openrouter: { ad: 'OpenRouter', kok: 'https://openrouter.ai/api/v1', model: 'openrouter/auto', tur: 'openai' },
   deepseek: { ad: 'DeepSeek', kok: 'https://api.deepseek.com/v1', model: 'deepseek-chat', tur: 'openai' },
   mistral: { ad: 'Mistral', kok: 'https://api.mistral.ai/v1', model: 'mistral-small-latest', tur: 'openai' },
@@ -64,6 +64,14 @@ export function saglayiciAyari(ad: string) {
   };
 }
 
+/**
+ * "Güncel bilgi" açıkken Groq'ta gpt-oss modellerinin yerleşik internet araması. Eskiden `groq/compound`
+ * modeline geçiliyordu; o model hesaplardan kaldırıldı ("does not exist or you do not have access").
+ */
+export function groqAramaAraci(ad: string, model: string): { tools?: { type: string }[] } {
+  return ad === 'groq' && model.startsWith('openai/gpt-oss') && ayar('ai_web_arama') === 'true' ? { tools: [{ type: 'browser_search' }] } : {};
+}
+
 function hataMetni(e: any, ad: string): string {
   const durum = e?.response?.status;
   const govde = e?.response?.data;
@@ -94,7 +102,9 @@ export async function metinUret(ad: string, sistem: string, kullanici: string, z
       `${a.kok}/chat/completions`,
       {
         model: a.model,
-        max_tokens: 400,
+        ...groqAramaAraci(ad, a.model),
+        // Düşünen modeller (gpt-oss) düşünme jetonlarını da bu sınırdan harcar; 400 boş cevap bırakabiliyordu
+        max_tokens: 1024,
         messages: [
           { role: 'system', content: sistem },
           { role: 'user', content: kullanici }

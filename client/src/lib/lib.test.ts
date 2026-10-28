@@ -205,6 +205,12 @@ describe('temalar', () => {
     expect(sonuc.baska).toBe(1);
   });
 
+  it('genel anahtar widget’ın kendi anahtarına da yazılır (hedef barı)', () => {
+    const tema = { id: 't', degerler: { accentColor: '#f00', textColor: '#fff', bgColor: '#111' } } as any;
+    const sonuc = temayiUygula({ barColor: '#0f0' }, tema, ['barColor', 'fontColor', 'backgroundColor']);
+    expect(sonuc).toEqual({ barColor: '#f00', fontColor: '#fff', backgroundColor: '#111' });
+  });
+
   it('temalar() en az bir seçenek verir', () => {
     expect(temalar('alert-box').length).toBeGreaterThan(0);
   });

@@ -3,7 +3,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { ttsEngine } from '../tts/tts.js';
 import { seyrekUyar } from '../../core/logger.js';
-import { bahisOku } from '../games/bahis.js';
+import { bahisOku, SLOT_UCLU_CARPAN, SLOT_IKILI_CARPAN } from '../games/bahis.js';
 
 interface ActiveDuel {
   challenger: string;
@@ -23,6 +23,8 @@ export function cuzdanAdi(platform: string | undefined | null, ad: string): stri
   if (!a || a.includes(':')) return a;
   return !platform || platform === 'kick' || platform === 'all' ? a : `${platform}:${a}`;
 }
+
+export const DUELLO_SURESI_MS = 120_000;
 
 export class EconomyEngine {
   private activeDuels: Map<string, ActiveDuel> = new Map();
@@ -492,11 +494,11 @@ export class EconomyEngine {
     // sohbette yazılan kazanç gerçek bakiyeyle tutmuyordu.
     this.removePoints(cuzdanAdi(message.platform, message.user.username), amount);
     if (s1 === s2 && s2 === s3) {
-      const payout = amount * 5;
+      const payout = Math.floor(amount * SLOT_UCLU_CARPAN);
       const newTotal = this.addPoints(cuzdanAdi(message.platform, message.user.username), payout);
       return `${machineView} 💥 BÜYÜK İKRAMİYE! @${message.user.displayName} üçünü de tutturdu, net +${payout - amount} puan! Bakiye: ${newTotal} 🤑`;
     } else if (s1 === s2 || s2 === s3 || s1 === s3) {
-      const payout = amount * 2;
+      const payout = Math.floor(amount * SLOT_IKILI_CARPAN);
       const newTotal = this.addPoints(cuzdanAdi(message.platform, message.user.username), payout);
       return `${machineView} ✨ Tebrikler @${message.user.displayName}, ikisini tutturdun! Net +${payout - amount} puan. Bakiye: ${newTotal}`;
     } else {
@@ -530,6 +532,10 @@ export class EconomyEngine {
 
     const duelKey = `${message.platform}_${targetUserClean}_${cuzdanAdi(message.platform, message.user.username)}`;
     const reverseKey = `${message.platform}_${cuzdanAdi(message.platform, message.user.username)}_${targetUserClean}`;
+
+    // Davet 2 dk geçerli: eski bir daveti saatler sonra "!duello @x 5" yazan, istemediği 5000'lik düelloya girmesin
+    const eski = this.activeDuels.get(reverseKey);
+    if (eski && Date.now() - eski.createdAt > DUELLO_SURESI_MS) this.activeDuels.delete(reverseKey);
 
     if (this.activeDuels.has(reverseKey)) {
       const duel = this.activeDuels.get(reverseKey)!;

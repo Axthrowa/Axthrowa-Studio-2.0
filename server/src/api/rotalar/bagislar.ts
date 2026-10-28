@@ -96,7 +96,7 @@ function parseIncomingDonation(raw: any, query: any = {}) {
   return { donorName, amount, currency, message, platform };
 }
 
-const processDonation = (donorName: string, amount: number, currency: string = 'TL', message: string = '', platform: string = 'bynogame', test = false) => {
+export const processDonation = (donorName: string, amount: number, currency: string = 'TL', message: string = '', platform: string = 'bynogame', test = false) => {
   const donationId = uuidv4();
   const numAmount = Math.max(0, Number(amount) || 0);
   const safeName = donorName || 'Gizli Bağışçı';
@@ -119,7 +119,7 @@ const processDonation = (donorName: string, amount: number, currency: string = '
     amount: numAmount,
     currency: safeCurrency,
     message: safeMessage
-  }, true);
+  }, test);
 
   wsHub.sohbetOlayi('bagis', safeName, `${numAmount} ${safeCurrency} bağışladı${safeMessage ? ': ' + safeMessage : ''}`);
   wsHub.broadcastTo(['dashboard', 'alertbox', 'goals', 'all'], {
@@ -141,7 +141,8 @@ const processDonation = (donorName: string, amount: number, currency: string = '
   wsHub.kupayaDusur('tip', { user: safeName, amount: numAmount });
 
   try {
-    economyService.recordTip(safeName, 'kick', numAmount);
+    // Simülasyon sadakat puanı vermez (her deneme 5000 puan yazıyordu)
+    if (!test) economyService.recordTip(safeName, 'kick', numAmount);
   } catch (e) {
     console.warn('[Ekonomi] Bağış sadakat kaydına işlenemedi:', hataMetni(e));
   }

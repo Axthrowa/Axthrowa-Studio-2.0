@@ -5,7 +5,9 @@
 
 export const FONTS = [
   'Plus Jakarta Sans', 'Inter', 'Roboto', 'Montserrat', 'Oswald', 'Poppins',
-  'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito'
+  'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito',
+  // Oyun & film temalarının yazı tipleri (Google Fonts, OFL)
+  'Press Start 2P', 'VT323', 'Audiowide', 'Black Ops One', 'Cinzel', 'Special Elite', 'Creepster', 'Rye', 'Bebas Neue'
 ];
 
 export const ACTIVITY_DEFAULTS = {
@@ -143,7 +145,15 @@ export const GOAL_DEFAULTS = {
   backgroundOpacity: 0.85,
   borderRadius: 16,
   letterSpacing: 0.5,
-  textTransform: 'uppercase'
+  textTransform: 'uppercase',
+  // Çubuk görünümü (hedef temaları bunları doldurur)
+  barStyle: 'flat',
+  barColor2: '#f97316',
+  barBorderColor: '#ffffff',
+  barBorderWidth: 0,
+  barIcon: '',
+  // Koyu gölge: açık/renkli sahnede yazı okunmuyordu
+  textShadow: true
 };
 
 /** Kappagen / Ekranda Emojiler */
@@ -159,6 +169,8 @@ export const KAPPAGEN_DEFAULTS = {
 };
 
 export const EMOTE_COMBO_DEFAULTS = {
+  /** Kombo kutusu stili: none, pixel, neon, clean */
+  comboStyle: 'none',
   minCombo: 3,
   timeoutMs: 5000,
   displayMs: 4000,
@@ -181,7 +193,9 @@ export const EMOTE_COMBO_DEFAULTS = {
   borderColor: '#fbbf24',
   template: 'x{count} COMBO!',
   subTemplate: '{emote} ÇILGINLIĞI!',
-  onlyKnownEmotes: false
+  onlyKnownEmotes: false,
+  gatherMode: true,
+  burstOnEnd: true
 };
 
 export const LABELS_DEFAULTS = {
@@ -251,6 +265,8 @@ export const WHEEL_DEFAULTS = {
   cevirmeBeklemeSn: 30,
   /** !cark puan maliyeti (0 = ücretsiz; mod/yayıncı muaf) */
   cevirmeMaliyeti: 0,
+  /** Renk paleti: custom = dilimlerin kendi rengi */
+  palette: 'custom',
   size: 300,
   maxLabel: 14,
   segments: [
@@ -370,7 +386,48 @@ export const SUBATHON_DEFAULTS = {
   showTotalAdded: true,
   hideWhenIdle: false,
   accentColor: '#22d3ee',
-  accentColor2: '#34d399'
+  accentColor2: '#34d399',
+  // Görünüm: kart, minimal, dijital (LCD), çevirmeli kartlar, neon, tek satır hap
+  theme: 'card',
+  fontFamily: 'Plus Jakarta Sans',
+  timeFontFamily: 'Orbitron',
+  timeFontSize: 56,
+  textColor: '#ffffff',
+  bgColor: '#000000',
+  bgOpacity: 0.85,
+  radius: 16,
+  icon: '⏳',
+  showRules: true,
+  showStatus: true
+};
+
+/** Kelime bulutu — sohbette en çok geçen sözcükler */
+export const WORD_CLOUD_DEFAULTS = {
+  maxWords: 40,
+  minCount: 2,
+  minSize: 16,
+  maxSize: 72,
+  verticalRatio: 0.2,
+  colors: '#22d3ee,#a78bfa,#f472b6,#fbbf24,#34d399,#ffffff',
+  fontFamily: 'Montserrat',
+  bgColor: '#000000',
+  bgOpacity: 0,
+  radius: 16,
+  textShadow: true,
+  refreshSec: 5
+};
+
+/** Skor tablosu — takım adları/skorlar `!skortablo` ya da panelden */
+export const SCOREBOARD_DEFAULTS = {
+  theme: 'split',
+  showTitle: true,
+  fontFamily: 'Russo One',
+  fontSize: 48,
+  textColor: '#ffffff',
+  accentColor: '#22d3ee',
+  bgColor: '#000000',
+  bgOpacity: 0.75,
+  radius: 16
 };
 
 export const TRIVIA_DEFAULTS = {
@@ -411,6 +468,8 @@ export const VIEWER_COUNTER_DEFAULTS = {
   showPerPlatform: true,
   showPlatformName: false,
   showIcons: true,
+  /** logo = platform logosu, dot = renkli nokta */
+  iconStyle: 'logo',
   compactNumbers: false,
   showKick: true,
   showTwitch: true,
@@ -746,6 +805,8 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   trivia: TRIVIA_DEFAULTS,
   'viewer-counter': VIEWER_COUNTER_DEFAULTS,
   'the-cup': THE_CUP_DEFAULTS,
+  'word-cloud': WORD_CLOUD_DEFAULTS,
+  scoreboard: SCOREBOARD_DEFAULTS,
   'pinned-messages': PINNED_DEFAULTS,
   shoutout: SHOUTOUT_DEFAULTS,
   rankings: RANKINGS_DEFAULTS,
@@ -768,4 +829,41 @@ export function hedefWidgetKimligi(tur?: unknown): string {
   if (tur === 'kicks') return 'kicks-goal';
   if (tur === 'tip' || tur === 'donation') return 'donation-goal';
   return 'follower-goal';
+}
+
+/** Olay başına uyarı kaydının varsayılanları (Uyarılar sayfası ve widget ayarları ortak kullanır) */
+export const UYARI_OLAY_VARSAYILANLARI: Record<string, any> = {
+  follow: { event_type: 'follow', title_template: 'YENİ TAKİPÇİ!', message_template: '{user} aileye katıldı!', accent_color: '#8b5cf6', duration_ms: 5000 },
+  sub: { event_type: 'sub', title_template: 'YENİ ABONE!', message_template: '{user} {tier} ile abone oldu! ({months} ay)', accent_color: '#ec4899', duration_ms: 6500 },
+  gift_sub: { event_type: 'gift_sub', title_template: 'HEDİYE ABONE!', message_template: '{user} {count} hediye abone gönderdi!', accent_color: '#f472b6', duration_ms: 6500 },
+  host: { event_type: 'host', title_template: 'HOST!', message_template: '{user} kanalı host etti ({viewers})', accent_color: '#38bdf8', duration_ms: 6000 },
+  tip: { event_type: 'tip', title_template: 'BAĞIŞ GELDİ!', message_template: '{user} {amount} {currency}: "{message}"', accent_color: '#10b981', duration_ms: 7000 },
+  kicks: { event_type: 'kicks', title_template: 'KICKS!', message_template: '{user} {amount} Kick gönderdi!', accent_color: '#53fc18', duration_ms: 5500 },
+  raid: { event_type: 'raid', title_template: 'RAID!', message_template: '{user} {viewers} izleyici ile raid yaptı!', accent_color: '#f59e0b', duration_ms: 8000 }
+};
+
+/** Henüz kaydı olmayan olay için düzenlenebilir başlangıç kaydı */
+export function yeniUyariKaydi(olay: string): Record<string, any> {
+  return { ...(UYARI_OLAY_VARSAYILANLARI[olay] || {}), event_type: olay, sound_url: '', image_url: '', font_family: 'Plus Jakarta Sans', text_color: '#ffffff', animation: 'bounce', sound_volume: 0.7, is_enabled: 1, layout_mode: 'stacked', text_effect: 'shine' };
+}
+
+/** `/api/alerts/save` gövdesi (sunucu satır adlarından API adlarına) */
+export function uyariKaydiGovdesi(olay: string, p: Record<string, any>) {
+  return {
+    id: p.id,
+    eventType: olay,
+    titleTemplate: p.title_template,
+    messageTemplate: p.message_template,
+    soundUrl: p.sound_url,
+    imageUrl: p.image_url,
+    durationMs: p.duration_ms,
+    fontFamily: p.font_family,
+    textColor: p.text_color,
+    accentColor: p.accent_color,
+    animation: p.animation,
+    soundVolume: p.sound_volume,
+    isEnabled: p.is_enabled,
+    layoutMode: p.layout_mode,
+    textEffect: p.text_effect
+  };
 }

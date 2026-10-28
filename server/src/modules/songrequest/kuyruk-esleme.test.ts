@@ -31,6 +31,19 @@ describe('şarkı kuyruğu eşleme', () => {
     expect(acik()).toEqual(['s1']);
   });
 
+  it('kuyruk boşken Otomatik DJ önceki kliplerden çalar, yeni istek gelince ona geçer', () => {
+    ekle('g1', 'Eski 1', 'https://www.youtube.com/watch?v=aaaaaaaaaaa', 1);
+    ekle('g2', 'Eski 2', 'https://www.youtube.com/watch?v=bbbbbbbbbbb', 2);
+    db.exec('UPDATE song_queue SET is_played = 1');
+    const dj = songRequest.klipSirasi()!;
+    expect(dj.requestedBy).toBe('Otomatik DJ');
+    expect(songRequest.klipSirasi()!.id).toBe(dj.id); // biri bitene kadar aynı parça
+    expect(songRequest.klipBitti(dj.id)).toBe(true);
+    expect(songRequest.klipSirasi()!.url).not.toBe(dj.url); // art arda aynısı gelmez
+    ekle('yeni', 'İstek', 'https://www.youtube.com/watch?v=ccccccccccc', 3);
+    expect(songRequest.klipSirasi()!.id).toBe('yeni');
+  });
+
   it("Yayın Yönetim Aracı'ndan gelen çalan şarkı (kimliksiz) başlıkla eşlenir", () => {
     ekle('a', 'Birinci — X', 'https://open.spotify.com/track/aaaaaaaaaaaaaaaaaaaaaa', 1);
     ekle('b', 'Paramparça — Teoman', 'https://open.spotify.com/track/bbbbbbbbbbbbbbbbbbbbbb', 2);
@@ -41,13 +54,15 @@ describe('şarkı kuyruğu eşleme', () => {
     expect(acik()).toEqual(['b']);
   });
 
-  it('kısa başlık, onunla başlayan başka şarkıyı yakalamaz', () => {
+  it('kısa başlık, onunla başlayan isteği "çalıyor" saymaz; bekleyen istek açık kalır', () => {
+    // YYA kipinde istek ancak çalmaya başlayınca çözülür: çalanla eşleşmeyen çözülmüş istek bitmiştir
     ekle('a', 'Birinci — X', 'https://open.spotify.com/track/aaaaaaaaaaaaaaaaaaaaaa', 1);
     ekle('b', 'Hey Jude — Beatles', 'https://open.spotify.com/track/bbbbbbbbbbbbbbbbbbbbbb', 2);
+    ekle('c', 'teoman', 'spotify-istek:teoman', 3);
     (muzikHost as any).calaniGuncelle(
       { title: 'Hey', artist: 'Y', album: '', albumArt: '', isPlaying: true, progress: 0, duration: 1, source: 'spotify', updatedAt: 2 },
       'spotify'
     );
-    expect(acik()).toEqual(['a', 'b']);
+    expect(acik()).toEqual(['c']);
   });
 });

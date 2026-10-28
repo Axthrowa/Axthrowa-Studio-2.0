@@ -3,7 +3,7 @@ import { cuzdanAdi, economy } from '../economy/economy.js';
 import { db } from '../../db/index.js';
 import { triviaEngine } from './trivia-engine.js';
 import { kelimeTuttuMu, serbestCevapDogruMu } from './cevap-eslestir.js';
-import { bahisOku } from './bahis.js';
+import { bahisOku, YARIS_TEK_KAZANMA, BOMBA_CARPANI, SOYGUN_HEDEFLERI, SOYGUN_EKIP_BONUSU, SOYGUN_EKIP_UST, KASA_DILIMLERI } from './bahis.js';
 
 // --- TYPES ---
 type PlatformType = 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo' | 'all';
@@ -27,7 +27,7 @@ export interface GameSettings {
   anagram: { rewardPoints: number; durationSeconds: number };
   fishing: { cooldownSeconds: number; catchChancePercent: number };
   lootbox: { cost: number; jackpotMultiplier: number };
-  bomb: { cooldownSeconds: number; multiplier: number };
+  bomb: { cooldownSeconds: number };
   dice: { minBet: number; maxBet: number };
   coinflip: { minBet: number; maxBet: number };
 }
@@ -51,7 +51,7 @@ const DEFAULT_GAME_SETTINGS: GameSettings = {
   anagram: { rewardPoints: 150, durationSeconds: 40 },
   fishing: { cooldownSeconds: 45, catchChancePercent: 75 },
   lootbox: { cost: 100, jackpotMultiplier: 10 },
-  bomb: { cooldownSeconds: 30, multiplier: 2.0 },
+  bomb: { cooldownSeconds: 30 },
   dice: { minBet: 10, maxBet: 2500 },
   coinflip: { minBet: 10, maxBet: 2500 }
 };
@@ -325,17 +325,8 @@ export class GamesEngine {
     this.activeHeist = null;
 
     const count = heist.participants.size;
-    const targets = [
-      { name: 'Kuyumcu Dükkanı', multiplier: 1.6, baseSuccess: 0.75 },
-      { name: 'Merkez Bankası Kasası', multiplier: 2.2, baseSuccess: 0.60 },
-      { name: 'Zırhlı Para Taşıma Aracı', multiplier: 1.9, baseSuccess: 0.68 },
-      { name: 'Şehir Kumarhanesi', multiplier: 2.5, baseSuccess: 0.52 },
-      { name: 'Dünya Elmas Borsası', multiplier: 3.2, baseSuccess: 0.40 }
-    ];
-
-    const target = targets[Math.floor(Math.random() * targets.length)];
-    // Gang synergy bonus: +4% chance per member
-    const successRate = Math.min(0.85, target.baseSuccess + (count * 0.04));
+    const target = SOYGUN_HEDEFLERI[Math.floor(Math.random() * SOYGUN_HEDEFLERI.length)];
+    const successRate = target.baseSuccess + Math.min(count, SOYGUN_EKIP_UST) * SOYGUN_EKIP_BONUSU;
 
     const winners: string[] = [];
     const losers: string[] = [];
@@ -429,7 +420,7 @@ export class GamesEngine {
     if (drivers.length === 1) {
       // Solo race against the drift bot
       const solo = drivers[0];
-      const win = Math.random() >= 0.45;
+      const win = Math.random() < YARIS_TEK_KAZANMA;
       if (win) {
         // Bahis katılırken çekildi: geri ver + aynı miktar kazanç
         economy.addPoints(solo.username, solo.amount * 2);
@@ -610,19 +601,19 @@ export class GamesEngine {
     economy.removePoints(cuzdanAdi(message.platform, message.user.username), cost);
     const roll = Math.random() * 100;
 
-    if (roll < 50) {
+    if (roll < KASA_DILIMLERI.siradan[0]) {
       // Common
-      const prize = Math.round(cost * 0.35);
+      const prize = Math.round(cost * KASA_DILIMLERI.siradan[1]);
       economy.addPoints(cuzdanAdi(message.platform, message.user.username), prize);
       return `📦 [KASA AÇILDI] ⚪ Sıradan Drop: @${message.user.displayName} [Paslı Çakı | Sahada Test Edilmiş] çıkardı! (+${prize} Puan) 💸`;
-    } else if (roll < 80) {
+    } else if (roll < KASA_DILIMLERI.nadir[0]) {
       // Rare
-      const prize = Math.round(cost * 1.5);
+      const prize = Math.round(cost * KASA_DILIMLERI.nadir[1]);
       economy.addPoints(cuzdanAdi(message.platform, message.user.username), prize);
       return `📦 [KASA AÇILDI] 🔵 Nadir Drop: @${message.user.displayName} [AK-47 | Neon Devrimi] çıkardı! (+${prize} Puan)! ✨`;
-    } else if (roll < 95) {
+    } else if (roll < KASA_DILIMLERI.epik[0]) {
       // Epic
-      const prize = Math.round(cost * 3.5);
+      const prize = Math.round(cost * KASA_DILIMLERI.epik[1]);
       economy.addPoints(cuzdanAdi(message.platform, message.user.username), prize);
       return `📦 [KASA AÇILDI] 🟣 EPİK DROP! @${message.user.displayName} [AWP | Ejderha Ateşi] düşürdü! (+${prize} Puan) 🐉🔥`;
     } else {
@@ -655,8 +646,7 @@ export class GamesEngine {
       this.activeBombs.delete(username);
 
       if (chosenColor === bomb.wire) {
-        const mult = this.settings.bomb.multiplier || 2.5;
-        const reward = Math.round(bomb.amount * mult);
+        const reward = Math.round(bomb.amount * BOMBA_CARPANI);
         economy.addPoints(username, reward);
         return `✂️ TIK... KABLO KESİLDİ! 🟢 @${message.user.displayName} doğru kabloyu (${chosenColor.toUpperCase()}) keserek C4 bombasını imha etti! +${reward} Puan kazandı! 🎖️`;
       } else {

@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { VIEWER_COUNTER_DEFAULTS } from '../lib/widget-defaults.js';
+import { PlatformLogo } from '../components/PlatformLogo.js';
 
 type Satir = { id: string; label: string; value: number; renk: string };
 
@@ -99,6 +100,29 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
       background: rgba(s.bgColor, s.bgOpacity),
       border: `1px solid ${rgba(s.borderColor, 0.25)}`,
       borderRadius: 999
+    },
+    // Koyu kadife: derin renk geçişi, yumuşak iç gölge
+    velvet: {
+      background: `radial-gradient(120% 140% at 0% 0%, ${rgba(s.accentColor, 0.35)}, ${rgba(s.bgColor, s.bgOpacity)} 60%)`,
+      border: `1px solid ${rgba(s.accentColor, 0.35)}`,
+      boxShadow: `inset 0 1px 0 ${rgba('#ffffff', 0.12)}, 0 12px 30px rgba(0,0,0,.55)`
+    },
+    // Borsa bandı: düz şerit, solda renkli çubuk, eş aralıklı rakamlar
+    ticker: {
+      background: rgba(s.bgColor, Math.max(0.85, Number(s.bgOpacity) || 0)),
+      borderLeft: `6px solid ${s.accentColor}`,
+      fontVariantNumeric: 'tabular-nums',
+      letterSpacing: 1
+    },
+    // Holografik kenar: kayan gökkuşağı çerçeve
+    holochip: {
+      background: `linear-gradient(${rgba(s.bgColor, s.bgOpacity)}, ${rgba(s.bgColor, s.bgOpacity)}) padding-box, linear-gradient(120deg, #22d3ee, #a78bfa, #f472b6, #fbbf24, #22d3ee) border-box`,
+      border: '2px solid transparent',
+      boxShadow: `0 0 18px ${rgba('#a78bfa', 0.35)}`
+    },
+    splitflap: {
+      background: 'transparent',
+      border: 'none'
     }
   };
 
@@ -135,27 +159,44 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
           </div>
         )}
 
-        {s.showTotal && (
-          <div className="font-black" style={{ fontSize: (Number(s.fontSize) || 18) * 1.25 }}>
-            {sayiBicimle(toplam, !!s.compactNumbers)}
-          </div>
-        )}
+        {s.showTotal &&
+          (tema === 'splitflap' ? (
+            // Havalimanı tabelası gibi: her rakam ortasından bölünmüş ayrı karo
+            <div className="flex gap-1">
+              {sayiBicimle(toplam, !!s.compactNumbers).split('').map((c, i) => (
+                <span
+                  key={i}
+                  className="font-black inline-flex items-center justify-center"
+                  style={{
+                    fontSize: (Number(s.fontSize) || 18) * 1.25,
+                    minWidth: (Number(s.fontSize) || 18) * 0.95,
+                    padding: '2px 4px',
+                    borderRadius: 6,
+                    background: `linear-gradient(180deg, ${rgba(s.bgColor, 1)} 0 49%, #000 49% 51%, ${rgba(s.bgColor, 0.85)} 51%)`,
+                    boxShadow: `0 3px 8px rgba(0,0,0,.55), inset 0 0 0 1px ${rgba(s.accentColor, 0.4)}`
+                  }}
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="font-black" style={{ fontSize: (Number(s.fontSize) || 18) * 1.25 }}>
+              {sayiBicimle(toplam, !!s.compactNumbers)}
+            </div>
+          ))}
 
         {s.showPerPlatform && (
           <div className="flex gap-3" style={{ fontSize: Math.max(10, (Number(s.fontSize) || 18) * 0.7) }}>
             {satirlar.map((r) => (
               <span key={r.id} className="flex items-center gap-1">
-                {s.showIcons && (
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 8,
-                      height: 8,
-                      borderRadius: 999,
-                      background: r.renk
-                    }}
-                  />
-                )}
+                {s.showIcons &&
+                  (s.iconStyle === 'dot' ? (
+                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 999, background: r.renk }} />
+                  ) : (
+                    // Platform logosu (satır içi SVG: OBS'te ağ isteği yok)
+                    <PlatformLogo platform={r.id} size={Math.max(12, Math.round((Number(s.fontSize) || 18) * 0.85))} />
+                  ))}
                 {s.showPlatformName && <span style={{ opacity: 0.7 }}>{r.label}</span>}
                 <strong>{sayiBicimle(r.value, !!s.compactNumbers)}</strong>
               </span>

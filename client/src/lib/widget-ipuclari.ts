@@ -93,6 +93,14 @@ export const WIDGET_IPUCLARI: Record<string, string[]> = {
     'Geri sayan bir yayın süresi; abone, bağış ve KICKs süreyi uzatır.',
     'Başlat/durdur ve hangi olayın kaç saniye eklediği bu pencereden ayarlanır.'
   ],
+  'word-cloud': [
+    'Sohbette en çok geçen sözcükler büyüyen bir bulut olarak görünür (bağlaçlar ve linkler sayılmaz).',
+    'Sayım bot açıldığından beri sürer; !chatstats sifirla (mod) ya da Sohbet İstatistikleri sayfasından sıfırlanır.'
+  ],
+  scoreboard: [
+    'Takım skorları: moderatör !skortablo 1 +1, !skortablo mavi =5, !skortablo ad 1 Mavi yazar.',
+    'İzleyici !skortablo ile skoru görür; değişen takım OBS’te kısa süre parlar.'
+  ],
   'the-cup': [
     'Bağış, abone, hediye abonelik ve KICKs kupaya düşer; öğeler rastgele yığılır.',
     'Hangi olayların sayılacağı ve eşikler ayarlanır; kupa OBS yenilense de dolu kalır.',

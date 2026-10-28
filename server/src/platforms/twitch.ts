@@ -39,10 +39,11 @@ export class TwitchPlatform extends BasePlatform {
 
     return new Promise((resolve) => {
       try {
-        this.ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        this.ws = ws;
 
-        this.ws.on('open', () => {
-          if (!this.ws) return;
+        ws.on('open', () => {
+          if (this.ws !== ws) return;
 
           // Request Twitch IRC capabilities (tags for badges, sub info, etc.)
           this.ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
@@ -62,18 +63,20 @@ export class TwitchPlatform extends BasePlatform {
           resolve(true);
         });
 
-        this.ws.on('message', (data: WebSocket.Data) => {
+        ws.on('message', (data: WebSocket.Data) => {
           this.handleIrcMessage(data.toString());
         });
 
-        this.ws.on('close', () => {
+        ws.on('close', () => {
+          // Yeniden bağlanınca eski soketin geç gelen kapanışı yeni bağlantıyı kopmuş göstermesin
+          if (this.ws !== ws) return;
           this.connected = false;
           console.log('[Twitch] Disconnected');
         });
 
-        this.ws.on('error', (err) => {
+        ws.on('error', (err) => {
           console.error('[Twitch] WebSocket error:', err.message);
-          this.connected = false;
+          if (this.ws === ws) this.connected = false;
           resolve(false);
         });
       } catch (err) {
@@ -247,7 +250,18 @@ export class TwitchPlatform extends BasePlatform {
     }
 
     try {
+      // Satır sonu IRC'de yeni komut demek: çok satırlı yanıt (yapay zekâ) kesilir, kalanı ham komut olarak giderdi
+      message = message.replace(/[\r\n]+/g, ' ').trim();
       this.ws.send(`PRIVMSG #${channel} :${message}`);
+      // Twitch IRC gönderene kendi mesajını geri yollamaz; panelde görünsün diye bot hesabının adıyla yansıtılır
+      eventBus.emitChat({
+        id: `self-${Date.now()}`,
+        platform: 'twitch',
+        channel,
+        user: { id: this.botUsername, username: this.botUsername.toLowerCase(), displayName: this.botUsername, badges: [], isMod: true, isSub: false, isVip: false, isBroadcaster: false, isSelf: true },
+        message,
+        timestamp: Date.now()
+      });
       return true;
     } catch (err) {
       console.error('[Twitch] Failed to send message:', err);
@@ -312,6 +326,16 @@ export class TwitchPlatform extends BasePlatform {
 
   async baslikDegistir(baslik: string): Promise<ModerasyonSonucu> {
     const r = await this.helix.kanalGuncelle(this.currentChannel, { baslik });
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  async isaretKoy(aciklama: string): Promise<ModerasyonSonucu> {
+    const r = await this.helix.isaretKoy(this.currentChannel, aciklama);
+    return r.ok ? { ok: true } : { ok: false, hata: r.hata };
+  }
+
+  async reklamBaslat(saniye: number): Promise<ModerasyonSonucu> {
+    const r = await this.helix.reklamBaslat(this.currentChannel, saniye);
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };
   }
 

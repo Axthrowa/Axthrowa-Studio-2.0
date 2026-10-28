@@ -22,7 +22,7 @@ import { SINIR, type DegiskenBaglam, type DegiskenTanimi } from './types.js';
 import { noktaliBol } from './resolve.js';
 import { sayi, sureMetni, matematik, jsonYolu, jsonYoluYaz, jsonYoluSil, jsonDegeri, JSON_DEGISKEN_SINIRI } from './pure.js';
 import { canliDurum } from '../live-status.js';
-import { agirlikliSec, havaMetni, ifSonucu, kickAlaniCoz, kickProfilAlani } from './ek-saf.js';
+import { agirlikliSec, havaMetni, ifSonucu, kickAlaniCoz, kickProfilAlani, steamAlani } from './ek-saf.js';
 
 export { matematik, jsonYolu } from './pure.js';
 
@@ -277,6 +277,14 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
       ag: true,
       ornek: '$(weather $(query))'
     }),
+    tanim('lastfm', 'web', 'Last.fm son dinlenen şarkı: $(lastfm kullanıcı). Ayarlarda Last.fm API anahtarı (lastfm_api_key) gerekir', (h) => lastfmSon(h), {
+      ag: true,
+      ornek: '🎧 Şu an: $(lastfm kullaniciadim)'
+    }),
+    tanim('steam', 'web', 'Steam profili: $(steam kullanıcı|64-bit kimlik [oyun|durum|ad]). Profil herkese açık olmalı', (h) => steamProfili(h), {
+      ag: true,
+      ornek: '🎮 $(steam gabelogannewell oyun)'
+    }),
     tanim(
       'kick',
       'user',
@@ -502,6 +510,42 @@ export function degiskenKatalogu() {
   }
   for (const g of Object.values(gruplar)) g.sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
   return gruplar;
+}
+
+// ---- Last.fm / Steam ---------------------------------------------------------
+async function lastfmSon(ham: string): Promise<string> {
+  const k = String(ham || '').trim().split(/\s+/)[0] || '';
+  if (!/^[A-Za-z0-9_-]{2,15}$/.test(k)) return '(lastfm: Last.fm kullanıcı adı yazın)';
+  const anahtar = settingsCache.get('lastfm_api_key', '').trim();
+  if (!anahtar) return '(lastfm: Ayarlarda Last.fm API anahtarı gerekir — last.fm/api/account/create)';
+  try {
+    const j = JSON.parse(
+      await guvenliGetir(`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(k)}&api_key=${encodeURIComponent(anahtar)}&format=json&limit=1`)
+    );
+    const t = j?.recenttracks?.track?.[0];
+    if (!t) return j?.message ? `(lastfm: ${String(j.message).slice(0, 60)})` : '(lastfm: dinleme yok)';
+    const sarki = `${t.artist?.['#text'] || '?'} — ${t.name || '?'}`;
+    return t['@attr']?.nowplaying === 'true' ? sarki : `${sarki} (son dinlenen)`;
+  } catch {
+    return '(lastfm: servise ulaşılamadı)';
+  }
+}
+
+/** Steam'in herkese açık profil XML'i (anahtarsız): oyun, çevrim içi durum, görünen ad */
+async function steamProfili(ham: string): Promise<string> {
+  const [kim = '', alan = 'oyun'] = String(ham || '').trim().split(/\s+/);
+  if (!/^[A-Za-z0-9_-]{2,32}$/.test(kim)) return '(steam: Steam kullanıcı adı ya da 64-bit kimlik yazın)';
+  const yol = /^\d{17}$/.test(kim) ? `profiles/${kim}` : `id/${kim}`;
+  const xml = await guvenliGetir(`https://steamcommunity.com/${yol}?xml=1`);
+  if (xml.startsWith('(fetch')) return '(steam: profile ulaşılamadı)';
+  const al = (etiket: string) => steamAlani(xml, etiket);
+  if (/<error>/.test(xml)) return '(steam: profil bulunamadı)';
+  const ad = al('steamID') || kim;
+  if (alan === 'ad') return ad;
+  const durum = al('onlineState');
+  if (alan === 'durum') return durum === 'in-game' ? 'oyunda' : durum === 'online' ? 'çevrim içi' : 'çevrim dışı';
+  const oyun = al('gameName');
+  return oyun ? `${ad} şu an ${oyun} oynuyor` : `${ad} şu an oyunda değil`;
 }
 
 // ---- Hava durumu (Open-Meteo: anahtarsız; konum başına 10 dk önbellek) --------

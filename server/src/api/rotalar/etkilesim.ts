@@ -15,9 +15,8 @@ import { kingSystemService } from '../../modules/games/king-system.js';
 import { tahminler } from '../../modules/engagement/predictions.js';
 import { kuyruk } from '../../modules/engagement/queue.js';
 import { puanDususu } from '../../modules/engagement/point-drops.js';
-import { hataMetni } from '../../core/logger.js';
 import { anketKapaticiyiBaslat } from '../../modules/engagement/anket-kapatici.js';
-import { overlayAyariOku, overlayAyariYaz } from './widgetlar.js';
+import { anketBaslat, anketBitir } from '../../modules/engagement/anket.js';
 
 const router = Router();
 anketKapaticiyiBaslat();
@@ -40,21 +39,8 @@ router.get('/giveaways', (req: Request, res: Response) => {
 
 router.post('/giveaways/create', (req: Request, res: Response) => {
   const { title, keyword = '!katil', subBonusMultiplier = 2.0, costPoints = 0, durationMinutes = 10, winnerCount = 1, maxEntries = 0, subOnly = false, minWatchMinutes = 0 } = req.body;
-  const created = giveaway.createGiveaway(title, keyword, subBonusMultiplier, costPoints);
-  let uyari: string | undefined;
-  if (created?.id) {
-    try {
-      db.prepare('UPDATE giveaways SET duration_minutes=?, winner_count=?, max_entries=?, follower_only=?, sub_only=?, min_watch_minutes=? WHERE id=?')
-        // "Yalnız takipçi" yok: Kick sohbet iletisi takip durumunu taşımaz, doğrulanamazdı (sütun 0 kalır)
-        .run(durationMinutes, winnerCount, maxEntries, 0, subOnly ? 1 : 0, minWatchMinutes, created.id);
-    } catch (e) {
-      // Eskiden sessizdi: süre, kazanan sayısı ve katılım şartları kaybolur,
-      // çekiliş varsayılanlarla açılırdı — yayıncı fark etmezdi.
-      uyari = 'Çekiliş açıldı ama ek ayarlar (süre, kazanan sayısı, katılım şartları) kaydedilemedi.';
-      console.error('[Çekiliş] Ek ayarlar yazılamadı:', hataMetni(e));
-    }
-  }
-  res.json({ success: true, giveaway: giveaway.getActiveGiveaway(), ...(uyari ? { uyari } : {}) });
+  const r = giveaway.baslat({ title, keyword, subBonusMultiplier, costPoints, durationMinutes, winnerCount, maxEntries, subOnly, minWatchMinutes });
+  res.json({ success: true, giveaway: r.giveaway, ...(r.uyari ? { uyari: r.uyari } : {}) });
 });
 
 router.post('/giveaways/draw', (req: Request, res: Response) => {
@@ -122,47 +108,14 @@ router.get('/polls/active', (req: Request, res: Response) => {
   });
 });
 
-router.post('/polls/create', (req: Request, res: Response) => {
-  const title = String(req.body?.title ?? '').trim().slice(0, 200);
-  const options: string[] = Array.isArray(req.body?.options)
-    ? req.body.options.map((o: unknown) => String(o ?? '').trim().slice(0, 100)).filter(Boolean).slice(0, 10)
-    : [];
-  // NaN/negatif süre anketi anında kapatıyor ya da hiç kapatmıyordu
-  const durationSeconds = Math.min(3600, Math.max(10, Math.floor(Number(req.body?.durationSeconds)) || 60));
-  const command = /^![\p{L}\p{N}_]{1,20}$/u.test(String(req.body?.command || '')) ? String(req.body.command) : '!oy';
-  if (!title || options.length < 2) {
-    return res.status(400).json({ error: 'Başlık ve en az 2 seçenek gerekli.' });
-  }
-
-  db.prepare('UPDATE polls SET is_active = 0 WHERE is_active = 1').run();
-
-  const id = `poll-${Date.now()}`;
-  const endsAt = Date.now() + Number(durationSeconds) * 1000;
-  db.prepare(`
-    INSERT INTO polls (id, title, options, is_active, created_at, duration_seconds, ends_at, command)
-    VALUES (?, ?, ?, 1, ?, ?, ?, ?)
-  `).run(id, title, JSON.stringify(options), Date.now(), durationSeconds, endsAt, command);
-
-  // Tek URL yerleşiminde anket katmanı kapalıysa anket OBS'te hiç görünmüyordu: başlayınca açılır
-  // (widget anket yokken kendini gizler, açık kalması zararsız)
-  try {
-    const yerlesim = overlayAyariOku();
-    if (!yerlesim?.polls?.enabled) overlayAyariYaz({ ...yerlesim, polls: { ...yerlesim.polls, enabled: true } });
-  } catch (e) {
-    console.warn('[Anket] Katman açılamadı:', hataMetni(e));
-  }
-
-  wsHub.broadcastTo(['all'], {
-    type: 'poll_started',
-    poll: { id, title, question: title, options, votes: [], endsAt, durationSeconds }
-  });
-
-  res.json({ success: true, id });
+router.post('/polls/create', async (req: Request, res: Response) => {
+  const r = await anketBaslat(req.body || {});
+  if (!r.ok) return res.status(400).json({ error: r.hata });
+  res.json({ success: true, id: r.id });
 });
 
-router.post('/polls/end', (req: Request, res: Response) => {
-  db.prepare('UPDATE polls SET is_active = 0 WHERE is_active = 1').run();
-  wsHub.broadcastTo(['all'], { type: 'poll_ended' });
+router.post('/polls/end', async (req: Request, res: Response) => {
+  await anketBitir();
   res.json({ success: true });
 });
 

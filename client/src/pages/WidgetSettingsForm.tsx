@@ -7,6 +7,8 @@ import { Save } from 'lucide-react';
 import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
+import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
+import { CARK_PALETLERI } from '../widgets/WheelWidget.js';
 
 const LABELS: Record<string, string> = {
   showFollow: 'Takip göster', showSub: 'Abone göster', showGiftSub: 'Hediye abone göster',
@@ -39,11 +41,14 @@ const LABELS: Record<string, string> = {
   messageBgColor: 'Mesaj arka planı', messageBgOpacity: 'Mesaj opaklığı', highlightColor: 'Vurgu rengi',
   hideBroadcaster: 'Yayıncıyı gizle', title: 'Başlık', endingTitle: 'Bitiş başlığı', current: 'Mevcut',
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
-  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', layout: 'Düzen', showRemaining: 'Kalan göster',
+  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', comboStyle: 'Görsel stil', iconStyle: 'Simge biçimi', palette: 'Renk paleti',
+  timeFontFamily: 'Süre yazı tipi', timeFontSize: 'Süre boyutu (px)', showRules: 'Kuralları göster', barColor2: 'Bar 2. renk (geçiş)',
+  barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Dolgu ucundaki simge (emoji)', layout: 'Düzen', showRemaining: 'Kalan göster',
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
   textTransform: 'Metin dönüşümü', minCombo: 'Min. combo', timeoutMs: 'Combo zaman aşımı (ms)',
   displayMs: 'Gösterim (ms)', size: 'Emote boyutu', showFloating: 'Uçan emote', showPopup: 'Popup göster',
   confetti: 'Konfeti', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
+  gatherMode: "Gelen emote'lar büyük emote'ta toplansın", burstOnEnd: "Kombo bitince emote'lar etrafa dağılıp kaybolsun",
   showTop: 'Top bağışçı', separator: 'Ayırıcı', marqueeSpeed: 'Kayan yazı hızı', height: 'Yükseklik',
   paddingX: 'Yatay dolgu', command: 'Komut', titleColor: 'Başlık rengi', showVotes: 'Oy sayısı',
   hideUntilEnd: 'Bitene kadar gizle', spinMs: 'Dönüş süresi (ms)', extraSpins: 'Ek tur',
@@ -139,6 +144,7 @@ const SECTIONS: Record<string, string> = {
   soundEnabled: 'Ses', soundUrl: 'Ses', soundVolume: 'Ses', mute: 'Ses', globalVolume: 'Ses',
   backgroundColor: 'Görünüm', backgroundOpacity: 'Görünüm', borderRadius: 'Görünüm', borderColor: 'Görünüm',
   barColor: 'Görünüm', barBackground: 'Görünüm', barHeight: 'Görünüm', barRadius: 'Görünüm',
+  barStyle: 'Görünüm', barColor2: 'Görünüm', barBorderColor: 'Görünüm', barBorderWidth: 'Görünüm', barIcon: 'Görünüm',
   messageBgColor: 'Görünüm', messageBgOpacity: 'Görünüm', highlightColor: 'Görünüm', accentColor: 'Görünüm',
   pointerColor: 'Görünüm', transparentBg: 'Görünüm', textShadow: 'Görünüm', smoothMask: 'Görünüm',
   showGlow: 'Görünüm',
@@ -223,10 +229,10 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
   'hype-train': { title: 'Genel', showTimer: 'Düzen' },
   'end-credits': { title: 'Genel' },
   king: { title: 'Genel' },
-  subathon: { title: 'Genel' },
+  subathon: { title: 'Genel', theme: 'Görünüm', icon: 'Görünüm', timeFontFamily: 'Tipografi', timeFontSize: 'Tipografi', showRules: 'Düzen', showStatus: 'Düzen' },
   'viewer-counter': { title: 'Genel' },
   trivia: { title: 'Genel' },
-  'wheel-of-fortune': { size: 'Görünüm' },
+  'wheel-of-fortune': { size: 'Görünüm', palette: 'Görünüm' },
   'audio-player': { label: 'Genel' }
 };
 
@@ -235,6 +241,12 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
   // `animKimligi()` ile eslenmeye devam ediyor.
   animation: ANIM_SECENEKLERI,
   exitAnimation: ANIM_SECENEKLERI,
+  barStyle: [
+    { value: 'flat', label: 'Düz' },
+    { value: 'gradient', label: 'Renk geçişi' },
+    { value: 'striped', label: 'Çizgili (akan)' },
+    { value: 'glossy', label: 'Parlak' }
+  ],
   fontFamily: FONTS.map(f => ({ value: f, label: f })),
   usernameColorMode: [
     { value: 'user', label: 'Kullanıcı rengi' },
@@ -287,19 +299,23 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     animation: [...ANIM_SECENEKLERI, { value: 'marquee', label: 'Kayan yazı' }]
   },
   'viewer-counter': {
-    theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['capsule', 'Kapsül']),
-    layout: tema(['column', 'Alt alta'], ['row', 'Yan yana'])
+    theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['capsule', 'Kapsül'], ['velvet', 'Kadife'], ['ticker', 'Borsa bandı'], ['holochip', 'Holografik'], ['splitflap', 'Çevirmeli tabela']),
+    layout: tema(['column', 'Alt alta'], ['row', 'Yan yana']),
+    iconStyle: tema(['logo', 'Platform logosu'], ['dot', 'Renkli nokta'])
   },
 
   'the-cup': {
     theme: tema(['glass', 'Cam'], ['neon', 'Neon'], ['wood', 'Ahşap'], ['minimal', 'Minimal'], ['crystal', 'Kristal'])
   },
   'pinned-messages': {
-    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam']),
+    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam'], ['cute', 'Sevimli'], ['terminal', 'Terminal'], ['cozy', 'Rahat'], ['pixel', 'Piksel'], ['compact', 'Kompakt'], ['capsule', 'Kapsül'], ['hud', 'HUD (oyun arayüzü)']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
+  'emote-combo': {
+    comboStyle: tema(['none', 'Yok (renk ayarları)'], ['pixel', 'Piksel'], ['neon', 'Neon'], ['clean', 'Minimal'])
+  },
   shoutout: {
-    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam']),
+    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam'], ['softcard', 'Yumuşak kart'], ['neumorph', 'Kabartma'], ['borderline', 'Yalnız çerçeve'], ['broadcast', 'Haber bandı'], ['horizon', 'Ufuk'], ['stage', 'Sahne ışığı'], ['ember', 'Kor'], ['signal', 'Sinyal'], ['tag', 'Etiket'], ['ribbon', 'Kurdele'], ['guestpass', 'Konuk kartı'], ['phosphor', 'Fosfor ekran'], ['prism', 'Prizma']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
   rankings: {
@@ -321,6 +337,16 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
   'loyalty-redemptions': {
     theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
+  },
+  'wheel-of-fortune': {
+    palette: Object.entries(CARK_PALETLERI).map(([value, p]) => ({ value, label: p.ad }))
+  },
+  scoreboard: {
+    theme: tema(['split', 'Yan yana kartlar'], ['stacked', 'Alt alta liste'], ['minimal', 'Minimal (yalnız yazı)'])
+  },
+  subathon: {
+    theme: tema(['card', 'Kart'], ['minimal', 'Minimal (yalnız süre)'], ['digital', 'Dijital saat (LCD)'], ['flip', 'Çevirmeli kartlar'], ['neon', 'Neon'], ['pill', 'Tek satır hap']),
+    timeFontFamily: FONTS.map(f => ({ value: f, label: f }))
   },
   'audio-player': {
     theme: tema(['status', 'Durum kartı'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['dot', 'Sadece nokta'])
@@ -354,6 +380,8 @@ const PATH_MAP: Record<string, string> = {
   'event-labels': '/widgets/event-labels',
   subathon: '/widgets/subathon',
   'the-cup': '/widgets/the-cup',
+  'word-cloud': '/widgets/word-cloud',
+  scoreboard: '/widgets/scoreboard',
   'viewer-counter': '/widgets/viewer-counter',
   shoutout: '/widgets/shoutout',
   polls: '/widgets/polls',
@@ -495,6 +523,8 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
           ))}
         </div>
       </div>
+
+      {ayarId === 'alert-box' && <UyariOlayMedyasi />}
 
       {sections.filter(s => openSection === 'all' || openSection === s).map(section => (
         <div key={section} className="space-y-2">

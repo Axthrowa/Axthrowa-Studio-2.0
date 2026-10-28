@@ -61,7 +61,7 @@ export class MuzikHost {
    * bağlantısı yokken o host'un çalan şarkısını okur, !sr isteğini oraya iletir.
    * Eskiden ikinci bir Spotify bağlantısı gerekiyordu; yoksa sözler boş, !sr çalmıyordu.
    */
-  private harici = { spotify: false, sonraki: 0 };
+  private harici = { spotify: false, ytmd: false, kaynak: '', sonraki: 0 };
 
   constructor(
     private depo: MuzikDeposu,
@@ -91,6 +91,8 @@ export class MuzikHost {
     try {
       const r = await axios.get(`${adres}/api/player/status`, { timeout: 2000 });
       this.harici.spotify = Boolean(r.data?.spotify?.connected);
+      this.harici.ytmd = Boolean(r.data?.ytmd?.connected);
+      this.harici.kaynak = String(r.data?.source || '');
       const np = r.data?.nowPlaying;
       this.calaniGuncelle(
         np?.title
@@ -111,16 +113,36 @@ export class MuzikHost {
     } catch {
       // Host kapalı (bağımsız kurulum): sık deneme
       this.harici.spotify = false;
+      this.harici.ytmd = false;
       this.harici.sonraki = Date.now() + 15_000;
     }
   }
 
   /** Şarkıyı harici host'ta arar; `sira` ise Spotify sırasına ekler, değilse hemen çalar. */
-  async hariciIstek(sorgu: string, sira: boolean): Promise<{ title: string; artist: string; uri: string }> {
+  /**
+   * İstekler hangi programa gitsin: şu an çalan programa (Spotify / YouTube Music Desktop),
+   * yoksa YYA'da seçili kaynağa, o da yoksa bağlı olana. Hiçbiri bağlı değilse null.
+   */
+  hariciHedef(): 'spotify' | 'ytmd' | null {
+    const { spotify, ytmd } = this.harici;
+    if (!spotify && !ytmd) return null;
+    if (spotify && !ytmd) return 'spotify';
+    if (ytmd && !spotify) return 'ytmd';
+    const calan = this.simdiCalan();
+    const k = calan?.isPlaying ? calan.source : this.harici.kaynak;
+    return k === 'youtube-music' ? 'ytmd' : 'spotify';
+  }
+
+  /** İstek işlenmeden önce YYA durumunu tazele (açılışta ilk yoklama gelmeden gelen istek kaybolmasın) */
+  async hariciTazele(): Promise<void> {
+    if (!this.spotifyBagliMi() && !this.ytmdBagliMi()) await this.hariciYokla();
+  }
+
+  async hariciIstek(sorgu: string, sira: boolean, videoId?: string): Promise<{ title: string; artist: string; uri: string }> {
     const adres = this.hariciAdres();
-    if (!adres || !this.harici.spotify) throw new Error('Spotify bağlı değil');
+    if (!adres || (!this.harici.spotify && !this.harici.ytmd)) throw new Error('Spotify / YouTube Music bağlı değil');
     try {
-      const r = await axios.post(`${adres}/api/player/request`, { query: sorgu.slice(0, 200), queue: sira }, { timeout: 10_000 });
+      const r = await axios.post(`${adres}/api/player/request`, { query: sorgu.slice(0, 200), video_id: videoId, queue: sira }, { timeout: 10_000 });
       setTimeout(() => void this.hariciYokla().catch(() => {}), 1500).unref?.();
       return { title: String(r.data?.title || sorgu), artist: String(r.data?.artist || ''), uri: String(r.data?.id || '') };
     } catch (e: any) {
@@ -481,8 +503,8 @@ export class MuzikHost {
     const sira = tercih === 'youtube-music' ? ['youtube-music', 'spotify'] : ['spotify', 'youtube-music'];
     let son: Error | null = null;
     const adres = this.hariciAdres();
-    if (!this.spotifyBagliMi() && !this.ytmdBagliMi() && adres && this.harici.spotify) {
-      await axios.post(`${adres}/api/player/command`, { action: eylem, source: 'spotify' }, { timeout: 5000 });
+    if (!this.spotifyBagliMi() && !this.ytmdBagliMi() && adres && this.hariciHedef()) {
+      await axios.post(`${adres}/api/player/command`, { action: eylem, source: this.hariciHedef() === 'ytmd' ? 'youtube-music' : 'spotify' }, { timeout: 5000 });
       return;
     }
     for (const k of sira) {

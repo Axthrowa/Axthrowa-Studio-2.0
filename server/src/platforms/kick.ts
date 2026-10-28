@@ -33,35 +33,12 @@ export class KickPlatform extends BasePlatform {
   private botUserId: number | null = null;
   private botUsername: string = '';
   /**
-   * Bot az önce şu metinleri gönderdi (metin → zaman damgası).
-   *
-   * Bir mesaj Birleşik Sohbet'te ÜÇ kez görünüyordu: (1) `bot_message` olayının
-   * ürettiği baloncuk, (2) gönderim başarılı olunca buradan atılan ikinci
-   * baloncuk, (3) Kick'in Pusher üzerinden geri yankıladığı gerçek mesaj.
-   * (2) kaldırıldı; (3) bu harita sayesinde eleniyor. Yalnız BOTUN kendi
-   * gönderdiği metinler elenir, yayıncının elle yazdığı mesajlar durur.
-   */
-  private recentlySent: Map<string, number> = new Map();
-  /**
    * Sohbetten öğrenilen kullanıcı adı → Kick kullanıcı kimliği.
    * Zaman aşımı için kimlik gerekir; her seferinde kanal sayfasını
    * sorgulamak yerine sohbette zaten gelen `sender.id` kullanılır.
    */
   private kullaniciKimlikleri: Map<string, number> = new Map();
 
-  /** Yankı elemesi: bu metin son 20 saniyede bot tarafından mı gönderildi? */
-  private wasJustSentByBot(text: string): boolean {
-    const key = String(text || '').trim();
-    const now = Date.now();
-    for (const [k, t] of this.recentlySent) {
-      if (now - t > 20000) this.recentlySent.delete(k);
-    }
-    if (this.recentlySent.has(key)) {
-      this.recentlySent.delete(key);
-      return true;
-    }
-    return false;
-  }
   private processedMessageIds: Set<string> = new Set();
 
   async connect(): Promise<boolean> {
@@ -296,9 +273,8 @@ export class KickPlatform extends BasePlatform {
 
       console.log(`[Kick Chat] <${senderName}>: ${content}`);
 
-      // Botun kendi gönderdiği mesaj Kick'ten geri geliyor; akışta ikinci kez
-      // görünmesin (komut döngüsü de başlatmasın).
-      if (isSelf && this.wasJustSentByBot(content)) return;
+      // Botun kendi mesajı Kick'ten geri gelir ve panelde platformdaki bot adıyla görünür
+      // (yerel kopya artık yansıtılmıyor). Komut/puan/zamanlayıcı isSelf ile korunur.
 
       if (sender.id && senderName) {
         this.kullaniciKimlikleri.set(senderName.toLowerCase(), Number(sender.id));
@@ -513,13 +489,6 @@ export class KickPlatform extends BasePlatform {
 
     let lastErrorMsg = '';
 
-    // Giden mesaj için AYRI baloncuk atılmaz (üçleme yapıyordu); yalnız metin
-    // kaydedilir ki Kick'in yankısı elensin.
-    const notifyMultiChat = () => {
-      this.recentlySent.set(String(message || '').trim(), Date.now());
-    };
-
-
     // 3. Try Official Kick Developer Public API (v1) - Try 'user' first, then 'bot' fallback
     if (this.broadcasterUserId) {
       for (const msgType of ['user', 'bot'] as const) {
@@ -544,7 +513,6 @@ export class KickPlatform extends BasePlatform {
 
           if (officialRes.status === 200 || officialRes.status === 201) {
             console.log(`[Kick] Chat message sent successfully via Official API (v1, type: ${msgType})`);
-            notifyMultiChat();
             return {
               success: true,
               message: 'Mesaj Kick sohbetine başarıyla iletildi!'
@@ -596,7 +564,6 @@ export class KickPlatform extends BasePlatform {
         );
 
         if (v2Res.status === 200 || v2Res.status === 201) {
-          notifyMultiChat();
           return {
             success: true,
             message: 'Mesaj Kick sohbetine iletildi!'

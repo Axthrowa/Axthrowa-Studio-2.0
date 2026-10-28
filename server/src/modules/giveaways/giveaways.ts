@@ -2,6 +2,7 @@ import { db } from '../../db/index.js';
 import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload } from '../../core/event-bus.js';
 import { cuzdanAdi, economy } from '../economy/economy.js';
+import { hataMetni } from '../../core/logger.js';
 
 export interface GiveawayWinner {
   /** Tüm kazananlar virgülle (eski istemciler tek ad bekliyordu; tek kazananda aynı) */
@@ -38,15 +39,39 @@ export class GiveawayEngine {
     return db.prepare('SELECT * FROM giveaways WHERE is_active = 1 LIMIT 1').get() || null;
   }
 
-  createGiveaway(title: string, keyword: string = '!katil', subBonusMultiplier: number = 2.0, costPoints: number = 0): any {
+  /** Açık çekilişi kazanansız kapatır; ücretli katılım puanları iade edilir. Kapatılan çekilişi döndürür. */
+  iptal(): any | null {
     // Kazanan çekilmeden kapanan ücretli çekilişin katılım puanları iade edilir (eskiden kayboluyordu)
     const onceki = this.getActiveGiveaway();
     if (onceki && Number(onceki.cost_points) > 0) {
       const katilanlar = db.prepare('SELECT username, platform FROM giveaway_entries WHERE giveaway_id = ?').all(onceki.id) as Array<{ username: string; platform: string }>;
       for (const k of katilanlar) economy.addPoints(cuzdanAdi(k.platform, k.username), Number(onceki.cost_points));
     }
-    // Close any previous active giveaway
     db.prepare('UPDATE giveaways SET is_active = 0, closed_at = ? WHERE is_active = 1').run(Date.now());
+    return onceki;
+  }
+
+  /** Çekiliş + ek ayarlar (süre, kazanan sayısı, katılım şartları); panel ve `!cekilis` komutu ortak. */
+  baslat(o: { title: string; keyword?: string; subBonusMultiplier?: number; costPoints?: number; durationMinutes?: number; winnerCount?: number; maxEntries?: number; subOnly?: boolean; minWatchMinutes?: number }): { giveaway: any; uyari?: string } {
+    const created = this.createGiveaway(o.title, o.keyword ?? '!katil', o.subBonusMultiplier ?? 2.0, o.costPoints ?? 0);
+    let uyari: string | undefined;
+    if (created?.id) {
+      try {
+        db.prepare('UPDATE giveaways SET duration_minutes=?, winner_count=?, max_entries=?, follower_only=?, sub_only=?, min_watch_minutes=? WHERE id=?')
+          // "Yalnız takipçi" yok: Kick sohbet iletisi takip durumunu taşımaz, doğrulanamazdı (sütun 0 kalır)
+          .run(o.durationMinutes ?? 10, o.winnerCount ?? 1, o.maxEntries ?? 0, 0, o.subOnly ? 1 : 0, o.minWatchMinutes ?? 0, created.id);
+      } catch (e) {
+        // Eskiden sessizdi: süre, kazanan sayısı ve katılım şartları kaybolur,
+        // çekiliş varsayılanlarla açılırdı — yayıncı fark etmezdi.
+        uyari = 'Çekiliş açıldı ama ek ayarlar (süre, kazanan sayısı, katılım şartları) kaydedilemedi.';
+        console.error('[Çekiliş] Ek ayarlar yazılamadı:', hataMetni(e));
+      }
+    }
+    return { giveaway: this.getActiveGiveaway(), uyari };
+  }
+
+  createGiveaway(title: string, keyword: string = '!katil', subBonusMultiplier: number = 2.0, costPoints: number = 0): any {
+    this.iptal();
 
     const id = uuidv4();
     db.prepare(`

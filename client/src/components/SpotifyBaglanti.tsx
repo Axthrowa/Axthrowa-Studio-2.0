@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink, Music2, Unplug } from 'lucide-react';
+import { openLink } from '../lib/openLink.js';
 
 interface Durum {
   spotify: { connected: boolean; clientId: string; displayName: string };
@@ -132,8 +133,8 @@ export function SpotifyBaglanti() {
         <label className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/30 p-2">
           Nasıl?
           <select value={mod} onChange={(e) => { setMod(e.target.value); void ayar('sr_spotify_mod', e.target.value); }} className="bg-black/50 rounded-lg p-1 text-xs">
-            <option value="sira">Spotify sırasına ekle (şarkı bitince çalar)</option>
-            <option value="hemen">Hemen çal</option>
+            <option value="sira">Sıraya ekle — çalan şarkı bitince çalar (önerilen)</option>
+            <option value="hemen">Hemen çal — çalan şarkıyı keser</option>
           </select>
         </label>
       </div>
@@ -144,7 +145,16 @@ export function SpotifyBaglanti() {
         </p>
       )}
       {(mesaj || d?.note) && <p className="text-[11px] text-amber-200">{mesaj || d?.note}</p>}
-      <a href="/resonance/" target="_blank" rel="noreferrer" className="text-[11px] text-emerald-300 underline">
+      <a
+        href="/resonance/"
+        onClick={(e) => {
+          e.preventDefault();
+          // Yayın Yönetim Aracı içindeyken uygulamanın kendi Müzik (Resonance) sekmesi açılır
+          if (window.parent !== window) window.parent.postMessage({ type: 'streamaxt:open-music' }, '*');
+          else openLink(`${window.location.origin}/resonance/`);
+        }}
+        className="text-[11px] text-emerald-300 underline"
+      >
         Resonance müzik çalarını aç (Spotify / YouTube Music, OBS "şu an çalan") <ExternalLink className="inline w-3 h-3" />
       </a>
     </div>

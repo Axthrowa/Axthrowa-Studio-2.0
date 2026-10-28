@@ -18,6 +18,8 @@ import { kupa } from '../../modules/engagement/kupa.js';
 import { etiketVerisi } from '../../modules/widgets/olay-etiketleri.js';
 import { takipciSayisi } from '../../modules/widgets/takipci-sayisi.js';
 import { carkCevir } from '../../modules/engagement/cark.js';
+import { sohbetIstatistik } from '../../modules/community/sohbet-istatistik.js';
+import { skorOku, skorYaz } from '../../modules/community/sohbet-araclari.js';
 
 const router = Router();
 
@@ -30,6 +32,21 @@ router.get('/subathon', (req: Request, res: Response) => {
 
 // Hype Treni (B3) — durum sunucuda
 router.get('/hype-train', (_req: Request, res: Response) => res.json(hypeTreni.durum()));
+
+// Sohbet istatistikleri (kelime bulutu widget'ı ve panel)
+router.get('/sohbet-istatistik', (_req: Request, res: Response) => res.json(sohbetIstatistik.ozet()));
+router.post('/sohbet-istatistik/sifirla', (_req: Request, res: Response) => {
+  sohbetIstatistik.sifirla();
+  res.json(sohbetIstatistik.ozet());
+});
+
+// Skor tablosu widget'ı: panel/komut değiştirir, OBS anında görür
+router.get('/skor-tablosu', (_req: Request, res: Response) => res.json(skorOku()));
+router.post('/skor-tablosu', (req: Request, res: Response) => {
+  const t = skorYaz(req.body || {});
+  wsHub.broadcastTo(['all'], { type: 'skor_tablosu', data: t });
+  res.json(t);
+});
 router.post('/hype-train/reset', (_req: Request, res: Response) => {
   hypeTreni.sifirla();
   res.json(hypeTreni.durum());

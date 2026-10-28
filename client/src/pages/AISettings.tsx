@@ -17,7 +17,7 @@ const AI_SAGLAYICILARI: Array<{ id: string; ad: string; model: string; ornek?: s
   { id: 'gemini', ad: 'Google Gemini', model: '' },
   { id: 'openai', ad: 'OpenAI (ChatGPT)', model: 'gpt-4o-mini', ornek: 'sk-...', adres: 'https://platform.openai.com/api-keys' },
   { id: 'anthropic', ad: 'Anthropic Claude', model: 'claude-haiku-5-5', ornek: 'sk-ant-...', adres: 'https://console.anthropic.com/settings/keys' },
-  { id: 'groq', ad: 'Groq', model: 'llama-3.3-70b-versatile', ornek: 'gsk_...', adres: 'https://console.groq.com/keys' },
+  { id: 'groq', ad: 'Groq (ücretsiz katman)', model: 'openai/gpt-oss-120b', ornek: 'gsk_...', adres: 'https://console.groq.com/keys' },
   { id: 'openrouter', ad: 'OpenRouter', model: 'openrouter/auto', ornek: 'sk-or-...', adres: 'https://openrouter.ai/keys' },
   { id: 'deepseek', ad: 'DeepSeek', model: 'deepseek-chat', ornek: 'sk-...', adres: 'https://platform.deepseek.com/api_keys' },
   { id: 'mistral', ad: 'Mistral', model: 'mistral-small-latest', adres: 'https://console.mistral.ai/api-keys' },
@@ -33,6 +33,7 @@ export function AISettings() {
   const [saglayiciAnahtar, setSaglayiciAnahtar] = useState('');
   const [saglayiciModel, setSaglayiciModel] = useState('');
   const [ozelAdres, setOzelAdres] = useState('');
+  const [webArama, setWebArama] = useState(false);
   const [kayitliAyarlar, setKayitliAyarlar] = useState<Record<string, string>>({});
   const [prompt, setPrompt] = useState('');
   const [enabled, setEnabled] = useState(true);
@@ -84,6 +85,7 @@ export function AISettings() {
         setSaglayiciAnahtar(d[`ai_${s0}_api_key`] || '');
         setSaglayiciModel(d[`ai_${s0}_model`] || '');
         setOzelAdres(d.ai_custom_base_url || '');
+        setWebArama(d.ai_web_arama === 'true');
         setPrompt(yuklenen.prompt);
         setEnabled(yuklenen.enabled);
         geminiTaban(yuklenen);
@@ -112,6 +114,7 @@ export function AISettings() {
           gemini_prompt: prompt,
           gemini_enabled: enabled ? 'true' : 'false',
           ai_provider: saglayici,
+          ai_web_arama: webArama ? 'true' : 'false',
           ...(saglayici !== 'gemini'
             ? { [`ai_${saglayici}_api_key`]: saglayiciAnahtar, [`ai_${saglayici}_model`]: saglayiciModel }
             : {}),
@@ -359,6 +362,15 @@ export function AISettings() {
               </select>
               <p className="text-[11px] text-gray-500 mt-1">Kaydedip "Bağlantıyı sına" ile anahtarı ve modelleri denetleyebilirsin. Bilgi yarışması soru üretimi yalnız Gemini ile çalışır.</p>
             </div>
+
+            <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
+              <input type="checkbox" checked={webArama} onChange={(e) => setWebArama(e.target.checked)} className="mt-0.5 accent-purple-600" />
+              <span className="text-xs text-gray-300">
+                <b className="text-white">Güncel bilgi: internette ara</b> — güncel haber, maç skoru, sonuç gibi sorularda yapay zekâ internette arar.
+                Groq'ta gpt-oss modellerinin yerleşik internet araması, Gemini'de Google Arama kullanılır. Cevap birkaç saniye daha uzun sürer;
+                ücretsiz katmanın günlük arama sınırı sağlayıcı panelinde görünür.
+              </span>
+            </label>
 
             {saglayici !== 'gemini' && (() => {
               const p = AI_SAGLAYICILARI.find((x) => x.id === saglayici)!;

@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Bell, Check, Play, Save, Settings2 } from 'lucide-react';
-import { ALERT_ADVANCED_DEFAULTS, FONTS } from '../lib/widget-defaults.js';
+import { ALERT_ADVANCED_DEFAULTS, FONTS, uyariKaydiGovdesi, yeniUyariKaydi } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, animKimligi } from '../lib/animations.js';
 import AlertVariants from '../components/AlertVariants.js';
 import { MediaLibrary, type MedyaOgesi } from '../components/MediaLibrary.js';
@@ -27,15 +27,6 @@ const TABS = [
 /** Ayar sekmesi olmayan (olay preseti taşımayan) sekmeler. */
 const OLAY_DISI = new Set(['advanced', 'variants', 'media']);
 
-const EVENT_DEFAULTS: Record<string, any> = {
-  follow: { event_type: 'follow', title_template: 'YENİ TAKİPÇİ!', message_template: '{user} aileye katıldı!', accent_color: '#8b5cf6', duration_ms: 5000 },
-  sub: { event_type: 'sub', title_template: 'YENİ ABONE!', message_template: '{user} {tier} ile abone oldu! ({months} ay)', accent_color: '#ec4899', duration_ms: 6500 },
-  gift_sub: { event_type: 'gift_sub', title_template: 'HEDİYE ABONE!', message_template: '{user} {count} hediye abone gönderdi!', accent_color: '#f472b6', duration_ms: 6500 },
-  host: { event_type: 'host', title_template: 'HOST!', message_template: '{user} kanalı host etti ({viewers})', accent_color: '#38bdf8', duration_ms: 6000 },
-  tip: { event_type: 'tip', title_template: 'BAĞIŞ GELDİ!', message_template: '{user} {amount} {currency}: "{message}"', accent_color: '#10b981', duration_ms: 7000 },
-  kicks: { event_type: 'kicks', title_template: 'KICKS!', message_template: '{user} {amount} Kick gönderdi!', accent_color: '#53fc18', duration_ms: 5500 },
-  raid: { event_type: 'raid', title_template: 'RAID!', message_template: '{user} {viewers} izleyici ile raid yaptı!', accent_color: '#f59e0b', duration_ms: 8000 }
-};
 
 export function AlertsStudio() {
   const [tab, setTab] = useState('advanced');
@@ -58,7 +49,7 @@ export function AlertsStudio() {
 
   useEffect(() => { load(); }, []);
 
-  const current = presets.find(p => p.event_type === tab) || { ...(EVENT_DEFAULTS[tab] || {}), sound_url: '', image_url: '', font_family: 'Plus Jakarta Sans', text_color: '#ffffff', animation: 'bounce', sound_volume: 0.7, is_enabled: 1, layout_mode: 'stacked', text_effect: 'shine' };
+  const current = presets.find(p => p.event_type === tab) || yeniUyariKaydi(tab);
 
   const updatePreset = (patch: Record<string, any>) => {
     setPresets(prev => {
@@ -87,23 +78,7 @@ export function AlertsStudio() {
     await fetch('/api/alerts/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: p.id,
-        eventType: tab,
-        titleTemplate: p.title_template,
-        messageTemplate: p.message_template,
-        soundUrl: p.sound_url,
-        imageUrl: p.image_url,
-        durationMs: p.duration_ms,
-        fontFamily: p.font_family,
-        textColor: p.text_color,
-        accentColor: p.accent_color,
-        animation: p.animation,
-        soundVolume: p.sound_volume,
-        isEnabled: p.is_enabled,
-        layoutMode: p.layout_mode,
-        textEffect: p.text_effect
-      })
+      body: JSON.stringify(uyariKaydiGovdesi(tab, p))
     });
     setSaved(`${tab} alert kaydedildi`);
     load();

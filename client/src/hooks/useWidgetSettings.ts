@@ -3,7 +3,8 @@
  * Developed by AxthrowA
  */
 import { useEffect, useState } from 'react';
-import { WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { fontuYukle } from '../lib/widget-style.js';
 import { ayarKanalinaKatil } from '../lib/ayarKanali.js';
 
 /** Adres çubuğundaki `?anahtar=değer` ayarları (OBS'te URL ile ince ayar). */
@@ -45,6 +46,9 @@ export function useWidgetSettings<T extends Record<string, any>>(widgetId: strin
       ayril();
     };
   }, [widgetId]);
+
+  useEffect(() => fontuYukle(settings.fontFamily, FONTS), [settings.fontFamily]);
+  useEffect(() => fontuYukle((settings as Record<string, any>).timeFontFamily, FONTS), [(settings as Record<string, any>).timeFontFamily]);
 
   return settings;
 }

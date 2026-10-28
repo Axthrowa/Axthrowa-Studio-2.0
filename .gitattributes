@@ -1,0 +1,2 @@
+# sqlx migrasyon sağlaması bayt bayt hesaplanır; CRLF çekim mevcut DB ile uyuşmaz
+src-tauri/migrations/*.sql text eol=lf

@@ -104,6 +104,8 @@ impl AppState {
         Err(e) => {
           yya_warn!("SQLite açılamadı ({e:#}); bellek DB");
           sqlx::sqlite::SqlitePoolOptions::new()
+            // her bellek bağlantısı ayrı DB; tek bağlantı yoksa tablolar "yok" görünür
+            .max_connections(1)
             .connect("sqlite::memory:")
             .await
             .expect("memory sqlite")

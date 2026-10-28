@@ -41,7 +41,7 @@ const LABELS: Record<string, string> = {
   messageBgColor: 'Mesaj arka planı', messageBgOpacity: 'Mesaj opaklığı', highlightColor: 'Vurgu rengi',
   hideBroadcaster: 'Yayıncıyı gizle', title: 'Başlık', endingTitle: 'Bitiş başlığı', current: 'Mevcut',
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
-  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', palette: 'Renk paleti',
+  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', comboStyle: 'Görsel stil', iconStyle: 'Simge biçimi', palette: 'Renk paleti',
   timeFontFamily: 'Süre yazı tipi', timeFontSize: 'Süre boyutu (px)', showRules: 'Kuralları göster', barColor2: 'Bar 2. renk (geçiş)',
   barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Dolgu ucundaki simge (emoji)', layout: 'Düzen', showRemaining: 'Kalan göster',
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
@@ -300,18 +300,22 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
   },
   'viewer-counter': {
     theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['capsule', 'Kapsül'], ['velvet', 'Kadife'], ['ticker', 'Borsa bandı'], ['holochip', 'Holografik'], ['splitflap', 'Çevirmeli tabela']),
-    layout: tema(['column', 'Alt alta'], ['row', 'Yan yana'])
+    layout: tema(['column', 'Alt alta'], ['row', 'Yan yana']),
+    iconStyle: tema(['logo', 'Platform logosu'], ['dot', 'Renkli nokta'])
   },
 
   'the-cup': {
     theme: tema(['glass', 'Cam'], ['neon', 'Neon'], ['wood', 'Ahşap'], ['minimal', 'Minimal'], ['crystal', 'Kristal'])
   },
   'pinned-messages': {
-    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam']),
+    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam'], ['cute', 'Sevimli'], ['terminal', 'Terminal'], ['cozy', 'Rahat'], ['pixel', 'Piksel'], ['compact', 'Kompakt'], ['capsule', 'Kapsül'], ['hud', 'HUD (oyun arayüzü)']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
+  'emote-combo': {
+    comboStyle: tema(['none', 'Yok (renk ayarları)'], ['pixel', 'Piksel'], ['neon', 'Neon'], ['clean', 'Minimal'])
+  },
   shoutout: {
-    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam']),
+    theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam'], ['softcard', 'Yumuşak kart'], ['neumorph', 'Kabartma'], ['borderline', 'Yalnız çerçeve'], ['broadcast', 'Haber bandı'], ['horizon', 'Ufuk'], ['stage', 'Sahne ışığı'], ['ember', 'Kor'], ['signal', 'Sinyal'], ['tag', 'Etiket'], ['ribbon', 'Kurdele'], ['guestpass', 'Konuk kartı'], ['phosphor', 'Fosfor ekran'], ['prism', 'Prizma']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
   rankings: {

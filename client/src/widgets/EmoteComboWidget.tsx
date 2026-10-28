@@ -7,6 +7,7 @@
  * HAM METİN görünüyordu; 7TV emote'ları da yalnız ad olarak yazılıyordu.
  * Artık Kick ve 7TV emote'ları görsel, Unicode emoji metin olarak çizilir.
  */
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { EMOTE_COMBO_DEFAULTS } from '../lib/widget-defaults.js';
@@ -202,7 +203,8 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
           borderRadius: 24,
           padding: '24px 40px',
           textAlign: 'center',
-          fontFamily: s.fontFamily
+          fontFamily: s.fontFamily,
+          ...(KOMBO_STILLERI[String(s.comboStyle || 'none')] || {})
         }}>
           {/* key=sayı: her yeni emote'ta büyük emote "vurulmuş" gibi zıplar */}
           <div key={s.gatherMode ? combo.count : 0} style={{ display: 'flex', justifyContent: 'center', animation: s.gatherMode ? 'axt-kombo-vurus 260ms ease-out' : undefined }}>
@@ -221,5 +223,12 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     </div>
   );
 }
+
+/** Kombo kutusunun görsel stili (kendi tasarımlarımız): yok = ayarlardaki renkler */
+const KOMBO_STILLERI: Record<string, React.CSSProperties> = {
+  pixel: { borderRadius: 0, border: '4px solid #fff', boxShadow: '6px 6px 0 #000', fontFamily: '"Press Start 2P", monospace', imageRendering: 'pixelated' },
+  neon: { background: 'rgba(11,4,32,.85)', border: '2px solid #ff2bd6', boxShadow: '0 0 24px #ff2bd6, inset 0 0 18px rgba(34,211,238,.35)' },
+  clean: { background: 'transparent', border: 'none', boxShadow: 'none', padding: '8px 16px' }
+};
 
 export default EmoteComboWidget;

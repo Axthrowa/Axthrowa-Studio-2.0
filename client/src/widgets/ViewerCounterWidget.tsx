@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { VIEWER_COUNTER_DEFAULTS } from '../lib/widget-defaults.js';
+import { PlatformLogo } from '../components/PlatformLogo.js';
 
 type Satir = { id: string; label: string; value: number; renk: string };
 
@@ -189,17 +190,13 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
           <div className="flex gap-3" style={{ fontSize: Math.max(10, (Number(s.fontSize) || 18) * 0.7) }}>
             {satirlar.map((r) => (
               <span key={r.id} className="flex items-center gap-1">
-                {s.showIcons && (
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 8,
-                      height: 8,
-                      borderRadius: 999,
-                      background: r.renk
-                    }}
-                  />
-                )}
+                {s.showIcons &&
+                  (s.iconStyle === 'dot' ? (
+                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 999, background: r.renk }} />
+                  ) : (
+                    // Platform logosu (satır içi SVG: OBS'te ağ isteği yok)
+                    <PlatformLogo platform={r.id} size={Math.max(12, Math.round((Number(s.fontSize) || 18) * 0.85))} />
+                  ))}
                 {s.showPlatformName && <span style={{ opacity: 0.7 }}>{r.label}</span>}
                 <strong>{sayiBicimle(r.value, !!s.compactNumbers)}</strong>
               </span>

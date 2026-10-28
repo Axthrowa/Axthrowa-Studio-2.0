@@ -11,6 +11,17 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.6.1',
+    ad: 'Vitrin',
+    tarih: '2026-10-28',
+    notlar: [
+      'İzleyici sayacında platform logoları (Kick, Twitch, YouTube); ayarlardan renkli noktaya dönülebilir',
+      'Shoutout: 13 yeni tasarım (Yumuşak kart, Kabartma, Yalnız çerçeve, Haber bandı, Ufuk, Sahne ışığı, Kor, Sinyal, Etiket, Kurdele, Konuk kartı, Fosfor ekran, Prizma)',
+      'Sabitlenmiş mesaj: 7 yeni tema (Sevimli, Terminal, Rahat, Piksel, Kompakt, Kapsül, HUD)',
+      'Emoji kombosu: görsel stil seçimi (Piksel, Neon, Minimal)'
+    ]
+  },
+  {
     surum: '1.6.0',
     ad: 'Tek Bot',
     tarih: '2026-10-28',

@@ -169,6 +169,8 @@ export const KAPPAGEN_DEFAULTS = {
 };
 
 export const EMOTE_COMBO_DEFAULTS = {
+  /** Kombo kutusu stili: none, pixel, neon, clean */
+  comboStyle: 'none',
   minCombo: 3,
   timeoutMs: 5000,
   displayMs: 4000,
@@ -466,6 +468,8 @@ export const VIEWER_COUNTER_DEFAULTS = {
   showPerPlatform: true,
   showPlatformName: false,
   showIcons: true,
+  /** logo = platform logosu, dot = renkli nokta */
+  iconStyle: 'logo',
   compactNumbers: false,
   showKick: true,
   showTwitch: true,

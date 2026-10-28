@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { PINNED_DEFAULTS } from '../lib/widget-defaults.js';
-import { rgba, yatay, dikey, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { rgba, yatay, dikey, onizlemeKipi, wsAdresi, kartTasarimlari } from '../lib/widget-style.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 interface PinnedItem {
@@ -116,11 +116,13 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
       <div
         className="flex items-center gap-3.5 shadow-2xl animate-fadeIn w-full"
         style={{
-          ...(temaStili[tema] || temaStili.card),
+          ...(temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
           borderRadius: tema === 'banner' ? 8 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           maxWidth: Number(s.maxWidth) || 512,
-          color: s.textColor
+          color: s.textColor,
+          // Kapsül ve kompakt tasarım köşe/boşluğu kendisi belirler
+          ...(tema === 'capsule' || tema === 'compact' ? kartTasarimlari(s)[tema] : {})
         }}
       >
         {s.showIcon && (

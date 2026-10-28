@@ -67,6 +67,10 @@ export const ACTIVITY_DEFAULTS = {
 
 export const CHAT_DEFAULTS = {
   maxMessages: 40,
+  // Görünüm stili (klasik, platform kartı, başlıklı, etiket, konuşma balonu, şerit, neon, kompakt)
+  chatStyle: 'klasik',
+  // Vurgu, çerçeve ve etiketlerde platformların özgün renkleri
+  platformColors: true,
   fontSize: 22,
   fontFamily: 'Plus Jakarta Sans',
   fontWeight: 600,

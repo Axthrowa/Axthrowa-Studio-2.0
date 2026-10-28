@@ -465,7 +465,16 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     tema('mesajlasma', 'Mesajlaşma Uygulaması', { messageBubbles: true, messageBgColor: '#dcf8c6', messageBgOpacity: 0.97, borderRadius: 14, textColor: '#111b21', usernameColorMode: 'custom', customUsernameColor: '#075e54', textShadow: false }, { arka: '#dcf8c6', vurgu: '#075e54', metin: '#111b21' }),
     tema('retro', 'Retro', { messageBubbles: true, messageBgColor: '#2b1d0e', messageBgOpacity: 0.9, borderRadius: 4, textColor: '#fde68a', fontFamily: 'Special Elite', highlightColor: '#f97316' }, { arka: '#2b1d0e', vurgu: '#f97316', metin: '#fde68a' }),
     tema('kadife', 'Kadife', { messageBubbles: true, messageBgColor: '#3b0a1f', messageBgOpacity: 0.88, borderRadius: 14, textColor: '#fce7f3', highlightColor: '#e11d48', highlightSpecial: true }, { arka: 'linear-gradient(135deg,#3b0a1f,#7f1d1d)', vurgu: '#e11d48', metin: '#fce7f3' }),
-    tema('kickyesili', 'Kick Yeşili', { messageBubbles: true, messageBgColor: '#0f1a0a', messageBgOpacity: 0.88, borderRadius: 8, textColor: P.beyaz, highlightColor: P.kick, highlightSpecial: true }, { arka: '#0f1a0a', vurgu: P.kick, metin: P.beyaz })
+    tema('kickyesili', 'Kick Yeşili', { messageBubbles: true, messageBgColor: '#0f1a0a', messageBgOpacity: 0.88, borderRadius: 8, textColor: P.beyaz, highlightColor: P.kick, highlightSpecial: true }, { arka: '#0f1a0a', vurgu: P.kick, metin: P.beyaz }),
+    // Görünüm stilli temalar: platformların özgün renkleri, logoları ve rozetleriyle
+    tema('platformkartlari', 'Platform Kartları', { chatStyle: 'platformkart', platformColors: true, messageBgColor: '#0b0f17', messageBgOpacity: 0.85, borderRadius: 10, textColor: P.beyaz, showPlatformLogo: true, showBadges: true, textShadow: false }, { arka: 'linear-gradient(90deg,#53fc1840,#0b0f17)', vurgu: P.kick, metin: P.beyaz, kenar: P.kick }),
+    tema('konusmabalonu', 'Konuşma Balonları', { chatStyle: 'konusma', platformColors: true, messageBgColor: '#111827', messageBgOpacity: 0.92, borderRadius: 16, textColor: P.beyaz, showAvatars: true, textShadow: false }, { arka: '#111827', vurgu: '#9146ff', metin: P.beyaz, kenar: '#9146ff' }),
+    tema('adetiketi', 'Ad Etiketleri', { chatStyle: 'etiket', platformColors: true, messageBgOpacity: 0, transparentBg: true, textColor: P.beyaz, textShadow: true }, { arka: 'transparent', vurgu: P.kick, metin: P.beyaz }),
+    tema('markaseridi', 'Marka Şeridi', { chatStyle: 'serit', messageBgColor: '#0b0f17', messageBgOpacity: 0.9, borderRadius: 8, textColor: P.beyaz, textShadow: false }, { arka: 'linear-gradient(90deg,#9146ff 18%,#0b0f17 18%)', vurgu: '#9146ff', metin: P.beyaz }),
+    tema('platformneonu', 'Platform Neonu', { chatStyle: 'neon', platformColors: true, messageBgColor: '#05010d', messageBgOpacity: 0.85, borderRadius: 12, textColor: P.beyaz, textShadow: true }, { arka: '#05010d', vurgu: '#ff0000', metin: P.beyaz, kenar: '#ff0000' }),
+    tema('basliklimesaj', 'Başlıklı Mesaj', { chatStyle: 'baslikli', platformColors: true, messageBgColor: '#1e293b', messageBgOpacity: 0.9, borderRadius: 14, textColor: '#f1f5f9', highlightSpecial: true, textShadow: false }, { arka: '#1e293b', vurgu: P.turkuaz, metin: '#f1f5f9' }),
+    tema('incesatir', 'İnce Satır', { chatStyle: 'kompakt', transparentBg: true, messageBgOpacity: 0, textColor: P.beyaz, textShadow: true, showTimestamp: false, showAvatars: false }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz }),
+    tema('oyunhud', 'Oyun HUD', { chatStyle: 'platformkart', platformColors: true, messageBgColor: '#020617', messageBgOpacity: 0.85, borderRadius: 0, fontFamily: 'Rajdhani', fontWeight: 700, textColor: '#e2e8f0', textShadow: false }, { arka: '#020617', vurgu: P.turkuaz, metin: '#e2e8f0', kenar: P.turkuaz, yazi: 'Rajdhani' })
   ],
   polls: [
     tema('savas', 'Düello', { barColor: P.kirmizi, barBackground: '#1e40af', showVotes: true }, { arka: '#1e293b', vurgu: P.kirmizi, metin: P.beyaz }),
@@ -486,7 +495,10 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
 
 /** Bir widget için kullanılabilir tüm temalar. */
 export function temalar(widgetId: string): TemaTanimi[] {
-  const ozel = WIDGET_TEMALARI[widgetId] || [];
+  // Sohbetin eski temaları görünüm stilini belirtmez: başka stilden geçince klasik görünüme dönsün
+  const ozel = (WIDGET_TEMALARI[widgetId] || []).map((t) =>
+    widgetId === 'chat-overlay' && !('chatStyle' in t.degerler) ? { ...t, degerler: { chatStyle: 'klasik', ...t.degerler } } : t
+  );
   const genel = GENEL_TEMALAR.filter((t) => !t.widgetlar || t.widgetlar.includes(widgetId));
   return [...ozel, ...genel]; // Widget'a özel temalar önce: hedef çubuğunda asıl seçenekler onlar
 }

@@ -14,6 +14,7 @@ import {
   kapsamVar,
   twitchHataAciklamasi,
   twitchJetonTemizle,
+  twitchRozetHaritasi,
   twitchSureSinirla,
   twitchYayinCoz
 } from './twitch-rules.js';
@@ -125,6 +126,14 @@ export class TwitchHelix {
     if (!id) return { ok: false, hata: `Twitch'te "${l}" bulunamadı` };
     this.kimlikler.set(l, id);
     return { ok: true, veri: id };
+  }
+
+  /** Kanalın ve Twitch'in genel sohbet rozetleri ("set/sürüm" → görsel). İzin gerektirmez. */
+  async sohbetRozetleri(kanal: string): Promise<Map<string, string>> {
+    const kimlik = await this.kullaniciKimligi(kanal);
+    const genel = await this.istek('GET', '/chat/badges/global');
+    const kanalin = kimlik.ok ? await this.istek('GET', `/chat/badges?broadcaster_id=${kimlik.veri}`) : null;
+    return twitchRozetHaritasi(genel.ok ? genel.veri : null, kanalin?.ok ? kanalin.veri : null);
   }
 
   /** Hesabın açılış anı (epoch ms). Helix `/users` → `created_at`. */

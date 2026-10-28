@@ -131,6 +131,8 @@ export interface ChatMessage {
     avatarUrl?: string;
   };
   message: string;
+  /** Twitch emote konumları (kimlik → "baş-son") */
+  emotes?: Record<string, string[]>;
   timestamp: number;
   /** Ortak kara listedeki kullanıcı: panelde işaretli, OBS katmanında gizli. */
   karaListede?: boolean;

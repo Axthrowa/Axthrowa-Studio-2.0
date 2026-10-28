@@ -2,9 +2,9 @@
  * StreamAxT widget settings loader
  * Developed by AxthrowA
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
-import { fontuYukle } from '../lib/widget-style.js';
+import { fontuYukle, yaziAilesi } from '../lib/widget-style.js';
 
 /** CSS'inde kendi yazı tipini kullanan tema görünümleri (kartTasarimlari, şarkı sözü) */
 const TEMA_YAZI_TIPI: Record<string, string> = {
@@ -64,5 +64,10 @@ export function useWidgetSettings<T extends Record<string, any>>(widgetId: strin
     for (const ad of anahtar.split('|')) fontuYukle(ad, FONTS);
   }, [anahtar]);
 
-  return settings;
+  // Widget'lar değeri doğrudan `fontFamily`ye yazar: tırnaklı ad + yedek (bkz. yaziAilesi)
+  return useMemo(() => {
+    const out: Record<string, unknown> = { ...settings };
+    for (const [k, v] of Object.entries(out)) if (typeof v === 'string' && FONTS.includes(v)) out[k] = yaziAilesi(v);
+    return out as T;
+  }, [settings]);
 }

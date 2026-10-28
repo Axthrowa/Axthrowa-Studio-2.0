@@ -2,14 +2,14 @@
  * StreamAxT Chat Overlay
  * Developed by AxthrowA
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { CHAT_DEFAULTS } from '../lib/widget-defaults.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
-import { onizlemeKipi } from '../lib/widget-style.js';
+import { onizlemeKipi, yaziOlcegi } from '../lib/widget-style.js';
 import { iletiCikar, iletiEkle } from '../lib/sohbetListesi.js';
 
 /** Yeni ileti sesi: dosya gerektirmeyen kısa bir "tık" (WebAudio). */
@@ -41,6 +41,8 @@ interface OverlayMsg {
   user: string;
   color: string;
   text: string;
+  /** Twitch emote konumları (kanalın kendi emote'ları için) */
+  emotes?: Record<string, string[]>;
   /** Platformun gönderdiği rozet ve rol bilgisi (özgün rozet görselleri için) */
   rozet: { rawBadges?: any[]; badges?: string[]; isBroadcaster?: boolean; isMod?: boolean; isVip?: boolean; isSub?: boolean };
   avatar?: string;
@@ -49,7 +51,14 @@ interface OverlayMsg {
   created: number;
 }
 
-const PLATFORM_COLORS: Record<string, string> = { twitch: '#9146ff', kick: '#53fc18', youtube: '#ff0000', tiktok: '#fe2c55' };
+/** Platformların özgün marka renkleri */
+const PLATFORM_COLORS: Record<string, string> = { twitch: '#9146ff', kick: '#53fc18', youtube: '#ff0000', tiktok: '#fe2c55', trovo: '#19d66b', discord: '#5865f2' };
+/** Marka renginin üstünde okunur yazı (Kick yeşili açık: siyah) */
+const PLATFORM_YAZI: Record<string, string> = { kick: '#000000', trovo: '#000000' };
+
+/** #rrggbb + saydamlık → #rrggbbaa */
+const saydam = (renk: string, oran: number) =>
+  /^#[0-9a-f]{6}$/i.test(renk) ? `${renk}${Math.round(Math.max(0, Math.min(1, oran)) * 255).toString(16).padStart(2, '0')}` : renk;
 
 /**
  * Önizleme örnekleri: stüdyo tuvali ve OBS test kipi boş bir kutu yerine
@@ -149,6 +158,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         user: user?.displayName || user?.username || 'anon',
         color,
         text: p.message,
+        emotes: p.emotes,
         rozet,
         // Sunucu yükü `avatarUrl` taşır; eski `avatar` alanı hiç dolu gelmiyordu
         avatar: user?.avatarUrl || user?.avatar,
@@ -177,15 +187,164 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   // Liste eskiden yeniye; "yeni mesajlar üstte" yalnız çizimde ters çevirir
   const list = s.reverse ? [...kaynak].reverse() : kaynak;
   const yanYana = s.layout === 'row';
+  const stil = String(s.chatStyle || 'klasik');
   // Balon: eskiden yalnız "şeffaf arka plan" kapalıyken (kutu da siyahken) çiziliyordu
   const balon = !s.transparentBg || Boolean(s.messageBubbles);
-  const msgBg = s.messageBgColor.length === 7
-    ? `${s.messageBgColor}${Math.round(s.messageBgOpacity * 255).toString(16).padStart(2, '0')}`
-    : 'transparent';
+  const msgBg = s.messageBgColor.length === 7 ? saydam(s.messageBgColor, s.messageBgOpacity) : 'transparent';
+  // Koyu zemin isteyen görünümler, ileti zemini kapalıyken de okunur kalsın
+  const koyuBg = s.messageBgOpacity > 0 ? msgBg : '#000000b3';
+  // Dar/süslü yazı tipleri aynı puntoda çok küçük görünüyordu: görünür boyut dengelenir
+  const boy = Math.round((Number(s.fontSize) || 22) * yaziOlcegi(s.fontFamily));
+
+  const metinStili: CSSProperties = {
+    fontSize: boy,
+    fontWeight: s.fontWeight,
+    lineHeight: s.lineHeight,
+    letterSpacing: s.letterSpacing,
+    color: s.textColor,
+    textAlign: s.align as CSSProperties['textAlign'],
+    WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined,
+    margin: 0,
+    minWidth: 0
+  };
+  const yaslama = s.align === 'center' ? 'center' : s.align === 'right' ? 'flex-end' : 'flex-start';
+  const sira: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, verticalAlign: 'middle' };
+
+  const ileti = (msg: OverlayMsg) => {
+    const pr = PLATFORM_COLORS[msg.platform] || s.highlightColor;
+    // Vurgu: "platform renkleri" açıksa platformun özgün rengi
+    const vurgu = s.platformColors && PLATFORM_COLORS[msg.platform] ? pr : s.highlightColor;
+    const vurguKenar = s.highlightSpecial && msg.special ? `3px solid ${vurgu}` : undefined;
+    const avatar = s.showAvatars && msg.avatar ? (
+      <img src={msg.avatar} alt="" style={{ width: Math.round(boy * 1.1), height: Math.round(boy * 1.1), borderRadius: '50%', flexShrink: 0 }} />
+    ) : null;
+    const logo = (renk?: string) =>
+      s.showPlatformLogo && msg.platform !== 'olay' ? (
+        <span style={{ color: renk || PLATFORM_COLORS[msg.platform] || '#cbd5e1', display: 'inline-flex', flexShrink: 0 }} title={msg.platform}>
+          <PlatformLogo platform={msg.platform} size={Math.round(boy * 0.95) || 16} />
+        </span>
+      ) : null;
+    const zaman = s.showTimestamp ? <span style={{ color: '#94a3b8', fontSize: Math.round(boy * 0.65), flexShrink: 0 }}>{msg.ts}</span> : null;
+    const rozetler = s.showBadges ? (
+      <span style={{ display: 'inline-flex', gap: 3, flexShrink: 0 }}>
+        <PlatformBadges platform={msg.platform as any} user={msg.rozet as any} size={Math.round(boy * 1.05) || 18} />
+      </span>
+    ) : null;
+    const icerik = <ChatMessageContent message={msg.text} size={Math.round(boy * 1.3) || 24} twitchEmotes={msg.emotes} />;
+    const ad = (renk: string = msg.color) => <span style={{ color: renk, fontWeight: 800 }}>{msg.user}</span>;
+    const kutu: CSSProperties = { whiteSpace: yanYana ? 'nowrap' : undefined, textShadow: s.textShadow ? '0 2px 8px #000' : undefined };
+    // Ad satırı + ileti (kart, neon ve şerit görünümlerinde ortak)
+    const satir = (oncesi: ReactNode) => (
+      <p style={metinStili}>
+        <span style={{ ...sira, marginRight: 6 }}>{oncesi}{ad()}</span>
+        {icerik}
+      </p>
+    );
+
+    switch (stil) {
+      // Kart: platformun renginde şerit ve hafif tonlu zemin
+      case 'platformkart':
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: `linear-gradient(90deg, ${saydam(pr, 0.25)}, ${koyuBg})`, borderLeft: `4px solid ${pr}`, borderRadius: s.borderRadius, padding: '6px 10px' }}>
+            {avatar}
+            {satir(<>{logo()}{rozetler}</>)}
+          </div>
+        );
+      // Başlıklı: üstte ad satırı, altında ileti balonu
+      case 'baslikli':
+        return (
+          <div style={{ ...kutu, display: 'flex', flexDirection: 'column', gap: 3, alignItems: yaslama }}>
+            <div style={{ ...sira, display: 'flex', fontSize: Math.round(boy * 0.8) }}>{avatar}{logo()}{rozetler}{ad()}{zaman}</div>
+            <p style={{ ...metinStili, background: koyuBg, borderRadius: s.borderRadius, padding: '6px 12px', borderLeft: vurguKenar }}>{icerik}</p>
+          </div>
+        );
+      // Etiket: kullanıcı adı dolu bir hapın içinde (platform renkleri açıksa platformun renginde)
+      case 'etiket': {
+        const zemin = s.platformColors ? pr : msg.color;
+        const yazi = s.platformColors ? PLATFORM_YAZI[msg.platform] || '#ffffff' : '#ffffff';
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: balon ? msgBg : 'transparent', borderRadius: s.borderRadius, padding: balon ? '5px 8px' : 0 }}>
+            {avatar}
+            <p style={metinStili}>
+              <span style={{ ...sira, gap: 5, background: zemin, color: yazi, borderRadius: 999, padding: '1px 10px 1px 6px', marginRight: 8, textShadow: 'none' }}>
+                {logo(yazi)}
+                {rozetler}
+                {ad('inherit')}
+              </span>
+              {icerik}
+            </p>
+          </div>
+        );
+      }
+      // Konuşma balonu: solda avatar ya da logo, kuyruklu balon
+      case 'konusma':
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-end', gap: 10, justifyContent: yaslama }}>
+            {avatar || logo()}
+            <div style={{ position: 'relative', background: koyuBg, borderRadius: s.borderRadius, padding: '6px 12px', border: `2px solid ${saydam(vurgu, 0.7)}`, minWidth: 0 }}>
+              <span style={{ position: 'absolute', left: -9, bottom: 8, width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderRight: `8px solid ${saydam(vurgu, 0.7)}` }} />
+              <div style={{ ...sira, display: 'flex', fontSize: Math.round(boy * 0.75), marginBottom: 2 }}>{rozetler}{ad()}{zaman}</div>
+              <p style={metinStili}>{icerik}</p>
+            </div>
+          </div>
+        );
+      // Şerit: solda platformun renginde blok, içinde logo
+      case 'serit':
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'stretch', borderRadius: s.borderRadius, overflow: 'hidden', background: koyuBg }}>
+            <span style={{ background: pr, color: PLATFORM_YAZI[msg.platform] || '#ffffff', display: 'flex', alignItems: 'center', padding: '0 8px', flexShrink: 0 }}>
+              {msg.platform === 'olay' ? '★' : <PlatformLogo platform={msg.platform} size={Math.round(boy * 0.95)} />}
+            </span>
+            <div style={{ padding: '6px 10px', minWidth: 0 }}>{satir(rozetler)}</div>
+          </div>
+        );
+      // Neon: platformun (ya da vurgunun) renginde parlayan çerçeve
+      case 'neon':
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: s.messageBgOpacity > 0 ? msgBg : '#05010dcc', border: `2px solid ${vurgu}`, boxShadow: `0 0 10px ${saydam(vurgu, 0.8)}, inset 0 0 8px ${saydam(vurgu, 0.35)}`, borderRadius: s.borderRadius, padding: '6px 10px' }}>
+            {avatar}
+            {satir(<>{logo()}{rozetler}</>)}
+          </div>
+        );
+      // Kompakt: zeminsiz, küçük öğeler
+      case 'kompakt':
+        return (
+          <div style={kutu}>
+            <p style={{ ...metinStili, fontSize: Math.round(boy * 0.85) }}>
+              <span style={{ ...sira, gap: 4, marginRight: 5 }}>{logo()}{ad()}:</span>
+              {icerik}
+            </p>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-start" style={{
+            ...kutu,
+            gap: 8,
+            justifyContent: yaslama,
+            background: balon ? msgBg : 'transparent',
+            borderRadius: s.borderRadius,
+            padding: balon ? '6px 10px' : 0,
+            borderLeft: vurguKenar
+          }}>
+            {avatar && <span style={{ marginTop: 2, display: 'inline-flex' }}>{avatar}</span>}
+            {logo() && <span style={{ marginTop: 3, display: 'inline-flex' }}>{logo()}</span>}
+            {zaman && <span style={{ marginTop: 4, display: 'inline-flex' }}>{zaman}</span>}
+            {rozetler && <span style={{ marginTop: 2, display: 'inline-flex' }}>{rozetler}</span>}
+            <p style={metinStili}>
+              <span style={{ color: msg.color, fontWeight: 800 }}>{msg.user}: </span>
+              {icerik}
+            </p>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="flex gap-1 p-4 h-full" style={{
       fontFamily: s.fontFamily,
+      // Kalınlık uydurulmaz: yazı tipinde olmayan kalınlığı tarayıcı kendisi çizince harfler dağılıyordu
+      fontSynthesis: 'none',
       gap: s.gap,
       // Alt alta: yeni mesaj altta ise kutunun dibine, üstte ise tepesine dayanır.
       // Yan yana: tek satır, en yeni sağda; eskiler soldan taşar.
@@ -198,44 +357,9 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         ? `linear-gradient(to ${yanYana ? 'right' : s.reverse ? 'top' : 'bottom'}, transparent 0%, black 18%)`
         : undefined
     }}>
-      {list.map(msg => (
-        <div key={msg.id} className={`axt-anim-${s.animation} flex items-start`} style={{
-          flexShrink: 0,
-          whiteSpace: yanYana ? 'nowrap' : undefined,
-          gap: 8,
-          justifyContent: s.align === 'center' ? 'center' : s.align === 'right' ? 'flex-end' : 'flex-start',
-          background: balon ? msgBg : 'transparent',
-          borderRadius: s.borderRadius,
-          padding: balon ? '6px 10px' : 0,
-          borderLeft: s.highlightSpecial && msg.special ? `3px solid ${s.highlightColor}` : undefined,
-          textShadow: s.textShadow ? '0 2px 8px #000' : undefined
-        }}>
-          {s.showAvatars && msg.avatar && (
-            <img src={msg.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', marginTop: 2 }} />
-          )}
-          {s.showPlatformLogo && (
-            <span style={{ color: PLATFORM_COLORS[msg.platform] || '#cbd5e1', display: 'inline-flex', marginTop: 3, flexShrink: 0 }} title={msg.platform}>
-              <PlatformLogo platform={msg.platform} size={Math.round(Number(s.fontSize) * 0.95) || 16} />
-            </span>
-          )}
-          {s.showTimestamp && <span style={{ color: '#64748b', fontSize: s.fontSize * 0.65, marginTop: 4 }}>{msg.ts}</span>}
-          {s.showBadges && (
-            <span style={{ display: 'inline-flex', gap: 3, marginTop: 2, flexShrink: 0 }}>
-              <PlatformBadges platform={msg.platform as any} user={msg.rozet as any} size={Math.round(Number(s.fontSize) * 1.05) || 18} />
-            </span>
-          )}
-          <p style={{
-            fontSize: s.fontSize,
-            fontWeight: s.fontWeight,
-            lineHeight: s.lineHeight,
-            letterSpacing: s.letterSpacing,
-            color: s.textColor,
-            textAlign: s.align as any,
-            WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined
-          }}>
-            <span style={{ color: msg.color, fontWeight: 800 }}>{msg.user}: </span>
-            <ChatMessageContent message={msg.text} size={Math.round(Number(s.fontSize) * 1.3) || 24} />
-          </p>
+      {list.map((msg) => (
+        <div key={msg.id} className={`axt-anim-${s.animation}`} style={{ flexShrink: 0 }}>
+          {ileti(msg)}
         </div>
       ))}
     </div>

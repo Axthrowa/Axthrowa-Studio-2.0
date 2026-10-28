@@ -136,3 +136,43 @@ export function sohbetModuGovdesi(g: unknown): { ok: true; govde: Record<string,
   if (!Object.keys(govde).length) return { ok: false, hata: 'Değiştirilecek sohbet modu yok' };
   return { ok: true, govde };
 }
+
+/** IRC `emotes` etiketi ("25:0-4,12-16/1902:6-10") → { '25': ['0-4', '12-16'], '1902': ['6-10'] }. Boşsa undefined. */
+export function twitchEmoteEtiketi(ham: unknown): Record<string, string[]> | undefined {
+  const out: Record<string, string[]> = {};
+  for (const parca of String(ham || '').split('/')) {
+    const [id, konumlar] = parca.split(':');
+    if (!/^[\w-]+$/.test(id || '') || !konumlar) continue;
+    const gecerli = konumlar.split(',').filter((k) => /^\d+-\d+$/.test(k));
+    if (gecerli.length) out[id] = gecerli;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/**
+ * Helix `/chat/badges/global` ve `/chat/badges?broadcaster_id=` yanıtları → "set/sürüm" → görsel adresi.
+ * Sonra verilen yanıt öncekini ezer (kanalın kendi abone/bit rozetleri genel rozetlerin yerine geçer).
+ */
+export function twitchRozetHaritasi(...yanitlar: any[]): Map<string, string> {
+  const h = new Map<string, string>();
+  for (const y of yanitlar) {
+    for (const set of Array.isArray(y?.data) ? y.data : []) {
+      for (const v of Array.isArray(set?.versions) ? set.versions : []) {
+        const url = String(v?.image_url_2x || v?.image_url_1x || '');
+        if (set?.set_id && v?.id && /^https:\/\/static-cdn\.jtvnw\.net\//.test(url)) h.set(`${set.set_id}/${v.id}`, url);
+      }
+    }
+  }
+  return h;
+}
+
+/** IRC `badges` etiketi → özgün rozet görselleri. Haritada olmayan rozet düz ad kalır (istemci yedeğini çizer). */
+export function twitchRozetleri(badgesStr: string, harita: ReadonlyMap<string, string>): Array<string | { type: string; text: string; imageUrl: string }> {
+  return String(badgesStr || '')
+    .split(',')
+    .filter(Boolean)
+    .map((b) => {
+      const url = harita.get(b);
+      return url ? { type: b.split('/')[0], text: b, imageUrl: url } : b;
+    });
+}

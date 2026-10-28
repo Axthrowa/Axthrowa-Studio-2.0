@@ -562,7 +562,12 @@ export function OverlayStudio() {
 
   const handleWidgetPointerDown = (e: React.PointerEvent, widgetKey: string) => {
     e.stopPropagation();
-    setSelectedCanvasWidget(widgetKey);
+    // Yalnız seçili widget taşınır: başka widget'a tıklamak onu yalnız seçer (üst üste binen
+    // widget'lardan istenmeyeni sürüklemek yerleşimi bozuyordu)
+    if (widgetKey !== selectedCanvasWidget) {
+      setSelectedCanvasWidget(widgetKey);
+      return;
+    }
     const item = (allInOne as any)[widgetKey];
     if (!item) return;
 
@@ -1261,10 +1266,12 @@ export function OverlayStudio() {
                       return (
                         <div
                           onPointerDown={tiklanir ? (e) => handleWidgetPointerDown(e, katman.anahtar) : undefined}
-                          title={katman.etiket}
+                          title={secili ? katman.etiket : `${katman.etiket} — seçmek için tıkla`}
                           style={{
                             ...stil,
-                            cursor: 'move',
+                            // Seçili widget düzenlemede üstte: başka widget'ın altında kalsa da tutulabilsin
+                            ...(secili && !obsGorunumu ? { zIndex: 9000 } : null),
+                            cursor: secili ? 'move' : 'pointer',
                             pointerEvents: tiklanir ? undefined : 'none',
                             // Kapalı katman tuvalde soluk görünür ki
                             // konumlandırılabilsin; OBS'te hiç çizilmez.
@@ -1760,8 +1767,8 @@ export function OverlayStudio() {
                     </a>
                   </div>
                 ) : (
-                  // Ayarlar solda, önizleme sağda (kaydırırken görünür kalır)
-                  <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-4 items-start">
+                  // Ayarlar solda (geniş), önizleme sağda sabit genişlikte (kaydırırken görünür kalır)
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
                     <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
                     <div className="lg:sticky lg:top-0">
                       <WidgetOnizleme url={selectedWidgetModal.url} testAdi={TEST_ADI[selectedWidgetModal.id]} />

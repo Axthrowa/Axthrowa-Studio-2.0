@@ -11,6 +11,18 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.8.0',
+    ad: 'Sohbet Görünümleri',
+    tarih: '2026-10-28',
+    notlar: [
+      "Tek URL OBS Stüdyosu: yalnız seçili widget taşınır; başka widget'a tıklamak onu yalnız seçer, seçili widget üste alınır",
+      'Sohbet yazı tipleri okunur: dar/süslü yazı tiplerinin boyutu dengelenir, gerçek kalın sürümler yüklenir; "Press Start 2P" ve "Exo 2" artık uygulanıyor',
+      'Sohbet katmanına 8 görünüm stili (platform kartı, başlıklı, ad etiketi, konuşma balonu, platform şeridi, neon, kompakt, klasik) ve 8 yeni hazır tema; platformların özgün renkleri',
+      "Twitch rozetleri düzeldi (çoğunun adresi bozuktu); jeton varsa kanalın kendi abone/bit rozetleri; Twitch kanal emote'ları, BTTV ve FFZ emote'ları",
+      'Widget ayar penceresi: ayarlar geniş, önizleme sağda sabit; önizleme titremeden ve sohbette okunur ölçekte yakınlaşır'
+    ]
+  },
+  {
     surum: '1.7.0',
     ad: 'Stüdyo Düzeni',
     tarih: '2026-10-28',

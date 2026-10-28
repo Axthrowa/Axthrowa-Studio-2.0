@@ -2,8 +2,9 @@
  * Widget ayarları penceresinde canlı önizleme: widget'ın gerçek OBS sayfası 1280×720 iframe'de
  * açılır. Ayarlar kendiliğinden kaydedilip yayınlandığı için önizleme her değişiklikte güncellenir.
  *
- * - "Yakınlaş" (varsayılan): widget'ın görünen kısmı kutuyu dolduracak kadar büyütülür
- *   (eskiden 1280×720 tuval küçültülüyordu, küçük widget'lar okunmuyordu).
+ * - "Yakınlaş" (varsayılan): widget'ın görünen kısmı kutuya sığacak kadar büyütülür (en çok 1,6 kat;
+ *   3 kat büyütme bulanık ve taşkın görünüyordu). Odak alanı yalnız büyür: her yeni sohbet iletisi ya da
+ *   animasyon karesiyle yeniden ölçülüp sürekli kayan, titreyen önizleme düzeldi.
  * - "Test et": önizleme canlı kipe geçer (örnek kip olayları dinlemez), sonra test gönderilir.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -17,7 +18,9 @@ export function icerikKutusu(d: Document): { x: number; y: number; w: number; h:
   let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
   for (const e of Array.from(d.querySelectorAll('#root *'))) {
     const r = (e as HTMLElement).getBoundingClientRect();
-    if (r.width < 2 || r.height < 2 || r.width >= GENISLIK - 4 || r.height >= YUKSEKLIK - 4) continue;
+    // Tuval boyu kutular (sohbet satırları, tam ekran sarmalayıcılar) atlanır: yalnız içerikleri ölçülür,
+    // yoksa sohbet gibi widget'larda odak tüm tuval olup yazı okunmayacak kadar küçülüyordu
+    if (r.width < 2 || r.height < 2 || r.width >= GENISLIK * 0.9 || r.height >= YUKSEKLIK * 0.9) continue;
     if (r.right <= 0 || r.bottom <= 0 || r.left >= GENISLIK || r.top >= YUKSEKLIK) continue;
     x1 = Math.min(x1, Math.max(0, r.left));
     y1 = Math.min(y1, Math.max(0, r.top));
@@ -25,6 +28,17 @@ export function icerikKutusu(d: Document): { x: number; y: number; w: number; h:
     y2 = Math.max(y2, Math.min(YUKSEKLIK, r.bottom));
   }
   return x2 > x1 && y2 > y1 ? { x: x1, y: y1, w: x2 - x1, h: y2 - y1 } : null;
+}
+
+type Kutu = { x: number; y: number; w: number; h: number };
+
+/** İki alanı kapsayan alan; değişmediyse aynı nesne (gereksiz çizim olmasın) */
+export function kapsa(a: Kutu, b: Kutu): Kutu {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  const w = Math.max(a.x + a.w, b.x + b.w) - x;
+  const h = Math.max(a.y + a.h, b.y + b.h) - y;
+  return x === a.x && y === a.y && w === a.w && h === a.h ? a : { x, y, w, h };
 }
 
 export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string }) {
@@ -45,12 +59,14 @@ export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string
     return () => g.disconnect();
   }, []);
 
-  // İçerik değiştikçe (ayar, test olayı) odak alanını yeniden ölç
+  // İçerik değiştikçe (ayar, test olayı) odak alanı ölçülür; yalnız büyür ki önizleme titremesin
   useEffect(() => {
+    setOdak(null);
     const t = setInterval(() => {
       try {
         const d = cerceve.current?.contentDocument;
-        if (d) setOdak(icerikKutusu(d));
+        const yeni = d ? icerikKutusu(d) : null;
+        if (yeni) setOdak((o) => (o ? kapsa(o, yeni) : yeni));
       } catch {
         /* çerçeve yükleniyor */
       }
@@ -69,14 +85,14 @@ export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string
   })();
 
   const yukseklik = Math.round((genislik * YUKSEKLIK) / GENISLIK);
-  // Yakınlaşma: içerik kutuyu (%8 pay bırakarak) doldursun, en çok 3 kat
+  // Yakınlaşma: içerik kutuya (%8 pay bırakarak) sığsın, en çok 1,6 kat
   const tamOlcek = genislik / GENISLIK;
   let olcek = tamOlcek;
   let tx = 0;
   let ty = 0;
   if (yakin && odak) {
     const pay = 1.16;
-    olcek = Math.min(3, Math.max(tamOlcek, Math.min(genislik / (odak.w * pay), yukseklik / (odak.h * pay))));
+    olcek = Math.min(1.6, Math.max(tamOlcek, Math.min(genislik / (odak.w * pay), yukseklik / (odak.h * pay))));
     tx = genislik / 2 - (odak.x + odak.w / 2) * olcek;
     ty = yukseklik / 2 - (odak.y + odak.h / 2) * olcek;
   }

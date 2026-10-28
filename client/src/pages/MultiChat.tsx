@@ -330,7 +330,7 @@ export function MultiChat() {
                   </div>
 
                   <div className="text-gray-200 text-sm font-medium break-words leading-relaxed">
-                    <ChatMessageContent message={msg.message} platform={msg.platform} size={22} />
+                    <ChatMessageContent message={msg.message} platform={msg.platform} size={22} twitchEmotes={msg.emotes} />
                   </div>
                 </div>
               </div>

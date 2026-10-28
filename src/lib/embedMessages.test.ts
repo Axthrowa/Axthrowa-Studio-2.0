@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OPEN_EXTERNAL_TYPE, frameOrigin, openExternalRequest, resonanceLinkAllowed } from "./embedMessages";
+import { OPEN_EXTERNAL_TYPE, OPEN_MUSIC_TYPE, frameOrigin, openExternalRequest, openMusicRequest, resonanceLinkAllowed } from "./embedMessages";
 
 const frame = { name: "streamaxt-frame" };
 const origin = "http://127.0.0.1:3001";
@@ -60,5 +60,16 @@ describe("resonanceLinkAllowed", () => {
     expect(resonanceLinkAllowed("http://accounts.spotify.com/authorize")).toBe(false);
     expect(resonanceLinkAllowed("javascript:alert(1)")).toBe(false);
     expect(resonanceLinkAllowed(42)).toBe(false);
+  });
+});
+
+
+describe("openMusicRequest", () => {
+  it("yalnız bizim çerçeveden ve kökenden gelen isteği kabul eder", () => {
+    const m = { data: { type: OPEN_MUSIC_TYPE }, origin, source: frame };
+    expect(openMusicRequest(m, frame, origin)).toBe(true);
+    expect(openMusicRequest({ ...m, source: {} }, frame, origin)).toBe(false);
+    expect(openMusicRequest({ ...m, origin: "https://ornek.com" }, frame, origin)).toBe(false);
+    expect(openMusicRequest(ok("https://ornek.com"), frame, origin)).toBe(false);
   });
 });

@@ -845,17 +845,20 @@ impl MusicState {
       .client
       .get("https://api.spotify.com/v1/search")
       .bearer_auth(&token)
-      .query(&[("q", q), ("type", "track"), ("limit", "1")])
+      .query(&[("q", q), ("type", "track"), ("limit", "10")])
       .send()
       .await?;
     if !res.status().is_success() {
       return Err(anyhow!("Spotify arama başarısız ({})", res.status()));
     }
     let data: Value = res.json().await.unwrap_or(json!({}));
-    let item = data
-      .pointer("/tracks/items/0")
-      .cloned()
+    // Spotify'ın ilk sonucu sık sık yanlış ("Tame Impala Loser" → "Dracula"); sorguya en çok uyanı seç
+    let items = data
+      .pointer("/tracks/items")
+      .and_then(|v| v.as_array())
+      .filter(|a| !a.is_empty())
       .ok_or_else(|| anyhow!("Spotify'da sonuç yok"))?;
+    let item = items[best_search_match(items, q)].clone();
     let uri = item
       .get("uri")
       .and_then(|v| v.as_str())
@@ -872,34 +875,58 @@ impl MusicState {
       .unwrap_or("")
       .to_string();
 
-    let play = if queue {
-      self
+    // Cihaz belirtilmezse Spotify komutu "etkin" sayılan hayalet bir cihaza gönderebiliyor:
+    // masaüstü durur, istek hiçbir yerde çalmaz. Bu bilgisayardaki uygulamayı açıkça hedefle.
+    let device = self.spotify_target_device(&token).await;
+    let mut params: Vec<(&str, &str)> = Vec::new();
+    if let Some(d) = device.as_deref() {
+      params.push(("device_id", d));
+    }
+    // "Hemen çal" da sıra + sonraki ile yapılır: `PUT /me/player/play {uris}` bu kullanıcıda
+    // masaüstünü durdurup hiçbir şey çalmıyordu, sıra + sonraki ise masaüstünde çalıyor.
+    let durum = |code: u16| match code {
+      200 | 202 | 204 => Ok(()),
+      403 => Err(anyhow!("Spotify çalamadı — Premium ve açık bir cihaz gerekir")),
+      404 => Err(anyhow!("Aktif Spotify cihazı yok — Spotify'da bir şey çalmaya başlatın")),
+      code => Err(anyhow!("Spotify play başarısız ({code})")),
+    };
+    let mut queue_params = params.clone();
+    queue_params.push(("uri", uri.as_str()));
+    let res = self
+      .client
+      .post("https://api.spotify.com/v1/me/player/queue")
+      .bearer_auth(&token)
+      .query(&queue_params)
+      .header(reqwest::header::CONTENT_LENGTH, "0")
+      .send()
+      .await?;
+    durum(res.status().as_u16())?;
+    if !queue {
+      let res = self
         .client
-        .post("https://api.spotify.com/v1/me/player/queue")
+        .post("https://api.spotify.com/v1/me/player/next")
         .bearer_auth(&token)
-        .query(&[("uri", uri.as_str())])
+        .query(&params)
         .header(reqwest::header::CONTENT_LENGTH, "0")
         .send()
-        .await?
-    } else {
-      self
-        .client
-        .put("https://api.spotify.com/v1/me/player/play")
-        .bearer_auth(&token)
-        .json(&json!({ "uris": [uri] }))
-        .send()
-        .await?
-    };
-    match play.status().as_u16() {
-      200 | 202 | 204 => Ok((title, artist, uri)),
-      403 => Err(anyhow!(
-        "Spotify çalamadı — Premium ve açık bir cihaz gerekir"
-      )),
-      404 => Err(anyhow!(
-        "Aktif Spotify cihazı yok — Spotify'da bir şey çalmaya başlatın"
-      )),
-      code => Err(anyhow!("Spotify play başarısız ({code})")),
+        .await?;
+      durum(res.status().as_u16())?;
     }
+    Ok((title, artist, uri))
+  }
+
+  /// `/me/player/devices` içinden çalma hedefi; liste alınamazsa `None` (Spotify kendi seçer).
+  async fn spotify_target_device(&self, token: &str) -> Option<String> {
+    let res = self
+      .client
+      .get("https://api.spotify.com/v1/me/player/devices")
+      .bearer_auth(token)
+      .send()
+      .await
+      .ok()?;
+    let data: Value = res.json().await.ok()?;
+    let pc = std::env::var("COMPUTERNAME").unwrap_or_default();
+    pick_spotify_device(data.get("devices")?.as_array()?, &pc)
   }
 
   pub async fn ytmd_change_video(&self, video_id: &str) -> Result<()> {
@@ -1105,9 +1132,80 @@ impl MusicState {
   }
 }
 
+/// Arama sonuçlarından sorgudaki kelimelerin en çoğunu (şarkı adı + sanatçı) içeren; eşitlikte Spotify sırası.
+fn best_search_match(items: &[Value], query: &str) -> usize {
+  let words = |t: &str| -> Vec<String> {
+    t.to_lowercase()
+      .split(|c: char| !c.is_alphanumeric())
+      .filter(|w| !w.is_empty())
+      .map(str::to_string)
+      .collect()
+  };
+  let q = words(query);
+  let score = |item: &Value| {
+    let mut text = item["name"].as_str().unwrap_or("").to_string();
+    for a in item["artists"].as_array().into_iter().flatten() {
+      text.push(' ');
+      text.push_str(a["name"].as_str().unwrap_or(""));
+    }
+    let have = words(&text);
+    let name = words(item["name"].as_str().unwrap_or(""));
+    // Şarkı adının tüm kelimeleri sorguda geçiyorsa öne çıkar ("Dracula" sorguda yok)
+    let name_hit = !name.is_empty() && name.iter().all(|w| q.contains(w));
+    q.iter().filter(|w| have.contains(w)).count() * 2 + usize::from(name_hit)
+  };
+  let mut best = 0;
+  for (i, item) in items.iter().enumerate() {
+    if score(item) > score(&items[best]) {
+      best = i;
+    }
+  }
+  best
+}
+
+/// Önce bu bilgisayardaki masaüstü uygulaması (cihaz adı = bilgisayar adı), sonra etkin cihaz,
+/// sonra herhangi bir bilgisayar cihazı. Kısıtlı (API ile yönetilemeyen) cihazlar atlanır.
+fn pick_spotify_device(devices: &[Value], pc: &str) -> Option<String> {
+  let usable: Vec<&Value> = devices
+    .iter()
+    .filter(|d| !d["is_restricted"].as_bool().unwrap_or(false) && d["id"].is_string())
+    .collect();
+  let computer = |d: &&&Value| d["type"].as_str().is_some_and(|t| t.eq_ignore_ascii_case("computer"));
+  usable
+    .iter()
+    .find(|d| computer(d) && !pc.is_empty() && d["name"].as_str().is_some_and(|n| n.eq_ignore_ascii_case(pc)))
+    .or_else(|| usable.iter().find(|d| d["is_active"].as_bool().unwrap_or(false)))
+    .or_else(|| usable.iter().find(computer))
+    .and_then(|d| d["id"].as_str().map(str::to_string))
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn search_match_prefers_title_in_query() {
+    let items = vec![
+      json!({"name": "Dracula", "artists": [{"name": "Tame Impala"}]}),
+      json!({"name": "Loser", "artists": [{"name": "Tame Impala"}]}),
+      json!({"name": "Loser", "artists": [{"name": "Beck"}]}),
+    ];
+    assert_eq!(best_search_match(&items, "Tame Impala Loser"), 1);
+    assert_eq!(best_search_match(&items, "loser beck"), 2);
+    assert_eq!(best_search_match(&items, "bilinmeyen"), 0);
+  }
+
+  #[test]
+  fn spotify_device_prefers_this_pc_over_active_ghost() {
+    let devices = vec![
+      json!({"id": "web", "name": "Web Player (Chrome)", "type": "Computer", "is_active": true}),
+      json!({"id": "pc", "name": "MASAUSTU", "type": "Computer", "is_active": false}),
+      json!({"id": "tv", "name": "TV", "type": "TV", "is_active": false, "is_restricted": true}),
+    ];
+    assert_eq!(pick_spotify_device(&devices, "masaustu").as_deref(), Some("pc"));
+    assert_eq!(pick_spotify_device(&devices, "BASKA").as_deref(), Some("web"));
+    assert_eq!(pick_spotify_device(&devices[2..], "x"), None);
+  }
 
   fn temp_state(tag: &str) -> MusicState {
     let root = std::env::temp_dir().join(format!("yayin-music-{tag}-{}", std::process::id()));

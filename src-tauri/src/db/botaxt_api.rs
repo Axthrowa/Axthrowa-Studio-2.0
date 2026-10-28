@@ -2430,11 +2430,6 @@ pub async fn remote_logout(pool: &SqlitePool, token: &str) -> Result<()> {
   Ok(())
 }
 
-pub async fn remote_auth_user(pool: &SqlitePool, token: &str) -> Result<(String, String)> {
-  let info = remote_auth_full(pool, token).await?;
-  Ok((info.user_id, info.username))
-}
-
 #[derive(Debug, Clone, Serialize)]
 pub struct RemoteAuthInfo {
   pub user_id: String,

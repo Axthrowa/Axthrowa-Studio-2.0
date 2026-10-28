@@ -16,7 +16,6 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use sqlx::SqlitePool;
-use std::str::FromStr;
 
 use crate::settings::AppSettings;
 
@@ -45,10 +44,9 @@ pub async fn open_connected(data_dir: &Path) -> Result<SqlitePool> {
   if let Some(parent) = path.parent() {
     std::fs::create_dir_all(parent).context("data klasörü")?;
   }
-  let path_str = path.to_string_lossy().replace('\\', "/");
-  let url = format!("sqlite://{path_str}?mode=rwc");
-  let opts = SqliteConnectOptions::from_str(&url)
-    .context("sqlite url")?
+  // URL değil doğrudan yol: portable'da canonicalize `\\?\C:\…` verir, URL'de bozulup bellek DB'ye düşüyordu
+  let opts = SqliteConnectOptions::new()
+    .filename(&path)
     .create_if_missing(true)
     .journal_mode(SqliteJournalMode::Wal)
     .foreign_keys(true);
@@ -119,4 +117,27 @@ pub fn chrono_now() -> i64 {
 
 pub async fn default_channel_id(pool: &SqlitePool) -> Result<String> {
   ensure_default_channel(pool).await
+}
+
+#[cfg(test)]
+mod tests {
+  // portable data yolu canonicalize edilir (Windows: \?\C:\...); DB yine dosyada açılmalı
+  #[tokio::test]
+  async fn opens_file_db_in_canonical_dir() {
+    let dir = std::env::temp_dir().join(format!("yya-db-{}", uuid::Uuid::new_v4()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let canon = std::fs::canonicalize(&dir).unwrap();
+    let pool = super::open_connected(&canon).await.unwrap();
+    pool.close().await;
+    assert!(canon.join("botaxt.db").exists());
+    let _ = std::fs::remove_dir_all(&dir);
+  }
+
+  // Kayıtlı DB'ler LF sağlamasıyla; CRLF çekimden derlenirse migrasyon "değişti" sayılır ve init düşer
+  #[test]
+  fn migrations_are_lf() {
+    for m in sqlx::migrate!("./migrations").iter() {
+      assert!(!m.sql.contains('\r'), "{} CRLF içeriyor", m.description);
+    }
+  }
 }

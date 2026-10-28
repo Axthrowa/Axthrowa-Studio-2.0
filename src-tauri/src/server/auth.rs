@@ -90,11 +90,33 @@ pub async fn require_bearer_outside_loopback(
     "Yetkisiz: uzak erişim için Bearer token gerekli (Settings → Alt kullanıcılar)".into(),
   ))?;
 
-  crate::db::botaxt_api::remote_auth_user(&state.db, &token)
+  let info = crate::db::botaxt_api::remote_auth_full(&state.db, &token)
     .await
     .map_err(map_err_status)?;
+  // Kısıtlı uzak kullanıcı yalnız kendi yetkisini denetleyen uçlara girer; eskiden geçerli her token
+  // ayarlar, Kick, müzik gibi denetimsiz uçları da açıyordu
+  if !crate::db::botaxt_api::remote_has_perm(&info, "*") && !perm_checked_path(&path) {
+    return Err((StatusCode::FORBIDDEN, "Bu uç yalnız yönetici içindir".into()));
+  }
 
   Ok(next.run(req).await)
+}
+
+/// İşleyicisi `remote_has_perm` ile kendi yetkisini denetleyen uçlar.
+fn perm_checked_path(path: &str) -> bool {
+  [
+    "/api/botaxt/remote/",
+    "/api/actions",
+    "/api/obs/",
+    "/api/obs-studio",
+    "/api/destek",
+    "/api/guncelleme",
+    "/api/multistream",
+    "/api/audit",
+    "/api/yayin-bilgisi",
+  ]
+  .iter()
+  .any(|p| path.starts_with(p))
 }
 
 /// Panel ayarı / env: `0.0.0.0` veya `127.0.0.1`.
@@ -119,5 +141,19 @@ pub fn resolve_bind_host(state: &AppState) -> [u8; 4] {
     [0, 0, 0, 0]
   } else {
     [127, 0, 0, 1]
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::perm_checked_path;
+
+  #[test]
+  fn kisitli_kullanici_denetimsiz_uca_giremez() {
+    assert!(perm_checked_path("/api/multistream/status"));
+    assert!(perm_checked_path("/api/botaxt/remote/chat/send"));
+    assert!(!perm_checked_path("/api/settings"));
+    assert!(!perm_checked_path("/api/kick/oauth/disconnect"));
+    assert!(!perm_checked_path("/api/botaxt/alerts"));
   }
 }

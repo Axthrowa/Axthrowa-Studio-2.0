@@ -212,7 +212,7 @@ impl KickAuth {
   fn save(&self) {
     let data = self.data.read().clone();
     if let Ok(text) = serde_json::to_string_pretty(&data) {
-      let _ = std::fs::write(&self.path, text);
+      let _ = crate::settings::write_atomic(&self.path, &text);
     }
   }
 

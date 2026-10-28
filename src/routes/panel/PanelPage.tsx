@@ -1647,7 +1647,7 @@ export default function PanelPage() {
         </div>
       ) : botTab ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <StreamAxtHost onToast={showToast} />
+          <StreamAxtHost onToast={showToast} onOpenMusic={() => setActiveNav("music")} />
         </div>
       ) : chatTab && !chatOverlaySettings ? (
         // Canlı Chat = StreamAxT'nin Multi-Chat'i (çapraz sohbet, izleyici kartları).
@@ -1663,7 +1663,7 @@ export default function PanelPage() {
               Sohbet katmanı ayarları
             </button>
           </div>
-          <StreamAxtHost onToast={showToast} tab="multichat" embed />
+          <StreamAxtHost onToast={showToast} tab="multichat" embed onOpenMusic={() => setActiveNav("music")} />
         </div>
       ) : soundsTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">

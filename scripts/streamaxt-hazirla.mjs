@@ -104,7 +104,7 @@ function link(target, at) {
 const clientSrc = path.join(kaynak, "client");
 const appSrc = path.join(kaynak, "release", "app");
 const serverDist = path.join(kaynak, "server", "dist");
-for (const p of [clientSrc, path.join(appSrc, "package.json"), serverDist]) {
+for (const p of [clientSrc, path.join(appSrc, "package.json"), path.join(kaynak, "server", "tsconfig.json")]) {
   if (!fs.existsSync(p)) {
     console.error(`[streamaxt] bulunamadı: ${p}\n  --kaynak ile StreamAxT (Projeler) klasörünü verin.`);
     process.exit(1);
@@ -190,6 +190,17 @@ execFileSync(process.execPath, [viteBin, "build", "--outDir", publicOut, "--empt
 console.log(`[streamaxt] arayüz turkuaz derlendi (${changed} dosyada sabit renk değişti) → ${publicOut}`);
 
 // ---- 2) Sunucu ---------------------------------------------------------------
+// Önce derlenir: eskiden hazır server/dist kopyalanıyordu, derlenmemiş sunucu düzeltmeleri
+// (1.4.8–1.4.10) sessizce eski kodla dağıtıldı.
+const tscBin = [path.join(kaynak, "server", "node_modules", "typescript", "bin", "tsc"), path.join(kaynak, "node_modules", "typescript", "bin", "tsc")].find((p) =>
+  fs.existsSync(p)
+);
+if (!tscBin) {
+  console.error("[streamaxt] typescript bulunamadı; StreamAxT klasöründe `npm install` çalıştırın.");
+  process.exit(1);
+}
+execFileSync(process.execPath, [tscBin, "-p", path.join(kaynak, "server")], { stdio: "inherit" });
+console.log("[streamaxt] sunucu derlendi");
 fs.rmSync(path.join(hedef, "dist"), { recursive: true, force: true });
 fs.cpSync(serverDist, path.join(hedef, "dist"), { recursive: true });
 fs.copyFileSync(path.join(appSrc, "package.json"), path.join(hedef, "package.json"));

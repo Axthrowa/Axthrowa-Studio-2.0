@@ -11,6 +11,8 @@
  */
 
 export const OPEN_EXTERNAL_TYPE = "streamaxt:open-external";
+/** StreamAxT'in "Resonance'ı aç" isteği: tarayıcı yerine panelin Müzik (Resonance) sekmesi açılır. */
+export const OPEN_MUSIC_TYPE = "streamaxt:open-music";
 
 export type EmbedMessageEvent = {
   data: unknown;
@@ -44,6 +46,13 @@ export function openExternalRequest(
   // Yalnız http(s); `javascript:`, `file:`, `ms-settings:` gibi şemalar açılmaz.
   if (!/^https?:\/\/[^\s]+$/i.test(url)) return null;
   return url;
+}
+
+/** Yalnız bizim çerçevemizden ve StreamAxT kökeninden gelen "Müzik sekmesini aç" isteği mi. */
+export function openMusicRequest(ev: EmbedMessageEvent, frameWindow: unknown, expectedOrigin: string | null): boolean {
+  if (!frameWindow || ev.source !== frameWindow) return false;
+  if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
+  return (ev.data as { type?: unknown } | null)?.type === OPEN_MUSIC_TYPE;
 }
 
 /**

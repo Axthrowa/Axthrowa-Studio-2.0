@@ -184,8 +184,11 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     </>
   );
 
+  // Ayrı OBS sayfasında ekranı kaplar; Tek URL katmanında kutusunu. Eskiden ikisinde de %100'dü:
+  // ayrı sayfada üst öğenin genişliği 0 olduğundan kombo çiziliyor ama hiç görünmüyordu.
+  const kap = props?.embedded ? { width: '100%', height: '100%' } : { width: '100vw', height: '100vh' };
   if (!combo || combo.count < s.minCombo) {
-    return <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>{yuzenler}{efektler}</div>;
+    return <div style={{ position: 'relative', ...kap, overflow: 'hidden' }}>{yuzenler}{efektler}</div>;
   }
   // Toplanma açıkken büyük emote kombo büyüdükçe irileşir (en çok 2 kat)
   const buyukBoyut = (Number(s.size) || 64) * (s.gatherMode ? Math.min(2, 1 + combo.count * 0.04) : 1);
@@ -195,7 +198,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
   const sub = (s.subTemplate || '{emote} ÇILGINLIĞI!').replace('{emote}', combo.emote.ad).replace('{count}', String(combo.count));
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', ...kap, position: 'relative', overflow: 'hidden' }}>
       {s.showPopup && (
         <div className={`axt-anim-${s.animation}`} style={{
           background: bg,

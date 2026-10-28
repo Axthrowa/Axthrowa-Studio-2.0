@@ -90,7 +90,8 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
     if (senkron.synced && senkron.progressMs !== null && senkron.updatedAt !== null) {
       const hesapla = () => {
         const gecen = senkron.isPlaying ? Date.now() - (senkron.updatedAt as number) : 0;
-        const konum = ((senkron.progressMs as number) + gecen) / 1000;
+        // Kaydırma: + söz erken, - geç gelir (çalar/söz kaynağı arasındaki sabit farkı düzeltmek için)
+        const konum = ((senkron.progressMs as number) + gecen + (Number(s.syncOffsetMs) || 0)) / 1000;
         let i = 0;
         for (let k = 0; k < lines.length; k++) {
           if (lines[k].time <= konum) i = k;
@@ -108,7 +109,7 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
       Math.max(500, Number(s.lineMs) || 4500)
     );
     return () => clearInterval(t);
-  }, [lines, s.lineMs, senkron]);
+  }, [lines, s.lineMs, s.syncOffsetMs, senkron]);
 
   const bos = lines.length === 0;
   if (bos && s.hideWhenIdle) return null;
@@ -142,6 +143,30 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
       border: 'none',
       borderLeft: `6px solid ${s.accentColor}`,
       borderRadius: 8
+    },
+    // Ek görünümler (kendi tasarımlarımız)
+    altyazi: { background: 'transparent', border: 'none', boxShadow: 'none' },
+    sahne: {
+      background: `radial-gradient(120% 120% at 50% 100%, ${rgba(s.accentColor, 0.35)}, ${rgba(s.bgColor, s.bgOpacity)} 70%)`,
+      border: 'none',
+      boxShadow: `0 20px 50px ${rgba('#000000', 0.5)}`
+    },
+    retro: {
+      background: rgba('#0d0221', 0.92),
+      border: `3px solid ${s.accentColor}`,
+      boxShadow: `0 0 0 3px #000, 0 0 24px ${rgba(s.accentColor, 0.5)}`,
+      fontFamily: '"Press Start 2P", monospace'
+    },
+    kart: { background: rgba('#ffffff', 0.94), border: 'none', boxShadow: '0 14px 40px rgba(0,0,0,.35)' },
+    kaset: {
+      background: `repeating-linear-gradient(0deg, ${rgba('#000000', 0.15)} 0 2px, transparent 2px 4px), linear-gradient(135deg, #3f2412, #1c1008)`,
+      border: '2px solid #a16207',
+      fontFamily: '"Special Elite", monospace'
+    },
+    aurora: {
+      background: `linear-gradient(135deg, ${rgba('#0f766e', 0.75)}, ${rgba('#6366f1', 0.7)}, ${rgba('#a855f7', 0.7)})`,
+      border: `1px solid ${rgba('#ffffff', 0.2)}`,
+      backdropFilter: 'blur(10px)'
     }
   };
 
@@ -190,8 +215,17 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
           className="my-2 px-4 py-1 font-extrabold transition-all duration-300"
           style={{
             fontSize: anaBoy,
-            color: s.textColor,
-            textShadow: tema === 'minimal' ? '0 2px 6px rgba(0,0,0,.8)' : `0 0 14px ${rgba(s.accentColor, 0.8)}`
+            fontFamily: s.lineFontFamily || undefined,
+            color: tema === 'kart' ? '#111827' : s.textColor,
+            // Altyazı: siyah kutu içinde, film altyazısı gibi
+            background: tema === 'altyazi' ? 'rgba(0,0,0,.78)' : undefined,
+            borderRadius: tema === 'altyazi' ? 6 : undefined,
+            textShadow:
+              tema === 'kart'
+                ? 'none'
+                : tema === 'minimal' || tema === 'altyazi'
+                  ? '0 2px 6px rgba(0,0,0,.8)'
+                  : `0 0 14px ${rgba(s.accentColor, 0.8)}`
           }}
         >
           {suAn}

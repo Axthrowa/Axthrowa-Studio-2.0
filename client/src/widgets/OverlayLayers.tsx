@@ -44,6 +44,8 @@ import { EndCreditsWidget } from './EndCreditsWidget.js';
 import { AudioPlayerWidget } from './AudioPlayerWidget.js';
 import { SoundBoardWidget } from './SoundBoardWidget.js';
 import { MuzikVideoWidget } from './MuzikVideoWidget.js';
+import { WordCloudWidget } from './WordCloudWidget.js';
+import { ScoreboardWidget } from './ScoreboardWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 
 export interface WidgetLayoutItem {
@@ -84,7 +86,9 @@ export type KatmanAnahtari =
   | 'endCredits'
   | 'tts'
   | 'soundBoard'
-  | 'muzikVideo';
+  | 'muzikVideo'
+  | 'wordCloud'
+  | 'scoreboard';
 
 export interface KatmanTanimi {
   anahtar: KatmanAnahtari;
@@ -148,7 +152,7 @@ export const KATMANLAR: KatmanTanimi[] = [
   },
   {
     anahtar: 'nowPlaying',
-    etiket: '🎵 Şu An Çalan (Resonance)',
+    etiket: '🎵 Resonance',
     z: 65,
     varsayilan: { x: 40, y: 80, width: 380, height: 90 },
     ciz: () => <ResonanceWidget embedded />
@@ -295,6 +299,20 @@ export const KATMANLAR: KatmanTanimi[] = [
     z: 56,
     varsayilan: { x: 1280, y: 700, width: 600, height: 340 },
     ciz: (o) => <MuzikVideoWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'wordCloud',
+    etiket: 'Kelime Bulutu',
+    z: 15,
+    varsayilan: { x: 1300, y: 60, width: 560, height: 320 },
+    ciz: (o) => <WordCloudWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'scoreboard',
+    etiket: 'Skor Tablosu',
+    z: 47,
+    varsayilan: { x: 760, y: 20, width: 400, height: 140 },
+    ciz: (o) => <ScoreboardWidget embedded previewMode={o} />
   }
 ];
 
@@ -329,7 +347,9 @@ export const GALERI_KATMANI: Record<string, { anahtar: KatmanAnahtari; ek?: Reco
   'end-credits': { anahtar: 'endCredits' },
   tts: { anahtar: 'tts' },
   'cloud-tts': { anahtar: 'tts' },
-  'muzik-video': { anahtar: 'muzikVideo' }
+  'muzik-video': { anahtar: 'muzikVideo' },
+  'word-cloud': { anahtar: 'wordCloud' },
+  scoreboard: { anahtar: 'scoreboard' }
 };
 
 /**

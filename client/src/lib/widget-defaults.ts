@@ -7,7 +7,11 @@ export const FONTS = [
   'Plus Jakarta Sans', 'Inter', 'Roboto', 'Montserrat', 'Oswald', 'Poppins',
   'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito',
   // Oyun & film temalarının yazı tipleri (Google Fonts, OFL)
-  'Press Start 2P', 'VT323', 'Audiowide', 'Black Ops One', 'Cinzel', 'Special Elite', 'Creepster', 'Rye', 'Bebas Neue'
+  'Press Start 2P', 'VT323', 'Audiowide', 'Black Ops One', 'Cinzel', 'Special Elite', 'Creepster', 'Rye', 'Bebas Neue',
+  // Türkçe karakterli (latin-ext) ek yazı tipleri
+  'Righteous', 'Exo 2', 'Rajdhani', 'Kanit', 'Bungee', 'Fredoka', 'Comfortaa', 'Caveat', 'Dancing Script',
+  'Playfair Display', 'Raleway', 'Ubuntu', 'Quicksand', 'Pixelify Sans', 'Fira Code', 'Staatliches', 'Lobster',
+  'Pacifico', 'Silkscreen', 'Monoton', 'Saira', 'Barlow Condensed', 'Lexend', 'Space Grotesk'
 ];
 
 export const ACTIVITY_DEFAULTS = {
@@ -655,6 +659,10 @@ export const LYRICS_DEFAULTS = {
   maxWidth: 896,
   lineMs: 4500,
   refreshSeconds: 5,
+  /** Senkron kaydırma (ms): + sözler erken, - geç gelir */
+  syncOffsetMs: 0,
+  /** Etkin satırın yazı tipi (boş = genel yazı tipi) */
+  lineFontFamily: '',
   idleText: '🎵 Müzik ritmini dinliyor...',
   notFoundText: 'Bu şarkının sözleri bulunamadı',
   showTrack: true,

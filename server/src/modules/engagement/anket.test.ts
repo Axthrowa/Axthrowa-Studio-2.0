@@ -22,6 +22,12 @@ describe('!anketac komutu', () => {
     expect(coz('3D mi 2D mi? | 3D | 2D')).toMatchObject({ soru: '3D mi 2D mi?', sure: 60 });
   });
 
+  it('virgüllü biçim: süre, soru, seçenekler', () => {
+    expect(coz('60, Hangi oyun?, Valorant, CS2, LoL')).toEqual({ soru: 'Hangi oyun?', secenekler: ['Valorant', 'CS2', 'LoL'], sure: 60 });
+    expect(coz('2dk, Soru, A, B')).toMatchObject({ sure: 120 });
+    expect(coz('Soru, A, B')).toEqual({ soru: 'Soru', secenekler: ['A', 'B'], sure: 60 });
+  });
+
   it('iki seçenekten azsa kullanım gösterilir', () => {
     expect('hata' in coz('Soru | Tek')).toBe(true);
     expect('hata' in coz('Sadece soru')).toBe(true);

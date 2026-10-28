@@ -77,6 +77,19 @@ function sonucDonustur(kayit: any, title: string, artist: string): SozSonucu | n
   return null;
 }
 
+/**
+ * Arama sonuçlarından söz sürümü: zaman damgalı ve süresi çalan parçaya en yakın olan.
+ * Eskiden ilk zaman damgalı sonuç alınıyordu; başka bir sürümse (radyo edit, canlı, uzun intro)
+ * sözler şarkıdan saniyelerce kayıyordu.
+ */
+export function surumSec<T extends { syncedLyrics?: unknown; duration?: unknown }>(liste: T[], sureMs: number): T | undefined {
+  const zamanli = liste.filter((x) => x?.syncedLyrics);
+  if (!zamanli.length) return liste[0];
+  if (!(sureMs > 0)) return zamanli[0];
+  const fark = (x: T) => Math.abs((Number(x.duration) || 0) * 1000 - sureMs);
+  return [...zamanli].sort((a, b) => fark(a) - fark(b))[0];
+}
+
 /** Parçanın sözleri (önbellekli). `sureMs` tam eşleşmeyi güçlendirir. */
 export async function sozleriGetir(title: string, artist: string, sureMs = 0): Promise<SozSonucu> {
   const temiz = baslikTemizle(title);
@@ -97,7 +110,7 @@ export async function sozleriGetir(title: string, artist: string, sureMs = 0): P
     if (!sonuc) {
       const r = await axios.get(`https://lrclib.net/api/search?q=${encodeURIComponent(`${artist ? artist.split(',')[0] + ' ' : ''}${temiz}`)}`, opts);
       const liste: any[] = Array.isArray(r.data) ? r.data : [];
-      const secilen = liste.find((x) => x?.syncedLyrics) || liste[0];
+      const secilen = surumSec(liste, sureMs);
       sonuc = sonucDonustur(secilen, temiz, artist);
     }
   } catch {

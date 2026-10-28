@@ -87,6 +87,7 @@ router.post('/subathon/settings', (req: Request, res: Response) => {
       bagisBirimi: Math.max(1, sayi(g.bagisBirimi, mevcut.bagisBirimi)),
       kicksDakika: sayi(g.kicksDakika, mevcut.kicksDakika),
       kicksBirimi: Math.max(1, sayi(g.kicksBirimi, mevcut.kicksBirimi)),
+      takipDakika: sayi(g.takipDakika, mevcut.takipDakika),
       maksSaat: sayi(g.maksSaat, mevcut.maksSaat)
     })
   );
@@ -98,6 +99,14 @@ router.post('/subathon/start', (req: Request, res: Response) => {
 
 router.post('/subathon/stop', (req: Request, res: Response) => {
   res.json(subathon.durdur());
+});
+
+// Duraklatılmış (ya da önceki yayından kalan) süreyle kaldığı yerden sürdür
+router.post('/subathon/resume', (_req: Request, res: Response) => {
+  res.json(subathon.devam());
+});
+router.post('/subathon/reset', (_req: Request, res: Response) => {
+  res.json(subathon.sifirla());
 });
 
 /** Elle sure ekle/cikar: `{ dakika: 5 }` veya `{ dakika: -5 }`. */
@@ -299,6 +308,49 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
         data: { id: `test-${Date.now()}`, user: body.username || 'TestIzleyici', rewardTitle: 'Test ödülü', rewardType: 'custom', cost: 500, timestamp: Date.now() }
       });
       break;
+    // Galeride testi olmayan widget'lar: yalnız katmana örnek gider, kayıtlı durum değişmez
+    case 'chat-overlay':
+      wsHub.broadcastTo(['all'], {
+        type: 'chat',
+        data: {
+          id: `test-${Date.now()}`,
+          platform: 'kick',
+          channel: 'test',
+          user: { id: 'test', username: 'testizleyici', displayName: 'TestIzleyici', badges: [], isMod: false, isSub: true, isVip: false, isBroadcaster: false, color: '#22d3ee' },
+          message: body.message || 'Merhaba! Bu bir sohbet katmanı testidir 👋',
+          timestamp: Date.now()
+        }
+      });
+      break;
+    case 'donation-goal':
+    case 'follower-goal':
+    case 'subscriber-goal':
+    case 'kicks-goal':
+      wsHub.triggerTestAlert(({ 'donation-goal': 'tip', 'follower-goal': 'follow', 'subscriber-goal': 'sub', 'kicks-goal': 'kicks' } as Record<string, string>)[widgetName]);
+      break;
+    case 'event-labels':
+      wsHub.triggerTestAlert(body.eventType || 'follow');
+      break;
+    case 'pinned-messages':
+      wsHub.broadcastTo(['all'], {
+        type: 'pinned_message',
+        data: { id: `test-${Date.now()}`, username: 'testizleyici', displayName: 'TestIzleyici', message: 'Sabitlenmiş mesaj testi 📌', platform: 'kick' }
+      });
+      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'pinned_clear' }), 8000).unref?.();
+      break;
+    case 'king':
+      wsHub.broadcastTo(['all'], {
+        type: 'king_update',
+        state: { username: 'testkral', displayName: 'TestKral', pointsBid: 5000, title: 'Test Kralı', crownedAt: Date.now(), test: true }
+      });
+      break;
+    case 'scoreboard': {
+      // Örnek skor 6 sn görünür, sonra gerçek tablo geri gelir
+      const gercek = skorOku();
+      wsHub.broadcastTo(['all'], { type: 'skor_tablosu', data: { ...gercek, takimlar: gercek.takimlar.map((t, i) => ({ ...t, skor: t.skor + i + 1 })) } });
+      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'skor_tablosu', data: skorOku() }), 6000).unref?.();
+      break;
+    }
     case 'activity-feed':
     case 'alert-box':
     case 'follow':

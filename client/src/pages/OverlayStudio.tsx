@@ -41,7 +41,6 @@ import {
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
-import { SohbetIstatistikPaneli, SkorTablosuPaneli } from '../components/SohbetAraclariPaneli.js';
 import { GALERI_KATMANI, KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
 import { enBuyukBoyut, hizala, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
@@ -272,10 +271,24 @@ const TEST_ADI: Record<string, string> = {
   'viewer-counter': 'viewer-counter',
   polls: 'polls',
   giveaways: 'giveaways',
-  'loyalty-redemptions': 'loyalty-redemptions'
+  'loyalty-redemptions': 'loyalty-redemptions',
+  // Eskiden testi olmayanlar (sunucuda yalnız katmana örnek gider)
+  'chat-overlay': 'chat-overlay',
+  'donation-goal': 'donation-goal',
+  'follower-goal': 'follower-goal',
+  'subscriber-goal': 'subscriber-goal',
+  'kicks-goal': 'kicks-goal',
+  'event-labels': 'event-labels',
+  'pinned-messages': 'pinned-messages',
+  king: 'king',
+  scoreboard: 'scoreboard'
 };
 
+// Tek URL katmanı → ayar kimliği. Eskiden elle yazılmış 14 katmanla sınırlıydı: sabitlenmiş mesaj, shoutout,
+// izleyici sayacı, sıralama, sadakat, jenerik vb. seçilince ayar paneli hiç açılmıyordu. Artık galeri
+// eşlemesinden türetilir; aşağıdaki elle yazılanlar önceliklidir.
 const KATMAN_AYAR_ID: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(GALERI_KATMANI).reverse().map(([galeriId, k]) => [k.anahtar, galeriId])),
   chat: 'chat-overlay',
   alerts: 'alert-box',
   goals: 'follower-goal',
@@ -1324,7 +1337,7 @@ export function OverlayStudio() {
                   <option value="polls">📊 Canlı Anket (Polls)</option>
                   <option value="wheel">🎡 Çarkıfelek</option>
                   <option value="hypeTrain">🚂 Hype Treni</option>
-                  <option value="nowPlaying">🎵 Now Playing (Şarkı Kartı)</option>
+                  <option value="nowPlaying">🎵 Resonance (şu an çalan)</option>
                   <option value="emoteCombo">🔥 Emote Kombo</option>
                   <option value="lyrics">🎶 Canlı Şarkı Sözleri (Lyrics)</option>
                   <option value="king">👑 Tahtın Kralı (King System)</option>
@@ -1748,10 +1761,10 @@ export function OverlayStudio() {
                   </div>
                 ) : (
                   // Ayarlar solda, önizleme sağda (kaydırırken görünür kalır)
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                  <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-4 items-start">
                     <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
                     <div className="lg:sticky lg:top-0">
-                      <WidgetOnizleme url={selectedWidgetModal.url} testTuru={selectedWidgetModal.id === 'alert-box' ? 'follow' : undefined} />
+                      <WidgetOnizleme url={selectedWidgetModal.url} testAdi={TEST_ADI[selectedWidgetModal.id]} />
                     </div>
                   </div>
                 )}
@@ -1800,9 +1813,7 @@ export function OverlayStudio() {
                   )}
 
                   {/* Dynamic controls according to widget */}
-                  {selectedWidgetModal.id === 'word-cloud' && <SohbetIstatistikPaneli />}
-                {selectedWidgetModal.id === 'scoreboard' && <SkorTablosuPaneli />}
-                {selectedWidgetModal.id === 'the-cup' && (
+                  {selectedWidgetModal.id === 'the-cup' && (
                     <div className="flex flex-wrap items-center gap-2">
                       <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'coin', count: 3 })} className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold">
                         🪙 3 bağış

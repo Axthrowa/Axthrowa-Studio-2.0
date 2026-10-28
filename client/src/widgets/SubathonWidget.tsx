@@ -35,6 +35,7 @@ interface SunucuDurumu {
     bagisBirimi: number;
     kicksDakika: number;
     kicksBirimi: number;
+    takipDakika?: number;
   };
 }
 
@@ -69,7 +70,8 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
     setDurum(d);
     // Kalan süreyi bitiş anından hesapla: sunucu ile arada gecikme olsa bile
     // widget doğru saniyede kalır.
-    setKalan(d.aktif ? Math.max(0, Math.round((d.bitisAni - Date.now()) / 1000)) : 0);
+    // Duraklatılmışken saklı kalan süre görünür (00:00 değil)
+    setKalan(d.aktif ? Math.max(0, Math.round((d.bitisAni - Date.now()) / 1000)) : Math.max(0, Number(d.kalanSaniye) || 0));
 
     if (d.sonEkleme && d.sonEkleme.zaman > sonBildirimAni.current) {
       sonBildirimAni.current = d.sonEkleme.zaman;
@@ -214,6 +216,12 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
       <span>Bağış: <strong className="text-emerald-300">+{a.bagisDakika} dk / {a.bagisBirimi}</strong></span>
       <span>•</span>
       <span>KICKs: <strong style={{ color: '#53fc18' }}>+{a.kicksDakika} dk / {a.kicksBirimi}</strong></span>
+      {(a.takipDakika ?? 0) > 0 && (
+        <>
+          <span>•</span>
+          <span>Takip: <strong style={{ color: '#a78bfa' }}>+{a.takipDakika} dk</strong></span>
+        </>
+      )}
     </div>
   );
 

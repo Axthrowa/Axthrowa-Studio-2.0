@@ -8,6 +8,7 @@ import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
+import { SabitMesajPaneli, SkorTablosuPaneli, SohbetIstatistikPaneli } from '../components/SohbetAraclariPaneli.js';
 import { CARK_PALETLERI } from '../widgets/WheelWidget.js';
 
 const LABELS: Record<string, string> = {
@@ -41,7 +42,7 @@ const LABELS: Record<string, string> = {
   messageBgColor: 'Mesaj arka planı', messageBgOpacity: 'Mesaj opaklığı', highlightColor: 'Vurgu rengi',
   hideBroadcaster: 'Yayıncıyı gizle', title: 'Başlık', endingTitle: 'Bitiş başlığı', current: 'Mevcut',
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
-  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', comboStyle: 'Görsel stil', iconStyle: 'Simge biçimi', palette: 'Renk paleti',
+  barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', syncOffsetMs: 'Senkron kaydırma (ms, + erken)', lineFontFamily: 'Etkin satır yazı tipi', comboStyle: 'Görsel stil', iconStyle: 'Simge biçimi', palette: 'Renk paleti',
   timeFontFamily: 'Süre yazı tipi', timeFontSize: 'Süre boyutu (px)', showRules: 'Kuralları göster', barColor2: 'Bar 2. renk (geçiş)',
   barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Dolgu ucundaki simge (emoji)', layout: 'Düzen', showRemaining: 'Kalan göster',
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
@@ -326,7 +327,8 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     theme: tema(['classic', 'Klasik'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['rails', 'Raylar'])
   },
   lyrics: {
-    theme: tema(['neon', 'Neon'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['karaoke', 'Karaoke'], ['band', 'Şerit'])
+    theme: tema(['neon', 'Neon'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['karaoke', 'Karaoke'], ['band', 'Şerit'], ['altyazi', 'Film altyazısı'], ['sahne', 'Sahne ışığı'], ['retro', 'Retro arcade'], ['kart', 'Beyaz kart'], ['kaset', 'Kaset / vintage'], ['aurora', 'Kutup ışığı']),
+    lineFontFamily: [{ value: '', label: 'Genel yazı tipiyle aynı' }, ...FONTS.map(f => ({ value: f, label: f }))]
   },
   king: {
     theme: tema(['royal', 'Kraliyet'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['plate', 'Plaka'])
@@ -424,6 +426,16 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   const [status, setStatus] = useState('');
   const [openSection, setOpenSection] = useState<string>('all');
 
+  // Yazı tipi listesi kendi görünümüyle gösterilsin: panel tüm yazı tiplerini bir kez yükler
+  useEffect(() => {
+    if (document.getElementById('axt-tum-yazilar')) return;
+    const l = document.createElement('link');
+    l.id = 'axt-tum-yazilar';
+    l.rel = 'stylesheet';
+    l.href = `https://fonts.googleapis.com/css2?${FONTS.map(f => `family=${encodeURIComponent(f).replace(/%20/g, '+')}`).join('&')}&display=swap`;
+    document.head.appendChild(l);
+  }, []);
+
   useEffect(() => {
     fetch(`/api/widgets/${ayarId}/settings`)
       .then(r => r.json())
@@ -509,14 +521,21 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
               key={t.id}
               type="button"
               title={t.etiket}
-              onClick={() => setValues(v => temayiUygula(v, t, keys) as Record<string, any>)}
+              onClick={() =>
+                setValues(v =>
+                  temayiUygula(v, t, keys, (k, deger) => {
+                    const sec = secenekler(ayarId, k);
+                    return !sec || sec.some(o => o.value === deger);
+                  }) as Record<string, any>
+                )
+              }
               className="rounded-lg border border-white/10 hover:border-cyan-400 overflow-hidden text-left transition-colors"
             >
               <div
                 className="h-7 flex items-center justify-center"
                 style={{ background: t.onizleme.arka, borderBottom: `2px solid ${t.onizleme.vurgu}` }}
               >
-                <span className="text-[9px] font-black" style={{ color: t.onizleme.metin }}>Aa</span>
+                <span className="text-[11px] font-black" style={{ color: t.onizleme.metin, fontFamily: t.onizleme.yazi || String(t.degerler.fontFamily || '') || undefined }}>Aa</span>
               </div>
               <div className="px-1 py-0.5 text-[9px] text-gray-300 truncate">{t.etiket}</div>
             </button>
@@ -525,6 +544,10 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
       </div>
 
       {ayarId === 'alert-box' && <UyariOlayMedyasi />}
+      {/* Widget'a özel kontroller: galeri penceresinde ve Tek URL stüdyosunda aynı yerde */}
+      {ayarId === 'pinned-messages' && <SabitMesajPaneli />}
+      {ayarId === 'word-cloud' && <SohbetIstatistikPaneli />}
+      {ayarId === 'scoreboard' && <SkorTablosuPaneli />}
 
       {sections.filter(s => openSection === 'all' || openSection === s).map(section => (
         <div key={section} className="space-y-2">
@@ -539,7 +562,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                     <input type="checkbox" checked={!!values[key]} onChange={e => setValues(v => ({ ...v, [key]: e.target.checked }))} className="ml-2 accent-purple-600" />
                   ) : type === 'select' ? (
                     <select value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white">
-                      {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: o.value } : undefined}>{o.label}</option>)}
                     </select>
                   ) : type === 'textarea' ? (
                     <textarea value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white min-h-[52px]" />

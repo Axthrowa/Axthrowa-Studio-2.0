@@ -1,50 +1,128 @@
 /**
  * Widget ayarları penceresinde canlı önizleme: widget'ın gerçek OBS sayfası 1280×720 iframe'de
- * açılır ve kutuya sığacak kadar küçültülür. Ayarlar kendiliğinden kaydedilip yayınlandığı için
- * önizleme her değişiklikte güncellenir (OBS'teki kaynakla aynı yol).
+ * açılır. Ayarlar kendiliğinden kaydedilip yayınlandığı için önizleme her değişiklikte güncellenir.
+ *
+ * - "Yakınlaş" (varsayılan): widget'ın görünen kısmı kutuyu dolduracak kadar büyütülür
+ *   (eskiden 1280×720 tuval küçültülüyordu, küçük widget'lar okunmuyordu).
+ * - "Test et": önizleme canlı kipe geçer (örnek kip olayları dinlemez), sonra test gönderilir.
  */
 import { useEffect, useRef, useState } from 'react';
-import { RefreshCw, Play } from 'lucide-react';
+import { RefreshCw, Play, Maximize2, Minimize2 } from 'lucide-react';
 
 const GENISLIK = 1280;
 const YUKSEKLIK = 720;
 
-export function WidgetOnizleme({ url, testTuru }: { url: string; testTuru?: string }) {
+/** Görünen öğelerin kapsadığı alan (iframe içi, aynı köken) */
+export function icerikKutusu(d: Document): { x: number; y: number; w: number; h: number } | null {
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  for (const e of Array.from(d.querySelectorAll('#root *'))) {
+    const r = (e as HTMLElement).getBoundingClientRect();
+    if (r.width < 2 || r.height < 2 || r.width >= GENISLIK - 4 || r.height >= YUKSEKLIK - 4) continue;
+    if (r.right <= 0 || r.bottom <= 0 || r.left >= GENISLIK || r.top >= YUKSEKLIK) continue;
+    x1 = Math.min(x1, Math.max(0, r.left));
+    y1 = Math.min(y1, Math.max(0, r.top));
+    x2 = Math.max(x2, Math.min(GENISLIK, r.right));
+    y2 = Math.max(y2, Math.min(YUKSEKLIK, r.bottom));
+  }
+  return x2 > x1 && y2 > y1 ? { x: x1, y: y1, w: x2 - x1, h: y2 - y1 } : null;
+}
+
+export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string }) {
   const kutu = useRef<HTMLDivElement>(null);
-  const [olcek, setOlcek] = useState(0.4);
+  const cerceve = useRef<HTMLIFrameElement>(null);
+  const [genislik, setGenislik] = useState(540);
   const [anahtar, setAnahtar] = useState(0);
-  const [test, setTest] = useState(false);
+  const [canli, setCanli] = useState(false);
+  const [yakin, setYakin] = useState(true);
+  const [odak, setOdak] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [durum, setDurum] = useState('');
 
   useEffect(() => {
     const el = kutu.current;
     if (!el) return;
-    const g = new ResizeObserver(() => setOlcek(el.clientWidth / GENISLIK));
+    const g = new ResizeObserver(() => setGenislik(el.clientWidth));
     g.observe(el);
     return () => g.disconnect();
   }, []);
 
+  // İçerik değiştikçe (ayar, test olayı) odak alanını yeniden ölç
+  useEffect(() => {
+    const t = setInterval(() => {
+      try {
+        const d = cerceve.current?.contentDocument;
+        if (d) setOdak(icerikKutusu(d));
+      } catch {
+        /* çerçeve yükleniyor */
+      }
+    }, 700);
+    return () => clearInterval(t);
+  }, [anahtar]);
+
   const adres = (() => {
     try {
       const u = new URL(url, window.location.origin);
-      u.searchParams.set('preview', '1');
-      if (test && testTuru) u.searchParams.set('test', testTuru);
+      if (!canli) u.searchParams.set('preview', '1');
       return u.pathname + u.search;
     } catch {
       return url;
     }
   })();
 
+  const yukseklik = Math.round((genislik * YUKSEKLIK) / GENISLIK);
+  // Yakınlaşma: içerik kutuyu (%8 pay bırakarak) doldursun, en çok 3 kat
+  const tamOlcek = genislik / GENISLIK;
+  let olcek = tamOlcek;
+  let tx = 0;
+  let ty = 0;
+  if (yakin && odak) {
+    const pay = 1.16;
+    olcek = Math.min(3, Math.max(tamOlcek, Math.min(genislik / (odak.w * pay), yukseklik / (odak.h * pay))));
+    tx = genislik / 2 - (odak.x + odak.w / 2) * olcek;
+    ty = yukseklik / 2 - (odak.y + odak.h / 2) * olcek;
+  }
+
+  const test = async () => {
+    if (!testAdi) return;
+    setDurum('Canlı kipe geçiliyor…');
+    if (!canli) {
+      setCanli(true);
+      setAnahtar((k) => k + 1);
+      // Canlı sayfa yüklenip WebSocket'e bağlansın
+      await new Promise((r) => setTimeout(r, 1800));
+    }
+    try {
+      await fetch(`/api/widgets/test/${testAdi}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      setDurum('Test gönderildi (OBS kaynakları da görür)');
+    } catch {
+      setDurum('Test gönderilemedi');
+    }
+    setTimeout(() => setDurum(''), 3500);
+  };
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-black uppercase tracking-wider text-cyan-300">Canlı önizleme</span>
-        <div className="flex gap-1.5">
-          {testTuru && (
-            <button type="button" onClick={() => { setTest(true); setAnahtar(k => k + 1); }} className="text-[10px] px-2 py-1 rounded-lg bg-emerald-600/80 text-white font-bold flex items-center gap-1">
-              <Play className="w-3 h-3" /> Örnek göster
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <span className="text-[11px] font-black uppercase tracking-wider text-cyan-300">
+          {canli ? 'Canlı görünüm' : 'Örnek görünüm'}
+        </span>
+        <div className="flex gap-1.5 flex-wrap">
+          {testAdi && (
+            <button type="button" onClick={() => void test()} className="text-[10px] px-2 py-1 rounded-lg bg-emerald-600/80 text-white font-bold flex items-center gap-1">
+              <Play className="w-3 h-3" /> Test et
             </button>
           )}
-          <button type="button" onClick={() => setAnahtar(k => k + 1)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => { setCanli((c) => !c); setAnahtar((k) => k + 1); }}
+            className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold"
+            title="Örnek: hazır örnek veri · Canlı: gerçek durum ve test olayları"
+          >
+            {canli ? 'Örneğe dön' : 'Canlı'}
+          </button>
+          <button type="button" onClick={() => setYakin((y) => !y)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
+            {yakin ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />} {yakin ? 'Tüm tuval' : 'Yakınlaş'}
+          </button>
+          <button type="button" onClick={() => setAnahtar((k) => k + 1)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
             <RefreshCw className="w-3 h-3" /> Yenile
           </button>
         </div>
@@ -53,20 +131,25 @@ export function WidgetOnizleme({ url, testTuru }: { url: string; testTuru?: stri
         ref={kutu}
         className="relative w-full overflow-hidden rounded-xl border border-white/10"
         style={{
-          aspectRatio: `${GENISLIK} / ${YUKSEKLIK}`,
+          height: yukseklik,
           // Saydam widget'lar dama desenli zeminde görünsün (OBS'teki gibi arkası boş)
           background: 'repeating-conic-gradient(#1f2430 0% 25%, #151821 0% 50%) 50% / 24px 24px'
         }}
       >
         <iframe
+          ref={cerceve}
           key={anahtar}
           src={adres}
           title="Widget önizleme"
-          style={{ width: GENISLIK, height: YUKSEKLIK, transform: `scale(${olcek})`, transformOrigin: '0 0', border: 0, background: 'transparent' }}
+          style={{ width: GENISLIK, height: YUKSEKLIK, transform: `translate(${tx}px, ${ty}px) scale(${olcek})`, transformOrigin: '0 0', border: 0, background: 'transparent', transition: 'transform .25s ease' }}
           allowTransparency
         />
       </div>
-      <p className="text-[10px] text-gray-500">Ayar değişince önizleme kendiliğinden güncellenir (OBS'teki kaynakla aynı). Olay bekleyen widget'larda "Örnek göster"e bas.</p>
+      {durum ? (
+        <p className="text-[10px] text-emerald-400">{durum}</p>
+      ) : (
+        <p className="text-[10px] text-gray-500">Ayar değişince önizleme kendiliğinden güncellenir. "Test et" önizlemeyi canlı kipe alıp örnek olay gönderir.</p>
+      )}
     </div>
   );
 }

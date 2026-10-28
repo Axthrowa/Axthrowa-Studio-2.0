@@ -15,7 +15,7 @@ interface Tablo {
 
 const ORNEK: Tablo = { baslik: 'MAÇ SKORU', takimlar: [{ ad: 'Mavi', renk: '#3b82f6', skor: 3 }, { ad: 'Kırmızı', renk: '#ef4444', skor: 2 }] };
 
-export function ScoreboardWidget({ previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
+export function ScoreboardWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('scoreboard', SCOREBOARD_DEFAULTS);
   const onizleme = onizlemeKipi(previewMode);
   const [t, setT] = useState<Tablo | null>(onizleme ? ORNEK : null);
@@ -53,7 +53,7 @@ export function ScoreboardWidget({ previewMode = false }: { embedded?: boolean; 
   const golge = '0 2px 4px rgba(0,0,0,.9)';
 
   return (
-    <div className="w-screen h-screen flex items-start justify-center p-6 select-none" style={{ fontFamily: s.fontFamily, color: s.textColor }}>
+    <div className={`${embedded ? 'w-full h-full' : 'w-screen h-screen p-6'} flex items-start justify-center select-none`} style={{ fontFamily: s.fontFamily, color: s.textColor }}>
       <div className="flex flex-col items-center gap-2" style={tema === 'minimal' ? {} : { ...kutu, padding: 14, boxShadow: `0 10px 30px ${rgba(s.accentColor, 0.3)}` }}>
         {s.showTitle && (
           <div className="font-black uppercase tracking-[0.25em]" style={{ color: s.accentColor, fontSize: Math.max(11, Number(s.fontSize) * 0.45), textShadow: golge }}>

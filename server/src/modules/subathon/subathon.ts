@@ -34,6 +34,8 @@ export interface SubathonAyarlari {
   /** `kicksBirimi` kadar KICKs başına dakika. */
   kicksDakika: number;
   kicksBirimi: number;
+  /** Takip başına dakika (0 = takip süre eklemez). */
+  takipDakika: number;
   /** Üst sınır (saat). 0 = sınırsız. */
   maksSaat: number;
 }
@@ -47,11 +49,14 @@ export const VARSAYILAN_AYAR: SubathonAyarlari = {
   bagisBirimi: 50,
   kicksDakika: 1,
   kicksBirimi: 100,
+  takipDakika: 1,
   maksSaat: 24
 };
 
 export interface SubathonDurumu {
   aktif: boolean;
+  /** Duraklatıldı: kalan süre saklı, "Devam et" ile kaldığı yerden sürer. */
+  duraklatildi: boolean;
   /** Bitiş anı (epoch ms). Aktif değilse 0. */
   bitisAni: number;
   kalanSaniye: number;
@@ -86,7 +91,7 @@ export function yeniBitis(mevcutBitis: number, eklenenSn: number, maksSaat: numb
 }
 
 class SubathonMotoru {
-  private durum: { aktif: boolean; bitisAni: number; eklenenSaniye: number } = {
+  private durum: { aktif: boolean; bitisAni: number; eklenenSaniye: number; duraklatildi?: boolean; kalanSn?: number } = {
     aktif: false,
     bitisAni: 0,
     eklenenSaniye: 0
@@ -142,11 +147,16 @@ class SubathonMotoru {
         this.durum = {
           aktif: Boolean(d.aktif),
           bitisAni: Number(d.bitisAni) || 0,
-          eklenenSaniye: Number(d.eklenenSaniye) || 0
+          eklenenSaniye: Number(d.eklenenSaniye) || 0,
+          duraklatildi: Boolean(d.duraklatildi),
+          kalanSn: Math.max(0, Number(d.kalanSn) || 0)
         };
-        // Sunucu kapalıyken süre dolduysa sayaç bitmiş sayılır.
-        if (this.durum.aktif && this.durum.bitisAni <= Date.now()) {
+        // Bot kapalıyken süre akmaz: kapanmadan önce saklanan kalan süreyle duraklatılmış açılır,
+        // yayıncı "Kaldığı yerden başlat" ile sürdürür. Eskiden bitiş mutlak saatti; kapalıyken
+        // süre doluyor ve sayaç sıfırlanıyordu.
+        if (this.durum.aktif) {
           this.durum.aktif = false;
+          this.durum.duraklatildi = (this.durum.kalanSn || 0) > 0;
           this.durum.bitisAni = 0;
         }
       }
@@ -157,9 +167,14 @@ class SubathonMotoru {
 
   durumAl(): SubathonDurumu {
     const ayar = this.ayarOku();
-    const kalan = this.durum.aktif ? Math.max(0, Math.round((this.durum.bitisAni - Date.now()) / 1000)) : 0;
+    const kalan = this.durum.aktif
+      ? Math.max(0, Math.round((this.durum.bitisAni - Date.now()) / 1000))
+      : this.durum.duraklatildi
+        ? this.durum.kalanSn || 0
+        : 0;
     return {
       aktif: this.durum.aktif,
+      duraklatildi: !this.durum.aktif && !!this.durum.duraklatildi,
       bitisAni: this.durum.bitisAni,
       kalanSaniye: kalan,
       eklenenSaniye: this.durum.eklenenSaniye,
@@ -175,7 +190,7 @@ class SubathonMotoru {
   baslat(dakika?: number): SubathonDurumu {
     const ayar = this.ayarOku();
     const sure = Math.max(1, Number(dakika ?? ayar.baslangicDakika) || 1);
-    this.durum = { aktif: true, bitisAni: Date.now() + sure * 60000, eklenenSaniye: 0 };
+    this.durum = { aktif: true, bitisAni: Date.now() + sure * 60000, eklenenSaniye: 0, duraklatildi: false, kalanSn: sure * 60 };
     this.sonEkleme = null;
     this.ayarYaz({ aktif: true });
     this.durumuKaydet();
@@ -184,8 +199,34 @@ class SubathonMotoru {
     return this.durumAl();
   }
 
+  /** Duraklatır: kalan süre saklanır (sıfırlanmaz); `devam` kaldığı yerden sürdürür. */
   durdur(): SubathonDurumu {
+    if (this.durum.aktif) {
+      this.durum.kalanSn = Math.max(0, Math.round((this.durum.bitisAni - Date.now()) / 1000));
+      this.durum.duraklatildi = this.durum.kalanSn > 0;
+    }
     this.durum.aktif = false;
+    this.ayarYaz({ aktif: false });
+    this.durumuKaydet();
+    this.durumYayinla();
+    return this.durumAl();
+  }
+
+  /** Duraklatılmış sayacı saklı kalan süreyle sürdürür (önceki yayından kalan dahil). */
+  devam(): SubathonDurumu {
+    const kalan = this.durum.kalanSn || 0;
+    if (this.durum.aktif || !this.durum.duraklatildi || kalan <= 0) return this.durumAl();
+    this.durum = { ...this.durum, aktif: true, duraklatildi: false, bitisAni: Date.now() + kalan * 1000 };
+    this.ayarYaz({ aktif: true });
+    this.durumuKaydet();
+    this.durumYayinla();
+    return this.durumAl();
+  }
+
+  /** Sayacı tamamen sıfırlar (saklı süre de silinir). */
+  sifirla(): SubathonDurumu {
+    this.durum = { aktif: false, bitisAni: 0, eklenenSaniye: 0, duraklatildi: false, kalanSn: 0 };
+    this.sonEkleme = null;
     this.ayarYaz({ aktif: false });
     this.durumuKaydet();
     this.durumYayinla();
@@ -202,6 +243,7 @@ class SubathonMotoru {
     if (!this.durum.aktif) return this.durumAl();
 
     this.durum.bitisAni = yeniBitis(this.durum.bitisAni, sn, ayar.maksSaat);
+    this.durum.kalanSn = Math.max(0, Math.round((this.durum.bitisAni - Date.now()) / 1000));
     this.durum.eklenenSaniye += Math.max(0, sn);
     this.sonEkleme = { metin, saniye: sn, zaman: Date.now() };
 
@@ -242,6 +284,13 @@ class SubathonMotoru {
       }
     });
 
+    eventBus.on('follow', (p: any) => {
+      const a = ayar();
+      if (!a.aktif || (p as any)?.isTest === true || !(a.takipDakika > 0)) return;
+      const ad = p?.displayName || p?.username || 'İzleyici';
+      this.sureEkle(a.takipDakika * 60, `+${a.takipDakika} dk · takip (${ad})`);
+    });
+
     eventBus.on('kicks', (p: any) => {
       const a = ayar();
       if (!a.aktif || (p as any)?.isTest === true) return;
@@ -259,8 +308,14 @@ class SubathonMotoru {
       if (!this.durum.aktif) return;
       if (this.durum.bitisAni <= Date.now()) {
         this.durum.aktif = false;
+        this.durum.duraklatildi = false;
+        this.durum.kalanSn = 0;
         this.durumuKaydet();
         console.log('[Subathon] süre doldu');
+      } else {
+        // Kalan süre 5 sn'de bir saklanır: bot kapanırsa açılışta buradan sürer
+        this.durum.kalanSn = Math.max(0, Math.round((this.durum.bitisAni - Date.now()) / 1000));
+        this.durumuKaydet();
       }
       this.durumYayinla();
     }, 5000);

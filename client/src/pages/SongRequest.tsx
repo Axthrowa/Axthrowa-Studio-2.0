@@ -13,6 +13,9 @@ import { PlatformLogo } from '../components/PlatformLogo.js';
 
 export function SongRequest() {
   const [current, setCurrent] = useState<SongItem | null>(null);
+  // Gerçekte çalan (Spotify / YouTube Music, istek olmasa da): eskiden yalnız !sr sırası gösteriliyordu,
+  // Spotify kendi listesinden çalarken "Şu anda çalan bir şarkı yok" yazıyordu
+  const [calan, setCalan] = useState<{ title: string; artist: string; album?: string; albumArt?: string; isPlaying: boolean; progress: number; duration: number; source?: string } | null>(null);
   const [queue, setQueue] = useState<SongItem[]>([]);
   const [desktopTarget, setDesktopTarget] = useState<string>('none');
   // Kuyruk boşken Otomatik DJ (önceki isteklerden rastgele klip)
@@ -30,6 +33,10 @@ export function SongRequest() {
   }, []);
 
   const loadQueue = () => {
+    fetch('/api/now-playing')
+      .then(r => r.json())
+      .then(d => setCalan(d && d.title ? d : null))
+      .catch(() => {});
     fetch('/api/songrequest/queue')
       .then(r => r.json())
       .then(d => {
@@ -244,6 +251,28 @@ export function SongRequest() {
           )}
         </div>
 
+        {calan && (
+          <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-black/30 border border-white/10">
+            {calan.albumArt ? (
+              <img src={calan.albumArt} alt={calan.album || calan.title} className="w-20 h-20 rounded-lg object-cover shadow-lg flex-shrink-0" />
+            ) : (
+              <div className="w-20 h-20 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0"><Music className="w-8 h-8 text-gray-500" /></div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">
+                {calan.isPlaying ? '● Çalıyor' : '❚❚ Duraklatıldı'} · {calan.source === 'youtube-music' ? 'YouTube Music' : 'Spotify'}
+              </div>
+              <div className="text-lg font-extrabold text-white truncate">{calan.title}</div>
+              <div className="text-xs text-gray-400 truncate">{calan.artist}{calan.album ? ` — ${calan.album}` : ''}</div>
+              {calan.duration > 0 && (
+                <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full bg-emerald-400" style={{ width: `${Math.min(100, (calan.progress / calan.duration) * 100)}%` }} />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {current ? (
           <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
             {current.thumbnail && (
@@ -286,7 +315,7 @@ export function SongRequest() {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500 text-sm">
-            Şu anda çalan bir şarkı yok. İzleyicileriniz <code className="text-purple-400">!sr &lt;şarkı veya link&gt;</code> yazdığında kuyruk burada başlayacaktır.
+            {calan ? 'Sırada bekleyen istek yok.' : 'Şu anda çalan bir şarkı yok.'} İzleyicileriniz <code className="text-purple-400">!sr &lt;şarkı veya link&gt;</code> yazdığında kuyruk burada başlayacaktır.
           </div>
         )}
       </div>

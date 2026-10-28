@@ -5,6 +5,14 @@
 import { useEffect, useState } from 'react';
 import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { fontuYukle } from '../lib/widget-style.js';
+
+/** CSS'inde kendi yazı tipini kullanan tema görünümleri (kartTasarimlari, şarkı sözü) */
+const TEMA_YAZI_TIPI: Record<string, string> = {
+  pixel: 'Press Start 2P',
+  retro: 'Press Start 2P',
+  phosphor: 'VT323',
+  kaset: 'Special Elite'
+};
 import { ayarKanalinaKatil } from '../lib/ayarKanali.js';
 
 /** Adres çubuğundaki `?anahtar=değer` ayarları (OBS'te URL ile ince ayar). */
@@ -47,8 +55,14 @@ export function useWidgetSettings<T extends Record<string, any>>(widgetId: strin
     };
   }, [widgetId]);
 
-  useEffect(() => fontuYukle(settings.fontFamily, FONTS), [settings.fontFamily]);
-  useEffect(() => fontuYukle((settings as Record<string, any>).timeFontFamily, FONTS), [(settings as Record<string, any>).timeFontFamily]);
+  // Ayarlardaki HER yazı tipi (fontFamily, timeFontFamily, lineFontFamily…) ve temanın kendi yazı tipi yüklenir.
+  // Eskiden yalnız fontFamily yükleniyordu; diğerleri OBS'te yedek yazı tipine düşüyordu.
+  const yazilar = Object.values(settings as Record<string, unknown>).filter((v): v is string => typeof v === 'string' && FONTS.includes(v));
+  const temaYazisi = TEMA_YAZI_TIPI[String((settings as Record<string, unknown>).theme || '')];
+  const anahtar = [...yazilar, temaYazisi || ''].join('|');
+  useEffect(() => {
+    for (const ad of anahtar.split('|')) fontuYukle(ad, FONTS);
+  }, [anahtar]);
 
   return settings;
 }

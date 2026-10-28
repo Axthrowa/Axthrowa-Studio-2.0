@@ -23,7 +23,7 @@ export interface TemaTanimi {
   /** Uygulanacak ayar değerleri. */
   degerler: Record<string, unknown>;
   /** Panelde küçük önizleme kartı için. */
-  onizleme: { arka: string; vurgu: string; metin: string; kenar?: string };
+  onizleme: { arka: string; vurgu: string; metin: string; kenar?: string; yazi?: string };
 }
 
 /** Temel palet — tüm temalar bundan türetilir. */
@@ -262,6 +262,38 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
     '🎬 Anime',
     { theme: 'neon', bgColor: '#1a0f2e', bgOpacity: 0.92, accentColor: '#ff6ec7', accentColor2: '#7df9ff', textColor: '#ffffff', radius: 18, fontFamily: 'Poppins' },
     { arka: 'linear-gradient(135deg,#1a0f2e,#7df9ff)', vurgu: '#ff6ec7', metin: '#ffffff', kenar: '#ff6ec7' }
+  ),
+  // Bilinen renk şemaları (Nord, Dracula, Catppuccin, Gruvbox, Solarized, Tokyo Night) ve yayın stilleri
+  ...(
+    [
+      ['nord', '❄️ Nord', '#2e3440', '#88c0d0', '#eceff4', 'Inter'],
+      ['dracula', '🧛 Dracula', '#282a36', '#ff79c6', '#f8f8f2', 'Fira Code'],
+      ['catppuccin', '🐈 Catppuccin', '#1e1e2e', '#cba6f7', '#cdd6f4', 'Lexend'],
+      ['gruvbox', '🍂 Gruvbox', '#282828', '#fabd2f', '#ebdbb2', 'Fira Code'],
+      ['solarized', '☀️ Solarized', '#002b36', '#b58900', '#eee8d5', 'Ubuntu'],
+      ['tokyo', '🌃 Tokyo Gecesi', '#1a1b26', '#7aa2f7', '#c0caf5', 'Space Grotesk'],
+      ['synthwave', '🌆 Synthwave', '#241b2f', '#ff7edb', '#fefeff', 'Monoton'],
+      ['vaporwave', '🌴 Vaporwave', '#2d1b4e', '#01cdfe', '#fffb96', 'Righteous'],
+      ['lofi', '☕ Lo-fi Kafe', '#3b2f2f', '#d4a373', '#fefae0', 'Caveat'],
+      ['sakura', '🌸 Sakura', '#2b1b24', '#ffb7c5', '#fff0f5', 'Comfortaa'],
+      ['okyanus', '🌊 Okyanus', '#03203c', '#22d3ee', '#e0f7ff', 'Quicksand'],
+      ['orman', '🌲 Orman', '#14281d', '#7cb518', '#f1f8e9', 'Kanit'],
+      ['col', '🏜️ Çöl', '#3d2817', '#e9a23b', '#fff4e0', 'Rajdhani'],
+      ['altin-luks', '👑 Altın Lüks', '#121212', '#d4af37', '#f5f0e1', 'Playfair Display'],
+      ['espor-kirmizi', '🎯 E-spor Kırmızı', '#0d0d0d', '#ff2e4c', '#ffffff', 'Saira'],
+      ['espor-mavi', '🛡️ E-spor Mavi', '#050b1a', '#2f80ff', '#ffffff', 'Barlow Condensed'],
+      ['tek-renk', '⚫ Tek Renk', '#000000', '#ffffff', '#ffffff', 'Space Grotesk'],
+      ['seker-pop', '🍭 Şeker Pop', '#2a1036', '#ff8fd8', '#ffffff', 'Fredoka'],
+      ['matrix', '🟢 Matrix', '#000000', '#00ff41', '#b6ffbf', 'Fira Code'],
+      ['piksel-mor', '👾 Piksel Gece', '#1b1035', '#a78bfa', '#ffffff', 'Pixelify Sans']
+    ] as const
+  ).map(([id, ad, arka, vurgu, metin, yazi]) =>
+    tema(
+      id,
+      ad,
+      { bgColor: arka, bgOpacity: 0.9, accentColor: vurgu, textColor: metin, radius: 14, fontFamily: yazi },
+      { arka: `linear-gradient(135deg,${arka},${vurgu}55)`, vurgu, metin, kenar: vurgu, yazi }
+    )
   )
 ];
 
@@ -468,11 +500,14 @@ export function temalar(widgetId: string): TemaTanimi[] {
 export function temayiUygula(
   mevcut: Record<string, unknown>,
   tema: TemaTanimi,
-  tanimliAnahtarlar: string[]
+  tanimliAnahtarlar: string[],
+  /** Seçmeli alanların geçerli değerleri: tema geçersiz bir görünüm yazmasın (ör. çarka "classic") */
+  gecerli?: (anahtar: string, deger: unknown) => boolean
 ): Record<string, unknown> {
   const izinli = new Set(tanimliAnahtarlar);
   const yeni = { ...mevcut };
   for (const [k, v] of Object.entries(tema.degerler)) {
+    if (gecerli && !gecerli(k, v)) continue;
     if (izinli.has(k)) yeni[k] = v;
     // Genel anahtarı widget kendi adıyla tanıyor (hedef barı: barColor/backgroundColor/fontColor);
     // tema o alanı ayrıca belirttiyse ona dokunulmaz

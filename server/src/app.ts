@@ -155,6 +155,17 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
+let surumOnbellek: string | null | undefined;
+function uygulamaSurumu(): string | null {
+  if (surumOnbellek !== undefined) return surumOnbellek;
+  try {
+    surumOnbellek = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version || '') || null;
+  } catch {
+    surumOnbellek = null;
+  }
+  return surumOnbellek;
+}
+
 // Health check
 app.get('/health', (req, res) => {
   // `uygulama` imzası: ikinci kopya portu dolu bulunca karşıdakinin StreamAxT olup olmadığını anlar
@@ -164,6 +175,8 @@ app.get('/health', (req, res) => {
     status: 'ok',
     uygulama: 'streamaxt',
     gozcuPid: process.env.STREAMAXT_COCUK === '1' ? process.ppid : null,
+    // Yayın Yönetim Aracı "Hakkında"da gösterir (paket kökündeki package.json)
+    surum: uygulamaSurumu(),
     time: new Date().toISOString()
   });
 });

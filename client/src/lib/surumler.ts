@@ -11,6 +11,25 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.7.0',
+    ad: 'Stüdyo Düzeni',
+    tarih: '2026-10-28',
+    notlar: [
+      "Tek URL OBS Stüdyosu'nda TÜM katmanların ayarları açılır (sabitlenmiş mesaj, shoutout, izleyici sayacı, sıralama, sadakat, jenerik… eskiden açılmıyordu); kelime bulutu ve skor tablosu Tek URL'ye eklendi",
+      'Sabitlenmiş mesaj: panelden kendi metnini yazıp sabitleme',
+      'Emote kombo ayrı OBS sayfasında görünmüyordu (kutu genişliği 0) — düzeltildi',
+      'Galeri testleri canlı önizlemede görünür ("Test et" önizlemeyi canlı kipe alır); sohbet, hedefler, etkinlik etiketleri, sabit mesaj, kral ve skor tablosuna test eklendi',
+      'Canlı önizleme widget’a yakınlaşır (büyük görünür); tüm tuval / yakınlaş seçeneği',
+      '!anketac virgülle de açılır: !anketac 60, Hangi oyun?, Valorant, CS2',
+      'Subathon: takipler süreye eklenir (ayarlanabilir); Duraklat kalan süreyi saklar, bot kapalıyken süre akmaz, "Kaldığı yerden başlat" ile sonraki yayında sürer',
+      'Müzik: gerçekte çalan şarkı (Spotify / YouTube Music) kapak fotoğrafı ve ilerlemeyle; "Now Playing" adları Resonance oldu',
+      'Şarkı sözleri: sürüm seçimi çalan parçanın süresine göre (kayma düzeltmesi), senkron kaydırma ayarı, 6 yeni görünüm ve satır yazı tipi',
+      'Yazı tipleri: ayarlardaki ve temalardaki tüm yazı tipleri OBS’te yüklenir; 24 yeni Türkçe karakterli yazı tipi; listede yazı tipleri kendi görünümüyle',
+      'Temalar: widget’ın tanımadığı görünüm değeri artık yazılmaz (bozuk görünüm); 20 yeni tema (Nord, Dracula, Catppuccin, Synthwave, Lo-fi, Sakura, E-spor…)',
+      "Yayın Yönetim Aracı'nın 'Hakkında' bölümünde StreamAxT sürümü görünür"
+    ]
+  },
+  {
     surum: '1.6.2',
     ad: 'Düzen',
     tarih: '2026-10-28',

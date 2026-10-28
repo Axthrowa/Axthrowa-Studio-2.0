@@ -100,3 +100,32 @@ export function SkorTablosuPaneli() {
     </div>
   );
 }
+
+/** Sabitlenmiş mesaj: sohbetten seçmeden kendi metnini yaz ve OBS'te sabitle */
+export function SabitMesajPaneli() {
+  const [metin, setMetin] = useState('');
+  const [ad, setAd] = useState('');
+  const [durum, setDurum] = useState('');
+  const sabitle = async () => {
+    if (!metin.trim()) return;
+    await fetch('/api/pinned', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platform: 'kick', username: ad.trim() || 'yayinci', displayName: ad.trim() || 'Yayıncı', message: metin.trim().slice(0, 500) })
+    }).catch(() => {});
+    setDurum('Sabitlendi');
+    setTimeout(() => setDurum(''), 2000);
+  };
+  return (
+    <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 space-y-2 text-xs text-gray-300">
+      <h4 className="font-bold text-cyan-200">📌 Mesaj sabitle</h4>
+      <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Yazan (boşsa Yayıncı)" className="w-full bg-black/50 border border-white/10 rounded-lg p-1.5 text-white" />
+      <textarea value={metin} onChange={(e) => setMetin(e.target.value)} placeholder="Sabitlenecek metin (sohbetten de 📌 ile seçilebilir)" className="w-full bg-black/50 border border-white/10 rounded-lg p-1.5 text-white min-h-[56px]" />
+      <div className="flex gap-2 items-center">
+        <button type="button" onClick={() => void sabitle()} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-bold">Sabitle</button>
+        <button type="button" onClick={() => void fetch('/api/pinned', { method: 'DELETE' })} className="px-3 py-1.5 rounded-lg bg-white/10 font-bold">Kaldır</button>
+        {durum && <span className="text-emerald-400">{durum}</span>}
+      </div>
+    </div>
+  );
+}

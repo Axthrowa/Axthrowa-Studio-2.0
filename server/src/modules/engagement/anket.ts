@@ -75,21 +75,35 @@ export async function anketBitir(): Promise<{ title: string; options: string[]; 
 }
 
 /**
- * Sohbet komutu: `!anketac [süre] Soru | Seçenek 1 | Seçenek 2 …`
- * Süre isteğe bağlı ilk sözcük: `90` (saniye, en çok 600), `90sn`, `2dk`.
+ * Sohbet komutu, iki biçim:
+ *  - `!anketac [süre] Soru | Seçenek 1 | Seçenek 2 …`
+ *  - `!anketac [süre], Soru, Seçenek 1, Seçenek 2 …` (virgüllü; süre ilk parça olabilir)
+ * Süre: `90` (saniye, en çok 600), `90sn`, `2dk`.
  */
 export function anketKomutuCoz(args: string[]): { soru: string; secenekler: string[]; sure: number } | { hata: string } {
-  let sozcukler = [...args];
+  const metin = args.join(' ').trim();
+  const ayirac = metin.includes('|') ? '|' : ',';
+  let parcalar = metin.split(ayirac).map((p) => p.trim()).filter(Boolean);
   let sure = 60;
-  const m = /^(\d{1,4})(sn|dk)?$/i.exec(sozcukler[0] || '');
-  // Birimsiz sayı yalnız 600'e kadar süre sayılır: "2026 en iyi oyun?" sorunun parçası
-  if (m && (m[2] || Number(m[1]) <= 600) && sozcukler.join(' ').includes('|')) {
-    const n = Number(m[1]);
-    sure = /^dk$/i.test(m[2] || '') ? n * 60 : n;
-    sozcukler = sozcukler.slice(1);
+  // Süre: virgüllü biçimde ilk parçanın tamamı, | biçiminde ilk sözcük
+  const sureOku = (t: string): number | null => {
+    const m = /^(\d{1,4})\s*(sn|dk)?$/i.exec(t);
+    // Birimsiz sayı yalnız 600'e kadar süre sayılır: "2026 en iyi oyun?" sorunun parçası
+    if (!m || (!m[2] && Number(m[1]) > 600)) return null;
+    return /^dk$/i.test(m[2] || '') ? Number(m[1]) * 60 : Number(m[1]);
+  };
+  if (ayirac === ',' && parcalar.length && sureOku(parcalar[0]) !== null) {
+    sure = sureOku(parcalar[0])!;
+    parcalar = parcalar.slice(1);
+  } else if (ayirac === '|' && parcalar.length) {
+    const [ilk, ...kalan] = parcalar[0].split(/\s+/);
+    const n = sureOku(ilk);
+    if (n !== null && kalan.length) {
+      sure = n;
+      parcalar[0] = kalan.join(' ');
+    }
   }
-  const parcalar = sozcukler.join(' ').split('|').map((p) => p.trim()).filter(Boolean);
-  if (parcalar.length < 3) return { hata: 'Kullanım: !anketac [süre] Soru | Seçenek 1 | Seçenek 2  (örn: !anketac 2dk Hangi oyun? | Valorant | CS2)' };
+  if (parcalar.length < 3) return { hata: 'Kullanım: !anketac 60, Hangi oyun?, Valorant, CS2  ya da  !anketac 2dk Hangi oyun? | Valorant | CS2' };
   return { soru: parcalar[0], secenekler: parcalar.slice(1), sure };
 }
 

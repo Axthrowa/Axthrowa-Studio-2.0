@@ -23,11 +23,13 @@ interface Ayar {
   bagisBirimi: number;
   kicksDakika: number;
   kicksBirimi: number;
+  takipDakika: number;
   maksSaat: number;
 }
 
 interface Durum {
   aktif: boolean;
+  duraklatildi?: boolean;
   kalanSaniye: number;
   eklenenSaniye: number;
   sonEkleme: { metin: string; zaman: number } | null;
@@ -168,7 +170,7 @@ export function SubathonPanel() {
         <div className="flex-1 min-w-[120px]">
           <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Durum</div>
           <div className={`text-sm font-black ${durum.aktif ? 'text-emerald-400' : 'text-gray-500'}`}>
-            {durum.aktif ? '● Çalışıyor' : '○ Durduruldu'}
+            {durum.aktif ? '● Çalışıyor' : durum.duraklatildi ? '⏸ Duraklatıldı (kalan süre saklı)' : '○ Durduruldu'}
           </div>
           {durum.eklenenSaniye > 0 && (
             <div className="text-[10px] text-gray-500 mt-0.5">Bu yayında eklenen: {sureYaz(durum.eklenenSaniye)}</div>
@@ -180,8 +182,25 @@ export function SubathonPanel() {
               onClick={() => cagir('stop')}
               className="px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
             >
-              <Square className="w-3.5 h-3.5" /> Durdur
+              <Square className="w-3.5 h-3.5" /> Duraklat
             </button>
+          ) : durum.duraklatildi ? (
+            <>
+              <button
+                onClick={() => cagir('resume')}
+                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                title="Duraklatılan ya da önceki yayından kalan süreyle devam eder"
+              >
+                <Play className="w-3.5 h-3.5" /> Kaldığı yerden başlat
+              </button>
+              <button
+                onClick={() => cagir('reset')}
+                className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 rounded-xl text-xs font-bold"
+                title="Saklı süreyi siler"
+              >
+                Sıfırla
+              </button>
+            </>
           ) : (
             <button
               onClick={() => cagir('start', { dakika: ayar.baslangicDakika })}
@@ -255,6 +274,13 @@ export function SubathonPanel() {
             dakika={ayar.hediyeAboneDakika}
             onDakika={d('hediyeAboneDakika')}
             aciklama="Hediye edilen HER abonelik için ayrı ayrı eklenir."
+          />
+          <Kural
+            baslik="Takip"
+            renk="#a78bfa"
+            dakika={ayar.takipDakika ?? 1}
+            onDakika={d('takipDakika')}
+            aciklama="Her yeni takip için. 0 yazarsan takip süre eklemez (takip botu saldırısında kapat)."
           />
           <Kural
             baslik="KICKs"

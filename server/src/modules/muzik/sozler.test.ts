@@ -4,6 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { baslikTemizle, etkinSatir, lrcAyikla } from './sozler.js';
+import { surumSec } from './sozler.js';
 
 describe('lrcAyikla', () => {
   it('zamanlı satırlar, çoklu zaman, boş satır', () => {
@@ -31,5 +32,18 @@ describe('baslikTemizle', () => {
     expect(baslikTemizle('Teoman - Paramparça (Official Video)')).toBe('Teoman - Paramparça');
     expect(baslikTemizle('Song [MV] feat. Biri')).toBe('Song');
     expect(baslikTemizle('Şarkı (Remastered 2011)')).toBe('Şarkı');
+  });
+});
+
+describe('söz sürümü seçimi', () => {
+  it('süresi çalan parçaya en yakın zaman damgalı sürüm', () => {
+    const liste = [
+      { id: 1, syncedLyrics: 'x', duration: 245 },
+      { id: 2, syncedLyrics: 'x', duration: 201 },
+      { id: 3, syncedLyrics: null, duration: 200 }
+    ];
+    expect(surumSec(liste, 200_000)?.id).toBe(2);
+    expect(surumSec(liste, 0)?.id).toBe(1);
+    expect(surumSec([{ id: 9, syncedLyrics: null, duration: 1 }], 5)?.id).toBe(9);
   });
 });

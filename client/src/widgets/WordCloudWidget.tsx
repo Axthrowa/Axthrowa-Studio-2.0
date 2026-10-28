@@ -57,7 +57,7 @@ export function bulutYerlesimi(liste: Sozcuk[], w: number, h: number, enKucuk: n
   return sonuc;
 }
 
-export function WordCloudWidget({ previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
+export function WordCloudWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('word-cloud', WORD_CLOUD_DEFAULTS);
   const onizleme = onizlemeKipi(previewMode);
   const [liste, setListe] = useState<Sozcuk[]>(onizleme ? ORNEK : []);
@@ -102,7 +102,7 @@ export function WordCloudWidget({ previewMode = false }: { embedded?: boolean; p
   return (
     <div
       ref={kutu}
-      className="w-screen h-screen relative overflow-hidden select-none"
+      className={`${embedded ? 'w-full h-full' : 'w-screen h-screen'} relative overflow-hidden select-none`}
       style={{ background: Number(s.bgOpacity) > 0 ? rgba(s.bgColor, s.bgOpacity) : 'transparent', borderRadius: Number(s.radius) || 0, fontFamily: s.fontFamily }}
     >
       {yerler.map((y) => (

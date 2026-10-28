@@ -139,7 +139,7 @@ export default function NavTabBar({
             <span className="block truncate font-display text-[13px] font-extrabold leading-tight tracking-tight text-white">{brandTitle}</span>
             <p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400/90">
               Stream Studio
-              <span className="rounded-full border border-cyan-400/40 bg-cyan-500/20 px-1.5 text-[9px] font-black text-cyan-300">PRO</span>
+              <span className="rounded-full border border-cyan-400/40 bg-cyan-500/20 px-1.5 text-[9px] font-black text-cyan-300" title="Uygulama sürümü">v{__YYA_SURUM__}</span>
             </p>
           </div>
         </div>

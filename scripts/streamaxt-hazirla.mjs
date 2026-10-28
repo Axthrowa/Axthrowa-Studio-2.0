@@ -203,7 +203,12 @@ execFileSync(process.execPath, [tscBin, "-p", path.join(kaynak, "server")], { st
 console.log("[streamaxt] sunucu derlendi");
 fs.rmSync(path.join(hedef, "dist"), { recursive: true, force: true });
 fs.cpSync(serverDist, path.join(hedef, "dist"), { recursive: true });
-fs.copyFileSync(path.join(appSrc, "package.json"), path.join(hedef, "package.json"));
+// Çalışma paketi release/app'ten; sürüm StreamAxT'in gerçek sürümü (YYA "Hakkında" bunu gösterir)
+{
+  const paket = JSON.parse(fs.readFileSync(path.join(appSrc, "package.json"), "utf8"));
+  paket.version = JSON.parse(fs.readFileSync(path.join(kaynak, "package.json"), "utf8")).version || paket.version;
+  fs.writeFileSync(path.join(hedef, "package.json"), JSON.stringify(paket, null, 2) + "\n");
+}
 // Sunucudaki varsayılan widget/alert renkleri de (dist kopyasında) turkuaza çevrilir.
 let serverChanged = 0;
 walk(path.join(hedef, "dist"), (p) => {

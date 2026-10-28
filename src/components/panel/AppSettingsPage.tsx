@@ -2,7 +2,7 @@
  * Uygulama ayarları — AxthrowA
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
@@ -396,6 +396,7 @@ export default function AppSettingsPage({
             <div>
               <h2 className="font-display text-xl font-bold tracking-tight text-white">{t("brand.title")}</h2>
               <p className="text-base font-bold text-panel-accent">{t("about.credit")}</p>
+              <SurumSatiri />
             </div>
           </div>
 
@@ -462,5 +463,27 @@ function DestekPaketi() {
       )}
       {hata && <p className="text-xs text-red-300">{hata}</p>}
     </div>
+  );
+}
+
+/** Yayın Yönetim Aracı ve gömülü StreamAxT sürümü (bot kapalıysa yalnız YYA) */
+function SurumSatiri() {
+  const [bot, setBot] = useState<string | null>(null);
+  useEffect(() => {
+    const port = import.meta.env.VITE_STREAMAXT_PORT || "3001";
+    fetch(`http://127.0.0.1:${port}/health`)
+      .then((r) => r.json())
+      .then((d) => setBot(typeof d?.surum === "string" ? d.surum : null))
+      .catch(() => {});
+  }, []);
+  return (
+    <p className="mt-1 text-xs text-panel-muted">
+      Sürüm <b className="text-white">v{__YYA_SURUM__}</b>
+      {bot && (
+        <>
+          {" "}· StreamAxT <b className="text-white">v{bot}</b>
+        </>
+      )}
+    </p>
   );
 }

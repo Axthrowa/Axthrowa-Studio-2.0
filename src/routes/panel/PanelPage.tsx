@@ -1740,21 +1740,14 @@ export default function PanelPage() {
               <Field label={tt("field.sub")} value={settings.sub || ""} onChange={(v) => update({ sub: v })} />
               <Field label={tt("field.badge")} value={settings.liveText || ""} onChange={(v) => update({ liveText: v })} />
               <Field label={tt("field.ticker")} value={settings.ticker || ""} onChange={(v) => update({ ticker: v })} />
-                </SettingsSection>
-              )}
-
-              {!sectionHidden("yaziStilleri") && (
-                <SettingsSection id="yaziStilleri" title={tt("sec.yaziStilleri")} style={secOrder("yaziStilleri")}>
-              <TextStyleEditor
-                settings={settings}
-                onChange={update}
-                includeCredits={screen === "ending"}
-              />
+              {/* Yazı stilleri ait oldukları ayarın altında (eskiden ayrı "Yazı stilleri" bölümündeydi) */}
+              <TextStyleEditor settings={settings} onChange={update} sadece={["eyebrow", "title", "sub", "ticker"]} />
                 </SettingsSection>
               )}
 
               {!sectionHidden("geriSayim") && (
                 <SettingsSection id="geriSayim" title={tt("sec.geriSayim")} style={secOrder("geriSayim")}>
+              <TextStyleEditor settings={settings} onChange={update} sadece={["countdown"]} />
               <Field
                 label="Geri sayım (datetime-local)"
                 value={settings.targetDate || ""}
@@ -3018,6 +3011,7 @@ export default function PanelPage() {
 
               {screen === "ending" && !sectionHidden("jenerik") && (
                 <SettingsSection id="jenerik" title={tt("sec.jenerik")} style={secOrder("jenerik")}>
+                  <TextStyleEditor settings={settings} onChange={update} includeCredits sadece={["credits"]} />
                   <h3 className="text-sm font-semibold">Otomatik jenerik</h3>
                   <p className="text-[11px] text-panel-muted">
                     Panel açıkken Twitch/Kick/YouTube abone, bağış (Super Chat / bits) ve

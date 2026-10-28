@@ -18,6 +18,8 @@ type Props = {
   settings: OverlaySettings;
   onChange: (patch: OverlaySettings) => void;
   includeCredits?: boolean;
+  /** Yalnız bu yazıların stilleri (ilgili ayar bölümünün altında gösterilir). Boşsa hepsi. */
+  sadece?: TextStyleKey[];
 };
 
 function StyleRow({
@@ -120,11 +122,12 @@ function StyleRow({
   );
 }
 
-export default function TextStyleEditor({ settings, onChange, includeCredits }: Props) {
+export default function TextStyleEditor({ settings, onChange, includeCredits, sadece }: Props) {
   const styles = (settings.textStyles || {}) as Record<string, TextStyle>;
   const keys = TEXT_STYLE_KEYS.filter(
-    (k) => k !== "countdown" && (k === "credits" ? includeCredits : true)
+    (k) => k !== "countdown" && (k === "credits" ? includeCredits : true) && (!sadece || sadece.includes(k))
   );
+  const geriSayimGoster = !sadece || sadece.includes("countdown");
 
   const patchKey = (key: TextStyleKey, partial: TextStyle) => {
     const next = {
@@ -165,9 +168,16 @@ export default function TextStyleEditor({ settings, onChange, includeCredits }: 
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">Yazı stilleri</h3>
-      <p className="text-[11px] text-panel-muted">Her yazı ayrı: font, boyut, efekt ve animasyon</p>
+      {sadece ? (
+        <h4 className="pt-1 text-[11px] font-semibold uppercase tracking-wider text-panel-muted">Yazı stili</h4>
+      ) : (
+        <>
+          <h3 className="text-sm font-semibold">Yazı stilleri</h3>
+          <p className="text-[11px] text-panel-muted">Her yazı ayrı: font, boyut, efekt ve animasyon</p>
+        </>
+      )}
 
+      {geriSayimGoster && (
       <StyleRow
         label="Geri sayım / rozet"
         st={{ ...cdSt, size: cdSize }}
@@ -189,6 +199,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits }: 
           </label>
         }
       />
+      )}
 
       {keys.map((key) => {
         const st = styles[key] || {};

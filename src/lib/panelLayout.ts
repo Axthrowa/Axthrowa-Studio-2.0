@@ -60,7 +60,6 @@ export const DEFAULT_TABS: { id: NavId; labelKey: string; label: string }[] = [
 
 export const LEFT_SECTIONS_SCENE: { id: SectionId; labelKey: string; label: string }[] = [
   { id: "metin", labelKey: "sec.metin", label: "Başlık / metin" },
-  { id: "yaziStilleri", labelKey: "sec.yaziStilleri", label: "Yazı stilleri" },
   { id: "geriSayim", labelKey: "sec.geriSayim", label: "Geri sayım" },
   { id: "arkaPlan", labelKey: "sec.arkaPlan", label: "Arka plan" },
   { id: "video", labelKey: "sec.video", label: "Yerel video" },

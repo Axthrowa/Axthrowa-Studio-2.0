@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { ExternalLink, Loader2, Play, RefreshCw, Square } from "lucide-react";
 import { openExternal } from "../../lib/openExternal";
-import { frameOrigin, openExternalRequest } from "../../lib/embedMessages";
+import { frameOrigin, openExternalRequest, openMusicRequest } from "../../lib/embedMessages";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { cn } from "../../lib/cn";
 import { streamaxtStatus as getStatus, type StreamAxtStatus } from "../../lib/streamaxt";
@@ -19,6 +19,8 @@ export type StreamAxtHostProps = {
   tab?: string;
   /** StreamAxT'nin kendi kenar çubuğu gizlensin (tek sekme gömerken). */
   embed?: boolean;
+  /** StreamAxT "Resonance'ı aç" dediğinde panelin Müzik sekmesine geç. */
+  onOpenMusic?: () => void;
 };
 
 /** Gömülecek adres: `#sekme` açılış sekmesini, `?embed=1` kenar çubuğunu belirler. */
@@ -27,7 +29,7 @@ export function frameUrl(base: string, tab?: string, embed?: boolean): string {
   return `${clean}${embed ? "?embed=1" : ""}${tab ? `#${tab}` : ""}`;
 }
 
-export default function StreamAxtHost({ onToast, tab, embed }: StreamAxtHostProps) {
+export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: StreamAxtHostProps) {
   const [st, setSt] = useState<StreamAxtStatus | null>(null);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +92,10 @@ export default function StreamAxtHost({ onToast, tab, embed }: StreamAxtHostProp
   // (`lib/embedMessages.ts`).
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
+      if (openMusicRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
+        onOpenMusic?.();
+        return;
+      }
       const url = openExternalRequest(ev, frameRef.current?.contentWindow, expectedOrigin);
       if (!url) return;
       void openExternal(url).then((sonuc) => {
@@ -99,7 +105,7 @@ export default function StreamAxtHost({ onToast, tab, embed }: StreamAxtHostProp
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [onToast, expectedOrigin]);
+  }, [onToast, expectedOrigin, onOpenMusic]);
 
   // Sekme ilk açıldığında kurulu ama kapalıysa (ve elle durdurulmadıysa) bir kez başlat.
   useEffect(() => {

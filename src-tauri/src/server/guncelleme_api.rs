@@ -1,7 +1,8 @@
-//! Yardım › Güncellemeleri denetle. Uygulamanın kendi dağıtım sunucusu yoktur: kullanıcı bir güncelleme bildirimi
-//! adresi tanımlar (JSON: `{"surum": "1.2.0", "sayfa": "https://…", "notlar": "…"}`). Denetim yalnız kullanıcı
-//! istediğinde yapılır; hiçbir şey indirilmez ya da çalıştırılmaz — yalnız sürüm karşılaştırılır ve sayfa bağlantısı
-//! gösterilir. Adres https olmalı (sınama için yalnız 127.0.0.1/localhost'ta http). Yanıt en çok 64 KB, 8 sn.
+//! Ayarlar › Güncellemeler. Uygulamanın kendi dağıtım sunucusu yoktur: kullanıcı bir güncelleme bildirimi adresi
+//! tanımlar (JSON: `{"surum": "1.2.0", "sayfa": "https://…", "notlar": "…", "kurulum": "https://…Setup.exe"}`).
+//! Adres tanımlıysa açılışta bir kez sessizce, ayrıca kullanıcı istediğinde denetlenir. "Kur" yalnız kullanıcı
+//! basınca kurulumu indirir ve yalnız Authenticode imzası bu uygulamanın sertifikasıyla (`IMZA_PARMAK_IZI`)
+//! eşleşiyorsa çalıştırır. Adres https olmalı (sınama için yalnız 127.0.0.1/localhost'ta http). Bildirim en çok 64 KB, 8 sn.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -21,6 +22,7 @@ type ApiResult = Result<Json<Value>, Hata>;
 
 const DOSYA: &str = "guncelleme.json";
 const EN_COK_BAYT: usize = 64 * 1024;
+const KURULUM_EN_COK: u64 = 300 * 1024 * 1024;
 
 #[derive(Default, Serialize, Deserialize)]
 struct Ayar {
@@ -148,14 +150,22 @@ async fn api_kur(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectI
   if !yanit.status().is_success() {
     return Err((StatusCode::BAD_GATEWAY, format!("kurulum adresi {} döndü", yanit.status())));
   }
+  // Boyut bildirilmişse indirmeden önce reddet (300 MB'ı belleğe almadan)
+  if yanit.content_length().is_some_and(|n| n > KURULUM_EN_COK) {
+    return Err((StatusCode::BAD_GATEWAY, "kurulum çok büyük".into()));
+  }
   let bayt = yanit.bytes().await.map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-  if bayt.len() > 300 * 1024 * 1024 {
+  if bayt.len() as u64 > KURULUM_EN_COK {
     return Err((StatusCode::BAD_GATEWAY, "kurulum çok büyük".into()));
   }
   let dosya = std::env::temp_dir().join(format!("YayinYonetimAraci-{}-Setup.exe", v["son"].as_str().unwrap_or("yeni").replace(|c: char| !c.is_ascii_alphanumeric() && c != '.', "")));
   std::fs::write(&dosya, &bayt).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   // İmza: geçerli ve BİZİM sertifikamız olmalı; değilse dosya silinir, çalıştırılmaz
-  let imza = imza_parmak_izi(&dosya);
+  // PowerShell ~1 sn sürer: sunucunun async iş parçacığını tutmasın
+  let imza = {
+    let d = dosya.clone();
+    tokio::task::spawn_blocking(move || imza_parmak_izi(&d)).await.ok().flatten()
+  };
   if imza.as_deref() != Some(IMZA_PARMAK_IZI) {
     let _ = std::fs::remove_file(&dosya);
     return Err((StatusCode::BAD_GATEWAY, format!("kurulumun imzası doğrulanamadı ({})", imza.unwrap_or_else(|| "imzasız".into()))));

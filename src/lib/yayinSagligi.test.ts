@@ -25,4 +25,12 @@ describe("yayın sağlığı", () => {
     r = saglikDegerlendir({ onceki: h({}), yogunBas: null }, h({ active: false }), 13_000);
     expect(idler(r.uyarilar)).toContain("saglik-durdu");
   });
+  it("yayın bitince kare uyarısı temizlenir; YYA'nın kendi durdurması uyarı vermez", () => {
+    let r = saglikDegerlendir(bas, h({ totalFrames: 1000 }), 0);
+    r = saglikDegerlendir(r.durum, h({ totalFrames: 1100, skippedFrames: 10 }), 3000);
+    expect(idler(r.uyarilar)).toContain("saglik-kare");
+    const bitis = saglikDegerlendir(r.durum, h({ active: false }), 6000, true);
+    expect(bitis.uyarilar).toContainEqual({ id: "saglik-kare", temizle: true });
+    expect(idler(bitis.uyarilar)).not.toContain("saglik-durdu");
+  });
 });

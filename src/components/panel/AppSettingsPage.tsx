@@ -23,6 +23,7 @@ import { API_BASE } from "../../lib/api";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
+import { streamaxtBase } from "../../lib/streamaxt";
 
 type Tab = "general" | "help" | "about";
 
@@ -475,8 +476,8 @@ function DestekPaketi() {
 function SurumSatiri() {
   const [bot, setBot] = useState<string | null>(null);
   useEffect(() => {
-    const port = import.meta.env.VITE_STREAMAXT_PORT || "3001";
-    fetch(`http://127.0.0.1:${port}/health`)
+    streamaxtBase()
+      .then((b) => fetch(`${b}/health`))
       .then((r) => r.json())
       .then((d) => setBot(typeof d?.surum === "string" ? d.surum : null))
       .catch(() => {});

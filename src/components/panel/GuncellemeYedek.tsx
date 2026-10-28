@@ -77,7 +77,7 @@ export function Guncelleme() {
   );
 }
 
-type Yedekler = { yedekler: Array<{ ad: string; zaman: number; bayt: number }>; bekleyen: string | null; sonUygulanan: string | null; klasor: string; sakla: number };
+type Yedekler = { yedekler: Array<{ ad: string; zaman: number; bayt: number; bot: boolean }>; bekleyen: string | null; sonUygulanan: string | null; klasor: string; sakla: number };
 
 const adOku = (ad: string) => `${ad.slice(6, 8)}.${ad.slice(4, 6)}.${ad.slice(0, 4)} ${ad.slice(9, 11)}:${ad.slice(11, 13)}`;
 
@@ -106,8 +106,9 @@ export function YedekPaneli() {
     <div className="space-y-2">
       <h3 className="text-sm font-bold uppercase tracking-wider text-white">Yedekler</h3>
       <p className="text-xs font-medium text-white/75">
-        Ayarlar, veritabanı ve bot verisi günde bir kendiliğinden yedeklenir (son {d.sakla} yedek tutulur). Geri yükleme ve taşıma
-        uygulamanın bir sonraki açılışında uygulanır.
+        Ayarlar, veritabanı ve bot verisi günde bir kendiliğinden yedeklenir (son {d.sakla} yedek ve son {d.sakla} günün
+        her birinden bir yedek tutulur). Geri yükleme ve taşıma uygulamanın bir sonraki açılışında uygulanır; uygulamadan önce o anki
+        hâl ayrıca yedeklenir, yanlış seçim geri alınabilir.
       </p>
       {d.sonUygulanan && <p className="rounded-md bg-emerald-500/10 p-2 text-xs text-emerald-200">{d.sonUygulanan}</p>}
       {d.bekleyen && (
@@ -123,7 +124,10 @@ export function YedekPaneli() {
       <ul className="space-y-1 text-xs text-white/85">
         {d.yedekler.map((y) => (
           <li key={y.ad} className="flex items-center justify-between rounded-md bg-black/30 px-2 py-1.5">
-            <span>{adOku(y.ad)} · {(y.bayt / 1024 / 1024).toFixed(1)} MB</span>
+            <span>
+              {adOku(y.ad)} · {(y.bayt / 1024 / 1024).toFixed(1)} MB
+              {!y.bot && <span className="text-amber-200"> · bot verisi yok</span>}
+            </span>
             <button
               type="button"
               className="dt-btn"

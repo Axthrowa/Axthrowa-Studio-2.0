@@ -22,7 +22,7 @@ export const ESIK = {
 };
 
 /** Bir örnekten uyarılar ve yeni durum. Aralıklı ölçüm: oranlar iki örnek arasındaki farktan hesaplanır. */
-export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: number): { durum: SaglikDurumu; uyarilar: Uyari[] } {
+export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: number, bilerek = false): { durum: SaglikDurumu; uyarilar: Uyari[] } {
   const uyarilar: Uyari[] = [];
   const o = d.onceki;
   let yogunBas = d.yogunBas;
@@ -42,6 +42,9 @@ export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: numbe
     } else {
       uyarilar.push({ id: "saglik-kare", temizle: true });
     }
+  } else if (!h.active) {
+    // Yayın bitti: son ölçümün kare uyarısı ekranda takılı kalmasın
+    uyarilar.push({ id: "saglik-kare", temizle: true });
   }
 
   if (h.active && h.congestion >= ESIK.yogunluk) {
@@ -54,13 +57,21 @@ export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: numbe
     uyarilar.push({ id: "saglik-ag", temizle: true });
   }
 
-  // Yayın beklenmedik şekilde durdu (yeniden bağlanma değil, çıktı kapandı)
-  if (o?.active && !h.active && !h.reconnecting) {
+  // Yayın beklenmedik şekilde durdu (yeniden bağlanma değil, çıktı kapandı). YYA'nın kendi durdurması uyarı değil;
+  // beklenmedik duruş uyarısı yayın yeniden başlayana dek kalır (oyundan dönünce görülsün).
+  if (o?.active && !h.active && !h.reconnecting && !bilerek) {
     uyarilar.push({ id: "saglik-durdu", seviye: "warn", metin: "Yayın durdu", ipucu: "Sen durdurmadıysan OBS'i ve internet bağlantını denetle" });
   }
   if (h.active) uyarilar.push({ id: "saglik-durdu", temizle: true });
 
   return { durum: { onceki: h, yogunBas }, uyarilar };
+}
+
+/** YYA yayını kendisi durdurduğunda (Yayını bitir, bitiş kuralı): bu süre içindeki duruş uyarı sayılmaz */
+const BILEREK_MS = 30_000;
+let bilerekDurdurma = 0;
+export function yayinBilerekDurduruluyor(): void {
+  bilerekDurdurma = Date.now();
 }
 
 /** Kısa uyarı sesi (oyun tam ekrandayken de duyulsun) */
@@ -97,7 +108,8 @@ export function yayinSagligiIzle(
     try {
       const h = await oku();
       if (iptal || !h) return;
-      const r = saglikDegerlendir(durum, h, Date.now());
+      const simdi = Date.now();
+      const r = saglikDegerlendir(durum, h, simdi, simdi - bilerekDurdurma < BILEREK_MS);
       durum = r.durum;
       let yeni = false;
       for (const u of r.uyarilar) {

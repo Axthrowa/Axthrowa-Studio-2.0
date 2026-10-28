@@ -624,7 +624,7 @@ pub fn run() {
   tauri::async_runtime::spawn(async move {
     tokio::time::sleep(std::time::Duration::from_secs(120)).await;
     loop {
-      if let Err(e) = yedek::gerekirse_yedekle(&state_for_backup.data_dir, &state_for_backup.db, 24 * 3600 * 1000).await {
+      if let Err(e) = yedek::gerekirse_yedekle(&state_for_backup.data_dir, &state_for_backup.db, yedek::bot_veri_klasoru().as_deref(), 24 * 3600 * 1000).await {
         yya_warn!("otomatik yedek alınamadı: {e:#}");
       }
       tokio::time::sleep(std::time::Duration::from_secs(6 * 3600)).await;

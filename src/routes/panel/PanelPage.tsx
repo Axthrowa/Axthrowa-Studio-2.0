@@ -28,7 +28,7 @@ import MusicPanel from "../../components/panel/MusicPanel";
 import VideoTrimBar from "../../components/panel/VideoTrimBar";
 import VideoScrubber from "../../components/panel/VideoScrubber";
 import TextStyleEditor from "../../components/panel/TextStyleEditor";
-import BotBaglantilari from "../../components/panel/BotBaglantilari";
+import BotSessions from "../../components/panel/BotSessions";
 import CopyUrl from "../../components/ui/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
@@ -1615,12 +1615,14 @@ export default function PanelPage() {
             />
           )}
           {dashBolum === "genel" && (
-            <BotBaglantilari
-              onAc={() => {
-                setBotSekme("platforms");
-                setActiveNav("bot");
-              }}
-            />
+            <div className="mx-4 mb-3">
+              <BotSessions
+                onAc={() => {
+                  setBotSekme("platforms");
+                  setActiveNav("bot");
+                }}
+              />
+            </div>
           )}
           {dashBolum === "genel" && <StreamHealthCard />}
           {/* Sekme değişse de bağlı kalır: sadakat sayacı, metrikler ve oturum kapatma sürer */}

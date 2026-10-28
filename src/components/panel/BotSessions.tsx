@@ -27,7 +27,7 @@ const PLATFORMS: Array<{ id: string; label: string }> = [
  * Veri doğrudan StreamAxT sunucusundan (`/api/status`) okunur; bot kapalıyken
  * istek düşer ve kart "kapalı" gösterir.
  */
-export default function BotSessions() {
+export default function BotSessions({ onAc }: { onAc?: () => void } = {}) {
   const [st, setSt] = useState<BotStatus | null>(null);
   const [checked, setChecked] = useState(false);
 
@@ -64,6 +64,11 @@ export default function BotSessions() {
         <span className="ml-auto truncate text-[11px] text-panel-muted">
           {!checked ? "denetleniyor…" : live ? st?.uptime || "açık" : "kapalı"}
         </span>
+        {onAc && (
+          <button type="button" className="dt-btn shrink-0" onClick={onAc}>
+            Bot'ta yönet
+          </button>
+        )}
       </div>
 
       {live ? (

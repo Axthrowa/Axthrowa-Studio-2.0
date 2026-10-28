@@ -53,7 +53,7 @@ async fn api_liste(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(state): Sta
 
 async fn api_yedekle(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(state): State<Arc<AppState>>) -> ApiResult {
   yerel(&addr)?;
-  yedek::yedekle(&state.data_dir, &state.db)
+  yedek::yedekle(&state.data_dir, &state.db, yedek::bot_veri_klasoru().as_deref())
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{e:#}")))?;
   Ok(Json(durum(&state)))

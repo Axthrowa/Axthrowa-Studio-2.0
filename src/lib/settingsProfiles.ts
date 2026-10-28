@@ -36,6 +36,8 @@ export type Profile = {
   updatedAt: number;
   /** Yalnız etkin OLMAYAN profillerde dolu. */
   data: ProfileSnapshot | null;
+  /** Profile geçince OBS'te açılacak sahne (boş = sahne değişmez) */
+  obsSahne?: string;
 };
 
 export type ProfilesState = { activeId: string; profiles: Profile[] };
@@ -148,6 +150,7 @@ export function ensureState(raw: unknown, now = Date.now()): ProfilesState {
       createdAt: Number(p.createdAt) || now,
       updatedAt: Number(p.updatedAt) || now,
       data: p.data && typeof p.data === "object" ? (p.data as ProfileSnapshot) : null,
+      ...(typeof p.obsSahne === "string" && p.obsSahne.trim() ? { obsSahne: p.obsSahne.trim().slice(0, 100) } : {}),
     });
   }
   if (!list.length) {
@@ -157,6 +160,19 @@ export function ensureState(raw: unknown, now = Date.now()): ProfilesState {
   const activeId = list.some((p) => p.id === r.activeId) ? String(r.activeId) : list[0].id;
   // Etkin profilin verisi tutulmaz (canlı ayar odur).
   return { activeId, profiles: list.map((p) => (p.id === activeId ? { ...p, data: null } : p)) };
+}
+
+/** Profilin OBS sahnesini ayarlar (boş metin kaldırır) */
+export function setProfileScene(state: ProfilesState, id: string, sahne: string): ProfilesState {
+  const temiz = sahne.trim().slice(0, 100);
+  return {
+    ...state,
+    profiles: state.profiles.map((p) => {
+      if (p.id !== id) return p;
+      const { obsSahne: _eski, ...kalan } = p;
+      return temiz ? { ...kalan, obsSahne: temiz } : kalan;
+    }),
+  };
 }
 
 export function activeProfile(state: ProfilesState): Profile {

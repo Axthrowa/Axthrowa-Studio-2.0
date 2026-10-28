@@ -28,6 +28,7 @@ import MusicPanel from "../../components/panel/MusicPanel";
 import VideoTrimBar from "../../components/panel/VideoTrimBar";
 import VideoScrubber from "../../components/panel/VideoScrubber";
 import TextStyleEditor from "../../components/panel/TextStyleEditor";
+import BotBaglantilari from "../../components/panel/BotBaglantilari";
 import CopyUrl from "../../components/ui/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
@@ -114,6 +115,8 @@ import { useCreditsCollector } from "../../lib/useCreditsCollector";
 import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec } from "../../lib/globalHotkeys";
 import { useVideoDownload } from "../../lib/useVideoDownload";
 import { clearNotice, pushNotice, useNotices } from "../../lib/notices";
+import { yayinSagligiIzle } from "../../lib/yayinSagligi";
+import { getStreamHealth } from "../../lib/obs";
 import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
 import AppAlertModal from "../../components/ui/AppAlertModal";
 import {
@@ -170,9 +173,24 @@ const ROL_AD: Record<SceneRole, string> = { starting: "Giriş", ending: "Çıkı
 
 export default function PanelPage() {
   const { connect: obsConnect, connected: obsCtxConnected } = useObs();
+  // Yayın sağlığı uyarıları: hangi sekme açık olursa olsun (pencere arkadayken de) izlenir
+  useEffect(
+    () =>
+      yayinSagligiIzle(
+        async () => (isObsConnected() ? getStreamHealth() : null),
+        (u) => ("temizle" in u ? clearNotice(u.id) : pushNotice({ id: u.id, level: u.seviye, text: u.metin, hint: u.ipucu })),
+        () => localStorage.getItem("yya.saglikSesi") !== "0"
+      ),
+    []
+  );
   const [screen, setScreen] = useState<ScreenId>("starting");
   // Müzik / Ayarlar ekran ayarlarından bağımsız; ScreenId şemasını kirletmez.
   const [activeNav, setActiveNav] = useState<NavId | ScreenId>("profile");
+  // Bot sekmesinde açılacak StreamAxT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
+  const [botSekme, setBotSekme] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (activeNav !== "bot") setBotSekme(undefined);
+  }, [activeNav]);
   const [layout, setLayout] = useState<PanelLayout>(() => loadPanelLayout());
   const [prefs, setPrefs] = useState<AppPrefs>(() => loadAppPrefs());
   const [editLayout, setEditLayout] = useState(false);
@@ -1596,6 +1614,14 @@ export default function PanelPage() {
               onObsConnected={() => void refreshObsLists()}
             />
           )}
+          {dashBolum === "genel" && (
+            <BotBaglantilari
+              onAc={() => {
+                setBotSekme("platforms");
+                setActiveNav("bot");
+              }}
+            />
+          )}
           {dashBolum === "genel" && <StreamHealthCard />}
           {/* Sekme değişse de bağlı kalır: sadakat sayacı, metrikler ve oturum kapatma sürer */}
           <ProfileDashboard
@@ -1647,7 +1673,7 @@ export default function PanelPage() {
         </div>
       ) : botTab ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <StreamAxtHost onToast={showToast} onOpenMusic={() => setActiveNav("music")} />
+          <StreamAxtHost key={botSekme || "bot"} onToast={showToast} tab={botSekme} onOpenMusic={() => setActiveNav("music")} />
         </div>
       ) : chatTab && !chatOverlaySettings ? (
         // Canlı Chat = StreamAxT'nin Multi-Chat'i (çapraz sohbet, izleyici kartları).

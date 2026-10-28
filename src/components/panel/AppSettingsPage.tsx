@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { Guncelleme, YedekPaneli } from "./GuncellemeYedek";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
@@ -358,6 +359,10 @@ export default function AppSettingsPage({
             </div>
           </div>
 
+          <hr className="border-white/[0.08]" />
+          <Guncelleme />
+          <hr className="border-white/[0.08]" />
+          <YedekPaneli />
           <hr className="border-white/[0.08]" />
           <DestekPaketi />
         </div>

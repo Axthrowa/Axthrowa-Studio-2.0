@@ -13,6 +13,7 @@ import {
   ensureState,
   removeProfile,
   renameProfile,
+  setProfileScene,
   screenForApply,
   switchProfile,
   type ProfileSnapshot,
@@ -97,6 +98,12 @@ export async function switchToProfile(targetId: string): Promise<ProfilesState> 
   await applySnapshot(r.apply);
   await persistProfilesState(r.state);
   return r.state;
+}
+
+export async function setProfileSceneApi(id: string, sahne: string): Promise<ProfilesState> {
+  const next = setProfileScene(await loadProfilesState(), id, sahne);
+  await persistProfilesState(next);
+  return next;
 }
 
 export async function renameProfileApi(id: string, name: string): Promise<ProfilesState> {

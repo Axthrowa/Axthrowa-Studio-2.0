@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Clapperboard, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   createProfileFromCurrent,
   deleteProfileApi,
   loadProfilesState,
   renameProfileApi,
+  setProfileSceneApi,
   switchToProfile,
 } from "../../lib/settingsProfilesApi";
+import { actionsApi } from "../../lib/api/actions";
 import { MAX_PROFILES, activeProfile, canDelete, type ProfilesState } from "../../lib/settingsProfiles";
 
 /**
@@ -74,7 +76,16 @@ export default function ProfileSwitcher({ onToast }: Props) {
       const next = await switchToProfile(id);
       setState(next);
       setOpen(false);
-      onToast(`«${name}» profiline geçildi — ayarlar yeniden yükleniyor`);
+      // Profilin OBS sahnesi (varsa): ayarlarla birlikte sahne de değişir
+      const sahne = next.profiles.find((p) => p.id === id)?.obsSahne;
+      if (sahne) {
+        try {
+          await actionsApi.run("scene.switch", { scene: sahne });
+        } catch (e) {
+          onToast(`OBS sahnesi değiştirilemedi («${sahne}»): ${String((e as Error)?.message || e).slice(0, 120)}`);
+        }
+      }
+      onToast(`«${name}» profiline geçildi${sahne ? ` · OBS: ${sahne}` : ""} — ayarlar yeniden yükleniyor`);
       // Panel bellekteki eski ayarı geri yazmasın: yeniden yükle.
       window.setTimeout(() => window.location.reload(), 500);
     });
@@ -166,6 +177,18 @@ export default function ProfileSwitcher({ onToast }: Props) {
                         }}
                       >
                         <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        title={p.obsSahne ? `OBS sahnesi: ${p.obsSahne} (değiştir)` : "Bu profile geçince açılacak OBS sahnesi"}
+                        aria-label={`${p.name} profilinin OBS sahnesi`}
+                        className={"rounded p-1 transition hover:text-white focus:opacity-100 group-hover:opacity-100 " + (p.obsSahne ? "text-cyan-300" : "text-panel-muted opacity-0")}
+                        onClick={() => {
+                          const yeni = window.prompt("Bu profile geçince açılacak OBS sahnesinin adı (boş = sahne değişmez):", p.obsSahne || "");
+                          if (yeni !== null) void run(async () => setState(await setProfileSceneApi(p.id, yeni)));
+                        }}
+                      >
+                        <Clapperboard className="h-3 w-3" />
                       </button>
                       {canDelete(state, p.id) && (
                         <button

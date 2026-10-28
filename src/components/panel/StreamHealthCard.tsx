@@ -27,6 +27,7 @@ export default function StreamHealthCard() {
   const [health, setHealth] = useState<StreamHealth>(EMPTY);
   const [obsErr, setObsErr] = useState<string | null>(null);
   const notices = useNotices();
+  const [sesli, setSesli] = useState(() => localStorage.getItem("yya.saglikSesi") !== "0");
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +70,17 @@ export default function StreamHealthCard() {
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-panel-accent" />
           <h3 className="text-sm font-bold uppercase tracking-wider text-white">Yayın Sağlığı & Telemetri</h3>
+          <label className="ml-2 flex items-center gap-1 text-[10px] font-semibold text-white/70" title="Kare düşüşü, ağ yoğunluğu, kopma ve yayın durmasında sesli uyarı (her sekmede çalışır)">
+            <input
+              type="checkbox"
+              checked={sesli}
+              onChange={(e) => {
+                setSesli(e.target.checked);
+                localStorage.setItem("yya.saglikSesi", e.target.checked ? "1" : "0");
+              }}
+            />
+            Sesli uyarı
+          </label>
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${

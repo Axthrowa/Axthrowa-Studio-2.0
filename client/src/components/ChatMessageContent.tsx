@@ -6,6 +6,22 @@ interface ChatMessageContentProps {
   platform?: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
   className?: string;
   size?: number; // emote height in px, default 24
+  /** Twitch IRC `emotes` etiketi (kimlik → "baş-son" konumları): kanalın kendi ve abone emote'ları */
+  twitchEmotes?: Record<string, string[]>;
+}
+
+/** Twitch konumları kod noktası (UTF-16 değil) sayar: ad → görsel */
+export function twitchEmoteHaritasi(message: string, emotes?: Record<string, string[]>): Map<string, string> {
+  const h = new Map<string, string>();
+  if (!emotes) return h;
+  const harfler = Array.from(message);
+  for (const [id, konumlar] of Object.entries(emotes)) {
+    const m = /^(\d+)-(\d+)$/.exec(konumlar?.[0] || '');
+    if (!m || !/^[\w-]+$/.test(id)) continue;
+    const ad = harfler.slice(Number(m[1]), Number(m[2]) + 1).join('');
+    if (ad) h.set(ad, `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`);
+  }
+  return h;
 }
 
 // Global 7TV / Twitch / BTTV emote dictionary
@@ -68,11 +84,13 @@ const GLOBAL_EMOTES: Record<string, string> = {
 export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({
   message,
   className = '',
-  size = 24
+  size = 24,
+  twitchEmotes
 }) => {
   // Kanalın ve 7TV genel setinin canlı listesi (sabit sözlük çevrimdışı yedek)
   const yediTv = useYediTvHaritasi();
   if (!message) return null;
+  const twitch = twitchEmoteHaritasi(message, twitchEmotes);
 
   // Tokenize string while preserving Kick emotes [emote:id:name], Discord emojis <:name:id>, and words
   // Regex matches:
@@ -128,7 +146,7 @@ export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({
         }
 
         // 3. Check for Global 7TV / Twitch / BTTV emotes in plain text words
-        const emoteUrl = yediTv.get(part) || (Object.prototype.hasOwnProperty.call(GLOBAL_EMOTES, part) ? GLOBAL_EMOTES[part] : undefined);
+        const emoteUrl = twitch.get(part) || yediTv.get(part) || (Object.prototype.hasOwnProperty.call(GLOBAL_EMOTES, part) ? GLOBAL_EMOTES[part] : undefined);
         if (emoteUrl) {
           return (
             <img

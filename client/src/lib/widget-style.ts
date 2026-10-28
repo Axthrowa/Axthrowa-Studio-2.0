@@ -59,10 +59,11 @@ export function sureYaz(toplamSaniye: number): string {
   return `${dk}:${String(sn).padStart(2, '0')}`;
 }
 
-/** Önizleme kipi: prop ya da adres satırındaki ?preview=1. */
 /**
  * Widget yazı tipini Google Fonts'tan yükler (OBS tarayıcısında kurulu olmayabilir).
  * Yalnız FONTS listesindeki adlar: ayardan gelen keyfi değer adrese yazılmaz.
+ * Kalın sürümler de istenir (Google olmayan kalınlığı atlar); eskiden yalnız 400 gelince
+ * tarayıcı kalınlığı kendisi uyduruyor, harfler dağılıp okunmuyordu.
  */
 export function fontuYukle(ad: string | undefined, liste: readonly string[]): void {
   if (!ad || !liste.includes(ad) || typeof document === 'undefined') return;
@@ -71,7 +72,7 @@ export function fontuYukle(ad: string | undefined, liste: readonly string[]): vo
   const link = document.createElement('link');
   link.id = id;
   link.rel = 'stylesheet';
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(ad).replace(/%20/g, '+')}&display=swap`;
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(ad).replace(/%20/g, '+')}:wght@400;600;700;800&display=swap`;
   document.head.appendChild(link);
 }
 
@@ -124,4 +125,29 @@ export function kartTasarimlari(s: { bgColor?: string; bgOpacity?: number | stri
     capsule: { background: arka, border: `1px solid ${rgba(vurgu, 0.5)}`, borderRadius: 999 },
     hud: { background: rgba('#020617', 0.8), border: `1px solid ${rgba(vurgu, 0.8)}`, clipPath: 'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)', boxShadow: `inset 0 0 16px ${rgba(vurgu, 0.25)}` }
   };
+}
+
+/**
+ * CSS font-family değeri: ad tırnaklı + yedek. Tırnaksız "Press Start 2P" ve "Exo 2" geçersiz CSS'ti
+ * (rakamla başlayan sözcük), tarayıcı hiç uygulamıyordu; yüklenene dek de okunur bir yedek görünür.
+ */
+export function yaziAilesi(ad: string): string {
+  return `"${ad.replace(/"/g, '')}", system-ui, sans-serif`;
+}
+
+/**
+ * Aynı punto değerinde dar/süslü yazı tipleri çok küçük, geniş olanlar çok büyük görünür.
+ * Sohbet okunurluğu için punto bu oranla çarpılır (x-yüksekliği ve genişlik ölçümüyle, Plus Jakarta Sans = 1).
+ */
+const YAZI_BOYUT_OLCEGI: Record<string, number> = {
+  Teko: 1.3, VT323: 1.35, Caveat: 1.3, 'Dancing Script': 1.3, 'Bebas Neue': 1.15, Bangers: 1.1, Oswald: 1.1,
+  'Barlow Condensed': 1.15, Rajdhani: 1.1, 'Pixelify Sans': 1.1, Creepster: 1.1, Staatliches: 1.05, Pacifico: 1.05,
+  'Press Start 2P': 0.62, Silkscreen: 0.8, Monoton: 0.8, Bungee: 0.82, Orbitron: 0.92, 'Fira Code': 0.92,
+  Audiowide: 0.92, 'Black Ops One': 0.92, Cinzel: 0.95
+};
+
+/** Ayar değeri ad ya da `yaziAilesi` çıktısı olabilir */
+export function yaziOlcegi(deger: unknown): number {
+  const ad = String(deger || '').replace(/^"([^"]+)".*$/, '$1');
+  return YAZI_BOYUT_OLCEGI[ad] ?? 1;
 }

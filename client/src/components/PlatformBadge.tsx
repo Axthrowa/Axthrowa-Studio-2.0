@@ -42,20 +42,23 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = ({ platform, badge, s
 
   // 2. Twitch Official CDN Badges
   if (platform === 'twitch') {
+    // Twitch'in genel rozetleri (sunucu kanalın kendi rozetlerini görsel adresiyle gönderir; bunlar yedek)
+    const T = 'https://static-cdn.jtvnw.net/badges/v1/';
     const twitchBadgeUrls: Record<string, string> = {
-      broadcaster: 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309d084cd10/2',
-      moderator: 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/2',
-      mod: 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/2',
-      vip: 'https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/2',
-      subscriber: 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff44952179d/2',
-      sub: 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff44952179d/2',
-      founder: 'https://static-cdn.jtvnw.net/badges/v1/09d93036-9ce6-45c6-8e7e-3161742058fb/2',
-      partner: 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/2',
-      verified: 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/2',
-      premium: 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a998-423e-abcb-65624a34eb60/2',
-      prime: 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a998-423e-abcb-65624a34eb60/2',
-      turbo: 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4bf9-abac-f6c23f87dd47/2',
-      artist: 'https://static-cdn.jtvnw.net/badges/v1/4500a716-3464-47f9-892f-b00630ff768f/2'
+      broadcaster: T + '5527c58c-fb7d-422d-b71b-f309dcb85cc1/2',
+      moderator: T + '3267646d-33f0-4b17-b3df-f923a41db1d0/2',
+      mod: T + '3267646d-33f0-4b17-b3df-f923a41db1d0/2',
+      vip: T + 'b817aba4-fad8-49e2-b88a-7cc744dfa6ec/2',
+      subscriber: T + '5d9f2208-5dd8-11e7-8513-2ff4adfae661/2',
+      sub: T + '5d9f2208-5dd8-11e7-8513-2ff4adfae661/2',
+      founder: T + '511b78a9-ab37-472f-9569-457753bbe7d3/2',
+      partner: T + 'd12a2e27-16f6-41d0-ab77-b780518f00a3/2',
+      verified: T + 'd12a2e27-16f6-41d0-ab77-b780518f00a3/2',
+      premium: T + 'bbbe0db0-a598-423e-86d0-f9fb98ca1933/2',
+      prime: T + 'bbbe0db0-a598-423e-86d0-f9fb98ca1933/2',
+      staff: T + 'd97c37bd-a6f5-4c38-8f57-4e4bef88af34/2',
+      'artist-badge': T + '4300a897-03dc-4e83-8c0e-c332fee7057f/2',
+      bits: T + '73b5c3fb-24f9-4a82-a852-2f475b59411c/2'
     };
 
     if (twitchBadgeUrls[type]) {

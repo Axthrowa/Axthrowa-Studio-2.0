@@ -3,6 +3,7 @@ import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { TwitchHelix } from './twitch-helix.js';
+import { twitchEmoteEtiketi, twitchRozetleri } from './twitch-rules.js';
 import type { YayinBilgisi } from '../core/live-status-math.js';
 
 export class TwitchPlatform extends BasePlatform {
@@ -18,6 +19,8 @@ export class TwitchPlatform extends BasePlatform {
    * Client-ID ayrıca istenmez, jeton doğrulamasından öğrenilir.
    */
   private helix = new TwitchHelix(() => this.botToken);
+  /** Özgün rozet görselleri (kanalın abone/bit rozetleri dahil); jeton yoksa boş, istemci yedeği çizer */
+  private rozetHaritasi: ReadonlyMap<string, string> = new Map();
 
   /** Bot hesabının kullanıcı adı (anahtar kelime komutlarının kendini tetiklemesini önlemek için). */
   botKullaniciAdi(): string {
@@ -36,6 +39,14 @@ export class TwitchPlatform extends BasePlatform {
     this.botToken = channelRow.token || '';
     this.botUsername = channelRow.account_id || `justinfan${Math.floor(Math.random() * 80000 + 10000)}`;
     this.helix.unut();
+    if (this.botToken) {
+      void this.helix
+        .sohbetRozetleri(channel)
+        .then((h) => {
+          if (h.size) this.rozetHaritasi = h;
+        })
+        .catch(() => {});
+    }
 
     return new Promise((resolve) => {
       try {
@@ -162,7 +173,7 @@ export class TwitchPlatform extends BasePlatform {
           username: username.toLowerCase(),
           displayName: username,
           badges: badgesStr.split(',').filter(Boolean),
-          rawBadges: badgesStr.split(',').filter(Boolean),
+          rawBadges: twitchRozetleri(badgesStr, this.rozetHaritasi),
           color: tags['color'] || undefined,
           isMod,
           isSub,
@@ -170,6 +181,7 @@ export class TwitchPlatform extends BasePlatform {
           isBroadcaster
         },
         message: messageText,
+        emotes: twitchEmoteEtiketi(tags['emotes']),
         timestamp: Date.now()
       });
     } catch (err) {

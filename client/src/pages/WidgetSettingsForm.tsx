@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
 import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { yaziAilesi } from '../lib/widget-style.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
@@ -26,7 +27,7 @@ const LABELS: Record<string, string> = {
   templateGiftSub: 'Hediye abone şablonu', templateTip: 'Bağış şablonu', templateRaid: 'Raid şablonu',
   templateHost: 'Host şablonu', templateKicks: 'Kicks şablonu', soundEnabled: 'Ses açık',
   soundUrl: 'Ses URL', soundVolume: 'Ses düzeyi', mute: 'Sessiz', paused: 'Duraklat',
-  maxMessages: 'Maks. mesaj', textColor: 'Metin rengi', usernameColorMode: 'Kullanıcı rengi',
+  maxMessages: 'Maks. mesaj', chatStyle: 'Görünüm stili', platformColors: 'Platform renkleri', textColor: 'Metin rengi', usernameColorMode: 'Kullanıcı rengi',
   customUsernameColor: 'Özel kullanıcı rengi', lineHeight: 'Satır yüksekliği',
   showPlatformLogo: 'Platform logosu', showBadges: 'Rozetler', showAvatars: 'Avatarlar',
   highlightSpecial: 'Özel mesaj vurgusu', fadeMessages: 'Mesajlar kaybolsun', fadeTimeout: 'Kaybolma (sn)',
@@ -161,7 +162,7 @@ const SECTIONS: Record<string, string> = {
   showVotes: 'Düzen', hideUntilEnd: 'Düzen', layoutMode: 'Düzen', queueEnabled: 'Gelişmiş',
   gapMs: 'Gelişmiş', ttsEnabled: 'Gelişmiş', ttsReadMessage: 'Gelişmiş', textEffect: 'Gelişmiş',
   minTipAmount: 'Gelişmiş', minKicks: 'Gelişmiş', skipEnabled: 'Gelişmiş', confetti: 'Gelişmiş',
-  usernameColorMode: 'Düzen', customUsernameColor: 'Görünüm',
+  usernameColorMode: 'Düzen', customUsernameColor: 'Görünüm', chatStyle: 'Görünüm', platformColors: 'Görünüm',
   iconFollow: 'İkonlar', iconSub: 'İkonlar', iconTip: 'İkonlar', iconRaid: 'İkonlar', iconHost: 'İkonlar', iconKicks: 'İkonlar',
   title: 'Hedef', endingTitle: 'Hedef', current: 'Hedef', target: 'Hedef', currency: 'Hedef', type: 'Hedef',
   minCombo: 'Combo', timeoutMs: 'Combo', displayMs: 'Combo', size: 'Combo', showFloating: 'Combo',
@@ -292,6 +293,7 @@ const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
   'chat-overlay': {
+    chatStyle: tema(['klasik', 'Klasik'], ['platformkart', 'Platform kartı'], ['baslikli', 'Başlıklı (ad üstte)'], ['etiket', 'Ad etiketi'], ['konusma', 'Konuşma balonu'], ['serit', 'Platform şeridi'], ['neon', 'Neon çerçeve'], ['kompakt', 'Kompakt']),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana (tek satır)']),
     animation: [...ANIM_SECENEKLERI, { value: 'daktilo', label: 'Daktilo' }]
   },
@@ -535,7 +537,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                 className="h-7 flex items-center justify-center"
                 style={{ background: t.onizleme.arka, borderBottom: `2px solid ${t.onizleme.vurgu}` }}
               >
-                <span className="text-[11px] font-black" style={{ color: t.onizleme.metin, fontFamily: t.onizleme.yazi || String(t.degerler.fontFamily || '') || undefined }}>Aa</span>
+                <span className="text-[11px] font-black" style={{ color: t.onizleme.metin, fontFamily: t.onizleme.yazi || (t.degerler.fontFamily ? yaziAilesi(String(t.degerler.fontFamily)) : undefined) }}>Aa</span>
               </div>
               <div className="px-1 py-0.5 text-[9px] text-gray-300 truncate">{t.etiket}</div>
             </button>
@@ -562,7 +564,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                     <input type="checkbox" checked={!!values[key]} onChange={e => setValues(v => ({ ...v, [key]: e.target.checked }))} className="ml-2 accent-purple-600" />
                   ) : type === 'select' ? (
                     <select value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white">
-                      {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: o.value } : undefined}>{o.label}</option>)}
+                      {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: yaziAilesi(o.value) } : undefined}>{o.label}</option>)}
                     </select>
                   ) : type === 'textarea' ? (
                     <textarea value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white min-h-[52px]" />

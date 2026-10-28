@@ -37,3 +37,17 @@ describe('anket sonucu duyurusu', () => {
     expect(anketSonucMetni({ title: 'Oyun', options: ['A', 'B'], oylar: [0, 0] })).toContain('hiç oy gelmedi');
   });
 });
+
+describe('süre dolan anketin sonucu', () => {
+  it('yalnız son 1 dakikada bittiyse duyurulur (bot kapalıyken dolan eski anket sessiz)', async () => {
+    const { sonucDuyurulmali } = await import('./anket-kapatici.js');
+    expect(sonucDuyurulmali(100_000, 130_000)).toBe(true);
+    expect(sonucDuyurulmali(100_000, 100_000 + 24 * 3600_000)).toBe(false);
+  });
+  it('Discord ve bağlı olmayan platformlar hariç', async () => {
+    const { yayinSohbetleri } = await import('./anket-kapatici.js');
+    const bagli: Record<string, boolean> = { kick: true, twitch: false, discord: true, youtube: true };
+    const pm = { getAllStatuses: () => bagli, getPlatform: (ad: string) => ({ isConnected: () => bagli[ad] }) };
+    expect(yayinSohbetleri(pm)).toEqual(['kick', 'youtube']);
+  });
+});

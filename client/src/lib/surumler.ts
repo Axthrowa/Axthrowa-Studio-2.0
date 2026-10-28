@@ -11,6 +11,16 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.6.2',
+    ad: 'Düzen',
+    tarih: '2026-10-28',
+    notlar: [
+      'Anket sonucu yalnız süre gerçekten o an dolduysa sohbete yazılır (bot kapalıyken biten eski anket ertesi gün duyurulmaz)',
+      'Anket sonucu Discord sunucusuna gitmez, yalnız yayın sohbetlerine yazılır',
+      '!hatirlat yanıtı botun yeniden başlamasında hatırlatmanın iptal olacağını söyler'
+    ]
+  },
+  {
     surum: '1.6.1',
     ad: 'Vitrin',
     tarih: '2026-10-28',

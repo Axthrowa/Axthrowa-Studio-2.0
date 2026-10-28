@@ -483,7 +483,8 @@ export class CommandManager {
         const hata = hatirlatmaKur(message.user.username, sn, () =>
           eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: `⏰ @${dn} hatırlatma: ${not}` })
         );
-        return hata ? `@${dn}, ${hata}.` : `⏰ @${dn}, ${kisaSure(sn)} sonra hatırlatacağım.`;
+        // Hatırlatma bellekte durur: arada uygulama yeniden başlarsa iptal olur, izleyici bunu baştan bilsin
+        return hata ? `@${dn}, ${hata}.` : `⏰ @${dn}, ${kisaSure(sn)} sonra hatırlatacağım (bot yeniden başlarsa iptal olur).`;
       }
 
       case 'timer':

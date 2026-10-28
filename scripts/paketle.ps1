@@ -41,7 +41,9 @@ New-Item -ItemType Directory -Force -Path $portable | Out-Null
 
 # 1) Calistirilabilir dosya
 $destExe = Join-Path $portable "YayinYonetimAraci.exe"
-$running = @(Get-Process YayinYonetimAraci -ErrorAction SilentlyContinue)
+# Yalniz paketlenen kopya kapatilir: eskiden ADI ayni olan HER surec (baska klasorden calisan,
+# yayin yapan uygulama dahil) zorla kapatiliyordu.
+$running = @(Get-Process YayinYonetimAraci -ErrorAction SilentlyContinue | Where-Object { $_.Path -and ($_.Path -ieq $destExe) })
 foreach ($proc in $running) {
   Write-Host "Calisan uygulama kapatiliyor (pid $($proc.Id))..."
   $proc | Stop-Process -Force

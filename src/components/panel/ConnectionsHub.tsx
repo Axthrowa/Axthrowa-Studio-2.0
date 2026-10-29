@@ -131,8 +131,9 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
     }
     try {
       const r = await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" });
-      const d = r.ok ? ((await r.json()) as { platforms?: { kick?: { connected?: boolean } } }) : null;
-      setBotKick(Boolean(d?.platforms?.kick?.connected));
+      const d = r.ok ? ((await r.json()) as { platforms?: { kick?: { connected?: boolean; yazabilir?: boolean } } }) : null;
+      // Jetonsuz bağlantı yalnız okur: bot yazamıyorsa uyarı kalır
+      setBotKick(Boolean(d?.platforms?.kick?.connected && d.platforms.kick.yazabilir));
     } catch {
       setBotKick(false); // bot kapalı
     }

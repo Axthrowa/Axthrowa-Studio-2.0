@@ -1,11 +1,11 @@
 /**
- * Sol kenar çubuğu — StreamAxT stüdyo düzeni (logo başlığı, gradyan etkin sekme,
- * durum altlığı). Sürükle-bırak sıralama ve "Menüyü düzenle" korunur.
+ * Sol kenar çubuğu — AxthrowA stüdyo düzeni. Bölümler çizgiyle değil boşluk ve hafif zemin farkıyla ayrılır;
+ * vurgu yalnız menekşe/camgöbeği. Etkin sekme: %10 camgöbeği zemin + sol kenarda parlak dikey çizgi.
+ * Sürükle-bırak sıralama ve "Menüyü düzenle" korunur.
  *
  * Normalde yalnız simgeler görünür (56px); fare çubuğa değince genişleyip
  * etiketleri açar. Genişleme düzeni kaydırmasın diye çubuk konumlandırılmıştır:
- * içerik yerinde kalır, menü üstüne açılır. Saf CSS (`group-hover` /
- * `group-focus-within`) — klavyeyle gezerken de açık kalır.
+ * içerik yerinde kalır, menü üstüne açılır.
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -117,6 +117,8 @@ export default function NavTabBar({
     setActiveDrag(null);
   };
 
+  const etiket = "truncate transition-opacity duration-200 " + (open ? "opacity-100" : "opacity-0");
+
   return (
     <div
       className="yya-nav-rail relative z-[80] w-14 shrink-0"
@@ -133,142 +135,141 @@ export default function NavTabBar({
         setOpen(true);
       }}
     >
-    <aside
-      className={
-        "absolute inset-y-0 left-0 flex flex-col justify-between overflow-hidden border-r border-white/[0.07] shadow-[8px_0_24px_rgba(0,0,0,0.45)] transition-[width] duration-200 ease-out " +
-        (open ? "w-56" : "w-14")
-      }
-      // Menü içeriğin ÜSTÜNE açılıyor; yarı saydam zeminde alttaki kartlar
-      // görünüp yazıları okunmaz yapıyordu (özellikle alt kısımda). Zemin opak.
-      style={{ background: "var(--panel-elevated)" }}
-    >
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center gap-3 border-b border-white/[0.06] p-3">
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-emerald-400 text-[#022026] shadow-lg shadow-cyan-500/25">
-            <Radio className="h-4 w-4" />
-          </div>
-          <div className={"min-w-0 overflow-hidden transition-opacity duration-150 " + (open ? "opacity-100" : "opacity-0")}>
-            <span className="block truncate font-display text-[13px] font-extrabold leading-tight tracking-tight text-white">{brandTitle}</span>
-            <p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400/90">
-              Stream Studio
-              <span className="rounded-full border border-cyan-400/40 bg-cyan-500/20 px-1.5 text-[9px] font-black text-cyan-300" title="Uygulama sürümü">v{__YYA_SURUM__}</span>
-              {yeniSurum && (
-                <span className="rounded-full bg-emerald-500/25 px-1.5 text-[9px] font-black text-emerald-300" title={`Yeni sürüm v${yeniSurum}: Ayarlar › Hakkında`}>
-                  ↑ v{yeniSurum}
+      <aside
+        className={
+          // Opak zemin: menü içeriğin ÜSTÜNE açılır, alttaki kartlar görünmesin. Ayrım çizgiyle değil,
+          // açıkken içeriğe düşen yumuşak gölgeyle.
+          "absolute inset-y-0 left-0 flex flex-col justify-between overflow-hidden bg-axthrowa-dark transition-[width,box-shadow] duration-300 ease-out " +
+          (open ? "w-60 shadow-[16px_0_40px_rgba(0,0,0,0.55)]" : "w-14")
+        }
+      >
+        <div className="flex min-h-0 flex-1 flex-col">
+          {/* Marka: üstte geniş, altta menüye kadar daha geniş boşluk */}
+          <div className="flex items-center gap-3 px-2.5 pb-6 pt-4">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-axthrowa-violet to-axthrowa-cyan text-white shadow-[0_6px_20px_rgba(139,92,246,0.35)]">
+              <Radio className="h-4 w-4" />
+            </div>
+            <div className={"min-w-0 overflow-hidden transition-opacity duration-200 " + (open ? "opacity-100" : "opacity-0")}>
+              <span className="block truncate font-display text-[13px] font-extrabold leading-tight tracking-tight text-zinc-100">{brandTitle}</span>
+              <p className="mt-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                Stream Studio
+                <span className="rounded-md bg-axthrowa-violet/15 px-1.5 py-px text-[9px] font-bold normal-case tracking-normal text-axthrowa-violet" title="Uygulama sürümü">
+                  v{__YYA_SURUM__}
                 </span>
-              )}
-            </p>
+                {yeniSurum && (
+                  <span className="rounded-md bg-axthrowa-cyan/15 px-1.5 py-px text-[9px] font-bold normal-case tracking-normal text-axthrowa-cyan" title={`Yeni sürüm v${yeniSurum}: Ayarlar › Hakkında`}>
+                    ↑ v{yeniSurum}
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
+
+          <nav className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pr-2" aria-label="Ana menü">
+            {visibleTabs.map((id) => {
+              const active = activeNav === id;
+              const isDrag = activeDrag === id;
+              const Icon = TAB_ICONS[id];
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  data-nav-id={id}
+                  title={`${labelFor(id)} — ${dragHint}`}
+                  aria-current={active ? "page" : undefined}
+                  className={
+                    // Sol kenar çizgisi hep var (pasifte saydam): etkinleşince içerik kaymaz
+                    "group relative flex w-full select-none touch-none items-center gap-3 rounded-r-lg border-l-2 py-2.5 pl-[18px] pr-3 text-[13px] font-medium cursor-grab active:cursor-grabbing " +
+                    (isDrag ? "scale-[0.97] opacity-60 ring-1 ring-axthrowa-violet/60 " : "") +
+                    (active
+                      ? "border-axthrowa-cyan bg-axthrowa-cyan/10 text-axthrowa-cyan shadow-[inset_8px_0_16px_-12px_rgba(6,182,212,0.9)]"
+                      : "border-transparent text-zinc-400 transition-colors duration-200 hover:bg-zinc-800/50 hover:text-zinc-200")
+                  }
+                  onPointerDown={(e) => {
+                    if (e.button !== 0) return;
+                    dragId.current = id;
+                    dragging.current = false;
+                    lastOver.current = null;
+                    start.current = { x: e.clientX, y: e.clientY };
+                    try {
+                      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                    } catch {
+                      /* */
+                    }
+                  }}
+                  onPointerMove={(e) => {
+                    if (!dragId.current) return;
+                    const dx = e.clientX - start.current.x;
+                    const dy = e.clientY - start.current.y;
+                    if (!dragging.current) {
+                      if (dx * dx + dy * dy < DRAG_PX * DRAG_PX) return;
+                      dragging.current = true;
+                      setActiveDrag(dragId.current);
+                    }
+                    const el = document.elementFromPoint(e.clientX, e.clientY);
+                    const tab = el?.closest("[data-nav-id]") as HTMLElement | null;
+                    const overId = tab?.dataset.navId;
+                    if (!overId || overId === dragId.current) return;
+                    if (overId === lastOver.current) return;
+                    lastOver.current = overId;
+                    const next = reorderByDrop(fullOrder(), dragId.current, overId);
+                    onReorder(next);
+                  }}
+                  onPointerUp={(e) => {
+                    const idNow = dragId.current;
+                    const wasDrag = dragging.current;
+                    try {
+                      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                    } catch {
+                      /* */
+                    }
+                    endDrag();
+                    if (!wasDrag && idNow === id) onSelect(id as NavId);
+                  }}
+                  onPointerCancel={() => endDrag()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelect(id as NavId);
+                    }
+                  }}
+                >
+                  {Icon && (
+                    <Icon
+                      className={
+                        "h-[18px] w-[18px] shrink-0 transition-colors duration-200 " +
+                        (active ? "text-axthrowa-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]" : "text-zinc-500 group-hover:text-zinc-200")
+                      }
+                    />
+                  )}
+                  <span className={etiket}>{labelFor(id)}</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
-        <nav className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2" aria-label="Ana menü">
-      {visibleTabs.map((id, i) => {
-        const active = activeNav === id;
-        const isDrag = activeDrag === id;
-        const Icon = TAB_ICONS[id];
-        return (
+
+        {/* Alt bölüm: çizgi yerine hafif yükseltilmiş kart zemini */}
+        <div className="mx-2 mb-2 mt-4 space-y-3 rounded-xl bg-axthrowa-card/60 px-1.5 py-2">
           <button
-            key={id}
             type="button"
-            data-nav-id={id}
-            title={`${labelFor(id)} — ${dragHint}`}
-            className={
-              "group relative flex w-full items-center gap-3 rounded px-2.5 py-2 text-xs font-semibold transition-colors duration-150 select-none touch-none " +
-              (isDrag ? "opacity-60 ring-2 ring-panel-accent scale-95 " : "") +
-              (active
-                ? "bg-panel-cta text-[color:var(--panel-cta-ink)]"
-                : "text-white/75 hover:bg-white/[0.06] hover:text-white") +
-              " cursor-grab active:cursor-grabbing"
-            }
-            onPointerDown={(e) => {
-              if (e.button !== 0) return;
-              dragId.current = id;
-              dragging.current = false;
-              lastOver.current = null;
-              start.current = { x: e.clientX, y: e.clientY };
-              try {
-                (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-              } catch {
-                /* */
-              }
-            }}
-            onPointerMove={(e) => {
-              if (!dragId.current) return;
-              const dx = e.clientX - start.current.x;
-              const dy = e.clientY - start.current.y;
-              if (!dragging.current) {
-                if (dx * dx + dy * dy < DRAG_PX * DRAG_PX) return;
-                dragging.current = true;
-                setActiveDrag(dragId.current);
-              }
-              const el = document.elementFromPoint(e.clientX, e.clientY);
-              const tab = el?.closest("[data-nav-id]") as HTMLElement | null;
-              const overId = tab?.dataset.navId;
-              if (!overId || overId === dragId.current) return;
-              if (overId === lastOver.current) return;
-              lastOver.current = overId;
-              const next = reorderByDrop(fullOrder(), dragId.current, overId);
-              onReorder(next);
-            }}
-            onPointerUp={(e) => {
-              const idNow = dragId.current;
-              const wasDrag = dragging.current;
-              try {
-                (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-              } catch {
-                /* */
-              }
-              endDrag();
-              if (!wasDrag && idNow === id) onSelect(id as NavId);
-            }}
-            onPointerCancel={() => endDrag()}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onSelect(id as NavId);
-              }
-            }}
+            className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-xs font-medium text-zinc-400 transition-colors duration-200 hover:bg-zinc-800/50 hover:text-zinc-200"
+            onClick={onToggleEdit}
+            title={customizeLabel}
           >
-            {Icon && (
-              <Icon
-                className={`h-4 w-4 shrink-0 transition-colors ${
-                  active ? "text-[color:var(--panel-cta-ink)]" : "text-white/60 group-hover:text-white"
-                }`}
-              />
-            )}
-            <span className={"truncate transition-opacity duration-150 " + (open ? "opacity-100" : "opacity-0")}>
-              {labelFor(id)}
-            </span>
+            <SlidersHorizontal className={"h-4 w-4 shrink-0 " + (editLayout ? "text-axthrowa-violet" : "")} />
+            <span className={etiket}>{customizeLabel}</span>
           </button>
-        );
-      })}
-        </nav>
-      </div>
-      <div className="space-y-2 border-t border-white/[0.06] bg-black/20 p-2 md:p-3">
-        <button
-          type="button"
-          className="flex w-full items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-2.5 py-2 text-xs font-semibold text-white/75 transition-all hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white"
-          onClick={onToggleEdit}
-          title={customizeLabel}
-        >
-          <SlidersHorizontal className="h-4 w-4 shrink-0" />
-          <span className={"truncate transition-opacity duration-150 " + (open ? "opacity-100" : "opacity-0")}>
-            {customizeLabel}
-          </span>
-        </button>
-        {editLayout ? (
-          <div className={"transition-opacity " + (open ? "opacity-100" : "opacity-0")}>
-            {children}
+          {editLayout ? <div className={"px-1 transition-opacity " + (open ? "opacity-100" : "opacity-0")}>{children}</div> : null}
+          <div className={"flex items-center justify-between gap-2 overflow-hidden whitespace-nowrap px-2 pb-0.5 text-[11px] transition-opacity duration-200 " + (open ? "opacity-100" : "opacity-0")}>
+            <span className="flex items-center gap-1.5 font-medium text-zinc-400">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+              {statusLabel}
+            </span>
+            <span className="font-mono text-axthrowa-cyan/90">{statusHint}</span>
           </div>
-        ) : null}
-        <div className={"flex items-center justify-between gap-2 overflow-hidden whitespace-nowrap text-[11px] text-white/60 transition-opacity duration-150 " + (open ? "opacity-100" : "opacity-0")}>
-          <span className="flex items-center gap-1.5 font-medium">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-            {statusLabel}
-          </span>
-          <span className="font-mono text-cyan-300">{statusHint}</span>
         </div>
-      </div>
-    </aside>
+      </aside>
     </div>
   );
 }

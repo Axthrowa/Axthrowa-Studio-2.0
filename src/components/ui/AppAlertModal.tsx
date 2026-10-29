@@ -1,60 +1,47 @@
-/** Ekranın ortasında, Tamam’a basılana kadar kalan hata kutusu. */
+/** Ekranın ortasında, Tamam’a basılana kadar kalan hata kutusu (AxthrowA penceresi). */
 
+import { useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 import { dismissAppAlert, useAppAlert } from "../../lib/appAlert";
+import { Dialog } from "./dialog";
 
 export default function AppAlertModal() {
-  const alert = useAppAlert();
-  if (!alert) return null;
+  const simdiki = useAppAlert();
+  // Kapanış animasyonu sürerken son uyarının metni görünmeye devam etsin
+  const son = useRef(simdiki);
+  if (simdiki) son.current = simdiki;
+  const alert = son.current;
 
   return (
-    <div
-      className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+    <Dialog
+      open={!!simdiki}
+      onOpenChange={(acik) => !acik && dismissAppAlert()}
       role="alertdialog"
-      aria-modal="true"
-      aria-labelledby="app-alert-title"
-      aria-describedby="app-alert-body"
-    >
-      <div className="w-full max-w-[26rem] rounded-xl border border-white/10 bg-[#12141a] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-300">
-            <AlertTriangle className="h-5 w-5" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2
-              id="app-alert-title"
-              className="text-[15px] font-semibold tracking-tight text-white"
-            >
-              {alert.title}
-            </h2>
-            <p
-              id="app-alert-body"
-              className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-white/75"
-            >
-              {alert.message}
-            </p>
-            {alert.hint ? (
-              <p className="mt-2 text-[12px] leading-relaxed text-white/50">{alert.hint}</p>
-            ) : null}
-          </div>
-        </div>
-        <div className="mt-5 flex justify-end">
-          <button
-            type="button"
-            className="rounded-lg bg-[#3EEDFE] px-5 py-2 text-[13px] font-semibold text-[#032f34]"
-            onClick={() => dismissAppAlert()}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                dismissAppAlert();
-              }
-            }}
-          >
-            Tamam
-          </button>
-        </div>
-      </div>
-    </div>
+      dismissible={false}
+      icon={
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/15 text-red-300">
+          <AlertTriangle className="h-5 w-5" aria-hidden />
+        </span>
+      }
+      title={alert?.title ?? ""}
+      description={
+        alert ? (
+          <>
+            <p className="whitespace-pre-wrap">{alert.message}</p>
+            {alert.hint ? <p className="mt-2 text-[13px] text-zinc-500">{alert.hint}</p> : null}
+          </>
+        ) : null
+      }
+      footer={
+        <button
+          type="button"
+          className="rounded-xl bg-axthrowa-cyan px-5 py-2 text-sm font-semibold text-axthrowa-dark transition-all duration-300 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-axthrowa-cyan/50 focus-visible:ring-offset-2 focus-visible:ring-offset-axthrowa-card"
+          onClick={() => dismissAppAlert()}
+          autoFocus
+        >
+          Tamam
+        </button>
+      }
+    />
   );
 }

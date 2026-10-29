@@ -31,6 +31,8 @@ import {
   type ObsSceneSnapshot,
   type ObsSourceInfo,
 } from "../../lib/obsControl";
+import { Switch } from "../ui/switch";
+import { WidgetCard } from "../ui/WidgetCard";
 
 export type ObsShortcutBridge = {
   obs: ObsHotkeySlice;
@@ -248,7 +250,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
         {row?.hotkey ? (
           <select
             aria-label="Kısayolun işlemi"
-            className="yya-input h-7 w-[5.5rem] px-1 text-[10px]"
+            className="h-8 w-[5.5rem] rounded-lg bg-zinc-900/80 px-1.5 text-[11px] text-zinc-200 ring-1 ring-white/5 focus:outline-none focus:ring-axthrowa-violet/60"
             value={String(row.mode || "toggle")}
             onChange={(e) =>
               shortcuts.onPatch({ actionHotkeys: setSrcToggleMode(actionRows, row.id, e.target.value) } as never)
@@ -262,7 +264,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
           </select>
         ) : null}
         <HotkeyInput
-          className="w-24 rounded border border-panel-border bg-black/40 px-1 py-1 text-center text-[11px]"
+          className={KISAYOL}
           value={row?.hotkey || ""}
           placeholder="Kısayol"
           onListeningChange={shortcuts.onListeningChange}
@@ -288,7 +290,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
           failures={shortcuts.hotkeyFailures || []}
         />
         <HotkeyInput
-          className="w-24 rounded border border-panel-border bg-black/40 px-1 py-1 text-center text-[11px]"
+          className={KISAYOL}
           value={row?.hotkey || ""}
           placeholder="Kısayol"
           onListeningChange={shortcuts.onListeningChange}
@@ -308,105 +310,102 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-2">
-      <header className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="font-display text-base font-semibold text-white">OBS Kontrol</h2>
-          <p className="text-[11px] text-panel-muted">
-            Sahneler, mixer ve kısayollar
-          </p>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-6 px-1">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="font-display text-xl font-semibold tracking-tight text-zinc-100">OBS Kontrol</h2>
+          <p className="text-sm leading-relaxed text-zinc-400">Sahneler, ses mikseri, kısayollar ve otomasyon</p>
         </div>
         <button
           type="button"
           disabled={!status.connected || !!busy}
-          className="yya-btn-ghost h-8 px-3 text-[11px]"
+          className={DUGME}
           onClick={() => void refresh()}
         >
-          <RefreshCw className="mr-1.5 inline h-3.5 w-3.5" />
+          <RefreshCw className="h-4 w-4" />
           Yenile
         </button>
       </header>
 
-      <section className="rounded-xl border border-white/[0.07] bg-[#101216] p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-xs font-semibold text-white">
-              <Clapperboard className="h-4 w-4 text-panel-accent" /> Sahneler
-            </h3>
-            <span className="text-[10px] text-panel-muted">{snapshot.scenes.length} sahne</span>
-          </div>
-          <div className="grid max-h-52 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3 xl:grid-cols-4">
-            {snapshot.scenes.map((scene, index) => {
-              const active = scene === snapshot.currentScene;
-              return (
-                <button
-                  key={scene}
-                  type="button"
-                  disabled={!status.connected || !!busy}
-                  onClick={() => void selectScene(scene)}
-                  className={`group min-h-16 rounded-lg border px-3 py-2 text-left transition active:scale-[.98] ${
-                    active
-                      ? "border-panel-accent/60 bg-panel-accent/10 shadow-[inset_0_0_18px_rgba(62,237,254,.08),0_0_14px_rgba(62,237,254,.08)]"
-                      : "border-white/[0.07] bg-black/20 hover:border-white/20 hover:bg-white/[0.04]"
-                  }`}
-                >
-                  <span className="text-[9px] tabular-nums text-white/50">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className={`mt-1 block truncate text-[11px] font-medium ${active ? "text-panel-accent" : "text-white/75"}`}>
-                    {scene}
-                  </span>
-                  {active && <span className="mt-1 block text-[8px] uppercase tracking-widest text-panel-accent/60">Program</span>}
-                </button>
-              );
-            })}
-            {!snapshot.scenes.length && (
-              <div className="col-span-full flex min-h-24 items-center justify-center text-[11px] text-panel-muted">
-                Sahneleri görmek için OBS’e bağlanın.
-              </div>
-            )}
-          </div>
-      </section>
+      <WidgetCard
+        title="Sahneler"
+        description="Tıkladığın sahne OBS'te yayına (Program) alınır."
+        icon={<Clapperboard className="h-4 w-4 text-axthrowa-violet" />}
+        action={<span className="text-xs text-zinc-500">{snapshot.scenes.length} sahne</span>}
+      >
+        <div className="grid max-h-56 grid-cols-2 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
+          {snapshot.scenes.map((scene, index) => {
+            const active = scene === snapshot.currentScene;
+            return (
+              <button
+                key={scene}
+                type="button"
+                disabled={!status.connected || !!busy}
+                onClick={() => void selectScene(scene)}
+                className={`group flex min-h-[4.5rem] flex-col justify-between rounded-xl px-4 py-3 text-left transition-all duration-300 active:scale-[.98] ${
+                  active
+                    ? "bg-axthrowa-violet/10 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.45),0_0_24px_rgba(139,92,246,0.12)]"
+                    : "bg-zinc-900/60 hover:bg-zinc-800/50"
+                }`}
+              >
+                <span className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] tabular-nums text-zinc-500">{String(index + 1).padStart(2, "0")}</span>
+                  {active && <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-axthrowa-violet">Program</span>}
+                </span>
+                <span className={`mt-2 block truncate text-sm font-medium ${active ? "text-zinc-100" : "text-zinc-400 group-hover:text-zinc-200"}`}>
+                  {scene}
+                </span>
+              </button>
+            );
+          })}
+          {!snapshot.scenes.length && <EmptyRow text="Sahneleri görmek için OBS'e bağlan." />}
+        </div>
+      </WidgetCard>
 
-      <section className="grid gap-3 lg:grid-cols-2">
-        <ControlList
+      <div className="grid gap-6 lg:grid-cols-2">
+        <WidgetCard
           title="Kaynaklar"
-          subtitle={snapshot.currentScene || "Aktif sahne yok"}
-          icon={<Camera className="h-4 w-4 text-panel-accent" />}
+          description={snapshot.currentScene ? `“${snapshot.currentScene}” sahnesindeki kaynaklar` : "Aktif sahne yok"}
+          icon={<Camera className="h-4 w-4 text-axthrowa-cyan" />}
         >
-          {sources.map((source) => (
-            <ControlRow
-              key={source.name}
-              label={source.name}
-              hint={source.kind}
-              enabled={source.visible}
-              onToggle={() => void updateSource(source)}
-              hotkey={sourceHotkey(source.name)}
-            />
-          ))}
-          {!sources.length && <EmptyRow text="Aktif sahnenin kaynakları burada görünür." />}
-        </ControlList>
+          <div className="-mx-2 max-h-64 space-y-0.5 overflow-y-auto">
+            {sources.map((source) => (
+              <ControlRow
+                key={source.name}
+                label={source.name}
+                hint={source.kind}
+                enabled={source.visible}
+                onToggle={() => void updateSource(source)}
+                hotkey={sourceHotkey(source.name)}
+              />
+            ))}
+            {!sources.length && <EmptyRow text="Aktif sahnenin kaynakları burada görünür." />}
+          </div>
+        </WidgetCard>
 
-        <ControlList
-          title="Ses Mixer"
-          subtitle="Mikrofon ve masaüstü sesleri"
-          icon={<AudioLines className="h-4 w-4 text-panel-accent" />}
+        <WidgetCard
+          title="Ses Mikseri"
+          description="Mikrofon ve masaüstü sesleri"
+          icon={<AudioLines className="h-4 w-4 text-axthrowa-cyan" />}
         >
-          {inputs.map((input) => (
-            <ControlRow
-              key={input.name}
-              label={input.name}
-              hint={input.kind}
-              enabled={!input.muted}
-              enabledText="Açık"
-              disabledText="Susturuldu"
-              icon={<Mic className={`h-3.5 w-3.5 ${input.muted ? "text-red-300" : "text-panel-accent"}`} />}
-              onToggle={() => void updateMute(input)}
-              hotkey={mixerHotkey(input.name)}
-            />
-          ))}
-          {!inputs.length && <EmptyRow text="OBS ses girişleri burada görünür." />}
-        </ControlList>
-      </section>
+          <div className="-mx-2 max-h-64 space-y-0.5 overflow-y-auto">
+            {inputs.map((input) => (
+              <ControlRow
+                key={input.name}
+                label={input.name}
+                hint={input.kind}
+                enabled={!input.muted}
+                enabledText="Açık"
+                disabledText="Susturuldu"
+                icon={<Mic className={`h-4 w-4 shrink-0 ${input.muted ? "text-red-400" : "text-axthrowa-cyan"}`} />}
+                onToggle={() => void updateMute(input)}
+                hotkey={mixerHotkey(input.name)}
+              />
+            ))}
+            {!inputs.length && <EmptyRow text="OBS ses girişleri burada görünür." />}
+          </div>
+        </WidgetCard>
+      </div>
 
       {shortcuts && (
         <ObsShortcutSettings
@@ -422,22 +421,19 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
         />
       )}
 
-      <section className="rounded-xl border border-white/[0.07] bg-[#101216] p-3">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 className="flex items-center gap-2 text-xs font-semibold text-white">
-              <Settings2 className="h-4 w-4 text-panel-accent" /> Reaktif OBS Otomasyonu
-            </h3>
-            <p className="mt-1 text-[10px] text-panel-muted">
-              Yüksek bağış veya emote kombosu eşik değerini aşınca Rust motoru OBS’i tetikler.
-            </p>
-          </div>
-          <ControlSwitch
-            enabled={automation.enabled}
-            onToggle={() => void saveAutomation({ ...automation, enabled: !automation.enabled })}
+      <WidgetCard
+        title="Reaktif OBS Otomasyonu"
+        description="Yüksek bağış ya da emote kombosu eşiği aşınca OBS'te sahneye geçer ya da bir kaynağı gösterir."
+        icon={<Settings2 className="h-4 w-4 text-axthrowa-violet" />}
+        action={
+          <Switch
+            checked={automation.enabled}
+            onCheckedChange={(enabled) => void saveAutomation({ ...automation, enabled })}
+            aria-label="Otomasyon açık"
           />
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
+        }
+      >
+        <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
           <CompactField
             label="Bağış eşiği"
             type="number"
@@ -452,10 +448,16 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
             onChange={(value) => setAutomation((prev) => ({ ...prev, comboThreshold: Math.max(0, Number(value) || 0) }))}
             onBlur={() => void saveAutomation(automation)}
           />
-          <label className="block text-[10px] text-panel-muted">
-            <span className="mb-1 block">Aksiyon</span>
+          <CompactField
+            label="Bekleme (sn)"
+            type="number"
+            value={String(automation.cooldownSec)}
+            onChange={(value) => setAutomation((prev) => ({ ...prev, cooldownSec: Math.max(1, Number(value) || 1) }))}
+            onBlur={() => void saveAutomation(automation)}
+          />
+          <Alan label="Eylem">
             <select
-              className="yya-input h-8 py-1 text-[11px]"
+              className={GIRDI}
               value={automation.action}
               onChange={(event) =>
                 void saveAutomation({
@@ -467,48 +469,52 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
               <option value="scene">Sahneye geç</option>
               <option value="source">Kaynağı göster</option>
             </select>
-          </label>
-          <label className="block text-[10px] text-panel-muted">
-            <span className="mb-1 block">Hedef sahne</span>
+          </Alan>
+          <Alan label="Hedef sahne">
             <select
-              className="yya-input h-8 py-1 text-[11px]"
+              className={GIRDI}
               value={automation.sceneName}
-              onChange={(event) =>
-                void saveAutomation({ ...automation, sceneName: event.target.value })
-              }
+              onChange={(event) => void saveAutomation({ ...automation, sceneName: event.target.value })}
             >
               <option value="">— seç —</option>
               {snapshot.scenes.map((scene) => (
                 <option key={scene} value={scene}>{scene}</option>
               ))}
             </select>
-          </label>
-          <label className="block text-[10px] text-panel-muted">
-            <span className="mb-1 block">Özel kaynak</span>
+          </Alan>
+          <Alan label="Gösterilecek kaynak">
             <select
               disabled={automation.action !== "source"}
-              className="yya-input h-8 py-1 text-[11px] disabled:opacity-40"
+              className={`${GIRDI} disabled:opacity-40`}
               value={automation.sourceName}
-              onChange={(event) =>
-                void saveAutomation({ ...automation, sourceName: event.target.value })
-              }
+              onChange={(event) => void saveAutomation({ ...automation, sourceName: event.target.value })}
             >
               <option value="">— seç —</option>
               {targetSources.map((source) => (
                 <option key={source.name} value={source.name}>{source.name}</option>
               ))}
             </select>
-          </label>
-          <CompactField
-            label="Bekleme (sn)"
-            type="number"
-            value={String(automation.cooldownSec)}
-            onChange={(value) => setAutomation((prev) => ({ ...prev, cooldownSec: Math.max(1, Number(value) || 1) }))}
-            onBlur={() => void saveAutomation(automation)}
-          />
+          </Alan>
         </div>
-      </section>
+      </WidgetCard>
     </div>
+  );
+}
+
+/** Kart içi giriş: kenarlık yok, ince iç ışık; odakta menekşe */
+const GIRDI =
+  "h-10 w-full rounded-xl bg-zinc-900/80 px-3 text-sm text-zinc-100 ring-1 ring-white/5 transition-all duration-300 placeholder:text-zinc-600 focus:outline-none focus:ring-axthrowa-violet/60";
+const DUGME =
+  "inline-flex items-center gap-2 rounded-xl bg-zinc-800/60 px-4 py-2 text-sm font-medium text-zinc-300 transition-all duration-300 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-40";
+const KISAYOL =
+  "w-24 rounded-lg bg-zinc-900/80 px-2 py-1.5 text-center font-mono text-[11px] text-zinc-200 ring-1 ring-white/5 transition-all duration-300 focus:outline-none focus:ring-axthrowa-violet/60";
+
+function Alan({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-xs font-medium text-zinc-400">{label}</span>
+      {children}
+    </label>
   );
 }
 
@@ -518,48 +524,17 @@ function CompactField({
   onChange,
   onBlur,
   type = "text",
-  className = "",
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
   type?: string;
-  className?: string;
 }) {
   return (
-    <label className={`block text-[10px] text-panel-muted ${className}`}>
-      <span className="mb-1 block">{label}</span>
-      <input
-        className="yya-input h-8 py-1 text-[11px]"
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onBlur={onBlur}
-      />
-    </label>
-  );
-}
-
-function ControlList({
-  title,
-  subtitle,
-  icon,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-white/[0.07] bg-[#101216] p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-xs font-semibold text-white">{icon}{title}</h3>
-        <span className="max-w-52 truncate text-[9px] text-panel-muted">{subtitle}</span>
-      </div>
-      <div className="max-h-52 space-y-1 overflow-y-auto">{children}</div>
-    </div>
+    <Alan label={label}>
+      <input className={GIRDI} type={type} value={value} onChange={(event) => onChange(event.target.value)} onBlur={onBlur} />
+    </Alan>
   );
 }
 
@@ -584,46 +559,28 @@ function ControlRow({
   hotkey?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-black/20 px-3 py-2">
-      {icon}
-      <div className="min-w-[6rem] flex-1">
-        <p className="truncate text-[11px] font-medium text-white/80">{label}</p>
-        <p className="truncate text-[9px] text-panel-muted">{hint}</p>
+    <div className="flex items-center justify-between gap-6 rounded-xl px-3 py-2.5 transition-all duration-300 hover:bg-zinc-800/50">
+      <div className="flex min-w-0 items-center gap-3">
+        {icon}
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="truncate text-sm font-medium tracking-tight text-zinc-100">{label}</p>
+          <p className="truncate text-xs text-zinc-500">{hint}</p>
+        </div>
       </div>
-      {hotkey && <div className="flex items-center gap-1.5">{hotkey}</div>}
-      <span className={`text-[9px] ${enabled ? "text-panel-accent" : "text-white/50"}`}>
-        {enabled ? enabledText : disabledText}
-      </span>
-      <ControlSwitch enabled={enabled} onToggle={onToggle} />
+      <div className="flex shrink-0 items-center gap-3">
+        {hotkey && <div className="flex items-center gap-1.5">{hotkey}</div>}
+        <span className={`w-16 text-right text-[11px] ${enabled ? "text-axthrowa-cyan" : "text-zinc-500"}`}>
+          {enabled ? enabledText : disabledText}
+        </span>
+        <Switch checked={enabled} onCheckedChange={onToggle} aria-label={`${label}: ${enabled ? enabledText : disabledText}`} />
+      </div>
     </div>
-  );
-}
-
-function ControlSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={enabled}
-      onClick={onToggle}
-      className={`relative h-5 w-9 rounded-full border transition ${
-        enabled ? "border-panel-accent/40 bg-panel-accent/25" : "border-white/10 bg-white/[0.05]"
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 h-3.5 w-3.5 rounded-full transition ${
-          enabled
-            ? "left-[18px] bg-panel-accent shadow-[0_0_8px_rgba(62,237,254,.45)]"
-            : "left-0.5 bg-white/35"
-        }`}
-      />
-    </button>
   );
 }
 
 function EmptyRow({ text }: { text: string }) {
   return (
-    <div className="flex min-h-20 items-center justify-center rounded-lg border border-dashed border-white/[0.07] text-[10px] text-panel-muted">
+    <div className="col-span-full flex min-h-24 items-center justify-center rounded-xl bg-zinc-900/50 px-6 text-center text-sm text-zinc-500">
       {text}
     </div>
   );

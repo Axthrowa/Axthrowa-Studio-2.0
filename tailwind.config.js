@@ -11,6 +11,14 @@ export default {
         // beyaz (anahtar topuzu, koyu editör zemini) için `pure-white`.
         white: "rgb(var(--fg-rgb, 255 255 255) / <alpha-value>)",
         "pure-white": "#ffffff",
+        // AxthrowA marka renkleri (sol menü, önizleme tuvali). Vurgu yalnız menekşe ve camgöbeği.
+        axthrowa: {
+          violet: "#8B5CF6",
+          cyan: "#06B6D4",
+          dark: "#09090B",
+          // Zeminden belirgin ayrılsın (zinc-900 / #18181B zemine çok yakındı, derinlik kayboluyordu)
+          card: "#1C1C21",
+        },
         teal: {
           50: "#e9fdff",
           100: "#cdfaff",
@@ -84,10 +92,19 @@ export default {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "none" },
         },
+        // Pencere / ipucu: soluk + hafif büyüme (çıkışta tersi)
+        "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+        "fade-out": { from: { opacity: "1" }, to: { opacity: "0" } },
+        "zoom-in": { from: { opacity: "0", transform: "scale(.95)" }, to: { opacity: "1", transform: "none" } },
+        "zoom-out": { from: { opacity: "1", transform: "none" }, to: { opacity: "0", transform: "scale(.95)" } },
       },
       animation: {
         "nav-in": "nav-in .35s ease both",
         "card-rise": "card-rise .4s ease both",
+        "fade-in": "fade-in .2s ease-out both",
+        "fade-out": "fade-out .2s ease-in both",
+        "zoom-in": "zoom-in .2s cubic-bezier(.22,1,.36,1) both",
+        "zoom-out": "zoom-out .2s ease-in both",
       },
     },
   },

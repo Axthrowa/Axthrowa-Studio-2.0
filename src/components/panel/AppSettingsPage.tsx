@@ -21,6 +21,7 @@ import type { MsgKey } from "../../i18n/messages";
 import type { AppPrefs, AppTheme } from "../../lib/appPrefs";
 import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
 import { Switch } from "../axthrowa/switch";
+import { LisansFormu } from "../axthrowa/LisansEkrani";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
@@ -383,6 +384,20 @@ export default function AppSettingsPage({
             </div>
           </div>
 
+          {isTauri() ? (
+            <>
+              <hr className="border-white/[0.08]" />
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-white">Premium lisans</h3>
+                  <p className="mt-1 text-xs font-medium text-white/75">
+                    Anahtar bu bilgisayarda Windows Kimlik Bilgisi Yöneticisi'nde saklanır; doğrulama çevrimdışıdır.
+                  </p>
+                </div>
+                <LisansFormu />
+              </div>
+            </>
+          ) : null}
           <hr className="border-white/[0.08]" />
           <Guncelleme />
           <hr className="border-white/[0.08]" />

@@ -35,6 +35,7 @@ pub mod single_instance;
 pub mod sistem_araci;
 pub mod eklenti;
 pub mod performans;
+pub mod lisans;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -785,6 +786,9 @@ pub fn run() {
       kick::login_window::import_kick_session_from_browser,
       kick::login_window::harvest_kick_bot_cookies,
       kick::login_window::kick_bot_session_status,
+      lisans::lisans_durumu,
+      lisans::lisans_etkinlestir,
+      lisans::lisans_kaldir,
       obs_client::connect_obs,
       obs_client::obs_get_status,
       obs_client::obs_disconnect,

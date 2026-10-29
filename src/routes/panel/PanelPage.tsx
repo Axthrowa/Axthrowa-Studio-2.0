@@ -121,6 +121,7 @@ import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
 import AppAlertModal from "@/components/axthrowa/AppAlertModal";
 import UpdateModal from "@/components/axthrowa/UpdateModal";
 import { Toast } from "@/components/axthrowa/Toast";
+import KarsilamaEkrani from "@/components/axthrowa/LisansEkrani";
 import { gunluk } from "../../lib/gunluk";
 import { useAxthrowaStore, useAxthrowaStoreKoprusu } from "../../store/useAxthrowaStore";
 import {
@@ -1519,6 +1520,7 @@ export default function PanelPage() {
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
     <PencereBasligi />
     <UpdateModal />
+    <KarsilamaEkrani />
     <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
       <NavTabBar

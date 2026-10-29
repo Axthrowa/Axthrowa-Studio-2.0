@@ -30,6 +30,7 @@
   },
   "bundle": {
     "active": true,
+    "licenseFile": "../LICENSE",
     "targets": [
       "nsis"
     ],
@@ -51,7 +52,10 @@
       "timestampUrl": "http://timestamp.digicert.com",
       "nsis": {
         "installMode": "currentUser",
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "icons/nsis-baslik.bmp",
+        "sidebarImage": "icons/nsis-kenar.bmp"
       }
     }
   }

@@ -26,10 +26,10 @@
   "dependencies": {
     "@fontsource/open-sans": "^5.3.0",
     "@phosphor-icons/react": "2.1.10",
-    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/api": "~2.11.0",
     "@tauri-apps/plugin-dialog": "^2.2.1",
-    "@tauri-apps/plugin-log": "^2.10.1",
-    "@tauri-apps/plugin-notification": "^2.8.0",
+    "@tauri-apps/plugin-log": "~2.9.0",
+    "@tauri-apps/plugin-notification": "~2.4.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^13.2.0",

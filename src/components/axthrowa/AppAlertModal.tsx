@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 import { dismissAppAlert, useAppAlert } from "../../lib/appAlert";
-import { Dialog } from "./dialog";
+import { Dialog } from "@/components/axthrowa/dialog";
 
 export default function AppAlertModal() {
   const simdiki = useAppAlert();

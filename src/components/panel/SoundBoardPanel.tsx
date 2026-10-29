@@ -18,7 +18,7 @@ import {
   Trash2,
   Volume2,
 } from "lucide-react";
-import CopyUrl from "../ui/CopyUrl";
+import CopyUrl from "@/components/axthrowa/CopyUrl";
 import HotkeyInput from "./HotkeyInput";
 import { useI18n } from "../../i18n";
 import { API_BASE, importLibraryFile } from "../../lib/api";

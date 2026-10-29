@@ -29,11 +29,11 @@ import VideoTrimBar from "../../components/panel/VideoTrimBar";
 import VideoScrubber from "../../components/panel/VideoScrubber";
 import TextStyleEditor from "../../components/panel/TextStyleEditor";
 import BotSessions from "../../components/panel/BotSessions";
-import CopyUrl from "../../components/ui/CopyUrl";
+import CopyUrl from "@/components/axthrowa/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar, { applyTabOrder } from "../../components/panel/NavTabBar";
-import PencereBasligi from "../../components/panel/PencereBasligi";
+import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import AppSettingsPage from "../../components/panel/AppSettingsPage";
 import SettingsSection from "../../components/panel/SettingsSection";
 import SoundBoardPanel from "../../components/panel/SoundBoardPanel";
@@ -119,7 +119,7 @@ import { clearNotice, pushNotice, useNotices } from "../../lib/notices";
 import { yayinSagligiIzle } from "../../lib/yayinSagligi";
 import { getStreamHealth } from "../../lib/obs";
 import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
-import AppAlertModal from "../../components/ui/AppAlertModal";
+import AppAlertModal from "@/components/axthrowa/AppAlertModal";
 import {
   clearCreditsSession,
   creditsSessionCounts,

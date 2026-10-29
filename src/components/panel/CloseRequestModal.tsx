@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { isTauri } from "@tauri-apps/api/core";
+import { useAxthrowaEvents } from "@/lib/useAxthrowaEvents";
 
 type Choice = "tray" | "quit" | "cancel";
 
@@ -11,24 +11,10 @@ type Choice = "tray" | "quit" | "cancel";
 export default function CloseRequestModal() {
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isTauri()) return;
-    let un: (() => void) | undefined;
-    let dead = false;
-    void import("@tauri-apps/api/event").then(({ listen, emit }) =>
-      listen("close-requested", () => {
-        setOpen(true);
-        void emit("close-ack");
-      }).then((fn) => {
-        if (dead) fn();
-        else un = fn;
-      })
-    );
-    return () => {
-      dead = true;
-      un?.();
-    };
-  }, []);
+  useAxthrowaEvents("close-requested", () => {
+    setOpen(true);
+    void import("@tauri-apps/api/event").then(({ emit }) => emit("close-ack"));
+  });
 
   const choose = useCallback((c: Choice) => {
     setOpen(false);

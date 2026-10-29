@@ -1,5 +1,5 @@
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
-import CopyUrl from "../ui/CopyUrl";
+import CopyUrl from "@/components/axthrowa/CopyUrl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PlayerStatus } from "../../lib/api";
 import { fetchPlayerStatus, sendPlayerCommand } from "../../lib/api";

@@ -31,8 +31,8 @@ import {
   type ObsSceneSnapshot,
   type ObsSourceInfo,
 } from "../../lib/obsControl";
-import { Switch } from "../ui/switch";
-import { WidgetCard } from "../ui/WidgetCard";
+import { Switch } from "@/components/axthrowa/switch";
+import { WidgetCard } from "@/components/axthrowa/WidgetCard";
 
 export type ObsShortcutBridge = {
   obs: ObsHotkeySlice;

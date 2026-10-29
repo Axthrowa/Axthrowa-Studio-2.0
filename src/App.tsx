@@ -31,14 +31,18 @@ const MasterOverlay = lazy(() => import("./routes/overlay/MasterOverlay"));
 const RemoteLoginPage = lazy(() => import("./routes/remote/RemoteLoginPage"));
 const LoginPage = lazy(() => import("./auth/LoginPage"));
 const ObsDockSayfasi = lazy(() => import("./routes/ObsDockSayfasi"));
+const SagTikMenusu = lazy(() => import("@/components/axthrowa/SagTikMenusu"));
+
+/** Tarayıcı sağ tık menüsünün AxthrowA menüsüyle değiştiği ekranlar (OBS'e verilen overlay sayfaları değil) */
+const PANEL_YOLLARI = new Set(["/", "/panel", "/dock"]);
 
 export default function App() {
   const loc = useLocation();
-  void loc;
   // Her sayfa kendi parçasını yükler: OBS katmanları (giriş/mola/sohbet…) panelin
   // tamamını (~1,3 MB) indirmesin. Yüklenirken saydam (OBS'te boş kare yok).
   return (
     <Suspense fallback={null}>
+    {PANEL_YOLLARI.has(loc.pathname) && <SagTikMenusu />}
     <Routes>
       <Route path="/" element={<PanelPage />} />
       <Route path="/panel" element={<PanelPage />} />

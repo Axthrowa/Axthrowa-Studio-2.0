@@ -11,7 +11,7 @@ import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInter
 import BotSessions from "./BotSessions";
 import { streamaxtBase } from "../../lib/streamaxt";
 import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
-import StatusDot from "../ui/StatusDot";
+import StatusDot from "@/components/axthrowa/StatusDot";
 import EndRulesEditor from "./EndRulesEditor";
 
 type Props = {

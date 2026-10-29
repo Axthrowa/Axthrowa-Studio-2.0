@@ -22,6 +22,7 @@ use crate::settings::ScreenKind;
 use crate::AppState;
 
 mod actions_api;
+pub mod asistan_api;
 pub(crate) use actions_api::kisayol_eylemi;
 mod auth;
 mod botaxt;
@@ -198,6 +199,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(runtime_api::router())
     .merge(multistream_api::router())
     .merge(actions_api::router())
+    .merge(asistan_api::router())
     .merge(destek_api::router())
     .merge(guncelleme_api::router())
     .merge(yedek_api::router())
@@ -872,6 +874,11 @@ async fn api_kick_bot_session_test(
 async fn api_clear_platform_chats(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
+  Ok(Json(sohbeti_temizle(&state).await))
+}
+
+/// Sohbet katmanını sıfırlar ve Kick sohbetini platformda temizler (`/clear`). Panel düğmesi ve asistan kullanır.
+pub(crate) async fn sohbeti_temizle(state: &AppState) -> Value {
   let epoch = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map(|d| d.as_millis() as u64)
@@ -899,11 +906,11 @@ async fn api_clear_platform_chats(
       }),
     },
   };
-  Ok(Json(json!({
+  json!({
     "local": true,
     "kick": kick_cmd.get("ok").and_then(|v| v.as_bool()).unwrap_or(false),
     "kickError": kick_cmd.get("error").cloned(),
-  })))
+  })
 }
 
 async fn api_kick_bot_session_refresh_xsrf(

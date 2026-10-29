@@ -37,6 +37,7 @@ pub mod eklenti;
 pub mod performans;
 pub mod lisans;
 pub mod hata_raporu;
+pub mod asistan;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -790,6 +791,7 @@ pub fn run() {
       kick::login_window::import_kick_session_from_browser,
       kick::login_window::harvest_kick_bot_cookies,
       kick::login_window::kick_bot_session_status,
+      server::asistan_api::asistan_komut,
       hata_raporu::hata_raporu_durumu,
       hata_raporu::hata_raporu_izni,
       lisans::lisans_durumu,

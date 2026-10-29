@@ -13,6 +13,7 @@
 #   secrets.SURUM_TOKEN       SURUM_DEPOSU verildiyse o depoya "Contents: write" yetkili ince ayarlı belirteç
 #   secrets.SENTRY_DSN        (isteğe bağlı) çökme raporları; yoksa uygulamada Sentry hiç kurulmaz
 #   secrets.POSTHOG_KEY       (isteğe bağlı) anonim analitik; yoksa PostHog hiç yüklenmez (AB sunucusu)
+#   secrets.SENTRY_AUTH_TOKEN (isteğe bağlı) sürümü Sentry'ye bildirmek için; vars.SENTRY_ORG, vars.SENTRY_PROJECT
 #
 # macOS (Apple Silicon .dmg) ve Linux (.deb, AppImage) işleri Windows sürümü yayınlandıktan sonra çalışır ve
 # dosyalarını aynı sürüme ekler; biri başarısız olsa Windows sürümü etkilenmez. macOS paketi imzasızdır
@@ -206,7 +207,8 @@ jobs:
       - name: Sistem paketleri (WebKitGTK, tepsi, gizli anahtar deposu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev             libssl-dev libdbus-1-dev libxdo-dev pkg-config patchelf file
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+            libssl-dev libdbus-1-dev libxdo-dev pkg-config patchelf file
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -235,4 +237,28 @@ jobs:
           surum="${ETIKET#v}"
           cp src-tauri/target/release/bundle/deb/*.deb "YayinYonetimAraci-$surum-amd64.deb"
           cp src-tauri/target/release/bundle/appimage/*.AppImage "YayinYonetimAraci-$surum-x86_64.AppImage"
-          gh release upload "$ETIKET" "YayinYonetimAraci-$surum-amd64.deb" "YayinYonetimAraci-$surum-x86_64.AppImage"             --repo "$DEPO" --clobber
+          gh release upload "$ETIKET" "YayinYonetimAraci-$surum-amd64.deb" "YayinYonetimAraci-$surum-x86_64.AppImage" \
+            --repo "$DEPO" --clobber
+
+  # Derlemeler bitince sürümü Sentry'ye bildirir: çökme raporları bu sürüme bağlanır. Sürüm adı uygulamanın
+  # gönderdiğiyle aynı olmalı (sentry::release_name! = <crate adı>@<sürüm>). Belirteç yoksa adım atlanır.
+  sentry:
+    needs: [windows, macos, linux]
+    # macOS/Linux başarısız olsa da Windows sürümü yayındaysa bildir
+    if: ${{ always() && needs.windows.result == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      ETIKET: ${{ github.ref_name }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+    steps:
+      - name: Sentry sürümü
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_ORG" ] || [ -z "$SENTRY_PROJECT" ]; then
+            echo "Sentry ayarlı değil; atlandı"
+            exit 0
+          fi
+          surum="yayin-yonetim-araci@${ETIKET#v}"
+          npx --yes @sentry/cli@2 releases new "$surum"
+          npx --yes @sentry/cli@2 releases finalize "$surum"

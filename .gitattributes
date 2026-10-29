@@ -1,2 +1,4 @@
 # sqlx migrasyon sağlaması bayt bayt hesaplanır; CRLF çekim mevcut DB ile uyuşmaz
 src-tauri/migrations/*.sql text eol=lf
+# Bash betiği Linux/macOS’ta CRLF ile çalışmaz
+dev.sh text eol=lf

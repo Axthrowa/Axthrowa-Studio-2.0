@@ -1,0 +1,41 @@
+# Her push ve PR'da: tür denetimi, arayüz ve Rust sınamaları. İmza ve sürüm burada yok: kurulumlar yalnız
+# `v1.2.3` etiketiyle release.yml'de derlenip imzalanır (her push'ta üç platform derleyip imzalamak hem yavaş
+# hem de sertifikayı gereksiz yere açar).
+name: Denetim
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: denetim-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Bağımlılıklar
+        run: npm ci
+      - name: Arayüz (tsc + vitest)
+        run: |
+          npm run typecheck
+          npm test
+      - name: Rust sınamaları
+        shell: bash
+        run: |
+          # tauri::generate_context! paketlenecek arayüz klasörlerinin var olmasını ister
+          npm run build
+          mkdir -p resonance/dist
+          cargo test --lib --manifest-path src-tauri/Cargo.toml

@@ -19,7 +19,8 @@ import {
 import { useI18n } from "../../i18n";
 import type { MsgKey } from "../../i18n/messages";
 import type { AppPrefs, AppTheme } from "../../lib/appPrefs";
-import { API_BASE } from "../../lib/api";
+import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
+import { Switch } from "../axthrowa/switch";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
@@ -81,6 +82,11 @@ export default function AppSettingsPage({
   const { skin, setSkin, skins } = useStudioTheme();
   const [tab, setTab] = useState<Tab>("general");
   const [msg, setMsg] = useState("");
+  // Rust okur (pencere simge durumuna inince): bu yüzden tarayıcı tercihinde değil, panel ayarında
+  const [tepsiyeKucult, setTepsiyeKucult] = useState(false);
+  useEffect(() => {
+    if (isTauri()) void fetchSettings("panel").then((s) => setTepsiyeKucult(s.tepsiyeKucult === true)).catch(() => {});
+  }, []);
 
   const set = (patch: Partial<AppPrefs>) => onPrefs({ ...prefs, ...patch });
 
@@ -266,6 +272,23 @@ export default function AppSettingsPage({
               <span>{t("settings.openObs")}</span>
             </label>
           </div>
+
+          {isTauri() ? (
+            <div className="flex items-center justify-between gap-6">
+              <div className="min-w-0">
+                <p className="text-xs md:text-sm font-bold text-white/85">{t("settings.trayOnMinimize")}</p>
+                <p className="mt-1 text-xs text-white/60">{t("settings.trayOnMinimizeHint")}</p>
+              </div>
+              <Switch
+                checked={tepsiyeKucult}
+                aria-label={t("settings.trayOnMinimize")}
+                onCheckedChange={(v) => {
+                  setTepsiyeKucult(v);
+                  void patchSettings("panel", { tepsiyeKucult: v }).catch(() => setTepsiyeKucult(!v));
+                }}
+              />
+            </div>
+          ) : null}
 
           {/* OBS Path */}
           <div className="space-y-2.5">

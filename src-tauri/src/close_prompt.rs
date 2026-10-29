@@ -1,7 +1,7 @@
 //! Pencerenin X düğmesi: doğrudan tepsiye atmak yerine ne yapılacağını sor.
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, Emitter, Listener, Manager};
+use tauri::{AppHandle, Emitter, Listener};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind, MessageDialogResult};
 
 const LABEL_TRAY: &str = "Sistem tepsisine küçült";
@@ -42,11 +42,7 @@ static ACKED: AtomicBool = AtomicBool::new(false);
 fn apply(app: &AppHandle, choice: CloseChoice) {
   OPEN.store(false, Ordering::SeqCst);
   match choice {
-    CloseChoice::Tray => {
-      if let Some(w) = app.get_webview_window("main") {
-        let _ = w.hide();
-      }
-    }
+    CloseChoice::Tray => crate::pencereyi_gizle(app),
     CloseChoice::Quit => {
       // Tepsideki "Çıkış" ile aynı: axum + tokio görevlerini zorla sonlandır.
       yya_log!("[pencere] Kapat — process::exit(0)");

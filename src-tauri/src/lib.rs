@@ -209,12 +209,47 @@ async fn fetch_kick_chatroom(slug: String) -> Result<serde_json::Value, String> 
 /// tarafından 64 px'e indirilip keskinleştiriliyor.
 const TRAY_ICON_PNG: &[u8] = include_bytes!("../icons/tray.png");
 
+/// Tepsi menüsündeki Göster/Gizle öğesi; yazısı pencerenin durumunu izler.
+struct TepsiGorunurluk(MenuItem<tauri::Wry>);
+
+/// Ana pencereyi tepsiden geri getirir (simge durumundaysa açar, öne alır).
+pub(crate) fn pencereyi_goster(app: &AppHandle) {
+  if let Some(w) = app.get_webview_window("main") {
+    let _ = w.unminimize();
+    let _ = w.show();
+    let _ = w.set_focus();
+  }
+  gorunurluk_yazisi(app, true);
+}
+
+/// Ana pencereyi tepsiye gizler: bot, HTTP ve WS çalışmaya devam eder.
+pub(crate) fn pencereyi_gizle(app: &AppHandle) {
+  if let Some(w) = app.get_webview_window("main") {
+    let _ = w.hide();
+  }
+  gorunurluk_yazisi(app, false);
+}
+
+fn gorunurluk_yazisi(app: &AppHandle, gorunur: bool) {
+  if let Some(oge) = app.try_state::<TepsiGorunurluk>() {
+    let _ = oge.0.set_text(if gorunur { "Gizle" } else { "Göster" });
+  }
+}
+
+/// Ayarlar › Genel: "Simge durumuna küçültünce tepsiye gönder" (panel ayarı `tepsiyeKucult`)
+fn kucultunce_tepsiye(app: &AppHandle) -> bool {
+  app
+    .try_state::<AppState>()
+    .is_some_and(|s| s.settings.read().get(ScreenKind::Panel).get("tepsiyeKucult").and_then(|v| v.as_bool()) == Some(true))
+}
+
 fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
-  let show = MenuItem::with_id(app, "show", "Göster", true, None::<&str>)?;
+  let gorunur = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(true);
+  let gorunurluk = MenuItem::with_id(app, "toggle", if gorunur { "Gizle" } else { "Göster" }, true, None::<&str>)?;
   let settings = MenuItem::with_id(app, "settings", "Ayarlar", true, None::<&str>)?;
-  let hide = MenuItem::with_id(app, "hide", "Tepsiye Küçült", true, None::<&str>)?;
   let quit = MenuItem::with_id(app, "quit", "Çıkış", true, None::<&str>)?;
-  let menu = Menu::with_items(app, &[&show, &settings, &hide, &quit])?;
+  let menu = Menu::with_items(app, &[&gorunurluk, &settings, &quit])?;
+  app.manage(TepsiGorunurluk(gorunurluk));
 
   // Simge **açıkça** verilmeli. Eskiden `tauri.conf.json > app.trayIcon`
   // vardı ve Tauri ondan "main" kimliğiyle kendi tepsisini kuruyordu; buradaki
@@ -239,46 +274,36 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
         streamaxt::shutdown();
         std::process::exit(0);
       }
-      "show" => {
-        if let Some(w) = app.get_webview_window("main") {
-          let _ = w.unminimize();
-          let _ = w.show();
-          let _ = w.set_focus();
+      "toggle" => {
+        let acik = app
+          .get_webview_window("main")
+          .is_some_and(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false));
+        if acik {
+          pencereyi_gizle(app);
+        } else {
+          pencereyi_goster(app);
         }
       }
       "settings" => {
+        pencereyi_goster(app);
         if let Some(w) = app.get_webview_window("main") {
-          let _ = w.unminimize();
-          let _ = w.show();
-          let _ = w.set_focus();
           let url = format!("http://127.0.0.1:{DEFAULT_PORT}/#/panel?nav=settings");
           if let Ok(parsed) = url.parse() {
             let _ = w.navigate(parsed);
           }
         }
       }
-      "hide" => {
-        if let Some(w) = app.get_webview_window("main") {
-          // Gerçek tepsi: pencereyi gizle — bot/HTTP/WS çalışmaya devam eder.
-          let _ = w.hide();
-        }
-      }
       _ => {}
     })
-    .on_tray_icon_event(|tray, event| {
-      if let TrayIconEvent::Click {
+    // Sol tık ya da çift tık pencereyi getirir; menü sağ tıkta açılır
+    .on_tray_icon_event(|tray, event| match event {
+      TrayIconEvent::Click {
         button: MouseButton::Left,
         button_state: MouseButtonState::Up,
         ..
-      } = event
-      {
-        let app = tray.app_handle();
-        if let Some(w) = app.get_webview_window("main") {
-          let _ = w.unminimize();
-          let _ = w.show();
-          let _ = w.set_focus();
-        }
       }
+      | TrayIconEvent::DoubleClick { button: MouseButton::Left, .. } => pencereyi_goster(tray.app_handle()),
+      _ => {}
     })
     .build(app)?;
   Ok(())
@@ -698,6 +723,12 @@ pub fn run() {
         if window.label() == "main" {
           api.prevent_close();
           close_prompt::request(window.app_handle());
+        }
+      }
+      // Simge durumuna küçültülünce (ayar açıksa) görev çubuğundan da kalkıp tepsiye iner
+      if let tauri::WindowEvent::Resized(_) = event {
+        if window.label() == "main" && window.is_minimized().unwrap_or(false) && kucultunce_tepsiye(window.app_handle()) {
+          pencereyi_gizle(window.app_handle());
         }
       }
     })

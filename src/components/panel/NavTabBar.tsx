@@ -9,6 +9,8 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useAxthrowaStore } from "../../store/useAxthrowaStore";
+import { useT } from "../../i18n";
 import {
   Broadcast,
   ChatCircleDots,
@@ -96,6 +98,10 @@ export default function NavTabBar({
   const dragging = useRef(false);
   const lastOver = useRef<string | null>(null);
   const [activeDrag, setActiveDrag] = useState<string | null>(null);
+  const t = useT();
+  // Yalnız bu iki alan değişince çizilir (OBS koptu / yayın başladı → nokta anında değişir)
+  const obsBagli = useAxthrowaStore((s) => s.isObsConnected);
+  const canli = useAxthrowaStore((s) => s.isLive);
   // Seçilen sekmenin simgesi yaylanarak zıplar; sayaç aynı sekmeye tekrar tıklanınca da yeniden oynatır
   const [yay, setYay] = useState<{ id: string; n: number } | null>(null);
   const sec = (id: string) => {
@@ -172,7 +178,7 @@ export default function NavTabBar({
             </div>
           </div>
 
-          <nav className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pr-2" aria-label="Ana menü">
+          <nav className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pr-2" aria-label={t("nav.menu")}>
             {visibleTabs.map((id) => {
               const active = activeNav === id;
               const isDrag = activeDrag === id;
@@ -244,8 +250,23 @@ export default function NavTabBar({
                   {Icon && (
                     <span
                       key={yay?.id === id ? yay.n : "d"}
-                      className={"inline-flex shrink-0 transform-gpu " + (yay?.id === id ? "animate-yay" : "")}
+                      className={"relative inline-flex shrink-0 transform-gpu " + (yay?.id === id ? "animate-yay" : "")}
                     >
+                      {id === "yayin" ? (
+                        <span
+                          title={t(obsBagli ? "status.obsOn" : "status.obsOff")}
+                          className={
+                            "absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-axthrowa-dark transition-colors duration-300 " +
+                            (obsBagli ? "bg-axthrowa-cyan shadow-[0_0_6px_rgba(6,182,212,0.9)]" : "bg-zinc-600")
+                          }
+                        />
+                      ) : null}
+                      {id === "control" && canli ? (
+                        <span
+                          title={t("status.live")}
+                          className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)] ring-2 ring-axthrowa-dark"
+                        />
+                      ) : null}
                       <Icon
                         weight={active ? "duotone" : "bold"}
                         className={

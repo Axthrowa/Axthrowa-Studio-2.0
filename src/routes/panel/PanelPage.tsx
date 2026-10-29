@@ -56,7 +56,6 @@ import { resonanceLinkAllowed } from "../../lib/embedMessages";
 const ControlCenter = lazy(() => import("../../components/control/ControlCenter"));
 const ObsStudioPanel = lazy(() => import("../../components/panel/ObsStudioPanel"));
 import ThemeSelector from "../../components/ThemeSelector";
-import { I18nProvider } from "../../i18n";
 import { en, tr, type MsgKey } from "../../i18n/messages";
 import {
   applyThemeToDom,
@@ -122,6 +121,7 @@ import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
 import AppAlertModal from "@/components/axthrowa/AppAlertModal";
 import UpdateModal from "@/components/axthrowa/UpdateModal";
 import { gunluk } from "../../lib/gunluk";
+import { useAxthrowaStore, useAxthrowaStoreKoprusu } from "../../store/useAxthrowaStore";
 import {
   clearCreditsSession,
   creditsSessionCounts,
@@ -277,7 +277,10 @@ export default function PanelPage() {
   const [obsConnected, setObsConnected] = useState(false);
   const [dashBolum, setDashBolum] = useDashboardBolumu();
   const [masterBusy, setMasterBusy] = useState(false);
-  const [liveOn, setLiveOn] = useState(false);
+  // OBS'te elle başlatılan yayın da görünsün: durum store'da, Rust ve OBS olaylarıyla güncellenir
+  useAxthrowaStoreKoprusu();
+  const liveOn = useAxthrowaStore((s) => s.isLive);
+  const setLiveOn = useAxthrowaStore((s) => s.setLive);
   const [scenes, setScenes] = useState<string[]>([]);
   const scenesCountRef = useRef(0);
   scenesCountRef.current = scenes.length;
@@ -1509,10 +1512,7 @@ export default function PanelPage() {
   }, [visibleTabs, activeNav]);
 
   return (
-    <I18nProvider
-      locale={prefs.locale}
-      onLocaleChange={(l) => setPrefs((p) => ({ ...p, locale: l }))}
-    >
+    <>
       <CloseRequestModal />
     {/* Özel pencere başlığı (masaüstünde) + altında panel; panel kalan yüksekliği doldurur */}
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
@@ -3694,7 +3694,7 @@ export default function PanelPage() {
       </div>
     </div>
     </div>
-    </I18nProvider>
+    </>
   );
 }
 

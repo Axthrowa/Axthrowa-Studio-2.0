@@ -10,7 +10,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type ReactNode,
 } from "react";
 import { getBotConfig } from "../smartBot";
@@ -22,6 +21,7 @@ import {
   switchScene,
   type ObsConnection,
 } from "../obs";
+import { useAxthrowaStore } from "../../store/useAxthrowaStore";
 import { API_BASE, isObsMode } from "../api";
 import { logger } from "../logger";
 import { sendTwitchPrivmsg } from "../platformAuth/twitchWrite";
@@ -36,6 +36,10 @@ type ObsCtx = {
 };
 
 const Ctx = createContext<ObsCtx | null>(null);
+
+const setConnected = (isObsConnected: boolean) => useAxthrowaStore.setState({ isObsConnected });
+const setConnecting = (obsConnecting: boolean) => useAxthrowaStore.setState({ obsConnecting });
+const setLastError = (obsLastError: string | null) => useAxthrowaStore.setState({ obsLastError });
 
 function defaultCfg(): ObsConnection {
   return { host: "127.0.0.1", port: 4455, password: "" };
@@ -69,9 +73,9 @@ async function loadObsCfgFromServer(): Promise<ObsConnection> {
 }
 
 export function ObsProvider({ children }: { children: ReactNode }) {
-  const [connected, setConnected] = useState(() => isObsConnected());
-  const [connecting, setConnecting] = useState(false);
-  const [lastError, setLastError] = useState<string | null>(null);
+  const connected = useAxthrowaStore((s) => s.isObsConnected);
+  const connecting = useAxthrowaStore((s) => s.obsConnecting);
+  const lastError = useAxthrowaStore((s) => s.obsLastError);
   const cfgRef = useRef<ObsConnection>(defaultCfg());
 
   useEffect(() => {

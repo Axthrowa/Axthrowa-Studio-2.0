@@ -7,9 +7,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { ActivityFeedPanel, UniversalChatPanel } from "../components/control/UniversalChat";
 import { DeckPanel } from "../components/control/DeckPanel";
 import { YayinBilgisiDock } from "../components/control/YayinBilgisiDock";
-import { I18nProvider } from "../i18n";
 import { API_BASE } from "../lib/api";
-import { loadAppPrefs } from "../lib/appPrefs";
 import "../styles/desktop.css";
 import "@fontsource/open-sans/400.css";
 import "@fontsource/open-sans/700.css";
@@ -40,7 +38,6 @@ export function dockKimligi(arama: string): ObsDockKimligi {
 export default function ObsDockSayfasi() {
   const id = dockKimligi(window.location.search);
   const [mesaj, setMesaj] = useState<string | null>(null);
-  const [locale] = useState(() => loadAppPrefs().locale);
 
   useEffect(() => {
     document.title = `${AD[id]} — Yayın Yönetim Aracı`;
@@ -83,7 +80,7 @@ export default function ObsDockSayfasi() {
   }
 
   return (
-    <I18nProvider locale={locale}>
+    <>
       <div className="obs-yami flex h-screen flex-col p-1">
         <div className="custom-scrollbar min-h-0 flex-1 overflow-auto p-1.5">
           <Suspense fallback={<p className="p-3 text-[12px] dt-soluk">Yükleniyor…</p>}>{icerik}</Suspense>
@@ -94,6 +91,6 @@ export default function ObsDockSayfasi() {
           </div>
         )}
       </div>
-    </I18nProvider>
+    </>
   );
 }

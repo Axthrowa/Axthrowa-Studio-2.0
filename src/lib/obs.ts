@@ -1,6 +1,7 @@
 import OBSWebSocket from "obs-websocket-js";
 import { isAudioInput } from "./obsAudio";
 import { yayinBilerekDurduruluyor } from "./yayinSagligi";
+import { useAxthrowaStore } from "../store/useAxthrowaStore";
 
 export type ObsConnection = {
   host: string;
@@ -48,7 +49,14 @@ export function getObs() {
   if (!obs) obs = new OBSWebSocket();
   if (!dinleyicilerBagli) {
     dinleyicilerBagli = true;
-    obs.on("Identified", () => duyur(true));
+    obs.on("Identified", () => {
+      duyur(true);
+      // Bağlanınca o anki sahne ve yayın durumu; sonrası olaylarla gelir
+      void obs!.call("GetCurrentProgramScene").then((s) => useAxthrowaStore.setState({ currentScene: s.currentProgramSceneName })).catch(() => {});
+      void obs!.call("GetStreamStatus").then((s) => useAxthrowaStore.setState({ isLive: s.outputActive })).catch(() => {});
+    });
+    obs.on("CurrentProgramSceneChanged", (e) => useAxthrowaStore.setState({ currentScene: e.sceneName }));
+    obs.on("StreamStateChanged", (e) => useAxthrowaStore.setState({ isLive: e.outputActive }));
     obs.on("ConnectionClosed", (err: any) => {
       connectedKey = null;
       const kasitli = kasitliKapanis;

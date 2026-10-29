@@ -3,6 +3,9 @@
  * Başlık ile açıklama birbirine yakın, sağdaki eylem (düğme/anahtar) bu gruptan belirgin uzak.
  *
  *   <WidgetCard title="Sahneler" description="OBS'teki sahneler" action={<Switch … />}>…</WidgetCard>
+ *
+ * Çok dilli: kart metin çevirmez, çağıran verir —
+ *   const t = useT();  <WidgetCard title={t("nav.settings")} description={t("settings.trayOnMinimizeHint")} />
  */
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";

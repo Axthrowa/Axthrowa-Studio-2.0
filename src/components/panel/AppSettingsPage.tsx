@@ -23,6 +23,7 @@ import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
 import { Switch } from "../axthrowa/switch";
 import { LisansFormu } from "../axthrowa/LisansEkrani";
 import PrivacySettings from "../axthrowa/PrivacySettings";
+import DiscordKarti from "../axthrowa/DiscordKarti";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
@@ -398,6 +399,7 @@ export default function AppSettingsPage({
                   </p>
                 </div>
                 <LisansFormu />
+                <DiscordKarti />
               </div>
             </>
           ) : null}

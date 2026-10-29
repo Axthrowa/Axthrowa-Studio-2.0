@@ -795,6 +795,8 @@ pub fn run() {
       hata_raporu::hata_raporu_durumu,
       hata_raporu::hata_raporu_izni,
       lisans::lisans_durumu,
+      lisans::discord_kullanilabilir,
+      lisans::discord_bagla,
       lisans::lisans_etkinlestir,
       lisans::lisans_kaldir,
       obs_client::connect_obs,

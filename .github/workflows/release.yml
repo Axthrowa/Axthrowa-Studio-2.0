@@ -13,6 +13,7 @@
 #   secrets.SURUM_TOKEN       SURUM_DEPOSU verildiyse o depoya "Contents: write" yetkili ince ayarlı belirteç
 #   secrets.SENTRY_DSN        (isteğe bağlı) çökme raporları; yoksa uygulamada Sentry hiç kurulmaz
 #   secrets.POSTHOG_KEY       (isteğe bağlı) anonim analitik; yoksa PostHog hiç yüklenmez (AB sunucusu)
+#   vars.AXTHROWA_SITE_URL    (isteğe bağlı) tanıtım sitesi, ör. https://axthrowa.com — Discord'u Bağla düğmesi için
 #   secrets.SENTRY_AUTH_TOKEN (isteğe bağlı) sürümü Sentry'ye bildirmek için; vars.SENTRY_ORG, vars.SENTRY_PROJECT
 #
 # macOS (Apple Silicon .dmg) ve Linux (.deb, AppImage) işleri Windows sürümü yayınlandıktan sonra çalışır ve
@@ -113,6 +114,7 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          AXTHROWA_SITE_URL: ${{ vars.AXTHROWA_SITE_URL }}
         run: |
           npm run build
           npm run build:resonance
@@ -180,6 +182,7 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          AXTHROWA_SITE_URL: ${{ vars.AXTHROWA_SITE_URL }}
         run: |
           npm ci
           npm --prefix resonance ci
@@ -224,6 +227,7 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          AXTHROWA_SITE_URL: ${{ vars.AXTHROWA_SITE_URL }}
         run: |
           npm ci
           npm --prefix resonance ci

@@ -75,6 +75,28 @@ pub async fn lisans_kaldir() {
   log::info!(target: "lisans", "lisans kaldırıldı");
 }
 
+/// Tanıtım sitesi (derlemede `AXTHROWA_SITE_URL`, ör. https://axthrowa.com). Yoksa Discord bağlama görünmez.
+const SITE: Option<&str> = option_env!("AXTHROWA_SITE_URL");
+
+fn site() -> Option<&'static str> {
+  SITE.map(|s| s.trim().trim_end_matches('/')).filter(|s| s.starts_with("https://"))
+}
+
+#[tauri::command]
+pub fn discord_kullanilabilir() -> bool {
+  site().is_some()
+}
+
+/// Sitenin Discord sayfasını varsayılan tarayıcıda açar. Anahtar adresin # kısmında gider: sunucuya ve
+/// günlüklere ulaşmaz, arayüze (webview) de hiç verilmez.
+#[tauri::command]
+pub async fn discord_bagla() -> Result<(), String> {
+  let site = site().ok_or("Bu derlemede site adresi yok")?;
+  let anahtar = secret_store::get_secret(DEPO_ADI).ok_or("Önce Premium lisansı etkinleştirin")?;
+  dogrula(&anahtar)?;
+  crate::open_external_url(&format!("{site}/discord#anahtar={anahtar}"))
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

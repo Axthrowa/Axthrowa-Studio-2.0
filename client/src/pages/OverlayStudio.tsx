@@ -253,6 +253,14 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   }
 };
 
+/** Galeri önizlemesinin açılacağı boyut: widget'ın Tek URL katmanındaki varsayılan boyutu (OBS'teki gibi görünsün) */
+function onizlemeBoyutu(galeriId: string): { w: number; h: number } | undefined {
+  const anahtar = GALERI_KATMANI[galeriId]?.anahtar;
+  const v = KATMANLAR.find((k) => k.anahtar === anahtar)?.varsayilan;
+  // Ekran boyu şeritler (olay etiketleri 1840 px) önizlemede çok küçülmesin: genişlik 960 ile sınırlı
+  return v && (v.width < 1900 || v.height < 1060) ? { w: Math.min(960, v.width), h: v.height } : undefined;
+}
+
 /** Galeri kimliği → sunucudaki test adı (widgets/test/:ad). Listede olmayanın ayrı testi yok, önizlemesi var. */
 const TEST_ADI: Record<string, string> = {
   'activity-feed': 'activity-feed',
@@ -1275,13 +1283,20 @@ export function OverlayStudio() {
                             pointerEvents: tiklanir ? undefined : 'none',
                             // Kapalı katman tuvalde soluk görünür ki
                             // konumlandırılabilsin; OBS'te hiç çizilmez.
-                            opacity: item?.enabled ? 1 : 0.3,
-                            outline: secili ? '3px solid #a78bfa' : '1px dashed rgba(167,139,250,0.35)',
+                            outline: secili ? `3px ${item?.enabled ? 'solid' : 'dashed'} #a78bfa` : '1px dashed rgba(167,139,250,0.35)',
                             outlineOffset: 2,
                             borderRadius: 6
                           }}
                         >
-                          <div style={{ pointerEvents: 'none', width: '100%', height: '100%' }}>{icerik}</div>
+                          {item?.enabled ? (
+                            <div style={{ pointerEvents: 'none', width: '100%', height: '100%' }}>{icerik}</div>
+                          ) : (
+                            // Kaldırılan (Tek URL'ye dahil olmayan) widget içeriğiyle çizilmez: eskiden seçili kaldığı
+                            // için soluk hâliyle tuvalde duruyor, kaldırılmamış sanılıyordu. Yalnız yeri belli olur.
+                            <div style={{ pointerEvents: 'none', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(167,139,250,0.08)', color: '#c4b5fd', fontSize: 22, fontWeight: 800, textAlign: 'center', padding: 8 }}>
+                              {katman.etiket} — kapalı (Tek URL'de yok)
+                            </div>
+                          )}
                           {secili && (
                             <div
                               onPointerDown={(e) => handleResizePointerDown(e, katman.anahtar)}
@@ -1771,7 +1786,7 @@ export function OverlayStudio() {
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
                     <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
                     <div className="lg:sticky lg:top-0">
-                      <WidgetOnizleme url={selectedWidgetModal.url} testAdi={TEST_ADI[selectedWidgetModal.id]} />
+                      <WidgetOnizleme url={selectedWidgetModal.url} testAdi={TEST_ADI[selectedWidgetModal.id]} boyut={onizlemeBoyutu(selectedWidgetModal.id)} />
                     </div>
                   </div>
                 )}

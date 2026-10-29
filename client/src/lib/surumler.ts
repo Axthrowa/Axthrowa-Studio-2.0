@@ -11,6 +11,21 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.9.0',
+    ad: 'Komut Merkezi',
+    tarih: '2026-10-29',
+    notlar: [
+      'Komutlar › Yerleşik Komutlar: botun 101 komutunun tümü (takma adlar, kullanım örnekleri), aç/kapat, yetki ve bekleme; !komutlar listesi buradan, !komutlar oyunlar gibi kategoriyle ayrıntı',
+      'Subathon: duraklatılmış sayaca da elle süre eklenip çıkarılır; durum kartı yazıları ayarlanabilir',
+      'Widget galerisi: önizleme widget’ı OBS’teki boyutunda açar (çok küçük görünmüyor), taşan içerik kesilmez; "Test et" widget bağlanınca gönderir; Shoutout ve Olay Etiketleri testleri düzeldi',
+      'Hazır temalar renkle birlikte görünümü de değiştirir; hedef barlarında simge barla uyumlu rozet',
+      '!sr: Spotify / YouTube Music açık değilse sohbete anlaşılır bildirim',
+      'Emote kombo: toplanma ve saçılma kutunun içinde, rastgele yön/boy/düşüşle; skor tablosu yeni görünümler (TV yayını, neon, HUD) ve skor animasyonu',
+      'Bağış kupası: doğal düşüş (yerçekimi, sekme) ve alttan düzgün dolan yığın; sohbette ayrı giriş/çıkış animasyonları, ödül/bağış satırları süre sonunda kaybolur',
+      'Tek URL stüdyosu: kaldırılan widget önizlemede içeriğiyle görünmez'
+    ]
+  },
+  {
     surum: '1.8.0',
     ad: 'Sohbet Görünümleri',
     tarih: '2026-10-28',

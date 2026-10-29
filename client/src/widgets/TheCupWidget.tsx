@@ -7,9 +7,9 @@
  * (modules/engagement/kupa.ts): OBS sayfası yenilense de kupa dolu kalır,
  * panelden "Kupayı sıfırla" ile boşaltılır.
  *
- * Öğeler eskiden flex satırlarına dizildiği için simetrik duruyordu. Artık her
- * öğe rastgele bir yatay konuma düşer ve altındaki yığının üstüne, rastgele
- * açıyla yerleşir. Konum öğe kimliğinden tohumlanır: yenilemede aynı kalır.
+ * Yerleşim: tuğla dizisi gibi alttan yukarı sıra sıra dolar (her sırada boşluk sırası rastgele), öğeler
+ * hafif kayık ve döndürülmüş durur; kupanın yuvarlak tabanında alt sıralar daralır. Düşüş yerçekimiyle
+ * hızlanır, yana sapar, döner ve yere değince küçük bir sekmeyle oturur.
  */
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -22,6 +22,8 @@ interface Oge {
   tur: string;
   /** Yeni düştü: yukarıdan düşme animasyonu */
   yeni?: boolean;
+  /** Aynı anda düşenler arka arkaya düşsün (ms) */
+  gecikme?: number;
 }
 
 export interface TheCupWidgetProps {
@@ -62,44 +64,49 @@ export interface Yerlesim {
 }
 
 /**
- * Yığın yerleşimi: kupa tabanı sütunlara bölünür; her öğe yığının EN ALÇAK yerine düşer (sıvı gibi
- * katman katman dolar) ve kapladığı sütunların en yükseğinin üstüne biraz iç içe oturur. Eskiden x
- * rastgeleydi: bir yerde kule, yanında boşluk oluşuyordu.
+ * Yığın yerleşimi: tuğla dizisi gibi alttan yukarı sıra sıra (tek sıralar yarım adım kayık). Her sıranın
+ * boşlukları tohumlu rastgele sırayla dolar: yığın hep düz ve homojen, ama dizilim ızgara gibi değil.
+ * Konum yalnız sıradaki yerden (indeks) ve kimlikten gelir: yeni öğe düşünce eskiler yerinden oynamaz.
+ * `kose`: kupanın taban köşe yarıçapı; alt sıralar köşelerde daralır.
  */
 export function yigin(
   ogeler: Array<{ id: string; tur: string }>,
   genislik: number,
-  s: { itemSize?: number; itemSizeVary?: number } & Parameters<typeof emojiSeti>[1]
+  s: { itemSize?: number; itemSizeVary?: number } & Parameters<typeof emojiSeti>[1],
+  kose = 0
 ): Yerlesim[] {
-  const SUTUN = 4;
-  const n = Math.max(1, Math.floor(genislik / SUTUN));
-  const yukseklik = new Array<number>(n).fill(0);
   const taban = Math.max(8, Number(s.itemSize) || 24);
   const oynak = Math.max(0, Number(s.itemSizeVary) || 0);
-  return ogeler.map((o) => {
+  const adim = (taban + oynak / 2) * 0.9;
+  const satirH = (taban + oynak / 2) * 0.74;
+  const yerler: Array<{ x: number; y: number }> = [];
+  let satir = 0;
+  const satirUret = () => {
+    const y = satir * satirH;
+    // Yuvarlak tabanda bu yükseklikte kullanılabilir genişlik
+    const orta = y + taban / 2;
+    const iceri = kose > 0 && orta < kose ? kose - Math.sqrt(Math.max(0, kose * kose - (kose - orta) ** 2)) : 0;
+    const kayma = satir % 2 ? adim / 2 : 0;
+    const kullanilir = Math.max(taban, genislik - iceri * 2 - kayma);
+    const n = Math.max(1, Math.floor((kullanilir - taban) / adim) + 1);
+    const bas = iceri + kayma + (kullanilir - ((n - 1) * adim + taban)) / 2;
+    const sira = Array.from({ length: n }, (_, i) => i);
+    const r = tohumlu(`satir-${satir}`);
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1));
+      [sira[i], sira[j]] = [sira[j], sira[i]];
+    }
+    for (const i of sira) yerler.push({ x: bas + i * adim, y });
+    satir++;
+  };
+  return ogeler.map((o, i) => {
+    while (yerler.length <= i) satirUret();
+    const yer = yerler[i];
     const r = tohumlu(o.id);
     const set = emojiSeti(o.tur, s);
     const boyut = taban + Math.floor(r() * (oynak + 1));
-    const enGenis = Math.max(0, genislik - boyut);
-    const tepe = (x: number) => {
-      let u = 0;
-      for (let c = Math.max(0, Math.floor(x / SUTUN)); c <= Math.min(n - 1, Math.ceil((x + boyut) / SUTUN)); c++) u = Math.max(u, yukseklik[c]);
-      return u;
-    };
-    // Tüm konumlar denenir; eşit alçaklıkta olanlardan (yarım öğe payıyla) biri tohumla seçilir — düzenli ama ızgara gibi değil
-    const adaylar: Array<{ x: number; u: number }> = [];
-    for (let x = 0; x <= enGenis; x += SUTUN) adaylar.push({ x, u: tepe(x) });
-    if (!adaylar.length) adaylar.push({ x: 0, u: tepe(0) });
-    const enAlcak = Math.min(...adaylar.map((a) => a.u));
-    const uygun = adaylar.filter((a) => a.u <= enAlcak + boyut * 0.5);
-    const secilen = uygun[Math.floor(r() * uygun.length) % uygun.length];
-    const x = Math.min(enGenis, secilen.x + r() * SUTUN);
-    const bas = Math.max(0, Math.floor(x / SUTUN));
-    const son = Math.min(n - 1, Math.ceil((x + boyut) / SUTUN));
-    const ust = tepe(x);
-    // Öğeler biraz iç içe geçer (yığın doğal görünsün)
-    const y = Math.max(0, ust - boyut * (0.15 + r() * 0.2));
-    for (let c = bas; c <= son; c++) yukseklik[c] = y + boyut * 0.8;
+    const x = Math.min(Math.max(0, genislik - boyut), Math.max(0, yer.x + (r() - 0.5) * taban * 0.3 - (boyut - taban) / 2));
+    const y = Math.max(0, yer.y + (r() - 0.5) * taban * 0.16);
     return { x, y, boyut, aci: Math.round((r() - 0.5) * 70), emoji: set[Math.floor(r() * set.length) % set.length] };
   });
 }
@@ -143,7 +150,7 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
         const adet = Math.min(20, Math.max(1, Number(d.adet) || 1));
         const tur = String(d.type || 'tip');
         const tavan = Math.max(5, Number(ayarRef.current.maxItems) || 45);
-        setOgeler((onceki) => [...onceki, ...Array.from({ length: adet }, () => ({ id: yeniKimlik(), tur, yeni: true }))].slice(-tavan));
+        setOgeler((onceki) => [...onceki, ...Array.from({ length: adet }, (_, i) => ({ id: yeniKimlik(), tur, yeni: true, gecikme: i * 110 }))].slice(-tavan));
       } catch {
         /* bozuk mesaj */
       }
@@ -156,7 +163,8 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
   const yukseklik = Number(s.cupHeight) || 256;
   const kenar = Math.max(0, Number(s.borderWidth) || 0);
   const ic = Math.max(20, genislik - kenar * 2 - 12);
-  const yerlesim = useMemo(() => yigin(ogeler, ic, s), [ogeler, ic, s]);
+  const kose = Math.max(0, (Number(s.cupRadius) || 40) - kenar - 6);
+  const yerlesim = useMemo(() => yigin(ogeler, ic, s, kose), [ogeler, ic, s, kose]);
 
   const temaStili: Record<string, React.CSSProperties> = {
     glass: {
@@ -197,7 +205,14 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
       }
       style={{ justifyContent: yatay(s.align), fontFamily: s.fontFamily }}
     >
-      <style>{`@keyframes axt-kupa-dus { from { transform: translateY(-${yukseklik}px) rotate(var(--aci0)); opacity: .2 } 70% { opacity: 1 } to { transform: translateY(0) rotate(var(--aci)); } }`}</style>
+      <style>{`@keyframes axt-kupa-dus {
+        0% { transform: translate(var(--dx0), -${yukseklik + 40}px) rotate(var(--aci0)); animation-timing-function: cubic-bezier(.55,0,1,.45) }
+        64% { transform: translate(0, 0) rotate(var(--aci)) scale(1.06, .9); animation-timing-function: cubic-bezier(0,.55,.45,1) }
+        78% { transform: translate(0, calc(var(--sicra) * -1)) rotate(var(--aci)) scale(.97, 1.04); animation-timing-function: cubic-bezier(.55,0,1,.45) }
+        90% { transform: translate(0, 0) rotate(var(--aci)) scale(1.02, .97); animation-timing-function: cubic-bezier(0,.55,.45,1) }
+        95% { transform: translate(0, calc(var(--sicra) * -.25)) rotate(var(--aci)) }
+        100% { transform: translate(0, 0) rotate(var(--aci)) }
+      }`}</style>
       <div className="relative flex flex-col items-center">
         <div
           className="relative overflow-hidden"
@@ -237,8 +252,13 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
                       lineHeight: 1,
                       transform: `rotate(${y.aci}deg)`,
                       '--aci': `${y.aci}deg`,
-                      '--aci0': `${-y.aci}deg`,
-                      animation: o.yeni && s.animateItems !== false ? 'axt-kupa-dus 750ms cubic-bezier(.45,.05,.75,1.2) both' : undefined
+                      // Düşerken döner ve yana sapar; sekme boya göre
+                      '--aci0': `${y.aci + (i % 2 ? 1 : -1) * (180 + (i * 37) % 180)}deg`,
+                      '--dx0': `${((i * 53) % 81) - 40}px`,
+                      '--sicra': `${Math.round(y.boyut * 0.45)}px`,
+                      transformOrigin: '50% 100%',
+                      animation:
+                        o.yeni && s.animateItems !== false ? `axt-kupa-dus ${900 + ((i * 71) % 300)}ms linear ${o.gecikme || 0}ms both` : undefined
                     } as React.CSSProperties
                   }
                 >

@@ -110,3 +110,14 @@ describe('YYA Spotify sırası (bot tarafında)', () => {
     expect(sirasiGeldi({ isPlaying: true, progress: 50_000, duration: 200_000, updatedAt: 1 } as any, 8_001)).toBe(false);
   });
 });
+
+import { calarKapali, spotifyHataYaniti } from './songrequest.js';
+
+describe('!sr çalar kapalıyken', () => {
+  it('çalar bağlı değilse istek alınmaz, video kipinde alınır; Spotify cihaz hatası izleyiciye anlaşılır', () => {
+    expect(calarKapali({ videoKipi: false, otomatik: false })).toBe(true);
+    expect(calarKapali({ videoKipi: true, otomatik: false })).toBe(false);
+    expect(calarKapali({ videoKipi: false, otomatik: true })).toBe(false);
+    expect(spotifyHataYaniti('Ali', new Error('Açık Spotify cihazı yok — Spotify uygulamasında bir şey çalmaya başlat.'))).toContain('Spotify şu an açık değil');
+  });
+});

@@ -40,6 +40,11 @@ describe('subathon kalan süre', () => {
     vi.advanceTimersByTime(10 * 3600_000);
     (subathon as any).durumuYukle();
     expect(subathon.durumAl()).toMatchObject({ aktif: false, duraklatildi: true, kalanSaniye: 535 });
+
+    // Duraklıyken elle ekleme/çıkarma saklı süreyi değiştirir; otomatik olay değiştirmez
+    expect(subathon.sureEkle(300, 'elle', true).kalanSaniye).toBe(835);
+    expect(subathon.sureEkle(-900, 'elle', true)).toMatchObject({ kalanSaniye: 0, duraklatildi: false });
+    expect(subathon.sureEkle(600, 'abone').kalanSaniye).toBe(0);
     vi.useRealTimers();
   });
 });

@@ -31,3 +31,17 @@ describe('önizleme odağı', () => {
     expect(kapsa(a, { x: 0, y: 30, w: 50, h: 100 })).toEqual({ x: 0, y: 10, w: 110, h: 120 });
   });
 });
+
+import { dagilmaParcalari, toplanmaBaslangici } from '../widgets/EmoteComboWidget.js';
+
+describe('emote kombo saçılması', () => {
+  it('parçalar kutunun içinde kalır ve yönleri düzgün halka değil rastgele', () => {
+    const p = dagilmaParcalari(10, 400, 200);
+    expect(p.length).toBe(14);
+    expect(p.every((x) => Math.abs(x.dx) <= 200 * 1.05 && Math.abs(x.dy) <= 100 * 1.35)).toBe(true);
+    const uzaklik = p.map((x) => Math.hypot(x.dx / 200, x.dy / 100));
+    expect(Math.max(...uzaklik) - Math.min(...uzaklik)).toBeGreaterThan(0.1);
+    const b = toplanmaBaslangici(400, 200, () => 0);
+    expect(b).toEqual({ dx: 200 * 0.85, dy: 0 });
+  });
+});

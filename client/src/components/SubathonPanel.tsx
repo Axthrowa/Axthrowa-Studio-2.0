@@ -238,14 +238,14 @@ export function SubathonPanel() {
         </label>
         <button
           onClick={() => cagir('add', { dakika: Math.abs(elleDakika) })}
-          disabled={!durum.aktif}
+          disabled={!elleDakika}
           className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1"
         >
           <Plus className="w-3.5 h-3.5" /> Ekle
         </button>
         <button
           onClick={() => cagir('add', { dakika: -Math.abs(elleDakika) })}
-          disabled={!durum.aktif}
+          disabled={!elleDakika}
           className="px-3 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1"
         >
           <Minus className="w-3.5 h-3.5" /> Çıkar

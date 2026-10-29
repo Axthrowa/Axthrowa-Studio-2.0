@@ -37,6 +37,7 @@ import { duzenliler } from '../community/regulars.js';
 import { votekick, bingo, ayarSayi, kappagenGonder, metindenEmoteler } from '../community/topluluk.js';
 import { emoteAdlari } from '../community/oyunlar.js';
 import { yediTv } from '../emotes/yedi-tv.js';
+import { komutlarMetni, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -163,7 +164,12 @@ export class CommandManager {
    * "gönderildi" ardından "yetersiz bakiye") her zaman yazılır — yapılan
    * işlemin onayı yutulmaz. Mod ve yayıncı muaf. '' döner: özel komuta düşülmez.
    */
+  /** Panelden bekleme verilen yerleşik komutun son yanıtı (asıl ad → zaman) */
+  private yerlesikBeklemeSon: Map<string, number> = new Map();
+
   private yerlesikSeli(ad: string, message: ChatMessagePayload, sonuc: string): string {
+    const kayit = yerlesikBul(ad);
+    if (kayit) this.yerlesikBeklemeSon.set(kayit.ad, Date.now());
     if (!sonuc || message.user.isMod || message.user.isBroadcaster) return sonuc;
     const k = `${message.platform}:${message.user.username.toLowerCase()}:${ad}`;
     const simdi = Date.now();
@@ -276,6 +282,17 @@ export class CommandManager {
     return `📅 ${hedef} hesabı ${metin} önce açılmış (${new Date(t).toLocaleDateString('tr-TR')}).`;
   }
 
+  /** Panelden kapatılan yerleşik komutlar (asıl ya da eski kayıtlarda takma ad) */
+  private kapaliYerlesikler(): string[] {
+    try {
+      const v = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
+      return Array.isArray(v) ? v.map(String) : [];
+    } catch (e) {
+      seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
+      return [];
+    }
+  }
+
   /** `!anketac [süre] Soru | A | B` → anket açılır, seçenekler sohbete yazılır */
   private async anketAc(args: string[]): Promise<string> {
     const c = anketKomutuCoz(args);
@@ -287,11 +304,14 @@ export class CommandManager {
   }
 
   private async executeBuiltIn(name: string, args: string[], message: ChatMessagePayload): Promise<string | null> {
-    try {
-      const disabled = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
-      if (Array.isArray(disabled) && disabled.includes(name)) return null;
-    } catch (e) {
-      seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
+    // Kapatma asıl adla tutulur ve takma adları da kapsar (eskiden !puan kapalıyken !bakiye çalışıyordu)
+    const kayit = yerlesikBul(name);
+    if (this.kapaliYerlesikler().some((x) => x === name || x === kayit?.ad)) return null;
+    if (kayit) {
+      const ayar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'))[kayit.ad];
+      if (ayar && !yetkiYeterli(ayar.yetki, message.user)) return null;
+      const ayricalikli = message.user.isMod || message.user.isBroadcaster;
+      if (ayar?.bekleme && !ayricalikli && Date.now() - (this.yerlesikBeklemeSon.get(kayit.ad) || 0) < ayar.bekleme * 1000) return null;
     }
     const modul = Object.entries(MODULLER).find(([, adlar]) => adlar.includes(name))?.[0];
     if (modul && settingsCache.getBoolean(`modul_kapali_${modul}`, false)) return null;
@@ -976,14 +996,15 @@ export class CommandManager {
         const altKomut: Record<string, string> = { add: 'addcom', ekle: 'addcom', edit: 'editcom', duzenle: 'editcom', delete: 'delcom', del: 'delcom', remove: 'delcom', sil: 'delcom' };
         const yonlen = altKomut[trKatla(args[0] || '')];
         if (yonlen) return this.executeBuiltIn(yonlen, args.slice(1), message);
-        // Sabit liste yerine gercekten TANIMLI komutlar listelenir; kullanici
-        // komut ekleyince liste kendiliginden guncellenir.
+        // Yerleşik komutlar tek listeden (yerlesik-komutlar.ts), kapalı olanlar ve kapalı modüllerinkiler çıkarılır;
+        // eskiden 7 sabit ad yazılıyordu. `!komutlar oyunlar`: o kategorinin tümü kullanımlarıyla.
         const ozel = db
-          .prepare('SELECT name FROM commands WHERE is_enabled = 1 ORDER BY name LIMIT 25')
+          .prepare("SELECT name FROM commands WHERE is_enabled = 1 AND COALESCE(trigger_type, 'command') = 'command' ORDER BY use_count DESC, name LIMIT 40")
           .all() as Array<{ name: string }>;
-        const yerlesik = ['!puan', '!liderlik', '!uptime', '!izleme', '!oyunlar', '!sr', '!sor'];
-        const hepsi = [...yerlesik, ...ozel.map((c) => `!${String(c.name).replace(/^!/, '')}`)];
-        return `📌 Komutlar: ${[...new Set(hepsi)].join(', ')}`;
+        const modulKapali = Object.entries(MODULLER)
+          .filter(([m]) => settingsCache.getBoolean(`modul_kapali_${m}`, false))
+          .flatMap(([, adlar]) => adlar.map((a) => yerlesikBul(a)?.ad || a));
+        return komutlarMetni({ kategori: args.join(' ').trim() || undefined, kapali: [...this.kapaliYerlesikler(), ...modulKapali], ozel: ozel.map((c) => String(c.name)) });
       }
 
       // ---- Topluluk bahisleri (BotRix: !bet) -------------------------------

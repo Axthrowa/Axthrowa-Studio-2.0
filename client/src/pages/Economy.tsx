@@ -66,6 +66,15 @@ export function Economy() {
   const [users, setUsers] = useState<LoyaltyUser[]>([]);
   const [rewards, setRewards] = useState<LoyaltyRewardItem[]>([]);
   const [redemptions, setRedemptions] = useState<LoyaltyRedemption[]>([]);
+  // Sonuçlanan talepler (tamamlandı/iade) 10 dk sonra kuyruktan düşer; "Geçmiş" hepsini gösterir
+  const [gecmis, setGecmis] = useState(false);
+  const [simdi, setSimdi] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setSimdi(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const SONUCLANAN_KALMA_MS = 10 * 60_000;
+  const gorunenTalepler = gecmis ? redemptions : redemptions.filter((r) => r.status === 'pending' || simdi - Number(r.created_at) < SONUCLANAN_KALMA_MS);
   const [rates, setRates] = useState<LoyaltyRates>({
     pointsPerMessage: 2,
     pointsPerInterval: 15,
@@ -273,15 +282,21 @@ export function Economy() {
                 İzleyicilerin chatten (!al) veya marketten satın aldığı ödüller burada listelenir.
               </p>
             </div>
-            <button
-              onClick={fetchRedemptions}
-              className="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded-xl text-xs font-bold transition-all"
-            >
-              Yenile
-            </button>
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold" title="Kapalıyken tamamlanan ve iade edilen talepler 10 dakika sonra listeden düşer">
+                <input type="checkbox" checked={gecmis} onChange={(e) => setGecmis(e.target.checked)} className="accent-purple-600" />
+                Geçmişi göster
+              </label>
+              <button
+                onClick={fetchRedemptions}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                Yenile
+              </button>
+            </div>
           </div>
 
-          {redemptions.length === 0 ? (
+          {gorunenTalepler.length === 0 ? (
             <div className="text-center py-12 text-gray-500 text-xs">
               Henüz mağazadan talep edilen bir ödül bulunmuyor. Chat'te izleyiciler <code className="text-purple-300">!al &lt;ürün&gt;</code> yazdığında anında burada belirecektir.
             </div>
@@ -300,7 +315,7 @@ export function Economy() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 font-medium">
-                  {redemptions.map(r => (
+                  {gorunenTalepler.map(r => (
                     <tr key={r.id} className="hover:bg-white/5 transition-colors">
                       <td className="py-3 px-3 font-bold text-white flex items-center gap-1.5">
                         <span>@{r.display_name || r.username}</span>

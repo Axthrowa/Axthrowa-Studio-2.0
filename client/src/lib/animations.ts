@@ -171,15 +171,26 @@ export function animasyonCss(sureMs = 450): string {
   const satirlar: string[] = [];
   for (const a of ANIM_ON_AYARLARI) {
     if (a.id === 'none') {
-      satirlar.push('.axt-anim-none{animation:none}');
+      satirlar.push('.axt-anim-none{animation:none}', '.axt-cikis-none{animation:none;opacity:0}');
       continue;
     }
     const from = `opacity:${a.from.opacity ?? 1};transform:${a.from.transform ?? 'none'}`;
     satirlar.push(
       `@keyframes axt-on-${a.id}{from{${from}}to{opacity:1;transform:none}}`,
-      `.axt-anim-${a.id}{animation:axt-on-${a.id} ${sureMs}ms ${a.easing || 'ease'} both}`
+      `.axt-anim-${a.id}{animation:axt-on-${a.id} ${sureMs}ms ${a.easing || 'ease'} both}`,
+      // Çıkış: girişin tersi (görünürden uzak hâle), sonunda görünmez kalır
+      `.axt-cikis-${a.id}{animation:axt-on-${a.id} ${sureMs}ms ${a.easing || 'ease'} reverse both}`
     );
   }
+  // Sohbete özgü ek girişler (çıkışları da var)
+  satirlar.push(
+    '@keyframes axt-on-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:none}}',
+    '.axt-anim-pop{animation:axt-on-pop 420ms cubic-bezier(.34,1.56,.64,1) both}.axt-cikis-pop{animation:axt-on-pop 320ms ease-in reverse both}',
+    '@keyframes axt-on-bulanik{from{opacity:0;filter:blur(10px);transform:translateY(6px)}to{opacity:1;filter:none;transform:none}}',
+    '.axt-anim-bulanik{animation:axt-on-bulanik 500ms ease-out both}.axt-cikis-bulanik{animation:axt-on-bulanik 450ms ease-in reverse both}',
+    '@keyframes axt-on-elastik{0%{opacity:0;transform:scaleX(.3) scaleY(1.4)}55%{opacity:1;transform:scaleX(1.1) scaleY(.9)}80%{transform:scaleX(.97) scaleY(1.03)}100%{opacity:1;transform:none}}',
+    '.axt-anim-elastik{animation:axt-on-elastik 650ms ease-out both;transform-origin:left center}.axt-cikis-elastik{animation:axt-on-elastik 400ms ease-in reverse both;transform-origin:left center}'
+  );
   satirlar.push(
     '@keyframes axt-on-daktilo{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}',
     // "Hareketi azalt" burada uygulanmaz: katman İZLEYİCİYE gösterilir, yayın bilgisayarının

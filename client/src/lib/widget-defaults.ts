@@ -97,6 +97,8 @@ export const CHAT_DEFAULTS = {
   hideEmoteOnly: false,
   ignoreList: '',
   animation: 'fade',
+  // Kaybolan (eski, süresi dolan) mesajın animasyonu
+  exitAnimation: 'fade',
   align: 'left',
   reverse: false,
   layout: 'column',
@@ -105,6 +107,8 @@ export const CHAT_DEFAULTS = {
   messageBubbles: false,
   showDonations: true,
   showRedemptions: true,
+  // Bağış ve ödül kullanımı satırları bu kadar saniye sonra kaybolur (0 = kalır)
+  eventFadeSec: 30,
   messageBgColor: '#000000',
   messageBgOpacity: 0.5,
   borderRadius: 12,
@@ -160,6 +164,8 @@ export const GOAL_DEFAULTS = {
   barBorderColor: '#ffffff',
   barBorderWidth: 0,
   barIcon: '',
+  // Simge rozeti: barın başında ('start') ya da dolgunun ucunda ('tip')
+  barIconPosition: 'start',
   // Koyu gölge: açık/renkli sahnede yazı okunmuyordu
   textShadow: true
 };
@@ -406,7 +412,13 @@ export const SUBATHON_DEFAULTS = {
   radius: 16,
   icon: '⏳',
   showRules: true,
-  showStatus: true
+  showStatus: true,
+  // Durum kartı yazıları (boş bırakılan görünmez)
+  statusLiveText: 'CANLI SAYAÇ',
+  statusPausedText: 'DURAKLADI',
+  statusIdleText: 'BAŞLAMADI',
+  statusFontSize: 12,
+  totalAddedLabel: 'Bu yayında eklenen'
 };
 
 /** Kelime bulutu — sohbette en çok geçen sözcükler */
@@ -427,8 +439,10 @@ export const WORD_CLOUD_DEFAULTS = {
 
 /** Skor tablosu — takım adları/skorlar `!skortablo` ya da panelden */
 export const SCOREBOARD_DEFAULTS = {
-  theme: 'split',
+  theme: 'broadcast',
   showTitle: true,
+  // Önde olan takımda taç
+  showLeader: true,
   fontFamily: 'Russo One',
   fontSize: 48,
   textColor: '#ffffff',

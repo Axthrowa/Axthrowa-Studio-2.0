@@ -518,8 +518,10 @@ export function temayiUygula(
 ): Record<string, unknown> {
   const izinli = new Set(tanimliAnahtarlar);
   const yeni = { ...mevcut };
+  const gorunumKondu = new Set<string>();
   for (const [k, v] of Object.entries(tema.degerler)) {
     if (gecerli && !gecerli(k, v)) continue;
+    if (izinli.has(k) && GORUNUM_ANAHTARLARI.includes(k)) gorunumKondu.add(k);
     if (izinli.has(k)) yeni[k] = v;
     // Genel anahtarı widget kendi adıyla tanıyor (hedef barı: barColor/backgroundColor/fontColor);
     // tema o alanı ayrıca belirttiyse ona dokunulmaz
@@ -527,8 +529,65 @@ export function temayiUygula(
       if (izinli.has(es) && !(es in tema.degerler)) yeni[es] = v;
     }
   }
+  // Görünüm (yerleşim) de değişsin: temanın istediği görünüm bu widget'ta yoksa (ör. shoutout'ta "classic")
+  // eskiden yalnız renkler değişiyordu. Temanın aday görünümlerinden widget'ta olan ilki seçilir.
+  if (gecerli) {
+    const adaylar = [...(GORUNUM_ADAYLARI[tema.id] || []), ...(GORUNUM_ADAYLARI[String(tema.degerler.theme)] || [])];
+    for (const k of GORUNUM_ANAHTARLARI) {
+      if (!izinli.has(k) || gorunumKondu.has(k)) continue;
+      const bulunan = adaylar.find((a) => gecerli(k, a));
+      if (bulunan) yeni[k] = bulunan;
+    }
+  }
   return yeni;
 }
+
+/** Widget'ın yerleşimini belirleyen seçmeli alanlar */
+const GORUNUM_ANAHTARLARI = ['theme', 'chatStyle', 'comboStyle'];
+
+/**
+ * Tema kimliği (ya da genel görünüm adı) → sırayla denenecek görünümler. Widget'ların kendi görünüm adları
+ * (shoutout: card/banner/ribbon…, sohbet: klasik/neon/kompakt…, kombo: pixel/neon/clean) karışık durur;
+ * her widget kendinde olan ilkini alır.
+ */
+const GORUNUM_ADAYLARI: Record<string, string[]> = {
+  classic: ['classic', 'card', 'klasik', 'plate', 'stacked'],
+  minimal: ['minimal', 'compact', 'borderline', 'kompakt', 'clean'],
+  glass: ['glass', 'softcard', 'neumorph', 'baslikli'],
+  neon: ['neon', 'signal', 'prism', 'holochip'],
+  klasik: ['classic', 'card', 'klasik', 'plate'],
+  cam: ['glass', 'softcard', 'neumorph', 'baslikli'],
+  karbon: ['plate', 'classic', 'card', 'platformkart', 'status'],
+  aurora: ['glass', 'aurora', 'prism', 'holochip', 'horizon', 'baslikli'],
+  gunbatimi: ['horizon', 'ember', 'softcard', 'card', 'platformkart'],
+  gokyuzu: ['glass', 'softcard', 'horizon', 'baslikli'],
+  hacker: ['terminal', 'phosphor', 'pixel', 'retro', 'kompakt', 'clean'],
+  retro: ['retro', 'splitflap', 'kaset', 'pixel', 'card', 'klasik'],
+  pastel: ['cute', 'softcard', 'capsule', 'konusma', 'glass'],
+  beyaz: ['card', 'softcard', 'kart', 'classic', 'baslikli'],
+  kick: ['signal', 'neon', 'platformkart', 'classic'],
+  kadife: ['velvet', 'royal', 'softcard', 'glass'],
+  kor: ['ember', 'stage', 'neon'],
+  buz: ['glass', 'prism', 'holochip', 'baslikli'],
+  kagit: ['minimal', 'kart', 'card', 'softcard', 'borderline', 'kompakt'],
+  gece: ['stage', 'classic', 'card', 'baslikli'],
+  seker: ['cute', 'capsule', 'softcard', 'konusma'],
+  altin: ['royal', 'plate', 'velvet', 'neon'],
+  arcade: ['pixel', 'retro', 'splitflap', 'neon'],
+  piksel: ['pixel', 'retro', 'phosphor'],
+  siberpunk: ['hud', 'holochip', 'prism', 'neon'],
+  taktik: ['hud', 'status', 'signal', 'platformkart'],
+  fantastik: ['royal', 'ribbon', 'velvet', 'plate'],
+  yaris: ['hud', 'broadcast', 'signal', 'neon'],
+  zombi: ['terminal', 'phosphor', 'neon'],
+  uzay: ['holochip', 'hud', 'prism', 'neon'],
+  korku: ['ember', 'stage', 'neon'],
+  vahsibati: ['wood', 'ribbon', 'retro', 'plate'],
+  noir: ['borderline', 'minimal', 'stage', 'kompakt'],
+  gala: ['stage', 'royal', 'ribbon', 'plate'],
+  cizgiroman: ['tag', 'cute', 'capsule', 'banner', 'etiket'],
+  anime: ['cute', 'softcard', 'prism', 'capsule', 'konusma']
+};
 
 /** Genel tema anahtarı → widget'ların aynı anlamdaki kendi anahtarları. */
 const ESANLAMLI: Record<string, string[]> = {

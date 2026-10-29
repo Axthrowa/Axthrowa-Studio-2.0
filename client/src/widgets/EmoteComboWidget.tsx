@@ -17,29 +17,49 @@ import { emoteleriAyikla, guvenliEmoteAdresi, type EmoteParca } from '../lib/emo
 import { useYediTvHaritasi } from '../lib/yediTv.js';
 
 interface Combo { emote: EmoteParca; count: number; displayUntil: number }
-/** Ekranın kenarından büyük emote'a uçan kopya (vw/vh cinsinden başlangıç kayması) */
-interface Ucan { id: number; emote: EmoteParca; dx: number; dy: number }
-/** Kombo bitince merkezden dışa saçılan parça */
-interface Parca { aci: number; mesafe: number; donus: number; gecikme: number }
+/** Kutunun kenarından büyük emote'a uçan kopya (piksel cinsinden başlangıç kayması) */
+interface Ucan { id: number; emote: EmoteParca; dx: number; dy: number; donus: number }
+/** Kombo bitince merkezden saçılan parça (piksel) */
+export interface Parca { dx: number; dy: number; dusus: number; donus: number; gecikme: number; olcek: number }
 
-const TOPLANMA_MS = 650;
-const DAGILMA_MS = 1400;
+const TOPLANMA_MS = 900;
+const DAGILMA_MS = 1600;
 
-/** Kombo bitişinde saçılacak parçalar: sayı arttıkça daha çok (en çok 24), açılar eşit aralıklı + biraz rastgele. */
-export function dagilmaParcalari(adet: number, rastgele: () => number = Math.random): Parca[] {
-  const n = Math.max(6, Math.min(24, adet));
-  return Array.from({ length: n }, (_, i) => ({
-    aci: (i / n) * Math.PI * 2 + (rastgele() - 0.5) * 0.6,
-    mesafe: 28 + rastgele() * 22,
-    donus: (rastgele() - 0.5) * 720,
-    gecikme: rastgele() * 120
-  }));
+/**
+ * Kombo bitişinde saçılacak parçalar: yön, uzaklık, boy, dönüş ve gecikme tamamen rastgele; sonra yerçekimiyle
+ * düşerek kaybolur. Eskiden açılar eşit aralıklıydı (düzgün bir halka) ve uzaklık ekran yüzdesiyle (vw/vh)
+ * verildiği için Tek URL kutusunun dışına çıkıp kesiliyordu. `w`,`h`: kutunun boyutu (px).
+ */
+export function dagilmaParcalari(adet: number, w: number, h: number, rastgele: () => number = Math.random): Parca[] {
+  const n = Math.max(8, Math.min(28, adet + 4));
+  const rx = Math.max(60, w / 2);
+  const ry = Math.max(40, h / 2);
+  return Array.from({ length: n }, () => {
+    const aci = rastgele() * Math.PI * 2;
+    const oran = 0.3 + rastgele() * 0.75;
+    return {
+      dx: Math.cos(aci) * rx * oran,
+      dy: Math.sin(aci) * ry * oran - ry * 0.25 * rastgele(),
+      dusus: 30 + rastgele() * Math.max(40, ry * 0.8),
+      donus: (rastgele() - 0.5) * 900,
+      gecikme: rastgele() * 220,
+      olcek: 0.45 + rastgele() * 0.75
+    };
+  });
+}
+
+/** Toplanan emote'un başlangıcı: kutunun kenarına yakın rastgele bir nokta (px) */
+export function toplanmaBaslangici(w: number, h: number, rastgele: () => number = Math.random): { dx: number; dy: number } {
+  const aci = rastgele() * Math.PI * 2;
+  const oran = 0.85 + rastgele() * 0.25;
+  return { dx: Math.cos(aci) * Math.max(80, w / 2) * oran, dy: Math.sin(aci) * Math.max(50, h / 2) * oran };
 }
 
 const KOMBO_CSS = `
-@keyframes axt-kombo-toplan { from { transform: translate(var(--dx), var(--dy)) scale(.7); opacity: 0 } 15% { opacity: 1 } 85% { opacity: 1 } to { transform: translate(0, 0) scale(.35); opacity: 0 } }
-@keyframes axt-kombo-dagil { from { transform: translate(0, 0) rotate(0) scale(1); opacity: 1 } to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.6); opacity: 0 } }
-@keyframes axt-kombo-vurus { 0% { transform: scale(1) } 40% { transform: scale(1.18) } 100% { transform: scale(1) } }
+@keyframes axt-kombo-toplan { 0% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.1); opacity: 0 } 12% { opacity: 1 } 75% { opacity: 1; transform: translate(calc(var(--dx) * .18), calc(var(--dy) * .18)) rotate(0deg) scale(.85) } 100% { transform: translate(0, 0) scale(.3); opacity: 0 } }
+@keyframes axt-kombo-dagil { 0% { transform: translate(0, 0) rotate(0) scale(var(--s)); opacity: 1 } 55% { transform: translate(var(--dx), var(--dy)) rotate(calc(var(--rot) * .6)) scale(var(--s)); opacity: 1 } 100% { transform: translate(var(--dx), calc(var(--dy) + var(--fall))) rotate(var(--rot)) scale(calc(var(--s) * .7)); opacity: 0 } }
+@keyframes axt-kombo-vurus { 0% { transform: scale(1) } 40% { transform: scale(1.22) } 100% { transform: scale(1) } }
+@keyframes axt-kombo-halka { from { transform: scale(.4); opacity: .9 } to { transform: scale(2.2); opacity: 0 } }
 `;
 
 /** Emote görseli (Kick/7TV) ya da emoji/metin */
@@ -66,6 +86,12 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
   ayar.current = s;
   const harita = useRef(yediTv);
   harita.current = yediTv;
+  // Uçuş/saçılma uzaklıkları kutunun gerçek boyutundan (Tek URL katmanı ya da OBS kaynağı)
+  const kutu = useRef<HTMLDivElement>(null);
+  const kutuBoyutu = () => {
+    const r = kutu.current?.getBoundingClientRect();
+    return { w: r?.width || window.innerWidth, h: r?.height || window.innerHeight };
+  };
 
   useEffect(() => {
     if (onizleme) return;
@@ -92,8 +118,9 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
       // Kombo ekrandayken her yeni emote kenardan uçup büyük emote'ta toplanır
       if (a.gatherMode && count >= a.minCombo) {
         const id = ++fid;
-        const aci = Math.random() * Math.PI * 2;
-        setUcanlar((u) => [...u.slice(-20), { id, emote, dx: Math.cos(aci) * 48, dy: Math.sin(aci) * 48 }]);
+        const { w, h } = kutuBoyutu();
+        const b = toplanmaBaslangici(w, h);
+        setUcanlar((u) => [...u.slice(-20), { id, emote, dx: b.dx, dy: b.dy, donus: (Math.random() - 0.5) * 240 }]);
         setTimeout(() => setUcanlar((u) => u.filter((x) => x.id !== id)), TOPLANMA_MS + 50);
       } else if (a.showFloating) {
         const id = ++fid;
@@ -140,7 +167,8 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
         // Biten kombo: büyük emote parçalara ayrılıp etrafa saçılır ve kaybolur
         if (a.burstOnEnd && c.count >= a.minCombo) {
           const id = ++did;
-          setDagilma({ id, emote: c.emote, parcalar: dagilmaParcalari(c.count) });
+          const { w, h } = kutuBoyutu();
+          setDagilma({ id, emote: c.emote, parcalar: dagilmaParcalari(c.count, w, h) });
           setTimeout(() => setDagilma((d) => (d?.id === id ? null : d)), DAGILMA_MS + 200);
         }
         return null;
@@ -162,23 +190,30 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     <>
       <style>{KOMBO_CSS}</style>
       {ucanlar.map((u) => (
-        <span key={u.id} style={{ ...merkez, ['--dx' as any]: `${u.dx}vw`, ['--dy' as any]: `${u.dy}vh`, animation: `axt-kombo-toplan ${TOPLANMA_MS}ms ease-in forwards` }}>
-          <EmoteGorsel e={u.emote} boyut={40} />
+        <span key={u.id} style={{ ...merkez, zIndex: 2, ['--dx' as any]: `${u.dx}px`, ['--dy' as any]: `${u.dy}px`, ['--rot' as any]: `${u.donus}deg`, opacity: 0, animation: `axt-kombo-toplan ${TOPLANMA_MS}ms cubic-bezier(.45,.05,.55,.95) forwards`, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))' }}>
+          <EmoteGorsel e={u.emote} boyut={44} />
         </span>
       ))}
+      {dagilma && (
+        <span key={`halka-${dagilma.id}`} style={{ ...merkez, borderRadius: '50%', border: `3px solid ${s.borderColor || '#fbbf24'}`, opacity: 0, animation: 'axt-kombo-halka 600ms ease-out forwards' }} />
+      )}
       {dagilma?.parcalar.map((p, i) => (
         <span
           key={`${dagilma.id}-${i}`}
           style={{
             ...merkez,
-            ['--dx' as any]: `${Math.cos(p.aci) * p.mesafe}vw`,
-            ['--dy' as any]: `${Math.sin(p.aci) * p.mesafe}vh`,
+            zIndex: 2,
+            ['--dx' as any]: `${p.dx}px`,
+            ['--dy' as any]: `${p.dy}px`,
+            ['--fall' as any]: `${p.dusus}px`,
             ['--rot' as any]: `${p.donus}deg`,
+            ['--s' as any]: p.olcek,
             opacity: 0,
-            animation: `axt-kombo-dagil ${DAGILMA_MS}ms cubic-bezier(.15,.7,.3,1) ${p.gecikme}ms forwards`
+            filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))',
+            animation: `axt-kombo-dagil ${DAGILMA_MS}ms cubic-bezier(.2,.75,.35,1) ${p.gecikme}ms forwards`
           }}
         >
-          <EmoteGorsel e={dagilma.emote} boyut={Math.max(32, (Number(s.size) || 64) * 0.6)} />
+          <EmoteGorsel e={dagilma.emote} boyut={Math.max(32, (Number(s.size) || 64) * 0.7)} />
         </span>
       ))}
     </>
@@ -188,7 +223,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
   // ayrı sayfada üst öğenin genişliği 0 olduğundan kombo çiziliyor ama hiç görünmüyordu.
   const kap = props?.embedded ? { width: '100%', height: '100%' } : { width: '100vw', height: '100vh' };
   if (!combo || combo.count < s.minCombo) {
-    return <div style={{ position: 'relative', ...kap, overflow: 'hidden' }}>{yuzenler}{efektler}</div>;
+    return <div ref={kutu} style={{ position: 'relative', ...kap, overflow: 'hidden' }}>{yuzenler}{efektler}</div>;
   }
   // Toplanma açıkken büyük emote kombo büyüdükçe irileşir (en çok 2 kat)
   const buyukBoyut = (Number(s.size) || 64) * (s.gatherMode ? Math.min(2, 1 + combo.count * 0.04) : 1);
@@ -198,7 +233,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
   const sub = (s.subTemplate || '{emote} ÇILGINLIĞI!').replace('{emote}', combo.emote.ad).replace('{count}', String(combo.count));
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', ...kap, position: 'relative', overflow: 'hidden' }}>
+    <div ref={kutu} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', ...kap, position: 'relative', overflow: 'hidden' }}>
       {s.showPopup && (
         <div className={`axt-anim-${s.animation}`} style={{
           background: bg,

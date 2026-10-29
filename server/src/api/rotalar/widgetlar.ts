@@ -113,7 +113,7 @@ router.post('/subathon/reset', (_req: Request, res: Response) => {
 router.post('/subathon/add', (req: Request, res: Response) => {
   const dk = Number(req.body?.dakika);
   if (!Number.isFinite(dk) || dk === 0) return res.status(400).json({ error: 'dakika gerekli' });
-  res.json(subathon.sureEkle(Math.round(dk * 60), `${dk > 0 ? '+' : ''}${dk} dk · elle`));
+  res.json(subathon.sureEkle(Math.round(dk * 60), `${dk > 0 ? '+' : ''}${dk} dk · elle`, true));
 });
 
 // 18. All-in-One Overlay Settings (Single OBS URL: /widgets/overlay)
@@ -255,12 +255,16 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     case 'shoutout':
+      // Widget gerçek shoutout'taki gibi `data` içinde bekler; eskiden alanlar düz gönderildiği için test görünmüyordu
       wsHub.broadcastTo(['all'], {
         type: 'shoutout',
-        channel: body.channel || 'StreamMaster',
-        game: body.game || 'Grand Theft Auto VI',
-        avatarUrl: body.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop',
-        message: body.message || 'Bu harika yayıncıyı takip etmeyi unutmayın!'
+        data: {
+          channel: body.channel || 'StreamMaster',
+          platform: body.platform || 'kick',
+          game: body.game || 'Grand Theft Auto VI',
+          avatarUrl: body.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop',
+          message: body.message || 'Bu harika yayıncıyı takip etmeyi unutmayın!'
+        }
       });
       break;
     case 'credits':
@@ -329,7 +333,9 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       wsHub.triggerTestAlert(({ 'donation-goal': 'tip', 'follower-goal': 'follow', 'subscriber-goal': 'sub', 'kicks-goal': 'kicks' } as Record<string, string>)[widgetName]);
       break;
     case 'event-labels':
-      wsHub.triggerTestAlert(body.eventType || 'follow');
+      // Etiketler test uyarılarını bilerek yok sayar (gerçek "son takipçi" bozulmasın): test için örnek
+      // değerler birkaç saniye gösterilir, sonra gerçek değerlere dönülür
+      wsHub.broadcastTo(['all'], { type: 'event_labels_test' });
       break;
     case 'pinned-messages':
       wsHub.broadcastTo(['all'], {

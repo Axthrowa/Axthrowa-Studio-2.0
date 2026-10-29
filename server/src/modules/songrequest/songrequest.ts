@@ -53,6 +53,23 @@ function sistemdeAc(hedef: string): void {
   cocuk.unref();
 }
 
+/**
+ * İstek çalınabilir mi? Spotify/YouTube Music hedefinde çalar (bot ya da Yayın Yönetim Aracı üzerinden) bağlı
+ * değilse çalınamaz. Video kipinde klip OBS'te çalar, çalar gerekmez.
+ */
+export function calarKapali(d: { videoKipi: boolean; otomatik: boolean }): boolean {
+  return !d.videoKipi && !d.otomatik;
+}
+
+/** Spotify hatası sohbette izleyiciye anlaşılır yazılır (teknik ayrıntı panel günlüğünde kalır) */
+export function spotifyHataYaniti(kim: string, e: unknown): string {
+  const m = String((e as { message?: string })?.message || e);
+  console.warn(`[SongRequest] Spotify isteği başarısız: ${m.slice(0, 200)}`);
+  if (/cihaz|device|404/i.test(m)) return `@${kim}, Spotify şu an açık değil (çalan cihaz yok). Yayıncı Spotify'ı açınca tekrar dene.`;
+  if (/premium/i.test(m)) return `@${kim}, Spotify isteği için yayıncının Premium hesabı gerekiyor.`;
+  return `@${kim}, şarkı Spotify'a eklenemedi: ${m.slice(0, 120)}`;
+}
+
 export class SongRequestEngine {
   private currentSong: SongItem | null = null;
 
@@ -336,7 +353,7 @@ export class SongRequestEngine {
           ? `🎵 @${kim}, "${baslik}" şimdi Spotify'da çalıyor!`
           : `🎵 @${kim}, "${baslik}" Spotify sırasına eklendi — sıradaki şarkılardan sonra kendiliğinden çalacak.`;
       } catch (e: any) {
-        return `@${kim}, şarkı Spotify'a eklenemedi: ${String(e?.message || e).slice(0, 120)}`;
+        return spotifyHataYaniti(kim, e);
       }
     }
     try {
@@ -353,7 +370,7 @@ export class SongRequestEngine {
         ? `🎵 @${kim}, "${baslik}" şimdi Spotify'da çalıyor!`
         : `🎵 @${kim}, "${baslik}" Spotify sırasına eklendi — sıradaki şarkılardan sonra kendiliğinden çalacak.`;
     } catch (e: any) {
-      return `@${kim}, şarkı Spotify'a eklenemedi: ${String(e?.message || e).slice(0, 120)}`;
+      return spotifyHataYaniti(kim, e);
     }
   }
   private skipVotes: Set<string> = new Set();
@@ -379,6 +396,10 @@ export class SongRequestEngine {
     if (this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);
 
     const videoKipi = this.videoKipi();
+    // Müzik çalar açık değil: eskiden istek hiç çalmayacak bir sıraya "eklendi" diye alınıyordu
+    if (calarKapali({ videoKipi, otomatik: false })) {
+      return `@${message.user.displayName}, şu an Spotify ya da YouTube Music açık değil, isteğin çalınamaz. Yayıncı müzik çaları açınca tekrar dene.`;
+    }
     // Video kipinde Spotify linki başlığıyla YouTube'da aranır
     let aramaSorgusu = rawQuery;
     let videoId = '';

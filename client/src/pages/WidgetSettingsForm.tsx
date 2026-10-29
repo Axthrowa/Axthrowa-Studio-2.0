@@ -30,7 +30,7 @@ const LABELS: Record<string, string> = {
   maxMessages: 'Maks. mesaj', chatStyle: 'Görünüm stili', platformColors: 'Platform renkleri', textColor: 'Metin rengi', usernameColorMode: 'Kullanıcı rengi',
   customUsernameColor: 'Özel kullanıcı rengi', lineHeight: 'Satır yüksekliği',
   showPlatformLogo: 'Platform logosu', showBadges: 'Rozetler', showAvatars: 'Avatarlar',
-  highlightSpecial: 'Özel mesaj vurgusu', fadeMessages: 'Mesajlar kaybolsun', fadeTimeout: 'Kaybolma (sn)',
+  highlightSpecial: 'Özel mesaj vurgusu', fadeMessages: 'Mesajlar kaybolsun', fadeTimeout: 'Kaybolma (sn)', eventFadeSec: 'Bağış/ödül satırı kaybolma (sn, 0 = kalır)',
   smoothMask: 'Yumuşak maske', textShadow: 'Yazı gölgesi', transparentBg: 'Şeffaf arka plan',
   hideCommands: 'Komutları gizle', hideBots: 'Botları gizle', hideEmoteOnly: 'Sadece emote gizle',
   ignoreList: 'Yoksay listesi', align: 'Hizalama', reverse: 'Yeni mesajlar üstte',
@@ -45,7 +45,7 @@ const LABELS: Record<string, string> = {
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
   barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', syncOffsetMs: 'Senkron kaydırma (ms, + erken)', lineFontFamily: 'Etkin satır yazı tipi', comboStyle: 'Görsel stil', iconStyle: 'Simge biçimi', palette: 'Renk paleti',
   timeFontFamily: 'Süre yazı tipi', timeFontSize: 'Süre boyutu (px)', showRules: 'Kuralları göster', barColor2: 'Bar 2. renk (geçiş)',
-  barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Dolgu ucundaki simge (emoji)', layout: 'Düzen', showRemaining: 'Kalan göster',
+  barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Simge (emoji)', barIconPosition: 'Simge yeri', layout: 'Düzen', showRemaining: 'Kalan göster',
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
   textTransform: 'Metin dönüşümü', minCombo: 'Min. combo', timeoutMs: 'Combo zaman aşımı (ms)',
   displayMs: 'Gösterim (ms)', size: 'Emote boyutu', showFloating: 'Uçan emote', showPopup: 'Popup göster',
@@ -110,7 +110,8 @@ const LABELS: Record<string, string> = {
   titleRaids: 'Raid bölüm başlığı', showSubs: 'Abone bölümü', showTips: 'Bağış bölümü',
   showFollows: 'Takip bölümü', showRaids: 'Raid bölümü', showAmounts: 'Tutarları göster',
   showFooter: 'Alt notu göster', loop: 'Döngü',
-  maxQueue: 'Maks. kuyruk', showStatus: 'Durum kartı', showText: 'Okunan metni göster',
+  maxQueue: 'Maks. kuyruk', showStatus: 'Durum kartı', statusLiveText: 'Durum yazısı: çalışırken', statusPausedText: 'Durum yazısı: duraklatılınca',
+  statusIdleText: 'Durum yazısı: başlamadan', statusFontSize: 'Durum yazısı boyutu', showLeader: 'Öndekine taç', totalAddedLabel: 'Eklenen süre yazısı', showText: 'Okunan metni göster',
   showQueue: 'Kuyruk sayısı',
   // --- Uyarı kutusu derinleştirmesi ---
   exitAnimation: 'Çıkış animasyonu',
@@ -146,13 +147,13 @@ const SECTIONS: Record<string, string> = {
   soundEnabled: 'Ses', soundUrl: 'Ses', soundVolume: 'Ses', mute: 'Ses', globalVolume: 'Ses',
   backgroundColor: 'Görünüm', backgroundOpacity: 'Görünüm', borderRadius: 'Görünüm', borderColor: 'Görünüm',
   barColor: 'Görünüm', barBackground: 'Görünüm', barHeight: 'Görünüm', barRadius: 'Görünüm',
-  barStyle: 'Görünüm', barColor2: 'Görünüm', barBorderColor: 'Görünüm', barBorderWidth: 'Görünüm', barIcon: 'Görünüm',
+  barStyle: 'Görünüm', barColor2: 'Görünüm', barBorderColor: 'Görünüm', barBorderWidth: 'Görünüm', barIcon: 'Görünüm', barIconPosition: 'Görünüm',
   messageBgColor: 'Görünüm', messageBgOpacity: 'Görünüm', highlightColor: 'Görünüm', accentColor: 'Görünüm',
   pointerColor: 'Görünüm', transparentBg: 'Görünüm', textShadow: 'Görünüm', smoothMask: 'Görünüm',
   showGlow: 'Görünüm',
   maxItems: 'Düzen', newestFirst: 'Düzen', showIcons: 'Düzen', showTimestamp: 'Düzen', compact: 'Düzen',
   hideEmpty: 'Düzen', gap: 'Düzen', maxMessages: 'Düzen', showPlatformLogo: 'Düzen', showBadges: 'Düzen',
-  showAvatars: 'Düzen', highlightSpecial: 'Düzen', fadeMessages: 'Düzen', fadeTimeout: 'Düzen',
+  showAvatars: 'Düzen', highlightSpecial: 'Düzen', fadeMessages: 'Düzen', fadeTimeout: 'Düzen', eventFadeSec: 'Düzen',
   hideCommands: 'Düzen', hideBots: 'Düzen', hideEmoteOnly: 'Düzen', ignoreList: 'Düzen', align: 'Düzen',
   reverse: 'Düzen', hideBroadcaster: 'Düzen', layout: 'Düzen', showRemaining: 'Düzen', showPercent: 'Düzen',
   messageSound: 'Düzen', messageSoundVolume: 'Düzen', showDonations: 'Düzen', showRedemptions: 'Düzen', messageBubbles: 'Görünüm', showOwnBot: 'Düzen',
@@ -231,7 +232,7 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
   'hype-train': { title: 'Genel', showTimer: 'Düzen' },
   'end-credits': { title: 'Genel' },
   king: { title: 'Genel' },
-  subathon: { title: 'Genel', theme: 'Görünüm', icon: 'Görünüm', timeFontFamily: 'Tipografi', timeFontSize: 'Tipografi', showRules: 'Düzen', showStatus: 'Düzen' },
+  subathon: { title: 'Genel', theme: 'Görünüm', icon: 'Görünüm', timeFontFamily: 'Tipografi', timeFontSize: 'Tipografi', showRules: 'Düzen', showStatus: 'Durum kartı', statusLiveText: 'Durum kartı', statusPausedText: 'Durum kartı', statusIdleText: 'Durum kartı', statusFontSize: 'Durum kartı', totalAddedLabel: 'Durum kartı' },
   'viewer-counter': { title: 'Genel' },
   trivia: { title: 'Genel' },
   'wheel-of-fortune': { size: 'Görünüm', palette: 'Görünüm' },
@@ -250,6 +251,10 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
     { value: 'glossy', label: 'Parlak' }
   ],
   fontFamily: FONTS.map(f => ({ value: f, label: f })),
+  barIconPosition: [
+    { value: 'start', label: 'Barın başında (rozet)' },
+    { value: 'tip', label: 'Dolgunun ucunda (rozet)' }
+  ],
   usernameColorMode: [
     { value: 'user', label: 'Kullanıcı rengi' },
     { value: 'platform', label: 'Platform rengi' },
@@ -291,11 +296,15 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
  */
 const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({ value, label }));
 
+/** Sohbete özgü giriş/çıkış animasyonları (bkz. animations.ts animasyonCss) */
+const SOHBET_EK_ANIM = tema(['pop', 'Pop (fırlayarak)'], ['bulanik', 'Bulanıktan netleşme'], ['elastik', 'Elastik']);
+
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
   'chat-overlay': {
     chatStyle: tema(['klasik', 'Klasik'], ['platformkart', 'Platform kartı'], ['baslikli', 'Başlıklı (ad üstte)'], ['etiket', 'Ad etiketi'], ['konusma', 'Konuşma balonu'], ['serit', 'Platform şeridi'], ['neon', 'Neon çerçeve'], ['kompakt', 'Kompakt']),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana (tek satır)']),
-    animation: [...ANIM_SECENEKLERI, { value: 'daktilo', label: 'Daktilo' }]
+    animation: [...ANIM_SECENEKLERI, { value: 'daktilo', label: 'Daktilo' }, ...SOHBET_EK_ANIM],
+    exitAnimation: [...ANIM_SECENEKLERI.map((o) => (o.value === 'none' ? { value: 'none', label: 'Anında kaybolsun' } : o)), ...SOHBET_EK_ANIM]
   },
   'event-labels': {
     layout: tema(['row', 'Yan yana'], ['column', 'Alt alta']),
@@ -346,7 +355,7 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     palette: Object.entries(CARK_PALETLERI).map(([value, p]) => ({ value, label: p.ad }))
   },
   scoreboard: {
-    theme: tema(['split', 'Yan yana kartlar'], ['stacked', 'Alt alta liste'], ['minimal', 'Minimal (yalnız yazı)'])
+    theme: tema(['broadcast', 'TV yayını (eğik paneller)'], ['split', 'Yan yana kartlar'], ['stacked', 'Sıralama (oranlı çubuk)'], ['neon', 'Neon'], ['hud', 'E-spor HUD'], ['minimal', 'Minimal (yalnız yazı)'])
   },
   subathon: {
     theme: tema(['card', 'Kart'], ['minimal', 'Minimal (yalnız süre)'], ['digital', 'Dijital saat (LCD)'], ['flip', 'Çevirmeli kartlar'], ['neon', 'Neon'], ['pill', 'Tek satır hap']),

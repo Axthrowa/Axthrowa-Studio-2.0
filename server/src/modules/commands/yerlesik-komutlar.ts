@@ -210,7 +210,8 @@ export function komutlarMetni(o: { kategori?: string; kapali: string[]; ozel: st
   const kategoriler = [...new Set(YERLESIK_KOMUTLAR.map((x) => x.kategori))];
   const katla = (t: string) => t.toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i').replace(/[^a-z]/g, '');
   const enCok = o.enCok ?? 450;
-  if (o.kategori) {
+  // Harf içermeyen kategori ("!komutlar 123") verilmemiş sayılır; boş metin her kategoriye uyuyordu
+  if (o.kategori && katla(o.kategori)) {
     const kat = kategoriler.find((x) => katla(x).startsWith(katla(o.kategori!)));
     if (!kat) return `Kategori bulunamadı. Kategoriler: ${kategoriler.join(', ')}`;
     const liste = acik.filter((x) => x.kategori === kat).map((x) => `${x.kullanim || `!${x.ad}`}${x.yetki !== 'herkes' ? ' (mod)' : ''}`);

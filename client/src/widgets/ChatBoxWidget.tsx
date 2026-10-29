@@ -89,15 +89,21 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     // yasaklayınca OBS katmanı da güncellenir (eskiden yalnız 'chat' dinleniyordu).
     if (lastMessage.type === 'clear_chat') {
       islenen.current = lastMessage;
-      anlik.current = true;
-      setMessages([]);
+      // İşaret yalnız gerçekten silinen ileti varsa: boş sohbette takılı kalıp sonraki çıkışı yutmasın
+      setMessages((prev) => {
+        if (prev.length) anlik.current = true;
+        return [];
+      });
       return;
     }
     if (lastMessage.type === 'chat_deleted' || lastMessage.type === 'chat_user_removed') {
       islenen.current = lastMessage;
       const d = lastMessage.data || {};
-      anlik.current = true;
-      setMessages((prev) => iletiCikar(prev, { platform: d.platform, id: d.id ? String(d.id) : undefined, kullanici: d.username }));
+      setMessages((prev) => {
+        const kalan = iletiCikar(prev, { platform: d.platform, id: d.id ? String(d.id) : undefined, kullanici: d.username });
+        if (kalan.length !== prev.length) anlik.current = true;
+        return kalan;
+      });
       return;
     }
     if (lastMessage.type === 'chat_event') {
@@ -192,8 +198,8 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     const giden = once.filter((m) => !kalan.has(m.id));
     if (!giden.length) return;
     setGidenler((g) => [...g, ...giden]);
-    const t = setTimeout(() => setGidenler((g) => g.filter((x) => !giden.includes(x))), 520);
-    return () => clearTimeout(t);
+    // Temizlikte iptal edilmez: sohbet hızlıyken bir sonraki değişim zamanlayıcıyı iptal edip gidenleri biriktiriyordu
+    setTimeout(() => setGidenler((g) => g.filter((x) => !giden.includes(x))), 520);
   }, [messages, cikis]);
 
   // Mesajlar kaybolsun (isteğe bağlı) · bağış/ödül satırları ayrı sürede kaybolur (varsayılan 30 sn)

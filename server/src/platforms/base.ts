@@ -5,6 +5,8 @@ export interface PlatformStatus {
   channel?: string;
   error?: string;
   viewerCount?: number;
+  /** Sohbete yazabilir mi (jetonsuz bağlantı yalnız okur) */
+  yazabilir?: boolean;
 }
 
 /** Moderasyon eylemi sonucu — neden basarisiz oldugu panele tasinir. */

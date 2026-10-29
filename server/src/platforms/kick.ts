@@ -917,6 +917,7 @@ export class KickPlatform extends BasePlatform {
     return {
       connected: this.connected,
       channel: this.currentChannel,
+      yazabilir: this.connected && Boolean(this.botToken),
       ...(hata ? { error: hata } : {})
     };
   }

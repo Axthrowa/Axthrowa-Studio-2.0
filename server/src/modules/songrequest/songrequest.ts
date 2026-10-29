@@ -57,8 +57,9 @@ function sistemdeAc(hedef: string): void {
  * İstek çalınabilir mi? Spotify/YouTube Music hedefinde çalar (bot ya da Yayın Yönetim Aracı üzerinden) bağlı
  * değilse çalınamaz. Video kipinde klip OBS'te çalar, çalar gerekmez.
  */
-export function calarKapali(d: { videoKipi: boolean; otomatik: boolean }): boolean {
-  return !d.videoKipi && !d.otomatik;
+export function calarKapali(d: { videoKipi: boolean; otomatik: boolean; spotifyApiKapali?: boolean }): boolean {
+  // "İstekleri Spotify'da çal" bilerek kapatıldıysa istek eski yoldan (sıra / masaüstünde açma) alınır
+  return !d.videoKipi && !d.otomatik && !d.spotifyApiKapali;
 }
 
 /** Spotify hatası sohbette izleyiciye anlaşılır yazılır (teknik ayrıntı panel günlüğünde kalır) */
@@ -397,7 +398,7 @@ export class SongRequestEngine {
 
     const videoKipi = this.videoKipi();
     // Müzik çalar açık değil: eskiden istek hiç çalmayacak bir sıraya "eklendi" diye alınıyordu
-    if (calarKapali({ videoKipi, otomatik: false })) {
+    if (calarKapali({ videoKipi, otomatik: false, spotifyApiKapali: settingsCache.get('sr_spotify_api', 'true') === 'false' })) {
       return `@${message.user.displayName}, şu an Spotify ya da YouTube Music açık değil, isteğin çalınamaz. Yayıncı müzik çaları açınca tekrar dene.`;
     }
     // Video kipinde Spotify linki başlığıyla YouTube'da aranır

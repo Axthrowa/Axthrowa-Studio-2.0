@@ -26,6 +26,7 @@ describe('yerleşik komut listesi', () => {
     expect(m).toContain('!merhaba');
     expect(m).not.toMatch(/!sr\b/);
     expect(komutlarMetni({ kategori: 'oyun', kapali: [], ozel: [] })).toContain('!slot 25');
+    expect(komutlarMetni({ kategori: '123', kapali: [], ozel: [] })).toMatch(/^📌 Komutlar:/);
     expect(YERLESIK_KOMUTLAR.length).toBeGreaterThan(90);
   });
 });

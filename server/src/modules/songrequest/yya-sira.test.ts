@@ -118,6 +118,7 @@ describe('!sr çalar kapalıyken', () => {
     expect(calarKapali({ videoKipi: false, otomatik: false })).toBe(true);
     expect(calarKapali({ videoKipi: true, otomatik: false })).toBe(false);
     expect(calarKapali({ videoKipi: false, otomatik: true })).toBe(false);
+    expect(calarKapali({ videoKipi: false, otomatik: false, spotifyApiKapali: true })).toBe(false);
     expect(spotifyHataYaniti('Ali', new Error('Açık Spotify cihazı yok — Spotify uygulamasında bir şey çalmaya başlat.'))).toContain('Spotify şu an açık değil');
   });
 });

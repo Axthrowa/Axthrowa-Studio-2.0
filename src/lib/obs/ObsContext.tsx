@@ -22,6 +22,7 @@ import {
   type ObsConnection,
 } from "../obs";
 import { useAxthrowaStore } from "../../store/useAxthrowaStore";
+import { yerelBildirim } from "../yerelBildirim";
 import { API_BASE, isObsMode } from "../api";
 import { logger } from "../logger";
 import { sendTwitchPrivmsg } from "../platformAuth/twitchWrite";
@@ -81,7 +82,11 @@ export function ObsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     return onObsConnection((ok, reason) => {
       setConnected(ok);
-      if (!ok && reason) setLastError(reason);
+      if (!ok && reason) {
+        setLastError(reason);
+        // Pencere tepsideyken kopma ancak Windows bildirimiyle fark edilir
+        void yerelBildirim("OBS bağlantısı koptu", reason);
+      }
       if (ok) setLastError(null);
     });
   }, []);

@@ -120,6 +120,7 @@ import { getStreamHealth } from "../../lib/obs";
 import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
 import AppAlertModal from "@/components/axthrowa/AppAlertModal";
 import UpdateModal from "@/components/axthrowa/UpdateModal";
+import { Toast } from "@/components/axthrowa/Toast";
 import { gunluk } from "../../lib/gunluk";
 import { useAxthrowaStore, useAxthrowaStoreKoprusu } from "../../store/useAxthrowaStore";
 import {
@@ -3412,30 +3413,17 @@ export default function PanelPage() {
             </div>
           </div>
           {notices.length > 0 && (
-            <div className="space-y-1.5 border-b border-panel-border bg-black/40 px-3 py-2">
+            <div className="space-y-2 px-3 py-3">
               {notices.map((n) => (
-                <div
+                <Toast
                   key={n.id}
-                  className={
-                    "flex items-start gap-2 rounded-md border px-2.5 py-2 text-[11px] " +
-                    (n.level === "error"
-                      ? "border-red-500/50 bg-red-500/10 text-red-200"
-                      : "border-panel-cta/50 bg-panel-cta/10 text-orange-100")
-                  }
+                  variant={n.level}
+                  title={n.text}
+                  className="text-xs"
+                  onClose={() => clearNotice(n.id)}
                 >
-                  <span className="min-w-0 flex-1">
-                    <b className="block">{n.text}</b>
-                    {n.hint && <span className="text-panel-muted">{n.hint}</span>}
-                  </span>
-                  <button
-                    type="button"
-                    className="shrink-0 rounded border border-current/40 px-1.5 py-0.5"
-                    title="Bildirimi kapat"
-                    onClick={() => clearNotice(n.id)}
-                  >
-                    Kapat
-                  </button>
-                </div>
+                  {n.hint}
+                </Toast>
               ))}
             </div>
           )}
@@ -3686,8 +3674,8 @@ export default function PanelPage() {
       <SesliDinleyiciCercevesi />
 
       {toast && (
-        <div className="fixed bottom-4 right-4 z-50 rounded-xl border border-panel-accent/40 bg-panel-card/95 px-4 py-2.5 text-sm text-panel-accent shadow-glow">
-          {toast}
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+          <Toast key={toast}>{toast}</Toast>
         </div>
       )}
       <AppAlertModal />

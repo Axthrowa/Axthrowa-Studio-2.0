@@ -1,0 +1,147 @@
+# Sürüm: `v1.2.3` biçiminde etiket gönderilince Windows kurulumunu derler, Axthrowa sertifikasıyla imzalar,
+# uygulamanın güncelleyicisinin okuduğu `guncelleme.json`ı üretir ve ikisini GitHub Releases'e yükler.
+#
+#   git tag -a v1.2.3 -m "Sürüm notları buraya (güncelleme penceresinde görünür)"
+#   git push origin v1.2.3
+#
+# Gerekenler (Settings › Secrets and variables › Actions):
+#   secrets.IMZA_PFX_BASE64   CN=Axthrowa kod imzalama sertifikasının .pfx dışa aktarımı, base64
+#                             (PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("axthrowa.pfx")))
+#   secrets.IMZA_PFX_SIFRE    .pfx parolası
+#   vars.SURUM_DEPOSU         (isteğe bağlı) sürümlerin yükleneceği AÇIK depo, ör. Axthrowa/axthrowa-surumler.
+#                             Bu depo özel: özel depodaki dosyaları uygulama oturum açmadan indiremez.
+#   secrets.SURUM_TOKEN       SURUM_DEPOSU verildiyse o depoya "Contents: write" yetkili ince ayarlı belirteç
+#
+# Uygulamadaki güncelleme adresi (Ayarlar › Hakkında):
+#   https://github.com/<SURUM_DEPOSU>/releases/latest/download/guncelleme.json
+
+name: Sürüm
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: surum-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      ETIKET: ${{ github.ref_name }}
+      DEPO: ${{ vars.SURUM_DEPOSU || github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Etiket ve sürüm uyuşmalı
+        shell: pwsh
+        run: |
+          $surum = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $kargo = (Select-String -Path src-tauri/Cargo.toml -Pattern '^version\s*=\s*"(.+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          if ("v$surum" -ne $env:ETIKET -or $kargo -ne $surum) {
+            throw "Etiket $env:ETIKET; tauri.conf.json $surum; Cargo.toml $kargo — üçü aynı olmalı"
+          }
+          "SURUM=$surum" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            resonance/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Bağımlılıklar
+        run: |
+          npm ci
+          npm --prefix resonance ci
+
+      - name: Sınamalar
+        shell: pwsh
+        run: |
+          npm test
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          cargo test --lib --manifest-path src-tauri/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Lisans denetimi ve üçüncü taraf bildirimleri
+        run: |
+          cargo fetch --manifest-path src-tauri/Cargo.toml
+          node scripts/lisans-denetimi.mjs
+          node scripts/ucuncu-taraf-bildirimleri.mjs
+
+      - name: İmza sertifikasını içe al
+        shell: pwsh
+        env:
+          PFX: ${{ secrets.IMZA_PFX_BASE64 }}
+          SIFRE: ${{ secrets.IMZA_PFX_SIFRE }}
+        run: |
+          if (-not $env:PFX) { throw "IMZA_PFX_BASE64 tanımlı değil: imzasız kurulum güncelleyicide reddedilir" }
+          $dosya = Join-Path $env:RUNNER_TEMP "imza.pfx"
+          [IO.File]::WriteAllBytes($dosya, [Convert]::FromBase64String($env:PFX))
+          try {
+            $sertifika = Import-PfxCertificate -FilePath $dosya -CertStoreLocation Cert:\CurrentUser\My `
+              -Password (ConvertTo-SecureString $env:SIFRE -AsPlainText -Force)
+          } finally {
+            Remove-Item $dosya -Force
+          }
+          # Tauri, tauri.conf.json'daki parmak iziyle imzalar; güncelleyici de aynı parmak izini bekler
+          $beklenen = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).bundle.windows.certificateThumbprint
+          if ($sertifika.Thumbprint -ne $beklenen) {
+            throw "Sertifika parmak izi tauri.conf.json'dakiyle uyuşmuyor"
+          }
+
+      - name: Derle ve paketle (NSIS)
+        run: |
+          npm run build
+          npm run build:resonance
+          npx tauri build --bundles nsis --ci
+
+      - name: Kurulumu doğrula
+        shell: pwsh
+        run: |
+          $kurulum = Get-ChildItem src-tauri/target/release/bundle/nsis -Filter "*setup.exe" | Select-Object -First 1
+          if (-not $kurulum) { throw "NSIS kurulumu üretilmedi" }
+          # Kendinden imzalı sertifika bu makinede güvenilir değil: durum değil imzalayan denetlenir
+          $imza = Get-AuthenticodeSignature -LiteralPath $kurulum.FullName
+          $beklenen = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).bundle.windows.certificateThumbprint
+          if ($imza.SignerCertificate.Thumbprint -ne $beklenen) { throw "Kurulum beklenen sertifikayla imzalanmamış" }
+          New-Item -ItemType Directory -Force cikti | Out-Null
+          Copy-Item $kurulum.FullName "cikti/YayinYonetimAraci-$env:SURUM-Setup.exe"
+
+      - name: guncelleme.json üret
+        shell: pwsh
+        run: |
+          # Notlar, açıklamalı etiketin mesajından (git tag -a … -m "…")
+          git fetch --force origin "refs/tags/${env:ETIKET}:refs/tags/${env:ETIKET}"
+          $notlar = (git for-each-ref "refs/tags/$env:ETIKET" --format='%(contents)') -join "`n"
+          $notlar | Out-File cikti/notlar.md -Encoding utf8
+          $bildirim = [ordered]@{
+            surum   = $env:SURUM
+            sayfa   = "https://github.com/$env:DEPO/releases/tag/$env:ETIKET"
+            notlar  = $notlar.Trim()
+            kurulum = "https://github.com/$env:DEPO/releases/download/$env:ETIKET/YayinYonetimAraci-$env:SURUM-Setup.exe"
+          }
+          [IO.File]::WriteAllText("cikti/guncelleme.json", ($bildirim | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
+          Get-Content cikti/guncelleme.json
+
+      - name: GitHub Releases'e yükle
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.SURUM_TOKEN || github.token }}
+        run: |
+          gh release create $env:ETIKET `
+            "cikti/YayinYonetimAraci-$env:SURUM-Setup.exe" cikti/guncelleme.json `
+            --repo $env:DEPO --title "Yayın Yönetim Aracı $env:SURUM" --notes-file cikti/notlar.md
+          if ($LASTEXITCODE -ne 0) { exit 1 }

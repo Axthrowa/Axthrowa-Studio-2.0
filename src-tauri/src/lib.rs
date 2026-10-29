@@ -711,6 +711,7 @@ pub fn run() {
     // İlk eklenti: sonraki her şeyin günlüğü dosyaya düşsün
     .plugin(gunluk_eklentisi(gunluk_klasoru))
     .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_notification::init())
     // Sahne kısayolları işletim sistemi düzeyinde: tepsiye alınca da çalışsın.
     // Handler Rust'ta — WebView donunca JS geri çağrısı ölmesin diye.
     .plugin(hotkeys::build_plugin(hub_for_plugin).build())

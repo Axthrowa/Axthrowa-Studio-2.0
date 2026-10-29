@@ -27,6 +27,7 @@ import { extras } from './modules/extras/extras.js';
 import { cuzdanAdi, economy } from './modules/economy/economy.js';
 import { subathon } from './modules/subathon/subathon.js';
 import { hypeTreni } from './modules/hype/hype-train.js';
+import { hedefleriBagla } from './modules/goals/hedefler.js';
 import { seviyeler } from './modules/levels/levels.js';
 import { sohbetUyarilari } from './modules/chat-alerts/chat-alerts.js';
 import { discordDuyuru } from './modules/integrations/discord-announce.js';
@@ -318,6 +319,9 @@ server.listen(PORT, HOST, async () => {
 
   // Hype Treni de sunucuda (B3): tüm OBS kaynakları aynı treni görür.
   hypeTreni.baglaOlaylar();
+
+  // Hedef çubuklarının ilerlemesi sunucuda kalıcı (OBS yenilense de sürer; test/tekrar sayılmaz)
+  hedefleriBagla();
 
   // Sohbet tarafi olay mesajlari (BotRix'te 'Metin uyarilari'). Gorsel
   // overlay'den bagimsiz: olay olunca sohbete metin yazar.

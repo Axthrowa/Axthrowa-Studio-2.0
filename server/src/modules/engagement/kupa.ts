@@ -89,14 +89,17 @@ class Kupa {
     );
   }
 
-  /** Olayı işler; düşen öğe sayısını döndürür (yayını çağıran yapar). */
+  /**
+   * Olayı işler; düşen öğe sayısını döndürür (yayını çağıran yapar). Kupa doluysa öğe eklenmez: eskiden en eski
+   * atılıyordu ve yerleşim sıraya bağlı olduğu için dolu kupadaki bütün öğeler her bağışta yer değiştiriyordu.
+   */
   dus(tur: string, veri: { amount?: number; count?: number }): number {
     const a = this.ayarOku();
-    const adet = dusenAdet(tur, veri, a);
+    const l = this.liste().slice(0, a.maxItems);
+    const adet = Math.min(dusenAdet(tur, veri, a), Math.max(0, a.maxItems - l.length));
     if (!adet) return 0;
-    const l = this.liste();
     for (let i = 0; i < adet; i++) l.push(tur as KupaTuru);
-    this.ogeler = l.slice(-a.maxItems);
+    this.ogeler = l;
     this.yaz();
     return adet;
   }

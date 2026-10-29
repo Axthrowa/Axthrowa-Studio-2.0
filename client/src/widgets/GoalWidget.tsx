@@ -42,34 +42,22 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
   // GOAL_DEFAULTS onların ÜSTÜNE yazılınca takipçi hedefi bağışları sayıyordu.
   const s = useWidgetSettings<typeof GOAL_DEFAULTS & Record<string, any>>(widgetId);
   const { lastMessage } = useWebSocket('all');
-  const [current, setCurrent] = useState(Number(s.current) || 0);
+  // İlerleme sunucuda tutulur (modules/goals/hedefler.ts): gerçek olayda `current` ayarı artar ve ayar kanalıyla
+  // gelir. Eskiden burada sayılıyordu: OBS yenilenince sıfırlanıyor, test ve "yeniden oynat" da sayılıyordu.
+  // "Test et" kayıtlı değeri değiştirmez; birkaç saniye örnek artış gösterilir.
+  const [testArtisi, setTestArtisi] = useState(0);
+  const current = (Number(s.current) || 0) + testArtisi;
   const [reached, setReached] = useState(false);
-
-  useEffect(() => {
-    setCurrent(Number(s.current) || 0);
-  }, [s.current]);
 
   const islenen = useRef<unknown>(null);
   useEffect(() => {
-    if (!lastMessage) return;
-    // Etki hedef türü değişince de çalışır: aynı olay ikinci kez sayılmasın
-    if (islenen.current === lastMessage) return;
+    if (!lastMessage || islenen.current === lastMessage) return;
     islenen.current = lastMessage;
-    const ev = lastMessage.data || lastMessage.payload?.event || lastMessage.payload || {};
-    const type = lastMessage.subType || ev?.event_type || lastMessage.type;
-    const amount = Number(ev?.amount ?? lastMessage.payload?.amount ?? 0);
-    if ((s.type === 'tip' || s.type === 'donation') && (type === 'donation' || type === 'tip' || lastMessage.type === 'donation')) {
-      setCurrent(v => v + (amount || 0));
-    }
-    if (s.type === 'follower' && type === 'follow') setCurrent(v => v + 1);
-    // Sunucunun abonelik uyarı türü 'sub'; eskiden listede yoktu ve normal
-    // abonelikler hedefe HİÇ eklenmiyordu. Hediye paketi adediyle sayılır.
-    if (s.type === 'sub' && (type === 'sub' || type === 'subscription')) setCurrent(v => v + 1);
-    if (s.type === 'sub' && (type === 'gift_sub' || type === 'gifted_sub')) {
-      setCurrent(v => v + Math.max(1, Number(ev?.count) || 1));
-    }
-    if (s.type === 'kicks' && type === 'kicks') setCurrent(v => v + (amount || 1));
-  }, [lastMessage, s.type]);
+    if (lastMessage.type !== 'hedef_testi' || lastMessage.widgetId !== widgetId) return;
+    setTestArtisi((v) => v + (Number(lastMessage.artis) || 1));
+    // Temizlikte iptal edilmez: sonraki herhangi bir yayın zamanlayıcıyı iptal edip test artışını kalıcı yapardı
+    setTimeout(() => setTestArtisi(0), 6000);
+  }, [lastMessage, widgetId]);
 
   const percent = Math.min(100, (current / Math.max(1, Number(s.target))) * 100);
   useEffect(() => {

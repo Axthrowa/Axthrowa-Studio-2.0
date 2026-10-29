@@ -150,7 +150,8 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
         const adet = Math.min(20, Math.max(1, Number(d.adet) || 1));
         const tur = String(d.type || 'tip');
         const tavan = Math.max(5, Number(ayarRef.current.maxItems) || 45);
-        setOgeler((onceki) => [...onceki, ...Array.from({ length: adet }, (_, i) => ({ id: yeniKimlik(), tur, yeni: true, gecikme: i * 110 }))].slice(-tavan));
+        // Dolu kupaya eklenmez (sunucu da eklemez): en eskiyi atmak bütün yığını kaydırıyordu
+        setOgeler((onceki) => [...onceki, ...Array.from({ length: adet }, (_, i) => ({ id: yeniKimlik(), tur, yeni: true, gecikme: i * 110 }))].slice(0, tavan));
       } catch {
         /* bozuk mesaj */
       }
@@ -281,7 +282,7 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
           >
             {s.showLabel && s.title}
             {s.showLabel && s.showCount ? ' ' : ''}
-            {s.showCount && `(${ogeler.length} Öğe)`}
+            {s.showCount && `(${ogeler.length} Öğe${ogeler.length >= Math.max(5, Number(s.maxItems) || 45) ? ' · dolu' : ''})`}
           </div>
         )}
       </div>

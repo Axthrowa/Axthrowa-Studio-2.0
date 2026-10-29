@@ -12,6 +12,7 @@ import { wsHub } from '../../ws/server.js';
 import { ttsEngine } from '../../modules/tts/tts.js';
 import { subathon } from '../../modules/subathon/subathon.js';
 import { hypeTreni } from '../../modules/hype/hype-train.js';
+import { kingSystemService } from '../../modules/games/king-system.js';
 import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../../modules/widgets/settings-validate.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { kupa } from '../../modules/engagement/kupa.js';
@@ -330,7 +331,8 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
     case 'follower-goal':
     case 'subscriber-goal':
     case 'kicks-goal':
-      wsHub.triggerTestAlert(({ 'donation-goal': 'tip', 'follower-goal': 'follow', 'subscriber-goal': 'sub', 'kicks-goal': 'kicks' } as Record<string, string>)[widgetName]);
+      // Test hedefi DEĞİŞTİRMEZ: widget birkaç saniye örnek artışı gösterip kayıtlı değere döner
+      wsHub.broadcastTo(['all'], { type: 'hedef_testi', widgetId: widgetName, artis: ({ 'donation-goal': 50, 'kicks-goal': 100 } as Record<string, number>)[widgetName] || 1 });
       break;
     case 'event-labels':
       // Etiketler test uyarılarını bilerek yok sayar (gerçek "son takipçi" bozulmasın): test için örnek
@@ -342,13 +344,22 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
         type: 'pinned_message',
         data: { id: `test-${Date.now()}`, username: 'testizleyici', displayName: 'TestIzleyici', message: 'Sabitlenmiş mesaj testi 📌', platform: 'kick' }
       });
-      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'pinned_clear' }), 8000).unref?.();
+      // Gerçekte sabitlenmiş mesaj geri gelir (eskiden ekran boşaltılıyor, yayındaki sabit mesaj kayboluyordu)
+      setTimeout(() => {
+        const gercek = db.prepare('SELECT * FROM pinned_messages ORDER BY created_at DESC LIMIT 1').get();
+        wsHub.broadcastTo(['all'], { type: 'pinned_message', data: gercek || null });
+      }, 8000).unref?.();
       break;
     case 'king':
       wsHub.broadcastTo(['all'], {
         type: 'king_update',
         state: { username: 'testkral', displayName: 'TestKral', pointsBid: 5000, title: 'Test Kralı', crownedAt: Date.now(), test: true }
       });
+      // 8 sn sonra gerçek taht (eskiden test kralı bir sonraki gerçek değişikliğe dek ekranda kalıyordu)
+      setTimeout(() => {
+        // Boş taht da durum olarak gönderilir (widget "Taht boş" kartını gösterir)
+        wsHub.broadcastTo(['all'], { type: 'king_update', state: kingSystemService.getKingState() });
+      }, 8000).unref?.();
       break;
     case 'scoreboard': {
       // Örnek skor 6 sn görünür, sonra gerçek tablo geri gelir

@@ -450,8 +450,8 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   useEffect(() => {
     fetch(`/api/widgets/${ayarId}/settings`)
       .then(r => r.json())
-      .then(d => { ilkDeger.current = true; setValues({ ...defaults, ...d }); })
-      .catch(() => { ilkDeger.current = true; setValues(defaults); });
+      .then(d => { ilkDeger.current = true; sonKayit.current = { ...defaults, ...d }; setValues({ ...defaults, ...d }); })
+      .catch(() => { ilkDeger.current = true; sonKayit.current = { ...defaults }; setValues(defaults); });
   }, [ayarId]);
 
   const buildUrl = (next = values) => {
@@ -466,11 +466,17 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   };
 
   const save = async (veri: Record<string, any> = values) => {
-    await fetch(`/api/widgets/${ayarId}/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(veri)
-    });
+    // Yalnız değişen ayarlar gönderilir (sunucu birleştirir). Eskiden hepsi gönderiliyordu: pencere açıkken
+    // sunucu hedefin "Mevcut" değerini artırınca, başka bir ayarı değiştirmek eski değeri geri yazıyordu.
+    const fark = Object.fromEntries(Object.entries(veri).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(sonKayit.current[k])));
+    if (Object.keys(fark).length) {
+      await fetch(`/api/widgets/${ayarId}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fark)
+      });
+      sonKayit.current = { ...sonKayit.current, ...fark };
+    }
     onUrlChange?.(buildUrl(veri));
     setStatus('Ayarlar kaydedildi. Overlay anında güncellendi.');
     setTimeout(() => setStatus(''), 2500);
@@ -480,6 +486,8 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   // `widget_settings` yayını yapar; OBS'teki katman anında güncellenir.
   // Eskiden yalnız "Kaydet" düğmesiyle uygulanıyordu.
   const ilkDeger = useRef(true);
+  /** Sunucudaki son bilinen ayar (yalnız farkı göndermek için) */
+  const sonKayit = useRef<Record<string, any>>({});
   useEffect(() => {
     if (!autoSave) return;
     if (ilkDeger.current) {

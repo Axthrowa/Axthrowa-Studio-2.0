@@ -33,6 +33,8 @@ pub mod audio_brand;
 #[cfg(windows)]
 pub mod single_instance;
 pub mod sistem_araci;
+pub mod eklenti;
+pub mod performans;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -646,6 +648,7 @@ pub fn run() {
   let resolved = paths::resolve(root);
   let _ = std::fs::create_dir_all(&resolved.data_dir);
   panik_kaydini_kur(&resolved.data_dir);
+  performans::olcumu_kur();
   // Bekleyen geri yükleme / eski klasörden taşıma: veritabanları açılmadan ÖNCE
   match yedek::bekleyeni_uygula(
     &resolved.data_dir,
@@ -701,9 +704,6 @@ pub fn run() {
     music_poll_loop(state_for_music).await;
   });
 
-  // Kick/Twitch dinleyici + komut motoru + loyalty tick
-  bot::spawn_bot_runtime(state.clone());
-
   let hub = std::sync::Arc::new(hotkeys::HotkeyHub::new());
   let hub_for_plugin = hub.clone();
 
@@ -737,8 +737,12 @@ pub fn run() {
       setup_tray(app.handle())?;
       close_prompt::install(app.handle());
       streamaxt::autostart();
-      // OBS'e uygulama açılınca kendiliğinden bağlan (arayüzü beklemeden).
-      tauri::async_runtime::spawn(obs_client::autoconnect_loop(app.handle().clone()));
+      // Arka plan servisleri eklenti olarak: OBS (kendiliğinden bağlanır), sohbet (Kick/Twitch + bot)
+      let eklentiler = eklenti::varsayilan();
+      eklentiler.baslat(app.handle());
+      app.manage(eklentiler);
+      // Sistem sağlığı (RAM/CPU) 3 sn'de bir arayüze
+      tauri::async_runtime::spawn(performans::telemetri_dongusu(app.handle().clone()));
       // Panel UI'yi gömülü asset yerine yerel HTTP sunucusundan yükle.
       // Böylece `dist/` güncellemesi exe yeniden derlenmeden görünür
       // (sahne kısayolu ekle vb. portable'da kaybolmuyordu).

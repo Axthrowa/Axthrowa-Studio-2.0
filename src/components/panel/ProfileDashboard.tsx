@@ -20,6 +20,8 @@ import {
 import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
 import { useChatHub } from "../../lib/useChatHub";
 import ChatFeed from "../chat/ChatFeed";
+import { useAxthrowaStore, type KickCanli } from "../../store/useAxthrowaStore";
+import SistemSagligi from "../axthrowa/SistemSagligi";
 import { clearPlatformChats, clearResultToast } from "../../lib/clearPlatformChats";
 
 /** Dashboard alt sekmeleri (PanelPage). Bileşen sekme değişse de BAĞLI kalır:
@@ -34,13 +36,7 @@ type Props = {
   bolum?: DashboardBolumu;
 };
 
-type KickLiveStatus = {
-  live: boolean;
-  viewers: number;
-  followers: number;
-  playbackUrl?: string | null;
-  streamTitle?: string | null;
-};
+type KickLiveStatus = KickCanli;
 
 function markStreamLive(live: boolean) {
   saveBotConfig((prev) => ({
@@ -78,11 +74,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
   const [botEnabled, setBotEnabled] = useState(false);
   const [chatConnected, setChatConnected] = useState(false);
   const [kickSlug, setKickSlug] = useState("");
-  const [liveStatus, setLiveStatus] = useState<KickLiveStatus>({
-    live: false,
-    viewers: 0,
-    followers: 0,
-  });
+  // Store'da: izleyici ve canlı durumu panelin başka yerlerinden de okunabilsin
+  const liveStatus = useAxthrowaStore((s) => s.kick);
+  const setLiveStatus = (kick: KickLiveStatus) => useAxthrowaStore.setState({ kick });
   const announcedSession = useRef<string | null>(null);
   const liveSessionId = useRef<string | null>(null);
 
@@ -331,6 +325,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                       ? "● Bağlantı kontrol ediliyor"
                       : "○ Yayın kapalı"}
                 </span>
+                <SistemSagligi />
                 {/* Düğme her zaman görünür: çıkış ekranına geçiş oturumdan bağımsız. */}
                 <button
                   type="button"

@@ -238,6 +238,7 @@ fn imza_parmak_izi(dosya: &std::path::Path) -> Option<String> {
   (!t.is_empty()).then_some(t)
 }
 
+#[tracing::instrument(name = "guncelleme_denetle", skip_all)]
 async fn denetle(state: &AppState) -> Result<Value, Hata> {
   let mevcut = env!("CARGO_PKG_VERSION");
   let adres = oku(&state).adres;

@@ -250,6 +250,7 @@ fn pack_chatroom(
 
 /// Kick chatroom id'sini sırayla v1 → v2 → kanal sayfası üzerinden çözer.
 /// Cloudflare rustls'i engellerse curl.exe (Schannel) yedeklenir.
+#[tracing::instrument(name = "kick_kanal_bilgisi", skip_all)]
 pub async fn fetch_chatroom(slug: &str) -> Result<Value> {
   let slug = normalize_slug(slug);
   if slug.is_empty() {

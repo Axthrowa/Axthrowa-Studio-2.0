@@ -1046,6 +1046,7 @@ fn read_stream_plan(settings: &AppSettings) -> StreamSequencePlan {
 }
 
 fn emit_stream_state(app: &AppHandle, output_active: bool) {
+  crate::eklenti::yayinla(app, crate::eklenti::EklentiOlayi::YayinDurumu { acik: output_active });
   let t = crate::db::chrono_now();
   let _ = app.emit(
     "obs-stream-state",
@@ -1111,7 +1112,8 @@ pub async fn autoconnect_loop(app: AppHandle) {
             }
           }
         }
-        match state.obs.connect(&host, port, &password).await {
+        let baglan = tracing::Instrument::instrument(state.obs.connect(&host, port, &password), tracing::info_span!("obs_baglan"));
+        match baglan.await {
           Ok(()) => {
             spawn_obs_event_pump(Arc::clone(&state.obs), app.clone());
             backoff = 0;

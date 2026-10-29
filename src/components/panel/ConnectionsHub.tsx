@@ -9,6 +9,7 @@ import { obsControl, type ObsConnectionStatus } from "../../lib/obsControl";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import BotSessions from "./BotSessions";
+import { streamaxtBase } from "../../lib/streamaxt";
 import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
 import StatusDot from "../ui/StatusDot";
 import EndRulesEditor from "./EndRulesEditor";
@@ -65,6 +66,8 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
   // yazabilmek için API'ye ihtiyaç duyuyor. Tek rozet ikisini birleştirince
   // API kopukken de yeşil yanıyor ve "neden yazmıyor?" sorusuna yol açıyordu.
   const [kickApi, setKickApi] = useState<KickApiStatus>({});
+  // Kick API'si botun (StreamAxT) Platformlar sayfasından da bağlanabilir; o zaman sohbete bot yazar
+  const [botKick, setBotKick] = useState(false);
   const [obsScenes, setObsScenes] = useState<string[]>([]);
   // Bitiş kuralı düzenleyicisi için her ekranın kendi eski süre alanları.
   const [legacyEnd, setLegacyEnd] = useState<
@@ -125,6 +128,13 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
       if (r.ok) setKickApi((await r.json()) as KickApiStatus);
     } catch {
       /* sunucu kapalıysa bilinmiyor olarak kalsın */
+    }
+    try {
+      const r = await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" });
+      const d = r.ok ? ((await r.json()) as { platforms?: { kick?: { connected?: boolean } } }) : null;
+      setBotKick(Boolean(d?.platforms?.kick?.connected));
+    } catch {
+      setBotKick(false); // bot kapalı
     }
   }, []);
 
@@ -357,7 +367,7 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
               </span>
               <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-xs font-semibold text-white/80">
                 API
-                <StatusDot ok={!!kickApi.connected} />
+                <StatusDot ok={!!kickApi.connected || botKick} />
               </span>
             </div>
           </header>
@@ -397,7 +407,8 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
           </div>
         </div>
         {/* İki durum ayrı: çerez oturumu sohbeti okumaya, API yazmaya yarıyor. */}
-        {!kickApi.connected && (
+        {/* Bot Kick'e bağlıysa (Kick API'si botta) uyarı yanlış olurdu: sohbete bot yazar */}
+        {!kickApi.connected && !botKick && (
           <p className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium leading-relaxed text-amber-200">
             {kickApi.clientId
               ? "Kick API bağlı değil — bot sohbete yazamaz. Bot sekmesinden Bağlan’a basıp Kick onayını tamamla."

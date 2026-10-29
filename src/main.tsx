@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+import GlobalErrorBoundary from "./components/axthrowa/GlobalErrorBoundary";
 import { ObsProvider } from "./lib/obs/ObsContext";
 import { EmoteProvider } from "./lib/emotes/EmoteContext";
 import { ThemeProvider } from "./lib/theme/ThemeContext";
@@ -25,6 +26,7 @@ void anaPencereyiHatirla();
  */
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    <GlobalErrorBoundary>
     <BrowserRouter>
       <ThemeProvider>
         <EmoteProvider>
@@ -34,5 +36,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </EmoteProvider>
       </ThemeProvider>
     </BrowserRouter>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );

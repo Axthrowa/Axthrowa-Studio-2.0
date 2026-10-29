@@ -34,7 +34,7 @@ const ObsDockSayfasi = lazy(() => import("./routes/ObsDockSayfasi"));
 const SagTikMenusu = lazy(() => import("@/components/axthrowa/SagTikMenusu"));
 
 /** Tarayıcı sağ tık menüsünün AxthrowA menüsüyle değiştiği ekranlar (OBS'e verilen overlay sayfaları değil) */
-const PANEL_YOLLARI = new Set(["/", "/panel", "/dock"]);
+export const PANEL_YOLLARI = new Set(["/", "/panel", "/dock"]);
 
 export default function App() {
   const loc = useLocation();

@@ -53,6 +53,8 @@ sqlx = { version = "0.8", default-features = false, features = [
   "migrate",
   "macros",
 ] }
+tauri-plugin-log = "2"
+log = "0.4"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.61", features = [

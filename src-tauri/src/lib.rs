@@ -540,8 +540,47 @@ pub fn panik_kaydini_kur(data_dir: &std::path::Path) {
       use std::io::Write;
       let _ = f.write_all(satir.as_bytes());
     }
+    // Ana günlüğe de (tek merkezi dosya); ayrı çökme dosyası panik anında kesin yazılsın diye kalır
+    log::error!(target: "panik", "{}", satir.trim_end());
     onceki(bilgi);
   }));
+}
+
+/// Günlük kaydı: Rust (`yya_log!`/`yya_warn!`, `log::*`) ve arayüz (`@tauri-apps/plugin-log`) aynı dosyaya yazar:
+/// `<veri>/logs/axthrowa.log`. 5 MB'ı geçince döner, son 5 dosya tutulur. Belirteç benzeri sözcükler, RTMP yolları
+/// ve kullanıcı klasörü destek paketindeki gizleyiciyle maskelenir (günlük paylaşılabilsin).
+fn gunluk_eklentisi(klasor: std::path::PathBuf) -> tauri::plugin::TauriPlugin<tauri::Wry> {
+  use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
+  let kullanici = std::env::var("USERPROFILE").ok().filter(|k| k.len() > 3);
+  let mut hedefler = vec![Target::new(TargetKind::Folder { path: klasor, file_name: Some("axthrowa".into()) })];
+  if cfg!(debug_assertions) {
+    hedefler.push(Target::new(TargetKind::Stdout));
+  }
+  tauri_plugin_log::Builder::new()
+    .targets(hedefler)
+    .max_file_size(5 * 1024 * 1024)
+    .rotation_strategy(RotationStrategy::KeepSome(5))
+    .level(log::LevelFilter::Info)
+    // Gürültülü kütüphaneler yalnız uyarı ve hata yazar
+    .level_for("tao", log::LevelFilter::Warn)
+    .level_for("wry", log::LevelFilter::Warn)
+    .level_for("hyper", log::LevelFilter::Warn)
+    .level_for("reqwest", log::LevelFilter::Warn)
+    .level_for("sqlx", log::LevelFilter::Warn)
+    .level_for("tungstenite", log::LevelFilter::Warn)
+    .level_for("tokio_tungstenite", log::LevelFilter::Warn)
+    .level_for("obws", log::LevelFilter::Warn)
+    .format(move |out, mesaj, kayit| {
+      let metin = destek::Gizleyici::new(Vec::new(), kullanici.clone()).metin(&mesaj.to_string());
+      out.finish(format_args!(
+        "{} {:<5} [{}] {}",
+        chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+        kayit.level(),
+        kayit.target(),
+        metin
+      ))
+    })
+    .build()
 }
 
 pub fn run() {
@@ -598,6 +637,7 @@ pub fn run() {
       let _ = server::yedek_api::SON_UYGULANAN.set(format!("Geri yükleme başarısız: {e:#}"));
     }
   }
+  let gunluk_klasoru = resolved.data_dir.join("logs");
   let state = AppState::new(
     resolved.resource_root,
     resolved.data_dir,
@@ -643,6 +683,8 @@ pub fn run() {
   let hub_for_plugin = hub.clone();
 
   tauri::Builder::default()
+    // İlk eklenti: sonraki her şeyin günlüğü dosyaya düşsün
+    .plugin(gunluk_eklentisi(gunluk_klasoru))
     .plugin(tauri_plugin_dialog::init())
     // Sahne kısayolları işletim sistemi düzeyinde: tepsiye alınca da çalışsın.
     // Handler Rust'ta — WebView donunca JS geri çağrısı ölmesin diye.

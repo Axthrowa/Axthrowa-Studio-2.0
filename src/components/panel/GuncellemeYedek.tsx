@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { API_BASE } from "../../lib/api";
 
-async function istek<T>(yol: string, govde?: unknown): Promise<T> {
+export async function istek<T>(yol: string, govde?: unknown): Promise<T> {
   const r = await fetch(`${API_BASE}${yol}`, {
     method: govde === undefined ? "GET" : "POST",
     headers: govde === undefined ? undefined : { "Content-Type": "application/json" },
@@ -15,7 +15,7 @@ async function istek<T>(yol: string, govde?: unknown): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-type Denetim = { tanimli: boolean; mevcut: string; son?: string; yeniVar?: boolean; sayfa?: string | null; notlar?: string | null; kurulum?: string | null };
+export type Denetim = { tanimli: boolean; mevcut: string; son?: string; yeniVar?: boolean; sayfa?: string | null; notlar?: string | null; kurulum?: string | null };
 
 export function Guncelleme() {
   const [adres, setAdres] = useState("");

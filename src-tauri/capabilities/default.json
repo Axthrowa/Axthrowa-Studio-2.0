@@ -16,6 +16,7 @@
     "core:event:default",
     "core:window:default",
     "dialog:default",
+    "log:default",
     "allow-open-in-browser",
     "allow-sync-global-hotkeys",
     "allow-launch-obs",

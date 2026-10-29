@@ -120,6 +120,8 @@ import { yayinSagligiIzle } from "../../lib/yayinSagligi";
 import { getStreamHealth } from "../../lib/obs";
 import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
 import AppAlertModal from "@/components/axthrowa/AppAlertModal";
+import UpdateModal from "@/components/axthrowa/UpdateModal";
+import { gunluk } from "../../lib/gunluk";
 import {
   clearCreditsSession,
   creditsSessionCounts,
@@ -1036,10 +1038,14 @@ export default function PanelPage() {
     setMasterBusy(true);
     try {
       if (liveOn) {
+        gunluk.info("Yayın durduruluyor");
         await endLiveFromProfile();
         await closeDbSessionQuiet();
+        gunluk.info("Yayın durduruldu");
       } else {
+        gunluk.info("Yayın başlatılıyor");
         await goLiveFromProfile();
+        gunluk.info("Yayın başlatıldı");
         try {
           await startSession();
         } catch {
@@ -1047,6 +1053,7 @@ export default function PanelPage() {
         }
       }
     } catch (e: any) {
+      gunluk.error(`Yayın ${liveOn ? "durdurulamadı" : "başlatılamadı"}: ${e?.message || e}`);
       showToast(String(e?.message || e));
     } finally {
       setMasterBusy(false);
@@ -1510,6 +1517,7 @@ export default function PanelPage() {
     {/* Özel pencere başlığı (masaüstünde) + altında panel; panel kalan yüksekliği doldurur */}
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
     <PencereBasligi />
+    <UpdateModal />
     <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
       <NavTabBar

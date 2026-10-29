@@ -1,19 +1,17 @@
-//! Üretimde stdout/stderr sızıntısını kesen geliştirme günlüğü.
+//! Günlük makroları. Eskiden yalnız geliştirme derlemesinde ekrana yazılıyordu: dağıtılan sürümde 155 günlük
+//! satırının hiçbiri kaydedilmiyordu. Artık `log` üzerinden `tauri-plugin-log`a gider (`data/logs/axthrowa.log`,
+//! döndürmeli; belirteç benzeri sözcükler gizlenir — bkz. lib.rs `gunluk_eklentisi`).
 
 #[macro_export]
 macro_rules! yya_log {
   ($($arg:tt)*) => {{
-    if cfg!(debug_assertions) {
-      println!($($arg)*);
-    }
+    log::info!($($arg)*);
   }};
 }
 
 #[macro_export]
 macro_rules! yya_warn {
   ($($arg:tt)*) => {{
-    if cfg!(debug_assertions) {
-      eprintln!($($arg)*);
-    }
+    log::warn!($($arg)*);
   }};
 }

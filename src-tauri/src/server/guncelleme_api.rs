@@ -36,10 +36,18 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/guncelleme/denetle", post(api_denetle))
     .route("/api/guncelleme/durum", get(api_durum))
     .route("/api/guncelleme/kur", post(api_kur))
+    .route("/api/guncelleme/ilerleme", get(api_ilerleme))
+    .route("/api/gunluk", get(api_gunluk))
 }
 
 /// Son denetim sonucu (açılıştaki otomatik denetim dahil): panel başlığı rozeti bunu okur
 static SON_DENETIM: parking_lot::RwLock<Option<Value>> = parking_lot::const_rwlock(None);
+/// Kurulum indirmesinin durumu: `{asama, inen, toplam, hata?}` (arayüzdeki ilerleme çubuğu okur)
+static ILERLEME: parking_lot::RwLock<Option<Value>> = parking_lot::const_rwlock(None);
+
+fn ilerleme(asama: &str, inen: u64, toplam: Option<u64>) {
+  *ILERLEME.write() = Some(json!({"asama": asama, "inen": inen, "toplam": toplam}));
+}
 
 /// Kurulum dosyası yalnız bu sertifikayla imzalıysa çalıştırılır (tauri.conf.json certificateThumbprint)
 pub const IMZA_PARMAK_IZI: &str = "C111F8943858B938053836E8275672D03E094407";
@@ -131,22 +139,48 @@ async fn api_durum(ConnectInfo(addr): ConnectInfo<SocketAddr>) -> ApiResult {
   Ok(Json(SON_DENETIM.read().clone().unwrap_or_else(|| json!({"tanimli": false, "mevcut": env!("CARGO_PKG_VERSION")}))))
 }
 
+async fn api_ilerleme(ConnectInfo(addr): ConnectInfo<SocketAddr>) -> ApiResult {
+  yerel(&addr)?;
+  Ok(Json(ILERLEME.read().clone().unwrap_or_else(|| json!({"asama": "bos"}))))
+}
+
+/// Günlük klasörü: çökme ekranı kullanıcıya gösterir. Yalnız bu makineden (yol kullanıcı adını içerir).
+async fn api_gunluk(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectInfo<SocketAddr>) -> ApiResult {
+  yerel(&addr)?;
+  let klasor = state.data_dir.join("logs");
+  Ok(Json(json!({"klasor": klasor, "dosya": klasor.join("axthrowa.log")})))
+}
+
 /// Bildirimdeki kurulumu indirir, imzasını denetler ve çalıştırır. Kurulum kendi penceresini açar;
 /// uygulama açıksa kurulum kapatmayı kendisi sorar.
 async fn api_kur(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectInfo<SocketAddr>, headers: HeaderMap) -> ApiResult {
   yerel(&addr)?;
   authorize(&state, &addr, &headers, "broadcast.read").await?;
-  let v = denetle(&state).await?;
+  let sonuc = kur(&state).await;
+  match &sonuc {
+    Ok(_) => ilerleme("bitti", 0, None),
+    Err((_, e)) => {
+      log::error!(target: "guncelleme", "kurulum başarısız: {e}");
+      *ILERLEME.write() = Some(json!({"asama": "hata", "hata": e}));
+    }
+  }
+  sonuc
+}
+
+async fn kur(state: &AppState) -> ApiResult {
+  let v = denetle(state).await?;
   if v["yeniVar"].as_bool() != Some(true) {
     return Err(gecersiz("yeni sürüm yok"));
   }
+  log::info!(target: "guncelleme", "{} indiriliyor", v["son"]);
+  ilerleme("indiriliyor", 0, None);
   let adres = v["kurulum"].as_str().ok_or_else(|| gecersiz("bildirimde kurulum adresi yok; sayfadan indirin"))?.to_string();
   let istemci = reqwest::Client::builder()
     .timeout(std::time::Duration::from_secs(600))
     .redirect(reqwest::redirect::Policy::limited(5))
     .build()
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-  let yanit = istemci.get(&adres).send().await.map_err(|e| (StatusCode::BAD_GATEWAY, format!("indirilemedi: {e}")))?;
+  let mut yanit = istemci.get(&adres).send().await.map_err(|e| (StatusCode::BAD_GATEWAY, format!("indirilemedi: {e}")))?;
   if !yanit.status().is_success() {
     return Err((StatusCode::BAD_GATEWAY, format!("kurulum adresi {} döndü", yanit.status())));
   }
@@ -154,10 +188,20 @@ async fn api_kur(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectI
   if yanit.content_length().is_some_and(|n| n > KURULUM_EN_COK) {
     return Err((StatusCode::BAD_GATEWAY, "kurulum çok büyük".into()));
   }
-  let bayt = yanit.bytes().await.map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-  if bayt.len() as u64 > KURULUM_EN_COK {
-    return Err((StatusCode::BAD_GATEWAY, "kurulum çok büyük".into()));
+  // Parça parça: ilerleme çubuğu dolsun, boyut bildirilmese de sınır indirme sırasında uygulansın
+  let toplam = yanit.content_length();
+  let mut bayt = Vec::with_capacity(toplam.unwrap_or(0) as usize);
+  while let Some(parca) = yanit.chunk().await.map_err(|e| (StatusCode::BAD_GATEWAY, format!("indirme kesildi: {e}")))? {
+    bayt.extend_from_slice(&parca);
+    if bayt.len() as u64 > KURULUM_EN_COK {
+      return Err((StatusCode::BAD_GATEWAY, "kurulum çok büyük".into()));
+    }
+    ilerleme("indiriliyor", bayt.len() as u64, toplam);
   }
+  if toplam.is_some_and(|n| n != bayt.len() as u64) {
+    return Err((StatusCode::BAD_GATEWAY, "indirme eksik kaldı".into()));
+  }
+  ilerleme("dogrulaniyor", bayt.len() as u64, toplam);
   let dosya = std::env::temp_dir().join(format!("YayinYonetimAraci-{}-Setup.exe", v["son"].as_str().unwrap_or("yeni").replace(|c: char| !c.is_ascii_alphanumeric() && c != '.', "")));
   std::fs::write(&dosya, &bayt).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   // İmza: geçerli ve BİZİM sertifikamız olmalı; değilse dosya silinir, çalıştırılmaz
@@ -171,7 +215,8 @@ async fn api_kur(State(state): State<Arc<AppState>>, ConnectInfo(addr): ConnectI
     return Err((StatusCode::BAD_GATEWAY, format!("kurulumun imzası doğrulanamadı ({})", imza.unwrap_or_else(|| "imzasız".into()))));
   }
   std::process::Command::new(&dosya).spawn().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("kurulum açılamadı: {e}")))?;
-  audit(&state, &super::control_plane::Actor { name: "yerel".into(), local: true }, "UPDATE_INSTALL", json!({"surum": v["son"]})).await;
+  log::info!(target: "guncelleme", "{} kurulumu açıldı", v["son"]);
+  audit(state, &super::control_plane::Actor { name: "yerel".into(), local: true }, "UPDATE_INSTALL", json!({"surum": v["son"]})).await;
   Ok(Json(json!({"ok": true, "surum": v["son"]})))
 }
 

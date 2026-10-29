@@ -33,6 +33,7 @@ import CopyUrl from "../../components/ui/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar, { applyTabOrder } from "../../components/panel/NavTabBar";
+import PencereBasligi from "../../components/panel/PencereBasligi";
 import AppSettingsPage from "../../components/panel/AppSettingsPage";
 import SettingsSection from "../../components/panel/SettingsSection";
 import SoundBoardPanel from "../../components/panel/SoundBoardPanel";
@@ -1496,7 +1497,10 @@ export default function PanelPage() {
       onLocaleChange={(l) => setPrefs((p) => ({ ...p, locale: l }))}
     >
       <CloseRequestModal />
-    <div className="panel-shell flex h-screen w-full flex-row overflow-hidden bg-panel-bg text-white">
+    {/* Özel pencere başlığı (masaüstünde) + altında panel; panel kalan yüksekliği doldurur */}
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
+    <PencereBasligi />
+    <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
       <NavTabBar
         brandTitle={tt("brand.title")}
@@ -3667,6 +3671,7 @@ export default function PanelPage() {
       )}
       <AppAlertModal />
       </div>
+    </div>
     </div>
     </I18nProvider>
   );

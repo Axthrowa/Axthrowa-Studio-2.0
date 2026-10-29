@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AudioLines,
-  Camera,
-  Clapperboard,
-  Mic,
-  RefreshCw,
-  Settings2,
-} from "lucide-react";
+import { ArrowClockwise, FilmSlate, GearSix, Microphone, MicrophoneSlash, VideoCamera, Waveform } from "@phosphor-icons/react";
 import { fetchSettings, patchSettings } from "../../lib/api";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import HotkeyInput from "../panel/HotkeyInput";
@@ -322,7 +315,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
           className={DUGME}
           onClick={() => void refresh()}
         >
-          <RefreshCw className="h-4 w-4" />
+          <ArrowClockwise weight="bold" className="h-4 w-4" />
           Yenile
         </button>
       </header>
@@ -330,7 +323,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
       <WidgetCard
         title="Sahneler"
         description="Tıkladığın sahne OBS'te yayına (Program) alınır."
-        icon={<Clapperboard className="h-4 w-4 text-axthrowa-violet" />}
+        icon={<FilmSlate weight="duotone" className="h-4 w-4 text-axthrowa-violet" />}
         action={<span className="text-xs text-zinc-500">{snapshot.scenes.length} sahne</span>}
       >
         <div className="grid max-h-56 grid-cols-2 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
@@ -366,7 +359,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
         <WidgetCard
           title="Kaynaklar"
           description={snapshot.currentScene ? `“${snapshot.currentScene}” sahnesindeki kaynaklar` : "Aktif sahne yok"}
-          icon={<Camera className="h-4 w-4 text-axthrowa-cyan" />}
+          icon={<VideoCamera weight="duotone" className="h-4 w-4 text-axthrowa-cyan" />}
         >
           <div className="-mx-2 max-h-64 space-y-0.5 overflow-y-auto">
             {sources.map((source) => (
@@ -386,7 +379,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
         <WidgetCard
           title="Ses Mikseri"
           description="Mikrofon ve masaüstü sesleri"
-          icon={<AudioLines className="h-4 w-4 text-axthrowa-cyan" />}
+          icon={<Waveform weight="duotone" className="h-4 w-4 text-axthrowa-cyan" />}
         >
           <div className="-mx-2 max-h-64 space-y-0.5 overflow-y-auto">
             {inputs.map((input) => (
@@ -397,7 +390,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
                 enabled={!input.muted}
                 enabledText="Açık"
                 disabledText="Susturuldu"
-                icon={<Mic className={`h-4 w-4 shrink-0 ${input.muted ? "text-red-400" : "text-axthrowa-cyan"}`} />}
+                icon={input.muted ? <MicrophoneSlash weight="duotone" className="h-4 w-4 shrink-0 text-red-400" /> : <Microphone weight="duotone" className="h-4 w-4 shrink-0 text-axthrowa-cyan" />}
                 onToggle={() => void updateMute(input)}
                 hotkey={mixerHotkey(input.name)}
               />
@@ -424,7 +417,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
       <WidgetCard
         title="Reaktif OBS Otomasyonu"
         description="Yüksek bağış ya da emote kombosu eşiği aşınca OBS'te sahneye geçer ya da bir kaynağı gösterir."
-        icon={<Settings2 className="h-4 w-4 text-axthrowa-violet" />}
+        icon={<GearSix weight="duotone" className="h-4 w-4 text-axthrowa-violet" />}
         action={
           <Switch
             checked={automation.enabled}

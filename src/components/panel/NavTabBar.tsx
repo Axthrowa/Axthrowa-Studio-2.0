@@ -10,20 +10,21 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  LayoutDashboard,
-  PlayCircle,
-  StopCircle,
+  Broadcast,
+  ChatCircleDots,
   Coffee,
-  MessageSquare,
-  Bot,
-  Radio,
-  Music,
-  Volume2,
   Keyboard,
+  MonitorPlay,
+  MusicNotes,
+  PlayCircle,
+  Robot,
   Sliders,
   SlidersHorizontal,
-  MonitorPlay,
-} from "lucide-react";
+  SpeakerHigh,
+  SquaresFour,
+  StopCircle,
+  type IconWeight,
+} from "@phosphor-icons/react";
 import { DEFAULT_TABS, reorderByDrop, type NavId, type PanelLayout } from "../../lib/panelLayout";
 import { API_BASE } from "../../lib/api";
 
@@ -48,17 +49,17 @@ const DRAG_PX = 8;
 /** Fare çubuktan çıkınca kapanma gecikmesi — hemen kapanması rahatsız ediyordu. */
 const CLOSE_DELAY_MS = 450;
 
-const TAB_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  profile: LayoutDashboard,
+const TAB_ICONS: Record<string, React.ComponentType<{ className?: string; weight?: IconWeight }>> = {
+  profile: SquaresFour,
   yayin: MonitorPlay,
-  control: Radio,
+  control: Broadcast,
   starting: PlayCircle,
   ending: StopCircle,
   brb: Coffee,
-  chat: MessageSquare,
-  bot: Bot,
-  music: Music,
-  sounds: Volume2,
+  chat: ChatCircleDots,
+  bot: Robot,
+  music: MusicNotes,
+  sounds: SpeakerHigh,
   hotkeys: Keyboard,
   settings: Sliders,
 };
@@ -95,6 +96,12 @@ export default function NavTabBar({
   const dragging = useRef(false);
   const lastOver = useRef<string | null>(null);
   const [activeDrag, setActiveDrag] = useState<string | null>(null);
+  // Seçilen sekmenin simgesi yaylanarak zıplar; sayaç aynı sekmeye tekrar tıklanınca da yeniden oynatır
+  const [yay, setYay] = useState<{ id: string; n: number } | null>(null);
+  const sec = (id: string) => {
+    setYay((y) => ({ id, n: (y?.n || 0) + 1 }));
+    onSelect(id as NavId);
+  };
   // Açık/kapalı durumu JS'te: saf CSS :hover fare kenardan çıkar çıkmaz
   // kapatıyordu ve menü "çok çabuk" kapanıyordu.
   const [open, setOpen] = useState(false);
@@ -147,7 +154,7 @@ export default function NavTabBar({
           {/* Marka: üstte geniş, altta menüye kadar daha geniş boşluk */}
           <div className="flex items-center gap-3 px-2.5 pb-6 pt-4">
             <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-axthrowa-violet to-axthrowa-cyan text-white shadow-[0_6px_20px_rgba(139,92,246,0.35)]">
-              <Radio className="h-4 w-4" />
+              <Broadcast weight="bold" className="h-4 w-4" />
             </div>
             <div className={"min-w-0 overflow-hidden transition-opacity duration-200 " + (open ? "opacity-100" : "opacity-0")}>
               <span className="block truncate font-display text-[13px] font-extrabold leading-tight tracking-tight text-zinc-100">{brandTitle}</span>
@@ -224,23 +231,29 @@ export default function NavTabBar({
                       /* */
                     }
                     endDrag();
-                    if (!wasDrag && idNow === id) onSelect(id as NavId);
+                    if (!wasDrag && idNow === id) sec(id);
                   }}
                   onPointerCancel={() => endDrag()}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      onSelect(id as NavId);
+                      sec(id);
                     }
                   }}
                 >
                   {Icon && (
-                    <Icon
-                      className={
-                        "h-[18px] w-[18px] shrink-0 transition-colors duration-200 " +
-                        (active ? "text-axthrowa-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]" : "text-zinc-500 group-hover:text-zinc-200")
-                      }
-                    />
+                    <span
+                      key={yay?.id === id ? yay.n : "d"}
+                      className={"inline-flex shrink-0 transform-gpu " + (yay?.id === id ? "animate-yay" : "")}
+                    >
+                      <Icon
+                        weight={active ? "duotone" : "bold"}
+                        className={
+                          "h-[18px] w-[18px] transition-colors duration-200 " +
+                          (active ? "text-axthrowa-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]" : "text-zinc-500 group-hover:text-zinc-200")
+                        }
+                      />
+                    </span>
                   )}
                   <span className={etiket}>{labelFor(id)}</span>
                 </button>
@@ -257,7 +270,7 @@ export default function NavTabBar({
             onClick={onToggleEdit}
             title={customizeLabel}
           >
-            <SlidersHorizontal className={"h-4 w-4 shrink-0 " + (editLayout ? "text-axthrowa-violet" : "")} />
+            <SlidersHorizontal weight="bold" className={"h-4 w-4 shrink-0 " + (editLayout ? "text-axthrowa-violet" : "")} />
             <span className={etiket}>{customizeLabel}</span>
           </button>
           {editLayout ? <div className={"px-1 transition-opacity " + (open ? "opacity-100" : "opacity-0")}>{children}</div> : null}

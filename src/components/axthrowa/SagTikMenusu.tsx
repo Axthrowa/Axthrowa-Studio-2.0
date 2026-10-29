@@ -5,7 +5,7 @@
  * Geliştirmede Shift + sağ tık tarayıcı menüsünü açar (İncele için).
  */
 import { useEffect, useRef, useState } from "react";
-import { ClipboardPaste, Copy, RefreshCw, Scissors, TextSelect } from "lucide-react";
+import { ArrowClockwise, ClipboardText, Copy, Scissors, SelectionAll } from "@phosphor-icons/react";
 
 type Oge = { ad: string; ikon: typeof Copy; kisayol?: string; yap: () => void; kapali?: boolean };
 type Durum = { x: number; y: number; ogeler: Oge[] } | null;
@@ -47,18 +47,18 @@ export default function SagTikMenusu() {
           { ad: "Kopyala", ikon: Copy, kisayol: "Ctrl+C", kapali: !secili, yap: () => document.execCommand("copy") },
           {
             ad: "Yapıştır",
-            ikon: ClipboardPaste,
+            ikon: ClipboardText,
             kisayol: "Ctrl+V",
             kapali: salt,
             // insertText: React'ın onChange'i tetiklensin (değer doğrudan yazılırsa durum güncellenmez)
             yap: () => void navigator.clipboard?.readText().then((t) => t && document.execCommand("insertText", false, t)).catch(() => {}),
           },
-          { ad: "Tümünü seç", ikon: TextSelect, kisayol: "Ctrl+A", yap: () => document.execCommand("selectAll") }
+          { ad: "Tümünü seç", ikon: SelectionAll, kisayol: "Ctrl+A", yap: () => document.execCommand("selectAll") }
         );
       } else if (secim) {
         ogeler.push({ ad: "Kopyala", ikon: Copy, kisayol: "Ctrl+C", yap: () => void navigator.clipboard?.writeText(secim).catch(() => {}) });
       }
-      ogeler.push({ ad: "Paneli yenile", ikon: RefreshCw, kisayol: "F5", yap: () => window.location.reload() });
+      ogeler.push({ ad: "Paneli yenile", ikon: ArrowClockwise, kisayol: "F5", yap: () => window.location.reload() });
       setKonum(null);
       setDurum({ x: e.clientX, y: e.clientY, ogeler });
     };
@@ -101,7 +101,7 @@ export default function SagTikMenusu() {
       role="menu"
       // İlk çizimde ölçülene dek görünmez (köşeden zıplamasın)
       style={{ left: konum?.x ?? durum.x, top: konum?.y ?? durum.y, visibility: konum ? "visible" : "hidden" }}
-      className="fixed z-[600] min-w-[13rem] overflow-hidden rounded-xl bg-axthrowa-card p-1.5 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6)] animate-zoom-in before:pointer-events-none before:absolute before:inset-0 before:rounded-xl before:border-t before:border-white/5"
+      className="fixed z-[600] min-w-[13rem] overflow-hidden rounded-xl bg-axthrowa-card p-1.5 shadow-float transform-gpu animate-zoom-in before:pointer-events-none before:absolute before:inset-0 before:rounded-xl before:border-t before:border-white/5"
       onContextMenu={(e) => e.preventDefault()}
     >
       {durum.ogeler.map((o, i) => {
@@ -122,7 +122,7 @@ export default function SagTikMenusu() {
               }}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-zinc-300 transition-colors duration-200 hover:bg-zinc-800/60 hover:text-zinc-100 focus-visible:bg-zinc-800/60 focus-visible:text-zinc-100 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-35"
             >
-              <Ikon className="h-4 w-4 text-zinc-500" />
+              <Ikon weight="duotone" className="h-4 w-4 text-zinc-500" />
               <span className="flex-1">{o.ad}</span>
               {o.kisayol ? <span className="font-mono text-[11px] text-zinc-600">{o.kisayol}</span> : null}
             </button>

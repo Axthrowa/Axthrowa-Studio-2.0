@@ -1,7 +1,7 @@
 /** Ekranın ortasında, Tamam’a basılana kadar kalan hata kutusu (AxthrowA penceresi). */
 
 import { useRef } from "react";
-import { AlertTriangle } from "lucide-react";
+import { Warning } from "@phosphor-icons/react";
 import { dismissAppAlert, useAppAlert } from "../../lib/appAlert";
 import { Dialog } from "@/components/axthrowa/dialog";
 
@@ -20,7 +20,7 @@ export default function AppAlertModal() {
       dismissible={false}
       icon={
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/15 text-red-300">
-          <AlertTriangle className="h-5 w-5" aria-hidden />
+          <Warning weight="duotone" className="h-5 w-5" aria-hidden />
         </span>
       }
       title={alert?.title ?? ""}

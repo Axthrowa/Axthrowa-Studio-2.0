@@ -33,7 +33,7 @@ export function Switch({ checked, onCheckedChange, className, disabled, ...rest 
       <span
         data-state={state}
         className={cn(
-          "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35)]",
+          "pointer-events-none block h-5 w-5 transform-gpu rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35)]",
           "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
           "data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
         )}

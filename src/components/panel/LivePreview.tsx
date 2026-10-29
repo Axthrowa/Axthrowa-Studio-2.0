@@ -1,6 +1,6 @@
 /** Panel içi canlı önizleme — iframe yok (boş ekran / CSP sorunlarını önler) */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Volume2, VolumeX } from "lucide-react";
+import { SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import OverlayShell from "../overlay/OverlayShell";
 import UnifiedChatPanel from "./UnifiedChatPanel";
 import { OverlaySettings, ScreenId } from "../../lib/api";
@@ -146,9 +146,9 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd }: Props) {
           onClick={() => setPreviewMuted((v) => !v)}
         >
           {previewMuted || previewVolume === 0 ? (
-            <VolumeX className="h-4 w-4 text-zinc-500 hover:text-zinc-300" />
+            <SpeakerSlash weight="bold" className="h-4 w-4 text-zinc-500 hover:text-zinc-300" />
           ) : (
-            <Volume2 className="h-4 w-4 text-axthrowa-cyan hover:brightness-125" />
+            <SpeakerHigh weight="duotone" className="h-4 w-4 text-axthrowa-cyan hover:brightness-125" />
           )}
         </button>
         <input

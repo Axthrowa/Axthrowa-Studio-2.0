@@ -187,6 +187,16 @@ export default function PanelPage() {
   const [screen, setScreen] = useState<ScreenId>("starting");
   // Müzik / Ayarlar ekran ayarlarından bağımsız; ScreenId şemasını kirletmez.
   const [activeNav, setActiveNav] = useState<NavId | ScreenId>("profile");
+  const sayfaRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    sayfaRef.current?.animate?.(
+      [
+        { opacity: 0, transform: "translateY(8px) scale(0.98)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+    );
+  }, [activeNav]);
   // Bot sekmesinde açılacak StreamAxT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
   const [botSekme, setBotSekme] = useState<string | undefined>(undefined);
   useEffect(() => {
@@ -1592,6 +1602,8 @@ export default function PanelPage() {
         </div>
       </header>
 
+      {/* Sekme değişince içerik dipten ve hafif büyüyerek gelir (yeniden kurmadan: Web Animations) */}
+      <div ref={sayfaRef} className="flex min-h-0 flex-1 flex-col transform-gpu">
       {profileTab ? (
         <motion.div
           key="connections"
@@ -3660,6 +3672,7 @@ export default function PanelPage() {
         </EdgePanel>
       </div>
       )}
+      </div>
 
       {/* StreamAxT sesli komut dinleyicisi: sekmeden bağımsız, arka planda */}
       <SesliDinleyiciCercevesi />

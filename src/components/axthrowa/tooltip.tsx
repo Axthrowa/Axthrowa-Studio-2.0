@@ -68,7 +68,7 @@ export function Tooltip({
             data-state={acik ? "open" : "closed"}
             className={cn(
               "block w-max max-w-xs rounded-lg bg-axthrowa-dark px-3 py-1.5 text-xs font-medium leading-snug text-zinc-200",
-              "shadow-[0_8px_24px_rgba(0,0,0,0.4),0_0_14px_rgba(6,182,212,0.12)]",
+              "shadow-glow-cyan transform-gpu",
               "data-[state=closed]:animate-zoom-out data-[state=open]:animate-zoom-in",
               className
             )}

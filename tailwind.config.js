@@ -78,6 +78,9 @@ export default {
         "glow-lg": "0 0 30px var(--panel-accent-glow)",
         glass: "0 4px 20px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
         "glass-elevated": "0 8px 32px -4px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+        // AxthrowA: havada asılı (ipucu, sağ tık menüsü) ve marka parlaması
+        "glow-cyan": "0 8px 24px -6px rgba(0, 0, 0, 0.55), 0 0 18px rgba(6, 182, 212, 0.18)",
+        float: "0 12px 40px -8px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3)",
       },
       backgroundImage: {
         "panel-atmosphere":
@@ -97,6 +100,8 @@ export default {
         "fade-out": { from: { opacity: "1" }, to: { opacity: "0" } },
         "zoom-in": { from: { opacity: "0", transform: "scale(.95)" }, to: { opacity: "1", transform: "none" } },
         "zoom-out": { from: { opacity: "1", transform: "none" }, to: { opacity: "0", transform: "scale(.95)" } },
+        // Menü simgesi tıklanınca yaylanarak zıplar
+        yay: { "0%": { transform: "scale(.7)" }, "100%": { transform: "scale(1)" } },
       },
       animation: {
         "nav-in": "nav-in .35s ease both",
@@ -105,6 +110,7 @@ export default {
         "fade-out": "fade-out .2s ease-in both",
         "zoom-in": "zoom-in .2s cubic-bezier(.22,1,.36,1) both",
         "zoom-out": "zoom-out .2s ease-in both",
+        yay: "yay .45s cubic-bezier(0.34,1.56,0.64,1) both",
       },
     },
   },

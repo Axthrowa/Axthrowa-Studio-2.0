@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Copy, Minus, Radio, Square, X } from "lucide-react";
+import { Broadcast, Copy, Minus, Square, X } from "@phosphor-icons/react";
 
 const DUGME =
   "flex h-full w-12 items-center justify-center bg-transparent text-zinc-400 transition-colors duration-200 focus-visible:outline-none focus-visible:bg-zinc-800/70";
@@ -38,7 +38,7 @@ export default function PencereBasligi() {
       {/* Marka: kendisi de sürükleme alanı (yazının üstünden tutunca da pencere kayar) */}
       <div data-tauri-drag-region className="flex h-full items-center gap-2.5 pl-4">
         <span data-tauri-drag-region className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-axthrowa-violet to-axthrowa-cyan text-white shadow-[0_4px_14px_rgba(139,92,246,0.35)]">
-          <Radio className="pointer-events-none h-3.5 w-3.5" />
+          <Broadcast weight="bold" className="pointer-events-none h-3.5 w-3.5" />
         </span>
         <span data-tauri-drag-region className="text-[13px] font-semibold tracking-wide text-zinc-200">
           AxthrowA Studio
@@ -48,7 +48,7 @@ export default function PencereBasligi() {
       {/* Pencere düğmeleri: sürükleme alanı DEĞİL, tıklama sürüklemeye dönüşmez */}
       <div className="flex h-full items-stretch">
         <button type="button" className={`${DUGME} hover:bg-zinc-800/70 hover:text-zinc-100`} aria-label="Küçült" title="Küçült" onClick={() => void w().minimize()}>
-          <Minus className="h-4 w-4" />
+          <Minus weight="bold" className="h-4 w-4" />
         </button>
         <button
           type="button"
@@ -57,10 +57,10 @@ export default function PencereBasligi() {
           title={buyuk ? "Önceki boyut" : "Büyüt"}
           onClick={() => void w().toggleMaximize()}
         >
-          {buyuk ? <Copy className="h-3.5 w-3.5 -scale-x-100" /> : <Square className="h-3.5 w-3.5" />}
+          {buyuk ? <Copy weight="bold" className="h-3.5 w-3.5 -scale-x-100" /> : <Square weight="bold" className="h-3.5 w-3.5" />}
         </button>
         <button type="button" className={`${DUGME} hover:bg-red-500/90 hover:text-white`} aria-label="Kapat" title="Kapat" onClick={() => void w().close()}>
-          <X className="h-4 w-4" />
+          <X weight="bold" className="h-4 w-4" />
         </button>
       </div>
     </div>

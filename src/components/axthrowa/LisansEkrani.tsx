@@ -1,7 +1,8 @@
 /**
  * Premium lisans arayüzü.
  * - `LisansFormu`: anahtar gir / durum / kaldır (Ayarlar › Genel'de ve karşılama ekranında)
- * - varsayılan dışa aktarım: ilk açılışta bir kez görünen, atlanabilir karşılama ekranı. Uygulamayı kilitlemez.
+ * - varsayılan dışa aktarım: ilk açılışta bir kez görünen, atlanabilir karşılama ekranı. Uygulamayı kilitlemez;
+ *   hata raporu izni de burada bir kez sorulur (derlemede Sentry varsa).
  */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -11,6 +12,7 @@ import { WidgetCard } from "./WidgetCard";
 import { Button } from "./Button";
 import { useAxthrowaStore } from "../../store/useAxthrowaStore";
 import { lisansEtkinlestir, lisansKaldir, lisansYukle } from "../../lib/lisans";
+import { HataRaporuAnahtari } from "./HataRaporuAnahtari";
 
 const KARSILAMA_GORULDU = "axthrowa.karsilama.goruldu";
 
@@ -125,6 +127,7 @@ export default function KarsilamaEkrani() {
         className="relative w-full max-w-md bg-axthrowa-card/85 shadow-float backdrop-blur-xl transform-gpu animate-zoom-in"
       >
         <LisansFormu onEtkin={kapat} />
+        <HataRaporuAnahtari className="mt-5 rounded-xl bg-zinc-950/40 px-4 py-3" />
         <div className="mt-4 flex justify-center">
           <Button variant="ghost" onClick={kapat}>
             Şimdilik geç

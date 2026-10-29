@@ -11,6 +11,11 @@
 #   vars.SURUM_DEPOSU         (isteğe bağlı) sürümlerin yükleneceği AÇIK depo, ör. Axthrowa/axthrowa-surumler.
 #                             Bu depo özel: özel depodaki dosyaları uygulama oturum açmadan indiremez.
 #   secrets.SURUM_TOKEN       SURUM_DEPOSU verildiyse o depoya "Contents: write" yetkili ince ayarlı belirteç
+#   secrets.SENTRY_DSN        (isteğe bağlı) çökme raporları; yoksa uygulamada Sentry hiç kurulmaz
+#
+# macOS (Apple Silicon .dmg) ve Linux (.deb, AppImage) işleri Windows sürümü yayınlandıktan sonra çalışır ve
+# dosyalarını aynı sürüme ekler; biri başarısız olsa Windows sürümü etkilenmez. macOS paketi imzasızdır
+# (Apple Developer hesabı ve notarization yok): Gatekeeper ilk açılışta uyarır.
 #
 # Uygulamadaki güncelleme adresi (Ayarlar › Hakkında):
 #   https://github.com/<SURUM_DEPOSU>/releases/latest/download/guncelleme.json
@@ -103,6 +108,8 @@ jobs:
           }
 
       - name: Derle ve paketle (NSIS)
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           npm run build
           npm run build:resonance
@@ -145,3 +152,83 @@ jobs:
             "cikti/YayinYonetimAraci-$env:SURUM-Setup.exe" cikti/guncelleme.json `
             --repo $env:DEPO --title "Yayın Yönetim Aracı $env:SURUM" --notes-file cikti/notlar.md
           if ($LASTEXITCODE -ne 0) { exit 1 }
+
+  macos:
+    needs: windows
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      ETIKET: ${{ github.ref_name }}
+      DEPO: ${{ vars.SURUM_DEPOSU || github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            resonance/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Derle ve paketle (.app, .dmg)
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          npm ci
+          npm --prefix resonance ci
+          npm run build
+          npm run build:resonance
+          npx tauri build --bundles app,dmg --ci
+      - name: Sürüme ekle
+        env:
+          GH_TOKEN: ${{ secrets.SURUM_TOKEN || github.token }}
+        run: |
+          surum="${ETIKET#v}"
+          dmg=$(ls src-tauri/target/release/bundle/dmg/*.dmg | head -1)
+          cp "$dmg" "YayinYonetimAraci-$surum-macOS-arm64.dmg"
+          gh release upload "$ETIKET" "YayinYonetimAraci-$surum-macOS-arm64.dmg" --repo "$DEPO" --clobber
+
+  linux:
+    needs: windows
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      ETIKET: ${{ github.ref_name }}
+      DEPO: ${{ vars.SURUM_DEPOSU || github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sistem paketleri (WebKitGTK, tepsi, gizli anahtar deposu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev             libssl-dev libdbus-1-dev libxdo-dev pkg-config patchelf file
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            resonance/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Derle ve paketle (.deb, AppImage)
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          npm ci
+          npm --prefix resonance ci
+          npm run build
+          npm run build:resonance
+          npx tauri build --bundles deb,appimage --ci
+      - name: Sürüme ekle
+        env:
+          GH_TOKEN: ${{ secrets.SURUM_TOKEN || github.token }}
+        run: |
+          surum="${ETIKET#v}"
+          cp src-tauri/target/release/bundle/deb/*.deb "YayinYonetimAraci-$surum-amd64.deb"
+          cp src-tauri/target/release/bundle/appimage/*.AppImage "YayinYonetimAraci-$surum-x86_64.AppImage"
+          gh release upload "$ETIKET" "YayinYonetimAraci-$surum-amd64.deb" "YayinYonetimAraci-$surum-x86_64.AppImage"             --repo "$DEPO" --clobber

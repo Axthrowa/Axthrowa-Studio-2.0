@@ -267,7 +267,10 @@ async fn denetle(state: &AppState) -> Result<Value, Hata> {
   let sayfa = v["sayfa"].as_str().filter(|s| url::Url::parse(s).is_ok_and(|u| u.scheme() == "https")).map(String::from);
   let notlar = v["notlar"].as_str().map(|s| s.chars().take(2000).collect::<String>());
   // Uygulama içi kurulum: yalnız https .exe
-  let kurulum = v["kurulum"].as_str().filter(|s| url::Url::parse(s).is_ok_and(|u| u.scheme() == "https") && s.to_ascii_lowercase().ends_with(".exe")).map(String::from);
+  let kurulum = v["kurulum"].as_str().filter(|s| url::Url::parse(s).is_ok_and(|u| u.scheme() == "https") && s.to_ascii_lowercase().ends_with(".exe"))
+    // Kendiliğinden kurulum (Authenticode denetimi) yalnız Windows'ta; diğerlerinde "sayfadan indirin"
+    .filter(|_| cfg!(windows))
+    .map(String::from);
   Ok(json!({"tanimli": true, "mevcut": mevcut, "son": son, "yeniVar": surum_buyuk(&son, mevcut), "sayfa": sayfa, "notlar": notlar, "kurulum": kurulum}))
 }
 

@@ -36,6 +36,7 @@ pub mod sistem_araci;
 pub mod eklenti;
 pub mod performans;
 pub mod lisans;
+pub mod hata_raporu;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -650,6 +651,8 @@ pub fn run() {
   let _ = std::fs::create_dir_all(&resolved.data_dir);
   panik_kaydini_kur(&resolved.data_dir);
   performans::olcumu_kur();
+  // Çökme raporu: panik kancasından sonra (onu sarar); DSN yoksa kurulmaz, izin yoksa göndermez
+  let _sentry = hata_raporu::kur();
   // Bekleyen geri yükleme / eski klasörden taşıma: veritabanları açılmadan ÖNCE
   match yedek::bekleyeni_uygula(
     &resolved.data_dir,
@@ -673,6 +676,7 @@ pub fn run() {
     resolved.portable,
     DEFAULT_PORT,
   );
+  hata_raporu::izni_yukle(&state);
 
   let state_for_server = state.clone();
   tauri::async_runtime::spawn(async move {
@@ -786,6 +790,8 @@ pub fn run() {
       kick::login_window::import_kick_session_from_browser,
       kick::login_window::harvest_kick_bot_cookies,
       kick::login_window::kick_bot_session_status,
+      hata_raporu::hata_raporu_durumu,
+      hata_raporu::hata_raporu_izni,
       lisans::lisans_durumu,
       lisans::lisans_etkinlestir,
       lisans::lisans_kaldir,

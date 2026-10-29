@@ -50,6 +50,16 @@ type KickSession = {
   error?: string | null;
 };
 
+/**
+ * Bot Kick sohbetine yazabiliyor mu. `yazabilir` StreamAxT 1.9 ile geldi (jetonsuz bağlantı yalnız okur);
+ * daha eski bot bu alanı göndermez, o zaman bağlı olması yeterli sayılır — yoksa API girilmiş olsa bile
+ * "girilmemiş" uyarısı çıkıyordu.
+ */
+export function botKickYazabilir(kick: { connected?: boolean; yazabilir?: boolean } | undefined): boolean {
+  if (!kick?.connected) return false;
+  return kick.yazabilir ?? true;
+}
+
 const EMPTY_OBS: ObsConnectionStatus = {
   connected: false,
   connecting: false,
@@ -132,8 +142,7 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
     try {
       const r = await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" });
       const d = r.ok ? ((await r.json()) as { platforms?: { kick?: { connected?: boolean; yazabilir?: boolean } } }) : null;
-      // Jetonsuz bağlantı yalnız okur: bot yazamıyorsa uyarı kalır
-      setBotKick(Boolean(d?.platforms?.kick?.connected && d.platforms.kick.yazabilir));
+      setBotKick(botKickYazabilir(d?.platforms?.kick));
     } catch {
       setBotKick(false); // bot kapalı
     }

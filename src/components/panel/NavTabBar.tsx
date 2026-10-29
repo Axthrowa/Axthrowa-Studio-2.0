@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAxthrowaStore } from "../../store/useAxthrowaStore";
 import { useT } from "../../i18n";
+import { olay } from "../../lib/analitik";
 import {
   Broadcast,
   ChatCircleDots,
@@ -106,6 +107,7 @@ export default function NavTabBar({
   const [yay, setYay] = useState<{ id: string; n: number } | null>(null);
   const sec = (id: string) => {
     setYay((y) => ({ id, n: (y?.n || 0) + 1 }));
+    olay("sekme_acildi", { sekme: id });
     onSelect(id as NavId);
   };
   // Açık/kapalı durumu JS'te: saf CSS :hover fare kenardan çıkar çıkmaz

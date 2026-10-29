@@ -22,7 +22,7 @@ import type { AppPrefs, AppTheme } from "../../lib/appPrefs";
 import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
 import { Switch } from "../axthrowa/switch";
 import { LisansFormu } from "../axthrowa/LisansEkrani";
-import { HataRaporuAnahtari } from "../axthrowa/HataRaporuAnahtari";
+import PrivacySettings from "../axthrowa/PrivacySettings";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
@@ -292,7 +292,7 @@ export default function AppSettingsPage({
             </div>
           ) : null}
 
-          <HataRaporuAnahtari />
+          <PrivacySettings />
 
           {/* OBS Path */}
           <div className="space-y-2.5">

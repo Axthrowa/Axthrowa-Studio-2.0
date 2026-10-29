@@ -2,6 +2,7 @@ import OBSWebSocket from "obs-websocket-js";
 import { isAudioInput } from "./obsAudio";
 import { yayinBilerekDurduruluyor } from "./yayinSagligi";
 import { useAxthrowaStore } from "../store/useAxthrowaStore";
+import { olay } from "./analitik";
 
 export type ObsConnection = {
   host: string;
@@ -51,6 +52,7 @@ export function getObs() {
     dinleyicilerBagli = true;
     obs.on("Identified", () => {
       duyur(true);
+      olay("obs_connected");
       // Bağlanınca o anki sahne ve yayın durumu; sonrası olaylarla gelir
       void obs!.call("GetCurrentProgramScene").then((s) => useAxthrowaStore.setState({ currentScene: s.currentProgramSceneName })).catch(() => {});
       void obs!.call("GetStreamStatus").then((s) => useAxthrowaStore.setState({ isLive: s.outputActive })).catch(() => {});
@@ -144,6 +146,8 @@ export async function switchScene(opts: {
   transitionMs?: number;
 }) {
   const client = getObs();
+  // Sahne adı gönderilmez (kullanıcı içeriği): yalnız sayım
+  olay("sahne_degisti");
   if (opts.transition) {
     await client.call("SetCurrentSceneTransition", {
       transitionName: opts.transition,

@@ -9,6 +9,7 @@ import { ThemeProvider } from "./lib/theme/ThemeContext";
 import { applyPlatformTheme } from "./lib/platformTheme";
 import { oku as erisimOku, uygula as erisimUygula } from "./lib/erisilebilirlik";
 import { anaPencereyiHatirla } from "./lib/anaPencere";
+import { analitikBaslat } from "./lib/analitik";
 import "./styles/index.css";
 import "./styles/desktop.css";
 import "./styles/overlay.css";
@@ -18,6 +19,8 @@ applyPlatformTheme();
 erisimUygula(erisimOku());
 // Ana pencerenin konum/boyutu (yalnız masaüstü uygulamasının ana penceresinde)
 void anaPencereyiHatirla();
+// Anonim analitik: yalnız masaüstünde, derlemede anahtar ve kullanıcı izni varsa (yoksa kütüphane hiç yüklenmez)
+void analitikBaslat();
 
 /**
  * Panel + OBS HTTP (`http://127.0.0.1:8843/...`) — BrowserRouter.

@@ -123,6 +123,7 @@ import UpdateModal from "@/components/axthrowa/UpdateModal";
 import { Toast } from "@/components/axthrowa/Toast";
 import KarsilamaEkrani from "@/components/axthrowa/LisansEkrani";
 import { gunluk } from "../../lib/gunluk";
+import { olay } from "../../lib/analitik";
 import { useAxthrowaStore, useAxthrowaStoreKoprusu } from "../../store/useAxthrowaStore";
 import {
   clearCreditsSession,
@@ -1047,10 +1048,12 @@ export default function PanelPage() {
         await endLiveFromProfile();
         await closeDbSessionQuiet();
         gunluk.info("Yayın durduruldu");
+        olay("yayin_bitti");
       } else {
         gunluk.info("Yayın başlatılıyor");
         await goLiveFromProfile();
         gunluk.info("Yayın başlatıldı");
+        olay("yayin_basladi");
         try {
           await startSession();
         } catch {

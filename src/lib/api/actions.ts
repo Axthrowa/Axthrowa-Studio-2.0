@@ -3,6 +3,7 @@
  * onayı ve denetim günlüğünü tek yerde uygular (ileride Stream Deck / uzak arayüz aynı eylemleri kullanır).
  */
 import { API_BASE } from "../api";
+import { olay } from "../analitik";
 
 export type ActionParamKind =
   "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "filter" | "transition" | "text";
@@ -41,11 +42,14 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const actionsApi = {
   list: () => call<{ actions: ActionInfo[]; local: boolean }>("/api/actions").then((r) => r.actions),
-  run: (id: string, params: Record<string, string | number> = {}, confirm = false) =>
-    call<{ ok: boolean; id: string; result: unknown }>("/api/actions/run", {
+  run: (id: string, params: Record<string, string | number> = {}, confirm = false) => {
+    // Eylem kimliği ürün verisi (ör. scene.switch); parametreler (sahne/kaynak adı) gönderilmez
+    olay("eylem_calisti", { eylem: id });
+    return call<{ ok: boolean; id: string; result: unknown }>("/api/actions/run", {
       method: "POST",
       body: JSON.stringify({ id, params, confirm }),
-    }),
+    });
+  },
 };
 
 /** Hızlı eylem panelinde gösterilecekler: parametresiz eylemler, kategoriye göre sıralı. */

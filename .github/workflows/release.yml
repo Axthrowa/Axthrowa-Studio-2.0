@@ -12,6 +12,7 @@
 #                             Bu depo özel: özel depodaki dosyaları uygulama oturum açmadan indiremez.
 #   secrets.SURUM_TOKEN       SURUM_DEPOSU verildiyse o depoya "Contents: write" yetkili ince ayarlı belirteç
 #   secrets.SENTRY_DSN        (isteğe bağlı) çökme raporları; yoksa uygulamada Sentry hiç kurulmaz
+#   secrets.POSTHOG_KEY       (isteğe bağlı) anonim analitik; yoksa PostHog hiç yüklenmez (AB sunucusu)
 #
 # macOS (Apple Silicon .dmg) ve Linux (.deb, AppImage) işleri Windows sürümü yayınlandıktan sonra çalışır ve
 # dosyalarını aynı sürüme ekler; biri başarısız olsa Windows sürümü etkilenmez. macOS paketi imzasızdır
@@ -110,6 +111,7 @@ jobs:
       - name: Derle ve paketle (NSIS)
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
         run: |
           npm run build
           npm run build:resonance
@@ -176,6 +178,7 @@ jobs:
       - name: Derle ve paketle (.app, .dmg)
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
         run: |
           npm ci
           npm --prefix resonance ci
@@ -218,6 +221,7 @@ jobs:
       - name: Derle ve paketle (.deb, AppImage)
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
         run: |
           npm ci
           npm --prefix resonance ci

@@ -20,3 +20,12 @@ export function meterPercent(db: number): number {
 export function meterZone(db: number): "ok" | "hot" | "clip" {
   return db >= -9 ? "clip" : db >= -20 ? "hot" : "ok";
 }
+
+/** Kaydırıcı: OBS karıştırıcısı gibi -60..0 dB. Tamamen sola çekince OBS'in sessiz sınırı (-100 dB). */
+export function sesDbdenYuzde(db: number): number {
+  return Math.round(meterPercent(db));
+}
+
+export function sesYuzdedenDb(yuzde: number): number {
+  return yuzde <= 0 ? -100 : Math.round((yuzde - 100) * 0.6 * 10) / 10;
+}

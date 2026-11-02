@@ -20,6 +20,7 @@ import {
   Volume2,
   type LucideIcon,
 } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { useT } from "../../i18n";
 import type { MsgKey } from "../../i18n/messages";
 import { olay } from "../../lib/analitik";
@@ -123,7 +124,7 @@ export default function NavTabBar({
   return (
     <aside className="yya-nav-rail flex h-full w-[200px] shrink-0 flex-col border-r border-white/10 bg-panel-bg">
       <div className="flex h-10 shrink-0 items-center gap-2 border-b border-white/10 px-3">
-        <Radio className="h-4 w-4 shrink-0 text-white/80" strokeWidth={1.75} />
+        <img src={logo} alt="" className="h-5 w-5 shrink-0 rounded" />
         <span className="truncate text-[13px] font-medium text-white">{brandTitle}</span>
       </div>
 

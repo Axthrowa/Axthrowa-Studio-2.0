@@ -53,7 +53,7 @@ import TemplatePicker from "../../components/panel/TemplatePicker";
 import { runObsAction, type ActionRow } from "../../lib/obsActions";
 import { resonanceLinkAllowed } from "../../lib/embedMessages";
 // Kontrol Merkezi yalnız o sekme açılınca yüklenir (ana paketi büyütmesin)
-const ControlCenter = lazy(() => import("../../components/control/ControlCenter"));
+const CanliEkrani = lazy(() => import("../../components/control/CanliEkrani"));
 const ObsStudioPanel = lazy(() => import("../../components/panel/ObsStudioPanel"));
 import { en, tr, type MsgKey } from "../../i18n/messages";
 import {
@@ -1656,7 +1656,8 @@ export default function PanelPage() {
             <Save className="h-3.5 w-3.5" strokeWidth={1.75} />
             <span>{tt("brand.saveNow")}</span>
           </button>
-          {modul === "canli" ? (
+          {/* Canlı ekranının düğmesi kendi üst şeridinde */}
+          {modul === "canli" && !controlTab ? (
             <button
               type="button"
               disabled={masterBusy}
@@ -1739,7 +1740,17 @@ export default function PanelPage() {
         </div>
       ) : controlTab ? (
         <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
-          <ControlCenter onToast={showToast} />
+          <CanliEkrani
+            onToast={showToast}
+            canli={liveOn}
+            mesgul={masterBusy}
+            onYayin={() => void runMasterStream()}
+            onBot={(sayfa) => {
+              setBotSekme(sayfa);
+              setModul("hazirlik");
+              setActiveNav("bot");
+            }}
+          />
         </Suspense>
       ) : yayinTab ? (
         <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>

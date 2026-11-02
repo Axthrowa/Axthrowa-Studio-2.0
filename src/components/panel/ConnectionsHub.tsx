@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, Cable, CirclePower, Radio, Save, Unplug } from "lucide-react";
+import { AlertCircle, Check, Save, Unplug } from "lucide-react";
 import { fetchSettings, patchSettings } from "../../lib/api";
 import { obsControl, type ObsConnectionStatus } from "../../lib/obsControl";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
@@ -12,7 +12,7 @@ import { kickGirisiAc } from "../../lib/kickAuth";
 import { streamaxtBase } from "../../lib/streamaxt";
 import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
 import StatusDot from "@/components/axthrowa/StatusDot";
-import { PlatformLogo } from "../chat/ChatFeed";
+import { SOCIAL_META } from "../../lib/socials";
 import EndRulesEditor from "./EndRulesEditor";
 
 type Props = {
@@ -28,11 +28,6 @@ type Props = {
   onBotPlatformlar?: () => void;
   /** OBS'e bağlanılınca (Kaydet) panel sahne/giriş listelerini yenilesin. */
   onObsConnected?: () => void;
-  master?: {
-    live: boolean;
-    busy: boolean;
-    onToggle: () => void;
-  };
 };
 
 type BotPlatformDurumu = {
@@ -43,6 +38,20 @@ type BotPlatformDurumu = {
   kanalHesabi?: string;
   error?: string;
 };
+
+/** Platformun kendi renginde simge; logosu olmayanda baş harf */
+function PlatformRozeti({ id }: { id: string }) {
+  const meta = SOCIAL_META[id];
+  return (
+    <span aria-hidden className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold" style={{ background: meta?.color || "var(--panel-border)", color: meta?.iconFill || "var(--panel-text, #fff)" }}>
+      {meta ? (
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d={meta.path} fill={meta.iconFill} /></svg>
+      ) : (
+        id.charAt(0).toUpperCase()
+      )}
+    </span>
+  );
+}
 
 const DIGER_PLATFORMLAR = [
   { id: "twitch", ad: "Twitch" },
@@ -71,10 +80,12 @@ const EMPTY_OBS: ObsConnectionStatus = {
 
 const inputCls = "yya-input mt-1 h-9 text-xs md:text-sm font-medium text-white";
 
-export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsPatch, onObsConnected, onBotPlatformlar }: Props) {
+export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, onObsConnected, onBotPlatformlar }: Props) {
   const [kickSlug, setKickSlug] = useState("");
   // Tek doğruluk kaynağı botun durumu: bağlantıyı da sohbete yazmayı da bot yapıyor
   const [platformlar, setPlatformlar] = useState<Record<string, BotPlatformDurumu> | null>(null);
+  const [obsKaynaklari, setObsKaynaklari] = useState(0);
+  const [botAdresi, setBotAdresi] = useState("");
   const [obsScenes, setObsScenes] = useState<string[]>([]);
   // Bitiş kuralı düzenleyicisi için her ekranın kendi eski süre alanları.
   const [legacyEnd, setLegacyEnd] = useState<
@@ -91,9 +102,12 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
 
   const refreshBot = useCallback(async () => {
     try {
-      const r = await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" });
-      const d = r.ok ? ((await r.json()) as { platforms?: Record<string, BotPlatformDurumu> }) : null;
+      const base = await streamaxtBase();
+      setBotAdresi(base);
+      const r = await fetch(`${base}/api/status`, { cache: "no-store" });
+      const d = r.ok ? ((await r.json()) as { platforms?: Record<string, BotPlatformDurumu>; obsKaynaklari?: number }) : null;
       setPlatformlar(d?.platforms || null);
+      setObsKaynaklari(Number(d?.obsKaynaklari) || 0);
       const kanal = String(d?.platforms?.kick?.channel || "");
       if (kanal && !slugYazildi.current) setKickSlug(kanal);
     } catch {
@@ -203,10 +217,50 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
 
   const kick = platformlar?.kick;
 
+  const kanalKaydet = async () => {
+    if (busy) return;
+    setBusy("kanal");
+    const slug = kickSlug.trim().replace(/^@/, "");
+    try {
+      saveBotConfig((prev) => ({ ...prev, channelName: slug }));
+      await patchSettings("chat", { kickSlug: slug });
+      // Yayın kanalı botta da değişir; kayıtlı bot hesabı korunur
+      if (slug && platformlar && slug.toLowerCase() !== String(kick?.channel || "").toLowerCase()) {
+        const r = await fetch(`${await streamaxtBase()}/api/platforms/kick/connect`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channelName: slug }),
+        });
+        if (!r.ok) throw new Error(String((await r.json().catch(() => null))?.error || "Kick kanalı kaydedilemedi"));
+      }
+      slugYazildi.current = false;
+      onToast("Yayın kanalı kaydedildi");
+      void refreshBot();
+    } catch (e) {
+      onToast(String((e as Error).message || e));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const denetle = () => {
+    void refreshBot();
+    void obsControl.status().then(setStatus).catch(() => {});
+  };
+
+  const tekUrlKopyala = async () => {
+    const adres = `${botAdresi || (await streamaxtBase())}/widgets/overlay`;
+    try {
+      await navigator.clipboard.writeText(adres);
+      onToast("Tek URL kopyalandı: OBS'e Tarayıcı Kaynağı olarak ekle");
+    } catch {
+      onToast(adres);
+    }
+  };
+
   const saveAll = async () => {
     if (busy) return;
     setBusy("save");
-    const slug = kickSlug.trim().replace(/^@/, "");
     // Şifre kutusu boşken Kaydet, aynı adres için kayıtlı şifreyi sessizce siliyordu
     // (kutu yüklenmeden basılınca ya da tarayıcı otomatik doldurmayı temizleyince).
     // Aynı adreste kayıtlı bir şifre varsa boş alan onu ezmez.
@@ -227,18 +281,6 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
     const conn = { host, port, password: effectivePassword };
     saveObsSaved(conn);
     try {
-      saveBotConfig((prev) => ({ ...prev, channelName: slug }));
-      await patchSettings("chat", { kickSlug: slug });
-      // Yayın kanalı botta da değişir; kayıtlı bot hesabı korunur
-      if (slug && platformlar && slug.toLowerCase() !== String(kick?.channel || "").toLowerCase()) {
-        const r = await fetch(`${await streamaxtBase()}/api/platforms/kick/connect`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ channelName: slug }),
-        });
-        if (!r.ok) onToast(String((await r.json().catch(() => null))?.error || "Kick kanalı kaydedilemedi"));
-        void refreshBot();
-      }
       await patchSettings("panel", {
         obs: { host, port, password: effectivePassword, startHoldMin, endHoldMin },
       });
@@ -249,7 +291,7 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
       // aksi halde panel eski adrese bakıyor, sahneler gelmiyordu.
       onObsPatch?.({ host, port, password: effectivePassword });
       onObsConnected?.();
-      onToast("Bağlantılar kaydedildi");
+      onToast("OBS ayarları kaydedildi");
     } catch (error) {
       const message = String((error as Error)?.message || error);
       setStatus((prev) => ({
@@ -270,196 +312,161 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
     if (r.needConfig) onBotPlatformlar?.();
   };
 
+  const hazirlik = [
+    { ok: !!kick?.connected, ad: "Kick kanalı okunuyor" },
+    { ok: !!kick?.yazabilir, ad: "Bot sohbete yazabiliyor" },
+    { ok: status.connected, ad: "OBS bağlı" },
+    { ok: obsKaynaklari > 0, ad: "Tek URL OBS'te açık", cozum: { ad: "Adresi kopyala", calistir: () => void tekUrlKopyala() } },
+  ];
+  const hazirSayi = hazirlik.filter((h) => h.ok).length;
+  const kart = "rounded-xl bg-panel-card p-4";
+  const icKart = "flex flex-col gap-2.5 rounded-lg bg-white/[0.04] p-4";
+
   return (
-    <div className={`mx-4 mb-3 mt-1.5 grid gap-3.5 ${master ? "lg:grid-cols-[minmax(0,1fr)_17rem_minmax(0,1fr)]" : "lg:grid-cols-2"}`}>
-      <section className="relative flex flex-col rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
-        <div>
-          <header className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Platformlar</h3>
-            </div>
-          </header>
-
-          <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
-            <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4 text-panel-accent" />
-              <span className="text-xs font-bold text-white">Bot hesabı</span>
-              <StatusDot ok={!!kick?.yazabilir} />
-              <span className="ml-auto truncate text-xs text-white/70">
-                {kick?.botHesabi ? `@${kick.botHesabi}` : kick?.yazabilir ? "kayıtlı" : "girilmedi"}
+    <div className="mx-auto w-full max-w-6xl px-4 py-4">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
+        <div className="flex min-w-0 flex-col gap-3">
+          <section aria-labelledby="kick-baslik" className={`${kart} flex flex-col gap-3`}>
+            <div className="flex items-center gap-3">
+              <PlatformRozeti id="kick" />
+              <h2 id="kick-baslik" className="text-base font-semibold text-white">Kick</h2>
+              <span className="ml-auto">
+                <StatusDot ok={!!kick?.connected} />
               </span>
-              <button type="button" className="yya-btn-ghost h-8 shrink-0 px-2.5 text-xs font-bold" onClick={() => void kickGirisi("bot")}>
-                {kick?.yazabilir ? "Değiştir" : "Giriş yap"}
-              </button>
             </div>
-            <p className="mt-1.5 text-[11px] text-panel-muted">Sohbete yazan hesap. Bir kez girilir, kayıtlı kalır.</p>
-          </div>
-
-          <div className="mt-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
-            <div className="flex items-center gap-2">
-              <Radio className="h-4 w-4 text-panel-accent" />
-              <span className="text-xs font-bold text-white">Yayın kanalı</span>
-              <StatusDot ok={!!kick?.connected} />
-              <button type="button" className="yya-btn-ghost ml-auto h-8 shrink-0 px-2.5 text-xs font-bold" onClick={() => void kickGirisi("kanal")}>
-                {kick?.kanalHesabi ? `@${kick.kanalHesabi}` : "Kanala giriş"}
-              </button>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className={icKart}>
+                <h3 className="text-xs font-semibold text-panel-muted">Bot hesabı</h3>
+                <div className="truncate text-base font-semibold text-white">
+                  {kick?.botHesabi ? `@${kick.botHesabi}` : kick?.yazabilir ? "Kayıtlı" : "Girilmedi"}
+                </div>
+                <p className="text-[13px] leading-snug text-panel-muted">Sohbete yazar. Bir kez girilir, kayıtlı kalır.</p>
+                <button type="button" className="yya-btn-ghost h-10 self-start px-4 text-sm font-medium" onClick={() => void kickGirisi("bot")}>
+                  {kick?.yazabilir ? "Hesabı değiştir" : "Giriş yap"}
+                </button>
+              </div>
+              <div className={icKart}>
+                <h3 className="text-xs font-semibold text-panel-muted">Yayın kanalı</h3>
+                <label className="block">
+                  <span className="sr-only">Kanal adı</span>
+                  <input
+                    className="yya-input h-10 w-full text-sm font-medium text-white"
+                    placeholder="ör. kanal-adi"
+                    value={kickSlug}
+                    onChange={(e) => {
+                      slugYazildi.current = true;
+                      setKickSlug(e.target.value);
+                    }}
+                  />
+                </label>
+                <p className="text-[13px] leading-snug text-panel-muted">
+                  {kick?.error || (kick?.kanalHesabi ? `Giriş yapıldı: @${kick.kanalHesabi}. Temizleme ve başlık işleri açık.` : "Sohbet buradan okunur. Giriş, temizleme ve başlık işlerini açar.")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" disabled={!!busy} className="yya-btn-ghost h-10 px-4 text-sm font-medium" onClick={() => void kanalKaydet()}>
+                    {busy === "kanal" ? "Kaydediliyor…" : "Kaydet"}
+                  </button>
+                  <button type="button" className="yya-btn-ghost h-10 px-4 text-sm font-medium" onClick={() => void kickGirisi("kanal")}>
+                    Kanala giriş
+                  </button>
+                </div>
+              </div>
             </div>
-            <input
-              className={inputCls}
-              placeholder="ör. kanal-adi"
-              value={kickSlug}
-              onChange={(e) => {
-                slugYazildi.current = true;
-                setKickSlug(e.target.value);
-              }}
-            />
-            <p className="mt-1.5 text-[11px] text-panel-muted">
-              {kick?.error || "Dinlenecek kanal; Kaydet ile değişir. Kanala giriş, temizleme ve başlık gibi yayıncı işleri için."}
-            </p>
-          </div>
+          </section>
 
-          <div className="mt-2.5 flex flex-col gap-1">
+          <section aria-labelledby="diger-baslik" className={`${kart} !py-2`}>
+            <h2 id="diger-baslik" className="mb-1 mt-2 text-xs font-semibold text-panel-muted">Diğer platformlar</h2>
             {DIGER_PLATFORMLAR.map(({ id, ad }) => {
               const p = platformlar?.[id];
               return (
-                <div key={id} className="flex items-center gap-2 rounded-lg px-1 py-1 text-xs text-white/85">
-                  {id !== "trovo" && id !== "tiktok" ? <PlatformLogo platform={id as "twitch"} /> : null}
-                  <span className="font-semibold">{ad}</span>
-                  <StatusDot ok={!!p?.connected} />
-                  <span className="truncate text-white/55">{p?.connected ? p.channel : ""}</span>
-                  <button type="button" className="yya-btn-ghost ml-auto h-7 shrink-0 px-2.5 text-[11px] font-bold" onClick={onBotPlatformlar}>
-                    {p?.connected ? "Yönet" : "Giriş"}
+                <div key={id} className="flex min-h-[60px] items-center gap-3">
+                  <PlatformRozeti id={id} />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-white">{ad}</div>
+                    <div className="truncate text-[13px] text-panel-muted">{p?.connected ? `@${p.channel} bağlı` : "Bağlı değil"}</div>
+                  </div>
+                  <button type="button" className="yya-btn-ghost h-10 min-w-[104px] px-4 text-sm font-medium" onClick={onBotPlatformlar}>
+                    {p?.connected ? "Yönet" : "Giriş yap"}
                   </button>
                 </div>
               );
             })}
-          </div>
-          {!platformlar && <p className="mt-2 text-[11px] text-amber-200">Bot kapalı: bağlantılar okunamıyor.</p>}
+            {!platformlar && <p className="mb-2 text-xs text-amber-200">Bot kapalı: bağlantılar okunamıyor.</p>}
+          </section>
         </div>
-      </section>
 
-      {master ? (
-        <button
-          type="button"
-          disabled={master.busy}
-          className={
-            "group relative flex min-h-[8.5rem] w-full flex-col items-center justify-center gap-2.5 rounded-2xl border-2 " +
-            "text-base font-bold tracking-wider transition-all duration-200 active:scale-[0.98] focus:outline-none " +
-            "disabled:opacity-60 " +
-            (master.live
-              ? "border-red-400 bg-gradient-to-b from-red-500 to-red-600 text-white shadow-[0_0_30px_rgba(239,68,68,0.55)] hover:from-red-400 hover:to-red-500 hover:shadow-[0_0_40px_rgba(239,68,68,0.7)]"
-              : "border-emerald-400/80 bg-gradient-to-b from-emerald-500 to-emerald-600 text-[#03291e] shadow-[0_0_28px_rgba(16,185,129,0.45)] hover:from-emerald-400 hover:to-emerald-500 hover:shadow-[0_0_38px_rgba(16,185,129,0.65)]")
-          }
-          onClick={master.onToggle}
-        >
-          <div className="relative">
-            <CirclePower className="h-10 w-10 transition-transform group-hover:scale-110" />
-            {master.live && (
-              <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-red-600 bg-white animate-ping" />
-            )}
-          </div>
-          <span className="text-sm font-extrabold uppercase tracking-widest">
-            {master.busy ? "İşleniyor…" : master.live ? "Yayını Bitir" : "Yayını Başlat"}
-          </span>
-          <span className="text-xs font-semibold opacity-90">
-            {master.live ? "OBS + Platform Yayında" : "Tek Tıkla Canlıya Geç"}
-          </span>
-        </button>
-      ) : null}
-
-      <section className="relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
-        <div>
-          <header className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-panel-accent shadow-glow-sm" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white">OBS WebSocket</h3>
+        <aside className="flex min-w-0 flex-col gap-3">
+          <section aria-labelledby="hazir-baslik" className={`${kart} flex flex-col gap-3`}>
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 id="hazir-baslik" className="text-base font-semibold text-white">Yayına hazır mı?</h2>
+              <span className="text-xs tabular-nums text-panel-muted">{hazirSayi} / {hazirlik.length}</span>
             </div>
-            <StatusDot ok={status.connected} />
-          </header>
-          <div className="grid grid-cols-[1fr_6rem] gap-2.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
-              IP Adresi
-              <input className={inputCls} value={host} onChange={(e) => setHost(e.target.value)} />
+            <ul className="flex flex-col gap-2.5">
+              {hazirlik.map((h) => (
+                <li key={h.ad} className="flex items-start gap-2.5 text-sm text-white">
+                  {h.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" strokeWidth={2.5} aria-label="Hazır" /> : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-label="Eksik" />}
+                  <span>
+                    {h.ad}
+                    {!h.ok && h.cozum ? (
+                      <button type="button" className="block text-[13px] text-panel-accent underline" onClick={h.cozum.calistir}>{h.cozum.ad}</button>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="yya-btn-accent h-10 text-sm font-semibold" onClick={denetle}>Yeniden denetle</button>
+          </section>
+
+          <section aria-labelledby="obs-baslik" className={`${kart} flex flex-col gap-3`}>
+            <div className="flex items-center gap-2">
+              <h2 id="obs-baslik" className="text-base font-semibold text-white">OBS</h2>
+              <span className="ml-auto">
+                <StatusDot ok={status.connected} />
+              </span>
+            </div>
+            <div className="grid grid-cols-[1fr_6rem] gap-2.5">
+              <label className="block text-xs font-semibold text-panel-muted">
+                Adres
+                <input className={inputCls} value={host} onChange={(e) => setHost(e.target.value)} />
+              </label>
+              <label className="block text-xs font-semibold text-panel-muted">
+                Port
+                <input className={inputCls} type="number" value={port} onChange={(e) => setPort(Number(e.target.value) || 4455)} />
+              </label>
+            </div>
+            <label className="block text-xs font-semibold text-panel-muted">
+              Parola
+              <input className={inputCls} type="password" value={password} placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} />
             </label>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
-              Port
-              <input
-                className={inputCls}
-                type="number"
-                value={port}
-                onChange={(e) => setPort(Number(e.target.value) || 4455)}
-              />
-            </label>
-          </div>
-          <label className="mt-2.5 block text-xs font-bold uppercase tracking-wider text-white/85">
-            Parola
-            <input
-              className={inputCls}
-              type="password"
-              value={password}
-              placeholder="••••••••"
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
-              Giriş Bekletme (dk)
-              <input
-                className={inputCls}
-                type="number"
-                min={1}
-                value={startHoldMin}
-                onChange={(e) => setStartHoldMin(Math.max(1, Number(e.target.value) || 5))}
-              />
-            </label>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
-              Çıkış Bekletme (dk)
-              <input
-                className={inputCls}
-                type="number"
-                min={1}
-                value={endHoldMin}
-                onChange={(e) => setEndHoldMin(Math.max(1, Number(e.target.value) || 2))}
-              />
-            </label>
-          </div>
-          {onObsPatch && (
-            <EndRulesEditor
-              obs={sharedObs}
-              legacy={legacyEnd}
-              scenes={obsScenes}
-              onChange={(endRules) => onObsPatch({ endRules })}
-            />
-          )}
-        </div>
-        <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
-          <button
-            type="button"
-            disabled={!!busy}
-            className="yya-btn-primary h-9 px-4 text-xs md:text-sm font-bold"
-            onClick={() => void saveAll()}
-          >
-            <Save className="mr-1.5 inline h-4 w-4" />
-            {busy === "save" ? "Kaydediliyor…" : "Kaydet"}
-          </button>
-          {status.connected && (
-            <button
-              type="button"
-              className="yya-btn-danger h-9 px-3.5 text-xs md:text-sm font-bold"
-              onClick={() => {
-                void obsControl.disconnect().then(setStatus);
-              }}
-            >
-              <Unplug className="mr-1.5 inline h-4 w-4" />
-              Bağlantıyı Kes
-            </button>
-          )}
-          <span className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-mono font-medium text-white/80">
-            <Cable className="h-3.5 w-3.5 text-panel-accent" /> v5.x
-          </span>
-        </div>
-      </section>
+            <details className="text-[13px] text-panel-muted">
+              <summary className="flex min-h-8 cursor-pointer items-center">Bekletme süreleri ve bitiş kuralları</summary>
+              <div className="mt-2 grid grid-cols-2 gap-2.5">
+                <label className="block text-xs font-semibold">
+                  Giriş bekletme (dk)
+                  <input className={inputCls} type="number" min={1} value={startHoldMin} onChange={(e) => setStartHoldMin(Math.max(1, Number(e.target.value) || 5))} />
+                </label>
+                <label className="block text-xs font-semibold">
+                  Çıkış bekletme (dk)
+                  <input className={inputCls} type="number" min={1} value={endHoldMin} onChange={(e) => setEndHoldMin(Math.max(1, Number(e.target.value) || 2))} />
+                </label>
+              </div>
+              {onObsPatch && <EndRulesEditor obs={sharedObs} legacy={legacyEnd} scenes={obsScenes} onChange={(endRules) => onObsPatch({ endRules })} />}
+            </details>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" disabled={!!busy} className="yya-btn-primary h-10 px-4 text-sm font-semibold" onClick={() => void saveAll()}>
+                <Save className="mr-1.5 inline h-4 w-4" />
+                {busy === "save" ? "Kaydediliyor…" : "Kaydet ve bağlan"}
+              </button>
+              {status.connected && (
+                <button type="button" className="yya-btn-ghost h-10 px-3.5 text-sm font-medium" onClick={() => void obsControl.disconnect().then(setStatus)}>
+                  <Unplug className="mr-1.5 inline h-4 w-4" />
+                  Kes
+                </button>
+              )}
+            </div>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }

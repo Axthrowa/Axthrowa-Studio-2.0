@@ -808,7 +808,7 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
 const OLCER_RENK = { ok: "bg-emerald-400", hot: "bg-amber-400", clip: "bg-red-500" } as const;
 
 /** Tek giriş ölçeri: dolu çubuk ortalama büyüklük, ince çizgi tepe değeri. Veri yoksa gösterilmez. */
-function SesOlceri({ seviye, susturulmus }: { seviye?: ObsInputLevel; susturulmus: boolean }) {
+export function SesOlceri({ seviye, susturulmus }: { seviye?: ObsInputLevel; susturulmus: boolean }) {
   if (!seviye) return null;
   const tepe = meterPercent(seviye.peakDb);
   const ort = meterPercent(seviye.magnitudeDb);

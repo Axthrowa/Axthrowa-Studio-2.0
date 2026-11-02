@@ -176,6 +176,30 @@ export const obsControl = {
       await setInputMute(inputName, muted);
     }
   },
+  volumeDb: async (inputName: string): Promise<number> => {
+    try {
+      return await tryInvoke<number>("obs_get_volume", { inputName });
+    } catch {
+      const r = (await getObs().call("GetInputVolume", { inputName })) as { inputVolumeDb: number };
+      return r.inputVolumeDb;
+    }
+  },
+  setVolumeDb: async (inputName: string, db: number) => {
+    try {
+      await tryInvoke<void>("obs_set_volume", { inputName, db });
+    } catch {
+      await getObs().call("SetInputVolume", { inputName, inputVolumeDb: db });
+    }
+  },
+  /** Sahnenin anlık karesi (data URL) */
+  screenshot: async (sceneName: string, width: number): Promise<string> => {
+    try {
+      return await tryInvoke<string>("obs_screenshot", { sceneName, width });
+    } catch {
+      const r = (await getObs().call("GetSourceScreenshot", { sourceName: sceneName, imageFormat: "jpg", imageWidth: width, imageCompressionQuality: 60 })) as { imageData: string };
+      return r.imageData;
+    }
+  },
   startStreamSequence: async () => {
     try {
       return await tryInvoke<ObsSceneSnapshot>("obs_start_stream_sequence");

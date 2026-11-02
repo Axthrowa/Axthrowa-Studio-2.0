@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use futures_util::StreamExt;
 use obws::events::Event as ObsEvent;
-use obws::requests::inputs::InputId;
+use obws::requests::inputs::{InputId, Volume};
+use obws::requests::sources::{SourceId, TakeScreenshot};
 use obws::requests::EventSubscription;
 use obws::requests::scene_items::SetEnabled;
 use obws::requests::scenes::SceneId;
@@ -438,6 +439,41 @@ impl ObsClientState {
       .set_muted(InputId::Name(input_name), muted)
       .await
       .map_err(|error| format!("OBS ses durumu değiştirilemedi: {error}"))
+  }
+
+  pub async fn volume_db(&self, input_name: &str) -> Result<f32, String> {
+    let client = self.client()?;
+    client
+      .inputs()
+      .volume(InputId::Name(input_name))
+      .await
+      .map(|v| v.db)
+      .map_err(|error| format!("OBS ses düzeyi okunamadı: {error}"))
+  }
+
+  pub async fn set_volume_db(&self, input_name: &str, db: f32) -> Result<(), String> {
+    let client = self.client()?;
+    client
+      .inputs()
+      .set_volume(InputId::Name(input_name), Volume::Db(db))
+      .await
+      .map_err(|error| format!("OBS ses düzeyi değiştirilemedi: {error}"))
+  }
+
+  /// Sahnenin anlık karesi (data URL). Canlı ekranının önizlemesi.
+  pub async fn screenshot(&self, scene_name: &str, width: u32) -> Result<String, String> {
+    let client = self.client()?;
+    client
+      .sources()
+      .take_screenshot(TakeScreenshot {
+        source: SourceId::Name(scene_name),
+        format: "jpg",
+        width: Some(width),
+        height: None,
+        compression_quality: Some(60),
+      })
+      .await
+      .map_err(|error| format!("OBS önizlemesi alınamadı: {error}"))
   }
 
   /// Kaydı duraklatır (`Some(true)`), sürdürür (`Some(false)`) ya da değiştirir (`None`). Dönen: duraklatıldı mı.
@@ -902,6 +938,21 @@ pub async fn obs_toggle_mute(
   muted: bool,
 ) -> Result<(), String> {
   state.obs.set_muted(&input_name, muted).await
+}
+
+#[tauri::command]
+pub async fn obs_get_volume(state: State<'_, AppState>, input_name: String) -> Result<f32, String> {
+  state.obs.volume_db(&input_name).await
+}
+
+#[tauri::command]
+pub async fn obs_set_volume(state: State<'_, AppState>, input_name: String, db: f32) -> Result<(), String> {
+  state.obs.set_volume_db(&input_name, db).await
+}
+
+#[tauri::command]
+pub async fn obs_screenshot(state: State<'_, AppState>, scene_name: String, width: u32) -> Result<String, String> {
+  state.obs.screenshot(&scene_name, width).await
 }
 
 #[tauri::command]

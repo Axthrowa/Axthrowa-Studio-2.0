@@ -59,7 +59,16 @@ async function connect() {
   publish({ base });
   const ws = new WebSocket(`${base.replace(/^http/, "ws")}/ws?type=dashboard`);
   feed.ws = ws;
-  ws.onopen = () => publish({ connected: true });
+  ws.onopen = () => {
+    publish({ connected: true });
+    // Ekran sonradan açılınca ya da bağlantı kopup gelince son iletiler görünsün (tekrarlar elenir)
+    fetch(`${base}/api/chat/history`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        for (const data of d?.mesajlar || []) enqueue({ type: "chat", data });
+      })
+      .catch(() => {});
+  };
   ws.onmessage = (ev) => {
     try {
       enqueue(JSON.parse(String(ev.data)));
@@ -355,7 +364,7 @@ export function UniversalChatPanel({ onToast }: { onToast: (m: string) => void }
       <ChatModes base={base} yetenek={yetenek} bagli={bagli} onToast={onToast} />
 
       <div className="flex items-center gap-1">
-        <select className="yya-input !py-1 text-xs" value={hedef} onChange={(e) => setHedef(e.target.value)} title="Botun yazacağı platform">
+        <select className="yya-input !w-auto max-w-[116px] shrink-0 !py-1 text-xs" value={hedef} onChange={(e) => setHedef(e.target.value)} title="Botun yazacağı platform">
           <option value="all">Tüm platformlar</option>
           {gonderilebilir.map((p) => (
             <option key={p} value={p}>

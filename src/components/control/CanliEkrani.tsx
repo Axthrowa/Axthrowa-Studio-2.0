@@ -6,7 +6,7 @@
  * yeniden çizilmesin.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pin } from "lucide-react";
+import { Eye, EyeOff, Pin } from "lucide-react";
 import { actionsApi } from "../../lib/api/actions";
 import { getStreamHealth, isObsConnected, onObsConnection, type StreamHealth } from "../../lib/obs";
 import { isAudioInput, onizlemeBeklemesi } from "../../lib/obsAudio";
@@ -65,11 +65,32 @@ function ayniysaKoru<T>(yeni: T) {
   return <E,>(eski: E): E | T => (JSON.stringify(eski) === JSON.stringify(yeni) ? eski : yeni);
 }
 
+const ONIZLEME_KAPALI_KEY = "yya.canli.onizlemeKapali";
+
+function kayitliOnizlemeAcik(): boolean {
+  try {
+    return localStorage.getItem(ONIZLEME_KAPALI_KEY) !== "1";
+  } catch {
+    return true;
+  }
+}
+
 function ObsOnizleme({ sahne }: { sahne: string }) {
   const tuval = useRef<HTMLCanvasElement>(null);
   const [kareVar, setKareVar] = useState(false);
+  const [acik, setAcik] = useState(kayitliOnizlemeAcik);
+  const degistir = () => {
+    const yeni = !acik;
+    setAcik(yeni);
+    try {
+      localStorage.setItem(ONIZLEME_KAPALI_KEY, yeni ? "0" : "1");
+    } catch {
+      /* tercih saklanamadı: bu oturumda yine geçerli */
+    }
+  };
   useEffect(() => {
-    if (!sahne) {
+    // Kapalıyken OBS'ten hiç kare istenmez
+    if (!sahne || !acik) {
       setKareVar(false);
       return;
     }
@@ -104,7 +125,18 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
     return () => {
       iptal = true;
     };
-  }, [sahne]);
+  }, [sahne, acik]);
+  if (!acik) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl bg-panel-card px-3 py-2 text-sm text-panel-muted">
+        <EyeOff className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate">Önizleme kapalı{sahne ? ` · ${sahne}` : ""}</span>
+        <button type="button" onClick={degistir} className="shrink-0 rounded-md bg-white/[0.08] px-2.5 py-1 text-xs font-medium text-white hover:bg-white/[0.14]">
+          Önizlemeyi aç
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="relative aspect-video max-h-[52vh] w-full overflow-hidden rounded-xl bg-black">
       <canvas ref={tuval} role="img" aria-label={`${sahne} sahnesinin önizlemesi`} className="h-full w-full object-contain" />
@@ -114,6 +146,15 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
         </div>
       ) : null}
       {sahne ? <span className="absolute left-3 top-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-medium text-white">{sahne}</span> : null}
+      <button
+        type="button"
+        onClick={degistir}
+        title="Önizlemeyi kapat: OBS'ten kare istenmez, daha az kaynak harcanır"
+        className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-md bg-black/70 px-2.5 py-1 text-xs font-medium text-white hover:bg-black/90"
+      >
+        <Eye className="h-3.5 w-3.5" />
+        Önizlemeyi kapat
+      </button>
     </div>
   );
 }

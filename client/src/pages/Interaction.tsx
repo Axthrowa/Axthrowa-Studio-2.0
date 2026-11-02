@@ -110,7 +110,7 @@ function TahminPaneli() {
       await yolla('/api/predictions', { baslik: baslik.trim(), secenekler: temiz, kilitDakika: kilitDk });
       setBaslik('');
       setSecenekler(['', '']);
-      toast('Tahmin açıldı — sohbette !bet ile katılabilirler.', 'basari');
+      toast('Tahmin açıldı — sohbette !tahmin ile katılabilirler.', 'basari');
       yukle();
     } catch (e: any) {
       toast(String(e.message), 'hata');
@@ -145,7 +145,7 @@ function TahminPaneli() {
           aciklama={
             t.durum === 'kilitli'
               ? 'Kilitli — yeni bahis alınmıyor, sonucu işaretleyin.'
-              : 'Açık — izleyiciler !bet <seçenek> <puan> yazıyor.'
+              : 'Açık — izleyiciler !tahmin <seçenek> <puan> yazıyor.'
           }
           sag={
             <span
@@ -256,18 +256,18 @@ function TahminPaneli() {
       <Kart baslik="Sohbet komutları">
         <ul className="text-[11px] text-gray-400 space-y-1">
           <li>
-            <code className="text-purple-300">!bet</code> — açık tahminin durumunu gösterir
+            <code className="text-purple-300">!tahmin</code> — açık tahminin durumunu gösterir
           </li>
           <li>
-            <code className="text-purple-300">!bet &lt;seçenek&gt; &lt;puan&gt;</code> — izleyici bahis yapar
+            <code className="text-purple-300">!tahmin &lt;seçenek&gt; &lt;puan&gt;</code> — izleyici bahis yapar
           </li>
           <li>
-            <code className="text-purple-300">!bet create Soru | A | B</code> — yayıncı/mod tahmin açar
+            <code className="text-purple-300">!tahmin create Soru | A | B</code> — yayıncı/mod tahmin açar
           </li>
           <li>
-            <code className="text-purple-300">!bet lock</code> ·{' '}
-            <code className="text-purple-300">!bet result &lt;seçenek&gt;</code> ·{' '}
-            <code className="text-purple-300">!bet cancel</code>
+            <code className="text-purple-300">!tahmin lock</code> ·{' '}
+            <code className="text-purple-300">!tahmin result &lt;seçenek&gt;</code> ·{' '}
+            <code className="text-purple-300">!tahmin cancel</code>
           </li>
         </ul>
       </Kart>

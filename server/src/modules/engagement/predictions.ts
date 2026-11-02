@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  *
  * BotRix'te `/panel/interaction > Topluluk Bahisleri` (BETA V2) ve
- * `!bet yes 1000` / `!bet create` / `!bet result yes` komutları gözlemlendi
+ * `!bet` komut ailesi gözlemlendi; bizde komut `!tahmin`
  * (BOTRIX_UI_INVENTORY §11, §13.1). Bizde hiç yoktu.
  *
  * Kurallar:

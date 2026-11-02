@@ -22,6 +22,11 @@ export interface KickChannelVerification {
   error?: string;
 }
 
+/** Sohbet temizleme: `/clear` sonrası olay bekleme ve yedek olarak tek tek silme sınırları */
+const KOMUT_BEKLEME_MS = 3000;
+const TEK_TEK_EN_COK = 100;
+const TEK_TEK_ARALIK_MS = 150;
+
 export class KickPlatform extends BasePlatform {
   readonly name = 'kick' as const;
   /** Canlı sohbet (okuma) bağlantısı — gönderim resmi API'den ayrıdır. */
@@ -31,6 +36,12 @@ export class KickPlatform extends BasePlatform {
   private chatroomId: number | null = null;
   private broadcasterUserId: number | null = null;
   private botToken: string = '';
+  /** Yayın kanalının kendi girişi (varsa). Moderasyon ve kanal güncellemesi bununla yapılır. */
+  private kanalToken: string = '';
+  private kanalBitis: number = 0;
+  private kanalHesabi: string = '';
+  /** Kick'ten ChatroomClearEvent gelince çözülür (bkz. sohbetiTemizle) */
+  private temizlemeBekleyen: (() => void) | null = null;
   private botUserId: number | null = null;
   private botUsername: string = '';
   /**
@@ -52,6 +63,8 @@ export class KickPlatform extends BasePlatform {
     const channelSlug = channelRow.channel_name.trim().toLowerCase();
     this.currentChannel = channelSlug;
     this.botToken = channelRow.token || '';
+    this.kanalToken = channelRow.kanal_token || '';
+    this.kanalBitis = Number(channelRow.kanal_token_expires_at) || 0;
 
     try {
       // 1. Fetch channel metadata, user ID & chatroom ID
@@ -111,6 +124,8 @@ export class KickPlatform extends BasePlatform {
           }
         }
       }
+
+      await this.kanalHesabiniOku();
 
       // 3. Canlı sohbeti dinle. Eskiden sabit bir Pusher anahtarı vardı; Kick
       //    onu kapatınca (Ekim 2026) bot sohbeti OKUYAMAZ oldu ve komutlar /
@@ -252,6 +267,7 @@ export class KickPlatform extends BasePlatform {
       return;
     }
     if (ad === 'ChatroomClearEvent') {
+      this.temizlemeBekleyen?.();
       eventBus.emit('chat_cleared', { platform: 'kick', channel: channelSlug });
       return;
     }
@@ -486,6 +502,95 @@ export class KickPlatform extends BasePlatform {
     return false;
   }
 
+  private async kanalHesabiniOku(): Promise<void> {
+    this.kanalHesabi = '';
+    if (!this.kanalToken) return;
+    const token = await this.yetkiliToken();
+    try {
+      const r = await axios.get('https://api.kick.com/public/v1/users', {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000
+      });
+      this.kanalHesabi = String(r.data?.data?.[0]?.name || '');
+    } catch (e) {
+      console.warn('[Kick] Kanal hesabı okunamadı:', hataMetni(e));
+    }
+  }
+
+  private async kanalBelirteciniYenile(): Promise<boolean> {
+    const row = db.prepare("SELECT kanal_refresh_token FROM channels WHERE platform = 'kick'").get() as any;
+    const clientId = settingsCache.get('kick_client_id') || '';
+    if (!row?.kanal_refresh_token || !clientId) return false;
+    try {
+      const params = new URLSearchParams({ grant_type: 'refresh_token', client_id: clientId, refresh_token: row.kanal_refresh_token });
+      const secret = settingsCache.get('kick_client_secret') || '';
+      if (secret) params.append('client_secret', secret);
+      const res = await axios.post('https://id.kick.com/oauth/token', params.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+        timeout: 8000
+      });
+      if (!res.data?.access_token) return false;
+      this.kanalToken = res.data.access_token;
+      this.kanalBitis = Date.now() + (res.data.expires_in || 3600) * 1000;
+      db.prepare("UPDATE channels SET kanal_token = ?, kanal_refresh_token = ?, kanal_token_expires_at = ? WHERE platform = 'kick'")
+        .run(...sifreleHepsi([this.kanalToken, res.data.refresh_token || row.kanal_refresh_token]), this.kanalBitis);
+      return true;
+    } catch (e) {
+      console.warn('[Kick] Kanal girişi yenilenemedi:', hataMetni(e));
+      return false;
+    }
+  }
+
+  /** Moderasyon ve kanal işleri: varsa yayın kanalının girişi, yoksa bot hesabı. */
+  private async yetkiliToken(): Promise<string> {
+    if (this.kanalToken && this.kanalBitis && Date.now() > this.kanalBitis - 60_000) await this.kanalBelirteciniYenile();
+    return (this.kanalToken || this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+  }
+
+  /**
+   * Kick'in resmi API'sinde sohbet temizleme ucu yok: `/clear` komutu sohbete yazılır ve
+   * ChatroomClearEvent beklenir. Olay gelmezse (komut düz yazı sayıldıysa) `silinecekler`in
+   * verdiği iletiler resmi silme ucuyla tek tek kaldırılır; yazılan `/clear` da onların içindedir.
+   */
+  async sohbetiTemizle(silinecekler: () => string[]): Promise<{ ok: boolean; yontem?: 'komut' | 'tek-tek'; silinen?: number; hata?: string }> {
+    const token = await this.yetkiliToken();
+    if (!token) return { ok: false, hata: 'Kick hesabı bağlı değil.' };
+    if (!this.broadcasterUserId) return { ok: false, hata: 'Kick kanalı bağlı değil.' };
+    const olayGeldi = new Promise<boolean>((coz) => {
+      const zaman = setTimeout(() => coz(false), KOMUT_BEKLEME_MS);
+      this.temizlemeBekleyen = () => {
+        clearTimeout(zaman);
+        coz(true);
+      };
+    });
+    let komutHatasi = '';
+    try {
+      await axios.post(
+        'https://api.kick.com/public/v1/chat',
+        { broadcaster_user_id: Number(this.broadcasterUserId), content: '/clear', type: 'user' },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' }, timeout: 6000 }
+      );
+    } catch (e: any) {
+      komutHatasi = e?.response?.status ? `Kick ${e.response.status}` : hataMetni(e);
+      this.temizlemeBekleyen?.();
+    }
+    const geldi = await olayGeldi;
+    this.temizlemeBekleyen = null;
+    if (geldi && !komutHatasi) return { ok: true, yontem: 'komut' };
+
+    const kimlikler = silinecekler().slice(-TEK_TEK_EN_COK);
+    let silinen = 0;
+    let silmeHatasi = '';
+    for (const id of kimlikler) {
+      const r = await this.deleteMessage(id);
+      if (r.ok) silinen++;
+      else silmeHatasi = r.hata || 'silinemedi';
+      await new Promise((b) => setTimeout(b, TEK_TEK_ARALIK_MS));
+    }
+    if (silinen > 0) return { ok: true, yontem: 'tek-tek', silinen };
+    return { ok: false, hata: silmeHatasi || komutHatasi || 'Kick /clear komutunu işlemedi; silinecek ileti de yok.' };
+  }
+
   async sendKickMessage(channel: string, message: string, retried = false): Promise<{ success: boolean; message: string; details?: any }> {
     // 1. Ensure token is available
     if (!this.botToken) {
@@ -685,7 +790,7 @@ export class KickPlatform extends BasePlatform {
     if (!ad) return { ok: false, hata: 'Kullanici adi bos' };
     if (!this.broadcasterUserId) return { ok: false, hata: 'Kanal kimligi bilinmiyor (baglanti yok)' };
 
-    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    const token = await this.yetkiliToken();
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
 
     try {
@@ -713,7 +818,7 @@ export class KickPlatform extends BasePlatform {
 
   /** Resmi API: `DELETE /public/v1/chat/{message_id}` — izin `moderation:chat_message:manage`. */
   async deleteMessage(messageId: string): Promise<ModerasyonSonucu> {
-    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    const token = await this.yetkiliToken();
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
     if (!messageId) return { ok: false, hata: 'Mesaj kimligi yok' };
     try {
@@ -771,7 +876,7 @@ export class KickPlatform extends BasePlatform {
 
   /** Resmi API: `PATCH /public/v1/channels` — izin `channel:write`. */
   private async kanalGuncelle(govde: Record<string, unknown>): Promise<ModerasyonSonucu> {
-    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    const token = await this.yetkiliToken();
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
     try {
       await axios.patch('https://api.kick.com/public/v1/channels', govde, {
@@ -799,7 +904,7 @@ export class KickPlatform extends BasePlatform {
 
   /** Kategori adiyla arar (`GET /public/v2/categories?name=`), bulunanla gunceller. */
   async kategoriDegistir(kategori: string): Promise<ModerasyonSonucu & { kategori?: string }> {
-    const token = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    const token = await this.yetkiliToken();
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
     const ad = String(kategori || '').trim();
     if (!ad) return { ok: false, hata: 'Kategori adi bos' };
@@ -962,6 +1067,8 @@ export class KickPlatform extends BasePlatform {
       connected: this.connected,
       channel: this.currentChannel,
       yazabilir: this.connected && Boolean(this.botToken),
+      botHesabi: this.botUsername || undefined,
+      kanalHesabi: this.kanalHesabi || undefined,
       ...(hata ? { error: hata } : {})
     };
   }

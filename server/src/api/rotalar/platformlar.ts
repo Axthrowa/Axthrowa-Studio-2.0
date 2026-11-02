@@ -26,6 +26,8 @@ const router = Router();
 let kickPkceVerifier = '';
 // Son auth-url çağrısının state'i; geri dönüşte tek kullanımlık doğrulanır
 let kickState: BekleyenState | null = null;
+// Girilen hesap ne için: bot hesabı (sohbete yazar) mı, yayın kanalı (moderasyon, başlık) mı
+let kickHedef: 'bot' | 'kanal' = 'bot';
 
 // 2. Platforms Management
 router.get('/platforms', (req: Request, res: Response) => {
@@ -127,11 +129,17 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
   // Save to database
   const existing = db.prepare("SELECT * FROM channels WHERE platform = 'kick'").get() as any;
   if (existing) {
+    // Boş ya da maskeli alan kayıtlı bot girişini silmez: kanal değiştirmek hesabı unutturuyordu
+    const korunan = yeniSirDegeri(finalToken, existing.token ?? null);
+    // Başka kanala geçilince eski kanalın girişi bu kanalda kullanılmaz
+    if (String(existing.channel_name || '').toLowerCase() !== slug) {
+      db.prepare("UPDATE channels SET kanal_token = NULL, kanal_refresh_token = NULL, kanal_token_expires_at = NULL WHERE platform = 'kick'").run();
+    }
     db.prepare(`
-      UPDATE channels 
+      UPDATE channels
       SET channel_name = ?, account_id = ?, token = ?, is_active = 1
       WHERE platform = 'kick'
-    `).run(slug, String(verification.broadcasterUserId || ''), sifrele(finalToken));
+    `).run(slug, String(verification.broadcasterUserId || ''), sifrele(korunan));
   } else {
     db.prepare(`
       INSERT INTO channels (id, platform, channel_name, account_id, token, is_active, created_at)
@@ -191,6 +199,7 @@ router.get('/platforms/kick/auth-url', (req: Request, res: Response) => {
   kickPkceVerifier = crypto.randomBytes(32).toString('base64url');
   const codeChallenge = crypto.createHash('sha256').update(kickPkceVerifier).digest('base64url');
   kickState = yeniState();
+  kickHedef = req.query.hedef === 'kanal' ? 'kanal' : 'bot';
   const state = kickState.deger;
 
   // Moderasyon (AutoMod zaman aşımı / mesaj silme) ve !title/!game için
@@ -255,7 +264,15 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
         const refreshToken = tokenRes.data.refresh_token || null;
         const expiresAt = Date.now() + ((tokenRes.data.expires_in || 3600) * 1000);
         const kickRow = db.prepare("SELECT * FROM channels WHERE platform = 'kick'").get() as any;
-        if (kickRow) {
+        if (kickRow && kickHedef === 'kanal') {
+          // Yayın kanalı girişi: kanal bu hesap olur, kayıtlı bot hesabına dokunulmaz (bot yoksa bu hesap yazar)
+          const u = await axios.get('https://api.kick.com/public/v1/users', { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 5000 });
+          const kanal = String(u.data?.data?.[0]?.name || '').toLowerCase();
+          db.prepare("UPDATE channels SET channel_name = COALESCE(NULLIF(?, ''), channel_name), kanal_token = ?, kanal_refresh_token = ?, kanal_token_expires_at = ?, is_active = 1 WHERE platform = 'kick'")
+            .run(kanal, ...sifreleHepsi([accessToken, refreshToken]), expiresAt);
+          if (!kickRow.token) db.prepare("UPDATE channels SET token = ?, refresh_token = ?, token_expires_at = ? WHERE platform = 'kick'").run(...sifreleHepsi([accessToken, refreshToken]), expiresAt);
+          await platformManager.reconnect('kick');
+        } else if (kickRow) {
           db.prepare("UPDATE channels SET token = ?, refresh_token = ?, token_expires_at = ?, is_active = 1 WHERE platform = 'kick'").run(...sifreleHepsi([accessToken, refreshToken]), expiresAt);
           await platformManager.reconnect('kick');
         } else {

@@ -312,6 +312,12 @@ export class TwitchPlatform extends BasePlatform {
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };
   }
 
+  async sohbetiTemizle(): Promise<{ ok: boolean; yontem?: 'komut'; hata?: string }> {
+    if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };
+    const r = await this.helix.sohbetiTemizle(this.currentChannel);
+    return r.ok ? { ok: true, yontem: 'komut' } : { ok: false, hata: r.hata };
+  }
+
   /** Sohbet modları (yavaş / takipçi / abone / emote / benzersiz). Gövde önceden doğrulanmış olmalı. */
   async sohbetModu(govde: Record<string, boolean | number>): Promise<ModerasyonSonucu> {
     if (!this.currentChannel) return { ok: false, hata: 'Twitch kanalı bağlı değil' };

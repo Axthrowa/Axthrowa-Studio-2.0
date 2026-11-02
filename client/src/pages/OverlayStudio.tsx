@@ -36,7 +36,8 @@ import {
   Move,
   Eye,
   EyeOff,
-  Settings2
+  Settings2,
+  RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
@@ -465,6 +466,8 @@ export function OverlayStudio() {
   const [selectedCanvasWidget, setSelectedCanvasWidget] = useState<string>('chat');
   /** Tuval OBS'te görüneceği gibi mi (true) yoksa örnek verilerle mi çizilsin. */
   const [obsGorunumu, setObsGorunumu] = useState(false);
+  // Artınca tuvaldeki widget'lar yeniden yüklenir
+  const [tuvalAnahtari, setTuvalAnahtari] = useState(0);
   /** Seçili katmanın kendi ayar kaydı (hedef çubuğunda türe göre). */
   const seciliAyarId =
     selectedCanvasWidget === 'goals' ? hedefWidgetKimligi(allInOne.goals?.type) : KATMAN_AYAR_ID[selectedCanvasWidget];
@@ -799,6 +802,22 @@ export function OverlayStudio() {
         : '❌ Kaydedilemedi — StreamAxT çalışıyor mu? Tekrar deneyin.'
     );
     setTimeout(() => setTestNotification(null), 4000);
+  };
+
+  /** OBS'teki Tek URL'yi ve buradaki tuvali yeniden yükler. */
+  const tekUrlYenile = async () => {
+    setTuvalAnahtari((n) => n + 1);
+    const res = await fetch('/api/overlay/reload', { method: 'POST' }).catch(() => null);
+    setTestNotification(res?.ok ? "Tek URL yenilendi: OBS kaynağı ve önizleme yeniden yüklendi." : 'Yenilenemedi: sunucuya ulaşılamadı.');
+    setTimeout(() => setTestNotification(null), 3000);
+  };
+
+  /** Test olayı örnek kipte görünmez: tuval OBS görünümüne geçer. */
+  const katmaniTestEt = async (etiket: string, testAdi: string) => {
+    setObsGorunumu(true);
+    await triggerWidgetTest(testAdi);
+    setTestNotification(`${etiket} testi gönderildi.`);
+    setTimeout(() => setTestNotification(null), 3000);
   };
 
   // Trigger test for specific widget via API
@@ -1204,6 +1223,14 @@ export function OverlayStudio() {
                     </button>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void tekUrlYenile()}
+                  title="OBS'teki Tek URL kaynağını ve bu önizlemeyi yeniden yükler"
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10 flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Yenile
+                </button>
                 <p className="text-[10px] text-gray-400 max-w-md">
                   {obsGorunumu
                     ? allInOne.testMode
@@ -1211,6 +1238,21 @@ export function OverlayStudio() {
                       : 'Gerçek veri: uyarı, anket, çark gibi bileşenler olay geldiğinde görünür.'
                     : 'Örnekler yalnız burada; OBS’te de görmek için “OBS Test Modunu Aç”.'}
                 </p>
+              </div>
+
+              {/* Açık katmanların testleri: yayında görünür, bitince önceki hâline döner */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold text-gray-400 mr-1">Test:</span>
+                {KATMANLAR.filter((k) => (allInOne as any)[k.anahtar]?.enabled && TEST_ADI[KATMAN_AYAR_ID[k.anahtar]]).map((k) => (
+                  <button
+                    key={k.anahtar}
+                    type="button"
+                    onClick={() => void katmaniTestEt(k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]])}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
+                  >
+                    {k.etiket}
+                  </button>
+                ))}
               </div>
 
               {/* 16:9 Screen Simulation Box (Interactive Drag Canvas) */}
@@ -1248,6 +1290,7 @@ export function OverlayStudio() {
                   }}
                 >
                   <OverlayKatmanlari
+                    key={tuvalAnahtari}
                     config={allInOne as any}
                     onizleme={obsGorunumu ? Boolean(allInOne.testMode) : true}
                     sarmala={(katman, icerik, stil) => {

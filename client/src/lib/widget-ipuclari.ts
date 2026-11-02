@@ -59,7 +59,7 @@ export const WIDGET_IPUCLARI: Record<string, string[]> = {
     'Her etiketin başlığı, görünürlüğü ve rengi ayrı ayarlanır; yan yana ya da alt alta dizilebilir.'
   ],
   giveaways: [
-    'Çekiliş açıkken izleyiciler sohbete !katil yazarak katılır.',
+    'Çekiliş açıkken izleyiciler sohbete katılım kelimesini yazarak katılır; başlayınca bot kelimeyi sohbete duyurur.',
     'Katılım şartları (takipçi/abone, puan bedeli, en az mesaj) ve kazanan sayısı ayarlanır; kazanan panelden çekilir.'
   ],
   'hype-train': [

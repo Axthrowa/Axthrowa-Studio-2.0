@@ -34,7 +34,7 @@ function Compact(p) {
   const { track, isPlaying, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
   return (
     <SkinCard
-      className="w-fit min-w-56 max-w-80 rounded-xl border border-white/10 px-3 py-2.5 shadow-xl"
+      className="w-[var(--kart-genislik,20rem)] max-w-none rounded-xl border border-white/10 px-3 py-2.5 shadow-xl"
       background={shellBg}
       {...blurProps}
     >
@@ -58,7 +58,7 @@ function Boxy(p) {
   const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
   return (
     <SkinCard
-      className="w-fit min-w-64 max-w-96 rounded-2xl border border-white/10 p-4 shadow-2xl"
+      className="w-[var(--kart-genislik,24rem)] max-w-none rounded-2xl border border-white/10 p-4 shadow-2xl"
       background={shellBg}
       {...blurProps}
     >
@@ -94,7 +94,7 @@ function Gallery(p) {
   const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, mutedColor, coverProps, blurProps } = p
   const vinyl = coverProps.shape === 'vinyl'
   return (
-    <SkinCard className="w-64 rounded-2xl shadow-2xl" background={shellBg} {...blurProps} allowGlow={false}>
+    <SkinCard className="w-[var(--kart-genislik,16rem)] rounded-2xl shadow-2xl" background={shellBg} {...blurProps} allowGlow={false}>
       <div className={`relative ${vinyl ? 'flex justify-center p-3' : ''}`}>
         {/* Plak diski kartın tam kenarına dayandığında kesilmiş gibi
             duruyordu; yuvarlak kapakta biraz içeri alıyoruz. */}
@@ -125,7 +125,7 @@ function Gallery(p) {
 function Minimal(p) {
   const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, blurProps } = p
   return (
-    <SkinCard className="w-fit min-w-56 max-w-80 rounded-xl px-4 py-3" background={shellBg} {...blurProps}>
+    <SkinCard className="w-[var(--kart-genislik,20rem)] max-w-none rounded-xl px-4 py-3" background={shellBg} {...blurProps}>
       <div className="mb-2 flex items-center justify-between">
         <p className="truncate text-sm font-semibold" style={{ color: textColor }}>
           {track.name} <span style={{ color: mutedColor }}>· {track.artists}</span>
@@ -148,7 +148,7 @@ function MacOS(p) {
   const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
   return (
     <SkinCard
-      className="w-fit min-w-56 max-w-80 rounded-2xl border border-white/10 p-3 shadow-2xl backdrop-blur-xl"
+      className="w-[var(--kart-genislik,20rem)] max-w-none rounded-2xl border border-white/10 p-3 shadow-2xl backdrop-blur-xl"
       background={shellBg}
       {...blurProps}
     >
@@ -182,7 +182,7 @@ function Shell(p) {
   const { track, isPlaying, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
   return (
     <SkinCard
-      className="w-fit min-w-64 max-w-96 rounded-full border border-white/10 py-2 pl-2 pr-6 shadow-xl"
+      className="w-[var(--kart-genislik,24rem)] max-w-none rounded-full border border-white/10 py-2 pl-2 pr-6 shadow-xl"
       background={shellBg}
       {...blurProps}
     >
@@ -206,7 +206,7 @@ function Discord(p) {
   const { track, progress, progressMs, durationMs, shellBg, textColor, mutedColor, theme, coverProps, blurProps } = p
   return (
     <SkinCard
-      className="w-fit min-w-56 max-w-80 rounded-xl p-3 shadow-xl"
+      className="w-[var(--kart-genislik,20rem)] max-w-none rounded-xl p-3 shadow-xl"
       background={theme === 'light' ? shellBg : '#232428'}
       {...blurProps}
     >
@@ -258,7 +258,7 @@ function Clear(p) {
       ? '0 1px 6px rgba(255,255,255,0.85), 0 0 2px rgba(255,255,255,0.7)'
       : '0 1px 6px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.55)'
   return (
-    <div className="w-fit min-w-56 max-w-96 px-1 py-1" style={{ textShadow: shadow }}>
+    <div className="w-[var(--kart-genislik,24rem)] max-w-none px-1 py-1" style={{ textShadow: shadow }}>
       <div className="flex items-center gap-3">
         <Cover {...coverProps} size={48} />
         <div className="min-w-0 flex-1">
@@ -305,7 +305,7 @@ function Ring(p) {
   const head = ringHead(cx, r, pr)
   return (
     <SkinCard
-      className="w-fit min-w-64 max-w-96 rounded-2xl border border-white/10 py-3 pl-3 pr-5 shadow-xl"
+      className="w-[var(--kart-genislik,24rem)] max-w-none rounded-2xl border border-white/10 py-3 pl-3 pr-5 shadow-xl"
       background={shellBg}
       {...blurProps}
     >
@@ -388,7 +388,7 @@ function Aurora(p) {
   ].join(', ')
   return (
     <SkinCard
-      className="w-fit min-w-64 max-w-96 rounded-3xl border border-white/25 p-3.5"
+      className="w-[var(--kart-genislik,24rem)] max-w-none rounded-3xl border border-white/25 p-3.5"
       background={background}
       style={{ boxShadow: `0 10px 30px ${withAlpha(accent, 0.25)}, inset 0 1px 0 rgba(255,255,255,0.28)` }}
       {...blurProps}
@@ -427,7 +427,7 @@ function Edge(p) {
   const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
   return (
     <SkinCard
-      className="w-fit min-w-60 max-w-96 rounded-xl py-3 pl-3 pr-4"
+      className="w-[var(--kart-genislik,24rem)] max-w-none rounded-xl py-3 pl-3 pr-4"
       background={shellBg}
       style={{
         border: `2px solid ${accent}`,

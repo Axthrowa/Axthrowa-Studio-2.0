@@ -90,9 +90,11 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     if (lastMessage.type === 'clear_chat') {
       islenen.current = lastMessage;
       // İşaret yalnız gerçekten silinen ileti varsa: boş sohbette takılı kalıp sonraki çıkışı yutmasın
+      const platform = lastMessage.platform;
       setMessages((prev) => {
-        if (prev.length) anlik.current = true;
-        return [];
+        const kalan = platform ? prev.filter((m) => m.platform !== platform) : [];
+        if (kalan.length !== prev.length) anlik.current = true;
+        return kalan;
       });
       return;
     }

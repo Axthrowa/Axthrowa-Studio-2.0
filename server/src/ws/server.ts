@@ -33,6 +33,8 @@ export function kokenDogrula(info: { origin?: string; req: { headers: Record<str
   return tamam;
 }
 
+const GECMIS_EN_COK = 500;
+
 export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
@@ -197,10 +199,27 @@ export class WebSocketHub {
     } else if (msg.action === 'trigger_tts') {
       ttsEngine.enqueue(msg.text || 'Test TTS', 'Yayıncı');
     } else if (msg.action === 'clear_chat') {
+      this.sohbetGecmisiniTemizle();
       this.broadcastTo(['dashboard', 'chatbox', 'all'], {
         type: 'clear_chat'
       });
     }
+  }
+
+  /** Panel sekme değiştirince ya da yeniden açılınca sohbet boş kalmasın diye son iletiler burada tutulur. */
+  private gecmis: ChatMessagePayload[] = [];
+
+  private gecmiseEkle(m: ChatMessagePayload) {
+    this.gecmis.push(m);
+    if (this.gecmis.length > GECMIS_EN_COK) this.gecmis.splice(0, this.gecmis.length - GECMIS_EN_COK);
+  }
+
+  sohbetGecmisi(platform?: string): ChatMessagePayload[] {
+    return platform ? this.gecmis.filter((m) => m.platform === platform) : [...this.gecmis];
+  }
+
+  sohbetGecmisiniTemizle(platform?: string) {
+    this.gecmis = platform ? this.gecmis.filter((m) => m.platform !== platform) : [];
   }
 
   private setupEventForwarding() {
@@ -212,10 +231,9 @@ export class WebSocketHub {
       const karaListede = !!shieldModeService.karaListeKaydi(payload.user?.username, payload.platform);
       // Kalkan kuralına takılan mesaj da OBS'te gösterilmez (panelde işaretli görünür)
       const kalkanda = !karaListede && payload.user ? shieldModeService.ihlal(payload) : null;
-      this.broadcastTo(['dashboard', 'chatbox', 'all'], {
-        type: 'chat',
-        data: karaListede ? { ...payload, karaListede: true } : kalkanda ? { ...payload, kalkanda } : payload
-      });
+      const veri = karaListede ? { ...payload, karaListede: true } : kalkanda ? { ...payload, kalkanda } : payload;
+      this.gecmiseEkle(veri);
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat', data: veri });
     });
 
     // 1.0 Moderasyon: silinen ileti / yasaklanan kullanıcı / temizlenen sohbet
@@ -225,9 +243,12 @@ export class WebSocketHub {
     eventBus.on('chat_user_removed', (veri: { platform: string; username: string }) => {
       this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_user_removed', data: veri });
     });
-    eventBus.on('chat_cleared', () => {
-      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
+    // Temizlenen yalnız o platformun sohbeti: diğer platformların iletileri ekranda kalır
+    eventBus.on('chat_cleared', (v: { platform?: string } | undefined) => {
+      this.sohbetGecmisiniTemizle(v?.platform);
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat', platform: v?.platform });
     });
+    eventBus.on('cekilis_katilim', () => this.broadcastTo(['all'], { type: 'giveaway_join' }));
     eventBus.on('anket_katmani', (ileti: Record<string, unknown>) => this.broadcastTo(['all'], ileti));
 
     // Botun gönderdiği ileti burada yansıtılmaz: sohbette platformdan geri okunan hâli (isSelf) görünür,
@@ -259,6 +280,7 @@ export class WebSocketHub {
         timestamp: Date.now()
       };
       // Yalnız panel: 'all' her istemciye (OBS sohbet katmanı dahil) gider, iç hata yayında görünüyordu
+      this.gecmiseEkle(errMsg);
       this.broadcastTo(['dashboard'], { type: 'chat', data: errMsg });
     });
 

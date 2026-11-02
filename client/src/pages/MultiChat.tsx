@@ -15,6 +15,11 @@ const KALKAN_ETIKETI: Record<'abone' | 'link' | 'caps' | 'emoji', string> = {
 
 type ElleEylem = 'timeout' | 'ban' | 'unban';
 
+const GECMIS_ACIK = { gecmis: true };
+const PLATFORM_ADI: Record<string, string> = { kick: 'Kick', twitch: 'Twitch', youtube: 'YouTube', trovo: 'Trovo' };
+
+type TemizlikSonucu = { ok: boolean; yontem?: string; silinen?: number; hata?: string };
+
 interface ViewerModalData {
   username: string;
   displayName: string;
@@ -29,12 +34,18 @@ interface ViewerModalData {
 }
 
 export function MultiChat() {
-  const { chatMessages, sendChat, clearChat } = useWebSocket('chatbox');
+  const { chatMessages, sendChat, clearChat, lastMessage } = useWebSocket('chatbox', GECMIS_ACIK);
   const [filter, setFilter] = useState<'all' | 'kick' | 'twitch' | 'youtube' | 'trovo' | 'tiktok' | 'discord'>('all');
   const [inputMessage, setInputMessage] = useState('');
   const [targetPlatform, setTargetPlatform] = useState<string>('all');
-  const [confirmClear, setConfirmClear] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Temizleme penceresi: null kapalı; platform listesi sunucudan gelir
+  const [temizleListe, setTemizleListe] = useState<Array<{ id: string; bagli: boolean }> | null>(null);
+  const [temizleSecili, setTemizleSecili] = useState<Record<string, boolean>>({});
+  const [temizleniyor, setTemizleniyor] = useState(false);
+  const [bildirim, setBildirim] = useState('');
+  const [sabit, setSabit] = useState<{ message: string; displayName?: string; display_name?: string; platform?: string } | null>(null);
+  const listeRef = useRef<HTMLDivElement>(null);
+  const altta = useRef(true);
 
   // Viewer Profile & Notes Modal State
   const [selectedViewer, setSelectedViewer] = useState<ViewerModalData | null>(null);
@@ -52,8 +63,43 @@ export function MultiChat() {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+    fetch('/api/pinned').then((r) => r.json()).then((d) => setSabit(d?.message ? d : null)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (lastMessage?.type === 'pinned_message' && !String(lastMessage.data?.id || '').startsWith('test-')) setSabit(lastMessage.data || null);
+  }, [lastMessage]);
+
+  // Yalnız en alttayken kaydırılır: yukarıdaki iletiyi okurken liste kaçmaz
+  useEffect(() => {
+    const el = listeRef.current;
+    if (el && altta.current) el.scrollTop = el.scrollHeight;
+  }, [chatMessages, filter]);
+
+  const bildir = (metin: string) => {
+    setBildirim(metin);
+    setTimeout(() => setBildirim(''), 7000);
+  };
+
+  const mesajiSabitle = async (msg: any) => {
+    const res = await fetch('/api/pinned', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        platform: msg.platform,
+        username: msg.user.username,
+        displayName: msg.user.displayName || msg.user.username,
+        message: msg.message,
+        color: msg.user.color
+      })
+    }).catch(() => null);
+    bildir(res?.ok ? "Mesaj sabitlendi: OBS'te ve burada görünüyor." : 'Mesaj sabitlenemedi.');
+  };
+
+  const sabitiKaldir = async () => {
+    await fetch('/api/pinned', { method: 'DELETE' }).catch(() => {});
+    setSabit(null);
+  };
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,14 +108,37 @@ export function MultiChat() {
     setInputMessage('');
   };
 
-  const handleClearChat = () => {
-    if (!confirmClear) {
-      setConfirmClear(true);
-      setTimeout(() => setConfirmClear(false), 4000);
-      return;
+  const temizlemeyiAc = async () => {
+    setTemizleSecili({});
+    try {
+      const d = await (await fetch('/api/chat/clear-platforms')).json();
+      setTemizleListe(d.platformlar || []);
+    } catch {
+      setTemizleListe([]);
     }
-    clearChat();
-    setConfirmClear(false);
+  };
+
+  const seciliPlatformlar = (temizleListe || []).filter((p) => p.bagli && temizleSecili[p.id]).map((p) => p.id);
+
+  const platformlardaTemizle = async () => {
+    setTemizleniyor(true);
+    try {
+      const res = await fetch('/api/chat/clear-platforms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platforms: seciliPlatformlar })
+      });
+      const d = await res.json();
+      const sonuclar = Object.entries((d.sonuclar || {}) as Record<string, TemizlikSonucu>).map(([p, s]) =>
+        s.ok ? `${PLATFORM_ADI[p] || p}: temizlendi${s.yontem === 'tek-tek' ? ` (${s.silinen} ileti silindi)` : ''}` : `${PLATFORM_ADI[p] || p}: ${s.hata || 'temizlenemedi'}`
+      );
+      bildir(sonuclar.join(' · ') || d.hata || 'Sonuç alınamadı.');
+    } catch {
+      bildir('Sunucuya ulaşılamadı.');
+    } finally {
+      setTemizleniyor(false);
+      setTemizleListe(null);
+    }
   };
 
   const handleUserClick = async (user: any, platform: string) => {
@@ -212,23 +281,11 @@ export function MultiChat() {
         <div className="flex items-center gap-2">
           {/* One-Click Clear Chat Button */}
           <button
-            onClick={handleClearChat}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm cursor-pointer ${
-              confirmClear
-                ? 'bg-red-600 border-red-500 text-white animate-pulse'
-                : 'bg-white/5 hover:bg-red-500/20 border-white/10 hover:border-red-500/30 text-gray-300 hover:text-red-300'
-            }`}
-            title="OBS Chat ve Canlı Sohbeti temizle"
+            onClick={() => void temizlemeyiAc()}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm cursor-pointer bg-white/5 hover:bg-red-500/20 border-white/10 hover:border-red-500/30 text-gray-300 hover:text-red-300"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>{confirmClear ? 'Emin misiniz? (Tıkla)' : 'Sohbeti Temizle'}</span>
-          </button>
-          <button
-            onClick={() => void fetch('/api/pinned', { method: 'DELETE' })}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold border bg-white/5 hover:bg-white/10 border-white/10 text-gray-300"
-            title="OBS'teki sabitlenmiş mesajı kaldır (mesajların yanındaki 📌 ile sabitlenir)"
-          >
-            📌 Sabiti kaldır
+            <span>Sohbeti Temizle</span>
           </button>
 
           {/* Filter Tabs */}
@@ -251,9 +308,27 @@ export function MultiChat() {
         </div>
       </div>
 
+      {bildirim && <div className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-gray-200">{bildirim}</div>}
+
+      {sabit && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-500/30 bg-purple-500/10 text-sm">
+          <span aria-hidden>📌</span>
+          <b className="text-white shrink-0">{sabit.displayName || sabit.display_name}:</b>
+          <span className="text-gray-200 truncate">{sabit.message}</span>
+          <button onClick={() => void sabitiKaldir()} className="ml-auto shrink-0 text-xs font-bold text-gray-300 hover:text-white cursor-pointer">Kaldır</button>
+        </div>
+      )}
+
       {/* Chat Messages Box */}
-      <div className="flex-1 glass-panel p-4 rounded-2xl overflow-y-auto space-y-2 border border-white/10 flex flex-col justify-end">
-        <div className="space-y-2 overflow-y-auto">
+      <div className="flex-1 min-h-0 glass-panel p-4 rounded-2xl border border-white/10 flex flex-col">
+        <div
+          ref={listeRef}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            altta.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+          }}
+          className="flex-1 min-h-0 space-y-2 overflow-y-auto"
+        >
           {filteredMessages.length === 0 ? (
             <div className="text-center py-24 text-gray-500 text-sm">
               Sohbet akışı bekleniyor... Yayın başladığında veya platformlar bağlandığında tüm mesajlar anlık olarak burada akacaktır.
@@ -309,21 +384,9 @@ export function MultiChat() {
                     {/* OBS "Sabitlenmiş Mesajlar" widget'ına gönder (eskiden panelde bunu yapan bir düğme yoktu) */}
                     <button
                       type="button"
-                      title="OBS'te sabitle (Sabitlenmiş Mesajlar widget'ı)"
-                      onClick={() =>
-                        void fetch('/api/pinned', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            platform: msg.platform,
-                            username: msg.user.username,
-                            displayName: msg.user.displayName || msg.user.username,
-                            message: msg.message,
-                            color: msg.user.color
-                          })
-                        })
-                      }
-                      className="text-[11px] opacity-40 hover:opacity-100 transition-opacity"
+                      title="Sabitle (OBS'te ve burada görünür)"
+                      onClick={() => void mesajiSabitle(msg)}
+                      className="text-[11px] opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
                     >
                       📌
                     </button>
@@ -336,7 +399,6 @@ export function MultiChat() {
               </div>
             ))
           )}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 
@@ -370,6 +432,50 @@ export function MultiChat() {
           <Send className="w-3.5 h-3.5" /> Gönder
         </button>
       </form>
+
+      {/* Sohbeti nerede temizlemeli? */}
+      {temizleListe && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl max-w-sm w-full p-5 space-y-3">
+            <h3 className="text-base font-bold text-white">Sohbet nerede temizlensin?</h3>
+            <p className="text-xs text-gray-400">Seçilen platformda sohbet herkes için temizlenir.</p>
+            <div className="space-y-1">
+              {temizleListe.map((p) => (
+                <label key={p.id} className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm ${p.bagli ? 'text-white cursor-pointer hover:bg-white/5' : 'text-gray-500'}`}>
+                  <input
+                    type="checkbox"
+                    disabled={!p.bagli}
+                    checked={!!temizleSecili[p.id]}
+                    onChange={(e) => setTemizleSecili((s) => ({ ...s, [p.id]: e.target.checked }))}
+                  />
+                  <PlatformLogo platform={p.id} size={14} />
+                  {PLATFORM_ADI[p.id] || p.id}
+                  {!p.bagli && <span className="ml-auto text-[11px]">bağlı değil</span>}
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={() => {
+                  clearChat();
+                  setTemizleListe(null);
+                }}
+                className="mr-auto text-xs font-bold text-gray-300 hover:text-white cursor-pointer"
+              >
+                Yalnız bu ekran ve OBS
+              </button>
+              <button onClick={() => setTemizleListe(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white cursor-pointer">Vazgeç</button>
+              <button
+                disabled={temizleniyor || !seciliPlatformlar.length}
+                onClick={() => void platformlardaTemizle()}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {temizleniyor ? 'Temizleniyor…' : 'Temizle'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Viewer Profile & Streamer Notes Modal */}
       {selectedViewer && (

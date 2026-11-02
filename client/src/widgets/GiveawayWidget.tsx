@@ -2,32 +2,48 @@
  * StreamAxT Giveaway overlay
  * Developed by AxthrowA
  *
- * Çekiliş açıkken başlık, katılım kelimesi ve katılımcı sayısını gösterir;
- * kazanan çekilince `winnerShowSec` saniye kazananı gösterip kaybolur
- * (eskiden kazanan ekranda sonsuza dek kalıyordu ve önizleme örneği yoktu).
+ * Çekiliş açıkken ödül, katılım kelimesi, katılımcı sayısı ve kalan süre görünür. Kazanan çekilince
+ * katılımcı adları çarkta döner, yavaşlar ve kazanan `winnerShowSec` saniye gösterilip kaybolur.
  */
 import { useEffect, useRef, useState } from 'react';
+import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { GIVEAWAY_DEFAULTS } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 
+/** Çark adımlarının bekleme süreleri (ms): hızlı başlar, yavaşlayarak durur. */
+export function carkAdimlari(toplamMs = 3200, ilkMs = 60, carpan = 1.12): number[] {
+  const adimlar: number[] = [];
+  let bekleme = ilkMs;
+  let toplam = 0;
+  while (toplam + bekleme <= toplamMs) {
+    adimlar.push(Math.round(bekleme));
+    toplam += bekleme;
+    bekleme *= carpan;
+  }
+  return adimlar;
+}
+
 export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('giveaways', GIVEAWAY_DEFAULTS);
   const onizleme = onizlemeKipi(props?.previewMode);
-  const [active, setActive] = useState<any>(onizleme ? { title: 'Steam hediye kartı', keyword: s.keyword, created_at: Date.now(), duration_minutes: 5 } : null);
-  const [entries, setEntries] = useState(onizleme ? 37 : 0);
+  const [active, setActive] = useState<any>(null);
+  const [entries, setEntries] = useState<string[]>([]);
   const [winner, setWinner] = useState<string | null>(null);
-  // Katılım geri sayımı (Çekilişler sayfasındaki "Süre"); her saniye yeniden çizilir
+  const [cark, setCark] = useState<string | null>(null);
+  // Katılım geri sayımı; her saniye yeniden çizilir
   const [, setTik] = useState(0);
+  const ayar = useRef(s);
+  ayar.current = s;
+  const adlar = useRef<string[]>([]);
+  adlar.current = entries;
+  const zamanlar = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
   useEffect(() => {
     const t = setInterval(() => setTik((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, []);
-  const bitis = active && Number(active.duration_minutes) > 0 ? Number(active.created_at) + Number(active.duration_minutes) * 60_000 : 0;
-  const kalanSn = bitis ? Math.max(0, Math.round((bitis - Date.now()) / 1000)) : null;
-  const ayar = useRef(s);
-  ayar.current = s;
 
   useEffect(() => {
     if (onizleme) return;
@@ -36,12 +52,33 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
         .then((r) => r.json())
         .then((d) => {
           setActive(d.active || null);
-          setEntries((d.entries || []).length);
+          // Çekiliş kapanınca liste boşalır: çark son bilinen adları kullanabilsin
+          if (d.active) setEntries((d.entries || []).map((e: any) => e.username));
         })
         .catch(() => {});
     load();
     const t = setInterval(load, 4000);
-    let gizle: ReturnType<typeof setTimeout> | null = null;
+
+    const carkiDondur = (kazanan: string, adaylar: string[], sonucSn: number) => {
+      zamanlar.current.forEach(clearTimeout);
+      zamanlar.current = [];
+      setWinner(null);
+      const havuz = adaylar.length ? adaylar : [kazanan];
+      let gecen = 0;
+      carkAdimlari().forEach((bekleme, i) => {
+        gecen += bekleme;
+        zamanlar.current.push(setTimeout(() => setCark(havuz[i % havuz.length]), gecen));
+      });
+      zamanlar.current.push(
+        setTimeout(() => {
+          setCark(null);
+          setWinner(kazanan);
+          void confetti({ particleCount: 140, spread: 90, origin: { y: 0.55 } });
+          if (sonucSn > 0) zamanlar.current.push(setTimeout(() => setWinner(null), sonucSn * 1000));
+        }, gecen + 300)
+      );
+    };
+
     const ws = new KaliciSoket(wsAdresi());
     ws.onyenidenbaglandi = load;
     ws.onmessage = (e) => {
@@ -54,37 +91,69 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
       if (m?.type === 'giveaway_winner') {
         const ad = m.payload?.winner || m.winner?.winner || m.winner;
         if (typeof ad !== 'string') return;
-        setWinner(ad);
-        if (gizle) clearTimeout(gizle);
-        const sn = m.test ? 6 : Number(ayar.current.winnerShowSec);
-        if (sn > 0) gizle = setTimeout(() => setWinner(null), sn * 1000);
+        const adaylar = m.payload?.adaylar || m.winner?.adaylar || adlar.current;
+        carkiDondur(ad, adaylar, m.test ? 6 : Number(ayar.current.winnerShowSec));
+        load();
       }
-      if (m?.type === 'giveaway_join') load();
+      if (m?.type === 'giveaway_join' || m?.type === 'giveaway_started') load();
     };
     return () => {
       clearInterval(t);
-      if (gizle) clearTimeout(gizle);
+      zamanlar.current.forEach(clearTimeout);
       ws.close();
     };
   }, [onizleme]);
 
-  if (!active && !winner) return null;
+  // Önizleme ayarı anında yansıtır: örnek değerler her çizimde güncel ayardan okunur
+  const gosterilen = onizleme ? { title: 'Steam hediye kartı', keyword: s.keyword, created_at: Date.now() - 45_000, duration_minutes: 5 } : active;
+  const katilimci = onizleme ? 37 : entries.length;
+  const sonKatilanlar = onizleme ? ['Mira', 'Deniz', 'Kaan'] : entries.slice(0, 3);
+  if (!gosterilen && !winner && !cark) return null;
+
+  const sureMs = gosterilen ? Number(gosterilen.duration_minutes) * 60_000 : 0;
+  const kalanMs = sureMs > 0 ? Math.max(0, Number(gosterilen.created_at) + sureMs - Date.now()) : 0;
+  const kalanSn = Math.round(kalanMs / 1000);
   const bg = `${s.backgroundColor}${Math.round(s.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
 
   return (
-    <div className={`axt-anim-${s.animation}`} style={{
-      fontFamily: s.fontFamily, background: bg, borderRadius: s.borderRadius, padding: 20, color: s.fontColor, textAlign: 'center'
-    }}>
-      <div style={{ fontSize: s.fontSize, fontWeight: 900, color: s.accentColor }}>{s.overlayTitle}</div>
-      {active && <div style={{ fontWeight: 800, marginTop: 8 }}>{active.title}</div>}
-      {s.showKeyword && active && <div style={{ marginTop: 8, opacity: 0.8 }}>Katıl: {active.keyword || s.keyword}</div>}
-      {s.showEntries && active && <div style={{ marginTop: 6 }}>{entries} katılımcı</div>}
-      {s.showTimer && active && kalanSn !== null && (
-        <div style={{ marginTop: 6, opacity: 0.85 }}>
-          {kalanSn > 0 ? `⏳ ${Math.floor(kalanSn / 60)}:${String(kalanSn % 60).padStart(2, "0")}` : "Katılım kapandı"}
+    <div
+      className={`axt-anim-${s.animation}`}
+      style={{ fontFamily: s.fontFamily, background: bg, borderRadius: s.borderRadius, padding: '18px 22px', color: s.fontColor, textAlign: 'center', overflow: 'hidden', borderTop: `4px solid ${s.accentColor}` }}
+    >
+      <div style={{ fontSize: Math.round(s.fontSize * 0.75), fontWeight: 800, letterSpacing: 2, color: s.accentColor }}>{s.overlayTitle}</div>
+
+      {cark || winner ? (
+        <div style={{ marginTop: 12, marginBottom: 6 }}>
+          <div style={{ fontSize: 13, opacity: 0.75 }}>{winner ? 'Kazanan' : 'Çekiliyor…'}</div>
+          <div style={{ fontSize: s.fontSize * 1.9, fontWeight: 900, color: winner ? s.accentColor : s.fontColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {winner ? `🎉 ${winner}` : cark}
+          </div>
         </div>
+      ) : (
+        <>
+          <div style={{ fontSize: s.fontSize * 1.35, fontWeight: 900, marginTop: 6 }}>{gosterilen.title}</div>
+          {s.showKeyword && (
+            <div style={{ marginTop: 10 }}>
+              <span style={{ fontSize: 13, opacity: 0.75 }}>Katılmak için sohbete yaz </span>
+              <span style={{ display: 'inline-block', marginTop: 4, padding: '4px 14px', borderRadius: 999, background: s.accentColor, color: '#fff', fontWeight: 900, fontSize: s.fontSize }}>
+                {gosterilen.keyword}
+              </span>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 10, fontWeight: 700, fontSize: 14 }}>
+            {s.showEntries && <span>👥 {katilimci} katılımcı</span>}
+            {s.showTimer && sureMs > 0 && <span>{kalanSn > 0 ? `⏳ ${Math.floor(kalanSn / 60)}:${String(kalanSn % 60).padStart(2, '0')}` : 'Katılım kapandı'}</span>}
+          </div>
+          {s.showTimer && sureMs > 0 && (
+            <div style={{ height: 5, marginTop: 8, borderRadius: 999, background: 'rgba(255,255,255,.15)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${(kalanMs / sureMs) * 100}%`, background: s.accentColor, transition: 'width 1s linear' }} />
+            </div>
+          )}
+          {s.showEntries && sonKatilanlar.length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Son katılanlar: {sonKatilanlar.join(', ')}</div>
+          )}
+        </>
       )}
-      {winner && <div style={{ marginTop: 12, fontSize: 22, fontWeight: 900 }}>🎉 {winner}</div>}
     </div>
   );
 }

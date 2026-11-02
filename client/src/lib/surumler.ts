@@ -11,6 +11,22 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.9.2',
+    ad: 'Sohbet',
+    tarih: '2026-11-02',
+    notlar: [
+      'Canlı Sohbet: sekme değişince mesajlar kaybolmaz, yukarı kaydırınca liste kaçmaz',
+      'Sohbeti temizle hangi platformda temizleneceğini sorar; Kick’te /clear çalıştırır, işlemezse mesajları tek tek siler',
+      'Mesaj sabitleme çalışır: sabit mesaj panelde ve OBS’te görünür (Kick’in API’si platformda sabitlemeye izin vermiyor)',
+      'Kick’in orijinal rozetleri',
+      'Bot hesabı ve yayın kanalı girişi ayrıldı; bot hesabı kanal değişse de kayıtlı kalır',
+      'Çekiliş: yeni overlay ve Tek URL katmanı, başlayınca sohbete duyuru, özel katılım kelimesi, açık çekilişi düzenleme, yeniden çekme, kriptografik rastgele seçim',
+      'Tahmin komutu artık !tahmin',
+      'Tek URL’ye widget testleri ve Yenile; Anket ve Çekiliş sekmelerine önizleme',
+      'Resonance kartı sabit genişlikte: şarkı adı değişince yeri oynamaz'
+    ]
+  },
+  {
     surum: '1.9.1',
     ad: 'Sade',
     tarih: '2026-11-02',

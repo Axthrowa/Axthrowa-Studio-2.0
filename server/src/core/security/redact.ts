@@ -34,6 +34,7 @@ const GIZLI_PARCA = [
 /** Sır GİBİ görünse de gizlenmemesi gereken alanlar. */
 const ACIK_KALSIN = new Set([
   'token_expires_at', // yalnız zaman damgası
+  'kanal_token_expires_at',
   'has_token',
   'hasToken',
   'tokenPreview',

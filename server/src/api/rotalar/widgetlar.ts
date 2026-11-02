@@ -117,6 +117,12 @@ router.post('/subathon/add', (req: Request, res: Response) => {
   res.json(subathon.sureEkle(Math.round(dk * 60), `${dk > 0 ? '+' : ''}${dk} dk · elle`, true));
 });
 
+// Tek URL'yi açık tüm OBS kaynaklarında yeniden yükler
+router.post('/overlay/reload', (req: Request, res: Response) => {
+  wsHub.broadcastTo(['all'], { type: 'overlay_reload' });
+  res.json({ success: true });
+});
+
 // 18. All-in-One Overlay Settings (Single OBS URL: /widgets/overlay)
 export function normalizeAllInOneConfig(cfg: any) {
   const defaults = {
@@ -134,7 +140,10 @@ export function normalizeAllInOneConfig(cfg: any) {
     theCup: { enabled: false, x: 1580, y: 610, width: 300, height: 430, scale: 1 },
     polls: { enabled: false, x: 1540, y: 180, width: 340, height: 260, scale: 1 },
     wheel: { enabled: false, x: 760, y: 340, width: 400, height: 400, scale: 1 },
-    hypeTrain: { enabled: false, x: 685, y: 350, width: 550, height: 85, scale: 1 }
+    hypeTrain: { enabled: false, x: 685, y: 350, width: 550, height: 85, scale: 1 },
+    // Yalnız çekiliş açıkken ve mesaj sabitliyken görünürler; kapalı başlayınca panelden yapılan işlem OBS'e yansımıyordu
+    giveaway: { enabled: true, x: 660, y: 380, width: 600, height: 300, scale: 1 },
+    pinned: { enabled: true, x: 560, y: 820, width: 800, height: 110, scale: 1 }
   };
 
   const result: any = { ...defaults, ...(cfg || {}) };
@@ -305,7 +314,7 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     case 'giveaways':
-      wsHub.broadcastTo(['all'], { type: 'giveaway_winner', test: true, payload: { winner: body.username || 'TestIzleyici' } });
+      wsHub.broadcastTo(['all'], { type: 'giveaway_winner', test: true, payload: { winner: body.username || 'TestIzleyici', adaylar: ['Mira', 'Deniz', 'Kaan', 'Ece', 'Bora', 'Lale', 'Arda', 'Selin'] } });
       break;
     case 'loyalty-redemptions':
       wsHub.broadcastTo(['all'], {

@@ -38,6 +38,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
   const [savedPlatform, setSavedPlatform] = useState<string | null>(null);
 
   // Kick specific wizard state
+  const [canliKick, setCanliKick] = useState<{ botHesabi?: string; kanalHesabi?: string } | null>(null);
   const [kickMethod, setKickMethod] = useState<'quick' | 'oauth' | 'token'>('quick');
   const [kickChannelInput, setKickChannelInput] = useState('');
   const [kickTokenInput, setKickTokenInput] = useState('');
@@ -128,6 +129,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
           map[ch.platform] = ch;
         }
         setChannels(map);
+        setCanliKick(d.liveStatuses?.kick || null);
 
         // Pre-fill Kick state if exists
         if (map['kick']) {
@@ -331,6 +333,19 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     } catch (err: any) {
       setKickFeedback({ type: 'error', text: 'OAuth hatası: ' + err.message });
     }
+  };
+
+  /** Kick'in izin sayfasını açar; Client ID sunucuda kayıtlı değilse alandaki kullanılır. */
+  const kickGirisi = async (hedef: 'bot' | 'kanal') => {
+    const clientId = kickClientIdInput.trim();
+    const res = await fetch(`/api/platforms/kick/auth-url?hedef=${hedef}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ''}`);
+    const data = await res.json();
+    if (!res.ok || !data.authUrl) {
+      setKickMethod('oauth');
+      setKickFeedback({ type: 'error', text: data.error || 'Kick giriş adresi alınamadı.' });
+      return;
+    }
+    window.open(data.authUrl, '_blank', 'noopener');
   };
 
   const handleCopyOAuthLink = async () => {
@@ -551,6 +566,25 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
               <span>Botun chate komut cevabı yazabilmesi için Kick hesabı yetkilendirmesi (OAuth veya Token) gereklidir. Ayrıca bot hesabınızı kanalınızda <code className="text-[#53fc18] font-bold">/mod &lt;bot_adı&gt;</code> komutuyla moderatör yapmalısınız.</span>
             </div>
           </div>
+        </div>
+
+        {/* Bot hesabı bir kez girilir ve kayıtlı kalır; yayın kanalı ayrıca girilir */}
+        <div className="grid sm:grid-cols-2 gap-3">
+          {([
+            ['bot', 'Bot hesabı', canliKick?.botHesabi || (channels.kick?.token ? 'kayıtlı' : ''), 'Sohbete yazan hesap. Bir kez girilir, kayıtlı kalır.'],
+            ['kanal', 'Yayın kanalı girişi', canliKick?.kanalHesabi || '', 'Temizleme, başlık ve kategori gibi yayıncı işleri için.']
+          ] as const).map(([hedef, ad, hesap, aciklama]) => (
+            <div key={hedef} className="p-4 rounded-2xl bg-black/60 border border-white/10 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white">{ad}</span>
+                <span className="text-xs text-[#53fc18] truncate">{hesap ? (hesap === 'kayıtlı' ? hesap : `@${hesap}`) : ''}</span>
+                <button type="button" onClick={() => void kickGirisi(hedef)} className="ml-auto px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[#53fc18] text-black cursor-pointer shrink-0">
+                  {hesap ? 'Değiştir' : 'Giriş yap'}
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-400">{aciklama}</p>
+            </div>
+          ))}
         </div>
 
         {/* Input Fields According to Method */}

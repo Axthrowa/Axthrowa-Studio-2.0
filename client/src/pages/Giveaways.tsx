@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Giveaway } from '../types.js';
-import { Gift, Trophy, Plus, Users } from 'lucide-react';
+import { Gift, Trophy, Plus, Users, RotateCw, Settings2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
+import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
 
 export function Giveaways() {
   const [active, setActive] = useState<Giveaway | null>(null);
@@ -10,10 +11,12 @@ export function Giveaways() {
   const [pastGiveaways, setPastGiveaways] = useState<Giveaway[]>([]);
   const [winner, setWinner] = useState<any | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  // Pencere açık çekilişi düzenliyor mu
+  const [duzenleniyor, setDuzenleniyor] = useState(false);
 
   const [title, setTitle] = useState('');
   const [keyword, setKeyword] = useState('!katil');
-  const [subMultiplier, setSubMultiplier] = useState(2.0);
+  const [subMultiplier, setSubMultiplier] = useState(1);
   const [costPoints, setCostPoints] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(10);
   const [winnerCount, setWinnerCount] = useState(1);
@@ -28,6 +31,39 @@ export function Giveaways() {
     return () => clearInterval(interval);
   }, []);
 
+  const yeniPencere = async () => {
+    // Katılım kelimesi Çekiliş ayarlarından gelir
+    const ayar = await fetch('/api/widgets/giveaways/settings').then((r) => r.json()).catch(() => null);
+    if (ayar?.keyword) setKeyword(ayar.keyword);
+    setDuzenleniyor(false);
+    setTitle('');
+    setIsCreating(true);
+  };
+
+  const duzenlemeyiAc = () => {
+    if (!active) return;
+    const a = active as any;
+    setTitle(a.title);
+    setKeyword(a.keyword);
+    setSubMultiplier(Number(a.sub_bonus_multiplier) || 1);
+    setCostPoints(Number(a.cost_points) || 0);
+    setDurationMinutes(Number(a.duration_minutes) || 0);
+    setWinnerCount(Number(a.winner_count) || 1);
+    setMaxEntries(Number(a.max_entries) || 0);
+    setSubOnly(!!a.sub_only);
+    setMinWatch(Number(a.min_watch_minutes) || 0);
+    setDuzenleniyor(true);
+    setIsCreating(true);
+  };
+
+  const yenidenCek = async () => {
+    const res = await fetch('/api/giveaways/reroll', { method: 'POST' });
+    const data = await res.json();
+    if (data.winner) setWinner(data.winner);
+    else alert(data.error || 'Yeniden çekilemedi.');
+    loadGiveaways();
+  };
+
   const loadGiveaways = () => {
     fetch('/api/giveaways')
       .then(r => r.json())
@@ -41,7 +77,7 @@ export function Giveaways() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/giveaways/create', {
+    const res = await fetch(duzenleniyor ? '/api/giveaways/update' : '/api/giveaways/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -92,13 +128,27 @@ export function Giveaways() {
 
         {!active && (
           <button
-            onClick={() => setIsCreating(true)}
+            onClick={() => void yeniPencere()}
             className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all"
           >
             <Plus className="w-4 h-4" /> Yeni Çekiliş Başlat
           </button>
         )}
       </div>
+
+      {/* Kazanan: çekiliş kapandıktan sonra da görünür (eskiden yalnız açık çekilişin içindeydi, hiç görünmüyordu) */}
+      {winner && (
+        <div className="border border-yellow-500/40 bg-yellow-500/10 p-4 rounded-xl text-center space-y-2">
+          <div className="text-yellow-400 font-extrabold text-xs tracking-wider uppercase">Kazanan</div>
+          <div className="text-3xl font-black text-white">@{(winner.winners?.length ? winner.winners : [winner.winner]).join(', @')}</div>
+          <div className="text-xs text-gray-300">
+            {winner.participantsCount} katılımcı ve {winner.totalTickets} bilet arasından rastgele seçildi.
+          </div>
+          <button onClick={() => void yenidenCek()} className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-white inline-flex items-center gap-1.5">
+            <RotateCw className="w-3.5 h-3.5" /> Kazanan gelmedi, yeniden çek
+          </button>
+        </div>
+      )}
 
       {/* Active Giveaway Section */}
       {active ? (
@@ -115,27 +165,23 @@ export function Giveaways() {
                 <span>Abone Bonusu: <b className="text-pink-400">{active.sub_bonus_multiplier}x Bilet</b></span>
                 <span>•</span>
                 <span>Toplam Katılımcı: <b className="text-emerald-400">{entries.length} kişi</b></span>
+                <span>•</span>
+                <span>Süre: <b className="text-white">{(active as any).duration_minutes ? `${(active as any).duration_minutes} dk` : 'süresiz'}</b></span>
+                <span>•</span>
+                <span>Kazanan: <b className="text-white">{(active as any).winner_count || 1}</b></span>
               </div>
             </div>
 
+            <button onClick={duzenlemeyiAc} className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex items-center gap-1.5">
+              <Settings2 className="w-4 h-4" /> Ayarları düzenle
+            </button>
             <button
               onClick={handleDraw}
               className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold text-sm flex items-center gap-2 shadow-xl shadow-pink-600/30 transition-all transform hover:scale-105"
             >
-              <Trophy className="w-5 h-5 text-yellow-300" /> KAZANANI ÇEK (ÇARKI ÇEVİR)
+              <Trophy className="w-5 h-5 text-yellow-300" /> KAZANANI ÇEK
             </button>
           </div>
-
-          {/* Winner Banner */}
-          {winner && (
-            <div className="bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border border-yellow-500/50 p-4 rounded-xl text-center animate-in zoom-in-95">
-              <div className="text-yellow-400 font-extrabold text-xs tracking-wider uppercase">🎉 TEBRİKLER! ÇEKİLİŞİ KAZANAN 🎉</div>
-              <div className="text-3xl font-black text-white mt-1">@{(winner.winners?.length ? winner.winners : [winner.winner]).join(', @')}</div>
-              <div className="text-xs text-gray-300 mt-1">
-                {winner.participantsCount} katılımcı ve {winner.totalTickets} bilet arasından seçildi!
-              </div>
-            </div>
-          )}
 
           {/* Entrants List */}
           <div className="space-y-3 pt-2">
@@ -173,7 +219,7 @@ export function Giveaways() {
           <div className="glass-panel w-full max-w-md p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <Gift className="w-5 h-5 text-purple-400" />
-              Yeni Çekiliş Başlat
+              {duzenleniyor ? 'Çekilişi düzenle' : 'Yeni Çekiliş Başlat'}
             </h2>
 
             <form onSubmit={handleCreate} className="space-y-4">
@@ -215,15 +261,15 @@ export function Giveaways() {
                     onChange={e => setSubMultiplier(parseFloat(e.target.value))}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                   >
-                    <option value="1.0">1x (Eşit Şans)</option>
-                    <option value="2.0">2x Bilet (Önerilen)</option>
-                    <option value="3.0">3x Bilet</option>
-                    <option value="5.0">5x Bilet</option>
+                    <option value="1">Eşit şans (önerilen)</option>
+                    <option value="2">2x Bilet</option>
+                    <option value="3">3x Bilet</option>
+                    <option value="5">5x Bilet</option>
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <label className="text-xs font-bold">Puan maliyeti<input type="number" value={costPoints} onChange={e => setCostPoints(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
+                <label className="text-xs font-bold">Puan maliyeti<input type="number" disabled={duzenleniyor} title={duzenleniyor ? 'Katılanlar eski bedeli ödedi; açık çekilişte değişmez' : undefined} value={costPoints} onChange={e => setCostPoints(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1 disabled:opacity-50" /></label>
                 <label className="text-xs font-bold">Katılım süresi (dk, 0 = süresiz)<input type="number" min={0} value={durationMinutes} onChange={e => setDurationMinutes(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
                 <label className="text-xs font-bold">Kazanan sayısı<input type="number" value={winnerCount} onChange={e => setWinnerCount(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
                 <label className="text-xs font-bold">Max katılım (0=∞)<input type="number" value={maxEntries} onChange={e => setMaxEntries(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
@@ -243,7 +289,7 @@ export function Giveaways() {
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30"
                 >
-                  Çekilişi Başlat
+                  {duzenleniyor ? 'Kaydet' : 'Çekilişi Başlat'}
                 </button>
               </div>
             </form>
@@ -279,6 +325,10 @@ export function Giveaways() {
         </div>
       )}
 
+      <div className="glass-panel p-5 rounded-2xl space-y-3">
+        <h2 className="text-sm font-bold text-white">Önizleme</h2>
+        <WidgetOnizleme url={`${baseUrl}/widgets/giveaways`} testAdi="giveaways" boyut={{ w: 600, h: 300 }} />
+      </div>
       <WidgetSettingsForm widgetId="giveaways" baseUrl={baseUrl} />
     </div>
   );

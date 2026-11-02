@@ -242,6 +242,11 @@ try { db.exec('ALTER TABLE economy ADD COLUMN gifted_subs_count INTEGER NOT NULL
 try { db.exec('ALTER TABLE economy ADD COLUMN tips_amount REAL NOT NULL DEFAULT 0;'); } catch {}
 try { db.exec('ALTER TABLE economy ADD COLUMN loyalty_tier TEXT NOT NULL DEFAULT \'Çaylak\';'); } catch {}
 try { db.exec('ALTER TABLE channels ADD COLUMN token_expires_at INTEGER;'); } catch {}
+// Yayın kanalının kendi girişi: bot hesabından (token) ayrı tutulur, moderasyon ve başlık bununla yapılır
+try { db.exec('ALTER TABLE channels ADD COLUMN kanal_token TEXT;'); } catch {}
+try { db.exec('ALTER TABLE channels ADD COLUMN kanal_refresh_token TEXT;'); } catch {}
+try { db.exec('ALTER TABLE channels ADD COLUMN kanal_token_expires_at INTEGER;'); } catch {}
+try { db.exec('ALTER TABLE giveaways ADD COLUMN elenen_kazananlar TEXT;'); } catch {}
 try { db.exec('ALTER TABLE polls ADD COLUMN duration_seconds INTEGER NOT NULL DEFAULT 60;'); } catch {}
 try { db.exec('ALTER TABLE polls ADD COLUMN ends_at INTEGER;'); } catch {}
 try { db.exec('ALTER TABLE polls ADD COLUMN command TEXT DEFAULT \'!oy\';'); } catch {}

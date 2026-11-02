@@ -1,3 +1,4 @@
+import { giveaway } from '../modules/giveaways/giveaways.js';
 import { sohbetIstatistik } from '../modules/community/sohbet-istatistik.js';
 import { eventBus, ChatMessagePayload } from './event-bus.js';
 import { autoMod } from '../modules/automod/automod.js';
@@ -166,6 +167,12 @@ export class MessagePipeline {
     // 1.4 Puan dususu anahtar kelimesi — komut degil, duz kelime oldugu icin
     // komut isleyicisinden ONCE bakilir.
     if (puanDususu.katil(cuzdanAdi(message.platform, message.user.username), message.user.displayName, rawText)) {
+      return;
+    }
+
+    // 1.5 Çekilişin özel katılım kelimesi (ör. "katıl"): komut olmadığı için buradan yakalanır
+    if (giveaway.ozelKelimeMi(rawText)) {
+      eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: giveaway.handleJoin(message) });
       return;
     }
 

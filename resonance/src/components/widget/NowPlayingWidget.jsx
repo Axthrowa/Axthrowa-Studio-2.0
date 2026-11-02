@@ -74,6 +74,7 @@ export function NowPlayingWidget({
           style={{
             fontFamily,
             color: textColor,
+            ...(Number(config.cardWidth) > 0 ? { '--kart-genislik': `${Number(config.cardWidth)}px` } : {}),
             // Yazı gölgesi rengi (yalnız "arka planı gizle" açıkken kullanılır)
             '--bare-shadow':
               theme === 'light'

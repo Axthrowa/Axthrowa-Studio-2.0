@@ -19,7 +19,7 @@ vi.mock('../../db/index.js', async () => {
 vi.mock('../economy/economy.js', () => ({ economy: { getUser: () => ({ points: 0, watch_time_minutes: 0 }), removePoints: () => 0 } }));
 
 import { db } from '../../db/index.js';
-import { giveaway, kazananlariSec } from './giveaways.js';
+import { adilRastgele, baslangicDuyurusu, giveaway, kazananlariSec, kelimeyiDuzenle } from './giveaways.js';
 
 const mesaj = (ad: string, isSub = false) =>
   ({ platform: 'kick', channel: 'k', user: { username: ad, displayName: ad, isSub, isMod: false, isVip: false, isBroadcaster: false } }) as any;
@@ -61,5 +61,28 @@ describe('kazananlariSec', () => {
     expect(kazananlariSec(k, 1, () => 0.5)[0].ad).toBe('cok'); // 0.5×4=2 → 2. kişinin aralığı
     expect(kazananlariSec(k, 1, () => 0.1)[0].ad).toBe('az');
     expect(kazananlariSec(k, 5).map((x) => x.ad).sort()).toEqual(['az', 'cok']);
+  });
+});
+
+describe('çekiliş duyuruları ve rastgelelik', () => {
+  it('başlangıç duyurusu gerçek katılım kelimesini ve kuralları yazar', () => {
+    const m = baslangicDuyurusu({ title: 'Kod', keyword: 'katıl', duration_minutes: 5, winner_count: 2, sub_bonus_multiplier: 1 });
+    expect(m).toContain('sohbete katıl yaz');
+    expect(m).toContain('5 dk');
+    expect(m).toContain('2 kazanan');
+    expect(m).not.toContain('abonelere');
+  });
+
+  it('katılım kelimesi küçülür, boşsa varsayılan olur', () => {
+    expect(kelimeyiDuzenle('  KATIL ')).toBe('katıl');
+    expect(kelimeyiDuzenle('')).toBe('!katil');
+  });
+
+  it('adil rastgele 0 ile 1 arasında', () => {
+    for (let i = 0; i < 200; i++) {
+      const r = adilRastgele();
+      expect(r).toBeGreaterThanOrEqual(0);
+      expect(r).toBeLessThan(1);
+    }
   });
 });

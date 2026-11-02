@@ -12,7 +12,7 @@ import { tahminler } from '../engagement/predictions.js';
 import { kuyruk } from '../engagement/queue.js';
 import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
-import { giveaway } from '../giveaways/giveaways.js';
+import { baslangicDuyurusu, giveaway, kazananDuyurusu } from '../giveaways/giveaways.js';
 import { anketBaslat, anketBitir, anketKomutuCoz, anketSonucMetni } from '../engagement/anket.js';
 import { sohbetIstatistik } from '../community/sohbet-istatistik.js';
 import { hatirlatmaKur, kisaSure, lurkBasla, lurkBitir, skorKomutu, skorMetni, skorOku, skorYaz, sureCoz } from '../community/sohbet-araclari.js';
@@ -429,7 +429,7 @@ export class CommandManager {
         if (!r.giveaway) return `@${message.user.displayName}, çekiliş açılamadı.`;
         const { wsHub } = await import('../../ws/server.js');
         wsHub.broadcastTo(['all'], { type: 'giveaway_started', giveaway: r.giveaway });
-        return `🎉 ÇEKİLİŞ BAŞLADI: "${odul}" — katılmak için !katil yaz!${dakika > 0 ? ` (${dakika} dk)` : ''}`;
+        return baslangicDuyurusu(r.giveaway);
       }
 
       case 'cekilisbitir':
@@ -441,7 +441,7 @@ export class CommandManager {
         if (!kazanan) return `@${message.user.displayName}, "${acik.title}" çekilişine henüz kimse katılmadı.`;
         const { wsHub } = await import('../../ws/server.js');
         wsHub.broadcastTo(['wheel', 'dashboard', 'all'], { type: 'giveaway_winner', winner: kazanan });
-        return `🏆 "${acik.title}" çekilişinin kazananı: ${kazanan.winners.map((w) => '@' + w).join(', ')}! (${kazanan.participantsCount} katılımcı) 🎉`;
+        return kazananDuyurusu(acik.title, kazanan);
       }
 
       case 'cekilisiptal': {
@@ -1007,9 +1007,9 @@ export class CommandManager {
         return komutlarMetni({ kategori: args.join(' ').trim() || undefined, kapali: [...this.kapaliYerlesikler(), ...modulKapali], ozel: ozel.map((c) => String(c.name)) });
       }
 
-      // ---- Topluluk bahisleri (BotRix: !bet) -------------------------------
-      case 'bahis':
-      case 'bet': {
+      // ---- Topluluk tahminleri: !tahmin (eski adı !bahis da çalışır) --------
+      case 'tahmin':
+      case 'bahis': {
         const alt = (args[0] || '').toLowerCase();
         const mod = message.user.isBroadcaster || message.user.isMod;
 
@@ -1019,7 +1019,7 @@ export class CommandManager {
           const [baslik, ...sec] = kalan.split('|').map((x) => x.trim());
           const t = tahminler.olustur(baslik || 'Tahmin', sec.length ? sec : ['Evet', 'Hayır']);
           if ('hata' in t) return `@${message.user.displayName}, ${t.hata}`;
-          return `🎲 Tahmin açıldı: ${t.baslik} → ${t.secenekler.map((x, i) => `${i + 1}) ${x}`).join(' ')} · Katıl: !bet <seçenek> <puan>`;
+          return `🎲 Tahmin açıldı: ${t.baslik} → ${t.secenekler.map((x, i) => `${i + 1}) ${x}`).join(' ')} · Katıl: !tahmin <seçenek> <puan>`;
         }
 
         if (alt === 'result' || alt === 'sonuc') {

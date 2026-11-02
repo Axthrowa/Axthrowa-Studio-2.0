@@ -129,8 +129,58 @@ router.post('/automod', (req: Request, res: Response) => {
 
 // 16. Chat Clear Action (One-click)
 router.post('/chat/clear', (req: Request, res: Response) => {
+  wsHub.sohbetGecmisiniTemizle();
   wsHub.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
   res.json({ success: true, message: 'Canlı sohbet başarıyla temizlendi' });
+});
+
+router.get('/chat/history', (req: Request, res: Response) => {
+  res.json({ mesajlar: wsHub.sohbetGecmisi() });
+});
+
+// Platformda sohbet temizleme: yayıncı panelde hangi platformlar olduğunu seçer
+const TEMIZLENEBILIR = ['kick', 'twitch', 'youtube', 'trovo'] as const;
+const TEK_TEK_EN_COK = 50; // YouTube silme işlemi kota harcar
+
+router.get('/chat/clear-platforms', (req: Request, res: Response) => {
+  const platformlar = TEMIZLENEBILIR.map((id) => {
+    const p: any = platformManager.getPlatform(id);
+    return { id, bagli: !!p?.isConnected?.(), tumu: typeof p?.sohbetiTemizle === 'function' };
+  });
+  res.json({ platformlar });
+});
+
+router.post('/chat/clear-platforms', async (req: Request, res: Response) => {
+  const secilen = (Array.isArray(req.body?.platforms) ? req.body.platforms : []).filter((x: unknown) => TEMIZLENEBILIR.includes(x as any));
+  if (!secilen.length) return res.status(400).json({ ok: false, hata: 'Temizlenecek platform seçilmedi.' });
+  const sonuclar: Record<string, unknown> = {};
+  for (const id of secilen as string[]) {
+    const p: any = platformManager.getPlatform(id);
+    if (!p?.isConnected?.()) {
+      sonuclar[id] = { ok: false, hata: 'Bağlı değil.' };
+      continue;
+    }
+    const kimlikler = () => wsHub.sohbetGecmisi(id).filter((m) => !m.user?.id?.startsWith('streamaxt_')).map((m) => m.id);
+    let sonuc: any;
+    if (typeof p.sohbetiTemizle === 'function') {
+      sonuc = await p.sohbetiTemizle(kimlikler);
+    } else {
+      let silinen = 0;
+      let hata = '';
+      for (const mesajId of kimlikler().slice(-TEK_TEK_EN_COK)) {
+        const r = await p.deleteMessage(mesajId);
+        if (r.ok) silinen++;
+        else hata = r.hata || 'silinemedi';
+      }
+      sonuc = silinen > 0 ? { ok: true, yontem: 'tek-tek', silinen } : { ok: false, hata: hata || 'Silinecek ileti yok.' };
+    }
+    sonuclar[id] = sonuc;
+    if (sonuc.ok) {
+      eventBus.emit('chat_cleared', { platform: id, channel: '' });
+      shieldModeService.addAuditLog('CLEAR_CHAT', 'Yayıncı', `${id} sohbeti temizlendi`);
+    }
+  }
+  res.json({ ok: true, sonuclar });
 });
 
 // 3. Shield Mode & Moderation Security

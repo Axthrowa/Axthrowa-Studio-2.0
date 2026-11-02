@@ -3,7 +3,9 @@ import { flushSync } from 'react-dom';
 import { ChatMessage, PlatformStatus } from '../types.js';
 import { wsAdresi } from '../lib/widget-style.js';
 
-export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all' = 'all') {
+const EN_COK_ILETI = 500;
+
+export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'all' = 'all', secenek?: { gecmis?: boolean }) {
   const [connected, setConnected] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeAlert, setActiveAlert] = useState<any | null>(null);
@@ -29,6 +31,18 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
 
       ws.onopen = () => {
         setConnected(true);
+        // Sekme değişince ya da bağlantı kopup gelince son iletiler geri yüklenir
+        if (secenek?.gecmis) {
+          fetch('/api/chat/history')
+            .then((r) => r.json())
+            .then((d) =>
+              setChatMessages((prev) => {
+                const gorulen = new Set(prev.map((m) => m.id));
+                return [...(d.mesajlar || []).filter((m: ChatMessage) => !gorulen.has(m.id)), ...prev].slice(-EN_COK_ILETI);
+              })
+            )
+            .catch(() => {});
+        }
         // Galeri önizlemesi "Test et"i bu işaretle zamanlar (bkz. WidgetOnizleme)
         if (typeof window !== 'undefined') (window as unknown as { __axtSoketAcik?: boolean }).__axtSoketAcik = true;
         console.log(`[WS] Connected to StreamAxT Hub (${type})`);
@@ -49,7 +63,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
           } else if (payload.type === 'platform_statuses' && payload.data) {
             setPlatformStatuses(payload.data);
           } else if (payload.type === 'chat') {
-            setChatMessages((prev) => [...prev.slice(-150), payload.data]);
+            setChatMessages((prev) => [...prev.slice(-(EN_COK_ILETI - 1)), payload.data]);
           } else if (payload.type === 'alert') {
             setActiveAlert(payload.alert || payload);
           } else if (payload.type === 'alert_control') {
@@ -59,7 +73,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
           } else if (payload.type === 'tts' || payload.type === 'tts_play') {
             setTtsItem(payload.data || payload.item || payload);
           } else if (payload.type === 'clear_chat') {
-            setChatMessages([]);
+            setChatMessages((prev) => (payload.platform ? prev.filter((m) => m.platform !== payload.platform) : []));
           }
         } catch (err) {
           console.error('[WS] Parse error:', err);
@@ -78,7 +92,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
     } catch {
       if (!kapandiRef.current) reconnectTimeoutRef.current = setTimeout(connect, 3000);
     }
-  }, [type]);
+  }, [type, secenek?.gecmis]);
 
   useEffect(() => {
     kapandiRef.current = false;

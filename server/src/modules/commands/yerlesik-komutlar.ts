@@ -62,7 +62,7 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
   k('8ball', ['kure'], 'Oyunlar', 'herkes', 'Sihirli küre soruna cevap verir', '!8ball <soru>'),
   k('kelime', ['anagram'], 'Oyunlar', 'herkes', 'Karışık harflerden kelime bulmaca'),
   k('cark', ['wheel'], 'Oyunlar', 'herkes', 'Şans çarkını çevir (puan karşılığı olabilir)'),
-  k('bahis', ['bet'], 'Oyunlar', 'herkes', 'Topluluk bahsi · mod: !bahis ac Soru | A | B', '!bahis <seçenek> <puan>', true),
+  k('tahmin', ['bahis'], 'Oyunlar', 'herkes', 'Topluluk tahmini · mod: !tahmin ac Soru | A | B', '!tahmin <seçenek> <puan>', true),
   k('bingo', [], 'Oyunlar', 'herkes', 'Emote bingosu · mod: !bingo baslat', undefined, true),
   k('kappagen', ['emotepatlat'], 'Oyunlar', 'herkes', 'Emote patlat (ücretliyse herkes, değilse mod)', '!kappagen KEKW'),
 

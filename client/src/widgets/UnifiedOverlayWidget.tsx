@@ -225,7 +225,9 @@ export function UnifiedOverlayWidget() {
   // Listen to live WebSocket config updates
   useEffect(() => {
     if (!lastMessage) return;
-    if (lastMessage.type === 'all_in_one_overlay_settings' && lastMessage.config) {
+    if (lastMessage.type === 'overlay_reload') {
+      window.location.reload();
+    } else if (lastMessage.type === 'all_in_one_overlay_settings' && lastMessage.config) {
       setConfig(prev => ({ ...prev, ...lastMessage.config }));
     } else if (lastMessage.type === 'init') {
       // Sunucu yeniden başladı / bağlantı geri geldi: kopukken kaydedilen

@@ -6,6 +6,7 @@
  * rota gövdeleri DEĞİŞMEDİ, özgün sırayla kayıtlıdır. Bağlama sırası
  * api/routes.ts toplayıcısındadır.
  */
+import { wsHub } from '../../ws/server.js';
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { platformManager } from '../../platforms/manager.js';
@@ -36,6 +37,8 @@ router.get('/status', (req: Request, res: Response) => {
     // "yalnız yayındayken" komutları buna bağlı; pano rozetinde gösterilir.
     canli: canliDurum.ozet(),
     platforms,
+    // Tek URL ya da bir widget OBS'te açık mı (Bağlantılar'daki hazırlık listesi)
+    obsKaynaklari: wsHub.obsKaynakSayisi(),
     stats: {
       commandsCount,
       timersCount,

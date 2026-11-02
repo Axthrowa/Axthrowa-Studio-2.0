@@ -3,7 +3,21 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { cevapMesaji, soruMesaji } from './trivia-mesaj.js';
+import { cevapMesaji, soruMesaji, triviaArgumanlari } from './trivia-mesaj.js';
+
+describe('triviaArgumanlari', () => {
+  const coz = (s: string) => (s.includes('tarih') ? 'Tarih' : s.includes('4') ? '4 İşlem' : 'all');
+  it('kategori ve sayıyı sırası ne olursa olsun tanır', () => {
+    expect(triviaArgumanlari(['tarih', '5'], coz)).toEqual({ kategori: 'Tarih', adet: 5 });
+    expect(triviaArgumanlari(['5', 'tarih'], coz)).toEqual({ kategori: 'Tarih', adet: 5 });
+  });
+  it('sayı kategori sanılmaz, sınırlanır, yoksa varsayılan kullanılır', () => {
+    expect(triviaArgumanlari(['4'], coz)).toEqual({ kategori: 'all', adet: 4 });
+    expect(triviaArgumanlari(['99'], coz).adet).toBe(20);
+    expect(triviaArgumanlari(['0'], coz).adet).toBe(1);
+    expect(triviaArgumanlari([], coz, 5)).toEqual({ kategori: 'all', adet: 5 });
+  });
+});
 
 const q = { question: 'Türkiye’nin başkenti\nneresidir?', optionA: 'İstanbul', optionB: 'Ankara', optionC: 'İzmir', optionD: 'Bursa' };
 

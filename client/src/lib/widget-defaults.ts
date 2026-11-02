@@ -665,6 +665,8 @@ export const LYRICS_DEFAULTS = {
   lineFontFamily: '',
   idleText: '🎵 Müzik ritmini dinliyor...',
   notFoundText: 'Bu şarkının sözleri bulunamadı',
+  /** "Bulunamadı" yazısı kaç saniye kalsın; sonra widget gizlenir, sözü bulunan şarkıda yeniden açılır (0 = hep göster) */
+  notFoundSeconds: 6,
   showTrack: true,
   showPrev: true,
   showNext: true,

@@ -52,7 +52,23 @@ describe('emote kombo', () => {
   });
 });
 
-import { sozGizlensinMi } from '../widgets/LyricsWidget.js';
+import { bulunamadiDurumu, sozGizlensinMi } from '../widgets/LyricsWidget.js';
+
+describe('söz bulunamayınca', () => {
+  it('yazı süre boyunca kalır, sonra gizlenir; yeni şarkıda ve söz bulununca açılır', () => {
+    const a = bulunamadiDurumu(null, 'A', true, 6, 1000);
+    expect(a.gizle).toBe(false);
+    expect(bulunamadiDurumu(a.iz, 'A', true, 6, 6999).gizle).toBe(false);
+    const b = bulunamadiDurumu(a.iz, 'A', true, 6, 7000);
+    expect(b.gizle).toBe(true);
+    expect(bulunamadiDurumu(b.iz, 'B', true, 6, 8000).gizle).toBe(false);
+    expect(bulunamadiDurumu(b.iz, 'B', false, 6, 8000)).toEqual({ iz: null, gizle: false });
+  });
+
+  it('süre 0 ise yazı hep kalır', () => {
+    expect(bulunamadiDurumu({ sarki: 'A', an: 0 }, 'A', true, 0, 999999).gizle).toBe(false);
+  });
+});
 
 describe('şarkı sözleri', () => {
   it('şarkı durunca ya da bitince gizlenir', () => {

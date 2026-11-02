@@ -129,7 +129,8 @@ const LABELS: Record<string, string> = {
   onlyViewers: 'Yalnız izleyiciler (yayıncı tahta çıkamaz/gösterilmez)', emptyText: 'Taht boşken yazı',
   labelFollow: 'Takipçi başlığı', labelSub: 'Abone başlığı', labelTip: 'Bağış başlığı', labelTop: 'En büyük bağış başlığı',
   labelRaid: 'Raid başlığı', labelKicks: 'KICKs başlığı', labelFollowers: 'Takipçi sayısı başlığı', showFollowers: 'Takipçi sayısı göster', emptyValue: 'Veri yokken', labelColor: 'Başlık rengi',
-  notFoundText: 'Söz bulunamayınca yazı'
+  notFoundText: 'Söz bulunamayınca yazı',
+  notFoundSeconds: 'Bulunamadı yazısının süresi (sn, 0 = hep)'
 };
 
 const SECTIONS: Record<string, string> = {

@@ -7,7 +7,7 @@
  * üretiyordu ve satır sayacı şarkı değişince sıfırlanmıyordu; sözler yeni
  * parçaya geçince ortadan devam ediyordu.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Disc } from 'lucide-react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { LYRICS_DEFAULTS } from '../lib/widget-defaults.js';
@@ -18,6 +18,19 @@ export function sozGizlensinMi(d: { title?: unknown; isPlaying?: unknown; progre
   if (!d.title || d.isPlaying === false) return true;
   const sure = Number(d.durationMs) || 0;
   return d.isPlaying === true && sure > 0 && (Number(d.progressMs) || 0) + gecenMs >= sure;
+}
+
+/** Bu şarkının sözünün bulunamadığı ilk an; şarkı değişince sıfırlanır. */
+export type BulunamadiIzi = { sarki: string; an: number } | null;
+
+/**
+ * "Sözler bulunamadı" yazısı `sureSn` kadar kalır, sonra widget gizlenir. Şarkı değişince ya da söz
+ * bulununca iz silinir, widget yeniden açılır. `sureSn` 0 ise yazı hep kalır.
+ */
+export function bulunamadiDurumu(iz: BulunamadiIzi, sarki: string, yok: boolean, sureSn: number, simdi: number): { iz: BulunamadiIzi; gizle: boolean } {
+  if (!yok) return { iz: null, gizle: false };
+  const yeni = iz && iz.sarki === sarki ? iz : { sarki, an: simdi };
+  return { iz: yeni, gizle: sureSn > 0 && simdi - yeni.an >= sureSn * 1000 };
 }
 
 interface LyricLine {
@@ -53,6 +66,9 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
   });
   const [bulunamadi, setBulunamadi] = useState(false);
   const [gizli, setGizli] = useState(!onizleme);
+  const bulunamadiIzi = useRef<BulunamadiIzi>(null);
+  const ayar = useRef(s);
+  ayar.current = s;
 
   useEffect(() => {
     if (onizleme) return;
@@ -72,7 +88,9 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
         setArtist(data.artist || '');
         setLines(Array.isArray(data.lines) ? data.lines : []);
         setBulunamadi(Boolean(data.title) && data.bulundu === false);
-        setGizli(sozGizlensinMi(data));
+        const yok = bulunamadiDurumu(bulunamadiIzi.current, `${data.artist}|${data.title}`, Boolean(data.title) && data.bulundu === false, Number(ayar.current.notFoundSeconds) || 0, Date.now());
+        bulunamadiIzi.current = yok.iz;
+        setGizli(sozGizlensinMi(data) || yok.gizle);
         setSenkron({
           synced: Boolean(data.synced),
           progressMs: typeof data.progressMs === 'number' ? data.progressMs : null,

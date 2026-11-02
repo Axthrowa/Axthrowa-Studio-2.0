@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.9.3',
+    ad: 'Soru Sayısı',
+    tarih: '2026-11-02',
+    notlar: [
+      '!soru tarih 5: kategoriden sonra yazılan soru sayısı çalışır (yayıncı ve moderatör; izleyici tek soru açar)',
+      'Şarkı sözü bulunamayınca yazı birkaç saniye görünür, sonra widget gizlenir; sözü bulunan şarkıda yeniden açılır (süre ayarlardan değişir)'
+    ]
+  },
+  {
     surum: '1.9.2',
     ad: 'Sohbet',
     tarih: '2026-11-02',

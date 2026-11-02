@@ -67,7 +67,7 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
   k('kappagen', ['emotepatlat'], 'Oyunlar', 'herkes', 'Emote patlat (ücretliyse herkes, değilse mod)', '!kappagen KEKW'),
 
   // Bilgi yarışması
-  k('soru', ['trivia', 'bilgi', 'bilgiyarismasi'], 'Bil Bakalım', 'herkes', 'Yeni soru sor (kategori verilebilir)', '!soru tarih'),
+  k('soru', ['trivia', 'bilgi', 'bilgiyarismasi'], 'Bil Bakalım', 'herkes', 'Yeni soru sor; yayıncı ve moderatör soru sayısı da verebilir', '!soru tarih 5'),
   k('yarisma', ['turnuva'], 'Bil Bakalım', 'herkes', 'Çok sorulu yarışma · mod durdurur', '!yarisma 10', true),
   k('soruatla', ['sorubitir', 'pas'], 'Bil Bakalım', 'mod', 'Aktif soruyu atla'),
   k('triviaskor', ['skor'], 'Bil Bakalım', 'herkes', 'Bil Bakalım puanın'),

@@ -1,3 +1,4 @@
+import { triviaArgumanlari } from '../games/trivia-mesaj.js';
 import { db } from '../../db/index.js';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { parseVariables } from '../../core/variable-parser.js';
@@ -845,10 +846,21 @@ export class CommandManager {
           return `@${message.user.displayName}, zaten aktif bir soru devam ediyor! Kalan süre: ${state.remainingSeconds} sn. Cevap için sohbete A, B, C veya D yazın!`;
         }
 
-        const cat = parseTriviaCategory(args[0] || '');
-        const q = triviaEngine.startQuestion({ category: cat });
+        // Sıradaki soruyu bekleyen yarışma bozulmasın (yeni soru onun zamanlayıcısını siliyordu)
+        if (state.mode === 'tournament') {
+          return `@${message.user.displayName}, bilgi yarışması devam ediyor. Bitmesini bekle ya da moderatör !yarisma durdur yazsın.`;
+        }
+
+        // !soru tarih 5: kategori ve soru sayısı. Birden çok soru, !yarisma ile aynı yetkide (izleyici yayını kilitlemesin)
+        const { kategori, adet } = triviaArgumanlari(args, parseTriviaCategory);
+        const yetkili = message.user.isBroadcaster || message.user.isMod;
+        if (adet > 1 && yetkili) {
+          triviaEngine.startTournament(kategori, adet, 20);
+          return null;
+        }
+        const q = triviaEngine.startQuestion({ category: kategori });
         if (!q) return `@${message.user.displayName}, soru havuzunda uygun soru bulunamadı.`;
-        return null;
+        return adet > 1 ? `@${message.user.displayName}, birden çok soruyu yalnız yayıncı ve moderatörler açabilir; tek soru açıldı.` : null;
       }
 
       case 'yarisma':
@@ -866,22 +878,8 @@ export class CommandManager {
           return `@${message.user.displayName}, turnuva başlatmak için moderatör veya yayıncı olmalısınız. Tek soru için: !soru`;
         }
 
-        let cat = 'all';
-        let count = 5;
-        for (let i = 0; i < args.length; i++) {
-          const a = args[i].toLowerCase();
-          const parsedNum = parseInt(a, 10);
-          if (!isNaN(parsedNum) && parsedNum >= 3 && parsedNum <= 20) {
-            count = parsedNum;
-          } else {
-            const parsedCat = parseTriviaCategory(a);
-            if (parsedCat !== 'all') {
-              cat = parsedCat;
-            }
-          }
-        }
-
-        triviaEngine.startTournament(cat, count, 20);
+        const secim = triviaArgumanlari(args, parseTriviaCategory, 5);
+        triviaEngine.startTournament(secim.kategori, secim.adet, 20);
         return null;
       }
 

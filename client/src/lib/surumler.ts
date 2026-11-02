@@ -17,7 +17,7 @@ export const SURUMLER: Surum[] = [
     notlar: [
       'Yayın Yönetim Aracı 1.3.0 ile yeni menüde gömülü çalışır: Komutlar, Oyunlar, Puanlar, Moderasyon sekmeleri',
       'Sohbete yanıt verme anahtarı (!bot mute ile aynı ayar)',
-      'Bağlantılar için OBS'te açık kaynak bilgisi'
+      'Bağlantılar için OBS tarafında açık kaynak bilgisi'
     ]
   },
   {

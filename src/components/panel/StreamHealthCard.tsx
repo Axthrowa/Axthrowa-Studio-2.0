@@ -50,7 +50,7 @@ export default function StreamHealthCard() {
       }
     };
     void tick();
-    const id = setVisibleInterval(() => void tick(), 2000);
+    const id = setVisibleInterval(() => void tick(), 5000);
     return () => {
       cancelled = true;
       clearVisibleInterval(id);

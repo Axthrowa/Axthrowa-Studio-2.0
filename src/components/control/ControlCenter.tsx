@@ -681,11 +681,11 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
 
   useEffect(() => {
     void load();
-    const id = setVisibleInterval(() => void load(), 3000);
+    const id = setVisibleInterval(() => void load(), 8000);
     return () => clearVisibleInterval(id);
   }, [load]);
 
-  // Ses ölçerleri: panel görünürken 5/sn yoklanır; sunucu OBS aboneliğini istek kesilince kendisi kapatır
+  // Ses ölçerleri: panel görünürken 2/sn. OBS aboneliği istek kesilince kapanır.
   const bagli = !!status?.connected && inputs.length > 0;
   useEffect(() => {
     if (!bagli) return;
@@ -697,7 +697,7 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
           if (!iptal) setSeviye(r.ageMs >= 0 && r.ageMs < 2000 ? Object.fromEntries(r.inputs.map((l) => [l.name, l])) : {});
         })
         .catch(() => !iptal && setSeviye({}));
-    }, 200);
+    }, 500);
     return () => {
       iptal = true;
       clearVisibleInterval(id);

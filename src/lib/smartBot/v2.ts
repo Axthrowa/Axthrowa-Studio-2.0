@@ -30,6 +30,10 @@ export type ShopItem = {
   enabled: boolean;
   /** Overlay’de alert göster */
   alert: boolean;
+  /** Doluysa ödül OBS sahnesine geçer */
+  scene?: string;
+  /** Doluysa ödül bu ses dosyasını çalar */
+  sfx?: string;
 };
 
 /** Emote kombo overlay ayarları */
@@ -127,6 +131,8 @@ export type StreamGoal = {
   color: string;
   layout: "bar" | "circle" | "minimal";
   showPercent: boolean;
+  /** renk | duz | ince | dilim | gece | kick — boşsa türe göre seçilir */
+  theme?: string;
 };
 
 export type AlertStyle = {
@@ -291,6 +297,7 @@ export function defaultGoals(): StreamGoal[] {
       color: "#3ecfcf",
       layout: "bar",
       showPercent: true,
+      theme: "kick",
     },
     {
       id: uid("goal"),
@@ -302,6 +309,7 @@ export function defaultGoals(): StreamGoal[] {
       color: "#38bdf8",
       layout: "bar",
       showPercent: true,
+      theme: "gece",
     },
     {
       id: uid("goal"),
@@ -313,6 +321,7 @@ export function defaultGoals(): StreamGoal[] {
       color: "#fb7185",
       layout: "bar",
       showPercent: true,
+      theme: "dilim",
     },
     {
       id: uid("goal"),
@@ -324,6 +333,7 @@ export function defaultGoals(): StreamGoal[] {
       color: "#3EEDFE",
       layout: "bar",
       showPercent: true,
+      theme: "ince",
     },
   ];
 }

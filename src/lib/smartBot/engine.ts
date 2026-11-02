@@ -8,7 +8,7 @@ import { checkSpam, grantPermit } from "./filters";
 import { hasLevel, userLevel } from "./levels";
 import { handleModuleCommand, tryGiveawayKeyword } from "./modules";
 import { enqueueBotReply } from "./replyQueue";
-import { getBotConfig, saveBotConfig } from "./store";
+import { getBotConfig, noteLoyalty, saveBotConfig } from "./store";
 import { noteChatLine, noteChatter, startBotTimers, startLoyaltyTicker } from "./timers";
 import { buildArgs, interpolate } from "./variables";
 import {
@@ -19,6 +19,15 @@ import {
 import type { BotCommand, UserLevel } from "./types";
 import { isLocalBotUser } from "./botIdentity";
 import { botaxtApi } from "../api/botaxt";
+import {
+  createClip,
+  fireShopEffect,
+  kickModerate,
+  mirrorLoyalty,
+  pushStreamGame,
+  pushStreamTitle,
+  requestSong,
+} from "./platformActions";
 
 const userCd = new Map<string, number>();
 const globalCd = new Map<string, number>();
@@ -34,43 +43,54 @@ function trackEmoteCombo(msg: ChatMessage) {
   const cfg = getBotConfig() as any;
   const comboCfg = cfg.emoteCombo || {};
   if (comboCfg.enabled === false) return;
-  const minCount = Math.max(2, Number(comboCfg.minCount) || 3);
   const windowMs = Math.max(1000, Number(comboCfg.windowMs) || 8000);
 
-  const tokens = (msg.text || "").match(/:[a-zA-Z0-9_]+:|[\u{1F300}-\u{1FAFF}]/gu) || [];
-  if (!tokens.length) {
-    comboEmote = "";
-    comboCount = 0;
-    return;
+  const parcalar = ((msg.parts || []).filter((p) => p.type === "emote") as {
+    type: "emote";
+    url: string;
+    name: string;
+  }[]);
+  const ayniGorsel =
+    parcalar.length > 0 && parcalar.every((p) => p.url === parcalar[0].url || p.name === parcalar[0].name);
+  let e = "";
+  let url = "";
+  let adet = 1;
+  if (ayniGorsel) {
+    e = parcalar[0].name || parcalar[0].url;
+    url = parcalar[0].url || "";
+    adet = parcalar.length;
+  } else {
+    const tokens = (msg.text || "").match(/:[a-zA-Z0-9_]+:|[\u{1F300}-\u{1FAFF}]/gu) || [];
+    if (!tokens.length || !tokens.every((t) => t === tokens[0])) {
+      comboEmote = "";
+      comboCount = 0;
+      return;
+    }
+    e = tokens[0] || "";
+    adet = tokens.length;
   }
-  const e = tokens[0] || "";
   if (!e) {
     comboEmote = "";
     comboCount = 0;
     return;
   }
-  if (tokens.every((t) => t === e) && e === comboEmote) {
-    comboCount += 1;
-  } else if (tokens.every((t) => t === e)) {
+  if (e === comboEmote) comboCount += adet;
+  else {
     comboEmote = e;
-    comboCount = tokens.length;
-  } else {
-    comboEmote = "";
-    comboCount = 0;
-    return;
+    comboCount = adet;
   }
   if (comboTimer != null) window.clearTimeout(comboTimer);
   comboTimer = window.setTimeout(() => {
     comboEmote = "";
     comboCount = 0;
   }, windowMs);
-  if (comboCount >= minCount) {
+  if (comboCount >= 3) {
     void import("./events").then(({ emitWidgetEvent }) =>
       emitWidgetEvent({
         kind: "emotecombo",
         user: msg.user,
         message: `${e} x${comboCount}`,
-        meta: { emote: e, count: comboCount },
+        meta: { emote: e, url, count: comboCount },
         platform: msg.platform,
       })
     );
@@ -130,26 +150,8 @@ function bumpLoyaltyMessage(msg: ChatMessage) {
   const key = `${msg.platform}:${(msg.user || "").toLowerCase()}`;
   const add = cfg.pointsPerMessage || 0;
   const initial = Number((cfg as any).loyaltyExtras?.initialPoints || 0);
-  saveBotConfig((prev) => {
-    const u = prev.loyalty[key] || {
-      points: initial,
-      messages: 0,
-      watchMin: 0,
-      lastSeen: Date.now(),
-    };
-    return {
-      ...prev,
-      loyalty: {
-        ...prev.loyalty,
-        [key]: {
-          ...u,
-          points: u.points + add,
-          messages: u.messages + 1,
-          lastSeen: Date.now(),
-        },
-      },
-    };
-  });
+  noteLoyalty(key, add, 1, initial);
+  if (add) mirrorLoyalty(key, add, "chat_message");
 }
 
 function handleBuiltinAdmin(
@@ -260,12 +262,33 @@ function handleBuiltinAdmin(
     return [`${name} = ${v?.value ?? 0}`];
   }
 
+  if (cmd === "timeout" || cmd === "to" || cmd === "ban" || cmd === "unban") {
+    if (!isMod) return ["Mod gerekir."];
+    if (msg.platform !== "kick") return ["Bu moderasyon komutu Kick sohbetinde."];
+    const who = (args[0] || "").replace(/^@/, "");
+    if (!who) return [`!${cmd} kullanıcı [dakika]`];
+    const minsRaw = Number(args[1]);
+    const hasMins = Number.isFinite(minsRaw) && minsRaw > 0;
+    const mins = hasMins ? Math.floor(minsRaw) : Math.max(1, Math.ceil((cfg.filters.timeoutSec || 60) / 60));
+    const reasonFrom = cmd === "ban" || cmd === "unban" || !hasMins ? 1 : 2;
+    const reason = args.slice(reasonFrom).join(" ").trim() || "Moderasyon";
+    const action = cmd === "to" || cmd === "timeout" ? "timeout" : cmd === "ban" ? "ban" : "unban";
+    void kickModerate({
+      action,
+      user: who,
+      minutes: action === "timeout" ? mins : undefined,
+      reason,
+    }).then((line) => reply(msg, [line]));
+    return [];
+  }
+
   if (cmd === "setgame" || cmd === "oyun") {
     if (!isMod) return ["Mod gerekir."];
     const game = args.join(" ").trim();
     if (!game) return [`Oyun: ${cfg.game || "—"}`];
     saveBotConfig((p) => ({ ...p, game }));
-    return [`Oyun: ${game}`];
+    void pushStreamGame(msg.platform, game).then((line) => reply(msg, [line]));
+    return [];
   }
 
   if (cmd === "settitle" || cmd === "baslik") {
@@ -273,14 +296,14 @@ function handleBuiltinAdmin(
     const title = args.join(" ").trim();
     if (!title) return [`Başlık: ${cfg.title || "—"}`];
     saveBotConfig((p) => ({ ...p, title }));
-    return [`Başlık: ${title}`];
+    void pushStreamTitle(msg.platform, title).then((line) => reply(msg, [line]));
+    return [];
   }
 
   if (cmd === "clip") {
     if (!(cfg.modules as any).clip) return ["Clip kapalı."];
-    return [
-      `${msg.user} clip istedi — Kick/Twitch clip API bu yerel sürümde manuel; yayıncı klip alsın!`,
-    ];
+    void createClip(msg.platform).then((line) => reply(msg, [line]));
+    return [];
   }
 
   if (cmd === "resetranking" || cmd === "sifirlaranking") {
@@ -591,6 +614,7 @@ function handleBuiltinAdmin(
         },
       };
     });
+    mirrorLoyalty(key, amt, "addpoints");
     return [`${who} +${amt} ${cfg.pointsName}`];
   }
 
@@ -645,6 +669,8 @@ function handleBuiltinAdmin(
         salesLog,
       } as any;
     });
+    mirrorLoyalty(userKey, -item.cost, "redeem");
+    void fireShopEffect(item);
     const text = String(item.response || "")
       .replace(/\$\(user\)/gi, msg.user)
       .replace(/\{user\}/gi, msg.user);
@@ -1196,19 +1222,20 @@ export function handleSmartBotMessage(msg: ChatMessage): ChatMessage[] {
     queueMicrotask(() => trackEmoteCombo(msg));
   }
 
-  // Spam — yalnızca uyarı (timeout API yok)
   if (msg.kind === "chat") {
     const spam = checkSpam(msg, cfg.filters, broadcasters());
     if (!spam.ok) {
-      try {
-        window.dispatchEvent(
-          new CustomEvent("chat-command-toast", {
-            detail: `Filtre (${spam.action}): ${msg.user} — ${spam.reason}`,
-          })
-        );
-      } catch {
-        /* */
+      const mins = Math.max(1, Math.ceil((cfg.filters.timeoutSec || 60) / 60));
+      if (spam.action === "delete_warn" && msg.platform === "kick") {
+        void kickModerate({
+          action: "timeout",
+          user: msg.user,
+          minutes: mins,
+          reason: spam.reason,
+        });
       }
+      reply(msg, [`@${msg.user} ${spam.reason}`]);
+      return [];
     }
   }
 
@@ -1244,6 +1271,7 @@ export function handleSmartBotMessage(msg: ChatMessage): ChatMessage[] {
               .replace(/\$\(user\)/gi, msg.user)
               .replace(/\{reward\}/gi, String(reward));
             queueMicrotask(() => reply(msg, [success]));
+            mirrorLoyalty(key, reward, "claim");
             return {
               ...prev,
               loyalty: {
@@ -1336,7 +1364,10 @@ export function handleSmartBotMessage(msg: ChatMessage): ChatMessage[] {
           };
           return { ...prev, loyalty, songRequest } as any;
         });
-        reply(msg, [`Sıraya eklendi: ${title}`]);
+        if (cost > 0) mirrorLoyalty(key, -cost, "song_request");
+        void requestSong(title)
+          .then((played) => reply(msg, [`Sıraya eklendi: ${played}`]))
+          .catch(() => reply(msg, [`Sıraya eklendi: ${title}`]));
       });
       return [];
     }
@@ -1422,6 +1453,7 @@ function runCustomCommand(
       ),
     };
   });
+  if (cost > 0) mirrorLoyalty(key, -cost, "command");
   const updated = getBotConfig().commands.find((c) => c.id === custom.id) || custom;
   const pool = [custom.response, ...((extras.responses as string[]) || [])].filter(Boolean);
   const picked = pool[Math.floor(Math.random() * pool.length)] || custom.response;

@@ -45,7 +45,7 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
 
   useEffect(() => {
     void refresh();
-    const timer = setVisibleInterval(() => void refresh(), 3000);
+    const timer = setVisibleInterval(() => void refresh(), 10000);
     return () => clearVisibleInterval(timer);
   }, [refresh]);
 

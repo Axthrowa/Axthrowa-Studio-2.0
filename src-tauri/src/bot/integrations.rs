@@ -282,10 +282,36 @@ async fn kick_pusher_session(
   }
 }
 
+/// Pusher olayı `App\Events\FollowersUpdated` ya da `….FollowersUpdatedEvent` gelir.
+fn kick_event_tail(event: &str) -> &str {
+  event.rsplit(['\\', '.']).next().unwrap_or(event)
+}
+
+fn kick_person_name(data: &Value) -> Option<String> {
+  const PATHS: &[&str] = &[
+    "/username",
+    "/user/username",
+    "/follower/username",
+    "/sender/username",
+    "/followers/0/username",
+    "/recentFollowers/0/username",
+    "/recent_followers/0/username",
+  ];
+  for path in PATHS {
+    if let Some(name) = data.pointer(path).and_then(|v| v.as_str()) {
+      let name = name.trim();
+      if !name.is_empty() {
+        return Some(name.to_string());
+      }
+    }
+  }
+  None
+}
+
 fn parse_kick_event(event: &str, data: &Value) -> Option<ChatInbound> {
-  let ev = event.rsplit('.').next().unwrap_or(event);
+  let ev = kick_event_tail(event);
   match ev {
-    "ChatMessageEvent" | "App\\Events\\ChatMessageEvent" => {
+    "ChatMessageEvent" => {
       let user = data
         .pointer("/sender/username")
         .or_else(|| data.pointer("/user/username"))
@@ -327,19 +353,9 @@ fn parse_kick_event(event: &str, data: &Value) -> Option<ChatInbound> {
         raw_id: id,
       })
     }
-    "FollowersUpdated" | "LoyaltyUpdated" | "SubscriptionEvent" => {
-      let user = data
-        .get("username")
-        .or_else(|| data.pointer("/user/username"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("someone");
-      let kind = if ev.contains("Follow") {
-        "follow"
-      } else if ev.contains("Sub") {
-        "sub"
-      } else {
-        "follow"
-      };
+    "FollowersUpdated" | "FollowersUpdatedEvent" | "SubscriptionEvent" => {
+      let user = kick_person_name(data)?;
+      let kind = if ev.contains("Follow") { "follow" } else { "sub" };
       Some(ChatInbound {
         platform: "kick".into(),
         user_key: format!("kick:{user}"),
@@ -564,5 +580,30 @@ mod tests {
     assert_eq!(msg.text, "!ping");
     assert!(msg.is_mod);
     assert_eq!(msg.platform, "kick");
+  }
+
+  #[test]
+  fn parse_kick_followers_updated_event() {
+    let data = json!({
+      "follower": { "username": "yeni" },
+      "followersCount": 12
+    });
+    let msg = parse_kick_event("App\\Events\\FollowersUpdatedEvent", &data).expect("parse");
+    assert_eq!(msg.kind, "follow");
+    assert_eq!(msg.user_name, "yeni");
+  }
+
+  #[test]
+  fn parse_kick_followers_updated_list() {
+    let data = json!({ "recentFollowers": [{ "username": "ali" }] });
+    let msg = parse_kick_event("App\\Events\\FollowersUpdated", &data).expect("parse");
+    assert_eq!(msg.user_name, "ali");
+    assert_eq!(msg.kind, "follow");
+  }
+
+  #[test]
+  fn ignore_follow_count_without_name() {
+    let data = json!({ "followersCount": 12 });
+    assert!(parse_kick_event("App\\Events\\FollowersUpdatedEvent", &data).is_none());
   }
 }

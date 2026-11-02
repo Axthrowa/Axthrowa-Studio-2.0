@@ -25,6 +25,13 @@ export function baslikTemizle(t) {
     .trim()
 }
 
+/** Parça süresi dolmuşsa sözler hemen kalksın. Süre bilinmiyorsa karar verilmez. */
+export function sarkiBitti(track, progressMs) {
+  const sure = Number(track?.durationMs) || 0
+  if (!track || sure <= 0) return false
+  return Number(progressMs) >= sure - 250
+}
+
 /** Konum (sn) → etkin satır sırası (ilk satırdan önce -1) */
 export function etkinSatir(satirlar, konumSn) {
   let i = -1

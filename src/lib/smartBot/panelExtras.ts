@@ -222,7 +222,7 @@ export function defaultPanelExtras(): PanelExtras {
     },
     queue: {
       enabled: true,
-      open: false,
+      open: true,
       name: "Oyun sırası",
       cost: 0,
       userCooldownSec: 10,

@@ -1,11 +1,13 @@
 /** OBS Now Playing + Song Request kuyruk */
 
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { type NowPlaying } from "../../lib/api";
 import { useNowPlaying } from "../../lib/useNowPlaying";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
 import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
 import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
+import ResonanceNowPlaying from "../../components/overlay/ResonanceNowPlaying";
 
 export default function NowPlayingWidgetPage() {
   useObsKeepalive();
@@ -14,6 +16,7 @@ export default function NowPlayingWidgetPage() {
   const queueMode = params.get("mode") === "queue";
   const cfg = useOverlayBotConfig();
   const { track, progress } = useNowPlaying(!queueMode);
+  const [resonanceDown, setResonanceDown] = useState(false);
 
   if (queueMode) {
     const queue = cfg.songRequest?.queue || [];
@@ -47,6 +50,14 @@ export default function NowPlayingWidgetPage() {
             ))}
           </ul>
         </div>
+      </div>
+    );
+  }
+
+  if (!resonanceDown) {
+    return (
+      <div className="flex h-screen w-screen items-end justify-start bg-transparent p-4">
+        <ResonanceNowPlaying hideWhenIdle onUnavailable={() => setResonanceDown(true)} />
       </div>
     );
   }

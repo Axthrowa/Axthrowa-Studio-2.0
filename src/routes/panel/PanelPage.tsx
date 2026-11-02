@@ -1,5 +1,4 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { Pin, PinOff, Save } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -32,7 +31,8 @@ import BotSessions from "../../components/panel/BotSessions";
 import CopyUrl from "@/components/axthrowa/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
-import NavTabBar, { applyTabOrder } from "../../components/panel/NavTabBar";
+import NavTabBar, { applyTabOrder, CANLI_SEKME, HAZIRLIK_SEKME, type StudioModul } from "../../components/panel/NavTabBar";
+import DurumCubugu from "../../components/panel/DurumCubugu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import AppSettingsPage from "../../components/panel/AppSettingsPage";
 import SettingsSection from "../../components/panel/SettingsSection";
@@ -55,7 +55,6 @@ import { resonanceLinkAllowed } from "../../lib/embedMessages";
 // Kontrol Merkezi yalnız o sekme açılınca yüklenir (ana paketi büyütmesin)
 const ControlCenter = lazy(() => import("../../components/control/ControlCenter"));
 const ObsStudioPanel = lazy(() => import("../../components/panel/ObsStudioPanel"));
-import ThemeSelector from "../../components/ThemeSelector";
 import { en, tr, type MsgKey } from "../../i18n/messages";
 import {
   applyThemeToDom,
@@ -109,7 +108,8 @@ import { endSession, fetchDashboard, startSession } from "../../lib/api/botaxt";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { pickObsConnection, sameObsConnection } from "../../lib/obsConnection";
 import { suggestSceneMap, type SceneRole } from "../../lib/sceneSuggest";
-import { saveBotConfig } from "../../lib/smartBot";
+import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
+import { notifyDiscordLive } from "../../lib/smartBot/platformActions";
 import { ANIM_OPTIONS, EFFECT_OPTIONS } from "../../lib/textStyles";
 import { useCreditsCollector } from "../../lib/useCreditsCollector";
 import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec } from "../../lib/globalHotkeys";
@@ -191,17 +191,27 @@ export default function PanelPage() {
   );
   const [screen, setScreen] = useState<ScreenId>("starting");
   // Müzik / Ayarlar ekran ayarlarından bağımsız; ScreenId şemasını kirletmez.
-  const [activeNav, setActiveNav] = useState<NavId | ScreenId>("profile");
-  const sayfaRef = useRef<HTMLDivElement>(null);
+  const [activeNav, setActiveNav] = useState<NavId | ScreenId>(() => {
+    try {
+      return localStorage.getItem("yya.modul") === "hazirlik" ? "starting" : "control";
+    } catch {
+      return "control";
+    }
+  });
+  const [modul, setModul] = useState<StudioModul>(() => {
+    try {
+      return localStorage.getItem("yya.modul") === "hazirlik" ? "hazirlik" : "canli";
+    } catch {
+      return "canli";
+    }
+  });
   useEffect(() => {
-    sayfaRef.current?.animate?.(
-      [
-        { opacity: 0, transform: "translateY(8px) scale(0.98)" },
-        { opacity: 1, transform: "none" },
-      ],
-      { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
-    );
-  }, [activeNav]);
+    try {
+      localStorage.setItem("yya.modul", modul);
+    } catch {
+      /* depolama kapalı */
+    }
+  }, [modul]);
   // Bot sekmesinde açılacak StreamAxT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
   const [botSekme, setBotSekme] = useState<string | undefined>(undefined);
   useEffect(() => {
@@ -437,6 +447,22 @@ export default function PanelPage() {
     // Çıkış ayarının tamamı kaydedilirken canlı jenerik listesi panelin güncel oturumundan yazılır (bayatı ezmesin)
     await saveSettings(s, s === "ending" ? { ...data, creditsLive: getCreditsSession() } : data);
   }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "s" || e.altKey) return;
+      if (hotkeyCaptureRef.current) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el?.isContentEditable) return;
+      e.preventDefault();
+      void persistNow(screen, settings)
+        .then(() => showToast(tt("brand.saved")))
+        .catch(() => showToast("Kaydedilemedi — sunucu kapalı olabilir"));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [persistNow, screen, settings, showToast, tt]);
 
   const scheduleSave = useCallback(
     (data: OverlaySettings) => {
@@ -897,6 +923,7 @@ export default function PanelPage() {
       }
       if (navHint === "starting" || navHint === "ending" || navHint === "brb" || navHint === "chat") {
         forceNavRef.current = navHint;
+        setModul(navHint === "chat" ? "canli" : "hazirlik");
         setActiveNav(navHint);
         setScreen(navHint);
         if (navHint === "ending") {
@@ -913,6 +940,7 @@ export default function PanelPage() {
           endingStopDoneRef.current = false;
           streamWatchArmedRef.current = true;
           forceNavRef.current = "ending";
+          setModul("hazirlik");
           setActiveNav("ending");
           setScreen("ending");
         }
@@ -1003,6 +1031,22 @@ export default function PanelPage() {
     }
 
     setLiveOn(true);
+    const bot = getBotConfig() as {
+      channelName?: string;
+      title?: string;
+      discordWebhook?: string;
+      discord?: { enabled?: boolean; webhookUrl?: string; goLiveMessage?: string };
+    };
+    const hook = bot.discord?.webhookUrl || bot.discordWebhook;
+    if (hook && (bot.discord?.enabled === true || !!bot.discordWebhook)) {
+      void notifyDiscordLive({
+        webhookUrl: hook,
+        enabled: true,
+        message: bot.discord?.goLiveMessage,
+        channel: bot.channelName,
+        title: bot.title,
+      }).catch(() => {});
+    }
   }, [showToast, obsConnect]);
 
   const endLiveFromProfile = useCallback(async () => {
@@ -1016,6 +1060,7 @@ export default function PanelPage() {
       return { ...prev, tabs: { ...prev.tabs, order, hidden } };
     });
     forceNavRef.current = "ending";
+    setModul("hazirlik");
     setActiveNav("ending");
     setScreen("ending");
     try {
@@ -1499,22 +1544,31 @@ export default function PanelPage() {
   );
 
   useEffect(() => {
-    if (activeNav === "obs") setActiveNav("profile");
+    const kume = modul === "canli" ? CANLI_SEKME : HAZIRLIK_SEKME;
+    if (kume.includes(String(activeNav)) && visibleTabs.includes(String(activeNav))) return;
+    const next = kume.find((id) => visibleTabs.includes(id));
+    if (!next || next === activeNav) return;
+    setActiveNav(next as NavId);
+    if (next === "starting" || next === "ending" || next === "brb" || next === "chat") setScreen(next);
+  }, [modul, activeNav, visibleTabs]);
+
+  useEffect(() => {
+    if (activeNav === "obs") {
+      setModul("hazirlik");
+      setActiveNav("profile");
+    }
   }, [activeNav]);
 
   useEffect(() => {
-    if (!visibleTabs.includes(activeNav as string) && visibleTabs.length) {
-      // goLive / zorunlu navigasyon — layout gizlemiş olsa bile geri itme
-      if (forceNavRef.current && forceNavRef.current === activeNav) return;
-      const next = visibleTabs[0] as NavId;
-      setActiveNav(next);
-      if (next === "starting" || next === "ending" || next === "brb" || next === "chat") {
-        setScreen(next);
-      }
-    } else if (forceNavRef.current && visibleTabs.includes(forceNavRef.current)) {
+    if (forceNavRef.current && visibleTabs.includes(forceNavRef.current)) {
       forceNavRef.current = null;
     }
-  }, [visibleTabs, activeNav]);
+  }, [visibleTabs]);
+
+  const sayfaMeta = DEFAULT_TABS.find((tab) => tab.id === activeNav);
+  const sayfaAdi = (sayfaMeta?.labelKey && tt(sayfaMeta.labelKey as MsgKey)) || sayfaMeta?.label || String(activeNav);
+  const sahneSekmesi = activeNav === "starting" || activeNav === "ending" || activeNav === "brb";
+  const durumPort = (server?.baseUrl || API_BASE).split(":").pop()?.replace(/\D/g, "") || "8843";
 
   return (
     <>
@@ -1528,8 +1582,15 @@ export default function PanelPage() {
       <MusicBridge />
       <NavTabBar
         brandTitle={tt("brand.title")}
-        statusLabel={prefs.locale === "en" ? "System active" : "Sistem aktif"}
-        statusHint={`:${(server?.baseUrl || API_BASE).split(":").pop()?.replace(/\D/g, "") || "8843"}`}
+        modul={modul}
+        onModul={(m) => {
+          setModul(m);
+          const ids = m === "canli" ? CANLI_SEKME : HAZIRLIK_SEKME;
+          if (ids.includes(String(activeNav)) && visibleTabs.includes(String(activeNav))) return;
+          const next = (ids.find((id) => visibleTabs.includes(id)) || ids[0]) as NavId;
+          setActiveNav(next);
+          if (next === "starting" || next === "ending" || next === "brb" || next === "chat") setScreen(next);
+        }}
         visibleTabs={visibleTabs}
         activeNav={String(activeNav)}
         layoutOrder={layout.tabs.order}
@@ -1544,6 +1605,7 @@ export default function PanelPage() {
           return (key && table[key]) || meta?.label || id;
         }}
         onSelect={(id) => {
+          setModul(CANLI_SEKME.includes(id) ? "canli" : "hazirlik");
           setActiveNav(id);
           forceNavRef.current = null;
           if (id === "starting" || id === "ending" || id === "brb" || id === "chat") {
@@ -1568,64 +1630,53 @@ export default function PanelPage() {
         />
       </NavTabBar>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <header className="relative z-40 mx-4 mt-2.5 flex shrink-0 items-center justify-between gap-4 overflow-visible rounded-2xl border border-white/[0.08] bg-panel-card/85 px-4 py-2.5 shadow-panel">
-        <div className="flex min-w-0 items-center gap-2 text-[11px] text-panel-muted">
-          <span>{tt("brand.autosave")}</span>
-          <span className="text-panel-muted">·</span>
-          <span className="font-mono text-[10px] text-white/60">{server?.baseUrl || "…"}</span>
-          <PanelTimer
-            timer={{
-              screen,
-              endingMinutes: settings.endingMinutes,
-              brbMinutes: settings.brbMinutes,
-              targetDate: settings.targetDate,
-            }}
-            render={(text) => (
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-panel-accent/30 bg-panel-soft px-2 py-0.5 font-mono text-[11px] font-semibold text-panel-accent shadow-glow-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-panel-accent animate-ping" />
-                {screen === "starting"
-                  ? tt("nav.starting")
-                  : screen === "ending"
-                    ? tt("nav.ending")
-                    : tt("nav.brb")}{" "}
-                {text}
-              </span>
-            )}
-          />
+      <header className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[var(--dt-surface-2)] px-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <h1 className="truncate text-[13px] font-semibold text-white">{sayfaAdi}</h1>
+          {sahneSekmesi ? (
+            <PanelTimer
+              timer={{
+                screen,
+                endingMinutes: settings.endingMinutes,
+                brbMinutes: settings.brbMinutes,
+                targetDate: settings.targetDate,
+              }}
+              render={(text) => <span className="font-mono text-[12px] tabular-nums text-white/70">{text}</span>}
+            />
+          ) : null}
         </div>
-
-        <div className="hidden lg:block shrink-0 text-center">
-          <p className="font-display text-xs font-medium tracking-wide text-panel-muted/80">
-            {tt("brand.by")}
-          </p>
-        </div>
-
-        <div className="relative z-50 flex shrink-0 items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-2">
           <ProfileSwitcher onToast={showToast} />
-          <ThemeSelector />
           <button
-            className="yya-btn-primary h-8 shrink-0 px-3.5 text-xs font-bold gap-1.5 shadow-glow"
+            type="button"
+            className="dt-btn"
             onClick={async () => {
               await persistNow(screen, settings);
               showToast(tt("brand.saved"));
             }}
           >
-            <Save className="h-3.5 w-3.5" />
+            <Save className="h-3.5 w-3.5" strokeWidth={1.75} />
             <span>{tt("brand.saveNow")}</span>
           </button>
+          {modul === "canli" ? (
+            <button
+              type="button"
+              disabled={masterBusy}
+              className={
+                "inline-flex h-8 items-center rounded px-3 text-[13px] font-semibold transition-colors duration-150 disabled:opacity-60 " +
+                (liveOn ? "bg-[var(--dt-live)] text-white" : "bg-[var(--dt-ok)] text-[#03291e]")
+              }
+              onClick={() => void runMasterStream()}
+            >
+              {masterBusy ? "…" : liveOn ? tt("brand.endLive") : tt("brand.goLive")}
+            </button>
+          ) : null}
         </div>
       </header>
 
-      {/* Sekme değişince içerik dipten ve hafif büyüyerek gelir (yeniden kurmadan: Web Animations) */}
-      <div ref={sayfaRef} className="flex min-h-0 flex-1 flex-col transform-gpu">
+      <div className="flex min-h-0 flex-1 flex-col">
       {profileTab ? (
-        <motion.div
-          key="connections"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4"
-        >
+        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4">
           <DashboardUstSerit
             bolum={dashBolum}
             onBolum={setDashBolum}
@@ -1649,6 +1700,7 @@ export default function PanelPage() {
               <BotSessions
                 onAc={() => {
                   setBotSekme("platforms");
+                  setModul("hazirlik");
                   setActiveNav("bot");
                 }}
               />
@@ -1681,7 +1733,7 @@ export default function PanelPage() {
             />
           </div>
           )}
-        </motion.div>
+        </div>
       ) : controlTab ? (
         <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
           <ControlCenter onToast={showToast} />
@@ -1705,7 +1757,10 @@ export default function PanelPage() {
         </div>
       ) : botTab ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <StreamAxtHost key={botSekme || "bot"} onToast={showToast} tab={botSekme} onOpenMusic={() => setActiveNav("music")} />
+          <StreamAxtHost key={botSekme || "bot"} onToast={showToast} tab={botSekme} onOpenMusic={() => {
+            setModul("canli");
+            setActiveNav("music");
+          }} />
         </div>
       ) : chatTab && !chatOverlaySettings ? (
         // Canlı Chat = StreamAxT'nin Multi-Chat'i (çapraz sohbet, izleyici kartları).
@@ -1721,7 +1776,10 @@ export default function PanelPage() {
               Sohbet katmanı ayarları
             </button>
           </div>
-          <StreamAxtHost onToast={showToast} tab="multichat" embed onOpenMusic={() => setActiveNav("music")} />
+          <StreamAxtHost onToast={showToast} tab="multichat" embed onOpenMusic={() => {
+            setModul("canli");
+            setActiveNav("music");
+          }} />
         </div>
       ) : soundsTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -3519,7 +3577,10 @@ export default function PanelPage() {
           <button
             type="button"
             className="w-full rounded-md bg-panel-accent px-2 py-2 text-sm text-black"
-            onClick={() => setActiveNav("music")}
+            onClick={() => {
+              setModul("canli");
+              setActiveNav("music");
+            }}
           >
             Müzik sekmesini aç
           </button>
@@ -3604,7 +3665,10 @@ export default function PanelPage() {
             <button
               type="button"
               className="mt-2 w-full rounded-md bg-panel-accent px-3 py-2 text-sm font-medium text-[#08131c]"
-              onClick={() => setActiveNav("hotkeys")}
+              onClick={() => {
+                setModul("hazirlik");
+                setActiveNav("hotkeys");
+              }}
             >
               Kısayollar sekmesini aç
             </button>
@@ -3679,13 +3743,14 @@ export default function PanelPage() {
       <SesliDinleyiciCercevesi />
 
       {toast && (
-        <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+        <div className="fixed bottom-10 right-4 z-50 max-w-sm">
           <Toast key={toast}>{toast}</Toast>
         </div>
       )}
       <AppAlertModal />
       </div>
     </div>
+    <DurumCubugu port={durumPort} />
     </div>
     </>
   );

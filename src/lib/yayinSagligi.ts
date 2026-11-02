@@ -126,7 +126,7 @@ export function yayinSagligiIzle(
       /* OBS geçici olarak yanıt vermedi */
     }
   };
-  const t = setInterval(() => void tur(), 3000);
+  const t = setInterval(() => void tur(), 5000);
   return () => {
     iptal = true;
     clearInterval(t);

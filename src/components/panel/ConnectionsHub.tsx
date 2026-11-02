@@ -245,7 +245,7 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
         .status()
         .then((next) => setStatus((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next)))
         .catch(() => {});
-    }, 3000);
+    }, 8000);
     return () => clearVisibleInterval(poll);
   }, [refreshKick, refreshKickApi]);
 

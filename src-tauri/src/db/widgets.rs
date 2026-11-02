@@ -1482,3 +1482,56 @@ pub async fn bump_goal_widget_current(
   }
   Ok(out)
 }
+
+/// Olay türüne uyan hedef çubuklarını bir artırır (takipçi barı yalnız takipte).
+pub async fn bump_goal_for_event(
+  pool: &SqlitePool,
+  event_kind: &str,
+  amount: f64,
+) -> Result<Vec<(String, f64, f64, bool)>> {
+  let want: &[&str] = match event_kind {
+    "follow" => &["followers", "follower", "follow", "takip", "takipci", "takipçi"],
+    "sub" => &["subs", "sub", "subscribers", "subscriber", "abone"],
+    "raid" => &["raids", "raid"],
+    _ => return Ok(vec![]),
+  };
+  let channel_id = default_channel_id(pool).await?;
+  let rows: Vec<(String, String)> = sqlx::query_as(
+    "SELECT id, config_json FROM widget_instances
+     WHERE channel_id = ? AND kind IN ('goal','goals') AND enabled = 1
+     ORDER BY sort_order LIMIT 8",
+  )
+  .bind(&channel_id)
+  .fetch_all(pool)
+  .await?;
+
+  let now = chrono_now();
+  let mut out = Vec::new();
+  for (id, config_json) in rows {
+    let mut cfg: Value = serde_json::from_str(&config_json).unwrap_or(json!({}));
+    let metric = cfg
+      .get("metric")
+      .or_else(|| cfg.get("goalType"))
+      .and_then(|v| v.as_str())
+      .unwrap_or("followers")
+      .to_ascii_lowercase();
+    if !want.iter().any(|m| *m == metric) {
+      continue;
+    }
+    let cur = cfg.get("current").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let target = cfg.get("target").and_then(|v| v.as_f64()).unwrap_or(100.0).max(1.0);
+    let new_cur = cur + amount;
+    let completed = cur < target && new_cur >= target;
+    if let Some(obj) = cfg.as_object_mut() {
+      obj.insert("current".into(), json!(new_cur));
+    }
+    sqlx::query("UPDATE widget_instances SET config_json = ?, updated_at = ? WHERE id = ?")
+      .bind(cfg.to_string())
+      .bind(now)
+      .bind(&id)
+      .execute(pool)
+      .await?;
+    out.push((id, new_cur, target, completed));
+  }
+  Ok(out)
+}

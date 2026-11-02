@@ -53,7 +53,7 @@ export function startBotTimers() {
         overlay: cfg.replyToOverlay,
       });
     }
-  }, 15_000);
+  }, 30_000);
 }
 
 /** İzleme puanı — dakikada bir */

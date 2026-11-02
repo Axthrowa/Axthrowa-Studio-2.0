@@ -122,6 +122,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/kick/hub", get(api_kick_hub))
     .route("/api/auth/notify-success", post(api_auth_notify_success))
     .route("/api/kick/chat/send", post(api_kick_chat_send))
+    .route("/api/kick/moderation", post(api_kick_moderation))
     .route("/api/kick/bot-session/status", get(api_kick_bot_session_status))
     .route("/api/kick/bot-session/disconnect", post(api_kick_bot_session_disconnect))
     .route("/api/kick/bot-session/ingest", post(api_kick_bot_session_ingest))
@@ -715,6 +716,44 @@ async fn api_kick_chat_send(
     .await
     .map(Json)
     .map_err(map_kick_chat_send_err)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct KickModBody {
+  action: String,
+  user: String,
+  #[serde(default)]
+  minutes: Option<u64>,
+  #[serde(default)]
+  reason: Option<String>,
+}
+
+async fn api_kick_moderation(
+  State(state): State<Arc<AppState>>,
+  Json(body): Json<KickModBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+  if !state.kick_auth.is_connected() {
+    return Err((
+      StatusCode::UNAUTHORIZED,
+      "Kick API bağlı değil — Chat Bot’tan OAuth ile bağlan".into(),
+    ));
+  }
+  let user = body.user.trim().trim_start_matches('@').to_string();
+  if user.is_empty() {
+    return Err((StatusCode::BAD_REQUEST, "kullanıcı gerekli".into()));
+  }
+  let reason = body.reason.unwrap_or_else(|| "Moderasyon".into());
+  let result = match body.action.to_ascii_lowercase().as_str() {
+    "timeout" | "to" => {
+      let mins = body.minutes.unwrap_or(5).max(1);
+      state.kick_auth.moderation_ban(&user, Some(mins), &reason).await
+    }
+    "ban" => state.kick_auth.moderation_ban(&user, None, &reason).await,
+    "unban" => state.kick_auth.moderation_unban(&user).await,
+    _ => return Err((StatusCode::BAD_REQUEST, "action: timeout, ban veya unban".into())),
+  };
+  result.map(Json).map_err(map_kick_chat_send_err)
 }
 
 fn map_kick_chat_send_err(e: anyhow::Error) -> (StatusCode, String) {

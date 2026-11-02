@@ -6,6 +6,7 @@ import { useObsKeepalive } from "../../lib/obsKeepalive";
 import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
 import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
 import type { StreamGoal } from "../../lib/smartBot/v2";
+import GoalWidget from "../../components/widgets/GoalWidget";
 
 const KIND_ALIASES: Record<string, StreamGoal["kind"]> = {
   followers: "followers",
@@ -155,31 +156,21 @@ export default function GoalPage() {
   return (
     <div className="flex h-screen w-screen items-end justify-center bg-transparent p-4 text-white">
       <div className="w-[min(96vw,640px)]">
-        {!goal && preview && (
-          <div className="mb-2 text-[10px] uppercase tracking-widest text-amber-300/80">Önizleme</div>
-        )}
-        <div className="mb-2 flex items-end justify-between gap-3">
-          <div>
-            <div className="text-xs uppercase tracking-widest text-white/55">
-              {kindLabel[g.kind] || g.kind}
-            </div>
-            <div className="text-lg font-semibold">{g.name}</div>
-          </div>
-          <div className="text-right text-sm tabular-nums text-white/90">
-            {g.current} / {g.target}
-            {showPct && <span className="ml-2 text-white/50">{pct}%</span>}
-          </div>
-        </div>
-        <div className="h-4 overflow-hidden rounded-full bg-black/50 ring-1 ring-white/10">
-          <div
-            className="h-full rounded-full transition-[width] duration-700 ease-out"
-            style={{
-              width: `${pct}%`,
-              background: `linear-gradient(90deg, ${color}, #fff3)`,
-              boxShadow: `0 0 24px ${color}66`,
-            }}
-          />
-        </div>
+        <GoalWidget
+          config={{
+            title: g.name,
+            metric: g.kind,
+            current: preview && !goal ? 55 : g.current,
+            target: g.target,
+            startValue: 0,
+            color: color,
+            colorFrom: color,
+            layout: "bar",
+            showPercent: showPct,
+            theme: g.theme,
+            _previewMode: preview && !goal,
+          }}
+        />
       </div>
     </div>
   );

@@ -25,6 +25,54 @@ const GOAL_TYPE_LABELS: Record<string, string> = {
 
 const MONEY_METRICS = new Set(["tips", "donation", "tip", "donate"]);
 
+/** Çubuk görünüşü. Boş tema, hedefin türüne göre seçilir. */
+const GOAL_THEMES = ["renk", "duz", "ince", "dilim", "gece", "kick"] as const;
+type GoalTheme = (typeof GOAL_THEMES)[number];
+
+function goalTheme(config: Record<string, unknown>, metric: string): GoalTheme {
+  const raw = String(config.theme || "").toLowerCase();
+  if ((GOAL_THEMES as readonly string[]).includes(raw)) return raw as GoalTheme;
+  const m = metric.toLowerCase();
+  if (["subs", "sub", "abonelik"].includes(m)) return "gece";
+  if (["tips", "tip", "donation", "donate"].includes(m)) return "dilim";
+  if (["kicks", "kick"].includes(m)) return "ince";
+  if (["followers", "follower", "follow", "takip"].includes(m)) return "kick";
+  return "renk";
+}
+
+function GoalGlyph({ metric }: { metric: string }) {
+  const m = metric.toLowerCase();
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (["subs", "sub"].includes(m)) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+        <path {...common} d="M7 1.6 8.5 5l3.6.3-2.8 2.3.9 3.5L7 9.3 3.8 11.1l.9-3.5L1.9 5.3 5.5 5z" />
+      </svg>
+    );
+  }
+  if (isMoneyMetric(m)) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+        <circle {...common} cx="7" cy="7" r="5" />
+        <path {...common} d="M7 3.6v6.8M5.2 5.2h2.6a1.3 1.3 0 0 1 0 2.6H5.6" />
+      </svg>
+    );
+  }
+  if (["kicks", "kick"].includes(m)) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+        <path {...common} d="M8.2 1.4 3.2 7.6h3.2L5.4 12.6 11 5.8H7.6z" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+      <circle {...common} cx="7" cy="4.2" r="2" />
+      <path {...common} d="M3.2 12.2c.4-2.4 1.8-3.6 3.8-3.6s3.4 1.2 3.8 3.6" />
+    </svg>
+  );
+}
+
 function isMoneyMetric(metric: string): boolean {
   return MONEY_METRICS.has(metric.toLowerCase());
 }
@@ -59,6 +107,115 @@ function previewCurrent(config: Record<string, unknown>): number {
   const start = Math.max(0, Number(config.startValue ?? config.start ?? 0));
   if (Number.isFinite(cur) && cur > start) return cur;
   return start + Math.max(1, Math.round((target - start) * 0.55));
+}
+
+function GoalTrack({
+  theme,
+  pct,
+  barH,
+  from,
+  to,
+  gradient,
+  glow,
+  milestones,
+  bumpFlash,
+  metric,
+}: {
+  theme: GoalTheme;
+  pct: number;
+  barH: number;
+  from: string;
+  to: string;
+  gradient: string;
+  glow: string;
+  milestones: number[];
+  bumpFlash: number;
+  metric: string;
+}) {
+  const tip = Math.max(pct * 100, pct > 0 ? 4 : 0);
+  const width = `${tip}%`;
+  const fill =
+    theme === "kick"
+      ? "#53fc18"
+      : theme === "duz" || theme === "ince"
+        ? from
+        : theme === "gece"
+          ? "#e7e5e4"
+          : gradient;
+  const track =
+    theme === "gece" ? "#292524" : theme === "kick" ? "#142016" : "rgba(255,255,255,0.12)";
+  const radius = theme === "ince" || theme === "dilim" ? 2 : 999;
+  const segments = 24;
+  const filled = Math.round(pct * segments);
+  const yay = { type: "spring" as const, stiffness: 95, damping: 20 };
+
+  return (
+    <div className="relative" style={{ height: Math.max(barH, 22) }}>
+      <div
+        className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden"
+        style={{
+          height: barH,
+          borderRadius: radius,
+          background: track,
+          boxShadow: theme === "renk" ? "inset 0 0 0 1px rgba(255,255,255,0.15)" : undefined,
+        }}
+      >
+        {theme === "dilim" ? (
+          <div className="flex h-full gap-0.5">
+            {Array.from({ length: segments }, (_, i) => (
+              <span
+                key={i}
+                className="h-full flex-1"
+                style={{ background: i < filled ? from : "transparent" }}
+              />
+            ))}
+          </div>
+        ) : (
+          <>
+            {milestones.map((m) => (
+              <span
+                key={m}
+                className="pointer-events-none absolute top-0 z-[1] h-full w-px bg-white/25"
+                style={{ left: `${m * 100}%` }}
+              />
+            ))}
+            <motion.div
+              className="h-full"
+              animate={{ width }}
+              transition={yay}
+              style={{ background: fill, boxShadow: glow, borderRadius: radius }}
+            />
+          </>
+        )}
+        <AnimatePresence>
+          {theme === "renk" && bumpFlash > 0 ? (
+            <motion.span
+              key={bumpFlash}
+              className="pointer-events-none absolute inset-0"
+              style={{ background: `linear-gradient(90deg, transparent, ${from}55, transparent)` }}
+              initial={{ opacity: 0, x: "-30%" }}
+              animate={{ opacity: [0, 0.85, 0], x: "60%" }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.55 }}
+            />
+          ) : null}
+        </AnimatePresence>
+      </div>
+      <motion.span
+        className="absolute top-1/2 z-10 grid h-5 w-5 place-items-center"
+        animate={{ left: `${tip}%` }}
+        transition={yay}
+        style={{
+          x: "-50%",
+          y: "-50%",
+          color: theme === "gece" ? "#e7e5e4" : theme === "kick" ? "#53fc18" : from,
+          filter: "drop-shadow(0 1px 1px rgba(0,0,0,.85))",
+        }}
+      >
+        <GoalGlyph metric={metric} />
+      </motion.span>
+    </div>
+  );
 }
 
 export default function GoalWidget({ config }: Props) {
@@ -99,13 +256,19 @@ export default function GoalWidget({ config }: Props) {
         const abs = Number((m as { current?: unknown }).current);
         if (Number.isFinite(abs)) {
           const metricNow = String(config.metric || config.goalType || "followers").toLowerCase();
+          const msgMetric = String((m as { metric?: unknown }).metric || "").toLowerCase();
           const tipLike = ["tips", "tip", "donation", "donate", "bağış", "bagis"].includes(
             metricNow
           );
-          // Donasyon webhook absolute current yalnızca bağış hedeflerine
-          // Test bump da current gönderir — metric fark etmeksizin uygula eğer target da varsa
+          const same =
+            msgMetric !== "" &&
+            (msgMetric === metricNow ||
+              (msgMetric === "followers" &&
+                ["followers", "follower", "follow", "takip", "takipci", "takipçi"].includes(metricNow)));
+          // Donasyon webhook absolute current yalnızca bağış hedeflerine.
+          // Takip olayı metric: followers ile gelir; yalnız takipçi barına yazılır.
           const hasTarget = (m as { target?: unknown }).target != null;
-          if (tipLike || hasTarget) {
+          if (same || (!msgMetric && (tipLike || hasTarget))) {
             lastSeenConfig.current = abs;
             setCurrent(abs);
             setBumpFlash((n) => n + 1);
@@ -144,6 +307,7 @@ export default function GoalWidget({ config }: Props) {
   const from = String(config.colorFrom || config.color || "#3ECFCF");
   const to = String(config.colorTo || "#FF8A5B");
   const metric = String(config.metric || config.goalType || "followers");
+  const theme = goalTheme(config, metric);
   const title =
     String(config.title || "").trim() ||
     GOAL_TYPE_LABELS[metric] ||
@@ -352,60 +516,18 @@ export default function GoalWidget({ config }: Props) {
             </div>
           </div>
 
-          <div
-            className="relative overflow-hidden rounded-full bg-white/[0.12] ring-1 ring-inset ring-white/15"
-            style={{ height: barH }}
-          >
-            {milestones.map((m) => (
-              <span
-                key={m}
-                className="pointer-events-none absolute top-0 z-[1] h-full w-px bg-white/25"
-                style={{ left: `${m * 100}%` }}
-              />
-            ))}
-            <motion.div
-              className="relative h-full rounded-full"
-              animate={{ width: `${Math.max(pct * 100, pct > 0 ? 4 : 0)}%` }}
-              transition={{ type: "spring", stiffness: 95, damping: 20 }}
-              style={{ background: gradient, boxShadow: barGlow }}
-            >
-              {pct > 0.03 ? (
-                <span
-                  className="absolute right-0 top-1/2 h-[140%] w-3 -translate-y-1/2 rounded-full opacity-80"
-                  style={{
-                    background: `radial-gradient(circle, ${to}ee 0%, transparent 70%)`,
-                    filter: "blur(1px)",
-                  }}
-                />
-              ) : null}
-              {pct > 0.02 ? (
-                <motion.span
-                  className="absolute inset-y-0 right-0 w-10 opacity-50"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${to}99)`,
-                  }}
-                  animate={{ opacity: [0.25, 0.7, 0.25] }}
-                  transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                />
-              ) : null}
-            </motion.div>
-
-            <AnimatePresence>
-              {bumpFlash > 0 ? (
-                <motion.span
-                  key={bumpFlash}
-                  className="pointer-events-none absolute inset-0 rounded-full"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${from}55, transparent)`,
-                  }}
-                  initial={{ opacity: 0, x: "-30%" }}
-                  animate={{ opacity: [0, 0.85, 0], x: "60%" }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.55 }}
-                />
-              ) : null}
-            </AnimatePresence>
-          </div>
+          <GoalTrack
+            theme={theme}
+            pct={pct}
+            barH={theme === "ince" ? Math.min(barH, 8) : barH}
+            from={from}
+            to={to}
+            gradient={gradient}
+            glow={theme === "renk" ? barGlow : "none"}
+            milestones={theme === "renk" || theme === "duz" ? milestones : []}
+            bumpFlash={bumpFlash}
+            metric={metric}
+          />
 
           {isPreview ? (
             <p className="mt-1.5 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-cyan-300/75">

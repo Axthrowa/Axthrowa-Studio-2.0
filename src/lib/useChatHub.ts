@@ -14,7 +14,7 @@ import { kickParts, textPart } from "./chatParts";
 import { handleSmartBotMessage } from "./smartBot";
 import { pushAppAlert } from "./appAlert";
 import { isLocalBotUser } from "./smartBot/botIdentity";
-import { isRustKickChatActive, refreshRustKickChatActive } from "./rustKickGate";
+import { isRustKickChatActive, jsHandlesKickCommands, refreshRustKickChatActive } from "./rustKickGate";
 
 const INITIAL_STATUS: Record<Platform, PlatformStatus> = {
   kick: { platform: "kick", state: "off", detail: "kapalı", channel: "" },
@@ -203,7 +203,7 @@ export function useChatHub(
       });
     };
     tick();
-    const id = window.setInterval(tick, 400);
+    const id = window.setInterval(tick, 2000);
     return () => window.clearInterval(id);
   }, [hideAfterMs]);
 
@@ -303,8 +303,8 @@ export function useChatHub(
             ts: Number(msg.t) || Date.now(),
           };
           push(incoming);
-          // Rust Kick dinlerken JS komut motoru Kick yanıtı üretmesin (Failed to fetch / çift cevap).
-          if (platform === "kick" && !isRustKickChatActive()) {
+          // Rust dinlerken Pusher kapalı; komutları bu soket işler. Yanıt Kick API kuyruğuna gider.
+          if (platform === "kick" && jsHandlesKickCommands(isRustKickChatActive())) {
             const extras = handleSmartBotMessage(incoming);
             for (const x of extras) push(x);
           }

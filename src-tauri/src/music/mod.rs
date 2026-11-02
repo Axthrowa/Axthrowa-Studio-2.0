@@ -98,7 +98,7 @@ pub fn parse_retry_after(raw: Option<&str>) -> u64 {
 /// Yoklama aralığı: çalarken 2 sn (ilerleme çubuğu akıcı kalsın), durgunken 5 sn.
 /// Saniyede bir istek (dakikada 60) Spotify'ın 30 sn'lik penceresine takılıyordu.
 pub fn spotify_poll_delay(playing: bool) -> Duration {
-  Duration::from_secs(if playing { 2 } else { 5 })
+  Duration::from_secs(if playing { 5 } else { 12 })
 }
 
 fn now_ms() -> i64 {

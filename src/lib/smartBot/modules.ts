@@ -6,6 +6,7 @@ import { uid, type Quote } from "./types";
 import { hasLevel, userLevel } from "./levels";
 import { emitWidgetEvent } from "./events";
 import type { GiveawayConfig } from "./v2";
+import { mirrorLoyalty } from "./platformActions";
 
 const EIGHT = [
   "Kesinlikle.",
@@ -186,6 +187,7 @@ export function handleModuleCommand(
           queue: { ...((prev as any).queue || {}), users, enabled: true },
         } as any;
       });
+      if (cost > 0) mirrorLoyalty(k, -cost, "queue");
       return [`${msg.user} sırada #${users.indexOf(k) + 1}`];
     }
     return null;
@@ -310,6 +312,7 @@ export function handleModuleCommand(
       const points = Math.max(0, (u.points || 0) + (win ? amt : -amt));
       return { ...prev, loyalty: { ...prev.loyalty, [key]: { ...u, points, lastSeen: Date.now() } } };
     });
+    mirrorLoyalty(key, win ? amt : -amt, "roulette");
     return [win ? `${msg.user} +${amt} kazandı!` : `${msg.user} -${amt} kaybetti.`];
   }
 
@@ -347,6 +350,7 @@ export function handleModuleCommand(
       const points = Math.max(0, (u.points || 0) + (win ? amt * 2 : -amt));
       return { ...prev, loyalty: { ...prev.loyalty, [key]: { ...u, points, lastSeen: Date.now() } } };
     });
+    mirrorLoyalty(key, win ? amt * 2 : -amt, "gamble");
     return [win ? `${msg.user} gamble +${amt * 2}` : `${msg.user} gamble -${amt}`];
   }
 

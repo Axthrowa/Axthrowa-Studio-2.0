@@ -7,7 +7,6 @@ import { API_BASE, patchSettings } from "../api";
 import type { ChatMessage, Platform } from "../chatHub";
 import { sendTwitchPrivmsg, twitchWriteStatus } from "../platformAuth/twitchWrite";
 import { sendYoutubeLiveChat, youtubeWriteStatus } from "../platformAuth/youtubeWrite";
-import { isRustKickChatActive } from "../rustKickGate";
 import { pushAppAlert } from "../appAlert";
 import { getBotConfig } from "./store";
 
@@ -58,7 +57,6 @@ function toast(t: string) {
 }
 
 async function sendKick(text: string): Promise<boolean> {
-  if (isRustKickChatActive()) return true;
   const delay = Math.max(250, Math.min(2000, getBotConfig().replyDelayMs || 1200));
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
@@ -217,11 +215,7 @@ export function enqueueBotReply(
   queue.push({
     lines: clean,
     source,
-    toKick:
-      opts?.kick ??
-      (cfg.replyToKick !== false &&
-        source.platform === "kick" &&
-        !isRustKickChatActive()),
+    toKick: opts?.kick ?? (cfg.replyToKick !== false && source.platform === "kick"),
     toTwitch:
       opts?.twitch ?? (cfg.replyToTwitch !== false && source.platform === "twitch"),
     toYoutube:

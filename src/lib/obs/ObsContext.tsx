@@ -218,8 +218,15 @@ export function ObsProvider({ children }: { children: ReactNode }) {
         if (!closed) retry = window.setTimeout(connectWs, 2500);
       };
     };
+    const onShopScene = (e: Event) => {
+      const scene = String((e as CustomEvent<{ scene?: string }>).detail?.scene || "").trim();
+      if (!scene) return;
+      void goScene(scene).catch((err) => logger.warn("[ObsProvider] shop scene:", err));
+    };
+    window.addEventListener("yya-shop-scene", onShopScene);
     connectWs();
     return () => {
+      window.removeEventListener("yya-shop-scene", onShopScene);
       closed = true;
       if (retry) window.clearTimeout(retry);
       try {

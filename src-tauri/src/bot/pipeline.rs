@@ -300,6 +300,31 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
         "data": ev
       }));
     }
+    if kind == "follow" {
+      if let Ok(rows) = crate::db::widgets::bump_goal_for_event(&state.db, "follow", 1.0).await {
+        let now = chrono_now();
+        for (_id, cur, target, completed) in rows {
+          state.broadcast_json(&json!({
+            "type": "goal-update",
+            "metric": "followers",
+            "amount": 1,
+            "current": cur,
+            "target": target,
+            "user": msg.user_name,
+            "t": now,
+          }));
+          if completed {
+            state.broadcast_json(&json!({
+              "type": "widget-bus",
+              "from": "goal",
+              "action": "goal.complete",
+              "payload": { "current": cur, "target": target, "user": msg.user_name },
+              "t": now,
+            }));
+          }
+        }
+      }
+    }
     if matches!(kind, "tip" | "donation") {
       if let Some(amount) = msg.amount {
         state.obs.trigger_from_settings(

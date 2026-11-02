@@ -248,7 +248,23 @@ export type StreamHealth = {
   dropPct: number;
 };
 
+const HEALTH_CACHE_MS = 4000;
+let healthAt = 0;
+let healthPending: Promise<StreamHealth> | null = null;
+
 export async function getStreamHealth(): Promise<StreamHealth> {
+  const now = Date.now();
+  if (healthPending && now - healthAt < HEALTH_CACHE_MS) return healthPending;
+  healthAt = now;
+  healthPending = readStreamHealth().catch((e) => {
+    healthPending = null;
+    healthAt = 0;
+    throw e;
+  });
+  return healthPending;
+}
+
+async function readStreamHealth(): Promise<StreamHealth> {
   const st = (await getObs().call("GetStreamStatus")) as {
     outputActive?: boolean;
     outputReconnecting?: boolean;

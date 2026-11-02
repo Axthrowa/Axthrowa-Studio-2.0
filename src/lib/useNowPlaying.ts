@@ -8,7 +8,7 @@ import { API_BASE, NowPlaying, fetchNowPlaying } from "./api";
  * köprüsünden alır), burada yalnızca okunur. İlerleme çubuğu yoklamalar
  * arasında istemcide yürütülür; aksi halde saniyede bir zıplardı.
  */
-export function useNowPlaying(enabled = true, pollMs = 2000) {
+export function useNowPlaying(enabled = true, pollMs = 5000) {
   const [track, setTrack] = useState<NowPlaying | null>(null);
   const [progress, setProgress] = useState(0);
   const baseRef = useRef({ progress: 0, at: 0, playing: false, duration: 0 });
@@ -59,7 +59,7 @@ export function useNowPlaying(enabled = true, pollMs = 2000) {
         if (!b.playing) return;
         const next = b.progress + (Date.now() - b.at);
         setProgress(b.duration ? Math.min(next, b.duration) : next);
-      }, 250);
+      }, 1000);
     };
     const stop = () => {
       window.clearInterval(timer);

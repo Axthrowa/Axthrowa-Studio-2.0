@@ -229,10 +229,12 @@ function startKick(
       if (msg) h.onMessage(msg);
     });
     // Bazı istemciler takip olayını chatroom kanalında yayınlar
-    channel.bind("App\\Events\\FollowersUpdatedEvent", (data: unknown) => {
+    const onFollow = (data: unknown) => {
       const msg = parseKickFollow(data);
       if (msg) h.onMessage(msg);
-    });
+    };
+    channel.bind("App\\Events\\FollowersUpdatedEvent", onFollow);
+    channel.bind("App\\Events\\FollowersUpdated", onFollow);
 
     if (gateTick) window.clearInterval(gateTick);
     gateTick = window.setInterval(() => {
@@ -346,6 +348,8 @@ export function parseKickFollow(raw: unknown): ChatMessage | null {
     payload.user?.username,
     payload.follower?.username,
     payload.followers?.[0]?.username,
+    payload.recentFollowers?.[0]?.username,
+    payload.recent_followers?.[0]?.username,
   ];
   const user = String(candidates.find((x) => x) || "").trim();
   if (!user) return null;

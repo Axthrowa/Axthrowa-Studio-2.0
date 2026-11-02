@@ -119,7 +119,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
 
   useEffect(() => {
     void refresh();
-    const id = setVisibleInterval(() => void refresh(), 3000);
+    const id = setVisibleInterval(() => void refresh(), 10000);
     return () => clearVisibleInterval(id);
   }, [refresh]);
 
@@ -145,8 +145,8 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
       }
     };
     void poll();
-    const id = window.setInterval(poll, 10_000);
-    return () => window.clearInterval(id);
+    const id = setVisibleInterval(poll, 20_000);
+    return () => clearVisibleInterval(id);
   }, [kickSlug]);
 
   useEffect(() => {

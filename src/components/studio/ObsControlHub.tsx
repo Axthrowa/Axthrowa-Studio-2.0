@@ -136,7 +136,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
           if (next.connected) setStatus(next);
         })
         .catch(() => {});
-    }, 1500);
+    }, 4000);
     return () => clearVisibleInterval(id);
   }, [status.connected]);
 
@@ -144,7 +144,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
     if (!status.connected) return;
     void refresh(true);
     // Pencere görünmüyorken OBS'i yoklama; görününce hemen bir kez yenile.
-    const id = setVisibleInterval(() => void refresh(true), 3000);
+    const id = setVisibleInterval(() => void refresh(true), 10000);
     return () => clearVisibleInterval(id);
   }, [refresh, status.connected]);
 

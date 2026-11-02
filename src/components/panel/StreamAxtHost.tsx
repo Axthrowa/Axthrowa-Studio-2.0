@@ -48,7 +48,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
 
   useEffect(() => {
     void refresh();
-    const id = setVisibleInterval(() => void refresh(), 3000);
+    const id = setVisibleInterval(() => void refresh(), 10000);
     return () => clearVisibleInterval(id);
   }, [refresh]);
 

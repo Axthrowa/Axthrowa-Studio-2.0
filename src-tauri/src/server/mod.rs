@@ -248,13 +248,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     api
       .merge(spa)
       .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
-      // Yerel sunucuda önbellek kazancı yok ama OBS'te eski paket riski var:
-      // tarayıcı kaynağı, uygulama güncellendikten sonra bile eski JS'i
-      // çalıştırabiliyordu. Her istekte taze dosya versin.
-      .layer(SetResponseHeaderLayer::overriding(
-        header::CACHE_CONTROL,
-        HeaderValue::from_static("no-store, max-age=0"),
-      ))
+      .layer(axum::middleware::from_fn(onbellek_basligi))
       .layer(cors)
   } else {
     api.fallback(get(dev_vite_proxy)).layer(cors)
@@ -2539,5 +2533,48 @@ mod tests {
       resolve_spotify_redirect(base, Some("http://127.0.0.1:8843/resonance/callback")),
       "http://127.0.0.1:8843/resonance/callback"
     );
+  }
+}
+
+/// Vite'in içeriğe göre adlandırdığı dosya mı (`/assets/ad-XXXXXXXX.js`). Kullanıcı klasörleri (`/assets/music/…`) değil.
+fn degismez_varlik_mi(yol: &str) -> bool {
+  let Some(ad) = yol.strip_prefix("/assets/") else { return false };
+  let Some((govde, _)) = ad.rsplit_once('.') else { return false };
+  let b = govde.as_bytes();
+  !ad.contains('/')
+    && b.len() > 9
+    && b[b.len() - 9] == b'-'
+    && b[b.len() - 8..].iter().all(|c| c.is_ascii_alphanumeric() || *c == b'_' || *c == b'-')
+}
+
+/// OBS tarayıcı kaynağı güncellemeden sonra eski JS'i çalıştırabiliyordu: index.html ve API her istekte taze.
+/// Paket dosyalarının adı içerik değişince değişir; onlar önbellekten gelir, overlay ve panel daha hızlı açılır.
+async fn onbellek_basligi(req: axum::extract::Request, next: axum::middleware::Next) -> Response {
+  let degismez = degismez_varlik_mi(req.uri().path());
+  let mut r = next.run(req).await;
+  // Olmayan dosyaya index.html döner: o önbelleğe girmesin
+  let html = r.headers().get(header::CONTENT_TYPE).is_some_and(|v| v.as_bytes().starts_with(b"text/html"));
+  let deger = if degismez && r.status().is_success() && !html {
+    "public, max-age=31536000, immutable"
+  } else {
+    "no-store, max-age=0"
+  };
+  r.headers_mut().insert(header::CACHE_CONTROL, HeaderValue::from_static(deger));
+  r
+}
+
+#[cfg(test)]
+mod onbellek_testleri {
+  use super::degismez_varlik_mi;
+
+  #[test]
+  fn yalniz_icerige_gore_adlanan_paket_dosyalari_degismez() {
+    assert!(degismez_varlik_mi("/assets/index-BgLx5yHd.js"));
+    assert!(degismez_varlik_mi("/assets/kickAuth-DMT_V--2.js"));
+    assert!(degismez_varlik_mi("/assets/open-sans-latin-400-normal-Bk63H6sG.woff2"));
+    assert!(!degismez_varlik_mi("/index.html"));
+    assert!(!degismez_varlik_mi("/assets/logo.png"));
+    assert!(!degismez_varlik_mi("/assets/music/sarki-abcdefgh.mp3"));
+    assert!(!degismez_varlik_mi("/widgets/index-BgLx5yHd.js"));
   }
 }

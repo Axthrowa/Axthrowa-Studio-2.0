@@ -6,7 +6,7 @@
  * Moderasyon düğmeleri yalnız platform yeteneği VE bağlantısı varsa görünür, çift onay ister; eylem StreamAxT'in
  * denetimli elle moderasyon ucuna gider (gerçek platform eylemi).
  */
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Pause, Play, RotateCcw, Search, Send } from "lucide-react";
 import { streamaxtBase } from "../../lib/streamaxt";
 import { ACTIVITY_LABEL, CHAT_PLATFORMS, PLATFORM_LABEL, PLATFORM_SHORT, type ActivityEvent, type ChatPlatform, type NormalizedChatMessage } from "../../lib/chat/model";
@@ -181,7 +181,7 @@ function kayitliYaziBoyutu(): number {
   }
 }
 
-export function UniversalChatPanel({ onToast }: { onToast: (m: string) => void }) {
+export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: { onToast: (m: string) => void }) {
   const { chat, connected, base } = useFeed();
   const { yetenek, bagli } = usePlatformState(base);
   const [view, setView] = useState<ChatView>("all");
@@ -386,7 +386,7 @@ export function UniversalChatPanel({ onToast }: { onToast: (m: string) => void }
       </div>
     </div>
   );
-}
+});
 
 // ─── Sohbet modları ──────────────────────────────────────────────────────
 
@@ -466,7 +466,7 @@ function ChatModes({
 
 // ─── Etkinlik akışı ──────────────────────────────────────────────────────
 
-export function ActivityFeedPanel({ onToast }: { onToast: (m: string) => void }) {
+export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { onToast: (m: string) => void }) {
   const { activity, connected, base } = useFeed();
   const [tur, setTur] = useState<string>("all");
   const [testGizle, setTestGizle] = useState(false);
@@ -529,4 +529,4 @@ export function ActivityFeedPanel({ onToast }: { onToast: (m: string) => void })
       </div>
     </div>
   );
-}
+});

@@ -23,38 +23,38 @@ import { DEFAULT_END_MARGIN } from "../../lib/youtube";
 import LazyMount from "../../components/panel/LazyMount";
 import LivePreview from "../../components/panel/LivePreview";
 import MusicBridge from "../../components/panel/MusicBridge";
-import MusicPanel from "../../components/panel/MusicPanel";
 import VideoTrimBar from "../../components/panel/VideoTrimBar";
-import VideoScrubber from "../../components/panel/VideoScrubber";
 import TextStyleEditor from "../../components/panel/TextStyleEditor";
-import BotSessions from "../../components/panel/BotSessions";
 import CopyUrl from "@/components/axthrowa/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar from "../../components/panel/NavTabBar";
-import BotEkrani from "../../components/panel/BotEkrani";
 import { menuGrubuBul } from "../../lib/anaMenu";
 import DurumCubugu from "../../components/panel/DurumCubugu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
-import AppSettingsPage from "../../components/panel/AppSettingsPage";
 import SettingsSection from "../../components/panel/SettingsSection";
-import SoundBoardPanel from "../../components/panel/SoundBoardPanel";
-import StreamAxtHost from "../../components/panel/StreamAxtHost";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
-import ProfileDashboard from "../../components/panel/ProfileDashboard";
-import ConnectionsHub from "../../components/panel/ConnectionsHub";
 import StreamHealthCard from "../../components/panel/StreamHealthCard";
-import ObsControlHub from "../../components/studio/ObsControlHub";
-import HotkeysPage from "../../components/panel/HotkeysPage";
 import ProfileSwitcher from "../../components/panel/ProfileSwitcher";
 import PanelTimer from "../../components/panel/PanelTimer";
 import CloseRequestModal from "../../components/panel/CloseRequestModal";
 import EdgePanel from "../../components/panel/EdgePanel";
 import DashboardUstSerit, { useDashboardBolumu } from "../../components/panel/DashboardUstSerit";
-import TemplatePicker from "../../components/panel/TemplatePicker";
 import { runObsAction, type ActionRow } from "../../lib/obsActions";
 import { resonanceLinkAllowed } from "../../lib/embedMessages";
 // Kontrol Merkezi yalnız o sekme açılınca yüklenir (ana paketi büyütmesin)
+const MusicPanel = lazy(() => import("../../components/panel/MusicPanel"));
+const VideoScrubber = lazy(() => import("../../components/panel/VideoScrubber"));
+const BotSessions = lazy(() => import("../../components/panel/BotSessions"));
+const BotEkrani = lazy(() => import("../../components/panel/BotEkrani"));
+const AppSettingsPage = lazy(() => import("../../components/panel/AppSettingsPage"));
+const SoundBoardPanel = lazy(() => import("../../components/panel/SoundBoardPanel"));
+const StreamAxtHost = lazy(() => import("../../components/panel/StreamAxtHost"));
+const ProfileDashboard = lazy(() => import("../../components/panel/ProfileDashboard"));
+const ConnectionsHub = lazy(() => import("../../components/panel/ConnectionsHub"));
+const ObsControlHub = lazy(() => import("../../components/studio/ObsControlHub"));
+const HotkeysPage = lazy(() => import("../../components/panel/HotkeysPage"));
+const TemplatePicker = lazy(() => import("../../components/panel/TemplatePicker"));
 const CanliEkrani = lazy(() => import("../../components/control/CanliEkrani"));
 const ObsStudioPanel = lazy(() => import("../../components/panel/ObsStudioPanel"));
 import { en, tr, type MsgKey } from "../../i18n/messages";
@@ -1647,6 +1647,7 @@ export default function PanelPage() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
+      <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
       {profileTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4">
           <DashboardUstSerit
@@ -3719,6 +3720,7 @@ export default function PanelPage() {
         </EdgePanel>
       </div>
       )}
+      </Suspense>
       </div>
 
       {/* StreamAxT sesli komut dinleyicisi: sekmeden bağımsız, arka planda */}

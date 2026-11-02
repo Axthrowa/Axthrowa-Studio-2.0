@@ -2,12 +2,10 @@
  * Widget kind → React bileşeni (OBS overlay + panel canlı önizleme ortak).
  */
 
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import AlertsWidget from "../../components/widgets/AlertsWidget";
 import ChatWidget from "../../components/widgets/ChatWidget";
-import CupWidget from "../../components/widgets/CupWidget";
 import EmoteComboWidget from "../../components/widgets/EmoteComboWidget";
-import EmoteWallWidget from "../../components/widgets/EmoteWallWidget";
 import GoalWidget from "../../components/widgets/GoalWidget";
 import KickSubsWidget from "../../components/widgets/KickSubsWidget";
 import SubathonWidget from "../../components/widgets/SubathonWidget";
@@ -25,6 +23,10 @@ import {
   ViewersWidget,
   WheelWidget,
 } from "../../components/widgets/EnterpriseWidgets";
+
+// Fizik motoru (matter-js) büyük: yalnız bu iki widget açılınca yüklenir, diğer overlay'ler taşımaz
+const CupWidget = lazy(() => import("../../components/widgets/CupWidget"));
+const EmoteWallWidget = lazy(() => import("../../components/widgets/EmoteWallWidget"));
 
 /** Önizleme için demo config yaması (chat boş görünmesin vb.) */
 export function previewDemoPatch(kind: string, config: Record<string, unknown>): Record<string, unknown> {
@@ -51,7 +53,7 @@ export function previewDemoPatch(kind: string, config: Record<string, unknown>):
 function wrap(kind: string, config: Record<string, unknown>, node: ReactNode): ReactNode {
   return (
     <WidgetStage kind={kind} config={config}>
-      {node}
+      <Suspense fallback={null}>{node}</Suspense>
     </WidgetStage>
   );
 }

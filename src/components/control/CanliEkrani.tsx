@@ -60,6 +60,11 @@ function SureSayaci({ baslangic }: { baslangic: number }) {
  * OBS'in yayındaki sahnesi: bir kare gelince sıradakini ister, en çok ~15 kare/sn. Video akışı değildir; OBS ek bir
  * çıkış olmadan yalnız kare verir. Kare önce çözülür, sonra tuvale çizilir: geçişte titremez.
  */
+/** Yoklama aynı veriyi getirdiyse eski nesne kalsın: ekran boşuna yeniden çizilmez */
+function ayniysaKoru<T>(yeni: T) {
+  return <E,>(eski: E): E | T => (JSON.stringify(eski) === JSON.stringify(yeni) ? eski : yeni);
+}
+
 function ObsOnizleme({ sahne }: { sahne: string }) {
   const tuval = useRef<HTMLCanvasElement>(null);
   const [kareVar, setKareVar] = useState(false);
@@ -135,8 +140,8 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot }: 
         return;
       }
       const [sc, inp] = await Promise.all([obsControl.scenes(), obsControl.inputs()]);
-      setSnap(sc);
-      setGirisler(inp.filter((i) => isAudioInput(i.kind, i.name)));
+      setSnap(ayniysaKoru(sc));
+      setGirisler(ayniysaKoru(inp.filter((i) => isAudioInput(i.kind, i.name))));
     } catch {
       setObsBagli(false);
     }
@@ -155,8 +160,8 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot }: 
           fetch(`${base}/api/status`, { cache: "no-store" }).then((r) => r.json()),
           fetch(`${base}/api/pinned`, { cache: "no-store" }).then((r) => r.json()),
         ]);
-        setBot(d);
-        setSabit(p?.message ? p : null);
+        setBot(ayniysaKoru(d));
+        setSabit(ayniysaKoru(p?.message ? p : null));
       } catch {
         setBot(null);
       }

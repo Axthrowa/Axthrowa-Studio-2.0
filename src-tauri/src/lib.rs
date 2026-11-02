@@ -756,8 +756,9 @@ pub fn run() {
       let port = DEFAULT_PORT;
       tauri::async_runtime::spawn(async move {
         let url = format!("http://127.0.0.1:{port}/");
+        let istemci = reqwest::Client::new();
         for _ in 0..80 {
-          if reqwest::Client::new()
+          if istemci
             .get(format!("{url}api/server"))
             .send()
             .await

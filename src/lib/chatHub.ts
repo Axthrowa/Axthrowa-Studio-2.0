@@ -134,6 +134,8 @@ type Stop = () => void;
 /** Botun sohbet iletisi → ortak ileti (Kick ayrıştırıcısı yeniden kullanılır). */
 export function botKickMesaji(d: any): ChatMessage | null {
   if (d?.platform !== "kick" || !d.user) return null;
+  // Bot bunları yok sayıyor; yayında da görünmemeli
+  if (d.karaListede || d.kalkanda) return null;
   return parseKickMessage({
     id: d.id,
     content: d.message,

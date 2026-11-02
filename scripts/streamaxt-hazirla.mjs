@@ -278,3 +278,11 @@ if (flag("db-recolor") || flag("db-tohumla")) {
 }
 
 console.log(`[streamaxt] hazır: ${hedef}`);
+
+// ---- Resonance: kaynak bu depo. Botun bağımsız dağıtımı için kendi kopyası var; elle tutulunca ayrışıyordu.
+const botResonance = path.join(kaynak, "resonance", "src");
+if (fs.existsSync(botResonance)) {
+  fs.rmSync(botResonance, { recursive: true, force: true });
+  fs.cpSync(path.join(root, "resonance", "src"), botResonance, { recursive: true });
+  console.log(`[streamaxt] Resonance kaynağı bota eşitlendi → ${botResonance}`);
+}

@@ -83,14 +83,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
   const refresh = useCallback(async () => {
     try {
       setErr("");
-      const [snap, bot, chat] = await Promise.all([
-        fetchDashboard(),
-        botaxtApi.botSettings().catch(() => ({})),
-        botaxtApi.kickChatStatus().catch(() => ({})),
-      ]);
+      const [snap, bot] = await Promise.all([fetchDashboard(), botaxtApi.botSettings().catch(() => ({}))]);
       setData(snap);
       const botState = bot as Record<string, unknown>;
-      const chatState = chat as { connected?: boolean; username?: string | null };
       setBotEnabled(Number(botState.enabled ?? 1) !== 0);
       let kanal = "";
       let botBagli = false;
@@ -104,7 +99,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
       // Sohbeti bot okuyor: durum da ondan (Rust'un eski Pusher dinleyicisi artık bağlanamıyor)
       botBagli = !!kanal;
       setChatConnected(botBagli);
-      setKickSlug(String(kanal || chatState.username || getBotConfig().channelName || "").trim());
+      setKickSlug(String(kanal || getBotConfig().channelName || "").trim());
       // SQLite oturumu ile bot uptime senkronu
       const live = !!snap.active_session;
       const cfg = getBotConfig();

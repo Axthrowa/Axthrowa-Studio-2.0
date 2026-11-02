@@ -4,8 +4,6 @@ use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
 
 mod auth;
-mod browser_cdp;
-pub mod login_window;
 mod session;
 pub use auth::{
   explain_kick_chat_error, is_kick_rate_limit, kick_chat_send_as_bot, kick_rate_limit_user_msg,

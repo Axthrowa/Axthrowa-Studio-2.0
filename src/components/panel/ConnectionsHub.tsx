@@ -8,7 +8,7 @@ import { fetchSettings, patchSettings } from "../../lib/api";
 import { obsControl, type ObsConnectionStatus } from "../../lib/obsControl";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
-import { openExternal } from "../../lib/openExternal";
+import { kickGirisiAc } from "../../lib/kickAuth";
 import { streamaxtBase } from "../../lib/streamaxt";
 import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
 import StatusDot from "@/components/axthrowa/StatusDot";
@@ -264,21 +264,10 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
     }
   };
 
-  /** Kick'in resmi izin sayfası varsayılan tarayıcıda açılır; onaydan sonra bot kaydeder ve bağlanır. */
   const kickGirisi = async (hedef: "bot" | "kanal") => {
-    try {
-      const r = await fetch(`${await streamaxtBase()}/api/platforms/kick/auth-url?hedef=${hedef}`, { cache: "no-store" });
-      const d = await r.json();
-      if (!r.ok || !d.authUrl) {
-        onToast("Önce Kick Client ID gerekli: Bot › Platformlar › Kick");
-        onBotPlatformlar?.();
-        return;
-      }
-      const sonuc = await openExternal(d.authUrl);
-      onToast(sonuc === "opened" ? "Kick izin sayfası tarayıcıda açıldı" : "Giriş adresi panoya kopyalandı");
-    } catch {
-      onToast("Bot kapalı — Kick girişi açılamadı");
-    }
+    const r = await kickGirisiAc(hedef);
+    onToast(r.message);
+    if (r.needConfig) onBotPlatformlar?.();
   };
 
   return (

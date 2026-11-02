@@ -17,6 +17,12 @@ describe("botKickMesaji", () => {
     expect(m?.badges[0].svg).toContain("linearGradient");
   });
 
+  it("kara listedeki ve kalkana takılan ileti gösterilmez", () => {
+    const m = { platform: "kick", message: "x", user: { username: "a" } };
+    expect(botKickMesaji({ ...m, karaListede: true })).toBeNull();
+    expect(botKickMesaji({ ...m, kalkanda: "link" })).toBeNull();
+  });
+
   it("başka platformun iletisini almaz", () => {
     expect(botKickMesaji({ platform: "twitch", message: "x", user: {} })).toBeNull();
   });

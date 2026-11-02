@@ -703,27 +703,6 @@ impl KickBotSession {
       }
     }
 
-    // 2) Edge CDP — gerçek tarayıcı context
-    if let Some(data_dir) = self.path.parent() {
-      match super::browser_cdp::send_chat_via_cdp(
-        data_dir,
-        room,
-        content,
-        &sess.cookie_header,
-        &sess.xsrf_token,
-        &sess.bearer_token,
-      )
-      .await
-      {
-        Ok(v) => {
-          *self.session_lost.write() = None;
-          yya_log!("[kick-session] mesaj OK · cdp · room={room}");
-          return Ok(json!({ "ok": true, "via": "cdp", "response": v }));
-        }
-        Err(e) => yya_warn!("[kick-session] cdp send: {e:#}"),
-      }
-    }
-
     // 3) reqwest yedek (çoğu makinede CF 403)
     let c = client()?;
     let urls = [
@@ -867,64 +846,5 @@ impl KickBotSession {
       return Err(anyhow!("curl Cloudflare challenge HTML"));
     }
     Err(anyhow!("curl HTTP {code}: {text}"))
-  }
-
-  /// Kick sohbet geçmişini platform tarafında temizler (moderatör oturumu).
-  pub async fn clear_chat(&self) -> Result<Value> {
-    let sess = self.snapshot();
-    if sess.cookie_header.is_empty() || (sess.xsrf_token.is_empty() && sess.bearer_token.is_empty())
-    {
-      return Err(anyhow!("Kick bot oturumu yok"));
-    }
-    let slug = normalize_slug(&sess.channel_slug);
-    let room = sess.chatroom_id;
-    if slug.is_empty() && room == 0 {
-      return Err(anyhow!("kanal / chatroom yok"));
-    }
-    let c = client()?;
-    let urls = {
-      let mut u = Vec::new();
-      if room > 0 {
-        u.push(format!("https://kick.com/api/v2/chatrooms/{room}/clear"));
-        u.push(format!("https://kick.com/api/v1/chatrooms/{room}/clear"));
-      }
-      if !slug.is_empty() {
-        u.push(format!("https://kick.com/api/v2/channels/{slug}/chatroom/clear"));
-      }
-      u
-    };
-    let mut last_err = "Kick clear API yanıt vermedi".to_string();
-    for url in urls {
-      let mut req = c
-        .post(&url)
-        .header("Accept", "application/json")
-        .header("Content-Type", "application/json")
-        .header("User-Agent", UA)
-        .header("Origin", "https://kick.com")
-        .header("Referer", format!("https://kick.com/{}", slug))
-        .header("Cookie", &sess.cookie_header);
-      if !sess.xsrf_token.is_empty() {
-        req = req.header("X-XSRF-TOKEN", &sess.xsrf_token);
-      }
-      if !sess.bearer_token.is_empty() {
-        req = req.header("Authorization", format!("Bearer {}", sess.bearer_token));
-      }
-      let res = match req.json(&json!({})).send().await {
-        Ok(r) => r,
-        Err(e) => {
-          last_err = e.to_string();
-          continue;
-        }
-      };
-      let status = res.status();
-      let text = res.text().await.unwrap_or_default();
-      if status.is_success() {
-        yya_log!("[kick-session] chat clear OK · {url}");
-        return Ok(json!({ "ok": true, "url": url }));
-      }
-      last_err = format!("HTTP {status}: {text}");
-      yya_warn!("[kick-session] clear FAIL · {url} · {last_err}");
-    }
-    Err(anyhow!(last_err))
   }
 }

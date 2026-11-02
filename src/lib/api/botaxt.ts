@@ -363,27 +363,6 @@ export const botaxtApi = {
     });
   },
   discordTest: () => raw("/integrations/discord/test", { method: "POST" }),
-  kickChatConnect: (username: string) =>
-    json<{
-      connected?: boolean;
-      connecting?: boolean;
-      username?: string | null;
-      chatroomId?: number | null;
-      lastError?: string | null;
-    }>("/settings/kick", {
-      method: "POST",
-      body: JSON.stringify({ username }),
-    }),
-  kickChatStatus: () =>
-    json<{
-      connected?: boolean;
-      connecting?: boolean;
-      username?: string | null;
-      chatroomId?: number | null;
-      lastError?: string | null;
-    }>("/settings/kick/status"),
-  kickChatDisconnect: () =>
-    raw("/settings/kick", { method: "DELETE" }),
   syncSmartbot: (force = false) =>
     raw(`/sync/from-smartbot?force=${force ? 1 : 0}`, { method: "POST" }),
   seedWidgets: () => raw("/widgets/seed", { method: "POST" }),

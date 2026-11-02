@@ -10,7 +10,7 @@ Bu uygulama kullanıcının bilgisayarında kurulu OBS Studio ile obs-websocket 
 tarayıcı dock'u olarak eklenir; OBS Studio ve OBS eklentileri bu pakete dahil değildir. OBS Studio, OBS Project'in
 markasıdır; bu ürün onunla bağlantılı değildir.
 
-Bileşen sayısı: 520
+Bileşen sayısı: 518
 ====================================================================================================
 
 adler2 2.0.1  [cargo; panel (Rust)]
@@ -18373,33 +18373,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --- son ---
 
-pusher-js 8.6.0  [npm; panel ön yüzü (npm)]
-Lisans: MIT
---- LICENCE (metin #287) ---
-Copyright (c) 2020 Pusher, Ltd (https://pusher.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
---- son ---
-
 query-selector-shadow-dom 1.0.1  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #288) ---
+--- LICENSE (metin #287) ---
 MIT License
 
 Copyright (c) 2020 George Griffiths
@@ -18425,7 +18401,7 @@ SOFTWARE.
 
 react 19.2.8  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #289) ---
+--- LICENSE (metin #288) ---
 MIT License
 
 Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -18451,15 +18427,15 @@ SOFTWARE.
 
 react-dom 19.2.8  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #289 ile aynı
+LICENSE: metin #288 ile aynı
 
 react-is 19.2.8  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #289 ile aynı
+LICENSE: metin #288 ile aynı
 
 react-redux 9.3.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #290) ---
+--- LICENSE.md (metin #289) ---
 The MIT License (MIT)
 
 Copyright (c) 2015-present Dan Abramov
@@ -18485,7 +18461,7 @@ SOFTWARE.
 
 react-router 7.18.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #291) ---
+--- LICENSE.md (metin #290) ---
 MIT License
 
 Copyright (c) React Training LLC 2015-2019
@@ -18513,11 +18489,11 @@ SOFTWARE.
 
 react-router-dom 7.18.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #291 ile aynı
+LICENSE.md: metin #290 ile aynı
 
 recharts 3.10.1  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #292) ---
+--- LICENSE (metin #291) ---
 The MIT License (MIT)
 
 Copyright (c) 2015-present recharts
@@ -18543,15 +18519,15 @@ SOFTWARE.
 
 redux 5.0.1  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #290 ile aynı
+LICENSE.md: metin #289 ile aynı
 
 redux-thunk 3.1.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #290 ile aynı
+LICENSE.md: metin #289 ile aynı
 
 reselect 5.2.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #293) ---
+--- LICENSE (metin #292) ---
 The MIT License (MIT)
 
 Copyright (c) 2015-2018 Reselect Contributors
@@ -18577,11 +18553,11 @@ SOFTWARE.
 
 scheduler 0.27.0  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #289 ile aynı
+LICENSE: metin #288 ile aynı
 
 set-cookie-parser 2.7.2  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #294) ---
+--- LICENSE (metin #293) ---
 The MIT License (MIT)
 
 Copyright (c) 2015 Nathan Friedly <nathan@nfriedly.com> (http://nfriedly.com/)
@@ -18607,7 +18583,7 @@ THE SOFTWARE.
 
 socket.io-client 4.8.3  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #295) ---
+--- LICENSE (metin #294) ---
 The MIT License (MIT)
 
 Copyright (c) 2014-present Guillermo Rauch and Socket.IO contributors
@@ -18633,7 +18609,7 @@ THE SOFTWARE.
 
 socket.io-parser 4.2.7  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #296) ---
+--- LICENSE (metin #295) ---
 (The MIT License)
 
 Copyright (c) 2014-present Guillermo Rauch and Socket.IO contributors
@@ -18658,7 +18634,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 tailwind-merge 3.6.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #297) ---
+--- LICENSE.md (metin #296) ---
 MIT License
 
 Copyright (c) 2021 Dany Castillo
@@ -18684,7 +18660,7 @@ SOFTWARE.
 
 tiny-invariant 1.3.3  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #298) ---
+--- LICENSE (metin #297) ---
 MIT License
 
 Copyright (c) 2019 Alexander Reardon
@@ -18710,7 +18686,7 @@ SOFTWARE.
 
 tslib 2.8.1  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: 0BSD
---- LICENSE.txt (metin #299) ---
+--- LICENSE.txt (metin #298) ---
 Copyright (c) Microsoft Corporation.
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -18725,42 +18701,13 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 --- son ---
 
-tweetnacl 1.0.3  [npm; panel ön yüzü (npm)]
-Lisans: Unlicense
---- LICENSE (metin #300) ---
-This is free and unencumbered software released into the public domain.
-
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.
-
-In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-For more information, please refer to <http://unlicense.org>
---- son ---
-
 type-fest 3.13.1  [npm; panel ön yüzü (npm)]
 Lisans: (MIT OR CC0-1.0)
 (Pakette lisans dosyası yok; yukarıdaki SPDX lisansının standart metni geçerlidir.)
 
 use-sync-external-store 1.6.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #289 ile aynı
+LICENSE: metin #288 ile aynı
 
 victory-vendor 37.3.6  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT AND ISC
@@ -18768,7 +18715,7 @@ Lisans: MIT AND ISC
 
 web-vitals 6.2.3  [npm; panel ön yüzü (npm)]
 Lisans: Apache-2.0
---- LICENSE (metin #301) ---
+--- LICENSE (metin #299) ---
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -18974,11 +18921,11 @@ Apache License
 
 web-vitals-soft-navs 6.2.1  [npm; panel ön yüzü (npm)]
 Lisans: Apache-2.0
-LICENSE: metin #301 ile aynı
+LICENSE: metin #299 ile aynı
 
 ws 8.21.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #302) ---
+--- LICENSE (metin #300) ---
 Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 Copyright (c) 2013 Arnout Kazemier and contributors
 Copyright (c) 2016 Luigi Pinca and contributors
@@ -19003,7 +18950,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 xmlhttprequest-ssl 2.1.2  [npm; Resonance ön yüzü (npm)]
 Lisans: belirtilmemiş
---- LICENSE (metin #303) ---
+--- LICENSE (metin #301) ---
 Copyright (c) 2010 passive.ly LLC
 
  Permission is hereby granted, free of charge, to any person
@@ -19030,7 +18977,7 @@ Copyright (c) 2010 passive.ly LLC
 
 zustand 5.0.16  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #304) ---
+--- LICENSE (metin #302) ---
 MIT License
 
 Copyright (c) 2019 Paul Henschel

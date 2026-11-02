@@ -8,12 +8,7 @@ import { buildYoutubeAuthorizeUrl } from "../lib/platformAuth/youtubeWrite";
 import { buildDiscordAuthorizeUrl } from "../lib/platformAuth/discordAuth";
 import type { BotPlatform } from "../lib/platformTheme";
 import { setActivePlatform } from "../lib/platformTheme";
-import {
-  bindBotToKickChannel,
-  kickAuthBody,
-  openKickLoginPage,
-  postKickJson,
-} from "../lib/kickAuth";
+import { kickGirisiAc } from "../lib/kickAuth";
 
 export type StartLoginResult =
   | { ok: true; opened: boolean; message: string }
@@ -25,60 +20,9 @@ export async function startPlatformBotLogin(
   const cfg = loadBotConfig();
 
   if (platform === "kick") {
-    const id = (cfg.kickClientId || "").trim();
-    const secret = (cfg.kickClientSecret || "").trim();
     setActivePlatform("kick");
-    if (id && secret) {
-      try {
-        const { ok, json, raw } = await postKickJson(
-          "/api/kick/oauth/authorize",
-          kickAuthBody(id, secret, cfg.channelName)
-        );
-        const url = String(json.url || "");
-        if (ok && url.includes("/oauth/authorize")) {
-          const result = await openExternal(url);
-          window.setTimeout(() => void bindBotToKickChannel(cfg.channelName), 4000);
-          return {
-            ok: true,
-            opened: result === "opened",
-            message:
-              result === "opened"
-                ? "Kick izin penceresi açıldı — onaylayınca bot o kanala eklenir"
-                : "OAuth adresi panoya kopyalandı",
-          };
-        }
-        if (ok && url && !url.includes("/oauth/authorize")) {
-          /* kök id.kick.com 404 — login sayfasına düş */
-        } else if (!ok) {
-          /* OAuth yoksa çerez girişi */
-          void json.error;
-          void raw;
-        }
-      } catch {
-        /* çerez yoluna düş */
-      }
-    }
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      try {
-        await invoke("open_kick_login_in_browser");
-      } catch {
-        /* */
-      }
-    } catch {
-      /* */
-    }
-    const result = await openKickLoginPage();
-    window.setTimeout(() => void bindBotToKickChannel(cfg.channelName), 5000);
-    window.setTimeout(() => void bindBotToKickChannel(cfg.channelName), 12000);
-    return {
-      ok: true,
-      opened: result === "opened",
-      message:
-        result === "opened"
-          ? "Kick girişi açıldı (id.kick.com/login) — giriş bitince bot kanala eklenir"
-          : "Kick giriş adresi panoya kopyalandı: https://id.kick.com/login",
-    };
+    const r = await kickGirisiAc("bot");
+    return r.ok ? { ok: true, opened: true, message: r.message } : { ok: false, needConfig: r.needConfig, message: r.message };
   }
 
   if (platform === "twitch") {

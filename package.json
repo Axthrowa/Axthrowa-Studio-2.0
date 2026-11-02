@@ -37,7 +37,6 @@
     "matter-js": "^0.20.0",
     "obs-websocket-js": "^5.0.6",
     "posthog-js": "^1.442.0",
-    "pusher-js": "^8.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.5.0",

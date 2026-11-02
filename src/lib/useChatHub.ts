@@ -11,10 +11,8 @@ import {
 import type { ChatBadge } from "./chatBadges";
 import { KICK_ICONS, TWITCH_FALLBACK_ICONS, YOUTUBE_ICONS } from "./badgeIcons";
 import { kickParts, textPart } from "./chatParts";
-import { handleSmartBotMessage } from "./smartBot";
 import { pushAppAlert } from "./appAlert";
 import { isLocalBotUser } from "./smartBot/botIdentity";
-import { isRustKickChatActive, jsHandlesKickCommands, refreshRustKickChatActive } from "./rustKickGate";
 
 const INITIAL_STATUS: Record<Platform, PlatformStatus> = {
   kick: { platform: "kick", state: "off", detail: "kapalı", channel: "" },
@@ -245,11 +243,9 @@ export function useChatHub(
   }, [chatSettings._botAnnounce, push]);
 
   // Rust bot motoru → overlay-sync `chat-message`
-  // Pusher/IRC ile aynı anahtarı kullan: çift mesaj olmasın; emote + rozet ikonları gelsin.
+  // Bot akışı ve IRC ile aynı anahtarı kullan: çift mesaj olmasın; emote + rozet ikonları gelsin.
   useEffect(() => {
     if (!enabled) return;
-    void refreshRustKickChatActive();
-    const gateId = window.setInterval(() => void refreshRustKickChatActive(), 4000);
     let ws: WebSocket | null = null;
     let retry: number | undefined;
     const connect = () => {
@@ -280,7 +276,7 @@ export function useChatHub(
             platform === "kick" && text.includes("[emote:")
               ? kickParts(text)
               : textPart(text);
-          // Kick Pusher ile aynı anahtar → seen set çiftini ezer
+          // Kick bot akışıyla aynı anahtar → seen set çiftini ezer
           const key =
             platform === "kick" && id
               ? `kick:${id}`
@@ -303,11 +299,6 @@ export function useChatHub(
             ts: Number(msg.t) || Date.now(),
           };
           push(incoming);
-          // Rust dinlerken Pusher kapalı; komutları bu soket işler. Yanıt Kick API kuyruğuna gider.
-          if (platform === "kick" && jsHandlesKickCommands(isRustKickChatActive())) {
-            const extras = handleSmartBotMessage(incoming);
-            for (const x of extras) push(x);
-          }
         } catch {
           /* */
         }
@@ -318,7 +309,6 @@ export function useChatHub(
     };
     connect();
     return () => {
-      window.clearInterval(gateId);
       if (retry) window.clearTimeout(retry);
       try {
         ws?.close();

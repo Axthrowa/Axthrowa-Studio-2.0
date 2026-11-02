@@ -8,7 +8,7 @@ export type TemizlenebilirPlatform = { id: string; bagli: boolean; tumu: boolean
 
 export type ClearPlatformResult = {
   local: boolean;
-  sonuclar: Record<string, { ok: boolean; yontem?: string; silinen?: number; hata?: string }>;
+  sonuclar: Record<string, { ok: boolean; yontem?: string; silinen?: number; kalan?: number; hata?: string }>;
   hata?: string;
 };
 
@@ -43,7 +43,7 @@ export async function clearPlatformChats(platforms: string[]): Promise<ClearPlat
 export function clearResultToast(r: ClearPlatformResult): string {
   if (r.hata) return r.hata;
   const satirlar = Object.entries(r.sonuclar).map(([p, s]) =>
-    s.ok ? `${p}: temizlendi${s.yontem === "tek-tek" ? ` (${s.silinen} ileti silindi)` : ""}` : `${p}: ${s.hata || "temizlenemedi"}`
+    s.ok ? `${p}: ${s.yontem === "tek-tek" ? `${s.silinen} ileti silindi${s.kalan ? `, ${s.kalan} ileti kaldı` : ""}` : "temizlendi"}` : `${p}: ${s.hata || "temizlenemedi"}`
   );
   if (!satirlar.length) return r.local ? "Yayın sohbet katmanı temizlendi" : "Sohbet temizlenemedi";
   return satirlar.join(" · ");

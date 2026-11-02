@@ -935,21 +935,51 @@ pub(crate) async fn sohbeti_temizle(state: &AppState) -> Value {
     }));
   }
 
-  let kick_cmd = match state.kick_session.send_message(0, "/clear").await {
-    Ok(_) => json!({ "ok": true, "via": "command" }),
-    Err(send_err) => match state.kick_session.clear_chat().await {
-      Ok(_) => json!({ "ok": true, "via": "api", "commandError": send_err.to_string() }),
-      Err(api_err) => json!({
-        "ok": false,
-        "error": format!("/clear: {send_err}; api: {api_err}")
-      }),
-    },
-  };
+  let kick = botta_kick_temizle().await;
   json!({
     "local": true,
-    "kick": kick_cmd.get("ok").and_then(|v| v.as_bool()).unwrap_or(false),
-    "kickError": kick_cmd.get("error").cloned(),
+    "kick": kick.is_ok(),
+    "kickError": kick.err(),
   })
+}
+
+/// Kick'i bot temizler: oturumu ve `/clear` + tek tek silme mantığı orada.
+async fn botta_kick_temizle() -> Result<(), String> {
+  let url = format!("http://127.0.0.1:{}/api/chat/clear-platforms", crate::streamaxt::port());
+  let yanit = crate::kick::client()
+    .map_err(|e| e.to_string())?
+    .post(url)
+    .timeout(std::time::Duration::from_secs(60))
+    .json(&json!({ "platforms": ["kick"] }))
+    .send()
+    .await
+    .map_err(|e| format!("Bota ulaşılamadı: {e}"))?;
+  let d: Value = yanit.json().await.map_err(|e| e.to_string())?;
+  kick_temizleme_sonucu(&d)
+}
+
+fn kick_temizleme_sonucu(d: &Value) -> Result<(), String> {
+  let k = &d["sonuclar"]["kick"];
+  if k["ok"].as_bool() == Some(true) {
+    Ok(())
+  } else {
+    Err(k["hata"].as_str().or(d["hata"].as_str()).unwrap_or("Kick sohbeti temizlenemedi").to_string())
+  }
+}
+
+#[cfg(test)]
+mod kick_temizleme_testleri {
+  use super::*;
+
+  #[test]
+  fn bot_yaniti_okunur() {
+    assert!(kick_temizleme_sonucu(&json!({ "sonuclar": { "kick": { "ok": true } } })).is_ok());
+    assert_eq!(
+      kick_temizleme_sonucu(&json!({ "sonuclar": { "kick": { "ok": false, "hata": "Bağlı değil." } } })),
+      Err("Bağlı değil.".to_string())
+    );
+    assert_eq!(kick_temizleme_sonucu(&json!({ "hata": "seçilmedi" })), Err("seçilmedi".to_string()));
+  }
 }
 
 async fn api_kick_bot_session_refresh_xsrf(

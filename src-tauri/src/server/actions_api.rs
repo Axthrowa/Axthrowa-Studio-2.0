@@ -27,6 +27,22 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/actions/run", post(api_run))
     .route("/api/obs/canvases", get(api_canvases))
     .route("/api/obs/meters", get(api_meters))
+    .route("/api/obs/kumanda", get(api_kumanda))
+}
+
+/// Uzaktan kumanda (telefon) düğmeleri için OBS'teki gerçek sahne ve ses girişi adları
+async fn api_kumanda(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+) -> ApiResult {
+  authorize(&state, &addr, &headers, "scene.switch").await?;
+  if !state.obs.is_connected() {
+    return Err((StatusCode::CONFLICT, "OBS bağlı değil".into()));
+  }
+  let sahne = state.obs.scene_snapshot().await.map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
+  let girisler = state.obs.inputs().await.map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
+  Ok(Json(json!({ "scenes": sahne.scenes, "currentScene": sahne.current_scene, "streaming": sahne.streaming, "inputs": girisler })))
 }
 
 /// Giriş ses seviyeleri (salt-okunur). Abonelik ilk istekte açılır, istek kesilince kendiliğinden kapanır.

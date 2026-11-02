@@ -107,6 +107,7 @@ fn perm_checked_path(path: &str) -> bool {
   [
     "/api/botaxt/remote/",
     "/api/actions",
+    "/api/asistan",
     "/api/obs/",
     "/api/obs-studio",
     "/api/destek",

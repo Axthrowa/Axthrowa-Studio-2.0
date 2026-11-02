@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { KickRealtime } from './kick-realtime.js';
-import { abonelikKanallari, kickAnketi } from './kick-realtime-protokol.js';
+import { abonelikKanallari, kickAnketi, olayAdi } from './kick-realtime-protokol.js';
 import { kickZamani, type YayinBilgisi } from '../core/live-status-math.js';
 import { sifreleHepsi } from '../core/security/vault.js';
 import { eventBus } from '../core/event-bus.js';
@@ -197,7 +197,9 @@ export class KickPlatform extends BasePlatform {
       this.handleChatMessage(veri, channelSlug); // kendi kimlik elemesi var
       return;
     }
-    if (this.olayTekrariMi(olay, veri)) return;
+    // Aynı olay önekli ve öneksiz adla ayrı kanallardan gelebilir: tekrar denetimi de öneksiz adla
+    const ad = olayAdi(olay);
+    if (this.olayTekrariMi(ad, veri)) return;
     const parsed: any = veri && typeof veri === 'object' ? veri : {};
     // Teşhis: Kick olay adlarını değiştirebiliyor; her ad günlüğe bir kez yazılır (içerik yazılmaz)
     if (!this.gorulenOlaylar.has(olay)) {
@@ -205,13 +207,13 @@ export class KickPlatform extends BasePlatform {
       console.log(`[Kick] İlk kez görülen olay: ${olay}`);
     }
 
-    if (olay === 'App\\Events\\FollowersUpdated') {
+    if (ad === 'FollowersUpdated') {
       // Çoğu zaman ad gelmez, yalnız yeni sayı gelir: yine de takipçi sayılır (bar ve uyarı bunu bekliyor)
       const sayi = parsed?.followersCount ?? parsed?.followers_count;
       this.takipciSayisiIsle(channelSlug, sayi ?? (this.takipciIzi.enYuksek ?? 0) + 1, parsed?.username || undefined);
       return;
     }
-    if (olay === 'App\\Events\\SubscriptionEvent') {
+    if (ad === 'SubscriptionEvent') {
       eventBus.emitSub({
         platform: 'kick',
         channel: channelSlug,
@@ -223,7 +225,7 @@ export class KickPlatform extends BasePlatform {
       });
       return;
     }
-    if (olay === 'App\\Events\\GiftedSubscriptionsEvent') {
+    if (ad === 'GiftedSubscriptionsEvent') {
       eventBus.emitSub({
         platform: 'kick',
         channel: channelSlug,
@@ -239,27 +241,27 @@ export class KickPlatform extends BasePlatform {
     }
     // Moderasyon: silinen ileti / yasaklanan kullanıcı / temizlenen sohbet OBS sohbet
     // katmanından da kalkmalı (eskiden yakalanmıyordu; silinen ileti yayında kalıyordu).
-    if (olay === 'App\\Events\\MessageDeletedEvent') {
+    if (ad === 'MessageDeletedEvent') {
       const id = parsed?.message?.id;
       if (id) eventBus.emit('chat_deleted', { platform: 'kick', channel: channelSlug, id: String(id) });
       return;
     }
-    if (olay === 'App\\Events\\UserBannedEvent') {
+    if (ad === 'UserBannedEvent') {
       const ad = parsed?.user?.username || parsed?.user?.slug;
       if (ad) eventBus.emit('chat_user_removed', { platform: 'kick', channel: channelSlug, username: String(ad) });
       return;
     }
-    if (olay === 'App\\Events\\ChatroomClearEvent') {
+    if (ad === 'ChatroomClearEvent') {
       eventBus.emit('chat_cleared', { platform: 'kick', channel: channelSlug });
       return;
     }
     // Kick panelinden başlatılan anket: OBS anket katmanı da açılsın ve oylar canlı aksın
-    if (olay === 'App\\Events\\PollUpdateEvent') {
+    if (ad === 'PollUpdateEvent') {
       const anket = kickAnketi(parsed);
       if (anket) eventBus.emit('anket_katmani', { type: 'poll_update', poll: anket });
       return;
     }
-    if (olay === 'App\\Events\\PollDeleteEvent') {
+    if (ad === 'PollDeleteEvent') {
       eventBus.emit('anket_katmani', { type: 'poll_ended' });
       return;
     }

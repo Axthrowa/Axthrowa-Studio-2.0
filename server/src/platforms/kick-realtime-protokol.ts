@@ -97,6 +97,14 @@ export function abonelikKanallari(chatroomId: number, kanalId?: number | null): 
   return k;
 }
 
+/**
+ * Olay adının öneksiz hâli. Kick aynı olayı kanala göre farklı adlandırıyor (gözlem 2026-11:
+ * `GiftedSubscriptionsEvent` `chatroom_<oda>` kanalında öneksiz, `App\\Events\\SubscriptionEvent` önekli).
+ */
+export function olayAdi(olay: string): string {
+  return String(olay || '').replace(/^App\\Events\\/, '');
+}
+
 export type CentrifugoCerceve =
   | { tur: 'ping' }
   | { tur: 'yayin'; kanal: string; olay: string; veri: unknown }

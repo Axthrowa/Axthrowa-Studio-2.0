@@ -21,7 +21,7 @@ export const SURUMLER: Surum[] = [
       'Şarkı sözleri şarkı durduğu an ekrandan kalkar',
       'Tek URL’deki Resonance, Yayın Yönetim Aracı’ndaki Resonance ile aynı görünümü kullanır; orada yapılan değişiklik hemen yansır',
       'Widget testleri bitince her şey testten önceki hâline döner (kupa, sayaç, anket, akış, sohbet)',
-      'Kick KICKs olayları da artık yakalanır; kaldırılan varsayılan uyarı görselleri ve sesi değiştirildi',
+      'Kick hediye abonelikleri ve KICKs olayları artık yakalanır; kaldırılan varsayılan uyarı görselleri ve sesi değiştirildi',
       'Panel sadeleşti: düz yüzeyler, tek başlık, daha az yazı'
     ]
   },

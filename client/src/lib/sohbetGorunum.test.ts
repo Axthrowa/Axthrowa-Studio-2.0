@@ -32,16 +32,35 @@ describe('önizleme odağı', () => {
   });
 });
 
-import { dagilmaParcalari, toplanmaBaslangici } from '../widgets/EmoteComboWidget.js';
+import { emoteBoyu, patlamaParcalari } from '../widgets/EmoteComboWidget.js';
 
-describe('emote kombo saçılması', () => {
-  it('parçalar kutunun içinde kalır ve yönleri düzgün halka değil rastgele', () => {
-    const p = dagilmaParcalari(10, 400, 200);
-    expect(p.length).toBe(14);
+describe('emote kombo', () => {
+  it('geldikçe büyür, kutuya sığacak kadarla sınırlı', () => {
+    expect(emoteBoyu(100, 2, 2, 1000)).toBe(100);
+    expect(emoteBoyu(100, 4, 2, 1000)).toBe(170);
+    expect(emoteBoyu(100, 50, 2, 1000)).toBe(700);
+    // Küçük kutuda da taban boyun altına inmez
+    expect(emoteBoyu(100, 50, 2, 50)).toBe(100);
+  });
+
+  it('patlama parçaları kutunun içinde kalır ve yönleri rastgele', () => {
+    const p = patlamaParcalari(10, 400, 200);
+    expect(p.length).toBe(26);
     expect(p.every((x) => Math.abs(x.dx) <= 200 * 1.05 && Math.abs(x.dy) <= 100 * 1.35)).toBe(true);
     const uzaklik = p.map((x) => Math.hypot(x.dx / 200, x.dy / 100));
     expect(Math.max(...uzaklik) - Math.min(...uzaklik)).toBeGreaterThan(0.1);
-    const b = toplanmaBaslangici(400, 200, () => 0);
-    expect(b).toEqual({ dx: 200 * 0.85, dy: 0 });
+  });
+});
+
+import { sozGizlensinMi } from '../widgets/LyricsWidget.js';
+
+describe('şarkı sözleri', () => {
+  it('şarkı durunca ya da bitince gizlenir', () => {
+    expect(sozGizlensinMi({ title: 'A', isPlaying: false })).toBe(true);
+    expect(sozGizlensinMi({ title: '', isPlaying: true })).toBe(true);
+    expect(sozGizlensinMi({ title: 'A', isPlaying: true, progressMs: 200_000, durationMs: 200_000 })).toBe(true);
+    expect(sozGizlensinMi({ title: 'A', isPlaying: true, progressMs: 1000, durationMs: 200_000 })).toBe(false);
+    // İstek kuyruğu: çalma bilgisi yok, karar verilmez
+    expect(sozGizlensinMi({ title: 'A', isPlaying: null })).toBe(false);
   });
 });

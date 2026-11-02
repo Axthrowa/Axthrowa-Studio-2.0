@@ -474,6 +474,19 @@ if (commandsCount.cnt === 0) {
 }
 
 // Seed default alert presets
+// Kaynağından kaldırılan varsayılan medya: uyarıda "This content is not available" görünüyordu. Yalnız bu tam
+// adresler değişir; kullanıcının seçtiği görsele dokunulmaz.
+for (const [olu, yeni] of [
+  ['https://media.giphy.com/media/l41lT4n6ylgW2hh04/giphy.gif', 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif'],
+  ['https://media.giphy.com/media/26FPqAH60GLQM8i76/giphy.gif', 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif']
+]) {
+  db.prepare('UPDATE alert_presets SET image_url = ? WHERE image_url = ?').run(yeni, olu);
+}
+db.prepare('UPDATE alert_presets SET sound_url = ? WHERE sound_url = ?').run(
+  'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3',
+  'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'
+);
+
 const alertsCount = db.prepare('SELECT COUNT(*) as cnt FROM alert_presets').get() as { cnt: number };
 if (alertsCount.cnt === 0) {
   const defaultAlerts = [
@@ -492,8 +505,8 @@ if (alertsCount.cnt === 0) {
       eventType: 'sub',
       titleTemplate: 'YENİ ABONE!',
       messageTemplate: '{user} {tier} seviye ile abone oldu! ({months} ay)',
-      soundUrl: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-      imageUrl: 'https://media.giphy.com/media/l41lT4n6ylgW2hh04/giphy.gif',
+      soundUrl: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3',
+      imageUrl: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif',
       durationMs: 6500,
       accentColor: '#ec4899'
     },
@@ -513,7 +526,7 @@ if (alertsCount.cnt === 0) {
       titleTemplate: 'RAİD BASKINI!',
       messageTemplate: '{user} {viewers} izleyici ile baskın yaptı! Hoş geldiniz!',
       soundUrl: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
-      imageUrl: 'https://media.giphy.com/media/26FPqAH60GLQM8i76/giphy.gif',
+      imageUrl: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif',
       durationMs: 8000,
       accentColor: '#f59e0b'
     },
@@ -580,7 +593,7 @@ if (rewardsCount.cnt === 0) {
     { id: 'reward-tts', title: 'TTS Sesli Okuma', cost: 150, rewardType: 'tts', payload: '' },
     { id: 'reward-airhorn', title: 'Havalı Korna Efekti', cost: 100, rewardType: 'sound', payload: 'airhorn' },
     { id: 'reward-applause', title: 'Canlı Alkış Sesi', cost: 75, rewardType: 'sound', payload: 'applause' },
-    { id: 'reward-cat', title: 'Dans Eden Kedi GIF', cost: 120, rewardType: 'gif', payload: 'https://media.giphy.com/media/jpbnoe3UIa8TU8LM13/giphy.gif' },
+    { id: 'reward-cat', title: 'Dans Eden Kedi GIF', cost: 120, rewardType: 'gif', payload: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif' },
     { id: 'reward-vip', title: '24 Saatlik VIP Rolü', cost: 2500, rewardType: 'vip', payload: '24h' },
     { id: 'reward-priority', title: 'Şarkı Sırasında Öncelik', cost: 300, rewardType: 'priority_song', payload: '' }
   ];
@@ -658,7 +671,7 @@ if (!overlayRow) {
     subathon: { enabled: false, x: 1560, y: 60, width: 320, height: 70, scale: 1 },
     trivia: { enabled: false, x: 660, y: 700, width: 600, height: 320, scale: 1 },
     eventLabels: { enabled: true, x: 0, y: 0, width: 1920, height: 44, scale: 1 },
-    emoteCombo: { enabled: true, x: 1560, y: 460, width: 320, height: 140, scale: 1 },
+    emoteCombo: { enabled: true, x: 0, y: 0, width: 1920, height: 1080, scale: 1 },
     nowPlaying: { enabled: false, x: 1460, y: 960, width: 420, height: 90, scale: 1 },
     theCup: { enabled: false, x: 1580, y: 610, width: 300, height: 430, scale: 1 },
     polls: { enabled: false, x: 1540, y: 180, width: 340, height: 260, scale: 1 },

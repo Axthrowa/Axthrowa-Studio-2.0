@@ -17,6 +17,8 @@ import { THE_CUP_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, yatay, emojiListesi, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 
+const TEST_SURESI_MS = 8000;
+
 interface Oge {
   id: string;
   tur: string;
@@ -147,6 +149,8 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
         if (payload.type !== 'cup_drop' && payload.type !== 'the_cup_drop') return;
         // Hangi olayın kaç öğe düşüreceğine sunucu karar verir (kurallar, eşikler)
         const d = payload.data || {};
+        // Test yalnız görseldir: birkaç saniye sonra kayıtlı içerik geri gelir
+        if (payload.test) setTimeout(() => void yukle(), TEST_SURESI_MS);
         const adet = Math.min(20, Math.max(1, Number(d.adet) || 1));
         const tur = String(d.type || 'tip');
         const tavan = Math.max(5, Number(ayarRef.current.maxItems) || 45);

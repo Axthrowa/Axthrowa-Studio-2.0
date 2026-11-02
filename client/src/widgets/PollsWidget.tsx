@@ -75,7 +75,13 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
       }
       if (m?.type === 'poll_start' || m?.type === 'poll_started' || m?.type === 'poll_update') {
         const p = anketAyikla(m.poll || m.payload || m.data);
-        if (p) setPoll(p);
+        if (p) {
+          setPoll((onceki) => {
+            // Test anketi birkaç saniye görünür, sonra önceki hâl (gerçek anket ya da boş) geri gelir
+            if (m.test) setTimeout(() => setPoll(onceki), 8000);
+            return p;
+          });
+        }
       } else if (m?.type === 'poll_end' || m?.type === 'poll_ended') {
         setPoll((onceki) => {
           const son = anketAyikla(m.poll, true);

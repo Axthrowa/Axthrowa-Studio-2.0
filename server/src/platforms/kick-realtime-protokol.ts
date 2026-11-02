@@ -91,8 +91,9 @@ export function belirtecSec(yanit: unknown): string | null {
 
 /** Kanal adları: sohbet (`.v2`), eski sohbet ve kanal olayları (takip/abone). */
 export function abonelikKanallari(chatroomId: number, kanalId?: number | null): string[] {
-  const k = [`chatrooms.${chatroomId}.v2`, `chatrooms.${chatroomId}`];
-  if (kanalId && Number.isFinite(kanalId)) k.push(`channel.${kanalId}`);
+  // Gözlem (2026-11, oturumsuz): KicksGifted `channel_<id>`, RewardRedeemedEvent `chatroom_<oda>` kanalında gelir
+  const k = [`chatrooms.${chatroomId}.v2`, `chatrooms.${chatroomId}`, `chatroom_${chatroomId}`];
+  if (kanalId && Number.isFinite(kanalId)) k.push(`channel.${kanalId}`, `channel_${kanalId}`);
   return k;
 }
 

@@ -165,7 +165,7 @@ export const GOAL_DEFAULTS = {
   barBorderWidth: 0,
   barIcon: '',
   // Simge rozeti: barın başında ('start') ya da dolgunun ucunda ('tip')
-  barIconPosition: 'start',
+  barIconPosition: 'tip',
   // Koyu gölge: açık/renkli sahnede yazı okunmuyordu
   textShadow: true
 };
@@ -183,33 +183,15 @@ export const KAPPAGEN_DEFAULTS = {
 };
 
 export const EMOTE_COMBO_DEFAULTS = {
-  /** Kombo kutusu stili: none, pixel, neon, clean */
-  comboStyle: 'none',
-  minCombo: 3,
-  timeoutMs: 5000,
-  displayMs: 4000,
-  size: 64,
-  showFloating: true,
-  showPopup: true,
-  confetti: true,
+  /** Kaç kez art arda gelince ekranda belirsin */
+  minCombo: 2,
+  /** Emote bu kadar süre gelmezse patlar */
+  timeoutMs: 2500,
+  size: 96,
   soundEnabled: true,
   soundUrl: '',
   soundVolume: 0.6,
-  animation: 'bounce',
-  fontFamily: 'Anton',
-  fontSize: 64,
-  fontColor: '#fbbf24',
-  outlineEnabled: true,
-  outlineColor: '#000000',
-  outlineWidth: 3,
-  backgroundColor: '#000000',
-  backgroundOpacity: 0.85,
-  borderColor: '#fbbf24',
-  template: 'x{count} COMBO!',
-  subTemplate: '{emote} ÇILGINLIĞI!',
-  onlyKnownEmotes: false,
-  gatherMode: true,
-  burstOnEnd: true
+  onlyKnownEmotes: false
 };
 
 export const LABELS_DEFAULTS = {
@@ -817,7 +799,7 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'activity-feed': ACTIVITY_DEFAULTS,
   'chat-overlay': CHAT_DEFAULTS,
   'donation-goal': { ...GOAL_DEFAULTS, title: 'Bağış Hedefi', type: 'tip', barColor: '#10b981', target: 1000 },
-  'follower-goal': { ...GOAL_DEFAULTS, title: 'Takipçi Hedefi', type: 'follower', barColor: '#8b5cf6', target: 500, currency: '' },
+  'follower-goal': { ...GOAL_DEFAULTS, title: 'Takipçi Hedefi', type: 'follower', barColor: '#8b5cf6', target: 500, currency: '', gercekSayi: true },
   'subscriber-goal': { ...GOAL_DEFAULTS, title: 'Abone Hedefi', type: 'sub', barColor: '#ec4899', target: 250, currency: '' },
   'kicks-goal': { ...GOAL_DEFAULTS, title: 'KICKs Hedefi', type: 'kicks', barColor: '#53fc18', target: 500, currency: 'KICK' },
   'emote-combo': EMOTE_COMBO_DEFAULTS,

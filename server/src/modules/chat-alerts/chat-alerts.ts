@@ -139,6 +139,8 @@ class SohbetUyarilari {
   private async gonder(olay: SohbetOlayi, p: any, deger: number, ekArgs: string[] = []) {
     // Test uyarısı gerçek Kick sohbetine sahte kullanıcı için teşekkür yazmasın
     if (p?.isTest === true) return;
+    // Adı bilinmeyen takipçi (Kick yalnız sayıyı veriyor): sohbete "Yeni takipçi hoş geldin" yazılmasın
+    if (p?.anonim === true) return;
     const kural = this.ayarOku()[olay];
     if (!kural?.aktif) return;
     if (!esikGecer(kural, deger)) return;

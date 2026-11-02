@@ -7,7 +7,8 @@ import { sifreleHepsi } from '../core/security/vault.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { settingsCache } from '../core/settings-cache.js';
-import { hataMetni } from '../core/logger.js';
+import { hataMetni, seyrekUyar } from '../core/logger.js';
+import { takipciArtisi, TAKIPCI_YOKLAMA_MS, type TakipciIzi } from './kick-takipci.js';
 import { mesajiParcala } from '../core/text.js';
 
 export interface KickChannelVerification {
@@ -120,6 +121,7 @@ export class KickPlatform extends BasePlatform {
       this.realtime.on('olay', (_kanal: string, olay: string, veri: unknown) => this.olayIsle(olay, veri, channelSlug));
       this.realtime.on('durum', () => eventBus.emit('platform_status_changed', { platform: 'kick' }));
       this.realtime.baslat(abonelikKanallari(this.chatroomId, Number.isFinite(kanalId) ? kanalId : null));
+      this.takipciIzle(channelSlug, Number(res.data?.followersCount ?? res.data?.followers_count));
 
       this.connected = true;
       console.log(`[Kick] Connected successfully to channel: ${channelSlug} (Chatroom #${this.chatroomId}, Broadcaster ID: ${this.broadcasterUserId})`);
@@ -129,6 +131,45 @@ export class KickPlatform extends BasePlatform {
       this.connected = false;
       return false;
     }
+  }
+
+  private gorulenOlaylar = new Set<string>();
+  private takipciIzi: TakipciIzi = { enYuksek: null };
+  private takipciYoklayici: NodeJS.Timeout | null = null;
+
+  /** Sayı artınca yeni takipçi: bar ve uyarılar bu olaydan beslenir. Ad yalnız Kick verirse bilinir. */
+  private takipciSayisiIsle(channelSlug: string, sayi: unknown, ad?: string) {
+    if (Number(sayi) > 0) eventBus.emit('takipci_sayisi', Number(sayi));
+    const adet = takipciArtisi(this.takipciIzi, sayi);
+    for (let i = 0; i < adet; i++) {
+      const adVar = i === 0 && ad;
+      eventBus.emitFollow({
+        platform: 'kick',
+        channel: channelSlug,
+        username: adVar ? ad : 'Yeni takipçi',
+        displayName: adVar ? ad : 'Yeni takipçi',
+        timestamp: Date.now(),
+        // Adı bilinmeyen takipçiye sohbette teşekkür yazılmaz
+        ...(adVar ? {} : { anonim: true })
+      } as any);
+    }
+  }
+
+  /** Kick takipçi olayını güvenilir yayınlamıyor: kanal bilgisindeki sayı düzenli yoklanır. */
+  private takipciIzle(channelSlug: string, ilkSayi: number) {
+    if (this.takipciYoklayici) clearInterval(this.takipciYoklayici);
+    this.takipciIzi = { enYuksek: null };
+    this.takipciSayisiIsle(channelSlug, ilkSayi);
+    this.takipciYoklayici = setInterval(() => {
+      void axios
+        .get(`https://kick.com/api/v2/channels/${encodeURIComponent(channelSlug)}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', Accept: 'application/json' },
+          timeout: 8000
+        })
+        .then((r) => this.takipciSayisiIsle(channelSlug, r.data?.followersCount ?? r.data?.followers_count))
+        .catch((e) => seyrekUyar('kick:takipci', '[Kick] Takipçi sayısı okunamadı', e));
+    }, TAKIPCI_YOKLAMA_MS);
+    this.takipciYoklayici.unref?.();
   }
 
   /** Son birkaç saniyede işlenen sohbet-dışı olaylar (aynı olay birden çok kanaldan gelebilir). */
@@ -158,17 +199,16 @@ export class KickPlatform extends BasePlatform {
     }
     if (this.olayTekrariMi(olay, veri)) return;
     const parsed: any = veri && typeof veri === 'object' ? veri : {};
+    // Teşhis: Kick olay adlarını değiştirebiliyor; her ad günlüğe bir kez yazılır (içerik yazılmaz)
+    if (!this.gorulenOlaylar.has(olay)) {
+      this.gorulenOlaylar.add(olay);
+      console.log(`[Kick] İlk kez görülen olay: ${olay}`);
+    }
 
     if (olay === 'App\\Events\\FollowersUpdated') {
-      if (parsed?.username) {
-        eventBus.emitFollow({
-          platform: 'kick',
-          channel: channelSlug,
-          username: parsed.username,
-          displayName: parsed.username,
-          timestamp: Date.now()
-        });
-      }
+      // Çoğu zaman ad gelmez, yalnız yeni sayı gelir: yine de takipçi sayılır (bar ve uyarı bunu bekliyor)
+      const sayi = parsed?.followersCount ?? parsed?.followers_count;
+      this.takipciSayisiIsle(channelSlug, sayi ?? (this.takipciIzi.enYuksek ?? 0) + 1, parsed?.username || undefined);
       return;
     }
     if (olay === 'App\\Events\\SubscriptionEvent') {
@@ -365,6 +405,8 @@ export class KickPlatform extends BasePlatform {
   }
 
   async disconnect(): Promise<void> {
+    if (this.takipciYoklayici) clearInterval(this.takipciYoklayici);
+    this.takipciYoklayici = null;
     this.realtime.durdur();
     this.connected = false;
   }

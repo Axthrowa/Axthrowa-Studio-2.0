@@ -110,98 +110,100 @@ export interface KatmanTanimi {
 export const KATMANLAR: KatmanTanimi[] = [
   {
     anahtar: 'eventLabels',
-    etiket: '🏷️ Etkinlik Etiketleri',
+    etiket: 'Etkinlik Etiketleri',
     z: 100,
     varsayilan: { x: 40, y: 20, width: 1840, height: 44 },
     ciz: (o) => <EventLabelsWidget embedded previewMode={o} />
   },
   {
     anahtar: 'goals',
-    etiket: '🎯 Hedef Çubuğu',
+    etiket: 'Hedef Çubuğu',
     z: 90,
     varsayilan: { x: 1480, y: 140, width: 400, height: 90 },
     ciz: (o, item) => <GoalWidget embedded previewMode={o} widgetId={hedefWidgetKimligi(item?.type)} />
   },
   {
     anahtar: 'subathon',
-    etiket: '⏳ Subathon Sayacı',
+    etiket: 'Subathon Sayacı',
     z: 85,
     varsayilan: { x: 1560, y: 60, width: 320, height: 130 },
     ciz: (o) => <SubathonWidget embedded previewMode={o} />
   },
   {
     anahtar: 'alerts',
-    etiket: '🔔 AlertBox Bildirimleri',
+    etiket: 'AlertBox Bildirimleri',
     z: 80,
     varsayilan: { x: 660, y: 120, width: 600, height: 300 },
     ciz: (o) => <AlertBoxWidget embedded previewMode={o} />
   },
   {
     anahtar: 'chat',
-    etiket: '💬 Canlı Sohbet',
+    etiket: 'Canlı Sohbet',
     z: 70,
     varsayilan: { x: 40, y: 430, width: 420, height: 610 },
     ciz: (o) => <ChatBoxWidget embedded previewMode={o} />
   },
   {
     anahtar: 'emoteCombo',
-    etiket: '🔥 Emote Kombo',
+    etiket: 'Emote Kombo',
     z: 75,
-    varsayilan: { x: 500, y: 880, width: 260, height: 90 },
+    // Emote ekranın ortasında büyür ve patlayıp saçılır: tuvalin tamamı
+    varsayilan: { x: 0, y: 0, width: 1920, height: 1080 },
+    tamEkran: true,
     ciz: (o) => <EmoteComboWidget embedded previewMode={o} />
   },
   {
     anahtar: 'nowPlaying',
-    etiket: '🎵 Resonance',
+    etiket: 'Resonance',
     z: 65,
     varsayilan: { x: 40, y: 80, width: 380, height: 90 },
     ciz: () => <ResonanceWidget embedded />
   },
   {
     anahtar: 'theCup',
-    etiket: '🍷 Bağış Kupası',
+    etiket: 'Bağış Kupası',
     z: 60,
     varsayilan: { x: 1660, y: 700, width: 220, height: 300 },
     ciz: (o) => <TheCupWidget embedded previewMode={o} />
   },
   {
     anahtar: 'polls',
-    etiket: '📊 Canlı Anket',
+    etiket: 'Canlı Anket',
     z: 78,
     varsayilan: { x: 700, y: 760, width: 520, height: 240 },
     ciz: (o) => <PollsWidget embedded previewMode={o} />
   },
   {
     anahtar: 'wheel',
-    etiket: '🎡 Çarkıfelek',
+    etiket: 'Çarkıfelek',
     z: 88,
     varsayilan: { x: 760, y: 300, width: 400, height: 460 },
     ciz: (o) => <WheelWidget embedded previewMode={o} />
   },
   {
     anahtar: 'hypeTrain',
-    etiket: '🚂 Hype Treni',
+    etiket: 'Hype Treni',
     z: 82,
     varsayilan: { x: 40, y: 200, width: 460, height: 130 },
     ciz: (o) => <HypeTrainWidget embedded previewMode={o} />
   },
   {
     anahtar: 'lyrics',
-    etiket: '🎶 Şarkı Sözleri',
+    etiket: 'Şarkı Sözleri',
     z: 64,
     varsayilan: { x: 560, y: 940, width: 800, height: 110 },
     ciz: (o) => <LyricsWidget embedded previewMode={o} />
   },
   {
     anahtar: 'king',
-    etiket: '👑 Tahtın Kralı',
+    etiket: 'Tahtın Kralı',
     z: 68,
     varsayilan: { x: 1520, y: 940, width: 360, height: 100 },
     ciz: (o) => <KingWidget embedded previewMode={o} />
   },
   {
     anahtar: 'trivia',
-    etiket: '🧠 Bil Bakalım',
+    etiket: 'Bil Bakalım',
     z: 76,
     varsayilan: { x: 660, y: 700, width: 600, height: 320 },
     ciz: (o) => <TriviaWidget embedded previewMode={o} />

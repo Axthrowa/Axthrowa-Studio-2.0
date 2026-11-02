@@ -10,8 +10,6 @@ import {
   Layers,
   Sparkles,
   Settings as SettingsIcon,
-  ExternalLink,
-  ChevronRight,
   Gamepad2,
   BarChart3
 } from 'lucide-react';
@@ -81,8 +79,7 @@ const VoiceCommands = lazy(() => import('./pages/VoiceCommands.js'));
 import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
-import { openLink } from './lib/openLink.js';
-import { sunucuPortu } from './lib/widget-style.js';
+import { SURUMLER } from './lib/surumler.js';
 
 export function App() {
   const path = window.location.pathname;
@@ -249,27 +246,17 @@ export function App() {
     // Toast bildirimleri tum panelde kullanilabilsin (ui/index.tsx).
     <ToastSaglayici>
     {onayDiyalogu}
-    <div className="flex min-h-screen bg-[#090b10] text-gray-200">
+    <div className="axt-panel flex min-h-screen bg-[#0b0d12] text-gray-200">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 bg-[#0d1017]/90 backdrop-blur-xl flex flex-col justify-between fixed inset-y-0 left-0 z-30">
+      <aside className="w-64 border-r border-white/[0.06] bg-[#0b0d12] flex flex-col justify-between fixed inset-y-0 left-0 z-30">
         <div>
-          {/* Logo & Brand */}
-          <div className="p-6 pb-5 flex items-center space-x-3 border-b border-white/5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-600/30 text-white font-black text-xs tracking-wider">
-              {BRAND.short}
-            </div>
-            <div>
-              <div className="font-extrabold text-white text-lg tracking-tight flex items-center gap-1.5">
-                {BRAND.name}
-              </div>
-              <div className="text-[11px] text-purple-400 font-semibold tracking-wider uppercase">
-                {BRAND.tagline}
-              </div>
-            </div>
+          <div className="px-5 pt-5 pb-3 flex items-baseline gap-2">
+            <span className="text-[15px] font-semibold text-white">{BRAND.name}</span>
+            <span className="text-xs text-gray-500" title={SURUMLER[0].ad}>{SURUMLER[0].surum}</span>
           </div>
 
           {/* Navigation Items */}
-          <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
+          <nav className="px-2.5 pb-3 space-y-0.5 overflow-y-auto max-h-[calc(100vh-110px)]">
             {navItems.map((item, i) => {
               const Icon = item.icon;
               const isActive = aktifMerkez?.id === item.id;
@@ -278,24 +265,17 @@ export function App() {
               return (
                 <div key={item.id}>
                 {grupBasi && (
-                  <div className="px-3.5 pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-gray-500">{item.grup}</div>
+                  <div className="px-3 pt-4 pb-1 text-xs text-gray-500">{item.grup}</div>
                 )}
                 <button
                   onClick={() => sekmeyeGec(sonAltSayfa.current[item.id] || item.alt[0])}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    isActive
-                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                      : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-colors ${
+                    isActive ? 'bg-white/[0.08] text-white' : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.alt.length > 1 && (
-                    <span className={`text-[10px] font-extrabold ${isActive ? 'text-white/70' : 'text-gray-600'}`}>{item.alt.length}</span>
-                  )}
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-purple-400' : 'text-gray-500'}`} />
+                  <span>{item.label}</span>
                 </button>
                 </div>
               );
@@ -303,54 +283,21 @@ export function App() {
           </nav>
         </div>
 
-        {/* Bottom Status Info & Watermark */}
-        <div className="p-4 border-t border-white/5 bg-black/20 space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-gray-400">
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Sistem Aktif
-            </span>
-            <span className="font-mono text-purple-400">Port {sunucuPortu()}</span>
-          </div>
-          <div className="text-[10px] text-gray-500 text-center font-medium border-t border-white/5 pt-1.5">
-            {BRAND.name} • Developed by <span className="text-purple-400 font-bold">{BRAND.author}</span>
-          </div>
-        </div>
+        <div className="px-5 py-3 text-[11px] text-gray-600">{BRAND.author}</div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 ml-64 flex flex-col min-h-screen">
         {/* Top Header */}
-        <header className="h-16 border-b border-white/10 bg-[#0d1017]/60 backdrop-blur-xl sticky top-0 z-20 px-8 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-xs text-gray-400 font-medium">
-            <span className="font-bold text-white">{BRAND.name}</span>
-            <span className="text-[10px] text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold">by {BRAND.author}</span>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
-            <span className="text-white font-bold">{aktifMerkez?.label || sayfaAdlari[activeTab]}</span>
-            {aktifMerkez && aktifMerkez.alt.length > 1 && (
-              <>
-                <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
-                <span className="text-purple-300 font-bold">{sayfaAdlari[activeTab]}</span>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <DurumSeridi git={sekmeyeGec} />
-            <button
-              type="button"
-              onClick={() => openLink(`${window.location.origin}/widgets/alertbox`)}
-              className="text-xs text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-xl transition-all"
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> OBS Alert Önizle
-            </button>
-          </div>
+        <header className="h-16 border-b border-white/[0.06] bg-[#0b0d12] sticky top-0 z-20 px-8 flex items-center justify-between">
+          <h1 className="text-[15px] font-medium text-white">{aktifMerkez?.label || sayfaAdlari[activeTab]}</h1>
+          <DurumSeridi git={sekmeyeGec} />
         </header>
 
         {/* Page Content */}
         <main className="flex-1 p-8 overflow-y-auto">
           {aktifMerkez && aktifMerkez.alt.length > 1 && (
-            <div role="tablist" aria-label={aktifMerkez.label} className="mb-6 flex flex-wrap gap-1.5 border-b border-white/10 pb-3">
+            <div role="tablist" aria-label={aktifMerkez.label} className="mb-6 flex flex-wrap gap-5 border-b border-white/[0.08]">
               {aktifMerkez.alt.map((alt) => (
                 <button
                   key={alt}
@@ -358,8 +305,8 @@ export function App() {
                   role="tab"
                   aria-selected={activeTab === alt}
                   onClick={() => sekmeyeGec(alt)}
-                  className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
-                    activeTab === alt ? 'bg-purple-600 text-white' : 'bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] hover:text-white'
+                  className={`-mb-px border-b-2 pb-2.5 text-[13px] transition-colors ${
+                    activeTab === alt ? 'border-purple-400 text-white' : 'border-transparent text-gray-400 hover:text-white'
                   }`}
                 >
                   {sayfaAdlari[alt]}

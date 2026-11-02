@@ -45,9 +45,9 @@ const LABELS: Record<string, string> = {
   target: 'Hedef', currency: 'Birim', type: 'Hedef tipi', barColor: 'Bar rengi', barBackground: 'Bar arka plan',
   barHeight: 'Bar yüksekliği', barRadius: 'Bar yuvarlaklığı', barStyle: 'Bar dolgusu', syncOffsetMs: 'Senkron kaydırma (ms, + erken)', lineFontFamily: 'Etkin satır yazı tipi', comboStyle: 'Görsel stil', iconStyle: 'Simge biçimi', palette: 'Renk paleti',
   timeFontFamily: 'Süre yazı tipi', timeFontSize: 'Süre boyutu (px)', showRules: 'Kuralları göster', barColor2: 'Bar 2. renk (geçiş)',
-  barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Simge (emoji)', barIconPosition: 'Simge yeri', layout: 'Düzen', showRemaining: 'Kalan göster',
+  gercekSayi: 'Kanalın gerçek takipçi sayısını göster', barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Simge (emoji)', barIconPosition: 'Simge yeri', layout: 'Düzen', showRemaining: 'Kalan göster',
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
-  textTransform: 'Metin dönüşümü', minCombo: 'Min. combo', timeoutMs: 'Combo zaman aşımı (ms)',
+  textTransform: 'Metin dönüşümü', minCombo: 'Kaç kez art arda gelince belirsin', timeoutMs: 'Emote gelmezse kaç ms sonra patlasın',
   displayMs: 'Gösterim (ms)', size: 'Emote boyutu', showFloating: 'Uçan emote', showPopup: 'Popup göster',
   confetti: 'Konfeti', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
   gatherMode: "Gelen emote'lar büyük emote'ta toplansın", burstOnEnd: "Kombo bitince emote'lar etrafa dağılıp kaybolsun",
@@ -147,7 +147,7 @@ const SECTIONS: Record<string, string> = {
   soundEnabled: 'Ses', soundUrl: 'Ses', soundVolume: 'Ses', mute: 'Ses', globalVolume: 'Ses',
   backgroundColor: 'Görünüm', backgroundOpacity: 'Görünüm', borderRadius: 'Görünüm', borderColor: 'Görünüm',
   barColor: 'Görünüm', barBackground: 'Görünüm', barHeight: 'Görünüm', barRadius: 'Görünüm',
-  barStyle: 'Görünüm', barColor2: 'Görünüm', barBorderColor: 'Görünüm', barBorderWidth: 'Görünüm', barIcon: 'Görünüm', barIconPosition: 'Görünüm',
+  barStyle: 'Görünüm', barColor2: 'Görünüm', barBorderColor: 'Görünüm', barBorderWidth: 'Görünüm', barIcon: 'Görünüm', barIconPosition: 'Görünüm', gercekSayi: 'İçerik',
   messageBgColor: 'Görünüm', messageBgOpacity: 'Görünüm', highlightColor: 'Görünüm', accentColor: 'Görünüm',
   pointerColor: 'Görünüm', transparentBg: 'Görünüm', textShadow: 'Görünüm', smoothMask: 'Görünüm',
   showGlow: 'Görünüm',
@@ -322,9 +322,6 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
   'pinned-messages': {
     theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam'], ['cute', 'Sevimli'], ['terminal', 'Terminal'], ['cozy', 'Rahat'], ['pixel', 'Piksel'], ['compact', 'Kompakt'], ['capsule', 'Kapsül'], ['hud', 'HUD (oyun arayüzü)']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
-  },
-  'emote-combo': {
-    comboStyle: tema(['none', 'Yok (renk ayarları)'], ['pixel', 'Piksel'], ['neon', 'Neon'], ['clean', 'Minimal'])
   },
   shoutout: {
     theme: tema(['card', 'Kart'], ['banner', 'Şerit'], ['minimal', 'Minimal'], ['neon', 'Neon'], ['glass', 'Cam'], ['softcard', 'Yumuşak kart'], ['neumorph', 'Kabartma'], ['borderline', 'Yalnız çerçeve'], ['broadcast', 'Haber bandı'], ['horizon', 'Ufuk'], ['stage', 'Sahne ışığı'], ['ember', 'Kor'], ['signal', 'Sinyal'], ['tag', 'Etiket'], ['ribbon', 'Kurdele'], ['guestpass', 'Konuk kartı'], ['phosphor', 'Fosfor ekran'], ['prism', 'Prizma']),

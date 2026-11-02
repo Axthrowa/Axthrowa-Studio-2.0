@@ -19,6 +19,22 @@ export const HEDEF_WIDGETLARI: Record<string, string> = {
   'kicks-goal': 'kicks'
 };
 
+/**
+ * Takipçi hedefi varsayılan olarak kanalın gerçek takipçi sayısını gösterir: bot kapalıyken gelenler de sayılır,
+ * bırakanlar düşer. `gercekSayi: false` ise eskisi gibi elle girilen değerden olay başına artar.
+ */
+export function takipciSayisiniYaz(
+  sayi: number,
+  oku: (id: string) => Record<string, unknown>,
+  yaz: (id: string, govde: Record<string, unknown>) => unknown
+): void {
+  for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
+    const ayar = oku(id);
+    if (String(ayar.type || varsayilanTur) !== 'follower' || ayar.gercekSayi === false) continue;
+    if (Number(ayar.current) !== sayi) yaz(id, { current: sayi });
+  }
+}
+
 /** Olay bu türdeki hedefe kaç ekler (0 = eklemez) */
 export function hedefArtisi(tur: string, olay: HedefOlayi, p: any): number {
   if (p?.isTest === true || p?.isReplay === true) return 0;
@@ -38,7 +54,10 @@ export function hedefleriIlerlet(
 ): void {
   for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
     const ayar = oku(id);
-    const artis = hedefArtisi(String(ayar.type || varsayilanTur), olay, p);
+    const tur = String(ayar.type || varsayilanTur);
+    // Gerçek sayıya bağlı takipçi hedefini sayı olayı günceller; burada artarsa iki kez sayılır
+    if (tur === 'follower' && ayar.gercekSayi !== false) continue;
+    const artis = hedefArtisi(tur, olay, p);
     if (!artis) continue;
     const yeni = Math.round(((Number(ayar.current) || 0) + artis) * 100) / 100;
     yaz(id, { current: yeni });
@@ -59,4 +78,9 @@ export function hedefleriBagla(): void {
   eventBus.on('follow', isle('follow'));
   eventBus.on('sub', isle('sub'));
   eventBus.on('kicks', isle('kicks'));
+  eventBus.on('takipci_sayisi', (sayi: number) => {
+    void import('../../api/rotalar/widgetlar.js')
+      .then(({ widgetAyariOku, widgetAyariYaz }) => takipciSayisiniYaz(sayi, widgetAyariOku, widgetAyariYaz))
+      .catch((e) => console.warn('[Hedef] takipçi sayısı yazılamadı:', (e as Error)?.message || e));
+  });
 }

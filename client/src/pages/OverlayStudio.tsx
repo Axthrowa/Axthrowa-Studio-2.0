@@ -145,7 +145,7 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   },
   'emote-combo': {
     baslik: 'Emoji Kombosu',
-    aciklama: 'Aynı emoji arka arkaya gönderildiğinde ekranda kombo gösterir; sohbet etkileşimini artırır.'
+    aciklama: 'Aynı emote art arda gelince ekranda belirir, geldikçe büyür; gelmeyi kesince patlayıp etrafa saçılır.'
   },
   'end-credits': {
     baslik: 'Jenerik (Kapanış)',
@@ -379,10 +379,10 @@ const DEFAULT_ALL_IN_ONE_CONFIG: AllInOneConfig = {
   },
   emoteCombo: {
     enabled: true,
-    x: 1560,
-    y: 460,
-    width: 320,
-    height: 140,
+    x: 0,
+    y: 0,
+    width: 1920,
+    height: 1080,
     scale: 1
   },
   nowPlaying: {
@@ -1033,12 +1033,7 @@ export function OverlayStudio() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2">
-            OBS Overlay & Widget Stüdyosu
-          </h1>
-          <p className="text-sm text-gray-400">
-            Tek bir URL ile tüm yayını yönetin veya {widgetGalleryItemsTr.length} profesyonel bağımsız widget'ı özelleştirin.
-          </p>
+          <p className="text-sm text-gray-400">Tek adresle bütün yayın ya da tek tek widget'lar.</p>
         </div>
 
         {/* Tab Navigation */}
@@ -1052,7 +1047,7 @@ export function OverlayStudio() {
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
-            <span>Tek URL OBS Stüdyosu</span>
+            <span>Tek URL</span>
           </button>
 
           <button
@@ -1064,7 +1059,7 @@ export function OverlayStudio() {
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Widget Galerisi ({widgetGalleryItemsTr.length})</span>
+            <span>Widget'lar ({widgetGalleryItemsTr.length})</span>
           </button>
 
           <button
@@ -1109,17 +1104,14 @@ export function OverlayStudio() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className={`w-2.5 h-2.5 rounded-full ${allInOne.testMode ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
-                <h3 className="text-base font-extrabold text-white">Tek URL ile OBS Tüm Sahne Overlay'i</h3>
-                <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-md font-mono font-bold">1920x1080 Full HD</span>
+                <h3 className="text-sm font-medium text-white">OBS adresi</h3>
                 {allInOne.testMode && (
                   <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-bold animate-pulse">
-                    OBS ÖNİZLEME MODU AKTİF
+                    Test modu açık
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-300 max-w-2xl">
-                OBS'e tek tek widget eklemek yerine bu tek linki Tarayıcı Kaynağı (Browser Source) olarak ekleyin. Chat, alertler, hedefler ve tüm widget'lar bu tuvalde canlı senkronize çalışır.
-              </p>
+              <p className="text-xs text-gray-400">Bu adresi OBS'e 1920×1080 Tarayıcı Kaynağı olarak ekleyin.</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
@@ -1133,7 +1125,7 @@ export function OverlayStudio() {
                 title="OBS'te bileşenlerin konumunu rahatça ayarlamak için örnek verileri açıp kapatın"
               >
                 {allInOne.testMode ? <Eye className="w-4 h-4 text-amber-400" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
-                <span>{allInOne.testMode ? 'OBS Test Modunu Kapat' : 'OBS Test Modunu Aç'}</span>
+                <span>{allInOne.testMode ? 'Test modunu kapat' : 'Test modu'}</span>
               </button>
 
               <input 
@@ -1160,10 +1152,10 @@ export function OverlayStudio() {
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <Move className="w-4 h-4 text-purple-400" />
-                    Canlı Yayın Tuvali (16:9 Ekran - Sürükle & Bırak)
+                    Yayın ekranı
                   </h3>
                   <p className="text-xs text-gray-400">
-                    Bileşenleri farenizle tutup sürükleyerek konumlandırın, sağ alttaki tutamaçla boyutlandırın.
+                    Sürükleyerek taşıyın, köşeden boyutlandırın.
                   </p>
                 </div>
                 <span
@@ -1226,7 +1218,7 @@ export function OverlayStudio() {
                 ref={tuvalRef}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="relative w-full aspect-video bg-[#07090e] rounded-2xl border border-white/20 overflow-hidden shadow-2xl select-none cursor-default mx-auto"
+                className="axt-onizleme relative w-full aspect-video bg-[#07090e] rounded-lg border border-white/10 overflow-hidden select-none cursor-default mx-auto"
                 // Pencere alçakken tuval ekrandan taşmasın: yükseklik görünür alana sığar, 16:9 korunur
                 style={{ touchAction: 'none', maxWidth: 'max(320px, calc((100vh - 180px) * 16 / 9))' }}
               >
@@ -1235,9 +1227,6 @@ export function OverlayStudio() {
                   className="absolute inset-0 opacity-20 pointer-events-none" 
                   style={{ backgroundImage: 'radial-gradient(#8b5cf6 1px, transparent 1px)', backgroundSize: '24px 24px' }}
                 />
-                <div className="absolute top-2 right-3 text-[10px] font-mono text-white/20 pointer-events-none font-bold">
-                  1920 x 1080 OBS CANVAS
-                </div>
 
                 {/* TUVAL = OBS ÇIKTISI
                     Eskiden burada her katman için elle yazılmış sahte
@@ -1333,9 +1322,9 @@ export function OverlayStudio() {
                 <div>
                   <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
                     <Settings2 className="w-4 h-4 text-purple-400" />
-                    Bileşen Konumlandırma & Ayar
+                    Seçili widget
                   </h3>
-                  <p className="text-xs text-gray-400">Bileşeni seçin, tek URL'ye dahil edin ve koordinatlarını belirleyin.</p>
+                  <p className="text-xs text-gray-400">Konumu ve görünürlüğü buradan ayarlanır.</p>
                 </div>
               </div>
 
@@ -1349,21 +1338,21 @@ export function OverlayStudio() {
                   onChange={e => setSelectedCanvasWidget(e.target.value)}
                   className="w-full bg-[#12141a] border border-white/15 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500"
                 >
-                  <option value="chat">💬 Canlı Sohbet (Chat)</option>
-                  <option value="alerts">🔔 AlertBox Bildirimleri</option>
-                  <option value="goals">🎯 Hedef Çubuğu (Goal)</option>
-                  <option value="subathon">⏳ Subathon Sayacı</option>
-                  <option value="trivia">🧠 Bil Bakalım</option>
-                  <option value="eventLabels">🏷️ Event Labels (Üst Şerit)</option>
-                  <option value="theCup">🍷 The Cup (Jeton Kavanozu)</option>
-                  <option value="polls">📊 Canlı Anket (Polls)</option>
-                  <option value="wheel">🎡 Çarkıfelek</option>
-                  <option value="hypeTrain">🚂 Hype Treni</option>
-                  <option value="nowPlaying">🎵 Resonance (şu an çalan)</option>
-                  <option value="emoteCombo">🔥 Emote Kombo</option>
-                  <option value="lyrics">🎶 Canlı Şarkı Sözleri (Lyrics)</option>
-                  <option value="king">👑 Tahtın Kralı (King System)</option>
-                  <option value="jumpScare">💀 JumpScare Katmanı</option>
+                  <option value="chat">Canlı Sohbet (Chat)</option>
+                  <option value="alerts">AlertBox Bildirimleri</option>
+                  <option value="goals">Hedef Çubuğu (Goal)</option>
+                  <option value="subathon">Subathon Sayacı</option>
+                  <option value="trivia">Bil Bakalım</option>
+                  <option value="eventLabels">Event Labels (Üst Şerit)</option>
+                  <option value="theCup">The Cup (Jeton Kavanozu)</option>
+                  <option value="polls">Canlı Anket (Polls)</option>
+                  <option value="wheel">Çarkıfelek</option>
+                  <option value="hypeTrain">Hype Treni</option>
+                  <option value="nowPlaying">Resonance (şu an çalan)</option>
+                  <option value="emoteCombo">Emote Kombo</option>
+                  <option value="lyrics">Canlı Şarkı Sözleri (Lyrics)</option>
+                  <option value="king">Tahtın Kralı (King System)</option>
+                  <option value="jumpScare">JumpScare Katmanı</option>
                   {KATMANLAR.slice(KATMANLAR.findIndex((k) => k.anahtar === 'activityFeed')).filter((k) => k.anahtar !== 'jumpScare').map((k) => (
                     <option key={k.anahtar} value={k.anahtar}>
                       ➕ {k.etiket}
@@ -1395,8 +1384,8 @@ export function OverlayStudio() {
                     {/* Include in Single OBS URL Toggle */}
                     <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-white block">Tek OBS URL'sine Dahil Et</span>
-                        <span className="text-[10px] text-gray-400">Bu bileşeni tek tuvalde canlı yayına ekleyin</span>
+                        <span className="text-xs font-bold text-white block">Yayında göster</span>
+                        <span className="text-[10px] text-gray-400">Kapalıysa OBS'te görünmez</span>
                       </div>
                       <input 
                         type="checkbox"
@@ -1409,7 +1398,7 @@ export function OverlayStudio() {
                     {/* Numeric Coordinate and Size Inputs */}
                     <div className="p-3.5 bg-[#11131a] rounded-xl border border-white/10 space-y-3">
                       <div className="text-[11px] font-bold text-purple-300 flex items-center justify-between">
-                        <span>Koordinatlar & Boyut (1920x1080)</span>
+                        <span>Konum ve boyut</span>
                         <span className="text-[10px] text-gray-400 font-mono">
                           X:{cur.x} Y:{cur.y} | {cur.width}x{cur.height}
                         </span>

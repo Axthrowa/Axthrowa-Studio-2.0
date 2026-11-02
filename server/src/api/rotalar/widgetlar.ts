@@ -129,7 +129,7 @@ export function normalizeAllInOneConfig(cfg: any) {
     subathon: { enabled: false, x: 1560, y: 60, width: 320, height: 70, scale: 1 },
     trivia: { enabled: false, x: 660, y: 700, width: 600, height: 320, scale: 1 },
     eventLabels: { enabled: true, x: 0, y: 0, width: 1920, height: 44, scale: 1 },
-    emoteCombo: { enabled: true, x: 1560, y: 460, width: 320, height: 140, scale: 1 },
+    emoteCombo: { enabled: true, x: 0, y: 0, width: 1920, height: 1080, scale: 1 },
     nowPlaying: { enabled: false, x: 1460, y: 960, width: 420, height: 90, scale: 1 },
     theCup: { enabled: false, x: 1580, y: 610, width: 300, height: 430, scale: 1 },
     polls: { enabled: false, x: 1540, y: 180, width: 340, height: 260, scale: 1 },
@@ -205,18 +205,17 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
   switch (widgetName) {
     case 'emote-combo':
     case 'on-screen-emotes':
-      wsHub.broadcastTo(['all'], {
-        type: 'emote_used',
-        emote: body.emote || '🔥',
-        combo: body.combo || 7
-      });
+      // Gerçek kombo gibi: emote art arda gelir, büyür, durunca patlar
+      for (let i = 0; i < 7; i++) {
+        setTimeout(() => wsHub.broadcastTo(['all'], { type: 'emote_used', emote: body.emote || '🔥' }), i * 350).unref?.();
+      }
       break;
     case 'the-cup':
       {
-        // Test de gerçek kuralları ve kalıcı durumu kullanır (panelden "Sıfırla" ile boşaltılır)
+        // Yalnız görsel: kupanın kayıtlı içeriği değişmez, widget birkaç saniye sonra kayıtlı hâline döner
         const tur = ({ coin: 'tip', bits: 'kicks', kicks: 'kicks', sub: 'sub', gift: 'gift_sub' } as Record<string, string>)[String(body.tokenType || 'coin')] || 'tip';
         const adet = Math.min(20, Math.max(1, Number(body.count) || 5));
-        for (let i = 0; i < adet; i++) wsHub.kupayaDusur(tur, { user: 'Test', amount: 1_000_000, count: 1 });
+        wsHub.broadcastTo(['all'], { type: 'cup_drop', test: true, data: { type: tur, adet, user: 'Test' } });
       }
       break;
     // NOT: Aşağıdaki üç test eskiden widget'ın HİÇ dinlemediği mesajları
@@ -294,18 +293,19 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     case 'viewer-counter':
-      wsHub.broadcastTo(['all'], { type: 'viewer_count', kick: 128, twitch: 64, youtube: 42, total: 234 });
+      wsHub.broadcastTo(['all'], { type: 'viewer_count', test: true, kick: 128, twitch: 64, youtube: 42, total: 234 });
       break;
     // Aşağıdakiler eskiden varsayılana düşüp ilgisiz bir takipçi uyarısı gösteriyordu.
     // Yalnız katmana örnek gider; veritabanındaki anket/çekiliş/talep değişmez.
     case 'polls':
       wsHub.broadcastTo(['all'], {
         type: 'poll_update',
+        test: true,
         poll: { question: 'Test anketi: hangi oyun?', options: ['CS2', 'Valorant', 'Minecraft'], votes: { 1: 6, 2: 3, 3: 1 }, endsAt: Date.now() + 20_000 }
       });
       break;
     case 'giveaways':
-      wsHub.broadcastTo(['all'], { type: 'giveaway_winner', payload: { winner: body.username || 'TestIzleyici' } });
+      wsHub.broadcastTo(['all'], { type: 'giveaway_winner', test: true, payload: { winner: body.username || 'TestIzleyici' } });
       break;
     case 'loyalty-redemptions':
       wsHub.broadcastTo(['all'], {
@@ -314,11 +314,14 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     // Galeride testi olmayan widget'lar: yalnız katmana örnek gider, kayıtlı durum değişmez
-    case 'chat-overlay':
+    case 'chat-overlay': {
+      const testId = `test-${Date.now()}`;
+      // Örnek mesaj birkaç saniye sonra sohbet katmanından kalkar
+      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'chat_deleted', data: { platform: 'kick', id: testId } }), 8000).unref?.();
       wsHub.broadcastTo(['all'], {
         type: 'chat',
         data: {
-          id: `test-${Date.now()}`,
+          id: testId,
           platform: 'kick',
           channel: 'test',
           user: { id: 'test', username: 'testizleyici', displayName: 'TestIzleyici', badges: [], isMod: false, isSub: true, isVip: false, isBroadcaster: false, color: '#22d3ee' },
@@ -327,6 +330,7 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
         }
       });
       break;
+    }
     case 'donation-goal':
     case 'follower-goal':
     case 'subscriber-goal':

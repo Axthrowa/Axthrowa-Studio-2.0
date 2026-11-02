@@ -111,10 +111,10 @@ export const DEFAULT_ALL_IN_ONE_CONFIG: AllInOneConfig = {
   },
   emoteCombo: {
     enabled: true,
-    x: 1560,
-    y: 460,
-    width: 320,
-    height: 140,
+    x: 0,
+    y: 0,
+    width: 1920,
+    height: 1080,
     scale: 1
   },
   nowPlaying: {

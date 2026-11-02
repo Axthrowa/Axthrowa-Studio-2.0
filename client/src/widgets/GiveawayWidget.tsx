@@ -56,7 +56,7 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
         if (typeof ad !== 'string') return;
         setWinner(ad);
         if (gizle) clearTimeout(gizle);
-        const sn = Number(ayar.current.winnerShowSec);
+        const sn = m.test ? 6 : Number(ayar.current.winnerShowSec);
         if (sn > 0) gizle = setTimeout(() => setWinner(null), sn * 1000);
       }
       if (m?.type === 'giveaway_join') load();

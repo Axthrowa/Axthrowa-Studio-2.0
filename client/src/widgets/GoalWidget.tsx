@@ -87,55 +87,48 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
   };
 
   const dolgu = dolguArkaPlani(s.barStyle, s.barColor, s.barColor2);
-  // Simge rozeti: barla aynı renk ve çerçevede, barın biraz üstüne taşan yuvarlak (eskiden çıplak emoji
-  // dolgunun ucuna binip çubukla uyumsuz, sonradan eklenmiş gibi duruyordu)
   const barH = Math.max(6, Number(s.barHeight) || 20);
   const cerceve = Number(s.barBorderWidth) > 0 ? Number(s.barBorderWidth) : 0;
-  const rozetBoy = Math.max(26, Math.round(barH + cerceve * 2 + 12));
-  const ikinciRenk = s.barStyle === 'gradient' || s.barStyle === 'glossy' ? s.barColor2 || s.barColor : s.barColor;
-  const ucta = s.barIconPosition === 'tip';
-  const rozet = s.barIcon ? (
+  // Simge barın ucunda, dolguyla birlikte ilerler; bar yüksekliğini biraz aşar ki küçük kalmasın.
+  // Dolguyla aynı süre ve eğri: simge ucun önüne geçmez, arkasında kalmaz.
+  const gecis = '0.9s cubic-bezier(.22,1,.36,1)';
+  const simgeBoy = Math.max(24, Math.round((barH + cerceve * 2) * 1.5));
+  const ucta = s.barIconPosition !== 'start';
+  const simge = s.barIcon ? (
     <span
       style={{
-        width: rozetBoy,
-        height: rozetBoy,
-        flexShrink: 0,
-        borderRadius: '50%',
+        position: 'absolute',
+        top: '50%',
+        left: ucta ? `clamp(${simgeBoy / 2}px, ${percent}%, calc(100% - ${simgeBoy / 2}px))` : simgeBoy / 2,
+        transform: 'translate(-50%, -50%)',
+        transition: `left ${gecis}`,
+        width: simgeBoy,
+        height: simgeBoy,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: Math.round(rozetBoy * 0.56),
+        fontSize: Math.round(simgeBoy * 0.82),
         lineHeight: 1,
-        background: `radial-gradient(circle at 35% 30%, ${s.barColor}, ${ikinciRenk})`,
-        border: `${Math.max(2, cerceve)}px solid ${cerceve > 0 ? s.barBorderColor : 'rgba(255,255,255,.85)'}`,
-        boxShadow: `0 2px 8px rgba(0,0,0,.55)${s.showGlow ? `, 0 0 14px ${ikinciRenk}` : ''}`,
-        zIndex: 1,
-        ...(ucta
-          ? {
-              position: 'absolute' as const,
-              top: '50%',
-              left: `clamp(${rozetBoy / 2}px, ${percent}%, calc(100% - ${rozetBoy / 2}px))`,
-              transform: 'translate(-50%, -50%)',
-              transition: 'left 0.6s ease'
-            }
-          : { marginRight: -Math.round(rozetBoy * 0.35) })
+        filter: `drop-shadow(0 2px 3px rgba(0,0,0,.7))${s.showGlow ? ` drop-shadow(0 0 8px ${s.barColor})` : ''}`,
+        zIndex: 1
       }}
     >
-      {s.barIcon}
+      {/* key: her artışta simge bir kez zıplar */}
+      <span key={current} style={{ display: 'block', animation: 'axt-hedef-zipla .6s cubic-bezier(.34,1.56,.64,1)' }}>
+        {s.barIcon}
+      </span>
     </span>
   ) : null;
   const bar = (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-      {!ucta && rozet}
-      <div style={{ position: 'relative', flex: 1 }}>
+    <div style={{ position: 'relative' }}>
       <div style={{
         height: s.barHeight,
         borderRadius: s.barRadius,
         background: s.barBackground,
         overflow: 'hidden',
         position: 'relative',
-        border: Number(s.barBorderWidth) > 0 ? `${s.barBorderWidth}px solid ${s.barBorderColor}` : undefined,
-        boxShadow: Number(s.barBorderWidth) > 0 ? `0 0 10px ${s.barBorderColor}55` : undefined
+        border: cerceve > 0 ? `${cerceve}px solid ${s.barBorderColor}` : undefined,
+        boxShadow: 'inset 0 2px 4px rgba(0,0,0,.45)'
       }}>
         <div style={{
           height: '100%',
@@ -143,12 +136,11 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
           ...dolgu,
           borderRadius: s.barRadius,
           boxShadow: s.showGlow ? `0 0 16px ${s.barColor}` : undefined,
-          transition: 'width 0.6s ease',
+          transition: `width ${gecis}`,
           animation: s.barStyle === 'striped' ? 'axt-hedef-cizgi 1s linear infinite' : undefined
         }} />
       </div>
-      {ucta && rozet}
-      </div>
+      {simge}
     </div>
   );
 
@@ -165,7 +157,7 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
 
   return (
     <div className={`axt-anim-${s.animation}`} style={{ background: Number(s.backgroundOpacity) === 0 ? 'transparent' : bg, borderRadius: s.borderRadius, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <style>{'@keyframes axt-hedef-cizgi { from { background-position: 0 0, 0 0 } to { background-position: 28px 0, 0 0 } }'}</style>
+      <style>{'@keyframes axt-hedef-cizgi { from { background-position: 0 0, 0 0 } to { background-position: 28px 0, 0 0 } } @keyframes axt-hedef-zipla { 0% { transform: scale(1) } 40% { transform: scale(1.35) translateY(-8%) } 100% { transform: scale(1) } }'}</style>
       {s.layout === 'text-below' ? <>{bar}{label}</> : <>{label}{bar}</>}
     </div>
   );

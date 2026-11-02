@@ -123,8 +123,8 @@ describe('Centrifugo çerçeveleri', () => {
 
 describe('zamanlama ve kanallar', () => {
   it('sohbet + eski sohbet + kanal olayları', () => {
-    expect(abonelikKanallari(18001571, 18259385)).toEqual(['chatrooms.18001571.v2', 'chatrooms.18001571', 'channel.18259385']);
-    expect(abonelikKanallari(5)).toEqual(['chatrooms.5.v2', 'chatrooms.5']);
+    expect(abonelikKanallari(18001571, 18259385)).toEqual(['chatrooms.18001571.v2', 'chatrooms.18001571', 'chatroom_18001571', 'channel.18259385', 'channel_18259385']);
+    expect(abonelikKanallari(5)).toEqual(['chatrooms.5.v2', 'chatrooms.5', 'chatroom_5']);
   });
 
   it('belirteç süresi bitmeden 15 sn önce yenilenir', () => {

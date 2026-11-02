@@ -11,6 +11,21 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.9.1',
+    ad: 'Sade',
+    tarih: '2026-11-02',
+    notlar: [
+      'Takipçi hedefi kanalın gerçek takipçi sayısını gösterir; yeni takipçi gelince ilerler ve uyarı çalar (Kick takipçinin adını vermediği için uyarıda "Yeni takipçi" yazar)',
+      'Hedef barı: simge barın ucunda, dolguyla birlikte ilerler',
+      'Emote kombo: yalnız emote görünür, geldikçe büyür, gelmeyi kesince patlayıp saçılır',
+      'Şarkı sözleri şarkı durduğu an ekrandan kalkar',
+      'Tek URL’deki Resonance, Yayın Yönetim Aracı’ndaki Resonance ile aynı görünümü kullanır; orada yapılan değişiklik hemen yansır',
+      'Widget testleri bitince her şey testten önceki hâline döner (kupa, sayaç, anket, akış, sohbet)',
+      'Kick KICKs olayları da artık yakalanır; kaldırılan varsayılan uyarı görselleri ve sesi değiştirildi',
+      'Panel sadeleşti: düz yüzeyler, tek başlık, daha az yazı'
+    ]
+  },
+  {
     surum: '1.9.0',
     ad: 'Komut Merkezi',
     tarih: '2026-10-29',

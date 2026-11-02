@@ -13,6 +13,13 @@ import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { LYRICS_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, onizlemeKipi } from '../lib/widget-style.js';
 
+/** Şarkı duruyor ya da süresi dolduysa sözler ekranda kalmaz. `isPlaying` yoksa (istek kuyruğu) karar verilmez. */
+export function sozGizlensinMi(d: { title?: unknown; isPlaying?: unknown; progressMs?: unknown; durationMs?: unknown }, gecenMs = 0): boolean {
+  if (!d.title || d.isPlaying === false) return true;
+  const sure = Number(d.durationMs) || 0;
+  return d.isPlaying === true && sure > 0 && (Number(d.progressMs) || 0) + gecenMs >= sure;
+}
+
 interface LyricLine {
   time: number;
   text: string;
@@ -45,6 +52,7 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
     isPlaying: false
   });
   const [bulunamadi, setBulunamadi] = useState(false);
+  const [gizli, setGizli] = useState(!onizleme);
 
   useEffect(() => {
     if (onizleme) return;
@@ -64,6 +72,7 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
         setArtist(data.artist || '');
         setLines(Array.isArray(data.lines) ? data.lines : []);
         setBulunamadi(Boolean(data.title) && data.bulundu === false);
+        setGizli(sozGizlensinMi(data));
         setSenkron({
           synced: Boolean(data.synced),
           progressMs: typeof data.progressMs === 'number' ? data.progressMs : null,
@@ -76,13 +85,13 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
     };
 
     cek();
-    // Parça değişimini çabuk yakalamak için en çok 5 sn'de bir (sözler sunucuda önbellekli)
-    const t = setInterval(cek, Math.min(5, Math.max(2, Number(s.refreshSeconds) || 5)) * 1000);
+    // Şarkı kesilince sözler hemen kalksın: saniyede bir (sözler sunucuda önbellekli, istek yerel)
+    const t = setInterval(cek, 1000);
     return () => {
       iptal = true;
       clearInterval(t);
     };
-  }, [onizleme, s.refreshSeconds]);
+  }, [onizleme]);
 
   useEffect(() => {
     if (lines.length <= 1) return;
@@ -112,7 +121,7 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
   }, [lines, s.lineMs, s.syncOffsetMs, senkron]);
 
   const bos = lines.length === 0;
-  if (bos && s.hideWhenIdle) return null;
+  if (gizli || (bos && s.hideWhenIdle)) return null;
 
   // Boş listede modulo NaN üretiyordu; artık güvenli okuma.
   const satir = (i: number) => (lines.length ? lines[((i % lines.length) + lines.length) % lines.length]?.text || '' : '');

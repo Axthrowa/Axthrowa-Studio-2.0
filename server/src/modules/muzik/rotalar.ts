@@ -8,6 +8,7 @@
  * ve StreamAxT'e özgü modül kullanmaz: depolama ve yayın dışarıdan verilir.
  */
 import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import { spawn } from 'child_process';
 import type { MuzikHost } from './muzik.js';
 import { donusAdresiSec, SPOTIFY_DONUS_YOLLARI } from './spotify-saf.js';
@@ -21,6 +22,8 @@ export interface MuzikRotaSecenekleri {
   senkronYayinla: (m: unknown) => void;
   /** Spotify bağlantısı değişti (panelleri tazele) */
   durumDegisti?: () => void;
+  /** Temayı tutan uzak host (Yayın Yönetim Aracı); yoksa tema yalnız yerelde */
+  uzakHost?: () => string;
 }
 
 const DISARIDA_ACILABILIR = ['https://accounts.spotify.com/', 'https://developer.spotify.com/', 'https://accounts.google.com/'];
@@ -165,17 +168,32 @@ export function muzikRotalari(o: MuzikRotaSecenekleri): { router: Router; spotif
   });
 
   const kimlikGecerli = (id: string) => /^[A-Za-z0-9_-]{1,64}$/.test(id);
+  // YYA açıksa tema onun Resonance'ından: panelde değişen görünüm Tek URL'de de aynı olsun. YYA kapalıysa yerel kayıt.
+  const uzakAyarOku = async (id: string): Promise<unknown> => {
+    const uzak = o.uzakHost?.();
+    if (!uzak) return undefined;
+    try {
+      const r = await axios.get(`${uzak}/api/overlay-config`, { params: { id }, timeout: 1500 });
+      return r.data ?? undefined;
+    } catch {
+      return undefined;
+    }
+  };
   router.get('/overlay-config', (req, res) => {
     const id = String(req.query.id || '');
     if (!kimlikGecerli(id)) return hataYaz(res, 'geçersiz id', 400);
-    const v = o.ayarlarOku()[id];
-    return v === undefined ? hataYaz(res, 'kayıt yok', 404) : res.json(v);
+    void uzakAyarOku(id).then((uzak) => {
+      const v = uzak ?? o.ayarlarOku()[id];
+      return v === undefined ? hataYaz(res, 'kayıt yok', 404) : res.json(v);
+    });
   });
   router.post('/overlay-config', (req, res) => {
     const id = String(req.body?.id || '');
     if (!kimlikGecerli(id)) return hataYaz(res, 'geçersiz id', 400);
     const veri = req.body?.data ?? null;
     if (JSON.stringify(veri).length > 256_000) return hataYaz(res, 'ayar çok büyük', 413);
+    const uzak = o.uzakHost?.();
+    if (uzak) void axios.post(`${uzak}/api/overlay-config`, { id, data: veri }, { timeout: 2000 }).catch(() => {});
     const tum = o.ayarlarOku();
     tum[id] = veri;
     if (id !== 'aktif') tum.aktif = veri;

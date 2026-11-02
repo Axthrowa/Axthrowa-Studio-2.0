@@ -121,7 +121,7 @@ export function initExtras() {
 
   eventBus.on('follow', (p: any) => {
     const cfg = s();
-    if (cfg.chat_alerts_enabled && !yeniAcik('follow')) announce(p.platform, p.channel, tpl(cfg.chat_alert_follow, { user: p.displayName || p.username }));
+    if (cfg.chat_alerts_enabled && !p?.anonim && !yeniAcik('follow')) announce(p.platform, p.channel, tpl(cfg.chat_alert_follow, { user: p.displayName || p.username }));
   });
   eventBus.on('sub', (p: any) => {
     const cfg = s();

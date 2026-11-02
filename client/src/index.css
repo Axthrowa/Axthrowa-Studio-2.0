@@ -73,3 +73,19 @@
 .axt-anim-zoom { animation: axt-zoom .45s ease }
 .axt-anim-pulse { animation: axt-pulse 1.4s ease infinite }
 .axt-marquee { display: inline-block; white-space: nowrap; animation: axt-marquee 20s linear infinite }
+
+/*
+ * Panel dili: düz yüzeyler, ölçülü yazı ağırlığı, parlama yok. Yalnız panelde geçerli; OBS'e giden widget'lar ve
+ * stüdyo tuvali (`axt-onizleme`) etkilenmez.
+ */
+.axt-panel :is(.font-black, .font-extrabold):not(.axt-onizleme *) { font-weight: 600; }
+.axt-panel .font-bold:not(.axt-onizleme *) { font-weight: 500; }
+.axt-panel :is(h1, h2):not(.axt-onizleme *) { font-weight: 600; letter-spacing: -0.01em; }
+.axt-panel .uppercase:not(.axt-onizleme *) { text-transform: none; letter-spacing: 0; }
+.axt-panel :is([class*="shadow-lg"], [class*="shadow-xl"], .glow-purple):not(.axt-onizleme *):not([role="dialog"]) { box-shadow: none; }
+.axt-panel .glass-panel:not(.axt-onizleme *) { background: #12151c; border-color: rgba(255, 255, 255, 0.06); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.axt-panel .glass-panel-hover:hover:not(.axt-onizleme *) { transform: none; box-shadow: none; background: #161a22; border-color: rgba(255, 255, 255, 0.12); }
+.axt-panel [class*="rounded-2xl"]:not(.axt-onizleme *) { border-radius: 0.75rem; }
+/* Renk geçişli yüzey ve düğmeler düz: metin renk geçişine dokunulmaz */
+.axt-panel [class*="bg-gradient-to-"]:not(.bg-clip-text):not(.axt-onizleme *) { background-image: none; }
+.axt-panel [class*="animate-pulse"]:not(.axt-onizleme *):not(.axt-onizleme) { animation: none; }

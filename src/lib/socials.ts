@@ -16,8 +16,8 @@ export const SOCIAL_META: Record<
   },
   kick: {
     label: "Kick",
-    color: "#3EEDFE",
-    iconFill: "#06210a",
+    color: "#53FC18",
+    iconFill: "#000000",
     path: "M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z",
   },
   x: {

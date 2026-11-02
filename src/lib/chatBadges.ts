@@ -11,11 +11,14 @@
  */
 import { API_BASE } from "./api";
 import { BadgeIcon, KICK_ICONS, TWITCH_FALLBACK_ICONS, YOUTUBE_ICONS } from "./badgeIcons";
+import { kickRozeti } from "./kickRozetleri";
 
 export type ChatBadge = {
   label: string;
   /** Rozet görseli (varsa öncelikli) */
   url?: string;
+  /** Platformun kendi çizimi (sabit SVG gövdesi, viewBox 0 0 20 20) */
+  svg?: string;
   /** Görsel yoksa — ya da yüklenemezse — çizilecek SVG simge */
   icon?: BadgeIcon;
 };
@@ -157,11 +160,11 @@ export function kickBadges(raw: unknown): ChatBadge[] {
     if (type === "subscriber") {
       const url = kickSubBadgeFor(Number.isFinite(count) ? count : 0);
       if (url) {
-        out.push({ label, url, icon: icon || GENERIC_ICON });
+        out.push({ label, url, svg: kickRozeti(type), icon: icon || GENERIC_ICON });
         continue;
       }
     }
-    out.push({ label, icon: icon || GENERIC_ICON });
+    out.push({ label, svg: kickRozeti(type), icon: icon || GENERIC_ICON });
   }
   return out;
 }

@@ -34,7 +34,7 @@ Write-Host "kaynak exe -> $srcExe  imza=$((Get-AuthenticodeSignature -LiteralPat
 $cikti = Join-Path $proj "cikti"
 $portable = Join-Path $cikti "portable"
 $setupName = "YayinYonetimAraci-Setup.exe"
-$setupNameVersioned = "Yayin Yonetim Araci_1.2.6_x64-setup.exe"
+$setupNameVersioned = "Yayin Yonetim Araci_1.2.7_x64-setup.exe"
 
 New-Item -ItemType Directory -Force -Path $cikti | Out-Null
 New-Item -ItemType Directory -Force -Path $portable | Out-Null
@@ -175,7 +175,7 @@ $okuLines = @(
   "",
   "2) SETUP (Windows kurulum sihirbazi):",
   "   cikti\YayinYonetimAraci-Setup.exe",
-  "   cikti\Yayin Yonetim Araci_1.2.6_x64-setup.exe",
+  "   cikti\Yayin Yonetim Araci_1.2.7_x64-setup.exe",
   "",
   "OBS Browser Source (uygulama ACIK olmali):",
   "  http://127.0.0.1:8843/starting?obs=1",

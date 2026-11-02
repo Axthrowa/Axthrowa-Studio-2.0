@@ -7,13 +7,12 @@
  *  - Tüm yeniden denemeler üstel geri çekilmeli (backoff) — eski sabit 2 sn'lik
  *    döngü ağı ve YouTube'u gereksiz yere zorluyordu.
  */
-import Pusher from "pusher-js";
 import { API_BASE, OverlaySettings } from "./api";
 import { connectTwitchChat, normalizeTwitchChannel } from "./twitchChat";
 import { ChatPart, kickParts, normalizeParts, partsToText, textPart } from "./chatParts";
 import { ChatBadge, kickBadges, setKickSubBadges, youtubeBadges } from "./chatBadges";
 import { handleSmartBotMessage } from "./smartBot";
-import { isRustKickChatActive, refreshRustKickChatActive } from "./rustKickGate";
+import { streamaxtBase } from "./streamaxt";
 import { setYoutubeLiveContext } from "./platformAuth/youtubeWrite";
 
 export type Platform = "kick" | "twitch" | "youtube";
@@ -61,7 +60,7 @@ export type ChatHubHandlers = {
 };
 
 export const PLATFORM_COLOR: Record<Platform, string> = {
-  kick: "#3EEDFE",
+  kick: "#53FC18",
   twitch: "#9146ff",
   youtube: "#ff0000",
 };
@@ -71,10 +70,6 @@ export const PLATFORM_LABEL: Record<Platform, string> = {
   twitch: "Twitch",
   youtube: "YouTube",
 };
-
-/** Kick'in herkese açık Pusher uygulaması (salt-okunur sohbet) */
-const KICK_PUSHER_KEY = "32cbd69e4b950bf97679";
-const KICK_CLUSTER = "us2";
 
 const MAX_BACKOFF_MS = 30_000;
 
@@ -136,115 +131,104 @@ type Stop = () => void;
 
 /* ------------------------------------------------------------------ Kick */
 
+/** Botun sohbet iletisi → ortak ileti (Kick ayrıştırıcısı yeniden kullanılır). */
+export function botKickMesaji(d: any): ChatMessage | null {
+  if (d?.platform !== "kick" || !d.user) return null;
+  return parseKickMessage({
+    id: d.id,
+    content: d.message,
+    created_at: d.timestamp ? new Date(d.timestamp).toISOString() : undefined,
+    sender: {
+      username: d.user.displayName || d.user.username,
+      identity: { color: d.user.color, badges: d.user.rawBadges || d.user.badges?.map((type: string) => ({ type })) },
+    },
+  });
+}
+
+/**
+ * Kick sohbeti botun (StreamAxT) WebSocket'inden okunur: Kick'in eski Pusher anahtarı 2026 Ekim'de
+ * kapandı (kod 4001), yeni bağlantı pazarlığını bot zaten yapıyor. Bot kapalıysa sebep durumda yazar.
+ */
 function startKick(
   slug: string,
-  presetChatroomId: string | number | null | undefined,
+  _presetChatroomId: string | number | null | undefined,
   h: ChatHubHandlers
 ): Stop {
   let stopped = false;
-  let pusher: Pusher | null = null;
+  let ws: WebSocket | null = null;
   let retry: number | undefined;
-  let gateTick: number | undefined;
   let attempt = 0;
 
   const status = (state: ConnState, detail: string) =>
     h.onStatus({ platform: "kick", state, detail, channel: slug });
 
-  const dropJsPusher = () => {
+  const durumuDenetle = async (base: string) => {
     try {
-      pusher?.disconnect();
+      const d = await (await fetch(`${base}/api/status`, { cache: "no-store" })).json();
+      const k = d?.platforms?.kick;
+      if (!k?.connected) status("error", "Bot Kick'e bağlı değil — Bağlantılar'dan kanalı kaydet");
+      else if (String(k.channel || "").toLowerCase() !== slug) status("error", `Bot başka kanalda: ${k.channel}`);
+      else status("live", `#${slug}`);
     } catch {
-      /* */
+      /* soket kapanınca ayrıca bildirilir */
     }
-    pusher = null;
   };
 
   const boot = async () => {
     if (stopped) return;
-    if (await refreshRustKickChatActive()) {
-      dropJsPusher();
-      status("live", `#${slug} (bot)`);
-      if (retry) window.clearTimeout(retry);
-      retry = window.setTimeout(boot, 4000);
-      return;
-    }
-    if (pusher) {
-      status("live", `#${slug}`);
-      return;
-    }
-    status("connecting", "chatroom aranıyor");
+    status("connecting", "bota bağlanıyor");
+    // Abone rozeti görselleri kanal bilgisinde gelir; alınamazsa yalnız rozet görseli eksik kalır
+    fetch(`${API_BASE}/api/kick/chatroom?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data && setKickSubBadges(data.subscriberBadges))
+      .catch(() => {});
+    const base = await streamaxtBase();
+    if (stopped) return;
+    // Sekme değişince ya da sayfa yeniden açılınca son iletiler geri gelir
+    fetch(`${base}/api/chat/history`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (stopped) return;
+        for (const m of d?.mesajlar || []) {
+          const msg = String(m.channel || "").toLowerCase() === slug ? botKickMesaji(m) : null;
+          if (msg) h.onMessage(msg);
+        }
+      })
+      .catch(() => {});
 
-    let chatroomId = presetChatroomId ? String(presetChatroomId) : "";
-    // Kayıtlı chatroom kimliği olsa da kanal bilgisini çekiyoruz: abone rozeti
-    // görselleri yalnız orada geliyor. İstek başarısız olursa kayıtlı kimlikle
-    // yine de bağlanılır.
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/kick/chatroom?slug=${encodeURIComponent(slug)}`,
-        { cache: "no-store" }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setKickSubBadges(data?.subscriberBadges);
-      if (!chatroomId && data?.chatroomId) chatroomId = String(data.chatroomId);
-    } catch (e) {
-      if (stopped) return;
-      if (!chatroomId) {
-        status("error", `chatroom alınamadı (${(e as Error).message})`);
-        retry = window.setTimeout(boot, backoffMs(attempt++, 4000));
+    ws = new WebSocket(`${base.replace(/^http/, "ws")}/ws?type=chatbox`);
+    ws.onopen = () => {
+      attempt = 0;
+      void durumuDenetle(base);
+    };
+    ws.onmessage = (ev) => {
+      let p: any;
+      try {
+        p = JSON.parse(String(ev.data));
+      } catch {
         return;
       }
-      // Kayıtlı kimlikle devam — yalnız rozet görselleri eksik kalır
-    }
-    if (!chatroomId) {
-      status("error", "chatroom bulunamadı — kullanıcı adı doğru mu?");
-      retry = window.setTimeout(boot, backoffMs(attempt++, 8000));
-      return;
-    }
-    if (stopped) return;
-
-    attempt = 0;
-    pusher = new Pusher(KICK_PUSHER_KEY, {
-      cluster: KICK_CLUSTER,
-      wsHost: `ws-${KICK_CLUSTER}.pusher.com`,
-      forceTLS: true,
-      enabledTransports: ["ws", "wss"],
-    });
-    pusher.connection.bind("connected", () => status("live", `#${slug}`));
-    pusher.connection.bind("connecting", () => status("connecting", "bağlanıyor"));
-    pusher.connection.bind("unavailable", () => status("error", "Pusher erişilemiyor"));
-    pusher.connection.bind("failed", () => status("error", "bağlantı kurulamadı"));
-
-    const channel = pusher.subscribe(`chatrooms.${chatroomId}.v2`);
-    channel.bind("App\\Events\\ChatMessageEvent", (data: unknown) => {
-      const msg = parseKickMessage(data);
-      if (msg) h.onMessage(msg);
-    });
-    channel.bind("App\\Events\\SubscriptionEvent", (data: unknown) => {
-      const msg = parseKickSubscription(data, false);
-      if (msg) h.onMessage(msg);
-    });
-    channel.bind("App\\Events\\GiftedSubscriptionsEvent", (data: unknown) => {
-      const msg = parseKickSubscription(data, true);
-      if (msg) h.onMessage(msg);
-    });
-    // Bazı istemciler takip olayını chatroom kanalında yayınlar
-    const onFollow = (data: unknown) => {
-      const msg = parseKickFollow(data);
-      if (msg) h.onMessage(msg);
+      if (p?.type === "platform_statuses") void durumuDenetle(base);
+      if (p?.type === "chat" && String(p.data?.channel || "").toLowerCase() === slug) {
+        const msg = botKickMesaji(p.data);
+        if (msg) h.onMessage(msg);
+      }
+      if (p?.type === "alert" && p.data?.platform === "kick" && !p.data?.isTest) {
+        const msg =
+          p.subType === "sub" || p.subType === "gift_sub"
+            ? parseKickSubscription(p.data, p.subType === "gift_sub")
+            : p.subType === "follow" && !p.data?.anonim
+              ? parseKickFollow(p.data)
+              : null;
+        if (msg) h.onMessage(msg);
+      }
     };
-    channel.bind("App\\Events\\FollowersUpdatedEvent", onFollow);
-    channel.bind("App\\Events\\FollowersUpdated", onFollow);
-
-    if (gateTick) window.clearInterval(gateTick);
-    gateTick = window.setInterval(() => {
+    ws.onclose = () => {
+      ws = null;
       if (stopped) return;
-      void refreshRustKickChatActive().then((on) => {
-        if (!on || stopped) return;
-        dropJsPusher();
-        status("live", `#${slug} (bot)`);
-      });
-    }, 4000);
+      status("error", "Bot kapalı — yeniden deneniyor");
+      retry = window.setTimeout(boot, backoffMs(attempt++, 3000));
+    };
   };
 
   void boot();
@@ -252,8 +236,7 @@ function startKick(
   return () => {
     stopped = true;
     if (retry) window.clearTimeout(retry);
-    if (gateTick) window.clearInterval(gateTick);
-    dropJsPusher();
+    ws?.close();
   };
 }
 
@@ -594,9 +577,8 @@ export function startChatHub(cfg: ChatHubConfig, h: ChatHubHandlers): Stop {
         for (const abone of [...yeni.aboneler]) abone.onStatus(s);
       },
       onMessage: (m) => {
-        // Rust pipeline Kick'i dinliyorsa smartBot Kick yanıtı üretmesin
-        const skipSmart =
-          String(m.platform || "").toLowerCase() === "kick" && isRustKickChatActive();
+        // Kick sohbeti botun kendisinden geliyor ve komutlara bot yanıt veriyor: burada ikinci kez yanıtlanmaz
+        const skipSmart = String(m.platform || "").toLowerCase() === "kick";
         const extras = skipSmart ? [] : handleSmartBotMessage(m);
         for (const abone of [...yeni.aboneler]) {
           abone.onMessage(m);

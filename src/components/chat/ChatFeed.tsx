@@ -11,7 +11,7 @@ function hhmm(ts: number) {
 }
 
 /** Platformun kendi logosu — harf rozeti yerine gerçek marka işareti */
-function PlatformLogo({ platform }: { platform: Platform }) {
+export function PlatformLogo({ platform }: { platform: Platform }) {
   const meta = SOCIAL_META[platform];
   if (!meta) return null;
   return (
@@ -46,6 +46,14 @@ function Badge({ badge }: { badge: ChatBadge }) {
         decoding="async"
         onError={() => setFailed(true)}
       />
+    );
+  }
+  if (badge.svg) {
+    return (
+      <span className="chat-badge chat-badge-icon" style={{ padding: 0, boxShadow: "none" }} title={badge.label} aria-label={badge.label}>
+        {/* Yalnız kickRozetleri.ts'teki sabit çizim; dış veri girmez */}
+        <svg viewBox="0 0 20 20" role="img" aria-hidden focusable="false" fill="none" dangerouslySetInnerHTML={{ __html: badge.svg }} />
+      </span>
     );
   }
   if (badge.icon) {

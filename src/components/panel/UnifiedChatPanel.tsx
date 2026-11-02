@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { OverlaySettings } from "../../lib/api";
 import { PLATFORM_LABEL, Platform, PlatformStatus } from "../../lib/chatHub";
-import { chatHideAfterMs, useChatHub } from "../../lib/useChatHub";
+import { useChatHub } from "../../lib/useChatHub";
 import ChatFeed from "../chat/ChatFeed";
 import { useI18n } from "../../i18n";
 
@@ -30,7 +30,8 @@ export default function UnifiedChatPanel({ settings }: { settings: OverlaySettin
       ? { live: "live", connecting: "connecting", error: "error", off: "off" }
       : { live: "canlı", connecting: "bağlanıyor", error: "hata", off: "kapalı" };
 
-  const hideAfterMs = chatHideAfterMs(settings);
+  // Panelde mesaj süreyle kaybolmaz: kaybolma süresi yalnız OBS katmanının ayarı
+  const hideAfterMs = 0;
   const { messages, status, clear } = useChatHub(settings, {
     max: Math.max(Number(settings.maxMessages) || 60, 150),
     hideAfterMs,

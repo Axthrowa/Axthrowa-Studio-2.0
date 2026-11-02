@@ -103,7 +103,7 @@ import {
 } from "../../lib/streamAutomation";
 import { ruleStopStream } from "../../lib/endRules";
 import { obsControl } from "../../lib/obsControl";
-import { clearPlatformChats, clearResultToast } from "../../lib/clearPlatformChats";
+import { clearPlatformChats, clearResultToast, temizlenebilirPlatformlar } from "../../lib/clearPlatformChats";
 import { endSession, fetchDashboard, startSession } from "../../lib/api/botaxt";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { pickObsConnection, sameObsConnection } from "../../lib/obsConnection";
@@ -1245,10 +1245,8 @@ export default function PanelPage() {
 
   const clearChatNow = useCallback(async () => {
     try {
-      const r = await clearPlatformChats({
-        twitchChannel: String(settingsRef.current.twitchChannel || ""),
-        youtubeChannel: String(settingsRef.current.youtubeChannel || ""),
-      });
+      // Kısayolda soru sorulmaz: bağlı tüm platformlar temizlenir
+      const r = await clearPlatformChats((await temizlenebilirPlatformlar()).filter((p) => p.bagli).map((p) => p.id));
       showToast(clearResultToast(r));
     } catch (e: any) {
       showToast(String(e?.message || e));
@@ -1689,6 +1687,11 @@ export default function PanelPage() {
           />
           {dashBolum === "baglantilar" && (
             <ConnectionsHub
+              onBotPlatformlar={() => {
+                setBotSekme("platforms");
+                setModul("hazirlik");
+                setActiveNav("bot");
+              }}
               onToast={showToast}
               obs={settings.obs}
               onObsPatch={(patch) => update({ obs: patch })}

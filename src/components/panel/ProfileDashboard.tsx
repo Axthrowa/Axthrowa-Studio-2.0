@@ -22,7 +22,8 @@ import { useChatHub } from "../../lib/useChatHub";
 import ChatFeed from "../chat/ChatFeed";
 import { useAxthrowaStore, type KickCanli } from "../../store/useAxthrowaStore";
 import SistemSagligi from "../axthrowa/SistemSagligi";
-import { clearPlatformChats, clearResultToast } from "../../lib/clearPlatformChats";
+import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
+import { streamaxtBase } from "../../lib/streamaxt";
 
 /** Dashboard alt sekmeleri (PanelPage). Bileşen sekme değişse de BAĞLI kalır:
  *  sadakat sayacı, yayın metrikleri ve oturum kapatma arka planda sürmeli. */
@@ -48,22 +49,12 @@ function markStreamLive(live: boolean) {
 /**
  * `<video src>` bu akışı doğrudan oynatabilir mi?
  *
- * Kick'in playback adresi HLS (.m3u8). Chromium/WebView2 HLS'i yerel olarak
- * oynatmaz (yalnız Safari oynatır), bu yüzden önizleme siyah kalıyordu.
- * Oynatamıyorsak Kick'in kendi oynatıcısını (iframe) kullanırız.
+ * Kick'in playback adresi HLS (.m3u8). Chromium/WebView2 `canPlayType` için "maybe" dese de akış
+ * hiç başlamıyor (readyState 0, hata da yok) ve önizleme siyah kalıyordu. HLS'te hep Kick'in kendi
+ * oynatıcısı (iframe) kullanılır.
  */
-export function canPlayDirectly(url: string, probe?: (t: string) => string): boolean {
-  if (!/\.m3u8(\?|$)/i.test(url)) return true;
-  const can =
-    probe ||
-    ((t: string) => {
-      try {
-        return document.createElement("video").canPlayType(t);
-      } catch {
-        return "";
-      }
-    });
-  return !!(can("application/vnd.apple.mpegurl") || can("application/x-mpegURL"));
+export function canPlayDirectly(url: string): boolean {
+  return !/\.m3u8(\?|$)/i.test(url);
 }
 
 export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum }: Props) {
@@ -83,7 +74,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
   const [remoteUser, setRemoteUser] = useState("editor");
   const [remotePass, setRemotePass] = useState("");
   const [chatSettings, setChatSettings] = useState<OverlaySettings>({});
-  const [clearingChat, setClearingChat] = useState(false);
+  const [temizleAcik, setTemizleAcik] = useState(false);
+  // Kanal botta kayıtlıysa önizleme ve sohbet onu kullanır (YYA'da ayrıca yazılmamış olsa da)
+  const [botKanali, setBotKanali] = useState("");
   const [previewEpoch, setPreviewEpoch] = useState(0);
   const stopPending = useRef(false);
 
@@ -99,8 +92,19 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
       const botState = bot as Record<string, unknown>;
       const chatState = chat as { connected?: boolean; username?: string | null };
       setBotEnabled(Number(botState.enabled ?? 1) !== 0);
-      setChatConnected(!!chatState.connected);
-      setKickSlug(String(chatState.username || getBotConfig().channelName || "").trim());
+      let kanal = "";
+      let botBagli = false;
+      try {
+        const d = await (await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" })).json();
+        kanal = d?.platforms?.kick?.connected ? String(d.platforms.kick.channel || "") : "";
+      } catch {
+        /* bot kapalı */
+      }
+      setBotKanali(kanal);
+      // Sohbeti bot okuyor: durum da ondan (Rust'un eski Pusher dinleyicisi artık bağlanamıyor)
+      botBagli = !!kanal;
+      setChatConnected(botBagli);
+      setKickSlug(String(kanal || chatState.username || getBotConfig().channelName || "").trim());
       // SQLite oturumu ile bot uptime senkronu
       const live = !!snap.active_session;
       const cfg = getBotConfig();
@@ -188,7 +192,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
     };
   }, [refresh]);
 
-  const { messages, clear } = useChatHub(chatSettings, {
+  const { messages, clear } = useChatHub(botKanali ? { ...chatSettings, kickSlug: botKanali, enableKick: true } : chatSettings, {
     max: 200,
     hideAfterMs: 0,
   });
@@ -391,28 +395,18 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-panel-accent" />
-            <button
-              type="button"
-              disabled={clearingChat}
-              className="yya-btn-ghost inline-flex items-center gap-1.5 text-xs"
-              onClick={() => {
-                if (clearingChat) return;
-                setClearingChat(true);
-                void clearPlatformChats({
-                  twitchChannel: String(chatSettings.twitchChannel || ""),
-                  youtubeChannel: String(chatSettings.youtubeChannel || ""),
-                })
-                  .then((r) => {
-                    clear();
-                    onToast(clearResultToast(r));
-                  })
-                  .catch((e) => onToast(String((e as Error).message || e)))
-                  .finally(() => setClearingChat(false));
-              }}
-            >
+            <button type="button" className="yya-btn-ghost inline-flex items-center gap-1.5 text-xs" onClick={() => setTemizleAcik(true)}>
               <Eraser className="h-3.5 w-3.5" />
-              {clearingChat ? "Temizleniyor…" : "Sohbeti temizle"}
+              Sohbeti temizle
             </button>
+            <SohbetTemizleDiyalogu
+              open={temizleAcik}
+              onClose={() => setTemizleAcik(false)}
+              onDone={(mesaj) => {
+                clear();
+                onToast(mesaj);
+              }}
+            />
           </div>
         </div>
         <div className="grid min-h-[28rem] lg:grid-cols-[1.55fr_1fr]">

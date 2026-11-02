@@ -1,87 +1,50 @@
 /**
- * Kick / Twitch / YouTube sohbetini platform tarafında temizler
- * ve yerel overlay listesini sıfırlar.
+ * Sohbeti seçilen platformlarda temizler (işi bot yapar) ve YYA sohbet katmanını sıfırlar.
  */
+import { patchSettings } from "./api";
+import { streamaxtBase } from "./streamaxt";
 
-import { API_BASE, patchSettings } from "./api";
-import { sendTwitchPrivmsg } from "./platformAuth/twitchWrite";
-import { clearYoutubeLiveChat } from "./platformAuth/youtubeWrite";
-import { getBotConfig } from "./smartBot";
+export type TemizlenebilirPlatform = { id: string; bagli: boolean; tumu: boolean };
 
 export type ClearPlatformResult = {
   local: boolean;
-  kick: boolean;
-  twitch: boolean;
-  youtube: boolean;
-  detail: string[];
+  sonuclar: Record<string, { ok: boolean; yontem?: string; silinen?: number; hata?: string }>;
+  hata?: string;
 };
 
-export async function clearPlatformChats(opts?: {
-  twitchChannel?: string;
-  youtubeChannel?: string;
-}): Promise<ClearPlatformResult> {
-  const detail: string[] = [];
-  const cfg = getBotConfig();
-  const twitchChannel = String(
-    opts?.twitchChannel || (cfg as { twitchChannel?: string }).twitchChannel || ""
-  ).replace(/^#/, "");
-  const youtubeChannel = String(
-    opts?.youtubeChannel || (cfg as { youtubeChannel?: string }).youtubeChannel || ""
-  );
+export async function temizlenebilirPlatformlar(): Promise<TemizlenebilirPlatform[]> {
+  const r = await fetch(`${await streamaxtBase()}/api/chat/clear-platforms`, { cache: "no-store" });
+  if (!r.ok) throw new Error(`Bot yanıt vermedi (${r.status})`);
+  return ((await r.json()) as { platformlar: TemizlenebilirPlatform[] }).platformlar;
+}
 
+export async function clearPlatformChats(platforms: string[]): Promise<ClearPlatformResult> {
   let local = false;
   try {
     await patchSettings("chat", { clearEpoch: Date.now() });
     local = true;
   } catch {
-    detail.push("Yerel overlay temizlenemedi");
+    /* sonuç iletisinde yazar */
   }
-
-  let kick = false;
+  if (!platforms.length) return { local, sonuclar: {} };
   try {
-    const res = await fetch(`${API_BASE}/api/chat/clear-platforms`, {
+    const r = await fetch(`${await streamaxtBase()}/api/chat/clear-platforms`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: "{}",
+      body: JSON.stringify({ platforms }),
     });
-    if (res.ok) {
-      const body = (await res.json()) as { kick?: boolean; kickError?: string };
-      kick = !!body.kick;
-      if (!kick && body.kickError) detail.push(`Kick: ${body.kickError}`);
-      else if (!kick) detail.push("Kick sohbeti temizlenemedi (moderatör oturumu gerekir)");
-    } else {
-      detail.push(`Kick API ${res.status}`);
-    }
+    const d = await r.json();
+    return r.ok ? { local, sonuclar: d.sonuclar || {} } : { local, sonuclar: {}, hata: d.hata || `Bot ${r.status}` };
   } catch (e) {
-    detail.push(`Kick: ${String((e as Error).message || e)}`);
+    return { local, sonuclar: {}, hata: `Bota ulaşılamadı: ${String((e as Error).message || e)}` };
   }
-
-  let twitch = false;
-  if (twitchChannel) {
-    twitch = await sendTwitchPrivmsg(twitchChannel, "/clear");
-    if (!twitch) detail.push("Twitch /clear gönderilemedi — yazma oturumu veya kanal adı yok");
-  } else {
-    detail.push("Twitch kanalı tanımlı değil");
-  }
-
-  let youtube = false;
-  try {
-    youtube = await clearYoutubeLiveChat(youtubeChannel || undefined);
-    if (!youtube) detail.push("YouTube mesajları silinemedi — OAuth veya canlı chat yok");
-  } catch (e) {
-    detail.push(`YouTube: ${String((e as Error).message || e)}`);
-  }
-
-  return { local, kick, twitch, youtube, detail };
 }
 
 export function clearResultToast(r: ClearPlatformResult): string {
-  const ok = [
-    r.kick ? "Kick" : null,
-    r.twitch ? "Twitch" : null,
-    r.youtube ? "YouTube" : null,
-    r.local ? "yerel overlay" : null,
-  ].filter(Boolean);
-  if (!ok.length) return r.detail[0] || "Sohbet temizlenemedi";
-  return `Sohbet temizlendi: ${ok.join(", ")}`;
+  if (r.hata) return r.hata;
+  const satirlar = Object.entries(r.sonuclar).map(([p, s]) =>
+    s.ok ? `${p}: temizlendi${s.yontem === "tek-tek" ? ` (${s.silinen} ileti silindi)` : ""}` : `${p}: ${s.hata || "temizlenemedi"}`
+  );
+  if (!satirlar.length) return r.local ? "Yayın sohbet katmanı temizlendi" : "Sohbet temizlenemedi";
+  return satirlar.join(" · ");
 }

@@ -3,15 +3,16 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Cable, CirclePower, Cookie, Radio, Save, Unplug } from "lucide-react";
-import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
+import { Bot, Cable, CirclePower, Radio, Save, Unplug } from "lucide-react";
+import { fetchSettings, patchSettings } from "../../lib/api";
 import { obsControl, type ObsConnectionStatus } from "../../lib/obsControl";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
-import BotSessions from "./BotSessions";
+import { openExternal } from "../../lib/openExternal";
 import { streamaxtBase } from "../../lib/streamaxt";
 import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
 import StatusDot from "@/components/axthrowa/StatusDot";
+import { PlatformLogo } from "../chat/ChatFeed";
 import EndRulesEditor from "./EndRulesEditor";
 
 type Props = {
@@ -23,6 +24,8 @@ type Props = {
    */
   obs?: { endRules?: Record<string, any> } | null;
   onObsPatch?: (patch: Record<string, unknown>) => void;
+  /** Diğer platformların girişi botun Platformlar sayfasında */
+  onBotPlatformlar?: () => void;
   /** OBS'e bağlanılınca (Kaydet) panel sahne/giriş listelerini yenilesin. */
   onObsConnected?: () => void;
   master?: {
@@ -32,23 +35,22 @@ type Props = {
   };
 };
 
-/** `/api/kick/oauth/status` yanıtı — resmi Kick API bağlantısı. */
-type KickApiStatus = {
+type BotPlatformDurumu = {
   connected?: boolean;
-  username?: string | null;
-  clientId?: string | null;
-  hasSecret?: boolean;
+  channel?: string;
+  yazabilir?: boolean;
+  botHesabi?: string;
+  kanalHesabi?: string;
+  error?: string;
 };
 
-type KickSession = {
-  ready?: boolean;
-  connected?: boolean;
-  hasCookies?: boolean;
-  pending?: boolean;
-  username?: string | null;
-  channelSlug?: string | null;
-  error?: string | null;
-};
+const DIGER_PLATFORMLAR = [
+  { id: "twitch", ad: "Twitch" },
+  { id: "youtube", ad: "YouTube" },
+  { id: "discord", ad: "Discord" },
+  { id: "trovo", ad: "Trovo" },
+  { id: "tiktok", ad: "TikTok" },
+];
 
 /**
  * Bot Kick sohbetine yazabiliyor mu. `yazabilir` StreamAxT 1.9 ile geldi (jetonsuz bağlantı yalnız okur);
@@ -69,15 +71,10 @@ const EMPTY_OBS: ObsConnectionStatus = {
 
 const inputCls = "yya-input mt-1 h-9 text-xs md:text-sm font-medium text-white";
 
-export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsPatch, onObsConnected }: Props) {
+export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsPatch, onObsConnected, onBotPlatformlar }: Props) {
   const [kickSlug, setKickSlug] = useState("");
-  const [kickSession, setKickSession] = useState<KickSession>({});
-  // Çerez oturumu ile Kick API (OAuth) bağlantısı ayrı şeyler: bot sohbete
-  // yazabilmek için API'ye ihtiyaç duyuyor. Tek rozet ikisini birleştirince
-  // API kopukken de yeşil yanıyor ve "neden yazmıyor?" sorusuna yol açıyordu.
-  const [kickApi, setKickApi] = useState<KickApiStatus>({});
-  // Kick API'si botun (StreamAxT) Platformlar sayfasından da bağlanabilir; o zaman sohbete bot yazar
-  const [botKick, setBotKick] = useState(false);
+  // Tek doğruluk kaynağı botun durumu: bağlantıyı da sohbete yazmayı da bot yapıyor
+  const [platformlar, setPlatformlar] = useState<Record<string, BotPlatformDurumu> | null>(null);
   const [obsScenes, setObsScenes] = useState<string[]>([]);
   // Bitiş kuralı düzenleyicisi için her ekranın kendi eski süre alanları.
   const [legacyEnd, setLegacyEnd] = useState<
@@ -90,28 +87,19 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
   const [endHoldMin, setEndHoldMin] = useState(2);
   const [status, setStatus] = useState<ObsConnectionStatus>(EMPTY_OBS);
   const [busy, setBusy] = useState("");
-  const harvestLoop = useRef(false);
+  const slugYazildi = useRef(false);
 
-  const applyKick = useCallback((raw: KickSession | null | undefined) => {
-    if (!raw || typeof raw !== "object") return;
-    setKickSession(raw);
-    const fromSession = String(raw.username || raw.channelSlug || "").trim();
-    if (fromSession) setKickSlug((prev) => prev || fromSession);
-  }, []);
-
-  const refreshKick = useCallback(async () => {
+  const refreshBot = useCallback(async () => {
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      applyKick((await invoke("kick_bot_session_status")) as KickSession);
+      const r = await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" });
+      const d = r.ok ? ((await r.json()) as { platforms?: Record<string, BotPlatformDurumu> }) : null;
+      setPlatformlar(d?.platforms || null);
+      const kanal = String(d?.platforms?.kick?.channel || "");
+      if (kanal && !slugYazildi.current) setKickSlug(kanal);
     } catch {
-      try {
-        const r = await fetch("/api/kick/bot-session/status", { cache: "no-store" });
-        if (r.ok) applyKick((await r.json()) as KickSession);
-      } catch {
-        /* Tauri dışı önizleme */
-      }
+      setPlatformlar(null); // bot kapalı
     }
-  }, [applyKick]);
+  }, []);
 
   // OBS bağlanınca sahne adlarını çek: bitiş kuralındaki sahne alanı bunlarla
   // öneri sunuyor. Bağlı değilse boş kalır, alan serbest yazıma açık.
@@ -131,40 +119,6 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
       iptal = true;
     };
   }, [status.connected]);
-
-  const refreshKickApi = useCallback(async () => {
-    try {
-      const r = await fetch(`${API_BASE}/api/kick/oauth/status`, { cache: "no-store" });
-      if (r.ok) setKickApi((await r.json()) as KickApiStatus);
-    } catch {
-      /* sunucu kapalıysa bilinmiyor olarak kalsın */
-    }
-    try {
-      const r = await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" });
-      const d = r.ok ? ((await r.json()) as { platforms?: { kick?: { connected?: boolean; yazabilir?: boolean } } }) : null;
-      setBotKick(botKickYazabilir(d?.platforms?.kick));
-    } catch {
-      setBotKick(false); // bot kapalı
-    }
-  }, []);
-
-  const silentHarvest = useCallback(async () => {
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      let result = (await invoke("import_kick_session_from_browser")) as KickSession;
-      if (!(result.ready || result.connected || result.hasCookies)) {
-        try {
-          result = (await invoke("harvest_kick_bot_cookies")) as KickSession;
-        } catch {
-          /* CDP yedek */
-        }
-      }
-      applyKick(result);
-      return !!(result.ready || result.connected);
-    } catch {
-      return false;
-    }
-  }, [applyKick]);
 
   useEffect(() => {
     let iptal = false;
@@ -233,23 +187,21 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
         setStatus(EMPTY_OBS);
       }
     })();
-    void refreshKick();
-    void refreshKickApi();
+    void refreshBot();
     // OBS durumu da yoklanır: uygulama arka planda kendiliğinden bağlanınca kart
     // "Bağlı Değil" göstermeye devam ediyor, kullanıcı Kaydet'e basıp yeniden
     // bağlanıyordu (zaten bağlıyken).
     const poll = setVisibleInterval(() => {
-      void refreshKick();
-      void refreshKickApi();
+      void refreshBot();
       void obsControl
         .status()
         .then((next) => setStatus((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next)))
         .catch(() => {});
     }, 8000);
     return () => clearVisibleInterval(poll);
-  }, [refreshKick, refreshKickApi]);
+  }, [refreshBot]);
 
-  const kickReady = !!(kickSession.ready || kickSession.connected || kickSession.hasCookies);
+  const kick = platformlar?.kick;
 
   const saveAll = async () => {
     if (busy) return;
@@ -277,6 +229,16 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
     try {
       saveBotConfig((prev) => ({ ...prev, channelName: slug }));
       await patchSettings("chat", { kickSlug: slug });
+      // Yayın kanalı botta da değişir; kayıtlı bot hesabı korunur
+      if (slug && platformlar && slug.toLowerCase() !== String(kick?.channel || "").toLowerCase()) {
+        const r = await fetch(`${await streamaxtBase()}/api/platforms/kick/connect`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channelName: slug }),
+        });
+        if (!r.ok) onToast(String((await r.json().catch(() => null))?.error || "Kick kanalı kaydedilemedi"));
+        void refreshBot();
+      }
       await patchSettings("panel", {
         obs: { host, port, password: effectivePassword, startHoldMin, endHoldMin },
       });
@@ -302,129 +264,90 @@ export default function ConnectionsHub({ onToast, master, obs: sharedObs, onObsP
     }
   };
 
-  const harvestCookies = async () => {
-    if (busy) return;
-    setBusy("cookie");
+  /** Kick'in resmi izin sayfası varsayılan tarayıcıda açılır; onaydan sonra bot kaydeder ve bağlanır. */
+  const kickGirisi = async (hedef: "bot" | "kanal") => {
     try {
-      const ok = await silentHarvest();
-      await refreshKick();
-      if (ok || kickReady) onToast("Kick oturumu alındı");
-    } catch {
-      /* bağlanana kadar toast yok */
-    } finally {
-      setBusy("");
-    }
-  };
-
-  const openKickLogin = async () => {
-    try {
-      const { openKickLoginPage, bindBotToKickChannel } = await import("../../lib/kickAuth");
-      // Native yol (Edge + CDP) çalıştıysa ayrıca tarayıcı açmıyoruz: eskiden
-      // ikisi birden çalışıp kullanıcıda iki giriş penceresi bırakıyordu.
-      let nativeAcildi = false;
-      try {
-        const { invoke } = await import("@tauri-apps/api/core");
-        try {
-          await invoke("open_kick_login_in_browser");
-          nativeAcildi = true;
-        } catch {
-          /* native açılamadı — aşağıda varsayılan tarayıcıya düşülür */
-        }
-      } catch {
-        /* Tauri dışı ortam */
+      const r = await fetch(`${await streamaxtBase()}/api/platforms/kick/auth-url?hedef=${hedef}`, { cache: "no-store" });
+      const d = await r.json();
+      if (!r.ok || !d.authUrl) {
+        onToast("Önce Kick Client ID gerekli: Bot › Platformlar › Kick");
+        onBotPlatformlar?.();
+        return;
       }
-      if (nativeAcildi) {
-        onToast("Kick girişi Edge'de açıldı — giriş yapınca oturum otomatik alınır");
-      } else {
-        const opened = await openKickLoginPage();
-        onToast(
-          opened === "opened"
-            ? "Kick girişi tarayıcıda açıldı"
-            : "Tarayıcı açılamadı — adres panoya kopyalandı: https://id.kick.com/login"
-        );
-      }
-      harvestLoop.current = true;
-      void (async () => {
-        for (let i = 0; i < 40 && harvestLoop.current; i++) {
-          await new Promise((r) => window.setTimeout(r, 2500));
-          const ok = await silentHarvest();
-          if (ok) {
-            harvestLoop.current = false;
-            const bound = await bindBotToKickChannel(kickSlug);
-            if (bound.ok) onToast(bound.message);
-            break;
-          }
-        }
-      })();
+      const sonuc = await openExternal(d.authUrl);
+      onToast(sonuc === "opened" ? "Kick izin sayfası tarayıcıda açıldı" : "Giriş adresi panoya kopyalandı");
     } catch {
-      /* pencere yoksa sessiz poll devam */
+      onToast("Bot kapalı — Kick girişi açılamadı");
     }
   };
 
   return (
     <div className={`mx-4 mb-3 mt-1.5 grid gap-3.5 ${master ? "lg:grid-cols-[minmax(0,1fr)_17rem_minmax(0,1fr)]" : "lg:grid-cols-2"}`}>
-      <section className="relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
+      <section className="relative flex flex-col rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel">
         <div>
           <header className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Kick Platformu</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-xs font-semibold text-white/80">
-                Oturum
-                <StatusDot ok={kickReady} />
-              </span>
-              <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-0.5 text-xs font-semibold text-white/80">
-                API
-                <StatusDot ok={!!kickApi.connected || botKick} />
-              </span>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Platformlar</h3>
             </div>
           </header>
-          <label className="block text-xs font-bold uppercase tracking-wider text-white/85">
-            Kanal Adı
+
+          <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2">
+              <Bot className="h-4 w-4 text-panel-accent" />
+              <span className="text-xs font-bold text-white">Bot hesabı</span>
+              <StatusDot ok={!!kick?.yazabilir} />
+              <span className="ml-auto truncate text-xs text-white/70">
+                {kick?.botHesabi ? `@${kick.botHesabi}` : kick?.yazabilir ? "kayıtlı" : "girilmedi"}
+              </span>
+              <button type="button" className="yya-btn-ghost h-8 shrink-0 px-2.5 text-xs font-bold" onClick={() => void kickGirisi("bot")}>
+                {kick?.yazabilir ? "Değiştir" : "Giriş yap"}
+              </button>
+            </div>
+            <p className="mt-1.5 text-[11px] text-panel-muted">Sohbete yazan hesap. Bir kez girilir, kayıtlı kalır.</p>
+          </div>
+
+          <div className="mt-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2">
+              <Radio className="h-4 w-4 text-panel-accent" />
+              <span className="text-xs font-bold text-white">Yayın kanalı</span>
+              <StatusDot ok={!!kick?.connected} />
+              <button type="button" className="yya-btn-ghost ml-auto h-8 shrink-0 px-2.5 text-xs font-bold" onClick={() => void kickGirisi("kanal")}>
+                {kick?.kanalHesabi ? `@${kick.kanalHesabi}` : "Kanala giriş"}
+              </button>
+            </div>
             <input
               className={inputCls}
               placeholder="ör. kanal-adi"
               value={kickSlug}
-              onChange={(e) => setKickSlug(e.target.value)}
+              onChange={(e) => {
+                slugYazildi.current = true;
+                setKickSlug(e.target.value);
+              }}
             />
-          </label>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="yya-btn-ghost h-9 flex-1 px-3.5 text-xs md:text-sm font-bold" onClick={() => void openKickLogin()}>
-              <Radio className="mr-1.5 inline h-4 w-4 text-panel-accent" />
-              Kick Girişi
-            </button>
-            <button
-              type="button"
-              disabled={!!busy}
-              className="yya-btn-accent h-9 flex-1 px-3.5 text-xs md:text-sm font-bold"
-              onClick={() => void harvestCookies()}
-            >
-              <Cookie className="mr-1.5 inline h-4 w-4" />
-              {busy === "cookie" ? "Alınıyor…" : "Çerez Al"}
-            </button>
+            <p className="mt-1.5 text-[11px] text-panel-muted">
+              {kick?.error || "Dinlenecek kanal; Kaydet ile değişir. Kanala giriş, temizleme ve başlık gibi yayıncı işleri için."}
+            </p>
           </div>
-          {kickSession.username ? (
-            <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-mono">@{kickSession.username}</span>
-            </div>
-          ) : null}
-          {/* Bot (StreamAxT) durumu ve bağlı olduğu platform oturumları. */}
-          <div className="mt-3">
-            <BotSessions />
+
+          <div className="mt-2.5 flex flex-col gap-1">
+            {DIGER_PLATFORMLAR.map(({ id, ad }) => {
+              const p = platformlar?.[id];
+              return (
+                <div key={id} className="flex items-center gap-2 rounded-lg px-1 py-1 text-xs text-white/85">
+                  {id !== "trovo" && id !== "tiktok" ? <PlatformLogo platform={id as "twitch"} /> : null}
+                  <span className="font-semibold">{ad}</span>
+                  <StatusDot ok={!!p?.connected} />
+                  <span className="truncate text-white/55">{p?.connected ? p.channel : ""}</span>
+                  <button type="button" className="yya-btn-ghost ml-auto h-7 shrink-0 px-2.5 text-[11px] font-bold" onClick={onBotPlatformlar}>
+                    {p?.connected ? "Yönet" : "Giriş"}
+                  </button>
+                </div>
+              );
+            })}
           </div>
+          {!platformlar && <p className="mt-2 text-[11px] text-amber-200">Bot kapalı: bağlantılar okunamıyor.</p>}
         </div>
-        {/* İki durum ayrı: çerez oturumu sohbeti okumaya, API yazmaya yarıyor. */}
-        {/* Bot Kick'e bağlıysa (Kick API'si botta) uyarı yanlış olurdu: sohbete bot yazar */}
-        {!kickApi.connected && !botKick && (
-          <p className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium leading-relaxed text-amber-200">
-            {kickApi.clientId
-              ? "Kick API bağlı değil — bot sohbete yazamaz. Bot sekmesinden Bağlan’a basıp Kick onayını tamamla."
-              : "Kick API bilgileri girilmemiş — bot sohbete yazamaz. Bot sekmesinden Client ID ve Secret’ı gir."}
-          </p>
-        )}
       </section>
 
       {master ? (

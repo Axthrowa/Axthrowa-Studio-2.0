@@ -296,7 +296,7 @@ export function useChatHub(
             parts,
             color: String(
               msg.color ||
-                (platform === "twitch" ? "#9146ff" : platform === "youtube" ? "#ff0000" : "#3EEDFE")
+                (platform === "twitch" ? "#9146ff" : platform === "youtube" ? "#ff0000" : "#53FC18")
             ),
             kind: "chat",
             badges,

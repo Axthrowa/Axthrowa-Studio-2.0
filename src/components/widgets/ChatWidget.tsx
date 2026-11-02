@@ -105,7 +105,7 @@ function resolveBadgeIcon(raw: string): BadgeIcon | null {
 function PlatformDot({ platform }: { platform?: string }) {
   const p = (platform || "kick").toLowerCase();
   const color =
-    p === "twitch" ? "#9146ff" : p === "youtube" ? "#ff0000" : "#3EEDFE";
+    p === "twitch" ? "#9146ff" : p === "youtube" ? "#ff0000" : "#53FC18";
   const label = p === "twitch" ? "T" : p === "youtube" ? "Y" : "K";
   return (
     <span

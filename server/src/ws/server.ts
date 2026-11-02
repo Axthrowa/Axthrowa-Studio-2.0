@@ -238,6 +238,7 @@ export class WebSocketHub {
 
     // 1.0 Moderasyon: silinen ileti / yasaklanan kullanıcı / temizlenen sohbet
     eventBus.on('chat_deleted', (veri: { platform: string; id: string }) => {
+      this.gecmis = this.gecmis.filter((m) => !(m.platform === veri.platform && m.id === veri.id));
       this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_deleted', data: veri });
     });
     eventBus.on('chat_user_removed', (veri: { platform: string; username: string }) => {

@@ -5,6 +5,7 @@ import { Lyrics } from '../components/widget/Lyrics'
 import { useConfig, DEFAULT_CONFIG } from '../context/ConfigContext'
 import { useNowPlaying } from '../hooks/useNowPlaying'
 import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
+import { sarkiBitti } from '../lib/lyrics'
 import { hostBaseUrl, loadOverlayConfig } from '../lib/hostBridge'
 
 /** `lyricsOnly`: /resonance/lyrics — yalnız senkron sözler (ayrı OBS kaynağı). */
@@ -184,16 +185,20 @@ export default function Overlay({ lyricsOnly = false }) {
             onVisibilityChange={onVisibilityChange}
           />
         )}
-        {config && (lyricsOnly || config.showLyrics) && isPlaying && (
-          lyricsOnly ? (
-            <Lyrics track={track} progressMs={progressMs} config={config} />
-          ) : (
-            // Söz satırı gelip gidince kart yerinden oynamasın
-            <div className="absolute left-1/2 top-full w-[640px] -translate-x-1/2">
+        {config &&
+          (lyricsOnly || config.showLyrics) &&
+          track &&
+          isPlaying &&
+          !sarkiBitti(track, progressMs) && (
+            lyricsOnly ? (
               <Lyrics track={track} progressMs={progressMs} config={config} />
-            </div>
-          )
-        )}
+            ) : (
+              // Söz satırı gelip gidince kart yerinden oynamasın
+              <div className="absolute left-1/2 top-full w-[640px] -translate-x-1/2">
+                <Lyrics track={track} progressMs={progressMs} config={config} />
+              </div>
+            )
+          )}
       </div>
     </div>
   )

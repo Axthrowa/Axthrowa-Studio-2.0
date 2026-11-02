@@ -345,7 +345,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       setKickFeedback({ type: 'error', text: data.error || 'Kick giriş adresi alınamadı.' });
       return;
     }
-    window.open(data.authUrl, '_blank', 'noopener');
+    openLink(data.authUrl, 'width=600,height=720');
   };
 
   const handleCopyOAuthLink = async () => {

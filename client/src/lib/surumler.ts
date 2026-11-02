@@ -20,7 +20,9 @@ export const SURUMLER: Surum[] = [
       'Oyunlar sayfasındaki ayarlar artık oyunlara uygulanır; lobiler görünür, iptal ve Chate Gönder düğmeleri çalışır',
       '!kes kırmızı Türkçe yazımla tanınır; yanlış yazım bombayı patlatmaz, süresi dolan bomba sohbete yazılır',
       '!yazitura 50 tura ve !slot hepsi geçerli; panelden açılan soygun bedava puan vermez',
-      'Tek URL widget listesinde simgeler; yeni logo'
+      'Tek URL widget listesinde simgeler; yeni logo',
+      'Botun Platformlar sayfasındaki Kick giriş düğmeleri uygulama içinde de açılır; ad okunamasa da kanal girişi kaydedilir, süresi dolan kanal girişinde bot hesabına dönülür',
+      'Tek tek silmede yalnız silinen mesajlar ekrandan kalkar, kaç mesajın kaldığı yazılır; Kick’te silinen mesaj panelden de kalkar'
     ]
   },
   {

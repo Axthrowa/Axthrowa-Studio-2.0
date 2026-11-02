@@ -261,6 +261,14 @@ describe('oyun düzeltmeleri', () => {
 });
 
 describe('panel ayarları oyuna ulaşır', () => {
+  it('kapalı oyun panelden de başlamaz', () => {
+    const s = gamesEngine.getSettings();
+    gamesEngine.updateSettings(panelden(s, { soygun: { enabled: false } }));
+    expect(gamesEngine.triggerGame('soygun')).toContain('kapalı');
+    expect(gamesEngine.panelLobileri()).toEqual([]);
+    gamesEngine.updateSettings(panelden(gamesEngine.getSettings(), { soygun: { enabled: true } }));
+  });
+
   it('kapatma ve sınırlar motora yazılır, panele aynı döner', () => {
     const s = gamesEngine.getSettings();
     const y = panelden(s, { soygun: { enabled: false, minBet: 30, maxBet: 10, cooldownSec: 60 }, kelime: { rewardPoints: 75, timeoutSec: 25 } });

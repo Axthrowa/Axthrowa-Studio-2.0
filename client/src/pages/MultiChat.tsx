@@ -18,7 +18,7 @@ type ElleEylem = 'timeout' | 'ban' | 'unban';
 const GECMIS_ACIK = { gecmis: true };
 const PLATFORM_ADI: Record<string, string> = { kick: 'Kick', twitch: 'Twitch', youtube: 'YouTube', trovo: 'Trovo' };
 
-type TemizlikSonucu = { ok: boolean; yontem?: string; silinen?: number; hata?: string };
+type TemizlikSonucu = { ok: boolean; yontem?: string; silinen?: number; kalan?: number; hata?: string };
 
 interface ViewerModalData {
   username: string;
@@ -130,7 +130,7 @@ export function MultiChat() {
       });
       const d = await res.json();
       const sonuclar = Object.entries((d.sonuclar || {}) as Record<string, TemizlikSonucu>).map(([p, s]) =>
-        s.ok ? `${PLATFORM_ADI[p] || p}: temizlendi${s.yontem === 'tek-tek' ? ` (${s.silinen} ileti silindi)` : ''}` : `${PLATFORM_ADI[p] || p}: ${s.hata || 'temizlenemedi'}`
+        s.ok ? `${PLATFORM_ADI[p] || p}: ${s.yontem === 'tek-tek' ? `${s.silinen} ileti silindi${s.kalan ? `, ${s.kalan} ileti kaldı` : ''}` : 'temizlendi'}` : `${PLATFORM_ADI[p] || p}: ${s.hata || 'temizlenemedi'}`
       );
       bildir(sonuclar.join(' · ') || d.hata || 'Sonuç alınamadı.');
     } catch {
@@ -340,6 +340,8 @@ export function MultiChat() {
                 className={`p-2.5 rounded-xl hover:bg-white/[0.05] transition-all flex items-start space-x-2.5 text-sm ${
                   msg.karaListede || msg.kalkanda ? 'bg-red-500/[0.06] opacity-60' : 'bg-white/[0.02]'
                 }`}
+                // Görünmeyen satırlar çizilmez: 500 iletide liste akıcı kalsın
+                style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 64px' }}
                 title={
                   msg.karaListede
                     ? 'Ortak kara listede: bot yok sayar, OBS sohbetinde gösterilmez'

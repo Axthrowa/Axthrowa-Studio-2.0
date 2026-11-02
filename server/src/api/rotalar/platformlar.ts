@@ -266,8 +266,14 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
         const kickRow = db.prepare("SELECT * FROM channels WHERE platform = 'kick'").get() as any;
         if (kickRow && kickHedef === 'kanal') {
           // Yayın kanalı girişi: kanal bu hesap olur, kayıtlı bot hesabına dokunulmaz (bot yoksa bu hesap yazar)
-          const u = await axios.get('https://api.kick.com/public/v1/users', { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 5000 });
-          const kanal = String(u.data?.data?.[0]?.name || '').toLowerCase();
+          // Ad okunamazsa kanal adı değişmez; giriş yine kaydedilir (eskiden panel "başarılı" der, jeton kaybolurdu)
+          let kanal = '';
+          try {
+            const u = await axios.get('https://api.kick.com/public/v1/users', { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 5000 });
+            kanal = String(u.data?.data?.[0]?.name || '').toLowerCase();
+          } catch (e) {
+            console.warn('[Kick OAuth] Kanal hesabının adı okunamadı:', hataMetni(e));
+          }
           db.prepare("UPDATE channels SET channel_name = COALESCE(NULLIF(?, ''), channel_name), kanal_token = ?, kanal_refresh_token = ?, kanal_token_expires_at = ?, is_active = 1 WHERE platform = 'kick'")
             .run(kanal, ...sifreleHepsi([accessToken, refreshToken]), expiresAt);
           if (!kickRow.token) db.prepare("UPDATE channels SET token = ?, refresh_token = ?, token_expires_at = ? WHERE platform = 'kick'").run(...sifreleHepsi([accessToken, refreshToken]), expiresAt);

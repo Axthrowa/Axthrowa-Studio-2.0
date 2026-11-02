@@ -19,6 +19,7 @@ import { platformManager } from '../../platforms/manager.js';
 import { yetenek } from '../../platforms/capabilities.js';
 import { chatRescueService } from '../../modules/ai/chat-rescue.js';
 import { eventBus } from '../../core/event-bus.js';
+import { platformlardaTemizle } from '../../modules/moderation/sohbet-temizle.js';
 
 const GECERLI_EYLEMLER = new Set(['warn', 'timeout', 'timeout_warn', 'delete', 'delete_warn']);
 const GECERLI_MUAF = new Set(['regular', 'sub', 'vip', 'og', 'mod', 'broadcaster']);
@@ -140,8 +141,6 @@ router.get('/chat/history', (req: Request, res: Response) => {
 
 // Platformda sohbet temizleme: yayıncı panelde hangi platformlar olduğunu seçer
 const TEMIZLENEBILIR = ['kick', 'twitch', 'youtube', 'trovo'] as const;
-const TEK_TEK_EN_COK = 50; // YouTube silme işlemi kota harcar
-
 router.get('/chat/clear-platforms', (req: Request, res: Response) => {
   const platformlar = TEMIZLENEBILIR.map((id) => {
     const p: any = platformManager.getPlatform(id);
@@ -153,33 +152,15 @@ router.get('/chat/clear-platforms', (req: Request, res: Response) => {
 router.post('/chat/clear-platforms', async (req: Request, res: Response) => {
   const secilen = (Array.isArray(req.body?.platforms) ? req.body.platforms : []).filter((x: unknown) => TEMIZLENEBILIR.includes(x as any));
   if (!secilen.length) return res.status(400).json({ ok: false, hata: 'Temizlenecek platform seçilmedi.' });
-  const sonuclar: Record<string, unknown> = {};
-  for (const id of secilen as string[]) {
-    const p: any = platformManager.getPlatform(id);
-    if (!p?.isConnected?.()) {
-      sonuclar[id] = { ok: false, hata: 'Bağlı değil.' };
-      continue;
-    }
-    const kimlikler = () => wsHub.sohbetGecmisi(id).filter((m) => !m.user?.id?.startsWith('streamaxt_')).map((m) => m.id);
-    let sonuc: any;
-    if (typeof p.sohbetiTemizle === 'function') {
-      sonuc = await p.sohbetiTemizle(kimlikler);
-    } else {
-      let silinen = 0;
-      let hata = '';
-      for (const mesajId of kimlikler().slice(-TEK_TEK_EN_COK)) {
-        const r = await p.deleteMessage(mesajId);
-        if (r.ok) silinen++;
-        else hata = r.hata || 'silinemedi';
-      }
-      sonuc = silinen > 0 ? { ok: true, yontem: 'tek-tek', silinen } : { ok: false, hata: hata || 'Silinecek ileti yok.' };
-    }
-    sonuclar[id] = sonuc;
-    if (sonuc.ok) {
+  const sonuclar = await platformlardaTemizle(secilen as string[], {
+    platform: (id) => platformManager.getPlatform(id) as any,
+    kimlikler: (id) => wsHub.sohbetGecmisi(id).filter((m) => !m.user?.id?.startsWith('streamaxt_')).map((m) => m.id),
+    temizlendi: (id) => {
       eventBus.emit('chat_cleared', { platform: id, channel: '' });
       shieldModeService.addAuditLog('CLEAR_CHAT', 'Yayıncı', `${id} sohbeti temizlendi`);
-    }
-  }
+    },
+    silindi: (id, mesajId) => eventBus.emit('chat_deleted', { platform: id, id: mesajId })
+  });
   res.json({ ok: true, sonuclar });
 });
 

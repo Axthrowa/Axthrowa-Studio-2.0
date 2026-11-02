@@ -1,3 +1,4 @@
+import type { SohbetTemizlemeSonucu } from '../modules/moderation/sohbet-temizle.js';
 import axios from 'axios';
 import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { KickRealtime } from './kick-realtime.js';
@@ -543,7 +544,11 @@ export class KickPlatform extends BasePlatform {
 
   /** Moderasyon ve kanal işleri: varsa yayın kanalının girişi, yoksa bot hesabı. */
   private async yetkiliToken(): Promise<string> {
-    if (this.kanalToken && this.kanalBitis && Date.now() > this.kanalBitis - 60_000) await this.kanalBelirteciniYenile();
+    if (this.kanalToken && this.kanalBitis && Date.now() > this.kanalBitis - 60_000 && !(await this.kanalBelirteciniYenile())) {
+      // Yenilenemeyen giriş bu oturumda bırakılır: bot moderatörse işler onunla sürer
+      console.warn('[Kick] Kanal girişinin süresi doldu; Bağlantılar > Kanala giriş ile yenileyin. Bot hesabı kullanılıyor.');
+      this.kanalToken = '';
+    }
     return (this.kanalToken || this.botToken || '').replace(/^Bearer\s+/i, '').trim();
   }
 
@@ -552,7 +557,7 @@ export class KickPlatform extends BasePlatform {
    * ChatroomClearEvent beklenir. Olay gelmezse (komut düz yazı sayıldıysa) `silinecekler`in
    * verdiği iletiler resmi silme ucuyla tek tek kaldırılır; yazılan `/clear` da onların içindedir.
    */
-  async sohbetiTemizle(silinecekler: () => string[]): Promise<{ ok: boolean; yontem?: 'komut' | 'tek-tek'; silinen?: number; hata?: string }> {
+  async sohbetiTemizle(silinecekler: () => string[]): Promise<SohbetTemizlemeSonucu> {
     const token = await this.yetkiliToken();
     if (!token) return { ok: false, hata: 'Kick hesabı bağlı değil.' };
     if (!this.broadcasterUserId) return { ok: false, hata: 'Kick kanalı bağlı değil.' };
@@ -579,15 +584,15 @@ export class KickPlatform extends BasePlatform {
     if (geldi && !komutHatasi) return { ok: true, yontem: 'komut' };
 
     const kimlikler = silinecekler().slice(-TEK_TEK_EN_COK);
-    let silinen = 0;
+    const silinenIdler: string[] = [];
     let silmeHatasi = '';
     for (const id of kimlikler) {
       const r = await this.deleteMessage(id);
-      if (r.ok) silinen++;
+      if (r.ok) silinenIdler.push(id);
       else silmeHatasi = r.hata || 'silinemedi';
       await new Promise((b) => setTimeout(b, TEK_TEK_ARALIK_MS));
     }
-    if (silinen > 0) return { ok: true, yontem: 'tek-tek', silinen };
+    if (silinenIdler.length) return { ok: true, yontem: 'tek-tek', silinenIdler };
     return { ok: false, hata: silmeHatasi || komutHatasi || 'Kick /clear komutunu işlemedi; silinecek ileti de yok.' };
   }
 

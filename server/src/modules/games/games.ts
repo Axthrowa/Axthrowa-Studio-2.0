@@ -199,16 +199,19 @@ export class GamesEngine {
   triggerGame(oyun: string): string {
     switch (PANEL_OYUNU[oyun] || oyun) {
       case 'trivia': {
-        const q = triviaEngine.startQuestion();
+        if (!this.settings.enabledGames.trivia) return 'Bil Bakalım kapalı: önce ayarlardan açın.';
+        const q = triviaEngine.startQuestion({ durationSec: this.settings.trivia.durationSeconds });
         return q ? `🧠 Bil Bakalım sorusu başlatıldı: "${q.question}"` : 'Soru havuzunda soru bulunamadı!';
       }
       case 'anagram': {
+        if (!this.settings.enabledGames.anagram) return 'Kelime Bulmacası kapalı: önce ayarlardan açın.';
         if (this.anagramAcikMi()) return `Zaten devam eden bir kelime bulmacası var: [ ${this.activeAnagram!.scrambled} ]`;
         const msg = this.anagramBaslat('all');
         eventBus.emitBotMessage({ platform: 'all', message: msg });
         return msg;
       }
       case 'heist': {
+        if (!this.settings.enabledGames.heist) return 'Banka Soygunu kapalı: önce ayarlardan açın.';
         if (this.activeHeist) return 'Zaten aktif bir soygun lobisi var!';
         const dur = (this.settings.heist.countdownSeconds || 35) * 1000;
         this.activeHeist = {
@@ -225,6 +228,7 @@ export class GamesEngine {
         return msg;
       }
       case 'race': {
+        if (!this.settings.enabledGames.race) return 'Sokak Yarışı kapalı: önce ayarlardan açın.';
         if (this.activeRace) return 'Zaten aktif bir yarış lobisi var!';
         const dur = (this.settings.race.countdownSeconds || 30) * 1000;
         this.activeRace = {

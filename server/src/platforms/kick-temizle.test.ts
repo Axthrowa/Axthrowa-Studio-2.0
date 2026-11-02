@@ -41,8 +41,20 @@ describe('Kick sohbetiTemizle', () => {
     del.mockResolvedValue({ status: 204 });
     const p = kickPlatform.sohbetiTemizle(() => ['a', 'b']);
     await vi.advanceTimersByTimeAsync(4000);
-    expect(await p).toEqual({ ok: true, yontem: 'tek-tek', silinen: 2 });
+    expect(await p).toEqual({ ok: true, yontem: 'tek-tek', silinenIdler: ['a', 'b'] });
     expect(del).toHaveBeenCalledTimes(2);
+  });
+
+  it('yenilenemeyen kanal girişi bırakılır, bot hesabı kullanılır', async () => {
+    k.kanalBitis = 1; // süresi çoktan dolmuş; yenileme jetonu da yok
+    post.mockImplementation(async () => {
+      setTimeout(() => k.temizlemeBekleyen?.(), 100);
+      return { status: 200 };
+    });
+    const p = kickPlatform.sohbetiTemizle(() => []);
+    await vi.advanceTimersByTimeAsync(200);
+    await p;
+    expect(post.mock.calls[0][2].headers.Authorization).toBe('Bearer bot');
   });
 
   it('jeton yoksa denemez', async () => {

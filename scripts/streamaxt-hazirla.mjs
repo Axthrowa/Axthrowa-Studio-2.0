@@ -59,10 +59,9 @@ ${palette("pink", ZUMRUT)}
 }
 `;
 
-// Sabit yazılmış mor tonları (hex / rgba). Twitch moru dahil: kullanıcı tüm morların
-// turkuaz olmasını istedi.
+// Sabit yazılmış mor tonları (hex / rgba). Twitch moru (#9146ff) dışarıda: platform logoları orijinal renkte kalmalı.
 const HEX = {
-  "#9146ff": "#22d3ee", "#8b5cf6": "#22d3ee", "#a855f7": "#22d3ee", "#7c3aed": "#0aa0b8",
+  "#8b5cf6": "#22d3ee", "#a855f7": "#22d3ee", "#7c3aed": "#0aa0b8",
   "#6366f1": "#2dd4bf", "#a78bfa": "#67e8f9", "#d946ef": "#2dd4bf", "#c084fc": "#67e8f9",
   "#ec4899": "#34d399", "#f472b6": "#6ee7b7",
 };
@@ -162,7 +161,7 @@ if (!app.includes(tabState)) {
     '<header className="h-16 border-b',
     `<header style={embedded ? { display: 'none' } : undefined} className="h-16 border-b`,
   );
-  app = app.replace('<div className="flex-1 ml-64 flex flex-col min-h-screen">', "<div className={(embedded ? 'flex-1' : 'flex-1 ml-64') + ' flex flex-col min-h-screen'}>");
+  app = app.replace('<div className="flex-1 ml-64 flex flex-col min-h-screen">', "<div className={(embedded ? 'flex-1 min-w-0' : 'flex-1 min-w-0 ml-64') + ' flex flex-col min-h-screen'}>");
   fs.writeFileSync(appTsx, app);
   console.log("[streamaxt] gömme yaması uygulandı (#sekme + ?embed=1).");
 }

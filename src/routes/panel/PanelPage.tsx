@@ -31,7 +31,9 @@ import BotSessions from "../../components/panel/BotSessions";
 import CopyUrl from "@/components/axthrowa/CopyUrl";
 import HotkeyInput from "../../components/panel/HotkeyInput";
 import LayoutEditor from "../../components/panel/LayoutEditor";
-import NavTabBar, { applyTabOrder, CANLI_SEKME, HAZIRLIK_SEKME, type StudioModul } from "../../components/panel/NavTabBar";
+import NavTabBar from "../../components/panel/NavTabBar";
+import BotEkrani from "../../components/panel/BotEkrani";
+import { menuGrubuBul } from "../../lib/anaMenu";
 import DurumCubugu from "../../components/panel/DurumCubugu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import AppSettingsPage from "../../components/panel/AppSettingsPage";
@@ -191,27 +193,7 @@ export default function PanelPage() {
   );
   const [screen, setScreen] = useState<ScreenId>("starting");
   // Müzik / Ayarlar ekran ayarlarından bağımsız; ScreenId şemasını kirletmez.
-  const [activeNav, setActiveNav] = useState<NavId | ScreenId>(() => {
-    try {
-      return localStorage.getItem("yya.modul") === "hazirlik" ? "starting" : "control";
-    } catch {
-      return "control";
-    }
-  });
-  const [modul, setModul] = useState<StudioModul>(() => {
-    try {
-      return localStorage.getItem("yya.modul") === "hazirlik" ? "hazirlik" : "canli";
-    } catch {
-      return "canli";
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem("yya.modul", modul);
-    } catch {
-      /* depolama kapalı */
-    }
-  }, [modul]);
+  const [activeNav, setActiveNav] = useState<NavId | ScreenId>("control");
   // Bot sekmesinde açılacak StreamAxT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
   const [botSekme, setBotSekme] = useState<string | undefined>(undefined);
   useEffect(() => {
@@ -923,7 +905,6 @@ export default function PanelPage() {
       }
       if (navHint === "starting" || navHint === "ending" || navHint === "brb" || navHint === "chat") {
         forceNavRef.current = navHint;
-        setModul(navHint === "chat" ? "canli" : "hazirlik");
         setActiveNav(navHint);
         setScreen(navHint);
         if (navHint === "ending") {
@@ -940,7 +921,6 @@ export default function PanelPage() {
           endingStopDoneRef.current = false;
           streamWatchArmedRef.current = true;
           forceNavRef.current = "ending";
-          setModul("hazirlik");
           setActiveNav("ending");
           setScreen("ending");
         }
@@ -1060,7 +1040,6 @@ export default function PanelPage() {
       return { ...prev, tabs: { ...prev.tabs, order, hidden } };
     });
     forceNavRef.current = "ending";
-    setModul("hazirlik");
     setActiveNav("ending");
     setScreen("ending");
     try {
@@ -1541,18 +1520,17 @@ export default function PanelPage() {
     [layout.tabs]
   );
 
+  // Açık sayfa menüde gizlendiyse ilk görünen sayfaya geç
   useEffect(() => {
-    const kume = modul === "canli" ? CANLI_SEKME : HAZIRLIK_SEKME;
-    if (kume.includes(String(activeNav)) && visibleTabs.includes(String(activeNav))) return;
-    const next = kume.find((id) => visibleTabs.includes(id));
-    if (!next || next === activeNav) return;
+    if (activeNav === "obs" || visibleTabs.includes(String(activeNav))) return;
+    const next = visibleTabs[0];
+    if (!next) return;
     setActiveNav(next as NavId);
     if (next === "starting" || next === "ending" || next === "brb" || next === "chat") setScreen(next);
-  }, [modul, activeNav, visibleTabs]);
+  }, [activeNav, visibleTabs]);
 
   useEffect(() => {
     if (activeNav === "obs") {
-      setModul("hazirlik");
       setActiveNav("profile");
     }
   }, [activeNav]);
@@ -1564,7 +1542,13 @@ export default function PanelPage() {
   }, [visibleTabs]);
 
   const sayfaMeta = DEFAULT_TABS.find((tab) => tab.id === activeNav);
-  const sayfaAdi = (sayfaMeta?.labelKey && tt(sayfaMeta.labelKey as MsgKey)) || sayfaMeta?.label || String(activeNav);
+  const botGrubu = botTab ? menuGrubuBul("bot", botSekme) : null;
+  const sayfaAdi =
+    botGrubu === "etkilesim"
+      ? tt("nav.grup.etkilesim")
+      : botGrubu === "sahne"
+        ? tt("nav.overlaylar")
+        : (sayfaMeta?.labelKey && tt(sayfaMeta.labelKey as MsgKey)) || sayfaMeta?.label || String(activeNav);
   const sahneSekmesi = activeNav === "starting" || activeNav === "ending" || activeNav === "brb";
   const durumPort = (server?.baseUrl || API_BASE).split(":").pop()?.replace(/\D/g, "") || "8843";
 
@@ -1580,31 +1564,21 @@ export default function PanelPage() {
       <MusicBridge />
       <NavTabBar
         brandTitle={tt("brand.title")}
-        modul={modul}
-        onModul={(m) => {
-          setModul(m);
-          const ids = m === "canli" ? CANLI_SEKME : HAZIRLIK_SEKME;
-          if (ids.includes(String(activeNav)) && visibleTabs.includes(String(activeNav))) return;
-          const next = (ids.find((id) => visibleTabs.includes(id)) || ids[0]) as NavId;
-          setActiveNav(next);
-          if (next === "starting" || next === "ending" || next === "brb" || next === "chat") setScreen(next);
-        }}
         visibleTabs={visibleTabs}
         activeNav={String(activeNav)}
-        layoutOrder={layout.tabs.order}
-        dragHint={tt("nav.dragHint")}
+        botSayfa={botSekme}
         customizeLabel={tt("nav.customize")}
         editLayout={editLayout}
         onToggleEdit={() => setEditLayout((v) => !v)}
-        labelFor={(id) => {
-          const meta = DEFAULT_TABS.find((t) => t.id === id);
-          const key = (meta?.labelKey || "") as MsgKey;
+        labelFor={(s) => {
+          const meta = DEFAULT_TABS.find((t) => t.id === s.nav);
+          const key = (s.adAnahtari || meta?.labelKey || "") as MsgKey;
           const table = prefs.locale === "en" ? en : tr;
-          return (key && table[key]) || meta?.label || id;
+          return (key && table[key]) || meta?.label || s.nav;
         }}
-        onSelect={(id) => {
-          setModul(CANLI_SEKME.includes(id) ? "canli" : "hazirlik");
+        onSelect={({ nav: id, botSayfa }) => {
           setActiveNav(id);
+          setBotSekme(botSayfa);
           forceNavRef.current = null;
           if (id === "starting" || id === "ending" || id === "brb" || id === "chat") {
             setScreen(id);
@@ -1617,7 +1591,6 @@ export default function PanelPage() {
             startingSwitchDoneRef.current = false;
           }
         }}
-        onReorder={(order) => setLayout((prev) => applyTabOrder(prev, order))}
       >
         <LayoutEditor
           layout={layout}
@@ -1657,7 +1630,7 @@ export default function PanelPage() {
             <span>{tt("brand.saveNow")}</span>
           </button>
           {/* Canlı ekranının düğmesi kendi üst şeridinde */}
-          {modul === "canli" && !controlTab ? (
+          {chatTab || musicTab || soundsTab ? (
             <button
               type="button"
               disabled={masterBusy}
@@ -1690,7 +1663,6 @@ export default function PanelPage() {
             <ConnectionsHub
               onBotPlatformlar={() => {
                 setBotSekme("platforms");
-                setModul("hazirlik");
                 setActiveNav("bot");
               }}
               onToast={showToast}
@@ -1704,7 +1676,6 @@ export default function PanelPage() {
               <BotSessions
                 onAc={() => {
                   setBotSekme("platforms");
-                  setModul("hazirlik");
                   setActiveNav("bot");
                 }}
               />
@@ -1747,7 +1718,6 @@ export default function PanelPage() {
             onYayin={() => void runMasterStream()}
             onBot={(sayfa) => {
               setBotSekme(sayfa);
-              setModul("hazirlik");
               setActiveNav("bot");
             }}
           />
@@ -1770,12 +1740,13 @@ export default function PanelPage() {
           />
         </div>
       ) : botTab ? (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <StreamAxtHost key={botSekme || "bot"} onToast={showToast} tab={botSekme} onOpenMusic={() => {
-            setModul("canli");
-            setActiveNav("music");
-          }} />
-        </div>
+        botGrubu === "bot" ? (
+          <BotEkrani sayfa={botSekme} onSayfa={setBotSekme} onToast={showToast} onOpenMusic={() => setActiveNav("music")} />
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <StreamAxtHost onToast={showToast} tab={botSekme} embed onOpenMusic={() => setActiveNav("music")} />
+          </div>
+        )
       ) : chatTab && !chatOverlaySettings ? (
         // Canlı Chat = StreamAxT'nin Multi-Chat'i (çapraz sohbet, izleyici kartları).
         // Panelin kendi sohbet KATMANI ayarlarına düğmeyle dönülür.
@@ -1791,7 +1762,6 @@ export default function PanelPage() {
             </button>
           </div>
           <StreamAxtHost onToast={showToast} tab="multichat" embed onOpenMusic={() => {
-            setModul("canli");
             setActiveNav("music");
           }} />
         </div>
@@ -3592,7 +3562,6 @@ export default function PanelPage() {
             type="button"
             className="w-full rounded-md bg-panel-accent px-2 py-2 text-sm text-black"
             onClick={() => {
-              setModul("canli");
               setActiveNav("music");
             }}
           >
@@ -3680,7 +3649,6 @@ export default function PanelPage() {
               type="button"
               className="mt-2 w-full rounded-md bg-panel-accent px-3 py-2 text-sm font-medium text-[#08131c]"
               onClick={() => {
-                setModul("hazirlik");
                 setActiveNav("hotkeys");
               }}
             >

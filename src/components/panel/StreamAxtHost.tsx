@@ -34,6 +34,9 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [error, setError] = useState<string | null>(null);
   const [frameKey, setFrameKey] = useState(0);
+  // Sayfa gelene kadar boş ekran yerine yükleniyor yazısı (#sekme değişimi sayfayı yeniden yüklemez)
+  const [yuklendi, setYuklendi] = useState(false);
+  useEffect(() => setYuklendi(false), [frameKey, embed]);
   const triedAuto = useRef(false);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const expectedOrigin = st ? frameOrigin(st.url) : null;
@@ -143,8 +146,9 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-2 px-3 py-1.5 text-[11px] text-white/70">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      {/* Gömülü sayfalarda sunucu şeridi gerekmez: bot çalışıyorsa yer kaplamasın ("Tüm ayarlar"da görünür) */}
+      <div className={cn("flex shrink-0 items-center gap-2 px-3 py-1.5 text-[11px] text-white/70", embed && st.running && "hidden")}>
         <span
           className={cn(
             "h-2 w-2 rounded-full",
@@ -202,9 +206,16 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
         </pre>
       )}
 
+      {st.running && !yuklendi ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 text-sm text-panel-muted">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Yükleniyor…
+        </div>
+      ) : null}
       {st.running ? (
         <iframe
           key={frameKey}
+          onLoad={() => setYuklendi(true)}
           ref={frameRef}
           title="StreamAxT"
           src={frameUrl(st.url, tab, embed)}

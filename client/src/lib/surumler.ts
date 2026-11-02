@@ -11,6 +11,19 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.9.4',
+    ad: 'Kelime Avı',
+    tarih: '2026-11-02',
+    notlar: [
+      'Emote kombo: gelen emote’lar ekranın rastgele yerinden ortadakine uçar; bitince her yöne süzülüp ekrandan çıkar',
+      '!kelime: 150’ye yakın kelime, ipucu ve her turda gerçekten karışık harfler; süre dolunca cevap söylenir',
+      'Oyunlar sayfasındaki ayarlar artık oyunlara uygulanır; lobiler görünür, iptal ve Chate Gönder düğmeleri çalışır',
+      '!kes kırmızı Türkçe yazımla tanınır; yanlış yazım bombayı patlatmaz, süresi dolan bomba sohbete yazılır',
+      '!yazitura 50 tura ve !slot hepsi geçerli; panelden açılan soygun bedava puan vermez',
+      'Tek URL widget listesinde simgeler; yeni logo'
+    ]
+  },
+  {
     surum: '1.9.3',
     ad: 'Soru Sayısı',
     tarih: '2026-11-02',

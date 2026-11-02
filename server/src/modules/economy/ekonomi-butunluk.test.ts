@@ -30,6 +30,7 @@ vi.mock('../games/trivia-engine.js', () => ({ triviaEngine: { stopGame: () => {}
 import { db } from '../../db/index.js';
 import { cuzdanAdi, DUELLO_SURESI_MS, economy } from './economy.js';
 import { gamesEngine } from '../games/games.js';
+import { panelAyari, panelden } from '../games/oyun-ayarlari.js';
 import { seviyeler } from '../levels/levels.js';
 import { ttsEngine } from '../tts/tts.js';
 import { giveaway } from '../giveaways/giveaways.js';
@@ -205,5 +206,68 @@ describe('ücretli çekiliş', () => {
     db.prepare("INSERT INTO giveaway_entries (id, giveaway_id, username, platform, entered_at) VALUES ('e1', ?, 'ali', 'kick', 1)").run(g.id);
     giveaway.createGiveaway('Yeni', '!katil', 1, 0);
     expect(economy.getUserPoints('ali')).toBe(500);
+  });
+});
+
+describe('oyun düzeltmeleri', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('!kes kırmızı Türkçe yazımla tanınır, renksiz kes bombayı patlatmaz', () => {
+    economy.addPoints('bombaci', 1000);
+    vi.spyOn(Math, 'random').mockReturnValue(0); // doğru kablo: kirmizi
+    expect(gamesEngine.handleBomb(mesaj('bombaci'), [])).toContain('BOMBA KURULDU');
+    expect(gamesEngine.handleBomb(mesaj('bombaci'), [])).toContain('zaten kurulu');
+    expect(gamesEngine.handleBomb(mesaj('bombaci'), ['kes', undefined as unknown as string])).toContain('hangi kablo');
+    expect(gamesEngine.handleBomb(mesaj('bombaci'), ['kes', 'kırmızı'])).toContain('imha etti');
+    vi.restoreAllMocks();
+  });
+
+  it('süresi dolan bomba sohbete yazılır ve yenisi kurulabilir', () => {
+    economy.addPoints('gec', 1000);
+    gamesEngine.handleBomb(mesaj('gec'), []);
+    vi.advanceTimersByTime(31_000);
+    expect(gamesEngine.handleBomb(mesaj('gec'), [])).toContain('BOMBA KURULDU');
+    gamesEngine.handleBomb(mesaj('gec'), ['kes', 'mavi']);
+  });
+
+  it('yazı-tura miktar önce yazılınca da çalışır', () => {
+    economy.addPoints('para', 1000);
+    expect(gamesEngine.handleCoinFlip(mesaj('para'), ['50', 'TURA'])).toContain('Para havaya atıldı');
+  });
+
+  it('panelden başlatılan soygun kimseye bedava puan yazmaz, boş lobi kapanır', () => {
+    const once = economy.getUserPoints('yayinci');
+    gamesEngine.triggerGame('soygun');
+    expect(gamesEngine.panelLobileri()[0]).toMatchObject({ game: 'soygun', totalPot: 0 });
+    vi.advanceTimersByTime(60_000);
+    expect(gamesEngine.panelLobileri()).toEqual([]);
+    expect(economy.getUserPoints('yayinci')).toBe(once);
+  });
+
+  it('panel kelime oyununu adıyla başlatır, harfler kelimenin kendisi değildir', () => {
+    const m = gamesEngine.triggerGame('kelime');
+    expect(m).toContain('KELİME BULMACASI');
+    const karisik = m.match(/\[ (.+?) \]/)?.[1] || '';
+    expect(karisik).toMatch(/ - /);
+    expect(gamesEngine.cancelLobby('kelime')).toBe(true);
+    expect(gamesEngine.cancelLobby('kelime')).toBe(false);
+  });
+
+  it('!slot hepsi kabul edilir', () => {
+    economy.addPoints('slotcu', 100);
+    expect(economy.handleSlots(mesaj('slotcu'), ['hepsi'])).toContain('🎰');
+  });
+});
+
+describe('panel ayarları oyuna ulaşır', () => {
+  it('kapatma ve sınırlar motora yazılır, panele aynı döner', () => {
+    const s = gamesEngine.getSettings();
+    const y = panelden(s, { soygun: { enabled: false, minBet: 30, maxBet: 10, cooldownSec: 60 }, kelime: { rewardPoints: 75, timeoutSec: 25 } });
+    expect(y.enabledGames.heist).toBe(false);
+    expect(y.heist).toMatchObject({ minBet: 30, maxBet: 30, countdownSeconds: 60 });
+    expect(y.anagram).toEqual({ rewardPoints: 75, durationSeconds: 25 });
+    expect(panelAyari(y).soygun).toEqual({ enabled: false, minBet: 30, maxBet: 30, cooldownSec: 60 });
+    expect(y.enabledGames.dice).toBe(s.enabledGames.dice);
   });
 });

@@ -250,7 +250,8 @@ export function App() {
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/[0.06] bg-[#0b0d12] flex flex-col justify-between fixed inset-y-0 left-0 z-30">
         <div>
-          <div className="px-5 pt-5 pb-3 flex items-baseline gap-2">
+          <div className="px-5 pt-5 pb-3 flex items-center gap-2">
+            <img src="/logo.png" alt="" className="w-6 h-6 rounded-md" />
             <span className="text-[15px] font-semibold text-white">{BRAND.name}</span>
             <span className="text-xs text-gray-500" title={SURUMLER[0].ad}>{SURUMLER[0].surum}</span>
           </div>

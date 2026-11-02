@@ -32,7 +32,7 @@ describe('önizleme odağı', () => {
   });
 });
 
-import { emoteBoyu, patlamaParcalari } from '../widgets/EmoteComboWidget.js';
+import { emoteBoyu, patlamaParcalari, toplanmaBaslangici } from '../widgets/EmoteComboWidget.js';
 
 describe('emote kombo', () => {
   it('geldikçe büyür, kutuya sığacak kadarla sınırlı', () => {
@@ -43,12 +43,19 @@ describe('emote kombo', () => {
     expect(emoteBoyu(100, 50, 2, 50)).toBe(100);
   });
 
-  it('patlama parçaları kutunun içinde kalır ve yönleri rastgele', () => {
-    const p = patlamaParcalari(10, 400, 200);
-    expect(p.length).toBe(26);
-    expect(p.every((x) => Math.abs(x.dx) <= 200 * 1.05 && Math.abs(x.dy) <= 100 * 1.35)).toBe(true);
-    const uzaklik = p.map((x) => Math.hypot(x.dx / 200, x.dy / 100));
-    expect(Math.max(...uzaklik) - Math.min(...uzaklik)).toBeGreaterThan(0.1);
+  it('dağılan parçalar ekrandan çıkar ve her yöne gider', () => {
+    const p = patlamaParcalari(10, 400, 200, 50);
+    expect(p.length).toBe(28);
+    // Her parça kutunun dışında biter (emote yarım boyuyla da taşmış olmalı)
+    expect(p.every((x) => Math.abs(x.dx) > 200 + 25 * x.olcek || Math.abs(x.dy) > 100 + 25 * x.olcek)).toBe(true);
+    expect(new Set(p.map((x) => `${Math.sign(x.dx)},${Math.sign(x.dy)}`)).size).toBe(4);
+  });
+
+  it('toplanan emote kutunun dışından başlar', () => {
+    for (let i = 0; i < 50; i++) {
+      const g = toplanmaBaslangici(i, 400, 200, 50);
+      expect(Math.abs(g.dx) >= 200 || Math.abs(g.dy) >= 100).toBe(true);
+    }
   });
 });
 

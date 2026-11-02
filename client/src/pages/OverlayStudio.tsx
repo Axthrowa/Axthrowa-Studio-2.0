@@ -293,6 +293,14 @@ const TEST_ADI: Record<string, string> = {
   scoreboard: 'scoreboard'
 };
 
+/** Widget seçme listesinde adın yanındaki simge */
+const KATMAN_EMOJISI: Record<string, string> = {
+  chat: '💬', alerts: '🔔', goals: '🎯', subathon: '⏳', trivia: '🧠', eventLabels: '🏷️', theCup: '🏆', polls: '📊',
+  wheel: '🎡', hypeTrain: '🚂', nowPlaying: '🎵', emoteCombo: '🔥', lyrics: '🎤', king: '👑', jumpScare: '👻',
+  activityFeed: '📰', giveaway: '🎁', pinned: '📌', shoutout: '📣', viewerCounter: '👀', rankings: '🥇', loyalty: '🎟️',
+  kappagen: '🎉', endCredits: '🎬', tts: '🗣️', soundBoard: '🎛️', muzikVideo: '📺', wordCloud: '☁️', scoreboard: '🏅'
+};
+
 // Tek URL katmanı → ayar kimliği. Eskiden elle yazılmış 14 katmanla sınırlıydı: sabitlenmiş mesaj, shoutout,
 // izleyici sayacı, sıralama, sadakat, jenerik vb. seçilince ayar paneli hiç açılmıyordu. Artık galeri
 // eşlemesinden türetilir; aşağıdaki elle yazılanlar önceliklidir.
@@ -1250,7 +1258,7 @@ export function OverlayStudio() {
                     onClick={() => void katmaniTestEt(k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]])}
                     className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
                   >
-                    {k.etiket}
+                    {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
                   </button>
                 ))}
               </div>
@@ -1381,24 +1389,24 @@ export function OverlayStudio() {
                   onChange={e => setSelectedCanvasWidget(e.target.value)}
                   className="w-full bg-[#12141a] border border-white/15 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500"
                 >
-                  <option value="chat">Canlı Sohbet (Chat)</option>
-                  <option value="alerts">AlertBox Bildirimleri</option>
-                  <option value="goals">Hedef Çubuğu (Goal)</option>
-                  <option value="subathon">Subathon Sayacı</option>
-                  <option value="trivia">Bil Bakalım</option>
-                  <option value="eventLabels">Event Labels (Üst Şerit)</option>
-                  <option value="theCup">The Cup (Jeton Kavanozu)</option>
-                  <option value="polls">Canlı Anket (Polls)</option>
-                  <option value="wheel">Çarkıfelek</option>
-                  <option value="hypeTrain">Hype Treni</option>
-                  <option value="nowPlaying">Resonance (şu an çalan)</option>
-                  <option value="emoteCombo">Emote Kombo</option>
-                  <option value="lyrics">Canlı Şarkı Sözleri (Lyrics)</option>
-                  <option value="king">Tahtın Kralı (King System)</option>
-                  <option value="jumpScare">JumpScare Katmanı</option>
+                  <option value="chat">💬 Canlı Sohbet (Chat)</option>
+                  <option value="alerts">🔔 AlertBox Bildirimleri</option>
+                  <option value="goals">🎯 Hedef Çubuğu (Goal)</option>
+                  <option value="subathon">⏳ Subathon Sayacı</option>
+                  <option value="trivia">🧠 Bil Bakalım</option>
+                  <option value="eventLabels">🏷️ Event Labels (Üst Şerit)</option>
+                  <option value="theCup">🏆 The Cup (Jeton Kavanozu)</option>
+                  <option value="polls">📊 Canlı Anket (Polls)</option>
+                  <option value="wheel">🎡 Çarkıfelek</option>
+                  <option value="hypeTrain">🚂 Hype Treni</option>
+                  <option value="nowPlaying">🎵 Resonance (şu an çalan)</option>
+                  <option value="emoteCombo">🔥 Emote Kombo</option>
+                  <option value="lyrics">🎤 Canlı Şarkı Sözleri (Lyrics)</option>
+                  <option value="king">👑 Tahtın Kralı (King System)</option>
+                  <option value="jumpScare">👻 JumpScare Katmanı</option>
                   {KATMANLAR.slice(KATMANLAR.findIndex((k) => k.anahtar === 'activityFeed')).filter((k) => k.anahtar !== 'jumpScare').map((k) => (
                     <option key={k.anahtar} value={k.anahtar}>
-                      ➕ {k.etiket}
+                      {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
                     </option>
                   ))}
                 </select>

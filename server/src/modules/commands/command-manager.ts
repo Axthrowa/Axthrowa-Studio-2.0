@@ -374,6 +374,14 @@ export class CommandManager {
 
       case 'duello':
       case 'duel':
+        // Düello kendi motorunda olduğundan panel ayarı burada uygulanır
+        {
+          const ayar = gamesEngine.getSettings();
+          if (!ayar.enabledGames.duel) return `@${message.user.displayName}, Düello şu anda devre dışı bırakılmış. ⏸️`;
+          const miktar = parseInt(args[1], 10);
+          if (miktar < ayar.duel.minBet) return `@${message.user.displayName}, minimum düello bahsi: ${ayar.duel.minBet} Puan!`;
+          if (miktar > ayar.duel.maxBet) return `@${message.user.displayName}, maksimum düello bahsi: ${ayar.duel.maxBet} Puan!`;
+        }
         return economy.handleDuel(message, args);
 
       case '8ball':
@@ -841,6 +849,9 @@ export class CommandManager {
       case 'trivia':
       case 'bilgi':
       case 'bilgiyarismasi': {
+        const oyunAyari = gamesEngine.getSettings();
+        if (!oyunAyari.enabledGames.trivia) return `@${message.user.displayName}, Bil Bakalım şu anda devre dışı bırakılmış. ⏸️`;
+        const sureSn = oyunAyari.trivia.durationSeconds;
         const state = triviaEngine.getState();
         if (state.status === 'question_active') {
           return `@${message.user.displayName}, zaten aktif bir soru devam ediyor! Kalan süre: ${state.remainingSeconds} sn. Cevap için sohbete A, B, C veya D yazın!`;
@@ -855,10 +866,10 @@ export class CommandManager {
         const { kategori, adet } = triviaArgumanlari(args, parseTriviaCategory);
         const yetkili = message.user.isBroadcaster || message.user.isMod;
         if (adet > 1 && yetkili) {
-          triviaEngine.startTournament(kategori, adet, 20);
+          triviaEngine.startTournament(kategori, adet, sureSn);
           return null;
         }
-        const q = triviaEngine.startQuestion({ category: kategori });
+        const q = triviaEngine.startQuestion({ category: kategori, durationSec: sureSn });
         if (!q) return `@${message.user.displayName}, soru havuzunda uygun soru bulunamadı.`;
         return adet > 1 ? `@${message.user.displayName}, birden çok soruyu yalnız yayıncı ve moderatörler açabilir; tek soru açıldı.` : null;
       }
@@ -879,7 +890,7 @@ export class CommandManager {
         }
 
         const secim = triviaArgumanlari(args, parseTriviaCategory, 5);
-        triviaEngine.startTournament(secim.kategori, secim.adet, 20);
+        triviaEngine.startTournament(secim.kategori, secim.adet, gamesEngine.getSettings().trivia.durationSeconds);
         return null;
       }
 

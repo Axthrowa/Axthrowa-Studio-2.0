@@ -7,6 +7,8 @@ import { bahisOku, SLOT_UCLU_CARPAN, SLOT_IKILI_CARPAN } from '../games/bahis.js
 
 interface ActiveDuel {
   challenger: string;
+  /** Sohbette yazılacak ad: `challenger` cüzdan adıdır, Twitch'te "twitch:ali" görünüyordu */
+  challengerAd: string;
   target: string;
   amount: number;
   platform: string;
@@ -472,15 +474,13 @@ export class EconomyEngine {
 
   handleSlots(message: ChatMessagePayload, args: string[]): string {
     const user = this.getUser(message.platform, message.user.username, message.user.displayName);
-    const amount = parseInt(args[0], 10);
-
-    if (isNaN(amount) || amount <= 0) {
-      return `@${message.user.displayName}, lütfen oynamak istediğin miktarı yaz! Örnek: !slot 25`;
-    }
-
-    if (user.points < amount) {
-      return `@${message.user.displayName}, yeterli puanın yok! Bakiyen: ${user.points}`;
-    }
+    // Ruletle aynı kural: "!slot hepsi" de geçerli
+    const bahis = bahisOku(args[0], user.points, {
+      kisi: message.user.displayName,
+      ornek: 'lütfen oynamak istediğin miktarı yaz! Örnek: !slot 25 veya !slot hepsi'
+    });
+    if ('hata' in bahis) return bahis.hata;
+    const amount = bahis.miktar;
 
     const symbols = ['🍒', '🍋', '🔔', '💎', '7️⃣'];
     const s1 = symbols[Math.floor(Math.random() * symbols.length)];
@@ -547,7 +547,7 @@ export class EconomyEngine {
       }
       if (this.getUserPoints(duel.challenger) < duel.amount) {
         this.activeDuels.delete(reverseKey);
-        return `@${message.user.displayName}, @${duel.challenger} artık ${duel.amount} puana sahip değil; düello iptal.`;
+        return `@${message.user.displayName}, @${duel.challengerAd} artık ${duel.amount} puana sahip değil; düello iptal.`;
       }
       this.activeDuels.delete(reverseKey);
 
@@ -555,16 +555,17 @@ export class EconomyEngine {
       if (challengerWins) {
         this.addPoints(duel.challenger, duel.amount);
         this.removePoints(cuzdanAdi(message.platform, message.user.username), duel.amount);
-        return `⚔️ DÜELLO BİTTİ! @${duel.challenger} ile @${message.user.displayName} arasındaki kılıç savaşını @${duel.challenger} kazandı ve ${duel.amount * 2} puanı kaptı! 🏆`;
+        return `⚔️ DÜELLO BİTTİ! @${duel.challengerAd} ile @${message.user.displayName} arasındaki kılıç savaşını @${duel.challengerAd} kazandı ve ${duel.amount * 2} puanı kaptı! 🏆`;
       } else {
         this.addPoints(cuzdanAdi(message.platform, message.user.username), duel.amount);
         this.removePoints(duel.challenger, duel.amount);
-        return `⚔️ DÜELLO BİTTİ! @${message.user.displayName}, @${duel.challenger} karşısında galip geldi ve ${duel.amount * 2} puanı kaptı! 🏆`;
+        return `⚔️ DÜELLO BİTTİ! @${message.user.displayName}, @${duel.challengerAd} karşısında galip geldi ve ${duel.amount * 2} puanı kaptı! 🏆`;
       }
     }
 
     this.activeDuels.set(duelKey, {
       challenger: cuzdanAdi(message.platform, message.user.username),
+      challengerAd: message.user.displayName,
       target: targetUserClean,
       amount,
       platform: message.platform,

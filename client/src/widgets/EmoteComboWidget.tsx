@@ -2,7 +2,8 @@
  * StreamAxT Emote Combo overlay
  * Developed by AxthrowA
  *
- * Aynı emote art arda gelince ekranın ortasında belirir, geldikçe büyür; gelmeyi kesince patlayıp etrafa saçılır.
+ * Aynı emote art arda gelince ekranın ortasında belirir. Gelen her emote ekranın rastgele bir yerinden
+ * ortadakine doğru uçar ve onu büyütür; gelmeyi kesince kopyaları her yöne süzülüp ekrandan çıkar.
  * Yalnız emote'un kendisi görünür: çerçeve, ad ve sayaç yok.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -15,9 +16,14 @@ import { useYediTvHaritasi } from '../lib/yediTv.js';
 
 interface Kombo { emote: EmoteParca; adet: number }
 /** Patlamada saçılan parça (piksel) */
-export interface Parca { dx: number; dy: number; dusus: number; donus: number; gecikme: number; olcek: number }
+export interface Parca { dx: number; dy: number; donus: number; gecikme: number; olcek: number; sure: number }
+/** Ortaya uçan emote: kenardan başlar (piksel, merkeze göre) */
+export interface Gelen { id: number; dx: number; dy: number; donus: number; olcek: number }
 
-const PATLAMA_MS = 1500;
+/** Uçuş süresi: ortadaki emote uçan kopya varınca büyür */
+const UCUS_MS = 600;
+const EN_COK_UCAN = 40;
+const PATLAMA_EN_UZUN_MS = 2600;
 
 /** Kombo büyüdükçe emote boyu; kutuya sığacak kadarla sınırlı */
 export function emoteBoyu(taban: number, adet: number, enAz: number, kutu: number): number {
@@ -25,24 +31,36 @@ export function emoteBoyu(taban: number, adet: number, enAz: number, kutu: numbe
   return Math.min(b, Math.max(taban, kutu * 0.7));
 }
 
+/** Merkezden `aci` yönünde kutunun kenarına uzaklık (px) */
+function kenaraUzaklik(aci: number, w: number, h: number): number {
+  const c = Math.abs(Math.cos(aci));
+  const s = Math.abs(Math.sin(aci));
+  return Math.min(c > 1e-6 ? w / 2 / c : Infinity, s > 1e-6 ? h / 2 / s : Infinity);
+}
+
+/** Ortaya uçacak emote'un başlangıcı: rastgele yönde, kutunun hemen dışında. */
+export function toplanmaBaslangici(id: number, w: number, h: number, boy: number, rastgele: () => number = Math.random): Gelen {
+  const aci = rastgele() * Math.PI * 2;
+  const uzak = kenaraUzaklik(aci, w, h) + boy;
+  return { id, dx: Math.cos(aci) * uzak, dy: Math.sin(aci) * uzak, donus: (rastgele() - 0.5) * 240, olcek: 0.45 + rastgele() * 0.35 };
+}
+
 /**
- * Patlama parçaları: yön, uzaklık, boy, dönüş ve gecikme rastgele; sonra yerçekimiyle düşerek kaybolur.
- * Uzaklık kutunun boyutundan: Tek URL kutusunun dışına çıkıp kesilmesin. `w`,`h`: kutu (px).
+ * Dağılma parçaları: her yöne eşit dağılır (yönler arasına küçük sapma) ve kutunun tamamen dışında biter,
+ * yani parçalar solmadan ekrandan çıkar. `boy`: emote boyu (px).
  */
-export function patlamaParcalari(adet: number, w: number, h: number, rastgele: () => number = Math.random): Parca[] {
-  const n = Math.max(10, Math.min(36, adet * 2 + 6));
-  const rx = Math.max(60, w / 2);
-  const ry = Math.max(40, h / 2);
-  return Array.from({ length: n }, () => {
-    const aci = rastgele() * Math.PI * 2;
-    const oran = 0.3 + rastgele() * 0.7;
+export function patlamaParcalari(adet: number, w: number, h: number, boy = 96, rastgele: () => number = Math.random): Parca[] {
+  const n = Math.max(12, Math.min(36, adet * 2 + 8));
+  return Array.from({ length: n }, (_, i) => {
+    const aci = ((i + rastgele() * 0.8) / n) * Math.PI * 2;
+    const uzak = kenaraUzaklik(aci, w, h) + boy * 1.6;
     return {
-      dx: Math.cos(aci) * rx * oran,
-      dy: Math.sin(aci) * ry * oran - ry * 0.2 * rastgele(),
-      dusus: 30 + rastgele() * Math.max(40, ry * 0.7),
-      donus: (rastgele() - 0.5) * 900,
-      gecikme: rastgele() * 120,
-      olcek: 0.35 + rastgele() * 0.75
+      dx: Math.cos(aci) * uzak,
+      dy: Math.sin(aci) * uzak,
+      donus: (rastgele() - 0.5) * 360,
+      gecikme: rastgele() * 200,
+      olcek: 0.45 + rastgele() * 0.55,
+      sure: 1500 + rastgele() * 700
     };
   });
 }
@@ -50,7 +68,8 @@ export function patlamaParcalari(adet: number, w: number, h: number, rastgele: (
 const KOMBO_CSS = `
 @keyframes axt-kombo-belir { from { transform: scale(.2); opacity: 0 } to { transform: scale(1); opacity: 1 } }
 @keyframes axt-kombo-vurus { 0% { transform: scale(1) } 35% { transform: scale(1.14) rotate(-3deg) } 100% { transform: scale(1) } }
-@keyframes axt-kombo-sac { 0% { transform: translate(0, 0) rotate(0) scale(var(--s)); opacity: 1 } 55% { transform: translate(var(--dx), var(--dy)) rotate(calc(var(--rot) * .6)) scale(var(--s)); opacity: 1 } 100% { transform: translate(var(--dx), calc(var(--dy) + var(--fall))) rotate(var(--rot)) scale(calc(var(--s) * .6)); opacity: 0 } }
+@keyframes axt-kombo-topla { 0% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(var(--s)); opacity: 1 } 88% { opacity: 1 } 100% { transform: translate(0, 0) rotate(0) scale(.35); opacity: 0 } }
+@keyframes axt-kombo-sac { from { transform: translate(0, 0) rotate(0) scale(1) } to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(var(--s)) } }
 `;
 
 function EmoteGorsel({ e, boyut }: { e: EmoteParca; boyut: number }) {
@@ -69,6 +88,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     onizleme ? { emote: { ad: 'KEKW', url: 'https://files.kick.com/emotes/37226/fullsize' }, adet: 5 } : null
   );
   const [patlama, setPatlama] = useState<{ id: number; emote: EmoteParca; boy: number; parcalar: Parca[] } | null>(null);
+  const [gelenler, setGelenler] = useState<Array<Gelen & { emote: EmoteParca }>>([]);
   const ayar = useRef(s);
   ayar.current = s;
   const harita = useRef(yediTv);
@@ -83,13 +103,24 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     if (onizleme) return;
     let son: { anahtar: string; emote: EmoteParca; adet: number; zaman: ReturnType<typeof setTimeout> | null } | null = null;
     let patlamaNo = 0;
+    let gelenNo = 0;
+    const zamanlar = new Set<ReturnType<typeof setTimeout>>();
+    const sonra = (is: () => void, ms: number) => {
+      const z = setTimeout(() => {
+        zamanlar.delete(z);
+        is();
+      }, ms);
+      zamanlar.add(z);
+    };
 
     const patlat = (emote: EmoteParca, adet: number) => {
       const { w, h } = kutuBoyutu();
       const a = ayar.current;
       const id = ++patlamaNo;
-      setPatlama({ id, emote, boy: emoteBoyu(Number(a.size) || 96, adet, a.minCombo, Math.min(w, h)), parcalar: patlamaParcalari(adet, w, h) });
-      setTimeout(() => setPatlama((p) => (p?.id === id ? null : p)), PATLAMA_MS + 200);
+      const boy = emoteBoyu(Number(a.size) || 96, adet, a.minCombo, Math.min(w, h));
+      setGelenler([]);
+      setPatlama({ id, emote, boy, parcalar: patlamaParcalari(adet, w, h, boy) });
+      sonra(() => setPatlama((p) => (p?.id === id ? null : p)), PATLAMA_EN_UZUN_MS);
     };
 
     const isle = (emote: EmoteParca) => {
@@ -122,7 +153,19 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
           /* ses yok */
         }
       }
-      setKombo({ emote, adet: k.adet });
+      if (k.adet === a.minCombo) {
+        setKombo({ emote, adet: k.adet });
+      } else {
+        // Ortadaki emote, uçan kopya varınca büyür
+        const adet = k.adet;
+        sonra(() => {
+          if (son === k) setKombo({ emote, adet });
+        }, UCUS_MS);
+      }
+      const { w, h } = kutuBoyutu();
+      const yeni = { ...toplanmaBaslangici(++gelenNo, w, h, Number(a.size) || 96), emote };
+      setGelenler((g) => [...g.slice(-(EN_COK_UCAN - 1)), yeni]);
+      sonra(() => setGelenler((g) => g.filter((x) => x.id !== yeni.id)), UCUS_MS + 50);
     };
 
     const ws = new KaliciSoket(wsAdresi('chatbox'));
@@ -154,6 +197,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     return () => {
       ws.close();
       if (son?.zaman) clearTimeout(son.zaman);
+      zamanlar.forEach(clearTimeout);
     };
   }, [onizleme]);
 
@@ -176,6 +220,25 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
           </div>
         </div>
       )}
+      {gelenler.map((g) => (
+        <span key={g.id} style={{ position: 'absolute', left: '50%', top: '50%', pointerEvents: 'none', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.5))' }}>
+          <span
+            style={{
+              display: 'block',
+              marginLeft: -(Number(s.size) || 96) / 2,
+              marginTop: -(Number(s.size) || 96) / 2,
+              willChange: 'transform',
+              ['--dx' as any]: `${g.dx}px`,
+              ['--dy' as any]: `${g.dy}px`,
+              ['--rot' as any]: `${g.donus}deg`,
+              ['--s' as any]: g.olcek,
+              animation: `axt-kombo-topla ${UCUS_MS}ms cubic-bezier(.5,0,.8,.4) forwards`
+            }}
+          >
+            <EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} />
+          </span>
+        </span>
+      ))}
       {patlama?.parcalar.map((p, i) => (
         <span key={`${patlama.id}-${i}`} style={{ position: 'absolute', left: '50%', top: '50%', pointerEvents: 'none', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))' }}>
           <span
@@ -183,13 +246,13 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               display: 'block',
               marginLeft: -patlama.boy / 2,
               marginTop: -patlama.boy / 2,
-              opacity: 0,
+              willChange: 'transform',
               ['--dx' as any]: `${p.dx}px`,
               ['--dy' as any]: `${p.dy}px`,
-              ['--fall' as any]: `${p.dusus}px`,
               ['--rot' as any]: `${p.donus}deg`,
               ['--s' as any]: p.olcek,
-              animation: `axt-kombo-sac ${PATLAMA_MS}ms cubic-bezier(.15,.8,.3,1) ${p.gecikme}ms forwards`
+              // Hızlı çıkar, yavaşlamadan ekrandan süzülür; `both`: gecikme boyunca ortada bekler
+              animation: `axt-kombo-sac ${p.sure}ms cubic-bezier(.3,.55,.6,1) ${p.gecikme}ms both`
             }}
           >
             <EmoteGorsel e={patlama.emote} boyut={patlama.boy} />

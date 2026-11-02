@@ -1,7 +1,7 @@
 {
   "name": "yayin-yonetim-araci",
   "private": true,
-  "version": "1.2.8",
+  "version": "1.2.9",
   "license": "GPL-2.0-or-later",
   "type": "module",
   "scripts": {

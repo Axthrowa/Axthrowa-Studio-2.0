@@ -93,6 +93,15 @@ pub struct ObsInputLevel {
   pub peak_db: f32,
   /// Ortalama büyüklük (magnitude), dBFS
   pub magnitude_db: f32,
+  /// Kanal başına seviye (sol, sağ…): karıştırıcı ölçeri
+  pub channels: Vec<ObsKanalSeviyesi>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ObsKanalSeviyesi {
+  pub peak_db: f32,
+  pub magnitude_db: f32,
 }
 
 pub const METER_FLOOR_DB: f32 = -100.0;
@@ -111,7 +120,11 @@ pub fn mul_to_db(mul: f32) -> f32 {
 pub fn summarize_levels(name: String, channels: &[[f32; 3]]) -> ObsInputLevel {
   let peak = channels.iter().map(|c| c[1]).fold(0.0f32, f32::max);
   let magnitude = channels.iter().map(|c| c[0]).fold(0.0f32, f32::max);
-  ObsInputLevel { name, peak_db: mul_to_db(peak), magnitude_db: mul_to_db(magnitude) }
+  let channels = channels
+    .iter()
+    .map(|c| ObsKanalSeviyesi { peak_db: mul_to_db(c[1]), magnitude_db: mul_to_db(c[0]) })
+    .collect();
+  ObsInputLevel { name, peak_db: mul_to_db(peak), magnitude_db: mul_to_db(magnitude), channels }
 }
 
 struct ObsConnection {
@@ -1446,6 +1459,8 @@ mod tuval_tests {
     let l = summarize_levels("Mikrofon".into(), &[[0.1, 0.25, 0.3], [0.2, 0.5, 0.6]]);
     assert!((l.peak_db - mul_to_db(0.5)).abs() < 1e-6);
     assert!((l.magnitude_db - mul_to_db(0.2)).abs() < 1e-6);
+    assert_eq!(l.channels.len(), 2);
+    assert!((l.channels[0].peak_db - mul_to_db(0.25)).abs() < 1e-6);
     assert_eq!(summarize_levels("Boş".into(), &[]).peak_db, METER_FLOOR_DB);
   }
 

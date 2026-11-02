@@ -6,15 +6,16 @@
  * yeniden çizilmesin.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Mic, MicOff, Pin } from "lucide-react";
-import { actionsApi, obsApi, type ObsInputLevel } from "../../lib/api/actions";
+import { Pin } from "lucide-react";
+import { actionsApi } from "../../lib/api/actions";
 import { getStreamHealth, isObsConnected, onObsConnection, type StreamHealth } from "../../lib/obs";
-import { isAudioInput, sesDbdenYuzde, sesYuzdedenDb } from "../../lib/obsAudio";
+import { isAudioInput, onizlemeBeklemesi } from "../../lib/obsAudio";
 import { obsControl, type ObsInputInfo, type ObsSceneSnapshot } from "../../lib/obsControl";
 import { streamaxtBase } from "../../lib/streamaxt";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import SohbetTemizleDiyalogu from "../panel/SohbetTemizleDiyalogu";
-import ControlCenter, { SesOlceri } from "./ControlCenter";
+import ControlCenter from "./ControlCenter";
+import SesKaristirici from "./SesKaristirici";
 import { ActivityFeedPanel, UniversalChatPanel } from "./UniversalChat";
 
 type Props = {
@@ -31,7 +32,7 @@ type BotDurumu = {
   platforms?: Record<string, { connected?: boolean; yazabilir?: boolean }>;
 };
 
-const ONIZLEME_MS = 1500;
+const ONIZLEME_GENISLIK = 854;
 
 function Durum({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
@@ -55,128 +56,59 @@ function SureSayaci({ baslangic }: { baslangic: number }) {
   return <span className="font-medium tabular-nums text-panel-muted">{`${iki(Math.floor(s / 3600))}:${iki(Math.floor((s % 3600) / 60))}:${iki(s % 60)}`}</span>;
 }
 
-/** OBS'in yayındaki sahnesinin görüntüsü: birkaç saniye gecikmeli platform oynatıcısı yerine anlık kare */
+/**
+ * OBS'in yayındaki sahnesi: bir kare gelince sıradakini ister, en çok ~15 kare/sn. Video akışı değildir; OBS ek bir
+ * çıkış olmadan yalnız kare verir. Kare önce çözülür, sonra tuvale çizilir: geçişte titremez.
+ */
 function ObsOnizleme({ sahne }: { sahne: string }) {
-  const [kare, setKare] = useState("");
+  const tuval = useRef<HTMLCanvasElement>(null);
+  const [kareVar, setKareVar] = useState(false);
   useEffect(() => {
-    setKare("");
-    if (!sahne) return;
-    let bekliyor = false;
+    if (!sahne) {
+      setKareVar(false);
+      return;
+    }
     let iptal = false;
-    const al = async () => {
-      if (bekliyor) return;
-      bekliyor = true;
-      try {
-        const k = await obsControl.screenshot(sahne, 960);
-        if (!iptal) setKare(k);
-      } catch {
-        /* sahne değişiyor ya da OBS yanıt vermedi: son kare kalır */
-      } finally {
-        bekliyor = false;
+    const bekle = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    void (async () => {
+      while (!iptal) {
+        if (document.hidden) {
+          await bekle(500);
+          continue;
+        }
+        const t0 = performance.now();
+        try {
+          const im = new Image();
+          im.src = await obsControl.screenshot(sahne, ONIZLEME_GENISLIK);
+          await im.decode();
+          const c = tuval.current;
+          if (c && !iptal) {
+            if (c.width !== im.naturalWidth || c.height !== im.naturalHeight) {
+              c.width = im.naturalWidth;
+              c.height = im.naturalHeight;
+            }
+            c.getContext("2d")?.drawImage(im, 0, 0);
+            setKareVar(true);
+          }
+        } catch {
+          /* sahne değişiyor ya da OBS yanıt vermedi: son kare kalır */
+        }
+        await bekle(onizlemeBeklemesi(performance.now() - t0));
       }
-    };
-    void al();
-    const id = setVisibleInterval(() => void al(), ONIZLEME_MS);
+    })();
     return () => {
       iptal = true;
-      clearVisibleInterval(id);
     };
   }, [sahne]);
   return (
     <div className="relative aspect-video max-h-[52vh] w-full overflow-hidden rounded-xl bg-black">
-      {kare ? (
-        <img src={kare} alt={`${sahne} sahnesinin önizlemesi`} className="h-full w-full object-contain" />
-      ) : (
-        <div className="flex h-full items-center justify-center text-sm text-panel-muted">
+      <canvas ref={tuval} role="img" aria-label={`${sahne} sahnesinin önizlemesi`} className="h-full w-full object-contain" />
+      {!kareVar ? (
+        <div className="absolute inset-0 flex items-center justify-center text-sm text-panel-muted">
           {sahne ? "Önizleme yükleniyor…" : "OBS bağlanınca önizleme burada görünür"}
         </div>
-      )}
+      ) : null}
       {sahne ? <span className="absolute left-3 top-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-medium text-white">{sahne}</span> : null}
-    </div>
-  );
-}
-
-function SesSatiri({ girdi, seviye, onSustur, onToast }: { girdi: ObsInputInfo; seviye?: ObsInputLevel; onSustur: () => void; onToast: (m: string) => void }) {
-  const [yuzde, setYuzde] = useState<number | null>(null);
-  const sonGonderim = useRef(0);
-
-  useEffect(() => {
-    let iptal = false;
-    void obsControl
-      .volumeDb(girdi.name)
-      .then((db) => !iptal && setYuzde(sesDbdenYuzde(db)))
-      .catch(() => {});
-    return () => {
-      iptal = true;
-    };
-  }, [girdi.name]);
-
-  const gonder = (deger: number, zorla = false) => {
-    // Sürüklerken OBS'i boğmayalım; bırakınca son değer kesin gider
-    if (!zorla && Date.now() - sonGonderim.current < 80) return;
-    sonGonderim.current = Date.now();
-    void obsControl.setVolumeDb(girdi.name, sesYuzdedenDb(deger)).catch((e) => onToast(`${girdi.name}: ${String((e as Error).message || e).slice(0, 120)}`));
-  };
-
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={onSustur}
-        aria-pressed={girdi.muted}
-        aria-label={`${girdi.name} ${girdi.muted ? "sesini aç" : "sesini kapat"}`}
-        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${girdi.muted ? "bg-red-500/20 text-red-300" : "bg-white/[0.06] text-white"}`}
-      >
-        {girdi.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-      </button>
-      <label className="min-w-0 flex-1">
-        <span className="block truncate text-xs text-panel-muted">{girdi.name}</span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={yuzde ?? 0}
-          disabled={yuzde === null}
-          onChange={(e) => {
-            const d = Number(e.target.value);
-            setYuzde(d);
-            gonder(d);
-          }}
-          onPointerUp={(e) => gonder(Number(e.currentTarget.value), true)}
-          onKeyUp={(e) => gonder(Number(e.currentTarget.value), true)}
-          className="block w-full accent-[var(--panel-accent)]"
-        />
-        <SesOlceri seviye={seviye} susturulmus={girdi.muted} />
-      </label>
-    </div>
-  );
-}
-
-function SesPaneli({ girisler, onSustur, onToast }: { girisler: ObsInputInfo[]; onSustur: (g: ObsInputInfo) => void; onToast: (m: string) => void }) {
-  const [seviye, setSeviye] = useState<Record<string, ObsInputLevel>>({});
-  const varMi = girisler.length > 0;
-  useEffect(() => {
-    if (!varMi) return;
-    let iptal = false;
-    const id = setVisibleInterval(() => {
-      obsApi
-        .meters()
-        .then((r) => {
-          if (!iptal) setSeviye(r.ageMs >= 0 && r.ageMs < 2000 ? Object.fromEntries(r.inputs.map((l) => [l.name, l])) : {});
-        })
-        .catch(() => !iptal && setSeviye({}));
-    }, 500);
-    return () => {
-      iptal = true;
-      clearVisibleInterval(id);
-    };
-  }, [varMi]);
-  if (!varMi) return <p className="text-xs text-panel-muted">Ses girişi bulunamadı.</p>;
-  return (
-    <div className="flex flex-col gap-2">
-      {girisler.map((g) => (
-        <SesSatiri key={g.name} girdi={g} seviye={seviye[g.name]} onSustur={() => onSustur(g)} onToast={onToast} />
-      ))}
     </div>
   );
 }
@@ -361,10 +293,10 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot }: 
             )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">
             <div className="min-w-0">
-              <h2 className="mb-2 text-xs font-semibold text-panel-muted">Ses</h2>
-              {obsBagli ? <SesPaneli girisler={girisler} onSustur={(g) => void sustur(g)} onToast={onToast} /> : <p className="text-sm text-panel-muted">OBS bağlanınca görünür.</p>}
+              <h2 className="mb-2 text-xs font-semibold text-panel-muted">Ses karıştırıcısı</h2>
+              {obsBagli ? <SesKaristirici girisler={girisler} onSustur={(g) => void sustur(g)} onToast={onToast} /> : <p className="text-sm text-panel-muted">OBS bağlanınca görünür.</p>}
             </div>
             <div className="min-w-0">
               <h2 className="mb-2 text-xs font-semibold text-panel-muted">Hızlı işlem</h2>

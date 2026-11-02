@@ -130,7 +130,7 @@ export type ObsCanvas = {
   sceneSwitchSupported: boolean;
 };
 
-export type ObsInputLevel = { name: string; peakDb: number; magnitudeDb: number };
+export type ObsInputLevel = { name: string; peakDb: number; magnitudeDb: number; channels?: { peakDb: number; magnitudeDb: number }[] };
 
 /** OBS tuvalleri (salt-okunur; obs-websocket 5.7 / OBS 32.1+) ve ses ölçerleri. */
 export const obsApi = {

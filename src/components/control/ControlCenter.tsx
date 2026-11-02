@@ -871,7 +871,9 @@ function QuickActionsPanel({ onToast }: { onToast: (m: string) => void }) {
   if (hata) return <p className="text-xs text-red-300">Eylemler alınamadı: {hata}</p>;
   if (!list) return <p className="text-xs text-panel-muted">Yükleniyor…</p>;
 
-  const gruplar = list.reduce<Record<string, ActionInfo[]>>((m, a) => ((m[a.category] ||= []).push(a), m), {});
+  // Yalnız şu an kullanılabilenler: onlarca soluk düğme yayın sırasında aranılanı bulmayı zorlaştırıyordu
+  const gruplar = list.filter((a) => a.available).reduce<Record<string, ActionInfo[]>>((m, a) => ((m[a.category] ||= []).push(a), m), {});
+  if (!Object.keys(gruplar).length) return <p className="text-xs text-panel-muted">OBS bağlanınca eylemler burada görünür.</p>;
   return (
     <div className="space-y-2 text-xs">
       {Object.entries(gruplar).map(([kategori, eylemler]) => (
@@ -1073,7 +1075,8 @@ export default function ControlCenter({ onToast }: Props) {
             <header className="mb-2 flex items-center gap-1.5">
               {editing && <GripVertical className="h-3.5 w-3.5 cursor-grab text-panel-muted" />}
               <h3 className="text-xs font-bold text-white">{meta[p.id].title}</h3>
-              <span className="truncate text-[10px] text-panel-muted">{meta[p.id].hint}</span>
+              {/* Açıklama yalnız düzenlerken: yayın sırasında başlık yeter */}
+              {editing && <span className="truncate text-[10px] text-panel-muted">{meta[p.id].hint}</span>}
               {editing && (
                 <span className="ml-auto flex gap-1">
                   <button type="button" className="rounded p-1 hover:bg-white/10" title="Genişlik" onClick={() => setLayout(cycleSpan(layout, p.id))}>

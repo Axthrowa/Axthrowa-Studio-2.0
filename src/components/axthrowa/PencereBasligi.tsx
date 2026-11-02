@@ -41,7 +41,7 @@ export default function PencereBasligi() {
           <Broadcast weight="bold" className="pointer-events-none h-3.5 w-3.5" />
         </span>
         <span data-tauri-drag-region className="text-[13px] font-semibold tracking-wide text-zinc-200">
-          AxthrowA Studio
+          AxthrowA Studio <span className="font-normal text-zinc-500">{__YYA_SURUM__}</span>
         </span>
       </div>
 

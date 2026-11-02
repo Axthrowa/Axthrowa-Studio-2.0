@@ -1821,7 +1821,7 @@ export default function PanelPage() {
         <AppSettingsPage
           prefs={prefs}
           onPrefs={setPrefs}
-          version="1.0.0"
+          version={__YYA_SURUM__}
           layout={layout}
         />
         </div>

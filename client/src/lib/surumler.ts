@@ -11,6 +11,19 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.10.1',
+    ad: 'Tam Hesap',
+    tarih: '2026-11-03',
+    notlar: [
+      'Aynı yanıttaki ikinci değişken de çalışır: iki sayaç, iki seçim, iki koşul, iki hesap',
+      '{puan} herkese kendi cüzdanını ve güncel bakiyeyi gösterir; !izleme de kendi platformundaki kaydı okur',
+      'Puanlar en geç 30 saniyede kaydedilir: uygulama kapanınca son dakikalar kaybolmaz',
+      'Panelden yazılan komut yayıncı yetkisiyle çalışır; botla aynı metni yazan izleyici yok sayılmaz',
+      'Yayın kapalıyken izleme puanı verilmez',
+      '!duello uydurma ada cüzdan açmaz; tahmin ödemesi yarıda kalırsa iki kez ödenmez'
+    ]
+  },
+  {
     surum: '1.10.0',
     ad: 'Yeni Düzen',
     tarih: '2026-11-02',

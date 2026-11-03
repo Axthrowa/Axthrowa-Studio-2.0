@@ -3,6 +3,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { ttsEngine } from '../tts/tts.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { canliDurum } from '../../core/live-status.js';
 import { bahisOku, SLOT_UCLU_CARPAN, SLOT_IKILI_CARPAN } from '../games/bahis.js';
 
 interface ActiveDuel {
@@ -173,6 +174,9 @@ export class EconomyEngine {
    * sohbetlere saatlerce süre eklenmesin.
    */
   recordWatchTime(intervalMinutes: number = 5): number {
+    // Yayın kapalıyken izleme sayılmaz; durum bilinmiyorsa (algılama yok) sayım sürer
+    if (canliDurum.genel().canli === false) return 0;
+
     const rateRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'points_per_interval'").get() as any;
     const basePoints = rateRow ? parseInt(rateRow.value, 10) : 15;
     const esik = Date.now() - intervalMinutes * 60_000 * 2;
@@ -206,6 +210,9 @@ export class EconomyEngine {
         console.warn('[Economy] izleme süresi tiki:', (err as Error).message);
       }
     }, intervalMinutes * 60_000);
+    // Windows'ta bot süreci anında öldürülür (taskkill, cocuk.kill): kapanış kodu çalışmaz.
+    // Sık toplu yazım, kapanışta kaybolabilecek puanları en fazla 30 saniyeyle sınırlar.
+    setInterval(() => this.flushAll(), 30_000);
   }
 
   /**
@@ -291,6 +298,24 @@ export class EconomyEngine {
    * yazar, işlemi çalıştırır, sonra önbelleği boşaltır. Yoksa sonraki toplu yazım eski
    * bakiyeleri geri yazıp işlemi sessizce geri alıyordu.
    */
+  /**
+   * Puanları ve ardından gelen kaydı tek işlemde yazar: yarıda kesilirse hiçbiri kalmaz, tekrar
+   * denemede kimseye iki kez ödenmez. Geri alınınca önbellek de diskten yeniden okunur.
+   */
+  topluOde(odemeler: Array<{ kullanici: string; puan: number }>, kayit: () => void) {
+    this.flushAll();
+    db.exec('BEGIN');
+    try {
+      for (const o of odemeler) this.addPoints(o.kullanici, o.puan);
+      kayit();
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      for (const o of odemeler) this.userCache.delete(o.kullanici.toLowerCase());
+      throw e;
+    }
+  }
+
   tabloyuDegistir(islem: () => void) {
     this.flushAll();
     islem();
@@ -512,7 +537,7 @@ export class EconomyEngine {
     const targetTag = args[0];
     const amount = parseInt(args[1], 10);
 
-    if (!targetTag || isNaN(amount) || amount <= 0) {
+    if (!targetTag || !/^[\p{L}\p{N}_.-]{1,40}$/u.test(targetTag.replace(/^@+/, '')) || isNaN(amount) || amount <= 0) {
       return `@${message.user.displayName}, düello başlatmak için: !duello @hedef_kisi <miktar>`;
     }
 
@@ -525,8 +550,8 @@ export class EconomyEngine {
       return `@${message.user.displayName}, bu düelloya girecek kadar puanın yok! Bakiyen: ${user.points}`;
     }
 
-    const targetUser = this.getUser(message.platform, targetUserClean);
-    if (targetUser.points < amount) {
+    // getUser kullanılmaz: uydurma ada 100 puanlı yeni cüzdan açıyordu
+    if (this.getUserPoints(targetUserClean) < amount) {
       return `@${message.user.displayName}, meydan okuduğun kişinin (${targetTag}) yeterli puanı yok!`;
     }
 

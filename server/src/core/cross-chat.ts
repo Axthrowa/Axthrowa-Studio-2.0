@@ -78,3 +78,14 @@ export function aktarimYankisiMi(bicim: string, gelen: string): boolean {
   const metin = String(gelen || '').trim().replace(/^» /, '');
   return new RegExp(`^${govde}$`, 'i').test(metin);
 }
+
+const BOTU_ISARETLEYEN = new Set(['kick', 'twitch', 'discord']);
+
+/**
+ * Gelen metin botun az önce yazdığı metnin yankısı mı? Bot hesabını `isSelf` ile işaretleyen
+ * platformlarda izleyici yankı sayılmaz: botla aynı metni yazan izleyici yok sayılıyordu.
+ * YouTube ve Trovo'da bot hesabı ayırt edilemediği için metin eşleşmesi yeterlidir.
+ */
+export function botYankisiMi(sonCiktilar: Set<string>, metin: string, platform: string, isSelf?: boolean): boolean {
+  return sonCiktilar.has(metin) && (!BOTU_ISARETLEYEN.has(platform) || Boolean(isSelf));
+}

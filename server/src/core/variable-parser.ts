@@ -7,6 +7,7 @@ import { matematik } from './variables/pure.js';
 import { kosulDegerlendir } from './variables/ek-saf.js';
 
 import { canliDurum, sureMetni } from './live-status.js';
+import { cuzdanAdi, economy } from '../modules/economy/economy.js';
 
 /**
  * YEDEK başlangıç: yalnız hiçbir platform yayın durumu bildirmiyorsa
@@ -82,6 +83,8 @@ export async function parseVariables(
     } catch {
       result = result.replace(countMatch[0], '1');
     }
+    // Metin değişti: arama baştan başlamazsa aynı türden sonraki kalıp atlanır
+    namedCountRegex.lastIndex = 0;
   }
 
   // Random: {random:min-max} or $(random.min-max)
@@ -103,16 +106,19 @@ export async function parseVariables(
     const opts = optionsStr.split('|').map(s => s.trim()).filter(Boolean);
     if (opts.length > 0) {
       const chosen = opts[Math.floor(Math.random() * opts.length)];
-      result = result.replace(chooseMatch[0], chosen);
+      // İşlevle: seçenekteki `$&` kalıbı eşleşmeyi geri koyup döngüyü sonsuza sokmasın
+      result = result.replace(chooseMatch[0], () => chosen);
     } else {
       result = result.replace(chooseMatch[0], '');
     }
+    chooseRegex.lastIndex = 0;
   }
 
   // Points: {points}, {puan}, $(points), $(puan)
   if (result.includes('{points}') || result.includes('{puan}') || result.includes('$(points)') || result.includes('$(puan)')) {
-    const userRow = db.prepare('SELECT points FROM economy WHERE username = ? COLLATE NOCASE').get(message.user.username) as { points: number } | undefined;
-    const points = userRow ? userRow.points : 0;
+    // Cüzdan adıyla ve önbellekten: düz adla sorgu YouTube'daki Ali'ye Kick'teki Ali'nin bakiyesini,
+    // diskten okuma da son mesajların puanı yazılmamış eski bakiyeyi gösteriyordu
+    const points = economy.getUserPoints(cuzdanAdi(message.platform, message.user.username));
     result = result.replace(/\{points\}/gi, points.toString());
     result = result.replace(/\{puan\}/gi, points.toString());
     result = result.replace(/\$\(points\)/gi, points.toString());
@@ -145,7 +151,8 @@ export async function parseVariables(
     const evalCondition = temiz
       .split('||')
       .some((ve) => ve.split('&&').every((p) => /^\s*-?\d+(\.\d+)?\s*(==|!=|>=|<=|>|<)\s*-?\d+(\.\d+)?\s*$/.test(p) && kosulDegerlendir(p)));
-    result = result.replace(full, evalCondition ? thenVal : elseVal);
+    result = result.replace(full, () => (evalCondition ? thenVal : elseVal));
+    ifRegex.lastIndex = 0;
   }
 
   // Math / Eval: {math:expr} or $(eval expr)
@@ -156,6 +163,7 @@ export async function parseVariables(
     // Kod değerlendirmesi yok: güvenli çözümleyici (core/variables/pure.ts)
     const sonuc = matematik(expr.replace(/[^0-9+\-*/().%,\s]/g, ''));
     result = result.replace(mathMatch[0], sonuc === '(math geçersiz)' || sonuc === '(math çok uzun)' ? '[Hesap Hatası]' : sonuc);
+    mathRegex.lastIndex = 0;
   }
 
   // URL Fetch: $(urlfetch <url>)

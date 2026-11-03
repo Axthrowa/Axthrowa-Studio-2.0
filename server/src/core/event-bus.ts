@@ -111,6 +111,8 @@ export interface BotMessagePayload {
   replyToId?: string;
   /** `!bot mute` açıkken bile gönderilsin (susturma/açma onayı). */
   sessizdeBile?: boolean;
+  /** Yayıncı panelden yazdı: komutsa yayıncı yetkisiyle çalıştırılır (bkz. pipeline). */
+  panelden?: boolean;
 }
 
 class UniversalEventBus extends EventEmitter {

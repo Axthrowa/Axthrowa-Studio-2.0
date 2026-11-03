@@ -1181,7 +1181,7 @@ export class CommandManager {
         const hedef = (args[0] || message.user.username).replace(/^@/, '');
         const r = db
           .prepare('SELECT display_name, watch_time_minutes FROM economy WHERE LOWER(username) = LOWER(?)')
-          .get(hedef) as { display_name?: string; watch_time_minutes?: number } | undefined;
+          .get(cuzdanAdi(message.platform, hedef)) as { display_name?: string; watch_time_minutes?: number } | undefined;
         if (!r) return `@${message.user.displayName}, ${hedef} için izleme kaydı yok.`;
         const dk = Number(r.watch_time_minutes) || 0;
         const sa = Math.floor(dk / 60);

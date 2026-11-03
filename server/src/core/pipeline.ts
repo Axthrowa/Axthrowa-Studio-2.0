@@ -1,6 +1,6 @@
 import { giveaway } from '../modules/giveaways/giveaways.js';
 import { sohbetIstatistik } from '../modules/community/sohbet-istatistik.js';
-import { eventBus, ChatMessagePayload } from './event-bus.js';
+import { eventBus, BotMessagePayload, ChatMessagePayload } from './event-bus.js';
 import { autoMod } from '../modules/automod/automod.js';
 import { commandManager } from '../modules/commands/command-manager.js';
 import { ttsEngine } from '../modules/tts/tts.js';
@@ -15,7 +15,8 @@ import { karaListeyiUygula } from '../modules/moderation/blacklist.js';
 import { kalkaniUygula } from '../modules/moderation/shield-enforce.js';
 import { chatRescueService } from '../modules/ai/chat-rescue.js';
 import { seyrekUyar } from './logger.js';
-import { aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
+import { aktarimMetni, aktarimYankisiMi, botYankisiMi } from './cross-chat.js';
+import { db } from '../db/index.js';
 import { sonMesajlar } from '../modules/moderation/son-mesajlar.js';
 import { SeslenmeSiniri, seslenmeAyikla } from '../modules/ai/seslenme.js';
 import { geminiCoHost } from '../modules/ai/gemini.js';
@@ -45,8 +46,38 @@ export class MessagePipeline {
         setTimeout(() => {
           this.recentBotOutputs.delete(text);
         }, 15000);
+        if (payload.panelden) void this.panelKomutu(payload);
       }
     });
+  }
+
+  /**
+   * Panelden yazılan komut. Sohbetten dönen yankı botun yetkisiyle gelir ve yankı olarak elenir;
+   * yayıncının yazdığı komut ses komutları gibi doğrudan, yayıncı yetkisiyle çalışır.
+   */
+  private async panelKomutu(payload: BotMessagePayload) {
+    const metin = payload.message.trim();
+    if (!metin.startsWith(settingsCache.get('prefix', '!'))) return;
+    try {
+      const tumu = payload.platform === 'all';
+      const kayit = (tumu
+        ? db.prepare('SELECT platform, channel_name FROM channels WHERE is_active = 1 LIMIT 1').get()
+        : db.prepare('SELECT platform, channel_name FROM channels WHERE is_active = 1 AND platform = ? LIMIT 1').get(payload.platform)) as
+        | { platform: ChatMessagePayload['platform']; channel_name: string }
+        | undefined;
+      const kanal = kayit?.channel_name || 'yayinci';
+      const yanit = await commandManager.processMessage({
+        id: `panel-${Date.now()}`,
+        platform: kayit?.platform || (tumu ? 'kick' : (payload.platform as ChatMessagePayload['platform'])),
+        channel: kanal,
+        user: { id: 'panel-komut', username: kanal, displayName: 'Yayıncı', badges: ['broadcaster'], isMod: true, isSub: true, isVip: true, isBroadcaster: true },
+        message: metin,
+        timestamp: Date.now()
+      });
+      if (yanit) eventBus.emitBotMessage({ platform: payload.platform, message: yanit });
+    } catch (e) {
+      eventBus.emitSendError(payload.platform, `Komut çalışmadı: ${(e as Error).message}`);
+    }
   }
 
   async handleIncomingMessage(message: ChatMessagePayload) {
@@ -54,7 +85,7 @@ export class MessagePipeline {
     if (!rawText) return;
 
     // Prevent echoing automated bot outputs
-    if (this.recentBotOutputs.has(rawText)) {
+    if (botYankisiMi(this.recentBotOutputs, rawText, message.platform, message.user.isSelf)) {
       return;
     }
 

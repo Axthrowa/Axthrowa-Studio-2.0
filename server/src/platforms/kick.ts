@@ -45,6 +45,8 @@ export class KickPlatform extends BasePlatform {
   private temizlemeBekleyen: (() => void) | null = null;
   private botUserId: number | null = null;
   private botUsername: string = '';
+  /** `type: bot` ile gönderilen metinler: Kick bunları token sahibinin adıyla yansıtmayabilir. */
+  private botTuruGonderilen = new Set<string>();
   /**
    * Sohbetten öğrenilen kullanıcı adı → Kick kullanıcı kimliği.
    * Zaman aşımı için kimlik gerekir; her seferinde kanal sayfasını
@@ -310,7 +312,8 @@ export class KickPlatform extends BasePlatform {
       // Check if message was sent by the bot itself
       const isSelf = Boolean(
         (this.botUserId && senderId === this.botUserId) ||
-        (this.botUsername && senderName.toLowerCase() === this.botUsername.toLowerCase())
+        (this.botUsername && senderName.toLowerCase() === this.botUsername.toLowerCase()) ||
+        this.botTuruGonderilen.delete(String(content).trim())
       );
 
       const identity = sender.identity || {};
@@ -667,6 +670,11 @@ export class KickPlatform extends BasePlatform {
 
           if (officialRes.status === 200 || officialRes.status === 201) {
             console.log(`[Kick] Chat message sent successfully via Official API (v1, type: ${msgType})`);
+            if (msgType === 'bot') {
+              const metin = message.trim();
+              this.botTuruGonderilen.add(metin);
+              setTimeout(() => this.botTuruGonderilen.delete(metin), 15_000).unref();
+            }
             return {
               success: true,
               message: 'Mesaj Kick sohbetine başarıyla iletildi!'

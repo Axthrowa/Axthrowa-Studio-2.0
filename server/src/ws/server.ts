@@ -191,7 +191,7 @@ export class WebSocketHub {
       this.triggerTestAlert(msg.eventType);
     } else if (msg.action === 'send_chat') {
       // Yayıncı elle yazdı: `!bot mute` otomatik yanıtlar içindir, bu mesajı sessizce yutmamalı
-      eventBus.emitBotMessage({ platform: msg.platform, message: msg.message, sessizdeBile: true });
+      eventBus.emitBotMessage({ platform: msg.platform, message: msg.message, sessizdeBile: true, panelden: true });
     } else if (msg.action === 'trigger_tts') {
       ttsEngine.enqueue(msg.text || 'Test TTS', 'Yayıncı');
     } else if (msg.action === 'clear_chat') {

@@ -386,5 +386,6 @@ server.listen(PORT, HOST, async () => {
 process.on('SIGINT', async () => {
   console.log('\nShutting down StreamAxT gracefully...');
   timerManager.stopAll();
+  economy.flushAll();
   process.exit(0);
 });

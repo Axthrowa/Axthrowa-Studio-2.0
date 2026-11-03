@@ -75,6 +75,7 @@ const Integrations = lazy(() => import('./pages/Integrations.js'));
 const SoundBoard = lazy(() => import('./pages/SoundBoard.js'));
 const SoundBoardWidget = lazy(() => import('./widgets/SoundBoardWidget.js'));
 const SesliDinleyici = lazy(() => import('./pages/SesliDinleyici.js'));
+const Otomasyon = lazy(() => import('./pages/Otomasyon.js'));
 const VoiceCommands = lazy(() => import('./pages/VoiceCommands.js'));
 import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
@@ -147,6 +148,17 @@ export function App() {
   }, [onayIste]);
   const sekmeyeGecRef = useRef(sekmeyeGec);
   sekmeyeGecRef.current = sekmeyeGec;
+  // Panele gömülüyken Ctrl+K çerçeve dışına çıkmaz: komut paletini açsın diye panele bildirilir
+  useEffect(() => {
+    if (window.parent === window) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return;
+      e.preventDefault();
+      window.parent.postMessage({ type: 'streamaxt:komut-paleti' }, '*');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   useEffect(() => {
     const ilk = window.location.hash.replace('#', '');
     if (ilk) setActiveTab(ilk);
@@ -178,7 +190,7 @@ export function App() {
     overlays: 'Overlay Stüdyo', alerts: 'Uyarılar', pano: 'Ses / Video Panosu', tts: 'TTS',
     songrequest: 'Şarkı İsteği', polls: 'Anketler', giveaways: 'Çekilişler', interaction: 'Tahmin & Kuyruk',
     trivia: 'Bil Bakalım', games: 'Chat Oyunları', economy: 'Sadakat & Market', rankings: 'Sıralamalar',
-    donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar',
+    donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar', otomasyon: 'Otomasyon',
     extras: 'Klip & Seviye', automod: 'Bot Moderasyonu', shield: 'Kalkan & Denetim', ai: 'Yapay Zekâ',
     platforms: 'Platformlar', integrations: 'Discord & Entegrasyonlar', settings: 'Genel Ayarlar', botadvanced: 'Gelişmiş Bot'
   };
@@ -192,7 +204,7 @@ export function App() {
     { id: 'etkinlik', label: 'Anket & Çekiliş', icon: BarChart3, grup: 'Yayın sırasında', alt: ['polls', 'giveaways', 'interaction'] },
     { id: 'oyun', label: 'Oyunlar', icon: Gamepad2, grup: 'Etkileşim', alt: ['trivia', 'games'] },
     { id: 'ekonomi', label: 'Puan & Bağış', icon: Coins, grup: 'Etkileşim', alt: ['economy', 'rankings', 'donations'] },
-    { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'sesli', 'extras'] },
+    { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'otomasyon', 'sesli', 'extras'] },
     { id: 'moderasyon', label: 'Moderasyon', icon: ShieldCheck, grup: 'Kurulum & Ayarlar', alt: ['automod', 'shield'] },
     { id: 'yapayzeka', label: 'Yapay Zekâ', icon: Sparkles, grup: 'Kurulum & Ayarlar', alt: ['ai'] },
     { id: 'baglanti', label: 'Bağlantılar', icon: Link2, grup: 'Kurulum & Ayarlar', alt: ['platforms', 'integrations'] },
@@ -230,6 +242,7 @@ export function App() {
       case 'polls': return <PollsStudio />;
       case 'pano': return <SoundBoard />;
       case 'sesli': return <VoiceCommands />;
+      case 'otomasyon': return <Otomasyon />;
       case 'songrequest': return <SongRequest />;
       case 'economy': return <Economy />;
       case 'games': return <MiniGames />;

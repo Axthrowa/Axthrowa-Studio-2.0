@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  *
  * Aynı emote art arda gelince ekranın ortasında belirir. Gelen her emote ekranın rastgele bir yerinden
- * ortadakine doğru uçar ve onu büyütür; gelmeyi kesince kopyaları her yöne süzülüp ekrandan çıkar.
+ * ortadakine doğru uçar ve onu büyütür; gelmeyi kesince küçük kopyaları her yöne süzülüp ekrandan çıkar.
  * Yalnız emote'un kendisi görünür: çerçeve, ad ve sayaç yok.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -24,6 +24,8 @@ export interface Gelen { id: number; dx: number; dy: number; donus: number; olce
 const UCUS_MS = 600;
 const EN_COK_UCAN = 40;
 const PATLAMA_EN_UZUN_MS = 2600;
+/** Dağılan kopyanın boyu, ayarlanan emote boyuna göre: ortadaki ne kadar büyümüş olursa olsun küçük kalır */
+const PARCA_ORANI = 0.6;
 
 /** Kombo büyüdükçe emote boyu; kutuya sığacak kadarla sınırlı */
 export function emoteBoyu(taban: number, adet: number, enAz: number, kutu: number): number {
@@ -117,7 +119,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
       const { w, h } = kutuBoyutu();
       const a = ayar.current;
       const id = ++patlamaNo;
-      const boy = emoteBoyu(Number(a.size) || 96, adet, a.minCombo, Math.min(w, h));
+      const boy = (Number(a.size) || 96) * PARCA_ORANI;
       setGelenler([]);
       setPatlama({ id, emote, boy, parcalar: patlamaParcalari(adet, w, h, boy) });
       sonra(() => setPatlama((p) => (p?.id === id ? null : p)), PATLAMA_EN_UZUN_MS);

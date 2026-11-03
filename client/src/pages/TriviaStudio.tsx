@@ -34,7 +34,7 @@ import {
   History,
   Calculator,
   PenTool,
-  Quote
+  Quote,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { TriviaWidget } from '../widgets/TriviaWidget.js';
@@ -178,6 +178,17 @@ export function TriviaStudio() {
   };
 
   // Fetch Leaderboard
+  const skorlariSil = async () => {
+    if (!confirm('Bil Bakalım skorları silinsin mi? Sıralama, doğru/yanlış sayıları ve seriler sıfırlanır. Bu işlem geri alınamaz.')) return;
+    const r = await fetch('/api/istatistikler/sil', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grup: 'trivia' })
+    }).catch(() => null);
+    if (r?.ok) setLeaderboard([]);
+    else alert('Skorlar silinemedi: bot yanıt vermedi.');
+  };
+
   const fetchLeaderboard = async () => {
     try {
       const res = await fetch('/api/trivia/leaderboard?limit=25');
@@ -817,13 +828,23 @@ export function TriviaStudio() {
                 Canlı yayında bilgi yarışması sorularına en hızlı ve en çok doğru cevap veren izleyiciler
               </p>
             </div>
-            <button
-              onClick={fetchLeaderboard}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300"
-              title="Yenile"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={skorlariSil}
+                disabled={leaderboard.length === 0}
+                className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40 text-red-300 text-xs font-bold flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>İstatistikleri sil</span>
+              </button>
+              <button
+                onClick={fetchLeaderboard}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300"
+                title="Yenile"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {leaderboard.length === 0 ? (

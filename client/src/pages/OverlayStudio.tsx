@@ -1117,7 +1117,7 @@ export function OverlayStudio() {
 
       {/* Notification Toast */}
       {testNotification && (
-        <div className="flex items-center gap-2 p-3.5 bg-purple-600/30 border border-purple-500/40 rounded-xl text-purple-200 text-xs font-bold animate-fadeIn">
+        <div role="status" className="fixed bottom-6 right-6 z-50 flex items-center gap-2 p-3.5 bg-[#1b1430] border border-purple-500/40 rounded-xl shadow-xl text-purple-200 text-xs font-bold animate-fadeIn">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{testNotification}</span>
         </div>
@@ -1430,8 +1430,36 @@ export function OverlayStudio() {
                   }));
                 };
 
+                const kendiUrl =
+                  selectedCanvasWidget === 'soundBoard'
+                    ? `${baseUrl}/widgets/pano`
+                    : widgetGalleryItems.find((w) => w.id === seciliAyarId || GALERI_KATMANI[w.id]?.anahtar === selectedCanvasWidget)?.url;
+
                 return (
                   <div className="space-y-4">
+                    {kendiUrl && (
+                      <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-1.5">
+                        <span className="text-xs font-bold text-white block">Bu widget'ın kendi adresi</span>
+                        <span className="text-[10px] text-gray-400 block">OBS'te Tek URL olmadan ayrı kaynak olarak eklemek için</span>
+                        <div className="space-y-1.5">
+                          <p
+                            data-widget-adresi
+                            className="bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-purple-300 font-mono break-all select-all"
+                          >
+                            {kendiUrl}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(kendiUrl)}
+                            className="w-full justify-center px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[11px] font-bold flex items-center gap-1"
+                          >
+                            {copiedUrl === kendiUrl ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{copiedUrl === kendiUrl ? 'Kopyalandı' : 'Kopyala'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Include in Single OBS URL Toggle */}
                     <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between">
                       <div>

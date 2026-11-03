@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pause, Play, SkipForward, Trash2, Volume2, VolumeX, RotateCcw } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
-import { Buton, Kart, useToast } from '../ui/index.js';
+import { DONANIM_TUSU, Modul, useToast } from '../ui/index.js';
 
 interface Durum {
   paused: boolean;
@@ -101,68 +101,67 @@ export function AlertQueueControl() {
     ? `${durum.updatedBy || 'Biri'} ${EYLEM_METNI[durum.lastAction] || durum.lastAction} · ${new Date(durum.updatedAt).toLocaleTimeString('tr-TR')}`
     : 'Henüz denetim eylemi yok';
 
+  const tuslar = [
+    durum?.paused
+      ? { eylem: 'resume', etiket: 'Sürdür', ikon: Play, vurgu: true }
+      : { eylem: 'pause', etiket: 'Duraklat', ikon: Pause },
+    durum?.muted
+      ? { eylem: 'unmute', etiket: 'Sesi aç', ikon: Volume2, vurgu: true }
+      : { eylem: 'mute', etiket: 'Sessize al', ikon: VolumeX },
+    { eylem: 'skip', etiket: 'Atla', ikon: SkipForward },
+    { eylem: 'clear', etiket: 'Bekleyenleri temizle', ikon: Trash2 }
+  ];
+
   return (
-    <Kart
-      baslik="Uyarı Kuyruğu"
-      aciklama="Tüm panellere ve OBS uyarı kaynaklarına anında yansır"
+    <Modul
+      etiket="Uyarı kuyruğu"
       sag={
-        <div className="flex gap-1.5">
-          {durum?.paused && <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">DURAKLATILDI</span>}
-          {durum?.muted && <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-[10px] font-bold">SESSİZ</span>}
+        <div className="flex gap-1">
+          {durum?.paused && <span className="rounded-sm border border-zinc-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-300">Duraklatıldı</span>}
+          {durum?.muted && <span className="rounded-sm border border-red-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-400">Sessiz</span>}
         </div>
       }
     >
-      <div className="flex flex-wrap gap-2">
-        {durum?.paused ? (
-          <Buton ton="basari" ikon={<Play className="w-3.5 h-3.5" />} disabled={!!mesgul || !durum} onClick={() => uygula('resume')}>
-            Sürdür
-          </Buton>
-        ) : (
-          <Buton ton="ikincil" ikon={<Pause className="w-3.5 h-3.5" />} disabled={!!mesgul || !durum} onClick={() => uygula('pause')}>
-            Duraklat
-          </Buton>
-        )}
-        {durum?.muted ? (
-          <Buton ton="basari" ikon={<Volume2 className="w-3.5 h-3.5" />} disabled={!!mesgul || !durum} onClick={() => uygula('unmute')}>
-            Sesi aç
-          </Buton>
-        ) : (
-          <Buton ton="ikincil" ikon={<VolumeX className="w-3.5 h-3.5" />} disabled={!!mesgul || !durum} onClick={() => uygula('mute')}>
-            Sessize al
-          </Buton>
-        )}
-        <Buton ton="ikincil" ikon={<SkipForward className="w-3.5 h-3.5" />} disabled={!!mesgul || !durum} onClick={() => uygula('skip')}>
-          Atla
-        </Buton>
-        <Buton ton="ikincil" ikon={<Trash2 className="w-3.5 h-3.5" />} disabled={!!mesgul || !durum} onClick={() => uygula('clear')}>
-          Bekleyenleri temizle
-        </Buton>
+      <div className="grid grid-cols-2 gap-2">
+        {tuslar.map(({ eylem, etiket, ikon: Ikon, vurgu }) => (
+          <button
+            key={eylem}
+            type="button"
+            disabled={!!mesgul || !durum}
+            onClick={() => uygula(eylem)}
+            className={`${DONANIM_TUSU} flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-semibold ${vurgu ? 'border-[#53fc18] text-[#53fc18]' : ''}`}
+          >
+            <Ikon className="h-3.5 w-3.5 shrink-0" />
+            {etiket}
+          </button>
+        ))}
       </div>
-      <p className="text-[11px] text-gray-500">{son3}</p>
+      <p className="mt-2 font-mono text-[11px] text-zinc-500">{son3}</p>
 
-      <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-        {son.length === 0 && <p className="text-xs text-gray-500">Bu oturumda henüz uyarı gösterilmedi.</p>}
+      <div className="mt-2 max-h-56 divide-y divide-zinc-800 overflow-y-auto">
+        {son.length === 0 && <p className="text-xs text-zinc-500">Bu oturumda henüz uyarı gösterilmedi.</p>}
         {son.map((u) => (
-          <div key={u.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+          <div key={u.id} className="flex items-center justify-between gap-2 py-1.5">
             <div className="min-w-0">
-              <div className="text-xs text-white truncate">
+              <div className="truncate text-xs text-zinc-100">
                 {u.title || u.eventType}
-                {u.isTest && <span className="ml-1.5 text-[10px] text-cyan-300">TEST</span>}
+                {u.isTest && <span className="ml-1.5 font-mono text-[10px] text-zinc-500">TEST</span>}
               </div>
-              <div className="text-[11px] text-gray-400 truncate">{u.message}</div>
+              <div className="truncate text-[11px] text-zinc-400">{u.message}</div>
             </div>
             <button
               type="button"
               title="Yeniden oynat"
+              aria-label={`Yeniden oynat: ${u.title || u.eventType}`}
               disabled={!!mesgul}
               onClick={() => uygula('replay', u.id)}
-              className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 text-gray-300 disabled:opacity-40"
+              className={`${DONANIM_TUSU} shrink-0 p-2`}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="h-3.5 w-3.5" />
             </button>
           </div>
         ))}
       </div>
-    </Kart>
+    </Modul>
   );
 }

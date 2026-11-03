@@ -1,10 +1,11 @@
 import { Cover, glowShadow } from './Cover'
 import { Visualizer } from './Visualizer'
-import { ProgressBar, SkinCard, TIME_TEXT, clock, withAlpha } from './skinParts'
+import { PROGRESS_TRANSITION_MS, ProgressBar, SkinCard, TIME_TEXT, clock, withAlpha } from './skinParts'
 import { RING_SIZE, RING_STROKE, clamp01, ringDash, ringHead } from '../../lib/ringGeometry'
 import {
   AuroraPreview,
   BoxyPreview,
+  CassettePreview,
   ClearPreview,
   CompactPreview,
   DiscordPreview,
@@ -12,6 +13,7 @@ import {
   GalleryPreview,
   MacOSPreview,
   MinimalPreview,
+  TurntablePreview,
   RingPreview,
   ShellPreview,
 } from './SkinPreviews'
@@ -465,6 +467,102 @@ function Edge(p) {
   )
 }
 
+/** Pikap — dönen plak; çalarken iğne plağın üstünde, duraklayınca kalkıp kenara çekilir. */
+function Turntable(p) {
+  const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,24rem)] max-w-none rounded-xl p-3" background={shellBg} {...blurProps}>
+      <div className="flex items-center gap-3">
+        <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+          <div className="absolute left-1 top-1">
+            <Cover {...coverProps} shape="vinyl" size={92} />
+          </div>
+          <div
+            aria-hidden
+            data-igne={isPlaying ? 'plakta' : 'kalkik'}
+            className="absolute rounded-full"
+            style={{
+              right: 3,
+              top: 3,
+              width: 3,
+              height: 58,
+              background: textColor,
+              boxShadow: `0 0 6px ${withAlpha(accent, 0.8)}`,
+              transformOrigin: '50% 0',
+              transform: `rotate(${isPlaying ? 28 : 0}deg)`,
+              transition: 'transform 600ms ease-in-out',
+            }}
+          />
+          <div aria-hidden className="absolute rounded-full" style={{ right: 0, top: 0, width: 9, height: 9, background: accent }} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold" style={{ color: textColor }}>
+            {track.name}
+          </p>
+          <p className="truncate text-xs" style={{ color: mutedColor }}>
+            {track.artists}
+          </p>
+          <div className="mt-2 flex items-center gap-2.5">
+            <div className="min-w-0 flex-1">
+              <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} timeColor={mutedColor} />
+            </div>
+            {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+          </div>
+        </div>
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Kaset makarası: bant sarıldıkça çapı değişir, göbeği çalarken döner */
+function Makara({ cap, playing, renk }) {
+  return (
+    <div className="flex items-center justify-center" style={{ width: 44, height: 44 }}>
+      <div className="flex items-center justify-center rounded-full" style={{ width: cap, height: cap, background: 'rgba(0,0,0,0.65)', transition: `width ${PROGRESS_TRANSITION_MS}ms linear, height ${PROGRESS_TRANSITION_MS}ms linear` }}>
+        <div
+          className="resonance-spin flex items-center justify-center rounded-full"
+          style={{ width: 16, height: 16, border: `3px dashed ${renk}`, animationPlayState: playing ? 'running' : 'paused' }}
+        />
+      </div>
+    </div>
+  )
+}
+
+/** Retro kaset — bant soldan sağa sarılır: makara çapları parçanın ilerleyişini gösterir. */
+function Cassette(p) {
+  const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, blurProps } = p
+  const oran = clamp01(progress)
+  const cap = (o) => Math.round(20 + 24 * o)
+  return (
+    <SkinCard
+      className="w-[var(--kart-genislik,24rem)] max-w-none rounded-lg p-2.5"
+      background={shellBg}
+      style={{ border: `2px solid ${withAlpha(accent, 0.7)}` }}
+      {...blurProps}
+      keepBorder
+    >
+      <div className="rounded px-2.5 py-1.5" style={{ background: withAlpha(accent, 0.18), borderBottom: `3px double ${accent}` }}>
+        <p className="truncate font-mono text-sm font-bold" style={{ color: textColor }}>
+          {track.name}
+        </p>
+        <p className="truncate font-mono text-xs" style={{ color: mutedColor }}>
+          {track.artists}
+        </p>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 rounded-full px-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <Makara cap={cap(1 - oran)} playing={isPlaying} renk={accent} />
+          <Makara cap={cap(oran)} playing={isPlaying} renk={accent} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} timeColor={mutedColor} />
+        </div>
+        {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+      </div>
+    </SkinCard>
+  )
+}
+
 /**
  * `id`: yapılandırmada saklanan değer, `skins.<id>` çeviri anahtarı ve
  * `SKIN_COVER_SUPPORT` anahtarı — üçü hep aynı.
@@ -481,6 +579,8 @@ export const SKIN_REGISTRY = [
   { id: 'ring', Component: Ring, Preview: RingPreview, isNew: true },
   { id: 'aurora', Component: Aurora, Preview: AuroraPreview, isNew: true },
   { id: 'edge', Component: Edge, Preview: EdgePreview, isNew: true },
+  { id: 'turntable', Component: Turntable, Preview: TurntablePreview, isNew: true },
+  { id: 'cassette', Component: Cassette, Preview: CassettePreview, isNew: true },
 ]
 
 export const DEFAULT_SKIN_ID = 'compact'

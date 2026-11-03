@@ -178,6 +178,8 @@ export const translations = {
       ring: 'Ring',
       aurora: 'Aurora',
       edge: 'Edge',
+      turntable: 'Turntable',
+      cassette: 'Cassette',
       new: 'New',
     },
     covers: {
@@ -427,6 +429,8 @@ export const translations = {
       ring: 'Halka',
       aurora: 'Aurora',
       edge: 'Kenarlık',
+      turntable: 'Pikap',
+      cassette: 'Kaset',
       new: 'Yeni',
     },
     covers: {

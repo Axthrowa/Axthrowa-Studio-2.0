@@ -108,6 +108,29 @@ export function EdgePreview() {
   )
 }
 
+export function TurntablePreview() {
+  return (
+    <div className="relative h-8 w-10">
+      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-white/70">
+        <div className="h-2 w-2 rounded-full bg-[var(--color-surface-3)]" />
+      </div>
+      <div className="absolute right-0.5 top-0 h-6 w-0.5 origin-top rotate-[28deg] rounded-full bg-white" />
+    </div>
+  )
+}
+
+export function CassettePreview() {
+  return (
+    <div className="w-12 space-y-1 rounded-sm border border-white/60 bg-black/30 p-1">
+      <div className={`${block} h-1 w-full`} />
+      <div className="flex justify-between px-1">
+        <div className="h-2.5 w-2.5 rounded-full border border-white/80" />
+        <div className="h-2.5 w-2.5 rounded-full border border-white/80" />
+      </div>
+    </div>
+  )
+}
+
 export function SquarePreview() {
   return <div className="h-8 w-8 rounded-sm bg-white/70" />
 }

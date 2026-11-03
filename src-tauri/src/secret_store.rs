@@ -6,8 +6,18 @@ use serde_json::{json, Value};
 
 const SERVICE: &str = "com.axthrowa.yayin-yonetim-araci";
 
+static SERVICE_OVERRIDE: std::sync::OnceLock<&'static str> = std::sync::OnceLock::new();
+
+/// Süreç geneli kasa adını değiştirir (başsız düzenek gerçek sırlara dokunmasın diye).
+/// `main`'in başında, hiçbir sır okunmadan çağrılmalı; ilk çağrı geçerlidir.
+pub fn set_service_override(name: &'static str) {
+  let _ = SERVICE_OVERRIDE.set(name);
+}
+
 fn service_name() -> &'static str {
-  if cfg!(test) {
+  if let Some(name) = SERVICE_OVERRIDE.get() {
+    name
+  } else if cfg!(test) {
     "com.axthrowa.yayin-yonetim-araci.test"
   } else {
     SERVICE

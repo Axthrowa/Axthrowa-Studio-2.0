@@ -10,6 +10,7 @@ use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() {
+  yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.headless");
   yayin_yonetim_araci_lib::tls_saglayicisini_kur();
   let port: u16 =std::env::args().nth(1).and_then(|a| a.parse().ok()).unwrap_or(18843);
   let root: PathBuf = std::env::temp_dir().join(format!("yya-headless-{port}"));

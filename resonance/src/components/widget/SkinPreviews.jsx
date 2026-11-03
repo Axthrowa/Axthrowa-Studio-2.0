@@ -143,6 +143,38 @@ export function VinylPreview() {
   )
 }
 
+export function PillPreview() {
+  return <div className="flex h-4 w-12 items-center gap-1 rounded-full bg-white/20 px-0.5"><div className={`${block} h-3 w-3 rounded-full`} /><div className={`${block} h-1 flex-1`} /></div>
+}
+
+export function IslandPreview() {
+  return <div className="flex h-4 w-11 items-center justify-between rounded-full bg-black px-1"><div className="h-2 w-2 rounded-full bg-white/70" /><div className="h-1 w-3 rounded bg-white/70" /></div>
+}
+
+export function StripPreview() {
+  return <div className="h-2 w-14 border-l-2 border-white bg-white/30" />
+}
+
+export function AlbumFocusPreview() {
+  return <div className={`${block} relative h-10 w-10`}><div className="absolute inset-x-0 bottom-0 h-3 bg-black/60" /></div>
+}
+
+export function SidebarPreview() {
+  return <div className="flex h-12 w-7 flex-col items-center gap-0.5 rounded bg-white/15 p-0.5"><div className={`${block} h-5 w-5`} /><div className={`${block} h-1 w-5`} /><div className={`${block} h-1 w-3`} /></div>
+}
+
+export function GameboyPreview() {
+  return <div className="rounded-sm bg-[#306230] p-0.5"><div className="h-5 w-11 bg-[#9bbc0f]" /></div>
+}
+
+export function HudPreview() {
+  return <div className="h-6 w-12 border border-white/70 bg-white/10" style={{ clipPath: 'polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)' }} />
+}
+
+export function StickyPreview() {
+  return <div className="h-7 w-9 -rotate-3 bg-[#fcd34d]" />
+}
+
 export function NonePreview() {
   return <X className="h-5 w-5 text-white/40" />
 }

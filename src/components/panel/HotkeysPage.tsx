@@ -51,9 +51,9 @@ export default function HotkeysPage({
   const setAll = (next: HotkeyRow[]) => onPatch({ actionHotkeys: next });
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4">
       {/* Header Deck */}
-      <header className="rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass space-y-3">
+      <header className="rounded-2xl border border-white/[0.07] bg-panel-card/60 p-3 shadow-glass space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-xl border border-panel-accent/30 bg-panel-accent/15 text-panel-accent shadow-glow-sm">
@@ -97,7 +97,8 @@ export default function HotkeysPage({
       </header>
 
       {/* Sections */}
-      <div className="space-y-6">
+      <div className="grid items-start gap-4 xl:grid-cols-2 [&>*]:min-w-0">
+        <div className="xl:col-span-2">
         <ObsShortcutSettings
           obs={obs}
           scenes={scenes}
@@ -110,6 +111,7 @@ export default function HotkeysPage({
           onGoScene={onGoScene}
           onAction={onAction}
         />
+        </div>
 
         <SourceVisibilityHotkeys
           rows={parts.source}
@@ -120,14 +122,6 @@ export default function HotkeysPage({
           onListeningChange={onListeningChange}
           onChange={(next) => setAll(replaceSection(all, "source", next))}
           onRun={onRunRow}
-        />
-
-        <GeneralObsHotkeys
-          all={all}
-          registered={globalHotkeys}
-          failures={hotkeyFailures}
-          onListeningChange={onListeningChange}
-          onChange={setAll}
         />
 
         <ObsHotkeyBrowser
@@ -142,6 +136,8 @@ export default function HotkeysPage({
           onRun={onRunRow}
         />
 
+        {/* Tek kalan yarım kart sağda boşluk bırakıyordu */}
+        <div className="xl:col-span-2">
         <ObsActionSettings
           rows={parts.action as ActionRow[]}
           scenes={scenes}
@@ -153,6 +149,18 @@ export default function HotkeysPage({
           onRun={(row) => onRunRow(row as HotkeyRow)}
           hideKinds={["srcToggle", "obsHotkey"]}
         />
+        </div>
+
+        {/* İki sıra sütunlu liste: yarım genişlikte adlar kesiliyordu */}
+        <div className="xl:col-span-2">
+        <GeneralObsHotkeys
+          all={all}
+          registered={globalHotkeys}
+          failures={hotkeyFailures}
+          onListeningChange={onListeningChange}
+          onChange={setAll}
+        />
+        </div>
       </div>
     </div>
   );

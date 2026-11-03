@@ -27,6 +27,19 @@ void analitikBaslat();
  * Hash bookmark’ları `index.html` içindeki script path’e çevirir.
  * `vite base: '/'` ile /widgets/cup altında asset yolları kırılmaz.
  */
+// Güncellemeden sonra açık kalan sayfa, artık sunucuda olmayan eski parçayı isterse kendini bir kez yeniler
+window.addEventListener("vite:preloadError", (e) => {
+  const anahtar = "yya.parcaYenilendi";
+  try {
+    if (sessionStorage.getItem(anahtar) === __YYA_SURUM__) return;
+    sessionStorage.setItem(anahtar, __YYA_SURUM__);
+  } catch {
+    return;
+  }
+  e.preventDefault();
+  window.location.reload();
+});
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <GlobalErrorBoundary>

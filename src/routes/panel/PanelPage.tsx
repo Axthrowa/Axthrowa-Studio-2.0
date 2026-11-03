@@ -1564,6 +1564,64 @@ export default function PanelPage() {
     }
   }, []);
 
+  // Aynı bileşenler kendi sayfasında ve Canlı ekranına eklenen panelde çizilir
+  const muzikPaneli = (
+    <MusicPanel
+            baseUrl={server?.baseUrl || API_BASE}
+            onToast={showToast}
+            onOpenExternal={(url) => {
+              // Müzik kartı mesajın hangi çerçeveden geldiğine bakmıyor;
+              // yalnız Resonance'ın gerçekten açtırdığı adresler geçer.
+              if (resonanceLinkAllowed(url)) return openExternal(url);
+              showToast("Bu adres güvenlik nedeniyle açılmadı");
+            }}
+          />
+  );
+  const sesPaneli = (
+    <SoundBoardPanel
+          onToast={showToast}
+          onListeningChange={setHotkeyCapture}
+          registeredHotkeys={globalHotkeys}
+          hotkeyFailures={hotkeyFailures}
+          stopHotkey={sfxStopHk}
+          onStopHotkey={(v) => {
+            setSfxStopHk(v);
+            void patchSettings("panel", { sfxStopHotkey: v }).catch(() => {});
+          }}
+        />
+  );
+  const kisayolPaneli = (
+    <HotkeysPage
+            obs={(settings.obs || {}) as Record<string, any>}
+            scenes={scenes}
+            inputs={inputs}
+            obsConnected={obsConnected}
+            globalHotkeys={globalHotkeys}
+            hotkeyFailures={hotkeyFailures}
+            hotkeyError={hotkeyError}
+            onListeningChange={setHotkeyCapture}
+            onPatch={(patch) => update({ obs: patch })}
+            onGoScene={(scene, label, hint) => void goScene(scene, label, hint)}
+            onAction={(id) => void runActionHotkey(id)}
+            onRunRow={(row) =>
+              void runObsAction(row as ActionRow)
+                .then((m) => showToast(m))
+                .catch((e) => showToast(String(e?.message || e)))
+            }
+          />
+  );
+  const sahneOrtak = { PART_LABELS, bgFiles, clearChatHk, clearChatNow, creditCounts, fetchKickChatroom, handlePreviewCountdownEnd, hiddenParts, indirme, indirmeMetni, indirmeSuruyor, inputs, logoFiles, musicFiles, notices, obsConnected, obsUrl, openExternal, panelsPinned, particleFiles, particleKeys, pickBackground, pickLocalVideo, pickLogo, previewOn, refreshBackgrounds, refreshLogos, refreshMusic, refreshParticles, refreshVideos, resonanceOverlayUrl, restoreAllParts, restorePart, scenes, screen, secOrder, sectionHidden, setActiveNav, setClearChatHk, setCreditCounts, setHotkeyCapture, setPanelsPinned, setParticleFiles, setPreviewOn, settings, showToast, transitions, tt, update, videoFiles };
+  const yerelPanel = (id: string): React.ReactNode => {
+    const kaydirmali = (icerik: React.ReactNode) => <div className="custom-scrollbar h-full overflow-y-auto">{icerik}</div>;
+    if (id === "ek:muzik") return kaydirmali(muzikPaneli);
+    if (id === "ek:ses") return kaydirmali(sesPaneli);
+    if (id === "ek:kisayol") return kaydirmali(kisayolPaneli);
+    if (id === "ek:obs") return kaydirmali(<ObsStudioPanel onToast={showToast} />);
+    const ekran = { "ek:giris": "starting", "ek:cikis": "ending", "ek:mola": "brb" }[id];
+    if (ekran) return kaydirmali(<SahneAyarlari {...sahneOrtak} screen={ekran as typeof screen} />);
+    return null;
+  };
+
   return (
     <>
       <CloseRequestModal />
@@ -1711,6 +1769,7 @@ export default function PanelPage() {
             canli={liveOn}
             mesgul={masterBusy}
             onYayin={() => void runMasterStream()}
+            yerelPanel={yerelPanel}
             onBot={(sayfa) => {
               setBotSekme(sayfa);
               setActiveNav("bot");
@@ -1723,16 +1782,7 @@ export default function PanelPage() {
         </Suspense>
       ) : musicTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
-          <MusicPanel
-            baseUrl={server?.baseUrl || API_BASE}
-            onToast={showToast}
-            onOpenExternal={(url) => {
-              // Müzik kartı mesajın hangi çerçeveden geldiğine bakmıyor;
-              // yalnız Resonance'ın gerçekten açtırdığı adresler geçer.
-              if (resonanceLinkAllowed(url)) return openExternal(url);
-              showToast("Bu adres güvenlik nedeniyle açılmadı");
-            }}
-          />
+          {muzikPaneli}
         </div>
       ) : botTab ? (
         botGrubu === "bot" ? (
@@ -1762,38 +1812,11 @@ export default function PanelPage() {
         </div>
       ) : soundsTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-        <SoundBoardPanel
-          onToast={showToast}
-          onListeningChange={setHotkeyCapture}
-          registeredHotkeys={globalHotkeys}
-          hotkeyFailures={hotkeyFailures}
-          stopHotkey={sfxStopHk}
-          onStopHotkey={(v) => {
-            setSfxStopHk(v);
-            void patchSettings("panel", { sfxStopHotkey: v }).catch(() => {});
-          }}
-        />
+        {sesPaneli}
         </div>
       ) : hotkeysTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-          <HotkeysPage
-            obs={(settings.obs || {}) as Record<string, any>}
-            scenes={scenes}
-            inputs={inputs}
-            obsConnected={obsConnected}
-            globalHotkeys={globalHotkeys}
-            hotkeyFailures={hotkeyFailures}
-            hotkeyError={hotkeyError}
-            onListeningChange={setHotkeyCapture}
-            onPatch={(patch) => update({ obs: patch })}
-            onGoScene={(scene, label, hint) => void goScene(scene, label, hint)}
-            onAction={(id) => void runActionHotkey(id)}
-            onRunRow={(row) =>
-              void runObsAction(row as ActionRow)
-                .then((m) => showToast(m))
-                .catch((e) => showToast(String(e?.message || e)))
-            }
-          />
+          {kisayolPaneli}
         </div>
       ) : settingsTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -1805,7 +1828,7 @@ export default function PanelPage() {
         />
         </div>
       ) : (
-        <SahneAyarlari {...{ PART_LABELS, bgFiles, clearChatHk, clearChatNow, creditCounts, fetchKickChatroom, handlePreviewCountdownEnd, hiddenParts, indirme, indirmeMetni, indirmeSuruyor, inputs, logoFiles, musicFiles, notices, obsConnected, obsUrl, openExternal, panelsPinned, particleFiles, particleKeys, pickBackground, pickLocalVideo, pickLogo, previewOn, refreshBackgrounds, refreshLogos, refreshMusic, refreshParticles, refreshVideos, resonanceOverlayUrl, restoreAllParts, restorePart, scenes, screen, secOrder, sectionHidden, setActiveNav, setClearChatHk, setCreditCounts, setHotkeyCapture, setPanelsPinned, setParticleFiles, setPreviewOn, settings, showToast, transitions, tt, update, videoFiles }} />
+        <SahneAyarlari {...sahneOrtak} />
       )}
       </Suspense>
       </div>

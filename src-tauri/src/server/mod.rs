@@ -150,6 +150,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     // Gömülü müzik eklentisi — tüm ekranların paylaştığı tek "şu an çalan"
     .route("/api/now-playing", get(api_now_playing).post(api_set_now_playing))
     .route("/api/player/status", get(api_player_status))
+    .route("/api/player/sozler", get(api_player_sozler))
     .route("/api/player/source", post(api_player_source))
     .route("/api/player/command", post(api_player_command))
     .route("/api/player/request", post(api_player_request))
@@ -400,6 +401,58 @@ async fn api_patch_settings(
 #[derive(Deserialize)]
 struct KickQuery {
   slug: String,
+}
+
+#[derive(Deserialize)]
+struct SozSorgusu {
+  ara: Option<String>,
+  id: Option<String>,
+}
+
+/// Söz kaynağı NetEase tarayıcıdan sorulamaz (CORS). Hedef sabit, yalnız arama metni ve sayısal kimlik geçer.
+fn soz_adresi(q: &SozSorgusu) -> Option<reqwest::Url> {
+  if let Some(id) = q.id.as_deref().filter(|i| !i.is_empty() && i.len() <= 20 && i.bytes().all(|b| b.is_ascii_digit())) {
+    return reqwest::Url::parse_with_params("https://music.163.com/api/song/lyric", &[("id", id), ("lv", "1")]).ok();
+  }
+  let ara = q.ara.as_deref().map(str::trim).filter(|a| !a.is_empty())?;
+  let ara: String = ara.chars().take(200).collect();
+  reqwest::Url::parse_with_params("https://music.163.com/api/search/get", &[("s", ara.as_str()), ("type", "1"), ("limit", "8")]).ok()
+}
+
+async fn api_player_sozler(Query(q): Query<SozSorgusu>) -> Response {
+  let Some(hedef) = soz_adresi(&q) else {
+    return (StatusCode::BAD_REQUEST, "ara ya da id gerekli").into_response();
+  };
+  let istek = reqwest::Client::new()
+    .get(hedef)
+    .header(header::USER_AGENT, "Mozilla/5.0")
+    .header(header::REFERER, "https://music.163.com/")
+    .timeout(std::time::Duration::from_secs(8))
+    .send();
+  match istek.await {
+    Ok(r) if r.status().is_success() => match r.bytes().await {
+      Ok(b) => ([(header::CONTENT_TYPE, "application/json")], b).into_response(),
+      Err(_) => StatusCode::BAD_GATEWAY.into_response(),
+    },
+    _ => StatusCode::BAD_GATEWAY.into_response(),
+  }
+}
+
+#[cfg(test)]
+mod soz_testleri {
+  use super::{soz_adresi, SozSorgusu};
+
+  #[test]
+  fn yalniz_sabit_hedef_ve_sayisal_kimlik() {
+    let a = soz_adresi(&SozSorgusu { ara: None, id: Some("123".into()) }).unwrap();
+    assert_eq!(a.host_str(), Some("music.163.com"));
+    assert!(a.query().unwrap().contains("id=123"));
+    assert!(soz_adresi(&SozSorgusu { ara: None, id: Some("1/../x".into()) }).is_none());
+    assert!(soz_adresi(&SozSorgusu { ara: Some("  ".into()), id: None }).is_none());
+    let b = soz_adresi(&SozSorgusu { ara: Some("a&b=c".into()), id: None }).unwrap();
+    assert_eq!(b.path(), "/api/search/get");
+    assert!(b.query().unwrap().contains("s=a%26b%3Dc"));
+  }
 }
 
 async fn api_kick_chatroom(

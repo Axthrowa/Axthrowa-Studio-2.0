@@ -4,7 +4,8 @@
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { ETIKET, TUS } from "./donanim";
-import { BOSLUK_PX, SABLONLAR, SATIR_PX, SUTUN, VARSAYILAN_YERLESIM, yerlesimOku, yerlestir, type Kutu, type PanelId } from "../../lib/canliYerlesim";
+import { BOSLUK_PX, SABLONLAR, SATIR_PX, SUTUN, VARSAYILAN_YERLESIM, eklerleBirlestir, ekPanelMi, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kutu, type PanelId, type TemelPanelId } from "../../lib/canliYerlesim";
+import { EK_PANEL_GRUPLARI } from "../../lib/canliEkPaneller";
 
 const YERLESIM_KEY = "yya.canli.yerlesim";
 /** Bu genişliğin altında paneller alt alta dizilir: 12 sütun okunmaz olur */
@@ -30,10 +31,12 @@ type Props = {
   duzenle: boolean;
   onBitti: () => void;
   onGenisSohbet: (genis: boolean) => void;
-  paneller: Record<PanelId, { baslik: string; gosterBaslik: boolean; icerik: ReactNode }>;
+  paneller: Record<TemelPanelId, { baslik: string; gosterBaslik: boolean; icerik: ReactNode }>;
+  /** Eklenen panelin başlığı ve içeriği; katalogda yoksa `null` (kayıttan kalmış eski kimlik) */
+  ekPanel: (id: string) => { baslik: string; icerik: ReactNode } | null;
 };
 
-export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller }: Props) {
+export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller, ekPanel }: Props) {
   const [yerlesim, setYerlesim] = useState(kayitliYerlesim);
   const [dar, setDar] = useState(false);
   const izgara = useRef<HTMLDivElement>(null);
@@ -87,9 +90,15 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller 
   };
 
   const uygula = (kutular: Kutu[], genisSohbet: boolean) => {
-    setYerlesim(kutular);
-    kaydet(kutular);
+    const sonuc = eklerleBirlestir(kutular, yerlesim);
+    setYerlesim(sonuc);
+    kaydet(sonuc);
     onGenisSohbet(genisSohbet);
+  };
+
+  const listeyiYaz = (liste: Kutu[]) => {
+    setYerlesim(liste);
+    kaydet(liste);
   };
 
   const duzenlemede = duzenle && !dar;
@@ -107,6 +116,23 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller 
           <button type="button" className={`${TUS} h-8 px-3 text-xs font-medium`} onClick={() => uygula(VARSAYILAN_YERLESIM, false)}>
             Varsayılana dön
           </button>
+          <select
+            aria-label="Panel ekle"
+            className={`${TUS} h-8 px-2 text-xs font-medium`}
+            value=""
+            onChange={(e) => e.target.value && listeyiYaz(panelEkle(yerlesim, e.target.value as PanelId))}
+          >
+            <option value="">+ Panel ekle…</option>
+            {EK_PANEL_GRUPLARI.map((g) => (
+              <optgroup key={g.ad} label={g.ad}>
+                {g.paneller.map((p) => (
+                  <option key={p.id} value={p.id} disabled={yerlesim.some((k) => k.id === p.id)}>
+                    {p.ad}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
           <button type="button" className={`${TUS} h-8 px-3 text-xs font-bold`} onClick={onBitti}>
             Bitti
           </button>
@@ -118,12 +144,14 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller 
         style={dar ? undefined : { gridTemplateColumns: `repeat(${SUTUN}, minmax(0, 1fr))`, gridAutoRows: SATIR_PX, gap: BOSLUK_PX }}
       >
         {yerlesim.map((k) => {
-          const p = paneller[k.id];
+          const ek = ekPanelMi(k.id) ? ekPanel(k.id) : null;
+          if (ekPanelMi(k.id) && !ek) return null;
+          const p = ek ? { baslik: ek.baslik, gosterBaslik: true, icerik: ek.icerik } : paneller[k.id as TemelPanelId];
           return (
             <div
               key={k.id}
               className={`relative flex min-h-0 min-w-0 flex-col rounded-md border border-panel-border bg-panel-card ${p.gosterBaslik ? "p-2" : ""} ${dar && k.id === "onizleme" ? "aspect-video" : ""} ${dar && k.id === "ses" ? "h-80" : ""}`}
-              style={dar ? undefined : { gridColumn: `${k.x + 1} / span ${k.w}`, gridRow: `${k.y + 1} / span ${k.h}` }}
+              style={dar ? (ek ? { height: 480 } : undefined) : { gridColumn: `${k.x + 1} / span ${k.w}`, gridRow: `${k.y + 1} / span ${k.h}` }}
             >
               {p.gosterBaslik ? <h2 className={`${ETIKET} mb-2 shrink-0`}>{p.baslik}</h2> : null}
               <div className="custom-scrollbar min-h-0 flex-1 overflow-auto">{p.icerik}</div>
@@ -140,6 +168,16 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller 
                   className="absolute inset-0 z-10 flex cursor-move touch-none select-none items-center justify-center rounded-md border-2 border-dashed border-white/30 bg-black/70 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                 >
                   {p.baslik}
+                  {ek ? (
+                    <button
+                      type="button"
+                      className={`${TUS} absolute right-2 top-2 h-7 px-2 text-xs font-medium`}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => listeyiYaz(panelKaldir(yerlesim, k.id))}
+                    >
+                      Kaldır
+                    </button>
+                  ) : null}
                   <span
                     aria-hidden
                     title="Boyutlandır"

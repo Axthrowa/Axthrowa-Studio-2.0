@@ -1,4 +1,44 @@
 /** Skinlerin ortak yapı taşları — `skins.jsx` ve `NowPlayingWidget.jsx` kullanır. */
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
+
+/** Her skinde geçerli görünüm ayarları: skinlerin imzası değişmesin diye bağlamla gelir */
+export const GorunumBaglami = createContext({})
+
+/**
+ * Başlık ya da sanatçı. Sığmıyorsa (ayar açıksa) kayar; sanatçı satırı istenirse albümü de yazar.
+ * Kaydırma hızı sabittir: yazı uzadıkça tur süresi uzar.
+ */
+export function Kayan({ metin, album = false }) {
+  const { marquee, albumAdi } = useContext(GorunumBaglami)
+  const yazi = album && albumAdi ? `${metin} · ${albumAdi}` : metin
+  const el = useRef(null)
+  const [tasma, setTasma] = useState(0)
+  useEffect(() => {
+    if (!marquee) return setTasma(0)
+    const olc = () => {
+      const k = el.current
+      if (k?.parentElement) setTasma(Math.max(0, k.scrollWidth - k.parentElement.clientWidth))
+    }
+    olc()
+    // Yazı tipi geç yüklenince genişlik değişir
+    const t = setTimeout(olc, 600)
+    return () => clearTimeout(t)
+  }, [yazi, marquee])
+  return (
+    <span
+      ref={el}
+      className="inline-block max-w-none whitespace-nowrap"
+      style={tasma > 4 ? { '--kayan': `-${tasma}px`, animation: `resonance-kayan ${Math.max(7, tasma / 12 + 5)}s linear infinite` } : undefined}
+    >
+      {yazi}
+    </span>
+  )
+}
+
+/** Oynatma durumu noktası: çalarken yanar */
+export function DurumNoktasi({ playing, color }) {
+  return <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: playing ? color : 'rgba(255,255,255,.3)', boxShadow: playing ? `0 0 8px ${color}` : 'none' }} />
+}
 
 /** ms → 1:23 (bir saati geçen parçalarda 1:02:03) */
 export function clock(ms) {
@@ -53,6 +93,7 @@ export function ProgressBar({
 }) {
   // Süre bilinmiyorsa (bazı kaynaklar vermiyor) sayı göstermiyoruz —
   // "0:00 / 0:00" yazmak bilgi değil, gürültü.
+  const { kalanSure } = useContext(GorunumBaglami)
   const showTimes = times && Number(durationMs) > 0
   const pct = Math.min(1, Math.max(0, Number(progress) || 0)) * 100
   return (
@@ -76,7 +117,7 @@ export function ProgressBar({
           style={{ ...TIME_TEXT, color: timeColor || 'currentColor' }}
         >
           <span>{clock(progressMs)}</span>
-          <span>{clock(durationMs)}</span>
+          <span>{kalanSure ? `-${clock(Number(durationMs) - Number(progressMs))}` : clock(durationMs)}</span>
         </div>
       )}
     </div>
@@ -104,6 +145,7 @@ export function SkinCard({
   keepBorder = false,
   children,
 }) {
+  const { hareketliZemin, zeminRengi } = useContext(GorunumBaglami)
   const showBlur = blur && coverSrc && !bare
   return (
     <div
@@ -120,6 +162,9 @@ export function SkinCard({
           />
           <div className="absolute inset-0" style={{ background }} />
         </div>
+      )}
+      {hareketliZemin && !bare && (
+        <div className={`resonance-zemin resonance-zemin-${hareketliZemin}`} style={{ '--zemin-renk': zeminRengi }} aria-hidden />
       )}
       <div className="relative">{children}</div>
     </div>

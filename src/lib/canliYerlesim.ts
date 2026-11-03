@@ -2,7 +2,9 @@
  * Canlı ekranının "Yayın" bölümündeki panellerin yerleşimi: 12 sütunluk ızgarada konum ve boyut.
  * Saf: sürükleme ve boyutlandırma bu işlevlerden geçer, çakışan panel aşağı itilir.
  */
-export type PanelId = "onizleme" | "sahne" | "ses" | "hizli" | "bilgi" | "kontrol";
+export type TemelPanelId = "onizleme" | "sahne" | "ses" | "hizli" | "bilgi" | "kontrol";
+/** Temel paneller ya da sonradan eklenen `ek:…` paneller */
+export type PanelId = TemelPanelId | `ek:${string}`;
 export type Kutu = { id: PanelId; x: number; y: number; w: number; h: number };
 
 export const SUTUN = 12;
@@ -56,7 +58,7 @@ export const SABLONLAR: { id: string; ad: string; genisSohbet: boolean; kutular:
 ];
 
 /** Panel bu boydan küçültülemez (sütun, satır) */
-const EN_AZ: Record<PanelId, { w: number; h: number }> = {
+const EN_AZ: Record<TemelPanelId, { w: number; h: number }> = {
   onizleme: { w: 3, h: 5 },
   sahne: { w: 3, h: 3 },
   ses: { w: 3, h: 6 },
@@ -65,10 +67,14 @@ const EN_AZ: Record<PanelId, { w: number; h: number }> = {
   kontrol: { w: 3, h: 5 },
 };
 
+const EK_EN_AZ = { w: 3, h: 6 };
+
+export const ekPanelMi = (id: string) => id.startsWith("ek:");
+
 const cakisir = (a: Kutu, b: Kutu) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 function sinirla(k: Kutu): Kutu {
-  const en = EN_AZ[k.id];
+  const en = EN_AZ[k.id as TemelPanelId] ?? EK_EN_AZ;
   const w = Math.min(SUTUN, Math.max(en.w, Math.round(k.w)));
   return {
     id: k.id,
@@ -95,12 +101,25 @@ export function yerlestir(liste: Kutu[], id: PanelId, yeni: Omit<Kutu, "id">): K
   return liste.map((v) => yerlesen.find((k) => k.id === v.id)!);
 }
 
+/** Yeni paneli en alta ekler; zaten varsa liste değişmez. */
+export function panelEkle(liste: Kutu[], id: PanelId): Kutu[] {
+  if (liste.some((k) => k.id === id)) return liste;
+  const y = liste.reduce((en, k) => Math.max(en, k.y + k.h), 0);
+  return [...liste, { id, x: 0, y, w: SUTUN, h: 20 }];
+}
+
+export const panelKaldir = (liste: Kutu[], id: PanelId): Kutu[] => liste.filter((k) => k.id !== id);
+
+/** Hazır şablona geçerken eklenen paneller kaybolmasın: alta dizilir */
+export const eklerleBirlestir = (sablon: Kutu[], mevcut: Kutu[]): Kutu[] =>
+  mevcut.filter((k) => ekPanelMi(k.id)).reduce((l, k) => panelEkle(l, k.id), sablon);
+
 /** Kayıtlı metni okur; bozuk ya da eksikse varsayılan yerleşim döner. */
 export function yerlesimOku(ham: string | null): Kutu[] {
   if (!ham) return VARSAYILAN_YERLESIM;
   try {
     const okunan = JSON.parse(ham) as Kutu[];
-    const liste = (Array.isArray(okunan) ? okunan : []).filter((k) => k && k.id in EN_AZ && [k.x, k.y, k.w, k.h].every(Number.isFinite));
+    const liste = (Array.isArray(okunan) ? okunan : []).filter((k) => k && (k.id in EN_AZ || (typeof k.id === "string" && ekPanelMi(k.id))) && [k.x, k.y, k.w, k.h].every(Number.isFinite));
     if (!VARSAYILAN_YERLESIM.every((v) => liste.some((k) => k.id === v.id))) return VARSAYILAN_YERLESIM;
     let sonuc = liste;
     // Teker teker yerleştirilir: elle bozulmuş kayıtta da çakışma kalmaz

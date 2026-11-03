@@ -140,7 +140,10 @@ impl AppState {
       multistream,
       music: Arc::new(music::MusicState::new(&data_dir)),
       ytdl: Arc::new(ytdl::YtdlState::new()),
-      kick_auth: Arc::new(kick::KickAuth::new(&data_dir)),
+      kick_auth: {
+        let _ = streamaxt::KICK_DOSYASI.set(data_dir.join("kick-oauth.json"));
+        Arc::new(kick::KickAuth::new(&data_dir))
+      },
       kick_chat: Arc::new(bot::kick_chat::KickChatRuntime::new()),
       obs: Arc::new(obs_client::ObsClientState::new()),
       widget_rt: Arc::new(widget_runtime::WidgetRuntime::new()),

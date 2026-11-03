@@ -52,6 +52,24 @@ export const DEFAULT_CONFIG = {
   lyricsColor: '#ffffff',
   /** Yalnız o anki satır (önceki/sonraki gizli). */
   lyricsSingleLine: false,
+  /** Söz görünümü (bkz. SOZ_TEMALARI) */
+  lyricsTheme: 'klasik',
+  /** Kaç satır: 'uc' önceki-şimdi-sonraki, 'iki' şimdi-sonraki, 'tek' yalnız şimdi */
+  lyricsLayout: 'uc',
+  lyricsAlign: 'center',
+  /** Boş: kartın yazı tipi */
+  lyricsFont: '',
+  lyricsBgOpacity: 0.75,
+  /** Zamanı olmayan sözleri süreye yayarak göster */
+  lyricsPlain: true,
+  /** Sığmayan başlık kayar */
+  marquee: true,
+  showAlbum: false,
+  timeRemaining: false,
+  /** Kart arka planı: yok, aurora, akis, nabiz, nefes */
+  animatedBg: 'yok',
+  /** Hazır renk paleti; boş: renk kipi */
+  palet: '',
 }
 
 function makeProfile(name) {

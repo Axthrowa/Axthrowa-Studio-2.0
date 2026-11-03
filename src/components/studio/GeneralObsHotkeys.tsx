@@ -37,7 +37,7 @@ export default function GeneralObsHotkeys({ all, registered, failures, onListeni
           OBS'in Ayarlar → Kısayollar → Genel bölümündeki komutlar. Tuş ata, boş bırakırsan kapalı kalır.
         </p>
       </div>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {GENERAL_HOTKEYS.map((g) => {
           const hk = generalHotkeyOf(all, g.name);
           return (

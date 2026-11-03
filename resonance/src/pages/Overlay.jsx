@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { NowPlayingWidget } from '../components/widget/NowPlayingWidget'
-import { Lyrics } from '../components/widget/Lyrics'
+import { Lyrics, sozYuksekligi } from '../components/widget/Lyrics'
 import { useConfig, DEFAULT_CONFIG } from '../context/ConfigContext'
 import { useNowPlaying } from '../hooks/useNowPlaying'
 import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
@@ -168,13 +168,17 @@ export default function Overlay({ lyricsOnly = false }) {
     postState()
   }, [track, isPlaying])
 
+  // Sözler kartın genişliğini alır; kart gizliyken kutunun genişliği sıfır olur
+  const [kartGorunur, setKartGorunur] = useState(true)
   const onVisibilityChange = useCallback((visible) => {
     stateRef.current.visible = Boolean(visible)
+    setKartGorunur(Boolean(visible))
     postState({ visible: Boolean(visible) })
   }, [])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-transparent">
+    // Kart üste sabit: ortalanınca söz satırı değiştikçe ve sözler açılıp kapanınca kart yer değiştiriyordu
+    <div className={`flex min-h-screen justify-center bg-transparent ${lyricsOnly ? 'items-center' : 'items-start'}`}>
       <div ref={boxRef} className="relative inline-flex min-h-[1px] min-w-[1px] flex-col items-center">
         {config && !lyricsOnly && (
           <NowPlayingWidget
@@ -185,20 +189,17 @@ export default function Overlay({ lyricsOnly = false }) {
             onVisibilityChange={onVisibilityChange}
           />
         )}
-        {config &&
-          (lyricsOnly || config.showLyrics) &&
-          track &&
-          isPlaying &&
-          !sarkiBitti(track, progressMs) && (
-            lyricsOnly ? (
+        {config && (lyricsOnly || config.showLyrics) && (
+          // Kartın altında, kartın genişliğinde. Yer baştan ayrılır: satır gelip gidince kart yerinden oynamaz
+          <div
+            className={lyricsOnly ? 'w-screen px-4' : 'mt-2'}
+            style={lyricsOnly ? undefined : { width: kartGorunur ? 0 : 420, minWidth: kartGorunur ? '100%' : undefined, minHeight: sozYuksekligi(config) }}
+          >
+            {track && isPlaying && !sarkiBitti(track, progressMs) && (
               <Lyrics track={track} progressMs={progressMs} config={config} />
-            ) : (
-              // Söz satırı gelip gidince kart yerinden oynamasın
-              <div className="absolute left-1/2 top-full w-[640px] -translate-x-1/2">
-                <Lyrics track={track} progressMs={progressMs} config={config} />
-              </div>
-            )
-          )}
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

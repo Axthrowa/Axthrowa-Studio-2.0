@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SABLONLAR, SUTUN, VARSAYILAN_YERLESIM, yerlesimOku, yerlestir, type Kutu } from "./canliYerlesim";
+import { SABLONLAR, SUTUN, VARSAYILAN_YERLESIM, eklerleBirlestir, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kutu } from "./canliYerlesim";
 
 const bul = (l: Kutu[], id: Kutu["id"]) => l.find((k) => k.id === id)!;
 const cakismaVar = (l: Kutu[]) =>
@@ -39,6 +39,25 @@ describe("hazır çalışma alanları", () => {
     expect(cakismaVar(kutular)).toBe(false);
     expect(kutular.every((k) => k.x + k.w <= SUTUN)).toBe(true);
     expect(yerlesimOku(JSON.stringify(kutular))).toEqual(kutular);
+  });
+});
+
+describe("eklenen paneller", () => {
+  it("en alta çakışmadan eklenir, ikinci kez eklenmez, kayıttan döner, kaldırılır", () => {
+    const l = panelEkle(VARSAYILAN_YERLESIM, "ek:bot:overlays");
+    expect(cakismaVar(l)).toBe(false);
+    expect(panelEkle(l, "ek:bot:overlays")).toBe(l);
+    expect(yerlesimOku(JSON.stringify(l)).some((k) => k.id === "ek:bot:overlays")).toBe(true);
+    expect(panelKaldir(l, "ek:bot:overlays")).toEqual(VARSAYILAN_YERLESIM);
+  });
+
+  it("şablona geçince eklenen panel kalır, bilinmeyen kimlik düşer", () => {
+    const l = panelEkle(VARSAYILAN_YERLESIM, "ek:muzik");
+    const s = eklerleBirlestir(SABLONLAR[0].kutular, l);
+    expect(s.some((k) => k.id === "ek:muzik")).toBe(true);
+    expect(cakismaVar(s)).toBe(false);
+    const bozuk = JSON.stringify([...VARSAYILAN_YERLESIM, { id: "zararli", x: 0, y: 40, w: 3, h: 6 }]);
+    expect(yerlesimOku(bozuk).some((k) => (k.id as string) === "zararli")).toBe(false);
   });
 });
 

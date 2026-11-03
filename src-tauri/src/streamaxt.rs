@@ -215,6 +215,17 @@ pub fn start() -> Result<Value, String> {
   Err(format!("AxBoT 12 sn içinde yanıt vermedi:\n{}", tail_log(&dir)))
 }
 
+/// Studio'nun kayıtlı Kick uygulaması; yoksa `None` (dosya, lib.rs'teki KickAuth'un dosyası)
+pub static KICK_DOSYASI: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+
+/// Bot Kick girişini yalnız Client Secret ile tamamlar. Sır pakete girmez: bu bilgisayardaki Studio kaydından verilir.
+fn kick_uygulamasi(metin: &str) -> Option<(String, String)> {
+  let v: Value = serde_json::from_str(metin).ok()?;
+  let id = v.get("clientId")?.as_str()?.trim();
+  let sir = v.get("clientSecret")?.as_str()?.trim();
+  (!id.is_empty() && !sir.is_empty()).then(|| (id.to_string(), sir.to_string()))
+}
+
 fn spawn_child(dir: &Path, port: u16) -> Result<(), String> {
   let node = find_node().ok_or_else(|| "Node.js 22+ bulunamadı — nodejs.org üzerinden kurun.".to_string())?;
 
@@ -234,6 +245,15 @@ fn spawn_child(dir: &Path, port: u16) -> Result<(), String> {
     .arg("dist/index.js")
     .current_dir(dir)
     .env("PORT", port.to_string())
+    .envs(
+      KICK_DOSYASI
+        .get()
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|m| kick_uygulamasi(&m))
+        .map(|(id, sir)| [("STREAMAXT_KICK_CLIENT_ID", id), ("STREAMAXT_KICK_CLIENT_SECRET", sir)])
+        .into_iter()
+        .flatten(),
+    )
     .stdin(Stdio::null())
     .stdout(Stdio::from(log))
     .stderr(Stdio::from(log2));
@@ -365,6 +385,14 @@ pub async fn streamaxt_stop(force: Option<bool>) -> Result<Value, String> {
 
 #[cfg(test)]
 mod tests {
+  #[test]
+  fn kick_uygulamasi_yalniz_iki_alan_doluysa_doner() {
+    assert_eq!(kick_uygulamasi(r#"{"clientId":" a ","clientSecret":"b"}"#), Some(("a".into(), "b".into())));
+    assert_eq!(kick_uygulamasi(r#"{"clientId":"a","clientSecret":" "}"#), None);
+    assert_eq!(kick_uygulamasi(r#"{"clientId":"a"}"#), None);
+    assert_eq!(kick_uygulamasi("bozuk"), None);
+  }
+
   use super::*;
 
   #[test]

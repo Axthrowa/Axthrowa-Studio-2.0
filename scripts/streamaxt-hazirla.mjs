@@ -289,3 +289,5 @@ if (fs.existsSync(botResonance)) {
   fs.cpSync(path.join(root, "resonance", "src"), botResonance, { recursive: true });
   console.log(`[streamaxt] Resonance kaynağı bota eşitlendi → ${botResonance}`);
 }
+// Bu bilgisayarın Client ID'leri pakete girer (sır girmez): yeni kurulumda yeniden yazmak gerekmesin
+execFileSync(process.execPath, [path.join(root, "scripts", "kimlikleri-ekle.mjs"), path.join(hedef, "varsayilan-kimlikler.json")], { stdio: "inherit" });

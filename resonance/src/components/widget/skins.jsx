@@ -1,6 +1,6 @@
 import { Cover, glowShadow } from './Cover'
 import { Visualizer } from './Visualizer'
-import { PROGRESS_TRANSITION_MS, ProgressBar, SkinCard, TIME_TEXT, clock, withAlpha } from './skinParts'
+import { DurumNoktasi, Kayan, PROGRESS_TRANSITION_MS, ProgressBar, SkinCard, TIME_TEXT, clock, withAlpha } from './skinParts'
 import { RING_SIZE, RING_STROKE, clamp01, ringDash, ringHead } from '../../lib/ringGeometry'
 import {
   AuroraPreview,
@@ -16,6 +16,14 @@ import {
   TurntablePreview,
   RingPreview,
   ShellPreview,
+  PillPreview,
+  IslandPreview,
+  StripPreview,
+  AlbumFocusPreview,
+  SidebarPreview,
+  GameboyPreview,
+  HudPreview,
+  StickyPreview,
 } from './SkinPreviews'
 
 /**
@@ -44,10 +52,10 @@ function Compact(p) {
         <Cover {...coverProps} size={40} />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
         </div>
         {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
@@ -68,10 +76,10 @@ function Boxy(p) {
         <Cover {...coverProps} size={72} />
         <div className="min-w-0">
           <p className="truncate text-base font-bold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-sm" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
           <div className="mt-2 flex items-center gap-3">
             {/* Çubuk esnesin: aksi halde daralıp süre rakamları yapışıyordu. */}
@@ -102,8 +110,8 @@ function Gallery(p) {
             duruyordu; yuvarlak kapakta biraz içeri alıyoruz. */}
         <Cover {...coverProps} size={vinyl ? 232 : 256} />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-          <p className="truncate text-sm font-semibold text-white">{track.name}</p>
-          <p className="truncate text-xs text-white/75">{track.artists}</p>
+          <p className="truncate text-sm font-semibold text-white"><Kayan metin={track.name} /></p>
+          <p className="truncate text-xs text-white/75"><Kayan metin={track.artists} album /></p>
         </div>
       </div>
       <div className="p-3">
@@ -130,7 +138,7 @@ function Minimal(p) {
     <SkinCard className="w-[var(--kart-genislik,20rem)] max-w-none rounded-xl px-4 py-3" background={shellBg} {...blurProps}>
       <div className="mb-2 flex items-center justify-between">
         <p className="truncate text-sm font-semibold" style={{ color: textColor }}>
-          {track.name} <span style={{ color: mutedColor }}>· {track.artists}</span>
+          <Kayan metin={track.name} /> <span style={{ color: mutedColor }}>· <Kayan metin={track.artists} album /></span>
         </p>
         {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
       </div>
@@ -158,10 +166,10 @@ function MacOS(p) {
         <Cover {...coverProps} size={44} />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
           <div className="mt-1.5">
             <ProgressBar
@@ -192,10 +200,10 @@ function Shell(p) {
         <Cover {...coverProps} size={48} />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
         </div>
         {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} size="lg" />}
@@ -219,11 +227,11 @@ function Discord(p) {
         <Cover {...coverProps} size={56} />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           {track.artists && (
             <p className="truncate text-xs" style={{ color: mutedColor }}>
-              by {track.artists}
+              by <Kayan metin={track.artists} album />
             </p>
           )}
           {track.album && (
@@ -265,10 +273,10 @@ function Clear(p) {
         <Cover {...coverProps} size={48} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-bold leading-tight" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
         </div>
         {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
@@ -360,10 +368,10 @@ function Ring(p) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
           <div className="mt-1.5 flex items-center gap-2">
             {Number(durationMs) > 0 && (
@@ -399,10 +407,10 @@ function Aurora(p) {
         <Cover {...coverProps} size={60} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-bold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
           <div className="mt-2 flex items-center gap-3">
             <div className="min-w-0 flex-1">
@@ -443,10 +451,10 @@ function Edge(p) {
         <Cover {...coverProps} size={52} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
           <div className="mt-1.5 flex items-center gap-2.5">
             <div className="min-w-0 flex-1">
@@ -497,10 +505,10 @@ function Turntable(p) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold" style={{ color: textColor }}>
-            {track.name}
+            <Kayan metin={track.name} />
           </p>
           <p className="truncate text-xs" style={{ color: mutedColor }}>
-            {track.artists}
+            <Kayan metin={track.artists} album />
           </p>
           <div className="mt-2 flex items-center gap-2.5">
             <div className="min-w-0 flex-1">
@@ -543,10 +551,10 @@ function Cassette(p) {
     >
       <div className="rounded px-2.5 py-1.5" style={{ background: withAlpha(accent, 0.18), borderBottom: `3px double ${accent}` }}>
         <p className="truncate font-mono text-sm font-bold" style={{ color: textColor }}>
-          {track.name}
+          <Kayan metin={track.name} />
         </p>
         <p className="truncate font-mono text-xs" style={{ color: mutedColor }}>
-          {track.artists}
+          <Kayan metin={track.artists} album />
         </p>
       </div>
       <div className="mt-2 flex items-center gap-2">
@@ -560,6 +568,160 @@ function Cassette(p) {
         {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
       </div>
     </SkinCard>
+  )
+}
+
+/** Hap: tek satır, tam yuvarlak; alt kenarda ince ilerleme */
+function Pill(p) {
+  const { track, isPlaying, progress, accent, shellBg, textColor, mutedColor, config, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,22rem)] max-w-none rounded-full border border-white/10 py-1.5 pl-1.5 pr-5 shadow-xl" background={shellBg} {...blurProps}>
+      <div className="flex items-center gap-3">
+        <Cover {...coverProps} size={36} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold leading-tight" style={{ color: textColor }}><Kayan metin={track.name} /></p>
+          <p className="truncate text-[11px] leading-tight" style={{ color: mutedColor }}><Kayan metin={track.artists} album /></p>
+          <div className="mt-1 h-[2px] overflow-hidden rounded-full bg-white/15">
+            <div className="h-full ease-linear" style={{ width: `${Math.round(progress * 100)}%`, background: accent, transition: `width ${PROGRESS_TRANSITION_MS}ms linear` }} />
+          </div>
+        </div>
+        {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Ada: siyah, yatay kapsül; solda kapak, sağda çubuklar */
+function Island(p) {
+  const { track, isPlaying, accent, config, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,20rem)] max-w-none rounded-[28px] px-3 py-2 shadow-2xl" background="rgba(0,0,0,0.96)" {...blurProps}>
+      <div className="flex items-center gap-3">
+        <Cover {...coverProps} size={34} />
+        <div className="min-w-0 flex-1 text-center">
+          <p className="truncate text-[13px] font-semibold text-white"><Kayan metin={track.name} /></p>
+          <p className="truncate text-[11px] text-white/60"><Kayan metin={track.artists} album /></p>
+        </div>
+        {config.hideVisualizer ? <DurumNoktasi playing={isPlaying} color={accent} /> : <Visualizer playing={isPlaying} color={accent} />}
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Şerit: alt bant biçiminde geniş, ince; solda renk çubuğu */
+function Strip(p) {
+  const { track, isPlaying, progress, progressMs, durationMs, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,34rem)] max-w-none rounded-sm py-1.5 pr-3 shadow-xl" background={shellBg} style={{ borderLeft: `6px solid ${accent}` }} {...blurProps} keepBorder>
+      <div className="flex items-center gap-3 pl-2.5">
+        <Cover {...coverProps} size={30} />
+        <DurumNoktasi playing={isPlaying} color={accent} />
+        <p className="min-w-0 flex-1 truncate text-sm font-bold uppercase tracking-wide" style={{ color: textColor }}><Kayan metin={`${track.name} — ${track.artists}`} /></p>
+        {durationMs > 0 && <span className="shrink-0 text-xs" style={{ ...TIME_TEXT, color: mutedColor }}>{clock(progressMs)}</span>}
+        <div className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-white/15">
+          <div className="h-full" style={{ width: `${Math.round(progress * 100)}%`, background: accent }} />
+        </div>
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Kapak odaklı: büyük kapak, üstüne koyu geçişle yazı */
+function AlbumFocus(p) {
+  const { track, progress, accent, coverProps } = p
+  return (
+    <div className="relative w-[var(--kart-genislik,16rem)] max-w-none overflow-hidden rounded-2xl shadow-2xl" style={{ aspectRatio: '1 / 1', background: 'rgba(15,16,21,.9)' }}>
+      {coverProps.src && <img src={coverProps.src} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+      <div className="absolute inset-x-0 bottom-0 p-3" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.88))' }}>
+        <p className="truncate text-base font-bold text-white"><Kayan metin={track.name} /></p>
+        <p className="truncate text-xs text-white/70"><Kayan metin={track.artists} album /></p>
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/20">
+          <div className="h-full" style={{ width: `${Math.round(progress * 100)}%`, background: accent }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Yan sütun: dikey, dar; yayın kenarına yaslanır */
+function Sidebar(p) {
+  const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,11rem)] max-w-none rounded-xl border border-white/10 p-3 shadow-xl" background={shellBg} {...blurProps}>
+      <div className="flex flex-col items-center gap-2 text-center">
+        <Cover {...coverProps} size={120} />
+        <div className="w-full min-w-0">
+          <p className="truncate text-sm font-bold" style={{ color: textColor }}><Kayan metin={track.name} /></p>
+          <p className="truncate text-xs" style={{ color: mutedColor }}><Kayan metin={track.artists} album /></p>
+        </div>
+        <div className="w-full">
+          <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} timeColor={mutedColor} />
+        </div>
+        {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+      </div>
+    </SkinCard>
+  )
+}
+
+/** El konsolu: dört tonlu yeşil ekran; temanın rengini kullanmaz */
+function Gameboy(p) {
+  const { track, progress, isPlaying, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,20rem)] max-w-none rounded-lg p-2" background="#306230" {...blurProps} blur={false} keepBorder>
+      <div className="flex items-center gap-2.5 rounded p-2" style={{ background: '#9bbc0f', color: '#0f380f', fontFamily: '"Pixelify Sans", "VT323", monospace', boxShadow: 'inset 0 0 0 2px #8bac0f' }}>
+        {coverProps.shape !== 'none' && coverProps.src && <img src={coverProps.src} alt="" className="h-11 w-11 shrink-0 rounded-sm" style={{ imageRendering: 'pixelated', filter: 'grayscale(1) sepia(1) hue-rotate(40deg) saturate(2.4) brightness(.8)' }} />}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold"><Kayan metin={track.name} /></p>
+          <p className="truncate text-xs"><Kayan metin={track.artists} album /></p>
+          <div className="mt-1 flex items-center gap-1 text-[10px]">
+            <span>{isPlaying ? '▶' : '❚❚'}</span>
+            <div className="h-1.5 flex-1" style={{ background: '#8bac0f', outline: '1px solid #0f380f' }}>
+              <div className="h-full" style={{ width: `${Math.round(progress * 100)}%`, background: '#0f380f' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </SkinCard>
+  )
+}
+
+/** HUD: kesik köşeli oyun arayüzü paneli */
+function Hud(p) {
+  const { track, isPlaying, progress, progressMs, durationMs, accent, textColor, coverProps } = p
+  return (
+    <div
+      className="w-[var(--kart-genislik,24rem)] max-w-none p-[1px]"
+      style={{ background: accent, clipPath: 'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)' }}
+    >
+      <div className="flex items-center gap-3 p-2.5" style={{ background: 'rgba(2,6,23,.94)', clipPath: 'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)' }}>
+        {coverProps.shape !== 'none' && <Cover {...coverProps} size={46} />}
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>
+            <DurumNoktasi playing={isPlaying} color={accent} /> Şimdi çalıyor
+          </p>
+          <p className="truncate text-sm font-bold uppercase" style={{ color: textColor }}><Kayan metin={track.name} /></p>
+          <p className="truncate text-xs text-white/60"><Kayan metin={track.artists} album /></p>
+          <ProgressBar progress={progress} color={accent} height={2} progressMs={progressMs} durationMs={durationMs} times={false} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Yapışkan not: sarı kağıt, el yazısı, hafif eğik */
+function Sticky(p) {
+  const { track, progressMs, durationMs, coverProps } = p
+  return (
+    <div className="w-[var(--kart-genislik,16rem)] max-w-none p-3 shadow-xl" style={{ background: 'linear-gradient(180deg,#fde68a,#fcd34d)', color: '#3f2d06', transform: 'rotate(-1.2deg)', fontFamily: '"Kalam", "Caveat", cursive' }}>
+      <div className="flex items-center gap-2.5">
+        {coverProps.shape !== 'none' && coverProps.src && <img src={coverProps.src} alt="" className="h-12 w-12 shrink-0 rotate-2 border-2 border-white shadow" />}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-base font-bold leading-tight"><Kayan metin={track.name} /></p>
+          <p className="truncate text-sm leading-tight"><Kayan metin={track.artists} album /></p>
+          {durationMs > 0 && <p className="text-xs opacity-70">{clock(progressMs)} / {clock(durationMs)}</p>}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -581,6 +743,14 @@ export const SKIN_REGISTRY = [
   { id: 'edge', Component: Edge, Preview: EdgePreview, isNew: true },
   { id: 'turntable', Component: Turntable, Preview: TurntablePreview, isNew: true },
   { id: 'cassette', Component: Cassette, Preview: CassettePreview, isNew: true },
+  { id: 'pill', Component: Pill, Preview: PillPreview, isNew: true },
+  { id: 'island', Component: Island, Preview: IslandPreview, isNew: true },
+  { id: 'strip', Component: Strip, Preview: StripPreview, isNew: true },
+  { id: 'albumfocus', Component: AlbumFocus, Preview: AlbumFocusPreview, isNew: true },
+  { id: 'sidebar', Component: Sidebar, Preview: SidebarPreview, isNew: true },
+  { id: 'gameboy', Component: Gameboy, Preview: GameboyPreview, isNew: true },
+  { id: 'hud', Component: Hud, Preview: HudPreview, isNew: true },
+  { id: 'sticky', Component: Sticky, Preview: StickyPreview, isNew: true },
 ]
 
 export const DEFAULT_SKIN_ID = 'compact'

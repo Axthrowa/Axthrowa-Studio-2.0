@@ -5,7 +5,7 @@
  * Sık güncellenen parçalar (süre, önizleme, ses ölçeri) kendi bileşenlerinde: her güncellemede ekranın tamamı
  * yeniden çizilmesin.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Eye, EyeOff, Pin } from "lucide-react";
 import { actionsApi } from "../../lib/api/actions";
 import { getStreamHealth, isObsConnected, onObsConnection, type StreamHealth } from "../../lib/obs";
@@ -19,6 +19,7 @@ import ControlCenter, { KontrolListesi } from "./ControlCenter";
 import { ETIKET, TUS, TUS_TABAN } from "./donanim";
 import SesKaristirici from "./SesKaristirici";
 import YayinDuzeni from "./YayinDuzeni";
+import { botSekmesi, ekPanelBul } from "../../lib/canliEkPaneller";
 import { YayinBilgisiDock } from "./YayinBilgisiDock";
 import { ActivityFeedPanel, UniversalChatPanel } from "./UniversalChat";
 
@@ -29,7 +30,11 @@ type Props = {
   onYayin: () => void;
   /** Botta bir sayfa aç (çekiliş, anket) */
   onBot: (sayfa: string) => void;
+  /** Uygulamanın kendi sayfaları (Müzik, Ses Paneli…): panele eklenince aynı bileşen çizilir */
+  yerelPanel: (id: string) => ReactNode;
 };
+
+const StreamAxtHost = lazy(() => import("../panel/StreamAxtHost"));
 
 type BotDurumu = {
   canli?: { izleyici?: number };
@@ -173,7 +178,7 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
   );
 }
 
-export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot }: Props) {
+export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, yerelPanel }: Props) {
   const [gelismis, setGelismis] = useState(false);
   const [duzenle, setDuzenle] = useState(false);
   const [genisSohbet, setGenisSohbet] = useState(() => {
@@ -378,6 +383,25 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot }: 
             duzenle={duzenle}
             onBitti={() => setDuzenle(false)}
             onGenisSohbet={genisSohbetSec}
+            ekPanel={(id) => {
+              const k = ekPanelBul(id);
+              if (!k) return null;
+              const sekmesi = botSekmesi(id);
+              return {
+                baslik: k.ad,
+                icerik: (
+                  <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
+                    {sekmesi ? (
+                      <div className="flex h-full min-h-0 flex-col">
+                        <StreamAxtHost onToast={onToast} tab={sekmesi} embed onOpenMusic={() => onBot(sekmesi)} />
+                      </div>
+                    ) : (
+                      yerelPanel(id)
+                    )}
+                  </Suspense>
+                ),
+              };
+            }}
             paneller={{
               bilgi: { baslik: "Yayın bilgisi", gosterBaslik: false, icerik: <YayinBilgisiDock onToast={onToast} /> },
               kontrol: { baslik: "Yayın öncesi kontrol", gosterBaslik: true, icerik: <KontrolListesi onToast={onToast} /> },

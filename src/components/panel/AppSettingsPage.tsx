@@ -102,7 +102,7 @@ export default function AppSettingsPage({
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 overflow-visible p-4 pb-20 md:p-6">
+    <div className="mx-auto max-w-6xl space-y-4 overflow-visible p-4 pb-16">
       {/* Segmented Tab Bar */}
       <div className="flex gap-1.5 rounded-2xl border border-white/[0.07] bg-black/40 p-1.5 shadow-inner">
         {visibleTabs.map((id) => {
@@ -127,7 +127,8 @@ export default function AppSettingsPage({
       </div>
 
       {activeTab === "general" && (
-        <div className="space-y-6 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-6 shadow-glass">
+        // Geniş ekranda iki sütun: ayar blokları bölünmez, ayırıcı çizgiler sütunda gereksiz
+        <div className="columns-1 gap-8 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass xl:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid [&>hr]:hidden xl:[&>hr]:hidden">
           {/* Theme Option */}
           <div className="space-y-2.5">
             <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
@@ -159,7 +160,7 @@ export default function AppSettingsPage({
           {/* Skin Selection */}
           <div className="space-y-2.5">
             <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">Görünüm stili</p>
-            <div className="space-y-2.5">
+            <div className="grid gap-2 sm:grid-cols-2">
               {skins.map((s) => {
                 const on = skin === s.id;
                 return (

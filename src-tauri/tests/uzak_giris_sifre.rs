@@ -6,6 +6,7 @@ use yayin_yonetim_araci_lib::AppState;
 
 #[tokio::test]
 async fn eski_kayit_calisir_ve_girisle_yukseltilir() {
+  yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.test");
   let root = std::env::temp_dir().join(format!("yayin-uzakgiris-{}", std::process::id()));
   let _ = std::fs::remove_dir_all(&root);
   std::fs::create_dir_all(&root).unwrap();

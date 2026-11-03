@@ -17,10 +17,24 @@ fn gecersiz_kilma_gercek_kasaya_dokunmaz() {
   assert_eq!(yalitilmis.as_deref(), Some("deger"));
 }
 
-/// Başsız düzenek, AppState (ayarlar → kasa) kurulmadan önce kasayı yalıtmalı.
+/// Test ve örnekler normal kitaplığa bağlanır (`cfg!(test)` yanlış): AppState (ayarlar → kasa)
+/// kurmadan önce kasayı yalıtmalılar.
 #[test]
-fn bassiz_ornek_kasayi_once_yalitir() {
-  let kaynak = include_str!("../examples/headless_server.rs");
-  let yalitim = kaynak.find("secret_store::set_service_override(").expect("örnek kasayı yalıtmıyor");
-  assert!(yalitim < kaynak.find("AppState::new").unwrap());
+fn appstate_kuran_test_ve_ornekler_kasayi_once_yalitir() {
+  let kok = env!("CARGO_MANIFEST_DIR");
+  let mut denetlenen = 0;
+  for klasor in ["tests", "examples"] {
+    for dosya in std::fs::read_dir(format!("{kok}/{klasor}")).unwrap() {
+      let yol = dosya.unwrap().path();
+      let kaynak = std::fs::read_to_string(&yol).unwrap();
+      // Parçalı: bu dosya kendini eşleştirmesin.
+      let Some(kurulum) = kaynak.find(concat!("AppState", "::new(")) else {
+        continue;
+      };
+      let yalitim = kaynak.find("secret_store::set_service_override(");
+      assert!(yalitim.is_some_and(|y| y < kurulum), "{} kasayı yalıtmıyor", yol.display());
+      denetlenen += 1;
+    }
+  }
+  assert!(denetlenen >= 4, "beklenen dosyalar bulunamadı: {denetlenen}");
 }

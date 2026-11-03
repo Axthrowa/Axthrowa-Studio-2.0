@@ -26,6 +26,7 @@ fn mesaj(text: &str) -> ChatInbound {
 
 #[tokio::test]
 async fn sohbet_filtre_ve_market_calistirmaz() {
+  yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.test");
   let root = std::env::temp_dir().join(format!("yayin-eskibot-{}", std::process::id()));
   let _ = std::fs::remove_dir_all(&root);
   std::fs::create_dir_all(&root).unwrap();

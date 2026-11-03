@@ -35,6 +35,7 @@ fn free_port() -> u16 {
 }
 
 async fn make_state(root: PathBuf, portable: bool, port: u16) -> AppState {
+  yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.test");
   let data_dir = root.join("app-data");
   tokio::task::spawn_blocking(move || AppState::new(root, data_dir, portable, port))
     .await

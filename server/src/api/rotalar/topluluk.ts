@@ -1,5 +1,5 @@
 /**
- * StreamAxT — topluluk: 7TV emote'ları, düzenli izleyiciler
+ * AxBoT — topluluk: 7TV emote'ları, düzenli izleyiciler
  * Developed by AxthrowA
  */
 import { Router, Request, Response } from 'express';

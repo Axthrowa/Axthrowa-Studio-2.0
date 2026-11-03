@@ -1,5 +1,5 @@
 /**
- * StreamAxT — IPv4 öncelikli DNS testleri (ağsız: yalnız yerel adlar)
+ * AxBoT — IPv4 öncelikli DNS testleri (ağsız: yalnız yerel adlar)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sırların diskte şifrelenmesi (S6)
+ * AxBoT — sırların diskte şifrelenmesi (S6)
  * Developed by AxthrowA
  *
  * Denetim S6: OAuth tokenları ve API anahtarları `data/streamaxt.sqlite`
@@ -27,6 +27,7 @@ import { execFileSync } from 'node:child_process';
 export const ONEK = 'dpapi:v1:';
 
 /** Uygulamaya özgü ek entropi: başka bir uygulamanın DPAPI verisiyle karışmasın. */
+// Eski ad kasıtlı: değişirse kayıtlı sırlar çözülemez
 const ENTROPI_B64 = Buffer.from('StreamAxT-sir-kasasi-v1', 'utf8').toString('base64');
 
 /**

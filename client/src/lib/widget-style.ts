@@ -1,5 +1,5 @@
 /**
- * StreamAxT widget görünüm yardımcıları
+ * AxBoT widget görünüm yardımcıları
  * Developed by AxthrowA
  *
  * Renk seçicileri hex tutar, saydamlık ayrı bir alandır; bu ikisini birleştiren

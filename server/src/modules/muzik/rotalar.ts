@@ -1,11 +1,11 @@
 /**
- * StreamAxT — müzik host API'si (Resonance arayüzü + panel + OBS)
+ * AxBoT — müzik host API'si (Resonance arayüzü + panel + OBS)
  * Developed by AxthrowA
  *
- * Uçlar Yayın Yönetim Aracı'ndaki Rust host'uyla aynı biçimdedir; Resonance
- * değiştirilmeden hem orada, hem StreamAxT'te (/resonance/), hem de bağımsız
+ * Uçlar AxthrowA Studio'daki Rust host'uyla aynı biçimdedir; Resonance
+ * değiştirilmeden hem orada, hem AxBoT'ta (/resonance/), hem de bağımsız
  * Resonance sunucusunda (resonance-bagimsiz.ts) çalışır. Bu dosya veritabanı
- * ve StreamAxT'e özgü modül kullanmaz: depolama ve yayın dışarıdan verilir.
+ * ve AxBoT'a özgü modül kullanmaz: depolama ve yayın dışarıdan verilir.
  */
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
@@ -22,7 +22,7 @@ export interface MuzikRotaSecenekleri {
   senkronYayinla: (m: unknown) => void;
   /** Spotify bağlantısı değişti (panelleri tazele) */
   durumDegisti?: () => void;
-  /** Temayı tutan uzak host (Yayın Yönetim Aracı); yoksa tema yalnız yerelde */
+  /** Temayı tutan uzak host (AxthrowA Studio); yoksa tema yalnız yerelde */
   uzakHost?: () => string;
 }
 

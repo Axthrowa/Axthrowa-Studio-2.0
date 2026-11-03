@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sohbet metninden emote ayıklama (kappagen ve sohbet katmanı)
+ * AxBoT — sohbet metninden emote ayıklama (kappagen ve sohbet katmanı)
  * Developed by AxthrowA
  */
 

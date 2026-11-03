@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Ses/Video Panosu (Blerp tarzı) hizmeti
+ * AxBoT — Ses/Video Panosu (Blerp tarzı) hizmeti
  * Developed by AxthrowA
  *
  * Yayıncı kendi ses ve videolarını medya kütüphanesine yükler, panoya öğe olarak ekler; izleyiciler sohbetten
@@ -8,7 +8,7 @@
  * duraklatır, temizler (oynamamış isteklerin puanı iade edilir). Giriş sesi: izleyicinin o günkü ilk mesajında.
  *
  * Platform kanal puanı ödülleri bu sürümde bağlı değil: Kick ödül olayı yalnız webhook'la gelir (herkese açık adres
- * gerekir), Twitch için EventSub gerekir — ikisi de StreamAxT'te yok (KNOWN_LIMITATIONS).
+ * gerekir), Twitch için EventSub gerekir — ikisi de AxBoT'ta yok (KNOWN_LIMITATIONS).
  */
 import crypto from 'node:crypto';
 import { db } from '../../db/index.js';

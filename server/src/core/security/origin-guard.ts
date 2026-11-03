@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Host ve WebSocket köken koruması (saf)
+ * AxBoT — Host ve WebSocket köken koruması (saf)
  * Developed by AxthrowA
  *
  * `local-guard.ts` HTTP yazma isteklerini kökenle koruyordu; iki boşluk

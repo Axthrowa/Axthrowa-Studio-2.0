@@ -1,5 +1,5 @@
 /**
- * StreamAxT — canlı yayın durumu rozetleri (saf)
+ * AxBoT — canlı yayın durumu rozetleri (saf)
  * Developed by AxthrowA
  *
  * Sunucu yayının açık olup olmadığını platform API'lerinden yoklar

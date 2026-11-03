@@ -1,5 +1,5 @@
 /**
- * StreamAxT — yayın durumu yoklayıcısı
+ * AxBoT — yayın durumu yoklayıcısı
  * Developed by AxthrowA
  *
  * `yayinDurumu()` tanımlayan her bağlı platformu (Kick, Twitch, YouTube)

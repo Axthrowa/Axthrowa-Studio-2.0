@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Sesli komut dinleyicisi (tarayıcıda yerel konuşma tanıma)
+ * AxBoT — Sesli komut dinleyicisi (tarayıcıda yerel konuşma tanıma)
  * Developed by AxthrowA
  *
  * Vosk (vosk-browser, Apache-2.0) WASM olarak bir Web Worker'da çalışır; mikrofon sesi bilgisayardan çıkmaz.

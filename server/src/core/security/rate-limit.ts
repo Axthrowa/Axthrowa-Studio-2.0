@@ -1,5 +1,5 @@
 /**
- * StreamAxT — hız sınırı (S7) (saf)
+ * AxBoT — hız sınırı (S7) (saf)
  * Developed by AxthrowA
  *
  * Denetim S7: "Hiçbir uçta hız sınırı yok". Sunucu yalnız yerelde dinlediği

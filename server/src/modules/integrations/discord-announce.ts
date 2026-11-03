@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Discord duyuruları
+ * AxBoT — Discord duyuruları
  * Developed by AxthrowA
  *
  * BotRix'te `/panel/integrations` platform bağlantısı DEĞİL, Discord duyuru

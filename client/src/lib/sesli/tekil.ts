@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Panel içinde tek dinleyici (sekme değişse de sürer)
+ * AxBoT — Panel içinde tek dinleyici (sekme değişse de sürer)
  * Developed by AxthrowA
  */
 import { SesliDinleyici, sunucuyaGonder } from './dinleyici.js';

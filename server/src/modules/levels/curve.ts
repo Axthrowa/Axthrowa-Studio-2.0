@@ -1,5 +1,5 @@
 /**
- * StreamAxT — seviye eğrisi (saf hesap)
+ * AxBoT — seviye eğrisi (saf hesap)
  * Developed by AxthrowA
  *
  * Veritabanı erişimi YOK; test edilebilir olsun diye ayrıldı.

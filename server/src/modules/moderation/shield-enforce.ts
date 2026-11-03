@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Kalkan modunun uygulanması
+ * AxBoT — Kalkan modunun uygulanması
  * Developed by AxthrowA
  *
  * Kurallar `shield-rules.ts`'te (saf, testli). Burada: ihlal eden mesaj bot

@@ -1,5 +1,5 @@
 /**
- * StreamAxT Polls panel
+ * AxBoT Polls panel
  * Developed by AxthrowA
  */
 import { useEffect, useState } from 'react';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT Activity Feed overlay
+ * AxBoT Activity Feed overlay
  * Developed by AxthrowA
  */
 import { useEffect, useRef, useState } from 'react';

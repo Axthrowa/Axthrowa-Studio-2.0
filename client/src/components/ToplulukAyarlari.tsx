@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Topluluk: düzenli izleyiciler, votekick, emote piramidi,
+ * AxBoT — Topluluk: düzenli izleyiciler, votekick, emote piramidi,
  * emote bingo, kappagen ve 7TV ayarları
  * Developed by AxthrowA
  */

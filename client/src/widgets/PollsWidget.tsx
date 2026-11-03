@@ -1,5 +1,5 @@
 /**
- * StreamAxT Polls overlay
+ * AxBoT Polls overlay
  * Developed by AxthrowA
  *
  * Anket açılınca belirir, oylar canlı güncellenir; süre dolunca (ya da panelden

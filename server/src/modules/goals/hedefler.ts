@@ -1,5 +1,5 @@
 /**
- * StreamAxT — hedef çubuklarının ilerlemesi (bağış / takipçi / abone / KICKs)
+ * AxBoT — hedef çubuklarının ilerlemesi (bağış / takipçi / abone / KICKs)
  * Developed by AxthrowA
  *
  * İlerleme eskiden yalnız OBS sayfasının belleğinde sayılıyordu: OBS yeniden açılınca, sahne yenilenince ya

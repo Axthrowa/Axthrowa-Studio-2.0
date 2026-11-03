@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Spotify yardımcıları testleri
+ * AxBoT — Spotify yardımcıları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

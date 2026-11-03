@@ -1,5 +1,5 @@
 /**
- * StreamAxT — yerleşik komutların tek listesi
+ * AxBoT — yerleşik komutların tek listesi
  * Developed by AxthrowA
  *
  * Sohbetteki `!komutlar`, panelin Komutlar › Yerleşik Komutlar sekmesi ve komut ayarları (aç/kapat, yetki,

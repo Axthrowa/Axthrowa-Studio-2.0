@@ -1,5 +1,5 @@
 /**
- * StreamAxT — yayın durumu ve Twitch kuralları testleri (saf)
+ * AxBoT — yayın durumu ve Twitch kuralları testleri (saf)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

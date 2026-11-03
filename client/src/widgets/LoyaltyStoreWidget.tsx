@@ -1,5 +1,5 @@
 /**
- * StreamAxT Sadakat Mağazası bildirimi
+ * AxBoT Sadakat Mağazası bildirimi
  * Developed by AxthrowA
  *
  * Panelden tema, konum, süre, konfeti, ses ve gösterilecek alanlar ayarlanır.

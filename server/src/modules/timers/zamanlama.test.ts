@@ -1,5 +1,5 @@
 /**
- * StreamAxT — zamanlayıcı kararları testleri
+ * AxBoT — zamanlayıcı kararları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

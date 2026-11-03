@@ -144,10 +144,10 @@ export class Otomasyon {
     }
   }
 
-  /** OBS denetimi Yayın Yönetim Aracı'nda: yalnız bu bilinçli seçilmiş eylemler gönderilir (yayını bitirme gibi onaylılar yok) */
+  /** OBS denetimi AxthrowA Studio'da: yalnız bu bilinçli seçilmiş eylemler gönderilir (yayını bitirme gibi onaylılar yok) */
   private async yyaEylemi(id: 'scene.switch' | 'replay.save', params: Record<string, string>): Promise<void> {
     const adres = muzikHost.hariciAdres();
-    if (!adres) throw new Error("OBS için Yayın Yönetim Aracı açık olmalı");
+    if (!adres) throw new Error("OBS için AxthrowA Studio açık olmalı");
     try {
       await axios.post(`${adres}/api/actions/run`, { id, params, confirm: false }, { timeout: 10_000 });
     } catch (e: any) {

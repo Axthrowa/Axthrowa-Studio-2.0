@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Kick gerçek zamanlı sohbet protokolü (saf, ağsız)
+ * AxBoT — Kick gerçek zamanlı sohbet protokolü (saf, ağsız)
  * Developed by AxthrowA
  *
  * Kick sohbeti eskiden sabit bir Pusher anahtarıyla (`32cbd69e…`, küme us2)

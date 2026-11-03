@@ -1,5 +1,5 @@
 /**
- * StreamAxT Multi-Engine TTS
+ * AxBoT Multi-Engine TTS
  * Developed by AxthrowA
  */
 

@@ -401,6 +401,25 @@ export default function Pulse() {
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">
               {t('pulse.lyricsUrl')} {`${window.location.origin}/resonance/lyrics`}
             </p>
+            <SubLabel>{t('pulse.lyricsSize')}</SubLabel>
+            <Slider value={Number(config.lyricsFontSize) || 26} min={14} max={72} step={1} suffix=" px" onChange={(v) => set({ lyricsFontSize: v })} />
+            <SubLabel>{t('pulse.lyricsSideSize')}</SubLabel>
+            <Slider value={Number(config.lyricsSideSize) || 18} min={10} max={56} step={1} suffix=" px" onChange={(v) => set({ lyricsSideSize: v })} />
+            <SubLabel>{t('pulse.lyricsColor')}</SubLabel>
+            <input
+              type="color"
+              aria-label={t('pulse.lyricsColor')}
+              value={config.lyricsColor || '#ffffff'}
+              onChange={(e) => set({ lyricsColor: e.target.value })}
+              className="h-9 w-16 cursor-pointer rounded border-0 bg-transparent"
+            />
+            <ToggleRow
+              title={t('pulse.lyricsSingle')}
+              description={t('pulse.lyricsSingleDesc')}
+              checked={config.lyricsSingleLine === true}
+              onChange={(v) => set({ lyricsSingleLine: v })}
+            />
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t('pulse.lyricsScreens')}</p>
           </div>
         </div>
       </Section>

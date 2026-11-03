@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Discord duyurusu, Nightbot içe aktarma
+ * AxBoT API — Discord duyurusu, Nightbot içe aktarma
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ek değişkenler (if, pickw, weather, kick) testleri
+ * AxBoT — ek değişkenler (if, pickw, weather, kick) testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

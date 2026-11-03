@@ -1,5 +1,5 @@
 /**
- * StreamAxT widget settings
+ * AxBoT widget settings
  * Developed by AxthrowA
  */
 import { useEffect, useRef, useState } from 'react';
@@ -11,8 +11,11 @@ import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
 import { SabitMesajPaneli, SkorTablosuPaneli, SohbetIstatistikPaneli } from '../components/SohbetAraclariPaneli.js';
 import { CARK_PALETLERI } from '../widgets/WheelWidget.js';
+import { MediaLibrary } from '../components/MediaLibrary.js';
 
 const LABELS: Record<string, string> = {
+  showStatusDot: 'Başlıktaki durum noktası', centerSize: 'Orta göbek boyutu (%)', centerImageUrl: 'Orta görsel/GIF adresi',
+  hideIdle: 'Tren başlamadan gizle',
   showFollow: 'Takip göster', showSub: 'Abone göster', showGiftSub: 'Hediye abone göster',
   showTip: 'Bağış göster', showRaid: 'Raid göster', showHost: 'Host göster', showKicks: 'Kicks göster',
   showBits: 'Bits göster', maxItems: 'Maks. öğe', newestFirst: 'Yeniler üstte', showIcons: 'İkonlar',
@@ -427,6 +430,58 @@ function inferType(key: string, value: any, widgetId = ''): 'text' | 'textarea' 
   return 'text';
 }
 
+/** Çark dilimleri ve orta görsel: düz alan olmadıkları için formdan ayrı */
+function CarkPaneli({ values, degistir }: { values: Record<string, any>; degistir: (p: Record<string, any>) => void }) {
+  const [kutuphane, setKutuphane] = useState(false);
+  const dilimler: Array<{ label: string; color: string; weight?: number }> = values.segments || [];
+  const dilimYaz = (i: number, p: Record<string, any>) => degistir({ segments: dilimler.map((d, j) => (j === i ? { ...d, ...p } : d)) });
+  return (
+    <div className="space-y-3 p-3 rounded-xl border border-white/10 bg-black/20">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold text-white">Orta görsel / GIF</span>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={() => setKutuphane((a) => !a)} className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[10px] font-bold text-white">
+              {kutuphane ? 'Kapat' : 'Kütüphaneden seç / yükle'}
+            </button>
+            {values.centerImageUrl && (
+              <button type="button" onClick={() => degistir({ centerImageUrl: '' })} className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-bold text-gray-300">
+                Kaldır
+              </button>
+            )}
+          </div>
+        </div>
+        {values.centerImageUrl && <img src={values.centerImageUrl} alt="" className="w-14 h-14 rounded-full object-cover border border-white/20" />}
+        {kutuphane && (
+          <MediaLibrary
+            onSec={(m) => {
+              if (m.tur !== 'image') return;
+              degistir({ centerImageUrl: m.url });
+              setKutuphane(false);
+            }}
+          />
+        )}
+      </div>
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-bold text-white">Dilimler</span>
+        {dilimler.map((d, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <input aria-label="Dilim rengi" type="color" value={d.color} onChange={(e) => dilimYaz(i, { color: e.target.value })} className="w-7 h-7 bg-transparent cursor-pointer shrink-0" />
+            <input aria-label="Dilim adı" value={d.label} onChange={(e) => dilimYaz(i, { label: e.target.value })} className="flex-1 min-w-0 bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white" />
+            <input aria-label="Dilim ağırlığı" title="Ağırlık: büyük değer daha sık çıkar" type="number" min={0} value={d.weight ?? 1} onChange={(e) => dilimYaz(i, { weight: Math.max(0, Number(e.target.value) || 0) })} className="w-14 bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white" />
+            <button type="button" aria-label="Dilimi sil" disabled={dilimler.length <= 2} onClick={() => degistir({ segments: dilimler.filter((_, j) => j !== i) })} className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 disabled:opacity-30">
+              ×
+            </button>
+          </div>
+        ))}
+        <button type="button" onClick={() => degistir({ segments: [...dilimler, { label: `Dilim ${dilimler.length + 1}`, color: '#8b5cf6', weight: 1 }] })} className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[10px] font-bold text-white">
+          + Dilim ekle
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = true }: { widgetId: string; baseUrl: string; onUrlChange?: (url: string) => void; autoSave?: boolean }) {
   const ayarId = AYAR_TAKMA[widgetId] || widgetId;
   const defaults = WIDGET_DEFAULTS[ayarId] || {};
@@ -565,6 +620,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
       {ayarId === 'pinned-messages' && <SabitMesajPaneli />}
       {ayarId === 'word-cloud' && <SohbetIstatistikPaneli />}
       {ayarId === 'scoreboard' && <SkorTablosuPaneli />}
+      {ayarId === 'wheel-of-fortune' && <CarkPaneli values={values} degistir={(p) => setValues((v) => ({ ...v, ...p }))} />}
 
       {sections.filter(s => openSection === 'all' || openSection === s).map(section => (
         <div key={section} className="space-y-2">

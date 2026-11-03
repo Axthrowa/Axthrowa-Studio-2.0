@@ -1,5 +1,5 @@
 /**
- * StreamAxT — canlı yayın durumu hesapları (saf)
+ * AxBoT — canlı yayın durumu hesapları (saf)
  * Developed by AxthrowA
  *
  * Denetimde bulundu: `!uptime` ve `$(uptime)` YAYININ değil BOTUN ne

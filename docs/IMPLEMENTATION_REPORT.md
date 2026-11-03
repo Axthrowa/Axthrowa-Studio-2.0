@@ -8,7 +8,7 @@
 
 ## 1. Revizyon öncesi durum
 
-StreamAxT: tek kullanıcılı, yerel çalışan çok platformlu yayın botu.
+AxBoT: tek kullanıcılı, yerel çalışan çok platformlu yayın botu.
 
 | | |
 |---|---|
@@ -33,7 +33,7 @@ Tam denetim: [`CURRENT_SYSTEM_AUDIT.md`](CURRENT_SYSTEM_AUDIT.md)
 | İçerik | İki projenin tüm kaynağı, yapılandırması, **tüm SQLite veritabanları + WAL** |
 | Hariç | `node_modules`, derleme çıktıları, Rust `target` (manifestte belirtildi) |
 | **Doğrulama** | 11 kritik dosyanın **SHA-256** özeti kaynakla karşılaştırıldı — hepsi eşleşti |
-| Git etiketi (StreamAxT) | `pre-botrix-revision-20260921-182105` → `cdc968e` |
+| Git etiketi (AxBoT) | `pre-botrix-revision-20260921-182105` → `cdc968e` |
 | Git etiketi (panel) | aynı ad → `9a4faa6`, **working tree'ye dokunulmadı** |
 
 Ayrıntı ve restore adımları: [`BACKUP_MANIFEST.md`](../BACKUP_MANIFEST.md)
@@ -241,7 +241,7 @@ Ayrıntı: [`TEST_REPORT.md §4`](TEST_REPORT.md)
 | `release/StreamAxT-v1.0.0-Portable/app/{dist,public}` | ✅ |
 | Panel gömmesi `cikti/portable/streamaxt` | ✅ turkuaz derleme |
 
-> Kullanıcının kendi StreamAxT'si (port 3001) kapalıydı; açınca yeni sürümü
+> Kullanıcının kendi AxBoT'su (port 3001) kapalıydı; açınca yeni sürümü
 > alacak. Tüm doğrulama **izole test örneğinde** (port 3011, boş veritabanı)
 > yapıldı.
 
@@ -468,7 +468,7 @@ geri alınıyor:
 | `GET /api/alerts/backup?medya=1` | Kullanılan yerel medyayı gömer |
 | `POST /api/alerts/backup/import` | Gömülü medyayı geri yükler; gövde sınırı yalnız bu uçta 150 MB (genel 12 MB) |
 | `GET /api/hype-train` · `POST /api/hype-train/reset` | Hype Treni durumu sunucuda |
-| `POST /api/widgets/:id/settings` | Doğrulama; geçersizde 400, düzeltmede `X-StreamAxT-Uyari` başlığı |
+| `POST /api/widgets/:id/settings` | Doğrulama; geçersizde 400, düzeltmede `X-AxBoT-Uyari` başlığı |
 | `POST /api/giveaways/create` | Ek ayarlar yazılamazsa `uyari` |
 | `GET /api/auth/kick/callback` | Token yayınlamaz; `error`/`code` kaçışlı |
 | Tüm `/api` | JSON hata yanıtı (yığın izi ve disk yolu yok); bozuk JSON 400; Host izin listesi (403); hız sınırı (429 + `Retry-After`) |

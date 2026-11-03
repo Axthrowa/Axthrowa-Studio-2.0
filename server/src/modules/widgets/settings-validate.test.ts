@@ -1,5 +1,5 @@
 /**
- * StreamAxT — widget ayarı doğrulaması testleri (B2)
+ * AxBoT — widget ayarı doğrulaması testleri (B2)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — !kelime oyununun kelime havuzu ve harf karıştırma (saf)
+ * AxBoT — !kelime oyununun kelime havuzu ve harf karıştırma (saf)
  * Developed by AxthrowA
  *
  * Eskiden 11 kelime vardı ve "karışık" harfler elle yazılmıştı: çoğu kelimenin kendisiydi

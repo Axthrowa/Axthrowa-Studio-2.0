@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Widget galerisi "Nasıl çalışır?" ipuçları
+ * AxBoT — Widget galerisi "Nasıl çalışır?" ipuçları
  * Developed by AxthrowA
  *
  * Her widget için: OBS'e nasıl eklenir, ne zaman görünür, hangi olay/komutla

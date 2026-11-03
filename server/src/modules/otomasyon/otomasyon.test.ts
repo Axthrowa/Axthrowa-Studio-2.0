@@ -66,7 +66,7 @@ describe('otomasyon motoru', () => {
     await m.olay({ tur: 'komut', mesaj: '!hype' }, 1000);
     expect(mesajlar).toHaveLength(0);
     expect(m.gunlukOku()[0]).toMatchObject({ kural: 'Hype', ok: false });
-    expect(m.gunlukOku()[0].mesaj).toContain('Yayın Yönetim Aracı');
+    expect(m.gunlukOku()[0].mesaj).toContain('AxthrowA Studio');
   });
 
   it('komut eylemi izleyici metniyle doldurulmaz', async () => {

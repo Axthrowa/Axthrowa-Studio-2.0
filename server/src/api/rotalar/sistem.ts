@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Sistem durumu, genel ayarlar, olay akışı, platform yetenekleri, değişken kataloğu
+ * AxBoT API — Sistem durumu, genel ayarlar, olay akışı, platform yetenekleri, değişken kataloğu
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Olay Etiketleri verisi testleri
+ * AxBoT — Olay Etiketleri verisi testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

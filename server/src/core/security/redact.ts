@@ -1,5 +1,5 @@
 /**
- * StreamAxT — API yanıtlarından sır temizleme
+ * AxBoT — API yanıtlarından sır temizleme
  * Developed by AxthrowA
  *
  * Denetimde bulundu: `GET /api/platforms` `SELECT * FROM channels` sonucunu

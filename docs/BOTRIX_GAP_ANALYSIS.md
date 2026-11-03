@@ -1,7 +1,7 @@
 # BOTRIX GAP ANALYSIS
 
 **Tarih:** 2026-09-21
-**Karşılaştırılan:** StreamAxT `cdc968e` ↔ BotRix (ücretsiz plan, Kick, TR)
+**Karşılaştırılan:** AxBoT `cdc968e` ↔ BotRix (ücretsiz plan, Kick, TR)
 
 ## Durum kodları
 
@@ -22,7 +22,7 @@
 
 ## 0. Yapısal fark — önce bu
 
-BotRix **çok kiracılı SaaS**, StreamAxT **tek kullanıcılı yerel araç**.
+BotRix **çok kiracılı SaaS**, AxBoT **tek kullanıcılı yerel araç**.
 Aşağıdakiler bizim için `NOT_APPLICABLE`:
 
 | BotRix özelliği | Neden uygulanamaz |
@@ -452,7 +452,7 @@ Ayrıntı: [`IMPLEMENTATION_REPORT.md`](IMPLEMENTATION_REPORT.md),
 
 | Madde | Final |
 |---|---|
-| Çok kiracılı her şey | `NOT_APPLICABLE` — BotRix SaaS, StreamAxT tek kullanıcılı yerel araç (`§0`) |
+| Çok kiracılı her şey | `NOT_APPLICABLE` — BotRix SaaS, AxBoT tek kullanıcılı yerel araç (`§0`) |
 | Premium/plan kilitleri (varyant 5/25, 5 MB/50 MB) | `NOT_APPLICABLE` — yerel araçta plan yok; sınırlar disk korumasıdır |
 | `$(eval <js>)` | `NOT_DONE` (bilinçli — keyfi JS yürütme, `N2`) |
 | `$(leagueoflegends)` | `NOT_DONE` (niş, Riot API anahtarı, `N3`) |

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Topluluk Bahisleri (tahminler)
+ * AxBoT — Topluluk Bahisleri (tahminler)
  * Developed by AxthrowA
  *
  * BotRix'te `/panel/interaction > Topluluk Bahisleri` (BETA V2) ve

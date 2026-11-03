@@ -1,5 +1,5 @@
 /**
- * StreamAxT — şans çarkı seçimi testleri
+ * AxBoT — şans çarkı seçimi testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

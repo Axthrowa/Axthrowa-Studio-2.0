@@ -1,5 +1,5 @@
 /**
- * StreamAxT — League of Legends sıralaması: saf kurallar
+ * AxBoT — League of Legends sıralaması: saf kurallar
  * Developed by AxthrowA
  *
  * `$(leagueoflegends <Riot kimliği> <bölge>)` (BotRix belgesinde gözlenen

@@ -1,8 +1,8 @@
 /**
- * StreamAxT — yerel erişim koruması
+ * AxBoT — yerel erişim koruması
  * Developed by AxthrowA
  *
- * Tehdit modeli: StreamAxT tek kullanıcılı, yerel bir araç. Tehlike
+ * Tehdit modeli: AxBoT tek kullanıcılı, yerel bir araç. Tehlike
  * "internetten saldırgan" değil, kullanıcının ziyaret ettiği herhangi bir
  * web sayfası. Sunucu `cors: { origin: '*' }` ile çalıştığı için
  * `evil.com` üzerindeki bir betik `fetch('http://localhost:3001/api/platforms')`
@@ -74,7 +74,7 @@ export function baglanmaUyarisi(host: string): string | null {
   if (YEREL_HOST.has(host) && host !== '0.0.0.0') return null;
   return (
     `[UYARI] Sunucu ${host} adresinde dinliyor — aynı agdaki TUM cihazlar ` +
-    `StreamAxT'yi yonetebilir. Yalniz bu bilgisayardan erisim icin ` +
+    `AxBoT'u yonetebilir. Yalniz bu bilgisayardan erisim icin ` +
     `STREAMAXT_HOST degiskenini kaldirin.`
   );
 }

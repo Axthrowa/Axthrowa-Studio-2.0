@@ -1,5 +1,5 @@
 /**
- * StreamAxT — küçük sohbet araçları: !lurk, !hatirlat, skor tablosu
+ * AxBoT — küçük sohbet araçları: !lurk, !hatirlat, skor tablosu
  * Developed by AxthrowA
  */
 import { db } from '../../db/index.js';

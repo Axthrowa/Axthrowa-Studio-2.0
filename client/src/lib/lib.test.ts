@@ -1,5 +1,5 @@
 /**
- * StreamAxT — panel saf modül testleri
+ * AxBoT — panel saf modül testleri
  * Developed by AxthrowA
  *
  * Bu turda eklenen istemci mantığının kilidi: animasyon ön ayarları,

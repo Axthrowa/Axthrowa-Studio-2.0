@@ -1,5 +1,5 @@
 /**
- * StreamAxT JumpScare Overlay
+ * AxBoT JumpScare Overlay
  * Developed by AxthrowA
  *
  * Panelden varsayılan medya, süre, ses düzeyi, görsel şiddeti ve tetikleme

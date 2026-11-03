@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Şarkı isteği, TTS (filtre, ses, kuyruk), şarkı sözleri
+ * AxBoT API — Şarkı isteği, TTS (filtre, ses, kuyruk), şarkı sözleri
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;
@@ -18,7 +18,7 @@ const router = Router();
 
 // 6. Song Request Queue & Desktop Player
 router.get('/songrequest/queue', (req: Request, res: Response) => {
-  const current = songRequest.getCurrentSong();
+  const current = songRequest.calanIstek();
   const queue = songRequest.getQueueList();
   res.json({ current, queue, siralanabilir: songRequest.siralanabilir() });
 });
@@ -28,7 +28,7 @@ router.get('/songrequest/queue', (req: Request, res: Response) => {
 // ya da sonradan açılınca kayboluyordu.
 router.get('/songrequest/current', (req: Request, res: Response) => {
   // ?video=1: Şarkı Klipleri widget'ı için kuyruktaki ilk YouTube isteği
-  res.json((req.query.video === '1' ? songRequest.klipSirasi() : songRequest.getCurrentSong()) || null);
+  res.json((req.query.video === '1' ? songRequest.klipSirasi() : songRequest.calanIstek()) || null);
 });
 
 // Şarkı Klipleri widget'ı: video bitti → sıradakine geç (yalnız bitti denen şarkı hâlâ çalıyorsa)
@@ -97,7 +97,7 @@ router.post('/tts/settings', (req: Request, res: Response) => {
 });
 
 router.post('/tts/test', async (req: Request, res: Response) => {
-  const { text = 'StreamAxT 5 motorlu kesintisiz TTS sistemi başarıyla çalışıyor!', user = 'Test', settings } = req.body;
+  const { text = 'AxBoT 5 motorlu kesintisiz TTS sistemi başarıyla çalışıyor!', user = 'Test', settings } = req.body;
   try {
     const item = await multiEngineTTS.synthesizeWithFallback(text, user, settings);
     res.json({ success: !!item, item });

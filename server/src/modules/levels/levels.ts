@@ -1,5 +1,5 @@
 /**
- * StreamAxT — seviye / XP sistemi
+ * AxBoT — seviye / XP sistemi
  * Developed by AxthrowA
  *
  * BotRix'te `Sohbet Botu > Ekstralar > Seviye sistemi` ve `!level` / `!xp`

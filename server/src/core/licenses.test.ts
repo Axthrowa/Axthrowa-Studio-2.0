@@ -1,7 +1,7 @@
 /**
  * Bağımlılık lisans bekçisi: kilit dosyasındaki her paket izin listesindeki bir lisansla gelmeli.
  *
- * StreamAxT MIT dağıtılıyor; GPL/AGPL/SSPL gibi bir bağımlılık (ör. tiktok-live-connector ≥ 2.4.1 AGPL-3.0-only)
+ * AxBoT MIT dağıtılıyor; GPL/AGPL/SSPL gibi bir bağımlılık (ör. tiktok-live-connector ≥ 2.4.1 AGPL-3.0-only)
  * birleşik eserin lisans yükümlülüklerini değiştirir. Bir güncelleme böyle bir paketi getirirse bu test kırılır —
  * karar ürün sahibinindir (bkz. docs/LICENSE_AND_DEPENDENCY_REVIEW.md).
  */

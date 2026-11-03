@@ -1,5 +1,5 @@
 /**
- * StreamAxT — soru bankası kalite denetimi testleri
+ * AxBoT — soru bankası kalite denetimi testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

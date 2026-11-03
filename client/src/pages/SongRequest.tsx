@@ -248,7 +248,7 @@ export function SongRequest() {
       <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
         <div className="text-xs text-gray-300">
           <b className="text-white">İstek güvenlik filtreleri</b> — süre ve puan kuralından yayıncı ile modlar muaf; 0 kuralı kapatır.
-          Spotify Yayın Yönetim Aracı'nda bağlıyken süre önceden bilinmediği için süre sınırı uygulanamaz.
+          Spotify AxthrowA Studio'da bağlıyken süre önceden bilinmediği için süre sınırı uygulanamaz.
         </div>
         <div className="flex flex-wrap gap-3">
           <label className="flex items-center gap-2 text-xs text-gray-300">

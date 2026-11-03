@@ -1,5 +1,5 @@
 /**
- * StreamAxT Bağış Kupası widget
+ * AxBoT Bağış Kupası widget
  * Developed by AxthrowA
  *
  * Kupaya bağış, abone, hediye abonelik ve KICKs düşer; hangilerinin sayılacağı

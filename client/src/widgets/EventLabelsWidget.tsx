@@ -1,5 +1,5 @@
 /**
- * StreamAxT Event Labels
+ * AxBoT Event Labels
  * Developed by AxthrowA
  *
  * Son takipçi / abone / bağış / en büyük bağış / raid / KICKs etiketleri.

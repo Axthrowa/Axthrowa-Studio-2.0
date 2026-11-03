@@ -280,7 +280,7 @@ export function Otomasyon() {
             <Workflow className="h-6 w-6 text-purple-400" /> Otomasyon
           </h1>
           <p className="text-sm text-gray-400">
-            Bir olay olunca botun ne yapacağını kur. Metinlerde <code className="text-purple-400">{'{kullanici} {miktar} {mesaj} {odul} {platform}'}</code> kullanılabilir. OBS eylemleri için Yayın Yönetim Aracı açık olmalı.
+            Bir olay olunca botun ne yapacağını kur. Metinlerde <code className="text-purple-400">{'{kullanici} {miktar} {mesaj} {odul} {platform}'}</code> kullanılabilir. OBS eylemleri için AxthrowA Studio açık olmalı.
           </p>
         </div>
         <div className="flex gap-2">

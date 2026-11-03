@@ -187,7 +187,7 @@ gizle** ayarlarıyla birebir örtüşüyor — üç ayrı metin katmanı var.
 
 ## 7. Bizim sistemimizle karşılaştırma
 
-| Ayar | BotRix | StreamAxT | Durum |
+| Ayar | BotRix | AxBoT | Durum |
 |---|---|---|---|
 | Olay türü sayısı | 11 | 8 | `PARTIAL` |
 | Olay başına etkin/pasif | ✅ | ✅ (`is_enabled`) | `EXISTING` |

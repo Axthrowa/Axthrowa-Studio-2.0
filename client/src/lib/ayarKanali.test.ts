@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ayar kanalı yardımcı testleri
+ * AxBoT — ayar kanalı yardımcı testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

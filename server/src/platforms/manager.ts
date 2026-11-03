@@ -63,12 +63,12 @@ export class PlatformManager {
   }
 
   async connectAll() {
-    console.log('[StreamAxT] Initializing active platform connections...');
+    console.log('[AxBoT] Initializing active platform connections...');
     for (const [name, platform] of this.platforms.entries()) {
       try {
         await platform.connect();
       } catch (err: any) {
-        console.warn(`[StreamAxT] Could not connect platform ${name}:`, err?.message || err);
+        console.warn(`[AxBoT] Could not connect platform ${name}:`, err?.message || err);
       }
     }
   }

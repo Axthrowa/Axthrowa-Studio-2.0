@@ -1,5 +1,5 @@
 /**
- * StreamAxT — değişken motoru genel arayüzü
+ * AxBoT — değişken motoru genel arayüzü
  * Developed by AxthrowA
  *
  * Çağıranlar yalnız bu dosyayı kullanır.

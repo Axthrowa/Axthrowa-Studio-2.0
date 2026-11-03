@@ -106,7 +106,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
           id: 'test-url-' + Date.now(),
           eventType: testType,
           title: testType.toUpperCase() + ' TESTİ!',
-          message: 'StreamAxT AlertBox Bildirim Testi',
+          message: 'AxBoT AlertBox Bildirim Testi',
           soundUrl: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
           imageUrl: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif',
           durationMs: 5000,
@@ -329,6 +329,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
   return (
     <div 
+      data-katman-bos={displayAlert ? undefined : ''}
       onClick={unlockAudio}
       className={`${embedded ? 'w-full h-full' : 'w-screen h-screen'} bg-transparent flex flex-col items-center justify-center overflow-hidden select-none cursor-pointer relative`}
     >
@@ -336,7 +337,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       {showHelper && !displayAlert && (
         <div className="absolute bottom-4 px-4 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-[11px] text-gray-300 font-mono flex items-center gap-2 pointer-events-none transition-opacity">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>StreamAxT AlertBox Hazır. Tarayıcıda ses için tıklayın.</span>
+          <span>AxBoT AlertBox Hazır. Tarayıcıda ses için tıklayın.</span>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — anket başlatma/bitirme (panel ve sohbet komutu ortak)
+ * AxBoT — anket başlatma/bitirme (panel ve sohbet komutu ortak)
  * Developed by AxthrowA
  *
  * Eskiden anket yalnız panelden açılabiliyordu; mantık rota gövdesindeydi. Sohbet

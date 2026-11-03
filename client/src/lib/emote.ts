@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sohbet metninden emote ayıklama (istemci)
+ * AxBoT — sohbet metninden emote ayıklama (istemci)
  * Developed by AxthrowA
  *
  * Kick emote'u `[emote:<id>:<ad>]` olarak gelir; 7TV emote'u düz kelimedir

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — API modül bütünlüğü (B1)
+ * AxBoT — API modül bütünlüğü (B1)
  * Developed by AxthrowA
  *
  * api/routes.ts alan modüllerine bölündü. İki sessiz hata sınıfını kilitler:

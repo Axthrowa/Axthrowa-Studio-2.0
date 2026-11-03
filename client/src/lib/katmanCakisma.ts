@@ -1,5 +1,6 @@
 /**
- * Çekiliş, Bil Bakalım ve anket ekrandayken bölgelerindeki diğer katmanlar geçici gizlenir.
+ * Bildirim, çekiliş, Bil Bakalım ve anket ekrandayken bölgelerindeki diğer katmanlar geçici gizlenir.
+ * Her widget için iki ayar var; yerleşim kaydında tutulur, verilmezse varsayılan geçerlidir.
  * Saf: yalnız kutu hesabı. Katmanın "ekranda" olup olmadığını OverlayKatmanlari izler.
  */
 
@@ -11,11 +12,22 @@ export interface Kutu {
   scale?: number;
 }
 
-/** Bunlar ekrana gelince bölgesi boşaltılır */
-export const ONCELIKLI_KATMANLAR = ['polls', 'trivia', 'giveaway'];
+/** Varsayılan: bunlar ekrana gelince bölgesi boşaltılır, kendileri gizlenmez */
+export const ONCELIKLI_KATMANLAR = ['alerts', 'polls', 'trivia', 'giveaway'];
 
-/** Bildirim kısa sürer ve kaçırılırsa geri gelmez: bağış ve abonelik görünür kalsın */
-const GIZLENMEYEN_KATMANLAR = ['alerts'];
+export interface GizlemeAyari {
+  arkasiniGizle?: boolean;
+  cakisincaGizle?: boolean;
+  [k: string]: unknown;
+}
+
+/** Bu widget ekrana gelince arkasındakileri gizler mi */
+export const arkasiniGizlerMi = (anahtar: string, ayar?: GizlemeAyari): boolean =>
+  ayar?.arkasiniGizle ?? ONCELIKLI_KATMANLAR.includes(anahtar);
+
+/** Önüne öncelikli bir widget gelince bu widget gizlenir mi */
+export const cakisincaGizlenirMi = (anahtar: string, ayar?: GizlemeAyari): boolean =>
+  ayar?.cakisincaGizle ?? !ONCELIKLI_KATMANLAR.includes(anahtar);
 
 const kapsam = (k: Kutu) => {
   const olcek = typeof k.scale === 'number' ? k.scale : 1;
@@ -29,17 +41,17 @@ export function kutularCakisiyor(a: Kutu, b: Kutu): boolean {
   return p.sol < q.sag && q.sol < p.sag && p.ust < q.alt && q.ust < p.alt;
 }
 
-/** `kutular`: çizilen katmanlar; `etkinler`: şu an ekranda olan öncelikli katmanlar */
+/** `kutular`: çizilen katmanlar; `etkinler`: şu an ekranda olan ve arkasını gizleyen katmanlar */
 export function gizlenecekKatmanlar(
-  kutular: Array<{ anahtar: string; kutu: Kutu; tamEkran?: boolean }>,
+  kutular: Array<{ anahtar: string; kutu: Kutu; tamEkran?: boolean; gizlenmez?: boolean }>,
   etkinler: string[]
 ): Set<string> {
   const gizli = new Set<string>();
   const etkinKutular = kutular.filter((k) => etkinler.includes(k.anahtar));
   for (const k of kutular) {
     // Tam ekran katmanlar (emote, JumpScare) saydam efekttir, her şeyle çakışır: gizlenmez
-    if (k.tamEkran || ONCELIKLI_KATMANLAR.includes(k.anahtar) || GIZLENMEYEN_KATMANLAR.includes(k.anahtar)) continue;
-    if (etkinKutular.some((e) => kutularCakisiyor(e.kutu, k.kutu))) gizli.add(k.anahtar);
+    if (k.tamEkran || k.gizlenmez) continue;
+    if (etkinKutular.some((e) => e.anahtar !== k.anahtar && kutularCakisiyor(e.kutu, k.kutu))) gizli.add(k.anahtar);
   }
   return gizli;
 }

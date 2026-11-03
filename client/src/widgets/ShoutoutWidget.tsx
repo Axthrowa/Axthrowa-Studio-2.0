@@ -1,5 +1,5 @@
 /**
- * StreamAxT Shoutout widget
+ * AxBoT Shoutout widget
  * Developed by AxthrowA
  *
  * Panelden tema, konum, süre, konfeti ve gösterilecek alanlar ayarlanır.
@@ -62,7 +62,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
     const params = new URLSearchParams(window.location.search);
     if (onizleme || params.has('channel')) {
       triggerSO({
-        channel: params.get('channel') || 'StreamAxT',
+        channel: params.get('channel') || 'AxBoT',
         platform: params.get('platform') || 'kick',
         avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
       });

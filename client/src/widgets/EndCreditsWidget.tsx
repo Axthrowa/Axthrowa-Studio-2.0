@@ -1,5 +1,5 @@
 /**
- * StreamAxT Jenerik (kapanış) widget
+ * AxBoT Jenerik (kapanış) widget
  * Developed by AxthrowA
  *
  * Panelden başlıklar, bölümler, kaydırma hızı ve renkler ayarlanır. Eski

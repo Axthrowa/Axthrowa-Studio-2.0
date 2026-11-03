@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sürümlü veritabanı göçleri
+ * AxBoT — sürümlü veritabanı göçleri
  * Developed by AxthrowA
  *
  * Şema şimdiye kadar `CREATE TABLE IF NOT EXISTS` + dağınık
@@ -149,15 +149,24 @@ export const GOCLER: Gocler[] = [
   },
   {
     version: 10,
-    name: 'bot adı AxBot — varsayılan yapay zekâ yönergesi',
+    name: 'bot adı AxBoT — varsayılan yapay zekâ yönergesi',
     up(db) {
       // Yalnız hiç değiştirilmemiş varsayılan yönerge güncellenir; elle yazılana dokunulmaz
       const tablo = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'bot_settings'").get();
       if (!tablo) return;
       db.prepare("UPDATE bot_settings SET value = ? WHERE key = 'gemini_prompt' AND value = ?").run(
-        'Sen AxBot adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.',
+        'Sen AxBoT adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.',
         'Sen StreamAxT adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.'
       );
+    }
+  },
+  {
+    version: 11,
+    name: 'bot adı AxBoT — yapay zekâ yönergesi',
+    up(db) {
+      const tablo = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'bot_settings'").get();
+      if (!tablo) return;
+      db.prepare("UPDATE bot_settings SET value = replace(value, 'Sen AxBot adında', 'Sen AxBoT adında') WHERE key = 'gemini_prompt'").run();
     }
   }
 ];

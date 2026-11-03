@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Puan Düşüşleri (Point Drops)
+ * AxBoT — Puan Düşüşleri (Point Drops)
  * Developed by AxthrowA
  *
  * BotRix belgelerinde `!pdrops start / stop / status` komutları var ve

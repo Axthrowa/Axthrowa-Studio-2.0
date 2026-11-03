@@ -62,7 +62,7 @@ export function AISettings() {
   // Test chat
   const [testInput, setTestInput] = useState('');
   const [chatLog, setChatLog] = useState<Array<{ role: string; text: string }>>([
-    { role: 'bot', text: 'Merhaba! Ben StreamAxT AI yayın asistanınım. Sohbetteki izleyicilerin sorularına senin belirlediğin kişilikle yanıt verebilirim!' }
+    { role: 'bot', text: 'Merhaba! Ben AxBoT AI yayın asistanınım. Sohbetteki izleyicilerin sorularına senin belirlediğin kişilikle yanıt verebilirim!' }
   ]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
@@ -193,7 +193,7 @@ export function AISettings() {
         if (d?.model) setAktifModel(d.model);
       }
     } catch (err: any) {
-      yaz(`⚠️ StreamAxT sunucusuna ulaşılamadı: ${String(err?.message || err)}`);
+      yaz(`⚠️ AxBoT sunucusuna ulaşılamadı: ${String(err?.message || err)}`);
     } finally {
       setLoading(false);
     }
@@ -226,13 +226,13 @@ export function AISettings() {
         </p>
       </div>
 
-      {/* StreamAxT Chat Rescue Banner */}
+      {/* AxBoT Chat Rescue Banner */}
       <div className="bg-gradient-to-r from-purple-950/70 via-slate-900 to-indigo-950/60 border border-purple-500/30 rounded-2xl p-6 shadow-xl space-y-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-purple-500/20 text-purple-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-purple-500/30 uppercase tracking-wider">
-                StreamAxT Chat Rescue
+                AxBoT Chat Rescue
               </span>
               <span className="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Zap className="w-3 h-3" /> Canlı İzleyici Etkileşimi
@@ -341,7 +341,7 @@ export function AISettings() {
             <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
               <input type="checkbox" checked={seslenme} onChange={e => setSeslenme(e.target.checked)} className="mt-0.5 accent-purple-600" />
               <span className="text-xs text-gray-300">
-                <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla (AxBot ya da bot hesabının adı) başlarsa (ör. <code>@AxBot bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
+                <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla (AxBoT ya da bot hesabının adı) başlarsa (ör. <code>@AxBoT bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
               </span>
             </label>
 

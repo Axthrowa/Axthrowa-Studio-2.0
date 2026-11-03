@@ -1,5 +1,5 @@
 /**
- * StreamAxT — !clip: canlı yayından gerçek video klip (yerel ffmpeg)
+ * AxBoT — !clip: canlı yayından gerçek video klip (yerel ffmpeg)
  * Developed by AxthrowA
  *
  * Kick: kanal yanıtındaki HLS `playback_url` → 720p varyant → ffmpeg (yeniden

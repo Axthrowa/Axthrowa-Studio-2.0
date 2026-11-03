@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Trovo sohbet eşlemesi (saf)
+ * AxBoT — Trovo sohbet eşlemesi (saf)
  * Developed by AxthrowA
  *
  * Veritabanı ve ağ erişimi YOK: test edilebilsin ve testler çalışan

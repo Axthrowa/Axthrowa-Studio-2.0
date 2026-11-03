@@ -1,5 +1,5 @@
 /**
- * StreamAxT — League of Legends sıralaması (Riot API)
+ * AxBoT — League of Legends sıralaması (Riot API)
  * Developed by AxthrowA
  *
  * Kurallar ve kaynaklar `riot-rules.ts`'te. Güvenlik:

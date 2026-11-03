@@ -1,5 +1,5 @@
 /**
- * StreamAxT — istemci tarafı yetenek okuma
+ * AxBoT — istemci tarafı yetenek okuma
  * Developed by AxthrowA
  *
  * Panelin her platform için TÜM ayarları göstermesi denetimde kusur olarak

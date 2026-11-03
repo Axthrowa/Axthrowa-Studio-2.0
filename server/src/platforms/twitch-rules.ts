@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Twitch Helix kuralları (saf)
+ * AxBoT — Twitch Helix kuralları (saf)
  * Developed by AxthrowA
  *
  * KAYNAK: Twitch API Reference (dev.twitch.tv/docs/api/reference) —

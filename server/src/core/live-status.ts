@@ -1,5 +1,5 @@
 /**
- * StreamAxT — canlı yayın durumu servisi
+ * AxBoT — canlı yayın durumu servisi
  * Developed by AxthrowA
  *
  * Her platform yayın durumunu buraya BİLDİRİR (Kick/Twitch/YouTube yoklama

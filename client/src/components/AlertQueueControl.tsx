@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ekip çapında uyarı kuyruğu denetimi
+ * AxBoT — ekip çapında uyarı kuyruğu denetimi
  * Developed by AxthrowA
  *
  * Duraklat / sürdür, sessize al / sesi aç, geçerli uyarıyı atla, bekleyenleri temizle ve son uyarıları yeniden

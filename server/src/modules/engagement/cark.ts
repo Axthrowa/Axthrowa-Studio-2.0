@@ -1,5 +1,5 @@
 /**
- * StreamAxT — şans çarkı sonucu (sunucuda seçilir)
+ * AxBoT — şans çarkı sonucu (sunucuda seçilir)
  * Developed by AxthrowA
  *
  * Eskiden sunucu dilim sayısına bakmadan 0–7 arası rastgele bir sıra

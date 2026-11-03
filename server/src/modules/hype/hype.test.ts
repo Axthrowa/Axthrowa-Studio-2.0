@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Hype Treni hesapları (B3)
+ * AxBoT — Hype Treni hesapları (B3)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

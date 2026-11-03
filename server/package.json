@@ -1,10 +1,10 @@
 {
   "name": "streamaxt-server",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "engines": {
     "node": ">=22.5.0"
   },
-  "description": "StreamAxT Core Server & Multi-Platform Bot Engine - Developed by Axthrowa",
+  "description": "AxBoT Core Server & Multi-Platform Bot Engine - Developed by Axthrowa",
   "author": "Axthrowa",
   "main": "dist/index.js",
   "scripts": {

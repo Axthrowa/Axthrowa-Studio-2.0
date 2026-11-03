@@ -124,7 +124,7 @@ export function App() {
   // Eskiden Emote Combo'yu açıyordu; artık gerçek uçan emote (kappagen) katmanı
   if (path === '/widgets/emotes' || path === '/widgets/on-screen-emotes' || path === '/widgets/kappagen') return obsSayfasi(<KappagenWidget />);
 
-  // Otherwise, render full StreamAxT Dashboard
+  // Otherwise, render full AxBoT Dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
   // Tarayıcı geri/ileri tuşu (B7): sekme adresteki #sekme ile eşlenir.
   // NOT: yukarıdaki useState satırı BİLEREK değiştirilmedi — panel kabuğunun

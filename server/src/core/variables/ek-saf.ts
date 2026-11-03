@@ -1,8 +1,8 @@
 /**
- * StreamAxT — ek değişkenlerin saf mantığı (ağ yok, test edilir)
+ * AxBoT — ek değişkenlerin saf mantığı (ağ yok, test edilir)
  * Developed by AxthrowA
  *
- * Yaygın botlarda gözlenen (herkese açık belgeler, 2026-10) ve StreamAxT'de
+ * Yaygın botlarda gözlenen (herkese açık belgeler, 2026-10) ve AxBoT'da
  * eksik olan değişkenler:
  *  - `$(if)`      koşullu yanıt
  *  - `$(pickw)`   ağırlıklı rastgele seçim (`a:70;b:20;c:10`)

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — topluluk oyunları testleri
+ * AxBoT — topluluk oyunları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

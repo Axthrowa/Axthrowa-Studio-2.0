@@ -1,13 +1,13 @@
 /**
- * StreamAxT — giriş noktası ve gözcü
+ * AxBoT — giriş noktası ve gözcü
  * Developed by AxthrowA
  *
- * `node dist/index.js` (Yayın Yönetim Aracı da böyle başlatır) önce bir
+ * `node dist/index.js` (AxthrowA Studio da böyle başlatır) önce bir
  * GÖZCÜ süreci açar; asıl bot (app.ts) onun alt sürecidir. Bot beklenmedik
  * biçimde kapanırsa (yakalanmamış hata, bellek, sürücü) gözcü birkaç saniye
  * sonra yeniden başlatır — kullanıcı "bot kendi kendine kapandı" demesin.
  *
- *  • Çıkış kodu 0 (normal kapanış) ya da 2 (başka bir StreamAxT zaten
+ *  • Çıkış kodu 0 (normal kapanış) ya da 2 (başka bir AxBoT zaten
  *    çalışıyor) → yeniden başlatılmaz.
  *  • 10 dk içinde 8'den fazla çökme → vazgeçilir (sonsuz döngü olmasın).
  *  • Gözcü ölürse (pencere kapatıldı, görev yöneticisi) alt süreç IPC

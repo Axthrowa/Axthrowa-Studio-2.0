@@ -1,8 +1,8 @@
 /**
- * StreamAxT — Sesli komut dinleyicisi sayfası (/sesli-dinleyici)
+ * AxBoT — Sesli komut dinleyicisi sayfası (/sesli-dinleyici)
  * Developed by AxthrowA
  *
- * Yalnız dinler: panel (Yayın Yönetim Aracı) bunu arka planda gizli tutar, böylece başka sekmedeyken ya da oyun
+ * Yalnız dinler: panel (AxthrowA Studio) bunu arka planda gizli tutar, böylece başka sekmedeyken ya da oyun
  * oynarken de komutlar çalışır. OBS'te özel tarayıcı dock'u olarak da açılabilir. `?otomatik=1`: ayarlarda sesli
  * komutlar açıksa kendiliğinden dinlemeye başlar. Üst pencere bas-konuş tuşunu `postMessage` ile bildirir.
  */

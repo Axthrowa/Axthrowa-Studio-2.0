@@ -1,5 +1,5 @@
 /**
- * StreamAxT — topluluk özellikleri: kappagen, emote piramidi, emote bingo, votekick
+ * AxBoT — topluluk özellikleri: kappagen, emote piramidi, emote bingo, votekick
  * Developed by AxthrowA
  *
  * Akış (pipeline) moderasyondan GEÇMİŞ her mesaj için `toplulukMesaji`

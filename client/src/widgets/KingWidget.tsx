@@ -1,5 +1,5 @@
 /**
- * StreamAxT Yayın Kralı widget
+ * AxBoT Yayın Kralı widget
  * Developed by AxthrowA
  *
  * Panelden tema, renkler, avatar boyutu ve gösterilecek alanlar ayarlanır.

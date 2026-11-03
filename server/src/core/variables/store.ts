@@ -1,5 +1,5 @@
 /**
- * StreamAxT — kalıcı değişken ve sayaç deposu
+ * AxBoT — kalıcı değişken ve sayaç deposu
  * Developed by AxthrowA
  *
  * Üç kapsam:

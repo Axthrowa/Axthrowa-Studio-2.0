@@ -1,5 +1,5 @@
 /**
- * StreamAxT — 7TV emote haritası (sunucunun /api/emotes önbelleğinden) + BTTV ve FFZ genel emote'ları
+ * AxBoT — 7TV emote haritası (sunucunun /api/emotes önbelleğinden) + BTTV ve FFZ genel emote'ları
  * Developed by AxthrowA
  *
  * Tüm sohbet bileşenleri tek bir istek paylaşır; 30 dakikada bir tazelenir.

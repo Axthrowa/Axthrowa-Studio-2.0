@@ -1,5 +1,5 @@
 /**
- * StreamAxT Şarkı Sözleri widget
+ * AxBoT Şarkı Sözleri widget
  * Developed by AxthrowA
  *
  * Panelden tema, tipografi, satır geçiş hızı ve hangi satırların görüneceği
@@ -54,7 +54,7 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
   const onizleme = onizlemeKipi(previewMode);
 
   const [songTitle, setSongTitle] = useState(onizleme ? 'Lofi Chill Beats' : 'Şarkı Sözleri');
-  const [artist, setArtist] = useState(onizleme ? 'StreamAxT' : '');
+  const [artist, setArtist] = useState(onizleme ? 'AxBoT' : '');
   const [lines, setLines] = useState<LyricLine[]>(onizleme ? ORNEK : []);
   const [aktif, setAktif] = useState(0);
   // Senkron: sunucunun verdiği ilerleme (ms) + örnekleme anı; aradaki süre eklenir

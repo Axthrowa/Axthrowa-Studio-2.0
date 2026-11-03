@@ -1,5 +1,5 @@
 /**
- * StreamAxT — widget tema kütüphanesi
+ * AxBoT — widget tema kütüphanesi
  * Developed by AxthrowA
  *
  * BOTRIX_GAP_ANALYSIS §8'deki ana örüntü şuydu: *ayar sayısında biz öndeyiz,

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Nightbot eşlemesi (saf)
+ * AxBoT — Nightbot eşlemesi (saf)
  * Developed by AxthrowA
  *
  * Veritabanı erişimi YOK — testler sunucunun SQLite kilidine takılmasın.

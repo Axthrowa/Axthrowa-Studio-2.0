@@ -1,5 +1,5 @@
 /**
- * StreamAxT — günlük (B5)
+ * AxBoT — günlük (B5)
  * Developed by AxthrowA
  *
  * Denetim B5: 92 `console.*` çağrısı zaman damgasız ve seviyesizdi; panel

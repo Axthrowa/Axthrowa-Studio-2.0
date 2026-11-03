@@ -1,5 +1,5 @@
 /**
- * StreamAxT — süresi dolan anketi kapatır
+ * AxBoT — süresi dolan anketi kapatır
  * Developed by AxthrowA
  *
  * Eskiden anket süresi dolunca HİÇBİR şey olmuyordu: `is_active` 1 kalıyor,

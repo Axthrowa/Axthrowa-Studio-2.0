@@ -1,5 +1,5 @@
 /**
- * StreamAxT — varyant seçimi (saf)
+ * AxBoT — varyant seçimi (saf)
  * Developed by AxthrowA
  *
  * Veritabanı erişimi YOK; test edilebilir olsun diye ayrıldı.

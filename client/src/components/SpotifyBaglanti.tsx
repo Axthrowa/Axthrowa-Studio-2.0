@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Spotify bağlantısı (!sr şarkıyı Spotify'da kendiliğinden çalar)
+ * AxBoT — Spotify bağlantısı (!sr şarkıyı Spotify'da kendiliğinden çalar)
  * Developed by AxthrowA
  *
  * PKCE ile bağlanır: yalnız Spotify Developer Dashboard'daki Client ID gerekir.
@@ -12,7 +12,7 @@ import { openLink } from '../lib/openLink.js';
 interface Durum {
   spotify: { connected: boolean; clientId: string; displayName: string };
   note: string | null;
-  /** Spotify Yayın Yönetim Aracı'nda bağlıysa bot onu kullanır (ikinci bağlantı gerekmez) */
+  /** Spotify AxthrowA Studio'da bağlıysa bot onu kullanır (ikinci bağlantı gerekmez) */
   harici?: { spotify: boolean };
   nowPlaying: { title: string; artist: string; isPlaying: boolean } | null;
 }
@@ -89,7 +89,7 @@ export function SpotifyBaglanti() {
           <Music2 className="w-4 h-4 text-emerald-400" /> Spotify — istekler kendiliğinden çalsın
         </h3>
         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${bagli ? 'bg-emerald-500/20 text-emerald-300' : 'bg-gray-700 text-gray-300'}`}>
-          {yya ? "Bağlı · Yayın Yönetim Aracı'ndan" : bagli ? `Bağlı${d?.spotify.displayName ? ` · ${d.spotify.displayName}` : ''}` : 'Bağlı değil'}
+          {yya ? "Bağlı · AxthrowA Studio'dan" : bagli ? `Bağlı${d?.spotify.displayName ? ` · ${d.spotify.displayName}` : ''}` : 'Bağlı değil'}
         </span>
       </div>
       <p className="text-[11px] text-gray-400">
@@ -111,7 +111,7 @@ export function SpotifyBaglanti() {
         </ol>
       )}
       {yya && (
-        <p className="text-[11px] text-emerald-300">Spotify Yayın Yönetim Aracı'nda bağlı; bot onu kullanıyor, burada ayrıca bağlamana gerek yok.</p>
+        <p className="text-[11px] text-emerald-300">Spotify AxthrowA Studio'da bağlı; bot onu kullanıyor, burada ayrıca bağlamana gerek yok.</p>
       )}
       <div className={yya ? 'hidden' : 'flex gap-2'}>
         <input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Spotify Client ID (32 karakter)" className={girdi} disabled={bagli} />
@@ -149,7 +149,7 @@ export function SpotifyBaglanti() {
         href="/resonance/"
         onClick={(e) => {
           e.preventDefault();
-          // Yayın Yönetim Aracı içindeyken uygulamanın kendi Müzik (Resonance) sekmesi açılır
+          // AxthrowA Studio içindeyken uygulamanın kendi Müzik (Resonance) sekmesi açılır
           if (window.parent !== window) window.parent.postMessage({ type: 'streamaxt:open-music' }, '*');
           else openLink(`${window.location.origin}/resonance/`);
         }}

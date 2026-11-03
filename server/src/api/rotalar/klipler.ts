@@ -1,5 +1,5 @@
 /**
- * StreamAxT — !clip ile kaydedilen klipler (yerel dosyalar)
+ * AxBoT — !clip ile kaydedilen klipler (yerel dosyalar)
  * Developed by AxthrowA
  */
 import { Router, Request, Response } from 'express';

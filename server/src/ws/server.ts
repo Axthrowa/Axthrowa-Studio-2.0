@@ -151,7 +151,7 @@ export class WebSocketHub {
         type: 'init',
         data: {
           platformStatuses: platformManager.getAllStatuses(),
-          currentSong: songRequest.getCurrentSong(),
+          currentSong: songRequest.calanIstek(),
           queue: songRequest.getQueueList()
         }
       });
@@ -179,7 +179,7 @@ export class WebSocketHub {
     void import('../modules/pano/pano.js').then((m) => m.sesPanosu.yayinciBagla((p) => this.broadcastTo(['pano', 'dashboard'], p)));
     // Sesli komutlar: sonuç/ayar/model iletileri panele ve dinleyici sayfasına
     void import('../modules/sesli/sesli.js').then((m) => m.sesliKomutlar.yayinciBagla((p) => this.broadcastTo(['sesli', 'dashboard'], p)));
-    console.log('[StreamAxT] WebSocket Hub active on /ws');
+    console.log('[AxBoT] WebSocket Hub active on /ws');
   }
 
   private handleClientMessage(msg: any) {
@@ -265,7 +265,7 @@ export class WebSocketHub {
         channel: 'stream',
         user: {
           id: 'streamaxt_system',
-          username: 'AxBot',
+          username: 'AxBoT',
           displayName: '⚠️ Gönderilemedi',
           color: '#f87171',
           badges: [],

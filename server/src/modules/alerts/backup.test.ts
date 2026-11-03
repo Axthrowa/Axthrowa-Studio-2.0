@@ -1,5 +1,5 @@
 /**
- * StreamAxT — uyarı yedeği testleri (saf kısım)
+ * AxBoT — uyarı yedeği testleri (saf kısım)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
@@ -14,7 +14,7 @@ describe('medyaKimligi — yol gezinme ve yabancı adres', () => {
 });
 
 describe('yedekGecerliMi', () => {
-  const saglam = { uygulama: 'StreamAxT', surum: 1, presets: [], varyantlar: [] };
+  const saglam = { uygulama: 'AxBoT', surum: 1, presets: [], varyantlar: [] };
 
   it('kendi yedeğimizi kabul eder', () => {
     expect(yedekGecerliMi(saglam)).toEqual({ ok: true });
@@ -37,12 +37,12 @@ describe('yedekGecerliMi', () => {
   });
 
   it('içi boş yedeği reddeder', () => {
-    const r = yedekGecerliMi({ uygulama: 'StreamAxT', surum: 1 });
+    const r = yedekGecerliMi({ uygulama: 'AxBoT', surum: 1 });
     expect(r.ok).toBe(false);
   });
 
   it('yalnız varyant taşıyan yedek geçerlidir', () => {
-    expect(yedekGecerliMi({ uygulama: 'StreamAxT', surum: 1, varyantlar: [{}] }).ok).toBe(true);
+    expect(yedekGecerliMi({ uygulama: 'AxBoT', surum: 1, varyantlar: [{}] }).ok).toBe(true);
   });
 });
 

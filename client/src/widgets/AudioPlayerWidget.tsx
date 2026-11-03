@@ -1,5 +1,5 @@
 /**
- * StreamAxT OBS Ses / TTS oynatıcısı
+ * AxBoT OBS Ses / TTS oynatıcısı
  * Developed by AxthrowA
  *
  * Panelden ses düzeyi, kuyruk sınırı, durum kartının teması ve boşta gizlenme

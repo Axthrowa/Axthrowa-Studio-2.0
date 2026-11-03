@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Ses/Video Panosu istemci yardımcıları (saf, birim testli)
+ * AxBoT — Ses/Video Panosu istemci yardımcıları (saf, birim testli)
  * Developed by AxthrowA
  */
 import type { CSSProperties } from 'react';

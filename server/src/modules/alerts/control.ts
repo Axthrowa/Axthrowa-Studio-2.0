@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ekip çapında uyarı kuyruğu denetimi (saf)
+ * AxBoT — ekip çapında uyarı kuyruğu denetimi (saf)
  * Developed by AxthrowA
  *
  * Kuyruğun kendisi her OBS tarayıcı kaynağında (AlertBox widget'ı) çalışır; sunucu yalnız DENETİM durumunu

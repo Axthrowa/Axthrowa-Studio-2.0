@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Host / WebSocket köken ve hız sınırı testleri
+ * AxBoT — Host / WebSocket köken ve hız sınırı testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

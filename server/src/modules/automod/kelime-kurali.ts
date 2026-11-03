@@ -1,5 +1,5 @@
 /**
- * StreamAxT — kara liste kelime kuralları ve Zalgo tespiti (saf)
+ * AxBoT — kara liste kelime kuralları ve Zalgo tespiti (saf)
  * Developed by AxthrowA
  *
  * Kara liste eskiden yalnız düz alt metin arıyordu ve `toLowerCase()` Türkçe

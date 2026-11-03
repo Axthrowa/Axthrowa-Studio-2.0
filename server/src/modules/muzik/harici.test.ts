@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MuzikHost } from './muzik.js';
 
-// Sahte Yayın Yönetim Aracı host'u: Spotify orada bağlı
+// Sahte AxthrowA Studio host'u: Spotify orada bağlı
 let sunucu: http.Server;
 let kok = '';
 const gelen: any[] = [];
@@ -32,7 +32,7 @@ afterAll(() => sunucu.close());
 
 const depo = { oku: () => '', yaz: () => {} };
 
-describe('harici müzik host (Yayın Yönetim Aracı)', () => {
+describe('harici müzik host (AxthrowA Studio)', () => {
   it('çalan şarkıyı okur ve !sr isteğini sıraya ekletir', async () => {
     const h = new MuzikHost(depo, () => {}, () => kok);
     expect(h.spotifyKullanilabilir()).toBe(false);

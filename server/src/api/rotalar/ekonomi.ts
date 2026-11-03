@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Puan sıralaması, seviyeler, sadakat ayarları/ödülleri, ödül kullanımları
+ * AxBoT API — Puan sıralaması, seviyeler, sadakat ayarları/ödülleri, ödül kullanımları
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;

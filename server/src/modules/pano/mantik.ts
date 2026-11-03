@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Ses/Video Panosu (Blerp tarzı) saf mantığı
+ * AxBoT — Ses/Video Panosu (Blerp tarzı) saf mantığı
  * Developed by AxthrowA
  *
  * İzleyici sohbetten (`!ses <ad>`) bot puanıyla yayıncının kendi yüklediği ses ve videoları yayında oynatır.

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — REST API toplayıcısı
+ * AxBoT — REST API toplayıcısı
  * Developed by AxthrowA
  *
  * B1: Bu dosya eskiden 2.300+ satırlık tek parçaydı (154 rota). Rotalar

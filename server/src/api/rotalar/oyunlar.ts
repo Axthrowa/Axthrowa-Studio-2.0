@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Sohbet oyunları ve trivia
+ * AxBoT API — Sohbet oyunları ve trivia
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;

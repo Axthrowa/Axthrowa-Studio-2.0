@@ -48,7 +48,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
         }
         // Galeri önizlemesi "Test et"i bu işaretle zamanlar (bkz. WidgetOnizleme)
         if (typeof window !== 'undefined') (window as unknown as { __axtSoketAcik?: boolean }).__axtSoketAcik = true;
-        console.log(`[WS] Connected to StreamAxT Hub (${type})`);
+        console.log(`[WS] Connected to AxBoT Hub (${type})`);
       };
 
       ws.onmessage = (event) => {

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — kopunca yeniden bağlanan soket testleri
+ * AxBoT — kopunca yeniden bağlanan soket testleri
  * Developed by AxthrowA
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT Kelime Bulutu — sohbette en çok geçen sözcükler, sıklığa göre büyüyen bulut
+ * AxBoT Kelime Bulutu — sohbette en çok geçen sözcükler, sıklığa göre büyüyen bulut
  * Developed by AxthrowA
  *
  * Sayım sunucuda (`/api/sohbet-istatistik`); widget birkaç saniyede bir okur.

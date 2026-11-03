@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ortak kara liste kuralları testleri
+ * AxBoT — ortak kara liste kuralları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Uyarı şablonları, varyantlar, yedek/geri yükleme, medya kütüphanesi
+ * AxBoT API — Uyarı şablonları, varyantlar, yedek/geri yükleme, medya kütüphanesi
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;
@@ -114,7 +114,7 @@ router.delete('/alerts/variants/:id', (req: Request, res: Response) => {
 router.get('/alerts/backup', (req: Request, res: Response) => {
   // ?medya=1 → uyarıların kullandığı yerel görsel/ses dosyaları da gömülür
   const yedek = uyariYedegi.disaAktar(String(req.query.medya || '') === '1');
-  res.setHeader('Content-Disposition', 'attachment; filename="streamaxt-uyarilar.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="axbot-uyarilar.json"');
   res.json(yedek);
 });
 

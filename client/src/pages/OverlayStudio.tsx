@@ -43,6 +43,7 @@ import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
 import { GALERI_KATMANI, KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
+import { arkasiniGizlerMi, cakisincaGizlenirMi } from '../lib/katmanCakisma.js';
 import { enBuyukBoyut, hizala, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
@@ -431,7 +432,7 @@ const DEFAULT_ALL_IN_ONE_CONFIG: AllInOneConfig = {
     x: 685,
     y: 350,
     width: 550,
-    height: 85,
+    height: 130,
     scale: 1
   },
   lyrics: {
@@ -474,6 +475,8 @@ export function OverlayStudio() {
   const [selectedCanvasWidget, setSelectedCanvasWidget] = useState<string>('chat');
   /** Tuval OBS'te görüneceği gibi mi (true) yoksa örnek verilerle mi çizilsin. */
   const [obsGorunumu, setObsGorunumu] = useState(false);
+  // Test Modu açıkken de test olayı görünsün: tuval canlı veriye geçer
+  const [canliTest, setCanliTest] = useState(false);
   // Artınca tuvaldeki widget'lar yeniden yüklenir
   const [tuvalAnahtari, setTuvalAnahtari] = useState(0);
   /** Seçili katmanın kendi ayar kaydı (hedef çubuğunda türe göre). */
@@ -581,12 +584,9 @@ export function OverlayStudio() {
 
   const handleWidgetPointerDown = (e: React.PointerEvent, widgetKey: string) => {
     e.stopPropagation();
-    // Yalnız seçili widget taşınır: başka widget'a tıklamak onu yalnız seçer (üst üste binen
-    // widget'lardan istenmeyeni sürüklemek yerleşimi bozuyordu)
-    if (widgetKey !== selectedCanvasWidget) {
-      setSelectedCanvasWidget(widgetKey);
-      return;
-    }
+    // Yalnız "Düzenlenecek Bileşen"de seçili widget taşınır; başkasına tek tıklamak seçimi de değiştirmez
+    // (üst üste binen widget'larda seçim kayıyor, yanlış widget taşınıyordu). Çift tıklama seçer.
+    if (widgetKey !== selectedCanvasWidget) return;
     const item = (allInOne as any)[widgetKey];
     if (!item) return;
 
@@ -807,7 +807,7 @@ export function OverlayStudio() {
     setTestNotification(
       ok
         ? '✨ Yerleşim kaydedildi ve OBS\'teki overlay\'e uygulandı!'
-        : '❌ Kaydedilemedi — StreamAxT çalışıyor mu? Tekrar deneyin.'
+        : '❌ Kaydedilemedi — AxBoT çalışıyor mu? Tekrar deneyin.'
     );
     setTimeout(() => setTestNotification(null), 4000);
   };
@@ -822,7 +822,12 @@ export function OverlayStudio() {
 
   /** Test olayı örnek kipte görünmez: tuval OBS görünümüne geçer. */
   const katmaniTestEt = async (etiket: string, testAdi: string) => {
+    const gecisVar = !obsGorunumu || (Boolean(allInOne.testMode) && !canliTest);
     setObsGorunumu(true);
+    setCanliTest(true);
+    // Örnek görünümden yeni geçildiyse widget'ların canlı bağlantısı henüz açık değil:
+    // hemen yollanan test kaçıyor, kullanıcı yalnız tuvalin yenilendiğini görüyordu
+    if (gecisVar) await new Promise((r) => setTimeout(r, 1200));
     await triggerWidgetTest(testAdi);
     setTestNotification(`${etiket} testi gönderildi.`);
     setTimeout(() => setTestNotification(null), 3000);
@@ -844,6 +849,106 @@ export function OverlayStudio() {
       setTimeout(() => setModalActionStatus(null), 3000);
     }
   };
+
+  /** Widget'a özel kontroller: galeri penceresinde ve Tek URL'de aynı */
+  const widgetKontrolleri = (id: string) => (
+    <>
+                  {id === 'the-cup' && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'coin', count: 3 })} className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold">
+                        🪙 3 bağış
+                      </button>
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'sub', count: 2 })} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold">
+                        ⭐ 2 abone
+                      </button>
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'gift', count: 5 })} className="px-3 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold">
+                        🎁 5 hediye abone
+                      </button>
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'kicks', count: 3 })} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold">
+                        🟢 3 KICKs
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Kupanın içi tamamen boşaltılsın mı?')) return;
+                          await fetch('/api/cup/reset', { method: 'POST' }).catch(() => {});
+                          setModalActionStatus('🗑️ Kupa sıfırlandı');
+                          setTimeout(() => setModalActionStatus(null), 2500);
+                        }}
+                        className="px-3 py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-xl text-xs font-bold"
+                      >
+                        🗑️ Kupayı sıfırla
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Subathon kendi kontrol panelini kullanir: sayac artik
+                      sunucuda, sure kurallari buradan ayarlanir. Eski iki
+                      dugme yalniz sahte bir WS mesaji yolluyordu. */}
+                  {id === 'subathon' && <SubathonPanel />}
+
+                  {id === 'wheel-of-fortune' && (
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => triggerWidgetTest('wheel')}
+                        className="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                      >
+                        <Disc className="w-4 h-4" /> Çarkı Canlı Çevir
+                      </button>
+                    </div>
+                  )}
+
+                  {id === 'hype-train' && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/hype-train/start', { method: 'POST' }).catch(() => {});
+                          setModalActionStatus('🚂 Tren sıfırdan başlatıldı');
+                          setTimeout(() => setModalActionStatus(null), 2500);
+                        }}
+                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"
+                      >
+                        ▶ Treni başlat (sıfırdan)
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/hype-train/reset', { method: 'POST' }).catch(() => {});
+                          setModalActionStatus('⏹ Tren durduruldu');
+                          setTimeout(() => setModalActionStatus(null), 2500);
+                        }}
+                        className="px-3 py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-xl text-xs font-bold"
+                      >
+                        ⏹ Durdur / sıfırla
+                      </button>
+                      <button
+                        onClick={() => triggerWidgetTest('hype-train', { level: 2, percent: 80, secondsLeft: 240 })}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
+                      >
+                        🚂 Hype Train Seviye 2 Başlat
+                      </button>
+                    </div>
+                  )}
+
+                  {id === 'shoutout' && (
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => triggerWidgetTest('shoutout', { channel: 'YayınUstası', game: 'Valorant' })}
+                        className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
+                      >
+                        📢 Spotlight Simülasyonu
+                      </button>
+                    </div>
+                  )}
+
+                  {id === 'end-credits' && (
+                    <button 
+                      onClick={() => triggerWidgetTest('credits')}
+                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                    >
+                      <Play className="w-3.5 h-3.5" /> Kayan Jeneriği Başlat
+                    </button>
+                  )}
+    </>
+  );
 
   // Overlay widget gallery
   const widgetGalleryItems = [
@@ -1222,7 +1327,10 @@ export function OverlayStudio() {
                       role="tab"
                       aria-selected={obsGorunumu === deger}
                       title={ipucu}
-                      onClick={() => setObsGorunumu(deger)}
+                      onClick={() => {
+                        setObsGorunumu(deger);
+                        setCanliTest(false);
+                      }}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
                         obsGorunumu === deger ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-white/10'
                       }`}
@@ -1300,7 +1408,7 @@ export function OverlayStudio() {
                   <OverlayKatmanlari
                     key={tuvalAnahtari}
                     config={allInOne as any}
-                    onizleme={obsGorunumu ? Boolean(allInOne.testMode) : true}
+                    onizleme={obsGorunumu ? Boolean(allInOne.testMode) && !canliTest : true}
                     sarmala={(katman, icerik, stil) => {
                       const item = (allInOne as any)[katman.anahtar];
                       const secili = selectedCanvasWidget === katman.anahtar;
@@ -1314,13 +1422,15 @@ export function OverlayStudio() {
                       return (
                         <div
                           onPointerDown={tiklanir ? (e) => handleWidgetPointerDown(e, katman.anahtar) : undefined}
-                          title={secili ? katman.etiket : `${katman.etiket} — seçmek için tıkla`}
+                          onDoubleClick={() => setSelectedCanvasWidget(katman.anahtar)}
+                          title={secili ? katman.etiket : `${katman.etiket} — seçmek için çift tıkla`}
                           style={{
                             ...stil,
                             // Seçili widget düzenlemede üstte: başka widget'ın altında kalsa da tutulabilsin
                             ...(secili && !obsGorunumu ? { zIndex: 9000 } : null),
-                            cursor: secili ? 'move' : 'pointer',
-                            pointerEvents: tiklanir ? undefined : 'none',
+                            cursor: secili ? 'move' : 'default',
+                            // OBS görünümünde seçili widget öne alınmaz: üstündekiler tutmayı engellemesin
+                            pointerEvents: tiklanir && (secili || !obsGorunumu) ? undefined : 'none',
                             // Kapalı katman tuvalde soluk görünür ki
                             // konumlandırılabilsin; OBS'te hiç çizilmez.
                             outline: secili ? `3px ${item?.enabled ? 'solid' : 'dashed'} #a78bfa` : '1px dashed rgba(167,139,250,0.35)',
@@ -1473,6 +1583,35 @@ export function OverlayStudio() {
                         className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
                       />
                     </div>
+
+                    {!tanim?.tamEkran && (
+                      <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-2.5">
+                        <label className="flex items-center justify-between gap-3 cursor-pointer">
+                          <span>
+                            <span className="text-xs font-bold text-white block">Öne bir şey gelince gizlen</span>
+                            <span className="text-[10px] text-gray-400">Uyarı, anket gibi widget bunun üstüne gelince gizlenir, bitince geri gelir</span>
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={cakisincaGizlenirMi(selectedCanvasWidget, cur)}
+                            onChange={(e) => updateCur({ cakisincaGizle: e.target.checked })}
+                            className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
+                          />
+                        </label>
+                        <label className="flex items-center justify-between gap-3 cursor-pointer">
+                          <span>
+                            <span className="text-xs font-bold text-white block">Ekrana gelince arkasındakileri gizle</span>
+                            <span className="text-[10px] text-gray-400">Sürekli görünen widget'ta açarsan arkası hep gizli kalır</span>
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={arkasiniGizlerMi(selectedCanvasWidget, cur)}
+                            onChange={(e) => updateCur({ arkasiniGizle: e.target.checked })}
+                            className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
+                          />
+                        </label>
+                      </div>
+                    )}
 
                     {/* Numeric Coordinate and Size Inputs */}
                     <div className="p-3.5 bg-[#11131a] rounded-xl border border-white/10 space-y-3">
@@ -1651,6 +1790,10 @@ export function OverlayStudio() {
                     </h4>
                     <span className="text-[10px] text-emerald-400">otomatik kaydedilir</span>
                   </div>
+                  <div className="space-y-2 pb-3">
+                    {widgetKontrolleri(seciliAyarId)}
+                    {modalActionStatus && <div className="text-xs font-bold text-emerald-400">{modalActionStatus}</div>}
+                  </div>
                   <WidgetSettingsForm
                     key={seciliAyarId}
                     widgetId={seciliAyarId}
@@ -1672,7 +1815,7 @@ export function OverlayStudio() {
                   : yerlesimDurumu === 'bekliyor'
                     ? 'Değişiklik birazdan kaydedilecek…'
                     : yerlesimDurumu === 'hata'
-                      ? 'Kaydedilemedi — StreamAxT çalışıyor mu? Tekrar deneyin.'
+                      ? 'Kaydedilemedi — AxBoT çalışıyor mu? Tekrar deneyin.'
                       : 'Konum ve boyut değişiklikleri kendiliğinden kaydedilir ve OBS\'e yansır.'}
               </p>
             </div>
@@ -1902,101 +2045,7 @@ export function OverlayStudio() {
                     <p className="text-[11px] text-gray-500">Bu widget gerçek olayla çalışır; örnek görünüm yukarıdaki önizlemede.</p>
                   )}
 
-                  {/* Dynamic controls according to widget */}
-                  {selectedWidgetModal.id === 'the-cup' && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'coin', count: 3 })} className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold">
-                        🪙 3 bağış
-                      </button>
-                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'sub', count: 2 })} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold">
-                        ⭐ 2 abone
-                      </button>
-                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'gift', count: 5 })} className="px-3 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold">
-                        🎁 5 hediye abone
-                      </button>
-                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'kicks', count: 3 })} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold">
-                        🟢 3 KICKs
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!confirm('Kupanın içi tamamen boşaltılsın mı?')) return;
-                          await fetch('/api/cup/reset', { method: 'POST' }).catch(() => {});
-                          setModalActionStatus('🗑️ Kupa sıfırlandı');
-                          setTimeout(() => setModalActionStatus(null), 2500);
-                        }}
-                        className="px-3 py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-xl text-xs font-bold"
-                      >
-                        🗑️ Kupayı sıfırla
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Subathon kendi kontrol panelini kullanir: sayac artik
-                      sunucuda, sure kurallari buradan ayarlanir. Eski iki
-                      dugme yalniz sahte bir WS mesaji yolluyordu. */}
-                  {selectedWidgetModal.id === 'subathon' && <SubathonPanel />}
-
-                  {selectedWidgetModal.id === 'wheel-of-fortune' && (
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => triggerWidgetTest('wheel')}
-                        className="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
-                      >
-                        <Disc className="w-4 h-4" /> Çarkı Canlı Çevir
-                      </button>
-                    </div>
-                  )}
-
-                  {selectedWidgetModal.id === 'hype-train' && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={async () => {
-                          await fetch('/api/hype-train/start', { method: 'POST' }).catch(() => {});
-                          setModalActionStatus('🚂 Tren sıfırdan başlatıldı');
-                          setTimeout(() => setModalActionStatus(null), 2500);
-                        }}
-                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"
-                      >
-                        ▶ Treni başlat (sıfırdan)
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await fetch('/api/hype-train/reset', { method: 'POST' }).catch(() => {});
-                          setModalActionStatus('⏹ Tren durduruldu');
-                          setTimeout(() => setModalActionStatus(null), 2500);
-                        }}
-                        className="px-3 py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-xl text-xs font-bold"
-                      >
-                        ⏹ Durdur / sıfırla
-                      </button>
-                      <button
-                        onClick={() => triggerWidgetTest('hype-train', { level: 2, percent: 80, secondsLeft: 240 })}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
-                      >
-                        🚂 Hype Train Seviye 2 Başlat
-                      </button>
-                    </div>
-                  )}
-
-                  {selectedWidgetModal.id === 'shoutout' && (
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => triggerWidgetTest('shoutout', { channel: 'YayınUstası', game: 'Valorant' })}
-                        className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
-                      >
-                        📢 Spotlight Simülasyonu
-                      </button>
-                    </div>
-                  )}
-
-                  {selectedWidgetModal.id === 'end-credits' && (
-                    <button 
-                      onClick={() => triggerWidgetTest('credits')}
-                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
-                    >
-                      <Play className="w-3.5 h-3.5" /> Kayan Jeneriği Başlat
-                    </button>
-                  )}
+                  {widgetKontrolleri(selectedWidgetModal.id)}
 
                   {/* Universal Fallback Test Button */}
                   <button 

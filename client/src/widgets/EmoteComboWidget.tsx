@@ -1,5 +1,5 @@
 /**
- * StreamAxT Emote Combo overlay
+ * AxBoT Emote Combo overlay
  * Developed by AxthrowA
  *
  * Aynı emote art arda gelince ekranın ortasında belirir. Gelen her emote ekranın rastgele bir yerinden

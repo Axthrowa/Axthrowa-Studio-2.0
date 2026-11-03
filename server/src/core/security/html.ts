@@ -1,5 +1,5 @@
 /**
- * StreamAxT — HTML / betik bağlamı için kaçışlama (saf)
+ * AxBoT — HTML / betik bağlamı için kaçışlama (saf)
  * Developed by AxthrowA
  *
  * Kick OAuth geri dönüş sayfası `error` ve `code` sorgu parametrelerini

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Nightbot içe aktarma
+ * AxBoT — Nightbot içe aktarma
  * Developed by AxthrowA
  *
  * BotRix'te `Sohbet Botu > Ekstralar > Nightbot'tan içe aktar` var:

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ortak kara liste kuralları (saf)
+ * AxBoT — ortak kara liste kuralları (saf)
  * Developed by AxthrowA
  *
  * 4. tur denetimi: liste yalnız botun işleme hattında kullanılıyordu

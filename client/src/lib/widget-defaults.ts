@@ -1,5 +1,5 @@
 /**
- * StreamAxT widget defaults
+ * AxBoT widget defaults
  * Developed by AxthrowA
  */
 
@@ -287,6 +287,13 @@ export const WHEEL_DEFAULTS = {
   fontSize: 12,
   fontColor: '#ffffff',
   soundEnabled: true,
+  soundVolume: 0.6,
+  /** Boşsa dönüş tık sesi üretilir */
+  soundUrl: '',
+  /** Orta göbek: çapın yüzdesi olarak */
+  centerSize: 26,
+  /** Orta göbekte görsel/GIF */
+  centerImageUrl: '',
   confetti: true,
   command: '!cark',
   outlineEnabled: true,
@@ -395,6 +402,7 @@ export const SUBATHON_DEFAULTS = {
   icon: '⏳',
   showRules: true,
   showStatus: true,
+  showStatusDot: true,
   // Durum kartı yazıları (boş bırakılan görünmez)
   statusLiveText: 'CANLI SAYAÇ',
   statusPausedText: 'DURAKLADI',
@@ -638,7 +646,8 @@ export const HYPE_TRAIN_DEFAULTS = {
   showPercent: true,
   showSubtitle: true,
   showLastSupporter: true,
-  hideWhenIdle: true
+  /** Eskiden varsayılan açıktı: tren olay gelene dek hiç çizilmiyor, eklenmemiş sanılıyordu */
+  hideIdle: false
 };
 
 /** Şarkı sözleri — tema, satır sayısı ve tipografi. */
@@ -750,7 +759,7 @@ export const LOYALTY_DEFAULTS = {
 export const END_CREDITS_DEFAULTS = {
   title: 'YAYINI İZLEDİĞİNİZ İÇİN TEŞEKKÜRLER!',
   subtitle: 'Bugünkü yayında bize destek olan harika topluluğumuz:',
-  footer: 'Powered by StreamAxT',
+  footer: 'Powered by AxBoT',
   fontFamily: 'Plus Jakarta Sans',
   titleSize: 44,
   fontSize: 16,
@@ -790,7 +799,7 @@ export const AUDIO_PLAYER_DEFAULTS = {
   bgColor: '#000000',
   bgOpacity: 0.8,
   radius: 12,
-  label: 'StreamAxT OBS Audio',
+  label: 'AxBoT OBS Audio',
   showStatus: true,
   showText: true,
   showQueue: true,

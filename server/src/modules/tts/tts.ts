@@ -1,5 +1,5 @@
 /**
- * StreamAxT TTS Queue Bridge
+ * AxBoT TTS Queue Bridge
  * Developed by AxthrowA
  */
 

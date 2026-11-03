@@ -1,5 +1,5 @@
 /**
- * StreamAxT — tasarım sistemi
+ * AxBoT — tasarım sistemi
  * Developed by AxthrowA
  *
  * Denetimde bulundu (CURRENT_SYSTEM_AUDIT §15): ortak bileşen yoktu, her

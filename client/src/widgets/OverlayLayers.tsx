@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ortak overlay katmanları
+ * AxBoT — ortak overlay katmanları
  * Developed by AxthrowA
  *
  * Kullanıcı bildirdi: "OBS overlay & widget stüdyosunda önizlemede görünen
@@ -47,7 +47,7 @@ import { MuzikVideoWidget } from './MuzikVideoWidget.js';
 import { WordCloudWidget } from './WordCloudWidget.js';
 import { ScoreboardWidget } from './ScoreboardWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
-import { gizlenecekKatmanlar, ONCELIKLI_KATMANLAR } from '../lib/katmanCakisma.js';
+import { arkasiniGizlerMi, cakisincaGizlenirMi, gizlenecekKatmanlar } from '../lib/katmanCakisma.js';
 
 export interface WidgetLayoutItem {
   enabled?: boolean;
@@ -397,22 +397,25 @@ export interface OverlayKatmanlariProps {
   sarmala?: (katman: KatmanTanimi, icerik: ReactNode, stil: CSSProperties) => ReactNode;
 }
 
-/** Widget gizliyken hiçbir şey çizmez: kapsayıcısı dolunca ekranda, boşalınca değil demektir */
-function OncelikliKatman({ stil, degisti, children }: { stil: CSSProperties; degisti: (ekranda: boolean) => void; children: ReactNode }) {
+/**
+ * Widget gizliyken hiçbir şey çizmez ya da kökünü `data-katman-bos` ile işaretler (bildirim kutusu):
+ * kapsayıcısında içerik varsa ekranda demektir.
+ */
+function KatmanKutusu({ stil, izle, degisti, children }: { stil: CSSProperties; izle: boolean; degisti: (ekranda: boolean) => void; children: ReactNode }) {
   const kap = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = kap.current;
-    if (!el) return;
-    const bak = () => degisti(el.childElementCount > 0);
+    if (!el || !izle) return;
+    const bak = () => degisti(el.childElementCount > 0 && !el.querySelector('[data-katman-bos]'));
     bak();
     const izleyici = new MutationObserver(bak);
-    izleyici.observe(el, { childList: true });
+    izleyici.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-katman-bos'] });
     return () => {
       izleyici.disconnect();
       degisti(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [izle]);
   return (
     <div ref={kap} style={stil}>
       {children}
@@ -434,6 +437,7 @@ export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala
           return {
             anahtar: k.anahtar,
             tamEkran: k.tamEkran,
+            gizlenmez: !cakisincaGizlenirMi(k.anahtar, i),
             kutu: {
               x: typeof i?.x === 'number' ? i.x : k.varsayilan.x,
               y: typeof i?.y === 'number' ? i.y : k.varsayilan.y,
@@ -457,25 +461,18 @@ export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala
 
         if (sarmala) return <span key={katman.anahtar}>{sarmala(katman, icerik, stil)}</span>;
 
-        if (ONCELIKLI_KATMANLAR.includes(katman.anahtar)) {
-          return (
-            <OncelikliKatman
-              key={katman.anahtar}
-              stil={{ ...stil, pointerEvents: 'none' }}
-              degisti={(ekranda) =>
-                setEtkinler((l) => (ekranda === l.includes(katman.anahtar) ? l : ekranda ? [...l, katman.anahtar] : l.filter((a) => a !== katman.anahtar)))
-              }
-            >
-              {icerik}
-            </OncelikliKatman>
-          );
-        }
-
         // Widget kaldırılmaz, yalnız görünmez olur: sohbet geçmişi ve sayaçlar sürer
         return (
-          <div key={katman.anahtar} style={{ ...stil, pointerEvents: 'none', opacity: gizli.has(katman.anahtar) ? 0 : 1, transition: 'opacity 250ms ease' }}>
+          <KatmanKutusu
+            key={katman.anahtar}
+            stil={{ ...stil, pointerEvents: 'none', opacity: gizli.has(katman.anahtar) ? 0 : 1, transition: 'opacity 250ms' }}
+            izle={arkasiniGizlerMi(katman.anahtar, item)}
+            degisti={(ekranda) =>
+              setEtkinler((l) => (ekranda === l.includes(katman.anahtar) ? l : ekranda ? [...l, katman.anahtar] : l.filter((a) => a !== katman.anahtar)))
+            }
+          >
             {icerik}
-          </div>
+          </KatmanKutusu>
         );
       })}
     </>

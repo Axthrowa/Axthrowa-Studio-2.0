@@ -1,5 +1,5 @@
 /**
- * StreamAxT — değişken kayıt defteri
+ * AxBoT — değişken kayıt defteri
  * Developed by AxthrowA
  *
  * Şablon değişkenlerinin uygulaması. Çözümleme mantığı `resolve.ts`'te;

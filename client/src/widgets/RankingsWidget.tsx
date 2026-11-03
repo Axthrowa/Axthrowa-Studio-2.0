@@ -1,5 +1,5 @@
 /**
- * StreamAxT Sıralama (Rankings) overlay
+ * AxBoT Sıralama (Rankings) overlay
  * Developed by AxthrowA
  *
  * Eskiden yalnız adres satırındaki `?sort=` okunuyordu: renk, satır sayısı,

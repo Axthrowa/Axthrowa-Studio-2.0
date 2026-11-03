@@ -1,5 +1,5 @@
 /**
- * StreamAxT Hype Treni widget
+ * AxBoT Hype Treni widget
  * Developed by AxthrowA
  *
  * Eski sürüm tamamen sahteydi: seviye ve yüzde sabit kodlanmıştı, geri sayım
@@ -95,7 +95,7 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
 
   const kalan = aktif ? Math.max(0, Math.round((bitisAni - Date.now()) / 1000)) : 0;
 
-  if (!aktif && s.hideWhenIdle) return null;
+  if (!aktif && s.hideIdle) return null;
 
   const hedef = seviyeHedefi(seviye, Number(s.levelGoal) || 500, Number(s.levelGrowth) || 1.5);
   const yuzde = Math.min(100, Math.round((puan / Math.max(1, hedef)) * 100));

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — TTS metin filtreleri
+ * AxBoT — TTS metin filtreleri
  * Developed by AxthrowA
  *
  * BotRix'in TTS sayfasındaki "Gelişmiş ayarlar" bölümü gözlemlendi

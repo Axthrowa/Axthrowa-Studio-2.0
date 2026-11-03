@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Bil Bakalım sohbet mesajları (saf; testli)
+ * AxBoT — Bil Bakalım sohbet mesajları (saf; testli)
  * Developed by AxthrowA
  *
  * Eskiden soru kutu çizgileri (╔═══╗), kategori/süre/ödül satırları ve

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — uyarı varyantı seçim testleri
+ * AxBoT — uyarı varyantı seçim testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

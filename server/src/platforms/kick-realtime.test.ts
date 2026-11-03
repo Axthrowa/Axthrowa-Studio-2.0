@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Kick gerçek zamanlı protokol testleri
+ * AxBoT — Kick gerçek zamanlı protokol testleri
  * Developed by AxthrowA
  *
  * Örnek çerçevelerin ANAHTARLARI 2026-10-14'te oturumsuz bir istemciyle

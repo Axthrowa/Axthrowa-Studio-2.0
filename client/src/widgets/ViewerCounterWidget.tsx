@@ -1,5 +1,5 @@
 /**
- * StreamAxT İzleyici Sayacı widget
+ * AxBoT İzleyici Sayacı widget
  * Developed by AxthrowA
  *
  * Ayarlar panelden gelir (eskiden yalnız adres satırından okunuyordu ve

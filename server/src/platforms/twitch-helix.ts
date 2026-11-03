@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Twitch Helix istemcisi
+ * AxBoT — Twitch Helix istemcisi
  * Developed by AxthrowA
  *
  * Twitch sohbeti IRC ile okunuyor; moderasyon, yayın durumu ve kanal

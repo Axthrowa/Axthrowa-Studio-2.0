@@ -1,10 +1,10 @@
 /**
- * StreamAxT — Spotify yardımcıları (saf; testli)
+ * AxBoT — Spotify yardımcıları (saf; testli)
  * Developed by AxthrowA
  *
  * Yetkilendirme PKCE ile yapılır: istemci gizli anahtarı (client secret)
  * gerekmez, yalnız Spotify Developer Dashboard'daki "Client ID".
- * Davranış Yayın Yönetim Aracı'nın Rust müzik modülüyle aynıdır (aynı
+ * Davranış AxthrowA Studio'nun Rust müzik modülüyle aynıdır (aynı
  * Resonance arayüzü her ikisiyle de çalışsın).
  */
 import crypto from 'crypto';

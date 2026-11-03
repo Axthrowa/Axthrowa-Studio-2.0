@@ -1,5 +1,5 @@
 /**
- * StreamAxT — tahmin hesapları (saf)
+ * AxBoT — tahmin hesapları (saf)
  * Developed by AxthrowA
  *
  * Veritabanı erişimi YOK: test edilebilir olsun ve test koşarken çalışan

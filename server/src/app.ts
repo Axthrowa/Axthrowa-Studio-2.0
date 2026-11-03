@@ -1,5 +1,5 @@
 /**
- * StreamAxT Core Server & Multi-Platform Bot Engine
+ * AxBoT Core Server & Multi-Platform Bot Engine
  * Developed by AxthrowA
  * (c) 2026 AxthrowA. All rights reserved.
  */
@@ -107,7 +107,7 @@ app.use('/api', (req, res, next) => {
   console.warn(`[Guvenlik] Yabanci kokenden yazma istegi reddedildi: ${req.headers.origin} ${req.method} ${req.originalUrl}`);
   res.status(403).json({
     success: false,
-    error: 'Bu istek yalniz StreamAxT panelinden yapilabilir.'
+    error: 'Bu istek yalniz AxBoT panelinden yapilabilir.'
   });
 });
 
@@ -132,7 +132,7 @@ app.use('/api', apiRoutes);
 app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
-    error: `API uç noktası bulunamadı: ${req.method} ${req.originalUrl}. Lütfen StreamAxT'yi yeniden başlatın.`
+    error: `API uç noktası bulunamadı: ${req.method} ${req.originalUrl}. Lütfen AxBoT'u yeniden başlatın.`
   });
 });
 
@@ -152,7 +152,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   console.error(`[API] ${req.method} ${req.originalUrl} hata:`, err?.stack || err);
   res.status(Number(err?.status) || 500).json({
     success: false,
-    error: 'Sunucu hatası — ayrıntı StreamAxT günlüğünde.'
+    error: 'Sunucu hatası — ayrıntı AxBoT günlüğünde.'
   });
 });
 
@@ -169,14 +169,14 @@ function uygulamaSurumu(): string | null {
 
 // Health check
 app.get('/health', (req, res) => {
-  // `uygulama` imzası: ikinci kopya portu dolu bulunca karşıdakinin StreamAxT olup olmadığını anlar
-  // `gozcuPid`: dışarıdan durduran (Yayın Yönetim Aracı) yalnız portu dinleyen uygulamayı
+  // `uygulama` imzası: ikinci kopya portu dolu bulunca karşıdakinin AxBoT olup olmadığını anlar
+  // `gozcuPid`: dışarıdan durduran (AxthrowA Studio) yalnız portu dinleyen uygulamayı
   // öldürürse gözcü çökme sanıp yeniden başlatır — ağacı gözcüden kapatabilsin diye.
   res.json({
     status: 'ok',
     uygulama: 'streamaxt',
     gozcuPid: process.env.STREAMAXT_COCUK === '1' ? process.ppid : null,
-    // Yayın Yönetim Aracı "Hakkında"da gösterir (paket kökündeki package.json)
+    // AxthrowA Studio "Hakkında"da gösterir (paket kökündeki package.json)
     surum: uygulamaSurumu(),
     time: new Date().toISOString()
   });
@@ -246,7 +246,7 @@ const PORT = sunucuPortu();
 const HOST = baglanmaAdresi();
 
 /**
- * Port doluysa: karşıda zaten bir StreamAxT çalışıyorsa bu kopya temizce
+ * Port doluysa: karşıda zaten bir AxBoT çalışıyorsa bu kopya temizce
  * kapanır (kod 2 — gözcü yeniden başlatmaz). Değilse port bir önceki
  * kopyanın kapanmasından kalmış olabilir: 5 kez 2 sn arayla yeniden denenir.
  * Eskiden süreç işlenmeyen 'error' olayıyla çöküyordu.
@@ -257,18 +257,18 @@ async function portDoluysa(): Promise<void> {
     const r = await fetch(`http://127.0.0.1:${PORT}/health`, { signal: AbortSignal.timeout(3000) });
     const j: any = await r.json().catch(() => null);
     if (j?.uygulama === 'streamaxt' || j?.status === 'ok') {
-      console.error(`[StreamAxT] ${PORT} portunda zaten bir StreamAxT çalışıyor; bu kopya kapatılıyor.`);
+      console.error(`[AxBoT] ${PORT} portunda zaten bir AxBoT çalışıyor; bu kopya kapatılıyor.`);
       process.exit(ZATEN_CALISIYOR_KODU);
     }
   } catch {
-    /* karşıda yanıt veren StreamAxT yok */
+    /* karşıda yanıt veren AxBoT yok */
   }
   if (++portDenemesi <= 5) {
-    console.warn(`[StreamAxT] ${PORT} portu meşgul, 2 sn sonra yeniden denenecek (${portDenemesi}/5)…`);
+    console.warn(`[AxBoT] ${PORT} portu meşgul, 2 sn sonra yeniden denenecek (${portDenemesi}/5)…`);
     setTimeout(() => server.listen(PORT, HOST), 2000);
     return;
   }
-  console.error(`\n[UYARI] ${PORT} numaralı port başka bir uygulama tarafından kullanılıyor; StreamAxT başlatılamadı.\n`);
+  console.error(`\n[UYARI] ${PORT} numaralı port başka bir uygulama tarafından kullanılıyor; AxBoT başlatılamadı.\n`);
   process.exit(1);
 }
 
@@ -280,11 +280,11 @@ server.on('error', (err: any) => {
 // Botu tek bir yakalanmamış hata ya da reddedilen söz yüzünden KAPATMA:
 // günlüğe yaz ve devam et (gözcü yine de çökmeye karşı yeniden başlatır).
 process.on('unhandledRejection', (sebep: any) => {
-  seyrekUyar(`surec:red:${String(sebep?.message || sebep).slice(0, 60)}`, '[StreamAxT] Yakalanmamış söz reddi', sebep, 60_000);
+  seyrekUyar(`surec:red:${String(sebep?.message || sebep).slice(0, 60)}`, '[AxBoT] Yakalanmamış söz reddi', sebep, 60_000);
 });
 process.on('uncaughtException', (hata: any) => {
   if (hata?.code === 'EADDRINUSE') return; // yukarıda işleniyor
-  console.error('[StreamAxT] Yakalanmamış hata (bot çalışmaya devam ediyor):', hata?.stack || hata);
+  console.error('[AxBoT] Yakalanmamış hata (bot çalışmaya devam ediyor):', hata?.stack || hata);
 });
 
 let dinlemeBasladi = false;
@@ -294,7 +294,7 @@ server.listen(PORT, HOST, async () => {
   setStreamStartTime(Date.now());
   const uyari = baglanmaUyarisi(HOST);
   console.log(`\n======================================================`);
-  console.log(`🚀 StreamAxT Core Bot Engine - Developed by AxthrowA`);
+  console.log(`🚀 AxBoT Core Bot Engine - Developed by AxthrowA`);
   console.log(`🔗 Web Dashboard: http://localhost:${PORT}`);
   console.log(`📡 WebSocket Hub: ws://localhost:${PORT}/ws`);
   console.log(`🔒 Baglanti adresi: ${HOST}`);
@@ -384,7 +384,7 @@ server.listen(PORT, HOST, async () => {
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('\nShutting down StreamAxT gracefully...');
+  console.log('\nShutting down AxBoT gracefully...');
   timerManager.stopAll();
   economy.flushAll();
   process.exit(0);

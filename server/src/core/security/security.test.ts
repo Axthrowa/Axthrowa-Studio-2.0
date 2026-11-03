@@ -1,5 +1,5 @@
 /**
- * StreamAxT — güvenlik katmanı testleri
+ * AxBoT — güvenlik katmanı testleri
  * Developed by AxthrowA
  *
  * Bu testler denetimde bulunan token sızıntısını (CURRENT_SYSTEM_AUDIT §12,
@@ -99,7 +99,7 @@ describe('temizle', () => {
   it('ayar sözlüğündeki gizli anahtarları temizler', () => {
     const ayar = {
       prefix: '!',
-      kick_client_id: '01M2BA2Z5ZTSTX6JX578F3ZZBC',
+      kick_client_id: 'ornek-kick-istemci',
       kick_client_secret: 'cok-gizli-bir-anahtar-degeri-1234',
       gemini_api_key: ''
     };
@@ -107,7 +107,7 @@ describe('temizle', () => {
 
     expect(c.prefix).toBe('!');
     // client_id sır değil — panelin göstermesi gerekiyor
-    expect(c.kick_client_id).toBe('01M2BA2Z5ZTSTX6JX578F3ZZBC');
+    expect(c.kick_client_id).toBe('ornek-kick-istemci');
     expect(c.kick_client_secret).toBe('••••1234');
     expect(c.gemini_api_keyVar).toBe(false);
   });

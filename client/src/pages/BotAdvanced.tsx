@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Gelişmiş Bot Ayarları
+ * AxBoT — Gelişmiş Bot Ayarları
  * Developed by AxthrowA
  *
  * Bu turda sunucuya eklenen sistemlerin panel karşılığı. Hepsi API uçları

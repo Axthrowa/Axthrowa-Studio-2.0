@@ -1,5 +1,5 @@
 /**
- * StreamAxT AutoMod
+ * AxBoT AutoMod
  * Developed by AxthrowA
  *
  * DÜZELTME (3. tur): Bu sayfadaki "Aksiyon" ve "Timeout" seçimleri

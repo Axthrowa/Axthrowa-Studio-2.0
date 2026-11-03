@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Trovo eşleme testleri
+ * AxBoT — Trovo eşleme testleri
  * Developed by AxthrowA
  *
  * Örnekler resmi belgedeki "Chat Message Types and Samples" tablosundan

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — açılışta sır kasası hazırlığı (S6)
+ * AxBoT — açılışta sır kasası hazırlığı (S6)
  * Developed by AxthrowA
  *
  * 1) Şifreli tüm değerleri TEK PowerShell çağrısıyla çözüp önbelleğe alır;

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — metin yardımcıları testleri
+ * AxBoT — metin yardımcıları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

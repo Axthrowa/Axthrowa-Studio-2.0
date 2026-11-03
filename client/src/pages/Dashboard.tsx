@@ -83,7 +83,7 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
     // axt-onizleme: panelin büyük harf ve harf arası sıfırlaması bu ekranın tipografisine dokunmasın.
     // Eksi kenar boşluğu sayfa dolgusunu iptal eder: zinc-950 zemin içerik alanını kenardan kenara kaplar.
     <div className="axt-onizleme -mx-8 -mb-8 grid grid-cols-12 content-start gap-2 bg-zinc-950 p-2 font-sans text-zinc-200">
-      <Modul etiket="StreamAxT kontrol merkezi" className="col-span-12 lg:col-span-8">
+      <Modul etiket="AxBoT kontrol merkezi" className="col-span-12 lg:col-span-8">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-sm text-zinc-200">v{GUNCEL_SURUM.surum}</span>
           <span className="text-sm text-zinc-400">{GUNCEL_SURUM.ad}</span>
@@ -157,7 +157,7 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
             ))}
             <button
               type="button"
-              onClick={() => triggerTTS('StreamAxT sesli okuma sistemi başarıyla devrede!')}
+              onClick={() => triggerTTS('AxBoT sesli okuma sistemi başarıyla devrede!')}
               className={`${DONANIM_TUSU} min-h-10 px-2 text-xs font-semibold`}
             >
               Sesli okuma

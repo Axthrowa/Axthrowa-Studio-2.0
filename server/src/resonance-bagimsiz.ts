@@ -1,5 +1,5 @@
 /**
- * Resonance — bağımsız (StreamAxT ve Yayın Yönetim Aracı olmadan) çalışan müzik çalar
+ * Resonance — bağımsız (AxBoT ve AxthrowA Studio olmadan) çalışan müzik çalar
  * Developed by AxthrowA
  *
  * `node dist/resonance-bagimsiz.js` → http://127.0.0.1:8850/resonance/
@@ -7,7 +7,7 @@
  *  • OBS overlay'i: http://127.0.0.1:8850/resonance/overlay
  * Ayarlar `veri/resonance.json` dosyasında; Spotify/YTMD jetonları Windows
  * DPAPI ile şifreli. Yalnız bu bilgisayardan (127.0.0.1) erişilir.
- * Port: RESONANCE_PORT (varsayılan 8850 — Yayın Yönetim Aracı 8843'ü kullanır).
+ * Port: RESONANCE_PORT (varsayılan 8850 — AxthrowA Studio 8843'ü kullanır).
  */
 import express from 'express';
 import http from 'http';

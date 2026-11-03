@@ -1,5 +1,5 @@
 /**
- * StreamAxT Skor Tablosu — 2-6 takımın skoru; `!skortablo` komutu ya da panel günceller
+ * AxBoT Skor Tablosu — 2-6 takımın skoru; `!skortablo` komutu ya da panel günceller
  * Developed by AxthrowA
  *
  * Görünümler: TV yayını (eğik takım panelleri), kartlar, alt alta sıralama (oranlı çubuk), neon, e-spor HUD,

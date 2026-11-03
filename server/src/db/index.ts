@@ -390,7 +390,7 @@ if (settingsCount.cnt === 0) {
     tts_min_bits_or_points: '0',
     sr_desktop_target: 'none',
     gemini_api_key: '',
-    gemini_prompt: 'Sen AxBot adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.',
+    gemini_prompt: 'Sen AxBoT adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.',
     gemini_enabled: 'true',
     currency_name: 'Puan',
     points_per_interval: '10',
@@ -692,7 +692,7 @@ if (!overlayRow) {
   );
 }
 
-// Seed StreamAxT feature settings
+// Seed AxBoT feature settings
 ensureSetting('tts_advanced_settings', JSON.stringify({
   primaryEngine: 'edge',
   fallbackChain: ['edge', 'google', 'gemini', 'elevenlabs', 'webspeech'],

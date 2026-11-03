@@ -1,5 +1,5 @@
 /**
- * StreamAxT — YouTube Canlı adaptörü
+ * AxBoT — YouTube Canlı adaptörü
  * Developed by AxthrowA
  *
  * Kaynak: YouTube Data API v3 (CONFIRMED_IN_PUBLIC_DOCS)
@@ -350,7 +350,7 @@ export class YouTubePlatform extends BasePlatform {
     const kimlikler = this.banKimlikleriOku();
     const banId = kanalId ? kimlikler[kanalId] : undefined;
     if (!banId) {
-      return { ok: false, hata: 'Bu ban StreamAxT ile yapılmamış (ban kimliği yok) — YouTube Studio > Topluluk üzerinden kaldırın' };
+      return { ok: false, hata: 'Bu ban AxBoT ile yapılmamış (ban kimliği yok) — YouTube Studio > Topluluk üzerinden kaldırın' };
     }
     try {
       await axios.delete(`${API}/liveChat/bans`, {

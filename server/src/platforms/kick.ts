@@ -480,7 +480,7 @@ export class KickPlatform extends BasePlatform {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 StreamAxT/1.0'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 AxBoT/1.0'
         },
         timeout: 8000
       });
@@ -662,7 +662,7 @@ export class KickPlatform extends BasePlatform {
                 Authorization: `Bearer ${cleanToken}`,
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 StreamAxT/1.0'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 AxBoT/1.0'
               },
               timeout: 6000
             }

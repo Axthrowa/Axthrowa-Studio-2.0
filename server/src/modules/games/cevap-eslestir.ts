@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sohbet cevabı eşleştirme (saf)
+ * AxBoT — sohbet cevabı eşleştirme (saf)
  * Developed by AxthrowA
  *
  * Kullanıcı bildirdi: "Bilgi yarışmasında cevap sohbete yazılınca bot

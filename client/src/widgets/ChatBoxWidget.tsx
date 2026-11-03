@@ -1,5 +1,5 @@
 /**
- * StreamAxT Chat Overlay
+ * AxBoT Chat Overlay
  * Developed by AxthrowA
  */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';

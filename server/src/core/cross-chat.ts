@@ -1,5 +1,5 @@
 /**
- * StreamAxT — çapraz sohbet aktarımı (saf)
+ * AxBoT — çapraz sohbet aktarımı (saf)
  * Developed by AxthrowA
  *
  * Bir platformdaki sohbet mesajı diğer bağlı platformlara bot hesabıyla

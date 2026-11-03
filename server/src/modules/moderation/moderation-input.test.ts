@@ -1,5 +1,5 @@
 /**
- * StreamAxT — elle moderasyon ve kalkan ayarı doğrulama testleri
+ * AxBoT — elle moderasyon ve kalkan ayarı doğrulama testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

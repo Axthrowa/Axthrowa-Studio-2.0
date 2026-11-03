@@ -1,5 +1,5 @@
 /**
- * StreamAxT — değişken motoru tipleri
+ * AxBoT — değişken motoru tipleri
  * Developed by AxthrowA
  */
 

@@ -1,5 +1,5 @@
 /**
- * StreamAxT Giveaway overlay
+ * AxBoT Giveaway overlay
  * Developed by AxthrowA
  *
  * Çekiliş açıkken ödül, katılım kelimesi, katılımcı sayısı ve kalan süre görünür. Kazanan çekilince

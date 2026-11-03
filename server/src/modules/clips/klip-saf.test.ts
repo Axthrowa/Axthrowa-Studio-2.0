@@ -1,5 +1,5 @@
 /**
- * StreamAxT — !clip yardımcıları testleri
+ * AxBoT — !clip yardımcıları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

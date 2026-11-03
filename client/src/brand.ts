@@ -1,6 +1,6 @@
-/** StreamAxT — Developed by AxthrowA */
+/** AxBoT — Developed by AxthrowA */
 export const BRAND = {
-  name: 'StreamAxT',
+  name: 'AxBoT',
   author: 'AxthrowA',
   short: 'AxT',
   tagline: 'Bot & Overlay Studio',

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Kick gerçek zamanlı sohbet bağlantısı
+ * AxBoT — Kick gerçek zamanlı sohbet bağlantısı
  * Developed by AxthrowA
  *
  * Kick'in sunucusunun pazarlıkta verdiği sağlayıcıya (Centrifugo; önerilirse

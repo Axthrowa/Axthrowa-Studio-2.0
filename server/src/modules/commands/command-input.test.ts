@@ -1,5 +1,5 @@
 /**
- * StreamAxT — komut girdisi ve eşleme testleri
+ * AxBoT — komut girdisi ve eşleme testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

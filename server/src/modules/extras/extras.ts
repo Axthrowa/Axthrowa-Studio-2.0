@@ -1,5 +1,5 @@
 /**
- * StreamAxT extras — chat alerts, quotes, counters, clip, levels
+ * AxBoT extras — chat alerts, quotes, counters, clip, levels
  * Developed by AxthrowA
  */
 import { db } from '../../db/index.js';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — moderasyon ihlal eylemleri
+ * AxBoT — moderasyon ihlal eylemleri
  * Developed by AxthrowA
  *
  * Denetimde bulundu (BOTRIX_GAP_ANALYSIS §4): AutoMod'umuz bir ihlal

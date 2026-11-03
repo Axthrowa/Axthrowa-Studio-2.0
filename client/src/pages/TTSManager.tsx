@@ -1,5 +1,5 @@
 /**
- * StreamAxT 5-Engine TTS Studio
+ * AxBoT 5-Engine TTS Studio
  * Developed by AxthrowA
  */
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -133,7 +133,7 @@ export default function TTSManager() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [testText, setTestText] = useState('StreamAxT 5 motorlu kesintisiz TTS sistemi başarıyla çalışıyor!');
+  const [testText, setTestText] = useState('AxBoT 5 motorlu kesintisiz TTS sistemi başarıyla çalışıyor!');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [statusMsg, setStatusMsg] = useState('');
@@ -297,7 +297,7 @@ export default function TTSManager() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-blue-500/20 text-blue-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-500/30 uppercase tracking-wider">
-                StreamAxT Kesintisiz Mimari
+                AxBoT Kesintisiz Mimari
               </span>
               <span className="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> 5 Motor Aktif

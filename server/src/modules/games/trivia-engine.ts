@@ -320,7 +320,7 @@ export class TriviaEngine extends EventEmitter {
 
       const totalEarned = Math.round((basePoints + speedBonus + rankBonus) * streakMultiplier);
 
-      // Award points in StreamAxT economy
+      // Award points in AxBoT economy
       try {
         economy.addPoints(cuzdanAdi(v.platform, v.username), totalEarned);
       } catch (e) {

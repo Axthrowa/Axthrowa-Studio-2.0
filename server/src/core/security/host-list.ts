@@ -1,5 +1,5 @@
 /**
- * StreamAxT — bu makinenin adresleri (Host izin listesi için)
+ * AxBoT — bu makinenin adresleri (Host izin listesi için)
  * Developed by AxthrowA
  *
  * LAN kipinde (STREAMAXT_HOST=0.0.0.0) OBS başka bir bilgisayardan

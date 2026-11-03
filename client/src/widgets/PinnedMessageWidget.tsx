@@ -1,5 +1,5 @@
 /**
- * StreamAxT Sabitlenmiş Mesaj widget
+ * AxBoT Sabitlenmiş Mesaj widget
  * Developed by AxthrowA
  *
  * Eski sürümde hiç ayarı yoktu; üstelik örnek mesaj gerçek bir sabitleme yokken

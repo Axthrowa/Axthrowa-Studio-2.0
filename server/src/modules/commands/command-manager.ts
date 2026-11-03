@@ -396,12 +396,8 @@ export class CommandManager {
 
       case 'sarki':
       case 'song':
-      case 'currentsong': {
-        const current = songRequest.getCurrentSong();
-        return current 
-          ? `🎶 Şu anda çalan: "${current.title}" (İsteyen: ${current.requestedBy})`
-          : 'Şu anda kuyrukta çalan bir şarkı yok. Şarkı istemek için: !sr <şarkı adı>';
-      }
+      case 'currentsong':
+        return songRequest.calanYaniti();
 
       case 'atla':
       case 'skip':
@@ -1271,7 +1267,7 @@ export class CommandManager {
         return `🗑️ !${ad} silindi.`;
       }
 
-      // ---- Yaygın botlarda gözlenen, StreamAxT'de eksik komutlar (2026-10) ----
+      // ---- Yaygın botlarda gözlenen, AxBoT'da eksik komutlar (2026-10) ----
 
       // Toplu moderasyon: son 3 dk'da kalıba uyan mesajları sil / yazanları sustur
       case 'nuke': {

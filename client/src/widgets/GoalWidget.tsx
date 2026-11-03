@@ -1,5 +1,5 @@
 /**
- * StreamAxT Goal overlay — donation / follower / sub / kicks
+ * AxBoT Goal overlay — donation / follower / sub / kicks
  * Developed by AxthrowA
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';

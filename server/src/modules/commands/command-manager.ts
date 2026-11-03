@@ -30,6 +30,7 @@ import { hataMetni, seyrekUyar } from '../../core/logger.js';
 import { trKatla } from '../../core/text.js';
 import { klipYoneticisi } from '../clips/klip.js';
 import { klipSuresi } from '../clips/klip-saf.js';
+import { shoutoutGonder } from '../otomasyon/shoutout.js';
 import { kendiMesajlari, nukeArgumanlari, nukeHedefleri, sonMesajlar } from '../moderation/son-mesajlar.js';
 import { sureyiYaz } from '../automod/enforcement.js';
 import { rastgeleIzleyici } from '../../core/variables/registry.js';
@@ -1215,11 +1216,7 @@ export class CommandManager {
         };
         const kok = adresler[String(message.platform).toLowerCase()] || 'https://kick.com';
         // Overlay'deki Shoutout widget'ini da tetikle
-        try {
-          eventBus.emit('widget_update', { type: 'shoutout', data: { channel: kanal, platform: message.platform } });
-        } catch (e) {
-          seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e);
-        }
+        void shoutoutGonder(kanal, message.platform).catch((e) => seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e));
         return `📢 ${kanal} kanalına göz atın: ${kok}/${kanal}`;
       }
 

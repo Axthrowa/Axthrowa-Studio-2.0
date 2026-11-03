@@ -270,7 +270,7 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
         data: {
           channel: body.channel || 'StreamMaster',
           platform: body.platform || 'kick',
-          game: body.game || 'Grand Theft Auto VI',
+          oyun: body.oyun || 'Grand Theft Auto VI',
           avatarUrl: body.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop',
           message: body.message || 'Bu harika yayıncıyı takip etmeyi unutmayın!'
         }

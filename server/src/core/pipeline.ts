@@ -21,6 +21,7 @@ import { sonMesajlar } from '../modules/moderation/son-mesajlar.js';
 import { SeslenmeSiniri, seslenmeAyikla } from '../modules/ai/seslenme.js';
 import { geminiCoHost } from '../modules/ai/gemini.js';
 import { toplulukMesaji } from '../modules/community/topluluk.js';
+import { otomasyon } from '../modules/otomasyon/otomasyon.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
@@ -31,6 +32,7 @@ export class MessagePipeline {
   }
 
   init() {
+    otomasyon.baslat();
     console.log('[MessagePipeline] Chat message processing pipeline initialized and listening to events.');
   }
 
@@ -122,6 +124,9 @@ export class MessagePipeline {
     // Kalkan modu: yalnız abone / link / büyük harf / emoji seli kuralları.
     // Bot yok sayar; OBS sohbetinden ws/server.ts gizler; seçiliyse platformda silinir.
     if (kalkaniUygula(message)) return;
+
+    // Otomasyon kuralları: yankı, kara liste ve kalkan süzgeçlerinden geçen mesaj
+    otomasyon.sohbet(message);
 
     // Kelime bulutu, !emotecount, !chatstats (botun kendi mesajı sayılmaz)
     if (!message.user.isSelf) sohbetIstatistik.ekle(message.user.username, message.user.displayName, rawText);

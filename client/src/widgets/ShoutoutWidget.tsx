@@ -19,6 +19,8 @@ interface ShoutoutData {
   platform: string;
   avatarUrl?: string;
   bio?: string;
+  /** Yayında oynadığı ya da son oynadığı oyun */
+  oyun?: string;
 }
 
 export interface ShoutoutWidgetProps {
@@ -167,6 +169,12 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
           <div className="font-black truncate" style={{ fontSize: boy }}>
             @{so.channel}
           </div>
+
+          {so.oyun && (
+            <div className="font-bold truncate" style={{ fontSize: Math.max(10, boy * 0.5), color: s.accentColor, marginTop: 2 }}>
+              🎮 {so.oyun}
+            </div>
+          )}
 
           {s.showBio && (
             <div style={{ fontSize: Math.max(10, boy * 0.5), opacity: 0.78, marginTop: 4 }}>

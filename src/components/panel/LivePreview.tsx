@@ -19,9 +19,11 @@ type Props = {
   onPatch: (patch: OverlaySettings) => void;
   /** Süre / medya bitince (Giriş→oyun, Çıkış→Stop Stream) */
   onCountdownEnd?: (settings: OverlaySettings) => void;
+  /** Tuvalde bir parçaya tıklandı */
+  onPartSelect?: (key: string) => void;
 };
 
-export default function LivePreview({ screen, settings, onPatch, onCountdownEnd }: Props) {
+export default function LivePreview({ screen, settings, onPatch, onCountdownEnd, onPartSelect }: Props) {
   if (screen === "chat") {
     return (
       <div className="h-full min-h-0 w-full overflow-hidden">
@@ -35,6 +37,7 @@ export default function LivePreview({ screen, settings, onPatch, onCountdownEnd 
       settings={settings}
       onPatch={onPatch}
       onCountdownEnd={onCountdownEnd}
+      onPartSelect={onPartSelect}
     />
   );
 }
@@ -43,7 +46,7 @@ export default function LivePreview({ screen, settings, onPatch, onCountdownEnd 
  * Stüdyo çalışma tuvali: noktalı zemin, ortadan yayılan menekşe parlama ve ortada 1920×1080 overlay'in
  * kutuya sığacak kadar küçültülmüş hâli. Pencere sert çizgiyle değil, yumuşak gölge ve ince iç ışıkla ayrılır.
  */
-function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd }: Props) {
+function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd, onPartSelect }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const mediaEpoch = useStreamPreviewEpoch();
   const [scale, setScale] = useState(0.25);
@@ -124,6 +127,7 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd }: Props) {
                 onPositionsPersist={(positions) => onPatch({ positions })}
                 onLivePatch={onPatch}
                 onCountdownEnd={onCountdownEnd}
+                onPartSelect={onPartSelect}
               />
             </PreviewQualityProvider>
           </div>

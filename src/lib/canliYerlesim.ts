@@ -1,0 +1,112 @@
+/**
+ * Canlı ekranının "Yayın" bölümündeki panellerin yerleşimi: 12 sütunluk ızgarada konum ve boyut.
+ * Saf: sürükleme ve boyutlandırma bu işlevlerden geçer, çakışan panel aşağı itilir.
+ */
+export type PanelId = "onizleme" | "sahne" | "ses" | "hizli" | "bilgi" | "kontrol";
+export type Kutu = { id: PanelId; x: number; y: number; w: number; h: number };
+
+export const SUTUN = 12;
+export const SATIR_PX = 20;
+export const BOSLUK_PX = 8;
+
+export const VARSAYILAN_YERLESIM: Kutu[] = [
+  { id: "onizleme", x: 0, y: 0, w: 8, h: 13 },
+  { id: "sahne", x: 8, y: 0, w: 4, h: 7 },
+  { id: "ses", x: 0, y: 13, w: 12, h: 10 },
+  { id: "hizli", x: 8, y: 7, w: 4, h: 6 },
+];
+
+/** Hazır çalışma alanları. `bilgi` ve `kontrol` yalnız yayın öncesinde görünür, `genisSohbet` sağ sütunu büyütür. */
+export const SABLONLAR: { id: string; ad: string; genisSohbet: boolean; kutular: Kutu[] }[] = [
+  {
+    id: "oncesi",
+    ad: "Yayın öncesi",
+    genisSohbet: false,
+    kutular: [
+      { id: "onizleme", x: 0, y: 0, w: 5, h: 10 },
+      { id: "ses", x: 5, y: 0, w: 7, h: 10 },
+      { id: "bilgi", x: 0, y: 10, w: 6, h: 16 },
+      { id: "kontrol", x: 6, y: 10, w: 6, h: 10 },
+      { id: "sahne", x: 6, y: 20, w: 6, h: 6 },
+      { id: "hizli", x: 0, y: 26, w: 12, h: 4 },
+    ],
+  },
+  {
+    id: "canli",
+    ad: "Canlı",
+    genisSohbet: false,
+    kutular: [
+      { id: "onizleme", x: 0, y: 0, w: 7, h: 11 },
+      { id: "sahne", x: 7, y: 0, w: 5, h: 7 },
+      { id: "hizli", x: 7, y: 7, w: 5, h: 4 },
+      { id: "ses", x: 0, y: 11, w: 12, h: 10 },
+    ],
+  },
+  {
+    id: "sohbet",
+    ad: "Sohbet",
+    genisSohbet: true,
+    kutular: [
+      { id: "onizleme", x: 0, y: 0, w: 12, h: 10 },
+      { id: "hizli", x: 0, y: 10, w: 12, h: 4 },
+      { id: "sahne", x: 0, y: 14, w: 5, h: 10 },
+      { id: "ses", x: 5, y: 14, w: 7, h: 10 },
+    ],
+  },
+];
+
+/** Panel bu boydan küçültülemez (sütun, satır) */
+const EN_AZ: Record<PanelId, { w: number; h: number }> = {
+  onizleme: { w: 3, h: 5 },
+  sahne: { w: 3, h: 3 },
+  ses: { w: 3, h: 6 },
+  hizli: { w: 2, h: 3 },
+  bilgi: { w: 3, h: 6 },
+  kontrol: { w: 3, h: 5 },
+};
+
+const cakisir = (a: Kutu, b: Kutu) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+function sinirla(k: Kutu): Kutu {
+  const en = EN_AZ[k.id];
+  const w = Math.min(SUTUN, Math.max(en.w, Math.round(k.w)));
+  return {
+    id: k.id,
+    w,
+    h: Math.max(en.h, Math.round(k.h)),
+    x: Math.min(SUTUN - w, Math.max(0, Math.round(k.x))),
+    y: Math.max(0, Math.round(k.y)),
+  };
+}
+
+/** Paneli yeni yerine koyar; üstüne gelinen paneller çakışma kalmayana dek aşağı kayar. */
+export function yerlestir(liste: Kutu[], id: PanelId, yeni: Omit<Kutu, "id">): Kutu[] {
+  const yerlesen = [sinirla({ ...yeni, id })];
+  const digerleri = liste.filter((k) => k.id !== id).sort((a, b) => a.y - b.y || a.x - b.x);
+  for (const k of digerleri) {
+    const kopya = { ...k };
+    for (;;) {
+      const engel = yerlesen.find((u) => cakisir(kopya, u));
+      if (!engel) break;
+      kopya.y = engel.y + engel.h;
+    }
+    yerlesen.push(kopya);
+  }
+  return liste.map((v) => yerlesen.find((k) => k.id === v.id)!);
+}
+
+/** Kayıtlı metni okur; bozuk ya da eksikse varsayılan yerleşim döner. */
+export function yerlesimOku(ham: string | null): Kutu[] {
+  if (!ham) return VARSAYILAN_YERLESIM;
+  try {
+    const okunan = JSON.parse(ham) as Kutu[];
+    const liste = (Array.isArray(okunan) ? okunan : []).filter((k) => k && k.id in EN_AZ && [k.x, k.y, k.w, k.h].every(Number.isFinite));
+    if (!VARSAYILAN_YERLESIM.every((v) => liste.some((k) => k.id === v.id))) return VARSAYILAN_YERLESIM;
+    let sonuc = liste;
+    // Teker teker yerleştirilir: elle bozulmuş kayıtta da çakışma kalmaz
+    for (const k of [...liste].reverse()) sonuc = yerlestir(sonuc, k.id, k);
+    return sonuc;
+  } catch {
+    return VARSAYILAN_YERLESIM;
+  }
+}

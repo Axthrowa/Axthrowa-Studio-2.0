@@ -56,6 +56,8 @@ type Props = {
   onPositionsPersist?: (positions: Record<string, { x: number; y: number }>) => void;
   /** Önizlemeden görünürlük vb. patch */
   onLivePatch?: (patch: OverlaySettings) => void;
+  /** Önizlemede sürüklemeden tıklanan parça */
+  onPartSelect?: (key: string) => void;
   /** Panel/OBS yayın aç-kapa olunca video/iframe cache-bust */
   mediaEpoch?: number;
 };
@@ -80,6 +82,7 @@ export default function OverlayShell({
   forceEdit,
   onPositionsPersist,
   onLivePatch,
+  onPartSelect,
   mediaEpoch: mediaEpochProp = 0,
 }: Props) {
   const obs = isObsMode();
@@ -895,6 +898,7 @@ export default function OverlayShell({
     }
   }, [audioNode, videoNode, videoBitisiyleBitir, settings.audioLoop, settings.bgVideoStart, settings.bgVideoEnd]);
 
+  const sonSecim = useRef(-1000);
   const onPointerDown = (key: string, bas: Konum) => (e: REPointerEvent) => {
     if (!edit) return;
     // Yerinde yazı düzenlerken imleç metni seçsin, öğe sürüklenmesin
@@ -979,7 +983,12 @@ export default function OverlayShell({
     dragStart.current = null;
     setGuides({});
     // Sürüklemeden bırakılan tık konumu DEĞİŞTİRMEZ (eskiden öğe tıklanan yere atlıyordu)
-    if (!st?.moved) return;
+    if (!st?.moved) {
+      // Çift tıkın ikinci basışı odağı yerinde yazı düzenlemeden almasın
+      if (e.type === "pointerup" && e.timeStamp - sonSecim.current > 400) onPartSelect?.(key);
+      sonSecim.current = e.timeStamp;
+      return;
+    }
     const positions = { ...(settingsRef.current.positions || {}), ...(localPositions || {}), [key]: st.son };
     setLocalPositions(positions);
     if (onPositionsPersist) {

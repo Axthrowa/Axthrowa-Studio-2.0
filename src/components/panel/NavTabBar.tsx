@@ -43,8 +43,8 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
   };
 
   return (
-    <aside className="yya-nav-rail flex h-full w-[200px] shrink-0 flex-col border-r border-white/10 bg-panel-bg">
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-white/10 px-3">
+    <aside className="yya-nav-rail flex h-full w-[200px] shrink-0 flex-col border-r border-panel-border bg-[var(--dt-surface-1)]">
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-panel-border bg-[var(--dt-surface-2)] px-3">
         <img src={logo} alt="" className="h-5 w-5 shrink-0 rounded" />
         <span className="truncate text-[13px] font-medium text-white">{brandTitle}</span>
       </div>
@@ -64,8 +64,8 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
                 aria-current={acik && tek ? "page" : undefined}
                 aria-expanded={tek ? undefined : acik}
                 className={
-                  "flex h-9 w-full items-center gap-2.5 border-l-2 px-3 text-[13px] font-medium transition-colors duration-150 " +
-                  (acik ? "border-panel-accent bg-white/[0.06] text-white" : "border-transparent text-white/70 hover:bg-white/[0.04] hover:text-white")
+                  "flex h-9 w-full items-center gap-2.5 border-l-2 px-3 text-[13px] font-medium transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 " +
+                  (acik ? "border-panel-accent bg-[var(--dt-surface-3)] text-white" : "border-transparent text-white/70 hover:bg-[var(--dt-surface-3)] hover:text-white")
                 }
                 onClick={() => {
                   // Açık başlığa yeniden basmak sayfayı değiştirmesin
@@ -85,7 +85,7 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
                         type="button"
                         data-nav-id={s.nav}
                         aria-current={secili ? "page" : undefined}
-                        className={`h-8 w-full truncate pl-[38px] pr-3 text-left text-[13px] transition-colors duration-150 ${secili ? "font-medium text-panel-accent" : "text-white/70 hover:text-white"}`}
+                        className={`h-8 w-full truncate pl-[38px] pr-3 text-left text-[13px] transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 ${secili ? "font-medium text-panel-accent" : "text-white/70 hover:bg-[var(--dt-surface-3)] hover:text-white"}`}
                         onClick={() => sec(s)}
                       >
                         {labelFor(s)}
@@ -99,7 +99,7 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
         })}
       </nav>
 
-      <div className="shrink-0 border-t border-white/10 p-2">
+      <div className="shrink-0 border-t border-panel-border p-2">
         <button
           type="button"
           className="flex h-8 w-full items-center gap-2 px-2 text-[12px] font-medium text-white/70 transition-colors duration-150 hover:text-white"

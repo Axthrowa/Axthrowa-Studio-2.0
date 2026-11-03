@@ -13,7 +13,7 @@ import LazyMount from "./LazyMount";
 import LivePreview from "./LivePreview";
 import PanelTimer from "./PanelTimer";
 import { Pin, PinOff } from "lucide-react";
-import SettingsSection from "./SettingsSection";
+import SettingsSection, { ayarBolumuAc } from "./SettingsSection";
 import TextStyleEditor from "./TextStyleEditor";
 import { Toast } from "@/components/axthrowa/Toast";
 import VideoTrimBar from "./VideoTrimBar";
@@ -22,13 +22,28 @@ import { clearNotice, type useNotices } from "../../lib/notices";
 import { open } from "@tauri-apps/plugin-dialog";
 import { type useVideoDownload } from "../../lib/useVideoDownload";
 
+/** Önizlemede tıklanan parça → ayar bölümü ve varsa alanı */
+const PARCA_AYARI: Record<string, { bolum: string; alan?: string }> = {
+  logo: { bolum: "logo" },
+  eyebrow: { bolum: "metin", alan: "eyebrow" },
+  title: { bolum: "metin", alan: "title" },
+  sub: { bolum: "metin", alan: "sub" },
+  ticker: { bolum: "metin", alan: "ticker" },
+  countdown: { bolum: "geriSayim" },
+  socials: { bolum: "sosyal" },
+  credits: { bolum: "jenerik" },
+  nowPlaying: { bolum: "resonance" },
+};
+
 function Field({
+  alan,
   label,
   value,
   onChange,
   type = "text",
   placeholder,
 }: {
+  alan?: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -36,7 +51,7 @@ function Field({
   placeholder?: string;
 }) {
   return (
-    <div>
+    <div data-alan={alan}>
       <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
       <input
         type={type}
@@ -221,11 +236,11 @@ export default function SahneAyarlari({
           )}
           {!sectionHidden("metin") && (
             <SettingsSection id="metin" title={tt("sec.metin")} style={secOrder("metin")}>
-          <Field label={tt("field.eyebrow")} value={settings.eyebrow || ""} onChange={(v) => update({ eyebrow: v })} />
-          <Field label={tt("field.title")} value={settings.title || ""} onChange={(v) => update({ title: v })} />
-          <Field label={tt("field.sub")} value={settings.sub || ""} onChange={(v) => update({ sub: v })} />
+          <Field alan="eyebrow" label={tt("field.eyebrow")} value={settings.eyebrow || ""} onChange={(v) => update({ eyebrow: v })} />
+          <Field alan="title" label={tt("field.title")} value={settings.title || ""} onChange={(v) => update({ title: v })} />
+          <Field alan="sub" label={tt("field.sub")} value={settings.sub || ""} onChange={(v) => update({ sub: v })} />
           <Field label={tt("field.badge")} value={settings.liveText || ""} onChange={(v) => update({ liveText: v })} />
-          <Field label={tt("field.ticker")} value={settings.ticker || ""} onChange={(v) => update({ ticker: v })} />
+          <Field alan="ticker" label={tt("field.ticker")} value={settings.ticker || ""} onChange={(v) => update({ ticker: v })} />
           {/* Yazı stilleri ait oldukları ayarın altında (eskiden ayrı "Yazı stilleri" bölümündeydi) */}
           <TextStyleEditor settings={settings} onChange={update} sadece={["eyebrow", "title", "sub", "ticker"]} />
             </SettingsSection>
@@ -1867,6 +1882,10 @@ export default function SahneAyarlari({
             settings={settings}
             onPatch={update}
             onCountdownEnd={(live) => void handlePreviewCountdownEnd(live)}
+            onPartSelect={(k) => {
+              const a = PARCA_AYARI[k];
+              if (a && !ayarBolumuAc(a.bolum, a.alan)) showToast(`${PART_LABELS[k] || k} ayarları gizli; Düzen'den gösterebilirsin.`);
+            }}
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">

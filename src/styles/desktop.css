@@ -20,6 +20,55 @@
   --dt-focus: color-mix(in srgb, var(--panel-accent) 70%, transparent);
 }
 
+/* Varsayılan koyu temanın sabit katmanları: öteki temalar ve açık kip yukarıdaki türetmeyi kullanır */
+:root:not(.theme-light):not([data-skin]),
+:root:not(.theme-light)[data-skin="night-signal"] {
+  --dt-surface-1: #111317;
+  --dt-surface-2: #16191f;
+  --dt-surface-3: #1e222a;
+  --dt-line: rgba(255, 255, 255, 0.06);
+  --dt-line-strong: rgba(255, 255, 255, 0.12);
+}
+
+/* Basınca çöken tuş */
+.dt-btn:active,
+.dt-btn-primary:active,
+.dt-btn-danger:active,
+.dt-tool:active {
+  transform: scale(0.98);
+}
+
+/* Canlı yayın lambası: yalnız yayındayken yavaşça nefes alır */
+.dt-lamba {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgb(var(--fg-rgb, 255 255 255) / 0.2);
+}
+.dt-lamba[data-canli="true"] {
+  background: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+  animation: dt-lamba-nefes 2.4s ease-in-out infinite;
+}
+@keyframes dt-lamba-nefes {
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dt-lamba[data-canli="true"] {
+    animation: none;
+  }
+  .dt-btn:active,
+  .dt-btn-primary:active,
+  .dt-btn-danger:active,
+  .dt-tool:active {
+    transform: none;
+  }
+}
+
 /* ── Yuvalı panel ─────────────────────────────────────────── */
 .dt-dock {
   display: flex;

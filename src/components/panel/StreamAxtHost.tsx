@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { ExternalLink, Loader2, Play, RefreshCw, Square } from "lucide-react";
 import { openExternal } from "../../lib/openExternal";
-import { frameOrigin, openExternalRequest, openMusicRequest } from "../../lib/embedMessages";
+import { frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest } from "../../lib/embedMessages";
+import { PALET_AC_OLAYI } from "./KomutPaleti";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { cn } from "../../lib/cn";
 import { streamaxtStatus as getStatus, type StreamAxtStatus } from "../../lib/streamaxt";
@@ -97,6 +98,10 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
     const onMsg = (ev: MessageEvent) => {
       if (openMusicRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
         onOpenMusic?.();
+        return;
+      }
+      if (komutPaletiRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
+        window.dispatchEvent(new Event(PALET_AC_OLAYI));
         return;
       }
       const url = openExternalRequest(ev, frameRef.current?.contentWindow, expectedOrigin);

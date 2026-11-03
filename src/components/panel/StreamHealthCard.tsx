@@ -21,6 +21,8 @@ const EMPTY: StreamHealth = {
   skippedFrames: 0,
   totalFrames: 0,
   dropPct: 0,
+  bytes: 0,
+  fps: null,
 };
 
 export default function StreamHealthCard() {

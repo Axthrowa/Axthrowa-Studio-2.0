@@ -8,34 +8,34 @@
 :root,
 :root[data-skin="night-signal"] {
   color-scheme: dark;
-  --panel-bg: #0c0d10;
-  --panel-bg-deep: #090a0c;
-  --panel-card: rgba(255, 255, 255, 0.02);
-  --panel-elevated: #12141a;
+  --panel-bg: #0a0b0d;
+  --panel-bg-deep: #0a0b0d;
+  --panel-card: #111317;
+  --panel-elevated: #16191f;
   --panel-border: rgba(255, 255, 255, 0.06);
-  --panel-accent: #3EEDFE;
-  --panel-accent-strong: #25cbd9;
-  --panel-accent-glow: rgba(62, 237, 254, 0.14);
-  --panel-cta: #3EEDFE;
-  --panel-cta-ink: #032f34;
+  --panel-accent: #00e5ff;
+  --panel-accent-strong: #00bcd4;
+  --panel-accent-glow: rgba(0, 229, 255, 0.14);
+  --panel-cta: #00e5ff;
+  --panel-cta-ink: #00252b;
   /* %40 beyaz, panel zemininde 3.83:1 kontrast veriyordu — 10px etiketler
      için WCAG AA eşiği 4.5:1. %55 ile 6.15:1'e çıkıyor; diğer temaların
      (6.5–6.7:1) bandıyla da aynı hizaya geliyor. */
   --panel-muted: rgba(255, 255, 255, 0.72);
-  --panel-soft: rgba(62, 237, 254, 0.1);
+  --panel-soft: rgba(0, 229, 255, 0.1);
   --panel-glow-a: transparent;
   --panel-glow-b: transparent;
   --panel-pattern: transparent;
-  --panel-glass: rgba(12, 13, 16, 0.92);
+  --panel-glass: rgba(10, 11, 13, 0.92);
   --panel-glass-border: rgba(255, 255, 255, 0.05);
   --skin-pattern-opacity: 0;
 
-  --accent: #3EEDFE;
+  --accent: #00e5ff;
   /* Tema yazı renkleri — `text-white` (Tailwind) bunlara bağlı. Her skin
      kendi üçlüsünü tanımlamak zorunda (bkz. theme-contract testi). */
   --fg-rgb: 255 255 255;
-  --accent-rgb: 62 237 254;
-  --accent-text-rgb: 62 237 254;
+  --accent-rgb: 0 229 255;
+  --accent-text-rgb: 0 229 255;
   --title-color: rgba(255, 255, 255, 0.92);
   --eyebrow-color: rgba(255, 255, 255, 0.4);
   --sub-color: rgba(255, 255, 255, 0.55);

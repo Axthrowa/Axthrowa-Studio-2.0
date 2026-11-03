@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OPEN_EXTERNAL_TYPE, OPEN_MUSIC_TYPE, frameOrigin, openExternalRequest, openMusicRequest, resonanceLinkAllowed } from "./embedMessages";
+import { KOMUT_PALETI_TYPE, OPEN_EXTERNAL_TYPE, OPEN_MUSIC_TYPE, frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest, resonanceLinkAllowed } from "./embedMessages";
 
 const frame = { name: "streamaxt-frame" };
 const origin = "http://127.0.0.1:3001";
@@ -63,6 +63,16 @@ describe("resonanceLinkAllowed", () => {
   });
 });
 
+
+describe("komutPaletiRequest", () => {
+  it("yalnız bizim çerçeveden ve kökenden gelen isteği kabul eder", () => {
+    const m = { data: { type: KOMUT_PALETI_TYPE }, origin, source: frame };
+    expect(komutPaletiRequest(m, frame, origin)).toBe(true);
+    expect(komutPaletiRequest({ ...m, source: {} }, frame, origin)).toBe(false);
+    expect(komutPaletiRequest({ ...m, origin: "https://ornek.com" }, frame, origin)).toBe(false);
+    expect(komutPaletiRequest(ok("https://ornek.com"), frame, origin)).toBe(false);
+  });
+});
 
 describe("openMusicRequest", () => {
   it("yalnız bizim çerçeveden ve kökenden gelen isteği kabul eder", () => {

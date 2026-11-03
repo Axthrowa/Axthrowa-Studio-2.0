@@ -20,13 +20,15 @@ const SUSTURULMUS_ZEMIN = "#2c2d36";
 const SUSTURULMUS_DOLU = "#8b8d9b";
 const CETVEL = [-60, -50, -40, -30, -20, -10, 0];
 const VARSAYILAN_KANAL = 2;
+/** LED görünümü: 3 px yanık, 1 px boşluk */
+const LED = "repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 4px)";
 const OLCUM_MS = 100;
 
 function Olcer({ ad, kanal, susturulmus }: { ad: string; kanal: number; susturulmus: boolean }) {
   return (
-    <span data-olcer={`${ad}\u0000${kanal}`} className="relative block h-full w-[7px] overflow-hidden rounded-[1px]" style={{ background: susturulmus ? SUSTURULMUS_ZEMIN : ZEMIN }}>
+    <span data-olcer={`${ad}\u0000${kanal}`} className="relative block h-full w-[7px] overflow-hidden rounded-[1px]" style={{ background: susturulmus ? SUSTURULMUS_ZEMIN : ZEMIN, maskImage: LED }}>
       <span data-dolu className="absolute inset-0" style={{ background: susturulmus ? SUSTURULMUS_DOLU : DOLU, clipPath: "inset(100% 0 0 0)" }} />
-      <span data-tepe className="absolute inset-x-0 bottom-0 h-0.5 bg-white opacity-0" />
+      <span data-tepe className="absolute inset-x-0 bottom-0 h-0.5 opacity-0" />
     </span>
   );
 }
@@ -72,7 +74,7 @@ function Satir({ girdi, kanalSayisi, onSustur, onToast }: { girdi: ObsInputInfo;
     <div className="flex w-[104px] shrink-0 flex-col items-center gap-1 px-1.5 py-2">
       <span className={`w-full truncate text-center text-xs font-medium ${girdi.muted ? "text-panel-muted" : "text-white"}`} title={girdi.name}>{girdi.name}</span>
       <span className="h-4 font-mono text-[11px] tabular-nums text-panel-muted">{db === null ? "" : dbYazisi(db)}</span>
-      <div className="flex h-44 items-stretch justify-center gap-1.5">
+      <div className="flex min-h-44 flex-1 items-stretch justify-center gap-1.5">
         <input
           type="range"
           min={0}
@@ -112,7 +114,7 @@ function Satir({ girdi, kanalSayisi, onSustur, onToast }: { girdi: ObsInputInfo;
         aria-pressed={girdi.muted}
         aria-label={`${girdi.name} ${girdi.muted ? "sesini aç" : "sesini kapat"}`}
         title={girdi.muted ? "Sesi aç" : "Sustur"}
-        className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded ${girdi.muted ? "bg-red-500/25 text-red-300" : "text-white hover:bg-white/10"}`}
+        className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-all active:scale-[0.98] motion-reduce:active:scale-100 ${girdi.muted ? "border-red-500 text-red-400" : "border-panel-border text-white hover:bg-[var(--dt-surface-3)]"}`}
       >
         {girdi.muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
       </button>
@@ -167,6 +169,7 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
         const yuzde = meterPercent(d.tepe);
         tepe.style.opacity = yuzde > 0 ? "1" : "0";
         tepe.style.bottom = `calc(${yuzde}% - 2px)`;
+        tepe.style.background = yuzde >= KIRMIZI ? "#ef4444" : yuzde >= SARI ? "#facc15" : "#4ade50";
       });
       kare = requestAnimationFrame(ciz);
     };
@@ -179,7 +182,7 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
 
   if (!varMi) return <p className="text-xs text-panel-muted">Ses girişi bulunamadı.</p>;
   return (
-    <div ref={kutu} className="custom-scrollbar flex divide-x divide-white/[0.06] overflow-x-auto rounded-lg bg-panel-card">
+    <div ref={kutu} className="custom-scrollbar flex h-full divide-x divide-panel-border overflow-x-auto">
       {girisler.map((g) => (
         <Satir key={g.name} girdi={g} kanalSayisi={kanallar[g.name] || VARSAYILAN_KANAL} onSustur={() => onSustur(g)} onToast={onToast} />
       ))}

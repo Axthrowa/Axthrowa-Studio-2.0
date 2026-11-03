@@ -71,6 +71,30 @@ function saveCollapsed(map: Record<string, boolean>) {
   }
 }
 
+/**
+ * Bölümü açar, gösterir ve odağı içine alır (`alan`: varsa o ayar). Kenara gizli panel odak içerideyken
+ * açık kalır. Bölüm bu ekranda yoksa ya da kullanıcı gizlediyse false döner.
+ */
+export function ayarBolumuAc(id: string, alan?: string): boolean {
+  const kok = document.querySelector<HTMLElement>(`[data-section="${id}"]`);
+  if (!kok) return false;
+  const map = loadCollapsed();
+  map[id] = false;
+  saveCollapsed(map);
+  window.dispatchEvent(new CustomEvent("section-collapsed-changed"));
+  requestAnimationFrame(() => {
+    // Çift tıkla yerinde yazı düzenleme başladıysa odak onda kalsın
+    if ((document.activeElement as HTMLElement | null)?.isContentEditable) return;
+    const hedef = (alan && kok.querySelector<HTMLElement>(`[data-alan="${alan}"] input`)) || kok.querySelector<HTMLElement>("button");
+    hedef?.focus({ preventScroll: true });
+    (hedef || kok).scrollIntoView({ block: "center", behavior: "smooth" });
+    const vurgu = ["ring-2", "ring-panel-accent"];
+    kok.classList.add(...vurgu);
+    window.setTimeout(() => kok.classList.remove(...vurgu), 1600);
+  });
+  return true;
+}
+
 export function exportSectionCollapsed(): Record<string, boolean> {
   return loadCollapsed();
 }

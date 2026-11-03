@@ -246,6 +246,10 @@ export type StreamHealth = {
   skippedFrames: number;
   totalFrames: number;
   dropPct: number;
+  /** Yayının başından beri gönderilen bayt */
+  bytes: number;
+  /** OBS'in çizim hızı; okunamadıysa null */
+  fps: number | null;
 };
 
 const HEALTH_CACHE_MS = 4000;
@@ -272,7 +276,10 @@ async function readStreamHealth(): Promise<StreamHealth> {
     outputCongestion?: number;
     outputSkippedFrames?: number;
     outputTotalFrames?: number;
+    outputBytes?: number;
   };
+  // Yayın durumu okunduysa FPS'in okunamaması sağlık bilgisini düşürmesin
+  const stats = (await getObs().call("GetStats").catch(() => null)) as { activeFps?: number } | null;
   const total = Number(st.outputTotalFrames || 0);
   const skipped = Number(st.outputSkippedFrames || 0);
   return {
@@ -283,6 +290,8 @@ async function readStreamHealth(): Promise<StreamHealth> {
     skippedFrames: skipped,
     totalFrames: total,
     dropPct: total > 0 ? (skipped / total) * 100 : 0,
+    bytes: Number(st.outputBytes || 0),
+    fps: typeof stats?.activeFps === "number" ? stats.activeFps : null,
   };
 }
 

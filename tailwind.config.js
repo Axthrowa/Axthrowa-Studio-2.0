@@ -61,6 +61,7 @@ export default {
         sans: ['Inter', "Segoe UI", "system-ui", "sans-serif"],
         display: ['Inter', "Segoe UI", "system-ui", "sans-serif"],
         pixel: ['"Press Start 2P"', "monospace"],
+        mono: ['"JetBrains Mono"', "ui-monospace", "Consolas", "monospace"],
         terminal: ['"JetBrains Mono"', "ui-monospace", "Consolas", "monospace"],
         futuristic: ['"Orbitron"', "sans-serif"],
         // DİKKAT: buraya `bold` anahtarı KOYMAYIN. Tailwind ondan `.font-bold`

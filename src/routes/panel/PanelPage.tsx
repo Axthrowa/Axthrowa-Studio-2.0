@@ -22,7 +22,8 @@ import { DEFAULT_SOCIALS } from "../../lib/socials";
 import MusicBridge from "../../components/panel/MusicBridge";
 import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar from "../../components/panel/NavTabBar";
-import { menuGrubuBul } from "../../lib/anaMenu";
+import KomutPaleti from "../../components/panel/KomutPaleti";
+import { menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
 import DurumCubugu from "../../components/panel/DurumCubugu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
@@ -197,6 +198,7 @@ export default function PanelPage() {
   );
   const PART_LABELS = prefs.locale === "en" ? PART_LABELS_EN : PART_LABELS_TR;
   const hotkeyCaptureRef = useRef(false);
+  const kisayolYakalaniyor = useCallback(() => hotkeyCaptureRef.current, []);
   hotkeyCaptureRef.current = hotkeyCapture;
   const [settings, setSettings] = useState<OverlaySettings>({ socials: DEFAULT_SOCIALS });
   const musicTab = activeNav === "music";
@@ -1536,12 +1538,39 @@ export default function PanelPage() {
   const sahneSekmesi = activeNav === "starting" || activeNav === "ending" || activeNav === "brb";
   const durumPort = (server?.baseUrl || API_BASE).split(":").pop()?.replace(/\D/g, "") || "8843";
 
+  const sayfaAdiBul = useCallback(
+    (s: MenuSayfasi) => {
+      const meta = DEFAULT_TABS.find((t) => t.id === s.nav);
+      const key = (s.adAnahtari || meta?.labelKey || "") as MsgKey;
+      const table = prefs.locale === "en" ? en : tr;
+      return (key && table[key]) || meta?.label || s.nav;
+    },
+    [prefs.locale]
+  );
+
+  const sayfaAc = useCallback(({ nav: id, botSayfa }: MenuSayfasi) => {
+    setActiveNav(id);
+    setBotSekme(botSayfa);
+    forceNavRef.current = null;
+    if (id === "starting" || id === "ending" || id === "brb" || id === "chat") {
+      setScreen(id);
+    }
+    if (id === "ending") {
+      endingStopDoneRef.current = false;
+      streamWatchArmedRef.current = true;
+    }
+    if (id === "starting") {
+      startingSwitchDoneRef.current = false;
+    }
+  }, []);
+
   return (
     <>
       <CloseRequestModal />
     {/* Özel pencere başlığı (masaüstünde) + altında panel; panel kalan yüksekliği doldurur */}
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
     <PencereBasligi />
+    <KomutPaleti visibleTabs={visibleTabs} labelFor={sayfaAdiBul} onSayfa={sayfaAc} onToast={showToast} kapali={kisayolYakalaniyor} />
     <UpdateModal />
     <KarsilamaEkrani />
     <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
@@ -1554,27 +1583,8 @@ export default function PanelPage() {
         customizeLabel={tt("nav.customize")}
         editLayout={editLayout}
         onToggleEdit={() => setEditLayout((v) => !v)}
-        labelFor={(s) => {
-          const meta = DEFAULT_TABS.find((t) => t.id === s.nav);
-          const key = (s.adAnahtari || meta?.labelKey || "") as MsgKey;
-          const table = prefs.locale === "en" ? en : tr;
-          return (key && table[key]) || meta?.label || s.nav;
-        }}
-        onSelect={({ nav: id, botSayfa }) => {
-          setActiveNav(id);
-          setBotSekme(botSayfa);
-          forceNavRef.current = null;
-          if (id === "starting" || id === "ending" || id === "brb" || id === "chat") {
-            setScreen(id);
-          }
-          if (id === "ending") {
-            endingStopDoneRef.current = false;
-            streamWatchArmedRef.current = true;
-          }
-          if (id === "starting") {
-            startingSwitchDoneRef.current = false;
-          }
-        }}
+        labelFor={sayfaAdiBul}
+        onSelect={sayfaAc}
       >
         <LayoutEditor
           layout={layout}

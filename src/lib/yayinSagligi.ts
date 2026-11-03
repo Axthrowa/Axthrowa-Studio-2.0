@@ -21,6 +21,14 @@ export const ESIK = {
   yogunlukMs: 10_000,
 };
 
+/** İki örnek arasındaki bit hızı (kbps). Süre OBS'ten gelir: önbellekten dönen örnek hesabı bozmaz. Hesaplanamıyorsa null. */
+export function bitHiziKbps(o: StreamHealth | null, h: StreamHealth): number | null {
+  if (!o?.active || !h.active) return null;
+  const ms = h.durationMs - o.durationMs;
+  const bayt = h.bytes - o.bytes;
+  return ms > 0 && bayt >= 0 ? Math.round((bayt * 8) / ms) : null;
+}
+
 /** Bir örnekten uyarılar ve yeni durum. Aralıklı ölçüm: oranlar iki örnek arasındaki farktan hesaplanır. */
 export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: number, bilerek = false): { durum: SaglikDurumu; uyarilar: Uyari[] } {
   const uyarilar: Uyari[] = [];

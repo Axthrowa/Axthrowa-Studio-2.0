@@ -458,6 +458,11 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
   );
 }
 
+/** Canlı ekranının "Yayın öncesi" çalışma alanı için */
+export function KontrolListesi({ onToast }: { onToast: (m: string) => void }) {
+  return <PreflightPanel ms={useMultistream(onToast)} />;
+}
+
 function PreflightPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
   const [data, setData] = useState<{ findings: Finding[]; encoder: EncoderInfo } | null>(null);
   const [loading, setLoading] = useState(false);

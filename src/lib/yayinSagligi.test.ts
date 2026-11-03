@@ -1,11 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { saglikDegerlendir, type SaglikDurumu } from "./yayinSagligi";
+import type { StreamHealth } from "./obs";
+import { bitHiziKbps, saglikDegerlendir, type SaglikDurumu } from "./yayinSagligi";
 
-const h = (o: Partial<{ active: boolean; reconnecting: boolean; congestion: number; skippedFrames: number; totalFrames: number }>) => ({
-  active: true, reconnecting: false, durationMs: 0, congestion: 0, skippedFrames: 0, totalFrames: 0, dropPct: 0, ...o,
+const h = (o: Partial<StreamHealth>): StreamHealth => ({
+  active: true, reconnecting: false, durationMs: 0, congestion: 0, skippedFrames: 0, totalFrames: 0, dropPct: 0, bytes: 0, fps: null, ...o,
 });
 const bas: SaglikDurumu = { onceki: null, yogunBas: null };
 const idler = (u: Array<{ id: string } & object>) => u.filter((x) => !("temizle" in x)).map((x) => x.id);
+
+describe("bit hızı", () => {
+  it("iki örnek arasındaki farktan hesaplar", () => {
+    expect(bitHiziKbps(h({ durationMs: 1000, bytes: 0 }), h({ durationMs: 5000, bytes: 3_000_000 }))).toBe(6000);
+  });
+  it("hesaplanamayan durumda null döner", () => {
+    expect(bitHiziKbps(null, h({ durationMs: 5000, bytes: 10 }))).toBeNull();
+    expect(bitHiziKbps(h({ durationMs: 5000, bytes: 10 }), h({ durationMs: 5000, bytes: 10 }))).toBeNull();
+    expect(bitHiziKbps(h({ durationMs: 5000, bytes: 10 }), h({ durationMs: 6000, bytes: 0 }))).toBeNull();
+    expect(bitHiziKbps(h({ active: false }), h({ durationMs: 5000, bytes: 10 }))).toBeNull();
+  });
+});
 
 describe("yayın sağlığı", () => {
   it("son aralıktaki kare düşüşü eşiği geçince uyarır (toplam ortalama değil)", () => {

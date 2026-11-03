@@ -716,8 +716,10 @@ export default function PanelPage() {
       // ayarı. Eskiden ekran dilimindeki (şifresiz, eski adresli) kayıt
       // okunuyordu — kart "Bağlı" derken panel yanlış adrese gidiyordu.
       let panelObs: Record<string, unknown> | null = null;
+      let sunucuOkundu = false;
       try {
         panelObs = ((await fetchSettings("panel")).obs as Record<string, unknown>) || null;
+        sunucuOkundu = true;
       } catch {
         /* sunucu yanıt vermezse yerel yedek kullanılır */
       }
@@ -726,7 +728,8 @@ export default function PanelPage() {
         saved: loadObsSaved(),
         slice: settingsRef.current.obs,
       });
-      saveObsSaved(cfg);
+      // Sunucu kapalıyken yazılmaz: eski yedekteki şifre kasaya taşınmadan silinmesin
+      if (sunucuOkundu) saveObsSaved(cfg);
       // Ekran dilimini hizala: kısayol/plan kodu dilimi okuyor.
       // Ama BOŞ şifre, dilimde duran dolu şifrenin üstüne yazılmaz: panel kartı
       // şifresiz kaldığında bu hizalama kullanıcının OBS şifresini siliyordu.

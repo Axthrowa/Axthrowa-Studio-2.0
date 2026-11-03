@@ -1462,6 +1462,11 @@ mod tuval_tests {
     assert_eq!(l.channels.len(), 2);
     assert!((l.channels[0].peak_db - mul_to_db(0.25)).abs() < 1e-6);
     assert_eq!(summarize_levels("Boş".into(), &[]).peak_db, METER_FLOOR_DB);
+    // Arayüz bu JSON adlarını okur (lib/api/actions.ts, ObsInputLevel)
+    let j = serde_json::to_value(&l).unwrap();
+    assert_eq!(j["channels"][0]["peakDb"].as_f64().unwrap() as f32, l.channels[0].peak_db);
+    assert_eq!(j["channels"][1]["magnitudeDb"].as_f64().unwrap() as f32, l.channels[1].magnitude_db);
+    assert_eq!(j["peakDb"].as_f64().unwrap() as f32, l.peak_db);
   }
 
   #[test]

@@ -67,7 +67,6 @@ impl KickChatRuntime {
       },
     };
     *self.chatroom_id.write() = oda;
-    state.kick_session.set_channel_meta(&slug, oda.unwrap_or(0));
     Ok(self.status_json())
   }
 

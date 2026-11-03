@@ -2323,19 +2323,23 @@ pub async fn upsert_soundboard(pool: &SqlitePool, body: &Value) -> Result<Soundb
 }
 
 // ─── Remote editors ───────────────────────────────────────────────────
-// Not: sha256(salt+password) — ileride argon2'ye yükseltilebilir.
 
 fn hash_password(password: &str) -> String {
-  let salt = uuid::Uuid::new_v4().to_string().replace('-', "");
-  let mut hasher = Sha256::new();
-  hasher.update(salt.as_bytes());
-  hasher.update(password.as_bytes());
-  let dig = hasher.finalize();
-  let hex: String = dig.iter().map(|b| format!("{b:02x}")).collect();
-  format!("{salt}${hex}")
+  use argon2::password_hash::{PasswordHasher, SaltString};
+  let salt = SaltString::encode_b64(uuid::Uuid::new_v4().as_bytes()).expect("16 bayt geçerli tuzdur");
+  argon2::Argon2::default()
+    .hash_password(password.as_bytes(), &salt)
+    .expect("argon2 varsayılan ayarlarla özet üretir")
+    .to_string()
 }
 
 fn verify_password(stored: &str, password: &str) -> bool {
+  use argon2::password_hash::{PasswordHash, PasswordVerifier};
+  if stored.starts_with("$argon2") {
+    return PasswordHash::new(stored)
+      .is_ok_and(|h| argon2::Argon2::default().verify_password(password.as_bytes(), &h).is_ok());
+  }
+  // Eski kayıt: salt$sha256; ilk başarılı girişte argon2'ye yükseltilir
   let Some((salt, expect)) = stored.split_once('$') else {
     return false;
   };
@@ -2391,10 +2395,19 @@ pub async fn remote_login(pool: &SqlitePool, username: &str, password: &str) -> 
   .fetch_optional(pool)
   .await?;
   let Some((uid, ph, enabled, role, perms_json)) = row else {
+    // Aynı süre harcansın: yanıt süresi kullanıcı adının var olup olmadığını ele vermesin
+    let _ = hash_password(password);
     bail!("Geçersiz kimlik bilgileri");
   };
   if enabled == 0 || !verify_password(&ph, password) {
     bail!("Geçersiz kimlik bilgileri");
+  }
+  if !ph.starts_with("$argon2") {
+    sqlx::query("UPDATE remote_users SET password_hash = ? WHERE id = ?")
+      .bind(hash_password(password))
+      .bind(&uid)
+      .execute(pool)
+      .await?;
   }
   let token = uuid::Uuid::new_v4().to_string();
   let now = chrono_now();

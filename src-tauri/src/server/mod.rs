@@ -123,11 +123,6 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/auth/notify-success", post(api_auth_notify_success))
     .route("/api/kick/chat/send", post(api_kick_chat_send))
     .route("/api/kick/moderation", post(api_kick_moderation))
-    .route("/api/kick/bot-session/status", get(api_kick_bot_session_status))
-    .route("/api/kick/bot-session/disconnect", post(api_kick_bot_session_disconnect))
-    .route("/api/kick/bot-session/ingest", post(api_kick_bot_session_ingest))
-    .route("/api/kick/bot-session/refresh-xsrf", post(api_kick_bot_session_refresh_xsrf))
-    .route("/api/kick/bot-session/test", post(api_kick_bot_session_test))
     .route("/api/chat/clear-platforms", post(api_clear_platform_chats))
     .route("/api/kick/auth-signal", get(api_kick_auth_signal))
     .route("/api/youtube/live", get(api_youtube_live))
@@ -167,17 +162,12 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/automation/release", post(api_automation_release))
     .route("/api/player/spotify/manual", post(api_spotify_manual))
     .route("/api/player/spotify/token", post(api_spotify_token))
-    // Botaxt Modül 1 — profil / dashboard / oturum (+ eski /api/botrix alias)
+    // Botaxt Modül 1 — profil / dashboard / oturum
     .route("/api/botaxt/dashboard", get(api_botaxt_dashboard))
     .route("/api/botaxt/sessions", get(api_botaxt_sessions).post(api_botaxt_session_start))
     .route("/api/botaxt/sessions/end", post(api_botaxt_session_end))
     .route("/api/botaxt/metrics", post(api_botaxt_metrics))
     .route("/api/botaxt/events", get(api_botaxt_events).post(api_botaxt_event_log))
-    .route("/api/botrix/dashboard", get(api_botaxt_dashboard))
-    .route("/api/botrix/sessions", get(api_botaxt_sessions).post(api_botaxt_session_start))
-    .route("/api/botrix/sessions/end", post(api_botaxt_session_end))
-    .route("/api/botrix/metrics", post(api_botaxt_metrics))
-    .route("/api/botrix/events", get(api_botaxt_events).post(api_botaxt_event_log))
     // Spotify kodunun düşebileceği kısa yollar. Kullanıcı Dashboard'a
     // hangisini kaydettiyse o kullanılabilsin diye birden çok seçenek var.
     .route("/", get(spotify_code_catch_all))
@@ -759,15 +749,6 @@ fn map_kick_chat_send_err(e: anyhow::Error) -> (StatusCode, String) {
   }
 }
 
-async fn api_kick_bot_session_status(State(state): State<Arc<AppState>>) -> Json<Value> {
-  Json(state.kick_session.status())
-}
-
-async fn api_kick_bot_session_disconnect(State(state): State<Arc<AppState>>) -> Json<Value> {
-  state.kick_session.disconnect_db(&state.db).await;
-  Json(state.kick_session.status())
-}
-
 /// Kick login webview top-level sinyal (mixed-content fetch yerine).
 async fn api_kick_auth_signal(State(state): State<Arc<AppState>>) -> Response {
   state.broadcast_json(&serde_json::json!({
@@ -791,117 +772,6 @@ async fn api_kick_auth_signal(State(state): State<Arc<AppState>>) -> Response {
     .header(header::CACHE_CONTROL, "no-store")
     .body(Body::from(html))
     .unwrap_or_else(|_| Response::new(Body::empty()))
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct KickSessionIngestBody {
-  #[serde(default)]
-  document_cookie: String,
-  #[serde(default)]
-  bearer: String,
-  #[serde(default)]
-  username: String,
-  #[serde(default)]
-  page_url: String,
-}
-
-async fn api_kick_bot_session_ingest(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<KickSessionIngestBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  // document.cookie parçala → pairs
-  let mut pairs: Vec<(String, String)> = Vec::new();
-  for part in body.document_cookie.split(';') {
-    let part = part.trim();
-    if let Some((n, v)) = part.split_once('=') {
-      pairs.push((n.trim().to_string(), v.trim().to_string()));
-    }
-  }
-  // Mevcut HttpOnly jar ile birleştir (cookie_header parse)
-  let existing = state.kick_session.snapshot();
-  if !existing.cookie_header.is_empty() {
-    for part in existing.cookie_header.split(';') {
-      let part = part.trim();
-      if let Some((n, v)) = part.split_once('=') {
-        let n = n.trim().to_string();
-        if !pairs.iter().any(|(pn, _)| pn == &n) {
-          pairs.push((n, v.trim().to_string()));
-        }
-      }
-    }
-  }
-  let room = (*state.kick_chat.chatroom_id.read()).unwrap_or(0);
-  let slug = state
-    .kick_chat
-    .status_json()
-    .get("username")
-    .and_then(|v| v.as_str())
-    .unwrap_or("")
-    .to_string();
-  if !slug.is_empty() || room > 0 {
-    state.kick_session.set_channel_meta(&slug, room);
-  }
-  let _ = body.page_url;
-  let status = state
-    .kick_session
-    .ingest_cookies(
-      &pairs,
-      Some(&body.document_cookie),
-      if body.bearer.is_empty() {
-        None
-      } else {
-        Some(&body.bearer)
-      },
-      if body.username.is_empty() {
-        None
-      } else {
-        Some(&body.username)
-      },
-    )
-    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-
-  if status.get("ready").and_then(|v| v.as_bool()).unwrap_or(false) {
-    state.kick_session.clear_session_lost();
-    if let Err(e) = state.kick_session.persist_to_db(&state.db).await {
-      yya_warn!("[api] bot_auth kayıt: {e:#}");
-    }
-    state.broadcast_json(&serde_json::json!({
-      "type": "kick-bot-session-ready",
-      "status": status,
-    }));
-  }
-
-  Ok(Json(status))
-}
-
-#[derive(Deserialize)]
-struct KickSessionTestBody {
-  #[serde(default = "default_test_msg")]
-  text: String,
-}
-
-fn default_test_msg() -> String {
-  "BotAxT bot oturumu aktif ✓".into()
-}
-
-async fn api_kick_bot_session_test(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<KickSessionTestBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  // Resmi Kick API
-  if state.kick_auth.is_connected() {
-    return state
-      .kick_auth
-      .send_chat(&body.text, None)
-      .await
-      .map(Json)
-      .map_err(map_kick_chat_send_err);
-  }
-  Err((
-    StatusCode::UNAUTHORIZED,
-    "Kick API bağlı değil — OAuth ile bağlan".into(),
-  ))
 }
 
 async fn api_clear_platform_chats(
@@ -973,30 +843,6 @@ mod kick_temizleme_testleri {
       Err("Bağlı değil.".to_string())
     );
     assert_eq!(kick_temizleme_sonucu(&json!({ "hata": "seçilmedi" })), Err("seçilmedi".to_string()));
-  }
-}
-
-async fn api_kick_bot_session_refresh_xsrf(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  match state.kick_session.fetch_missing_xsrf().await {
-    Ok(status) => {
-      if status.get("ready").and_then(|v| v.as_bool()).unwrap_or(false) {
-        let _ = state.kick_session.resolve_identity().await;
-        if let Err(e) = state.kick_session.persist_to_db(&state.db).await {
-          yya_warn!("[api] xsrf persist: {e:#}");
-        }
-        let status = state.kick_session.status();
-        state.broadcast_json(&serde_json::json!({
-          "type": "kick-bot-session-ready",
-          "status": status,
-        }));
-        Ok(Json(status))
-      } else {
-        Ok(Json(status))
-      }
-    }
-    Err(e) => Err((StatusCode::BAD_GATEWAY, e.to_string())),
   }
 }
 
@@ -2565,7 +2411,25 @@ async fn onbellek_basligi(req: axum::extract::Request, next: axum::middleware::N
 
 #[cfg(test)]
 mod onbellek_testleri {
-  use super::degismez_varlik_mi;
+  use super::{degismez_varlik_mi, onbellek_basligi};
+  use axum::{http::{header, Request}, response::IntoResponse, routing::get, Router};
+  use tower::ServiceExt;
+
+  async fn onbellek_degeri(icerik_turu: &'static str, yol: &str) -> String {
+    let app = Router::new()
+      .fallback(get(move || async move { ([(header::CONTENT_TYPE, icerik_turu)], "x").into_response() }))
+      .layer(axum::middleware::from_fn(onbellek_basligi));
+    let r = app.oneshot(Request::get(yol).body(axum::body::Body::empty()).unwrap()).await.unwrap();
+    r.headers()[header::CACHE_CONTROL].to_str().unwrap().to_string()
+  }
+
+  #[tokio::test]
+  async fn eksik_paket_dosyasi_yerine_gelen_html_onbellege_girmez() {
+    let yol = "/assets/index-BgLx5yHd.js";
+    assert_eq!(onbellek_degeri("text/html; charset=utf-8", yol).await, "no-store, max-age=0");
+    assert_eq!(onbellek_degeri("text/javascript", yol).await, "public, max-age=31536000, immutable");
+    assert_eq!(onbellek_degeri("application/json", "/api/durum").await, "no-store, max-age=0");
+  }
 
   #[test]
   fn yalniz_icerige_gore_adlanan_paket_dosyalari_degismez() {

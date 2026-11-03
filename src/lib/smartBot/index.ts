@@ -19,9 +19,7 @@ export {
   applyRemoteBotConfig,
 } from "./store";
 export { useOverlayBotConfig, useOverlayWidgetEvents } from "./useOverlayWidgetEvents";
-export { handleSmartBotMessage, bootstrapSmartBot } from "./engine";
 export { enqueueBotReply, resetKickAuthWarn } from "./replyQueue";
-export { startBotTimers, startLoyaltyTicker } from "./timers";
 export { emitWidgetEvent } from "./events";
 export type { BotConfigV2, ShopItem, StreamGoal } from "./v2";
 export { ensureV2, ensurePanelExtras, defaultPanelExtras, defaultCommandExtras } from "./v2";

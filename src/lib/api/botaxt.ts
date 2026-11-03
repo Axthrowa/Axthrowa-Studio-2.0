@@ -1,8 +1,5 @@
 /**
  * Botaxt Modül 1 — Profil / Dashboard API istemcisi
- *
- * Çalışan release exe hâlâ `/api/botrix/*` sunabiliyor; kaynak `/api/botaxt/*`.
- * Prefiks otomatik seçilir (bir kez keşfedilir, sonra cache).
  */
 
 import { apiBaseCandidates } from "../api";
@@ -57,9 +54,7 @@ export type DashboardSnapshot = {
   migrated_smartbot: boolean;
 };
 
-const PREFIX_CANDIDATES = ["/api/botaxt", "/api/botrix"] as const;
-let cachedPrefix: string | null = null;
-let prefixPromise: Promise<string> | null = null;
+const PREFIX = "/api/botaxt";
 let cachedApiBase: string | null = null;
 
 function looksLikeJson(res: Response, text: string) {
@@ -103,46 +98,44 @@ async function fetchWithBase(urlPath: string, init?: RequestInit): Promise<Respo
   throw lastErr instanceof Error ? lastErr : new Error("Failed to fetch");
 }
 
-async function resolvePrefix(): Promise<string> {
-  if (cachedPrefix) return cachedPrefix;
-  if (prefixPromise) return prefixPromise;
-  prefixPromise = (async () => {
+let baseProbe: Promise<void> | null = null;
+
+async function resolveApiBase(): Promise<void> {
+  if (cachedApiBase != null) return;
+  if (baseProbe) return baseProbe;
+  baseProbe = (async () => {
     // Bazı kökler (özellikle Vite) bilinmeyen /api yoluna 404 yerine
     // index.html döndürür. Bu nedenle yalnız ağ hatasında değil, JSON olmayan
-    // yanıtta da sonraki base + prefix adayını dene.
+    // yanıtta da sonraki base adayını dene.
     for (const base of apiBaseCandidates()) {
-      for (const p of PREFIX_CANDIDATES) {
-        try {
-          const res = await fetch(`${base}${p}/dashboard`, {
-            cache: "no-store",
-          });
-          const text = await res.text();
-          if (res.ok && looksLikeJson(res, text)) {
-            cachedApiBase = base;
-            cachedPrefix = p;
-            return p;
-          }
-        } catch {
-          /* next */
+      try {
+        const res = await fetch(`${base}${PREFIX}/dashboard`, {
+          cache: "no-store",
+        });
+        const text = await res.text();
+        if (res.ok && looksLikeJson(res, text)) {
+          cachedApiBase = base;
+          return;
         }
+      } catch {
+        /* next */
       }
     }
     // json() gerçek istekte ayrıntılı ağ hatasını üretsin; başarısız probe'u
     // kalıcı cache'leme ki sunucu sonradan açıldığında kendini toparlasın.
-    return PREFIX_CANDIDATES[0];
   })();
   try {
-    return await prefixPromise;
+    await baseProbe;
   } finally {
-    prefixPromise = null;
+    baseProbe = null;
   }
 }
 
 /** Mutlak API yolu (ör. /api/botaxt/dashboard). */
 export async function botaxtUrl(path: string): Promise<string> {
-  const prefix = await resolvePrefix();
+  await resolveApiBase();
   const rest = path.startsWith("/") ? path : `/${path}`;
-  return `${prefix}${rest}`;
+  return `${PREFIX}${rest}`;
 }
 
 function networkDownMessage(e: unknown) {
@@ -159,7 +152,6 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetchWithBase(urlPath, init);
   } catch (e) {
-    cachedPrefix = null;
     cachedApiBase = null;
     throw new Error(networkDownMessage(e));
   }
@@ -179,7 +171,6 @@ async function raw(path: string, init?: RequestInit): Promise<Response> {
   try {
     return await fetchWithBase(urlPath, init);
   } catch (e) {
-    cachedPrefix = null;
     cachedApiBase = null;
     throw new Error(networkDownMessage(e));
   }

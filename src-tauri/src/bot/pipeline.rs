@@ -1,23 +1,19 @@
-//! Mesaj işleme — filtre → loyalty → oyun/mağaza → komut → overlay.
+//! Mesaj işleme — sohbet kaydı → istatistik → overlay → widget komutları. Sohbet botu StreamAxT'tir.
 
 use std::sync::Arc;
 
 use anyhow::Result;
 use serde_json::json;
 
-use crate::db::botaxt_api::{adjust_loyalty, get_bot_settings, get_loyalty_settings};
+use crate::db::botaxt_api::get_bot_settings;
 use crate::db::loyalty::ensure_loyalty_user;
 use crate::db::profile::log_event;
 use crate::db::{chrono_now, default_channel_id};
 use crate::settings::ScreenKind;
 use crate::AppState;
 
-use super::activity::{log_chat, log_reply};
-use super::chatbot::{try_builtin_command, try_match_command};
-use super::filters::check_filters;
-use super::games::try_handle_game;
+use super::activity::log_chat;
 use super::integrations::ChatInbound;
-use super::shop::try_handle_shop;
 
 pub struct ChannelConfig {
   pub kick_slug: Option<String>,
@@ -103,15 +99,9 @@ pub async fn resolve_channels(state: &AppState) -> ChannelConfig {
 
 pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()> {
   let channel_id = default_channel_id(&state.db).await?;
-  // Bot sekmesi StreamAxT: eski botun filtre (Kick timeout/ban), puan, oyun, market (!buy →
-  // ekranda uyarı), mod komutları ve özel komutları YALNIZ `YYA_LEGACY_BOT=1` iken çalışır.
-  // Yanıtlar zaten susturulmuştu ama bu yan etkiler görünmeden sürüyordu.
-  let eski_bot = legacy_replies_enabled();
 
   if msg.kind == "chat" {
     log_chat(&state, &msg.platform, &msg.user_name, &msg.text);
-    // Zamanlayıcıların "en az N satır aksın" eşiği için sayaç.
-    super::timers::bump_chat_line();
   }
 
   ensure_loyalty_user(
@@ -122,43 +112,8 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
   )
   .await?;
 
-  // 1) Moderasyon — ihlalde uyarı/timeout/ban + pipeline kes
-  if msg.kind == "chat" && eski_bot {
-    if let Some(hit) = check_filters(&state, &msg).await? {
-      let _ = send_reply(&state, &msg, &hit.reply).await;
-      // chat overlay'e silindi işareti
-      state.broadcast_json(&json!({
-        "type": "chat-message",
-        "platform": msg.platform,
-        "user": msg.user_name,
-        "user_key": msg.user_key,
-        "text": msg.text,
-        "badges": msg.badges,
-        "is_mod": msg.is_mod,
-        "is_vip": msg.is_vip,
-        "is_sub": msg.is_sub,
-        "color": msg.color,
-        "id": msg.raw_id,
-        "deleted": true,
-        "mod_action": hit.action,
-        "t": chrono_now(),
-      }));
-      if hit.block_pipeline {
-        return Ok(());
-      }
-    }
-  }
-
-  // 2) Mesaj puanı
+  // 1) Pano istatistikleri (puan vermez)
   if msg.kind == "chat" && !msg.text.is_empty() {
-    let settings = get_loyalty_settings(&state.db).await?;
-    let mut pts = settings.points_per_message;
-    if msg.is_sub && settings.sub_multiplier > 1.0 {
-      pts = ((pts as f64) * settings.sub_multiplier).round() as i64;
-    }
-    if pts != 0 && eski_bot {
-      let _ = adjust_loyalty(&state.db, &msg.user_key, pts, "chat_message").await;
-    }
     let now = chrono_now();
     let _ = sqlx::query(
       "INSERT INTO loyalty_users(
@@ -184,34 +139,9 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
     .bind(&channel_id)
     .execute(&state.db)
     .await;
-    if !eski_bot {
-      // karşılama yanıtı yalnız eski botta
-    } else if let Ok(settings) = get_bot_settings(&state.db).await {
-      let msgs: i64 = sqlx::query_scalar(
-        "SELECT messages FROM loyalty_users WHERE channel_id = ? AND user_key = ?",
-      )
-      .bind(&channel_id)
-      .bind(&msg.user_key)
-      .fetch_optional(&state.db)
-      .await
-      .ok()
-      .flatten()
-      .unwrap_or(0);
-      if msgs == 1 {
-        if let Some(text) = crate::bot::chatbot::chat_alert_reply(
-          &settings.extras_json,
-          "welcome",
-          &msg.user_name,
-          None,
-          &msg.text,
-        ) {
-          let _ = send_reply(&state, &msg, &text).await;
-        }
-      }
-    }
   }
 
-  // 3) Overlay chat + Emote Combo motoru
+  // 2) Overlay chat + Emote Combo motoru
   if msg.kind == "chat" {
     state.broadcast_json(&json!({
       "type": "chat-message",
@@ -230,7 +160,7 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
     crate::widgets::handle_combo_on_chat(state.as_ref(), &msg.text);
   }
 
-  // 4) Alert olayları
+  // 3) Alert olayları
   if matches!(
     msg.kind.as_str(),
     "follow" | "sub" | "tip" | "raid" | "bits" | "donation"
@@ -333,270 +263,21 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
         );
       }
     }
-    if let Ok(settings) = get_bot_settings(&state.db).await {
-      if let Some(text) = crate::bot::chatbot::chat_alert_reply(
-        &settings.extras_json,
-        kind,
-        &msg.user_name,
-        msg.amount,
-        &msg.text,
-      ) {
-        let _ = send_reply(&state, &msg, &text).await;
-      }
-    }
   }
 
-  // 5) Builtin: mod cmds → games → shop → bot_commands
+  // 4) Widget runtime: !oy / !katil / !sr (extras_json.runtime_commands ile kapatılabilir).
+  // Sohbet yanıtlarını StreamAxT yazar; burada yalnız oy/katılım işlenir.
   if msg.kind == "chat" {
     let settings = get_bot_settings(&state.db).await?;
-    let prefix = if settings.prefix.is_empty() {
-      "!".to_string()
-    } else {
-      settings.prefix.clone()
-    };
-
-    if eski_bot {
-      if let Some(reply) = try_handle_mod_commands(&state, &msg, &prefix).await? {
-        send_reply(&state, &msg, &reply).await?;
-        return Ok(());
-      }
-      if let Some(reply) = try_handle_game(&state, &msg, &prefix).await? {
-        send_reply(&state, &msg, &reply).await?;
-        return Ok(());
-      }
-      if let Some(reply) = try_handle_shop(&state, &msg, &prefix).await? {
-        send_reply(&state, &msg, &reply).await?;
-        return Ok(());
-      }
-    }
-    // Widget runtime: !oy / !katil / !sr (extras_json.runtime_commands ile kapatılabilir)
-    if let Some(reply) = crate::server::runtime_api::handle_runtime_chat(
+    let _ = crate::server::runtime_api::handle_runtime_chat(
       &state,
       &msg.user_name,
       &msg.user_key,
       &msg.text,
       &settings.extras_json,
     )
-    .await
-    {
-      send_reply(&state, &msg, &reply).await?;
-      return Ok(());
-    }
-    if !eski_bot {
-      return Ok(());
-    }
-    let mut vars = crate::bot::chatbot::CommandTemplateVars::from_state(&state);
-    vars.time = crate::bot::chatbot::stream_uptime_label(&state.db).await;
-    if let Some(reply) = crate::bot::chatbot::try_meta_command(&state, &msg).await? {
-      send_reply(&state, &msg, &reply).await?;
-      return Ok(());
-    }
-    if let Some(hit) = try_builtin_command(&state.db, &msg, &vars).await? {
-      send_reply(&state, &msg, &hit).await?;
-      return Ok(());
-    }
-    if let Some(hit) = try_match_command(
-      &state.db,
-      &msg,
-      &vars,
-    )
-    .await?
-    {
-      send_reply(&state, &msg, &hit.reply).await?;
-    }
+    .await;
   }
 
   Ok(())
-}
-
-/// !timeout / !ban / !unban — yalnız mod/broadcaster.
-async fn try_handle_mod_commands(
-  state: &AppState,
-  msg: &ChatInbound,
-  prefix: &str,
-) -> Result<Option<String>> {
-  if msg.platform != "kick" || !msg.is_mod {
-    return Ok(None);
-  }
-  let text = msg.text.trim();
-  let Some(rest) = text.strip_prefix(prefix) else {
-    return Ok(None);
-  };
-  let mut parts = rest.split_whitespace();
-  let cmd = parts.next().unwrap_or("").to_lowercase();
-  let target = parts.next().unwrap_or("").trim_start_matches('@');
-  if target.is_empty() {
-    return Ok(None);
-  }
-  if !state.kick_auth.is_connected() {
-    return Ok(Some(
-      "Kick API bağlı değil — Chat Bot’tan OAuth ile bağlan".into(),
-    ));
-  }
-  let slug = {
-    let s = state
-      .kick_auth
-      .status()
-      .get("broadcasterSlug")
-      .and_then(|v| v.as_str())
-      .unwrap_or("")
-      .to_string();
-    if !s.is_empty() {
-      s
-    } else {
-      state
-        .kick_chat
-        .status_json()
-        .get("username")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string()
-    }
-  };
-  let _ = slug;
-  match cmd.as_str() {
-    "timeout" | "to" => {
-      let mins: u64 = parts
-        .next()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(5)
-        .max(1);
-      let reason_owned = parts.collect::<Vec<_>>().join(" ");
-      let reason = if reason_owned.is_empty() {
-        "Moderasyon"
-      } else {
-        reason_owned.as_str()
-      };
-      state
-        .kick_auth
-        .moderation_ban(target, Some(mins), reason)
-        .await?;
-      Ok(Some(format!("@{target} {mins} dk timeout")))
-    }
-    "ban" => {
-      let reason_owned = parts.collect::<Vec<_>>().join(" ");
-      let reason = if reason_owned.is_empty() {
-        "Ban"
-      } else {
-        reason_owned.as_str()
-      };
-      state
-        .kick_auth
-        .moderation_ban(target, None, reason)
-        .await?;
-      Ok(Some(format!("@{target} banlandı")))
-    }
-    "unban" => {
-      state.kick_auth.moderation_unban(target).await?;
-      Ok(Some(format!("@{target} ban kaldırıldı")))
-    }
-    _ => Ok(None),
-  }
-}
-
-/// Eski yerleşik botun sohbete yanıt yazmasına izin veriliyor mu?
-pub fn legacy_replies_enabled() -> bool {
-  std::env::var("YYA_LEGACY_BOT").map(|v| v.trim() == "1").unwrap_or(false)
-}
-
-pub async fn send_reply(state: &AppState, msg: &ChatInbound, reply: &str) -> Result<()> {
-  if reply.trim().is_empty() {
-    return Ok(());
-  }
-  // Bot sekmesi artık StreamAxT: eski yerleşik bot sohbete yanıt yazmaz (çift yanıt
-  // olmasın). Geri açmak için ortam değişkeni `YYA_LEGACY_BOT=1`.
-  if !legacy_replies_enabled() {
-    return Ok(());
-  }
-  log_reply(state, &msg.platform, reply);
-  let settings = get_bot_settings(&state.db).await?;
-  // KickAuth gönderim kuyruğu 429 güvenliği için mesajlar arasındaki aralığı
-  // zaten uygular. Burada ayrıca beklemek ilk bot yanıtını geciktiriyordu.
-
-  if settings.reply_to_overlay != 0 {
-    state.broadcast_json(&json!({
-      "type": "settings",
-      "screen": "chat",
-      "data": {
-        "_botAnnounce": {
-          "id": uuid::Uuid::new_v4().to_string(),
-          "text": reply,
-          "user": settings.bot_name,
-          "platform": "bot",
-          "t": chrono_now(),
-        }
-      }
-    }));
-  }
-
-  if msg.platform == "kick" && settings.reply_to_kick != 0 {
-    let slug = resolve_channels(state).await.kick_slug;
-    send_kick_chat(state, reply, slug.as_deref()).await;
-  }
-
-  if msg.platform == "twitch" && settings.reply_to_twitch != 0 {
-    state.broadcast_json(&json!({
-      "type": "bot-reply-request",
-      "platform": "twitch",
-      "text": reply,
-      "t": chrono_now(),
-    }));
-  }
-
-  // bot/heist announce — Kick API
-  if msg.platform == "bot" && settings.reply_to_kick != 0 {
-    let slug = resolve_channels(state).await.kick_slug;
-    send_kick_chat(state, reply, slug.as_deref()).await;
-  }
-
-  Ok(())
-}
-
-async fn send_kick_chat(state: &AppState, reply: &str, slug: Option<&str>) {
-  if state.kick_auth.is_connected() {
-    match state.kick_auth.send_chat(reply, slug).await {
-      Ok(_) => return,
-      Err(e) => {
-        let err = format!("{e:#}");
-        yya_warn!("[bot] Kick API yanıt hatası: {err}");
-        if crate::kick::is_kick_rate_limit(&err) {
-          return;
-        }
-        state.broadcast_json(&json!({
-          "type": "bot-error",
-          "text": format!("Kick sohbet yanıtı gönderilemedi: {e}"),
-          "t": chrono_now(),
-        }));
-        // Cookie yedeği yalnızca Kick API bilgisi yoksa — site çıkışı API tokenını öldürmesin.
-        if state.kick_auth.has_app_credentials() {
-          return;
-        }
-      }
-    }
-  } else {
-    yya_warn!("[bot] Kick API bağlı değil — oturum yedeği deneniyor");
-  }
-  let room = (*state.kick_chat.chatroom_id.read()).unwrap_or(0);
-  if room == 0 {
-    yya_warn!("[bot] Kick yanıt atlandı — chatroom yok");
-    state.broadcast_json(&json!({
-      "type": "bot-error",
-      "text": "Kick sohbet yanıtı atlandı — Kick API bağlı değil ve sohbet odası yok. Chat Bot’tan Bağlan’a basın.",
-      "t": chrono_now(),
-    }));
-    return;
-  }
-  if let Err(e) = state.kick_session.send_message(room, reply).await {
-    yya_warn!("[bot] Kick oturum yanıt hatası: {e:#}");
-    state.broadcast_json(&json!({
-      "type": "bot-error",
-      "text": format!("Kick yanıtı gönderilemedi: {e}"),
-      "t": chrono_now(),
-    }));
-  }
-}
-
-/// Kullanıcı talebindeki ad — `handle_inbound` ile aynı pipeline.
-pub async fn handle_chat_message(state: Arc<AppState>, msg: ChatInbound) -> Result<()> {
-  handle_inbound(state, msg).await
 }

@@ -14,9 +14,6 @@ fn service_name() -> &'static str {
   }
 }
 
-pub const KICK_COOKIE: &str = "kick.cookie_header";
-pub const KICK_XSRF: &str = "kick.xsrf_token";
-pub const KICK_BEARER: &str = "kick.bearer_token";
 pub const OBS_PASSWORD: &str = "obs.websocket.password";
 
 fn entry(key: &str) -> Result<keyring::Entry> {
@@ -38,34 +35,6 @@ pub fn delete_secret(key: &str) {
   if let Ok(item) = entry(key) {
     let _ = item.delete_credential();
   }
-}
-
-pub fn vault_kick_secrets(cookie: &str, xsrf: &str, bearer: &str) -> bool {
-  let mut ok = true;
-  if !cookie.is_empty() {
-    ok &= set_secret(KICK_COOKIE, cookie);
-  }
-  if !xsrf.is_empty() {
-    ok &= set_secret(KICK_XSRF, xsrf);
-  }
-  if !bearer.is_empty() {
-    ok &= set_secret(KICK_BEARER, bearer);
-  }
-  ok
-}
-
-pub fn load_kick_secrets() -> (String, String, String) {
-  (
-    get_secret(KICK_COOKIE).unwrap_or_default(),
-    get_secret(KICK_XSRF).unwrap_or_default(),
-    get_secret(KICK_BEARER).unwrap_or_default(),
-  )
-}
-
-pub fn clear_kick_secrets() {
-  delete_secret(KICK_COOKIE);
-  delete_secret(KICK_XSRF);
-  delete_secret(KICK_BEARER);
 }
 
 pub fn vault_obs_password(password: &str) -> bool {

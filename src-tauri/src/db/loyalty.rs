@@ -192,11 +192,6 @@ pub async fn loyalty_tick(pool: &SqlitePool) -> Result<serde_json::Value> {
 }
 
 /// Bot tick döngüsü için interval (sn).
-pub async fn get_tick_interval_sec(pool: &SqlitePool) -> Result<i64> {
-  let settings = get_loyalty_settings(pool).await?;
-  Ok(settings.interval_sec.max(30))
-}
-
 /* ------------------------------------------------- puan yazma (BotRix denkliği) */
 
 /// Kullanıcı adından `loyalty_users` satırını bulmak için ortak eşleşme.

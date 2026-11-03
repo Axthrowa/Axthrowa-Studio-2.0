@@ -4,12 +4,10 @@ use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
 
 mod auth;
-mod session;
 pub use auth::{
   explain_kick_chat_error, is_kick_rate_limit, kick_chat_send_as_bot, kick_rate_limit_user_msg,
   KickAuth,
 };
-pub use session::{KickBotSession, StoredKickBotSession};
 
 pub(crate) const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 

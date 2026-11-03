@@ -66,18 +66,11 @@ const SCREENS = ["starting", "ending", "brb", "chat"];
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 async function botaxtSessionRoundTrip() {
-  const prefixes = ["/api/botaxt", "/api/botrix"];
-  let prefix = null;
-  for (const p of prefixes) {
-    const res = await fetch(`${BASE}${p}/dashboard`, { cache: "no-store" });
-    const text = await res.text();
-    if (res.ok && text.trimStart().startsWith("{")) {
-      prefix = p;
-      break;
-    }
-  }
-  if (!prefix) {
-    note("botaxt: dashboard JSON yok (botaxt/botrix)");
+  const prefix = "/api/botaxt";
+  const res = await fetch(`${BASE}${prefix}/dashboard`, { cache: "no-store" });
+  const text = await res.text();
+  if (!res.ok || !text.trimStart().startsWith("{")) {
+    note("botaxt: dashboard JSON yok");
     return;
   }
 

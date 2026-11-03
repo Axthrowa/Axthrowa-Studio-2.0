@@ -69,7 +69,6 @@ pub struct AppState {
   pub music: Arc<music::MusicState>,
   pub ytdl: Arc<ytdl::YtdlState>,
   pub kick_auth: Arc<kick::KickAuth>,
-  pub kick_session: Arc<kick::KickBotSession>,
   pub kick_chat: Arc<bot::kick_chat::KickChatRuntime>,
   pub obs: Arc<obs_client::ObsClientState>,
   /// Çoklu yayın yönlendiricisi (tek kodlama → çok hedef)
@@ -103,7 +102,6 @@ impl AppState {
     let settings = AppSettings::load(&data_dir);
     let (tx, _) = broadcast::channel::<String>(256);
     // sqlx SqlitePool Tokio context ister — lazy pool Drop’u da runtime’sız panikler.
-    let kick_session = Arc::new(kick::KickBotSession::new(&data_dir));
     let db = tauri::async_runtime::block_on(async {
       let pool = match db::open_connected(&data_dir).await {
         Ok(p) => p,
@@ -120,29 +118,6 @@ impl AppState {
       // Migrasyon + boş DB seed — HTTP ayağa kalkmadan ÖNCE (production race yok)
       if let Err(e) = db::init(&pool, &settings).await {
         yya_warn!("DB init uyarısı: {e:#}");
-      }
-      if let Err(e) = kick_session.hydrate_from_db(&pool).await {
-        yya_warn!("Kick bot_auth yükleme uyarısı: {e:#}");
-      }
-      // Açılışta kayıtlı çerez varsa XSRF’i sessizce tamamla → tekrar giriş gerekmesin
-      {
-        let st = kick_session.status();
-        let has_c = st.get("hasCookies").and_then(|v| v.as_bool()).unwrap_or(false);
-        let ready = st.get("ready").and_then(|v| v.as_bool()).unwrap_or(false);
-        if has_c && !ready {
-          match kick_session.fetch_missing_xsrf().await {
-            Ok(_) => {
-              if let Err(e) = kick_session.persist_to_db(&pool).await {
-                yya_warn!("Kick XSRF persist uyarısı: {e:#}");
-              } else {
-                yya_log!("[kick-session] açılış XSRF tamamlandı");
-              }
-            }
-            Err(e) => yya_warn!("[kick-session] açılış XSRF: {e:#}"),
-          }
-        } else if ready {
-          yya_log!("[kick-session] kayıtlı bot oturumu hazır");
-        }
       }
       match db::botaxt_api::seed_alerts_if_empty(&pool, &settings).await {
         Ok(n) if n > 0 => yya_log!("Botaxt alerts seed (init): {n}"),
@@ -166,7 +141,6 @@ impl AppState {
       music: Arc::new(music::MusicState::new(&data_dir)),
       ytdl: Arc::new(ytdl::YtdlState::new()),
       kick_auth: Arc::new(kick::KickAuth::new(&data_dir)),
-      kick_session,
       kick_chat: Arc::new(bot::kick_chat::KickChatRuntime::new()),
       obs: Arc::new(obs_client::ObsClientState::new()),
       widget_rt: Arc::new(widget_runtime::WidgetRuntime::new()),

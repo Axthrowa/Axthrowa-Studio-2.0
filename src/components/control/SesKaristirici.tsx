@@ -7,13 +7,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { obsApi, type ObsInputLevel } from "../../lib/api/actions";
-import { dbYazisi, olcerAdimi, olcerYuzdesi, OLCER_BOSTA, sesDbdenYuzde, sesYuzdedenDb, type OlcerDurumu } from "../../lib/obsAudio";
+import { dbYazisi, meterPercent, olcerAdimi, OLCER_BOSTA, sesDbdenYuzde, sesYuzdedenDb, type OlcerDurumu } from "../../lib/obsAudio";
 import { obsControl, type ObsInputInfo } from "../../lib/obsControl";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 
 /** OBS'in eşikleri: yeşil -20 dB'ye, sarı -9 dB'ye kadar, üstü kırmızı */
-const SARI = olcerYuzdesi(-20);
-const KIRMIZI = olcerYuzdesi(-9);
+const SARI = meterPercent(-20);
+const KIRMIZI = meterPercent(-9);
 const ZEMIN = `linear-gradient(90deg, #1f5c2f 0 ${SARI}%, #6b5f1c ${SARI}% ${KIRMIZI}%, #6b2424 ${KIRMIZI}% 100%)`;
 const DOLU = `linear-gradient(90deg, #4ade50 0 ${SARI}%, #facc15 ${SARI}% ${KIRMIZI}%, #ef4444 ${KIRMIZI}% 100%)`;
 const SUSTURULMUS_ZEMIN = "#2c2d36";
@@ -159,9 +159,9 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
         const c = l?.channels?.[Number(kanal)];
         const d = olcerAdimi(durum.get(anahtar) ?? OLCER_BOSTA, c ? c.peakDb : -Infinity, dt, simdi);
         durum.set(anahtar, d);
-        (el.querySelector("[data-dolu]") as HTMLElement).style.clipPath = `inset(0 ${100 - olcerYuzdesi(d.deger)}% 0 0)`;
+        (el.querySelector("[data-dolu]") as HTMLElement).style.clipPath = `inset(0 ${100 - meterPercent(d.deger)}% 0 0)`;
         const tepe = el.querySelector("[data-tepe]") as HTMLElement;
-        const yuzde = olcerYuzdesi(d.tepe);
+        const yuzde = meterPercent(d.tepe);
         tepe.style.opacity = yuzde > 0 ? "1" : "0";
         tepe.style.left = `calc(${yuzde}% - 2px)`;
       });
@@ -182,7 +182,7 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
       ))}
       <div aria-hidden className="relative h-4 text-[9px] text-panel-muted">
         {CETVEL.map((db) => (
-          <span key={db} className="absolute top-1 -translate-x-1/2 first:translate-x-0 last:-translate-x-full" style={{ left: `${olcerYuzdesi(db)}%` }}>{db}</span>
+          <span key={db} className="absolute top-1 -translate-x-1/2 first:translate-x-0 last:-translate-x-full" style={{ left: `${meterPercent(db)}%` }}>{db}</span>
         ))}
       </div>
     </div>

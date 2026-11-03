@@ -903,15 +903,6 @@ async fn api_kick_settings_post(
     .await
     .map_err(map_err)?;
 
-  // Cookie bot gönderimi için chatroom_id / slug senkron
-  {
-    let room = (*state.kick_chat.chatroom_id.read()).unwrap_or(0);
-    state.kick_session.set_channel_meta(username, room);
-    if let Err(e) = state.kick_session.persist_to_db(&state.db).await {
-      yya_warn!("[api] kick_session meta persist: {e:#}");
-    }
-  }
-
   // Panel smartBot.channelName ile senkron
   {
     use crate::settings::ScreenKind;

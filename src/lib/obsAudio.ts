@@ -30,11 +30,6 @@ export function sesYuzdedenDb(yuzde: number): number {
   return yuzde <= 0 ? -100 : Math.round((yuzde - 100) * 0.6 * 10) / 10;
 }
 
-/** -60..0 dB → ölçer genişliği (%) */
-export function olcerYuzdesi(db: number): number {
-  return meterPercent(db);
-}
-
 export function dbYazisi(db: number): string {
   return db <= -100 ? "-inf dB" : `${db.toFixed(1)} dB`;
 }

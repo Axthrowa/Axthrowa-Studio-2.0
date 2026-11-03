@@ -220,10 +220,12 @@ async fn kur(state: &AppState) -> ApiResult {
   Ok(Json(json!({"ok": true, "surum": v["son"]})))
 }
 
-/// Geçerli Authenticode imzasının sertifika parmak izi (geçersiz/imzasızsa None)
+/// Authenticode imzasının sertifika parmak izi (bozuk/imzasızsa None). Sertifikamız öz imzalı,
+/// başka bilgisayarda kökü güvenilir değil ve durum `UnknownError` döner; dosya kurcalanmışsa
+/// `HashMismatch` döner. Kimliği parmak izi karşılaştırması doğrular.
 fn imza_parmak_izi(dosya: &std::path::Path) -> Option<String> {
   let komut = format!(
-    "$s=Get-AuthenticodeSignature -LiteralPath '{}'; if($s.Status -eq 'Valid'){{$s.SignerCertificate.Thumbprint}}",
+    "$s=Get-AuthenticodeSignature -LiteralPath '{}'; if($s.Status -in 'Valid','UnknownError'){{$s.SignerCertificate.Thumbprint}}",
     dosya.display().to_string().replace('\'', "''")
   );
   let mut c = std::process::Command::new(crate::sistem_araci::yol("powershell.exe"));

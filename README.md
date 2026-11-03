@@ -7,7 +7,7 @@ Yeni uygulama: Vite + React + Tauri 2 + Rust HTTP medya motoru
 
 | Dosya | Açıklama |
 |-------|----------|
-| `cikti/Yayin Yonetim Araci_1.0.0_x64-setup.exe` | NSIS kurulum (imzalı) |
+| `cikti/Yayin Yonetim Araci_<sürüm>_x64-setup.exe` | NSIS kurulum (imzalı) |
 | `cikti/portable/Baslat.bat` | Taşınabilir çalıştırma |
 | `cikti/portable/YayinYonetimAraci.exe` | Ana exe (imzalı, optimize release) |
 

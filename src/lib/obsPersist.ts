@@ -1,4 +1,4 @@
-/** OBS WS kimliği — SQLite panel ayarına ek yerel yedek. */
+/** OBS WS adresi için yerel yedek. Şifre yazılmaz (kasada durur); eski kayıtta kalan şifre okunup kasaya taşınır. */
 
 export type ObsSavedConn = {
   host: string;
@@ -21,14 +21,13 @@ export function loadObsSaved(): ObsSavedConn | null {
   }
 }
 
-export function saveObsSaved(cfg: ObsSavedConn) {
+export function saveObsSaved(cfg: Pick<ObsSavedConn, "host" | "port">) {
   try {
     localStorage.setItem(
       KEY,
       JSON.stringify({
         host: cfg.host.trim() || "127.0.0.1",
         port: Number(cfg.port) || 4455,
-        password: cfg.password || "",
       })
     );
   } catch {

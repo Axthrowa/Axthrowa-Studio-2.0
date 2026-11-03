@@ -2,7 +2,6 @@
 
 pub mod alerts;
 pub mod audit;
-pub mod bot_auth;
 pub mod bot_vars;
 pub mod botaxt_api;
 pub mod loyalty;

@@ -41,6 +41,7 @@ percent-encoding = "2"
 http = "1"
 base64 = "0.22"
 sha2 = "0.10"
+argon2 = "0.5"
 # Eklenti paketi (zip) açma — zaten bağımlılık ağacında (reqwest/tauri üzerinden)
 flate2 = "1"
 # OBS WebSocket v5 istemcisi (kalıcı Control Hub bağlantısı)

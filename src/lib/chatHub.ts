@@ -11,7 +11,7 @@ import { API_BASE, OverlaySettings } from "./api";
 import { connectTwitchChat, normalizeTwitchChannel } from "./twitchChat";
 import { ChatPart, kickParts, normalizeParts, partsToText, textPart } from "./chatParts";
 import { ChatBadge, kickBadges, setKickSubBadges, youtubeBadges } from "./chatBadges";
-import { handleSmartBotMessage } from "./smartBot";
+import { handleChatCommand } from "./chatCommands";
 import { streamaxtBase } from "./streamaxt";
 import { setYoutubeLiveContext } from "./platformAuth/youtubeWrite";
 
@@ -581,7 +581,7 @@ export function startChatHub(cfg: ChatHubConfig, h: ChatHubHandlers): Stop {
       onMessage: (m) => {
         // Kick sohbeti botun kendisinden geliyor ve komutlara bot yanıt veriyor: burada ikinci kez yanıtlanmaz
         const skipSmart = String(m.platform || "").toLowerCase() === "kick";
-        const extras = skipSmart ? [] : handleSmartBotMessage(m);
+        const extras = skipSmart ? [] : handleChatCommand(m);
         for (const abone of [...yeni.aboneler]) {
           abone.onMessage(m);
           for (const x of extras) abone.onMessage(x);

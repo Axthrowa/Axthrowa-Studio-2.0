@@ -1,5 +1,5 @@
-//! Bot sekmesi StreamAxT iken (YYA_LEGACY_BOT yok) eski yerleşik bot sohbetten yan etki üretmemeli:
-//! filtre Kick ceza kaydı açmamalı, `!buy` puan düşüp ekrana uyarı yollamamalı. Sohbet kaydı sürmeli.
+//! Sohbet botu StreamAxT: uygulama sohbetten yan etki üretmemeli. Filtre Kick ceza kaydı
+//! açmamalı, `!buy` puan düşüp ekrana uyarı yollamamalı. Sohbet sayımı sürmeli.
 
 use std::sync::Arc;
 
@@ -25,8 +25,7 @@ fn mesaj(text: &str) -> ChatInbound {
 }
 
 #[tokio::test]
-async fn eski_bot_kapaliyken_filtre_ve_market_calismaz() {
-  assert!(std::env::var("YYA_LEGACY_BOT").is_err(), "bu test eski bot KAPALI varsayar");
+async fn sohbet_filtre_ve_market_calistirmaz() {
   let root = std::env::temp_dir().join(format!("yayin-eskibot-{}", std::process::id()));
   let _ = std::fs::remove_dir_all(&root);
   std::fs::create_dir_all(&root).unwrap();

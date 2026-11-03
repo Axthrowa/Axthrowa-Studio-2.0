@@ -54,19 +54,6 @@ pub fn log_chat(state: &AppState, platform: &str, user: &str, text: &str) {
   );
 }
 
-pub fn log_reply(state: &AppState, platform: &str, text: &str) {
-  state.bot_activity.push(
-    state,
-    json!({
-      "t": chrono_now_ms(),
-      "kind": "out",
-      "platform": platform,
-      "user": "BOT",
-      "text": text,
-    }),
-  );
-}
-
 fn chrono_now_ms() -> i64 {
   crate::db::chrono_now()
 }

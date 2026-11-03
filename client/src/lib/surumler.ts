@@ -11,6 +11,15 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.11.1',
+    ad: 'Sahne Sırası',
+    tarih: '2026-11-03',
+    notlar: [
+      'Tek URL overlay: çekiliş, Bil Bakalım ve anket ekrandayken bölgelerindeki widget gizlenir, bitince geri gelir',
+      'Bildirimler ve tam ekran efektler bu gizlemeden etkilenmez'
+    ]
+  },
+  {
     surum: '1.11.0',
     ad: 'Sahne Şovu',
     tarih: '2026-11-03',

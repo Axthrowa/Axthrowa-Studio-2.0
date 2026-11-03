@@ -1,5 +1,5 @@
 /**
- * StreamAxT — IPv4 öncelikli DNS çözümleme
+ * AxBoT — IPv4 öncelikli DNS çözümleme
  * Developed by AxthrowA
  *
  * Bazı ev ağlarında aile belirtilmemiş `dns.lookup` (A + AAAA) AAAA

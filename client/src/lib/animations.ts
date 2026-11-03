@@ -1,5 +1,5 @@
 /**
- * StreamAxT — animasyon ön ayarları
+ * AxBoT — animasyon ön ayarları
  * Developed by AxthrowA
  *
  * BotRix'in uyarı sayfasında 37 giriş animasyonu gözlemlendi

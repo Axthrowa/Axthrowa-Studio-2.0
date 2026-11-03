@@ -1,5 +1,5 @@
 /**
- * StreamAxT — medya kütüphanesi
+ * AxBoT — medya kütüphanesi
  * Developed by AxthrowA
  *
  * Denetimde bulundu (CURRENT_SYSTEM_AUDIT §11.6): `client/public` BOŞTU,

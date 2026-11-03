@@ -1,5 +1,5 @@
 /**
- * StreamAxT — tasarım sistemi
+ * AxBoT — tasarım sistemi
  * Developed by AxthrowA
  *
  * Denetimde bulundu (CURRENT_SYSTEM_AUDIT §15): ortak bileşen yoktu, her
@@ -365,5 +365,32 @@ export function KaydedilmemisUyari({ varMi, onKaydet }: { varMi: boolean; onKayd
         </Buton>
       )}
     </div>
+  );
+}
+
+/** Ana kontrol ekranının mekanik tuşu: basınca fiziksel olarak içeri girer */
+export const DONANIM_TUSU =
+  'rounded-md border border-zinc-800 bg-zinc-900 text-zinc-200 transition-all hover:bg-zinc-800 active:scale-[0.97] motion-reduce:active:scale-100 disabled:pointer-events-none disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-zinc-400';
+
+/** Ana kontrol ekranının bento modülü */
+export function Modul({
+  etiket,
+  sag,
+  className = '',
+  children
+}: {
+  etiket: string;
+  sag?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section aria-label={etiket} className={`rounded-md border border-zinc-800 bg-zinc-900/50 p-3 ${className}`}>
+      <header className="mb-2 flex items-center justify-between gap-2">
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{etiket}</h2>
+        {sag}
+      </header>
+      {children}
+    </section>
   );
 }

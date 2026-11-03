@@ -1,5 +1,5 @@
 /**
- * StreamAxT extra Bil Bakalım categories
+ * AxBoT extra Bil Bakalım categories
  * Original questions — Developed by AxthrowA
  */
 import { TriviaSeedItem } from './trivia-data.js';

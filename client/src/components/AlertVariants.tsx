@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Uyarı Varyantları
+ * AxBoT — Uyarı Varyantları
  * Developed by AxthrowA
  *
  * BotRix'te her olay türü için birden çok varyant tanımlanabiliyor

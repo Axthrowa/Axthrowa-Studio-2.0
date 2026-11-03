@@ -1,5 +1,5 @@
 /**
- * StreamAxT Bil Bakalım question bank sync
+ * AxBoT Bil Bakalım question bank sync
  * Developed by AxthrowA
  */
 import { DatabaseSync } from 'node:sqlite';

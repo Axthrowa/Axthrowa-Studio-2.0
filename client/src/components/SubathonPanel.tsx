@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Subathon kontrol paneli
+ * AxBoT — Subathon kontrol paneli
  * Developed by AxthrowA
  *
  * Kullanıcı istedi: "abone, hediye, bağış geldiğinde ne kadar süre artacağını
@@ -25,6 +25,11 @@ interface Ayar {
   kicksBirimi: number;
   takipDakika: number;
   maksSaat: number;
+  aboneAcik: boolean;
+  hediyeAcik: boolean;
+  bagisAcik: boolean;
+  kicksAcik: boolean;
+  takipAcik: boolean;
 }
 
 interface Durum {
@@ -49,6 +54,8 @@ function Kural({
   dakika,
   birim,
   birimEtiketi,
+  acik,
+  onAcik,
   onDakika,
   onBirim
 }: {
@@ -58,16 +65,20 @@ function Kural({
   dakika: number;
   birim?: number;
   birimEtiketi?: string;
+  acik: boolean;
+  onAcik: (v: boolean) => void;
   onDakika: (v: number) => void;
   onBirim?: (v: number) => void;
 }) {
   return (
     <div className="bg-black/30 border border-white/10 rounded-xl p-3">
-      <div className="flex items-center gap-2 mb-2">
+      <label className="flex items-center gap-2 mb-2 cursor-pointer">
         <span className="w-2 h-2 rounded-full" style={{ background: renk }} />
-        <span className="text-xs font-black text-white">{baslik}</span>
-      </div>
-      <div className="flex items-end gap-2">
+        <span className="text-xs font-black text-white flex-1">{baslik}</span>
+        <span className="text-[10px] text-gray-400">{acik ? 'Süre ekler' : 'Kapalı'}</span>
+        <input type="checkbox" checked={acik} onChange={(e) => onAcik(e.target.checked)} className="w-4 h-4 accent-cyan-500 cursor-pointer" />
+      </label>
+      <div className={`flex items-end gap-2 ${acik ? '' : 'opacity-40'}`}>
         <label className="flex-1">
           <span className="block text-[10px] text-gray-400 font-bold mb-1">Eklenecek dakika</span>
           <input
@@ -265,6 +276,8 @@ export function SubathonPanel() {
             baslik="Abonelik"
             renk="#22d3ee"
             dakika={ayar.aboneDakika}
+            acik={ayar.aboneAcik !== false}
+            onAcik={(v) => setAyar({ ...ayar, aboneAcik: v })}
             onDakika={d('aboneDakika')}
             aciklama="Yeni abone geldiğinde eklenecek süre."
           />
@@ -272,6 +285,8 @@ export function SubathonPanel() {
             baslik="Hediye abonelik"
             renk="#fbbf24"
             dakika={ayar.hediyeAboneDakika}
+            acik={ayar.hediyeAcik !== false}
+            onAcik={(v) => setAyar({ ...ayar, hediyeAcik: v })}
             onDakika={d('hediyeAboneDakika')}
             aciklama="Hediye edilen HER abonelik için ayrı ayrı eklenir."
           />
@@ -279,6 +294,8 @@ export function SubathonPanel() {
             baslik="Takip"
             renk="#a78bfa"
             dakika={ayar.takipDakika ?? 1}
+            acik={ayar.takipAcik !== false}
+            onAcik={(v) => setAyar({ ...ayar, takipAcik: v })}
             onDakika={d('takipDakika')}
             aciklama="Her yeni takip için. 0 yazarsan takip süre eklemez (takip botu saldırısında kapat)."
           />
@@ -288,6 +305,8 @@ export function SubathonPanel() {
             dakika={ayar.kicksDakika}
             birim={ayar.kicksBirimi}
             birimEtiketi="KICKs"
+            acik={ayar.kicksAcik !== false}
+            onAcik={(v) => setAyar({ ...ayar, kicksAcik: v })}
             onDakika={d('kicksDakika')}
             onBirim={d('kicksBirimi')}
             aciklama="Kick'in kendi para birimi. Örn. 100 KICKs başına 1 dakika."
@@ -298,6 +317,8 @@ export function SubathonPanel() {
             dakika={ayar.bagisDakika}
             birim={ayar.bagisBirimi}
             birimEtiketi="tutar"
+            acik={ayar.bagisAcik !== false}
+            onAcik={(v) => setAyar({ ...ayar, bagisAcik: v })}
             onDakika={d('bagisDakika')}
             onBirim={d('bagisBirimi')}
             aciklama="Harici bağış (BynoGame, SuperChat vb.). Örn. 50₺ başına 10 dakika."

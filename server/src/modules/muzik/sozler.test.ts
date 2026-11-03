@@ -1,5 +1,5 @@
 /**
- * StreamAxT — şarkı sözü yardımcıları testleri
+ * AxBoT — şarkı sözü yardımcıları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

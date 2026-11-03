@@ -1,5 +1,5 @@
 /**
- * StreamAxT — tekrarlanan mesaj koruması (B9) (saf)
+ * AxBoT — tekrarlanan mesaj koruması (B9) (saf)
  * Developed by AxthrowA
  *
  * Denetim B9: AutoMod'da "aynı mesajı tekrar tekrar yazma" kuralı yoktu.

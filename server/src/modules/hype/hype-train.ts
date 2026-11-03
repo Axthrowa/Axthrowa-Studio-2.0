@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Hype Treni (sunucu)
+ * AxBoT — Hype Treni (sunucu)
  * Developed by AxthrowA
  *
  * Denetim B3: Hype Treni durumu her OBS tarayıcı kaynağında AYRI tutuluyordu.

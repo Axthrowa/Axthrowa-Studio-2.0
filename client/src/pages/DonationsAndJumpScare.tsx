@@ -134,7 +134,7 @@ export default function DonationsAndJumpScare() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30 uppercase tracking-wider">
-                StreamAxT Bağış & Alert Ekosistemi
+                AxBoT Bağış & Alert Ekosistemi
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">

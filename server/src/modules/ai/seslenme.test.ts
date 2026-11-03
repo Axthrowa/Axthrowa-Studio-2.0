@@ -1,5 +1,5 @@
 /**
- * StreamAxT — yapay zekâya seslenme testleri
+ * AxBoT — yapay zekâya seslenme testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

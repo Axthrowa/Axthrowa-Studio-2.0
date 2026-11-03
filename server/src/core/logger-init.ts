@@ -1,5 +1,5 @@
 /**
- * StreamAxT — günlüğü EN BAŞTA kur.
+ * AxBoT — günlüğü EN BAŞTA kur.
  * Developed by AxthrowA
  *
  * index.ts'in İLK içe aktarması olmalı: diğer modüller içe aktarılırken

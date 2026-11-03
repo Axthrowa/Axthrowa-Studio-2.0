@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Sohbet olay mesajları, AI asistan, sohbet overlay ayarı, sabit mesaj, izleyici notları
+ * AxBoT API — Sohbet olay mesajları, AI asistan, sohbet overlay ayarı, sabit mesaj, izleyici notları
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;

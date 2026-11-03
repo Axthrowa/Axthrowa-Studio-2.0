@@ -1,6 +1,6 @@
 # Resonance
 
-Spotify / YouTube Music now-playing widget — **Yayın Yönetim Aracı** içinde gömülü.
+Spotify / YouTube Music now-playing widget — **AxthrowA Studio** içinde gömülü.
 
 Ayrı bir pencere açmak gerekmez: panelin üst çubuğundaki **Müzik** sekmesi bu
 uygulamayı aynı origin’den `iframe` ile gösterir. Kaynak seçimi, bağlantı

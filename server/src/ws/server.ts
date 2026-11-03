@@ -10,6 +10,7 @@ import { platformManager } from '../platforms/manager.js';
 import { economy } from '../modules/economy/economy.js';
 import { varyantlar } from '../modules/alerts/variants.js';
 import { hataMetni, seyrekUyar } from '../core/logger.js';
+import { shoutoutGonder } from '../modules/otomasyon/shoutout.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { BASLANGIC, kontrolUygula, KontrolDurumu, SonUyari, SonUyarilar, uyariKimligi } from '../modules/alerts/control.js';
 import { kupa } from '../modules/engagement/kupa.js';
@@ -46,7 +47,7 @@ export class WebSocketHub {
       const ham = (db.prepare("SELECT value FROM bot_settings WHERE key = 'widget_settings_shoutout'").get() as { value?: string } | undefined)?.value;
       const esik = Number(ham ? JSON.parse(ham).raidOtomatikEsik : 0) || 0;
       if (esik > 0 && Number(payload.viewers) > esik) {
-        eventBus.emit('widget_update', { type: 'shoutout', data: { channel: payload.username, platform: payload.platform } });
+        void shoutoutGonder(payload.username, String(payload.platform || 'kick'));
       }
     } catch {
       /* bozuk ayar: otomatik shoutout atlanır */
@@ -150,7 +151,7 @@ export class WebSocketHub {
         type: 'init',
         data: {
           platformStatuses: platformManager.getAllStatuses(),
-          currentSong: songRequest.getCurrentSong(),
+          currentSong: songRequest.calanIstek(),
           queue: songRequest.getQueueList()
         }
       });
@@ -178,7 +179,7 @@ export class WebSocketHub {
     void import('../modules/pano/pano.js').then((m) => m.sesPanosu.yayinciBagla((p) => this.broadcastTo(['pano', 'dashboard'], p)));
     // Sesli komutlar: sonuç/ayar/model iletileri panele ve dinleyici sayfasına
     void import('../modules/sesli/sesli.js').then((m) => m.sesliKomutlar.yayinciBagla((p) => this.broadcastTo(['sesli', 'dashboard'], p)));
-    console.log('[StreamAxT] WebSocket Hub active on /ws');
+    console.log('[AxBoT] WebSocket Hub active on /ws');
   }
 
   private handleClientMessage(msg: any) {
@@ -190,12 +191,8 @@ export class WebSocketHub {
     if (msg.action === 'test_alert') {
       this.triggerTestAlert(msg.eventType);
     } else if (msg.action === 'send_chat') {
-      const { platform, message } = msg;
-      if (platform === 'all') {
-        eventBus.emitBotMessage({ platform: 'all', message });
-      } else {
-        eventBus.emitBotMessage({ platform, message });
-      }
+      // Yayıncı elle yazdı: `!bot mute` otomatik yanıtlar içindir, bu mesajı sessizce yutmamalı
+      eventBus.emitBotMessage({ platform: msg.platform, message: msg.message, sessizdeBile: true, panelden: true });
     } else if (msg.action === 'trigger_tts') {
       ttsEngine.enqueue(msg.text || 'Test TTS', 'Yayıncı');
     } else if (msg.action === 'clear_chat') {
@@ -268,7 +265,7 @@ export class WebSocketHub {
         channel: 'stream',
         user: {
           id: 'streamaxt_system',
-          username: 'AxBot',
+          username: 'AxBoT',
           displayName: '⚠️ Gönderilemedi',
           color: '#f87171',
           badges: [],

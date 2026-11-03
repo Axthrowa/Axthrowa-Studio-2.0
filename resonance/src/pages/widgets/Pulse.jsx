@@ -8,8 +8,8 @@ import { Select } from '../../components/ui/Select'
 import { OptionGrid } from '../../components/ui/OptionGrid'
 import { ToggleRow } from '../../components/ui/Toggle'
 import { Slider } from '../../components/ui/Slider'
-import { NowPlayingWidget } from '../../components/widget/NowPlayingWidget'
-import { Lyrics } from '../../components/widget/Lyrics'
+import { NowPlayingWidget, PALETLER } from '../../components/widget/NowPlayingWidget'
+import { Lyrics, SOZ_TEMALARI } from '../../components/widget/Lyrics'
 import { TransportBar } from '../../components/widget/TransportBar'
 import { SquarePreview, VinylPreview, NonePreview } from '../../components/widget/SkinPreviews'
 import { SKIN_REGISTRY } from '../../components/widget/skins'
@@ -49,6 +49,7 @@ const FONTS = [
   { value: 'Oswald', label: 'Oswald' },
   { value: 'JetBrains Mono', label: 'JetBrains Mono' },
   { value: 'Roboto Mono', label: 'Roboto Mono' },
+  ...['Rubik', 'Manrope', 'Sora', 'Lexend', 'Barlow Condensed', 'Bebas Neue', 'Anton', 'Orbitron', 'Exo 2', 'Rajdhani', 'Pixelify Sans', 'Press Start 2P', 'VT323', 'Caveat', 'Kalam', 'Playfair Display', 'Fredoka'].map((value) => ({ value, label: value })),
 ]
 
 function Section({ title, children, className = '' }) {
@@ -248,7 +249,7 @@ export default function Pulse() {
         </div>
       </div>
       {config.showLyrics && (
-        <div className="mt-2 flex justify-center rounded-2xl bg-black/60 p-4">
+        <div className="mx-auto mt-2 w-full max-w-[640px] rounded-2xl bg-black/60 p-4">
           <Lyrics track={track} progressMs={progressMs} config={config} preview />
         </div>
       )}
@@ -401,6 +402,43 @@ export default function Pulse() {
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">
               {t('pulse.lyricsUrl')} {`${window.location.origin}/resonance/lyrics`}
             </p>
+            <SubLabel>Söz görünümü</SubLabel>
+            <Select value={config.lyricsTheme || 'klasik'} onChange={(v) => set({ lyricsTheme: v })} options={Object.entries(SOZ_TEMALARI).map(([value, x]) => ({ value, label: x.ad }))} />
+            <SubLabel>Satır sayısı</SubLabel>
+            <Select
+              value={config.lyricsSingleLine === true ? 'tek' : config.lyricsLayout || 'uc'}
+              onChange={(v) => set({ lyricsLayout: v, lyricsSingleLine: false })}
+              options={[{ value: 'uc', label: 'Önceki, şu anki, sonraki' }, { value: 'iki', label: 'Şu anki ve sonraki' }, { value: 'tek', label: 'Yalnız şu anki' }]}
+            />
+            <SubLabel>Hizalama</SubLabel>
+            <Select value={config.lyricsAlign || 'center'} onChange={(v) => set({ lyricsAlign: v })} options={[{ value: 'left', label: 'Sola' }, { value: 'center', label: 'Ortaya' }, { value: 'right', label: 'Sağa' }]} />
+            <SubLabel>Söz yazı tipi</SubLabel>
+            <Select value={config.lyricsFont || ''} onChange={(v) => set({ lyricsFont: v })} options={[{ value: '', label: 'Kartla aynı' }, ...FONTS]} />
+            {config.lyricsTheme === 'kart' && (
+              <>
+                <SubLabel>Kart saydamlığı</SubLabel>
+                <Slider value={Math.round((Number(config.lyricsBgOpacity ?? 0.75)) * 100)} min={0} max={100} step={5} suffix=" %" onChange={(v) => set({ lyricsBgOpacity: v / 100 })} />
+              </>
+            )}
+            <ToggleRow
+              title="Zamanı olmayan sözleri de göster"
+              description="Yalnız düz metin bulunan şarkılarda sözler süreye yayılarak yaklaşık gösterilir."
+              checked={config.lyricsPlain !== false}
+              onChange={(v) => set({ lyricsPlain: v })}
+            />
+            <SubLabel>{t('pulse.lyricsSize')}</SubLabel>
+            <Slider value={Number(config.lyricsFontSize) || 26} min={14} max={72} step={1} suffix=" px" onChange={(v) => set({ lyricsFontSize: v })} />
+            <SubLabel>{t('pulse.lyricsSideSize')}</SubLabel>
+            <Slider value={Number(config.lyricsSideSize) || 18} min={10} max={56} step={1} suffix=" px" onChange={(v) => set({ lyricsSideSize: v })} />
+            <SubLabel>{t('pulse.lyricsColor')}</SubLabel>
+            <input
+              type="color"
+              aria-label={t('pulse.lyricsColor')}
+              value={config.lyricsColor || '#ffffff'}
+              onChange={(e) => set({ lyricsColor: e.target.value })}
+              className="h-9 w-16 cursor-pointer rounded border-0 bg-transparent"
+            />
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t('pulse.lyricsScreens')}</p>
           </div>
         </div>
       </Section>
@@ -437,6 +475,20 @@ export default function Pulse() {
             />
             <span className="text-sm text-[var(--color-text-muted)]">{config.tintColor}</span>
           </div>
+        </div>
+      </Section>
+
+      <Section title="Kart ayrıntıları" className="mt-6">
+        <SubLabel>Hazır renk paleti</SubLabel>
+        <Select value={config.palet || ''} onChange={(v) => set({ palet: v })} options={[{ value: '', label: 'Yok (yukarıdaki renkler)' }, ...Object.entries(PALETLER).map(([value, x]) => ({ value, label: x.ad }))]} />
+        <div className="mt-4">
+          <SubLabel>Hareketli arka plan</SubLabel>
+          <Select value={config.animatedBg || 'yok'} onChange={(v) => set({ animatedBg: v })} options={[{ value: 'yok', label: 'Yok' }, { value: 'aurora', label: 'Aurora' }, { value: 'akis', label: 'Akış' }, { value: 'nabiz', label: 'Nabız' }, { value: 'nefes', label: 'Nefes' }]} />
+        </div>
+        <div className="mt-3 divide-y divide-[var(--color-border)]">
+          <ToggleRow title="Uzun başlık kaysın" description="Sığmayan şarkı adı ve sanatçı yavaşça kayar." checked={config.marquee !== false} onChange={(v) => set({ marquee: v })} />
+          <ToggleRow title="Albüm adını göster" description="Sanatçının yanına albüm adını ekler." checked={config.showAlbum === true} onChange={(v) => set({ showAlbum: v })} />
+          <ToggleRow title="Kalan süreyi göster" description="Toplam süre yerine kalan süreyi yazar." checked={config.timeRemaining === true} onChange={(v) => set({ timeRemaining: v })} />
         </div>
       </Section>
 

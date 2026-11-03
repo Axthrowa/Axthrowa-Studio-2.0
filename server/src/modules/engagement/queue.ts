@@ -1,5 +1,5 @@
 /**
- * StreamAxT — İzleyici Kuyruğu
+ * AxBoT — İzleyici Kuyruğu
  * Developed by AxthrowA
  *
  * BotRix'te `/panel/interaction > İzleyici Kuyruğu` (BETA) ve on komut

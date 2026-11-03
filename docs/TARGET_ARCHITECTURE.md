@@ -1,4 +1,4 @@
-# TARGET ARCHITECTURE — StreamAxT
+# TARGET ARCHITECTURE — AxBoT
 
 > **GÜNCELLİK NOTU (2026-09-22):** Bu tasarım 1. turda yazıldı. 2. tur sonunda §7 (animasyon motoru), alert kuyruğu, varyant seçimi, medya kütüphanesi ve yetenek modelinin panel yüzeyi **uygulandı**; hangi maddenin hangi durumda olduğu [`BOTRIX_GAP_ANALYSIS §13`](BOTRIX_GAP_ANALYSIS.md) tablosundadır. Trovo adaptörü mimariye eklendi (`platforms/trovo.ts` + saf `trovo-map.ts`).
 

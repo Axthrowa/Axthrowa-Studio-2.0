@@ -1,7 +1,8 @@
 /**
- * StreamAxT Activity Feed overlay
+ * AxBoT Activity Feed overlay
  * Developed by AxthrowA
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -101,6 +102,7 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
       background: bg,
       borderRadius: s.borderRadius,
       border: `1px solid ${s.borderColor}`,
+      ...kutuTasarimi(s),
       padding: 16,
       display: 'flex',
       flexDirection: 'column',

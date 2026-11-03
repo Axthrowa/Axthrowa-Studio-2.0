@@ -1,5 +1,5 @@
 /**
- * StreamAxT — uyarı kuyruğu durum makinesi
+ * AxBoT — uyarı kuyruğu durum makinesi
  * Developed by AxthrowA
  *
  * Denetimde bulundu (CURRENT_SYSTEM_AUDIT §11.5): `AlertBoxWidget`

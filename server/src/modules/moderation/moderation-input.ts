@@ -1,5 +1,5 @@
 /**
- * StreamAxT — panelden gelen moderasyon isteklerinin doğrulaması (saf)
+ * AxBoT — panelden gelen moderasyon isteklerinin doğrulaması (saf)
  * Developed by AxthrowA
  *
  * Panelin izleyici kartındaki "zaman aşımı / kalıcı ban / banı kaldır"

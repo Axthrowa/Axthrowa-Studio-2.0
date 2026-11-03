@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Bağış Kupası kuralları testleri
+ * AxBoT — Bağış Kupası kuralları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

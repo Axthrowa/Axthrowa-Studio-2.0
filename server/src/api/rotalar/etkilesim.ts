@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Çekiliş, tahmin, kuyruk, puan düşüşü, anket, krallık
+ * AxBoT API — Çekiliş, tahmin, kuyruk, puan düşüşü, anket, krallık
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;

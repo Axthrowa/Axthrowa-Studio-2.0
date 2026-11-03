@@ -14,6 +14,42 @@ vi.mock('../../db/index.js', () => ({
   }
 }));
 
+describe('subathon olay kuralları', () => {
+  it('abone, hediye, bağış, KICKs süre ekler; kaynak kapatılınca eklemez', async () => {
+    const { eventBus } = await import('../../core/event-bus.js');
+    const { subathon } = await import('./subathon.js');
+    subathon.baglaOlaylar();
+    subathon.durdurTik();
+    subathon.ayarYaz({ aboneDakika: 5, hediyeAboneDakika: 2, bagisDakika: 10, bagisBirimi: 50, kicksDakika: 1, kicksBirimi: 100 });
+    subathon.baslat(60);
+    const eklenen = () => subathon.durumAl().eklenenSaniye;
+    eventBus.emit('sub', { username: 'a', isGift: false });
+    expect(eklenen()).toBe(300);
+    eventBus.emit('sub', { username: 'a', isGift: true, count: 3 });
+    expect(eklenen()).toBe(300 + 360);
+    eventBus.emit('tip', { username: 'a', amount: 100 });
+    expect(eklenen()).toBe(660 + 1200);
+    eventBus.emit('kicks', { username: 'a', amount: 250 });
+    expect(eklenen()).toBe(1860 + 120);
+    eventBus.emit('sub', { username: 'a', isGift: false, isTest: true });
+    expect(eklenen()).toBe(1980);
+
+    subathon.ayarYaz({ aboneAcik: false, hediyeAcik: false, bagisAcik: false, kicksAcik: false, takipAcik: false });
+    eventBus.emit('sub', { username: 'a', isGift: false });
+    eventBus.emit('sub', { username: 'a', isGift: true, count: 3 });
+    eventBus.emit('tip', { username: 'a', amount: 100 });
+    eventBus.emit('kicks', { username: 'a', amount: 250 });
+    eventBus.emit('follow', { username: 'a' });
+    expect(eklenen()).toBe(1980);
+    subathon.ayarYaz({ aboneAcik: true, hediyeAcik: true, bagisAcik: true, kicksAcik: true, takipAcik: true });
+    subathon.sifirla();
+    eventBus.removeAllListeners('sub');
+    eventBus.removeAllListeners('tip');
+    eventBus.removeAllListeners('kicks');
+    eventBus.removeAllListeners('follow');
+  });
+});
+
 describe('subathon kalan süre', () => {
   it('duraklatınca süre saklanır, devamda kaldığı yerden sürer; bot kapanıp açılınca süre akmamış olur', async () => {
     vi.useFakeTimers();

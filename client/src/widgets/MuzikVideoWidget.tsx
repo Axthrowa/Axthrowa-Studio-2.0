@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Şarkı Klipleri widget'ı
+ * AxBoT — Şarkı Klipleri widget'ı
  * Developed by AxthrowA
  *
  * `!sr` istekleri (Şarkı İstekleri → "OBS Şarkı Klipleri" kipi) YouTube'da

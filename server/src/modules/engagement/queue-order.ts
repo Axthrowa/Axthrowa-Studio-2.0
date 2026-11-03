@@ -1,5 +1,5 @@
 /**
- * StreamAxT — kuyruk sıralaması (saf)
+ * AxBoT — kuyruk sıralaması (saf)
  * Developed by AxthrowA
  */
 

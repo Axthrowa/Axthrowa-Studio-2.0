@@ -1,10 +1,11 @@
 /**
- * StreamAxT Giveaway overlay
+ * AxBoT Giveaway overlay
  * Developed by AxthrowA
  *
  * Çekiliş açıkken ödül, katılım kelimesi, katılımcı sayısı ve kalan süre görünür. Kazanan çekilince
  * katılımcı adları çarkta döner, yavaşlar ve kazanan `winnerShowSec` saniye gösterilip kaybolur.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -118,7 +119,7 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
   return (
     <div
       className={`axt-anim-${s.animation}`}
-      style={{ fontFamily: s.fontFamily, background: bg, borderRadius: s.borderRadius, padding: '18px 22px', color: s.fontColor, textAlign: 'center', overflow: 'hidden', borderTop: `4px solid ${s.accentColor}` }}
+      style={{ fontFamily: s.fontFamily, background: bg, borderRadius: s.borderRadius, padding: '18px 22px', color: s.fontColor, textAlign: 'center', overflow: 'hidden', ...kutuTasarimi(s), borderTop: s.kabuk ? undefined : `4px solid ${s.accentColor}` }}
     >
       <div style={{ fontSize: Math.round(s.fontSize * 0.75), fontWeight: 800, letterSpacing: 2, color: s.accentColor }}>{s.overlayTitle}</div>
 

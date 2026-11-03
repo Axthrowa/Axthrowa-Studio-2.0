@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Medya Kütüphanesi
+ * AxBoT — Medya Kütüphanesi
  * Developed by AxthrowA
  *
  * Denetimde bulunmuştu: uyarı görseli ve sesi YALNIZ harici URL ile

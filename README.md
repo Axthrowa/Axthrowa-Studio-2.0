@@ -1,4 +1,4 @@
-# 🚀 StreamAxT: Tam Teşekküllü Multi-Platform Canlı Yayın Botu & Overlay Stüdyosu
+# 🚀 AxBoT: Tam Teşekküllü Multi-Platform Canlı Yayın Botu & Overlay Stüdyosu
 > **Geliştirici:** Axthrowa  
 > Beş büyük platform (**Kick, Twitch, YouTube, Discord, TikTok**) ile entegre çalışan canlı yayın asistanı.
 
@@ -88,4 +88,4 @@ OBS Studio'da **Kaynaklar (+) -> Tarayıcı (Browser)** seçin ve aşağıdaki l
 
 ### 👨‍💻 Geliştirici
 - **Geliştirici**: Axthrowa
-- **StreamAxT** © 2026. Tüm Hakları Saklıdır.
+- **AxBoT** © 2026. Tüm Hakları Saklıdır.

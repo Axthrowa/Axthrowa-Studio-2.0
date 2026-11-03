@@ -1,5 +1,5 @@
 /**
- * StreamAxT — medya doğrulama (saf)
+ * AxBoT — medya doğrulama (saf)
  * Developed by AxthrowA
  *
  * Dosya sistemi ve veritabanı erişimi YOK: test edilebilir olsun diye

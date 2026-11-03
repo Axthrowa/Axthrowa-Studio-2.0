@@ -1,5 +1,5 @@
 /**
- * StreamAxT Rankings — points / watchtime / messages leaderboards
+ * AxBoT Rankings — points / watchtime / messages leaderboards
  * Developed by AxthrowA
  */
 import { useEffect, useRef, useState } from 'react';

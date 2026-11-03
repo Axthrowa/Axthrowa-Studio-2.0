@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Kick takipçi artışı (saf)
+ * AxBoT — Kick takipçi artışı (saf)
  *
  * Kick herkese açık akışta takipçinin adını vermiyor; güvenilir tek bilgi kanalın takipçi sayısı. Sayı önceki
  * en yüksek değeri geçtikçe yeni takipçi sayılır. En yüksek değer tutulduğu için takip edip bırakıp yeniden

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — canlı şarkı sözleri (lrclib.net, anahtarsız)
+ * AxBoT — canlı şarkı sözleri (lrclib.net, anahtarsız)
  * Developed by AxthrowA
  *
  * Eskiden "çalan şarkı" olarak istek kuyruğunun İLK şarkısı kullanılıyordu
@@ -97,7 +97,7 @@ export async function sozleriGetir(title: string, artist: string, sureMs = 0): P
   const onbellekte = onbellek.get(anahtar);
   if (onbellekte) return onbellekte;
   let sonuc: SozSonucu | null = null;
-  const opts = { timeout: 8000, headers: { 'User-Agent': 'StreamAxT (https://github.com/Axthrowa/streamaxt)' } };
+  const opts = { timeout: 8000, headers: { 'User-Agent': 'AxBoT (https://github.com/Axthrowa/streamaxt)' } };
   try {
     // 1) Tam eşleşme: şarkı + sanatçı (+ süre)
     if (artist) {

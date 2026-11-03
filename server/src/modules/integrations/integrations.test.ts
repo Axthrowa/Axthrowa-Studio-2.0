@@ -1,5 +1,5 @@
 /**
- * StreamAxT — entegrasyon testleri
+ * AxBoT — entegrasyon testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

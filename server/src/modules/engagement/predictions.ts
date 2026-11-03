@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Topluluk Bahisleri (tahminler)
+ * AxBoT — Topluluk Bahisleri (tahminler)
  * Developed by AxthrowA
  *
  * BotRix'te `/panel/interaction > Topluluk Bahisleri` (BETA V2) ve
@@ -16,6 +16,7 @@ import crypto from 'node:crypto';
 import { db } from '../../db/index.js';
 import { degisinceBildir, durumYayinci } from '../../core/state-push.js';
 import { economy } from '../economy/economy.js';
+import { seyrekUyar } from '../../core/logger.js';
 
 export * from './prediction-math.js';
 import { odulDagit, secenekBul, type Tahmin, type TahminBahsi } from './prediction-math.js';
@@ -170,15 +171,20 @@ class TahminMotoru {
 
     const b = this.bahisler(t.id);
     const odul = odulDagit(b, idx);
-    for (const o of odul) {
-      if (o.kazanc > 0) economy.addPoints(o.kullanici, o.kazanc);
+    try {
+      economy.topluOde(
+        odul.filter((o) => o.kazanc > 0).map((o) => ({ kullanici: o.kullanici, puan: o.kazanc })),
+        () =>
+          db.prepare("UPDATE predictions SET durum = 'kapandi', kazanan_index = ?, kapanis = ? WHERE id = ?").run(
+            idx,
+            Date.now(),
+            t.id
+          )
+      );
+    } catch (e) {
+      seyrekUyar('tahmin:sonuc', '[Tahmin] Sonuçlandırılamadı, ödeme geri alındı', e);
+      return { ok: false, hata: 'Sonuç kaydedilemedi, kimseye ödeme yapılmadı. Tekrar deneyin.' };
     }
-
-    db.prepare("UPDATE predictions SET durum = 'kapandi', kazanan_index = ?, kapanis = ? WHERE id = ?").run(
-      idx,
-      Date.now(),
-      t.id
-    );
 
     return {
       ok: true,
@@ -193,8 +199,15 @@ class TahminMotoru {
     const t = this.aktif();
     if (!t) return { ok: false, iade: 0 };
     const b = this.bahisler(t.id);
-    for (const x of b) economy.addPoints(x.kullanici, x.puan);
-    db.prepare("UPDATE predictions SET durum = 'iptal', kapanis = ? WHERE id = ?").run(Date.now(), t.id);
+    try {
+      economy.topluOde(
+        b.map((x) => ({ kullanici: x.kullanici, puan: x.puan })),
+        () => db.prepare("UPDATE predictions SET durum = 'iptal', kapanis = ? WHERE id = ?").run(Date.now(), t.id)
+      );
+    } catch (e) {
+      seyrekUyar('tahmin:iptal', '[Tahmin] İptal edilemedi, iade geri alındı', e);
+      return { ok: false, iade: 0 };
+    }
     return { ok: true, iade: b.reduce((s, x) => s + x.puan, 0) };
   }
 }

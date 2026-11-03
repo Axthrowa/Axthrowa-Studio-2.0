@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Gemini anahtar/servis hatalarını anlaşılır Türkçeye çevirir
+ * AxBoT — Gemini anahtar/servis hatalarını anlaşılır Türkçeye çevirir
  * Developed by AxthrowA
  *
  * Google 401/403 yanıtında `details[].reason` ile asıl nedeni söyler. Eskiden

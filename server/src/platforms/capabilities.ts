@@ -1,5 +1,5 @@
 /**
- * StreamAxT — platform yetenek modeli
+ * AxBoT — platform yetenek modeli
  * Developed by AxthrowA
  *
  * Denetimde bulundu (CURRENT_SYSTEM_AUDIT §3): adaptör sözleşmesi yalnız

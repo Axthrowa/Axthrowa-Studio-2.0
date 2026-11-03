@@ -1,5 +1,5 @@
 /**
- * StreamAxT Çarkıfelek overlay
+ * AxBoT Çarkıfelek overlay
  * Developed by AxthrowA
  *
  * Çark SVG ile çizilir. Önceki sürüm CSS `skewY` üçgenleri kullanıyordu; bu
@@ -17,6 +17,11 @@ import { onizlemeKipi } from '../lib/widget-style.js';
 /** Çark renk paletleri: "custom" dilimlerin kendi rengini kullanır, diğerleri sırayla döner */
 export const CARK_PALETLERI: Record<string, { ad: string; renkler: string[] }> = {
   custom: { ad: 'Dilim renkleri (özel)', renkler: [] },
+  gundogumu: { ad: 'Gün doğumu', renkler: ['#ff6b6b', '#ffa94d', '#ffd43b', '#ff8787'] },
+  buzul: { ad: 'Buzul', renkler: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#0369a1'] },
+  gecedalga: { ad: 'Gece dalgası', renkler: ['#2b0a4d', '#7a1d6f', '#f0568a', '#ffb86b'] },
+  pastel: { ad: 'Pastel', renkler: ['#fbcfe8', '#ddd6fe', '#bfdbfe', '#bbf7d0', '#fef08a'] },
+  altin: { ad: 'Altın', renkler: ['#14100a', '#d4a843', '#3b2a14', '#f5e6c4'] },
   rainbow: { ad: 'Gökkuşağı', renkler: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'] },
   red: { ad: 'Kırmızı tonları', renkler: ['#7f1d1d', '#b91c1c', '#ef4444', '#f87171'] },
   green: { ad: 'Yeşil tonları', renkler: ['#14532d', '#15803d', '#22c55e', '#86efac'] },
@@ -107,6 +112,38 @@ export function donusFarki(mevcut: number, index: number, dilimSayisi: number, t
   return Math.max(1, tamTur) * 360 + fark;
 }
 
+/** Dilim sınırından geçiş anları (ms): dönüş ease-out yavaşladığı için tıklar seyrekleşir */
+export function tikZamanlari(toplamDerece: number, dilimDerece: number, sureMs: number, enFazla = 160): number[] {
+  const adet = Math.min(enFazla, Math.floor(toplamDerece / Math.max(1, dilimDerece)));
+  // ease-out'a yakın: ilerleme = 1 - (1 - t)^2
+  return Array.from({ length: adet }, (_, i) => (1 - Math.sqrt(1 - (i + 1) / (adet + 1))) * sureMs);
+}
+
+/** Dönüş efekti: dilim geçişlerinde tık, durunca zil (dosya gerekmez) */
+function donusSesiCal(zamanlar: number[], sureMs: number, ses: number) {
+  const Baglam = window.AudioContext || (window as any).webkitAudioContext;
+  if (!Baglam) return;
+  const ctx: AudioContext = new Baglam();
+  void ctx.resume();
+  const ton = (tur: OscillatorType, frekans: number, an: number, uzunluk: number, guc: number) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = tur;
+    o.frequency.value = frekans;
+    g.gain.setValueAtTime(guc * ses, an);
+    g.gain.exponentialRampToValueAtTime(0.0001, an + uzunluk);
+    o.connect(g).connect(ctx.destination);
+    o.start(an);
+    o.stop(an + uzunluk);
+  };
+  const bas = ctx.currentTime + 0.02;
+  for (const t of zamanlar) ton('square', 1500, bas + t / 1000, 0.03, 0.18);
+  const son = bas + sureMs / 1000;
+  ton('triangle', 880, son, 0.35, 0.5);
+  ton('triangle', 1320, son + 0.12, 0.5, 0.5);
+  setTimeout(() => void ctx.close().catch(() => {}), sureMs + 1500);
+}
+
 export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('wheel-of-fortune', WHEEL_DEFAULTS);
   const palet = CARK_PALETLERI[String(s.palette || 'custom')]?.renkler || [];
@@ -164,10 +201,18 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
     setWinner(null);
     // Çark görünür olur; sonuçtan `hideAfterSec` sn sonra kaybolur
     goster(s.spinMs || 4500);
-    setRotation((mevcut) => mevcut + donusFarki(mevcut, guvenli, segments.length, s.extraSpins || 6));
+    const fark = donusFarki(rotation, guvenli, segments.length, s.extraSpins || 6);
+    setRotation(rotation + fark);
     if (s.soundEnabled) {
+      const ses = Math.min(1, Math.max(0, Number(s.soundVolume ?? 0.6)));
       try {
-        new Audio('/sounds/wheel.mp3').play().catch(() => {});
+        if (s.soundUrl) {
+          const a = new Audio(String(s.soundUrl));
+          a.volume = ses;
+          a.play().catch(() => {});
+        } else {
+          donusSesiCal(tikZamanlari(fark, slice, s.spinMs || 4500), s.spinMs || 4500, ses);
+        }
       } catch {
         /* ses yok */
       }
@@ -191,11 +236,14 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   }, [lastMessage]);
 
   const boyut = Number(s.size) || 300;
+  // Göbek yarıçapı (viewBox birimi): çapın yüzdesi; yazılar göbeğin dışından başlar
+  const gobek = Math.min(60, Math.max(6, Number(s.centerSize) || 26));
   const otomatikGizle = s.autoHide !== false;
-  if (!onizleme && otomatikGizle && !gorunur && !spinning) return null;
+  // Gizliyken de çizili kalır: gizliden açılan SVG son açıda doğar, CSS geçişi hiç başlamaz, çark dönmezdi
+  const gizli = !onizleme && otomatikGizle && !gorunur && !spinning;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16 }}>
+    <div data-katman-bos={gizli ? '' : undefined} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16, visibility: gizli ? 'hidden' : 'visible' }}>
       <div style={{ position: 'relative', width: boyut, height: boyut }}>
         {/* İbre: saat 12 yönünde, çarkın üstünde */}
         <div
@@ -232,7 +280,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
             // Eskiden yazı dilime teğet duruyordu; 6-8 dilimde komşu adlar üst
             // üste biniyordu ("isimler iç içe giriyor"). Sol yarıda baş aşağı
             // düşmesin diye yazı 180 derece çevrilip sondan hizalanır.
-            const yazi = nokta(orta, R * 0.3);
+            const yazi = nokta(orta, Math.max(R * 0.3, gobek + 4));
             const solYari = orta > 180;
             const aci = solYari ? orta + 90 : orta - 90;
             const etiket = kisalt(String(seg.label), Number(s.maxLabel) || 14);
@@ -262,8 +310,26 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
             );
           })}
           {/* Orta göbek */}
-          <circle cx={CX} cy={CY} r={11} fill={s.borderColor} stroke="#0008" strokeWidth={1} />
+          <circle cx={CX} cy={CY} r={gobek} fill={s.borderColor} stroke="#0008" strokeWidth={1} />
         </svg>
+        {/* GIF dönmez: yalnız çark döner, görsel ortada okunur kalır */}
+        {s.centerImageUrl && (
+          <img
+            src={String(s.centerImageUrl)}
+            alt=""
+            referrerPolicy="no-referrer"
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: `${gobek}%`,
+              height: `${gobek}%`,
+              transform: 'translate(-50%,-50%)',
+              borderRadius: '50%',
+              objectFit: 'cover'
+            }}
+          />
+        )}
       </div>
 
       {winner && (

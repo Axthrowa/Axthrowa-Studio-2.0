@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Discord duyuru kuralları (saf)
+ * AxBoT — Discord duyuru kuralları (saf)
  * Developed by AxthrowA
  *
  * Veritabanı erişimi YOK. Sebep: testler koşarken çalışan sunucunun SQLite

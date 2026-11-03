@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ortak kara listenin uygulanması
+ * AxBoT — ortak kara listenin uygulanması
  * Developed by AxthrowA
  *
  * Kurallar `blacklist-rules.ts`'te (saf, testli). Burada: kayıt eşleşirse

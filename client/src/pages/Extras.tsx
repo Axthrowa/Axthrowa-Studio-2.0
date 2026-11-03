@@ -1,5 +1,5 @@
 /**
- * StreamAxT Extras — chat alerts, clip, levels, quotes, counters
+ * AxBoT Extras — chat alerts, clip, levels, quotes, counters
  * Developed by AxthrowA
  */
 import { useEffect, useState } from 'react';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — komut girdisi ve eşleme kuralları (saf)
+ * AxBoT — komut girdisi ve eşleme kuralları (saf)
  * Developed by AxthrowA
  *
  * Veritabanı erişimi YOK — testler çalışan sunucunun SQLite kilidine

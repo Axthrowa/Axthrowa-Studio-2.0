@@ -1,5 +1,5 @@
 /**
- * StreamAxT — `{{...}}` uyum testleri
+ * AxBoT — `{{...}}` uyum testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

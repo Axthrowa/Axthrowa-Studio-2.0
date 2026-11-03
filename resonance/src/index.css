@@ -53,6 +53,8 @@ body {
 
 .overlay-transparent {
   background: transparent !important;
+  /* OBS kaynağında ve gömülü çerçevede kaydırma çubuğu (sağda ve altta çizgi) çıkmasın */
+  overflow: hidden !important;
 }
 
 /* A quiet waveform motif used behind hero/banner sections for a bit of
@@ -98,6 +100,55 @@ body {
 .resonance-spin {
   animation: resonance-spin 6s linear infinite;
 }
+
+/* Uzun başlık kayar: bekler, sona gider, bekler, başa döner */
+@keyframes resonance-kayan {
+  0%, 15% { transform: translateX(0); }
+  70%, 85% { transform: translateX(var(--kayan)); }
+  100% { transform: translateX(0); }
+}
+
+/* Hareketli kart arka planları */
+.resonance-zemin {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.resonance-zemin::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  opacity: 0.5;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+.resonance-zemin-aurora::before {
+  background: radial-gradient(40% 40% at 30% 40%, var(--zemin-renk), transparent 70%), radial-gradient(35% 35% at 70% 60%, #a78bfa, transparent 70%), radial-gradient(30% 30% at 55% 30%, #22d3ee, transparent 70%);
+  animation-name: resonance-zemin-don;
+  animation-duration: 14s;
+}
+.resonance-zemin-akis::before {
+  background: linear-gradient(110deg, transparent 30%, var(--zemin-renk) 50%, transparent 70%);
+  animation-name: resonance-zemin-kay;
+  animation-duration: 7s;
+}
+.resonance-zemin-nabiz::before {
+  background: radial-gradient(45% 60% at 50% 50%, var(--zemin-renk), transparent 75%);
+  animation-name: resonance-zemin-nabiz;
+  animation-duration: 2s;
+}
+.resonance-zemin-nefes::before {
+  background: radial-gradient(60% 70% at 50% 50%, var(--zemin-renk), transparent 80%);
+  animation-name: resonance-zemin-nefes;
+  animation-duration: 6s;
+}
+@keyframes resonance-zemin-don { to { transform: rotate(360deg); } }
+@keyframes resonance-zemin-kay { from { transform: translateX(-30%); } to { transform: translateX(30%); } }
+@keyframes resonance-zemin-nabiz { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.6; } }
+@keyframes resonance-zemin-nefes { 0%, 100% { transform: scale(0.8); opacity: 0.25; } 50% { transform: scale(1.1); opacity: 0.55; } }
+[data-bare] > .resonance-zemin { display: none; }
 
 /* "Arka planı gizle": kabuk, degrade, bulanık kapak ve gölge görünmez olur;
    yalnız yazılar, kapak ve çubuklar kalır. Okunabilirlik için yumuşak yazı

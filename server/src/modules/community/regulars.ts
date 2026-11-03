@@ -1,5 +1,5 @@
 /**
- * StreamAxT — düzenli izleyiciler (regulars)
+ * AxBoT — düzenli izleyiciler (regulars)
  * Developed by AxthrowA
  *
  * Nightbot'taki "regular" kullanıcı düzeyinin karşılığı: yayıncı/mod'un elle

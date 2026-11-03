@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Özel komutlar, zamanlayıcılar, alıntı/sayaç (extras)
+ * AxBoT API — Özel komutlar, zamanlayıcılar, alıntı/sayaç (extras)
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;

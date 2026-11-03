@@ -1,5 +1,5 @@
 /**
- * StreamAxT Yayın Kralı widget
+ * AxBoT Yayın Kralı widget
  * Developed by AxthrowA
  *
  * Panelden tema, renkler, avatar boyutu ve gösterilecek alanlar ayarlanır.
@@ -8,11 +8,13 @@
  * kapansa da arkada çalışmaya devam ediyordu ve taht boşken bile "Yayıncı"
  * yazan sahte bir kral görünüyordu.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { Crown, Sparkles, Timer } from 'lucide-react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { KING_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, sayiYaz, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { acikRenkMi } from './WheelWidget.js';
 
 interface KingState {
   currentKing: string;
@@ -114,17 +116,16 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
   const tema = String(s.theme || 'royal');
   const temaStili: Record<string, React.CSSProperties> = {
     royal: {
-      background: `linear-gradient(90deg, ${rgba(s.bgColor, s.bgOpacity)}, ${rgba('#000000', 0.8)}, ${rgba(
-        s.bgColor,
-        s.bgOpacity
-      )})`,
+      // Orta koyuluk zemini örtmez: eskiden sabit siyahtı, açık temalarda koyu yazı okunmuyordu
+      background: `linear-gradient(90deg, transparent, ${rgba('#000000', 0.18)}, transparent), ${rgba(s.bgColor, s.bgOpacity)}`,
       border: `2px solid ${rgba(s.borderColor, 0.6)}`,
       boxShadow: `0 0 25px ${rgba(s.accentColor, 0.35)}`,
       backdropFilter: 'blur(8px)'
     },
-    minimal: { background: 'transparent', border: 'none', boxShadow: 'none' },
+    // Zeminsiz: yazı yayının üstünde okunsun diye yazı rengine zıt hale
+    minimal: { background: 'transparent', border: 'none', boxShadow: 'none', textShadow: acikRenkMi(s.textColor) ? '0 2px 4px #000, 0 0 10px rgba(0,0,0,.8)' : '0 0 3px #fff, 0 0 10px rgba(255,255,255,.9)' },
     glass: {
-      background: rgba(s.bgColor, Math.min(0.5, Number(s.bgOpacity) || 0.5)),
+      background: rgba(s.bgColor, Math.min(0.5, Number(s.bgOpacity ?? 0.5))),
       border: `1px solid ${rgba('#ffffff', 0.2)}`,
       backdropFilter: 'blur(14px)'
     },
@@ -138,8 +139,43 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
       border: 'none',
       borderBottom: `4px solid ${s.accentColor}`,
       borderRadius: 8
+    },
+    taht: {
+      background: `linear-gradient(135deg, ${rgba(s.bgColor, s.bgOpacity)}, ${rgba(s.accentColor, 0.22)})`,
+      border: `4px double ${s.accentColor}`,
+      boxShadow: `0 8px 24px rgba(0,0,0,.5), inset 0 0 18px ${rgba(s.accentColor, 0.2)}`
+    },
+    altin: {
+      background: 'linear-gradient(135deg, #f7d774, #b8860b 45%, #fff1b8 62%, #a8740a)',
+      border: '1px solid #fff1b8',
+      boxShadow: '0 6px 20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.6)'
+    },
+    alev: {
+      background: `linear-gradient(180deg, ${rgba(s.bgColor, s.bgOpacity)} 45%, ${rgba(s.accentColor, 0.45)})`,
+      borderBottom: `3px solid ${s.accentColor}`,
+      boxShadow: `0 10px 26px ${rgba(s.accentColor, 0.55)}`
+    },
+    buz: {
+      background: `linear-gradient(135deg, ${rgba(s.bgColor, s.bgOpacity)}, ${rgba('#ffffff', 0.12)})`,
+      border: `1px solid ${rgba(s.accentColor, 0.8)}`,
+      boxShadow: `inset 0 0 16px ${rgba(s.accentColor, 0.35)}`,
+      backdropFilter: 'blur(10px)'
+    },
+    serit: {
+      background: `linear-gradient(90deg, ${rgba(s.accentColor, 0.9)}, ${rgba(s.bgColor, s.bgOpacity)} 70%)`,
+      borderLeft: `6px solid ${s.accentColor}`
+    },
+    kart: {
+      background: rgba(s.bgColor, s.bgOpacity),
+      borderLeft: `5px solid ${s.accentColor}`,
+      boxShadow: '0 6px 18px rgba(0,0,0,.45)'
     }
   };
+
+  // Altın zemin sabit parlak: açık renkler (varsayılanlar dahil) üstünde okunmuyordu
+  const altinZemin = tema === 'altin' && !kutuTasarimi(s);
+  const vurgu = altinZemin && acikRenkMi(s.accentColor) ? '#7c4a03' : s.accentColor;
+  const yazi = altinZemin && acikRenkMi(s.textColor) ? '#2b1a00' : s.textColor;
 
   const boy = Number(s.fontSize) || 18;
   const avatar = Number(s.avatarSize) || 48;
@@ -156,10 +192,10 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
       <div
         className="relative flex items-center gap-3.5"
         style={{
-          ...(temaStili[tema] || temaStili.royal),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.royal),
           borderRadius: tema === 'plate' ? 8 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 12}px ${Number(s.paddingX) || 20}px`,
-          color: s.textColor
+          color: yazi
         }}
       >
         {s.showCrown && (
@@ -193,13 +229,6 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
                 <Crown style={{ width: avatar * 0.5, height: avatar * 0.5, color: '#000', fill: '#000' }} />
               </div>
             )}
-            <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5">
-              <span
-                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                style={{ background: s.accentColor }}
-              />
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5" style={{ background: s.accentColor }} />
-            </span>
           </div>
         )}
 
@@ -207,7 +236,7 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
           {s.showTitle && (
             <span
               className="font-semibold uppercase tracking-widest flex items-center gap-1"
-              style={{ fontSize: Math.max(9, boy * 0.55), color: s.accentColor }}
+              style={{ fontSize: Math.max(9, boy * 0.55), color: vurgu }}
             >
               <Sparkles className="w-3 h-3" />
               {king.title || s.title}
@@ -229,7 +258,7 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
                   style={{
                     background: rgba(s.accentColor, 0.2),
                     border: `1px solid ${rgba(s.accentColor, 0.3)}`,
-                    color: s.accentColor
+                    color: vurgu
                   }}
                 >
                   💎 {sayiYaz(Number(gorunen.pointsBid) || 0)} {s.pointsLabel}
@@ -237,7 +266,7 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
               )}
               {s.showReign && (
                 <span className="flex items-center gap-1">
-                  <Timer className="w-3 h-3" style={{ color: s.accentColor }} />
+                  <Timer className="w-3 h-3" style={{ color: vurgu }} />
                   {saltanatYaz(seconds)}
                 </span>
               )}

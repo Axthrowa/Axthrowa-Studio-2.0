@@ -1,5 +1,5 @@
 /**
- * StreamAxT — animasyon ve uyarı kuyruğu testleri
+ * AxBoT — animasyon ve uyarı kuyruğu testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

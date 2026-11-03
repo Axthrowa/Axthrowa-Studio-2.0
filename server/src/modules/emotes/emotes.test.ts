@@ -1,5 +1,5 @@
 /**
- * StreamAxT — emote ayıklama ve 7TV testleri
+ * AxBoT — emote ayıklama ve 7TV testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

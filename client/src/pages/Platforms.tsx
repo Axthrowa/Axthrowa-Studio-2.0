@@ -260,7 +260,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       } catch {
         throw new Error(
           res.status === 404
-            ? 'API uç noktası bulunamadı. Lütfen çalışan eski StreamAxT pencerelerini kapatıp StreamAxT.exe ile yeniden başlatın.'
+            ? 'API uç noktası bulunamadı. Lütfen çalışan eski AxBoT pencerelerini kapatıp AxthrowA Studio ile yeniden başlatın.'
             : `Sunucu geçersiz yanıt verdi (HTTP ${res.status}).`
         );
       }
@@ -297,7 +297,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: '🟢 [StreamAxT] Kick API ve sohbet bağlantısı başarıyla doğrulandı! Bot aktif.'
+          message: '🟢 [AxBoT] Kick API ve sohbet bağlantısı başarıyla doğrulandı! Bot aktif.'
         })
       });
       const data = await res.json();
@@ -439,7 +439,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
           </span>
         </h1>
         <p className="text-sm text-gray-400">
-          StreamAxT'yi yayın yaptığınız platformlara bağlayın. Kick.com için resmi API, OAuth ve hızlı moderatör modu tam desteklidir.
+          AxBoT'u yayın yaptığınız platformlara bağlayın. Kick.com için resmi API, OAuth ve hızlı moderatör modu tam desteklidir.
         </p>
       </div>
 
@@ -799,7 +799,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
 
             <div className="text-[11px] text-gray-400 flex items-center gap-1">
               <HelpCircle className="w-3.5 h-3.5 text-[#53fc18]" />
-              <span>Botun chatte engellenmemesi için kanalınızda <code className="text-[#53fc18] font-bold">/mod StreamAxT</code> yazabilirsiniz.</span>
+              <span>Botun chatte engellenmemesi için kanalınızda <code className="text-[#53fc18] font-bold">/mod AxBoT</code> yazabilirsiniz.</span>
             </div>
           </div>
         </div>

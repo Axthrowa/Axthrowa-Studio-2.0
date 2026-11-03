@@ -1,5 +1,5 @@
 /**
- * StreamAxT widget defaults
+ * AxBoT widget defaults
  * Developed by AxthrowA
  */
 
@@ -11,10 +11,14 @@ export const FONTS = [
   // Türkçe karakterli (latin-ext) ek yazı tipleri
   'Righteous', 'Exo 2', 'Rajdhani', 'Kanit', 'Bungee', 'Fredoka', 'Comfortaa', 'Caveat', 'Dancing Script',
   'Playfair Display', 'Raleway', 'Ubuntu', 'Quicksand', 'Pixelify Sans', 'Fira Code', 'Staatliches', 'Lobster',
-  'Pacifico', 'Silkscreen', 'Monoton', 'Saira', 'Barlow Condensed', 'Lexend', 'Space Grotesk'
+  'Pacifico', 'Silkscreen', 'Monoton', 'Saira', 'Barlow Condensed', 'Lexend', 'Space Grotesk',
+  // Sohbet eklentilerinde sık kullanılanlar (Türkçe karakterli)
+  'Open Sans', 'Lato', 'Noto Sans', 'Source Code Pro', 'Baloo 2', 'Rubik', 'Archivo Black', 'Alfa Slab One', 'Merriweather',
+  'Jost', 'Titillium Web', 'DM Sans', 'Manrope', 'Work Sans', 'Sora', 'Urbanist', 'Outfit', 'Chakra Petch', 'Kalam', 'Patrick Hand'
 ];
 
 export const ACTIVITY_DEFAULTS = {
+  kabuk: '',
   showFollow: true,
   showSub: true,
   showGiftSub: true,
@@ -69,6 +73,14 @@ export const CHAT_DEFAULTS = {
   maxMessages: 40,
   // Görünüm stili (klasik, platform kartı, başlıklı, etiket, konuşma balonu, şerit, neon, kompakt)
   chatStyle: 'klasik',
+  // İleti arka planı tamamen şeffaf: görünümün zemini de çizilmez
+  messageBgTransparent: false,
+  // Bilgisayarda kurulu bir yazı tipi (boşsa listeden seçilen)
+  customFont: '',
+  uppercase: false,
+  nameOnOwnLine: false,
+  hideUsernames: false,
+  emoteScale: 1.3,
   // Vurgu, çerçeve ve etiketlerde platformların özgün renkleri
   platformColors: true,
   fontSize: 22,
@@ -128,6 +140,7 @@ export const CHAT_DEFAULTS = {
 };
 
 export const GOAL_DEFAULTS = {
+  kabuk: '',
   title: 'Hedef',
   endingTitle: 'Hedefe ulaşıldı! 🎉',
   current: 0,
@@ -195,6 +208,7 @@ export const EMOTE_COMBO_DEFAULTS = {
 };
 
 export const LABELS_DEFAULTS = {
+  kabuk: '',
   showFollow: true,
   showSub: true,
   showTip: true,
@@ -234,6 +248,7 @@ export const LABELS_DEFAULTS = {
 };
 
 export const POLL_DEFAULTS = {
+  kabuk: '',
   command: '!oy',
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 14,
@@ -287,6 +302,13 @@ export const WHEEL_DEFAULTS = {
   fontSize: 12,
   fontColor: '#ffffff',
   soundEnabled: true,
+  soundVolume: 0.6,
+  /** Boşsa dönüş tık sesi üretilir */
+  soundUrl: '',
+  /** Orta göbek: çapın yüzdesi olarak */
+  centerSize: 26,
+  /** Orta göbekte görsel/GIF */
+  centerImageUrl: '',
   confetti: true,
   command: '!cark',
   outlineEnabled: true,
@@ -347,6 +369,7 @@ export const ALERT_ADVANCED_DEFAULTS = {
 // Çekiliş KURALLARI (süre, kazanan sayısı, şartlar) Çekilişler sayfasında; bunlar yalnız katman görünümü.
 // Eskiden kurallar burada da vardı ama hiçbir yerde okunmuyordu.
 export const GIVEAWAY_DEFAULTS = {
+  kabuk: '',
   keyword: '!katil',
   overlayTitle: 'ÇEKİLİŞ',
   winnerShowSec: 12,
@@ -377,6 +400,7 @@ export const GIVEAWAY_DEFAULTS = {
  * işlenmiyordu. Kurallar Overlay Stüdyo > Subathon panelinden ayarlanır.
  */
 export const SUBATHON_DEFAULTS = {
+  kabuk: '',
   title: 'SUBATHON',
   notifyMs: 4000,
   showTotalAdded: true,
@@ -395,6 +419,7 @@ export const SUBATHON_DEFAULTS = {
   icon: '⏳',
   showRules: true,
   showStatus: true,
+  showStatusDot: true,
   // Durum kartı yazıları (boş bırakılan görünmez)
   statusLiveText: 'CANLI SAYAÇ',
   statusPausedText: 'DURAKLADI',
@@ -435,6 +460,7 @@ export const SCOREBOARD_DEFAULTS = {
 };
 
 export const TRIVIA_DEFAULTS = {
+  kabuk: '',
   maxWidth: 672,
   radius: 24,
   cardColor: '#090d16',
@@ -453,6 +479,7 @@ export const TRIVIA_DEFAULTS = {
 
 /** İzleyici sayacı — tema, hizalama, ikon ve platform seçimi. */
 export const VIEWER_COUNTER_DEFAULTS = {
+  kabuk: '',
   title: 'İZLEYİCİ',
   theme: 'classic',
   layout: 'column',
@@ -484,6 +511,7 @@ export const VIEWER_COUNTER_DEFAULTS = {
 
 /** Bağış Kupası — tema, kap boyutu, emoji setleri ve eşikler. */
 export const THE_CUP_DEFAULTS = {
+  kabuk: '',
   title: 'BAĞIŞ KUPASI',
   theme: 'glass',
   align: 'right',
@@ -519,6 +547,7 @@ export const THE_CUP_DEFAULTS = {
 
 /** Sabitlenmiş mesaj — tema, konum, otomatik gizleme. */
 export const PINNED_DEFAULTS = {
+  kabuk: '',
   label: 'SABİTLENEN MESAJ',
   theme: 'card',
   position: 'top',
@@ -544,6 +573,7 @@ export const PINNED_DEFAULTS = {
 
 /** Shoutout — tema, süre, konfeti ve gösterilecek alanlar. */
 export const SHOUTOUT_DEFAULTS = {
+  kabuk: '',
   label: 'YAYINCI TAVSİYESİ',
   /** Bu sayıdan fazla izleyiciyle raid gelirse otomatik göster (0 = kapalı) */
   raidOtomatikEsik: 0,
@@ -573,6 +603,7 @@ export const SHOUTOUT_DEFAULTS = {
 
 /** Sıralama tablosu — sıralama ölçütü, tema, madalya ve satır sayısı. */
 export const RANKINGS_DEFAULTS = {
+  kabuk: '',
   title: 'SIRALAMA',
   sort: 'points',
   theme: 'classic',
@@ -602,6 +633,7 @@ export const RANKINGS_DEFAULTS = {
 
 /** Hype Treni — seviye eşiği, olay puanları ve görünüm. */
 export const HYPE_TRAIN_DEFAULTS = {
+  kabuk: '',
   title: 'HYPE TRENİ',
   subtitle: 'Topluluk desteğiyle raylar ısınıyor!',
   theme: 'classic',
@@ -638,7 +670,8 @@ export const HYPE_TRAIN_DEFAULTS = {
   showPercent: true,
   showSubtitle: true,
   showLastSupporter: true,
-  hideWhenIdle: true
+  /** Eskiden varsayılan açıktı: tren olay gelene dek hiç çizilmiyor, eklenmemiş sanılıyordu */
+  hideIdle: false
 };
 
 /** Şarkı sözleri — tema, satır sayısı ve tipografi. */
@@ -676,6 +709,7 @@ export const LYRICS_DEFAULTS = {
 
 /** Yayın Kralı — taht kartı görünümü. */
 export const KING_DEFAULTS = {
+  kabuk: '',
   title: 'YAYIN HÜKÜMDARI',
   theme: 'royal',
   fontFamily: 'Plus Jakarta Sans',
@@ -721,6 +755,7 @@ export const JUMPSCARE_DEFAULTS = {
 
 /** Sadakat ödülü bildirimi. */
 export const LOYALTY_DEFAULTS = {
+  kabuk: '',
   label: 'SADAKAT MAĞAZASI KULLANILDI',
   theme: 'card',
   position: 'center',
@@ -748,9 +783,10 @@ export const LOYALTY_DEFAULTS = {
 
 /** Jenerik (kapanış) — bölümler, hız ve başlıklar. */
 export const END_CREDITS_DEFAULTS = {
+  kabuk: '',
   title: 'YAYINI İZLEDİĞİNİZ İÇİN TEŞEKKÜRLER!',
   subtitle: 'Bugünkü yayında bize destek olan harika topluluğumuz:',
-  footer: 'Powered by StreamAxT',
+  footer: 'Powered by AxBoT',
   fontFamily: 'Plus Jakarta Sans',
   titleSize: 44,
   fontSize: 16,
@@ -780,6 +816,7 @@ export const END_CREDITS_DEFAULTS = {
 
 /** OBS ses oynatıcı (TTS) — ses düzeyi ve durum kartı. */
 export const AUDIO_PLAYER_DEFAULTS = {
+  kabuk: '',
   volume: 0.8,
   maxQueue: 20,
   theme: 'status',
@@ -790,7 +827,7 @@ export const AUDIO_PLAYER_DEFAULTS = {
   bgColor: '#000000',
   bgOpacity: 0.8,
   radius: 12,
-  label: 'StreamAxT OBS Audio',
+  label: 'AxBoT OBS Audio',
   showStatus: true,
   showText: true,
   showQueue: true,

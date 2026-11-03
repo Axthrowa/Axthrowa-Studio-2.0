@@ -1,5 +1,5 @@
 /**
- * StreamAxT — zamanlayıcı kararları (saf; testli)
+ * AxBoT — zamanlayıcı kararları (saf; testli)
  * Developed by AxthrowA
  *
  * Eski sürümdeki hatalar:

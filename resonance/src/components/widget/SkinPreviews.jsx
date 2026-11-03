@@ -108,6 +108,29 @@ export function EdgePreview() {
   )
 }
 
+export function TurntablePreview() {
+  return (
+    <div className="relative h-8 w-10">
+      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-white/70">
+        <div className="h-2 w-2 rounded-full bg-[var(--color-surface-3)]" />
+      </div>
+      <div className="absolute right-0.5 top-0 h-6 w-0.5 origin-top rotate-[28deg] rounded-full bg-white" />
+    </div>
+  )
+}
+
+export function CassettePreview() {
+  return (
+    <div className="w-12 space-y-1 rounded-sm border border-white/60 bg-black/30 p-1">
+      <div className={`${block} h-1 w-full`} />
+      <div className="flex justify-between px-1">
+        <div className="h-2.5 w-2.5 rounded-full border border-white/80" />
+        <div className="h-2.5 w-2.5 rounded-full border border-white/80" />
+      </div>
+    </div>
+  )
+}
+
 export function SquarePreview() {
   return <div className="h-8 w-8 rounded-sm bg-white/70" />
 }
@@ -118,6 +141,38 @@ export function VinylPreview() {
       <div className="h-2 w-2 rounded-full bg-[var(--color-surface-3)]" />
     </div>
   )
+}
+
+export function PillPreview() {
+  return <div className="flex h-4 w-12 items-center gap-1 rounded-full bg-white/20 px-0.5"><div className={`${block} h-3 w-3 rounded-full`} /><div className={`${block} h-1 flex-1`} /></div>
+}
+
+export function IslandPreview() {
+  return <div className="flex h-4 w-11 items-center justify-between rounded-full bg-black px-1"><div className="h-2 w-2 rounded-full bg-white/70" /><div className="h-1 w-3 rounded bg-white/70" /></div>
+}
+
+export function StripPreview() {
+  return <div className="h-2 w-14 border-l-2 border-white bg-white/30" />
+}
+
+export function AlbumFocusPreview() {
+  return <div className={`${block} relative h-10 w-10`}><div className="absolute inset-x-0 bottom-0 h-3 bg-black/60" /></div>
+}
+
+export function SidebarPreview() {
+  return <div className="flex h-12 w-7 flex-col items-center gap-0.5 rounded bg-white/15 p-0.5"><div className={`${block} h-5 w-5`} /><div className={`${block} h-1 w-5`} /><div className={`${block} h-1 w-3`} /></div>
+}
+
+export function GameboyPreview() {
+  return <div className="rounded-sm bg-[#306230] p-0.5"><div className="h-5 w-11 bg-[#9bbc0f]" /></div>
+}
+
+export function HudPreview() {
+  return <div className="h-6 w-12 border border-white/70 bg-white/10" style={{ clipPath: 'polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)' }} />
+}
+
+export function StickyPreview() {
+  return <div className="h-7 w-9 -rotate-3 bg-[#fcd34d]" />
 }
 
 export function NonePreview() {

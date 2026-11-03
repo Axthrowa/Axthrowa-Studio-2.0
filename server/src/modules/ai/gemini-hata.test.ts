@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Gemini hata açıklaması testleri
+ * AxBoT — Gemini hata açıklaması testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

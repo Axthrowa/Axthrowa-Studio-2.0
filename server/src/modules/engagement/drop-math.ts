@@ -1,5 +1,5 @@
 /**
- * StreamAxT — puan düşüşü hesapları (saf)
+ * AxBoT — puan düşüşü hesapları (saf)
  * Developed by AxthrowA
  */
 

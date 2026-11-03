@@ -1,5 +1,5 @@
 /**
- * StreamAxT — temalı sohbet uyarısı mesajları
+ * AxBoT — temalı sohbet uyarısı mesajları
  * Developed by AxthrowA
  *
  * Her tema her olay için birkaç mesaj içerir; olay her geldiğinde rastgele

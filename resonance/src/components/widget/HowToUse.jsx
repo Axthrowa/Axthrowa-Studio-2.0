@@ -30,14 +30,14 @@ export const HOWTO = {
       },
       {
         title: 'Giriş / Çıkış / Mola ekranlarında',
-        body: 'Ayrı bir OBS kaynağı gerekmez: Yayın Yönetim Aracı\'nın Giriş, Çıkış ve Mola ekranlarında "Şimdi Çalıyor" kartı zaten seçtiğin görünümle çıkar. Konumunu ve görünürlüğünü o ekranın ayarlarından değiştirirsin.',
+        body: 'Ayrı bir OBS kaynağı gerekmez: AxthrowA Studio\'nun Giriş, Çıkış ve Mola ekranlarında "Şimdi Çalıyor" kartı zaten seçtiğin görünümle çıkar. Konumunu ve görünürlüğünü o ekranın ayarlarından değiştirirsin.',
       },
     ],
     troubleshootTitle: 'Kart görünmüyorsa',
     troubleshoot: [
       'Bir şarkı çalıyor olmalı. Varsayılan olarak müzik durunca kart gizlenir ("Duraklayınca gizle").',
       'Sohbet/Müzik sekmesinde "Spotify istek sınırına takıldı (429)" yazıyorsa Spotify geçici olarak sınırlamıştır; süre dolunca kart kendiliğinden döner.',
-      'OBS adresi Yayın Yönetim Aracı açıkken çalışır; uygulamayı kapattıysan kart da kaybolur.',
+      'OBS adresi AxthrowA Studio açıkken çalışır; uygulamayı kapattıysan kart da kaybolur.',
       'Görünüm değiştirdin ama OBS\'te eski görünüyorsa OBS\'te kaynağa sağ tıkla → Yenile.',
     ],
     obsAddress: 'OBS adresi',

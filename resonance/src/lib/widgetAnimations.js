@@ -13,6 +13,10 @@ const STATES = {
   'swing-right': { opacity: 0, rotate: 14, x: OFFSET },
   'tilt-right': { opacity: 0, rotate: 10 },
   'tilt-left': { opacity: 0, rotate: -10 },
+  blur: { opacity: 0, filter: 'blur(14px)' },
+  pop: { opacity: 0, scale: 0.4 },
+  drop: { opacity: 0, y: -OFFSET * 3 },
+  rise: { opacity: 0, y: OFFSET * 3 },
 }
 
 const REST = { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }
@@ -30,6 +34,10 @@ export const REVEAL_OPTIONS = [
   { value: 'swing-right', label: 'Swing Right' },
   { value: 'tilt-right', label: 'Tilt Right' },
   { value: 'tilt-left', label: 'Tilt Left' },
+  { value: 'blur', label: 'Blur' },
+  { value: 'pop', label: 'Pop' },
+  { value: 'drop', label: 'Drop' },
+  { value: 'rise', label: 'Rise' },
 ]
 
 /**
@@ -45,7 +53,8 @@ export function getAnimationVariants(revealKey, exitKey) {
   const exitTo = STATES[exitKey] || STATES.fade
   return {
     initial: { ...REST, ...revealFrom },
-    animate: { ...REST },
+    // Bulanıktan netleşme hedefi açıkça yazılmalı: filtre REST'te yok
+    animate: revealKey === 'blur' ? { ...REST, filter: 'blur(0px)' } : { ...REST },
     exit: { ...exitTo },
     transition: { type: 'spring', stiffness: 280, damping: 26 },
     exitTransition: { duration: 0.32, ease: 'easeIn' },

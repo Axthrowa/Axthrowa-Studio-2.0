@@ -7,7 +7,7 @@ echo.
 echo Uygulama:  http://127.0.0.1:8843/resonance/
 echo Overlay:   http://127.0.0.1:8843/resonance/overlay
 echo.
-echo Once YayinYonetimAraci.exe / Baslat.bat acik olmali.
+echo Once AxthrowAStudio.exe / Baslat.bat acik olmali.
 echo Spotify redirect URI: http://127.0.0.1:8843/api/player/spotify/callback
 echo.
 start "" "http://127.0.0.1:8843/resonance/"

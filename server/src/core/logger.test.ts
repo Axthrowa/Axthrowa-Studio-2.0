@@ -1,5 +1,5 @@
 /**
- * StreamAxT — günlük sır maskeleme testleri (B5)
+ * AxBoT — günlük sır maskeleme testleri (B5)
  * Developed by AxthrowA
  */
 import { afterEach, describe, it, expect, vi } from 'vitest';

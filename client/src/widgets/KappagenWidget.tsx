@@ -1,9 +1,10 @@
 /**
- * StreamAxT — Kappagen / Ekranda Emojiler overlay'i
+ * AxBoT — Kappagen / Ekranda Emojiler overlay'i
  * Developed by AxthrowA
  *
  * Sunucu sohbetteki emote'ları (Kick, 7TV, emoji) `kappagen` olayıyla yollar;
- * burada ekranda uçarlar. `!kappagen` patlaması ortadan dağılır. Aynı anda
+ * burada ekranın rastgele bir kenarından girip başka bir kenarından çıkarlar.
+ * `!kappagen` patlaması ortadan dağılır. Aynı anda
  * ekrandaki emote sayısı sınırlıdır (OBS'i yormasın).
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -19,6 +20,7 @@ interface Parca {
 
 interface Ucan {
   id: number;
+  patlama: boolean;
   parca: Parca;
   x: number;
   y: number;
@@ -33,6 +35,19 @@ interface Ucan {
 export function guvenliGorsel(url?: string): string | undefined {
   if (!url) return undefined;
   return /^https:\/\/(files\.kick\.com\/emotes\/\d+\/fullsize|cdn\.7tv\.app\/emote\/[A-Za-z0-9]+\/\dx\.webp)$/.test(url) ? url : undefined;
+}
+
+/** Rastgele bir kenardan giriş, başka bir kenardan çıkış; konumlar % (ekran dışında başlar ve biter) */
+export function ucusRotasi(r: () => number = Math.random) {
+  const kenarNoktasi = (kenar: number) => {
+    const u = 5 + r() * 90;
+    return kenar === 0 ? { x: u, y: -12 } : kenar === 1 ? { x: 112, y: u } : kenar === 2 ? { x: u, y: 112 } : { x: -12, y: u };
+  };
+  const giris = Math.floor(r() * 4) % 4;
+  const cikis = (giris + 1 + (Math.floor(r() * 3) % 3)) % 4;
+  const a = kenarNoktasi(giris);
+  const b = kenarNoktasi(cikis);
+  return { x: a.x, y: a.y, dx: b.x - a.x, dy: b.y - a.y };
 }
 
 let sayac = 0;
@@ -53,13 +68,15 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
         for (let i = 0; i < kopya; i++) {
           const aci = Math.random() * Math.PI * 2;
           const hiz = 25 + Math.random() * 30;
+          const rota = ucusRotasi();
           yeni.push({
             id: ++sayac,
             parca: { ad: String(p.ad || '').slice(0, 60), url: guvenliGorsel(p.url) },
-            x: patlama ? 50 : 5 + Math.random() * 90,
-            y: patlama ? 50 : 100,
-            dx: patlama ? Math.cos(aci) * hiz : (Math.random() - 0.5) * 20,
-            dy: patlama ? Math.sin(aci) * hiz : -(60 + Math.random() * 40),
+            patlama,
+            x: patlama ? 50 : rota.x,
+            y: patlama ? 50 : rota.y,
+            dx: patlama ? Math.cos(aci) * hiz : rota.dx,
+            dy: patlama ? Math.sin(aci) * hiz : rota.dy,
             donus: (Math.random() - 0.5) * 540,
             sure: Math.max(800, a.durationMs) * (0.8 + Math.random() * 0.4),
             boyut: a.size * (patlama ? 1.2 : 0.8 + Math.random() * 0.4)
@@ -82,11 +99,8 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
         return;
       }
       if (m?.type === 'kappagen' && Array.isArray(m.emotes)) {
-        if (!m.patlama && !ayar.current.fromChat) return;
+        if (!m.patlama && !m.test && !ayar.current.fromChat) return;
         ekle(m.emotes.slice(0, 20), Boolean(m.patlama));
-      } else if (m?.type === 'emote_used' && m.emote) {
-        // Overlay Stüdyo "Test" düğmesi
-        ekle([{ ad: String(m.emote) }], true);
       }
     };
     return () => ws.close();
@@ -95,7 +109,7 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
       <style>{`@keyframes axt-kappagen { from { transform: translate(-50%,-50%) translate(0,0) rotate(0deg); opacity: 1 }
-        85% { opacity: 1 } to { transform: translate(-50%,-50%) translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0 } }`}</style>
+        85% { opacity: 1 } to { transform: translate(-50%,-50%) translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: var(--son) } }`}</style>
       {ucanlar.map((u) => (
         <div
           key={u.id}
@@ -109,7 +123,8 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
               fontSize: u.boyut * 0.8,
               lineHeight: `${u.boyut}px`,
               textAlign: 'center',
-              animation: `axt-kappagen ${u.sure}ms ease-out forwards`,
+              animation: `axt-kappagen ${u.sure}ms ${u.patlama ? 'ease-out' : 'linear'} forwards`,
+              '--son': u.patlama ? 0 : 1,
               '--dx': `${u.dx}vw`,
               '--dy': `${u.dy}vh`,
               '--rot': `${s.spin ? u.donus : 0}deg`,

@@ -1,10 +1,10 @@
 /**
- * StreamAxT — "Şu An Çalan" = Resonance müzik çaları overlay'i
+ * AxBoT — "Şu An Çalan" = Resonance müzik çaları overlay'i
  * Developed by AxthrowA
  *
  * Eski "Şu An Çalan" kartı yalnız şarkı isteği kuyruğunu gösteriyordu.
  * Yerini Resonance aldı: Spotify / YouTube Music'te GERÇEKTEN çalan parça,
- * kapak, ilerleme ve Resonance'ta seçilen tema (StreamAxT /resonance/).
+ * kapak, ilerleme ve Resonance'ta seçilen tema (AxBoT /resonance/).
  * Eski /widgets/now-playing OBS adresi de bunu gösterir (kaynaklar bozulmasın).
  */
 export function ResonanceWidget({ embedded = false }: { embedded?: boolean; previewMode?: boolean }) {
@@ -12,6 +12,7 @@ export function ResonanceWidget({ embedded = false }: { embedded?: boolean; prev
     <iframe
       title="Resonance — Şu An Çalan"
       src="/resonance/overlay"
+      scrolling="no"
       style={{
         border: 0,
         width: embedded ? '100%' : '100vw',

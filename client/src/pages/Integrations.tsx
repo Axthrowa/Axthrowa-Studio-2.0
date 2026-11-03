@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Entegrasyonlar
+ * AxBoT — Entegrasyonlar
  * Developed by AxthrowA
  *
  * Üç iş bir arada: dışarı duyuru, dışarıdan içe aktarma, yedek alma.
@@ -391,7 +391,7 @@ function YedekPaneli() {
       const url = URL.createObjectURL(new Blob([JSON.stringify(yedek, null, 2)], { type: 'application/json' }));
       const a = indirBag.current!;
       a.href = url;
-      a.download = `streamaxt-uyarilar-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `axbot-uyarilar-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       const medyaSayisi = Array.isArray(yedek.medya) ? yedek.medya.length : 0;

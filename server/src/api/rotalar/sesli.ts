@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Sesli komutlar
+ * AxBoT API — Sesli komutlar
  * Developed by AxthrowA
  *
  * Yazma uçları (komut çalıştırma dahil) genel köken denetiminden geçer (index.ts): yalnız bu panel ve yerel

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — tekrarlanan mesaj koruması testleri (B9)
+ * AxBoT — tekrarlanan mesaj koruması testleri (B9)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

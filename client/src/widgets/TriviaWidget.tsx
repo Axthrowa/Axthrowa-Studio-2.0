@@ -1,3 +1,4 @@
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { TRIVIA_DEFAULTS } from '../lib/widget-defaults.js';
@@ -463,7 +464,8 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
           background: rgbaYap(ayar.cardColor, ayar.cardOpacity),
           borderColor: rgbaYap(ayar.borderColor, ayar.borderOpacity),
           borderRadius: Number(ayar.radius) || 24,
-          boxShadow: `0 20px 60px ${rgbaYap(ayar.shadowColor, ayar.shadowOpacity)}`
+          boxShadow: `0 20px 60px ${rgbaYap(ayar.shadowColor, ayar.shadowOpacity)}`,
+          ...kutuTasarimi(ayar)
         }}
       >
         

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — widget tema kütüphanesi
+ * AxBoT — widget tema kütüphanesi
  * Developed by AxthrowA
  *
  * BOTRIX_GAP_ANALYSIS §8'deki ana örüntü şuydu: *ayar sayısında biz öndeyiz,
@@ -58,6 +58,16 @@ function tema(
  * `radius`, `bgOpacity`); bir widget o anahtarı tanımıyorsa yok sayılır.
  */
 export const GENEL_TEMALAR: TemaTanimi[] = [
+  tema('kutu_sivicam', 'Sıvı Cam', { kabuk: 'sivicam', bgColor: '#ffffff', bgOpacity: 0.1, accentColor: P.beyaz, textColor: P.beyaz }, { arka: '#ffffff', vurgu: P.beyaz, metin: P.beyaz }),
+  tema('kutu_pencere', 'Eski Pencere', { kabuk: 'pencere', bgColor: '#c0c0c0', bgOpacity: 1, accentColor: '#000080', textColor: '#000000' }, { arka: '#c0c0c0', vurgu: '#000080', metin: '#000000' }),
+  tema('kutu_gameboy', 'El Konsolu', { kabuk: 'gameboy', bgColor: '#9bbc0f', bgOpacity: 1, accentColor: '#306230', textColor: '#0f380f' }, { arka: '#9bbc0f', vurgu: '#306230', metin: '#0f380f' }),
+  tema('kutu_not', 'Yapışkan Not', { kabuk: 'yapiskan', bgColor: '#fde68a', bgOpacity: 1, accentColor: '#92400e', textColor: '#3f2d06' }, { arka: '#fde68a', vurgu: '#92400e', metin: '#3f2d06' }),
+  tema('kutu_parsomen', 'Parşömen', { kabuk: 'parsomen', bgColor: '#e8d3a6', bgOpacity: 1, accentColor: '#8a6a3b', textColor: '#3b2a14' }, { arka: '#e8d3a6', vurgu: '#8a6a3b', metin: '#3b2a14' }),
+  tema('kutu_cizgi', 'Çizgi Roman Kutu', { kabuk: 'cizgiroman', bgColor: '#ffffff', bgOpacity: 1, accentColor: '#111111', textColor: '#111111' }, { arka: '#ffffff', vurgu: '#111111', metin: '#111111' }),
+  tema('kutu_gecedalga', 'Gece Dalgası', { kabuk: 'gecedalga', bgColor: '#2b0a4d', bgOpacity: 0.95, accentColor: '#ff8ad8', textColor: P.beyaz }, { arka: '#2b0a4d', vurgu: '#ff8ad8', metin: P.beyaz }),
+  tema('kutu_altin', 'Altın Kenar', { kabuk: 'altin', bgColor: '#14100a', bgOpacity: 0.95, accentColor: '#d4a843', textColor: '#f5e6c4' }, { arka: '#14100a', vurgu: '#d4a843', metin: '#f5e6c4' }),
+  tema('kutu_koseli', 'Köşeli Yayın', { kabuk: 'koseli', bgColor: '#0b0f17', bgOpacity: 0.8, accentColor: P.turkuaz, textColor: P.beyaz }, { arka: '#0b0f17', vurgu: P.turkuaz, metin: P.beyaz }),
+  tema('kutu_kupon', 'Kupon', { kabuk: 'kupon', bgColor: '#111827', bgOpacity: 0.9, accentColor: P.pembe, textColor: P.beyaz }, { arka: '#111827', vurgu: P.pembe, metin: P.beyaz }),
   tema(
     'klasik',
     'Klasik',
@@ -362,6 +372,17 @@ const HEDEF_TEMALARI: TemaTanimi[] = [
   hedefTema('h-yilbasi', '🎄 Yılbaşı', '#b91c1c', '#16a34a', '🎄', { fontFamily: 'Montserrat', barBorderColor: '#fde68a', barStyle: 'striped' }),
   hedefTema('h-altin', '🏆 Altın Kupa', '#a16207', '#fde047', '🏆', { fontFamily: 'Oswald', barBorderColor: '#fef08a', barStyle: 'glossy' }),
   hedefTema('h-kick', '💚 Yeşil Neon', '#14532d', '#53fc18', '💚', { fontFamily: 'Russo One', barBorderColor: '#53fc18' }),
+  hedefTema('h-batarya', '🔋 Batarya', '#16a34a', '#a3e635', '🔋', { fontFamily: 'Orbitron', barStyle: 'segment', barRadius: 6, barBorderColor: '#d9f99d', barHeight: 28 }),
+  hedefTema('h-can', '❤️ Can Barı', '#b91c1c', '#f87171', '❤️', { fontFamily: 'Press Start 2P', fontSize: 12, barStyle: 'segment', barRadius: 0, barBorderColor: '#fecaca', barHeight: 28 }),
+  hedefTema('h-mana', '🔮 Mana', '#1d4ed8', '#a78bfa', '🔮', { fontFamily: 'Cinzel', barStyle: 'parilti', barBorderColor: '#c7d2fe' }),
+  hedefTema('h-galaksi', '🌌 Galaksi', '#4c1d95', '#22d3ee', '🌌', { fontFamily: 'Audiowide', barStyle: 'parilti', barBorderColor: '#a5f3fc' }),
+  hedefTema('h-sakura', '🌸 Sakura', '#f472b6', '#fbcfe8', '🌸', { fontFamily: 'Nunito', barStyle: 'parilti', barBorderColor: '#ffffff', barBackground: '#500724' }),
+  hedefTema('h-matrix', '💻 Matrix', '#003b00', '#00ff41', '💻', { fontFamily: 'VT323', fontSize: 22, barStyle: 'segment', barRadius: 0, barBorderColor: '#00ff41', barBackground: '#000000', fontColor: '#00ff41' }),
+  hedefTema('h-vapor', '🌴 Vaporwave', '#ff71ce', '#01cdfe', '🌴', { fontFamily: 'Audiowide', barStyle: 'glossy', barBorderColor: '#fffb96', barBackground: '#2d1b4e' }),
+  hedefTema('h-bakir', '🥉 Bakır', '#7c3f1d', '#e0a070', '🥉', { fontFamily: 'Oswald', barStyle: 'glossy', barRadius: 6, barBorderColor: '#f3c9a5' }),
+  hedefTema('h-cikolata', '🍫 Çikolata', '#3f2412', '#a0693d', '🍫', { fontFamily: 'Baloo 2', barStyle: 'segment', barRadius: 8, barBorderColor: '#e7c9a9', barHeight: 28 }),
+  hedefTema('h-tropik', '🍹 Tropik', '#f97316', '#2dd4bf', '🍹', { fontFamily: 'Kalam', barBorderColor: '#fef3c7' }),
+  hedefTema('h-monokrom', '⬛ Siyah Beyaz', '#ffffff', '#a3a3a3', '', { fontFamily: 'Archivo Black', barRadius: 0, barBorderColor: '#ffffff', barBackground: '#000000', barBorderWidth: 2 }),
   hedefTema('h-sade', 'Sade (okunaklı)', '#10b981', '#10b981', '', { barStyle: 'flat', barBorderWidth: 0, barHeight: 20, fontFamily: 'Inter', fontSize: 16, letterSpacing: 1, backgroundOpacity: 0.85 })
 ];
 
@@ -393,11 +414,48 @@ const SAYAC_TEMALARI: TemaTanimi[] = [
   sayacTema('s-gala', '🎬 Sinema', 'flip', '#e6b422', '#991b1b', '#2a0505', '🎬', { fontFamily: 'Bebas Neue', timeFontFamily: 'Bebas Neue', timeFontSize: 64 }),
   sayacTema('s-cizgiroman', '💥 Çizgi Roman', 'card', '#facc15', '#dc2626', '#1e3a8a', '💥', { fontFamily: 'Bangers', timeFontFamily: 'Bangers', timeFontSize: 64 }),
   sayacTema('s-anime', '🌸 Anime', 'pill', '#ff6ec7', '#7df9ff', '#1a0f2e', '🌸', { fontFamily: 'Poppins', timeFontFamily: 'Poppins' }),
-  sayacTema('s-yilbasi', '🎄 Yılbaşı', 'card', '#fde68a', '#16a34a', '#7f1d1d', '🎄', { fontFamily: 'Montserrat', timeFontFamily: 'Oswald' })
+  sayacTema('s-yilbasi', '🎄 Yılbaşı', 'card', '#fde68a', '#16a34a', '#7f1d1d', '🎄', { fontFamily: 'Montserrat', timeFontFamily: 'Oswald' }),
+  sayacTema('s-cam', '🫧 Buzlu Cam', 'cam', '#e0f2fe', '#7dd3fc', '#0f172a', '🫧', { timeFontFamily: 'Jost', radius: 20 }),
+  sayacTema('s-plaka', '📺 Yayın Plakası', 'plaka', '#ef4444', '#f97316', '#111827', '🔴', { fontFamily: 'Oswald', timeFontFamily: 'Oswald', timeFontSize: 60 }),
+  sayacTema('s-serit', '🎗️ Şerit', 'serit', '#a855f7', '#22d3ee', '#0b0420', '⏳', { fontFamily: 'Montserrat', timeFontFamily: 'Orbitron', timeFontSize: 48 }),
+  sayacTema('s-yaris', '🏁 Yarış Pisti', 'serit', '#dc2626', '#f5f5f5', '#111111', '🏁', { fontFamily: 'Russo One', timeFontFamily: 'Russo One', timeFontSize: 48 }),
+  sayacTema('s-matrix', '💻 Matrix', 'digital', '#00ff41', '#003b00', '#000000', '💻', { fontFamily: 'VT323', timeFontFamily: 'VT323', timeFontSize: 68, radius: 0 }),
+  sayacTema('s-altin', '🏆 Altın Kupa', 'plaka', '#fde047', '#a16207', '#1c1403', '🏆', { fontFamily: 'Cinzel', timeFontFamily: 'Cinzel' }),
+  sayacTema('s-kick', '💚 Yeşil Neon', 'neon', '#53fc18', '#14532d', '#050f02', '💚', { fontFamily: 'Russo One', timeFontFamily: 'Russo One' }),
+  sayacTema('s-okyanus', '🐠 Okyanus', 'cam', '#2dd4bf', '#0369a1', '#042f4b', '🐠', { fontFamily: 'Nunito', timeFontFamily: 'Nunito', radius: 24 }),
+  sayacTema('s-sakura', '🌸 Sakura', 'cam', '#fbcfe8', '#f472b6', '#500724', '🌸', { fontFamily: 'Nunito', timeFontFamily: 'Baloo 2', radius: 24 }),
+  sayacTema('s-kagit', '📄 Kâğıt', 'plaka', '#b91c1c', '#7c2d12', '#fef3c7', '📄', { fontFamily: 'Special Elite', timeFontFamily: 'Special Elite', textColor: '#1f2937' }),
+  sayacTema('s-lav', '🌋 Lav', 'flip', '#fb923c', '#7c2d12', '#1c0a02', '🌋', { fontFamily: 'Anton', timeFontFamily: 'Anton', timeFontSize: 60 })
 ];
 
 /** Widget'a özel ek temalar. */
+/** Tahtın Kralı temaları: görünüm, renkler ve yazı tipi birlikte */
+function kralTema(id: string, etiket: string, gorunum: string, vurgu: string, arka: string, metin: string, ek: Record<string, unknown> = {}): TemaTanimi {
+  return tema(
+    id,
+    etiket,
+    { theme: gorunum, accentColor: vurgu, borderColor: vurgu, bgColor: arka, bgOpacity: 0.9, textColor: metin, ...ek },
+    { arka, vurgu, metin, kenar: vurgu }
+  );
+}
+
+const KRAL_TEMALARI: TemaTanimi[] = [
+  kralTema('k-taht', '👑 Taht Odası', 'taht', '#d4af37', '#2a0f12', '#fff7e0', { fontFamily: 'Cinzel' }),
+  kralTema('k-altin', '🏆 Altın Levha', 'altin', '#7c4a03', '#d4af37', '#2b1a00', { fontFamily: 'Cinzel', bgOpacity: 1 }),
+  kralTema('k-gumus', '🥈 Gümüş', 'plate', '#475569', '#e5e7eb', '#111827', { fontFamily: 'Oswald', bgOpacity: 0.95 }),
+  kralTema('k-alev', '🔥 Alev Kralı', 'alev', '#f97316', '#1c0a02', '#fff7ed', { fontFamily: 'Anton' }),
+  kralTema('k-buz', '❄️ Buz Kralı', 'buz', '#7dd3fc', '#082f49', '#f0f9ff', { fontFamily: 'Jost' }),
+  kralTema('k-zehir', '🐍 Zehir', 'neon', '#84cc16', '#0a1402', '#ecfccb', { fontFamily: 'Russo One' }),
+  kralTema('k-gece', '🌙 Gece Sarayı', 'glass', '#c4b5fd', '#1e1b4b', '#ffffff', { fontFamily: 'Montserrat' }),
+  kralTema('k-kick', '💚 Yeşil Neon', 'neon', '#53fc18', '#050f02', '#ffffff', { fontFamily: 'Russo One' }),
+  kralTema('k-arcade', '👾 Retro Arcade', 'kart', '#ff2a6d', '#0d0221', '#00f0ff', { fontFamily: 'Press Start 2P', fontSize: 13, radius: 0 }),
+  kralTema('k-cizgi', '💥 Çizgi Roman', 'kart', '#dc2626', '#facc15', '#111827', { fontFamily: 'Bangers', fontSize: 24, radius: 4, bgOpacity: 1 }),
+  kralTema('k-siberpunk', '⚡ Siberpunk', 'serit', '#fcee0a', '#0a0014', '#ffffff', { fontFamily: 'Audiowide', radius: 2 }),
+  kralTema('k-sade', 'Yalnız yazı', 'minimal', '#fbbf24', '#000000', '#ffffff', { fontFamily: 'Plus Jakarta Sans' })
+];
+
 export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
+  king: KRAL_TEMALARI,
   subathon: SAYAC_TEMALARI,
   'donation-goal': HEDEF_TEMALARI,
   'follower-goal': HEDEF_TEMALARI,
@@ -443,6 +501,18 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     )
   ],
   'chat-overlay': [
+    tema('sohbetseffaf', 'Saf Şeffaf', { chatStyle: 'klasik', messageBgTransparent: true, transparentBg: true, textShadow: true, outlineEnabled: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz }),
+    tema('pencere95', 'Eski Pencere', { chatStyle: 'pencere', messageBgTransparent: false, textShadow: false, fontFamily: 'Silkscreen' }, { arka: '#c0c0c0', vurgu: '#000080', metin: '#000000' }),
+    tema('sivicam', 'Sıvı Cam', { chatStyle: 'sivicam', messageBgTransparent: false, textColor: P.beyaz, textShadow: true, fontFamily: 'Outfit' }, { arka: 'rgba(255,255,255,.14)', vurgu: P.beyaz, metin: P.beyaz }),
+    tema('komutsatiri', 'Komut Satırı', { chatStyle: 'terminal', messageBgTransparent: false, textShadow: false, showAvatars: false, showBadges: false }, { arka: '#020b05', vurgu: '#22c55e', metin: '#86efac', yazi: 'Fira Code' }),
+    tema('notkagidi', 'Not Kağıdı', { chatStyle: 'yapiskan', messageBgTransparent: false, textShadow: false, fontFamily: 'Kalam' }, { arka: '#fde68a', vurgu: '#92400e', metin: '#3f2d06', yazi: 'Kalam' }),
+    tema('oyundiyalogu', 'Oyun Diyaloğu', { chatStyle: 'rpg', messageBgTransparent: false, textColor: P.beyaz, textShadow: false, fontFamily: 'Pixelify Sans' }, { arka: '#0f1535', vurgu: '#fde68a', metin: P.beyaz, yazi: 'Pixelify Sans' }),
+    tema('cizgibalon', 'Çizgi Balon', { chatStyle: 'cizgiroman', messageBgTransparent: false, textShadow: false, fontFamily: 'Bangers' }, { arka: '#ffffff', vurgu: '#111111', metin: '#111111', yazi: 'Bangers' }),
+    tema('yayinbandi', 'Yayın Bandı', { chatStyle: 'yayinbandi', messageBgTransparent: false, platformColors: true, messageBgColor: '#0b0f17', messageBgOpacity: 0.92, textColor: P.beyaz, textShadow: false, fontFamily: 'Barlow Condensed' }, { arka: '#0b0f17', vurgu: P.kick, metin: P.beyaz, yazi: 'Barlow Condensed' }),
+    tema('renkgecisi', 'Renk Geçişi', { chatStyle: 'gecis', messageBgTransparent: false, borderRadius: 14, textColor: P.beyaz, textShadow: true, fontFamily: 'Poppins' }, { arka: 'linear-gradient(100deg,#a78bfa,transparent)', vurgu: P.mor, metin: P.beyaz }),
+    tema('altcizgi', 'Alt Çizgi', { chatStyle: 'altcizgi', messageBgTransparent: true, textColor: P.beyaz, textShadow: true, fontFamily: 'Jost' }, { arka: 'transparent', vurgu: P.pembe, metin: P.beyaz }),
+    tema('buyukyazi', 'Büyük Okunur', { chatStyle: 'klasik', messageBgTransparent: true, fontSize: 30, fontWeight: 800, outlineEnabled: true, outlineWidth: 1, outlineColor: '#000000', textShadow: true, fontFamily: 'Rubik', showTimestamp: false }, { arka: 'transparent', vurgu: P.amber, metin: P.beyaz, yazi: 'Rubik' }),
+    tema('yayinci', 'Temiz Satır', { chatStyle: 'klasik', messageBgTransparent: true, nameOnOwnLine: true, fontFamily: 'Open Sans', textShadow: true, showTimestamp: false, showBadges: true }, { arka: 'transparent', vurgu: P.turkuaz, metin: P.beyaz, yazi: 'Open Sans' }),
     tema('baloncuk', 'Baloncuk', { messageBubbles: true, messageBgColor: '#1e293b', messageBgOpacity: 0.9, borderRadius: 22 }, { arka: '#1e293b', vurgu: P.turkuaz, metin: P.beyaz }),
     tema('yanmenu', 'Yan Şerit', { messageBubbles: true, messageBgColor: P.siyah, messageBgOpacity: 0.55, borderRadius: 4 }, { arka: 'rgba(0,0,0,.55)', vurgu: P.mor, metin: P.beyaz }),
     tema('seffaf', 'Tamamen Şeffaf', { transparentBg: true, messageBgOpacity: 0, textShadow: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz }),
@@ -519,6 +589,8 @@ export function temayiUygula(
   const izinli = new Set(tanimliAnahtarlar);
   const yeni = { ...mevcut };
   const gorunumKondu = new Set<string>();
+  // Ortak kutu tasarımı yalnız onu seçen temada kalır
+  if (izinli.has('kabuk')) yeni.kabuk = '';
   for (const [k, v] of Object.entries(tema.degerler)) {
     if (gecerli && !gecerli(k, v)) continue;
     if (izinli.has(k) && GORUNUM_ANAHTARLARI.includes(k)) gorunumKondu.add(k);

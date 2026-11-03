@@ -1,5 +1,5 @@
 /**
- * StreamAxT — uyarı yedekleme (dışa/içe aktarma)
+ * AxBoT — uyarı yedekleme (dışa/içe aktarma)
  * Developed by AxthrowA
  *
  * BotRix'te uyarı ayarları bir hesaba bağlı; makine değiştirince panelden
@@ -73,7 +73,7 @@ export interface GomuluMedya {
 export interface UyariYedegi {
   surum: number;
   olusturma: number;
-  uygulama: 'StreamAxT';
+  uygulama: 'AxBoT';
   presets: Array<Record<string, unknown>>;
   varyantlar: Array<Record<string, unknown>>;
   gelismis: Record<string, unknown>;
@@ -124,7 +124,8 @@ function karsiliksizMedya(url: unknown): boolean {
 /** Gelen JSON gerçekten bizim yedeğimiz mi? */
 export function yedekGecerliMi(veri: any): { ok: true } | { ok: false; hata: string } {
   if (!veri || typeof veri !== 'object') return { ok: false, hata: 'Dosya okunamadı (JSON değil).' };
-  if (veri.uygulama !== 'StreamAxT') return { ok: false, hata: 'Bu dosya bir StreamAxT uyarı yedeği değil.' };
+  // Yeniden adlandırmadan önce alınan yedekler de açılır
+  if (veri.uygulama !== 'AxBoT' && (veri.uygulama as string) !== 'StreamAxT') return { ok: false, hata: 'Bu dosya bir AxBoT uyarı yedeği değil.' };
   if (Number(veri.surum) > YEDEK_SURUMU) {
     return { ok: false, hata: `Yedek sürümü ${veri.surum}, bu sürüm en fazla ${YEDEK_SURUMU} okuyabiliyor.` };
   }
@@ -158,7 +159,7 @@ class UyariYedegiDeposu {
     const yedek: UyariYedegi & { medyaUyarisi?: string } = {
       surum: YEDEK_SURUMU,
       olusturma: Date.now(),
-      uygulama: 'StreamAxT',
+      uygulama: 'AxBoT',
       presets,
       varyantlar,
       gelismis

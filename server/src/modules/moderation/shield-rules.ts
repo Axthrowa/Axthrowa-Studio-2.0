@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Kalkan modu kuralları (saf)
+ * AxBoT — Kalkan modu kuralları (saf)
  * Developed by AxthrowA
  *
  * 4. tur denetimi (H-KALKAN): ayarlardaki büyük harf / emoji / hesap yaşı /

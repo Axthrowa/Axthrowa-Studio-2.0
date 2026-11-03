@@ -1,5 +1,5 @@
 /**
- * StreamAxT — durum değişince panele anında gönderme
+ * AxBoT — durum değişince panele anında gönderme
  * Developed by AxthrowA
  *
  * Etkileşim ekranı (tahmin / kuyruk / puan düşüşü) durumu 2-4 sn'de bir

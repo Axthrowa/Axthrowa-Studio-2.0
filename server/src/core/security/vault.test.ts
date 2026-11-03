@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sır kasası testleri (S6)
+ * AxBoT — sır kasası testleri (S6)
  * Developed by AxthrowA
  */
 import { describe, it, expect, afterEach } from 'vitest';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Gelişmiş Bot Ayarları
+ * AxBoT — Gelişmiş Bot Ayarları
  * Developed by AxthrowA
  *
  * Bu turda sunucuya eklenen sistemlerin panel karşılığı. Hepsi API uçları
@@ -11,7 +11,7 @@
  *   • Değişken kataloğu            (/api/variables)
  */
 import { useEffect, useState } from 'react';
-import { Save, RotateCcw, Play, Search } from 'lucide-react';
+import { Save, RotateCcw, Play, Search, Trash2 } from 'lucide-react';
 import {
   Alan,
   AlanMetni,
@@ -27,10 +27,11 @@ import {
   useToast
 } from '../ui/index.js';
 
-type Sekme = 'levels' | 'tts' | 'chatAlerts' | 'moderation' | 'variables';
+type Sekme = 'levels' | 'stats' | 'tts' | 'chatAlerts' | 'moderation' | 'variables';
 
 const SEKMELER: Array<{ id: Sekme; etiket: string }> = [
   { id: 'levels', etiket: 'Seviye / XP' },
+  { id: 'stats', etiket: 'İstatistikler' },
   { id: 'tts', etiket: 'TTS Filtreleri' },
   { id: 'chatAlerts', etiket: 'Sohbet Uyarıları' },
   { id: 'moderation', etiket: 'Moderasyon Eylemleri' },
@@ -177,6 +178,63 @@ function SeviyePaneli() {
 }
 
 // ------------------------------------------------------------------- TTS ----
+
+function IstatistikPaneli() {
+  const toast = useToast();
+  const { sor, eleman } = useOnay();
+  const [gruplar, setGruplar] = useState<Array<{ id: string; ad: string; aciklama: string; kayit: number }> | null>(null);
+  const [hata, setHata] = useState('');
+
+  const yukle = () =>
+    al<NonNullable<typeof gruplar>>('/api/istatistikler')
+      .then((g) => {
+        setGruplar(g);
+        setHata('');
+      })
+      .catch((e) => setHata(String(e?.message || e)));
+
+  useEffect(() => {
+    void yukle();
+  }, []);
+
+  if (hata) return <HataDurumu mesaj={hata} yenidenDene={yukle} />;
+  if (!gruplar) return <Iskelet satir={6} />;
+
+  return (
+    <Kart baslik="Tutulan istatistikler" aciklama="Her satır ayrı silinir. Silinen veri geri gelmez.">
+      {eleman}
+      <div className="space-y-2">
+        {gruplar.map((g) => (
+          <div key={g.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white">
+                {g.ad} <span className="ml-1 font-mono text-xs font-normal text-gray-400">{g.kayit} kayıt</span>
+              </p>
+              <p className="text-xs text-gray-400">{g.aciklama}</p>
+            </div>
+            <Buton
+              ton="tehlike"
+              disabled={g.kayit === 0}
+              ikon={<Trash2 className="w-3.5 h-3.5" />}
+              onClick={() =>
+                sor(`${g.ad} silinsin mi?`, `${g.aciklama} Bu işlem geri alınamaz.`, () =>
+                  yolla<{ gruplar: NonNullable<typeof gruplar> }>('/api/istatistikler/sil', { grup: g.id })
+                    .then((r) => {
+                      setGruplar(r.gruplar);
+                      toast(`${g.ad} silindi.`, 'basari');
+                    })
+                    .catch(() => toast('Silinemedi.', 'hata'))
+                )
+              }
+            >
+              Sil
+            </Buton>
+          </div>
+        ))}
+      </div>
+    </Kart>
+  );
+}
 
 function TtsPaneli() {
   const toast = useToast();
@@ -712,6 +770,7 @@ export function BotAdvanced() {
       </div>
 
       {sekme === 'levels' && <SeviyePaneli />}
+      {sekme === 'stats' && <IstatistikPaneli />}
       {sekme === 'tts' && <TtsPaneli />}
       {sekme === 'chatAlerts' && <SohbetUyariPaneli />}
       {sekme === 'moderation' && <ModerasyonPaneli />}

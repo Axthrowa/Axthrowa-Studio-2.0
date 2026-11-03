@@ -1,5 +1,5 @@
 /**
- * StreamAxT Sadakat Mağazası bildirimi
+ * AxBoT Sadakat Mağazası bildirimi
  * Developed by AxthrowA
  *
  * Panelden tema, konum, süre, konfeti, ses ve gösterilecek alanlar ayarlanır.
@@ -7,6 +7,7 @@
  * aşımları temizlenmediği için arka arkaya kullanılan iki ödül birbirinin
  * kartını erken kapatıyordu.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -135,7 +136,7 @@ export function LoyaltyStoreWidget({ embedded = false, previewMode = false }: Lo
           visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 -translate-y-6'
         } flex flex-col items-center text-center`}
         style={{
-          ...(temaStili[tema] || temaStili.card),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.card),
           borderRadius: Number(s.radius) || 24,
           padding: `${Number(s.paddingY) || 24}px ${Number(s.paddingX) || 24}px`,
           maxWidth: Number(s.maxWidth) || 448,

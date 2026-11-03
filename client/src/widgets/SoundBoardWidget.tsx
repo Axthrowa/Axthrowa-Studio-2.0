@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Ses/Video Panosu katmanı (tarayıcı kaynağı: /widgets/pano)
+ * AxBoT — Ses/Video Panosu katmanı (tarayıcı kaynağı: /widgets/pano)
  * Developed by AxthrowA
  *
  * Sunucu sıradaki isteği gönderir (`pano_oynat`); katman yayıncının kendi ses/videosunu oynatır, sesle birlikte

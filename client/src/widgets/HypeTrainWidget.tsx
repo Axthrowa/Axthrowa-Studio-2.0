@@ -1,5 +1,5 @@
 /**
- * StreamAxT Hype Treni widget
+ * AxBoT Hype Treni widget
  * Developed by AxthrowA
  *
  * Eski sürüm tamamen sahteydi: seviye ve yüzde sabit kodlanmıştı, geri sayım
@@ -15,6 +15,7 @@
  * Aşağıdaki hesap fonksiyonları sunucuyla aynı kuraldır, önizleme ve
  * geriye uyum için duruyor.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { HYPE_TRAIN_DEFAULTS } from '../lib/widget-defaults.js';
@@ -95,7 +96,7 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
 
   const kalan = aktif ? Math.max(0, Math.round((bitisAni - Date.now()) / 1000)) : 0;
 
-  if (!aktif && s.hideWhenIdle) return null;
+  if (!aktif && s.hideIdle) return null;
 
   const hedef = seviyeHedefi(seviye, Number(s.levelGoal) || 500, Number(s.levelGrowth) || 1.5);
   const yuzde = Math.min(100, Math.round((puan / Math.max(1, hedef)) * 100));
@@ -138,7 +139,7 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
       <div
         className="w-full"
         style={{
-          ...(temaStili[tema] || temaStili.classic),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic),
           borderRadius: Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           color: s.textColor

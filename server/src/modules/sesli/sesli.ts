@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Sesli komutlar hizmeti
+ * AxBoT — Sesli komutlar hizmeti
  * Developed by AxthrowA
  *
  * Konuşma tanıma tarayıcıda yerel olarak (Vosk, WASM) yapılır; ses bilgisayardan çıkmaz. Tanınan cümle bu hizmete

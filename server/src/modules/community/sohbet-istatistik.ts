@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sohbet istatistikleri: kelime bulutu, emote/kelime sayacı, en çok yazanlar
+ * AxBoT — sohbet istatistikleri: kelime bulutu, emote/kelime sayacı, en çok yazanlar
  * Developed by AxthrowA
  *
  * Yayın oturumu boyunca bellekte tutulur (bot yeniden başlayınca ya da `!chatstats sifirla`

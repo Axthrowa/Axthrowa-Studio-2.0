@@ -1,5 +1,5 @@
 /**
- * StreamAxT — değişkenler için güvenli ağ erişimi
+ * AxBoT — değişkenler için güvenli ağ erişimi
  * Developed by AxthrowA
  *
  * `fetch[...]` ve `$(urlfetch ...)` kullanıcı şablonundan gelen bir adrese
@@ -169,7 +169,7 @@ function istek(adres: string): Promise<{ durum: number; govde: string }> {
       u,
       {
         lookup: guvenliLookup as unknown as net.LookupFunction,
-        headers: { 'User-Agent': 'StreamAxT/1.0', Accept: 'text/plain, application/json, */*' },
+        headers: { 'User-Agent': 'AxBoT/1.0', Accept: 'text/plain, application/json, */*' },
         timeout: SINIR.agMs
       },
       (res) => {

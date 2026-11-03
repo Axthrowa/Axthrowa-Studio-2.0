@@ -1,5 +1,5 @@
 /**
- * StreamAxT — değişken motorunun saf yardımcıları
+ * AxBoT — değişken motorunun saf yardımcıları
  * Developed by AxthrowA
  *
  * Veritabanı veya ağ erişimi YOK. Bu sayede test edilebilirler ve

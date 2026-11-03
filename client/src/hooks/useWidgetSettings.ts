@@ -1,5 +1,5 @@
 /**
- * StreamAxT widget settings loader
+ * AxBoT widget settings loader
  * Developed by AxthrowA
  */
 import { useEffect, useMemo, useState } from 'react';

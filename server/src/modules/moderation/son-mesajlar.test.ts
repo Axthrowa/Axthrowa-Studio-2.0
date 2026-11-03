@@ -1,5 +1,5 @@
 /**
- * StreamAxT — !nuke / !vanish hedef seçimi testleri
+ * AxBoT — !nuke / !vanish hedef seçimi testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

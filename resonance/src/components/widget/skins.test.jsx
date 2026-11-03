@@ -72,8 +72,8 @@ describe('SKIN_REGISTRY bütünlüğü', () => {
     }
   })
 
-  it('yeni dört skin kayıtlı ve "yeni" etiketli', () => {
-    for (const id of ['clear', 'ring', 'aurora', 'edge']) {
+  it('yeni skinler kayıtlı ve "yeni" etiketli', () => {
+    for (const id of ['clear', 'ring', 'aurora', 'edge', 'turntable', 'cassette']) {
       expect(getSkin(id).id).toBe(id)
       expect(SKIN_REGISTRY.find((s) => s.id === id).isNew).toBe(true)
     }
@@ -86,6 +86,12 @@ describe('SKIN_REGISTRY bütünlüğü', () => {
 })
 
 describe('skinler çizilebiliyor', () => {
+  it('pikapta iğne yalnız çalarken plağın üstünde', () => {
+    const { Component } = getSkin('turntable')
+    expect(renderToStaticMarkup(<Component {...props('turntable')} />)).toContain('data-igne="plakta"')
+    expect(renderToStaticMarkup(<Component {...props('turntable', { isPlaying: false })} />)).toContain('data-igne="kalkik"')
+  })
+
   it.each(SKIN_REGISTRY.map((s) => s.id))('%s parça adını ve sanatçıyı yazar', (id) => {
     const { Component } = getSkin(id)
     const html = renderToStaticMarkup(<Component {...props(id)} />)

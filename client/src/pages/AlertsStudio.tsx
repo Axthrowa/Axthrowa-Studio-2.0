@@ -1,5 +1,5 @@
 /**
- * StreamAxT Alerts Studio
+ * AxBoT Alerts Studio
  * Developed by AxthrowA
  */
 import { useEffect, useState } from 'react';

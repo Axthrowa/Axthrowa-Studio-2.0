@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Discord duyuruları
+ * AxBoT — Discord duyuruları
  * Developed by AxthrowA
  *
  * BotRix'te `/panel/integrations` platform bağlantısı DEĞİL, Discord duyuru
@@ -76,6 +76,19 @@ class DiscordDuyurulari {
    * Duyuruyu gönderir.
    * `zorla` test düğmesi içindir: bekleme süresini atlar.
    */
+  /** Otomasyon: yayın duyurusu için girilmiş ilk geçerli webhook'a düz metin yazar; kimse etiketlenmez */
+  async metinGonder(metin: string): Promise<void> {
+    const webhook = Object.values(this.ayarOku()).find((k) => webhookGecerliMi(k.webhook))?.webhook;
+    if (!webhook) throw new Error('Discord webhook adresi girilmemiş (Bağlantılar › Discord duyuruları)');
+    const r = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: metin.slice(0, 1900), allowed_mentions: { parse: [] } }),
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!r.ok) throw new Error(`Discord yanıtı: ${r.status}`);
+  }
+
   async duyur(
     kaynak: DuyuruKaynagi,
     kanal: string,

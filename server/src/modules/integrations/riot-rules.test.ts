@@ -1,5 +1,5 @@
 /**
- * StreamAxT — League of Legends kuralları testleri
+ * AxBoT — League of Legends kuralları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

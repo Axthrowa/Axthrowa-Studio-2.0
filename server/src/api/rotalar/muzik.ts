@@ -1,9 +1,9 @@
 /**
- * StreamAxT — müzik host API'sinin StreamAxT örneği
+ * AxBoT — müzik host API'sinin AxBoT örneği
  * Developed by AxthrowA
  *
  * Uçların kendisi modules/muzik/rotalar.ts'te (bağımsız Resonance sunucusu da
- * aynısını kullanır); burada yalnız StreamAxT'in deposu ve yayınları bağlanır.
+ * aynısını kullanır); burada yalnız AxBoT'un deposu ve yayınları bağlanır.
  */
 import WebSocket from 'ws';
 import { db } from '../../db/index.js';

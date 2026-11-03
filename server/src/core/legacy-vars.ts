@@ -1,5 +1,5 @@
 /**
- * StreamAxT — eski `{user}` biçimi: izleyici değerlerinin yerleştirilmesi (saf)
+ * AxBoT — eski `{user}` biçimi: izleyici değerlerinin yerleştirilmesi (saf)
  * Developed by AxthrowA
  *
  * GÜVENLİK (4. tur): `variable-parser.ts` izleyici metnini ({query}, {user},

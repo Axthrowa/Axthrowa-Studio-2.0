@@ -14,6 +14,8 @@ import { mesajiParcala } from '../core/text.js';
 
 export interface KickChannelVerification {
   success: boolean;
+  /** Kick verilen girişi reddetti (401): kaydedilirse bot hiçbir şey yazamaz */
+  tokenGecersiz?: boolean;
   channelSlug: string;
   chatroomId?: number;
   broadcasterUserId?: number;
@@ -37,6 +39,8 @@ export class KickPlatform extends BasePlatform {
   private chatroomId: number | null = null;
   private broadcasterUserId: number | null = null;
   private botToken: string = '';
+  /** Kick girişi reddetti ve yenilenemedi: "bağlı" görünüp sessizce yazamamak yerine durumda söylenir */
+  private botGirisiGecersiz = false;
   /** Yayın kanalının kendi girişi (varsa). Moderasyon ve kanal güncellemesi bununla yapılır. */
   private kanalToken: string = '';
   private kanalBitis: number = 0;
@@ -45,6 +49,8 @@ export class KickPlatform extends BasePlatform {
   private temizlemeBekleyen: (() => void) | null = null;
   private botUserId: number | null = null;
   private botUsername: string = '';
+  /** `type: bot` ile gönderilen metinler: Kick bunları token sahibinin adıyla yansıtmayabilir. */
+  private botTuruGonderilen = new Set<string>();
   /**
    * Sohbetten öğrenilen kullanıcı adı → Kick kullanıcı kimliği.
    * Zaman aşımı için kimlik gerekir; her seferinde kanal sayfasını
@@ -64,6 +70,7 @@ export class KickPlatform extends BasePlatform {
     const channelSlug = channelRow.channel_name.trim().toLowerCase();
     this.currentChannel = channelSlug;
     this.botToken = channelRow.token || '';
+    this.botGirisiGecersiz = false;
     this.kanalToken = channelRow.kanal_token || '';
     this.kanalBitis = Number(channelRow.kanal_token_expires_at) || 0;
 
@@ -103,6 +110,7 @@ export class KickPlatform extends BasePlatform {
           if (e?.response?.status === 401) {
             console.log('[Kick] Token expired (401) on startup. Attempting auto-refresh...');
             const refreshed = await this.refreshKickToken();
+            this.botGirisiGecersiz = !refreshed;
             if (refreshed) {
               cleanToken = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
               try {
@@ -310,7 +318,8 @@ export class KickPlatform extends BasePlatform {
       // Check if message was sent by the bot itself
       const isSelf = Boolean(
         (this.botUserId && senderId === this.botUserId) ||
-        (this.botUsername && senderName.toLowerCase() === this.botUsername.toLowerCase())
+        (this.botUsername && senderName.toLowerCase() === this.botUsername.toLowerCase()) ||
+        this.botTuruGonderilen.delete(String(content).trim())
       );
 
       const identity = sender.identity || {};
@@ -470,6 +479,7 @@ export class KickPlatform extends BasePlatform {
         params.append('client_id', clientId);
         params.append('client_secret', clientSecret);
       } else {
+        console.warn('[Kick Token Refresh] Giriş yenilenemedi: yenileme anahtarı ve Client Secret yok. Platformlar > Kick ile bot hesabına yeniden giriş yapın.');
         return false;
       }
 
@@ -477,7 +487,7 @@ export class KickPlatform extends BasePlatform {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 StreamAxT/1.0'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 AxBoT/1.0'
         },
         timeout: 8000
       });
@@ -659,7 +669,7 @@ export class KickPlatform extends BasePlatform {
                 Authorization: `Bearer ${cleanToken}`,
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 StreamAxT/1.0'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 AxBoT/1.0'
               },
               timeout: 6000
             }
@@ -667,6 +677,11 @@ export class KickPlatform extends BasePlatform {
 
           if (officialRes.status === 200 || officialRes.status === 201) {
             console.log(`[Kick] Chat message sent successfully via Official API (v1, type: ${msgType})`);
+            if (msgType === 'bot') {
+              const metin = message.trim();
+              this.botTuruGonderilen.add(metin);
+              setTimeout(() => this.botTuruGonderilen.delete(metin), 15_000).unref();
+            }
             return {
               success: true,
               message: 'Mesaj Kick sohbetine başarıyla iletildi!'
@@ -680,6 +695,7 @@ export class KickPlatform extends BasePlatform {
           if (status === 401 && !retried) {
             console.log('[Kick] Token 401 received. Trying auto-refresh...');
             const refreshed = await this.refreshKickToken();
+            this.botGirisiGecersiz = !refreshed;
             if (refreshed) {
               return this.sendKickMessage(channel, message, true);
             }
@@ -1021,6 +1037,7 @@ export class KickPlatform extends BasePlatform {
       const isVerified = Boolean(res.data?.verified);
 
       let canSendChat = false;
+      let tokenGecersiz = false;
       const cleanToken = (token || this.botToken).replace(/^Bearer\s+/i, '').trim();
 
       if (cleanToken && chatroomId) {
@@ -1031,9 +1048,10 @@ export class KickPlatform extends BasePlatform {
             timeout: 4000
           });
           canSendChat = authCheck.status === 200;
-        } catch {
-          // If public API check fails, token might still work on channel API
-          canSendChat = true;
+        } catch (e: any) {
+          // 401 kesin red; başka hatada (ağ, 5xx) giriş yine geçerli olabilir
+          tokenGecersiz = e?.response?.status === 401;
+          canSendChat = !tokenGecersiz;
         }
       }
 
@@ -1044,7 +1062,8 @@ export class KickPlatform extends BasePlatform {
         broadcasterUserId,
         followersCount,
         isVerified,
-        canSendChat
+        canSendChat,
+        tokenGecersiz
       };
     } catch (err: any) {
       return {
@@ -1067,11 +1086,13 @@ export class KickPlatform extends BasePlatform {
         ? okuma.durum === 'baglaniyor'
           ? 'Sohbet bağlantısı kuruluyor…'
           : `Sohbet okunamıyor${okuma.hata ? `: ${okuma.hata}` : ''} — yeniden deneniyor`
-        : undefined;
+        : this.botGirisiGecersiz
+          ? 'Kick bot girişi geçersiz: komutlar çalışır ama sohbete yanıt yazılamaz. Bot hesabına yeniden giriş yapın.'
+          : undefined;
     return {
       connected: this.connected,
       channel: this.currentChannel,
-      yazabilir: this.connected && Boolean(this.botToken),
+      yazabilir: this.connected && Boolean(this.botToken) && !this.botGirisiGecersiz,
       botHesabi: this.botUsername || undefined,
       kanalHesabi: this.kanalHesabi || undefined,
       ...(hata ? { error: hata } : {})

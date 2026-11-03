@@ -1,5 +1,5 @@
 /**
- * StreamAxT — kaydedilmemiş değişiklik kaydı
+ * AxBoT — kaydedilmemiş değişiklik kaydı
  * Developed by AxthrowA
  *
  * Panel tek sayfalık bir uygulama: kenar çubuğundan sekme değiştirmek

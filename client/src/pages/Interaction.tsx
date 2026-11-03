@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Etkileşim
+ * AxBoT — Etkileşim
  * Developed by AxthrowA
  *
  * BotRix'te `/panel/interaction` altında üç araç var: Tahminler, İzleyici

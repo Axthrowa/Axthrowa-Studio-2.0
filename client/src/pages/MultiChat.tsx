@@ -34,7 +34,8 @@ interface ViewerModalData {
 }
 
 export function MultiChat() {
-  const { chatMessages, sendChat, clearChat, lastMessage } = useWebSocket('chatbox', GECMIS_ACIK);
+  // 'dashboard': gönderim hataları yalnız bu türe gelir (OBS'teki 'chatbox' katmanı görmesin)
+  const { connected, chatMessages, sendChat, clearChat, lastMessage } = useWebSocket('dashboard', GECMIS_ACIK);
   const [filter, setFilter] = useState<'all' | 'kick' | 'twitch' | 'youtube' | 'trovo' | 'tiktok' | 'discord'>('all');
   const [inputMessage, setInputMessage] = useState('');
   const [targetPlatform, setTargetPlatform] = useState<string>('all');
@@ -103,7 +104,7 @@ export function MultiChat() {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || !connected) return;
     sendChat(targetPlatform, inputMessage.trim());
     setInputMessage('');
   };
@@ -423,13 +424,14 @@ export function MultiChat() {
           type="text"
           value={inputMessage}
           onChange={e => setInputMessage(e.target.value)}
-          placeholder="Yayın sohbetine bir mesaj yazın..."
+          placeholder={connected ? 'Yayın sohbetine bir mesaj yazın...' : 'Bot bağlantısı yok, yeniden bağlanıyor...'}
           className="flex-1 bg-transparent px-3 py-2 text-sm text-white focus:outline-none placeholder-gray-500"
         />
 
         <button
           type="submit"
-          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+          disabled={!connected}
+          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
         >
           <Send className="w-3.5 h-3.5" /> Gönder
         </button>

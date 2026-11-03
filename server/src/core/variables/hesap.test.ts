@@ -1,5 +1,5 @@
 /**
- * StreamAxT — güvenli ifade çözümleyicisi testleri (Function/eval yerine)
+ * AxBoT — güvenli ifade çözümleyicisi testleri (Function/eval yerine)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — eski biçim değer yerleştirme testleri (şablon enjeksiyonu)
+ * AxBoT — eski biçim değer yerleştirme testleri (şablon enjeksiyonu)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

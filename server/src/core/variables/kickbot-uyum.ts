@@ -1,9 +1,9 @@
 /**
- * StreamAxT — `{{...}}` söz dizimi uyumu
+ * AxBoT — `{{...}}` söz dizimi uyumu
  * Developed by AxthrowA
  *
  * KickBot belgelerindeki `{{sender.username}}`, `{{randomRange(1,6)}}` gibi
- * yer tutucular StreamAxT'in `$(...)` değişkenlerine çevrilir; başka bottan
+ * yer tutucular AxBoT'un `$(...)` değişkenlerine çevrilir; başka bottan
  * taşınan komutlar elle düzeltmeden çalışır. Tanınmayan `{{...}}` olduğu gibi
  * bırakılır (sessizce silinmez). Kaynak: herkese açık KickBot belgeleri.
  */

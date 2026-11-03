@@ -1,5 +1,5 @@
 /**
- * StreamAxT — müzik host'unun StreamAxT örneği (bot_settings deposu + WebSocket yayını)
+ * AxBoT — müzik host'unun AxBoT örneği (bot_settings deposu + WebSocket yayını)
  * Developed by AxthrowA
  *
  * Depo `settingsCache`: `spotify_refresh_token` ve `ytmd_token` adları "token"
@@ -25,6 +25,6 @@ export const muzikHost = new MuzikHost(
     }
   },
   (m) => ozelYayin?.(m),
-  // Yayın Yönetim Aracı'nın Resonance host'u (bot kendi Spotify'ı bağlı değilken); kapalıysa 15 sn'de bir dener
+  // AxthrowA Studio'nun Resonance host'u (bot kendi Spotify'ı bağlı değilken); kapalıysa 15 sn'de bir dener
   () => process.env.STREAMAXT_MUZIK_HOST ?? settingsCache.get('muzik_harici_host', 'http://127.0.0.1:8843')
 );

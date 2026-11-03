@@ -30,6 +30,7 @@ import { hataMetni, seyrekUyar } from '../../core/logger.js';
 import { trKatla } from '../../core/text.js';
 import { klipYoneticisi } from '../clips/klip.js';
 import { klipSuresi } from '../clips/klip-saf.js';
+import { shoutoutGonder } from '../otomasyon/shoutout.js';
 import { kendiMesajlari, nukeArgumanlari, nukeHedefleri, sonMesajlar } from '../moderation/son-mesajlar.js';
 import { sureyiYaz } from '../automod/enforcement.js';
 import { rastgeleIzleyici } from '../../core/variables/registry.js';
@@ -395,12 +396,8 @@ export class CommandManager {
 
       case 'sarki':
       case 'song':
-      case 'currentsong': {
-        const current = songRequest.getCurrentSong();
-        return current 
-          ? `🎶 Şu anda çalan: "${current.title}" (İsteyen: ${current.requestedBy})`
-          : 'Şu anda kuyrukta çalan bir şarkı yok. Şarkı istemek için: !sr <şarkı adı>';
-      }
+      case 'currentsong':
+        return songRequest.calanYaniti();
 
       case 'atla':
       case 'skip':
@@ -779,13 +776,6 @@ export class CommandManager {
         return this.hesapYasi(args[0] || message.user.username, message);
       case 'cark':
       case 'wheel': {
-        // Dilimler hiç kaydedilmemişse sonuç adı boş kalıyor, sohbete sonuç yazılmıyordu (ve maliyet boşa gidiyordu)
-        const { carkAyari } = await import('../engagement/cark.js');
-        if (!carkAyari().dilimler.length) {
-          return message.user.isBroadcaster || message.user.isMod
-            ? "🎡 Çark henüz ayarlanmadı: Overlay Stüdyo → Şans Çarkı'ndan dilimleri kaydet."
-            : null;
-        }
         // İzleyici çevirebilir; art arda çevirme seli olmasın diye genel bekleme. Bekleme ve puan maliyeti
         // çark widget'ının ayarlarından (eskiden `wheel_cooldown`un panelde ayarı yoktu)
         let carkAyar: { cevirmeBeklemeSn?: unknown; cevirmeMaliyeti?: unknown } = {};
@@ -1181,7 +1171,7 @@ export class CommandManager {
         const hedef = (args[0] || message.user.username).replace(/^@/, '');
         const r = db
           .prepare('SELECT display_name, watch_time_minutes FROM economy WHERE LOWER(username) = LOWER(?)')
-          .get(hedef) as { display_name?: string; watch_time_minutes?: number } | undefined;
+          .get(cuzdanAdi(message.platform, hedef)) as { display_name?: string; watch_time_minutes?: number } | undefined;
         if (!r) return `@${message.user.displayName}, ${hedef} için izleme kaydı yok.`;
         const dk = Number(r.watch_time_minutes) || 0;
         const sa = Math.floor(dk / 60);
@@ -1215,11 +1205,7 @@ export class CommandManager {
         };
         const kok = adresler[String(message.platform).toLowerCase()] || 'https://kick.com';
         // Overlay'deki Shoutout widget'ini da tetikle
-        try {
-          eventBus.emit('widget_update', { type: 'shoutout', data: { channel: kanal, platform: message.platform } });
-        } catch (e) {
-          seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e);
-        }
+        void shoutoutGonder(kanal, message.platform).catch((e) => seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e));
         return `📢 ${kanal} kanalına göz atın: ${kok}/${kanal}`;
       }
 
@@ -1274,7 +1260,7 @@ export class CommandManager {
         return `🗑️ !${ad} silindi.`;
       }
 
-      // ---- Yaygın botlarda gözlenen, StreamAxT'de eksik komutlar (2026-10) ----
+      // ---- Yaygın botlarda gözlenen, AxBoT'da eksik komutlar (2026-10) ----
 
       // Toplu moderasyon: son 3 dk'da kalıba uyan mesajları sil / yazanları sustur
       case 'nuke': {

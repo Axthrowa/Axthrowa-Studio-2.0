@@ -1,5 +1,5 @@
 /**
- * StreamAxT — !clip ile kaydedilen klipler (izle / indir / sil)
+ * AxBoT — !clip ile kaydedilen klipler (izle / indir / sil)
  * Developed by AxthrowA
  */
 import { useCallback, useEffect, useState } from 'react';

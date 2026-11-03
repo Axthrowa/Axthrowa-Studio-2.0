@@ -1,5 +1,5 @@
 /**
- * StreamAxT — `POST /api/settings` gövde doğrulaması (saf)
+ * AxBoT — `POST /api/settings` gövde doğrulaması (saf)
  * Developed by AxthrowA
  *
  * Uç her anahtar/değeri olduğu gibi yazıyordu: dizi gövde "0", "1" gibi

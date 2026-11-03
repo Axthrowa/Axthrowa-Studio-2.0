@@ -1,5 +1,5 @@
 /**
- * StreamAxT — değişken çözümleyici
+ * AxBoT — değişken çözümleyici
  * Developed by AxthrowA
  *
  * Saf metin işleme: veritabanı ve ağ erişimi işleyicilerin içinde, burada

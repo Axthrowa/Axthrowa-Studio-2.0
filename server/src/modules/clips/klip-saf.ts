@@ -1,5 +1,5 @@
 /**
- * StreamAxT — !clip (gerçek klip) saf yardımcıları
+ * AxBoT — !clip (gerçek klip) saf yardımcıları
  * Developed by AxthrowA
  *
  * Eskiden `!clip` hiçbir şey kaydetmiyordu (yalnız "an" işaretliyordu). Yaygın

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Sesli komutlar: saf eşleştirme mantığı (birim testli, DB açmaz)
+ * AxBoT — Sesli komutlar: saf eşleştirme mantığı (birim testli, DB açmaz)
  * Developed by AxthrowA
  *
  * Konuşma tanıma (Vosk, tarayıcıda yerel) cümleyi metne çevirir; burada o metin yayıncının tanımladığı

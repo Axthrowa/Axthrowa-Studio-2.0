@@ -1,9 +1,9 @@
 /**
- * StreamAxT — yapay zekâya sohbette seslenme (saf)
+ * AxBoT — yapay zekâya sohbette seslenme (saf)
  * Developed by AxthrowA
  *
  * Yaygın botlarda gözlenen (herkese açık belgeler, 2026-10): izleyici mesajı
- * botun adıyla başlatınca (`@Bot soru`) yapay zekâ yanıt verir. StreamAxT'de
+ * botun adıyla başlatınca (`@Bot soru`) yapay zekâ yanıt verir. AxBoT'da
  * yalnız `!sor` vardı. Ayar: `ai_mention_enabled` (varsayılan kapalı).
  */
 

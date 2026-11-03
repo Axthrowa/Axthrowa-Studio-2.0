@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Sesli Komutlar
+ * AxBoT — Sesli Komutlar
  * Developed by AxthrowA
  *
  * Yayıncı mikrofona konuşur ("bot, sohbeti temizle"); tanıma tarayıcıda yerel (Vosk, Türkçe model) yapılır, sunucu
@@ -328,7 +328,7 @@ export default function VoiceCommands() {
               Basılı tut ve konuş
             </button>
             <p className="mt-2 text-[11px] text-gray-500">
-              Yayın Yönetim Aracı dinleyiciyi arka planda açık tutar ve genel kısayolla bas-konuş sağlar (oyun içindeyken de). Ayrı kullanımda bu
+              AxthrowA Studio dinleyiciyi arka planda açık tutar ve genel kısayolla bas-konuş sağlar (oyun içindeyken de). Ayrı kullanımda bu
               sayfayı açık bırakın ya da dinleyiciyi OBS'te özel tarayıcı dock'u olarak ekleyin:{' '}
               <code className="select-all text-gray-400">{dinleyiciAdresi}</code>
             </p>

@@ -1,10 +1,10 @@
 /**
- * StreamAxT — kopunca kendi kendine yeniden bağlanan WebSocket.
+ * AxBoT — kopunca kendi kendine yeniden bağlanan WebSocket.
  * Developed by AxthrowA
  *
  * OBS tarayıcı kaynakları saatlerce açık kalır. Birçok widget (jenerik, hype
  * treni, şu an çalan, sabit mesaj, shoutout, subathon, bağış kupası, sadakat
- * ödülleri) kendi soketini açıyor ve StreamAxT bir kez yeniden başlayınca
+ * ödülleri) kendi soketini açıyor ve AxBoT bir kez yeniden başlayınca
  * (panel yeniden açıldı, güncelleme) bir daha hiç bağlanmıyordu: olaylar OBS'e
  * ulaşmıyor, "önizlemede var, OBS'te yok" görünüyordu.
  *

@@ -1,5 +1,5 @@
 /**
- * StreamAxT Shoutout widget
+ * AxBoT Shoutout widget
  * Developed by AxthrowA
  *
  * Panelden tema, konum, süre, konfeti ve gösterilecek alanlar ayarlanır.
@@ -7,6 +7,7 @@
  * gömülüydü; zaman aşımı temizlenmediği için arka arkaya gelen iki shoutout
  * birbirinin sayacını bozuyordu.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -19,6 +20,8 @@ interface ShoutoutData {
   platform: string;
   avatarUrl?: string;
   bio?: string;
+  /** Yayında oynadığı ya da son oynadığı oyun */
+  oyun?: string;
 }
 
 export interface ShoutoutWidgetProps {
@@ -60,7 +63,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
     const params = new URLSearchParams(window.location.search);
     if (onizleme || params.has('channel')) {
       triggerSO({
-        channel: params.get('channel') || 'StreamAxT',
+        channel: params.get('channel') || 'AxBoT',
         platform: params.get('platform') || 'kick',
         avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
       });
@@ -127,7 +130,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
           visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 -translate-y-8'
         } flex items-center gap-5 w-full`}
         style={{
-          ...(temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
+          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
           borderRadius: Number(s.radius) || 24,
           padding: `${Number(s.paddingY) || 24}px ${Number(s.paddingX) || 24}px`,
           maxWidth: Number(s.maxWidth) || 512,
@@ -167,6 +170,12 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
           <div className="font-black truncate" style={{ fontSize: boy }}>
             @{so.channel}
           </div>
+
+          {so.oyun && (
+            <div className="font-bold truncate" style={{ fontSize: Math.max(10, boy * 0.5), color: s.accentColor, marginTop: 2 }}>
+              🎮 {so.oyun}
+            </div>
+          )}
 
           {s.showBio && (
             <div style={{ fontSize: Math.max(10, boy * 0.5), opacity: 0.78, marginTop: 4 }}>

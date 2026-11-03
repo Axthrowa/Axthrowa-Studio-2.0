@@ -1,10 +1,10 @@
 /**
- * StreamAxT — OAuth yönlendirme adresi ve `state` doğrulaması
+ * AxBoT — OAuth yönlendirme adresi ve `state` doğrulaması
  * Developed by AxthrowA
  *
  * Kick yetkilendirmesi eskiden `http://localhost:3001/...` adresine sabitti:
  * sunucu başka portta (PORT=3011) çalışınca Kick kullanıcıyı ya boşluğa ya da
- * AYNI makinedeki başka bir StreamAxT kopyasına döndürüyordu. Ayrıca üretilen
+ * AYNI makinedeki başka bir AxBoT kopyasına döndürüyordu. Ayrıca üretilen
  * `state` hiç denetlenmiyordu; geri dönüşte yalnız PKCE'ye güveniliyordu.
  */
 import crypto from 'crypto';

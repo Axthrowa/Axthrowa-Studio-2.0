@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Şarkı isteği, TTS (filtre, ses, kuyruk), şarkı sözleri
+ * AxBoT API — Şarkı isteği, TTS (filtre, ses, kuyruk), şarkı sözleri
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;
@@ -7,7 +7,6 @@
  * api/routes.ts toplayıcısındadır.
  */
 import { Router, Request, Response } from 'express';
-import { db } from '../../db/index.js';
 import { songRequest } from '../../modules/songrequest/songrequest.js';
 import { multiEngineTTS } from '../../modules/tts/tts-engine.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
@@ -19,9 +18,9 @@ const router = Router();
 
 // 6. Song Request Queue & Desktop Player
 router.get('/songrequest/queue', (req: Request, res: Response) => {
-  const current = songRequest.getCurrentSong();
+  const current = songRequest.calanIstek();
   const queue = songRequest.getQueueList();
-  res.json({ current, queue });
+  res.json({ current, queue, siralanabilir: songRequest.siralanabilir() });
 });
 
 // "Şu An Çalan" OBS widget'ı bu ucu istiyordu ama yoktu (404): çalan şarkı
@@ -29,7 +28,7 @@ router.get('/songrequest/queue', (req: Request, res: Response) => {
 // ya da sonradan açılınca kayboluyordu.
 router.get('/songrequest/current', (req: Request, res: Response) => {
   // ?video=1: Şarkı Klipleri widget'ı için kuyruktaki ilk YouTube isteği
-  res.json((req.query.video === '1' ? songRequest.klipSirasi() : songRequest.getCurrentSong()) || null);
+  res.json((req.query.video === '1' ? songRequest.klipSirasi() : songRequest.calanIstek()) || null);
 });
 
 // Şarkı Klipleri widget'ı: video bitti → sıradakine geç (yalnız bitti denen şarkı hâlâ çalıyorsa)
@@ -43,8 +42,19 @@ router.post('/songrequest/skip', (req: Request, res: Response) => {
 });
 
 router.delete('/songrequest/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
-  db.prepare('DELETE FROM song_queue WHERE id = ?').run(String(id));
+  songRequest.kaldir(String(req.params.id));
+  res.json({ success: true });
+});
+
+router.post('/songrequest/sira', (req: Request, res: Response) => {
+  const ids = req.body?.ids;
+  if (!Array.isArray(ids) || ids.length > 500 || !ids.every((i) => typeof i === 'string')) return res.status(400).json({ error: 'Kimlik listesi geçersiz' });
+  if (!songRequest.siraDegistir(ids)) return res.status(409).json({ error: "Şarkılar Spotify'ın kendi sırasında, buradan değiştirilemez" });
+  res.json({ success: true });
+});
+
+router.post('/songrequest/:id/engelle', (req: Request, res: Response) => {
+  if (!songRequest.engelle(String(req.params.id))) return res.status(404).json({ error: 'İstek bulunamadı' });
   res.json({ success: true });
 });
 
@@ -87,7 +97,7 @@ router.post('/tts/settings', (req: Request, res: Response) => {
 });
 
 router.post('/tts/test', async (req: Request, res: Response) => {
-  const { text = 'StreamAxT 5 motorlu kesintisiz TTS sistemi başarıyla çalışıyor!', user = 'Test', settings } = req.body;
+  const { text = 'AxBoT 5 motorlu kesintisiz TTS sistemi başarıyla çalışıyor!', user = 'Test', settings } = req.body;
   try {
     const item = await multiEngineTTS.synthesizeWithFallback(text, user, settings);
     res.json({ success: !!item, item });

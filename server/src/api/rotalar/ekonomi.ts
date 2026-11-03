@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Puan sıralaması, seviyeler, sadakat ayarları/ödülleri, ödül kullanımları
+ * AxBoT API — Puan sıralaması, seviyeler, sadakat ayarları/ödülleri, ödül kullanımları
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;
@@ -11,6 +11,7 @@ import { db } from '../../db/index.js';
 import { wsHub } from '../../ws/server.js';
 import economyService from '../../modules/economy/economy.js';
 import { seviyeler } from '../../modules/levels/levels.js';
+import { istatistikler, istatistikSil } from '../../modules/community/istatistik-sil.js';
 import { hataMetni } from '../../core/logger.js';
 
 const router = Router();
@@ -53,6 +54,13 @@ router.post('/levels/reset', (req: Request, res: Response) => {
   const neyi = String(req.body?.neyi || 'xp') as 'xp' | 'puan' | 'ikisi';
   if (!['xp', 'puan', 'ikisi'].includes(neyi)) return res.status(400).json({ error: 'neyi: xp | puan | ikisi' });
   res.json(seviyeler.sifirla(neyi));
+});
+
+router.get('/istatistikler', (_req: Request, res: Response) => res.json(istatistikler()));
+
+router.post('/istatistikler/sil', (req: Request, res: Response) => {
+  if (!istatistikSil(String(req.body?.grup || ''))) return res.status(400).json({ error: 'Bilinmeyen istatistik grubu' });
+  res.json({ success: true, gruplar: istatistikler() });
 });
 
 // 13. Loyalty Settings & Rewards

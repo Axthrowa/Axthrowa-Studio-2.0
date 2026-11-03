@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { enBuyukBoyut, hizala, sinirla, yapistir } from './hizala';
+import { enBuyukBoyut, hizala, olcekSinirla, sinirla, yapistir } from './hizala';
 
 const sohbet = { x: 40, y: 430, width: 420, height: 610, scale: 0.8 };
+
+describe('olcekSinirla', () => {
+  it('görünen kutu tuvalden taşmaz, küçülme alt sınırda durur', () => {
+    expect(olcekSinirla(1.5, { x: 0, y: 0, width: 400, height: 200 })).toBe(1.5);
+    expect(olcekSinirla(9, { x: 1000, y: 0, width: 460, height: 100 })).toBe(2);
+    expect(olcekSinirla(0.01, { x: 0, y: 0, width: 400, height: 200 })).toBe(0.25);
+  });
+});
 
 describe('hizala', () => {
   it('ölçekli sohbet ekranın en altına iner (eskiden 122 px yukarıda kalıyordu)', () => {

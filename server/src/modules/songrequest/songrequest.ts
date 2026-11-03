@@ -22,6 +22,7 @@ export function sirasiGeldi(c: CalanSarki | null, simdi: number): boolean {
 import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';
 import { parcaKimligi } from '../muzik/spotify-saf.js';
+import { engelliMi, siraDegerleri, youtubeSuresi } from './istek-filtresi.js';
 
 export interface SongItem {
   id: string;
@@ -54,7 +55,7 @@ function sistemdeAc(hedef: string): void {
 }
 
 /**
- * İstek çalınabilir mi? Spotify/YouTube Music hedefinde çalar (bot ya da Yayın Yönetim Aracı üzerinden) bağlı
+ * İstek çalınabilir mi? Spotify/YouTube Music hedefinde çalar (bot ya da AxthrowA Studio üzerinden) bağlı
  * değilse çalınamaz. Video kipinde klip OBS'te çalar, çalar gerekmez.
  */
 export function calarKapali(d: { videoKipi: boolean; otomatik: boolean; spotifyApiKapali?: boolean }): boolean {
@@ -80,7 +81,7 @@ export class SongRequestEngine {
     muzikHost.parcaDegisince((c) => {
       if (!c?.title) return;
       try {
-        // Yayın Yönetim Aracı'nın çalan bilgisinde parça kimliği yok: o zaman başlıkla eşlenir
+        // AxthrowA Studio'nun çalan bilgisinde parça kimliği yok: o zaman başlıkla eşlenir
         // (kayıt "Şarkı — Sanatçı" biçiminde); eskiden bu istekler kuyrukta hep açık kalıyordu
         const satir = (
           c.trackId
@@ -113,7 +114,8 @@ export class SongRequestEngine {
           if (!istekCaliyor && Date.now() - this.sonBaslatma > 15_000 && Date.now() > this.hariciSiraBekle) void this.hariciSiraDenetle(Date.now(), true);
         }
         if (!satir) return;
-        db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ?').run(satir.created_at);
+        // Sırasını bekleyen istek henüz çalmadı: "çalındı" sayılırsa izleyicinin isteği sessizce kaybolur
+        db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ? AND url NOT LIKE ?').run(satir.created_at, `${BEKLEYEN}%`);
         this.currentSong = null;
         this.skipVotes.clear();
       } catch {
@@ -133,11 +135,73 @@ export class SongRequestEngine {
   /** Bekleyen isteği sıraya aldıktan sonraki cevap; "hemen" kipinde çalanın yerine hemen başlar */
   private siraYaniti(kim: string, ad: string, hemen: boolean): string {
     const sira = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`) as { n: number }).n;
-    const bos = hemen || (sira === 1 && sirasiGeldi(muzikHost.simdiCalan(), Date.now()));
+    const bos = hemen || (sira === 1 && !this.baslatmaBekleniyor(Date.now()) && sirasiGeldi(muzikHost.simdiCalan(), Date.now()));
     void this.hariciSiraDenetle(Date.now(), hemen);
     return bos
       ? `🎵 @${kim}, "${ad}" şimdi çalıyor.`
       : `🎵 @${kim}, "${ad}" sıraya alındı (${sira}. sırada) — çalan şarkı bitince kendiliğinden çalacak.`;
+  }
+
+  private engelli(metin: string): boolean {
+    return engelliMi(metin, settingsCache.get('sr_engelli', ''));
+  }
+
+  /** Süre sınırına takılıyorsa izleyiciye cevap; süre bilinmiyorsa (0) istek geçer. Yayıncı ve modlar muaf. */
+  private sureEngeli(message: ChatMessagePayload, sureSn: number): string | null {
+    const dk = Math.max(0, Number(settingsCache.get('sr_max_dk', '0')) || 0);
+    if (!dk || !sureSn || sureSn <= dk * 60 || message.user.isBroadcaster || message.user.isMod) return null;
+    return `@${message.user.displayName}, bu şarkı çok uzun (${Math.ceil(sureSn / 60)} dk); en fazla ${dk} dk olabilir.`;
+  }
+
+  /** Süre sınırı açıksa YouTube süresini öğrenir: kapalıyken fazladan istek atılmaz (önbellekli) */
+  private async youtubeSure(videoId: string): Promise<number> {
+    if (!(Number(settingsCache.get('sr_max_dk', '0')) > 0)) return 0;
+    const bilinen = this.sureOnbellek.get(videoId);
+    if (bilinen !== undefined) return bilinen;
+    try {
+      const res = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, { timeout: 2500, headers: { 'Accept-Language': 'tr-TR,tr;q=0.9' } });
+      const sn = youtubeSuresi(res.data);
+      if (sn) this.sureOnbellek.set(videoId, sn);
+      return sn;
+    } catch {
+      return 0;
+    }
+  }
+  private sureOnbellek = new Map<string, number>();
+
+  private engelYaniti(kim: string, ad: string): string {
+    return `⛔ @${kim}, "${ad.slice(0, 80)}" engel listesinde, istenemez.`;
+  }
+
+  /** Bu kurulumda sıra gerçekten değişebilir mi: bot Spotify'a doğrudan bağlıyken parçalar Spotify'ın kendi sırasındadır */
+  siralanabilir(): boolean {
+    return !(this.spotifyOtomatikMi() && muzikHost.spotifyBagliMi());
+  }
+
+  /** Bekleyen isteklerin sırasını değiştirir; çalan şarkıya dokunulmaz (OBS klibi yarıda kesilmesin) */
+  siraDegistir(yeniSira: string[]): boolean {
+    if (!this.siralanabilir()) return false;
+    const calan = this.getCurrentSong()?.id ?? '';
+    const bekleyen = db.prepare('SELECT id, created_at FROM song_queue WHERE is_played = 0 AND id <> ?').all(calan) as Array<{ id: string; created_at: number }>;
+    const yaz = db.prepare('UPDATE song_queue SET created_at = ? WHERE id = ?');
+    for (const k of siraDegerleri(bekleyen, yeniSira)) yaz.run(k.created_at, k.id);
+    return true;
+  }
+
+  /** İsteği kuyruktan siler */
+  kaldir(id: string): void {
+    db.prepare('DELETE FROM song_queue WHERE id = ?').run(id);
+    if (this.currentSong?.id === id) this.currentSong = null;
+  }
+
+  /** İsteği siler, adını engel listesine ekler: aynı şarkı bir daha istenemez */
+  engelle(id: string): boolean {
+    const satir = db.prepare('SELECT title FROM song_queue WHERE id = ?').get(id) as { title: string } | undefined;
+    if (!satir) return false;
+    const liste = settingsCache.get('sr_engelli', '');
+    if (!this.engelli(satir.title)) settingsCache.set('sr_engelli', [liste.trim(), satir.title.trim()].filter(Boolean).join('\n'));
+    this.kaldir(id);
+    return true;
   }
 
   /** YouTube'da ilk video (önbellekli) */
@@ -170,6 +234,29 @@ export class SongRequestEngine {
   /** Aynı isteği iki kez göndermemek için (YYA'nın çalan bilgisi birkaç sn sonra güncellenir) */
   private hariciSiraBekle = 0;
 
+  /** Son başlatılan istekten önce çalan parça: çalan bilgisi bundan farklı olana dek yeni istek başlamaz */
+  private baslatmaOncesi: { anahtar: string; zaman: number } | null = null;
+
+  /** Üst üste başarısız deneme: tek bir bozuk istek sırayı sonsuza dek tıkamasın */
+  private hataSayaci = { id: '', adet: 0 };
+
+  private calanAnahtari(): string {
+    const c = muzikHost.simdiCalan();
+    return c ? `${c.source}:${c.title}:${c.artist}` : '';
+  }
+
+  /**
+   * Başlatılan istek çalan bilgisine henüz yansımadı mı? Eski parça "bitmek üzere" görünürken
+   * sıradaki istek başlatılırsa az önce başlayan şarkı kesiliyordu ("sıraya alındı ama çalmadı").
+   * Oynatıcı hiç tepki vermezse sıra 45 sn sonra yine ilerler.
+   */
+  private baslatmaBekleniyor(simdi: number): boolean {
+    if (!this.baslatmaOncesi) return false;
+    if (simdi - this.baslatmaOncesi.zaman < 45_000 && this.calanAnahtari() === this.baslatmaOncesi.anahtar) return true;
+    this.baslatmaOncesi = null;
+    return false;
+  }
+
   /**
    * YYA'daki Spotify'da sıra: istekler hemen gönderilmez (eski YYA exe'si "sıraya ekle"yi tanımıyor,
    * çalan şarkıyı kesiyordu). Çalan şarkı bitmek üzereyken sıradaki istek başlatılır; istek yoksa
@@ -182,14 +269,22 @@ export class SongRequestEngine {
       .prepare('SELECT id, url, requested_by, platform FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1')
       .get(`${BEKLEYEN}%`) as { id: string; url: string; requested_by: string; platform: string } | undefined;
     if (!bekleyen) return;
-    if (!zorla && !sirasiGeldi(muzikHost.simdiCalan(), simdi)) return;
+    if (!zorla && (this.baslatmaBekleniyor(simdi) || !sirasiGeldi(muzikHost.simdiCalan(), simdi))) return;
     this.hariciSiraBekle = simdi + 8000;
+    const baslamadanOnce = this.calanAnahtari();
     try {
       const icerik = bekleyen.url.slice(BEKLEYEN.length);
       // YouTube Music isteği: "yt=<videoId> <başlık>"
       const yt = icerik.match(/^yt=([a-zA-Z0-9_-]{11}) (.*)$/s);
       const p = yt ? await muzikHost.hariciIstek(yt[2], false, yt[1]) : await muzikHost.hariciIstek(icerik, false);
       const baslik = yt ? yt[2] : p.artist ? `${p.title} — ${p.artist}` : p.title;
+      // YYA adla arayıp hemen çalıyor, gerçek ad ancak şimdi belli: engelliyse hemen geçilir
+      if (!yt && this.engelli(baslik)) {
+        await muzikHost.komut('next', 'spotify').catch(() => {});
+        db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(bekleyen.id);
+        eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `⛔ @${bekleyen.requested_by}, "${baslik.slice(0, 100)}" engel listesinde, atlandı.` });
+        return;
+      }
       const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
       // Bundan önceki her şey bitti sayılır (çalınmış istekler, takılı eski kayıtlar)
       db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND id <> ? AND url NOT LIKE ?').run(bekleyen.id, `${BEKLEYEN}%`);
@@ -199,6 +294,8 @@ export class SongRequestEngine {
         bekleyen.id
       );
       this.sonBaslatma = Date.now();
+      this.baslatmaOncesi = { anahtar: baslamadanOnce, zaman: simdi };
+      this.hataSayaci = { id: '', adet: 0 };
       this.currentSong = null;
       eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `🎶 Şimdi çalıyor: "${baslik}" — isteyen @${bekleyen.requested_by}` });
     } catch (e: any) {
@@ -206,6 +303,12 @@ export class SongRequestEngine {
       // Spotify kapalı / cihaz yok / bağlantı: istek kaybolmaz, 30 sn sonra yeniden denenir
       if (!/sonuç yok|track URI yok|boş arama/i.test(hata)) {
         this.hariciSiraBekle = Date.now() + 30_000;
+        this.hataSayaci = { id: bekleyen.id, adet: this.hataSayaci.id === bekleyen.id ? this.hataSayaci.adet + 1 : 1 };
+        if (/cihaz|device|bağlı değil|ECONN|timeout|network/i.test(hata) || this.hataSayaci.adet < 3) return;
+        // Oynatıcı ayakta ama bu istek başlamıyor: sonrakiler beklemesin, izleyici de haberdar olsun
+        db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(bekleyen.id);
+        this.hariciSiraBekle = 0;
+        eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `⚠️ @${bekleyen.requested_by}, isteğin çalınamadı: ${hata.slice(0, 100)}` });
         return;
       }
       // Spotify'da bulunamayan istek kuyruğu tıkamasın
@@ -317,12 +420,15 @@ export class SongRequestEngine {
       }
     }
     const hemen = settingsCache.get('sr_spotify_mod', 'sira') === 'hemen';
-    // Spotify / YouTube Music Yayın Yönetim Aracı'nda bağlı: istek bot tarafında sıralanır
+    // Spotify / YouTube Music AxthrowA Studio'da bağlı: istek bot tarafında sıralanır
     if (!muzikHost.spotifyBagliMi() && muzikHost.hariciHedef() === 'ytmd') {
       const id = rawQuery.match(/(?:[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1];
       const b = id ? { videoId: id, title: sorgu } : await this.youtubeAra(sorgu);
       if (!b) return `@${kim}, YouTube'da "${sorgu.slice(0, 60)}" bulunamadı.`;
       const baslik = b.title.slice(0, 200);
+      if (this.engelli(baslik)) return this.engelYaniti(kim, baslik);
+      const uzun = this.sureEngeli(message, await this.youtubeSure(b.videoId));
+      if (uzun) return uzun;
       db.prepare(`
         INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
@@ -336,6 +442,7 @@ export class SongRequestEngine {
           const o = await axios.get(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${id}`)}`, { timeout: 4000 });
           sorgu = String(o.data?.title || '') || sorgu;
         }
+        if (this.engelli(sorgu)) return this.engelYaniti(kim, sorgu);
         if (!hemen) {
           db.prepare(`
             INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
@@ -361,8 +468,11 @@ export class SongRequestEngine {
       const id = parcaKimligi(rawQuery);
       const p = id ? await muzikHost.parcaBilgisi(id) : await muzikHost.parcaAra(sorgu);
       if (!p) return `@${kim}, Spotify'da "${sorgu.slice(0, 60)}" bulunamadı.`;
-      await muzikHost.parcayiCal(p.uri, hemen);
       const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
+      if (this.engelli(baslik)) return this.engelYaniti(kim, baslik);
+      const uzun = this.sureEngeli(message, Math.round(p.sureMs / 1000));
+      if (uzun) return uzun;
+      await muzikHost.parcayiCal(p.uri, hemen);
       db.prepare(`
         INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
@@ -390,6 +500,14 @@ export class SongRequestEngine {
     if (sinir > 0 && !message.user.isBroadcaster && !message.user.isMod) {
       const bekleyenim = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND LOWER(requested_by) = LOWER(?)').get(message.user.displayName) as { n: number }).n;
       if (bekleyenim >= sinir) return `@${message.user.displayName}, sırada en fazla ${sinir} isteğin olabilir; biri çalınca yenisini iste.`;
+    }
+    if (this.engelli(rawQuery)) return this.engelYaniti(message.user.displayName, rawQuery);
+    // En az puan şartı: harcanmaz, yalnız bakılır
+    const enAzPuan = Math.max(0, Number(settingsCache.get('sr_min_puan', '0')) || 0);
+    if (enAzPuan > 0 && !message.user.isBroadcaster && !message.user.isMod) {
+      const { economy } = await import('../economy/economy.js');
+      const puan = Number(economy.getUser(message.platform, message.user.username, message.user.displayName)?.points) || 0;
+      if (puan < enAzPuan) return `@${message.user.displayName}, şarkı istemek için en az ${enAzPuan} puan gerekiyor (sende ${puan}).`;
     }
 
     await muzikHost.hariciTazele();
@@ -480,6 +598,12 @@ export class SongRequestEngine {
       }
     }
 
+    if (this.engelli(`${title} ${videoUrl}`)) return this.engelYaniti(message.user.displayName, title);
+    if (videoId) {
+      const uzun = this.sureEngeli(message, await this.youtubeSure(videoId));
+      if (uzun) return uzun;
+    }
+
     const songId = uuidv4();
     db.prepare(`
       INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
@@ -549,6 +673,36 @@ export class SongRequestEngine {
     if (desktopTarget === player) {
       this.openDesktopPlayer(player, title, url);
     }
+  }
+
+  /** Oynatıcıda gerçekten çalan parça bir istekse onun kaydı (eski, takılı kayıt "çalan" sayılmaz) */
+  calanIstek(): SongItem | null {
+    if (this.videoKipi() || !this.spotifyOtomatikMi()) return this.getCurrentSong();
+    const c = muzikHost.simdiCalan();
+    if (!c?.title) return null;
+    const a = c.title.toLocaleLowerCase('tr');
+    const satirlar = db.prepare(`SELECT * FROM song_queue WHERE is_played = 0 AND url NOT LIKE '${BEKLEYEN}%' ORDER BY created_at DESC`).all() as any[];
+    const row = satirlar.find((r) => {
+      const t = String(r.title).toLocaleLowerCase('tr');
+      return t === a || t.startsWith(`${a} — `);
+    });
+    return row
+      ? { id: row.id, title: row.title, url: row.url, duration: row.duration, requestedBy: row.requested_by, platform: row.platform, thumbnail: row.thumbnail, createdAt: row.created_at, isPlayed: false }
+      : null;
+  }
+
+  /** !sarki cevabı: kuyruğun başı değil, oynatıcıda gerçekten çalan parça yazılır */
+  calanYaniti(): string {
+    const yok = 'Şu anda çalan bir şarkı yok. Şarkı istemek için: !sr <şarkı adı>';
+    if (this.videoKipi() || !this.spotifyOtomatikMi()) {
+      const k = this.getCurrentSong();
+      return k ? `🎶 Şu anda çalan: "${k.title}" (İsteyen: ${k.requestedBy})` : yok;
+    }
+    const c = muzikHost.simdiCalan();
+    if (!c?.title) return yok;
+    const istek = this.calanIstek();
+    const ad = c.artist ? `${c.title} — ${c.artist}` : c.title;
+    return `🎶 Şu anda çalan: "${ad}"${istek ? ` (İsteyen: ${istek.requestedBy})` : ''}`;
   }
 
   getCurrentSong(): SongItem | null {

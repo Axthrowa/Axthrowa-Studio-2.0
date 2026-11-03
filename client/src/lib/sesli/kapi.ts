@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Sesli komutlar: bas-konuş kapısı ve sayfalar arası kanal (saf, birim testli)
+ * AxBoT — Sesli komutlar: bas-konuş kapısı ve sayfalar arası kanal (saf, birim testli)
  * Developed by AxthrowA
  */
 

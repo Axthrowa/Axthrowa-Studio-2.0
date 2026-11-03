@@ -1,5 +1,5 @@
 /**
- * StreamAxT — REST API toplayıcısı
+ * AxBoT — REST API toplayıcısı
  * Developed by AxthrowA
  *
  * B1: Bu dosya eskiden 2.300+ satırlık tek parçaydı (154 rota). Rotalar
@@ -17,6 +17,8 @@ import platformlar from './rotalar/platformlar.js';
 import komutlar from './rotalar/komutlar.js';
 import moderasyon from './rotalar/moderasyon.js';
 import ses from './rotalar/ses.js';
+import otomasyon from './rotalar/otomasyon.js';
+import yayinozeti from './rotalar/yayinozeti.js';
 import ekonomi from './rotalar/ekonomi.js';
 import etkilesim from './rotalar/etkilesim.js';
 import uyarilar from './rotalar/uyarilar.js';
@@ -38,6 +40,8 @@ router.use(platformlar);
 router.use(komutlar);
 router.use(moderasyon);
 router.use(ses);
+router.use(otomasyon);
+router.use(yayinozeti);
 router.use(ekonomi);
 router.use(etkilesim);
 router.use(uyarilar);

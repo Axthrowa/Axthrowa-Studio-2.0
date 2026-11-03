@@ -1,5 +1,5 @@
 /**
- * StreamAxT İzleyici Sayacı widget
+ * AxBoT İzleyici Sayacı widget
  * Developed by AxthrowA
  *
  * Ayarlar panelden gelir (eskiden yalnız adres satırından okunuyordu ve
@@ -7,6 +7,7 @@
  * çoklu platform toplamı BotRix'teki sayaçla aynı işlev seviyesinde —
  * uygulama bize ait, kod kopyalanmadı.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -143,7 +144,7 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
     >
       <div
         style={{
-          ...(temaStili[tema] || temaStili.classic),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic),
           borderRadius: tema === 'capsule' ? 999 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 12}px ${Number(s.paddingX) || 16}px`,
           color: s.textColor,

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — ortak overlay katmanları
+ * AxBoT — ortak overlay katmanları
  * Developed by AxthrowA
  *
  * Kullanıcı bildirdi: "OBS overlay & widget stüdyosunda önizlemede görünen
@@ -16,7 +16,7 @@
  * (TARGET_ARCHITECTURE §8: "Preview ile gerçek widget birbirinden tamamen
  * farklı iki implementation olmasın.")
  */
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ChatBoxWidget } from './ChatBoxWidget.js';
 import { AlertBoxWidget } from './AlertBoxWidget.js';
 import { EmoteComboWidget } from './EmoteComboWidget.js';
@@ -47,6 +47,7 @@ import { MuzikVideoWidget } from './MuzikVideoWidget.js';
 import { WordCloudWidget } from './WordCloudWidget.js';
 import { ScoreboardWidget } from './ScoreboardWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
+import { arkasiniGizlerMi, cakisincaGizlenirMi, gizlenecekKatmanlar } from '../lib/katmanCakisma.js';
 
 export interface WidgetLayoutItem {
   enabled?: boolean;
@@ -397,9 +398,58 @@ export interface OverlayKatmanlariProps {
 }
 
 /**
+ * Widget gizliyken hiçbir şey çizmez ya da kökünü `data-katman-bos` ile işaretler (bildirim kutusu):
+ * kapsayıcısında içerik varsa ekranda demektir.
+ */
+function KatmanKutusu({ stil, izle, degisti, children }: { stil: CSSProperties; izle: boolean; degisti: (ekranda: boolean) => void; children: ReactNode }) {
+  const kap = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = kap.current;
+    if (!el || !izle) return;
+    const bak = () => degisti(el.childElementCount > 0 && !el.querySelector('[data-katman-bos]'));
+    bak();
+    const izleyici = new MutationObserver(bak);
+    izleyici.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-katman-bos'] });
+    return () => {
+      izleyici.disconnect();
+      degisti(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [izle]);
+  return (
+    <div ref={kap} style={stil}>
+      {children}
+    </div>
+  );
+}
+
+/**
  * Etkin katmanları çizer. `sarmala` verilmezse düz render — OBS bunu kullanır.
  */
 export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala }: OverlayKatmanlariProps) {
+  const [etkinler, setEtkinler] = useState<string[]>([]);
+  // Önizlemede tüm örnekler aynı anda çizilir: orada kimse gizlenmez
+  const gizli = onizleme || sarmala
+    ? new Set<string>()
+    : gizlenecekKatmanlar(
+        KATMANLAR.filter((k) => config[k.anahtar]?.enabled).map((k) => {
+          const i = config[k.anahtar];
+          return {
+            anahtar: k.anahtar,
+            tamEkran: k.tamEkran,
+            gizlenmez: !cakisincaGizlenirMi(k.anahtar, i),
+            kutu: {
+              x: typeof i?.x === 'number' ? i.x : k.varsayilan.x,
+              y: typeof i?.y === 'number' ? i.y : k.varsayilan.y,
+              width: typeof i?.width === 'number' ? i.width : k.varsayilan.width,
+              height: typeof i?.height === 'number' ? i.height : k.varsayilan.height,
+              scale: i?.scale,
+            },
+          };
+        }),
+        etkinler
+      );
+
   return (
     <>
       {KATMANLAR.map((katman) => {
@@ -411,10 +461,18 @@ export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala
 
         if (sarmala) return <span key={katman.anahtar}>{sarmala(katman, icerik, stil)}</span>;
 
+        // Widget kaldırılmaz, yalnız görünmez olur: sohbet geçmişi ve sayaçlar sürer
         return (
-          <div key={katman.anahtar} style={{ ...stil, pointerEvents: 'none' }}>
+          <KatmanKutusu
+            key={katman.anahtar}
+            stil={{ ...stil, pointerEvents: 'none', opacity: gizli.has(katman.anahtar) ? 0 : 1, transition: 'opacity 250ms' }}
+            izle={arkasiniGizlerMi(katman.anahtar, item)}
+            degisti={(ekranda) =>
+              setEtkinler((l) => (ekranda === l.includes(katman.anahtar) ? l : ekranda ? [...l, katman.anahtar] : l.filter((a) => a !== katman.anahtar)))
+            }
+          >
             {icerik}
-          </div>
+          </KatmanKutusu>
         );
       })}
     </>

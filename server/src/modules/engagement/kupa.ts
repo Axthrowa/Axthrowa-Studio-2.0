@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Bağış Kupası durumu (sunucuda; OBS yenilense de korunur)
+ * AxBoT — Bağış Kupası durumu (sunucuda; OBS yenilense de korunur)
  * Developed by AxthrowA
  *
  * Kupaya bağış, abone, hediye abonelik ve KICKs düşer (panelde hangilerinin

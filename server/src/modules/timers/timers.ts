@@ -1,5 +1,5 @@
 /**
- * StreamAxT — zamanlayıcılar (aralıklı sohbet mesajları)
+ * AxBoT — zamanlayıcılar (aralıklı sohbet mesajları)
  * Developed by AxthrowA
  *
  * Tek bir 5 sn'lik tik tüm zamanlayıcıları denetler; kararlar zamanlama.ts'te.

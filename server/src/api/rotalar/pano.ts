@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Ses/Video Panosu (Blerp tarzı)
+ * AxBoT API — Ses/Video Panosu (Blerp tarzı)
  * Developed by AxthrowA
  *
  * Öğeler ve kovalar medya kütüphanesindeki (/api/media) yayıncının kendi dosyalarını kullanır. Yazma uçları

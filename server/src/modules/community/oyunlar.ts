@@ -1,5 +1,5 @@
 /**
- * StreamAxT — topluluk oyunları: oylu susturma, emote piramidi, emote bingo
+ * AxBoT — topluluk oyunları: oylu susturma, emote piramidi, emote bingo
  * Developed by AxthrowA
  *
  * Saf durum makineleri (zaman parametreyle verilir, test edilebilir). Sohbete

@@ -1,11 +1,12 @@
 /**
- * StreamAxT Polls overlay
+ * AxBoT Polls overlay
  * Developed by AxthrowA
  *
  * Anket açılınca belirir, oylar canlı güncellenir; süre dolunca (ya da panelden
  * bitirilince) sonuç `hideAfterSec` saniye gösterilip kaybolur. Eskiden bitiş
  * olayı gelmezse "Anket bitti" kartı ekranda sonsuza dek kalıyordu.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { POLL_DEFAULTS } from '../lib/widget-defaults.js';
@@ -112,6 +113,7 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
       fontFamily: s.fontFamily,
       background: bg,
       border: `1px solid ${s.borderColor}`,
+      ...kutuTasarimi(s),
       borderRadius: s.borderRadius,
       padding: 16,
       minWidth: 280

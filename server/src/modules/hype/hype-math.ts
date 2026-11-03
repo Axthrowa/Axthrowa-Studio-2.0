@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Hype Treni hesapları (saf)
+ * AxBoT — Hype Treni hesapları (saf)
  * Developed by AxthrowA
  *
  * Widget'taki hesapların (HypeTrainWidget.tsx) sunucu karşılığı; kurallar

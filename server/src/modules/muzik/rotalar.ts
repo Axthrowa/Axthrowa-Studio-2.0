@@ -1,11 +1,11 @@
 /**
- * StreamAxT — müzik host API'si (Resonance arayüzü + panel + OBS)
+ * AxBoT — müzik host API'si (Resonance arayüzü + panel + OBS)
  * Developed by AxthrowA
  *
- * Uçlar Yayın Yönetim Aracı'ndaki Rust host'uyla aynı biçimdedir; Resonance
- * değiştirilmeden hem orada, hem StreamAxT'te (/resonance/), hem de bağımsız
+ * Uçlar AxthrowA Studio'daki Rust host'uyla aynı biçimdedir; Resonance
+ * değiştirilmeden hem orada, hem AxBoT'ta (/resonance/), hem de bağımsız
  * Resonance sunucusunda (resonance-bagimsiz.ts) çalışır. Bu dosya veritabanı
- * ve StreamAxT'e özgü modül kullanmaz: depolama ve yayın dışarıdan verilir.
+ * ve AxBoT'a özgü modül kullanmaz: depolama ve yayın dışarıdan verilir.
  */
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
@@ -22,7 +22,7 @@ export interface MuzikRotaSecenekleri {
   senkronYayinla: (m: unknown) => void;
   /** Spotify bağlantısı değişti (panelleri tazele) */
   durumDegisti?: () => void;
-  /** Temayı tutan uzak host (Yayın Yönetim Aracı); yoksa tema yalnız yerelde */
+  /** Temayı tutan uzak host (AxthrowA Studio); yoksa tema yalnız yerelde */
   uzakHost?: () => string;
 }
 
@@ -38,6 +38,24 @@ export function muzikRotalari(o: MuzikRotaSecenekleri): { router: Router; spotif
 
   router.get('/health', (_req, res) => {
     res.type('text/plain').send('ok');
+  });
+
+  // Söz kaynağı NetEase tarayıcıdan sorulamaz (CORS). Hedef sabit, yalnız arama metni ve sayısal kimlik geçer.
+  router.get('/player/sozler', async (req, res) => {
+    const ara = String(req.query.ara || '').trim().slice(0, 200);
+    const id = String(req.query.id || '');
+    const hedef = /^\d{1,20}$/.test(id)
+      ? `https://music.163.com/api/song/lyric?id=${id}&lv=1`
+      : ara
+        ? `https://music.163.com/api/search/get?s=${encodeURIComponent(ara)}&type=1&limit=8`
+        : '';
+    if (!hedef) return res.status(400).json({ error: 'ara ya da id gerekli' });
+    try {
+      const r = await fetch(hedef, { headers: { 'User-Agent': 'Mozilla/5.0', Referer: 'https://music.163.com/' }, signal: AbortSignal.timeout(8000) });
+      res.status(r.ok ? 200 : 502).type('application/json').send(await r.text());
+    } catch {
+      res.status(502).json({ error: 'kaynak yanıt vermedi' });
+    }
   });
 
   router.get('/now-playing', (_req, res) => {

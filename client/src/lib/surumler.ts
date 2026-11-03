@@ -11,11 +11,86 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.1',
+    ad: 'Temalar',
+    tarih: '2026-11-04',
+    notlar: [
+      'Kick: geçersiz bot girişi artık görünür; süresi dolan giriş kendini yeniler, yanıt yazamama sessizce kalmaz',
+      'Çarkıfelek: dönmeme hatası giderildi, kayıtlı dilim yokken de çalışır, ortaya görsel veya GIF adresi eklenir',
+      'Tek URL: yalnız ayar paneli kayar, köşe widgetı büyütür, kenarlar kutuyu değiştirir',
+      'Tahtın Kralı: taçtaki nokta kaldırıldı, hatalı temalar düzeltildi, yeni temalar',
+      'Hedef çubuğu ve Subathon sayacı: yeni görünümler ve 11\'er yeni tema',
+    ]
+  },
+  {
+    surum: '1.13.0',
+    ad: 'Temalar',
+    tarih: '2026-11-03',
+    notlar: [
+      'Canlı Chat: ileti arka planını tamamen şeffaf yapan ayar, 9 yeni görünüm, 12 yeni tema, 20 yeni yazı tipi, kurulu yazı tipi, ad ayrı satırda, emote boyutu',
+      'Tüm kutulu widgetlar: 27 ortak kutu tasarımı ve 10 yeni hazır tema',
+      'Çarkıfelek: 5 yeni renk paleti',
+      'Resonance: 8 yeni görünüm, renk paletleri, hareketli arka plan, kayan başlık, albüm adı, kalan süre',
+      'Şarkı sözleri: kartın altında ve kart genişliğinde, 9 görünüm; bulunamayınca NetEase ve Lyrics.ovh da aranır',
+    ]
+  },
+  {
+    surum: '1.12.0',
+    ad: 'AxBoT',
+    tarih: '2026-11-03',
+    notlar: [
+      'Botun adı AxBoT, uygulamanın adı AxthrowA Studio oldu',
+      '!sr: başlayan istek kesilmez, sıradaki istek kaybolmaz; !sarki gerçekten çalan şarkıyı yazar',
+      'Tek URL: uyarı dahil her widget için “arkasındakileri gizle” ve “öne bir şey gelince gizlen” ayarı',
+      'Tek URL: test düğmesi görünür çalışır, yalnız seçili widget taşınır, widget ayarlarının tamamı aynı panelde',
+      'Subathon: abone, hediye, bağış, KICKs ve takip ayrı ayrı açılıp kapanır; durum noktası kapatılabilir',
+      'Çarkıfelek: daha büyük orta alan, GIF, dönüş sesi ve dilim düzenleyici',
+      'Ekranda emote: emote’lar rastgele kenardan girip başka kenardan çıkar',
+      'Bağış treni boştayken de görünür; gizlemek ayarla açılır',
+      'Şarkı sözleri Giriş, Çıkış ve Mola ekranlarında; ayarları Resonance’ta'
+    ]
+  },
+  {
+    surum: '1.11.1',
+    ad: 'Sahne Sırası',
+    tarih: '2026-11-03',
+    notlar: [
+      'Tek URL overlay: çekiliş, Bil Bakalım ve anket ekrandayken bölgelerindeki widget gizlenir, bitince geri gelir',
+      'Bildirimler ve tam ekran efektler bu gizlemeden etkilenmez'
+    ]
+  },
+  {
+    surum: '1.11.0',
+    ad: 'Sahne Şovu',
+    tarih: '2026-11-03',
+    notlar: [
+      'Otomasyon: kod yazmadan tetikleyici, koşul ve eylem kuralları; Dene düğmesi hiçbir eylemi çalıştırmadan adımları gösterir',
+      'Sohbet patlamasında otomatik klip ya da OBS tekrar arabelleği kaydı kurulabilir',
+      '!so kartı Kick kanallarında profil fotoğrafını ve oyunu gösterir',
+      'Yayın Sonu Özeti: yayın bitince sayısal rapor; isteğe bağlı 3 maddelik yapay zekâ özeti',
+      'Şarkı isteği kuyruğu: sürükle-bırak sıra, öne alma, engel listesi, süre ve puan sınırı',
+      'Genel Bakış yenilendi, Ctrl+K komut paleti Bot sekmesinden de açılır'
+    ]
+  },
+  {
+    surum: '1.10.1',
+    ad: 'Tam Hesap',
+    tarih: '2026-11-03',
+    notlar: [
+      'Aynı yanıttaki ikinci değişken de çalışır: iki sayaç, iki seçim, iki koşul, iki hesap',
+      '{puan} herkese kendi cüzdanını ve güncel bakiyeyi gösterir; !izleme de kendi platformundaki kaydı okur',
+      'Puanlar en geç 30 saniyede kaydedilir: uygulama kapanınca son dakikalar kaybolmaz',
+      'Panelden yazılan komut yayıncı yetkisiyle çalışır; botla aynı metni yazan izleyici yok sayılmaz',
+      'Yayın kapalıyken izleme puanı verilmez',
+      '!duello uydurma ada cüzdan açmaz; tahmin ödemesi yarıda kalırsa iki kez ödenmez'
+    ]
+  },
+  {
     surum: '1.10.0',
     ad: 'Yeni Düzen',
     tarih: '2026-11-02',
     notlar: [
-      'Yayın Yönetim Aracı 1.3.0 ile yeni menüde gömülü çalışır: Komutlar, Oyunlar, Puanlar, Moderasyon sekmeleri',
+      'AxthrowA Studio 1.3.0 ile yeni menüde gömülü çalışır: Komutlar, Oyunlar, Puanlar, Moderasyon sekmeleri',
       'Sohbete yanıt verme anahtarı (!bot mute ile aynı ayar)',
       'Bağlantılar için OBS tarafında açık kaynak bilgisi'
     ]
@@ -69,7 +144,7 @@ export const SURUMLER: Surum[] = [
       'Hedef barı: simge barın ucunda, dolguyla birlikte ilerler',
       'Emote kombo: yalnız emote görünür, geldikçe büyür, gelmeyi kesince patlayıp saçılır',
       'Şarkı sözleri şarkı durduğu an ekrandan kalkar',
-      'Tek URL’deki Resonance, Yayın Yönetim Aracı’ndaki Resonance ile aynı görünümü kullanır; orada yapılan değişiklik hemen yansır',
+      'Tek URL’deki Resonance, AxthrowA Studio’ndaki Resonance ile aynı görünümü kullanır; orada yapılan değişiklik hemen yansır',
       'Widget testleri bitince her şey testten önceki hâline döner (kupa, sayaç, anket, akış, sohbet)',
       'Kick hediye abonelikleri ve KICKs olayları artık yakalanır; kaldırılan varsayılan uyarı görselleri ve sesi değiştirildi',
       'Panel sadeleşti: düz yüzeyler, tek başlık, daha az yazı'
@@ -118,7 +193,7 @@ export const SURUMLER: Surum[] = [
       'Şarkı sözleri: sürüm seçimi çalan parçanın süresine göre (kayma düzeltmesi), senkron kaydırma ayarı, 6 yeni görünüm ve satır yazı tipi',
       'Yazı tipleri: ayarlardaki ve temalardaki tüm yazı tipleri OBS’te yüklenir; 24 yeni Türkçe karakterli yazı tipi; listede yazı tipleri kendi görünümüyle',
       'Temalar: widget’ın tanımadığı görünüm değeri artık yazılmaz (bozuk görünüm); 20 yeni tema (Nord, Dracula, Catppuccin, Synthwave, Lo-fi, Sakura, E-spor…)',
-      "Yayın Yönetim Aracı'nın 'Hakkında' bölümünde StreamAxT sürümü görünür"
+      "AxthrowA Studio'nun 'Hakkında' bölümünde AxBoT sürümü görünür"
     ]
   },
   {
@@ -191,7 +266,7 @@ export const SURUMLER: Surum[] = [
     tarih: '2026-10-27',
     notlar: [
       'Twitch: yeniden bağlanınca eski bağlantının geç kapanışı yeni bağlantıyı kopmuş göstermez (bot mesajları gitmiyor, bekçi her dakika yeniden bağlıyordu)',
-      "Yayın Yönetim Aracı: kısıtlı yetkili uzak kullanıcı yalnız izinli uçlara erişir; Kick oturum dosyaları yarım yazılmaz (yeni YYA exe'si ister)"
+      "AxthrowA Studio: kısıtlı yetkili uzak kullanıcı yalnız izinli uçlara erişir; Kick oturum dosyaları yarım yazılmaz (yeni AxthrowA Studio exe'si ister)"
     ]
   },
   {
@@ -211,8 +286,8 @@ export const SURUMLER: Surum[] = [
     ad: 'Gerçek Sohbet',
     tarih: '2026-10-27',
     notlar: [
-      'Canlı sohbette botun mesajı yerel "AxBot" kopyası olarak değil, sohbete gerçekten düşen hâliyle (platformdaki bot hesabının adıyla) görünür',
-      "Yayın Yönetim Aracı taşınabilir kurulumda veritabanını dosyaya yazar (Dashboard 'no such table: app_meta' hatası; yeni YYA exe'si ister)"
+      'Canlı sohbette botun mesajı yerel "AxBoT" kopyası olarak değil, sohbete gerçekten düşen hâliyle (platformdaki bot hesabının adıyla) görünür',
+      "AxthrowA Studio taşınabilir kurulumda veritabanını dosyaya yazar (Dashboard 'no such table: app_meta' hatası; yeni AxthrowA Studio exe'si ister)"
     ]
   },
   {
@@ -220,9 +295,9 @@ export const SURUMLER: Surum[] = [
     ad: 'Sıra + Sonraki',
     tarih: '2026-10-27',
     notlar: [
-      "!sr isteği Spotify'da sıraya eklenip sonrakine geçilerek başlar (doğrudan \"çal\" komutu masaüstünü durduruyordu; yeni YYA exe'si ister)",
+      "!sr isteği Spotify'da sıraya eklenip sonrakine geçilerek başlar (doğrudan \"çal\" komutu masaüstünü durduruyordu; yeni AxthrowA Studio exe'si ister)",
       'Spotify aramasında şarkı adı sorguyla eşleşen sonuç seçilir ("Tame Impala Loser" artık "Dracula" getirmez)',
-      '"Resonance müzik çalarını aç" Yayın Yönetim Aracı içinde Müzik sekmesini açar',
+      '"Resonance müzik çalarını aç" AxthrowA Studio içinde Müzik sekmesini açar',
       "Emote Kombo: gelen emote'lar uçup büyük emote'ta toplanır, büyük emote kombo büyüdükçe irileşir; kombo bitince emote'lar etrafa dağılıp kaybolur (ayarlardan kapatılabilir)",
       'Hazır temalara 14 oyun & film teması (Retro Arcade, Siberpunk, Fantastik RPG, Korku, Vahşi Batı, Kara Film, Çizgi Roman…) ve yazı tipleri',
       'Temalar artık hedef barı gibi kendi renk alanlarını kullanan widget\'lara da uygulanır (önceden bar rengi değişmiyordu)'
@@ -233,8 +308,8 @@ export const SURUMLER: Surum[] = [
     ad: 'Doğru Cihaz',
     tarih: '2026-10-27',
     notlar: [
-      "!sr isteği Spotify'da bu bilgisayardaki masaüstü uygulamasında çalar (başka/hayalet cihaza gidip masaüstünü durdurmaz; yeni YYA exe'si ister)",
-      '"Resonance müzik çalarını aç" bağlantısı Yayın Yönetim Aracı içinde de açılır'
+      "!sr isteği Spotify'da bu bilgisayardaki masaüstü uygulamasında çalar (başka/hayalet cihaza gidip masaüstünü durdurmaz; yeni AxthrowA Studio exe'si ister)",
+      '"Resonance müzik çalarını aç" bağlantısı AxthrowA Studio içinde de açılır'
     ]
   },
   {
@@ -252,7 +327,7 @@ export const SURUMLER: Surum[] = [
     tarih: '2026-10-27',
     notlar: [
       "!sr istekleri hangi program açıksa (Spotify ya da YouTube Music Desktop) onda sıraya girer, çalan şarkı bitince kendiliğinden çalar",
-      'Bot, isteği işlemeden önce Yayın Yönetim Aracı müzik durumunu tazeler (açılışta gelen ilk istek kaybolmaz)',
+      'Bot, isteği işlemeden önce AxthrowA Studio müzik durumunu tazeler (açılışta gelen ilk istek kaybolmaz)',
       'Yeni istek başlarken önceki/takılı kayıtlar kapanır; "Hemen çal" seçeneğinin çalan şarkıyı kestiği açıkça yazar'
     ]
   },
@@ -280,7 +355,7 @@ export const SURUMLER: Surum[] = [
     ad: 'Sıradaki',
     tarih: '2026-10-27',
     notlar: [
-      "!sr isteği çalan şarkıyı kesmez: Yayın Yönetim Aracı'ndaki Spotify'da istekler bot tarafında sıraya alınır, çalan şarkı bitmek üzereyken sıradaki başlar",
+      "!sr isteği çalan şarkıyı kesmez: AxthrowA Studio'daki Spotify'da istekler bot tarafında sıraya alınır, çalan şarkı bitmek üzereyken sıradaki başlar",
       'Sırada istek yoksa Spotify kendi akışıyla (rastgele/otomatik) çalmaya devam eder; istek başlayınca sohbete "Şimdi çalıyor" yazılır',
       'Şarkı Klipleri: video kipinde katman kendiliğinden açılır; kuyruk boşken Otomatik DJ önceki isteklerden rastgele çalar',
       'Atlamada sırada istek varsa doğrudan o başlar; Spotify API kipinde masaüstü uygulaması ayrıca açılmaz'
@@ -344,7 +419,7 @@ export const SURUMLER: Surum[] = [
       'Başlıkta durum şeridi: Platform, Müzik, OBS, Yapay zekâ (tıklayınca ilgili sayfa)',
       'Menü üç gruba ayrıldı: Yayın sırasında, Etkileşim & Eğlence, Kurulum & Ayarlar',
       "Galeride her widget'a hızlı test; anket, çekiliş ve ödül widget'larının gerçek testi",
-      "Spotify kartı, Yayın Yönetim Aracı'ndaki bağlantıyı gösterir (ikinci bağlantı gerekmez)"
+      "Spotify kartı, AxthrowA Studio'daki bağlantıyı gösterir (ikinci bağlantı gerekmez)"
     ]
   },
   {
@@ -352,11 +427,11 @@ export const SURUMLER: Surum[] = [
     ad: 'Tek Sahne',
     tarih: '2026-10-26',
     notlar: [
-      'Bot adı artık AxBot (uygulama adı StreamAxT)',
+      'Bot adı artık AxBoT (uygulama adı AxBoT)',
       "Tüm widget'lar tek OBS URL'sine eklenebilir; galeride \"Tek URL'ye ekle\" düğmesi",
       "Yeni Şarkı Klipleri widget'ı: !sr istekleri YouTube klibiyle OBS'te sırayla çalar",
       'Anket başlayınca tek URL katmanı kendiliğinden açılır; Kick panelinden başlatılan anket de görünür',
-      "!sr, Yayın Yönetim Aracı'ndaki Spotify bağlantısını kullanır (sıraya ekleme yeni YYA exe'si ister; eski exe'de hemen çalar)",
+      "!sr, AxthrowA Studio'daki Spotify bağlantısını kullanır (sıraya ekleme yeni AxthrowA Studio exe'si ister; eski exe'de hemen çalar)",
       'Resonance içinde senkron şarkı sözleri (/resonance/lyrics)',
       'Yapay zekâ: Gemini yanında OpenAI, Claude, Groq, OpenRouter, DeepSeek, Mistral, xAI, Ollama ve özel adres',
       'Çıkış jeneriği yalnız o yayında gelen abone/destekçi/takipçileri gösterir (açılıp kapatılabilir)',

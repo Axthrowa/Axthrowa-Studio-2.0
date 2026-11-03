@@ -1,5 +1,5 @@
 /**
- * StreamAxT — seviye/XP testleri
+ * AxBoT — seviye/XP testleri
  * Developed by AxthrowA
  *
  * Yalnız saf hesap fonksiyonları test edilir; `levels.ts` veritabanını

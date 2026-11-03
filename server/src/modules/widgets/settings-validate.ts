@@ -1,5 +1,5 @@
 /**
- * StreamAxT — widget ayarı doğrulaması (B2) (saf)
+ * AxBoT — widget ayarı doğrulaması (B2) (saf)
  * Developed by AxthrowA
  *
  * Denetim B2: `POST /api/widgets/:widgetId/settings` gelen HER JSON'u

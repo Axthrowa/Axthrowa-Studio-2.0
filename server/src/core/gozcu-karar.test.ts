@@ -1,5 +1,5 @@
 /**
- * StreamAxT — gözcü kararı testleri
+ * AxBoT — gözcü kararı testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

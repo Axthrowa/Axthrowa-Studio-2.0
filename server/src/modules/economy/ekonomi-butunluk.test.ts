@@ -34,6 +34,7 @@ import { panelAyari, panelden } from '../games/oyun-ayarlari.js';
 import { seviyeler } from '../levels/levels.js';
 import { ttsEngine } from '../tts/tts.js';
 import { giveaway } from '../giveaways/giveaways.js';
+import { canliDurum } from '../../core/live-status.js';
 
 const mesaj = (ad: string) =>
   ({
@@ -277,5 +278,69 @@ describe('panel ayarları oyuna ulaşır', () => {
     expect(y.anagram).toEqual({ rewardPoints: 75, durationSeconds: 25 });
     expect(panelAyari(y).soygun).toEqual({ enabled: false, minBet: 30, maxBet: 30, cooldownSec: 60 });
     expect(y.enabledGames.dice).toBe(s.enabledGames.dice);
+  });
+});
+
+describe('kapanışa dayanıklılık', () => {
+  it('mesaj puanı en geç 30 saniyede diske yazılır (süreç öldürülünce kaybolmaz)', () => {
+    bakiyeYap('ali', 100);
+    economy.startWatchTimeLoop(5);
+    economy.recordMessage(mesaj('ali'));
+    expect(diskteki('ali')).toBe(100);
+    vi.advanceTimersByTime(30_000);
+    expect(diskteki('ali')).toBe(102);
+  });
+});
+
+describe('izleme puanı', () => {
+  const izleme = () =>
+    (db.prepare('SELECT watch_time_minutes w FROM economy WHERE username = ?').get('ali') as { w: number }).w;
+
+  it('yayın kapalıyken verilmez', () => {
+    bakiyeYap('ali', 100);
+    vi.spyOn(canliDurum, 'genel').mockReturnValue({ canli: false } as any);
+    expect(economy.recordWatchTime(5)).toBe(0);
+    economy.flushAll();
+    expect(izleme()).toBe(0);
+    expect(diskteki('ali')).toBe(100);
+  });
+
+  it('yayın açıkken ve durum bilinmiyorken verilir', () => {
+    bakiyeYap('ali', 100);
+    vi.spyOn(canliDurum, 'genel').mockReturnValue({ canli: true } as any);
+    expect(economy.recordWatchTime(5)).toBe(1);
+    vi.spyOn(canliDurum, 'genel').mockReturnValue({ canli: null } as any);
+    expect(economy.recordWatchTime(5)).toBe(1);
+    expect(izleme()).toBe(10);
+  });
+});
+
+describe('düello hedefi', () => {
+  const satirSayisi = () => (db.prepare('SELECT COUNT(*) c FROM economy').get() as { c: number }).c;
+
+  it('uydurma ada cüzdan açmaz', () => {
+    bakiyeYap('ali', 1000);
+    const once = satirSayisi();
+    expect(economy.handleDuel(mesaj('ali'), ['@hayalet_kisi', '1'])).toContain('yeterli puanı yok');
+    expect(satirSayisi()).toBe(once);
+  });
+
+  it('geçersiz ad reddedilir', () => {
+    bakiyeYap('ali', 1000);
+    expect(economy.handleDuel(mesaj('ali'), ['<script>', '1'])).toContain('düello başlatmak için');
+  });
+});
+
+describe('toplu ödeme', () => {
+  it('hata olursa disk ve önbellek eski bakiyeye döner; ödenmemiş mesaj puanı korunur', () => {
+    bakiyeYap('ali', 100);
+    economy.recordMessage(mesaj('ali'));
+    expect(() =>
+      economy.topluOde([{ kullanici: 'ali', puan: 50 }], () => {
+        throw new Error('kayıt yazılamadı');
+      })
+    ).toThrow('kayıt yazılamadı');
+    expect(economy.getUserPoints('ali')).toBe(102);
+    expect(diskteki('ali')).toBe(102);
   });
 });

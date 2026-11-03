@@ -1,11 +1,11 @@
 /**
- * StreamAxT — widget ayar kanalı (sayfa başına TEK WebSocket)
+ * AxBoT — widget ayar kanalı (sayfa başına TEK WebSocket)
  * Developed by AxthrowA
  *
  * Kullanıcı bildirdi: "Overlay Stüdyo'da yaptığım değişiklikler OBS'e
  * yansımıyor." Sebeplerinden biri: her widget ayarlarını kendi açtığı bir
  * WebSocket'ten dinliyordu ve bu soket KOPUNCA YENİDEN BAĞLANMIYORDU. OBS
- * tarayıcı kaynakları saatlerce açık kalır; StreamAxT bir kez yeniden
+ * tarayıcı kaynakları saatlerce açık kalır; AxBoT bir kez yeniden
  * başlayınca (panel yeniden açıldı, güncelleme geldi…) sonraki tüm ayar
  * değişiklikleri o kaynağa hiç ulaşmıyordu. Ayrıca tek tuvalde 14 widget = 14
  * ayrı soket demekti.

@@ -1,7 +1,7 @@
 /**
  * Dış bağlantıyı aç — gömülü (iframe) kullanımda da çalışır.
  *
- * StreamAxT, Yayın Yönetim Aracı'nın Bot sekmesinde bir iframe içinde
+ * AxBoT, AxthrowA Studio'nun Bot sekmesinde bir iframe içinde
  * çalışıyor. Orada `target="_blank"` ve `window.open` sessizce başarısız
  * oluyor (WebView yeni sekme açmıyor): "OBS Alert Önizle" gibi düğmeler hiçbir
  * şey yapmıyormuş gibi görünüyordu. Açılamazsa üst pencereye haber verilir;

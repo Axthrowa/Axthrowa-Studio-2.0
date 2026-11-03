@@ -1,4 +1,4 @@
-// Resonance, Yayın Yönetim Aracı'nın yerel HTTP sunucusundan (varsayılan
+// Resonance, AxthrowA Studio'nun yerel HTTP sunucusundan (varsayılan
 // 127.0.0.1:8843) servis edilir. Bu modül o "host" ile konuşur.
 //
 // Neden gerekli: Spotify yetkilendirmesi artık tarayıcı `sessionStorage`'ında

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { baskinRenk } from '../lib/baskinRenk'
 
 const cache = new Map()
 
@@ -23,20 +24,8 @@ export function useDominantColor(imageUrl) {
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, size, size)
         const { data } = ctx.getImageData(0, 0, size, size)
-        let r = 0
-        let g = 0
-        let b = 0
-        let count = 0
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i]
-          g += data[i + 1]
-          b += data[i + 2]
-          count++
-        }
-        r = Math.round(r / count)
-        g = Math.round(g / count)
-        b = Math.round(b / count)
-        const hex = `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`
+        const hex = baskinRenk(data)
+        if (!hex) return
         cache.set(imageUrl, hex)
         setColor(hex)
       } catch {

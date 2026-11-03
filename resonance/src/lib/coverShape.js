@@ -62,10 +62,20 @@ export const SKIN_COVER_SUPPORT = {
   ring: ['square', 'vinyl'], // 'square' = yuvarlak fotoğraf, 'vinyl' = dönen plak; kapaksız halka yok
   aurora: ['square', 'vinyl', 'none'],
   edge: ['square', 'vinyl', 'none'],
+  turntable: ['vinyl'], // kapak hep plağın üstünde döner
+  cassette: [], // kapak hiç çizilmiyor
+  pill: ['square', 'vinyl', 'none'],
+  island: ['square', 'vinyl', 'none'],
+  strip: ['square', 'vinyl', 'none'],
+  albumfocus: ['square'],
+  sidebar: ['square', 'vinyl', 'none'],
+  gameboy: ['square', 'none'],
+  hud: ['square', 'none'],
+  sticky: ['square', 'none'],
 }
 
 /** Destek listesi dışında kalan seçimin düşeceği biçim. */
-const FALLBACK = { shell: 'vinyl', discord: 'square', gallery: 'square', ring: 'square' }
+const FALLBACK = { shell: 'vinyl', discord: 'square', gallery: 'square', ring: 'square', turntable: 'vinyl' }
 
 export function supportedCovers(skin) {
   return SKIN_COVER_SUPPORT[skin] || SKIN_COVER_SUPPORT.compact

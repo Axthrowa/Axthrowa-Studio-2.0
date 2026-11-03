@@ -1,5 +1,5 @@
 /**
- * StreamAxT — etkileşim sistemleri testleri
+ * AxBoT — etkileşim sistemleri testleri
  * Developed by AxthrowA
  *
  * Yalnız saf fonksiyonlar; motor sınıfları veritabanı açtığı için

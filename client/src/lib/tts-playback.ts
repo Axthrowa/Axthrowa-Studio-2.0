@@ -1,5 +1,5 @@
 /**
- * StreamAxT TTS playback — applies selected voice gender on the client
+ * AxBoT TTS playback — applies selected voice gender on the client
  * Developed by AxthrowA
  */
 

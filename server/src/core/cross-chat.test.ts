@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AKTARIM_UZUNLUK_SINIRI, aktarimMetni, aktarimYankisiMi } from './cross-chat.js';
+import { AKTARIM_UZUNLUK_SINIRI, aktarimMetni, aktarimYankisiMi, botYankisiMi } from './cross-chat.js';
 
 const VARSAYILAN = '[$platform] $user: $message';
 
@@ -51,5 +51,20 @@ describe('aktarimYankisiMi', () => {
     const bicim = '($platform) $user » $message';
     expect(aktarimYankisiMi(bicim, aktarimMetni(bicim, { platform: 'trovo', user: 'x', message: 'y' }))).toBe(true);
     expect(aktarimYankisiMi('$message', 'herhangi bir metin')).toBe(false);
+  });
+});
+
+describe('botYankisiMi', () => {
+  const son = new Set(['!anket']);
+
+  it('bot hesabı işaretli platformda yalnız botun kendi mesajı yankıdır', () => {
+    expect(botYankisiMi(son, '!anket', 'kick', true)).toBe(true);
+    expect(botYankisiMi(son, '!anket', 'kick', false)).toBe(false);
+    expect(botYankisiMi(son, '!anket', 'twitch', undefined)).toBe(false);
+  });
+
+  it('bot hesabı ayırt edilemeyen platformda metin eşleşmesi yeter', () => {
+    expect(botYankisiMi(son, '!anket', 'youtube', false)).toBe(true);
+    expect(botYankisiMi(son, 'selam', 'youtube', false)).toBe(false);
   });
 });

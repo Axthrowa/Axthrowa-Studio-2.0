@@ -44,7 +44,7 @@ describe('şarkı kuyruğu eşleme', () => {
     expect(songRequest.klipSirasi()!.id).toBe('yeni');
   });
 
-  it("Yayın Yönetim Aracı'ndan gelen çalan şarkı (kimliksiz) başlıkla eşlenir", () => {
+  it("AxthrowA Studio'dan gelen çalan şarkı (kimliksiz) başlıkla eşlenir", () => {
     ekle('a', 'Birinci — X', 'https://open.spotify.com/track/aaaaaaaaaaaaaaaaaaaaaa', 1);
     ekle('b', 'Paramparça — Teoman', 'https://open.spotify.com/track/bbbbbbbbbbbbbbbbbbbbbb', 2);
     (muzikHost as any).calaniGuncelle(

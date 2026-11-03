@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Trovo adaptörü
+ * AxBoT — Trovo adaptörü
  * Developed by AxthrowA
  *
  * BOTRIX_GAP_ANALYSIS'te eksik olarak işaretlenmişti: BotRix Trovo'yu

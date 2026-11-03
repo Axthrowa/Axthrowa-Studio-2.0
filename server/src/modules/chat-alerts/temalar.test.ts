@@ -1,5 +1,5 @@
 /**
- * StreamAxT — temalı sohbet uyarısı testleri
+ * AxBoT — temalı sohbet uyarısı testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

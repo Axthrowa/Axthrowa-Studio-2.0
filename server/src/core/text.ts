@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Türkçe metin yardımcıları (saf)
+ * AxBoT — Türkçe metin yardımcıları (saf)
  * Developed by AxthrowA
  *
  * `'HAYIR'.toLowerCase()` = `'hayir'` ama `'Hayır'.toLowerCase()` =

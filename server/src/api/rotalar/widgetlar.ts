@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Subathon, Hype Treni, hepsi-bir-arada overlay, widget testleri ve ayarları
+ * AxBoT API — Subathon, Hype Treni, hepsi-bir-arada overlay, widget testleri ve ayarları
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;
@@ -79,6 +79,7 @@ router.post('/subathon/settings', (req: Request, res: Response) => {
   const g = req.body || {};
   const sayi = (v: any, varsayilan: number) => (v === undefined || v === null || v === '' ? varsayilan : Math.max(0, Number(v) || 0));
   const mevcut = subathon.ayarOku();
+  const acik = (v: any, varsayilan: boolean) => (typeof v === 'boolean' ? v : varsayilan);
   res.json(
     subathon.ayarYaz({
       baslangicDakika: sayi(g.baslangicDakika, mevcut.baslangicDakika),
@@ -89,7 +90,12 @@ router.post('/subathon/settings', (req: Request, res: Response) => {
       kicksDakika: sayi(g.kicksDakika, mevcut.kicksDakika),
       kicksBirimi: Math.max(1, sayi(g.kicksBirimi, mevcut.kicksBirimi)),
       takipDakika: sayi(g.takipDakika, mevcut.takipDakika),
-      maksSaat: sayi(g.maksSaat, mevcut.maksSaat)
+      maksSaat: sayi(g.maksSaat, mevcut.maksSaat),
+      aboneAcik: acik(g.aboneAcik, mevcut.aboneAcik),
+      hediyeAcik: acik(g.hediyeAcik, mevcut.hediyeAcik),
+      bagisAcik: acik(g.bagisAcik, mevcut.bagisAcik),
+      kicksAcik: acik(g.kicksAcik, mevcut.kicksAcik),
+      takipAcik: acik(g.takipAcik, mevcut.takipAcik)
     })
   );
 });
@@ -140,7 +146,7 @@ export function normalizeAllInOneConfig(cfg: any) {
     theCup: { enabled: false, x: 1580, y: 610, width: 300, height: 430, scale: 1 },
     polls: { enabled: false, x: 1540, y: 180, width: 340, height: 260, scale: 1 },
     wheel: { enabled: false, x: 760, y: 340, width: 400, height: 400, scale: 1 },
-    hypeTrain: { enabled: false, x: 685, y: 350, width: 550, height: 85, scale: 1 },
+    hypeTrain: { enabled: false, x: 685, y: 350, width: 550, height: 130, scale: 1 },
     // Yalnız çekiliş açıkken ve mesaj sabitliyken görünürler; kapalı başlayınca panelden yapılan işlem OBS'e yansımıyordu
     giveaway: { enabled: true, x: 660, y: 380, width: 600, height: 300, scale: 1 },
     pinned: { enabled: true, x: 560, y: 820, width: 800, height: 110, scale: 1 }
@@ -212,8 +218,13 @@ router.post('/overlay/all-in-one', (req: Request, res: Response) => {
 /** Widget test tetikleyicisi (Overlay Studio "Test" düğmesi ve sesli komutlar). Gerçek durum değişmez. */
 export function widgetTesti(widgetName: string, body: any = {}): void {
   switch (widgetName) {
-    case 'emote-combo':
     case 'on-screen-emotes':
+      // Kombodan ayrı: yalnız ekranda emote widget'ı alır; sohbetten gelen emote'lar gibi kenardan kenara uçar
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => wsHub.broadcastTo(['all'], { type: 'kappagen', test: true, patlama: false, emotes: [{ ad: body.emote || '🔥' }, { ad: '🎉' }] }), i * 250).unref?.();
+      }
+      break;
+    case 'emote-combo':
       // Gerçek kombo gibi: emote art arda gelir, büyür, durunca patlar
       for (let i = 0; i < 7; i++) {
         setTimeout(() => wsHub.broadcastTo(['all'], { type: 'emote_used', emote: body.emote || '🔥' }), i * 350).unref?.();
@@ -256,7 +267,7 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
         test: true,
         song: {
           title: body.title || 'Test Şarkısı',
-          artist: body.artist || 'StreamAxT',
+          artist: body.artist || 'AxBoT',
           requestedBy: body.requestedBy || 'TestIzleyici',
           thumbnail: body.coverUrl || '',
           duration: 200
@@ -270,7 +281,7 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
         data: {
           channel: body.channel || 'StreamMaster',
           platform: body.platform || 'kick',
-          game: body.game || 'Grand Theft Auto VI',
+          oyun: body.oyun || 'Grand Theft Auto VI',
           avatarUrl: body.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop',
           message: body.message || 'Bu harika yayıncıyı takip etmeyi unutmayın!'
         }
@@ -291,7 +302,7 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       break;
     case 'tts':
     case 'cloud-tts':
-      ttsEngine.enqueue(body.text || 'StreamAxT widget TTS testi. Dil ve ses ayarları uygulandı.', body.user || 'Yayıncı');
+      ttsEngine.enqueue(body.text || 'AxBoT widget TTS testi. Dil ve ses ayarları uygulandı.', body.user || 'Yayıncı');
       break;
     case 'jumpscare':
       wsHub.broadcastTo(['all'], {
@@ -444,7 +455,7 @@ router.post('/widgets/:widgetId/settings', (req: Request, res: Response) => {
   if (sonuc.uyarilar.length) {
     console.warn(`[Widget] ${req.params.widgetId} ayarında düzeltme:`, sonuc.uyarilar.slice(0, 5).join(' · '));
     // Yanıt gövdesi değişmesin (panel ayar nesnesi bekliyor); uyarı başlıkta
-    res.setHeader('X-StreamAxT-Uyari', encodeURIComponent(sonuc.uyarilar.slice(0, 3).join(' | ')));
+    res.setHeader('X-AxBoT-Uyari', encodeURIComponent(sonuc.uyarilar.slice(0, 3).join(' | ')));
   }
   res.json(sonuc.deger);
 });

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — son sohbet mesajları tamponu (`!nuke`, `!vanish`)
+ * AxBoT — son sohbet mesajları tamponu (`!nuke`, `!vanish`)
  * Developed by AxthrowA
  *
  * Yaygın botlarda gözlenen (herkese açık belgeler, 2026-10) toplu moderasyon:

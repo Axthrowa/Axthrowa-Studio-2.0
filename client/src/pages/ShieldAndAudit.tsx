@@ -239,7 +239,7 @@ export default function ShieldAndAudit() {
                 {shield.isActive ? <ShieldAlert className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                 {shield.isActive ? 'KALKAN MODU AKTİF (ACİL DURUM)' : 'SİSTEM GÜVENLİ (NORMAL MOD)'}
               </span>
-              <span className="text-xs text-gray-400">StreamAxT Shield Standardı</span>
+              <span className="text-xs text-gray-400">AxBoT Shield Standardı</span>
             </div>
 
             <h1 className="text-2xl md:text-3xl font-black text-white">

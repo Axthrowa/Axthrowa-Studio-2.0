@@ -1,5 +1,5 @@
 /**
- * StreamAxT — kara liste kelime kuralları testleri
+ * AxBoT — kara liste kelime kuralları testleri
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

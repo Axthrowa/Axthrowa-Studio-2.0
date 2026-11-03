@@ -3,7 +3,7 @@
 **Tarih:** 2026-09-21 · 2. tur 2026-09-22 · 3. tur 2026-09-23/24 (`§9`)
 **Sürüm:** `revamp/botrix-parity-20260921` · `26911f3`+
 **Test örneği:** port 3011, **boş ve izole veritabanı** — kullanıcının
-gerçek StreamAxT'sine (3001) hiç dokunulmadı.
+gerçek AxBoT'suna (3001) hiç dokunulmadı.
 
 ---
 
@@ -432,7 +432,7 @@ dışı bırakılmadı.
 | Widget ayarı: geçersiz kimlik · 60 karakter kimlik | 400 · 400 |
 | `__proto__` + `constructor` · `fontSize: "abc"` · `"30"` | Atıldı · eski değer (24) korundu · 30 (sayı) |
 | 3 MB gövde · dizi gövde · 12 seviyeli nesne | 400 · 400 · 8. seviyede kırpıldı |
-| Düzeltme bildirimi | `X-StreamAxT-Uyari` başlığında ve günlükte `UYARI` satırı |
+| Düzeltme bildirimi | `X-AxBoT-Uyari` başlığında ve günlükte `UYARI` satırı |
 | Açılış günlüğü | Her satır ISO zaman + seviye; günlükte maskelenmemiş sır deseni **0** |
 | Bozuk `jumpscare_settings` JSON'u + 6 istek | Yanıt varsayılan; günlükte **tek** uyarı satırı |
 | Pano, canlı durum bilinmiyorken | Sarı "Yayın durumu bilinmiyor" rozeti, ipucu komut etkisini açıklıyor; 6 platform kartı (Trovo dahil) |

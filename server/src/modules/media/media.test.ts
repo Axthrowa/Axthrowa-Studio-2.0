@@ -1,5 +1,5 @@
 /**
- * StreamAxT — medya doğrulama testleri
+ * AxBoT — medya doğrulama testleri
  * Developed by AxthrowA
  *
  * Yalnız saf doğrulama fonksiyonları; `media.ts` veritabanı ve dosya sistemi

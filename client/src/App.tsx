@@ -75,6 +75,7 @@ const Integrations = lazy(() => import('./pages/Integrations.js'));
 const SoundBoard = lazy(() => import('./pages/SoundBoard.js'));
 const SoundBoardWidget = lazy(() => import('./widgets/SoundBoardWidget.js'));
 const SesliDinleyici = lazy(() => import('./pages/SesliDinleyici.js'));
+const Otomasyon = lazy(() => import('./pages/Otomasyon.js'));
 const VoiceCommands = lazy(() => import('./pages/VoiceCommands.js'));
 import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
@@ -123,7 +124,7 @@ export function App() {
   // Eskiden Emote Combo'yu açıyordu; artık gerçek uçan emote (kappagen) katmanı
   if (path === '/widgets/emotes' || path === '/widgets/on-screen-emotes' || path === '/widgets/kappagen') return obsSayfasi(<KappagenWidget />);
 
-  // Otherwise, render full StreamAxT Dashboard
+  // Otherwise, render full AxBoT Dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
   // Tarayıcı geri/ileri tuşu (B7): sekme adresteki #sekme ile eşlenir.
   // NOT: yukarıdaki useState satırı BİLEREK değiştirilmedi — panel kabuğunun
@@ -147,6 +148,17 @@ export function App() {
   }, [onayIste]);
   const sekmeyeGecRef = useRef(sekmeyeGec);
   sekmeyeGecRef.current = sekmeyeGec;
+  // Panele gömülüyken Ctrl+K çerçeve dışına çıkmaz: komut paletini açsın diye panele bildirilir
+  useEffect(() => {
+    if (window.parent === window) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return;
+      e.preventDefault();
+      window.parent.postMessage({ type: 'streamaxt:komut-paleti' }, '*');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   useEffect(() => {
     const ilk = window.location.hash.replace('#', '');
     if (ilk) setActiveTab(ilk);
@@ -178,7 +190,7 @@ export function App() {
     overlays: 'Overlay Stüdyo', alerts: 'Uyarılar', pano: 'Ses / Video Panosu', tts: 'TTS',
     songrequest: 'Şarkı İsteği', polls: 'Anketler', giveaways: 'Çekilişler', interaction: 'Tahmin & Kuyruk',
     trivia: 'Bil Bakalım', games: 'Chat Oyunları', economy: 'Sadakat & Market', rankings: 'Sıralamalar',
-    donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar',
+    donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar', otomasyon: 'Otomasyon',
     extras: 'Klip & Seviye', automod: 'Bot Moderasyonu', shield: 'Kalkan & Denetim', ai: 'Yapay Zekâ',
     platforms: 'Platformlar', integrations: 'Discord & Entegrasyonlar', settings: 'Genel Ayarlar', botadvanced: 'Gelişmiş Bot'
   };
@@ -192,13 +204,15 @@ export function App() {
     { id: 'etkinlik', label: 'Anket & Çekiliş', icon: BarChart3, grup: 'Yayın sırasında', alt: ['polls', 'giveaways', 'interaction'] },
     { id: 'oyun', label: 'Oyunlar', icon: Gamepad2, grup: 'Etkileşim', alt: ['trivia', 'games'] },
     { id: 'ekonomi', label: 'Puan & Bağış', icon: Coins, grup: 'Etkileşim', alt: ['economy', 'rankings', 'donations'] },
-    { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'sesli', 'extras'] },
+    { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'otomasyon', 'sesli', 'extras'] },
     { id: 'moderasyon', label: 'Moderasyon', icon: ShieldCheck, grup: 'Kurulum & Ayarlar', alt: ['automod', 'shield'] },
     { id: 'yapayzeka', label: 'Yapay Zekâ', icon: Sparkles, grup: 'Kurulum & Ayarlar', alt: ['ai'] },
     { id: 'baglanti', label: 'Bağlantılar', icon: Link2, grup: 'Kurulum & Ayarlar', alt: ['platforms', 'integrations'] },
     { id: 'ayarlar', label: 'Ayarlar', icon: SettingsIcon, grup: 'Kurulum & Ayarlar', alt: ['settings', 'botadvanced'] },
   ];
   const aktifMerkez = navItems.find((m) => m.alt.includes(activeTab));
+  // AxthrowA Studio tek bir sayfayı gömer (?embed=1): menü ve başlık orada zaten var
+  const gomulu = new URLSearchParams(window.location.search).has('embed');
   if (aktifMerkez) sonAltSayfa.current[aktifMerkez.id] = activeTab;
 
   const renderActivePage = () => {
@@ -230,6 +244,7 @@ export function App() {
       case 'polls': return <PollsStudio />;
       case 'pano': return <SoundBoard />;
       case 'sesli': return <VoiceCommands />;
+      case 'otomasyon': return <Otomasyon />;
       case 'songrequest': return <SongRequest />;
       case 'economy': return <Economy />;
       case 'games': return <MiniGames />;
@@ -248,7 +263,7 @@ export function App() {
     {onayDiyalogu}
     <div className="axt-panel flex min-h-screen bg-[#0b0d12] text-gray-200">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/[0.06] bg-[#0b0d12] flex flex-col justify-between fixed inset-y-0 left-0 z-30">
+      {!gomulu && <aside className="w-64 border-r border-white/[0.06] bg-[#0b0d12] flex flex-col justify-between fixed inset-y-0 left-0 z-30">
         <div>
           <div className="px-5 pt-5 pb-3 flex items-center gap-2">
             <img src="/logo.png" alt="" className="w-6 h-6 rounded-md" />
@@ -285,19 +300,20 @@ export function App() {
         </div>
 
         <div className="px-5 py-3 text-[11px] text-gray-600">{BRAND.author}</div>
-      </aside>
+      </aside>}
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      {/* Yükseklik sabit: sayfayı `main` kaydırır, böylece içerideki yapışkan (sticky) alanlar çalışır */}
+      <div className={`flex-1 flex flex-col h-screen min-w-0 ${gomulu ? '' : 'ml-64'}`}>
         {/* Top Header */}
-        <header className="h-16 border-b border-white/[0.06] bg-[#0b0d12] sticky top-0 z-20 px-8 flex items-center justify-between">
+        {!gomulu && <header className="h-16 border-b border-white/[0.06] bg-[#0b0d12] sticky top-0 z-20 px-8 flex items-center justify-between">
           <h1 className="text-[15px] font-medium text-white">{aktifMerkez?.label || sayfaAdlari[activeTab]}</h1>
           <DurumSeridi git={sekmeyeGec} />
-        </header>
+        </header>}
 
         {/* Page Content */}
-        <main className="flex-1 p-8 overflow-y-auto">
-          {aktifMerkez && aktifMerkez.alt.length > 1 && (
+        <main className={`flex-1 min-h-0 overflow-y-auto ${gomulu ? 'p-4' : 'p-8'}`}>
+          {!gomulu && aktifMerkez && aktifMerkez.alt.length > 1 && (
             <div role="tablist" aria-label={aktifMerkez.label} className="mb-6 flex flex-wrap gap-5 border-b border-white/[0.08]">
               {aktifMerkez.alt.map((alt) => (
                 <button

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — 7TV emote'ları (herkese açık 7tv.io v3 API'si)
+ * AxBoT — 7TV emote'ları (herkese açık 7tv.io v3 API'si)
  * Developed by AxthrowA
  *
  * Kanalın 7TV seti (Kick kullanıcı kimliğiyle) + 7TV genel seti okunur;

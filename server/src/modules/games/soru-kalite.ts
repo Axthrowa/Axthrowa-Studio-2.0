@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Bil Bakalım soru bankası kalite denetimi ve onarımı (saf; testli)
+ * AxBoT — Bil Bakalım soru bankası kalite denetimi ve onarımı (saf; testli)
  * Developed by AxthrowA
  *
  * Bankanın büyük kısmı şablonla üretilmişti ve çoğu bozuktu:

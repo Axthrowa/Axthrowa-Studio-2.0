@@ -30,7 +30,7 @@ export function HizliKurulum({ git }: { git: (sekme: string) => void }) {
     },
     {
       baslik: 'Müziği bağla (isteğe bağlı)',
-      aciklama: d?.muzik ? `${MUZIK_ADI[d.muzik]} kullanılıyor.` : "Spotify'ı Yayın Yönetim Aracı'nda ya da burada bağla: !sr ve şarkı sözleri bunu kullanır.",
+      aciklama: d?.muzik ? `${MUZIK_ADI[d.muzik]} kullanılıyor.` : "Spotify'ı AxthrowA Studio'da ya da burada bağla: !sr ve şarkı sözleri bunu kullanır.",
       tamam: Boolean(d?.muzik),
       eylem: <Dugme onClick={() => git('songrequest')}>Şarkı İsteği</Dugme>
     },

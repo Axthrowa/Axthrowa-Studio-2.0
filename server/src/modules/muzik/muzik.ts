@@ -1,14 +1,14 @@
 /**
- * StreamAxT — müzik "host"u: Spotify + YouTube Music Desktop, ortak "şu an çalan"
+ * AxBoT — müzik "host"u: Spotify + YouTube Music Desktop, ortak "şu an çalan"
  * Developed by AxthrowA
  *
- * Resonance arayüzünün beklediği host API'sini (Yayın Yönetim Aracı'ndaki Rust
+ * Resonance arayüzünün beklediği host API'sini (AxthrowA Studio'daki Rust
  * sürümüyle aynı biçim) sağlar; `!sr`, şarkı sözleri ve "Şu An Çalan"
  * widget'ı da buradan beslenir. Depolama ve yayın dışarıdan verilir: aynı
- * modül hem StreamAxT'te hem bağımsız Resonance sunucusunda çalışır.
+ * modül hem AxBoT'ta hem bağımsız Resonance sunucusunda çalışır.
  *
  * Sırlar (Spotify refresh token, YTMD token) depoya `gizli` işaretiyle yazılır;
- * StreamAxT'te Windows DPAPI ile şifrelenir. Hiçbir uçta düz dönmez.
+ * AxBoT'ta Windows DPAPI ile şifrelenir. Hiçbir uçta düz dönmez.
  */
 import axios from 'axios';
 import {
@@ -57,7 +57,7 @@ export class MuzikHost {
   private parcaDinleyicileri: Array<(c: CalanSarki | null, onceki: CalanSarki | null) => void> = [];
 
   /**
-   * Bot Yayın Yönetim Aracı'na gömülüyken Spotify çoğunlukla ORADA bağlı: bot kendi
+   * Bot AxthrowA Studio'ya gömülüyken Spotify çoğunlukla ORADA bağlı: bot kendi
    * bağlantısı yokken o host'un çalan şarkısını okur, !sr isteğini oraya iletir.
    * Eskiden ikinci bir Spotify bağlantısı gerekiyordu; yoksa sözler boş, !sr çalmıyordu.
    */
@@ -197,7 +197,7 @@ export class MuzikHost {
         port: this.depo.oku(A.ytmdPort) || '9863'
       },
       note: this.not || null,
-      // Spotify Yayın Yönetim Aracı'nda bağlıysa bot onu kullanır
+      // Spotify AxthrowA Studio'da bağlıysa bot onu kullanır
       harici: { spotify: this.harici.spotify },
       nowPlaying: this.simdiCalan()
     };
@@ -394,7 +394,7 @@ export class MuzikHost {
     this.yoklayici = null;
   }
 
-  async parcaAra(sorgu: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string } | null> {
+  async parcaAra(sorgu: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string; sureMs: number } | null> {
     const q = String(sorgu || '').trim().slice(0, 200);
     if (!q) return null;
     const r = await this.istek('get', `/search?${new URLSearchParams({ q, type: 'track', limit: '1' }).toString()}`);
@@ -406,11 +406,12 @@ export class MuzikHost {
       id: String(t.id),
       title: String(t.name || q),
       artist: (t.artists || []).map((a: any) => a?.name).filter(Boolean).join(', '),
-      albumArt: String(t.album?.images?.[0]?.url || '')
+      albumArt: String(t.album?.images?.[0]?.url || ''),
+      sureMs: Number(t.duration_ms) || 0
     };
   }
 
-  async parcaBilgisi(id: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string } | null> {
+  async parcaBilgisi(id: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string; sureMs: number } | null> {
     if (!/^[A-Za-z0-9]{22}$/.test(id)) return null;
     const r = await this.istek('get', `/tracks/${id}`);
     if (r.status >= 400) throw new Error(oynaticiHatasi(r.status));
@@ -420,7 +421,8 @@ export class MuzikHost {
       id,
       title: String(t?.name || ''),
       artist: (t?.artists || []).map((a: any) => a?.name).filter(Boolean).join(', '),
-      albumArt: String(t?.album?.images?.[0]?.url || '')
+      albumArt: String(t?.album?.images?.[0]?.url || ''),
+      sureMs: Number(t?.duration_ms) || 0
     };
   }
 

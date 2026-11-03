@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Gemini dışındaki yapay zekâ sağlayıcıları
+ * AxBoT — Gemini dışındaki yapay zekâ sağlayıcıları
  * Developed by AxthrowA
  *
  * Çoğu sağlayıcı OpenAI uyumlu `/chat/completions` ucunu konuşur (OpenAI, Groq,

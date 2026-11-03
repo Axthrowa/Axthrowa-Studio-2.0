@@ -1,5 +1,5 @@
 /**
- * StreamAxT Subathon sayacı
+ * AxBoT Subathon sayacı
  * Developed by AxthrowA
  *
  * Sayaç artık SUNUCUDA tutuluyor (`server/src/modules/subathon`). Bu widget
@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SUBATHON_DEFAULTS } from '../lib/widget-defaults.js';
-import { rgba, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { kutuTasarimi, rgba, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 export interface SubathonWidgetProps {
@@ -37,6 +37,11 @@ interface SunucuDurumu {
     kicksDakika: number;
     kicksBirimi: number;
     takipDakika?: number;
+    aboneAcik?: boolean;
+    hediyeAcik?: boolean;
+    bagisAcik?: boolean;
+    kicksAcik?: boolean;
+    takipAcik?: boolean;
   };
 }
 
@@ -199,7 +204,7 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
 
   const durumSatiri = s.showStatus !== false && (
     <div className="flex items-center gap-2 mb-1">
-      <span className={`w-2.5 h-2.5 rounded-full ${durum.aktif ? 'animate-ping' : ''}`} style={{ background: durum.aktif ? '#34d399' : '#6b7280' }} />
+      {s.showStatusDot !== false && <span className={`w-2.5 h-2.5 rounded-full ${durum.aktif ? 'animate-ping' : ''}`} style={{ background: durum.aktif ? '#34d399' : '#6b7280' }} />}
       <h2 className="font-black uppercase tracking-widest" style={{ color: vurgu, fontFamily: s.fontFamily, fontSize: Number(s.statusFontSize) || 12, textShadow: golge }}>
         {s.icon ? `${s.icon} ` : ''}
         {[s.title, durum.aktif ? s.statusLiveText : durum.duraklatildi ? s.statusPausedText : s.statusIdleText].filter(Boolean).join(' ')}
@@ -208,30 +213,37 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
   );
 
   // Kurallar sunucudaki AYARDAN okunur; widget'ın kendi kopyası yok.
-  const kurallar = s.showRules !== false && (
+  const kuralListesi = [
+    a.aboneAcik !== false && <>Abone: <strong style={{ color: vurgu }}>+{a.aboneDakika} dk</strong></>,
+    a.hediyeAcik !== false && <>Hediye abone: <strong className="text-amber-300">+{a.hediyeAboneDakika} dk</strong></>,
+    a.bagisAcik !== false && <>Bağış: <strong className="text-emerald-300">+{a.bagisDakika} dk / {a.bagisBirimi}</strong></>,
+    a.kicksAcik !== false && <>KICKs: <strong style={{ color: '#53fc18' }}>+{a.kicksDakika} dk / {a.kicksBirimi}</strong></>,
+    a.takipAcik !== false && (a.takipDakika ?? 0) > 0 && <>Takip: <strong style={{ color: '#a78bfa' }}>+{a.takipDakika} dk</strong></>
+  ].filter(Boolean);
+  const kurallar = s.showRules !== false && kuralListesi.length > 0 && (
     <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold" style={{ color: rgba(metinRengi, 0.8), textShadow: golge }}>
-      <span>Abone: <strong style={{ color: vurgu }}>+{a.aboneDakika} dk</strong></span>
-      <span>•</span>
-      <span>Hediye abone: <strong className="text-amber-300">+{a.hediyeAboneDakika} dk</strong></span>
-      <span>•</span>
-      <span>Bağış: <strong className="text-emerald-300">+{a.bagisDakika} dk / {a.bagisBirimi}</strong></span>
-      <span>•</span>
-      <span>KICKs: <strong style={{ color: '#53fc18' }}>+{a.kicksDakika} dk / {a.kicksBirimi}</strong></span>
-      {(a.takipDakika ?? 0) > 0 && (
-        <>
-          <span>•</span>
-          <span>Takip: <strong style={{ color: '#a78bfa' }}>+{a.takipDakika} dk</strong></span>
-        </>
-      )}
+      {kuralListesi.map((k, i) => (
+        <span key={i}>
+          {i > 0 && <span className="mr-2">•</span>}
+          {k}
+        </span>
+      ))}
     </div>
   );
 
   const kutuStili: React.CSSProperties =
-    tema === 'minimal'
+    kutuTasarimi(s) ||
+    (tema === 'minimal'
       ? {}
+      : tema === 'cam'
+        ? { background: rgba(s.bgColor, Math.min(0.35, Number(s.bgOpacity))), border: `1px solid ${rgba('#ffffff', 0.3)}`, borderRadius: Number(s.radius), boxShadow: '0 10px 30px rgba(0,0,0,.35)' }
+      : tema === 'plaka'
+        ? { background: rgba(s.bgColor, s.bgOpacity), borderBottom: `5px solid ${vurgu}`, borderRadius: 6, boxShadow: '0 8px 20px rgba(0,0,0,.5)' }
+      : tema === 'serit'
+        ? { background: `linear-gradient(90deg, ${rgba(vurgu, 0.85)}, ${rgba(s.bgColor, s.bgOpacity)} 45%)`, borderLeft: `6px solid ${s.accentColor2 || vurgu}`, borderRadius: 4 }
       : tema === 'neon'
         ? { background: rgba(s.bgColor, s.bgOpacity), border: `2px solid ${vurgu}`, borderRadius: Number(s.radius), boxShadow: `0 0 18px ${vurgu}, inset 0 0 18px ${rgba(vurgu, 0.35)}` }
-        : { background: rgba(s.bgColor, s.bgOpacity), border: `2px solid ${vurgu}`, borderRadius: Number(s.radius), boxShadow: `0 10px 35px ${rgba(vurgu, 0.33)}` };
+        : { background: rgba(s.bgColor, s.bgOpacity), border: `2px solid ${vurgu}`, borderRadius: Number(s.radius), boxShadow: `0 10px 35px ${rgba(vurgu, 0.33)}` });
 
   return (
     <div
@@ -242,8 +254,8 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
       }
       style={{ fontFamily: s.fontFamily }}
     >
-      {tema === 'pill' ? (
-        <div className="flex items-center gap-3 px-5 py-2" style={{ ...kutuStili, borderRadius: 999 }}>
+      {tema === 'pill' || tema === 'serit' ? (
+        <div className="flex items-center gap-3 px-5 py-2" style={{ ...kutuStili, ...(tema === 'pill' ? { borderRadius: 999 } : null) }}>
           <span style={{ fontSize: sureBoy * 0.55 }}>{s.icon || '⏳'}</span>
           <span className="font-black uppercase tracking-widest" style={{ color: vurgu, fontSize: Math.max(11, sureBoy * 0.28), textShadow: golge }}>{s.title}</span>
           <span className="font-black" style={{ fontFamily: s.timeFontFamily, fontSize: sureBoy * 0.6, color: metinRengi, textShadow: golge }}>{sure}</span>

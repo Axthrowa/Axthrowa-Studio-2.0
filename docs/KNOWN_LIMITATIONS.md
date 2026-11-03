@@ -60,7 +60,7 @@ günlükte sebep yazar. Başlık için `!title Yeni başlık` (mod/yayıncı).
 | N1e | Discord moderasyonu | Discord botu duyuru/sohbet kanalıdır; moderasyon kapsam dışı |
 | N2 | **`$(eval <js>)` değişkeni** | Keyfi JavaScript yürütme. BotRix'te bile beta ve elle erişim kontrollü |
 | N3 | **`$(leagueoflegends)`** | Riot API anahtarı gerektiriyor, niş kullanım |
-| N6 | Çok kiracılı özellikler | Mimari fark: BotRix SaaS, StreamAxT tek kullanıcılı yerel araç (`BOTRIX_GAP_ANALYSIS §0`) |
+| N6 | Çok kiracılı özellikler | Mimari fark: BotRix SaaS, AxBoT tek kullanıcılı yerel araç (`BOTRIX_GAP_ANALYSIS §0`) |
 | N7 | Widget adresine kimlik token'ı | Kullanıcı şartı: widget/tarayıcı kaynağı adreslerinde sır olmayacak. Koruma bunun yerine yerel bağlama + Host izin listesi + köken denetimiyle sağlanıyor (`S8`) |
 
 2. turda burada duran **N4** (`$(settitle)`/`$(setcategory)`) ve **N5**
@@ -222,7 +222,7 @@ Apache-2.0, ~37 MB) pakete GİRMEZ: yayıncı "Modeli indir" deyince alphacephei
 3. Tarayıcı ses bağlamını kullanıcı etkileşimi olmadan başlatmayabilir; o durumda ilk tık/tuşta dinleme başlar.
 4. **Bot komutu eylemi** yayıncı adına çalışır ve yanıt GERÇEK sohbete gider (gerçek sohbetle denenmedi; yalıtılmış
    sunucuda platform bağlantısı yokken sınandı).
-5. Genel (oyun içi) bas-konuş kısayolu yalnız Yayın Yönetim Aracı'nda; tek başına StreamAxT'te bas-konuş, sayfadaki
+5. Genel (oyun içi) bas-konuş kısayolu yalnız AxthrowA Studio'da; tek başına AxBoT'ta bas-konuş, sayfadaki
    düğmeyle.
 6. Ses panosuna öğe eklenince tanıyıcı ifade listesi en geç 60 sn'de yenilenir (komut değişikliğinde anında).
 
@@ -256,7 +256,7 @@ bırakılır. Kopukluk panelde Kick kartında uyarı olarak görünür (eskiden 
 - Kick'e 500 karakteri aşan mesaj parçalanarak gider (eskiden reddedilip kayboluyordu).
 - `!clip` platformda klip oluşturmaz; eskiden "Klip alındı" diyordu. Artık anı "Son Etkinlikler"e işaretler ve bunu söyler.
 - **Overlay Stüdyo ↔ OBS:** (a) konum/boyut/aç-kapa kendiliğinden kaydedilir (eskiden yalnız "Kaydet" ile);
-  (b) widget ayar soketi kopunca yeniden bağlanır ve ayarları tazeler — StreamAxT yeniden başlayınca OBS'teki kaynak
+  (b) widget ayar soketi kopunca yeniden bağlanır ve ayarları tazeler — AxBoT yeniden başlayınca OBS'teki kaynak
   bir daha güncellenmiyordu; (c) OBS sayfası yeniden bağlanınca yeni sürüm varsa kendini yeniler; (d) "Sohbet Görünümü"
   sekmesi OBS'in hiç okumadığı ayrı bir kayda yazıyordu ve elle çizilmiş maket gösteriyordu → gerçek bileşen + gerçek
   ayarlar (`/api/settings/chat-overlay` geriye dönük olarak aynı kayda yönlendirildi); (e) hedef çubuğu tuvalde hep
@@ -271,7 +271,7 @@ bırakılır. Kopukluk panelde Kick kartında uyarı olarak görünür (eskiden 
   katmanlar soluk görünür (yerleşim için). OBS kipinde tuval OBS'in o an çizdiğinin aynısıdır: kapalı katman yok,
   örnek veri yalnız "OBS Test Modu" açıksa. "Önizlemede var, OBS'te yok" farkı çoğunlukla bu örnek verilerdi.
 - Jenerik, hype treni, şu an çalan, sabit mesaj, shoutout, subathon, bağış kupası ve sadakat ödülü widget'ları
-  StreamAxT yeniden başlayınca bir daha bağlanmıyordu (OBS kaynağı yenilenene kadar ölü) → `lib/kaliciSoket.ts`.
+  AxBoT yeniden başlayınca bir daha bağlanmıyordu (OBS kaynağı yenilenene kadar ölü) → `lib/kaliciSoket.ts`.
 - "Şu An Çalan" widget'ının istediği `GET /api/songrequest/current` yoktu (404) → eklendi.
 - Sayfalar ve widget'lar tembel yüklenir: OBS'teki her widget ana paketin tamamını (626 KB) değil ~26 KB + kendi
   parçasını indirir.
@@ -348,7 +348,7 @@ Eklenmeyen: Twitch/BTTV/FFZ emote setleri (yalnız 7TV).
 
 - **Kendi kendine kapanma:** günlükte iki neden görüldü: 3001 portu doluyken açılış (`EADDRINUSE`) ve
   açılışta "database is locked". `index.ts` artık bir gözcü: uygulamayı (`app.ts`) alt süreç olarak açar,
-  çökünce 3/6/12…30 sn bekleyip yeniden başlatır, 10 dakikada 8 çökmede vazgeçer. Port başka bir StreamAxT'deyse
+  çökünce 3/6/12…30 sn bekleyip yeniden başlatır, 10 dakikada 8 çökmede vazgeçer. Port başka bir AxBoT'daysa
   çıkış kodu 2 (yeniden başlatılmaz). SQLite 15 sn kilit beklemesiyle açılıyor. `STREAMAXT_GOZCU=kapali` gözcüyü kapatır.
 - **Yavaş ağ:** bu makinede IPv6/IPv4 belirtilmemiş DNS sorguları 4–12 sn sürüyordu (Kick/Discord/Gemini zaman
   aşımı). `core/dns-hizli.ts` süreç genelinde önce IPv4 sorgular.

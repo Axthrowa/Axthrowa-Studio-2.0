@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Subathon motoru (sunucu tarafı)
+ * AxBoT — Subathon motoru (sunucu tarafı)
  * Developed by AxthrowA
  *
  * Kullanıcı bildirdi: "subathon ayarları hala yok; abone, hediye, bağış
@@ -38,6 +38,12 @@ export interface SubathonAyarlari {
   takipDakika: number;
   /** Üst sınır (saat). 0 = sınırsız. */
   maksSaat: number;
+  /** Kaynak kapalıysa o olay süre eklemez (dakika ayarı saklı kalır). */
+  aboneAcik: boolean;
+  hediyeAcik: boolean;
+  bagisAcik: boolean;
+  kicksAcik: boolean;
+  takipAcik: boolean;
 }
 
 export const VARSAYILAN_AYAR: SubathonAyarlari = {
@@ -50,7 +56,12 @@ export const VARSAYILAN_AYAR: SubathonAyarlari = {
   kicksDakika: 1,
   kicksBirimi: 100,
   takipDakika: 1,
-  maksSaat: 24
+  maksSaat: 24,
+  aboneAcik: true,
+  hediyeAcik: true,
+  bagisAcik: true,
+  kicksAcik: true,
+  takipAcik: true
 };
 
 export interface SubathonDurumu {
@@ -280,15 +291,15 @@ class SubathonMotoru {
         // Kick'te hediye abonelik birden çok kişiye olabilir
         const adet = hediyeAdedi(p);
         const dk = hediyeDakikasi(adet, a.hediyeAboneDakika);
-        if (dk > 0) this.sureEkle(dk * 60, `+${dk} dk · ${adet} hediye abone (${ad})`);
+        if (a.hediyeAcik && dk > 0) this.sureEkle(dk * 60, `+${dk} dk · ${adet} hediye abone (${ad})`);
       } else {
-        if (a.aboneDakika > 0) this.sureEkle(a.aboneDakika * 60, `+${a.aboneDakika} dk · abone (${ad})`);
+        if (a.aboneAcik && a.aboneDakika > 0) this.sureEkle(a.aboneDakika * 60, `+${a.aboneDakika} dk · abone (${ad})`);
       }
     });
 
     eventBus.on('tip', (p: any) => {
       const a = ayar();
-      if (!a.aktif || (p as any)?.isTest === true) return;
+      if (!a.aktif || !a.bagisAcik || (p as any)?.isTest === true) return;
       const dk = birimDakikasi(p?.amount, a.bagisDakika, a.bagisBirimi);
       if (dk > 0) {
         const ad = p?.displayName || p?.username || 'İzleyici';
@@ -298,14 +309,14 @@ class SubathonMotoru {
 
     eventBus.on('follow', (p: any) => {
       const a = ayar();
-      if (!a.aktif || (p as any)?.isTest === true || !(a.takipDakika > 0)) return;
+      if (!a.aktif || !a.takipAcik || (p as any)?.isTest === true || !(a.takipDakika > 0)) return;
       const ad = p?.displayName || p?.username || 'İzleyici';
       this.sureEkle(a.takipDakika * 60, `+${a.takipDakika} dk · takip (${ad})`);
     });
 
     eventBus.on('kicks', (p: any) => {
       const a = ayar();
-      if (!a.aktif || (p as any)?.isTest === true) return;
+      if (!a.aktif || !a.kicksAcik || (p as any)?.isTest === true) return;
       const dk = birimDakikasi(p?.amount, a.kicksDakika, a.kicksBirimi);
       if (dk > 0) {
         const ad = p?.displayName || p?.username || 'İzleyici';

@@ -1,5 +1,5 @@
 /**
- * StreamAxT — değişken motoru testleri
+ * AxBoT — değişken motoru testleri
  * Developed by AxthrowA
  *
  * Yalnız saf modüller test edilir (resolve / pure / net / store ifadesi):

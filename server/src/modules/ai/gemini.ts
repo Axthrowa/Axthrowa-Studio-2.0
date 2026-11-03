@@ -282,7 +282,7 @@ class GeminiCoHost {
 
   private gecmiseEkle(senderName: string, prompt: string, reply: string) {
     this.conversationHistory.push({ role: senderName, text: prompt });
-    this.conversationHistory.push({ role: 'AxBot', text: reply });
+    this.conversationHistory.push({ role: 'AxBoT', text: reply });
     if (this.conversationHistory.length > 10) this.conversationHistory = this.conversationHistory.slice(-10);
   }
 
@@ -325,7 +325,7 @@ class GeminiCoHost {
 
     const client = this.initClient();
     if (!client) {
-      return '⚠️ Gemini API anahtarı henüz girilmemiş. Lütfen StreamAxT panelinden bir API anahtarı ekleyin!';
+      return '⚠️ Gemini API anahtarı henüz girilmemiş. Lütfen AxBoT panelinden bir API anahtarı ekleyin!';
     }
 
     try {

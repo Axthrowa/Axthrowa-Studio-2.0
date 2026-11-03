@@ -1,5 +1,5 @@
 /**
- * StreamAxT — Olay Etiketleri verisi (son takipçi, son abone, son bağış…)
+ * AxBoT — Olay Etiketleri verisi (son takipçi, son abone, son bağış…)
  * Developed by AxthrowA
  *
  * Widget eskiden yalnız açıkken gelen canlı olayları biliyordu: OBS sayfası

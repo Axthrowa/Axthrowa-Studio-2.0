@@ -1,5 +1,5 @@
 /**
- * StreamAxT — sohbet tarafı olay mesajları
+ * AxBoT — sohbet tarafı olay mesajları
  * Developed by AxthrowA
  *
  * BotRix'te `Sohbet Botu > Ekstralar > Sohbet uyarıları` başlığı altında,

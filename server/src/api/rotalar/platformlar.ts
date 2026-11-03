@@ -1,5 +1,5 @@
 /**
- * StreamAxT API — Platform bağlantıları ve Kick OAuth (PKCE)
+ * AxBoT API — Platform bağlantıları ve Kick OAuth (PKCE)
  * Developed by AxthrowA
  *
  * B1: eski tek parça api/routes.ts'den (2.300+ satır, 154 rota) ayrıldı;
@@ -87,13 +87,15 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
 
   // If OAuth code and credentials provided, exchange for access token
   const oauthCode = code || (token && !token.startsWith('Bearer') && token.length > 20 && !token.includes('.') ? token : '');
-  if (oauthCode && clientId && clientSecret) {
+  const uygulamaId = clientId || settingsCache.get('kick_client_id') || '';
+  const uygulamaSirri = clientSecret || settingsCache.get('kick_client_secret') || '';
+  if (oauthCode && uygulamaId && uygulamaSirri) {
     try {
       const redirectUri = kickYonlendirmeAdresi();
       const params = new URLSearchParams();
       params.append('grant_type', 'authorization_code');
-      params.append('client_id', clientId);
-      params.append('client_secret', clientSecret);
+      params.append('client_id', uygulamaId);
+      params.append('client_secret', uygulamaSirri);
       params.append('redirect_uri', redirectUri);
       params.append('code', oauthCode);
       if (kickPkceVerifier) {
@@ -123,6 +125,13 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       error: verification.error || 'Kick kanalı doğrulanamadı. Kullanıcı adını kontrol edin.'
+    });
+  }
+  // Client Secret yokken yetki kodu jetona çevrilemez; kod kaydedilirse panel "bağlandı" der, bot hiç yazamaz
+  if (finalToken && verification.tokenGecersiz) {
+    return res.status(400).json({
+      success: false,
+      error: 'Kick bu girişi kabul etmedi (401). Client Secret kutusunu doldurup bot hesabıyla yeniden giriş yapın.'
     });
   }
 
@@ -180,7 +189,7 @@ router.post('/platforms/kick/verify', async (req: Request, res: Response) => {
 router.post('/platforms/kick/test-message', async (req: Request, res: Response) => {
   const { message, channel } = req.body;
   const channelName = channel || kickPlatform.getStatus().channel || '';
-  const testMsg = message || '🟢 [AxBot] Kick API & Chat bağlantısı başarıyla doğrulandı! Bot aktif.';
+  const testMsg = message || '🟢 [AxBoT] Kick API & Chat bağlantısı başarıyla doğrulandı! Bot aktif.';
   const result = await kickPlatform.sendKickMessage(channelName, testMsg);
   res.json(result);
 });
@@ -321,18 +330,18 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
 
   res.send(`
     <!DOCTYPE html>
-    <html><head><meta charset="utf-8"><title>Kick Yetkilendirmesi - StreamAxT</title></head>
+    <html><head><meta charset="utf-8"><title>Kick Yetkilendirmesi - AxBoT</title></head>
     <body style="font-family:system-ui, -apple-system, sans-serif;background:#0b0f19;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
       <div style="background:#1e293b;padding:36px;border-radius:20px;text-align:center;max-width:500px;border:1px solid rgba(83,252,24,0.4);box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
         <div style="font-size:42px;margin-bottom:12px;">✅</div>
         <h2 style="color:#53fc18;margin:0 0 12px 0;font-size:22px;">${accessToken ? 'Kick Yetkilendirmesi Başarılı!' : 'Kick Yetki Kodu Alındı!'}</h2>
         <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:20px;">
           ${accessToken 
-            ? 'Bot hesabınız başarıyla StreamAxT\'ye bağlandı! Erişim anahtarı (Access Token) kaydedildi. Artık botunuz yayın sohbetine mesaj gönderebilir.' 
-            : 'Kick yetki kodu StreamAxT sistemine iletildi: <br/><code style="background:#0f172a;padding:4px 8px;border-radius:6px;color:#53fc18;word-break:break-all;">' + htmlKacisla(code) + '</code>'}
+            ? 'Bot hesabınız başarıyla AxBoT\'a bağlandı! Erişim anahtarı (Access Token) kaydedildi. Artık botunuz yayın sohbetine mesaj gönderebilir.' 
+            : 'Kick yetki kodu AxBoT sistemine iletildi: <br/><code style="background:#0f172a;padding:4px 8px;border-radius:6px;color:#53fc18;word-break:break-all;">' + htmlKacisla(code) + '</code>'}
         </p>
         <div style="background:rgba(83,252,24,0.08);border:1px dashed rgba(83,252,24,0.3);padding:12px;border-radius:12px;margin-bottom:20px;font-size:13px;color:#cbd5e1;">
-          💡 Bu pencereyi (veya Gizli Sekmeyi) kapatıp <b>StreamAxT Paneline</b> dönebilirsiniz. Bağlantı otomatik olarak algılanmıştır.
+          💡 Bu pencereyi (veya Gizli Sekmeyi) kapatıp <b>AxBoT Paneline</b> dönebilirsiniz. Bağlantı otomatik olarak algılanmıştır.
         </div>
         <button onclick="window.close()" style="padding:12px 28px;background:#53fc18;color:#000;border:none;border-radius:10px;font-weight:900;font-size:14px;cursor:pointer;transition:transform 0.1s;">
           Pencereyi Kapat

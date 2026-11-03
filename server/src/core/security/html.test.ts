@@ -1,5 +1,5 @@
 /**
- * StreamAxT — HTML/betik kaçışlama testleri (OAuth geri dönüş XSS'i)
+ * AxBoT — HTML/betik kaçışlama testleri (OAuth geri dönüş XSS'i)
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';

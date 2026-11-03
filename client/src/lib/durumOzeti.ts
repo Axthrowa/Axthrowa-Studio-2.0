@@ -30,6 +30,6 @@ export function useDurumOzeti(): DurumOzeti | null {
 
 export const MUZIK_ADI: Record<string, string> = {
   spotify: 'Spotify',
-  'yya-spotify': "Spotify (Yayın Yönetim Aracı'ndan)",
+  'yya-spotify': "Spotify (AxthrowA Studio'dan)",
   ytmd: 'YouTube Music'
 };

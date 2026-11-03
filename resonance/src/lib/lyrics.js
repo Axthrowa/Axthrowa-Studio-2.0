@@ -1,5 +1,5 @@
 // Şarkı sözleri (lrclib.net, anahtarsız, CORS açık). Tarayıcıdan doğrudan sorulur:
-// Resonance hem Yayın Yönetim Aracı'nda (8843) hem StreamAxT'te (3001) aynı çalışır.
+// Resonance hem AxthrowA Studio'da (8843) hem AxBoT'ta (3001) aynı çalışır.
 
 /** LRC metni → zamanlı satırlar ([mm:ss.xx] metin; bir satırda birden çok zaman olabilir) */
 export function lrcAyikla(lrc) {

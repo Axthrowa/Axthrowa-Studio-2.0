@@ -1,12 +1,12 @@
 # Platform Yetenek Matrisi ve Politika Kuralları
 
-> İki kaynak birleşiyor: (1) topluluk yetenekleri — StreamAxT `server/src/platforms/capabilities.ts` (kodda tek gerçek
+> İki kaynak birleşiyor: (1) topluluk yetenekleri — AxBoT `server/src/platforms/capabilities.ts` (kodda tek gerçek
 > kaynak; arayüz buna göre etiketler); (2) yayın çıkışı gereksinimleri — resmi belgeler (2026-09-25, bkz.
 > [REFERENCE_PRODUCT_RESEARCH §3.7](REFERENCE_PRODUCT_RESEARCH.md#37-platform-gereksinimleri-ve-kuralları)).
 > Çıkış sınırları ve kurallar kodda sabit değil, **politika tablosunda** tutulur (§131): kural değişince kod
 > değişmeden güncellenir.
 
-## 1. Topluluk yetenekleri (StreamAxT adaptörleri)
+## 1. Topluluk yetenekleri (AxBoT adaptörleri)
 
 | Yetenek | Kick | Twitch | YouTube | Trovo | TikTok | Discord |
 |---|---|---|---|---|---|---|

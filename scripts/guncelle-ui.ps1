@@ -11,13 +11,13 @@ $proj = Split-Path $PSScriptRoot -Parent
 Set-Location $proj
 
 $portable = Join-Path $proj "cikti\portable"
-$exe = Join-Path $portable "YayinYonetimAraci.exe"
+$exe = Join-Path $portable "AxthrowAStudio.exe"
 $frozenDir = Join-Path $proj "cikti\sac-frozen"
-$frozenExe = Join-Path $frozenDir "YayinYonetimAraci.exe"
+$frozenExe = Join-Path $frozenDir "AxthrowAStudio.exe"
 New-Item -ItemType Directory -Force -Path $frozenDir | Out-Null
 
 if (-not (Test-Path -LiteralPath $exe) -and -not (Test-Path -LiteralPath $frozenExe)) {
-  throw "cikti\portable\YayinYonetimAraci.exe yok. SAC kabul ettigi exe'yi portable klasorune koyun; sonra npm run guncelle."
+  throw "cikti\portable\AxthrowAStudio.exe yok. SAC kabul ettigi exe'yi portable klasorune koyun; sonra npm run guncelle."
 }
 
 if ((Test-Path -LiteralPath $frozenExe) -and (Test-Path -LiteralPath $exe)) {
@@ -25,7 +25,7 @@ if ((Test-Path -LiteralPath $frozenExe) -and (Test-Path -LiteralPath $exe)) {
   $liveHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
   if ($frozenHash -ne $liveHash) {
     Write-Warning "Portable exe hash degismis. SAC-frozen kopya geri yukleniyor (yeni hash 3077)."
-    Get-Process YayinYonetimAraci -ErrorAction SilentlyContinue | ForEach-Object {
+    Get-Process AxthrowAStudio -ErrorAction SilentlyContinue | ForEach-Object {
       $_ | Stop-Process -Force
     }
     Start-Sleep -Milliseconds 600
@@ -39,8 +39,8 @@ if ((Test-Path -LiteralPath $frozenExe) -and (Test-Path -LiteralPath $exe)) {
 }
 
 # Bilinen onceki acilan kopya (yedek; otomatik ezilmez)
-$knownGoodSrc = Join-Path $proj "Portable-Build-NEW\YayinYonetimAraci.exe"
-$knownGoodDest = Join-Path $frozenDir "YayinYonetimAraci-2026-09-11.exe"
+$knownGoodSrc = Join-Path $proj "Portable-Build-NEW\AxthrowAStudio.exe"
+$knownGoodDest = Join-Path $frozenDir "AxthrowAStudio-2026-09-11.exe"
 if ((Test-Path -LiteralPath $knownGoodSrc) -and -not (Test-Path -LiteralPath $knownGoodDest)) {
   Copy-Item -LiteralPath $knownGoodSrc -Destination $knownGoodDest -Force
   Write-Host "Onceki acilan kopya yedeklendi: $knownGoodDest"
@@ -81,7 +81,7 @@ if ($hashAfter -ne $hashBefore) {
   throw "Exe hash degisti - SAC tekrar takilir. Bu script exe yazmamali."
 }
 
-$wasRunning = @(Get-Process YayinYonetimAraci -ErrorAction SilentlyContinue)
+$wasRunning = @(Get-Process AxthrowAStudio -ErrorAction SilentlyContinue)
 foreach ($proc in $wasRunning) {
   Write-Host "Ayni exe yeniden baslatiliyor (pid $($proc.Id))..."
   $proc | Stop-Process -Force

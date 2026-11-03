@@ -40,7 +40,7 @@ export default function ObsDockSayfasi() {
   const [mesaj, setMesaj] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = `${AD[id]} — Yayın Yönetim Aracı`;
+    document.title = `${AD[id]} — AxthrowA Studio`;
   }, [id]);
 
   const toast = (m: string) => {

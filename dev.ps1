@@ -20,7 +20,7 @@ $adlar = @(); $renkler = @(); $komutlar = @()
 if (-not $TauriYok) {
   # Kurulu uygulama açıksa 8843 doludur ve tek-örnek kilidi ikinci kopyayı kapatır: Tauri'yi başlatma
   if (Get-NetTCPConnection -LocalPort 8843 -State Listen -ErrorAction SilentlyContinue) {
-    Write-Warning "8843 portu kullanımda (kurulu Yayın Yönetim Aracı açık). Tauri atlandı; uygulamayı kapatıp yeniden deneyin."
+    Write-Warning "8843 portu kullanımda (kurulu AxthrowA Studio açık). Tauri atlandı; uygulamayı kapatıp yeniden deneyin."
   } else {
     $adlar += "tauri"; $renkler += "magenta"; $komutlar += "npm run tauri:dev"
   }

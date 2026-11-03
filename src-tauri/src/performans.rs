@@ -52,7 +52,7 @@ pub fn olcumu_kur() {
     .try_init();
 }
 
-/// Uygulamanın kendisi + alt süreçleri (WebView2, StreamAxT botu, ffmpeg…) toplamı
+/// Uygulamanın kendisi + alt süreçleri (WebView2, AxBoT botu, ffmpeg…) toplamı
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SistemSagligi {

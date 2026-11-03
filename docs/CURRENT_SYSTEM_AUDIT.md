@@ -5,7 +5,7 @@
 
 Ürün iki depodan oluşuyor. Masaüstü kabuğu (panel) diğerini gömerek çalıştırıyor:
 
-| | **Panel — "Yayın Yönetim Aracı"** (masaüstü kabuğu) | **StreamAxT** (bot/topluluk sunucusu) |
+| | **Panel — "AxthrowA Studio"** (masaüstü kabuğu) | **AxBoT** (bot/topluluk sunucusu) |
 |---|---|---|
 | Kök | `C:\Users\Axthrowa\Desktop\yayin-yonetim-araci - Kopya (2)` | `C:\Users\Axthrowa\Desktop\Projeler` |
 | Git | var, uzak: `github.com/Axthrowa/yayin-yonetim-araci` | var, **uzak yok** (yalnız yerel) |
@@ -35,11 +35,11 @@
 | SSE | yok |
 | Kuyruklar | `alert_queue` tablosu + bellek içi; ön yüzde `replyQueue` (bot yanıtları) |
 | Olay veriyolu | Rust: `AppState.tx` (tokio broadcast); JS: `widgetBus`, `chatHub` |
-| İşçiler | tokio görevleri: müzik yoklama, Kick dinleyici, OBS olay pompası, zamanlayıcılar, StreamAxT süreç izleyici |
+| İşçiler | tokio görevleri: müzik yoklama, Kick dinleyici, OBS olay pompası, zamanlayıcılar, AxBoT süreç izleyici |
 | Widget'lar | ~30 OBS rota: alerts, goal, label, poll, activity, subathon, viewers, emote-combo/wall, shoutout, wheel, hype, now-playing, songrequest, redeems, giveaway, cup, glass, tts, credits, master overlay … (React, aynı kökenden) |
 | Uyarılar | `alert_types` + `alert_variants` + overlay; test ucu `/api/botaxt/alerts/test` |
-| Komutlar | İki motor: ön yüzdeki `smartBot` (JS) ve Rust `bot/chatbot.rs`; ayrıca gömülü StreamAxT'in kendi komut motoru |
-| TTS | Panelde yalnız overlay rotası (`/tts`, `/cloudtts`); asıl TTS motoru StreamAxT'te |
+| Komutlar | İki motor: ön yüzdeki `smartBot` (JS) ve Rust `bot/chatbot.rs`; ayrıca gömülü AxBoT'un kendi komut motoru |
+| TTS | Panelde yalnız overlay rotası (`/tts`, `/cloudtts`); asıl TTS motoru AxBoT'ta |
 | Sadakat | Rust `loyalty_*` tabloları + JS `smartBot` sadakat sayacı |
 | Medya | `assets/{videos,music,sfx,logos,backgrounds,particles}`; `/media/file` Range akışı (4. turda yalnız medya uzantıları); YouTube arka planı için `yt-dlp` + ffmpeg ilk kullanımda indirilir (`ytdl`) |
 | Yükleme | Ham gövde + `x-filename` başlığı (4. turda katı ad doğrulaması) |
@@ -55,9 +55,9 @@
 | Günlük | `yya_log!/yya_warn!` makroları (dosya + konsol), `hotkey-hatalari.log` |
 | Dağıtım | `cikti/portable` (exe + `portable.txt` + dist + resonance + streamaxt) ve NSIS kurulum |
 
-Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind 4; müzik/şimdi çalıyor widget'ı, `/resonance` altından servis) ve **StreamAxT** (`streamaxt.rs` Node sürecini başlatır/izler; `cikti/portable/streamaxt` kopyası, 3001 portu, panelde iframe).
+Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind 4; müzik/şimdi çalıyor widget'ı, `/resonance` altından servis) ve **AxBoT** (`streamaxt.rs` Node sürecini başlatır/izler; `cikti/portable/streamaxt` kopyası, 3001 portu, panelde iframe).
 
-## 2. StreamAxT (bot / topluluk sunucusu)
+## 2. AxBoT (bot / topluluk sunucusu)
 
 | Konu | Durum |
 |---|---|
@@ -84,8 +84,8 @@ Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind
 | `%APPDATA%\com.axthrowa.yayin-yonetim-tauri` (~4 MB) | Eski sürüm verisi (`settings.json`, `media/`) |
 | `%LOCALAPPDATA%\com.axthrowa.yayin-yonetim-araci\EBWebView` (~100 MB) | WebView2 profili: `localStorage` (smartBot ayarları, Twitch/YouTube/Discord yazma oturumları, panel tercihleri), IndexedDB |
 | `cikti\portable\{data,app-data,media,assets}` | Taşınabilir mod verisi |
-| `cikti\portable\streamaxt\data\streamaxt.sqlite` | Panelde gömülü StreamAxT'in gerçek veritabanı |
-| `Projeler\data`, `Projeler\server\data` | StreamAxT geliştirme veritabanları ve medya |
+| `cikti\portable\streamaxt\data\streamaxt.sqlite` | Panelde gömülü AxBoT'un gerçek veritabanı |
+| `Projeler\data`, `Projeler\server\data` | AxBoT geliştirme veritabanları ve medya |
 | Windows Kimlik Yöneticisi | OBS WebSocket parolası, Kick bot sırları (`keyring`) — dosya olarak yedeklenemez, rapora not düşülür |
 
 ## 4. Streaming OS hedefine göre mevcut yetenekler
@@ -95,30 +95,30 @@ Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind
 | Yakalama / sahne grafiği / GPU birleştirme / kodlama / kayıt / tekrar arabelleği | **Uygulamada yok** — OBS Studio'ya devredilmiş, WebSocket ile yönetiliyor |
 | Çoklu yayın (multistream) | **yok** (OBS tek hedefe yayınlar; eklenti de kurulu değil) |
 | Çoklu tuval (dikey/yatay) | **yok** |
-| Birleşik sohbet | **var** (Kick + Twitch + YouTube panelde ve overlay'de; StreamAxT'te Trovo/Discord/TikTok da) |
-| Etkinlik akışı | **kısmi** (StreamAxT `stream_events`, panelde widget) |
-| Uyarı kuyruğu denetimi (duraklat/atla/sustur) | **eksik** (StreamAxT `alertQueue.atla/temizle` yalnız testte; `skipEnabled` etkisiz) |
+| Birleşik sohbet | **var** (Kick + Twitch + YouTube panelde ve overlay'de; AxBoT'ta Trovo/Discord/TikTok da) |
+| Etkinlik akışı | **kısmi** (AxBoT `stream_events`, panelde widget) |
+| Uyarı kuyruğu denetimi (duraklat/atla/sustur) | **eksik** (AxBoT `alertQueue.atla/temizle` yalnız testte; `skipEnabled` etkisiz) |
 | Hızlı eylemler / Stream Deck benzeri | **kısmi** (küresel kısayollar + OBS eylemleri + ses paneli) → 2026-09-26: eylem kayıt defteri + Hızlı eylemler + Kontrol destesi; donanım Stream Deck yalnız HTTP ile (UNVERIFIED) |
 | Uzaktan denetim | **kısmi** (LAN Bearer ile `/remote` paneli; QR eşleme yok) |
-| Moderasyon | **var** (StreamAxT: sil/zaman aşımı/ban, ortak kara liste, AutoMod, kalkan) |
+| Moderasyon | **var** (AxBoT: sil/zaman aşımı/ban, ortak kara liste, AutoMod, kalkan) |
 | Otomasyon | **kısmi** (bitiş kuralları, zamanlayıcılar, OBS dizisi; düğüm tabanlı editör yok) |
-| Denetim günlüğü | **kısmi** (StreamAxT `audit`, panelde `audit_log` tablosu) |
+| Denetim günlüğü | **kısmi** (AxBoT `audit`, panelde `audit_log` tablosu) |
 | Tanılama / sağlık | **kısmi** (`StreamHealthCard`: OBS istatistikleri) |
-| AI | **kısmi** (StreamAxT Gemini: sohbet kurtarma, toksisite, yanıt) |
+| AI | **kısmi** (AxBoT Gemini: sohbet kurtarma, toksisite, yanıt) |
 
 ## 5. Bilinen yapısal riskler
 
 1. Görüntü hattı tamamen OBS'e bağımlı: yakalama/kodlama hataları uygulamanın denetiminde değil.
-2. İki ayrı bot motoru (panel `smartBot` + Rust `chatbot.rs` ve StreamAxT) aynı sohbete yanıt verebilir; ayrım `rustKickGate` ve ayarlarla yapılıyor.
+2. İki ayrı bot motoru (panel `smartBot` + Rust `chatbot.rs` ve AxBoT) aynı sohbete yanıt verebilir; ayrım `rustKickGate` ve ayarlarla yapılıyor.
 3. Ön yüz platform yazma oturumları WebView2 `localStorage`'da düz metin.
 4. LAN kipinde herkese açık WebSocket anlık görüntüsü OBS parolasını taşıyor (4. turda belgelendi).
-5. StreamAxT deposunun uzak kopyası yok — tek kopya yerel disk + yedekler.
+5. AxBoT deposunun uzak kopyası yok — tek kopya yerel disk + yedekler.
 
 ---
 
 ## 6. Revizyon denetimi — 2026-09-26 (ikinci Streaming OS görevi, salt-okunur)
 
-| | Panel | StreamAxT |
+| | Panel | AxBoT |
 |---|---|---|
 | Dal (denetim anında) | `revamp/streaming-os-20260925` | `revamp/streaming-os-20260925` |
 | HEAD | `809a53393ad5af0daaec1f26a8088522f5d7d2a2` | `aef017d2e372c5f47db4eb86fa9b34cf3ad84c69` |
@@ -133,10 +133,10 @@ Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind
 | Çoklu yayın | yok | **var**: `src-tauri/src/multistream/` — OBS → yerel FFmpeg alıcı (127.0.0.1) → Rust FLV çoğaltıcı → hedef başına FFmpeg yayıncı (`-c copy`); hedef başına durum makinesi, geri çekilme, yavaş hedef koruması; API + denetim günlüğü |
 | Yayın öncesi kontrol | yok | kısmi: OBS profil okuma + platform kural tablosu (`policy.rs`) |
 | Operatör çalışma alanı | yok | kısmi: Kontrol Merkezi (panel ızgarası; oturum, hedefler, ön kontrol, uyarı kuyruğu, sahne/ses, denetim, notlar) |
-| Uyarı kuyruğu denetimi | eksik | var (StreamAxT, ekip çapında, sürüm kilitli) |
+| Uyarı kuyruğu denetimi | eksik | var (AxBoT, ekip çapında, sürüm kilitli) |
 | Sır deposu | mock depo (kalıcı değil) | `keyring` `windows-native` — kalıcı |
 | LAN WS | OBS parolası sızıyordu | loopback dışına ayıklanıyor |
-| Testler | TS 314, Rust 192+21, StreamAxT 431+75 | TS 323, Rust 228+21+2 (uçtan uca), StreamAxT 451+81 |
+| Testler | TS 314, Rust 192+21, AxBoT 431+75 | TS 323, Rust 228+21+2 (uçtan uca), AxBoT 451+81 |
 
 ### 6.2 Bu görevin kontrol listesine göre (önceki bölümlerde yoksa)
 

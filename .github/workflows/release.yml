@@ -130,7 +130,7 @@ jobs:
           $beklenen = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).bundle.windows.certificateThumbprint
           if ($imza.SignerCertificate.Thumbprint -ne $beklenen) { throw "Kurulum beklenen sertifikayla imzalanmamış" }
           New-Item -ItemType Directory -Force cikti | Out-Null
-          Copy-Item $kurulum.FullName "cikti/YayinYonetimAraci-$env:SURUM-Setup.exe"
+          Copy-Item $kurulum.FullName "cikti/AxthrowAStudio-$env:SURUM-Setup.exe"
 
       - name: guncelleme.json üret
         shell: pwsh
@@ -143,7 +143,7 @@ jobs:
             surum   = $env:SURUM
             sayfa   = "https://github.com/$env:DEPO/releases/tag/$env:ETIKET"
             notlar  = $notlar.Trim()
-            kurulum = "https://github.com/$env:DEPO/releases/download/$env:ETIKET/YayinYonetimAraci-$env:SURUM-Setup.exe"
+            kurulum = "https://github.com/$env:DEPO/releases/download/$env:ETIKET/AxthrowAStudio-$env:SURUM-Setup.exe"
           }
           [IO.File]::WriteAllText("cikti/guncelleme.json", ($bildirim | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
           Get-Content cikti/guncelleme.json
@@ -154,8 +154,8 @@ jobs:
           GH_TOKEN: ${{ secrets.SURUM_TOKEN || github.token }}
         run: |
           gh release create $env:ETIKET `
-            "cikti/YayinYonetimAraci-$env:SURUM-Setup.exe" cikti/guncelleme.json `
-            --repo $env:DEPO --title "Yayın Yönetim Aracı $env:SURUM" --notes-file cikti/notlar.md
+            "cikti/AxthrowAStudio-$env:SURUM-Setup.exe" cikti/guncelleme.json `
+            --repo $env:DEPO --title "AxthrowA Studio $env:SURUM" --notes-file cikti/notlar.md
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
   macos:
@@ -195,8 +195,8 @@ jobs:
         run: |
           surum="${ETIKET#v}"
           dmg=$(ls src-tauri/target/release/bundle/dmg/*.dmg | head -1)
-          cp "$dmg" "YayinYonetimAraci-$surum-macOS-arm64.dmg"
-          gh release upload "$ETIKET" "YayinYonetimAraci-$surum-macOS-arm64.dmg" --repo "$DEPO" --clobber
+          cp "$dmg" "AxthrowAStudio-$surum-macOS-arm64.dmg"
+          gh release upload "$ETIKET" "AxthrowAStudio-$surum-macOS-arm64.dmg" --repo "$DEPO" --clobber
 
   linux:
     needs: windows
@@ -239,9 +239,9 @@ jobs:
           GH_TOKEN: ${{ secrets.SURUM_TOKEN || github.token }}
         run: |
           surum="${ETIKET#v}"
-          cp src-tauri/target/release/bundle/deb/*.deb "YayinYonetimAraci-$surum-amd64.deb"
-          cp src-tauri/target/release/bundle/appimage/*.AppImage "YayinYonetimAraci-$surum-x86_64.AppImage"
-          gh release upload "$ETIKET" "YayinYonetimAraci-$surum-amd64.deb" "YayinYonetimAraci-$surum-x86_64.AppImage" \
+          cp src-tauri/target/release/bundle/deb/*.deb "AxthrowAStudio-$surum-amd64.deb"
+          cp src-tauri/target/release/bundle/appimage/*.AppImage "AxthrowAStudio-$surum-x86_64.AppImage"
+          gh release upload "$ETIKET" "AxthrowAStudio-$surum-amd64.deb" "AxthrowAStudio-$surum-x86_64.AppImage" \
             --repo "$DEPO" --clobber
 
   # Derlemeler bitince sürümü Sentry'ye bildirir: çökme raporları bu sürüme bağlanır. Sürüm adı uygulamanın

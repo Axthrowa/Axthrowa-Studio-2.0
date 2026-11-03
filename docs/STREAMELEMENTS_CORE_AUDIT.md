@@ -129,13 +129,13 @@ değiştirmek, ana tuvaldekinden farklı bir geçiş/sinyal yolundan geçiyor ve
 
 | Sınıf | Örnek | Bizim karşılığımız |
 |---|---|---|
-| Başlatma/kapatma yarışları | CORE-786, #142; kapanırken başlayan dock (sürüm notu) | Tauri tarafında tek örnek kilidi, StreamAxT süreç izleyici; OBS ayrı süreçte olduğu için onun yarışları bizi çökertmez |
+| Başlatma/kapatma yarışları | CORE-786, #142; kapanırken başlayan dock (sürüm notu) | Tauri tarafında tek örnek kilidi, AxBoT süreç izleyici; OBS ayrı süreçte olduğu için onun yarışları bizi çökertmez |
 | Çift yıkım | CORE-777 (#140) | Rust sahiplik modeli; `kill_on_drop`, zarif durdurma |
 | Sinyal verisi ömrü | CORE-1715 (#172), CORE-1114 (#163) | obs-websocket olayları kopya veriyle gelir; paylaşılan işaretçi yok |
 | Referans sayımı | CORE-865 (#149) | yönlendiricide `Arc` + kanal; tüketici kapanınca hedef çıkarılır (testli) |
 | Çökme raporlama | CORE-860…864, 968 (Sentry, WER, izin istemi) | bizde çökme raporlama yok — `KNOWN_LIMITATIONS` |
 | Ayar dosyası okunamazsa açılmama | CORE-1900 (#174) | `write_atomic` + bozuk ayarda varsayılana dönüş (panel), `parseLayout` (Kontrol Merkezi) |
-| Token'ın çökme raporuna sızması | CORE-1922 yorumu | günlüklerde sır maskeleme (StreamAxT `logger-init`, Rust `config::redact`) |
+| Token'ın çökme raporuna sızması | CORE-1922 yorumu | günlüklerde sır maskeleme (AxBoT `logger-init`, Rust `config::redact`) |
 
 ## 11. Bu üründe ne alınıyor, ne alınmıyor
 

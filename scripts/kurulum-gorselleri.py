@@ -65,7 +65,7 @@ def kenar() -> Image.Image:
         t = (x - 24) / (w - 48)
         d.line([(x, 206), (x, 208)], fill=tuple(round(MENEKSE[i] * (1 - t) + CAMGOBEGI[i] * t) for i in range(3)))
     f2 = yazi_tipi(11)
-    alt = "Yayın Yönetim Aracı"
+    alt = "AxthrowA Studio"
     d.text(((w - d.textlength(alt, font=f2)) / 2, 218), alt, font=f2, fill=(161, 161, 170))
     return img
 

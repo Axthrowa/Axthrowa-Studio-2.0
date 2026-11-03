@@ -8,7 +8,7 @@ const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const apiPort = process.argv[2] || '18843';
 const uiPort = Number(process.argv[3] || 1421);
 process.env.VITE_API_BASE = `http://127.0.0.1:${apiPort}`;
-// Yalıtılmış bir StreamAxT örneğiyle denemek için (gerçek bot 3001'de kalır)
+// Yalıtılmış bir AxBoT örneğiyle denemek için (gerçek bot 3001'de kalır)
 if (process.argv[4]) process.env.VITE_STREAMAXT_PORT = process.argv[4];
 // PostCSS/Tailwind yapılandırması çalışma dizininden aranıyor; depo kökünden çalış
 process.chdir(kok);

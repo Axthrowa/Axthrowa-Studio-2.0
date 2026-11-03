@@ -1,5 +1,5 @@
 /**
- * Sol menünün yapısı: yayın akışına göre altı başlık. `botSayfa` verilen sayfalar botun (StreamAxT) o sekmesini
+ * Sol menünün yapısı: yayın akışına göre altı başlık. `botSayfa` verilen sayfalar botun (AxBoT) o sekmesini
  * gömülü açar; botun aynı konudaki alt sayfaları kendi üst sekmelerinde kalır.
  */
 import type { MsgKey } from "../i18n/messages";

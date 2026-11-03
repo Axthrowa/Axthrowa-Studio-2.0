@@ -606,11 +606,11 @@ function AlertQueuePanel({ onToast }: { onToast: (m: string) => void }) {
       if (r.status === 409) onToast(`${d.error || "Başka biri az önce değiştirdi"} — güncel durum yüklendi`);
       else if (!r.ok) onToast(d.error || "Uyarı denetimi uygulanamadı");
     } catch {
-      onToast("StreamAxT'e ulaşılamadı (Bot sekmesinden başlatın)");
+      onToast("AxBoT'a ulaşılamadı (Bot sekmesinden başlatın)");
     }
   };
 
-  if (offline) return <p className="text-xs text-white/50">StreamAxT çalışmıyor — uyarı kuyruğu denetimi için Bot sekmesinden başlatın.</p>;
+  if (offline) return <p className="text-xs text-white/50">AxBoT çalışmıyor — uyarı kuyruğu denetimi için Bot sekmesinden başlatın.</p>;
 
   return (
     <div className="space-y-2 text-xs">

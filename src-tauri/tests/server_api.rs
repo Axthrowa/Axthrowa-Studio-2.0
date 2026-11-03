@@ -1113,8 +1113,8 @@ async fn multistream_api_keys_never_leak_and_actions_are_audited() {
   assert!(yayin_yonetim_araci_lib::secret_store::get_secret("multistream.key.itest-twitch").is_none());
 }
 
-/// Eylem kayıt defteri: onay zorunluluğu, kullanılabilirlik, bilinmeyen eylem, StreamAxT'e iletim ve denetim kaydı.
-/// StreamAxT yerine test içinde sahte bir uyarı denetimi sunucusu açılır (gerçek bota dokunulmaz).
+/// Eylem kayıt defteri: onay zorunluluğu, kullanılabilirlik, bilinmeyen eylem, AxBoT'a iletim ve denetim kaydı.
+/// AxBoT yerine test içinde sahte bir uyarı denetimi sunucusu açılır (gerçek bota dokunulmaz).
 #[tokio::test(flavor = "multi_thread")]
 async fn action_registry_enforces_confirmation_availability_and_audit() {
   use std::sync::{Arc, Mutex};
@@ -1172,12 +1172,12 @@ async fn action_registry_enforces_confirmation_availability_and_audit() {
   assert!(r.text().await.unwrap().contains("OBS"));
   assert_eq!(calistir(json!({"id": "destination.start", "params": {"id": "yok"}})).await.status(), 409);
 
-  // StreamAxT'e iletim: durum geri döner, istek yerel aktörle gider
+  // AxBoT'a iletim: durum geri döner, istek yerel aktörle gider
   let r = calistir(json!({"id": "alert.pause"})).await;
   assert!(r.status().is_success());
   let v: Value = r.json().await.unwrap();
   assert_eq!(v["result"]["paused"], true);
-  // StreamAxT çakışması arayüze hata olarak taşınır
+  // AxBoT çakışması arayüze hata olarak taşınır
   let r = calistir(json!({"id": "alert.skip"})).await;
   assert_eq!(r.status(), 502);
   assert!(r.text().await.unwrap().contains("değiştirdi"));

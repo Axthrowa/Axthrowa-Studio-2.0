@@ -176,7 +176,7 @@ export default function PanelPage() {
   const [screen, setScreen] = useState<ScreenId>("starting");
   // Müzik / Ayarlar ekran ayarlarından bağımsız; ScreenId şemasını kirletmez.
   const [activeNav, setActiveNav] = useState<NavId | ScreenId>("control");
-  // Bot sekmesinde açılacak StreamAxT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
+  // Bot sekmesinde açılacak AxBoT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
   const [botSekme, setBotSekme] = useState<string | undefined>(undefined);
   useEffect(() => {
     if (activeNav !== "bot") setBotSekme(undefined);
@@ -206,7 +206,7 @@ export default function PanelPage() {
   const yayinTab = activeNav === "yayin";
   const botTab = activeNav === "bot";
   const chatTab = activeNav === "chat";
-  // Canlı Chat sekmesi StreamAxT'nin Multi-Chat'ini gösterir; panelin kendi
+  // Canlı Chat sekmesi AxBoT'un Multi-Chat'ini gösterir; panelin kendi
   // sohbet KATMANI ayarlarına (OBS overlay tasarımı) bu bayrakla dönülür.
   const [chatOverlaySettings, setChatOverlaySettings] = useState(false);
   const profileTab = activeNav === "profile" || activeNav === "obs";
@@ -1743,7 +1743,7 @@ export default function PanelPage() {
           </div>
         )
       ) : chatTab && !chatOverlaySettings ? (
-        // Canlı Chat = StreamAxT'nin Multi-Chat'i (çapraz sohbet, izleyici kartları).
+        // Canlı Chat = AxBoT'un Multi-Chat'i (çapraz sohbet, izleyici kartları).
         // Panelin kendi sohbet KATMANI ayarlarına düğmeyle dönülür.
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex shrink-0 items-center gap-2 px-3 pt-1.5 text-[11px] text-panel-muted">
@@ -1810,7 +1810,7 @@ export default function PanelPage() {
       </Suspense>
       </div>
 
-      {/* StreamAxT sesli komut dinleyicisi: sekmeden bağımsız, arka planda */}
+      {/* AxBoT sesli komut dinleyicisi: sekmeden bağımsız, arka planda */}
       <SesliDinleyiciCercevesi />
 
       {toast && (

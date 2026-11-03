@@ -7,7 +7,7 @@
 //! yönetebiliyor, yayını başlatıp durdurabiliyor, uzak yönetici hesabı
 //! açabiliyordu.
 //!
-//! Üç katman (StreamAxT'deki `local-guard` / `origin-guard` ile aynı model):
+//! Üç katman (AxBoT'daki `local-guard` / `origin-guard` ile aynı model):
 //!  1. **Host izin listesi** — DNS yeniden bağlama: saldırgan kendi alan adını
 //!     127.0.0.1'e çözdürürse istek `Host: kotu.com:8843` ile gelir.
 //!  2. **Köken denetimi** — yazma istekleri (POST/PUT/PATCH/DELETE) ve
@@ -88,7 +88,7 @@ pub fn host_allowed(host: Option<&str>, machine: Option<&str>, extra: &[String])
 
 /// Köken kabul edilir mi?
 ///
-/// * yerel kökenler (localhost / 127.0.0.1 / ::1, her port — gömülü StreamAxT,
+/// * yerel kökenler (localhost / 127.0.0.1 / ::1, her port — gömülü AxBoT,
 ///   geliştirme sunucuları)
 /// * Tauri penceresinin kendi kökeni
 /// * isteğin Host'u ile birebir aynı köken (LAN'daki uzak panel / OBS sayfası)

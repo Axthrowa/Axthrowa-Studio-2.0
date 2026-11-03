@@ -52,17 +52,17 @@ hiçbir şey arayüzde destekleniyor gibi gösterilmez.
 1. **Sırlar önceden hiç kalıcı değildi** (keyring mock deposu, a76f2b5). Düzeltmeden önce girilen OBS şifresi ve
    Kick oturumu diske/kasaya yazılmamıştı: **OBS şifresini ve Kick girişini bir kez yeniden girmek gerekir.**
    Düzeltmeyi geri almak (eski sürüme dönmek) bu sorunu geri getirir.
-2. **StreamAxT'te çapraz sohbet aktarımı (`cross_chat_enabled`) kullanıcının veritabanlarında açık.** Twitch'e
+2. **AxBoT'ta çapraz sohbet aktarımı (`cross_chat_enabled`) kullanıcının veritabanlarında açık.** Twitch'e
    eşzamanlı yayında birleşik sohbeti yayında göstermek Twitch koşullarıyla çelişebilir; yayın öncesi kontrol bunu
    uyarı olarak gösterir. Kapatmak kullanıcının kararıdır, kendiliğinden değiştirilmedi.
 3. **Kick yetkilendirmesi güncelleme anında yarımdaysa** (auth-url açılmış, geri dönüş gelmemiş) yeni sürümde `state`
    eşleşmez; panelden bir kez yeniden başlatılmalı.
 
-## StreamAxT (bot) tarafı
+## AxBoT (bot) tarafı
 
 1. **Kalkan modunda "yalnız takipçi" ve "en az hesap yaşı" uygulanmaz** — sohbet olayları bu bilgiyi taşımıyor;
    sayfa bunu gerekçesiyle "desteklenmiyor" diye gösterir. Platformun kendi sohbet modları (takipçi modu, yavaş mod)
-   StreamAxT'ten değiştirilmez.
+   AxBoT'tan değiştirilmez.
 2. **Kalkanın platformda silmesi varsayılan kapalı** (onayla açılır); kapalıyken yalnız bot yok sayar ve OBS
    sohbetinde gizler.
 3. **Kaydedilmemiş değişiklik şeridi dört sayfada** (Ayarlar, Bot Moderasyonu, Chat Oyunları, Gemini AI). Diğer
@@ -83,10 +83,10 @@ hiçbir şey arayüzde destekleniyor gibi gösterilmez.
 | Kendi GPL-2.0 OBS eklentimiz (tuval oluşturma, hedef başına kodlayıcı/ses izi) | **PLANNED** (P2) | OBS SDK derleme zinciri, ayrı açık kaynak depo ve imzalı dağıtım gerektirir; bu turda başlanmadı. Tasarım: `ENCODER_LIFECYCLE_DESIGN.md`, `STREAMING_ENGINE_DECISION.md` ADR-002. |
 | Donanım Stream Deck | HTTP yolu VERIFIED (curl), Elgato yazılımıyla **UNVERIFIED** | Stream Deck yazılımı/donanımı bu makinede yok. Yerel Elgato eklentisi PLANNED. Donanım tuşunda `confirm: true` göndermek çift dokunuş korumasını atlar (belgelendi). |
 | Kontrol destesi yapılandırması | son yazan kazanır | Yapılandırma panel ayarlarında tek kayıt; iki cihazdan aynı anda düzenlenirse sonuncusu geçerli olur (sürüm kilidi yok). |
-| Twitch sohbet modları, mesaj silme | canlı **UNVERIFIED** | Gerçek moderasyon kullanıcı kuralı gereği tetiklenmedi. Gövde kuralları Twitch resmi belgesine göre (yavaş mod 3–120 sn, takipçi modu 0–129600 dk) birim testli; hata/yetenek yolları yalıtılmış StreamAxT'e karşı 8 durumda doğrulandı. Kick ve YouTube'da resmi sohbet modu API'si yok → devre dışı + neden. |
+| Twitch sohbet modları, mesaj silme | canlı **UNVERIFIED** | Gerçek moderasyon kullanıcı kuralı gereği tetiklenmedi. Gövde kuralları Twitch resmi belgesine göre (yavaş mod 3–120 sn, takipçi modu 0–129600 dk) birim testli; hata/yetenek yolları yalıtılmış AxBoT'a karşı 8 durumda doğrulandı. Kick ve YouTube'da resmi sohbet modu API'si yok → devre dışı + neden. |
 | Ses ölçerleri | yalnız okuma, talebe bağlı | OBS aboneliği ilk istekte açılır, 10 sn istek gelmezse kapanır; arayüz 5/sn yoklar. Tüm girişler o an sessiz olduğu için canlı ölçümde yalnız -100 dBFS görüldü; dönüşüm birim testli. |
 | Tek seferlik test başarısızlığı | izleniyor | `server_api` paketinde bir çalıştırmada 22 testten 1'i başarısız oldu; çıktı o an filtrelendiği için hangi test olduğu kaydedilmedi. Sonraki 41 çalıştırmada (12 sıralı, 4 eşzamanlı yük altında, 25 döngü) tekrar etmedi. Test devre dışı bırakılmadı; olası neden paylaşılan ortam/port yarışı. Yeniden görülürse tam çıktı saklanacak. |
-| Eski StreamAxT dağıtım arşivleri | dikkat | `release\StreamAxT-v1.0.0-*.zip` arşivleri AGPL `tiktok-live-connector` 2.5.0 içerir; klasörler 2.4.0'a indirildi ama arşivler yeniden paketlenmedi. |
+| Eski AxBoT dağıtım arşivleri | dikkat | `release\StreamAxT-v1.0.0-*.zip` arşivleri AGPL `tiktok-live-connector` 2.5.0 içerir; klasörler 2.4.0'a indirildi ama arşivler yeniden paketlenmedi. |
 
 ## Yerel yayın çekirdeği (ADR-003) — 2026-09-26
 

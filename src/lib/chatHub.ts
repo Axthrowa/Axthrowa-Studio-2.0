@@ -148,7 +148,7 @@ export function botKickMesaji(d: any): ChatMessage | null {
 }
 
 /**
- * Kick sohbeti botun (StreamAxT) WebSocket'inden okunur: Kick'in eski Pusher anahtarı 2026 Ekim'de
+ * Kick sohbeti botun (AxBoT) WebSocket'inden okunur: Kick'in eski Pusher anahtarı 2026 Ekim'de
  * kapandı (kod 4001), yeni bağlantı pazarlığını bot zaten yapıyor. Bot kapalıysa sebep durumda yazar.
  */
 function startKick(

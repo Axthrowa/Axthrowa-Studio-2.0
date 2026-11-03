@@ -50,7 +50,7 @@ pub struct Context {
   pub encoder: EncoderInfo,
   /// Yayına giren sohbet overlay'i birden çok platformun mesajını gösteriyor mu?
   pub combined_chat_overlay: bool,
-  /// Çapraz sohbet aktarımı (StreamAxT) açık mı?
+  /// Çapraz sohbet aktarımı (AxBoT) açık mı?
   pub cross_chat_relay: bool,
   pub ffmpeg_found: bool,
   pub obs_connected: bool,

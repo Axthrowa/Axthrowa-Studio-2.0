@@ -1,5 +1,5 @@
 /**
- * StreamAxT WebSocket yüklerini (`{type:"chat", data}`, `{type:"alert", subType, data, alert}`) normalleştirir.
+ * AxBoT WebSocket yüklerini (`{type:"chat", data}`, `{type:"alert", subType, data, alert}`) normalleştirir.
  * Bozuk / eksik yük çökmez: `null` döner ya da güvenli varsayılan kullanılır. Ham yük saklanmaz (bellek).
  */
 import { CHAT_PLATFORMS, type ActivityEvent, type ChatPlatform, type ChatRole, type NormalizedChatMessage } from "./model";
@@ -87,7 +87,7 @@ export function normalizeChat(data: unknown): NormalizedChatMessage | null {
   };
 }
 
-/** `{type:"alert"}` iletisinden etkinlik. StreamAxT uyarı kimliği varsa olay kimliği odur (idempotent). */
+/** `{type:"alert"}` iletisinden etkinlik. AxBoT uyarı kimliği varsa olay kimliği odur (idempotent). */
 export function normalizeActivity(msg: unknown): ActivityEvent | null {
   const m = obj(msg);
   if (m.type !== "alert") return null;

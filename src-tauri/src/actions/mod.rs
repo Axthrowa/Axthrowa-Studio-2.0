@@ -192,9 +192,9 @@ pub enum Action {
   Hold { input: String, konus: bool, basili: bool },
   /// `eylem`: `yeniden` | `degistir`
   Media { input: String, eylem: &'static str },
-  /// StreamAxT uyarı kuyruğu denetimine iletilecek eylem adı
+  /// AxBoT uyarı kuyruğu denetimine iletilecek eylem adı
   Alert { action: &'static str },
-  /// StreamAxT sesli komut dinleyicisinin bas-konuş tuşu (panel gizli dinleyici çerçevesine iletir)
+  /// AxBoT sesli komut dinleyicisinin bas-konuş tuşu (panel gizli dinleyici çerçevesine iletir)
   SesliBasKonus { basili: bool },
 }
 

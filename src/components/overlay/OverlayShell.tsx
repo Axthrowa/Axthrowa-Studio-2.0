@@ -29,6 +29,7 @@ import CreditsRoller, { sectionsFromSettings } from "./CreditsRoller";
 import AudioVisualizer from "./AudioVisualizer";
 import NowPlayingWidget from "./NowPlayingWidget";
 import ResonanceNowPlaying from "./ResonanceNowPlaying";
+import ResonanceLyrics from "./ResonanceLyrics";
 import { useNowPlaying } from "../../lib/useNowPlaying";
 import { usePreviewQuality } from "../../lib/previewQuality";
 import { clearNotice, pushNotice } from "../../lib/notices";
@@ -1215,6 +1216,7 @@ export default function OverlayShell({
     credits: "Jenerik",
     visualizer: "Visualizer",
     nowPlaying: "Şimdi Çalıyor",
+    lyrics: "Şarkı Sözleri",
   };
   const hiddenKeys = Object.keys(HIDDEN_LABELS).filter((k) => displaySettings.visible?.[k] === false);
 
@@ -1523,6 +1525,10 @@ export default function OverlayShell({
             ),
             { x: 16, y: 88 }
           )}
+
+        {screen !== "chat" &&
+          s.lyricsEnabled === true &&
+          renderDraggable("lyrics", <ResonanceLyrics placeholder={edit} />, { x: 50, y: 72 })}
       </div>
 
       {edit && hiddenKeys.length > 0 && (

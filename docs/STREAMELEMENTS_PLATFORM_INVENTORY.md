@@ -26,17 +26,17 @@ Sınıflar: [REFERENCE_PRODUCT_RESEARCH §1](REFERENCE_PRODUCT_RESEARCH.md#1-kay
 | Komutlar, zamanlayıcılar, modüller, spam filtreleri, sayaçlar, değişkenler | `CONFIRMED_IN_OFFICIAL_DOCS (özet)` (Ground Control 2.0 bunları yönetir) |
 | Sadakat puanları, çekilişler, yarışmalar, izleyici kuyruğu, şarkı isteği, bağış (tipping), liderlik tabloları, sohbet uyarıları, etkinlik akışı | `INFERRED` (platformun bilinen modülleri) — ayrıntı `UNVERIFIED` |
 
-## 3. Bizim sistemle (StreamAxT + panel) farklar
+## 3. Bizim sistemle (AxBoT + panel) farklar
 
 | Konu | StreamElements | Bizde | Değerlendirme |
 |---|---|---|---|
 | Özel widget SDK'sı | HTML/CSS/JS + Fields + SE_API, kum havuzu | Yok (hazır React widget'ları) | **Eksik** — güvenli kum havuzlu SDK tasarlanacak (sandbox iframe, `postMessage` köprüsü, alan şeması, izin kapsamlı API) |
 | Widget'a verilen kimlik | apiToken | Widget URL'lerinde OAuth tokenı yok (kullanıcı kuralı) | Bizim yaklaşım daha güvenli; kapsamlı widget tokenı planlanacak |
-| Kuyruk denetimi (atla, sustur, devam) | Olay + API | StreamAxT'te kuyruk var, **denetim yok** | **Eksik** — P1 |
-| Paylaşılan anahtar-değer deposu | `SE_API.store` | StreamAxT sayaç/değişkenleri | Kısmi |
-| Küfür süzgeci API'si | `sanitize` | StreamAxT AutoMod + TTS filtresi | Var (widget API'si olarak yok) |
-| Kick "KICKs" olayı | var | var (StreamAxT) | Eşdeğer |
-| Çoklu platform etkinlik akışı | var | StreamAxT `stream_events` + widget | Kısmi |
+| Kuyruk denetimi (atla, sustur, devam) | Olay + API | AxBoT'ta kuyruk var, **denetim yok** | **Eksik** — P1 |
+| Paylaşılan anahtar-değer deposu | `SE_API.store` | AxBoT sayaç/değişkenleri | Kısmi |
+| Küfür süzgeci API'si | `sanitize` | AxBoT AutoMod + TTS filtresi | Var (widget API'si olarak yok) |
+| Kick "KICKs" olayı | var | var (AxBoT) | Eşdeğer |
+| Çoklu platform etkinlik akışı | var | AxBoT `stream_events` + widget | Kısmi |
 
 ## 4. Ürüne alınacaklar (seçici — hepsini körlemesine değil)
 

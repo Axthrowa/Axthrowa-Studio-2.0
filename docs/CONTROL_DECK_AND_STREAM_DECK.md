@@ -1,6 +1,6 @@
 # Kontrol destesi ve Stream Deck entegrasyonu
 
-Durum: **yerleşik deste IMPLEMENTED + VERIFIED** (tarayıcıda, yalıtılmış StreamAxT'e karşı) ·
+Durum: **yerleşik deste IMPLEMENTED + VERIFIED** (tarayıcıda, yalıtılmış AxBoT'a karşı) ·
 **donanım Stream Deck: HTTP yolu VERIFIED (curl), Elgato yazılımıyla uçtan uca UNVERIFIED** — bu makinede Stream Deck
 yazılımı yüklü değil (`%APPDATA%\Elgato\StreamDeck` ve `C:\Program Files\Elgato\StreamDeck` yok, süreç yok).
 
@@ -29,7 +29,7 @@ Denetleyici ne olursa olsun izin, onay ve denetim günlüğü sunucuda uygulanı
 - Yeni panel göçü: hazır profilde (kullanıcı özelleştirmemiş) kayıtlı düzene profilin görünürlüğüyle eklenir; özel
   düzende gizli olarak sona eklenir.
 
-Kanıt (OBSERVED_IN_RUNTIME, başsız sunucu + yalıtılmış StreamAxT 3012):
+Kanıt (OBSERVED_IN_RUNTIME, başsız sunucu + yalıtılmış AxBoT 3012):
 "Uyarıları duraklat" → 3012 `paused: true, updatedBy: yerel`; "Uyarıları sürdür" → `paused: false`; denetimde
 `ACTION:alert.pause ok:true`, `ACTION:alert.resume ok:true`. Eklenen düğmeler yeniden yüklemede korundu; silme ve sayfa
 silme sunucu kaydına yansıdı. Birim testleri: `src/lib/deck.test.ts`, `src/lib/controlCenter.test.ts`.

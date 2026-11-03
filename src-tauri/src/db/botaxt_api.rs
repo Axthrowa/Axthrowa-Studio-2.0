@@ -2248,7 +2248,7 @@ pub async fn discord_test_webhook(pool: &SqlitePool) -> Result<Value> {
 
   let payload = json!({
     "content": "Yayındayız",
-    "username": "Yayın Yönetim Aracı",
+    "username": "AxthrowA Studio",
   });
   let res = reqwest::Client::new()
     .post(url)

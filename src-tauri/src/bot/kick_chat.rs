@@ -1,4 +1,4 @@
-//! Kayıtlı Kick kanalı ve oda kimliği. Sohbeti bot (StreamAxT) okur: Kick'in Pusher anahtarı
+//! Kayıtlı Kick kanalı ve oda kimliği. Sohbeti bot (AxBoT) okur: Kick'in Pusher anahtarı
 //! 2026 Ekim'de kapandı (kod 4001), burada artık dinleyici yok.
 
 use std::sync::Arc;

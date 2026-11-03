@@ -96,10 +96,10 @@ fn native_dialog(app: &AppHandle) {
   let handle = app.clone();
   app
     .dialog()
-    .message("StreamAxT kapatılırken ne yapılsın?
+    .message("AxthrowA Studio kapatılırken ne yapılsın?
 
 Tepsiye küçültürsen bot, sunucu ve kısayollar çalışmaya devam eder.")
-    .title("StreamAxT")
+    .title("AxthrowA Studio")
     .kind(MessageDialogKind::Info)
     .buttons(MessageDialogButtons::YesNoCancelCustom(
       LABEL_TRAY.into(),

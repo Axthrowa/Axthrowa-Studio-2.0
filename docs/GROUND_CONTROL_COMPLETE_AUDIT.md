@@ -94,12 +94,12 @@ Kaynak: `support.streamelements.com` "Ground Control" makalesi (sürüm 2.0.5 no
 | Özellik | Belgede | Bizde (2026-09-26) |
 |---|---|---|
 | Özelleştirilebilir yerleşim | sürükle-bırak panel, yeniden boyutlandırma | Kontrol Merkezi: gizle/sırala/genişlik/hazır profil (bölme ağacı yok) |
-| Çoklu sohbet | Twitch, YouTube, Trovo, X; 2.0.5'te yazı boyutu ayarı | Evrensel sohbet: Kick/Twitch/YouTube + StreamAxT (Trovo/Discord/TikTok); yazı boyutu ayarı **yok** |
+| Çoklu sohbet | Twitch, YouTube, Trovo, X; 2.0.5'te yazı boyutu ayarı | Evrensel sohbet: Kick/Twitch/YouTube + AxBoT (Trovo/Discord/TikTok); yazı boyutu ayarı **yok** |
 | Çok platformlu etkinlik akışı | takip, abone, bahşiş, üyelik; 2.0.5'te platform başına birden çok akış | tek tekilleştirilmiş akış + filtre; platform başına ayrı akış **yok** |
 | Hızlı eylemler | uyarı duraklat/sustur, reklam erteleme | eylem kayıt defteri (18 eylem); reklam erteleme **yok** (platform API'si) |
 | Stream Deck | yerel Elgato entegrasyonu | Kontrol destesi (yazılım) + HTTP ucu; yerel Elgato eklentisi PLANNED |
 | Moderatörler | ekip çapında uyarılar, gerçek zamanlı kuyruk eylemleri, tek tıkla tahmin | ekip çapında uyarı kuyruğu (sürüm kilitli, denetimli) var; tahmin **yok** |
-| Komut düzenleme (2.0.5) | uygulamadan çıkmadan komut düzenleme | StreamAxT komut sayfaları (ayrı sekme) |
+| Komut düzenleme (2.0.5) | uygulamadan çıkmadan komut düzenleme | AxBoT komut sayfaları (ayrı sekme) |
 | Üst metrikleri gizleme (2.0.5) | var | Kontrol Merkezi'nde panel gizleme |
 | Topluluk içgörüleri | 30 günlük topluluklar arası izleyici etkinliği; ilk kez destek verenler için bildirim | **yok** (topluluklar arası veri bizde yok ve toplanmayacak) |
-| Yalnız Twitch | hızlı ayarlar (başlık/kategori), yayın önizlemesi, anket/tahmin (Affiliate/Partner) | başlık/kategori StreamAxT'te; Twitch sohbet modları (yavaş/takipçi/abone/emote) bu tur eklendi |
+| Yalnız Twitch | hızlı ayarlar (başlık/kategori), yayın önizlemesi, anket/tahmin (Affiliate/Partner) | başlık/kategori AxBoT'ta; Twitch sohbet modları (yavaş/takipçi/abone/emote) bu tur eklendi |

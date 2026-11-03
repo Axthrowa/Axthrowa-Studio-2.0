@@ -145,7 +145,7 @@ export function YedekPaneli() {
       <div className="space-y-1 pt-2">
         <h4 className="text-xs font-bold text-white">Eski kurulumdan taşı</h4>
         <p className="text-[11px] text-white/65">
-          Eski taşınabilir klasörün yolunu yaz (ör. C:\Users\…\YayinYonetimAraci-StreamAxT-v1.4.2). Ayarlar, veritabanı, kütüphane (assets) ve bot verisi bir sonraki
+          Eski taşınabilir klasörün yolunu yaz (ör. C:\Users\…\AxthrowAStudio-1.4.2). Ayarlar, veritabanı, kütüphane (assets) ve bot verisi bir sonraki
           açılışta buraya kopyalanır. Eski uygulamayı önce kapat.
         </p>
         <div className="flex flex-wrap gap-2">

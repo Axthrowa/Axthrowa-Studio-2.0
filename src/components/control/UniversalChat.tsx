@@ -1,9 +1,9 @@
 /**
  * Kontrol Merkezi — Evrensel sohbet ve Etkinlik akışı panelleri.
  *
- * Kaynak: StreamAxT'in WebSocket'i (Kick, Twitch, YouTube, Trovo, Discord, TikTok bağdaştırıcıları orada). İki panel
+ * Kaynak: AxBoT'un WebSocket'i (Kick, Twitch, YouTube, Trovo, Discord, TikTok bağdaştırıcıları orada). İki panel
  * tek bir paylaşılan bağlantıyı kullanır; ileti ve olaylar `lib/chat` ile normalleştirilir, tekilleştirilir.
- * Moderasyon düğmeleri yalnız platform yeteneği VE bağlantısı varsa görünür, çift onay ister; eylem StreamAxT'in
+ * Moderasyon düğmeleri yalnız platform yeteneği VE bağlantısı varsa görünür, çift onay ister; eylem AxBoT'un
  * denetimli elle moderasyon ucuna gider (gerçek platform eylemi).
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -130,7 +130,7 @@ function usePlatformState(base: string | null) {
         for (const [k, v] of Object.entries((s?.platforms || {}) as Record<string, { connected?: boolean }>)) b[k] = !!v?.connected;
         setBagli(b);
       } catch {
-        /* StreamAxT kapalı — düğmeler gizli kalır */
+        /* AxBoT kapalı — düğmeler gizli kalır */
       }
     };
     void yukle();
@@ -247,7 +247,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
         const ne = eylem === "timeout" ? "10 dk zaman aşımı" : eylem === "ban" ? "kalıcı ban" : "mesaj silme";
         onToast(r.ok ? `${m.displayName}: ${ne} uygulandı` : `${m.displayName}: ${d?.hata || `HTTP ${r.status}`}`);
       } catch {
-        onToast("StreamAxT'e ulaşılamadı");
+        onToast("AxBoT'a ulaşılamadı");
       }
     },
     [armed, base, onToast]
@@ -270,7 +270,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
   return (
     <div className="flex h-[26rem] flex-col gap-2 text-xs">
       <div className="flex flex-wrap items-center gap-1">
-        <span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400"}`} title={connected ? "StreamAxT'e bağlı" : "StreamAxT'e bağlı değil"} />
+        <span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400"}`} title={connected ? "AxBoT'a bağlı" : "AxBoT'a bağlı değil"} />
         {CHAT_VIEWS.map((v) => (
           <button key={v} type="button" onClick={() => setView(v)} className={`rounded-full border px-2 py-0.5 ${view === v ? "border-white/40 bg-white/15 text-white" : "border-white/10 text-white/70 hover:border-white/30"}`}>
             {CHAT_VIEW_LABEL[v]}
@@ -315,7 +315,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
 
       <div ref={listRef} className="custom-scrollbar min-h-0 flex-1 space-y-0.5 overflow-y-auto rounded-lg bg-black/20 p-1.5" style={{ fontSize: yaziBoyutu }} role="log" aria-live="polite">
         {filtered.length > shown.length && <p className="text-center text-[10px] text-panel-muted">{filtered.length - shown.length} eski ileti gizli — aramayla bulunur</p>}
-        {shown.length === 0 && <p className="p-2 text-panel-muted">{connected ? "Bu görünümde ileti yok." : "StreamAxT çalışmıyor — sohbet için Bot sekmesinden başlatın."}</p>}
+        {shown.length === 0 && <p className="p-2 text-panel-muted">{connected ? "Bu görünümde ileti yok." : "AxBoT çalışmıyor — sohbet için Bot sekmesinden başlatın."}</p>}
         {shown.map((m) => {
           const y = yetenek[m.platform]?.moderasyon;
           const modOk = !m.isBot && !m.isSystem && bagli[m.platform] && !m.roles.includes("broadcaster") && !m.roles.includes("moderator");
@@ -438,7 +438,7 @@ function ChatModes({
       const d = await r.json().catch(() => ({}));
       onToast(r.ok ? `${PLATFORM_LABEL[platform as ChatPlatform]}: ${etiket} uygulandı` : `${PLATFORM_LABEL[platform as ChatPlatform]}: ${d?.hata || `HTTP ${r.status}`}`);
     } catch {
-      onToast("StreamAxT'e ulaşılamadı");
+      onToast("AxBoT'a ulaşılamadı");
     }
   };
   return (
@@ -486,7 +486,7 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
       const d = await r.json().catch(() => ({}));
       onToast(r.ok ? "Uyarı yeniden oynatılıyor" : d?.error || `HTTP ${r.status}`);
     } catch {
-      onToast("StreamAxT'e ulaşılamadı");
+      onToast("AxBoT'a ulaşılamadı");
     }
   };
 
@@ -507,7 +507,7 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
         </label>
       </div>
       <div className="custom-scrollbar max-h-72 space-y-1 overflow-y-auto">
-        {list.length === 0 && <p className="text-panel-muted">{connected ? "Bu oturumda olay yok." : "StreamAxT çalışmıyor."}</p>}
+        {list.length === 0 && <p className="text-panel-muted">{connected ? "Bu oturumda olay yok." : "AxBoT çalışmıyor."}</p>}
         {list.map((e) => (
           <div key={e.eventId} className="flex items-center gap-1.5 rounded-lg bg-white/[0.03] px-2 py-1">
             <PlatformBadge p={e.platform} />

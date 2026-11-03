@@ -1,7 +1,7 @@
 //! Otomatik yedekleme, geri yükleme ve eski klasörden ayar taşıma.
 //!
 //! Yedek: `data/yedekler/<zaman>/` altına ayar JSON'ları, `botaxt.db` (VACUUM INTO: açıkken tutarlı kopya)
-//! ve gömülü StreamAxT veritabanı. Günde bir kendiliğinden alınır; son `SAKLA` yedek ve son `SAKLA` günün
+//! ve gömülü AxBoT veritabanı. Günde bir kendiliğinden alınır; son `SAKLA` yedek ve son `SAKLA` günün
 //! her birinden en yenisi tutulur (elle alınan yedekler günlükleri itmesin).
 //! Geri yükleme / taşıma ANINDA yapılmaz: veritabanları açıkken üzerine yazılamaz. İstek bir işaret
 //! dosyasına yazılır, uygulama bir sonraki açılışta (veritabanları açılmadan önce) önce o anki hâli

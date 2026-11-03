@@ -1,4 +1,4 @@
-> **Streaming OS notu (2026-09-25):** Bu envanter StreamAxT deposundaki `docs/BOTRIX_COMPLETE_AUDIT.md` belgesinin
+> **Streaming OS notu (2026-09-25):** Bu envanter AxBoT deposundaki `docs/BOTRIX_COMPLETE_AUDIT.md` belgesinin
 > kopyasıdır; 2026-09-21 turunda tarayıcı eklentisi ile BotRix panelinde doğrudan gözlemle (`OBSERVED_IN_UI`)
 > çıkarıldı. 2026-09-25 turunda yeniden gözlem **`BLOCKED`** (Chrome uzantısı bağlı değildi); değişiklik varsa
 > Chrome bağlandığında bu belge güncellenecek. Streaming OS için çıkarılan ders: komut, olay, uyarı, widget, TTS,
@@ -570,6 +570,6 @@ yönlendirdi → panel yine `NOT_ACCESSIBLE` (giriş yapılmadı; kimlik bilgisi
 izleme süresi, puan, shoutout, sayaç düzenleme), puan ve puan yağmuru komutları, sohbetten özel komut
 ekle/düzenle/sil, şarkı isteği denetimi, tahmin (bahis) komutları, sıra (kuyruk) sistemi ve `$(...)` değişken
 sözdizimi (gönderen, roller, konumsal argümanlar ve yedek değerler, takipçi/abone sayısı, başlık okuma/değiştirme).
-Bu liste 2026-09-21 envanteriyle çelişmiyor; StreamAxT'teki karşılıklar `Desktop/Projeler/docs/BOTRIX_GAP_ANALYSIS.md`. Özellik bazında karşılaştırma ve eşdeğerlik durumu StreamAxT
+Bu liste 2026-09-21 envanteriyle çelişmiyor; AxBoT'taki karşılıklar `Desktop/Projeler/docs/BOTRIX_GAP_ANALYSIS.md`. Özellik bazında karşılaştırma ve eşdeğerlik durumu AxBoT
 deposunda: `Desktop/Projeler/docs/BOTRIX_GAP_ANALYSIS.md`, `BOTRIX_ALERT_MATRIX.md`. BotRix kodu/varlığı
 kopyalanmadı.

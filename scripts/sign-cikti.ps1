@@ -31,11 +31,11 @@ if (-not $cert) { throw "Kod imzalama sertifikasi yok (CN=Axthrowa)" }
 Write-Host "Sertifika: $($cert.Subject)  [$($cert.Thumbprint)]"
 
 $files = @(
-  (Join-Path $proj "cikti\YayinYonetimAraci-Setup.exe"),
-  (Join-Path $proj "cikti\Yayin Yonetim Araci_1.0.0_x64-setup.exe")
+  (Join-Path $proj "cikti\AxthrowAStudio-Setup.exe"),
+  (Join-Path $proj "cikti\AxthrowA Studio_1.0.0_x64-setup.exe")
 )
 if (-not $SkipPortable) {
-  $files = @((Join-Path $proj "cikti\portable\YayinYonetimAraci.exe")) + $files
+  $files = @((Join-Path $proj "cikti\portable\AxthrowAStudio.exe")) + $files
 }
 if ($Yalniz) { $files = $Yalniz }
 $files = $files | Where-Object { Test-Path $_ } | Select-Object -Unique
@@ -45,8 +45,8 @@ if (-not $files) { throw "cikti icinde imzalanacak dosya yok. Once scripts\paket
 $failed = @()
 foreach ($f in $files) {
   # Çalışan uygulama dosyayı kilitler; imza "file is being used" ile düşer.
-  if ((Split-Path $f -Leaf) -eq "YayinYonetimAraci.exe") {
-    Get-Process YayinYonetimAraci -ErrorAction SilentlyContinue | ForEach-Object {
+  if ((Split-Path $f -Leaf) -eq "AxthrowAStudio.exe") {
+    Get-Process AxthrowAStudio -ErrorAction SilentlyContinue | ForEach-Object {
       Write-Host "Calisan uygulama kapatiliyor (pid $($_.Id))..."
       $_ | Stop-Process -Force
       Start-Sleep -Milliseconds 800

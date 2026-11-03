@@ -14,7 +14,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 /// `true` = bu süreç devam etsin. `false` = zaten çalışıyor, çık.
 pub fn claim() -> bool {
-  let name: Vec<u16> = "Local\\YayinYonetimAraci_SingleInstance\0"
+  let name: Vec<u16> = "Local\\AxthrowAStudio_SingleInstance\0"
     .encode_utf16()
     .collect();
   unsafe {
@@ -35,7 +35,7 @@ pub fn claim() -> bool {
 }
 
 fn one_getir() {
-  let title: Vec<u16> = "StreamAxT\0".encode_utf16().collect();
+  let title: Vec<u16> = "AxthrowA Studio\0".encode_utf16().collect();
   unsafe {
     // Sınıf adı bilinmiyor; başlıkla bul.
     if let Ok(hwnd) = FindWindowW(PCWSTR::null(), PCWSTR(title.as_ptr())) {

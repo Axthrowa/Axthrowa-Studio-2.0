@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { streamaxtBase } from "../../lib/streamaxt";
 
-/** StreamAxT `/api/status` çıktısındaki tek platform. */
+/** AxBoT `/api/status` çıktısındaki tek platform. */
 type PlatformStatus = { connected?: boolean; channel?: string; error?: string };
 
 type BotStatus = {
@@ -21,10 +21,10 @@ const PLATFORMS: Array<{ id: string; label: string }> = [
 ];
 
 /**
- * Dashboard'daki Kick kartında bot (StreamAxT) durumu: çalışıyor mu, ne kadardır
+ * Dashboard'daki Kick kartında bot (AxBoT) durumu: çalışıyor mu, ne kadardır
  * ayakta ve hangi platform oturumlarına bağlı.
  *
- * Veri doğrudan StreamAxT sunucusundan (`/api/status`) okunur; bot kapalıyken
+ * Veri doğrudan AxBoT sunucusundan (`/api/status`) okunur; bot kapalıyken
  * istek düşer ve kart "kapalı" gösterir.
  */
 export default function BotSessions({ onAc }: { onAc?: () => void } = {}) {
@@ -60,7 +60,7 @@ export default function BotSessions({ onAc }: { onAc?: () => void } = {}) {
             (live ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-neutral-500")
           }
         />
-        <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">Bot · StreamAxT</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">Bot · AxBoT</span>
         <span className="ml-auto truncate text-[11px] text-panel-muted">
           {!checked ? "denetleniyor…" : live ? st?.uptime || "açık" : "kapalı"}
         </span>
@@ -103,7 +103,7 @@ export default function BotSessions({ onAc }: { onAc?: () => void } = {}) {
       ) : (
         checked && (
           <p className="mt-2 text-[11px] text-panel-muted">
-            Bot sekmesini açınca StreamAxT başlar ve oturumlar burada görünür.
+            Bot sekmesini açınca AxBoT başlar ve oturumlar burada görünür.
           </p>
         )
       )}

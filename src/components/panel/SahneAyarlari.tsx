@@ -33,6 +33,7 @@ const PARCA_AYARI: Record<string, { bolum: string; alan?: string }> = {
   socials: { bolum: "sosyal" },
   credits: { bolum: "jenerik" },
   nowPlaying: { bolum: "resonance" },
+  lyrics: { bolum: "resonance" },
 };
 
 function Field({
@@ -723,7 +724,7 @@ export default function SahneAyarlari({
             </div>
             <p className="mt-1 text-[10px] text-panel-muted">
               Yerel video ve YouTube aynı ses ayarını kullanır — hangisi fon ise o çalar.
-              Windows ses karıştırıcısında &quot;StreamAxT&quot; adıyla görünür
+              Windows ses karıştırıcısında &quot;AxBoT&quot; adıyla görünür
               (ses çalarken; Edge WebView2 diye arama).
             </p>
           </div>
@@ -1274,7 +1275,7 @@ export default function SahneAyarlari({
           {!sectionHidden("boyutlar") && (
             <SettingsSection id="boyutlar" title={tt("sec.boyutlar")} style={secOrder("boyutlar")}>
           <p className="text-[11px] text-panel-muted">Önizlemede köşeden de ölçeklenebilir.</p>
-          {(["logo", "eyebrow", "title", "sub", "countdown", "socials", "ticker", "credits", "visualizer", "nowPlaying"] as const).map((k) => (
+          {(["logo", "eyebrow", "title", "sub", "countdown", "socials", "ticker", "credits", "visualizer", "nowPlaying", "lyrics"] as const).map((k) => (
             <div key={k} className="flex items-center gap-2 text-xs">
               <span className="w-20 text-panel-muted">{k}</span>
               <input
@@ -1320,6 +1321,19 @@ export default function SahneAyarlari({
               }
             />
             Şimdi Çalıyor widget’ı
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={settings.lyricsEnabled === true && settings.visible?.lyrics !== false}
+              onChange={(e) =>
+                update({
+                  lyricsEnabled: e.target.checked,
+                  visible: { ...(settings.visible || {}), lyrics: true },
+                })
+              }
+            />
+            Şarkı sözleri widget’ı
           </label>
           {settings.nowPlayingEnabled !== false && (
             <>
@@ -1977,6 +1991,22 @@ export default function SahneAyarlari({
         onCopied={() => showToast("Kopyalandı")}
         onOpened={(u, s) => showToast(s === "opened" ? "Önizleme tarayıcıda açıldı" : s === "copied" ? "Tarayıcı açılamadı — adres kopyalandı" : "Önizleme açılamadı: " + u)}
       />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={settings.lyricsEnabled === true && settings.visible?.lyrics !== false}
+          onChange={(e) =>
+            update({
+              lyricsEnabled: e.target.checked,
+              visible: { ...(settings.visible || {}), lyrics: true },
+            })
+          }
+        />
+        Bu ekranda şarkı sözlerini göster
+      </label>
+      <p className="text-[11px] text-panel-muted">
+        Söz boyutu, rengi ve zamanlaması Müzik sayfasında (Resonance) ayarlanır.
+      </p>
       <p className="text-[11px] text-panel-muted">
         Ayrı OBS kaynağı isterseniz yukarıdaki adresi kullan. Gerekmez — “Şimdi Çalıyor”
         widget’ı zaten Giriş/Mola/Çıkış ekranlarında.

@@ -37,15 +37,15 @@ Kod: `src-tauri/src/actions/mod.rs` (tanımlar, doğrulama), `src-tauri/src/serv
 | `destination.start` | Hedefler kartı / API | çoklu yayın | `broadcast.outputs` | — | tek hedef bağlanır | oturum açıksa |
 | `destination.stop` | Hedefler kartı / API | çoklu yayın | `broadcast.outputs` | **çift onay** | tek hedef durur, diğerleri sürer | oturum açıksa |
 | `destinations.stopAll` | Hızlı eylemler | çoklu yayın | `broadcast.outputs` | **çift onay** | tüm hedefler ve alıcı kapanır | oturum açıksa |
-| `alert.pause` / `resume` / `skip` / `mute` / `unmute` | Hızlı eylemler | StreamAxT uyarı kuyruğu (ekip çapında) | `alerts.control` | — | tüm panellere anında yayılır | StreamAxT çalışıyorsa |
-| `alert.clear` | Hızlı eylemler | StreamAxT | `alerts.control` | **çift onay** | bekleyen uyarılar silinir | StreamAxT çalışıyorsa |
+| `alert.pause` / `resume` / `skip` / `mute` / `unmute` | Hızlı eylemler | AxBoT uyarı kuyruğu (ekip çapında) | `alerts.control` | — | tüm panellere anında yayılır | AxBoT çalışıyorsa |
+| `alert.clear` | Hızlı eylemler | AxBoT | `alerts.control` | **çift onay** | bekleyen uyarılar silinir | AxBoT çalışıyorsa |
 
 Kapsam dışı kalanlar (MISSING): reklam çalıştır/ertele, anket/tahmin, başlık/kategori, klip oluştur (platform API),
 acil "hepsini sustur" makrosu, yerel Elgato Stream Deck eklentisi (PLANNED).
 
 Sonradan eklenenler: **Kontrol destesi** (aynı eylemleri sayfalı düğme ızgarasında çalıştırır; onaylı eylemler çift
 dokunuşla) ve donanım Stream Deck için genel HTTP ucu — bkz. `CONTROL_DECK_AND_STREAM_DECK.md`. Twitch yavaş / abone /
-takipçi / yalnız-emote modları StreamAxT moderasyon ucunda ve Evrensel sohbet panelinde (yalnız Twitch; bkz.
+takipçi / yalnız-emote modları AxBoT moderasyon ucunda ve Evrensel sohbet panelinde (yalnız Twitch; bkz.
 `MULTICHAT_ARCHITECTURE.md` §4).
 
 ---
@@ -59,7 +59,7 @@ Her eylem: kimlik, etiket, simge, gerekli izin (`scope`), onay gereksinimi (tehl
 
 | Eylem | Kapsam (izin) | Onay | Yetenek denetimi | Mevcut durum |
 |---|---|---|---|---|
-| Uyarıları sustur / sesi aç | `alerts.control` | — | — | EKSİK (StreamAxT'te kuyruk var, sustur yok) |
+| Uyarıları sustur / sesi aç | `alerts.control` | — | — | EKSİK (AxBoT'ta kuyruk var, sustur yok) |
 | Uyarı kuyruğunu duraklat / sürdür | `alerts.control` | — | — | EKSİK |
 | Geçerli uyarıyı atla | `alerts.control` | — | — | EKSİK (`alertQueue.atla` yalnız testte) |
 | Test uyarılarını temizle | `alerts.control` | — | — | EKSİK |
@@ -73,7 +73,7 @@ Her eylem: kimlik, etiket, simge, gerekli izin (`scope`), onay gereksinimi (tehl
 | Reklam çalıştır | `channel.ads` | evet | Twitch yetkisi | EKSİK |
 | Anket / tahmin oluştur | `channel.polls` | — | Twitch Affiliate/Partner | EKSİK |
 | Botu aç/kapa | `bot.control` | — | — | KISMİ |
-| TTS'i aç/kapa | `tts.control` | — | — | KISMİ (StreamAxT ayarı) |
+| TTS'i aç/kapa | `tts.control` | — | — | KISMİ (AxBoT ayarı) |
 | Acil sahne / BRB | `scene.switch` | basılı tut | — | KISMİ (BRB sahnesi) |
 | Hepsini sustur (acil) | `audio.control` | basılı tut | — | EKSİK |
 | Hedefi durdur / hepsini bitir | `broadcast.outputs` | çift onay | hedef durumu | EKSİK (çoklu yayın yok) |

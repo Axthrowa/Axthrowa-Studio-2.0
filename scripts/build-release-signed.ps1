@@ -90,8 +90,8 @@ if ($SkipSign) { $paketArgs += "-SkipSign" }
 if ($LASTEXITCODE -ne 0) { throw "paketle failed" }
 
 # Imza dogrulama + Zone.Identifier temizle (SAC)
-$exe = Join-Path $proj "cikti\portable\YayinYonetimAraci.exe"
-$setup = Join-Path $proj "cikti\YayinYonetimAraci-Setup.exe"
+$exe = Join-Path $proj "cikti\portable\AxthrowAStudio.exe"
+$setup = Join-Path $proj "cikti\AxthrowAStudio-Setup.exe"
 foreach ($f in @($exe, $setup)) {
   if (-not (Test-Path $f)) { continue }
   Unblock-File -LiteralPath $f -ErrorAction SilentlyContinue
@@ -106,4 +106,4 @@ foreach ($f in @($exe, $setup)) {
 Write-Host ""
 Write-Host ("Bitti. rustOk={0} bundleOk={1}" -f $rustOk, $bundleOk)
 Write-Host "  Portable: cikti\portable\"
-Write-Host "  Setup:    cikti\YayinYonetimAraci-Setup.exe"
+Write-Host "  Setup:    cikti\AxthrowAStudio-Setup.exe"

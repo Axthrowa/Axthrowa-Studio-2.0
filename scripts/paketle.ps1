@@ -33,17 +33,17 @@ Write-Host "kaynak exe -> $srcExe  imza=$((Get-AuthenticodeSignature -LiteralPat
 
 $cikti = Join-Path $proj "cikti"
 $portable = Join-Path $cikti "portable"
-$setupName = "YayinYonetimAraci-Setup.exe"
-$setupNameVersioned = "Yayin Yonetim Araci_1.4.1_x64-setup.exe"
+$setupName = "AxthrowAStudio-Setup.exe"
+$setupNameVersioned = "AxthrowA Studio_1.5.0_x64-setup.exe"
 
 New-Item -ItemType Directory -Force -Path $cikti | Out-Null
 New-Item -ItemType Directory -Force -Path $portable | Out-Null
 
 # 1) Calistirilabilir dosya
-$destExe = Join-Path $portable "YayinYonetimAraci.exe"
+$destExe = Join-Path $portable "AxthrowAStudio.exe"
 # Yalniz paketlenen kopya kapatilir: eskiden ADI ayni olan HER surec (baska klasorden calisan,
 # yayin yapan uygulama dahil) zorla kapatiliyordu.
-$running = @(Get-Process YayinYonetimAraci -ErrorAction SilentlyContinue | Where-Object { $_.Path -and ($_.Path -ieq $destExe) })
+$running = @(Get-Process AxthrowAStudio -ErrorAction SilentlyContinue | Where-Object { $_.Path -and ($_.Path -ieq $destExe) })
 foreach ($proc in $running) {
   Write-Host "Calisan uygulama kapatiliyor (pid $($proc.Id))..."
   $proc | Stop-Process -Force
@@ -69,7 +69,7 @@ if ($KeepExe -and (Test-Path $destExe)) {
   Write-Host "KeepExe: portable exe dokunulmadi (SAC hash ayni)"
 } else {
   if (-not (Wait-FileUnlocked $destExe)) {
-    throw "cikti\portable\YayinYonetimAraci.exe hala kilitli. Uygulamayi kapatip tekrar deneyin."
+    throw "cikti\portable\AxthrowAStudio.exe hala kilitli. Uygulamayi kapatip tekrar deneyin."
   }
   Copy-Item $srcExe $destExe -Force
   Write-Host "portable exe -> $destExe"
@@ -123,14 +123,14 @@ if ((Test-Path $projParticles) -and -not (Get-ChildItem $destParticles -File -Er
 $batLines = @(
   "@echo off",
   "cd /d `"%~dp0`"",
-  "powershell -NoProfile -Command `"Unblock-File -LiteralPath '%~dp0YayinYonetimAraci.exe' -ErrorAction SilentlyContinue`" >nul 2>&1",
+  "powershell -NoProfile -Command `"Unblock-File -LiteralPath '%~dp0AxthrowAStudio.exe' -ErrorAction SilentlyContinue`" >nul 2>&1",
   "echo Giris : http://127.0.0.1:8843/starting?obs=1",
   "echo Cikis : http://127.0.0.1:8843/ending?obs=1",
   "echo Mola  : http://127.0.0.1:8843/brb?obs=1",
   "echo Chat  : http://127.0.0.1:8843/chat?obs=1",
-  "taskkill /F /IM YayinYonetimAraci.exe >nul 2>&1",
+  "taskkill /F /IM AxthrowAStudio.exe >nul 2>&1",
   "timeout /t 1 /nobreak >nul",
-  "start `"`" `"%~dp0YayinYonetimAraci.exe`""
+  "start `"`" `"%~dp0AxthrowAStudio.exe`""
 )
 Set-Content -Path (Join-Path $portable "Baslat.bat") -Value $batLines -Encoding ASCII
 
@@ -171,11 +171,11 @@ $okuLines = @(
   "",
   "1) PORTABLE (kurulum yok, klasoru tasiyip calistir):",
   "   cikti\portable\Baslat.bat",
-  "   cikti\portable\YayinYonetimAraci.exe",
+  "   cikti\portable\AxthrowAStudio.exe",
   "",
   "2) SETUP (Windows kurulum sihirbazi):",
-  "   cikti\YayinYonetimAraci-Setup.exe",
-  "   cikti\Yayin Yonetim Araci_1.4.1_x64-setup.exe",
+  "   cikti\AxthrowAStudio-Setup.exe",
+  "   cikti\AxthrowA Studio_1.5.0_x64-setup.exe",
   "",
   "OBS Browser Source (uygulama ACIK olmali):",
   "  http://127.0.0.1:8843/starting?obs=1",
@@ -188,7 +188,7 @@ $okuLines = @(
   "",
   "GUNLUK GUNCELLEME (yeni EXE yok - SAC hash ayni kalir):",
   "  npm run guncelle",
-  "Exe kilidi: cikti\\sac-frozen\\YayinYonetimAraci.exe",
+  "Exe kilidi: cikti\\sac-frozen\\AxthrowAStudio.exe",
   "Tam yeni setup/exe (yalnizca Rust/sunucu degisince):",
   "  powershell -ExecutionPolicy Bypass -File scripts\build-release-signed.ps1"
 )

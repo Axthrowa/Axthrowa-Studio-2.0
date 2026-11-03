@@ -111,7 +111,7 @@ const liste = [...birlesik.values()].sort((a, b) => `${a.tur}:${a.ad}`.localeCom
 const surum = JSON.parse(fs.readFileSync(path.join(kok, 'package.json'), 'utf8')).version;
 const satirlar = [];
 const yaz = (s = '') => satirlar.push(s);
-yaz('YAYIN YÖNETİM ARACI — ÜÇÜNCÜ TARAF BİLDİRİMLERİ');
+yaz('AxthrowA Studio — ÜÇÜNCÜ TARAF BİLDİRİMLERİ');
 yaz(`Sürüm ${surum}. Bu dosya scripts/ucuncu-taraf-bildirimleri.mjs ile üretilir; elle düzenlemeyin.`);
 yaz();
 yaz('Ürün lisansı: GNU General Public License sürüm 2 ya da (tercihinize göre) daha sonraki bir sürüm');

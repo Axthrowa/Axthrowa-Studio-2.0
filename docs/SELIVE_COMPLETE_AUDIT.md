@@ -131,12 +131,12 @@ Scenes and Sources in SE.Live", "Using Backtrack on SE.Live Canvas", "Dual Forma
 | **Aitum Vertical ile birlikte** | **iki eklenti birlikte kurulmamalı** (kararsızlık/çökme); Aitum varsa kaldırılmalı | ADR-002 katman 2 (Aitum vendor köprüsü) **bu kullanıcıda uygulanamaz** — SE.Live kurulu |
 | Çoklu yayın hedefleri | Twitch, YouTube, TikTok, Kick, X, Trovo, özel RTMP; yerel çalışır, harici hizmet yok; X desteği henüz tam değil | Output Router ile aynı ilke (yerel, hedef başına) |
 | Bant hesabı | toplam bit hızı = ana bit hızı × platform sayısı önerisi | bizim hesap bunu ses (+160 kbps/hedef), %5 ek yük ve %25 pay ile genişletiyor (`policy.rs`) |
-| Çıkış (hedef) ayarı | hedef başına aç/kapa, bağlı tuval, **hedef başına OBS ses izi**, hedef başına yayın başlığı/kategori | ses izi seçimi bizde yok (ADR-002 katman 3); başlık/kategori StreamAxT'te |
+| Çıkış (hedef) ayarı | hedef başına aç/kapa, bağlı tuval, **hedef başına OBS ses izi**, hedef başına yayın başlığı/kategori | ses izi seçimi bizde yok (ADR-002 katman 3); başlık/kategori AxBoT'ta |
 | Tek hedefi durdurma | diğerlerini durdurmadan tek platform kapatılabilir | bizde de var (`destination.stop`) |
 | Tuval | menüden yeni tuval, ad + çözünürlük (dikey 1080×1920); tuval başına kodlama (gelişmiş, beta) ve çıkış başına genel ayarı ezme | tuval **oluşturma** obs-websocket'te yok → bizde yalnız keşif |
 | Bağlı sahneler | sahne bağlanınca çoklu yayın aracında sahne geçişi tüm tuvallere yansır; Stream Deck yapılandırması değişmeden çalışır | bizim `scene.switch` ana tuvalde; bağlı sahnelerin SE.Live tarafından yayılması `UNVERIFIED` (canlı denenmedi) |
 | Backtrack | build .477+; özel tuvalde **yalnız yayın sürerken** çalışır; açıkken boşta bile kodlayıcı harcar; 180 sn üstü önerilmiyor; tuval başına "Save Replay" kısayolu | `replay.save` yalnız OBS'in yerel tekrar arabelleğini kaydeder; tuval Backtrack'i tetiklenmez |
 | Twitch Dual Format | Twitch Dual Output Beta onayı + SE.Live **Public Beta** gerekir; OBS'te Enhanced Broadcasting açılıp SE.Live tuvali ek tuval seçilir; silinen tuval listede "Inactive" kalır (OBS hatası) | OBS'in kendi özelliği; bizden bağımsız |
 | Bulut yedeği | profil + sahne koleksiyonu yedeği, toplam 100 MB sınırı | bizde yerel zip + git bundle yedeği |
-| TikTok sohbeti | TikTok API vermediği için etkinlik akışında/çoklu sohbette yok; ayrı TikTok sohbet dock'u | StreamAxT TikTok'u topluluk kütüphanesiyle bağlar (lisans incelemesi: 2.4.0 sabitlendi) |
+| TikTok sohbeti | TikTok API vermediği için etkinlik akışında/çoklu sohbette yok; ayrı TikTok sohbet dock'u | AxBoT TikTok'u topluluk kütüphanesiyle bağlar (lisans incelemesi: 2.4.0 sabitlendi) |
 | Kaplama URL'si | kaplama URL'si gizli bilgi içerir, izleyiciye gösterilmemeli | bizim widget URL'leri kullanıcı parolası/OAuth jetonu taşımaz (`SECURITY_REVIEW`) |

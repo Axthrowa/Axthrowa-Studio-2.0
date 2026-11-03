@@ -90,7 +90,7 @@ async fn api_tasi(
   yerel(&addr)?;
   let kok = PathBuf::from(g.kaynak.trim().trim_matches('"'));
   if !kok.is_absolute() || !yedek::eski_kurulum_mu(&kok) {
-    return Err((StatusCode::BAD_REQUEST, "Bu klasörde eski bir Yayın Yönetim Aracı kurulumu (data\\botaxt.db) bulunamadı".into()));
+    return Err((StatusCode::BAD_REQUEST, "Bu klasörde eski bir AxthrowA Studio kurulumu (data\\botaxt.db) bulunamadı".into()));
   }
   // Kendi klasörüne taşıma anlamsız (ve kendi verisinin üzerine yazar)
   if state.data_dir.starts_with(&kok) {

@@ -11,16 +11,16 @@ import { streamaxtStatus as getStatus, type StreamAxtStatus } from "../../lib/st
 export type { StreamAxtStatus };
 
 /**
- * Bot sekmesi: StreamAxT'i (ayrı Node sunucusu) gömer. Sunucuyu Rust başlatır;
+ * Bot sekmesi: AxBoT'u (ayrı Node sunucusu) gömer. Sunucuyu Rust başlatır;
  * burada durum izlenir, gerekirse başlat/durdur/yeniden başlat sunulur.
  */
 export type StreamAxtHostProps = {
   onToast?: (msg: string) => void;
-  /** StreamAxT'nin hangi sekmesi açılsın (ör. "multichat"). */
+  /** AxBoT'un hangi sekmesi açılsın (ör. "multichat"). */
   tab?: string;
-  /** StreamAxT'nin kendi kenar çubuğu gizlensin (tek sekme gömerken). */
+  /** AxBoT'un kendi kenar çubuğu gizlensin (tek sekme gömerken). */
   embed?: boolean;
-  /** StreamAxT "Resonance'ı aç" dediğinde panelin Müzik sekmesine geç. */
+  /** AxBoT "Resonance'ı aç" dediğinde panelin Müzik sekmesine geç. */
   onOpenMusic?: () => void;
 };
 
@@ -86,13 +86,13 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
     [],
   );
 
-  // Gömülü StreamAxT'ten gelen "dış bağlantı aç" isteği.
+  // Gömülü AxBoT'tan gelen "dış bağlantı aç" isteği.
   //
-  // iframe içinde `target="_blank"` / `window.open` çalışmıyor; StreamAxT
+  // iframe içinde `target="_blank"` / `window.open` çalışmıyor; AxBoT
   // açamadığı adresi üst pencereye bildiriyor, biz işletim sisteminin
   // tarayıcısında açıyoruz ("OBS Alert Önizle" gibi düğmeler bu yüzden
   // hiçbir şey yapmıyormuş gibi görünüyordu). Yalnız BU çerçeveden ve
-  // StreamAxT kökeninden gelen http(s) istekleri kabul edilir
+  // AxBoT kökeninden gelen http(s) istekleri kabul edilir
   // (`lib/embedMessages.ts`).
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
@@ -127,7 +127,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
   if (!st) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-white/60">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> StreamAxT denetleniyor…
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> AxBoT denetleniyor…
       </div>
     );
   }
@@ -135,7 +135,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
   if (isTauri() && !st.installed) {
     return (
       <Notice
-        title="StreamAxT bulunamadı"
+        title="AxBoT bulunamadı"
         body="Uygulamanın yanında `streamaxt` klasörü olmalı. Hazırlamak için proje klasöründe şunu çalıştırın:"
         code="node scripts/streamaxt-hazirla.mjs"
       />
@@ -145,7 +145,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
     return (
       <Notice
         title="Node.js gerekli"
-        body="StreamAxT, Node.js 22 veya üstünü gerektirir. nodejs.org üzerinden kurup uygulamayı yeniden açın."
+        body="AxBoT, Node.js 22 veya üstünü gerektirir. nodejs.org üzerinden kurup uygulamayı yeniden açın."
       />
     );
   }
@@ -160,7 +160,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
             st.running ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-amber-400",
           )}
         />
-        <span className="font-semibold text-white">StreamAxT</span>
+        <span className="font-semibold text-white">AxBoT</span>
         <span className="font-mono text-cyan-300/90">127.0.0.1:{st.port}</span>
         {st.external && <span className="rounded bg-white/[0.06] px-1.5 py-0.5">harici örnek</span>}
         <div className="ml-auto flex items-center gap-1">
@@ -174,13 +174,13 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
             (st.running ? (
               <Small
                 onClick={() => void stop(st.external)}
-                title={st.external ? "Harici örneği kapat" : "StreamAxT'i durdur"}
+                title={st.external ? "Harici örneği kapat" : "AxBoT'u durdur"}
                 icon={busy === "stop" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Square className="h-3 w-3" />}
               />
             ) : (
               <Small
                 onClick={() => void start()}
-                title="StreamAxT'i başlat"
+                title="AxBoT'u başlat"
                 icon={busy === "start" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
               />
             ))}
@@ -190,14 +190,14 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
       {st.external && isTauri() && (
         <div className="mx-3 mb-1.5 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-200">
           <span className="min-w-0 flex-1">
-            {st.port} portunda uygulamanın başlatmadığı bir StreamAxT çalışıyor; eski arayüzü gösterebilir.
+            {st.port} portunda uygulamanın başlatmadığı bir AxBoT çalışıyor; eski arayüzü gösterebilir.
           </span>
           <button
             type="button"
             className="shrink-0 rounded-md bg-amber-400/20 px-2 py-1 font-semibold hover:bg-amber-400/30"
             onClick={() => {
               void stop(true).then(() => start());
-              onToast?.("Harici StreamAxT kapatılıp yerleşik sürüm başlatılıyor…");
+              onToast?.("Harici AxBoT kapatılıp yerleşik sürüm başlatılıyor…");
             }}
           >
             Kapat ve yerleşik sürümü başlat
@@ -222,7 +222,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
           key={frameKey}
           onLoad={() => setYuklendi(true)}
           ref={frameRef}
-          title="StreamAxT"
+          title="AxBoT"
           src={frameUrl(st.url, tab, embed)}
           className="min-h-0 w-full flex-1 border-0 bg-[#090b10]"
           // microphone: Sesli Komutlar sayfasında "Bu pencerede dinle" ve mikrofon listesi
@@ -233,11 +233,11 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
           {busy === "start" ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin text-cyan-300" />
-              StreamAxT başlatılıyor…
+              AxBoT başlatılıyor…
             </>
           ) : (
             <>
-              <p>StreamAxT kapalı{st.disabled ? " (elle durduruldu)" : ""}.</p>
+              <p>AxBoT kapalı{st.disabled ? " (elle durduruldu)" : ""}.</p>
               {isTauri() && (
                 <button
                   type="button"

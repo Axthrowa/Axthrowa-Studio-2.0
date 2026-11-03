@@ -36,17 +36,17 @@ bir süreç** olarak yapılacak; sınamalar yalnız sentetik kaynaklarla (ekran/
 | 13 | SE.Live çalışma anı denetimi | PARTIAL | resmî makaleler + kaynak; çalışma anında yalnız tuval keşfi (`OBSERVED_IN_RUNTIME`); arayüz `NOT_ACCESSIBLE` |
 | 14 | Ground Control adli denetim | PARTIAL | resmî makale + ürün sayfası; uygulama arayüzü `NOT_ACCESSIBLE`; hızlı eylem matrisi var |
 | 15 | Kontrol Merkezi | PARTIAL | Var: sohbet, etkinlik, hedefler, sağlık (kısmi), uyarı kuyruğu, hızlı eylemler, deste, sahne&ses (susturma + ölçer), yayın öncesi kontrol, denetim, notlar. Yok: yayın önizlemesi, anket/tahmin, üst veri paneli, otomasyon paneli; yerleşim ızgara (yuvalama/bölme/ayrı pencere yok) |
-| 16 | Evrensel sohbet motoru | IMPLEMENTED | StreamAxT bağdaştırıcıları → `src/lib/chat/normalize.ts` → depo; `MULTICHAT_ARCHITECTURE` |
+| 16 | Evrensel sohbet motoru | IMPLEMENTED | AxBoT bağdaştırıcıları → `src/lib/chat/normalize.ts` → depo; `MULTICHAT_ARCHITECTURE` |
 | 17 | Normalleştirilmiş sohbet modeli | PARTIAL | model var; `messageParts`, `replyTo`, emote parçaları bağdaştırıcılardan gelmiyor |
 | 18 | Sohbet kimliği (platform + kullanıcı kimliği) | IMPLEMENTED | `platform:userId`, ada düşme işaretli; birim testli |
 | 19 | Görünüm kipleri | PARTIAL | Birleşik, bahsetme, soru, ilk kez, üye, ücretli, moderasyon, platform seçimi, arama; platform sütunları ve gerçek sanallaştırma yok |
 | 20 | Sohbet moderasyonu | PARTIAL | sil, zaman aşımı, ban, Twitch yavaş/takipçi/abone/emote modu; unban, yanıt, VIP, sohbeti temizle yok; canlı `UNVERIFIED` |
-| 21 | Platform başına hız sınırı | PARTIAL | StreamAxT bağdaştırıcılarında platform başına gönderim ve yeniden deneme; kuyruk taşması/yinelenen bastırma belgesi eksik |
+| 21 | Platform başına hız sınırı | PARTIAL | AxBoT bağdaştırıcılarında platform başına gönderim ve yeniden deneme; kuyruk taşması/yinelenen bastırma belgesi eksik |
 | 22 | Çok platformlu etkinlik akışı | IMPLEMENTED | normalize + idempotent; tarayıcıda doğrulandı |
-| 23 | Platform bağdaştırıcı mimarisi | PARTIAL | StreamAxT `platforms/*` + `capabilities.ts`; anket/tahmin/hedef oluşturma arayüzde yok |
+| 23 | Platform bağdaştırıcı mimarisi | PARTIAL | AxBoT `platforms/*` + `capabilities.ts`; anket/tahmin/hedef oluşturma arayüzde yok |
 | 24 | Platform yetenek matrisi | IMPLEMENTED | `PLATFORM_CAPABILITY_MATRIX`, `capabilities.ts`, arayüz yetenek güdümlü |
 | 25 | Yerel yayın çekirdeği kararı | IMPLEMENTED | ADR-003: libobs tabanlı ayrı süreç (`motor/`, GPL-2.0-or-later); ADR-001 yolları yanında kalır |
-| 26 | Süreç mimarisi | IMPLEMENTED | arayüz / Rust denetim düzlemi / StreamAxT / yayın çekirdeği ayrı süreçler; çekirdekle stdio JSON (tipli komutlar); çekirdek çökerse panel sürer |
+| 26 | Süreç mimarisi | IMPLEMENTED | arayüz / Rust denetim düzlemi / AxBoT / yayın çekirdeği ayrı süreçler; çekirdekle stdio JSON (tipli komutlar); çekirdek çökerse panel sürer |
 | 27 | Yakalama motoru | PARTIAL | çekirdekte ortak kaynak soyutlaması (libobs): renk, yazı, görsel, medya **doğrulandı**; ekran, oyun, mikrofon, masaüstü sesi kod yolu var, `UNVERIFIED` (yalnız sentetik kuralı); kamera/pencere MISSING |
 | 28 | Sahne motoru | PARTIAL | çekirdekte sahne, öğe, konum/ölçek/sınır/açı/görünürlük; düzenleyici arayüzü (grup, kilit, sürükle, geri al) yok |
 | 29 | GPU birleştirici | IMPLEMENTED (libobs) | D3D11 birleştirme, NV12 GPU dönüşümü, NVENC doku kodlayıcı (GPU→CPU kopyası yalnız önizlemede) |
@@ -83,19 +83,19 @@ bir süreç** olarak yapılacak; sınamalar yalnız sentetik kaynaklarla (ekran/
 | 61 | Rol tabanlı erişim | PARTIAL | uzak kullanıcıda rol + izin listesi; hazır rol şablonları yok |
 | 62 | Paylaşılan ekip durumu | IMPLEMENTED | uyarı denetimi: sürüm kilidi (409), WS yayını, denetim |
 | 63 | Uyarı kuyruğu denetimi | PARTIAL | duraklat/sürdür/sustur/aç/atla/temizle/yeniden oynat; öncelik, inceleme, tek uyarı kaldırma yok |
-| 64–65 | Yayın üst verisi / toplu üst veri | PARTIAL | StreamAxT başlık/kategori (çok platformlu); Kontrol Merkezi paneli ve platforma özel geçersiz kılma yok |
+| 64–65 | Yayın üst verisi / toplu üst veri | PARTIAL | AxBoT başlık/kategori (çok platformlu); Kontrol Merkezi paneli ve platforma özel geçersiz kılma yok |
 | 66 | Anket / tahmin | MISSING | Twitch API yeteneği var, uygulanmadı |
 | 67 | Stream Deck | PARTIAL | HTTP yolu doğrulandı; yerel eklenti yok; cihazla `UNVERIFIED` |
 | 68 | Yerleşik dokunmatik deste | PARTIAL | sayfa, düğme, renk, canlı kullanılabilirlik, çift dokunuş; klasör, aç/kapa, basılı tutma, çoklu eylem yok |
 | 69 | Uzaktan denetim | PARTIAL | `/remote` + Bearer + izinler; QR eşleme, cihaz kaydı/iptali yok |
 | 70 | BotRix denetimi | IMPLEMENTED | `BOTRIX_COMPLETE_AUDIT` (2026-09-21 arayüz gözlemi; bu tur panel `NOT_ACCESSIBLE`) |
-| 71–74 | Sohbet botu, zamanlayıcı, moderasyon botu, TTS | EXISTING | StreamAxT BotRix eşdeğerlik turları (`BOTRIX_GAP_ANALYSIS`) |
+| 71–74 | Sohbet botu, zamanlayıcı, moderasyon botu, TTS | EXISTING | AxBoT BotRix eşdeğerlik turları (`BOTRIX_GAP_ANALYSIS`) |
 | 75 | Uyarı motoru durum makinesi | PARTIAL | kuyruk + denetim; açık QUEUED→COMPLETED durum makinesi yok |
-| 76–78 | Widget motoru, overlay tasarımcısı, animasyon | PARTIAL | panel OverlayStudio + StreamAxT widget'ları; ortak yapılandırma modeli ve geri al/yinele eksik |
+| 76–78 | Widget motoru, overlay tasarımcısı, animasyon | PARTIAL | panel OverlayStudio + AxBoT widget'ları; ortak yapılandırma modeli ve geri al/yinele eksik |
 | 79 | Medya kitaplığı | PARTIAL | panel medya kitaplığı; kullanım takibi ve silme uyarısı yok |
-| 80–81 | Sadakat, hedefler/etiketler | EXISTING | StreamAxT |
+| 80–81 | Sadakat, hedefler/etiketler | EXISTING | AxBoT |
 | 82–83 | Otomasyon stüdyosu ve tetikleyiciler | PARTIAL | bitiş kuralları, zamanlayıcılar, OBS dizisi; düğüm editörü yok |
-| 84 | Olay veriyolu | EXISTING | StreamAxT `core/event-bus.ts` |
+| 84 | Olay veriyolu | EXISTING | AxBoT `core/event-bus.ts` |
 | 85 | Olay güvenilirliği | PARTIAL | benzersiz kimlik + arayüzde tekilleştirme; yeniden bağlanmada yeniden oynatma yok |
 | 86 | Performans izleyici | PARTIAL | OBS istatistikleri, hedef başına kbps/fps/hız; GPU/VRAM/kodlayıcı oturum sayısı yok |
 | 87 | Yayın öncesi kontrol | PARTIAL | kodlayıcı, platform kuralları, bant genişliği, OBS bağlantısı; mikrofon/kamera/disk/kırpılma/boş çıktı yok |

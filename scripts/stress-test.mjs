@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Yayın Yönetim Aracı — canlı sunucu stres testi.
+ * AxthrowA Studio — canlı sunucu stres testi.
  *
  * Uygulama açıkken çalıştır:
  *   node scripts/stress-test.mjs

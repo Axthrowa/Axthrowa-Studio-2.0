@@ -11,7 +11,7 @@ export type ChatPlatform = (typeof CHAT_PLATFORMS)[number] | "unknown";
 
 export type ChatRole = "broadcaster" | "moderator" | "vip" | "subscriber";
 
-/** Kara liste / kalkan: bot yok sayar, OBS sohbetinde gösterilmez (StreamAxT işaretler) */
+/** Kara liste / kalkan: bot yok sayar, OBS sohbetinde gösterilmez (AxBoT işaretler) */
 export type ModerationState = "visible" | "blocked" | "shielded";
 
 export type NormalizedChatMessage = {
@@ -47,7 +47,7 @@ export type NormalizedChatMessage = {
 };
 
 export type ActivityEvent = {
-  /** olay kimliği (StreamAxT uyarı kimliği) — tekilleştirme */
+  /** olay kimliği (AxBoT uyarı kimliği) — tekilleştirme */
   eventId: string;
   platform: ChatPlatform;
   eventType: string;
@@ -60,7 +60,7 @@ export type ActivityEvent = {
   viewers?: number;
   message?: string;
   isTest: boolean;
-  /** StreamAxT uyarı kuyruğundaki kimlik — yeniden oynatma için */
+  /** AxBoT uyarı kuyruğundaki kimlik — yeniden oynatma için */
   alertId?: string;
 };
 

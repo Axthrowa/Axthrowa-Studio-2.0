@@ -4,7 +4,7 @@
 //!   cargo run --example headless_server -- 18843
 //!   node scripts/ui-headless.mjs 18843 1421     (Vite, VITE_API_BASE bu sunucuya ayarlı)
 //!
-//! OBS'e otomatik bağlanma, tepsi, kısayollar ve StreamAxT süreci BAŞLATILMAZ (yalnız `server::serve`).
+//! OBS'e otomatik bağlanma, tepsi, kısayollar ve AxBoT süreci BAŞLATILMAZ (yalnız `server::serve`).
 
 use std::path::PathBuf;
 

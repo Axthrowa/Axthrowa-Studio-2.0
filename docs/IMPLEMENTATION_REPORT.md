@@ -43,13 +43,13 @@ tamamsa yazıldı.
 | P1 | **Yayın öncesi kontrol**: gerçek OBS profilinden kodlayıcı/bit hızı/anahtar kare/çözünürlük + yapılandırılabilir platform kuralları (Kick, YouTube, Twitch eşzamanlı yayın) → uyarı/engel | f3b0a16 | **PARTIAL** (cihaz/ağ denetimi yok) |
 | P1 | **Kontrol Merkezi**: yayın oturumu, hedef kartları (canlı kbps/fps/hız, hata, yeniden deneme), yayın öncesi kontrol, uyarı kuyruğu, denetim günlüğü, notlar; gizle/sırala/genişlik/hazır düzenler (Yayıncı, Moderatör, Teknik, Sade) | af32308 | **DONE** (ızgara); yerleşim motoru bölme ağacı **PARTIAL** |
 | P1 | **Sahne & Ses** paneli: tek dokunuş sahne geçişi, giriş susturma | 6806ac5 | **PARTIAL** (seviye ölçer yok, eylemler denetim günlüğüne yazılmıyor, canlı OBS ile arayüz denemesi yapılmadı) |
-| P1 | **Ekip çapında uyarı kuyruğu denetimi** (StreamAxT): duraklat/sürdür/atla/sustur/temizle/yeniden oynat, iyimser sürüm kilidi (409), denetim günlüğü; + her türün yalnız ilk uyarısının oynaması hatası | StreamAxT b53051d | **DONE** |
+| P1 | **Ekip çapında uyarı kuyruğu denetimi** (AxBoT): duraklat/sürdür/atla/sustur/temizle/yeniden oynat, iyimser sürüm kilidi (409), denetim günlüğü; + her türün yalnız ilk uyarısının oynaması hatası | AxBoT b53051d | **DONE** |
 | Güvenlik | LAN WS istemcilerine OBS şifresi gitmiyor | 0077750 | **DONE** (birim testli; canlı LAN denenmedi) |
-| Güvenlik | Kick OAuth `state` doğrulaması, sorgu `redirectUri`'si kaldırıldı, PKCE doğrulayıcısı sunucuda | StreamAxT a9736f0 | **DONE** |
-| Hata | StreamAxT portu tek kaynaktan (kenar çubuğu, Platformlar WS, Kick adresi; panelde Kontrol Merkezi, Dashboard bot kartı, yayın öncesi kontrol) | a9736f0, 6806ac5 | **DONE** |
-| Hata | **Kalkan modu** ayarları gerçekten uygulanıyor (link, büyük harf, emoji seli, yalnız abone; OBS sohbetinden gizleme; isteğe bağlı platformda silme); uygulanamayanlar "desteklenmiyor" | StreamAxT f54d6f9 | **DONE** |
-| Hata | Kaydedilmemiş değişiklik uyarısı bağlandı (4 sayfa + sekme/geri tuşu onayı); başarısız kayıtlar "Kaydedildi" demiyor | StreamAxT a7083dc | **DONE** (4 sayfa kapsamı) |
-| Hata | Aktivite Akışı açıklaması denetimlerin gerçek yerini gösteriyor | StreamAxT 3865500 | **DONE** |
+| Güvenlik | Kick OAuth `state` doğrulaması, sorgu `redirectUri`'si kaldırıldı, PKCE doğrulayıcısı sunucuda | AxBoT a9736f0 | **DONE** |
+| Hata | AxBoT portu tek kaynaktan (kenar çubuğu, Platformlar WS, Kick adresi; panelde Kontrol Merkezi, Dashboard bot kartı, yayın öncesi kontrol) | a9736f0, 6806ac5 | **DONE** |
+| Hata | **Kalkan modu** ayarları gerçekten uygulanıyor (link, büyük harf, emoji seli, yalnız abone; OBS sohbetinden gizleme; isteğe bağlı platformda silme); uygulanamayanlar "desteklenmiyor" | AxBoT f54d6f9 | **DONE** |
+| Hata | Kaydedilmemiş değişiklik uyarısı bağlandı (4 sayfa + sekme/geri tuşu onayı); başarısız kayıtlar "Kaydedildi" demiyor | AxBoT a7083dc | **DONE** (4 sayfa kapsamı) |
+| Hata | Aktivite Akışı açıklaması denetimlerin gerçek yerini gösteriyor | AxBoT 3865500 | **DONE** |
 | Belgeler | Denetim, yedek, araştırma, mimari, güvenlik, performans, test, sınırlamalar, geri dönüş | c7c61fd, 06e71b9, bu commit | **DONE** |
 
 ## 4. Bilerek yapılmayanlar / sonraki fazlar
@@ -65,7 +65,7 @@ tamamsa yazıldı.
 
 ## 5. Doğrulama özeti
 
-- Testler: `TEST_REPORT.md` — panel 323 TS + 228 Rust + 21 API + 2 uçtan uca; Resonance 71; StreamAxT 451 + 81.
+- Testler: `TEST_REPORT.md` — panel 323 TS + 228 Rust + 21 API + 2 uçtan uca; Resonance 71; AxBoT 451 + 81.
   Hiçbiri devre dışı bırakılmadı.
 - Performans: `PERFORMANCE_REPORT.md` — yönlendirici ~%1–3 tek çekirdek / ~19 MB; hedef başına ~%22–30 / ~23 MB;
   5 hedefte 0 düşen kare, hız 1,02×.
@@ -77,7 +77,7 @@ tamamsa yazıldı.
 
 1. **OBS WebSocket şifresini ve Kick girişini bir kez yeniden girin** (önceki sürüm sırları hiç kaydetmiyordu).
 2. İlk gerçek çoklu yayında önce bir hedefle deneyin; Kontrol Merkezi → Yayın öncesi kontrol'deki uyarıları okuyun.
-3. Twitch'e eşzamanlı yayın yapacaksanız StreamAxT'te çapraz sohbet aktarımının açık olduğunu bilin (kontrol listesi
+3. Twitch'e eşzamanlı yayın yapacaksanız AxBoT'ta çapraz sohbet aktarımının açık olduğunu bilin (kontrol listesi
    uyarır; kapatmak sizin kararınız).
 4. Commit'ler uzak depoya gönderilmedi.
 
@@ -90,25 +90,25 @@ makaleleri, BotRix belgeleri) → uygulama.
 
 | Öncelik | Özellik | Commit | Durum |
 |---|---|---|---|
-| Lisans | `tiktok-live-connector` AGPL sürümünden MIT 2.4.0'a sabitleme; dağıtım klasörleri de indirildi; lisans bekçisi testleri (iki depo) + cargo denetimi | StreamAxT 71d0c37, f8a247d; panel 7512b0f | **DONE** |
+| Lisans | `tiktok-live-connector` AGPL sürümünden MIT 2.4.0'a sabitleme; dağıtım klasörleri de indirildi; lisans bekçisi testleri (iki depo) + cargo denetimi | AxBoT 71d0c37, f8a247d; panel 7512b0f | **DONE** |
 | P1 | **Eylem kayıt defteri** (18 eylem: sahne, ses, kayıt, tekrar, yayın, hedefler, uyarı kuyruğu) — izin, onay, kullanılabilirlik, denetim; Hızlı eylemler paneli | e58c677 | **DONE** |
-| P1 | **Evrensel sohbet + etkinlik akışı** (Kontrol Merkezi): platformlar arası kimlik `platform:userId`, tekilleştirme, görünümler, arama, moderasyon; mesaj silme ve Twitch sohbet modları (StreamAxT uçları); yazı boyutu | 03d1fce, 8d5e65b, 891d6d8; StreamAxT 64023eb | **DONE** (canlı platformda UNVERIFIED) |
+| P1 | **Evrensel sohbet + etkinlik akışı** (Kontrol Merkezi): platformlar arası kimlik `platform:userId`, tekilleştirme, görünümler, arama, moderasyon; mesaj silme ve Twitch sohbet modları (AxBoT uçları); yazı boyutu | 03d1fce, 8d5e65b, 891d6d8; AxBoT 64023eb | **DONE** (canlı platformda UNVERIFIED) |
 | P1 | **Bant genişliği** yayın öncesi kontrolde (hedef başına video + ses, ek yük, pay; ölçülmüş yükleme hızıyla karşılaştırma) | c7eb37b | **DONE** |
 | P1 | **OBS tuval keşfi** (obws 0.15 / obs-websocket 5.7), SE.Live tuvalinin tanınması | 6bee4f1 | **DONE** (salt-okunur; ikincil tuval denetimi obs-websocket'te yok) |
 | P1 | **Kontrol destesi** (sayfalı, renkli, çift dokunuşlu onay, sunucuda kalıcı) + donanım Stream Deck HTTP yolu | f1ca2ee | **DONE** (yazılım deste); donanım **UNVERIFIED** |
 | P2 | **Ses seviye ölçerleri** (talebe bağlı OBS aboneliği) | 4b8b20d | **DONE** (arka uç gerçek OBS'e karşı doğrulandı; arayüz canlı görünümü UNVERIFIED) |
-| P2 | StreamAxT `$(jsonset)` / `$(jsonunset)` değişkenleri (BotRix belgesindeki davranış; kod kopyalanmadı) | StreamAxT 3837b88 | **DONE** |
+| P2 | AxBoT `$(jsonset)` / `$(jsonunset)` değişkenleri (BotRix belgesindeki davranış; kod kopyalanmadı) | AxBoT 3837b88 | **DONE** |
 | Belgeler | StreamElements çekirdek denetimi, host API matrisi (208 yöntem), ses mimarisi, kodlayıcı yaşam döngüsü, ADR-002, lisans incelemesi, çoklu sohbet mimarisi, deste belgesi, resmi kaynak güncellemeleri | b0f51f1, be1d35e, c35efaf, f1ca2ee | **DONE** |
 | P2 | Kendi GPL-2.0 OBS eklentisi (tuval oluşturma, hedef başına kodlayıcı ve ses izi) | — | **PLANNED** (ayrı depo ve OBS SDK zinciri gerekir) |
 | P3 | Yerel Elgato Stream Deck eklentisi | — | **PLANNED** (Stream Deck yazılımı yok, doğrulanamaz) |
 
-Testler (2. tur sonu): panel 342 TS + 236 Rust + 22 API (+1 yok sayılan) + 2 uçtan uca; Resonance 71; StreamAxT
+Testler (2. tur sonu): panel 342 TS + 236 Rust + 22 API (+1 yok sayılan) + 2 uçtan uca; Resonance 71; AxBoT
 462 + 81; tsc ve clippy temiz. Ayrıntı `TEST_REPORT.md`, sınırlamalar `KNOWN_LIMITATIONS.md` "İkinci tur",
 güvenlik `SECURITY_REVIEW.md` "İkinci tur".
 
 Kullanıcı için: yeni bir şey yeniden girmek gerekmez. Kontrol Merkezi'nde "Kontrol destesi" paneli hazır profil
 kullananlarda kendiliğinden görünür; özel düzen kullananlar panel listesinden açabilir. Twitch sohbet modları için
-StreamAxT'teki Twitch bağlantısının `moderator:manage:chat_settings` kapsamını içermesi gerekir (yoksa uç açık hata
+AxBoT'taki Twitch bağlantısının `moderator:manage:chat_settings` kapsamını içermesi gerekir (yoksa uç açık hata
 döner).
 
 ## 8. Kendi yayın çekirdeği — "kendi OBS'imiz" (2026-09-26)

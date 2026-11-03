@@ -350,12 +350,12 @@ async fn api_go_live(
   Ok(Json(v))
 }
 
-/// StreamAxT'te çapraz sohbet aktarımı açık mı? (StreamAxT kapalıysa bilinmiyor → `false`)
+/// AxBoT'ta çapraz sohbet aktarımı açık mı? (AxBoT kapalıysa bilinmiyor → `false`)
 async fn streamaxt_relay_enabled() -> bool {
   let Ok(client) = reqwest::Client::builder().timeout(std::time::Duration::from_millis(1500)).build() else {
     return false;
   };
-  // Panel StreamAxT'i `YYA_STREAMAXT_PORT` ile başka portta başlatabilir (eskiden 3001 sabitti)
+  // Panel AxBoT'u `YYA_STREAMAXT_PORT` ile başka portta başlatabilir (eskiden 3001 sabitti)
   let url = format!("http://127.0.0.1:{}/api/settings", crate::streamaxt::port());
   match client.get(url).send().await {
     Ok(r) if r.status().is_success() => r

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * StreamAxT'i (Desktop\StreamAxT; eski yer Desktop\Projeler) Yayın Yönetim Aracı'nın "Bot" sekmesi için hazırlar.
+ * AxBoT'u (Desktop\StreamAxT; eski yer Desktop\Projeler) AxthrowA Studio'nun "Bot" sekmesi için hazırlar.
  *
- * - Arayüzü TURKUAZ temayla derler: kaynak StreamAxT'e DOKUNULMAZ; istemci kaynağı
+ * - Arayüzü TURKUAZ temayla derler: kaynak AxBoT'a DOKUNULMAZ; istemci kaynağı
  *   geçici bir klasöre kopyalanır, mor/indigo/pembe tonları turkuaza çevrilir, orada derlenir.
  * - Sunucuyu (release/app) `<hedef>` klasörüne koyar. node_modules 160+ MB olduğu için
  *   varsayılan olarak kopyalanmaz, bağlantı (junction) olur; `--kopyala` ile gerçek kopya.
@@ -105,7 +105,7 @@ const appSrc = path.join(kaynak, "release", "app");
 const serverDist = path.join(kaynak, "server", "dist");
 for (const p of [clientSrc, path.join(appSrc, "package.json"), path.join(kaynak, "server", "tsconfig.json")]) {
   if (!fs.existsSync(p)) {
-    console.error(`[streamaxt] bulunamadı: ${p}\n  --kaynak ile StreamAxT (Projeler) klasörünü verin.`);
+    console.error(`[streamaxt] bulunamadı: ${p}\n  --kaynak ile AxBoT (Projeler) klasörünü verin.`);
     process.exit(1);
   }
 }
@@ -132,7 +132,7 @@ walk(path.join(work, "src"), (p) => {
   }
 });
 // Gömülü kullanım: adresteki `#sekme` ile açılış sekmesi seçilebilsin ve
-// `?embed=1` ile StreamAxT'nin kendi kenar çubuğu gizlensin (panelin kendi
+// `?embed=1` ile AxBoT'un kendi kenar çubuğu gizlensin (panelin kendi
 // menüsüyle iki çubuk yan yana durmasın). Kaynak dosya değil, kopya düzenlenir.
 const appTsx = path.join(work, "src", "App.tsx");
 let app = fs.readFileSync(appTsx, "utf8");
@@ -195,14 +195,18 @@ const tscBin = [path.join(kaynak, "server", "node_modules", "typescript", "bin",
   fs.existsSync(p)
 );
 if (!tscBin) {
-  console.error("[streamaxt] typescript bulunamadı; StreamAxT klasöründe `npm install` çalıştırın.");
+  console.error("[streamaxt] typescript bulunamadı; AxBoT klasöründe `npm install` çalıştırın.");
   process.exit(1);
 }
 execFileSync(process.execPath, [tscBin, "-p", path.join(kaynak, "server")], { stdio: "inherit" });
 console.log("[streamaxt] sunucu derlendi");
 fs.rmSync(path.join(hedef, "dist"), { recursive: true, force: true });
 fs.cpSync(serverDist, path.join(hedef, "dist"), { recursive: true });
-// Çalışma paketi release/app'ten; sürüm StreamAxT'in gerçek sürümü (YYA "Hakkında" bunu gösterir)
+// Testler dağıtıma girmez (örnek değerler ve gereksiz boyut)
+for (const f of fs.readdirSync(path.join(hedef, "dist"), { recursive: true })) {
+  if (/\.test\.(js|js\.map|d\.ts)$/.test(String(f))) fs.rmSync(path.join(hedef, "dist", String(f)));
+}
+// Çalışma paketi release/app'ten; sürüm AxBoT'un gerçek sürümü (YYA "Hakkında" bunu gösterir)
 {
   const paket = JSON.parse(fs.readFileSync(path.join(appSrc, "package.json"), "utf8"));
   paket.version = JSON.parse(fs.readFileSync(path.join(kaynak, "package.json"), "utf8")).version || paket.version;
@@ -242,7 +246,7 @@ if (flag("db-tohumla") && !fs.existsSync(dbDest)) {
     const s = path.join(kaynak, "server", "data", f);
     if (fs.existsSync(s)) fs.copyFileSync(s, path.join(dataDest, f));
   }
-  console.log("[streamaxt] mevcut StreamAxT veritabanı tohumlandı (platform/komut ayarları taşındı).");
+  console.log("[streamaxt] mevcut AxBoT veritabanı tohumlandı (platform/komut ayarları taşındı).");
 }
 
 // Veritabanındaki kayıtlı widget renkleri (yalnız bizim kopya; sunucu kapalıyken çalıştırın).

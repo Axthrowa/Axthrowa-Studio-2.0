@@ -1,7 +1,7 @@
 /**
- * StreamAxT (gömülü bot sunucusu) adresi — tek kaynak.
+ * AxBoT (gömülü bot sunucusu) adresi — tek kaynak.
  *
- * Panel StreamAxT'i `YYA_STREAMAXT_PORT` ile başka bir portta başlatabiliyor; eskiden Bot sekmesi dışındaki
+ * Panel AxBoT'u `YYA_STREAMAXT_PORT` ile başka bir portta başlatabiliyor; eskiden Bot sekmesi dışındaki
  * kullanıcılar (Kontrol Merkezi uyarı kuyruğu, Dashboard bot kartı) 3001'e sabitti ve o durumda sessizce
  * "kapalı" görünüyordu. Masaüstünde adres Rust `streamaxt_status`'tan, tarayıcıda varsayılandan gelir.
  */
@@ -59,7 +59,7 @@ export function baseFromUrl(url: string | null | undefined): string {
 
 let base: Promise<string> | null = null;
 
-/** Sondaki eğik çizgi olmadan StreamAxT kökü. Port uygulama çalışırken değişmez: bir kez sorulur. */
+/** Sondaki eğik çizgi olmadan AxBoT kökü. Port uygulama çalışırken değişmez: bir kez sorulur. */
 export function streamaxtBase(): Promise<string> {
   if (!base) {
     base = streamaxtStatus()

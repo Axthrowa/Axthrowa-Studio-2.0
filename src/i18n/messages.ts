@@ -68,30 +68,6 @@ export const tr = {
   "about.version": "Sürüm",
   "about.port": "Yerel sunucu",
   "help.title": "Yardım",
-  "help.howto": "Uygulama nasıl kullanılır",
-  "help.howto.body":
-    "Üstten Giriş / Çıkış / Mola / Chat / Ses Paneli sekmelerini seçin. Solda overlay ayarlarını düzenleyin; ortada önizleme canlıdır. Sağda OBS URL’lerini kopyalayıp Browser Source olarak ekleyin. Değişiklikler otomatik kaydedilir. Menüyü düzenle ile sekmeleri ve ayar gruplarını gizleyip sıralayabilirsiniz.",
-  "help.browser": "OBS Browser Source",
-  "help.browser.body":
-    "OBS’te Kaynaklar → Browser → URL’ye paneldeki adresi yapıştırın (ör. http://127.0.0.1:8843/starting?obs=1). Genişlik 1920, yükseklik 1080. Uygulama açıkken yerel sunucu çalışır.",
-  "help.ws": "WebSocket nasıl bağlanır",
-  "help.ws.body":
-    "OBS → Araçlar → WebSocket sunucu ayarları → Etkinleştir. Port (varsayılan 4455) ve şifreyi paneldeki OBS WebSocket alanına yazıp Bağlan’a basın. Yeşil durum = sahneler ve kısayollar hazır.",
-  "help.hotkeys": "Kısayollar",
-  "help.hotkeys.body":
-    "Sahne/ses kısayollarını Dashboard sekmesindeki OBS Kontrol alanından veya Giriş/Çıkış/Mola WebSocket panelinden ayarlayın. Dinle’ye basıp tuş kombinasyonuna basın — otomatik kaydolur (Esc iptal). Elle de yazabilirsiniz (Ctrl+1, F5). Yeşil nokta: tepsideyken de çalışır. Üst sekmeleri sürükleyerek sıralayın.",
-  "help.music": "Müzik (Resonance)",
-  "help.music.body":
-    "Müzik sekmesinden Axt temasını ve bağlantıları yönetin. Overlay’de Şimdi Çalıyor kartı Resonance temasını kullanır.",
-  "help.chat": "Canlı chat nasıl bağlanır",
-  "help.chat.body":
-    "1) Giriş sekmesinde sosyal hesaplara Twitch / Kick / YouTube kullanıcı adlarını yazın. 2) Canlı Chat sekmesinde ilgili platformları açık tutun (otomatik algı açıksa kanallar Giriş’ten gelir). 3) OBS’e Browser Source ekleyip /chat?obs=1 adresini yapıştırın (1920×1080, şeffaf). 4) Yayına geçince mesajlar akmaya başlar. Kick için gerekirse Chatroom çek’e basın; YouTube’ta @handle veya canlı video linki kullanın.",
-  "help.sfx": "Ses paneli",
-  "help.sfx.body":
-    "Ses ekleyin, OBS’e /sfx?obs=1 ekleyin. Chat: !sesadı çalar, !seslistesi listeler. !istek şarkı adı (Spotify Premium) veya YouTube linki (YTMD).",
-  "help.tips": "İpuçları",
-  "help.tips.body":
-    "Siyah overlay: OBS bağlantısından sonra kaynaklar yenilenir; gerekirse Browser Source’ta Yenile. Menüyü düzenle ile kullanmadığınız ayar gruplarını gizleyin. Önizlemeyi kapatarak panel yükünü azaltabilirsiniz.",
   "layout.tabs": "Sekmeler",
   "layout.left": "Bu ekranın ayarları",
   "layout.right": "Yan panel",
@@ -266,30 +242,6 @@ export const en: Record<MsgKey, string> = {
   "about.version": "Version",
   "about.port": "Local server",
   "help.title": "Help",
-  "help.howto": "How to use the app",
-  "help.howto.body":
-    "Use Starting / Ending / BRB / Chat / Soundboard from the top. Edit overlay settings on the left; the center preview updates live. Copy OBS URLs on the right into Browser Sources. Changes auto-save. Customize menu to hide or reorder tabs and setting groups.",
-  "help.browser": "OBS Browser Source",
-  "help.browser.body":
-    "OBS → Sources → Browser → paste the panel URL (e.g. http://127.0.0.1:8843/starting?obs=1). Size 1920×1080. Keep this app running so the local server stays up.",
-  "help.ws": "How to connect WebSocket",
-  "help.ws.body":
-    "OBS → Tools → WebSocket Server Settings → Enable. Enter the port (default 4455) and password in the panel’s OBS WebSocket fields, then Connect. Green status means scenes and hotkeys are ready.",
-  "help.hotkeys": "Hotkeys",
-  "help.hotkeys.body":
-    "Set scene/audio hotkeys on the Dashboard tab in OBS Control, or in Starting/Ending/BRB WebSocket. Click Listen then press your combo — saves automatically (Esc cancels). Or type manually. Drag top tabs to reorder. Green dot: works in tray.",
-  "help.music": "Music (Resonance)",
-  "help.music.body":
-    "Use the Music tab for Axt themes and connections. The Now Playing card on overlays uses your Resonance theme.",
-  "help.chat": "How to connect live chat",
-  "help.chat.body":
-    "1) On Starting, enter Twitch / Kick / YouTube handles under Social. 2) On Live Chat, keep platforms enabled (auto-detect pulls channels from Starting). 3) Add an OBS Browser Source with /chat?obs=1 (1920×1080, transparent). 4) Go live and messages appear. For Kick, use Fetch chatroom if needed; for YouTube use @handle or a live video link.",
-  "help.sfx": "Soundboard",
-  "help.sfx.body":
-    "Add sounds, OBS /sfx?obs=1. Chat: !name plays, !seslistesi lists. !istek song (Spotify Premium) or YouTube link (YTMD).",
-  "help.tips": "Tips",
-  "help.tips.body":
-    "Black overlay: browser sources refresh after OBS connects; otherwise Refresh in OBS. Customize menu to hide unused setting groups. Turn off preview to lighten the panel.",
   "layout.tabs": "Tabs",
   "layout.left": "This screen’s settings",
   "layout.right": "Side panel",

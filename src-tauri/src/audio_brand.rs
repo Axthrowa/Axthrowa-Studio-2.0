@@ -66,7 +66,7 @@ fn uzanti_ico(p: &Path) -> bool {
 fn ikon_dosyasini_hazirla() -> Option<PathBuf> {
   let dir = {
     let base = std::env::var_os("LOCALAPPDATA")?;
-    PathBuf::from(base).join("YayinYonetimAraci")
+    PathBuf::from(base).join("AxthrowAStudio")
   };
   let _ = std::fs::create_dir_all(&dir);
   let yol = dir.join("app-icon.ico");
@@ -233,7 +233,7 @@ mod tests {
   fn yalniz_kendi_surec_agacimiz_etiketlenir() {
     let tablo: HashMap<u32, Surec> = [
       (10, Surec { ust: 1, ad: "explorer.exe".into() }),
-      (20, Surec { ust: 10, ad: "YayinYonetimAraci.exe".into() }),
+      (20, Surec { ust: 10, ad: "AxthrowAStudio.exe".into() }),
       (30, Surec { ust: 20, ad: "msedgewebview2.exe".into() }),
       (40, Surec { ust: 10, ad: "Spotify.exe".into() }),
       (50, Surec { ust: 50, ad: "dongu.exe".into() }),

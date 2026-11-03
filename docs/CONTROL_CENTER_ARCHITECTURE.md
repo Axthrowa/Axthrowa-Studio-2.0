@@ -7,16 +7,16 @@
 
 | Panel | Veri kaynağı | Durum |
 |---|---|---|
-| Universal Chat | panel `chatHub` (Kick/Twitch/YouTube) + StreamAxT (Trovo/Discord/TikTok) | VAR — Kontrol Merkezi paneli (görünümler, arama, mesaj silme, Twitch sohbet modları; [MULTICHAT](MULTICHAT_ARCHITECTURE.md)) |
-| Activity Feed | StreamAxT `stream_events` + normalize olay | VAR — tekilleştirilmiş panel (ortak akış) |
+| Universal Chat | panel `chatHub` (Kick/Twitch/YouTube) + AxBoT (Trovo/Discord/TikTok) | VAR — Kontrol Merkezi paneli (görünümler, arama, mesaj silme, Twitch sohbet modları; [MULTICHAT](MULTICHAT_ARCHITECTURE.md)) |
+| Activity Feed | AxBoT `stream_events` + normalize olay | VAR — tekilleştirilmiş panel (ortak akış) |
 | Quick Actions | eylem kataloğu ([GROUND_CONTROL_QUICK_ACTION_MATRIX](GROUND_CONTROL_QUICK_ACTION_MATRIX.md)) | VAR — `/api/actions` (izin, onay, denetim) |
 | Control Deck | aynı eylem kataloğu, sayfalı düğme ızgarası ([CONTROL_DECK_AND_STREAM_DECK](CONTROL_DECK_AND_STREAM_DECK.md)) | VAR |
 | Yayın motoru | kendi yayın çekirdeği (`/api/motor…`, ADR-003): tuval önizlemeleri, kaynaklar, hedef başına tuval | VAR (kısmi: sahne düzenleyici, kayıt düğmesi yok) |
 | Stream Preview | OBS program önizlemesi / Kick oynatıcısı (mevcut ProfileDashboard) | KISMİ |
-| Stream Metadata | StreamAxT başlık/kategori uçları (yetenek denetimli) | KISMİ |
+| Stream Metadata | AxBoT başlık/kategori uçları (yetenek denetimli) | KISMİ |
 | Destinations | Output Router durumları ([MULTISTREAM](MULTISTREAM_ARCHITECTURE.md)) | VAR |
-| Alert Queue | StreamAxT uyarı kuyruğu + denetim olayları | VAR |
-| Moderation | StreamAxT elle moderasyon, ortak kara liste, AutoMod | VAR (StreamAxT sayfaları) |
+| Alert Queue | AxBoT uyarı kuyruğu + denetim olayları | VAR |
+| Moderation | AxBoT elle moderasyon, ortak kara liste, AutoMod | VAR (AxBoT sayfaları) |
 | Polls / Predictions | Twitch API | EKSİK (yetenek: yalnız Twitch Affiliate/Partner) |
 | Stream Health | OBS `GetStats` + hedef ilerlemesi + sistem | KISMİ (StreamHealthCard) |
 | Recording / Replay | obs-websocket kayıt ve tekrar arabelleği | KISMİ (kısayol eylemleri) |
@@ -55,7 +55,7 @@
 
 ## 4. Ekip çapında uyarı kuyruğu (§57, §58)
 
-- Tek kaynak: StreamAxT uyarı kuyruğu. Denetimler: `pause`, `resume`, `skip`, `mute`, `unmute`, `replay`, `remove`,
+- Tek kaynak: AxBoT uyarı kuyruğu. Denetimler: `pause`, `resume`, `skip`, `mute`, `unmute`, `replay`, `remove`,
   `clearTests`.
 - Her denetim bir **sürüm numarasıyla** gelir (iyimser kilit): istemci gördüğü kuyruk sürümünü gönderir; sürüm
   eskiyse (başka moderatör önce davrandıysa) istek reddedilir ve güncel durum döner — "Mod A atladı, Mod B anında görür".

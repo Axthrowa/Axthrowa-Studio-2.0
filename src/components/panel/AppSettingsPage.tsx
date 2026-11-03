@@ -24,6 +24,7 @@ import { Switch } from "../axthrowa/switch";
 import { LisansFormu } from "../axthrowa/LisansEkrani";
 import PrivacySettings from "../axthrowa/PrivacySettings";
 import DiscordKarti from "../axthrowa/DiscordKarti";
+import YardimSayfasi from "./YardimSayfasi";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
@@ -37,37 +38,6 @@ type Props = {
   version?: string;
   layout?: PanelLayout;
 };
-
-const HELP_BLOCKS: {
-  title: MsgKey;
-  body: MsgKey;
-  img?: string;
-  imgAlt?: string;
-}[] = [
-  { title: "help.howto", body: "help.howto.body" },
-  {
-    title: "help.browser",
-    body: "help.browser.body",
-    img: "/help/help-obs-browser.png",
-    imgAlt: "OBS Browser Source",
-  },
-  { title: "help.ws", body: "help.ws.body" },
-  {
-    title: "help.chat",
-    body: "help.chat.body",
-    img: "/help/help-chat-connect.png",
-    imgAlt: "Chat",
-  },
-  {
-    title: "help.sfx",
-    body: "help.sfx.body",
-    img: "/help/help-soundboard.png",
-    imgAlt: "Soundboard",
-  },
-  { title: "help.hotkeys", body: "help.hotkeys.body" },
-  { title: "help.music", body: "help.music.body" },
-  { title: "help.tips", body: "help.tips.body" },
-];
 
 const THEME_OPTS: { id: AppTheme; labelKey: MsgKey }[] = [
   { id: "dark", labelKey: "settings.theme.dark" },
@@ -412,29 +382,7 @@ export default function AppSettingsPage({
         </div>
       )}
 
-      {activeTab === "help" && (
-        <div className="space-y-4 text-xs md:text-sm">
-          {HELP_BLOCKS.map((block) => (
-            <section
-              key={block.title}
-              className="overflow-hidden rounded-2xl border border-white/[0.07] bg-panel-card/60 shadow-glass"
-            >
-              {block.img && (
-                <img
-                  src={block.img}
-                  alt={block.imgAlt || ""}
-                  className="max-h-52 w-full object-cover object-center border-b border-white/[0.06]"
-                  loading="lazy"
-                />
-              )}
-              <div className="p-5 space-y-2">
-                <h3 className="font-display text-base font-bold text-white">{t(block.title)}</h3>
-                <p className="text-xs md:text-sm text-white/80 leading-relaxed">{t(block.body)}</p>
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+      {activeTab === "help" && <YardimSayfasi />}
 
       {activeTab === "about" && (
         <div className="space-y-4 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-6 text-xs md:text-sm shadow-glass">
@@ -449,6 +397,24 @@ export default function AppSettingsPage({
             </div>
           </div>
 
+          <p className="leading-relaxed text-white/85">
+            AxthrowA Studio, yayın ekranlarını, OBS kontrolünü, çoklu sohbeti, müziği ve sohbet botunu tek uygulamada toplayan
+            yayıncı stüdyosudur. Her şey bu bilgisayarda çalışır; hesap açman ya da sunucu kiralaman gerekmez.
+          </p>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              ["Stüdyo", "Giriş, Çıkış ve Mola ekranları, OBS kontrolü, kısayollar ve ses paneli"],
+              ["AxBoT", "Sohbet komutları, uyarılar, Tek URL widget'ları, çekiliş, anket ve oyunlar"],
+              ["Resonance", "Spotify ve YouTube Music için şimdi çalıyor kartı ve şarkı sözleri"],
+            ].map(([ad, aciklama]) => (
+              <div key={ad} className="rounded-xl border border-white/[0.06] bg-black/30 p-3">
+                <p className="font-bold text-panel-accent">{ad}</p>
+                <p className="mt-1 leading-relaxed text-white/75">{aciklama}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="space-y-2 rounded-xl border border-white/[0.06] bg-black/30 p-4">
             <p className="text-xs md:text-sm text-white/80 font-medium">
               {t("about.version")}: <span className="font-mono font-bold text-white">{version}</span>
@@ -456,6 +422,23 @@ export default function AppSettingsPage({
             <p className="text-xs md:text-sm text-white/80 font-medium">
               {t("about.port")}: <span className="font-mono font-bold text-white">{API_BASE}</span>
             </p>
+          </div>
+
+          <div className="space-y-1.5 rounded-xl border border-white/[0.06] bg-black/30 p-4">
+            <p className="font-bold text-white">Verilerin</p>
+            <p className="leading-relaxed text-white/75">
+              Ayarların, medyan ve bağlantı bilgilerin yalnız bu bilgisayarda saklanır. Hata raporları sen açmadıkça gönderilmez.
+              Sorun bildirirken Genel sekmesindeki Destek paketini ekleyebilirsin; sırlar dosyaya yazılmadan ayıklanır.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 text-xs">
+            <a href="/LICENSE.txt" target="_blank" rel="noreferrer" className="font-bold text-panel-accent underline underline-offset-2">
+              Lisans
+            </a>
+            <a href="/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer" className="font-bold text-panel-accent underline underline-offset-2">
+              Üçüncü taraf bildirimleri
+            </a>
           </div>
         </div>
       )}
@@ -515,7 +498,7 @@ function DestekPaketi() {
   );
 }
 
-/** Yayın Yönetim Aracı ve gömülü StreamAxT sürümü (bot kapalıysa yalnız YYA) */
+/** AxthrowA Studio ve gömülü AxBoT sürümü (bot kapalıysa yalnız YYA) */
 function SurumSatiri() {
   const [bot, setBot] = useState<string | null>(null);
   useEffect(() => {
@@ -530,7 +513,7 @@ function SurumSatiri() {
       Sürüm <b className="text-white">v{__YYA_SURUM__}</b>
       {bot && (
         <>
-          {" "}· StreamAxT <b className="text-white">v{bot}</b>
+          {" "}· AxBoT <b className="text-white">v{bot}</b>
         </>
       )}
     </p>

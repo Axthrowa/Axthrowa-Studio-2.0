@@ -77,7 +77,7 @@ async fn hazir_mi(state: &AppState, r: Requires) -> (bool, Option<&'static str>)
   match r {
     Requires::Obs if !state.obs.is_connected() => (false, Some("OBS bağlı değil")),
     Requires::Multistream if !state.multistream.session_active() => (false, Some("Çoklu yayın oturumu kapalı")),
-    // StreamAxT her çağrıda yoklanmaz (liste ucu hızlı kalsın); yürütmede ulaşılamazsa hata döner
+    // AxBoT her çağrıda yoklanmaz (liste ucu hızlı kalsın); yürütmede ulaşılamazsa hata döner
     _ => (true, None),
   }
 }
@@ -226,15 +226,15 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
     }
     Action::Media { input, eylem } => state.obs.media_action(input, eylem).await.map(|e| json!({ "input": input, "action": e })),
     Action::SesliBasKonus { basili } => {
-      // Ön yüz bunu gizli dinleyici çerçevesine (StreamAxT /sesli-dinleyici) postMessage ile iletir
+      // Ön yüz bunu gizli dinleyici çerçevesine (AxBoT /sesli-dinleyici) postMessage ile iletir
       state.broadcast_json(&json!({ "type": "sesli-ptt", "basili": basili }));
       Ok(json!({ "basili": basili }))
     }
   }
 }
 
-/// StreamAxT'in ekip çapındaki uyarı kuyruğu denetimine iletir. Sürüm gönderilmez: hızlı eylemde son yazan kazanır
-/// (StreamAxT sürümsüz isteği kabul eder ve yeni durumu tüm panellere yayar).
+/// AxBoT'un ekip çapındaki uyarı kuyruğu denetimine iletir. Sürüm gönderilmez: hızlı eylemde son yazan kazanır
+/// (AxBoT sürümsüz isteği kabul eder ve yeni durumu tüm panellere yayar).
 async fn uyari_denetimi(action: &str, actor: &str) -> Result<Value, String> {
   let url = format!("http://127.0.0.1:{}/api/alerts/control", crate::streamaxt::port());
   let client = reqwest::Client::builder()
@@ -246,7 +246,7 @@ async fn uyari_denetimi(action: &str, actor: &str) -> Result<Value, String> {
     .json(&json!({ "action": action, "actor": actor.chars().take(40).collect::<String>() }))
     .send()
     .await
-    .map_err(|_| "StreamAxT'e ulaşılamadı (Bot sekmesinden başlatın)".to_string())?;
+    .map_err(|_| "AxBoT'a ulaşılamadı (Bot sekmesinden başlatın)".to_string())?;
   let durum = res.status();
   let govde: Value = res.json().await.unwrap_or(Value::Null);
   if !durum.is_success() {

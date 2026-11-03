@@ -1,4 +1,4 @@
-//! Mesaj işleme — sohbet kaydı → istatistik → overlay → widget komutları. Sohbet botu StreamAxT'tir.
+//! Mesaj işleme — sohbet kaydı → istatistik → overlay → widget komutları. Sohbet botu AxBoT'tur.
 
 use std::sync::Arc;
 
@@ -266,7 +266,7 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
   }
 
   // 4) Widget runtime: !oy / !katil / !sr (extras_json.runtime_commands ile kapatılabilir).
-  // Sohbet yanıtlarını StreamAxT yazar; burada yalnız oy/katılım işlenir.
+  // Sohbet yanıtlarını AxBoT yazar; burada yalnız oy/katılım işlenir.
   if msg.kind == "chat" {
     let settings = get_bot_settings(&state.db).await?;
     let _ = crate::server::runtime_api::handle_runtime_chat(

@@ -46,6 +46,12 @@ export const DEFAULT_CONFIG = {
   showLyrics: false,
   /** Sözleri kaydır (ms; + ileri). */
   lyricsOffsetMs: 0,
+  /** Söz görünümü: giriş/çıkış/mola ekranları ve ayrı OBS kaynağı aynı ayarı kullanır. */
+  lyricsFontSize: 26,
+  lyricsSideSize: 18,
+  lyricsColor: '#ffffff',
+  /** Yalnız o anki satır (önceki/sonraki gizli). */
+  lyricsSingleLine: false,
 }
 
 function makeProfile(name) {

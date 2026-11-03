@@ -202,7 +202,7 @@ async fn kur(state: &AppState) -> ApiResult {
     return Err((StatusCode::BAD_GATEWAY, "indirme eksik kaldı".into()));
   }
   ilerleme("dogrulaniyor", bayt.len() as u64, toplam);
-  let dosya = std::env::temp_dir().join(format!("YayinYonetimAraci-{}-Setup.exe", v["son"].as_str().unwrap_or("yeni").replace(|c: char| !c.is_ascii_alphanumeric() && c != '.', "")));
+  let dosya = std::env::temp_dir().join(format!("AxthrowAStudio-{}-Setup.exe", v["son"].as_str().unwrap_or("yeni").replace(|c: char| !c.is_ascii_alphanumeric() && c != '.', "")));
   std::fs::write(&dosya, &bayt).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   // İmza: geçerli ve BİZİM sertifikamız olmalı; değilse dosya silinir, çalıştırılmaz
   // PowerShell ~1 sn sürer: sunucunun async iş parçacığını tutmasın

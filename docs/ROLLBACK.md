@@ -17,9 +17,9 @@ Kontrol Merkezi'nde **"OBS'i yönlendiriciye bağla"** kullanıldıysa OBS'in ya
 | Depo | Güvenlik etiketi | Önceki dal | Bu turun dalı |
 |---|---|---|---|
 | Panel | `pre-streaming-os-20260925-175532` | `streamaxt-bot` | `revamp/streaming-os-20260925` |
-| StreamAxT | `pre-streaming-os-20260925-175532` | `revamp/botrix-parity-20260921` | `revamp/streaming-os-20260925` |
+| AxBoT | `pre-streaming-os-20260925-175532` | `revamp/botrix-parity-20260921` | `revamp/streaming-os-20260925` |
 | Panel (2. tur) | `pre-streaming-os-revision-20260926-010500` | `revamp/streaming-os-20260925` | `revamp/streaming-os-20260926` |
-| StreamAxT (2. tur) | `pre-streaming-os-revision-20260926-010500` | `revamp/streaming-os-20260925` | `revamp/streaming-os-20260926` |
+| AxBoT (2. tur) | `pre-streaming-os-revision-20260926-010500` | `revamp/streaming-os-20260925` | `revamp/streaming-os-20260926` |
 
 Yalnız ikinci turu geri almak için iki depoda `revamp/streaming-os-20260925` dalına dönmek yeterli (ikinci turda
 veritabanı şeması değişmedi; eklenen tek kalıcı ayar `settings-panel.json` → `controlDeck`, eski sürüm yok sayar).
@@ -48,8 +48,8 @@ Kick oturumu her açılışta kayboluyordu.
 | OBS servis yedeği | Kimlik Yöneticisi `multistream.obs_service_backup` | okumaz |
 | Denetim günlüğü kayıtları | `botaxt.db` → `audit_log` (tablo 001 göçünden beri var; bu tur yalnız satır ekler, şema değişmedi) | kayıtları okumaz; silmek gerekmez |
 | Kontrol Merkezi düzeni / notlar | WebView `localStorage` (`yya.controlCenter.*`) | kullanmaz |
-| Kalkan `platformdaSil` | StreamAxT `bot_settings.shield_mode_settings` JSON'u | bilinmeyen alanı yok sayar |
-| Uyarı kuyruğu denetim durumu | StreamAxT belleği (kalıcı değil) | — |
+| Kalkan `platformdaSil` | AxBoT `bot_settings.shield_mode_settings` JSON'u | bilinmeyen alanı yok sayar |
+| Uyarı kuyruğu denetim durumu | AxBoT belleği (kalıcı değil) | — |
 
 Bu turda şema göçü yok; hiçbir değişiklik veri silmez ya da mevcut alanı değiştirmez; eski sürüme dönmek için veri geri yüklemek **gerekmez**.
 
@@ -57,7 +57,7 @@ Bu turda şema göçü yok; hiçbir değişiklik veri silmez ya da mevcut alanı
 
 Yedek: `C:\Users\Axthrowa\Yedekler\backup-pre-streaming-os-20260925-175532` (3644 dosya, SHA-256 doğrulamalı).
 
-1. Paneli ve StreamAxT'i kapatın (tepsi simgesinden çıkış).
+1. Paneli ve AxBoT'u kapatın (tepsi simgesinden çıkış).
 2. Depo: `git/panel.bundle` ve `git/streamaxt.bundle` → `git clone <bundle> <hedef>` ya da mevcut depoda
    `git fetch <bundle> 'refs/*:refs/*'`.
 3. Veritabanları: `db-snapshots/` altındaki tutarlı kopyaları özgün yollarına kopyalayın (yollar `manifest.json`'da).
@@ -74,10 +74,10 @@ doldurulur). Kullanıcı verisi (`data`, `app-data`, `media`) paketin dışında
 
 - Önceki paket kopyası: `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\dagitim-oncesi-20260926-003528\`
   (413 dosya, 31 MB, `manifest.json`'da sha256):
-  - `panel-portable\` → `YayinYonetimAraci.exe`, `dist`, `resonance`, `streamaxt\{dist,public,package.json}`;
+  - `panel-portable\` → `AxthrowAStudio.exe`, `dist`, `resonance`, `streamaxt\{dist,public,package.json}`;
     geri dönmek için bunları `cikti\portable\` altındaki karşılıklarının üzerine kopyalayın (panel kapalıyken).
   - `streamaxt-release\` → `Projeler\release\app\{dist,public}` ve `…\StreamAxT-v1.0.0-Portable\app\{dist,public}`.
-  - `db\` → dağıtım anındaki üç gerçek StreamAxT veritabanının SQLite backup API kopyası (`integrity_check = ok`).
+  - `db\` → dağıtım anındaki üç gerçek AxBoT veritabanının SQLite backup API kopyası (`integrity_check = ok`).
     Bu turda şema değişmediği için normalde gerekmez.
 
 ### Dağıtım — ikinci tur (2026-09-26)

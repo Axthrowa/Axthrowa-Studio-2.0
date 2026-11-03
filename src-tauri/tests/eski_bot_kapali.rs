@@ -1,4 +1,4 @@
-//! Sohbet botu StreamAxT: uygulama sohbetten yan etki üretmemeli. Filtre Kick ceza kaydı
+//! Sohbet botu AxBoT: uygulama sohbetten yan etki üretmemeli. Filtre Kick ceza kaydı
 //! açmamalı, `!buy` puan düşüp ekrana uyarı yollamamalı. Sohbet sayımı sürmeli.
 
 use std::sync::Arc;

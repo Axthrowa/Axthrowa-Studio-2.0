@@ -1436,7 +1436,7 @@ struct RequestBody {
   query: String,
   #[serde(default)]
   video_id: Option<String>,
-  /// true: Spotify sırasına ekle (StreamAxT !sr), false: hemen çal
+  /// true: Spotify sırasına ekle (AxBoT !sr), false: hemen çal
   #[serde(default)]
   queue: bool,
 }

@@ -3,15 +3,15 @@ import { baseFromUrl, streamaxtStatus } from "../../lib/streamaxt";
 import { overlaySyncWsUrl } from "../../lib/widgets/useWidgetSync";
 
 /**
- * StreamAxT sesli komut dinleyicisini (`/sesli-dinleyici`) panelde gizli ve sürekli açık tutar: Bot sekmesi kapalıyken,
- * başka sekmedeyken ya da oyun oynarken de komutlar çalışır. Sesli komutlar StreamAxT'te kapalıysa sayfa mikrofonu
+ * AxBoT sesli komut dinleyicisini (`/sesli-dinleyici`) panelde gizli ve sürekli açık tutar: Bot sekmesi kapalıyken,
+ * başka sekmedeyken ya da oyun oynarken de komutlar çalışır. Sesli komutlar AxBoT'ta kapalıysa sayfa mikrofonu
  * açmaz. Genel "Sesli komut: bas-konuş" kısayolu Rust'tan `sesli-ptt` olarak yayınlanır; buradan çerçeveye iletilir.
  */
 export default function SesliDinleyiciCercevesi() {
   const [kok, setKok] = useState<string | null>(null);
   const cerceve = useRef<HTMLIFrameElement | null>(null);
 
-  // StreamAxT çalışıyor mu? (panel onu kendisi başlatıyor; sonradan da açılabilir)
+  // AxBoT çalışıyor mu? (panel onu kendisi başlatıyor; sonradan da açılabilir)
   useEffect(() => {
     let iptal = false;
     const yokla = () =>

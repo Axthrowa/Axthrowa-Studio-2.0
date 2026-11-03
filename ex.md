@@ -1,12 +1,12 @@
-# Yayın Yönetim Aracı — Tauri Dönüşüm Spesifikasyonu (ex.md)
+# AxthrowA Studio — Tauri Dönüşüm Spesifikasyonu (ex.md)
 
 > **Durum:** Faz 1–4 tamamlandı · Release üretildi · `cikti/` klasöründe  
 > **İmza:** axthrowa  
 > **Tarih:** 2026-09-05  
 
 ### Çıktı
-- `cikti/Yayin Yonetim Araci_1.0.0_x64-setup.exe`
-- `cikti/portable/YayinYonetimAraci.exe` + `Baslat.bat` + `dist/`
+- `cikti/AxthrowA Studio_1.0.0_x64-setup.exe`
+- `cikti/portable/AxthrowAStudio.exe` + `Baslat.bat` + `dist/`
 
 ### Not (WDAC)
 Bu makinede Windows Uygulama Denetimi (os error 4551) Desktop/AppData altında cargo build-script’lerini engelleyebiliyor. Release, izinli sandbox target dir ile üretildi.

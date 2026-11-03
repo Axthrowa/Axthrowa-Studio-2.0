@@ -1,7 +1,7 @@
 # Güvenlik İncelemesi — Streaming OS turu
 
 Kapsam: bu turda eklenen/değişen her şey (çoklu yayın yönlendiricisi, HTTP API, Control Plane, Kontrol Merkezi,
-StreamAxT uyarı denetimi, Kick OAuth, Kalkan modu, kaydedilmemiş değişiklik) + bağımlılık denetimi. Rapor hiçbir
+AxBoT uyarı denetimi, Kick OAuth, Kalkan modu, kaydedilmemiş değişiklik) + bağımlılık denetimi. Rapor hiçbir
 sır, anahtar ya da token değeri içermez.
 
 ## Tehdit modeli (kısa)
@@ -23,7 +23,7 @@ sır, anahtar ya da token değeri içermez.
 | 3 | Orta | Kick OAuth geri dönüşünde `state` hiç denetlenmiyordu; auth-url sorgudan `redirectUri` kabul ediyordu; PKCE doğrulayıcısı istemciye dönüyordu. | `state` tek kullanımlık, 15 dk, sabit zamanlı karşılaştırma; sorgu adresi yok sayılır; doğrulayıcı sunucuda kalır. a9736f0 |
 | 4 | Orta | Kalkan modu "katı link/caps kısıtlamaları devreye girer, sohbet temizlenir" diyordu; kuralların çoğu hiç uygulanmıyordu (yanlış güvenlik hissi). | Kurallar gerçekten uygulanıyor; uygulanamayanlar gerekçesiyle "desteklenmiyor". f54d6f9 |
 | 5 | Düşük | Ayarlar / Gemini / Chat Oyunları sunucu reddetse de "Kaydedildi" gösteriyordu (kullanıcı korumanın açık olduğunu sanabilir). | Yanıt denetlenir, hata bildirilir. a7083dc |
-| 6 | Düşük | StreamAxT portu birkaç yerde 3001'e sabitti; başka portta çalışan kurulumda Kick geri dönüşü aynı makinedeki başka bir StreamAxT kopyasına gidebiliyordu. | Port tek kaynaktan. a9736f0, 6806ac5 |
+| 6 | Düşük | AxBoT portu birkaç yerde 3001'e sabitti; başka portta çalışan kurulumda Kick geri dönüşü aynı makinedeki başka bir AxBoT kopyasına gidebiliyordu. | Port tek kaynaktan. a9736f0, 6806ac5 |
 
 ## Çoklu yayında uygulanan denetimler
 
@@ -45,7 +45,7 @@ sır, anahtar ya da token değeri içermez.
 - **Yabancı site koruması** (mevcut `local_guard`): Host izin listesi (DNS yeniden bağlama), yazma istekleri ve WS el
   sıkışmasında köken denetimi, CORS beyaz listesi — yeni çoklu yayın uçları için ayrıca testli.
 
-## StreamAxT tarafı denetimler
+## AxBoT tarafı denetimler
 
 - Uyarı kuyruğu denetimi yazma uçları mevcut köken/host korumasının arkasında; iyimser sürüm çakışmasında 409; her
   eylem denetim günlüğünde.
@@ -58,7 +58,7 @@ sır, anahtar ya da token değeri içermez.
 |---|---|---|
 | Panel (npm) | `npm audit` (üretim + geliştirme) | 0 açık |
 | Resonance (npm) | `npm audit` | 0 açık |
-| StreamAxT (npm workspace) | `npm audit` | 0 açık |
+| AxBoT (npm workspace) | `npm audit` | 0 açık |
 | Panel (Cargo.lock, 580 crate) | OSV.dev sorgusu (cargo-audit kurulu değil; OSV RustSec'i içerir) | 8 danışman, **hiçbiri Windows derlemesinde istismar edilebilir değil**: `rsa` (Marvin) hiçbir hedefte derlenmiyor (yalnız kilit dosyasında); `glib` (unsound) ve `proc-macro-error` (bakımsız) yalnız Linux tepsi zinciri; `unic-*` (bakımsız) yalnız Tauri derleme zamanı `urlpattern`. Bu turda yeni crate eklenmedi. |
 
 ## Kalan riskler (kabul edilen)
@@ -70,13 +70,13 @@ KNOWN_LIMITATIONS.md "Güvenlik ödünleşimleri": alıcının anahtar doğrulam
 
 | Konu | Uygulanan denetim | Doğrulama |
 |---|---|---|
-| Eylem kayıt defteri (`/api/actions/run`) | her denetleyici (Hızlı eylemler, Kontrol destesi, Sahne & Ses, donanım HTTP) aynı yoldan: parametre doğrulama (400) → izin (403) → onay (428) → kullanılabilirlik (409) → yürütme → `ACTION:<id>` denetim kaydı; yayın/kayıt kesen eylemler onaysız reddedilir | API testi `action_registry_enforces_confirmation_availability_and_audit`; tarayıcıda deste düğmesi → yalıtılmış StreamAxT |
+| Eylem kayıt defteri (`/api/actions/run`) | her denetleyici (Hızlı eylemler, Kontrol destesi, Sahne & Ses, donanım HTTP) aynı yoldan: parametre doğrulama (400) → izin (403) → onay (428) → kullanılabilirlik (409) → yürütme → `ACTION:<id>` denetim kaydı; yayın/kayıt kesen eylemler onaysız reddedilir | API testi `action_registry_enforces_confirmation_availability_and_audit`; tarayıcıda deste düğmesi → yalıtılmış AxBoT |
 | Donanım Stream Deck HTTP yolu | köken başlığı olmayan yerel istek kabul (loopback güveni — mevcut model); yabancı `Origin` ve yabancı `Host` reddedilir | curl: kökensiz 200, `Origin: https://evil.example` 403, `Host: attacker.example` 403, onaysız `alert.clear` 428 |
 | Kontrol destesi yapılandırması | `parseDeck`: kimlik ve eylem kimliği biçimi, parametre adı beyaz listesi (`__proto__` vb. düşer), renk beyaz listesi, kontrol karakterleri temizlenir, sayfa/düğme sayısı sınırlı; renkler sınıf eşlemesiyle (kullanıcı CSS'i enjekte edilemez) | `src/lib/deck.test.ts` |
 | OBS tuval ve ölçer uçları | yalnız okuma, `broadcast.read` izni; OBS yoksa 409 (uydurma boş liste yok); ölçer aboneliği talebe bağlı ve kendiliğinden kapanır | API testi 409; `obs_probe` ile gerçek OBS |
 | `examples/obs_probe` | OBS WebSocket parolasını obs-websocket'in yerel yapılandırmasından okur, **yazdırmaz**; yalnız okuma istekleri | çıktı incelendi |
-| StreamAxT moderasyon uçları (mesaj silme, sohbet modları) | platform yeteneği + bağlantı + parametre sınırları (Twitch belgesi) + denetim kaydı; desteklenmeyen platformda açık hata | `twitch-rules.test.ts`, yalıtılmış örnekte 8 hata/yetenek yolu |
-| Lisans | panel + Resonance + StreamAxT npm kilitleri test ile, Rust crate'leri `scripts/lisans-denetimi.mjs` ile denetlenir; GPL/AGPL/SSPL gelirse test kırılır. Dağıtım klasörlerindeki AGPL `tiktok-live-connector` 2.5.0 → MIT 2.4.0 | `licenses.test.ts` (iki depo), 579 crate temiz |
+| AxBoT moderasyon uçları (mesaj silme, sohbet modları) | platform yeteneği + bağlantı + parametre sınırları (Twitch belgesi) + denetim kaydı; desteklenmeyen platformda açık hata | `twitch-rules.test.ts`, yalıtılmış örnekte 8 hata/yetenek yolu |
+| Lisans | panel + Resonance + AxBoT npm kilitleri test ile, Rust crate'leri `scripts/lisans-denetimi.mjs` ile denetlenir; GPL/AGPL/SSPL gelirse test kırılır. Dağıtım klasörlerindeki AGPL `tiktok-live-connector` 2.5.0 → MIT 2.4.0 | `licenses.test.ts` (iki depo), 579 crate temiz |
 | Yeni crate'ler (obws 0.15 zinciri: `sha1_smol`, `simdutf8`, `tokio-websockets`, `unicode-xid`) | OSV.dev sorgusu | danışman yok (2026-09-26) |
 
 Rapor hiçbir parola, anahtar, token ya da çerez değeri içermez.
@@ -117,7 +117,7 @@ kapıları, npm bağımlılıkları. `cargo clippy --all-targets` uyarısız; TS
 |---|---|---|
 | `/media/file` UNC yolu (`\sunucu\pay\x.png`, `\?\UNC\…`) kabul ediyordu. Uç GET olduğundan köken denetimine girmez: yayıncının açtığı herhangi bir site `<img>` ile Windows'u saldırgan sunucuya SMB bağlantısı açmaya ve **NTLM özetini göndermeye** zorlayabiliyordu. | Yüksek | Düzeltildi: yalnız yerel disk (`media::yerel_disk_yolu`), test + başsız sunucuda HTTP 400 doğrulandı |
 | `curl.exe`, `powershell`, `reg`, `tasklist`, `taskkill`, `netstat`, `tar` çıplak adla çağrılıyordu; Windows önce uygulama klasörüne bakar (taşınabilir klasöre bırakılan sahte exe çalışırdı). | Orta | Düzeltildi: `sistem_araci::yol` (System32 tam yolu) |
-| Harici StreamAxT "zorla durdur": artık gözcülü; yalnız portu dinleyen süreç öldürülünce gözcü yeniden başlatıyordu. | İşlev | Düzeltildi: `/health` `gozcuPid` → ağaç gözcüden kapatılır (yalnız `node.exe` ise) |
+| Harici AxBoT "zorla durdur": artık gözcülü; yalnız portu dinleyen süreç öldürülünce gözcü yeniden başlatıyordu. | İşlev | Düzeltildi: `/health` `gozcuPid` → ağaç gözcüden kapatılır (yalnız `node.exe` ise) |
 | npm: `source-map-js` (yüksek), `braces`, `postcss-selector-parser` — yalnız derleme zamanı, pakete girmez. | Düşük | `source-map-js` düzeltildi; diğer ikisi `--force` (kırıcı tailwind zinciri) ister, bırakıldı |
 
 İncelenip sorun bulunmayanlar: Host/köken koruması (`local_guard`), LAN Bearer, CORS beyaz listesi,
@@ -130,7 +130,7 @@ Ek (aynı gün): ffmpeg/yt-dlp indirmeleri artık aynı sürümün SHA-256 liste
 rustls 0.23.46, rustls-webpki 0.103.16, webpki-roots 1.0.10'a güncellendi (RUSTSEC-2026-0346..0349, -0381, -0382).
 Kalan uyarılar: webpki-roots 0.26.11 yalnız 1.0.10'a köprü (sürüm adına göre uyarı); rsa (RUSTSEC-2023-0071)
 yalnız kilit dosyasında — sqlx-mysql derlenmiyor; unic-*/proc-macro-error/glib "bakımsız" uyarıları Tauri ağacından,
-açık değil. Gömülü StreamAxT'te follow-redirects 1.16.1'e çıkarıldı; vosk-browser içindeki uuid'in düzeltmesi yok.
+açık değil. Gömülü AxBoT'ta follow-redirects 1.16.1'e çıkarıldı; vosk-browser içindeki uuid'in düzeltmesi yok.
 Ölü kod: Tauri öncesi bağımsız HTML aracı `legacy/` kaldırıldı (git geçmişinde duruyor).
 
 ### Kalanların kapatılması (2026-10-21)

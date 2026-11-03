@@ -35,17 +35,17 @@
 | SRT | ✗ | ✓ (çıkış) | ? | — | ? | — | — | ✓ | FFmpeg ile hedef/alıcı | — | P3 | orta | MISSING |
 | Birleşik sohbet | var | ✗ | — | ~ | ? | ✓ | — | ✓ (Chat) | panel + filtreler + moderasyon | envanterler | P1 | orta | EXISTING |
 | Sohbet filtreleri (platform, bahsetme, mod, arama) | kısmi | — | — | ? | ? | ? | — | ? | filtre çubuğu | envanterler | P1 | düşük | EXISTING ← PARTIAL (görünümler, platform seçimi, arama, bot süzgeci; 03d1fce) |
-| Sohbet moderasyonu (sil/zaman aşımı/ban) | var (StreamAxT) | — | — | ✓ | ? | ? | ~ | ? | yetenek denetimli, denetim günlüklü | envanterler | P1 | orta | EXISTING |
+| Sohbet moderasyonu (sil/zaman aşımı/ban) | var (AxBoT) | — | — | ✓ | ? | ? | ~ | ? | yetenek denetimli, denetim günlüklü | envanterler | P1 | orta | EXISTING |
 | Çok platformlu etkinlik akışı | kısmi | — | — | ✓ | ✓ | ✓ | ✓ | ~ | normalize olay + filtre | envanterler | P1 | orta | PARTIAL |
 | Uyarılar | var | — | — | ✓ | ✓ | — | ✓ | — | durum makinesi + test laboratuvarı | envanterler | P1 | orta | EXISTING |
-| **Uyarı kuyruğu denetimi** (duraklat, sürdür, atla, sustur) | ✗ (`skipEnabled` etkisiz) | — | — | ? | ? | ✓ | ✓ | — | ekip çapında, iyimser kilitli, denetim günlüklü | GC: resmi; bizde: canlı yalıtılmış test | P1 | orta | EXISTING ← MISSING (StreamAxT b53051d; panel af32308) |
+| **Uyarı kuyruğu denetimi** (duraklat, sürdür, atla, sustur) | ✗ (`skipEnabled` etkisiz) | — | — | ? | ? | ✓ | ✓ | — | ekip çapında, iyimser kilitli, denetim günlüklü | GC: resmi; bizde: canlı yalıtılmış test | P1 | orta | EXISTING ← MISSING (AxBoT b53051d; panel af32308) |
 | Hızlı eylemler | kısmi (kısayollar) | ~ (kısayol) | — | — | ? | ✓ | — | — | izinli eylem kataloğu | GC: resmi | P1 | orta | PARTIAL (Kontrol Merkezi: tek dokunuş sahne/susturma, çift onaylı yayın eylemleri) |
 | Stream Deck | ✗ | ~ (eklentiyle) | — | — | ? | ✓ | — | — | yerel API + eklenti | envanterler; bizde: curl | P3 | orta | PARTIAL ← MISSING (yerel HTTP eylem ucu `/api/actions/run` genel HTTP eklentileriyle kullanılabilir — curl ile VERIFIED; Elgato yazılımı bu makinede yok → uçtan uca UNVERIFIED; yerel eklenti PLANNED — bkz. CONTROL_DECK_AND_STREAM_DECK.md) |
 | Dahili dokunmatik deste | ✗ | — | — | — | — | — | — | — | ızgara, sayfa, çoklu eylem | envanterler; bizde: tarayıcı | P3 | düşük | IMPLEMENTED + VERIFIED ← MISSING (sayfa, renk, çift dokunuşlu onay, sunucuda kalıcı; çoklu eylem/makro yok) |
 | Yerleşim motoru (dock) | ✗ (sekme) | ✓ (dock) | ~ (OBS dock API'si) | — | ✓ (dock) | ✓ | — | — | bölme ağacı + sekme yığını + ayrı pencere | SE Core: kaynak | P1 | orta | PARTIAL ← MISSING (panel ızgarası: gizle/sırala/genişlik/hazır düzen; bölme ağacı ve ayrı pencere yok) |
 | Moderatör / ekip rolleri | kısmi (uzak kullanıcı rolü) | — | — | ~ | — | ✓ | ~ | ✓ (takım) | RBAC + kapsamlar | envanterler | P2 | yüksek | PARTIAL |
 | Denetim günlüğü | kısmi | — | — | ? | — | ? | ? | ? | tüm Control Plane eylemleri | bizde: API testi | P1 | düşük | PARTIAL (çoklu yayın + uyarı denetimi günlükte; sahne/susturma henüz değil) |
-| Başlık / kategori yönetimi | var (StreamAxT) | — | — | ✓ | ? | ✓ (Twitch) | ✓ | ✓ | çok platformlu toplu düzenleme | envanterler | P1 | orta | EXISTING |
+| Başlık / kategori yönetimi | var (AxBoT) | — | — | ✓ | ? | ✓ (Twitch) | ✓ | ✓ | çok platformlu toplu düzenleme | envanterler | P1 | orta | EXISTING |
 | Anket / tahmin | ✗ | — | — | ~ (anket widget) | ? | ✓ (Twitch) | ~ | — | adaptör yetenekli | envanterler | P2 | orta | MISSING |
 | Yayın öncesi kontrol listesi | ✗ | — | ~ (bant genişliği testi) | — | ? | ✓ | — | ? | politika kuralları + cihaz/ağ | SE Core: kaynak; GC: resmi (başlık) | P1 | orta | PARTIAL ← MISSING (platform kuralları + OBS profili; cihaz/ağ denetimi yok) |
 | Platform politika uyarıları | ✗ | — | — | — | ? | ? | — | ✓ (kurallar blogu) | yapılandırılabilir kural tablosu | platform resmi belgeleri | P1 | orta | EXISTING ← MISSING (policy.rs kural tablosu) |

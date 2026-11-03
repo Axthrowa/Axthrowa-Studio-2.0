@@ -14,13 +14,13 @@
 │   ├─ Engine Supervisor ──(obs-websocket 5.x)──► OBS Studio süreci           │
 │   ├─ Output Router ──(FLV boru)──► FFmpeg ingest ──► FFmpeg publisher × N   │
 │   ├─ Control Plane (izin + denetim günlüğü + eylem kataloğu)                │
-│   ├─ Event Gateway (tokio broadcast) ◄─── StreamAxT olayları (HTTP/WS)      │
+│   ├─ Event Gateway (tokio broadcast) ◄─── AxBoT olayları (HTTP/WS)      │
 │   ├─ Policy Engine (platform kuralları, yayın öncesi kontrol listesi)       │
 │   └─ Store (SQLite botaxt.db, ayar JSON'ları, keyring)                      │
 └─────────────────────────────────────────────────────────────────────────────┘
         │ alt süreç (Job Object)                          │ ayrı uygulama
         ▼                                                  ▼
-┌──── StreamAxT (Node 24) ────┐                 ┌──── OBS Studio 32.x ────┐
+┌──── AxBoT (Node 24) ────┐                 ┌──── OBS Studio 32.x ────┐
 │ platform adaptörleri, bot,  │                 │ yakalama, sahne grafiği, │
 │ uyarılar, TTS, sadakat,     │                 │ GPU birleştirme, ses,    │
 │ moderasyon, 3001 portu      │                 │ kodlama, kayıt, tekrar   │
@@ -38,19 +38,19 @@ panel çökerse OBS ve FFmpeg yayıncıları sürer; OBS çökerse Supervisor ye
 | Desktop Shell | Tauri 2 + React; çalışma alanları | VAR (sekme tabanlı panel) → çalışma alanlarına dönüşecek |
 | Broadcast Workspace | sahneler, kaynaklar, önizleme, ses, kontroller, çıkışlar | KISMİ (OBS denetim kartları) |
 | Control Center | birleşik sohbet, etkinlik, hızlı eylemler, uyarı kuyruğu, hedefler, sağlık | EKSİK → Faz 11 |
-| Bot Workspace | gömülü StreamAxT | VAR |
+| Bot Workspace | gömülü AxBoT | VAR |
 | Overlay Designer | OverlayStudio, widget ayarları | KISMİ |
 | Automation Studio | bitiş kuralları, zamanlayıcılar | KISMİ → düğüm editörü Faz 14 |
-| Media Manager | kitaplık (`assets/*`), StreamAxT medya | KISMİ |
+| Media Manager | kitaplık (`assets/*`), AxBoT medya | KISMİ |
 | Analytics | oturumlar, metrikler | KISMİ |
 | Capture/Scene/Compositor/Audio/Encoder/Recording/Replay/Virtual Camera | **OBS** (ADR-001), obs-websocket ile yönetilir | VAR (OBS'te) / denetim KISMİ |
 | Output Router | tek kodlama → çok hedef | EKSİK → Faz 8–9 (bu turda başlıyor) |
-| Platform Layer | StreamAxT adaptörleri (Kick, Twitch, YouTube, Trovo, TikTok-okuma, Discord) + panelin kendi okuyucuları | VAR |
+| Platform Layer | AxBoT adaptörleri (Kick, Twitch, YouTube, Trovo, TikTok-okuma, Discord) + panelin kendi okuyucuları | VAR |
 
 ## 3. Olay omurgası
 
 ```
-PLATFORM OLAYLARI (StreamAxT adaptörleri, panel okuyucuları)
+PLATFORM OLAYLARI (AxBoT adaptörleri, panel okuyucuları)
         ↓  normalize: {id, platform, eventType, ts, channel, user, displayName, avatar,
         ↓              message, amount, currency, quantity, metadata, isTest, raw?}
 EVENT GATEWAY (tokio broadcast + kalıcı kuyruklar)

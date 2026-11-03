@@ -1,4 +1,4 @@
-//! Sohbet alımı — platform dinleyicileri ve overlay'e aktarım. Sohbet botu StreamAxT'tir.
+//! Sohbet alımı — platform dinleyicileri ve overlay'e aktarım. Sohbet botu AxBoT'tur.
 //!
 //! ## Mimari
 //! ```text

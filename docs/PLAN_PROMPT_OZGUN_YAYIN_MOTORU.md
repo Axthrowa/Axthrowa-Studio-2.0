@@ -336,7 +336,7 @@ penceresi (çoklu dosya kuyruğu) · Eksik dosyalar penceresi (ara, klasörde ar
   kaynak yeniden kullanımı farklı dönüşümle.
 - **Backtrack:** her tuval için sürekli dönen arabellek (süre ve bellek sınırı), tek kısayolla son N saniyeyi
   kaydet, klip listesi + hızlı kırpma/dışa aktarma (dikey tuvalden doğrudan kısa video).
-- **Birleşik sohbet + etkinlik dock'u:** mevcut `chatHub` / StreamAxT altyapısı; platform rozetleri, moderasyon
+- **Birleşik sohbet + etkinlik dock'u:** mevcut `chatHub` / AxBoT altyapısı; platform rozetleri, moderasyon
   eylemleri, etkinlik filtreleri, uyarıyı yeniden oynat.
 - **Uyarılar/overlay:** mevcut overlay sistemi motorun tarayıcı kaynağına yerel URL ile bağlanır (dış servis
   zorunlu değil).

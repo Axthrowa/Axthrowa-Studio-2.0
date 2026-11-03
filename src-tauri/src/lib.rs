@@ -245,7 +245,7 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
     .menu(&menu)
     // Windows'ta sol tık pencereyi getirsin, menü sağ tıkta açılsın.
     .show_menu_on_left_click(false)
-    .tooltip("StreamAxT — arka planda çalışıyor")
+    .tooltip("AxthrowA Studio — arka planda çalışıyor")
     .on_menu_event(|app, event| match event.id.as_ref() {
       "quit" => {
         // Axum + tüm tokio görevlerini zorla sonlandır (app.exit asılı kalabiliyor)
@@ -598,7 +598,7 @@ pub fn run() {
       return;
     }
     // WebView ayağa kalktıktan sonra etiketle (ayrı thread, gecikmeli).
-    audio_brand::start("StreamAxT", None);
+    audio_brand::start("AxthrowA Studio", None);
   }
 
   let mut root = std::env::current_exe()

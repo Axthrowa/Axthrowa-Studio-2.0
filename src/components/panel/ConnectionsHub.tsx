@@ -62,7 +62,7 @@ const DIGER_PLATFORMLAR = [
 ];
 
 /**
- * Bot Kick sohbetine yazabiliyor mu. `yazabilir` StreamAxT 1.9 ile geldi (jetonsuz bağlantı yalnız okur);
+ * Bot Kick sohbetine yazabiliyor mu. `yazabilir` AxBoT 1.9 ile geldi (jetonsuz bağlantı yalnız okur);
  * daha eski bot bu alanı göndermez, o zaman bağlı olması yeterli sayılır — yoksa API girilmiş olsa bile
  * "girilmemiş" uyarısı çıkıyordu.
  */

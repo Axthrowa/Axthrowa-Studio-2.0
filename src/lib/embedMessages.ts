@@ -1,17 +1,17 @@
 /**
- * Gömülü StreamAxT çerçevesinden gelen `postMessage` isteklerinin doğrulaması.
+ * Gömülü AxBoT çerçevesinden gelen `postMessage` isteklerinin doğrulaması.
  *
- * StreamAxT iframe içinde `window.open` yapamadığı adresi üst pencereye
+ * AxBoT iframe içinde `window.open` yapamadığı adresi üst pencereye
  * `{ type: "streamaxt:open-external", url }` olarak bildirir; panel adresi
  * işletim sisteminin tarayıcısında açar. Doğrulama olmadan panelde açık
  * HERHANGİ bir çerçeve ya da pencere tarayıcıda rastgele adres açtırabilirdi;
- * iki StreamAxT görünümü aynı anda bağlıyken de adres iki kez açılırdı.
+ * iki AxBoT görünümü aynı anda bağlıyken de adres iki kez açılırdı.
  * Bu yüzden yalnız bizim çerçevemizden (kaynak pencere + köken) ve yalnız
  * http(s) adresler kabul edilir.
  */
 
 export const OPEN_EXTERNAL_TYPE = "streamaxt:open-external";
-/** StreamAxT'in "Resonance'ı aç" isteği: tarayıcı yerine panelin Müzik (Resonance) sekmesi açılır. */
+/** AxBoT'un "Resonance'ı aç" isteği: tarayıcı yerine panelin Müzik (Resonance) sekmesi açılır. */
 export const OPEN_MUSIC_TYPE = "streamaxt:open-music";
 /** Odak gömülü bottayken basılan Ctrl+K: paneli açan tuş çerçevenin dışına çıkmaz, bot bunu bildirir. */
 export const KOMUT_PALETI_TYPE = "streamaxt:komut-paleti";
@@ -50,14 +50,14 @@ export function openExternalRequest(
   return url;
 }
 
-/** Yalnız bizim çerçevemizden ve StreamAxT kökeninden gelen "Komut paletini aç" isteği mi. */
+/** Yalnız bizim çerçevemizden ve AxBoT kökeninden gelen "Komut paletini aç" isteği mi. */
 export function komutPaletiRequest(ev: EmbedMessageEvent, frameWindow: unknown, expectedOrigin: string | null): boolean {
   if (!frameWindow || ev.source !== frameWindow) return false;
   if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
   return (ev.data as { type?: unknown } | null)?.type === KOMUT_PALETI_TYPE;
 }
 
-/** Yalnız bizim çerçevemizden ve StreamAxT kökeninden gelen "Müzik sekmesini aç" isteği mi. */
+/** Yalnız bizim çerçevemizden ve AxBoT kökeninden gelen "Müzik sekmesini aç" isteği mi. */
 export function openMusicRequest(ev: EmbedMessageEvent, frameWindow: unknown, expectedOrigin: string | null): boolean {
   if (!frameWindow || ev.source !== frameWindow) return false;
   if (!expectedOrigin || ev.origin !== expectedOrigin) return false;

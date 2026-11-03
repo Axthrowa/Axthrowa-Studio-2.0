@@ -12,12 +12,12 @@ test asıl nedeni düzeltilerek geçirildi (aşağıda "Testlerin yakaladıklar�
 | Panel API bütünleşme | `cargo test --test server_api` | **22 geçti, 1 bilerek yok sayılan** (2. tur sonu) (`serve_portable`: gerçek `cikti\portable` ile sunucuyu açık tutan geliştirme yardımcısı, test değil) | 21 (1 yok sayılan dahil) |
 | Çoklu yayın uçtan uca (gerçek FFmpeg) | `cargo test --test multistream_e2e` | **2/2** (~21 sn) | yoktu |
 | Resonance widget | `npx vitest run` (resonance/) | **71/71**, 4 dosya | 71 |
-| StreamAxT sunucu | `npx vitest run` (server/) | **462/462**, 32 dosya (2. tur sonu) | 431 / 27 dosya |
-| StreamAxT istemci | `npx vitest run` (client/) | **81/81** | 75 |
-| Tip denetimi | `tsc --noEmit` (panel, StreamAxT sunucu+istemci) | temiz | — |
+| AxBoT sunucu | `npx vitest run` (server/) | **462/462**, 32 dosya (2. tur sonu) | 431 / 27 dosya |
+| AxBoT istemci | `npx vitest run` (client/) | **81/81** | 75 |
+| Tip denetimi | `tsc --noEmit` (panel, AxBoT sunucu+istemci) | temiz | — |
 | Rust lint | `cargo clippy --lib --tests --examples` | uyarısız | — |
 | Rust crate lisansları | `node scripts/lisans-denetimi.mjs` | 579 crate, izin listesi dışı yok | — |
-| Üretim derlemesi | `vite build` (panel, StreamAxT istemci), `tsc` (StreamAxT sunucu), `cargo build --release --example headless_server` | başarılı | — |
+| Üretim derlemesi | `vite build` (panel, AxBoT istemci), `tsc` (AxBoT sunucu), `cargo build --release --example headless_server` | başarılı | — |
 
 ## Bu turda eklenen testler
 
@@ -44,9 +44,9 @@ test asıl nedeni düzeltilerek geçirildi (aşağıda "Testlerin yakaladıklar�
 **Panel ön yüz (TS)**
 - `controlCenter.test.ts`: düzen ayrıştırma/göç, gizle/genişlik/sıra, hazır düzenler, durum etiketleri, bayt biçimi,
   yeni panelin eski kayıtlı düzene gizli eklenmesi.
-- `streamaxt.test.ts`: StreamAxT kök adresi (port korunur, zararlı şema reddedilir), ses girişi kuralı.
+- `streamaxt.test.ts`: AxBoT kök adresi (port korunur, zararlı şema reddedilir), ses girişi kuralı.
 
-**StreamAxT**
+**AxBoT**
 - `modules/alerts/control.test.ts`: uyarı kuyruğu denetimi (duraklat/sürdür/atla/sustur/temizle/yeniden oynat),
   iyimser sürüm çakışması, benzersiz uyarı kimliği.
 - `core/security/oauth-state.test.ts`: port çözümü, Kick geri dönüş adresi, `state` eşleşmesi/süresi/tek kullanım.
@@ -60,14 +60,14 @@ test asıl nedeni düzeltilerek geçirildi (aşağıda "Testlerin yakaladıklar�
 |---|---|---|
 | Kontrol Merkezi uçtan uca | başsız sunucu + Vite; arayüzden hedef ekle → GO LIVE → sentetik kaynak | kartta "Canlı · 2659 kbps · 38 fps"; hedef tek başına durduruldu (alıcı 420 kare, 0 çözme hatası); "Hepsini bitir" çift onay; denetim günlüğünde 4 olay |
 | Yayın öncesi kontrol | gerçek OBS profili okundu | H.264, 8000 kbps CBR, 2 sn, 1920×1080@60; "OBS bağlı değil" uyarısı |
-| Uyarı kuyruğu denetimi | yalıtılmış StreamAxT (3012) | 11/11 senaryo; widget duraklat/sürdür |
-| Kick OAuth | yalıtılmış StreamAxT (PORT=3012) | adres 3012'yi izliyor; yabancı / yinelenen / eksik `state` reddedildi; Kick hata parametresi geçti |
-| Kaydedilmemiş değişiklik | yalıtılmış StreamAxT | şerit, onay diyaloğu (Vazgeç korur), geri tuşu, şeritten kaydet, geri alınca şerit kaybolur; 4 sayfada yanlış alarm yok |
+| Uyarı kuyruğu denetimi | yalıtılmış AxBoT (3012) | 11/11 senaryo; widget duraklat/sürdür |
+| Kick OAuth | yalıtılmış AxBoT (PORT=3012) | adres 3012'yi izliyor; yabancı / yinelenen / eksik `state` reddedildi; Kick hata parametresi geçti |
+| Kaydedilmemiş değişiklik | yalıtılmış AxBoT | şerit, onay diyaloğu (Vazgeç korur), geri tuşu, şeritten kaydet, geri alınca şerit kaybolur; 4 sayfada yanlış alarm yok |
 | Kalkan modu | yalıtılmış veritabanıyla derlenmiş modüller | 9/9 (kapalı kalkan, 3 kural, normal mesaj, mod muafiyeti, sayaç, ayarın taze okunması, WS kararı); arayüzde kural aç/kapa kaydı |
 | Performans | release başsız sunucu, 1/3/5 hedef | PERFORMANCE_REPORT.md |
 
 **Hiçbir test gerçek platforma yayın açmadı, gerçek sohbet mesajı / bildirim / ödeme / moderasyon eylemi
-tetiklemedi, kullanıcının gerçek OBS'ini değiştirmedi.** StreamAxT denemeleri gerçek veritabanının değil,
+tetiklemedi, kullanıcının gerçek OBS'ini değiştirmedi.** AxBoT denemeleri gerçek veritabanının değil,
 `scratchpad/sx-test2/data` altındaki yalıtılmış kopyanın üzerinde yapıldı; değiştirilen test değerleri geri alındı.
 
 ## Testlerin yakaladıkları (asıl neden düzeltildi)
@@ -87,22 +87,22 @@ tetiklemedi, kullanıcının gerçek OBS'ini değiştirmedi.** StreamAxT denemel
 - Rust: `actions` (eylem ayrıştırma, parametre, onay; 5 test), `multistream::policy` bant genişliği bulguları,
   `multistream` yavaş hedef dağıtıcısı, `obs_client::tuval_tests` (tuval sağlayıcısı, dBFS dönüşümü, kanal özeti),
   `secret_store` OBS parolası metin ayıklama; API: `action_registry_enforces_confirmation_availability_and_audit`
-  (sahte StreamAxT ile; OBS yokken tuval/ölçer uçları 409).
+  (sahte AxBoT ile; OBS yokken tuval/ölçer uçları 409).
 - Panel TS: `api/actions.test.ts`, `chat/chat.test.ts` (evrensel sohbet modeli), `deck.test.ts`,
   `controlCenter.test.ts` (yeni panelin hazır profile göre göçü), `licenses.test.ts`, ses ölçeri ölçeklemesi.
-- StreamAxT: `platforms/twitch-rules.test.ts` (sohbet modu gövdesi ve sınırları), değişken motoru `$(jsonset)` /
+- AxBoT: `platforms/twitch-rules.test.ts` (sohbet modu gövdesi ve sınırları), değişken motoru `$(jsonset)` /
   `$(jsonunset)` (prototip kirletme reddi dahil), `core/licenses.test.ts`.
 
 **Canlı / elle doğrulamalar**
 
 | Senaryo | Nasıl | Sonuç |
 |---|---|---|
-| Kontrol destesi | başsız sunucu + Vite + yalıtılmış StreamAxT (3012) | duraklat/sürdür 3012'de durum değiştirdi (`updatedBy: yerel`); onaylı düğmede ilk dokunuş istek göndermedi, ikincisi `ACTION:alert.clear ok:true`; OBS yokken sahne düğmesi "OBS bağlı değil" ile devre dışı; ekle/sil/taşı/sayfa işlemleri yeniden yüklemede korundu |
+| Kontrol destesi | başsız sunucu + Vite + yalıtılmış AxBoT (3012) | duraklat/sürdür 3012'de durum değiştirdi (`updatedBy: yerel`); onaylı düğmede ilk dokunuş istek göndermedi, ikincisi `ACTION:alert.clear ok:true`; OBS yokken sahne düğmesi "OBS bağlı değil" ile devre dışı; ekle/sil/taşı/sayfa işlemleri yeniden yüklemede korundu |
 | Donanım deste HTTP yolu | curl | kökensiz 200, yabancı köken/host 403, onaysız 428 |
 | OBS istemcisi | `cargo run --example obs_probe` (gerçek OBS 32.2.2, yalnız okuma) | 5 sahne, 11 giriş, 2 tuval (SE.Live dikey tuvali tanındı), 8 girişte ölçüm (~50 ms taze), 12 sn boşta abonelik kapandı |
 | Evrensel sohbet | tarayıcı | yazı boyutu 12/14/16 döngüsü ve kalıcılık; hızlı art arda tıklamada eski kapanım hatası bulundu ve düzeltildi |
 | Bant genişliği bulgusu | gerçek OBS profili (8000 kbps, 3 hedef) | gereksinim 25,7 Mbps; 20 Mbps girilince "aşıldı" uyarısı |
-| StreamAxT moderasyon uçları | yalıtılmış örnek | 8 hata/yetenek yolu beklenen kodlarla |
+| AxBoT moderasyon uçları | yalıtılmış örnek | 8 hata/yetenek yolu beklenen kodlarla |
 | Kararsızlık avı | `server_api` 25 döngü + 12 sıralı + 4 eşzamanlı | 0 başarısız (tek seferlik başarısızlık KNOWN_LIMITATIONS'ta) |
 
 Hiçbir doğrulama gerçek sohbet mesajı, moderasyon, bildirim, ödeme ya da yayın tetiklemedi; kullanıcının OBS'inde
@@ -243,7 +243,7 @@ Sahneyi çoğalt arayüzü tarayıcıda görülmedi.
 
 ### Ek (2026-10-05): akıcı önizleme (H.264 + WebCodecs), OBS Yami görünümü, Ses/Video Panosu (bot)
 
-Komitler: dd4f6b6, eed4e94 (panel); ec02106 (StreamAxT).
+Komitler: dd4f6b6, eed4e94 (panel); ec02106 (AxBoT).
 
 | Katman | Sonuç |
 |---|---|
@@ -251,7 +251,7 @@ Komitler: dd4f6b6, eed4e94 (panel); ec02106 (StreamAxT).
 | Motor birim | **31** + 1 (paket çerçevesi biçimi, bit hızı sınırları) |
 | Panel birim (Rust) | **308** · entegrasyon **41** (1 elle; `/ws/motor` `{"video":…}` aboneliği ikili kare döndürür, tuval süzgeci) |
 | Ön yüz (vitest) | **438** (`canliVideo`: SPS'ten `avc1.PPCCLL`, çerçeve ayrıştırma; lisans bekçisi OFL-1.1 Open Sans) |
-| StreamAxT | sunucu **469**, istemci **83** (ses panosu: kova ağırlıklı seçim, bekleme, yetki, sohbet adı, katman konumu) |
+| AxBoT | sunucu **469**, istemci **83** (ses panosu: kova ağırlıklı seçim, bekleme, yetki, sohbet adı, katman konumu) |
 
 Canlı doğrulamalar (başsız sunucu + başsız Chrome, ayrı profil): önizleme ve program bölmeleri ≈60 kare/sn, uzun görev
 yok; Studio Mode'da seçili öğe çerçevesi yalnız önizleme bölmesinde (9 tutamaç önizlemede, 0 programda); pencere

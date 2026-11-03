@@ -1,6 +1,6 @@
-//! Bot sekmesi: StreamAxT (Node) sunucusunu başlatır, izler ve kapatır.
+//! Bot sekmesi: AxBoT (Node) sunucusunu başlatır, izler ve kapatır.
 //!
-//! StreamAxT ayrı bir Node uygulamasıdır (`Desktop\Projeler`). Bot sekmesi onu
+//! AxBoT ayrı bir Node uygulamasıdır (`Desktop\Projeler`). Bot sekmesi onu
 //! `<exe klasörü>\streamaxt` altından çalıştırıp `http://127.0.0.1:<port>` adresini
 //! gömer. Uygulama kapanırken çocuk süreç de kapatılır; kullanıcı elle durdurduysa
 //! (`data\yya-kapali` işareti) bir sonraki açılışta kendiliğinden başlatılmaz.
@@ -28,7 +28,7 @@ pub fn port() -> u16 {
     .unwrap_or(DEFAULT_PORT)
 }
 
-/// `dist/index.js` içeren StreamAxT klasörü.
+/// `dist/index.js` içeren AxBoT klasörü.
 pub fn find_dir() -> Option<PathBuf> {
   let mut cands: Vec<PathBuf> = Vec::new();
   if let Ok(p) = std::env::var("YYA_STREAMAXT_DIR") {
@@ -79,7 +79,7 @@ fn health_body(port: u16) -> Option<String> {
   Some(buf)
 }
 
-/// StreamAxT gözcülü çalışır: portu dinleyen süreç UYGULAMADIR, onu başlatan gözcü
+/// AxBoT gözcülü çalışır: portu dinleyen süreç UYGULAMADIR, onu başlatan gözcü
 /// çökme sanıp yeniden açar. `/health` gözcünün PID'ini (`gozcuPid`) bildirir;
 /// harici örneği durdururken ağaç o PID'den öldürülür.
 pub fn parse_gozcu_pid(health: &str) -> Option<u32> {
@@ -107,7 +107,7 @@ fn node_sureci_mi(pid: u32) -> bool {
 }
 
 /// Windows: çocuğu bir "job"a bağla; uygulama nasıl ölürse ölsün (çökme, görev
-/// yöneticisi, güncelleyici) StreamAxT de kapanır ve 3001 portu takılı kalmaz.
+/// yöneticisi, güncelleyici) AxBoT de kapanır ve 3001 portu takılı kalmaz.
 #[cfg(windows)]
 fn bind_to_our_lifetime(child: &Child) {
   use std::os::windows::io::AsRawHandle;
@@ -191,7 +191,7 @@ pub fn start() -> Result<Value, String> {
   let _kilit = START_LOCK.lock().unwrap_or_else(|e| e.into_inner());
   let port = port();
   let dir = find_dir().ok_or_else(|| {
-    "StreamAxT klasörü bulunamadı (uygulamanın yanında `streamaxt` olmalı).".to_string()
+    "AxBoT klasörü bulunamadı (uygulamanın yanında `streamaxt` olmalı).".to_string()
   })?;
   let _ = std::fs::remove_file(marker(&dir));
   if healthy(port) {
@@ -208,11 +208,11 @@ pub fn start() -> Result<Value, String> {
       return Ok(status());
     }
     if own_child_alive().is_none() {
-      return Err(format!("StreamAxT hemen kapandı:\n{}", tail_log(&dir)));
+      return Err(format!("AxBoT hemen kapandı:\n{}", tail_log(&dir)));
     }
     std::thread::sleep(Duration::from_millis(250));
   }
-  Err(format!("StreamAxT 12 sn içinde yanıt vermedi:\n{}", tail_log(&dir)))
+  Err(format!("AxBoT 12 sn içinde yanıt vermedi:\n{}", tail_log(&dir)))
 }
 
 fn spawn_child(dir: &Path, port: u16) -> Result<(), String> {

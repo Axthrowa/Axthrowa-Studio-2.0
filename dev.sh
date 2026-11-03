@@ -20,7 +20,7 @@ adlar=(); renkler=(); komutlar=()
 if [[ "${1:-}" != "--tauri-yok" ]]; then
   # Kurulu uygulama açıksa 8843 doludur ve tek-örnek kilidi ikinci kopyayı kapatır: Tauri'yi başlatma
   if (exec 3<>/dev/tcp/127.0.0.1/8843) 2>/dev/null; then
-    echo "UYARI: 8843 portu kullanımda (kurulu Yayın Yönetim Aracı açık). Tauri atlandı." >&2
+    echo "UYARI: 8843 portu kullanımda (kurulu AxthrowA Studio açık). Tauri atlandı." >&2
   else
     adlar+=(tauri); renkler+=(magenta); komutlar+=("npm run tauri:dev")
   fi

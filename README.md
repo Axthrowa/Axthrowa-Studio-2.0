@@ -1,4 +1,4 @@
-# Yayın Yönetim Aracı — Tauri Masaüstü
+# AxthrowA Studio — Tauri Masaüstü
 
 Eski HTML/JS arşivi: `legacy/`  
 Yeni uygulama: Vite + React + Tauri 2 + Rust HTTP medya motoru
@@ -7,9 +7,9 @@ Yeni uygulama: Vite + React + Tauri 2 + Rust HTTP medya motoru
 
 | Dosya | Açıklama |
 |-------|----------|
-| `cikti/Yayin Yonetim Araci_<sürüm>_x64-setup.exe` | NSIS kurulum (imzalı) |
+| `cikti/AxthrowA Studio_<sürüm>_x64-setup.exe` | NSIS kurulum (imzalı) |
 | `cikti/portable/Baslat.bat` | Taşınabilir çalıştırma |
-| `cikti/portable/YayinYonetimAraci.exe` | Ana exe (imzalı, optimize release) |
+| `cikti/portable/AxthrowAStudio.exe` | Ana exe (imzalı, optimize release) |
 
 Yeniden paketleme + imzalama tek komut:
 

@@ -190,12 +190,8 @@ export class WebSocketHub {
     if (msg.action === 'test_alert') {
       this.triggerTestAlert(msg.eventType);
     } else if (msg.action === 'send_chat') {
-      const { platform, message } = msg;
-      if (platform === 'all') {
-        eventBus.emitBotMessage({ platform: 'all', message });
-      } else {
-        eventBus.emitBotMessage({ platform, message });
-      }
+      // Yayıncı elle yazdı: `!bot mute` otomatik yanıtlar içindir, bu mesajı sessizce yutmamalı
+      eventBus.emitBotMessage({ platform: msg.platform, message: msg.message, sessizdeBile: true });
     } else if (msg.action === 'trigger_tts') {
       ttsEngine.enqueue(msg.text || 'Test TTS', 'Yayıncı');
     } else if (msg.action === 'clear_chat') {

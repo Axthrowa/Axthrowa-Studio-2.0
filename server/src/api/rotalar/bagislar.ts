@@ -13,6 +13,7 @@ import { wsHub } from '../../ws/server.js';
 import economyService from '../../modules/economy/economy.js';
 import { ttsEngine } from '../../modules/tts/tts.js';
 import { hataMetni, seyrekUyar } from '../../core/logger.js';
+import { hedefOlayiIsle } from '../../modules/goals/hedefler.js';
 
 const router = Router();
 
@@ -139,6 +140,8 @@ export const processDonation = (donorName: string, amount: number, currency: str
   });
 
   wsHub.kupayaDusur('tip', { user: safeName, amount: numAmount });
+  // Bu bağışlar olay yolundan geçmez: bağış hedefi ayrıca ilerletilir (simülasyon saymaz)
+  hedefOlayiIsle('tip', { amount: numAmount, isTest: test });
 
   try {
     // Simülasyon sadakat puanı vermez (her deneme 5000 puan yazıyordu)

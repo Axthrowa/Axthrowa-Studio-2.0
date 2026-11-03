@@ -5,6 +5,11 @@ export interface PlatformStatus {
   channel?: string;
   error?: string;
   viewerCount?: number;
+  /** Sohbete yazabilir mi (jetonsuz bağlantı yalnız okur) */
+  yazabilir?: boolean;
+  /** Kick: sohbete yazan bot hesabı ve girişi yapılmış yayın kanalı */
+  botHesabi?: string;
+  kanalHesabi?: string;
 }
 
 /** Moderasyon eylemi sonucu — neden basarisiz oldugu panele tasinir. */

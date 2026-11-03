@@ -10,6 +10,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { randomUUID as uuidv4 } from 'crypto';
 import { gamesEngine } from '../../modules/games/games.js';
+import { panelAyari, panelden } from '../../modules/games/oyun-ayarlari.js';
 import { triviaEngine } from '../../modules/games/trivia-engine.js';
 import { GoogleGenAI } from '@google/genai';
 import { geminiCoHost } from '../../modules/ai/gemini.js';
@@ -19,16 +20,16 @@ const router = Router();
 
 // 17. Chat Minigames API
 router.get('/games/settings', (req: Request, res: Response) => {
-  res.json(gamesEngine.getSettings());
+  res.json(panelAyari(gamesEngine.getSettings()));
 });
 
 router.post('/games/settings', (req: Request, res: Response) => {
-  const updated = gamesEngine.updateSettings(req.body);
-  res.json({ success: true, settings: updated });
+  const updated = gamesEngine.updateSettings(panelden(gamesEngine.getSettings(), req.body));
+  res.json({ success: true, settings: panelAyari(updated) });
 });
 
 router.get('/games/active-lobbies', (req: Request, res: Response) => {
-  res.json(gamesEngine.getActiveLobbies());
+  res.json(gamesEngine.panelLobileri());
 });
 
 router.post('/games/trigger', (req: Request, res: Response) => {
@@ -38,9 +39,8 @@ router.post('/games/trigger', (req: Request, res: Response) => {
 });
 
 router.post('/games/cancel', (req: Request, res: Response) => {
-  const { type } = req.body;
-  const ok = gamesEngine.cancelLobby(type);
-  res.json({ success: ok });
+  const ok = gamesEngine.cancelLobby(String(req.body?.game || req.body?.type || ''));
+  res.json({ success: ok, message: ok ? 'Lobi iptal edildi' : 'İptal edilecek lobi yok' });
 });
 
 // --- BİL BAKALIM TRIVIA BİLGİ YARIŞMASI API ---

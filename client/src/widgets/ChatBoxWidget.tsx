@@ -77,6 +77,11 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   /** Bu etki ayar (`s`) değişince de çalışır: aynı ileti İKİNCİ KEZ eklenmesin. */
   const islenen = useRef<unknown>(null);
   const canliGeldi = useRef(false);
+  // Çıkış animasyonu: listeden düşen ileti kısa süre "gidiyor" olarak çizilir. Moderatör silmesi ve
+  // sohbet temizliği anında olur (silinen ileti ekranda oynamasın).
+  const [gidenler, setGidenler] = useState<OverlayMsg[]>([]);
+  const oncekiler = useRef<OverlayMsg[]>([]);
+  const anlik = useRef(false);
 
   useEffect(() => {
     if (!lastMessage || islenen.current === lastMessage) return;
@@ -84,13 +89,23 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     // yasaklayınca OBS katmanı da güncellenir (eskiden yalnız 'chat' dinleniyordu).
     if (lastMessage.type === 'clear_chat') {
       islenen.current = lastMessage;
-      setMessages([]);
+      // İşaret yalnız gerçekten silinen ileti varsa: boş sohbette takılı kalıp sonraki çıkışı yutmasın
+      const platform = lastMessage.platform;
+      setMessages((prev) => {
+        const kalan = platform ? prev.filter((m) => m.platform !== platform) : [];
+        if (kalan.length !== prev.length) anlik.current = true;
+        return kalan;
+      });
       return;
     }
     if (lastMessage.type === 'chat_deleted' || lastMessage.type === 'chat_user_removed') {
       islenen.current = lastMessage;
       const d = lastMessage.data || {};
-      setMessages((prev) => iletiCikar(prev, { platform: d.platform, id: d.id ? String(d.id) : undefined, kullanici: d.username }));
+      setMessages((prev) => {
+        const kalan = iletiCikar(prev, { platform: d.platform, id: d.id ? String(d.id) : undefined, kullanici: d.username });
+        if (kalan.length !== prev.length) anlik.current = true;
+        return kalan;
+      });
       return;
     }
     if (lastMessage.type === 'chat_event') {
@@ -172,20 +187,46 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     if (s.messageSound && !onizlemeKipi(props?.previewMode)) tikla(Number(s.messageSoundVolume) || 0.4);
   }, [lastMessage, s]);
 
+  const cikis = String(s.exitAnimation || 'fade');
   useEffect(() => {
-    if (!s.fadeMessages) return;
+    const once = oncekiler.current;
+    oncekiler.current = messages;
+    if (anlik.current) {
+      anlik.current = false;
+      return;
+    }
+    if (cikis === 'none') return;
+    const kalan = new Set(messages.map((m) => m.id));
+    const giden = once.filter((m) => !kalan.has(m.id));
+    if (!giden.length) return;
+    setGidenler((g) => [...g, ...giden]);
+    // Temizlikte iptal edilmez: sohbet hızlıyken bir sonraki değişim zamanlayıcıyı iptal edip gidenleri biriktiriyordu
+    setTimeout(() => setGidenler((g) => g.filter((x) => !giden.includes(x))), 520);
+  }, [messages, cikis]);
+
+  // Mesajlar kaybolsun (isteğe bağlı) · bağış/ödül satırları ayrı sürede kaybolur (varsayılan 30 sn)
+  const olaySn = Number(s.eventFadeSec) || 0;
+  useEffect(() => {
+    if (!s.fadeMessages && olaySn <= 0) return;
     const t = setInterval(() => {
-      const cutoff = Date.now() - s.fadeTimeout * 1000;
-      setMessages(prev => prev.filter(m => m.created > cutoff));
+      const simdi = Date.now();
+      setMessages((prev) => {
+        const kalan = prev.filter(
+          (m) => (!s.fadeMessages || m.created > simdi - s.fadeTimeout * 1000) && (olaySn <= 0 || m.platform !== 'olay' || m.created > simdi - olaySn * 1000)
+        );
+        return kalan.length === prev.length ? prev : kalan;
+      });
     }, 1000);
     return () => clearInterval(t);
-  }, [s.fadeMessages, s.fadeTimeout]);
+  }, [s.fadeMessages, s.fadeTimeout, olaySn]);
 
   // Stüdyo önizlemesi: örnekler yalnız henüz hiç canlı ileti gelmemişken (kaybolan iletinin yerine
   // örnekler geri gelince canlı sohbet görünmüyor sanılıyordu)
   const kaynak = onizlemeKipi(props?.previewMode) && messages.length === 0 && !canliGeldi.current ? ORNEK_MESAJLAR : messages;
-  // Liste eskiden yeniye; "yeni mesajlar üstte" yalnız çizimde ters çevirir
-  const list = s.reverse ? [...kaynak].reverse() : kaynak;
+  // Liste eskiden yeniye; "yeni mesajlar üstte" yalnız çizimde ters çevirir. Giden iletiler eski yerinde çizilir.
+  const gidenIdler = new Set(gidenler.map((m) => m.id));
+  const birlesik = gidenler.length ? [...gidenler, ...kaynak].sort((a, b) => a.created - b.created) : kaynak;
+  const list = s.reverse ? [...birlesik].reverse() : birlesik;
   const yanYana = s.layout === 'row';
   const stil = String(s.chatStyle || 'klasik');
   // Balon: eskiden yalnız "şeffaf arka plan" kapalıyken (kutu da siyahken) çiziliyordu
@@ -358,7 +399,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         : undefined
     }}>
       {list.map((msg) => (
-        <div key={msg.id} className={`axt-anim-${s.animation}`} style={{ flexShrink: 0 }}>
+        <div key={msg.id} className={gidenIdler.has(msg.id) ? `axt-cikis-${cikis}` : `axt-anim-${s.animation}`} style={{ flexShrink: 0 }}>
           {ileti(msg)}
         </div>
       ))}

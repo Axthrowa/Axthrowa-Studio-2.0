@@ -1,3 +1,4 @@
+import { triviaArgumanlari } from '../games/trivia-mesaj.js';
 import { db } from '../../db/index.js';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import { parseVariables } from '../../core/variable-parser.js';
@@ -12,7 +13,7 @@ import { tahminler } from '../engagement/predictions.js';
 import { kuyruk } from '../engagement/queue.js';
 import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
-import { giveaway } from '../giveaways/giveaways.js';
+import { baslangicDuyurusu, giveaway, kazananDuyurusu } from '../giveaways/giveaways.js';
 import { anketBaslat, anketBitir, anketKomutuCoz, anketSonucMetni } from '../engagement/anket.js';
 import { sohbetIstatistik } from '../community/sohbet-istatistik.js';
 import { hatirlatmaKur, kisaSure, lurkBasla, lurkBitir, skorKomutu, skorMetni, skorOku, skorYaz, sureCoz } from '../community/sohbet-araclari.js';
@@ -37,6 +38,7 @@ import { duzenliler } from '../community/regulars.js';
 import { votekick, bingo, ayarSayi, kappagenGonder, metindenEmoteler } from '../community/topluluk.js';
 import { emoteAdlari } from '../community/oyunlar.js';
 import { yediTv } from '../emotes/yedi-tv.js';
+import { komutlarMetni, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -163,7 +165,12 @@ export class CommandManager {
    * "gönderildi" ardından "yetersiz bakiye") her zaman yazılır — yapılan
    * işlemin onayı yutulmaz. Mod ve yayıncı muaf. '' döner: özel komuta düşülmez.
    */
+  /** Panelden bekleme verilen yerleşik komutun son yanıtı (asıl ad → zaman) */
+  private yerlesikBeklemeSon: Map<string, number> = new Map();
+
   private yerlesikSeli(ad: string, message: ChatMessagePayload, sonuc: string): string {
+    const kayit = yerlesikBul(ad);
+    if (kayit) this.yerlesikBeklemeSon.set(kayit.ad, Date.now());
     if (!sonuc || message.user.isMod || message.user.isBroadcaster) return sonuc;
     const k = `${message.platform}:${message.user.username.toLowerCase()}:${ad}`;
     const simdi = Date.now();
@@ -276,6 +283,17 @@ export class CommandManager {
     return `📅 ${hedef} hesabı ${metin} önce açılmış (${new Date(t).toLocaleDateString('tr-TR')}).`;
   }
 
+  /** Panelden kapatılan yerleşik komutlar (asıl ya da eski kayıtlarda takma ad) */
+  private kapaliYerlesikler(): string[] {
+    try {
+      const v = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
+      return Array.isArray(v) ? v.map(String) : [];
+    } catch (e) {
+      seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
+      return [];
+    }
+  }
+
   /** `!anketac [süre] Soru | A | B` → anket açılır, seçenekler sohbete yazılır */
   private async anketAc(args: string[]): Promise<string> {
     const c = anketKomutuCoz(args);
@@ -287,11 +305,14 @@ export class CommandManager {
   }
 
   private async executeBuiltIn(name: string, args: string[], message: ChatMessagePayload): Promise<string | null> {
-    try {
-      const disabled = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
-      if (Array.isArray(disabled) && disabled.includes(name)) return null;
-    } catch (e) {
-      seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
+    // Kapatma asıl adla tutulur ve takma adları da kapsar (eskiden !puan kapalıyken !bakiye çalışıyordu)
+    const kayit = yerlesikBul(name);
+    if (this.kapaliYerlesikler().some((x) => x === name || x === kayit?.ad)) return null;
+    if (kayit) {
+      const ayar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'))[kayit.ad];
+      if (ayar && !yetkiYeterli(ayar.yetki, message.user)) return null;
+      const ayricalikli = message.user.isMod || message.user.isBroadcaster;
+      if (ayar?.bekleme && !ayricalikli && Date.now() - (this.yerlesikBeklemeSon.get(kayit.ad) || 0) < ayar.bekleme * 1000) return null;
     }
     const modul = Object.entries(MODULLER).find(([, adlar]) => adlar.includes(name))?.[0];
     if (modul && settingsCache.getBoolean(`modul_kapali_${modul}`, false)) return null;
@@ -353,6 +374,14 @@ export class CommandManager {
 
       case 'duello':
       case 'duel':
+        // Düello kendi motorunda olduğundan panel ayarı burada uygulanır
+        {
+          const ayar = gamesEngine.getSettings();
+          if (!ayar.enabledGames.duel) return `@${message.user.displayName}, Düello şu anda devre dışı bırakılmış. ⏸️`;
+          const miktar = parseInt(args[1], 10);
+          if (miktar < ayar.duel.minBet) return `@${message.user.displayName}, minimum düello bahsi: ${ayar.duel.minBet} Puan!`;
+          if (miktar > ayar.duel.maxBet) return `@${message.user.displayName}, maksimum düello bahsi: ${ayar.duel.maxBet} Puan!`;
+        }
         return economy.handleDuel(message, args);
 
       case '8ball':
@@ -409,7 +438,7 @@ export class CommandManager {
         if (!r.giveaway) return `@${message.user.displayName}, çekiliş açılamadı.`;
         const { wsHub } = await import('../../ws/server.js');
         wsHub.broadcastTo(['all'], { type: 'giveaway_started', giveaway: r.giveaway });
-        return `🎉 ÇEKİLİŞ BAŞLADI: "${odul}" — katılmak için !katil yaz!${dakika > 0 ? ` (${dakika} dk)` : ''}`;
+        return baslangicDuyurusu(r.giveaway);
       }
 
       case 'cekilisbitir':
@@ -421,7 +450,7 @@ export class CommandManager {
         if (!kazanan) return `@${message.user.displayName}, "${acik.title}" çekilişine henüz kimse katılmadı.`;
         const { wsHub } = await import('../../ws/server.js');
         wsHub.broadcastTo(['wheel', 'dashboard', 'all'], { type: 'giveaway_winner', winner: kazanan });
-        return `🏆 "${acik.title}" çekilişinin kazananı: ${kazanan.winners.map((w) => '@' + w).join(', ')}! (${kazanan.participantsCount} katılımcı) 🎉`;
+        return kazananDuyurusu(acik.title, kazanan);
       }
 
       case 'cekilisiptal': {
@@ -820,15 +849,29 @@ export class CommandManager {
       case 'trivia':
       case 'bilgi':
       case 'bilgiyarismasi': {
+        const oyunAyari = gamesEngine.getSettings();
+        if (!oyunAyari.enabledGames.trivia) return `@${message.user.displayName}, Bil Bakalım şu anda devre dışı bırakılmış. ⏸️`;
+        const sureSn = oyunAyari.trivia.durationSeconds;
         const state = triviaEngine.getState();
         if (state.status === 'question_active') {
           return `@${message.user.displayName}, zaten aktif bir soru devam ediyor! Kalan süre: ${state.remainingSeconds} sn. Cevap için sohbete A, B, C veya D yazın!`;
         }
 
-        const cat = parseTriviaCategory(args[0] || '');
-        const q = triviaEngine.startQuestion({ category: cat });
+        // Sıradaki soruyu bekleyen yarışma bozulmasın (yeni soru onun zamanlayıcısını siliyordu)
+        if (state.mode === 'tournament') {
+          return `@${message.user.displayName}, bilgi yarışması devam ediyor. Bitmesini bekle ya da moderatör !yarisma durdur yazsın.`;
+        }
+
+        // !soru tarih 5: kategori ve soru sayısı. Birden çok soru, !yarisma ile aynı yetkide (izleyici yayını kilitlemesin)
+        const { kategori, adet } = triviaArgumanlari(args, parseTriviaCategory);
+        const yetkili = message.user.isBroadcaster || message.user.isMod;
+        if (adet > 1 && yetkili) {
+          triviaEngine.startTournament(kategori, adet, sureSn);
+          return null;
+        }
+        const q = triviaEngine.startQuestion({ category: kategori, durationSec: sureSn });
         if (!q) return `@${message.user.displayName}, soru havuzunda uygun soru bulunamadı.`;
-        return null;
+        return adet > 1 ? `@${message.user.displayName}, birden çok soruyu yalnız yayıncı ve moderatörler açabilir; tek soru açıldı.` : null;
       }
 
       case 'yarisma':
@@ -846,22 +889,8 @@ export class CommandManager {
           return `@${message.user.displayName}, turnuva başlatmak için moderatör veya yayıncı olmalısınız. Tek soru için: !soru`;
         }
 
-        let cat = 'all';
-        let count = 5;
-        for (let i = 0; i < args.length; i++) {
-          const a = args[i].toLowerCase();
-          const parsedNum = parseInt(a, 10);
-          if (!isNaN(parsedNum) && parsedNum >= 3 && parsedNum <= 20) {
-            count = parsedNum;
-          } else {
-            const parsedCat = parseTriviaCategory(a);
-            if (parsedCat !== 'all') {
-              cat = parsedCat;
-            }
-          }
-        }
-
-        triviaEngine.startTournament(cat, count, 20);
+        const secim = triviaArgumanlari(args, parseTriviaCategory, 5);
+        triviaEngine.startTournament(secim.kategori, secim.adet, gamesEngine.getSettings().trivia.durationSeconds);
         return null;
       }
 
@@ -976,19 +1005,20 @@ export class CommandManager {
         const altKomut: Record<string, string> = { add: 'addcom', ekle: 'addcom', edit: 'editcom', duzenle: 'editcom', delete: 'delcom', del: 'delcom', remove: 'delcom', sil: 'delcom' };
         const yonlen = altKomut[trKatla(args[0] || '')];
         if (yonlen) return this.executeBuiltIn(yonlen, args.slice(1), message);
-        // Sabit liste yerine gercekten TANIMLI komutlar listelenir; kullanici
-        // komut ekleyince liste kendiliginden guncellenir.
+        // Yerleşik komutlar tek listeden (yerlesik-komutlar.ts), kapalı olanlar ve kapalı modüllerinkiler çıkarılır;
+        // eskiden 7 sabit ad yazılıyordu. `!komutlar oyunlar`: o kategorinin tümü kullanımlarıyla.
         const ozel = db
-          .prepare('SELECT name FROM commands WHERE is_enabled = 1 ORDER BY name LIMIT 25')
+          .prepare("SELECT name FROM commands WHERE is_enabled = 1 AND COALESCE(trigger_type, 'command') = 'command' ORDER BY use_count DESC, name LIMIT 40")
           .all() as Array<{ name: string }>;
-        const yerlesik = ['!puan', '!liderlik', '!uptime', '!izleme', '!oyunlar', '!sr', '!sor'];
-        const hepsi = [...yerlesik, ...ozel.map((c) => `!${String(c.name).replace(/^!/, '')}`)];
-        return `📌 Komutlar: ${[...new Set(hepsi)].join(', ')}`;
+        const modulKapali = Object.entries(MODULLER)
+          .filter(([m]) => settingsCache.getBoolean(`modul_kapali_${m}`, false))
+          .flatMap(([, adlar]) => adlar.map((a) => yerlesikBul(a)?.ad || a));
+        return komutlarMetni({ kategori: args.join(' ').trim() || undefined, kapali: [...this.kapaliYerlesikler(), ...modulKapali], ozel: ozel.map((c) => String(c.name)) });
       }
 
-      // ---- Topluluk bahisleri (BotRix: !bet) -------------------------------
-      case 'bahis':
-      case 'bet': {
+      // ---- Topluluk tahminleri: !tahmin (eski adı !bahis da çalışır) --------
+      case 'tahmin':
+      case 'bahis': {
         const alt = (args[0] || '').toLowerCase();
         const mod = message.user.isBroadcaster || message.user.isMod;
 
@@ -998,7 +1028,7 @@ export class CommandManager {
           const [baslik, ...sec] = kalan.split('|').map((x) => x.trim());
           const t = tahminler.olustur(baslik || 'Tahmin', sec.length ? sec : ['Evet', 'Hayır']);
           if ('hata' in t) return `@${message.user.displayName}, ${t.hata}`;
-          return `🎲 Tahmin açıldı: ${t.baslik} → ${t.secenekler.map((x, i) => `${i + 1}) ${x}`).join(' ')} · Katıl: !bet <seçenek> <puan>`;
+          return `🎲 Tahmin açıldı: ${t.baslik} → ${t.secenekler.map((x, i) => `${i + 1}) ${x}`).join(' ')} · Katıl: !tahmin <seçenek> <puan>`;
         }
 
         if (alt === 'result' || alt === 'sonuc') {

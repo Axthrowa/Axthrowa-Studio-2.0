@@ -8,7 +8,8 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import { giveaway } from '../../modules/giveaways/giveaways.js';
+import { baslangicDuyurusu, giveaway, kazananDuyurusu } from '../../modules/giveaways/giveaways.js';
+import { eventBus } from '../../core/event-bus.js';
 import { wsHub } from '../../ws/server.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { kingSystemService } from '../../modules/games/king-system.js';
@@ -38,12 +39,17 @@ router.get('/giveaways', (req: Request, res: Response) => {
 });
 
 router.post('/giveaways/create', (req: Request, res: Response) => {
-  const { title, keyword = '!katil', subBonusMultiplier = 2.0, costPoints = 0, durationMinutes = 10, winnerCount = 1, maxEntries = 0, subOnly = false, minWatchMinutes = 0 } = req.body;
+  const { title, keyword = '!katil', subBonusMultiplier = 1, costPoints = 0, durationMinutes = 10, winnerCount = 1, maxEntries = 0, subOnly = false, minWatchMinutes = 0 } = req.body;
   const r = giveaway.baslat({ title, keyword, subBonusMultiplier, costPoints, durationMinutes, winnerCount, maxEntries, subOnly, minWatchMinutes });
+  if (r.giveaway) {
+    eventBus.emitBotMessage({ platform: 'all', message: baslangicDuyurusu(r.giveaway) });
+    wsHub.broadcastTo(['all'], { type: 'giveaway_started', giveaway: r.giveaway });
+  }
   res.json({ success: true, giveaway: r.giveaway, ...(r.uyari ? { uyari: r.uyari } : {}) });
 });
 
 router.post('/giveaways/draw', (req: Request, res: Response) => {
+  const baslik = giveaway.getActiveGiveaway()?.title || '';
   const winner = giveaway.pickWinner();
   if (winner) {
     // Notify OBS wheel widget
@@ -51,7 +57,25 @@ router.post('/giveaways/draw', (req: Request, res: Response) => {
       type: 'giveaway_winner',
       winner
     });
+    eventBus.emitBotMessage({ platform: 'all', message: kazananDuyurusu(baslik, winner) });
   }
+  res.json({ winner });
+});
+
+router.post('/giveaways/update', (req: Request, res: Response) => {
+  const onceki = giveaway.getActiveGiveaway();
+  const g = giveaway.guncelle(req.body || {});
+  if (!g) return res.status(404).json({ success: false, error: 'Açık çekiliş yok.' });
+  if (onceki.keyword !== g.keyword) eventBus.emitBotMessage({ platform: 'all', message: `📢 Çekiliş katılım kelimesi değişti: sohbete ${g.keyword} yaz!` });
+  wsHub.broadcastTo(['all'], { type: 'giveaway_join' });
+  res.json({ success: true, giveaway: g });
+});
+
+router.post('/giveaways/reroll', (req: Request, res: Response) => {
+  const winner = giveaway.yenidenCek();
+  if (!winner) return res.status(404).json({ winner: null, error: 'Yeniden çekilecek katılımcı kalmadı.' });
+  wsHub.broadcastTo(['wheel', 'dashboard', 'all'], { type: 'giveaway_winner', winner });
+  eventBus.emitBotMessage({ platform: 'all', message: `🔁 Yeniden çekildi. ${kazananDuyurusu(winner.baslik, winner)}` });
   res.json({ winner });
 });
 

@@ -5,6 +5,7 @@ import { Lyrics } from '../components/widget/Lyrics'
 import { useConfig, DEFAULT_CONFIG } from '../context/ConfigContext'
 import { useNowPlaying } from '../hooks/useNowPlaying'
 import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
+import { sarkiBitti } from '../lib/lyrics'
 import { hostBaseUrl, loadOverlayConfig } from '../lib/hostBridge'
 
 /** `lyricsOnly`: /resonance/lyrics — yalnız senkron sözler (ayrı OBS kaynağı). */
@@ -129,7 +130,8 @@ export default function Overlay({ lyricsOnly = false }) {
     if (!el || window.parent === window) return
     const r = el.getBoundingClientRect()
     let width = Math.ceil(r.width)
-    let height = Math.ceil(r.height)
+    // Sözler kartın altına taşar (kartı yukarı itmesinler); üst çerçeve onları da kapsasın
+    let height = Math.max(Math.ceil(r.height), el.scrollHeight)
     // Kart gizlenince kutu 0×0 oluyor; ebeveyn çerçevesini çökertme —
     // müzik yeniden başlayınca tema görünmez / kesik kalıyordu.
     if (width >= 40 && height >= 20) {
@@ -173,7 +175,7 @@ export default function Overlay({ lyricsOnly = false }) {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-transparent">
-      <div ref={boxRef} className="inline-flex min-h-[1px] min-w-[1px] flex-col items-center">
+      <div ref={boxRef} className="relative inline-flex min-h-[1px] min-w-[1px] flex-col items-center">
         {config && !lyricsOnly && (
           <NowPlayingWidget
             track={track}
@@ -183,9 +185,20 @@ export default function Overlay({ lyricsOnly = false }) {
             onVisibilityChange={onVisibilityChange}
           />
         )}
-        {config && (lyricsOnly || config.showLyrics) && isPlaying && (
-          <Lyrics track={track} progressMs={progressMs} config={config} />
-        )}
+        {config &&
+          (lyricsOnly || config.showLyrics) &&
+          track &&
+          isPlaying &&
+          !sarkiBitti(track, progressMs) && (
+            lyricsOnly ? (
+              <Lyrics track={track} progressMs={progressMs} config={config} />
+            ) : (
+              // Söz satırı gelip gidince kart yerinden oynamasın
+              <div className="absolute left-1/2 top-full w-[640px] -translate-x-1/2">
+                <Lyrics track={track} progressMs={progressMs} config={config} />
+              </div>
+            )
+          )}
       </div>
     </div>
   )

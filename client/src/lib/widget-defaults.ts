@@ -97,6 +97,8 @@ export const CHAT_DEFAULTS = {
   hideEmoteOnly: false,
   ignoreList: '',
   animation: 'fade',
+  // Kaybolan (eski, süresi dolan) mesajın animasyonu
+  exitAnimation: 'fade',
   align: 'left',
   reverse: false,
   layout: 'column',
@@ -105,6 +107,8 @@ export const CHAT_DEFAULTS = {
   messageBubbles: false,
   showDonations: true,
   showRedemptions: true,
+  // Bağış ve ödül kullanımı satırları bu kadar saniye sonra kaybolur (0 = kalır)
+  eventFadeSec: 30,
   messageBgColor: '#000000',
   messageBgOpacity: 0.5,
   borderRadius: 12,
@@ -160,6 +164,8 @@ export const GOAL_DEFAULTS = {
   barBorderColor: '#ffffff',
   barBorderWidth: 0,
   barIcon: '',
+  // Simge rozeti: barın başında ('start') ya da dolgunun ucunda ('tip')
+  barIconPosition: 'tip',
   // Koyu gölge: açık/renkli sahnede yazı okunmuyordu
   textShadow: true
 };
@@ -177,33 +183,15 @@ export const KAPPAGEN_DEFAULTS = {
 };
 
 export const EMOTE_COMBO_DEFAULTS = {
-  /** Kombo kutusu stili: none, pixel, neon, clean */
-  comboStyle: 'none',
-  minCombo: 3,
-  timeoutMs: 5000,
-  displayMs: 4000,
-  size: 64,
-  showFloating: true,
-  showPopup: true,
-  confetti: true,
+  /** Kaç kez art arda gelince ekranda belirsin */
+  minCombo: 2,
+  /** Emote bu kadar süre gelmezse patlar */
+  timeoutMs: 2500,
+  size: 96,
   soundEnabled: true,
   soundUrl: '',
   soundVolume: 0.6,
-  animation: 'bounce',
-  fontFamily: 'Anton',
-  fontSize: 64,
-  fontColor: '#fbbf24',
-  outlineEnabled: true,
-  outlineColor: '#000000',
-  outlineWidth: 3,
-  backgroundColor: '#000000',
-  backgroundOpacity: 0.85,
-  borderColor: '#fbbf24',
-  template: 'x{count} COMBO!',
-  subTemplate: '{emote} ÇILGINLIĞI!',
-  onlyKnownEmotes: false,
-  gatherMode: true,
-  burstOnEnd: true
+  onlyKnownEmotes: false
 };
 
 export const LABELS_DEFAULTS = {
@@ -406,7 +394,13 @@ export const SUBATHON_DEFAULTS = {
   radius: 16,
   icon: '⏳',
   showRules: true,
-  showStatus: true
+  showStatus: true,
+  // Durum kartı yazıları (boş bırakılan görünmez)
+  statusLiveText: 'CANLI SAYAÇ',
+  statusPausedText: 'DURAKLADI',
+  statusIdleText: 'BAŞLAMADI',
+  statusFontSize: 12,
+  totalAddedLabel: 'Bu yayında eklenen'
 };
 
 /** Kelime bulutu — sohbette en çok geçen sözcükler */
@@ -427,8 +421,10 @@ export const WORD_CLOUD_DEFAULTS = {
 
 /** Skor tablosu — takım adları/skorlar `!skortablo` ya da panelden */
 export const SCOREBOARD_DEFAULTS = {
-  theme: 'split',
+  theme: 'broadcast',
   showTitle: true,
+  // Önde olan takımda taç
+  showLeader: true,
   fontFamily: 'Russo One',
   fontSize: 48,
   textColor: '#ffffff',
@@ -669,6 +665,8 @@ export const LYRICS_DEFAULTS = {
   lineFontFamily: '',
   idleText: '🎵 Müzik ritmini dinliyor...',
   notFoundText: 'Bu şarkının sözleri bulunamadı',
+  /** "Bulunamadı" yazısı kaç saniye kalsın; sonra widget gizlenir, sözü bulunan şarkıda yeniden açılır (0 = hep göster) */
+  notFoundSeconds: 6,
   showTrack: true,
   showPrev: true,
   showNext: true,
@@ -803,7 +801,7 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'activity-feed': ACTIVITY_DEFAULTS,
   'chat-overlay': CHAT_DEFAULTS,
   'donation-goal': { ...GOAL_DEFAULTS, title: 'Bağış Hedefi', type: 'tip', barColor: '#10b981', target: 1000 },
-  'follower-goal': { ...GOAL_DEFAULTS, title: 'Takipçi Hedefi', type: 'follower', barColor: '#8b5cf6', target: 500, currency: '' },
+  'follower-goal': { ...GOAL_DEFAULTS, title: 'Takipçi Hedefi', type: 'follower', barColor: '#8b5cf6', target: 500, currency: '', gercekSayi: true },
   'subscriber-goal': { ...GOAL_DEFAULTS, title: 'Abone Hedefi', type: 'sub', barColor: '#ec4899', target: 250, currency: '' },
   'kicks-goal': { ...GOAL_DEFAULTS, title: 'KICKs Hedefi', type: 'kicks', barColor: '#53fc18', target: 500, currency: 'KICK' },
   'emote-combo': EMOTE_COMBO_DEFAULTS,

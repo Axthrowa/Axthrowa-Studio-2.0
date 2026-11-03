@@ -11,6 +11,86 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.10.0',
+    ad: 'Yeni Düzen',
+    tarih: '2026-11-02',
+    notlar: [
+      'Yayın Yönetim Aracı 1.3.0 ile yeni menüde gömülü çalışır: Komutlar, Oyunlar, Puanlar, Moderasyon sekmeleri',
+      'Sohbete yanıt verme anahtarı (!bot mute ile aynı ayar)',
+      'Bağlantılar için OBS tarafında açık kaynak bilgisi'
+    ]
+  },
+  {
+    surum: '1.9.4',
+    ad: 'Kelime Avı',
+    tarih: '2026-11-02',
+    notlar: [
+      'Emote kombo: gelen emote’lar ekranın rastgele yerinden ortadakine uçar; bitince her yöne süzülüp ekrandan çıkar',
+      '!kelime: 150’ye yakın kelime, ipucu ve her turda gerçekten karışık harfler; süre dolunca cevap söylenir',
+      'Oyunlar sayfasındaki ayarlar artık oyunlara uygulanır; lobiler görünür, iptal ve Chate Gönder düğmeleri çalışır',
+      '!kes kırmızı Türkçe yazımla tanınır; yanlış yazım bombayı patlatmaz, süresi dolan bomba sohbete yazılır',
+      '!yazitura 50 tura ve !slot hepsi geçerli; panelden açılan soygun bedava puan vermez',
+      'Tek URL widget listesinde simgeler; yeni logo',
+      'Botun Platformlar sayfasındaki Kick giriş düğmeleri uygulama içinde de açılır; ad okunamasa da kanal girişi kaydedilir, süresi dolan kanal girişinde bot hesabına dönülür',
+      'Tek tek silmede yalnız silinen mesajlar ekrandan kalkar, kaç mesajın kaldığı yazılır; Kick’te silinen mesaj panelden de kalkar'
+    ]
+  },
+  {
+    surum: '1.9.3',
+    ad: 'Soru Sayısı',
+    tarih: '2026-11-02',
+    notlar: [
+      '!soru tarih 5: kategoriden sonra yazılan soru sayısı çalışır (yayıncı ve moderatör; izleyici tek soru açar)',
+      'Şarkı sözü bulunamayınca yazı birkaç saniye görünür, sonra widget gizlenir; sözü bulunan şarkıda yeniden açılır (süre ayarlardan değişir)'
+    ]
+  },
+  {
+    surum: '1.9.2',
+    ad: 'Sohbet',
+    tarih: '2026-11-02',
+    notlar: [
+      'Canlı Sohbet: sekme değişince mesajlar kaybolmaz, yukarı kaydırınca liste kaçmaz',
+      'Sohbeti temizle hangi platformda temizleneceğini sorar; Kick’te /clear çalıştırır, işlemezse mesajları tek tek siler',
+      'Mesaj sabitleme çalışır: sabit mesaj panelde ve OBS’te görünür (Kick’in API’si platformda sabitlemeye izin vermiyor)',
+      'Kick’in orijinal rozetleri',
+      'Bot hesabı ve yayın kanalı girişi ayrıldı; bot hesabı kanal değişse de kayıtlı kalır',
+      'Çekiliş: yeni overlay ve Tek URL katmanı, başlayınca sohbete duyuru, özel katılım kelimesi, açık çekilişi düzenleme, yeniden çekme, kriptografik rastgele seçim',
+      'Tahmin komutu artık !tahmin',
+      'Tek URL’ye widget testleri ve Yenile; Anket ve Çekiliş sekmelerine önizleme',
+      'Resonance kartı sabit genişlikte: şarkı adı değişince yeri oynamaz'
+    ]
+  },
+  {
+    surum: '1.9.1',
+    ad: 'Sade',
+    tarih: '2026-11-02',
+    notlar: [
+      'Takipçi hedefi kanalın gerçek takipçi sayısını gösterir; yeni takipçi gelince ilerler ve uyarı çalar (Kick takipçinin adını vermediği için uyarıda "Yeni takipçi" yazar)',
+      'Hedef barı: simge barın ucunda, dolguyla birlikte ilerler',
+      'Emote kombo: yalnız emote görünür, geldikçe büyür, gelmeyi kesince patlayıp saçılır',
+      'Şarkı sözleri şarkı durduğu an ekrandan kalkar',
+      'Tek URL’deki Resonance, Yayın Yönetim Aracı’ndaki Resonance ile aynı görünümü kullanır; orada yapılan değişiklik hemen yansır',
+      'Widget testleri bitince her şey testten önceki hâline döner (kupa, sayaç, anket, akış, sohbet)',
+      'Kick hediye abonelikleri ve KICKs olayları artık yakalanır; kaldırılan varsayılan uyarı görselleri ve sesi değiştirildi',
+      'Panel sadeleşti: düz yüzeyler, tek başlık, daha az yazı'
+    ]
+  },
+  {
+    surum: '1.9.0',
+    ad: 'Komut Merkezi',
+    tarih: '2026-10-29',
+    notlar: [
+      'Komutlar › Yerleşik Komutlar: botun 101 komutunun tümü (takma adlar, kullanım örnekleri), aç/kapat, yetki ve bekleme; !komutlar listesi buradan, !komutlar oyunlar gibi kategoriyle ayrıntı',
+      'Subathon: duraklatılmış sayaca da elle süre eklenip çıkarılır; durum kartı yazıları ayarlanabilir',
+      'Widget galerisi: önizleme widget’ı OBS’teki boyutunda açar (çok küçük görünmüyor), taşan içerik kesilmez; "Test et" widget bağlanınca gönderir; Shoutout ve Olay Etiketleri testleri düzeldi',
+      'Hazır temalar renkle birlikte görünümü de değiştirir; hedef barlarında simge barla uyumlu rozet',
+      '!sr: Spotify / YouTube Music açık değilse sohbete anlaşılır bildirim',
+      'Emote kombo: toplanma ve saçılma kutunun içinde, rastgele yön/boy/düşüşle; skor tablosu yeni görünümler (TV yayını, neon, HUD) ve skor animasyonu',
+      'Bağış kupası: doğal düşüş (yerçekimi, sekme) ve alttan düzgün dolan yığın; sohbette ayrı giriş/çıkış animasyonları, ödül/bağış satırları süre sonunda kaybolur',
+      'Tek URL stüdyosu: kaldırılan widget önizlemede içeriğiyle görünmez'
+    ]
+  },
+  {
     surum: '1.8.0',
     ad: 'Sohbet Görünümleri',
     tarih: '2026-10-28',

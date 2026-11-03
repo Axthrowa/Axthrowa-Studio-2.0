@@ -40,6 +40,8 @@ export const DEFAULT_CONFIG = {
   songChangeOnly: false,
   songChangeVisibleDuration: 5,
   hideVisualizer: false,
+  /** Kart genişliği (px); 0 = temanın varsayılanı. Şarkı adı uzunluğu kartı değiştirmez. */
+  cardWidth: 0,
   /** Senkron şarkı sözlerini kartın altında göster. */
   showLyrics: false,
   /** Sözleri kaydır (ms; + ileri). */

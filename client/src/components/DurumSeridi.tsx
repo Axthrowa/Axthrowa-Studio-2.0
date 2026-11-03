@@ -14,16 +14,16 @@ export function DurumSeridi({ git }: { git: (sekme: string) => void }) {
     { ad: 'Yapay zekâ', ok: d.ai.hazir, ipucu: d.ai.hazir ? `Sağlayıcı: ${d.ai.saglayici}` : 'API anahtarı girilmemiş', sekme: 'ai' }
   ];
   return (
-    <div className="flex items-center gap-1.5" aria-label="Sistem durumu">
+    <div className="flex items-center gap-4" aria-label="Sistem durumu">
       {ogeler.map((o) => (
         <button
           key={o.ad}
           type="button"
           onClick={() => git(o.sekme)}
           title={o.ipucu}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] font-bold text-gray-300 hover:bg-white/[0.08]"
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
         >
-          <span className={`h-2 w-2 rounded-full ${o.ok ? 'bg-emerald-400' : 'bg-red-400'}`} aria-hidden />
+          <span className={`h-1.5 w-1.5 rounded-full ${o.ok ? 'bg-emerald-400' : 'bg-gray-600'}`} aria-hidden />
           {o.ad}
           <span className="sr-only">{o.ok ? 'çalışıyor' : 'sorun var'}: {o.ipucu}</span>
         </button>

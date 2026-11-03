@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { baslikTemizle, etkinSatir, lrcAyikla } from './lyrics'
+import { baslikTemizle, etkinSatir, lrcAyikla, sarkiBitti } from './lyrics'
 
 describe('şarkı sözleri', () => {
   it('LRC zamanlarını sıralı satırlara çevirir', () => {
@@ -12,6 +12,12 @@ describe('şarkı sözleri', () => {
     expect(etkinSatir(s, 1)).toBe(-1)
     expect(etkinSatir(s, 5)).toBe(0)
     expect(etkinSatir(s, 99)).toBe(1)
+  })
+  it('süre dolunca sözler biter', () => {
+    const parca = { durationMs: 10_000 }
+    expect(sarkiBitti(parca, 9_000)).toBe(false)
+    expect(sarkiBitti(parca, 9_800)).toBe(true)
+    expect(sarkiBitti(null, 9_800)).toBe(false)
   })
   it('başlık gürültüsünü atar', () => {
     expect(baslikTemizle('Paramparça (Official Video) [4K]')).toBe('Paramparça')

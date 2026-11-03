@@ -234,13 +234,25 @@ class SubathonMotoru {
   }
 
   /** Elle veya olayla süre ekler. Negatif değer süre düşer. */
-  sureEkle(saniye: number, metin: string): SubathonDurumu {
+  sureEkle(saniye: number, metin: string, elle = false): SubathonDurumu {
     const ayar = this.ayarOku();
     const sn = Math.round(Number(saniye) || 0);
     if (!sn) return this.durumAl();
 
-    // Sayaç kapalıyken gelen destek süreyi BAŞLATMAZ; yayıncı kendi başlatır.
-    if (!this.durum.aktif) return this.durumAl();
+    if (!this.durum.aktif) {
+      // Sayaç kapalıyken gelen destek süreyi BAŞLATMAZ; yayıncı kendi başlatır.
+      if (!elle) return this.durumAl();
+      // Elle ekleme/çıkarma duraklatılmış (ya da hiç başlamamış) sayacın saklı süresini değiştirir;
+      // eskiden düğmeler devre dışıydı, bot yeniden açılınca sayaç duraklı olduğu için hiçbir şey olmuyordu.
+      const tavan = Number(ayar.maksSaat) > 0 ? Number(ayar.maksSaat) * 3600 : Infinity;
+      this.durum.kalanSn = Math.max(0, Math.min(tavan, (this.durum.kalanSn || 0) + sn));
+      this.durum.duraklatildi = this.durum.kalanSn > 0;
+      this.durum.eklenenSaniye += Math.max(0, sn);
+      this.sonEkleme = { metin, saniye: sn, zaman: Date.now() };
+      this.durumuKaydet();
+      this.durumYayinla();
+      return this.durumAl();
+    }
 
     this.durum.bitisAni = yeniBitis(this.durum.bitisAni, sn, ayar.maksSaat);
     this.durum.kalanSn = Math.max(0, Math.round((this.durum.bitisAni - Date.now()) / 1000));

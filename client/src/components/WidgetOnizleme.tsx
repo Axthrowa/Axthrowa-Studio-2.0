@@ -32,6 +32,19 @@ export function icerikKutusu(d: Document): { x: number; y: number; w: number; h:
 
 type Kutu = { x: number; y: number; w: number; h: number };
 
+/** Görünen öğelerin sağ ve alt sınırı (sayfa kendi boyutundan taşıyorsa önizleme büyütülsün) */
+export function icerikSiniri(d: Document): { w: number; h: number } | null {
+  let w = 0;
+  let h = 0;
+  for (const e of Array.from(d.querySelectorAll('#root *'))) {
+    const r = (e as HTMLElement).getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) continue;
+    w = Math.max(w, Math.ceil(r.right));
+    h = Math.max(h, Math.ceil(r.bottom));
+  }
+  return w > 0 && h > 0 ? { w, h } : null;
+}
+
 /** İki alanı kapsayan alan; değişmediyse aynı nesne (gereksiz çizim olmasın) */
 export function kapsa(a: Kutu, b: Kutu): Kutu {
   const x = Math.min(a.x, b.x);
@@ -41,13 +54,25 @@ export function kapsa(a: Kutu, b: Kutu): Kutu {
   return x === a.x && y === a.y && w === a.w && h === a.h ? a : { x, y, w, h };
 }
 
-export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string }) {
+/** Önizleme kutusunun yüksekliği sınırları (px) */
+const KUTU_EN_AZ = 150;
+const KUTU_EN_COK = 420;
+
+/**
+ * `boyut`: widget'ın OBS'teki (Tek URL katmanı) boyutu. Verilirse önizleme sayfayı o boyutta açar:
+ * ekranı kaplayan widget'lar 1280 piksele yayılıp küçülmez, OBS'teki gibi görünür.
+ */
+export function WidgetOnizleme({ url, testAdi, boyut }: { url: string; testAdi?: string; boyut?: { w: number; h: number } }) {
   const kutu = useRef<HTMLDivElement>(null);
   const cerceve = useRef<HTMLIFrameElement>(null);
   const [genislik, setGenislik] = useState(540);
   const [anahtar, setAnahtar] = useState(0);
   const [canli, setCanli] = useState(false);
   const [yakin, setYakin] = useState(true);
+  // Widget boyutu (varsayılan) ya da tüm tuval
+  const [tuval, setTuval] = useState(!boyut);
+  // Widget boyutunda içerik kaynağa sığmıyorsa (açılan bildirim, kurallar satırı) önizleme o kadar büyür
+  const [tasma, setTasma] = useState<{ w: number; h: number } | null>(null);
   const [odak, setOdak] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [durum, setDurum] = useState('');
 
@@ -62,11 +87,14 @@ export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string
   // İçerik değiştikçe (ayar, test olayı) odak alanı ölçülür; yalnız büyür ki önizleme titremesin
   useEffect(() => {
     setOdak(null);
+    setTasma(null);
     const t = setInterval(() => {
       try {
         const d = cerceve.current?.contentDocument;
         const yeni = d ? icerikKutusu(d) : null;
         if (yeni) setOdak((o) => (o ? kapsa(o, yeni) : yeni));
+        const sinir = d ? icerikSiniri(d) : null;
+        if (sinir) setTasma((o) => (o && o.w >= sinir.w && o.h >= sinir.h ? o : { w: Math.max(o?.w || 0, sinir.w), h: Math.max(o?.h || 0, sinir.h) }));
       } catch {
         /* çerçeve yükleniyor */
       }
@@ -84,13 +112,15 @@ export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string
     }
   })();
 
-  const yukseklik = Math.round((genislik * YUKSEKLIK) / GENISLIK);
-  // Yakınlaşma: içerik kutuya (%8 pay bırakarak) sığsın, en çok 1,6 kat
-  const tamOlcek = genislik / GENISLIK;
+  const W = !tuval && boyut ? Math.min(GENISLIK, Math.max(200, boyut.w, tasma?.w || 0)) : GENISLIK;
+  const H = !tuval && boyut ? Math.min(YUKSEKLIK * 1.5, Math.max(60, boyut.h, tasma?.h || 0)) : YUKSEKLIK;
+  const yukseklik = tuval ? Math.round((genislik * YUKSEKLIK) / GENISLIK) : Math.min(KUTU_EN_COK, Math.max(KUTU_EN_AZ, Math.round((genislik * H) / W)));
+  // Widget boyutunda: sayfa kutuya sığar ve ortalanır (en çok 2 kat). Tüm tuvalde: içeriğe yakınlaşır (en çok 1,6 kat)
+  const tamOlcek = tuval ? genislik / GENISLIK : Math.min(2, genislik / W, yukseklik / H);
   let olcek = tamOlcek;
-  let tx = 0;
-  let ty = 0;
-  if (yakin && odak) {
+  let tx = tuval ? 0 : (genislik - W * olcek) / 2;
+  let ty = tuval ? 0 : (yukseklik - H * olcek) / 2;
+  if (tuval && yakin && odak) {
     const pay = 1.16;
     olcek = Math.min(1.6, Math.max(tamOlcek, Math.min(genislik / (odak.w * pay), yukseklik / (odak.h * pay))));
     tx = genislik / 2 - (odak.x + odak.w / 2) * olcek;
@@ -103,8 +133,19 @@ export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string
     if (!canli) {
       setCanli(true);
       setAnahtar((k) => k + 1);
-      // Canlı sayfa yüklenip WebSocket'e bağlansın
-      await new Promise((r) => setTimeout(r, 1800));
+      // Canlı sayfa yüklenip WebSocket'e bağlansın. Eskiden sabit 1,8 sn beklenirdi: yavaş açılışta
+      // (gömülü panel, ilk yükleme) olay widget dinlemeye başlamadan gidip kayboluyordu.
+      await new Promise((r) => setTimeout(r, 300));
+      for (let i = 0; i < 40; i++) {
+        const w = cerceve.current?.contentWindow as (Window & { __axtSoketAcik?: boolean }) | null | undefined;
+        try {
+          if (w?.__axtSoketAcik && w.location.search.indexOf('preview=1') < 0) break;
+        } catch {
+          /* çerçeve yükleniyor */
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      await new Promise((r) => setTimeout(r, 400));
     }
     try {
       await fetch(`/api/widgets/test/${testAdi}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
@@ -135,9 +176,15 @@ export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string
           >
             {canli ? 'Örneğe dön' : 'Canlı'}
           </button>
-          <button type="button" onClick={() => setYakin((y) => !y)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
-            {yakin ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />} {yakin ? 'Tüm tuval' : 'Yakınlaş'}
-          </button>
+          {boyut ? (
+            <button type="button" onClick={() => { setTuval((t) => !t); setAnahtar((k) => k + 1); }} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1" title="Widget boyutu: OBS'teki kaynak boyutu · Tüm tuval: 1280×720 sahne">
+              {tuval ? <Maximize2 className="w-3 h-3" /> : <Minimize2 className="w-3 h-3" />} {tuval ? 'Widget boyutu' : 'Tüm tuval'}
+            </button>
+          ) : (
+            <button type="button" onClick={() => setYakin((y) => !y)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
+              {yakin ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />} {yakin ? 'Tüm tuval' : 'Yakınlaş'}
+            </button>
+          )}
           <button type="button" onClick={() => setAnahtar((k) => k + 1)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
             <RefreshCw className="w-3 h-3" /> Yenile
           </button>
@@ -157,7 +204,7 @@ export function WidgetOnizleme({ url, testAdi }: { url: string; testAdi?: string
           key={anahtar}
           src={adres}
           title="Widget önizleme"
-          style={{ width: GENISLIK, height: YUKSEKLIK, transform: `translate(${tx}px, ${ty}px) scale(${olcek})`, transformOrigin: '0 0', border: 0, background: 'transparent', transition: 'transform .25s ease' }}
+          style={{ width: W, height: H, transform: `translate(${tx}px, ${ty}px) scale(${olcek})`, transformOrigin: '0 0', border: 0, background: 'transparent', transition: 'transform .25s ease' }}
           allowTransparency
         />
       </div>

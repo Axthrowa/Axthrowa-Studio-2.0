@@ -63,6 +63,11 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
   useEffect(() => {
     if (onizleme) return;
     if (lastMessage?.type === 'viewer_count') {
+      // Test örneği birkaç saniye görünür, sonra önceki sayılar geri gelir
+      if (lastMessage.test) {
+        const onceki = counts;
+        setTimeout(() => setCounts(onceki), 8000);
+      }
       setCounts((prev) => ({
         kick: lastMessage.kick ?? prev.kick,
         twitch: lastMessage.twitch ?? prev.twitch,

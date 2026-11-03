@@ -10,6 +10,22 @@
 
 const SINIR = 480; // Kick tek mesaj sınırı 500
 
+export const EN_COK_SORU = 20;
+
+/**
+ * Komut argümanları: sayı soru adedi, ilk tanınan sözcük kategori (`!soru tarih 5`, `!soru 5 tarih`).
+ * Sayı önce denenir: kategori çözücü "4" gibi bir sayıyı "4 İşlem" kategorisi sanıyordu.
+ */
+export function triviaArgumanlari(args: string[], kategoriCoz: (s: string) => string, varsayilanAdet = 1): { kategori: string; adet: number } {
+  let kategori = 'all';
+  let adet = varsayilanAdet;
+  for (const a of args) {
+    if (/^\d+$/.test(a)) adet = Math.min(EN_COK_SORU, Math.max(1, Number(a)));
+    else if (kategori === 'all') kategori = kategoriCoz(a);
+  }
+  return { kategori, adet };
+}
+
 interface Soru {
   question: string;
   optionA: string;

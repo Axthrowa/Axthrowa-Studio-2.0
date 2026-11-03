@@ -31,3 +31,59 @@ describe('önizleme odağı', () => {
     expect(kapsa(a, { x: 0, y: 30, w: 50, h: 100 })).toEqual({ x: 0, y: 10, w: 110, h: 120 });
   });
 });
+
+import { emoteBoyu, patlamaParcalari, toplanmaBaslangici } from '../widgets/EmoteComboWidget.js';
+
+describe('emote kombo', () => {
+  it('geldikçe büyür, kutuya sığacak kadarla sınırlı', () => {
+    expect(emoteBoyu(100, 2, 2, 1000)).toBe(100);
+    expect(emoteBoyu(100, 4, 2, 1000)).toBe(170);
+    expect(emoteBoyu(100, 50, 2, 1000)).toBe(700);
+    // Küçük kutuda da taban boyun altına inmez
+    expect(emoteBoyu(100, 50, 2, 50)).toBe(100);
+  });
+
+  it('dağılan parçalar ekrandan çıkar ve her yöne gider', () => {
+    const p = patlamaParcalari(10, 400, 200, 50);
+    expect(p.length).toBe(28);
+    // Her parça kutunun dışında biter (emote yarım boyuyla da taşmış olmalı)
+    expect(p.every((x) => Math.abs(x.dx) > 200 + 25 * x.olcek || Math.abs(x.dy) > 100 + 25 * x.olcek)).toBe(true);
+    expect(new Set(p.map((x) => `${Math.sign(x.dx)},${Math.sign(x.dy)}`)).size).toBe(4);
+  });
+
+  it('toplanan emote kutunun dışından başlar', () => {
+    for (let i = 0; i < 50; i++) {
+      const g = toplanmaBaslangici(i, 400, 200, 50);
+      expect(Math.abs(g.dx) >= 200 || Math.abs(g.dy) >= 100).toBe(true);
+    }
+  });
+});
+
+import { bulunamadiDurumu, sozGizlensinMi } from '../widgets/LyricsWidget.js';
+
+describe('söz bulunamayınca', () => {
+  it('yazı süre boyunca kalır, sonra gizlenir; yeni şarkıda ve söz bulununca açılır', () => {
+    const a = bulunamadiDurumu(null, 'A', true, 6, 1000);
+    expect(a.gizle).toBe(false);
+    expect(bulunamadiDurumu(a.iz, 'A', true, 6, 6999).gizle).toBe(false);
+    const b = bulunamadiDurumu(a.iz, 'A', true, 6, 7000);
+    expect(b.gizle).toBe(true);
+    expect(bulunamadiDurumu(b.iz, 'B', true, 6, 8000).gizle).toBe(false);
+    expect(bulunamadiDurumu(b.iz, 'B', false, 6, 8000)).toEqual({ iz: null, gizle: false });
+  });
+
+  it('süre 0 ise yazı hep kalır', () => {
+    expect(bulunamadiDurumu({ sarki: 'A', an: 0 }, 'A', true, 0, 999999).gizle).toBe(false);
+  });
+});
+
+describe('şarkı sözleri', () => {
+  it('şarkı durunca ya da bitince gizlenir', () => {
+    expect(sozGizlensinMi({ title: 'A', isPlaying: false })).toBe(true);
+    expect(sozGizlensinMi({ title: '', isPlaying: true })).toBe(true);
+    expect(sozGizlensinMi({ title: 'A', isPlaying: true, progressMs: 200_000, durationMs: 200_000 })).toBe(true);
+    expect(sozGizlensinMi({ title: 'A', isPlaying: true, progressMs: 1000, durationMs: 200_000 })).toBe(false);
+    // İstek kuyruğu: çalma bilgisi yok, karar verilmez
+    expect(sozGizlensinMi({ title: 'A', isPlaying: null })).toBe(false);
+  });
+});

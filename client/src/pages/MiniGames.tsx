@@ -19,29 +19,32 @@ import { KaydedilmemisUyari } from '../ui/index.js';
 import { useKirliTakip } from '../hooks/useKirliTakip.js';
 
 interface GameSettings {
-  soygun: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number; winMultiplier: number };
-  yaris: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number; winMultiplier: number };
-  trivia: { enabled: boolean; cooldownSec: number; rewardPoints: number; timeoutSec: number };
-  kelime: { enabled: boolean; cooldownSec: number; rewardPoints: number; timeoutSec: number };
-  balik: { enabled: boolean; cooldownSec: number; minPoints: number; maxPoints: number };
-  kasa: { enabled: boolean; cost: number; cooldownSec: number };
-  bomba: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
-  zar: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
-  yazi_tura: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
-  duello: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
+  soygun: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
+  yaris: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
+  trivia: { enabled: boolean; timeoutSec: number };
+  kelime: { enabled: boolean; rewardPoints: number; timeoutSec: number };
+  balik: { enabled: boolean; cooldownSec: number };
+  kasa: { enabled: boolean; cost: number };
+  bomba: { enabled: boolean; cooldownSec: number };
+  zar: { enabled: boolean; minBet: number; maxBet: number };
+  yazi_tura: { enabled: boolean; minBet: number; maxBet: number };
+  duello: { enabled: boolean; minBet: number; maxBet: number };
 }
 
+/** Süre alanının oyuna göre anlamı */
+const SURE_ETIKETI: Record<string, string> = { soygun: 'Katılım süresi (sn)', yaris: 'Katılım süresi (sn)', balik: 'Bekleme (sn)', bomba: 'Bomba süresi (sn)' };
+
 const DEFAULT_GAME_SETTINGS: GameSettings = {
-  soygun: { enabled: true, minBet: 10, maxBet: 500, cooldownSec: 45, winMultiplier: 2.2 },
-  yaris: { enabled: true, minBet: 10, maxBet: 500, cooldownSec: 45, winMultiplier: 2.5 },
-  trivia: { enabled: true, cooldownSec: 60, rewardPoints: 100, timeoutSec: 30 },
-  kelime: { enabled: true, cooldownSec: 60, rewardPoints: 75, timeoutSec: 35 },
-  balik: { enabled: true, cooldownSec: 30, minPoints: 10, maxPoints: 200 },
-  kasa: { enabled: true, cost: 100, cooldownSec: 20 },
-  bomba: { enabled: true, minBet: 10, maxBet: 300, cooldownSec: 30 },
-  zar: { enabled: true, minBet: 5, maxBet: 250, cooldownSec: 15 },
-  yazi_tura: { enabled: true, minBet: 5, maxBet: 250, cooldownSec: 15 },
-  duello: { enabled: true, minBet: 20, maxBet: 1000, cooldownSec: 60 }
+  soygun: { enabled: true, minBet: 20, maxBet: 5000, cooldownSec: 35 },
+  yaris: { enabled: true, minBet: 20, maxBet: 5000, cooldownSec: 30 },
+  trivia: { enabled: true, timeoutSec: 20 },
+  kelime: { enabled: true, rewardPoints: 150, timeoutSec: 40 },
+  balik: { enabled: true, cooldownSec: 45 },
+  kasa: { enabled: true, cost: 100 },
+  bomba: { enabled: true, cooldownSec: 30 },
+  zar: { enabled: true, minBet: 10, maxBet: 2500 },
+  yazi_tura: { enabled: true, minBet: 10, maxBet: 2500 },
+  duello: { enabled: true, minBet: 1, maxBet: 100000 }
 };
 
 export function MiniGames() {
@@ -167,7 +170,7 @@ export function MiniGames() {
     {
       id: 'trivia',
       title: 'Bilgi Yarışması (Trivia)',
-      command: '!trivia & !cevap <1-4>',
+      command: '!soru [kategori] [sayı]',
       desc: 'Chatte 4 şıklı genel kültür veya yayıncı soruları sorulur. Doğru şıkkı ilk yazan puanı kapar.',
       icon: HelpCircle,
       color: 'from-purple-600 to-pink-600',
@@ -176,8 +179,8 @@ export function MiniGames() {
     {
       id: 'kelime',
       title: 'Kelime Bulmaca (Anagram)',
-      command: '!kelime <tahmin>',
-      desc: 'Harfleri karıştırılmış bir Türkçe kelime sorulur. Anagramı doğru çözen ilk izleyici ödüllendirilir.',
+      command: '!kelime',
+      desc: 'Harfleri karıştırılmış bir kelime ve ipucu verilir. Kelimeyi sohbete ilk yazan ödülü alır.',
       icon: Sparkles,
       color: 'from-emerald-600 to-teal-600',
       borderColor: 'border-emerald-500/30'
@@ -203,7 +206,7 @@ export function MiniGames() {
     {
       id: 'bomba',
       title: 'Bomba İmha',
-      command: '!bomba <miktar>',
+      command: '!bomba',
       desc: 'Saatli bomba masada! Kırmızı mı mavi mi? Doğru kabloyu (üçte bir şans) kesen bahsinin 2,85 katını alır, yanlış kabloda bomba patlar.',
       icon: ShieldAlert,
       color: 'from-red-600 to-rose-600',
@@ -478,19 +481,6 @@ export function MiniGames() {
                   )}
 
                   {/* Win Multiplier */}
-                  {conf.winMultiplier !== undefined && (
-                    <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Ödül Çarpanı</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="1"
-                        value={conf.winMultiplier}
-                        onChange={e => updateGameField(game.id as any, 'winMultiplier', parseFloat(e.target.value) || 2)}
-                        className="w-full bg-[#12141a] border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono"
-                      />
-                    </div>
-                  )}
 
                   {/* Reward Points (Trivia & Kelime) */}
                   {conf.rewardPoints !== undefined && (
@@ -536,35 +526,11 @@ export function MiniGames() {
                   )}
 
                   {/* Balik min/max */}
-                  {conf.minPoints !== undefined && (
-                    <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Min Balık Puanı</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={conf.minPoints}
-                        onChange={e => updateGameField(game.id as any, 'minPoints', parseInt(e.target.value, 10) || 5)}
-                        className="w-full bg-[#12141a] border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono"
-                      />
-                    </div>
-                  )}
-                  {conf.maxPoints !== undefined && (
-                    <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Maks Balık Puanı</label>
-                      <input
-                        type="number"
-                        min="10"
-                        value={conf.maxPoints}
-                        onChange={e => updateGameField(game.id as any, 'maxPoints', parseInt(e.target.value, 10) || 100)}
-                        className="w-full bg-[#12141a] border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono"
-                      />
-                    </div>
-                  )}
 
                   {/* Cooldown Sec */}
                   {conf.cooldownSec !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Bekleme Süresi (sn)</label>
+                      <label className="text-[10px] text-gray-400 block mb-1">{SURE_ETIKETI[game.id] || 'Süre (sn)'}</label>
                       <input
                         type="number"
                         min="5"

@@ -33,6 +33,8 @@ export function kokenDogrula(info: { origin?: string; req: { headers: Record<str
   return tamam;
 }
 
+const GECMIS_EN_COK = 500;
+
 export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
@@ -197,10 +199,27 @@ export class WebSocketHub {
     } else if (msg.action === 'trigger_tts') {
       ttsEngine.enqueue(msg.text || 'Test TTS', 'Yayıncı');
     } else if (msg.action === 'clear_chat') {
+      this.sohbetGecmisiniTemizle();
       this.broadcastTo(['dashboard', 'chatbox', 'all'], {
         type: 'clear_chat'
       });
     }
+  }
+
+  /** Panel sekme değiştirince ya da yeniden açılınca sohbet boş kalmasın diye son iletiler burada tutulur. */
+  private gecmis: ChatMessagePayload[] = [];
+
+  private gecmiseEkle(m: ChatMessagePayload) {
+    this.gecmis.push(m);
+    if (this.gecmis.length > GECMIS_EN_COK) this.gecmis.splice(0, this.gecmis.length - GECMIS_EN_COK);
+  }
+
+  sohbetGecmisi(platform?: string): ChatMessagePayload[] {
+    return platform ? this.gecmis.filter((m) => m.platform === platform) : [...this.gecmis];
+  }
+
+  sohbetGecmisiniTemizle(platform?: string) {
+    this.gecmis = platform ? this.gecmis.filter((m) => m.platform !== platform) : [];
   }
 
   private setupEventForwarding() {
@@ -212,22 +231,25 @@ export class WebSocketHub {
       const karaListede = !!shieldModeService.karaListeKaydi(payload.user?.username, payload.platform);
       // Kalkan kuralına takılan mesaj da OBS'te gösterilmez (panelde işaretli görünür)
       const kalkanda = !karaListede && payload.user ? shieldModeService.ihlal(payload) : null;
-      this.broadcastTo(['dashboard', 'chatbox', 'all'], {
-        type: 'chat',
-        data: karaListede ? { ...payload, karaListede: true } : kalkanda ? { ...payload, kalkanda } : payload
-      });
+      const veri = karaListede ? { ...payload, karaListede: true } : kalkanda ? { ...payload, kalkanda } : payload;
+      this.gecmiseEkle(veri);
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat', data: veri });
     });
 
     // 1.0 Moderasyon: silinen ileti / yasaklanan kullanıcı / temizlenen sohbet
     eventBus.on('chat_deleted', (veri: { platform: string; id: string }) => {
+      this.gecmis = this.gecmis.filter((m) => !(m.platform === veri.platform && m.id === veri.id));
       this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_deleted', data: veri });
     });
     eventBus.on('chat_user_removed', (veri: { platform: string; username: string }) => {
       this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'chat_user_removed', data: veri });
     });
-    eventBus.on('chat_cleared', () => {
-      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
+    // Temizlenen yalnız o platformun sohbeti: diğer platformların iletileri ekranda kalır
+    eventBus.on('chat_cleared', (v: { platform?: string } | undefined) => {
+      this.sohbetGecmisiniTemizle(v?.platform);
+      this.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat', platform: v?.platform });
     });
+    eventBus.on('cekilis_katilim', () => this.broadcastTo(['all'], { type: 'giveaway_join' }));
     eventBus.on('anket_katmani', (ileti: Record<string, unknown>) => this.broadcastTo(['all'], ileti));
 
     // Botun gönderdiği ileti burada yansıtılmaz: sohbette platformdan geri okunan hâli (isSelf) görünür,
@@ -259,6 +281,7 @@ export class WebSocketHub {
         timestamp: Date.now()
       };
       // Yalnız panel: 'all' her istemciye (OBS sohbet katmanı dahil) gider, iç hata yayında görünüyordu
+      this.gecmiseEkle(errMsg);
       this.broadcastTo(['dashboard'], { type: 'chat', data: errMsg });
     });
 
@@ -302,7 +325,7 @@ export class WebSocketHub {
       });
 
       // Bağış Kupası: hediye abonelik adediyle düşer (eskiden düz "sub" sayılıyordu)
-      this.kupayaDusur(tur, { user: payload.displayName || payload.username, count: hediye ? hediyeAdedi(payload) : 1 });
+      if (!(payload as any)?.isTest) this.kupayaDusur(tur, { user: payload.displayName || payload.username, count: hediye ? hediyeAdedi(payload) : 1 });
     });
 
     // 4. Tip / SuperChat Event -> AlertBox & Dashboard & Goals & Loyalty Tracking
@@ -328,7 +351,7 @@ export class WebSocketHub {
       });
 
       // The Cup drop & subathon
-      this.kupayaDusur('tip', { user: payload.displayName || payload.username, amount: payload.amount });
+      if (!(payload as any)?.isTest) this.kupayaDusur('tip', { user: payload.displayName || payload.username, amount: payload.amount });
       this.sohbetOlayi('bagis', payload.displayName || payload.username, `${payload.amount} ${payload.currency || ''} bağışladı${payload.message ? ': ' + payload.message : ''}`);
 
       // Also trigger TTS if tip contains message
@@ -359,7 +382,7 @@ export class WebSocketHub {
         alert: alertData
       });
 
-      this.kupayaDusur('kicks', { user: payload.displayName || payload.username, amount: payload.amount });
+      if (!(payload as any)?.isTest) this.kupayaDusur('kicks', { user: payload.displayName || payload.username, amount: payload.amount });
     });
 
     // 4.6 Host
@@ -497,11 +520,11 @@ export class WebSocketHub {
     if (!preset) {
       const defaults: Record<string, any> = {
         follow: { title: 'YENİ TAKİPÇİ!', message: '{user} aileye katıldı!', color: '#8b5cf6', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif' },
-        sub: { title: 'YENİ ABONE!', message: '{user} {tier} seviye ile abone oldu! ({months} ay)', color: '#ec4899', sound: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3', img: 'https://media.giphy.com/media/l41lT4n6ylgW2hh04/giphy.gif' },
+        sub: { title: 'YENİ ABONE!', message: '{user} {tier} seviye ile abone oldu! ({months} ay)', color: '#ec4899', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' },
         tip: { title: 'BAĞIŞ GELDİ!', message: '{user} {amount} {currency} gönderdi: "{message}"', color: '#10b981', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' },
-        raid: { title: 'RAİD BASKINI!', message: '{user} {viewers} izleyici ile baskın yaptı! Hoş geldiniz!', color: '#f59e0b', sound: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', img: 'https://media.giphy.com/media/26FPqAH60GLQM8i76/giphy.gif' },
+        raid: { title: 'RAİD BASKINI!', message: '{user} {viewers} izleyici ile baskın yaptı! Hoş geldiniz!', color: '#f59e0b', sound: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', img: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' },
         gift_tiktok: { title: 'TIKTOK HEDİYESİ!', message: '{user} x{count} {giftName} gönderdi!', color: '#06b6d4', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' },
-        gift_sub: { title: 'HEDİYE ABONE!', message: '{user} {count} hediye abone gönderdi!', color: '#f472b6', sound: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3', img: 'https://media.giphy.com/media/l41lT4n6ylgW2hh04/giphy.gif' },
+        gift_sub: { title: 'HEDİYE ABONE!', message: '{user} {count} hediye abone gönderdi!', color: '#f472b6', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' },
         host: { title: 'HOST!', message: '{user} kanalı host etti ({viewers})', color: '#38bdf8', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif' },
         kicks: { title: 'KICKS!', message: '{user} {amount} Kick gönderdi!', color: '#53fc18', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' }
       };

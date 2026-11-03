@@ -202,6 +202,15 @@ export class TwitchHelix {
     );
   }
 
+  /** Tüm sohbeti temizler: `message_id` verilmeyen `DELETE /moderation/chat`. */
+  async sohbetiTemizle(kanal: string): Promise<HelixSonuc> {
+    const d = await this.dogrula();
+    if (!d.ok) return d;
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    return this.istek('DELETE', `/moderation/chat?broadcaster_id=${yayinci.veri}&moderator_id=${d.veri.userId}`, undefined, 'moderator:manage:chat_messages');
+  }
+
   /** Sohbet modları: `PATCH /chat/settings` (gövde `sohbetModuGovdesi` ile doğrulanmış olmalı). */
   async sohbetModlari(kanal: string, govde: Record<string, boolean | number>): Promise<HelixSonuc> {
     const d = await this.dogrula();

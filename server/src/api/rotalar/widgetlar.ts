@@ -12,6 +12,7 @@ import { wsHub } from '../../ws/server.js';
 import { ttsEngine } from '../../modules/tts/tts.js';
 import { subathon } from '../../modules/subathon/subathon.js';
 import { hypeTreni } from '../../modules/hype/hype-train.js';
+import { kingSystemService } from '../../modules/games/king-system.js';
 import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../../modules/widgets/settings-validate.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { kupa } from '../../modules/engagement/kupa.js';
@@ -113,7 +114,13 @@ router.post('/subathon/reset', (_req: Request, res: Response) => {
 router.post('/subathon/add', (req: Request, res: Response) => {
   const dk = Number(req.body?.dakika);
   if (!Number.isFinite(dk) || dk === 0) return res.status(400).json({ error: 'dakika gerekli' });
-  res.json(subathon.sureEkle(Math.round(dk * 60), `${dk > 0 ? '+' : ''}${dk} dk · elle`));
+  res.json(subathon.sureEkle(Math.round(dk * 60), `${dk > 0 ? '+' : ''}${dk} dk · elle`, true));
+});
+
+// Tek URL'yi açık tüm OBS kaynaklarında yeniden yükler
+router.post('/overlay/reload', (req: Request, res: Response) => {
+  wsHub.broadcastTo(['all'], { type: 'overlay_reload' });
+  res.json({ success: true });
 });
 
 // 18. All-in-One Overlay Settings (Single OBS URL: /widgets/overlay)
@@ -128,12 +135,15 @@ export function normalizeAllInOneConfig(cfg: any) {
     subathon: { enabled: false, x: 1560, y: 60, width: 320, height: 70, scale: 1 },
     trivia: { enabled: false, x: 660, y: 700, width: 600, height: 320, scale: 1 },
     eventLabels: { enabled: true, x: 0, y: 0, width: 1920, height: 44, scale: 1 },
-    emoteCombo: { enabled: true, x: 1560, y: 460, width: 320, height: 140, scale: 1 },
+    emoteCombo: { enabled: true, x: 0, y: 0, width: 1920, height: 1080, scale: 1 },
     nowPlaying: { enabled: false, x: 1460, y: 960, width: 420, height: 90, scale: 1 },
     theCup: { enabled: false, x: 1580, y: 610, width: 300, height: 430, scale: 1 },
     polls: { enabled: false, x: 1540, y: 180, width: 340, height: 260, scale: 1 },
     wheel: { enabled: false, x: 760, y: 340, width: 400, height: 400, scale: 1 },
-    hypeTrain: { enabled: false, x: 685, y: 350, width: 550, height: 85, scale: 1 }
+    hypeTrain: { enabled: false, x: 685, y: 350, width: 550, height: 85, scale: 1 },
+    // Yalnız çekiliş açıkken ve mesaj sabitliyken görünürler; kapalı başlayınca panelden yapılan işlem OBS'e yansımıyordu
+    giveaway: { enabled: true, x: 660, y: 380, width: 600, height: 300, scale: 1 },
+    pinned: { enabled: true, x: 560, y: 820, width: 800, height: 110, scale: 1 }
   };
 
   const result: any = { ...defaults, ...(cfg || {}) };
@@ -204,18 +214,17 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
   switch (widgetName) {
     case 'emote-combo':
     case 'on-screen-emotes':
-      wsHub.broadcastTo(['all'], {
-        type: 'emote_used',
-        emote: body.emote || '🔥',
-        combo: body.combo || 7
-      });
+      // Gerçek kombo gibi: emote art arda gelir, büyür, durunca patlar
+      for (let i = 0; i < 7; i++) {
+        setTimeout(() => wsHub.broadcastTo(['all'], { type: 'emote_used', emote: body.emote || '🔥' }), i * 350).unref?.();
+      }
       break;
     case 'the-cup':
       {
-        // Test de gerçek kuralları ve kalıcı durumu kullanır (panelden "Sıfırla" ile boşaltılır)
+        // Yalnız görsel: kupanın kayıtlı içeriği değişmez, widget birkaç saniye sonra kayıtlı hâline döner
         const tur = ({ coin: 'tip', bits: 'kicks', kicks: 'kicks', sub: 'sub', gift: 'gift_sub' } as Record<string, string>)[String(body.tokenType || 'coin')] || 'tip';
         const adet = Math.min(20, Math.max(1, Number(body.count) || 5));
-        for (let i = 0; i < adet; i++) wsHub.kupayaDusur(tur, { user: 'Test', amount: 1_000_000, count: 1 });
+        wsHub.broadcastTo(['all'], { type: 'cup_drop', test: true, data: { type: tur, adet, user: 'Test' } });
       }
       break;
     // NOT: Aşağıdaki üç test eskiden widget'ın HİÇ dinlemediği mesajları
@@ -255,12 +264,16 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     case 'shoutout':
+      // Widget gerçek shoutout'taki gibi `data` içinde bekler; eskiden alanlar düz gönderildiği için test görünmüyordu
       wsHub.broadcastTo(['all'], {
         type: 'shoutout',
-        channel: body.channel || 'StreamMaster',
-        game: body.game || 'Grand Theft Auto VI',
-        avatarUrl: body.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop',
-        message: body.message || 'Bu harika yayıncıyı takip etmeyi unutmayın!'
+        data: {
+          channel: body.channel || 'StreamMaster',
+          platform: body.platform || 'kick',
+          game: body.game || 'Grand Theft Auto VI',
+          avatarUrl: body.avatarUrl || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop',
+          message: body.message || 'Bu harika yayıncıyı takip etmeyi unutmayın!'
+        }
       });
       break;
     case 'credits':
@@ -289,18 +302,19 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     case 'viewer-counter':
-      wsHub.broadcastTo(['all'], { type: 'viewer_count', kick: 128, twitch: 64, youtube: 42, total: 234 });
+      wsHub.broadcastTo(['all'], { type: 'viewer_count', test: true, kick: 128, twitch: 64, youtube: 42, total: 234 });
       break;
     // Aşağıdakiler eskiden varsayılana düşüp ilgisiz bir takipçi uyarısı gösteriyordu.
     // Yalnız katmana örnek gider; veritabanındaki anket/çekiliş/talep değişmez.
     case 'polls':
       wsHub.broadcastTo(['all'], {
         type: 'poll_update',
+        test: true,
         poll: { question: 'Test anketi: hangi oyun?', options: ['CS2', 'Valorant', 'Minecraft'], votes: { 1: 6, 2: 3, 3: 1 }, endsAt: Date.now() + 20_000 }
       });
       break;
     case 'giveaways':
-      wsHub.broadcastTo(['all'], { type: 'giveaway_winner', payload: { winner: body.username || 'TestIzleyici' } });
+      wsHub.broadcastTo(['all'], { type: 'giveaway_winner', test: true, payload: { winner: body.username || 'TestIzleyici', adaylar: ['Mira', 'Deniz', 'Kaan', 'Ece', 'Bora', 'Lale', 'Arda', 'Selin'] } });
       break;
     case 'loyalty-redemptions':
       wsHub.broadcastTo(['all'], {
@@ -309,11 +323,14 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       });
       break;
     // Galeride testi olmayan widget'lar: yalnız katmana örnek gider, kayıtlı durum değişmez
-    case 'chat-overlay':
+    case 'chat-overlay': {
+      const testId = `test-${Date.now()}`;
+      // Örnek mesaj birkaç saniye sonra sohbet katmanından kalkar
+      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'chat_deleted', data: { platform: 'kick', id: testId } }), 8000).unref?.();
       wsHub.broadcastTo(['all'], {
         type: 'chat',
         data: {
-          id: `test-${Date.now()}`,
+          id: testId,
           platform: 'kick',
           channel: 'test',
           user: { id: 'test', username: 'testizleyici', displayName: 'TestIzleyici', badges: [], isMod: false, isSub: true, isVip: false, isBroadcaster: false, color: '#22d3ee' },
@@ -322,27 +339,40 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
         }
       });
       break;
+    }
     case 'donation-goal':
     case 'follower-goal':
     case 'subscriber-goal':
     case 'kicks-goal':
-      wsHub.triggerTestAlert(({ 'donation-goal': 'tip', 'follower-goal': 'follow', 'subscriber-goal': 'sub', 'kicks-goal': 'kicks' } as Record<string, string>)[widgetName]);
+      // Test hedefi DEĞİŞTİRMEZ: widget birkaç saniye örnek artışı gösterip kayıtlı değere döner
+      wsHub.broadcastTo(['all'], { type: 'hedef_testi', widgetId: widgetName, artis: ({ 'donation-goal': 50, 'kicks-goal': 100 } as Record<string, number>)[widgetName] || 1 });
       break;
     case 'event-labels':
-      wsHub.triggerTestAlert(body.eventType || 'follow');
+      // Etiketler test uyarılarını bilerek yok sayar (gerçek "son takipçi" bozulmasın): test için örnek
+      // değerler birkaç saniye gösterilir, sonra gerçek değerlere dönülür
+      wsHub.broadcastTo(['all'], { type: 'event_labels_test' });
       break;
     case 'pinned-messages':
       wsHub.broadcastTo(['all'], {
         type: 'pinned_message',
         data: { id: `test-${Date.now()}`, username: 'testizleyici', displayName: 'TestIzleyici', message: 'Sabitlenmiş mesaj testi 📌', platform: 'kick' }
       });
-      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'pinned_clear' }), 8000).unref?.();
+      // Gerçekte sabitlenmiş mesaj geri gelir (eskiden ekran boşaltılıyor, yayındaki sabit mesaj kayboluyordu)
+      setTimeout(() => {
+        const gercek = db.prepare('SELECT * FROM pinned_messages ORDER BY created_at DESC LIMIT 1').get();
+        wsHub.broadcastTo(['all'], { type: 'pinned_message', data: gercek || null });
+      }, 8000).unref?.();
       break;
     case 'king':
       wsHub.broadcastTo(['all'], {
         type: 'king_update',
         state: { username: 'testkral', displayName: 'TestKral', pointsBid: 5000, title: 'Test Kralı', crownedAt: Date.now(), test: true }
       });
+      // 8 sn sonra gerçek taht (eskiden test kralı bir sonraki gerçek değişikliğe dek ekranda kalıyordu)
+      setTimeout(() => {
+        // Boş taht da durum olarak gönderilir (widget "Taht boş" kartını gösterir)
+        wsHub.broadcastTo(['all'], { type: 'king_update', state: kingSystemService.getKingState() });
+      }, 8000).unref?.();
       break;
     case 'scoreboard': {
       // Örnek skor 6 sn görünür, sonra gerçek tablo geri gelir

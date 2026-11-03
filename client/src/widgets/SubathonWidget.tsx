@@ -24,6 +24,7 @@ export interface SubathonWidgetProps {
 
 interface SunucuDurumu {
   aktif: boolean;
+  duraklatildi?: boolean;
   bitisAni: number;
   kalanSaniye: number;
   eklenenSaniye: number;
@@ -199,9 +200,9 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
   const durumSatiri = s.showStatus !== false && (
     <div className="flex items-center gap-2 mb-1">
       <span className={`w-2.5 h-2.5 rounded-full ${durum.aktif ? 'animate-ping' : ''}`} style={{ background: durum.aktif ? '#34d399' : '#6b7280' }} />
-      <h2 className="font-black uppercase tracking-widest" style={{ color: vurgu, fontFamily: s.fontFamily, fontSize: 12, textShadow: golge }}>
+      <h2 className="font-black uppercase tracking-widest" style={{ color: vurgu, fontFamily: s.fontFamily, fontSize: Number(s.statusFontSize) || 12, textShadow: golge }}>
         {s.icon ? `${s.icon} ` : ''}
-        {s.title} {durum.aktif ? 'CANLI SAYAÇ' : 'DURAKLADI'}
+        {[s.title, durum.aktif ? s.statusLiveText : durum.duraklatildi ? s.statusPausedText : s.statusIdleText].filter(Boolean).join(' ')}
       </h2>
     </div>
   );
@@ -253,7 +254,7 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
           {sureGosterimi}
           {kurallar}
           {s.showTotalAdded && durum.eklenenSaniye > 0 && (
-            <div className="mt-1 text-[10px]" style={{ color: rgba(metinRengi, 0.6), textShadow: golge }}>Bu yayında eklenen: {sureYaz(durum.eklenenSaniye)}</div>
+            <div className="mt-1 text-[10px]" style={{ color: rgba(metinRengi, 0.6), textShadow: golge }}>{s.totalAddedLabel ? `${s.totalAddedLabel}: ` : ''}{sureYaz(durum.eklenenSaniye)}</div>
           )}
         </div>
       )}

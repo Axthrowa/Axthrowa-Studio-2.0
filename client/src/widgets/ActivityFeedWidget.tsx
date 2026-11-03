@@ -74,8 +74,11 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
       host: s.templateHost, kicks: s.templateKicks, bits: s.templateKicks
     };
     const text = tpl(templates[type] || '{user}', { user, amount, currency, viewers, count });
+    const yeniId = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    // Test olayı akışta kalmaz
+    if (ev?.isTest || lastMessage.alert?.isTest) setTimeout(() => setItems((l) => l.filter((x) => x.id !== yeniId)), 8000);
     setItems(prev => {
-      const next = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, type, icon: icons[type] || '✨', text, time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
+      const next = { id: yeniId, type, icon: icons[type] || '✨', text, time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
       const list = s.newestFirst ? [next, ...prev] : [...prev, next];
       return list.slice(0, s.maxItems);
     });

@@ -36,7 +36,8 @@ import {
   Move,
   Eye,
   EyeOff,
-  Settings2
+  Settings2,
+  RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
@@ -145,7 +146,7 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   },
   'emote-combo': {
     baslik: 'Emoji Kombosu',
-    aciklama: 'Aynı emoji arka arkaya gönderildiğinde ekranda kombo gösterir; sohbet etkileşimini artırır.'
+    aciklama: 'Aynı emote art arda gelince ekranda belirir, geldikçe büyür; gelmeyi kesince patlayıp etrafa saçılır.'
   },
   'end-credits': {
     baslik: 'Jenerik (Kapanış)',
@@ -253,6 +254,14 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   }
 };
 
+/** Galeri önizlemesinin açılacağı boyut: widget'ın Tek URL katmanındaki varsayılan boyutu (OBS'teki gibi görünsün) */
+function onizlemeBoyutu(galeriId: string): { w: number; h: number } | undefined {
+  const anahtar = GALERI_KATMANI[galeriId]?.anahtar;
+  const v = KATMANLAR.find((k) => k.anahtar === anahtar)?.varsayilan;
+  // Ekran boyu şeritler (olay etiketleri 1840 px) önizlemede çok küçülmesin: genişlik 960 ile sınırlı
+  return v && (v.width < 1900 || v.height < 1060) ? { w: Math.min(960, v.width), h: v.height } : undefined;
+}
+
 /** Galeri kimliği → sunucudaki test adı (widgets/test/:ad). Listede olmayanın ayrı testi yok, önizlemesi var. */
 const TEST_ADI: Record<string, string> = {
   'activity-feed': 'activity-feed',
@@ -282,6 +291,14 @@ const TEST_ADI: Record<string, string> = {
   'pinned-messages': 'pinned-messages',
   king: 'king',
   scoreboard: 'scoreboard'
+};
+
+/** Widget seçme listesinde adın yanındaki simge */
+const KATMAN_EMOJISI: Record<string, string> = {
+  chat: '💬', alerts: '🔔', goals: '🎯', subathon: '⏳', trivia: '🧠', eventLabels: '🏷️', theCup: '🏆', polls: '📊',
+  wheel: '🎡', hypeTrain: '🚂', nowPlaying: '🎵', emoteCombo: '🔥', lyrics: '🎤', king: '👑', jumpScare: '👻',
+  activityFeed: '📰', giveaway: '🎁', pinned: '📌', shoutout: '📣', viewerCounter: '👀', rankings: '🥇', loyalty: '🎟️',
+  kappagen: '🎉', endCredits: '🎬', tts: '🗣️', soundBoard: '🎛️', muzikVideo: '📺', wordCloud: '☁️', scoreboard: '🏅'
 };
 
 // Tek URL katmanı → ayar kimliği. Eskiden elle yazılmış 14 katmanla sınırlıydı: sabitlenmiş mesaj, shoutout,
@@ -371,10 +388,10 @@ const DEFAULT_ALL_IN_ONE_CONFIG: AllInOneConfig = {
   },
   emoteCombo: {
     enabled: true,
-    x: 1560,
-    y: 460,
-    width: 320,
-    height: 140,
+    x: 0,
+    y: 0,
+    width: 1920,
+    height: 1080,
     scale: 1
   },
   nowPlaying: {
@@ -457,6 +474,8 @@ export function OverlayStudio() {
   const [selectedCanvasWidget, setSelectedCanvasWidget] = useState<string>('chat');
   /** Tuval OBS'te görüneceği gibi mi (true) yoksa örnek verilerle mi çizilsin. */
   const [obsGorunumu, setObsGorunumu] = useState(false);
+  // Artınca tuvaldeki widget'lar yeniden yüklenir
+  const [tuvalAnahtari, setTuvalAnahtari] = useState(0);
   /** Seçili katmanın kendi ayar kaydı (hedef çubuğunda türe göre). */
   const seciliAyarId =
     selectedCanvasWidget === 'goals' ? hedefWidgetKimligi(allInOne.goals?.type) : KATMAN_AYAR_ID[selectedCanvasWidget];
@@ -793,6 +812,22 @@ export function OverlayStudio() {
     setTimeout(() => setTestNotification(null), 4000);
   };
 
+  /** OBS'teki Tek URL'yi ve buradaki tuvali yeniden yükler. */
+  const tekUrlYenile = async () => {
+    setTuvalAnahtari((n) => n + 1);
+    const res = await fetch('/api/overlay/reload', { method: 'POST' }).catch(() => null);
+    setTestNotification(res?.ok ? "Tek URL yenilendi: OBS kaynağı ve önizleme yeniden yüklendi." : 'Yenilenemedi: sunucuya ulaşılamadı.');
+    setTimeout(() => setTestNotification(null), 3000);
+  };
+
+  /** Test olayı örnek kipte görünmez: tuval OBS görünümüne geçer. */
+  const katmaniTestEt = async (etiket: string, testAdi: string) => {
+    setObsGorunumu(true);
+    await triggerWidgetTest(testAdi);
+    setTestNotification(`${etiket} testi gönderildi.`);
+    setTimeout(() => setTestNotification(null), 3000);
+  };
+
   // Trigger test for specific widget via API
   const triggerWidgetTest = async (widgetId: string, customBody?: any) => {
     try {
@@ -1025,12 +1060,7 @@ export function OverlayStudio() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2">
-            OBS Overlay & Widget Stüdyosu
-          </h1>
-          <p className="text-sm text-gray-400">
-            Tek bir URL ile tüm yayını yönetin veya {widgetGalleryItemsTr.length} profesyonel bağımsız widget'ı özelleştirin.
-          </p>
+          <p className="text-sm text-gray-400">Tek adresle bütün yayın ya da tek tek widget'lar.</p>
         </div>
 
         {/* Tab Navigation */}
@@ -1044,7 +1074,7 @@ export function OverlayStudio() {
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
-            <span>Tek URL OBS Stüdyosu</span>
+            <span>Tek URL</span>
           </button>
 
           <button
@@ -1056,7 +1086,7 @@ export function OverlayStudio() {
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Widget Galerisi ({widgetGalleryItemsTr.length})</span>
+            <span>Widget'lar ({widgetGalleryItemsTr.length})</span>
           </button>
 
           <button
@@ -1101,17 +1131,14 @@ export function OverlayStudio() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className={`w-2.5 h-2.5 rounded-full ${allInOne.testMode ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
-                <h3 className="text-base font-extrabold text-white">Tek URL ile OBS Tüm Sahne Overlay'i</h3>
-                <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-md font-mono font-bold">1920x1080 Full HD</span>
+                <h3 className="text-sm font-medium text-white">OBS adresi</h3>
                 {allInOne.testMode && (
                   <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-bold animate-pulse">
-                    OBS ÖNİZLEME MODU AKTİF
+                    Test modu açık
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-300 max-w-2xl">
-                OBS'e tek tek widget eklemek yerine bu tek linki Tarayıcı Kaynağı (Browser Source) olarak ekleyin. Chat, alertler, hedefler ve tüm widget'lar bu tuvalde canlı senkronize çalışır.
-              </p>
+              <p className="text-xs text-gray-400">Bu adresi OBS'e 1920×1080 Tarayıcı Kaynağı olarak ekleyin.</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
@@ -1125,7 +1152,7 @@ export function OverlayStudio() {
                 title="OBS'te bileşenlerin konumunu rahatça ayarlamak için örnek verileri açıp kapatın"
               >
                 {allInOne.testMode ? <Eye className="w-4 h-4 text-amber-400" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
-                <span>{allInOne.testMode ? 'OBS Test Modunu Kapat' : 'OBS Test Modunu Aç'}</span>
+                <span>{allInOne.testMode ? 'Test modunu kapat' : 'Test modu'}</span>
               </button>
 
               <input 
@@ -1152,10 +1179,10 @@ export function OverlayStudio() {
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <Move className="w-4 h-4 text-purple-400" />
-                    Canlı Yayın Tuvali (16:9 Ekran - Sürükle & Bırak)
+                    Yayın ekranı
                   </h3>
                   <p className="text-xs text-gray-400">
-                    Bileşenleri farenizle tutup sürükleyerek konumlandırın, sağ alttaki tutamaçla boyutlandırın.
+                    Sürükleyerek taşıyın, köşeden boyutlandırın.
                   </p>
                 </div>
                 <span
@@ -1204,6 +1231,14 @@ export function OverlayStudio() {
                     </button>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void tekUrlYenile()}
+                  title="OBS'teki Tek URL kaynağını ve bu önizlemeyi yeniden yükler"
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10 flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Yenile
+                </button>
                 <p className="text-[10px] text-gray-400 max-w-md">
                   {obsGorunumu
                     ? allInOne.testMode
@@ -1213,12 +1248,27 @@ export function OverlayStudio() {
                 </p>
               </div>
 
+              {/* Açık katmanların testleri: yayında görünür, bitince önceki hâline döner */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold text-gray-400 mr-1">Test:</span>
+                {KATMANLAR.filter((k) => (allInOne as any)[k.anahtar]?.enabled && TEST_ADI[KATMAN_AYAR_ID[k.anahtar]]).map((k) => (
+                  <button
+                    key={k.anahtar}
+                    type="button"
+                    onClick={() => void katmaniTestEt(k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]])}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
+                  >
+                    {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
+                  </button>
+                ))}
+              </div>
+
               {/* 16:9 Screen Simulation Box (Interactive Drag Canvas) */}
               <div 
                 ref={tuvalRef}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="relative w-full aspect-video bg-[#07090e] rounded-2xl border border-white/20 overflow-hidden shadow-2xl select-none cursor-default mx-auto"
+                className="axt-onizleme relative w-full aspect-video bg-[#07090e] rounded-lg border border-white/10 overflow-hidden select-none cursor-default mx-auto"
                 // Pencere alçakken tuval ekrandan taşmasın: yükseklik görünür alana sığar, 16:9 korunur
                 style={{ touchAction: 'none', maxWidth: 'max(320px, calc((100vh - 180px) * 16 / 9))' }}
               >
@@ -1227,9 +1277,6 @@ export function OverlayStudio() {
                   className="absolute inset-0 opacity-20 pointer-events-none" 
                   style={{ backgroundImage: 'radial-gradient(#8b5cf6 1px, transparent 1px)', backgroundSize: '24px 24px' }}
                 />
-                <div className="absolute top-2 right-3 text-[10px] font-mono text-white/20 pointer-events-none font-bold">
-                  1920 x 1080 OBS CANVAS
-                </div>
 
                 {/* TUVAL = OBS ÇIKTISI
                     Eskiden burada her katman için elle yazılmış sahte
@@ -1251,6 +1298,7 @@ export function OverlayStudio() {
                   }}
                 >
                   <OverlayKatmanlari
+                    key={tuvalAnahtari}
                     config={allInOne as any}
                     onizleme={obsGorunumu ? Boolean(allInOne.testMode) : true}
                     sarmala={(katman, icerik, stil) => {
@@ -1275,13 +1323,20 @@ export function OverlayStudio() {
                             pointerEvents: tiklanir ? undefined : 'none',
                             // Kapalı katman tuvalde soluk görünür ki
                             // konumlandırılabilsin; OBS'te hiç çizilmez.
-                            opacity: item?.enabled ? 1 : 0.3,
-                            outline: secili ? '3px solid #a78bfa' : '1px dashed rgba(167,139,250,0.35)',
+                            outline: secili ? `3px ${item?.enabled ? 'solid' : 'dashed'} #a78bfa` : '1px dashed rgba(167,139,250,0.35)',
                             outlineOffset: 2,
                             borderRadius: 6
                           }}
                         >
-                          <div style={{ pointerEvents: 'none', width: '100%', height: '100%' }}>{icerik}</div>
+                          {item?.enabled ? (
+                            <div style={{ pointerEvents: 'none', width: '100%', height: '100%' }}>{icerik}</div>
+                          ) : (
+                            // Kaldırılan (Tek URL'ye dahil olmayan) widget içeriğiyle çizilmez: eskiden seçili kaldığı
+                            // için soluk hâliyle tuvalde duruyor, kaldırılmamış sanılıyordu. Yalnız yeri belli olur.
+                            <div style={{ pointerEvents: 'none', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(167,139,250,0.08)', color: '#c4b5fd', fontSize: 22, fontWeight: 800, textAlign: 'center', padding: 8 }}>
+                              {katman.etiket} — kapalı (Tek URL'de yok)
+                            </div>
+                          )}
                           {secili && (
                             <div
                               onPointerDown={(e) => handleResizePointerDown(e, katman.anahtar)}
@@ -1318,9 +1373,9 @@ export function OverlayStudio() {
                 <div>
                   <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
                     <Settings2 className="w-4 h-4 text-purple-400" />
-                    Bileşen Konumlandırma & Ayar
+                    Seçili widget
                   </h3>
-                  <p className="text-xs text-gray-400">Bileşeni seçin, tek URL'ye dahil edin ve koordinatlarını belirleyin.</p>
+                  <p className="text-xs text-gray-400">Konumu ve görünürlüğü buradan ayarlanır.</p>
                 </div>
               </div>
 
@@ -1340,18 +1395,18 @@ export function OverlayStudio() {
                   <option value="subathon">⏳ Subathon Sayacı</option>
                   <option value="trivia">🧠 Bil Bakalım</option>
                   <option value="eventLabels">🏷️ Event Labels (Üst Şerit)</option>
-                  <option value="theCup">🍷 The Cup (Jeton Kavanozu)</option>
+                  <option value="theCup">🏆 The Cup (Jeton Kavanozu)</option>
                   <option value="polls">📊 Canlı Anket (Polls)</option>
                   <option value="wheel">🎡 Çarkıfelek</option>
                   <option value="hypeTrain">🚂 Hype Treni</option>
                   <option value="nowPlaying">🎵 Resonance (şu an çalan)</option>
                   <option value="emoteCombo">🔥 Emote Kombo</option>
-                  <option value="lyrics">🎶 Canlı Şarkı Sözleri (Lyrics)</option>
+                  <option value="lyrics">🎤 Canlı Şarkı Sözleri (Lyrics)</option>
                   <option value="king">👑 Tahtın Kralı (King System)</option>
-                  <option value="jumpScare">💀 JumpScare Katmanı</option>
+                  <option value="jumpScare">👻 JumpScare Katmanı</option>
                   {KATMANLAR.slice(KATMANLAR.findIndex((k) => k.anahtar === 'activityFeed')).filter((k) => k.anahtar !== 'jumpScare').map((k) => (
                     <option key={k.anahtar} value={k.anahtar}>
-                      ➕ {k.etiket}
+                      {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
                     </option>
                   ))}
                 </select>
@@ -1380,8 +1435,8 @@ export function OverlayStudio() {
                     {/* Include in Single OBS URL Toggle */}
                     <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-white block">Tek OBS URL'sine Dahil Et</span>
-                        <span className="text-[10px] text-gray-400">Bu bileşeni tek tuvalde canlı yayına ekleyin</span>
+                        <span className="text-xs font-bold text-white block">Yayında göster</span>
+                        <span className="text-[10px] text-gray-400">Kapalıysa OBS'te görünmez</span>
                       </div>
                       <input 
                         type="checkbox"
@@ -1394,7 +1449,7 @@ export function OverlayStudio() {
                     {/* Numeric Coordinate and Size Inputs */}
                     <div className="p-3.5 bg-[#11131a] rounded-xl border border-white/10 space-y-3">
                       <div className="text-[11px] font-bold text-purple-300 flex items-center justify-between">
-                        <span>Koordinatlar & Boyut (1920x1080)</span>
+                        <span>Konum ve boyut</span>
                         <span className="text-[10px] text-gray-400 font-mono">
                           X:{cur.x} Y:{cur.y} | {cur.width}x{cur.height}
                         </span>
@@ -1771,7 +1826,7 @@ export function OverlayStudio() {
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
                     <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
                     <div className="lg:sticky lg:top-0">
-                      <WidgetOnizleme url={selectedWidgetModal.url} testAdi={TEST_ADI[selectedWidgetModal.id]} />
+                      <WidgetOnizleme url={selectedWidgetModal.url} testAdi={TEST_ADI[selectedWidgetModal.id]} boyut={onizlemeBoyutu(selectedWidgetModal.id)} />
                     </div>
                   </div>
                 )}

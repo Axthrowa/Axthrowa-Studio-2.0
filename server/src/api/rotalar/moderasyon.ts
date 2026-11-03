@@ -19,6 +19,7 @@ import { platformManager } from '../../platforms/manager.js';
 import { yetenek } from '../../platforms/capabilities.js';
 import { chatRescueService } from '../../modules/ai/chat-rescue.js';
 import { eventBus } from '../../core/event-bus.js';
+import { platformlardaTemizle } from '../../modules/moderation/sohbet-temizle.js';
 
 const GECERLI_EYLEMLER = new Set(['warn', 'timeout', 'timeout_warn', 'delete', 'delete_warn']);
 const GECERLI_MUAF = new Set(['regular', 'sub', 'vip', 'og', 'mod', 'broadcaster']);
@@ -129,8 +130,38 @@ router.post('/automod', (req: Request, res: Response) => {
 
 // 16. Chat Clear Action (One-click)
 router.post('/chat/clear', (req: Request, res: Response) => {
+  wsHub.sohbetGecmisiniTemizle();
   wsHub.broadcastTo(['dashboard', 'chatbox', 'all'], { type: 'clear_chat' });
   res.json({ success: true, message: 'Canlı sohbet başarıyla temizlendi' });
+});
+
+router.get('/chat/history', (req: Request, res: Response) => {
+  res.json({ mesajlar: wsHub.sohbetGecmisi() });
+});
+
+// Platformda sohbet temizleme: yayıncı panelde hangi platformlar olduğunu seçer
+const TEMIZLENEBILIR = ['kick', 'twitch', 'youtube', 'trovo'] as const;
+router.get('/chat/clear-platforms', (req: Request, res: Response) => {
+  const platformlar = TEMIZLENEBILIR.map((id) => {
+    const p: any = platformManager.getPlatform(id);
+    return { id, bagli: !!p?.isConnected?.(), tumu: typeof p?.sohbetiTemizle === 'function' };
+  });
+  res.json({ platformlar });
+});
+
+router.post('/chat/clear-platforms', async (req: Request, res: Response) => {
+  const secilen = (Array.isArray(req.body?.platforms) ? req.body.platforms : []).filter((x: unknown) => TEMIZLENEBILIR.includes(x as any));
+  if (!secilen.length) return res.status(400).json({ ok: false, hata: 'Temizlenecek platform seçilmedi.' });
+  const sonuclar = await platformlardaTemizle(secilen as string[], {
+    platform: (id) => platformManager.getPlatform(id) as any,
+    kimlikler: (id) => wsHub.sohbetGecmisi(id).filter((m) => !m.user?.id?.startsWith('streamaxt_')).map((m) => m.id),
+    temizlendi: (id) => {
+      eventBus.emit('chat_cleared', { platform: id, channel: '' });
+      shieldModeService.addAuditLog('CLEAR_CHAT', 'Yayıncı', `${id} sohbeti temizlendi`);
+    },
+    silindi: (id, mesajId) => eventBus.emit('chat_deleted', { platform: id, id: mesajId })
+  });
+  res.json({ ok: true, sonuclar });
 });
 
 // 3. Shield Mode & Moderation Security

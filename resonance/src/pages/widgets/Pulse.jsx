@@ -68,6 +68,12 @@ function SubLabel({ children }) {
   )
 }
 
+/** Kart genişliğini denemek için örnek şarkı adları */
+const ORNEK_ADLAR = {
+  kisa: { name: 'Yol', artists: 'Sanatçı' },
+  uzun: { name: 'Bu Çok Uzun Bir Şarkı Adı: Gecenin Sonunda Yeniden Doğan Şehir (Akustik Canlı Kayıt)', artists: 'Çok Uzun Adlı Bir Sanatçı, Konuk Sanatçı ve Orkestrası' },
+}
+
 export default function Pulse() {
   const { t, language } = useLanguage()
   const { profiles, activeProfile, activeId, setActiveId, addProfile, updateConfig } = useConfig()
@@ -76,6 +82,7 @@ export default function Pulse() {
   const config = activeProfile?.config
   const { track, isPlaying, progressMs } = useNowPlaying(config?.musicService || 'auto')
   const liveSource = track?.source || config?.musicService || 'spotify'
+  const [ornekAd, setOrnekAd] = useState(null)
   const [showUrl, setShowUrl] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -198,19 +205,47 @@ export default function Pulse() {
 
   if (!config) return null
 
+  const onizlemeParcasi = ornekAd
+    ? { ...(track || {}), id: 'ornek', durationMs: track?.durationMs || 200000, ...ORNEK_ADLAR[ornekAd] }
+    : track
+
   return (
     <div className="mx-auto max-w-3xl pb-24">
       <h1 className="text-3xl font-bold text-white">{t('pulse.title')}</h1>
 
       <div className="sticky top-20 z-20 mt-6 flex justify-center overflow-visible rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-12 backdrop-blur">
         <NowPlayingWidget
-          track={track}
-          isPlaying={isPlaying}
-          progressMs={progressMs}
+          track={onizlemeParcasi}
+          isPlaying={ornekAd ? true : isPlaying}
+          progressMs={ornekAd ? 60000 : progressMs}
           config={config}
           preview
-          demoVisible={demoVisible}
+          demoVisible={ornekAd ? true : demoVisible}
         />
+      </div>
+      <div className="mt-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <SubLabel>Önizlemede şarkı adı</SubLabel>
+          {[
+            [null, 'Çalan şarkı'],
+            ['kisa', 'Kısa ad'],
+            ['uzun', 'Uzun ad'],
+          ].map(([deger, ad]) => (
+            <button
+              key={ad}
+              type="button"
+              onClick={() => setOrnekAd(deger)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${ornekAd === deger ? 'bg-[var(--color-accent)] text-black' : 'bg-white/5 text-white'}`}
+            >
+              {ad}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3">
+          <SubLabel>Kart genişliği (0 = temanın varsayılanı)</SubLabel>
+          <Slider value={Number(config.cardWidth) || 0} min={0} max={720} step={10} suffix=" px" onChange={(v) => set({ cardWidth: v })} />
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Kart genişliği sabittir: şarkı adı değişince kart ve yazılar yerinde kalır, sığmayan ad kısaltılır.</p>
+        </div>
       </div>
       {config.showLyrics && (
         <div className="mt-2 flex justify-center rounded-2xl bg-black/60 p-4">

@@ -13,8 +13,49 @@ import { aralikMs, mesajlariAyikla, minSatir } from '../../modules/timers/zamanl
 import { commandManager } from '../../modules/commands/command-manager.js';
 import { extras } from '../../modules/extras/extras.js';
 import { komutGirdisiniCoz } from '../../modules/commands/command-input.js';
+import { MODULLER } from '../../modules/commands/command-manager.js';
+import { YERLESIK_KOMUTLAR, yerlesikAyarlariCoz, yerlesikBul } from '../../modules/commands/yerlesik-komutlar.js';
+import { settingsCache } from '../../core/settings-cache.js';
 
 const router = Router();
+
+/** Kapalı yerleşik komutlar asıl adlarıyla (eski kayıtta takma ad olabilir) */
+function kapaliYerlesikler(): string[] {
+  try {
+    const v = JSON.parse(settingsCache.get('default_commands_disabled', '[]'));
+    return Array.isArray(v) ? [...new Set(v.map((x) => yerlesikBul(String(x))?.ad || String(x)))] : [];
+  } catch {
+    return [];
+  }
+}
+
+// Yerleşik komutlar: liste, aç/kapat, yetki ve bekleme (panel Komutlar › Yerleşik Komutlar)
+router.get('/commands/builtin', (_req: Request, res: Response) => {
+  res.json({
+    komutlar: YERLESIK_KOMUTLAR,
+    kapali: kapaliYerlesikler(),
+    ayarlar: yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}')),
+    moduller: Object.fromEntries(
+      Object.entries(MODULLER).map(([m, adlar]) => [m, { kapali: settingsCache.getBoolean(`modul_kapali_${m}`, false), komutlar: [...new Set(adlar.map((a) => yerlesikBul(a)?.ad || a))] }])
+    )
+  });
+});
+
+router.post('/commands/builtin', (req: Request, res: Response) => {
+  const g = req.body || {};
+  const kayit = yerlesikBul(String(g.ad || ''));
+  if (!kayit) return res.status(400).json({ error: 'Böyle bir yerleşik komut yok' });
+  if (typeof g.acik === 'boolean') {
+    const kapali = kapaliYerlesikler().filter((x) => x !== kayit.ad);
+    settingsCache.set('default_commands_disabled', JSON.stringify(g.acik ? kapali : [...kapali, kayit.ad]));
+  }
+  if ('yetki' in g || 'bekleme' in g) {
+    const ayarlar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'));
+    const yeni = { ...ayarlar[kayit.ad], ...('yetki' in g ? { yetki: g.yetki || undefined } : {}), ...('bekleme' in g ? { bekleme: Number(g.bekleme) || undefined } : {}) };
+    settingsCache.set('yerlesik_komut_ayarlari', JSON.stringify(yerlesikAyarlariCoz({ ...ayarlar, [kayit.ad]: yeni })));
+  }
+  res.json({ ok: true, kapali: kapaliYerlesikler(), ayarlar: yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}')) });
+});
 
 // 3. Commands CRUD
 router.get('/commands', (req: Request, res: Response) => {

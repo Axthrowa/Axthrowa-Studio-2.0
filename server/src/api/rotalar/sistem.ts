@@ -6,6 +6,7 @@
  * rota gövdeleri DEĞİŞMEDİ, özgün sırayla kayıtlıdır. Bağlama sırası
  * api/routes.ts toplayıcısındadır.
  */
+import { wsHub } from '../../ws/server.js';
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { platformManager } from '../../platforms/manager.js';
@@ -22,6 +23,16 @@ import { EYLEM_SECENEKLERI, TIMEOUT_KADEMELERI } from '../../modules/automod/enf
 
 const router = Router();
 
+// `!bot mute` ile aynı ayar: açıkken yanıtlar ve otomatik mesajlar sohbete gitmez
+router.get('/bot/sessiz', (req: Request, res: Response) => {
+  res.json({ sessiz: settingsCache.getBoolean('bot_sessiz', false) });
+});
+
+router.post('/bot/sessiz', (req: Request, res: Response) => {
+  settingsCache.set('bot_sessiz', req.body?.sessiz === true ? '1' : '0');
+  res.json({ sessiz: settingsCache.getBoolean('bot_sessiz', false) });
+});
+
 // 1. System Overview & Status
 router.get('/status', (req: Request, res: Response) => {
   const platforms = platformManager.getAllStatuses();
@@ -36,6 +47,8 @@ router.get('/status', (req: Request, res: Response) => {
     // "yalnız yayındayken" komutları buna bağlı; pano rozetinde gösterilir.
     canli: canliDurum.ozet(),
     platforms,
+    // Tek URL ya da bir widget OBS'te açık mı (Bağlantılar'daki hazırlık listesi)
+    obsKaynaklari: wsHub.obsKaynakSayisi(),
     stats: {
       commandsCount,
       timersCount,

@@ -1,45 +1,8 @@
 import { useState, useEffect } from 'react';
 import { CustomCommand } from '../types.js';
 import { Terminal, Plus, Edit2, Trash2, Check, Sparkles, Search } from 'lucide-react';
+import { YerlesikKomutlar } from '../components/YerlesikKomutlar.js';
 
-const DEFAULT_COMMANDS = [
-  { name: 'puan', response: 'Puanını gösterir', user_level: 'everyone', category: 'Ekonomi' },
-  { name: 'liderlik', response: 'Puan sıralaması', user_level: 'everyone', category: 'Ekonomi' },
-  { name: 'seviye', response: 'Seviye / rank profili', user_level: 'everyone', category: 'Ekonomi' },
-  { name: 'watchtime', response: 'İzleme süresi', user_level: 'everyone', category: 'Ekonomi' },
-  { name: 'market', response: 'Sadakat mağazası', user_level: 'everyone', category: 'Ekonomi' },
-  { name: 'al', response: 'Ödül satın al', user_level: 'everyone', category: 'Ekonomi' },
-  { name: 'katil', response: 'Çekilişe katıl', user_level: 'everyone', category: 'Çekiliş' },
-  { name: 'cekilis', response: 'Çekiliş başlat: !cekilis [dk] [ödül] (örn: !cekilis 5 Steam kodu)', user_level: 'mod', category: 'Çekiliş' },
-  { name: 'cekilisbitir', response: 'Kazananı çek ve sohbete yaz', user_level: 'mod', category: 'Çekiliş' },
-  { name: 'cekilisiptal', response: 'Çekilişi kazanansız kapat (ücretli katılım iade)', user_level: 'mod', category: 'Çekiliş' },
-  { name: 'anketac', response: 'Anket başlat: !anketac [süre] Soru | A | B (örn: !anketac 2dk Hangi oyun? | Valorant | CS2)', user_level: 'mod', category: 'Anket' },
-  { name: 'anketbitir', response: 'Anketi kapat, kazananı sohbete yaz', user_level: 'mod', category: 'Anket' },
-  { name: 'oy', response: 'Ankette oy ver: !oy 1', user_level: 'everyone', category: 'Anket' },
-  { name: 'cevir', response: 'Çeviri: !cevir <metin> (Türkçe↔İngilizce) · !cevir de <metin>', user_level: 'everyone', category: 'Sohbet' },
-  { name: 'lurk', response: 'Arka planda izliyorum (!unlurk ile dönüş, süre söylenir)', user_level: 'everyone', category: 'Sohbet' },
-  { name: 'hatirlat', response: 'Hatırlatıcı: !hatirlat 15dk su iç (kişi başı 3, en çok 12 sa)', user_level: 'everyone', category: 'Sohbet' },
-  { name: 'emotecount', response: 'Emote/kelime bu oturumda kaç mesajda geçti: !emotecount KEKW', user_level: 'everyone', category: 'Sohbet' },
-  { name: 'chatstats', response: 'Mesaj sayısı, en çok yazanlar, popüler kelimeler · mod: !chatstats sifirla', user_level: 'everyone', category: 'Sohbet' },
-  { name: 'skortablo', response: 'Skor tablosu · mod: !skortablo 1 +1 · !skortablo ad 1 Mavi · !skortablo sifirla', user_level: 'everyone', category: 'Sohbet' },
-  { name: 'timer', response: 'Zamanlayıcıları listele / !timer ac|kapat <ad>', user_level: 'mod', category: 'Moderasyon' },
-  { name: 'modul', response: 'Modül aç/kapat: !modul kapat oyunlar (oyunlar, sarki, yapayzeka, bilgi, market)', user_level: 'mod', category: 'Moderasyon' },
-  { name: 'nukeusername', response: 'Adı kalıba uyanları sustur/banla: !nukeusername bot* 600 · !nukeusername ~/^spam\d+$/ ban', user_level: 'mod', category: 'Moderasyon' },
-  { name: 'srclear', response: 'Şarkı sırasını temizle (çalan sürer)', user_level: 'mod', category: 'Şarkı' },
-  { name: 'marker', response: 'Twitch yayın işareti koy', user_level: 'mod', category: 'Yayın' },
-  { name: 'commercial', response: 'Twitch reklamı başlat: !commercial 60', user_level: 'mod', category: 'Yayın' },
-  { name: 'clip', response: 'Son klipten paylaş', user_level: 'everyone', category: 'Extras' },
-  { name: 'permit', response: 'Kullanıcıya link izni ver', user_level: 'mod', category: 'Moderasyon' },
-  { name: 'title', response: 'Başlığı gösterir · mod: !title <yeni başlık>', user_level: 'everyone', category: 'Yayın' },
-  { name: 'game', response: 'Kategoriyi gösterir · mod: !game <kategori>', user_level: 'everyone', category: 'Yayın' },
-  { name: 'followage', response: 'Takip süresini gösterir', user_level: 'everyone', category: 'Yayın' },
-  { name: 'accountage', response: 'Hesap yaşını gösterir', user_level: 'everyone', category: 'Yayın' },
-  { name: 'uptime', response: 'Gerçek yayın süresi (kapalıysa söyler)', user_level: 'everyone', category: 'Yayın' },
-  { name: 'komutlar', response: 'Komut listesi', user_level: 'everyone', category: 'Genel' },
-  { name: 'quote', response: 'Rastgele alıntı', user_level: 'everyone', category: 'Extras' },
-  { name: 'addquote', response: 'Alıntı ekle', user_level: 'mod', category: 'Extras' },
-  { name: 'count', response: 'Sayaç göster/arttır', user_level: 'everyone', category: 'Extras' }
-];
 
 export function Commands() {
   const [commands, setCommands] = useState<CustomCommand[]>([]);
@@ -47,7 +10,6 @@ export function Commands() {
   const [editingCmd, setEditingCmd] = useState<CustomCommand | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [tab, setTab] = useState<'my' | 'default'>('my');
-  const [disabledDefaults, setDisabledDefaults] = useState<string[]>([]);
 
   useEffect(() => {
     loadCommands();
@@ -57,12 +19,6 @@ export function Commands() {
     fetch('/api/commands')
       .then(r => r.json())
       .then(d => setCommands(d))
-      .catch(() => {});
-    fetch('/api/settings')
-      .then(r => r.json())
-      .then(d => {
-        try { setDisabledDefaults(JSON.parse(d.default_commands_disabled || '[]')); } catch { setDisabledDefaults([]); }
-      })
       .catch(() => {});
   };
 
@@ -172,7 +128,7 @@ export function Commands() {
 
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
         <button onClick={() => setTab('my')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'my' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Komutlarım</button>
-        <button onClick={() => setTab('default')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'default' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Varsayılan Komutlar</button>
+        <button onClick={() => setTab('default')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'default' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Yerleşik Komutlar</button>
       </div>
 
       {/* Search Filter */}
@@ -187,32 +143,7 @@ export function Commands() {
         />
       </div>
 
-      {tab === 'default' && (
-        <div className="glass-panel rounded-2xl overflow-hidden border border-white/10">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-white/[0.04] text-xs font-bold text-gray-400 uppercase">
-              <tr><th className="py-3 px-4">Komut</th><th className="py-3 px-4">Açıklama</th><th className="py-3 px-4">Yetki</th><th className="py-3 px-4">Kategori</th><th className="py-3 px-4">Açık</th></tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {DEFAULT_COMMANDS.filter(c => c.name.includes(search.toLowerCase()) || c.response.toLowerCase().includes(search.toLowerCase())).map(cmd => (
-                <tr key={cmd.name}>
-                  <td className="py-3 px-4 font-bold text-purple-400">!{cmd.name}</td>
-                  <td className="py-3 px-4 text-gray-300">{cmd.response}</td>
-                  <td className="py-3 px-4 text-xs">{cmd.user_level}</td>
-                  <td className="py-3 px-4 text-xs">{cmd.category}</td>
-                  <td className="py-3 px-4">
-                    <input type="checkbox" checked={!disabledDefaults.includes(cmd.name)} onChange={async e => {
-                      const next = e.target.checked ? disabledDefaults.filter(n => n !== cmd.name) : [...disabledDefaults, cmd.name];
-                      setDisabledDefaults(next);
-                      await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ default_commands_disabled: JSON.stringify(next) }) });
-                    }} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tab === 'default' && <YerlesikKomutlar arama={search} />}
 
       {tab === 'my' && <div className="glass-panel rounded-2xl overflow-hidden border border-white/10">
         <table className="w-full text-left text-sm">

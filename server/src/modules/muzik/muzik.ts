@@ -70,7 +70,7 @@ export class MuzikHost {
     private hariciKok: () => string = () => ''
   ) {}
 
-  private hariciAdres(): string {
+  hariciAdres(): string {
     const k = String(this.hariciKok() || '').trim().replace(/\/+$/, '');
     try {
       const u = new URL(k);
@@ -379,11 +379,13 @@ export class MuzikHost {
       if (!this.spotifyBagliMi() || Date.now() < this.sonrakiYoklama) return;
       try {
         await this.spotifyYokla();
+        // Tik sıklaştı (harici host için): Spotify'a yine en çok 3 sn'de bir
+        this.sonrakiYoklama = Date.now() + 2900;
       } catch {
         // Ağ/oturum hatasında 30 sn ara ver (Spotify'a yüklenme)
         this.sonrakiYoklama = Date.now() + 30_000;
       }
-    }, 3000);
+    }, 1500);
     this.yoklayici.unref?.();
   }
 

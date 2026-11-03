@@ -1,4 +1,5 @@
 import React from 'react';
+import { kickRozeti } from './kick-rozetleri.js';
 
 export interface BadgeInfo {
   type: string;
@@ -75,123 +76,26 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = ({ platform, badge, s
     }
   }
 
-  // 3. Kick Official Style Badges (Exact match to Kick platform UI)
+  // 3. Kick'in kendi rozet çizimleri
   if (platform === 'kick') {
-    const KICK_CROWN = "M12 4 8.5 9.2 4 6.5l1.6 9.3h12.8L20 6.5l-4.5 2.7zM5.6 18.2h12.8v2H5.6z";
-    const KICK_SWORD = "M20.7 5.6a4.5 4.5 0 0 1-5.9 5.9l-7.2 7.2a1.8 1.8 0 1 1-2.5-2.5l7.2-7.2a4.5 4.5 0 0 1 5.9-5.9l-2.8 2.8 2.5 2.5 2.8-2.8z";
-    const KICK_SEAL = "M12 1.5 14.6 4l3.5-.4 1 3.4 3 1.9-1.6 3.1 1.6 3.1-3 1.9-1 3.4-3.5-.4L12 22.5 9.4 20l-3.5.4-1-3.4-3-1.9L4.5 12 2.9 8.9l3-1.9 1-3.4L10.4 4 12 1.5zm-1 13.6 5.3-5.3-1.4-1.4-3.9 3.9-1.9-1.9-1.4 1.4 3.3 3.3z";
-    const KICK_STAR = "M12 2.6 15 9l7 .9-5.1 4.8 1.3 6.9L12 18.2 5.8 21.6l1.3-6.9L2 9.9 9 9l3-6.4z";
-    const KICK_HEART = "M12 21s-7.8-4.9-9.4-9.4C1.3 8 3.4 4.5 7 4.5c2 0 3.6 1 5 2.7 1.4-1.7 3-2.7 5-2.7 3.6 0 5.7 3.5 4.4 7.1C19.8 16.1 12 21 12 21z";
-    const KICK_GIFT = "M20 8h-2.4a3 3 0 0 0-4.1-4.2L12 4.9l-1.5-1.1A3 3 0 0 0 6.4 8H4v4h1v9h14v-9h1V8zm-6.3-2.7a1.2 1.2 0 1 1 1.6 1.8L13 8V5.9l.7-.6zM8.7 5.3l.6.6V8L7.7 7.1a1.2 1.2 0 0 1 1-1.8zM13 19h-2v-9h2v9z";
-    const KICK_SHIELD = "M12 2 4 5.2v6c0 5 3.4 9.6 8 10.8 4.6-1.2 8-5.8 8-10.8v-6L12 2zm-1 14.5-4-4 1.5-1.5 2.5 2.5 5-5L17.5 10l-6.5 6.5z";
-
-    if (type === 'broadcaster' || type === 'owner') {
+    const govde = kickRozeti(type);
+    if (govde) {
       return (
-        <span
-          title="Yayıncı"
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#e91916' }}
-          className="inline-flex items-center justify-center rounded-[4px] text-white font-black flex-shrink-0 align-middle shadow-sm select-none"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_CROWN} />
-          </svg>
+        <span title={badgeObj.text || type} style={{ width: `${size}px`, height: `${size}px` }} className="inline-block flex-shrink-0 align-middle select-none">
+          {/* Yalnız kick-rozetleri.ts'teki sabit çizim; dış veri girmez */}
+          <svg viewBox="0 0 20 20" width={size} height={size} fill="none" dangerouslySetInnerHTML={{ __html: govde }} />
         </span>
       );
     }
-
-    if (type === 'moderator' || type === 'mod') {
-      return (
-        <span
-          title="Moderatör"
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#00c7ff' }}
-          className="inline-flex items-center justify-center rounded-[4px] text-black font-black flex-shrink-0 align-middle shadow-sm select-none"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_SWORD} />
-          </svg>
-        </span>
-      );
-    }
-
-    if (type === 'vip') {
-      return (
-        <span
-          title="VIP"
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#e9b800' }}
-          className="inline-flex items-center justify-center rounded-[4px] text-black font-bold flex-shrink-0 align-middle shadow-sm select-none"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_STAR} />
-          </svg>
-        </span>
-      );
-    }
-
-    if (type === 'subscriber' || type === 'sub') {
-      return (
-        <span
-          title={`Abone ${badgeObj.count ? `(${badgeObj.count}. Ay)` : ''}`}
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#3EEDFE' }}
-          className="inline-flex items-center justify-center rounded-[4px] text-black font-black flex-shrink-0 align-middle shadow-sm select-none"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_STAR} />
-          </svg>
-        </span>
-      );
-    }
-
     if (type === 'sub_gifter' || type === 'gifter') {
       return (
         <span
           title="Abonelik Hediye Eden"
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#3EEDFE' }}
-          className="inline-flex items-center justify-center rounded-[4px] text-black font-black flex-shrink-0 align-middle shadow-sm select-none"
+          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#53fc18' }}
+          className="inline-flex items-center justify-center rounded-[4px] text-black flex-shrink-0 align-middle select-none"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_GIFT} />
-          </svg>
-        </span>
-      );
-    }
-
-    if (type === 'founder') {
-      return (
-        <span
-          title="Kurucu Abone"
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#ff9d00' }}
-          className="inline-flex items-center justify-center rounded-[4px] text-black font-black flex-shrink-0 align-middle shadow-sm select-none"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_HEART} />
-          </svg>
-        </span>
-      );
-    }
-
-    if (type === 'verified') {
-      return (
-        <span
-          title="Doğrulanmış"
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#1475e1' }}
-          className="inline-flex items-center justify-center rounded-full text-white font-black flex-shrink-0 align-middle select-none shadow-sm"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_SEAL} />
-          </svg>
-        </span>
-      );
-    }
-
-    if (type === 'og') {
-      return (
-        <span
-          title="OG"
-          style={{ width: `${size}px`, height: `${size}px`, backgroundColor: '#00ffb2' }}
-          className="inline-flex items-center justify-center rounded-[4px] text-black font-black flex-shrink-0 align-middle select-none shadow-sm"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-[11px] h-[11px]">
-            <path d={KICK_SHIELD} />
+            <path d="M20 8h-2.4a3 3 0 0 0-4.1-4.2L12 4.9l-1.5-1.1A3 3 0 0 0 6.4 8H4v4h1v9h14v-9h1V8zm-6.3-2.7a1.2 1.2 0 1 1 1.6 1.8L13 8V5.9l.7-.6zM8.7 5.3l.6.6V8L7.7 7.1a1.2 1.2 0 0 1 1-1.8zM13 19h-2v-9h2v9z" />
           </svg>
         </span>
       );

@@ -38,6 +38,8 @@ export class KaliciSoket {
     this.ws = ws;
     ws.onopen = () => {
       this.deneme = 0;
+        // Galeri önizlemesi "Test et"i bu işaretle zamanlar (bkz. WidgetOnizleme)
+        if (typeof window !== 'undefined') (window as unknown as { __axtSoketAcik?: boolean }).__axtSoketAcik = true;
       if (this.baglandiMi) this.onyenidenbaglandi?.();
       this.baglandiMi = true;
     };

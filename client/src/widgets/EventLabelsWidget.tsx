@@ -61,6 +61,11 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
       } catch {
         return;
       }
+      if (m?.type === 'event_labels_test') {
+        setV(ORNEK);
+        setTimeout(() => void yukle(), 8000);
+        return;
+      }
       if (m?.type !== 'alert' || m?.alert?.isTest) return;
       const d = m.data || {};
       const ad = String(d.displayName || d.display_name || d.username || '').slice(0, 60);

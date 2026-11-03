@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Play, Square } from 'lucide-react';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
+import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
 
 export function PollsStudio() {
   const [title, setTitle] = useState('');
@@ -54,6 +55,10 @@ export function PollsStudio() {
           {active && <button onClick={end} className="px-4 py-2 bg-red-600 rounded-xl text-xs font-bold flex items-center gap-1"><Square className="w-4 h-4" /> Bitir</button>}
         </div>
         {active && <div className="text-xs text-emerald-300">Aktif: {active.title || active.question}</div>}
+      </div>
+      <div className="glass-panel p-5 rounded-2xl space-y-3">
+        <h2 className="text-sm font-bold text-white">Önizleme</h2>
+        <WidgetOnizleme url={`${baseUrl}/widgets/polls`} testAdi="polls" boyut={{ w: 340, h: 260 }} />
       </div>
       <WidgetSettingsForm widgetId="polls" baseUrl={baseUrl} />
     </div>

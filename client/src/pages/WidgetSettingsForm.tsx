@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
 import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
+import { KUTU_TASARIMLARI } from '../lib/widget-style.js';
 import { yaziAilesi } from '../lib/widget-style.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
@@ -20,6 +21,7 @@ const LABELS: Record<string, string> = {
   showTip: 'Bağış göster', showRaid: 'Raid göster', showHost: 'Host göster', showKicks: 'Kicks göster',
   showBits: 'Bits göster', maxItems: 'Maks. öğe', newestFirst: 'Yeniler üstte', showIcons: 'İkonlar',
   showTimestamp: 'Saat göster', compact: 'Kompakt görünüm', hideEmpty: 'Boşken gizle',
+  kabuk: 'Kutu tasarımı', messageBgTransparent: 'İleti arka planı şeffaf', customFont: 'Kurulu yazı tipi (bilgisayardaki ad)', uppercase: 'Büyük harf', nameOnOwnLine: 'Ad ayrı satırda', hideUsernames: 'Kullanıcı adlarını gizle', emoteScale: 'Emote boyutu (katsayı)',
   fontFamily: 'Yazı tipi', fontSize: 'Yazı boyutu', fontWeight: 'Kalınlık', fontColor: 'Yazı rengi',
   letterSpacing: 'Harf aralığı', backgroundColor: 'Arka plan rengi', backgroundOpacity: 'Arka plan opaklığı',
   borderRadius: 'Köşe yuvarlaklığı', borderColor: 'Kenar rengi', outlineEnabled: 'Kontur açık',
@@ -142,6 +144,7 @@ const SECTIONS: Record<string, string> = {
   templateFollow: 'Şablon', templateSub: 'Şablon', templateGiftSub: 'Şablon', templateTip: 'Şablon',
   templateRaid: 'Şablon', templateHost: 'Şablon', templateKicks: 'Şablon', template: 'Şablon',
   subTemplate: 'Şablon',
+  kabuk: 'Görünüm', messageBgTransparent: 'Görünüm', customFont: 'Tipografi', uppercase: 'Tipografi', nameOnOwnLine: 'Düzen', hideUsernames: 'Düzen', emoteScale: 'Tipografi',
   fontFamily: 'Tipografi', fontSize: 'Tipografi', fontWeight: 'Tipografi', fontColor: 'Tipografi',
   letterSpacing: 'Tipografi', textColor: 'Tipografi', lineHeight: 'Tipografi', textTransform: 'Tipografi',
   titleColor: 'Tipografi',
@@ -236,7 +239,7 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
   'hype-train': { title: 'Genel', showTimer: 'Düzen' },
   'end-credits': { title: 'Genel' },
   king: { title: 'Genel' },
-  subathon: { title: 'Genel', theme: 'Görünüm', icon: 'Görünüm', timeFontFamily: 'Tipografi', timeFontSize: 'Tipografi', showRules: 'Düzen', showStatus: 'Durum kartı', statusLiveText: 'Durum kartı', statusPausedText: 'Durum kartı', statusIdleText: 'Durum kartı', statusFontSize: 'Durum kartı', totalAddedLabel: 'Durum kartı' },
+  subathon: { title: 'Genel', theme: 'Görünüm', kabuk: 'Görünüm', icon: 'Görünüm', timeFontFamily: 'Tipografi', timeFontSize: 'Tipografi', showRules: 'Düzen', showStatus: 'Durum kartı', statusLiveText: 'Durum kartı', statusPausedText: 'Durum kartı', statusIdleText: 'Durum kartı', statusFontSize: 'Durum kartı', totalAddedLabel: 'Durum kartı' },
   'viewer-counter': { title: 'Genel' },
   trivia: { title: 'Genel' },
   'wheel-of-fortune': { size: 'Görünüm', palette: 'Görünüm' },
@@ -252,9 +255,12 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
     { value: 'flat', label: 'Düz' },
     { value: 'gradient', label: 'Renk geçişi' },
     { value: 'striped', label: 'Çizgili (akan)' },
-    { value: 'glossy', label: 'Parlak' }
+    { value: 'glossy', label: 'Parlak' },
+    { value: 'segment', label: 'Bölmeli (batarya)' },
+    { value: 'parilti', label: 'Akan parıltı' }
   ],
   fontFamily: FONTS.map(f => ({ value: f, label: f })),
+  kabuk: KUTU_TASARIMLARI,
   barIconPosition: [
     { value: 'start', label: 'Barın başında (rozet)' },
     { value: 'tip', label: 'Dolgunun ucunda (rozet)' }
@@ -305,7 +311,7 @@ const SOHBET_EK_ANIM = tema(['pop', 'Pop (fırlayarak)'], ['bulanik', 'Bulanıkt
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
   'chat-overlay': {
-    chatStyle: tema(['klasik', 'Klasik'], ['platformkart', 'Platform kartı'], ['baslikli', 'Başlıklı (ad üstte)'], ['etiket', 'Ad etiketi'], ['konusma', 'Konuşma balonu'], ['serit', 'Platform şeridi'], ['neon', 'Neon çerçeve'], ['kompakt', 'Kompakt']),
+    chatStyle: tema(['klasik', 'Klasik'], ['platformkart', 'Platform kartı'], ['baslikli', 'Başlıklı (ad üstte)'], ['etiket', 'Ad etiketi'], ['konusma', 'Konuşma balonu'], ['serit', 'Platform şeridi'], ['neon', 'Neon çerçeve'], ['pencere', 'Eski pencere'], ['sivicam', 'Sıvı cam'], ['terminal', 'Terminal'], ['yapiskan', 'Yapışkan not'], ['rpg', 'Oyun diyaloğu'], ['cizgiroman', 'Çizgi roman'], ['yayinbandi', 'Yayın bandı'], ['gecis', 'Renk geçişi'], ['altcizgi', 'Alt çizgi'], ['kompakt', 'Kompakt']),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana (tek satır)']),
     animation: [...ANIM_SECENEKLERI, { value: 'daktilo', label: 'Daktilo' }, ...SOHBET_EK_ANIM],
     exitAnimation: [...ANIM_SECENEKLERI.map((o) => (o.value === 'none' ? { value: 'none', label: 'Anında kaybolsun' } : o)), ...SOHBET_EK_ANIM]
@@ -343,7 +349,7 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     lineFontFamily: [{ value: '', label: 'Genel yazı tipiyle aynı' }, ...FONTS.map(f => ({ value: f, label: f }))]
   },
   king: {
-    theme: tema(['royal', 'Kraliyet'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['plate', 'Plaka'])
+    theme: tema(['royal', 'Kraliyet'], ['minimal', 'Minimal'], ['glass', 'Cam'], ['neon', 'Neon'], ['plate', 'Plaka'], ['taht', 'Taht odası'], ['altin', 'Altın levha'], ['alev', 'Alev'], ['buz', 'Buz'], ['serit', 'Şerit'], ['kart', 'Düz kart'])
   },
   jumpscare: {
     mediaType: tema(['image', 'Görsel'], ['video', 'Video'], ['audio', 'Yalnız ses'])
@@ -359,7 +365,7 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     theme: tema(['broadcast', 'TV yayını (eğik paneller)'], ['split', 'Yan yana kartlar'], ['stacked', 'Sıralama (oranlı çubuk)'], ['neon', 'Neon'], ['hud', 'E-spor HUD'], ['minimal', 'Minimal (yalnız yazı)'])
   },
   subathon: {
-    theme: tema(['card', 'Kart'], ['minimal', 'Minimal (yalnız süre)'], ['digital', 'Dijital saat (LCD)'], ['flip', 'Çevirmeli kartlar'], ['neon', 'Neon'], ['pill', 'Tek satır hap']),
+    theme: tema(['card', 'Kart'], ['minimal', 'Minimal (yalnız süre)'], ['digital', 'Dijital saat (LCD)'], ['flip', 'Çevirmeli kartlar'], ['neon', 'Neon'], ['pill', 'Tek satır hap'], ['cam', 'Cam'], ['plaka', 'Plaka'], ['serit', 'Şerit']),
     timeFontFamily: FONTS.map(f => ({ value: f, label: f }))
   },
   'audio-player': {
@@ -451,6 +457,13 @@ function CarkPaneli({ values, degistir }: { values: Record<string, any>; degisti
             )}
           </div>
         </div>
+        <input
+          aria-label="Orta görsel adresi"
+          value={values.centerImageUrl || ''}
+          onChange={(e) => degistir({ centerImageUrl: e.target.value.trim() })}
+          placeholder="ya da görsel/GIF adresi yapıştırın (https://…)"
+          className="w-full bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-white"
+        />
         {values.centerImageUrl && <img src={values.centerImageUrl} alt="" className="w-14 h-14 rounded-full object-cover border border-white/20" />}
         {kutuphane && (
           <MediaLibrary

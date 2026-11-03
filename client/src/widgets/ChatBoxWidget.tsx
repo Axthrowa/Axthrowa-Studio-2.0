@@ -9,7 +9,7 @@ import { CHAT_DEFAULTS } from '../lib/widget-defaults.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
-import { onizlemeKipi, yaziOlcegi } from '../lib/widget-style.js';
+import { onizlemeKipi, yaziAilesi, yaziOlcegi } from '../lib/widget-style.js';
 import { iletiCikar, iletiEkle } from '../lib/sohbetListesi.js';
 
 /** Yeni ileti sesi: dosya gerektirmeyen kısa bir "tık" (WebAudio). */
@@ -231,17 +231,22 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   const stil = String(s.chatStyle || 'klasik');
   // Balon: eskiden yalnız "şeffaf arka plan" kapalıyken (kutu da siyahken) çiziliyordu
   const balon = !s.transparentBg || Boolean(s.messageBubbles);
-  const msgBg = s.messageBgColor.length === 7 ? saydam(s.messageBgColor, s.messageBgOpacity) : 'transparent';
+  const seffafIleti = s.messageBgTransparent === true;
+  const msgBg = !seffafIleti && s.messageBgColor.length === 7 ? saydam(s.messageBgColor, s.messageBgOpacity) : 'transparent';
   // Koyu zemin isteyen görünümler, ileti zemini kapalıyken de okunur kalsın
-  const koyuBg = s.messageBgOpacity > 0 ? msgBg : '#000000b3';
+  const koyuBg = seffafIleti ? 'transparent' : s.messageBgOpacity > 0 ? msgBg : '#000000b3';
+  // Görünümün kendi zemini (şeffaf ayarı açıkken çizilmez)
+  const zemin = (v: string) => (seffafIleti ? 'transparent' : v);
   // Dar/süslü yazı tipleri aynı puntoda çok küçük görünüyordu: görünür boyut dengelenir
-  const boy = Math.round((Number(s.fontSize) || 22) * yaziOlcegi(s.fontFamily));
+  const kurulu = String(s.customFont || '').trim();
+  const boy = Math.round((Number(s.fontSize) || 22) * (kurulu ? 1 : yaziOlcegi(s.fontFamily)));
 
   const metinStili: CSSProperties = {
     fontSize: boy,
     fontWeight: s.fontWeight,
     lineHeight: s.lineHeight,
     letterSpacing: s.letterSpacing,
+    textTransform: s.uppercase ? 'uppercase' : undefined,
     color: s.textColor,
     textAlign: s.align as CSSProperties['textAlign'],
     WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined,
@@ -271,13 +276,13 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         <PlatformBadges platform={msg.platform as any} user={msg.rozet as any} size={Math.round(boy * 1.05) || 18} />
       </span>
     ) : null;
-    const icerik = <ChatMessageContent message={msg.text} size={Math.round(boy * 1.3) || 24} twitchEmotes={msg.emotes} />;
-    const ad = (renk: string = msg.color) => <span style={{ color: renk, fontWeight: 800 }}>{msg.user}</span>;
+    const icerik = <ChatMessageContent message={msg.text} size={Math.round(boy * (Number(s.emoteScale) || 1.3)) || 24} twitchEmotes={msg.emotes} />;
+    const ad = (renk: string = msg.color) => (s.hideUsernames ? null : <span style={{ color: renk, fontWeight: 800 }}>{msg.user}</span>);
     const kutu: CSSProperties = { whiteSpace: yanYana ? 'nowrap' : undefined, textShadow: s.textShadow ? '0 2px 8px #000' : undefined };
     // Ad satırı + ileti (kart, neon ve şerit görünümlerinde ortak)
     const satir = (oncesi: ReactNode) => (
       <p style={metinStili}>
-        <span style={{ ...sira, marginRight: 6 }}>{oncesi}{ad()}</span>
+        <span style={{ ...sira, marginRight: 6, display: s.nameOnOwnLine ? 'flex' : sira.display }}>{oncesi}{ad()}</span>
         {icerik}
       </p>
     );
@@ -286,7 +291,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
       // Kart: platformun renginde şerit ve hafif tonlu zemin
       case 'platformkart':
         return (
-          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: `linear-gradient(90deg, ${saydam(pr, 0.25)}, ${koyuBg})`, borderLeft: `4px solid ${pr}`, borderRadius: s.borderRadius, padding: '6px 10px' }}>
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: zemin(`linear-gradient(90deg, ${saydam(pr, 0.25)}, ${koyuBg})`), borderLeft: `4px solid ${pr}`, borderRadius: s.borderRadius, padding: '6px 10px' }}>
             {avatar}
             {satir(<>{logo()}{rozetler}</>)}
           </div>
@@ -342,8 +347,84 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
       // Neon: platformun (ya da vurgunun) renginde parlayan çerçeve
       case 'neon':
         return (
-          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: s.messageBgOpacity > 0 ? msgBg : '#05010dcc', border: `2px solid ${vurgu}`, boxShadow: `0 0 10px ${saydam(vurgu, 0.8)}, inset 0 0 8px ${saydam(vurgu, 0.35)}`, borderRadius: s.borderRadius, padding: '6px 10px' }}>
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: seffafIleti ? 'transparent' : s.messageBgOpacity > 0 ? msgBg : '#05010dcc', border: `2px solid ${vurgu}`, boxShadow: `0 0 10px ${saydam(vurgu, 0.8)}, inset 0 0 8px ${saydam(vurgu, 0.35)}`, borderRadius: s.borderRadius, padding: '6px 10px' }}>
             {avatar}
+            {satir(<>{logo()}{rozetler}</>)}
+          </div>
+        );
+      // Eski pencere: başlık çubuğunda ad, gri kabartmalı kutuda ileti
+      case 'pencere':
+        return (
+          <div style={{ ...kutu, background: zemin('#c0c0c0'), ...(seffafIleti ? {} : { border: '2px solid', borderColor: '#ffffff #404040 #404040 #ffffff', boxShadow: '1px 1px 0 #000' }) }}>
+            <div style={{ ...sira, display: 'flex', background: zemin('linear-gradient(90deg,#000080,#1084d0)'), color: '#fff', padding: '1px 6px', fontSize: Math.round(boy * 0.75), fontWeight: 700 }}>{logo('#ffffff')}{rozetler}{ad('#ffffff')}{zaman}</div>
+            <p style={{ ...metinStili, color: seffafIleti ? s.textColor : '#000000', padding: '4px 8px' }}>{icerik}</p>
+          </div>
+        );
+      // Sıvı cam: çok saydam kapsül, üst kenarda ışık
+      case 'sivicam':
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: zemin('rgba(255,255,255,.1)'), border: seffafIleti ? undefined : '1px solid rgba(255,255,255,.28)', boxShadow: seffafIleti ? undefined : 'inset 0 1px 0 rgba(255,255,255,.45), 0 8px 22px rgba(0,0,0,.3)', backdropFilter: seffafIleti ? undefined : 'blur(14px) saturate(160%)', borderRadius: 20, padding: '8px 14px' }}>
+            {avatar}
+            {satir(<>{logo()}{rozetler}</>)}
+          </div>
+        );
+      // Terminal: yeşil yazı, komut satırı gibi
+      case 'terminal':
+        return (
+          <div style={{ ...kutu, background: zemin('#020b05e6'), borderLeft: '2px solid #22c55e', padding: '4px 10px', fontFamily: '"Fira Code", "Source Code Pro", monospace' }}>
+            <p style={{ ...metinStili, color: '#86efac', fontSize: Math.round(boy * 0.9) }}>
+              <span style={{ color: '#22c55e' }}>{'> '}</span>
+              {s.hideUsernames ? null : <span style={{ color: '#4ade80', fontWeight: 700 }}>{msg.user}: </span>}
+              {icerik}
+            </p>
+          </div>
+        );
+      // Yapışkan not: sarı kağıt, koyu yazı
+      case 'yapiskan':
+        return (
+          <div style={{ ...kutu, background: zemin('linear-gradient(180deg,#fde68a,#fcd34d)'), boxShadow: seffafIleti ? undefined : '2px 5px 12px rgba(0,0,0,.4)', padding: '8px 12px', textShadow: 'none' }}>
+            <div style={{ ...sira, display: 'flex', fontSize: Math.round(boy * 0.75), marginBottom: 2 }}>{logo('#3f2d06')}{rozetler}{ad('#92400e')}{zaman}</div>
+            <p style={{ ...metinStili, color: seffafIleti ? s.textColor : '#3f2d06' }}>{icerik}</p>
+          </div>
+        );
+      // Oyun diyaloğu: çift çerçeve, ad sekmesi üstte
+      case 'rpg':
+        return (
+          <div style={{ ...kutu, position: 'relative', marginTop: 12, background: zemin('#0f1535f0'), border: '3px double #e2e8f0', borderRadius: 6, padding: '14px 12px 8px' }}>
+            <span style={{ ...sira, position: 'absolute', top: -12, left: 10, background: '#312e81', border: '2px solid #e2e8f0', borderRadius: 4, padding: '0 8px', fontSize: Math.round(boy * 0.75) }}>{logo('#ffffff')}{rozetler}{ad('#fde68a')}</span>
+            <p style={metinStili}>{icerik}</p>
+          </div>
+        );
+      // Çizgi roman: kalın kontur, düz gölge
+      case 'cizgiroman':
+        return (
+          <div style={{ ...kutu, background: zemin('#ffffff'), border: seffafIleti ? undefined : '3px solid #111', boxShadow: seffafIleti ? undefined : '5px 5px 0 #111', borderRadius: 14, padding: '6px 12px', textShadow: 'none' }}>
+            <p style={{ ...metinStili, color: seffafIleti ? s.textColor : '#111111' }}>
+              <span style={{ ...sira, marginRight: 6, display: s.nameOnOwnLine ? 'flex' : sira.display }}>{logo()}{rozetler}{ad()}</span>
+              {icerik}
+            </p>
+          </div>
+        );
+      // Yayın bandı: ad bloğu ve ileti bloğu yan yana
+      case 'yayinbandi':
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'stretch', transform: 'skewX(-6deg)' }}>
+            <span style={{ ...sira, background: vurgu, color: PLATFORM_YAZI[msg.platform] || '#ffffff', padding: '4px 10px', fontSize: Math.round(boy * 0.8), flexShrink: 0, textShadow: 'none' }}>{logo('currentColor')}{rozetler}{ad('inherit')}</span>
+            <div style={{ background: koyuBg, padding: '4px 12px', minWidth: 0 }}><p style={metinStili}>{icerik}</p></div>
+          </div>
+        );
+      // Renk geçişi: kullanıcının renginden zemine
+      case 'gecis':
+        return (
+          <div style={{ ...kutu, display: 'flex', alignItems: 'flex-start', gap: 8, background: zemin(`linear-gradient(100deg, ${saydam(msg.color, 0.45)}, ${saydam(msg.color, 0.05)})`), borderRadius: s.borderRadius, padding: '6px 12px' }}>
+            {avatar}
+            {satir(<>{logo()}{rozetler}</>)}
+          </div>
+        );
+      // Alt çizgi: zeminsiz, ad renginde ince çizgi
+      case 'altcizgi':
+        return (
+          <div style={{ ...kutu, borderBottom: `2px solid ${saydam(msg.color, 0.7)}`, paddingBottom: 3 }}>
             {satir(<>{logo()}{rozetler}</>)}
           </div>
         );
@@ -373,7 +454,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
             {zaman && <span style={{ marginTop: 4, display: 'inline-flex' }}>{zaman}</span>}
             {rozetler && <span style={{ marginTop: 2, display: 'inline-flex' }}>{rozetler}</span>}
             <p style={metinStili}>
-              <span style={{ color: msg.color, fontWeight: 800 }}>{msg.user}: </span>
+              {s.hideUsernames ? null : <span style={{ color: msg.color, fontWeight: 800, display: s.nameOnOwnLine ? 'block' : undefined }}>{msg.user}{s.nameOnOwnLine ? '' : ': '}</span>}
               {icerik}
             </p>
           </div>
@@ -383,7 +464,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
 
   return (
     <div className="flex gap-1 p-4 h-full" style={{
-      fontFamily: s.fontFamily,
+      fontFamily: kurulu ? yaziAilesi(kurulu) : s.fontFamily,
       // Kalınlık uydurulmaz: yazı tipinde olmayan kalınlığı tarayıcı kendisi çizince harfler dağılıyordu
       fontSynthesis: 'none',
       gap: s.gap,

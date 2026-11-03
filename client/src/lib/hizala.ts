@@ -36,6 +36,12 @@ export function enBuyukBoyut(k: Kutu): { width: number; height: number } {
   return { width: Math.floor((TUVAL_G - k.x) / s), height: Math.floor((TUVAL_Y - k.y) / s) };
 }
 
+/** Köşeden ölçekleme: içerik büyür, görünen kutu tuvalden taşmaz (kaydırıcıyla aynı alt sınır). */
+export function olcekSinirla(olcek: number, k: Kutu): number {
+  const enFazla = Math.min((TUVAL_G - k.x) / k.width, (TUVAL_Y - k.y) / k.height);
+  return Math.round(Math.max(0.25, Math.min(3, enFazla, olcek)) * 100) / 100;
+}
+
 export type Yon = 'sol' | 'yatayOrta' | 'sag' | 'ust' | 'dikeyOrta' | 'alt';
 
 /** Seçili kutuyu tuvale göre hizalar; yalnız değişen ekseni döndürür. */

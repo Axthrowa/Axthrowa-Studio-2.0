@@ -5,6 +5,18 @@ import { useWidgetVisibility } from '../../hooks/useWidgetVisibility'
 import { getAnimationVariants } from '../../lib/widgetAnimations'
 import { effectiveCover, resolveRadius } from '../../lib/coverShape'
 import { getSkin } from './skins'
+import { GorunumBaglami } from './skinParts'
+
+/** Hazır renk paletleri: kart zemini, yazı ve vurgu birlikte değişir. Boş: seçili renk kipi. */
+export const PALETLER = {
+  obsidyen: { ad: 'Obsidyen', zemin: 'rgba(10,10,12,0.94)', yazi: '#f5f5f5', soluk: 'rgba(245,245,245,0.6)', vurgu: '#a1a1aa' },
+  gece: { ad: 'Gece mavisi', zemin: 'rgba(11,18,42,0.92)', yazi: '#e6edff', soluk: 'rgba(230,237,255,0.62)', vurgu: '#60a5fa' },
+  kutup: { ad: 'Kutup ışığı', zemin: 'rgba(7,24,28,0.92)', yazi: '#e6fffb', soluk: 'rgba(230,255,251,0.62)', vurgu: '#2dd4bf' },
+  orman: { ad: 'Orman', zemin: 'rgba(12,28,18,0.92)', yazi: '#eafbe9', soluk: 'rgba(234,251,233,0.62)', vurgu: '#4ade80' },
+  amber: { ad: 'Kehribar', zemin: 'rgba(32,20,6,0.93)', yazi: '#fff3dc', soluk: 'rgba(255,243,220,0.62)', vurgu: '#fbbf24' },
+  gul: { ad: 'Gül', zemin: 'rgba(36,10,22,0.92)', yazi: '#ffe8f1', soluk: 'rgba(255,232,241,0.62)', vurgu: '#f472b6' },
+  cam: { ad: 'Cam', zemin: 'rgba(255,255,255,0.12)', yazi: '#ffffff', soluk: 'rgba(255,255,255,0.72)', vurgu: '#ffffff' },
+}
 
 function useAccentColor(config, coverUrl) {
   const dominant = useDominantColor(config.colorMode === 'magic' ? coverUrl : null)
@@ -34,7 +46,9 @@ export function NowPlayingWidget({
     : null
   const displayTrack = track || placeholderTrack
 
-  const accent = useAccentColor(config, displayTrack?.cover)
+  const palet = PALETLER[config.palet]
+  const renk = useAccentColor(config, displayTrack?.cover)
+  const accent = palet?.vurgu || renk
   const theme = config.colorMode === 'light' ? 'light' : 'dark'
   const { initial, animate, exit, transition, exitTransition } = getAnimationVariants(
     config.revealAnimation,
@@ -54,9 +68,9 @@ export function NowPlayingWidget({
     })
   }, [visible, track, isPlaying, onVisibilityChange])
 
-  const shellBg = theme === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(15,16,21,0.88)'
-  const textColor = theme === 'light' ? '#111114' : '#ffffff'
-  const mutedColor = theme === 'light' ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.6)'
+  const shellBg = palet?.zemin || (theme === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(15,16,21,0.88)')
+  const textColor = palet?.yazi || (theme === 'light' ? '#111114' : '#ffffff')
+  const mutedColor = palet?.soluk || (theme === 'light' ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.6)')
 
   // Animasyon ayarı / demo sırasında key sabit kalsın ki exit unmount ile oynasın;
   // yalnız track değişince remount (reveal).
@@ -126,5 +140,16 @@ function Skin(props) {
     bare: config.hideBackground === true,
     allowGlow: Boolean(config.coverGlow),
   }
-  return <Component {...props} coverProps={coverProps} blurProps={blurProps} />
+  const gorunum = {
+    marquee: config.marquee !== false,
+    albumAdi: config.showAlbum ? track.album : '',
+    kalanSure: config.timeRemaining === true,
+    hareketliZemin: config.animatedBg && config.animatedBg !== 'yok' ? config.animatedBg : '',
+    zeminRengi: accent,
+  }
+  return (
+    <GorunumBaglami.Provider value={gorunum}>
+      <Component {...props} coverProps={coverProps} blurProps={blurProps} />
+    </GorunumBaglami.Provider>
+  )
 }

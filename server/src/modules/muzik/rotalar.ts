@@ -40,6 +40,24 @@ export function muzikRotalari(o: MuzikRotaSecenekleri): { router: Router; spotif
     res.type('text/plain').send('ok');
   });
 
+  // Söz kaynağı NetEase tarayıcıdan sorulamaz (CORS). Hedef sabit, yalnız arama metni ve sayısal kimlik geçer.
+  router.get('/player/sozler', async (req, res) => {
+    const ara = String(req.query.ara || '').trim().slice(0, 200);
+    const id = String(req.query.id || '');
+    const hedef = /^\d{1,20}$/.test(id)
+      ? `https://music.163.com/api/song/lyric?id=${id}&lv=1`
+      : ara
+        ? `https://music.163.com/api/search/get?s=${encodeURIComponent(ara)}&type=1&limit=8`
+        : '';
+    if (!hedef) return res.status(400).json({ error: 'ara ya da id gerekli' });
+    try {
+      const r = await fetch(hedef, { headers: { 'User-Agent': 'Mozilla/5.0', Referer: 'https://music.163.com/' }, signal: AbortSignal.timeout(8000) });
+      res.status(r.ok ? 200 : 502).type('application/json').send(await r.text());
+    } catch {
+      res.status(502).json({ error: 'kaynak yanıt vermedi' });
+    }
+  });
+
   router.get('/now-playing', (_req, res) => {
     res.json(host.simdiCalan());
   });

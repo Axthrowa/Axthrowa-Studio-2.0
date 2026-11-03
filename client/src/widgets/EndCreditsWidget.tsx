@@ -8,6 +8,7 @@
  * isimler yalnız `?preview=1` kipinde çıkar, boş bölüm gizlenir ve kaydırma
  * süresi ayardan gelir.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { END_CREDITS_DEFAULTS } from '../lib/widget-defaults.js';
@@ -99,7 +100,7 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
           ? 'w-full h-full overflow-hidden relative font-sans select-none flex justify-center text-center'
           : 'w-screen h-screen overflow-hidden relative font-sans select-none flex justify-center text-center'
       }
-      style={{ background: rgba(s.bgColor, s.bgOpacity), fontFamily: s.fontFamily, color: s.textColor }}
+      style={{ background: rgba(s.bgColor, s.bgOpacity), fontFamily: s.fontFamily, color: s.textColor, ...kutuTasarimi(s) }}
     >
       <div
         key={tur}

@@ -87,13 +87,15 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
 
   // If OAuth code and credentials provided, exchange for access token
   const oauthCode = code || (token && !token.startsWith('Bearer') && token.length > 20 && !token.includes('.') ? token : '');
-  if (oauthCode && clientId && clientSecret) {
+  const uygulamaId = clientId || settingsCache.get('kick_client_id') || '';
+  const uygulamaSirri = clientSecret || settingsCache.get('kick_client_secret') || '';
+  if (oauthCode && uygulamaId && uygulamaSirri) {
     try {
       const redirectUri = kickYonlendirmeAdresi();
       const params = new URLSearchParams();
       params.append('grant_type', 'authorization_code');
-      params.append('client_id', clientId);
-      params.append('client_secret', clientSecret);
+      params.append('client_id', uygulamaId);
+      params.append('client_secret', uygulamaSirri);
       params.append('redirect_uri', redirectUri);
       params.append('code', oauthCode);
       if (kickPkceVerifier) {
@@ -123,6 +125,13 @@ router.post('/platforms/kick/connect', async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       error: verification.error || 'Kick kanalı doğrulanamadı. Kullanıcı adını kontrol edin.'
+    });
+  }
+  // Client Secret yokken yetki kodu jetona çevrilemez; kod kaydedilirse panel "bağlandı" der, bot hiç yazamaz
+  if (finalToken && verification.tokenGecersiz) {
+    return res.status(400).json({
+      success: false,
+      error: 'Kick bu girişi kabul etmedi (401). Client Secret kutusunu doldurup bot hesabıyla yeniden giriş yapın.'
     });
   }
 

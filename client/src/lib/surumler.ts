@@ -11,6 +11,30 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.1',
+    ad: 'Temalar',
+    tarih: '2026-11-04',
+    notlar: [
+      'Kick: geçersiz bot girişi artık görünür; süresi dolan giriş kendini yeniler, yanıt yazamama sessizce kalmaz',
+      'Çarkıfelek: dönmeme hatası giderildi, kayıtlı dilim yokken de çalışır, ortaya görsel veya GIF adresi eklenir',
+      'Tek URL: yalnız ayar paneli kayar, köşe widgetı büyütür, kenarlar kutuyu değiştirir',
+      'Tahtın Kralı: taçtaki nokta kaldırıldı, hatalı temalar düzeltildi, yeni temalar',
+      'Hedef çubuğu ve Subathon sayacı: yeni görünümler ve 11\'er yeni tema',
+    ]
+  },
+  {
+    surum: '1.13.0',
+    ad: 'Temalar',
+    tarih: '2026-11-03',
+    notlar: [
+      'Canlı Chat: ileti arka planını tamamen şeffaf yapan ayar, 9 yeni görünüm, 12 yeni tema, 20 yeni yazı tipi, kurulu yazı tipi, ad ayrı satırda, emote boyutu',
+      'Tüm kutulu widgetlar: 27 ortak kutu tasarımı ve 10 yeni hazır tema',
+      'Çarkıfelek: 5 yeni renk paleti',
+      'Resonance: 8 yeni görünüm, renk paletleri, hareketli arka plan, kayan başlık, albüm adı, kalan süre',
+      'Şarkı sözleri: kartın altında ve kart genişliğinde, 9 görünüm; bulunamayınca NetEase ve Lyrics.ovh da aranır',
+    ]
+  },
+  {
     surum: '1.12.0',
     ad: 'AxBoT',
     tarih: '2026-11-03',

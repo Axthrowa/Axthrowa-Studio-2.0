@@ -15,6 +15,7 @@
  * Aşağıdaki hesap fonksiyonları sunucuyla aynı kuraldır, önizleme ve
  * geriye uyum için duruyor.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { HYPE_TRAIN_DEFAULTS } from '../lib/widget-defaults.js';
@@ -138,7 +139,7 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
       <div
         className="w-full"
         style={{
-          ...(temaStili[tema] || temaStili.classic),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic),
           borderRadius: Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           color: s.textColor

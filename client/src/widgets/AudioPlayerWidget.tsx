@@ -7,6 +7,7 @@
  * okunabiliyordu ve kuyruğun üst sınırı yoktu: uzun bir mola sonrası biriken
  * onlarca TTS arka arkaya okunuyordu.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { playTtsAudio } from '../lib/tts-playback.js';
@@ -92,7 +93,7 @@ export function AudioPlayerWidget({ embedded = false }: AudioPlayerWidgetProps) 
       <div
         className="flex items-center gap-2"
         style={{
-          ...(temaStili[tema] || temaStili.status),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.status),
           borderRadius: Number(s.radius) || 12,
           padding: tema === 'dot' ? 0 : '8px 16px',
           color: s.textColor,

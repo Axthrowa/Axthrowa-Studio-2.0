@@ -12,6 +12,7 @@ export function ResonanceWidget({ embedded = false }: { embedded?: boolean; prev
     <iframe
       title="Resonance — Şu An Çalan"
       src="/resonance/overlay"
+      scrolling="no"
       style={{
         border: 0,
         width: embedded ? '100%' : '100vw',

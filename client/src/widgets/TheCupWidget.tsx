@@ -11,6 +11,7 @@
  * hafif kayık ve döndürülmüş durur; kupanın yuvarlak tabanında alt sıralar daralır. Düşüş yerçekimiyle
  * hızlanır, yana sapar, döner ve yere değince küçük bir sekmeyle oturur.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { THE_CUP_DEFAULTS } from '../lib/widget-defaults.js';
@@ -231,7 +232,7 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
             borderStyle: 'solid',
             borderBottomLeftRadius: Number(s.cupRadius) || 40,
             borderBottomRightRadius: Number(s.cupRadius) || 40,
-            ...(temaStili[tema] || temaStili.glass)
+            ...(kutuTasarimi(s) || temaStili[tema] || temaStili.glass)
           }}
         >
           {s.showGlare && (

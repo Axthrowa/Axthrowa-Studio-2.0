@@ -14,8 +14,9 @@ export interface CarkDilimi {
   weight?: number;
 }
 
-/** Ayar yoksa (panelde hiç açılmadıysa) widget'ın varsayılan 8 dilimi */
-const VARSAYILAN_DILIM_SAYISI = 8;
+/** Ayar yoksa (panelde hiç açılmadıysa) widget'ın varsayılan 8 dilimi: WHEEL_DEFAULTS.segments ile aynı */
+const VARSAYILAN_DILIMLER: CarkDilimi[] = ['Ahmet_34', 'ProPlayer', 'KralGamer', 'AyseLive', 'Can_99', 'Ece_Star', 'Berk_GG', 'Zeynep_X'].map((label) => ({ label, weight: 1 }));
+const VARSAYILAN_DILIM_SAYISI = VARSAYILAN_DILIMLER.length;
 
 export function agirlikliSira(dilimler: CarkDilimi[], rastgele: () => number = Math.random): number {
   if (!dilimler.length) return Math.floor(rastgele() * VARSAYILAN_DILIM_SAYISI);
@@ -39,9 +40,9 @@ export function carkAyari(): { dilimler: CarkDilimi[]; donusMs: number } {
     const dilimler = Array.isArray(j.segments)
       ? j.segments.filter((d: any) => d && String(d.label ?? '').trim()).slice(0, 50).map((d: any) => ({ label: String(d.label).slice(0, 60), weight: Number(d.weight ?? 1) }))
       : [];
-    return { dilimler, donusMs: Math.min(20_000, Math.max(1000, Number(j.spinMs) || 4500)) };
+    return { dilimler: dilimler.length ? dilimler : VARSAYILAN_DILIMLER, donusMs: Math.min(20_000, Math.max(1000, Number(j.spinMs) || 4500)) };
   } catch {
-    return { dilimler: [], donusMs: 4500 };
+    return { dilimler: VARSAYILAN_DILIMLER, donusMs: 4500 };
   }
 }
 

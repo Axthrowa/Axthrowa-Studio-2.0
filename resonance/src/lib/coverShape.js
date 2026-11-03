@@ -64,6 +64,14 @@ export const SKIN_COVER_SUPPORT = {
   edge: ['square', 'vinyl', 'none'],
   turntable: ['vinyl'], // kapak hep plağın üstünde döner
   cassette: [], // kapak hiç çizilmiyor
+  pill: ['square', 'vinyl', 'none'],
+  island: ['square', 'vinyl', 'none'],
+  strip: ['square', 'vinyl', 'none'],
+  albumfocus: ['square'],
+  sidebar: ['square', 'vinyl', 'none'],
+  gameboy: ['square', 'none'],
+  hud: ['square', 'none'],
+  sticky: ['square', 'none'],
 }
 
 /** Destek listesi dışında kalan seçimin düşeceği biçim. */

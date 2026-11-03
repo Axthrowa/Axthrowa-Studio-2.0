@@ -17,6 +17,11 @@ import { onizlemeKipi } from '../lib/widget-style.js';
 /** Çark renk paletleri: "custom" dilimlerin kendi rengini kullanır, diğerleri sırayla döner */
 export const CARK_PALETLERI: Record<string, { ad: string; renkler: string[] }> = {
   custom: { ad: 'Dilim renkleri (özel)', renkler: [] },
+  gundogumu: { ad: 'Gün doğumu', renkler: ['#ff6b6b', '#ffa94d', '#ffd43b', '#ff8787'] },
+  buzul: { ad: 'Buzul', renkler: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#0369a1'] },
+  gecedalga: { ad: 'Gece dalgası', renkler: ['#2b0a4d', '#7a1d6f', '#f0568a', '#ffb86b'] },
+  pastel: { ad: 'Pastel', renkler: ['#fbcfe8', '#ddd6fe', '#bfdbfe', '#bbf7d0', '#fef08a'] },
+  altin: { ad: 'Altın', renkler: ['#14100a', '#d4a843', '#3b2a14', '#f5e6c4'] },
   rainbow: { ad: 'Gökkuşağı', renkler: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'] },
   red: { ad: 'Kırmızı tonları', renkler: ['#7f1d1d', '#b91c1c', '#ef4444', '#f87171'] },
   green: { ad: 'Yeşil tonları', renkler: ['#14532d', '#15803d', '#22c55e', '#86efac'] },
@@ -234,10 +239,11 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   // Göbek yarıçapı (viewBox birimi): çapın yüzdesi; yazılar göbeğin dışından başlar
   const gobek = Math.min(60, Math.max(6, Number(s.centerSize) || 26));
   const otomatikGizle = s.autoHide !== false;
-  if (!onizleme && otomatikGizle && !gorunur && !spinning) return null;
+  // Gizliyken de çizili kalır: gizliden açılan SVG son açıda doğar, CSS geçişi hiç başlamaz, çark dönmezdi
+  const gizli = !onizleme && otomatikGizle && !gorunur && !spinning;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16 }}>
+    <div data-katman-bos={gizli ? '' : undefined} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16, visibility: gizli ? 'hidden' : 'visible' }}>
       <div style={{ position: 'relative', width: boyut, height: boyut }}>
         {/* İbre: saat 12 yönünde, çarkın üstünde */}
         <div

@@ -2,6 +2,7 @@
  * AxBoT Goal overlay — donation / follower / sub / kicks
  * Developed by AxthrowA
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -28,6 +29,13 @@ export function dolguArkaPlani(stil: string, renk: string, renk2: string): CSSPr
     return {
       background: `repeating-linear-gradient(45deg, rgba(255,255,255,.22) 0 7px, transparent 7px 14px), linear-gradient(90deg, ${renk}, ${renk2})`,
       backgroundSize: '28px 100%, 100% 100%'
+    };
+  if (stil === 'segment')
+    return { background: `repeating-linear-gradient(90deg, transparent 0 16px, rgba(0,0,0,.55) 16px 20px), linear-gradient(90deg, ${renk}, ${renk2})` };
+  if (stil === 'parilti')
+    return {
+      background: `linear-gradient(100deg, transparent 35%, rgba(255,255,255,.6) 50%, transparent 65%), linear-gradient(90deg, ${renk}, ${renk2})`,
+      backgroundSize: '220% 100%, 100% 100%'
     };
   if (stil === 'glossy') return { background: `linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0) 55%), linear-gradient(90deg, ${renk}, ${renk2})` };
   return { background: renk };
@@ -137,7 +145,7 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
           borderRadius: s.barRadius,
           boxShadow: s.showGlow ? `0 0 16px ${s.barColor}` : undefined,
           transition: `width ${gecis}`,
-          animation: s.barStyle === 'striped' ? 'axt-hedef-cizgi 1s linear infinite' : undefined
+          animation: s.barStyle === 'striped' ? 'axt-hedef-cizgi 1s linear infinite' : s.barStyle === 'parilti' ? 'axt-hedef-parilti 2.4s linear infinite' : undefined
         }} />
       </div>
       {simge}
@@ -156,8 +164,8 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
   );
 
   return (
-    <div className={`axt-anim-${s.animation}`} style={{ background: Number(s.backgroundOpacity) === 0 ? 'transparent' : bg, borderRadius: s.borderRadius, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <style>{'@keyframes axt-hedef-cizgi { from { background-position: 0 0, 0 0 } to { background-position: 28px 0, 0 0 } } @keyframes axt-hedef-zipla { 0% { transform: scale(1) } 40% { transform: scale(1.35) translateY(-8%) } 100% { transform: scale(1) } }'}</style>
+    <div className={`axt-anim-${s.animation}`} style={{ background: Number(s.backgroundOpacity) === 0 ? 'transparent' : bg, borderRadius: s.borderRadius, ...kutuTasarimi(s), padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <style>{'@keyframes axt-hedef-parilti { from { background-position: 120% 0, 0 0 } to { background-position: -120% 0, 0 0 } } @keyframes axt-hedef-cizgi { from { background-position: 0 0, 0 0 } to { background-position: 28px 0, 0 0 } } @keyframes axt-hedef-zipla { 0% { transform: scale(1) } 40% { transform: scale(1.35) translateY(-8%) } 100% { transform: scale(1) } }'}</style>
       {s.layout === 'text-below' ? <>{bar}{label}</> : <>{label}{bar}</>}
     </div>
   );

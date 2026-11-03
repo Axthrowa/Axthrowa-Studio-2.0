@@ -123,8 +123,47 @@ export function kartTasarimlari(s: { bgColor?: string; bgOpacity?: number | stri
     pixel: { background: arka, border: `4px solid ${vurgu}`, boxShadow: '6px 6px 0 rgba(0,0,0,.85)', fontFamily: '"Press Start 2P", monospace' },
     compact: { background: arka, border: `1px solid ${rgba('#ffffff', 0.12)}`, padding: '8px 12px' },
     capsule: { background: arka, border: `1px solid ${rgba(vurgu, 0.5)}`, borderRadius: 999 },
+    // Pencere: eski masaüstü penceresi gibi kabartmalı gri kutu
+    pencere: { background: '#c0c0c0', color: '#000000', border: '2px solid', borderColor: '#ffffff #404040 #404040 #ffffff', boxShadow: '1px 1px 0 #000', borderRadius: 0 },
+    // El konsolu: yeşil tonlu dört renkli ekran
+    gameboy: { background: '#9bbc0f', color: '#0f380f', border: '4px solid #306230', boxShadow: 'inset 0 0 0 2px #8bac0f', borderRadius: 4 },
+    // Yapışkan not ve parşömen: açık zemin, koyu yazı
+    yapiskan: { background: 'linear-gradient(180deg,#fde68a,#fcd34d)', color: '#3f2d06', border: 'none', boxShadow: '3px 6px 14px rgba(0,0,0,.4)', borderRadius: 2, transform: 'rotate(-0.6deg)' },
+    parsomen: { background: 'radial-gradient(120% 120% at 50% 50%,#f5e6c4,#d9bf8c)', color: '#3b2a14', border: '1px solid #8a6a3b', boxShadow: 'inset 0 0 24px rgba(90,60,20,.45)' },
+    // Çizgi roman: kalın siyah kontur, düz gölge
+    cizgiroman: { background: '#ffffff', color: '#111111', border: '3px solid #111111', boxShadow: '6px 6px 0 #111111' },
+    // Sıvı cam: çok saydam, üst kenarda ışık
+    sivicam: { background: rgba('#ffffff', 0.1), border: `1px solid ${rgba('#ffffff', 0.28)}`, boxShadow: `inset 0 1px 0 ${rgba('#ffffff', 0.45)}, 0 12px 32px rgba(0,0,0,.35)`, backdropFilter: 'blur(14px) saturate(160%)' },
+    // Gece dalgası: mor-pembe geçiş, parlak çerçeve
+    gecedalga: { background: 'linear-gradient(160deg,#2b0a4d,#7a1d6f 60%,#f0568a)', border: '1px solid #ff8ad8', boxShadow: '0 0 22px rgba(240,86,138,.55)' },
+    // Altın kenar: koyu zemin, çift altın çerçeve
+    altin: { background: rgba('#14100a', 0.95), border: '2px solid #d4a843', boxShadow: `inset 0 0 0 3px ${rgba('#14100a', 1)}, inset 0 0 0 4px ${rgba('#d4a843', 0.5)}` },
+    // Köşeli: yalnız köşeleri çizili yayın çerçevesi
+    koseli: { background: `linear-gradient(${vurgu},${vurgu}) 0 0/18px 2px no-repeat, linear-gradient(${vurgu},${vurgu}) 0 0/2px 18px no-repeat, linear-gradient(${vurgu},${vurgu}) 100% 100%/18px 2px no-repeat, linear-gradient(${vurgu},${vurgu}) 100% 100%/2px 18px no-repeat, ${arka}`, border: 'none' },
+    // Kupon: kesik kenarlı hediye kuponu
+    kupon: { background: arka, border: `2px dashed ${rgba(vurgu, 0.8)}`, outline: `4px solid ${arka}` },
     hud: { background: rgba('#020617', 0.8), border: `1px solid ${rgba(vurgu, 0.8)}`, clipPath: 'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)', boxShadow: `inset 0 0 16px ${rgba(vurgu, 0.25)}` }
   };
+}
+
+/** Her widget'ta seçilebilen ortak kutu tasarımları; boş: widget'ın kendi görünümü */
+export const KUTU_TASARIMLARI: Array<{ value: string; label: string }> = [
+  ['', "Widget'ın kendi görünümü"], ['sivicam', 'Sıvı cam'], ['softcard', 'Yumuşak kart'], ['neumorph', 'Kabartma'], ['borderline', 'Yalnız çerçeve'],
+  ['broadcast', 'Haber bandı'], ['horizon', 'Ufuk geçişi'], ['stage', 'Sahne ışığı'], ['ember', 'Kor'], ['signal', 'Sinyal şeridi'], ['tag', 'Etiket'],
+  ['ribbon', 'Kurdele'], ['guestpass', 'Davetiye'], ['phosphor', 'Terminal'], ['prism', 'Prizma kenar'], ['cute', 'Sevimli'], ['capsule', 'Kapsül'], ['hud', 'E-spor HUD'],
+  ['pencere', 'Eski pencere'], ['gameboy', 'El konsolu'], ['yapiskan', 'Yapışkan not'], ['parsomen', 'Parşömen'], ['cizgiroman', 'Çizgi roman'],
+  ['gecedalga', 'Gece dalgası'], ['altin', 'Altın kenar'], ['koseli', 'Köşeli çerçeve'], ['kupon', 'Kupon']
+].map(([value, label]) => ({ value, label }));
+
+/** Seçili ortak kutu tasarımı (widget kutusunun stiline en son eklenir). Renk alanlarının adı widget'a göre değişir. */
+export function kutuTasarimi(s: Record<string, any>): import('react').CSSProperties | undefined {
+  if (!s.kabuk) return undefined;
+  return kartTasarimlari({
+    bgColor: s.bgColor ?? s.backgroundColor ?? s.cardColor,
+    bgOpacity: s.bgOpacity ?? s.backgroundOpacity ?? s.cardOpacity,
+    accentColor: s.accentColor ?? s.barColor ?? s.highlightColor ?? s.borderColor,
+    borderColor: s.borderColor
+  })[String(s.kabuk)];
 }
 
 /**

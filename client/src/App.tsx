@@ -211,6 +211,8 @@ export function App() {
     { id: 'ayarlar', label: 'Ayarlar', icon: SettingsIcon, grup: 'Kurulum & Ayarlar', alt: ['settings', 'botadvanced'] },
   ];
   const aktifMerkez = navItems.find((m) => m.alt.includes(activeTab));
+  // AxthrowA Studio tek bir sayfayı gömer (?embed=1): menü ve başlık orada zaten var
+  const gomulu = new URLSearchParams(window.location.search).has('embed');
   if (aktifMerkez) sonAltSayfa.current[aktifMerkez.id] = activeTab;
 
   const renderActivePage = () => {
@@ -261,7 +263,7 @@ export function App() {
     {onayDiyalogu}
     <div className="axt-panel flex min-h-screen bg-[#0b0d12] text-gray-200">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/[0.06] bg-[#0b0d12] flex flex-col justify-between fixed inset-y-0 left-0 z-30">
+      {!gomulu && <aside className="w-64 border-r border-white/[0.06] bg-[#0b0d12] flex flex-col justify-between fixed inset-y-0 left-0 z-30">
         <div>
           <div className="px-5 pt-5 pb-3 flex items-center gap-2">
             <img src="/logo.png" alt="" className="w-6 h-6 rounded-md" />
@@ -298,19 +300,20 @@ export function App() {
         </div>
 
         <div className="px-5 py-3 text-[11px] text-gray-600">{BRAND.author}</div>
-      </aside>
+      </aside>}
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      {/* Yükseklik sabit: sayfayı `main` kaydırır, böylece içerideki yapışkan (sticky) alanlar çalışır */}
+      <div className={`flex-1 flex flex-col h-screen min-w-0 ${gomulu ? '' : 'ml-64'}`}>
         {/* Top Header */}
-        <header className="h-16 border-b border-white/[0.06] bg-[#0b0d12] sticky top-0 z-20 px-8 flex items-center justify-between">
+        {!gomulu && <header className="h-16 border-b border-white/[0.06] bg-[#0b0d12] sticky top-0 z-20 px-8 flex items-center justify-between">
           <h1 className="text-[15px] font-medium text-white">{aktifMerkez?.label || sayfaAdlari[activeTab]}</h1>
           <DurumSeridi git={sekmeyeGec} />
-        </header>
+        </header>}
 
         {/* Page Content */}
-        <main className="flex-1 p-8 overflow-y-auto">
-          {aktifMerkez && aktifMerkez.alt.length > 1 && (
+        <main className={`flex-1 min-h-0 overflow-y-auto ${gomulu ? 'p-4' : 'p-8'}`}>
+          {!gomulu && aktifMerkez && aktifMerkez.alt.length > 1 && (
             <div role="tablist" aria-label={aktifMerkez.label} className="mb-6 flex flex-wrap gap-5 border-b border-white/[0.08]">
               {aktifMerkez.alt.map((alt) => (
                 <button

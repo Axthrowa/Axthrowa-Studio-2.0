@@ -7,6 +7,7 @@
  * gömülüydü; zaman aşımı temizlenmediği için arka arkaya gelen iki shoutout
  * birbirinin sayacını bozuyordu.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -129,7 +130,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
           visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 -translate-y-8'
         } flex items-center gap-5 w-full`}
         style={{
-          ...(temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
+          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
           borderRadius: Number(s.radius) || 24,
           padding: `${Number(s.paddingY) || 24}px ${Number(s.paddingX) || 24}px`,
           maxWidth: Number(s.maxWidth) || 512,

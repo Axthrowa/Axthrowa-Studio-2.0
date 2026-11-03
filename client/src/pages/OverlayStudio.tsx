@@ -44,7 +44,7 @@ import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
 import { GALERI_KATMANI, KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
 import { arkasiniGizlerMi, cakisincaGizlenirMi } from '../lib/katmanCakisma.js';
-import { enBuyukBoyut, hizala, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
+import { enBuyukBoyut, hizala, olcekSinirla, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 import { ayarKanalinaKatil, YERLESIM_KIMLIGI } from '../lib/ayarKanali.js';
@@ -568,7 +568,7 @@ export function OverlayStudio() {
   const [isDragging, setIsDragging] = useState(false);
   const [kilavuz, setKilavuz] = useState<Kilavuzlar>({ dikey: [], yatay: [] });
   const [isResizing, setIsResizing] = useState(false);
-  const dragStartRef = useRef<{ pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
+  const dragStartRef = useRef<{ mod?: 'olcek' | 'en' | 'boy'; origScale?: number; pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
 
   // Otomatik kayıt: değişiklikten 400 ms sonra; sürükleme sırasında bekler
   useEffect(() => {
@@ -602,7 +602,7 @@ export function OverlayStudio() {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
-  const handleResizePointerDown = (e: React.PointerEvent, widgetKey: string) => {
+  const handleResizePointerDown = (e: React.PointerEvent, widgetKey: string, mod: 'olcek' | 'en' | 'boy') => {
     e.stopPropagation();
     setSelectedCanvasWidget(widgetKey);
     const item = (allInOne as any)[widgetKey];
@@ -610,6 +610,8 @@ export function OverlayStudio() {
 
     setIsResizing(true);
     dragStartRef.current = {
+      mod,
+      origScale: typeof item.scale === 'number' && item.scale > 0 ? item.scale : 1,
       pointerX: e.clientX,
       pointerY: e.clientY,
       widgetX: item.x ?? 0,
@@ -659,14 +661,22 @@ export function OverlayStudio() {
       const olcek = typeof curItem?.scale === 'number' && curItem.scale > 0 ? curItem.scale : 1;
       const enBuyuk = enBuyukBoyut({ x: dragStartRef.current.widgetX, y: dragStartRef.current.widgetY, width: 0, height: 0, scale: olcek });
       // Fare hareketi görünen boyutu değiştirir; ölçeksiz boyuta çevir
-      const newW = Math.round(Math.max(100, Math.min(enBuyuk.width, dragStartRef.current.origW + deltaX / olcek)));
-      const newH = Math.round(Math.max(40, Math.min(enBuyuk.height, dragStartRef.current.origH + deltaY / olcek)));
+      const { mod, origW, origH, origScale = 1, widgetX, widgetY } = dragStartRef.current;
+      const newW = Math.round(Math.max(100, Math.min(enBuyuk.width, origW + deltaX / olcek)));
+      const newH = Math.round(Math.max(40, Math.min(enBuyuk.height, origH + deltaY / olcek)));
+      // Köşe içeriği büyütür: widget'ların çoğu kutuya göre büyümez, kutu değişince yalnız kırpılırdı.
+      // Kenarlar kutuyu değiştirir (sohbet gibi alanı dolduranlar için).
+      const yama =
+        mod === 'olcek'
+          ? { scale: olcekSinirla(origScale * Math.max(1 + deltaX / (origW * origScale), 1 + deltaY / (origH * origScale)), { x: widgetX, y: widgetY, width: origW, height: origH }) }
+          : mod === 'en'
+            ? { width: newW }
+            : { height: newH };
       setAllInOne(prev => ({
         ...prev,
         [selectedCanvasWidget]: {
           ...(prev as any)[selectedCanvasWidget],
-          width: newW,
-          height: newH
+          ...yama
         }
       }));
     }
@@ -1279,7 +1289,7 @@ export function OverlayStudio() {
           {/* Interactive Screen Preview & Controls Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left: 16:9 Stream Canvas Preview with Interactive Drag & Drop */}
-            <div className="lg:col-span-8 glass-panel p-5 rounded-2xl border border-white/10 space-y-4">
+            <div className="lg:col-span-8 lg:sticky lg:top-0 lg:self-start glass-panel p-5 rounded-2xl border border-white/10 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -1287,7 +1297,7 @@ export function OverlayStudio() {
                     Yayın ekranı
                   </h3>
                   <p className="text-xs text-gray-400">
-                    Sürükleyerek taşıyın, köşeden boyutlandırın.
+                    Sürükleyerek taşıyın. Köşe widget'ı büyütür, kenarlar kutuyu değiştirir.
                   </p>
                 </div>
                 <span
@@ -1447,21 +1457,18 @@ export function OverlayStudio() {
                               {katman.etiket} — kapalı (Tek URL'de yok)
                             </div>
                           )}
-                          {secili && (
-                            <div
-                              onPointerDown={(e) => handleResizePointerDown(e, katman.anahtar)}
-                              style={{
-                                position: 'absolute',
-                                right: 0,
-                                bottom: 0,
-                                width: 30,
-                                height: 30,
-                                background: '#a78bfa',
-                                cursor: 'se-resize',
-                                borderTopLeftRadius: 6
-                              }}
-                            />
-                          )}
+                          {secili && (() => {
+                            // Tutamaçlar ekranda hep aynı boyda: tuval ve widget ölçeğinden bağımsız
+                            const boy = 14 / (tuvalOlcek * (typeof item?.scale === 'number' && item.scale > 0 ? item.scale : 1));
+                            const seritRengi = 'rgba(167,139,250,.45)';
+                            return (
+                              <>
+                                <div title="Kutuyu genişlet" onPointerDown={(e) => handleResizePointerDown(e, katman.anahtar, 'en')} style={{ position: 'absolute', top: 0, right: 0, bottom: boy, width: boy * 0.6, background: seritRengi, cursor: 'ew-resize', touchAction: 'none' }} />
+                                <div title="Kutuyu uzat" onPointerDown={(e) => handleResizePointerDown(e, katman.anahtar, 'boy')} style={{ position: 'absolute', left: 0, right: boy, bottom: 0, height: boy * 0.6, background: seritRengi, cursor: 'ns-resize', touchAction: 'none' }} />
+                                <div title="Widget'ı büyüt / küçült" onPointerDown={(e) => handleResizePointerDown(e, katman.anahtar, 'olcek')} style={{ position: 'absolute', right: 0, bottom: 0, width: boy, height: boy, background: '#a78bfa', cursor: 'nwse-resize', borderTopLeftRadius: boy / 3, touchAction: 'none' }} />
+                              </>
+                            );
+                          })()}
                         </div>
                       );
                     }}
@@ -1478,7 +1485,7 @@ export function OverlayStudio() {
             </div>
 
             {/* Right: Detailed Component Positioning & Settings Panel */}
-            <div className="lg:col-span-4 glass-panel p-5 rounded-2xl border border-white/10 space-y-4">
+            <div className="lg:col-span-4 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto glass-panel p-5 rounded-2xl border border-white/10 space-y-4">
               <div className="pb-3 border-b border-white/10 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
@@ -1669,8 +1676,8 @@ export function OverlayStudio() {
                         </div>
                         <input
                           type="range"
-                          min="0.5"
-                          max="2.0"
+                          min="0.25"
+                          max="3"
                           step="0.05"
                           value={cur.scale ?? 1}
                           onChange={e => updateCur({ scale: parseFloat(e.target.value) || 1 })}

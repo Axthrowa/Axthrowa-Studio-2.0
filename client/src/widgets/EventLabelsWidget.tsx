@@ -9,6 +9,7 @@
  * Artık her etiket ayrı bir parça: başlığı, rengi ve görünürlüğü ayrı ayarlanır;
  * son olaylar sunucudan (/api/event-labels) okunur, canlı olaylar üstüne yazar.
  */
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { LABELS_DEFAULTS } from '../lib/widget-defaults.js';
@@ -115,6 +116,7 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
       overflow: 'hidden',
       background: bg,
       borderRadius: s.borderRadius,
+      ...kutuTasarimi(s),
       minHeight: s.height,
       padding: sutun ? `10px ${s.paddingX}px` : `0 ${s.paddingX}px`,
       display: 'flex',

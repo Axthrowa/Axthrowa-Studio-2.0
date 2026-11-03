@@ -138,7 +138,7 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
     );
   }
   return (
-    <div className="relative aspect-video max-h-[52vh] w-full overflow-hidden rounded-xl bg-black">
+    <div className="relative aspect-video max-h-[52vh] w-full shrink-0 overflow-hidden rounded-xl bg-black">
       <canvas ref={tuval} role="img" aria-label={`${sahne} sahnesinin önizlemesi`} className="h-full w-full object-contain" />
       {!kareVar ? (
         <div className="absolute inset-0 flex items-center justify-center text-sm text-panel-muted">

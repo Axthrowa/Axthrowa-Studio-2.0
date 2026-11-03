@@ -77,6 +77,8 @@ async function connect() {
     }
   };
   ws.onclose = () => {
+    // Sekme değişince kapatılan eski soketin kapanışı geç gelir: yeni bağlantıyı düşürmesin
+    if (feed.ws && feed.ws !== ws) return;
     feed.ws = null;
     publish({ connected: false });
     if (feed.listeners.size) feed.retry = window.setTimeout(() => void connect(), 4000);

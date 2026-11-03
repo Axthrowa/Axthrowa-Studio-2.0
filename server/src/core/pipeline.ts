@@ -22,6 +22,7 @@ import { SeslenmeSiniri, seslenmeAyikla } from '../modules/ai/seslenme.js';
 import { geminiCoHost } from '../modules/ai/gemini.js';
 import { toplulukMesaji } from '../modules/community/topluluk.js';
 import { otomasyon } from '../modules/otomasyon/otomasyon.js';
+import { yayinOzeti } from '../modules/ai/yayin-ozeti.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
@@ -33,6 +34,7 @@ export class MessagePipeline {
 
   init() {
     otomasyon.baslat();
+    yayinOzeti.baslat();
     console.log('[MessagePipeline] Chat message processing pipeline initialized and listening to events.');
   }
 
@@ -127,6 +129,7 @@ export class MessagePipeline {
 
     // Otomasyon kuralları: yankı, kara liste ve kalkan süzgeçlerinden geçen mesaj
     otomasyon.sohbet(message);
+    yayinOzeti.sohbet(message);
 
     // Kelime bulutu, !emotecount, !chatstats (botun kendi mesajı sayılmaz)
     if (!message.user.isSelf) sohbetIstatistik.ekle(message.user.username, message.user.displayName, rawText);

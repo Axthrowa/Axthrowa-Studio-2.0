@@ -11,6 +11,19 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.11.0',
+    ad: 'Sahne Şovu',
+    tarih: '2026-11-03',
+    notlar: [
+      'Otomasyon: kod yazmadan tetikleyici, koşul ve eylem kuralları; Dene düğmesi hiçbir eylemi çalıştırmadan adımları gösterir',
+      'Sohbet patlamasında otomatik klip ya da OBS tekrar arabelleği kaydı kurulabilir',
+      '!so kartı Kick kanallarında profil fotoğrafını ve oyunu gösterir',
+      'Yayın Sonu Özeti: yayın bitince sayısal rapor; isteğe bağlı 3 maddelik yapay zekâ özeti',
+      'Şarkı isteği kuyruğu: sürükle-bırak sıra, öne alma, engel listesi, süre ve puan sınırı',
+      'Genel Bakış yenilendi, Ctrl+K komut paleti Bot sekmesinden de açılır'
+    ]
+  },
+  {
     surum: '1.10.1',
     ad: 'Tam Hesap',
     tarih: '2026-11-03',

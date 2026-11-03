@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sparkles, Bot, Save, Check, Send, User, MessageSquarePlus, Zap } from 'lucide-react';
 import { KaydedilmemisUyari, useToast } from '../ui/index.js';
 import { useKirliTakip } from '../hooks/useKirliTakip.js';
+import { YayinOzetleri } from '../components/YayinOzetleri.js';
 
 interface ChatRescueSettings {
   isEnabled: boolean;
@@ -559,6 +560,8 @@ export function AISettings() {
           </form>
         </div>
       </div>
+
+      <YayinOzetleri />
     </div>
   );
 }

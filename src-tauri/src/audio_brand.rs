@@ -202,7 +202,7 @@ fn bizimle_ilgili(pid: u32, bizim_pid: u32, tablo: &HashMap<u32, Surec>) -> bool
       return false;
     };
     let a = s.ad.to_ascii_lowercase();
-    if a.starts_with("yayinyonetimaraci") || a.starts_with("yayin-yonetim-araci") {
+    if ["axthrowastudio", "axthrowa studio", "yayinyonetimaraci", "yayin-yonetim-araci"].iter().any(|ad| a.starts_with(ad)) {
       return true;
     }
     if s.ust == 0 || s.ust == mevcut {

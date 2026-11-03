@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SpotifyBaglanti } from '../components/SpotifyBaglanti.js';
 import { SongItem } from '../types.js';
 import {
@@ -6,6 +6,9 @@ import {
   SkipForward,
   Trash2,
   ExternalLink,
+  Ban,
+  ChevronsUp,
+  GripVertical,
   Laptop,
   Sparkles
 } from 'lucide-react';
@@ -22,6 +25,13 @@ export function SongRequest() {
   const [rastgele, setRastgele] = useState(true);
   // Kişi başına sırada bekleyen istek sınırı (0 = sınırsız)
   const [kisiBasina, setKisiBasina] = useState(2);
+  // Güvenlik filtreleri: 0 / boş = kapalı
+  const [engelli, setEngelli] = useState('');
+  const [maxDk, setMaxDk] = useState(0);
+  const [minPuan, setMinPuan] = useState(0);
+  const [siralanabilir, setSiralanabilir] = useState(true);
+  // Sürüklenen satır: sürerken 4 sn'lik yenileme satırları yerinden oynatmasın
+  const surukle = useRef<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -40,8 +50,10 @@ export function SongRequest() {
     fetch('/api/songrequest/queue')
       .then(r => r.json())
       .then(d => {
+        if (surukle.current) return;
         setCurrent(d.current);
         setQueue(d.queue || []);
+        setSiralanabilir(d.siralanabilir !== false);
       })
       .catch(() => {});
   };
@@ -55,8 +67,51 @@ export function SongRequest() {
         }
         setRastgele(d.sr_bos_rastgele !== 'false');
         if (d.sr_kisi_basina !== undefined) setKisiBasina(Number(d.sr_kisi_basina) || 0);
+        setEngelli(d.sr_engelli || '');
+        setMaxDk(Number(d.sr_max_dk) || 0);
+        setMinPuan(Number(d.sr_min_puan) || 0);
       })
       .catch(() => {});
+  };
+
+  const ayarYaz = (ayar: Record<string, string>) =>
+    void fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ayar)
+    }).catch(() => {});
+
+  const hataGoster = (m: string) => {
+    setStatusMsg(m);
+    setTimeout(() => setStatusMsg(null), 4000);
+  };
+
+  /** Satırı başka bir satırın yerine taşır (çalan şarkı yerinde kalır) */
+  const yerDegistir = (liste: SongItem[], id: string, hedefId: string) => {
+    const kaynak = liste.findIndex((s) => s.id === id);
+    const hedef = liste.findIndex((s) => s.id === hedefId);
+    if (kaynak < 0 || hedef < 0 || kaynak === hedef) return liste;
+    const yeni = [...liste];
+    yeni.splice(hedef, 0, yeni.splice(kaynak, 1)[0]);
+    return yeni;
+  };
+
+  const siraKaydet = async (yeni: SongItem[]) => {
+    setQueue(yeni);
+    const r = await fetch('/api/songrequest/sira', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: yeni.filter((s) => s.id !== current?.id).map((s) => s.id) })
+    }).catch(() => null);
+    if (!r?.ok) hataGoster('Sıra kaydedilemedi.');
+    loadQueue();
+  };
+
+  const handleEngelle = async (item: SongItem) => {
+    const r = await fetch(`/api/songrequest/${item.id}/engelle`, { method: 'POST' }).catch(() => null);
+    hataGoster(r?.ok ? `"${item.title}" kuyruktan çıkarıldı ve engel listesine eklendi.` : 'Engellenemedi.');
+    loadQueue();
+    loadSettings();
   };
 
   const handleDesktopSettingChange = async (target: string) => {
@@ -189,6 +244,54 @@ export function SongRequest() {
           aria-label="Kişi başına istek sınırı"
         />
       </label>
+
+      <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
+        <div className="text-xs text-gray-300">
+          <b className="text-white">İstek güvenlik filtreleri</b> — süre ve puan kuralından yayıncı ile modlar muaf; 0 kuralı kapatır.
+          Spotify Yayın Yönetim Aracı'nda bağlıyken süre önceden bilinmediği için süre sınırı uygulanamaz.
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            En uzun süre (dk)
+            <input
+              type="number"
+              min={0}
+              max={60}
+              value={maxDk}
+              onChange={(e) => {
+                const n = Math.max(0, Math.min(60, Math.floor(Number(e.target.value) || 0)));
+                setMaxDk(n);
+                ayarYaz({ sr_max_dk: String(n) });
+              }}
+              className="w-20 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            En az puan
+            <input
+              type="number"
+              min={0}
+              value={minPuan}
+              onChange={(e) => {
+                const n = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                setMinPuan(n);
+                ayarYaz({ sr_min_puan: String(n) });
+              }}
+              className="w-24 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+            />
+          </label>
+        </div>
+        <label className="block text-xs text-gray-300">
+          Engel listesi — her satıra bir şarkı, sanatçı ya da sözcük. Başlığında geçen istek reddedilir.
+          <textarea
+            rows={4}
+            value={engelli}
+            onChange={(e) => setEngelli(e.target.value)}
+            onBlur={() => ayarYaz({ sr_engelli: engelli })}
+            className="mt-1 w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+          />
+        </label>
+      </div>
 
       {desktopTarget === 'none' && (
         <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">
@@ -336,8 +439,28 @@ export function SongRequest() {
         ) : (
           <div className="divide-y divide-white/5">
             {queue.map((item, idx) => (
-              <div key={item.id} className="py-3 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-xl transition-all">
+              <div
+                key={item.id}
+                draggable={siralanabilir && item.id !== current?.id}
+                onDragStart={(e) => {
+                  surukle.current = item.id;
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                onDragOver={(e) => {
+                  const id = surukle.current;
+                  if (!id || item.id === current?.id) return;
+                  e.preventDefault();
+                  setQueue((q) => yerDegistir(q, id, item.id));
+                }}
+                onDrop={(e) => e.preventDefault()}
+                onDragEnd={() => {
+                  surukle.current = null;
+                  void siraKaydet(queue);
+                }}
+                className="py-3 flex items-center justify-between hover:bg-white/[0.02] px-2 rounded-xl transition-all"
+              >
                 <div className="flex items-center space-x-4 min-w-0">
+                  {siralanabilir && item.id !== current?.id ? <GripVertical aria-hidden className="w-4 h-4 flex-shrink-0 cursor-grab text-gray-500" /> : null}
                   <span className="text-xs font-black text-gray-500 w-5">#{idx + 1}</span>
                   {item.thumbnail && (
                     <img src={item.thumbnail} alt="" className="w-12 h-8 rounded-lg object-cover flex-shrink-0" />
@@ -352,6 +475,24 @@ export function SongRequest() {
                 </div>
 
                 <div className="flex items-center space-x-2">
+                  {siralanabilir && item.id !== current?.id ? (
+                    <button
+                      onClick={() => void siraKaydet([...queue.filter((s) => s.id === current?.id), item, ...queue.filter((s) => s.id !== item.id && s.id !== current?.id)])}
+                      className="p-1.5 hover:bg-purple-500/20 text-gray-400 hover:text-purple-300 rounded-lg transition-all"
+                      title="Öne al (VIP)"
+                      aria-label={`${item.title}: öne al`}
+                    >
+                      <ChevronsUp className="w-4 h-4" />
+                    </button>
+                  ) : null}
+                  <button
+                    onClick={() => handleEngelle(item)}
+                    className="p-1.5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-lg transition-all"
+                    title="Engelle: kuyruktan çıkar, bir daha istenemesin"
+                    aria-label={`${item.title}: engelle`}
+                  >
+                    <Ban className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => handleOpenDesktop('spotify', item.title, item.url)}
                     className="p-1.5 hover:bg-[#1db954]/20 text-gray-400 hover:text-[#1db954] rounded-lg transition-all"

@@ -22,6 +22,7 @@ export function sirasiGeldi(c: CalanSarki | null, simdi: number): boolean {
 import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';
 import { parcaKimligi } from '../muzik/spotify-saf.js';
+import { engelliMi, siraDegerleri, youtubeSuresi } from './istek-filtresi.js';
 
 export interface SongItem {
   id: string;
@@ -140,6 +141,68 @@ export class SongRequestEngine {
       : `🎵 @${kim}, "${ad}" sıraya alındı (${sira}. sırada) — çalan şarkı bitince kendiliğinden çalacak.`;
   }
 
+  private engelli(metin: string): boolean {
+    return engelliMi(metin, settingsCache.get('sr_engelli', ''));
+  }
+
+  /** Süre sınırına takılıyorsa izleyiciye cevap; süre bilinmiyorsa (0) istek geçer. Yayıncı ve modlar muaf. */
+  private sureEngeli(message: ChatMessagePayload, sureSn: number): string | null {
+    const dk = Math.max(0, Number(settingsCache.get('sr_max_dk', '0')) || 0);
+    if (!dk || !sureSn || sureSn <= dk * 60 || message.user.isBroadcaster || message.user.isMod) return null;
+    return `@${message.user.displayName}, bu şarkı çok uzun (${Math.ceil(sureSn / 60)} dk); en fazla ${dk} dk olabilir.`;
+  }
+
+  /** Süre sınırı açıksa YouTube süresini öğrenir: kapalıyken fazladan istek atılmaz (önbellekli) */
+  private async youtubeSure(videoId: string): Promise<number> {
+    if (!(Number(settingsCache.get('sr_max_dk', '0')) > 0)) return 0;
+    const bilinen = this.sureOnbellek.get(videoId);
+    if (bilinen !== undefined) return bilinen;
+    try {
+      const res = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, { timeout: 2500, headers: { 'Accept-Language': 'tr-TR,tr;q=0.9' } });
+      const sn = youtubeSuresi(res.data);
+      if (sn) this.sureOnbellek.set(videoId, sn);
+      return sn;
+    } catch {
+      return 0;
+    }
+  }
+  private sureOnbellek = new Map<string, number>();
+
+  private engelYaniti(kim: string, ad: string): string {
+    return `⛔ @${kim}, "${ad.slice(0, 80)}" engel listesinde, istenemez.`;
+  }
+
+  /** Bu kurulumda sıra gerçekten değişebilir mi: bot Spotify'a doğrudan bağlıyken parçalar Spotify'ın kendi sırasındadır */
+  siralanabilir(): boolean {
+    return !(this.spotifyOtomatikMi() && muzikHost.spotifyBagliMi());
+  }
+
+  /** Bekleyen isteklerin sırasını değiştirir; çalan şarkıya dokunulmaz (OBS klibi yarıda kesilmesin) */
+  siraDegistir(yeniSira: string[]): boolean {
+    if (!this.siralanabilir()) return false;
+    const calan = this.getCurrentSong()?.id ?? '';
+    const bekleyen = db.prepare('SELECT id, created_at FROM song_queue WHERE is_played = 0 AND id <> ?').all(calan) as Array<{ id: string; created_at: number }>;
+    const yaz = db.prepare('UPDATE song_queue SET created_at = ? WHERE id = ?');
+    for (const k of siraDegerleri(bekleyen, yeniSira)) yaz.run(k.created_at, k.id);
+    return true;
+  }
+
+  /** İsteği kuyruktan siler */
+  kaldir(id: string): void {
+    db.prepare('DELETE FROM song_queue WHERE id = ?').run(id);
+    if (this.currentSong?.id === id) this.currentSong = null;
+  }
+
+  /** İsteği siler, adını engel listesine ekler: aynı şarkı bir daha istenemez */
+  engelle(id: string): boolean {
+    const satir = db.prepare('SELECT title FROM song_queue WHERE id = ?').get(id) as { title: string } | undefined;
+    if (!satir) return false;
+    const liste = settingsCache.get('sr_engelli', '');
+    if (!this.engelli(satir.title)) settingsCache.set('sr_engelli', [liste.trim(), satir.title.trim()].filter(Boolean).join('\n'));
+    this.kaldir(id);
+    return true;
+  }
+
   /** YouTube'da ilk video (önbellekli) */
   private async youtubeAra(sorgu: string): Promise<{ videoId: string; title: string; thumbnail?: string } | null> {
     const anahtar = sorgu.toLowerCase();
@@ -190,6 +253,13 @@ export class SongRequestEngine {
       const yt = icerik.match(/^yt=([a-zA-Z0-9_-]{11}) (.*)$/s);
       const p = yt ? await muzikHost.hariciIstek(yt[2], false, yt[1]) : await muzikHost.hariciIstek(icerik, false);
       const baslik = yt ? yt[2] : p.artist ? `${p.title} — ${p.artist}` : p.title;
+      // YYA adla arayıp hemen çalıyor, gerçek ad ancak şimdi belli: engelliyse hemen geçilir
+      if (!yt && this.engelli(baslik)) {
+        await muzikHost.komut('next', 'spotify').catch(() => {});
+        db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(bekleyen.id);
+        eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `⛔ @${bekleyen.requested_by}, "${baslik.slice(0, 100)}" engel listesinde, atlandı.` });
+        return;
+      }
       const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
       // Bundan önceki her şey bitti sayılır (çalınmış istekler, takılı eski kayıtlar)
       db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND id <> ? AND url NOT LIKE ?').run(bekleyen.id, `${BEKLEYEN}%`);
@@ -323,6 +393,9 @@ export class SongRequestEngine {
       const b = id ? { videoId: id, title: sorgu } : await this.youtubeAra(sorgu);
       if (!b) return `@${kim}, YouTube'da "${sorgu.slice(0, 60)}" bulunamadı.`;
       const baslik = b.title.slice(0, 200);
+      if (this.engelli(baslik)) return this.engelYaniti(kim, baslik);
+      const uzun = this.sureEngeli(message, await this.youtubeSure(b.videoId));
+      if (uzun) return uzun;
       db.prepare(`
         INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
@@ -336,6 +409,7 @@ export class SongRequestEngine {
           const o = await axios.get(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${id}`)}`, { timeout: 4000 });
           sorgu = String(o.data?.title || '') || sorgu;
         }
+        if (this.engelli(sorgu)) return this.engelYaniti(kim, sorgu);
         if (!hemen) {
           db.prepare(`
             INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
@@ -361,8 +435,11 @@ export class SongRequestEngine {
       const id = parcaKimligi(rawQuery);
       const p = id ? await muzikHost.parcaBilgisi(id) : await muzikHost.parcaAra(sorgu);
       if (!p) return `@${kim}, Spotify'da "${sorgu.slice(0, 60)}" bulunamadı.`;
-      await muzikHost.parcayiCal(p.uri, hemen);
       const baslik = p.artist ? `${p.title} — ${p.artist}` : p.title;
+      if (this.engelli(baslik)) return this.engelYaniti(kim, baslik);
+      const uzun = this.sureEngeli(message, Math.round(p.sureMs / 1000));
+      if (uzun) return uzun;
+      await muzikHost.parcayiCal(p.uri, hemen);
       db.prepare(`
         INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
@@ -390,6 +467,14 @@ export class SongRequestEngine {
     if (sinir > 0 && !message.user.isBroadcaster && !message.user.isMod) {
       const bekleyenim = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND LOWER(requested_by) = LOWER(?)').get(message.user.displayName) as { n: number }).n;
       if (bekleyenim >= sinir) return `@${message.user.displayName}, sırada en fazla ${sinir} isteğin olabilir; biri çalınca yenisini iste.`;
+    }
+    if (this.engelli(rawQuery)) return this.engelYaniti(message.user.displayName, rawQuery);
+    // En az puan şartı: harcanmaz, yalnız bakılır
+    const enAzPuan = Math.max(0, Number(settingsCache.get('sr_min_puan', '0')) || 0);
+    if (enAzPuan > 0 && !message.user.isBroadcaster && !message.user.isMod) {
+      const { economy } = await import('../economy/economy.js');
+      const puan = Number(economy.getUser(message.platform, message.user.username, message.user.displayName)?.points) || 0;
+      if (puan < enAzPuan) return `@${message.user.displayName}, şarkı istemek için en az ${enAzPuan} puan gerekiyor (sende ${puan}).`;
     }
 
     await muzikHost.hariciTazele();
@@ -478,6 +563,12 @@ export class SongRequestEngine {
       } catch {
         /* başlık isteğe bağlı: oEmbed yanıt vermezse sorgu metni başlık kalır */
       }
+    }
+
+    if (this.engelli(`${title} ${videoUrl}`)) return this.engelYaniti(message.user.displayName, title);
+    if (videoId) {
+      const uzun = this.sureEngeli(message, await this.youtubeSure(videoId));
+      if (uzun) return uzun;
     }
 
     const songId = uuidv4();

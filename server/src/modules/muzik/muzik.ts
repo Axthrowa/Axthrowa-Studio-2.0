@@ -394,7 +394,7 @@ export class MuzikHost {
     this.yoklayici = null;
   }
 
-  async parcaAra(sorgu: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string } | null> {
+  async parcaAra(sorgu: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string; sureMs: number } | null> {
     const q = String(sorgu || '').trim().slice(0, 200);
     if (!q) return null;
     const r = await this.istek('get', `/search?${new URLSearchParams({ q, type: 'track', limit: '1' }).toString()}`);
@@ -406,11 +406,12 @@ export class MuzikHost {
       id: String(t.id),
       title: String(t.name || q),
       artist: (t.artists || []).map((a: any) => a?.name).filter(Boolean).join(', '),
-      albumArt: String(t.album?.images?.[0]?.url || '')
+      albumArt: String(t.album?.images?.[0]?.url || ''),
+      sureMs: Number(t.duration_ms) || 0
     };
   }
 
-  async parcaBilgisi(id: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string } | null> {
+  async parcaBilgisi(id: string): Promise<{ uri: string; id: string; title: string; artist: string; albumArt: string; sureMs: number } | null> {
     if (!/^[A-Za-z0-9]{22}$/.test(id)) return null;
     const r = await this.istek('get', `/tracks/${id}`);
     if (r.status >= 400) throw new Error(oynaticiHatasi(r.status));
@@ -420,7 +421,8 @@ export class MuzikHost {
       id,
       title: String(t?.name || ''),
       artist: (t?.artists || []).map((a: any) => a?.name).filter(Boolean).join(', '),
-      albumArt: String(t?.album?.images?.[0]?.url || '')
+      albumArt: String(t?.album?.images?.[0]?.url || ''),
+      sureMs: Number(t?.duration_ms) || 0
     };
   }
 

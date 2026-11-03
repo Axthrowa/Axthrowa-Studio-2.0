@@ -13,7 +13,10 @@ vi.mock('../../db/index.js', async () => {
   return { db };
 });
 
+vi.mock('../economy/economy.js', () => ({ economy: { getUser: () => ({ points: 50 }) } }));
+
 import { db } from '../../db/index.js';
+import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';
 import { songRequest, sirasiGeldi } from './songrequest.js';
 
@@ -51,6 +54,66 @@ afterAll(() => {
 });
 
 const mesaj = { id: 'm', platform: 'kick', channel: 'k', user: { id: 'u', username: 'ali', displayName: 'ali' }, message: '!sr teoman' } as any;
+
+describe('istek güvenlik filtreleri', () => {
+  const ayar = (a: Record<string, string>) => Object.entries(a).forEach(([k, v]) => settingsCache.set(k, v));
+  const ekle = (id: string, zaman: number, url = 'spotify-istek:x') =>
+    db.prepare('INSERT INTO song_queue (id, title, url, duration, requested_by, platform, thumbnail, created_at, is_played) VALUES (?, ?, ?, 180, ?, ?, ?, ?, 0)').run(id, `Şarkı ${id}`, url, 'ali', 'kick', '', zaman);
+  const sira = () => (db.prepare('SELECT id FROM song_queue WHERE is_played = 0 ORDER BY created_at ASC').all() as any[]).map((r) => r.id);
+
+  it('engel listesindeki istek reddedilir, kuyruğa girmez', async () => {
+    db.exec('DELETE FROM song_queue');
+    ayar({ sr_engelli: 'paramparca' });
+    expect(await songRequest.handleSongRequest(mesaj, ['Teoman', 'Paramparça'])).toContain('engel listesinde');
+    expect(sira()).toEqual([]);
+    ayar({ sr_engelli: '' });
+  });
+
+  it('puanı yetmeyen izleyici isteyemez, mod muaf', async () => {
+    db.exec('DELETE FROM song_queue');
+    ayar({ sr_min_puan: '100' });
+    expect(await songRequest.handleSongRequest(mesaj, ['a'])).toContain('en az 100 puan');
+    const mod = { ...mesaj, user: { ...mesaj.user, isMod: true } };
+    await (muzikHost as any).hariciYokla();
+    expect(await songRequest.handleSongRequest(mod, ['a'])).not.toContain('puan');
+    ayar({ sr_min_puan: '0' });
+  });
+
+  it('süre sınırını aşan istek reddedilir, süre bilinmiyorsa geçer', () => {
+    ayar({ sr_max_dk: '5' });
+    expect((songRequest as any).sureEngeli(mesaj, 301)).toContain('en fazla 5 dk');
+    expect((songRequest as any).sureEngeli(mesaj, 300)).toBeNull();
+    expect((songRequest as any).sureEngeli(mesaj, 0)).toBeNull();
+    ayar({ sr_max_dk: '0' });
+  });
+
+  it('sıra değişir, çalan şarkı yerinde kalır', () => {
+    db.exec('DELETE FROM song_queue');
+    (songRequest as any).currentSong = null;
+    ekle('calan', 1, 'https://www.youtube.com/watch?v=aaaaaaaaaaa');
+    ekle('b', 2);
+    ekle('c', 3);
+    expect(songRequest.siraDegistir(['c', 'b', 'calan'])).toBe(true);
+    expect(sira()).toEqual(['calan', 'c', 'b']);
+  });
+
+  it('engellenen istek kuyruktan çıkar, adı listeye eklenir', async () => {
+    expect(songRequest.engelle('c')).toBe(true);
+    expect(sira()).toEqual(['calan', 'b']);
+    expect(settingsCache.get('sr_engelli')).toBe('Şarkı c');
+    expect(songRequest.engelle('yok')).toBe(false);
+    ayar({ sr_engelli: '' });
+  });
+
+  it('çalan şarkı silinince eski bilgi kalmaz', () => {
+    expect(songRequest.getCurrentSong()?.id).toBe('calan');
+    songRequest.kaldir('calan');
+    expect(songRequest.getCurrentSong()?.id).not.toBe('calan');
+    db.exec('DELETE FROM song_queue');
+    (songRequest as any).hariciSiraBekle = 0;
+    istekler.length = 0;
+  });
+});
 
 describe('YYA Spotify sırası (bot tarafında)', () => {
   it('çalan şarkı kesilmez; bitmek üzereyken sıradaki istek başlar', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GeciciHata, _onbellegiTemizle, aramaAdaylari, baslikTemizle, enIyiEslesme, etkinSatir, lrcAyikla, sarkiBitti, sade, satirOrani, sozleriGetir, sureyeYay } from './lyrics'
+import { satirSuresi, GeciciHata, _onbellegiTemizle, aramaAdaylari, baslikTemizle, enIyiEslesme, etkinSatir, lrcAyikla, sarkiBitti, sade, satirOrani, sozleriGetir, sureyeYay } from './lyrics'
 
 describe('şarkı sözleri', () => {
   it('LRC zamanlarını sıralı satırlara çevirir', () => {
@@ -63,5 +63,14 @@ describe('şarkı sözleri', () => {
     const sonra = await sozleriGetir('Iki', 'Ben', 0, { ...bos, ovhSor: async () => ({ duz: 'y\nz', kaynak: 'Lyrics.ovh' }) })
     expect(sonra.tahmini).toBe(true)
     expect(sonra.lines.length).toBe(2)
+  })
+})
+
+describe('satirSuresi', () => {
+  it('müzik arasında metin uzunluğuyla sınırlanır, sık satırda sonraki satıra kadardır', () => {
+    const s = [{ time: 0, text: 'kisa' }, { time: 30, text: 'x'.repeat(50) }, { time: 32, text: 'son' }]
+    expect(satirSuresi(s, 0)).toBe(1.5)
+    expect(satirSuresi(s, 1)).toBe(2)
+    expect(satirOrani(s, 0, 1.5)).toBe(1)
   })
 })

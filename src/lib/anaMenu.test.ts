@@ -31,4 +31,11 @@ describe("ana menü", () => {
     expect(sayfaAcikMi(overlay, "bot", "commands")).toBe(false);
     expect(sayfaAcikMi({ nav: "chat" }, "chat")).toBe(true);
   });
+
+  it("Etkileşimde üç sayfa var, yalnız açık olan seçili", () => {
+    const grup = ANA_MENU.find((g) => g.id === "etkilesim")!;
+    expect(grup.sayfalar.map((s) => s.botSayfa)).toEqual(["polls", "giveaways", "interaction"]);
+    expect(sayfaAcikMi(grup.sayfalar[1], "bot", "giveaways")).toBe(true);
+    expect(sayfaAcikMi(grup.sayfalar[0], "bot", "giveaways")).toBe(false);
+  });
 });

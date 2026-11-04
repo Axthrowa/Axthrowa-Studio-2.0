@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 /** Duraklamada gizleme için en kısa bekleme (ms). */
-export const MIN_PAUSE_HIDE_MS = 1500
+export const MIN_PAUSE_HIDE_MS = 300
 
 /**
  * "Duraklayınca gizle" gecikmesi. Ayarlı süre 0 iken (varsayılan) bile kısa bir

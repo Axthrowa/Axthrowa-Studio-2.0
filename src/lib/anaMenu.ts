@@ -25,7 +25,15 @@ export const ANA_MENU: MenuGrubu[] = [
       { nav: "sounds" },
     ],
   },
-  { id: "etkilesim", adAnahtari: "nav.grup.etkilesim", sayfalar: [{ nav: "bot", botSayfa: "polls" }] },
+  {
+    id: "etkilesim",
+    adAnahtari: "nav.grup.etkilesim",
+    sayfalar: [
+      { nav: "bot", botSayfa: "polls", adAnahtari: "nav.anketler" },
+      { nav: "bot", botSayfa: "giveaways", adAnahtari: "nav.cekilisler" },
+      { nav: "bot", botSayfa: "interaction", adAnahtari: "nav.tahminKuyruk" },
+    ],
+  },
   { id: "bot", adAnahtari: "nav.bot", sayfalar: [{ nav: "bot", botSayfa: "commands" }] },
   { id: "ayarlar", adAnahtari: "nav.grup.ayarlar", sayfalar: [{ nav: "settings" }, { nav: "hotkeys" }] },
 ];
@@ -61,5 +69,7 @@ export function botSekmesiBul(botSayfa?: string): string | null {
 export function sayfaAcikMi(s: MenuSayfasi, nav: string, botSayfa?: string): boolean {
   if (s.nav !== nav) return false;
   if (nav !== "bot") return true;
+  // Etkileşim satırlarının her biri ayrı sayfa
+  if (s.botSayfa && ETKILESIM_SAYFALARI.includes(s.botSayfa)) return s.botSayfa === botSayfa;
   return menuGrubuBul(nav, s.botSayfa) === menuGrubuBul(nav, botSayfa);
 }

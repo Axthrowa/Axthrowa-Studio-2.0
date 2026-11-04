@@ -3,7 +3,7 @@ export const FONT_OPTIONS: { id: string; label: string; stack: string }[] = [
   { id: "system", label: "Sistem", stack: '"Segoe UI", system-ui, sans-serif' },
   { id: "pixel8", label: "8-Bit", stack: '"Press Start 2P", monospace' },
   { id: "terminal", label: "Terminal", stack: '"VT323", monospace' },
-  { id: "futuristic", label: "Fütüristik", stack: '"Orbitron", sans-serif' },
+  { id: "futuristic", label: "Fütüristik", stack: '"Oxanium", sans-serif' },
   { id: "bold", label: "Kalın Başlık", stack: '"Bebas Neue", sans-serif' },
   { id: "display", label: "Display", stack: '"Anton", sans-serif' },
   { id: "serif", label: "Serif", stack: '"Playfair Display", Georgia, serif' },

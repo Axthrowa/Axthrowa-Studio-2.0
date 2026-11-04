@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tek kalınlıklı yazı tiplerini tarayıcı kalınlaştırınca harfler birbirine giriyor */
+html {
+  font-synthesis-weight: none;
+}
+
 /*
   Night Signal Deep — varsayılan (data-skin)
 */

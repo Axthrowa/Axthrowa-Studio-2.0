@@ -18,10 +18,10 @@ type Props = {
  * Kartın çıkış animasyonundan (≈320 ms + yay) uzun olmalı ki animasyon
  * kesilmeden bitsin.
  */
-const HIDE_DELAY_MS = 700;
+const HIDE_DELAY_MS = 400;
 
 /** İlk çerçeve ölçüsü — gerçek boyut sayfadan gelene kadar */
-const INITIAL = { width: 420, height: 150 };
+const INITIAL = { width: 420, height: 150, kart: 0 };
 
 /** Çerçevenin servis edildiği köken (panelinkinden farklı olabilir) */
 const HOST_ORIGIN = (() => {
@@ -64,6 +64,8 @@ export default function ResonanceNowPlaying({
         type?: string;
         width?: number;
         height?: number;
+        /** Yalnız kartın boyu: ekrandaki konum buna göre, sözler dahil değil */
+        kart?: number;
         hasTrack?: boolean;
         isPlaying?: boolean;
         /** Resonance kartının kendi görünürlük kuralı (hideOnPause vb.) */
@@ -76,10 +78,11 @@ export default function ResonanceNowPlaying({
       const w = Number(d.width);
       const h = Number(d.height);
       if (Number.isFinite(w) && Number.isFinite(h) && w >= 40 && h >= 20) {
+        const kart = Number(d.kart) >= 20 ? Number(d.kart) : 0;
         setSize((prev) =>
-          Math.abs(prev.width - w) < 2 && Math.abs(prev.height - h) < 2
+          Math.abs(prev.width - w) < 2 && Math.abs(prev.height - h) < 2 && (!kart || Math.abs(prev.kart - kart) < 2)
             ? prev
-            : { width: Math.min(1600, w), height: Math.min(900, h) }
+            : { width: Math.min(1600, w), height: Math.min(900, h), kart: kart || prev.kart }
         );
       }
 
@@ -142,7 +145,9 @@ export default function ResonanceNowPlaying({
       className="np-frame"
       style={{
         width: size.width,
-        height: size.height,
+        // Konum merkezden hesaplanır: sözler boyu değiştirince kart yukarı aşağı oynamasın diye yalnız kartın boyu sayılır
+        height: size.kart || size.height,
+        position: "relative",
         // Sürüklemeyi iframe yutmasın; katman zaten etkileşimsiz.
         pointerEvents: "none",
         outline: placeholder ? "1px dashed rgba(255,255,255,.25)" : undefined,
@@ -162,8 +167,11 @@ export default function ResonanceNowPlaying({
           title="Şimdi Çalıyor"
           src={`${API_BASE}/resonance/overlay?p=${ACTIVE_OVERLAY_ID}&embed=1`}
           style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
             width: "100%",
-            height: "100%",
+            height: size.height,
             border: 0,
             background: "transparent",
             colorScheme: "normal",

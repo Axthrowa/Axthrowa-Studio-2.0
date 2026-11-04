@@ -98,7 +98,8 @@ pub fn parse_retry_after(raw: Option<&str>) -> u64 {
 /// Yoklama aralığı: çalarken 2 sn (ilerleme çubuğu akıcı kalsın), durgunken 5 sn.
 /// Saniyede bir istek (dakikada 60) Spotify'ın 30 sn'lik penceresine takılıyordu.
 pub fn spotify_poll_delay(playing: bool) -> Duration {
-  Duration::from_secs(if playing { 5 } else { 12 })
+  // Durdurma ve başlatma en geç bu kadar sonra görünür; 429 gelirse poll döngüsü Retry-After kadar bekler
+  Duration::from_millis(if playing { 1000 } else { 2000 })
 }
 
 fn now_ms() -> i64 {
@@ -712,6 +713,7 @@ impl MusicState {
 
   pub async fn poll_spotify(&self) -> Result<Option<NowPlaying>> {
     let token = self.spotify_access_token().await?;
+    let istek_ani = std::time::Instant::now();
     let res = self
       .client
       // `track` tek başına istenirse podcast/bölüm çalarken Spotify `item: null`
@@ -786,7 +788,13 @@ impl MusicState {
         .get("is_playing")
         .and_then(|v| v.as_bool())
         .unwrap_or(false),
-      progress: data.get("progress_ms").and_then(|v| v.as_i64()).unwrap_or(0),
+      // Yanıt yolda geçen süre kadar eskidir (karaoke bu farkla geride kalıyordu); çalmıyorsa konum değişmez
+      progress: data.get("progress_ms").and_then(|v| v.as_i64()).unwrap_or(0)
+        + if data.get("is_playing").and_then(|v| v.as_bool()).unwrap_or(false) {
+          istek_ani.elapsed().as_millis() as i64 / 2
+        } else {
+          0
+        },
       duration: item.get("duration_ms").and_then(|v| v.as_i64()).unwrap_or(0),
       source: SOURCE_SPOTIFY.into(),
       updated_at: now_ms(),
@@ -1325,8 +1333,8 @@ mod tests {
   }
 
   #[test]
-  fn poll_delay_is_slower_when_idle_and_never_per_second() {
-    assert!(spotify_poll_delay(true) >= Duration::from_secs(2));
+  fn poll_delay_is_slower_when_idle_and_at_most_once_per_second() {
+    assert!(spotify_poll_delay(true) >= Duration::from_secs(1));
     assert!(spotify_poll_delay(false) > spotify_poll_delay(true));
   }
 

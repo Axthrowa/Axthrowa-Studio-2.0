@@ -8,7 +8,7 @@
  * uygulama bize ait, kod kopyalanmadı.
  */
 import { kutuTasarimi } from '../lib/widget-style.js';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { VIEWER_COUNTER_DEFAULTS } from '../lib/widget-defaults.js';
@@ -36,7 +36,7 @@ export function sayiBicimle(n: number, kisalt: boolean): string {
 
 export function ViewerCounterWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('viewer-counter', VIEWER_COUNTER_DEFAULTS);
-  const { platformStatuses, lastMessage } = useWebSocket('all');
+  const { lastMessage } = useWebSocket('all');
   const onizleme =
     previewMode ||
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1');
@@ -47,25 +47,28 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
     youtube: onizleme ? 42 : 0
   });
 
+  // Sayılar botun yayın yoklamasından gelir. Eskiden platform durumundan okunuyordu; orada izleyici hiç yoktu, hep 0 yazıyordu
+  const testBitis = useRef(0);
   useEffect(() => {
     if (onizleme) return;
-    setCounts((prev) => {
-      const next = { ...prev };
-      Object.entries(platformStatuses || {}).forEach(([key, status]: any) => {
-        const viewers = Number(status?.viewerCount || status?.viewers || 0);
-        if (key.includes('kick')) next.kick = viewers;
-        if (key.includes('twitch')) next.twitch = viewers;
-        if (key.includes('youtube') || key.includes('yt')) next.youtube = viewers;
-      });
-      return next;
-    });
-  }, [platformStatuses, onizleme]);
+    const cek = () => {
+      if (Date.now() < testBitis.current) return;
+      fetch('/api/overlay/izleyici')
+        .then((r) => r.json())
+        .then((d) => setCounts({ kick: Number(d.kick) || 0, twitch: Number(d.twitch) || 0, youtube: Number(d.youtube) || 0 }))
+        .catch(() => {});
+    };
+    cek();
+    const t = setInterval(cek, 20000);
+    return () => clearInterval(t);
+  }, [onizleme]);
 
   useEffect(() => {
     if (onizleme) return;
     if (lastMessage?.type === 'viewer_count') {
       // Test örneği birkaç saniye görünür, sonra önceki sayılar geri gelir
       if (lastMessage.test) {
+        testBitis.current = Date.now() + 8000;
         const onceki = counts;
         setTimeout(() => setCounts(onceki), 8000);
       }
@@ -132,7 +135,8 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
     }
   };
 
-  const hizala = String(s.align || 'left');
+  const hizala = String(s.align || 'center');
+  const icHizala = hizala === 'center' ? 'center' : hizala === 'right' ? 'flex-end' : 'flex-start';
   const kap = embedded
     ? 'w-full h-full flex items-center'
     : 'w-screen h-screen bg-transparent p-4 flex items-start';
@@ -152,7 +156,8 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
           fontSize: Number(s.fontSize) || 18,
           display: 'flex',
           flexDirection: s.layout === 'row' ? 'row' : 'column',
-          alignItems: s.layout === 'row' ? 'center' : 'flex-start',
+          alignItems: s.layout === 'row' ? 'center' : icHizala,
+          textAlign: hizala as 'left' | 'center' | 'right',
           gap: s.layout === 'row' ? 12 : 2
         }}
       >

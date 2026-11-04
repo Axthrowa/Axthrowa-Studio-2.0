@@ -9,7 +9,7 @@
  *
  * Yerleşim: tuğla dizisi gibi alttan yukarı sıra sıra dolar (her sırada boşluk sırası rastgele), öğeler
  * hafif kayık ve döndürülmüş durur; kupanın yuvarlak tabanında alt sıralar daralır. Düşüş yerçekimiyle
- * hızlanır, yana sapar, döner ve yere değince küçük bir sekmeyle oturur.
+ * hızlanır, yana sapar, döner ve yere değince tek küçük sekmeyle oturur.
  */
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -212,12 +212,10 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
       style={{ justifyContent: yatay(s.align), fontFamily: s.fontFamily }}
     >
       <style>{`@keyframes axt-kupa-dus {
-        0% { transform: translate(var(--dx0), -${yukseklik + 40}px) rotate(var(--aci0)); animation-timing-function: cubic-bezier(.55,0,1,.45) }
-        64% { transform: translate(0, 0) rotate(var(--aci)) scale(1.06, .9); animation-timing-function: cubic-bezier(0,.55,.45,1) }
-        78% { transform: translate(0, calc(var(--sicra) * -1)) rotate(var(--aci)) scale(.97, 1.04); animation-timing-function: cubic-bezier(.55,0,1,.45) }
-        90% { transform: translate(0, 0) rotate(var(--aci)) scale(1.02, .97); animation-timing-function: cubic-bezier(0,.55,.45,1) }
-        95% { transform: translate(0, calc(var(--sicra) * -.25)) rotate(var(--aci)) }
-        100% { transform: translate(0, 0) rotate(var(--aci)) }
+        0% { transform: translate3d(var(--dx0), -${yukseklik + 40}px, 0) rotate(var(--aci0)); animation-timing-function: cubic-bezier(.4,.05,.75,.6) }
+        76% { transform: translate3d(0, 0, 0) rotate(var(--aci)); animation-timing-function: cubic-bezier(.2,.6,.4,1) }
+        88% { transform: translate3d(0, calc(var(--sicra) * -1), 0) rotate(var(--aci)); animation-timing-function: cubic-bezier(.6,0,.8,.4) }
+        100% { transform: translate3d(0, 0, 0) rotate(var(--aci)) }
       }`}</style>
       <div className="relative flex flex-col items-center">
         <div
@@ -261,10 +259,11 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
                       // Düşerken döner ve yana sapar; sekme boya göre
                       '--aci0': `${y.aci + (i % 2 ? 1 : -1) * (180 + (i * 37) % 180)}deg`,
                       '--dx0': `${((i * 53) % 81) - 40}px`,
-                      '--sicra': `${Math.round(y.boyut * 0.45)}px`,
+                      '--sicra': `${Math.round(y.boyut * 0.22)}px`,
+                      willChange: o.yeni ? 'transform' : undefined,
                       transformOrigin: '50% 100%',
                       animation:
-                        o.yeni && s.animateItems !== false ? `axt-kupa-dus ${900 + ((i * 71) % 300)}ms linear ${o.gecikme || 0}ms both` : undefined
+                        o.yeni && s.animateItems !== false ? `axt-kupa-dus ${1500 + ((i * 71) % 300)}ms linear ${o.gecikme || 0}ms both` : undefined
                     } as React.CSSProperties
                   }
                 >

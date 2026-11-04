@@ -30,16 +30,18 @@ export function sinirla(x: number, y: number, k: Kutu): { x: number; y: number }
   };
 }
 
-/** Boyutlandırmada en büyük ölçeksiz genişlik/yükseklik (görünen kutu tuvalden taşmasın). */
-export function enBuyukBoyut(k: Kutu): { width: number; height: number } {
+/**
+ * Boyut değişince widget yerinde kalır: kutu merkezinde büyür, yalnız tuval kenarına dayanınca içeri itilir.
+ * Widget'ların çoğu kutusunda ortalı; sol üst sabit kalınca kutu büyüdükçe içerik kayıyordu.
+ */
+export function merkezdeBoyutla(k: Kutu, yeni: { width?: number; height?: number; scale?: number }): Required<Kutu> {
+  const eski = gorunen(k);
   const s = typeof k.scale === 'number' && k.scale > 0 ? k.scale : 1;
-  return { width: Math.floor((TUVAL_G - k.x) / s), height: Math.floor((TUVAL_Y - k.y) / s) };
-}
-
-/** Köşeden ölçekleme: içerik büyür, görünen kutu tuvalden taşmaz (kaydırıcıyla aynı alt sınır). */
-export function olcekSinirla(olcek: number, k: Kutu): number {
-  const enFazla = Math.min((TUVAL_G - k.x) / k.width, (TUVAL_Y - k.y) / k.height);
-  return Math.round(Math.max(0.25, Math.min(3, enFazla, olcek)) * 100) / 100;
+  const width = Math.round(Math.max(1, Math.min(TUVAL_G / s, yeni.width ?? k.width)));
+  const height = Math.round(Math.max(1, Math.min(TUVAL_Y / s, yeni.height ?? k.height)));
+  const scale = Math.round(Math.max(0.25, Math.min(3, TUVAL_G / width, TUVAL_Y / height, yeni.scale ?? s)) * 100) / 100;
+  const hedef = { x: k.x + eski.g / 2 - (width * scale) / 2, y: k.y + eski.y / 2 - (height * scale) / 2 };
+  return { ...sinirla(hedef.x, hedef.y, { x: 0, y: 0, width, height, scale }), width, height, scale };
 }
 
 export type Yon = 'sol' | 'yatayOrta' | 'sag' | 'ust' | 'dikeyOrta' | 'alt';

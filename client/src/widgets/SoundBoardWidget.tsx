@@ -103,7 +103,7 @@ export function SoundBoardWidget({ previewMode = false }: { previewMode?: boolea
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [istek?.id]);
 
-  if (!istek) return <div className="fixed inset-0 bg-transparent" />;
+  if (!istek) return <div data-katman-bos="" className="fixed inset-0 bg-transparent" />;
   return (
     <div className="fixed inset-0 overflow-hidden bg-transparent pointer-events-none" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div className="absolute flex flex-col items-center gap-2" style={konumStili(gorunum)}>

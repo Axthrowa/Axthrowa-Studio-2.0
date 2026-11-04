@@ -49,7 +49,7 @@ const FONTS = [
   { value: 'Oswald', label: 'Oswald' },
   { value: 'JetBrains Mono', label: 'JetBrains Mono' },
   { value: 'Roboto Mono', label: 'Roboto Mono' },
-  ...['Rubik', 'Manrope', 'Sora', 'Lexend', 'Barlow Condensed', 'Bebas Neue', 'Anton', 'Orbitron', 'Exo 2', 'Rajdhani', 'Pixelify Sans', 'Press Start 2P', 'VT323', 'Caveat', 'Kalam', 'Playfair Display', 'Fredoka'].map((value) => ({ value, label: value })),
+  ...['Oxanium', 'Tektur', 'Josefin Sans', 'Great Vibes', 'Kaushan Script', 'Luckiest Guy', 'Lilita One', 'Cinzel Decorative', 'Metal Mania', 'Courier Prime', 'Rubik', 'Manrope', 'Sora', 'Lexend', 'Barlow Condensed', 'Bebas Neue', 'Anton', 'Orbitron', 'Exo 2', 'Rajdhani', 'Pixelify Sans', 'Press Start 2P', 'VT323', 'Caveat', 'Kalam', 'Playfair Display', 'Fredoka'].map((value) => ({ value, label: value })),
 ]
 
 function Section({ title, children, className = '' }) {

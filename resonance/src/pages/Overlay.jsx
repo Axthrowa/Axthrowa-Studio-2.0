@@ -146,6 +146,8 @@ export default function Overlay({ lyricsOnly = false }) {
         type: 'state',
         width,
         height,
+        // Kart ilk çocuk; yalnız söz sayfasında kart yok
+        kart: lyricsOnly ? 0 : el.firstElementChild?.offsetHeight || 0,
         hasTrack: stateRef.current.hasTrack,
         isPlaying: stateRef.current.isPlaying,
         visible: stateRef.current.visible,

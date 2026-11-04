@@ -118,7 +118,7 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
       padding: 16,
       minWidth: 280
     }}>
-      <div style={{ color: s.titleColor, fontWeight: 800, marginBottom: 12, WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined }}>
+      <div style={{ color: s.titleColor, fontWeight: 800, lineHeight: 1.35, overflowWrap: 'anywhere', marginBottom: 12, WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined }}>
         {poll.question}
       </div>
       {poll.options.map((opt, i) => {
@@ -127,7 +127,7 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
         const kazanan = ended && votes > 0 && votes === enCok;
         return (
           <div key={`${i}-${opt}`} style={{ marginBottom: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: s.fontSize, color: s.fontColor, fontWeight: kazanan ? 800 : 400 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, lineHeight: 1.35, overflowWrap: 'anywhere', fontSize: s.fontSize, color: s.fontColor, fontWeight: kazanan ? 800 : 400 }}>
               <span>{kazanan ? '🏆 ' : ''}{i + 1}. {opt}</span>
               <span>{s.showPercent ? `${pct}%` : ''} {s.showVotes ? `(${votes})` : ''}</span>
             </div>
@@ -137,7 +137,7 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
           </div>
         );
       })}
-      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+      <div style={{ fontSize: 11, color: s.fontColor, opacity: 0.7, marginTop: 8 }}>
         {ended ? 'Anket bitti' : `${remaining} sn kaldı`} · {s.command} 1-{poll.options.length}
       </div>
     </div>

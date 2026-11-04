@@ -80,6 +80,7 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
 
   // Şarkı
   k('sr', ['songrequest', 'sarkiiste'], 'Şarkı', 'herkes', 'Şarkı iste (ad, YouTube/Spotify linki)', '!sr Teoman Paramparça'),
+  k('klip', ['klipiste'], 'Şarkı', 'herkes', 'Şarkı klibini OBS\'te video olarak aç', '!klip Teoman Paramparça'),
   k('sarki', ['song', 'currentsong'], 'Şarkı', 'herkes', 'Şu an çalan şarkı'),
   k('sira', ['queue'], 'Şarkı', 'herkes', 'Sıradaki şarkılar'),
   k('when', ['sarkisiram'], 'Şarkı', 'herkes', 'İsteğinin sırası'),

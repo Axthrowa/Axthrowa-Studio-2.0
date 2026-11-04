@@ -11,7 +11,9 @@ vi.mock('../../db/index.js', async () => {
   return { db };
 });
 
+import axios from 'axios';
 import { db } from '../../db/index.js';
+import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';
 import { songRequest } from './songrequest.js';
 
@@ -32,6 +34,7 @@ describe('şarkı kuyruğu eşleme', () => {
   });
 
   it('kuyruk boşken Otomatik DJ önceki kliplerden çalar, yeni istek gelince ona geçer', () => {
+    settingsCache.set('sr_hedef', 'video');
     ekle('g1', 'Eski 1', 'https://www.youtube.com/watch?v=aaaaaaaaaaa', 1);
     ekle('g2', 'Eski 2', 'https://www.youtube.com/watch?v=bbbbbbbbbbb', 2);
     db.exec('UPDATE song_queue SET is_played = 1');
@@ -42,6 +45,19 @@ describe('şarkı kuyruğu eşleme', () => {
     expect(songRequest.klipSirasi()!.url).not.toBe(dj.url); // art arda aynısı gelmez
     ekle('yeni', 'İstek', 'https://www.youtube.com/watch?v=ccccccccccc', 3);
     expect(songRequest.klipSirasi()!.id).toBe('yeni');
+    settingsCache.set('sr_hedef', 'spotify');
+  });
+
+  it('Spotify kipinde DJ eski klip çalmaz; !klip istek kipten bağımsız klip sırasına girer', async () => {
+    settingsCache.set('sr_hedef', 'spotify');
+    ekle('g1', 'Eski', 'https://www.youtube.com/watch?v=aaaaaaaaaaa', 1);
+    db.exec('UPDATE song_queue SET is_played = 1');
+    expect(songRequest.klipSirasi()).toBeNull();
+    vi.spyOn(axios, 'get').mockRejectedValue(new Error('ağ yok'));
+    const mesaj = { platform: 'kick', channel: 'k', user: { username: 'a', displayName: 'A' } } as any;
+    expect(await songRequest.handleSongRequest(mesaj, [], { klip: true })).toContain('!klip');
+    expect(await songRequest.handleSongRequest(mesaj, ['https://youtu.be/ccccccccccc'], { klip: true })).toContain('🎬');
+    expect(songRequest.klipSirasi()?.url).toContain('ccccccccccc');
   });
 
   it("AxthrowA Studio'dan gelen çalan şarkı (kimliksiz) başlıkla eşlenir", () => {

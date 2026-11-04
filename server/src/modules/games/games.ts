@@ -27,7 +27,7 @@ export interface GameSettings {
   heist: { minBet: number; maxBet: number; countdownSeconds: number; payoutMultiplier: number };
   race: { minBet: number; maxBet: number; countdownSeconds: number; payoutMultiplier: number };
   trivia: { rewardPoints: number; durationSeconds: number };
-  anagram: { rewardPoints: number; durationSeconds: number };
+  anagram: { rewardPoints: number; durationSeconds: number; showHint?: boolean };
   fishing: { cooldownSeconds: number; catchChancePercent: number };
   lootbox: { cost: number; jackpotMultiplier: number };
   bomb: { cooldownSeconds: number };
@@ -85,6 +85,16 @@ interface ActiveBomb {
   amount: number;
   expiresAt: number;
   timer: NodeJS.Timeout;
+}
+
+/** Panelden başlatılan oyunlarda yazan ad: botun bağlı olduğu yayın hesabı */
+function yayinciAdi(): string {
+  try {
+    const r = db.prepare("SELECT channel_name FROM channels WHERE is_active = 1 AND channel_name <> '' LIMIT 1").get() as { channel_name?: string } | undefined;
+    return r?.channel_name?.trim() || 'Yayıncı';
+  } catch {
+    return 'Yayıncı';
+  }
 }
 
 const OYUN_DUYURULARI: Record<string, string> = {
@@ -173,14 +183,14 @@ export class GamesEngine {
       if (this.activeHeist.timer) clearTimeout(this.activeHeist.timer);
       this.bahisleriIadeEt(this.activeHeist.participants);
       this.activeHeist = null;
-      eventBus.emitBotMessage({ platform: 'all', message: '❌ Aktif banka soygunu yayıncı tarafından iptal edildi.' });
+      eventBus.emitBotMessage({ platform: 'all', message: `❌ Aktif banka soygunu ${yayinciAdi()} tarafından iptal edildi.` });
       return true;
     }
     if (type === 'race' && this.activeRace) {
       if (this.activeRace.timer) clearTimeout(this.activeRace.timer);
       this.bahisleriIadeEt(this.activeRace.participants);
       this.activeRace = null;
-      eventBus.emitBotMessage({ platform: 'all', message: '❌ Aktif sokak yarışı yayıncı tarafından iptal edildi.' });
+      eventBus.emitBotMessage({ platform: 'all', message: `❌ Aktif sokak yarışı ${yayinciAdi()} tarafından iptal edildi.` });
       return true;
     }
     if (type === 'trivia') {
@@ -223,7 +233,7 @@ export class GamesEngine {
           participants: new Map(),
           timer: setTimeout(() => this.executeHeist(), dur)
         };
-        const msg = `🚨 BÜYÜK BANKA SOYGUNU BAŞLADI! Yayıncı soygunu başlattı! Çeteye katılmak için ${Math.round(dur / 1000)} saniyeniz var: !soygun <miktar> 💼💥`;
+        const msg = `🚨 BÜYÜK BANKA SOYGUNU BAŞLADI! ${yayinciAdi()} soygunu başlattı! Çeteye katılmak için ${Math.round(dur / 1000)} saniyeniz var: !soygun <miktar> 💼💥`;
         eventBus.emitBotMessage({ platform: 'all', message: msg });
         return msg;
       }
@@ -239,7 +249,7 @@ export class GamesEngine {
           participants: new Map(),
           timer: setTimeout(() => this.executeRace(), dur)
         };
-        const msg = `🏎️💨 SOKAK YARIŞI BAŞLIYOR! Yayıncı pisti açtı! Katılmak için ${Math.round(dur / 1000)} saniyeniz var: !yaris <miktar> 🚦🏁`;
+        const msg = `🏎️💨 SOKAK YARIŞI BAŞLIYOR! ${yayinciAdi()} pisti açtı! Katılmak için ${Math.round(dur / 1000)} saniyeniz var: !yaris <miktar> 🚦🏁`;
         eventBus.emitBotMessage({ platform: 'all', message: msg });
         return msg;
       }
@@ -494,7 +504,7 @@ export class GamesEngine {
         eventBus.emitBotMessage({ platform: platform as PlatformType, channel, message: `⌛ Süre doldu! Kelime "${item.kelime.toLocaleUpperCase('tr-TR')}" idi.` });
       }, durSec * 1000)
     };
-    return `🔤 KELİME BULMACASI: Karışık harfleri doğru sıraya dizip ilk yazan ${reward} Puanı kapar! 👉 [ ${scrambled} ] (İpucu: ${item.ipucu} | Süre: ${durSec} sn) 🕒`;
+    return `🔤 KELİME BULMACASI: Karışık harfleri doğru sıraya dizip ilk yazan ${reward} Puanı kapar! 👉 [ ${scrambled} ] (${this.settings.anagram.showHint === false ? '' : `İpucu: ${item.ipucu} | `}Süre: ${durSec} sn) 🕒`;
   }
 
   // Check incoming chat messages for trivia / anagram answers

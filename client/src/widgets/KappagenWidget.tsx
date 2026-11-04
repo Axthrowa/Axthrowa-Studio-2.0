@@ -7,11 +7,11 @@
  * `!kappagen` patlaması ortadan dağılır. Aynı anda
  * ekrandaki emote sayısı sınırlıdır (OBS'i yormasın).
  */
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { KAPPAGEN_DEFAULTS } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
-import { wsAdresi } from '../lib/widget-style.js';
+import { hizCarpani, wsAdresi } from '../lib/widget-style.js';
 
 interface Parca {
   ad: string;
@@ -52,6 +52,57 @@ export function ucusRotasi(r: () => number = Math.random) {
 
 let sayac = 0;
 
+/** Görsel önceden çözülür: ilk kez gelen emote'u çözmek uçan diğerlerini bir an takılıyordu */
+const cozulen = new Map<string, Promise<unknown>>();
+function gorseliCoz(url: string): Promise<unknown> {
+  let s = cozulen.get(url);
+  if (!s) {
+    const g = new Image();
+    g.referrerPolicy = 'no-referrer';
+    g.src = url;
+    s = g.decode().catch(() => {});
+    if (cozulen.size > 300) cozulen.clear();
+    cozulen.set(url, s);
+  }
+  return s;
+}
+
+const KAPPAGEN_CSS = `@keyframes axt-kappagen { from { transform: translate(-50%,-50%) translate3d(0,0,0) rotate(0deg); opacity: 1 }
+  85% { opacity: 1 } to { transform: translate(-50%,-50%) translate3d(var(--dx), var(--dy), 0) rotate(var(--rot)); opacity: var(--son) } }`;
+
+/** memo: yeni emote eklenince uçmakta olanlar yeniden çizilmez */
+const UcanEmote = memo(function UcanEmote({ u, spin, shadow }: { u: Ucan; spin: boolean; shadow: boolean }) {
+  return (
+    <div
+      style={
+        {
+          position: 'absolute',
+          left: `${u.x}%`,
+          top: `${u.y}%`,
+          width: u.boyut,
+          height: u.boyut,
+          fontSize: u.boyut * 0.8,
+          lineHeight: `${u.boyut}px`,
+          textAlign: 'center',
+          willChange: 'transform',
+          animation: `axt-kappagen ${u.sure}ms ${u.patlama ? 'ease-out' : 'linear'} forwards`,
+          '--son': u.patlama ? 0 : 1,
+          '--dx': `${u.dx}vw`,
+          '--dy': `${u.dy}vh`,
+          '--rot': `${spin ? u.donus : 0}deg`,
+          filter: shadow ? 'drop-shadow(0 4px 6px rgba(0,0,0,.6))' : undefined
+        } as CSSProperties
+      }
+    >
+      {u.parca.url ? (
+        <img src={u.parca.url} alt={u.parca.ad} decoding="sync" style={{ width: '100%', height: '100%', objectFit: 'contain' }} referrerPolicy="no-referrer" />
+      ) : (
+        <span>{u.parca.ad}</span>
+      )}
+    </div>
+  );
+});
+
 export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('on-screen-emotes', KAPPAGEN_DEFAULTS);
   const ayar = useRef(s);
@@ -78,16 +129,19 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
             dx: patlama ? Math.cos(aci) * hiz : rota.dx,
             dy: patlama ? Math.sin(aci) * hiz : rota.dy,
             donus: (Math.random() - 0.5) * 540,
-            sure: Math.max(800, a.durationMs) * (0.8 + Math.random() * 0.4),
+            sure: (Math.max(800, a.durationMs) * (0.8 + Math.random() * 0.4)) / hizCarpani(a.speed),
             boyut: a.size * (patlama ? 1.2 : 0.8 + Math.random() * 0.4)
           });
         }
       }
       if (!yeni.length) return;
-      setUcanlar((u) => [...u, ...yeni].slice(-Math.max(5, a.maxOnScreen)));
-      const enUzun = Math.max(...yeni.map((y) => y.sure));
-      const kimlikler = new Set(yeni.map((y) => y.id));
-      setTimeout(() => setUcanlar((u) => u.filter((x) => !kimlikler.has(x.id))), enUzun + 100);
+      const baslat = () => {
+        setUcanlar((u) => [...u, ...yeni].slice(-Math.max(5, a.maxOnScreen)));
+        const enUzun = Math.max(...yeni.map((y) => y.sure));
+        const kimlikler = new Set(yeni.map((y) => y.id));
+        setTimeout(() => setUcanlar((u) => u.filter((x) => !kimlikler.has(x.id))), enUzun + 100);
+      };
+      void Promise.all(yeni.flatMap((y) => (y.parca.url ? [gorseliCoz(y.parca.url)] : []))).then(baslat);
     };
 
     const ws = new KaliciSoket(wsAdresi());
@@ -107,37 +161,10 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
   }, []);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-      <style>{`@keyframes axt-kappagen { from { transform: translate(-50%,-50%) translate(0,0) rotate(0deg); opacity: 1 }
-        85% { opacity: 1 } to { transform: translate(-50%,-50%) translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: var(--son) } }`}</style>
+    <div data-katman-bos={ucanlar.length ? undefined : ''} style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      <style>{KAPPAGEN_CSS}</style>
       {ucanlar.map((u) => (
-        <div
-          key={u.id}
-          style={
-            {
-              position: 'absolute',
-              left: `${u.x}%`,
-              top: `${u.y}%`,
-              width: u.boyut,
-              height: u.boyut,
-              fontSize: u.boyut * 0.8,
-              lineHeight: `${u.boyut}px`,
-              textAlign: 'center',
-              animation: `axt-kappagen ${u.sure}ms ${u.patlama ? 'ease-out' : 'linear'} forwards`,
-              '--son': u.patlama ? 0 : 1,
-              '--dx': `${u.dx}vw`,
-              '--dy': `${u.dy}vh`,
-              '--rot': `${s.spin ? u.donus : 0}deg`,
-              filter: s.shadow ? 'drop-shadow(0 4px 6px rgba(0,0,0,.6))' : undefined
-            } as CSSProperties
-          }
-        >
-          {u.parca.url ? (
-            <img src={u.parca.url} alt={u.parca.ad} style={{ width: '100%', height: '100%', objectFit: 'contain' }} referrerPolicy="no-referrer" />
-          ) : (
-            <span>{u.parca.ad}</span>
-          )}
-        </div>
+        <UcanEmote key={u.id} u={u} spin={Boolean(s.spin)} shadow={Boolean(s.shadow)} />
       ))}
     </div>
   );

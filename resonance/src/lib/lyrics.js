@@ -43,12 +43,22 @@ export function etkinSatir(satirlar, konumSn) {
   return i
 }
 
+/**
+ * Satırın söylenme süresi (sn). Kaynak yalnız satır başlarını verir; sonraki satıra kadar uzun müzik arası
+ * varsa dolum sürünmesin diye süre metin uzunluğuyla sınırlanır (ağır baladda bile harf başına 0,16 sn yeter).
+ */
+export function satirSuresi(satirlar, i) {
+  const l = satirlar[i]
+  if (!l) return 4
+  const ara = (satirlar[i + 1]?.time ?? l.time + 4) - l.time
+  return Math.max(0.2, Math.min(ara, Math.max(1.5, String(l.text || '').length * 0.16)))
+}
+
 /** Satırın ne kadarı söylendi (0-1): karaoke dolumu için */
 export function satirOrani(satirlar, i, konumSn) {
   const l = satirlar[i]
   if (!l) return 0
-  const sonraki = satirlar[i + 1]?.time ?? l.time + 4
-  return Math.max(0, Math.min(1, (konumSn - l.time) / Math.max(0.2, sonraki - l.time)))
+  return Math.max(0, Math.min(1, (konumSn - l.time) / satirSuresi(satirlar, i)))
 }
 
 /** Aranacak başlık ve sanatçı çeşitleri: en güveniliri önce */

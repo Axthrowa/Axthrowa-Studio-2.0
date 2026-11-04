@@ -46,7 +46,9 @@ $failed = @()
 foreach ($f in $files) {
   # Çalışan uygulama dosyayı kilitler; imza "file is being used" ile düşer.
   if ((Split-Path $f -Leaf) -eq "AxthrowAStudio.exe") {
-    Get-Process AxthrowAStudio -ErrorAction SilentlyContinue | ForEach-Object {
+    # Yalnız imzalanan dosyadan çalışan süreç: başka klasördeki açık kurulum kapatılmaz.
+    $tam = (Resolve-Path -LiteralPath $f).Path
+    Get-Process AxthrowAStudio -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $tam } | ForEach-Object {
       Write-Host "Calisan uygulama kapatiliyor (pid $($_.Id))..."
       $_ | Stop-Process -Force
       Start-Sleep -Milliseconds 800

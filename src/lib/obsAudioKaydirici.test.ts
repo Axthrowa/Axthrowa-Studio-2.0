@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dbYazisi, olcerAdimi, OLCER_BOSTA, onizlemeBeklemesi, sesDbdenYuzde, sesYuzdedenDb } from "./obsAudio";
+import { dbYazisi, olcerAdimi, OLCER_BOSTA, onizlemeBeklemesi, sesDbdenYuzde, sesYuzdedenDb, onizlemeGenisligi } from "./obsAudio";
 
 describe("ses kaydırıcısı", () => {
   it("uçlar OBS sınırlarına denk gelir", () => {
@@ -44,5 +44,14 @@ describe("önizleme hızı", () => {
     expect(onizlemeBeklemesi(10) + 10).toBe(66);
     expect(onizlemeBeklemesi(200)).toBe(200);
     expect(onizlemeBeklemesi(5000)).toBe(1000);
+  });
+});
+
+describe("onizlemeGenisligi", () => {
+  it("tuvalin gerçek piksel genişliğini ister, sınırlar içinde kalır", () => {
+    expect(onizlemeGenisligi(1000, 1.25)).toBe(1250);
+    expect(onizlemeGenisligi(0, 1)).toBe(854);
+    expect(onizlemeGenisligi(1200, 2)).toBe(1600);
+    expect(onizlemeGenisligi(1000, 0)).toBe(1000);
   });
 });

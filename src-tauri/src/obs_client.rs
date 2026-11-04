@@ -483,7 +483,7 @@ impl ObsClientState {
         format: "jpg",
         width: Some(width),
         height: None,
-        compression_quality: Some(60),
+        compression_quality: Some(85),
       })
       .await
       .map_err(|error| format!("OBS önizlemesi alınamadı: {error}"))

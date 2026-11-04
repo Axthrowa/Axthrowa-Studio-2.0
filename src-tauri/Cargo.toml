@@ -1,6 +1,6 @@
 [package]
 name = "yayin-yonetim-araci"
-version = "1.6.3"
+version = "1.6.8"
 description = "AxthrowA Studio — OBS Overlay Desktop"
 authors = ["axthrowa"]
 license = "GPL-2.0-or-later"
@@ -69,6 +69,7 @@ keyring = { version = "3", features = ["apple-native"] }
 keyring = { version = "3", features = ["linux-native-sync-persistent", "crypto-rust"] }
 
 [target.'cfg(windows)'.dependencies]
+webview2-com = "0.38"
 keyring = { version = "3", features = ["windows-native"] }
 windows = { version = "0.61", features = [
   "Win32_Foundation",

@@ -61,9 +61,14 @@ pub fn find_in_path(path_var: &str, exe: &str) -> Option<PathBuf> {
     .find(|p| p.is_file())
 }
 
-/// Sunucu ayakta mı? (`/health` "ok" dönüyorsa)
+/// Yanıt AxBoT'un mu? `"status":"ok"` yetmez: 3001'de aynısını dönen başka bir uygulama AxBoT sanılıp kapatılıyordu
+fn axbot_yaniti(govde: &str) -> bool {
+  govde.contains("\"uygulama\":\"streamaxt\"")
+}
+
+/// AxBoT ayakta mı?
 pub fn healthy(port: u16) -> bool {
-  health_body(port).map(|b| b.contains("\"status\":\"ok\"")).unwrap_or(false)
+  health_body(port).is_some_and(|b| axbot_yaniti(&b))
 }
 
 /// `/health` yanıtının tamamı (başlıklar dahil); bağlanılamazsa `None`.
@@ -327,7 +332,7 @@ pub fn stop(force: bool) -> Result<Value, String> {
     kill_tree(c.id());
     let _ = c.kill();
     let _ = c.wait();
-  } else if force {
+  } else if force && healthy(port()) {
     if let Some(pid) = external_pid(port()) {
       // Gözcü varsa önce onu (ağaçla birlikte uygulamayı da) kapat; yoksa yalnız uygulama
       // ölür ve gözcü birkaç saniye içinde yeniden başlatır.
@@ -394,6 +399,12 @@ mod tests {
   }
 
   use super::*;
+
+  #[test]
+  fn yalniz_axbot_imzasi_axbot_sayilir() {
+    assert!(axbot_yaniti("\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"streamaxt\",\"gozcuPid\":null}"));
+    assert!(!axbot_yaniti("\r\n\r\n{\"status\":\"ok\"}"));
+  }
 
   #[test]
   fn gozcu_pid_health_yanitindan_okunur() {

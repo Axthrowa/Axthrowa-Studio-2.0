@@ -196,7 +196,7 @@ export const obsControl = {
     try {
       return await tryInvoke<string>("obs_screenshot", { sceneName, width });
     } catch {
-      const r = (await getObs().call("GetSourceScreenshot", { sourceName: sceneName, imageFormat: "jpg", imageWidth: width, imageCompressionQuality: 60 })) as { imageData: string };
+      const r = (await getObs().call("GetSourceScreenshot", { sourceName: sceneName, imageFormat: "jpg", imageWidth: width, imageCompressionQuality: 85 })) as { imageData: string };
       return r.imageData;
     }
   },

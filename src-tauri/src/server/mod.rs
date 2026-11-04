@@ -412,7 +412,7 @@ struct SozSorgusu {
 /// Söz kaynağı NetEase tarayıcıdan sorulamaz (CORS). Hedef sabit, yalnız arama metni ve sayısal kimlik geçer.
 fn soz_adresi(q: &SozSorgusu) -> Option<reqwest::Url> {
   if let Some(id) = q.id.as_deref().filter(|i| !i.is_empty() && i.len() <= 20 && i.bytes().all(|b| b.is_ascii_digit())) {
-    return reqwest::Url::parse_with_params("https://music.163.com/api/song/lyric", &[("id", id), ("lv", "1")]).ok();
+    return reqwest::Url::parse_with_params("https://music.163.com/api/song/lyric", &[("id", id), ("lv", "1"), ("yv", "1")]).ok();
   }
   let ara = q.ara.as_deref().map(str::trim).filter(|a| !a.is_empty())?;
   let ara: String = ara.chars().take(200).collect();

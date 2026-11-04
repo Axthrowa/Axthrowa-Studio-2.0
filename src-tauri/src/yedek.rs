@@ -250,7 +250,31 @@ fn onceki_hali_yedekle(data_dir: &Path, bot_veri: Option<&Path>) -> Result<Strin
 /// Açılışta, veritabanları açılmadan ÖNCE çağrılır. Uygulanan işlemi döndürür.
 pub fn bekleyeni_uygula(data_dir: &Path, bot_veri: Option<&Path>, assets: &Path) -> Result<Option<String>> {
   let Some(istek) = bekleyen(data_dir) else { return Ok(None) };
+  // İşaret en sonda silinir: elektrik kesilirse sonraki açılışta yeniden denenir
+  let sonuc = uygula(&istek, data_dir, bot_veri, assets);
   iptal(data_dir);
+  sonuc.map(Some)
+}
+
+/// Yedeğin ayarlarını ve veritabanlarını yerine koyar
+fn yedekten_kopyala(kok: &Path, data_dir: &Path, bot_veri: Option<&Path>) -> Result<()> {
+  yan_dosyalari_sil(&data_dir.join("botaxt.db"));
+  klasor_kopyala(&kok.join("yya"), data_dir, &[])?;
+  if let (Some(bot), true) = (bot_veri, kok.join("bot").join(BOT_DB).exists()) {
+    kapali_db_kopyala(&kok.join("bot").join(BOT_DB), &bot.join(BOT_DB))?;
+  }
+  Ok(())
+}
+
+/// Kopyalama yarıda kaldıysa veriler karışık kalmasın: işlemden hemen önceki hâle dönülür
+fn hatada_geri_don(sonuc: Result<()>, onceki: &str, data_dir: &Path, bot_veri: Option<&Path>) -> Result<()> {
+  sonuc.map_err(|e| match yedekten_kopyala(&yedek_klasoru(data_dir).join(onceki), data_dir, bot_veri) {
+    Ok(()) => anyhow!("{e:#}; önceki hâle dönüldü"),
+    Err(g) => anyhow!("{e:#}; önceki hâle dönülemedi ({g:#}), şu yedeği geri yükleyin: {onceki}"),
+  })
+}
+
+fn uygula(istek: &str, data_dir: &Path, bot_veri: Option<&Path>, assets: &Path) -> Result<String> {
   if let Some(ad) = istek.strip_prefix("yedek:") {
     if !ad_gecerli(ad) {
       return Err(anyhow!("geçersiz yedek adı"));
@@ -261,13 +285,9 @@ pub fn bekleyeni_uygula(data_dir: &Path, bot_veri: Option<&Path>, assets: &Path)
       return Err(anyhow!("yedek eksik: {ad}"));
     }
     let onceki = onceki_hali_yedekle(data_dir, bot_veri).context("o anki hâl yedeklenemedi; geri yükleme yapılmadı")?;
-    yan_dosyalari_sil(&data_dir.join("botaxt.db"));
-    klasor_kopyala(&yya, data_dir, &[])?;
-    if let (Some(bot), true) = (bot_veri, kok.join("bot").join(BOT_DB).exists()) {
-      kapali_db_kopyala(&kok.join("bot").join(BOT_DB), &bot.join(BOT_DB))?;
-    }
+    hatada_geri_don(yedekten_kopyala(&kok, data_dir, bot_veri), &onceki, data_dir, bot_veri)?;
     eskileri_sil(data_dir);
-    return Ok(Some(format!("Yedek geri yüklendi: {ad} (önceki hâl {onceki} yedeğinde)")));
+    return Ok(format!("Yedek geri yüklendi: {ad} (önceki hâl {onceki} yedeğinde)"));
   }
   if let Some(eski) = istek.strip_prefix("tasi:") {
     let eski = PathBuf::from(eski);
@@ -275,23 +295,27 @@ pub fn bekleyeni_uygula(data_dir: &Path, bot_veri: Option<&Path>, assets: &Path)
       return Err(anyhow!("eski kurulum bulunamadı: {}", eski.display()));
     }
     let onceki = onceki_hali_yedekle(data_dir, bot_veri).context("o anki hâl yedeklenemedi; taşıma yapılmadı")?;
-    // Ayarlar + veritabanı (yedekler ve indirilen araçlar taşınmaz; -wal taşınır, son yazılanlar orada olabilir)
-    yan_dosyalari_sil(&data_dir.join("botaxt.db"));
-    klasor_kopyala(&eski.join("data"), data_dir, &["yedekler", "tools", "botaxt.db-shm"])?;
-    // Kullanıcının kütüphanesi (logo, video, müzik…)
-    if eski.join("assets").is_dir() {
-      klasor_kopyala(&eski.join("assets"), assets, &[])?;
-    }
-    // Bot verisi
-    if let Some(bot) = bot_veri {
-      let eski_bot = eski.join("streamaxt").join("data");
-      if eski_bot.is_dir() {
-        yan_dosyalari_sil(&bot.join(BOT_DB));
-        klasor_kopyala(&eski_bot, bot, &["streamaxt.sqlite-shm"])?;
+    let tasi = || -> Result<()> {
+      // Ayarlar + veritabanı (yedekler ve indirilen araçlar taşınmaz; -wal taşınır, son yazılanlar orada olabilir)
+      yan_dosyalari_sil(&data_dir.join("botaxt.db"));
+      klasor_kopyala(&eski.join("data"), data_dir, &["yedekler", "tools", "botaxt.db-shm"])?;
+      // Kullanıcının kütüphanesi (logo, video, müzik…)
+      if eski.join("assets").is_dir() {
+        klasor_kopyala(&eski.join("assets"), assets, &[])?;
       }
-    }
+      // Bot verisi
+      if let Some(bot) = bot_veri {
+        let eski_bot = eski.join("streamaxt").join("data");
+        if eski_bot.is_dir() {
+          yan_dosyalari_sil(&bot.join(BOT_DB));
+          klasor_kopyala(&eski_bot, bot, &["streamaxt.sqlite-shm"])?;
+        }
+      }
+      Ok(())
+    };
+    hatada_geri_don(tasi(), &onceki, data_dir, bot_veri)?;
     eskileri_sil(data_dir);
-    return Ok(Some(format!("Eski kurulumdan taşındı: {} (önceki hâl {onceki} yedeğinde)", eski.display())));
+    return Ok(format!("Eski kurulumdan taşındı: {} (önceki hâl {onceki} yedeğinde)", eski.display()));
   }
   Err(anyhow!("bilinmeyen bekleyen işlem"))
 }
@@ -375,6 +399,24 @@ mod tests {
     assert!(onceki.bot);
     let _ = std::fs::remove_dir_all(&data);
     let _ = std::fs::remove_dir_all(&bot);
+  }
+
+  #[test]
+  fn yarida_kalan_geri_yukleme_onceki_hale_doner() {
+    let data = gecici("yarim");
+    std::fs::write(data.join("botaxt.db"), "simdiki").unwrap();
+    // Yedekteki ikinci dosya kopyalanamaz: hedefte aynı adda klasör var
+    std::fs::create_dir_all(data.join("z.json")).unwrap();
+    let yya = yedek_klasoru(&data).join("20261104-120000").join("yya");
+    std::fs::create_dir_all(&yya).unwrap();
+    std::fs::write(yya.join("botaxt.db"), "yedekteki").unwrap();
+    std::fs::write(yya.join("z.json"), "{}").unwrap();
+    isaretle(&data, "yedek:20261104-120000").unwrap();
+    let hata = bekleyeni_uygula(&data, None, &data.join("assets")).unwrap_err().to_string();
+    assert!(hata.contains("önceki hâle dönüldü"), "{hata}");
+    assert_eq!(std::fs::read_to_string(data.join("botaxt.db")).unwrap(), "simdiki");
+    assert!(bekleyen(&data).is_none());
+    let _ = std::fs::remove_dir_all(&data);
   }
 
   #[test]

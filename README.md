@@ -1,6 +1,5 @@
 # AxthrowA Studio — Tauri Masaüstü
 
-Eski HTML/JS arşivi: `legacy/`  
 Yeni uygulama: Vite + React + Tauri 2 + Rust HTTP medya motoru
 
 ## Çıktı (hazır)
@@ -116,7 +115,7 @@ npm run tauri:dev
 ```
 
 Windows WDAC bazen `cargo` build-script’lerini engeller (os error 4551).  
-Çözüm: `CARGO_TARGET_DIR` olarak izinli bir temp path kullanın (bkz. `ex.md`).
+Çözüm: `CARGO_TARGET_DIR` olarak izinli bir temp path kullanın.
 
 Docker: `docker/docker-compose.yml` (Linux CI toolchain).
 

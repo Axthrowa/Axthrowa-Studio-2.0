@@ -51,6 +51,11 @@ export function olcerAdimi(o: OlcerDurumu, db: number, dtMs: number, simdi: numb
 
 /** Önizleme: en çok ~15 kare/sn. OBS yavaşsa bekleme de uzar, OBS zamanının en fazla yarısı kare almaya gider. */
 const ONIZLEME_HEDEF_MS = 66;
+/** Kare, tuvalin ekrandaki gerçek piksel genişliğinde istenir: 854'lük kare büyütülünce bulanıklaşıyordu */
+export function onizlemeGenisligi(cssGenislik: number, oran: number): number {
+  return Math.min(1600, Math.max(854, Math.ceil(cssGenislik * (oran || 1))));
+}
+
 export function onizlemeBeklemesi(sureMs: number): number {
   return Math.min(1000, Math.max(ONIZLEME_HEDEF_MS - sureMs, sureMs));
 }

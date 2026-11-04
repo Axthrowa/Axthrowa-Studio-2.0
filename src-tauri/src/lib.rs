@@ -199,15 +199,44 @@ pub(crate) fn pencereyi_goster(app: &AppHandle) {
   if let Some(w) = app.get_webview_window("main") {
     let _ = w.unminimize();
     let _ = w.show();
+    webview_bellegi(&w, false);
     let _ = w.set_focus();
   }
   gorunurluk_yazisi(app, true);
 }
 
+/// Pencere görünmezken WebView2 boş belleğini bırakır, görünür olunca eski seviyesine döner.
+#[cfg(windows)]
+fn webview_bellegi(w: &tauri::WebviewWindow, dusuk: bool) {
+  use std::sync::atomic::{AtomicBool, Ordering};
+  use webview2_com::Microsoft::Web::WebView2::Win32::{
+    ICoreWebView2_19, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL,
+  };
+  use windows::core::Interface;
+  static DUSUK: AtomicBool = AtomicBool::new(false);
+  if DUSUK.swap(dusuk, Ordering::SeqCst) == dusuk {
+    return;
+  }
+  let _ = w.with_webview(move |v| unsafe {
+    let Ok(cekirdek) = v.controller().CoreWebView2() else { return };
+    if let Ok(c) = cekirdek.cast::<ICoreWebView2_19>() {
+      let _ = c.SetMemoryUsageTargetLevel(if dusuk {
+        COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW
+      } else {
+        COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL
+      });
+    }
+  });
+}
+
+#[cfg(not(windows))]
+fn webview_bellegi(_w: &tauri::WebviewWindow, _dusuk: bool) {}
+
 /// Ana pencereyi tepsiye gizler: bot, HTTP ve WS çalışmaya devam eder.
 pub(crate) fn pencereyi_gizle(app: &AppHandle) {
   if let Some(w) = app.get_webview_window("main") {
     let _ = w.hide();
+    webview_bellegi(&w, true);
   }
   gorunurluk_yazisi(app, false);
 }

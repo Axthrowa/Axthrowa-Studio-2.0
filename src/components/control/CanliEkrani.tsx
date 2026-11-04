@@ -9,7 +9,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNod
 import { Eye, EyeOff, Pin } from "lucide-react";
 import { actionsApi } from "../../lib/api/actions";
 import { getStreamHealth, isObsConnected, onObsConnection, type StreamHealth } from "../../lib/obs";
-import { isAudioInput, onizlemeBeklemesi } from "../../lib/obsAudio";
+import { isAudioInput, onizlemeBeklemesi, onizlemeGenisligi } from "../../lib/obsAudio";
 import { obsControl, type ObsInputInfo, type ObsSceneSnapshot } from "../../lib/obsControl";
 import { streamaxtBase } from "../../lib/streamaxt";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
@@ -41,7 +41,6 @@ type BotDurumu = {
   platforms?: Record<string, { connected?: boolean; yazabilir?: boolean }>;
 };
 
-const ONIZLEME_GENISLIK = 854;
 
 function Olcum({ etiket, uyari, children }: { etiket: React.ReactNode; uyari?: boolean; children: React.ReactNode }) {
   return (
@@ -124,7 +123,7 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
         const t0 = performance.now();
         try {
           const im = new Image();
-          im.src = await obsControl.screenshot(sahne, ONIZLEME_GENISLIK);
+          im.src = await obsControl.screenshot(sahne, onizlemeGenisligi(tuval.current?.clientWidth ?? 0, window.devicePixelRatio));
           await im.decode();
           const c = tuval.current;
           if (c && !iptal) {

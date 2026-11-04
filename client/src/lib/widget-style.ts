@@ -76,6 +76,11 @@ export function fontuYukle(ad: string | undefined, liste: readonly string[]): vo
   document.head.appendChild(link);
 }
 
+/** Hız ayarı: 1 normal, 2 iki kat hızlı */
+export function hizCarpani(deger: unknown): number {
+  return Math.min(4, Math.max(0.25, Number(deger) || 1));
+}
+
 export function onizlemeKipi(prop?: boolean): boolean {
   if (prop) return true;
   if (typeof window === 'undefined') return false;
@@ -181,7 +186,7 @@ export function yaziAilesi(ad: string): string {
 const YAZI_BOYUT_OLCEGI: Record<string, number> = {
   Teko: 1.3, VT323: 1.35, Caveat: 1.3, 'Dancing Script': 1.3, 'Bebas Neue': 1.15, Bangers: 1.1, Oswald: 1.1,
   'Barlow Condensed': 1.15, Rajdhani: 1.1, 'Pixelify Sans': 1.1, Creepster: 1.1, Staatliches: 1.05, Pacifico: 1.05,
-  'Press Start 2P': 0.62, Silkscreen: 0.8, Monoton: 0.8, Bungee: 0.82, Orbitron: 0.92, 'Fira Code': 0.92,
+  'Press Start 2P': 0.62, Silkscreen: 0.8, Monoton: 0.8, Bungee: 0.82, Orbitron: 0.92, Oxanium: 0.95, Michroma: 0.78, 'Rubik Mono One': 0.78, 'Great Vibes': 1.3, Sacramento: 1.35, Allura: 1.3, 'Alex Brush': 1.25, 'Amatic SC': 1.3, 'Shadows Into Light': 1.15, 'Fira Code': 0.92,
   Audiowide: 0.92, 'Black Ops One': 0.92, Cinzel: 0.95
 };
 

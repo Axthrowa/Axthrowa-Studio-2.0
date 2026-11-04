@@ -91,7 +91,7 @@ const KLIP_MESAJI = '📌 @{user} klip anını işaretledi ({zaman}) — yayınc
 /** `!modul kapat <ad>`: bu adlardaki yerleşik komutlar yanıt vermez */
 export const MODULLER: Record<string, string[]> = {
   oyunlar: ['slot', 'slots', 'rulet', 'roulette', 'duello', 'duel', 'soygun', 'heist', 'yaris', 'race', 'drag', 'balik', 'avla', 'fish', 'kasaac', 'kasa', 'case', 'bomba', 'c4', 'kes', 'cut', 'yazitura', 'cf', 'coinflip', 'zar', 'dice', 'kral', 'taht', 'king', 'tahtikap', 'claimthrone', 'claimking', 'cark', 'wheel'],
-  sarki: ['sr', 'songrequest', 'sarkiiste'],
+  sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste'],
   yapayzeka: ['sor', 'ask', 'ai', 'cevir', 'translate', 'tr'],
   bilgi: ['soru', 'trivia', 'bilgi', 'bilgiyarismasi', 'yarisma', 'kelime', 'anagram'],
   market: ['market', 'magaza', 'store', 'shop', 'al', 'buy', 'redeem']
@@ -393,6 +393,10 @@ export class CommandManager {
       case 'songrequest':
       case 'sarkiiste':
         return await songRequest.handleSongRequest(message, args);
+
+      case 'klip':
+      case 'klipiste':
+        return await songRequest.handleSongRequest(message, args, { klip: true });
 
       case 'sarki':
       case 'song':

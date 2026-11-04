@@ -1,13 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { enBuyukBoyut, hizala, olcekSinirla, sinirla, yapistir } from './hizala';
+import { hizala, merkezdeBoyutla, sinirla, yapistir } from './hizala';
 
 const sohbet = { x: 40, y: 430, width: 420, height: 610, scale: 0.8 };
 
-describe('olcekSinirla', () => {
-  it('görünen kutu tuvalden taşmaz, küçülme alt sınırda durur', () => {
-    expect(olcekSinirla(1.5, { x: 0, y: 0, width: 400, height: 200 })).toBe(1.5);
-    expect(olcekSinirla(9, { x: 1000, y: 0, width: 460, height: 100 })).toBe(2);
-    expect(olcekSinirla(0.01, { x: 0, y: 0, width: 400, height: 200 })).toBe(0.25);
+describe('merkezdeBoyutla', () => {
+  it('merkez yerinde kalır', () => {
+    const k = { x: 100, y: 100, width: 200, height: 100, scale: 1 };
+    expect(merkezdeBoyutla(k, { scale: 2 })).toEqual({ x: 0, y: 50, width: 200, height: 100, scale: 2 });
+    expect(merkezdeBoyutla(k, { width: 300 })).toEqual({ x: 50, y: 100, width: 300, height: 100, scale: 1 });
+    expect(merkezdeBoyutla(k, { height: 40 })).toEqual({ x: 100, y: 130, width: 200, height: 40, scale: 1 });
+  });
+  it('tuval kenarındaki widget dışarı taşmaz, ölçek sınırda durur', () => {
+    const r = merkezdeBoyutla({ x: 1800, y: 0, width: 100, height: 100 }, { width: 200 });
+    expect(r.x + r.width).toBe(1920);
+    expect(r.y).toBe(0);
+    expect(merkezdeBoyutla({ x: 0, y: 0, width: 960, height: 100 }, { scale: 9 }).scale).toBe(2);
+    expect(merkezdeBoyutla({ x: 0, y: 0, width: 400, height: 200 }, { scale: 0.01 }).scale).toBe(0.25);
   });
 });
 
@@ -21,7 +29,6 @@ describe('hizala', () => {
 
   it('ölçek 1’den büyükse tuvalden taşmaz', () => {
     expect(sinirla(5000, 5000, { x: 0, y: 0, width: 400, height: 200, scale: 2 })).toEqual({ x: 1120, y: 680 });
-    expect(enBuyukBoyut({ x: 1000, y: 580, width: 100, height: 100, scale: 2 })).toEqual({ width: 460, height: 250 });
   });
 
   it('ortalama görünen boyuta göre', () => {

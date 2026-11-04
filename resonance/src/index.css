@@ -23,6 +23,11 @@ body,
   height: 100%;
 }
 
+/* Tek kalınlıklı yazı tiplerini tarayıcı kalınlaştırınca harfler birbirine giriyor */
+html {
+  font-synthesis-weight: none;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useLyrics } from '../../hooks/useLyrics'
+import { satirSuresi } from '../../lib/lyrics'
 
 /** Söz görünümleri. `kutu`: çevreleyen alan; `etkin`: şu anki satır; `yan`: önceki/sonraki satır */
 export const SOZ_TEMALARI = {
@@ -62,7 +63,7 @@ export function sozYuksekligi(config) {
 }
 
 /** Küçük kaymada yerel saat sürer: sunucudan gelen her örnekte dolum geri-ileri sıçramasın */
-const SAAT_ESIGI_MS = 400
+const SAAT_ESIGI_MS = 120
 
 /**
  * Karaoke dolumu her karede yazılır (React'e uğramadan): ilerleme 4 kez/sn geldiği için adım adım görünüyordu.
@@ -136,13 +137,12 @@ export function Lyrics({ track, progressMs, config, preview = false }) {
         const etkin = i === 1
         const satirStili = { color: metinRengi, fontSize: etkin ? buyuk : kucuk, fontWeight: 500, lineHeight: 1.3, ...(etkin ? stil.etkin : stil.yan) }
         if (etkin && tema.karaoke && goster) {
-          const sonraki = lines[index + 1]?.time ?? l.time + 4
           return (
             <KaraokeSatir
               key={`${i}-${index}-${l.text}`}
               metin={l.text}
               oran={oran}
-              satirMs={Math.max(0.2, sonraki - l.time) * 1000}
+              satirMs={satirSuresi(lines, index) * 1000}
               renk={renk}
               metinRengi={metinRengi}
               style={satirStili}

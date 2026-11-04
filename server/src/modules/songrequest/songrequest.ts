@@ -215,7 +215,8 @@ export class SongRequestEngine {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8'
         },
-        timeout: 2500
+        // Arama sayfası yavaş gelince istek "bulunamadı" sayılıyordu
+        timeout: 6000
       });
       const vid = res.data.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/)?.[1];
       if (!vid) return null;
@@ -358,7 +359,8 @@ export class SongRequestEngine {
       this.djParca = null;
       return istek;
     }
-    if (settingsCache.get('sr_bos_rastgele', 'true') === 'false') return null;
+    // Otomatik DJ yalnız video kipinde: Spotify kipinde !klip ile açılan katman kendiliğinden eski klip çalmasın
+    if (!this.videoKipi() || settingsCache.get('sr_bos_rastgele', 'true') === 'false') return null;
     if (this.djParca) return this.djParca;
     const gecmis = db
       .prepare("SELECT title, url FROM song_queue WHERE is_played = 1 AND (url LIKE '%youtube.com/%' OR url LIKE '%youtu.be/%') ORDER BY created_at DESC LIMIT 200")
@@ -489,8 +491,10 @@ export class SongRequestEngine {
   // In-memory cache for fast search responses (0ms on repeated songs)
   private searchCache: Map<string, { videoId: string; title: string; thumbnail?: string }> = new Map();
 
-  async handleSongRequest(message: ChatMessagePayload, args: string[]): Promise<string> {
+  /** `klip`: !klip komutu; kip ne olursa olsun istek OBS'teki Şarkı Klipleri widget'ında video olarak çalar. */
+  async handleSongRequest(message: ChatMessagePayload, args: string[], { klip = false } = {}): Promise<string> {
     const rawQuery = args.join(' ').trim();
+    if (!rawQuery && klip) return `@${message.user.displayName}, bir şarkı adı ya da YouTube linki yaz. Örnek: !klip Teoman Paramparça`;
     if (!rawQuery) {
       return `@${message.user.displayName}, bir şarkı ismi, YouTube, Spotify veya YouTube Music linki girmelisin! Örnek: !sr Teoman Paramparça`;
     }
@@ -512,9 +516,9 @@ export class SongRequestEngine {
 
     await muzikHost.hariciTazele();
     // Spotify / YouTube Music bağlıysa şarkı doğrudan o programda çalınır
-    if (this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);
+    if (!klip && this.spotifyOtomatikMi()) return this.spotifyIstegi(message, rawQuery);
 
-    const videoKipi = this.videoKipi();
+    const videoKipi = klip || this.videoKipi();
     // Müzik çalar açık değil: eskiden istek hiç çalmayacak bir sıraya "eklendi" diye alınıyordu
     if (calarKapali({ videoKipi, otomatik: false, spotifyApiKapali: settingsCache.get('sr_spotify_api', 'true') === 'false' })) {
       return `@${message.user.displayName}, şu an Spotify ya da YouTube Music açık değil, isteğin çalınamaz. Yayıncı müzik çaları açınca tekrar dene.`;
@@ -619,6 +623,7 @@ export class SongRequestEngine {
 
     const queueCount = (db.prepare('SELECT COUNT(*) as count FROM song_queue WHERE is_played = 0').get() as { count: number }).count;
 
+    if (klip) return `🎬 @${message.user.displayName}, "${title}" klibi sıraya eklendi! (Sıradaki #${queueCount})`;
     return `🎵 @${message.user.displayName}, "${title}" sıraya eklendi! (Sıradaki #${queueCount})`;
   }
 

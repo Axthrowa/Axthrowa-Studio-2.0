@@ -12,6 +12,11 @@ export const FONTS = [
   'Righteous', 'Exo 2', 'Rajdhani', 'Kanit', 'Bungee', 'Fredoka', 'Comfortaa', 'Caveat', 'Dancing Script',
   'Playfair Display', 'Raleway', 'Ubuntu', 'Quicksand', 'Pixelify Sans', 'Fira Code', 'Staatliches', 'Lobster',
   'Pacifico', 'Silkscreen', 'Monoton', 'Saira', 'Barlow Condensed', 'Lexend', 'Space Grotesk',
+  // Başlık, el yazısı, film ve oyun havası (Google Fonts, OFL; Türkçe karakterli)
+  'Josefin Sans', 'Questrial', 'League Spartan', 'Fjalla One', 'Abril Fatface', 'Cormorant Garamond', 'Bitter', 'Courier Prime', 'IBM Plex Mono',
+  'Great Vibes', 'Kaushan Script', 'Sacramento', 'Courgette', 'Allura', 'Alex Brush', 'Yellowtail', 'Gloria Hallelujah', 'Shadows Into Light', 'Amatic SC', 'Indie Flower',
+  'Luckiest Guy', 'Passion One', 'Paytone One', 'Sigmar One', 'Titan One', 'Lilita One', 'Rubik Mono One', 'Bungee Inline', 'Tilt Neon',
+  'Michroma', 'Tektur', 'Oxanium', 'Racing Sans One', 'Faster One', 'Metal Mania', 'New Rocker', 'Eater', 'Pirata One', 'MedievalSharp', 'Cinzel Decorative', 'Grenze Gotisch',
   // Sohbet eklentilerinde sık kullanılanlar (Türkçe karakterli)
   'Open Sans', 'Lato', 'Noto Sans', 'Source Code Pro', 'Baloo 2', 'Rubik', 'Archivo Black', 'Alfa Slab One', 'Merriweather',
   'Jost', 'Titillium Web', 'DM Sans', 'Manrope', 'Work Sans', 'Sora', 'Urbanist', 'Outfit', 'Chakra Petch', 'Kalam', 'Patrick Hand'
@@ -19,6 +24,7 @@ export const FONTS = [
 
 export const ACTIVITY_DEFAULTS = {
   kabuk: '',
+  showBorder: true,
   showFollow: true,
   showSub: true,
   showGiftSub: true,
@@ -188,6 +194,7 @@ export const KAPPAGEN_DEFAULTS = {
   fromChat: true,
   size: 64,
   durationMs: 3500,
+  speed: 1,
   maxOnScreen: 60,
   burstCopies: 4,
   spin: true,
@@ -201,6 +208,9 @@ export const EMOTE_COMBO_DEFAULTS = {
   /** Emote bu kadar süre gelmezse patlar */
   timeoutMs: 2500,
   size: 96,
+  /** Kombo büyüdükçe emote en fazla bu boya çıkar */
+  maxSize: 300,
+  speed: 1,
   soundEnabled: true,
   soundUrl: '',
   soundVolume: 0.6,
@@ -373,6 +383,7 @@ export const GIVEAWAY_DEFAULTS = {
   keyword: '!katil',
   overlayTitle: 'ÇEKİLİŞ',
   winnerShowSec: 12,
+  drawSec: 7,
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 18,
   fontColor: '#ffffff',
@@ -410,7 +421,7 @@ export const SUBATHON_DEFAULTS = {
   // Görünüm: kart, minimal, dijital (LCD), çevirmeli kartlar, neon, tek satır hap
   theme: 'card',
   fontFamily: 'Plus Jakarta Sans',
-  timeFontFamily: 'Orbitron',
+  timeFontFamily: 'Oxanium',
   timeFontSize: 56,
   textColor: '#ffffff',
   bgColor: '#000000',
@@ -483,7 +494,7 @@ export const VIEWER_COUNTER_DEFAULTS = {
   title: 'İZLEYİCİ',
   theme: 'classic',
   layout: 'column',
-  align: 'left',
+  align: 'center',
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 18,
   textColor: '#ffffff',

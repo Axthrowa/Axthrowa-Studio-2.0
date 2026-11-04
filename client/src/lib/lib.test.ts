@@ -22,7 +22,11 @@ import {
   sonrakiTik,
   type UyariOgesi
 } from './alertQueue.js';
-import { GENEL_TEMALAR, temalar, temayiUygula } from './themes.js';
+import { GENEL_TEMALAR, WIDGET_TEMALARI, temalar, temayiUygula } from './themes.js';
+import { FONTS } from './widget-defaults.js';
+import { tuvaleSigdirmaPayi } from './katmanCakisma.js';
+import { yuvalariGuncelle } from '../widgets/WordCloudWidget.js';
+import { kasaSeridi } from '../widgets/GiveawayWidget.js';
 import { olayEtiketi, olayiDestekleyenler, onbellegiTemizle, yetenekleriGetir } from './capabilities.js';
 import { genelRozet, platformRozeti, type CanliOzet } from './live-status.js';
 
@@ -403,5 +407,72 @@ describe('kaydedilmemiş değişiklik kaydı', () => {
     expect(anlikGoruntu({ a: 1, b: { c: 2, d: [1, 2] } })).toBe(anlikGoruntu({ b: { d: [1, 2], c: 2 }, a: 1 }));
     expect(anlikGoruntu({ a: 1 })).not.toBe(anlikGoruntu({ a: '1' }));
     expect(anlikGoruntu({ l: [1, 2] })).not.toBe(anlikGoruntu({ l: [2, 1] }));
+  });
+});
+
+describe('tema okunurluğu', () => {
+  const parlaklik = (h: string) => {
+    const k = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * k[0] + 0.7152 * k[1] + 0.0722 * k[2];
+  };
+  const kontrast = (a: string, b: string) => {
+    const [x, y] = [parlaklik(a), parlaklik(b)].sort((p, q) => q - p);
+    return (x + 0.05) / (y + 0.05);
+  };
+  const hex = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
+
+  it('genel temalarda metin ve başlık zeminde okunur, yazı tipi listede ve Türkçe harfli', () => {
+    const kotu: string[] = [];
+    for (const t of [...GENEL_TEMALAR, ...Object.values(WIDGET_TEMALARI).flat()]) {
+      const d = t.degerler as Record<string, unknown>;
+      const bgColor = d.bgColor ?? d.backgroundColor ?? d.messageBgColor;
+      const textColor = d.textColor ?? d.fontColor ?? d.messageColor;
+      const accentColor = d.titleColor ?? d.accentColor;
+      const { fontFamily } = d;
+      // Yarı saydam zemin (cam) sahneye göre değişir: rengiyle ölçülmez
+      if (Number(d.bgOpacity ?? d.backgroundOpacity ?? d.messageBgOpacity ?? 1) < 0.5) continue;
+      if (hex(bgColor) && hex(textColor) && kontrast(bgColor, textColor) < 4.5) kotu.push(`${t.id} metin ${kontrast(bgColor, textColor).toFixed(1)}`);
+      if (hex(bgColor) && hex(accentColor) && kontrast(bgColor, accentColor) < 3) kotu.push(`${t.id} başlık ${kontrast(bgColor, accentColor).toFixed(1)}`);
+      if (typeof fontFamily === 'string' && !fontFamily.includes(',') && (!FONTS.includes(fontFamily) || ['Orbitron', 'Creepster'].includes(fontFamily))) kotu.push(`${t.id} yazı ${fontFamily}`);
+    }
+    expect(kotu).toEqual([]);
+  });
+});
+
+describe('kelime bulutu yuvaları', () => {
+  const say = (l: string[]) => l.reduce<Record<string, number>>((a, k) => ({ ...a, [k]: (a[k] || 0) + 1 }), {});
+
+  it('az sözcükte her sözcükten eşit sayıda doldurur', () => {
+    expect(say(yuvalariGuncelle([], ['a', 'b'], 10))).toEqual({ a: 5, b: 5 });
+    expect(yuvalariGuncelle([], ['a', 'b'], 4)).toEqual(['a', 'b', 'a', 'b']);
+    expect(yuvalariGuncelle([], [], 4)).toEqual([]);
+  });
+
+  it('yeni sözcük yalnız fazla kopyaların yerine geçer, diğer yuvalar yerinde kalır', () => {
+    const once = yuvalariGuncelle([], ['a', 'b'], 12);
+    const sonra = yuvalariGuncelle(once, ['a', 'b', 'c'], 12);
+    expect(say(sonra)).toEqual({ a: 4, b: 4, c: 4 });
+    expect(sonra.filter((k, i) => k === once[i]).length).toBe(8);
+  });
+});
+
+describe('katman tuvale sığdırma', () => {
+  it('yalnız alttan taşan kadar yukarı alır, üstü geçmez', () => {
+    expect(tuvaleSigdirmaPayi(760, 240)).toBe(0);
+    expect(tuvaleSigdirmaPayi(760, 400)).toBe(80);
+    expect(tuvaleSigdirmaPayi(760, 400, 2)).toBe(480);
+    expect(tuvaleSigdirmaPayi(100, 5000)).toBe(100);
+  });
+});
+
+describe('çekiliş kasa şeridi', () => {
+  it('işaret kazanan kartın üstünde durur', () => {
+    for (const r of [() => 0, () => 0.5, () => 0.999]) {
+      const { isimler, kayma } = kasaSeridi('Kazanan', ['a', 'b'], r);
+      expect(isimler[Math.floor(kayma / 178)]).toBe('Kazanan');
+    }
+  });
+  it('aday yoksa da çalışır', () => {
+    expect(kasaSeridi('K', []).isimler.every((a) => a === 'K')).toBe(true);
   });
 });

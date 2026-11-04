@@ -22,7 +22,7 @@ interface GameSettings {
   soygun: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
   yaris: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
   trivia: { enabled: boolean; timeoutSec: number };
-  kelime: { enabled: boolean; rewardPoints: number; timeoutSec: number };
+  kelime: { enabled: boolean; showHint?: boolean; rewardPoints: number; timeoutSec: number };
   balik: { enabled: boolean; cooldownSec: number };
   kasa: { enabled: boolean; cost: number };
   bomba: { enabled: boolean; cooldownSec: number };
@@ -38,7 +38,7 @@ const DEFAULT_GAME_SETTINGS: GameSettings = {
   soygun: { enabled: true, minBet: 20, maxBet: 5000, cooldownSec: 35 },
   yaris: { enabled: true, minBet: 20, maxBet: 5000, cooldownSec: 30 },
   trivia: { enabled: true, timeoutSec: 20 },
-  kelime: { enabled: true, rewardPoints: 150, timeoutSec: 40 },
+  kelime: { enabled: true, showHint: true, rewardPoints: 150, timeoutSec: 40 },
   balik: { enabled: true, cooldownSec: 45 },
   kasa: { enabled: true, cost: 100 },
   bomba: { enabled: true, cooldownSec: 30 },
@@ -481,6 +481,18 @@ export function MiniGames() {
                   )}
 
                   {/* Win Multiplier */}
+
+                  {game.id === 'kelime' && (
+                    <label className="bg-black/50 p-2.5 rounded-xl border border-white/5 flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="text-[10px] text-gray-400">İpucu göster</span>
+                      <input
+                        type="checkbox"
+                        checked={(conf as any).showHint !== false}
+                        onChange={e => updateGameField('kelime', 'showHint', e.target.checked)}
+                        className="w-4 h-4 accent-purple-600"
+                      />
+                    </label>
+                  )}
 
                   {/* Reward Points (Trivia & Kelime) */}
                   {conf.rewardPoints !== undefined && (

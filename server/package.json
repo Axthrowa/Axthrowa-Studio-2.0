@@ -1,6 +1,6 @@
 {
   "name": "streamaxt-server",
-  "version": "1.13.1",
+  "version": "1.13.3",
   "engines": {
     "node": ">=22.5.0"
   },

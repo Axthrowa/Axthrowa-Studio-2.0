@@ -15,6 +15,7 @@ import { hypeTreni } from '../../modules/hype/hype-train.js';
 import { kingSystemService } from '../../modules/games/king-system.js';
 import { WIDGET_KIMLIGI, widgetAyariniTemizle } from '../../modules/widgets/settings-validate.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { canliDurum } from '../../core/live-status.js';
 import { kupa } from '../../modules/engagement/kupa.js';
 import { etiketVerisi } from '../../modules/widgets/olay-etiketleri.js';
 import { takipciSayisi } from '../../modules/widgets/takipci-sayisi.js';
@@ -124,6 +125,12 @@ router.post('/subathon/add', (req: Request, res: Response) => {
 });
 
 // Tek URL'yi açık tüm OBS kaynaklarında yeniden yükler
+// İzleyici Sayacı widget'ı: yayın yoklamasının gördüğü sayılar
+router.get('/overlay/izleyici', (_req: Request, res: Response) => {
+  const say = (p: string) => canliDurum.platform(p)?.izleyici ?? 0;
+  res.json({ kick: say('kick'), twitch: say('twitch'), youtube: say('youtube') });
+});
+
 router.post('/overlay/reload', (req: Request, res: Response) => {
   wsHub.broadcastTo(['all'], { type: 'overlay_reload' });
   res.json({ success: true });
@@ -141,7 +148,7 @@ export function normalizeAllInOneConfig(cfg: any) {
     subathon: { enabled: false, x: 1560, y: 60, width: 320, height: 70, scale: 1 },
     trivia: { enabled: false, x: 660, y: 700, width: 600, height: 320, scale: 1 },
     eventLabels: { enabled: true, x: 0, y: 0, width: 1920, height: 44, scale: 1 },
-    emoteCombo: { enabled: true, x: 0, y: 0, width: 1920, height: 1080, scale: 1 },
+    emoteCombo: { enabled: true, x: 760, y: 340, width: 400, height: 400, scale: 1 },
     nowPlaying: { enabled: false, x: 1460, y: 960, width: 420, height: 90, scale: 1 },
     theCup: { enabled: false, x: 1580, y: 610, width: 300, height: 430, scale: 1 },
     polls: { enabled: false, x: 1540, y: 180, width: 340, height: 260, scale: 1 },
@@ -153,6 +160,16 @@ export function normalizeAllInOneConfig(cfg: any) {
   };
 
   const result: any = { ...defaults, ...(cfg || {}) };
+  // Eski kayıt: kombo tam ekran katmandı, taşınamıyordu. Ayarı olmayan tam ekran kutu yeni varsayılana iner
+  const kombo = result.emoteCombo;
+  if (kombo?.width === 1920 && kombo?.height === 1080 && kombo?.etkiTamEkran === undefined) {
+    result.emoteCombo = { ...kombo, ...defaults.emoteCombo, enabled: kombo.enabled, etkiTamEkran: false };
+  }
+  // Eski varsayılan yerleşim: üstü olay şeridinin altında, altı kutudan taşıyordu
+  const sayac = result.viewerCounter;
+  if (sayac?.x === 1660 && sayac?.y === 20 && sayac?.width === 220 && sayac?.height === 60) {
+    result.viewerCounter = { ...sayac, y: 140, height: 110 };
+  }
   for (const key of Object.keys(defaults)) {
     if (key === 'canvasWidth' || key === 'canvasHeight' || key === 'testMode') continue;
     const defW = (defaults as any)[key];
@@ -229,6 +246,9 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
       for (let i = 0; i < 7; i++) {
         setTimeout(() => wsHub.broadcastTo(['all'], { type: 'emote_used', emote: body.emote || '🔥' }), i * 350).unref?.();
       }
+      break;
+    case 'muzik-video':
+      wsHub.broadcastTo(['all'], { type: 'muzik_video_test' });
       break;
     case 'the-cup':
       {

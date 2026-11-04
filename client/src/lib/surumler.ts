@@ -11,6 +11,28 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.3',
+    ad: 'Temalar',
+    tarih: '2026-11-04',
+    notlar: [
+      'Çekiliş: kasa açar gibi kayan isimler, çekiliş anına ayrı konum',
+      'Anket ve diğer widgetlar içerikleri kadar uzar; ekrana gelmeyen widget arkasındakini gizlemez',
+      'Kelime bulutu az sözcükte eşit dolar; emote kombo ve ekranda emote için hız ayarı, daha akıcı emote ve kupa',
+      'Şarkı Klipleri için Test düğmesi; 28 film, oyun ve dizi teması, 41 yeni yazı tipi, okunmayan yazılar düzeltildi',
+    ]
+  },
+  {
+    surum: '1.13.2',
+    ad: 'Temalar',
+    tarih: '2026-11-04',
+    notlar: [
+      'Tek URL: emote kombo taşınır ve boyutlanır, etkisi isteğe bağlı tüm ekranı kaplar; boyutlandırma widget yerini değiştirmez, test sayfayı yenilemez',
+      'İzleyici sayacı canlı sayıyı gösterir ve ortalanır; varsayılan yeri düzeltildi',
+      'Çekiliş: katılan tüm isimler sağdan sola kayar; Tahtın Kralı boşken yer kaplamaz',
+      'Yeni !klip komutu; oyun mesajlarında yayıncının kendi adı; !kelime ipucu ve etkinlik akışı çerçevesi kapatılabilir',
+    ]
+  },
+  {
     surum: '1.13.1',
     ad: 'Temalar',
     tarih: '2026-11-04',

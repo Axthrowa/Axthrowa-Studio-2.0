@@ -109,8 +109,10 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
   const bos = !king || Boolean(king.bos);
   if (bos && (s.hideWhenEmpty || !king)) return null;
   if (!king) return null;
+  // Tek satır uzun yazı kutuyu şişiriyordu, ad gelince küçülüyordu: komut alt satırda küçük yazılır
+  const bosMetin = String(s.emptyText || 'Taht boş — !tahtikap <puan>').split(/\s+—\s+/);
   const gorunen: KingState = bos
-    ? { ...king, displayName: String(s.emptyText || 'Taht boş — !tahtikap <puan>'), avatarUrl: '', pointsBid: 0 }
+    ? { ...king, displayName: bosMetin[0], avatarUrl: '', pointsBid: 0 }
     : king;
 
   const tema = String(s.theme || 'royal');
@@ -246,6 +248,12 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
           <div className="font-black leading-tight truncate" style={{ fontSize: boy }}>
             {gorunen.displayName || gorunen.currentKing}
           </div>
+
+          {bos && bosMetin[1] && (
+            <div className="mt-0.5 font-medium truncate" style={{ fontSize: Math.max(9, boy * 0.6), opacity: 0.85 }}>
+              {bosMetin[1]}
+            </div>
+          )}
 
           {!bos && (s.showPoints || s.showReign) && (
             <div

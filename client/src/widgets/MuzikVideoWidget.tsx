@@ -8,7 +8,12 @@
  * hâlâ çalan şarkıyı geçirir: iki OBS kaynağı aynı şarkıyı iki kez atlatmaz.
  */
 import { useEffect, useRef, useState } from 'react';
-import { onizlemeKipi } from '../lib/widget-style.js';
+import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
+
+/** Paneldeki Test düğmesinin oynattığı açık lisanslı kısa film */
+const TEST_ADRESI = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ';
+const TEST_MS = 15_000;
 
 interface Istek {
   id: string;
@@ -52,6 +57,9 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
   const oynatici = useRef<any>(null);
   const calan = useRef('');
   const bitirRef = useRef<() => Promise<unknown>>(async () => {});
+  const hedefVideo = useRef('');
+  const testBitis = useRef(0);
+  const [hata, setHata] = useState(false);
   const params = new URLSearchParams(window.location.search);
   const ses = Math.max(0, Math.min(100, Number(params.get('volume') ?? 70)));
   const bilgi = params.get('info') !== '0';
@@ -64,15 +72,26 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
       fetch('/api/songrequest/current?video=1')
         .then((r) => r.json())
         .then((d) => {
-          if (iptal) return;
+          if (iptal || Date.now() < testBitis.current) return;
           setIstek(d && videoKimligi(d.url) ? { id: d.id, title: d.title, url: d.url, requestedBy: d.requestedBy } : null);
         })
         .catch(() => {});
     cek();
     const t = setInterval(cek, 3000);
+    const ws = new KaliciSoket(wsAdresi());
+    ws.onmessage = (e) => {
+      try {
+        if (JSON.parse(String(e.data))?.type !== 'muzik_video_test') return;
+      } catch {
+        return;
+      }
+      testBitis.current = Date.now() + TEST_MS;
+      setIstek({ id: `test-${Date.now()}`, title: 'Test klibi', url: TEST_ADRESI, requestedBy: 'Test' });
+    };
     return () => {
       iptal = true;
       clearInterval(t);
+      ws.close();
     };
   }, [onizleme]);
 
@@ -80,16 +99,21 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
   useEffect(() => {
     if (onizleme || !istek || calan.current === istek.id) return;
     calan.current = istek.id;
+    setHata(false);
     const vid = videoKimligi(istek.url);
-    const bitir = () =>
-      fetch('/api/songrequest/bitti', {
+    hedefVideo.current = vid;
+    const bitir = async () => {
+      if (istek.id.startsWith('test-')) return;
+      await fetch('/api/songrequest/bitti', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: istek.id })
       }).catch(() => {});
+    };
     void youtubeApi().then((YT) => {
       if (oynatici.current) {
-        oynatici.current.loadVideoById(vid);
+        // Oynatıcı henüz hazır değilse onReady hedef videoyu açar
+        oynatici.current.loadVideoById?.(vid);
         return;
       }
       if (!kutu.current) return;
@@ -97,16 +121,28 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
         videoId: vid,
         width: '100%',
         height: '100%',
-        playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, playsinline: 1 },
+        playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, playsinline: 1, origin: window.location.origin },
         events: {
           onReady: (e: any) => {
             e.target.setVolume(ses);
-            e.target.playVideo();
+            if (hedefVideo.current !== vid) e.target.loadVideoById(hedefVideo.current);
+            else e.target.playVideo();
+            // Tarayıcı sesli otomatik oynatmayı engellerse klip sessizce başlar: yoksa sıra sonsuza dek takılırdı
+            setTimeout(() => {
+              if ([-1, 2, 5].includes(e.target.getPlayerState?.())) {
+                e.target.mute();
+                e.target.playVideo();
+              }
+            }, 2500);
           },
           // 0 = bitti
           onStateChange: (e: any) => e.data === 0 && void bitirRef.current(),
           // Gömme kapalı / video yok: 2 sn sonra sıradakine
-          onError: () => setTimeout(() => void bitirRef.current(), 2000)
+          onError: (e: any) => {
+            console.warn('[Şarkı Klipleri] YouTube oynatamadı, kod:', e?.data);
+            setHata(true);
+            setTimeout(() => void bitirRef.current(), 2000);
+          }
         }
       });
     });
@@ -132,9 +168,9 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
   }
 
   return (
-    <div style={{ ...boyut, position: 'relative', background: 'transparent', visibility: istek ? 'visible' : 'hidden' }}>
+    <div data-katman-bos={istek ? undefined : ''} style={{ ...boyut, position: 'relative', background: 'transparent', visibility: istek ? 'visible' : 'hidden' }}>
       <div ref={kutu} style={{ width: '100%', height: '100%' }} />
-      {istek && bilgi && <Bilgi baslik={istek.title} kim={istek.requestedBy} />}
+      {istek && bilgi && <Bilgi baslik={hata ? `Bu klip gömülemiyor, sıradakine geçiliyor: ${istek.title}` : istek.title} kim={istek.requestedBy} />}
     </div>
   );
 }

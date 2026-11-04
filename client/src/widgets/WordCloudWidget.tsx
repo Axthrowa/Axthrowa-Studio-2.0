@@ -25,6 +25,34 @@ export interface Yerlesik {
   donuk: boolean;
 }
 
+/**
+ * Az sözcük varken bulut sözcüklerin kopyalarıyla dolar, her sözcükten eşit sayıda. Yeni sözcük gelince
+ * yalnız fazla kopyaların yerine geçer: diğer yuvalar yerinde kalır, bulut baştan dizilmez.
+ */
+export function yuvalariGuncelle(onceki: string[], kelimeler: string[], hedef: number): string[] {
+  if (!kelimeler.length) return [];
+  const taban = Math.floor(hedef / kelimeler.length);
+  const artan = hedef % kelimeler.length;
+  const eksik = new Map(kelimeler.map((k, i) => [k, taban + (i < artan ? 1 : 0)]));
+  const kalan = Array.from({ length: hedef }, (_, i) => {
+    const k = onceki[i];
+    if (k === undefined || !eksik.get(k)) return null;
+    eksik.set(k, eksik.get(k)! - 1);
+    return k;
+  });
+  // Boş yuvalara sırayla: aynı sözcükler yan yana yığılmasın
+  const sira: string[] = [];
+  while ([...eksik.values()].some((n) => n > 0)) {
+    for (const k of kelimeler) {
+      if (eksik.get(k)! > 0) {
+        sira.push(k);
+        eksik.set(k, eksik.get(k)! - 1);
+      }
+    }
+  }
+  return kalan.map((k) => k ?? sira.shift()!);
+}
+
 /** Arşimet sarmalı ile çakışmasız yerleşim (yaklaşık kutu: genişlik ≈ harf × 0.6 × boyut) */
 export function bulutYerlesimi(liste: Sozcuk[], w: number, h: number, enKucuk: number, enBuyuk: number, renkler: string[], dikeyOran: number): Yerlesik[] {
   if (!liste.length) return [];
@@ -85,29 +113,37 @@ export function WordCloudWidget({ embedded = false, previewMode = false }: { emb
   }, []);
 
   const renkler = useMemo(() => String(s.colors || '').split(',').map((r) => r.trim()).filter(Boolean), [s.colors]);
+  const yuvalar = useRef<string[]>([]);
   const yerler = useMemo(
-    () =>
-      bulutYerlesimi(
-        liste.filter((x) => x.sayi >= (Number(s.minCount) || 1)).slice(0, Number(s.maxWords) || 40),
+    () => {
+      const hedef = Number(s.maxWords) || 40;
+      const yeterli = liste.filter((x) => x.sayi >= (Number(s.minCount) || 1));
+      const kaynak = yeterli.length ? yeterli : liste;
+      // Az sözcük: yuvalar eşit kopyayla dolar; boyut yuvanın sırasından gelir, sözcük değişince yer değişmez
+      yuvalar.current = kaynak.length < hedef ? yuvalariGuncelle(yuvalar.current, kaynak.map((x) => x.sozcuk), hedef) : [];
+      return bulutYerlesimi(
+        yuvalar.current.length ? yuvalar.current.map((sozcuk, i) => ({ sozcuk, sayi: 100 / (i + 1) })) : kaynak.slice(0, hedef),
         olcu.w,
         olcu.h,
         Number(s.minSize) || 16,
         Number(s.maxSize) || 72,
         renkler.length ? renkler : ['#ffffff'],
         Number(s.verticalRatio) || 0
-      ),
+      );
+    },
     [liste, olcu, s.minCount, s.maxWords, s.minSize, s.maxSize, renkler, s.verticalRatio]
   );
 
   return (
     <div
       ref={kutu}
+      data-katman-bos={yerler.length ? undefined : ''}
       className={`${embedded ? 'w-full h-full' : 'w-screen h-screen'} relative overflow-hidden select-none`}
       style={{ background: Number(s.bgOpacity) > 0 ? rgba(s.bgColor, s.bgOpacity) : 'transparent', borderRadius: Number(s.radius) || 0, fontFamily: s.fontFamily }}
     >
-      {yerler.map((y) => (
+      {yerler.map((y, i) => (
         <span
-          key={y.sozcuk}
+          key={i}
           className="absolute whitespace-nowrap font-black"
           style={{
             left: y.x,

@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { EMOTE_COMBO_DEFAULTS } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
-import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { hizCarpani, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 import { emoteleriAyikla, guvenliEmoteAdresi, type EmoteParca } from '../lib/emote.js';
 import { useYediTvHaritasi } from '../lib/yediTv.js';
 
@@ -27,10 +27,10 @@ const PATLAMA_EN_UZUN_MS = 2600;
 /** Dağılan kopyanın boyu, ayarlanan emote boyuna göre: ortadaki ne kadar büyümüş olursa olsun küçük kalır */
 const PARCA_ORANI = 0.6;
 
-/** Kombo büyüdükçe emote boyu; kutuya sığacak kadarla sınırlı */
-export function emoteBoyu(taban: number, adet: number, enAz: number, kutu: number): number {
+/** Kombo büyüdükçe emote boyu; kutuya ve ayarlanan en büyük boya kadar */
+export function emoteBoyu(taban: number, adet: number, enAz: number, kutu: number, enBuyuk = Infinity): number {
   const b = taban * (1 + Math.max(0, adet - enAz) * 0.35);
-  return Math.min(b, Math.max(taban, kutu * 0.7));
+  return Math.min(b, Math.max(taban, Math.min(kutu * 0.7, enBuyuk)));
 }
 
 /** Merkezden `aci` yönünde kutunun kenarına uzaklık (px) */
@@ -82,7 +82,7 @@ function EmoteGorsel({ e, boyut }: { e: EmoteParca; boyut: number }) {
   return <span style={{ fontSize: boyut, lineHeight: 1, display: 'block', transition: 'font-size .18s ease-out' }}>{e.ad}</span>;
 }
 
-export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
+export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boolean; tamEkranEtki?: boolean }) {
   const s = useWidgetSettings('emote-combo', EMOTE_COMBO_DEFAULTS);
   const onizleme = onizlemeKipi(props?.previewMode);
   const yediTv = useYediTvHaritasi();
@@ -96,10 +96,12 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
   const harita = useRef(yediTv);
   harita.current = yediTv;
   const kutu = useRef<HTMLDivElement>(null);
-  const kutuBoyutu = () => {
-    const r = kutu.current?.getBoundingClientRect();
-    return { w: r?.width || window.innerWidth, h: r?.height || window.innerHeight };
-  };
+  // clientWidth: ölçeksiz boyut. Ekrandaki boyutla önizleme büyütülünce emote de büyüyordu
+  const kutuBoyutu = () => ({ w: kutu.current?.clientWidth || window.innerWidth, h: kutu.current?.clientHeight || window.innerHeight });
+  const etki = useRef(props?.tamEkranEtki);
+  etki.current = props?.tamEkranEtki;
+  // Tüm ekran: kutu nerede olursa olsun kopyalar ekranın dışından gelir ve dışına çıkar
+  const ucusAlani = () => (etki.current ? { w: 3840, h: 2160 } : kutuBoyutu());
 
   useEffect(() => {
     if (onizleme) return;
@@ -116,13 +118,14 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     };
 
     const patlat = (emote: EmoteParca, adet: number) => {
-      const { w, h } = kutuBoyutu();
+      const { w, h } = ucusAlani();
       const a = ayar.current;
       const id = ++patlamaNo;
       const boy = (Number(a.size) || 96) * PARCA_ORANI;
+      const hiz = hizCarpani(a.speed);
       setGelenler([]);
-      setPatlama({ id, emote, boy, parcalar: patlamaParcalari(adet, w, h, boy) });
-      sonra(() => setPatlama((p) => (p?.id === id ? null : p)), PATLAMA_EN_UZUN_MS);
+      setPatlama({ id, emote, boy, parcalar: patlamaParcalari(adet, w, h, boy).map((p) => ({ ...p, sure: p.sure / hiz, gecikme: p.gecikme / hiz })) });
+      sonra(() => setPatlama((p) => (p?.id === id ? null : p)), PATLAMA_EN_UZUN_MS / hiz);
     };
 
     const isle = (emote: EmoteParca) => {
@@ -162,12 +165,12 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
         const adet = k.adet;
         sonra(() => {
           if (son === k) setKombo({ emote, adet });
-        }, UCUS_MS);
+        }, UCUS_MS / hizCarpani(a.speed));
       }
-      const { w, h } = kutuBoyutu();
+      const { w, h } = ucusAlani();
       const yeni = { ...toplanmaBaslangici(++gelenNo, w, h, Number(a.size) || 96), emote };
       setGelenler((g) => [...g.slice(-(EN_COK_UCAN - 1)), yeni]);
-      sonra(() => setGelenler((g) => g.filter((x) => x.id !== yeni.id)), UCUS_MS + 50);
+      sonra(() => setGelenler((g) => g.filter((x) => x.id !== yeni.id)), UCUS_MS / hizCarpani(a.speed) + 50);
     };
 
     const ws = new KaliciSoket(wsAdresi('chatbox'));
@@ -204,13 +207,13 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
   }, [onizleme]);
 
   const { w, h } = kutuBoyutu();
-  const boy = kombo ? emoteBoyu(Number(s.size) || 96, kombo.adet, s.minCombo, Math.min(w, h)) : 0;
+  const boy = kombo ? emoteBoyu(Number(s.size) || 96, kombo.adet, s.minCombo, Math.min(w, h), Number(s.maxSize) || 300) : 0;
   const merkez = { position: 'absolute' as const, left: '50%', top: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' as const };
   // Ayrı OBS sayfasında ekranı kaplar; Tek URL katmanında kutusunu.
   const kap = props?.embedded ? { width: '100%', height: '100%' } : { width: '100vw', height: '100vh' };
 
   return (
-    <div ref={kutu} style={{ position: 'relative', ...kap, overflow: 'hidden' }}>
+    <div ref={kutu} data-katman-bos={kombo || patlama || gelenler.length ? undefined : ''} style={{ position: 'relative', ...kap, overflow: props?.tamEkranEtki ? 'visible' : 'hidden' }}>
       <style>{KOMBO_CSS}</style>
       {kombo && (
         <div style={{ ...merkez, filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}>
@@ -234,7 +237,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               ['--dy' as any]: `${g.dy}px`,
               ['--rot' as any]: `${g.donus}deg`,
               ['--s' as any]: g.olcek,
-              animation: `axt-kombo-topla ${UCUS_MS}ms cubic-bezier(.5,0,.8,.4) forwards`
+              animation: `axt-kombo-topla ${UCUS_MS / hizCarpani(s.speed)}ms cubic-bezier(.5,0,.8,.4) forwards`
             }}
           >
             <EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} />

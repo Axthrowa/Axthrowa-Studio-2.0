@@ -16,7 +16,7 @@
  * (TARGET_ARCHITECTURE §8: "Preview ile gerçek widget birbirinden tamamen
  * farklı iki implementation olmasın.")
  */
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ChatBoxWidget } from './ChatBoxWidget.js';
 import { AlertBoxWidget } from './AlertBoxWidget.js';
 import { EmoteComboWidget } from './EmoteComboWidget.js';
@@ -47,7 +47,7 @@ import { MuzikVideoWidget } from './MuzikVideoWidget.js';
 import { WordCloudWidget } from './WordCloudWidget.js';
 import { ScoreboardWidget } from './ScoreboardWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
-import { arkasiniGizlerMi, cakisincaGizlenirMi, gizlenecekKatmanlar } from '../lib/katmanCakisma.js';
+import { arkasiniGizlerMi, cakisincaGizlenirMi, gizlenecekKatmanlar, tuvaleSigdirmaPayi } from '../lib/katmanCakisma.js';
 
 export interface WidgetLayoutItem {
   enabled?: boolean;
@@ -148,10 +148,9 @@ export const KATMANLAR: KatmanTanimi[] = [
     anahtar: 'emoteCombo',
     etiket: 'Emote Kombo',
     z: 75,
-    // Emote ekranın ortasında büyür ve patlayıp saçılır: tuvalin tamamı
-    varsayilan: { x: 0, y: 0, width: 1920, height: 1080 },
-    tamEkran: true,
-    ciz: (o) => <EmoteComboWidget embedded previewMode={o} />
+    // Emote kutunun ortasında büyür; "Etki tüm ekranı kaplasın" açıksa kopyalar kutudan taşıp ekrana saçılır
+    varsayilan: { x: 760, y: 340, width: 400, height: 400 },
+    ciz: (o, item) => <EmoteComboWidget embedded previewMode={o} tamEkranEtki={Boolean(item?.etkiTamEkran)} />
   },
   {
     anahtar: 'nowPlaying',
@@ -242,7 +241,7 @@ export const KATMANLAR: KatmanTanimi[] = [
     anahtar: 'viewerCounter',
     etiket: 'İzleyici Sayacı',
     z: 66,
-    varsayilan: { x: 1660, y: 20, width: 220, height: 60 },
+    varsayilan: { x: 1660, y: 140, width: 220, height: 110 },
     ciz: (o) => <ViewerCounterWidget embedded previewMode={o} />
   },
   {
@@ -383,7 +382,8 @@ export function katmanStili(
     transform: `scale(${kendiOlcek * olcek})`,
     transformOrigin: 'top left',
     zIndex: z,
-    overflow: 'hidden'
+    // Kırpılmaz: anket seçeneği gibi uzayan içerik elle boyut ayarlamadan görünsün
+    overflow: 'visible'
   };
 }
 
@@ -391,6 +391,8 @@ export interface OverlayKatmanlariProps {
   config: Record<string, WidgetLayoutItem | undefined>;
   /** Örnek veri göster (stüdyo önizlemesi ve OBS test kipi). */
   onizleme?: boolean;
+  /** Örnek görünümde yalnız bunlar canlı çizilir (stüdyoda denenen widget). */
+  canliKatmanlar?: string[];
   /** Tuval küçültme oranı; OBS'te 1. */
   olcek?: number;
   /** Stüdyo sürükleme/seçme sarmalayıcısı. OBS'te verilmez. */
@@ -401,23 +403,52 @@ export interface OverlayKatmanlariProps {
  * Widget gizliyken hiçbir şey çizmez ya da kökünü `data-katman-bos` ile işaretler (bildirim kutusu):
  * kapsayıcısında içerik varsa ekranda demektir.
  */
-function KatmanKutusu({ stil, izle, degisti, children }: { stil: CSSProperties; izle: boolean; degisti: (ekranda: boolean) => void; children: ReactNode }) {
+function KatmanKutusu({
+  stil,
+  cekilisStili,
+  izle,
+  degisti,
+  children
+}: {
+  stil: CSSProperties;
+  /** Widget `data-katman-cekilis` ile çekiliş anını bildirince geçilecek konum */
+  cekilisStili?: CSSProperties;
+  izle: boolean;
+  degisti: (ekranda: boolean) => void;
+  children: ReactNode;
+}) {
   const kap = useRef<HTMLDivElement>(null);
+  const [cekilisAni, setCekilisAni] = useState(false);
+  const [icerikH, setIcerikH] = useState(0);
   useEffect(() => {
     const el = kap.current;
-    if (!el || !izle) return;
-    const bak = () => degisti(el.childElementCount > 0 && !el.querySelector('[data-katman-bos]'));
+    if (!el) return;
+    const boyut = new ResizeObserver((g) => setIcerikH((g[0].target as HTMLElement).offsetHeight));
+    const bak = () => {
+      // <style> tek başına ekranda bir şey değildir
+      const kok = [...el.children].find((c) => c.tagName !== 'STYLE') as HTMLElement | undefined;
+      if (izle) degisti(Boolean(kok) && !el.querySelector('[data-katman-bos]'));
+      setCekilisAni(Boolean(el.querySelector('[data-katman-cekilis]')));
+      setIcerikH(kok?.offsetHeight ?? 0);
+      boyut.disconnect();
+      if (kok) boyut.observe(kok);
+    };
     bak();
     const izleyici = new MutationObserver(bak);
-    izleyici.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-katman-bos'] });
+    izleyici.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-katman-bos', 'data-katman-cekilis'] });
     return () => {
       izleyici.disconnect();
-      degisti(false);
+      boyut.disconnect();
+      if (izle) degisti(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [izle]);
+  const aktif = cekilisAni && cekilisStili ? cekilisStili : stil;
+  const olcek = Number(String(aktif.transform).match(/scale\(([\d.]+)\)/)?.[1]) || 1;
+  const y = parseFloat(String(aktif.top)) || 0;
+  const pay = tuvaleSigdirmaPayi(y, icerikH, olcek);
   return (
-    <div ref={kap} style={stil}>
+    <div ref={kap} style={{ ...aktif, top: `${y - pay}px` }}>
       {children}
     </div>
   );
@@ -426,7 +457,7 @@ function KatmanKutusu({ stil, izle, degisti, children }: { stil: CSSProperties; 
 /**
  * Etkin katmanları çizer. `sarmala` verilmezse düz render — OBS bunu kullanır.
  */
-export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala }: OverlayKatmanlariProps) {
+export function OverlayKatmanlari({ config, onizleme = false, canliKatmanlar, olcek = 1, sarmala }: OverlayKatmanlariProps) {
   const [etkinler, setEtkinler] = useState<string[]>([]);
   // Önizlemede tüm örnekler aynı anda çizilir: orada kimse gizlenmez
   const gizli = onizleme || sarmala
@@ -457,7 +488,9 @@ export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala
         if (!item?.enabled && !sarmala) return null; // OBS: kapalı katman hiç çizilmez
 
         const stil = katmanStili(item, katman.varsayilan, katman.z, olcek);
-        const icerik = katman.ciz(onizleme, item);
+        const canli = onizleme && canliKatmanlar?.includes(katman.anahtar);
+        // key: örnek veriyle başlayan widget canlıya geçince baştan kurulur
+        const icerik = <Fragment key={canli ? 'canli' : 'ornek'}>{katman.ciz(onizleme && !canli, item)}</Fragment>;
 
         if (sarmala) return <span key={katman.anahtar}>{sarmala(katman, icerik, stil)}</span>;
 
@@ -465,7 +498,12 @@ export function OverlayKatmanlari({ config, onizleme = false, olcek = 1, sarmala
         return (
           <KatmanKutusu
             key={katman.anahtar}
-            stil={{ ...stil, pointerEvents: 'none', opacity: gizli.has(katman.anahtar) ? 0 : 1, transition: 'opacity 250ms' }}
+            stil={{ ...stil, pointerEvents: 'none', opacity: gizli.has(katman.anahtar) ? 0 : 1, transition: 'opacity 250ms, left 400ms ease, top 400ms ease' }}
+            cekilisStili={
+              item?.cekilis
+                ? { ...katmanStili({ ...item, ...item.cekilis }, katman.varsayilan, katman.z, olcek), pointerEvents: 'none', opacity: gizli.has(katman.anahtar) ? 0 : 1, transition: 'opacity 250ms, left 400ms ease, top 400ms ease' }
+                : undefined
+            }
             izle={arkasiniGizlerMi(katman.anahtar, item)}
             degisti={(ekranda) =>
               setEtkinler((l) => (ekranda === l.includes(katman.anahtar) ? l : ekranda ? [...l, katman.anahtar] : l.filter((a) => a !== katman.anahtar)))

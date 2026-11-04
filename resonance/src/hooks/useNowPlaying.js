@@ -17,7 +17,7 @@ export function useNowPlaying(musicService, overrides = null) {
   const host = useHostNowPlaying(!hasOverride)
   const useHost = !hasOverride && host.available
 
-  const spotify = useCurrentlyPlaying(3000, !isYtmd && !useHost, overrides?.spotify || null)
+  const spotify = useCurrentlyPlaying(1000, !isYtmd && !useHost, overrides?.spotify || null)
   // Köprü her zaman açık: seçili kaynak Spotify olsa bile YTMD çalıyorsa
   // host'a yazılsın, otomatik kaynak geçişi çalışsın.
   const ytmd = useYtmdNowPlaying(true, overrides?.ytmd || null, true)

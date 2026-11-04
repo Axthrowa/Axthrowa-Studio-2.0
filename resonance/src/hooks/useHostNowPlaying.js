@@ -2,6 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { getNowPlaying, hostBaseUrl, isHostAvailable } from '../lib/hostBridge'
 import { PROGRESS_TICK_MS } from '../components/widget/skinParts'
 
+/** Bu kadar küçük fark örnekleme gürültüsüdür: yerel saat sürer, sözler geri-ileri sıçramaz */
+export const SAPMA_ESIGI_MS = 200
+
+/** Çalmaya devam eden aynı parçada gelen konum yerel saate çok yakınsa yok sayılır (ileri/geri sarma değil) */
+export function konumKorunsunMu(taban, id, caliyor, yeni, simdi = Date.now()) {
+  if (!taban.playing || !caliyor || taban.id !== id) return false
+  return Math.abs(yeni - (taban.progress + (simdi - taban.at))) < SAPMA_ESIGI_MS
+}
+
 function toTrack(np) {
   if (!np || !np.title) return null
   return {
@@ -18,12 +27,12 @@ function toTrack(np) {
 // Host (Rust) tek "şu an çalan" kaydını tutar: Spotify'ı kendi yoklar,
 // YouTube Music'i Resonance köprüsünden alır. Resonance'ın kendi ekranları da
 // buradan okur ki panel, widget ve OBS aynı anı göstersin.
-export function useHostNowPlaying(enabled = true, pollMs = 3000) {
+export function useHostNowPlaying(enabled = true, pollMs = 1000) {
   const [available, setAvailable] = useState(false)
   const [track, setTrack] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progressMs, setProgressMs] = useState(0)
-  const baseRef = useRef({ progress: 0, at: 0, playing: false, duration: 0 })
+  const baseRef = useRef({ id: '', progress: 0, at: 0, playing: false, duration: 0 })
 
   useEffect(() => {
     if (!enabled) return undefined
@@ -38,7 +47,10 @@ export function useHostNowPlaying(enabled = true, pollMs = 3000) {
       const raw = (np?.progress || 0) + (np?.isPlaying ? age : 0)
       const dur = np?.duration || 0
       const started = dur > 0 ? Math.min(raw, dur) : raw
+      const id = toTrack(np)?.id || ''
+      if (konumKorunsunMu(baseRef.current, id, Boolean(np?.isPlaying), started)) return
       baseRef.current = {
+        id,
         progress: started,
         at: Date.now(),
         playing: Boolean(np?.isPlaying),

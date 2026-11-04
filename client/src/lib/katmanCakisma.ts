@@ -27,12 +27,18 @@ export const arkasiniGizlerMi = (anahtar: string, ayar?: GizlemeAyari): boolean 
 
 /** Önüne öncelikli bir widget gelince bu widget gizlenir mi */
 export const cakisincaGizlenirMi = (anahtar: string, ayar?: GizlemeAyari): boolean =>
-  ayar?.cakisincaGizle ?? !ONCELIKLI_KATMANLAR.includes(anahtar);
+  // Emote kombo saydam efekt: üstüne bildirim gelse de kaybolmaz
+  ayar?.cakisincaGizle ?? !(ONCELIKLI_KATMANLAR.includes(anahtar) || anahtar === 'emoteCombo');
 
 const kapsam = (k: Kutu) => {
   const olcek = typeof k.scale === 'number' ? k.scale : 1;
   return { sol: k.x, ust: k.y, sag: k.x + k.width * olcek, alt: k.y + k.height * olcek };
 };
+
+/** İçerik kutudan uzayıp tuvalin altından taşacaksa katmanın ne kadar yukarı alınacağı (tuvalin üstünü geçmez) */
+export function tuvaleSigdirmaPayi(y: number, icerikH: number, olcek = 1, tuvalH = 1080): number {
+  return Math.max(0, Math.min(y, y + icerikH * olcek - tuvalH));
+}
 
 /** Yalnız kenarı değen kutular çakışmış sayılmaz */
 export function kutularCakisiyor(a: Kutu, b: Kutu): boolean {

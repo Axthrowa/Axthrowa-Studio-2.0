@@ -103,6 +103,7 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
       borderRadius: s.borderRadius,
       border: `1px solid ${s.borderColor}`,
       ...kutuTasarimi(s),
+      ...(s.showBorder ? null : { border: 'none', boxShadow: 'none' }),
       padding: 16,
       display: 'flex',
       flexDirection: 'column',

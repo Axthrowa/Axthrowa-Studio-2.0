@@ -44,7 +44,7 @@ import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
 import { GALERI_KATMANI, KATMANLAR, OverlayKatmanlari } from '../widgets/OverlayLayers.js';
 import { arkasiniGizlerMi, cakisincaGizlenirMi } from '../lib/katmanCakisma.js';
-import { enBuyukBoyut, hizala, olcekSinirla, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
+import { hizala, merkezdeBoyutla, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
 import { ayarKanalinaKatil, YERLESIM_KIMLIGI } from '../lib/ayarKanali.js';
@@ -291,7 +291,8 @@ const TEST_ADI: Record<string, string> = {
   'event-labels': 'event-labels',
   'pinned-messages': 'pinned-messages',
   king: 'king',
-  scoreboard: 'scoreboard'
+  scoreboard: 'scoreboard',
+  'muzik-video': 'muzik-video'
 };
 
 /** Widget seçme listesinde adın yanındaki simge */
@@ -389,10 +390,10 @@ const DEFAULT_ALL_IN_ONE_CONFIG: AllInOneConfig = {
   },
   emoteCombo: {
     enabled: true,
-    x: 0,
-    y: 0,
-    width: 1920,
-    height: 1080,
+    x: 760,
+    y: 340,
+    width: 400,
+    height: 400,
     scale: 1
   },
   nowPlaying: {
@@ -476,7 +477,9 @@ export function OverlayStudio() {
   /** Tuval OBS'te görüneceği gibi mi (true) yoksa örnek verilerle mi çizilsin. */
   const [obsGorunumu, setObsGorunumu] = useState(false);
   // Test Modu açıkken de test olayı görünsün: tuval canlı veriye geçer
-  const [canliTest, setCanliTest] = useState(false);
+  // Test edilen katmanlar: yalnız onlar canlı çizilir, tuvalin geri kalanı olduğu gibi kalır
+  const [testKatmanlari, setTestKatmanlari] = useState<string[]>([]);
+  const testSureleri = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   // Artınca tuvaldeki widget'lar yeniden yüklenir
   const [tuvalAnahtari, setTuvalAnahtari] = useState(0);
   /** Seçili katmanın kendi ayar kaydı (hedef çubuğunda türe göre). */
@@ -568,7 +571,7 @@ export function OverlayStudio() {
   const [isDragging, setIsDragging] = useState(false);
   const [kilavuz, setKilavuz] = useState<Kilavuzlar>({ dikey: [], yatay: [] });
   const [isResizing, setIsResizing] = useState(false);
-  const dragStartRef = useRef<{ mod?: 'olcek' | 'en' | 'boy'; origScale?: number; pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
+  const dragStartRef = useRef<{ cekilis?: boolean; mod?: 'olcek' | 'en' | 'boy'; origScale?: number; pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
 
   // Otomatik kayıt: değişiklikten 400 ms sonra; sürükleme sırasında bekler
   useEffect(() => {
@@ -602,6 +605,16 @@ export function OverlayStudio() {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
+  /** Çekiliş anı kutusu ana konumdan bağımsız sürüklenir */
+  const handleCekilisPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    const c = (allInOne as any).giveaway?.cekilis;
+    if (!c) return;
+    setIsDragging(true);
+    dragStartRef.current = { cekilis: true, pointerX: e.clientX, pointerY: e.clientY, widgetX: c.x, widgetY: c.y, origW: 0, origH: 0 };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
   const handleResizePointerDown = (e: React.PointerEvent, widgetKey: string, mod: 'olcek' | 'en' | 'boy') => {
     e.stopPropagation();
     setSelectedCanvasWidget(widgetKey);
@@ -629,7 +642,11 @@ export function OverlayStudio() {
     const deltaX = (e.clientX - dragStartRef.current.pointerX) / displayScale;
     const deltaY = (e.clientY - dragStartRef.current.pointerY) / displayScale;
 
-    if (isDragging) {
+    if (isDragging && dragStartRef.current.cekilis) {
+      const x = Math.round(dragStartRef.current.widgetX + deltaX);
+      const y = Math.round(dragStartRef.current.widgetY + deltaY);
+      setAllInOne((prev) => ({ ...prev, giveaway: { ...(prev as any).giveaway, cekilis: { x, y } } }));
+    } else if (isDragging) {
       const curItem = (allInOne as any)[selectedCanvasWidget];
       const kutu: Kutu = { x: 0, y: 0, width: curItem?.width || 300, height: curItem?.height || 200, scale: curItem?.scale };
       const hamX = dragStartRef.current.widgetX + deltaX;
@@ -657,21 +674,16 @@ export function OverlayStudio() {
         }
       }));
     } else if (isResizing) {
-      const curItem = (allInOne as any)[selectedCanvasWidget];
-      const olcek = typeof curItem?.scale === 'number' && curItem.scale > 0 ? curItem.scale : 1;
-      const enBuyuk = enBuyukBoyut({ x: dragStartRef.current.widgetX, y: dragStartRef.current.widgetY, width: 0, height: 0, scale: olcek });
-      // Fare hareketi görünen boyutu değiştirir; ölçeksiz boyuta çevir
-      const { mod, origW, origH, origScale = 1, widgetX, widgetY } = dragStartRef.current;
-      const newW = Math.round(Math.max(100, Math.min(enBuyuk.width, origW + deltaX / olcek)));
-      const newH = Math.round(Math.max(40, Math.min(enBuyuk.height, origH + deltaY / olcek)));
       // Köşe içeriği büyütür: widget'ların çoğu kutuya göre büyümez, kutu değişince yalnız kırpılırdı.
-      // Kenarlar kutuyu değiştirir (sohbet gibi alanı dolduranlar için).
+      // Kenarlar kutuyu değiştirir. Kutu merkezde büyüdüğü için fark iki katı: tutulan kenar fareyi izler.
+      const { mod, origW, origH, origScale = 1, widgetX, widgetY } = dragStartRef.current;
+      const bas = { x: widgetX, y: widgetY, width: origW, height: origH, scale: origScale };
       const yama =
         mod === 'olcek'
-          ? { scale: olcekSinirla(origScale * Math.max(1 + deltaX / (origW * origScale), 1 + deltaY / (origH * origScale)), { x: widgetX, y: widgetY, width: origW, height: origH }) }
+          ? merkezdeBoyutla(bas, { scale: origScale * Math.max(1 + (2 * deltaX) / (origW * origScale), 1 + (2 * deltaY) / (origH * origScale)) })
           : mod === 'en'
-            ? { width: newW }
-            : { height: newH };
+            ? merkezdeBoyutla(bas, { width: Math.max(100, origW + (2 * deltaX) / origScale) })
+            : merkezdeBoyutla(bas, { height: Math.max(40, origH + (2 * deltaY) / origScale) });
       setAllInOne(prev => ({
         ...prev,
         [selectedCanvasWidget]: {
@@ -830,15 +842,18 @@ export function OverlayStudio() {
     setTimeout(() => setTestNotification(null), 3000);
   };
 
-  /** Test olayı örnek kipte görünmez: tuval OBS görünümüne geçer. */
-  const katmaniTestEt = async (etiket: string, testAdi: string) => {
-    const gecisVar = !obsGorunumu || (Boolean(allInOne.testMode) && !canliTest);
-    setObsGorunumu(true);
-    setCanliTest(true);
-    // Örnek görünümden yeni geçildiyse widget'ların canlı bağlantısı henüz açık değil:
-    // hemen yollanan test kaçıyor, kullanıcı yalnız tuvalin yenilendiğini görüyordu
-    if (gecisVar) await new Promise((r) => setTimeout(r, 1200));
+  /** Test olayı örnek widget'ta görünmez: yalnız denenen katman bir süre canlı çizilir, tuval yenilenmez. */
+  const katmaniTestEt = async (anahtar: string, etiket: string, testAdi: string) => {
+    const ornekte = !obsGorunumu || Boolean(allInOne.testMode);
+    const gecisVar = ornekte && !testKatmanlari.includes(anahtar);
+    clearTimeout(testSureleri.current[anahtar]);
+    if (gecisVar) {
+      setTestKatmanlari((l) => [...l, anahtar]);
+      // Canlı bağlantı henüz açık değil: hemen yollanan test kaçardı
+      await new Promise((r) => setTimeout(r, 1200));
+    }
     await triggerWidgetTest(testAdi);
+    testSureleri.current[anahtar] = setTimeout(() => setTestKatmanlari((l) => l.filter((a) => a !== anahtar)), 15000);
     setTestNotification(`${etiket} testi gönderildi.`);
     setTimeout(() => setTestNotification(null), 3000);
   };
@@ -1339,7 +1354,6 @@ export function OverlayStudio() {
                       title={ipucu}
                       onClick={() => {
                         setObsGorunumu(deger);
-                        setCanliTest(false);
                       }}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
                         obsGorunumu === deger ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-white/10'
@@ -1373,7 +1387,7 @@ export function OverlayStudio() {
                   <button
                     key={k.anahtar}
                     type="button"
-                    onClick={() => void katmaniTestEt(k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]])}
+                    onClick={() => void katmaniTestEt(k.anahtar, k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]])}
                     className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
                   >
                     {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
@@ -1418,7 +1432,8 @@ export function OverlayStudio() {
                   <OverlayKatmanlari
                     key={tuvalAnahtari}
                     config={allInOne as any}
-                    onizleme={obsGorunumu ? Boolean(allInOne.testMode) && !canliTest : true}
+                    onizleme={obsGorunumu ? Boolean(allInOne.testMode) : true}
+                    canliKatmanlar={testKatmanlari}
                     sarmala={(katman, icerik, stil) => {
                       const item = (allInOne as any)[katman.anahtar];
                       const secili = selectedCanvasWidget === katman.anahtar;
@@ -1427,7 +1442,7 @@ export function OverlayStudio() {
                       // Düzenleme görünümü: kapalı katman yalnız seçiliyken (konumlandırmak için) soluk çizilir;
                       // tam ekran katmanlar (JumpScare, ekranda emote) seçili değilken çizilmez. Eskiden 28
                       // katmanın hepsi çiziliyor, açık JumpScare tuvali kaplayıp tüm tıklamaları yutuyordu.
-                      if (!obsGorunumu && !secili && (!item?.enabled || katman.tamEkran)) return null;
+                      if (!obsGorunumu && !secili && !testKatmanlari.includes(katman.anahtar) && (!item?.enabled || katman.tamEkran)) return null;
                       const tiklanir = !katman.tamEkran || secili;
                       return (
                         <div
@@ -1473,6 +1488,31 @@ export function OverlayStudio() {
                       );
                     }}
                   />
+                  {selectedCanvasWidget === 'giveaway' && (allInOne as any).giveaway?.cekilis && (
+                    <div
+                      onPointerDown={handleCekilisPointerDown}
+                      style={{
+                        position: 'absolute',
+                        left: (allInOne as any).giveaway.cekilis.x,
+                        top: (allInOne as any).giveaway.cekilis.y,
+                        width: (allInOne as any).giveaway.width,
+                        height: (allInOne as any).giveaway.height,
+                        transform: `scale(${(allInOne as any).giveaway.scale || 1})`,
+                        transformOrigin: 'top left',
+                        border: '4px dashed #f59e0b',
+                        background: 'rgba(245,158,11,.15)',
+                        color: '#fde68a',
+                        font: '800 28px sans-serif',
+                        display: 'grid',
+                        placeItems: 'center',
+                        cursor: 'move',
+                        touchAction: 'none',
+                        zIndex: 500
+                      }}
+                    >
+                      Çekiliş anı konumu
+                    </div>
+                  )}
                   {kilavuz.dikey.map((x) => (
                     <div key={'d' + x} style={{ position: 'absolute', left: x - 1, top: 0, width: 2, height: 1080, background: '#f472b6', zIndex: 9999, pointerEvents: 'none' }} />
                   ))}
@@ -1591,6 +1631,36 @@ export function OverlayStudio() {
                       />
                     </div>
 
+                    {selectedCanvasWidget === 'emoteCombo' && (
+                      <label className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between gap-3 cursor-pointer">
+                        <span>
+                          <span className="text-xs font-bold text-white block">Etki tüm ekranı kaplasın</span>
+                          <span className="text-[10px] text-gray-400">Emote'lar ekranın her yerinden gelir ve her yere saçılır. Ortadaki emote kutunun yerinde kalır</span>
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(cur.etkiTamEkran)}
+                          onChange={(e) => updateCur({ etkiTamEkran: e.target.checked })}
+                          className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
+                        />
+                      </label>
+                    )}
+
+                    {selectedCanvasWidget === 'giveaway' && (
+                      <label className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between gap-3 cursor-pointer">
+                        <span>
+                          <span className="text-xs font-bold text-white block">Çekilirken farklı konumda dursun</span>
+                          <span className="text-[10px] text-gray-400">Tuvalde turuncu kesikli kutuyu sürükle. Çekiliş başlayınca widget oraya geçer, bitince geri döner.</span>
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(cur.cekilis)}
+                          onChange={(e) => updateCur({ cekilis: e.target.checked ? { x: cur.x, y: Math.max(0, cur.y - 240) } : undefined })}
+                          className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
+                        />
+                      </label>
+                    )}
+
                     {!tanim?.tamEkran && (
                       <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-2.5">
                         <label className="flex items-center justify-between gap-3 cursor-pointer">
@@ -1653,7 +1723,7 @@ export function OverlayStudio() {
                           <input
                             type="number"
                             value={cur.width ?? 300}
-                            onChange={e => updateCur({ width: parseInt(e.target.value, 10) || 100 })}
+                            onChange={e => updateCur(merkezdeBoyutla(cur, { width: parseInt(e.target.value, 10) || 100 }))}
                             className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white font-mono"
                           />
                         </div>
@@ -1662,7 +1732,7 @@ export function OverlayStudio() {
                           <input
                             type="number"
                             value={cur.height ?? 200}
-                            onChange={e => updateCur({ height: parseInt(e.target.value, 10) || 50 })}
+                            onChange={e => updateCur(merkezdeBoyutla(cur, { height: parseInt(e.target.value, 10) || 50 }))}
                             className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white font-mono"
                           />
                         </div>
@@ -1680,7 +1750,7 @@ export function OverlayStudio() {
                           max="3"
                           step="0.05"
                           value={cur.scale ?? 1}
-                          onChange={e => updateCur({ scale: parseFloat(e.target.value) || 1 })}
+                          onChange={e => updateCur(merkezdeBoyutla(cur, { scale: parseFloat(e.target.value) || 1 }))}
                           className="w-full accent-purple-500 cursor-pointer h-1.5 bg-gray-700 rounded-lg"
                         />
                       </div>

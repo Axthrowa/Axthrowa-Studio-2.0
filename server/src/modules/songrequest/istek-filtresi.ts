@@ -40,3 +40,14 @@ export function siraDegerleri(mevcut: Array<{ id: string; created_at: number }>,
     return { id, created_at: onceki };
   });
 }
+
+/** YouTube arama sayfasındaki sonuçlar, sırayla ve tekrarsız. */
+export function aramaAdaylari(html: string): Array<{ videoId: string; title: string }> {
+  const sonuc = new Map<string, string>();
+  for (const m of String(html).matchAll(/"videoRenderer":\{"videoId":"([\w-]{11})"[\s\S]{0,1500}?"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.)*)"/g)) {
+    if (!sonuc.has(m[1])) sonuc.set(m[1], m[2].replace(/\\(.)/g, '$1'));
+  }
+  // Sayfa biçimi değişirse en azından kimlikler
+  if (!sonuc.size) for (const m of String(html).matchAll(/\/watch\?v=([\w-]{11})/g)) if (!sonuc.has(m[1])) sonuc.set(m[1], '');
+  return [...sonuc].map(([videoId, title]) => ({ videoId, title }));
+}

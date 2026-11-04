@@ -328,11 +328,33 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
         return;
       }
       if (data.authUrl) {
-        openLink(data.authUrl, 'width=600,height=720');
+        await izinSayfasiniAc(data.authUrl, true);
       }
     } catch (err: any) {
       setKickFeedback({ type: 'error', text: 'OAuth hatası: ' + err.message });
     }
+  };
+
+  /** Bot girişi gizli pencerede: tarayıcıda açık yayıncı hesabı karışmasın. Yüklü tarayıcı bulunamazsa normal pencere. */
+  const izinSayfasiniAc = async (authUrl: string, gizli: boolean) => {
+    const r = gizli
+      ? await fetch('/api/platforms/kick/gizli-ac', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: authUrl })
+        }).then((y) => y.json()).catch(() => null)
+      : null;
+    if (!r?.acildi) {
+      openLink(authUrl, 'width=600,height=720');
+      return;
+    }
+    setKickFeedback({ type: 'success', text: 'Giriş sayfası gizli pencerede açıldı. Bot hesabınla giriş yap; bitince burası kendiliğinden güncellenir.' });
+    // Gizli pencere ayrı süreç, panele mesaj gönderemez: bağlantı 2 dk yoklanır
+    let kalan = 40;
+    const t = setInterval(() => {
+      loadPlatforms();
+      if (--kalan <= 0) clearInterval(t);
+    }, 3000);
   };
 
   /** Kick'in izin sayfasını açar; Client ID sunucuda kayıtlı değilse alandaki kullanılır. */
@@ -345,7 +367,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
       setKickFeedback({ type: 'error', text: data.error || 'Kick giriş adresi alınamadı.' });
       return;
     }
-    openLink(data.authUrl, 'width=600,height=720');
+    await izinSayfasiniAc(data.authUrl, hedef === 'bot');
   };
 
   const handleCopyOAuthLink = async () => {

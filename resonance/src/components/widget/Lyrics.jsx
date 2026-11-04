@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useLyrics } from '../../hooks/useLyrics'
-import { satirSuresi } from '../../lib/lyrics'
+import { kelimeDolumu, kelimeleriTahminEt, saatOku, satirSuresi } from '../../lib/lyrics'
 
 /** Söz görünümleri. `kutu`: çevreleyen alan; `etkin`: şu anki satır; `yan`: önceki/sonraki satır */
 export const SOZ_TEMALARI = {
@@ -62,35 +62,48 @@ export function sozYuksekligi(config) {
   return Math.ceil(buyuk * 1.45 + (n - 1) * kucuk * 1.45 + (n - 1) * 4 + dolgulu)
 }
 
-/** Küçük kaymada yerel saat sürer: sunucudan gelen her örnekte dolum geri-ileri sıçramasın */
-const SAAT_ESIGI_MS = 120
-
 /**
- * Karaoke dolumu her karede yazılır (React'e uğramadan): ilerleme 4 kez/sn geldiği için adım adım görünüyordu.
- * `span` satır içi: uzun satır alta kayınca dolum satır satır ilerler, sütun gibi değil.
+ * Karaoke dolumu kelime kelime, her karede yazılır (React'e uğramadan). Yalnız değişen kelimeye dokunulur:
+ * eski kelimeler dolu, gelecektekiler boş kalır. Kelime kendi içinde dolduğu için uzun satır alta kayınca da doğru akar.
  */
-function KaraokeSatir({ metin, oran, satirMs, renk, metinRengi, style }) {
-  const el = useRef(null)
-  const saat = useRef({ oran, at: performance.now() })
+function KaraokeSatir({ satir, satirSn, saat, offsetMs, renk, metinRengi, style }) {
+  const kelimeler = useMemo(() => satir.kelimeler || kelimeleriTahminEt(satir.text, satirSn, satir.time), [satir, satirSn])
+  const kutu = useRef(null)
   useEffect(() => {
-    const beklenen = saat.current.oran + (performance.now() - saat.current.at) / satirMs
-    if (Math.abs(beklenen - oran) * satirMs > SAAT_ESIGI_MS) saat.current = { oran, at: performance.now() }
-  }, [oran, satirMs])
-  useEffect(() => {
+    const dolu = `linear-gradient(${renk}, ${renk})`
+    const bos = `linear-gradient(${metinRengi}, ${metinRengi})`
+    const elemanlar = [...(kutu.current?.children || [])]
+    for (const el of elemanlar) el.style.backgroundImage = bos
     let kare
+    let sonI = -1
+    let sonYuzde = -1
     const ciz = () => {
-      const o = Math.min(1, saat.current.oran + (performance.now() - saat.current.at) / satirMs) * 100
-      if (el.current) el.current.style.backgroundImage = `linear-gradient(90deg, ${renk} ${o}%, ${metinRengi} ${Math.min(100, o + 1.5)}%)`
+      const { i, oran } = kelimeDolumu(kelimeler, (saatOku(saat.current, performance.now()) + offsetMs) / 1000)
+      if (i !== sonI) {
+        // Geri sarmada da doğru: her kelime kendi tarafına yazılır
+        elemanlar.forEach((el, k) => {
+          if (k !== i) el.style.backgroundImage = k < i ? dolu : bos
+        })
+        sonI = i
+        sonYuzde = -1
+      }
+      const yuzde = Math.round(oran * 100)
+      if (i >= 0 && yuzde !== sonYuzde) {
+        sonYuzde = yuzde
+        elemanlar[i].style.backgroundImage = `linear-gradient(90deg, ${renk} ${yuzde}%, ${metinRengi} ${Math.min(100, yuzde + 4)}%)`
+      }
       kare = requestAnimationFrame(ciz)
     }
     ciz()
     return () => cancelAnimationFrame(kare)
-  }, [renk, metinRengi, satirMs])
+  }, [kelimeler, renk, metinRengi, saat, offsetMs])
   return (
-    <p className="max-w-full" style={style}>
-      <span ref={el} style={{ WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', WebkitBoxDecorationBreak: 'slice', boxDecorationBreak: 'slice' }}>
-        {metin}
-      </span>
+    <p ref={kutu} className="max-w-full" style={{ ...style, whiteSpace: 'pre-wrap' }}>
+      {kelimeler.map((k, i) => (
+        <span key={i} style={{ WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+          {k.m}
+        </span>
+      ))}
     </p>
   )
 }
@@ -100,7 +113,7 @@ function KaraokeSatir({ metin, oran, satirMs, renk, metinRengi, style }) {
  * süreye yayılarak yaklaşık gösterilir ("Zamanı olmayan sözleri de göster" kapatılabilir).
  */
 export function Lyrics({ track, progressMs, config, preview = false }) {
-  const { lines, synced, tahmini, index, oran } = useLyrics(track, progressMs, true, Number(config?.lyricsOffsetMs) || 0)
+  const { lines, synced, tahmini, index, saat } = useLyrics(track, progressMs, true, Number(config?.lyricsOffsetMs) || 0)
   const tema = SOZ_TEMALARI[config?.lyricsTheme] || SOZ_TEMALARI.klasik
   const renk = config?.tintColor || '#22d3b8'
   const zemin = `rgba(15,16,21,${Number(config?.lyricsBgOpacity ?? 0.75)})`
@@ -140,9 +153,10 @@ export function Lyrics({ track, progressMs, config, preview = false }) {
           return (
             <KaraokeSatir
               key={`${i}-${index}-${l.text}`}
-              metin={l.text}
-              oran={oran}
-              satirMs={satirSuresi(lines, index) * 1000}
+              satir={l}
+              satirSn={satirSuresi(lines, index)}
+              saat={saat}
+              offsetMs={Number(config?.lyricsOffsetMs) || 0}
               renk={renk}
               metinRengi={metinRengi}
               style={satirStili}

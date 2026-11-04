@@ -32,7 +32,7 @@ describe('önizleme odağı', () => {
   });
 });
 
-import { emoteBoyu, patlamaParcalari, toplanmaBaslangici } from '../widgets/EmoteComboWidget.js';
+import { emoteBoyu, komboBitisi, patlamaParcalari, toplanmaBaslangici, ucusSuresi } from '../widgets/EmoteComboWidget.js';
 
 describe('emote kombo', () => {
   it('geldikçe büyür, kutuya sığacak kadarla sınırlı', () => {
@@ -85,5 +85,19 @@ describe('şarkı sözleri', () => {
     expect(sozGizlensinMi({ title: 'A', isPlaying: true, progressMs: 1000, durationMs: 200_000 })).toBe(false);
     // İstek kuyruğu: çalma bilgisi yok, karar verilmez
     expect(sozGizlensinMi({ title: 'A', isPlaying: null })).toBe(false);
+  });
+});
+
+describe('emote kombo zamanlaması', () => {
+  it('hız yalnız uçuşu değiştirir', () => {
+    expect(ucusSuresi(1)).toBe(1500);
+    expect(ucusSuresi(0.5)).toBe(3000);
+    expect(ucusSuresi(3)).toBe(500);
+  });
+  it('kombo son emote merkeze vardıktan sonra biter: en yavaş hızda bile varmadan patlamaz', () => {
+    for (const hiz of [0.1, 0.25, 0.45, 1, 3]) {
+      expect(komboBitisi(hiz, 2500)).toBe(ucusSuresi(hiz) + 2500);
+      expect(komboBitisi(hiz, 0)).toBeGreaterThan(ucusSuresi(hiz));
+    }
   });
 });

@@ -46,7 +46,7 @@ describe('hizala', () => {
     const b = yapistir(507, 300, k, [{ x: 100, y: 600, width: 400, height: 50 }]);
     expect(b.x).toBe(500);
     // eşikten uzaksa dokunmaz
-    const c = yapistir(700, 300, k, []);
-    expect(c).toEqual({ x: 700, y: 300, kilavuz: { dikey: [], yatay: [] } });
+    const c = yapistir(700, 200, k, []);
+    expect(c).toEqual({ x: 700, y: 200, kilavuz: { dikey: [], yatay: [] } });
   });
 });

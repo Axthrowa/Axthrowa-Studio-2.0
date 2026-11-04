@@ -138,6 +138,20 @@ export function MiniGames() {
     } catch {}
   };
 
+  /** İpucu anahtarı hemen kaydedilir */
+  const ipucuYaz = async (acik: boolean) => {
+    const yeni = { ...settings, kelime: { ...settings.kelime, showHint: acik } };
+    setSettings(yeni);
+    const tamam = await fetch('/api/games/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kelime: { showHint: acik } })
+    }).then((r) => r.ok).catch(() => false);
+    if (tamam && !kirli) taban(yeni);
+    setStatusMessage(tamam ? (acik ? '✅ Kelime Bulmacası ipucu açıldı.' : '✅ Kelime Bulmacası artık ipucu göstermeyecek.') : '❌ İpucu ayarı kaydedilemedi');
+    setTimeout(() => setStatusMessage(null), 3500);
+  };
+
   const updateGameField = (gameKey: keyof GameSettings, field: string, value: any) => {
     setSettings(prev => ({
       ...prev,
@@ -488,7 +502,7 @@ export function MiniGames() {
                       <input
                         type="checkbox"
                         checked={(conf as any).showHint !== false}
-                        onChange={e => updateGameField('kelime', 'showHint', e.target.checked)}
+                        onChange={e => void ipucuYaz(e.target.checked)}
                         className="w-4 h-4 accent-purple-600"
                       />
                     </label>

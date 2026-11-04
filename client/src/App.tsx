@@ -89,6 +89,13 @@ export function App() {
   // yüklenirken saydam kalır.
   const obsSayfasi = (icerik: ReactNode) => <Suspense fallback={null}>{icerik}</Suspense>;
 
+  // YouTube, 127.0.0.1'de açılan gömülü oynatıcıda müzik videolarını reddediyor (hata 150); aynı video localhost'ta oynuyor.
+  // Yalnız OBS'in açtığı üst sayfa: panel içindeki iframe önizlemeleri aynı kökende kalmalı.
+  if (window.location.hostname === '127.0.0.1' && window.top === window.self && (path === '/widgets/overlay' || path === '/overlay' || path === '/widgets/muzik-video')) {
+    window.location.replace(window.location.href.replace('//127.0.0.1', '//localhost'));
+    return null;
+  }
+
   // Render standalone OBS widgets when visiting /widgets/*
   if (path === '/widgets/overlay' || path === '/overlay') return obsSayfasi(<UnifiedOverlayWidget />);
   if (path === '/widgets/alertbox') return obsSayfasi(<AlertBoxWidget />);

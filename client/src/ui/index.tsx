@@ -138,6 +138,35 @@ export function Anahtar({
 
 // ---- Kart ve durumlar ------------------------------------------------------
 
+/** Açılır ayar grubu. Tarayıcının kendi `details` öğesi: klavye ve ekran okuyucu hazır gelir. */
+export function Katlanir({
+  baslik,
+  aciklama,
+  sayi,
+  acik = false,
+  children
+}: {
+  baslik: string;
+  aciklama?: string;
+  sayi?: number;
+  acik?: boolean;
+  children: ReactNode;
+}) {
+  // Yalnız ilk açılışta geçerli: içindeki alan değişince grup kullanıcının elinde kapanmasın
+  const [ilkAcik] = useState(acik);
+  return (
+    <details open={ilkAcik} className="group rounded-xl border border-white/10 bg-black/20">
+      <summary className="flex items-center gap-2 cursor-pointer select-none px-3 py-2.5 list-none [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="text-[10px] text-gray-400 transition-transform group-open:rotate-90">▶</span>
+        <span className="text-xs font-bold text-white">{baslik}</span>
+        {sayi !== undefined && <span className="text-[10px] text-gray-500">{sayi}</span>}
+        {aciklama && <span className="ml-auto pl-3 text-[10px] text-gray-500 truncate">{aciklama}</span>}
+      </summary>
+      <div className="px-3 pb-3 pt-1 space-y-3">{children}</div>
+    </details>
+  );
+}
+
 export function Kart({
   baslik,
   aciklama,

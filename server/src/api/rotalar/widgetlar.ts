@@ -234,6 +234,12 @@ router.post('/overlay/all-in-one', (req: Request, res: Response) => {
 // 18. Universal Widget Test Trigger Endpoint
 /** Widget test tetikleyicisi (Overlay Studio "Test" düğmesi ve sesli komutlar). Gerçek durum değişmez. */
 export function widgetTesti(widgetName: string, body: any = {}): void {
+  // ornek-<katman>: gerçek veriye dokunmadan Tek URL'de katmanın örneği birkaç saniye görünür
+  const ornek = widgetName.match(/^ornek-([a-zA-Z]{1,40})$/);
+  if (ornek) {
+    wsHub.broadcastTo(['all'], { type: 'katman_ornek', anahtar: ornek[1] });
+    return;
+  }
   switch (widgetName) {
     case 'on-screen-emotes':
       // Kombodan ayrı: yalnız ekranda emote widget'ı alır; sohbetten gelen emote'lar gibi kenardan kenara uçar

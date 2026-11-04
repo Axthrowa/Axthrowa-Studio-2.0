@@ -4,12 +4,14 @@ import { Gift, Trophy, Plus, Users, RotateCw, Settings2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
+import { Katlanir } from '../ui/index.js';
 
 export function Giveaways() {
   const [active, setActive] = useState<Giveaway | null>(null);
   const [entries, setEntries] = useState<any[]>([]);
   const [pastGiveaways, setPastGiveaways] = useState<Giveaway[]>([]);
   const [winner, setWinner] = useState<any | null>(null);
+  const [uyari, setUyari] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   // Pencere açık çekilişi düzenliyor mu
   const [duzenleniyor, setDuzenleniyor] = useState(false);
@@ -60,7 +62,7 @@ export function Giveaways() {
     const res = await fetch('/api/giveaways/reroll', { method: 'POST' });
     const data = await res.json();
     if (data.winner) setWinner(data.winner);
-    else alert(data.error || 'Yeniden çekilemedi.');
+    else setUyari(data.error || 'Yeniden çekilemedi.');
     loadGiveaways();
   };
 
@@ -94,16 +96,19 @@ export function Giveaways() {
     });
     // Sunucu ek ayarları yazamazsa artık söylüyor (eskiden sessizdi)
     const veri = await res.json().catch(() => null);
-    if (veri?.uyari) alert(veri.uyari);
+    if (veri?.uyari) setUyari(veri.uyari);
     setIsCreating(false);
     setTitle('');
     loadGiveaways();
   };
 
   const handleDraw = async () => {
-    const res = await fetch('/api/giveaways/draw', { method: 'POST' });
-    const data = await res.json();
-    if (data.winner) {
+    setUyari('');
+    // Gömülü panelde alert() sessizce yutulur: katılımcı yokken düğme hiçbir şey yapmıyor gibi görünüyordu
+    const data = await fetch('/api/giveaways/draw', { method: 'POST' }).then((r) => r.json()).catch(() => null);
+    if (!data) {
+      setUyari('Sunucuya ulaşılamadı, kazanan çekilmedi.');
+    } else if (data.winner) {
       setWinner(data.winner);
       confetti({
         particleCount: 150,
@@ -112,7 +117,7 @@ export function Giveaways() {
       });
       loadGiveaways();
     } else {
-      alert('Çekilişe katılan kimse bulunamadı!');
+      setUyari('Henüz katılan yok, kazanan çekilemez. Sohbette katılım kelimesini yazan olunca tekrar dene.');
     }
   };
 
@@ -159,19 +164,16 @@ export function Giveaways() {
                 AKTİF ÇEKİLİŞ
               </span>
               <h2 className="text-2xl font-black text-white mt-1">{active.title}</h2>
-              <div className="flex items-center space-x-3 text-xs text-gray-400 mt-2">
-                <span>Katılım Kelimesi: <b className="text-purple-400">{active.keyword}</b></span>
-                <span>•</span>
-                <span>Abone Bonusu: <b className="text-pink-400">{active.sub_bonus_multiplier}x Bilet</b></span>
-                <span>•</span>
-                <span>Toplam Katılımcı: <b className="text-emerald-400">{entries.length} kişi</b></span>
-                <span>•</span>
-                <span>Süre: <b className="text-white">{(active as any).duration_minutes ? `${(active as any).duration_minutes} dk` : 'süresiz'}</b></span>
-                <span>•</span>
-                <span>Kazanan: <b className="text-white">{(active as any).winner_count || 1}</b></span>
+              <div className="flex flex-wrap gap-1.5 text-[11px] text-gray-400 mt-2">
+                <span className="px-2 py-1 rounded-lg bg-white/5">Katılım: <b className="text-purple-400">{active.keyword}</b></span>
+                <span className="px-2 py-1 rounded-lg bg-white/5">Katılımcı: <b className="text-emerald-400">{entries.length}</b></span>
+                <span className="px-2 py-1 rounded-lg bg-white/5">Süre: <b className="text-white">{(active as any).duration_minutes ? `${(active as any).duration_minutes} dk` : 'süresiz'}</b></span>
+                <span className="px-2 py-1 rounded-lg bg-white/5">Kazanan: <b className="text-white">{(active as any).winner_count || 1}</b></span>
+                <span className="px-2 py-1 rounded-lg bg-white/5">Abone: <b className="text-pink-400">{active.sub_bonus_multiplier}x bilet</b></span>
               </div>
             </div>
 
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button onClick={duzenlemeyiAc} className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex items-center gap-1.5">
               <Settings2 className="w-4 h-4" /> Ayarları düzenle
             </button>
@@ -181,7 +183,10 @@ export function Giveaways() {
             >
               <Trophy className="w-5 h-5 text-yellow-300" /> KAZANANI ÇEK
             </button>
+            </div>
           </div>
+
+          {uyari && <div role="alert" className="p-3 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 text-xs font-bold">{uyari}</div>}
 
           {/* Entrants List */}
           <div className="space-y-3 pt-2">
@@ -194,7 +199,7 @@ export function Giveaways() {
                 <div key={e.id} className="bg-black/40 border border-white/5 p-2.5 rounded-xl flex items-center justify-between text-xs">
                   <span className="font-bold text-white truncate">@{e.username}</span>
                   <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">
-                    {e.tickets} bilet
+                    {e.tickets} bilet · %{Math.round((e.tickets / Math.max(1, entries.reduce((t, x) => t + Math.max(1, Number(x.tickets) || 1), 0))) * 1000) / 10}
                   </span>
                 </div>
               ))}
@@ -216,7 +221,7 @@ export function Giveaways() {
       {/* Create Modal */}
       {isCreating && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
+          <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <Gift className="w-5 h-5 text-purple-400" />
               {duzenleniyor ? 'Çekilişi düzenle' : 'Yeni Çekiliş Başlat'}
@@ -252,6 +257,13 @@ export function Giveaways() {
                   />
                 </div>
 
+                <label className="block text-xs font-bold text-gray-300 space-y-1">Katılım süresi (dk, 0 = süresiz)<input type="number" min={0} value={durationMinutes} onChange={e => setDurationMinutes(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
+                <label className="block text-xs font-bold text-gray-300 space-y-1">Kazanan sayısı<input type="number" value={winnerCount} onChange={e => setWinnerCount(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
+              </div>
+
+              <Katlanir baslik="Katılım şartları" aciklama="İsteğe bağlı" acik={subOnly || minWatch > 0 || maxEntries > 0 || costPoints > 0 || subMultiplier !== 1}>
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-300"><input type="checkbox" checked={subOnly} onChange={e => setSubOnly(e.target.checked)} /> Yalnız aboneler katılabilsin</label>
+                <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Abone Bilet Çarpanı
@@ -267,15 +279,11 @@ export function Giveaways() {
                     <option value="5">5x Bilet</option>
                   </select>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="text-xs font-bold">Puan maliyeti<input type="number" disabled={duzenleniyor} title={duzenleniyor ? 'Katılanlar eski bedeli ödedi; açık çekilişte değişmez' : undefined} value={costPoints} onChange={e => setCostPoints(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1 disabled:opacity-50" /></label>
-                <label className="text-xs font-bold">Katılım süresi (dk, 0 = süresiz)<input type="number" min={0} value={durationMinutes} onChange={e => setDurationMinutes(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
-                <label className="text-xs font-bold">Kazanan sayısı<input type="number" value={winnerCount} onChange={e => setWinnerCount(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
-                <label className="text-xs font-bold">Max katılım (0=∞)<input type="number" value={maxEntries} onChange={e => setMaxEntries(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
-                <label className="text-xs font-bold">Min izleme (dk)<input type="number" value={minWatch} onChange={e => setMinWatch(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
-                <label className="text-xs font-bold flex items-center gap-2"><input type="checkbox" checked={subOnly} onChange={e => setSubOnly(e.target.checked)} /> Sadece abone</label>
-              </div>
+                  <label className="block text-xs font-bold text-gray-300 space-y-1">Katılım bedeli (puan, 0 = ücretsiz)<input type="number" disabled={duzenleniyor} title={duzenleniyor ? 'Katılanlar eski bedeli ödedi; açık çekilişte değişmez' : undefined} value={costPoints} onChange={e => setCostPoints(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1 disabled:opacity-50" /></label>
+                  <label className="block text-xs font-bold text-gray-300 space-y-1">En fazla katılımcı (0 = sınırsız)<input type="number" value={maxEntries} onChange={e => setMaxEntries(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
+                  <label className="block text-xs font-bold text-gray-300 space-y-1">En az izleme süresi (dk)<input type="number" value={minWatch} onChange={e => setMinWatch(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
+                </div>
+              </Katlanir>
 
               <div className="pt-3 border-t border-white/10 flex justify-end space-x-2">
                 <button
@@ -297,12 +305,19 @@ export function Giveaways() {
         </div>
       )}
 
+      <div className="space-y-2">
+        <h2 className="text-sm font-bold text-white">OBS'teki görünüm</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
+          <WidgetSettingsForm widgetId="giveaways" baseUrl={baseUrl} />
+          <div className="lg:sticky lg:top-0">
+            <WidgetOnizleme url={`${baseUrl}/widgets/giveaways`} testAdi="giveaways" boyut={{ w: 600, h: 300 }} />
+          </div>
+        </div>
+      </div>
+
       {/* Geçmiş çekilişler — sunucu son 10'u döndürüyordu ama sayfa hiç göstermiyordu */}
       {pastGiveaways.length > 0 && (
-        <div className="glass-panel p-5 rounded-2xl space-y-3">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-yellow-400" /> Geçmiş Çekilişler
-          </h2>
+        <Katlanir baslik="Geçmiş çekilişler" sayi={pastGiveaways.length}>
           <div className="divide-y divide-white/5">
             {pastGiveaways.map((g) => (
               <div key={g.id} className="flex items-center justify-between gap-3 py-2 text-sm">
@@ -322,14 +337,8 @@ export function Giveaways() {
               </div>
             ))}
           </div>
-        </div>
+        </Katlanir>
       )}
-
-      <div className="glass-panel p-5 rounded-2xl space-y-3">
-        <h2 className="text-sm font-bold text-white">Önizleme</h2>
-        <WidgetOnizleme url={`${baseUrl}/widgets/giveaways`} testAdi="giveaways" boyut={{ w: 600, h: 300 }} />
-      </div>
-      <WidgetSettingsForm widgetId="giveaways" baseUrl={baseUrl} />
     </div>
   );
 }

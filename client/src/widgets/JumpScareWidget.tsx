@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { JUMPSCARE_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 
 export interface JumpScareWidgetProps {
   embedded?: boolean;
@@ -79,14 +80,8 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
       return;
     }
 
-    let ws: WebSocket | null = null;
-    let yenidenBaglan: NodeJS.Timeout | null = null;
-    let kapali = false;
-
-    const connect = () => {
-      if (kapali) return;
-      ws = new WebSocket(wsAdresi());
-      ws.onmessage = (event) => {
+    const ws = new KaliciSoket(wsAdresi());
+    ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type !== 'jumpscare_trigger') return;
@@ -117,17 +112,9 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
           /* bozuk mesaj */
         }
       };
-      ws.onclose = () => {
-        if (!kapali) yenidenBaglan = setTimeout(connect, 3000);
-      };
-    };
-
-    connect();
     return () => {
-      kapali = true;
-      if (yenidenBaglan) clearTimeout(yenidenBaglan);
       if (kapatRef.current) clearTimeout(kapatRef.current);
-      ws?.close();
+      ws.close();
     };
   }, [onizleme]);
 

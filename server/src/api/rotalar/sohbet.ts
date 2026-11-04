@@ -13,7 +13,7 @@ import { widgetAyariOku, widgetAyariYaz } from './widgetlar.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { geminiCoHost } from '../../modules/ai/gemini.js';
 import { sohbetUyarilari } from '../../modules/chat-alerts/chat-alerts.js';
-import { TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
+import { takipAdaylari, TAKIP_TEMA_ADLARI, TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
 import { seyrekUyar } from '../../core/logger.js';
 
 const router = Router();
@@ -29,6 +29,17 @@ router.get('/chat-alerts/tema', (_req: Request, res: Response) => {
 });
 router.post('/chat-alerts/tema', (req: Request, res: Response) => {
   res.json({ tema: sohbetUyarilari.temaYaz(String(req.body?.tema || 'yok')) });
+});
+
+// Yeni takipçi karşılaması: temalar ve örnek mesajlar
+router.get('/chat-alerts/karsilama', (_req: Request, res: Response) => {
+  res.json({
+    secili: sohbetUyarilari.takipTemalariOku(),
+    temalar: Object.entries(TAKIP_TEMA_ADLARI).map(([id, ad]) => ({ id, ad, ornekler: takipAdaylari([id]) }))
+  });
+});
+router.post('/chat-alerts/karsilama', (req: Request, res: Response) => {
+  res.json({ secili: sohbetUyarilari.takipTemalariYaz(req.body?.temalar) });
 });
 
 router.post('/chat-alerts', (req: Request, res: Response) => {

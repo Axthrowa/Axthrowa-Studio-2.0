@@ -16,7 +16,19 @@ vi.mock('../../db/index.js', async () => {
   `);
   return { db };
 });
-vi.mock('../economy/economy.js', () => ({ economy: { getUser: () => ({ points: 0, watch_time_minutes: 0 }), removePoints: () => 0 } }));
+const odenen = vi.hoisted(() => [] as Array<{ kullanici: string; puan: number }>);
+vi.mock('../economy/economy.js', () => ({
+  cuzdanAdi: (_p: string, u: string) => u,
+  economy: {
+    getUser: () => ({ points: 0, watch_time_minutes: 0 }),
+    removePoints: () => 0,
+    // Gerçeği ekonomi-butunluk testlerinde: ödeme ve kayıt tek işlem
+    topluOde: (o: Array<{ kullanici: string; puan: number }>, kayit: () => void) => {
+      kayit();
+      odenen.push(...o);
+    }
+  }
+}));
 
 import { db } from '../../db/index.js';
 import { adilRastgele, baslangicDuyurusu, giveaway, kazananlariSec, kelimeyiDuzenle } from './giveaways.js';
@@ -84,5 +96,31 @@ describe('çekiliş duyuruları ve rastgelelik', () => {
       expect(r).toBeGreaterThanOrEqual(0);
       expect(r).toBeLessThan(1);
     }
+  });
+});
+
+import { seritAdaylari } from './giveaways.js';
+
+describe('seritAdaylari', () => {
+  it('yalnız ilk katılanları değil tüm havuzu karıştırır ve kimseyi çoğaltmaz', () => {
+    const k = Array.from({ length: 100 }, (_, i) => ({ username: `k${i}` }));
+    const s = seritAdaylari(k);
+    expect(new Set(s).size).toBe(100);
+    expect(s.slice(0, 40)).not.toEqual(k.slice(0, 40).map((x) => x.username));
+    expect(seritAdaylari(k, undefined, 10)).toHaveLength(10);
+  });
+});
+
+describe('çekiliş iptali', () => {
+  it('ücretli katılımı kapatmayla aynı işlemde iade eder', () => {
+    odenen.length = 0;
+    ayarla('cost_points = 25');
+    db.exec("INSERT INTO giveaway_entries (id, giveaway_id, username, platform, tickets, entered_at) SELECT 'e1', id, 'ali', 'kick', 1, 1 FROM giveaways WHERE is_active = 1");
+    expect(giveaway.iptal()).toBeTruthy();
+    expect(odenen).toEqual([{ kullanici: 'ali', puan: 25 }]);
+    expect(giveaway.getActiveGiveaway()).toBeFalsy();
+    odenen.length = 0;
+    expect(giveaway.iptal()).toBeFalsy(); // ikinci iptal yeniden ödemez
+    expect(odenen).toEqual([]);
   });
 });

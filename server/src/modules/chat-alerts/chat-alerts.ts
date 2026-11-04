@@ -17,7 +17,7 @@
 import { db } from '../../db/index.js';
 import { hediyeAdedi, eventBus } from '../../core/event-bus.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
-import { rastgeleFarkli, temaAdaylari, TEMA_ADLARI } from './temalar.js';
+import { rastgeleFarkli, takipAdaylari, takipTemalariCoz, TAKIP_TEMA_ADLARI, temaAdaylari, TEMA_ADLARI } from './temalar.js';
 
 export type SohbetOlayi = 'follow' | 'sub' | 'resub' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'welcome' | 'stream_online';
 
@@ -30,7 +30,12 @@ export interface OlayKurali {
   beklemeSn: number;
   /** Ek şablonlar: olay her geldiğinde şablon + bunlardan rastgele biri gider */
   varyantlar?: string[];
+  /** Yalnız takip: Kick adı vermediğinde de karşıla ("Yeni takipçi" diye). Boş: evet */
+  adsizKarsila?: boolean;
 }
+
+/** Adı bilinmeyen takipçi dalgasında sohbet dolmasın */
+const ADSIZ_KARSILAMA_ARASI_MS = 30_000;
 
 export type ChatAlertAyarlari = Record<SohbetOlayi, OlayKurali>;
 
@@ -42,7 +47,7 @@ const K = (sablon: string, minDeger = 0, aktif = false, beklemeSn = 0): OlayKura
 });
 
 export const VARSAYILAN_CHAT_ALERT: ChatAlertAyarlari = {
-  follow: K('💜 $(sender) kanalı takip etti, hoş geldin!'),
+  follow: K('💜 $(sender) kanalı takip etti, hoş geldin!', 0, true),
   sub: K('⭐ $(sender) abone oldu! Teşekkürler!'),
   resub: K('⭐ $(sender) aboneliğini $(v1). ay yeniledi!'),
   gift_sub: K('🎁 $(sender) $(v1) kişiye abonelik hediye etti!'),
@@ -58,6 +63,7 @@ export const VARSAYILAN_CHAT_ALERT: ChatAlertAyarlari = {
 
 const AYAR_ANAHTARI = 'chat_alert_settings';
 const TEMA_ANAHTARI = 'chat_alert_tema';
+const TAKIP_TEMA_ANAHTARI = 'chat_alert_takip_temalari';
 
 /** Eşik kontrolü: değer yoksa 0 sayılır. */
 export function esikGecer(kural: OlayKurali, deger: number): boolean {
@@ -86,10 +92,24 @@ class SohbetUyarilari {
     return t;
   }
 
+  /** Karşılamada seçili temalar (boş: genel tema ya da kendi şablonun) */
+  takipTemalariOku(): string[] {
+    const r = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(TAKIP_TEMA_ANAHTARI) as { value?: string } | undefined;
+    const sablon = this.ayarOku().follow.sablon;
+    return takipTemalariCoz(r?.value, sablon !== VARSAYILAN_CHAT_ALERT.follow.sablon || this.temaOku() !== 'yok');
+  }
+
+  takipTemalariYaz(temalar: unknown): string[] {
+    const secili = (Array.isArray(temalar) ? temalar : []).filter((t) => typeof t === 'string' && t in TAKIP_TEMA_ADLARI);
+    db.prepare('INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(TAKIP_TEMA_ANAHTARI, JSON.stringify(secili));
+    return secili;
+  }
+
   /** Bu olay için gönderilecek şablon: tema seçiliyse temadan, değilse şablon + varyantlar */
   sablonSec(olay: SohbetOlayi, kural: OlayKurali): string | undefined {
     const tema = this.temaOku();
-    let adaylar = tema !== 'yok' ? temaAdaylari(tema, olay) : [];
+    let adaylar = olay === 'follow' ? takipAdaylari(this.takipTemalariOku()) : [];
+    if (!adaylar.length) adaylar = tema !== 'yok' ? temaAdaylari(tema, olay) : [];
     if (!adaylar.length) adaylar = [kural.sablon, ...(Array.isArray(kural.varyantlar) ? kural.varyantlar : [])].map((x) => String(x || '').trim()).filter(Boolean);
     const secilen = rastgeleFarkli(adaylar, this.sonSablon.get(olay));
     if (secilen) this.sonSablon.set(olay, secilen);
@@ -139,13 +159,13 @@ class SohbetUyarilari {
   private async gonder(olay: SohbetOlayi, p: any, deger: number, ekArgs: string[] = []) {
     // Test uyarısı gerçek Kick sohbetine sahte kullanıcı için teşekkür yazmasın
     if (p?.isTest === true) return;
-    // Adı bilinmeyen takipçi (Kick yalnız sayıyı veriyor): sohbete "Yeni takipçi hoş geldin" yazılmasın
-    if (p?.anonim === true) return;
     const kural = this.ayarOku()[olay];
     if (!kural?.aktif) return;
     if (!esikGecer(kural, deger)) return;
 
     const simdi = Date.now();
+    // Kick çoğu takipte adı vermez, yalnız sayı artar: "Yeni takipçi" diye karşılanır (kapatılabilir)
+    if (p?.anonim === true && (olay !== 'follow' || kural.adsizKarsila === false || simdi - (this.sonGonderim.get(olay) || 0) < ADSIZ_KARSILAMA_ARASI_MS)) return;
     if (kural.beklemeSn > 0) {
       const son = this.sonGonderim.get(olay) || 0;
       if (simdi - son < kural.beklemeSn * 1000) return;

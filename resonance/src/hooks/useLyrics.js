@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { etkinSatir, satirOrani, sozleriGetir } from '../lib/lyrics'
+import { etkinSatir, saatOku, saatOrnekle, saatYeni, sozleriGetir } from '../lib/lyrics'
 
 const BOS = { synced: false, tahmini: false, lines: [], kaynak: '' }
 const TIK_PAYI_MS = 300
 
 /**
- * Çalan parçanın sözleri ve şu anki satır. İlerleme (`progressMs`) zaten akıcı
- * güncellenir (useHostNowPlaying); `offsetMs` sözleri ileri/geri kaydırır.
+ * Çalan parçanın sözleri ve şu anki satır. `saat` karaoke dolumunun da okuduğu tek
+ * zaman kaynağıdır: satır ve kelime birbirinden kopmaz. `offsetMs` sözleri kaydırır.
  */
 export function useLyrics(track, progressMs, enabled = true, offsetMs = 0) {
   const [soz, setSoz] = useState(BOS)
@@ -31,11 +31,11 @@ export function useLyrics(track, progressMs, enabled = true, offsetMs = 0) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anahtar, enabled])
 
-  // İlerleme 4 kez/sn gelir: satır 250 ms geç değişmesin diye son örnekten beri geçen süre eklenir
-  const orneklem = useRef({ ms: progressMs, at: performance.now() })
-  if (orneklem.current.ms !== progressMs) orneklem.current = { ms: progressMs, at: performance.now() }
-  const gecen = Math.min(TIK_PAYI_MS, performance.now() - orneklem.current.at)
-  const anlikMs = Number(progressMs) + gecen + Number(offsetMs || 0)
+  // İlerleme 4 kez/sn gelir: satır 250 ms geç değişmesin diye saat araları doldurur
+  const saat = useRef(null)
+  const su = performance.now()
+  saat.current = saat.current ? saatOrnekle(saat.current, Number(progressMs), su) : saatYeni(Number(progressMs), su)
+  const anlikMs = saatOku(saat.current, su) + Number(offsetMs || 0)
   const konumSn = anlikMs / 1000
   const zamanli = soz.synced || soz.tahmini
   const index = zamanli ? etkinSatir(soz.lines, konumSn) : -1
@@ -47,5 +47,5 @@ export function useLyrics(track, progressMs, enabled = true, offsetMs = 0) {
     const z = setTimeout(() => yenile((n) => n + 1), kalan)
     return () => clearTimeout(z)
   })
-  return { ...soz, index, oran: zamanli ? satirOrani(soz.lines, index, konumSn) : 0 }
+  return { ...soz, index, saat }
 }

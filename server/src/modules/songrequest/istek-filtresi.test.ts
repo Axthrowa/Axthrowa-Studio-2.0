@@ -46,3 +46,18 @@ describe('siraDegerleri', () => {
     expect(sirali(siraDegerleri(esit, ['b', 'c', 'a']))).toEqual(['b', 'c', 'a']);
   });
 });
+
+import { aramaAdaylari } from './istek-filtresi.js';
+
+describe('aramaAdaylari', () => {
+  it('sonuçları sırayla ve tekrarsız, başlıklarıyla verir', () => {
+    const v = (id: string, t: string) => `"videoRenderer":{"videoId":"${id}","thumbnail":{},"title":{"runs":[{"text":"${t}"}]}}`;
+    expect(aramaAdaylari(v('aaaaaaaaaaa', 'Bir \\"iki\\"') + v('bbbbbbbbbbb', 'Üç') + v('aaaaaaaaaaa', 'Yine'))).toEqual([
+      { videoId: 'aaaaaaaaaaa', title: 'Bir "iki"' },
+      { videoId: 'bbbbbbbbbbb', title: 'Üç' }
+    ]);
+  });
+  it('biçim değişirse kimliklere düşer', () => {
+    expect(aramaAdaylari('/watch?v=ccccccccccc x /watch?v=ccccccccccc')).toEqual([{ videoId: 'ccccccccccc', title: '' }]);
+  });
+});

@@ -374,8 +374,14 @@ export class MuzikHost {
 
   yoklamayiBaslat() {
     if (this.yoklayici) return;
+    let sonHarici = 0;
     this.yoklayici = setInterval(async () => {
-      if (!this.spotifyBagliMi() && !this.ytmdBagliMi()) return this.hariciYokla();
+      if (!this.spotifyBagliMi() && !this.ytmdBagliMi()) {
+        // Konum aradaki sürede saatle ilerletilir: saniyede bir sormak yeter
+        if (Date.now() - sonHarici < 900) return;
+        sonHarici = Date.now();
+        return this.hariciYokla();
+      }
       if (!this.spotifyBagliMi() || Date.now() < this.sonrakiYoklama) return;
       try {
         await this.spotifyYokla();

@@ -175,6 +175,13 @@ export interface YerlesikAyar {
   yetki?: KomutYetkisi;
   /** Genel bekleme (sn) */
   bekleme?: number;
+  /** Sohbete yazılan yanıtın şablonu: {sonuc} botun yanıtı, {kullanici} yazan kişi */
+  yanit?: string;
+}
+
+/** Panelde yazılan yanıt şablonunu uygular. Değişken motoruna girmez: {sonuc} izleyici metni içerebilir. */
+export function yanitSablonu(sablon: string, sonuc: string, kullanici: string): string {
+  return sablon.replace(/\{(sonuc|kullanici)\}/g, (_, ad) => (ad === 'sonuc' ? sonuc : kullanici)).slice(0, 500);
 }
 
 export function yerlesikAyarlariCoz(ham: unknown): Record<string, YerlesikAyar> {
@@ -190,7 +197,8 @@ export function yerlesikAyarlariCoz(ham: unknown): Record<string, YerlesikAyar> 
     if (!yerlesikBul(ad) || !a || typeof a !== 'object') continue;
     const yetki = ['herkes', 'mod', 'yayinci'].includes(a.yetki) ? (a.yetki as KomutYetkisi) : undefined;
     const bekleme = Number.isFinite(Number(a.bekleme)) ? Math.max(0, Math.min(3600, Math.round(Number(a.bekleme)))) : undefined;
-    if (yetki || bekleme) out[yerlesikBul(ad)!.ad] = { ...(yetki ? { yetki } : {}), ...(bekleme ? { bekleme } : {}) };
+    const yanit = String(a.yanit ?? '').trim().slice(0, 400);
+    if (yetki || bekleme || yanit) out[yerlesikBul(ad)!.ad] = { ...(yetki ? { yetki } : {}), ...(bekleme ? { bekleme } : {}), ...(yanit ? { yanit } : {}) };
   }
   return out;
 }

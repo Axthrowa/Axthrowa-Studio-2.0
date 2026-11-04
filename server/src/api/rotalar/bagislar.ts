@@ -8,14 +8,54 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import { randomUUID as uuidv4 } from 'crypto';
+import { randomBytes, randomUUID as uuidv4, timingSafeEqual } from 'crypto';
 import { wsHub } from '../../ws/server.js';
 import economyService from '../../modules/economy/economy.js';
 import { ttsEngine } from '../../modules/tts/tts.js';
 import { hataMetni, seyrekUyar } from '../../core/logger.js';
 import { hedefOlayiIsle } from '../../modules/goals/hedefler.js';
+import { settingsCache } from '../../core/settings-cache.js';
 
 const router = Router();
+
+const BAGIS_TOKEN = 'bagis_webhook_token';
+const BAGIS_UCLARI = new Set(['/api/donations/bynogame', '/api/donations/webhook']);
+
+/**
+ * Bağış sitesi `localhost`a ulaşamaz, bildirim tünelden gelir (Host'u tünelin adıdır). Host denetimi
+ * yalnız bu iki uç ve doğru anahtar için aşılır: API'nin geri kalanı tünelden yine görünmez.
+ */
+export function disBagisIstegiMi(yontem: string, yol: string, token: unknown): boolean {
+  if (yontem !== 'POST' || !BAGIS_UCLARI.has(yol) || typeof token !== 'string') return false;
+  const a = Buffer.from(token);
+  const b = Buffer.from(settingsCache.get(BAGIS_TOKEN));
+  return b.length > 0 && a.length === b.length && timingSafeEqual(a, b);
+}
+
+router.get('/donations/webhook-ayar', (_req: Request, res: Response) => {
+  let token = settingsCache.get(BAGIS_TOKEN);
+  if (!token) {
+    token = randomBytes(24).toString('hex');
+    settingsCache.set(BAGIS_TOKEN, token);
+  }
+  res.json({ token, disAdres: settingsCache.get('bagis_dis_adres') });
+});
+
+router.post('/donations/webhook-ayar', (req: Request, res: Response) => {
+  const ham = String(req.body?.disAdres ?? '').trim();
+  let disAdres = '';
+  if (ham) {
+    try {
+      const u = new URL(ham);
+      if (u.protocol !== 'https:') throw new Error('https');
+      disAdres = u.origin;
+    } catch {
+      return res.status(400).json({ error: 'Adres https:// ile başlamalı.' });
+    }
+  }
+  settingsCache.set('bagis_dis_adres', disAdres);
+  res.json({ disAdres });
+});
 
 // 2. Donations & BynoGame & JumpScare
 router.get('/donations/recent', (req: Request, res: Response) => {
@@ -64,7 +104,15 @@ function pickDonationField(source: Record<string, any>, keys: string[]): any {
 
 function flattenDonationPayload(raw: any): Record<string, any> {
   if (!raw || typeof raw !== 'object') return {};
-  const nested = raw.data || raw.donation || raw.payload || raw.message?.[0] || raw.event || {};
+  let nested = raw.data || raw.donation || raw.payload || raw.message?.[0] || raw.event || {};
+  // Ko-fi veriyi `data` alanında JSON METNİ olarak gönderir
+  if (typeof nested === 'string') {
+    try {
+      nested = JSON.parse(nested);
+    } catch {
+      nested = {};
+    }
+  }
   return { ...nested, ...raw };
 }
 
@@ -77,11 +125,11 @@ export function tutarOku(ham: unknown): number {
   return Number(s) || 0;
 }
 
-function parseIncomingDonation(raw: any, query: any = {}) {
+export function parseIncomingDonation(raw: any, query: any = {}) {
   const body = flattenDonationPayload({ ...query, ...(raw || {}) });
   const donorName = String(
     pickDonationField(body, [
-      'donorName', 'user_name', 'username', 'user', 'name', 'donator', 'donator_name',
+      'donorName', 'user_name', 'username', 'user', 'name', 'donator', 'donator_name', 'from_name',
       'gonderen', 'from', 'payer_name', 'displayName', 'display_name'
     ]) || 'Gizli Bağışçı'
   );
@@ -90,7 +138,8 @@ function parseIncomingDonation(raw: any, query: any = {}) {
   ]);
   const amount = tutarOku(amountRaw);
   const currency = String(pickDonationField(body, ['currency', 'para_birimi', 'mc_currency']) || 'TL');
-  const message = String(
+  // Ko-fi'de bağışçı "gizli" dediyse mesaj yayında gösterilmez, okunmaz
+  const message = body.is_public === false ? '' : String(
     pickDonationField(body, ['message', 'user_message', 'mesaj', 'note', 'comment', 'msg']) || ''
   );
   const platform = String(pickDonationField(body, ['platform', 'source', 'provider']) || 'bynogame');

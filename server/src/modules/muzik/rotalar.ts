@@ -45,7 +45,7 @@ export function muzikRotalari(o: MuzikRotaSecenekleri): { router: Router; spotif
     const ara = String(req.query.ara || '').trim().slice(0, 200);
     const id = String(req.query.id || '');
     const hedef = /^\d{1,20}$/.test(id)
-      ? `https://music.163.com/api/song/lyric?id=${id}&lv=1`
+      ? `https://music.163.com/api/song/lyric?id=${id}&lv=1&yv=1`
       : ara
         ? `https://music.163.com/api/search/get?s=${encodeURIComponent(ara)}&type=1&limit=8`
         : '';

@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { CustomCommand } from '../types.js';
 import { Terminal, Plus, Edit2, Trash2, Check, Sparkles, Search } from 'lucide-react';
-import { YerlesikKomutlar } from '../components/YerlesikKomutlar.js';
+import { SohbetOnizleme, YerlesikKomutlar } from '../components/YerlesikKomutlar.js';
+import { TakipciKarsilama } from '../components/TakipciKarsilama.js';
+
+/** Önizleme: sık değişkenler örnek değerle; diğerleri olduğu gibi kalır */
+const ornekYanit = (metin: string) => metin.replace(/\$\((sender|user)\)/g, 'izleyici').replace(/\$\(channel\)/g, 'kanal');
 
 
 export function Commands() {
@@ -9,7 +13,7 @@ export function Commands() {
   const [search, setSearch] = useState('');
   const [editingCmd, setEditingCmd] = useState<CustomCommand | null>(null);
   const [isNew, setIsNew] = useState(false);
-  const [tab, setTab] = useState<'my' | 'default'>('my');
+  const [tab, setTab] = useState<'my' | 'default' | 'karsilama'>('my');
 
   useEffect(() => {
     loadCommands();
@@ -129,6 +133,7 @@ export function Commands() {
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
         <button onClick={() => setTab('my')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'my' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Komutlarım</button>
         <button onClick={() => setTab('default')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'default' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Yerleşik Komutlar</button>
+        <button onClick={() => setTab('karsilama')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'karsilama' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Takipçi Karşılama</button>
       </div>
 
       {/* Search Filter */}
@@ -144,6 +149,7 @@ export function Commands() {
       </div>
 
       {tab === 'default' && <YerlesikKomutlar arama={search} />}
+      {tab === 'karsilama' && <TakipciKarsilama />}
 
       {tab === 'my' && <div className="glass-panel rounded-2xl overflow-hidden border border-white/10">
         <table className="w-full text-left text-sm">
@@ -187,8 +193,8 @@ export function Commands() {
                     )}
                   </div>
                 </td>
-                <td className="py-3 px-4 text-gray-300 max-w-md truncate">
-                  {cmd.response}
+                <td className="py-3 px-4 max-w-md">
+                  <SohbetOnizleme yazilan={`!${cmd.name}`} yanit={ornekYanit(cmd.response)} />
                 </td>
                 <td className="py-3 px-4">
                   <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-gray-300">
@@ -328,6 +334,11 @@ export function Commands() {
                   placeholder="Botun sohbete yazacağı mesaj veya cevap..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                 />
+                {editingCmd.response.trim() && (
+                  <div className="mt-2">
+                    <SohbetOnizleme yazilan={`!${editingCmd.name || 'komut'}`} yanit={ornekYanit(editingCmd.response)} />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

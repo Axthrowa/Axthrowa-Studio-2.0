@@ -6,6 +6,7 @@
  * rota gövdeleri DEĞİŞMEDİ, özgün sırayla kayıtlıdır. Bağlama sırası
  * api/routes.ts toplayıcısındadır.
  */
+import { YERLESIK_ORNEKLER } from '../../modules/commands/yerlesik-ornekler.js';
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { timerManager } from '../../modules/timers/timers.js';
@@ -33,6 +34,7 @@ function kapaliYerlesikler(): string[] {
 router.get('/commands/builtin', (_req: Request, res: Response) => {
   res.json({
     komutlar: YERLESIK_KOMUTLAR,
+    ornekler: YERLESIK_ORNEKLER,
     kapali: kapaliYerlesikler(),
     ayarlar: yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}')),
     moduller: Object.fromEntries(
@@ -49,9 +51,9 @@ router.post('/commands/builtin', (req: Request, res: Response) => {
     const kapali = kapaliYerlesikler().filter((x) => x !== kayit.ad);
     settingsCache.set('default_commands_disabled', JSON.stringify(g.acik ? kapali : [...kapali, kayit.ad]));
   }
-  if ('yetki' in g || 'bekleme' in g) {
+  if ('yetki' in g || 'bekleme' in g || 'yanit' in g) {
     const ayarlar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'));
-    const yeni = { ...ayarlar[kayit.ad], ...('yetki' in g ? { yetki: g.yetki || undefined } : {}), ...('bekleme' in g ? { bekleme: Number(g.bekleme) || undefined } : {}) };
+    const yeni = { ...ayarlar[kayit.ad], ...('yanit' in g ? { yanit: g.yanit || undefined } : {}), ...('yetki' in g ? { yetki: g.yetki || undefined } : {}), ...('bekleme' in g ? { bekleme: Number(g.bekleme) || undefined } : {}) };
     settingsCache.set('yerlesik_komut_ayarlari', JSON.stringify(yerlesikAyarlariCoz({ ...ayarlar, [kayit.ad]: yeni })));
   }
   res.json({ ok: true, kapali: kapaliYerlesikler(), ayarlar: yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}')) });

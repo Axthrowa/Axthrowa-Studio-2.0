@@ -26,7 +26,7 @@ import { GENEL_TEMALAR, WIDGET_TEMALARI, temalar, temayiUygula } from './themes.
 import { FONTS } from './widget-defaults.js';
 import { tuvaleSigdirmaPayi } from './katmanCakisma.js';
 import { yuvalariGuncelle } from '../widgets/WordCloudWidget.js';
-import { kasaSeridi } from '../widgets/GiveawayWidget.js';
+import { bitmisBosCekilis, kasaSeridi } from '../widgets/GiveawayWidget.js';
 import { olayEtiketi, olayiDestekleyenler, onbellegiTemizle, yetenekleriGetir } from './capabilities.js';
 import { genelRozet, platformRozeti, type CanliOzet } from './live-status.js';
 
@@ -474,5 +474,58 @@ describe('çekiliş kasa şeridi', () => {
   });
   it('aday yoksa da çalışır', () => {
     expect(kasaSeridi('K', []).isimler.every((a) => a === 'K')).toBe(true);
+  });
+});
+
+describe('tema biçim değiştirir', () => {
+  const secili = (id: string) => temayiUygula({ kabuk: '', barColor: '#000' }, temalar(id).find((t) => t.id === 'o-nisanci')!, ['kabuk', 'barColor'], () => true);
+  it('görünüm seçeneği olmayan widget kutu tasarımını alır', () => {
+    expect(secili('polls').kabuk).toBe('hud');
+  });
+  it('film, oyun ve dizi temalarının hepsi bir aileye bağlı', () => {
+    const uretilen = new Set(
+      GENEL_TEMALAR.filter((t) => !t.id.startsWith('kutu_')).map(
+        (t) => temayiUygula({ kabuk: '' }, t, ['kabuk'], () => true).kabuk as string
+      )
+    );
+    expect(uretilen.has('')).toBe(false);
+    expect(uretilen.size).toBeGreaterThanOrEqual(12);
+  });
+  it('kutu temasının kendi tasarımı ezilmez', () => {
+    const t = GENEL_TEMALAR.find((x) => x.id === 'kutu_not')!;
+    expect(temayiUygula({ kabuk: '' }, t, ['kabuk'], () => true).kabuk).toBe('yapiskan');
+  });
+});
+
+describe('hız ayarı', () => {
+  it('0 en yavaşa iner, boş normal kalır', async () => {
+    const { hizCarpani } = await import('./widget-style.js');
+    expect(hizCarpani(0)).toBe(0.5);
+    expect(hizCarpani(0.3)).toBe(0.3);
+    expect(hizCarpani(undefined)).toBe(1);
+    expect(hizCarpani('abc')).toBe(1);
+    expect(hizCarpani(9)).toBe(4);
+  });
+});
+
+describe('çekiliş şeridi okunur hızda', () => {
+  it('süre uzadıkça kart sayısı orantılı, art arda aynı isim yok', () => {
+    const { isimler, kayma } = kasaSeridi('K', ['a', 'b', 'c'], Math.random, 10_000);
+    expect(isimler.length).toBe(21);
+    expect(kayma / 178 / 10).toBeLessThan(2);
+    for (let i = 1; i < isimler.length; i++) if (isimler[i] !== 'K' && isimler[i - 1] !== 'K') expect(isimler[i]).not.toBe(isimler[i - 1]);
+  });
+});
+
+describe('çekiliş widget görünürlüğü', () => {
+  const c = { created_at: 1000, duration_minutes: 1 };
+  it('süresi dolmuş ve katılımsız çekiliş gizlenir', () => {
+    expect(bitmisBosCekilis(c, 0, 1000 + 60_000)).toBe(true);
+  });
+  it('süresi sürüyorsa, katılımcı varsa ya da süresizse görünür', () => {
+    expect(bitmisBosCekilis(c, 0, 1000 + 59_000)).toBe(false);
+    expect(bitmisBosCekilis(c, 3, 1000 + 60_000)).toBe(false);
+    expect(bitmisBosCekilis({ created_at: 1000, duration_minutes: 0 }, 0, 9e9)).toBe(false);
+    expect(bitmisBosCekilis(null, 0, 9e9)).toBe(false);
   });
 });

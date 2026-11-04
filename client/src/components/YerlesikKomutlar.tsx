@@ -2,7 +2,7 @@
  * Komutlar › Yerleşik Komutlar: botun tüm yerleşik komutları (sunucudaki tek listeden), aç/kapat,
  * yetki ve bekleme. Eskiden panelde elle yazılmış 37 satırlık ayrı bir liste vardı; çoğu komut görünmüyordu.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
 type Yetki = 'herkes' | 'mod' | 'yayinci';
 interface Komut {
@@ -17,16 +17,33 @@ interface Komut {
 interface Veri {
   komutlar: Komut[];
   kapali: string[];
-  ayarlar: Record<string, { yetki?: Yetki; bekleme?: number }>;
+  ornekler: Record<string, string>;
+  ayarlar: Record<string, { yetki?: Yetki; bekleme?: number; yanit?: string }>;
   moduller: Record<string, { kapali: boolean; komutlar: string[] }>;
 }
 
 const YETKI_ADI: Record<Yetki, string> = { herkes: 'Herkes', mod: 'Mod', yayinci: 'Yayıncı' };
 
+/** Komutun sohbette görünüşü: izleyicinin yazdığı ve botun yanıtı */
+export function SohbetOnizleme({ yazilan, yanit }: { yazilan: string; yanit: string }) {
+  return (
+    <div className="rounded-lg bg-black/30 px-3 py-1.5 text-xs leading-relaxed">
+      <div className="text-gray-300 break-words">
+        <b className="text-sky-300">izleyici:</b> {yazilan}
+      </div>
+      <div className="text-gray-200 break-words">
+        <b className="text-emerald-400">AxBoT:</b> {yanit || <i className="text-gray-500">sohbete yazmaz, yalnız işlem yapar</i>}
+      </div>
+    </div>
+  );
+}
+
 export function YerlesikKomutlar({ arama }: { arama: string }) {
   const [v, setV] = useState<Veri | null>(null);
   const [kategori, setKategori] = useState('');
   const [hata, setHata] = useState('');
+  // Yanıtı düzenlenen komut ve taslağı
+  const [duzen, setDuzen] = useState<{ ad: string; metin: string } | null>(null);
 
   useEffect(() => {
     fetch('/api/commands/builtin')
@@ -35,7 +52,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
       .catch(() => setHata('Komut listesi alınamadı'));
   }, []);
 
-  const kaydet = async (ad: string, degisim: { acik?: boolean; yetki?: Yetki | ''; bekleme?: number }) => {
+  const kaydet = async (ad: string, degisim: { acik?: boolean; yetki?: Yetki | ''; bekleme?: number; yanit?: string }) => {
     setHata('');
     try {
       const r = await fetch('/api/commands/builtin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ad, ...degisim }) });
@@ -93,8 +110,12 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
               const acik = !v.kapali.includes(k.ad);
               const ayar = v.ayarlar[k.ad] || {};
               const modul = modulKapali(k.ad);
+              const ornek = v.ornekler[k.ad] ?? '';
+              const sablon = duzen?.ad === k.ad ? duzen.metin : ayar.yanit;
+              const yanit = sablon ? sablon.replace(/\{sonuc\}/g, ornek).replace(/\{kullanici\}/g, 'izleyici') : ornek;
               return (
-                <tr key={k.ad} className={acik ? '' : 'opacity-50'}>
+                <Fragment key={k.ad}>
+                <tr className={acik ? '' : 'opacity-50'}>
                   <td className="py-2.5 px-4 align-top">
                     <div className="font-bold text-purple-400">!{k.ad}</div>
                     {k.takma.length > 0 && <div className="text-[10px] text-gray-500">{k.takma.map((t) => `!${t}`).join(' ')}</div>}
@@ -136,6 +157,56 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                     <input type="checkbox" checked={acik} onChange={(e) => void kaydet(k.ad, { acik: e.target.checked })} className="w-4 h-4 accent-purple-600" aria-label={`!${k.ad} açık`} />
                   </td>
                 </tr>
+                <tr className={acik ? '' : 'opacity-50'}>
+                  <td colSpan={5} className="px-4 pb-3 pt-0">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <SohbetOnizleme yazilan={(k.kullanim || `!${k.ad}`).split(' · ')[0]} yanit={yanit} />
+                      </div>
+                      {ornek && (
+                        <button
+                          type="button"
+                          onClick={() => setDuzen(duzen?.ad === k.ad ? null : { ad: k.ad, metin: ayar.yanit || '{sonuc}' })}
+                          className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-gray-200 hover:bg-white/10"
+                        >
+                          {ayar.yanit ? 'Yanıtı düzenle ●' : 'Yanıtı düzenle'}
+                        </button>
+                      )}
+                    </div>
+                    {duzen?.ad === k.ad && (
+                      <div className="mt-2 space-y-1.5">
+                        <textarea
+                          rows={2}
+                          maxLength={400}
+                          value={duzen.metin}
+                          aria-label={`!${k.ad} yanıt şablonu`}
+                          onChange={(e) => setDuzen({ ad: k.ad, metin: e.target.value })}
+                          className="w-full bg-black/50 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white"
+                        />
+                        <p className="text-[10px] text-gray-400">
+                          <b>{'{sonuc}'}</b> botun yanıtı, <b>{'{kullanici}'}</b> komutu yazan kişi. {'{sonuc}'} olmazsa puan, kazanç ve hata mesajları da görünmez; her durumda bu metin yazılır.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void kaydet(k.ad, { yanit: duzen.metin.trim() === '{sonuc}' ? '' : duzen.metin }).then(() => setDuzen(null))}
+                            className="rounded-lg bg-purple-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-purple-500"
+                          >
+                            Kaydet
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void kaydet(k.ad, { yanit: '' }).then(() => setDuzen(null))}
+                            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-gray-200 hover:bg-white/10"
+                          >
+                            Varsayılana dön
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                </Fragment>
               );
             })}
           </tbody>

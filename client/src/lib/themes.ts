@@ -360,6 +360,7 @@ function hedefTema(
       barBorderColor: '#ffffff',
       barBorderWidth: 3,
       barIcon: simge,
+      barIconFlip: false,
       barHeight: 26,
       barRadius: 999,
       fontColor: '#ffffff',
@@ -386,8 +387,8 @@ const HEDEF_TEMALARI: TemaTanimi[] = [
   hedefTema('h-siberpunk', '⚡ Siberpunk', '#fcee0a', '#00f0ff', '⚡', { fontFamily: 'Audiowide', barRadius: 4, barBorderColor: '#fcee0a', barStyle: 'glossy' }),
   hedefTema('h-taktik', '🎯 Taktik', '#4d5d2a', '#ff6b00', '🎯', { fontFamily: 'Black Ops One', barRadius: 2, barBorderColor: '#c5b358' }),
   hedefTema('h-fantastik', '🗡️ Fantastik RPG', '#7b1e1e', '#d4af37', '🗡️', { fontFamily: 'Cinzel', barBorderColor: '#d4af37', barRadius: 8 }),
-  hedefTema('h-ejderha', '🐉 Ejderha Ateşi', '#991b1b', '#fbbf24', '🐉', { fontFamily: 'Cinzel', barBorderColor: '#fbbf24', barStyle: 'glossy' }),
-  hedefTema('h-yaris', '🏎️ Yarış', '#dc2626', '#f5f5f5', '🏎️', { fontFamily: 'Russo One', barRadius: 4, barStyle: 'striped', barBorderColor: '#e5e5e5' }),
+  hedefTema('h-ejderha', '🐉 Ejderha Ateşi', '#991b1b', '#fbbf24', '🐉', { barIconFlip: true, fontFamily: 'Cinzel', barBorderColor: '#fbbf24', barStyle: 'glossy' }),
+  hedefTema('h-yaris', '🏎️ Yarış', '#dc2626', '#f5f5f5', '🏎️', { barIconFlip: true, fontFamily: 'Russo One', barRadius: 4, barStyle: 'striped', barBorderColor: '#e5e5e5' }),
   hedefTema('h-futbol', '⚽ Futbol', '#15803d', '#4ade80', '⚽', { fontFamily: 'Oswald', barBorderColor: '#ffffff', barStyle: 'striped' }),
   hedefTema('h-uzay', '🚀 Uzay Destanı', '#312e81', '#4fc3f7', '🚀', { fontFamily: 'Oxanium', barBorderColor: '#93c5fd', barStyle: 'glossy' }),
   hedefTema('h-vahsibati', '🤠 Vahşi Batı', '#8c1c13', '#e0a458', '🤠', { fontFamily: 'Rye', barBorderColor: '#e0a458', barRadius: 6 }),
@@ -395,7 +396,7 @@ const HEDEF_TEMALARI: TemaTanimi[] = [
   hedefTema('h-gala', '🍿 Sinema Galası', '#991b1b', '#e6b422', '🍿', { fontFamily: 'Bebas Neue', fontSize: 22, barBorderColor: '#e6b422', barStyle: 'glossy' }),
   hedefTema('h-cizgiroman', '💥 Çizgi Roman', '#dc2626', '#facc15', '💥', { fontFamily: 'Bangers', fontSize: 22, barBorderColor: '#000000', outlineEnabled: true, outlineColor: '#000000', outlineWidth: 1 }),
   hedefTema('h-anime', '🌸 Anime', '#ff6ec7', '#7df9ff', '🌸', { fontFamily: 'Poppins', barBorderColor: '#ffffff', barStyle: 'glossy' }),
-  hedefTema('h-okyanus', '🐠 Okyanus', '#0369a1', '#2dd4bf', '🐠', { fontFamily: 'Nunito', barBorderColor: '#a5f3fc' }),
+  hedefTema('h-okyanus', '🐠 Okyanus', '#0369a1', '#2dd4bf', '🐠', { barIconFlip: true, fontFamily: 'Nunito', barBorderColor: '#a5f3fc' }),
   hedefTema('h-lav', '🌋 Lav', '#7c2d12', '#facc15', '🌋', { fontFamily: 'Anton', barBorderColor: '#fb923c', barStyle: 'striped' }),
   hedefTema('h-kis', '❄️ Kış', '#1e3a8a', '#e0f2fe', '❄️', { fontFamily: 'Nunito', barBorderColor: '#e0f2fe', barStyle: 'glossy' }),
   hedefTema('h-yilbasi', '🎄 Yılbaşı', '#b91c1c', '#16a34a', '🎄', { fontFamily: 'Montserrat', barBorderColor: '#fde68a', barStyle: 'striped' }),
@@ -483,7 +484,22 @@ const KRAL_TEMALARI: TemaTanimi[] = [
   kralTema('k-sade', 'Yalnız yazı', 'minimal', '#fbbf24', '#000000', '#ffffff', { fontFamily: 'Plus Jakarta Sans' })
 ];
 
+const cekilisTema = (id: string, etiket: string, kasaTema: string, kabuk: string, arka: string, vurgu: string, metin: string, yazi: string, ek: Record<string, unknown> = {}): TemaTanimi =>
+  tema(id, etiket, { kasaTema, kabuk, backgroundColor: arka, backgroundOpacity: 0.92, accentColor: vurgu, fontColor: metin, fontFamily: yazi, ...ek }, { arka, vurgu, metin, yazi });
+
+const CEKILIS_TEMALARI: TemaTanimi[] = [
+  cekilisTema('c-kasa', '🎁 Kasa Açılışı', 'kart', 'softcard', '#111827', '#f59e0b', '#ffffff', 'Rajdhani'),
+  cekilisTema('c-neon', '⚡ Neon Arena', 'neon', 'stage', '#0a0118', '#e879f9', '#ffffff', 'Audiowide'),
+  cekilisTema('c-hazine', '👑 Altın Hazine', 'altin', 'altin', '#14100a', '#d4a843', '#f5e6c4', 'Cinzel'),
+  cekilisTema('c-piksel', '👾 Piksel Arcade', 'piksel', 'compact', '#0b1020', '#22d3ee', '#ffffff', 'VT323', { fontSize: 22 }),
+  cekilisTema('c-bilet', '🎟️ Şanslı Bilet', 'bilet', 'guestpass', '#1c1208', '#fb923c', '#fff7ed', 'Bebas Neue', { fontSize: 22 }),
+  cekilisTema('c-kumarhane', '🎰 Kumarhane', 'kumarhane', 'horizon', '#1a0505', '#fbbf24', '#fef3c7', 'Playfair Display'),
+  cekilisTema('c-uzay', '🚀 Uzay Kapsülü', 'neon', 'prism', '#05060f', '#38bdf8', '#f8fafc', 'Oxanium'),
+  cekilisTema('c-sade', '⬜ Sade Yayın', 'sade', 'borderline', '#000000', '#ffffff', '#ffffff', 'Oswald', { backgroundOpacity: 0.6 })
+];
+
 export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
+  giveaways: CEKILIS_TEMALARI,
   king: KRAL_TEMALARI,
   subathon: SAYAC_TEMALARI,
   'donation-goal': HEDEF_TEMALARI,
@@ -633,12 +649,19 @@ export function temayiUygula(
   // Görünüm (yerleşim) de değişsin: temanın istediği görünüm bu widget'ta yoksa (ör. shoutout'ta "classic")
   // eskiden yalnız renkler değişiyordu. Temanın aday görünümlerinden widget'ta olan ilki seçilir.
   if (gecerli) {
-    const adaylar = [...(GORUNUM_ADAYLARI[tema.id] || []), ...(GORUNUM_ADAYLARI[String(tema.degerler.theme)] || [])];
+    const aile = AILELER[TEMA_AILESI[tema.id]];
+    const adaylar = [...(GORUNUM_ADAYLARI[tema.id] || []), ...(GORUNUM_ADAYLARI[String(tema.degerler.theme)] || []), ...(aile?.gorunum || [])];
+    let bicimDegisti = gorunumKondu.size > 0;
     for (const k of GORUNUM_ANAHTARLARI) {
       if (!izinli.has(k) || gorunumKondu.has(k)) continue;
       const bulunan = adaylar.find((a) => gecerli(k, a));
-      if (bulunan) yeni[k] = bulunan;
+      if (bulunan) {
+        yeni[k] = bulunan;
+        bicimDegisti = true;
+      }
     }
+    // Görünüm seçeneği olmayan widget'ta (anket, çekiliş, hedef…) tema yalnız renk değiştiriyordu: kutu biçimi de değişsin
+    if (!bicimDegisti && aile && izinli.has('kabuk') && !tema.degerler.kabuk && gecerli('kabuk', aile.kabuk)) yeni.kabuk = aile.kabuk;
   }
   return yeni;
 }
@@ -688,6 +711,50 @@ const GORUNUM_ADAYLARI: Record<string, string[]> = {
   gala: ['stage', 'royal', 'ribbon', 'plate'],
   cizgiroman: ['tag', 'cute', 'capsule', 'banner', 'etiket'],
   anime: ['cute', 'softcard', 'prism', 'capsule', 'konusma']
+};
+
+/**
+ * Tema aileleri: görünüm adayları ve görünüm seçeneği olmayan widget'lar için ortak kutu tasarımı.
+ * Kutular renklerini temadan alır (sabit renkli kutular açık/koyu yazıyla okunmaz olabilirdi).
+ */
+const AILELER: Record<string, { gorunum: string[]; kabuk: string }> = {
+  kart: { gorunum: ['card', 'classic', 'plate', 'softcard', 'klasik'], kabuk: 'softcard' },
+  sade: { gorunum: ['minimal', 'kompakt', 'borderline', 'clean', 'pill'], kabuk: 'borderline' },
+  cam: { gorunum: ['glass', 'cam', 'crystal', 'softcard', 'baslikli'], kabuk: 'horizon' },
+  neon: { gorunum: ['neon', 'signal', 'prism', 'holochip'], kabuk: 'stage' },
+  uzay: { gorunum: ['holochip', 'hud', 'prism', 'neon', 'glass'], kabuk: 'prism' },
+  asil: { gorunum: ['royal', 'taht', 'velvet', 'altin', 'ribbon', 'plate'], kabuk: 'altin' },
+  doga: { gorunum: ['wood', 'cozy', 'crystal', 'softcard', 'card'], kabuk: 'kupon' },
+  cizgi: { gorunum: ['tag', 'cute', 'capsule', 'banner', 'etiket', 'konusma'], kabuk: 'koseli' },
+  piksel: { gorunum: ['pixel', 'retro', 'splitflap', 'phosphor', 'terminal', 'digital', 'flip'], kabuk: 'compact' },
+  taktik: { gorunum: ['hud', 'status', 'signal', 'split', 'platformkart', 'broadcast'], kabuk: 'hud' },
+  korku: { gorunum: ['ember', 'alev', 'stage', 'sahne', 'neon'], kabuk: 'ember' },
+  bati: { gorunum: ['wood', 'ribbon', 'retro', 'plaka', 'plate'], kabuk: 'guestpass' },
+  yayin: { gorunum: ['broadcast', 'banner', 'ticker', 'serit', 'band', 'stacked'], kabuk: 'broadcast' },
+  eglence: { gorunum: ['cute', 'capsule', 'softcard', 'konusma', 'pill'], kabuk: 'capsule' }
+};
+
+const TEMA_AILESI: Record<string, string> = {
+  ...Object.fromEntries(
+    (
+      [
+        ['kart', 'klasik karbon beyaz gece nord solarized gruvbox'],
+        ['sade', 'minimal kagit noir tek-renk lofi'],
+        ['cam', 'cam aurora gokyuzu buz okyanus catppuccin'],
+        ['neon', 'neon kick f-neon-yagmur synthwave vaporwave dracula tokyo'],
+        ['uzay', 'uzay f-galaktik f-mavi-gezegen o-gece-kenti d-siyah-ayna'],
+        ['asil', 'kadife altin fantastik gala altin-luks vegas f-buyucu f-orta-diyar d-demir-taht d-kasket'],
+        ['doga', 'gunbatimi pastel f-dinozor o-blok orman col sakura'],
+        ['cizgi', 'cizgiroman anime f-orumcek o-uzay-haini o-son-kalan'],
+        ['piksel', 'hacker retro arcade piksel d-kimya matrix piksel-mor'],
+        ['taktik', 'siberpunk taktik yaris espor-kirmizi espor-mavi f-zirh o-nisanci o-karsi-saldiri'],
+        ['korku', 'kor zombi korku o-kul d-ters-dunya d-yuruyen o-cadi-avcisi'],
+        ['bati', 'vahsibati f-korsan o-haydut'],
+        ['yayin', 'f-karanlik-sehir o-suc-sehri d-soygun'],
+        ['eglence', 'seker seker-pop gokkusagi d-olumcul-oyun']
+      ] as Array<[string, string]>
+    ).flatMap(([aile, idler]) => idler.split(' ').map((id) => [id, aile]))
+  )
 };
 
 /** Genel tema anahtarı → widget'ların aynı anlamdaki kendi anahtarları. */

@@ -11,7 +11,8 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const dbPath = path.join(dataDir, 'streamaxt.sqlite');
+// Testler paralel çalışır: aynı dosyayı açanlar "disk I/O error" alıyor, geliştirme verisine de dokunuyordu
+const dbPath = process.env.VITEST ? ':memory:' : path.join(dataDir, 'streamaxt.sqlite');
 // Kilit beklemesi İLK iş: başka bir kopya veritabanını tutarken açılış hemen
 // "database is locked" ile çöküyordu (journal_mode PRAGMA'sı beklemeden önce koşuyordu).
 const db = new DatabaseSync(dbPath, { timeout: 15000 } as any);

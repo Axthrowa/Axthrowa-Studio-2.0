@@ -14,6 +14,7 @@ import { Crown, Sparkles, Timer } from 'lucide-react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { KING_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, sayiYaz, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { acikRenkMi } from './WheelWidget.js';
 
 interface KingState {
@@ -58,8 +59,6 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
   useEffect(() => {
     if (onizleme) return;
     kapaliRef.current = false;
-    let ws: WebSocket | null = null;
-    let yenidenBaglan: NodeJS.Timeout | null = null;
 
     fetch('/api/king')
       .then((r) => (r.ok ? r.json() : null))
@@ -71,10 +70,8 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
       })
       .catch(() => {});
 
-    const connect = () => {
-      if (kapaliRef.current) return;
-      ws = new WebSocket(wsAdresi());
-      ws.onmessage = (event) => {
+    const ws = new KaliciSoket(wsAdresi());
+    ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'king_update' && data.state) {
@@ -89,18 +86,12 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
           /* bozuk mesaj */
         }
       };
-      ws.onclose = () => {
-        if (!kapaliRef.current) yenidenBaglan = setTimeout(connect, 3000);
-      };
-    };
-    connect();
 
     const timer = setInterval(() => setSeconds((p) => p + 1), 1000);
 
     return () => {
       kapaliRef.current = true;
-      if (yenidenBaglan) clearTimeout(yenidenBaglan);
-      ws?.close();
+      ws.close();
       clearInterval(timer);
     };
   }, [onizleme]);

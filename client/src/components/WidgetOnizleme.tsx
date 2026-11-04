@@ -17,6 +17,7 @@ const YUKSEKLIK = 720;
 export function icerikKutusu(d: Document): { x: number; y: number; w: number; h: number } | null {
   let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
   for (const e of Array.from(d.querySelectorAll('#root *'))) {
+    if ((e as HTMLElement).closest('[data-odak-disi]')) continue;
     const r = (e as HTMLElement).getBoundingClientRect();
     // Tuval boyu kutular (sohbet satırları, tam ekran sarmalayıcılar) atlanır: yalnız içerikleri ölçülür,
     // yoksa sohbet gibi widget'larda odak tüm tuval olup yazı okunmayacak kadar küçülüyordu
@@ -37,6 +38,7 @@ export function icerikSiniri(d: Document): { w: number; h: number } | null {
   let w = 0;
   let h = 0;
   for (const e of Array.from(d.querySelectorAll('#root *'))) {
+    if ((e as HTMLElement).closest('[data-odak-disi]')) continue;
     const r = (e as HTMLElement).getBoundingClientRect();
     if (r.width < 2 || r.height < 2) continue;
     w = Math.max(w, Math.ceil(r.right));

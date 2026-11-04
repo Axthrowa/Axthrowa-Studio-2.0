@@ -76,9 +76,11 @@ export function fontuYukle(ad: string | undefined, liste: readonly string[]): vo
   document.head.appendChild(link);
 }
 
-/** Hız ayarı: 1 normal, 2 iki kat hızlı */
+/** Hız ayarı: 1 normal, 2 iki kat hızlı, 0.1 en yavaş. 0 eskiden "ayar yok" sayılıp normal hıza dönüyordu. */
 export function hizCarpani(deger: unknown): number {
-  return Math.min(4, Math.max(0.25, Number(deger) || 1));
+  const n = deger === '' || deger === null || deger === undefined ? 1 : Number(deger);
+  if (n === 0) return 0.5;
+  return Number.isFinite(n) ? Math.min(4, Math.max(0.1, n)) : 1;
 }
 
 export function onizlemeKipi(prop?: boolean): boolean {

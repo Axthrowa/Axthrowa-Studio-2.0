@@ -63,6 +63,16 @@ export function kazananlariSec<T extends { tickets?: number }>(katilimcilar: T[]
   return sonuc;
 }
 
+/** Kayan isimler için tüm katılımcılardan karışık örnek; eskiden hep ilk katılan 40 kişi görünüyordu. */
+export function seritAdaylari(katilimcilar: Array<{ username: string }>, rastgele = adilRastgele, enCok = 200): string[] {
+  const k = katilimcilar.map((e) => e.username);
+  for (let i = k.length - 1; i > 0; i--) {
+    const j = Math.floor(rastgele() * (i + 1));
+    [k[i], k[j]] = [k[j], k[i]];
+  }
+  return k.slice(0, enCok);
+}
+
 export class GiveawayEngine {
   getActiveGiveaway(): any | null {
     return db.prepare('SELECT * FROM giveaways WHERE is_active = 1 LIMIT 1').get() || null;
@@ -72,11 +82,14 @@ export class GiveawayEngine {
   iptal(): any | null {
     // Kazanan çekilmeden kapanan ücretli çekilişin katılım puanları iade edilir (eskiden kayboluyordu)
     const onceki = this.getActiveGiveaway();
-    if (onceki && Number(onceki.cost_points) > 0) {
-      const katilanlar = db.prepare('SELECT username, platform FROM giveaway_entries WHERE giveaway_id = ?').all(onceki.id) as Array<{ username: string; platform: string }>;
-      for (const k of katilanlar) economy.addPoints(cuzdanAdi(k.platform, k.username), Number(onceki.cost_points));
-    }
-    db.prepare('UPDATE giveaways SET is_active = 0, closed_at = ? WHERE is_active = 1').run(Date.now());
+    const katilanlar = onceki && Number(onceki.cost_points) > 0
+      ? (db.prepare('SELECT username, platform FROM giveaway_entries WHERE giveaway_id = ?').all(onceki.id) as Array<{ username: string; platform: string }>)
+      : [];
+    // Tek işlemde: kapatma başarısız olursa iade de geri alınır, ikinci iptal iki kez ödemez
+    economy.topluOde(
+      katilanlar.map((k) => ({ kullanici: cuzdanAdi(k.platform, k.username), puan: Number(onceki.cost_points) })),
+      () => db.prepare('UPDATE giveaways SET is_active = 0, closed_at = ? WHERE is_active = 1').run(Date.now())
+    );
     return onceki;
   }
 
@@ -227,7 +240,7 @@ export class GiveawayEngine {
       platform: secilenler[0].platform,
       totalTickets: toplamBilet,
       participantsCount: entries.length,
-      adaylar: entries.slice(0, 40).map((e) => e.username)
+      adaylar: seritAdaylari(entries)
     };
   }
 
@@ -249,7 +262,7 @@ export class GiveawayEngine {
       platform: secilenler[0].platform,
       totalTickets: kalan.reduce((t, e) => t + Math.max(1, Number(e.tickets) || 1), 0),
       participantsCount: kalan.length,
-      adaylar: kalan.slice(0, 40).map((e) => e.username)
+      adaylar: seritAdaylari(kalan)
     };
   }
 

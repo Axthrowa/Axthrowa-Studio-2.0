@@ -295,6 +295,38 @@ const TEST_ADI: Record<string, string> = {
   'muzik-video': 'muzik-video'
 };
 
+const HIZA_NOKTALARI: Array<[string, string, Yon[]]> = [
+  ['↖', 'Sol üst köşe', ['sol', 'ust']], ['↑', 'Üst orta', ['yatayOrta', 'ust']], ['↗', 'Sağ üst köşe', ['sag', 'ust']],
+  ['←', 'Sol orta', ['sol', 'dikeyOrta']], ['⊙', 'Tam orta', ['yatayOrta', 'dikeyOrta']], ['→', 'Sağ orta', ['sag', 'dikeyOrta']],
+  ['↙', 'Sol alt köşe', ['sol', 'alt']], ['↓', 'Alt orta', ['yatayOrta', 'alt']], ['↘', 'Sağ alt köşe', ['sag', 'alt']]
+];
+
+/** Tuvalin dokuz noktasına tek tıkla hizalama + yalnız tek eksen + kenardan bırakılacak pay */
+function HizaIzgarasi({ onSec, pay, payDegisti }: { onSec: (yonler: Yon[]) => void; pay: number; payDegisti: (p: number) => void }) {
+  const dugme = 'py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[11px] font-bold text-gray-200 transition-colors';
+  return (
+    <div className="flex gap-2 pt-1" role="group" aria-label="Hizalama">
+      <div className="grid grid-cols-3 gap-1 w-28 shrink-0">
+        {HIZA_NOKTALARI.map(([simge, ad, yonler]) => (
+          <button key={ad} type="button" title={ad} aria-label={ad} onClick={() => onSec(yonler)} className={dugme}>
+            {simge}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 space-y-1">
+        <button type="button" onClick={() => onSec(['yatayOrta'])} className={`${dugme} w-full`}>↔ Yalnız yatay orta</button>
+        <button type="button" onClick={() => onSec(['dikeyOrta'])} className={`${dugme} w-full`}>↕ Yalnız dikey orta</button>
+        <label className="flex items-center justify-between gap-1 text-[10px] font-bold text-gray-400">
+          Kenar payı
+          <select value={pay} onChange={(e) => payDegisti(Number(e.target.value))} className="bg-black/60 border border-white/10 rounded p-0.5 text-white">
+            {[0, 20, 40, 80].map((p) => <option key={p} value={p}>{p} px</option>)}
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 /** Widget seçme listesinde adın yanındaki simge */
 const KATMAN_EMOJISI: Record<string, string> = {
   chat: '💬', alerts: '🔔', goals: '🎯', subathon: '⏳', trivia: '🧠', eventLabels: '🏷️', theCup: '🏆', polls: '📊',
@@ -480,6 +512,8 @@ export function OverlayStudio() {
   // Test edilen katmanlar: yalnız onlar canlı çizilir, tuvalin geri kalanı olduğu gibi kalır
   const [testKatmanlari, setTestKatmanlari] = useState<string[]>([]);
   const testSureleri = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Görünüm ya da Test modu değişince canlıda bırakılan katmanlar örneğe döner
+  useEffect(() => setTestKatmanlari([]), [obsGorunumu, allInOne.testMode]);
   // Artınca tuvaldeki widget'lar yeniden yüklenir
   const [tuvalAnahtari, setTuvalAnahtari] = useState(0);
   /** Seçili katmanın kendi ayar kaydı (hedef çubuğunda türe göre). */
@@ -571,6 +605,7 @@ export function OverlayStudio() {
   const [isDragging, setIsDragging] = useState(false);
   const [kilavuz, setKilavuz] = useState<Kilavuzlar>({ dikey: [], yatay: [] });
   const [isResizing, setIsResizing] = useState(false);
+  const [kenarPayi, setKenarPayi] = useState(0);
   const dragStartRef = useRef<{ cekilis?: boolean; mod?: 'olcek' | 'en' | 'boy'; origScale?: number; pointerX: number; pointerY: number; widgetX: number; widgetY: number; origW: number; origH: number } | null>(null);
 
   // Otomatik kayıt: değişiklikten 400 ms sonra; sürükleme sırasında bekler
@@ -643,9 +678,13 @@ export function OverlayStudio() {
     const deltaY = (e.clientY - dragStartRef.current.pointerY) / displayScale;
 
     if (isDragging && dragStartRef.current.cekilis) {
-      const x = Math.round(dragStartRef.current.widgetX + deltaX);
-      const y = Math.round(dragStartRef.current.widgetY + deltaY);
-      setAllInOne((prev) => ({ ...prev, giveaway: { ...(prev as any).giveaway, cekilis: { x, y } } }));
+      const hamX = dragStartRef.current.widgetX + deltaX;
+      const hamY = dragStartRef.current.widgetY + deltaY;
+      const kutu = cekilisKutusu();
+      const digerleri = KATMANLAR.map((k) => (allInOne as any)[k.anahtar]).filter((it) => it?.enabled) as Kutu[];
+      const yap = e.altKey ? { ...sinirla(hamX, hamY, kutu), kilavuz: { dikey: [], yatay: [] } } : yapistir(hamX, hamY, kutu, digerleri, 14);
+      setKilavuz(yap.kilavuz);
+      setAllInOne((prev) => ({ ...prev, giveaway: { ...(prev as any).giveaway, cekilis: { x: yap.x, y: yap.y } } }));
     } else if (isDragging) {
       const curItem = (allInOne as any)[selectedCanvasWidget];
       const kutu: Kutu = { x: 0, y: 0, width: curItem?.width || 300, height: curItem?.height || 200, scale: curItem?.scale };
@@ -660,7 +699,7 @@ export function OverlayStudio() {
         // Yalnız tuvalde görünen (açık) diğer katmanlara yapış
         const digerleri = KATMANLAR.map((k) => (allInOne as any)[k.anahtar])
           .filter((it, i) => it?.enabled && KATMANLAR[i].anahtar !== selectedCanvasWidget) as Kutu[];
-        const yap = yapistir(hamX, hamY, kutu, digerleri);
+        const yap = yapistir(hamX, hamY, kutu, digerleri, 14);
         newX = yap.x;
         newY = yap.y;
         setKilavuz(yap.kilavuz);
@@ -702,11 +741,24 @@ export function OverlayStudio() {
   };
 
   /** Seçili katmanı tuvale göre hizalar (görünen, yani ölçekli boyuta göre). */
-  const hizalaSecili = (yon: Yon) => {
+  const hizalaSecili = (yonler: Yon[]) => {
     const item = (allInOne as any)[selectedCanvasWidget];
     if (!item) return;
-    const yeni = hizala({ x: item.x ?? 0, y: item.y ?? 0, width: item.width || 300, height: item.height || 200, scale: item.scale }, yon);
+    const yeni = Object.assign({}, ...yonler.map((yon) => hizala({ x: item.x ?? 0, y: item.y ?? 0, width: item.width || 300, height: item.height || 200, scale: item.scale }, yon, kenarPayi)));
     setAllInOne(prev => ({ ...prev, [selectedCanvasWidget]: { ...(prev as any)[selectedCanvasWidget], ...yeni } }));
+  };
+
+  /** Çekiliş anı konumu widget'la aynı boyutta */
+  const cekilisKutusu = (): Kutu => {
+    const g = (allInOne as any).giveaway;
+    return { x: 0, y: 0, width: g?.width || 600, height: g?.height || 300, scale: g?.scale };
+  };
+  const hizalaCekilis = (yonler: Yon[]) => {
+    const yeni = Object.assign({}, ...yonler.map((yon) => hizala(cekilisKutusu(), yon, kenarPayi)));
+    setAllInOne((prev) => {
+      const g = (prev as any).giveaway;
+      return { ...prev, giveaway: { ...g, cekilis: { ...g.cekilis, ...yeni } } };
+    });
   };
 
   // Ok tuşları seçili katmanı 1 px (Shift ile 10 px) kaydırır; yazı alanındayken değil
@@ -845,7 +897,8 @@ export function OverlayStudio() {
   /** Test olayı örnek widget'ta görünmez: yalnız denenen katman bir süre canlı çizilir, tuval yenilenmez. */
   const katmaniTestEt = async (anahtar: string, etiket: string, testAdi: string) => {
     const ornekte = !obsGorunumu || Boolean(allInOne.testMode);
-    const gecisVar = ornekte && !testKatmanlari.includes(anahtar);
+    // Yayın ekranında katman zaten örnekteyse örnek testi için canlıya geçilmez
+    const gecisVar = ornekte && !testKatmanlari.includes(anahtar) && !(obsGorunumu && testAdi.startsWith('ornek-'));
     clearTimeout(testSureleri.current[anahtar]);
     if (gecisVar) {
       setTestKatmanlari((l) => [...l, anahtar]);
@@ -853,7 +906,8 @@ export function OverlayStudio() {
       await new Promise((r) => setTimeout(r, 1200));
     }
     await triggerWidgetTest(testAdi);
-    testSureleri.current[anahtar] = setTimeout(() => setTestKatmanlari((l) => l.filter((a) => a !== anahtar)), 15000);
+    // Yayın ekranında katman canlı kalır: 15 sn sonra örneğe dönüş widget'ı baştan kuruyor, ekran kendi kendine yenileniyordu
+    if (!obsGorunumu) testSureleri.current[anahtar] = setTimeout(() => setTestKatmanlari((l) => l.filter((a) => a !== anahtar)), 15000);
     setTestNotification(`${etiket} testi gönderildi.`);
     setTimeout(() => setTestNotification(null), 3000);
   };
@@ -1383,11 +1437,11 @@ export function OverlayStudio() {
               {/* Açık katmanların testleri: yayında görünür, bitince önceki hâline döner */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] font-bold text-gray-400 mr-1">Test:</span>
-                {KATMANLAR.filter((k) => (allInOne as any)[k.anahtar]?.enabled && TEST_ADI[KATMAN_AYAR_ID[k.anahtar]]).map((k) => (
+                {KATMANLAR.filter((k) => (allInOne as any)[k.anahtar]?.enabled).map((k) => (
                   <button
                     key={k.anahtar}
                     type="button"
-                    onClick={() => void katmaniTestEt(k.anahtar, k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]])}
+                    onClick={() => void katmaniTestEt(k.anahtar, k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]] || `ornek-${k.anahtar}`)}
                     className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
                   >
                     {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
@@ -1661,6 +1715,13 @@ export function OverlayStudio() {
                       </label>
                     )}
 
+                    {selectedCanvasWidget === 'giveaway' && cur.cekilis && (
+                      <div className="p-3 bg-[#11131a] rounded-xl border border-orange-400/40 space-y-2">
+                        <span className="text-xs font-bold text-white block">Çekiliş anı konumunu hizala</span>
+                        <HizaIzgarasi onSec={hizalaCekilis} pay={kenarPayi} payDegisti={setKenarPayi} />
+                      </div>
+                    )}
+
                     {!tanim?.tamEkran && (
                       <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-2.5">
                         <label className="flex items-center justify-between gap-3 cursor-pointer">
@@ -1756,20 +1817,7 @@ export function OverlayStudio() {
                       </div>
 
                       {/* Alignment Action Buttons */}
-                      <div className="grid grid-cols-3 gap-1.5 pt-1" role="group" aria-label="Hizalama">
-                        {([
-                          ['sol', '⇤ Sola'], ['yatayOrta', '↔️ Yatay orta'], ['sag', 'Sağa ⇥'],
-                          ['ust', '⤒ Üste'], ['dikeyOrta', '↕️ Dikey orta'], ['alt', 'Alta ⤓']
-                        ] as Array<[Yon, string]>).map(([yon, etiket]) => (
-                          <button
-                            key={yon}
-                            onClick={() => hizalaSecili(yon)}
-                            className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-gray-200 transition-colors"
-                          >
-                            {etiket}
-                          </button>
-                        ))}
-                      </div>
+                      <HizaIzgarasi onSec={hizalaSecili} pay={kenarPayi} payDegisti={setKenarPayi} />
                       <p className="text-[10px] text-gray-500 leading-snug">
                         Sürüklerken kenarlara, ortaya ve diğer katmanlara yapışır (Alt basılı: serbest). Ok tuşları 1 px, Shift+ok 10 px kaydırır.
                       </p>

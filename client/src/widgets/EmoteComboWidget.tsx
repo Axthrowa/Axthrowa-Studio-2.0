@@ -20,8 +20,12 @@ export interface Parca { dx: number; dy: number; donus: number; gecikme: number;
 /** Ortaya uçan emote: kenardan başlar (piksel, merkeze göre) */
 export interface Gelen { id: number; dx: number; dy: number; donus: number; olcek: number }
 
-/** Uçuş süresi: ortadaki emote uçan kopya varınca büyür */
-const UCUS_MS = 600;
+/** Hız 1'de uçuş süresi: ortadaki emote uçan kopya varınca büyür */
+const UCUS_MS = 1500;
+/** Gelen emote'un uçuşu; hız ayarı yalnız bunu değiştirir */
+export const ucusSuresi = (hiz: unknown) => UCUS_MS / hizCarpani(hiz);
+/** Kombo son emote merkeze vardıktan sonra bekler: uçuş bekleme süresini geçince emote varmadan patlıyordu */
+export const komboBitisi = (hiz: unknown, beklemeMs: unknown) => ucusSuresi(hiz) + Math.max(500, Number(beklemeMs) || 2500);
 const EN_COK_UCAN = 40;
 const PATLAMA_EN_UZUN_MS = 2600;
 /** Dağılan kopyanın boyu, ayarlanan emote boyuna göre: ortadaki ne kadar büyümüş olursa olsun küçük kalır */
@@ -122,10 +126,9 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
       const a = ayar.current;
       const id = ++patlamaNo;
       const boy = (Number(a.size) || 96) * PARCA_ORANI;
-      const hiz = hizCarpani(a.speed);
       setGelenler([]);
-      setPatlama({ id, emote, boy, parcalar: patlamaParcalari(adet, w, h, boy).map((p) => ({ ...p, sure: p.sure / hiz, gecikme: p.gecikme / hiz })) });
-      sonra(() => setPatlama((p) => (p?.id === id ? null : p)), PATLAMA_EN_UZUN_MS / hiz);
+      setPatlama({ id, emote, boy, parcalar: patlamaParcalari(adet, w, h, boy) });
+      sonra(() => setPatlama((p) => (p?.id === id ? null : p)), PATLAMA_EN_UZUN_MS);
     };
 
     const isle = (emote: EmoteParca) => {
@@ -147,7 +150,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
         if (k.adet >= ayar.current.minCombo) patlat(k.emote, k.adet);
         son = null;
         setKombo(null);
-      }, Math.max(500, Number(a.timeoutMs) || 2500));
+      }, komboBitisi(a.speed, a.timeoutMs));
       if (k.adet < a.minCombo) return;
       if (k.adet === a.minCombo && a.soundEnabled && a.soundUrl) {
         try {
@@ -165,12 +168,12 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
         const adet = k.adet;
         sonra(() => {
           if (son === k) setKombo({ emote, adet });
-        }, UCUS_MS / hizCarpani(a.speed));
+        }, ucusSuresi(a.speed));
       }
       const { w, h } = ucusAlani();
       const yeni = { ...toplanmaBaslangici(++gelenNo, w, h, Number(a.size) || 96), emote };
       setGelenler((g) => [...g.slice(-(EN_COK_UCAN - 1)), yeni]);
-      sonra(() => setGelenler((g) => g.filter((x) => x.id !== yeni.id)), UCUS_MS / hizCarpani(a.speed) + 50);
+      sonra(() => setGelenler((g) => g.filter((x) => x.id !== yeni.id)), ucusSuresi(a.speed) + 50);
     };
 
     const ws = new KaliciSoket(wsAdresi('chatbox'));
@@ -237,7 +240,8 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               ['--dy' as any]: `${g.dy}px`,
               ['--rot' as any]: `${g.donus}deg`,
               ['--s' as any]: g.olcek,
-              animation: `axt-kombo-topla ${UCUS_MS / hizCarpani(s.speed)}ms cubic-bezier(.5,0,.8,.4) forwards`
+              // Yavaşlayarak gelir: ekrana girdikten sonra gözle izlenir (eskisi en sonda hızlanıp bir anda varıyordu)
+              animation: `axt-kombo-topla ${ucusSuresi(s.speed)}ms cubic-bezier(.22,.55,.45,1) forwards`
             }}
           >
             <EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} />

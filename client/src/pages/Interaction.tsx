@@ -28,6 +28,7 @@ import {
   HataDurumu,
   Iskelet,
   Kart,
+  Katlanir,
   Secim,
   useOnay,
   useToast
@@ -253,7 +254,7 @@ function TahminPaneli() {
         </Kart>
       )}
 
-      <Kart baslik="Sohbet komutları">
+      <Katlanir baslik="Sohbet komutları" aciklama="Sohbetten de yönetilebilir">
         <ul className="text-[11px] text-gray-400 space-y-1">
           <li>
             <code className="text-purple-300">!tahmin</code> — açık tahminin durumunu gösterir
@@ -270,7 +271,7 @@ function TahminPaneli() {
             <code className="text-purple-300">!tahmin cancel</code>
           </li>
         </ul>
-      </Kart>
+      </Katlanir>
     </div>
   );
 }
@@ -428,7 +429,7 @@ function KuyrukPaneli() {
         </div>
       </Kart>
 
-      <Kart baslik="Sohbet komutları">
+      <Katlanir baslik="Sohbet komutları" aciklama="Sohbetten de yönetilebilir">
         <ul className="text-[11px] text-gray-400 space-y-1">
           <li>
             <code className="text-purple-300">!joinq</code> katıl ·{' '}
@@ -448,7 +449,7 @@ function KuyrukPaneli() {
             Not: <code>!sira</code> ŞARKI isteği kuyruğuna aittir, izleyici kuyruğuna değil.
           </li>
         </ul>
-      </Kart>
+      </Katlanir>
     </div>
   );
 }
@@ -642,7 +643,7 @@ function DususPaneli() {
         </div>
       </Kart>
 
-      <Kart baslik="Sohbet komutları">
+      <Katlanir baslik="Sohbet komutları" aciklama="Sohbetten de yönetilebilir">
         <ul className="text-[11px] text-gray-400 space-y-1">
           <li>
             <code className="text-purple-300">!pdrops start</code> ·{' '}
@@ -653,7 +654,7 @@ function DususPaneli() {
             İzleyici yalnız <code className="text-purple-300">{ayar.anahtar}</code> yazar — bir kişi bir kez sayılır.
           </li>
         </ul>
-      </Kart>
+      </Katlanir>
     </div>
   );
 }

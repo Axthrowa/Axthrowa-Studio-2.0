@@ -45,16 +45,25 @@ export default function DonationsAndJumpScare() {
   const [simulating, setSimulating] = useState(false);
 
   const origin = window.location.origin;
-  const bynoWebhookUrl = `${origin}/api/donations/bynogame`;
-  const genericWebhookUrl = `${origin}/api/donations/webhook`;
+  const [webhookToken, setWebhookToken] = useState('');
+  const [disAdres, setDisAdres] = useState('');
+  const [disAdresTaslak, setDisAdresTaslak] = useState('');
+  const [disAdresHata, setDisAdresHata] = useState('');
+  const webhookUrl = (uc: string) => `${disAdres || origin}/api/donations/${uc}?token=${webhookToken}`;
+  const bynoWebhookUrl = webhookUrl('bynogame');
+  const genericWebhookUrl = webhookUrl('webhook');
   const jumpscareObsUrl = `${origin}/widgets/jumpscare`;
 
   const fetchData = async () => {
     try {
-      const [jsRes, donRes] = await Promise.all([
+      const [jsRes, donRes, ayar] = await Promise.all([
         fetch('/api/donations/jumpscare').then(r => r.json()),
-        fetch('/api/donations/recent').then(r => r.json())
+        fetch('/api/donations/recent').then(r => r.json()),
+        fetch('/api/donations/webhook-ayar').then(r => r.json())
       ]);
+      setWebhookToken(ayar?.token || '');
+      setDisAdres(ayar?.disAdres || '');
+      setDisAdresTaslak(ayar?.disAdres || '');
       if (jsRes) setJsSettings(jsRes);
       if (Array.isArray(donRes)) setRecentDonations(donRes);
     } catch {}
@@ -63,6 +72,19 @@ export default function DonationsAndJumpScare() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const disAdresKaydet = async () => {
+    setDisAdresHata('');
+    const r = await fetch('/api/donations/webhook-ayar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disAdres: disAdresTaslak })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return setDisAdresHata(j.error || 'Adres kaydedilemedi.');
+    setDisAdres(j.disAdres);
+    setDisAdresTaslak(j.disAdres);
+  };
 
   const handleCopy = (text: string, type: 'byno' | 'generic' | 'obs') => {
     navigator.clipboard.writeText(text);
@@ -148,6 +170,38 @@ export default function DonationsAndJumpScare() {
         </div>
       </div>
 
+      {/* Bağış sitesi localhost'a ulaşamaz: bildirim tünelden gelir */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-3 shadow-lg">
+        <h2 className="text-md font-bold text-white">Bağış sitesinin bu bilgisayara ulaşması</h2>
+        <p className="text-xs text-gray-400">
+          BynoGame ve Ko-fi bildirimi kendi sunucusundan yollar; bu bilgisayarın yerel adresine ulaşamaz. Bir tünel açın
+          (ör. <code className="text-emerald-300">cloudflared tunnel --url http://localhost:3001</code>) ve verdiği https adresini buraya yazın.
+          Tünelden yalnız aşağıdaki gizli anahtarlı iki bağış adresine ulaşılabilir; paneli ve diğer uçları dışarıdan kimse göremez.
+          Tünelin Host başlığını localhost yapan ayarını açmayın: o zaman bu koruma çalışmaz.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            aria-label="Tünel adresi"
+            value={disAdresTaslak}
+            onChange={e => setDisAdresTaslak(e.target.value)}
+            placeholder="https://ornek.trycloudflare.com"
+            className="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none"
+          />
+          <button
+            onClick={() => void disAdresKaydet()}
+            className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 rounded-xl cursor-pointer transition-all"
+          >
+            Kaydet
+          </button>
+        </div>
+        {disAdresHata && <p role="alert" className="text-xs text-red-400">{disAdresHata}</p>}
+        {!disAdres && (
+          <p className="text-xs text-amber-300">Tünel adresi yok: aşağıdaki adresler yalnız bu bilgisayardan çalışır, bağış sitesine yapıştırılırsa bağış gelmez.</p>
+        )}
+        <p className="text-[11px] text-gray-500">Adresler gizli anahtar içerir, ekranda göstermeyin. Geçici tünelin adresi her açılışta değişir; değişince burayı ve bağış sitesini güncelleyin.</p>
+      </div>
+
       {/* Webhook URLs & Setup Guides */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* BynoGame Webhook */}
@@ -218,7 +272,7 @@ export default function DonationsAndJumpScare() {
           </div>
 
           <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl text-[11px] text-gray-400">
-            JSON formatında <code className="text-blue-300">{"{ donorName, amount, currency, message }"}</code> gönderildiğinde alertler anında oynatılır.
+            JSON formatında <code className="text-blue-300">{"{ donorName, amount, currency, message }"}</code> gönderildiğinde alertler anında oynatılır. Ko-fi'nin kendi biçimi de okunur.
           </div>
         </div>
       </div>

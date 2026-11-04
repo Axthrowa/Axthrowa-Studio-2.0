@@ -39,7 +39,7 @@ import { duzenliler } from '../community/regulars.js';
 import { votekick, bingo, ayarSayi, kappagenGonder, metindenEmoteler } from '../community/topluluk.js';
 import { emoteAdlari } from '../community/oyunlar.js';
 import { yediTv } from '../emotes/yedi-tv.js';
-import { komutlarMetni, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
+import { komutlarMetni, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -171,6 +171,8 @@ export class CommandManager {
 
   private yerlesikSeli(ad: string, message: ChatMessagePayload, sonuc: string): string {
     const kayit = yerlesikBul(ad);
+    const sablon = kayit && yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'))[kayit.ad]?.yanit;
+    if (sablon && sonuc) sonuc = yanitSablonu(sablon, sonuc, message.user.displayName);
     if (kayit) this.yerlesikBeklemeSon.set(kayit.ad, Date.now());
     if (!sonuc || message.user.isMod || message.user.isBroadcaster) return sonuc;
     const k = `${message.platform}:${message.user.username.toLowerCase()}:${ad}`;

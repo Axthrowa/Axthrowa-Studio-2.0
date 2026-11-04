@@ -13,6 +13,9 @@ import { KAPPAGEN_DEFAULTS } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { hizCarpani, wsAdresi } from '../lib/widget-style.js';
 
+/** Hız 1'in temposu: eskisi gözle takip edilemeyecek kadar hızlıydı */
+const TABAN_HIZ = 0.6;
+
 interface Parca {
   ad: string;
   url?: string;
@@ -129,7 +132,7 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
             dx: patlama ? Math.cos(aci) * hiz : rota.dx,
             dy: patlama ? Math.sin(aci) * hiz : rota.dy,
             donus: (Math.random() - 0.5) * 540,
-            sure: (Math.max(800, a.durationMs) * (0.8 + Math.random() * 0.4)) / hizCarpani(a.speed),
+            sure: (Math.max(800, a.durationMs) * (0.8 + Math.random() * 0.4)) / (hizCarpani(a.speed) * TABAN_HIZ),
             boyut: a.size * (patlama ? 1.2 : 0.8 + Math.random() * 0.4)
           });
         }

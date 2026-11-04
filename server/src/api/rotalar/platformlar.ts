@@ -6,6 +6,7 @@
  * rota gövdeleri DEĞİŞMEDİ, özgün sırayla kayıtlıdır. Bağlama sırası
  * api/routes.ts toplayıcısındadır.
  */
+import { gizliPenceredeAc } from '../../core/gizli-pencere.js';
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { randomUUID as uuidv4 } from 'crypto';
@@ -192,6 +193,11 @@ router.post('/platforms/kick/test-message', async (req: Request, res: Response) 
   const testMsg = message || '🟢 [AxBoT] Kick API & Chat bağlantısı başarıyla doğrulandı! Bot aktif.';
   const result = await kickPlatform.sendKickMessage(channelName, testMsg);
   res.json(result);
+});
+
+/** Giriş sayfası gizli pencerede: tarayıcıda açık yayıncı hesabı bot girişine karışmaz. Yalnız Kick'in izin sayfası açılır. */
+router.post('/platforms/kick/gizli-ac', (req: Request, res: Response) => {
+  res.json({ acildi: gizliPenceredeAc(String(req.body?.url || '')) });
 });
 
 router.get('/platforms/kick/auth-url', (req: Request, res: Response) => {

@@ -750,7 +750,7 @@ export class GamesEngine {
 
   // 10. LIST ALL GAMES
   handleGamesHelp(): string {
-    return '🎮 STREAMAXT OYUNLARI: ' +
+    return '🎮 AXBOT OYUNLARI: ' +
       '!soygun (Çete Banka Soygunu) | ' +
       '!yaris (Sokak Yarışı) | ' +
       '!soru (Bil Bakalım) | ' +

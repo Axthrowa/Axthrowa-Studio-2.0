@@ -111,7 +111,7 @@ export class KingSystemService extends EventEmitter {
     }
 
     // Deduct points
-    economyService.deductPoints(username, pointsBid);
+    economyService.removePoints(username, pointsBid);
 
     // Save previous king to history
     let history: any[] = [];

@@ -202,6 +202,8 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
     }
   };
 
+  if (s.hideEmpty && !onizleme && !ogeler.length) return null;
+
   return (
     <div
       className={

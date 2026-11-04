@@ -16,6 +16,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import apiRoutes from './api/routes.js';
+import { disBagisIstegiMi } from './api/rotalar/bagislar.js';
 import { spotifyDonusu } from './api/rotalar/muzik.js';
 import { wsHub } from './ws/server.js';
 import { platformManager } from './platforms/manager.js';
@@ -61,7 +62,7 @@ const server = http.createServer(app);
 // değilse HİÇBİR şey sunulmaz. Saldırgan kendi alan adını 127.0.0.1'e
 // çözdürse bile Host'u kendi alan adı olur ve burada reddedilir.
 app.use((req, res, next) => {
-  if (izinliHostMu(req.headers.host, arayuzAdresleri(), ekIzinliHostlar())) return next();
+  if (izinliHostMu(req.headers.host, arayuzAdresleri(), ekIzinliHostlar()) || disBagisIstegiMi(req.method, req.path, req.query.token)) return next();
   console.warn(`[Guvenlik] Izin listesinde olmayan Host reddedildi: ${req.headers.host}`);
   res.status(403).json({ success: false, error: 'Geçersiz Host başlığı.' });
 });
@@ -256,7 +257,7 @@ async function portDoluysa(): Promise<void> {
   try {
     const r = await fetch(`http://127.0.0.1:${PORT}/health`, { signal: AbortSignal.timeout(3000) });
     const j: any = await r.json().catch(() => null);
-    if (j?.uygulama === 'streamaxt' || j?.status === 'ok') {
+    if (j?.uygulama === 'streamaxt') {
       console.error(`[AxBoT] ${PORT} portunda zaten bir AxBoT çalışıyor; bu kopya kapatılıyor.`);
       process.exit(ZATEN_CALISIYOR_KODU);
     }

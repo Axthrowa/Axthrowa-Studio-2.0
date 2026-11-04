@@ -47,15 +47,15 @@ export function merkezdeBoyutla(k: Kutu, yeni: { width?: number; height?: number
 export type Yon = 'sol' | 'yatayOrta' | 'sag' | 'ust' | 'dikeyOrta' | 'alt';
 
 /** Seçili kutuyu tuvale göre hizalar; yalnız değişen ekseni döndürür. */
-export function hizala(k: Kutu, yon: Yon): { x?: number; y?: number } {
+export function hizala(k: Kutu, yon: Yon, pay = 0): { x?: number; y?: number } {
   const { g, y: h } = gorunen(k);
   switch (yon) {
-    case 'sol': return { x: 0 };
+    case 'sol': return { x: pay };
     case 'yatayOrta': return { x: Math.round((TUVAL_G - g) / 2) };
-    case 'sag': return { x: Math.round(TUVAL_G - g) };
-    case 'ust': return { y: 0 };
+    case 'sag': return { x: Math.round(TUVAL_G - g - pay) };
+    case 'ust': return { y: pay };
     case 'dikeyOrta': return { y: Math.round((TUVAL_Y - h) / 2) };
-    case 'alt': return { y: Math.round(TUVAL_Y - h) };
+    case 'alt': return { y: Math.round(TUVAL_Y - h - pay) };
   }
 }
 
@@ -78,8 +78,8 @@ export function yapistir(
   esik = 10
 ): { x: number; y: number; kilavuz: Kilavuzlar } {
   const { g, y: h } = gorunen(k);
-  const dikeyHedef = [0, TUVAL_G / 2, TUVAL_G];
-  const yatayHedef = [0, TUVAL_Y / 2, TUVAL_Y];
+  const dikeyHedef = [0, TUVAL_G / 3, TUVAL_G / 2, (TUVAL_G * 2) / 3, TUVAL_G];
+  const yatayHedef = [0, TUVAL_Y / 3, TUVAL_Y / 2, (TUVAL_Y * 2) / 3, TUVAL_Y];
   for (const d of digerleri) {
     const b = gorunen(d);
     dikeyHedef.push(d.x, d.x + b.g / 2, d.x + b.g);

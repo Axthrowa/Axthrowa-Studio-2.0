@@ -247,14 +247,6 @@ export class EconomyEngine {
     return this.addPoints(username, -Math.abs(amount));
   }
 
-  deductPoints(username: string, amount: number) {
-    this.removePoints(username, amount);
-  }
-
-  awardPoints(username: string, _disp: string, amount: number) {
-    this.addPoints(username, amount);
-  }
-
   /**
    * Bellekteki bütün kullanıcıları diske yazar.
    *
@@ -265,15 +257,18 @@ export class EconomyEngine {
    */
   flushAll() {
     const now = Date.now();
+    const sorgu = db.prepare(
+      `UPDATE economy SET last_active = ?, display_name = ?, points = ?, watch_time_minutes = ?,
+         messages_count = ?, subs_count = ?, gifted_subs_count = ?, tips_amount = ?, loyalty_tier = ?
+       WHERE id = ?`,
+    );
+    // Tek işlemde: 2.000 kullanıcıda 121 ms yerine 17 ms; bu sırada bot başka iş yapamıyor
+    db.exec('BEGIN');
     for (const [, cached] of this.userCache.entries()) {
       const d = cached.data;
       if (!d?.id) continue;
       try {
-        db.prepare(
-          `UPDATE economy SET last_active = ?, display_name = ?, points = ?, watch_time_minutes = ?,
-             messages_count = ?, subs_count = ?, gifted_subs_count = ?, tips_amount = ?, loyalty_tier = ?
-           WHERE id = ?`,
-        ).run(
+        sorgu.run(
           d.last_active || now,
           d.display_name || d.username,
           d.points || 0,
@@ -290,6 +285,13 @@ export class EconomyEngine {
         /* tek kullanıcı yazılamazsa diğerleri sürsün — ama sessiz kalmasın */
         seyrekUyar('ekonomi:toplu', '[Ekonomi] Toplu kayıtta bir kullanıcı yazılamadı', e, 30_000);
       }
+    }
+    try {
+      db.exec('COMMIT');
+    } catch (e) {
+      // Açık kalan işlem sonraki her yazımı kilitlerdi; veri bellekte duruyor, sonraki turda yeniden yazılır
+      db.exec('ROLLBACK');
+      seyrekUyar('ekonomi:toplu', '[Ekonomi] Toplu kayıt tamamlanamadı', e, 30_000);
     }
   }
 
@@ -333,8 +335,8 @@ export class EconomyEngine {
     const item = db.prepare('SELECT * FROM loyalty_redemptions WHERE id = ?').get(id) as any;
     if (!item) return { ok: false, kod: 404, hata: 'Talep bulunamadı' };
     if (item.status === 'refunded') return { ok: false, kod: 409, hata: 'Talep zaten iade edildi' };
-    if (status === 'refunded') this.addPoints(String(item.username), Number(item.cost) || 0);
-    db.prepare('UPDATE loyalty_redemptions SET status = ? WHERE id = ?').run(status, id);
+    const odemeler = status === 'refunded' ? [{ kullanici: String(item.username), puan: Number(item.cost) || 0 }] : [];
+    this.topluOde(odemeler, () => db.prepare('UPDATE loyalty_redemptions SET status = ? WHERE id = ?').run(status, id));
     return { ok: true };
   }
 

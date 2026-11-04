@@ -33,6 +33,8 @@ import KingWidget from './KingWidget.js';
 import TriviaWidget from './TriviaWidget.js';
 import { ActivityFeedWidget } from './ActivityFeedWidget.js';
 import { GiveawayWidget } from './GiveawayWidget.js';
+import { KaliciSoket } from '../lib/kaliciSoket.js';
+import { wsAdresi } from '../lib/widget-style.js';
 import { PinnedMessageWidget } from './PinnedMessageWidget.js';
 import { ShoutoutWidget } from './ShoutoutWidget.js';
 import { ViewerCounterWidget } from './ViewerCounterWidget.js';
@@ -454,11 +456,33 @@ function KatmanKutusu({
   );
 }
 
+const ORNEK_TEST_MS = 10_000;
+
 /**
  * Etkin katmanları çizer. `sarmala` verilmezse düz render — OBS bunu kullanır.
  */
 export function OverlayKatmanlari({ config, onizleme = false, canliKatmanlar, olcek = 1, sarmala }: OverlayKatmanlariProps) {
   const [etkinler, setEtkinler] = useState<string[]>([]);
+  // Test düğmesi: kendi olayı olmayan katmanın örneği birkaç saniye görünür
+  const [ornekler, setOrnekler] = useState<string[]>([]);
+  useEffect(() => {
+    const ws = new KaliciSoket(wsAdresi());
+    const zamanlar: Array<ReturnType<typeof setTimeout>> = [];
+    ws.onmessage = (e) => {
+      try {
+        const m = JSON.parse(String(e.data));
+        if (m?.type !== 'katman_ornek' || typeof m.anahtar !== 'string') return;
+        setOrnekler((l) => (l.includes(m.anahtar) ? l : [...l, m.anahtar]));
+        zamanlar.push(setTimeout(() => setOrnekler((l) => l.filter((a) => a !== m.anahtar)), ORNEK_TEST_MS));
+      } catch {
+        /* başka ileti */
+      }
+    };
+    return () => {
+      zamanlar.forEach(clearTimeout);
+      ws.close();
+    };
+  }, []);
   // Önizlemede tüm örnekler aynı anda çizilir: orada kimse gizlenmez
   const gizli = onizleme || sarmala
     ? new Set<string>()
@@ -489,8 +513,10 @@ export function OverlayKatmanlari({ config, onizleme = false, canliKatmanlar, ol
 
         const stil = katmanStili(item, katman.varsayilan, katman.z, olcek);
         const canli = onizleme && canliKatmanlar?.includes(katman.anahtar);
-        // key: örnek veriyle başlayan widget canlıya geçince baştan kurulur
-        const icerik = <Fragment key={canli ? 'canli' : 'ornek'}>{katman.ciz(onizleme && !canli, item)}</Fragment>;
+        const testte = ornekler.includes(katman.anahtar);
+        const ornekCizim = (onizleme && !canli) || testte;
+        // key: yalnız örnek/canlı arası geçişte baştan kurulur; zaten örnekteyken test onu yenilemez
+        const icerik = <Fragment key={ornekCizim ? 'ornek' : 'canli'}>{katman.ciz(ornekCizim, item)}</Fragment>;
 
         if (sarmala) return <span key={katman.anahtar}>{sarmala(katman, icerik, stil)}</span>;
 

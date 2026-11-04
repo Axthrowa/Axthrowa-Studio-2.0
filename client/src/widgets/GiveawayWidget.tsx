@@ -15,20 +15,49 @@ import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 
 const KART_G = 170;
 const KART_ARA = 8;
-const SERIT_KART = 52;
-const KAZANAN_SIRA = 46;
+/** Saniyede geçen kart sayısı: eskiden 46 kart 7 sn'de geçiyor, isimler okunmuyordu */
+const SANIYEDE_KART = 1.5;
 
-/** Kasa şeridi: kazanan sonlara yakın bir kartta; işaret kartın tam ortasına denk gelmesin diye küçük sapma. */
-export function kasaSeridi(kazanan: string, adaylar: string[], r: () => number = Math.random) {
+/**
+ * Kasa şeridi: kazanan sonlara yakın bir kartta; işaret kartın tam ortasına denk gelmesin diye küçük sapma.
+ * Kazananı sunucu önceden seçer; animasyon sonucu etkilemez, adaylar tüm katılımcılardan gelir.
+ */
+export function kasaSeridi(kazanan: string, adaylar: string[], r: () => number = Math.random, sureMs = 10_000) {
   const havuz = adaylar.length ? adaylar : [kazanan];
-  const isimler = Array.from({ length: SERIT_KART }, () => havuz[Math.floor(r() * havuz.length) % havuz.length]);
-  isimler[KAZANAN_SIRA] = kazanan;
-  const kayma = KAZANAN_SIRA * (KART_G + KART_ARA) + KART_G / 2 + (r() - 0.5) * KART_G * 0.7;
+  const sira = Math.max(10, Math.min(46, Math.round((sureMs / 1000) * SANIYEDE_KART)));
+  const isimler: string[] = [];
+  for (let i = 0; i < sira + 6; i++) {
+    let ad = havuz[Math.floor(r() * havuz.length) % havuz.length];
+    // Art arda aynı isim gelmesin
+    if (havuz.length > 1 && ad === isimler[i - 1]) ad = havuz[(havuz.indexOf(ad) + 1) % havuz.length];
+    isimler.push(ad);
+  }
+  isimler[sira] = kazanan;
+  const kayma = sira * (KART_G + KART_ARA) + KART_G / 2 + (r() - 0.5) * KART_G * 0.7;
   return { isimler, kayma };
+}
+
+/** Kayan isim kartının teması */
+function kasaKarti(tema: string, vurgu: string, yazi: string): CSSProperties {
+  switch (tema) {
+    case 'neon': return { background: 'rgba(0,0,0,.55)', border: `2px solid ${vurgu}`, boxShadow: `0 0 12px ${vurgu}, inset 0 0 8px ${vurgu}66`, borderRadius: 10, color: yazi };
+    case 'altin': return { background: 'linear-gradient(160deg,#fde68a,#b8860b 60%,#fde68a)', border: '1px solid #fff3b0', borderRadius: 6, color: '#2b1a00' };
+    case 'piksel': return { background: '#111827', border: `3px solid ${vurgu}`, boxShadow: '3px 3px 0 #000', borderRadius: 0, color: yazi };
+    case 'bilet': return { background: `radial-gradient(circle at 0 50%, transparent 7px, ${vurgu}33 8px), radial-gradient(circle at 100% 50%, transparent 7px, ${vurgu}33 8px)`, backgroundSize: '51% 100%', backgroundPosition: 'left, right', backgroundRepeat: 'no-repeat', borderTop: `2px dashed ${vurgu}`, borderBottom: `2px dashed ${vurgu}`, color: yazi };
+    case 'kumarhane': return { background: 'linear-gradient(180deg,#7f1d1d,#450a0a)', border: '2px solid #fbbf24', borderRadius: 8, color: '#fef3c7' };
+    case 'sade': return { background: 'transparent', color: yazi };
+    default: return { background: 'rgba(255,255,255,.1)', borderBottom: `3px solid ${vurgu}`, borderRadius: 8, color: yazi };
+  }
 }
 
 const KAYAN_CSS = `@keyframes axt-cekilis-kay { from { left: 100%; transform: translateX(0) } to { left: 0; transform: translateX(-100%) } }
 @keyframes axt-kasa { to { transform: translate3d(calc(var(--kayma) * -1), 0, 0) } }`;
+
+/** Süresi dolmuş ve kimse katılmamış çekiliş: çekilecek kimse yok, ekranda "Katılım kapandı" asılı kalmasın */
+export function bitmisBosCekilis(c: { created_at?: unknown; duration_minutes?: unknown } | null, katilimci: number, simdi: number): boolean {
+  const sure = Number(c?.duration_minutes) * 60_000;
+  return Boolean(c) && sure > 0 && katilimci === 0 && simdi >= Number(c?.created_at) + sure;
+}
 
 export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('giveaways', GIVEAWAY_DEFAULTS);
@@ -68,8 +97,9 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
       zamanlar.current.forEach(clearTimeout);
       zamanlar.current = [];
       setWinner(null);
-      const sureMs = Math.min(20, Math.max(3, Number(ayar.current.drawSec) || 7)) * 1000;
-      setKasa({ no: Date.now(), ...kasaSeridi(kazanan, adaylar), sureMs });
+      const sureMs = Math.min(30, Math.max(3, Number(ayar.current.drawSec) || 10)) * 1000;
+      // Birden çok kazananda şerit ilkinde durur, sonuç ekranı hepsini gösterir
+      setKasa({ no: Date.now(), ...kasaSeridi(kazanan.split(', ')[0], adaylar, Math.random, sureMs), sureMs });
       zamanlar.current.push(
         setTimeout(() => {
           setKasa(null);
@@ -106,7 +136,7 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
   }, [onizleme]);
 
   // Önizleme ayarı anında yansıtır: örnek değerler her çizimde güncel ayardan okunur
-  const gosterilen = onizleme ? { title: 'Steam hediye kartı', keyword: s.keyword, created_at: Date.now() - 45_000, duration_minutes: 5 } : active;
+  const gosterilen = onizleme ? { title: 'Steam hediye kartı', keyword: s.keyword, created_at: Date.now() - 45_000, duration_minutes: 5 } : bitmisBosCekilis(active, entries.length, Date.now()) ? null : active;
   const katilimci = onizleme ? 37 : entries.length;
   const isimler = onizleme ? ['Mira', 'Deniz', 'Kaan', 'Ece', 'Berk', 'Zeynep', 'Can', 'Ayşe'] : entries;
   if (!gosterilen && !winner && !kasa) return null;
@@ -132,6 +162,7 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
             <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 3, marginLeft: -1.5, background: s.accentColor, boxShadow: `0 0 10px ${s.accentColor}`, zIndex: 1 }} />
             <div
               key={kasa.no}
+              data-odak-disi=""
               style={
                 {
                   position: 'absolute',
@@ -141,12 +172,12 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
                   gap: KART_ARA,
                   willChange: 'transform',
                   '--kayma': `${kasa.kayma}px`,
-                  animation: `axt-kasa ${kasa.sureMs}ms cubic-bezier(.08,.72,.12,1) forwards`
+                  animation: `axt-kasa ${kasa.sureMs}ms cubic-bezier(.3,.5,.25,1) forwards`
                 } as CSSProperties
               }
             >
               {kasa.isimler.map((ad, i) => (
-                <div key={i} style={{ flex: `0 0 ${KART_G}px`, height: 64, display: 'grid', placeItems: 'center', padding: '0 8px', borderRadius: 8, background: 'rgba(255,255,255,.1)', borderBottom: `3px solid ${s.accentColor}`, fontWeight: 800, fontSize: s.fontSize, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div key={i} style={{ flex: `0 0 ${KART_G}px`, height: 64, display: 'grid', placeItems: 'center', padding: '0 8px', ...kasaKarti(String(s.kasaTema), s.accentColor, s.fontColor), fontWeight: 800, fontSize: s.fontSize, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {ad}
                 </div>
               ))}
@@ -184,7 +215,7 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
             <div style={{ position: 'relative', height: 20, marginTop: 8, overflow: 'hidden', fontSize: 13, opacity: 0.8 }}>
               <style>{KAYAN_CSS}</style>
               {/* Mutlak konum: uzun liste kutuyu genişletmez. Süre onarlı artar: her katılımda yazı başa dönmesin */}
-              <span style={{ position: 'absolute', top: 0, whiteSpace: 'nowrap', animation: `axt-cekilis-kay ${Math.max(10, Math.ceil(isimler.length / 10) * 12)}s linear infinite` }}>
+              <span data-odak-disi="" style={{ position: 'absolute', top: 0, whiteSpace: 'nowrap', animation: `axt-cekilis-kay ${Math.max(30, Math.ceil(isimler.length / 10) * 30)}s linear infinite` }}>
                 {isimler.join('  •  ')}
               </span>
             </div>

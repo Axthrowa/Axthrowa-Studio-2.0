@@ -9,6 +9,7 @@
  * $(title) yayın başlığı, $(platformurl) kanal adresi.
  */
 import type { SohbetOlayi } from './chat-alerts.js';
+import { KARSILAMALAR } from './karsilamalar.js';
 
 export type TemaKimligi = 'starwars' | 'harrypotter' | 'lotr' | 'got' | 'breakingbad' | 'gta' | 'witcher';
 
@@ -397,6 +398,39 @@ export const TEMA_MESAJLARI: Record<TemaKimligi, Mesajlar> = {
 export function temaAdaylari(tema: string, olay: SohbetOlayi): string[] {
   if (tema === 'karisik') return Object.values(TEMA_MESAJLARI).flatMap((m) => m[olay] || []);
   return (TEMA_MESAJLARI as Record<string, Mesajlar>)[tema]?.[olay] || [];
+}
+
+/** Yeni takipçi karşılamasında seçilebilen temalar */
+export const TAKIP_TEMA_ADLARI: Record<string, string> = {
+  harrypotter: 'Harry Potter',
+  lotr: 'Yüzüklerin Efendisi',
+  starwars: 'Star Wars',
+  got: 'Game of Thrones',
+  breakingbad: 'Breaking Bad',
+  marvel: 'Marvel',
+  stranger: 'Stranger Things',
+  witcher: 'The Witcher',
+  mario: 'Super Mario',
+  gta: 'GTA'
+};
+
+/** Seçili temaların tüm karşılama mesajları */
+export function takipAdaylari(temalar: string[]): string[] {
+  return temalar.flatMap((t) => [...((TEMA_MESAJLARI as Record<string, Mesajlar>)[t]?.follow || []), ...(KARSILAMALAR[t] || [])]);
+}
+
+/**
+ * Kayıtlı seçim. Hiç seçim yapılmadıysa (`ham` boş) ve kullanıcı kendi şablonunu ya da genel temayı
+ * ayarlamadıysa bütün temalar karışık gider; bilerek boşaltılan liste kendi şablonuna döner.
+ */
+export function takipTemalariCoz(ham: string | null | undefined, kendiAyariVar: boolean): string[] {
+  if (!ham) return kendiAyariVar ? [] : Object.keys(TAKIP_TEMA_ADLARI);
+  try {
+    const v = JSON.parse(ham);
+    return Array.isArray(v) ? v.filter((t) => typeof t === 'string' && t in TAKIP_TEMA_ADLARI) : [];
+  } catch {
+    return [];
+  }
 }
 
 /** Son gönderileni tekrar etmeden rastgele seçim */

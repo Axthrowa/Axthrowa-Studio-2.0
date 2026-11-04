@@ -11,6 +11,62 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.8',
+    ad: 'Sağlam Kapı',
+    tarih: '2026-11-04',
+    notlar: [
+      'Bağış bildirimi tünelle dışarıdan alınabilir: adres gizli anahtar taşır, tünelden yalnız iki bağış ucuna ulaşılır',
+      'Ko-fi bildirimi okunur; bağışçı gizli dediyse mesajı gösterilmez ve okunmaz',
+      '3001 portundaki başka bir uygulama artık AxBoT sanılıp kapatılmaz, bot da bu yüzden açılmamazlık etmez',
+      'Çekiliş iptali ve market iadesi tek işlemde yapılır, iki kez iade olmaz; puan kaydı çok daha az takılır',
+      'Yedek geri yükleme yarıda kalırsa veriler önceki hâline döner',
+    ]
+  },
+  {
+    surum: '1.13.7',
+    ad: 'Sağlam Sıra',
+    tarih: '2026-11-04',
+    notlar: [
+      'Oynatıcısı takılan klip sırayı ve duraklatılmış müziği kilitlemez; uzun klipler süresince çalar',
+      'Klipten sonra istek başlamazsa müzik duraklatılmış kalmaz, istek kuyrukta bekler',
+      'Sıra klipteyken !skip çalan parçayı geçer, izleyiciye yanlışlıkla "şimdi çalıyor" denmez, Otomatik DJ yarıda kesilmez',
+      'Çekiliş şartları grubu değer değişince kapanmaz, widget aramasında kapalı bölümler açılır, anket şıklarındaki boşluklar temizlenir',
+    ]
+  },
+  {
+    surum: '1.13.6',
+    ad: 'Sade',
+    tarih: '2026-11-04',
+    notlar: [
+      'Tek URL sayfası çok daha az işlemci harcıyor: hedef çubuğu çizgileri yeniden boyamıyor, widgetlar tek bağlantıyı paylaşıyor, klip yokken YouTube oynatıcısı kapanıyor',
+      'Klip isteği çalan müziğin bitmesini bekler, müzik klip boyunca duraklar, klip bitince sürer; istek şarkılar sırayı bozmaz',
+      'Karaoke kelime kelime akar: kelime zamanı varsa o kullanılır, yoksa heceye göre yayılır; dolum geri sıçramaz',
+      'Anket, çekiliş, tahmin, uyarı ve widget ayarları açılır gruplara ayrıldı; widget ayarlarında arama var',
+    ]
+  },
+  {
+    surum: '1.13.5',
+    ad: 'Karşılama',
+    tarih: '2026-11-04',
+    notlar: [
+      'Yeni takipçi sohbette temalı karşılanır: Harry Potter, Yüzüklerin Efendisi, Star Wars, Game of Thrones, Breaking Bad ve fazlası; temalar seçilebilir',
+      'Komutlar sekmesinde her komutun sohbet görünümü ve yanıt düzenleme',
+      'Emote kombo: gelen emote hızı ayarlanır, emote varmadan patlamaz',
+      'Tek URL Yayın ekranı testte kendiliğinden yenilenmez; süresi dolmuş boş çekiliş gizlenir; bağış kupası boşken gizlenebilir',
+    ]
+  },
+  {
+    surum: '1.13.4',
+    ad: 'Klip',
+    tarih: '2026-11-04',
+    notlar: [
+      '!klip düzeldi: YouTube müzik videolarını 127.0.0.1 adresinde reddediyordu; gömmeye kapalı yüklemede başka sürüme geçer',
+      'Temalar görünümü de değiştirir; Tek URL\'de her widget\'a Test; hedef simgesi bara ortalı',
+      'Çekiliş: okunur hızda isimler, tüm katılımcılardan şerit, 8 yeni tema, çekiliş anı için hizalama',
+      'Hizalama dokuz nokta ve kenar payı; daha yumuşak çark; emote hızı kaydırıcısı; bot girişi gizli pencerede; ipucu anahtarı hemen kaydedilir',
+    ]
+  },
+  {
     surum: '1.13.3',
     ad: 'Temalar',
     tarih: '2026-11-04',

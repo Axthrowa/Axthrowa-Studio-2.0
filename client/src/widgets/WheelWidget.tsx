@@ -14,6 +14,9 @@ import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { WHEEL_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi } from '../lib/widget-style.js';
 
+/** Hızlı başlar, uzun ve sarsıntısız bir yavaşlamayla durur */
+const YUMUSAK_DONUS = 'cubic-bezier(0.1, 0.55, 0.08, 1)';
+
 /** Çark renk paletleri: "custom" dilimlerin kendi rengini kullanır, diğerleri sırayla döner */
 export const CARK_PALETLERI: Record<string, { ad: string; renkler: string[] }> = {
   custom: { ad: 'Dilim renkleri (özel)', renkler: [] },
@@ -200,7 +203,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
     setSpinning(true);
     setWinner(null);
     // Çark görünür olur; sonuçtan `hideAfterSec` sn sonra kaybolur
-    goster(s.spinMs || 4500);
+    goster(s.spinMs || 8000);
     const fark = donusFarki(rotation, guvenli, segments.length, s.extraSpins || 6);
     setRotation(rotation + fark);
     if (s.soundEnabled) {
@@ -211,7 +214,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
           a.volume = ses;
           a.play().catch(() => {});
         } else {
-          donusSesiCal(tikZamanlari(fark, slice, s.spinMs || 4500), s.spinMs || 4500, ses);
+          donusSesiCal(tikZamanlari(fark, slice, s.spinMs || 8000), s.spinMs || 8000, ses);
         }
       } catch {
         /* ses yok */
@@ -221,7 +224,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
     timer.current = setTimeout(() => {
       setSpinning(false);
       setWinner(segments[guvenli]?.label || null);
-    }, s.spinMs || 4500);
+    }, s.spinMs || 8000);
   };
 
   useEffect(() => {
@@ -266,9 +269,10 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
           width={boyut}
           height={boyut}
           style={{
+            willChange: 'transform',
             transform: `rotate(${rotation}deg)`,
             transition: spinning
-              ? `transform ${s.spinMs || 4500}ms ${s.animation || 'cubic-bezier(0.15,0.8,0.2,1)'}`
+              ? `transform ${s.spinMs || 8000}ms ${/^cubic-bezier/.test(String(s.animation)) ? s.animation : YUMUSAK_DONUS}`
               : 'none'
           }}
         >

@@ -56,7 +56,7 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
   const kutu = useRef<HTMLDivElement>(null);
   const oynatici = useRef<any>(null);
   const calan = useRef('');
-  const bitirRef = useRef<() => Promise<unknown>>(async () => {});
+  const bitirRef = useRef<(gomulemedi?: boolean) => Promise<unknown>>(async () => {});
   const hedefVideo = useRef('');
   const testBitis = useRef(0);
   const [hata, setHata] = useState(false);
@@ -80,11 +80,15 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
     const t = setInterval(cek, 3000);
     const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (e) => {
+      let tur: unknown;
       try {
-        if (JSON.parse(String(e.data))?.type !== 'muzik_video_test') return;
+        tur = JSON.parse(String(e.data))?.type;
       } catch {
         return;
       }
+      // Sunucu sırayı açtı ya da klip bitti: 3 sn'lik yoklama beklenmez
+      if (tur === 'klip_hazir') return void cek();
+      if (tur !== 'muzik_video_test') return;
       testBitis.current = Date.now() + TEST_MS;
       setIstek({ id: `test-${Date.now()}`, title: 'Test klibi', url: TEST_ADRESI, requestedBy: 'Test' });
     };
@@ -97,17 +101,19 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
 
   // İstek değişince oynatıcıyı kur / videoyu değiştir
   useEffect(() => {
-    if (onizleme || !istek || calan.current === istek.id) return;
-    calan.current = istek.id;
+    // Adres de anahtarda: gömülemeyen klibin yerine sunucu aynı istekte başka yükleme verir
+    const anahtar = istek ? `${istek.id}|${istek.url}` : '';
+    if (onizleme || !istek || calan.current === anahtar) return;
+    calan.current = anahtar;
     setHata(false);
     const vid = videoKimligi(istek.url);
     hedefVideo.current = vid;
-    const bitir = async () => {
+    const bitir = async (gomulemedi = false) => {
       if (istek.id.startsWith('test-')) return;
       await fetch('/api/songrequest/bitti', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: istek.id })
+        body: JSON.stringify({ id: istek.id, videoId: vid, gomulemedi })
       }).catch(() => {});
     };
     void youtubeApi().then((YT) => {
@@ -116,8 +122,12 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
         oynatici.current.loadVideoById?.(vid);
         return;
       }
-      if (!kutu.current) return;
-      oynatici.current = new YT.Player(kutu.current, {
+      // API yüklenirken kuyruk boşalmış olabilir
+      if (!kutu.current || !hedefVideo.current) return;
+      // YouTube verilen öğeyi iframe ile değiştirir: React'in düğümü olmasın
+      const yer = document.createElement('div');
+      kutu.current.replaceChildren(yer);
+      oynatici.current = new YT.Player(yer, {
         videoId: vid,
         width: '100%',
         height: '100%',
@@ -137,11 +147,12 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
           },
           // 0 = bitti
           onStateChange: (e: any) => e.data === 0 && void bitirRef.current(),
-          // Gömme kapalı / video yok: 2 sn sonra sıradakine
+          // Gömme kapalı / video yok (ör. 150): sunucu aynı şarkının başka yüklemesini verir
           onError: (e: any) => {
             console.warn('[Şarkı Klipleri] YouTube oynatamadı, kod:', e?.data);
             setHata(true);
-            setTimeout(() => void bitirRef.current(), 2000);
+            // Panelin 127.0.0.1 önizlemesinde her müzik videosu reddedilir: OBS'te çalacak istek buradan düşürülmesin
+            if (window.location.hostname !== '127.0.0.1') void bitirRef.current(true);
           }
         }
       });
@@ -153,7 +164,11 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
   useEffect(() => {
     if (istek) return;
     calan.current = '';
-    oynatici.current?.stopVideo?.();
+    hedefVideo.current = '';
+    // Durdurmak yetmiyor: açık kalan YouTube sayfası klip yokken de işlemci ve bellek harcıyordu
+    oynatici.current?.destroy?.();
+    oynatici.current = null;
+    kutu.current?.replaceChildren();
   }, [istek]);
 
   const boyut = embedded ? { width: '100%', height: '100%' } : { width: '100vw', height: '100vh' };
@@ -170,7 +185,7 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
   return (
     <div data-katman-bos={istek ? undefined : ''} style={{ ...boyut, position: 'relative', background: 'transparent', visibility: istek ? 'visible' : 'hidden' }}>
       <div ref={kutu} style={{ width: '100%', height: '100%' }} />
-      {istek && bilgi && <Bilgi baslik={hata ? `Bu klip gömülemiyor, sıradakine geçiliyor: ${istek.title}` : istek.title} kim={istek.requestedBy} />}
+      {istek && bilgi && <Bilgi baslik={hata ? `Bu yükleme yayında oynatılamıyor, başka sürüm aranıyor: ${istek.title}` : istek.title} kim={istek.requestedBy} />}
     </div>
   );
 }

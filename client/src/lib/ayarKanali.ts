@@ -16,6 +16,7 @@
  * kendini yeniler — güncellemeden sonra OBS'te elle "Yenile" gerekmez.
  */
 import { wsAdresi } from './widget-style.js';
+import { KaliciSoket } from './kaliciSoket.js';
 
 export interface AyarDinleyicisi {
   widgetId: string;
@@ -29,9 +30,7 @@ export interface AyarDinleyicisi {
 export const YERLESIM_KIMLIGI = '__tek-tuval-yerlesimi__';
 
 const dinleyiciler = new Set<AyarDinleyicisi>();
-let soket: WebSocket | null = null;
-let zamanlayici: ReturnType<typeof setTimeout> | null = null;
-let oncedenBaglandi = false;
+let soket: KaliciSoket | null = null;
 
 /** index.html'deki ana paket adresi (Vite her derlemede adı değiştirir). */
 export function anaPaketAdresi(html: string): string | null {
@@ -60,22 +59,11 @@ async function surumDenetle() {
 }
 
 function baglan() {
-  zamanlayici = null;
-  if (!dinleyiciler.size) return;
-  let ws: WebSocket;
-  try {
-    ws = new WebSocket(wsAdresi('all'));
-  } catch {
-    zamanlayici = setTimeout(baglan, 3000);
-    return;
-  }
+  const ws = new KaliciSoket(wsAdresi('all'));
   soket = ws;
-  ws.onopen = () => {
-    if (oncedenBaglandi) {
-      for (const d of dinleyiciler) d.tazele();
-      void surumDenetle();
-    }
-    oncedenBaglandi = true;
+  ws.onyenidenbaglandi = () => {
+    for (const d of dinleyiciler) d.tazele();
+    void surumDenetle();
   };
   ws.onmessage = (ev) => {
     let msg: any;
@@ -90,27 +78,16 @@ function baglan() {
       for (const d of dinleyiciler) if (d.widgetId === YERLESIM_KIMLIGI) d.ayar(msg.config);
     }
   };
-  ws.onclose = () => {
-    if (soket === ws) soket = null;
-    if (dinleyiciler.size && !zamanlayici) zamanlayici = setTimeout(baglan, 3000);
-  };
 }
 
 /** Kanala katıl; dönen işlev ayrılır. Son dinleyici ayrılınca soket kapanır. */
 export function ayarKanalinaKatil(d: AyarDinleyicisi): () => void {
   dinleyiciler.add(d);
-  if (!soket && !zamanlayici) baglan();
+  if (!soket) baglan();
   return () => {
     dinleyiciler.delete(d);
     if (dinleyiciler.size) return;
-    if (zamanlayici) clearTimeout(zamanlayici);
-    zamanlayici = null;
-    const s = soket;
+    soket?.close();
     soket = null;
-    oncedenBaglandi = false;
-    if (s) {
-      s.onclose = null;
-      s.close();
-    }
   };
 }

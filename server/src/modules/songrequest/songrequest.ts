@@ -22,7 +22,8 @@ export function sirasiGeldi(c: CalanSarki | null, simdi: number): boolean {
 import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';
 import { parcaKimligi } from '../muzik/spotify-saf.js';
-import { engelliMi, siraDegerleri, youtubeSuresi } from './istek-filtresi.js';
+import { aramaAdaylari, engelliMi, siraDegerleri, youtubeSuresi } from './istek-filtresi.js';
+import { KLIP_EN_COK_BEKLEME_MS, KLIP_TAKILDI_MS, KLIP_WIDGET_MS, klipKarari, parcaAnahtari } from './klip-kapisi.js';
 
 export interface SongItem {
   id: string;
@@ -43,6 +44,10 @@ export interface SongItem {
  * `%DEĞİŞKEN%` kalıplarını tırnak içinde bile genişletir ve şarkı adı izleyiciden
  * geliyor. explorer.exe bağımsız değişkeni olduğu gibi kabuğa iletir.
  */
+/** `!klip` satırları Spotify sırasından bağımsız: widget çalana dek kuyrukta kalır */
+const KLIP_DEGIL = "url NOT LIKE '%www.youtube.com/watch%'";
+const KLIP_EN_COK_DENEME = 8;
+
 function sistemdeAc(hedef: string): void {
   if (!/^(https:\/\/|spotify:)[^\s"]+$/i.test(hedef)) {
     console.warn('[SongRequest] Açılmayan hedef reddedildi');
@@ -115,27 +120,166 @@ export class SongRequestEngine {
         }
         if (!satir) return;
         // Sırasını bekleyen istek henüz çalmadı: "çalındı" sayılırsa izleyicinin isteği sessizce kaybolur
-        db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ? AND url NOT LIKE ?').run(satir.created_at, `${BEKLEYEN}%`);
+        db.prepare(`UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ? AND url NOT LIKE ? AND ${KLIP_DEGIL}`).run(satir.created_at, `${BEKLEYEN}%`);
         this.currentSong = null;
         this.skipVotes.clear();
       } catch {
         /* kuyruk eşlemesi kritik değil */
       }
     });
-    setInterval(() => void this.hariciSiraDenetle(), 2000).unref?.();
+    setInterval(() => {
+      void this.hariciSiraDenetle();
+      if (!this.klipZamanlayici && this.ilkKlip()) this.klipKapisiniUyandir();
+    }, 2000).unref?.();
+  }
+
+  // Klip sırası: klip başlayana dek `klipSirasi` boş döner (bkz. klip-kapisi.ts)
+  private klipZamanlayici: ReturnType<typeof setInterval> | null = null;
+  private klipOturumu = false;
+  private klipBekleyis: { id: string; baslangic: number; anahtar: string } | null = null;
+  /** Klip bitince müzik nasıl sürecek; biz duraklatmadıysak hiç dokunulmaz */
+  private klipDevam: 'play' | 'next' | null = null;
+  private sonKlipYoklama = 0;
+  /** Çalan klip ne zamandır çalıyor: oynatıcı bitişi bildirmezse sıra sonsuza dek kilitlenmesin */
+  private klipCalan: { id: string; baslangic: number; sinir: number } | null = null;
+  /** Süre sınırıyla önündeki şarkıları geçmiş klip: oturum "önceki istek var" diye geri kapanmasın */
+  private klipSinirla: string | null = null;
+
+  private klipKapisiniUyandir() {
+    if (this.klipZamanlayici) return;
+    this.klipZamanlayici = setInterval(() => this.klipKapisi(), 500);
+    this.klipZamanlayici.unref?.();
+  }
+
+  /** Klip çalıyor ya da bu zamandan önce istendi: sıra onun (OBS'te widget açık değilse klip kimseyi tutmaz) */
+  private klipSiraTutuyor(zaman: number, simdi = Date.now()): boolean {
+    if (this.klipOturumu) return true;
+    const klip = this.ilkKlip();
+    return Boolean(klip && klip.createdAt < zaman && simdi - this.sonKlipYoklama < KLIP_WIDGET_MS);
+  }
+
+  private oncekiIstekVar(zaman: number): boolean {
+    if (!this.spotifyOtomatikMi()) return false;
+    const sql = muzikHost.spotifyBagliMi()
+      ? 'SELECT title, url FROM song_queue WHERE is_played = 0 AND created_at < ? AND (url LIKE ? OR url LIKE \'%open.spotify.com%\')'
+      : 'SELECT title, url FROM song_queue WHERE is_played = 0 AND created_at < ? AND url LIKE ?';
+    const satirlar = db.prepare(sql).all(zaman, `${BEKLEYEN}%`) as Array<{ title: string; url: string }>;
+    return satirlar.some((r) => !this.calanSatirMi(r));
+  }
+
+  private calanSatirMi(r: { title: string; url: string }): boolean {
+    const c = muzikHost.simdiCalan();
+    if (!c?.title || String(r.url).startsWith(BEKLEYEN)) return false;
+    if (c.trackId && String(r.url).endsWith(`/track/${c.trackId}`)) return true;
+    const a = c.title.toLocaleLowerCase('tr');
+    const t = String(r.title).toLocaleLowerCase('tr');
+    return t === a || t.startsWith(`${a} — `);
+  }
+
+  private klipKapisi(simdi = Date.now()): void {
+    try {
+      const ilk = this.ilkKlip();
+      if (this.klipOturumu) {
+        // Widget sormayı kestiyse (OBS kapandı) müzik sonsuza dek duraklatılmış kalmasın; klip kuyrukta kalır
+        const koptu = simdi - this.sonKlipYoklama > KLIP_WIDGET_MS + 5000;
+        if (koptu || !ilk || (this.klipSinirla !== ilk.id && this.oncekiIstekVar(ilk.createdAt))) {
+          this.klipOturumuKapat();
+          return;
+        }
+        if (this.klipCalan?.id !== ilk.id) this.klipCalan = { id: ilk.id, baslangic: simdi, sinir: simdi + KLIP_TAKILDI_MS };
+        else if (simdi > this.klipCalan.sinir) void this.klipTakildiMi(ilk.url);
+        return;
+      }
+      if (!ilk) {
+        this.klipBekleyis = null;
+        if (this.klipZamanlayici) clearInterval(this.klipZamanlayici);
+        this.klipZamanlayici = null;
+        return;
+      }
+      this.klipKapisiniUyandir();
+      // Az önce başlatılan istek çalan bilgisine yansımadan eski parçanın sonu sanılmasın
+      if (this.baslatmaBekleniyor(simdi)) return;
+      const calan = muzikHost.simdiCalan();
+      const anahtar = parcaAnahtari(calan);
+      const widgetCanli = simdi - this.sonKlipYoklama < KLIP_WIDGET_MS;
+      if (this.klipBekleyis?.id !== ilk.id) this.klipBekleyis = { id: ilk.id, baslangic: simdi, anahtar };
+      const b = this.klipBekleyis;
+      if (!widgetCanli) b.baslangic = simdi;
+      const acikIstekler = db
+        .prepare(`SELECT title, url FROM song_queue WHERE is_played = 0 AND url NOT LIKE ? AND ${KLIP_DEGIL}`)
+        .all(`${BEKLEYEN}%`) as Array<{ title: string; url: string }>;
+      const istekCaliyor = acikIstekler.some((r) => this.calanSatirMi(r));
+      if (!b.anahtar || istekCaliyor) b.anahtar = anahtar;
+      const karar = klipKarari({
+        calan,
+        ilkAnahtar: b.anahtar,
+        oncekiIstek: this.oncekiIstekVar(ilk.createdAt),
+        istekCaliyor,
+        widgetCanli,
+        bekleyisMs: simdi - b.baslangic,
+        simdi
+      });
+      if (karar === 'bekle') return;
+      this.klipBekleyis = null;
+      this.klipOturumu = true;
+      this.klipSinirla = simdi - b.baslangic >= KLIP_EN_COK_BEKLEME_MS ? ilk.id : null;
+      this.currentSong = null;
+      if (karar !== 'baslat') {
+        this.klipDevam = karar === 'duraklat-son' ? 'next' : 'play';
+        // Parça bitti sayılır: oynatıcı duraklatılınca "parça değişti" olayı gelmez
+        if (karar === 'duraklat-son')
+          db.prepare(`UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND created_at < ? AND url NOT LIKE ? AND ${KLIP_DEGIL}`).run(ilk.createdAt, `${BEKLEYEN}%`);
+        void muzikHost.komut('pause').catch((e) => console.warn('[SongRequest] Müzik duraklatılamadı:', e?.message || e));
+      }
+      eventBus.emit('anket_katmani', { type: 'klip_hazir' });
+    } catch (e) {
+      console.warn('[SongRequest] Klip sırası denetlenemedi:', (e as Error)?.message || e);
+    }
+  }
+
+  /** Klip uzun süredir bitmedi: gerçek süresi (kuyruktaki değer sabit) daha uzunsa beklenir, değilse geçilir */
+  private async klipTakildiMi(url: string) {
+    const k = this.klipCalan;
+    if (!k) return;
+    k.sinir = Infinity; // yanıt gelene dek ikinci kez sorulmasın
+    const videoId = url.match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1];
+    const bitis = k.baslangic + ((videoId ? await this.youtubeSure(videoId, true) : 0) + 60) * 1000;
+    if (this.klipCalan !== k) return;
+    if (bitis > Date.now()) k.sinir = bitis;
+    else this.klipBitti(k.id);
+  }
+
+  private klipOturumuKapat() {
+    this.klipOturumu = false;
+    const devam = this.klipDevam;
+    this.klipDevam = null;
+    eventBus.emit('anket_katmani', { type: 'klip_hazir' });
+    const bekleyen = this.spotifyOtomatikMi() && !muzikHost.spotifyBagliMi() && db.prepare('SELECT 1 FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`);
+    void (async () => {
+      const once = this.sonBaslatma;
+      if (bekleyen) await this.hariciSiraDenetle(Date.now(), true);
+      // İstek başladıysa müzik zaten çalıyor; başlamadıysa duraklatılmış kalmasın
+      if (!devam || this.sonBaslatma !== once) return;
+      // Duraklattığımız parçanın son saniyesi klipten sonra çalmasın
+      if (devam === 'next') await muzikHost.komut('next').catch(() => {});
+      await muzikHost.komut('play');
+    })().catch((e) => console.warn('[SongRequest] Müzik sürdürülemedi:', e?.message || e));
   }
 
   /** Spotify'da atla: YYA kipinde sırada istek varsa doğrudan o başlar, yoksa Spotify'ın sonraki şarkısı */
   private async spotifyAtla() {
-    const bekleyen = !muzikHost.spotifyBagliMi() && db.prepare('SELECT 1 FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`);
-    if (bekleyen) return this.hariciSiraDenetle(Date.now(), true);
+    // Klip çalarken !skip klibi geçer; müzik zaten duraklatılmış
+    if (this.klipOturumu) return;
+    const bekleyen = !muzikHost.spotifyBagliMi() && (db.prepare('SELECT MIN(created_at) AS ilk FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`) as { ilk: number | null }).ilk;
+    // Sıra daha eski klipteyse şarkı başlatılamaz: !skip yine de çalan parçayı geçer
+    if (bekleyen && !this.klipSiraTutuyor(bekleyen)) return this.hariciSiraDenetle(Date.now(), true);
     await muzikHost.komut('next', 'spotify').catch(() => {});
   }
 
   /** Bekleyen isteği sıraya aldıktan sonraki cevap; "hemen" kipinde çalanın yerine hemen başlar */
   private siraYaniti(kim: string, ad: string, hemen: boolean): string {
-    const sira = (db.prepare('SELECT COUNT(*) AS n FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`) as { n: number }).n;
-    const bos = hemen || (sira === 1 && !this.baslatmaBekleniyor(Date.now()) && sirasiGeldi(muzikHost.simdiCalan(), Date.now()));
+    const { n: sira, ilk } = db.prepare('SELECT COUNT(*) AS n, MIN(created_at) AS ilk FROM song_queue WHERE is_played = 0 AND url LIKE ?').get(`${BEKLEYEN}%`) as { n: number; ilk: number };
+    const bos = !this.klipSiraTutuyor(ilk) && (hemen || (sira === 1 && !this.baslatmaBekleniyor(Date.now()) && sirasiGeldi(muzikHost.simdiCalan(), Date.now())));
     void this.hariciSiraDenetle(Date.now(), hemen);
     return bos
       ? `🎵 @${kim}, "${ad}" şimdi çalıyor.`
@@ -154,8 +298,8 @@ export class SongRequestEngine {
   }
 
   /** Süre sınırı açıksa YouTube süresini öğrenir: kapalıyken fazladan istek atılmaz (önbellekli) */
-  private async youtubeSure(videoId: string): Promise<number> {
-    if (!(Number(settingsCache.get('sr_max_dk', '0')) > 0)) return 0;
+  private async youtubeSure(videoId: string, sinirsizDa = false): Promise<number> {
+    if (!sinirsizDa && !(Number(settingsCache.get('sr_max_dk', '0')) > 0)) return 0;
     const bilinen = this.sureOnbellek.get(videoId);
     if (bilinen !== undefined) return bilinen;
     try {
@@ -205,6 +349,22 @@ export class SongRequestEngine {
   }
 
   /** YouTube'da ilk video (önbellekli) */
+  private async youtubeAdaylari(sorgu: string): Promise<Array<{ videoId: string; title: string }>> {
+    try {
+      const res = await axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(sorgu)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8'
+        },
+        timeout: 6000
+      });
+      return aramaAdaylari(res.data);
+    } catch (err: any) {
+      console.warn('[SongRequest] YouTube araması başarısız:', err?.message || err);
+      return [];
+    }
+  }
+
   private async youtubeAra(sorgu: string): Promise<{ videoId: string; title: string; thumbnail?: string } | null> {
     const anahtar = sorgu.toLowerCase();
     const onbellekte = this.searchCache.get(anahtar);
@@ -267,9 +427,10 @@ export class SongRequestEngine {
     if (muzikHost.spotifyBagliMi() || !this.spotifyOtomatikMi()) return;
     if (!zorla && simdi < this.hariciSiraBekle) return;
     const bekleyen = db
-      .prepare('SELECT id, url, requested_by, platform FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC LIMIT 1')
-      .get(`${BEKLEYEN}%`) as { id: string; url: string; requested_by: string; platform: string } | undefined;
+      .prepare('SELECT id, url, requested_by, platform, created_at FROM song_queue WHERE is_played = 0 AND url LIKE ? ORDER BY created_at ASC, rowid ASC LIMIT 1')
+      .get(`${BEKLEYEN}%`) as { id: string; url: string; requested_by: string; platform: string; created_at: number } | undefined;
     if (!bekleyen) return;
+    if (this.klipSiraTutuyor(bekleyen.created_at, simdi)) return;
     if (!zorla && (this.baslatmaBekleniyor(simdi) || !sirasiGeldi(muzikHost.simdiCalan(), simdi))) return;
     this.hariciSiraBekle = simdi + 8000;
     const baslamadanOnce = this.calanAnahtari();
@@ -282,13 +443,14 @@ export class SongRequestEngine {
       // YYA adla arayıp hemen çalıyor, gerçek ad ancak şimdi belli: engelliyse hemen geçilir
       if (!yt && this.engelli(baslik)) {
         await muzikHost.komut('next', 'spotify').catch(() => {});
+        this.sonBaslatma = Date.now();
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(bekleyen.id);
         eventBus.emitBotMessage({ platform: (bekleyen.platform || 'all') as any, message: `⛔ @${bekleyen.requested_by}, "${baslik.slice(0, 100)}" engel listesinde, atlandı.` });
         return;
       }
       const parca = p.uri.match(/^spotify:track:([A-Za-z0-9]{22})$/)?.[1];
       // Bundan önceki her şey bitti sayılır (çalınmış istekler, takılı eski kayıtlar)
-      db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND id <> ? AND url NOT LIKE ?').run(bekleyen.id, `${BEKLEYEN}%`);
+      db.prepare(`UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND id <> ? AND url NOT LIKE ? AND ${KLIP_DEGIL}`).run(bekleyen.id, `${BEKLEYEN}%`);
       db.prepare('UPDATE song_queue SET title = ?, url = ? WHERE id = ?').run(
         baslik.slice(0, 200),
         yt ? `https://music.youtube.com/watch?v=${yt[1]}` : parca ? `https://open.spotify.com/track/${parca}` : 'https://open.spotify.com/',
@@ -335,7 +497,52 @@ export class SongRequestEngine {
     db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(simdiki.id);
     if (this.currentSong?.id === id) this.currentSong = null;
     this.skipVotes.clear();
+    this.klipKapisi();
+    eventBus.emit('anket_katmani', { type: 'klip_hazir' });
     return true;
+  }
+
+  /** Aynı isteğin denenmiş yüklemeleri ve aramada olanlar */
+  private klipDenenen = new Map<string, Set<string>>();
+  private klipAraniyor = new Set<string>();
+
+  /**
+   * Widget klibi oynatamadı. Şirketlerin resmî klipleri çoğu zaman gömmeye kapalıdır (YouTube hata 150) ve
+   * arama ilk sonuç olarak tam da onları verir: istek "çalındı" sayılıp ekranda hiç görünmeden kayboluyordu.
+   * Aynı şarkının sıradaki sonucuna geçilir; hiçbiri olmazsa istek düşer ve sohbete söylenir.
+   */
+  async klipGomulemedi(id: string, videoId: string): Promise<boolean> {
+    if (this.djParca?.id === id) return this.klipBitti(id);
+    const r = this.ilkKlip();
+    // İki OBS kaynağı aynı hatayı bildirir: yalnız hâlâ o videodaysa işlenir
+    if (r?.id !== id || !r.url.includes(videoId) || this.klipAraniyor.has(id)) return false;
+    this.klipAraniyor.add(id);
+    try {
+      const denenen = this.klipDenenen.get(id) ?? new Set<string>();
+      denenen.add(videoId);
+      this.klipDenenen.set(id, denenen);
+      const sonraki = denenen.size < KLIP_EN_COK_DENEME
+        ? (await this.youtubeAdaylari(r.title)).find((a) => !denenen.has(a.videoId) && !this.engelli(a.title))
+        : undefined;
+      if (sonraki) {
+        db.prepare('UPDATE song_queue SET url = ?, thumbnail = ? WHERE id = ?').run(
+          `https://www.youtube.com/watch?v=${sonraki.videoId}`,
+          `https://img.youtube.com/vi/${sonraki.videoId}/hqdefault.jpg`,
+          id
+        );
+        return true;
+      }
+      this.klipDenenen.delete(id);
+      const satir = db.prepare('SELECT platform FROM song_queue WHERE id = ?').get(id) as { platform: string } | undefined;
+      this.klipBitti(id);
+      eventBus.emitBotMessage({
+        platform: (satir?.platform || 'all') as any,
+        message: `⚠️ @${r.requestedBy}, "${r.title.slice(0, 80)}" YouTube'da yayınlarda oynatmaya kapalı, başka sürümü de bulunamadı.`
+      });
+      return true;
+    } finally {
+      this.klipAraniyor.delete(id);
+    }
   }
 
   /**
@@ -351,13 +558,18 @@ export class SongRequestEngine {
    * (ayar açıksa) daha önce istenmiş kliplerden rastgele biri. Yeni istek gelince DJ'in yerine geçer.
    */
   klipSirasi(): { id: string; title: string; url: string; requestedBy: string } | null {
+    this.sonKlipYoklama = Date.now();
     // Kip Spotify'dan videoya geçtiyse bekleyen Spotify istekleri artık çalınamaz: kuyrukta takılı kalmasın
     // (yalnız video kipinde: katman OBS'te açık kalsa da Spotify kipindeki istekler silinmez)
     if (this.videoKipi()) db.prepare('UPDATE song_queue SET is_played = 1 WHERE is_played = 0 AND url LIKE ?').run(`${BEKLEYEN}%`);
     const istek = this.ilkKlip();
     if (istek) {
+      if (!this.klipOturumu) this.klipKapisi();
+      // İstek sırasını beklerken DJ parçası yarıda kesilmez
+      if (!this.klipOturumu) return this.videoKipi() ? this.djParca : null;
       this.djParca = null;
-      return istek;
+      const { id, title, url, requestedBy } = istek;
+      return { id, title, url, requestedBy };
     }
     // Otomatik DJ yalnız video kipinde: Spotify kipinde !klip ile açılan katman kendiliğinden eski klip çalmasın
     if (!this.videoKipi() || settingsCache.get('sr_bos_rastgele', 'true') === 'false') return null;
@@ -386,11 +598,12 @@ export class SongRequestEngine {
     }
   }
 
-  ilkKlip(): { id: string; title: string; url: string; requestedBy: string } | null {
+  ilkKlip(): { id: string; title: string; url: string; requestedBy: string; createdAt: number } | null {
+    // music.youtube.com: Spotify gibi çalar, klip değil
     const r = db
-      .prepare("SELECT id, title, url, requested_by FROM song_queue WHERE is_played = 0 AND (url LIKE '%youtube.com/%' OR url LIKE '%youtu.be/%') ORDER BY created_at ASC LIMIT 1")
-      .get() as { id: string; title: string; url: string; requested_by: string } | undefined;
-    return r ? { id: r.id, title: r.title, url: r.url, requestedBy: r.requested_by } : null;
+      .prepare("SELECT id, title, url, requested_by, created_at FROM song_queue WHERE is_played = 0 AND (url LIKE '%youtube.com/%' OR url LIKE '%youtu.be/%') AND url NOT LIKE '%music.youtube.com%' ORDER BY created_at ASC, rowid ASC LIMIT 1")
+      .get() as { id: string; title: string; url: string; requested_by: string; created_at: number } | undefined;
+    return r ? { id: r.id, title: r.title, url: r.url, requestedBy: r.requested_by, createdAt: r.created_at } : null;
   }
 
   /** Spotify Web API ile otomatik çalma açık ve hesap bağlı mı? */
@@ -561,7 +774,8 @@ export class SongRequestEngine {
       const ytMusicMatch = rawQuery.match(/v=([a-zA-Z0-9_-]{11})/);
       if (ytMusicMatch) {
         videoId = ytMusicMatch[1];
-        videoUrl = `https://music.youtube.com/watch?v=${videoId}`;
+        // Klip widget'ı www adresini oynatır; music.youtube.com satırları klip sayılmaz
+        videoUrl = videoKipi ? `https://www.youtube.com/watch?v=${videoId}` : `https://music.youtube.com/watch?v=${videoId}`;
         thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       }
     } 
@@ -614,6 +828,7 @@ export class SongRequestEngine {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).run(songId, title, videoUrl, 180, message.user.displayName, message.platform, thumbnailUrl, Date.now());
     if (videoKipi) void this.klipKatmaniniAc();
+    if (videoKipi) this.klipKapisiniUyandir();
 
     // Auto open desktop player if enabled (video kipinde klip OBS'te çalar)
     const desktopTarget = settingsCache.get('sr_desktop_target', 'none');
@@ -785,7 +1000,7 @@ export class SongRequestEngine {
   }
 
   getQueueList(): SongItem[] {
-    const rows = db.prepare('SELECT * FROM song_queue WHERE is_played = 0 ORDER BY created_at ASC LIMIT 15').all() as any[];
+    const rows = db.prepare('SELECT * FROM song_queue WHERE is_played = 0 ORDER BY created_at ASC, rowid ASC LIMIT 15').all() as any[];
     return rows.map(r => ({
       id: r.id,
       title: r.title,

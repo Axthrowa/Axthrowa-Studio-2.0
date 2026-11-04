@@ -13,6 +13,7 @@ import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
 import { SabitMesajPaneli, SkorTablosuPaneli, SohbetIstatistikPaneli } from '../components/SohbetAraclariPaneli.js';
 import { CARK_PALETLERI } from '../widgets/WheelWidget.js';
 import { MediaLibrary } from '../components/MediaLibrary.js';
+import { Katlanir } from '../ui/index.js';
 
 const LABELS: Record<string, string> = {
   showStatusDot: 'Başlıktaki durum noktası', centerSize: 'Orta göbek boyutu (%)', centerImageUrl: 'Orta görsel/GIF adresi',
@@ -52,7 +53,7 @@ const LABELS: Record<string, string> = {
   timeFontFamily: 'Süre yazı tipi', timeFontSize: 'Süre boyutu (px)', showRules: 'Kuralları göster', barColor2: 'Bar 2. renk (geçiş)',
   gercekSayi: 'Kanalın gerçek takipçi sayısını göster', barBorderColor: 'Bar çerçeve rengi', barBorderWidth: 'Bar çerçeve kalınlığı', barIcon: 'Simge (emoji)', barIconPosition: 'Simge yeri', layout: 'Düzen', showRemaining: 'Kalan göster',
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
-  textTransform: 'Metin dönüşümü', minCombo: 'Kaç kez art arda gelince belirsin', maxSize: 'En büyük emote boyu', speed: 'Hız (1 normal, 2 iki kat hızlı)', drawSec: 'Çekiliş kayma süresi (sn)', showBorder: 'Çerçeve göster', timeoutMs: 'Emote gelmezse kaç ms sonra patlasın',
+  textTransform: 'Metin dönüşümü', minCombo: 'Kaç kez art arda gelince belirsin', maxSize: 'En büyük emote boyu', speed: 'Hız (1 normal, 0.5 yarı hız, 0.1 en yavaş)', barIconFlip: 'Simgeyi ters çevir', kasaTema: 'Kayan isim kartları', drawSec: 'Çekiliş kayma süresi (sn)', showBorder: 'Çerçeve göster', timeoutMs: 'Son emote vardıktan kaç ms sonra patlasın',
   displayMs: 'Gösterim (ms)', size: 'Emote boyutu', showFloating: 'Uçan emote', showPopup: 'Popup göster',
   confetti: 'Konfeti', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
   gatherMode: "Gelen emote'lar büyük emote'ta toplansın", burstOnEnd: "Kombo bitince emote'lar etrafa dağılıp kaybolsun",
@@ -154,7 +155,7 @@ const SECTIONS: Record<string, string> = {
   soundEnabled: 'Ses', soundUrl: 'Ses', soundVolume: 'Ses', mute: 'Ses', globalVolume: 'Ses',
   backgroundColor: 'Görünüm', backgroundOpacity: 'Görünüm', borderRadius: 'Görünüm', borderColor: 'Görünüm',
   barColor: 'Görünüm', barBackground: 'Görünüm', barHeight: 'Görünüm', barRadius: 'Görünüm',
-  barStyle: 'Görünüm', barColor2: 'Görünüm', barBorderColor: 'Görünüm', barBorderWidth: 'Görünüm', barIcon: 'Görünüm', barIconPosition: 'Görünüm', gercekSayi: 'İçerik',
+  barStyle: 'Görünüm', barColor2: 'Görünüm', barBorderColor: 'Görünüm', barBorderWidth: 'Görünüm', barIcon: 'Görünüm', barIconPosition: 'Görünüm', barIconFlip: 'Görünüm', gercekSayi: 'İçerik',
   messageBgColor: 'Görünüm', messageBgOpacity: 'Görünüm', highlightColor: 'Görünüm', accentColor: 'Görünüm',
   pointerColor: 'Görünüm', transparentBg: 'Görünüm', textShadow: 'Görünüm', smoothMask: 'Görünüm',
   showGlow: 'Görünüm',
@@ -173,7 +174,7 @@ const SECTIONS: Record<string, string> = {
   usernameColorMode: 'Düzen', customUsernameColor: 'Görünüm', chatStyle: 'Görünüm', platformColors: 'Görünüm',
   iconFollow: 'İkonlar', iconSub: 'İkonlar', iconTip: 'İkonlar', iconRaid: 'İkonlar', iconHost: 'İkonlar', iconKicks: 'İkonlar',
   title: 'Hedef', endingTitle: 'Hedef', current: 'Hedef', target: 'Hedef', currency: 'Hedef', type: 'Hedef',
-  maxSize: 'Combo', speed: 'Combo', drawSec: 'Zamanlama', showBorder: 'Düzen', minCombo: 'Combo', timeoutMs: 'Combo', displayMs: 'Combo', size: 'Combo', showFloating: 'Combo',
+  maxSize: 'Combo', speed: 'Combo', drawSec: 'Zamanlama', kasaTema: 'Görünüm', showBorder: 'Düzen', minCombo: 'Combo', timeoutMs: 'Combo', displayMs: 'Combo', size: 'Combo', showFloating: 'Combo',
   showPopup: 'Combo', onlyKnownEmotes: 'Combo',
   keyword: 'Çekiliş', durationMinutes: 'Çekiliş', winnerCount: 'Çekiliş', maxEntries: 'Çekiliş',
   costPoints: 'Çekiliş', subBonusMultiplier: 'Çekiliş', followerOnly: 'Çekiliş', subOnly: 'Çekiliş',
@@ -246,6 +247,25 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
   'audio-player': { label: 'Genel' }
 };
 
+/** Önce widget'ın işi, sonra görünümü: listede olmayan bölümler ikisinin arasına girer */
+const ILK_BOLUMLER = ['Genel', 'Hedef', 'Çekiliş', 'Komut', 'Kontrol', 'Sıralama', 'Kupa', 'Tren', 'Puanlar', 'Bölümler', 'Combo', 'Olaylar', 'Medya', 'Ses', 'Metin', 'Şablon', 'Zamanlama'];
+const SON_BOLUMLER = ['Platformlar', 'Düzen', 'Görünürlük', 'Tema', 'Görünüm', 'Tipografi', 'Animasyon', 'İkonlar', 'Emojiler', 'Gelişmiş'];
+const BOLUM_ACIKLAMASI: Record<string, string> = {
+  Platformlar: 'Hangi platformlar görünsün',
+  Düzen: 'Ne gösterilsin, nasıl dizilsin',
+  Görünürlük: 'Ne zaman gizlensin',
+  Görünüm: 'Renk, köşe, kutu tasarımı',
+  Tipografi: 'Yazı tipi ve boyutu',
+  Animasyon: 'Giriş, çıkış ve hareket',
+  Gelişmiş: 'Nadiren gereken ayarlar'
+};
+function bolumSirasi(b: string): number {
+  const i = ILK_BOLUMLER.indexOf(b);
+  if (i >= 0) return i;
+  const j = SON_BOLUMLER.indexOf(b);
+  return j >= 0 ? 100 + j : 50;
+}
+
 const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
   // 37 on ayar (lib/animations.ts). Eski 9'luk liste geriye uyum icin
   // `animKimligi()` ile eslenmeye devam ediyor.
@@ -310,6 +330,9 @@ const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({
 const SOHBET_EK_ANIM = tema(['pop', 'Pop (fırlayarak)'], ['bulanik', 'Bulanıktan netleşme'], ['elastik', 'Elastik']);
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
+  giveaways: {
+    kasaTema: tema(['kart', 'Kart'], ['neon', 'Neon çerçeve'], ['altin', 'Altın levha'], ['piksel', 'Piksel'], ['bilet', 'Bilet'], ['kumarhane', 'Kumarhane'], ['sade', 'Sade yazı'])
+  },
   'chat-overlay': {
     chatStyle: tema(['klasik', 'Klasik'], ['platformkart', 'Platform kartı'], ['baslikli', 'Başlıklı (ad üstte)'], ['etiket', 'Ad etiketi'], ['konusma', 'Konuşma balonu'], ['serit', 'Platform şeridi'], ['neon', 'Neon çerçeve'], ['pencere', 'Eski pencere'], ['sivicam', 'Sıvı cam'], ['terminal', 'Terminal'], ['yapiskan', 'Yapışkan not'], ['rpg', 'Oyun diyaloğu'], ['cizgiroman', 'Çizgi roman'], ['yayinbandi', 'Yayın bandı'], ['gecis', 'Renk geçişi'], ['altcizgi', 'Alt çizgi'], ['kompakt', 'Kompakt']),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana (tek satır)']),
@@ -501,7 +524,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   const keys = Object.keys(defaults).filter(k => typeof defaults[k] !== 'object' || defaults[k] === null);
   const [values, setValues] = useState<Record<string, any>>(defaults);
   const [status, setStatus] = useState('');
-  const [openSection, setOpenSection] = useState<string>('all');
+  const [ara, setAra] = useState('');
 
   // Yazı tipi listesi kendi görünümüyle gösterilsin: panel tüm yazı tiplerini bir kez yükler
   useEffect(() => {
@@ -569,38 +592,46 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
 
   if (keys.length === 0) return null;
 
-  const grouped = keys.reduce((acc, key) => {
-    const section = WIDGET_SECTIONS[ayarId]?.[key] || SECTIONS[key] || 'Genel';
-    acc[section] = acc[section] || [];
-    acc[section].push(key);
-    return acc;
-  }, {} as Record<string, string[]>);
+  const etiketi = (key: string) => (ayarId === 'emote-combo' && key === 'speed' ? 'Gelen emote hızı (1 normal, 0.5 yarı hız, 0.1 en yavaş)' : LABELS[key] || key);
+  const aranan = ara.trim().toLocaleLowerCase('tr');
+  const grouped = keys
+    .filter(key => !aranan || etiketi(key).toLocaleLowerCase('tr').includes(aranan))
+    .reduce((acc, key) => {
+      const section = WIDGET_SECTIONS[ayarId]?.[key] || SECTIONS[key] || 'Genel';
+      acc[section] = acc[section] || [];
+      acc[section].push(key);
+      return acc;
+    }, {} as Record<string, string[]>);
 
-  const sections = Object.keys(grouped);
+  const sections = Object.keys(grouped).sort((x, y) => bolumSirasi(x) - bolumSirasi(y));
+  // Aç/kapa anahtarları alanların altında toplanır: form taranabilir kalsın
+  const anahtarSonda = (liste: string[]) => {
+    const anahtarMi = (k: string) => inferType(k, values[k] ?? defaults[k], ayarId) === 'checkbox';
+    return [...liste.filter(k => !anahtarMi(k)), ...liste.filter(anahtarMi)];
+  };
 
   return (
     <div className="p-4 bg-black/40 rounded-xl border border-white/5 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs font-bold text-gray-200">Widget Ayarları</h4>
-        <select
-          value={openSection}
-          onChange={e => setOpenSection(e.target.value)}
-          className="bg-black/60 border border-white/10 rounded-lg p-1 text-[11px] text-white"
-        >
-          <option value="all">Tüm sekmeler</option>
-          {sections.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <h4 className="text-xs font-bold text-gray-200 shrink-0">Widget Ayarları</h4>
+        <input
+          type="search"
+          value={ara}
+          onChange={e => setAra(e.target.value)}
+          placeholder="Ayar ara…"
+          aria-label="Ayar ara"
+          className="w-40 min-w-0 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+        />
       </div>
 
+      {!aranan && (
+        <>
       {/* Tema kutuphanesi — BotRix widget basina 13-28 tema sunuyor, bizde
           4-5 vardi. Tema, ayar degerlerinin hazir bir kumesidir: secilince
           ilgili alanlar dolar, kullanici sonra tek tek degistirebilir.
           Widget'in TANIMADIGI anahtarlar atlanir. */}
-      <div>
-        <div className="text-[10px] font-black uppercase tracking-wider text-cyan-300 border-b border-white/10 pb-1 mb-2">
-          Hazır Temalar ({temalar(ayarId).length})
-        </div>
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-40 overflow-y-auto pr-1">
+      <Katlanir baslik="Hazır temalar" sayi={temalar(ayarId).length} aciklama="Tek tıkla görünüm">
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-60 overflow-y-auto pr-1">
           {temalar(ayarId).map(t => (
             <button
               key={t.id}
@@ -626,7 +657,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
             </button>
           ))}
         </div>
-      </div>
+      </Katlanir>
 
       {ayarId === 'alert-box' && <UyariOlayMedyasi />}
       {/* Widget'a özel kontroller: galeri penceresinde ve Tek URL stüdyosunda aynı yerde */}
@@ -634,16 +665,19 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
       {ayarId === 'word-cloud' && <SohbetIstatistikPaneli />}
       {ayarId === 'scoreboard' && <SkorTablosuPaneli />}
       {ayarId === 'wheel-of-fortune' && <CarkPaneli values={values} degistir={(p) => setValues((v) => ({ ...v, ...p }))} />}
+        </>
+      )}
 
-      {sections.filter(s => openSection === 'all' || openSection === s).map(section => (
-        <div key={section} className="space-y-2">
-          <div className="text-[10px] font-black uppercase tracking-wider text-purple-300 border-b border-white/10 pb-1">{section}</div>
+      {aranan && !sections.length && <p className="text-[11px] text-gray-500">"{ara.trim()}" ile eşleşen ayar yok.</p>}
+
+      {sections.map((section, sira) => (
+        <Katlanir key={section + (aranan ? '-ara' : '')} baslik={section} sayi={grouped[section].length} aciklama={BOLUM_ACIKLAMASI[section]} acik={Boolean(aranan) || sira === 0}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {grouped[section].map(key => {
+            {anahtarSonda(grouped[section]).map(key => {
               const type = inferType(key, values[key] ?? defaults[key], ayarId);
               return (
-                <label key={key} className="text-[11px] text-gray-300 font-semibold space-y-1">
-                  <span>{LABELS[key] || key}</span>
+                <label key={key} className={`text-[11px] text-gray-300 font-semibold ${type === 'checkbox' ? 'flex items-center justify-between gap-2 bg-white/5 rounded-lg px-2.5 py-2' : 'space-y-1'}`}>
+                  <span>{etiketi(key)}</span>
                   {type === 'checkbox' ? (
                     <input type="checkbox" checked={!!values[key]} onChange={e => setValues(v => ({ ...v, [key]: e.target.checked }))} className="ml-2 accent-purple-600" />
                   ) : type === 'select' ? (
@@ -652,6 +686,11 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                     </select>
                   ) : type === 'textarea' ? (
                     <textarea value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white min-h-[52px]" />
+                  ) : key === 'speed' ? (
+                    <div className="flex items-center gap-2">
+                      <input type="range" min={0.1} max={3} step={0.05} value={Number(values[key] ?? 1) || 0.5} onChange={e => setValues(v => ({ ...v, [key]: parseFloat(e.target.value) }))} className="flex-1 accent-purple-600" />
+                      <span className="w-10 text-right font-mono text-xs text-white">{(Number(values[key] ?? 1) || 0.5).toFixed(2)}</span>
+                    </div>
                   ) : (
                     <input
                       type={type === 'range' ? 'range' : type}
@@ -670,7 +709,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
               );
             })}
           </div>
-        </div>
+        </Katlanir>
       ))}
 
       <button onClick={save} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5">

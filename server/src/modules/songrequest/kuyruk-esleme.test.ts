@@ -82,3 +82,26 @@ describe('şarkı kuyruğu eşleme', () => {
     expect(acik()).toEqual(['c']);
   });
 });
+
+describe('gömülemeyen klip', () => {
+  const s = songRequest as any;
+  const dur = () => vi.spyOn(s, 'youtubeAdaylari');
+
+  it('aynı istekte başka yüklemeye geçer, iki kez bildirilse de bir kez ilerler', async () => {
+    ekle('k1', 'Tame Impala - Loser', 'https://www.youtube.com/watch?v=aaaaaaaaaaa', 1);
+    const ara = dur().mockResolvedValue([{ videoId: 'aaaaaaaaaaa', title: 'resmi' }, { videoId: 'bbbbbbbbbbb', title: 'sözlü' }]);
+    expect(await songRequest.klipGomulemedi('k1', 'aaaaaaaaaaa')).toBe(true);
+    expect(songRequest.ilkKlip()?.url).toContain('bbbbbbbbbbb');
+    expect(await songRequest.klipGomulemedi('k1', 'aaaaaaaaaaa')).toBe(false); // ikinci OBS kaynağı
+    expect(ara).toHaveBeenCalledTimes(1);
+    ara.mockRestore();
+  });
+
+  it('başka sürüm yoksa istek düşer', async () => {
+    ekle('k2', 'Şarkı', 'https://www.youtube.com/watch?v=ccccccccccc', 1);
+    const ara = dur().mockResolvedValue([{ videoId: 'ccccccccccc', title: 'resmi' }]);
+    expect(await songRequest.klipGomulemedi('k2', 'ccccccccccc')).toBe(true);
+    expect(acik()).toEqual([]);
+    ara.mockRestore();
+  });
+});

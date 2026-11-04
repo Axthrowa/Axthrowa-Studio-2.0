@@ -185,6 +185,7 @@ export const GOAL_DEFAULTS = {
   barIcon: '',
   // Simge rozeti: barın başında ('start') ya da dolgunun ucunda ('tip')
   barIconPosition: 'tip',
+  barIconFlip: false,
   // Koyu gölge: açık/renkli sahnede yazı okunmuyordu
   textShadow: true
 };
@@ -300,7 +301,7 @@ export const WHEEL_DEFAULTS = {
     { label: 'Berk_GG', color: '#6366f1', weight: 1 },
     { label: 'Zeynep_X', color: '#ef4444', weight: 1 }
   ],
-  spinMs: 4500,
+  spinMs: 8000,
   extraSpins: 6,
   /** Yalnız çevrilince / ayar değişince görünsün */
   autoHide: true,
@@ -383,7 +384,8 @@ export const GIVEAWAY_DEFAULTS = {
   keyword: '!katil',
   overlayTitle: 'ÇEKİLİŞ',
   winnerShowSec: 12,
-  drawSec: 7,
+  drawSec: 10,
+  kasaTema: 'kart',
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 18,
   fontColor: '#ffffff',
@@ -523,6 +525,8 @@ export const VIEWER_COUNTER_DEFAULTS = {
 /** Bağış Kupası — tema, kap boyutu, emoji setleri ve eşikler. */
 export const THE_CUP_DEFAULTS = {
   kabuk: '',
+  /** Kupada hiç bağış yokken ekranda görünmesin */
+  hideEmpty: false,
   title: 'BAĞIŞ KUPASI',
   theme: 'glass',
   align: 'right',

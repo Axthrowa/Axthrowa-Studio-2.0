@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Bell, Check, Play, Save, Settings2 } from 'lucide-react';
+import { Katlanir } from '../ui/index.js';
 import { ALERT_ADVANCED_DEFAULTS, FONTS, uyariKaydiGovdesi, yeniUyariKaydi } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, animKimligi } from '../lib/animations.js';
 import AlertVariants from '../components/AlertVariants.js';
@@ -118,16 +119,26 @@ export function AlertsStudio() {
       ) : tab === 'media' ? (
         <MediaLibrary />
       ) : tab === 'advanced' ? (
-        <div className="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="glass-panel p-6 rounded-2xl space-y-3">
+          <Katlanir baslik="Davranış" aciklama="Sıra, aralık ve en düşük tutarlar" acik>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-xs text-gray-300 font-bold">Kuyruk <input className="ml-2" type="checkbox" checked={advanced.queueEnabled} onChange={e => setAdvanced(a => ({ ...a, queueEnabled: e.target.checked }))} /></label>
           <label className="text-xs text-gray-300 font-bold">Alert atla <input className="ml-2" type="checkbox" checked={advanced.skipEnabled} onChange={e => setAdvanced(a => ({ ...a, skipEnabled: e.target.checked }))} /></label>
-          <label className="text-xs text-gray-300 font-bold">TTS <input className="ml-2" type="checkbox" checked={advanced.ttsEnabled} onChange={e => setAdvanced(a => ({ ...a, ttsEnabled: e.target.checked }))} /></label>
-          <label className="text-xs text-gray-300 font-bold">Mesajı TTS ile oku <input className="ml-2" type="checkbox" checked={advanced.ttsReadMessage} onChange={e => setAdvanced(a => ({ ...a, ttsReadMessage: e.target.checked }))} /></label>
           <label className="text-xs text-gray-300 font-bold">Konfeti <input className="ml-2" type="checkbox" checked={advanced.confetti} onChange={e => setAdvanced(a => ({ ...a, confetti: e.target.checked }))} /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Aralık (ms)<input type="number" value={advanced.gapMs} onChange={e => setAdvanced(a => ({ ...a, gapMs: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Genel ses ({advanced.globalVolume})<input type="range" min={0} max={1} step={0.05} value={advanced.globalVolume} onChange={e => setAdvanced(a => ({ ...a, globalVolume: Number(e.target.value) }))} className="w-full" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Min bağış<input type="number" value={advanced.minTipAmount} onChange={e => setAdvanced(a => ({ ...a, minTipAmount: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Min kicks<input type="number" value={advanced.minKicks} onChange={e => setAdvanced(a => ({ ...a, minKicks: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+            </div>
+          </Katlanir>
+          <Katlanir baslik="Ses ve TTS" aciklama="Genel ses, mesajı okuma">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="text-xs text-gray-300 font-bold">TTS <input className="ml-2" type="checkbox" checked={advanced.ttsEnabled} onChange={e => setAdvanced(a => ({ ...a, ttsEnabled: e.target.checked }))} /></label>
+          <label className="text-xs text-gray-300 font-bold">Mesajı TTS ile oku <input className="ml-2" type="checkbox" checked={advanced.ttsReadMessage} onChange={e => setAdvanced(a => ({ ...a, ttsReadMessage: e.target.checked }))} /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Genel ses ({advanced.globalVolume})<input type="range" min={0} max={1} step={0.05} value={advanced.globalVolume} onChange={e => setAdvanced(a => ({ ...a, globalVolume: Number(e.target.value) }))} className="w-full" /></label>
+            </div>
+          </Katlanir>
+          <Katlanir baslik="Görünüm" aciklama="Düzen, yazı tipi, animasyon">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-xs text-gray-300 font-bold space-y-1">Düzen
             <select value={advanced.layoutMode} onChange={e => setAdvanced(a => ({ ...a, layoutMode: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
               <option value="stacked">Üst üste</option><option value="side-by-side">Yan yana</option><option value="text-over">Yazı üstünde</option>
@@ -143,11 +154,19 @@ export function AlertsStudio() {
               {FONTS.map(f => <option key={f}>{f}</option>)}
             </select>
           </label>
-          {/* Metin katmanı — önceden yalnız OBS Stüdyo formundaydı */}
-          <div className="md:col-span-2 pt-3 border-t border-white/10">
+          <label className="text-xs text-gray-300 font-bold space-y-1">Çıkış animasyonu
+            <select value={animKimligi(advanced.exitAnimation)} onChange={e => setAdvanced(a => ({ ...a, exitAnimation: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+              {ANIM_SECENEKLERI.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+            </select>
+          </label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Animasyon süresi (ms)<input type="number" min={0} max={3000} step={50} value={advanced.animationDuration} onChange={e => setAdvanced(a => ({ ...a, animationDuration: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Görsel en fazla yükseklik (px)<input type="number" min={40} max={1080} value={advanced.imageMaxHeight} onChange={e => setAdvanced(a => ({ ...a, imageMaxHeight: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+            </div>
+          </Katlanir>
+          <Katlanir baslik="Metin katmanı" aciklama="Başlık ve mesajın rengi, konumu, zamanı">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">Metin katmanı</p>
             <p className="text-[10px] text-gray-500">Üst metin (başlık) ve alt metin (mesaj) ayrı renklenir; konum ve görünme aralığı görsel/ses ile senkron için.</p>
-          </div>
           <label className="text-xs text-gray-300 font-bold space-y-1">Üst metin rengi<input type="color" value={advanced.titleColor} onChange={e => setAdvanced(a => ({ ...a, titleColor: e.target.value }))} className="w-full h-9 bg-black/40 rounded-xl" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Alt metin rengi<input type="color" value={advanced.messageColor} onChange={e => setAdvanced(a => ({ ...a, messageColor: e.target.value }))} className="w-full h-9 bg-black/40 rounded-xl" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Üst metin boyutu (px)<input type="number" min={10} max={160} value={advanced.titleSize} onChange={e => setAdvanced(a => ({ ...a, titleSize: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
@@ -159,23 +178,30 @@ export function AlertsStudio() {
           <label className="text-xs text-gray-300 font-bold space-y-1">Metin görünsün — başlangıç (ms)<input type="number" min={0} step={100} value={advanced.textFromMs} onChange={e => setAdvanced(a => ({ ...a, textFromMs: Math.max(0, Number(e.target.value)) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Metin görünsün — bitiş (ms)<input type="number" min={0} step={100} value={advanced.textToMs} onChange={e => setAdvanced(a => ({ ...a, textToMs: Math.max(0, Number(e.target.value)) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <p className="md:col-span-2 text-[10px] text-gray-500">0 – 0 = metin hep görünür. Örnek: 1500 – 4500 → uyarı başladıktan 1,5 sn sonra belirir, 4,5. saniyede kaybolur.</p>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Çıkış animasyonu
-            <select value={animKimligi(advanced.exitAnimation)} onChange={e => setAdvanced(a => ({ ...a, exitAnimation: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              {ANIM_SECENEKLERI.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-            </select>
-          </label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Animasyon süresi (ms)<input type="number" min={0} max={3000} step={50} value={advanced.animationDuration} onChange={e => setAdvanced(a => ({ ...a, animationDuration: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Görsel en fazla yükseklik (px)<input type="number" min={40} max={1080} value={advanced.imageMaxHeight} onChange={e => setAdvanced(a => ({ ...a, imageMaxHeight: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+            </div>
+          </Katlanir>
 
           <button onClick={saveAdvanced} className="md:col-span-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 w-fit">
             <Settings2 className="w-4 h-4" /> Gelişmiş ayarları kaydet
           </button>
         </div>
       ) : (
-        <div className="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="glass-panel p-6 rounded-2xl space-y-3">
+          <Katlanir baslik="Metin" aciklama="Uyarıda ne yazsın" acik>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-xs text-gray-300 font-bold">Alert açık <input className="ml-2" type="checkbox" checked={current.is_enabled !== 0} onChange={e => updatePreset({ is_enabled: e.target.checked ? 1 : 0 })} /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Başlık şablonu<input value={current.title_template || ''} onChange={e => updatePreset({ title_template: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="md:col-span-2 text-xs text-gray-300 font-bold space-y-1">Mesaj şablonu<textarea value={current.message_template || ''} onChange={e => updatePreset({ message_template: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 min-h-[70px]" /></label>
+          {olayEtiketi(yetenek, tab) && (
+            <p className="md:col-span-2 text-[11px] text-amber-300/90">
+              Bu olayı üreten kaynaklar: {olayEtiketi(yetenek, tab)}
+            </p>
+          )}
+          <p className="md:col-span-2 text-[11px] text-gray-500">Değişkenler: {'{user} {amount} {currency} {message} {months} {tier} {count} {viewers}'}</p>
+            </div>
+          </Katlanir>
+          <Katlanir baslik="Görsel ve ses" aciklama="GIF, ses dosyası, süre">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-xs text-gray-300 font-bold space-y-1">Görsel / GIF URL<input value={current.image_url || ''} onChange={e => updatePreset({ image_url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Ses URL<input value={current.sound_url || ''} onChange={e => updatePreset({ sound_url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           {/* Harici URL kırılgandı: site dosyayı silince uyarı sessizce bozuluyordu */}
@@ -201,6 +227,10 @@ export function AlertsStudio() {
           )}
           <label className="text-xs text-gray-300 font-bold space-y-1">Süre (ms)<input type="number" value={current.duration_ms || 5000} onChange={e => updatePreset({ duration_ms: Number(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Ses ({current.sound_volume ?? 0.7})<input type="range" min={0} max={1} step={0.05} value={current.sound_volume ?? 0.7} onChange={e => updatePreset({ sound_volume: Number(e.target.value) })} className="w-full" /></label>
+            </div>
+          </Katlanir>
+          <Katlanir baslik="Görünüm" aciklama="Renk, yazı tipi, animasyon">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-xs text-gray-300 font-bold space-y-1">Yazı rengi<input type="color" value={current.text_color || '#ffffff'} onChange={e => updatePreset({ text_color: e.target.value })} className="w-full h-9 bg-black/40 rounded-xl" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Vurgu rengi<input type="color" value={current.accent_color || '#8b5cf6'} onChange={e => updatePreset({ accent_color: e.target.value })} className="w-full h-9 bg-black/40 rounded-xl" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Yazı tipi
@@ -223,12 +253,8 @@ export function AlertsStudio() {
               <option value="none">Yok</option><option value="shine">Shine</option><option value="wiggle">Wiggle</option><option value="wave">Wave</option><option value="pulse">Pulse</option>
             </select>
           </label>
-          {olayEtiketi(yetenek, tab) && (
-            <p className="md:col-span-2 text-[11px] text-amber-300/90">
-              Bu olayı üreten kaynaklar: {olayEtiketi(yetenek, tab)}
-            </p>
-          )}
-          <p className="md:col-span-2 text-[11px] text-gray-500">Değişkenler: {'{user} {amount} {currency} {message} {months} {tier} {count} {viewers}'}</p>
+            </div>
+          </Katlanir>
           <button onClick={saveEvent} className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 w-fit">
             <Save className="w-4 h-4" /> Bu sekmeyi kaydet
           </button>

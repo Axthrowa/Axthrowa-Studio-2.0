@@ -10,6 +10,7 @@
  *   • Moderasyon ihlal eylemleri   (/api/automod + /api/platforms/capabilities)
  *   • Değişken kataloğu            (/api/variables)
  */
+import { TakipciKarsilama } from '../components/TakipciKarsilama.js';
 import { useEffect, useState } from 'react';
 import { Save, RotateCcw, Play, Search, Trash2 } from 'lucide-react';
 import {
@@ -443,6 +444,7 @@ function SohbetUyariPaneli() {
 
   return (
     <div className="space-y-3">
+      <TakipciKarsilama degisti={yukle} />
       <TemaSecici />
       <Kart
         baslik="Sohbete yazılan olay mesajları"

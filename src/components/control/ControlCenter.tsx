@@ -763,7 +763,7 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
               }`}
               title={aktif ? "Yayındaki sahne" : `${ad} sahnesine geç`}
             >
-              {aktif && <span className="mr-1 text-[9px] font-black text-red-300">CANLI</span>}
+              {aktif && <span className="mr-1 text-[10px] font-black text-red-300">CANLI</span>}
               {ad}
             </button>
           );

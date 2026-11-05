@@ -343,7 +343,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
               >
                 <span className="flex items-center justify-between">
                   <span className="font-mono text-[10px] tabular-nums text-zinc-500">{String(index + 1).padStart(2, "0")}</span>
-                  {active && <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-axthrowa-violet">Program</span>}
+                  {active && <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-axthrowa-violet">Program</span>}
                 </span>
                 <span className={`mt-2 block truncate text-sm font-medium ${active ? "text-zinc-100" : "text-zinc-400 group-hover:text-zinc-200"}`}>
                   {scene}

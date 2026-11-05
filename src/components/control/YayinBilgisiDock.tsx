@@ -232,7 +232,7 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
             <label className="dt-etiket" htmlFor="yb-baslik">
               Başlık
             </label>
-            <input
+            <input aria-label="Başlık"
               id="yb-baslik"
               className="dt-input"
               value={baslik}

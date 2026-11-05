@@ -138,14 +138,15 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd, onPartSelect
       <div className="pointer-events-none absolute left-4 top-4 z-50 flex items-center gap-2 rounded-full bg-axthrowa-card/80 px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.4)] backdrop-blur-md">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]" />
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-300">Canlı önizleme</span>
-        <span className="font-mono text-[10px] text-zinc-500">1920×1080</span>
+        <span className="font-mono text-[10px] text-zinc-400">1920×1080</span>
       </div>
 
       {/* Ses: sağ alt köşede cam hap */}
       <div className="absolute bottom-4 right-4 z-50 flex items-center gap-3 rounded-full bg-axthrowa-card/85 py-2 pl-3 pr-4 shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md">
         <button
           type="button"
-          className="transition-colors duration-200"
+          className="p-1 transition-colors duration-200"
+          aria-label={previewMuted ? "Önizleme sesini aç" : "Önizleme sesini kapat"}
           title={previewMuted ? "Önizleme sesini aç" : "Önizleme sesini kapat"}
           onClick={() => setPreviewMuted((v) => !v)}
         >

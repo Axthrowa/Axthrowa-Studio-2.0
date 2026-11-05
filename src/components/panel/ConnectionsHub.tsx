@@ -349,7 +349,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
                 <h3 className="text-xs font-semibold text-panel-muted">Yayın kanalı</h3>
                 <label className="block">
                   <span className="sr-only">Kanal adı</span>
-                  <input
+                  <input aria-label="Kanal adı"
                     className="yya-input h-10 w-full text-sm font-medium text-white"
                     placeholder="ör. kanal-adi"
                     value={kickSlug}

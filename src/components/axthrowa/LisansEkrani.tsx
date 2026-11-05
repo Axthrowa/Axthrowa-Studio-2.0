@@ -69,7 +69,7 @@ export function LisansFormu({ onEtkin }: { onEtkin?: () => void }) {
     >
       <label className="flex flex-col gap-2">
         <span className="text-xs font-medium text-zinc-400">Lisans anahtarı</span>
-        <input
+        <input aria-label="Lisans anahtarı"
           className={GIRDI}
           value={anahtar}
           onChange={(e) => setAnahtar(e.target.value)}

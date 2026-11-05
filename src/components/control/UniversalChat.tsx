@@ -155,7 +155,7 @@ const PLATFORM_TONE: Record<ChatPlatform, string> = {
 
 function PlatformBadge({ p }: { p: ChatPlatform }) {
   return (
-    <span className={`shrink-0 rounded px-1 text-[9px] font-black ${PLATFORM_TONE[p]}`} title={PLATFORM_LABEL[p]}>
+    <span className={`shrink-0 rounded px-1 text-[10px] font-black ${PLATFORM_TONE[p]}`} title={PLATFORM_LABEL[p]}>
       {PLATFORM_SHORT[p]}
     </span>
   );
@@ -272,7 +272,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
       <div className="flex flex-wrap items-center gap-1">
         <span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400"}`} title={connected ? "AxBoT'a bağlı" : "AxBoT'a bağlı değil"} />
         {CHAT_VIEWS.map((v) => (
-          <button key={v} type="button" onClick={() => setView(v)} className={`rounded-full border px-2 py-0.5 ${view === v ? "border-white/40 bg-white/15 text-white" : "border-white/10 text-white/70 hover:border-white/30"}`}>
+          <button key={v} type="button" onClick={() => setView(v)} className={`min-h-6 rounded-full border px-2 py-0.5 ${view === v ? "border-white/40 bg-white/15 text-white" : "border-white/10 text-white/70 hover:border-white/30"}`}>
             {CHAT_VIEW_LABEL[v]}
           </button>
         ))}
@@ -291,7 +291,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
                 else n.add(p);
                 return n;
               })}
-              className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 ${acik ? "border-white/20" : "border-white/5 opacity-50"}`}
+              className={`inline-flex min-h-6 items-center gap-1 rounded border px-1.5 py-0.5 ${acik ? "border-white/20" : "border-white/5 opacity-50"}`}
               title={`${PLATFORM_LABEL[p]}${bagli[p] ? " — bağlı" : " — bağlı değil"}`}
             >
               <PlatformBadge p={p} /> {sayac[p] || 0}
@@ -305,10 +305,10 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
           <Search className="pointer-events-none absolute left-1.5 top-1.5 h-3 w-3 text-panel-muted" />
           <input className="yya-input !py-0.5 !pl-6 w-32 text-xs" placeholder="Ara" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <button type="button" className="rounded px-1 text-[11px] font-bold hover:bg-white/10" onClick={yaziBoyutuDegistir} title={`Yazı boyutu: ${yaziBoyutu} px (değiştirmek için tıkla)`} aria-label="Sohbet yazı boyutu">
-          A<span className="text-[9px]">{yaziBoyutu}</span>
+        <button type="button" className="min-h-6 rounded px-1 text-[11px] font-bold hover:bg-white/10" onClick={yaziBoyutuDegistir} title={`Yazı boyutu: ${yaziBoyutu} px (değiştirmek için tıkla)`} aria-label="Sohbet yazı boyutu">
+          A<span className="text-[10px]">{yaziBoyutu}</span>
         </button>
-        <button type="button" className="rounded p-1 hover:bg-white/10" onClick={togglePause} title={paused ? "Akışı sürdür" : "Akışı dondur (okumak için)"}>
+        <button type="button" className="min-h-6 min-w-6 rounded p-1 hover:bg-white/10" onClick={togglePause} title={paused ? "Akışı sürdür" : "Akışı dondur (okumak için)"}>
           {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
         </button>
       </div>
@@ -330,8 +330,8 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
                 <b style={m.color ? { color: m.color } : undefined} title={`${PLATFORM_LABEL[m.platform]} · ${m.userKeySource === "id" ? m.userKey : "kimliksiz (ad)"}`}>
                   {m.displayName}
                 </b>
-                {m.firstInSession && <span className="ml-1 rounded bg-sky-500/20 px-1 text-[9px] text-sky-200">ilk</span>}
-                {m.moderation !== "visible" && <span className="ml-1 rounded bg-red-500/20 px-1 text-[9px] text-red-200">{m.moderation === "blocked" ? "kara liste" : `kalkan · ${m.moderationReason}`}</span>}
+                {m.firstInSession && <span className="ml-1 rounded bg-sky-500/20 px-1 text-[10px] text-sky-200">ilk</span>}
+                {m.moderation !== "visible" && <span className="ml-1 rounded bg-red-500/20 px-1 text-[10px] text-red-200">{m.moderation === "blocked" ? "kara liste" : `kalkan · ${m.moderationReason}`}</span>}
                 <span className="text-white/85">: {m.message}</span>
               </span>
               {modOk && (y?.timeout || y?.ban || (y?.mesajSil && !m.messageId.startsWith("yerel-"))) && (
@@ -518,7 +518,7 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
               {e.months !== undefined && <span className="ml-1 text-white/70">{e.months}. ay</span>}
               {e.viewers !== undefined && <span className="ml-1 text-white/70">{e.viewers} izleyici</span>}
               {e.message && <span className="ml-1 text-panel-muted">“{e.message}”</span>}
-              {e.isTest && <span className="ml-1 rounded bg-cyan-500/20 px-1 text-[9px] text-cyan-200">TEST</span>}
+              {e.isTest && <span className="ml-1 rounded bg-cyan-500/20 px-1 text-[10px] text-cyan-200">TEST</span>}
             </span>
             <span className="shrink-0 text-[10px] text-panel-muted">{saat(e.timestamp)}</span>
             {e.alertId && (

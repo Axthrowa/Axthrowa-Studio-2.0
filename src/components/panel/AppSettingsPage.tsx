@@ -276,7 +276,7 @@ export default function AppSettingsPage({
               <input
                 className="min-w-0 flex-1 rounded-xl border border-white/[0.09] bg-black/40 px-3.5 py-2.5 text-xs md:text-sm font-medium text-white placeholder:text-panel-muted outline-none focus:border-panel-accent/60"
                 value={prefs.obsExePath || ""}
-                placeholder="C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
+                placeholder="C:\Program Files\obs-studio\bin\64bit\obs64.exe"
                 onChange={(e) => set({ obsExePath: e.target.value || null })}
               />
               <button
@@ -294,7 +294,7 @@ export default function AppSettingsPage({
           <div className="flex flex-wrap items-center gap-3.5">
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-600/90 px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-glow-sm transition-all hover:bg-emerald-500 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-700 px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-glow-sm transition-all hover:bg-emerald-500 active:scale-95"
               onClick={() => void launchObs()}
             >
               <Play className="size-4 fill-current" />

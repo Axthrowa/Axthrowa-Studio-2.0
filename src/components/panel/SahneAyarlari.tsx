@@ -55,6 +55,7 @@ function Field({
     <div data-alan={alan}>
       <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
       <input
+        aria-label={label}
         type={type}
         className="yya-input h-9 w-full rounded-xl border border-white/[0.12] bg-black/50 px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
         value={value}
@@ -80,6 +81,7 @@ function Select({
     <div>
       <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
       <select
+        aria-label={label}
         className="h-9 w-full rounded-xl border border-white/[0.12] bg-[#12151e] px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -493,6 +495,7 @@ export default function SahneAyarlari({
           <div>
             <label className="mb-1 block text-xs text-panel-muted">{tt("field.bg")}</label>
             <select
+              aria-label={tt("field.bg")}
               className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
               value={settings.bgStyle || "mix"}
               onChange={(e) => update({ bgStyle: e.target.value })}
@@ -711,7 +714,7 @@ export default function SahneAyarlari({
             </label>
             <div className="mt-1.5 flex items-center gap-2 text-xs">
               <span className="w-16 text-panel-muted">Seviye</span>
-              <input
+              <input aria-label="Seviye"
                 type="range"
                 min={0}
                 max={100}
@@ -865,7 +868,7 @@ export default function SahneAyarlari({
               )}
               <div>
                 <label className="mb-1 block text-xs text-panel-muted">YouTube kalite</label>
-                <select
+                <select aria-label="YouTube kalite"
                   className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
                   value={settings.youtubeQuality || "hd1080"}
                   onChange={(e) => update({ youtubeQuality: e.target.value, bgStyle: "youtube" })}
@@ -902,7 +905,7 @@ export default function SahneAyarlari({
                 <label className="mb-1 block text-xs text-panel-muted">
                   Kart bilgisi okunamazsa sondan atlanacak süre (sn)
                 </label>
-                <input
+                <input aria-label="Kart bilgisi okunamazsa sondan atlanacak süre (sn)"
                   type="number"
                   min={0.5}
                   max={60}
@@ -942,7 +945,7 @@ export default function SahneAyarlari({
             </label>
             <div className="mt-1.5 flex items-center gap-2 text-xs">
               <span className="w-16 text-panel-muted">Seviye</span>
-              <input
+              <input aria-label="Seviye"
                 type="range"
                 min={0}
                 max={100}
@@ -1114,7 +1117,7 @@ export default function SahneAyarlari({
               )}
               <div className="mt-1.5 flex items-center gap-2 text-xs">
                 <span className="w-16 text-panel-muted">Seviye</span>
-                <input
+                <input aria-label="Seviye"
                   type="range"
                   min={0}
                   max={100}
@@ -1189,7 +1192,7 @@ export default function SahneAyarlari({
           </label>
           <div className="flex items-center gap-2 text-xs">
             <span className="w-20 text-panel-muted">Zoom</span>
-            <input
+            <input aria-label="Zoom"
               type="range"
               min={50}
               max={250}
@@ -1201,7 +1204,7 @@ export default function SahneAyarlari({
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="w-20 text-panel-muted">Kaydır X</span>
-            <input
+            <input aria-label="Kaydır X"
               type="range"
               min={-40}
               max={40}
@@ -1213,7 +1216,7 @@ export default function SahneAyarlari({
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="w-20 text-panel-muted">Kaydır Y</span>
-            <input
+            <input aria-label="Kaydır Y"
               type="range"
               min={-40}
               max={40}
@@ -1225,7 +1228,7 @@ export default function SahneAyarlari({
           </div>
           <div>
             <label className="mb-1 block text-xs text-panel-muted">Logo efekt</label>
-            <select
+            <select aria-label="Logo efekt"
               className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
               value={settings.logoEffect || "none"}
               onChange={(e) => update({ logoEffect: e.target.value })}
@@ -1239,7 +1242,7 @@ export default function SahneAyarlari({
           </div>
           <div>
             <label className="mb-1 block text-xs text-panel-muted">Logo animasyon</label>
-            <select
+            <select aria-label="Logo animasyon"
               className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
               value={settings.logoAnim || "none"}
               onChange={(e) => update({ logoAnim: e.target.value })}
@@ -1256,6 +1259,7 @@ export default function SahneAyarlari({
             <div className="flex items-center gap-2">
               <input
                 type="color"
+                aria-label="Logo vurgu rengi"
                 className="h-9 w-12 cursor-pointer rounded border border-panel-border bg-[#1c2030]"
                 value={settings.logoAccentColor || settings.accent || "#7c5cff"}
                 onChange={(e) => update({ logoAccentColor: e.target.value })}
@@ -1277,8 +1281,9 @@ export default function SahneAyarlari({
           <p className="text-[11px] text-panel-muted">Önizlemede köşeden de ölçeklenebilir.</p>
           {(["logo", "eyebrow", "title", "sub", "countdown", "socials", "ticker", "credits", "visualizer", "nowPlaying", "lyrics"] as const).map((k) => (
             <div key={k} className="flex items-center gap-2 text-xs">
-              <span className="w-20 text-panel-muted">{k}</span>
+              <span className="w-20 text-panel-muted">{PART_LABELS[k] || k}</span>
               <input
+                aria-label={PART_LABELS[k] || k}
                 type="range"
                 min={40}
                 max={220}
@@ -1381,7 +1386,7 @@ export default function SahneAyarlari({
           </label>
           <div className="flex items-center gap-2 text-xs">
             <span className="w-20 text-panel-muted">Yoğunluk</span>
-            <input
+            <input aria-label="Yoğunluk"
               type="range"
               min={20}
               max={200}
@@ -1479,7 +1484,7 @@ export default function SahneAyarlari({
                 </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-panel-muted">Boyut</span>
-                    <input
+                    <input aria-label="Boyut"
                       type="range"
                       min={50}
                       max={400}
@@ -1495,7 +1500,7 @@ export default function SahneAyarlari({
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-panel-muted">Vurgu</span>
-                    <input
+                    <input aria-label="Vurgu"
                       type="color"
                       value={settings.particleColors?.[key] || settings.accent || "#7c5cff"}
                       onChange={(e) =>
@@ -1832,7 +1837,7 @@ export default function SahneAyarlari({
           <span className="font-display text-[11px] font-bold tracking-wider text-white">
             {previewOn ? tt("preview.on") : tt("preview.off")}
           </span>
-          <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.2 text-[9px] font-mono text-panel-muted">
+          <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.2 text-[10px] font-mono text-panel-muted">
             1080P STUDIO
           </span>
         </div>
@@ -2108,6 +2113,7 @@ export default function SahneAyarlari({
                   }`}
                 >
                   <input
+                    aria-label={SOCIAL_META[key as keyof typeof SOCIAL_META]?.label || key}
                     type="checkbox"
                     checked={isEnabled}
                     onChange={(e) =>

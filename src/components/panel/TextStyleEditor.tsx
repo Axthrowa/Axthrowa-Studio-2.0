@@ -108,7 +108,7 @@ function StyleRow({
       </div>
       <div className="flex items-center gap-2 pt-1 text-[10px]">
         <span className="font-semibold uppercase tracking-wider text-panel-muted">Boyut</span>
-        <input
+        <input aria-label="Boyut"
           type="range"
           min={40}
           max={280}
@@ -219,7 +219,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
               <div className="mt-1.5 space-y-1.5 px-1 text-[10px]">
                 <div className="flex items-center gap-2">
                   <span className="text-panel-muted">Akış hızı</span>
-                  <input
+                  <input aria-label="Akış hızı"
                     type="range"
                     min={1}
                     max={20}
@@ -233,7 +233,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-28 text-panel-muted">Kayma alanı %</span>
-                  <input
+                  <input aria-label="Kayma alanı %"
                     type="range"
                     min={50}
                     max={100}
@@ -245,7 +245,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-28 text-panel-muted">Kenar fade</span>
-                  <input
+                  <input aria-label="Kenar fade"
                     type="range"
                     min={0}
                     max={35}
@@ -336,7 +336,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
           </button>
           <div className="flex items-center gap-2 text-[10px]">
             <span className="text-panel-muted">Jenerik hızı (sn)</span>
-            <input
+            <input aria-label="Jenerik hızı (sn)"
               type="range"
               min={10}
               max={120}
@@ -348,7 +348,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
           </div>
           <div className="flex items-center gap-2 text-[10px]">
             <span className="text-panel-muted">Bitince bekle (sn)</span>
-            <input
+            <input aria-label="Bitince bekle (sn)"
               type="range"
               min={1}
               max={15}

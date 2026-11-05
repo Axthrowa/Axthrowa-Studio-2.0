@@ -47,7 +47,7 @@ export function Toast({ variant = "success", title, children, onClose, className
           type="button"
           title="Kapat"
           aria-label="Bildirimi kapat"
-          className="shrink-0 rounded-md p-0.5 text-zinc-500 transition-colors duration-200 hover:text-zinc-200"
+          className="shrink-0 rounded-md p-[5px] text-zinc-400 transition-colors duration-200 hover:text-zinc-200"
           onClick={onClose}
         >
           <X weight="bold" className="h-3.5 w-3.5" />

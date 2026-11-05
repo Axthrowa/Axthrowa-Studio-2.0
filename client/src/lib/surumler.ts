@@ -11,6 +11,17 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.9',
+    ad: 'Net Görünüm',
+    tarih: '2026-11-05',
+    notlar: [
+      'Soluk yazılar ve çok küçük metinler okunur hâle geldi; küçük düğmelerin tıklama alanı büyüdü',
+      'Klavyeyle gezerken seçili öğe her yerde görünür; form alanları ve simge düğmeleri ekran okuyucuya adını söyler',
+      'TTS sayfasındaki okunmayan "Yayına ekleme linkini kopyala" düğmesi düzeltildi',
+      'Sistemde hareket azaltma açıksa panel animasyonları kapanır',
+    ]
+  },
+  {
     surum: '1.13.8',
     ad: 'Sağlam Kapı',
     tarih: '2026-11-04',

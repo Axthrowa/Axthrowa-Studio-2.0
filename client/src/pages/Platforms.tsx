@@ -631,7 +631,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 <label className="block text-xs font-bold text-gray-300 mb-1">
                   Kick App Client ID
                 </label>
-                <input
+                <input aria-label="Kick App Client ID"
                   type="text"
                   value={kickClientIdInput}
                   onChange={e => setKickClientIdInput(e.target.value)}
@@ -644,7 +644,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 <label className="block text-xs font-bold text-gray-300 mb-1">
                   Kick App Client Secret
                 </label>
-                <input
+                <input aria-label="Kick App Client Secret"
                   type="password"
                   value={kickClientSecretInput}
                   onChange={e => setKickClientSecretInput(e.target.value)}

@@ -943,7 +943,7 @@ export function OverlayStudio() {
                       <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'gift', count: 5 })} className="px-3 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold">
                         🎁 5 hediye abone
                       </button>
-                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'kicks', count: 3 })} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold">
+                      <button onClick={() => triggerWidgetTest('the-cup', { tokenType: 'kicks', count: 3 })} className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold">
                         🟢 3 KICKs
                       </button>
                       <button
@@ -984,7 +984,7 @@ export function OverlayStudio() {
                           setModalActionStatus('🚂 Tren sıfırdan başlatıldı');
                           setTimeout(() => setModalActionStatus(null), 2500);
                         }}
-                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"
+                        className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold"
                       >
                         ▶ Treni başlat (sıfırdan)
                       </button>
@@ -1339,7 +1339,7 @@ export function OverlayStudio() {
                 <span>{allInOne.testMode ? 'Test modunu kapat' : 'Test modu'}</span>
               </button>
 
-              <input 
+              <input aria-label="Tek OBS adresi" 
                 type="text" 
                 readOnly 
                 value={singleOverlayUrl} 
@@ -1595,7 +1595,7 @@ export function OverlayStudio() {
                 <label className="text-[11px] font-bold text-gray-300 block mb-1">
                   Düzenlenecek Bileşen:
                 </label>
-                <select
+                <select aria-label="Düzenlenecek Bileşen"
                   value={selectedCanvasWidget}
                   onChange={e => setSelectedCanvasWidget(e.target.value)}
                   className="w-full bg-[#12141a] border border-white/15 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500"
@@ -1677,7 +1677,7 @@ export function OverlayStudio() {
                         <span className="text-xs font-bold text-white block">Yayında göster</span>
                         <span className="text-[10px] text-gray-400">Kapalıysa OBS'te görünmez</span>
                       </div>
-                      <input 
+                      <input aria-label="Yayında göster" 
                         type="checkbox"
                         checked={Boolean(cur.enabled)}
                         onChange={e => updateCur({ enabled: e.target.checked })}
@@ -1763,7 +1763,7 @@ export function OverlayStudio() {
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
                           <label className="text-[10px] text-gray-400 block mb-0.5">X Konumu (px)</label>
-                          <input
+                          <input aria-label="X Konumu (px)"
                             type="number"
                             value={cur.x ?? 0}
                             onChange={e => updateCur({ x: parseInt(e.target.value, 10) || 0 })}
@@ -1772,7 +1772,7 @@ export function OverlayStudio() {
                         </div>
                         <div>
                           <label className="text-[10px] text-gray-400 block mb-0.5">Y Konumu (px)</label>
-                          <input
+                          <input aria-label="Y Konumu (px)"
                             type="number"
                             value={cur.y ?? 0}
                             onChange={e => updateCur({ y: parseInt(e.target.value, 10) || 0 })}
@@ -1781,7 +1781,7 @@ export function OverlayStudio() {
                         </div>
                         <div>
                           <label className="text-[10px] text-gray-400 block mb-0.5">Genişlik (px)</label>
-                          <input
+                          <input aria-label="Genişlik (px)"
                             type="number"
                             value={cur.width ?? 300}
                             onChange={e => updateCur(merkezdeBoyutla(cur, { width: parseInt(e.target.value, 10) || 100 }))}
@@ -1790,7 +1790,7 @@ export function OverlayStudio() {
                         </div>
                         <div>
                           <label className="text-[10px] text-gray-400 block mb-0.5">Yükseklik (px)</label>
-                          <input
+                          <input aria-label="Yükseklik (px)"
                             type="number"
                             value={cur.height ?? 200}
                             onChange={e => updateCur(merkezdeBoyutla(cur, { height: parseInt(e.target.value, 10) || 50 }))}
@@ -1805,7 +1805,7 @@ export function OverlayStudio() {
                           <span className="text-[10px] text-gray-400">Ölçek (Scale)</span>
                           <span className="text-[10px] font-mono text-purple-300 font-bold">{cur.scale ?? 1}x</span>
                         </div>
-                        <input
+                        <input aria-label="Ölçek"
                           type="range"
                           min="0.25"
                           max="3"
@@ -1888,7 +1888,7 @@ export function OverlayStudio() {
                     {selectedCanvasWidget === 'goals' && (
                       <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-1.5 text-xs">
                         <label className="text-[10px] text-gray-400 block font-bold">Gösterilecek hedef</label>
-                        <select
+                        <select aria-label="Gösterilecek hedef"
                           value={hedefWidgetKimligi(cur.type)}
                           onChange={e => updateCur({ type: ({ 'follower-goal': 'follower', 'subscriber-goal': 'sub', 'donation-goal': 'tip', 'kicks-goal': 'kicks' } as Record<string, string>)[e.target.value] })}
                           className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
@@ -1975,7 +1975,7 @@ export function OverlayStudio() {
                 />
               </div>
 
-              <select
+              <select aria-label="Kategori filtresi"
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(e.target.value)}
                 className="bg-[#12141a] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
@@ -2131,7 +2131,7 @@ export function OverlayStudio() {
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-gray-400">Bağımsız OBS Browser Source URL:</label>
                   <div className="flex items-center gap-2">
-                    <input 
+                    <input aria-label="Bağımsız OBS adresi" 
                       type="text" 
                       readOnly 
                       value={selectedWidgetModal.url}
@@ -2148,7 +2148,7 @@ export function OverlayStudio() {
                   {GALERI_KATMANI[selectedWidgetModal.id] && (
                     <button
                       onClick={() => tekUrlyeEkle(selectedWidgetModal.id)}
-                      className="mt-2 w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
+                      className="mt-2 w-full px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
                     >
                       <Monitor className="w-4 h-4" />
                       <span>Tek OBS URL'sine ekle (ayrı kaynak gerekmez)</span>
@@ -2247,7 +2247,7 @@ export function OverlayStudio() {
             <div className="p-3.5 bg-black/50 border border-white/10 rounded-xl space-y-2">
               <span className="text-xs font-bold text-gray-300">OBS Bağımsız Chatbox URL:</span>
               <div className="flex items-center gap-2">
-                <input
+                <input aria-label="Bağımsız sohbet adresi"
                   type="text"
                   readOnly
                   value={`${baseUrl}/widgets/chatbox`}
@@ -2340,7 +2340,7 @@ export function OverlayStudio() {
             <div className="p-4 bg-black/50 border border-white/10 rounded-xl space-y-2 mt-4">
               <span className="text-xs font-bold text-gray-300">OBS Bağımsız AlertBox URL:</span>
               <div className="flex items-center gap-2">
-                <input
+                <input aria-label="Bağımsız uyarı adresi"
                   type="text"
                   readOnly
                   value={`${baseUrl}/widgets/alertbox`}

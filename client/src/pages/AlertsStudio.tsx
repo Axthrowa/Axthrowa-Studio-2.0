@@ -101,7 +101,7 @@ export function AlertsStudio() {
           <h1 className="text-2xl font-black text-white flex items-center gap-2"><Bell className="w-6 h-6 text-purple-400" /> Uyarılar (Alert Box)</h1>
           <p className="text-sm text-gray-400">Takip, abone, hediye abone, host, bağış, kicks ve raid alert ayarları.</p>
         </div>
-        <button onClick={test} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5">
+        <button onClick={test} className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5">
           <Play className="w-4 h-4" /> Test uyarısı
         </button>
       </div>

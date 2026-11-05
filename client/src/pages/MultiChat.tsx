@@ -407,7 +407,7 @@ export function MultiChat() {
 
       {/* Input Sender Bar */}
       <form onSubmit={handleSend} className="glass-panel p-2.5 rounded-2xl flex items-center space-x-2 border border-white/10">
-        <select
+        <select aria-label="Mesajın gideceği platform"
           value={targetPlatform}
           onChange={e => setTargetPlatform(e.target.value)}
           className="bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-purple-300 focus:outline-none"
@@ -577,7 +577,7 @@ export function MultiChat() {
               <label className="block text-xs font-bold text-gray-300">
                 🔒 Gizli Yayıncı Notu (Sadece Siz Görebilirsiniz):
               </label>
-              <textarea
+              <textarea aria-label="Gizli Yayıncı Notu (Sadece Siz Görebilirsiniz)"
                 rows={3}
                 value={noteText}
                 onChange={e => setNoteText(e.target.value)}

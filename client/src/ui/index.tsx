@@ -31,7 +31,7 @@ const TON: Record<ButonTonu, string> = {
   birincil: 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20',
   ikincil: 'bg-white/5 hover:bg-white/10 text-gray-100 border border-white/10',
   tehlike: 'bg-red-600 hover:bg-red-500 text-white',
-  basari: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+  basari: 'bg-emerald-700 hover:bg-emerald-600 text-white',
   sade: 'bg-transparent hover:bg-white/5 text-gray-300'
 };
 
@@ -110,17 +110,21 @@ export function Secim({
 export function Anahtar({
   acik,
   onChange,
-  etiket
+  etiket,
+  ad
 }: {
   acik: boolean;
   onChange: (v: boolean) => void;
   etiket?: string;
+  /** Görünür etiketi olmayan anahtarın ekran okuyucu adı */
+  ad?: string;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={acik}
+      aria-label={etiket ? undefined : ad}
       onClick={() => onChange(!acik)}
       className="inline-flex items-center gap-2 group"
     >
@@ -266,7 +270,7 @@ export function ToastSaglayici({ children }: { children: ReactNode }) {
   return (
     <ToastBaglam.Provider value={deger}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none">
+      <div role="status" aria-live="polite" className="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none">
         {liste.map((t) => (
           <div
             key={t.id}

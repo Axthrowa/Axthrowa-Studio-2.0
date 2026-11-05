@@ -232,7 +232,7 @@ export function Giveaways() {
                 <label className="block text-xs font-bold text-gray-300 mb-1">
                   Çekiliş Başlığı / Ödül
                 </label>
-                <input
+                <input aria-label="Çekiliş Başlığı / Ödül"
                   type="text"
                   required
                   value={title}
@@ -247,7 +247,7 @@ export function Giveaways() {
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Katılım Kelimesi
                   </label>
-                  <input
+                  <input aria-label="Katılım Kelimesi"
                     type="text"
                     required
                     value={keyword}
@@ -268,7 +268,7 @@ export function Giveaways() {
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Abone Bilet Çarpanı
                   </label>
-                  <select
+                  <select aria-label="Abone Bilet Çarpanı"
                     value={subMultiplier}
                     onChange={e => setSubMultiplier(parseFloat(e.target.value))}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"

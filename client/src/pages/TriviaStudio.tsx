@@ -468,7 +468,7 @@ export function TriviaStudio() {
               </div>
 
               <div className="flex items-center gap-2">
-                <input
+                <input aria-label="Oyun overlay adresi"
                   type="text"
                   readOnly
                   value={overlayUrl}
@@ -552,7 +552,7 @@ export function TriviaStudio() {
                     <span>Soru Süresi:</span>
                     <span className="text-xs font-mono text-purple-400 font-bold">{questionDuration} Saniye</span>
                   </label>
-                  <input
+                  <input aria-label="Soru süresi"
                     type="range"
                     min={10}
                     max={45}
@@ -573,7 +573,7 @@ export function TriviaStudio() {
                     <span>Turnuva Soru Sayısı:</span>
                     <span className="text-xs font-mono text-pink-400 font-bold">{tournamentCount} Soru</span>
                   </label>
-                  <input
+                  <input aria-label="Turnuva soru sayısı"
                     type="range"
                     min={3}
                     max={15}
@@ -702,7 +702,7 @@ export function TriviaStudio() {
           <div className="bg-[#0f131c] border border-white/10 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
               {/* Category Filter */}
-              <select
+              <select aria-label="Kategori filtresi"
                 value={filterCat}
                 onChange={(e) => setFilterCat(e.target.value)}
                 className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-200 focus:outline-none"
@@ -927,7 +927,7 @@ export function TriviaStudio() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-gray-300 font-bold block mb-1">Kategori:</label>
-                  <select
+                  <select aria-label="Kategori"
                     value={newQuestionForm.category}
                     onChange={(e) => setNewQuestionForm({ ...newQuestionForm, category: e.target.value })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white"
@@ -939,7 +939,7 @@ export function TriviaStudio() {
                 </div>
                 <div>
                   <label className="text-gray-300 font-bold block mb-1">Ödül Puanı:</label>
-                  <input
+                  <input aria-label="Ödül Puanı"
                     type="number"
                     value={newQuestionForm.points}
                     onChange={(e) => setNewQuestionForm({ ...newQuestionForm, points: parseInt(e.target.value, 10) || 100 })}
@@ -950,7 +950,7 @@ export function TriviaStudio() {
 
               <div>
                 <label className="text-gray-300 font-bold block mb-1">Soru Metni:</label>
-                <textarea
+                <textarea aria-label="Soru Metni"
                   rows={3}
                   required
                   placeholder="Soruyu buraya yazın..."
@@ -963,7 +963,7 @@ export function TriviaStudio() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-gray-300 font-bold block mb-0.5">A Şıkkı:</label>
-                  <input
+                  <input aria-label="A Şıkkı"
                     type="text"
                     required
                     value={newQuestionForm.optionA}
@@ -973,7 +973,7 @@ export function TriviaStudio() {
                 </div>
                 <div>
                   <label className="text-gray-300 font-bold block mb-0.5">B Şıkkı:</label>
-                  <input
+                  <input aria-label="B Şıkkı"
                     type="text"
                     required
                     value={newQuestionForm.optionB}
@@ -983,7 +983,7 @@ export function TriviaStudio() {
                 </div>
                 <div>
                   <label className="text-gray-300 font-bold block mb-0.5">C Şıkkı:</label>
-                  <input
+                  <input aria-label="C Şıkkı"
                     type="text"
                     required
                     value={newQuestionForm.optionC}
@@ -993,7 +993,7 @@ export function TriviaStudio() {
                 </div>
                 <div>
                   <label className="text-gray-300 font-bold block mb-0.5">D Şıkkı:</label>
-                  <input
+                  <input aria-label="D Şıkkı"
                     type="text"
                     required
                     value={newQuestionForm.optionD}
@@ -1025,7 +1025,7 @@ export function TriviaStudio() {
 
               <div>
                 <label className="text-gray-300 font-bold block mb-1">Bunu Biliyor muydunuz? (Bilgi Notu):</label>
-                <input
+                <input aria-label="Bunu Biliyor muydunuz? (Bilgi Notu)"
                   type="text"
                   placeholder="Cevapla ilgili kısa ilginç bilgi..."
                   value={newQuestionForm.explanation}
@@ -1073,7 +1073,7 @@ export function TriviaStudio() {
             <div className="space-y-3 text-xs">
               <div>
                 <label className="text-gray-300 font-bold block mb-1">Kategori:</label>
-                <select
+                <select aria-label="Kategori"
                   value={aiConfig.category}
                   onChange={(e) => setAiConfig({ ...aiConfig, category: e.target.value })}
                   className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white"
@@ -1086,7 +1086,7 @@ export function TriviaStudio() {
 
               <div>
                 <label className="text-gray-300 font-bold block mb-1">Üretilecek Soru Sayısı:</label>
-                <select
+                <select aria-label="Üretilecek Soru Sayısı"
                   value={aiConfig.count}
                   onChange={(e) => setAiConfig({ ...aiConfig, count: parseInt(e.target.value, 10) })}
                   className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white font-mono"
@@ -1099,7 +1099,7 @@ export function TriviaStudio() {
 
               <div>
                 <label className="text-gray-300 font-bold block mb-1">Zorluk Derecesi:</label>
-                <select
+                <select aria-label="Zorluk Derecesi"
                   value={aiConfig.difficulty}
                   onChange={(e) => setAiConfig({ ...aiConfig, difficulty: e.target.value })}
                   className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white"

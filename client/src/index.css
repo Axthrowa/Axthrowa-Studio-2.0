@@ -92,3 +92,35 @@
 /* Renk geçişli yüzey ve düğmeler düz: metin renk geçişine dokunulmaz */
 .axt-panel [class*="bg-gradient-to-"]:not(.bg-clip-text):not(.axt-onizleme *) { background-image: none; }
 .axt-panel [class*="animate-pulse"]:not(.axt-onizleme *):not(.axt-onizleme) { animation: none; }
+
+/*
+ * Erişilebilirlik tabanı: yalnız panelde. Renkler token olarak değişir ki hover: gibi durum sınıfları çalışmaya devam etsin;
+ * önizleme tuvali gerçek renkleri korur.
+ */
+.axt-panel {
+  --color-gray-500: oklch(0.68 0.022 261);
+  --color-gray-600: oklch(0.68 0.022 261);
+  --color-zinc-500: oklch(0.68 0.012 286);
+  --color-zinc-600: oklch(0.68 0.012 286);
+}
+.axt-onizleme {
+  --color-gray-500: oklch(0.551 0.027 264.364);
+  --color-gray-600: oklch(0.446 0.03 256.802);
+  --color-zinc-500: oklch(0.552 0.016 285.938);
+  --color-zinc-600: oklch(0.442 0.017 285.786);
+}
+.axt-panel ::placeholder { color: var(--color-gray-500); opacity: 1; }
+.axt-panel .axt-onizleme ::placeholder { color: revert; opacity: revert; }
+.axt-panel :focus-visible:not(.axt-onizleme *) { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+.axt-panel :is(input, select, textarea):focus-visible:not(.axt-onizleme *) { outline-offset: 0; }
+.axt-panel :is(.text-\[8px\], .text-\[9px\], .text-\[10px\]):not(.axt-onizleme *) { font-size: 11px; }
+.axt-panel button:not(:disabled):not(.axt-onizleme *) { cursor: pointer; }
+.axt-panel button:not(.axt-onizleme *) { min-width: 24px; min-height: 24px; }
+@media (prefers-reduced-motion: reduce) {
+  .axt-panel *:not(.axt-onizleme *) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

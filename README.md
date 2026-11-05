@@ -1,91 +1,76 @@
-# 🚀 AxBoT: Tam Teşekküllü Multi-Platform Canlı Yayın Botu & Overlay Stüdyosu
-> **Geliştirici:** Axthrowa  
-> Beş büyük platform (**Kick, Twitch, YouTube, Discord, TikTok**) ile entegre çalışan canlı yayın asistanı.
+# AxBoT
 
----
+Kick odaklı, çok platformlu canlı yayın botu ve OBS overlay stüdyosu. Kendi bilgisayarınızda çalışır ve tarayıcıdan yönetilir. Tek başına kullanılabilir; [AxthrowA Studio](https://github.com/Axthrowa/Axthrowa-Studio) içinde de "Bot" sekmesi olarak gömülü çalışır.
 
-## 🌟 Öne Çıkan Özellikler
+Geçerli sürüm: **1.13.9**.
 
-### 1. 🔗 Evrensel Platform Entegrasyonu
-- **Kick.com**: Pusher WebSocket ile canlı sohbet, takipçi, abone ve hediye abonelik akışı dinleme + Kick API ile mesaj gönderme.
-- **Twitch.tv**: IRC WebSocket ve EventSub ile Bits, Abone, Raid ve canlı sohbet desteği.
-- **YouTube Canlı**: LiveChat API ile canlı mesaj akışı ve SuperChat bildirimleri.
-- **Discord**: Discord.js v14 gateway ile canlı yayın duyuruları ve iki yönlü sohbet köprüsü (Cross-Chat bridge).
-- **TikTok Live**: Canlı yayın hediyeleri (Gifts), elmas değerleri ve canlı sohbet akışı.
+## Neler yapar
 
-### 2. 💬 Çapraz Sohbet Aktarımı (Cross-Chat Relay)
-- Bir platformda (örn: Kick) yazılan mesajları anında diğer bağlı platformlara (Twitch, YouTube, Discord) `[KICK] Kullanici: Mesaj` formatında aktarır.
+- **Platformlar:** Kick, Twitch, YouTube, Discord, TikTok ve Trovo; sohbet, takip, abonelik ve hediye olayları.
+- **Canlı sohbet:** tek ekranda çoklu sohbet ve platformlar arası mesaj aktarımı.
+- **OBS overlay'leri:** uyarı kutusu, sohbet, hedefler, çark, anket, kelime bulutu, müzik ve daha fazla widget; tek adresle ya da ayrı ayrı eklenebilir.
+- **Komutlar:** özel ve yerleşik komutlar, değişkenler, zamanlayıcılar, otomasyon kuralları ve sesli komutlar.
+- **Müzik:** `!sr` ile şarkı isteği, kuyruk, oylama ve Spotify bağlantısı; karaoke görünümü için Resonance.
+- **Etkileşim:** puan ve market, chat oyunları, Bil Bakalım, çekilişler, anketler, tahminler ve subathon.
+- **Bağışlar:** BynoGame ve Ko-fi bildirimleri, bağış uyarıları ve TTS.
+- **Moderasyon:** otomatik filtreler, kalkan modu, denetim kaydı ve Gemini destekli yapay zekâ özellikleri.
 
-### 3. 🎨 OBS Overlay & Widget Stüdyosu
-- **OBS AlertBox**: Takipçi, Abone, Bağış, Raid ve TikTok hediyeleri için sesli, GIF/video animasyonlu ve konfetili bildirim kutusu (`/widgets/alertbox`).
-- **Canlı Sohbet Overlay (ChatBox)**: Kick yeşili, Twitch moru, YouTube kırmızısı gibi platform ikonlarıyla şeffaf OBS sohbeti (`/widgets/chatbox`).
-- **Hedef Barı (Goal Widget)**: Takipçi ve abone hedeflerinizi gösteren canlı ilerleme çubuğu (`/widgets/goals`).
-- **Çekiliş Çarkı (Wheel Widget)**: Çekilişlerde kazanan belirlenirken OBS ekranında yavaşlayarak dönen şans çarkı (`/widgets/wheel`).
-- **OBS Ses & TTS Oynatıcı**: Şarkı istekleri ve sesli okumayı masaüstü sesi yakalamadan doğrudan OBS mikserine bağlar (`/widgets/audio-player`).
+## Teknoloji
 
-### 4. ⚡ Gelişmiş Komut & Değişken Motoru
-- `$(user)`: Komutu kullanan kişi.
-- `$(touser)`: Etiketlenen kişi veya kullanan kişi.
-- `$(query)` / `$(args)`: Komutla birlikte yazılan argümanlar.
-- `$(count)`: Her kullanımda otomatik artan sayaç.
-- `$(uptime)`: Kesintisiz yayın süresi.
-- `$(random.1-100)`: Rastgele sayı üretici.
-- `$(puan)`: Kullanıcının sadakat puanı.
-- `$(eval <matematik>)`: Güvenli matematiksel hesaplama.
-- `$(urlfetch <link>)`: Dış API'lerden veri çekme.
-- `$(sor <soru>)`: Gemini yapay zekasına soru sorma.
+- **Sunucu:** Node.js 22.5 veya üzeri, Express, ws, yerleşik `node:sqlite` (`server/`)
+- **Panel ve widget'lar:** React 19, Vite, Tailwind CSS 4 (`client/`)
+- **Müzik:** Resonance (`resonance/`)
 
-### 5. 🛡️ AutoMod & Yapay Zeka Koruması
-- Aşırı büyük harf (Caps Lock) filtresi.
-- Emoji ve sembol spamı sınırlayıcısı.
-- Güvenli alan adı (Whitelist) kontrollü link engelleyici.
-- Kelime ve küfür kara listesi.
-- **Gemini 2.5 Flash Yapay Zeka Moderatörü**: İğneleyici lafları, taciz ve dolaylı nefret söylemini bağlamsal olarak tespit eder.
+## Kurulum
 
-### 6. 🎵 Şarkı İsteği (Song Request)
-- `!sr <şarkı adı veya YouTube linki>` ile kuyruğa ekleme.
-- `!sarki` / `!song`: Çalan şarkıyı gösterme.
-- `!atla` / `!voteskip`: Şarkıyı oylamayla veya mod yetkisiyle atlama.
-- `!sira` / `!queue`: Sıradaki şarkıları listeleme.
-
-### 7. 💰 Sadakat, Ekonomi & Mini Oyunlar
-- Sohbette yazanlara her 5 dakikada bir otomatik puan dağıtımı.
-- `!rulet <miktar / hepsi>`: %50 şansla puanları ikiye katlama.
-- `!slot <miktar>`: Slot makinesi çevirme (3 simge eşleşmesinde 5x ikramiye).
-- `!duello @kullanici <miktar>`: Başka bir izleyiciyle kılıç savaşı düellosu.
-- `!8ball <soru>`: Sihirli küreye soru sorma.
-- `!puan` ve `!liderlik`: Puan kontrolü ve Top 50 zenginler tablosu.
-
-### 8. 🎁 Çekilişler & Hediye Dağıtımı
-- `!katil` anahtar kelimesiyle katılım.
-- Abonelere 2x / 3x / 5x bilet çarpanı avantajı.
-- OBS Çarkı ile senkronize kazanan belirleme.
-
-### 9. 🤖 Yapay Zeka Eş-Sunucu (Gemini Co-Host)
-- Google Gemini 2.5 Flash ile izleyicilerin sorularına yayıncı kişiliğinize uygun akıllı, samimi ve canlı yanıtlar üretir (`!sor <soru>`).
-
----
-
-## 🚀 Hızlı Başlangıç
-
-### 1. Servisleri Başlatma
-Proje kök dizininde:
 ```bash
+npm install
+npm --prefix resonance install
 npm run dev
 ```
-- **Web Kontrol Paneli**: [http://localhost:5173](http://localhost:5173)
-- **Sunucu & WebSocket Motoru**: [http://localhost:3001](http://localhost:3001)
 
-### 2. OBS Tarayıcı Kaynağı (Browser Source) Ekleme
-OBS Studio'da **Kaynaklar (+) -> Tarayıcı (Browser)** seçin ve aşağıdaki linkleri yapıştırın:
-- **AlertBox**: `http://localhost:5173/widgets/alertbox` (Önerilen boyut: 800 x 600)
-- **Sohbet (ChatBox)**: `http://localhost:5173/widgets/chatbox` (Önerilen boyut: 450 x 700)
-- **Hedef Barı**: `http://localhost:5173/widgets/goals` (Önerilen boyut: 600 x 150)
-- **Çekiliş Çarkı**: `http://localhost:5173/widgets/wheel` (Önerilen boyut: 600 x 600)
-- **Ses & TTS Oynatıcı**: `http://localhost:5173/widgets/audio-player` ("Sesi OBS üzerinden kontrol et" kutucuğunu işaretleyin)
+- Panel: `http://localhost:5173`
+- Sunucu ve WebSocket: `http://localhost:3001`
 
----
+Platformları panelin **Bağlantılar** sayfasından bağlayın. Veriler, sunucunun çalıştığı klasördeki `data/` altında tutulur ve depoya eklenmez.
 
-### 👨‍💻 Geliştirici
-- **Geliştirici**: Axthrowa
-- **AxBoT** © 2026. Tüm Hakları Saklıdır.
+### Derleme
+
+```bash
+npm run build
+npm start
+```
+
+Derlenmiş panel `http://localhost:3001` adresinden sunulur.
+
+### Testler
+
+```bash
+npm --prefix server exec vitest run
+npm --prefix client exec vitest run
+```
+
+## OBS'e ekleme
+
+**Overlay Stüdyo** sayfası adresleri hazır verir. Tek bir tarayıcı kaynağı için 1920×1080 **Tek URL**'yi, ayrı kaynaklar için widget adreslerini kopyalayın. Örnek: `http://localhost:3001/widgets/alertbox`.
+
+## Bağış bildirimleri
+
+Bağış siteleri bilgisayarınıza doğrudan ulaşamaz, bu yüzden bir tünel gerekir:
+
+```bash
+cloudflared tunnel --url http://localhost:3001
+```
+
+Verilen https adresini **Puan & Bağış → Bağış & JumpScare** sayfasına kaydedin ve panelin gösterdiği adresi bağış sitesine yapıştırın.
+
+Adres gizli anahtar taşır; kimseyle paylaşmayın. Tünelden yalnız iki bağış ucuna ulaşılır. Tünelin Host başlığını `localhost` yapan ayarını açmayın, yoksa API'nin tamamı internete açılır.
+
+## Güvenlik
+
+- Sunucu varsayılan olarak yalnız bu bilgisayardan erişilecek şekilde çalışır.
+- `.env`, `data/` ve veritabanı dosyalarını depoya eklemeyin.
+
+## Lisans
+
+© 2026 Axthrowa. Tüm hakları saklıdır.

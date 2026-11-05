@@ -117,6 +117,7 @@ export function MediaLibrary({ onSec }: { onSec?: (oge: MedyaOgesi) => void }) {
         aciklama="Yüklenen dosyalar yerel diskte durur; internet kesilse bile uyarılar çalışır."
         sag={
           <Secim
+            aria-label="Medya türü"
             value={suzgec}
             onChange={(e) => setSuzgec(e.target.value)}
             className="w-auto"

@@ -376,7 +376,7 @@ export default function SoundBoard() {
           </div>
         </Kart>
 
-        <Kart baslik="Giriş sesleri" aciklama="İzleyicinin günün ilk mesajında kendi sesi çalar (ücretsiz)" sag={<Anahtar acik={a.girisSesleri} onChange={(v) => void ayarYaz({ girisSesleri: v })} />}>
+        <Kart baslik="Giriş sesleri" aciklama="İzleyicinin günün ilk mesajında kendi sesi çalar (ücretsiz)" sag={<Anahtar acik={a.girisSesleri} onChange={(v) => void ayarYaz({ girisSesleri: v })} ad="Giriş sesleri" />}>
           <div className="space-y-2">
             {d.girisSesleri.map((g) => (
               <div key={g.kullanici} className="flex items-center justify-between rounded-lg bg-black/30 px-3 py-2 text-sm text-white">
@@ -390,7 +390,7 @@ export default function SoundBoard() {
             ))}
             <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
               <Girdi placeholder="Kullanıcı adı" value={giris.kullanici} onChange={(e) => setGiris({ ...giris, kullanici: e.target.value })} />
-              <Secim value={giris.ogeId} secenekler={[{ value: '', label: 'Ses seçin' }, ...d.ogeler.map((o) => ({ value: o.id, label: o.ad }))]} onChange={(e) => setGiris({ ...giris, ogeId: e.target.value })} />
+              <Secim aria-label="Ses" value={giris.ogeId} secenekler={[{ value: '', label: 'Ses seçin' }, ...d.ogeler.map((o) => ({ value: o.id, label: o.ad }))]} onChange={(e) => setGiris({ ...giris, ogeId: e.target.value })} />
               <Buton
                 disabled={!giris.kullanici.trim() || !giris.ogeId}
                 onClick={() =>

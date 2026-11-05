@@ -343,7 +343,7 @@ export function Economy() {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleUpdateRedemptionStatus(r.id, 'completed')}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all"
+                              className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all"
                               title="Tamamla"
                             >
                               <Check className="w-3 h-3" />
@@ -504,7 +504,7 @@ export function Economy() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 İzleme Süresi Puanı (Her aralıkta verilen puan)
               </label>
-              <input
+              <input aria-label="İzleme Süresi Puanı (Her aralıkta verilen puan)"
                 type="number"
                 value={rates.pointsPerInterval}
                 onChange={e => setRates({ ...rates, pointsPerInterval: parseInt(e.target.value, 10) || 15 })}
@@ -516,7 +516,7 @@ export function Economy() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 İzleme Kontrol Aralığı (Dakika)
               </label>
-              <input
+              <input aria-label="İzleme Kontrol Aralığı (Dakika)"
                 type="number"
                 value={rates.intervalMinutes}
                 onChange={e => setRates({ ...rates, intervalMinutes: parseInt(e.target.value, 10) || 5 })}
@@ -528,7 +528,7 @@ export function Economy() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Mesaj Başına Puan
               </label>
-              <input
+              <input aria-label="Mesaj Başına Puan"
                 type="number"
                 value={rates.pointsPerMessage}
                 onChange={e => setRates({ ...rates, pointsPerMessage: parseInt(e.target.value, 10) || 2 })}
@@ -540,7 +540,7 @@ export function Economy() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Kanal Aboneliği Başına Puan
               </label>
-              <input
+              <input aria-label="Kanal Aboneliği Başına Puan"
                 type="number"
                 value={rates.pointsPerSub}
                 onChange={e => setRates({ ...rates, pointsPerSub: parseInt(e.target.value, 10) || 500 })}
@@ -552,7 +552,7 @@ export function Economy() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Hediye Abonelik Başına Puan
               </label>
-              <input
+              <input aria-label="Hediye Abonelik Başına Puan"
                 type="number"
                 value={rates.pointsPerGiftedSub}
                 onChange={e => setRates({ ...rates, pointsPerGiftedSub: parseInt(e.target.value, 10) || 1000 })}
@@ -579,7 +579,7 @@ export function Economy() {
             <form onSubmit={handleCreateReward} className="space-y-3">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Ödül Başlığı</label>
-                <input
+                <input aria-label="Ödül Başlığı"
                   type="text"
                   required
                   placeholder="Örn: 24 Saat VIP Rolü"
@@ -591,7 +591,7 @@ export function Economy() {
 
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Gereken Puan</label>
-                <input
+                <input aria-label="Gereken Puan"
                   type="number"
                   required
                   min="10"
@@ -603,7 +603,7 @@ export function Economy() {
 
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Ödül Türü (Aksiyon)</label>
-                <select
+                <select aria-label="Ödül Türü (Aksiyon)"
                   value={newReward.rewardType}
                   onChange={e => setNewReward({ ...newReward, rewardType: e.target.value })}
                   className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-white"

@@ -76,7 +76,7 @@ export function Settings() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Komut Öneki (Prefix)
               </label>
-              <input
+              <input aria-label="Komut Öneki (Prefix)"
                 type="text"
                 value={settings.prefix || '!'}
                 onChange={e => handleChange('prefix', e.target.value)}
@@ -89,7 +89,7 @@ export function Settings() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Para / Puan Birimi Adı
               </label>
-              <input
+              <input aria-label="Para / Puan Birimi Adı"
                 type="text"
                 value={settings.currency_name || 'Puan'}
                 onChange={e => handleChange('currency_name', e.target.value)}
@@ -126,7 +126,7 @@ export function Settings() {
             <label className="block text-xs font-bold text-gray-300 mb-1">
               Aktarım Mesaj Formatı
             </label>
-            <input
+            <input aria-label="Aktarım Mesaj Formatı"
               type="text"
               value={settings.cross_chat_format || '[$platform] $user: $message'}
               onChange={e => handleChange('cross_chat_format', e.target.value)}
@@ -162,7 +162,7 @@ export function Settings() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Varsayılan Ses
               </label>
-              <select
+              <select aria-label="Varsayılan Ses"
                 value={settings.tts_voice || 'tr-TR-AhmetNeural'}
                 onChange={e => handleChange('tts_voice', e.target.value)}
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
@@ -178,7 +178,7 @@ export function Settings() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 TTS Ses Düzeyi: %{Math.round(parseFloat(settings.tts_volume || '0.8') * 100)}
               </label>
-              <input
+              <input aria-label="TTS ses düzeyi"
                 type="range"
                 min="0.1"
                 max="1.0"

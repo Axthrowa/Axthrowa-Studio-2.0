@@ -158,13 +158,13 @@ export function Timers() {
                       messagesText: messagesList.join('\n')
                     });
                   }}
-                  className="p-1.5 hover:bg-white/10 rounded-lg text-gray-300 hover:text-white transition-all"
+                  aria-label="Düzenle" title="Düzenle" className="p-1.5 hover:bg-white/10 rounded-lg text-gray-300 hover:text-white transition-all"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(t.id)}
-                  className="p-1.5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-all"
+                  aria-label="Sil" title="Sil" className="p-1.5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-all"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -188,7 +188,7 @@ export function Timers() {
                 <label className="block text-xs font-bold text-gray-300 mb-1">
                   Zamanlayıcı İsmi
                 </label>
-                <input
+                <input aria-label="Zamanlayıcı İsmi"
                   type="text"
                   required
                   value={editingTimer.name}
@@ -202,7 +202,7 @@ export function Timers() {
                 <label className="block text-xs font-bold text-gray-300 mb-1">
                   Mesajlar (Her satıra bir mesaj yazın, sırayla gönderilir)
                 </label>
-                <textarea
+                <textarea aria-label="Mesajlar (Her satıra bir mesaj yazın, sırayla gönderilir)"
                   required
                   rows={4}
                   value={editingTimer.messagesText}
@@ -217,7 +217,7 @@ export function Timers() {
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Aralık (Dakika)
                   </label>
-                  <input
+                  <input aria-label="Aralık (Dakika)"
                     type="number"
                     min="1"
                     max="1440"
@@ -231,7 +231,7 @@ export function Timers() {
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Gereken Asgari Chat Satırı
                   </label>
-                  <input
+                  <input aria-label="Gereken Asgari Chat Satırı"
                     type="number"
                     min="0"
                     max="100"

@@ -368,7 +368,7 @@ export default function ShieldAndAudit() {
                   onChange={e => setNewBanUser(e.target.value)}
                   className="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-red-500 focus:outline-none"
                 />
-                <select
+                <select aria-label="Platform"
                   value={newBanPlatform}
                   onChange={e => setNewBanPlatform(e.target.value)}
                   title="Kayıt yalnız bu platformda geçerli olur: başka platformdaki aynı adlı kişi etkilenmez"
@@ -433,7 +433,7 @@ export default function ShieldAndAudit() {
               Denetim Günlüğü (Audit Logs)
             </h2>
             <div className="flex items-center gap-2">
-              <select
+              <select aria-label="İşlem filtresi"
                 value={actionFilter}
                 onChange={e => setActionFilter(e.target.value)}
                 className="bg-slate-900 border border-slate-700 text-xs text-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none"

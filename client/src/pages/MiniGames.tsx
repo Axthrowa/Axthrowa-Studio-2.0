@@ -470,7 +470,7 @@ export function MiniGames() {
                   {conf.minBet !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
                       <label className="text-[10px] text-gray-400 block mb-1">Min Bahis</label>
-                      <input
+                      <input aria-label="Min Bahis"
                         type="number"
                         min="1"
                         value={conf.minBet}
@@ -484,7 +484,7 @@ export function MiniGames() {
                   {conf.maxBet !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
                       <label className="text-[10px] text-gray-400 block mb-1">Maks Bahis</label>
-                      <input
+                      <input aria-label="Maks Bahis"
                         type="number"
                         min="1"
                         value={conf.maxBet}
@@ -499,7 +499,7 @@ export function MiniGames() {
                   {game.id === 'kelime' && (
                     <label className="bg-black/50 p-2.5 rounded-xl border border-white/5 flex items-center justify-between gap-2 cursor-pointer">
                       <span className="text-[10px] text-gray-400">İpucu göster</span>
-                      <input
+                      <input aria-label="İpucu göster"
                         type="checkbox"
                         checked={(conf as any).showHint !== false}
                         onChange={e => void ipucuYaz(e.target.checked)}
@@ -512,7 +512,7 @@ export function MiniGames() {
                   {conf.rewardPoints !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
                       <label className="text-[10px] text-gray-400 block mb-1">Doğru Cevap Ödülü</label>
-                      <input
+                      <input aria-label="Doğru Cevap Ödülü"
                         type="number"
                         min="1"
                         value={conf.rewardPoints}
@@ -526,7 +526,7 @@ export function MiniGames() {
                   {conf.timeoutSec !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
                       <label className="text-[10px] text-gray-400 block mb-1">Cevaplama Süresi</label>
-                      <input
+                      <input aria-label="Cevaplama Süresi"
                         type="number"
                         min="10"
                         max="120"
@@ -541,7 +541,7 @@ export function MiniGames() {
                   {conf.cost !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
                       <label className="text-[10px] text-gray-400 block mb-1">Kasa Ücreti (Puan)</label>
-                      <input
+                      <input aria-label="Kasa Ücreti (Puan)"
                         type="number"
                         min="10"
                         value={conf.cost}
@@ -557,7 +557,7 @@ export function MiniGames() {
                   {conf.cooldownSec !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
                       <label className="text-[10px] text-gray-400 block mb-1">{SURE_ETIKETI[game.id] || 'Süre (sn)'}</label>
-                      <input
+                      <input aria-label={SURE_ETIKETI[game.id] || 'Süre (sn)'}
                         type="number"
                         min="5"
                         value={conf.cooldownSec}

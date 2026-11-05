@@ -314,7 +314,7 @@ export function App() {
       <div className={`flex-1 flex flex-col h-screen min-w-0 ${gomulu ? '' : 'ml-64'}`}>
         {/* Top Header */}
         {!gomulu && <header className="h-16 border-b border-white/[0.06] bg-[#0b0d12] sticky top-0 z-20 px-8 flex items-center justify-between">
-          <h1 className="text-[15px] font-medium text-white">{aktifMerkez?.label || sayfaAdlari[activeTab]}</h1>
+          <div className="text-[15px] font-medium text-white">{aktifMerkez?.label || sayfaAdlari[activeTab]}</div>
           <DurumSeridi git={sekmeyeGec} />
         </header>}
 

@@ -56,7 +56,7 @@ export function PollsStudio() {
           <h2 className="text-sm font-bold text-white">Yeni anket</h2>
           <label className="block text-xs font-bold text-gray-300 space-y-1">
             <span>Soru</span>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Bugün hangi oyunu oynayalım?" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" />
+            <input aria-label="Soru" value={title} onChange={e => setTitle(e.target.value)} placeholder="Bugün hangi oyunu oynayalım?" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" />
           </label>
           <div className="space-y-2">
             <span className="block text-xs font-bold text-gray-300">Seçenekler (en az 2)</span>
@@ -73,9 +73,9 @@ export function PollsStudio() {
           <div className="flex flex-wrap items-end justify-between gap-3 pt-3 border-t border-white/10">
             <label className="block text-xs font-bold text-gray-300 space-y-1">
               <span>Süre (saniye)</span>
-              <input type="number" min={5} value={duration} onChange={e => setDuration(+e.target.value)} className="w-28 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+              <input aria-label="Süre (saniye)" type="number" min={5} value={duration} onChange={e => setDuration(+e.target.value)} className="w-28 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
             </label>
-            <button onClick={create} disabled={!hazir} title={hazir ? undefined : 'Soru ve en az 2 seçenek gerekli'} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1"><Play className="w-4 h-4" /> Anketi başlat</button>
+            <button onClick={create} disabled={!hazir} title={hazir ? undefined : 'Soru ve en az 2 seçenek gerekli'} className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1"><Play className="w-4 h-4" /> Anketi başlat</button>
           </div>
         </div>
       )}

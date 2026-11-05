@@ -81,7 +81,7 @@ function Kural({
       <div className={`flex items-end gap-2 ${acik ? '' : 'opacity-40'}`}>
         <label className="flex-1">
           <span className="block text-[10px] text-gray-400 font-bold mb-1">Eklenecek dakika</span>
-          <input
+          <input aria-label="Eklenecek dakika"
             type="number"
             min={0}
             value={dakika}
@@ -199,7 +199,7 @@ export function SubathonPanel() {
             <>
               <button
                 onClick={() => cagir('resume')}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
                 title="Duraklatılan ya da önceki yayından kalan süreyle devam eder"
               >
                 <Play className="w-3.5 h-3.5" /> Kaldığı yerden başlat
@@ -215,7 +215,7 @@ export function SubathonPanel() {
           ) : (
             <button
               onClick={() => cagir('start', { dakika: ayar.baslangicDakika })}
-              className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+              className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
             >
               <Play className="w-3.5 h-3.5" /> Başlat ({ayar.baslangicDakika} dk)
             </button>
@@ -240,7 +240,7 @@ export function SubathonPanel() {
       <div className="bg-black/30 border border-white/10 rounded-xl p-3 flex items-end gap-2">
         <label className="flex-1">
           <span className="block text-[10px] text-gray-400 font-bold mb-1">Elle süre ekle / çıkar (dakika)</span>
-          <input
+          <input aria-label="Elle süre ekle / çıkar (dakika)"
             type="number"
             value={elleDakika}
             onChange={(e) => setElleDakika(Number(e.target.value) || 0)}
@@ -250,7 +250,7 @@ export function SubathonPanel() {
         <button
           onClick={() => cagir('add', { dakika: Math.abs(elleDakika) })}
           disabled={!elleDakika}
-          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1"
+          className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1"
         >
           <Plus className="w-3.5 h-3.5" /> Ekle
         </button>
@@ -330,7 +330,7 @@ export function SubathonPanel() {
       <div className="grid grid-cols-2 gap-2">
         <label>
           <span className="block text-[10px] text-gray-400 font-bold mb-1">Başlangıç süresi (dakika)</span>
-          <input
+          <input aria-label="Başlangıç süresi (dakika)"
             type="number"
             min={1}
             value={ayar.baslangicDakika}
@@ -340,7 +340,7 @@ export function SubathonPanel() {
         </label>
         <label>
           <span className="block text-[10px] text-gray-400 font-bold mb-1">Üst sınır (saat, 0 = sınırsız)</span>
-          <input
+          <input aria-label="Üst sınır (saat, 0 = sınırsız)"
             type="number"
             min={0}
             value={ayar.maksSaat}

@@ -262,7 +262,7 @@ function TtsPaneli() {
         <div className="text-[11px] font-bold text-gray-200">{etiket}</div>
         {ipucu && <div className="text-[10px] text-gray-500">{ipucu}</div>}
       </div>
-      <Anahtar acik={!!f[k]} onChange={(v) => setF({ ...f, [k]: v })} />
+      <Anahtar acik={!!f[k]} onChange={(v) => setF({ ...f, [k]: v })} ad={etiket} />
     </div>
   );
 

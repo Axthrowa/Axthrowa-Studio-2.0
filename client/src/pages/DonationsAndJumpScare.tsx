@@ -219,7 +219,7 @@ export default function DonationsAndJumpScare() {
           </p>
 
           <div className="flex gap-2">
-            <input
+            <input aria-label="BynoGame bildirim adresi"
               type="text"
               readOnly
               value={bynoWebhookUrl}
@@ -227,7 +227,7 @@ export default function DonationsAndJumpScare() {
             />
             <button
               onClick={() => handleCopy(bynoWebhookUrl, 'byno')}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white p-2.5 rounded-xl cursor-pointer transition-all"
+              className="bg-emerald-700 hover:bg-emerald-600 text-white p-2.5 rounded-xl cursor-pointer transition-all"
               title="Kopyala"
             >
               {copiedByno ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -256,7 +256,7 @@ export default function DonationsAndJumpScare() {
           </p>
 
           <div className="flex gap-2">
-            <input
+            <input aria-label="Genel bağış adresi"
               type="text"
               readOnly
               value={genericWebhookUrl}
@@ -302,7 +302,7 @@ export default function DonationsAndJumpScare() {
           </p>
 
           <div className="flex gap-2">
-            <input
+            <input aria-label="JumpScare OBS adresi"
               type="text"
               readOnly
               value={jumpscareObsUrl}
@@ -323,7 +323,7 @@ export default function DonationsAndJumpScare() {
               <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Tetiklenecek Minimum Bağış Tutarı (TL):
               </label>
-              <input
+              <input aria-label="Tetiklenecek Minimum Bağış Tutarı (TL)"
                 type="number"
                 min="1"
                 value={jsSettings.minAmount}
@@ -336,7 +336,7 @@ export default function DonationsAndJumpScare() {
               <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Ekranda Kalma Süresi (ms):
               </label>
-              <input
+              <input aria-label="Ekranda Kalma Süresi (ms)"
                 type="number"
                 min="1000"
                 step="500"
@@ -351,7 +351,7 @@ export default function DonationsAndJumpScare() {
             <label className="block text-xs font-semibold text-gray-300 mb-1">
               Korkutucu Video / GIF URL:
             </label>
-            <input
+            <input aria-label="Korkutucu Video / GIF URL"
               type="text"
               value={jsSettings.mediaUrl}
               onChange={e => setJsSettings({ ...jsSettings, mediaUrl: e.target.value })}
@@ -363,7 +363,7 @@ export default function DonationsAndJumpScare() {
             <label className="block text-xs font-semibold text-gray-300 mb-1">
               Çığlık / Efekt Ses URL (İsteğe bağlı):
             </label>
-            <input
+            <input aria-label="Çığlık / Efekt Ses URL (İsteğe bağlı)"
               type="text"
               value={jsSettings.audioUrl || ''}
               onChange={e => setJsSettings({ ...jsSettings, audioUrl: e.target.value })}
@@ -397,7 +397,7 @@ export default function DonationsAndJumpScare() {
           <form onSubmit={handleSimulateDonation} className="space-y-3">
             <div>
               <label className="block text-xs text-gray-300 mb-1">Bağışçı Adı:</label>
-              <input
+              <input aria-label="Bağışçı Adı"
                 type="text"
                 value={simName}
                 onChange={e => setSimName(e.target.value)}
@@ -407,7 +407,7 @@ export default function DonationsAndJumpScare() {
 
             <div>
               <label className="block text-xs text-gray-300 mb-1">Miktar (TL):</label>
-              <input
+              <input aria-label="Miktar (TL)"
                 type="number"
                 min="1"
                 value={simAmount}
@@ -421,7 +421,7 @@ export default function DonationsAndJumpScare() {
 
             <div>
               <label className="block text-xs text-gray-300 mb-1">Bağış Mesajı (TTS ile okunacak):</label>
-              <textarea
+              <textarea aria-label="Bağış Mesajı (TTS ile okunacak)"
                 rows={2}
                 value={simMessage}
                 onChange={e => setSimMessage(e.target.value)}

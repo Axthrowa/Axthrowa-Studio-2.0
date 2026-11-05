@@ -214,13 +214,13 @@ export function Commands() {
                       setKayitHatasi('');
                       setEditingCmd(cmd);
                     }}
-                    className="p-1.5 hover:bg-white/10 rounded-lg text-gray-300 hover:text-white transition-all"
+                    aria-label="Düzenle" title="Düzenle" className="p-1.5 hover:bg-white/10 rounded-lg text-gray-300 hover:text-white transition-all"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(cmd.id)}
-                    className="p-1.5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-all"
+                    aria-label="Sil" title="Sil" className="p-1.5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -244,7 +244,7 @@ export function Commands() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Etkinleştirme</label>
-                  <select
+                  <select aria-label="Etkinleştirme"
                     value={editingCmd.trigger_type || 'command'}
                     onChange={e => setEditingCmd({ ...editingCmd, trigger_type: e.target.value as any })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
@@ -255,7 +255,7 @@ export function Commands() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Erişim</label>
-                  <select
+                  <select aria-label="Erişim"
                     value={editingCmd.access_mode || 'always'}
                     onChange={e => setEditingCmd({ ...editingCmd, access_mode: e.target.value as any })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
@@ -346,7 +346,7 @@ export function Commands() {
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Kullanıcı Yetkisi
                   </label>
-                  <select
+                  <select aria-label="Kullanıcı Yetkisi"
                     value={editingCmd.user_level}
                     onChange={e => setEditingCmd({ ...editingCmd, user_level: e.target.value as any })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
@@ -362,7 +362,7 @@ export function Commands() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Bekleme süresi (sn)</label>
-                  <input
+                  <input aria-label="Bekleme süresi (sn)"
                     type="number"
                     min={0}
                     max={86400}
@@ -376,7 +376,7 @@ export function Commands() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Bekleme modu</label>
-                  <select
+                  <select aria-label="Bekleme modu"
                     value={editingCmd.cooldown_mode || 'global'}
                     onChange={e => setEditingCmd({ ...editingCmd, cooldown_mode: e.target.value as any })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
@@ -388,7 +388,7 @@ export function Commands() {
                 {editingCmd.cooldown_mode === 'user' && (
                   <div>
                     <label className="block text-xs font-bold text-gray-300 mb-1">Kişi başı bekleme (sn)</label>
-                    <input
+                    <input aria-label="Kişi başı bekleme (sn)"
                       type="number"
                       min={0}
                       max={86400}
@@ -403,7 +403,7 @@ export function Commands() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Fiyat (puan)</label>
-                  <input
+                  <input aria-label="Fiyat (puan)"
                     type="number"
                     min={0}
                     value={editingCmd.cost_points ?? 0}
@@ -414,7 +414,7 @@ export function Commands() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">En düşük seviye</label>
-                  <input
+                  <input aria-label="En düşük seviye"
                     type="number"
                     min={0}
                     value={editingCmd.min_level ?? 0}

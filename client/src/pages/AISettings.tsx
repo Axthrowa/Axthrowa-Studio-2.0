@@ -271,7 +271,7 @@ export function AISettings() {
             <label className="block text-xs font-semibold text-gray-300 mb-1.5">
               Bot Kişiliği (Persona):
             </label>
-            <select
+            <select aria-label="Bot Kişiliği (Persona)"
               value={rescue.personality}
               onChange={e => setRescue({ ...rescue, personality: e.target.value as any })}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-purple-500 focus:outline-none"
@@ -289,7 +289,7 @@ export function AISettings() {
               <span>Hareketsizlik Eşiği:</span>
               <span className="font-bold text-purple-400">{rescue.inactivityMinutes} dakika</span>
             </div>
-            <input
+            <input aria-label="Hareketsizlik eşiği"
               type="range"
               min="2"
               max="20"
@@ -347,7 +347,7 @@ export function AISettings() {
 
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-1">Yapay zekâ sağlayıcısı</label>
-              <select
+              <select aria-label="Yapay zekâ sağlayıcısı"
                 value={saglayici}
                 onChange={(e) => {
                   const y = e.target.value;
@@ -380,7 +380,7 @@ export function AISettings() {
                   {saglayici === 'custom' && (
                     <div>
                       <label className="block text-xs font-bold text-gray-300 mb-1">API adresi (OpenAI uyumlu, /v1 ile)</label>
-                      <input value={ozelAdres} onChange={(e) => setOzelAdres(e.target.value)} placeholder="http://127.0.0.1:1234/v1"
+                      <input aria-label="API adresi (OpenAI uyumlu, /v1 ile)" value={ozelAdres} onChange={(e) => setOzelAdres(e.target.value)} placeholder="http://127.0.0.1:1234/v1"
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono" />
                     </div>
                   )}
@@ -399,7 +399,7 @@ export function AISettings() {
                   )}
                   <div>
                     <label className="block text-xs font-bold text-gray-300 mb-1">Model</label>
-                    <input value={saglayiciModel} onChange={(e) => setSaglayiciModel(e.target.value)} placeholder={p.model || 'model adı'}
+                    <input aria-label="Model" value={saglayiciModel} onChange={(e) => setSaglayiciModel(e.target.value)} placeholder={p.model || 'model adı'}
                       list="ai-modeller"
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono" />
                     <datalist id="ai-modeller">
@@ -415,7 +415,7 @@ export function AISettings() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Google Gemini API Anahtarı
               </label>
-              <input
+              <input aria-label="Google Gemini API Anahtarı"
                 type="password"
                 value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
@@ -478,7 +478,7 @@ export function AISettings() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Yapay Zeka Kişiliği & Talimatlar (System Prompt)
               </label>
-              <textarea
+              <textarea aria-label="Yapay Zeka Kişiliği & Talimatlar (System Prompt)"
                 rows={4}
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}

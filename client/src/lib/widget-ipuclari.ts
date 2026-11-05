@@ -76,6 +76,14 @@ export const WIDGET_IPUCLARI: Record<string, string[]> = {
     'Bağlantı: Şarkı İsteği sayfasındaki Spotify kartı ya da Resonance’ın kendi ekranı (/resonance/).',
     'Görünüm (tema, renk, animasyon) Resonance’ta seçilir; OBS adresi değişmez.'
   ],
+  'social-rotator': [
+    'Eklediğin sosyal medya hesapları sırayla döner; her hesabın süresini ve tur arası beklemeyi seçebilirsin.',
+    'Hesap eklenmedikçe yayında görünmez. Profil adresi yapıştırırsan ekranda yalnız @ad yazılır.'
+  ],
+  'sponsor-banner': [
+    'Sponsor ve iş birliği görsellerini, GIF ve videolarını sırayla gösterir; her öğenin süresi ve alt yazısı ayrı ayarlanır.',
+    'Medya eklenmedikçe yayında görünmez. Video sesi varsayılan olarak kapalıdır.'
+  ],
   'pinned-messages': [
     'Öne çıkardığın sohbet mesajını ekranda sabit tutar.',
     'Canlı Multi-Chat’te mesajın yanındaki sabitle düğmesiyle seçilir; belirli süre sonra kendiliğinden kalkabilir.'

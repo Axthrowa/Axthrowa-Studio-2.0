@@ -36,6 +36,8 @@ import { GiveawayWidget } from './GiveawayWidget.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { wsAdresi } from '../lib/widget-style.js';
 import { PinnedMessageWidget } from './PinnedMessageWidget.js';
+import { SosyalDonenWidget } from './SosyalDonenWidget.js';
+import { SponsorWidget } from './SponsorWidget.js';
 import { ShoutoutWidget } from './ShoutoutWidget.js';
 import { ViewerCounterWidget } from './ViewerCounterWidget.js';
 import { RankingsWidget } from './RankingsWidget.js';
@@ -80,6 +82,8 @@ export type KatmanAnahtari =
   | 'activityFeed'
   | 'giveaway'
   | 'pinned'
+  | 'socials'
+  | 'sponsor'
   | 'shoutout'
   | 'viewerCounter'
   | 'rankings'
@@ -226,6 +230,20 @@ export const KATMANLAR: KatmanTanimi[] = [
     ciz: (o) => <GiveawayWidget embedded previewMode={o} />
   },
   {
+    anahtar: 'socials',
+    etiket: 'Sosyal Medya',
+    z: 71,
+    varsayilan: { x: 40, y: 960, width: 480, height: 90 },
+    ciz: (o) => <SosyalDonenWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'sponsor',
+    etiket: 'Sponsor',
+    z: 70,
+    varsayilan: { x: 1400, y: 40, width: 480, height: 200 },
+    ciz: (o) => <SponsorWidget embedded previewMode={o} />
+  },
+  {
     anahtar: 'pinned',
     etiket: 'Sabit Mesaj',
     z: 72,
@@ -343,6 +361,8 @@ export const GALERI_KATMANI: Record<string, { anahtar: KatmanAnahtari; ek?: Reco
   'activity-feed': { anahtar: 'activityFeed' },
   giveaways: { anahtar: 'giveaway' },
   'pinned-messages': { anahtar: 'pinned' },
+  'social-rotator': { anahtar: 'socials' },
+  'sponsor-banner': { anahtar: 'sponsor' },
   shoutout: { anahtar: 'shoutout' },
   'viewer-counter': { anahtar: 'viewerCounter' },
   rankings: { anahtar: 'rankings' },

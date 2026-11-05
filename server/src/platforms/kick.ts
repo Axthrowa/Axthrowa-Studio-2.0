@@ -553,6 +553,33 @@ export class KickPlatform extends BasePlatform {
   }
 
   /** Moderasyon ve kanal işleri: varsa yayın kanalının girişi, yoksa bot hesabı. */
+  /**
+   * Önce resmi API (kimlik sohbetten öğrenilir, Cloudflare'e takılmaz); olmazsa kanal sayfası verisi.
+   * Kanal adresinde `_` yerine `-` kullanılır.
+   */
+  async avatarBul(kullanici: string): Promise<string | null> {
+    const ad = kullanici.toLowerCase();
+    const kimlik = this.kullaniciKimlikleri.get(ad);
+    const token = await this.yetkiliToken();
+    if (kimlik && token) {
+      try {
+        const r = await axios.get('https://api.kick.com/public/v1/users', {
+          params: { id: kimlik },
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 5000
+        });
+        if (r.data?.data?.[0]?.profile_picture) return String(r.data.data[0].profile_picture);
+      } catch {
+        /* kanal verisine düşülür */
+      }
+    }
+    const r = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(ad.replace(/_/g, '-'))}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      timeout: 5000
+    });
+    return r.data?.user?.profile_pic || null;
+  }
+
   private async yetkiliToken(): Promise<string> {
     if (this.kanalToken && this.kanalBitis && Date.now() > this.kanalBitis - 60_000 && !(await this.kanalBelirteciniYenile())) {
       // Yenilenemeyen giriş bu oturumda bırakılır: bot moderatörse işler onunla sürer

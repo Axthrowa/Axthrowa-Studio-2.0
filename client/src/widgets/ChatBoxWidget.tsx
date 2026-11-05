@@ -2,6 +2,7 @@
  * AxBoT Chat Overlay
  * Developed by AxthrowA
  */
+import { SohbetAvatari } from '../components/SohbetAvatari.js';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -261,8 +262,17 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     // Vurgu: "platform renkleri" açıksa platformun özgün rengi
     const vurgu = s.platformColors && PLATFORM_COLORS[msg.platform] ? pr : s.highlightColor;
     const vurguKenar = s.highlightSpecial && msg.special ? `3px solid ${vurgu}` : undefined;
-    const avatar = s.showAvatars && msg.avatar ? (
-      <img src={msg.avatar} alt="" style={{ width: Math.round(boy * 1.1), height: Math.round(boy * 1.1), borderRadius: '50%', flexShrink: 0 }} />
+    const avatar = s.showAvatars && msg.platform !== 'olay' ? (
+      <SohbetAvatari
+        platform={msg.platform}
+        kullanici={msg.kullanici}
+        ad={msg.user}
+        url={msg.avatar}
+        boyut={Number(s.avatarSize) || Math.round(boy * 1.1)}
+        bicim={s.avatarShape}
+        yedekHarf={Boolean(s.avatarFallback)}
+        renk={msg.color}
+      />
     ) : null;
     const logo = (renk?: string) =>
       s.showPlatformLogo && msg.platform !== 'olay' ? (

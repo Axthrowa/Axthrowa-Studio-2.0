@@ -15,8 +15,22 @@ import { geminiCoHost } from '../../modules/ai/gemini.js';
 import { sohbetUyarilari } from '../../modules/chat-alerts/chat-alerts.js';
 import { takipAdaylari, TAKIP_TEMA_ADLARI, TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
 import { seyrekUyar } from '../../core/logger.js';
+import { platformManager } from '../../platforms/manager.js';
+import { AvatarOnbellek, avatarIstegiGecerli } from '../../modules/chat-avatar/avatar-onbellek.js';
 
 const router = Router();
+
+const avatarlar = new AvatarOnbellek(async (platform, ad) => (await platformManager.getPlatform(platform)?.avatarBul?.(ad)) ?? null);
+
+// Sohbet satırları ve OBS sohbeti <img> ile buraya gelir; resim platformun kendi adresinden yüklenir
+router.get('/chat/avatar/:platform/:ad', async (req: Request, res: Response) => {
+  const platform = String(req.params.platform);
+  const ad = String(req.params.ad);
+  if (!avatarIstegiGecerli(platform, ad)) return res.status(400).end();
+  const url = await avatarlar.getir(platform, ad);
+  if (!url) return res.set('Cache-Control', 'public, max-age=600').status(404).end();
+  res.set('Cache-Control', 'public, max-age=3600').redirect(302, url);
+});
 
 // 9.0 Sohbet tarafi olay mesajlari
 router.get('/chat-alerts', (req: Request, res: Response) => {

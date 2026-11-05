@@ -8,7 +8,13 @@
  * (`square` + 12px).
  */
 
-export const COVER_SHAPES = ['square', 'vinyl', 'none']
+export const COVER_SHAPES = ['square', 'circle', 'hexagon', 'polaroid', 'vinyl', 'disc', 'cd', 'none']
+
+/** Çalarken dönen kapaklar: `vinyl` delikli plak, `disc` deliksiz plak, `cd` parlak disk. */
+export const DONEN_KAPAKLAR = ['vinyl', 'disc', 'cd']
+
+const YUVARLAK_KAPAKLAR = [...DONEN_KAPAKLAR, 'circle']
+const KAPAKSIZ_OLMAZ = COVER_SHAPES.filter((s) => s !== 'none')
 
 export const DEFAULT_CORNER_RADIUS = 8
 export const MIN_CORNER_RADIUS = 0
@@ -50,32 +56,38 @@ export function resolveRadius(config) {
  * çizimi (`effectiveCover`) besliyor — iki yerin ayrışması mümkün değil.
  */
 export const SKIN_COVER_SUPPORT = {
-  compact: ['square', 'vinyl', 'none'],
-  boxy: ['square', 'vinyl', 'none'],
-  macos: ['square', 'vinyl', 'none'],
+  compact: COVER_SHAPES,
+  boxy: COVER_SHAPES,
+  macos: COVER_SHAPES,
   minimal: [], // kapak hiç çizilmiyor
-  shell: ['vinyl', 'none'],
-  discord: ['square', 'vinyl'],
-  gallery: ['square', 'vinyl'],
+  shell: [...YUVARLAK_KAPAKLAR, 'none'],
+  discord: KAPAKSIZ_OLMAZ,
+  gallery: KAPAKSIZ_OLMAZ,
   // yeni skinler
-  clear: ['square', 'vinyl', 'none'],
-  ring: ['square', 'vinyl'], // 'square' = yuvarlak fotoğraf, 'vinyl' = dönen plak; kapaksız halka yok
-  aurora: ['square', 'vinyl', 'none'],
-  edge: ['square', 'vinyl', 'none'],
-  turntable: ['vinyl'], // kapak hep plağın üstünde döner
+  clear: COVER_SHAPES,
+  ring: ['square', ...DONEN_KAPAKLAR], // 'square' = yuvarlak fotoğraf, diğerleri dönen disk; kapaksız halka yok
+  aurora: COVER_SHAPES,
+  edge: COVER_SHAPES,
+  turntable: DONEN_KAPAKLAR, // kapak hep plağın üstünde döner
   cassette: [], // kapak hiç çizilmiyor
-  pill: ['square', 'vinyl', 'none'],
-  island: ['square', 'vinyl', 'none'],
-  strip: ['square', 'vinyl', 'none'],
+  pill: COVER_SHAPES,
+  island: COVER_SHAPES,
+  strip: COVER_SHAPES,
   albumfocus: ['square'],
-  sidebar: ['square', 'vinyl', 'none'],
+  sidebar: COVER_SHAPES,
   gameboy: ['square', 'none'],
   hud: ['square', 'none'],
   sticky: ['square', 'none'],
+  neon: COVER_SHAPES,
+  wave: COVER_SHAPES,
+  poster: KAPAKSIZ_OLMAZ,
+  terminal: [], // kapak hiç çizilmiyor
+  lcd: [...DONEN_KAPAKLAR, 'none'],
+  ticket: ['square', 'circle', 'polaroid', 'vinyl', 'disc', 'cd', 'none'],
 }
 
 /** Destek listesi dışında kalan seçimin düşeceği biçim. */
-const FALLBACK = { shell: 'vinyl', discord: 'square', gallery: 'square', ring: 'square', turntable: 'vinyl' }
+const FALLBACK = { shell: 'vinyl', discord: 'square', gallery: 'square', ring: 'square', turntable: 'vinyl', lcd: 'cd', poster: 'square' }
 
 export function supportedCovers(skin) {
   return SKIN_COVER_SUPPORT[skin] || SKIN_COVER_SUPPORT.compact
@@ -94,6 +106,11 @@ export function effectiveCover(skin, shape) {
   if (!list.length) return s // kapak kullanmayan skin: değer önemsiz
   if (list.includes(s)) return s
   return FALLBACK[skin] || list[0]
+}
+
+/** İlerleme halkası bu oynatıcı ve kapakta eklenebilir mi? Halka oynatıcısının kendi halkası var. */
+export function halkaDestekli(skin, shape) {
+  return skin !== 'ring' && YUVARLAK_KAPAKLAR.includes(shape)
 }
 
 /**

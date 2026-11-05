@@ -281,6 +281,10 @@ export class TwitchPlatform extends BasePlatform {
     }
   }
 
+  avatarBul(kullanici: string): Promise<string | null> {
+    return this.helix.avatarBul(kullanici);
+  }
+
   // ------------------------------------------------ Helix: moderasyon ------
 
   async timeoutUser(username: string, saniye: number, sebep?: string): Promise<ModerasyonSonucu> {

@@ -3,7 +3,8 @@ import { useEffect } from 'react'
 import { useDominantColor } from '../../hooks/useDominantColor'
 import { useWidgetVisibility } from '../../hooks/useWidgetVisibility'
 import { getAnimationVariants } from '../../lib/widgetAnimations'
-import { effectiveCover, resolveRadius } from '../../lib/coverShape'
+import { effectiveCover, halkaDestekli, resolveRadius } from '../../lib/coverShape'
+import { sarkiBitti } from '../../lib/lyrics'
 import { getSkin } from './skins'
 import { GorunumBaglami } from './skinParts'
 
@@ -56,7 +57,8 @@ export function NowPlayingWidget({
   )
   const progress = track ? Math.min(progressMs / Math.max(track.durationMs || 1, 1), 1) : 0
   const fontFamily = `"${config.font || 'Poppins'}", system-ui, sans-serif`
-  const autoVisible = useWidgetVisibility(track, isPlaying, config, preview)
+  // Parça sonuna gelip sıradaki başlamadıysa kaynak hâlâ "çalıyor" diyebilir: bu da durmuş sayılır
+  const autoVisible = useWidgetVisibility(track, isPlaying && !sarkiBitti(track, progressMs), config, preview)
   const visible = typeof demoVisible === 'boolean' ? demoVisible : autoVisible
 
   // Üst çerçeve (Giriş/Bitiş/Mola) boyut + görünürlüğü buradan okusun;
@@ -124,11 +126,14 @@ export function NowPlayingWidget({
  * çözülür (`effectiveCover`); skin bileşenleri ham `config.cover`'a bakmaz.
  */
 function Skin(props) {
-  const { skin, track, isPlaying, config, accent } = props
+  const { skin, track, isPlaying, progress, config, accent } = props
   const { Component } = getSkin(skin)
+  const shape = effectiveCover(skin, config.cover)
   const coverProps = {
     src: track.cover,
-    shape: effectiveCover(skin, config.cover),
+    shape,
+    ring: config.coverRing === true && halkaDestekli(skin, shape),
+    progress,
     radius: resolveRadius(config),
     glow: config.coverGlow,
     playing: isPlaying,

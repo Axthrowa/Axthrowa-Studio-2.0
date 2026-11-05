@@ -128,6 +128,11 @@ export class TwitchHelix {
     return { ok: true, veri: id };
   }
 
+  async avatarBul(login: string): Promise<string | null> {
+    const r = await this.istek('GET', `/users?login=${encodeURIComponent(login.toLowerCase())}`);
+    return r.ok ? r.veri?.data?.[0]?.profile_image_url || null : null;
+  }
+
   /** Kanalın ve Twitch'in genel sohbet rozetleri ("set/sürüm" → görsel). İzin gerektirmez. */
   async sohbetRozetleri(kanal: string): Promise<Map<string, string>> {
     const kimlik = await this.kullaniciKimligi(kanal);

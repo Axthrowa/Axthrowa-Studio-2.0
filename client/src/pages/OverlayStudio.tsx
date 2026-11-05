@@ -37,7 +37,8 @@ import {
   Eye,
   EyeOff,
   Settings2,
-  RefreshCw
+  RefreshCw,
+  Share2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
@@ -180,6 +181,14 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   'on-screen-emotes': {
     baslik: 'Ekranda Emojiler (Kappagen)',
     aciklama: "Sohbetteki Kick, 7TV ve emoji emote'larını ekranda uçurur; !kappagen ile ortadan patlatır."
+  },
+  'social-rotator': {
+    baslik: 'Dönen Sosyal Medya',
+    aciklama: 'Eklediğiniz sosyal medya hesaplarını yayında sırayla gösterir.'
+  },
+  'sponsor-banner': {
+    baslik: 'Sponsor ve İş Birliği',
+    aciklama: 'Reklam ve iş birliği görsellerini, GIF ve videolarını sırayla gösterir.'
   },
   'pinned-messages': {
     baslik: 'Sabitlenmiş Mesajlar',
@@ -331,7 +340,7 @@ function HizaIzgarasi({ onSec, pay, payDegisti }: { onSec: (yonler: Yon[]) => vo
 const KATMAN_EMOJISI: Record<string, string> = {
   chat: '💬', alerts: '🔔', goals: '🎯', subathon: '⏳', trivia: '🧠', eventLabels: '🏷️', theCup: '🏆', polls: '📊',
   wheel: '🎡', hypeTrain: '🚂', nowPlaying: '🎵', emoteCombo: '🔥', lyrics: '🎤', king: '👑', jumpScare: '👻',
-  activityFeed: '📰', giveaway: '🎁', pinned: '📌', shoutout: '📣', viewerCounter: '👀', rankings: '🥇', loyalty: '🎟️',
+  socials: '🔗', sponsor: '🤝', activityFeed: '📰', giveaway: '🎁', pinned: '📌', shoutout: '📣', viewerCounter: '👀', rankings: '🥇', loyalty: '🎟️',
   kappagen: '🎉', endCredits: '🎬', tts: '🗣️', soundBoard: '🎛️', muzikVideo: '📺', wordCloud: '☁️', scoreboard: '🏅'
 };
 
@@ -348,6 +357,8 @@ const KATMAN_AYAR_ID: Record<string, string> = {
   eventLabels: 'event-labels',
   polls: 'polls',
   wheel: 'wheel-of-fortune',
+  socials: 'social-rotator',
+  sponsor: 'sponsor-banner',
   emoteCombo: 'emote-combo',
   theCup: 'the-cup',
   hypeTrain: 'hype-train',
@@ -1114,6 +1125,18 @@ export function OverlayStudio() {
       category: 'Engagement',
       icon: Smile,
       url: `${baseUrl}/widgets/emotes`
+    },
+    {
+      id: 'social-rotator',
+      category: 'On-Stream',
+      icon: Share2,
+      url: `${baseUrl}/widgets/socials`
+    },
+    {
+      id: 'sponsor-banner',
+      category: 'On-Stream',
+      icon: Megaphone,
+      url: `${baseUrl}/widgets/sponsor`
     },
     {
       id: 'pinned-messages',

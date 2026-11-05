@@ -10,12 +10,19 @@ import { yaziAilesi } from '../lib/widget-style.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
+import { SosyalHesapPaneli, SponsorPaneli } from '../components/DonenWidgetPanelleri.js';
 import { SabitMesajPaneli, SkorTablosuPaneli, SohbetIstatistikPaneli } from '../components/SohbetAraclariPaneli.js';
 import { CARK_PALETLERI } from '../widgets/WheelWidget.js';
 import { MediaLibrary } from '../components/MediaLibrary.js';
 import { Katlanir } from '../ui/index.js';
 
 const LABELS: Record<string, string> = {
+  avatarShape: 'Avatar biçimi', avatarFallback: 'Resim yoksa baş harfi göster',
+  itemSeconds: 'Her hesabın süresi (sn)', waitSeconds: 'Tur sonunda gizli bekleme (sn, 0 = kapalı)',
+  defaultSeconds: 'Varsayılan görsel süresi (sn)',
+  iconSize: 'Simge boyutu (px)', fit: 'Medyayı sığdırma',
+  soundOn: 'Video sesi açık', showCaption: 'Alt yazıyı göster', captionColor: 'Alt yazı rengi',
+  captionBgColor: 'Alt yazı zemini', captionBgOpacity: 'Alt yazı zemin opaklığı',
   showStatusDot: 'Başlıktaki durum noktası', centerSize: 'Orta göbek boyutu (%)', centerImageUrl: 'Orta görsel/GIF adresi',
   hideIdle: 'Tren başlamadan gizle',
   showFollow: 'Takip göster', showSub: 'Abone göster', showGiftSub: 'Hediye abone göster',
@@ -140,6 +147,8 @@ const LABELS: Record<string, string> = {
 };
 
 const SECTIONS: Record<string, string> = {
+  avatarShape: 'Düzen', avatarFallback: 'Düzen',
+  itemSeconds: 'Zamanlama', waitSeconds: 'Zamanlama', defaultSeconds: 'Zamanlama',
   showFollow: 'Olaylar', showSub: 'Olaylar', showGiftSub: 'Olaylar', showTip: 'Olaylar', showRaid: 'Olaylar',
   showHost: 'Olaylar', showKicks: 'Olaylar', showFollowers: 'Olaylar', showBits: 'Olaylar', showTop: 'Olaylar',
   templateFollow: 'Şablon', templateSub: 'Şablon', templateGiftSub: 'Şablon', templateTip: 'Şablon',
@@ -267,6 +276,11 @@ function bolumSirasi(b: string): number {
 }
 
 const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
+  avatarShape: [
+    { value: 'circle', label: 'Daire' },
+    { value: 'rounded', label: 'Yuvarlak köşe' },
+    { value: 'square', label: 'Kare' }
+  ],
   // 37 on ayar (lib/animations.ts). Eski 9'luk liste geriye uyum icin
   // `animKimligi()` ile eslenmeye devam ediyor.
   animation: ANIM_SECENEKLERI,
@@ -330,6 +344,13 @@ const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({
 const SOHBET_EK_ANIM = tema(['pop', 'Pop (fırlayarak)'], ['bulanik', 'Bulanıktan netleşme'], ['elastik', 'Elastik']);
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
+  'social-rotator': {
+    theme: tema(['kart', 'Kart'], ['hap', 'Hap'], ['neon', 'Neon'], ['sade', 'Sade']),
+    position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
+  },
+  'sponsor-banner': {
+    fit: tema(['contain', 'Tamamı görünsün'], ['cover', 'Alanı doldursun'])
+  },
   giveaways: {
     kasaTema: tema(['kart', 'Kart'], ['neon', 'Neon çerçeve'], ['altin', 'Altın levha'], ['piksel', 'Piksel'], ['bilet', 'Bilet'], ['kumarhane', 'Kumarhane'], ['sade', 'Sade yazı'])
   },
@@ -430,6 +451,8 @@ const PATH_MAP: Record<string, string> = {
   polls: '/widgets/polls',
   'hype-train': '/widgets/hype-train',
   'pinned-messages': '/widgets/pinned',
+  'social-rotator': '/widgets/socials',
+  'sponsor-banner': '/widgets/sponsor',
   'end-credits': '/widgets/credits',
   'wheel-of-fortune': '/widgets/wheel',
   'trivia-quiz': '/widgets/trivia',
@@ -662,6 +685,8 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
       {ayarId === 'alert-box' && <UyariOlayMedyasi />}
       {/* Widget'a özel kontroller: galeri penceresinde ve Tek URL stüdyosunda aynı yerde */}
       {ayarId === 'pinned-messages' && <SabitMesajPaneli />}
+      {ayarId === 'social-rotator' && <SosyalHesapPaneli values={values} degistir={(p) => setValues((v) => ({ ...v, ...p }))} />}
+      {ayarId === 'sponsor-banner' && <SponsorPaneli values={values} degistir={(p) => setValues((v) => ({ ...v, ...p }))} />}
       {ayarId === 'word-cloud' && <SohbetIstatistikPaneli />}
       {ayarId === 'scoreboard' && <SkorTablosuPaneli />}
       {ayarId === 'wheel-of-fortune' && <CarkPaneli values={values} degistir={(p) => setValues((v) => ({ ...v, ...p }))} />}

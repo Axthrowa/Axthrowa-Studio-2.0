@@ -101,6 +101,9 @@ export const CHAT_DEFAULTS = {
   showBadges: true,
   showTimestamp: true,
   showAvatars: true,
+  avatarSize: 0, // 0: yazı boyutuna göre
+  avatarShape: 'circle',
+  avatarFallback: false,
   highlightSpecial: true,
   // Kapalı: iletiler 17 sn sonra kayboluyor, OBS'te sohbet çoğu zaman boş görünüyordu.
   // Eskiler "en fazla mesaj" sınırıyla düşer.
@@ -586,6 +589,50 @@ export const PINNED_DEFAULTS = {
   autoHideSeconds: 0
 };
 
+/** Dönen sosyal medya: hesap listesi panelde düzenlenir. */
+export const SOCIAL_ROTATOR_DEFAULTS = {
+  kabuk: '',
+  hesaplar: [] as Array<{ platform: string; kullanici: string }>,
+  itemSeconds: 6,
+  waitSeconds: 0,
+  animation: 'slideUp',
+  animationDuration: 450,
+  theme: 'kart',
+  position: 'bottom',
+  align: 'left',
+  fontFamily: 'Plus Jakarta Sans',
+  fontSize: 22,
+  iconSize: 44,
+  textColor: '#ffffff',
+  platformColors: true,
+  accentColor: '#22d3ee',
+  bgColor: '#0b0f14',
+  bgOpacity: 0.88,
+  radius: 14,
+  showPlatformName: true,
+  prefix: ''
+};
+
+/** Sponsor ve iş birliği: görsel, GIF, video listesi panelde düzenlenir. */
+export const SPONSOR_DEFAULTS = {
+  ogeler: [] as Array<{ url: string; tur?: 'image' | 'video'; sure?: number; metin?: string }>,
+  defaultSeconds: 10,
+  waitSeconds: 0,
+  animation: 'fade',
+  animationDuration: 500,
+  fit: 'contain',
+  radius: 12,
+  bgColor: '#000000',
+  bgOpacity: 0,
+  soundOn: false,
+  showCaption: true,
+  fontFamily: 'Plus Jakarta Sans',
+  fontSize: 18,
+  captionColor: '#ffffff',
+  captionBgColor: '#000000',
+  captionBgOpacity: 0.7
+};
+
 /** Shoutout — tema, süre, konfeti ve gösterilecek alanlar. */
 export const SHOUTOUT_DEFAULTS = {
   kabuk: '',
@@ -870,6 +917,8 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'word-cloud': WORD_CLOUD_DEFAULTS,
   scoreboard: SCOREBOARD_DEFAULTS,
   'pinned-messages': PINNED_DEFAULTS,
+  'social-rotator': SOCIAL_ROTATOR_DEFAULTS,
+  'sponsor-banner': SPONSOR_DEFAULTS,
   shoutout: SHOUTOUT_DEFAULTS,
   rankings: RANKINGS_DEFAULTS,
   'hype-train': HYPE_TRAIN_DEFAULTS,

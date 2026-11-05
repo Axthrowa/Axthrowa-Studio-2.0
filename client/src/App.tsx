@@ -59,6 +59,8 @@ const WordCloudWidget = lazy(() => import('./widgets/WordCloudWidget.js'));
 const ScoreboardWidget = lazy(() => import('./widgets/ScoreboardWidget.js'));
 const EndCreditsWidget = lazy(() => import('./widgets/EndCreditsWidget.js'));
 const PinnedMessageWidget = lazy(() => import('./widgets/PinnedMessageWidget.js'));
+const SosyalDonenWidget = lazy(() => import('./widgets/SosyalDonenWidget.js'));
+const SponsorWidget = lazy(() => import('./widgets/SponsorWidget.js'));
 const LoyaltyStoreWidget = lazy(() => import('./widgets/LoyaltyStoreWidget.js'));
 const LyricsWidget = lazy(() => import('./widgets/LyricsWidget.js'));
 const MuzikVideoWidget = lazy(() => import('./widgets/MuzikVideoWidget.js'));
@@ -118,6 +120,8 @@ export function App() {
   if (path === '/widgets/scoreboard') return obsSayfasi(<ScoreboardWidget />);
   if (path === '/widgets/credits') return obsSayfasi(<EndCreditsWidget />);
   if (path === '/widgets/pinned') return obsSayfasi(<PinnedMessageWidget />);
+  if (path === '/widgets/socials') return obsSayfasi(<SosyalDonenWidget />);
+  if (path === '/widgets/sponsor') return obsSayfasi(<SponsorWidget />);
   if (path === '/widgets/loyalty-redeem') return obsSayfasi(<LoyaltyStoreWidget />);
   if (path === '/widgets/lyrics') return obsSayfasi(<LyricsWidget />);
   if (path === '/widgets/muzik-video') return obsSayfasi(<MuzikVideoWidget />);

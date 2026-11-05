@@ -11,6 +11,18 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.10',
+    ad: 'Vitrin',
+    tarih: '2026-11-05',
+    notlar: [
+      'Canlı sohbette kullanıcı avatarları: panelde aç/kapat, boyut ve biçim; OBS sohbetinde ayrıca baş harf seçeneği',
+      'Yeni Dönen Sosyal Medya widgetı: eklediğin hesaplar sırayla döner',
+      'Yeni Sponsor ve İş Birliği widgetı: görsel, GIF veya video banner gösterir',
+      'Resonance: şarkı durunca veya bitince gizlenme ayarı artık çalışıyor',
+      'Resonance: yeni kapak biçimleri, yeni oynatıcı görünümleri ve kapak çevresinde ilerleme halkası',
+    ]
+  },
+  {
     surum: '1.13.9',
     ad: 'Net Görünüm',
     tarih: '2026-11-05',

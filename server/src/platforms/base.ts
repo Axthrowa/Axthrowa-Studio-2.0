@@ -27,6 +27,9 @@ export abstract class BasePlatform {
   abstract isConnected(): boolean;
   abstract getStatus(): PlatformStatus;
 
+  /** Sohbet mesajı avatar taşımayan platformlarda kullanıcının resmini bulur. */
+  avatarBul?(kullanici: string): Promise<string | null>;
+
   /**
    * Kullaniciya zaman asimi verir. Platform desteklemiyorsa TANIMSIZ birakilir;
    * hangi platformun ne yapabildigi `capabilities.ts` dosyasinda ilan edilir.

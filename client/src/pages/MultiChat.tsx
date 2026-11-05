@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { Send, Trash2, User, Smile, Frown, Meh, Save, X, ShieldAlert, Sparkles } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
+import { SohbetAvatari } from '../components/SohbetAvatari.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { yetenekleriGetir, type YetenekHaritasi } from '../lib/capabilities.js';
@@ -16,6 +17,10 @@ const KALKAN_ETIKETI: Record<'abone' | 'link' | 'caps' | 'emoji', string> = {
 type ElleEylem = 'timeout' | 'ban' | 'unban';
 
 const GECMIS_ACIK = { gecmis: true };
+
+/** Canlı Sohbet ayarı sunucuda durur: uygulama yeniden açılınca ve Studio içinde de korunur */
+const PANEL_SOHBET_AYARI = '/api/widgets/panel-sohbet/settings';
+const AVATAR_VARSAYILAN = { avatarGoster: true, avatarBoyut: 28, avatarBicim: 'circle' };
 const PLATFORM_ADI: Record<string, string> = { kick: 'Kick', twitch: 'Twitch', youtube: 'YouTube', trovo: 'Trovo' };
 
 type TemizlikSonucu = { ok: boolean; yontem?: string; silinen?: number; kalan?: number; hata?: string };
@@ -38,6 +43,14 @@ export function MultiChat() {
   const { connected, chatMessages, sendChat, clearChat, lastMessage } = useWebSocket('dashboard', GECMIS_ACIK);
   const [filter, setFilter] = useState<'all' | 'kick' | 'twitch' | 'youtube' | 'trovo' | 'tiktok' | 'discord'>('all');
   const [inputMessage, setInputMessage] = useState('');
+  const [avatarAyar, setAvatarAyar] = useState(AVATAR_VARSAYILAN);
+  useEffect(() => {
+    fetch(PANEL_SOHBET_AYARI).then((r) => r.json()).then((d) => setAvatarAyar((a) => ({ ...a, ...d }))).catch(() => {});
+  }, []);
+  const avatarYaz = (p: Partial<typeof AVATAR_VARSAYILAN>) => {
+    setAvatarAyar((a) => ({ ...a, ...p }));
+    void fetch(PANEL_SOHBET_AYARI, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).catch(() => {});
+  };
   const [targetPlatform, setTargetPlatform] = useState<string>('all');
   // Temizleme penceresi: null kapalı; platform listesi sunucudan gelir
   const [temizleListe, setTemizleListe] = useState<Array<{ id: string; bagli: boolean }> | null>(null);
@@ -269,7 +282,7 @@ export function MultiChat() {
 
   return (
     <div className="space-y-4 h-[calc(100vh-140px)] flex flex-col relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2">
             Birleşik Canlı Sohbet (Multi-Chat Dock)
@@ -279,7 +292,7 @@ export function MultiChat() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* One-Click Clear Chat Button */}
           <button
             onClick={() => void temizlemeyiAc()}
@@ -288,6 +301,27 @@ export function MultiChat() {
             <Trash2 className="w-3.5 h-3.5" />
             <span>Sohbeti Temizle</span>
           </button>
+
+          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 px-2 py-1 rounded-xl text-[11px] text-gray-200">
+            <label className="flex items-center gap-1.5 cursor-pointer font-bold">
+              <input type="checkbox" checked={avatarAyar.avatarGoster} onChange={(e) => avatarYaz({ avatarGoster: e.target.checked })} />
+              Avatarlar
+            </label>
+            {avatarAyar.avatarGoster && (
+              <>
+                <select aria-label="Avatar boyutu" value={avatarAyar.avatarBoyut} onChange={(e) => avatarYaz({ avatarBoyut: Number(e.target.value) })} className="bg-black/60 border border-white/10 rounded-lg px-1 py-0.5 text-white">
+                  <option value={20}>Küçük</option>
+                  <option value={28}>Orta</option>
+                  <option value={40}>Büyük</option>
+                </select>
+                <select aria-label="Avatar biçimi" value={avatarAyar.avatarBicim} onChange={(e) => avatarYaz({ avatarBicim: e.target.value })} className="bg-black/60 border border-white/10 rounded-lg px-1 py-0.5 text-white">
+                  <option value="circle">Daire</option>
+                  <option value="rounded">Yuvarlak köşe</option>
+                  <option value="square">Kare</option>
+                </select>
+              </>
+            )}
+          </div>
 
           {/* Filter Tabs */}
           <div className="flex items-center space-x-1.5 bg-black/40 border border-white/10 p-1 rounded-xl text-xs font-bold">
@@ -351,11 +385,16 @@ export function MultiChat() {
                       : undefined
                 }
               >
-                {msg.user.avatarUrl && (
-                  <img
-                    src={msg.user.avatarUrl}
-                    alt=""
-                    className="w-6 h-6 rounded-full mt-0.5 object-cover flex-shrink-0 cursor-pointer"
+                {avatarAyar.avatarGoster && (
+                  <SohbetAvatari
+                    platform={msg.platform}
+                    kullanici={msg.user.username}
+                    ad={msg.user.displayName || msg.user.username}
+                    url={msg.user.avatarUrl}
+                    boyut={avatarAyar.avatarBoyut}
+                    bicim={avatarAyar.avatarBicim}
+                    renk={getUserColor(msg.user.username, msg.user.color)}
+                    className="mt-0.5"
                     onClick={() => handleUserClick(msg.user, msg.platform)}
                   />
                 )}

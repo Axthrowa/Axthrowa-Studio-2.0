@@ -11,13 +11,14 @@ import { Slider } from '../../components/ui/Slider'
 import { NowPlayingWidget, PALETLER } from '../../components/widget/NowPlayingWidget'
 import { Lyrics, SOZ_TEMALARI } from '../../components/widget/Lyrics'
 import { TransportBar } from '../../components/widget/TransportBar'
-import { SquarePreview, VinylPreview, NonePreview } from '../../components/widget/SkinPreviews'
+import { CdPreview, CirclePreview, DiscPreview, HexagonPreview, PolaroidPreview, SquarePreview, VinylPreview, NonePreview } from '../../components/widget/SkinPreviews'
 import { SKIN_REGISTRY } from '../../components/widget/skins'
 import { HowToUse } from '../../components/widget/HowToUse'
 import {
   MAX_CORNER_RADIUS,
   MIN_CORNER_RADIUS,
   effectiveCover,
+  halkaDestekli,
   isCoverSupported,
   normalizeCoverShape,
   resolveRadius,
@@ -35,7 +36,12 @@ import { isHostAvailable } from '../../lib/hostBridge'
 
 const COVERS = [
   { value: 'square', key: 'square', preview: <SquarePreview /> },
+  { value: 'circle', key: 'circle', preview: <CirclePreview /> },
+  { value: 'hexagon', key: 'hexagon', preview: <HexagonPreview /> },
+  { value: 'polaroid', key: 'polaroid', preview: <PolaroidPreview /> },
   { value: 'vinyl', key: 'vinyl', preview: <VinylPreview /> },
+  { value: 'disc', key: 'disc', preview: <DiscPreview /> },
+  { value: 'cd', key: 'cd', preview: <CdPreview /> },
   { value: 'none', key: 'none', preview: <NonePreview /> },
 ]
 
@@ -337,7 +343,7 @@ export default function Pulse() {
         <div className="mt-5">
           <SubLabel>{t('pulse.coverAppearance')}</SubLabel>
           <OptionGrid
-            columns={3}
+            columns={4}
             value={normalizeCoverShape(config.cover)}
             onChange={(v) => set({ cover: v })}
             options={COVER_OPTIONS}
@@ -371,6 +377,14 @@ export default function Pulse() {
             checked={config.coverGlow}
             onChange={(v) => set({ coverGlow: v })}
           />
+          {halkaDestekli(config.skin, effectiveCover(config.skin, config.cover)) && (
+            <ToggleRow
+              title={t('pulse.coverRing')}
+              description={t('pulse.coverRingDesc')}
+              checked={config.coverRing === true}
+              onChange={(v) => set({ coverRing: v })}
+            />
+          )}
           <ToggleRow
             title={t('pulse.hideBackground')}
             description={t('pulse.hideBackgroundDesc')}

@@ -26,9 +26,12 @@ export function useWidgetVisibility(track, isPlaying, config, preview = false) {
   const pauseTimerRef = useRef(null)
   const songTimerRef = useRef(null)
   const lastTrackIdRef = useRef(null)
+  // Yoklama her saniye yeni parça nesnesi üretir: nesneye bağlanınca sayaç hiç dolmuyordu
+  const parcaVar = Boolean(track)
+  const parcaId = track?.id ?? null
 
   useEffect(() => {
-    if (preview || !config.hideOnPause || !track) {
+    if (preview || !config.hideOnPause || !parcaVar) {
       setHiddenByPause(false)
       return undefined
     }
@@ -39,23 +42,23 @@ export function useWidgetVisibility(track, isPlaying, config, preview = false) {
     const delayMs = pauseHideDelayMs(config)
     pauseTimerRef.current = setTimeout(() => setHiddenByPause(true), delayMs)
     return () => clearTimeout(pauseTimerRef.current)
-  }, [preview, config.hideOnPause, config.hideOnPauseDelay, isPlaying, track])
+  }, [preview, config.hideOnPause, config.hideOnPauseDelay, isPlaying, parcaVar])
 
   useEffect(() => {
-    if (preview || !config.songChangeOnly || !track) {
+    if (preview || !config.songChangeOnly || !parcaVar) {
       setHiddenBySongChange(false)
-      lastTrackIdRef.current = track?.id ?? null
+      lastTrackIdRef.current = parcaId
       return undefined
     }
-    if (track.id !== lastTrackIdRef.current) {
-      lastTrackIdRef.current = track.id
+    if (parcaId !== lastTrackIdRef.current) {
+      lastTrackIdRef.current = parcaId
       setHiddenBySongChange(false)
       clearTimeout(songTimerRef.current)
       const durationMs = (Number(config.songChangeVisibleDuration) || 0) * 1000
       songTimerRef.current = setTimeout(() => setHiddenBySongChange(true), durationMs)
     }
     return () => clearTimeout(songTimerRef.current)
-  }, [preview, config.songChangeOnly, config.songChangeVisibleDuration, track])
+  }, [preview, config.songChangeOnly, config.songChangeVisibleDuration, parcaVar, parcaId])
 
   if (preview) return true
   if (!track) return config.showNothingPlaying === true

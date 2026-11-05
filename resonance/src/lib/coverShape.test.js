@@ -82,7 +82,7 @@ describe('skin başına kapak desteği', () => {
     expect(SKIN_COVER_SUPPORT.minimal).toEqual([])
   })
   it('halka skini kare (yuvarlak fotoğraf) ve plağı destekler, "yok"u kareye çevirir', () => {
-    expect(SKIN_COVER_SUPPORT.ring).toEqual(['square', 'vinyl'])
+    expect(SKIN_COVER_SUPPORT.ring).toEqual(['square', 'vinyl', 'disc', 'cd'])
     expect(effectiveCover('ring', 'vinyl')).toBe('vinyl')
     expect(effectiveCover('ring', 'square')).toBe('square')
     expect(effectiveCover('ring', 'none')).toBe('square')

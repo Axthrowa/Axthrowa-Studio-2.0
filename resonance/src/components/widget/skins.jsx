@@ -24,6 +24,12 @@ import {
   GameboyPreview,
   HudPreview,
   StickyPreview,
+  NeonPreview,
+  WavePreview,
+  PosterPreview,
+  TerminalPreview,
+  LcdPreview,
+  TicketPreview,
 } from './SkinPreviews'
 
 /**
@@ -102,7 +108,7 @@ function Boxy(p) {
 
 function Gallery(p) {
   const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, mutedColor, coverProps, blurProps } = p
-  const vinyl = coverProps.shape === 'vinyl'
+  const vinyl = coverProps.shape !== 'square'
   return (
     <SkinCard className="w-[var(--kart-genislik,16rem)] rounded-2xl shadow-2xl" background={shellBg} {...blurProps} allowGlow={false}>
       <div className={`relative ${vinyl ? 'flex justify-center p-3' : ''}`}>
@@ -309,7 +315,7 @@ function Ring(p) {
   const pr = clamp01(progress)
   const { circ, offset } = ringDash(r, pr)
   const inner = size - stroke * 2 - 6
-  const vinyl = coverProps.shape === 'vinyl'
+  const vinyl = coverProps.shape !== 'square'
   const cx = size / 2
   // İşaret, döndürülmüş grubun içinde çizilir (bkz. ringGeometry.js).
   const head = ringHead(cx, r, pr)
@@ -353,7 +359,7 @@ function Ring(p) {
             style={{ inset: stroke + 3, width: inner, height: inner }}
           >
             {vinyl ? (
-              <Cover {...coverProps} shape="vinyl" size={inner} />
+              <Cover {...coverProps} size={inner} />
             ) : track.cover ? (
               <img
                 src={track.cover}
@@ -483,7 +489,7 @@ function Turntable(p) {
       <div className="flex items-center gap-3">
         <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
           <div className="absolute left-1 top-1">
-            <Cover {...coverProps} shape="vinyl" size={92} />
+            <Cover {...coverProps} size={92} />
           </div>
           <div
             aria-hidden
@@ -725,6 +731,146 @@ function Sticky(p) {
   )
 }
 
+/** Neon: vurgu renginde ışıyan çerçeve */
+function Neon(p) {
+  const { track, isPlaying, progress, progressMs, durationMs, config, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
+  return (
+    <SkinCard
+      className="w-[var(--kart-genislik,24rem)] max-w-none rounded-2xl border p-3"
+      background={shellBg}
+      {...blurProps}
+      allowGlow
+      keepBorder
+      style={{ borderColor: accent, boxShadow: `0 0 14px ${withAlpha(accent, 0.7)}, inset 0 0 14px ${withAlpha(accent, 0.22)}` }}
+    >
+      <div className="flex items-center gap-3">
+        <Cover {...coverProps} size={64} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold" style={{ color: textColor, textShadow: `0 0 8px ${withAlpha(accent, 0.9)}` }}>
+            <Kayan metin={track.name} />
+          </p>
+          <p className="truncate text-xs" style={{ color: mutedColor }}><Kayan metin={track.artists} album /></p>
+          <div className="mt-2 flex items-center gap-2.5">
+            <div className="min-w-0 flex-1">
+              <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} />
+            </div>
+            {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+          </div>
+        </div>
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Her çubuğun yüksekliği (%). Sabit desen: gerçek ses verisi yok, ilerlemeyi gösterir. */
+const DALGA = Array.from({ length: 44 }, (_, i) =>
+  Math.round(30 + 70 * Math.abs(Math.sin(i * 0.7) * Math.cos(i * 0.23))),
+)
+
+/** Dalga: ilerleme, ses dalgası biçiminde dolar */
+function Wave(p) {
+  const { track, progress, progressMs, durationMs, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,26rem)] max-w-none rounded-2xl border border-white/10 p-3 shadow-xl" background={shellBg} {...blurProps}>
+      <div className="flex items-center gap-3">
+        <Cover {...coverProps} size={48} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold" style={{ color: textColor }}><Kayan metin={track.name} /></p>
+          <p className="truncate text-xs" style={{ color: mutedColor }}><Kayan metin={track.artists} album /></p>
+        </div>
+        {durationMs > 0 && (
+          <span className="shrink-0 text-[11px]" style={{ ...TIME_TEXT, color: mutedColor }}>{clock(progressMs)} / {clock(durationMs)}</span>
+        )}
+      </div>
+      <div aria-hidden className="mt-2.5 flex h-8 items-center justify-between">
+        {DALGA.map((yukseklik, i) => (
+          <span
+            key={i}
+            data-dalga={i / DALGA.length < progress ? 'dolu' : 'bos'}
+            className="w-[3px] rounded-full"
+            style={{ height: `${yukseklik}%`, background: i / DALGA.length < progress ? accent : withAlpha('#ffffff', 0.22) }}
+          />
+        ))}
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Afiş: üstte büyük kapak, altta ortalı yazı */
+function Poster(p) {
+  const { track, progress, progressMs, durationMs, accent, shellBg, textColor, mutedColor, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,13rem)] max-w-none rounded-2xl border border-white/10 p-3 shadow-xl" background={shellBg} {...blurProps} allowGlow={Boolean(coverProps.glow)}>
+      <div className="flex justify-center"><Cover {...coverProps} size={168} /></div>
+      <div className="mt-3 text-center">
+        <p className="truncate text-base font-bold leading-tight" style={{ color: textColor }}><Kayan metin={track.name} /></p>
+        <p className="truncate text-xs" style={{ color: mutedColor }}><Kayan metin={track.artists} album /></p>
+      </div>
+      <div className="mt-2">
+        <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} times={false} />
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Terminal: komut satırı görünümü, ilerleme karakterlerle */
+function Terminal(p) {
+  const { track, isPlaying, progress, progressMs, durationMs, accent } = p
+  const dolu = Math.round(clamp01(progress) * 20)
+  return (
+    <div className="w-[var(--kart-genislik,24rem)] max-w-none rounded-lg border border-white/15 bg-[#0b0f14] p-3 font-mono text-xs shadow-xl" style={{ color: '#d1d5db' }}>
+      <p style={{ color: accent }}>$ {isPlaying ? 'now-playing' : 'paused'}</p>
+      <p className="mt-1 truncate font-bold text-white"><Kayan metin={track.name} /></p>
+      <p className="truncate opacity-75"><Kayan metin={track.artists} album /></p>
+      <p className="mt-1 truncate" style={{ color: accent }}>
+        [{'#'.repeat(dolu)}{'-'.repeat(20 - dolu)}]{durationMs > 0 ? ` ${clock(progressMs)}/${clock(durationMs)}` : ''}
+      </p>
+    </div>
+  )
+}
+
+/** CD çalar: dönen disk ve yeşil ekran */
+function Lcd(p) {
+  const { track, isPlaying, progressMs, durationMs, shellBg, coverProps, blurProps } = p
+  return (
+    <SkinCard className="w-[var(--kart-genislik,24rem)] max-w-none rounded-xl border border-white/10 p-2.5 shadow-xl" background={shellBg} {...blurProps} allowGlow={Boolean(coverProps.glow)}>
+      <div className="flex items-center gap-3">
+        <Cover {...coverProps} size={68} />
+        <div className="min-w-0 flex-1 rounded-md px-2.5 py-1.5 font-mono" style={{ background: '#a7c957', color: '#14290f', boxShadow: 'inset 0 1px 4px rgba(0,0,0,.45)' }}>
+          <p className="truncate text-sm font-bold leading-tight"><Kayan metin={track.name} /></p>
+          <p className="truncate text-[11px] leading-tight"><Kayan metin={track.artists} album /></p>
+          <p className="mt-0.5 flex justify-between text-[11px] font-bold leading-tight" style={TIME_TEXT}>
+            <span>{isPlaying ? 'PLAY' : 'PAUSE'}</span>
+            {durationMs > 0 && <span>{clock(progressMs)} / {clock(durationMs)}</span>}
+          </p>
+        </div>
+      </div>
+    </SkinCard>
+  )
+}
+
+/** Bilet: kesik çizgiyle ayrılmış koçan */
+function Ticket(p) {
+  const { track, progress, progressMs, durationMs, accent, coverProps } = p
+  return (
+    <div className="flex w-[var(--kart-genislik,24rem)] max-w-none overflow-hidden rounded-lg shadow-xl" style={{ background: '#fbf5e6', color: '#1f2937' }}>
+      {coverProps.shape !== 'none' && (
+        <div className="flex shrink-0 items-center justify-center border-r-2 border-dashed border-black/30 p-2.5" style={{ background: accent }}>
+          <Cover {...coverProps} size={60} />
+        </div>
+      )}
+      <div className="min-w-0 flex-1 p-2.5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Şimdi çalıyor</p>
+        <p className="truncate text-sm font-extrabold leading-tight"><Kayan metin={track.name} /></p>
+        <p className="truncate text-xs"><Kayan metin={track.artists} album /></p>
+        <div className="mt-1.5">
+          <ProgressBar progress={progress} color="#1f2937" height={2} progressMs={progressMs} durationMs={durationMs} times={false} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /**
  * `id`: yapılandırmada saklanan değer, `skins.<id>` çeviri anahtarı ve
  * `SKIN_COVER_SUPPORT` anahtarı — üçü hep aynı.
@@ -751,6 +897,12 @@ export const SKIN_REGISTRY = [
   { id: 'gameboy', Component: Gameboy, Preview: GameboyPreview, isNew: true },
   { id: 'hud', Component: Hud, Preview: HudPreview, isNew: true },
   { id: 'sticky', Component: Sticky, Preview: StickyPreview, isNew: true },
+  { id: 'neon', Component: Neon, Preview: NeonPreview, isNew: true },
+  { id: 'wave', Component: Wave, Preview: WavePreview, isNew: true },
+  { id: 'poster', Component: Poster, Preview: PosterPreview, isNew: true },
+  { id: 'terminal', Component: Terminal, Preview: TerminalPreview, isNew: true },
+  { id: 'lcd', Component: Lcd, Preview: LcdPreview, isNew: true },
+  { id: 'ticket', Component: Ticket, Preview: TicketPreview, isNew: true },
 ]
 
 export const DEFAULT_SKIN_ID = 'compact'

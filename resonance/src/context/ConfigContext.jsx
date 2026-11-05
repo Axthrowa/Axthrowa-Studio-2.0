@@ -22,6 +22,8 @@ export const DEFAULT_CONFIG = {
   skin: 'compact',
   cover: 'square',
   coverGlow: false,
+  /** Yuvarlak kapakların çevresine ilerleme halkası. */
+  coverRing: false,
   coverBlur: false,
   /** Skin arka planını (kabuk, degrade, bulanık kapak, gölge) gizle. */
   hideBackground: false,

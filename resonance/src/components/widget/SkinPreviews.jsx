@@ -175,6 +175,78 @@ export function StickyPreview() {
   return <div className="h-7 w-9 -rotate-3 bg-[#fcd34d]" />
 }
 
+export function NeonPreview() {
+  return <div className="h-6 w-12 rounded border border-white shadow-[0_0_6px_rgba(255,255,255,.9)]" />
+}
+
+export function WavePreview() {
+  return (
+    <div className="flex h-6 w-12 items-center justify-between">
+      {[3, 6, 4, 8, 5, 7, 3, 5].map((h, i) => (
+        <div key={i} className="w-[3px] rounded-full bg-white/70" style={{ height: h * 2 }} />
+      ))}
+    </div>
+  )
+}
+
+export function PosterPreview() {
+  return (
+    <div className="flex h-12 w-9 flex-col items-center gap-0.5 rounded-sm bg-white/15 p-0.5">
+      <div className={`${block} h-7 w-7`} />
+      <div className={`${block} h-1 w-6`} />
+    </div>
+  )
+}
+
+export function TerminalPreview() {
+  return <div className="h-7 w-12 rounded-sm bg-black p-1 font-mono text-[8px] leading-none text-white/80">&gt;_</div>
+}
+
+export function LcdPreview() {
+  return (
+    <div className="flex h-7 w-12 items-center gap-1 rounded-sm bg-white/15 p-0.5">
+      <div className="h-5 w-5 shrink-0 rounded-full bg-white/70" />
+      <div className="h-4 flex-1 rounded-sm bg-[#9bbc0f]" />
+    </div>
+  )
+}
+
+export function TicketPreview() {
+  return (
+    <div className="flex h-6 w-12 rounded-sm bg-white/70">
+      <div className="w-3 border-r border-dashed border-black/50" />
+    </div>
+  )
+}
+
+export function CirclePreview() {
+  return <div className="h-8 w-8 rounded-full bg-white/70" />
+}
+
+export function HexagonPreview() {
+  return <div className="h-8 w-8 bg-white/70" style={{ clipPath: 'polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)' }} />
+}
+
+export function PolaroidPreview() {
+  return (
+    <div className="h-8 w-8 -rotate-3 bg-white p-0.5 pb-1.5">
+      <div className="h-full w-full bg-black/40" />
+    </div>
+  )
+}
+
+export function DiscPreview() {
+  return <div className="h-8 w-8 rounded-full bg-white/70" style={{ background: 'repeating-radial-gradient(circle, rgba(255,255,255,.75) 0 2px, rgba(255,255,255,.4) 2px 4px)' }} />
+}
+
+export function CdPreview() {
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'conic-gradient(#e2e8f0, #7dd3fc, #e2e8f0, #f9a8d4, #e2e8f0)' }}>
+      <div className="h-2 w-2 rounded-full bg-[var(--color-surface-3)]" />
+    </div>
+  )
+}
+
 export function NonePreview() {
   return <X className="h-5 w-5 text-white/40" />
 }

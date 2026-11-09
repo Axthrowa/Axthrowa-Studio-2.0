@@ -10,7 +10,8 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "../../lib/cn";
 
-const CIKIS_MS = 200;
+// Çıkış animasyonu (index.css --hz-cikis 140ms) bitene kadar çizili kalır
+const CIKIS_MS = 150;
 
 type Props = {
   open: boolean;

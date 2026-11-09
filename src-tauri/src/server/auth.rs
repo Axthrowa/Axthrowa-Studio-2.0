@@ -57,15 +57,17 @@ pub fn is_public_path(path: &str) -> bool {
   if path.contains("/oauth/callback") || path.contains("/spotify/callback") {
     return true;
   }
-  // Statik paket (js/css) — SPA yüklenmesi için
-  if path.ends_with(".js")
+  // Statik paket (js/css) — SPA yüklenmesi için. `/api/` hariç: uzantı kuralı
+  // `/api/botaxt/integrations/x.png` gibi parametreli uçları Bearer'sız açıyordu.
+  if !path.starts_with("/api/")
+    && (path.ends_with(".js")
     || path.ends_with(".css")
     || path.ends_with(".map")
     || path.ends_with(".woff2")
     || path.ends_with(".png")
     || path.ends_with(".svg")
     || path.ends_with(".ico")
-    || path.ends_with(".webp")
+    || path.ends_with(".webp"))
   {
     return true;
   }
@@ -147,7 +149,16 @@ pub fn resolve_bind_host(state: &AppState) -> [u8; 4] {
 
 #[cfg(test)]
 mod tests {
-  use super::perm_checked_path;
+  use super::{is_public_path, perm_checked_path};
+
+  #[test]
+  fn api_ucu_uzantiyla_herkese_acilmaz() {
+    assert!(!is_public_path("/api/botaxt/integrations/x.png"));
+    assert!(!is_public_path("/api/botaxt/widgets/a.js"));
+    assert!(is_public_path("/assets/index-abc.js"));
+    assert!(is_public_path("/logo.png"));
+    assert!(is_public_path("/api/kick/oauth/callback"));
+  }
 
   #[test]
   fn kisitli_kullanici_denetimsiz_uca_giremez() {

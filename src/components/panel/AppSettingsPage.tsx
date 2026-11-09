@@ -14,11 +14,12 @@ import {
   Monitor,
   Palette,
   Play,
+  SlidersHorizontal,
   Upload
 } from "lucide-react";
 import { useI18n } from "../../i18n";
 import type { MsgKey } from "../../i18n/messages";
-import type { AppPrefs, AppTheme } from "../../lib/appPrefs";
+import type { AppPrefs, AppTheme, Hareket, Kose, Yogunluk } from "../../lib/appPrefs";
 import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
 import { Switch } from "../axthrowa/switch";
 import { LisansFormu } from "../axthrowa/LisansEkrani";
@@ -44,6 +45,52 @@ const THEME_OPTS: { id: AppTheme; labelKey: MsgKey }[] = [
   { id: "light", labelKey: "settings.theme.light" },
   { id: "system", labelKey: "settings.theme.system" },
 ];
+
+const YOGUNLUK_OPTS: { id: Yogunluk; labelKey: MsgKey }[] = [
+  { id: "rahat", labelKey: "settings.density.rahat" },
+  { id: "siki", labelKey: "settings.density.siki" },
+];
+const KOSE_OPTS: { id: Kose; labelKey: MsgKey }[] = [
+  { id: "yuvarlak", labelKey: "settings.corners.yuvarlak" },
+  { id: "az", labelKey: "settings.corners.az" },
+  { id: "keskin", labelKey: "settings.corners.keskin" },
+];
+const HAREKET_OPTS: { id: Hareket; labelKey: MsgKey }[] = [
+  { id: "acik", labelKey: "settings.motion.acik" },
+  { id: "azaltilmis", labelKey: "settings.motion.azaltilmis" },
+  { id: "kapali", labelKey: "settings.motion.kapali" },
+  { id: "sistem", labelKey: "settings.motion.sistem" },
+];
+
+const secimDugmesi = (on: boolean) =>
+  cn(
+    "rounded-xl border px-3.5 py-3 text-xs md:text-sm font-bold transition-all active:scale-95",
+    on
+      ? "border-panel-accent/60 bg-panel-accent/15 text-panel-accent shadow-glow-sm"
+      : "border-white/[0.08] bg-black/30 text-white/75 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
+  );
+
+/** Etiketli düğme grubu (tek seçim) */
+function SecimGrubu<T extends string>({ baslik, secenekler, deger, onSec, t }: {
+  baslik: string;
+  secenekler: { id: T; labelKey: MsgKey }[];
+  deger: T;
+  onSec: (id: T) => void;
+  t: (k: MsgKey) => string;
+}) {
+  return (
+    <div role="group" aria-label={baslik} className="space-y-1.5">
+      <p className="text-xs font-semibold text-white/80">{baslik}</p>
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${secenekler.length}, minmax(0, 1fr))` }}>
+        {secenekler.map((o) => (
+          <button key={o.id} type="button" aria-pressed={deger === o.id} onClick={() => onSec(o.id)} className={secimDugmesi(deger === o.id)}>
+            {t(o.labelKey)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AppSettingsPage({
   prefs,
@@ -126,6 +173,7 @@ export default function AppSettingsPage({
         })}
       </div>
 
+      <div key={activeTab} className="yya-sayfa-gir">
       {activeTab === "general" && (
         // Geniş ekranda iki sütun: ayar blokları bölünmez, ayırıcı çizgiler sütunda gereksiz
         <div className="columns-1 gap-8 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass xl:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid [&>hr]:hidden xl:[&>hr]:hidden">
@@ -142,13 +190,9 @@ export default function AppSettingsPage({
                   <button
                     key={opt.id}
                     type="button"
+                    aria-pressed={on}
                     onClick={() => set({ theme: opt.id })}
-                    className={cn(
-                      "rounded-xl border px-3.5 py-3 text-xs md:text-sm font-bold transition-all active:scale-95",
-                      on
-                        ? "border-panel-accent/60 bg-panel-accent/15 text-panel-accent shadow-glow-sm"
-                        : "border-white/[0.08] bg-black/30 text-white/75 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
-                    )}
+                    className={secimDugmesi(on)}
                   >
                     {t(opt.labelKey)}
                   </button>
@@ -160,16 +204,18 @@ export default function AppSettingsPage({
           {/* Skin Selection */}
           <div className="space-y-2.5">
             <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">Görünüm stili</p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            {skin === "gun-isigi" ? <p className="text-xs text-white/75">{t("settings.skinLightHint")}</p> : null}
+            <div className="yya-liste-gir grid gap-2 sm:grid-cols-2">
               {skins.map((s) => {
                 const on = skin === s.id;
                 return (
                   <button
                     key={s.id}
                     type="button"
+                    aria-pressed={on}
                     onClick={() => setSkin(s.id as StudioSkin)}
                     className={cn(
-                      "flex w-full items-center gap-3.5 rounded-xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.99]",
+                      "yya-kalk flex w-full items-center gap-3.5 rounded-xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.99]",
                       on
                         ? "border-panel-accent/60 bg-panel-accent/[0.12] shadow-glow-sm"
                         : "border-white/[0.07] bg-black/30 hover:border-white/[0.12] hover:bg-black/50"
@@ -196,6 +242,18 @@ export default function AppSettingsPage({
                 );
               })}
             </div>
+          </div>
+
+          {/* Arayüz: yoğunluk, köşeler, animasyonlar */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+              <SlidersHorizontal className="size-4 text-panel-accent" />
+              <span>{t("settings.ui")}</span>
+            </div>
+            <SecimGrubu baslik={t("settings.density")} secenekler={YOGUNLUK_OPTS} deger={prefs.yogunluk} onSec={(yogunluk) => set({ yogunluk })} t={t} />
+            <SecimGrubu baslik={t("settings.corners")} secenekler={KOSE_OPTS} deger={prefs.kose} onSec={(kose) => set({ kose })} t={t} />
+            <SecimGrubu baslik={t("settings.motion")} secenekler={HAREKET_OPTS} deger={prefs.hareket} onSec={(hareket) => set({ hareket })} t={t} />
+            <p className="text-xs text-white/75">{t("settings.motionHint")}</p>
           </div>
 
           {/* Language Selection */}
@@ -443,6 +501,7 @@ export default function AppSettingsPage({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

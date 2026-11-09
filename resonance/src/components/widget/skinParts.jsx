@@ -93,7 +93,7 @@ export function ProgressBar({
 }) {
   // Süre bilinmiyorsa (bazı kaynaklar vermiyor) sayı göstermiyoruz —
   // "0:00 / 0:00" yazmak bilgi değil, gürültü.
-  const { kalanSure } = useContext(GorunumBaglami)
+  const { kalanSure, zamanDalgasi, oynuyor } = useContext(GorunumBaglami)
   const showTimes = times && Number(durationMs) > 0
   const pct = Math.min(1, Math.max(0, Number(progress) || 0)) * 100
   return (
@@ -117,10 +117,36 @@ export function ProgressBar({
           style={{ ...TIME_TEXT, color: timeColor || 'currentColor' }}
         >
           <span>{clock(progressMs)}</span>
+          {zamanDalgasi && <ZamanDalgasi renk={color} oynuyor={oynuyor} />}
           <span>{kalanSure ? `-${clock(Number(durationMs) - Number(progressMs))}` : clock(durationMs)}</span>
         </div>
       )}
     </div>
+  )
+}
+
+/** İki süre etiketi arasındaki ses dalgası: çalarken dalgalanır, durunca alçak ve soluk kalır */
+const DALGA_BOYLARI = [0.35, 0.7, 0.5, 1, 0.6, 0.85, 0.4, 0.95, 0.55, 0.75, 0.45, 0.9, 0.6, 0.8, 0.4, 0.65]
+
+export function ZamanDalgasi({ renk, oynuyor }) {
+  return (
+    <span data-zaman-dalgasi className="flex min-w-0 flex-1 items-center justify-center gap-[2px] overflow-hidden" style={{ height: 11 }} aria-hidden>
+      {DALGA_BOYLARI.map((boy, i) => (
+        <span
+          key={i}
+          className="w-[2px] shrink-0 rounded-full"
+          style={{
+            height: '100%',
+            background: renk || 'currentColor',
+            transform: `scaleY(${oynuyor ? boy : 0.2})`,
+            opacity: oynuyor ? 0.85 : 0.35,
+            animation: oynuyor ? `resonance-zaman-dalga ${0.7 + (i % 4) * 0.15}s ease-in-out ${(i * 0.07).toFixed(2)}s infinite alternate` : 'none',
+            '--dalga-boy': boy,
+          }}
+        />
+      ))}
+      <style>{`@keyframes resonance-zaman-dalga{from{transform:scaleY(calc(var(--dalga-boy) * .3))}to{transform:scaleY(var(--dalga-boy))}}`}</style>
+    </span>
   )
 }
 

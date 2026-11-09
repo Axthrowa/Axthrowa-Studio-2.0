@@ -2,6 +2,7 @@
  * BotAxt Global Tema Motoru — data-skin + CSS değişkenleri.
  * Temalar: Night Signal · Crimson Dragon · Cyber Neon · Aurora · Warm Sepia · Mono Contrast
  * (NVIDIA MCP ile renk/pattern yönü üretildi)
+ * + AxBoT panel temalarıyla aynı kimlik ve hisle: gece-mavisi · gun-isigi · neon-arcade · murekkep · gun-batimi · orman
  */
 
 import {
@@ -13,6 +14,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { applyThemeToDom, loadAppPrefs } from "../appPrefs";
 
 export type StudioSkin =
   | "night-signal"
@@ -20,7 +22,13 @@ export type StudioSkin =
   | "cyber-neon"
   | "aurora"
   | "warm-sepia"
-  | "mono-contrast";
+  | "mono-contrast"
+  | "gece-mavisi"
+  | "gun-isigi"
+  | "neon-arcade"
+  | "murekkep"
+  | "gun-batimi"
+  | "orman";
 
 export type SkinMeta = {
   id: StudioSkin;
@@ -66,6 +74,13 @@ export const STUDIO_SKINS: SkinMeta[] = [
     hint: "Siyah · beyaz · sarı (yüksek kontrast)",
     swatch: ["#000000", "#ffd400"],
   },
+  // AxBoT panel temalarıyla eşleşir (StreamAxT client/src/lib/panelTemalari.ts)
+  { id: "gece-mavisi", label: "Gece Mavisi", hint: "AxBoT · lacivert · buz mavisi", swatch: ["#0a0f1c", "#60a5fa"] },
+  { id: "gun-isigi", label: "Gün Işığı", hint: "AxBoT · açık tema · mor vurgu", swatch: ["#f4f5f8", "#7c3aed"] },
+  { id: "neon-arcade", label: "Neon Arcade", hint: "AxBoT · keskin köşe · pembe neon", swatch: ["#07060d", "#f472b6"] },
+  { id: "murekkep", label: "Mürekkep & Kağıt", hint: "AxBoT · tek renk · sepya", swatch: ["#0d0c0a", "#d6b892"] },
+  { id: "gun-batimi", label: "Gün Batımı", hint: "AxBoT · sıcak · yanık turuncu", swatch: ["#120b0d", "#fb923c"] },
+  { id: "orman", label: "Orman", hint: "AxBoT · yosun · yeşim", swatch: ["#08100c", "#4ade80"] },
 ];
 
 export const DEFAULT_SKIN: StudioSkin = "night-signal";
@@ -101,6 +116,8 @@ export function applySkinToDom(skin: StudioSkin) {
   const root = document.documentElement;
   root.dataset.skin = skin;
   for (const s of STUDIO_SKINS) root.classList.toggle(`skin-${s.id}`, s.id === skin);
+  // Açık zeminli skin açık/koyu sınıfını değiştirir; yalnız panel temayı yazdıysa (overlay sayfalarına dokunma)
+  if (root.dataset.theme) applyThemeToDom(loadAppPrefs().theme);
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

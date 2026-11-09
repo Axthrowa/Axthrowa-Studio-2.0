@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Save } from "lucide-react";
+import { MotionConfig } from "framer-motion";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
@@ -49,8 +50,10 @@ const CanliEkrani = lazy(() => import("../../components/control/CanliEkrani"));
 const ObsStudioPanel = lazy(() => import("../../components/panel/ObsStudioPanel"));
 import { en, tr, type MsgKey } from "../../i18n/messages";
 import {
+  applyArayuzToDom,
   applyThemeToDom,
   loadAppPrefs,
+  resolveHareket,
   saveAppPrefs,
   type AppPrefs,
 } from "../../lib/appPrefs";
@@ -213,6 +216,7 @@ export default function PanelPage() {
   const soundsTab = activeNav === "sounds";
   const hotkeysTab = activeNav === "hotkeys";
   const settingsTab = activeNav === "settings";
+  const sayfaDali = profileTab ? "profile" : controlTab ? "control" : yayinTab ? "yayin" : musicTab ? "music" : botTab ? "bot" : chatTab ? "chat" : soundsTab ? "sounds" : hotkeysTab ? "hotkeys" : settingsTab ? "settings" : "sahne";
 
   useEffect(() => {
     const sync = () => setSfxPads(loadSoundboard());
@@ -231,8 +235,24 @@ export default function PanelPage() {
 
   useEffect(() => {
     applyThemeToDom(prefs.theme);
+    applyArayuzToDom(prefs);
     saveAppPrefs(prefs);
   }, [prefs]);
+
+  // "Sistem" seçiliyken işletim sistemi tercihi değişirse hemen uygula
+  const [, sistemHareketDegisti] = useState(0);
+  useEffect(() => {
+    if (prefs.hareket !== "sistem") return;
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!mq) return;
+    const degisti = () => {
+      applyArayuzToDom(prefs);
+      sistemHareketDegisti((n) => n + 1);
+    };
+    mq.addEventListener("change", degisti);
+    return () => mq.removeEventListener("change", degisti);
+  }, [prefs]);
+  const hareket = resolveHareket(prefs.hareket);
 
   useEffect(() => {
     savePanelLayout(layout);
@@ -1623,7 +1643,7 @@ export default function PanelPage() {
   };
 
   return (
-    <>
+    <MotionConfig reducedMotion={hareket === "acik" ? "never" : "always"}>
       <CloseRequestModal />
     {/* Özel pencere başlığı (masaüstünde) + altında panel; panel kalan yüksekliği doldurur */}
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
@@ -1698,7 +1718,8 @@ export default function PanelPage() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* Sayfa geçişi: yalnız gösterilen dal değişince yeniden takılır; aynı daldaki sekmeler (Giriş/Çıkış/Mola) durumunu korur */}
+      <div key={sayfaDali} className="yya-sayfa-gir flex min-h-0 flex-1 flex-col">
       <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
       {profileTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4">
@@ -1846,7 +1867,7 @@ export default function PanelPage() {
     </div>
     <DurumCubugu port={durumPort} />
     </div>
-    </>
+    </MotionConfig>
   );
 }
 

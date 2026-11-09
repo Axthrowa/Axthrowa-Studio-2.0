@@ -38,6 +38,10 @@ pub fn normalize_slug(raw: &str) -> String {
     .unwrap_or(s)
     .trim()
     .to_lowercase()
+    // Kick adı yalnız harf/rakam/_/-: `\`, `%2f`, satır sonu URL'ye, curl'e ve günlüğe gitmesin
+    .chars()
+    .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+    .collect()
 }
 
 /// HTML/JSON gövdesinden chatroom id'sini kazı — API 403 verdiğinde son çare.
@@ -330,6 +334,8 @@ mod tests {
     assert_eq!(normalize_slug("kick.com/axthrowa/videos"), "axthrowa");
     assert_eq!(normalize_slug("axthrowa?tab=chat"), "axthrowa");
     assert_eq!(normalize_slug("   "), "");
+    assert_eq!(normalize_slug("my_name-1"), "my_name-1");
+    assert_eq!(normalize_slug("..\\..\\x%2f\nsahte"), "x2fsahte");
   }
 
   #[test]

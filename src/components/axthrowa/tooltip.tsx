@@ -9,7 +9,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
 
 const ACILMA_MS = 300;
-const CIKIS_MS = 200;
+const CIKIS_MS = 150; // index.css --hz-cikis (140ms) + pay
 
 const YER: Record<"top" | "bottom" | "left" | "right", string> = {
   top: "bottom-full left-1/2 mb-2 -translate-x-1/2",

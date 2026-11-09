@@ -70,7 +70,8 @@ pub fn aday_yollar(ozel: Option<&str>) -> Vec<PathBuf> {
   let mut out = Vec::new();
   if let Some(p) = ozel.map(str::trim).filter(|s| !s.is_empty()) {
     let p = PathBuf::from(p);
-    if obs_exe_mi(&p) {
+    // Ağ paylaşımı (`\\sunucu\pay\obs64.exe`) reddedilir: ayar/yedek ile uzaktan exe çalıştırılmasın
+    if obs_exe_mi(&p) && crate::media::yerel_disk_yolu(&p) {
       out.push(p);
     }
   }
@@ -445,5 +446,14 @@ mod tests {
     assert!(obs_exe_mi(Path::new(r"C:\x\obs64.exe")));
     assert!(!obs_exe_mi(Path::new(r"C:\Windows\System32\cmd.exe")));
     assert!(aday_yollar(Some(r"C:\Windows\System32\cmd.exe")).iter().all(|p| obs_exe_mi(p)));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn ag_paylasimindaki_obs_reddedilir() {
+    let unc = Path::new(r"\\saldirgan\pay\obs64.exe");
+    assert!(!aday_yollar(Some(r"\\saldirgan\pay\obs64.exe")).iter().any(|p| p == unc));
+    let yerel = Path::new(r"D:\OBS\bin\64bit\obs64.exe");
+    assert_eq!(aday_yollar(Some(r"D:\OBS\bin\64bit\obs64.exe")).first().map(|p| p.as_path()), Some(yerel));
   }
 }

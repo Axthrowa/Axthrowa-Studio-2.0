@@ -46,6 +46,13 @@ const THEMES: { id: string; pattern: RegExp; base?: string }[] = [
   { id: "warm-sepia", pattern: /:root\[data-skin="warm-sepia"\]\s*\{/, base: "night-signal" },
   { id: "mono-contrast", pattern: /:root\[data-skin="mono-contrast"\]\s*\{/, base: "night-signal" },
   { id: "light", pattern: /:root\.theme-light\s*\{/, base: "night-signal" },
+  // AxBoT panel temalarıyla eşleşenler
+  { id: "gece-mavisi", pattern: /:root\[data-skin="gece-mavisi"\]\s*\{/, base: "night-signal" },
+  { id: "neon-arcade", pattern: /:root\[data-skin="neon-arcade"\]\s*\{/, base: "night-signal" },
+  { id: "murekkep", pattern: /:root\[data-skin="murekkep"\]\s*\{/, base: "night-signal" },
+  { id: "gun-batimi", pattern: /:root\[data-skin="gun-batimi"\]\s*\{/, base: "night-signal" },
+  { id: "orman", pattern: /:root\[data-skin="orman"\]\s*\{/, base: "night-signal" },
+  { id: "gun-isigi", pattern: /:root\.theme-light\[data-skin="gun-isigi"\]\s*\{/, base: "light" },
 ];
 
 /** Skin'in etkin değişkenleri: taban tema + kendi geçersiz kılmaları. */
@@ -198,7 +205,7 @@ describe("skin listesi", () => {
 describe("okunabilirlik", () => {
   it("koyu temalarda %50 beyaz yazı bile AA eşiğini geçer", () => {
     // Bu yüzden kaynakta %50'nin altında `text-white/N` yasak (aşağıdaki test).
-    for (const id of ["night-signal", "crimson-dragon", "cyber-neon", "aurora", "warm-sepia", "mono-contrast"]) {
+    for (const id of ["night-signal", "crimson-dragon", "cyber-neon", "aurora", "warm-sepia", "mono-contrast", "gece-mavisi", "neon-arcade", "murekkep", "gun-batimi", "orman"]) {
       const v = effective(id);
       const bg = parseColor(v["--panel-bg"]);
       const fg = parseColor(v["--fg-rgb"]);
@@ -215,6 +222,30 @@ describe("okunabilirlik", () => {
     const karisim: RGB = [fg[0] * a + bg[0] * (1 - a), fg[1] * a + bg[1] * (1 - a), fg[2] * a + bg[2] * (1 - a)];
     expect(contrast(karisim, bg)).toBeGreaterThanOrEqual(4.5);
     expect(css).toContain(":root.theme-light .text-white\\/50");
+  });
+
+  it("Gün Işığı: %72 ikincil yazı beyaz kartta, koyu yazı dolgu vurgusunda AA'yı geçer", () => {
+    const v = effective("gun-isigi");
+    const kart = parseColor(v["--panel-card"]);
+    const fg = parseColor(v["--fg-rgb"]);
+    const a = 0.72;
+    const karisim: RGB = [fg[0] * a + kart[0] * (1 - a), fg[1] * a + kart[1] * (1 - a), fg[2] * a + kart[2] * (1 - a)];
+    expect(contrast(karisim, kart)).toBeGreaterThanOrEqual(4.5);
+    // Etkin sekme / birincil düğme: dolgu vurgusu üstünde #08131c yazı
+    expect(contrast(parseColor("#08131c"), parseColor(v["--accent-rgb"]))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(parseColor(v["--panel-cta-ink"]), parseColor(v["--panel-cta"]))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("koyu skinlerde vurgu yazı olarak ve dolgu üstündeki koyu yazı okunur", () => {
+    // `text-panel-accent` koyu temada --accent-rgb'yi yazı rengi olarak kullanıyor
+    for (const id of ["gece-mavisi", "neon-arcade", "murekkep", "gun-batimi", "orman"]) {
+      const v = effective(id);
+      const bg = parseColor(v["--panel-bg"]);
+      const vurgu = parseColor(v["--accent-rgb"]);
+      expect(contrast(vurgu, bg), id).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(parseColor(v["--panel-cta-ink"]), parseColor(v["--panel-cta"])), id).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(parseColor("#08131c"), vurgu), id).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("kaynakta %50'nin altında düz `text-white/N` kalmamış", () => {

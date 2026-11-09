@@ -57,16 +57,12 @@
     opacity: 0.55;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .dt-lamba[data-canli="true"] {
-    animation: none;
-  }
-  .dt-btn:active,
-  .dt-btn-primary:active,
-  .dt-btn-danger:active,
-  .dt-tool:active {
-    transform: none;
-  }
+/* İşletim sistemi bayrağı yerine Ayarlar › Animasyonlar (data-hareket; "Sistem" seçiliyse o bayrağa uyar) */
+:root:is([data-hareket="azaltilmis"], [data-hareket="kapali"]) .dt-lamba[data-canli="true"] {
+  animation: none;
+}
+:root:is([data-hareket="azaltilmis"], [data-hareket="kapali"]) :is(.dt-btn, .dt-btn-primary, .dt-btn-danger, .dt-tool):active {
+  transform: none;
 }
 
 /* ── Yuvalı panel ─────────────────────────────────────────── */
@@ -412,12 +408,8 @@
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .dt-btn,
-  .dt-btn-primary,
-  .dt-btn-danger {
-    transition: none;
-  }
+:root[data-hareket="kapali"] :is(.dt-btn, .dt-btn-primary, .dt-btn-danger) {
+  transition: none;
 }
 
 /* ── Sekme şeridi (ayar/yönetici pencereleri) ── */

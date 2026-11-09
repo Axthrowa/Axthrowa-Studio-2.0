@@ -186,6 +186,141 @@ html {
   --eyebrow-color: #ffd400;
 }
 
+/* ---------------------------------------------------------------------------
+   AxBoT panel temalarıyla eşleşen skinler (aynı kimlik, aynı zemin/yüzey tonları).
+   Bot tarafındaki vurgu dolgu rengidir; burada `text-panel-accent` vurguyu yazı
+   olarak da kullandığı için koyu zeminde okunan açık tonu seçildi.
+--------------------------------------------------------------------------- */
+:root[data-skin="gece-mavisi"] {
+  --panel-bg: #0a0f1c;
+  --panel-bg-deep: #070b15;
+  --panel-card: #101829;
+  --panel-elevated: #16213a;
+  --panel-border: #1f2c47;
+  --panel-accent: #60a5fa;
+  --panel-accent-strong: #93c5fd;
+  --panel-accent-glow: rgba(96, 165, 250, 0.2);
+  --panel-cta: #60a5fa;
+  --panel-cta-ink: #06122a;
+  --panel-muted: #a9b8cf;
+  --panel-soft: rgba(96, 165, 250, 0.12);
+  --panel-glow-a: rgba(59, 130, 246, 0.14);
+  --panel-glow-b: transparent;
+  --panel-pattern: transparent;
+  --panel-glass: rgba(16, 24, 41, 0.85);
+  --panel-glass-border: rgba(147, 197, 253, 0.16);
+  --skin-pattern-opacity: 0;
+  --accent: #60a5fa;
+  --fg-rgb: 236 241 248;
+  --accent-rgb: 96 165 250;
+  --accent-text-rgb: 147 197 253;
+  --eyebrow-color: #93c5fd;
+}
+
+:root[data-skin="neon-arcade"] {
+  --panel-bg: #07060d;
+  --panel-bg-deep: #040308;
+  --panel-card: #0f0c1a;
+  --panel-elevated: #171228;
+  --panel-border: #2c2042;
+  --panel-accent: #f472b6;
+  --panel-accent-strong: #22d3ee;
+  --panel-accent-glow: rgba(236, 72, 153, 0.3);
+  --panel-cta: #f472b6;
+  --panel-cta-ink: #1a0514;
+  --panel-muted: #b6aecf;
+  --panel-soft: rgba(244, 114, 182, 0.12);
+  --panel-glow-a: rgba(236, 72, 153, 0.14);
+  --panel-glow-b: rgba(34, 211, 238, 0.1);
+  --panel-pattern: transparent;
+  --panel-glass: rgba(15, 12, 26, 0.85);
+  --panel-glass-border: rgba(236, 72, 153, 0.2);
+  --skin-pattern-opacity: 0;
+  --accent: #f472b6;
+  --fg-rgb: 238 236 246;
+  --accent-rgb: 244 114 182;
+  --accent-text-rgb: 249 168 212;
+  --eyebrow-color: #22d3ee;
+}
+
+:root[data-skin="murekkep"] {
+  --panel-bg: #0d0c0a;
+  --panel-bg-deep: #080706;
+  --panel-card: #161512;
+  --panel-elevated: #1e1c18;
+  --panel-border: #2e2b25;
+  --panel-accent: #d6b892;
+  --panel-accent-strong: #f4eee3;
+  --panel-accent-glow: rgba(214, 184, 146, 0.16);
+  --panel-cta: #d6b892;
+  --panel-cta-ink: #1a140c;
+  --panel-muted: #b8b0a3;
+  --panel-soft: rgba(214, 184, 146, 0.1);
+  --panel-glow-a: transparent;
+  --panel-glow-b: transparent;
+  --panel-pattern: transparent;
+  --panel-glass: rgba(22, 21, 18, 0.9);
+  --panel-glass-border: rgba(244, 238, 227, 0.08);
+  --skin-pattern-opacity: 0;
+  --accent: #d6b892;
+  --fg-rgb: 242 238 231;
+  --accent-rgb: 214 184 146;
+  --accent-text-rgb: 226 204 172;
+  --eyebrow-color: #d6b892;
+}
+
+:root[data-skin="gun-batimi"] {
+  --panel-bg: #120b0d;
+  --panel-bg-deep: #0b0608;
+  --panel-card: #1b1215;
+  --panel-elevated: #25181c;
+  --panel-border: #3a2429;
+  --panel-accent: #fb923c;
+  --panel-accent-strong: #fdba74;
+  --panel-accent-glow: rgba(251, 146, 60, 0.2);
+  --panel-cta: #fb923c;
+  --panel-cta-ink: #2a0e02;
+  --panel-muted: #c8b2af;
+  --panel-soft: rgba(251, 146, 60, 0.12);
+  --panel-glow-a: rgba(251, 146, 60, 0.16);
+  --panel-glow-b: rgba(219, 39, 119, 0.12);
+  --panel-pattern: transparent;
+  --panel-glass: rgba(27, 18, 21, 0.85);
+  --panel-glass-border: rgba(253, 186, 116, 0.16);
+  --skin-pattern-opacity: 0;
+  --accent: #fb923c;
+  --fg-rgb: 244 236 235;
+  --accent-rgb: 251 146 60;
+  --accent-text-rgb: 253 186 116;
+  --eyebrow-color: #fdba74;
+}
+
+:root[data-skin="orman"] {
+  --panel-bg: #08100c;
+  --panel-bg-deep: #050a07;
+  --panel-card: #0e1812;
+  --panel-elevated: #142219;
+  --panel-border: #213628;
+  --panel-accent: #4ade80;
+  --panel-accent-strong: #86efac;
+  --panel-accent-glow: rgba(74, 222, 128, 0.18);
+  --panel-cta: #4ade80;
+  --panel-cta-ink: #03200f;
+  --panel-muted: #a9c0b3;
+  --panel-soft: rgba(74, 222, 128, 0.1);
+  --panel-glow-a: rgba(34, 197, 94, 0.09);
+  --panel-glow-b: transparent;
+  --panel-pattern: transparent;
+  --panel-glass: rgba(14, 24, 18, 0.88);
+  --panel-glass-border: rgba(134, 239, 172, 0.12);
+  --skin-pattern-opacity: 0;
+  --accent: #4ade80;
+  --fg-rgb: 234 241 237;
+  --accent-rgb: 74 222 128;
+  --accent-text-rgb: 134 239 172;
+  --eyebrow-color: #86efac;
+}
+
 html,
 body,
 #root {
@@ -657,7 +792,8 @@ html.theme-light .studio-nav-hint {
   color: #5b6b7f !important;
 }
 html.theme-light .studio-nav-btn-active .studio-nav-label {
-  color: var(--panel-accent) !important;
+  /* Parlak dolgu vurgusu beyaz zeminde ~1.3:1 kalıyordu; yazı vurgusu AA'yı geçer */
+  color: rgb(var(--accent-text-rgb)) !important;
 }
 html.theme-light select,
 html.theme-light select option,
@@ -738,3 +874,214 @@ html.obs-transparent body.panel-app {
 .panel-shell aside [class*="border-b"][class*="border-panel-border"] {
   border-color: rgb(var(--fg-rgb) / 0.05) !important;
 }
+
+/* Gün Işığı — AxBoT'un açık teması. Yalnız açık temayla birlikte geçerli
+   (skin seçilince `theme-light` sınıfı da konur); özgüllük (0,3,0) ve sıra
+   `:root.theme-light` bloğunun üstüne yazar. */
+:root.theme-light[data-skin="gun-isigi"] {
+  --panel-bg: #f4f5f8;
+  --panel-bg-deep: #eceef3;
+  --panel-card: #ffffff;
+  --panel-elevated: #f7f8fb;
+  --panel-border: #d5d9e3;
+  /* Dolgu vurgusu açık mor (üstünde koyu yazı okunur), yazı vurgusu koyu mor */
+  --panel-accent: #a78bfa;
+  --panel-accent-strong: #8b5cf6;
+  --panel-accent-glow: rgba(139, 92, 246, 0.18);
+  --panel-cta: #6d28d9;
+  --panel-cta-ink: #ffffff;
+  --panel-muted: #4b5563;
+  --panel-soft: rgba(139, 92, 246, 0.1);
+  --panel-glow-a: rgba(139, 92, 246, 0.08);
+  --panel-glow-b: transparent;
+  --panel-pattern: transparent;
+  --panel-glass: rgba(255, 255, 255, 0.85);
+  --panel-glass-border: rgba(31, 40, 57, 0.08);
+  --accent: #a78bfa;
+  --fg-rgb: 31 40 57;
+  --accent-rgb: 167 139 250;
+  --accent-text-rgb: 109 40 217;
+}
+
+/* Skin atmosferi — AxBoT temalarındaki dokunun aynısı (zemin ışıltısı, tarama çizgisi, gren) */
+:root[data-skin="gece-mavisi"] .panel-shell {
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgb(59 130 246 / 0.14), transparent 70%), var(--panel-bg);
+}
+:root[data-skin="neon-arcade"] .panel-shell {
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.018) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(236 72 153 / 0.14), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgb(34 211 238 / 0.1), transparent 70%),
+    var(--panel-bg);
+}
+:root[data-skin="murekkep"] .panel-shell {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"), var(--panel-bg);
+}
+:root[data-skin="gun-batimi"] .panel-shell {
+  background:
+    radial-gradient(ellipse 70% 45% at 85% -5%, rgb(251 146 60 / 0.16), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 0% 0%, rgb(219 39 119 / 0.12), transparent 70%),
+    var(--panel-bg);
+}
+:root[data-skin="orman"] .panel-shell {
+  background: radial-gradient(ellipse 60% 50% at 0% 100%, rgb(34 197 94 / 0.09), transparent 70%), var(--panel-bg);
+}
+:root.theme-light[data-skin="gun-isigi"] .panel-shell {
+  background: radial-gradient(ellipse 70% 40% at 50% -10%, rgb(139 92 246 / 0.08), transparent 70%), var(--panel-bg);
+}
+
+/* ---------------------------------------------------------------------------
+   Odak halkası — klavyeyle gezinmede her zaman görünür. Yazı vurgusu her skinde
+   zemine karşı ≥ 4.5:1 (tema sözleşmesi), halka için gereken 3:1'in üstünde.
+   `outline-none` sınıfını da ezer (aynı özgüllük, sonra gelir).
+--------------------------------------------------------------------------- */
+:root {
+  --yya-odak: rgb(var(--accent-text-rgb));
+}
+:root :focus-visible {
+  outline: 2px solid var(--yya-odak);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Hareket — Ayarlar › Animasyonlar (`data-hareket`: acik | azaltilmis | kapali).
+   Varsayılan açık: işletim sisteminin "azaltılmış hareket" bayrağına yalnız
+   kullanıcı "Sistem"i seçerse uyulur (appPrefs.resolveHareket).
+   Yalnız transform/opacity; çıkış girişten kısa. Sahne önizlemesi
+   (`.obs-canvas-wrap`) yayın çıktısıdır, bu ayarlardan etkilenmez.
+--------------------------------------------------------------------------- */
+:root {
+  --hz-giris: 220ms;
+  --hz-cikis: 140ms;
+  --hz-hizli: 120ms;
+  --egri-giris: cubic-bezier(0.22, 1, 0.36, 1);
+  --egri-cikis: cubic-bezier(0.4, 0, 1, 1);
+  --hareket-mesafe: 6px;
+  --hover-kalk: -1px;
+  --basma: 0.97;
+}
+:root[data-hareket="azaltilmis"] {
+  /* Yer değiştirme yok, yalnız soluklaşma */
+  --hareket-mesafe: 0px;
+  --hover-kalk: 0px;
+  --basma: 1;
+}
+
+@keyframes yya-gir {
+  from {
+    opacity: 0;
+    translate: 0 var(--hareket-mesafe);
+  }
+}
+
+/* Sayfa / sekme geçişi: içerik değişince yeniden takılır (key). `backwards`:
+   bitince hiçbir değer kalmaz, sabit konumlu çocukların kapsayıcısı bozulmaz. */
+.yya-sayfa-gir {
+  animation: yya-gir var(--hz-giris) var(--egri-giris) backwards;
+}
+
+/* Liste öğeleri: sırayla, en çok 7 adım gecikme */
+.yya-liste-gir > * {
+  animation: yya-gir var(--hz-giris) var(--egri-giris) backwards;
+}
+.yya-liste-gir > :nth-child(2) { animation-delay: 30ms; }
+.yya-liste-gir > :nth-child(3) { animation-delay: 60ms; }
+.yya-liste-gir > :nth-child(4) { animation-delay: 90ms; }
+.yya-liste-gir > :nth-child(5) { animation-delay: 120ms; }
+.yya-liste-gir > :nth-child(6) { animation-delay: 150ms; }
+.yya-liste-gir > :nth-child(7) { animation-delay: 180ms; }
+.yya-liste-gir > :nth-child(n + 8) { animation-delay: 210ms; }
+
+/* Açılır pencere, ipucu, bildirim: giriş 220ms, çıkış 140ms */
+.animate-zoom-in,
+.animate-fade-in {
+  animation-duration: var(--hz-giris);
+}
+.animate-zoom-out,
+.animate-fade-out {
+  animation-duration: var(--hz-cikis);
+  animation-timing-function: var(--egri-cikis);
+}
+:root[data-hareket="azaltilmis"] .animate-zoom-in {
+  animation-name: fade-in;
+}
+:root[data-hareket="azaltilmis"] .animate-zoom-out {
+  animation-name: fade-out;
+}
+@keyframes yya-modal-gir {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+.dt-modal {
+  animation: yya-modal-gir var(--hz-giris) var(--egri-giris) backwards;
+}
+:root[data-hareket="azaltilmis"] .dt-modal {
+  animation-name: fade-in;
+}
+
+/* Düğme basma ve kart kalkışı: `scale` / `translate` ayrı özellikler, Tailwind
+   `transform`'uyla (konumlandırma, active:scale-95) çakışmaz. */
+.panel-shell :is(button, [role="button"], .yya-btn):not(:disabled, .obs-canvas-wrap *):active {
+  scale: var(--basma);
+}
+.panel-shell button:not([class*="transition"], [class*="dt-"]) {
+  transition: scale var(--hz-hizli) ease-out, background-color 150ms, border-color 150ms, color 150ms;
+}
+.panel-shell button.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, scale;
+}
+.yya-card-hover,
+.yya-kalk {
+  transition-property: color, background-color, border-color, box-shadow, translate, scale;
+  transition-duration: 180ms;
+  transition-timing-function: var(--egri-giris);
+}
+.yya-card-hover:hover,
+.yya-kalk:hover {
+  translate: 0 var(--hover-kalk);
+}
+
+/* Kapalı: her şey anında (sahne önizlemesi hariç) */
+:root[data-hareket="kapali"] :not(.obs-canvas-wrap, .obs-canvas-wrap *),
+:root[data-hareket="kapali"] :not(.obs-canvas-wrap, .obs-canvas-wrap *)::before,
+:root[data-hareket="kapali"] :not(.obs-canvas-wrap, .obs-canvas-wrap *)::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+:root[data-hareket="kapali"] .panel-shell :is(button, [role="button"], .yya-btn):active,
+:root[data-hareket="kapali"] :is(.yya-card-hover, .yya-kalk):hover {
+  scale: none;
+  translate: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Yoğunluk — Sıkı: boşluklar ~%25 daralır, yazı boyutu değişmez (okunurluk).
+--------------------------------------------------------------------------- */
+:root[data-yogunluk="siki"] .panel-shell .p-6:not(.obs-canvas-wrap *) { padding: 1rem; }
+:root[data-yogunluk="siki"] .panel-shell .p-5:not(.obs-canvas-wrap *) { padding: 0.875rem; }
+:root[data-yogunluk="siki"] .panel-shell .p-4:not(.obs-canvas-wrap *) { padding: 0.75rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.p-3, .p-3\.5, .yya-card):not(.obs-canvas-wrap *) { padding: 0.5rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.px-4, .px-5):not(.obs-canvas-wrap *) { padding-left: 0.75rem; padding-right: 0.75rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.py-3, .py-2\.5):not(.obs-canvas-wrap *) { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.gap-4, .gap-5):not(.obs-canvas-wrap *) { gap: 0.625rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.gap-3, .gap-3\.5):not(.obs-canvas-wrap *) { gap: 0.5rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.space-y-4, .space-y-5):not(.obs-canvas-wrap *) > :not([hidden]) ~ :not([hidden]) { margin-top: 0.625rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.space-y-3, .space-y-2\.5):not(.obs-canvas-wrap *) > :not([hidden]) ~ :not([hidden]) { margin-top: 0.4rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.yya-btn, .yya-btn-primary, .yya-btn-ghost, .yya-btn-danger, .yya-btn-accent, .yya-input):not(.obs-canvas-wrap *) { height: 2rem; }
+
+/* ---------------------------------------------------------------------------
+   Köşeler — Yuvarlak (varsayılan, değişiklik yok) · Az · Keskin.
+   Yalnız düz köşe sınıfları; `rounded-full` (hap, nokta, anahtar) korunur.
+--------------------------------------------------------------------------- */
+:root[data-kose="az"] .panel-shell :is(.rounded-2xl, .rounded-3xl):not(.obs-canvas-wrap *) { border-radius: 0.625rem; }
+:root[data-kose="az"] .panel-shell .rounded-xl:not(.obs-canvas-wrap *) { border-radius: 0.5rem; }
+:root[data-kose="az"] .panel-shell .rounded-lg:not(.obs-canvas-wrap *) { border-radius: 0.3125rem; }
+:root[data-kose="keskin"] .panel-shell :is(.rounded-2xl, .rounded-3xl):not(.obs-canvas-wrap *) { border-radius: 0.25rem; }
+:root[data-kose="keskin"] .panel-shell :is(.rounded-xl, .rounded-lg):not(.obs-canvas-wrap *) { border-radius: 0.1875rem; }
+:root[data-kose="keskin"] .panel-shell :is(.rounded-md, .rounded):not(.obs-canvas-wrap *) { border-radius: 2px; }

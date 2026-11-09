@@ -8,6 +8,8 @@
  * kapansa da arkada çalışmaya devam ediyordu ve taht boşken bile "Yayıncı"
  * yazan sahte bir kral görünüyordu.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { Crown, Sparkles, Timer } from 'lucide-react';
@@ -182,10 +184,10 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
       }
       style={{ fontFamily: s.fontFamily }}
     >
-      <div
+      <div {...kokOzellik(s)}
         className="relative flex items-center gap-3.5"
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.royal),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.royal), ...ortakHareket(s),
           borderRadius: tema === 'plate' ? 8 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 12}px ${Number(s.paddingX) || 20}px`,
           color: yazi

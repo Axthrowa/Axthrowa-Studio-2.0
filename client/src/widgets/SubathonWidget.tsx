@@ -11,6 +11,8 @@
  * (abone / hediye abone / bağış / KICKs) panelden ayarlanır ve olaylar
  * otomatik işlenir.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SUBATHON_DEFAULTS } from '../lib/widget-defaults.js';
@@ -255,13 +257,13 @@ export function SubathonWidget({ embedded = false, previewMode = false }: Subath
       style={{ fontFamily: s.fontFamily }}
     >
       {tema === 'pill' || tema === 'serit' ? (
-        <div className="flex items-center gap-3 px-5 py-2" style={{ ...kutuStili, ...(tema === 'pill' ? { borderRadius: 999 } : null) }}>
+        <div {...kokOzellik(s)} className="flex items-center gap-3 px-5 py-2" style={{ ...kutuStili, ...(tema === 'pill' ? { borderRadius: 999 } : null), ...ortakHareket(s) }}>
           <span style={{ fontSize: sureBoy * 0.55 }}>{s.icon || '⏳'}</span>
           <span className="font-black uppercase tracking-widest" style={{ color: vurgu, fontSize: Math.max(11, sureBoy * 0.28), textShadow: golge }}>{s.title}</span>
           <span className="font-black" style={{ fontFamily: s.timeFontFamily, fontSize: sureBoy * 0.6, color: metinRengi, textShadow: golge }}>{sure}</span>
         </div>
       ) : (
-        <div className={`p-4 flex flex-col items-center ${tema === 'minimal' ? '' : 'backdrop-blur-xl'} ${embedded ? 'w-full justify-center' : 'min-w-[320px]'}`} style={kutuStili}>
+        <div {...kokOzellik(s)} className={`p-4 flex flex-col items-center ${tema === 'minimal' ? '' : 'backdrop-blur-xl'} ${embedded ? 'w-full justify-center' : 'min-w-[320px]'}`} style={{ ...kutuStili, ...ortakHareket(s) }}>
           {durumSatiri}
           {sureGosterimi}
           {kurallar}

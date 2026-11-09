@@ -8,14 +8,29 @@
  * MEVCUT açının üstüne mutlak bir hedef ekliyordu: ilk çevirmeden sonra ibre
  * kazanan dilimin üstüne gelmiyordu. Artık gereken FARK hesaplanıyor.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { kutuTasarimi } from '../lib/widget-style.js';
+import { CIKIS_ORANI, animStili, efektEkle, ortakHareket, type AnimAsamasi } from '../lib/animations.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { WHEEL_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi } from '../lib/widget-style.js';
 
-/** Hızlı başlar, uzun ve sarsıntısız bir yavaşlamayla durur */
-const YUMUSAK_DONUS = 'cubic-bezier(0.1, 0.55, 0.08, 1)';
+/**
+ * Gerçek çark gibi: kısa bir kalkışla hızlanır (en yüksek hız sürenin ~%14'ünde), sonra uzun ve
+ * sarsıntısız yavaşlar; son dilimler ağır ağır geçer. Eski eğri ilk %3'te tam hıza fırlıyordu.
+ */
+const YUMUSAK_DONUS = 'cubic-bezier(0.22, 0.12, 0.08, 1)';
+
+/** CSS eğrisinin dört sayısı; tanınmazsa varsayılan dönüş eğrisi */
+export function egriNoktalari(egri: unknown): [number, number, number, number] {
+  const m = /cubic-bezier\(([^)]+)\)/.exec(String(egri || ''));
+  const n = m ? m[1].split(',').map(Number) : [];
+  return n.length === 4 && n.every(Number.isFinite) ? (n as [number, number, number, number]) : [0.22, 0.12, 0.08, 1];
+}
+
+const bezier = (p1: number, p2: number, t: number) => 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t * t * p2 + t ** 3;
 
 /** Çark renk paletleri: "custom" dilimlerin kendi rengini kullanır, diğerleri sırayla döner */
 export const CARK_PALETLERI: Record<string, { ad: string; renkler: string[] }> = {
@@ -107,19 +122,41 @@ export function agirlikliSec(segments: Segment[], rastgele: () => number = Math.
  * Hedef dilimi ibrenin altına getirecek DÖNÜŞ FARKI.
  * `mevcut` derece cinsinden şu anki açı; sonuç daima ileri (pozitif) döner.
  */
-export function donusFarki(mevcut: number, index: number, dilimSayisi: number, tamTur: number): number {
+export function donusFarki(mevcut: number, index: number, dilimSayisi: number, tamTur: number, sapma = 0): number {
   const slice = 360 / dilimSayisi;
-  const merkez = index * slice + slice / 2; // dilimin orta açısı
+  // sapma: dilim içinde -0.45..0.45 (dilim genişliği oranı); hep tam ortada durmasın, kenara da değmesin
+  const merkez = index * slice + slice / 2 + Math.max(-0.45, Math.min(0.45, sapma)) * slice;
   const hedef = (360 - merkez) % 360; // ibre saat 12'de
   const fark = (hedef - (mevcut % 360) + 360) % 360;
   return Math.max(1, tamTur) * 360 + fark;
 }
 
-/** Dilim sınırından geçiş anları (ms): dönüş ease-out yavaşladığı için tıklar seyrekleşir */
-export function tikZamanlari(toplamDerece: number, dilimDerece: number, sureMs: number, enFazla = 160): number[] {
-  const adet = Math.min(enFazla, Math.floor(toplamDerece / Math.max(1, dilimDerece)));
-  // ease-out'a yakın: ilerleme = 1 - (1 - t)^2
-  return Array.from({ length: adet }, (_, i) => (1 - Math.sqrt(1 - (i + 1) / (adet + 1))) * sureMs);
+/** İbrenin altındaki dilim (çark `aci` derece dönmüşken) */
+export function ibredekiDilim(aci: number, dilimSayisi: number): number {
+  const slice = 360 / dilimSayisi;
+  return Math.floor((((360 - (aci % 360)) % 360) + 360) % 360 / slice) % dilimSayisi;
+}
+
+/**
+ * Dilim sınırından geçiş anları (ms): dönüşün kendi eğrisinden hesaplanır, tık sesi görüntüyle örtüşür.
+ * İbre dilim ortasından başlar: ilk sınır yarım dilim sonra gelir.
+ */
+export function tikZamanlari(toplamDerece: number, dilimDerece: number, sureMs: number, enFazla = 160, egri: unknown = YUMUSAK_DONUS): number[] {
+  const [x1, y1, x2, y2] = egriNoktalari(egri);
+  const dilim = Math.max(1, dilimDerece);
+  const tam = Math.floor(toplamDerece / dilim);
+  const adet = Math.min(enFazla, tam);
+  return Array.from({ length: adet }, (_, i) => {
+    const yol = adet < tam ? (i + 1) / (adet + 1) : ((i + 0.5) * dilim) / toplamDerece;
+    let alt = 0;
+    let ust = 1;
+    for (let k = 0; k < 32; k++) {
+      const orta = (alt + ust) / 2;
+      if (bezier(y1, y2, orta) < yol) alt = orta;
+      else ust = orta;
+    }
+    return bezier(x1, x2, (alt + ust) / 2) * sureMs;
+  });
 }
 
 /** Dönüş efekti: dilim geçişlerinde tık, durunca zil (dosya gerekmez) */
@@ -153,22 +190,39 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   const dilimRengi = (i: number, kendi: string) => (palet.length ? palet[i % palet.length] : kendi);
   const { lastMessage } = useWebSocket('all');
   const [rotation, setRotation] = useState(0);
+  const donus = useRef(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
   const timer = useRef<NodeJS.Timeout | null>(null);
+  const baslat = useRef<NodeJS.Timeout | null>(null);
   const onizleme = onizlemeKipi(_props?.previewMode === true);
-  // Görünürlük: otomatik gizlemede yalnız çevrilince ya da ayar değişince belirir
-  const [gorunur, setGorunur] = useState(false);
+  const girisMs = Math.max(0, Number((s as Record<string, any>).animationDuration) || 600);
+  const cikisMs = Math.round(girisMs * CIKIS_ORANI);
+  // Görünürlük: otomatik gizlemede yalnız çevrilince ya da ayar değişince giriş animasyonuyla belirir,
+  // süre dolunca çıkış animasyonuyla gider
+  const [faz, setFaz] = useState<AnimAsamasi>('hidden');
+  const fazRef = useRef<AnimAsamasi>('hidden');
+  const fazDegistir = (f: AnimAsamasi) => {
+    fazRef.current = f;
+    setFaz(f);
+  };
   const gizleZamani = useRef<NodeJS.Timeout | null>(null);
   const gizlemeyiPlanla = (ekMs = 0) => {
     if (gizleZamani.current) clearTimeout(gizleZamani.current);
     const sn = Number(s.hideAfterSec);
     if (!(sn > 0)) return;
-    gizleZamani.current = setTimeout(() => setGorunur(false), ekMs + sn * 1000);
+    gizleZamani.current = setTimeout(() => {
+      fazDegistir('exiting');
+      gizleZamani.current = setTimeout(() => fazDegistir('hidden'), cikisMs);
+    }, ekMs + sn * 1000);
   };
-  const goster = (ekMs = 0) => {
-    setGorunur(true);
-    gizlemeyiPlanla(ekMs);
+  /** Görünür yapar; giriş animasyonu oynayacaksa onun süresini döndürür (dönüş ondan sonra başlar) */
+  const goster = (ekMs = 0): number => {
+    // Hep ekrandaysa (otomatik gizleme kapalı, önizleme) giriş beklenmez
+    const bekle = fazRef.current === 'visible' || onizleme || s.autoHide === false ? 0 : girisMs;
+    fazDegistir('visible');
+    gizlemeyiPlanla(ekMs + bekle);
+    return bekle;
   };
 
   const segments: Segment[] = (s.segments && s.segments.length ? s.segments : WHEEL_DEFAULTS.segments) as Segment[];
@@ -177,6 +231,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
+      if (baslat.current) clearTimeout(baslat.current);
       if (gizleZamani.current) clearTimeout(gizleZamani.current);
     },
     []
@@ -202,38 +257,47 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
     const guvenli = ((index % segments.length) + segments.length) % segments.length;
     setSpinning(true);
     setWinner(null);
-    // Çark görünür olur; sonuçtan `hideAfterSec` sn sonra kaybolur
-    goster(s.spinMs || 8000);
-    const fark = donusFarki(rotation, guvenli, segments.length, s.extraSpins || 6);
-    setRotation(rotation + fark);
-    if (s.soundEnabled) {
-      const ses = Math.min(1, Math.max(0, Number(s.soundVolume ?? 0.6)));
-      try {
-        if (s.soundUrl) {
-          const a = new Audio(String(s.soundUrl));
-          a.volume = ses;
-          a.play().catch(() => {});
-        } else {
-          donusSesiCal(tikZamanlari(fark, slice, s.spinMs || 8000), s.spinMs || 8000, ses);
+    const sure = s.spinMs || 8000;
+    // Çark girişle belirir, giriş bitince döner; sonuçtan `hideAfterSec` sn sonra çıkışla kaybolur
+    const bekle = goster(sure);
+    // Her çevirmede tur sayısı ve dilim içindeki duruş noktası değişir: aynı hareketi tekrar etmesin
+    const fark = donusFarki(donus.current, guvenli, segments.length, (s.extraSpins || 6) + (Math.random() < 0.5 ? 0 : 1), (Math.random() - 0.5) * 0.8);
+    if (baslat.current) clearTimeout(baslat.current);
+    baslat.current = setTimeout(() => {
+      donus.current += fark;
+      setRotation(donus.current);
+      if (s.soundEnabled) {
+        const ses = Math.min(1, Math.max(0, Number(s.soundVolume ?? 0.6)));
+        try {
+          if (s.soundUrl) {
+            const a = new Audio(String(s.soundUrl));
+            a.volume = ses;
+            a.play().catch(() => {});
+          } else {
+            donusSesiCal(tikZamanlari(fark, slice, sure, 160, donusEgrisi), sure, ses);
+          }
+        } catch {
+          /* ses yok */
         }
-      } catch {
-        /* ses yok */
       }
-    }
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      setSpinning(false);
-      setWinner(segments[guvenli]?.label || null);
-    }, s.spinMs || 8000);
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        setSpinning(false);
+        setWinner(segments[guvenli]?.label || null);
+      }, sure);
+    }, bekle);
   };
 
   useEffect(() => {
     if (!lastMessage) return;
     if (lastMessage.type === 'wheel_spin' || lastMessage.type === 'spin_wheel') {
       const etiket = lastMessage.payload?.label;
-      // Sunucu kazananı adıyla da yollar: panel ayarı yeni kaydedildiyse sıra kaymasın
+      // Aynı ad birden çok dilimdeyse adla aramak hep İLK dilimi buluyordu (çark hep aynı yere düşüyordu):
+      // sunucunun sırası adıyla uyuşuyorsa o kullanılır, ad yalnız sıra kaydıysa yedek
+      const sira = lastMessage.payload?.index ?? lastMessage.data?.index ?? lastMessage.winnerIndex;
+      const siraUyar = typeof sira === 'number' && (!etiket || segments[sira]?.label === etiket);
       const adla = etiket ? segments.findIndex((x) => x.label === etiket) : -1;
-      const gelen = adla >= 0 ? adla : (lastMessage.payload?.index ?? lastMessage.data?.index ?? lastMessage.winnerIndex);
+      const gelen = siraUyar ? sira : adla >= 0 ? adla : sira;
       spinTo(typeof gelen === 'number' ? gelen : agirlikliSec(segments));
     }
   }, [lastMessage]);
@@ -243,10 +307,18 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
   const gobek = Math.min(60, Math.max(6, Number(s.centerSize) || 26));
   const otomatikGizle = s.autoHide !== false;
   // Gizliyken de çizili kalır: gizliden açılan SVG son açıda doğar, CSS geçişi hiç başlamaz, çark dönmezdi
-  const gizli = !onizleme && otomatikGizle && !gorunur && !spinning;
+  const gizli = !onizleme && otomatikGizle && faz === 'hidden' && !spinning;
+  const donusEgrisi = /^cubic-bezier/.test(String(s.animation)) ? String(s.animation) : YUMUSAK_DONUS;
+  const girisAdi = String((s as Record<string, any>).girisAnimasyonu || 'fade');
+  const cikisAdi = !s.exitAnimation || s.exitAnimation === 'ayni' ? girisAdi : String(s.exitAnimation);
+  // Hep ekrandaysa giriş bir kez oynar; otomatik gizlemede her görünüşte giriş, kayboluşta çıkış
+  const hareketStili =
+    onizleme || !otomatikGizle
+      ? ortakHareket(s)
+      : efektEkle(animStili(faz === 'exiting' ? cikisAdi : girisAdi, gizli ? 'hidden' : faz, girisMs), s, faz, girisMs);
 
   return (
-    <div data-katman-bos={gizli ? '' : undefined} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16, visibility: gizli ? 'hidden' : 'visible' }}>
+    <div {...kokOzellik(s)} data-katman-bos={gizli ? '' : undefined} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16, ...kutuTasarimi(s), ...hareketStili, visibility: gizli ? 'hidden' : 'visible' }}>
       <div style={{ position: 'relative', width: boyut, height: boyut }}>
         {/* İbre: saat 12 yönünde, çarkın üstünde */}
         <div
@@ -272,7 +344,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
             willChange: 'transform',
             transform: `rotate(${rotation}deg)`,
             transition: spinning
-              ? `transform ${s.spinMs || 8000}ms ${/^cubic-bezier/.test(String(s.animation)) ? s.animation : YUMUSAK_DONUS}`
+              ? `transform ${s.spinMs || 8000}ms ${donusEgrisi}`
               : 'none'
           }}
         >

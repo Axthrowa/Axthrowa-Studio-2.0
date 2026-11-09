@@ -1,3 +1,5 @@
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -175,7 +177,7 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
 
   // Web Audio Sound FX Synthesizer
   const playSound = (type: 'tick' | 'urgent_tick' | 'correct' | 'reveal' | 'podium') => {
-    if (!soundEnabled) return;
+    if (!soundEnabled || ayar.soundEnabled === false) return;
     try {
       if (!audioCtxRef.current) {
         audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -457,7 +459,7 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
     // yukarı hem aşağı büyüyüp OBS'te yerinden oynuyordu. Üste hizalı duruyor,
     // büyüme yalnız aşağı doğru oluyor.
     <div className={embedded ? "w-full h-full bg-transparent p-0 flex items-start justify-center select-none font-sans" : "w-screen h-screen bg-transparent p-6 flex items-start justify-center select-none font-sans"}>
-      <div
+      <div {...kokOzellik(ayar)}
         className="w-full backdrop-blur-2xl border-2 overflow-hidden relative transition-all duration-300 p-5 md:p-6"
         style={{
           maxWidth: Number(ayar.maxWidth) || 672,
@@ -465,7 +467,7 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
           borderColor: rgbaYap(ayar.borderColor, ayar.borderOpacity),
           borderRadius: Number(ayar.radius) || 24,
           boxShadow: `0 20px 60px ${rgbaYap(ayar.shadowColor, ayar.shadowOpacity)}`,
-          ...kutuTasarimi(ayar)
+          ...kutuTasarimi(ayar), ...ortakHareket(ayar)
         }}
       >
         
@@ -475,7 +477,7 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
 
         {/* 1. TOURNAMENT PODIUM CELEBRATION MODAL */}
         {isPodium ? (
-          <div className="py-6 flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in zoom-in duration-300">
+          <div className="py-6 flex flex-col items-center justify-center text-center space-y-5 axt-anim-zoom">
             <div className="relative">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
                 <Trophy className="w-10 h-10 text-white animate-bounce" />
@@ -664,7 +666,7 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
 
             {/* 6. REVEAL PHASE: EXPLANATION NOTE & WINNERS PODIUM */}
             {isRevealing && (
-              <div className="space-y-3 pt-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-3 pt-1 axt-anim-fadeUp">
                 {/* Explanation Card ("Bunu Biliyor muydunuz?") */}
                 {question?.explanation && (
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-start gap-2.5">

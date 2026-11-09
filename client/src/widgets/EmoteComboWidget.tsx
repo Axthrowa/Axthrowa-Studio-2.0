@@ -6,6 +6,8 @@
  * ortadakine doğru uçar ve onu büyütür; gelmeyi kesince küçük kopyaları her yöne süzülüp ekrandan çıkar.
  * Yalnız emote'un kendisi görünür: çerçeve, ad ve sayaç yok.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { EMOTE_COMBO_DEFAULTS } from '../lib/widget-defaults.js';
@@ -216,11 +218,11 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
   const kap = props?.embedded ? { width: '100%', height: '100%' } : { width: '100vw', height: '100vh' };
 
   return (
-    <div ref={kutu} data-katman-bos={kombo || patlama || gelenler.length ? undefined : ''} style={{ position: 'relative', ...kap, overflow: props?.tamEkranEtki ? 'visible' : 'hidden' }}>
+    <div ref={kutu} {...kokOzellik(s)} data-katman-bos={kombo || patlama || gelenler.length ? undefined : ''} style={{ position: 'relative', ...kap, overflow: props?.tamEkranEtki ? 'visible' : 'hidden' }}>
       <style>{KOMBO_CSS}</style>
       {kombo && (
-        <div style={{ ...merkez, filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}>
-          <div style={{ animation: 'axt-kombo-belir 260ms cubic-bezier(.34,1.56,.64,1)' }}>
+        <div data-yuzey="" style={{ ...merkez, filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}>
+          <div style={ortakHareket(s)}>
             {/* key=adet: her yeni emote'ta bir kez vurulmuş gibi zıplar */}
             <div key={kombo.adet} style={{ animation: 'axt-kombo-vurus 240ms ease-out' }}>
               <EmoteGorsel e={kombo.emote} boyut={boy} />

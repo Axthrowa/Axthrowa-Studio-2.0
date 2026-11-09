@@ -11,6 +11,31 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.12',
+    ad: 'Çark',
+    tarih: '2026-11-09',
+    notlar: [
+      'Çarkıfelek gerçek çark gibi: girişten sonra döner, yavaş kalkıp uzun süzülür, dilim içinde farklı yerlerde durur; aynı adlı dilimlerde hep ilkine düşme hatası düzeldi; çıkış animasyonu geldi',
+      'Hedef çubuğu: başlık, rakam, bar, dolgu ve simge için ayrı giriş ve sürekli efekt',
+      'Dönen sosyal medya ve sponsor: çıkış animasyonu ayrı seçilebilir',
+      'Bütün animasyonlar daha akıcı; 14 yeni giriş, 8 yeni sürekli efekt, 10 yeni yapısal tema (kaset, polaroid, post-it, film şeridi, rozet…)',
+      'Hazır temalar elden geçirildi: benzer temalar ayrıştı, düşük kontrastlar düzeldi',
+      'Panel için 6 yeni arayüz teması (Ayarlar > Panel teması): Gece Mavisi, Gün Işığı, Neon Arcade, Mürekkep & Kağıt, Gün Batımı, Orman',
+    ]
+  },
+  {
+    surum: '1.13.11',
+    ad: 'Kabuk',
+    tarih: '2026-11-05',
+    notlar: [
+      'Widgetlarda animasyonlar düzeldi: Windows animasyon efektleri kapalıyken de seçtiğin giriş oynar; 20 yeni giriş ve 12 sürekli efekt geldi',
+      'Her widgeta tema dışında arka plan, çerçeve ve gölge kapatma ayarı geldi',
+      '16 yeni yapısal tema: hologram, CRT, defter, ampul, bilet, vitray ve daha fazlası',
+      'Hedef çubuğu: yanıp sönme yalnız bar, dolgu ya da yazıya uygulanabilir; halka, pil, kama, nokta ve dalga biçimleri geldi',
+      'Canlı sohbet: satır başı çizgileri kapatılabilir, avatar bütün temalarda düzgün durur',
+    ]
+  },
+  {
     surum: '1.13.10',
     ad: 'Vitrin',
     tarih: '2026-11-05',

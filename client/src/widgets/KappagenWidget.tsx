@@ -7,6 +7,8 @@
  * `!kappagen` patlaması ortadan dağılır. Aynı anda
  * ekrandaki emote sayısı sınırlıdır (OBS'i yormasın).
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { KAPPAGEN_DEFAULTS } from '../lib/widget-defaults.js';
@@ -74,7 +76,7 @@ const KAPPAGEN_CSS = `@keyframes axt-kappagen { from { transform: translate(-50%
   85% { opacity: 1 } to { transform: translate(-50%,-50%) translate3d(var(--dx), var(--dy), 0) rotate(var(--rot)); opacity: var(--son) } }`;
 
 /** memo: yeni emote eklenince uçmakta olanlar yeniden çizilmez */
-const UcanEmote = memo(function UcanEmote({ u, spin, shadow }: { u: Ucan; spin: boolean; shadow: boolean }) {
+const UcanEmote = memo(function UcanEmote({ u, spin, shadow, hareket }: { u: Ucan; spin: boolean; shadow: boolean; hareket?: string }) {
   return (
     <div
       style={
@@ -97,11 +99,13 @@ const UcanEmote = memo(function UcanEmote({ u, spin, shadow }: { u: Ucan; spin: 
         } as CSSProperties
       }
     >
+      <div style={{ width: '100%', height: '100%', animation: hareket }}>
       {u.parca.url ? (
         <img src={u.parca.url} alt={u.parca.ad} decoding="sync" style={{ width: '100%', height: '100%', objectFit: 'contain' }} referrerPolicy="no-referrer" />
       ) : (
         <span>{u.parca.ad}</span>
       )}
+      </div>
     </div>
   );
 });
@@ -164,10 +168,10 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
   }, []);
 
   return (
-    <div data-katman-bos={ucanlar.length ? undefined : ''} style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+    <div {...kokOzellik(s)} data-katman-bos={ucanlar.length ? undefined : ''} style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
       <style>{KAPPAGEN_CSS}</style>
       {ucanlar.map((u) => (
-        <UcanEmote key={u.id} u={u} spin={Boolean(s.spin)} shadow={Boolean(s.shadow)} />
+        <UcanEmote key={u.id} u={u} spin={Boolean(s.spin)} shadow={Boolean(s.shadow) && !(s as Record<string, any>).golgeKapali} hareket={ortakHareket(s).animation as string | undefined} />
       ))}
     </div>
   );

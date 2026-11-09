@@ -8,6 +8,8 @@
  * konum, renkler ve otomatik gizleme süresi ayarlanır; `pinned_clear` yayını
  * mesajı kaldırır.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { PINNED_DEFAULTS } from '../lib/widget-defaults.js';
@@ -113,10 +115,10 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
       }
       style={{ alignItems: dikey(s.position), justifyContent: yatay(s.align), fontFamily: s.fontFamily }}
     >
-      <div
-        className="flex items-center gap-3.5 shadow-2xl animate-fadeIn w-full"
+      <div {...kokOzellik(s)}
+        className="flex items-center gap-3.5 shadow-2xl w-full"
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
+          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card), ...ortakHareket(s),
           borderRadius: tema === 'banner' ? 8 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           maxWidth: Number(s.maxWidth) || 512,

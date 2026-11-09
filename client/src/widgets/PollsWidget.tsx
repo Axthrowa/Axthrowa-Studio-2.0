@@ -6,6 +6,8 @@
  * bitirilince) sonuç `hideAfterSec` saniye gösterilip kaybolur. Eskiden bitiş
  * olayı gelmezse "Anket bitti" kartı ekranda sonsuza dek kalıyordu.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -109,11 +111,11 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
   const bg = `${s.backgroundColor}${Math.round(s.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
 
   return (
-    <div className={`axt-anim-${s.animation}`} style={{
+    <div {...kokOzellik(s)} style={{
       fontFamily: s.fontFamily,
       background: bg,
       border: `1px solid ${s.borderColor}`,
-      ...kutuTasarimi(s),
+      ...kutuTasarimi(s), ...ortakHareket(s),
       borderRadius: s.borderRadius,
       padding: 16,
       minWidth: 280

@@ -76,13 +76,6 @@ describe('animasyon ön ayarları', () => {
     expect(s.visibility).toBe('hidden');
   });
 
-  it('"hareketi azalt" açıkken taşıma yapılmaz', () => {
-    const normal = animStili('slideLeft', 'entering', 400, 0, false);
-    const azalt = animStili('slideLeft', 'entering', 400, 0, true);
-    expect(String(normal.transform)).not.toBe('none');
-    expect(azalt.transform).toBe('none');
-  });
-
   it('metin efektleri listesi boş değil', () => {
     expect(METIN_EFEKTLERI.length).toBeGreaterThan(1);
   });

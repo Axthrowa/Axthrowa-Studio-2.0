@@ -7,6 +7,8 @@
  * ifadesi watchtime/messages alan adlarını ıskalıyor, sütun boş kalınca
  * puanı gösteriyordu. Artık alan eşlemesi açık ve değer biçimlenerek yazılıyor.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -106,9 +108,9 @@ export function RankingsWidget({ embedded = false, previewMode = false }: Rankin
     <div
       className={embedded ? 'w-full h-full flex items-start' : 'w-screen h-screen bg-transparent p-4 flex items-start'}
     >
-      <div
+      <div {...kokOzellik(s)}
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic), ...ortakHareket(s),
           borderRadius: Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           minWidth: Number(s.minWidth) || 280,

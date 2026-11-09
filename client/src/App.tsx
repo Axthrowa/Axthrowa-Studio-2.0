@@ -83,6 +83,7 @@ import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
 import { SURUMLER } from './lib/surumler.js';
+import { VARSAYILAN_TEMA, usePanelTemasi } from './lib/panelTemalari.js';
 
 export function App() {
   const path = window.location.pathname;
@@ -144,6 +145,7 @@ export function App() {
   // Kaydedilmemiş form varken sekme değişimi önce sorar (tek sayfalık
   // uygulamada `beforeunload` sekme geçişinde tetiklenmez).
   const { sor: onayIste, eleman: onayDiyalogu } = useOnay();
+  const panelTemasi = usePanelTemasi();
   const aktifSekme = useRef(activeTab);
   aktifSekme.current = activeTab;
   const sekmeyeGec = useCallback((hedef: string) => {
@@ -272,7 +274,7 @@ export function App() {
     // Toast bildirimleri tum panelde kullanilabilsin (ui/index.tsx).
     <ToastSaglayici>
     {onayDiyalogu}
-    <div className="axt-panel flex min-h-screen bg-[#0b0d12] text-gray-200">
+    <div className="axt-panel flex min-h-screen bg-[#0b0d12] text-gray-200" data-panel-tema={panelTemasi === VARSAYILAN_TEMA ? undefined : panelTemasi}>
       {/* Sidebar */}
       {!gomulu && <aside className="w-64 border-r border-white/[0.06] bg-[#0b0d12] flex flex-col justify-between fixed inset-y-0 left-0 z-30">
         <div>

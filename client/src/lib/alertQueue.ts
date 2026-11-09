@@ -227,3 +227,12 @@ export function sonrakiTik(durum: KuyrukDurumu, simdi = Date.now()): number | nu
   if (!durum.aktif && !durum.bekleyen.length) return null;
   return Math.max(16, durum.asamaBitis - simdi);
 }
+
+/**
+ * Olay ayarı mı, genel ayar mı? Her olay kaydı veritabanında hazır değerle (bounce, stacked, shine) gelir;
+ * bu yüzden widget'taki genel seçim hiç uygulanmıyordu. Olay yalnız hazır değerden farklıysa kendi seçimidir.
+ */
+export function olayYoksaGenel(olay: unknown, genel: unknown, hazir: string): string {
+  const o = String(olay || '');
+  return o && o !== hazir ? o : String(genel || hazir);
+}

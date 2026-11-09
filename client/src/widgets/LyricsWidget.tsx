@@ -7,6 +7,9 @@
  * üretiyordu ve satır sayacı şarkı değişince sıfırlanmıyordu; sözler yeni
  * parçaya geçince ortadan devam ediyordu.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { kutuTasarimi } from '../lib/widget-style.js';
+import { ortakHareket } from '../lib/animations.js';
 import { useState, useEffect, useRef } from 'react';
 import { Disc } from 'lucide-react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -210,9 +213,11 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
       style={{ fontFamily: s.fontFamily }}
     >
       <div
+        {...kokOzellik(s)}
         className="w-full flex flex-col items-center justify-center text-center overflow-hidden"
         style={{
-          ...(temaStili[tema] || temaStili.neon),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.neon),
+          ...ortakHareket(s),
           borderRadius: tema === 'band' ? 8 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 20}px ${Number(s.paddingX) || 20}px`,
           maxWidth: Number(s.maxWidth) || 896,

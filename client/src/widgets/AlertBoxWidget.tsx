@@ -1,3 +1,5 @@
+import { kokOzellik } from '../lib/kabuklar.js';
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import confetti from 'canvas-confetti';
@@ -13,9 +15,10 @@ import {
   metinPenceresiAcik,
   sonrakiMetinSiniri,
   sonrakiTik,
-  type KuyrukDurumu
+  type KuyrukDurumu,
+  olayYoksaGenel
 } from '../lib/alertQueue.js';
-import { animStili, type AnimAsamasi } from '../lib/animations.js';
+import { animStili, type AnimAsamasi, efektEkle } from '../lib/animations.js';
 
 interface AlertItem {
   id: string;
@@ -132,9 +135,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       durationMs: raw.durationMs || raw.duration_ms || 5000,
       textColor: raw.textColor || raw.text_color || '#ffffff',
       accentColor: raw.accentColor || raw.accent_color || '#3EEDFE',
-      animation: raw.animation || advanced.animation || 'bounce',
-      layoutMode: raw.layoutMode || raw.layout_mode || advanced.layoutMode || 'stacked',
-      textEffect: raw.textEffect || raw.text_effect || advanced.textEffect || 'shine',
+      animation: olayYoksaGenel(raw.animation, advanced.animation, 'bounce'),
+      layoutMode: olayYoksaGenel(raw.layoutMode || raw.layout_mode, advanced.layoutMode, 'stacked') as AlertItem['layoutMode'],
+      textEffect: olayYoksaGenel(raw.textEffect || raw.text_effect, advanced.textEffect, 'shine'),
       soundVolume: raw.soundVolume ?? raw.sound_volume ?? 0.7
     };
   };
@@ -311,10 +314,6 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     );
   };
 
-  /** İşletim sisteminde "hareketi azalt" açıksa animasyonlar sadeleşir. */
-  const azaltilmisHareket =
-    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-
   // Metin efekti — CSS sinifi
   const getTextEffectClass = (fx?: string) => {
     switch (fx) {
@@ -343,13 +342,20 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
       {displayAlert && (
         <div
-          style={animStili(
-            asama === 'exiting' ? (advanced.exitAnimation || displayAlert.animation) : displayAlert.animation,
-            asama,
-            Math.max(0, Number(advanced.animationDuration) || 500),
-            0,
-            azaltilmisHareket
-          )}
+          {...kokOzellik(advanced as Record<string, any>)}
+          style={{
+            ...efektEkle(
+              animStili(
+                asama === 'exiting' ? (advanced.exitAnimation || displayAlert.animation) : displayAlert.animation,
+                asama,
+                Math.max(0, Number(advanced.animationDuration) || 500)
+              ),
+              advanced as Record<string, any>,
+              asama,
+              Math.max(0, Number(advanced.animationDuration) || 500)
+            ),
+            ...kutuTasarimi(advanced as Record<string, any>)
+          }}
           className={`p-4 max-w-full ${
             displayAlert.layoutMode === 'side-by-side'
               ? 'flex flex-row items-center justify-center gap-5 text-left'
@@ -371,6 +377,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
             </div>
           ) : (
             <div 
+              data-yuzey=""
               className="w-20 h-20 mb-3 rounded-2xl flex items-center justify-center text-3xl shadow-2xl animate-bounce"
               style={{ backgroundColor: `${displayAlert.accentColor || '#3EEDFE'}33`, border: `2px solid ${displayAlert.accentColor || '#3EEDFE'}` }}
             >
@@ -410,6 +417,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
             {/* Alt metin (izleyici mesaji) */}
             {displayAlert.message && !advanced.hideUserMessage && (
               <div
+                data-yuzey=""
                 className="font-bold bg-black/80 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-md shadow-xl mt-1"
                 style={{
                   color: (advanced.messageColor as string) || displayAlert.textColor || '#ffffff',

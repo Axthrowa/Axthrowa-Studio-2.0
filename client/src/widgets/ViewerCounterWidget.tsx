@@ -7,6 +7,8 @@
  * çoklu platform toplamı BotRix'teki sayaçla aynı işlev seviyesinde —
  * uygulama bize ait, kod kopyalanmadı.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
@@ -146,9 +148,9 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
       className={kap}
       style={{ justifyContent: hizala === 'center' ? 'center' : hizala === 'right' ? 'flex-end' : 'flex-start' }}
     >
-      <div
+      <div {...kokOzellik(s)}
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic), ...ortakHareket(s),
           borderRadius: tema === 'capsule' ? 999 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 12}px ${Number(s.paddingX) || 16}px`,
           color: s.textColor,

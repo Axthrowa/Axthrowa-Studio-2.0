@@ -4,12 +4,14 @@
  *
  * Hesap eklenmemişse yayında hiçbir şey çizmez; örnek yalnız önizlemede görünür.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import type { CSSProperties } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SOCIAL_ROTATOR_DEFAULTS } from '../lib/widget-defaults.js';
 import { dikey, kutuTasarimi, onizlemeKipi, rgba, yatay } from '../lib/widget-style.js';
 import { animStili } from '../lib/animations.js';
-import { hesapMetni, useDongu } from '../lib/donenWidget.js';
+import { asamaAnimasyonu, hesapMetni, useDongu } from '../lib/donenWidget.js';
 import { SOSYAL_DIGER, SOSYAL_PLATFORMLAR } from '../lib/sosyalPlatformlar.js';
 
 export interface SosyalDonenWidgetProps {
@@ -50,18 +52,17 @@ export function SosyalDonenWidget({ embedded = false, previewMode = false }: Sos
     neon: { background: rgba(s.bgColor, s.bgOpacity), border: `2px solid ${vurgu}`, boxShadow: `0 0 18px ${rgba(vurgu, 0.65)}`, borderRadius: Number(s.radius) || 0 },
     sade: { background: 'transparent' }
   };
-  const azaltilmis = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
   return (
     <div
       className={`${embedded ? 'w-full h-full p-0' : 'w-screen h-screen p-6'} bg-transparent flex select-none overflow-hidden`}
       style={{ alignItems: dikey(s.position), justifyContent: yatay(s.align), fontFamily: s.fontFamily }}
     >
-      <div style={animStili(s.animation, asama, gecisMs, 0, Boolean(azaltilmis))}>
-        <div
+      <div style={animStili(asamaAnimasyonu(s, asama), asama, gecisMs)}>
+        <div {...kokOzellik(s)}
           data-sosyal-hesap={hesap.platform}
           className="inline-flex items-center gap-3"
-          style={{ ...(kutuTasarimi(s) || temaStili[tema] || temaStili.kart), padding: tema === 'sade' ? 0 : '10px 18px 10px 10px', color: s.textColor }}
+          style={{ ...(kutuTasarimi(s) || temaStili[tema] || temaStili.kart), ...ortakHareket(s, { giris: false }), padding: tema === 'sade' ? 0 : '10px 18px 10px 10px', color: s.textColor }}
         >
           <span
             className="flex shrink-0 items-center justify-center rounded-xl"

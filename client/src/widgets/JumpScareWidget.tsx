@@ -7,6 +7,8 @@
  * özel jumpscare). Eski sürümde kapanış zamanlayıcısı temizlenmiyordu: art
  * arda gelen iki tetikte ikincisi birincinin sayacıyla erken kapanıyordu.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { JUMPSCARE_DEFAULTS } from '../lib/widget-defaults.js';
@@ -139,7 +141,7 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
   }%)`;
 
   return (
-    <div className="fixed inset-0 z-[99999] w-screen h-screen bg-black flex items-center justify-center overflow-hidden">
+    <div {...kokOzellik(s)} className="fixed inset-0 z-[99999] w-screen h-screen bg-black flex items-center justify-center overflow-hidden" style={ortakHareket(s)}>
       {!mediaFailed && scare.mediaUrl && scare.mediaType === 'video' ? (
         <video
           ref={videoRef}

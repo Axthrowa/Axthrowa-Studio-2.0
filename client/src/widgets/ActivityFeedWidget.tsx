@@ -2,6 +2,8 @@
  * AxBoT Activity Feed overlay
  * Developed by AxthrowA
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
@@ -97,14 +99,14 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
   if (s.hideEmpty && items.length === 0) return null;
 
   return (
-    <div style={{
+    <div {...kokOzellik(s)} style={{
       fontFamily: s.fontFamily,
       background: bg,
       borderRadius: s.borderRadius,
       border: `1px solid ${s.borderColor}`,
-      ...kutuTasarimi(s),
+      ...kutuTasarimi(s), ...ortakHareket(s, { giris: false }),
       ...(s.showBorder ? null : { border: 'none', boxShadow: 'none' }),
-      padding: 16,
+      padding: s.compact ? 8 : 16,
       display: 'flex',
       flexDirection: 'column',
       gap: s.gap,
@@ -118,7 +120,7 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          fontSize: s.fontSize,
+          fontSize: s.compact ? Math.round(Number(s.fontSize) * 0.85) : s.fontSize,
           fontWeight: s.fontWeight,
           color: s.fontColor,
           letterSpacing: s.letterSpacing,

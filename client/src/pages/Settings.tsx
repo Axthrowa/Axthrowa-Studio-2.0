@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, Check, Volume2, Share2 } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Check, Volume2, Share2, Palette } from 'lucide-react';
 import { KaydedilmemisUyari, useToast } from '../ui/index.js';
 import { useKirliTakip } from '../hooks/useKirliTakip.js';
+import { PANEL_TEMALARI, panelTemasiSec, usePanelTemasi } from '../lib/panelTemalari.js';
 
 export function Settings() {
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -191,7 +192,64 @@ export function Settings() {
           </div>
         </div>
       </form>
+
+      <PanelTemasiSecici />
     </div>
+  );
+}
+
+/** Panel teması bu tarayıcıda saklanır, sunucu ayarlarıyla kaydedilmez; seçim anında uygulanır. */
+function PanelTemasiSecici() {
+  const secili = usePanelTemasi();
+  return (
+    <section className="glass-panel p-6 rounded-2xl space-y-4" aria-labelledby="panel-temasi-baslik">
+      <div className="flex items-center space-x-2 pb-2 border-b border-white/10">
+        <Palette className="w-5 h-5 text-purple-400" aria-hidden />
+        <h2 id="panel-temasi-baslik" className="font-bold text-white text-base">Panel teması</h2>
+      </div>
+      <p className="text-[11px] text-gray-400">
+        Yalnız bu paneli boyar ve bu tarayıcıda saklanır. OBS widget'ları ve stüdyo önizlemesi değişmez. Ok tuşlarıyla da seçebilirsiniz.
+      </p>
+      <div role="radiogroup" aria-labelledby="panel-temasi-baslik" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {PANEL_TEMALARI.map((t) => {
+          const o = t.onizleme;
+          return (
+            <label
+              key={t.id}
+              className={`group block cursor-pointer rounded-xl border p-2 transition-colors duration-200 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--axt-odak,#c4b5fd)] ${
+                secili === t.id ? 'border-purple-400 bg-purple-500/10' : 'border-white/10 hover:border-white/25 hover:bg-white/[0.03]'
+              }`}
+            >
+              <input
+                type="radio"
+                name="panel-temasi"
+                value={t.id}
+                checked={secili === t.id}
+                onChange={() => panelTemasiSec(t.id)}
+                aria-describedby={`panel-temasi-${t.id}`}
+                className="sr-only"
+              />
+              {/* Küçük önizleme: tema renkleri satır içi, panel temasından bağımsız */}
+              <span aria-hidden className="flex h-16 overflow-hidden rounded-lg border border-black/20" style={{ background: o.zemin }}>
+                <span className="w-1/4 h-full border-r" style={{ borderColor: `${o.metin}14` }} />
+                <span className="flex-1 p-1.5 space-y-1">
+                  <span className="block h-full rounded-md p-1.5 space-y-1" style={{ background: o.yuzey }}>
+                    <span className="block h-1.5 w-3/5 rounded-full" style={{ background: o.metin }} />
+                    <span className="block h-1 w-4/5 rounded-full opacity-50" style={{ background: o.metin }} />
+                    <span className="block h-2.5 w-2/5 rounded" style={{ background: o.vurgu }} />
+                  </span>
+                </span>
+              </span>
+              <span className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-white">{t.ad}</span>
+                {secili === t.id && <Check className="w-3.5 h-3.5 text-purple-400" aria-hidden />}
+              </span>
+              <span id={`panel-temasi-${t.id}`} className="block text-[11px] text-gray-400 leading-snug">{t.aciklama}</span>
+            </label>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

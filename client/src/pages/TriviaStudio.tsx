@@ -687,7 +687,7 @@ export function TriviaStudio() {
               </div>
 
               {/* Embedded Trivia Widget Preview */}
-              <div className="w-full bg-neutral-950/80 rounded-2xl border border-white/10 p-3 min-h-[460px] flex items-center justify-center overflow-hidden">
+              <div className="axt-onizleme w-full bg-neutral-950/80 rounded-2xl border border-white/10 p-3 min-h-[460px] flex items-center justify-center overflow-hidden">
                 <TriviaWidget embedded={true} previewMode={!gameState?.question} />
               </div>
             </div>

@@ -43,6 +43,12 @@ export function asamaSuresi(asama: AnimAsamasi, gorunumMs: number, beklemeMs: nu
  * Tek öğe ve bekleme yoksa ekranda sabit kalır. Sayaç yalnız sayılara bağlı:
  * ayar nesnesi yenilense de süre baştan başlamaz.
  */
+/** Dönen widget'larda çıkışta oynayacak animasyon: 'ayni' (ya da boş) girişin tersi demek */
+export function asamaAnimasyonu(s: { animation?: unknown; exitAnimation?: unknown }, asama: string): string {
+  const cikis = String(s.exitAnimation || 'ayni');
+  return asama === 'exiting' && cikis !== 'ayni' ? cikis : String(s.animation || 'fade');
+}
+
 export function useDongu(n: number, gorunumMs: (i: number) => number, beklemeMs: number, gecisMs: number) {
   const [d, setD] = useState<DonguDurumu>({ i: 0, asama: 'entering' });
   const i = n > 0 ? d.i % n : 0;

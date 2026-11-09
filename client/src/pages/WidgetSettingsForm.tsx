@@ -7,7 +7,8 @@ import { Save } from 'lucide-react';
 import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { KUTU_TASARIMLARI } from '../lib/widget-style.js';
 import { yaziAilesi } from '../lib/widget-style.js';
-import { ANIM_SECENEKLERI, METIN_EFEKTLERI } from '../lib/animations.js';
+import { YAPISAL_KABUKLAR } from '../lib/kabuklar.js';
+import { ANIM_SECENEKLERI, METIN_EFEKTLERI, SUREKLI_EFEKTLER, eskiHareketiCevir } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
 import { SosyalHesapPaneli, SponsorPaneli } from '../components/DonenWidgetPanelleri.js';
@@ -18,6 +19,14 @@ import { Katlanir } from '../ui/index.js';
 
 const LABELS: Record<string, string> = {
   avatarShape: 'Avatar biçimi', avatarFallback: 'Resim yoksa baş harfi göster',
+  arkaPlanKapali: 'Arka planı kapat', cerceveKapali: 'Çerçeveyi kapat', golgeKapali: 'Gölgeyi kapat',
+  surekliEfekt: 'Sürekli efekt', efektSuresi: 'Efekt süresi (sn)', efektHedefi: 'Genel efekt nereye uygulansın', girisAnimasyonu: 'Giriş animasyonu',
+  satirCizgisi: 'Satır başı çizgileri',
+  baslikGiris: 'Başlık · giriş', baslikEfekti: 'Başlık · sürekli efekt',
+  rakamGiris: 'Rakamlar · giriş', rakamEfekti: 'Rakamlar · sürekli efekt',
+  barGiris: 'Bar · giriş', barEfekti: 'Bar · sürekli efekt',
+  dolguGiris: 'Bar dolgusu · giriş', dolguEfekti: 'Bar dolgusu · sürekli efekt',
+  simgeGiris: 'Simge · giriş', simgeEfekti: 'Simge · sürekli efekt',
   itemSeconds: 'Her hesabın süresi (sn)', waitSeconds: 'Tur sonunda gizli bekleme (sn, 0 = kapalı)',
   defaultSeconds: 'Varsayılan görsel süresi (sn)',
   iconSize: 'Simge boyutu (px)', fit: 'Medyayı sığdırma',
@@ -148,6 +157,9 @@ const LABELS: Record<string, string> = {
 
 const SECTIONS: Record<string, string> = {
   avatarShape: 'Düzen', avatarFallback: 'Düzen',
+  arkaPlanKapali: 'Görünüm', cerceveKapali: 'Görünüm', golgeKapali: 'Görünüm', satirCizgisi: 'Görünüm',
+  surekliEfekt: 'Animasyon', efektSuresi: 'Animasyon', efektHedefi: 'Animasyon', girisAnimasyonu: 'Animasyon',
+  baslikGiris: 'Parçalar', baslikEfekti: 'Parçalar', rakamGiris: 'Parçalar', rakamEfekti: 'Parçalar', barGiris: 'Parçalar', barEfekti: 'Parçalar', dolguGiris: 'Parçalar', dolguEfekti: 'Parçalar', simgeGiris: 'Parçalar', simgeEfekti: 'Parçalar',
   itemSeconds: 'Zamanlama', waitSeconds: 'Zamanlama', defaultSeconds: 'Zamanlama',
   showFollow: 'Olaylar', showSub: 'Olaylar', showGiftSub: 'Olaylar', showTip: 'Olaylar', showRaid: 'Olaylar',
   showHost: 'Olaylar', showKicks: 'Olaylar', showFollowers: 'Olaylar', showBits: 'Olaylar', showTop: 'Olaylar',
@@ -258,7 +270,7 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
 
 /** Önce widget'ın işi, sonra görünümü: listede olmayan bölümler ikisinin arasına girer */
 const ILK_BOLUMLER = ['Genel', 'Hedef', 'Çekiliş', 'Komut', 'Kontrol', 'Sıralama', 'Kupa', 'Tren', 'Puanlar', 'Bölümler', 'Combo', 'Olaylar', 'Medya', 'Ses', 'Metin', 'Şablon', 'Zamanlama'];
-const SON_BOLUMLER = ['Platformlar', 'Düzen', 'Görünürlük', 'Tema', 'Görünüm', 'Tipografi', 'Animasyon', 'İkonlar', 'Emojiler', 'Gelişmiş'];
+const SON_BOLUMLER = ['Platformlar', 'Düzen', 'Görünürlük', 'Tema', 'Görünüm', 'Tipografi', 'Animasyon', 'Parçalar', 'İkonlar', 'Emojiler', 'Gelişmiş'];
 const BOLUM_ACIKLAMASI: Record<string, string> = {
   Platformlar: 'Hangi platformlar görünsün',
   Düzen: 'Ne gösterilsin, nasıl dizilsin',
@@ -266,6 +278,7 @@ const BOLUM_ACIKLAMASI: Record<string, string> = {
   Görünüm: 'Renk, köşe, kutu tasarımı',
   Tipografi: 'Yazı tipi ve boyutu',
   Animasyon: 'Giriş, çıkış ve hareket',
+  Parçalar: 'Başlık, rakam, bar, dolgu ve simge ayrı ayrı canlanır',
   Gelişmiş: 'Nadiren gereken ayarlar'
 };
 function bolumSirasi(b: string): number {
@@ -274,6 +287,10 @@ function bolumSirasi(b: string): number {
   const j = SON_BOLUMLER.indexOf(b);
   return j >= 0 ? 100 + j : 50;
 }
+
+/** Hedef çubuğu parçaları: giriş 'none' = kutuyla gelir, efekt 'genel' = genel efekt seçimi */
+const PARCA_GIRISI = ANIM_SECENEKLERI.map((o) => (o.value === 'none' ? { value: 'none', label: 'Kutuyla birlikte' } : o));
+const PARCA_EFEKTI = [{ value: 'genel', label: 'Genel efekt ayarı' }, ...SUREKLI_EFEKTLER];
 
 const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
   avatarShape: [
@@ -285,7 +302,30 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
   // `animKimligi()` ile eslenmeye devam ediyor.
   animation: ANIM_SECENEKLERI,
   exitAnimation: ANIM_SECENEKLERI,
+  girisAnimasyonu: ANIM_SECENEKLERI,
+  surekliEfekt: SUREKLI_EFEKTLER,
+  baslikGiris: PARCA_GIRISI,
+  baslikEfekti: PARCA_EFEKTI,
+  rakamGiris: PARCA_GIRISI,
+  rakamEfekti: PARCA_EFEKTI,
+  barGiris: PARCA_GIRISI,
+  barEfekti: PARCA_EFEKTI,
+  dolguGiris: PARCA_GIRISI,
+  dolguEfekti: PARCA_EFEKTI,
+  simgeGiris: PARCA_GIRISI,
+  simgeEfekti: PARCA_EFEKTI,
+  efektHedefi: [
+    { value: 'bar', label: 'Yalnız bar' },
+    { value: 'dolgu', label: 'Yalnız bar dolgusu' },
+    { value: 'yazi', label: 'Yalnız yazı' },
+    { value: 'tum', label: 'Tüm widget' }
+  ],
   barStyle: [
+    { value: 'halka', label: 'Halka (yuvarlak)' },
+    { value: 'pil', label: 'Pil (hücreli)' },
+    { value: 'kama', label: 'Kama (yükselen)' },
+    { value: 'noktalar', label: 'Noktalar' },
+    { value: 'dalga', label: 'Akan dalga' },
     { value: 'flat', label: 'Düz' },
     { value: 'gradient', label: 'Renk geçişi' },
     { value: 'striped', label: 'Çizgili (akan)' },
@@ -339,26 +379,26 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
  * tek bir küresel tablo ikisini birden karşılayamıyordu.
  */
 const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]) => ({ value, label }));
-
-/** Sohbete özgü giriş/çıkış animasyonları (bkz. animations.ts animasyonCss) */
-const SOHBET_EK_ANIM = tema(['pop', 'Pop (fırlayarak)'], ['bulanik', 'Bulanıktan netleşme'], ['elastik', 'Elastik']);
+/** Dönen widget'lar ve çark: çıkış ayrı seçilebilir, varsayılanı girişin tersi */
+const AYRI_CIKIS = [{ value: 'ayni', label: 'Girişin tersi' }, ...ANIM_SECENEKLERI];
 
 const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
   'social-rotator': {
+    exitAnimation: AYRI_CIKIS,
     theme: tema(['kart', 'Kart'], ['hap', 'Hap'], ['neon', 'Neon'], ['sade', 'Sade']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
   'sponsor-banner': {
+    exitAnimation: AYRI_CIKIS,
     fit: tema(['contain', 'Tamamı görünsün'], ['cover', 'Alanı doldursun'])
   },
   giveaways: {
     kasaTema: tema(['kart', 'Kart'], ['neon', 'Neon çerçeve'], ['altin', 'Altın levha'], ['piksel', 'Piksel'], ['bilet', 'Bilet'], ['kumarhane', 'Kumarhane'], ['sade', 'Sade yazı'])
   },
   'chat-overlay': {
-    chatStyle: tema(['klasik', 'Klasik'], ['platformkart', 'Platform kartı'], ['baslikli', 'Başlıklı (ad üstte)'], ['etiket', 'Ad etiketi'], ['konusma', 'Konuşma balonu'], ['serit', 'Platform şeridi'], ['neon', 'Neon çerçeve'], ['pencere', 'Eski pencere'], ['sivicam', 'Sıvı cam'], ['terminal', 'Terminal'], ['yapiskan', 'Yapışkan not'], ['rpg', 'Oyun diyaloğu'], ['cizgiroman', 'Çizgi roman'], ['yayinbandi', 'Yayın bandı'], ['gecis', 'Renk geçişi'], ['altcizgi', 'Alt çizgi'], ['kompakt', 'Kompakt']),
+    chatStyle: tema(['klasik', 'Klasik'], ['platformkart', 'Platform kartı'], ['baslikli', 'Başlıklı (ad üstte)'], ['etiket', 'Ad etiketi'], ['konusma', 'Konuşma balonu'], ['serit', 'Platform şeridi'], ['neon', 'Neon çerçeve'], ['pencere', 'Eski pencere'], ['sivicam', 'Sıvı cam'], ['terminal', 'Terminal'], ['yapiskan', 'Yapışkan not'], ['rpg', 'Oyun diyaloğu'], ['cizgiroman', 'Çizgi roman'], ['yayinbandi', 'Yayın bandı'], ['gecis', 'Renk geçişi'], ['altcizgi', 'Alt çizgi'], ['kompakt', 'Kompakt']).concat(YAPISAL_KABUKLAR),
     layout: tema(['column', 'Alt alta'], ['row', 'Yan yana (tek satır)']),
-    animation: [...ANIM_SECENEKLERI, { value: 'daktilo', label: 'Daktilo' }, ...SOHBET_EK_ANIM],
-    exitAnimation: [...ANIM_SECENEKLERI.map((o) => (o.value === 'none' ? { value: 'none', label: 'Anında kaybolsun' } : o)), ...SOHBET_EK_ANIM]
+    exitAnimation: [...ANIM_SECENEKLERI.map((o) => (o.value === 'none' ? { value: 'none', label: 'Anında kaybolsun' } : o))]
   },
   'event-labels': {
     layout: tema(['row', 'Yan yana'], ['column', 'Alt alta']),
@@ -403,6 +443,13 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
   'wheel-of-fortune': {
+    exitAnimation: AYRI_CIKIS,
+    animation: [
+      { value: 'ease-out', label: 'Yumuşak durma' },
+      { value: 'cubic-bezier(.17,.89,.32,1.05)', label: 'Hızlı başla, sekerek dur' },
+      { value: 'cubic-bezier(.12,.6,.1,1)', label: 'Uzun süzülme' },
+      { value: 'cubic-bezier(.68,-.12,.27,1.12)', label: 'Geri çekilip dön' }
+    ],
     palette: Object.entries(CARK_PALETLERI).map(([value, p]) => ({ value, label: p.ad }))
   },
   scoreboard: {
@@ -429,7 +476,7 @@ const AYAR_TAKMA: Record<string, string> = {
   'trivia-quiz': 'trivia'
 };
 
-const PATH_MAP: Record<string, string> = {
+export const PATH_MAP: Record<string, string> = {
   'chat-overlay': '/widgets/chatbox',
   'alert-box': '/widgets/alertbox',
   'activity-feed': '/widgets/activity-feed',
@@ -466,7 +513,7 @@ const PATH_MAP: Record<string, string> = {
   trivia: '/widgets/trivia'
 };
 
-function secenekler(widgetId: string, key: string) {
+export function secenekler(widgetId: string, key: string) {
   return WIDGET_SELECTS[widgetId]?.[key] || SELECTS[key];
 }
 
@@ -562,7 +609,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   useEffect(() => {
     fetch(`/api/widgets/${ayarId}/settings`)
       .then(r => r.json())
-      .then(d => { ilkDeger.current = true; sonKayit.current = { ...defaults, ...d }; setValues({ ...defaults, ...d }); })
+      .then(d => { ilkDeger.current = true; sonKayit.current = { ...defaults, ...d }; setValues(eskiHareketiCevir({ ...defaults, ...d })); })
       .catch(() => { ilkDeger.current = true; sonKayit.current = { ...defaults }; setValues(defaults); });
   }, [ayarId]);
 

@@ -58,7 +58,34 @@ function tema(
  * `radius`, `bgOpacity`); bir widget o anahtarı tanımıyorsa yok sayılır.
  */
 export const GENEL_TEMALAR: TemaTanimi[] = [
-  tema('kutu_sivicam', 'Sıvı Cam', { kabuk: 'sivicam', bgColor: '#ffffff', bgOpacity: 0.1, accentColor: P.beyaz, textColor: P.beyaz }, { arka: '#ffffff', vurgu: P.beyaz, metin: P.beyaz }),
+  // Yapısal temalar: kutunun biçimini, dokusunu ve hareketini değiştirir (lib/kabuklar.ts)
+  tema('yapi_holo', 'Hologram', { kabuk: 'holo', chatStyle: 'holo', bgColor: '#0b1020', bgOpacity: 0.96, accentColor: '#a78bfa', textColor: '#ffffff' }, { arka: '#0b1020', vurgu: '#a78bfa', metin: '#ffffff' }),
+  tema('yapi_crt', 'CRT Ekran', { kabuk: 'crt', chatStyle: 'crt', bgColor: '#03140a', bgOpacity: 0.97, accentColor: '#22c55e', textColor: '#86efac' }, { arka: '#03140a', vurgu: '#22c55e', metin: '#86efac' }),
+  tema('yapi_brutal', 'Brutalist', { kabuk: 'brutal', chatStyle: 'brutal', bgColor: '#fde047', bgOpacity: 1, accentColor: '#1e3a8a', textColor: '#000000' }, { arka: '#fde047', vurgu: '#1e3a8a', metin: '#000000' }),
+  tema('yapi_defter', 'Karalama Defteri', { kabuk: 'defter', chatStyle: 'defter', bgColor: '#fdf6e3', bgOpacity: 1, accentColor: '#be185d', textColor: '#3b2f1a' }, { arka: '#fdf6e3', vurgu: '#be185d', metin: '#3b2f1a' }),
+  tema('yapi_ampul', 'Sahne Ampulleri', { kabuk: 'ampul', chatStyle: 'ampul', bgColor: '#1c0a2e', bgOpacity: 0.97, accentColor: '#fbbf24', textColor: '#fef3c7' }, { arka: '#1c0a2e', vurgu: '#fbbf24', metin: '#fef3c7' }),
+  tema('yapi_siber', 'Siber HUD', { kabuk: 'siber', chatStyle: 'siber', bgColor: '#020617', bgOpacity: 0.92, accentColor: '#22d3ee', textColor: '#e0f2fe' }, { arka: '#020617', vurgu: '#22d3ee', metin: '#e0f2fe' }),
+  tema('yapi_kil', 'Kil', { kabuk: 'kil', chatStyle: 'kil', bgColor: '#6d4aff', bgOpacity: 1, accentColor: '#ffb86b', textColor: '#ffffff' }, { arka: '#6d4aff', vurgu: '#ffb86b', metin: '#ffffff' }),
+  tema('yapi_krom', 'Y2K Krom', { kabuk: 'krom', chatStyle: 'krom', bgColor: '#111827', bgOpacity: 0.96, accentColor: '#e2e8f0', textColor: '#f8fafc' }, { arka: '#111827', vurgu: '#e2e8f0', metin: '#f8fafc' }),
+  tema('yapi_plan', 'Mavi Plan', { kabuk: 'plan', chatStyle: 'plan', bgColor: '#0b3a75', bgOpacity: 1, accentColor: '#7dd3fc', textColor: '#e0f2fe' }, { arka: '#0b3a75', vurgu: '#7dd3fc', metin: '#e0f2fe' }),
+  tema('yapi_bilet', 'Bilet', { kabuk: 'bilet', chatStyle: 'bilet', bgColor: '#1f2937', bgOpacity: 1, accentColor: '#fbbf24', textColor: '#fef3c7' }, { arka: '#1f2937', vurgu: '#fbbf24', metin: '#fef3c7' }),
+  tema('yapi_origami', 'Origami', { kabuk: 'origami', chatStyle: 'origami', bgColor: '#0f766e', bgOpacity: 1, accentColor: '#99f6e4', textColor: '#f0fdfa' }, { arka: '#0f766e', vurgu: '#99f6e4', metin: '#f0fdfa' }),
+  tema('yapi_vapor', 'Vaporwave', { kabuk: 'vapor', chatStyle: 'vapor', bgColor: '#12062e', bgOpacity: 1, accentColor: '#f472b6', textColor: '#fdf4ff' }, { arka: '#12062e', vurgu: '#f472b6', metin: '#fdf4ff' }),
+  tema('yapi_manga', 'Manga', { kabuk: 'manga', chatStyle: 'manga', bgColor: '#ffffff', bgOpacity: 1, accentColor: '#111111', textColor: '#111111' }, { arka: '#ffffff', vurgu: '#111111', metin: '#111111' }),
+  tema('yapi_vitray', 'Vitray', { kabuk: 'vitray', chatStyle: 'vitray', bgColor: '#0a0a0a', bgOpacity: 0.9, accentColor: '#fbbf24', textColor: '#ffffff' }, { arka: '#0a0a0a', vurgu: '#fbbf24', metin: '#ffffff' }),
+  tema('yapi_lav', 'Lav Lambası', { kabuk: 'lav', chatStyle: 'lav', bgColor: '#1a0b2e', bgOpacity: 0.97, accentColor: '#fb923c', textColor: '#fff7ed' }, { arka: '#1a0b2e', vurgu: '#fb923c', metin: '#fff7ed' }),
+  tema('yapi_perde', 'Tiyatro Perdesi', { kabuk: 'perde', chatStyle: 'perde', bgColor: '#1c0606', bgOpacity: 0.97, accentColor: '#d4a843', textColor: '#fef3c7' }, { arka: '#1c0606', vurgu: '#d4a843', metin: '#fef3c7' }),
+  tema('yapi_arcade', 'Arcade Dolabı', { kabuk: 'arcade', chatStyle: 'arcade', bgColor: '#0d0221', bgOpacity: 0.96, accentColor: '#00f0ff', textColor: '#ffffff', fontFamily: 'Pixelify Sans' }, { arka: '#0d0221', vurgu: '#00f0ff', metin: '#ffffff', kenar: '#111111', yazi: 'Pixelify Sans' }),
+  tema('yapi_kaset', 'Kaset', { kabuk: 'kaset', chatStyle: 'kaset', bgColor: '#292524', bgOpacity: 1, accentColor: '#fb923c', textColor: '#fafaf9' }, { arka: '#292524', vurgu: '#fb923c', metin: '#fafaf9', kenar: '#1c1917' }),
+  tema('yapi_polaroid', 'Polaroid', { kabuk: 'polaroid', chatStyle: 'polaroid', bgColor: '#1c1917', bgOpacity: 1, accentColor: '#fbbf24', textColor: '#fafaf9', fontFamily: 'Kalam' }, { arka: '#1c1917', vurgu: '#fbbf24', metin: '#fafaf9', kenar: '#fafaf9', yazi: 'Kalam' }),
+  tema('yapi_postit', 'Post-it', { kabuk: 'postit', chatStyle: 'postit', bgColor: '#fde047', bgOpacity: 1, accentColor: '#9a3412', textColor: '#3b2f06', fontFamily: 'Caveat' }, { arka: '#fde047', vurgu: '#9a3412', metin: '#3b2f06', yazi: 'Caveat' }),
+  tema('yapi_piksel', 'Piksel Çerçeve', { kabuk: 'piksel', chatStyle: 'piksel', bgColor: '#1e1b4b', bgOpacity: 1, accentColor: '#facc15', textColor: '#ffffff', fontFamily: 'Pixelify Sans' }, { arka: '#1e1b4b', vurgu: '#facc15', metin: '#ffffff', kenar: '#facc15', yazi: 'Pixelify Sans' }),
+  tema('yapi_ahsap', 'Ahşap Tabela', { kabuk: 'ahsap', chatStyle: 'ahsap', bgColor: '#6b4019', bgOpacity: 1, accentColor: '#fcd34d', textColor: '#fff7e6', fontFamily: 'Rye' }, { arka: 'linear-gradient(180deg,#8a5426,#55320f)', vurgu: '#fcd34d', metin: '#fff7e6', kenar: '#3b2410', yazi: 'Rye' }),
+  tema('yapi_film', 'Sinema Şeridi', { kabuk: 'film', chatStyle: 'film', bgColor: '#0a0a0a', bgOpacity: 0.97, accentColor: '#fbbf24', textColor: '#f5f5f5', fontFamily: 'Bebas Neue' }, { arka: '#0a0a0a', vurgu: '#fbbf24', metin: '#f5f5f5', yazi: 'Bebas Neue' }),
+  tema('yapi_buz', 'Kristal Buz', { kabuk: 'buz', chatStyle: 'buz', bgColor: '#0c2a43', bgOpacity: 0.92, accentColor: '#7dd3fc', textColor: '#f0f9ff' }, { arka: 'linear-gradient(135deg,#1e4a6e,#0c2a43)', vurgu: '#7dd3fc', metin: '#f0f9ff', kenar: '#e0f2fe' }),
+  tema('yapi_washi', 'Washi Bant', { kabuk: 'washi', chatStyle: 'washi', bgColor: '#fffbf0', bgOpacity: 1, accentColor: '#0f766e', textColor: '#1f2937' }, { arka: '#fffbf0', vurgu: '#0f766e', metin: '#1f2937' }),
+  tema('yapi_rozet', 'Rozet', { kabuk: 'rozet', chatStyle: 'rozet', bgColor: '#1e1b4b', bgOpacity: 0.97, accentColor: '#f5c518', textColor: '#fef9c3' }, { arka: '#1e1b4b', vurgu: '#f5c518', metin: '#fef9c3', kenar: '#f5c518' }),
+  tema('kutu_sivicam', 'Sıvı Cam', { kabuk: 'sivicam', bgColor: '#ffffff', bgOpacity: 0.1, accentColor: P.beyaz, textColor: P.beyaz }, { arka: 'rgba(255,255,255,.12)', vurgu: P.beyaz, metin: P.beyaz, kenar: 'rgba(255,255,255,.35)' }),
   tema('kutu_pencere', 'Eski Pencere', { kabuk: 'pencere', bgColor: '#c0c0c0', bgOpacity: 1, accentColor: '#000080', textColor: '#000000' }, { arka: '#c0c0c0', vurgu: '#000080', metin: '#000000' }),
   tema('kutu_gameboy', 'El Konsolu', { kabuk: 'gameboy', bgColor: '#9bbc0f', bgOpacity: 1, accentColor: '#306230', textColor: '#0f380f' }, { arka: '#9bbc0f', vurgu: '#306230', metin: '#0f380f' }),
   tema('kutu_not', 'Yapışkan Not', { kabuk: 'yapiskan', bgColor: '#fde68a', bgOpacity: 1, accentColor: '#92400e', textColor: '#3f2d06' }, { arka: '#fde68a', vurgu: '#92400e', metin: '#3f2d06' }),
@@ -113,8 +140,8 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
   tema(
     'gokyuzu',
     'Gökyüzü',
-    { theme: 'glass', bgColor: '#082f49', bgOpacity: 0.55, accentColor: '#38bdf8', textColor: P.beyaz, radius: 20 },
-    { arka: 'rgba(8,47,73,.55)', vurgu: '#38bdf8', metin: P.beyaz }
+    { theme: 'glass', bgColor: '#0b3b5c', bgOpacity: 0.55, accentColor: '#fcd34d', textColor: P.beyaz, radius: 20 },
+    { arka: 'rgba(11,59,92,.55)', vurgu: '#fcd34d', metin: P.beyaz }
   ),
   tema(
     'hacker',
@@ -282,7 +309,7 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
       ['gruvbox', '🍂 Gruvbox', '#282828', '#fabd2f', '#ebdbb2', 'Fira Code'],
       ['solarized', '☀️ Solarized', '#002b36', '#b58900', '#eee8d5', 'Ubuntu'],
       ['tokyo', '🌃 Tokyo Gecesi', '#1a1b26', '#7aa2f7', '#c0caf5', 'Space Grotesk'],
-      ['synthwave', '🌆 Synthwave', '#241b2f', '#ff7edb', '#fefeff', 'Audiowide'],
+      ['synthwave', '🌆 Synthwave', '#241b2f', '#36f9f6', '#fefeff', 'Audiowide'],
       ['vaporwave', '🌴 Vaporwave', '#2d1b4e', '#01cdfe', '#fffb96', 'Righteous'],
       ['lofi', '☕ Lo-fi Kafe', '#3b2f2f', '#d4a373', '#fefae0', 'Caveat'],
       ['sakura', '🌸 Sakura', '#2b1b24', '#ffb7c5', '#fff0f5', 'Comfortaa'],
@@ -293,26 +320,26 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
       ['espor-kirmizi', '🎯 E-spor Kırmızı', '#0d0d0d', '#ff2e4c', '#ffffff', 'Saira'],
       ['espor-mavi', '🛡️ E-spor Mavi', '#050b1a', '#2f80ff', '#ffffff', 'Barlow Condensed'],
       ['tek-renk', '⚫ Tek Renk', '#000000', '#ffffff', '#ffffff', 'Space Grotesk'],
-      ['seker-pop', '🍭 Şeker Pop', '#2a1036', '#ff8fd8', '#ffffff', 'Fredoka'],
+      ['seker-pop', '🍭 Şeker Pop', '#43105e', '#ff8fd8', '#ffffff', 'Fredoka'],
       ['matrix', '🟢 Matrix', '#000000', '#00ff41', '#b6ffbf', 'Fira Code'],
       ['piksel-mor', '👾 Piksel Gece', '#1b1035', '#a78bfa', '#ffffff', 'Pixelify Sans'],
       // Popüler film, oyun ve dizilerin havası: kendi renk ve yazı tipi birleşimlerimiz (marka adı, logo, görsel yok)
       ['f-karanlik-sehir', '🦇 Film: Karanlık Şehir', '#0b0d12', '#f5c518', '#e5e7eb', 'Bebas Neue'],
       ['f-galaktik', '🌌 Film: Galaktik Savaş', '#05060f', '#ffe81f', '#f8fafc', 'Michroma'],
-      ['f-buyucu', '🪄 Film: Büyücü Okulu', '#1a1025', '#d3a625', '#f5ecd7', 'Cinzel Decorative'],
-      ['f-orta-diyar', '💍 Film: Yüzük Diyarı', '#1c1a12', '#c9a227', '#f2ead3', 'MedievalSharp'],
-      ['f-mavi-gezegen', '🌿 Film: Mavi Gezegen', '#04202e', '#38e8d4', '#e6fffb', 'Exo 2'],
+      ['f-buyucu', '🪄 Film: Büyücü Okulu', '#2a0b12', '#d3a625', '#f5ecd7', 'Cinzel Decorative'],
+      ['f-orta-diyar', '💍 Film: Yüzük Diyarı', '#1a2114', '#c9a227', '#f2ead3', 'MedievalSharp'],
+      ['f-mavi-gezegen', '🌿 Film: Mavi Gezegen', '#120a33', '#38e8d4', '#e6fffb', 'Exo 2'],
       ['f-dinozor', '🦖 Film: Dinozor Adası', '#13240f', '#f59e0b', '#fef3c7', 'Anton'],
       ['f-neon-yagmur', '🌧️ Film: Neon Yağmur', '#10091f', '#ff5ea0', '#ffe9f3', 'Oxanium'],
       ['f-korsan', '🏴‍☠️ Film: Korsan Denizi', '#14202b', '#d9a441', '#f4ead5', 'Pirata One'],
       ['f-orumcek', '🕸️ Film: Örümcek Kahraman', '#0a1a4a', '#ff3b4a', '#ffffff', 'Bangers'],
       ['f-zirh', '🤖 Film: Zırhlı Dahi', '#2a0a0a', '#f5b301', '#fff7e0', 'Russo One'],
-      ['o-blok', '⛏️ Oyun: Blok Dünyası', '#1f2a17', '#7bc043', '#f0f7e6', 'Pixelify Sans'],
+      ['o-blok', '⛏️ Oyun: Blok Dünyası', '#3b2a1a', '#7bc043', '#f0f7e6', 'Pixelify Sans'],
       ['o-suc-sehri', '🚗 Oyun: Suç Şehri', '#0e1712', '#57c26b', '#ffffff', 'Oswald'],
       ['o-nisanci', '🎯 Oyun: Taktik Nişancı', '#0f1923', '#ff4655', '#ece8e1', 'Tektur'],
       ['o-karsi-saldiri', '💣 Oyun: Karşı Saldırı', '#1b1f23', '#de9b35', '#f5f5f5', 'Rajdhani'],
-      ['o-gece-kenti', '🌃 Oyun: Gece Kenti', '#0a0a12', '#fcee0a', '#e8fdff', 'Oxanium'],
-      ['o-cadi-avcisi', '🐺 Oyun: Canavar Avcısı', '#15120e', '#d9534f', '#e9dfc7', 'Grenze Gotisch'],
+      ['o-gece-kenti', '🌃 Oyun: Gece Kenti', '#0a0a12', '#ff2a6d', '#e8fdff', 'Oxanium'],
+      ['o-cadi-avcisi', '🐺 Oyun: Canavar Avcısı', '#15120e', '#b8c4cc', '#e9dfc7', 'Grenze Gotisch'],
       ['o-kul', '🔥 Oyun: Kül ve Ruhlar', '#100d0b', '#e8742b', '#eadfce', 'New Rocker'],
       ['o-uzay-haini', '🔺 Oyun: Uzayda Hain', '#1a0f2e', '#ff5c5c', '#ffffff', 'Luckiest Guy'],
       ['o-haydut', '🤠 Oyun: Vahşi Haydutlar', '#2a1a10', '#e0634f', '#f5e6c8', 'Rye'],
@@ -320,7 +347,7 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
       ['d-demir-taht', '🐉 Dizi: Demir Taht', '#101418', '#8fb8d6', '#e8eef2', 'Cinzel'],
       ['d-kimya', '🧪 Dizi: Kimya Öğretmeni', '#0e2a1a', '#6fd08c', '#f2fff5', 'Courier Prime'],
       ['d-ters-dunya', '🚲 Dizi: Ters Dünya', '#0b0506', '#ff2a33', '#f9d6d6', 'Metal Mania'],
-      ['d-soygun', '🎭 Dizi: Büyük Soygun', '#1a0505', '#ff3b42', '#ffffff', 'Anton'],
+      ['d-soygun', '🎭 Dizi: Büyük Soygun', '#5a0a0a', '#f5d7b5', '#ffffff', 'Anton'],
       ['d-olumcul-oyun', '🟢 Dizi: Ölümcül Oyun', '#0d2b2a', '#ff5c97', '#fdf6ec', 'Fredoka'],
       ['d-yuruyen', '🧟 Dizi: Yürüyen Ölüler', '#1a1c14', '#a3b56b', '#e3e3d3', 'Eater'],
       ['d-siyah-ayna', '📱 Dizi: Siyah Ayna', '#000000', '#7dd3fc', '#f1f5f9', 'Space Grotesk'],
@@ -387,7 +414,7 @@ const HEDEF_TEMALARI: TemaTanimi[] = [
   hedefTema('h-siberpunk', '⚡ Siberpunk', '#fcee0a', '#00f0ff', '⚡', { fontFamily: 'Audiowide', barRadius: 4, barBorderColor: '#fcee0a', barStyle: 'glossy' }),
   hedefTema('h-taktik', '🎯 Taktik', '#4d5d2a', '#ff6b00', '🎯', { fontFamily: 'Black Ops One', barRadius: 2, barBorderColor: '#c5b358' }),
   hedefTema('h-fantastik', '🗡️ Fantastik RPG', '#7b1e1e', '#d4af37', '🗡️', { fontFamily: 'Cinzel', barBorderColor: '#d4af37', barRadius: 8 }),
-  hedefTema('h-ejderha', '🐉 Ejderha Ateşi', '#991b1b', '#fbbf24', '🐉', { barIconFlip: true, fontFamily: 'Cinzel', barBorderColor: '#fbbf24', barStyle: 'glossy' }),
+  hedefTema('h-ejderha', '🐉 Ejderha Ateşi', '#0f766e', '#fbbf24', '🐉', { barIconFlip: true, fontFamily: 'Cinzel', barBorderColor: '#fbbf24', barStyle: 'glossy' }),
   hedefTema('h-yaris', '🏎️ Yarış', '#dc2626', '#f5f5f5', '🏎️', { barIconFlip: true, fontFamily: 'Russo One', barRadius: 4, barStyle: 'striped', barBorderColor: '#e5e5e5' }),
   hedefTema('h-futbol', '⚽ Futbol', '#15803d', '#4ade80', '⚽', { fontFamily: 'Oswald', barBorderColor: '#ffffff', barStyle: 'striped' }),
   hedefTema('h-uzay', '🚀 Uzay Destanı', '#312e81', '#4fc3f7', '🚀', { fontFamily: 'Oxanium', barBorderColor: '#93c5fd', barStyle: 'glossy' }),
@@ -542,7 +569,8 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
         ['matrix', '🟢 Matrix', '#00ff41', '#00ff41']
       ] as const
     ).map(([palet, ad, kenar, ibre]) =>
-      tema(`p-${palet}`, ad, { palette: palet, borderColor: kenar, pointerColor: ibre, outlineEnabled: true, outlineColor: '#000000' }, { arka: palet === 'white' ? '#e2e8f0' : '#1e293b', vurgu: ibre, metin: kenar })
+      tema(`p-${palet}`, ad, { palette: palet, borderColor: kenar, pointerColor: ibre, outlineEnabled: true, outlineColor: '#000000' }, // Önizleme yazısı zeminde okunsun: çerçeve rengi zemine yakınsa düz yazı rengi
+      { arka: palet === 'white' ? '#e2e8f0' : '#1e293b', vurgu: ibre, metin: palet === 'white' ? '#0f172a' : palet === 'kart' || palet === 'piksel' ? '#ffffff' : kenar, kenar })
     )
   ],
   'chat-overlay': [
@@ -559,7 +587,7 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     tema('buyukyazi', 'Büyük Okunur', { chatStyle: 'klasik', messageBgTransparent: true, fontSize: 30, fontWeight: 800, outlineEnabled: true, outlineWidth: 1, outlineColor: '#000000', textShadow: true, fontFamily: 'Rubik', showTimestamp: false }, { arka: 'transparent', vurgu: P.amber, metin: P.beyaz, yazi: 'Rubik' }),
     tema('yayinci', 'Temiz Satır', { chatStyle: 'klasik', messageBgTransparent: true, nameOnOwnLine: true, fontFamily: 'Open Sans', textShadow: true, showTimestamp: false, showBadges: true }, { arka: 'transparent', vurgu: P.turkuaz, metin: P.beyaz, yazi: 'Open Sans' }),
     tema('baloncuk', 'Baloncuk', { messageBubbles: true, messageBgColor: '#1e293b', messageBgOpacity: 0.9, borderRadius: 22 }, { arka: '#1e293b', vurgu: P.turkuaz, metin: P.beyaz }),
-    tema('yanmenu', 'Yan Şerit', { messageBubbles: true, messageBgColor: P.siyah, messageBgOpacity: 0.55, borderRadius: 4 }, { arka: 'rgba(0,0,0,.55)', vurgu: P.mor, metin: P.beyaz }),
+    tema('yanmenu', 'Yan Şerit', { messageBubbles: true, messageBgColor: '#1e1033', messageBgOpacity: 0.7, borderRadius: 4, textColor: P.beyaz, highlightColor: P.mor, highlightSpecial: true }, { arka: 'rgba(30,16,51,.7)', vurgu: P.mor, metin: P.beyaz }),
     tema('seffaf', 'Tamamen Şeffaf', { transparentBg: true, messageBgOpacity: 0, textShadow: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz }),
     // BotRix'te 24 hazır sohbet tasarımı gözlemlendi; bizdekiler kendi renk/ayar birleşimlerimiz
     tema('neon', 'Neon', { messageBubbles: true, messageBgColor: '#0b0420', messageBgOpacity: 0.85, borderRadius: 10, textColor: P.beyaz, highlightColor: P.pembe, highlightSpecial: true, outlineEnabled: false, textShadow: true }, { arka: '#0b0420', vurgu: P.pembe, metin: P.beyaz }),
@@ -574,7 +602,7 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     tema('akis', 'Akış Çizgisi', { messageBubbles: true, messageBgColor: '#000000', messageBgOpacity: 0.6, borderRadius: 2, textColor: P.beyaz, highlightColor: P.turkuaz, highlightSpecial: true, gap: 4 }, { arka: 'rgba(0,0,0,.6)', vurgu: P.turkuaz, metin: P.beyaz }),
     tema('neonkart', 'Neon Kartlar', { messageBubbles: true, messageBgColor: '#12002b', messageBgOpacity: 0.9, borderRadius: 12, textColor: P.beyaz, highlightColor: '#22d3ee', highlightSpecial: true, textShadow: true }, { arka: '#12002b', vurgu: '#22d3ee', metin: P.beyaz, kenar: '#ff2bd6' }),
     tema('pikselsohbet', 'Piksel Macera', { messageBubbles: true, messageBgColor: '#1f2937', messageBgOpacity: 0.9, borderRadius: 0, textColor: '#f1f8e9', fontFamily: 'VT323', fontSize: 26, highlightColor: '#7cc242' }, { arka: '#1f2937', vurgu: '#7cc242', metin: '#f1f8e9' }),
-    tema('yuvarlak', 'Yuvarlak', { messageBubbles: true, messageBgColor: '#1e293b', messageBgOpacity: 0.85, borderRadius: 999, textColor: P.beyaz, gap: 8 }, { arka: '#1e293b', vurgu: P.mor, metin: P.beyaz }),
+    tema('yuvarlak', 'Yuvarlak', { messageBubbles: true, messageBgColor: '#2e1065', messageBgOpacity: 0.85, borderRadius: 999, textColor: P.beyaz, highlightColor: P.mor, gap: 8 }, { arka: '#2e1065', vurgu: P.mor, metin: P.beyaz }),
     tema('gokyuzu', 'Gökyüzü', { messageBubbles: true, messageBgColor: '#e0f2fe', messageBgOpacity: 0.92, borderRadius: 16, textColor: '#0c4a6e', usernameColorMode: 'custom', customUsernameColor: '#0284c7', textShadow: false }, { arka: '#e0f2fe', vurgu: '#0284c7', metin: '#0c4a6e' }),
     tema('pencerecami', 'Pencere Camı', { messageBubbles: true, messageBgColor: '#ffffff', messageBgOpacity: 0.18, borderRadius: 6, textColor: P.beyaz, textShadow: true }, { arka: 'rgba(255,255,255,.18)', vurgu: P.beyaz, metin: P.beyaz, kenar: 'rgba(255,255,255,.5)' }),
     tema('mesajlasma', 'Mesajlaşma Uygulaması', { messageBubbles: true, messageBgColor: '#dcf8c6', messageBgOpacity: 0.97, borderRadius: 14, textColor: '#111b21', usernameColorMode: 'custom', customUsernameColor: '#075e54', textShadow: false }, { arka: '#dcf8c6', vurgu: '#075e54', metin: '#111b21' }),
@@ -592,18 +620,18 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     tema('oyunhud', 'Oyun HUD', { chatStyle: 'platformkart', platformColors: true, messageBgColor: '#020617', messageBgOpacity: 0.85, borderRadius: 0, fontFamily: 'Rajdhani', fontWeight: 700, textColor: '#e2e8f0', textShadow: false }, { arka: '#020617', vurgu: P.turkuaz, metin: '#e2e8f0', kenar: P.turkuaz, yazi: 'Rajdhani' })
   ],
   polls: [
-    tema('savas', 'Düello', { barColor: P.kirmizi, barBackground: '#1e40af', showVotes: true }, { arka: '#1e293b', vurgu: P.kirmizi, metin: P.beyaz }),
+    tema('savas', 'Düello', { barColor: '#f87171', barBackground: '#1e40af', showVotes: true }, { arka: '#1e293b', vurgu: P.kirmizi, metin: P.beyaz }),
     tema('yayin', 'Yayın Bandı', { barColor: P.turkuaz, barBackground: '#0f172a', borderRadius: 4 }, { arka: '#0f172a', vurgu: P.turkuaz, metin: P.beyaz }),
     tema('kompakt', 'Kompakt Kapışma', { barColor: '#f97316', barBackground: '#1e3a8a', borderRadius: 6, fontSize: 12, backgroundOpacity: 0.85 }, { arka: '#1e3a8a', vurgu: '#f97316', metin: P.beyaz }),
     tema('platform', 'Platform Rengi', { barColor: P.kick, barBackground: '#0f1a0a', titleColor: P.kick, borderColor: P.kick }, { arka: '#0f1a0a', vurgu: P.kick, metin: P.beyaz }),
     tema('baloncuk', 'Baloncuklar', { barColor: '#38bdf8', barBackground: '#0c4a6e', borderRadius: 24, titleColor: '#bae6fd', borderColor: '#38bdf8' }, { arka: '#0c4a6e', vurgu: '#38bdf8', metin: P.beyaz }),
     tema('beyaz', 'Beyaz', { backgroundColor: '#ffffff', backgroundOpacity: 0.95, fontColor: '#111827', titleColor: '#4f46e5', barColor: '#4f46e5', barBackground: '#e5e7eb', borderColor: '#e5e7eb' }, { arka: '#ffffff', vurgu: '#4f46e5', metin: '#111827' }),
-    tema('pasta', 'Pasta', { backgroundColor: '#fff1f2', backgroundOpacity: 0.95, fontColor: '#831843', titleColor: '#db2777', barColor: '#f472b6', barBackground: '#fce7f3', borderColor: '#f9a8d4', borderRadius: 22 }, { arka: '#fff1f2', vurgu: '#db2777', metin: '#831843' }),
+    tema('pasta', 'Pasta', { backgroundColor: '#fff1f2', backgroundOpacity: 0.95, fontColor: '#831843', titleColor: '#db2777', barColor: '#db2777', barBackground: '#fce7f3', borderColor: '#f9a8d4', borderRadius: 22 }, { arka: '#fff1f2', vurgu: '#db2777', metin: '#831843' }),
     tema('hacker', 'Hacker', { backgroundColor: '#000000', fontColor: '#22c55e', titleColor: '#4ade80', barColor: '#16a34a', barBackground: '#052e16', borderColor: '#16a34a', borderRadius: 0, fontFamily: 'VT323', fontSize: 18 }, { arka: '#000000', vurgu: '#22c55e', metin: '#22c55e' }),
     tema('neon', 'Neon', { backgroundColor: '#0b0420', fontColor: P.beyaz, titleColor: '#ff2bd6', barColor: '#ff2bd6', barBackground: '#1e0b3a', borderColor: '#22d3ee' }, { arka: '#0b0420', vurgu: '#ff2bd6', metin: P.beyaz, kenar: '#22d3ee' }),
     tema('yuvarlak', 'Yuvarlak', { borderRadius: 28, barColor: P.mor, barBackground: '#1e1b4b', titleColor: '#c4b5fd', borderColor: P.mor }, { arka: '#1e1b4b', vurgu: P.mor, metin: P.beyaz }),
     tema('isinkilici', 'Işın Kılıcı', { backgroundColor: '#020617', barColor: '#38bdf8', barBackground: '#0f172a', titleColor: '#e0f2fe', borderColor: '#38bdf8', borderRadius: 999, fontFamily: 'Oxanium' }, { arka: '#020617', vurgu: '#38bdf8', metin: '#e0f2fe' }),
-    tema('kapisma', 'Kapışma', { barColor: '#dc2626', barBackground: '#1d4ed8', titleColor: '#fde047', borderColor: '#fde047', fontFamily: 'Russo One' }, { arka: 'linear-gradient(90deg,#dc2626,#1d4ed8)', vurgu: '#fde047', metin: P.beyaz }),
+    tema('kapisma', 'Kapışma', { barColor: '#f87171', barBackground: '#1e3a8a', titleColor: '#fde047', borderColor: '#fde047', fontFamily: 'Russo One' }, { arka: 'linear-gradient(90deg,#f87171,#1e3a8a)', vurgu: '#fde047', metin: P.beyaz }),
     tema('minimalanket', 'Minimal', { backgroundOpacity: 0, borderColor: '#ffffff', barColor: '#ffffff', barBackground: '#ffffff33', titleColor: '#ffffff', outlineEnabled: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz })
   ]
 };

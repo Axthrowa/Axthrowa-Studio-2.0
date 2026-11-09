@@ -7,6 +7,8 @@
  * aşımları temizlenmediği için arka arkaya kullanılan iki ödül birbirinin
  * kartını erken kapatıyordu.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
@@ -131,12 +133,12 @@ export function LoyaltyStoreWidget({ embedded = false, previewMode = false }: Lo
       }
       style={{ alignItems: dikey(s.position), fontFamily: s.fontFamily }}
     >
-      <div
+      <div {...kokOzellik(s)}
         className={`transition-all duration-500 transform ${
           visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 -translate-y-6'
         } flex flex-col items-center text-center`}
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.card),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.card), ...(visible ? ortakHareket(s) : null),
           borderRadius: Number(s.radius) || 24,
           padding: `${Number(s.paddingY) || 24}px ${Number(s.paddingX) || 24}px`,
           maxWidth: Number(s.maxWidth) || 448,

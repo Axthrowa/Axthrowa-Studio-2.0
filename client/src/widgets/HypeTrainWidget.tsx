@@ -15,6 +15,8 @@
  * Aşağıdaki hesap fonksiyonları sunucuyla aynı kuraldır, önizleme ve
  * geriye uyum için duruyor.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -136,10 +138,10 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
       }
       style={{ fontFamily: s.fontFamily }}
     >
-      <div
+      <div {...kokOzellik(s)}
         className="w-full"
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic), ...ortakHareket(s),
           borderRadius: Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           color: s.textColor

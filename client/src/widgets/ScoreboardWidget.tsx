@@ -5,6 +5,9 @@
  * Görünümler: TV yayını (eğik takım panelleri), kartlar, alt alta sıralama (oranlı çubuk), neon, e-spor HUD,
  * minimal. Skor değişince sayı zıplar ve "+1" yükselir; önde olan takımda taç.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { kutuTasarimi } from '../lib/widget-style.js';
+import { ortakHareket } from '../lib/animations.js';
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SCOREBOARD_DEFAULTS } from '../lib/widget-defaults.js';
@@ -123,13 +126,13 @@ export function ScoreboardWidget({ embedded = false, previewMode = false }: { em
     icerik = (
       <div className="flex flex-col items-stretch gap-1">
         {s.showTitle && (
-          <div className="self-center px-4 py-0.5 rounded-t-lg" style={{ background: rgba(s.bgColor, Math.max(0.6, Number(s.bgOpacity))) }}>
+          <div data-yuzey="" className="self-center px-4 py-0.5 rounded-t-lg" style={{ background: rgba(s.bgColor, Math.max(0.6, Number(s.bgOpacity))) }}>
             {baslik}
           </div>
         )}
         <div className="flex items-stretch" style={{ filter: `drop-shadow(0 8px 18px ${rgba(s.accentColor, 0.35)})` }}>
           {panel(a, 0, false)}
-          <div className="flex items-center gap-3 px-4" style={{ background: rgba(s.bgColor, Math.max(0.85, Number(s.bgOpacity))), borderTop: `3px solid ${s.accentColor}`, borderBottom: `3px solid ${s.accentColor}` }}>
+          <div data-yuzey="" className="flex items-center gap-3 px-4" style={{ background: rgba(s.bgColor, Math.max(0.85, Number(s.bgOpacity))), borderTop: `3px solid ${s.accentColor}`, borderBottom: `3px solid ${s.accentColor}` }}>
             {skorSayisi(a, 0)}
             <span className="font-black" style={{ fontSize: boy * 0.5, color: s.accentColor }}>:</span>
             {skorSayisi(b, 1)}
@@ -143,7 +146,7 @@ export function ScoreboardWidget({ embedded = false, previewMode = false }: { em
     const sirali = t.takimlar.map((x, i) => ({ x, i })).sort((p, q) => q.x.skor - p.x.skor);
     const enCok = Math.max(1, ...t.takimlar.map((x) => x.skor));
     icerik = (
-      <div className="flex flex-col gap-1.5" style={{ minWidth: boy * 6, background: rgba(s.bgColor, s.bgOpacity), borderRadius: Number(s.radius), padding: 12, border: `2px solid ${rgba(s.accentColor, 0.6)}` }}>
+      <div data-yuzey="" className="flex flex-col gap-1.5" style={{ minWidth: boy * 6, background: rgba(s.bgColor, s.bgOpacity), borderRadius: Number(s.radius), padding: 12, border: `2px solid ${rgba(s.accentColor, 0.6)}` }}>
         {baslik}
         {sirali.map(({ x, i }, sira) => (
           <div key={i} className="relative flex items-center gap-3 px-3 py-1.5 rounded-lg overflow-hidden" style={{ background: rgba('#ffffff', 0.05) }}>
@@ -192,7 +195,7 @@ export function ScoreboardWidget({ embedded = false, previewMode = false }: { em
   }
 
   return (
-    <div className={`${embedded ? 'w-full h-full' : 'w-screen h-screen p-6'} flex items-start justify-center select-none`} style={{ fontFamily: s.fontFamily, color: s.textColor }}>
+    <div {...kokOzellik(s)} className={`${embedded ? 'w-full h-full' : 'w-screen h-screen p-6'} flex items-start justify-center select-none`} style={{ fontFamily: s.fontFamily, color: s.textColor, ...kutuTasarimi(s), ...ortakHareket(s) }}>
       <style>{SKOR_CSS}</style>
       {icerik}
     </div>

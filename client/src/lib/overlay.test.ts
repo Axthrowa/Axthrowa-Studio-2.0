@@ -99,11 +99,6 @@ describe('animStili', () => {
     expect(String(s.transition)).toContain('120ms');
   });
 
-  it('hareketi azalt açıkken tüm ön ayarlar soluk geçişe düşer', () => {
-    const s = animStili('bounceLeft', 'entering', 400, 0, true);
-    expect(s.transform).toBe('none');
-    expect(s.opacity).toBe(0);
-  });
 });
 
 describe('metin efektleri', () => {

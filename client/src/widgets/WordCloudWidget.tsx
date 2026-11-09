@@ -5,6 +5,9 @@
  * Sayım sunucuda (`/api/sohbet-istatistik`); widget birkaç saniyede bir okur.
  * Yerleşim: sözcükler sarmal üzerinde sırayla yerleştirilir, çakışanlar dışarı itilir.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { kutuTasarimi } from '../lib/widget-style.js';
+import { ortakHareket } from '../lib/animations.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { WORD_CLOUD_DEFAULTS } from '../lib/widget-defaults.js';
@@ -137,9 +140,10 @@ export function WordCloudWidget({ embedded = false, previewMode = false }: { emb
   return (
     <div
       ref={kutu}
+      {...kokOzellik(s)}
       data-katman-bos={yerler.length ? undefined : ''}
       className={`${embedded ? 'w-full h-full' : 'w-screen h-screen'} relative overflow-hidden select-none`}
-      style={{ background: Number(s.bgOpacity) > 0 ? rgba(s.bgColor, s.bgOpacity) : 'transparent', borderRadius: Number(s.radius) || 0, fontFamily: s.fontFamily }}
+      style={{ background: Number(s.bgOpacity) > 0 ? rgba(s.bgColor, s.bgOpacity) : 'transparent', borderRadius: Number(s.radius) || 0, fontFamily: s.fontFamily, ...kutuTasarimi(s), ...ortakHareket(s) }}
     >
       {yerler.map((y, i) => (
         <span

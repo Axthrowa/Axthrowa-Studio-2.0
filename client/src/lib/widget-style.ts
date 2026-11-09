@@ -103,6 +103,8 @@ export function wsAdresi(tur = 'all'): string {
   return `${protocol}//${window.location.hostname}:${sunucuPortu()}/ws?type=${tur}`;
 }
 
+import { YAPISAL_KABUKLAR, yapisalKabukStilleri } from './kabuklar.js';
+
 /**
  * Kart biçimli widget'ların (Shoutout, Sabitlenmiş Mesaj) ek tasarımları. Kendi stillerimiz;
  * her biri yalnız kutu görünümünü değiştirir, metin/avatar düzeni widget'ta kalır.
@@ -111,6 +113,7 @@ export function kartTasarimlari(s: { bgColor?: string; bgOpacity?: number | stri
   const arka = rgba(s.bgColor, s.bgOpacity ?? 0.85);
   const vurgu = s.accentColor || '#22d3ee';
   return {
+    ...yapisalKabukStilleri(arka, vurgu),
     softcard: { background: arka, border: `1px solid ${rgba('#ffffff', 0.08)}`, boxShadow: '0 20px 50px rgba(0,0,0,.45)' },
     neumorph: { background: rgba(s.bgColor, 1), border: 'none', boxShadow: `8px 8px 18px rgba(0,0,0,.6), -6px -6px 14px ${rgba('#ffffff', 0.06)}` },
     borderline: { background: 'transparent', border: `2px solid ${vurgu}`, boxShadow: 'none' },
@@ -160,7 +163,7 @@ export const KUTU_TASARIMLARI: Array<{ value: string; label: string }> = [
   ['ribbon', 'Kurdele'], ['guestpass', 'Davetiye'], ['phosphor', 'Terminal'], ['prism', 'Prizma kenar'], ['cute', 'Sevimli'], ['capsule', 'Kapsül'], ['hud', 'E-spor HUD'],
   ['pencere', 'Eski pencere'], ['gameboy', 'El konsolu'], ['yapiskan', 'Yapışkan not'], ['parsomen', 'Parşömen'], ['cizgiroman', 'Çizgi roman'],
   ['gecedalga', 'Gece dalgası'], ['altin', 'Altın kenar'], ['koseli', 'Köşeli çerçeve'], ['kupon', 'Kupon']
-].map(([value, label]) => ({ value, label }));
+].map(([value, label]) => ({ value, label })).concat(YAPISAL_KABUKLAR);
 
 /** Seçili ortak kutu tasarımı (widget kutusunun stiline en son eklenir). Renk alanlarının adı widget'a göre değişir. */
 export function kutuTasarimi(s: Record<string, any>): import('react').CSSProperties | undefined {

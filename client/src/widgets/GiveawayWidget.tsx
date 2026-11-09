@@ -5,6 +5,8 @@
  * Çekiliş açıkken ödül, katılım kelimesi, katılımcı sayısı ve kalan süre görünür. Kazanan çekilince
  * katılımcı adları kasa açar gibi sağdan sola kayar, yavaşlar ve kazanan `winnerShowSec` saniye gösterilip kaybolur.
  */
+import { kokOzellik } from '../lib/kabuklar.js';
+import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import confetti from 'canvas-confetti';
@@ -147,10 +149,9 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
   const bg = `${s.backgroundColor}${Math.round(s.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
 
   return (
-    <div
+    <div {...kokOzellik(s)}
       data-katman-cekilis={kasa || winner ? '' : undefined}
-      className={`axt-anim-${s.animation}`}
-      style={{ fontFamily: s.fontFamily, background: bg, borderRadius: s.borderRadius, padding: '18px 22px', color: s.fontColor, textAlign: 'center', overflow: 'hidden', ...kutuTasarimi(s), borderTop: s.kabuk ? undefined : `4px solid ${s.accentColor}` }}
+      style={{ fontFamily: s.fontFamily, background: bg, borderRadius: s.borderRadius, padding: '18px 22px', color: s.fontColor, textAlign: 'center', overflow: 'hidden', ...kutuTasarimi(s), ...ortakHareket(s), borderTop: s.kabuk ? undefined : `4px solid ${s.accentColor}` }}
     >
       <div style={{ fontSize: Math.round(s.fontSize * 0.75), fontWeight: 800, letterSpacing: 2, color: s.accentColor }}>{s.overlayTitle}</div>
 

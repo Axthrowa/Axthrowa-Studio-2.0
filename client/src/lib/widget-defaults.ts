@@ -100,6 +100,11 @@ export const CHAT_DEFAULTS = {
   showPlatformLogo: true,
   showBadges: true,
   showTimestamp: true,
+  // Satır başındaki renkli çizgiler (vurgu, platform kartı, terminal)
+  arkaPlanKapali: false,
+  cerceveKapali: false,
+  animationDuration: 450,
+  satirCizgisi: true,
   showAvatars: true,
   avatarSize: 0, // 0: yazı boyutuna göre
   avatarShape: 'circle',
@@ -174,7 +179,20 @@ export const GOAL_DEFAULTS = {
   outlineEnabled: false,
   outlineColor: '#000000',
   outlineWidth: 2,
-  animation: 'pulse',
+  animation: 'fade',
+  // Sürekli efekt tüm kutuya değil, seçilen parçaya uygulanır
+  efektHedefi: 'bar',
+  // Parça parça hareket: giriş 'none' = kutuyla birlikte gelir; efekt 'genel' = üstteki tek seçim
+  baslikGiris: 'none',
+  baslikEfekti: 'genel',
+  rakamGiris: 'none',
+  rakamEfekti: 'genel',
+  barGiris: 'none',
+  barEfekti: 'genel',
+  dolguGiris: 'none',
+  dolguEfekti: 'genel',
+  simgeGiris: 'none',
+  simgeEfekti: 'genel',
   backgroundColor: '#000000',
   backgroundOpacity: 0.85,
   borderRadius: 16,
@@ -195,6 +213,8 @@ export const GOAL_DEFAULTS = {
 
 /** Kappagen / Ekranda Emojiler */
 export const KAPPAGEN_DEFAULTS = {
+  animation: 'zoom',
+  animationDuration: 300,
   fromChat: true,
   size: 64,
   durationMs: 3500,
@@ -207,6 +227,8 @@ export const KAPPAGEN_DEFAULTS = {
 };
 
 export const EMOTE_COMBO_DEFAULTS = {
+  animation: 'pop',
+  animationDuration: 260,
   /** Kaç kez art arda gelince ekranda belirsin */
   minCombo: 2,
   /** Emote bu kadar süre gelmezse patlar */
@@ -305,6 +327,8 @@ export const WHEEL_DEFAULTS = {
     { label: 'Zeynep_X', color: '#ef4444', weight: 1 }
   ],
   spinMs: 8000,
+  /** Çark kaybolurken: 'ayni' = giriş animasyonunun tersi */
+  exitAnimation: 'ayni',
   extraSpins: 6,
   /** Yalnız çevrilince / ayar değişince görünsün */
   autoHide: true,
@@ -596,7 +620,8 @@ export const SOCIAL_ROTATOR_DEFAULTS = {
   itemSeconds: 6,
   waitSeconds: 0,
   animation: 'slideUp',
-  animationDuration: 450,
+  exitAnimation: 'ayni',
+  animationDuration: 600,
   theme: 'kart',
   position: 'bottom',
   align: 'left',
@@ -619,7 +644,8 @@ export const SPONSOR_DEFAULTS = {
   defaultSeconds: 10,
   waitSeconds: 0,
   animation: 'fade',
-  animationDuration: 500,
+  exitAnimation: 'ayni',
+  animationDuration: 600,
   fit: 'contain',
   radius: 12,
   bgColor: '#000000',
@@ -670,7 +696,6 @@ export const RANKINGS_DEFAULTS = {
   sort: 'points',
   theme: 'classic',
   limit: 10,
-  refreshSeconds: 8,
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 13,
   textColor: '#ffffff',
@@ -690,7 +715,8 @@ export const RANKINGS_DEFAULTS = {
   showValue: true,
   highlightTop: true,
   compactNumbers: false,
-  hideEmpty: true
+  hideEmpty: true,
+  refreshSeconds: 8
 };
 
 /** Hype Treni — seviye eşiği, olay puanları ve görünüm. */
@@ -753,7 +779,6 @@ export const LYRICS_DEFAULTS = {
   paddingY: 20,
   maxWidth: 896,
   lineMs: 4500,
-  refreshSeconds: 5,
   /** Senkron kaydırma (ms): + sözler erken, - geç gelir */
   syncOffsetMs: 0,
   /** Etkin satırın yazı tipi (boş = genel yazı tipi) */
@@ -799,6 +824,7 @@ export const KING_DEFAULTS = {
 
 /** JumpScare — varsayılan medya, süre ve tetikleme eşiği. */
 export const JUMPSCARE_DEFAULTS = {
+  animation: 'none',
   mediaUrl: '',
   mediaType: 'image',
   audioUrl: '',
@@ -896,7 +922,7 @@ export const AUDIO_PLAYER_DEFAULTS = {
   hideWhenIdle: false
 };
 
-export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
+const WIDGET_AYARLARI: Record<string, Record<string, any>> = {
   'activity-feed': ACTIVITY_DEFAULTS,
   'chat-overlay': CHAT_DEFAULTS,
   'donation-goal': { ...GOAL_DEFAULTS, title: 'Bağış Hedefi', type: 'tip', barColor: '#10b981', target: 1000 },
@@ -929,6 +955,33 @@ export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = {
   'end-credits': END_CREDITS_DEFAULTS,
   'audio-player': AUDIO_PLAYER_DEFAULTS
 };
+
+/** Kutusu olmayan widget'lar: kapatılacak zemin/çerçeve yok, yalnız hareket ve gölge */
+const KUTUSUZ = new Set(['on-screen-emotes', 'emote-combo', 'jumpscare']);
+/** Sohbet görünümü `chatStyle` ile, Resonance kendi sayfasında seçilir */
+const KABUKSUZ = new Set(['chat-overlay', 'on-screen-emotes', 'emote-combo', 'jumpscare']);
+
+/**
+ * Her widget'ta temadan bağımsız ortak ayarlar: buraya eklenen anahtar panelde tüm widget'larda görünür.
+ * Widget'ın kendi değeri (ör. varsayılan animasyonu) korunur.
+ */
+export function ortakAyarlarEkle(id: string, d: Record<string, any>): Record<string, any> {
+  return {
+    ...(KABUKSUZ.has(id) ? {} : { kabuk: '' }),
+    ...(KUTUSUZ.has(id) ? {} : { arkaPlanKapali: false, cerceveKapali: false }),
+    golgeKapali: false,
+    // Çarkta `animation` dönüş eğrisidir, giriş ayrı anahtardadır
+    ...(id === 'wheel-of-fortune' ? { girisAnimasyonu: 'fade' } : { animation: 'fade' }),
+    animationDuration: 600,
+    surekliEfekt: 'none',
+    efektSuresi: 2,
+    ...d
+  };
+}
+
+export const WIDGET_DEFAULTS: Record<string, Record<string, any>> = Object.fromEntries(
+  Object.entries(WIDGET_AYARLARI).map(([id, d]) => [id, ortakAyarlarEkle(id, d)])
+);
 
 
 /**

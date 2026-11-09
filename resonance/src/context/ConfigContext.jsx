@@ -68,6 +68,8 @@ export const DEFAULT_CONFIG = {
   marquee: true,
   showAlbum: false,
   timeRemaining: false,
+  /** Süre etiketleri arasında ses dalgası */
+  timeWave: true,
   /** Kart arka planı: yok, aurora, akis, nabiz, nefes */
   animatedBg: 'yok',
   /** Hazır renk paleti; boş: renk kipi */

@@ -8,6 +8,32 @@ import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
 import { sarkiBitti } from '../lib/lyrics'
 import { hostBaseUrl, loadOverlayConfig } from '../lib/hostBridge'
 
+/** Önizlemede gösterilen örnek parça (kapak: gömülü degrade, ağa çıkmaz) */
+export const ORNEK_PARCA = {
+  id: 'ornek',
+  name: 'Örnek Şarkı',
+  artists: 'Resonance',
+  album: 'Önizleme',
+  cover:
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><rect width="64" height="64" fill="url(#g)"/><circle cx="32" cy="32" r="12" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/><circle cx="32" cy="32" r="3" fill="#fff"/></svg>',
+    ),
+  durationMs: 200000,
+  source: 'spotify',
+}
+
+/** Örnek parçanın ilerlemesi: süre çubuğu ve dalga gerçek gibi akar */
+function useOrnekIlerleme(acik) {
+  const [ms, setMs] = useState(60000)
+  useEffect(() => {
+    if (!acik) return undefined
+    const t = setInterval(() => setMs((m) => (m + 1000 >= ORNEK_PARCA.durationMs ? 0 : m + 1000)), 1000)
+    return () => clearInterval(t)
+  }, [acik])
+  return ms
+}
+
 /** `lyricsOnly`: /resonance/lyrics — yalnız senkron sözler (ayrı OBS kaynağı). */
 export default function Overlay({ lyricsOnly = false }) {
   const [params] = useSearchParams()
@@ -95,10 +121,17 @@ export default function Overlay({ lyricsOnly = false }) {
   const rawConfig = hosted?.config || (configReady ? portable?.config || profile?.config : null)
   const config = rawConfig ? { ...DEFAULT_CONFIG, ...rawConfig } : null
   const overrides = { ytmd: portable?.ytmd || null, spotify: portable?.spotify || null }
-  const { track, isPlaying, progressMs } = useNowPlaying(
+  const canli = useNowPlaying(
     config?.musicService || DEFAULT_CONFIG.musicService,
     overrides,
   )
+  // `?ornek=1`: bot panelinin önizlemesi ve OBS test kipi. Şarkı çalmıyorsa örnek parça çalıyormuş gibi görünür
+  const ornek = params.get('ornek') === '1'
+  const ornekKipi = ornek && !(canli.track && canli.isPlaying)
+  const ornekIlerleme = useOrnekIlerleme(ornekKipi)
+  const track = ornekKipi ? ORNEK_PARCA : canli.track
+  const isPlaying = ornekKipi ? true : canli.isPlaying
+  const progressMs = ornekKipi ? ornekIlerleme : canli.progressMs
 
   useEffect(() => {
     document.body.classList.add('overlay-transparent')
@@ -188,6 +221,7 @@ export default function Overlay({ lyricsOnly = false }) {
             isPlaying={isPlaying}
             progressMs={progressMs}
             config={config}
+            demoVisible={ornekKipi ? true : undefined}
             onVisibilityChange={onVisibilityChange}
           />
         )}
@@ -197,7 +231,7 @@ export default function Overlay({ lyricsOnly = false }) {
             className={lyricsOnly ? 'w-screen px-4' : 'mt-2'}
             style={lyricsOnly ? undefined : { width: kartGorunur ? 0 : 420, minWidth: kartGorunur ? '100%' : undefined, minHeight: sozYuksekligi(config) }}
           >
-            {track && isPlaying && !sarkiBitti(track, progressMs) && (
+            {track && isPlaying && !ornekKipi && !sarkiBitti(track, progressMs) && (
               <Lyrics track={track} progressMs={progressMs} config={config} />
             )}
           </div>

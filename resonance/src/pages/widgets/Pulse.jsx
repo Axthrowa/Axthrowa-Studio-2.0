@@ -503,6 +503,7 @@ export default function Pulse() {
           <ToggleRow title="Uzun başlık kaysın" description="Sığmayan şarkı adı ve sanatçı yavaşça kayar." checked={config.marquee !== false} onChange={(v) => set({ marquee: v })} />
           <ToggleRow title="Albüm adını göster" description="Sanatçının yanına albüm adını ekler." checked={config.showAlbum === true} onChange={(v) => set({ showAlbum: v })} />
           <ToggleRow title="Kalan süreyi göster" description="Toplam süre yerine kalan süreyi yazar." checked={config.timeRemaining === true} onChange={(v) => set({ timeRemaining: v })} />
+          <ToggleRow title="Süreler arasında ses dalgası" description="Süre gösteren çubuklu görünümlerde iki süre arasına çalarken dalgalanan bir ses dalgası koyar." checked={config.timeWave !== false} onChange={(v) => set({ timeWave: v })} />
         </div>
       </Section>
 

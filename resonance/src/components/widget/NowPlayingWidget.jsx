@@ -149,6 +149,9 @@ function Skin(props) {
     marquee: config.marquee !== false,
     albumAdi: config.showAlbum ? track.album : '',
     kalanSure: config.timeRemaining === true,
+    // Süre etiketleri arasındaki ses dalgası (varsayılan açık)
+    zamanDalgasi: config.timeWave !== false,
+    oynuyor: Boolean(isPlaying),
     hareketliZemin: config.animatedBg && config.animatedBg !== 'yok' ? config.animatedBg : '',
     zeminRengi: accent,
   }

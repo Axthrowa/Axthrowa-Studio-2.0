@@ -1,6 +1,6 @@
 [package]
 name = "yayin-yonetim-araci"
-version = "1.6.10"
+version = "1.6.12"
 description = "AxthrowA Studio — OBS Overlay Desktop"
 authors = ["axthrowa"]
 license = "GPL-2.0-or-later"

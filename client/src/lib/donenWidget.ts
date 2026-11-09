@@ -39,15 +39,16 @@ export function asamaSuresi(asama: AnimAsamasi, gorunumMs: number, beklemeMs: nu
   return GIRIS_KARESI_MS;
 }
 
-/**
- * Tek öğe ve bekleme yoksa ekranda sabit kalır. Sayaç yalnız sayılara bağlı:
- * ayar nesnesi yenilense de süre baştan başlamaz.
- */
 /** Dönen widget'larda çıkışta oynayacak animasyon: 'ayni' (ya da boş) girişin tersi demek */
 export function asamaAnimasyonu(s: { animation?: unknown; exitAnimation?: unknown }, asama: string): string {
   const cikis = String(s.exitAnimation || 'ayni');
   return asama === 'exiting' && cikis !== 'ayni' ? cikis : String(s.animation || 'fade');
 }
+
+/**
+ * Tek öğe ve bekleme yoksa ekranda sabit kalır. Sayaç yalnız sayılara bağlı:
+ * ayar nesnesi yenilense de süre baştan başlamaz.
+ */
 
 export function useDongu(n: number, gorunumMs: (i: number) => number, beklemeMs: number, gecisMs: number) {
   const [d, setD] = useState<DonguDurumu>({ i: 0, asama: 'entering' });
@@ -67,12 +68,15 @@ export function useDongu(n: number, gorunumMs: (i: number) => number, beklemeMs:
   return { i, asama: d.asama, gec, sabit: n <= 1 && beklemeMs <= 0 };
 }
 
-/** Profil adresi yapıştırılsa da ekranda yalnız `@ad` görünsün. */
-export function hesapMetni(platform: string | undefined, girdi: string | undefined): string {
+/** Profil adresi yapıştırılsa da ekranda yalnız `@ad` görünsün. Oyun hesapları (Ad#TAG) olduğu gibi yazılır. */
+export function hesapMetni(platform: string | undefined, girdi: string | undefined, oyun = false): string {
   const ham = String(girdi || '').trim().replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '');
   if (!ham) return '';
   if (platform === 'discord' || platform === 'diger') return ham;
-  const ad = (ham.includes('/') ? ham.slice(ham.indexOf('/') + 1).split('/').pop() || '' : ham.includes('.') ? '' : ham).replace(/^@/, '');
+  if (oyun) return ham.includes('/') ? ham.split('/').pop() || '' : ham.replace(/^@/, '');
+  // Yalnız çıplak site adresi (instagram.com) boş sayılır; noktalı kullanıcı adları (ad.soyad, ad.bsky.social) kalır
+  const siteAdi = /^[a-z0-9-]+\.(com|tv|gg|net|org|app|me|co)$/i.test(ham);
+  const ad = (ham.includes('/') ? ham.slice(ham.indexOf('/') + 1).split('/').pop() || '' : siteAdi ? '' : ham).replace(/^@/, '');
   return ad ? `@${ad}` : '';
 }
 

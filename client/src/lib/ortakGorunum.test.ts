@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ANIM_SECENEKLERI, SUREKLI_EFEKTLER, animasyonCss, efektAnimasyonu, eskiHareketiCevir, ortakHareket } from './animations';
 import { KABUK_CSS, YAPISAL_KABUKLAR, kokOzellik } from './kabuklar';
 import { KUTU_TASARIMLARI, kartTasarimlari } from './widget-style';
-import { GENEL_TEMALAR } from './themes';
+import { GENEL_TEMALAR, renkKaristir, temayiUygula } from './themes';
 import { WIDGET_DEFAULTS } from './widget-defaults';
 import { olayYoksaGenel } from './alertQueue';
 
@@ -180,5 +180,28 @@ describe('eğlenceli hareketler ve yeni kabuklar', () => {
       return zemin && yazi && Number(d.bgOpacity ?? 1) >= 0.5 && k(yazi, zemin) < 4.5 ? [t.id] : [];
     });
     expect(zayif).toEqual([]);
+  });
+});
+
+describe('genel temalar çubuğu da değiştirir', () => {
+  it('hedef çubuğunda hiçbir renk alanı eski temada kalmaz, dolgu biçimi temadan temaya değişir', () => {
+    for (const id of ['donation-goal', 'polls', 'sponsor-banner', 'lyrics', 'jumpscare', 'trivia', 'chat-overlay']) {
+      const def = WIDGET_DEFAULTS[id];
+      const renkler = Object.keys(def).filter((k) => /^#[0-9a-f]{3,8}$/i.test(String(def[k])));
+      const degismeyen = renkler.filter((k) => GENEL_TEMALAR.every((t) => temayiUygula(def, t, Object.keys(def), () => true)[k] === def[k]));
+      expect(degismeyen, id).toEqual([]);
+    }
+    const hedef = WIDGET_DEFAULTS['donation-goal'];
+    const bicimler = new Set(GENEL_TEMALAR.map((t) => temayiUygula(hedef, t, Object.keys(hedef), () => true).barStyle));
+    expect(bicimler.size).toBeGreaterThanOrEqual(6);
+    const crt = temayiUygula(hedef, GENEL_TEMALAR.find((t) => t.id === 'yapi_crt')!, Object.keys(hedef), () => true);
+    expect(crt).toMatchObject({ barStyle: 'segment', barRadius: 0, barColor: '#22c55e', barBackground: '#86efac29' });
+  });
+
+  it('temanın kendi verdiği çubuk değeri ezilmez; renk karıştırma doğru', () => {
+    const t = { id: 'x', etiket: 'x', degerler: { accentColor: '#ff0000', barStyle: 'halka' }, onizleme: { arka: '', vurgu: '', metin: '' } };
+    expect(temayiUygula({ barStyle: 'flat', barColor2: '#000000' }, t, ['barStyle', 'barColor2']).barStyle).toBe('halka');
+    expect(renkKaristir('#000000', '#ffffff', 0.5)).toBe('#808080');
+    expect(renkKaristir('#f00', 'yok', 0.5)).toBe('#ff0000');
   });
 });

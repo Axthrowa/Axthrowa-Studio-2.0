@@ -15,7 +15,9 @@ export const YAPISAL_KABUKLAR: Array<{ value: string; label: string }> = [
   ['manga', 'Manga (hız çizgili)'], ['vitray', 'Vitray'], ['lav', 'Lav lambası'], ['perde', 'Tiyatro perdesi'],
   ['arcade', 'Arcade dolabı (ışıklı tabela)'], ['kaset', 'Kaset (makaralı)'], ['polaroid', 'Polaroid (bantlı fotoğraf)'], ['postit', 'Post-it (raptiyeli)'],
   ['piksel', 'Piksel çerçeve (8-bit)'], ['ahsap', 'Ahşap tabela (çivili)'], ['film', 'Sinema şeridi (akan delikler)'], ['buz', 'Kristal buz (kırağılı)'],
-  ['washi', 'Washi bant (desenli)'], ['rozet', 'Rozet (madalyalı)']
+  ['washi', 'Washi bant (desenli)'], ['rozet', 'Rozet (madalyalı)'],
+  ['terminal', 'Terminal penceresi'], ['gazete', 'Gazete manşeti'], ['neontabela', 'Neon tabela (yanıp sönen tüp)'], ['karton', 'Karton kutu (bantlı)'],
+  ['mermer', 'Mermer (damarlı)'], ['sakiz', 'Sakız balonu (dalgalanan)']
 ].map(([value, label]) => ({ value, label }));
 
 const KIMLIKLER = new Set(YAPISAL_KABUKLAR.map((k) => k.value));
@@ -70,7 +72,14 @@ export function yapisalKabukStilleri(zemin: string, vurgu: string): Record<strin
     film: taban({ background: zemin, border: 'none', borderRadius: 2, overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.1), 0 8px 18px rgba(0,0,0,.45)', paddingTop: 16, paddingBottom: 16 }),
     buz: taban({ background: `linear-gradient(135deg,rgba(255,255,255,.2),transparent 40%), linear-gradient(315deg,rgba(186,230,253,.22),transparent 45%), ${zemin}`, border: '1px solid rgba(224,242,254,.65)', borderRadius: 14, overflow: 'hidden', boxShadow: 'inset 0 0 18px rgba(186,230,253,.3), 0 0 16px rgba(125,211,252,.28)' }),
     washi: taban({ background: `radial-gradient(rgba(0,0,0,.06) 1px,transparent 1.5px) 0 0/8px 8px, ${zemin}`, border: 'none', borderRadius: 4, boxShadow: '0 6px 16px rgba(0,0,0,.35)' }),
-    rozet: taban({ background: zemin, border: `2px solid ${vurgu}`, borderRadius: 16, boxShadow: `inset 0 0 0 4px ${zemin}, inset 0 0 0 5px ${vurgu}, 0 8px 20px rgba(0,0,0,.4)`, paddingLeft: 40 })
+    rozet: taban({ background: zemin, border: `2px solid ${vurgu}`, borderRadius: 16, boxShadow: `inset 0 0 0 4px ${zemin}, inset 0 0 0 5px ${vurgu}, 0 8px 20px rgba(0,0,0,.4)`, paddingLeft: 40 }),
+    terminal: taban({ background: zemin, border: '1px solid rgba(255,255,255,.16)', borderTop: '24px solid #1f2937', borderRadius: 10, overflow: 'hidden', boxShadow: '0 12px 28px rgba(0,0,0,.5)' }),
+    gazete: taban({ background: `radial-gradient(rgba(0,0,0,.05) 1px,transparent 1.4px) 0 0/5px 5px, ${zemin}`, border: 'none', borderTop: '4px double currentColor', borderBottom: '4px double currentColor', borderRadius: 0, boxShadow: '0 8px 18px rgba(0,0,0,.35)' }),
+    neontabela: taban({ background: zemin, border: `3px solid ${vurgu}`, borderRadius: 18, boxShadow: `0 0 8px ${vurgu}, 0 0 22px ${vurgu}, inset 0 0 12px ${vurgu}` }),
+    // Karton sabit renkli: yazı koyu kalır (temanın zemini kartonu boyamaz)
+    karton: taban({ background: 'repeating-linear-gradient(90deg,rgba(0,0,0,.04) 0 2px,transparent 2px 6px), linear-gradient(180deg,#c89b63,#b0814b)', color: '#2b1a0a', border: 'none', borderRadius: 4, boxShadow: 'inset 0 0 0 2px rgba(0,0,0,.12), 0 8px 18px rgba(0,0,0,.4)' }),
+    mermer: taban({ background: `linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 45%,transparent 50%) 0 0/180px 120px, linear-gradient(25deg,transparent 55%,rgba(0,0,0,.18) 58%,transparent 62%) 0 0/220px 140px, ${zemin}`, border: `1px solid ${vurgu}`, borderRadius: 6, boxShadow: '0 10px 22px rgba(0,0,0,.4)' }),
+    sakiz: taban({ background: `radial-gradient(circle at 28% 22%,rgba(255,255,255,.45),transparent 30%), ${zemin}`, border: 'none', borderRadius: '42% 58% 46% 54% / 56% 44% 56% 44%', boxShadow: 'inset -6px -8px 14px rgba(0,0,0,.18), 0 10px 22px rgba(0,0,0,.35)', padding: 22 })
   };
 }
 
@@ -179,6 +188,8 @@ ${s('kaset')}{padding-bottom:30px!important}
 ${s('film')}{padding-top:17px!important;padding-bottom:17px!important}
 ${s('postit')}{padding-top:16px!important}
 ${s('rozet')}{padding-left:28px!important}
+${s('terminal')}{padding-top:10px!important}
+${s('karton')}{padding-top:18px!important}
 
 ${s('buz')}::before{${kaplama}top:-12px;left:-12px;width:84px;height:84px;z-index:-1;background:repeating-conic-gradient(rgba(255,255,255,.5) 0 3deg,transparent 3deg 30deg);-webkit-mask-image:radial-gradient(circle at 12px 12px,#000,transparent 70%);mask-image:radial-gradient(circle at 12px 12px,#000,transparent 70%)}
 ${s('buz')}::after{${kaplama}top:8px;right:10px;width:14px;height:14px;z-index:3;background:#f0f9ff;filter:drop-shadow(0 0 4px #7dd3fc);clip-path:polygon(50% 0,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0 50%,42% 42%);animation:axt-k-yildiz 3.2s ease-in-out infinite}
@@ -188,6 +199,18 @@ ${s('washi')}::after{${kaplama}top:-8px;right:-16px;width:74px;height:20px;rotat
 
 ${s('rozet')}::before{${kaplama}top:-10px;left:-10px;width:30px;height:30px;border-radius:50%;z-index:3;background:radial-gradient(circle at 35% 30%,#fff7c2,#f5c518 45%,#a16207);box-shadow:0 0 0 3px var(--axt-vurgu),0 4px 8px rgba(0,0,0,.45);animation:axt-k-rozet 4s ease-in-out infinite}
 ${s('rozet')}::after{${kaplama}top:12px;left:-4px;width:20px;height:28px;z-index:2;background:linear-gradient(90deg,var(--axt-vurgu) 0 50%,#ef4444 50%);clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)}
+@keyframes axt-k-neon{0%,100%{opacity:1}8%,12%{opacity:.35}10%{opacity:.9}}
+@keyframes axt-k-sakiz{0%,100%{transform:scale(1,1)}50%{transform:scale(1.015,.985)}}
+${s('terminal')}::before{${kaplama}top:-16px;left:10px;width:9px;height:9px;border-radius:50%;z-index:3;background:#ef4444;box-shadow:15px 0 0 #f59e0b,30px 0 0 #22c55e}
+${s('terminal')}::after{${kaplama}right:12px;bottom:10px;width:9px;height:16px;z-index:3;background:var(--axt-vurgu);animation:axt-k-ampul 1.1s steps(1) infinite}
+${s('gazete')}::before{${kaplama}left:10px;right:10px;top:4px;height:1px;z-index:2;background:currentColor;opacity:.45}
+${s('gazete')}::after{${kaplama}right:10px;top:-14px;padding:1px 6px;z-index:3;content:"SON DAKİKA";font:800 9px/12px sans-serif;letter-spacing:1px;color:#fff;background:#b91c1c}
+${s('neontabela')}::before{${kaplama}inset:-3px;border-radius:inherit;z-index:-1;box-shadow:0 0 26px var(--axt-vurgu);animation:axt-k-neon 5s linear infinite}
+${s('karton')}::before{${kaplama}top:0;left:50%;width:34%;height:14px;translate:-50% 0;z-index:3;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,.12)),#d9b98a;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+${s('karton')}::after{${kaplama}right:10px;bottom:6px;z-index:3;content:"BU TARAF ÜSTE";font:700 8px/10px sans-serif;letter-spacing:1px;color:rgba(43,26,10,.55)}
+${s('mermer')}::before{${kaplama}inset:4px;border-radius:3px;z-index:-1;border:1px solid var(--axt-vurgu);opacity:.5}
+${s('sakiz')}{animation:axt-k-sakiz 7s ease-in-out infinite}
+${s('sakiz')}::after{${kaplama}top:10px;right:16%;width:14px;height:8px;border-radius:50%;z-index:3;background:rgba(255,255,255,.65);rotate:-25deg}
 `;
 
 /** Kuralları belgeye bir kez ekler (main.tsx). */

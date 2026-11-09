@@ -45,6 +45,9 @@ describe('döngü', () => {
 describe('sosyal hesap metni', () => {
   it('@ ekler, yapıştırılan profil adresini ada çevirir', () => {
     expect(hesapMetni('kick', 'axthrowa')).toBe('@axthrowa');
+    expect(hesapMetni('bluesky', 'axthrowa.bsky.social')).toBe('@axthrowa.bsky.social');
+    expect(hesapMetni('facebook', 'ad.soyad')).toBe('@ad.soyad');
+    expect(hesapMetni('instagram', 'instagram.com')).toBe('');
     expect(hesapMetni('kick', '@axthrowa')).toBe('@axthrowa');
     expect(hesapMetni('instagram', 'https://www.instagram.com/axthrowa/')).toBe('@axthrowa');
     expect(hesapMetni('youtube', 'https://youtube.com/@axthrowa')).toBe('@axthrowa');

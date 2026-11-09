@@ -75,6 +75,8 @@ class HypeTreni {
 
   /** Bir uyarı olayı: puan ekler, süreyi tazeler, seviye atlatır. */
   olay(subType: string, data: any): number {
+    // Test uyarısı gerçek treni doldurmaz (subathon/hedefler ile aynı kural); örnek gösterim testGoster()'de
+    if (data?.isTest === true || data?.isReplay === true) return 0;
     const a = this.ayarOku();
     const eklenen = olayPuani(subType, data, a);
     if (eklenen <= 0) return 0;

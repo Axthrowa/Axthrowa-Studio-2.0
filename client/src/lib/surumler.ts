@@ -11,6 +11,19 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.13',
+    ad: 'Oyuncu',
+    tarih: '2026-11-09',
+    notlar: [
+      'Sosyal medyaya oyun hesapları: Steam, Epic Games, Ubisoft, League of Legends, Riot ID, Valorant, Battle.net, EA, PlayStation, Nintendo, GOG, Rockstar; ayrıca Facebook, Threads, Bluesky, Reddit, Spotify, Patreon, Ko-fi',
+      'Sosyal medya logo biçimi: kare, yuvarlak, keskin kare ya da zeminsiz yalnız logo',
+      'Hazır temalar artık çubuğu da değiştiriyor: dolgu biçimi, ikinci renk, zemin ve kenar temaya uyuyor (hedef, anket ve diğer widgetlar)',
+      '8 yeni giriş animasyonu, 4 sürekli efekt ve 6 yeni kutu tasarımı (terminal, gazete, neon tabela, karton, mermer, sakız balonu)',
+      'Resonance: test kipinde ve önizlemede şarkı çalmıyorsa örnek parça görünür; süreler arasında açılıp kapanabilen ses dalgası',
+      'Güvenlik: Kick giriş adresi yalnız panelden istenebilir, Spotify dönüşünde güvenlik kodu zorunlu, bağımlılık açıkları kapandı',
+    ]
+  },
+  {
     surum: '1.13.12',
     ad: 'Çark',
     tarih: '2026-11-09',

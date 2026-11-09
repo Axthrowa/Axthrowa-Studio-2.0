@@ -200,7 +200,8 @@ router.post('/platforms/kick/gizli-ac', (req: Request, res: Response) => {
   res.json({ acildi: gizliPenceredeAc(String(req.body?.url || '')) });
 });
 
-router.get('/platforms/kick/auth-url', (req: Request, res: Response) => {
+// POST: state/PKCE yeniler; GET'te herhangi bir site <img> ile yarım kalan girişi bozabiliyordu (köken denetimi yalnız yazma isteklerinde)
+router.post('/platforms/kick/auth-url', (req: Request, res: Response) => {
   const clientId = ((req.query.clientId as string) || settingsCache.get('kick_client_id') || '').trim();
   if (!clientId || clientId === 'stream-axt-bot') {
     return res.status(400).json({ 

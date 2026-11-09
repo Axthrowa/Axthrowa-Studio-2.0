@@ -77,6 +77,12 @@ export const GENEL_TEMALAR: TemaTanimi[] = [
   tema('yapi_perde', 'Tiyatro Perdesi', { kabuk: 'perde', chatStyle: 'perde', bgColor: '#1c0606', bgOpacity: 0.97, accentColor: '#d4a843', textColor: '#fef3c7' }, { arka: '#1c0606', vurgu: '#d4a843', metin: '#fef3c7' }),
   tema('yapi_arcade', 'Arcade Dolabı', { kabuk: 'arcade', chatStyle: 'arcade', bgColor: '#0d0221', bgOpacity: 0.96, accentColor: '#00f0ff', textColor: '#ffffff', fontFamily: 'Pixelify Sans' }, { arka: '#0d0221', vurgu: '#00f0ff', metin: '#ffffff', kenar: '#111111', yazi: 'Pixelify Sans' }),
   tema('yapi_kaset', 'Kaset', { kabuk: 'kaset', chatStyle: 'kaset', bgColor: '#292524', bgOpacity: 1, accentColor: '#fb923c', textColor: '#fafaf9' }, { arka: '#292524', vurgu: '#fb923c', metin: '#fafaf9', kenar: '#1c1917' }),
+  tema('yapi_terminal', 'Terminal', { kabuk: 'terminal', chatStyle: 'terminal', bgColor: '#0a0f0a', bgOpacity: 0.96, accentColor: '#4ade80', textColor: '#d1fae5', fontFamily: 'Fira Code' }, { arka: '#0a0f0a', vurgu: '#4ade80', metin: '#d1fae5', kenar: '#1f2937' }),
+  tema('yapi_gazete', 'Gazete', { kabuk: 'gazete', chatStyle: 'gazete', bgColor: '#f5f1e6', bgOpacity: 1, accentColor: '#b91c1c', textColor: '#1c1917', fontFamily: 'Playfair Display' }, { arka: '#f5f1e6', vurgu: '#b91c1c', metin: '#1c1917', kenar: '#1c1917' }),
+  tema('yapi_neontabela', 'Neon Tabela', { kabuk: 'neontabela', chatStyle: 'neon', bgColor: '#0a0014', bgOpacity: 0.9, accentColor: '#ff2bd6', textColor: '#ffe4fa' }, { arka: '#0a0014', vurgu: '#ff2bd6', metin: '#ffe4fa', kenar: '#ff2bd6' }),
+  tema('yapi_karton', 'Karton Kutu', { kabuk: 'karton', chatStyle: 'karton', bgColor: '#c89b63', bgOpacity: 1, accentColor: '#7c2d12', textColor: '#2b1a0a', fontFamily: 'Gloria Hallelujah' }, { arka: '#c89b63', vurgu: '#7c2d12', metin: '#2b1a0a' }),
+  tema('yapi_mermer', 'Mermer', { kabuk: 'mermer', chatStyle: 'mermer', bgColor: '#1f1d24', bgOpacity: 0.97, accentColor: '#d4af37', textColor: '#f5f5f4', fontFamily: 'Cinzel' }, { arka: '#1f1d24', vurgu: '#d4af37', metin: '#f5f5f4', kenar: '#d4af37' }),
+  tema('yapi_sakiz', 'Sakız Balonu', { kabuk: 'sakiz', chatStyle: 'sakiz', bgColor: '#f472b6', bgOpacity: 1, accentColor: '#500724', textColor: '#3b0a24', fontFamily: 'Fredoka' }, { arka: '#f472b6', vurgu: '#500724', metin: '#3b0a24' }),
   tema('yapi_polaroid', 'Polaroid', { kabuk: 'polaroid', chatStyle: 'polaroid', bgColor: '#1c1917', bgOpacity: 1, accentColor: '#fbbf24', textColor: '#fafaf9', fontFamily: 'Kalam' }, { arka: '#1c1917', vurgu: '#fbbf24', metin: '#fafaf9', kenar: '#fafaf9', yazi: 'Kalam' }),
   tema('yapi_postit', 'Post-it', { kabuk: 'postit', chatStyle: 'postit', bgColor: '#fde047', bgOpacity: 1, accentColor: '#9a3412', textColor: '#3b2f06', fontFamily: 'Caveat' }, { arka: '#fde047', vurgu: '#9a3412', metin: '#3b2f06', yazi: 'Caveat' }),
   tema('yapi_piksel', 'Piksel Çerçeve', { kabuk: 'piksel', chatStyle: 'piksel', bgColor: '#1e1b4b', bgOpacity: 1, accentColor: '#facc15', textColor: '#ffffff', fontFamily: 'Pixelify Sans' }, { arka: '#1e1b4b', vurgu: '#facc15', metin: '#ffffff', kenar: '#facc15', yazi: 'Pixelify Sans' }),
@@ -691,7 +697,79 @@ export function temayiUygula(
     // Görünüm seçeneği olmayan widget'ta (anket, çekiliş, hedef…) tema yalnız renk değiştiriyordu: kutu biçimi de değişsin
     if (!bicimDegisti && aile && izinli.has('kabuk') && !tema.degerler.kabuk && gecerli('kabuk', aile.kabuk)) yeni.kabuk = aile.kabuk;
   }
+  // Genel temalar yalnız ana rengi veriyordu: çubuğun zemini, ikinci rengi, kenarı ve dolgu biçimi
+  // (ve altyazı/bağlam gibi yan renkler) önceki temada kalıyordu. Temanın kendi renklerinden türetilir.
+  for (const [k, v] of Object.entries(turetilenler(tema, String(yeni.kabuk || '')))) {
+    if (!izinli.has(k) || k in tema.degerler || v === undefined) continue;
+    if (gecerli && !gecerli(k, v)) continue;
+    yeni[k] = v;
+  }
   return yeni;
+}
+
+/** #rgb / #rrggbb / #rrggbbaa → [r, g, b]; tanınmazsa null */
+function hexRgb(renk: unknown): [number, number, number] | null {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(String(renk || ''));
+  if (!m) return null;
+  const h = m[1].length === 3 ? [...m[1]].map((x) => x + x).join('') : m[1].slice(0, 6);
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
+}
+
+/** İki rengi `oran` kadar karıştırır (0 = a, 1 = b) */
+export function renkKaristir(a: unknown, b: unknown, oran: number): string | undefined {
+  const x = hexRgb(a);
+  if (!x) return undefined;
+  const y = hexRgb(b) || x;
+  return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * oran).toString(16).padStart(2, '0')).join('');
+}
+
+/** Saydamlık ekli renk (#rrggbbaa) */
+function saydam(renk: unknown, alfa: number): string | undefined {
+  const r = renkKaristir(renk, renk, 0);
+  return r ? r + Math.round(alfa * 255).toString(16).padStart(2, '0') : undefined;
+}
+
+/** Kutu tasarımına (ya da tema ailesine) yakışan çubuk: [dolgu biçimi, köşe, kenar kalınlığı] */
+const BAR_BICIMLERI: Record<string, [string, number, number?]> = {
+  holo: ['parilti', 999], crt: ['segment', 0], brutal: ['flat', 0, 3], defter: ['striped', 6], ampul: ['noktalar', 999],
+  siber: ['segment', 2], kil: ['glossy', 999], krom: ['glossy', 999], plan: ['striped', 0], bilet: ['pil', 4],
+  origami: ['kama', 0], vapor: ['gradient', 0], manga: ['striped', 0, 3], vitray: ['segment', 4], lav: ['dalga', 999],
+  perde: ['gradient', 6], arcade: ['segment', 0], kaset: ['pil', 4], polaroid: ['flat', 2], postit: ['striped', 2],
+  piksel: ['segment', 0, 2], ahsap: ['gradient', 4, 2], film: ['segment', 0], buz: ['parilti', 999], washi: ['striped', 4],
+  rozet: ['glossy', 999, 2], sivicam: ['parilti', 999], pencere: ['flat', 0, 2], gameboy: ['segment', 0], yapiskan: ['flat', 2],
+  parsomen: ['gradient', 4], cizgiroman: ['striped', 0, 3], gecedalga: ['dalga', 999], altin: ['glossy', 999, 2], koseli: ['kama', 0],
+  kupon: ['segment', 6], terminal: ['segment', 2], gazete: ['striped', 0, 2], neontabela: ['parilti', 999, 2], karton: ['striped', 2],
+  mermer: ['glossy', 4, 1], sakiz: ['glossy', 999],
+  // Kutusu olmayan temalar ailesine göre
+  'aile:kart': ['gradient', 999], 'aile:sade': ['flat', 999], 'aile:cam': ['glossy', 999], 'aile:neon': ['parilti', 999],
+  'aile:uzay': ['parilti', 999], 'aile:asil': ['glossy', 8, 2], 'aile:doga': ['dalga', 999], 'aile:cizgi': ['striped', 6, 2],
+  'aile:piksel': ['segment', 0], 'aile:taktik': ['segment', 2], 'aile:korku': ['dalga', 4], 'aile:bati': ['gradient', 4, 2],
+  'aile:yayin': ['striped', 2], 'aile:eglence': ['glossy', 999]
+};
+
+/** Temanın belirtmediği yan alanlar: çubuk biçimi ve renkleri, yazı dış çizgisi, altyazı/bağlam renkleri */
+function turetilenler(tema: TemaTanimi, kabuk: string): Record<string, unknown> {
+  const d = tema.degerler;
+  const vurgu = d.accentColor ?? d.barColor;
+  const metin = d.textColor ?? d.fontColor;
+  const arka = d.bgColor ?? d.backgroundColor;
+  if (!hexRgb(vurgu)) return {};
+  const bicim = BAR_BICIMLERI[kabuk] || BAR_BICIMLERI[`aile:${TEMA_AILESI[tema.id] || ''}`] || ['gradient', 999];
+  return {
+    barStyle: bicim[0],
+    barRadius: bicim[1],
+    barBorderWidth: bicim[2] ?? 0,
+    barColor2: renkKaristir(vurgu, metin ?? '#ffffff', 0.45),
+    barBackground: saydam(metin ?? '#ffffff', 0.16),
+    barBorderColor: renkKaristir(vurgu, vurgu, 0),
+    outlineColor: renkKaristir(arka, arka, 0),
+    customUsernameColor: renkKaristir(vurgu, vurgu, 0),
+    captionColor: renkKaristir(metin, metin, 0),
+    captionBgColor: renkKaristir(arka, arka, 0),
+    contextColor: saydam(metin, 0.6),
+    donorLabelColor: renkKaristir(vurgu, vurgu, 0),
+    shadowColor: renkKaristir(arka, arka, 0)
+  };
 }
 
 /** Widget'ın yerleşimini belirleyen seçmeli alanlar */

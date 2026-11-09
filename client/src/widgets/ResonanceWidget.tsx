@@ -8,8 +8,11 @@
  * Eski /widgets/now-playing OBS adresi de bunu gösterir (kaynaklar bozulmasın).
  */
 import { useEffect, useRef, useState } from 'react';
+import { onizlemeKipi } from '../lib/widget-style.js';
 
-export function ResonanceWidget({ embedded = false }: { embedded?: boolean; previewMode?: boolean }) {
+export function ResonanceWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
+  // Önizleme ve OBS test kipinde şarkı çalmıyorsa örnek parça gösterilir (eskiden boş kalıyordu)
+  const ornek = onizlemeKipi(previewMode);
   const cerceve = useRef<HTMLIFrameElement>(null);
   const [yukseklik, setYukseklik] = useState(0);
   useEffect(() => {
@@ -27,7 +30,7 @@ export function ResonanceWidget({ embedded = false }: { embedded?: boolean; prev
     <iframe
       ref={cerceve}
       title="Resonance — Şu An Çalan"
-      src="/resonance/overlay"
+      src={ornek ? '/resonance/overlay?ornek=1' : '/resonance/overlay'}
       scrolling="no"
       style={{
         border: 0,

@@ -48,8 +48,12 @@ export function SosyalHesapPaneli({ values, degistir }: PanelProps) {
             onChange={(e) => yaz(hesaplar.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)))}
             className={`${GIRDI} min-w-0 flex-1`}
           >
-            {Object.entries(SOSYAL_PLATFORMLAR).map(([k, m]) => (
-              <option key={k} value={k}>{m.label}</option>
+            {(['sosyal', 'oyun'] as const).map((g) => (
+              <optgroup key={g} label={g === 'oyun' ? 'Oyun hesapları' : 'Sosyal medya'}>
+                {Object.entries(SOSYAL_PLATFORMLAR).filter(([, m]) => (m.grup || 'sosyal') === g).map(([k, m]) => (
+                  <option key={k} value={k}>{m.label}</option>
+                ))}
+              </optgroup>
             ))}
             <option value="diger">Diğer</option>
           </select>
@@ -58,7 +62,7 @@ export function SosyalHesapPaneli({ values, degistir }: PanelProps) {
           <input
             aria-label="Kullanıcı adı veya adres"
             value={h.kullanici}
-            placeholder="kullanıcı adı veya profil adresi"
+            placeholder={SOSYAL_PLATFORMLAR[h.platform]?.grup === 'oyun' ? 'oyun içi ad (ör. Ad#TAG) ya da profil adresi' : 'kullanıcı adı veya profil adresi'}
             onChange={(e) => yaz(hesaplar.map((x, j) => (j === i ? { ...x, kullanici: e.target.value } : x)))}
             className={`${GIRDI} w-full`}
           />

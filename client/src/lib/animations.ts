@@ -143,6 +143,14 @@ export const ANIM_ON_AYARLARI: AnimOnAyari[] = [
   ka('roket', 'Roket kalkışı', '0%{opacity:0;transform:translateY(160px) scale(.8,1.3)}60%{opacity:1;transform:translateY(-12px) scale(.96,1.06)}80%{transform:translateY(3px) scale(1)}100%{opacity:1;transform:none}'),
   ka('kalpCarpinti', 'Kalp çarpıntısı', '0%{opacity:0;transform:scale(.3) rotate(0)}25%{opacity:1;transform:scale(1.18) rotate(-6deg)}38%{transform:scale(.92) rotate(0)}52%{transform:scale(1.12) rotate(4deg)}68%{transform:scale(.97) rotate(0)}100%{opacity:1;transform:none}'),
   ka('kasirga', 'Kasırga', '0%{opacity:0;transform:rotate(-540deg) scale(0)}70%{opacity:1;transform:rotate(15deg) scale(1.05)}100%{opacity:1;transform:none}', YUMUSAK),
+  ka('floresan', 'Floresan yanması', '0%{opacity:0}10%{opacity:.8}14%{opacity:.1}22%{opacity:.9}26%{opacity:.25}40%{opacity:1}46%{opacity:.6}100%{opacity:1;transform:none}', 'linear'),
+  ka('mektup', 'Mektup açılması', '0%{opacity:0;transform:perspective(700px) rotateX(-95deg);transform-origin:top center}60%{opacity:1;transform:perspective(700px) rotateX(12deg);transform-origin:top center}100%{opacity:1;transform:none;transform-origin:top center}'),
+  ka('yercekimi', 'Yerçekimi (ağır düşüş)', '0%{opacity:0;transform:translateY(-120vh)}55%{opacity:1;transform:translateY(0) scale(1.06,.9)}68%{transform:translateY(-28px) scale(.98,1.02)}80%{transform:translateY(0) scale(1.02,.98)}90%{transform:translateY(-6px)}100%{opacity:1;transform:none}'),
+  ka('origamiKatlama', 'Origami katlanması', '0%{opacity:0;transform:perspective(800px) rotateY(-120deg) scale(.6);transform-origin:left center}55%{opacity:1;transform:perspective(800px) rotateY(18deg);transform-origin:left center}100%{opacity:1;transform:none;transform-origin:left center}'),
+  ka('askiSarkac', 'Askıdan sallanma', '0%{opacity:0;transform:rotate(-70deg);transform-origin:top center}35%{opacity:1;transform:rotate(28deg);transform-origin:top center}55%{transform:rotate(-14deg);transform-origin:top center}72%{transform:rotate(6deg);transform-origin:top center}86%{transform:rotate(-2deg);transform-origin:top center}100%{opacity:1;transform:none;transform-origin:top center}'),
+  ka('kayanKart', 'Kayan kart (eğik)', '0%{opacity:0;transform:translateX(-110%) skewX(28deg)}60%{opacity:1;transform:translateX(4%) skewX(-10deg)}80%{transform:translateX(-1%) skewX(3deg)}100%{opacity:1;transform:none}'),
+  ka('dalgaGiris', 'Dalgayla gelme', '0%{opacity:0;transform:translateY(60px) rotate(-8deg)}30%{opacity:1;transform:translateY(-14px) rotate(5deg)}55%{transform:translateY(8px) rotate(-3deg)}78%{transform:translateY(-3px) rotate(1deg)}100%{opacity:1;transform:none}'),
+  ka('girdap', 'Girdaptan çıkış', '0%{opacity:0;transform:translate(-40px,40px) rotate(-200deg) scale(.1)}60%{opacity:1;transform:translate(6px,-6px) rotate(14deg) scale(1.05)}100%{opacity:1;transform:none}', YUMUSAK),
   ka('savrulma', 'Savrulma (sağdan)', '0%{opacity:0;transform:translateX(120%) rotate(20deg)}60%{opacity:1;transform:translateX(-6%) rotate(-6deg)}80%{transform:translateX(2%) rotate(2deg)}100%{opacity:1;transform:none}'),
 ];
 
@@ -270,6 +278,10 @@ const EFEKT_TANIMLARI: Array<{ id: string; etiket: string; kare: string; egri?: 
   { id: 'kalp', etiket: 'Kalp atışı (çift vuruş)', kare: '0%,40%,100%{transform:scale(1)}10%{transform:scale(1.06)}20%{transform:scale(1)}30%{transform:scale(1.04)}' },
   { id: 'yorunge', etiket: 'Yörünge (hafif dönme)', kare: 'from{transform:rotate(0) translateX(3px) rotate(0)}to{transform:rotate(360deg) translateX(3px) rotate(-360deg)}', egri: 'linear' },
   { id: 'nefesAl', etiket: 'Nefes alma', kare: '0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.02);opacity:.88}' },
+  { id: 'titresim', etiket: 'Titreşim (telefon)', kare: '0%,40%,100%{transform:none}5%,15%,25%,35%{transform:translateX(-2px) rotate(-.6deg)}10%,20%,30%{transform:translateX(2px) rotate(.6deg)}' },
+  { id: 'neonTitresme', etiket: 'Neon titremesi', kare: '0%,19%,23%,60%,64%,100%{opacity:1}20%,22%,61%,63%{opacity:.55}' },
+  { id: 'zemberek', etiket: 'Zemberek (yaylanma)', kare: '0%,100%{transform:scale(1,1)}30%{transform:scale(1.05,.94)}50%{transform:scale(.96,1.05)}70%{transform:scale(1.02,.98)}' },
+  { id: 'sekizCizme', etiket: 'Sekiz çizme', kare: '0%,100%{transform:translate(0,0)}25%{transform:translate(6px,-4px)}50%{transform:translate(0,0)}75%{transform:translate(-6px,-4px)}' },
   { id: 'bayrak', etiket: 'Bayrak dalgası', kare: '0%,100%{transform:skewY(0)}25%{transform:skewY(1.5deg)}75%{transform:skewY(-1.5deg)}' }
 ];
 

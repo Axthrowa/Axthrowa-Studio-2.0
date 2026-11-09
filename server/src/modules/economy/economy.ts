@@ -264,7 +264,11 @@ export class EconomyEngine {
     );
     // Tek işlemde: 2.000 kullanıcıda 121 ms yerine 17 ms; bu sırada bot başka iş yapamıyor
     db.exec('BEGIN');
-    for (const [, cached] of this.userCache.entries()) {
+    // Uzun yayında önbellek her yazarla büyüyor, her 30 sn'de hepsi yeniden yazılıyordu:
+    // 1 saattir sessiz ve diske yazılabilmiş kullanıcılar işlem tamamlanınca bellekten düşer.
+    const bosta: string[] = [];
+    const esik = now - 60 * 60_000;
+    for (const [anahtar, cached] of this.userCache.entries()) {
       const d = cached.data;
       if (!d?.id) continue;
       try {
@@ -281,6 +285,7 @@ export class EconomyEngine {
           d.id,
         );
         cached.lastDbUpdate = now;
+        if ((Number(d.last_active) || now) < esik) bosta.push(anahtar);
       } catch (e) {
         /* tek kullanıcı yazılamazsa diğerleri sürsün — ama sessiz kalmasın */
         seyrekUyar('ekonomi:toplu', '[Ekonomi] Toplu kayıtta bir kullanıcı yazılamadı', e, 30_000);
@@ -288,6 +293,7 @@ export class EconomyEngine {
     }
     try {
       db.exec('COMMIT');
+      for (const k of bosta) this.userCache.delete(k);
     } catch (e) {
       // Açık kalan işlem sonraki her yazımı kilitlerdi; veri bellekte duruyor, sonraki turda yeniden yazılır
       db.exec('ROLLBACK');

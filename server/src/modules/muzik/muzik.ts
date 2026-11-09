@@ -263,7 +263,8 @@ export class MuzikHost {
   async koduTakasEt(hamKod: string, durum?: string): Promise<string> {
     const k = koduAyikla(hamKod);
     if ('hata' in k) throw new Error(k.hata);
-    const adaylar = [...this.bekleyenler].reverse().filter((b) => !durum || b.durum === durum);
+    // `undefined` = elle yapıştırma (state yok); verilmiş ama boş state hiçbiriyle eşleşmez
+    const adaylar = [...this.bekleyenler].reverse().filter((b) => durum === undefined || b.durum === durum);
     if (!adaylar.length) throw new Error("Bekleyen Spotify yetkilendirmesi yok — 'Bağlan'a basıp baştan başla.");
     let sonHata = '';
     for (const b of adaylar) {

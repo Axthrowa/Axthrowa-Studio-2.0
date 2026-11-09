@@ -344,3 +344,17 @@ describe('toplu ödeme', () => {
     expect(diskteki('ali')).toBe(102);
   });
 });
+
+describe('önbellek uzun yayında sınırsız büyümez', () => {
+  it('1 saattir sessiz kullanıcı diske yazılıp bellekten düşer, puanı korunur', () => {
+    const onbellek = (economy as any).userCache as Map<string, unknown>;
+    bakiyeYap('sessiz', 700);
+    vi.advanceTimersByTime(61 * 60_000);
+    bakiyeYap('aktif', 300);
+    economy.flushAll();
+    expect(onbellek.has('sessiz')).toBe(false);
+    expect(onbellek.has('aktif')).toBe(true);
+    expect(diskteki('sessiz')).toBe(700);
+    expect(economy.getUserPoints('sessiz')).toBe(700); // yeniden okununca diskteki bakiye gelir
+  });
+});

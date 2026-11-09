@@ -37,8 +37,16 @@ export function hamSorgu(sql: string) {
   return asilPrepare(sql);
 }
 {
+  // Derlenen ifade önbelleği: sohbet sıcak yolunda (olay kaydı, ekonomi, seviye) her mesajda
+  // aynı SQL yeniden derleniyordu. Dinamik SQL sınırsız büyütmesin diye taşınca boşaltılır.
+  // shortcut: sarmalanmış ifade paylaşılır; .iterate() sürerken aynı SQL yeniden çalıştırılırsa yineleyici bozulur (bugün kullanan yok).
+  const onbellek = new Map<string, any>();
   (db as any).prepare = (sql: string) => {
+    const hazir = onbellek.get(sql);
+    if (hazir) return hazir;
+    if (onbellek.size >= 500) onbellek.clear();
     const st: any = asilPrepare(sql);
+    onbellek.set(sql, st);
     const asilGet = st.get.bind(st);
     const asilAll = st.all.bind(st);
     st.get = (...a: any[]) => satiriCoz(asilGet(...a));

@@ -321,7 +321,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     }
     try {
       const clientId = kickClientIdInput.trim();
-      const res = await fetch(`/api/platforms/kick/auth-url?clientId=${encodeURIComponent(clientId)}`);
+      const res = await fetch(`/api/platforms/kick/auth-url?clientId=${encodeURIComponent(clientId)}`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok || data.error) {
         setKickFeedback({ type: 'error', text: data.error || 'Kick OAuth URL alınamadı.' });
@@ -360,7 +360,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
   /** Kick'in izin sayfasını açar; Client ID sunucuda kayıtlı değilse alandaki kullanılır. */
   const kickGirisi = async (hedef: 'bot' | 'kanal') => {
     const clientId = kickClientIdInput.trim();
-    const res = await fetch(`/api/platforms/kick/auth-url?hedef=${hedef}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ''}`);
+    const res = await fetch(`/api/platforms/kick/auth-url?hedef=${hedef}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ''}`, { method: 'POST' });
     const data = await res.json();
     if (!res.ok || !data.authUrl) {
       setKickMethod('oauth');
@@ -381,7 +381,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
     }
     try {
       const clientId = kickClientIdInput.trim();
-      const res = await fetch(`/api/platforms/kick/auth-url?clientId=${encodeURIComponent(clientId)}`);
+      const res = await fetch(`/api/platforms/kick/auth-url?clientId=${encodeURIComponent(clientId)}`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok || data.error) {
         setKickFeedback({ type: 'error', text: data.error || 'Kick OAuth URL alınamadı.' });

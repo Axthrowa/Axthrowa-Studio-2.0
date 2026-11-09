@@ -29,7 +29,7 @@ const LABELS: Record<string, string> = {
   simgeGiris: 'Simge · giriş', simgeEfekti: 'Simge · sürekli efekt',
   itemSeconds: 'Her hesabın süresi (sn)', waitSeconds: 'Tur sonunda gizli bekleme (sn, 0 = kapalı)',
   defaultSeconds: 'Varsayılan görsel süresi (sn)',
-  iconSize: 'Simge boyutu (px)', fit: 'Medyayı sığdırma',
+  iconSize: 'Simge boyutu (px)', ikonSekli: 'Logo biçimi', fit: 'Medyayı sığdırma',
   soundOn: 'Video sesi açık', showCaption: 'Alt yazıyı göster', captionColor: 'Alt yazı rengi',
   captionBgColor: 'Alt yazı zemini', captionBgOpacity: 'Alt yazı zemin opaklığı',
   showStatusDot: 'Başlıktaki durum noktası', centerSize: 'Orta göbek boyutu (%)', centerImageUrl: 'Orta görsel/GIF adresi',
@@ -386,6 +386,7 @@ const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label
   'social-rotator': {
     exitAnimation: AYRI_CIKIS,
     theme: tema(['kart', 'Kart'], ['hap', 'Hap'], ['neon', 'Neon'], ['sade', 'Sade']),
+    ikonSekli: tema(['kare', 'Kare (yumuşak köşe)'], ['yuvarlak', 'Yuvarlak'], ['keskin', 'Keskin kare'], ['logo', 'Yalnız logo (zeminsiz)']),
     position: tema(['top', 'Üst'], ['center', 'Orta'], ['bottom', 'Alt'])
   },
   'sponsor-banner': {

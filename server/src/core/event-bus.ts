@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { db } from '../db/index.js';
 import { randomUUID as uuidv4 } from 'crypto';
 import { StreamEvent } from '../db/schema.js';
+import { seyrekUyar } from './logger.js';
 
 export interface ChatMessagePayload {
   id: string;
@@ -125,7 +126,15 @@ class UniversalEventBus extends EventEmitter {
   }
 
   emitChat(payload: ChatMessagePayload) {
-    this.emit('chat', payload);
+    // emit() ilk fırlatan dinleyicide durur: OBS yayını, komut hattı ve olay kaydı birbirini
+    // düşürmesin, hata platform bağdaştırıcısına taşmasın diye her dinleyici ayrı korunur.
+    for (const dinleyici of this.rawListeners('chat')) {
+      try {
+        dinleyici.call(this, payload);
+      } catch (e) {
+        seyrekUyar('olay:chat-dinleyici', '[EventBus] Sohbet dinleyicisi hata verdi', e);
+      }
+    }
     this.logEvent({
       id: payload.id || uuidv4(),
       platform: payload.platform,

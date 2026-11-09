@@ -128,7 +128,8 @@ export function muzikRotalari(o: MuzikRotaSecenekleri): { router: Router; spotif
     }
     if (!q.code) return sayfa("Spotify'dan kod gelmedi.", false);
     try {
-      const ad = await host.koduTakasEt(String(q.code), q.state ? String(q.state) : undefined);
+      // GET dönüşünde state zorunlu (boşsa hiçbir bekleyenle eşleşmez): yabancı sayfa kod enjekte edemesin
+      const ad = await host.koduTakasEt(String(q.code), String(q.state ?? ''));
       o.durumDegisti?.();
       return sayfa(`${ad || 'Spotify hesabınız'} bağlandı. Bu sekmeyi kapatıp uygulamaya dönebilirsiniz.`, true);
     } catch (e) {

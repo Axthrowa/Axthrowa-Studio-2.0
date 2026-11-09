@@ -628,6 +628,8 @@ export const SOCIAL_ROTATOR_DEFAULTS = {
   fontFamily: 'Plus Jakarta Sans',
   fontSize: 22,
   iconSize: 44,
+  /** kare | yuvarlak | keskin | logo (zeminsiz, platformun kendi logosu) */
+  ikonSekli: 'kare',
   textColor: '#ffffff',
   platformColors: true,
   accentColor: '#22d3ee',

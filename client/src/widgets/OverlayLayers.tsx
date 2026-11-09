@@ -163,7 +163,7 @@ export const KATMANLAR: KatmanTanimi[] = [
     etiket: 'Resonance',
     z: 65,
     varsayilan: { x: 40, y: 80, width: 380, height: 90 },
-    ciz: () => <ResonanceWidget embedded />
+    ciz: (o) => <ResonanceWidget embedded previewMode={o} />
   },
   {
     anahtar: 'theCup',

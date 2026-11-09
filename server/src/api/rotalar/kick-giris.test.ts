@@ -29,7 +29,7 @@ let kok = '';
 const satir = () => db.prepare("SELECT * FROM channels WHERE platform = 'kick'").get() as any;
 
 const girisYap = async (hedef: string) => {
-  const a: any = await (await fetch(`${kok}/platforms/kick/auth-url?hedef=${hedef}`)).json();
+  const a: any = await (await fetch(`${kok}/platforms/kick/auth-url?hedef=${hedef}`, { method: 'POST' })).json();
   return fetch(`${kok}/auth/kick/callback?code=kod&state=${encodeURIComponent(a.state)}`);
 };
 

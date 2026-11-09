@@ -1,5 +1,5 @@
 AxthrowA Studio — ÜÇÜNCÜ TARAF BİLDİRİMLERİ
-Sürüm 1.6.12. Bu dosya scripts/ucuncu-taraf-bildirimleri.mjs ile üretilir; elle düzenlemeyin.
+Sürüm 1.6.13. Bu dosya scripts/ucuncu-taraf-bildirimleri.mjs ile üretilir; elle düzenlemeyin.
 
 Ürün lisansı: GNU General Public License sürüm 2 ya da (tercihinize göre) daha sonraki bir sürüm
 (GPL-2.0-or-later). Lisans metni: LICENSE.txt. Bu programın ikili sürümünü alan herkes, karşılık gelen tam

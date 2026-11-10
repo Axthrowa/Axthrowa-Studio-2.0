@@ -59,7 +59,10 @@ export function NowPlayingWidget({
   const fontFamily = `"${config.font || 'Poppins'}", system-ui, sans-serif`
   // Parça sonuna gelip sıradaki başlamadıysa kaynak hâlâ "çalıyor" diyebilir: bu da durmuş sayılır
   const autoVisible = useWidgetVisibility(track, isPlaying && !sarkiBitti(track, progressMs), config, preview)
-  const visible = typeof demoVisible === 'boolean' ? demoVisible : autoVisible
+  // Parça bitince kart çıkış animasyonuyla kapanır, sıradaki parça giriş animasyonuyla açılır. Eskiden "duraklayınca
+  // gizle" kapalıyken kart son saniyede donup kalıyor, yeni parça gelince geçiş bir anlık oluyordu.
+  const parcaBitti = !preview && sarkiBitti(track, progressMs)
+  const visible = typeof demoVisible === 'boolean' ? demoVisible : autoVisible && !parcaBitti
 
   // Üst çerçeve (Giriş/Bitiş/Mola) boyut + görünürlüğü buradan okusun;
   // aksi halde ebeveyn kendi `isPlaying` kuralıyla temayı OBS'te yutuyordu.

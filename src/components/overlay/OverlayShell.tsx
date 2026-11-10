@@ -1371,6 +1371,7 @@ export default function OverlayShell({
           "logo",
           <div
             className={`logo-ring ${settings.logoFit === false ? "" : "fit"} ${settings.logoFrame === false ? "no-frame" : ""}`}
+            data-bicim={settings.logoShape === "kare" || settings.logoShape === "yuvarlakKare" ? settings.logoShape : undefined}
             style={
               settings.logoAccentColor
                 ? ({ ["--accent" as string]: settings.logoAccentColor } as CSSProperties)

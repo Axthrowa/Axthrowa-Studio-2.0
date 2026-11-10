@@ -1171,6 +1171,11 @@ export default function SahneAyarlari({
               );
             })}
           </div>
+          {settings.logoFile && !logoFiles.includes(settings.logoFile) ? (
+            <p role="alert" className="rounded-md border border-amber-400/40 bg-amber-400/10 px-2 py-1.5 text-[11px] text-amber-200">
+              Seçili logo ({settings.logoFile}) bu uygulama klasörünün assets\logos klasöründe yok, ekranda görünmez. Yeni sürüm klasörüne geçtiysen logoyu yeniden ekle.
+            </p>
+          ) : null}
           <button className="w-full rounded-md bg-black/40 px-3 py-2 text-sm" onClick={() => void pickLogo()}>
             + Logo ekle / kaydet
           </button>
@@ -1190,6 +1195,18 @@ export default function SahneAyarlari({
             <input type="checkbox" checked={settings.logoFrame !== false} onChange={(e) => update({ logoFrame: e.target.checked })} />
             Logo çerçevesi
           </label>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="w-20 text-panel-muted">Biçim</span>
+            <select aria-label="Logo biçimi"
+              className="flex-1 rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-sm text-white"
+              value={settings.logoShape || "daire"}
+              onChange={(e) => update({ logoShape: e.target.value })}
+            >
+              <option value="daire">Daire</option>
+              <option value="yuvarlakKare">Yuvarlak kare</option>
+              <option value="kare">Kare</option>
+            </select>
+          </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="w-20 text-panel-muted">Zoom</span>
             <input aria-label="Zoom"

@@ -1085,3 +1085,11 @@ html.obs-transparent body.panel-app {
 :root[data-kose="keskin"] .panel-shell :is(.rounded-2xl, .rounded-3xl):not(.obs-canvas-wrap *) { border-radius: 0.25rem; }
 :root[data-kose="keskin"] .panel-shell :is(.rounded-xl, .rounded-lg):not(.obs-canvas-wrap *) { border-radius: 0.1875rem; }
 :root[data-kose="keskin"] .panel-shell :is(.rounded-md, .rounded):not(.obs-canvas-wrap *) { border-radius: 2px; }
+
+/* Komut paletinden açılan ayar: kısa süre vurgulanır */
+.yya-ayar-vurgu {
+  outline: 2px solid var(--panel-accent, #22d3ee);
+  outline-offset: 3px;
+  border-radius: 4px;
+  transition: outline-color 0.3s;
+}

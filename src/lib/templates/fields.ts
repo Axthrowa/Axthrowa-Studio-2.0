@@ -45,6 +45,7 @@ export const STYLE_FIELDS = [
   // logo görünümü (dosya yolu HARİÇ)
   "logoFit",
   "logoFrame",
+  "logoShape",
   "logoZoom",
   "logoPanX",
   "logoPanY",

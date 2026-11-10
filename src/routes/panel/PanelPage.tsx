@@ -24,10 +24,8 @@ import MusicBridge from "../../components/panel/MusicBridge";
 import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar from "../../components/panel/NavTabBar";
 import KomutPaleti, { PALET_AC_OLAYI } from "../../components/panel/KomutPaleti";
-import { YayinDugmesi, YayinOnayi } from "../../components/kabuk/Yayin";
-import { Button, Kbd } from "@/components/ui";
+import { Kbd } from "@/components/ui";
 import { menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
-import DurumCubugu from "../../components/panel/DurumCubugu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
 import StreamHealthCard from "../../components/panel/StreamHealthCard";
@@ -277,7 +275,6 @@ export default function PanelPage() {
   const [obsConnected, setObsConnected] = useState(false);
   const [dashBolum, setDashBolum] = useDashboardBolumu();
   const [masterBusy, setMasterBusy] = useState(false);
-  const [yayinOnay, setYayinOnay] = useState(false);
   // OBS'te elle başlatılan yayın da görünsün: durum store'da, Rust ve OBS olaylarıyla güncellenir
   useAxthrowaStoreKoprusu();
   const liveOn = useAxthrowaStore((s) => s.isLive);
@@ -1650,40 +1647,25 @@ export default function PanelPage() {
     {/* Özel pencere başlığı (masaüstünde) + altında panel; panel kalan yüksekliği doldurur */}
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
     {/* Üst şerit (pencere başlığı + durum): arayüz yenilemesinden; altındaki ekranlar 1.6.13 */}
-    <PencereBasligi
-      title={tt("brand.title")}
-      actions={
-        <>
-          <Button variant="ghost" aria-label={tt("palet.baslik")} title={tt("palet.baslik")} onClick={() => window.dispatchEvent(new Event(PALET_AC_OLAYI))}>
-            <Search aria-hidden />
-            <Kbd>Ctrl K</Kbd>
-          </Button>
-          <YayinDugmesi canli={liveOn} mesgul={masterBusy} onClick={() => setYayinOnay(true)} />
-        </>
-      }
-    >
-      <DurumCubugu
-        onObs={() => {
-          sayfaAc({ nav: "profile" });
-          setDashBolum("baglantilar");
-        }}
-      />
+    <PencereBasligi title={tt("brand.title")}>
+      {/* Üst şeritte yalnız marka ve arama: ortada geniş arama düğmesi komut paletini açar */}
+      <button
+        type="button"
+        aria-label={tt("palet.baslik")}
+        onClick={() => window.dispatchEvent(new Event(PALET_AC_OLAYI))}
+        className="mx-auto flex h-6 w-full max-w-[420px] items-center gap-2 rounded-ui-2 border border-ui-line bg-ui-s1 px-2.5 text-xs text-ui-fg2 transition-colors duration-ui hover:bg-ui-s2 hover:text-ui-fg"
+      >
+        <Search aria-hidden className="h-3.5 w-3.5 shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-left">{tt("palet.baslik")}</span>
+        <Kbd>Ctrl K</Kbd>
+      </button>
     </PencereBasligi>
     <KomutPaleti visibleTabs={visibleTabs} labelFor={sayfaAdiBul} onSayfa={sayfaAc} onToast={showToast} kapali={kisayolYakalaniyor} />
     <UpdateModal />
     <KarsilamaEkrani />
-    <YayinOnayi
-      open={yayinOnay}
-      onOpenChange={setYayinOnay}
-      canli={liveOn}
-      mesgul={masterBusy}
-      obsBagli={obsConnected}
-      onConfirm={runMasterStream}
-    />
     <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
       <NavTabBar
-        brandTitle={tt("brand.title")}
         visibleTabs={visibleTabs}
         activeNav={String(activeNav)}
         botSayfa={botSekme}

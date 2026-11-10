@@ -32,9 +32,8 @@ import {
   TicketPreview,
 } from './SkinPreviews'
 
-/** Süre satırının sağındaki dalga: süreler arasında ses dalgası çiziliyorsa ikincisi gösterilmez */
-export const sagDalga = (config, durationMs) =>
-  !config.hideVisualizer && !(config.timeWave !== false && Number(durationMs) > 0)
+/** Süre satırının sağındaki dalga: süre satırı varken hiç çizilmez (aradaki dalga kapatılsa da), yalnız süresiz kaynakta */
+export const sagDalga = (config, durationMs) => !config.hideVisualizer && !(Number(durationMs) > 0)
 
 /**
  * Skin kayıt defteri.

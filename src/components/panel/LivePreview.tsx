@@ -134,8 +134,8 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd, onPartSelect
         </div>
       </div>
 
-      {/* Stüdyo etiketi: sol üst köşede, çerçevesiz cam hap */}
-      <div className="pointer-events-none absolute left-4 top-4 z-50 flex items-center gap-2 rounded-full bg-axthrowa-card/80 px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.4)] backdrop-blur-md">
+      {/* Stüdyo etiketi: üstte ortada, çerçevesiz cam hap */}
+      <div className="pointer-events-none absolute left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-axthrowa-card/80 px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.4)] backdrop-blur-md">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]" />
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-300">Canlı önizleme</span>
         <span className="font-mono text-[10px] text-zinc-400">1920×1080</span>

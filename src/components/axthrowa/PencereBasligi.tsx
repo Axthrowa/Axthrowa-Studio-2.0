@@ -53,8 +53,9 @@ export default function PencereBasligi({ children, actions, title }: Props) {
     >
       {/* Marka: kendisi de sürükleme alanı */}
       <Tooltip content={`${title} ${__YYA_SURUM__}`} side="bottom">
-        <span data-tauri-drag-region className="flex h-8 w-12 shrink-0 items-center justify-center">
-          <img src={logo} alt={title} className="pointer-events-none h-[18px] w-[18px] rounded-ui-1" />
+        <span data-tauri-drag-region className="flex h-8 shrink-0 items-center gap-2 pl-3 pr-4">
+          <img src={logo} alt="" className="pointer-events-none h-[18px] w-[18px] rounded-ui-1" />
+          <span className="pointer-events-none whitespace-nowrap text-[13px] font-semibold text-ui-fg">{title}</span>
         </span>
       </Tooltip>
 

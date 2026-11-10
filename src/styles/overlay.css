@@ -175,6 +175,12 @@
   background: #1a1d28;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 70%, white), 0 0 40px color-mix(in srgb, var(--accent) 50%, transparent);
 }
+.logo-ring[data-bicim="kare"] {
+  border-radius: 0;
+}
+.logo-ring[data-bicim="yuvarlakKare"] {
+  border-radius: 18%;
+}
 .logo-ring.no-frame {
   box-shadow: none;
   background: transparent;

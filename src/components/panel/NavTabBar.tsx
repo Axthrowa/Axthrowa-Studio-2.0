@@ -5,7 +5,6 @@
 
 import type { ReactNode } from "react";
 import { Bot, CheckCircle2, MessageCircle, Monitor, Radio, Settings, SlidersHorizontal, type LucideIcon } from "lucide-react";
-import logo from "@/assets/logo.png";
 import { useT } from "../../i18n";
 import { olay } from "../../lib/analitik";
 import { ANA_MENU, menuGrubuBul, sayfaAcikMi, type MenuGrubuId, type MenuSayfasi } from "../../lib/anaMenu";
@@ -19,7 +18,6 @@ type Props = {
   editLayout: boolean;
   onToggleEdit: () => void;
   onSelect: (s: MenuSayfasi) => void;
-  brandTitle: string;
   children?: ReactNode;
 };
 
@@ -32,7 +30,7 @@ const GRUP_IKONU: Record<MenuGrubuId, LucideIcon> = {
   ayarlar: Settings,
 };
 
-export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, customizeLabel, editLayout, onToggleEdit, onSelect, brandTitle, children }: Props) {
+export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, customizeLabel, editLayout, onToggleEdit, onSelect, children }: Props) {
   const t = useT();
   const visible = new Set(visibleTabs);
   const aktifGrup = menuGrubuBul(activeNav, botSayfa);
@@ -44,11 +42,6 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
 
   return (
     <aside className="yya-nav-rail flex h-full w-[200px] shrink-0 flex-col border-r border-panel-border bg-[var(--dt-surface-1)]">
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-panel-border bg-[var(--dt-surface-2)] px-3">
-        <img src={logo} alt="" className="h-5 w-5 shrink-0 rounded" />
-        <span className="truncate text-[13px] font-medium text-white">{brandTitle}</span>
-      </div>
-
       <nav className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-2" aria-label={t("nav.menu")}>
         {ANA_MENU.map((grup) => {
           const sayfalar = grup.sayfalar.filter((s) => visible.has(s.nav));

@@ -6,7 +6,9 @@
  * yeniden çizilmesin.
  */
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Eye, EyeOff, Pin } from "lucide-react";
+import { Activity, Eye, EyeOff, Gauge, Pin, Plug, Radio, TriangleAlert, Users, type LucideIcon } from "lucide-react";
+import { PlatformLogo } from "../chat/ChatFeed";
+import type { Platform } from "../../lib/chatHub";
 import { actionsApi } from "../../lib/api/actions";
 import { getStreamHealth, isObsConnected, onObsConnection, type StreamHealth } from "../../lib/obs";
 import { isAudioInput, onizlemeBeklemesi, onizlemeGenisligi } from "../../lib/obsAudio";
@@ -21,7 +23,7 @@ import SesKaristirici from "./SesKaristirici";
 import YayinDuzeni from "./YayinDuzeni";
 import { botSekmesi, ekPanelBul } from "../../lib/canliEkPaneller";
 import { YayinBilgisiDock } from "./YayinBilgisiDock";
-import { ActivityFeedPanel, UniversalChatPanel } from "./UniversalChat";
+import { ActivityFeedPanel } from "./UniversalChat";
 
 type Props = {
   onToast: (m: string) => void;
@@ -37,17 +39,38 @@ type Props = {
 const StreamAxtHost = lazy(() => import("../panel/StreamAxtHost"));
 
 type BotDurumu = {
-  canli?: { izleyici?: number };
+  canli?: { izleyici?: number; platformlar?: { platform: string; canli?: boolean; izleyici?: number }[] };
   platforms?: Record<string, { connected?: boolean; yazabilir?: boolean }>;
 };
 
 
-function Olcum({ etiket, uyari, children }: { etiket: React.ReactNode; uyari?: boolean; children: React.ReactNode }) {
+function Olcum({ etiket, ikon: Ikon, uyari, children }: { etiket: React.ReactNode; ikon?: LucideIcon; uyari?: boolean; children: React.ReactNode }) {
   return (
     <div className="min-w-0 rounded-md border border-panel-border bg-panel-card px-2 py-1.5">
-      <div className={`${ETIKET} flex items-center gap-1.5`}>{etiket}</div>
+      <div className={`${ETIKET} flex items-center gap-1.5`}>
+        {Ikon ? <Ikon aria-hidden className={`h-3.5 w-3.5 shrink-0 ${uyari ? "text-red-400" : "text-white/55"}`} /> : null}
+        {etiket}
+      </div>
       <div className={`truncate font-mono text-base tabular-nums ${uyari ? "text-red-400" : "text-white"}`}>{children}</div>
     </div>
+  );
+}
+
+const LOGOLU: ReadonlySet<string> = new Set<Platform>(["kick", "twitch", "youtube"]);
+
+/** İzleyici: yayında olan her platform kendi logosu ve sayısıyla (çoklu yayında hepsi); bilinmiyorsa toplam */
+function Izleyiciler({ bot }: { bot: BotDurumu | null }) {
+  const canlilar = (bot?.canli?.platformlar || []).filter((p) => p.canli && LOGOLU.has(p.platform));
+  if (!canlilar.length) return <>{bot?.canli?.izleyici ?? "—"}</>;
+  return (
+    <span className="flex min-w-0 items-center gap-2.5">
+      {canlilar.map((p) => (
+        <span key={p.platform} className="inline-flex shrink-0 items-center">
+          <PlatformLogo platform={p.platform as Platform} />
+          {p.izleyici ?? 0}
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -58,6 +81,38 @@ function Durum({ ok, children }: { ok: boolean; children: React.ReactNode }) {
       {children}
       <span className="sr-only">{ok ? " bağlı" : " bağlı değil"}</span>
     </span>
+  );
+}
+
+/** Uygulama sayfaları bu genişliğe göre tasarlandı; daha dar panelde sayfa bu genişlikte çizilip orantılı küçültülür */
+const SAYFA_TABAN_PX = 760;
+/** Bundan küçük yazı okunmaz: daha dar kutuda sayfa yatay kaydırılır */
+const EN_AZ_ORAN = 0.7;
+
+/**
+ * Panele eklenen uygulama sayfası (Giriş ekranı, OBS Stüdyo…) dar kutuda sütunları birbirine girmesin: sayfa
+ * taban genişlikte çizilir, CSS `zoom` ile kutuya sığdırılır. Botun sayfaları iframe'de kendi genişliğine uyar, buna gerek duymaz.
+ */
+function Sigdir({ children }: { children: ReactNode }) {
+  const kap = useRef<HTMLDivElement>(null);
+  const [olcu, setOlcu] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    const el = kap.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setOlcu({ w: el.clientWidth, h: el.clientHeight }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const oran = olcu && olcu.w > 0 && olcu.w < SAYFA_TABAN_PX ? Math.max(EN_AZ_ORAN, olcu.w / SAYFA_TABAN_PX) : 1;
+  return (
+    <div ref={kap} className="custom-scrollbar h-full min-h-0 w-full overflow-x-auto overflow-y-hidden">
+      <div
+        className="custom-scrollbar overflow-auto"
+        style={oran < 1 && olcu ? { zoom: oran, width: SAYFA_TABAN_PX, height: olcu.h / oran } : { width: "100%", height: "100%" }}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -335,6 +390,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
     <div className="flex min-h-0 flex-1 flex-col bg-panel-bg font-sans text-white">
       <div className="grid shrink-0 grid-cols-2 gap-2 p-2 pb-0 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-[repeat(6,minmax(0,1fr))_auto]">
         <Olcum
+          ikon={Radio}
           uyari={saglik?.reconnecting}
           etiket={
             <>
@@ -345,14 +401,14 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
         >
           {yayinda ? <SureSayaci key={Math.round(baslangic / 10000)} baslangic={baslangic} /> : canli ? "—" : "KAPALI"}
         </Olcum>
-        <Olcum etiket="İzleyici">{bot?.canli?.izleyici ?? "—"}</Olcum>
-        <Olcum etiket="FPS">{saglik?.fps != null ? saglik.fps.toFixed(0) : "—"}</Olcum>
-        <Olcum etiket="Bit hızı · kbps">{yayinda && kbps !== null ? kbps : "—"}</Olcum>
-        <Olcum etiket="Kare kaybı" uyari={yayinda && saglik.dropPct >= ESIK.kareDususu}>
+        <Olcum etiket="İzleyici" ikon={Users}><Izleyiciler bot={bot} /></Olcum>
+        <Olcum etiket="FPS" ikon={Gauge}>{saglik?.fps != null ? saglik.fps.toFixed(0) : "—"}</Olcum>
+        <Olcum etiket="Bit hızı · kbps" ikon={Activity}>{yayinda && kbps !== null ? kbps : "—"}</Olcum>
+        <Olcum etiket="Kare kaybı" ikon={TriangleAlert} uyari={yayinda && saglik.dropPct >= ESIK.kareDususu}>
           {yayinda ? `%${saglik.dropPct.toFixed(1)}` : "—"}
         </Olcum>
         <div className="min-w-0 rounded-md border border-panel-border bg-panel-card px-2 py-1.5">
-          <div className={ETIKET}>Bağlantı</div>
+          <div className={`${ETIKET} flex items-center gap-1.5`}><Plug aria-hidden className="h-3.5 w-3.5 shrink-0 text-white/55" />Bağlantı</div>
           <div className="flex h-6 items-center gap-3">
             <Durum ok={obsBagli}>OBS</Durum>
             <Durum ok={!!kick?.connected}>Bot</Durum>
@@ -395,7 +451,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
                         <StreamAxtHost onToast={onToast} tab={sekmesi} embed onOpenMusic={() => onBot(sekmesi)} />
                       </div>
                     ) : (
-                      yerelPanel(id)
+                      <Sigdir>{yerelPanel(id)}</Sigdir>
                     )}
                   </Suspense>
                 ),
@@ -475,7 +531,11 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
             </div>
           ) : null}
           {/* İkisi de bağlı kalır: sekme değişince liste ve filtreler kaybolmasın */}
-          <div className={`custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2 ${sekme === "sohbet" ? "" : "hidden"}`}><UniversalChatPanel onToast={onToast} /></div>
+          <div className={`flex min-h-0 flex-1 flex-col ${sekme === "sohbet" ? "" : "hidden"}`}>
+            <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
+              <StreamAxtHost onToast={onToast} tab="multichat" embed onOpenMusic={() => onBot("multichat")} />
+            </Suspense>
+          </div>
           <div className={`custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2 ${sekme === "olaylar" ? "" : "hidden"}`}><ActivityFeedPanel onToast={onToast} /></div>
         </aside>
       </div>

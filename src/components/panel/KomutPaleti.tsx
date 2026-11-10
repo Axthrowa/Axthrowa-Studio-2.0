@@ -1,5 +1,5 @@
 /**
- * Ctrl+K komut paleti: sayfalar, sahneler ve eylem kayıt defterindeki parametresiz eylemler tek aramada.
+ * Ctrl+K komut paleti: sayfalar, sahneler, eylem kayıt defterindeki parametresiz eylemler ve uygulamadaki tüm ayarlar tek aramada.
  * Eylemler `actionsApi` üzerinden çalışır: izin, onay ve denetim günlüğü sunucuda aynen uygulanır.
  * Onay isteyen eylem (yayını başlat/bitir gibi) yanlışlıkla çalışmasın diye ikinci Enter ister.
  */
@@ -11,6 +11,34 @@ import { ANA_MENU, type MenuSayfasi } from "../../lib/anaMenu";
 import { komutAra, type Komut } from "../../lib/komutPaleti";
 import { obsControl } from "../../lib/obsControl";
 import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
+import AYAR_DIZINI from "../../lib/ayarDizini.json";
+import type { NavId } from "../../lib/panelLayout";
+
+/** `scripts/ayar-dizini.mjs` üretir: s sayfa, b bot sekmesi, t ayarın bulunduğu sekme, a ayarın adı */
+type AyarKaydi = { s: string; a: string; b?: string; t?: string };
+
+const AYAR_SECICI = 'label, legend, h2, h3, h4, summary, p.uppercase, div.uppercase > span, [role="tab"], [role="group"][aria-label]';
+const ayarAdi = (el: Element) => {
+  if (el.matches('[role="group"][aria-label]')) return el.getAttribute("aria-label") || "";
+  const k = el.cloneNode(true) as Element;
+  k.querySelectorAll('select, option, input, textarea, button, svg, [aria-hidden="true"], .sr-only').forEach((x) => x.remove());
+  return (k.textContent || "").replace(/\s+/g, " ").trim();
+};
+
+/** Sayfa açıldıktan sonra ayarı bulur (gerekirse sekmesini açar), görünür yere kaydırır ve kısa süre vurgular */
+function ayaraGit(ad: string, sekme?: string, deneme = 0) {
+  const kok = document.querySelector(".panel-shell") || document.body;
+  const bul = (metin: string) => [...kok.querySelectorAll(AYAR_SECICI)].find((el) => !el.closest(".yya-nav-rail") && ayarAdi(el) === metin) as HTMLElement | undefined;
+  if (sekme && deneme === 0) bul(sekme)?.click();
+  const el = bul(ad);
+  if (!el) {
+    if (deneme < 12) window.setTimeout(() => ayaraGit(ad, sekme, deneme + 1), 150);
+    return;
+  }
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.classList.add("yya-ayar-vurgu");
+  window.setTimeout(() => el.classList.remove("yya-ayar-vurgu"), 1800);
+}
 
 /** Gömülü bot çerçevesinden gelen Ctrl+K bu olayla ulaşır */
 export const PALET_AC_OLAYI = "yya:komut-paleti";
@@ -120,7 +148,25 @@ export default function KomutPaleti({ visibleTabs, labelFor, onSayfa, onToast, k
         },
       },
     ];
-    return [...hazir, ...uzak, ...sayfalar];
+    const ayarlar: Komut[] = (AYAR_DIZINI as AyarKaydi[])
+      .filter((k) => gorunur.has(k.s))
+      .map((k) => {
+        const sayfa: MenuSayfasi = { nav: k.s as NavId, botSayfa: k.b };
+        return {
+          id: `ayar:${k.s}:${k.b || ""}:${k.t || ""}:${k.a}`,
+          ad: k.a,
+          // Aynı ad Giriş/Çıkış/Mola gibi birkaç sayfada geçer: hangisi olduğu yanda yazar
+          grup: `Ayar · ${labelFor(sayfa)}`,
+          anahtar: `${labelFor(sayfa)} ${k.b || ""} ${k.t || ""}`,
+          calistir: () => {
+            onSayfa(sayfa);
+            // Bot sayfaları çerçevede açılır: ayarın yerine kaydırma yalnız uygulamanın kendi sayfalarında
+            if (k.s !== "bot") window.setTimeout(() => ayaraGit(k.a, k.t), 200);
+          },
+        };
+      });
+    // Ayarlar en sonda: sayfa ve eylem adları aramada önce gelsin
+    return [...hazir, ...uzak, ...sayfalar, ...ayarlar];
   }, [visibleTabs, labelFor, onSayfa, uzak]);
 
   const sonuc = useMemo(() => komutAra(komutlar, sorgu).slice(0, 50), [komutlar, sorgu]);
@@ -187,7 +233,7 @@ export default function KomutPaleti({ visibleTabs, labelFor, onSayfa, onToast, k
                 aria-controls="komut-listesi"
                 aria-activedescendant={aktif ? `komut-${sonuc.indexOf(aktif)}` : undefined}
                 aria-label="Komut ara"
-                placeholder="Komut, sahne ya da sayfa ara…"
+                placeholder="Komut, ayar, sahne ya da sayfa ara…"
                 className="h-11 min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-panel-muted"
               />
               <kbd className="shrink-0 rounded border border-panel-border px-1.5 py-0.5 font-mono text-[11px] text-panel-muted">Esc</kbd>

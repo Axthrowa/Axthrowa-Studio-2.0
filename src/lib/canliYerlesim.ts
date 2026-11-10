@@ -114,18 +114,44 @@ export const panelKaldir = (liste: Kutu[], id: PanelId): Kutu[] => liste.filter(
 export const eklerleBirlestir = (sablon: Kutu[], mevcut: Kutu[]): Kutu[] =>
   mevcut.filter((k) => ekPanelMi(k.id)).reduce((l, k) => panelEkle(l, k.id), sablon);
 
-/** Kayıtlı metni okur; bozuk ya da eksikse varsayılan yerleşim döner. */
-export function yerlesimOku(ham: string | null): Kutu[] {
-  if (!ham) return VARSAYILAN_YERLESIM;
+/**
+ * Canlı ekranının üç kipi: her birinin kendi yerleşimi (ve kendi kaydı) vardır.
+ * Yayın öncesinde kontrol listesi ve yayın bilgisi, canlıda önizleme + ses, sonrasında sahne + hızlı işlem öne çıkar.
+ */
+export type Kip = "oncesi" | "canli" | "sonrasi";
+
+export const KIPLER: { id: Kip; ad: string; kutular: Kutu[] }[] = [
+  { id: "oncesi", ad: "Yayın öncesi", kutular: SABLONLAR[0].kutular },
+  { id: "canli", ad: "Canlı", kutular: SABLONLAR[1].kutular },
+  {
+    id: "sonrasi",
+    ad: "Yayın sonrası",
+    kutular: [
+      { id: "onizleme", x: 0, y: 0, w: 8, h: 10 },
+      { id: "sahne", x: 8, y: 0, w: 4, h: 7 },
+      { id: "hizli", x: 8, y: 7, w: 4, h: 6 },
+      { id: "ses", x: 0, y: 10, w: 8, h: 8 },
+    ],
+  },
+];
+
+export const kipKutulari = (kip: Kip): Kutu[] => (KIPLER.find((k) => k.id === kip) ?? KIPLER[1]).kutular;
+
+/** Yayın açıkken Canlı kipi, kapalıyken Yayın öncesi kipi öne çıkar (kullanıcı elle başkasını seçmediyse) */
+export const otomatikKip = (yayinda: boolean): Kip => (yayinda ? "canli" : "oncesi");
+
+/** Kayıtlı metni okur; bozuk ya da eksikse `varsayilan` yerleşim döner. */
+export function yerlesimOku(ham: string | null, varsayilan: Kutu[] = VARSAYILAN_YERLESIM): Kutu[] {
+  if (!ham) return varsayilan;
   try {
     const okunan = JSON.parse(ham) as Kutu[];
     const liste = (Array.isArray(okunan) ? okunan : []).filter((k) => k && (k.id in EN_AZ || (typeof k.id === "string" && ekPanelMi(k.id))) && [k.x, k.y, k.w, k.h].every(Number.isFinite));
-    if (!VARSAYILAN_YERLESIM.every((v) => liste.some((k) => k.id === v.id))) return VARSAYILAN_YERLESIM;
+    if (!VARSAYILAN_YERLESIM.every((v) => liste.some((k) => k.id === v.id))) return varsayilan;
     let sonuc = liste;
     // Teker teker yerleştirilir: elle bozulmuş kayıtta da çakışma kalmaz
     for (const k of [...liste].reverse()) sonuc = yerlestir(sonuc, k.id, k);
     return sonuc;
   } catch {
-    return VARSAYILAN_YERLESIM;
+    return varsayilan;
   }
 }

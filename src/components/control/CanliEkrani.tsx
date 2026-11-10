@@ -22,6 +22,7 @@ import { ETIKET, TUS, TUS_TABAN } from "./donanim";
 import SesKaristirici from "./SesKaristirici";
 import HizliIslemler from "./HizliIslemler";
 import YayinDuzeni from "./YayinDuzeni";
+import { KIPLER, otomatikKip, type Kip } from "../../lib/canliYerlesim";
 import { botSekmesi, ekPanelBul } from "../../lib/canliEkPaneller";
 import { YayinBilgisiDock } from "./YayinBilgisiDock";
 import { ActivityFeedPanel } from "./UniversalChat";
@@ -236,6 +237,10 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
 export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, yerelPanel }: Props) {
   const [gelismis, setGelismis] = useState(false);
   const [duzenle, setDuzenle] = useState(false);
+  // Kip: yayın açılınca "Canlı", kapanınca "Yayın öncesi" kendiliğinden seçilir; elle seçilen o değişime dek korunur
+  const [kipSecim, setKipSecim] = useState<Kip | null>(null);
+  useEffect(() => setKipSecim(null), [canli]);
+  const kip = kipSecim ?? otomatikKip(canli);
   const [genisSohbet, setGenisSohbet] = useState(() => {
     try {
       return localStorage.getItem(GENIS_SOHBET_KEY) === "1";
@@ -435,7 +440,26 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
 
       <div className={`grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto p-2 lg:overflow-hidden ${genisSohbet ? "lg:grid-cols-[minmax(0,1fr)_minmax(320px,45%)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]"}`}>
         <section aria-label="Yayın" className="custom-scrollbar min-w-0 lg:overflow-y-auto">
+          <div role="tablist" aria-label="Yayın kipi" className="mb-2 flex gap-1">
+            {KIPLER.map((k) => (
+              <button
+                key={k.id}
+                type="button"
+                role="tab"
+                aria-selected={kip === k.id}
+                className={`${TUS_TABAN} h-8 flex-1 text-xs font-bold ${kip === k.id ? "border-white/20 bg-[var(--dt-surface-3)] text-white" : "border-panel-border text-white/55 hover:bg-[var(--dt-surface-3)]"}`}
+                onClick={() => {
+                  setDuzenle(false);
+                  setKipSecim(k.id);
+                }}
+              >
+                {k.ad}
+              </button>
+            ))}
+          </div>
           <YayinDuzeni
+            key={kip}
+            kip={kip}
             duzenle={duzenle}
             onBitti={() => setDuzenle(false)}
             onGenisSohbet={genisSohbetSec}

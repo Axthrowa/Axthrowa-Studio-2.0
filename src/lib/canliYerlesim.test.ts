@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SABLONLAR, SUTUN, VARSAYILAN_YERLESIM, eklerleBirlestir, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kutu } from "./canliYerlesim";
+import { KIPLER, SABLONLAR, SUTUN, VARSAYILAN_YERLESIM, eklerleBirlestir, kipKutulari, otomatikKip, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kutu } from "./canliYerlesim";
 
 const bul = (l: Kutu[], id: Kutu["id"]) => l.find((k) => k.id === id)!;
 const cakismaVar = (l: Kutu[]) =>
@@ -76,5 +76,24 @@ describe("yerlesimOku", () => {
   it("elle bozulmuş kayıtta çakışma bırakmaz", () => {
     const bozuk = VARSAYILAN_YERLESIM.map((k) => ({ ...k, x: 0, y: 0 }));
     expect(cakismaVar(yerlesimOku(JSON.stringify(bozuk)))).toBe(false);
+  });
+});
+
+describe("Canlı kipleri", () => {
+  it.each(KIPLER)("$ad çakışmaz, taşmaz ve kayıttan aynen döner", ({ id, kutular }) => {
+    expect(cakismaVar(kutular)).toBe(false);
+    expect(kutular.every((k) => k.x >= 0 && k.x + k.w <= SUTUN)).toBe(true);
+    expect(yerlesimOku(JSON.stringify(kutular), kipKutulari(id))).toEqual(kutular);
+  });
+
+  it("kayıt yoksa ya da bozuksa o kipin kendi yerleşimi döner, ortak varsayılan değil", () => {
+    expect(yerlesimOku(null, kipKutulari("sonrasi"))).toEqual(kipKutulari("sonrasi"));
+    expect(yerlesimOku("{bozuk", kipKutulari("oncesi"))).toEqual(kipKutulari("oncesi"));
+    expect(yerlesimOku("[]", kipKutulari("oncesi"))).toEqual(kipKutulari("oncesi"));
+  });
+
+  it("yayın açıkken Canlı, kapalıyken Yayın öncesi seçilir", () => {
+    expect(otomatikKip(true)).toBe("canli");
+    expect(otomatikKip(false)).toBe("oncesi");
   });
 });

@@ -4,30 +4,36 @@
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { ETIKET, TUS } from "./donanim";
-import { BOSLUK_PX, SABLONLAR, SATIR_PX, SUTUN, VARSAYILAN_YERLESIM, eklerleBirlestir, ekPanelMi, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kutu, type PanelId, type TemelPanelId } from "../../lib/canliYerlesim";
+import { BOSLUK_PX, SABLONLAR, SATIR_PX, SUTUN, eklerleBirlestir, ekPanelMi, kipKutulari, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kip, type Kutu, type PanelId, type TemelPanelId } from "../../lib/canliYerlesim";
 import { EK_PANEL_GRUPLARI } from "../../lib/canliEkPaneller";
 
 const YERLESIM_KEY = "yya.canli.yerlesim";
 /** Bu genişliğin altında paneller alt alta dizilir: küçük ekranda 12 sütunluk ızgarada panellerin içi sıkışıp iç içe giriyordu */
-const DAR_PX = 820;
+const DAR_PX = 640;
 
-function kayitliYerlesim(): Kutu[] {
+const anahtar = (kip: Kip) => `${YERLESIM_KEY}.${kip}`;
+
+function kayitliYerlesim(kip: Kip): Kutu[] {
   try {
-    return yerlesimOku(localStorage.getItem(YERLESIM_KEY));
+    // Kipler gelmeden önce tek yerleşim vardı: Canlı kipi onu devralır
+    const ham = localStorage.getItem(anahtar(kip)) ?? (kip === "canli" ? localStorage.getItem(YERLESIM_KEY) : null);
+    return yerlesimOku(ham, kipKutulari(kip));
   } catch {
-    return VARSAYILAN_YERLESIM;
+    return kipKutulari(kip);
   }
 }
 
-function kaydet(l: Kutu[]) {
+function kaydet(kip: Kip, l: Kutu[]) {
   try {
-    localStorage.setItem(YERLESIM_KEY, JSON.stringify(l));
+    localStorage.setItem(anahtar(kip), JSON.stringify(l));
   } catch {
     /* saklanamadı: bu oturumda yine geçerli */
   }
 }
 
 type Props = {
+  /** Hangi kipin yerleşimi: her kipin kendi yerleşimi ve kaydı var (üst bileşen kip değişince bunu `key` ile yeniler) */
+  kip: Kip;
   duzenle: boolean;
   onBitti: () => void;
   onGenisSohbet: (genis: boolean) => void;
@@ -37,8 +43,8 @@ type Props = {
   ekPanel: (id: string) => { baslik: string; icerik: ReactNode } | null;
 };
 
-export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller, ekPanel }: Props) {
-  const [yerlesim, setYerlesim] = useState(kayitliYerlesim);
+export default function YayinDuzeni({ kip, duzenle, onBitti, onGenisSohbet, paneller, ekPanel }: Props) {
+  const [yerlesim, setYerlesim] = useState(() => kayitliYerlesim(kip));
   const [dar, setDar] = useState(false);
   const izgara = useRef<HTMLDivElement>(null);
   const hareket = useRef<{ id: PanelId; tur: "tasi" | "boyut"; px: number; py: number; taban: Kutu[] } | null>(null);
@@ -76,7 +82,7 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller,
   const birak = () => {
     if (!hareket.current) return;
     hareket.current = null;
-    kaydet(yerlesim);
+    kaydet(kip, yerlesim);
   };
 
   const tus = (id: PanelId) => (e: KeyboardEvent<HTMLDivElement>) => {
@@ -87,19 +93,19 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller,
     const yeni = e.shiftKey ? { ...k, w: k.w + yon[0], h: k.h + yon[1] } : { ...k, x: k.x + yon[0], y: k.y + yon[1] };
     const sonuc = yerlestir(yerlesim, id, yeni);
     setYerlesim(sonuc);
-    kaydet(sonuc);
+    kaydet(kip, sonuc);
   };
 
   const uygula = (kutular: Kutu[], genisSohbet: boolean) => {
     const sonuc = eklerleBirlestir(kutular, yerlesim);
     setYerlesim(sonuc);
-    kaydet(sonuc);
+    kaydet(kip, sonuc);
     onGenisSohbet(genisSohbet);
   };
 
   const listeyiYaz = (liste: Kutu[]) => {
     setYerlesim(liste);
-    kaydet(liste);
+    kaydet(kip, liste);
   };
 
   const duzenlemede = duzenle && !dar;
@@ -114,7 +120,7 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller,
               {s.ad}
             </button>
           ))}
-          <button type="button" className={`${TUS} h-8 px-3 text-xs font-medium`} onClick={() => uygula(VARSAYILAN_YERLESIM, false)}>
+          <button type="button" className={`${TUS} h-8 px-3 text-xs font-medium`} onClick={() => uygula(kipKutulari(kip), false)}>
             Varsayılana dön
           </button>
           <select

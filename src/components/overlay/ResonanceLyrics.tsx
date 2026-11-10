@@ -10,8 +10,10 @@ export default function ResonanceLyrics({ placeholder }: { placeholder?: boolean
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/resonance/`, { cache: "no-store" })
-      .then((r) => !cancelled && setReady(r.ok))
+    // Çerçevenin açacağı yol sınanır; Resonance'sız sunucu Studio'nun index.html'ini döndürür
+    fetch(`${API_BASE}/resonance/lyrics`, { cache: "no-store" })
+      .then(async (r) => r.ok && (await r.text()).includes("<title>Resonance</title>"))
+      .then((resonance) => !cancelled && setReady(resonance))
       .catch(() => !cancelled && setReady(false));
     return () => {
       cancelled = true;

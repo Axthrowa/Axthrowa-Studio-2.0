@@ -122,11 +122,13 @@ export default function ResonanceNowPlaying({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/resonance/`, { cache: "no-store" })
-      .then((r) => {
+    // Çerçevenin açacağı yol sınanır; Resonance'sız sunucu buraya Studio'nun index.html'ini döndürür (çerçevede Studio açılırdı)
+    fetch(`${API_BASE}/resonance/overlay`, { cache: "no-store" })
+      .then(async (r) => r.ok && (await r.text()).includes("<title>Resonance</title>"))
+      .then((resonance) => {
         if (cancelled) return;
-        setReady(r.ok);
-        if (!r.ok) onUnavailable?.();
+        setReady(resonance);
+        if (!resonance) onUnavailable?.();
       })
       .catch(() => {
         if (cancelled) return;
@@ -165,7 +167,8 @@ export default function ResonanceNowPlaying({
       {ready && (
         <iframe
           title="Şimdi Çalıyor"
-          src={`${API_BASE}/resonance/overlay?p=${ACTIVE_OVERLAY_ID}&embed=1`}
+          // Panel önizlemesinde şarkı çalmıyorsa Resonance örnek parçayı gösterir; OBS'te (placeholder yok) gösterilmez
+          src={`${API_BASE}/resonance/overlay?p=${ACTIVE_OVERLAY_ID}&embed=1${placeholder ? "&ornek=1" : ""}`}
           style={{
             position: "absolute",
             top: 0,

@@ -84,6 +84,12 @@ export function resolveStartingScene(obs: ObsSlice | Record<string, unknown> | u
   );
 }
 
+/** Yayını bitirirken gösterilecek çıkış sahnesi (Rust'taki `read_stream_plan` ile aynı sıra) */
+export function resolveEndingScene(obs: ObsSlice | Record<string, unknown> | undefined): string {
+  const o = (obs || {}) as { sceneMap?: { ending?: string }; endingScene?: string; endingEndScene?: string };
+  return String(o.sceneMap?.ending || "").trim() || String(o.endingScene || "").trim() || String(o.endingEndScene || "").trim();
+}
+
 export function resolveEndingFollowScene(obs: ObsSlice | Record<string, unknown> | undefined): string {
   const o = (obs || {}) as ObsSlice & {
     endingEndScene?: string;

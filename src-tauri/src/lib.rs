@@ -6,6 +6,7 @@ mod close_prompt;
 pub mod streamaxt;
 pub mod db;
 pub mod kick;
+pub mod kutuphane;
 pub mod media;
 pub mod actions;
 pub mod destek;
@@ -664,7 +665,7 @@ pub fn run() {
   match yedek::bekleyeni_uygula(
     &resolved.data_dir,
     yedek::bot_veri_klasoru().as_deref(),
-    &resolved.resource_root.join("assets"),
+    &resolved.data_dir.join("assets"),
   ) {
     Ok(Some(m)) => {
       yya_log!("{m}");
@@ -676,6 +677,8 @@ pub fn run() {
       let _ = server::yedek_api::SON_UYGULANAN.set(format!("Geri yükleme başarısız: {e:#}"));
     }
   }
+  // Logo/video/müzik kütüphanesi veri klasöründe: eski sürüm klasörlerindekiler bir kez birleştirilir
+  kutuphane::hazirla(&resolved.resource_root, &resolved.data_dir, env!("CARGO_PKG_VERSION"));
   let gunluk_klasoru = resolved.data_dir.join("logs");
   let state = AppState::new(
     resolved.resource_root,

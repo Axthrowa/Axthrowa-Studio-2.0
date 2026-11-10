@@ -466,7 +466,7 @@ async fn indir_ic(state: &Arc<crate::AppState>, url: &str) -> anyhow::Result<Str
   // Liste (`/api/videos`) ve oynatma (`/assets/videos`) kökteki klasöre bakıyor.
   // Eskiden buraya `data_dir` yazılıyordu; taşınabilir kurulumda ikisi farklı
   // klasör olduğu için inen video panelde hiç görünmüyordu.
-  let videolar = indirme_klasoru(&state.root);
+  let videolar = indirme_klasoru(&state.data_dir);
   std::fs::create_dir_all(&videolar)?;
 
   guncelle(state, |d| {

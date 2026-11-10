@@ -19,7 +19,7 @@ pub fn media_playable_urls(
   state: State<'_, AppState>,
   path: String,
 ) -> Result<paths::PlayableMedia, String> {
-  let stored = paths::normalize_for_storage(&path, &state.root, &state.base_url())
+  let stored = paths::normalize_for_storage(&path, &state.data_dir, &state.base_url())
     .map_err(map_err)?;
   paths::playable(&state.base_url(), &stored).map_err(map_err)
 }

@@ -91,6 +91,7 @@ import {
   clearStartingCountdown,
   obsConnectionFrom,
   resolveGameScene,
+  resolveEndingScene,
   resolveStartingScene,
   runEndingEndAction,
   runStartingEndAction,
@@ -1067,7 +1068,7 @@ export default function PanelPage() {
     setActiveNav("ending");
     setScreen("ending");
     try {
-      await obsControl.stopStreamSequence();
+      await obsControl.stopStreamSequence(resolveEndingScene(settingsRef.current.obs || {}));
     } catch {
       /* OBS kapalıysa sessiz */
     }
@@ -1280,7 +1281,7 @@ export default function PanelPage() {
           return;
         }
         if (id === "stopStream") {
-          await obsControl.stopStreamSequence();
+          await obsControl.stopStreamSequence(resolveEndingScene(settingsRef.current.obs || {}));
           showToast("Çıkış sahnesi — yayın süre sonunda kapanacak");
           return;
         }

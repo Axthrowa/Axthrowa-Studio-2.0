@@ -79,6 +79,8 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
 
   let port = state.port;
   let root = state.root.clone();
+  // Kullanıcı kütüphanesi (logo, video, müzik…) sürüm klasöründe değil veri klasöründe durur: sürüm değişince kaybolmaz
+  let kutuphane = state.data_dir.clone();
   let dist = root.join("dist");
   let index = dist.join("index.html");
   let has_dist = index.exists();
@@ -90,12 +92,12 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .allow_methods(Any)
     .allow_headers(Any);
 
-  let particles_dir = root.join("assets").join("particles");
-  let music_dir = root.join("assets").join("music");
-  let sfx_dir = root.join("assets").join("sfx");
-  let logos_dir = root.join("assets").join("logos");
-  let videos_dir = root.join("assets").join("videos");
-  let backgrounds_dir = root.join("assets").join("backgrounds");
+  let particles_dir = kutuphane.join("assets").join("particles");
+  let music_dir = kutuphane.join("assets").join("music");
+  let sfx_dir = kutuphane.join("assets").join("sfx");
+  let logos_dir = kutuphane.join("assets").join("logos");
+  let videos_dir = kutuphane.join("assets").join("videos");
+  let backgrounds_dir = kutuphane.join("assets").join("backgrounds");
   let resonance_dist = resolve_resonance_dist(&root);
   let has_resonance = resonance_dist
     .as_ref()
@@ -964,7 +966,7 @@ async fn api_twitch_badges(
 }
 
 async fn api_particles(State(state): State<Arc<AppState>>) -> Json<Value> {
-  Json(serde_json::json!(list_particle_files(&state.root)))
+  Json(serde_json::json!(list_particle_files(&state.data_dir)))
 }
 
 fn list_particle_files(root: &std::path::Path) -> Vec<String> {
@@ -1016,14 +1018,14 @@ async fn api_particle_upload(
   } else {
     format!("{safe}.{ext}")
   };
-  let dir = state.root.join("assets").join("particles");
+  let dir = state.data_dir.join("assets").join("particles");
   std::fs::create_dir_all(&dir).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   let dest = dir.join(&safe);
   std::fs::write(&dest, &body).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   Ok(Json(serde_json::json!({
     "ok": true,
     "name": safe,
-    "files": list_particle_files(&state.root),
+    "files": list_particle_files(&state.data_dir),
   })))
 }
 
@@ -1039,18 +1041,18 @@ async fn api_particle_delete(
   let Some(name) = dosya_adi::asset_file_name(&body.name) else {
     return Err((StatusCode::BAD_REQUEST, "invalid name".into()));
   };
-  let path = state.root.join("assets").join("particles").join(&name);
+  let path = state.data_dir.join("assets").join("particles").join(&name);
   if path.is_file() {
     std::fs::remove_file(&path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   }
   Ok(Json(serde_json::json!({
     "ok": true,
-    "files": list_particle_files(&state.root),
+    "files": list_particle_files(&state.data_dir),
   })))
 }
 
 async fn api_music(State(state): State<Arc<AppState>>) -> Json<Value> {
-  Json(serde_json::json!(list_music_files(&state.root)))
+  Json(serde_json::json!(list_music_files(&state.data_dir)))
 }
 
 fn list_music_files(root: &std::path::Path) -> Vec<String> {
@@ -1097,14 +1099,14 @@ async fn api_music_upload(
   } else {
     format!("{safe}.{ext}")
   };
-  let dir = state.root.join("assets").join("music");
+  let dir = state.data_dir.join("assets").join("music");
   std::fs::create_dir_all(&dir).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   let dest = dir.join(&safe);
   std::fs::write(&dest, &body).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   Ok(Json(serde_json::json!({
     "ok": true,
     "name": safe,
-    "files": list_music_files(&state.root),
+    "files": list_music_files(&state.data_dir),
   })))
 }
 
@@ -1120,18 +1122,18 @@ async fn api_music_delete(
   let Some(name) = dosya_adi::asset_file_name(&body.name) else {
     return Err((StatusCode::BAD_REQUEST, "invalid name".into()));
   };
-  let path = state.root.join("assets").join("music").join(&name);
+  let path = state.data_dir.join("assets").join("music").join(&name);
   if path.is_file() {
     std::fs::remove_file(&path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   }
   Ok(Json(serde_json::json!({
     "ok": true,
-    "files": list_music_files(&state.root),
+    "files": list_music_files(&state.data_dir),
   })))
 }
 
 async fn api_sfx(State(state): State<Arc<AppState>>) -> Json<Value> {
-  Json(serde_json::json!(list_sfx_files(&state.root)))
+  Json(serde_json::json!(list_sfx_files(&state.data_dir)))
 }
 
 fn list_sfx_files(root: &std::path::Path) -> Vec<String> {
@@ -1199,14 +1201,14 @@ async fn api_sfx_upload(
   } else {
     format!("{safe}.{ext}")
   };
-  let dir = state.root.join("assets").join("sfx");
+  let dir = state.data_dir.join("assets").join("sfx");
   std::fs::create_dir_all(&dir).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   let dest = dir.join(&safe);
   std::fs::write(&dest, &body).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   Ok(Json(serde_json::json!({
     "ok": true,
     "name": safe,
-    "files": list_sfx_files(&state.root),
+    "files": list_sfx_files(&state.data_dir),
   })))
 }
 
@@ -1222,13 +1224,13 @@ async fn api_sfx_delete(
   let Some(name) = dosya_adi::asset_file_name(&body.name) else {
     return Err((StatusCode::BAD_REQUEST, "invalid name".into()));
   };
-  let path = state.root.join("assets").join("sfx").join(&name);
+  let path = state.data_dir.join("assets").join("sfx").join(&name);
   if path.is_file() {
     std::fs::remove_file(&path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   }
   Ok(Json(serde_json::json!({
     "ok": true,
-    "files": list_sfx_files(&state.root),
+    "files": list_sfx_files(&state.data_dir),
   })))
 }
 
@@ -1248,7 +1250,7 @@ fn list_named_files(dir: &std::path::Path, exts: &[&str]) -> Vec<String> {
 }
 
 async fn api_logos(State(state): State<Arc<AppState>>) -> Json<Value> {
-  let dir = state.root.join("assets").join("logos");
+  let dir = state.data_dir.join("assets").join("logos");
   Json(serde_json::json!(list_named_files(
     &dir,
     &[".png", ".jpg", ".jpeg", ".webp", ".gif"]
@@ -1256,7 +1258,7 @@ async fn api_logos(State(state): State<Arc<AppState>>) -> Json<Value> {
 }
 
 async fn api_videos(State(state): State<Arc<AppState>>) -> Json<Value> {
-  let dir = crate::ytdl::indirme_klasoru(&state.root);
+  let dir = crate::ytdl::indirme_klasoru(&state.data_dir);
   Json(serde_json::json!(list_named_files(
     &dir,
     &[".mp4", ".webm", ".mov", ".mkv", ".m4v"]
@@ -1264,7 +1266,7 @@ async fn api_videos(State(state): State<Arc<AppState>>) -> Json<Value> {
 }
 
 async fn api_backgrounds(State(state): State<Arc<AppState>>) -> Json<Value> {
-  let dir = state.root.join("assets").join("backgrounds");
+  let dir = state.data_dir.join("assets").join("backgrounds");
   Json(serde_json::json!(list_named_files(
     &dir,
     &[".png", ".jpg", ".jpeg", ".webp", ".gif", ".apng"]
@@ -1275,7 +1277,7 @@ async fn api_backgrounds_delete(
   State(state): State<Arc<AppState>>,
   Json(body): Json<NamedDelete>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  delete_named_asset(&state.root, "backgrounds", &body.name)
+  delete_named_asset(&state.data_dir, "backgrounds", &body.name)
 }
 
 #[derive(Deserialize)]
@@ -1287,14 +1289,14 @@ async fn api_logos_delete(
   State(state): State<Arc<AppState>>,
   Json(body): Json<NamedDelete>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  delete_named_asset(&state.root, "logos", &body.name)
+  delete_named_asset(&state.data_dir, "logos", &body.name)
 }
 
 async fn api_videos_delete(
   State(state): State<Arc<AppState>>,
   Json(body): Json<NamedDelete>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  delete_named_asset(&state.root, "videos", &body.name)
+  delete_named_asset(&state.data_dir, "videos", &body.name)
 }
 
 #[derive(Deserialize)]
@@ -1397,7 +1399,7 @@ async fn api_library_import(
     .unwrap_or_else(|| format!("import-{}", chrono::Utc::now().timestamp_millis()));
   let safe = dosya_adi::asset_file_name(&fname)
     .unwrap_or_else(|| format!("import-{}", chrono::Utc::now().timestamp_millis()));
-  let dir = state.root.join("assets").join(folder);
+  let dir = state.data_dir.join("assets").join(folder);
   std::fs::create_dir_all(&dir).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   let dest = dir.join(&safe);
   std::fs::copy(&src, &dest).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

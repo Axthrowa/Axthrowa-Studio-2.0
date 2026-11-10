@@ -13,9 +13,11 @@ async fn main() {
   yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.headless");
   yayin_yonetim_araci_lib::tls_saglayicisini_kur();
   let port: u16 =std::env::args().nth(1).and_then(|a| a.parse().ok()).unwrap_or(18843);
-  let root: PathBuf = std::env::temp_dir().join(format!("yya-headless-{port}"));
+  // YYA_HEADLESS_KOK: sürüm klasörü dizilimini (yan yana eski sürümler) denemek için kökü değiştirir
+  let root: PathBuf = std::env::var_os("YYA_HEADLESS_KOK").map(PathBuf::from).unwrap_or_else(|| std::env::temp_dir().join(format!("yya-headless-{port}")));
   std::fs::create_dir_all(root.join("assets")).expect("geçici kök");
   let data_dir = root.join("app-data");
+  yayin_yonetim_araci_lib::kutuphane::hazirla(&root, &data_dir, "baslisiz");
   eprintln!("başsız sunucu: http://127.0.0.1:{port}  (veri: {})", data_dir.display());
   let state = tokio::task::spawn_blocking(move || {
     yayin_yonetim_araci_lib::AppState::new(root, data_dir, false, port)

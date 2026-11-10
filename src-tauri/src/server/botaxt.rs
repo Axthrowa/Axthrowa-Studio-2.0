@@ -312,7 +312,7 @@ async fn api_alert_variants_put(
   let rows = crate::db::alerts::upsert_alert_variants(
     &state.db,
     &items,
-    &state.root,
+    &state.data_dir,
     &state.base_url(),
   )
   .await
@@ -370,7 +370,7 @@ async fn api_widgets_post(
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
   let base = state.base_url();
-  let w = crate::db::widgets::upsert_widget(&state.db, &body, &state.root, &base)
+  let w = crate::db::widgets::upsert_widget(&state.db, &body, &state.data_dir, &base)
     .await
     .map_err(map_err)?;
   broadcast_widget_config(&state, &w);
@@ -387,7 +387,7 @@ async fn api_widgets_patch_config(
     .get("config")
     .cloned()
     .unwrap_or(body);
-  let w = crate::db::widgets::patch_widget_config(&state.db, &id, &patch, &state.root, &base)
+  let w = crate::db::widgets::patch_widget_config(&state.db, &id, &patch, &state.data_dir, &base)
     .await
     .map_err(map_err)?;
   broadcast_widget_config(&state, &w);

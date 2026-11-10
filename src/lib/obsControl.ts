@@ -208,11 +208,16 @@ export const obsControl = {
       return sceneSnapshotJs();
     }
   },
-  stopStreamSequence: async () => {
+  /**
+   * Yayını bitirme: önce çıkış sahnesine geçilir, yayın çıkış ekranının süresi dolunca kapanır.
+   * Yerel (Rust) dizi başarısız olursa eskiden burada yayın HEMEN kapatılıyor, çıkış ekranı hiç gösterilmiyordu.
+   * Artık yalnız çıkış sahnesine geçilir; kapatmayı çıkış ekranının sayacı (`endingEnd`) yapar.
+   */
+  stopStreamSequence: async (cikisSahnesi = "") => {
     try {
       return await tryInvoke<ObsSceneSnapshot>("obs_stop_stream_sequence");
     } catch {
-      await stopStream();
+      if (cikisSahnesi) await switchScene({ sceneName: cikisSahnesi });
       return sceneSnapshotJs();
     }
   },

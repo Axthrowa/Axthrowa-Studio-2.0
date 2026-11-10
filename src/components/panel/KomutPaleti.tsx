@@ -15,7 +15,7 @@ import AYAR_DIZINI from "../../lib/ayarDizini.json";
 import type { NavId } from "../../lib/panelLayout";
 
 /** `scripts/ayar-dizini.mjs` üretir: s sayfa, b bot sekmesi, t ayarın bulunduğu sekme, a ayarın adı */
-type AyarKaydi = { s: string; a: string; b?: string; t?: string };
+type AyarKaydi = { s: string; a: string; b?: string; t?: string; g?: string };
 
 const AYAR_SECICI = 'label, legend, h2, h3, h4, summary, p.uppercase, div.uppercase > span, [role="tab"], [role="group"][aria-label]';
 const ayarAdi = (el: Element) => {
@@ -156,8 +156,8 @@ export default function KomutPaleti({ visibleTabs, labelFor, onSayfa, onToast, k
           id: `ayar:${k.s}:${k.b || ""}:${k.t || ""}:${k.a}`,
           ad: k.a,
           // Aynı ad Giriş/Çıkış/Mola gibi birkaç sayfada geçer: hangisi olduğu yanda yazar
-          grup: `Ayar · ${labelFor(sayfa)}`,
-          anahtar: `${labelFor(sayfa)} ${k.b || ""} ${k.t || ""}`,
+          grup: k.g || `Ayar · ${labelFor(sayfa)}`,
+          anahtar: `${labelFor(sayfa)} ${k.b || ""} ${k.t || ""} ${k.g ? "widget overlay katman" : ""}`,
           calistir: () => {
             onSayfa(sayfa);
             // Bot sayfaları çerçevede açılır: ayarın yerine kaydırma yalnız uygulamanın kendi sayfalarında

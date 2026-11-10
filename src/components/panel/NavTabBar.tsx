@@ -4,7 +4,7 @@
  */
 
 import type { ReactNode } from "react";
-import { Bot, CheckCircle2, MessageCircle, Monitor, Radio, Settings, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { BarChart3, Bot, Cast, CheckCircle2, Clapperboard, Coffee, Flag, Gift, Keyboard, Layers, MessageCircle, MessagesSquare, Monitor, Music, Play, Radio, Settings, Settings2, SlidersHorizontal, Target, Volume2, type LucideIcon } from "lucide-react";
 import { useT } from "../../i18n";
 import { olay } from "../../lib/analitik";
 import { ANA_MENU, menuGrubuBul, sayfaAcikMi, type MenuGrubuId, type MenuSayfasi } from "../../lib/anaMenu";
@@ -28,6 +28,34 @@ const GRUP_IKONU: Record<MenuGrubuId, LucideIcon> = {
   etkilesim: MessageCircle,
   bot: Bot,
   ayarlar: Settings,
+};
+
+/** Her başlığın simgesi kendi renginde: menü bir bakışta ayırt edilir, daha canlı durur */
+const GRUP_RENGI: Record<MenuGrubuId, string> = {
+  hazirlik: "text-emerald-400",
+  canli: "text-rose-400",
+  sahne: "text-sky-400",
+  etkilesim: "text-pink-400",
+  bot: "text-violet-400",
+  ayarlar: "text-amber-400",
+};
+
+/** Alt sayfaların simgesi: bot sayfasında sekme adı, diğerlerinde gezinme kimliği */
+const SAYFA_IKONU: Record<string, LucideIcon> = {
+  control: Clapperboard,
+  chat: MessagesSquare,
+  starting: Play,
+  ending: Flag,
+  brb: Coffee,
+  yayin: Cast,
+  overlays: Layers,
+  music: Music,
+  sounds: Volume2,
+  polls: BarChart3,
+  giveaways: Gift,
+  interaction: Target,
+  settings: Settings2,
+  hotkeys: Keyboard,
 };
 
 export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, customizeLabel, editLayout, onToggleEdit, onSelect, children }: Props) {
@@ -65,23 +93,25 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
                   if (!acik) sec(sayfalar[0]);
                 }}
               >
-                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                <Icon className={`h-4 w-4 shrink-0 ${GRUP_RENGI[grup.id]}`} strokeWidth={1.75} />
                 <span className="truncate">{t(grup.adAnahtari)}</span>
               </button>
               {acik && !tek ? (
                 <div className="mb-1 mt-0.5 flex flex-col">
                   {sayfalar.map((s) => {
                     const secili = sayfaAcikMi(s, activeNav, botSayfa);
+                    const SayfaIkonu = SAYFA_IKONU[s.botSayfa || s.nav];
                     return (
                       <button
                         key={s.botSayfa || s.nav}
                         type="button"
                         data-nav-id={s.nav}
                         aria-current={secili ? "page" : undefined}
-                        className={`min-h-8 w-full truncate pl-[38px] pr-3 py-1 text-left text-[length:var(--menu-yazi,13px)] transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 ${secili ? "font-medium text-panel-accent" : "text-white/70 hover:bg-[var(--dt-surface-3)] hover:text-white"}`}
+                        className={`flex min-h-8 w-full items-center gap-2 pl-[30px] pr-3 py-1 text-left text-[length:var(--menu-yazi,13px)] transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 ${secili ? "font-medium text-panel-accent" : "text-white/70 hover:bg-[var(--dt-surface-3)] hover:text-white"}`}
                         onClick={() => sec(s)}
                       >
-                        {labelFor(s)}
+                        {SayfaIkonu ? <SayfaIkonu aria-hidden className={`h-3.5 w-3.5 shrink-0 ${secili ? "" : GRUP_RENGI[grup.id]}`} strokeWidth={1.75} /> : <span className="w-3.5 shrink-0" />}
+                        <span className="truncate">{labelFor(s)}</span>
                       </button>
                     );
                   })}

@@ -64,8 +64,18 @@ describe("resolveEndRule — açık kural", () => {
 
   it("hedef saat modu giriş ekranında da geçerli", () => {
     // Eski davranışta giriş ekranı targetDate'i yok sayıyordu.
-    const r = resolveEndRule("starting", { endRules: { starting: { mode: "targetDate" } } }, {});
+    const r = resolveEndRule("starting", { endRules: { starting: { mode: "targetDate", targetDate: "2030-05-05T21:00" } } }, {});
     expect(r).toMatchObject({ explicit: true, useTargetDate: true });
+  });
+
+  it("geçmişte kalmış hedef tarih yok sayılır: dakikaya dönülür (yoksa çıkış ekranı açılır açılmaz yayın kapanır)", () => {
+    const simdi = new Date("2026-11-10T12:00").getTime();
+    const eski = resolveEndRule("ending", {}, { endingMinutes: 2, targetDate: "2026-09-08T01:28" }, simdi);
+    expect(eski).toMatchObject({ mode: "minutes", minutes: 2, useTargetDate: false, targetDate: "" });
+    const acik = resolveEndRule("ending", { endRules: { ending: { mode: "targetDate", targetDate: "2026-09-08T01:28" } } }, { endingMinutes: 3 }, simdi);
+    expect(acik).toMatchObject({ mode: "minutes", minutes: 3, useTargetDate: false });
+    const ileri = resolveEndRule("ending", {}, { endingMinutes: 2, targetDate: "2026-12-01T20:00" }, simdi);
+    expect(ileri).toMatchObject({ mode: "targetDate", useTargetDate: true });
   });
 
   it("hedef saat: kuralın kendi tarihi ekran alanından önceliklidir", () => {

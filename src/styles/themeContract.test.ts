@@ -52,6 +52,9 @@ const THEMES: { id: string; pattern: RegExp; base?: string }[] = [
   { id: "murekkep", pattern: /:root\[data-skin="murekkep"\]\s*\{/, base: "night-signal" },
   { id: "gun-batimi", pattern: /:root\[data-skin="gun-batimi"\]\s*\{/, base: "night-signal" },
   { id: "orman", pattern: /:root\[data-skin="orman"\]\s*\{/, base: "night-signal" },
+  { id: "seker", pattern: /:root\[data-skin="seker"\]\s*\{/, base: "night-signal" },
+  { id: "gokkusagi", pattern: /:root\[data-skin="gokkusagi"\]\s*\{/, base: "night-signal" },
+  { id: "tropik", pattern: /:root\[data-skin="tropik"\]\s*\{/, base: "night-signal" },
   { id: "gun-isigi", pattern: /:root\.theme-light\[data-skin="gun-isigi"\]\s*\{/, base: "light" },
 ];
 

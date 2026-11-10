@@ -256,6 +256,23 @@ export default function OverlayShell({
     effTarget,
   ]);
 
+  // "Yayını başlat": panel yeni bitiş anını ayarla yayar (`countdownEndsAt`). OBS ayrı bir tarayıcıdır, panelin
+  // yerel belleğini göremez; bu olmadan sayaç önizlemede kaldığı saniyeden devam ediyordu.
+  const yayinBitisi = Number((settings as { countdownEndsAt?: unknown }).countdownEndsAt) || 0;
+  useEffect(() => {
+    if (screen !== "starting" || yayinBitisi <= Date.now()) return;
+    try {
+      localStorage.setItem(STARTING_END_STORAGE_KEY, String(yayinBitisi));
+      sessionStorage.setItem("starting_end_5", String(yayinBitisi));
+      sessionStorage.setItem(`starting_end_${effMinutes}`, String(yayinBitisi));
+    } catch {
+      /* bellek kapalıysa sayaç yine `settings` üzerinden doğru başlar */
+    }
+    endedRef.current = false;
+    setNow(Date.now());
+    setTimerEpoch((n) => n + 1);
+  }, [screen, yayinBitisi, effMinutes]);
+
   // Seed from initial once if sync empty
   useEffect(() => {
     if (liveSettings) return;

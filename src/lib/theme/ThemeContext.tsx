@@ -28,7 +28,10 @@ export type StudioSkin =
   | "neon-arcade"
   | "murekkep"
   | "gun-batimi"
-  | "orman";
+  | "orman"
+  | "seker"
+  | "gokkusagi"
+  | "tropik";
 
 export type SkinMeta = {
   id: StudioSkin;
@@ -81,6 +84,9 @@ export const STUDIO_SKINS: SkinMeta[] = [
   { id: "murekkep", label: "Mürekkep & Kağıt", hint: "AxBoT · tek renk · sepya", swatch: ["#0d0c0a", "#d6b892"] },
   { id: "gun-batimi", label: "Gün Batımı", hint: "AxBoT · sıcak · yanık turuncu", swatch: ["#120b0d", "#fb923c"] },
   { id: "orman", label: "Orman", hint: "AxBoT · yosun · yeşim", swatch: ["#08100c", "#4ade80"] },
+  { id: "seker", label: "Şeker", hint: "Mor zemin · şeker pembesi · turkuaz ışıltı", swatch: ["#150b24", "#ff5fa2"] },
+  { id: "gokkusagi", label: "Gökkuşağı", hint: "Lacivert zemin · mor vurgu · çok renkli ışık", swatch: ["#0c0f1f", "#8b7bff"] },
+  { id: "tropik", label: "Tropik", hint: "Deniz yeşili zemin · turkuaz · mercan ve limon", swatch: ["#06161a", "#2dd4bf"] },
 ];
 
 export const DEFAULT_SKIN: StudioSkin = "night-signal";

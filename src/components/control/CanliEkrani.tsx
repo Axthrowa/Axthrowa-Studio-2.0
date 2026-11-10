@@ -6,7 +6,7 @@
  * yeniden çizilmesin.
  */
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Activity, Eye, EyeOff, Gauge, Pin, Plug, Radio, TriangleAlert, Users, type LucideIcon } from "lucide-react";
+import { Activity, Eye, EyeOff, Gauge, Pin, Plug, Radio, Settings2, TriangleAlert, Users, type LucideIcon } from "lucide-react";
 import { PlatformLogo } from "../chat/ChatFeed";
 import type { Platform } from "../../lib/chatHub";
 import { actionsApi } from "../../lib/api/actions";
@@ -20,6 +20,7 @@ import SohbetTemizleDiyalogu from "../panel/SohbetTemizleDiyalogu";
 import ControlCenter, { KontrolListesi } from "./ControlCenter";
 import { ETIKET, TUS, TUS_TABAN } from "./donanim";
 import SesKaristirici from "./SesKaristirici";
+import HizliIslemler from "./HizliIslemler";
 import YayinDuzeni from "./YayinDuzeni";
 import { botSekmesi, ekPanelBul } from "../../lib/canliEkPaneller";
 import { YayinBilgisiDock } from "./YayinBilgisiDock";
@@ -252,6 +253,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
   };
   const [sekme, setSekme] = useState<"sohbet" | "olaylar">("sohbet");
   const [temizleAcik, setTemizleAcik] = useState(false);
+  const [hizliDuzen, setHizliDuzen] = useState(false);
   const [bot, setBot] = useState<BotDurumu | null>(null);
   const [obsBagli, setObsBagli] = useState(false);
   const [snap, setSnap] = useState<ObsSceneSnapshot | null>(null);
@@ -384,7 +386,6 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
   const kick = bot?.platforms?.kick;
   const baslangic = saglik?.active ? Date.now() - saglik.durationMs : 0;
   const yayinda = canli && !!saglik?.active;
-  const hizliSinif = `${TUS} h-10 w-full px-2 text-xs font-semibold`;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-panel-bg font-sans text-white">
@@ -495,13 +496,19 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
               hizli: {
                 baslik: "Hızlı işlem",
                 gosterBaslik: true,
+                baslikEki: (
+                  <button
+                    type="button"
+                    aria-pressed={hizliDuzen}
+                    className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-white/70 transition-colors hover:bg-[var(--dt-surface-3)] hover:text-white"
+                    onClick={() => setHizliDuzen((d) => !d)}
+                  >
+                    <Settings2 aria-hidden className="h-3.5 w-3.5" />
+                    {hizliDuzen ? "Bitti" : "Özelleştir"}
+                  </button>
+                ),
                 icerik: (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2">
-                <button type="button" className={hizliSinif} onClick={() => onBot("giveaways")}>Çekiliş başlat</button>
-                <button type="button" className={hizliSinif} onClick={() => onBot("polls")}>Anket aç</button>
-                <button type="button" className={hizliSinif} onClick={() => void soruSor()}>Soru sor</button>
-                <button type="button" className={hizliSinif} onClick={() => setTemizleAcik(true)}>Sohbeti temizle</button>
-              </div>
+              <HizliIslemler onToast={onToast} onSoru={() => void soruSor()} onTemizle={() => setTemizleAcik(true)} duzen={hizliDuzen} />
                 ),
               },
             }}

@@ -110,12 +110,20 @@ export function clampLoops(v: unknown): number {
 export function resolveEndRule(
   screen: EndScreen,
   obs: ObsLike,
-  legacy: LegacyFields
+  legacy: LegacyFields,
+  now: number = Date.now()
 ): ResolvedRule {
   const raw = obs?.endRules?.[screen];
+  // Geçmişte kalmış hedef tarih yok sayılır: yoksa sayaç "çoktan bitti" olur, Çıkış ekranı açılır açılmaz
+  // bitiş işlemi çalışır ve yayın çıkış ekranı gösterilmeden kapanır. Dakikalı süreye dönülür.
+  const gelecek = (t: unknown) => {
+    const s = String(t || "").trim();
+    return s && new Date(s).getTime() > now ? s : "";
+  };
 
   if (raw && typeof raw === "object" && VALID_MODES.has(raw.mode)) {
-    const mode = raw.mode;
+    const hedef = raw.mode === "targetDate" ? gelecek(raw.targetDate) || gelecek(legacy.targetDate) : "";
+    const mode: EndMode = raw.mode === "targetDate" && !hedef ? "minutes" : raw.mode;
     const minutes = num(raw.minutes);
     const usesTimer = mode === "minutes" || mode === "minutesOrMediaEnd";
     return {
@@ -126,10 +134,7 @@ export function resolveEndRule(
       minutes: usesTimer ? minutes || fallbackMinutes(screen, legacy) : 0,
       useTargetDate: mode === "targetDate",
       // Kuralın kendi tarihi öncelikli; boşsa ekranın eski alanına düşer.
-      targetDate:
-        mode === "targetDate"
-          ? String(raw.targetDate || "").trim() || String(legacy.targetDate || "").trim()
-          : "",
+      targetDate: hedef,
       usesMedia: mode === "mediaEnd" || mode === "mediaLoops" || mode === "minutesOrMediaEnd",
       loops: mode === "mediaLoops" ? clampLoops(raw.loops ?? 2) : 1,
       thenScene: String(raw.thenScene || "").trim(),
@@ -138,13 +143,13 @@ export function resolveEndRule(
   }
 
   // Eski davranış: alanlardan türet. Giriş ekranı targetDate'i yok sayar.
-  const hasTarget = screen !== "starting" && !!String(legacy.targetDate || "").trim();
+  const hasTarget = screen !== "starting" && !!gelecek(legacy.targetDate);
   return {
     explicit: false,
     mode: hasTarget ? "targetDate" : "minutes",
     minutes: hasTarget ? 0 : fallbackMinutes(screen, legacy),
     useTargetDate: hasTarget,
-    targetDate: hasTarget ? String(legacy.targetDate || "").trim() : "",
+    targetDate: hasTarget ? gelecek(legacy.targetDate) : "",
     usesMedia: false,
     loops: 1,
     thenScene: "",

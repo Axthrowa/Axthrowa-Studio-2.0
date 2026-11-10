@@ -295,6 +295,85 @@ html {
   --eyebrow-color: #fdba74;
 }
 
+/* Renkli görünümler: Şeker, Gökkuşağı, Tropik */
+:root[data-skin="seker"] {
+  --panel-bg: #150b24;
+  --panel-bg-deep: #0d0618;
+  --panel-card: #1f1233;
+  --panel-elevated: #2a1946;
+  --panel-border: #43296b;
+  --panel-accent: #ff5fa2;
+  --panel-accent-strong: #ff9cc6;
+  --panel-accent-glow: rgba(255, 95, 162, 0.22);
+  --panel-cta: #ff5fa2;
+  --panel-cta-ink: #2a0416;
+  --panel-muted: #cbb9de;
+  --panel-soft: rgba(255, 95, 162, 0.13);
+  --panel-glow-a: rgba(255, 95, 162, 0.18);
+  --panel-glow-b: rgba(34, 211, 238, 0.14);
+  --panel-pattern: transparent;
+  --panel-glass: rgba(31, 18, 51, 0.85);
+  --panel-glass-border: rgba(255, 156, 198, 0.18);
+  --skin-pattern-opacity: 0;
+  --accent: #ff5fa2;
+  --fg-rgb: 246 239 252;
+  --accent-rgb: 255 95 162;
+  --accent-text-rgb: 255 156 198;
+  --eyebrow-color: #ff9cc6;
+}
+
+:root[data-skin="gokkusagi"] {
+  --panel-bg: #0c0f1f;
+  --panel-bg-deep: #070914;
+  --panel-card: #141a33;
+  --panel-elevated: #1c2446;
+  --panel-border: #2f3a6b;
+  --panel-accent: #8b7bff;
+  --panel-accent-strong: #c4b5fd;
+  --panel-accent-glow: rgba(139, 123, 255, 0.22);
+  --panel-cta: #8b7bff;
+  --panel-cta-ink: #0d0730;
+  --panel-muted: #b8bfdc;
+  --panel-soft: rgba(139, 123, 255, 0.13);
+  --panel-glow-a: rgba(139, 123, 255, 0.18);
+  --panel-glow-b: rgba(244, 114, 182, 0.14);
+  --panel-pattern: transparent;
+  --panel-glass: rgba(20, 26, 51, 0.85);
+  --panel-glass-border: rgba(196, 181, 253, 0.18);
+  --skin-pattern-opacity: 0;
+  --accent: #8b7bff;
+  --fg-rgb: 238 240 251;
+  --accent-rgb: 139 123 255;
+  --accent-text-rgb: 196 181 253;
+  --eyebrow-color: #c4b5fd;
+}
+
+:root[data-skin="tropik"] {
+  --panel-bg: #06161a;
+  --panel-bg-deep: #030d10;
+  --panel-card: #0b2228;
+  --panel-elevated: #113038;
+  --panel-border: #1d4a55;
+  --panel-accent: #2dd4bf;
+  --panel-accent-strong: #5eead4;
+  --panel-accent-glow: rgba(45, 212, 191, 0.22);
+  --panel-cta: #2dd4bf;
+  --panel-cta-ink: #012420;
+  --panel-muted: #a9cdd1;
+  --panel-soft: rgba(45, 212, 191, 0.13);
+  --panel-glow-a: rgba(45, 212, 191, 0.18);
+  --panel-glow-b: rgba(251, 113, 133, 0.14);
+  --panel-pattern: transparent;
+  --panel-glass: rgba(11, 34, 40, 0.85);
+  --panel-glass-border: rgba(94, 234, 212, 0.18);
+  --skin-pattern-opacity: 0;
+  --accent: #2dd4bf;
+  --fg-rgb: 235 250 248;
+  --accent-rgb: 45 212 191;
+  --accent-text-rgb: 94 234 212;
+  --eyebrow-color: #5eead4;
+}
+
 :root[data-skin="orman"] {
   --panel-bg: #08100c;
   --panel-bg-deep: #050a07;
@@ -921,6 +1000,28 @@ html.obs-transparent body.panel-app {
   background:
     radial-gradient(ellipse 70% 45% at 85% -5%, rgb(251 146 60 / 0.16), transparent 70%),
     radial-gradient(ellipse 60% 40% at 0% 0%, rgb(219 39 119 / 0.12), transparent 70%),
+    var(--panel-bg);
+}
+:root[data-skin="seker"] .panel-shell {
+  background:
+    radial-gradient(ellipse 65% 45% at 90% -5%, rgb(255 95 162 / 0.22), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 0% 100%, rgb(34 211 238 / 0.16), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 30% 0%, rgb(168 85 247 / 0.18), transparent 70%),
+    var(--panel-bg);
+}
+:root[data-skin="gokkusagi"] .panel-shell {
+  background:
+    radial-gradient(ellipse 45% 40% at 0% 0%, rgb(244 114 182 / 0.18), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 50% -10%, rgb(250 204 21 / 0.12), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 100% 0%, rgb(34 211 238 / 0.18), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 50% 110%, rgb(139 123 255 / 0.2), transparent 70%),
+    var(--panel-bg);
+}
+:root[data-skin="tropik"] .panel-shell {
+  background:
+    radial-gradient(ellipse 60% 45% at 95% -5%, rgb(251 113 133 / 0.18), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 0% 100%, rgb(163 230 53 / 0.13), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 20% 0%, rgb(45 212 191 / 0.16), transparent 70%),
     var(--panel-bg);
 }
 :root[data-skin="orman"] .panel-shell {

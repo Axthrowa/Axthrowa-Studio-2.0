@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Save, Search } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Save, Search } from "lucide-react";
 import { MotionConfig } from "framer-motion";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -275,6 +275,22 @@ export default function PanelPage() {
   const [obsConnected, setObsConnected] = useState(false);
   const [dashBolum, setDashBolum] = useDashboardBolumu();
   const [masterBusy, setMasterBusy] = useState(false);
+  const [menuGizli, setMenuGizli] = useState(() => {
+    try {
+      return localStorage.getItem("yya.panel.menuGizli") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const menuGizle = () =>
+    setMenuGizli((g) => {
+      try {
+        localStorage.setItem("yya.panel.menuGizli", g ? "0" : "1");
+      } catch {
+        /* saklanamadı: bu oturumda yine geçerli */
+      }
+      return !g;
+    });
   // OBS'te elle başlatılan yayın da görünsün: durum store'da, Rust ve OBS olaylarıyla güncellenir
   useAxthrowaStoreKoprusu();
   const liveOn = useAxthrowaStore((s) => s.isLive);
@@ -969,7 +985,9 @@ export default function PanelPage() {
     const cfg = obsConnectionFrom(obs);
     const game = resolveGameScene(obs);
     const holdMin = Math.max(1, Number(obs.startHoldMin) || 5);
-    seedStartingCountdown(holdMin);
+    // Bitiş anı OBS'teki Giriş ekranına da gider: sayaç her yayında baştan (ör. 5:00) başlar
+    const bitis = seedStartingCountdown(holdMin);
+    void patchSettings("starting", { countdownEndsAt: bitis }).catch(() => {});
 
     try {
       await obsConnect(cfg);
@@ -1648,6 +1666,17 @@ export default function PanelPage() {
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
     {/* Üst şerit (pencere başlığı + durum): arayüz yenilemesinden; altındaki ekranlar 1.6.13 */}
     <PencereBasligi title={tt("brand.title")}>
+      {/* Sol menüyü gizle/göster: küçük ekranda içeriğe yer açar; tercih bu bilgisayarda saklanır */}
+      <button
+        type="button"
+        aria-pressed={menuGizli}
+        aria-label={tt(menuGizli ? "menu.goster" : "menu.gizle")}
+        title={tt(menuGizli ? "menu.goster" : "menu.gizle")}
+        onClick={menuGizle}
+        className="flex h-6 w-7 shrink-0 items-center justify-center rounded-ui-2 text-ui-fg2 transition-colors duration-ui hover:bg-ui-s2 hover:text-ui-fg"
+      >
+        {menuGizli ? <PanelLeftOpen aria-hidden className="h-4 w-4" /> : <PanelLeftClose aria-hidden className="h-4 w-4" />}
+      </button>
       {/* Üst şeritte yalnız marka ve arama: ortada geniş arama düğmesi komut paletini açar */}
       <button
         type="button"
@@ -1665,6 +1694,8 @@ export default function PanelPage() {
     <KarsilamaEkrani />
     <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
+      {/* Gizliyken de bağlı kalır: menü düzenleme durumu kaybolmaz */}
+      <div className={menuGizli ? "hidden" : "contents"}>
       <NavTabBar
         visibleTabs={visibleTabs}
         activeNav={String(activeNav)}
@@ -1683,6 +1714,7 @@ export default function PanelPage() {
           onClose={() => setEditLayout(false)}
         />
       </NavTabBar>
+      </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[var(--dt-surface-2)] px-3">
         <div className="flex min-w-0 items-center gap-3">

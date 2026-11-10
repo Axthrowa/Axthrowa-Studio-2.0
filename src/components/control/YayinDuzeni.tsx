@@ -8,8 +8,8 @@ import { BOSLUK_PX, SABLONLAR, SATIR_PX, SUTUN, VARSAYILAN_YERLESIM, eklerleBirl
 import { EK_PANEL_GRUPLARI } from "../../lib/canliEkPaneller";
 
 const YERLESIM_KEY = "yya.canli.yerlesim";
-/** Bu genişliğin altında paneller alt alta dizilir: 12 sütun okunmaz olur */
-const DAR_PX = 560;
+/** Bu genişliğin altında paneller alt alta dizilir: küçük ekranda 12 sütunluk ızgarada panellerin içi sıkışıp iç içe giriyordu */
+const DAR_PX = 820;
 
 function kayitliYerlesim(): Kutu[] {
   try {
@@ -31,7 +31,8 @@ type Props = {
   duzenle: boolean;
   onBitti: () => void;
   onGenisSohbet: (genis: boolean) => void;
-  paneller: Record<TemelPanelId, { baslik: string; gosterBaslik: boolean; icerik: ReactNode }>;
+  /** `baslikEki`: başlığın sağında küçük denetim (ör. Hızlı işlem › Özelleştir) */
+  paneller: Record<TemelPanelId, { baslik: string; gosterBaslik: boolean; icerik: ReactNode; baslikEki?: ReactNode }>;
   /** Eklenen panelin başlığı ve içeriği; katalogda yoksa `null` (kayıttan kalmış eski kimlik) */
   ekPanel: (id: string) => { baslik: string; icerik: ReactNode } | null;
 };
@@ -146,14 +147,19 @@ export default function YayinDuzeni({ duzenle, onBitti, onGenisSohbet, paneller,
         {yerlesim.map((k) => {
           const ek = ekPanelMi(k.id) ? ekPanel(k.id) : null;
           if (ekPanelMi(k.id) && !ek) return null;
-          const p = ek ? { baslik: ek.baslik, gosterBaslik: true, icerik: ek.icerik } : paneller[k.id as TemelPanelId];
+          const p: Props["paneller"][TemelPanelId] = ek ? { baslik: ek.baslik, gosterBaslik: true, icerik: ek.icerik } : paneller[k.id as TemelPanelId];
           return (
             <div
               key={k.id}
               className={`relative flex min-h-0 min-w-0 flex-col rounded-md border border-panel-border bg-panel-card ${p.gosterBaslik ? "p-2" : ""} ${dar && k.id === "onizleme" ? "aspect-video" : ""} ${dar && k.id === "ses" ? "h-80" : ""}`}
               style={dar ? (ek ? { height: 480 } : undefined) : { gridColumn: `${k.x + 1} / span ${k.w}`, gridRow: `${k.y + 1} / span ${k.h}` }}
             >
-              {p.gosterBaslik ? <h2 className={`${ETIKET} mb-2 shrink-0`}>{p.baslik}</h2> : null}
+              {p.gosterBaslik ? (
+                <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
+                  <h2 className={ETIKET}>{p.baslik}</h2>
+                  {p.baslikEki}
+                </div>
+              ) : null}
               <div className="custom-scrollbar min-h-0 flex-1 overflow-auto">{p.icerik}</div>
               {duzenlemede ? (
                 <div

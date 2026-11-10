@@ -99,6 +99,12 @@ if (existsSync(botKok)) {
   }
 }
 
+// Widget adları (OverlayStudio.tsx GALERI_TR): aramada "Widget" grubunda çıkar, Tek URL ve widget'lar sayfasını açar
+const galeri = path.join(botKok, 'pages', 'OverlayStudio.tsx');
+if (existsSync(galeri)) {
+  for (const m of readFileSync(galeri, 'utf8').matchAll(/^\s*'?[a-z-]+'?: \{\s*baslik: '([^']+)'/gm)) kayit.push({ s: 'bot', b: 'overlays', a: m[1], g: 'Widget' });
+}
+
 // Ayıkla: sayı, saat, tek harf ve tekrarlar dışarıda
 const gorulen = new Set();
 const temiz = kayit.filter((k) => {

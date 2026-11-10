@@ -147,6 +147,48 @@
   --ui-accent-text: 253 186 116;
   --ui-accent-ink: 42 14 2;
 }
+:root[data-skin="seker"] {
+  --ui-bg: 21 11 36;
+  --ui-s1: 31 18 51;
+  --ui-s2: 42 25 70;
+  --ui-s3: 53 32 87;
+  --ui-line: 67 41 107;
+  --ui-line2: 91 57 144;
+  --ui-fg: 246 239 252;
+  --ui-fg2: 185 170 203;
+  --ui-fg3: 172 158 191;
+  --ui-accent: 255 95 162;
+  --ui-accent-text: 255 156 198;
+  --ui-accent-ink: 42 4 22;
+}
+:root[data-skin="gokkusagi"] {
+  --ui-bg: 12 15 31;
+  --ui-s1: 20 26 51;
+  --ui-s2: 28 36 70;
+  --ui-s3: 31 39 76;
+  --ui-line: 47 58 107;
+  --ui-line2: 66 80 143;
+  --ui-fg: 238 240 251;
+  --ui-fg2: 170 176 204;
+  --ui-fg3: 161 167 195;
+  --ui-accent: 139 123 255;
+  --ui-accent-text: 196 181 253;
+  --ui-accent-ink: 13 7 48;
+}
+:root[data-skin="tropik"] {
+  --ui-bg: 6 22 26;
+  --ui-s1: 11 34 40;
+  --ui-s2: 17 48 56;
+  --ui-s3: 17 46 54;
+  --ui-line: 29 74 85;
+  --ui-line2: 42 100 114;
+  --ui-fg: 235 250 248;
+  --ui-fg2: 163 194 196;
+  --ui-fg3: 150 181 184;
+  --ui-accent: 45 212 191;
+  --ui-accent-text: 94 234 212;
+  --ui-accent-ink: 1 36 32;
+}
 :root[data-skin="orman"] {
   --ui-bg: 8 16 12;
   --ui-s1: 14 24 18;

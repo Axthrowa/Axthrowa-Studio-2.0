@@ -16,6 +16,8 @@ type Msg =
 const HEARTBEAT_MS = 25_000;
 const HEARTBEAT_TIMEOUT_MS = 10_000;
 const MAX_RETRY_MS = 15_000;
+/** WebSocket kapalıyken ayarların sorulma aralığı */
+const YEDEK_YOKLAMA_MS = 3_000;
 
 export type OverlaySyncOptions = {
   /** Panel önizlemesi ayarları kendi tutar — orada WebSocket açmaya gerek yok. */
@@ -144,8 +146,21 @@ export function useOverlaySync(
 
     connect();
 
+    // Yedek yol: WebSocket kapalıyken (OBS'in tarayıcısı bağlantıyı düşürdüyse, uygulama yeniden açıldıysa)
+    // ayarlar birkaç saniyede bir sorulur; panelde yapılan değişiklik OBS'e yine yansır.
+    const yedek = window.setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) return;
+      fetchSettings(screen)
+        .then((data) => {
+          if (cancelled || !data || !Object.keys(data).length) return;
+          if (JSON.stringify(data) !== JSON.stringify(settingsRef.current)) setSettings(data);
+        })
+        .catch(() => {});
+    }, YEDEK_YOKLAMA_MS);
+
     return () => {
       cancelled = true;
+      window.clearInterval(yedek);
       clearHeartbeat();
       if (retry) window.clearTimeout(retry);
       try {

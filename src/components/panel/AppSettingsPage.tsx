@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "../../i18n";
 import type { MsgKey } from "../../i18n/messages";
-import type { AppPrefs, AppTheme, Hareket, Kose, Yogunluk } from "../../lib/appPrefs";
+import type { AppPrefs, AppTheme, Hareket, Kose, MenuYazi, Yogunluk } from "../../lib/appPrefs";
 import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
 import { Switch } from "../axthrowa/switch";
 import { LisansFormu } from "../axthrowa/LisansEkrani";
@@ -54,6 +54,12 @@ const KOSE_OPTS: { id: Kose; labelKey: MsgKey }[] = [
   { id: "yuvarlak", labelKey: "settings.corners.yuvarlak" },
   { id: "az", labelKey: "settings.corners.az" },
   { id: "keskin", labelKey: "settings.corners.keskin" },
+];
+const MENU_YAZI_OPTS: { id: MenuYazi; labelKey: MsgKey }[] = [
+  { id: "kucuk", labelKey: "settings.menuYazi.kucuk" },
+  { id: "normal", labelKey: "settings.menuYazi.normal" },
+  { id: "buyuk", labelKey: "settings.menuYazi.buyuk" },
+  { id: "cokBuyuk", labelKey: "settings.menuYazi.cokBuyuk" },
 ];
 const HAREKET_OPTS: { id: Hareket; labelKey: MsgKey }[] = [
   { id: "acik", labelKey: "settings.motion.acik" },
@@ -252,6 +258,7 @@ export default function AppSettingsPage({
             </div>
             <SecimGrubu baslik={t("settings.density")} secenekler={YOGUNLUK_OPTS} deger={prefs.yogunluk} onSec={(yogunluk) => set({ yogunluk })} t={t} />
             <SecimGrubu baslik={t("settings.corners")} secenekler={KOSE_OPTS} deger={prefs.kose} onSec={(kose) => set({ kose })} t={t} />
+            <SecimGrubu baslik={t("settings.menuYazi")} secenekler={MENU_YAZI_OPTS} deger={prefs.menuYazi} onSec={(menuYazi) => set({ menuYazi })} t={t} />
             <SecimGrubu baslik={t("settings.motion")} secenekler={HAREKET_OPTS} deger={prefs.hareket} onSec={(hareket) => set({ hareket })} t={t} />
             <p className="text-xs text-white/75">{t("settings.motionHint")}</p>
           </div>

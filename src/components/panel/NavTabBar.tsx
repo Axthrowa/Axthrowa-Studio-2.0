@@ -64,7 +64,7 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
                 aria-current={acik && tek ? "page" : undefined}
                 aria-expanded={tek ? undefined : acik}
                 className={
-                  "flex h-9 w-full items-center gap-2.5 border-l-2 px-3 text-[13px] font-medium transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 " +
+                  "flex min-h-9 w-full items-center gap-2.5 border-l-2 px-3 py-1 text-[length:var(--menu-yazi,13px)] font-medium transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 " +
                   (acik ? "border-panel-accent bg-[var(--dt-surface-3)] text-white" : "border-transparent text-white/70 hover:bg-[var(--dt-surface-3)] hover:text-white")
                 }
                 onClick={() => {
@@ -85,7 +85,7 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
                         type="button"
                         data-nav-id={s.nav}
                         aria-current={secili ? "page" : undefined}
-                        className={`h-8 w-full truncate pl-[38px] pr-3 text-left text-[13px] transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 ${secili ? "font-medium text-panel-accent" : "text-white/70 hover:bg-[var(--dt-surface-3)] hover:text-white"}`}
+                        className={`min-h-8 w-full truncate pl-[38px] pr-3 py-1 text-left text-[length:var(--menu-yazi,13px)] transition-all duration-150 active:scale-[0.98] motion-reduce:active:scale-100 ${secili ? "font-medium text-panel-accent" : "text-white/70 hover:bg-[var(--dt-surface-3)] hover:text-white"}`}
                         onClick={() => sec(s)}
                       >
                         {labelFor(s)}
@@ -102,7 +102,7 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
       <div className="shrink-0 border-t border-panel-border p-2">
         <button
           type="button"
-          className="flex h-8 w-full items-center gap-2 px-2 text-[12px] font-medium text-white/70 transition-colors duration-150 hover:text-white"
+          className="flex min-h-8 w-full items-center gap-2 px-2 py-1 text-[length:calc(var(--menu-yazi,13px)-1px)] font-medium text-white/70 transition-colors duration-150 hover:text-white"
           onClick={onToggleEdit}
           title={customizeLabel}
         >

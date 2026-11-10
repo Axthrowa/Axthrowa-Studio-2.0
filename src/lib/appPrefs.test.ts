@@ -20,6 +20,15 @@ describe("arayüz tercihleri", () => {
     expect(loadAppPrefs()).toMatchObject({ yogunluk: "rahat", kose: "yuvarlak", hareket: "acik" });
   });
 
+  it("menü yazı boyutu: eski kayıtta normal, bozuk değer normale düşer", () => {
+    depo({});
+    expect(loadAppPrefs().menuYazi).toBe("normal");
+    depo({ menuYazi: "buyuk" });
+    expect(loadAppPrefs().menuYazi).toBe("buyuk");
+    depo({ menuYazi: "dev" });
+    expect(loadAppPrefs().menuYazi).toBe("normal");
+  });
+
   it("işletim sistemi azaltılmış hareketi yalnız 'sistem' seçiliyse dinlenir", () => {
     vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
     expect(resolveHareket("acik")).toBe("acik");

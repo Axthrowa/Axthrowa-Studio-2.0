@@ -7,6 +7,9 @@ export type Yogunluk = "rahat" | "siki";
 export type Kose = "yuvarlak" | "az" | "keskin";
 /** "sistem" yalnız işletim sisteminin azaltılmış hareket tercihini dinler; varsayılan "acik" (Windows'ta animasyonlar kapalı olsa da oynar). */
 export type Hareket = "acik" | "azaltilmis" | "kapali" | "sistem";
+export type MenuYazi = "kucuk" | "normal" | "buyuk" | "cokBuyuk";
+/** Sol menü yazısının piksel boyu */
+export const MENU_YAZI_PX: Record<MenuYazi, number> = { kucuk: 12, normal: 13, buyuk: 15, cokBuyuk: 17 };
 
 export type AppPrefs = {
   theme: AppTheme;
@@ -16,6 +19,7 @@ export type AppPrefs = {
   yogunluk: Yogunluk;
   kose: Kose;
   hareket: Hareket;
+  menuYazi: MenuYazi;
 };
 
 const KEY = "app.prefs";
@@ -28,6 +32,7 @@ export const DEFAULT_APP_PREFS: AppPrefs = {
   yogunluk: "rahat",
   kose: "yuvarlak",
   hareket: "acik",
+  menuYazi: "normal",
 };
 
 const secenek = <T extends string>(v: unknown, izinli: readonly T[], varsayilan: T): T =>
@@ -46,6 +51,7 @@ export function loadAppPrefs(): AppPrefs {
       yogunluk: secenek(p.yogunluk, ["rahat", "siki"], "rahat"),
       kose: secenek(p.kose, ["yuvarlak", "az", "keskin"], "yuvarlak"),
       hareket: secenek(p.hareket, ["acik", "azaltilmis", "kapali", "sistem"], "acik"),
+      menuYazi: secenek(p.menuYazi, ["kucuk", "normal", "buyuk", "cokBuyuk"], "normal"),
     };
   } catch {
     return { ...DEFAULT_APP_PREFS };
@@ -87,8 +93,9 @@ export function resolveHareket(h: Hareket): Exclude<Hareket, "sistem"> {
 }
 
 /** Yoğunluk, köşe ve hareket tercihini kök öğeye yazar (CSS `data-*` özniteliklerini okur). */
-export function applyArayuzToDom(p: Pick<AppPrefs, "yogunluk" | "kose" | "hareket">) {
+export function applyArayuzToDom(p: Pick<AppPrefs, "yogunluk" | "kose" | "hareket"> & Partial<Pick<AppPrefs, "menuYazi">>) {
   const d = document.documentElement.dataset;
+  document.documentElement.style.setProperty("--menu-yazi", `${MENU_YAZI_PX[p.menuYazi ?? "normal"]}px`);
   d.yogunluk = p.yogunluk;
   d.kose = p.kose;
   d.hareket = resolveHareket(p.hareket);

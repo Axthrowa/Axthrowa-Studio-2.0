@@ -252,7 +252,7 @@ describe("cn (token farkında)", () => {
 
 /* ------------------------------------------------------------ token kontrastı */
 
-const css = readFileSync(new URL("../../styles/index.css", import.meta.url), "utf8");
+const css = readFileSync(new URL("../../styles/ust-serit.css", import.meta.url), "utf8");
 
 function blok(bas: string): Record<string, string> {
   const i = css.indexOf(bas);

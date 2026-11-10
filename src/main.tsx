@@ -10,7 +10,14 @@ import { applyPlatformTheme } from "./lib/platformTheme";
 import { oku as erisimOku, uygula as erisimUygula } from "./lib/erisilebilirlik";
 import { anaPencereyiHatirla } from "./lib/anaPencere";
 import { analitikBaslat } from "./lib/analitik";
+// Üst şerit yazı tipi: yerel paket, ağdan yükleme yok
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
 import "./styles/index.css";
+import "./styles/ust-serit.css";
 import "./styles/desktop.css";
 import "./styles/overlay.css";
 

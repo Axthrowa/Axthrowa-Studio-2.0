@@ -1,0 +1,279 @@
+/* Üst şerit (pencere başlığı + durum) — arayüz yenilemesinden alınan Stüdyo Masası token'ları.
+   Yalnız --ui-* değişkenleri ve şeridin yazı tipi; 1.6.13 ekranlarının görünümünü değiştirmez. */
+:root,
+:root[data-skin="night-signal"] {
+  --ui-bg: 13 14 16;
+  --ui-s1: 20 21 24;
+  --ui-s2: 27 29 33;
+  --ui-s3: 35 38 43;
+  --ui-line: 43 47 53;
+  --ui-line2: 58 63 70;
+  --ui-fg: 228 230 234;
+  --ui-fg2: 167 173 182;
+  --ui-fg3: 138 145 155;
+  --ui-accent: 46 197 219;
+  --ui-accent-text: 46 197 219;
+  --ui-accent-ink: 6 38 44;
+  --ui-brand: 155 131 255;
+  --ui-live: 200 35 43;
+  --ui-live-ink: 255 255 255;
+  --ui-rec: 240 136 62;
+  --ui-ok: 63 207 142;
+  --ui-warn: 232 185 49;
+}
+:root[data-skin="crimson-dragon"] {
+  --ui-bg: 18 8 8;
+  --ui-s1: 26 12 12;
+  --ui-s2: 34 18 18;
+  --ui-s3: 44 24 24;
+  --ui-line: 63 29 29;
+  --ui-line2: 90 42 42;
+  --ui-fg: 255 240 232;
+  --ui-fg2: 179 166 160;
+  --ui-fg3: 148 136 131;
+  --ui-accent: 232 184 74;
+  --ui-accent-text: 240 201 106;
+  --ui-accent-ink: 26 5 5;
+}
+:root[data-skin="cyber-neon"] {
+  --ui-bg: 7 6 26;
+  --ui-s1: 14 12 38;
+  --ui-s2: 21 18 48;
+  --ui-s3: 29 25 61;
+  --ui-line: 42 36 88;
+  --ui-line2: 58 50 112;
+  --ui-fg: 226 232 255;
+  --ui-fg2: 165 169 191;
+  --ui-fg3: 134 137 159;
+  --ui-accent: 0 229 255;
+  --ui-accent-text: 0 229 255;
+  --ui-accent-ink: 0 37 43;
+}
+:root[data-skin="aurora"] {
+  --ui-bg: 10 15 28;
+  --ui-s1: 17 24 48;
+  --ui-s2: 22 32 56;
+  --ui-s3: 29 41 69;
+  --ui-line: 37 50 90;
+  --ui-line2: 51 67 122;
+  --ui-fg: 236 242 255;
+  --ui-fg2: 175 181 194;
+  --ui-fg3: 143 149 162;
+  --ui-accent: 62 237 254;
+  --ui-accent-text: 62 237 254;
+  --ui-accent-ink: 3 47 52;
+}
+:root[data-skin="warm-sepia"] {
+  --ui-bg: 23 17 12;
+  --ui-s1: 33 24 16;
+  --ui-s2: 42 31 21;
+  --ui-s3: 52 39 27;
+  --ui-line: 74 54 38;
+  --ui-line2: 94 70 50;
+  --ui-fg: 250 240 226;
+  --ui-fg2: 189 180 168;
+  --ui-fg3: 157 149 138;
+  --ui-accent: 224 169 109;
+  --ui-accent-text: 236 190 135;
+  --ui-accent-ink: 28 13 5;
+}
+:root[data-skin="mono-contrast"] {
+  --ui-bg: 0 0 0;
+  --ui-s1: 10 10 10;
+  --ui-s2: 20 20 20;
+  --ui-s3: 30 30 30;
+  --ui-line: 89 89 89;
+  --ui-line2: 140 140 140;
+  --ui-fg: 255 255 255;
+  --ui-fg2: 230 230 230;
+  --ui-fg3: 200 200 200;
+  --ui-accent: 255 212 0;
+  --ui-accent-text: 255 212 0;
+  --ui-accent-ink: 0 0 0;
+}
+:root[data-skin="gece-mavisi"] {
+  --ui-bg: 10 15 28;
+  --ui-s1: 16 24 41;
+  --ui-s2: 22 33 58;
+  --ui-s3: 29 42 72;
+  --ui-line: 31 44 71;
+  --ui-line2: 44 61 96;
+  --ui-fg: 236 241 248;
+  --ui-fg2: 180 185 193;
+  --ui-fg3: 146 151 160;
+  --ui-accent: 96 165 250;
+  --ui-accent-text: 147 197 253;
+  --ui-accent-ink: 6 18 42;
+}
+:root[data-skin="neon-arcade"] {
+  --ui-bg: 7 6 13;
+  --ui-s1: 15 12 26;
+  --ui-s2: 23 18 40;
+  --ui-s3: 32 26 54;
+  --ui-line: 44 32 66;
+  --ui-line2: 61 45 92;
+  --ui-fg: 238 236 246;
+  --ui-fg2: 169 167 176;
+  --ui-fg3: 139 137 146;
+  --ui-accent: 244 114 182;
+  --ui-accent-text: 249 168 212;
+  --ui-accent-ink: 26 5 20;
+}
+:root[data-skin="murekkep"] {
+  --ui-bg: 13 12 10;
+  --ui-s1: 22 21 18;
+  --ui-s2: 30 28 24;
+  --ui-s3: 39 37 32;
+  --ui-line: 46 43 37;
+  --ui-line2: 65 61 53;
+  --ui-fg: 242 238 231;
+  --ui-fg2: 180 177 171;
+  --ui-fg3: 148 145 140;
+  --ui-accent: 214 184 146;
+  --ui-accent-text: 226 204 172;
+  --ui-accent-ink: 26 20 12;
+}
+:root[data-skin="gun-batimi"] {
+  --ui-bg: 18 11 13;
+  --ui-s1: 27 18 21;
+  --ui-s2: 37 24 28;
+  --ui-s3: 47 32 37;
+  --ui-line: 58 36 41;
+  --ui-line2: 80 51 58;
+  --ui-fg: 244 236 235;
+  --ui-fg2: 181 173 173;
+  --ui-fg3: 149 142 142;
+  --ui-accent: 251 146 60;
+  --ui-accent-text: 253 186 116;
+  --ui-accent-ink: 42 14 2;
+}
+:root[data-skin="orman"] {
+  --ui-bg: 8 16 12;
+  --ui-s1: 14 24 18;
+  --ui-s2: 20 34 25;
+  --ui-s3: 27 44 33;
+  --ui-line: 33 54 40;
+  --ui-line2: 47 74 56;
+  --ui-fg: 234 241 237;
+  --ui-fg2: 175 183 179;
+  --ui-fg3: 144 151 147;
+  --ui-accent: 74 222 128;
+  --ui-accent-text: 134 239 172;
+  --ui-accent-ink: 3 32 15;
+}
+:root {
+  --ui-err: var(--ui-warn);
+  --ui-danger: var(--ui-live);
+  --ui-shadow-float: 0 8px 24px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(var(--ui-line2));
+  --ui-dur: 140ms;
+  --ui-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+:root[data-hareket="azaltilmis"] {
+  --ui-dur: 100ms;
+}
+:root[data-hareket="kapali"] {
+  --ui-dur: 0ms;
+}
+:root.theme-light {
+  --ui-bg: 233 235 238;
+  --ui-s1: 255 255 255;
+  --ui-s2: 243 244 246;
+  --ui-s3: 255 255 255;
+  --ui-line: 213 217 223;
+  --ui-line2: 188 194 202;
+  --ui-fg: 21 23 26;
+  --ui-fg2: 74 81 91;
+  --ui-fg3: 95 102 112;
+  --ui-accent: 10 116 136;
+  --ui-accent-text: 10 116 136;
+  --ui-accent-ink: 255 255 255;
+  --ui-brand: 100 70 216;
+  --ui-live: 194 31 40;
+  --ui-live-ink: 255 255 255;
+  --ui-rec: 168 74 11;
+  --ui-ok: 24 116 74;
+  --ui-warn: 127 98 0;
+  --ui-shadow-float: 0 8px 24px rgb(15 20 30 / 0.16), 0 0 0 1px rgb(var(--ui-line2));
+}
+:root.theme-light[data-skin="gun-isigi"] {
+  --ui-accent: 109 40 217;
+  --ui-accent-text: 109 40 217;
+  --ui-accent-ink: 255 255 255;
+}
+:root {
+  /* Hata ve tehlikeli eylem: tasarım kuralı gereği hata sarı (uyarı + simge),
+     yıkıcı eylem kenarı CANLI kırmızısı. Skin ya da açık tema bunları
+     yeniden tanımlamadan izler (aynı öğede hesaplanır). */
+  --ui-err: var(--ui-warn);
+  --ui-danger: var(--ui-live);
+
+
+  /* Tipografi ölçeği (6 boyut) */
+  --fs-1: 11px;
+  --fs-2: 12px;
+  --fs-3: 13px;
+  --fs-4: 15px;
+  --fs-5: 20px;
+  --fs-6: 28px;
+
+  /* Yoğunluk — taban sıkı; `data-yogunluk="rahat"` büyütür */
+  --ctl: 24px;
+  --row: 26px;
+  --pad: 8px;
+  --hit: 40px; /* deste / sustur / sahne: stres altında büyük vuruş alanı */
+
+  /* Köşe — taban keskin; `data-kose` değiştirir. r-1 küçük öğe, r-2 düğme/girdi/yüzen */
+  --r-1: 0px;
+  --r-2: 2px;
+
+  /* Gölge yalnız yüzen katman (menü, açılır liste, diyalog, ipucu) */
+  --ui-shadow-float: 0 8px 24px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(var(--ui-line2));
+
+  /* Hareket */
+  --ui-dur: 140ms;
+  --ui-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* z-index ölçeği */
+  --z-sticky: 20;
+  --z-header: 50;
+  --z-rail: 80;
+  --z-modal: 900;
+  --z-popover: 1000;
+  --z-toast: 1100;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-hareket="acik"]) {
+    --ui-dur: 0ms;
+  }
+}
+/* İlkel bileşenlerin açılış hareketi (yalnız açılış; kapanış anında). `hareket: kapalı`
+   aşağıdaki genel kuralla 1 ms'ye iner, azaltılmışta ölçek yok. */
+@keyframes ui-gir {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ui-gir-olcek {
+  from {
+    opacity: 0;
+    scale: 0.98;
+  }
+}
+.ui-gir {
+  animation: ui-gir var(--ui-dur) var(--ui-ease) backwards;
+}
+.ui-gir-olcek {
+  animation: ui-gir-olcek var(--ui-dur) var(--ui-ease) backwards;
+}
+:root[data-hareket="azaltilmis"] .ui-gir-olcek {
+  animation-name: ui-gir;
+}
+
+
+.ust-serit {
+  font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+}
+.ust-serit .font-mono,
+.ust-serit kbd {
+  font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}

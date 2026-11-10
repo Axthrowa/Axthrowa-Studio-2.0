@@ -34,6 +34,14 @@ export default {
           900: "#176a72",
           950: "#083f46",
         },
+        // Üst şerit (Stüdyo Masası) token'ları; kanal üçlüsü: `bg-ui-accent/15`
+        ui: Object.fromEntries(
+          ["bg", "s1", "s2", "s3", "line", "line2", "fg", "fg2", "fg3", "accent", "accent-text", "accent-ink",
+            "brand", "live", "live-ink", "rec", "ok", "warn", "err", "danger"].map((k) => [
+            k,
+            `rgb(var(--ui-${k}) / <alpha-value>)`,
+          ])
+        ),
         panel: {
           bg: "var(--panel-bg)",
           card: "var(--panel-card)",
@@ -72,7 +80,40 @@ export default {
         // yazılar bulanık/ezik görünüyordu. Bebas'ı isteyen yerler kendi
         // yığınını yazıyor (src/lib/textStyles.ts, styles/overlay.css).
       },
+      fontSize: {
+        "ui-1": ["var(--fs-1)", { lineHeight: "16px" }],
+        "ui-2": ["var(--fs-2)", { lineHeight: "16px" }],
+        "ui-3": ["var(--fs-3)", { lineHeight: "18px" }],
+        "ui-4": ["var(--fs-4)", { lineHeight: "20px" }],
+        "ui-5": ["var(--fs-5)", { lineHeight: "26px" }],
+        "ui-6": ["var(--fs-6)", { lineHeight: "32px" }],
+      },
+      spacing: {
+        ctl: "var(--ctl)",
+        row: "var(--row)",
+        pad: "var(--pad)",
+        hit: "var(--hit)",
+      },
+      borderRadius: {
+        "ui-1": "var(--r-1)",
+        "ui-2": "var(--r-2)",
+      },
+      zIndex: {
+        "ui-sticky": "var(--z-sticky)",
+        "ui-header": "var(--z-header)",
+        "ui-rail": "var(--z-rail)",
+        "ui-modal": "var(--z-modal)",
+        "ui-popover": "var(--z-popover)",
+        "ui-toast": "var(--z-toast)",
+      },
+      transitionDuration: {
+        ui: "var(--ui-dur)",
+      },
+      transitionTimingFunction: {
+        ui: "var(--ui-ease)",
+      },
       boxShadow: {
+        "ui-float": "var(--ui-shadow-float)",
         panel: "0 8px 24px rgba(0,0,0,.28)",
         glow: "0 0 18px var(--panel-accent-glow)",
         "glow-sm": "0 0 10px var(--panel-accent-glow)",

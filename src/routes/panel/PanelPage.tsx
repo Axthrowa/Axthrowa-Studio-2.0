@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Save } from "lucide-react";
+import { Save, Search } from "lucide-react";
 import { MotionConfig } from "framer-motion";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -23,7 +23,9 @@ import { DEFAULT_SOCIALS } from "../../lib/socials";
 import MusicBridge from "../../components/panel/MusicBridge";
 import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar from "../../components/panel/NavTabBar";
-import KomutPaleti from "../../components/panel/KomutPaleti";
+import KomutPaleti, { PALET_AC_OLAYI } from "../../components/panel/KomutPaleti";
+import { YayinDugmesi, YayinOnayi } from "../../components/kabuk/Yayin";
+import { Button, Kbd } from "@/components/ui";
 import { menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
 import DurumCubugu from "../../components/panel/DurumCubugu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
@@ -275,6 +277,7 @@ export default function PanelPage() {
   const [obsConnected, setObsConnected] = useState(false);
   const [dashBolum, setDashBolum] = useDashboardBolumu();
   const [masterBusy, setMasterBusy] = useState(false);
+  const [yayinOnay, setYayinOnay] = useState(false);
   // OBS'te elle başlatılan yayın da görünsün: durum store'da, Rust ve OBS olaylarıyla güncellenir
   useAxthrowaStoreKoprusu();
   const liveOn = useAxthrowaStore((s) => s.isLive);
@@ -1556,7 +1559,6 @@ export default function PanelPage() {
         ? tt("nav.overlaylar")
         : (sayfaMeta?.labelKey && tt(sayfaMeta.labelKey as MsgKey)) || sayfaMeta?.label || String(activeNav);
   const sahneSekmesi = activeNav === "starting" || activeNav === "ending" || activeNav === "brb";
-  const durumPort = (server?.baseUrl || API_BASE).split(":").pop()?.replace(/\D/g, "") || "8843";
 
   const sayfaAdiBul = useCallback(
     (s: MenuSayfasi) => {
@@ -1647,10 +1649,37 @@ export default function PanelPage() {
       <CloseRequestModal />
     {/* Özel pencere başlığı (masaüstünde) + altında panel; panel kalan yüksekliği doldurur */}
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
-    <PencereBasligi />
+    {/* Üst şerit (pencere başlığı + durum): arayüz yenilemesinden; altındaki ekranlar 1.6.13 */}
+    <PencereBasligi
+      title={tt("brand.title")}
+      actions={
+        <>
+          <Button variant="ghost" aria-label={tt("palet.baslik")} title={tt("palet.baslik")} onClick={() => window.dispatchEvent(new Event(PALET_AC_OLAYI))}>
+            <Search aria-hidden />
+            <Kbd>Ctrl K</Kbd>
+          </Button>
+          <YayinDugmesi canli={liveOn} mesgul={masterBusy} onClick={() => setYayinOnay(true)} />
+        </>
+      }
+    >
+      <DurumCubugu
+        onObs={() => {
+          sayfaAc({ nav: "profile" });
+          setDashBolum("baglantilar");
+        }}
+      />
+    </PencereBasligi>
     <KomutPaleti visibleTabs={visibleTabs} labelFor={sayfaAdiBul} onSayfa={sayfaAc} onToast={showToast} kapali={kisayolYakalaniyor} />
     <UpdateModal />
     <KarsilamaEkrani />
+    <YayinOnayi
+      open={yayinOnay}
+      onOpenChange={setYayinOnay}
+      canli={liveOn}
+      mesgul={masterBusy}
+      obsBagli={obsConnected}
+      onConfirm={runMasterStream}
+    />
     <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
       <NavTabBar
@@ -1865,7 +1894,6 @@ export default function PanelPage() {
       <AppAlertModal />
       </div>
     </div>
-    <DurumCubugu port={durumPort} />
     </div>
     </MotionConfig>
   );

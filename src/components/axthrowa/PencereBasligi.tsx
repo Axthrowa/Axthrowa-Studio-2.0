@@ -1,20 +1,33 @@
 /**
- * Özel pencere başlığı (tauri.conf.json `decorations: false`). Şeridin boş yeri pencereyi sürükler
- * (`data-tauri-drag-region`; çift tık büyütür/küçültür), sağda küçült / büyüt / kapat.
- * Kapat, işletim sisteminin X'i gibi `CloseRequested` gönderir: uygulamanın "tepsiye küçült / kapat"
- * sorusu (close_prompt) aynen çalışır. Yalnız masaüstü uygulamasında çizilir (tarayıcıdaki panelde yok).
+ * Üst şerit (32 px): pencere başlığı + durum şeridi tek satır (Stüdyo Masası). Soldan logo (marka yalnız burada),
+ * ortada `children` (durum şeridi), sağda `actions` (Ctrl K, yayın düğmesi) ve pencere düğmeleri.
+ * Masaüstünde (tauri.conf.json `decorations: false`) boş yerler pencereyi sürükler (`data-tauri-drag-region`;
+ * çift tık büyütür/küçültür). Kapat, işletim sisteminin X'i gibi `CloseRequested` gönderir: "tepsiye küçült /
+ * kapat" sorusu (close_prompt) aynen çalışır. Tarayıcıdaki panelde pencere düğmeleri çizilmez, şerit kalır.
  * Tauri 2: `appWindow` kaldırıldı, `getCurrentWindow()` kullanılır.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Copy, Minus, Square, X } from "@phosphor-icons/react";
+import { Copy, Minus, Square, X } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { useT } from "../../i18n";
+import { Tooltip, cn } from "@/components/ui";
 
 const DUGME =
-  "flex h-full w-12 items-center justify-center bg-transparent text-zinc-400 transition-colors duration-200 focus-visible:outline-none focus-visible:bg-zinc-800/70";
+  "flex h-full w-[46px] items-center justify-center bg-transparent text-ui-fg2 transition-colors duration-ui hover:bg-ui-s2 hover:text-ui-fg [&>svg]:h-3.5 [&>svg]:w-3.5";
 
-export default function PencereBasligi() {
+type Props = {
+  /** Durum şeridi */
+  children?: ReactNode;
+  /** Sağda, pencere düğmelerinden önce (komut paleti, yayın düğmesi) */
+  actions?: ReactNode;
+  /** Logonun ipucu ve erişilebilir adı */
+  title: string;
+};
+
+export default function PencereBasligi({ children, actions, title }: Props) {
+  const t = useT();
   const masaustu = isTauri();
   const [buyuk, setBuyuk] = useState(false);
 
@@ -31,37 +44,53 @@ export default function PencereBasligi() {
     return () => birak?.();
   }, [masaustu]);
 
-  if (!masaustu) return null;
   const w = () => getCurrentWindow();
 
   return (
-    <div data-tauri-drag-region className="flex h-12 w-full shrink-0 select-none items-center justify-between border-b border-white/5 bg-axthrowa-dark">
-      {/* Marka: kendisi de sürükleme alanı (yazının üstünden tutunca da pencere kayar) */}
-      <div data-tauri-drag-region className="flex h-full items-center gap-2.5 pl-4">
-        <img src={logo} alt="" className="pointer-events-none h-6 w-6 rounded-lg" />
-        <span data-tauri-drag-region className="text-[13px] font-semibold tracking-wide text-zinc-200">
-          AxthrowA Studio <span className="font-normal text-zinc-500">{__YYA_SURUM__}</span>
+    <header
+      data-tauri-drag-region
+      className="relative z-ui-header flex h-8 w-full shrink-0 select-none items-stretch border-b border-ui-line bg-ui-bg font-sans"
+    >
+      {/* Marka: kendisi de sürükleme alanı */}
+      <Tooltip content={`${title} ${__YYA_SURUM__}`} side="bottom">
+        <span data-tauri-drag-region className="flex h-8 w-12 shrink-0 items-center justify-center">
+          <img src={logo} alt={title} className="pointer-events-none h-[18px] w-[18px] rounded-ui-1" />
         </span>
+      </Tooltip>
+
+      <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-3 pr-3">
+        {children}
       </div>
 
+      {actions ? <div className="flex shrink-0 items-center gap-2 pr-2">{actions}</div> : null}
+
       {/* Pencere düğmeleri: sürükleme alanı DEĞİL, tıklama sürüklemeye dönüşmez */}
-      <div className="flex h-full items-stretch">
-        <button type="button" className={`${DUGME} hover:bg-zinc-800/70 hover:text-zinc-100`} aria-label="Küçült" title="Küçült" onClick={() => void w().minimize()}>
-          <Minus weight="bold" className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          className={`${DUGME} hover:bg-zinc-800/70 hover:text-zinc-100`}
-          aria-label={buyuk ? "Önceki boyut" : "Büyüt"}
-          title={buyuk ? "Önceki boyut" : "Büyüt"}
-          onClick={() => void w().toggleMaximize()}
-        >
-          {buyuk ? <Copy weight="bold" className="h-3.5 w-3.5 -scale-x-100" /> : <Square weight="bold" className="h-3.5 w-3.5" />}
-        </button>
-        <button type="button" className={`${DUGME} hover:bg-red-500/90 hover:text-white`} aria-label="Kapat" title="Kapat" onClick={() => void w().close()}>
-          <X weight="bold" className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
+      {masaustu ? (
+        <div className="flex h-full shrink-0 items-stretch border-l border-ui-line">
+          <button type="button" className={DUGME} aria-label={t("pencere.kucult")} title={t("pencere.kucult")} onClick={() => void w().minimize()}>
+            <Minus aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={DUGME}
+            aria-label={buyuk ? t("pencere.onceki") : t("pencere.buyut")}
+            title={buyuk ? t("pencere.onceki") : t("pencere.buyut")}
+            onClick={() => void w().toggleMaximize()}
+          >
+            {buyuk ? <Copy aria-hidden className="-scale-x-100" /> : <Square aria-hidden />}
+          </button>
+          <button
+            type="button"
+            // Kapat düğmesi işletim sistemi alışkanlığıyla kırmızıya döner (CANLI kırmızısı token'ı, yalnız hover)
+            className={cn(DUGME, "hover:bg-ui-live hover:text-ui-live-ink")}
+            aria-label={t("pencere.kapat")}
+            title={t("pencere.kapat")}
+            onClick={() => void w().close()}
+          >
+            <X aria-hidden />
+          </button>
+        </div>
+      ) : null}
+    </header>
   );
 }

@@ -89,17 +89,19 @@ const UcanEmote = memo(function UcanEmote({ u, spin, shadow, hareket }: { u: Uca
           fontSize: u.boyut * 0.8,
           lineHeight: `${u.boyut}px`,
           textAlign: 'center',
-          willChange: 'transform',
+          // Hareket ekran kartında kalsın: gölge filtresi bu katmanda olursa her karede yeniden çiziliyor, emote takılıyordu
+          willChange: 'transform, opacity',
+          backfaceVisibility: 'hidden',
+          contain: 'layout style',
           animation: `axt-kappagen ${u.sure}ms ${u.patlama ? 'ease-out' : 'linear'} forwards`,
           '--son': u.patlama ? 0 : 1,
           '--dx': `${u.dx}vw`,
           '--dy': `${u.dy}vh`,
-          '--rot': `${spin ? u.donus : 0}deg`,
-          filter: shadow ? 'drop-shadow(0 4px 6px rgba(0,0,0,.6))' : undefined
+          '--rot': `${spin ? u.donus : 0}deg`
         } as CSSProperties
       }
     >
-      <div style={{ width: '100%', height: '100%', animation: hareket }}>
+      <div style={{ width: '100%', height: '100%', animation: hareket, filter: shadow ? 'drop-shadow(0 4px 6px rgba(0,0,0,.6))' : undefined }}>
       {u.parca.url ? (
         <img src={u.parca.url} alt={u.parca.ad} decoding="sync" style={{ width: '100%', height: '100%', objectFit: 'contain' }} referrerPolicy="no-referrer" />
       ) : (

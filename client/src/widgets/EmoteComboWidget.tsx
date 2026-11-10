@@ -221,23 +221,25 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
     <div ref={kutu} {...kokOzellik(s)} data-katman-bos={kombo || patlama || gelenler.length ? undefined : ''} style={{ position: 'relative', ...kap, overflow: props?.tamEkranEtki ? 'visible' : 'hidden' }}>
       <style>{KOMBO_CSS}</style>
       {kombo && (
-        <div data-yuzey="" style={{ ...merkez, filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}>
+        <div data-yuzey="" style={merkez}>
           <div style={ortakHareket(s)}>
             {/* key=adet: her yeni emote'ta bir kez vurulmuş gibi zıplar */}
             <div key={kombo.adet} style={{ animation: 'axt-kombo-vurus 240ms ease-out' }}>
-              <EmoteGorsel e={kombo.emote} boyut={boy} />
+              {/* Gölge hareket eden katmanın içinde: dıştaki kapta olunca her karede tüm kap yeniden çiziliyordu */}
+              <span style={{ display: 'block', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}><EmoteGorsel e={kombo.emote} boyut={boy} /></span>
             </div>
           </div>
         </div>
       )}
       {gelenler.map((g) => (
-        <span key={g.id} style={{ position: 'absolute', left: '50%', top: '50%', pointerEvents: 'none', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.5))' }}>
+        <span key={g.id} style={{ position: 'absolute', left: '50%', top: '50%', pointerEvents: 'none' }}>
           <span
             style={{
               display: 'block',
               marginLeft: -(Number(s.size) || 96) / 2,
               marginTop: -(Number(s.size) || 96) / 2,
-              willChange: 'transform',
+              willChange: 'transform, opacity',
+              backfaceVisibility: 'hidden',
               ['--dx' as any]: `${g.dx}px`,
               ['--dy' as any]: `${g.dy}px`,
               ['--rot' as any]: `${g.donus}deg`,
@@ -246,18 +248,19 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               animation: `axt-kombo-topla ${ucusSuresi(s.speed)}ms cubic-bezier(.22,.55,.45,1) forwards`
             }}
           >
-            <EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} />
+            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.5))' }}><EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} /></span>
           </span>
         </span>
       ))}
       {patlama?.parcalar.map((p, i) => (
-        <span key={`${patlama.id}-${i}`} style={{ position: 'absolute', left: '50%', top: '50%', pointerEvents: 'none', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))' }}>
+        <span key={`${patlama.id}-${i}`} style={{ position: 'absolute', left: '50%', top: '50%', pointerEvents: 'none' }}>
           <span
             style={{
               display: 'block',
               marginLeft: -patlama.boy / 2,
               marginTop: -patlama.boy / 2,
-              willChange: 'transform',
+              willChange: 'transform, opacity',
+              backfaceVisibility: 'hidden',
               ['--dx' as any]: `${p.dx}px`,
               ['--dy' as any]: `${p.dy}px`,
               ['--rot' as any]: `${p.donus}deg`,
@@ -266,7 +269,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               animation: `axt-kombo-sac ${p.sure}ms cubic-bezier(.3,.55,.6,1) ${p.gecikme}ms both`
             }}
           >
-            <EmoteGorsel e={patlama.emote} boyut={patlama.boy} />
+            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))' }}><EmoteGorsel e={patlama.emote} boyut={patlama.boy} /></span>
           </span>
         </span>
       ))}

@@ -38,6 +38,9 @@ interface ViewerModalData {
   sentimentDetails?: { positives?: number; negatives?: number; messageCount?: number; summary?: string; source?: string; recent?: string[] };
 }
 
+// AxthrowA Studio sayfayı `?embed=1` ile gömer (App.tsx ile aynı ölçüt)
+const gomulu = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('embed');
+
 export function MultiChat() {
   // 'dashboard': gönderim hataları yalnız bu türe gelir (OBS'teki 'chatbox' katmanı görmesin)
   const { connected, chatMessages, sendChat, clearChat, lastMessage } = useWebSocket('dashboard', GECMIS_ACIK);
@@ -281,9 +284,10 @@ export function MultiChat() {
   };
 
   return (
-    <div className="space-y-4 h-[calc(100vh-140px)] flex flex-col relative">
+    // Studio'da gömülüyken (dar yan sütun) başlık gizlenir, araçlar sarar, yükseklik iframe'i doldurur
+    <div className={`flex flex-col relative ${gomulu ? 'space-y-2 h-[calc(100vh-2rem)]' : 'space-y-4 h-[calc(100vh-140px)]'}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className={gomulu ? 'hidden' : undefined}>
           <h1 className="text-2xl font-black text-white flex items-center gap-2">
             Birleşik Canlı Sohbet (Multi-Chat Dock)
           </h1>
@@ -324,7 +328,7 @@ export function MultiChat() {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center space-x-1.5 bg-black/40 border border-white/10 p-1 rounded-xl text-xs font-bold">
+          <div className="flex flex-wrap items-center gap-1.5 bg-black/40 border border-white/10 p-1 rounded-xl text-xs font-bold">
             {(['all', 'kick', 'twitch', 'youtube', 'trovo', 'tiktok', 'discord'] as const).map(p => (
               <button
                 key={p}
@@ -372,7 +376,7 @@ export function MultiChat() {
             filteredMessages.map(msg => (
               <div
                 key={msg.id}
-                className={`p-2.5 rounded-xl hover:bg-white/[0.05] transition-all flex items-start space-x-2.5 text-sm ${
+                className={`p-2.5 rounded-xl hover:bg-white/[0.05] transition-all flex items-center space-x-2.5 text-sm ${
                   msg.karaListede || msg.kalkanda ? 'bg-red-500/[0.06] opacity-60' : 'bg-white/[0.02]'
                 }`}
                 // Görünmeyen satırlar çizilmez: 500 iletide liste akıcı kalsın
@@ -394,7 +398,7 @@ export function MultiChat() {
                     boyut={avatarAyar.avatarBoyut}
                     bicim={avatarAyar.avatarBicim}
                     renk={getUserColor(msg.user.username, msg.user.color)}
-                    className="mt-0.5"
+                    className="self-center"
                     onClick={() => handleUserClick(msg.user, msg.platform)}
                   />
                 )}
@@ -445,11 +449,11 @@ export function MultiChat() {
       </div>
 
       {/* Input Sender Bar */}
-      <form onSubmit={handleSend} className="glass-panel p-2.5 rounded-2xl flex items-center space-x-2 border border-white/10">
+      <form onSubmit={handleSend} className="glass-panel p-2.5 rounded-2xl flex items-center gap-2 border border-white/10">
         <select aria-label="Mesajın gideceği platform"
           value={targetPlatform}
           onChange={e => setTargetPlatform(e.target.value)}
-          className="bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-purple-300 focus:outline-none"
+          className="min-w-0 max-w-[45%] shrink bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-purple-300 focus:outline-none"
         >
           <option value="all">Tüm Platformlara Gönder</option>
           <option value="kick">Sadece Kick</option>
@@ -464,13 +468,13 @@ export function MultiChat() {
           value={inputMessage}
           onChange={e => setInputMessage(e.target.value)}
           placeholder={connected ? 'Yayın sohbetine bir mesaj yazın...' : 'Bot bağlantısı yok, yeniden bağlanıyor...'}
-          className="flex-1 bg-transparent px-3 py-2 text-sm text-white focus:outline-none placeholder-gray-500"
+          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-white focus:outline-none placeholder-gray-500"
         />
 
         <button
           type="submit"
           disabled={!connected}
-          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+          className="shrink-0 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
         >
           <Send className="w-3.5 h-3.5" /> Gönder
         </button>

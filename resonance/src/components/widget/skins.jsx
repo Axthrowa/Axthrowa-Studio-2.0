@@ -32,6 +32,9 @@ import {
   TicketPreview,
 } from './SkinPreviews'
 
+/** Süre satırının sağındaki dalga: süre satırı varken hiç çizilmez (aradaki dalga kapatılsa da), yalnız süresiz kaynakta */
+export const sagDalga = (config, durationMs) => !config.hideVisualizer && !(Number(durationMs) > 0)
+
 /**
  * Skin kayıt defteri.
  *
@@ -98,7 +101,7 @@ function Boxy(p) {
                 timeColor={mutedColor}
               />
             </div>
-            {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+            {sagDalga(config, durationMs) && <Visualizer playing={isPlaying} color={accent} />}
           </div>
         </div>
       </div>
@@ -430,7 +433,7 @@ function Aurora(p) {
                 trackColor={theme === 'light' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.22)'}
               />
             </div>
-            {!config.hideVisualizer && <Visualizer playing={isPlaying} color={textColor} />}
+            {sagDalga(config, durationMs) && <Visualizer playing={isPlaying} color={textColor} />}
           </div>
         </div>
       </div>
@@ -473,7 +476,7 @@ function Edge(p) {
                 timeColor={mutedColor}
               />
             </div>
-            {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+            {sagDalga(config, durationMs) && <Visualizer playing={isPlaying} color={accent} />}
           </div>
         </div>
       </div>
@@ -520,7 +523,7 @@ function Turntable(p) {
             <div className="min-w-0 flex-1">
               <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} timeColor={mutedColor} />
             </div>
-            {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+            {sagDalga(config, durationMs) && <Visualizer playing={isPlaying} color={accent} />}
           </div>
         </div>
       </div>
@@ -571,7 +574,7 @@ function Cassette(p) {
         <div className="min-w-0 flex-1">
           <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} timeColor={mutedColor} />
         </div>
-        {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+        {sagDalga(config, durationMs) && <Visualizer playing={isPlaying} color={accent} />}
       </div>
     </SkinCard>
   )
@@ -754,7 +757,7 @@ function Neon(p) {
             <div className="min-w-0 flex-1">
               <ProgressBar progress={progress} color={accent} height={3} progressMs={progressMs} durationMs={durationMs} />
             </div>
-            {!config.hideVisualizer && <Visualizer playing={isPlaying} color={accent} />}
+            {sagDalga(config, durationMs) && <Visualizer playing={isPlaying} color={accent} />}
           </div>
         </div>
       </div>

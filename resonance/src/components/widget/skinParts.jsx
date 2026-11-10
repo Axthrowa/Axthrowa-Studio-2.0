@@ -1,5 +1,6 @@
 /** Skinlerin ortak yapı taşları — `skins.jsx` ve `NowPlayingWidget.jsx` kullanır. */
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { useMuzikSeviyesi } from '../../hooks/useMuzikSeviyesi'
 
 /** Her skinde geçerli görünüm ayarları: skinlerin imzası değişmesin diye bağlamla gelir */
 export const GorunumBaglami = createContext({})
@@ -116,19 +117,33 @@ export function ProgressBar({
           className="mt-1 flex justify-between gap-3 font-mono text-[11px] leading-none"
           style={{ ...TIME_TEXT, color: timeColor || 'currentColor' }}
         >
-          <span>{clock(progressMs)}</span>
+          <span>{clock(gecenSn(progressMs) * 1000)}</span>
           {zamanDalgasi && <ZamanDalgasi renk={color} oynuyor={oynuyor} />}
-          <span>{kalanSure ? `-${clock(Number(durationMs) - Number(progressMs))}` : clock(durationMs)}</span>
+          <span>{kalanSure ? `-${clock(kalanSn(progressMs, durationMs) * 1000)}` : clock(durationMs)}</span>
         </div>
       )}
     </div>
   )
 }
 
+/**
+ * Geçen ve kalan süre aynı saniye sınırında değişir: ayrı ayrı yuvarlanınca iki etiket farklı anlarda atlıyor,
+ * kalan süre geçenden hızlı akıyormuş gibi görünüyordu. Geçen + kalan = toplam her an tutar.
+ */
+export const gecenSn = (progressMs) => Math.max(0, Math.floor((Number(progressMs) || 0) / 1000))
+export const kalanSn = (progressMs, durationMs) =>
+  Math.max(0, Math.round((Number(durationMs) || 0) / 1000) - gecenSn(progressMs))
+
 /** İki süre etiketi arasındaki ses dalgası: çalarken dalgalanır, durunca alçak ve soluk kalır */
 const DALGA_BOYLARI = [0.35, 0.7, 0.5, 1, 0.6, 0.85, 0.4, 0.95, 0.55, 0.75, 0.45, 0.9, 0.6, 0.8, 0.4, 0.65]
 
+/** Gerçek seviye gelince her çubuk kendi boyu × seviye; komşular biraz farklı oynasın diye zamana bağlı küçük sapma */
+export const cubukOlcegi = (boy, seviye, i, t = Date.now()) =>
+  Math.max(0.12, boy * seviye * (0.7 + 0.3 * Math.sin(t / 90 + i * 1.7)))
+
 export function ZamanDalgasi({ renk, oynuyor }) {
+  const seviye = useMuzikSeviyesi(oynuyor)
+  const ritim = seviye != null
   return (
     <span data-zaman-dalgasi className="flex min-w-0 flex-1 items-center justify-center gap-[2px] overflow-hidden" style={{ height: 11 }} aria-hidden>
       {DALGA_BOYLARI.map((boy, i) => (
@@ -138,9 +153,11 @@ export function ZamanDalgasi({ renk, oynuyor }) {
           style={{
             height: '100%',
             background: renk || 'currentColor',
-            transform: `scaleY(${oynuyor ? boy : 0.2})`,
+            transform: `scaleY(${ritim ? cubukOlcegi(boy, seviye, i) : oynuyor ? boy : 0.2})`,
             opacity: oynuyor ? 0.85 : 0.35,
-            animation: oynuyor ? `resonance-zaman-dalga ${0.7 + (i % 4) * 0.15}s ease-in-out ${(i * 0.07).toFixed(2)}s infinite alternate` : 'none',
+            // Ölçer varken müziğin seviyesi sürer; yoksa süs animasyonu
+            transition: ritim ? 'transform 90ms linear' : undefined,
+            animation: oynuyor && !ritim ? `resonance-zaman-dalga ${0.7 + (i % 4) * 0.15}s ease-in-out ${(i * 0.07).toFixed(2)}s infinite alternate` : 'none',
             '--dalga-boy': boy,
           }}
         />

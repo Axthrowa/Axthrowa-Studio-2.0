@@ -7,6 +7,7 @@
  */
 import { db } from '../../db/index.js';
 import { hataMetni } from '../../core/logger.js';
+import { trKatla } from '../../core/text.js';
 
 export interface AnketGirdisi {
   title?: unknown;
@@ -52,6 +53,42 @@ export async function anketBaslat(g: AnketGirdisi): Promise<AnketSonucu> {
     poll: { id, title, question: title, options, votes: [], endsAt, durationSeconds }
   });
   return { ok: true, id, title, options, durationSeconds, command };
+}
+
+/**
+ * Düz sohbet mesajı oy mu? Yalnız numara ("2") ya da şıkkın kendisi ("Valorant", büyük-küçük ve Türkçe harf
+ * farkı önemsiz) oy sayılır; içinde başka söz geçen mesaj sayılmaz. Dönen değer şık sırası (0'dan), yoksa null.
+ */
+export function anketOyuCoz(metin: string, secenekler: string[]): number | null {
+  const t = String(metin || '').trim();
+  if (!t || t.length > 100) return null;
+  if (/^\d{1,2}$/.test(t)) {
+    const n = Number(t);
+    return n >= 1 && n <= secenekler.length ? n - 1 : null;
+  }
+  const i = secenekler.findIndex((s) => trKatla(s) === trKatla(t));
+  return i >= 0 ? i : null;
+}
+
+/** Oyu yazar ve widget'lara duyurur. Aynı kişi ikinci kez oy veremez: false döner. */
+export async function anketOyuKaydet(poll: any, kullanici: string, sira: number): Promise<boolean> {
+  try {
+    db.prepare('INSERT INTO poll_votes (id, poll_id, username, option_index, voted_at) VALUES (?, ?, ?, ?, ?)').run(`vote-${Date.now()}-${kullanici}`, poll.id, kullanici.toLowerCase(), sira, Date.now());
+  } catch {
+    return false;
+  }
+  const votes = db.prepare('SELECT option_index, COUNT(*) as count FROM poll_votes WHERE poll_id = ? GROUP BY option_index').all(poll.id);
+  const { wsHub } = await import('../../ws/server.js');
+  wsHub.broadcastTo(['all'], { type: 'poll_update', poll: { ...poll, options: JSON.parse(poll.options || '[]'), votes, endsAt: poll.ends_at } });
+  return true;
+}
+
+/** Süresi dolmamış açık anket (yoksa null) */
+export function acikAnket(): any | null {
+  const poll = db.prepare('SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1').get() as any;
+  // Kapatıcı 5 sn'de bir kapatır; arada gelen oy sayılmasın
+  if (!poll || (Number(poll.ends_at) > 0 && Date.now() > Number(poll.ends_at))) return null;
+  return poll;
 }
 
 /** Açık anketi kapatır; sonuçları döndürür (açık anket yoksa null). */

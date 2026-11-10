@@ -140,7 +140,7 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
         );
       })}
       <div style={{ fontSize: 11, color: s.fontColor, opacity: 0.7, marginTop: 8 }}>
-        {ended ? 'Anket bitti' : `${remaining} sn kaldı`} · {s.command} 1-{poll.options.length}
+        {ended ? 'Anket bitti' : `${remaining} sn kaldı`} · sohbete 1-{poll.options.length} ya da şıkkı yaz
       </div>
     </div>
   );

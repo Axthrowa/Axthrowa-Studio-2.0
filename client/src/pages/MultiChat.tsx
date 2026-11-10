@@ -18,6 +18,10 @@ type ElleEylem = 'timeout' | 'ban' | 'unban';
 
 const GECMIS_ACIK = { gecmis: true };
 
+/** Hazır susturma süreleri (dakika) */
+const SURE_SECENEKLERI = [1, 5, 10, 30, 60, 360, 1440, 10080];
+export const sureMetni = (dk: number) => (dk % 1440 === 0 ? `${dk / 1440} gün` : dk % 60 === 0 ? `${dk / 60} saat` : `${dk} dakika`);
+
 /** Canlı Sohbet ayarı sunucuda durur: uygulama yeniden açılınca ve Studio içinde de korunur */
 const PANEL_SOHBET_AYARI = '/api/widgets/panel-sohbet/settings';
 const AVATAR_VARSAYILAN = { avatarGoster: true, avatarBoyut: 28, avatarBicim: 'circle' };
@@ -74,6 +78,9 @@ export function MultiChat() {
   const [yetenekler, setYetenekler] = useState<YetenekHaritasi>({});
   const [modBusy, setModBusy] = useState<ElleEylem | 'karaliste' | null>(null);
   const [modMesaj, setModMesaj] = useState<{ ok: boolean; text: string } | null>(null);
+  // Susturma süresi (dakika): hazır seçenek ya da "Özel" ile elle girilen değer
+  const [sureDk, setSureDk] = useState(10);
+  const [ozelSure, setOzelSure] = useState(false);
 
   useEffect(() => {
     void yetenekleriGetir().then(setYetenekler);
@@ -239,21 +246,37 @@ export function MultiChat() {
     if (!selectedViewer) return;
     const { username, platform } = selectedViewer;
     if (eylem === 'ban' && !confirm(`@${username} ${platform} platformunda KALICI olarak banlanacak. Emin misiniz?`)) return;
+    const dk = Math.min(10080, Math.max(1, Math.round(Number(sureDk)) || 10));
     setModBusy(eylem);
     setModMesaj(null);
     try {
       const res = await fetch(`/api/moderation/${eylem}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform, username, saniye: 600, sebep: 'Panelden moderatör kararı' })
+        body: JSON.stringify({ platform, username, saniye: dk * 60, sebep: 'Panelden moderatör kararı' })
       });
       const d = await res.json().catch(() => ({}));
-      const ne = eylem === 'timeout' ? '10 dakika susturuldu' : eylem === 'ban' ? 'kalıcı olarak banlandı' : 'banı kaldırıldı';
+      const ne = eylem === 'timeout' ? `${sureMetni(dk)} susturuldu` : eylem === 'ban' ? 'kalıcı olarak banlandı' : 'banı kaldırıldı';
       setModMesaj(d?.ok ? { ok: true, text: `@${username} ${ne}.` } : { ok: false, text: d?.hata || `HTTP ${res.status}` });
     } catch {
       setModMesaj({ ok: false, text: 'Sunucuya ulaşılamadı' });
     } finally {
       setModBusy(null);
+    }
+  };
+
+  /** Tek mesajı platformda siler (gerçek eylem). Silinince platformun olayıyla listeden de kalkar. */
+  const mesajiSil = async (msg: any) => {
+    try {
+      const res = await fetch('/api/moderation/delete-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: msg.platform, messageId: msg.id, username: msg.user?.username })
+      });
+      const d = await res.json().catch(() => ({}));
+      bildir(d?.ok ? 'Mesaj silindi.' : `Mesaj silinemedi: ${d?.hata || `HTTP ${res.status}`}`);
+    } catch {
+      bildir('Mesaj silinemedi: sunucuya ulaşılamadı');
     }
   };
 
@@ -436,6 +459,17 @@ export function MultiChat() {
                     >
                       📌
                     </button>
+                    {yetenekler[msg.platform]?.moderasyon?.mesajSil && (
+                      <button
+                        type="button"
+                        title="Mesajı sil (platformda herkes için silinir)"
+                        aria-label="Mesajı sil"
+                        onClick={() => void mesajiSil(msg)}
+                        className="text-gray-400 opacity-60 hover:opacity-100 hover:text-red-300 transition-opacity cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
 
                   <div className="text-gray-200 text-sm font-medium break-words leading-relaxed">
@@ -640,9 +674,41 @@ export function MultiChat() {
                 <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
                 Moderasyon ({selectedViewer.platform})
               </div>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-300">
+                <label htmlFor="sustur-sure" className="font-semibold">Susturma süresi</label>
+                <select
+                  id="sustur-sure"
+                  value={ozelSure ? 'ozel' : String(sureDk)}
+                  onChange={(e) => {
+                    if (e.target.value === 'ozel') return setOzelSure(true);
+                    setOzelSure(false);
+                    setSureDk(Number(e.target.value));
+                  }}
+                  className="bg-black/60 border border-white/10 rounded-lg px-1.5 py-1 text-white"
+                >
+                  {SURE_SECENEKLERI.map((dk) => (
+                    <option key={dk} value={dk}>{sureMetni(dk)}</option>
+                  ))}
+                  <option value="ozel">Özel…</option>
+                </select>
+                {ozelSure && (
+                  <>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10080}
+                      aria-label="Susturma süresi (dakika)"
+                      value={sureDk}
+                      onChange={(e) => setSureDk(Number(e.target.value))}
+                      className="w-20 bg-black/60 border border-white/10 rounded-lg px-1.5 py-1 text-white"
+                    />
+                    <span>dakika (en çok 7 gün)</span>
+                  </>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {([
-                  ['timeout', '10 dk sustur'],
+                  ['timeout', 'Sustur'],
                   ['ban', 'Kalıcı banla'],
                   ['unban', 'Banı kaldır']
                 ] as Array<[ElleEylem, string]>).map(([eylem, etiket]) => {

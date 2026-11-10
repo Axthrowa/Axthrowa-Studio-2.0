@@ -40,6 +40,25 @@ const SAYI = /^-?\d+$/;
 
 /** Tamamen anlamsız (onarılamaz) şablon soruları */
 const COP_SORU = [/bilgisi #\d+/i, /^bir oyuncu \d+ sayı attıysa/i, /\(sadece bu veri\)/i];
+
+/**
+ * Şablonla üretilmiş, bilgi istemeyen aşırı kolay sorular ("1925 ile 1929 yılları arasında geçen süre kaç yıldır?",
+ * "3 sayısının bir fazlası kaçtır?"). Bankadan atılır, yeniden içe aktarılmaz.
+ */
+const COK_KOLAY = [
+  /\d+ ile \d+ yılları arasında geçen süre/i,
+  /sayısının bir fazlası kaçtır/i,
+  /^\d+ sayı \+ \d+ sayı toplamı/i,
+  /^bir atomda \d+ proton varsa/i,
+  /yılı hangi yüzyıldadır/i,
+  /hangi milenyumdadır/i,
+  /^bir dizi \d+\. sezonundaysa/i,
+  /^bir tablo \d+ katmanda/i,
+  /hangi tür bir yapımıdır/i,
+  /konusu\/alanı hangisine yakındır/i,
+  /hangi sanat dalıyla özdeşleşir/i,
+  /^bir (yılda|haftada|günde|saatte|dakikada) kaç/i,
+];
 const COP_SECENEK = [/^yanlış [a-d]\d+$/i, /^doğru bilgi \d+$/i];
 
 /** Anlamsız doldurma: onarılamazsa soru atılır */
@@ -60,7 +79,7 @@ const YER_TUTUCU = [
 ];
 
 export function copSoruMu(q: Soru): boolean {
-  return COP_SORU.some((r) => r.test(q.question)) || secenekler(q).some((s) => COP_SECENEK.some((r) => r.test(norm(s))));
+  return COP_SORU.some((r) => r.test(q.question)) || COK_KOLAY.some((r) => r.test(String(q.question).trim())) || secenekler(q).some((s) => COP_SECENEK.some((r) => r.test(norm(s))));
 }
 
 export function anlamsizMi(secenek: string): boolean {

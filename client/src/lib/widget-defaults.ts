@@ -239,8 +239,7 @@ export const EMOTE_COMBO_DEFAULTS = {
   speed: 1,
   soundEnabled: true,
   soundUrl: '',
-  soundVolume: 0.6,
-  onlyKnownEmotes: false
+  soundVolume: 0.6
 };
 
 export const LABELS_DEFAULTS = {

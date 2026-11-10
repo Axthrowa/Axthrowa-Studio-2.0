@@ -8,10 +8,11 @@ import fs from 'fs';
 import { randomUUID as uuidv4 } from 'crypto';
 import { TRIVIA_SEED_QUESTIONS } from './trivia-data.js';
 import { TRIVIA_EXTRA_QUESTIONS } from './trivia-extra.js';
+import { TRIVIA_ZOR_SORULAR } from './trivia-zor.js';
 import { bankayiDenetle, copSoruMu } from './soru-kalite.js';
 
 /** Kalite kuralları değişince bu artar: banka bir kez daha denetlenir */
-export const KALITE_SURUMU = '1';
+export const KALITE_SURUMU = '2';
 
 export interface TriviaSyncResult {
   added: number;
@@ -233,7 +234,7 @@ export function syncTriviaBank(database: DatabaseSync): TriviaSyncResult {
     for (const q of TRIVIA_SEED_QUESTIONS) {
       if (insertIfNew(database, check, insert, q)) sources.core++;
     }
-    for (const q of TRIVIA_EXTRA_QUESTIONS) {
+    for (const q of [...TRIVIA_EXTRA_QUESTIONS, ...TRIVIA_ZOR_SORULAR]) {
       if (insertIfNew(database, check, insert, q)) sources.extra++;
     }
     sources.json = importJsonBank(database, check, insert);

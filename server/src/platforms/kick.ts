@@ -844,6 +844,10 @@ export class KickPlatform extends BasePlatform {
     try {
       const hedefId = await this.hedefKimligi(ad);
       if (!hedefId) return { ok: false, hata: `${ad} kullanicisi bulunamadi` };
+      // Kick bunu aciklamasiz "Invalid request" ile reddediyor: sebebi soyleyelim
+      if (tur !== 'unban' && hedefId === Number(this.broadcasterUserId)) {
+        return { ok: false, hata: 'Yayıncının kendisi susturulamaz ya da banlanamaz. Başka bir izleyicide deneyin.' };
+      }
 
       const govde = { broadcaster_user_id: Number(this.broadcasterUserId), user_id: hedefId, ...ek };
       const basliklar = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -858,7 +862,7 @@ export class KickPlatform extends BasePlatform {
       const mesaj =
         durum === 401 || durum === 403
           ? 'Kick tokeninde "moderation:ban" izni yok — Platformlar > Kick > yeniden baglan (yeni izinlerle)'
-          : String(e?.response?.data?.message || e?.message || e);
+          : `${String(e?.response?.data?.message || e?.message || e)}${durum === 400 ? ' (Kick isteği reddetti: hedef yayıncı/moderatör olabilir ya da zaten yasaklı)' : ''}`;
       console.warn(`[Kick] ${tur} basarisiz (${ad}):`, mesaj);
       return { ok: false, hata: mesaj };
     }

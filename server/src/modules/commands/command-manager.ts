@@ -14,7 +14,7 @@ import { kuyruk } from '../engagement/queue.js';
 import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
 import { baslangicDuyurusu, giveaway, kazananDuyurusu } from '../giveaways/giveaways.js';
-import { anketBaslat, anketBitir, anketKomutuCoz, anketSonucMetni } from '../engagement/anket.js';
+import { acikAnket, anketBaslat, anketBitir, anketOyuCoz, anketOyuKaydet, anketKomutuCoz, anketSonucMetni } from '../engagement/anket.js';
 import { sohbetIstatistik } from '../community/sohbet-istatistik.js';
 import { hatirlatmaKur, kisaSure, lurkBasla, lurkBitir, skorKomutu, skorMetni, skorOku, skorYaz, sureCoz } from '../community/sohbet-araclari.js';
 import { kelimeKuraliDerle, kelimeEslesmesi } from '../automod/kelime-kurali.js';
@@ -192,6 +192,16 @@ export class CommandManager {
     if (!text.startsWith(prefix)) {
       // Award active chatter points
       economy.getUser(message.platform, message.user.username, message.user.displayName);
+      // Açık ankette komut gerekmez: sohbete yalnız numara ("2") ya da şıkkın adı yazılınca oy sayılır.
+      // Sessiz kaydedilir (yüzlerce oya tek tek yanıt sohbeti boğar); ikinci oy yok sayılır.
+      const anket = acikAnket();
+      if (anket && !message.user.isSelf) {
+        const sira = anketOyuCoz(text, JSON.parse(anket.options || '[]'));
+        if (sira !== null) {
+          await anketOyuKaydet(anket, message.user.username, sira);
+          return null;
+        }
+      }
       // Önek yoksa yalnız "Sohbet anahtar kelimesi" komutları bakılır
       return this.anahtarKelimeIsle(message, text);
     }
@@ -304,7 +314,7 @@ export class CommandManager {
     const r = await anketBaslat({ title: c.soru, options: c.secenekler, durationSeconds: c.sure });
     if (!r.ok) return r.hata;
     const liste = r.options.map((o, i) => `${i + 1}) ${o}`).join('  ');
-    return `📊 ANKET: ${r.title} — ${liste} · Oy vermek için ${r.command} <numara> (${r.durationSeconds} sn)`;
+    return `📊 ANKET: ${r.title} — ${liste} · Oy vermek için sohbete numarasını (1-${r.options.length}) ya da şıkkın adını yaz (${r.durationSeconds} sn)`;
   }
 
   private async executeBuiltIn(name: string, args: string[], message: ChatMessagePayload): Promise<string | null> {
@@ -654,18 +664,12 @@ export class CommandManager {
         if (!poll) return `@${message.user.displayName}, aktif anket yok.`;
         // Süresi dolmuş ankete oy yok (kapatıcı 5 sn'de bir kapatır; arada gelen oy sayılmasın)
         if (Number(poll.ends_at) > 0 && Date.now() > Number(poll.ends_at)) return `@${message.user.displayName}, anket sona erdi.`;
-        const choice = parseInt(args[0], 10);
         const opts = JSON.parse(poll.options || '[]');
-        if (!choice || choice < 1 || choice > opts.length) return `@${message.user.displayName}, ${poll.command || '!oy'} 1-${opts.length} yaz.`;
-        try {
-          db.prepare('INSERT INTO poll_votes (id, poll_id, username, option_index, voted_at) VALUES (?, ?, ?, ?, ?)').run(`vote-${Date.now()}-${message.user.username}`, poll.id, message.user.username.toLowerCase(), choice - 1, Date.now());
-        } catch {
-          return `@${message.user.displayName}, zaten oy verdin.`;
-        }
-        const votes = db.prepare('SELECT option_index, COUNT(*) as count FROM poll_votes WHERE poll_id = ? GROUP BY option_index').all(poll.id);
-        const { wsHub } = await import('../../ws/server.js');
-        wsHub.broadcastTo(['all'], { type: 'poll_update', poll: { ...poll, options: opts, votes, endsAt: poll.ends_at } });
-        return `@${message.user.displayName}, oyun kaydedildi: ${opts[choice - 1]}`;
+        // Komutla da numara ya da şıkkın adı yazılabilir
+        const sira = anketOyuCoz(args.join(' '), opts);
+        if (sira === null) return `@${message.user.displayName}, oy için sohbete 1-${opts.length} ya da şıkkın adını yaz.`;
+        if (!(await anketOyuKaydet(poll, message.user.username, sira))) return `@${message.user.displayName}, zaten oy verdin.`;
+        return `@${message.user.displayName}, oyun kaydedildi: ${opts[sira]}`;
       }
 
       case 'clip': {

@@ -78,3 +78,28 @@ describe('üreteçler', () => {
     expect(yakinSayilar(0).every((x) => Number(x) >= 0)).toBe(true);
   });
 });
+
+describe('aşırı kolay şablon sorular ve zor soru seti', async () => {
+  const { TRIVIA_ZOR_SORULAR } = await import('./trivia-zor.js');
+  const soru = (question: string) => ({ category: 'Tarih', question, optionA: '4', optionB: '1925', optionC: '3854', optionD: '1929', correctOption: 'A' });
+
+  it('bilgi istemeyen şablon sorular atılır, gerçek sorular kalır', () => {
+    expect(copSoruMu(soru('1925 ile 1929 yılları arasında geçen süre kaç yıldır?'))).toBe(true);
+    expect(copSoruMu(soru('3 sayısının bir fazlası kaçtır?'))).toBe(true);
+    expect(copSoruMu(soru('1520 hangi milenyumdadır?'))).toBe(true);
+    expect(copSoruMu(soru('Malazgirt Savaşı hangi yıldır?'))).toBe(false);
+  });
+
+  it('zor sorular: yinelenmez, dört ayrı şık, doğru şık yerinde, kalite denetiminden geçer', () => {
+    expect(TRIVIA_ZOR_SORULAR.length).toBeGreaterThan(150);
+    expect(new Set(TRIVIA_ZOR_SORULAR.map((q) => q.question)).size).toBe(TRIVIA_ZOR_SORULAR.length);
+    for (const q of TRIVIA_ZOR_SORULAR) {
+      const siklar = [q.optionA, q.optionB, q.optionC, q.optionD];
+      expect(new Set(siklar.map((s) => s.toLocaleLowerCase('tr-TR'))).size, q.question).toBe(4);
+      expect(copSoruMu(q), q.question).toBe(false);
+    }
+    // Doğru şık hep aynı harfe düşmez
+    expect(new Set(TRIVIA_ZOR_SORULAR.map((q) => q.correctOption)).size).toBe(4);
+    expect(bankayiDenetle(TRIVIA_ZOR_SORULAR.map((q, i) => ({ ...q, id: String(i) }))).atilacak).toEqual([]);
+  });
+});

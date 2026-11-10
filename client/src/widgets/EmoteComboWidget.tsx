@@ -198,10 +198,8 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
       if (m.data?.karaListede || m.data?.kalkanda) return;
       const metin = String(m.data?.message || m.payload?.message || '').trim();
       if (!metin || metin.startsWith('!')) return;
-      const bulunan = emoteleriAyikla(metin, harita.current, 1)[0];
-      // "Yalnız bilinen emote" kapalıysa tek kelimelik mesaj da sayılır (ör. LUL)
-      const tekKelime = !ayar.current.onlyKnownEmotes && !/\s/.test(metin) && metin.length <= 30 ? { ad: metin } : null;
-      const e = bulunan || tekKelime;
+      // Yalnız gerçek emote sayılır: art arda yazılan düz yazı (tek kelime de olsa) kombo olmaz, ekrana çıkmaz
+      const e = emoteleriAyikla(metin, harita.current, 1)[0];
       if (e) isle(e);
     };
     return () => {

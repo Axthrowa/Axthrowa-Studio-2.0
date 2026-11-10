@@ -13,13 +13,14 @@ const ROZET_RENGI: Record<Rozet['tur'], string> = {
   bilinmiyor: 'border-dashed border-zinc-600 text-zinc-400'
 };
 
+// `renk`: platformun marka rengi; kartın üst çizgisi, logo rozeti ve zemin tonu bundan gelir
 const PLATFORMLAR = [
-  { key: 'kick', name: 'Kick' },
-  { key: 'twitch', name: 'Twitch' },
-  { key: 'youtube', name: 'YouTube' },
-  { key: 'discord', name: 'Discord' },
-  { key: 'tiktok', name: 'TikTok' },
-  { key: 'trovo', name: 'Trovo' },
+  { key: 'kick', name: 'Kick', renk: '#53fc18' },
+  { key: 'twitch', name: 'Twitch', renk: '#9146ff' },
+  { key: 'youtube', name: 'YouTube', renk: '#ff3b30' },
+  { key: 'discord', name: 'Discord', renk: '#5865f2' },
+  { key: 'tiktok', name: 'TikTok', renk: '#fe2c55' },
+  { key: 'trovo', name: 'Trovo', renk: '#19d65c' },
 ];
 
 const TEST_UYARILARI = [
@@ -114,15 +115,21 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
                 type="button"
                 key={p.key}
                 onClick={() => onConnectPlatform?.(p.key)}
-                className={`${DONANIM_TUSU} flex min-h-24 min-w-0 flex-col justify-between gap-2 p-2 text-left`}
+                className={`${DONANIM_TUSU} relative flex min-h-24 min-w-0 flex-col justify-between gap-2 overflow-hidden p-2 text-left hover:-translate-y-0.5 motion-reduce:hover:translate-y-0`}
+                style={{
+                  borderTop: `3px solid ${p.renk}`,
+                  backgroundImage: `linear-gradient(160deg, ${p.renk}${isConnected ? '33' : '1a'}, transparent 65%)`
+                }}
                 title={`${p.name} bağlama ekranını aç`}
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-2">
-                    <PlatformLogo platform={p.key} size={16} />
-                    <span className="truncate text-sm font-semibold">{p.name}</span>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ color: p.renk, background: `${p.renk}26`, boxShadow: `inset 0 0 0 1px ${p.renk}66` }}>
+                      <PlatformLogo platform={p.key} size={18} />
+                    </span>
+                    <span className="truncate text-sm font-semibold" style={{ color: isConnected ? p.renk : undefined }}>{p.name}</span>
                   </span>
-                  <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${isConnected ? 'bg-[#53fc18]' : 'bg-zinc-700'}`} />
+                  <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: isConnected ? p.renk : '#3f3f46', boxShadow: isConnected ? `0 0 8px ${p.renk}` : undefined }} />
                 </span>
                 <span className="flex flex-col items-start gap-1">
                   <span className={`max-w-full truncate font-mono text-xs ${isConnected ? 'text-zinc-200' : 'text-zinc-500'}`}>

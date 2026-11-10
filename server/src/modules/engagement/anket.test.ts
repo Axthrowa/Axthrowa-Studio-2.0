@@ -57,3 +57,17 @@ describe('süre dolan anketin sonucu', () => {
     expect(yayinSohbetleri(pm)).toEqual(['kick', 'youtube']);
   });
 });
+
+describe('düz sohbet mesajından oy', () => {
+  const siklar = ['Valorant', 'CS2', 'İzle sadece'];
+  it('yalnız numara ya da şıkkın adı oy sayılır', async () => {
+    const { anketOyuCoz } = await import('./anket.js');
+    expect(anketOyuCoz('2', siklar)).toBe(1);
+    expect(anketOyuCoz(' valorant ', siklar)).toBe(0);
+    expect(anketOyuCoz('izle sadece', siklar)).toBe(2);
+    expect(anketOyuCoz('4', siklar)).toBeNull();
+    expect(anketOyuCoz('0', siklar)).toBeNull();
+    expect(anketOyuCoz('bence valorant', siklar)).toBeNull();
+    expect(anketOyuCoz('', siklar)).toBeNull();
+  });
+});

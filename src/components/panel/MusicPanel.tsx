@@ -52,8 +52,10 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
   // Resonance paketlenmemişse iframe sessizce boş kalır; kullanıcıya söyle.
   useEffect(() => {
     let cancelled = false;
-    fetch(`${base}/resonance/`, { cache: "no-store" })
-      .then((r) => !cancelled && setAvailable(r.ok))
+    // Yalnız r.ok yetmez: Resonance'sız sunucu bu yola Studio'nun kendi index.html'ini döndürür ve çerçevede uygulama kendini açar.
+    fetch(`${base}/resonance/dashboard/home`, { cache: "no-store" })
+      .then(async (r) => r.ok && (await r.text()).includes("<title>Resonance</title>"))
+      .then((resonanceVar) => !cancelled && setAvailable(resonanceVar))
       .catch(() => !cancelled && setAvailable(false));
     return () => {
       cancelled = true;

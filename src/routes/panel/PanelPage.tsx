@@ -1666,7 +1666,7 @@ export default function PanelPage() {
     <div className="flex h-screen w-full flex-col overflow-hidden bg-axthrowa-dark">
     {/* Üst şerit (pencere başlığı + durum): arayüz yenilemesinden; altındaki ekranlar 1.6.13 */}
     <PencereBasligi title={tt("brand.title")}>
-      {/* Sol menüyü gizle/göster: küçük ekranda içeriğe yer açar; tercih bu bilgisayarda saklanır */}
+      {/* Sol menüyü daralt/genişlet: yalnız simgeler kalır, içeriğe yer açar; tercih bu bilgisayarda saklanır */}
       <button
         type="button"
         aria-pressed={menuGizli}
@@ -1694,9 +1694,8 @@ export default function PanelPage() {
     <KarsilamaEkrani />
     <div className="panel-shell flex !min-h-0 w-full flex-1 flex-row overflow-hidden bg-panel-bg text-white">
       <MusicBridge />
-      {/* Gizliyken de bağlı kalır: menü düzenleme durumu kaybolmaz */}
-      <div className={menuGizli ? "hidden" : "contents"}>
       <NavTabBar
+        dar={menuGizli}
         visibleTabs={visibleTabs}
         activeNav={String(activeNav)}
         botSayfa={botSekme}
@@ -1714,7 +1713,6 @@ export default function PanelPage() {
           onClose={() => setEditLayout(false)}
         />
       </NavTabBar>
-      </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[var(--dt-surface-2)] px-3">
         <div className="flex min-w-0 items-center gap-3">

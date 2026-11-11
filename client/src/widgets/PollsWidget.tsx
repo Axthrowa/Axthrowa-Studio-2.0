@@ -59,16 +59,20 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 500);
     if (previewMode) return () => clearInterval(t);
-    fetch('/api/polls/active')
-      .then((r) => r.json())
-      .then((d) => {
-        const p = anketAyikla(d?.poll);
-        // Süresi çoktan dolmuş eski anketi geri getirme
-        if (p && p.endsAt > Date.now()) setPoll(p);
-      })
-      .catch(() => {});
+    const yukle = () =>
+      fetch('/api/polls/active')
+        .then((r) => r.json())
+        .then((d) => {
+          const p = anketAyikla(d?.poll);
+          // Süresi çoktan dolmuş eski anketi geri getirme
+          if (p && p.endsAt > Date.now()) setPoll(p);
+        })
+        .catch(() => {});
+    void yukle();
     // Her olay ayrı işlenir (useWebSocket son mesajı birleştirebiliyordu)
     const ws = new KaliciSoket(wsAdresi());
+    // Kopukken başlayan anket ve gelen oylar kaçmasın
+    ws.onyenidenbaglandi = () => void yukle();
     ws.onmessage = (e) => {
       let m: any;
       try {

@@ -62,17 +62,24 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
     if (onizleme) return;
     kapaliRef.current = false;
 
-    fetch('/api/king')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d && d.displayName) {
-          setKing(d);
-          setSeconds(Number(d.reignSeconds) || 0);
-        }
-      })
-      .catch(() => {});
+    // `sifirla`: yeniden bağlanınca kral yoksa eskisi ekranda kalmasın (kopukken devrilmiş olabilir)
+    const yukle = (sifirla: boolean) =>
+      fetch('/api/king')
+        .then((r) => (r.ok ? r.json() : undefined))
+        .then((d) => {
+          if (d && d.displayName) {
+            setKing(d);
+            setSeconds(Number(d.reignSeconds) || 0);
+          } else if (sifirla && d !== undefined) {
+            setKing(null);
+            setSeconds(0);
+          }
+        })
+        .catch(() => {});
+    void yukle(false);
 
     const ws = new KaliciSoket(wsAdresi());
+    ws.onyenidenbaglandi = () => void yukle(true);
     ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);

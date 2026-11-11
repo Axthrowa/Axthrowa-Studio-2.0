@@ -46,14 +46,19 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
 
   useEffect(() => {
     if (onizleme) return;
-    fetch('/api/pinned')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d && d.message) setPinned(d);
-      })
-      .catch(() => {});
+    // `sifirla`: yeniden bağlanınca sabit mesaj yoksa eskisi ekranda kalmasın
+    const yukle = (sifirla: boolean) =>
+      fetch('/api/pinned')
+        .then((r) => (r.ok ? r.json() : undefined))
+        .then((d) => {
+          if (d && d.message) setPinned(d);
+          else if (sifirla && d !== undefined) setPinned(null);
+        })
+        .catch(() => {});
+    void yukle(false);
 
     const ws = new KaliciSoket(wsAdresi());
+    ws.onyenidenbaglandi = () => void yukle(true);
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);

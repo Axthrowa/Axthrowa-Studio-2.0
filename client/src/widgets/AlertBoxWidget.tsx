@@ -2,7 +2,7 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
-import confetti from 'canvas-confetti';
+import { kutla } from '../lib/kutlama.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ALERT_ADVANCED_DEFAULTS } from '../lib/widget-defaults.js';
 import {
@@ -34,13 +34,24 @@ interface AlertItem {
   layoutMode?: 'stacked' | 'side-by-side' | 'text-over';
   textEffect?: string;
   soundVolume: number;
+  amount: number;
+  isTest: boolean;
+}
+
+// Tek ses bağlamı: her zil için yenisi açılıp kapatılmıyordu, uzun yayında tarayıcının bağlam sınırı dolup zil susuyordu
+let sesBaglami: AudioContext | null = null;
+function sesBaglamiAl(): AudioContext | null {
+  const Sinif = window.AudioContext || (window as any).webkitAudioContext;
+  if (!Sinif) return null;
+  sesBaglami ??= new Sinif();
+  if (sesBaglami.state === 'suspended') void sesBaglami.resume().catch(() => {});
+  return sesBaglami;
 }
 
 function playSynthesizedChime(volume: number = 0.7) {
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
+    const ctx = sesBaglamiAl();
+    if (!ctx) return;
     const now = ctx.currentTime;
     
     // Pleasant dual-tone chime (C5 -> E5 -> G5 -> C6)
@@ -76,6 +87,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
   const [kuyruk, setKuyruk] = useState<KuyrukDurumu>(BOS_DURUM);
   const gorulenler = useRef(new GorulenKimlikler(200));
   const [imgError, setImgError] = useState(false);
+  /** Bekleyen kutlama atışlarını iptal eder (yeni uyarı gelince / kaynak kapanınca) */
+  const kutlamaIptal = useRef<() => void>(() => {});
+  useEffect(() => () => kutlamaIptal.current(), []);
   const [showHelper, setShowHelper] = useState(!embedded);
 
   const params = new URLSearchParams(window.location.search);
@@ -92,12 +106,10 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
   const unlockAudio = () => {
     setShowHelper(false);
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) {
-        const ctx = new AudioContextClass();
-        ctx.resume();
-      }
-    } catch {}
+      sesBaglamiAl();
+    } catch {
+      /* ses yoksa görsel yine çalışır */
+    }
   };
 
   // Check URL query parameters for instant preview/test
@@ -118,7 +130,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
           animation: 'bounce',
           layoutMode: 'stacked',
           textEffect: 'shine',
-          soundVolume: 0.7
+          soundVolume: 0.7,
+          amount: 0,
+          isTest: true
         });
       }, 500);
     }
@@ -138,7 +152,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       animation: olayYoksaGenel(raw.animation, advanced.animation, 'bounce'),
       layoutMode: olayYoksaGenel(raw.layoutMode || raw.layout_mode, advanced.layoutMode, 'stacked') as AlertItem['layoutMode'],
       textEffect: olayYoksaGenel(raw.textEffect || raw.text_effect, advanced.textEffect, 'shine'),
-      soundVolume: raw.soundVolume ?? raw.sound_volume ?? 0.7
+      soundVolume: raw.soundVolume ?? raw.sound_volume ?? 0.7,
+      amount: Number(raw.amount) || 0,
+      isTest: raw.isTest === true
     };
   };
 
@@ -150,8 +166,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
    * WebSocket yeniden baglandiginda ayni uyari iki kez oynuyordu.
    */
   const enqueueAlert = (item: AlertItem) => {
-    if (item.eventType === 'tip' && advanced.minTipAmount && Number((item as any).amount || 0) < advanced.minTipAmount) return;
-    if (item.eventType === 'kicks' && advanced.minKicks && Number((item as any).amount || 0) < advanced.minKicks) return;
+    // Eşik: tutar eskiden uyarıya hiç taşınmıyordu, eşik açıkken TÜM bağışlar düşüyordu. Test uyarısı eşiğe takılmaz.
+    const esik = item.eventType === 'tip' ? Number(advanced.minTipAmount) : item.eventType === 'kicks' ? Number(advanced.minKicks) : 0;
+    if (!item.isTest && esik > 0 && item.amount < esik) return;
 
     // Ayni uyariyi iki kez oynatma
     if (gorulenler.current.gorduk(item.id)) return;
@@ -197,11 +214,8 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     }
 
     if (advanced.confetti && ['sub', 'tip', 'raid', 'gift_tiktok', 'follow', 'gift_sub', 'kicks', 'host'].includes(alert.eventType)) {
-      try {
-        confetti({ particleCount: alert.eventType === 'follow' ? 50 : 90, spread: 80, origin: { y: 0.6 } });
-      } catch {
-        /* konfeti yoksa sorun degil */
-      }
+      kutlamaIptal.current();
+      kutlamaIptal.current = kutla(String(advanced.celebration || 'konfeti'), alert.eventType === 'follow' ? 0.55 : 1);
     }
   };
 
@@ -283,7 +297,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     animation: 'bounce',
     layoutMode: 'stacked',
     textEffect: 'shine',
-    soundVolume: 0.7
+    soundVolume: 0.7,
+    amount: 0,
+    isTest: true
   };
 
   const aktifUyari = (kuyruk.aktif?.veri as AlertItem | undefined) || null;

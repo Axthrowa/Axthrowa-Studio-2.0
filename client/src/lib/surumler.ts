@@ -11,6 +11,17 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.15',
+    ad: 'Havai fişek',
+    tarih: '2026-11-11',
+    notlar: [
+      'Uyarı kutusu: kutlama efekti ekranın tam ortasından çıkar; yeni efektler: havai fişek, yıldız patlaması, kalp yağmuru, yan toplar, konfeti yağmuru, rastgele',
+      'Uyarı kutusu: "en düşük bağış / Kicks" eşiği açıkken tüm bağış uyarıları düşüyordu, düzeltildi',
+      'Uyarı kutusu: uzun yayında zil sesinin susmasına yol açan ses bağlamı sızıntısı giderildi',
+      'Hype Train, Kral, Sabit Mesaj ve Anket katmanları bot yeniden bağlanınca güncel durumu yeniden okur'
+    ]
+  },
+  {
     surum: '1.13.14',
     ad: 'Oylama',
     tarih: '2026-11-11',

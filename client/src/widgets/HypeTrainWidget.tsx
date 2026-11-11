@@ -75,6 +75,8 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
     if (onizleme) return;
     gercegiYukle();
     const ws = new KaliciSoket(wsAdresi());
+    // Bağlantı koptuğu sırada tren bitmiş/ilerlemiş olabilir
+    ws.onyenidenbaglandi = () => void gercegiYukle();
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);

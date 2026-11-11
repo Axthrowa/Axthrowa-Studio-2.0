@@ -8,6 +8,7 @@ import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { KUTU_TASARIMLARI } from '../lib/widget-style.js';
 import { yaziAilesi } from '../lib/widget-style.js';
 import { YAPISAL_KABUKLAR } from '../lib/kabuklar.js';
+import { KUTLAMA_SECENEKLERI } from '../lib/kutlama.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI, SUREKLI_EFEKTLER, eskiHareketiCevir } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
@@ -71,7 +72,7 @@ const LABELS: Record<string, string> = {
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
   textTransform: 'Metin dönüşümü', minCombo: 'Kaç kez art arda gelince belirsin', maxSize: 'En büyük emote boyu', speed: 'Hız (1 normal, 0.5 yarı hız, 0.1 en yavaş)', barIconFlip: 'Simgeyi ters çevir', kasaTema: 'Kayan isim kartları', drawSec: 'Çekiliş kayma süresi (sn)', showBorder: 'Çerçeve göster', timeoutMs: 'Son emote vardıktan kaç ms sonra patlasın',
   displayMs: 'Gösterim (ms)', size: 'Emote boyutu', showFloating: 'Uçan emote', showPopup: 'Popup göster',
-  confetti: 'Konfeti', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
+  confetti: 'Kutlama efekti açık', celebration: 'Kutlama efekti', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
   gatherMode: "Gelen emote'lar büyük emote'ta toplansın", burstOnEnd: "Kombo bitince emote'lar etrafa dağılıp kaybolsun",
   showTop: 'Top bağışçı', separator: 'Ayırıcı', marqueeSpeed: 'Kayan yazı hızı', height: 'Yükseklik',
   paddingX: 'Yatay dolgu', command: 'Komut', titleColor: 'Başlık rengi', showVotes: 'Oy sayısı',
@@ -191,7 +192,7 @@ const SECTIONS: Record<string, string> = {
   decimals: 'Düzen', prefix: 'Düzen', suffix: 'Düzen', height: 'Düzen', paddingX: 'Düzen',
   showVotes: 'Düzen', hideUntilEnd: 'Düzen', layoutMode: 'Düzen', queueEnabled: 'Gelişmiş',
   gapMs: 'Gelişmiş', ttsEnabled: 'Gelişmiş', ttsReadMessage: 'Gelişmiş', textEffect: 'Gelişmiş',
-  minTipAmount: 'Gelişmiş', minKicks: 'Gelişmiş', skipEnabled: 'Gelişmiş', confetti: 'Gelişmiş',
+  minTipAmount: 'Gelişmiş', minKicks: 'Gelişmiş', skipEnabled: 'Gelişmiş', confetti: 'Gelişmiş', celebration: 'Gelişmiş',
   usernameColorMode: 'Düzen', customUsernameColor: 'Görünüm', chatStyle: 'Görünüm', platformColors: 'Görünüm',
   iconFollow: 'İkonlar', iconSub: 'İkonlar', iconTip: 'İkonlar', iconRaid: 'İkonlar', iconHost: 'İkonlar', iconKicks: 'İkonlar',
   title: 'Hedef', endingTitle: 'Hedef', current: 'Hedef', target: 'Hedef', currency: 'Hedef', type: 'Hedef',
@@ -370,7 +371,8 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
     { value: 'side-by-side', label: 'Yan yana' },
     { value: 'text-over', label: 'Yazı üstünde' }
   ],
-  textEffect: METIN_EFEKTLERI
+  textEffect: METIN_EFEKTLERI,
+  celebration: [...KUTLAMA_SECENEKLERI]
 };
 
 /**

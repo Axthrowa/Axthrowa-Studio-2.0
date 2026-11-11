@@ -9,6 +9,7 @@ import { ALERT_ADVANCED_DEFAULTS, FONTS, uyariKaydiGovdesi, yeniUyariKaydi } fro
 import { ANIM_SECENEKLERI, animKimligi } from '../lib/animations.js';
 import AlertVariants from '../components/AlertVariants.js';
 import { MediaLibrary, type MedyaOgesi } from '../components/MediaLibrary.js';
+import { KUTLAMA_SECENEKLERI, kutla } from '../lib/kutlama.js';
 import { yetenekleriGetir, olayEtiketi, type YetenekHaritasi } from '../lib/capabilities.js';
 
 const TABS = [
@@ -124,7 +125,15 @@ export function AlertsStudio() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="text-xs text-gray-300 font-bold">Kuyruk <input className="ml-2" type="checkbox" checked={advanced.queueEnabled} onChange={e => setAdvanced(a => ({ ...a, queueEnabled: e.target.checked }))} /></label>
           <label className="text-xs text-gray-300 font-bold">Alert atla <input className="ml-2" type="checkbox" checked={advanced.skipEnabled} onChange={e => setAdvanced(a => ({ ...a, skipEnabled: e.target.checked }))} /></label>
-          <label className="text-xs text-gray-300 font-bold">Konfeti <input className="ml-2" type="checkbox" checked={advanced.confetti} onChange={e => setAdvanced(a => ({ ...a, confetti: e.target.checked }))} /></label>
+          <label className="text-xs text-gray-300 font-bold">Kutlama efekti <input className="ml-2" type="checkbox" checked={advanced.confetti} onChange={e => setAdvanced(a => ({ ...a, confetti: e.target.checked }))} /></label>
+          <label className="text-xs text-gray-300 font-bold space-y-1">Efekt türü
+            <span className="flex gap-2">
+              <select value={advanced.celebration || 'konfeti'} disabled={!advanced.confetti} onChange={e => setAdvanced(a => ({ ...a, celebration: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 disabled:opacity-50">
+                {KUTLAMA_SECENEKLERI.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
+              </select>
+              <button type="button" onClick={() => kutla(advanced.celebration || 'konfeti')} className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 text-xs hover:bg-white/10">Dene</button>
+            </span>
+          </label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Aralık (ms)<input type="number" value={advanced.gapMs} onChange={e => setAdvanced(a => ({ ...a, gapMs: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Min bağış<input type="number" value={advanced.minTipAmount} onChange={e => setAdvanced(a => ({ ...a, minTipAmount: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs text-gray-300 font-bold space-y-1">Min kicks<input type="number" value={advanced.minKicks} onChange={e => setAdvanced(a => ({ ...a, minKicks: Number(e.target.value) }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>

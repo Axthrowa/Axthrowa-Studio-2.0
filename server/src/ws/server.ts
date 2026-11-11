@@ -558,6 +558,8 @@ export class WebSocketHub {
       presetId: preset.id,
       isTest,
       eventType: preset.event_type,
+      // Uyarı kutusunun "en düşük bağış / Kicks" eşiği bunu okur
+      amount: Number(variables?.amount) || 0,
       title,
       message,
       soundUrl: preset.sound_url,

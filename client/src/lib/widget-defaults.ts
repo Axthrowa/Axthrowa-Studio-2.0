@@ -400,7 +400,9 @@ export const ALERT_ADVANCED_DEFAULTS = {
   // Eşikler
   minTipAmount: 0,
   minKicks: 0,
-  confetti: true
+  confetti: true,
+  /** Kutlama efekti türü (lib/kutlama.ts) */
+  celebration: 'konfeti'
 };
 
 // Çekiliş KURALLARI (süre, kazanan sayısı, şartlar) Çekilişler sayfasında; bunlar yalnız katman görünümü.

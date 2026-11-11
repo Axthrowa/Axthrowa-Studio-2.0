@@ -1053,6 +1053,9 @@ fn first_text(settings: &AppSettings, pointers: &[&str]) -> String {
   String::new()
 }
 
+/// Çıkış süresi boşken yayını kapatan güvenlik ağı (dk); asıl bitişi Çıkış sayfasının medya sonu yapar.
+const ENDING_SAFETY_MIN: u64 = 15;
+
 fn minutes_to_hold(raw: &str, default_min: u64) -> Duration {
   let parsed = raw.parse::<f64>().unwrap_or(0.0);
   let minutes = if parsed > 0.0 { parsed } else { default_min as f64 };
@@ -1103,7 +1106,10 @@ fn read_stream_plan(settings: &AppSettings) -> StreamSequencePlan {
     live,
     ending,
     start_hold: minutes_to_hold(&start_raw, 5),
-    end_hold: minutes_to_hold(&end_raw, 2),
+    // Süre girilmemişse panel "video/müzik bitince" diyor: bitişi Çıkış sayfası (medya sonu) yapar.
+    // Eskiden 2 dk varsayılanı 4:40'lık çıkış videosunu yarıda kesip yayını kapatıyordu. Buradaki uzun
+    // süre yalnız güvenlik ağı (Çıkış sayfası OBS'te yüklü değilse yayın sonsuza dek açık kalmasın).
+    end_hold: minutes_to_hold(&end_raw, ENDING_SAFETY_MIN),
     start_auto: start_rule.auto,
     end_auto: end_rule.auto,
   }
@@ -1310,6 +1316,13 @@ pub async fn obs_stop_stream_sequence(
 mod rule_hold_tests {
   use super::*;
   use serde_json::json;
+
+  #[test]
+  fn cikis_suresi_bosken_video_yarida_kesilmez() {
+    // Gerçek ayar: endingMinutes 0, çıkış videosu 4:40. Yayın 2. dakikada kapanmamalı.
+    assert!(minutes_to_hold("", ENDING_SAFETY_MIN) > Duration::from_secs(5 * 60));
+    assert_eq!(minutes_to_hold("3", ENDING_SAFETY_MIN), Duration::from_secs(180));
+  }
 
   #[test]
   fn kural_yoksa_eski_davranis_zamanlayici_acik() {

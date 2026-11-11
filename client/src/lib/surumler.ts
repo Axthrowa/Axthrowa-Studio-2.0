@@ -11,6 +11,16 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.16',
+    ad: 'Sağlık',
+    tarih: '2026-11-11',
+    notlar: [
+      'OBS katman sağlığı: durum şeridindeki OBS noktası bir katman koptuğunda sarıya döner ve hangisinin koptuğunu söyler; widget ayarlarında katmanın OBS'te açık olup olmadığı yazar',
+      'Kutlama efekti (konfeti, havai fişek, yıldız, kalp…) çark, çekiliş, Bil Bakalım, shoutout ve mağaza katmanlarında da seçilebilir; çarkın konfeti ayarı artık çalışıyor',
+      'Jenerik bot yeniden bağlanınca listeyi yeniler; uyarı sesi yüklenemezse yerleşik zil çalar, görsel seçilmemişse dış adrese gidilmez'
+    ]
+  },
+  {
     surum: '1.13.15',
     ad: 'Havai fişek',
     tarih: '2026-11-11',

@@ -177,6 +177,7 @@ router.get('/durum-ozeti', async (_req: Request, res: Response) => {
     platformlar: Object.keys(durumlar).filter((k) => durumlar[k]?.connected),
     muzik: m.spotify.connected ? 'spotify' : m.harici.spotify ? 'yya-spotify' : m.ytmd.connected ? 'ytmd' : null,
     obsKaynak: wsHub.obsKaynakSayisi(),
+    katmanlar: wsHub.katmanDurumu(),
     ai: { saglayici: saglayici || 'gemini', hazir: aiHazir }
   });
 });

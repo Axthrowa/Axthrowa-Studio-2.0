@@ -2,6 +2,7 @@
  * AxBoT widget settings
  * Developed by AxthrowA
  */
+import { KatmanBaglantisi } from '../components/KatmanBaglantisi.js';
 import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
 import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
@@ -687,6 +688,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
     <div className="p-4 bg-black/40 rounded-xl border border-white/5 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-xs font-bold text-gray-200 shrink-0">Widget Ayarları</h4>
+        <KatmanBaglantisi yol={PATH_MAP[widgetId] || ''} />
         <input
           type="search"
           value={ara}

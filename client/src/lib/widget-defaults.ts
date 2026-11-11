@@ -347,6 +347,7 @@ export const WHEEL_DEFAULTS = {
   /** Orta göbekte görsel/GIF */
   centerImageUrl: '',
   confetti: true,
+  celebration: 'konfeti',
   command: '!cark',
   outlineEnabled: true,
   outlineColor: '#000000',
@@ -424,7 +425,9 @@ export const GIVEAWAY_DEFAULTS = {
   animation: 'fade',
   showKeyword: true,
   showEntries: true,
-  showTimer: true
+  showTimer: true,
+  confetti: true,
+  celebration: 'havaiFisek'
 };
 
 
@@ -514,7 +517,9 @@ export const TRIVIA_DEFAULTS = {
   /** Doğru cevap gösterildikten kaç sn sonra kaybolsun (0 = kaybolmasın) */
   hideDelaySec: 3,
   /** Turnuva kürsüsü kaç sn ekranda kalsın (0 = kalsın) */
-  podiumHideSec: 8
+  podiumHideSec: 8,
+  confetti: true,
+  celebration: 'konfeti'
 };
 
 
@@ -689,7 +694,8 @@ export const SHOUTOUT_DEFAULTS = {
   showLabel: true,
   showBio: true,
   showUrl: true,
-  confetti: true
+  confetti: true,
+  celebration: 'konfeti'
 };
 
 /** Sıralama tablosu — sıralama ölçütü, tema, madalya ve satır sayısı. */
@@ -869,6 +875,7 @@ export const LOYALTY_DEFAULTS = {
   showCost: true,
   showPayload: true,
   confetti: true,
+  celebration: 'konfeti',
   soundEnabled: false
 };
 

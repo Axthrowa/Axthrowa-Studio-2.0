@@ -5,8 +5,21 @@ export interface DurumOzeti {
   platformlar: string[];
   muzik: 'spotify' | 'yya-spotify' | 'ytmd' | null;
   obsKaynak: number;
+  /** Widget sayfalarının bağlantısı (sunucu: ws/katmanDurumu.ts) */
+  katmanlar?: KatmanSatiri[];
   ai: { saglayici: string; hazir: boolean };
 }
+
+export interface KatmanSatiri {
+  katman: string;
+  bagli: number;
+  obs: number;
+  sonBaglanti: number;
+  sonKopma: number;
+}
+
+/** Bu oturumda bağlanıp sonra kopan (şu an bağlı olmayan) katmanlar: yayında görünmüyorlar */
+export const kopanKatmanlar = (l: KatmanSatiri[] = []) => l.filter((k) => k.bagli === 0 && k.sonKopma > 0);
 
 /** 10 sn'de bir yenilenen durum özeti (yüklenene kadar null). */
 export function useDurumOzeti(): DurumOzeti | null {

@@ -98,9 +98,20 @@ export function sunucuPortu(konum: { port: string } = window.location): string {
 }
 
 /** Overlay WebSocket adresi. */
+/** Bu sayfa yüklemesinin kimliği (aynı sayfanın soketleri sunucuda tek kaynak sayılır) */
+const SAYFA_KIMLIGI = Math.random().toString(36).slice(2, 12);
+
+/** `/widgets/alertbox` → `alertbox`; widget sayfası değilse boş (panel bağlantıları katman sayılmaz) */
+export function katmanAdi(yol: string): string {
+  const m = /^\/widgets\/([a-z0-9-]{1,40})\/?$/i.exec(yol);
+  return m ? m[1].toLowerCase() : '';
+}
+
 export function wsAdresi(tur = 'all'): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.hostname}:${sunucuPortu()}/ws?type=${tur}`;
+  // Katman adı: panel hangi OBS katmanının bağlı olduğunu gösterebilsin
+  const katman = katmanAdi(window.location.pathname);
+  return `${protocol}//${window.location.hostname}:${sunucuPortu()}/ws?type=${tur}${katman ? `&katman=${katman}&sayfa=${SAYFA_KIMLIGI}` : ''}`;
 }
 
 import { YAPISAL_KABUKLAR, yapisalKabukStilleri } from './kabuklar.js';

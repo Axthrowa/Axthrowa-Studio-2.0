@@ -153,6 +153,7 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
       void Promise.all(yeni.flatMap((y) => (y.parca.url ? [gorseliCoz(y.parca.url)] : []))).then(baslat);
     };
 
+    // yeniden-baglanma: gerekmez — anlık emote patlaması; kaçan olay sonradan anlamsız
     const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (e) => {
       let m: any;

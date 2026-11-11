@@ -9,7 +9,7 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import confetti from 'canvas-confetti';
+import { kutla } from '../lib/kutlama.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { GIVEAWAY_DEFAULTS } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
@@ -106,7 +106,7 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
         setTimeout(() => {
           setKasa(null);
           setWinner(kazanan);
-          void confetti({ particleCount: 140, spread: 90, origin: { y: 0.55 } });
+          if (ayar.current.confetti !== false) kutla(String(ayar.current.celebration || 'havaiFisek'));
           if (sonucSn > 0) zamanlar.current.push(setTimeout(() => setWinner(null), sonucSn * 1000));
         }, sureMs + 500)
       );

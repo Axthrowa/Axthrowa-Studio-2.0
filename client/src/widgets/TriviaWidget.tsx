@@ -34,7 +34,7 @@ import {
   PenTool,
   Quote
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { kutla } from '../lib/kutlama.js';
 
 interface TriviaOptionDist {
   count: number;
@@ -160,6 +160,12 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
     (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1');
   // Panelden ayarlanabilir görünüm (renk, genişlik, kontur, ses).
   const ayar = useWidgetSettings('trivia', TRIVIA_DEFAULTS);
+  // Soket dinleyicisi bir kez kurulur: güncel ayarı ref'ten okur
+  const ayarRef = useRef(ayar);
+  ayarRef.current = ayar;
+  const kutlaAyarli = (guc: number) => {
+    if (ayarRef.current.confetti !== false) kutla(String(ayarRef.current.celebration || 'konfeti'), guc);
+  };
   const [state, setState] = useState<TriviaState | null>(previewMode ? SAMPLE_QUESTION : null);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -303,19 +309,11 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
             } else if (msg.type === 'trivia_answer_reveal') {
               setState(msg.data);
               playSound('reveal');
-              confetti({
-                particleCount: 50,
-                spread: 70,
-                origin: { y: 0.7 }
-              });
+              kutlaAyarli(0.5);
             } else if (msg.type === 'trivia_podium') {
               setState(prev => prev ? { ...prev, status: 'podium' } : null);
               playSound('podium');
-              confetti({
-                particleCount: 100,
-                spread: 100,
-                origin: { y: 0.6 }
-              });
+              kutlaAyarli(1);
             }
           } catch {}
         };

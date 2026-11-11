@@ -486,6 +486,7 @@ export function OverlayKatmanlari({ config, onizleme = false, canliKatmanlar, ol
   // Test düğmesi: kendi olayı olmayan katmanın örneği birkaç saniye görünür
   const [ornekler, setOrnekler] = useState<string[]>([]);
   useEffect(() => {
+    // yeniden-baglanma: gerekmez — yalnız Test düğmesinin örnek gösterimi
     const ws = new KaliciSoket(wsAdresi());
     const zamanlar: Array<ReturnType<typeof setTimeout>> = [];
     ws.onmessage = (e) => {

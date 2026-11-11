@@ -11,7 +11,7 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
+import { kutla } from '../lib/kutlama.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SHOUTOUT_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, dikey, onizlemeKipi, wsAdresi, kartTasarimlari } from '../lib/widget-style.js';
@@ -46,11 +46,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
     setSo(data);
     setVisible(true);
     if (a.confetti) {
-      try {
-        confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
-      } catch {
-        /* konfeti yoksa sorun değil */
-      }
+      kutla(String(a.celebration || 'konfeti'));
     }
     // Önceki shoutout'un sayaçları temizlenmezse kart erken kapanıyordu.
     if (gizleRef.current) clearTimeout(gizleRef.current);
@@ -71,6 +67,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
       });
     }
 
+    // yeniden-baglanma: gerekmez — anlık tanıtım kartı; kaçan shoutout komutla yeniden atılır
     const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (event) => {
       try {

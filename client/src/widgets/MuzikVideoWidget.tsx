@@ -78,6 +78,7 @@ export function MuzikVideoWidget({ embedded = false, previewMode = false }: { em
         .catch(() => {});
     cek();
     const t = setInterval(cek, 3000);
+    // yeniden-baglanma: gerekmez — sıra zaten 3 sn'de bir yoklanıyor
     const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (e) => {
       let tur: unknown;

@@ -82,6 +82,7 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
       return;
     }
 
+    // yeniden-baglanma: gerekmez — anlık korku efekti; kopukken gelen olayı sonradan oynatmak yayında yersiz olur
     const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (event) => {
         try {

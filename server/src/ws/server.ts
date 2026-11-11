@@ -1,3 +1,4 @@
+import { KatmanIzleyici, katmanAdiTemizle, type KatmanSatiri } from './katmanDurumu.js';
 import { WebSocketServer, WebSocket } from 'ws';
 import { izinliHostMu, kokenKabulEdilir } from '../core/security/origin-guard.js';
 import { arayuzAdresleri, ekIzinliHostlar } from '../core/security/host-list.js';
@@ -20,6 +21,10 @@ interface ClientConnection {
   type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals' | 'wheel' | 'audio' | 'pano' | 'sesli' | 'all';
   /** OBS tarayıcı kaynağı mı (kullanıcı aracısında "OBS/" geçer) — panel durum şeridi için */
   obs?: boolean;
+  /** Hangi widget sayfası (ör. `alertbox`); panel bağlantılarında yok */
+  katman?: string;
+  /** Sayfa kimliği: bir widget sayfasının birden çok soketi tek kaynak sayılsın */
+  sayfa?: string;
 }
 
 /**
@@ -52,6 +57,13 @@ export class WebSocketHub {
     } catch {
       /* bozuk ayar: otomatik shoutout atlanır */
     }
+  }
+
+  private katmanlar = new KatmanIzleyici();
+
+  /** Widget sayfalarının bağlantı durumu (panelde OBS noktası) */
+  katmanDurumu(): KatmanSatiri[] {
+    return this.katmanlar.durum(this.clients);
   }
 
   /** Şu an bağlı OBS tarayıcı kaynağı sayısı */
@@ -142,9 +154,20 @@ export class WebSocketHub {
     this.wss.on('connection', (ws: WebSocket, req) => {
       const url = new URL(req.url || '', `http://${req.headers.host}`);
       const type = (url.searchParams.get('type') || 'all') as any;
+      const katman = katmanAdiTemizle(url.searchParams.get('katman'));
+      const sayfa = katmanAdiTemizle(url.searchParams.get('sayfa'));
 
-      const clientConn: ClientConnection = { ws, type, obs: /\bOBS\//.test(String(req.headers['user-agent'] || '')) };
+      const clientConn: ClientConnection = { ws, type, obs: /\bOBS\//.test(String(req.headers['user-agent'] || '')), katman, sayfa };
       this.clients.add(clientConn);
+      if (katman) this.katmanlar.baglandi(katman);
+      // close ve error ikisi de gelebilir: kopma bir kez yazılır
+      let kapandi = false;
+      const kapat = () => {
+        if (kapandi) return;
+        kapandi = true;
+        this.clients.delete(clientConn);
+        if (katman) this.katmanlar.koptu(katman);
+      };
 
       // Send initial state
       this.sendToClient(clientConn, {
@@ -165,13 +188,8 @@ export class WebSocketHub {
         }
       });
 
-      ws.on('close', () => {
-        this.clients.delete(clientConn);
-      });
-
-      ws.on('error', () => {
-        this.clients.delete(clientConn);
-      });
+      ws.on('close', kapat);
+      ws.on('error', kapat);
     });
 
     this.setupEventForwarding();

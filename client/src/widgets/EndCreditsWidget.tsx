@@ -62,6 +62,8 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
     // Widget "Test" düğmesi ve yayın sonu komutu `credits_start` yayınlar;
     // eskiden dinlenmiyordu, jenerik yalnız sayfa açılışında bir kez akıyordu.
     const ws = new KaliciSoket(wsAdresi());
+    // Kopukken gelen takip/abone jenerikte eksik kalmasın
+    ws.onyenidenbaglandi = () => void yukle();
     ws.onmessage = (ev) => {
       try {
         const m = JSON.parse(ev.data);

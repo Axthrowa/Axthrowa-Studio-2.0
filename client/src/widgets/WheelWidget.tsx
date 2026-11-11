@@ -13,6 +13,7 @@ import { kutuTasarimi } from '../lib/widget-style.js';
 import { CIKIS_ORANI, animStili, efektEkle, ortakHareket, type AnimAsamasi } from '../lib/animations.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
+import { kutla } from '../lib/kutlama.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { WHEEL_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi } from '../lib/widget-style.js';
@@ -284,6 +285,8 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
       timer.current = setTimeout(() => {
         setSpinning(false);
         setWinner(segments[guvenli]?.label || null);
+        // `confetti` ayarı vardı ama hiç okunmuyordu: kazanan çıkınca kutlama yoktu
+        if (s.confetti && !onizleme) kutla(String(s.celebration || 'konfeti'));
       }, sure);
     }, bekle);
   };

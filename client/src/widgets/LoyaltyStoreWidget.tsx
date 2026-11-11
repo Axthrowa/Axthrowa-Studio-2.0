@@ -11,7 +11,7 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
+import { kutla } from '../lib/kutlama.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { LOYALTY_DEFAULTS } from '../lib/widget-defaults.js';
 import { rgba, dikey, sayiYaz, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
@@ -54,11 +54,7 @@ export function LoyaltyStoreWidget({ embedded = false, previewMode = false }: Lo
     setVisible(true);
 
     if (a.confetti) {
-      try {
-        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
-      } catch {
-        /* konfeti yoksa sorun değil */
-      }
+      kutla(String(a.celebration || 'konfeti'));
     }
     if (a.soundEnabled) {
       try {
@@ -78,6 +74,7 @@ export function LoyaltyStoreWidget({ embedded = false, previewMode = false }: Lo
 
   useEffect(() => {
     if (onizleme) return;
+    // yeniden-baglanma: gerekmez — anlık ödül bildirimi; geçmişi sohbet ve panel tutar
     const ws = new KaliciSoket(wsAdresi());
     ws.onmessage = (e) => {
       try {

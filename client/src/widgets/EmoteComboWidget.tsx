@@ -178,6 +178,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
       sonra(() => setGelenler((g) => g.filter((x) => x.id !== yeni.id)), ucusSuresi(a.speed) + 50);
     };
 
+    // yeniden-baglanma: gerekmez — anlık sohbet akışı; kopukken yazılan emote'lar zaten eski kombodur
     const ws = new KaliciSoket(wsAdresi('chatbox'));
     ws.onmessage = (ev) => {
       let m: any;

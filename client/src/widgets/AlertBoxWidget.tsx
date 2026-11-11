@@ -145,7 +145,8 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       title: raw.title || raw.title_template || 'YENİ BİLDİRİM!',
       message: raw.message || raw.message_template || '',
       soundUrl: raw.soundUrl || raw.sound_url || '',
-      imageUrl: raw.imageUrl || raw.image_url || 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif',
+      // Görsel seçilmemişse dış adrese gidilmez: internet yokken de yerleşik kart görünür
+      imageUrl: raw.imageUrl || raw.image_url || '',
       durationMs: raw.durationMs || raw.duration_ms || 5000,
       textColor: raw.textColor || raw.text_color || '#ffffff',
       accentColor: raw.accentColor || raw.accent_color || '#3EEDFE',
@@ -205,7 +206,15 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       try {
         const audio = new Audio(alert.soundUrl);
         audio.volume = Math.max(0, Math.min(1, (alert.soundVolume ?? 0.7) * (advanced.globalVolume ?? 1)));
-        audio.play().catch(() => playSynthesizedChime(alert.soundVolume));
+        // Ses dosyası yüklenemezse (internet yok, adres kalkmış) yerleşik zil: uyarı sessiz kalmasın, iki kez de çalmasın
+        let yedekCaldi = false;
+        const yedek = () => {
+          if (yedekCaldi) return;
+          yedekCaldi = true;
+          playSynthesizedChime(alert.soundVolume);
+        };
+        audio.onerror = yedek;
+        audio.play().catch(yedek);
       } catch {
         playSynthesizedChime(alert.soundVolume);
       }

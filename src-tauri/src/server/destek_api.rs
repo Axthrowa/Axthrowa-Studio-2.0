@@ -72,6 +72,19 @@ async fn api_paket(
 }
 
 /// Paketin gizlenmemiş hâli (yalnız bellekte) ve bölüm adları.
+async fn bot_ozeti() -> Value {
+  let adres = format!("http://127.0.0.1:{}/api/durum-ozeti", crate::streamaxt::port());
+  let istemci = match reqwest::Client::builder().timeout(std::time::Duration::from_secs(2)).build() {
+    Ok(i) => i,
+    Err(e) => return json!({"hata": e.to_string()}),
+  };
+  match istemci.get(&adres).send().await {
+    Ok(y) if y.status().is_success() => y.json::<Value>().await.unwrap_or_else(|e| json!({"hata": e.to_string()})),
+    Ok(y) => json!({"hata": format!("HTTP {}", y.status())}),
+    Err(_) => json!({"hata": "AxBoT'a ulaşılamadı (kapalı olabilir)"}),
+  }
+}
+
 async fn topla(state: &Arc<AppState>) -> (Value, Vec<&'static str>) {
   let mut p = json!({
     "bicim": "yya-destek-paketi",
@@ -115,7 +128,12 @@ async fn topla(state: &Arc<AppState>) -> (Value, Vec<&'static str>) {
   };
   bolumler.push("denetim");
 
+  // AxBoT: hangi OBS katmanı bağlı / koptu, hangi platform bağlı (sırsız özet; bot kapalıysa not düşülür)
+  p["bot"] = bot_ozeti().await;
+  bolumler.push("bot");
+
   let mut gunluk = serde_json::Map::new();
+  gunluk.insert("axthrowa.log".into(), json!(son_satirlar(&state.data_dir.join("logs").join("axthrowa.log"), 200)));
   gunluk.insert("hotkey-hatalari.log".into(), json!(son_satirlar(&state.data_dir.join("hotkey-hatalari.log"), 100)));
   if let Some(d) = crate::streamaxt::find_dir() {
     gunluk.insert("streamaxt.log".into(), json!(son_satirlar(&d.join("streamaxt.log"), 100)));

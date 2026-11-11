@@ -30,6 +30,13 @@ Provada çıkan her hata Aşama 1'in başına eklenir.
 
 ## Aşama 1 — Güvenilirlik (Studio 1.6.19 / AxBoT 1.13.16)
 
+**Durum (11 Kasım):** Aşama 0 provaları yayıncı tarafından başarıyla tamamlandı.
+- 1 tamam: katman sağlığı durum şeridinde ve widget ayarlarında (sandbox'ta katman açıp kapatarak doğrulandı).
+- 2 tamam: soketli her widget ya yeniden okur ya da nedenini yazar; `yenidenBaglanma.test.ts` denetler.
+- 3 kısmen: dış görsel zorlanmıyor, ses yüklenemezse yerleşik zil. Kayıtlı ön ayarlardaki giphy/mixkit adresleri kullanıcının verisi olduğu için değiştirilmedi; yerel varsayılan medya için dosya seçimi/indirme kararı bekliyor.
+- 4 tamam: `canvas-confetti` yalnız widget dışı panel sayfalarında ve `kutlama.ts`'de kaldı.
+- 5 tamam: "Sorun bildir" zaten Ayarlar → Destek paketi olarak vardı; Studio günlüğü (son 200 satır) ve bot katman özeti eklendi.
+
 Amaç: yayın ortasında hiçbir şeyin sessizce bozulmaması.
 
 1. **Widget sağlık panosu.** Bot, her OBS katmanının son bağlantı anını zaten biliyor (WebSocket). Canlı ekranına "Katmanlar" kutusu: her widget için yeşil / sarı (30 sn'dir sessiz) / kırmızı (bağlı değil).

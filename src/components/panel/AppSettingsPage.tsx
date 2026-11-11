@@ -29,6 +29,7 @@ import YardimSayfasi from "./YardimSayfasi";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
+import { TabPanel, Tabs } from "../ui";
 import { streamaxtBase } from "../../lib/streamaxt";
 
 type Tab = "general" | "help" | "about";
@@ -156,30 +157,19 @@ export default function AppSettingsPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 overflow-visible p-4 pb-16">
-      {/* Segmented Tab Bar */}
-      <div className="flex gap-1.5 rounded-2xl border border-white/[0.07] bg-black/40 p-1.5 shadow-inner">
-        {visibleTabs.map((id) => {
+      {/* Sekme şeridi: Hazırlık, Bot ve diğer sayfalarla aynı bileşen */}
+      <Tabs
+        label={t("nav.grup.ayarlar")}
+        idPrefix="ayar"
+        value={activeTab}
+        onValueChange={(id) => setTab(id as Tab)}
+        items={visibleTabs.map((id) => {
           const meta = SETTINGS_SECTIONS.find((s) => s.id === id);
-          const isActive = activeTab === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              className={cn(
-                "flex-1 rounded-xl px-4 py-2.5 text-xs md:text-sm font-bold tracking-wide transition-all duration-150",
-                isActive
-                  ? "border border-panel-accent/40 bg-panel-accent/90 text-[#08131c] shadow-glow-sm"
-                  : "text-white/70 hover:bg-white/[0.05] hover:text-white"
-              )}
-              onClick={() => setTab(id)}
-            >
-              {meta ? t(meta.labelKey as MsgKey) : id}
-            </button>
-          );
+          return { id, label: meta ? t(meta.labelKey as MsgKey) : id };
         })}
-      </div>
+      />
 
-      <div key={activeTab} className="yya-sayfa-gir">
+      <TabPanel key={activeTab} idPrefix="ayar" id={activeTab} className="yya-sayfa-gir">
       {activeTab === "general" && (
         // Geniş ekranda iki sütun: ayar blokları bölünmez, ayırıcı çizgiler sütunda gereksiz
         <div className="columns-1 gap-8 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass xl:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid [&>hr]:hidden xl:[&>hr]:hidden">
@@ -508,7 +498,7 @@ export default function AppSettingsPage({
           </div>
         </div>
       )}
-      </div>
+      </TabPanel>
     </div>
   );
 }

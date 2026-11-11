@@ -2,7 +2,7 @@
 
 Kick odaklı, çok platformlu canlı yayın botu ve OBS overlay stüdyosu. Kendi bilgisayarınızda çalışır ve tarayıcıdan yönetilir. Tek başına kullanılabilir; [AxthrowA Studio](https://github.com/Axthrowa/Axthrowa-Studio) içinde de "Bot" sekmesi olarak gömülü çalışır.
 
-Geçerli sürüm: **1.13.13**.
+Geçerli sürüm: **1.13.14**.
 
 ## Neler yapar
 

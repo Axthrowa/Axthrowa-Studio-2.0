@@ -11,6 +11,19 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.14',
+    ad: 'Oylama',
+    tarih: '2026-11-11',
+    notlar: [
+      'Anket: sohbete yalnız numara (1, 2, 3…) ya da şıkkın adı yazılınca oy sayılır, komut gerekmez',
+      "Emote kombo yalnız gerçek emote'ları sayar; art arda yazılan düz yazı ekrana çıkmaz",
+      'Bil Bakalım: bilgi istemeyen şablon sorular kaldırıldı, yaklaşık 200 zor soru eklendi',
+      'Çoklu sohbet: susturma süresi seçilebilir, mesaj silme düğmesi, dar yan sütunda sıkışmayan düzen',
+      'Genel Bakış: platform kartları marka rengi ve logosuyla',
+      'Resonance: dalgalar OBS ses ölçerinden müziğin ritmiyle oynar, geçen ve kalan süre birlikte değişir',
+    ]
+  },
+  {
     surum: '1.13.13',
     ad: 'Oyuncu',
     tarih: '2026-11-09',

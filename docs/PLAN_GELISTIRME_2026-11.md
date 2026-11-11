@@ -20,6 +20,12 @@ Her işin yanında **Bitti sayılır** ölçütü var: o ölçüt sınanmadan i�
 
 Provada çıkan her hata Aşama 1'in başına eklenir.
 
+**11 Kasım sonuçları (açık uygulamadan yalnız okuyarak):**
+- 0.2 tamam: 1.6.18 kütüphaneyi 8 eski klasörden birleştirdi, seçili logo 200 ile sunuluyor, eski klasörler duruyor.
+- 0.1 için bulunan hata: çıkış süresi boşken Rust yayını 2. dakikada kapatıyordu, 4:40'lık çıkış videosu yarıda kalıyordu. Düzeltildi (`cc0e5f7`): bitişi video sonu yapar, 15 dk yalnız güvenlik ağı. Pakete girmedi.
+- 0.5: OBS ölçerleri okunuyor; "Müzik" kaynağı sessizdi, dalga denemesi müzik çalarken yapılmalı.
+- 0.1 (gerçek başlat/bitir), 0.3, 0.4: gerçek yayın ve gerçek sohbet gerektirir, yayıncı yapar.
+
 ---
 
 ## Aşama 1 — Güvenilirlik (Studio 1.6.19 / AxBoT 1.13.16)

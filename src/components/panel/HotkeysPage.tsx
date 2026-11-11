@@ -60,7 +60,7 @@ export default function HotkeysPage({
               <Keyboard className="size-5.5" />
             </span>
             <div>
-              <h2 className="font-display text-xl font-bold tracking-tight text-white">
+              <h2 className="text-base font-semibold text-white">
                 Stüdyo Kısayolları
               </h2>
               <p className="text-sm font-medium text-white/80">

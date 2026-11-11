@@ -118,9 +118,9 @@ export default function ObsShortcutSettings({
           : "grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
       }
     >
-      <section className="min-w-0 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
+      <section className="min-w-0 rounded-lg border border-white/[0.07] bg-panel-card/60 p-4">
         <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
-          <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+          <h3 className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-white">
             <Keyboard className="h-4.5 w-4.5 text-panel-accent" /> Sahne kısayolları
           </h3>
           <button
@@ -152,7 +152,7 @@ export default function ObsShortcutSettings({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="flex-1 rounded-lg bg-panel-accent/85 px-3 py-2 text-xs md:text-sm font-bold text-[#08131c] transition hover:bg-panel-accent"
+                    className="flex-1 rounded-lg border border-panel-accent/40 bg-panel-accent/10 px-3 py-1.5 text-xs font-semibold text-panel-accent transition hover:bg-panel-accent/20"
                     onClick={() =>
                       onGoScene(sceneVal, label, id === "game" ? undefined : (id as SceneNavHint))
                     }
@@ -218,7 +218,7 @@ export default function ObsShortcutSettings({
                   />
                   <button
                     type="button"
-                    className="shrink-0 rounded-lg bg-panel-accent/85 px-3 py-1.5 text-xs font-bold text-[#08131c]"
+                    className="shrink-0 rounded-lg border border-panel-accent/40 bg-panel-accent/10 px-3 py-1.5 text-xs font-semibold text-panel-accent hover:bg-panel-accent/20"
                     disabled={!sceneName}
                     onClick={() => onGoScene(sceneName, customLabel)}
                   >
@@ -286,8 +286,8 @@ export default function ObsShortcutSettings({
         </div>
       </section>
 
-      <section className="min-w-0 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
-        <h3 className="mb-2.5 flex items-center gap-2 border-b border-white/[0.06] pb-2.5 text-sm font-bold uppercase tracking-wider text-white">
+      <section className="min-w-0 rounded-lg border border-white/[0.07] bg-panel-card/60 p-4">
+        <h3 className="mb-2.5 flex items-center gap-2 border-b border-white/[0.06] pb-2.5 text-[13px] font-semibold uppercase tracking-wide text-white">
           <Volume2 className="h-4.5 w-4.5 text-panel-accent" /> Ses kısayolları
         </h3>
         <div className="mb-3 grid grid-cols-2 gap-2.5">

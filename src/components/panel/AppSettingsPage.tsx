@@ -29,7 +29,7 @@ import YardimSayfasi from "./YardimSayfasi";
 import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/panelLayout";
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
-import { TabPanel, Tabs } from "../ui";
+import { SegmentedControl, TabPanel, Tabs } from "../ui";
 import { streamaxtBase } from "../../lib/streamaxt";
 
 type Tab = "general" | "help" | "about";
@@ -69,15 +69,7 @@ const HAREKET_OPTS: { id: Hareket; labelKey: MsgKey }[] = [
   { id: "sistem", labelKey: "settings.motion.sistem" },
 ];
 
-const secimDugmesi = (on: boolean) =>
-  cn(
-    "rounded-xl border px-3.5 py-3 text-xs md:text-sm font-bold transition-all active:scale-95",
-    on
-      ? "border-panel-accent/60 bg-panel-accent/15 text-panel-accent shadow-glow-sm"
-      : "border-white/[0.08] bg-black/30 text-white/75 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
-  );
-
-/** Etiketli düğme grubu (tek seçim) */
+/** Etiketli seçenek grubu (tek seçim): ortak bölümlü denetim */
 function SecimGrubu<T extends string>({ baslik, secenekler, deger, onSec, t }: {
   baslik: string;
   secenekler: { id: T; labelKey: MsgKey }[];
@@ -86,15 +78,9 @@ function SecimGrubu<T extends string>({ baslik, secenekler, deger, onSec, t }: {
   t: (k: MsgKey) => string;
 }) {
   return (
-    <div role="group" aria-label={baslik} className="space-y-1.5">
+    <div className="space-y-1.5">
       <p className="text-xs font-semibold text-white/80">{baslik}</p>
-      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${secenekler.length}, minmax(0, 1fr))` }}>
-        {secenekler.map((o) => (
-          <button key={o.id} type="button" aria-pressed={deger === o.id} onClick={() => onSec(o.id)} className={secimDugmesi(deger === o.id)}>
-            {t(o.labelKey)}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl label={baslik} options={secenekler.map((o) => ({ id: o.id, label: t(o.labelKey) }))} value={deger} onValueChange={onSec} />
     </div>
   );
 }
@@ -172,36 +158,26 @@ export default function AppSettingsPage({
       <TabPanel key={activeTab} idPrefix="ayar" id={activeTab} className="yya-sayfa-gir">
       {activeTab === "general" && (
         // Geniş ekranda iki sütun: ayar blokları bölünmez, ayırıcı çizgiler sütunda gereksiz
-        <div className="columns-1 gap-8 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass xl:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid [&>hr]:hidden xl:[&>hr]:hidden">
+        <div className="columns-1 gap-8 rounded-lg border border-white/[0.07] bg-panel-card/60 p-4 xl:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid [&>hr]:hidden xl:[&>hr]:hidden">
           {/* Theme Option */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+            <div className="flex items-center gap-2 text-xs md:text-[13px] font-semibold uppercase tracking-wide text-white/85">
               <Palette className="size-4 text-panel-accent" />
               <span>{t("settings.theme")}</span>
             </div>
-            <div className="grid grid-cols-3 gap-2.5">
-              {THEME_OPTS.map((opt) => {
-                const on = prefs.theme === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => set({ theme: opt.id })}
-                    className={secimDugmesi(on)}
-                  >
-                    {t(opt.labelKey)}
-                  </button>
-                );
-              })}
-            </div>
+            <SegmentedControl
+              label={t("settings.theme")}
+              options={THEME_OPTS.map((o) => ({ id: o.id, label: t(o.labelKey) }))}
+              value={prefs.theme}
+              onValueChange={(theme) => set({ theme })}
+            />
           </div>
 
           {/* Skin Selection */}
           <div className="space-y-2.5">
-            <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">Görünüm stili</p>
+            <p className="text-xs md:text-[13px] font-semibold uppercase tracking-wide text-white/85">Görünüm stili</p>
             {skin === "gun-isigi" ? <p className="text-xs text-white/75">{t("settings.skinLightHint")}</p> : null}
-            <div className="yya-liste-gir grid gap-2 sm:grid-cols-2">
+            <div className="yya-liste-gir grid gap-1.5 sm:grid-cols-2">
               {skins.map((s) => {
                 const on = skin === s.id;
                 return (
@@ -211,23 +187,23 @@ export default function AppSettingsPage({
                     aria-pressed={on}
                     onClick={() => setSkin(s.id as StudioSkin)}
                     className={cn(
-                      "yya-kalk flex w-full items-center gap-3.5 rounded-xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.99]",
+                      "yya-kalk flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-all duration-150 active:scale-[0.99]",
                       on
                         ? "border-panel-accent/60 bg-panel-accent/[0.12] shadow-glow-sm"
                         : "border-white/[0.07] bg-black/30 hover:border-white/[0.12] hover:bg-black/50"
                     )}
                   >
                     <span
-                      className="size-10 shrink-0 rounded-xl border border-white/20 shadow-sm"
+                      className="size-8 shrink-0 rounded-lg border border-white/20 shadow-sm"
                       style={{
                         background: `linear-gradient(145deg, ${s.swatch[0]} 40%, ${s.swatch[1]})`,
                       }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-bold text-white">
+                      <span className="block text-[13px] font-semibold text-white">
                         {s.label}
                       </span>
-                      <span className="block text-xs font-medium text-white/75">{s.hint}</span>
+                      <span className="block truncate text-[11px] text-white/65">{s.hint}</span>
                     </span>
                     {on ? (
                       <span className="rounded-lg border border-panel-accent/30 bg-panel-accent/20 px-2.5 py-1 text-xs font-bold text-panel-accent">
@@ -242,7 +218,7 @@ export default function AppSettingsPage({
 
           {/* Arayüz: yoğunluk, köşeler, animasyonlar */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+            <div className="flex items-center gap-2 text-xs md:text-[13px] font-semibold uppercase tracking-wide text-white/85">
               <SlidersHorizontal className="size-4 text-panel-accent" />
               <span>{t("settings.ui")}</span>
             </div>
@@ -255,38 +231,22 @@ export default function AppSettingsPage({
 
           {/* Language Selection */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+            <div className="flex items-center gap-2 text-xs md:text-[13px] font-semibold uppercase tracking-wide text-white/85">
               <Languages className="size-4 text-panel-accent" />
               <span>{t("settings.language")}</span>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              {(
-                [
-                  { id: "tr" as const, labelKey: "settings.lang.tr" as MsgKey },
-                  { id: "en" as const, labelKey: "settings.lang.en" as MsgKey },
-                ] as const
-              ).map((opt) => {
-                const on = locale === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => {
-                      setLocale(opt.id);
-                      set({ locale: opt.id });
-                    }}
-                    className={cn(
-                      "rounded-xl border px-3.5 py-3 text-xs md:text-sm font-bold transition-all active:scale-95",
-                      on
-                        ? "border-panel-accent/60 bg-panel-accent/15 text-panel-accent shadow-glow-sm"
-                        : "border-white/[0.08] bg-black/30 text-white/75 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
-                    )}
-                  >
-                    {t(opt.labelKey)}
-                  </button>
-                );
-              })}
-            </div>
+            <SegmentedControl
+              label={t("settings.language")}
+              options={[
+                { id: "tr" as const, label: t("settings.lang.tr" as MsgKey) },
+                { id: "en" as const, label: t("settings.lang.en" as MsgKey) },
+              ]}
+              value={locale === "en" ? "en" : "tr"}
+              onValueChange={(id) => {
+                setLocale(id);
+                set({ locale: id });
+              }}
+            />
           </div>
 
           {/* OBS Auto-launch switch */}
@@ -323,7 +283,7 @@ export default function AppSettingsPage({
 
           {/* OBS Path */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white/85">
+            <div className="flex items-center gap-2 text-xs md:text-[13px] font-semibold uppercase tracking-wide text-white/85">
               <Monitor className="size-4 text-panel-accent" />
               <span>{t("settings.obsPath")}</span>
             </div>
@@ -363,7 +323,7 @@ export default function AppSettingsPage({
           {/* Backup & Restore */}
           <div className="space-y-3">
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wide text-white">
                 {t("backup.title")}
               </h3>
               <p className="mt-1 text-xs font-medium text-white/75">{t("backup.hint")}</p>
@@ -419,7 +379,7 @@ export default function AppSettingsPage({
               <hr className="border-white/[0.08]" />
               <div className="space-y-3">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-white">Premium lisans</h3>
+                  <h3 className="text-[13px] font-semibold uppercase tracking-wide text-white">Premium lisans</h3>
                   <p className="mt-1 text-xs font-medium text-white/75">
                     Anahtar bu bilgisayarda Windows Kimlik Bilgisi Yöneticisi'nde saklanır; doğrulama çevrimdışıdır.
                   </p>
@@ -447,7 +407,7 @@ export default function AppSettingsPage({
               <Info className="size-6" />
             </span>
             <div>
-              <h2 className="font-display text-xl font-bold tracking-tight text-white">{t("brand.title")}</h2>
+              <h2 className="text-base font-semibold text-white">{t("brand.title")}</h2>
               <p className="text-base font-bold text-panel-accent">{t("about.credit")}</p>
               <SurumSatiri />
             </div>
@@ -511,7 +471,7 @@ function DestekPaketi() {
   return (
     <div className="space-y-2">
       <div>
-        <h3 className="text-sm font-bold uppercase tracking-wider text-white">Destek paketi</h3>
+        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-white">Destek paketi</h3>
         <p className="mt-1 text-xs font-medium text-white/75">
           Sorun bildirirken ekleyebileceğin tek bir JSON dosyası: sürüm, OBS ve motor durumu, çoklu yayın hedefleri, ön kontrol,
           ayarlar ve son günlük satırları. Yayın anahtarları, parolalar, token alanları, rtmp yolları ve kullanıcı klasörü

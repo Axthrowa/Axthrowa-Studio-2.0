@@ -236,7 +236,9 @@ export function Iskelet({ satir = 3 }: { satir?: number }) {
 
 // ---- Toast -----------------------------------------------------------------
 
-type ToastTuru = 'bilgi' | 'basari' | 'hata';
+type ToastTuru = 'bilgi' | 'basari' | 'uyari' | 'hata';
+/** Bildirim standardı (Studio ile aynı, A5): bilgi 4 sn, uyarı 8 sn, hata kapatılana kadar durur */
+export const TOAST_SURESI: Record<ToastTuru, number | null> = { bilgi: 4000, basari: 4000, uyari: 8000, hata: null };
 interface Toast {
   id: number;
   tur: ToastTuru;
@@ -254,30 +256,40 @@ export function useToast() {
 const TOAST_RENK: Record<ToastTuru, string> = {
   bilgi: 'bg-slate-800 border-white/15 text-gray-100',
   basari: 'bg-emerald-600/90 border-emerald-400/40 text-white',
+  uyari: 'bg-amber-600/90 border-amber-400/40 text-white',
   hata: 'bg-red-600/90 border-red-400/40 text-white'
 };
 
 export function ToastSaglayici({ children }: { children: ReactNode }) {
   const [liste, setListe] = useState<Toast[]>([]);
 
+  const kapat = useCallback((id: number) => setListe((p) => p.filter((t) => t.id !== id)), []);
   const toast = useCallback((metin: string, tur: ToastTuru = 'bilgi') => {
     const id = Date.now() + Math.random();
-    setListe((p) => [...p, { id, tur, metin }]);
-    setTimeout(() => setListe((p) => p.filter((t) => t.id !== id)), 4000);
-  }, []);
+    // Aynı açık bildirim çoğalmaz
+    setListe((p) => (p.some((t) => t.metin === metin && t.tur === tur) ? p : [...p.slice(-4), { id, tur, metin }]));
+    const sure = TOAST_SURESI[tur];
+    if (sure !== null) setTimeout(() => kapat(id), sure);
+  }, [kapat]);
 
   const deger = useMemo(() => ({ toast }), [toast]);
 
   return (
     <ToastBaglam.Provider value={deger}>
       {children}
-      <div role="status" aria-live="polite" className="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none">
+      <div aria-live="polite" className="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none">
         {liste.map((t) => (
           <div
             key={t.id}
-            className={`px-4 py-2.5 rounded-xl border shadow-2xl text-xs font-bold max-w-sm animate-fadeIn ${TOAST_RENK[t.tur]}`}
+            role={t.tur === 'hata' ? 'alert' : 'status'}
+            className={`pointer-events-auto flex items-start gap-3 px-4 py-2.5 rounded-xl border shadow-2xl text-xs font-bold max-w-sm animate-fadeIn ${TOAST_RENK[t.tur]}`}
           >
-            {t.metin}
+            <span className="flex-1">{t.metin}</span>
+            {TOAST_SURESI[t.tur] === null && (
+              <button type="button" aria-label="Kapat" onClick={() => kapat(t.id)} className="-mr-1 px-1 opacity-80 hover:opacity-100">
+                ×
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -9,7 +9,7 @@ import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { KUTU_TASARIMLARI } from '../lib/widget-style.js';
 import { yaziAilesi } from '../lib/widget-style.js';
 import { YAPISAL_KABUKLAR } from '../lib/kabuklar.js';
-import { KUTLAMA_SECENEKLERI } from '../lib/kutlama.js';
+import { KUTLAMA_SECENEKLERI, kutla } from '../lib/kutlama.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI, SUREKLI_EFEKTLER, eskiHareketiCevir } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
@@ -758,9 +758,14 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                   {type === 'checkbox' ? (
                     <input type="checkbox" checked={!!values[key]} onChange={e => setValues(v => ({ ...v, [key]: e.target.checked }))} className="ml-2 accent-purple-600" />
                   ) : type === 'select' ? (
-                    <select value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white">
-                      {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: yaziAilesi(o.value) } : undefined}>{o.label}</option>)}
-                    </select>
+                    <div className="flex items-center gap-1.5">
+                      <select value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="flex-1 min-w-0 w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white">
+                        {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: yaziAilesi(o.value) } : undefined}>{o.label}</option>)}
+                      </select>
+                      {key === 'celebration' && (
+                        <button type="button" onClick={() => kutla(String(values[key] || 'konfeti'))} className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-white shrink-0">Dene</button>
+                      )}
+                    </div>
                   ) : type === 'textarea' ? (
                     <textarea value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white min-h-[52px]" />
                   ) : key === 'speed' ? (

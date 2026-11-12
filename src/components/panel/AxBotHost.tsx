@@ -2,7 +2,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { ExternalLink, Loader2, Play, RefreshCw, Square } from "lucide-react";
 import { openExternal } from "../../lib/openExternal";
-import { frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest, temaIstegi } from "../../lib/embedMessages";
+import {
+  BOT_AYAR_OLAYI,
+  GERI_AL_MESAJI,
+  ayaraGitMesaji,
+  bekleyenBotAyariAl,
+  frameOrigin,
+  geriAlBotaGider,
+  komutPaletiRequest,
+  odakBirakRequest,
+  openExternalRequest,
+  openMusicRequest,
+  temaIstegi,
+} from "../../lib/embedMessages";
 import { botTemaMesaji, renkleriOku } from "../../lib/botTemaMesaji";
 import { PALET_AC_OLAYI } from "./KomutPaleti";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
@@ -115,6 +127,12 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
         onOpenMusic?.();
         return;
       }
+      if (odakBirakRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
+        // Esc ile çerçeveden çıkış: odak Studio menüsündeki açık sayfaya döner
+        const hedef = document.querySelector<HTMLElement>('.studio-nav-rail [aria-current="page"]') ?? document.querySelector<HTMLElement>(".studio-nav-rail button");
+        hedef?.focus();
+        return;
+      }
       if (komutPaletiRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
         window.dispatchEvent(new Event(PALET_AC_OLAYI));
         return;
@@ -129,6 +147,33 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
   }, [onToast, expectedOrigin, onOpenMusic, temaGonder]);
+
+  // Gömülü sözleşme (docs/GOMULU_SOZLESME.md): komut paletinden bot ayarına inme ve Ctrl+Z
+  useEffect(() => {
+    const win = () => {
+      const f = frameRef.current;
+      // Görünmeyen (başka sekmedeki) çerçeve isteği almaz; görünür olunca `tab` değişimiyle yeniden denenir
+      return yuklendi && expectedOrigin && f && f.offsetParent !== null ? f.contentWindow : null;
+    };
+    const ayarGonder = () => {
+      const w = win();
+      const b = w && bekleyenBotAyariAl();
+      if (w && b) w.postMessage(ayaraGitMesaji(b.ayar, b.sekme), expectedOrigin!);
+    };
+    const tus = (e: KeyboardEvent) => {
+      const w = win();
+      if (!w || !geriAlBotaGider(e, document.activeElement as HTMLElement | null)) return;
+      e.preventDefault();
+      w.postMessage(GERI_AL_MESAJI, expectedOrigin!);
+    };
+    ayarGonder();
+    window.addEventListener(BOT_AYAR_OLAYI, ayarGonder);
+    window.addEventListener("keydown", tus);
+    return () => {
+      window.removeEventListener(BOT_AYAR_OLAYI, ayarGonder);
+      window.removeEventListener("keydown", tus);
+    };
+  }, [yuklendi, expectedOrigin, tab]);
 
   useEffect(() => {
     if (!yuklendi) return;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KOMUT_PALETI_TYPE, OPEN_EXTERNAL_TYPE, OPEN_MUSIC_TYPE, frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest, resonanceLinkAllowed, temaIstegi } from "./embedMessages";
+import { KOMUT_PALETI_TYPE, ODAK_BIRAK_TYPE, OPEN_EXTERNAL_TYPE, OPEN_MUSIC_TYPE, GERI_AL_MESAJI, ayaraGitMesaji, bekleyenBotAyariAl, botAyariIste, frameOrigin, geriAlBotaGider, komutPaletiRequest, odakBirakRequest, openExternalRequest, openMusicRequest, resonanceLinkAllowed, temaIstegi } from "./embedMessages";
 
 const frame = { name: "axbot-frame" };
 const origin = "http://127.0.0.1:3001";
@@ -90,5 +90,37 @@ describe("temaIstegi", () => {
     expect(temaIstegi(m, frame, origin)).toBe(true);
     expect(temaIstegi({ ...m, source: {} }, frame, origin)).toBe(false);
     expect(temaIstegi({ ...m, origin: "https://ornek.com" }, frame, origin)).toBe(false);
+  });
+});
+
+describe("gömülü sözleşme (T2)", () => {
+  it("odak-birak yalnız bizim çerçeveden ve kökenden kabul edilir", () => {
+    const m = { data: { type: ODAK_BIRAK_TYPE }, origin, source: frame };
+    expect(odakBirakRequest(m, frame, origin)).toBe(true);
+    expect(odakBirakRequest({ ...m, source: {} }, frame, origin)).toBe(false);
+    expect(odakBirakRequest({ ...m, origin: "https://ornek.com" }, frame, origin)).toBe(false);
+  });
+
+  it("ayara-git ve geri-al iletileri botun beklediği biçimde", () => {
+    expect(ayaraGitMesaji("Komutları içe aktar", "Komut Aktarma")).toEqual({ tur: "ayara-git", ayar: "Komutları içe aktar", sekme: "Komut Aktarma" });
+    expect(ayaraGitMesaji("Bekleme (dakika)")).toEqual({ tur: "ayara-git", ayar: "Bekleme (dakika)" });
+    expect(GERI_AL_MESAJI).toEqual({ tur: "geri-al" });
+  });
+
+  it("bot ayarı isteği bir kez alınır", () => {
+    const olaylar: string[] = [];
+    (globalThis as { window?: unknown }).window ??= { dispatchEvent: (e: Event) => olaylar.push(e.type) };
+    botAyariIste("Etiket", "Genel");
+    expect(bekleyenBotAyariAl()).toEqual({ ayar: "Etiket", sekme: "Genel" });
+    expect(bekleyenBotAyariAl()).toBeNull();
+  });
+
+  it("Ctrl+Z yazı alanında tarayıcıda kalır, başka yerde bota gider", () => {
+    const z = { key: "z", ctrlKey: true, metaKey: false, shiftKey: false, altKey: false };
+    expect(geriAlBotaGider(z, { tagName: "BUTTON" })).toBe(true);
+    expect(geriAlBotaGider(z, null)).toBe(true);
+    expect(geriAlBotaGider(z, { tagName: "INPUT" })).toBe(false);
+    expect(geriAlBotaGider(z, { tagName: "DIV", isContentEditable: true })).toBe(false);
+    expect(geriAlBotaGider({ ...z, shiftKey: true }, null)).toBe(false);
   });
 });

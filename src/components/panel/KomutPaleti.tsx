@@ -12,6 +12,7 @@ import { komutAra, type Komut } from "../../lib/komutPaleti";
 import { obsControl } from "../../lib/obsControl";
 import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
 import AYAR_DIZINI from "../../lib/ayarDizini.json";
+import { botAyariIste } from "../../lib/embedMessages";
 import type { NavId } from "../../lib/panelLayout";
 
 /** `scripts/ayar-dizini.mjs` üretir: s sayfa, b bot sekmesi, t ayarın bulunduğu sekme, a ayarın adı */
@@ -160,8 +161,9 @@ export default function KomutPaleti({ visibleTabs, labelFor, onSayfa, onToast, k
           anahtar: `${labelFor(sayfa)} ${k.b || ""} ${k.t || ""} ${k.g ? "widget overlay katman" : ""}`,
           calistir: () => {
             onSayfa(sayfa);
-            // Bot sayfaları çerçevede açılır: ayarın yerine kaydırma yalnız uygulamanın kendi sayfalarında
-            if (k.s !== "bot") window.setTimeout(() => ayaraGit(k.a, k.t), 200);
+            // Bot sayfaları çerçevede açılır: kaydırmayı bot yapar, istek AxBotHost üzerinden gider (ayara-git)
+            if (k.s === "bot") botAyariIste(k.a, k.t);
+            else window.setTimeout(() => ayaraGit(k.a, k.t), 200);
           },
         };
       });

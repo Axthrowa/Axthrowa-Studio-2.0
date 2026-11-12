@@ -17,6 +17,36 @@ export const OPEN_MUSIC_TYPE = "axbot:open-music";
 export const KOMUT_PALETI_TYPE = "axbot:komut-paleti";
 /** AxBoT gömülünce Studio temasını ister. */
 export const TEMA_ISTE_TUR = "studio-tema-iste";
+/** Bot içinde Esc: odak çerçeveden çıkıp Studio menüsüne döner. Sözleşmenin tamamı: docs/GOMULU_SOZLESME.md */
+export const ODAK_BIRAK_TYPE = "axbot:odak-birak";
+/** Komut paletinden seçilen bot ayarı AxBotHost'a bu pencere olayıyla haber verilir (istek: bekleyenBotAyariAl) */
+export const BOT_AYAR_OLAYI = "studio:bot-ayar";
+
+/** Studio → bot: ayarın yerine kaydır, vurgula, denetimine odaklan */
+export function ayaraGitMesaji(ayar: string, sekme?: string) {
+  return sekme ? { tur: "ayara-git" as const, ayar, sekme } : { tur: "ayara-git" as const, ayar };
+}
+let bekleyenAyar: { ayar: string; sekme?: string } | null = null;
+/** Komut paleti bot ayarı seçti: istek, çerçeve yüklenip görünür olunca AxBotHost tarafından bir kez gönderilir */
+export function botAyariIste(ayar: string, sekme?: string) {
+  bekleyenAyar = { ayar, sekme };
+  window.dispatchEvent(new Event(BOT_AYAR_OLAYI));
+}
+export function bekleyenBotAyariAl() {
+  const b = bekleyenAyar;
+  bekleyenAyar = null;
+  return b;
+}
+
+/** Studio → bot: odak Studio'dayken bot sayfasında basılan Ctrl+Z */
+export const GERI_AL_MESAJI = { tur: "geri-al" as const };
+
+/** Ctrl+Z bota gitsin mi: odak yazı alanındaysa tarayıcının kendi geri alması kalır */
+export function geriAlBotaGider(e: { key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean }, odak: { tagName?: string; isContentEditable?: boolean } | null): boolean {
+  if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || e.key.toLowerCase() !== "z") return false;
+  const ad = (odak?.tagName || "").toUpperCase();
+  return !(ad === "INPUT" || ad === "TEXTAREA" || ad === "SELECT" || ad === "IFRAME" || odak?.isContentEditable);
+}
 
 export type EmbedMessageEvent = {
   data: unknown;
@@ -64,6 +94,13 @@ export function openMusicRequest(ev: EmbedMessageEvent, frameWindow: unknown, ex
   if (!frameWindow || ev.source !== frameWindow) return false;
   if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
   return (ev.data as { type?: unknown } | null)?.type === OPEN_MUSIC_TYPE;
+}
+
+/** Yalnız bizim çerçevemizden ve AxBoT kökeninden gelen "odağı bırak" bildirimi mi. */
+export function odakBirakRequest(ev: EmbedMessageEvent, frameWindow: unknown, expectedOrigin: string | null): boolean {
+  if (!frameWindow || ev.source !== frameWindow) return false;
+  if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
+  return (ev.data as { type?: unknown } | null)?.type === ODAK_BIRAK_TYPE;
 }
 
 /** Yalnız bizim çerçevemizden gelen "temayı gönder" isteği mi. */

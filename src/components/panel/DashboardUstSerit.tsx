@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CirclePower, History, LayoutDashboard, PlugZap, SlidersHorizontal, Wrench } from "lucide-react";
 import type { DashboardBolumu } from "./ProfileDashboard";
+import YayinSaglikSatiri from "./YayinSaglikSatiri";
 
 /**
  * Dashboard üst şeridi: alt sekmeler + her sekmeden erişilen yayın düğmesi.
@@ -85,6 +86,7 @@ export default function DashboardUstSerit({ bolum, onBolum, master, obsBagli }: 
         })}
       </div>
 
+      <YayinSaglikSatiri />
       <div className="ml-auto flex items-center gap-2">
         <button
           type="button"

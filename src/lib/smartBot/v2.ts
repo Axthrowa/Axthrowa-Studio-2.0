@@ -494,7 +494,7 @@ export function defaultGiveaway(): GiveawayConfig {
 export function defaultEmoteWall(): EmoteWallConfig {
   return {
     enabled: true,
-    max: 40,
+    max: 12,
     durationMs: 3500,
     swaySpeed: 1,
     explosionOnFollow: true,

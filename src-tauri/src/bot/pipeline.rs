@@ -157,7 +157,7 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
       "id": msg.raw_id,
       "t": chrono_now(),
     }));
-    crate::widgets::handle_combo_on_chat(state.as_ref(), &msg.text);
+    crate::widgets::handle_combo_on_chat(state.as_ref(), &msg.user_name, &msg.text);
   }
 
   // 3) Alert olayları

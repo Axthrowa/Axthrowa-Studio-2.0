@@ -5,13 +5,13 @@
 #   npm run guncelle
 #   powershell -ExecutionPolicy Bypass -File scripts\guncelle-ui.ps1
 #
-# Tam yeni EXE (yalnizca Rust/sunucu; SAC yeni hash gorebilir):
+# Tam yeni EXE (test, AxBoT, derleme, imza). Kendisi surum yukseltmez, kurulum indirmez:
 #   powershell -ExecutionPolicy Bypass -File scripts\build-release-signed.ps1
 #
 # Not: WDAC cargo build-script'leri engelliyorsa (os error 4551) once
 # "Sertifikalar > Guvenilen Yayincilar" icinde CN=Axthrowa olmali.
 
-param([switch]$SkipRust, [switch]$SkipBundle, [switch]$SkipSign)
+param([switch]$SkipRust, [switch]$SkipBundle, [switch]$SkipSign, [switch]$SkipTests)
 
 $ErrorActionPreference = "Stop"
 $proj = Split-Path $PSScriptRoot -Parent
@@ -21,6 +21,23 @@ Set-Location $proj
 $td = Join-Path $env:LOCALAPPDATA "yya-cargo-target"
 New-Item -ItemType Directory -Force -Path $td | Out-Null
 $env:CARGO_TARGET_DIR = $td
+
+if (-not $SkipTests) {
+  Write-Host "== Testler =="
+  npm test
+  if ($LASTEXITCODE -ne 0) { throw "Studio testleri basarisiz" }
+  if (Test-Path (Join-Path $proj "resonance\package.json")) {
+    npm --prefix resonance test
+    if ($LASTEXITCODE -ne 0) { throw "Resonance testleri basarisiz" }
+  }
+  $bot = Join-Path $env:USERPROFILE "Desktop\StreamAxT\server"
+  if (Test-Path (Join-Path $bot "package.json")) {
+    npm --prefix $bot exec vitest run
+    if ($LASTEXITCODE -ne 0) { throw "AxBoT testleri basarisiz" }
+  } else {
+    Write-Warning "Desktop\StreamAxT yok; AxBoT testleri atlandi"
+  }
+}
 
 Write-Host "== Lisans denetimi + ucuncu taraf bildirimleri + SBOM (ADR-005) =="
 node (Join-Path $proj "scripts\lisans-denetimi.mjs")
@@ -82,6 +99,10 @@ if (-not $SkipBundle) {
     Write-Warning "tauri bundle setup uretemedi; portable yine cikti\portable altina yazilacak."
   }
 }
+
+Write-Host "== AxBoT =="
+node (Join-Path $proj "scripts\streamaxt-hazirla.mjs")
+if ($LASTEXITCODE -ne 0) { throw "AxBoT pakete hazirlanamadi" }
 
 Write-Host "== Paketle -> cikti\ =="
 $paketArgs = @()

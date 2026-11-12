@@ -15,6 +15,8 @@ export const OPEN_EXTERNAL_TYPE = "streamaxt:open-external";
 export const OPEN_MUSIC_TYPE = "streamaxt:open-music";
 /** Odak gömülü bottayken basılan Ctrl+K: paneli açan tuş çerçevenin dışına çıkmaz, bot bunu bildirir. */
 export const KOMUT_PALETI_TYPE = "streamaxt:komut-paleti";
+/** AxBoT gömülünce Studio temasını ister. */
+export const TEMA_ISTE_TUR = "yya-tema-iste";
 
 export type EmbedMessageEvent = {
   data: unknown;
@@ -62,6 +64,13 @@ export function openMusicRequest(ev: EmbedMessageEvent, frameWindow: unknown, ex
   if (!frameWindow || ev.source !== frameWindow) return false;
   if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
   return (ev.data as { type?: unknown } | null)?.type === OPEN_MUSIC_TYPE;
+}
+
+/** Yalnız bizim çerçevemizden gelen "temayı gönder" isteği mi. */
+export function temaIstegi(ev: EmbedMessageEvent, frameWindow: unknown, expectedOrigin: string | null): boolean {
+  if (!frameWindow || ev.source !== frameWindow) return false;
+  if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
+  return (ev.data as { tur?: unknown } | null)?.tur === TEMA_ISTE_TUR;
 }
 
 /**

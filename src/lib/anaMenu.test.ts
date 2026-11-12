@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANA_MENU, botSekmesiBul, menuGrubuBul, sayfaAcikMi } from "./anaMenu";
+import { ANA_MENU, OVERLAY_PENCERESI, botSekmesiBul, menuGrubuBul, sayfaAcikMi } from "./anaMenu";
 import { DEFAULT_TABS } from "./panelLayout";
 
 describe("ana menü", () => {
@@ -23,6 +23,10 @@ describe("ana menü", () => {
     expect(botSekmesiBul("timers")).toBe("commands");
     expect(botSekmesiBul("shield")).toBe("automod");
     expect(botSekmesiBul("platforms")).toBeNull();
+  });
+
+  it("Overlay ve Uyarılar penceresinde iki sayfa da vardır", () => {
+    expect(OVERLAY_PENCERESI.map((s) => s.id)).toEqual(["overlays", "alerts", "pano", "tts"]);
   });
 
   it("aynı gruptaki alt sayfada menü satırı seçili kalır", () => {

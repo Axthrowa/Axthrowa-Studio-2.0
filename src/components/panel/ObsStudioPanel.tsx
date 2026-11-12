@@ -202,7 +202,7 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
                 onChange={() => degistir(k.kimlik)}
               />
               <label htmlFor={`dock-${k.kimlik}`} className="min-w-0 flex-1 cursor-pointer">
-                <span className="block text-sm font-bold text-white">{k.baslik.replace(/^YYA · /, "")}</span>
+                <span className="block text-sm font-bold text-white">{k.baslik.replace(/^AX Studio · /, "")}</span>
                 <span className="block truncate font-mono text-[11px] text-white/55">{k.url}</span>
               </label>
               {k.ekli && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-label="OBS'te ekli" />}

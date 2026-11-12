@@ -4,7 +4,8 @@
  * uçlardan gelir (izin + denetim sunucuda); dock yalnız görünümdür. Görünüm OBS'in koyu temasına uyar.
  */
 import { lazy, Suspense, useEffect, useState } from "react";
-import { ActivityFeedPanel, UniversalChatPanel } from "../components/control/UniversalChat";
+import { ActivityFeedPanel } from "../components/control/UniversalChat";
+import StreamAxtHost from "../components/panel/StreamAxtHost";
 import { DeckPanel } from "../components/control/DeckPanel";
 import { YayinBilgisiDock } from "../components/control/YayinBilgisiDock";
 import { API_BASE } from "../lib/api";
@@ -51,7 +52,7 @@ export default function ObsDockSayfasi() {
   let icerik: React.ReactNode;
   switch (id) {
     case "sohbet":
-      icerik = <UniversalChatPanel onToast={toast} />;
+      icerik = <StreamAxtHost onToast={toast} tab="multichat" embed />;
       break;
     case "etkinlik":
       icerik = <ActivityFeedPanel onToast={toast} />;
@@ -82,7 +83,7 @@ export default function ObsDockSayfasi() {
   return (
     <>
       <div className="obs-yami flex h-screen flex-col p-1">
-        <div className="custom-scrollbar min-h-0 flex-1 overflow-auto p-1.5">
+        <div className={`min-h-0 flex-1 p-1.5 ${id === "sohbet" ? "flex flex-col overflow-hidden" : "custom-scrollbar overflow-auto"}`}>
           <Suspense fallback={<p className="p-3 text-[12px] dt-soluk">Yükleniyor…</p>}>{icerik}</Suspense>
         </div>
         {mesaj && (

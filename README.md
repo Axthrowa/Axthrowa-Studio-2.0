@@ -2,7 +2,7 @@
 
 Canlı yayıncılar için Windows masaüstü kontrol merkezi. OBS Studio'yu yönetir; sohbeti, müziği, sahneleri, overlay'leri ve yayın botunu tek uygulamada toplar.
 
-Geçerli sürüm: **1.6.18** (içinde AxBoT 1.13.14).
+Geçerli sürüm: **1.6.20** (içinde AxBoT 1.13.18).
 
 > OBS Studio pakete dahil değildir. Yayının kendisi kurulu OBS üzerinden yapılır; Studio OBS ile obs-websocket üzerinden konuşur.
 
@@ -48,7 +48,7 @@ cd src-tauri && cargo test --lib
 
 ### Tam paket
 
-Tam paket botu da içerir, bu yüzden AxBoT'un `Desktop\StreamAxT` klasöründe bulunması beklenir. Başka bir yerdeyse `scripts/streamaxt-hazirla.mjs` betiğine `--kaynak <klasör>` verin.
+Tam paket botu da içerir. `npm run build:cikti` önce Studio, Resonance ve AxBoT testlerini çalıştırır, sonra derleyip imzalar. AxBoT'un `Desktop\StreamAxT` klasöründe olması beklenir. Başka bir yerdeyse `scripts/streamaxt-hazirla.mjs` betiğine `--kaynak <klasör>` verin. Sürüm `package.json` içindedir; betik sürümü kendisi yükseltmez ve kurulumu kendiliğinden indirmez.
 
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts/build-release-signed.ps1

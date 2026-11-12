@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Matter from "matter-js";
 import { useWidgetSync, type WidgetSyncEvent } from "../../lib/widgets/useWidgetSync";
+import { isLocalBotUser } from "../../lib/smartBot/botIdentity";
 import {
   playWidgetSfx,
   resolveSfx,
@@ -16,6 +17,7 @@ const EMOJI_RE =
   /(?:\p{Extended_Pictographic}|\p{Emoji_Presentation}|:\w+:)/gu;
 
 function extractTokens(text: string): string[] {
+  if (text.trim().startsWith("!")) return [];
   const found = text.match(EMOJI_RE) || [];
   if (found.length) return found.slice(0, 8);
   const word = text.trim().slice(0, 3);
@@ -27,7 +29,7 @@ type Meta = { text: string; size: number; born: number; life: number };
 export default function EmoteWallWidget({ config }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const { subscribe } = useWidgetSync({ kinds: ["chat"] });
-  const maxOnScreen = Number(config.maxOnScreen) || 40;
+  const maxOnScreen = Math.min(Number(config.maxOnScreen) || 12, 16);
   const minSize = Number(config.minSize) || 32;
   const maxSize = Number(config.maxSize) || 96;
   const lifetimeMs = Number(config.lifetimeMs) || 6000;
@@ -144,6 +146,7 @@ export default function EmoteWallWidget({ config }: Props) {
 
   useEffect(() => {
     return subscribe((ev: WidgetSyncEvent) => {
+      if (isLocalBotUser(ev.user || "")) return;
       const tokens = extractTokens(ev.text || "");
       for (const t of tokens) spawnRef.current(t);
     });
@@ -152,7 +155,7 @@ export default function EmoteWallWidget({ config }: Props) {
   useEffect(() => {
     const burstOnHype = config.burstOnHypeLevel !== false;
     const listenGoal = config.listenGoalComplete !== false;
-    const count = Number(config.burstCount) || 24;
+    const count = Math.min(Number(config.burstCount) || 8, 12);
     const emojis = ["🔥", "✨", "💎", "🚀", "💜", "⚡", "🎉", "💥"];
     return subscribeWidgetBus((ev) => {
       const burst =

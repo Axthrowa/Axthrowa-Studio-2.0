@@ -47,7 +47,14 @@ export const BOT_SEKMELERI: { id: string; ad: string; alt: string[] }[] = [
 ];
 
 const ETKILESIM_SAYFALARI = ["polls", "giveaways", "interaction"];
-const OVERLAY_SAYFALARI = ["overlays", "alerts", "pano", "tts"];
+/** Sahne menüsündeki "Overlay ve Uyarılar" penceresinin iç sekmeleri */
+export const OVERLAY_PENCERESI: { id: string; ad: string }[] = [
+  { id: "overlays", ad: "Overlay" },
+  { id: "alerts", ad: "Uyarılar" },
+  { id: "pano", ad: "Ses panosu" },
+  { id: "tts", ad: "Metin okuma" },
+];
+const OVERLAY_SAYFALARI = OVERLAY_PENCERESI.map((s) => s.id);
 
 /** Açık sayfanın ait olduğu menü başlığı */
 export function menuGrubuBul(nav: string, botSayfa?: string): MenuGrubuId {

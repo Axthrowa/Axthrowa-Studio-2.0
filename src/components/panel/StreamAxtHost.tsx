@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { ExternalLink, Loader2, Play, RefreshCw, Square } from "lucide-react";
 import { openExternal } from "../../lib/openExternal";
-import { frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest } from "../../lib/embedMessages";
+import { frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest, temaIstegi } from "../../lib/embedMessages";
+import { botTemaMesaji, renkleriOku } from "../../lib/botTemaMesaji";
 import { PALET_AC_OLAYI } from "./KomutPaleti";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { cn } from "../../lib/cn";
@@ -41,6 +42,16 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
   const triedAuto = useRef(false);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const expectedOrigin = st ? frameOrigin(st.url) : null;
+
+  const temaGonder = useCallback(() => {
+    const win = frameRef.current?.contentWindow;
+    if (!win || !expectedOrigin) return;
+    const kok = document.documentElement;
+    win.postMessage(
+      botTemaMesaji(renkleriOku((ad) => getComputedStyle(kok).getPropertyValue(ad), kok.dataset.kose ?? null)),
+      expectedOrigin,
+    );
+  }, [expectedOrigin]);
 
   const refresh = useCallback(async () => {
     try {
@@ -96,6 +107,10 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
   // (`lib/embedMessages.ts`).
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
+      if (temaIstegi(ev, frameRef.current?.contentWindow, expectedOrigin)) {
+        temaGonder();
+        return;
+      }
       if (openMusicRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
         onOpenMusic?.();
         return;
@@ -113,7 +128,15 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [onToast, expectedOrigin, onOpenMusic]);
+  }, [onToast, expectedOrigin, onOpenMusic, temaGonder]);
+
+  useEffect(() => {
+    if (!yuklendi) return;
+    temaGonder();
+    const goz = new MutationObserver(() => temaGonder());
+    goz.observe(document.documentElement, { attributes: true, attributeFilter: ["data-skin", "data-kose"] });
+    return () => goz.disconnect();
+  }, [yuklendi, temaGonder, frameKey]);
 
   // Sekme ilk açıldığında kurulu ama kapalıysa (ve elle durdurulmadıysa) bir kez başlat.
   useEffect(() => {

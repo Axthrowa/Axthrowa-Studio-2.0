@@ -34,6 +34,8 @@ type Props = {
   onYayin: () => void;
   /** Botta bir sayfa aç (çekiliş, anket) */
   onBot: (sayfa: string) => void;
+  /** OBS WebSocket bağlantı ekranına git */
+  onObsBagla: () => void;
   /** Uygulamanın kendi sayfaları (Müzik, Ses Paneli…): panele eklenince aynı bileşen çizilir */
   yerelPanel: (id: string) => ReactNode;
 };
@@ -150,7 +152,18 @@ function kayitliOnizlemeAcik(): boolean {
   }
 }
 
-function ObsOnizleme({ sahne }: { sahne: string }) {
+function ObsBos({ metin, onBagla }: { metin: string; onBagla: () => void }) {
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <p className="text-sm text-panel-muted">{metin}</p>
+      <button type="button" className={`${TUS_TABAN} h-8 px-3 text-xs font-bold`} onClick={onBagla}>
+        OBS&apos;e bağlan
+      </button>
+    </div>
+  );
+}
+
+function ObsOnizleme({ sahne, bagli, onBagla }: { sahne: string; bagli: boolean; onBagla: () => void }) {
   const tuval = useRef<HTMLCanvasElement>(null);
   const [kareVar, setKareVar] = useState(false);
   const [acik, setAcik] = useState(kayitliOnizlemeAcik);
@@ -215,7 +228,11 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-md bg-black">
       <canvas ref={tuval} role="img" aria-label={`${sahne} sahnesinin önizlemesi`} className="h-full w-full object-contain" />
-      {!kareVar ? (
+      {!bagli ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4">
+          <ObsBos metin="Önizleme için OBS bağlı değil." onBagla={onBagla} />
+        </div>
+      ) : !kareVar ? (
         <div className="absolute inset-0 flex items-center justify-center text-sm text-panel-muted">
           {sahne ? "Önizleme yükleniyor…" : "OBS bağlanınca önizleme burada görünür"}
         </div>
@@ -234,7 +251,7 @@ function ObsOnizleme({ sahne }: { sahne: string }) {
   );
 }
 
-export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, yerelPanel }: Props) {
+export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, onObsBagla, yerelPanel }: Props) {
   const [gelismis, setGelismis] = useState(false);
   const [duzenle, setDuzenle] = useState(false);
   // Kip: yayın açılınca "Canlı", kapanınca "Yayın öncesi" kendiliğinden seçilir; elle seçilen o değişime dek korunur
@@ -485,12 +502,12 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
             paneller={{
               bilgi: { baslik: "Yayın bilgisi", gosterBaslik: false, icerik: <YayinBilgisiDock onToast={onToast} /> },
               kontrol: { baslik: "Yayın öncesi kontrol", gosterBaslik: true, icerik: <KontrolListesi onToast={onToast} /> },
-              onizleme: { baslik: "Önizleme", gosterBaslik: false, icerik: <ObsOnizleme sahne={snap?.currentScene || ""} /> },
+              onizleme: { baslik: "Önizleme", gosterBaslik: false, icerik: <ObsOnizleme sahne={snap?.currentScene || ""} bagli={obsBagli} onBagla={onObsBagla} /> },
               sahne: {
                 baslik: "Sahne",
                 gosterBaslik: true,
                 icerik: !obsBagli ? (
-              <p className="text-sm text-panel-muted">OBS bağlı değil. Hazırlık › Bağlantılar'dan bağlanabilirsin.</p>
+              <ObsBos metin="Sahne listesi için OBS bağlı değil." onBagla={onObsBagla} />
             ) : (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2">
                 {(snap?.scenes || []).map((ad) => {
@@ -515,7 +532,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, ye
               ses: {
                 baslik: "Ses karıştırıcısı",
                 gosterBaslik: true,
-                icerik: obsBagli ? <SesKaristirici girisler={girisler} onSustur={(g) => void sustur(g)} onToast={onToast} /> : <p className="text-sm text-panel-muted">OBS bağlanınca görünür.</p>,
+                icerik: obsBagli ? <SesKaristirici girisler={girisler} onSustur={(g) => void sustur(g)} onToast={onToast} /> : <ObsBos metin="Ses karıştırıcısı için OBS bağlı değil." onBagla={onObsBagla} />,
               },
               hizli: {
                 baslik: "Hızlı işlem",

@@ -194,9 +194,30 @@ fn display_label(emote_id: &str) -> String {
   emote_id.to_string()
 }
 
+/// Sohbet botunun kendi iletisi kombo sayacına girmez.
+pub fn bot_sohbeti(user: &str) -> bool {
+  let u = user.trim().trim_start_matches('@').to_lowercase();
+  matches!(u.as_str(), "botaxt" | "sesbot" | "bot axt" | "axbot")
+}
+
 /// Chat mesajından emote çıkar → combo motoru.
-pub fn handle_combo_on_chat(state: &AppState, text: &str) {
+pub fn handle_combo_on_chat(state: &AppState, user: &str, text: &str) {
+  if bot_sohbeti(user) || text.trim_start().starts_with('!') {
+    return;
+  }
   if let Some((id, url)) = extract_first_emote(text) {
     handle_combo_logic(state, &state.emote_combo, &id, &url);
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::bot_sohbeti;
+
+  #[test]
+  fn bot_adi_komboya_girmez() {
+    assert!(bot_sohbeti("BotAxT"));
+    assert!(bot_sohbeti("@axbot"));
+    assert!(!bot_sohbeti("izleyici"));
   }
 }

@@ -28,6 +28,13 @@ const MAX_PENDING: usize = 5;
 /// Spotify kodu ~10 dk geçerli; biraz pay bırakıyoruz.
 const PENDING_TTL_MS: i64 = 20 * 60 * 1000;
 
+/// `volume:65` → 65. Bozuk ya da 100 üstü metin komut değildir.
+pub fn ses_yuzdesi(action: &str) -> Option<u8> {
+  let rest = action.strip_prefix("volume:")?;
+  let n: u8 = rest.parse().ok()?;
+  if n > 100 { None } else { Some(n) }
+}
+
 /// Süresi geçmiş denemeleri atar, en fazla `MAX_PENDING` tutar.
 fn prune_pending(mut list: Vec<PendingAuth>) -> Vec<PendingAuth> {
   let now = now_ms();
@@ -143,6 +150,18 @@ fn pick_active_now(
   paused.into_iter().max_by_key(|np| np.updated_at).cloned()
 }
 
+pub fn parca_adi(s: &str) -> String {
+  s.trim().to_lowercase()
+}
+
+/// Yoklama, istenen parçayla aynı mı. Boş gelen parça eski sayılır.
+pub fn parca_ayni(beklenen: &str, gelen: &str) -> bool {
+  if beklenen.is_empty() || gelen.is_empty() {
+    return false;
+  }
+  beklenen == gelen || gelen.contains(beklenen) || beklenen.contains(gelen)
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NowPlaying {
@@ -253,6 +272,8 @@ pub struct MusicState {
   /// deniyoruz.
   pending: RwLock<Vec<PendingAuth>>,
   note: RwLock<Option<String>>,
+  /// !sr hemen çalınca Spotify bir süre eski parçayı bildirir. (beklenen ad, zaman aşımı ms)
+  beklenen: RwLock<Option<(String, i64)>>,
 }
 
 fn doc_path(data_dir: &Path) -> PathBuf {
@@ -290,6 +311,7 @@ impl MusicState {
       access: RwLock::new((String::new(), 0)),
       pending: RwLock::new(prune_pending(doc.pending)),
       note: RwLock::new(None),
+      beklenen: RwLock::new(None),
     }
   }
 
@@ -342,12 +364,16 @@ impl MusicState {
   }
 
   /// Spotify veya YTMD anlık görüntüsünü kaydeder; çalan kaynağa otomatik geçer.
+  /// !sr sonrası gelen eski parça, beklenen ad gelene kadar yok sayılır.
   pub fn ingest_now(&self, mut np: Option<NowPlaying>, from: &str) {
     let from = if from == SOURCE_YTMD {
       SOURCE_YTMD
     } else {
       SOURCE_SPOTIFY
     };
+    if from == SOURCE_SPOTIFY && !self.yoklama_kabul(&np) {
+      return;
+    }
     if let Some(v) = np.as_mut() {
       if v.source.is_empty() {
         v.source = from.to_string();
@@ -374,6 +400,42 @@ impl MusicState {
       }
     }
     *self.now.write() = pick;
+  }
+
+  /// !sr hemen çalınca overlay bu parçayı gösterir. Spotify eski parçayı
+  /// bildirdikçe 20 sn boyunca yok sayılır.
+  pub fn istegi_yaz(&self, title: &str, artist: &str) {
+    let ad = parca_adi(title);
+    if ad.is_empty() {
+      return;
+    }
+    *self.beklenen.write() = Some((ad, now_ms() + 20_000));
+    *self.spotify_snap.write() = Some(NowPlaying {
+      title: title.trim().to_string(),
+      artist: artist.trim().to_string(),
+      is_playing: true,
+      source: SOURCE_SPOTIFY.to_string(),
+      updated_at: now_ms(),
+      ..Default::default()
+    });
+    self.publish_active();
+  }
+
+  fn yoklama_kabul(&self, np: &Option<NowPlaying>) -> bool {
+    let bek = (*self.beklenen.read()).clone();
+    let Some((ad, son)) = bek else {
+      return true;
+    };
+    if now_ms() > son {
+      *self.beklenen.write() = None;
+      return true;
+    }
+    let gelen = np.as_ref().map(|n| parca_adi(&n.title)).unwrap_or_default();
+    if parca_ayni(&ad, &gelen) {
+      *self.beklenen.write() = None;
+      return true;
+    }
+    false
   }
 
   pub fn set_note(&self, note: Option<String>) {
@@ -808,6 +870,23 @@ impl MusicState {
       .map(|n| n.is_playing)
       .unwrap_or(false);
 
+    if let Some(n) = ses_yuzdesi(action) {
+      let res = self
+        .client
+        .put(format!("https://api.spotify.com/v1/me/player/volume?volume_percent={n}"))
+        .bearer_auth(&token)
+        .header(reqwest::header::CONTENT_LENGTH, "0")
+        .body("")
+        .send()
+        .await?;
+      return match res.status().as_u16() {
+        200 | 202 | 204 => Ok(()),
+        403 => Err(anyhow!("Spotify kontrolü reddetti — oynatma kontrolü Spotify Premium gerektirir")),
+        404 => Err(anyhow!("Aktif Spotify cihazı yok — Spotify'da bir şey çalmaya başlatın")),
+        code => Err(anyhow!("Spotify komutu başarısız ({code})")),
+      };
+    }
+
     let (method, path) = match action {
       "play" => (reqwest::Method::PUT, "play"),
       "pause" => (reqwest::Method::PUT, "pause"),
@@ -1029,7 +1108,11 @@ impl MusicState {
     }
 
     // muteToggle: durumdan oku → mute/unmute (YTMD ayrı komutlar sunuyor).
-    let command = match action {
+    let ses = ses_yuzdesi(action);
+    let command = if ses.is_some() {
+      "setVolume".to_string()
+    } else {
+      match action {
       "play" => "play".to_string(),
       "pause" => "pause".to_string(),
       "playPause" => "playPause".to_string(),
@@ -1046,9 +1129,14 @@ impl MusicState {
         }
       }
       other => return Err(anyhow!("bilinmeyen komut: {other}")),
+    }
     };
 
     let url = format!("http://{host}:{port}/api/v1/command");
+    let govde = match ses {
+      Some(n) => json!({ "command": command, "data": n }),
+      None => json!({ "command": command }),
+    };
     // Companion Server sürümleri arasında başlık biçimi değişiyor: önce düz
     // token, 401 gelirse Bearer denenir.
     for header in [token.clone(), format!("Bearer {token}")] {
@@ -1056,7 +1144,7 @@ impl MusicState {
         .client
         .post(&url)
         .header(reqwest::header::AUTHORIZATION, header)
-        .json(&json!({ "command": command }))
+        .json(&govde)
         .send()
         .await;
       match res {
@@ -1192,6 +1280,15 @@ mod tests {
   use super::*;
 
   #[test]
+  fn volume_action_is_0_to_100() {
+    assert_eq!(ses_yuzdesi("volume:65"), Some(65));
+    assert_eq!(ses_yuzdesi("volume:0"), Some(0));
+    assert_eq!(ses_yuzdesi("volume:100"), Some(100));
+    assert_eq!(ses_yuzdesi("volume:101"), None);
+    assert_eq!(ses_yuzdesi("pause"), None);
+  }
+
+  #[test]
   fn search_match_prefers_title_in_query() {
     let items = vec![
       json!({"name": "Dracula", "artists": [{"name": "Tame Impala"}]}),
@@ -1302,6 +1399,19 @@ mod tests {
       updated_at,
       ..Default::default()
     }
+  }
+
+  #[test]
+  fn istek_eski_yoklamayi_yok_sayar() {
+    let st = temp_state("istek");
+    st.istegi_yaz("Paramparça", "Teoman");
+    assert_eq!(st.now_playing().unwrap().title, "Paramparça");
+    st.ingest_now(Some(np("spotify", true, "Eski", now_ms())), "spotify");
+    assert_eq!(st.now_playing().unwrap().title, "Paramparça");
+    st.ingest_now(Some(np("spotify", true, "Paramparça", now_ms())), "spotify");
+    assert_eq!(st.now_playing().unwrap().artist, "a");
+    st.ingest_now(Some(np("spotify", true, "Baska", now_ms())), "spotify");
+    assert_eq!(st.now_playing().unwrap().title, "Baska");
   }
 
   #[test]

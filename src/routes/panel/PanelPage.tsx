@@ -25,7 +25,7 @@ import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar from "../../components/panel/NavTabBar";
 import KomutPaleti, { PALET_AC_OLAYI } from "../../components/panel/KomutPaleti";
 import { Kbd } from "@/components/ui";
-import { menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
+import { OVERLAY_PENCERESI, menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
 import StreamHealthCard from "../../components/panel/StreamHealthCard";
@@ -1837,6 +1837,10 @@ export default function PanelPage() {
               setBotSekme(sayfa);
               setActiveNav("bot");
             }}
+            onObsBagla={() => {
+              setDashBolum("baglantilar");
+              setActiveNav("profile");
+            }}
           />
         </Suspense>
       ) : yayinTab ? (
@@ -1852,7 +1856,26 @@ export default function PanelPage() {
           <BotEkrani sayfa={botSekme} onSayfa={setBotSekme} onToast={showToast} onOpenMusic={() => setActiveNav("music")} />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
-            <StreamAxtHost onToast={showToast} tab={botSekme} embed onOpenMusic={() => setActiveNav("music")} />
+            {botGrubu === "sahne" ? (
+              <div role="tablist" aria-label={tt("nav.overlaylar")} className="flex shrink-0 gap-1 border-b border-white/10 px-3 py-2">
+                {OVERLAY_PENCERESI.map((s) => {
+                  const acik = (botSekme || "overlays") === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={acik}
+                      className={`h-9 whitespace-nowrap rounded-md px-3.5 text-sm font-semibold transition-colors ${acik ? "bg-white/10 text-white" : "text-panel-muted hover:text-white"}`}
+                      onClick={() => setBotSekme(s.id)}
+                    >
+                      {s.ad}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+            <StreamAxtHost onToast={showToast} tab={botSekme || "overlays"} embed onOpenMusic={() => setActiveNav("music")} />
           </div>
         )
       ) : chatTab && !chatOverlaySettings ? (

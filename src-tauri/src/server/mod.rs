@@ -1505,6 +1505,13 @@ async fn api_player_request(
     .request_track(&body.query, body.video_id.as_deref(), body.queue)
     .await
     .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+  if !body.queue {
+    state.music.istegi_yaz(&title, &artist);
+    state.broadcast_json(&serde_json::json!({
+      "type": "now-playing",
+      "data": state.music.now_playing(),
+    }));
+  }
   if state.music.spotify_connected() {
     if let Ok(np) = state.music.poll_spotify().await {
       state.music.ingest_now(np, "spotify");

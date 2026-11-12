@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
 import type { WidgetEvent } from "../../lib/smartBot/events";
 import { getBotConfig, hydrateBotConfigFromServer, subscribeBotConfig } from "../../lib/smartBot";
+import { isLocalBotUser } from "../../lib/smartBot/botIdentity";
 import { useOverlayWidgetEvents } from "../../lib/smartBot/useOverlayWidgetEvents";
+import { PATLAMA_TAVAN, patlamaAdedi, patlamaSimgesi } from "../../lib/patlamaAdedi";
 
 type Floater = {
   id: string;
@@ -29,7 +31,7 @@ export default function OnScreenEmotesPage() {
   const pushMany = useCallback(
     (list: { url?: string; text: string }[]) => {
       if (cfg?.enabled === false) return;
-      const max = cfg?.max || 40;
+      const max = Math.min(cfg?.max || 12, PATLAMA_TAVAN);
       const baseDur = cfg?.durationMs || 3500;
       const sway = cfg?.swaySpeed || 1;
       const minSize = Math.max(8, cfg?.minSize ?? 28);
@@ -61,9 +63,20 @@ export default function OnScreenEmotesPage() {
   const onEvent = useCallback(
     (ev: WidgetEvent) => {
       if (cfg?.enabled === false) return;
+      if (isLocalBotUser(ev.user || "")) return;
+      const olay = patlamaAdedi(ev.kind, ev.amount, {
+        follow: cfg?.explosionOnFollow !== false,
+        sub: cfg?.explosionOnSub !== false,
+      });
+      if (olay) {
+        const simge = patlamaSimgesi(ev.kind);
+        pushMany(Array.from({ length: olay }, () => ({ text: simge })));
+        return;
+      }
       if (ev.kind !== "emote" && ev.kind !== "emotecombo") return;
+      if (String(ev.message || "").trim().startsWith("!")) return;
       if (ev.meta?.explosion) {
-        const n = Number(ev.meta.count || 12);
+        const n = Math.min(PATLAMA_TAVAN, Number(ev.meta.count || 8));
         pushMany(
           Array.from({ length: n }, () => ({
             text: String(ev.message || "✨"),
@@ -79,7 +92,7 @@ export default function OnScreenEmotesPage() {
         },
       ]);
     },
-    [pushMany, cfg?.enabled]
+    [pushMany, cfg]
   );
 
   useOverlayWidgetEvents(onEvent);
@@ -89,7 +102,7 @@ export default function OnScreenEmotesPage() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-transparent">
+    <div className="pointer-events-none fixed bottom-4 right-4 h-[480px] w-[640px] overflow-hidden bg-transparent">
       {items.map((it) => (
         <div
           key={it.id}
@@ -113,8 +126,8 @@ export default function OnScreenEmotesPage() {
         @keyframes emoteFly{
           0%{transform:translate(0,0) scale(.7);opacity:0}
           12%{opacity:1}
-          50%{transform:translate(var(--sway), -45vh) scale(1)}
-          100%{transform:translate(calc(var(--sway) * -1), -90vh) scale(1.15);opacity:0}
+          50%{transform:translate(var(--sway), -220px) scale(1)}
+          100%{transform:translate(calc(var(--sway) * -1), -440px) scale(1.15);opacity:0}
         }
       `}</style>
     </div>

@@ -16,14 +16,14 @@ use serde_json::{json, Value};
 
 /// Panelin OBS'e eklenebilen dock'ları: (kimlik, OBS'teki başlık). Adres `/dock?id=<kimlik>`.
 pub const DOCKLAR: &[(&str, &str)] = &[
-  ("sohbet", "YYA · Çoklu Sohbet"),
-  ("etkinlik", "YYA · Etkinlik Akışı"),
-  ("deste", "YYA · Hızlı Eylemler"),
-  ("yayinbilgisi", "YYA · Yayın Bilgisi"),
-  ("kontrol", "YYA · Kontrol Merkezi"),
-  ("muzik", "YYA · Müzik"),
-  ("sesler", "YYA · Ses Paneli"),
-  ("panel", "YYA · Panel"),
+  ("sohbet", "AX Studio · Çoklu Sohbet"),
+  ("etkinlik", "AX Studio · Etkinlik Akışı"),
+  ("deste", "AX Studio · Hızlı Eylemler"),
+  ("yayinbilgisi", "AX Studio · Yayın Bilgisi"),
+  ("kontrol", "AX Studio · Kontrol Merkezi"),
+  ("muzik", "AX Studio · Müzik"),
+  ("sesler", "AX Studio · Ses Paneli"),
+  ("panel", "AX Studio · Panel"),
 ];
 
 /// İlk kurulumda önerilen dock'lar (geri kalanı OBS Studio sekmesinden eklenir)

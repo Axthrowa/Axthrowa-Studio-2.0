@@ -44,8 +44,7 @@ export function Guncelleme() {
     <div className="space-y-2">
       <h3 className="text-sm font-bold uppercase tracking-wider text-white">Güncellemeler</h3>
       <p className="text-xs font-medium text-white/75">
-        Güncelleme bildirimi adresi (https JSON): <code>{'{"surum":"1.2.0","sayfa":"https://…","kurulum":"https://…Setup.exe"}'}</code>. Uygulama açılışta denetler.
-        "Kur" kurulumu indirir; yalnız bu uygulamanın sertifikasıyla imzalıysa çalıştırır.
+        Güncelleme bildirimi adresi (https JSON): <code>{'{"surum":"1.2.0","sayfa":"https://…","notlar":"…","kurulum":"https://…Setup.exe"}'}</code>. Uygulama açılışta bakar ve notları gösterir. Kendiliğinden indirmez. "İndir ve kur"a basınca kurulumu indirir; yalnız bu uygulamanın sertifikasıyla imzalıysa çalıştırır.
       </p>
       <div className="flex flex-wrap gap-2">
         <input className="min-w-[260px] flex-1 rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-xs text-white" placeholder="https://…/guncelleme.json" value={adres} onChange={(e) => setAdres(e.target.value)} />

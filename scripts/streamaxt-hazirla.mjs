@@ -282,12 +282,15 @@ if (flag("db-recolor") || flag("db-tohumla")) {
 
 console.log(`[streamaxt] hazır: ${hedef}`);
 
-// ---- Resonance: kaynak bu depo. Botun bağımsız dağıtımı için kendi kopyası var; elle tutulunca ayrışıyordu.
-const botResonance = path.join(kaynak, "resonance", "src");
-if (fs.existsSync(botResonance)) {
-  fs.rmSync(botResonance, { recursive: true, force: true });
-  fs.cpSync(path.join(root, "resonance", "src"), botResonance, { recursive: true });
-  console.log(`[streamaxt] Resonance kaynağı bota eşitlendi → ${botResonance}`);
+// Resonance kaynağı Studio deposunda. Paket, orada derlenmiş dist'i alır;
+// botun kendi src ağacı elle eşitlenmez.
+const resDist = path.join(root, "resonance", "dist");
+const resPaket = path.join(root, "cikti", "portable", "resonance", "dist");
+if (fs.existsSync(path.join(resDist, "index.html"))) {
+  fs.cpSync(resDist, resPaket, { recursive: true });
+  console.log(`[streamaxt] Resonance derlemesi pakete kopyalandı → ${resPaket}`);
+} else {
+  console.warn("[streamaxt] resonance/dist yok. Önce: npm run build:resonance");
 }
 // Bu bilgisayarın Client ID'leri pakete girer (sır girmez): yeni kurulumda yeniden yazmak gerekmesin
 execFileSync(process.execPath, [path.join(root, "scripts", "kimlikleri-ekle.mjs"), path.join(hedef, "varsayilan-kimlikler.json")], { stdio: "inherit" });

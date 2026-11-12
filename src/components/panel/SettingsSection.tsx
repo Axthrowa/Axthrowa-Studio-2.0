@@ -111,7 +111,7 @@ export default function SettingsSection({
   children,
   className = "",
   style,
-  defaultOpen = true,
+  defaultOpen = false,
 }: Props) {
   const t = useT();
   const [open, setOpen] = useState(() => {

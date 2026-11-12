@@ -1,7 +1,7 @@
 /** Kick sohbetinde görünen bot kimliği — Botrix’teki `botrixlive` karşılığı. */
 export const DEFAULT_BOT_NAME = "BotAxT";
 
-const KNOWN = new Set(["botaxt", "sesbot", "bot axt"]);
+const KNOWN = new Set(["botaxt", "sesbot", "bot axt", "axbot"]);
 
 export function isLocalBotUser(user: string, botName?: string): boolean {
   const u = String(user || "")

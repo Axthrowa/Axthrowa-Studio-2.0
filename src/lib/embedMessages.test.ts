@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KOMUT_PALETI_TYPE, OPEN_EXTERNAL_TYPE, OPEN_MUSIC_TYPE, frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest, resonanceLinkAllowed } from "./embedMessages";
+import { KOMUT_PALETI_TYPE, OPEN_EXTERNAL_TYPE, OPEN_MUSIC_TYPE, frameOrigin, komutPaletiRequest, openExternalRequest, openMusicRequest, resonanceLinkAllowed, temaIstegi } from "./embedMessages";
 
 const frame = { name: "streamaxt-frame" };
 const origin = "http://127.0.0.1:3001";
@@ -81,5 +81,14 @@ describe("openMusicRequest", () => {
     expect(openMusicRequest({ ...m, source: {} }, frame, origin)).toBe(false);
     expect(openMusicRequest({ ...m, origin: "https://ornek.com" }, frame, origin)).toBe(false);
     expect(openMusicRequest(ok("https://ornek.com"), frame, origin)).toBe(false);
+  });
+});
+
+describe("temaIstegi", () => {
+  it("yalnız bizim çerçeveden gelen tema isteğini kabul eder", () => {
+    const m = { data: { tur: "yya-tema-iste" }, origin, source: frame };
+    expect(temaIstegi(m, frame, origin)).toBe(true);
+    expect(temaIstegi({ ...m, source: {} }, frame, origin)).toBe(false);
+    expect(temaIstegi({ ...m, origin: "https://ornek.com" }, frame, origin)).toBe(false);
   });
 });

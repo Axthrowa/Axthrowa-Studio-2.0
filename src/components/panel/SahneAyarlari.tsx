@@ -237,6 +237,58 @@ export default function SahneAyarlari({
               onToast={showToast}
             />
           )}
+          {(screen === "starting" || screen === "ending" || screen === "brb") && (
+            <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-black/25 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">Sık kullanılan</p>
+              <Field label={tt("field.title")} value={settings.title || ""} onChange={(v) => update({ title: v })} />
+              {screen === "brb" ? (
+                <Field
+                  label="Mola (dk)"
+                  type="number"
+                  value={String(settings.brbMinutes ?? 5)}
+                  onChange={(v) => {
+                    sessionStorage.removeItem("brb_end_" + (settings.brbMinutes || 5));
+                    sessionStorage.removeItem("brb_end_" + (Number(v) || 5));
+                    update({ brbMinutes: Number(v) || 5 });
+                  }}
+                />
+              ) : (
+                <Field label={tt("field.sub")} value={settings.sub || ""} onChange={(v) => update({ sub: v })} />
+              )}
+              <div>
+                <label className="mb-1 block text-xs text-panel-muted">{tt("field.bg")}</label>
+                <select
+                  aria-label={tt("field.bg")}
+                  className="h-9 w-full rounded-xl border border-white/[0.12] bg-[#12151e] px-3 text-sm text-white"
+                  value={settings.bgStyle || "mix"}
+                  onChange={(e) => update({ bgStyle: e.target.value })}
+                >
+                  <option value="mix">{tt("bg.mix")}</option>
+                  <option value="accent">{tt("bg.accent")}</option>
+                  <option value="dark">{tt("bg.dark")}</option>
+                  <option value="image">{tt("bg.image")}</option>
+                  <option value="video">{tt("bg.video")}</option>
+                  <option value="youtube">{tt("bg.youtube")}</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-white/80">
+                Müzik
+                <input
+                  aria-label="Müzik sesi"
+                  type="range"
+                  min={0}
+                  max={100}
+                  className="min-w-0 flex-1"
+                  value={settings.musicVolume ?? 70}
+                  onChange={(e) => update({ musicVolume: Number(e.target.value) })}
+                />
+                <span className="w-8 text-right tabular-nums">{settings.musicVolume ?? 70}</span>
+              </label>
+              <button type="button" className="text-left text-xs font-semibold text-panel-accent" onClick={() => ayarBolumuAc("logo")}>
+                Logo: {settings.logoFile || "seç"}
+              </button>
+            </div>
+          )}
           {!sectionHidden("metin") && (
             <SettingsSection id="metin" title={tt("sec.metin")} style={secOrder("metin")}>
           <Field alan="eyebrow" label={tt("field.eyebrow")} value={settings.eyebrow || ""} onChange={(v) => update({ eyebrow: v })} />
@@ -1598,7 +1650,7 @@ export default function SahneAyarlari({
       )}
 
       {screen === "chat" && !sectionHidden("chatAyarlari") && (
-        <SettingsSection id="chatAyarlari" title={tt("sec.chatAyarlari")} style={secOrder("chatAyarlari")}>
+        <SettingsSection id="chatAyarlari" title={tt("sec.chatAyarlari")} style={secOrder("chatAyarlari")} defaultOpen>
           <div className="rounded-xl border border-panel-accent/30 bg-panel-soft px-2.5 py-2 text-[11px] leading-relaxed text-panel-accent/90">
             <p className="mb-1 font-semibold text-panel-accent">{tt("chat.tipsTitle")}</p>
             <p>{tt("chat.tipsBody")}</p>

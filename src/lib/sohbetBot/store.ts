@@ -72,26 +72,6 @@ function emit(c: BotConfigV2) {
   }
 }
 
-/** Sohbet puanı: tüm ayarı kopyalamadan kullanıcıyı yerinde günceller, yazmayı 2 sn biriktirir. */
-export function noteLoyalty(key: string, addPoints: number, addMessages: number, initial = 0) {
-  const cfg = loadBotConfig();
-  let u = cfg.loyalty[key];
-  if (!u) {
-    u = { points: initial, messages: 0, watchMin: 0, lastSeen: Date.now() };
-    cfg.loyalty[key] = u;
-  }
-  u.points += addPoints;
-  u.messages += addMessages;
-  u.lastSeen = Date.now();
-  if (saveTimer != null) return;
-  saveTimer = window.setTimeout(() => {
-    saveTimer = null;
-    const c = loadBotConfig();
-    emit(c);
-    flushPersist(c);
-  }, 2000);
-}
-
 function flushPersist(c: BotConfigV2) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(c));

@@ -202,15 +202,3 @@ export function moveInOrder(order: string[], id: string, dir: -1 | 1): string[] 
   return next;
 }
 
-/** Sürükle-bırak: dragId’yi dropId konumuna taşı. */
-export function reorderByDrop(order: string[], dragId: string, dropId: string): string[] {
-  if (dragId === dropId) return order;
-  const next = [...order];
-  const from = next.indexOf(dragId);
-  const to = next.indexOf(dropId);
-  if (from < 0 || to < 0) return order;
-  next.splice(from, 1);
-  next.splice(to, 0, dragId);
-  return next;
-}
-

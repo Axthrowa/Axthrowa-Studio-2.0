@@ -428,31 +428,6 @@ export function defaultWheel(): WheelConfig {
   };
 }
 
-/** Ağırlıklı rastgele dilim indeksi */
-export function pickWeightedIndex(weights: number[], length: number): number {
-  const n = Math.max(1, length);
-  const w = Array.from({ length: n }, (_, i) => Math.max(0, Number(weights[i]) || 0));
-  const total = w.reduce((a, b) => a + b, 0);
-  if (total <= 0) return Math.floor(Math.random() * n);
-  let r = Math.random() * total;
-  for (let i = 0; i < n; i++) {
-    r -= w[i];
-    if (r <= 0) return i;
-  }
-  return n - 1;
-}
-
-/**
- * İşaretçi üstte; dilim merkezi üste gelsin diye ekstra turlar + açı.
- * CSS conic-gradient 0° üstten başlar, saat yönünde ilerler.
- */
-export function computeWheelRotationDeg(index: number, count: number, extraSpins = 5): number {
-  const n = Math.max(1, count);
-  const slice = 360 / n;
-  const center = index * slice + slice / 2;
-  return extraSpins * 360 + ((360 - center) % 360);
-}
-
 export function defaultHypeTrain(): HypeTrainConfig {
   return {
     active: false,

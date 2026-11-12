@@ -232,27 +232,6 @@ export async function twitchKategoriAra(q: string): Promise<{ id: string; ad: st
   return (j.data ?? []).map((c) => ({ id: c.id, ad: c.name }));
 }
 
-/** Eski oturumlarda `clips:edit` yoktur — yeniden bağlanana dek klip kapalı kalır. */
-export async function twitchClipOlustur(): Promise<string> {
-  const s = load();
-  if (!s?.userId) return "Twitch bağlı değil — Bot → Twitch yazma’dan Bağlan.";
-  if (!s.scopes?.includes("clips:edit")) {
-    return "Klip için Twitch’i yeniden bağla (clips:edit izni).";
-  }
-  const r = await fetch(`${HELIX}/clips?broadcaster_id=${encodeURIComponent(s.userId)}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${s.accessToken}`, "Client-Id": s.clientId },
-  });
-  if (!r.ok) {
-    const t = (await r.text().catch(() => "")).slice(0, 160);
-    return `Twitch klip: ${r.status}${t ? ` ${t}` : ""}`;
-  }
-  const j = (await r.json()) as { data?: { id?: string; edit_url?: string }[] };
-  const clip = j.data?.[0];
-  if (!clip?.id) return "Twitch klip oluşmadı — yayın açık mı?";
-  return clip.edit_url || `https://clips.twitch.tv/${clip.id}`;
-}
-
 export async function twitchKanalGuncelle(d: { baslik?: string; kategoriId?: string | null; etiketler?: string[] }): Promise<void> {
   if (!twitchKanalYazabilir()) throw new Error("Twitch oturumunda channel:manage:broadcast izni yok — Twitch'i yeniden bağlayın");
   const govde = twitchKanalGovdesi(d);

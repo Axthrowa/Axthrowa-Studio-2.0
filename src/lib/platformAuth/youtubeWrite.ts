@@ -179,48 +179,6 @@ export async function sendYoutubeLiveChat(text: string, channelRef?: string): Pr
   }
 }
 
-/** Canlı sohbetteki son metin mesajlarını siler (toplu clear API yok). */
-export async function clearYoutubeLiveChat(channelRef?: string): Promise<boolean> {
-  const session = load();
-  if (!session) return false;
-  try {
-    const videoId = await resolveVideoIdFromHub(channelRef);
-    const liveChatId = await resolveLiveChatId(videoId, session.accessToken);
-    const listUrl = new URL("https://www.googleapis.com/youtube/v3/liveChat/messages");
-    listUrl.searchParams.set("liveChatId", liveChatId);
-    listUrl.searchParams.set("part", "id,snippet");
-    listUrl.searchParams.set("maxResults", "200");
-    const list = await fetch(listUrl.toString(), {
-      headers: { Authorization: `Bearer ${session.accessToken}` },
-    });
-    if (list.status === 401) {
-      clearYoutubeWriteSession();
-      return false;
-    }
-    if (!list.ok) return false;
-    const data = (await list.json()) as {
-      items?: { id?: string; snippet?: { type?: string } }[];
-    };
-    const ids = (data.items || [])
-      .filter((it) => it.id && it.snippet?.type === "textMessageEvent")
-      .map((it) => String(it.id))
-      .slice(0, 80);
-    if (!ids.length) return true;
-    const results = await Promise.all(
-      ids.map(async (id) => {
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/liveChat/messages?id=${encodeURIComponent(id)}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${session.accessToken}` },
-        });
-        return res.ok || res.status === 404;
-      })
-    );
-    return results.some(Boolean);
-  } catch {
-    return false;
-  }
-}
-
 // ─── Yayın bilgisi (YouTube Data API v3; resmi belge: liveBroadcasts.list/update, videos.list/update,
 // videoCategories.list). Mevcut `youtube.force-ssl` kapsamı yeterli. Belge yayın kimliğinin video kimliği olduğunu
 // açıkça söylemediği için bu varsayılmaz: yayın kimliği `videos.list` ile bulunursa kategori/etiket de güncellenir,

@@ -74,7 +74,8 @@ export class WebSocketHub {
   }
   /** Ekip çapında uyarı kuyruğu denetimi (modules/alerts/control.ts) */
   private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
-  private sonUyarilar = new SonUyarilar(50);
+  // Etkinlik akışı geçmişi de buradan (U4): panel sonradan açılınca son olaylar görünsün
+  private sonUyarilar = new SonUyarilar(200);
   /** OBS'teki uyarı kutularının bildirdiği kuyruk (U3) */
   private kuyrukAynalari = new KuyrukAynalari<ClientConnection>();
 
@@ -86,7 +87,7 @@ export class WebSocketHub {
     return {
       queue: this.kuyrukAynalari.ozet(),
       state: this.uyariKontrol,
-      recent: this.sonUyarilar.hepsi().map(({ alert: _a, ...geri }) => geri)
+      recent: this.sonUyarilar.hepsi().slice(0, 50).map(({ alert: _a, data: _d, ...geri }) => geri)
     };
   }
 
@@ -118,6 +119,21 @@ export class WebSocketHub {
       });
     }
     return sonuc;
+  }
+
+  /** Etkinlik akışı geçmişi (eskiden yeniye): canlıda yayınlanan `alert` iletisinin aynısı + teşekkür işareti */
+  etkinlikGecmisi() {
+    return this.sonUyarilar
+      .hepsi()
+      .reverse()
+      .map((u) => ({ type: 'alert', subType: u.eventType, data: u.data, alert: u.alert, tesekkur: !!u.tesekkur }));
+  }
+
+  /** "Teşekkür edildi" işareti: tüm panellere yayınlanır. Uyarı geçmişte yoksa false. */
+  tesekkurIsaretle(id: string, deger: boolean): boolean {
+    if (!this.sonUyarilar.tesekkurIsaretle(id, deger)) return false;
+    this.broadcastTo(['dashboard'], { type: 'activity_thanked', id, tesekkur: deger });
+    return true;
   }
 
   /** /ws dışındaki WebSocket yolları (ör. Resonance /ws/overlay-sync) */
@@ -775,7 +791,8 @@ export class WebSocketHub {
         message: String(a.message || ''),
         at: Date.now(),
         isTest: !!a.isTest,
-        alert: a
+        alert: a,
+        data: payload.data
       });
     }
     // Yeniden oynatma sayaçlara (hype treni, hedef) ikinci kez işlemez

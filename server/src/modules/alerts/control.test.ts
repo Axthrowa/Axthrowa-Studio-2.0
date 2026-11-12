@@ -56,6 +56,18 @@ describe('uyariKimligi', () => {
   });
 });
 
+describe('SonUyarilar teşekkür işareti (U4)', () => {
+  it('halkadaki uyarıyı işaretler, olmayanı reddeder', () => {
+    const s = new SonUyarilar(3);
+    s.ekle({ id: 'a', eventType: 'follow', title: '', message: '', at: 1, isTest: false, alert: {}, data: { username: 'x' } });
+    expect(s.tesekkurIsaretle('a', true)).toBe(true);
+    expect(s.bul('a')?.tesekkur).toBe(true);
+    expect(s.tesekkurIsaretle('a', false)).toBe(true);
+    expect(s.bul('a')?.tesekkur).toBe(false);
+    expect(s.tesekkurIsaretle('yok', true)).toBe(false);
+  });
+});
+
 describe('SonUyarilar', () => {
   it('en yenisi başta, tavanı aşmaz, kimlikle bulunur', () => {
     const s = new SonUyarilar(3);

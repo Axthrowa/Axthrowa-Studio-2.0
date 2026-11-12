@@ -93,6 +93,10 @@ export interface SonUyari {
   isTest: boolean;
   /** Yeniden oynatma için widget'a giden veri */
   alert: Record<string, unknown>;
+  /** Olayın ham verisi (kullanıcı, tutar…): etkinlik akışı geçmişi için (U4) */
+  data?: unknown;
+  /** Yayıncı ya da moderatör "teşekkür edildi" işaretledi mi (U4, tüm panellerde ortak) */
+  tesekkur?: boolean;
 }
 
 /** Son uyarılar halkası (yeniden oynatma listesi). */
@@ -107,6 +111,14 @@ export class SonUyarilar {
 
   bul(id: string): SonUyari | undefined {
     return this.liste.find((x) => x.id === id);
+  }
+
+  /** Teşekkür işareti; uyarı halkada yoksa false */
+  tesekkurIsaretle(id: string, deger: boolean): boolean {
+    const u = this.bul(id);
+    if (!u) return false;
+    u.tesekkur = deger;
+    return true;
   }
 
   hepsi(): SonUyari[] {

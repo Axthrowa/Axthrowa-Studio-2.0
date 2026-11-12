@@ -139,6 +139,17 @@ router.get('/chat/history', (req: Request, res: Response) => {
   res.json({ mesajlar: wsHub.sohbetGecmisi() });
 });
 
+// Etkinlik akışı (U4): son 200 olay ve ortak "teşekkür edildi" işareti
+router.get('/activity/history', (_req: Request, res: Response) => {
+  res.json({ olaylar: wsHub.etkinlikGecmisi() });
+});
+router.post('/activity/thanked', (req: Request, res: Response) => {
+  const id = String(req.body?.id ?? '').slice(0, 120);
+  if (!id) return res.status(400).json({ error: 'Olay kimliği gerekli' });
+  if (!wsHub.tesekkurIsaretle(id, req.body?.tesekkur !== false)) return res.status(404).json({ error: 'Olay geçmişte yok' });
+  res.json({ ok: true });
+});
+
 // Platformda sohbet temizleme: yayıncı panelde hangi platformlar olduğunu seçer
 const TEMIZLENEBILIR = ['kick', 'twitch', 'youtube', 'trovo'] as const;
 router.get('/chat/clear-platforms', (req: Request, res: Response) => {

@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Bell, Check, Play, Save } from 'lucide-react';
-import { Katlanir } from '../ui/index.js';
+import { Alan, AlanMetni, Anahtar, Buton, Girdi, Katlanir, Secim } from '../ui/index.js';
 import { FONTS, uyariKaydiGovdesi, yeniUyariKaydi } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, animKimligi } from '../lib/animations.js';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
@@ -28,6 +28,9 @@ const TABS = [
 
 /** Ayar sekmesi olmayan (olay preseti taşımayan) sekmeler. */
 const OLAY_DISI = new Set(['advanced', 'variants', 'media']);
+
+const DUZENLER = [{ value: 'stacked', label: 'Üst üste' }, { value: 'side-by-side', label: 'Yan yana' }, { value: 'text-over', label: 'Yazı üstünde' }];
+const YAZI_EFEKTLERI = [{ value: 'none', label: 'Yok' }, { value: 'shine', label: 'Parlama' }, { value: 'wiggle', label: 'Kıpırtı' }, { value: 'wave', label: 'Dalga' }, { value: 'pulse', label: 'Nabız' }];
 
 
 export function AlertsStudio() {
@@ -90,9 +93,7 @@ export function AlertsStudio() {
           <h1 className="text-2xl font-black text-white flex items-center gap-2"><Bell className="w-6 h-6 text-purple-400" /> Uyarılar (Alert Box)</h1>
           <p className="text-sm text-gray-400">Takip, abone, hediye abone, host, bağış, kicks ve raid alert ayarları.</p>
         </div>
-        <button onClick={test} className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5">
-          <Play className="w-4 h-4" /> Test uyarısı
-        </button>
+        <Buton ton="basari" onClick={test} ikon={<Play className="w-4 h-4" />}>Test uyarısı</Buton>
       </div>
 
       <div className="flex flex-wrap gap-1 bg-black/30 p-1 rounded-xl">
@@ -116,9 +117,9 @@ export function AlertsStudio() {
         <div className="glass-panel p-6 rounded-2xl space-y-3">
           <Katlanir baslik="Metin" aciklama="Uyarıda ne yazsın" acik>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="text-xs text-gray-300 font-bold">Alert açık <input className="ml-2" type="checkbox" checked={current.is_enabled !== 0} onChange={e => updatePreset({ is_enabled: e.target.checked ? 1 : 0 })} /></label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Başlık şablonu<input value={current.title_template || ''} onChange={e => updatePreset({ title_template: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <label className="md:col-span-2 text-xs text-gray-300 font-bold space-y-1">Mesaj şablonu<textarea value={current.message_template || ''} onChange={e => updatePreset({ message_template: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 min-h-[70px]" /></label>
+          <Anahtar etiket="Uyarı açık" acik={current.is_enabled !== 0} onChange={(v) => updatePreset({ is_enabled: v ? 1 : 0 })} />
+          <Alan etiket="Başlık şablonu"><Girdi value={current.title_template || ''} onChange={e => updatePreset({ title_template: e.target.value })} /></Alan>
+          <div className="md:col-span-2"><Alan etiket="Mesaj şablonu"><AlanMetni value={current.message_template || ''} onChange={e => updatePreset({ message_template: e.target.value })} /></Alan></div>
           {olayEtiketi(yetenek, tab) && (
             <p className="md:col-span-2 text-[11px] text-amber-300/90">
               Bu olayı üreten kaynaklar: {olayEtiketi(yetenek, tab)}
@@ -129,16 +130,16 @@ export function AlertsStudio() {
           </Katlanir>
           <Katlanir baslik="Görsel ve ses" aciklama="GIF, ses dosyası, süre">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="text-xs text-gray-300 font-bold space-y-1">Görsel / GIF URL<input value={current.image_url || ''} onChange={e => updatePreset({ image_url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Ses URL<input value={current.sound_url || ''} onChange={e => updatePreset({ sound_url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <Alan etiket="Görsel / GIF adresi"><Girdi value={current.image_url || ''} onChange={e => updatePreset({ image_url: e.target.value })} /></Alan>
+          <Alan etiket="Ses adresi"><Girdi value={current.sound_url || ''} onChange={e => updatePreset({ sound_url: e.target.value })} /></Alan>
           {/* Harici URL kırılgandı: site dosyayı silince uyarı sessizce bozuluyordu */}
           <div className="md:col-span-2 flex flex-wrap gap-2">
-            <button onClick={() => setKutuphane(kutuphane === 'image' ? null : 'image')} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-gray-200">
+            <Buton ton="ikincil" onClick={() => setKutuphane(kutuphane === 'image' ? null : 'image')}>
               {kutuphane === 'image' ? 'Kütüphaneyi kapat' : 'Görseli kütüphaneden seç'}
-            </button>
-            <button onClick={() => setKutuphane(kutuphane === 'audio' ? null : 'audio')} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-gray-200">
+            </Buton>
+            <Buton ton="ikincil" onClick={() => setKutuphane(kutuphane === 'audio' ? null : 'audio')}>
               {kutuphane === 'audio' ? 'Kütüphaneyi kapat' : 'Sesi kütüphaneden seç'}
-            </button>
+            </Buton>
           </div>
           {kutuphane && (
             <div className="md:col-span-2 pt-2 border-t border-white/10">
@@ -152,39 +153,21 @@ export function AlertsStudio() {
               />
             </div>
           )}
-          <label className="text-xs text-gray-300 font-bold space-y-1">Süre (ms)<input type="number" value={current.duration_ms || 5000} onChange={e => updatePreset({ duration_ms: Number(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Ses ({current.sound_volume ?? 0.7})<input type="range" min={0} max={1} step={0.05} value={current.sound_volume ?? 0.7} onChange={e => updatePreset({ sound_volume: Number(e.target.value) })} className="w-full" /></label>
+          <Alan etiket="Süre (ms)"><Girdi type="number" value={current.duration_ms || 5000} onChange={e => updatePreset({ duration_ms: Number(e.target.value) })} /></Alan>
+          <Alan etiket={`Ses düzeyi (%${Math.round((current.sound_volume ?? 0.7) * 100)})`}><input type="range" min={0} max={1} step={0.05} value={current.sound_volume ?? 0.7} onChange={e => updatePreset({ sound_volume: Number(e.target.value) })} className="w-full accent-[var(--axt-vurgu,#8b5cf6)]" /></Alan>
             </div>
           </Katlanir>
           <Katlanir baslik="Görünüm" aciklama="Renk, yazı tipi, animasyon">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="text-xs text-gray-300 font-bold space-y-1">Yazı rengi<input type="color" value={current.text_color || '#ffffff'} onChange={e => updatePreset({ text_color: e.target.value })} className="w-full h-9 bg-black/40 rounded-xl" /></label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Vurgu rengi<input type="color" value={current.accent_color || '#8b5cf6'} onChange={e => updatePreset({ accent_color: e.target.value })} className="w-full h-9 bg-black/40 rounded-xl" /></label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Yazı tipi
-            <select value={current.font_family || 'Plus Jakarta Sans'} onChange={e => updatePreset({ font_family: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              {FONTS.map(f => <option key={f}>{f}</option>)}
-            </select>
-          </label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Animasyon
-            <select value={animKimligi(current.animation || 'bounce')} onChange={e => updatePreset({ animation: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              {ANIM_SECENEKLERI.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-            </select>
-          </label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Düzen
-            <select value={current.layout_mode || 'stacked'} onChange={e => updatePreset({ layout_mode: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              <option value="stacked">Üst üste</option><option value="side-by-side">Yan yana</option><option value="text-over">Yazı üstünde</option>
-            </select>
-          </label>
-          <label className="text-xs text-gray-300 font-bold space-y-1">Yazı efekti
-            <select value={current.text_effect || 'shine'} onChange={e => updatePreset({ text_effect: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
-              <option value="none">Yok</option><option value="shine">Shine</option><option value="wiggle">Wiggle</option><option value="wave">Wave</option><option value="pulse">Pulse</option>
-            </select>
-          </label>
+          <Alan etiket="Yazı rengi"><Girdi type="color" value={current.text_color || '#ffffff'} onChange={e => updatePreset({ text_color: e.target.value })} className="h-9" /></Alan>
+          <Alan etiket="Vurgu rengi"><Girdi type="color" value={current.accent_color || '#8b5cf6'} onChange={e => updatePreset({ accent_color: e.target.value })} className="h-9" /></Alan>
+          <Alan etiket="Yazı tipi"><Secim value={current.font_family || 'Plus Jakarta Sans'} onChange={e => updatePreset({ font_family: e.target.value })} secenekler={FONTS.map(f => ({ value: f, label: f }))} /></Alan>
+          <Alan etiket="Animasyon"><Secim value={animKimligi(current.animation || 'bounce')} onChange={e => updatePreset({ animation: e.target.value })} secenekler={ANIM_SECENEKLERI} /></Alan>
+          <Alan etiket="Düzen"><Secim value={current.layout_mode || 'stacked'} onChange={e => updatePreset({ layout_mode: e.target.value })} secenekler={DUZENLER} /></Alan>
+          <Alan etiket="Yazı efekti"><Secim value={current.text_effect || 'shine'} onChange={e => updatePreset({ text_effect: e.target.value })} secenekler={YAZI_EFEKTLERI} /></Alan>
             </div>
           </Katlanir>
-          <button onClick={saveEvent} className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 w-fit">
-            <Save className="w-4 h-4" /> Bu sekmeyi kaydet
-          </button>
+          <Buton onClick={saveEvent} ikon={<Save className="w-4 h-4" />}>Bu sekmeyi kaydet</Buton>
         </div>
       )}
       {saved && <div className="text-xs text-emerald-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {saved}</div>}

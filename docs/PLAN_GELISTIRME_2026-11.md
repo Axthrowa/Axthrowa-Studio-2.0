@@ -17,7 +17,15 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - B1 sessiz komutlar: `!clip` kapalıyken tek satır yazar; özel komut beklemedeyken "N sn bekle" (genel beklemede komut başına, kişi başı beklemede kişi başına bir kez). Yerleşik komutta "Reddedince sessiz kal", özel komutta "Reddedince sohbete yanıt ver" (`commands.refusal_reply`, göç 12). Test: `ret-yaniti.test.ts`.
 - B11 içe aktarma: Nightbot yanında StreamElements ve Fossabot dosyaları tanınır (`disa-aktarim-bicimleri.ts`); `GET /api/integrations/disa-aktar` kendi komut ve zamanlayıcıları yazar, aynı kutudan geri yüklenir. Aynı dosya iki kez yüklenince zamanlayıcı çoğalmaz. SE/Fossabot alan adları gerçek dışa aktarımla sınanmadı.
 - A6 klavye: Canlı ekranında adsız denetim yok, odak halkası 3 px; tüm temalar zaten kontrast testinde.
-- Açık: U1 kurulum sihirbazı, A1–A5 (bot bileşenleri, menü, Ekranlar sayfası, tek kaydetme modeli, bildirim merkezi), T1–T2 (ortak tasarım değişkenleri, gömülü sayfa sözleşmesi).
+- T1 ortak tasarım değişkenleri: `src/styles/axt-tasarim.css` (köşe, başlık yazısı, boşluk); Studio, Resonance ve gömülü bot aynı değişkenleri okur.
+- T2 gömülü sayfa sözleşmesi: `docs/GOMULU_SOZLESME.md`; ayara git, Esc ile odak bırakma, Ctrl+Z geri alma.
+- A1 bot bileşenleri: Uyarı Stüdyosu ortak `Alan/Girdi/Secim/Anahtar/Buton` bileşenlerinde.
+- A4 tek kaydetme modeli: `useOtoKayit` (700 ms sonra kaydeder, Ctrl+Z); Ayarlar, Mini oyunlar, Moderasyon, Yapay zekâ sayfaları. `Otomasyon.tsx` hâlâ eski "kaydedilmedi" şeridini kullanır.
+- A5 bildirim merkezi: `lib/bildirimler.ts`, zil simgesinde son 200 bildirim; hata kalıcı, bilgi 4 sn.
+- A2 menü: yedi başlık (Hazırlık, Canlı, Sahne ve Overlay, Etkileşim, Bot, Yayın sonrası, Ayarlar), Giriş/Mola/Çıkış tek "Ekranlar" satırı + iç sekme, "Tüm ayarlar" kalktı. Ctrl+1..7 başlık, Alt+←/→ gezinme geçmişi, dar kipte 300 ms sonra yan panel, katlanan başlık hatırlanır (`studio.menu.katli`). Test: `anaMenu.test.ts`.
+- A3 Ekranlar: 1366×768'de bölümler kapalıyken ayar paneli kaydırmasız (en uzun Çıkış 631/662 px). Şablonlar katlanır bölüm, sık kullanılanlar iki sütun.
+- U1 kurulum sihirbazı: OBS → platform → sahne eşleme → test uyarısı; son adım birleşik overlay'i (`/overlay/master`) açık sahneye ekler, aynı adresli kaynak varsa eklemez. Bitti bilgisi panel ayarlarında `kurulumBitti`; OBS'i parolalı ayarlanmış eski kurulumlarda satır görünmez. Gerçek OBS'e ekleme sınanmadı (sandbox OBS'e bağlı değil).
+- Faz 1 tamam.
 
 ---
 

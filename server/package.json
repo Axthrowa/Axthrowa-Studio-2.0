@@ -1,6 +1,6 @@
 {
   "name": "axbot-server",
-  "version": "1.13.18",
+  "version": "1.14.0",
   "engines": {
     "node": ">=22.5.0"
   },

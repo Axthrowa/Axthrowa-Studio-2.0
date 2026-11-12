@@ -73,7 +73,7 @@ router.post('/automod', (req: Request, res: Response) => {
     ai_moderation_enabled ? 1 : 0, ai_toxicity_threshold
   );
 
-  // Kural basina ihlal eylemi (BotRix parity, GAP §4). Alan gonderilmemisse
+  // Kural basina ihlal eylemi (örnek alınan bot parity, rakip incelemesi). Alan gonderilmemisse
   // MEVCUT deger korunur — eski panel surumu yeni ayarlari silmesin.
   const kurallar: Array<'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat'> = [
     'caps', 'emotes', 'links', 'symbols', 'blacklist', 'repeat'
@@ -154,7 +154,7 @@ router.post('/chat/clear-platforms', async (req: Request, res: Response) => {
   if (!secilen.length) return res.status(400).json({ ok: false, hata: 'Temizlenecek platform seçilmedi.' });
   const sonuclar = await platformlardaTemizle(secilen as string[], {
     platform: (id) => platformManager.getPlatform(id) as any,
-    kimlikler: (id) => wsHub.sohbetGecmisi(id).filter((m) => !m.user?.id?.startsWith('streamaxt_')).map((m) => m.id),
+    kimlikler: (id) => wsHub.sohbetGecmisi(id).filter((m) => !m.user?.id?.startsWith('axbot_')).map((m) => m.id),
     temizlendi: (id) => {
       eventBus.emit('chat_cleared', { platform: id, channel: '' });
       shieldModeService.addAuditLog('CLEAR_CHAT', 'Yayıncı', `${id} sohbeti temizlendi`);

@@ -236,7 +236,7 @@ export class AutoModEngine {
     const kaynak = kural === 'zalgo' || kural === 'length' ? { ...row, ...this.advancedCache } : row;
     const ayar = kuralAyariOku(kaynak, kural, violation.reason);
 
-    // Rol muafiyeti — BotRix'te her kuralin kendi bypass listesi var
+    // Rol muafiyeti — örnek alınan botta her kuralin kendi bypass listesi var
     const roller = { ...message.user, isRegular: duzenliler.mi(message.platform, message.user.username) };
     if (bypassEder(roller as any, ayar.bypass)) return;
 

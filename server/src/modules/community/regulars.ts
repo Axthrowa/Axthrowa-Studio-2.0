@@ -2,7 +2,7 @@
  * AxBoT — düzenli izleyiciler (regulars)
  * Developed by AxthrowA
  *
- * Nightbot'taki "regular" kullanıcı düzeyinin karşılığı: yayıncı/mod'un elle
+ * "regular" kullanıcı düzeyinin karşılığı: yayıncı/mod'un elle
  * eklediği güvenilir izleyiciler. Komut yetkisi `regular` (regular + VIP + mod)
  * ve AutoMod muafiyeti için kullanılır. Bellekte önbellek; her mesajda DB'ye
  * gidilmez.

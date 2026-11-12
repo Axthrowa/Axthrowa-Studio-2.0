@@ -4,11 +4,11 @@
  *
  * Üç iş bir arada: dışarı duyuru, dışarıdan içe aktarma, yedek alma.
  *
- *  • Discord duyuruları — BotRix'te `/panel/integrations` bir platform
- *    bağlantısı değil, Discord duyuru otomasyonudur (BOTRIX_UI_INVENTORY §8).
- *  • Nightbot içe aktarma — BotRix `Sohbet Botu > Ekstralar` (§6.4). Yeni
+ *  • Discord duyuruları — örnek alınan botta `/panel/integrations` bir platform
+ *    bağlantısı değil, Discord duyuru otomasyonudur (rakip incelemesi).
+ *  • Nightbot içe aktarma — örnek alınan bot `Sohbet Botu > Ekstralar` (§6.4). Yeni
  *    gelen kullanıcı komutlarını kaybetmesin.
- *  • Uyarı yedeği — BotRix'te ayarlar hesapta durur; bizde her şey yerel
+ *  • Uyarı yedeği — örnek alınan botta ayarlar hesapta durur; bizde her şey yerel
  *    SQLite'ta olduğu için makine değişiminde emek kaybolmasın diye
  *    dışa/içe aktarma eklendi.
  */

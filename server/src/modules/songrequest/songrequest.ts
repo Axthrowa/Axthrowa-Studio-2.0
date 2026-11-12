@@ -5,7 +5,7 @@ import { spawn } from 'child_process';
 import { ChatMessagePayload, eventBus } from '../../core/event-bus.js';
 import type { CalanSarki } from '../muzik/spotify-saf.js';
 
-/** Bot tarafında bekleyen, YYA'daki Spotify'a sırası gelince iletilecek istek (url öneki) */
+/** Bot tarafında bekleyen, Studio'daki Spotify'a sırası gelince iletilecek istek (url öneki) */
 const BEKLEYEN = 'spotify-istek:';
 
 /**
@@ -102,7 +102,7 @@ export class SongRequestEngine {
                   return t === a || t.startsWith(`${a} — `);
                 })
         ) as { created_at: number } | undefined;
-        // YYA kipinde istekler ancak çalmaya başlayınca çözülür: çalandan başka çözülmüş istek bitmiştir
+        // Studio kipinde istekler ancak çalmaya başlayınca çözülür: çalandan başka çözülmüş istek bitmiştir
         // (Spotify kendi rastgele şarkısına geçtiğinde de kuyrukta açık kalmasın)
         if (!muzikHost.spotifyBagliMi()) {
           const a = c.title.toLocaleLowerCase('tr');
@@ -267,7 +267,7 @@ export class SongRequestEngine {
     })().catch((e) => console.warn('[SongRequest] Müzik sürdürülemedi:', e?.message || e));
   }
 
-  /** Spotify'da atla: YYA kipinde sırada istek varsa doğrudan o başlar, yoksa Spotify'ın sonraki şarkısı */
+  /** Spotify'da atla: Studio kipinde sırada istek varsa doğrudan o başlar, yoksa Spotify'ın sonraki şarkısı */
   private async spotifyAtla() {
     // Klip çalarken !skip klibi geçer; müzik zaten duraklatılmış
     if (this.klipOturumu) return;
@@ -393,7 +393,7 @@ export class SongRequestEngine {
   /** Son istek başlatma anı: o andan sonraki parça değişimi bizim isteğimizdir */
   private sonBaslatma = 0;
 
-  /** Aynı isteği iki kez göndermemek için (YYA'nın çalan bilgisi birkaç sn sonra güncellenir) */
+  /** Aynı isteği iki kez göndermemek için (Studio'nun çalan bilgisi birkaç sn sonra güncellenir) */
   private hariciSiraBekle = 0;
 
   /** Son başlatılan istekten önce çalan parça: çalan bilgisi bundan farklı olana dek yeni istek başlamaz */
@@ -420,7 +420,7 @@ export class SongRequestEngine {
   }
 
   /**
-   * YYA'daki Spotify'da sıra: istekler hemen gönderilmez (eski YYA exe'si "sıraya ekle"yi tanımıyor,
+   * Studio'daki Spotify'da sıra: istekler hemen gönderilmez (eski Studio exe'si "sıraya ekle"yi tanımıyor,
    * çalan şarkıyı kesiyordu). Çalan şarkı bitmek üzereyken sıradaki istek başlatılır; istek yoksa
    * Spotify kendi akışıyla (rastgele/otomatik) çalmaya devam eder.
    */
@@ -441,7 +441,7 @@ export class SongRequestEngine {
       const yt = icerik.match(/^yt=([a-zA-Z0-9_-]{11}) (.*)$/s);
       const p = yt ? await muzikHost.hariciIstek(yt[2], false, yt[1]) : await muzikHost.hariciIstek(icerik, false);
       const baslik = yt ? yt[2] : p.artist ? `${p.title} — ${p.artist}` : p.title;
-      // YYA adla arayıp hemen çalıyor, gerçek ad ancak şimdi belli: engelliyse hemen geçilir
+      // Studio adla arayıp hemen çalıyor, gerçek ad ancak şimdi belli: engelliyse hemen geçilir
       if (!yt && this.engelli(baslik)) {
         await muzikHost.komut('next', 'spotify').catch(() => {});
         this.sonBaslatma = Date.now();

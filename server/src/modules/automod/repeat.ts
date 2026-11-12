@@ -6,8 +6,8 @@
  * Spam botları ve heyecanlanan izleyiciler aynı satırı art arda yapıştırır;
  * büyük harf / link / emoji kuralları bunu yakalamaz.
  *
- * BotRix'te bu kural GÖZLEMLENMEDİ (BOTRIX_UI_INVENTORY §6.1'de beş koruma
- * var) — sınıflandırma: bizim eklememiz, BotRix eşdeğeri UNVERIFIED.
+ * Örnek alınan botta bu kural GÖZLEMLENMEDİ (rakip incelemesi'de beş koruma
+ * var) — sınıflandırma: bizim eklememiz, örnek alınan bot eşdeğeri UNVERIFIED.
  *
  * Kural: aynı kullanıcı, `pencereSn` içinde, aynı (katlanmış) mesajı
  * `adet` kez yazarsa ihlal. "Merhaba", "MERHABA!!" ve "merhaba" aynı sayılır.

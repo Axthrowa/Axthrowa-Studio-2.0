@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  *
  * Denetim B5: 92 `console.*` çağrısı zaman damgasız ve seviyesizdi; panel
- * kabuğu çıktıyı `streamaxt.log` dosyasına yazıyor. İki sorun:
+ * kabuğu çıktıyı `axbot.log` dosyasına yazıyor. İki sorun:
  *   1) Sorun ne zaman oldu bilinmiyordu (zaman damgası yok).
  *   2) SIZINTI: hata nesneleri (ör. axios hatası) olduğu gibi basıldığında
  *      istek yapılandırması da basılır — `Authorization: Bearer <token>`,

@@ -8,7 +8,7 @@ import type { ChatMessagePayload } from '../event-bus.js';
 import { coz } from './resolve.js';
 import { kayitDefteri, degiskenKatalogu } from './registry.js';
 import type { DegiskenBaglam } from './types.js';
-import { kickbotCevir } from './kickbot-uyum.js';
+import { ciftParantezCevir } from './cift-parantez-uyum.js';
 
 export { degiskenKatalogu };
 export type { DegiskenBaglam };
@@ -46,7 +46,7 @@ export function baglamOlustur(
  */
 export async function degiskenleriCoz(sablon: string, ctx: DegiskenBaglam): Promise<string> {
   // `{{sender.username}}` gibi başka bot söz dizimi önce `$(...)`'a çevrilir
-  return coz(kickbotCevir(sablon), kayitDefteri, ctx);
+  return coz(ciftParantezCevir(sablon), kayitDefteri, ctx);
 }
 
 /** Kayıtlı değişken sayısı (panelde göstermek için). */

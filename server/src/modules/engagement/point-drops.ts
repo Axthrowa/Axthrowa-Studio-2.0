@@ -2,9 +2,9 @@
  * AxBoT — Puan Düşüşleri (Point Drops)
  * Developed by AxthrowA
  *
- * BotRix belgelerinde `!pdrops start / stop / status` komutları var ve
+ * Örnek alınan bot belgelerinde `!pdrops start / stop / status` komutları var ve
  * "genel talep komutu ayarların içinde ayrıca yapılandırılır" deniyor
- * (BOTRIX_UI_INVENTORY §13.1). Panelde bu bölüm bulunamadı, bu yüzden
+ * (rakip incelemesi). Panelde bu bölüm bulunamadı, bu yüzden
  * ayar yüzeyi `UNVERIFIED`; davranış belgelenen komutlardan türetildi.
  *
  * Nasıl çalışır: yayıncı bir "düşüş" başlatır, sohbete anahtar kelime

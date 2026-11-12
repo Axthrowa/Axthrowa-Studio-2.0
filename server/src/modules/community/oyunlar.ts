@@ -4,7 +4,7 @@
  *
  * Saf durum makineleri (zaman parametreyle verilir, test edilebilir). Sohbete
  * yazma ve platform eylemi çağıran tarafta (komut yöneticisi / akış) yapılır.
- * Davranış StreamElements/Nightbot'un herkese açık belgelerindeki tanıma göre
+ * Davranış yaygın botların herkese açık belgelerindeki tanıma göre
  * yazıldı; kodları kopyalanmadı.
  */
 

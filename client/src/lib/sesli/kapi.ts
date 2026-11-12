@@ -42,9 +42,9 @@ export class BasKonusKapisi {
 }
 
 /** Dinleyici durumunu panelin her sekmesine/penceresine yayan kanal (aynı köken) */
-export const KANAL_ADI = 'streamaxt-sesli';
+export const KANAL_ADI = 'axbot-sesli';
 /** Mikrofonu aynı anda tek dinleyici tutsun (Web Locks) */
-export const KILIT_ADI = 'streamaxt-sesli-dinleyici';
+export const KILIT_ADI = 'axbot-sesli-dinleyici';
 
 export type DinleyiciDurumu = 'kapali' | 'model-yok' | 'yukleniyor' | 'dinliyor' | 'hata' | 'baska-pencerede';
 
@@ -55,7 +55,7 @@ export type KanalMesaji =
   | { tur: 'ptt'; basili: boolean }
   | { tur: 'durum-sor' };
 
-/** Üst pencereden (panel / YYA) gelen bas-konuş iletisinin biçimi */
+/** Üst pencereden (panel / Studio) gelen bas-konuş iletisinin biçimi */
 export function pttIletisi(veri: unknown): boolean | null {
   if (!veri || typeof veri !== 'object') return null;
   const v = veri as Record<string, unknown>;

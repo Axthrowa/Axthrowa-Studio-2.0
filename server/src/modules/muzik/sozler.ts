@@ -97,7 +97,7 @@ export async function sozleriGetir(title: string, artist: string, sureMs = 0): P
   const onbellekte = onbellek.get(anahtar);
   if (onbellekte) return onbellekte;
   let sonuc: SozSonucu | null = null;
-  const opts = { timeout: 8000, headers: { 'User-Agent': 'AxBoT (https://github.com/Axthrowa/streamaxt)' } };
+  const opts = { timeout: 8000, headers: { 'User-Agent': 'AxBoT' } };
   try {
     // 1) Tam eşleşme: şarkı + sanatçı (+ süre)
     if (artist) {

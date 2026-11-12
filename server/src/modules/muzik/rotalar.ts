@@ -187,7 +187,7 @@ export function muzikRotalari(o: MuzikRotaSecenekleri): { router: Router; spotif
   });
 
   const kimlikGecerli = (id: string) => /^[A-Za-z0-9_-]{1,64}$/.test(id);
-  // YYA açıksa tema onun Resonance'ından: panelde değişen görünüm Tek URL'de de aynı olsun. YYA kapalıysa yerel kayıt.
+  // Studio açıksa tema onun Resonance'ından: panelde değişen görünüm Tek URL'de de aynı olsun. Studio kapalıysa yerel kayıt.
   const uzakAyarOku = async (id: string): Promise<unknown> => {
     const uzak = o.uzakHost?.();
     if (!uzak) return undefined;

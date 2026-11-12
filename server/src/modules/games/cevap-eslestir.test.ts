@@ -14,7 +14,7 @@ describe('cevapBicimi', () => {
     expect(cevapBicimi('KIRMIZI')).toBe('kirmizi');
   });
   it('emote, etiket ve noktalamayı temizler', () => {
-    expect(cevapBicimi('@StreamAxTBot  C)  [emote:37226:KEKW]')).toBe('c');
+    expect(cevapBicimi('@OrnekBot  C)  [emote:37226:KEKW]')).toBe('c');
     expect(cevapBicimi('<:kekw:123> suç ve ceza!!!')).toBe('suc ve ceza');
   });
 });
@@ -38,7 +38,7 @@ describe('sikCoz — harf ve rakam', () => {
     ['cevap b', 'B'],
     ['Cevabım: C', 'C'],
     ['bence d', 'D'],
-    ['@StreamAxTBot a', 'A'],
+    ['@OrnekBot a', 'A'],
     ['[emote:1:KEKW] b', 'B']
   ])('%s → %s', (mesaj, beklenen) => {
     expect(sikCoz(mesaj, SECENEK)).toBe(beklenen);

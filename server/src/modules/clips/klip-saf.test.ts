@@ -63,7 +63,7 @@ describe('dosya adları', () => {
     const ad = klipDosyaAdi('Çağrı@Yılmaz!', new Date(2026, 9, 14, 21, 30, 5), 30);
     expect(ad).toBe('20261014-213005_CagrYlmaz_30sn.mp4');
     expect(klipAdiGecerliMi(ad)).toBe(true);
-    expect(klipAdiGecerliMi('../streamaxt.sqlite')).toBe(false);
+    expect(klipAdiGecerliMi('../axbot.sqlite')).toBe(false);
     expect(klipAdiGecerliMi('20261014-213005_a_30sn.mp4/../x')).toBe(false);
   });
 });

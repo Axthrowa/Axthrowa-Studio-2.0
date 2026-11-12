@@ -2,9 +2,9 @@
  * AxBoT — Topluluk Bahisleri (tahminler)
  * Developed by AxthrowA
  *
- * BotRix'te `/panel/interaction > Topluluk Bahisleri` (BETA V2) ve
+ * Örnek alınan botta `/panel/interaction > Topluluk Bahisleri` (BETA V2) ve
  * `!bet` komut ailesi gözlemlendi; bizde komut `!tahmin`
- * (BOTRIX_UI_INVENTORY §11, §13.1). Bizde hiç yoktu.
+ * (rakip incelemesi). Bizde hiç yoktu.
  *
  * Kurallar:
  *   - Bahis puanla yapılır; puan bahis anında TAHSİL EDİLİR

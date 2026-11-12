@@ -60,12 +60,12 @@ export function yazmaYontemiMi(method: string): boolean {
 
 /**
  * Sunucunun bağlanacağı adres. Varsayılan yalnız bu makine; ağdaki başka
- * cihazlardan erişim isteniyorsa kullanıcı `STREAMAXT_HOST=0.0.0.0` diyerek
+ * cihazlardan erişim isteniyorsa kullanıcı `AXBOT_HOST=0.0.0.0` diyerek
  * bunu AÇIKÇA seçer. Eskiden host verilmediği için Node tüm arayüzleri
  * dinliyordu ve aynı ağdaki herkes botu yönetebiliyordu.
  */
 export function baglanmaAdresi(env: NodeJS.ProcessEnv = process.env): string {
-  const secim = (env.STREAMAXT_HOST || '').trim();
+  const secim = (env.AXBOT_HOST || '').trim();
   return secim || '127.0.0.1';
 }
 
@@ -75,6 +75,6 @@ export function baglanmaUyarisi(host: string): string | null {
   return (
     `[UYARI] Sunucu ${host} adresinde dinliyor — aynı agdaki TUM cihazlar ` +
     `AxBoT'u yonetebilir. Yalniz bu bilgisayardan erisim icin ` +
-    `STREAMAXT_HOST degiskenini kaldirin.`
+    `AXBOT_HOST degiskenini kaldirin.`
   );
 }

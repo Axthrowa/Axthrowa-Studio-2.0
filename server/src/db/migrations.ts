@@ -51,7 +51,7 @@ export const GOCLER: Gocler[] = [
     version: 2,
     name: 'commands — fiyat, kullanıcı başına bekleme, platform, tetikleyici',
     up(db) {
-      // BotRix komut formunda gözlemlenen alanlar (BOTRIX_UI_INVENTORY §6.2)
+      // Örnek alınan bot komut formunda gözlemlenen alanlar (rakip incelemesi)
       sutunEkle(db, 'commands', 'cooldown_mode', "TEXT NOT NULL DEFAULT 'global'");
       sutunEkle(db, 'commands', 'user_cooldown', 'INTEGER NOT NULL DEFAULT 0');
       sutunEkle(db, 'commands', 'cost_points', 'INTEGER NOT NULL DEFAULT 0');
@@ -88,8 +88,8 @@ export const GOCLER: Gocler[] = [
     version: 5,
     name: 'automod — kural başına ihlal eylemi ve bypass rolleri',
     up(db) {
-      // BotRix moderasyon modalında gözlemlenen derinlik
-      // (BOTRIX_UI_INVENTORY §6.1): eylem + timeout süresi + özel mesaj +
+      // Örnek alınan bot moderasyon modalında gözlemlenen derinlik
+      // (rakip incelemesi): eylem + timeout süresi + özel mesaj +
       // bypass rolleri, her kural için ayrı.
       for (const kural of ['caps', 'emotes', 'links', 'symbols', 'blacklist']) {
         sutunEkle(db, 'automod_settings', `${kural}_action`, "TEXT NOT NULL DEFAULT 'warn'");
@@ -156,7 +156,7 @@ export const GOCLER: Gocler[] = [
       if (!tablo) return;
       db.prepare("UPDATE bot_settings SET value = ? WHERE key = 'gemini_prompt' AND value = ?").run(
         'Sen AxBoT adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.',
-        'Sen StreamAxT adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.'
+        'Sen AxBoT adında neşeli, esprili, yayıncıya ve izleyicilere sadık, oyunları ve internet kültürünü iyi bilen zeki bir yayın asistanısın. Kısa, canlı ve samimi cevaplar ver.'
       );
     }
   },

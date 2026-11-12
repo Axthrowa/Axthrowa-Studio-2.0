@@ -21,7 +21,7 @@ describe('yedekGecerliMi', () => {
   });
 
   it('başka uygulamanın dosyasını reddeder', () => {
-    const r = yedekGecerliMi({ ...saglam, uygulama: 'Nightbot' });
+    const r = yedekGecerliMi({ ...saglam, uygulama: 'BaskaUygulama' });
     expect(r.ok).toBe(false);
   });
 

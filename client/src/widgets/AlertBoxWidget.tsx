@@ -325,7 +325,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
   /**
    * Metin katmani gorunur mu?
    *
-   * BotRix'te "Metin gorunumu ms - ms" araligi var: gorsel/ses ile metnin
+   * Örnek alınan botta "Metin gorunumu ms - ms" araligi var: gorsel/ses ile metnin
    * senkronize edilmesini saglar. 0-0 ise her zaman gorunur.
    */
   const metinGorunur = () => {
@@ -411,7 +411,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
           )}
 
           {/* Metin katmani.
-              BotRix'te ust ve alt metnin rengi, boyutu ve konumu AYRI
+              Örnek alınan botta ust ve alt metnin rengi, boyutu ve konumu AYRI
               ayarlaniyor; ayrica metnin gorunecegi ms araligi var. Bizde
               tek renk ve sabit boyut vardi. */}
           <div

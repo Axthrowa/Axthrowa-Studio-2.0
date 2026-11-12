@@ -1,6 +1,6 @@
 /**
  * AxthrowA Studio içinde gömülüyken (?embed=1) Studio'nun renkleri bota uygulanır: Studio çerçeveye
- * `{ tur: 'yya-tema', ... }` gönderir. Değerler yalnız CSS değişkeni olarak yazılır; yine de biçimleri süzülür.
+ * `{ tur: 'studio-tema', ... }` gönderir. Değerler yalnız CSS değişkeni olarak yazılır; yine de biçimleri süzülür.
  */
 
 export interface StudioTemasi {
@@ -18,7 +18,7 @@ const TEMA = /^[a-z0-9-]{1,30}$/;
 export function studioTemasiCoz(veri: unknown): StudioTemasi | null {
   if (!veri || typeof veri !== 'object') return null;
   const v = veri as { tur?: unknown; tema?: unknown; degiskenler?: unknown };
-  if (v.tur !== 'yya-tema' || typeof v.tema !== 'string' || !TEMA.test(v.tema)) return null;
+  if (v.tur !== 'studio-tema' || typeof v.tema !== 'string' || !TEMA.test(v.tema)) return null;
   const degiskenler: Record<string, string> = {};
   const ham = (v.degiskenler && typeof v.degiskenler === 'object' ? v.degiskenler : {}) as Record<string, unknown>;
   for (const ad of IZINLI) {

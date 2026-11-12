@@ -706,7 +706,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
 
       {!aranan && (
         <>
-      {/* Tema kutuphanesi — BotRix widget basina 13-28 tema sunuyor, bizde
+      {/* Tema kutuphanesi — örnek alınan bot widget basina 13-28 tema sunuyor, bizde
           4-5 vardi. Tema, ayar degerlerinin hazir bir kumesidir: secilince
           ilgili alanlar dolar, kullanici sonra tek tek degistirebilir.
           Widget'in TANIMADIGI anahtarlar atlanir. */}

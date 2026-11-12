@@ -103,15 +103,15 @@ export function kayitDefteriOlustur(): Map<string, DegiskenTanimi> {
     tanim('touser', 'user', '$(toname) ile aynı', (h, c) =>
       atSil(c.args[0] || '') || yedekli(h, c.user.displayName || c.user.username)
     ),
-    // Nightbot uyumluluğu: oradan kopyalanan komutlar ham "$(user)" yazmasın
-    tanim('user', 'user', '$(sender) ile aynı (Nightbot adı)', (_h, c) => c.user.displayName || c.user.username),
-    tanim('userlevel', 'user', 'owner / moderator / vip / subscriber / everyone (Nightbot adı)', (_h, c) =>
+    // Uyumluluk: oradan kopyalanan komutlar ham "$(user)" yazmasın
+    tanim('user', 'user', '$(sender) ile aynı (uyumluluk adı)', (_h, c) => c.user.displayName || c.user.username),
+    tanim('userlevel', 'user', 'owner / moderator / vip / subscriber / everyone (uyumluluk adı)', (_h, c) =>
       c.user.isBroadcaster ? 'owner' : c.user.isMod ? 'moderator' : c.user.isVip ? 'vip' : c.user.isSub ? 'subscriber' : 'everyone'
     ),
-    tanim('querystring', 'text', 'Komuttan sonraki metin, adrese uygun kodlanmış (Nightbot adı)', (h, c) =>
+    tanim('querystring', 'text', 'Komuttan sonraki metin, adrese uygun kodlanmış (uyumluluk adı)', (h, c) =>
       encodeURIComponent(yedekli(h, c.rawArgs))
     ),
-    tanim('command', 'text', 'Çalışan komutun adı (Nightbot adı)', (_h, c) => (c.commandName || '').replace(/^!/, '')),
+    tanim('command', 'text', 'Çalışan komutun adı (uyumluluk adı)', (_h, c) => (c.commandName || '').replace(/^!/, '')),
     ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) =>
       tanim(`v${i}`, 'text', `${i}. kelime`, (h, c) => yedekli(h, c.args[i - 1] || ''))
     ),

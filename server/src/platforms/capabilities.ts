@@ -9,7 +9,7 @@
  * tüm ayarları gösteriyordu — Discord'a "abone uyarısı", YouTube'a "raid"
  * gibi karşılığı olmayanlar dahil.
  *
- * BotRix de aynı şeyi yapıyor: TTS sayfasındaki rol listesi Kick'e özel
+ * Örnek alınan bot da aynı şeyi yapıyor: TTS sayfasındaki rol listesi Kick'e özel
  * ("Herkes / Abone / VIP / OG / Moderatör / Sahip"), uyarı listesi platform
  * etiketli ("Bits (Twitch)", "Super Chat (YouTube)").
  *
@@ -54,7 +54,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
   // `ban`: kalıcı yasaklama YÖNTEMİ (`banUser`/`unbanUser`) uygulanmış mı?
   // 4. turda Kick, Twitch, YouTube ve Trovo'ya resmi uçlarla eklendi;
   // ortak kara liste ve panel izleyici kartı kullanır. AutoMod kural
-  // eylemleri BotRix'teki gibi uyarı/silme/zaman aşımıyla sınırlı kalır.
+  // eylemleri örnek alınan bottaki gibi uyarı/silme/zaman aşımıyla sınırlı kalır.
   kick: {
     sohbet: { oku: true, gonder: true },
     olaylar: ['chat', 'follow', 'sub', 'gift_sub', 'kicks', 'host', 'stream_online', 'stream_offline'],
@@ -65,7 +65,7 @@ export const YETENEKLER: Record<PlatformAdi, PlatformYetenekleri> = {
     // Kalıcı ban: aynı uç, `duration` verilmez; kaldırma DELETE.
     moderasyon: { timeout: true, ban: true, mesajSil: true, sohbetModlari: false },
     yayin: { baslikDegistir: true, kategoriDegistir: true, izleyiciSayisi: true },
-    // Kick'in rol kümesi — BotRix TTS sayfasında da aynısı listeleniyor
+    // Kick'in rol kümesi — örnek alınan bot TTS sayfasında da aynısı listeleniyor
     roller: ['everyone', 'sub', 'vip', 'og', 'mod', 'broadcaster']
   },
   twitch: {

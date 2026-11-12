@@ -70,9 +70,9 @@ export const SINIR = {
   derinlik: 3,
   /** Tek çalıştırmada çözülecek maksimum değişken. */
   degisken: 25,
-  /** `$(repeat n text)` üst sınırı (BotRix ile aynı). */
+  /** `$(repeat n text)` üst sınırı (örnek alınan botla aynı). */
   tekrar: 10,
-  /** Yerel değişken sayısı (BotRix ile aynı). */
+  /** Yerel değişken sayısı (örnek alınan botla aynı). */
   yerel: 5,
   /** `fetch[...]` zaman aşımı. */
   agMs: 5000,

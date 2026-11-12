@@ -2,8 +2,8 @@
  * AxBoT — uyarı varyantları
  * Developed by AxthrowA
  *
- * BotRix'te her olay türü için birden çok "varyant" tanımlanabiliyor
- * (ücretsiz 5, premium 25 — BOTRIX_UI_INVENTORY §12). Aynı olay her
+ * Örnek alınan botta her olay türü için birden çok "varyant" tanımlanabiliyor
+ * (ücretsiz 5, premium 25 — rakip incelemesi). Aynı olay her
  * geldiğinde farklı bir görsel/ses/metin gösterilebiliyor; ayrıca tutara
  * göre farklı varyant seçilebiliyor (büyük bağışa daha görkemli uyarı).
  *

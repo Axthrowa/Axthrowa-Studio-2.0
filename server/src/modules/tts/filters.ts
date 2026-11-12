@@ -2,8 +2,8 @@
  * AxBoT — TTS metin filtreleri
  * Developed by AxthrowA
  *
- * BotRix'in TTS sayfasındaki "Gelişmiş ayarlar" bölümü gözlemlendi
- * (BOTRIX_UI_INVENTORY §4.11): sayıları / sembolleri / emojileri /
+ * Örnek alınan botun TTS sayfasındaki "Gelişmiş ayarlar" bölümü gözlemlendi
+ * (rakip incelemesi): sayıları / sembolleri / emojileri /
  * tekrarlanan harfleri / linkleri yok say, karakter sınırı, bekleme süresi,
  * ton, okuma şablonu ve kara liste.
  *

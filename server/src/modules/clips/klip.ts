@@ -6,7 +6,7 @@
  * kodlama yok) → `data/klipler/*.mp4`. Klipler bilgisayarda kalır; panelin
  * Ekstralar > Klip sekmesinden izlenir/indirilir/silinir. Platforma yükleme YOK.
  *
- * Sınama: `STREAMAXT_KLIP_HLS_URL=http://127.0.0.1:<port>/...m3u8` yalnız
+ * Sınama: `AXBOT_KLIP_HLS_URL=http://127.0.0.1:<port>/...m3u8` yalnız
  * yerel adresi kabul eder (Kick sorgusu atlanır).
  */
 import { spawn } from 'child_process';
@@ -32,7 +32,7 @@ export interface KlipBilgisi {
 
 /** ffmpeg yolu: ortam değişkeni ya da PATH. */
 function ffmpegKomutu(): string {
-  return String(process.env.STREAMAXT_FFMPEG || '').trim() || 'ffmpeg';
+  return String(process.env.AXBOT_FFMPEG || '').trim() || 'ffmpeg';
 }
 
 // "Yok" sonucu 1 dk tutulur: ffmpeg sonradan kurulursa yeniden başlatmadan görülür
@@ -64,7 +64,7 @@ export function ffmpegVarMi(): Promise<boolean> {
 
 /** Yayının HLS adresi (yalnız Kick; yayın kapalıysa null). */
 async function hlsAdresi(platform: string): Promise<string | null> {
-  const sinama = String(process.env.STREAMAXT_KLIP_HLS_URL || '').trim();
+  const sinama = String(process.env.AXBOT_KLIP_HLS_URL || '').trim();
   if (sinama && /^http:\/\/127\.0\.0\.1:\d+\//.test(sinama)) return sinama;
   if (platform !== 'kick') return null;
   const { kickPlatform } = await import('../../platforms/kick.js');

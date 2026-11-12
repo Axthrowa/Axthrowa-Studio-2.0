@@ -1,5 +1,5 @@
 /**
- * Nightbot / KickBot uyum adları: oradan kopyalanan (ya da kickbotCevir'in ürettiği) komutlar
+ * Başka botlardan gelen uyum adları: oradan kopyalanan (ya da ciftParantezCevir'in ürettiği) komutlar
  * ham "$(user)" yazmasın.
  */
 import { describe, expect, it, vi } from 'vitest';
@@ -26,12 +26,12 @@ const baglam = (kullanici: Partial<DegiskenBaglam['user']> = {}): DegiskenBaglam
   }) as DegiskenBaglam;
 const coz = (ad: string, c: DegiskenBaglam) => kayit.get(ad)!.isleyici('', c);
 
-describe('Nightbot uyum değişkenleri', () => {
+describe('Uyumluluk değişkenleri', () => {
   it('$(user) komutu yazanın adı', async () => {
     expect(await coz('user', baglam())).toBe('Ali');
   });
 
-  it('$(userlevel) Nightbot değerleri', async () => {
+  it('$(userlevel) değerleri', async () => {
     expect(await coz('userlevel', baglam({ isBroadcaster: true }))).toBe('owner');
     expect(await coz('userlevel', baglam({ isMod: true }))).toBe('moderator');
     expect(await coz('userlevel', baglam({ isSub: true }))).toBe('subscriber');

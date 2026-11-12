@@ -23,7 +23,7 @@ muzikYayiniBagla((m) => {
 });
 muzikHost.yoklamayiBaslat();
 
-/** YYA'daki Resonance'ta tema değişince Tek URL'deki Resonance da hemen güncellensin */
+/** Studio'daki Resonance'ta tema değişince Tek URL'deki Resonance da hemen güncellensin */
 function yyaTemaKoprusu() {
   const tekrar = () => setTimeout(yyaTemaKoprusu, 10_000).unref?.();
   const uzak = muzikHost.hariciAdres();
@@ -36,7 +36,7 @@ function yyaTemaKoprusu() {
       /* ilgisiz mesaj */
     }
   });
-  ws.on('error', () => {}); // YYA kapalı: `close` yeniden dener
+  ws.on('error', () => {}); // Studio kapalı: `close` yeniden dener
   ws.on('close', tekrar);
 }
 yyaTemaKoprusu();

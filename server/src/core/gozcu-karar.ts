@@ -23,7 +23,7 @@ export function gozcuKarari(kod: number | null, sinyal: string | null, oncekiler
   }
   const yakin = oncekiler.filter((c) => simdi - c.zaman < PENCERE_MS).length;
   if (yakin >= EN_COK_COKME) {
-    return { tur: 'cik', kod: 1, mesaj: `Bot 10 dakikada ${yakin + 1} kez çöktü; yeniden başlatma durduruldu. Günlüğe bakın (streamaxt.log).` };
+    return { tur: 'cik', kod: 1, mesaj: `Bot 10 dakikada ${yakin + 1} kez çöktü; yeniden başlatma durduruldu. Günlüğe bakın (axbot.log).` };
   }
   // 3 sn, 6 sn, 12 sn… en çok 30 sn
   return { tur: 'yeniden', beklemeMs: Math.min(30_000, 3000 * 2 ** Math.min(yakin, 4)) };

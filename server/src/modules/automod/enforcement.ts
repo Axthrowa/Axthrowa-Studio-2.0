@@ -2,11 +2,11 @@
  * AxBoT — moderasyon ihlal eylemleri
  * Developed by AxthrowA
  *
- * Denetimde bulundu (BOTRIX_GAP_ANALYSIS §4): AutoMod'umuz bir ihlal
+ * Denetimde bulundu (rakip incelemesi): AutoMod'umuz bir ihlal
  * gördüğünde yalnız sohbete uyarı yazıyordu — platformda GERÇEK bir eylem
- * yapmıyordu. BotRix'te her kural için ayrı ayrı seçilebilen beş eylem,
+ * yapmıyordu. örnek alınan botta her kural için ayrı ayrı seçilebilen beş eylem,
  * on bir zaman aşımı kademesi, özel uyarı mesajı ve bypass rolleri var
- * (BOTRIX_UI_INVENTORY §6.1).
+ * (rakip incelemesi).
  *
  * Bu modül SAF: hangi eylemin uygulanacağına karar verir, uygulamaz.
  * Böylece platform bağlantısı olmadan test edilebilir.
@@ -24,7 +24,7 @@ export function metinOzeti(metin: string): string {
   return t ? ` — “${t}”` : '';
 }
 
-/** BotRix'teki on bir kademe (BOTRIX_UI_INVENTORY §6.1). */
+/** Örnek alınan bottaki on bir kademe (rakip incelemesi). */
 export const TIMEOUT_KADEMELERI = [30, 60, 120, 300, 900, 1800, 3600, 7200, 18000, 43200, 86400] as const;
 
 export const EYLEM_SECENEKLERI: Array<{ value: IhlalEylemi; label: string }> = [
@@ -63,7 +63,7 @@ export interface EylemPlani {
 
 /**
  * Kullanıcı bu kuraldan muaf mı?
- * Yayıncı ve moderatör HER ZAMAN muaftır (BotRix: "Moderatör her zaman
+ * Yayıncı ve moderatör HER ZAMAN muaftır (örnek alınan bot: "Moderatör her zaman
  * bypass'a sahiptir"), ayarda yazmasa bile.
  */
 export function bypassEder(user: KullaniciRolleri, bypass: Rol[] = []): boolean {

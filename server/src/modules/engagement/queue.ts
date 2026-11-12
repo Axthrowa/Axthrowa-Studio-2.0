@@ -2,10 +2,10 @@
  * AxBoT — İzleyici Kuyruğu
  * Developed by AxthrowA
  *
- * BotRix'te `/panel/interaction > İzleyici Kuyruğu` (BETA) ve on komut
+ * Örnek alınan botta `/panel/interaction > İzleyici Kuyruğu` (BETA) ve on komut
  * belgelenmiş: `!joinq` `!leaveq` `!posq` `!queue`/`!listq` ve moderatör
  * komutları `!openq` `!closeq` `!nextq` `!removeq` `!clearq`
- * (BOTRIX_UI_INVENTORY §13.1). Bizde hiç yoktu.
+ * (rakip incelemesi). Bizde hiç yoktu.
  *
  * Saf mantık: sıra bellekte + diskte tutulur, komutlar buradan beslenir.
  */

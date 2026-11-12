@@ -158,7 +158,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   // Tarayıcı geri/ileri tuşu (B7): sekme adresteki #sekme ile eşlenir.
   // NOT: yukarıdaki useState satırı BİLEREK değiştirilmedi — panel kabuğunun
-  // hazırlama betiği (streamaxt-hazirla.mjs) o satırı birebir arayıp gömme
+  // hazırlama betiği (axbot-hazirla.mjs) o satırı birebir arayıp gömme
   // yamasını uyguluyor. Bu etkiler yama uygulansa da uygulanmasa da çalışır.
   // Kaydedilmemiş form varken sekme değişimi önce sorar (tek sayfalık
   // uygulamada `beforeunload` sekme geçişinde tetiklenmez).
@@ -178,7 +178,7 @@ export function App() {
     };
     window.addEventListener('message', dinle);
     // Hazır olduğumuzu bildir: Studio temayı hemen gönderir (yükleme yarışında ilk ileti kaçmasın)
-    window.parent.postMessage({ tur: 'yya-tema-iste' }, '*');
+    window.parent.postMessage({ tur: 'studio-tema-iste' }, '*');
     return () => window.removeEventListener('message', dinle);
   }, []);
   const aktifSekme = useRef(activeTab);
@@ -202,7 +202,7 @@ export function App() {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return;
       e.preventDefault();
-      window.parent.postMessage({ type: 'streamaxt:komut-paleti' }, '*');
+      window.parent.postMessage({ type: 'axbot:komut-paleti' }, '*');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -232,7 +232,7 @@ export function App() {
   const [focusPlatform, setFocusPlatform] = useState<string | null>(null);
   const sonAltSayfa = useRef<Record<string, string>>({});
 
-  // Sayfa adları (alt sekme ve başlık). Kimlikler adres (#overlays…) ve gömülü YYA için AYNI kalmalı.
+  // Sayfa adları (alt sekme ve başlık). Kimlikler adres (#overlays…) ve gömülü Studio için AYNI kalmalı.
   const sayfaAdlari: Record<string, string> = {
     dashboard: 'Genel Bakış', kurulum: 'Hızlı Kurulum', multichat: 'Canlı Multi-Chat',
     overlays: 'Overlay Stüdyo', alerts: 'Uyarılar', pano: 'Ses / Video Panosu', tts: 'TTS',

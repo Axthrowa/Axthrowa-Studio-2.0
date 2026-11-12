@@ -2,10 +2,10 @@
  * AxBoT — uyarı yedekleme (dışa/içe aktarma)
  * Developed by AxthrowA
  *
- * BotRix'te uyarı ayarları bir hesaba bağlı; makine değiştirince panelden
+ * Örnek alınan botta uyarı ayarları bir hesaba bağlı; makine değiştirince panelden
  * geri geliyor. Bizde her şey YEREL SQLite'ta: Windows'u yeniden kuran ya da
  * ikinci bilgisayara geçen kullanıcı bütün uyarı emeğini kaybediyordu
- * (BOTRIX_GAP_ANALYSIS — "alert dışa/içe aktarma yok").
+ * (rakip incelemesi — "alert dışa/içe aktarma yok").
  *
  * Bu modül tek bir JSON dosyasında toplar:
  *   • alert_presets        (olay başına temel uyarı)

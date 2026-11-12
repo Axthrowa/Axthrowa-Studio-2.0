@@ -2,10 +2,10 @@
  * AxBoT — sohbet tarafı olay mesajları
  * Developed by AxthrowA
  *
- * BotRix'te `Sohbet Botu > Ekstralar > Sohbet uyarıları` başlığı altında,
+ * Örnek alınan botta `Sohbet Botu > Ekstralar > Sohbet uyarıları` başlığı altında,
  * görsel overlay'den TAMAMEN AYRI bir sistem var: bir olay olduğunda
  * sohbete metin mesajı gönderiyor. Olaylar ve eşikleri gözlemlendi
- * (BOTRIX_ALERT_MATRIX §1.3): Takip, KICKs (min. tutar), Abonelik,
+ * (rakip incelemesi): Takip, KICKs (min. tutar), Abonelik,
  * Yeniden abonelik, Hediye abonelik, Host (min. izleyici), Karşılama.
  *
  * Bizde bu hiç yoktu: olaylar yalnız overlay'de görünüyordu, sohbette
@@ -55,7 +55,7 @@ export const VARSAYILAN_CHAT_ALERT: ChatAlertAyarlari = {
   kicks: K('🟢 $(sender) $(v1) KICKs gönderdi!', 0),
   host: K('🚀 $(sender) $(v1) izleyiciyle kanalı host etti!', 0),
   raid: K('🚀 $(sender) $(v1) izleyiciyle raid yaptı!', 0),
-  // İlk kez yazan izleyiciyi karşılama — BotRix'te premium
+  // İlk kez yazan izleyiciyi karşılama — örnek alınan botta premium
   welcome: K('👋 Aramıza hoş geldin $(sender)!', 0, false, 0),
   // Yayın başlayınca sohbete duyuru (yaygın botlarda 'Live Announcement')
   stream_online: K('🔴 Yayın başladı! $(title) — gel izle: $(platformurl)', 0, false, 0)

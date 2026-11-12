@@ -19,7 +19,7 @@ function ayar(ek: Partial<KuralAyari> = {}): KuralAyari {
 
 describe('bypassEder', () => {
   it('yayıncı ve moderatör HER ZAMAN muaf', () => {
-    // BotRix: "Moderatör her zaman bypass'a sahiptir"
+    // Örnek alınan bot: "Moderatör her zaman bypass'a sahiptir"
     expect(bypassEder({ isBroadcaster: true }, [])).toBe(true);
     expect(bypassEder({ isMod: true }, [])).toBe(true);
   });

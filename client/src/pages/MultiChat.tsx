@@ -184,7 +184,7 @@ export function MultiChat() {
       username,
       displayName: user.displayName || username,
       platform,
-      kendiBotu: user.id === 'streamaxt_bot' || user.isSelf === true,
+      kendiBotu: user.id === 'axbot_bot' || user.isSelf === true,
       avatarUrl: user.avatarUrl,
       roles: user.roles || [],
       note: '',

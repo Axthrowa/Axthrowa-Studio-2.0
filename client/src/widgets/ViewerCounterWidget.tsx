@@ -4,7 +4,7 @@
  *
  * Ayarlar panelden gelir (eskiden yalnız adres satırından okunuyordu ve
  * panelde hiç ayarı yoktu). Tema, hizalama, ikon, yuvarlaklık, renkler ve
- * çoklu platform toplamı BotRix'teki sayaçla aynı işlev seviyesinde —
+ * çoklu platform toplamı örnek alınan bottaki sayaçla aynı işlev seviyesinde —
  * uygulama bize ait, kod kopyalanmadı.
  */
 import { kokOzellik } from '../lib/kabuklar.js';

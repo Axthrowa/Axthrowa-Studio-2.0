@@ -2,8 +2,8 @@
  * AxBoT — Etkileşim
  * Developed by AxthrowA
  *
- * BotRix'te `/panel/interaction` altında üç araç var: Tahminler, İzleyici
- * Kuyruğu (BETA) ve Puan Düşüşleri (BOTRIX_UI_INVENTORY §13). Sunucu tarafı
+ * Örnek alınan botta `/panel/interaction` altında üç araç var: Tahminler, İzleyici
+ * Kuyruğu (BETA) ve Puan Düşüşleri (rakip incelemesi). Sunucu tarafı
  * bu turda yazıldı, API uçları hazırdı ama panelde hiç görünmüyordu —
  * yani yayıncı için yok hükmündeydi. Bu sayfa o üç aracın tam yüzeyi.
  *

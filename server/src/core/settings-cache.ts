@@ -42,9 +42,9 @@ class SettingsCache {
 
   /** Studio kendi kayıtlı Kick uygulama sırrını ortamdan verir: pakette sır yok, Kick girişi yine de tamamlanır */
   private kickSirriniAl() {
-    const al = kickSirriTohumu(process.env.STREAMAXT_KICK_CLIENT_ID, process.env.STREAMAXT_KICK_CLIENT_SECRET, this.cache.get('kick_client_id'), this.cache.get('kick_client_secret'));
-    delete process.env.STREAMAXT_KICK_CLIENT_ID;
-    delete process.env.STREAMAXT_KICK_CLIENT_SECRET;
+    const al = kickSirriTohumu(process.env.AXBOT_KICK_CLIENT_ID, process.env.AXBOT_KICK_CLIENT_SECRET, this.cache.get('kick_client_id'), this.cache.get('kick_client_secret'));
+    delete process.env.AXBOT_KICK_CLIENT_ID;
+    delete process.env.AXBOT_KICK_CLIENT_SECRET;
     if (!al) return;
     this.set('kick_client_id', al.id);
     this.set('kick_client_secret', al.sir);
@@ -52,7 +52,7 @@ class SettingsCache {
 
   /** Pakete eklenen Client ID'ler yalnız boş ayarı doldurur: kullanıcının girdiğinin üstüne yazmaz */
   private kimlikleriTohumla() {
-    const dosya = path.resolve(process.env.STREAMAXT_KIMLIK_DOSYASI || path.join(process.cwd(), 'varsayilan-kimlikler.json'));
+    const dosya = path.resolve(process.env.AXBOT_KIMLIK_DOSYASI || path.join(process.cwd(), 'varsayilan-kimlikler.json'));
     if (!fs.existsSync(dosya)) return;
     try {
       const okunan = JSON.parse(fs.readFileSync(dosya, 'utf8')) as Record<string, unknown>;

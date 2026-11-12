@@ -17,7 +17,7 @@ export function openLink(url: string, features?: string): boolean {
   }
   try {
     if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'streamaxt:open-external', url }, '*');
+      window.parent.postMessage({ type: 'axbot:open-external', url }, '*');
       return true;
     }
   } catch {

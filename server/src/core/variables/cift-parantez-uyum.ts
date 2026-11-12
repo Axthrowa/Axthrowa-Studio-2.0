@@ -2,10 +2,10 @@
  * AxBoT — `{{...}}` söz dizimi uyumu
  * Developed by AxthrowA
  *
- * KickBot belgelerindeki `{{sender.username}}`, `{{randomRange(1,6)}}` gibi
+ * başka botların belgelerindeki `{{sender.username}}`, `{{randomRange(1,6)}}` gibi
  * yer tutucular AxBoT'un `$(...)` değişkenlerine çevrilir; başka bottan
  * taşınan komutlar elle düzeltmeden çalışır. Tanınmayan `{{...}}` olduğu gibi
- * bırakılır (sessizce silinmez). Kaynak: herkese açık KickBot belgeleri.
+ * bırakılır (sessizce silinmez). Kaynak: başka botların herkese açık belgeleri.
  */
 
 const KISI_ALANLARI = ['bio', 'instagram', 'twitter', 'youtube', 'discord', 'tiktok', 'facebook', 'followers', 'url'] as const;
@@ -99,7 +99,7 @@ function fonksiyonCevir(ad: string, govde: string): string | null {
  * Metindeki tanınan `{{...}}` yer tutucularını `$(...)` biçimine çevirir.
  * Metinde `{{` yoksa aynen döner (sıcak yol ucuz kalsın).
  */
-export function kickbotCevir(metin: string): string {
+export function ciftParantezCevir(metin: string): string {
   if (!metin || !metin.includes('{{')) return metin;
   return metin.replace(/\{\{\s*([^{}]{1,300}?)\s*\}\}/g, (tum, icHam: string) => {
     const ic = icHam.trim();

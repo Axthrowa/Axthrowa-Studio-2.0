@@ -6,17 +6,17 @@ import { describe, it, expect } from 'vitest';
 import { SeslenmeSiniri, seslenmeAyikla } from './seslenme.js';
 
 describe('seslenmeAyikla', () => {
-  const botlar = ['streamaxtbot'];
+  const botlar = ['ornekbot'];
   it('bot adıyla başlayan mesajdan soruyu alır', () => {
-    expect(seslenmeAyikla('@StreamAxTBot bugün ne oynuyoruz?', botlar)).toBe('bugün ne oynuyoruz?');
-    expect(seslenmeAyikla('@streamaxtbot, selam', botlar)).toBe('selam');
-    expect(seslenmeAyikla('@streamaxtbot: nasılsın', botlar)).toBe('nasılsın');
+    expect(seslenmeAyikla('@OrnekBot bugün ne oynuyoruz?', botlar)).toBe('bugün ne oynuyoruz?');
+    expect(seslenmeAyikla('@ornekbot, selam', botlar)).toBe('selam');
+    expect(seslenmeAyikla('@ornekbot: nasılsın', botlar)).toBe('nasılsın');
   });
   it('başka kişiye seslenme, ortada geçen ad ve boş soru yok sayılır', () => {
     expect(seslenmeAyikla('@ali selam', botlar)).toBeNull();
-    expect(seslenmeAyikla('selam @streamaxtbot', botlar)).toBeNull();
-    expect(seslenmeAyikla('@streamaxtbot', botlar)).toBeNull();
-    expect(seslenmeAyikla('@streamaxtbot a', botlar)).toBeNull();
+    expect(seslenmeAyikla('selam @ornekbot', botlar)).toBeNull();
+    expect(seslenmeAyikla('@ornekbot', botlar)).toBeNull();
+    expect(seslenmeAyikla('@ornekbot a', botlar)).toBeNull();
   });
 });
 

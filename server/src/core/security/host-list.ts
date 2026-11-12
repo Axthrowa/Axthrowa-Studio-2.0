@@ -2,7 +2,7 @@
  * AxBoT — bu makinenin adresleri (Host izin listesi için)
  * Developed by AxthrowA
  *
- * LAN kipinde (STREAMAXT_HOST=0.0.0.0) OBS başka bir bilgisayardan
+ * LAN kipinde (AXBOT_HOST=0.0.0.0) OBS başka bir bilgisayardan
  * `http://192.168.1.5:3001/widgets/...` ile bağlanır: Host bu makinenin IP'si
  * olur ve kabul edilmelidir. IP'ler DHCP ile değişebildiği için 30 sn'de bir
  * yenilenir.
@@ -30,7 +30,7 @@ export function arayuzAdresleri(): Set<string> {
   return kume;
 }
 
-/** Kullanıcının eklediği adlar: STREAMAXT_IZINLI_HOSTLAR="yayin.local,ev-pc" */
+/** Kullanıcının eklediği adlar: AXBOT_IZINLI_HOSTLAR="yayin.local,ev-pc" */
 export function ekIzinliHostlar(): Set<string> {
-  return ekHostlariCoz(process.env.STREAMAXT_IZINLI_HOSTLAR);
+  return ekHostlariCoz(process.env.AXBOT_IZINLI_HOSTLAR);
 }

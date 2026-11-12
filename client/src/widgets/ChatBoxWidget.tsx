@@ -142,10 +142,10 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     if ((s as Record<string, unknown>)[`${p.platform}Goster`] === false) return;
     if (s.hideCommands && (p.message || '').trim().startsWith('!')) return;
     // Panel iç hata iletisi (Gönderilemedi…) yayına çıkmaz
-    if (user?.id === 'streamaxt_system') return;
+    if (user?.id === 'axbot_system') return;
     // "Botları gizle" başka botlar içindir; kendi botumuzun yanıtları (yapay zekâ, bilgi yarışması,
     // zamanlayıcılar) ayrı seçenekle görünür — eskiden bot adı ("…_Bot") yüzünden hep gizleniyordu
-    const kendiBot = user?.isSelf === true || user?.id === 'streamaxt_bot';
+    const kendiBot = user?.isSelf === true || user?.id === 'axbot_bot';
     if (kendiBot ? !s.showOwnBot : s.hideBots && (user?.isBot || username.includes('bot'))) return;
     if (s.hideBroadcaster && user?.isBroadcaster) return;
     // Kick emote'u `[emote:123:ad]` biçiminde gelir; eski `:ad:` deseni onu tanımıyordu

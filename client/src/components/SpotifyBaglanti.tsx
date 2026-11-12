@@ -80,8 +80,8 @@ export function SpotifyBaglanti() {
     yukle();
   };
 
-  const yya = !d?.spotify?.connected && Boolean(d?.harici?.spotify);
-  const bagli = d?.spotify?.connected || yya;
+  const studio = !d?.spotify?.connected && Boolean(d?.harici?.spotify);
+  const bagli = d?.spotify?.connected || studio;
   return (
     <div className="glass-panel p-5 rounded-2xl border border-emerald-500/20 space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -89,7 +89,7 @@ export function SpotifyBaglanti() {
           <Music2 className="w-4 h-4 text-emerald-400" /> Spotify — istekler kendiliğinden çalsın
         </h3>
         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${bagli ? 'bg-emerald-500/20 text-emerald-300' : 'bg-gray-700 text-gray-300'}`}>
-          {yya ? "Bağlı · AxthrowA Studio'dan" : bagli ? `Bağlı${d?.spotify.displayName ? ` · ${d.spotify.displayName}` : ''}` : 'Bağlı değil'}
+          {studio ? "Bağlı · AxthrowA Studio'dan" : bagli ? `Bağlı${d?.spotify.displayName ? ` · ${d.spotify.displayName}` : ''}` : 'Bağlı değil'}
         </span>
       </div>
       <p className="text-[11px] text-gray-400">
@@ -110,10 +110,10 @@ export function SpotifyBaglanti() {
           <li>Uygulamanın <b>Client ID</b>'sini aşağıya yapıştır, <b>Bağlan</b>'a bas ve Spotify'da onayla.</li>
         </ol>
       )}
-      {yya && (
+      {studio && (
         <p className="text-[11px] text-emerald-300">Spotify AxthrowA Studio'da bağlı; bot onu kullanıyor, burada ayrıca bağlamana gerek yok.</p>
       )}
-      <div className={yya ? 'hidden' : 'flex gap-2'}>
+      <div className={studio ? 'hidden' : 'flex gap-2'}>
         <input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Spotify Client ID (32 karakter)" className={girdi} disabled={bagli} />
         {bagli ? (
           <button onClick={() => void kes()} className="px-3 py-2 rounded-xl bg-red-600/80 text-xs font-bold flex items-center gap-1 shrink-0">
@@ -150,7 +150,7 @@ export function SpotifyBaglanti() {
         onClick={(e) => {
           e.preventDefault();
           // AxthrowA Studio içindeyken uygulamanın kendi Müzik (Resonance) sekmesi açılır
-          if (window.parent !== window) window.parent.postMessage({ type: 'streamaxt:open-music' }, '*');
+          if (window.parent !== window) window.parent.postMessage({ type: 'axbot:open-music' }, '*');
           else openLink(`${window.location.origin}/resonance/`);
         }}
         className="text-[11px] text-emerald-300 underline"

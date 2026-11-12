@@ -7,8 +7,8 @@
  * veriliyordu. Bu da (a) internet kesilince uyarıların bozulması,
  * (b) telifli/dış sitelerin kaybolması, (c) OBS'te yavaş yükleme demekti.
  *
- * BotRix'te yükleme var ve boyut sınırı planla değişiyor
- * (ücretsiz 5 MB, premium 50 MB — BOTRIX_UI_INVENTORY §12). Bizde tek
+ * Örnek alınan botta yükleme var ve boyut sınırı planla değişiyor
+ * (ücretsiz 5 MB, premium 50 MB — rakip incelemesi). Bizde tek
  * sınır var ve yereldir.
  */
 import fs from 'node:fs';

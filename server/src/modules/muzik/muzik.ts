@@ -125,7 +125,7 @@ export class MuzikHost {
   /** Şarkıyı harici host'ta arar; `sira` ise Spotify sırasına ekler, değilse hemen çalar. */
   /**
    * İstekler hangi programa gitsin: şu an çalan programa (Spotify / YouTube Music Desktop),
-   * yoksa YYA'da seçili kaynağa, o da yoksa bağlı olana. Hiçbiri bağlı değilse null.
+   * yoksa Studio'da seçili kaynağa, o da yoksa bağlı olana. Hiçbiri bağlı değilse null.
    */
   hariciHedef(): 'spotify' | 'ytmd' | null {
     const { spotify, ytmd } = this.harici;
@@ -137,7 +137,7 @@ export class MuzikHost {
     return k === 'youtube-music' ? 'ytmd' : 'spotify';
   }
 
-  /** İstek işlenmeden önce YYA durumunu tazele (açılışta ilk yoklama gelmeden gelen istek kaybolmasın) */
+  /** İstek işlenmeden önce Studio durumunu tazele (açılışta ilk yoklama gelmeden gelen istek kaybolmasın) */
   async hariciTazele(): Promise<void> {
     if (!this.spotifyBagliMi() && !this.ytmdBagliMi()) await this.hariciYokla();
   }

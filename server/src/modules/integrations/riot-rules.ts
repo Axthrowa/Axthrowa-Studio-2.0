@@ -2,7 +2,7 @@
  * AxBoT — League of Legends sıralaması: saf kurallar
  * Developed by AxthrowA
  *
- * `$(leagueoflegends <Riot kimliği> <bölge>)` (BotRix belgesinde gözlenen
+ * `$(leagueoflegends <Riot kimliği> <bölge>)` (örnek alınan bot belgesinde gözlenen
  * değişken; KNOWN_LIMITATIONS N3). Kaynak: developer.riotgames.com
  * (CONFIRMED_IN_PUBLIC_DOCS):
  *   • ACCOUNT-V1  GET /riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}

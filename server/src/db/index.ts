@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { syncTriviaBank, triviaBankasiniOnar } from '../modules/games/trivia-sync.js';
 import { gocleriUygula } from './migrations.js';
+import { eskiVeritabaniniTasi, VERITABANI_DOSYASI } from './eski-dosya-adi.js';
 import { hataMetni } from '../core/logger.js';
 
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -12,7 +13,8 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Testler paralel çalışır: aynı dosyayı açanlar "disk I/O error" alıyor, geliştirme verisine de dokunuyordu
-const dbPath = process.env.VITEST ? ':memory:' : path.join(dataDir, 'streamaxt.sqlite');
+if (!process.env.VITEST) eskiVeritabaniniTasi(dataDir);
+const dbPath = process.env.VITEST ? ':memory:' : path.join(dataDir, VERITABANI_DOSYASI);
 // Kilit beklemesi İLK iş: başka bir kopya veritabanını tutarken açılış hemen
 // "database is locked" ile çöküyordu (journal_mode PRAGMA'sı beklemeden önce koşuyordu).
 const db = new DatabaseSync(dbPath, { timeout: 15000 } as any);
@@ -438,7 +440,7 @@ if (commandsCount.cnt === 0) {
     {
       id: 'cmd-discord',
       name: 'discord',
-      response: 'Topluluğumuza katılmak ve etkinliklerden haberdar olmak için Discord sunucumuza gel! 👉 https://discord.gg/streamaxt',
+      response: 'Topluluğumuza katılmak ve etkinliklerden haberdar olmak için Discord sunucumuza gel! 👉 https://discord.gg/axbot',
       userLevel: 'everyone',
       cooldown: 5,
       description: 'Discord sunucu bağlantısını gösterir'

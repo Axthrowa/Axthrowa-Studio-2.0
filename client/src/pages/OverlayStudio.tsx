@@ -2043,7 +2043,7 @@ export function OverlayStudio() {
         </div>
       )}
 
-      {/* TAB 2: WIDGET GALLERY (23 BOTRIX-GRADE WIDGETS) */}
+      {/* TAB 2: WIDGET GALLERY (23 WIDGETS) */}
       {activeTab === 'gallery' && (
         <div className="space-y-6">
           {/* Gallery Header & Search */}

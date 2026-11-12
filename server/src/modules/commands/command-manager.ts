@@ -36,7 +36,7 @@ import { shoutoutGonder } from '../otomasyon/shoutout.js';
 import { kendiMesajlari, nukeArgumanlari, nukeHedefleri, sonMesajlar } from '../moderation/son-mesajlar.js';
 import { sureyiYaz } from '../automod/enforcement.js';
 import { rastgeleIzleyici } from '../../core/variables/registry.js';
-import { kickbotCevir } from '../../core/variables/kickbot-uyum.js';
+import { ciftParantezCevir } from '../../core/variables/cift-parantez-uyum.js';
 import { duzenliler } from '../community/regulars.js';
 import { votekick, bingo, ayarSayi, kappagenGonder, metindenEmoteler } from '../community/topluluk.js';
 import { emoteAdlari } from '../community/oyunlar.js';
@@ -241,7 +241,7 @@ export class CommandManager {
 
   /**
    * Anahtar kelime komutları: mesajın herhangi bir yerinde bütün kelime
-   * olarak geçince çalışır (BotRix "Etkinleştirme: Sohbet anahtar kelimesi").
+   * olarak geçince çalışır (örnek alınan bot "Etkinleştirme: Sohbet anahtar kelimesi").
    *
    * Döngü koruması: botun kendi mesajı ASLA tetiklemez — yanıt metninde
    * anahtar kelime geçiyorsa bot kendine sonsuza dek cevap verirdi.
@@ -1059,7 +1059,7 @@ export class CommandManager {
       case 'commands':
       case 'yardim':
       case 'help': {
-        // Nightbot biçimi: !commands add|edit|delete !ad yanıt (mod)
+        // Yaygın biçim: !commands add|edit|delete !ad yanıt (mod)
         const altKomut: Record<string, string> = { add: 'addcom', ekle: 'addcom', edit: 'editcom', duzenle: 'editcom', delete: 'delcom', del: 'delcom', remove: 'delcom', sil: 'delcom' };
         const yonlen = altKomut[trKatla(args[0] || '')];
         if (yonlen) return this.executeBuiltIn(yonlen, args.slice(1), message);
@@ -1115,7 +1115,7 @@ export class CommandManager {
         return `✅ @${message.user.displayName} "${r.secenek}" için ${r.puan} puan yatırdı.`;
       }
 
-      // ---- Izleyici kuyrugu (BotRix: !joinq ailesi) ------------------------
+      // ---- Izleyici kuyrugu (örnek alınan bot: !joinq ailesi) ------------------------
       case 'joinq':
       case 'sirayagir': {
         const r = kuyruk.katil(message.user.username, message.user.displayName, message.platform, {
@@ -1179,7 +1179,7 @@ export class CommandManager {
         return `🧹 Kuyruk temizlendi (${n} kişi).`;
       }
 
-      // ---- Puan dususu (BotRix: !pdrops) ----------------------------------
+      // ---- Puan dususu (örnek alınan bot: !pdrops) ----------------------------------
       case 'pdrops':
       case 'puandususu': {
         const ayar = puanDususu.ayarOku();
@@ -1224,7 +1224,7 @@ export class CommandManager {
         return `🏆 Seviye sıralaması: ${liste.map((u, i) => `${i + 1}. ${u.displayName} (Sv.${u.seviye})`).join(' · ')}`;
       }
 
-      // ---- BotRix karsiligi olan yerlesik komutlar (GAP §2.1) -------------
+      // ---- örnek alınan bot karsiligi olan yerlesik komutlar (rakip incelemesi) -------------
       case 'uptime':
       case 'yayinsuresi':
         // Yayın kapalıyken "X önce başladı" demek yanlış bilgiydi
@@ -1387,7 +1387,7 @@ export class CommandManager {
         return null;
       }
 
-      // Düzenli izleyiciler (Nightbot "regulars"): !regulars add|remove|list @kişi
+      // Düzenli izleyiciler: !regulars add|remove|list @kişi
       case 'regulars':
       case 'duzenli': {
         if (!message.user.isMod && !message.user.isBroadcaster) return null;
@@ -1408,7 +1408,7 @@ export class CommandManager {
           : 'Henüz düzenli izleyici yok. Eklemek için: !regulars add @kullanıcı';
       }
 
-      // Oylu susturma (StreamElements !votekick) — ayar votekick_enabled (varsayılan kapalı)
+      // Oylu susturma (yaygın !votekick) — ayar votekick_enabled (varsayılan kapalı)
       case 'votekick':
       case 'oylasustur': {
         if (!settingsCache.getBoolean('votekick_enabled', false)) return null;
@@ -1728,9 +1728,9 @@ export class CommandManager {
 
     // 5) Degiskenler: once ESKI `{user}` bicimi (geriye uyum), sonra yeni
     //    `$(...)` motoru. Eski sablonlar oldugu gibi calismaya devam eder.
-    // `{{...}}` (KickBot) söz dizimi eski `{user}` ayrıştırıcısından ÖNCE çevrilir;
+    // `{{...}}` (çift süslü parantez) söz dizimi eski `{user}` ayrıştırıcısından ÖNCE çevrilir;
     // yoksa `{{username}}` içindeki `{username}` yarım yerleştirilir.
-    const eskiBicim = await parseVariables(kickbotCevir(cmd.response), {
+    const eskiBicim = await parseVariables(ciftParantezCevir(cmd.response), {
       message,
       commandName: cmd.name,
       args,
@@ -1754,7 +1754,7 @@ export class CommandManager {
         return message.user.isVip || message.user.isMod;
       case 'sub':
         return message.user.isSub || message.user.isMod || message.user.isVip;
-      // Nightbot "regular": elle eklenen güvenilir izleyici (+ VIP, mod)
+      // "regular": elle eklenen güvenilir izleyici (+ VIP, mod)
       case 'regular':
         return message.user.isMod || message.user.isVip || duzenliler.mi(message.platform, message.user.username);
       case 'everyone':

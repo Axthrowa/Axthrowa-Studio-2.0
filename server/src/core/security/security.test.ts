@@ -177,7 +177,7 @@ describe('yerelKokenMi', () => {
     for (const o of [
       'https://evil.example',
       'http://evil.example',
-      'https://botrix.live',
+      'https://baska-site.live',
       'http://192.168.1.50:3001',
       'http://localhost.evil.example'
     ]) {
@@ -206,11 +206,11 @@ describe('yazmaYontemiMi', () => {
 describe('baglanmaAdresi', () => {
   it('varsayılan yalnız bu makine', () => {
     expect(baglanmaAdresi({})).toBe('127.0.0.1');
-    expect(baglanmaAdresi({ STREAMAXT_HOST: '' })).toBe('127.0.0.1');
+    expect(baglanmaAdresi({ AXBOT_HOST: '' })).toBe('127.0.0.1');
   });
 
   it('kullanıcı açıkça seçerse ağa açılır', () => {
-    expect(baglanmaAdresi({ STREAMAXT_HOST: '0.0.0.0' })).toBe('0.0.0.0');
+    expect(baglanmaAdresi({ AXBOT_HOST: '0.0.0.0' })).toBe('0.0.0.0');
   });
 
   it('ağa açık bağlamada uyarı verir', () => {

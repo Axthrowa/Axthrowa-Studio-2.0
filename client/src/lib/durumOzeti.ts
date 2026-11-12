@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 /** Sunucu: GET /api/durum-ozeti (api/rotalar/sistem.ts) */
 export interface DurumOzeti {
   platformlar: string[];
-  muzik: 'spotify' | 'yya-spotify' | 'ytmd' | null;
+  muzik: 'spotify' | 'studio-spotify' | 'ytmd' | null;
   obsKaynak: number;
   /** Widget sayfalarının bağlantısı (sunucu: ws/katmanDurumu.ts) */
   katmanlar?: KatmanSatiri[];
@@ -43,6 +43,6 @@ export function useDurumOzeti(): DurumOzeti | null {
 
 export const MUZIK_ADI: Record<string, string> = {
   spotify: 'Spotify',
-  'yya-spotify': "Spotify (AxthrowA Studio'dan)",
+  'studio-spotify': "Spotify (AxthrowA Studio'dan)",
   ytmd: 'YouTube Music'
 };

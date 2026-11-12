@@ -16,7 +16,7 @@
  * Bu modül iki adlandırmayı da kabul eder ve kısmi güncellemede verilmeyen
  * alanları MEVCUT değerden alır — eski bir panel yeni alanları sıfırlamasın.
  *
- * BotRix komut formu (BOTRIX_UI_INVENTORY §6.2): Komut · Erişim ·
+ * Örnek alınan bot komut formu (rakip incelemesi): Komut · Erişim ·
  * Etkinleştirme (Sadece komut / Sohbet anahtar kelimesi) · Mesaj · Platform ·
  * Bekleme süresi · Bekleme modu (Genel / Kullanıcı başına) · Takma ad ·
  * Fiyat · Rol.

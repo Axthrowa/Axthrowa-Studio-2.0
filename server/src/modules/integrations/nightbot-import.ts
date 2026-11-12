@@ -2,9 +2,9 @@
  * AxBoT — Nightbot içe aktarma
  * Developed by AxthrowA
  *
- * BotRix'te `Sohbet Botu > Ekstralar > Nightbot'tan içe aktar` var:
+ * Örnek alınan botta `Sohbet Botu > Ekstralar > Nightbot'tan içe aktar` var:
  * komutlar, zamanlayıcılar ve moderasyon ayarları taşınıyor
- * (BOTRIX_UI_INVENTORY §6.4). Yeni gelen kullanıcı için en büyük engel
+ * (rakip incelemesi). Yeni gelen kullanıcı için en büyük engel
  * mevcut komutlarını kaybetmek; bu yüzden değerli.
  *
  * Nightbot'un dışa aktarma biçimi JSON'dur. Değişken sözdizimi bizimkiyle

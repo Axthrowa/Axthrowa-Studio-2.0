@@ -161,7 +161,7 @@ router.get('/events', (req: Request, res: Response) => {
 
 /**
  * Panel durum şeridi ve Hızlı Kurulum: neyin çalıştığı tek bakışta (ağa çıkmaz, ucuz).
- * Bu turdaki sorunların çoğu (Spotify YYA'da bağlı, anket katmanı kapalı) burada görünür olsun diye.
+ * Bu turdaki sorunların çoğu (Spotify Studio'da bağlı, anket katmanı kapalı) burada görünür olsun diye.
  */
 router.get('/durum-ozeti', async (_req: Request, res: Response) => {
   const durumlar = platformManager.getAllStatuses() as Record<string, { connected?: boolean }>;
@@ -175,7 +175,7 @@ router.get('/durum-ozeti', async (_req: Request, res: Response) => {
     : Boolean(settingsCache.get('gemini_api_key', '') || process.env.GEMINI_API_KEY);
   res.json({
     platformlar: Object.keys(durumlar).filter((k) => durumlar[k]?.connected),
-    muzik: m.spotify.connected ? 'spotify' : m.harici.spotify ? 'yya-spotify' : m.ytmd.connected ? 'ytmd' : null,
+    muzik: m.spotify.connected ? 'spotify' : m.harici.spotify ? 'studio-spotify' : m.ytmd.connected ? 'ytmd' : null,
     obsKaynak: wsHub.obsKaynakSayisi(),
     katmanlar: wsHub.katmanDurumu(),
     ai: { saglayici: saglayici || 'gemini', hazir: aiHazir }

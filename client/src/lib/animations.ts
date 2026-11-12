@@ -2,13 +2,13 @@
  * AxBoT — animasyon ön ayarları
  * Developed by AxthrowA
  *
- * BotRix'in uyarı sayfasında 37 giriş animasyonu gözlemlendi
- * (BOTRIX_ALERT_MATRIX §3.1). Bizde ~9 vardı ve her widget kendi içinde
+ * Örnek alınan botun uyarı sayfasında 37 giriş animasyonu gözlemlendi
+ * (rakip incelemesi). Bizde ~9 vardı ve her widget kendi içinde
  * Tailwind `animate-bounce` yapıştırıyordu: süre, gecikme ve easing
  * ayarlanamıyordu, çıkış animasyonu hiç yoktu.
  *
  * Burada isimler aynı (kullanıcı ne beklediğini bilsin) ama **davranış
- * sıfırdan yazıldı** — `transform` + `opacity` ile. BotRix kodu veya
+ * sıfırdan yazıldı** — `transform` + `opacity` ile. örnek alınan bot kodu veya
  * herhangi bir animasyon kütüphanesi kopyalanmadı.
  *
  * Her ön ayar `from` (giriş başlangıcı / çıkış bitişi) ve `to` (görünür hâl)
@@ -225,7 +225,7 @@ export function hareketAnahtari(s: Record<string, any>): string {
   return [s.girisAnimasyonu, s.animation, s.animationDuration, s.exitAnimation, s.surekliEfekt, s.efektSuresi].map((v) => String(v ?? '')).join('|');
 }
 
-/** Metin katmanı efektleri (BotRix'te 6 seçenek gözlemlendi). */
+/** Metin katmanı efektleri (örnek alınan botta 6 seçenek gözlemlendi). */
 export const METIN_EFEKTLERI = [
   { value: 'none', label: 'Yok' },
   { value: 'shine', label: 'Parıltı' },

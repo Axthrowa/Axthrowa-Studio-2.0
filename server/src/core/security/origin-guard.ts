@@ -20,7 +20,7 @@
  *
  * Kurallar:
  *   • Host: localhost / 127.0.0.1 / ::1 veya BU makinenin arayüz IP'leri
- *     (LAN kipinde OBS başka bilgisayardaysa) ya da STREAMAXT_IZINLI_HOSTLAR.
+ *     (LAN kipinde OBS başka bilgisayardaysa) ya da AXBOT_IZINLI_HOSTLAR.
  *   • Köken: yerel köken (local-guard) VEYA Host ile birebir aynı köken
  *     (LAN'daki OBS sayfası kendi sunucusuna bağlanabilsin).
  *   • Köken yoksa (tarayıcı dışı istemci: OBS eklentisi, betik) kabul —

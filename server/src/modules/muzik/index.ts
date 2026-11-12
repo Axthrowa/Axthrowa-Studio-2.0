@@ -26,5 +26,5 @@ export const muzikHost = new MuzikHost(
   },
   (m) => ozelYayin?.(m),
   // AxthrowA Studio'nun Resonance host'u (bot kendi Spotify'ı bağlı değilken); kapalıysa 15 sn'de bir dener
-  () => process.env.STREAMAXT_MUZIK_HOST ?? settingsCache.get('muzik_harici_host', 'http://127.0.0.1:8843')
+  () => process.env.AXBOT_MUZIK_HOST ?? settingsCache.get('muzik_harici_host', 'http://127.0.0.1:8843')
 );

@@ -71,7 +71,7 @@ describe('şarkı kuyruğu eşleme', () => {
   });
 
   it('kısa başlık, onunla başlayan isteği "çalıyor" saymaz; bekleyen istek açık kalır', () => {
-    // YYA kipinde istek ancak çalmaya başlayınca çözülür: çalanla eşleşmeyen çözülmüş istek bitmiştir
+    // Studio kipinde istek ancak çalmaya başlayınca çözülür: çalanla eşleşmeyen çözülmüş istek bitmiştir
     ekle('a', 'Birinci — X', 'https://open.spotify.com/track/aaaaaaaaaaaaaaaaaaaaaa', 1);
     ekle('b', 'Hey Jude — Beatles', 'https://open.spotify.com/track/bbbbbbbbbbbbbbbbbbbbbb', 2);
     ekle('c', 'teoman', 'spotify-istek:teoman', 3);

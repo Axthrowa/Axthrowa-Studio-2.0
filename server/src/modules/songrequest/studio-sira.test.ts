@@ -46,11 +46,11 @@ beforeAll(async () => {
     });
   });
   await new Promise<void>((r) => sunucu.listen(0, '127.0.0.1', r));
-  process.env.STREAMAXT_MUZIK_HOST = `http://127.0.0.1:${(sunucu.address() as AddressInfo).port}`;
+  process.env.AXBOT_MUZIK_HOST = `http://127.0.0.1:${(sunucu.address() as AddressInfo).port}`;
 });
 afterAll(() => {
   sunucu.close();
-  delete process.env.STREAMAXT_MUZIK_HOST;
+  delete process.env.AXBOT_MUZIK_HOST;
 });
 
 const mesaj = { id: 'm', platform: 'kick', channel: 'k', user: { id: 'u', username: 'ali', displayName: 'ali' }, message: '!sr teoman' } as any;
@@ -115,7 +115,7 @@ describe('istek güvenlik filtreleri', () => {
   });
 });
 
-describe('YYA Spotify sırası (bot tarafında)', () => {
+describe('Studio Spotify sırası (bot tarafında)', () => {
   it('çalan şarkı kesilmez; bitmek üzereyken sıradaki istek başlar', async () => {
     await (muzikHost as any).hariciYokla();
     const yanit = await songRequest.handleSongRequest(mesaj, ['teoman']);

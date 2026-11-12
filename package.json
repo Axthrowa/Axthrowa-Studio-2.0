@@ -1,5 +1,5 @@
 {
-  "name": "streamaxt-workspace",
+  "name": "axbot-workspace",
   "version": "1.13.18",
   "engines": {
     "node": ">=22.5.0"
@@ -18,7 +18,7 @@
     "build:resonance": "npm --prefix resonance run build"
   },
   "keywords": [
-    "streamaxt",
+    "axbot",
     "twitch",
     "kick",
     "youtube",

@@ -97,7 +97,7 @@ export function asamaSuresi(oge: UyariOgesi, asama: UyariAsamasi): number {
  * Kuyruğa ekler.
  *
  * `kuyrukAcik` false ise bekleyenler tutulmaz: yeni olay mevcut uyarıyı
- * ANINDA değiştirir (BotRix'te kuyruk ayarı gözlemlenmedi, bizde seçenek).
+ * ANINDA değiştirir (örnek alınan botta kuyruk ayarı gözlemlenmedi, bizde seçenek).
  */
 export function kuyrugaEkle(
   durum: KuyrukDurumu,
@@ -196,7 +196,7 @@ export function temizle(durum: KuyrukDurumu): KuyrukDurumu {
 }
 
 /**
- * Metin görünüm penceresi (BotRix: "Metin görünümü ms – ms").
+ * Metin görünüm penceresi (örnek alınan bot: "Metin görünümü ms – ms").
  * 0–0 = her zaman görünür. Yalnız başlangıç verilirse o andan sonuna kadar,
  * yalnız bitiş verilirse baştan o ana kadar.
  */

@@ -13,13 +13,13 @@
  *  • Gözcü ölürse (pencere kapatıldı, görev yöneticisi) alt süreç IPC
  *    kopmasını görür ve kendisi de kapanır; yetim süreç portu tutmaz.
  *
- * `STREAMAXT_GOZCU=kapali` gözcüsüz çalıştırır (geliştirme, sınama).
+ * `AXBOT_GOZCU=kapali` gözcüsüz çalıştırır (geliştirme, sınama).
  */
 import { fork, type ChildProcess } from 'child_process';
 import { gozcuKarari, type CokmeKaydi } from './core/gozcu-karar.js';
 
-const COCUK = process.env.STREAMAXT_COCUK === '1';
-const GOZCUSUZ = String(process.env.STREAMAXT_GOZCU || '').toLowerCase() === 'kapali';
+const COCUK = process.env.AXBOT_COCUK === '1';
+const GOZCUSUZ = String(process.env.AXBOT_GOZCU || '').toLowerCase() === 'kapali';
 
 if (COCUK || GOZCUSUZ) {
   if (COCUK) {
@@ -35,7 +35,7 @@ if (COCUK || GOZCUSUZ) {
 
   const baslat = () => {
     cocuk = fork(betik, process.argv.slice(2), {
-      env: { ...process.env, STREAMAXT_COCUK: '1' },
+      env: { ...process.env, AXBOT_COCUK: '1' },
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       windowsHide: true
     });

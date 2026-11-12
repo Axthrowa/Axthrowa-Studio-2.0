@@ -63,7 +63,7 @@ describe('komutGirdisiniCoz — panel/istemci uyumu', () => {
     expect(r.kayit.access_mode).toBe('online');
   });
 
-  it('BotRix formundaki tüm alanlar yazılabilir', () => {
+  it('örnek alınan bot formundaki tüm alanlar yazılabilir', () => {
     const r = komutGirdisiniCoz({
       name: '!Selam',
       response: 'Hoş geldin $(sender)',

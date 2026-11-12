@@ -7,7 +7,7 @@
  * YouTube'a "raid" gibi karşılığı olmayan ayarlar sunuluyordu. Kullanıcı
  * ayarı açıyor, hiç çalışmıyor, sebebini anlayamıyordu.
  *
- * BotRix bunu gizleyerek değil ETİKETLEYEREK çözüyor: "Bits (Twitch)",
+ * Örnek alınan bot bunu gizleyerek değil ETİKETLEYEREK çözüyor: "Bits (Twitch)",
  * "Super Chat (YouTube)". Biz de aynısını yapıyoruz — bir ayarı sessizce
  * yok etmek, neden çalışmadığını söylemekten daha kötü.
  *

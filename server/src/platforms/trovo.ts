@@ -2,7 +2,7 @@
  * AxBoT — Trovo adaptörü
  * Developed by AxthrowA
  *
- * BOTRIX_GAP_ANALYSIS'te eksik olarak işaretlenmişti: BotRix Trovo'yu
+ * rakip incelemesi'te eksik olarak işaretlenmişti: örnek alınan bot Trovo'yu
  * destekliyor, bizde hiç yoktu.
  *
  * KAYNAK: Trovo Chat Service ve Trovo APIs resmi belgeleri

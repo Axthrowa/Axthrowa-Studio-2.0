@@ -60,7 +60,7 @@ class TTSEngine extends EventEmitter {
     });
   }
 
-  /** Filtre ayarlarini oku (BotRix TTS > Gelismis ayarlar karsiligi). */
+  /** Filtre ayarlarini oku (örnek alınan bot TTS > Gelismis ayarlar karsiligi). */
   filtreAyarlari(): TTSFiltreAyarlari {
     try {
       const r = db.prepare("SELECT value FROM bot_settings WHERE key = 'tts_filters'").get() as

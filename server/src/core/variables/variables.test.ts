@@ -88,7 +88,7 @@ describe('adVeArguman', () => {
   it('argümanlı', () => {
     expect(adVeArguman('random 0 10')).toEqual({ ad: 'random', ham: '0 10' });
   });
-  it('adı küçük harfe çevirir (BotRix şablonları karışık yazıyor)', () => {
+  it('adı küçük harfe çevirir (örnek alınan bot şablonları karışık yazıyor)', () => {
     expect(adVeArguman('addPoints 100').ad).toBe('addpoints');
   });
 });
@@ -479,7 +479,7 @@ describe('SSRF — IPv6 ve alan adı çözümlemesi (4. tur)', () => {
   });
 });
 
-describe('jsonset / jsonunset yardımcıları (BotRix belgesindeki örnekler)', () => {
+describe('jsonset / jsonunset yardımcıları (örnek alınan bot belgesindeki örnekler)', () => {
   it('yol yazar, ara nesneleri kurar; değer JSON ise türüyle saklanır', () => {
     expect(JSON.stringify(jsonYoluYaz({}, 'stats.wins', jsonDegeri('2')))).toBe('{"stats":{"wins":2}}');
     expect(JSON.stringify(jsonYoluYaz({ a: 1 }, 'items[0].name', jsonDegeri('sword')))).toBe('{"a":1,"items":[{"name":"sword"}]}');

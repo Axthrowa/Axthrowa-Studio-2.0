@@ -175,8 +175,8 @@ app.get('/health', (req, res) => {
   // öldürürse gözcü çökme sanıp yeniden başlatır — ağacı gözcüden kapatabilsin diye.
   res.json({
     status: 'ok',
-    uygulama: 'streamaxt',
-    gozcuPid: process.env.STREAMAXT_COCUK === '1' ? process.ppid : null,
+    uygulama: 'axbot',
+    gozcuPid: process.env.AXBOT_COCUK === '1' ? process.ppid : null,
     // AxthrowA Studio "Hakkında"da gösterir (paket kökündeki package.json)
     surum: uygulamaSurumu(),
     time: new Date().toISOString()
@@ -257,7 +257,7 @@ async function portDoluysa(): Promise<void> {
   try {
     const r = await fetch(`http://127.0.0.1:${PORT}/health`, { signal: AbortSignal.timeout(3000) });
     const j: any = await r.json().catch(() => null);
-    if (j?.uygulama === 'streamaxt') {
+    if (j?.uygulama === 'axbot') {
       console.error(`[AxBoT] ${PORT} portunda zaten bir AxBoT çalışıyor; bu kopya kapatılıyor.`);
       process.exit(ZATEN_CALISIYOR_KODU);
     }
@@ -324,7 +324,7 @@ server.listen(PORT, HOST, async () => {
   // Hedef çubuklarının ilerlemesi sunucuda kalıcı (OBS yenilense de sürer; test/tekrar sayılmaz)
   hedefleriBagla();
 
-  // Sohbet tarafi olay mesajlari (BotRix'te 'Metin uyarilari'). Gorsel
+  // Sohbet tarafi olay mesajlari (örnek alınan botta 'Metin uyarilari'). Gorsel
   // overlay'den bagimsiz: olay olunca sohbete metin yazar.
   sohbetUyarilari.baglaOlaylar();
 
@@ -360,7 +360,7 @@ server.listen(PORT, HOST, async () => {
     });
   });
 
-  // Destek olaylari da XP verir (BotRix'te seviye sistemi abonelik ve
+  // Destek olaylari da XP verir (örnek alınan botta seviye sistemi abonelik ve
   // bagisla da besleniyor).
   eventBus.on('sub', (p: any) => {
     const a = seviyeler.ayarOku();

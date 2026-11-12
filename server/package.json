@@ -1,5 +1,5 @@
 {
-  "name": "streamaxt-server",
+  "name": "axbot-server",
   "version": "1.13.18",
   "engines": {
     "node": ">=22.5.0"

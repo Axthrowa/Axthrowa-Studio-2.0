@@ -2,10 +2,10 @@
  * AxBoT — Discord duyuruları
  * Developed by AxthrowA
  *
- * BotRix'te `/panel/integrations` platform bağlantısı DEĞİL, Discord duyuru
+ * Örnek alınan botta `/panel/integrations` platform bağlantısı DEĞİL, Discord duyuru
  * otomasyonudur: Twitch/YouTube Live/YouTube Videos/TikTok/Kick için yayına
  * başlayınca veya içerik paylaşınca Discord'a mesaj atar
- * (BOTRIX_UI_INVENTORY §8). Bizde hiç yoktu.
+ * (rakip incelemesi). Bizde hiç yoktu.
  *
  * Webhook kullanılır: Discord botunu sunucuya eklemeye gerek yok, kullanıcı
  * kanal ayarlarından bir webhook adresi alıp yapıştırır.

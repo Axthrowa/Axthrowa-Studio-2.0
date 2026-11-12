@@ -60,7 +60,7 @@ const EYLEMLER = [
   { value: 'delete_warn', label: 'Sil + uyarı' }
 ];
 
-/** BotRix'teki on bir kademe. */
+/** Örnek alınan bottaki on bir kademe. */
 const SURELER = [
   [30, '30 sn'], [60, '1 dk'], [120, '2 dk'], [300, '5 dk'], [900, '15 dk'], [1800, '30 dk'],
   [3600, '1 sa'], [7200, '2 sa'], [18000, '5 sa'], [43200, '12 sa'], [86400, '1 gün']

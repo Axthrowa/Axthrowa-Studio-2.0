@@ -2,12 +2,12 @@
  * AxBoT — widget tema kütüphanesi
  * Developed by AxthrowA
  *
- * BOTRIX_GAP_ANALYSIS §8'deki ana örüntü şuydu: *ayar sayısında biz öndeyiz,
- * tema çeşitliliğinde BotRix açık ara önde* — widget başına 13-28 tema
+ * rakip incelemesindeki ana örüntü şuydu: *ayar sayısında biz öndeyiz,
+ * tema çeşitliliğinde örnek alınan bot açık ara önde* — widget başına 13-28 tema
  * sunuyor (Chat 24, Çark 28, Anket 13, Şu An Çalan 16, Sayaç 9). Bizde
  * widget başına 4-5 vardı.
  *
- * Buradaki temalar **kendi tasarımlarımız**: BotRix'in görselleri, renk
+ * Buradaki temalar **kendi tasarımlarımız**: örnek alınan botun görselleri, renk
  * paletleri veya CSS'i kopyalanmadı. İsimler kategoriktir (Neon, Cam,
  * Minimal gibi) ve sektörde yaygındır.
  *
@@ -595,7 +595,7 @@ export const WIDGET_TEMALARI: Record<string, TemaTanimi[]> = {
     tema('baloncuk', 'Baloncuk', { messageBubbles: true, messageBgColor: '#1e293b', messageBgOpacity: 0.9, borderRadius: 22 }, { arka: '#1e293b', vurgu: P.turkuaz, metin: P.beyaz }),
     tema('yanmenu', 'Yan Şerit', { messageBubbles: true, messageBgColor: '#1e1033', messageBgOpacity: 0.7, borderRadius: 4, textColor: P.beyaz, highlightColor: P.mor, highlightSpecial: true }, { arka: 'rgba(30,16,51,.7)', vurgu: P.mor, metin: P.beyaz }),
     tema('seffaf', 'Tamamen Şeffaf', { transparentBg: true, messageBgOpacity: 0, textShadow: true }, { arka: 'transparent', vurgu: P.beyaz, metin: P.beyaz }),
-    // BotRix'te 24 hazır sohbet tasarımı gözlemlendi; bizdekiler kendi renk/ayar birleşimlerimiz
+    // Örnek alınan botta 24 hazır sohbet tasarımı gözlemlendi; bizdekiler kendi renk/ayar birleşimlerimiz
     tema('neon', 'Neon', { messageBubbles: true, messageBgColor: '#0b0420', messageBgOpacity: 0.85, borderRadius: 10, textColor: P.beyaz, highlightColor: P.pembe, highlightSpecial: true, outlineEnabled: false, textShadow: true }, { arka: '#0b0420', vurgu: P.pembe, metin: P.beyaz }),
     tema('karbon', 'Karbon', { messageBubbles: true, messageBgColor: '#111827', messageBgOpacity: 0.92, borderRadius: 6, textColor: '#e5e7eb', highlightColor: P.gri, textShadow: false }, { arka: '#111827', vurgu: P.gri, metin: '#e5e7eb' }),
     tema('beyazkart', 'Beyaz Kart', { messageBubbles: true, messageBgColor: P.beyaz, messageBgOpacity: 0.95, borderRadius: 14, textColor: '#111827', usernameColorMode: 'user', textShadow: false, outlineEnabled: false }, { arka: P.beyaz, vurgu: P.mor, metin: '#111827' }),

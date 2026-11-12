@@ -2,10 +2,10 @@
  * AxBoT — seviye / XP sistemi
  * Developed by AxthrowA
  *
- * BotRix'te `Sohbet Botu > Ekstralar > Seviye sistemi` ve `!level` / `!xp`
+ * Örnek alınan botta `Sohbet Botu > Ekstralar > Seviye sistemi` ve `!level` / `!xp`
  * komutları gözlemlendi; sadakat yapılandırmasında liderlik tablosu
  * "Puanlar / Seviyeler / İzleme süresi" arasında seçilebiliyor
- * (BOTRIX_UI_INVENTORY §6.4, §7). Bizde seviye kavramı hiç yoktu —
+ * (rakip incelemesi). Bizde seviye kavramı hiç yoktu —
  * `loyalty_tier` yalnız puana bakan sabit bir etiketti.
  *
  * XP puandan AYRIDIR: puan harcanır, XP harcanmaz. Böylece mağazadan
@@ -150,7 +150,7 @@ class SeviyeMotoru {
     }));
   }
 
-  /** Tüm seviyeleri sıfırla (BotRix'te "Sıralamalar > Sıfırla"). */
+  /** Tüm seviyeleri sıfırla (örnek alınan botta "Sıralamalar > Sıfırla"). */
   sifirla(neyi: 'xp' | 'puan' | 'ikisi' = 'xp'): { etkilenen: number } {
     if (neyi === 'xp' || neyi === 'ikisi') {
       db.prepare('UPDATE economy SET xp = 0, level = 0').run();

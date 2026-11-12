@@ -21,7 +21,7 @@ export interface MedyaOgesi {
   url: string;
 }
 
-/** Tek dosya üst sınırı (BotRix ücretsiz planla aynı). */
+/** Tek dosya üst sınırı (örnek alınan bot ücretsiz planla aynı). */
 export const MAKS_BOYUT = 5 * 1024 * 1024;
 
 /** Video üst sınırı (ses/video panosu: yayıncının kendi kısa videoları) */

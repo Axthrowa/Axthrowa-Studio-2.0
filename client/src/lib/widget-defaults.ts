@@ -145,7 +145,7 @@ export const CHAT_DEFAULTS = {
   outlineWidth: 1,
   highlightColor: '#7c3aed',
   hideBroadcaster: false,
-  // Hangi platformların sohbeti görünsün (BotRix "Platformlar" seçimi karşılığı)
+  // Hangi platformların sohbeti görünsün (örnek alınan bot "Platformlar" seçimi karşılığı)
   kickGoster: true,
   twitchGoster: true,
   youtubeGoster: true,
@@ -366,8 +366,8 @@ export const WHEEL_DEFAULTS = {
 };
 
 /**
- * Uyarı kutusu — BotRix'in uyarı sayfasındaki derinliğe göre genişletildi
- * (BOTRIX_ALERT_MATRIX §2). Eskiden 13 ayar vardı; metin katmanı, konum,
+ * Uyarı kutusu — örnek alınan botun uyarı sayfasındaki derinliğe göre genişletildi
+ * (rakip incelemesi). Eskiden 13 ayar vardı; metin katmanı, konum,
  * görünüm penceresi ve animasyon süresi hiç ayarlanamıyordu.
  */
 export const ALERT_ADVANCED_DEFAULTS = {
@@ -391,7 +391,7 @@ export const ALERT_ADVANCED_DEFAULTS = {
   exitAnimation: 'fade',
   textEffect: 'shine',
 
-  // Metin katmanları — BotRix'te üst ve alt metnin rengi AYRI ayarlanıyor
+  // Metin katmanları — örnek alınan botta üst ve alt metnin rengi AYRI ayarlanıyor
   titleColor: '#3EEDFE',
   messageColor: '#ffffff',
   titleSize: 36,
@@ -924,7 +924,7 @@ export const END_CREDITS_DEFAULTS = {
   titleTips: 'DESTEKÇİLERİMİZ & BAĞIŞLAR',
   titleFollows: 'YENİ TAKİPÇİLER',
   titleRaids: 'RAID GÖNDERENLER',
-  /** Jenerik son kaç saatin olaylarını tarar (BotRix "Taranacak saat") */
+  /** Jenerik son kaç saatin olaylarını tarar (örnek alınan bot "Taranacak saat") */
   taranacakSaat: 12,
   showSubs: true,
   showTips: true,

@@ -46,7 +46,7 @@ export interface KickRealtimeOzet {
  * Üretimde her zaman `web.kick.com`.
  */
 function apiKoku(): { kok: string; ekIzinli: string[] } {
-  const ortam = String(process.env.STREAMAXT_KICK_REALTIME_API || '').trim().replace(/\/+$/, '');
+  const ortam = String(process.env.AXBOT_KICK_REALTIME_API || '').trim().replace(/\/+$/, '');
   if (ortam && /^http:\/\/127\.0\.0\.1:\d+(\/|$)/.test(ortam)) {
     const port = new URL(ortam).port;
     return { kok: ortam, ekIzinli: [`ws://127.0.0.1:${port}/`] };

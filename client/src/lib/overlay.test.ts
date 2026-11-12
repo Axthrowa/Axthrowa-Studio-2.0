@@ -26,8 +26,8 @@ import {
 // ---- Animasyonlar -----------------------------------------------------------
 
 describe('animasyon ön ayarları', () => {
-  it('BotRix seviyesinde çeşitlilik sunar', () => {
-    // BOTRIX_ALERT_MATRIX §3.1: 37 giriş animasyonu gözlemlendi
+  it('örnek alınan bot seviyesinde çeşitlilik sunar', () => {
+    // rakip incelemesi: 37 giriş animasyonu gözlemlendi
     expect(ANIM_ON_AYARLARI.length).toBeGreaterThanOrEqual(37);
   });
 
@@ -104,7 +104,7 @@ describe('animStili', () => {
 });
 
 describe('metin efektleri', () => {
-  it('BotRix ile aynı sayıda seçenek', () => {
+  it('örnek alınan botla aynı sayıda seçenek', () => {
     expect(METIN_EFEKTLERI.length).toBe(6);
   });
 });

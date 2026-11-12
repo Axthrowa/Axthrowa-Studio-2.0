@@ -2,7 +2,7 @@
  * AxBoT — sırların diskte şifrelenmesi (S6)
  * Developed by AxthrowA
  *
- * Denetim S6: OAuth tokenları ve API anahtarları `data/streamaxt.sqlite`
+ * Denetim S6: OAuth tokenları ve API anahtarları `data/axbot.sqlite`
  * içinde DÜZ METİN duruyordu. API'den artık dönmüyorlardı ama dosyayı ele
  * geçiren (paylaşılan bir yedek zip'i, taşınan taşınabilir klasör, başka bir
  * kullanıcı) hepsini okuyabiliyordu. Yedek betiği `data` klasörünü de zip'e
@@ -19,7 +19,7 @@
  * (geriye uyum). Başka makineye taşınan şifreli değer çözülemez → boş
  * sayılır → platform "yeniden bağlan" der. Bu bilinçli: amaç tam da bu.
  *
- * Kapatmak için: STREAMAXT_SIFRELEME=kapali (yeni yazımlar düz kalır;
+ * Kapatmak için: AXBOT_SIFRELEME=kapali (yeni yazımlar düz kalır;
  * mevcut şifreli değerler okunmaya devam eder).
  */
 import { execFileSync } from 'node:child_process';
@@ -27,8 +27,8 @@ import { execFileSync } from 'node:child_process';
 export const ONEK = 'dpapi:v1:';
 
 /** Uygulamaya özgü ek entropi: başka bir uygulamanın DPAPI verisiyle karışmasın. */
-// Eski ad kasıtlı: değişirse kayıtlı sırlar çözülemez
-const ENTROPI_B64 = Buffer.from('StreamAxT-sir-kasasi-v1', 'utf8').toString('base64');
+// Baytlar ilk sürümden beri aynı: değişirse kayıtlı sırlar çözülemez
+const ENTROPI_B64 = 'U3RyZWFtQXhULXNpci1rYXNhc2ktdjE=';
 
 /**
  * Toplu işlem betiği. Girdi stdin'den JSON: [{i, islem:'sifrele'|'coz', veri}]
@@ -83,7 +83,7 @@ export function onekliMi(deger: unknown): deger is string {
 }
 
 export function sifrelemeAcikMi(env: NodeJS.ProcessEnv = process.env): boolean {
-  return !kullanilamaz && String(env.STREAMAXT_SIFRELEME || '').toLowerCase() !== 'kapali';
+  return !kullanilamaz && String(env.AXBOT_SIFRELEME || '').toLowerCase() !== 'kapali';
 }
 
 function calistir(isler: Is[]): Sonuc[] {

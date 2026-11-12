@@ -279,7 +279,7 @@ describe('yetenekleriGetir', () => {
   });
 });
 
-describe('metin görünüm penceresi (BotRix: Metin görünümü ms – ms)', () => {
+describe('metin görünüm penceresi (örnek alınan bot: Metin görünümü ms – ms)', () => {
   it('0–0 her zaman görünür', () => {
     expect(metinPenceresiAcik(0, 0, 0)).toBe(true);
     expect(metinPenceresiAcik(9999, 0, 0)).toBe(true);

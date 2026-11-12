@@ -49,7 +49,7 @@ router.get('/levels/:username', (req: Request, res: Response) => {
   res.json(seviyeler.kullanici(String(req.params.username || '')));
 });
 
-/** BotRix'teki "Siralamalar > Sifirla" karsiligi. */
+/** Örnek alınan bottaki "Siralamalar > Sifirla" karsiligi. */
 router.post('/levels/reset', (req: Request, res: Response) => {
   const neyi = String(req.body?.neyi || 'xp') as 'xp' | 'puan' | 'ikisi';
   if (!['xp', 'puan', 'ikisi'].includes(neyi)) return res.status(400).json({ error: 'neyi: xp | puan | ikisi' });

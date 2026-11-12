@@ -5,7 +5,7 @@
  * Saf metin işleme: veritabanı ve ağ erişimi işleyicilerin içinde, burada
  * yalnız ayrıştırma ve sıra yönetimi var. Bu sayede test edilebilir.
  *
- * Desteklenen sözdizimi (BotRix şablonlarının taşınabilmesi için aynı biçim;
+ * Desteklenen sözdizimi (örnek alınan bot şablonlarının taşınabilmesi için aynı biçim;
  * uygulama sıfırdan yazıldı, kod kopyalanmadı):
  *   $(ad)              $(ad arg)            $(ad arg1;arg2)
  *   Rand[0,10]         RandomList[a;b;c]    fetch[https://…]

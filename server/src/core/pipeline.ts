@@ -142,7 +142,7 @@ export class MessagePipeline {
     // Notify Chat Rescue of active conversation
     chatRescueService.recordChatMessage();
 
-    // Ilk kez yazan izleyiciyi karsila (BotRix'te 'Karsilama').
+    // Ilk kez yazan izleyiciyi karsila (örnek alınan botta 'Karsilama').
     sohbetUyarilari.sohbetMesaji(message.user.username, message);
 
     // Record Loyalty (Messages count, watch time activity, loyalty tier, points)

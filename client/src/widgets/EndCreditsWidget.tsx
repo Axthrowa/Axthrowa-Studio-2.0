@@ -113,7 +113,7 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
           maxWidth: 640,
           gap: Number(s.gap) || 48,
           padding: '64px 0',
-          animation: `streamaxtCredits ${sure}s linear ${s.loop ? 'infinite' : '1 forwards'}`
+          animation: `axbotCredits ${sure}s linear ${s.loop ? 'infinite' : '1 forwards'}`
         }}
       >
         <div className="space-y-2">
@@ -156,7 +156,7 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
       </div>
 
       <style>{`
-        @keyframes streamaxtCredits {
+        @keyframes axbotCredits {
           0% { transform: translateY(100vh); }
           100% { transform: translateY(-120%); }
         }

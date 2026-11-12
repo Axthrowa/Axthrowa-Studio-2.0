@@ -45,7 +45,7 @@ export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
 
-  /** Shoutout widget'ı: izleyici eşiğini aşan raid/host'ta gelen yayıncı otomatik tanıtılır (BotRix'teki seçenek; 0 = kapalı) */
+  /** Shoutout widget'ı: izleyici eşiğini aşan raid/host'ta gelen yayıncı otomatik tanıtılır (örnek alınan bottaki seçenek; 0 = kapalı) */
   private raidShoutout(payload: { username?: string; platform?: string; viewers?: number; isTest?: boolean }) {
     if (payload?.isTest || !payload?.username) return;
     try {
@@ -282,7 +282,7 @@ export class WebSocketHub {
         platform: (platform === 'all' ? 'kick' : platform) as any,
         channel: 'stream',
         user: {
-          id: 'streamaxt_system',
+          id: 'axbot_system',
           username: 'AxBoT',
           displayName: '⚠️ Gönderilemedi',
           color: '#f87171',

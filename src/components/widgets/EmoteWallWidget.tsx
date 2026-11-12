@@ -146,7 +146,7 @@ export default function EmoteWallWidget({ config }: Props) {
 
   useEffect(() => {
     return subscribe((ev: WidgetSyncEvent) => {
-      if (isLocalBotUser(ev.user || "")) return;
+      if (ev.bot || isLocalBotUser(ev.user || "")) return;
       const tokens = extractTokens(ev.text || "");
       for (const t of tokens) spawnRef.current(t);
     });

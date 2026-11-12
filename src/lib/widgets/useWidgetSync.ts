@@ -28,6 +28,8 @@ export type WidgetSyncEvent = {
   badges?: string[];
   color?: string;
   t?: number;
+  /** Botun kendi iletisi (Studio, botun az önce gönderdiği metinle eşleştirir) */
+  bot?: boolean;
   raw?: Record<string, unknown>;
 };
 
@@ -150,6 +152,7 @@ function fromChatMessage(msg: Record<string, unknown>): WidgetSyncEvent | null {
     badges: Array.isArray(msg.badges) ? (msg.badges as string[]) : [],
     color: msg.color ? String(msg.color) : undefined,
     t: Number(msg.t) || Date.now(),
+    bot: msg.bot === true,
     raw: msg,
   };
 }

@@ -344,12 +344,18 @@ fn is_safe_web_url(url: &str) -> bool {
 /// SEE_MASK_DOENVSUBST verilmedikçe ortam değişkeni genişletmez.
 #[cfg(target_os = "windows")]
 fn shell_open(url: &str) -> Result<(), String> {
+  shell_open_kipli(url, false)
+}
+
+/// `sessiz`: pencereyi simge durumunda, odak almadan açar (oyun tam ekranken öne fırlamasın).
+#[cfg(target_os = "windows")]
+fn shell_open_kipli(url: &str, sessiz: bool) -> Result<(), String> {
   use windows::core::{w, HSTRING, PCWSTR};
   use windows::Win32::System::Com::{
     CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE,
   };
   use windows::Win32::UI::Shell::ShellExecuteW;
-  use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+  use windows::Win32::UI::WindowsAndMessaging::{SW_SHOWMINNOACTIVE, SW_SHOWNORMAL};
 
   let url = url.to_string();
   // ShellExecute bazı işleyicileri COM ile çağırır; belgelerin önerdiği gibi
@@ -357,7 +363,8 @@ fn shell_open(url: &str) -> Result<(), String> {
   std::thread::spawn(move || unsafe {
     let com = CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     let hedef = HSTRING::from(url.as_str());
-    let sonuc = ShellExecuteW(None, w!("open"), &hedef, PCWSTR::null(), PCWSTR::null(), SW_SHOWNORMAL);
+    let kip = if sessiz { SW_SHOWMINNOACTIVE } else { SW_SHOWNORMAL };
+    let sonuc = ShellExecuteW(None, w!("open"), &hedef, PCWSTR::null(), PCWSTR::null(), kip);
     if com.is_ok() {
       CoUninitialize();
     }
@@ -371,6 +378,18 @@ fn shell_open(url: &str) -> Result<(), String> {
   })
   .join()
   .map_err(|_| "Tarayıcı açma iş parçacığı çöktü".to_string())?
+}
+
+/// Spotify masaüstü uygulamasını arka planda açar (yalnız Windows; `spotify:` iletişim kuralı).
+pub fn spotify_uygulamasini_ac() -> Result<(), String> {
+  #[cfg(target_os = "windows")]
+  {
+    shell_open_kipli("spotify:", true)
+  }
+  #[cfg(not(target_os = "windows"))]
+  {
+    Err("Spotify otomatik açma yalnız Windows'ta".into())
+  }
 }
 
 /// Adresi sistem tarayıcısında açar.

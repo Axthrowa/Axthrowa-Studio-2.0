@@ -105,8 +105,8 @@ pub fn parse_retry_after(raw: Option<&str>) -> u64 {
 /// Yoklama aralığı: çalarken 2 sn (ilerleme çubuğu akıcı kalsın), durgunken 5 sn.
 /// Saniyede bir istek (dakikada 60) Spotify'ın 30 sn'lik penceresine takılıyordu.
 pub fn spotify_poll_delay(playing: bool) -> Duration {
-  // Durdurma ve başlatma en geç bu kadar sonra görünür; 429 gelirse poll döngüsü Retry-After kadar bekler
-  Duration::from_millis(if playing { 1000 } else { 2000 })
+  // 1 sn (1.6.3) dakikada 60 istek ediyordu: !sr araması 429 alıp çalmıyordu. Konum arada saatle ilerletilir.
+  Duration::from_millis(if playing { 2000 } else { 5000 })
 }
 
 fn now_ms() -> i64 {
@@ -922,7 +922,8 @@ impl MusicState {
 
   /// Arama + URI ile çal (chat !istek). `queue`: hemen çalmak yerine Spotify sırasına ekler
   /// (gömülü botun !sr isteği çalan şarkıyı kesmesin).
-  pub async fn spotify_search_play(&self, query: &str, queue: bool) -> Result<(String, String, String)> {
+  /// `ac`: etkin Spotify cihazı yoksa masaüstü uygulamasını açıp cihazı bekler (AxBoT ayarı).
+  pub async fn spotify_search_play(&self, query: &str, queue: bool, ac: bool) -> Result<(String, String, String)> {
     let q = query.trim();
     if q.is_empty() {
       return Err(anyhow!("boş arama"));
@@ -936,6 +937,10 @@ impl MusicState {
       .send()
       .await?;
     if !res.status().is_success() {
+      if res.status().as_u16() == 429 {
+        let sn = parse_retry_after(res.headers().get("retry-after").and_then(|v| v.to_str().ok()));
+        return Err(anyhow!("Spotify istek sınırı (429), {} sonra tekrar denenecek", human_wait(sn)));
+      }
       return Err(anyhow!("Spotify arama başarısız ({})", res.status()));
     }
     let data: Value = res.json().await.unwrap_or(json!({}));
@@ -964,7 +969,32 @@ impl MusicState {
 
     // Cihaz belirtilmezse Spotify komutu "etkin" sayılan hayalet bir cihaza gönderebiliyor:
     // masaüstü durur, istek hiçbir yerde çalmaz. Bu bilgisayardaki uygulamayı açıkça hedefle.
-    let device = self.spotify_target_device(&token).await;
+    let mut hedef = self.spotify_target_device(&token).await;
+    if ac && !hedef.as_ref().is_some_and(|(_, etkin)| *etkin) {
+      if hedef.is_none() {
+        // Uygulama kapalı: aç, cihaz listede görünene kadar en çok 15 sn bekle
+        crate::spotify_uygulamasini_ac().map_err(|e| anyhow!(e))?;
+        for _ in 0..15 {
+          tokio::time::sleep(Duration::from_secs(1)).await;
+          hedef = self.spotify_target_device(&token).await;
+          if hedef.is_some() {
+            break;
+          }
+        }
+      }
+      // Açık ama etkin olmayan cihaz sıraya ekleme kabul etmez (404): çalmayı ona aktar
+      if let Some((d, false)) = hedef.as_ref() {
+        let _ = self
+          .client
+          .put("https://api.spotify.com/v1/me/player")
+          .bearer_auth(&token)
+          .json(&json!({ "device_ids": [d], "play": false }))
+          .send()
+          .await;
+        tokio::time::sleep(Duration::from_millis(800)).await;
+      }
+    }
+    let device = hedef.map(|(d, _)| d);
     let mut params: Vec<(&str, &str)> = Vec::new();
     if let Some(d) = device.as_deref() {
       params.push(("device_id", d));
@@ -998,12 +1028,23 @@ impl MusicState {
         .send()
         .await?;
       durum(res.status().as_u16())?;
+      // Spotify duraklatılmışsa "sonraki" parçayı yükler ama çalmaz: sürdür (çalıyorsa etkisiz)
+      let _ = self
+        .client
+        .put("https://api.spotify.com/v1/me/player/play")
+        .bearer_auth(&token)
+        .query(&params)
+        .header(reqwest::header::CONTENT_LENGTH, "0")
+        .body("")
+        .send()
+        .await;
     }
     Ok((title, artist, uri))
   }
 
   /// `/me/player/devices` içinden çalma hedefi; liste alınamazsa `None` (Spotify kendi seçer).
-  async fn spotify_target_device(&self, token: &str) -> Option<String> {
+  /// (cihaz kimliği, etkin mi)
+  async fn spotify_target_device(&self, token: &str) -> Option<(String, bool)> {
     let res = self
       .client
       .get("https://api.spotify.com/v1/me/player/devices")
@@ -1013,7 +1054,10 @@ impl MusicState {
       .ok()?;
     let data: Value = res.json().await.ok()?;
     let pc = std::env::var("COMPUTERNAME").unwrap_or_default();
-    pick_spotify_device(data.get("devices")?.as_array()?, &pc)
+    let liste = data.get("devices")?.as_array()?;
+    let id = pick_spotify_device(liste, &pc)?;
+    let etkin = liste.iter().any(|d| d["id"].as_str() == Some(id.as_str()) && d["is_active"].as_bool().unwrap_or(false));
+    Some((id, etkin))
   }
 
   pub async fn ytmd_change_video(&self, video_id: &str) -> Result<()> {
@@ -1057,6 +1101,7 @@ impl MusicState {
     query: &str,
     video_id: Option<&str>,
     queue: bool,
+    ac: bool,
   ) -> Result<(String, String, String)> {
     if let Some(vid) = video_id.map(str::trim).filter(|s| !s.is_empty()) {
       if !self.ytmd.read().token.is_empty() {
@@ -1065,7 +1110,7 @@ impl MusicState {
       }
     }
     if self.spotify_connected() {
-      return self.spotify_search_play(query, queue).await;
+      return self.spotify_search_play(query, queue, ac).await;
     }
     if !self.ytmd.read().token.is_empty() {
       return Err(anyhow!(

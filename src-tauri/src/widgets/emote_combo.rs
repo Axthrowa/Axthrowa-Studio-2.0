@@ -32,11 +32,33 @@ impl Default for EmoteComboState {
   }
 }
 
-pub struct ComboMemory(pub Mutex<EmoteComboState>);
+/// Kombo durumu + botun son gönderdiği metinler (bot yayıncı hesabından yazınca adıyla ayırt edilemiyor)
+pub struct ComboMemory(pub Mutex<EmoteComboState>, Mutex<Vec<(String, std::time::Instant)>>);
 
 impl ComboMemory {
   pub fn new() -> Self {
-    Self(Mutex::new(EmoteComboState::new()))
+    Self(Mutex::new(EmoteComboState::new()), Mutex::new(Vec::new()))
+  }
+
+  /// Botun sohbete yazdığı metin: 30 sn içinde sohbetten geri okunursa bot iletisi sayılır.
+  pub fn bot_gonderdi(&self, metin: &str) {
+    let t = metin.trim();
+    if t.is_empty() {
+      return;
+    }
+    let mut l = self.1.lock();
+    l.retain(|(_, z)| z.elapsed().as_secs() < 30);
+    if l.len() >= 100 {
+      l.remove(0);
+    }
+    l.push((t.chars().take(500).collect(), std::time::Instant::now()));
+  }
+
+  pub fn bot_metni_mi(&self, metin: &str) -> bool {
+    let t: String = metin.trim().chars().take(500).collect();
+    let mut l = self.1.lock();
+    l.retain(|(_, z)| z.elapsed().as_secs() < 30);
+    l.iter().any(|(m, _)| *m == t)
   }
 }
 
@@ -201,8 +223,13 @@ pub fn bot_sohbeti(user: &str) -> bool {
 }
 
 /// Chat mesajından emote çıkar → combo motoru.
+/// Botun kendi iletisi mi: bilinen bot adı ya da botun az önce gönderdiği metin.
+pub fn bot_iletisi_mi(state: &AppState, user: &str, text: &str) -> bool {
+  bot_sohbeti(user) || state.emote_combo.bot_metni_mi(text)
+}
+
 pub fn handle_combo_on_chat(state: &AppState, user: &str, text: &str) {
-  if bot_sohbeti(user) || text.trim_start().starts_with('!') {
+  if bot_iletisi_mi(state, user, text) || text.trim_start().starts_with('!') {
     return;
   }
   if let Some((id, url)) = extract_first_emote(text) {
@@ -212,7 +239,15 @@ pub fn handle_combo_on_chat(state: &AppState, user: &str, text: &str) {
 
 #[cfg(test)]
 mod tests {
-  use super::bot_sohbeti;
+  use super::{bot_sohbeti, ComboMemory};
+
+  #[test]
+  fn bot_gonderdigi_metin_otuz_sn_taninir() {
+    let m = ComboMemory::new();
+    m.bot_gonderdi("  KEKW KEKW ");
+    assert!(m.bot_metni_mi("KEKW KEKW"));
+    assert!(!m.bot_metni_mi("KEKW"));
+  }
 
   #[test]
   fn bot_adi_komboya_girmez() {

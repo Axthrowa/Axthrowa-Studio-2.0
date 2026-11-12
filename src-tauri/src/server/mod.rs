@@ -156,6 +156,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/player/source", post(api_player_source))
     .route("/api/player/command", post(api_player_command))
     .route("/api/player/request", post(api_player_request))
+    .route("/api/bot/giden", post(api_bot_giden))
     .route("/api/player/spotify/authorize", post(api_spotify_authorize))
     .route("/api/player/spotify/callback", get(api_spotify_callback))
     .route("/api/player/spotify/disconnect", post(api_spotify_disconnect))
@@ -1494,6 +1495,20 @@ struct RequestBody {
   /// true: Spotify sırasına ekle (AxBoT !sr), false: hemen çal
   #[serde(default)]
   queue: bool,
+  /// AxBoT ayarı: Spotify kapalıysa uygulamayı aç
+  #[serde(default)]
+  spotify_ac: bool,
+}
+
+#[derive(Deserialize)]
+struct BotGiden {
+  metin: String,
+}
+
+/// Gömülü bot sohbete yazdığı metni bildirir: sohbetten geri okununca emote duvarı / kombo onu saymaz.
+async fn api_bot_giden(State(state): State<Arc<AppState>>, Json(b): Json<BotGiden>) -> StatusCode {
+  state.emote_combo.bot_gonderdi(&b.metin);
+  StatusCode::NO_CONTENT
 }
 
 async fn api_player_request(
@@ -1502,7 +1517,7 @@ async fn api_player_request(
 ) -> Result<Json<Value>, (StatusCode, String)> {
   let (title, artist, id) = state
     .music
-    .request_track(&body.query, body.video_id.as_deref(), body.queue)
+    .request_track(&body.query, body.video_id.as_deref(), body.queue, body.spotify_ac)
     .await
     .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
   if !body.queue {

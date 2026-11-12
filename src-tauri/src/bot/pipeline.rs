@@ -143,6 +143,8 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
 
   // 2) Overlay chat + Emote Combo motoru
   if msg.kind == "chat" {
+    // Botun kendi iletisi emote duvarı / kombo gibi katmanları beslemesin
+    let bot = crate::widgets::bot_iletisi_mi(state.as_ref(), &msg.user_name, &msg.text);
     state.broadcast_json(&json!({
       "type": "chat-message",
       "platform": msg.platform,
@@ -155,6 +157,7 @@ pub async fn handle_inbound(state: Arc<AppState>, msg: ChatInbound) -> Result<()
       "is_sub": msg.is_sub,
       "color": msg.color,
       "id": msg.raw_id,
+      "bot": bot,
       "t": chrono_now(),
     }));
     crate::widgets::handle_combo_on_chat(state.as_ref(), &msg.user_name, &msg.text);

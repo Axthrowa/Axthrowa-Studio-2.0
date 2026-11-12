@@ -507,7 +507,7 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
         </label>
       </div>
       <div className="custom-scrollbar max-h-72 space-y-1 overflow-y-auto">
-        {list.length === 0 && <p className="text-panel-muted">{connected ? "Bu oturumda olay yok." : "AxBoT çalışmıyor."}</p>}
+        {list.length === 0 && <p className="text-panel-muted">{connected ? "Bu oturumda olay yok. Takip, abone ve bağışlar geldikçe burada görünür." : "AxBoT çalışmıyor — olaylar için Bot sekmesinden başlatın."}</p>}
         {list.map((e) => (
           <div key={e.eventId} className="flex items-center gap-1.5 rounded-lg bg-white/[0.03] px-2 py-1">
             <PlatformBadge p={e.platform} />

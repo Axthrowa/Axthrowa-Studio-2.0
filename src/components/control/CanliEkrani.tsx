@@ -508,6 +508,8 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
                 gosterBaslik: true,
                 icerik: !obsBagli ? (
               <ObsBos metin="Sahne listesi için OBS bağlı değil." onBagla={onObsBagla} />
+            ) : !snap?.scenes?.length ? (
+              <p className="text-sm text-panel-muted">OBS bağlı ama sahne yok. OBS&apos;te bir sahne ekleyin; liste kendiliğinden yenilenir.</p>
             ) : (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2">
                 {(snap?.scenes || []).map((ad) => {

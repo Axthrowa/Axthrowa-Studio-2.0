@@ -17,7 +17,7 @@
 import { db } from '../../db/index.js';
 import { hediyeAdedi, eventBus } from '../../core/event-bus.js';
 import { baglamOlustur, degiskenleriCoz } from '../../core/variables/index.js';
-import { rastgeleFarkli, takipAdaylari, takipTemalariCoz, TAKIP_TEMA_ADLARI, temaAdaylari, TEMA_ADLARI } from './temalar.js';
+import { rastgeleFarkli, takipAdaylari, takipMetinleriCoz, takipTemalariCoz, TAKIP_TEMA_ADLARI, temaAdaylari, TEMA_ADLARI } from './temalar.js';
 
 export type SohbetOlayi = 'follow' | 'sub' | 'resub' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'welcome' | 'stream_online';
 
@@ -64,6 +64,7 @@ export const VARSAYILAN_CHAT_ALERT: ChatAlertAyarlari = {
 const AYAR_ANAHTARI = 'chat_alert_settings';
 const TEMA_ANAHTARI = 'chat_alert_tema';
 const TAKIP_TEMA_ANAHTARI = 'chat_alert_takip_temalari';
+const TAKIP_METIN_ANAHTARI = 'takip_karsilama_metinleri';
 
 /** Eşik kontrolü: değer yoksa 0 sayılır. */
 export function esikGecer(kural: OlayKurali, deger: number): boolean {
@@ -105,10 +106,27 @@ class SohbetUyarilari {
     return secili;
   }
 
+  /** Panelde düzenlenen karşılama metinleri (tema → liste) */
+  takipMetinleriOku(): Record<string, string[]> {
+    const r = db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(TAKIP_METIN_ANAHTARI) as { value?: string } | undefined;
+    return takipMetinleriCoz(r?.value);
+  }
+
+  /** `metinler` null: temayı gömülü metinlere döndürür */
+  takipMetinleriYaz(tema: string, metinler: unknown): Record<string, string[]> {
+    if (!(tema in TAKIP_TEMA_ADLARI)) return this.takipMetinleriOku();
+    const hepsi = this.takipMetinleriOku();
+    if (Array.isArray(metinler)) hepsi[tema] = metinler.map(String);
+    else delete hepsi[tema];
+    const temiz = takipMetinleriCoz(hepsi);
+    db.prepare('INSERT INTO bot_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(TAKIP_METIN_ANAHTARI, JSON.stringify(temiz));
+    return temiz;
+  }
+
   /** Bu olay için gönderilecek şablon: tema seçiliyse temadan, değilse şablon + varyantlar */
   sablonSec(olay: SohbetOlayi, kural: OlayKurali): string | undefined {
     const tema = this.temaOku();
-    let adaylar = olay === 'follow' ? takipAdaylari(this.takipTemalariOku()) : [];
+    let adaylar = olay === 'follow' ? takipAdaylari(this.takipTemalariOku(), this.takipMetinleriOku()) : [];
     if (!adaylar.length) adaylar = tema !== 'yok' ? temaAdaylari(tema, olay) : [];
     if (!adaylar.length) adaylar = [kural.sablon, ...(Array.isArray(kural.varyantlar) ? kural.varyantlar : [])].map((x) => String(x || '').trim()).filter(Boolean);
     const secilen = rastgeleFarkli(adaylar, this.sonSablon.get(olay));

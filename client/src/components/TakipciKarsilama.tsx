@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 
-interface Tema { id: string; ad: string; ornekler: string[] }
+interface Tema { id: string; ad: string; ornekler: string[]; varsayilan?: string[]; duzenlendi?: boolean }
 interface Kural { aktif: boolean; adsizKarsila?: boolean }
 
 const yolla = (yol: string, govde: unknown) =>
@@ -19,12 +19,18 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
   const [kural, setKural] = useState<Kural | null>(null);
   const [hata, setHata] = useState('');
   const [ornekNo, setOrnekNo] = useState(0);
+  const [duzenlenen, setDuzenlenen] = useState('');
+  const [taslak, setTaslak] = useState('');
+  const [kaydedildi, setKaydedildi] = useState('');
 
   useEffect(() => {
     Promise.all([fetch('/api/chat-alerts/karsilama').then((r) => r.json()), fetch('/api/chat-alerts').then((r) => r.json())])
       .then(([k, a]) => {
         setTemalar(k.temalar);
         setSecili(k.secili);
+        const ilk = k.secili[0] || k.temalar[0]?.id || '';
+        setDuzenlenen(ilk);
+        setTaslak((k.temalar.find((t: Tema) => t.id === ilk)?.ornekler || []).join('\n'));
         setKural(a.follow);
       })
       .catch(() => setHata('Karşılama ayarları alınamadı.'));
@@ -44,6 +50,21 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
     setOrnekNo(0);
     yolla('/api/chat-alerts/karsilama', { temalar: liste }).catch((e) => setHata(String(e.message || e)));
   };
+
+  const duzenlemeAc = (id: string) => {
+    setDuzenlenen(id);
+    setTaslak((temalar.find((t) => t.id === id)?.ornekler || []).join('\n'));
+    setKaydedildi('');
+  };
+  const metinYaz = (metinler: string[] | null) =>
+    yolla('/api/chat-alerts/karsilama/metinler', { tema: duzenlenen, metinler })
+      .then((k) => {
+        setTemalar(k.temalar);
+        setTaslak((k.temalar.find((t: Tema) => t.id === duzenlenen)?.ornekler || []).join('\n'));
+        setKaydedildi(metinler ? 'Kaydedildi' : 'Varsayılan metinlere dönüldü');
+      })
+      .catch((e) => setHata(String(e.message || e)));
+  const duzenTema = temalar.find((t) => t.id === duzenlenen);
 
   const ornekler = temalar.filter((t) => secili.includes(t.id)).flatMap((t) => t.ornekler);
   const ornek = ornekler.length ? ornekler[ornekNo % ornekler.length].replace(/\$\(sender\)/g, 'izleyici').replace(/\$\(channel\)/g, 'kanal') : '';
@@ -96,6 +117,46 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
       ) : (
         <p className="text-[11px] text-gray-400">Tema seçili değil: Sohbet uyarılarındaki kendi takip şablonun gider.</p>
       )}
+      <details className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+        <summary className="cursor-pointer text-xs font-bold text-gray-200">Metinleri gör ve düzenle</summary>
+        <div className="mt-2 space-y-2">
+          <label className="flex items-center gap-2 text-[11px] text-gray-300">
+            Tema
+            <select value={duzenlenen} onChange={(e) => duzenlemeAc(e.target.value)} className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
+              {temalar.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.ad}
+                  {t.duzenlendi ? ' (düzenlendi)' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <textarea
+            value={taslak}
+            onChange={(e) => {
+              setTaslak(e.target.value);
+              setKaydedildi('');
+            }}
+            rows={8}
+            aria-label="Karşılama metinleri, her satıra bir metin"
+            placeholder="Her satıra bir karşılama yaz. Örnek: Hoş geldin $(sender), $(channel) ailesine katıldın!"
+            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white font-mono"
+          />
+          <p className="text-[10px] text-gray-500">Her satır bir metin. $(sender) takip edenin adı, $(channel) kanal adı olur. En çok 100 satır, satır başına 300 harf.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => metinYaz(taslak.split('\n'))} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-[11px] font-bold text-white">
+              Kaydet
+            </button>
+            {duzenTema?.duzenlendi && (
+              <button type="button" onClick={() => metinYaz(null)} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-gray-200">
+                Varsayılana dön
+              </button>
+            )}
+            {kaydedildi && <span className="text-[11px] text-emerald-400">{kaydedildi}</span>}
+            {duzenTema && !secili.includes(duzenTema.id) && <span className="text-[11px] text-amber-300">Bu tema seçili değil; metinleri gitmesi için yukarıdan seç.</span>}
+          </div>
+        </div>
+      </details>
       {hata && <p className="text-xs text-red-300">{hata}</p>}
     </div>
   );

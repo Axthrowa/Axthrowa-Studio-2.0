@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { takipAdaylari, takipTemalariCoz, TAKIP_TEMA_ADLARI, rastgeleFarkli, temaAdaylari, TEMA_MESAJLARI } from './temalar.js';
+import { takipAdaylari, takipMetinleriCoz, takipTemalariCoz, TAKIP_TEMA_ADLARI, rastgeleFarkli, temaAdaylari, TEMA_MESAJLARI } from './temalar.js';
 
 const OLAYLAR = ['follow', 'sub', 'resub', 'gift_sub', 'tip', 'kicks', 'host', 'raid', 'welcome', 'stream_online'] as const;
 
@@ -37,7 +37,7 @@ describe('temalar', () => {
 
 describe('yeni takipçi karşılaması', () => {
   it('her temada adı geçen mesajlar var, Discord kalıbı kalmadı', () => {
-    for (const id of Object.keys(TAKIP_TEMA_ADLARI)) {
+    for (const id of Object.keys(TAKIP_TEMA_ADLARI).filter((t) => t !== 'kendi')) {
       const m = takipAdaylari([id]);
       expect(m.length).toBeGreaterThanOrEqual(3);
       for (const x of m) {
@@ -55,5 +55,24 @@ describe('yeni takipçi karşılaması', () => {
     expect(takipTemalariCoz('[]', false)).toEqual([]);
     expect(takipTemalariCoz('["lotr","uydurma"]', false)).toEqual(['lotr']);
     expect(takipTemalariCoz('bozuk', false)).toEqual([]);
+  });
+});
+
+describe('düzenlenebilir karşılama metinleri', () => {
+  it('düzenlenen tema kendi listesini kullanır, diğerleri gömülü metinleri', () => {
+    const d = takipMetinleriCoz('{"lotr":["  Hoş geldin $(sender)  ",""],"uydurma":["x"],"gta":"bozuk"}');
+    expect(d).toEqual({ lotr: ['Hoş geldin $(sender)'] });
+    expect(takipAdaylari(['lotr'], d)).toEqual(['Hoş geldin $(sender)']);
+    expect(takipAdaylari(['mario'], d).length).toBeGreaterThan(2);
+    expect(takipAdaylari(['kendi'])).toEqual([]);
+    expect(takipMetinleriCoz('bozuk')).toEqual({});
+  });
+
+  it('gömülü metinlerde yeni takipçiye "tekrar" ya da çift "hoş geldin" yok', () => {
+    for (const m of takipAdaylari(Object.keys(TAKIP_TEMA_ADLARI))) {
+      expect(m).not.toMatch(/tekrar hoş geldin/i);
+      expect((m.match(/hoş geldin/gi) || []).length).toBeLessThanOrEqual(1);
+      expect(m).toContain('$(sender)');
+    }
   });
 });

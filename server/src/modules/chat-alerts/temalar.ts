@@ -411,12 +411,35 @@ export const TAKIP_TEMA_ADLARI: Record<string, string> = {
   stranger: 'Stranger Things',
   witcher: 'The Witcher',
   mario: 'Super Mario',
-  gta: 'GTA'
+  gta: 'GTA',
+  kendi: 'Kendi metinlerim'
 };
 
-/** Seçili temaların tüm karşılama mesajları */
-export function takipAdaylari(temalar: string[]): string[] {
-  return temalar.flatMap((t) => [...((TEMA_MESAJLARI as Record<string, Mesajlar>)[t]?.follow || []), ...(KARSILAMALAR[t] || [])]);
+/** Temanın gömülü karşılamaları (kullanıcı düzenlemesi yoksa bunlar gider) */
+export function varsayilanTakipMetinleri(tema: string): string[] {
+  return [...((TEMA_MESAJLARI as Record<string, Mesajlar>)[tema]?.follow || []), ...(KARSILAMALAR[tema] || [])];
+}
+
+/** Seçili temaların tüm karşılama mesajları; `duzenlenen` temada panelden yazılan liste geçerlidir */
+export function takipAdaylari(temalar: string[], duzenlenen: Record<string, string[]> = {}): string[] {
+  return temalar.flatMap((t) => duzenlenen[t] ?? varsayilanTakipMetinleri(t));
+}
+
+/** Paneldeki düzenlemeler (`takip_karsilama_metinleri`): bilinen tema, satır başına bir metin, en çok 100 × 300 harf */
+export function takipMetinleriCoz(ham: unknown): Record<string, string[]> {
+  let v: unknown = ham;
+  try {
+    if (typeof ham === 'string') v = JSON.parse(ham || '{}');
+  } catch {
+    return {};
+  }
+  const out: Record<string, string[]> = {};
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  for (const [tema, liste] of Object.entries(v as Record<string, unknown>)) {
+    if (!(tema in TAKIP_TEMA_ADLARI) || !Array.isArray(liste)) continue;
+    out[tema] = liste.map((x) => String(x ?? '').trim().slice(0, 300)).filter(Boolean).slice(0, 100);
+  }
+  return out;
 }
 
 /**

@@ -13,7 +13,7 @@ import { widgetAyariOku, widgetAyariYaz } from './widgetlar.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { geminiCoHost } from '../../modules/ai/gemini.js';
 import { sohbetUyarilari } from '../../modules/chat-alerts/chat-alerts.js';
-import { takipAdaylari, TAKIP_TEMA_ADLARI, TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
+import { takipAdaylari, varsayilanTakipMetinleri, TAKIP_TEMA_ADLARI, TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { platformManager } from '../../platforms/manager.js';
 import { AvatarOnbellek, avatarIstegiGecerli } from '../../modules/chat-avatar/avatar-onbellek.js';
@@ -47,11 +47,26 @@ router.post('/chat-alerts/tema', (req: Request, res: Response) => {
 });
 
 // Yeni takipçi karşılaması: temalar ve örnek mesajlar
-router.get('/chat-alerts/karsilama', (_req: Request, res: Response) => {
-  res.json({
+const karsilamaDurumu = () => {
+  const duzenlenen = sohbetUyarilari.takipMetinleriOku();
+  return {
     secili: sohbetUyarilari.takipTemalariOku(),
-    temalar: Object.entries(TAKIP_TEMA_ADLARI).map(([id, ad]) => ({ id, ad, ornekler: takipAdaylari([id]) }))
-  });
+    temalar: Object.entries(TAKIP_TEMA_ADLARI).map(([id, ad]) => ({
+      id,
+      ad,
+      ornekler: takipAdaylari([id], duzenlenen),
+      varsayilan: varsayilanTakipMetinleri(id),
+      duzenlendi: id in duzenlenen
+    }))
+  };
+};
+router.get('/chat-alerts/karsilama', (_req: Request, res: Response) => {
+  res.json(karsilamaDurumu());
+});
+/** Bir temanın karşılama metinleri: `{ tema, metinler: string[] }`; `metinler: null` gömülü metinlere döndürür */
+router.post('/chat-alerts/karsilama/metinler', (req: Request, res: Response) => {
+  sohbetUyarilari.takipMetinleriYaz(String(req.body?.tema || ''), req.body?.metinler ?? null);
+  res.json(karsilamaDurumu());
 });
 router.post('/chat-alerts/karsilama', (req: Request, res: Response) => {
   res.json({ secili: sohbetUyarilari.takipTemalariYaz(req.body?.temalar) });

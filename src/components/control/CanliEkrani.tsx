@@ -18,6 +18,7 @@ import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInter
 import { bitHiziKbps, ESIK } from "../../lib/yayinSagligi";
 import SohbetTemizleDiyalogu from "../panel/SohbetTemizleDiyalogu";
 import ControlCenter, { KontrolListesi } from "./ControlCenter";
+import UyariKuyrugu from "./UyariKuyrugu";
 import { ETIKET, TUS, TUS_TABAN } from "./donanim";
 import SesKaristirici from "./SesKaristirici";
 import HizliIslemler from "./HizliIslemler";
@@ -510,6 +511,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
             paneller={{
               bilgi: { baslik: "Yayın bilgisi", gosterBaslik: false, icerik: <YayinBilgisiDock onToast={onToast} /> },
               kontrol: { baslik: "Yayın öncesi kontrol", gosterBaslik: true, icerik: <KontrolListesi onToast={onToast} /> },
+              uyarilar: { baslik: "Uyarı kuyruğu", gosterBaslik: true, icerik: <UyariKuyrugu onToast={onToast} /> },
               onizleme: { baslik: "Önizleme", gosterBaslik: false, icerik: <ObsOnizleme sahne={snap?.currentScene || ""} bagli={obsBagli} onBagla={onObsBagla} /> },
               sahne: {
                 baslik: "Sahne",

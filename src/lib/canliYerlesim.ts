@@ -2,7 +2,7 @@
  * Canlı ekranının "Yayın" bölümündeki panellerin yerleşimi: 12 sütunluk ızgarada konum ve boyut.
  * Saf: sürükleme ve boyutlandırma bu işlevlerden geçer, çakışan panel aşağı itilir.
  */
-export type TemelPanelId = "onizleme" | "sahne" | "ses" | "hizli" | "bilgi" | "kontrol";
+export type TemelPanelId = "onizleme" | "sahne" | "ses" | "hizli" | "bilgi" | "kontrol" | "uyarilar";
 /** Temel paneller ya da sonradan eklenen `ek:…` paneller */
 export type PanelId = TemelPanelId | `ek:${string}`;
 export type Kutu = { id: PanelId; x: number; y: number; w: number; h: number };
@@ -41,7 +41,8 @@ export const SABLONLAR: { id: string; ad: string; genisSohbet: boolean; kutular:
       { id: "onizleme", x: 0, y: 0, w: 7, h: 11 },
       { id: "sahne", x: 7, y: 0, w: 5, h: 7 },
       { id: "hizli", x: 7, y: 7, w: 5, h: 4 },
-      { id: "ses", x: 0, y: 11, w: 12, h: 10 },
+      { id: "ses", x: 0, y: 11, w: 7, h: 10 },
+      { id: "uyarilar", x: 7, y: 11, w: 5, h: 10 },
     ],
   },
   {
@@ -65,6 +66,7 @@ const EN_AZ: Record<TemelPanelId, { w: number; h: number }> = {
   hizli: { w: 2, h: 3 },
   bilgi: { w: 3, h: 6 },
   kontrol: { w: 3, h: 5 },
+  uyarilar: { w: 3, h: 6 },
 };
 
 const EK_EN_AZ = { w: 3, h: 6 };
@@ -150,6 +152,10 @@ export function yerlesimOku(ham: string | null, varsayilan: Kutu[] = VARSAYILAN_
     let sonuc = liste;
     // Teker teker yerleştirilir: elle bozulmuş kayıtta da çakışma kalmaz
     for (const k of [...liste].reverse()) sonuc = yerlestir(sonuc, k.id, k);
+    // Sonradan eklenen temel panel (ör. uyarı kuyruğu) eski kayıtta yok: kendi boyuyla alta eklenir.
+    // Temel paneller kaldırılamadığı için eksik olması kullanıcının seçimi değildir.
+    const alt = () => sonuc.reduce((en, k) => Math.max(en, k.y + k.h), 0);
+    for (const v of varsayilan) if (!ekPanelMi(v.id) && !sonuc.some((k) => k.id === v.id)) sonuc = [...sonuc, { ...v, y: alt() }];
     return sonuc;
   } catch {
     return varsayilan;

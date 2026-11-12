@@ -97,3 +97,14 @@ describe("Canlı kipleri", () => {
     expect(otomatikKip(false)).toBe("oncesi");
   });
 });
+
+describe("sonradan eklenen temel panel (U3)", () => {
+  it("eski Canlı kaydında uyarı kuyruğu yoksa kendi boyuyla alta eklenir, çakışma olmaz", () => {
+    const eski = kipKutulari("canli").filter((k) => k.id !== "uyarilar");
+    const okunan = yerlesimOku(JSON.stringify(eski), kipKutulari("canli"));
+    const u = bul(okunan, "uyarilar");
+    expect(u).toMatchObject({ w: 5, h: 10 });
+    expect(u.y).toBe(Math.max(...eski.map((k) => k.y + k.h)));
+    expect(cakismaVar(okunan)).toBe(false);
+  });
+});

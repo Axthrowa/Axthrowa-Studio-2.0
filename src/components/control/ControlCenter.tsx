@@ -11,7 +11,6 @@ import {
   Play,
   Square,
   Plus,
-  Trash2,
   Pencil,
   RefreshCw,
   AlertTriangle,
@@ -20,23 +19,18 @@ import {
   GripVertical,
   EyeOff,
   Columns2,
-  Pause,
-  Volume2,
-  VolumeX,
-  SkipForward,
-  RotateCcw,
   Link2,
   Undo2,
   Mic,
   MicOff,
 } from "lucide-react";
 import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
-import { axbotBase } from "../../lib/axbot";
 import { obsControl, type ObsConnectionStatus, type ObsInputInfo, type ObsSceneSnapshot } from "../../lib/obsControl";
 import { isAudioInput, meterPercent, meterZone } from "../../lib/obsAudio";
 import { actionsApi, CATEGORY_LABEL, obsApi, quickActions, type ActionInfo, type ObsCanvas, type ObsInputLevel } from "../../lib/api/actions";
 import { ActivityFeedPanel, UniversalChatPanel } from "./UniversalChat";
 import { DeckPanel } from "./DeckPanel";
+import UyariKuyrugu from "./UyariKuyrugu";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import {
   applyPreset,
@@ -543,116 +537,6 @@ function PreflightPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
   );
 }
 
-type AlertState = { paused: boolean; muted: boolean; version: number; updatedBy: string; lastAction: string | null; updatedAt: number };
-type RecentAlert = { id: string; eventType: string; title: string; message: string; at: number; isTest: boolean };
-
-function AlertQueuePanel({ onToast }: { onToast: (m: string) => void }) {
-  const [state, setState] = useState<AlertState | null>(null);
-  const [recent, setRecent] = useState<RecentAlert[]>([]);
-  const [offline, setOffline] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      const r = await fetch(`${await axbotBase()}/api/alerts/control`, { cache: "no-store" });
-      const d = await r.json();
-      setState(d.state);
-      setRecent(d.recent || []);
-      setOffline(false);
-    } catch {
-      setOffline(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-    let ws: WebSocket | null = null;
-    let closed = false;
-    let retry: number | undefined;
-    const connect = async () => {
-      const kok = await axbotBase();
-      if (closed) return;
-      ws = new WebSocket(`${kok.replace(/^http/, "ws")}/ws?type=dashboard`);
-      ws.onmessage = (ev) => {
-        try {
-          const m = JSON.parse(String(ev.data));
-          if (m?.type === "alert_control" && m.state) setState(m.state);
-          if (m?.type === "alert_control" || m?.type === "alert") window.setTimeout(() => void load(), 250);
-        } catch {
-          /* */
-        }
-      };
-      ws.onclose = () => {
-        if (!closed) retry = window.setTimeout(() => void connect(), 4000);
-      };
-    };
-    void connect();
-    return () => {
-      closed = true;
-      if (retry) window.clearTimeout(retry);
-      ws?.close();
-    };
-  }, [load]);
-
-  const act = async (action: string, alertId?: string) => {
-    try {
-      const r = await fetch(`${await axbotBase()}/api/alerts/control`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, version: state?.version, alertId, actor: "Kontrol Merkezi" }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (d?.state) setState(d.state);
-      if (d?.recent) setRecent(d.recent);
-      if (r.status === 409) onToast(`${d.error || "Başka biri az önce değiştirdi"} — güncel durum yüklendi`);
-      else if (!r.ok) onToast(d.error || "Uyarı denetimi uygulanamadı");
-    } catch {
-      onToast("AxBoT'a ulaşılamadı (Bot sekmesinden başlatın)");
-    }
-  };
-
-  if (offline) return <p className="text-xs text-white/50">AxBoT çalışmıyor — uyarı kuyruğu denetimi için Bot sekmesinden başlatın.</p>;
-
-  return (
-    <div className="space-y-2 text-xs">
-      <div className="flex flex-wrap gap-1.5">
-        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act(state?.paused ? "resume" : "pause")}>
-          {state?.paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />} {state?.paused ? "Sürdür" : "Duraklat"}
-        </button>
-        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act(state?.muted ? "unmute" : "mute")}>
-          {state?.muted ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />} {state?.muted ? "Sesi aç" : "Sessize al"}
-        </button>
-        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act("skip")}>
-          <SkipForward className="h-3 w-3" /> Atla
-        </button>
-        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act("clear")}>
-          <Trash2 className="h-3 w-3" /> Bekleyenleri temizle
-        </button>
-        {state?.paused && <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${TONE_CLASS.warn}`}>DURAKLATILDI</span>}
-        {state?.muted && <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${TONE_CLASS.bad}`}>SESSİZ</span>}
-      </div>
-      {state?.lastAction && (
-        <p className="text-[10px] text-panel-muted">
-          Son: {state.updatedBy} · {state.lastAction} · {new Date(state.updatedAt).toLocaleTimeString("tr-TR")}
-        </p>
-      )}
-      <div className="max-h-48 space-y-1 overflow-y-auto">
-        {recent.length === 0 && <p className="text-panel-muted">Bu oturumda uyarı yok.</p>}
-        {recent.map((u) => (
-          <div key={u.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2 py-1">
-            <span className="min-w-0 truncate text-white/80">
-              {u.title || u.eventType} <span className="text-panel-muted">{u.message}</span>
-              {u.isTest && <span className="ml-1 text-[10px] text-cyan-300">TEST</span>}
-            </span>
-            <button type="button" className="shrink-0 rounded p-1 hover:bg-white/10" title="Yeniden oynat" onClick={() => void act("replay", u.id)}>
-              <RotateCcw className="h-3 w-3" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /**
  * OBS sahne ve ses hızlı denetimi (Ground Control tarzı tek dokunuş). Sahne geçişi ve susturma yayını
  * başlatmaz/bitirmez; bu yüzden onay istemez. OBS'e bağlantı Bağlantılar sekmesinden yapılır.
@@ -1016,7 +900,7 @@ export default function ControlCenter({ onToast }: Props) {
       case "preflight":
         return <PreflightPanel ms={ms} />;
       case "alertQueue":
-        return <AlertQueuePanel onToast={onToast} />;
+        return <UyariKuyrugu onToast={onToast} />;
       case "audit":
         return <AuditPanel ms={ms} />;
       case "notes":

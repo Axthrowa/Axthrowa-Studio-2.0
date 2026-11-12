@@ -117,6 +117,8 @@ for (const f of ["index.html", "package.json", "vite.config.ts", "tsconfig.json"
   if (fs.existsSync(path.join(clientSrc, f))) fs.copyFileSync(path.join(clientSrc, f), path.join(work, f));
 }
 fs.cpSync(path.join(clientSrc, "src"), path.join(work, "src"), { recursive: true });
+// Ortak tasarım değişkenleri (T1): botun kendi kopyası yerine Studio'daki kaynak dosya derlenir
+fs.copyFileSync(path.join(root, "src", "styles", "axt-tasarim.css"), path.join(work, "src", "axt-tasarim.css"));
 if (fs.existsSync(path.join(clientSrc, "public"))) {
   fs.cpSync(path.join(clientSrc, "public"), path.join(work, "public"), { recursive: true });
 }

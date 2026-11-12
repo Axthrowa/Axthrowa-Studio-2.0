@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { botTemaMesaji, renkleriOku, yaricapOku } from "./botTemaMesaji";
 
@@ -36,7 +37,22 @@ describe("botTemaMesaji", () => {
         "--axt-soluk": "rgba(255, 255, 255, 0.72)",
         "--axt-yaricap-kart": "0.25rem",
         "--axt-yaricap-dugme": "0.1875rem",
+        "--axt-yazi-baslik": "1.25rem",
       },
     });
+  });
+
+  it("köşe ve başlık ölçüsünü ortak tasarım dosyasından alır (T1)", () => {
+    const ortak: Record<string, string> = { "--axt-yaricap-kart": "0.5rem", "--axt-yaricap-dugme": "0.25rem", "--axt-yazi-baslik": "1.5rem" };
+    const renk = renkleriOku((ad) => ortak[ad] || "", null);
+    expect([renk.kart, renk.dugme, renk.baslik]).toEqual(["0.5rem", "0.25rem", "1.5rem"]);
+  });
+
+  it("ortak dosya Studio, Resonance ve AxBoT derlemesine bağlı", () => {
+    const oku = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
+    expect(oku("../main.tsx")).toContain('import "./styles/axt-tasarim.css"');
+    expect(oku("../../resonance/src/index.css")).toContain('@import "../../src/styles/axt-tasarim.css"');
+    expect(oku("../../scripts/axbot-hazirla.mjs")).toContain("axt-tasarim.css");
+    for (const ad of ["--axt-yaricap-kart", "--axt-yaricap-dugme", "--axt-yazi-baslik"]) expect(oku("../styles/axt-tasarim.css")).toContain(ad);
   });
 });

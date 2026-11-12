@@ -1177,14 +1177,13 @@ html.obs-transparent body.panel-app {
 :root[data-yogunluk="siki"] .panel-shell :is(.studio-btn, .studio-btn-primary, .studio-btn-ghost, .studio-btn-danger, .studio-btn-accent, .studio-input):not(.obs-canvas-wrap *) { height: 2rem; }
 
 /* ---------------------------------------------------------------------------
-   Köşeler — Yuvarlak (varsayılan, değişiklik yok) · Az · Keskin.
+   Köşeler — Yuvarlak (varsayılan) · Az · Keskin. Değerler ortak dosyada (axt-tasarim.css).
    Yalnız düz köşe sınıfları; `rounded-full` (hap, nokta, anahtar) korunur.
 --------------------------------------------------------------------------- */
-:root[data-kose="az"] .panel-shell :is(.rounded-2xl, .rounded-3xl):not(.obs-canvas-wrap *) { border-radius: 0.625rem; }
-:root[data-kose="az"] .panel-shell .rounded-xl:not(.obs-canvas-wrap *) { border-radius: 0.5rem; }
-:root[data-kose="az"] .panel-shell .rounded-lg:not(.obs-canvas-wrap *) { border-radius: 0.3125rem; }
-:root[data-kose="keskin"] .panel-shell :is(.rounded-2xl, .rounded-3xl):not(.obs-canvas-wrap *) { border-radius: 0.25rem; }
-:root[data-kose="keskin"] .panel-shell :is(.rounded-xl, .rounded-lg):not(.obs-canvas-wrap *) { border-radius: 0.1875rem; }
+.panel-shell .rounded-2xl:not(.obs-canvas-wrap *),
+:root[data-kose] .panel-shell .rounded-3xl:not(.obs-canvas-wrap *) { border-radius: var(--axt-yaricap-kart); }
+.panel-shell .rounded-xl:not(.obs-canvas-wrap *) { border-radius: var(--axt-yaricap-dugme); }
+.panel-shell .rounded-lg:not(.obs-canvas-wrap *) { border-radius: var(--axt-yaricap-kucuk); }
 :root[data-kose="keskin"] .panel-shell :is(.rounded-md, .rounded):not(.obs-canvas-wrap *) { border-radius: 2px; }
 
 /* Komut paletinden açılan ayar: kısa süre vurgulanır */

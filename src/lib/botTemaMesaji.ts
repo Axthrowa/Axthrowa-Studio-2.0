@@ -1,6 +1,6 @@
 /**
- * Gömülü AxBoT'a giden tema iletisi. Renkler Studio'nun hesaplanmış panel
- * değişkenlerinden okunur; köşe ayarı Studio'nun `data-kose` değeriyle aynıdır.
+ * Gömülü AxBoT'a ve Resonance'a giden tema iletisi. Renkler Studio'nun hesaplanmış panel
+ * değişkenlerinden, köşe ve başlık ölçüsü ortak tasarım dosyasından (styles/axt-tasarim.css) okunur.
  */
 
 export type BotTemaRenk = {
@@ -13,6 +13,7 @@ export type BotTemaRenk = {
   soluk: string;
   kart: string;
   dugme: string;
+  baslik: string;
 };
 
 export function yaricapOku(kose: string | null | undefined): { kart: string; dugme: string } {
@@ -33,8 +34,10 @@ export function renkleriOku(oku: (ad: string) => string, kose: string | null | u
     vurgu: v("--panel-accent"),
     metin: v("--title-color") || (fg ? `rgb(${fg})` : ""),
     soluk: v("--panel-muted"),
-    kart: y.kart,
-    dugme: y.dugme,
+    // Ortak dosya yüklenmemişse (eski derleme, sınama) data-kose eşlemesine düşülür
+    kart: v("--axt-yaricap-kart") || y.kart,
+    dugme: v("--axt-yaricap-dugme") || y.dugme,
+    baslik: v("--axt-yazi-baslik") || "1.25rem",
   };
 }
 
@@ -52,6 +55,7 @@ export function botTemaMesaji(renk: BotTemaRenk) {
       "--axt-soluk": renk.soluk,
       "--axt-yaricap-kart": renk.kart,
       "--axt-yaricap-dugme": renk.dugme,
+      "--axt-yazi-baslik": renk.baslik,
     },
   };
 }

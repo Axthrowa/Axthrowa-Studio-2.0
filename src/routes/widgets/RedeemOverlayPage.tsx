@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "../../lib/api";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import type { WidgetEvent } from "../../lib/smartBot/events";
-import { getBotConfig, hydrateBotConfigFromServer, subscribeBotConfig } from "../../lib/smartBot";
-import type { AlertStyle } from "../../lib/smartBot/v2";
+import type { WidgetEvent } from "../../lib/sohbetBot/events";
+import { getBotConfig, hydrateBotConfigFromServer, subscribeBotConfig } from "../../lib/sohbetBot";
+import type { AlertStyle } from "../../lib/sohbetBot/v2";
 
 function formatAlert(tpl: string, ev: WidgetEvent, item?: string) {
   return tpl
@@ -57,7 +57,7 @@ export default function RedeemOverlayPage() {
 
   useEffect(() => {
     const onLocal = (e: Event) => enqueue((e as CustomEvent<WidgetEvent>).detail);
-    window.addEventListener("smartbot-widget-event", onLocal);
+    window.addEventListener("sohbet-bot-widget-olayi", onLocal);
 
     let ws: WebSocket | null = null;
     let retry: number | undefined;
@@ -84,7 +84,7 @@ export default function RedeemOverlayPage() {
     };
     connect();
     return () => {
-      window.removeEventListener("smartbot-widget-event", onLocal);
+      window.removeEventListener("sohbet-bot-widget-olayi", onLocal);
       if (retry) window.clearTimeout(retry);
       try {
         ws?.close();

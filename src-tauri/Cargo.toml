@@ -1,5 +1,5 @@
 [package]
-name = "yayin-yonetim-araci"
+name = "axthrowa-studio"
 version = "1.6.20"
 description = "AxthrowA Studio — OBS Overlay Desktop"
 authors = ["axthrowa"]
@@ -7,7 +7,7 @@ license = "GPL-2.0-or-later"
 edition = "2021"
 
 [lib]
-name = "yayin_yonetim_araci_lib"
+name = "axthrowa_studio_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

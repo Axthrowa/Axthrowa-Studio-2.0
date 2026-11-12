@@ -224,14 +224,14 @@ pub fn build_plugin<R: Runtime>(hub: Arc<HotkeyHub>) -> tauri_plugin_global_shor
       g.by_id.get(&id).cloned()
     };
     let Some(binding) = binding else {
-      yya_warn!("hotkey: kayıt yok id={id} {:?}", shortcut);
+      studio_warn!("hotkey: kayıt yok id={id} {:?}", shortcut);
       return;
     };
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
       let result = fire_binding(&app, &binding).await;
       if let Err(e) = &result {
-        yya_warn!("hotkey {}: {e}", binding.id);
+        studio_warn!("hotkey {}: {e}", binding.id);
         // Yayın sürümünde uyarılar hiçbir yere yazılmıyor; kısayol hatası sessiz
         // kalıyordu. Panele olay olarak yolla ve dosyaya da yaz.
         report_hotkey_error(&app, &binding, e);

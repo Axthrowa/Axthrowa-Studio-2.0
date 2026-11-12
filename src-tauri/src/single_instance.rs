@@ -24,7 +24,7 @@ pub fn claim() -> bool {
   }
   if kilit_var(ESKI_KILIT) {
     let baslik: Vec<u16> = "AxthrowA Studio\0".encode_utf16().collect();
-    let metin: Vec<u16> = "Yayın Yönetim Aracı'nın eski sürümü hâlâ açık (görev çubuğunun sağındaki simgeye de bak).\n\nÖnce onu kapat, sonra AxthrowA Studio'yu yeniden aç.\0"
+    let metin: Vec<u16> = "AxthrowA Studio'nın eski sürümü hâlâ açık (görev çubuğunun sağındaki simgeye de bak).\n\nÖnce onu kapat, sonra AxthrowA Studio'yu yeniden aç.\0"
       .encode_utf16()
       .collect();
     unsafe {

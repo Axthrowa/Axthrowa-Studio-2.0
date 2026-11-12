@@ -1,4 +1,4 @@
-//! Kick resmi OAuth 2.1 PKCE + chat:write — BotAxT yanıtları için.
+//! Kick resmi OAuth 2.1 PKCE + chat:write — bot yanıtları için.
 //! Token: `{data_dir}/kick-oauth.json`
 
 use std::path::{Path, PathBuf};
@@ -19,7 +19,7 @@ const SCOPES: &str =
   "chat:write user:read channel:read channel:write events:subscribe moderation:ban moderation:chat_message:manage";
 const TOKEN_FILE: &str = "kick-oauth.json";
 const PENDING_TTL_MS: i64 = 15 * 60 * 1000;
-/// Kick `/public/v1/chat` — Botrix gibi tek kuyruk, ~1 mesaj/sn.
+/// Kick `/public/v1/chat` — tek kuyruk, ~1 mesaj/sn.
 const KICK_CHAT_MIN_GAP_MS: i64 = 1200;
 const KICK_CHAT_MAX_429: u32 = 3;
 const KICK_CHAT_RETRY_CAP_MS: u64 = 8000;
@@ -71,7 +71,7 @@ fn looks_like_kick_client_id(id: &str) -> bool {
 /// Kick Public Chat API:
 /// `type=bot` → token sahibinin kanalına uygulama botu yazar (broadcaster yok sayılır).
 /// `type=user` → token sahibinin kullanıcı adı yazar; `broadcaster_user_id` hedef kanal.
-/// Yayıncı OAuth + aynı kanal → bot. BotAxT OAuth + farklı yayın kanalı → user.
+/// Yayıncı OAuth + aynı kanal → bot. Bot hesabı OAuth + farklı yayın kanalı → user.
 pub fn kick_chat_send_as_bot(oauth_username: &str, target_slug: &str) -> bool {
   let oauth = super::normalize_slug(oauth_username);
   let target = super::normalize_slug(target_slug);
@@ -88,8 +88,8 @@ pub fn explain_kick_chat_error(status: u16, body: &str, as_bot: bool) -> String 
   {
     return format!(
       "Kick uygulama botu yazamadı ({status}). kick.com/settings/developer → uygulamanızı düzenle → \
-       «Create a BOT for this account» (BotAxT). type=user yayıncı hesabından yazar; bu yüzden kendi adınız görünüyordu. \
-       BotAxT kullanıcı adıyla göndermek için Kick’te BotAxT ile girip Bağlan’a basın; yayın kanalını ayrı yazın."
+       «Create a BOT for this account» (bot hesabı). type=user yayıncı hesabından yazar; bu yüzden kendi adınız görünüyordu. \
+       Bot hesabının adıyla göndermek için Kick’te bot hesabıyla girip Bağlan’a basın; yayın kanalını ayrı yazın."
     );
   }
   if status == 403 {
@@ -109,8 +109,8 @@ pub fn is_kick_rate_limit(msg: &str) -> bool {
 }
 
 pub fn kick_rate_limit_user_msg() -> &'static str {
-  "Kick sohbet hız limiti. BotAxT mesajları sıraya alır; birkaç saniye bekleyin. \
-   Yayın sohbetinde /mod BotAxT verin (Botrix’te botrixlive nasıl mod ise)."
+  "Kick sohbet hız limiti. Bot mesajları sıraya alır; birkaç saniye bekleyin. \
+   Yayın sohbetinde bot hesabına /mod verin."
 }
 
 fn parse_retry_after_ms(headers: &reqwest::header::HeaderMap) -> u64 {
@@ -370,7 +370,7 @@ impl KickAuth {
       || lower.contains("invalid_grant")
       || lower.contains("invalid_request")
     {
-      yya_warn!("[kick-oauth] client_credentials ön-kontrol atlandı: {status} {body}");
+      studio_warn!("[kick-oauth] client_credentials ön-kontrol atlandı: {status} {body}");
       {
         let mut d = self.data.write();
         d.client_id = client_id;
@@ -700,7 +700,7 @@ impl KickAuth {
   pub async fn warmup(&self) -> Value {
     if self.has_app_credentials() {
       if let Err(e) = self.ensure_app_access_token().await {
-        yya_warn!("[kick-oauth] uygulama tokenı: {e:#}");
+        studio_warn!("[kick-oauth] uygulama tokenı: {e:#}");
       }
     }
     let has_refresh = !self.data.read().refresh_token.is_empty();
@@ -710,7 +710,7 @@ impl KickAuth {
           let _ = self.refresh_profile().await;
         }
         Err(e) => {
-          yya_warn!("[kick-oauth] kullanıcı tokenı yenilenemedi: {e:#} — uygulama tokenı ile devam");
+          studio_warn!("[kick-oauth] kullanıcı tokenı yenilenemedi: {e:#} — uygulama tokenı ile devam");
         }
       }
     }
@@ -1058,7 +1058,7 @@ impl KickAuth {
     let parsed: Value = serde_json::from_str(&text).unwrap_or(json!({ "raw": text }));
     if !status.is_success() {
       // Yerel masaüstü için webhook genelde yok — soft fail
-      yya_warn!("[kick-api] event subscribe {status}: {text}");
+      studio_warn!("[kick-api] event subscribe {status}: {text}");
       return Ok(json!({ "ok": false, "status": status.as_u16(), "response": parsed }));
     }
     Ok(json!({ "ok": true, "response": parsed }))
@@ -1082,12 +1082,12 @@ impl KickAuth {
           obj.insert("channel".into(), ch);
         }
       }
-      Err(e) => yya_warn!("[kick-api] hub channel: {e:#}"),
+      Err(e) => studio_warn!("[kick-api] hub channel: {e:#}"),
     }
     status
   }
 
-  /// BotAxT satırını Kick chat’e gönder (tek kuyruk, 429 bekleyip yeniden dener).
+  /// Bot satırını Kick chat’e gönder (tek kuyruk, 429 bekleyip yeniden dener).
   pub async fn send_chat(&self, text: &str, slug_hint: Option<&str>) -> Result<Value> {
     let content = text.trim();
     if content.is_empty() {
@@ -1184,7 +1184,7 @@ impl KickAuth {
         let text_body = res.text().await.unwrap_or_default();
         if status.is_success() {
           let parsed: Value = serde_json::from_str(&text_body).unwrap_or(json!({ "raw": text_body }));
-          yya_log!(
+          studio_log!(
             "[kick-api] chat OK · type={send_type} · channel={target_slug} · via={}",
             if via_app { "app" } else { "user" }
           );
@@ -1199,7 +1199,7 @@ impl KickAuth {
         }
 
         last_err = explain_kick_chat_error(status.as_u16(), &text_body, send_type == "bot");
-        yya_warn!("[kick-api] chat fail · {last_err}");
+        studio_warn!("[kick-api] chat fail · {last_err}");
 
         if status.as_u16() == 429 {
           rate_tries += 1;
@@ -1250,7 +1250,7 @@ async fn resolve_user_id_for_slug(slug: &str) -> Option<u64> {
       continue;
     };
     if !res.status().is_success() {
-      yya_warn!(
+      studio_warn!(
         "[kick] resolve_user_id HTTP {} · {url}",
         res.status()
       );
@@ -1392,7 +1392,7 @@ mod tests {
 
   #[test]
   fn status_connected_with_only_client_credentials() {
-    let dir = std::env::temp_dir().join(format!("yya-kick-auth-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("studio-kick-auth-{}", std::process::id()));
     let _ = std::fs::create_dir_all(&dir);
     let auth = KickAuth::new(&dir);
     {

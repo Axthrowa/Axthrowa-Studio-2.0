@@ -3,9 +3,9 @@
 
 use std::sync::Arc;
 
-use yayin_yonetim_araci_lib::bot::integrations::ChatInbound;
-use yayin_yonetim_araci_lib::bot::pipeline::handle_inbound;
-use yayin_yonetim_araci_lib::AppState;
+use axthrowa_studio_lib::bot::integrations::ChatInbound;
+use axthrowa_studio_lib::bot::pipeline::handle_inbound;
+use axthrowa_studio_lib::AppState;
 
 fn mesaj(text: &str) -> ChatInbound {
   ChatInbound {
@@ -26,7 +26,7 @@ fn mesaj(text: &str) -> ChatInbound {
 
 #[tokio::test]
 async fn sohbet_filtre_ve_market_calistirmaz() {
-  yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.test");
+  axthrowa_studio_lib::secret_store::set_service_override("com.axthrowa.studio.test");
   let root = std::env::temp_dir().join(format!("yayin-eskibot-{}", std::process::id()));
   let _ = std::fs::remove_dir_all(&root);
   std::fs::create_dir_all(&root).unwrap();
@@ -34,7 +34,7 @@ async fn sohbet_filtre_ve_market_calistirmaz() {
   let r = root.clone();
   let state = tokio::task::spawn_blocking(move || AppState::new(r, data, false, 0)).await.unwrap();
   let db = state.db.clone();
-  let kanal = yayin_yonetim_araci_lib::db::default_channel_id(&db).await.unwrap();
+  let kanal = axthrowa_studio_lib::db::default_channel_id(&db).await.unwrap();
 
   // Bağlantı filtresi AÇIK, ali'nin 1000 puanı, 50 puanlık market öğesi
   sqlx::query("INSERT OR REPLACE INTO bot_filters(channel_id, links_enabled) VALUES(?, 1)")

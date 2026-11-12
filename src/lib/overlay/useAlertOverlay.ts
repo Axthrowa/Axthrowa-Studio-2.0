@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "../api";
 import { mediaPlayableUrls } from "../api/studioMedia";
 import { alertsList, alertVariantsList } from "../api/studioMedia";
-import type { WidgetEvent } from "../smartBot/events";
+import type { WidgetEvent } from "../sohbetBot/events";
 import { AlertQueueEngine } from "../alerts/queueEngine";
 import {
   configFromDbRow,
@@ -306,7 +306,7 @@ export function useAlertOverlayQueue() {
         void enqueueEvent(detail as WidgetEvent);
       }
     };
-    window.addEventListener("smartbot-widget-event", onLocal);
+    window.addEventListener("sohbet-bot-widget-olayi", onLocal);
     window.addEventListener("trigger_alert", onLocal);
     window.addEventListener("new_alert", onLocal);
 
@@ -354,7 +354,7 @@ export function useAlertOverlayQueue() {
     })();
 
     return () => {
-      window.removeEventListener("smartbot-widget-event", onLocal);
+      window.removeEventListener("sohbet-bot-widget-olayi", onLocal);
       window.removeEventListener("trigger_alert", onLocal);
       window.removeEventListener("new_alert", onLocal);
       if (retry) window.clearTimeout(retry);

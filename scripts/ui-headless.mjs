@@ -1,6 +1,6 @@
 // Geliştirme: panel arayüzünü başsız sunucuya (examples/headless_server.rs) bağlı Vite ile açar.
 //   cargo run --example headless_server -- 18843
-//   node scripts/ui-headless.mjs [api-portu] [ui-portu] [streamaxt-portu]
+//   node scripts/ui-headless.mjs [api-portu] [ui-portu] [axbot-portu]
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,7 +9,7 @@ const apiPort = process.argv[2] || '18843';
 const uiPort = Number(process.argv[3] || 1421);
 process.env.VITE_API_BASE = `http://127.0.0.1:${apiPort}`;
 // Yalıtılmış bir AxBoT örneğiyle denemek için (gerçek bot 3001'de kalır)
-if (process.argv[4]) process.env.VITE_STREAMAXT_PORT = process.argv[4];
+if (process.argv[4]) process.env.VITE_AXBOT_PORT = process.argv[4];
 // PostCSS/Tailwind yapılandırması çalışma dizininden aranıyor; depo kökünden çalış
 process.chdir(kok);
 

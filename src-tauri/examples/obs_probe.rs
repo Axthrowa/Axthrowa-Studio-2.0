@@ -8,7 +8,7 @@
 
 use std::sync::Arc;
 
-use yayin_yonetim_araci_lib::obs_client::ObsClientState;
+use axthrowa_studio_lib::obs_client::ObsClientState;
 
 fn obs_ws_yapilandirma() -> Option<(u16, String)> {
   let yol = std::path::PathBuf::from(std::env::var("APPDATA").ok()?)

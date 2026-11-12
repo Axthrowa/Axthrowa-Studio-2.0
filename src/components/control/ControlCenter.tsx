@@ -31,7 +31,7 @@ import {
   MicOff,
 } from "lucide-react";
 import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
-import { streamaxtBase } from "../../lib/streamaxt";
+import { axbotBase } from "../../lib/axbot";
 import { obsControl, type ObsConnectionStatus, type ObsInputInfo, type ObsSceneSnapshot } from "../../lib/obsControl";
 import { isAudioInput, meterPercent, meterZone } from "../../lib/obsAudio";
 import { actionsApi, CATEGORY_LABEL, obsApi, quickActions, type ActionInfo, type ObsCanvas, type ObsInputLevel } from "../../lib/api/actions";
@@ -67,8 +67,8 @@ import {
 
 type Props = { onToast: (msg: string) => void };
 
-const LAYOUT_KEY = "yya.controlCenter.layout";
-const NOTES_KEY = "yya.controlCenter.notes";
+const LAYOUT_KEY = "studio.controlCenter.layout";
+const NOTES_KEY = "studio.controlCenter.notes";
 
 function loadLayout(): ControlLayout {
   try {
@@ -227,7 +227,7 @@ function SessionPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className="yya-btn-primary inline-flex items-center gap-1.5"
+          className="studio-btn-primary inline-flex items-center gap-1.5"
           disabled={!!busy || !s?.ffmpeg}
           onClick={() =>
             void go("go", async () => {
@@ -242,7 +242,7 @@ function SessionPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
         </button>
         <button
           type="button"
-          className="yya-btn-ghost inline-flex items-center gap-1.5"
+          className="studio-btn-ghost inline-flex items-center gap-1.5"
           disabled={!!busy || !s?.ffmpeg}
           title="OBS'in yayın servisini yerel alıcıya çevirir; özgün ayar Kimlik Yöneticisine yedeklenir"
           onClick={() => void go("obs", () => ms.run("OBS yönlendirme", multistreamApi.obsConnect))}
@@ -252,7 +252,7 @@ function SessionPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
         {s?.obsRedirected && (
           <button
             type="button"
-            className="yya-btn-ghost inline-flex items-center gap-1.5"
+            className="studio-btn-ghost inline-flex items-center gap-1.5"
             disabled={!!busy}
             onClick={() => void go("restore", () => ms.run("OBS geri yükleme", multistreamApi.obsRestore))}
           >
@@ -349,7 +349,7 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
                 {isActive(d.state) ? (
                   <button
                     type="button"
-                    className="yya-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
+                    className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
                     onClick={() => void ms.run(`${d.name} durdurma`, () => multistreamApi.stop(d.id))}
                   >
                     <Square className="h-3 w-3" /> Durdur
@@ -357,7 +357,7 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
                 ) : (
                   <button
                     type="button"
-                    className="yya-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
+                    className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
                     disabled={!d.enabled || !d.hasKey || !s?.session}
                     title={!s?.session ? "Önce çoklu yayını başlatın" : !d.hasKey ? "Yayın anahtarı yok" : undefined}
                     onClick={() => void ms.run(`${d.name} başlatma`, () => multistreamApi.start(d.id))}
@@ -367,7 +367,7 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
                 )}
                 <button
                   type="button"
-                  className="yya-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
+                  className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
                   onClick={() => openEdit(d)}
                 >
                   <Pencil className="h-3 w-3" /> Düzenle
@@ -387,20 +387,20 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
       {draft ? (
         <div className="space-y-2 rounded-xl border border-white/10 bg-black/20 p-3">
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="yya-label">
+            <label className="studio-label">
               Ad
               <input
-                className="yya-input mt-1 w-full"
+                className="studio-input mt-1 w-full"
                 value={draft.name}
                 maxLength={60}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 placeholder="Ör. Twitch ana kanal"
               />
             </label>
-            <label className="yya-label">
+            <label className="studio-label">
               Platform
               <select
-                className="yya-input mt-1 w-full"
+                className="studio-input mt-1 w-full"
                 value={draft.platform}
                 onChange={(e) => {
                   const platform = e.target.value as Platform;
@@ -416,21 +416,21 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
               </select>
             </label>
           </div>
-          <label className="yya-label block">
+          <label className="studio-label block">
             Sunucu adresi (anahtarsız)
             <input
-              className="yya-input mt-1 w-full font-mono"
+              className="studio-input mt-1 w-full font-mono"
               value={draft.server}
               onChange={(e) => setDraft({ ...draft, server: e.target.value })}
               placeholder={draft.platform === "kick" ? "Kick panelindeki sunucu: rtmps://…/app" : "rtmps://…"}
             />
           </label>
-          <label className="yya-label block">
+          <label className="studio-label block">
             Yayın anahtarı {draft.id ? "(boş bırakılırsa mevcut anahtar korunur)" : ""}
             <input
               type="password"
               autoComplete="off"
-              className="yya-input mt-1 w-full font-mono"
+              className="studio-input mt-1 w-full font-mono"
               value={draft.key}
               onChange={(e) => setDraft({ ...draft, key: e.target.value })}
               placeholder="Windows Kimlik Yöneticisinde saklanır"
@@ -441,16 +441,16 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
             GO LIVE ile başlasın
           </label>
           <div className="flex gap-2">
-            <button type="button" className="yya-btn-primary" onClick={() => void save()}>
+            <button type="button" className="studio-btn-primary" onClick={() => void save()}>
               Kaydet
             </button>
-            <button type="button" className="yya-btn-ghost" onClick={() => setDraft(null)}>
+            <button type="button" className="studio-btn-ghost" onClick={() => setDraft(null)}>
               Vazgeç
             </button>
           </div>
         </div>
       ) : (
-        <button type="button" className="yya-btn-ghost inline-flex items-center gap-1.5" onClick={openNew}>
+        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1.5" onClick={openNew}>
           <Plus className="h-3.5 w-3.5" /> Hedef ekle
         </button>
       )}
@@ -506,14 +506,14 @@ function PreflightPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
           {e?.keyintSec ?? "?"} sn · {e?.width && e?.height ? `${e.width}×${e.height}` : "?"}
           {e?.fps ? ` @${Math.round(e.fps)}` : ""}
         </span>
-        <button type="button" className="yya-btn-ghost !px-2 !py-1" disabled={loading} onClick={() => void load()} title="Yenile">
+        <button type="button" className="studio-btn-ghost !px-2 !py-1" disabled={loading} onClick={() => void load()} title="Yenile">
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
       <label className="flex items-center gap-2 text-[11px] text-white/70">
         Ölçtüğüm yükleme hızı
         <input
-          className="yya-input w-20 !py-0.5 text-xs"
+          className="studio-input w-20 !py-0.5 text-xs"
           inputMode="decimal"
           placeholder="Mbps"
           value={upload}
@@ -553,7 +553,7 @@ function AlertQueuePanel({ onToast }: { onToast: (m: string) => void }) {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch(`${await streamaxtBase()}/api/alerts/control`, { cache: "no-store" });
+      const r = await fetch(`${await axbotBase()}/api/alerts/control`, { cache: "no-store" });
       const d = await r.json();
       setState(d.state);
       setRecent(d.recent || []);
@@ -569,7 +569,7 @@ function AlertQueuePanel({ onToast }: { onToast: (m: string) => void }) {
     let closed = false;
     let retry: number | undefined;
     const connect = async () => {
-      const kok = await streamaxtBase();
+      const kok = await axbotBase();
       if (closed) return;
       ws = new WebSocket(`${kok.replace(/^http/, "ws")}/ws?type=dashboard`);
       ws.onmessage = (ev) => {
@@ -595,7 +595,7 @@ function AlertQueuePanel({ onToast }: { onToast: (m: string) => void }) {
 
   const act = async (action: string, alertId?: string) => {
     try {
-      const r = await fetch(`${await streamaxtBase()}/api/alerts/control`, {
+      const r = await fetch(`${await axbotBase()}/api/alerts/control`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, version: state?.version, alertId, actor: "Kontrol Merkezi" }),
@@ -615,16 +615,16 @@ function AlertQueuePanel({ onToast }: { onToast: (m: string) => void }) {
   return (
     <div className="space-y-2 text-xs">
       <div className="flex flex-wrap gap-1.5">
-        <button type="button" className="yya-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act(state?.paused ? "resume" : "pause")}>
+        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act(state?.paused ? "resume" : "pause")}>
           {state?.paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />} {state?.paused ? "Sürdür" : "Duraklat"}
         </button>
-        <button type="button" className="yya-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act(state?.muted ? "unmute" : "mute")}>
+        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act(state?.muted ? "unmute" : "mute")}>
           {state?.muted ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />} {state?.muted ? "Sesi aç" : "Sessize al"}
         </button>
-        <button type="button" className="yya-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act("skip")}>
+        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act("skip")}>
           <SkipForward className="h-3 w-3" /> Atla
         </button>
-        <button type="button" className="yya-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act("clear")}>
+        <button type="button" className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1" disabled={!state} onClick={() => void act("clear")}>
           <Trash2 className="h-3 w-3" /> Bekleyenleri temizle
         </button>
         {state?.paused && <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${TONE_CLASS.warn}`}>DURAKLATILDI</span>}
@@ -886,7 +886,7 @@ function QuickActionsPanel({ onToast }: { onToast: (m: string) => void }) {
           <div className="mb-1 font-bold text-white/80">{CATEGORY_LABEL[kategori] || kategori}</div>
           <div className="flex flex-wrap gap-1.5">
             {eylemler.map((a) => {
-              const sinif = `yya-btn-ghost !px-2 !py-1 ${a.available ? "" : "opacity-50"}`;
+              const sinif = `studio-btn-ghost !px-2 !py-1 ${a.available ? "" : "opacity-50"}`;
               const baslik = a.available ? (a.confirm ? "Çift onay ister" : a.label) : a.reason || "Kullanılamıyor";
               return a.confirm ? (
                 <span key={a.id} title={baslik}>
@@ -971,7 +971,7 @@ function NotesPanel() {
   }, [text]);
   return (
     <textarea
-      className="yya-input h-32 w-full resize-y text-xs"
+      className="studio-input h-32 w-full resize-y text-xs"
       value={text}
       maxLength={4000}
       onChange={(e) => setText(e.target.value)}
@@ -1036,7 +1036,7 @@ export default function ControlCenter({ onToast }: Props) {
         {ms.error && <span className="text-[11px] text-red-300">{ms.error.slice(0, 120)}</span>}
         <span className="ml-auto" />
         <select
-          className="yya-input !py-1 text-xs"
+          className="studio-input !py-1 text-xs"
           value={PRESETS[layout.preset] ? layout.preset : "custom"}
           onChange={(e) => e.target.value !== "custom" && setLayout(applyPreset(e.target.value))}
           title="Hazır düzen"
@@ -1048,7 +1048,7 @@ export default function ControlCenter({ onToast }: Props) {
           ))}
           <option value="custom">Özel</option>
         </select>
-        <button type="button" className={`yya-btn-ghost !py-1 text-xs ${editing ? "ring-1 ring-panel-accent" : ""}`} onClick={() => setEditing((x) => !x)}>
+        <button type="button" className={`studio-btn-ghost !py-1 text-xs ${editing ? "ring-1 ring-panel-accent" : ""}`} onClick={() => setEditing((x) => !x)}>
           Düzeni düzenle
         </button>
       </div>
@@ -1057,7 +1057,7 @@ export default function ControlCenter({ onToast }: Props) {
         <div className="mb-3 flex flex-wrap gap-1.5 text-[11px]">
           <span className="text-white/50">Gizli paneller:</span>
           {hidden.map((p) => (
-            <button key={p.id} type="button" className="yya-btn-ghost !px-2 !py-0.5" onClick={() => setLayout(toggleVisible(layout, p.id))}>
+            <button key={p.id} type="button" className="studio-btn-ghost !px-2 !py-0.5" onClick={() => setLayout(toggleVisible(layout, p.id))}>
               + {meta[p.id].title}
             </button>
           ))}

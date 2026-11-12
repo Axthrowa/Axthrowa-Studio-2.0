@@ -86,7 +86,7 @@ hiçbir şey arayüzde destekleniyor gibi gösterilmez.
 | Twitch sohbet modları, mesaj silme | canlı **UNVERIFIED** | Gerçek moderasyon kullanıcı kuralı gereği tetiklenmedi. Gövde kuralları Twitch resmi belgesine göre (yavaş mod 3–120 sn, takipçi modu 0–129600 dk) birim testli; hata/yetenek yolları yalıtılmış AxBoT'a karşı 8 durumda doğrulandı. Kick ve YouTube'da resmi sohbet modu API'si yok → devre dışı + neden. |
 | Ses ölçerleri | yalnız okuma, talebe bağlı | OBS aboneliği ilk istekte açılır, 10 sn istek gelmezse kapanır; arayüz 5/sn yoklar. Tüm girişler o an sessiz olduğu için canlı ölçümde yalnız -100 dBFS görüldü; dönüşüm birim testli. |
 | Tek seferlik test başarısızlığı | izleniyor | `server_api` paketinde bir çalıştırmada 22 testten 1'i başarısız oldu; çıktı o an filtrelendiği için hangi test olduğu kaydedilmedi. Sonraki 41 çalıştırmada (12 sıralı, 4 eşzamanlı yük altında, 25 döngü) tekrar etmedi. Test devre dışı bırakılmadı; olası neden paylaşılan ortam/port yarışı. Yeniden görülürse tam çıktı saklanacak. |
-| Eski AxBoT dağıtım arşivleri | dikkat | `release\StreamAxT-v1.0.0-*.zip` arşivleri AGPL `tiktok-live-connector` 2.5.0 içerir; klasörler 2.4.0'a indirildi ama arşivler yeniden paketlenmedi. |
+| Eski AxBoT dağıtım arşivleri | dikkat | `release\AxBoT-v1.0.0-*.zip` arşivleri AGPL `tiktok-live-connector` 2.5.0 içerir; klasörler 2.4.0'a indirildi ama arşivler yeniden paketlenmedi. |
 
 ## Yerel yayın çekirdeği (ADR-003) — 2026-09-26
 

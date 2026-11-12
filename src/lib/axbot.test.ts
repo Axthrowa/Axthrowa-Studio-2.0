@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseFromUrl } from "./streamaxt";
+import { baseFromUrl } from "./axbot";
 import { isAudioInput, meterPercent, meterZone } from "./obsAudio";
 
 describe("baseFromUrl", () => {

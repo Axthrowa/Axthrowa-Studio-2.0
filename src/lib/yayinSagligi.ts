@@ -65,7 +65,7 @@ export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: numbe
     uyarilar.push({ id: "saglik-ag", temizle: true });
   }
 
-  // Yayın beklenmedik şekilde durdu (yeniden bağlanma değil, çıktı kapandı). YYA'nın kendi durdurması uyarı değil;
+  // Yayın beklenmedik şekilde durdu (yeniden bağlanma değil, çıktı kapandı). Studio'nun kendi durdurması uyarı değil;
   // beklenmedik duruş uyarısı yayın yeniden başlayana dek kalır (oyundan dönünce görülsün).
   if (o?.active && !h.active && !h.reconnecting && !bilerek) {
     uyarilar.push({ id: "saglik-durdu", seviye: "warn", metin: "Yayın durdu", ipucu: "Sen durdurmadıysan OBS'i ve internet bağlantını denetle" });
@@ -75,7 +75,7 @@ export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: numbe
   return { durum: { onceki: h, yogunBas }, uyarilar };
 }
 
-/** YYA yayını kendisi durdurduğunda (Yayını bitir, bitiş kuralı): bu süre içindeki duruş uyarı sayılmaz */
+/** Studio yayını kendisi durdurduğunda (Yayını bitir, bitiş kuralı): bu süre içindeki duruş uyarı sayılmaz */
 const BILEREK_MS = 30_000;
 let bilerekDurdurma = 0;
 export function yayinBilerekDurduruluyor(): void {

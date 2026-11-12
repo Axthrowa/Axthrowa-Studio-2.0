@@ -183,6 +183,12 @@
           "markdownDescription": "Alerts / Widgets CRUD ve yerel medya stream URL üretimi"
         },
         {
+          "description": "Bot sekmesi: AxBoT sunucusunu başlatma / durdurma / durum",
+          "type": "string",
+          "const": "allow-axbot",
+          "markdownDescription": "Bot sekmesi: AxBoT sunucusunu başlatma / durdurma / durum"
+        },
+        {
           "description": "Kick bot giriş penceresi, oturum ve chatroom komutları",
           "type": "string",
           "const": "allow-kick-bot",
@@ -205,12 +211,6 @@
           "type": "string",
           "const": "allow-open-in-browser",
           "markdownDescription": "Sistem tarayıcısında URL açmaya izin verir"
-        },
-        {
-          "description": "Bot sekmesi: AxBoT sunucusunu başlatma / durdurma / durum",
-          "type": "string",
-          "const": "allow-streamaxt",
-          "markdownDescription": "Bot sekmesi: AxBoT sunucusunu başlatma / durdurma / durum"
         },
         {
           "description": "Küresel kısayolları kaydetmeye izin verir (tepsi / alta alınca da çalışsın)",

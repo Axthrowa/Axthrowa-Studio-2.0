@@ -27,7 +27,7 @@ pub async fn twitch_listener(login: String, tx: mpsc::Sender<ChatInbound>) -> Re
   if channel.is_empty() {
     return Err(anyhow!("Twitch kanal boş"));
   }
-  yya_warn!("[bot/twitch] bağlanıyor · #{channel}");
+  studio_warn!("[bot/twitch] bağlanıyor · #{channel}");
 
   let (ws, _) = connect_async("wss://irc-ws.chat.twitch.tv:443")
     .await

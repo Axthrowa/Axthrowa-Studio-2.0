@@ -60,11 +60,11 @@ pub async fn acilista_denetle(state: Arc<AppState>) {
   match denetle(&state).await {
     Ok(v) => {
       if v["yeniVar"].as_bool() == Some(true) {
-        yya_log!("Yeni sürüm var: {}", v["son"]);
+        studio_log!("Yeni sürüm var: {}", v["son"]);
       }
       *SON_DENETIM.write() = Some(v);
     }
-    Err((_, e)) => yya_warn!("güncelleme denetlenemedi: {e}"),
+    Err((_, e)) => studio_warn!("güncelleme denetlenemedi: {e}"),
   }
 }
 

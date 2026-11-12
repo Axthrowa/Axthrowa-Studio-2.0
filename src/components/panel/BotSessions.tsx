@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
-import { streamaxtBase } from "../../lib/streamaxt";
+import { axbotBase } from "../../lib/axbot";
 
 /** AxBoT `/api/status` çıktısındaki tek platform. */
 type PlatformStatus = { connected?: boolean; channel?: string; error?: string };
@@ -33,7 +33,7 @@ export default function BotSessions({ onAc }: { onAc?: () => void } = {}) {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" });
+      const r = await fetch(`${await axbotBase()}/api/status`, { cache: "no-store" });
       setSt(r.ok ? ((await r.json()) as BotStatus) : null);
     } catch {
       setSt(null);

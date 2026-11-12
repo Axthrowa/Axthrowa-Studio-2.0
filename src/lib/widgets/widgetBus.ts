@@ -39,7 +39,7 @@ export async function emitWidgetBus(
   payload: Record<string, unknown> = {}
 ): Promise<void> {
   try {
-    await fetch(`${API_BASE}/api/botaxt/runtime/bus`, {
+    await fetch(`${API_BASE}/api/bot/runtime/bus`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from, action, payload }),
@@ -232,7 +232,7 @@ export function transformStyle(
 
 /** Inline custom CSS — widget köküne scoped değil; kullanıcı bilinçli yazar */
 export function injectCustomCss(id: string, css: string | undefined | null): () => void {
-  const styleId = `yya-custom-css-${id}`;
+  const styleId = `studio-custom-css-${id}`;
   const existing = document.getElementById(styleId);
   if (!css || !String(css).trim()) {
     existing?.remove();

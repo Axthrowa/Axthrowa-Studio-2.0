@@ -6,7 +6,7 @@ Tarih: 11 Kasım 2026. Kaynaklar: Kick geliştirici belgeleri, Streamer.bot sohb
 
 - Botun kendi emote’u (bot hesabı ya da yayıncı hesabından giden yankı) emote duvarına ve emote kombosuna sayılmıyor.
 - `!clip`: Twitch’te Helix klip (`clips:edit`). Kick’te resmi klip ucu hâlâ yok ([KickDevDocs #71](https://github.com/KickEngineering/KickDevDocs/issues/71), Eylül 2026’da yol haritasında). Kick klibi yayının HLS adresinden yerel ffmpeg ile kesiliyor; adres `playback_url` hem kökte hem `livestream` içinde aranıyor. Başarısız olursa sohbet “klip alındı” demiyor, nedeni yazıyor.
-- OBS “YYA · Çoklu Sohbet” dock’u paneldeki canlı çoklu sohbeti (AxBoT Multi-Chat) açıyor. Dock’u OBS’te bir kez yenilemek gerekir.
+- OBS “Studio · Çoklu Sohbet” dock’u paneldeki canlı çoklu sohbeti (AxBoT Multi-Chat) açıyor. Dock’u OBS’te bir kez yenilemek gerekir.
 
 ## Sıradaki iş (yayını bozmadan)
 
@@ -31,7 +31,7 @@ Tarih: 11 Kasım 2026. Kaynaklar: Kick geliştirici belgeleri, Streamer.bot sohb
 
 ## 11 Kasım 2026 — dock adları
 
-OBS’e yazılan sekiz dock başlığı `YYA · …` yerine `AX Studio · …`. Panel listesi öneki yine gizler; OBS menüsünde tam ad görünür. Eski başlık OBS ayarında durur. OBS kapalıyken Studio’dan dock’ları yeniden yazmak gerekir.
+OBS’e yazılan sekiz dock başlığı `Studio · …` yerine `AX Studio · …`. Panel listesi öneki yine gizler; OBS menüsünde tam ad görünür. Eski başlık OBS ayarında durur. OBS kapalıyken Studio’dan dock’ları yeniden yazmak gerekir.
 
 ## Uygulama planı
 

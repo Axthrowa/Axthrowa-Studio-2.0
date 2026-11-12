@@ -9,7 +9,7 @@
 |---|---|---|
 | Kök | `C:\Users\Axthrowa\Desktop\yayin-yonetim-araci - Kopya (2)` | `C:\Users\Axthrowa\Desktop\Projeler` |
 | Git | var, uzak: `github.com/Axthrowa/yayin-yonetim-araci` | var, **uzak yok** (yalnız yerel) |
-| Etkin dal | `streamaxt-bot` | `revamp/botrix-parity-20260921` |
+| Etkin dal | `axbot-bot` | `revamp/botrix-parity-20260921` |
 | HEAD | `75f7c97121865d7c04e6b8a9b4f71b67f10e1684` | `ef6481e21c6eb56997442dc91becce7e96714755` |
 | Staged / unstaged / untracked | yok / yok / yok (temiz) | yok / yok / yok (temiz) |
 | Önceki güvenlik etiketi | `pre-botrix-revision-20260921-182105` | `pre-botrix-revision-20260921-182105` |
@@ -53,9 +53,9 @@
 | Lint | `tsc --noEmit`, `cargo clippy --all-targets` (uyarısız), Resonance'ta `oxlint` |
 | Derleme | `scripts/build-release-signed.ps1` → yerel `cargo build --release` + `tauri bundle` (NSIS) + `paketle.ps1` (imzalama, taşınabilir klasör) |
 | Günlük | `yya_log!/yya_warn!` makroları (dosya + konsol), `hotkey-hatalari.log` |
-| Dağıtım | `cikti/portable` (exe + `portable.txt` + dist + resonance + streamaxt) ve NSIS kurulum |
+| Dağıtım | `cikti/portable` (exe + `portable.txt` + dist + resonance + axbot) ve NSIS kurulum |
 
-Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind 4; müzik/şimdi çalıyor widget'ı, `/resonance` altından servis) ve **AxBoT** (`streamaxt.rs` Node sürecini başlatır/izler; `cikti/portable/streamaxt` kopyası, 3001 portu, panelde iframe).
+Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind 4; müzik/şimdi çalıyor widget'ı, `/resonance` altından servis) ve **AxBoT** (`axbot.rs` Node sürecini başlatır/izler; `cikti/portable/axbot` kopyası, 3001 portu, panelde iframe).
 
 ## 2. AxBoT (bot / topluluk sunucusu)
 
@@ -63,7 +63,7 @@ Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind
 |---|---|
 | Çalışma ortamı | Node 24.19, Express 4, `ws`, `node:sqlite` (DatabaseSync), TypeScript → CommonJS |
 | Ön yüz | React 19 + Vite 6 + Tailwind (panelde iframe olarak gömülü, turkuaz tema yaması) |
-| Veritabanı / migrasyon | SQLite `streamaxt.sqlite`, 27 tablo; sürümlü, geriye uyumlu göçler (`db/migrations.ts`, sürüm 7) |
+| Veritabanı / migrasyon | SQLite `axbot.sqlite`, 27 tablo; sürümlü, geriye uyumlu göçler (`db/migrations.ts`, sürüm 7) |
 | Kimlik / yetki | Tek kullanıcılı yerel araç; `local-guard` + `origin-guard` (Host, Origin, WS köken) |
 | OAuth | Kick (OAuth 2.1 + PKCE), Twitch, Google/YouTube, Trovo; Discord bot tokenı. Sırlar DPAPI ile şifreli (`vault.ts`) |
 | Platform adaptörleri | Kick, Twitch (+Helix), YouTube, Trovo, TikTok (yalnız okuma, resmi olmayan), Discord — ortak `base.ts` + `capabilities.ts` yetenek tablosu |
@@ -74,7 +74,7 @@ Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind
 | TTS | Çok sağlayıcılı (Edge, Gemini, ElevenLabs, Google, WebSpeech), kuyruk, filtreler, rol eşiği |
 | Medya | Base64 yükleme, içerik imzasıyla tür doğrulaması, UUID dosya adları |
 | Testler | server vitest 27 dosya / 431 test, client 75 test |
-| Derleme / dağıtım | `tsc` + `vite build` → `release/app` → panel `scripts/streamaxt-hazirla.mjs` ile kopyalar |
+| Derleme / dağıtım | `tsc` + `vite build` → `release/app` → panel `scripts/axbot-hazirla.mjs` ile kopyalar |
 
 ## 3. Kullanıcı verisi konumları (yedeklenecek)
 
@@ -84,7 +84,7 @@ Gömülü bileşenler: **Resonance** (`resonance/`, React 19 + Vite 8 + Tailwind
 | `%APPDATA%\com.axthrowa.yayin-yonetim-tauri` (~4 MB) | Eski sürüm verisi (`settings.json`, `media/`) |
 | `%LOCALAPPDATA%\com.axthrowa.yayin-yonetim-araci\EBWebView` (~100 MB) | WebView2 profili: `localStorage` (smartBot ayarları, Twitch/YouTube/Discord yazma oturumları, panel tercihleri), IndexedDB |
 | `cikti\portable\{data,app-data,media,assets}` | Taşınabilir mod verisi |
-| `cikti\portable\streamaxt\data\streamaxt.sqlite` | Panelde gömülü AxBoT'un gerçek veritabanı |
+| `cikti\portable\axbot\data\axbot.sqlite` | Panelde gömülü AxBoT'un gerçek veritabanı |
 | `Projeler\data`, `Projeler\server\data` | AxBoT geliştirme veritabanları ve medya |
 | Windows Kimlik Yöneticisi | OBS WebSocket parolası, Kick bot sırları (`keyring`) — dosya olarak yedeklenemez, rapora not düşülür |
 

@@ -336,10 +336,10 @@ impl MusicState {
           .and_then(|_| std::fs::rename(&tmp, &path))
           .or_else(|_| std::fs::write(&path, &text));
         if let Err(e) = sonuc {
-          yya_warn!("müzik oturumu kaydedilemedi: {e}");
+          studio_warn!("müzik oturumu kaydedilemedi: {e}");
         }
       }
-      Err(e) => yya_warn!("müzik oturumu serileştirilemedi: {e}"),
+      Err(e) => studio_warn!("müzik oturumu serileştirilemedi: {e}"),
     }
   }
 

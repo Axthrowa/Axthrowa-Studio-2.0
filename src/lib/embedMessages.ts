@@ -2,7 +2,7 @@
  * Gömülü AxBoT çerçevesinden gelen `postMessage` isteklerinin doğrulaması.
  *
  * AxBoT iframe içinde `window.open` yapamadığı adresi üst pencereye
- * `{ type: "streamaxt:open-external", url }` olarak bildirir; panel adresi
+ * `{ type: "axbot:open-external", url }` olarak bildirir; panel adresi
  * işletim sisteminin tarayıcısında açar. Doğrulama olmadan panelde açık
  * HERHANGİ bir çerçeve ya da pencere tarayıcıda rastgele adres açtırabilirdi;
  * iki AxBoT görünümü aynı anda bağlıyken de adres iki kez açılırdı.
@@ -10,13 +10,13 @@
  * http(s) adresler kabul edilir.
  */
 
-export const OPEN_EXTERNAL_TYPE = "streamaxt:open-external";
+export const OPEN_EXTERNAL_TYPE = "axbot:open-external";
 /** AxBoT'un "Resonance'ı aç" isteği: tarayıcı yerine panelin Müzik (Resonance) sekmesi açılır. */
-export const OPEN_MUSIC_TYPE = "streamaxt:open-music";
+export const OPEN_MUSIC_TYPE = "axbot:open-music";
 /** Odak gömülü bottayken basılan Ctrl+K: paneli açan tuş çerçevenin dışına çıkmaz, bot bunu bildirir. */
-export const KOMUT_PALETI_TYPE = "streamaxt:komut-paleti";
+export const KOMUT_PALETI_TYPE = "axbot:komut-paleti";
 /** AxBoT gömülünce Studio temasını ister. */
-export const TEMA_ISTE_TUR = "yya-tema-iste";
+export const TEMA_ISTE_TUR = "studio-tema-iste";
 
 export type EmbedMessageEvent = {
   data: unknown;

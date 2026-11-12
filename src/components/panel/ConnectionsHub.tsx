@@ -9,8 +9,8 @@ import { obsControl, type ObsConnectionStatus } from "../../lib/obsControl";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { kickGirisiAc } from "../../lib/kickAuth";
-import { streamaxtBase } from "../../lib/streamaxt";
-import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
+import { axbotBase } from "../../lib/axbot";
+import { getBotConfig, saveBotConfig } from "../../lib/sohbetBot";
 import StatusDot from "@/components/axthrowa/StatusDot";
 import { SOCIAL_META } from "../../lib/socials";
 import EndRulesEditor from "./EndRulesEditor";
@@ -78,7 +78,7 @@ const EMPTY_OBS: ObsConnectionStatus = {
   port: 4455,
 };
 
-const inputCls = "yya-input mt-1 h-9 text-xs md:text-sm font-medium text-white";
+const inputCls = "studio-input mt-1 h-9 text-xs md:text-sm font-medium text-white";
 
 export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, onObsConnected, onBotPlatformlar }: Props) {
   const [kickSlug, setKickSlug] = useState("");
@@ -102,7 +102,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
 
   const refreshBot = useCallback(async () => {
     try {
-      const base = await streamaxtBase();
+      const base = await axbotBase();
       setBotAdresi(base);
       const r = await fetch(`${base}/api/status`, { cache: "no-store" });
       const d = r.ok ? ((await r.json()) as { platforms?: Record<string, BotPlatformDurumu>; obsKaynaklari?: number }) : null;
@@ -226,7 +226,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
       await patchSettings("chat", { kickSlug: slug });
       // Yayın kanalı botta da değişir; kayıtlı bot hesabı korunur
       if (slug && platformlar && slug.toLowerCase() !== String(kick?.channel || "").toLowerCase()) {
-        const r = await fetch(`${await streamaxtBase()}/api/platforms/kick/connect`, {
+        const r = await fetch(`${await axbotBase()}/api/platforms/kick/connect`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ channelName: slug }),
@@ -249,7 +249,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
   };
 
   const tekUrlKopyala = async () => {
-    const adres = `${botAdresi || (await streamaxtBase())}/widgets/overlay`;
+    const adres = `${botAdresi || (await axbotBase())}/widgets/overlay`;
     try {
       await navigator.clipboard.writeText(adres);
       onToast("Tek URL kopyalandı: OBS'e Tarayıcı Kaynağı olarak ekle");
@@ -341,7 +341,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
                   {kick?.botHesabi ? `@${kick.botHesabi}` : kick?.yazabilir ? "Kayıtlı" : "Girilmedi"}
                 </div>
                 <p className="text-[13px] leading-snug text-panel-muted">Sohbete yazar. Bir kez girilir, kayıtlı kalır.</p>
-                <button type="button" className="yya-btn-ghost h-10 self-start px-4 text-sm font-medium" onClick={() => void kickGirisi("bot")}>
+                <button type="button" className="studio-btn-ghost h-10 self-start px-4 text-sm font-medium" onClick={() => void kickGirisi("bot")}>
                   {kick?.yazabilir ? "Hesabı değiştir" : "Giriş yap"}
                 </button>
               </div>
@@ -350,7 +350,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
                 <label className="block">
                   <span className="sr-only">Kanal adı</span>
                   <input aria-label="Kanal adı"
-                    className="yya-input h-10 w-full text-sm font-medium text-white"
+                    className="studio-input h-10 w-full text-sm font-medium text-white"
                     placeholder="ör. kanal-adi"
                     value={kickSlug}
                     onChange={(e) => {
@@ -363,10 +363,10 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
                   {kick?.error || (kick?.kanalHesabi ? `Giriş yapıldı: @${kick.kanalHesabi}. Temizleme ve başlık işleri açık.` : "Sohbet buradan okunur. Giriş, temizleme ve başlık işlerini açar.")}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" disabled={!!busy} className="yya-btn-ghost h-10 px-4 text-sm font-medium" onClick={() => void kanalKaydet()}>
+                  <button type="button" disabled={!!busy} className="studio-btn-ghost h-10 px-4 text-sm font-medium" onClick={() => void kanalKaydet()}>
                     {busy === "kanal" ? "Kaydediliyor…" : "Kaydet"}
                   </button>
-                  <button type="button" className="yya-btn-ghost h-10 px-4 text-sm font-medium" onClick={() => void kickGirisi("kanal")}>
+                  <button type="button" className="studio-btn-ghost h-10 px-4 text-sm font-medium" onClick={() => void kickGirisi("kanal")}>
                     Kanala giriş
                   </button>
                 </div>
@@ -385,7 +385,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
                     <div className="font-semibold text-white">{ad}</div>
                     <div className="truncate text-[13px] text-panel-muted">{p?.connected ? `@${p.channel} bağlı` : "Bağlı değil"}</div>
                   </div>
-                  <button type="button" className="yya-btn-ghost h-10 min-w-[104px] px-4 text-sm font-medium" onClick={onBotPlatformlar}>
+                  <button type="button" className="studio-btn-ghost h-10 min-w-[104px] px-4 text-sm font-medium" onClick={onBotPlatformlar}>
                     {p?.connected ? "Yönet" : "Giriş yap"}
                   </button>
                 </div>
@@ -414,7 +414,7 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
                 </li>
               ))}
             </ul>
-            <button type="button" className="yya-btn-accent h-10 text-sm font-semibold" onClick={denetle}>Yeniden denetle</button>
+            <button type="button" className="studio-btn-accent h-10 text-sm font-semibold" onClick={denetle}>Yeniden denetle</button>
           </section>
 
           <section aria-labelledby="obs-baslik" className={`${kart} flex flex-col gap-3`}>
@@ -453,12 +453,12 @@ export default function ConnectionsHub({ onToast, obs: sharedObs, onObsPatch, on
               {onObsPatch && <EndRulesEditor obs={sharedObs} legacy={legacyEnd} scenes={obsScenes} onChange={(endRules) => onObsPatch({ endRules })} />}
             </details>
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" disabled={!!busy} className="yya-btn-primary h-10 px-4 text-sm font-semibold" onClick={() => void saveAll()}>
+              <button type="button" disabled={!!busy} className="studio-btn-primary h-10 px-4 text-sm font-semibold" onClick={() => void saveAll()}>
                 <Save className="mr-1.5 inline h-4 w-4" />
                 {busy === "save" ? "Kaydediliyor…" : "Kaydet ve bağlan"}
               </button>
               {status.connected && (
-                <button type="button" className="yya-btn-ghost h-10 px-3.5 text-sm font-medium" onClick={() => void obsControl.disconnect().then(setStatus)}>
+                <button type="button" className="studio-btn-ghost h-10 px-3.5 text-sm font-medium" onClick={() => void obsControl.disconnect().then(setStatus)}>
                   <Unplug className="mr-1.5 inline h-4 w-4" />
                   Kes
                 </button>

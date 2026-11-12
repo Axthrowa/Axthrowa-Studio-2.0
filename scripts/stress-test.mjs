@@ -65,16 +65,16 @@ async function expectStatus(label, url, opts, allowed) {
 const SCREENS = ["starting", "ending", "brb", "chat"];
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
-async function botaxtSessionRoundTrip() {
-  const prefix = "/api/botaxt";
+async function botSessionRoundTrip() {
+  const prefix = "/api/bot";
   const res = await fetch(`${BASE}${prefix}/dashboard`, { cache: "no-store" });
   const text = await res.text();
   if (!res.ok || !text.trimStart().startsWith("{")) {
-    note("botaxt: dashboard JSON yok");
+    note("bot: dashboard JSON yok");
     return;
   }
 
-  await timed("botaxt dashboard", async () => {
+  await timed("bot dashboard", async () => {
     const res = await fetch(`${BASE}${prefix}/dashboard`, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const j = await res.json();
@@ -83,7 +83,7 @@ async function botaxtSessionRoundTrip() {
   });
 
   let sessionId = null;
-  await timed("botaxt session start", async () => {
+  await timed("bot session start", async () => {
     const res = await fetch(`${BASE}${prefix}/sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -97,7 +97,7 @@ async function botaxtSessionRoundTrip() {
   });
 
   if (sessionId) {
-    await timed("botaxt session end", async () => {
+    await timed("bot session end", async () => {
       const res = await fetch(`${BASE}${prefix}/sessions/end`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -353,7 +353,7 @@ async function main() {
 
   const wsResult = await wsStorm(WS_CLIENTS, 1500);
   // Önce oturum API’sini bir kez doğrula (profil hatası regresyonu)
-  await botaxtSessionRoundTrip();
+  await botSessionRoundTrip();
   await Promise.all(Array.from({ length: WORKERS }, () => worker(deadline, videoName)));
 
   const elapsed = (performance.now() - t0) / 1000;

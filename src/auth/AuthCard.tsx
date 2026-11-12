@@ -35,7 +35,7 @@ export default function AuthCard() {
           Platform ile giriş
         </h1>
         <p className="mt-2 text-[13px] leading-snug text-white/50">
-          Botrix gibi — hesabınla giriş yap, bot o platforma bağlansın. Şifre yok.
+          Hesabınla giriş yap, bot o platforma bağlansın. Şifre yok.
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export default function AuthCard() {
       <div className="space-y-2 border-t border-white/[0.05] px-6 py-4 text-center text-[11px] leading-relaxed text-white/50">
         <p>
           Kick botu yazabilsin diye kanalında{" "}
-          <span className="text-white/50">/mod BotAxT</span> verin (Botrix’te botrixlive gibi). Twitch / YouTube’ta
+          <span className="text-white/50">/mod (bot hesabınız)</span> verin. Twitch / YouTube’ta
           bot hesabına moderatör yetkisi gerekir.
         </p>
         <Link

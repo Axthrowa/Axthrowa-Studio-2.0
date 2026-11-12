@@ -34,7 +34,7 @@ pub fn start(display_name: &str, icon_path: Option<PathBuf>) {
     return;
   }
 
-  let aumid: Vec<u16> = "com.axthrowa.yayin-yonetim-araci\0"
+  let aumid: Vec<u16> = "com.axthrowa.studio\0"
     .encode_utf16()
     .collect();
   unsafe {
@@ -89,7 +89,7 @@ fn etiket_dongusu(display_name: String, icon_path: Option<PathBuf>) {
   let mut kararlar = HashMap::new();
   loop {
     if let Err(e) = unsafe { oturumlari_etiketle(bizim_pid, &ad_wide, ikon_wide.as_deref(), &mut kararlar) } {
-      yya_warn!("ses oturumu etiketlenemedi: {e}");
+      studio_warn!("ses oturumu etiketlenemedi: {e}");
     }
     std::thread::sleep(Duration::from_secs(3));
   }
@@ -202,7 +202,7 @@ fn bizimle_ilgili(pid: u32, bizim_pid: u32, tablo: &HashMap<u32, Surec>) -> bool
       return false;
     };
     let a = s.ad.to_ascii_lowercase();
-    if ["axthrowastudio", "axthrowa studio", "yayinyonetimaraci", "yayin-yonetim-araci"].iter().any(|ad| a.starts_with(ad)) {
+    if ["axthrowastudio", "axthrowa studio", "axthrowa-studio"].iter().any(|ad| a.starts_with(ad)) {
       return true;
     }
     if s.ust == 0 || s.ust == mevcut {

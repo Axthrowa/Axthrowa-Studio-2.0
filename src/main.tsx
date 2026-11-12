@@ -20,7 +20,10 @@ import "./styles/index.css";
 import "./styles/ust-serit.css";
 import "./styles/desktop.css";
 import "./styles/overlay.css";
+import { eskiAnahtarlariTasi } from "./lib/eskiAdlar";
 
+// Ayar okunmadan önce: eski sürümün tarayıcı depolama anahtarları yeni adlara kopyalanır
+eskiAnahtarlariTasi();
 applyPlatformTheme();
 // Erişilebilirlik renkleri (OBS dock'ları da bu girişten açılır)
 erisimUygula(erisimOku());
@@ -36,10 +39,10 @@ void analitikBaslat();
  */
 // Güncellemeden sonra açık kalan sayfa, artık sunucuda olmayan eski parçayı isterse kendini bir kez yeniler
 window.addEventListener("vite:preloadError", (e) => {
-  const anahtar = "yya.parcaYenilendi";
+  const anahtar = "studio.parcaYenilendi";
   try {
-    if (sessionStorage.getItem(anahtar) === __YYA_SURUM__) return;
-    sessionStorage.setItem(anahtar, __YYA_SURUM__);
+    if (sessionStorage.getItem(anahtar) === __STUDIO_SURUM__) return;
+    sessionStorage.setItem(anahtar, __STUDIO_SURUM__);
   } catch {
     return;
   }

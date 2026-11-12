@@ -58,8 +58,8 @@ export async function emitWidgetEvent(
   }
   // SQLite events_log (dashboard)
   try {
-    const { logBotaxtEvent } = await import("../api/botaxt");
-    void logBotaxtEvent({
+    const { logBotEvent } = await import("../api/botApi");
+    void logBotEvent({
       kind: ev.kind,
       platform: ev.platform || "local",
       user_name: ev.user,
@@ -70,7 +70,7 @@ export async function emitWidgetEvent(
     /* */
   }
   try {
-    window.dispatchEvent(new CustomEvent("smartbot-widget-event", { detail: ev }));
+    window.dispatchEvent(new CustomEvent("sohbet-bot-widget-olayi", { detail: ev }));
     window.dispatchEvent(new CustomEvent("trigger_alert", { detail: ev }));
   } catch {
     /* */

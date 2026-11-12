@@ -1,11 +1,11 @@
-/** OBS TTS / CloudTTS — Botaxt /widgets/tts + cloudtts (yerel SpeechSynthesis) */
+/** OBS TTS / CloudTTS — Bot /widgets/tts + cloudtts (yerel SpeechSynthesis) */
 
 import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { getBotConfig, hydrateBotConfigFromServer, subscribeBotConfig } from "../../lib/smartBot";
-import type { WidgetEvent } from "../../lib/smartBot/events";
-import { useOverlayWidgetEvents } from "../../lib/smartBot/useOverlayWidgetEvents";
+import { getBotConfig, hydrateBotConfigFromServer, subscribeBotConfig } from "../../lib/sohbetBot";
+import type { WidgetEvent } from "../../lib/sohbetBot/events";
+import { useOverlayWidgetEvents } from "../../lib/sohbetBot/useOverlayWidgetEvents";
 
 function speak(
   text: string,

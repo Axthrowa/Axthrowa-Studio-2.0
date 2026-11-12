@@ -1011,7 +1011,7 @@ pub async fn patch_kicksubs_widget_configs(pool: &SqlitePool) -> Result<usize> {
   Ok(n)
 }
 
-/// Chat overlay — Botrix temaları + gizleme / emote / gölge alanları.
+/// Chat overlay — hazır temalar + gizleme / emote / gölge alanları.
 pub async fn patch_chat_widget_configs(pool: &SqlitePool) -> Result<usize> {
   let channel_id = default_channel_id(pool).await?;
   let now = chrono_now();

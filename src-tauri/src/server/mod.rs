@@ -25,7 +25,7 @@ mod actions_api;
 pub mod asistan_api;
 pub(crate) use actions_api::kisayol_eylemi;
 mod auth;
-mod botaxt;
+mod bot_api;
 mod control_plane;
 mod destek_api;
 mod dosya_adi;
@@ -59,20 +59,20 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
   {
     let settings_snap = state.settings.read().clone();
     if let Err(e) = crate::db::init(&state.db, &settings_snap).await {
-      yya_warn!("DB init uyarısı: {e:#}");
+      studio_warn!("DB init uyarısı: {e:#}");
     }
-    yya_log!(
+    studio_log!(
       "SQLite → {}",
       crate::db::db_file(&state.data_dir).display()
     );
-    match crate::db::botaxt_api::seed_alerts_if_empty(&state.db, &settings_snap).await {
-      Ok(n) if n > 0 => yya_log!("Botaxt alerts seed: {n}"),
-      Err(e) => yya_warn!("alerts seed uyarısı: {e:#}"),
+    match crate::db::bot_api::seed_alerts_if_empty(&state.db, &settings_snap).await {
+      Ok(n) if n > 0 => studio_log!("Bot alerts seed: {n}"),
+      Err(e) => studio_warn!("alerts seed uyarısı: {e:#}"),
       _ => {}
     }
-    match crate::db::botaxt_api::seed_widgets_if_empty(&state.db).await {
-      Ok(n) if n > 0 => yya_log!("Botaxt widgets seed: {n}"),
-      Err(e) => yya_warn!("widgets seed uyarısı: {e:#}"),
+    match crate::db::bot_api::seed_widgets_if_empty(&state.db).await {
+      Ok(n) if n > 0 => studio_log!("Bot widgets seed: {n}"),
+      Err(e) => studio_warn!("widgets seed uyarısı: {e:#}"),
       _ => {}
     }
   }
@@ -166,12 +166,12 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/automation/release", post(api_automation_release))
     .route("/api/player/spotify/manual", post(api_spotify_manual))
     .route("/api/player/spotify/token", post(api_spotify_token))
-    // Botaxt Modül 1 — profil / dashboard / oturum
-    .route("/api/botaxt/dashboard", get(api_botaxt_dashboard))
-    .route("/api/botaxt/sessions", get(api_botaxt_sessions).post(api_botaxt_session_start))
-    .route("/api/botaxt/sessions/end", post(api_botaxt_session_end))
-    .route("/api/botaxt/metrics", post(api_botaxt_metrics))
-    .route("/api/botaxt/events", get(api_botaxt_events).post(api_botaxt_event_log))
+    // Bot modülü 1 — profil / dashboard / oturum
+    .route("/api/bot/dashboard", get(api_bot_dashboard))
+    .route("/api/bot/sessions", get(api_bot_sessions).post(api_bot_session_start))
+    .route("/api/bot/sessions/end", post(api_bot_session_end))
+    .route("/api/bot/metrics", post(api_bot_metrics))
+    .route("/api/bot/events", get(api_bot_events).post(api_bot_event_log))
     // Spotify kodunun düşebileceği kısa yollar. Kullanıcı Dashboard'a
     // hangisini kaydettiyse o kullanılabilsin diye birden çok seçenek var.
     .route("/", get(spotify_code_catch_all))
@@ -188,9 +188,9 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .nest_service("/assets/videos", ServeDir::new(&videos_dir))
     .nest_service("/assets/backgrounds", ServeDir::new(&backgrounds_dir));
 
-  // Botaxt Modül 2–8
+  // Bot modülü 2–8
   let mut api = api
-    .merge(botaxt::router())
+    .merge(bot_api::router())
     .merge(runtime_api::router())
     .merge(multistream_api::router())
     .merge(actions_api::router())
@@ -260,17 +260,17 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
   let addr = SocketAddr::from((bind_host, port));
   let listener = tokio::net::TcpListener::bind(addr).await?;
   let lan = bind_host == [0, 0, 0, 0];
-  yya_log!(
+  studio_log!(
     "Overlay HTTP server → http://127.0.0.1:{port} bind={} (dist={has_dist}, resonance={has_resonance})",
     if lan { "0.0.0.0 (LAN/uzak)" } else { "127.0.0.1" }
   );
   if lan {
-    yya_log!(
+    studio_log!(
       "Uzak panel: http://<bu-pc-ip>:{port}/remote/login · Bearer token zorunlu (loopback hariç)"
     );
   }
   if has_resonance {
-    yya_log!("Resonance → http://127.0.0.1:{port}/resonance/");
+    studio_log!("Resonance → http://127.0.0.1:{port}/resonance/");
   }
   axum::serve(
     listener,
@@ -389,7 +389,7 @@ async fn api_patch_settings(
     // Disk yazımı başarısızsa ayar yalnızca bellekte kalır ve yeniden
     // açılışta kaybolur; en azından iz bırakalım.
     if let Err(e) = s.save_one(&state.data_dir, kind) {
-      yya_warn!("ayar diske yazılamadı ({screen}): {e}");
+      studio_warn!("ayar diske yazılamadı ({screen}): {e}");
     }
     merged
   };
@@ -575,8 +575,8 @@ async fn api_kick_prepare(
     let st = state.clone();
     tokio::spawn(async move {
       match st.kick_chat.connect(st.as_ref().clone(), &slug_c).await {
-        Ok(_) => yya_warn!("[kick-api] prepare sonrası sohbet dinleme: {slug_c}"),
-        Err(e) => yya_warn!("[kick-api] prepare sohbet: {e:#}"),
+        Ok(_) => studio_warn!("[kick-api] prepare sonrası sohbet dinleme: {slug_c}"),
+        Err(e) => studio_warn!("[kick-api] prepare sohbet: {e:#}"),
       }
     });
   }
@@ -625,7 +625,7 @@ async fn api_kick_oauth_callback(
         tokio::spawn(async move {
           match st.kick_chat.connect(st.as_ref().clone(), &slug_c).await {
             Ok(_) => {
-              yya_warn!("[kick-api] OAuth sonrası sohbet dinleme: {slug_c}");
+              studio_warn!("[kick-api] OAuth sonrası sohbet dinleme: {slug_c}");
               st.broadcast_json(&serde_json::json!({
                 "type": "kick-chat-status",
                 "connected": true,
@@ -633,7 +633,7 @@ async fn api_kick_oauth_callback(
                 "t": crate::db::chrono_now(),
               }));
             }
-            Err(e) => yya_warn!("[kick-api] sohbet auto-connect: {e:#}"),
+            Err(e) => studio_warn!("[kick-api] sohbet auto-connect: {e:#}"),
           }
         });
       }
@@ -865,7 +865,7 @@ pub(crate) async fn sohbeti_temizle(state: &AppState) -> Value {
 
 /// Kick'i bot temizler: oturumu ve `/clear` + tek tek silme mantığı orada.
 async fn botta_kick_temizle() -> Result<(), String> {
-  let url = format!("http://127.0.0.1:{}/api/chat/clear-platforms", crate::streamaxt::port());
+  let url = format!("http://127.0.0.1:{}/api/chat/clear-platforms", crate::axbot::port());
   let yanit = crate::kick::client()
     .map_err(|e| e.to_string())?
     .post(url)
@@ -1325,7 +1325,7 @@ async fn api_video_download(
   tokio::spawn(async move {
     // Kullanıcıya durum WebSocket'ten gidiyor; burada yalnızca iz bırakıyoruz.
     if let Err(e) = crate::ytdl::indir(arka, body.url).await {
-      yya_warn!("video indirme başarısız: {e}");
+      studio_warn!("video indirme başarısız: {e}");
     }
   });
   Ok(Json(serde_json::json!({ "ok": true })))
@@ -2137,9 +2137,9 @@ async fn client_ws(socket: WebSocket, state: Arc<AppState>, redact: bool) {
   send_task.abort();
 }
 
-// ─── Botaxt Modül 1: Profil / Dashboard API ───────────────────────────
+// ─── Bot modülü 1: Profil / Dashboard API ───────────────────────────
 
-async fn api_botaxt_dashboard(
+async fn api_bot_dashboard(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
   crate::db::profile::dashboard(&state.db)
@@ -2158,7 +2158,7 @@ fn default_limit() -> i64 {
   20
 }
 
-async fn api_botaxt_sessions(
+async fn api_bot_sessions(
   State(state): State<Arc<AppState>>,
   Query(q): Query<SessionsQuery>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
@@ -2173,7 +2173,7 @@ struct SessionStartBody {
   title: Option<String>,
 }
 
-async fn api_botaxt_session_start(
+async fn api_bot_session_start(
   State(state): State<Arc<AppState>>,
   Json(body): Json<SessionStartBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
@@ -2200,7 +2200,7 @@ struct SessionEndBody {
   session_id: String,
 }
 
-async fn api_botaxt_session_end(
+async fn api_bot_session_end(
   State(state): State<Arc<AppState>>,
   Json(body): Json<SessionEndBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
@@ -2234,7 +2234,7 @@ struct MetricsBody {
   subs: i64,
 }
 
-async fn api_botaxt_metrics(
+async fn api_bot_metrics(
   State(state): State<Arc<AppState>>,
   Json(body): Json<MetricsBody>,
 ) -> Result<StatusCode, (StatusCode, String)> {
@@ -2257,7 +2257,7 @@ struct EventsQuery {
   limit: i64,
 }
 
-async fn api_botaxt_events(
+async fn api_bot_events(
   State(state): State<Arc<AppState>>,
   Query(q): Query<EventsQuery>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
@@ -2292,7 +2292,7 @@ fn default_platform() -> String {
   "local".into()
 }
 
-async fn api_botaxt_event_log(
+async fn api_bot_event_log(
   State(state): State<Arc<AppState>>,
   Json(body): Json<EventLogBody>,
 ) -> Result<StatusCode, (StatusCode, String)> {

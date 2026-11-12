@@ -1,4 +1,4 @@
-/** Botaxt tarzı widget / sadakat / etkileşim geniş tipleri. */
+/** Bot tarzı widget / sadakat / etkileşim geniş tipleri. */
 
 import type {
   BotCommand,

@@ -6,7 +6,7 @@ export type ObsSavedConn = {
   password: string;
 };
 
-const KEY = "yya.obs.connection";
+const KEY = "studio.obs.connection";
 
 export function loadObsSaved(): ObsSavedConn | null {
   try {

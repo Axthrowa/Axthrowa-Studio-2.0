@@ -11,12 +11,12 @@ describe("obsPersist", () => {
   beforeEach(() => depo.clear());
 
   it("şifreyi yerel depoya yazmaz, eski kayıttaki şifreyi de üzerine yazarak temizler", () => {
-    depo.set("yya.obs.connection", JSON.stringify({ host: "10.0.0.5", port: 4460, password: "eski" }));
+    depo.set("studio.obs.connection", JSON.stringify({ host: "10.0.0.5", port: 4460, password: "eski" }));
     expect(loadObsSaved()?.password).toBe("eski"); // kasaya taşınabilsin diye bir kez okunur
 
     saveObsSaved({ host: "10.0.0.5", port: 4460, password: "yeni" } as never);
 
-    expect(depo.get("yya.obs.connection")).not.toContain("password");
+    expect(depo.get("studio.obs.connection")).not.toContain("password");
     expect(loadObsSaved()).toEqual({ host: "10.0.0.5", port: 4460, password: "" });
   });
 });

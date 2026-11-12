@@ -1,5 +1,5 @@
 /**
- * AlertWidget — Botrix master overlay
+ * AlertWidget — ana katman
  * Style · Disposition · Animation · Typography · Text FX · TTS · Audio
  */
 

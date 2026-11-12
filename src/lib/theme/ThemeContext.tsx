@@ -1,5 +1,5 @@
 /**
- * BotAxt Global Tema Motoru — data-skin + CSS değişkenleri.
+ * Genel tema motoru — data-skin + CSS değişkenleri.
  * Temalar: Night Signal · Crimson Dragon · Cyber Neon · Aurora · Warm Sepia · Mono Contrast
  * (NVIDIA MCP ile renk/pattern yönü üretildi)
  * + AxBoT panel temalarıyla aynı kimlik ve hisle: gece-mavisi · gun-isigi · neon-arcade · murekkep · gun-batimi · orman
@@ -77,7 +77,7 @@ export const STUDIO_SKINS: SkinMeta[] = [
     hint: "Siyah · beyaz · sarı (yüksek kontrast)",
     swatch: ["#000000", "#ffd400"],
   },
-  // AxBoT panel temalarıyla eşleşir (StreamAxT client/src/lib/panelTemalari.ts)
+  // AxBoT panel temalarıyla eşleşir (AxBoT client/src/lib/panelTemalari.ts)
   { id: "gece-mavisi", label: "Gece Mavisi", hint: "AxBoT · lacivert · buz mavisi", swatch: ["#0a0f1c", "#60a5fa"] },
   { id: "gun-isigi", label: "Gün Işığı", hint: "AxBoT · açık tema · mor vurgu", swatch: ["#f4f5f8", "#7c3aed"] },
   { id: "neon-arcade", label: "Neon Arcade", hint: "AxBoT · keskin köşe · pembe neon", swatch: ["#07060d", "#f472b6"] },
@@ -100,7 +100,7 @@ export function parseSkin(raw: unknown, ids: readonly string[] = STUDIO_SKINS.ma
   return typeof raw === "string" && ids.includes(raw) ? (raw as StudioSkin) : DEFAULT_SKIN;
 }
 
-const STORAGE_KEY = "botaxt.studio.skin";
+const STORAGE_KEY = "studio.bot.studio.skin";
 
 type ThemeCtx = {
   skin: StudioSkin;

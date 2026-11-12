@@ -351,12 +351,12 @@ async fn api_go_live(
 }
 
 /// AxBoT'ta çapraz sohbet aktarımı açık mı? (AxBoT kapalıysa bilinmiyor → `false`)
-async fn streamaxt_relay_enabled() -> bool {
+async fn axbot_relay_enabled() -> bool {
   let Ok(client) = reqwest::Client::builder().timeout(std::time::Duration::from_millis(1500)).build() else {
     return false;
   };
-  // Panel AxBoT'u `YYA_STREAMAXT_PORT` ile başka portta başlatabilir (eskiden 3001 sabitti)
-  let url = format!("http://127.0.0.1:{}/api/settings", crate::streamaxt::port());
+  // Panel AxBoT'u `AXBOT_PORT` ile başka portta başlatabilir (eskiden 3001 sabitti)
+  let url = format!("http://127.0.0.1:{}/api/settings", crate::axbot::port());
   match client.get(url).send().await {
     Ok(r) if r.status().is_success() => r
       .json::<Value>()
@@ -393,7 +393,7 @@ pub(crate) async fn build_preflight(state: &Arc<AppState>) -> (Vec<policy::Findi
       .collect(),
     encoder: encoder.clone(),
     combined_chat_overlay: policy::chat_overlay_platforms(&chat, &starting) > 1,
-    cross_chat_relay: streamaxt_relay_enabled().await,
+    cross_chat_relay: axbot_relay_enabled().await,
     ffmpeg_found: state.multistream.ffmpeg().is_some(),
     obs_connected: state.obs.is_connected(),
     upload_mbps,

@@ -42,7 +42,7 @@ export function mirrorLoyalty(userKey: string, delta: number, reason: string) {
     loyaltyBatch.clear();
     for (const [key, row] of rows) {
       if (!row.delta) continue;
-      void fetch(`${API_BASE}/api/botaxt/loyalty/adjust`, {
+      void fetch(`${API_BASE}/api/bot/loyalty/adjust`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_key: key, delta: row.delta, reason: row.reason }),
@@ -156,7 +156,7 @@ export async function requestSong(query: string): Promise<string> {
 export async function fireShopEffect(item: { scene?: string; sfx?: string; sound?: string }) {
   const scene = String(item.scene || "").trim();
   if (scene) {
-    window.dispatchEvent(new CustomEvent("yya-shop-scene", { detail: { scene } }));
+    window.dispatchEvent(new CustomEvent("studio-shop-scene", { detail: { scene } }));
   }
   const file = String(item.sfx || item.sound || "").trim();
   if (file) await emitSfxCue({ file, volume: 1 });

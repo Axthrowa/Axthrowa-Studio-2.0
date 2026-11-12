@@ -44,7 +44,7 @@ const KONUM: Record<Platform, string> = { kick: "Kick'te", twitch: "Twitch'te", 
 export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) {
   const [platform, setPlatform] = useState<Platform>(() => {
     try {
-      const p = localStorage.getItem("yya.yayinBilgisi.platform");
+      const p = localStorage.getItem("studio.yayinBilgisi.platform");
       return p === "twitch" || p === "youtube" ? p : "kick";
     } catch {
       return "kick";
@@ -81,7 +81,7 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
   const platformSec = (p: Platform) => {
     setPlatform(p);
     try {
-      localStorage.setItem("yya.yayinBilgisi.platform", p);
+      localStorage.setItem("studio.yayinBilgisi.platform", p);
     } catch {
       /* yalnız bu oturumda */
     }

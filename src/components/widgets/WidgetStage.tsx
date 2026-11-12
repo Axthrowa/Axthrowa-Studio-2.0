@@ -16,7 +16,7 @@ export default function WidgetStage({ kind, config, children }: Props) {
 
   return (
     <div
-      className="yya-widget-stage relative h-full w-full"
+      className="studio-widget-stage relative h-full w-full"
       data-widget-kind={kind}
       style={transformStyle(config)}
     >

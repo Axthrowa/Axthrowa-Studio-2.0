@@ -140,7 +140,7 @@ export default function ProfileSwitcher({ onToast }: Props) {
                   {renaming === p.id ? (
                     <input
                       autoFocus
-                      className="yya-input h-7 min-w-0 flex-1 text-xs"
+                      className="studio-input h-7 min-w-0 flex-1 text-xs"
                       value={renameVal}
                       maxLength={40}
                       onChange={(e) => setRenameVal(e.target.value)}
@@ -211,7 +211,7 @@ export default function ProfileSwitcher({ onToast }: Props) {
           <div className="mt-2 border-t border-white/[0.06] pt-2">
             <div className="flex items-center gap-1.5">
               <input
-                className="yya-input h-8 min-w-0 flex-1 text-xs"
+                className="studio-input h-8 min-w-0 flex-1 text-xs"
                 placeholder="Yeni profil adı"
                 value={newName}
                 maxLength={40}

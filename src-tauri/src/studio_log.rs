@@ -3,14 +3,14 @@
 //! döndürmeli; belirteç benzeri sözcükler gizlenir — bkz. lib.rs `gunluk_eklentisi`).
 
 #[macro_export]
-macro_rules! yya_log {
+macro_rules! studio_log {
   ($($arg:tt)*) => {{
     log::info!($($arg)*);
   }};
 }
 
 #[macro_export]
-macro_rules! yya_warn {
+macro_rules! studio_warn {
   ($($arg:tt)*) => {{
     log::warn!($($arg)*);
   }};

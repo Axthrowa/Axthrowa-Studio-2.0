@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "react-router-dom";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
+import { useOverlayBotConfig } from "../../lib/sohbetBot/useOverlayWidgetEvents";
 
 export default function ViewerCountPage() {
   useObsKeepalive();

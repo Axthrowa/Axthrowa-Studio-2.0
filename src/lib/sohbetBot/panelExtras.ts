@@ -1,4 +1,4 @@
-/** Botaxt panel sekmelerinden aktarılan ekstra config şeması. */
+/** Bot panel sekmelerinden aktarılan ekstra config şeması. */
 
 import { uid, type UserLevel } from "./types";
 
@@ -7,7 +7,7 @@ export type KeywordMatch = "exact" | "startsWith" | "contains" | "endsWith";
 export type CmdAvailability = "always" | "live" | "offline";
 export type PlatformFlag = "kick" | "twitch" | "youtube" | "all";
 
-/** Botaxt custom/keyword command alanları (BotCommand üzerine). */
+/** Bot custom/keyword command alanları (BotCommand üzerine). */
 export type ExtraCommandFields = {
   trigger: CommandTrigger;
   keywordMatch: KeywordMatch;

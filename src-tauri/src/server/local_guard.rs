@@ -28,8 +28,8 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 
 /// Kullanıcının ek olarak izin verdiği ana makine adları (virgülle ayrılmış),
-/// ör. tünel ya da `yayin-pc.local`: `YYA_IZINLI_HOSTLAR=yayin-pc.local`.
-const EK_HOST_ORTAM: &str = "YYA_IZINLI_HOSTLAR";
+/// ör. tünel ya da `yayin-pc.local`: `STUDIO_IZINLI_HOSTLAR=yayin-pc.local`.
+const EK_HOST_ORTAM: &str = "STUDIO_IZINLI_HOSTLAR";
 
 /// `"127.0.0.1:8843"` → `"127.0.0.1"`, `"[::1]:8843"` → `"::1"`, büyük/küçük harf duyarsız.
 pub fn host_name(host: &str) -> String {
@@ -182,7 +182,7 @@ pub async fn guard(req: Request, next: Next) -> Response {
         .chars()
         .take(80)
         .collect::<String>();
-      yya_warn!("[güvenlik] izinsiz Host reddedildi: {host} {}", req.uri().path());
+      studio_warn!("[güvenlik] izinsiz Host reddedildi: {host} {}", req.uri().path());
       (
         StatusCode::FORBIDDEN,
         format!("Bu adres ({host}) kabul edilmiyor. Tünel/özel ad için {EK_HOST_ORTAM} ortam değişkenine ekleyin."),
@@ -198,7 +198,7 @@ pub async fn guard(req: Request, next: Next) -> Response {
         .chars()
         .take(80)
         .collect::<String>();
-      yya_warn!(
+      studio_warn!(
         "[güvenlik] yabancı köken reddedildi: {origin} → {} {}",
         req.method(),
         req.uri().path()

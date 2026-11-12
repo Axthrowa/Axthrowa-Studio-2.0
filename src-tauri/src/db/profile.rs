@@ -106,7 +106,7 @@ pub async fn dashboard(pool: &SqlitePool) -> Result<DashboardSnapshot> {
   .await
   .unwrap_or_default();
 
-  let migrated_smartbot = meta_get(pool, "smartbot_imported_v1")
+  let eski_panel_aktarildi = meta_get(pool, crate::db::eski_panel_aktarimi::BAYRAK)
     .await?
     .as_deref()
     == Some("1");
@@ -126,7 +126,7 @@ pub async fn dashboard(pool: &SqlitePool) -> Result<DashboardSnapshot> {
     commands,
     recent_events,
     sessions,
-    migrated_smartbot,
+    eski_panel_aktarildi,
   })
 }
 

@@ -44,7 +44,7 @@ const SCREENS: { id: EndScreen; label: string }[] = [
 ];
 
 const field =
-  "yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white";
+  "studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white";
 
 export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: Props) {
   const rules: Rules = useMemo(() => obs?.endRules || {}, [obs?.endRules]);

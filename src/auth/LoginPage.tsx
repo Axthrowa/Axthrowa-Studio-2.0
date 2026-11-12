@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import AuthCard from "./AuthCard";
 import { applyPlatformTheme } from "../lib/platformTheme";
 
-/** Botrix.live benzeri ortalanmış OAuth giriş — platform → bot bağlantısı */
+/** Ortalanmış OAuth giriş — platform → bot bağlantısı */
 export default function LoginPage() {
   useEffect(() => {
     applyPlatformTheme(null);

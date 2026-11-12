@@ -36,9 +36,9 @@ const FFMPEG_OZET_URL: &str =
   "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/checksums.sha256";
 
 /// İlerleme satırlarını yt-dlp'nin diğer çıktısından ayırmak için ön ek.
-const PROGRESS_TAG: &str = "YYAILERLEME";
+const PROGRESS_TAG: &str = "STUDIOILERLEME";
 /// Tamamlanan dosyanın yolunu taşıyan satırın ön eki.
-const FILE_TAG: &str = "YYADOSYA";
+const FILE_TAG: &str = "STUDIODOSYA";
 
 /// İndirmenin hangi aşamada olduğu. Panel bunu okunabilir metne çeviriyor.
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Debug)]
@@ -171,7 +171,7 @@ pub fn youtube_id(url: &str) -> Option<String> {
 
 /// yt-dlp'nin `--progress-template` çıktısındaki yüzdeyi okur.
 ///
-/// Gelen satır `YYAILERLEME 12.3% 1.20MiB/s 00:42` biçiminde. Yüzde yerine
+/// Gelen satır `STUDIOILERLEME 12.3% 1.20MiB/s 00:42` biçiminde. Yüzde yerine
 /// `NA` gelebiliyor (boyut bilinmeyen akışlar); o durumda `None` dönüyoruz ki
 /// çubuk sıfıra düşüp geri zıplamasın.
 pub fn parse_progress(line: &str) -> Option<(f64, String)> {
@@ -714,7 +714,7 @@ mod tests {
 
   #[test]
   fn ilerleme_satirini_okur() {
-    let (yuzde, mesaj) = parse_progress("YYAILERLEME 12.3% 1.20MiB/s 00:42").unwrap();
+    let (yuzde, mesaj) = parse_progress("STUDIOILERLEME 12.3% 1.20MiB/s 00:42").unwrap();
     assert!((yuzde - 12.3).abs() < 1e-6);
     assert_eq!(mesaj, "1.20MiB/s — kalan 00:42");
   }
@@ -722,14 +722,14 @@ mod tests {
   #[test]
   fn bilinmeyen_yuzdede_ilerleme_bildirmez() {
     // Boyutu bilinmeyen akışlarda yt-dlp "NA" yazıyor; çubuk sıfıra düşmesin.
-    assert!(parse_progress("YYAILERLEME NA NA NA").is_none());
+    assert!(parse_progress("STUDIOILERLEME NA NA NA").is_none());
     assert!(parse_progress("[download] Destination: video.mp4").is_none());
   }
 
   #[test]
   fn bosluklu_yuzdeyi_okur() {
     // yt-dlp yüzdeyi sağa yaslıyor: "  0.5%"
-    let (yuzde, mesaj) = parse_progress("YYAILERLEME   0.5%    6.52MiB/s 00:00").unwrap();
+    let (yuzde, mesaj) = parse_progress("STUDIOILERLEME   0.5%    6.52MiB/s 00:00").unwrap();
     assert!((yuzde - 0.5).abs() < 1e-6);
     assert_eq!(mesaj, "6.52MiB/s — kalan 00:00");
   }
@@ -759,7 +759,7 @@ mod tests {
 
   #[test]
   fn yeni_dosya_eski_sayilmaz_olmayan_dosya_eski_sayilir() {
-    let gecici = std::env::temp_dir().join(format!("yya-ytdl-yas-{}", std::process::id()));
+    let gecici = std::env::temp_dir().join(format!("studio-ytdl-yas-{}", std::process::id()));
     std::fs::write(&gecici, b"x").unwrap();
     assert!(!eski_mi(&gecici, std::time::Duration::from_secs(3600)));
     let _ = std::fs::remove_file(&gecici);
@@ -769,13 +769,13 @@ mod tests {
   #[test]
   fn indirilen_video_listelenen_klasore_yazilir() {
     // `/api/videos` ve `/assets/videos` `root/assets/videos`'a bakıyor.
-    let kok = Path::new("C:/YYA");
+    let kok = Path::new("C:/Studio");
     assert_eq!(indirme_klasoru(kok), kok.join("assets").join("videos"));
   }
 
   #[test]
   fn yuzde_araliga_sikistirilir() {
-    let (yuzde, _) = parse_progress("YYAILERLEME 130.0% 1MiB/s 00:01").unwrap();
+    let (yuzde, _) = parse_progress("STUDIOILERLEME 130.0% 1MiB/s 00:01").unwrap();
     assert_eq!(yuzde, 100.0);
   }
 }

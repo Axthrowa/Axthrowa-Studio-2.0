@@ -268,10 +268,10 @@ describe("okunabilirlik", () => {
 });
 
 describe("performans", () => {
-  it("panel kartları (yya-card/stat/settings-panel) backdrop-blur kullanmıyor", () => {
+  it("panel kartları (studio-card/stat/settings-panel) backdrop-blur kullanmıyor", () => {
     // Şeffaf kartların arkasını her karede bulanıklaştırmak WebView2'de kaydırmayı
     // ve canlı önizleme üzerindeki çizimi yavaşlatıyordu; görsel katkısı yoktu.
-    for (const cls of ["yya-card", "yya-stat", "yya-settings-panel"]) {
+    for (const cls of ["studio-card", "studio-stat", "studio-settings-panel"]) {
       const m = new RegExp("\\." + cls + "\\s*\\{[^}]*\\}").exec(css);
       expect(m, cls).not.toBeNull();
       expect(m![0], cls).not.toMatch(/backdrop-blur/);

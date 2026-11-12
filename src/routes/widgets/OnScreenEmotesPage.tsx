@@ -1,11 +1,11 @@
-/** OBS Emotes en pantalla — Botaxt /widgets/emotewall */
+/** OBS Emotes en pantalla — Bot /widgets/emotewall */
 
 import { useCallback, useEffect, useState } from "react";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import type { WidgetEvent } from "../../lib/smartBot/events";
-import { getBotConfig, hydrateBotConfigFromServer, subscribeBotConfig } from "../../lib/smartBot";
-import { isLocalBotUser } from "../../lib/smartBot/botIdentity";
-import { useOverlayWidgetEvents } from "../../lib/smartBot/useOverlayWidgetEvents";
+import type { WidgetEvent } from "../../lib/sohbetBot/events";
+import { getBotConfig, hydrateBotConfigFromServer, subscribeBotConfig } from "../../lib/sohbetBot";
+import { isLocalBotUser } from "../../lib/sohbetBot/botIdentity";
+import { useOverlayWidgetEvents } from "../../lib/sohbetBot/useOverlayWidgetEvents";
 import { PATLAMA_TAVAN, patlamaAdedi, patlamaSimgesi } from "../../lib/patlamaAdedi";
 
 type Floater = {

@@ -12,14 +12,14 @@ param([switch]$SkipSign, [switch]$KeepExe)
 $ErrorActionPreference = "Stop"
 $proj = Split-Path $PSScriptRoot -Parent
 $release = Join-Path $proj "src-tauri\target\release"
-$cargoTd = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $env:LOCALAPPDATA "yya-cargo-target" }
+$cargoTd = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $env:LOCALAPPDATA "studio-cargo-target" }
 # Docker (cargo-xwin) ciktisi da aday: Smart App Control acikken Windows'ta
 # cargo calismiyor, capraz derleme tek yol.
-$dockerExe = Join-Path $proj "target-docker\x86_64-pc-windows-msvc\release\yayin-yonetim-araci.exe"
+$dockerExe = Join-Path $proj "target-docker\x86_64-pc-windows-msvc\release\axthrowa-studio.exe"
 $srcExeCandidates = @(
   $dockerExe,
-  (Join-Path $cargoTd "release\yayin-yonetim-araci.exe"),
-  (Join-Path $release "yayin-yonetim-araci.exe")
+  (Join-Path $cargoTd "release\axthrowa-studio.exe"),
+  (Join-Path $release "axthrowa-studio.exe")
 ) | Where-Object { Test-Path $_ }
 # En yeni derleme kazanir. Eskiden "imzasi gecerli olan" tercih ediliyordu;
 # taze derleme heniz imzasiz oldugu icin bu, bayat exe'yi paketletiyordu.

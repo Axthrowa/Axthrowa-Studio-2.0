@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
+import { useOverlayBotConfig } from "../../lib/sohbetBot/useOverlayWidgetEvents";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
 
 export default function WheelPage() {
   useObsKeepalive();

@@ -19,24 +19,24 @@ use crate::AppState;
 pub fn router() -> Router<Arc<AppState>> {
   Router::new()
     .route("/api/webhooks/donations", post(api_donations_webhook))
-    .route("/api/botaxt/runtime/poll", get(api_poll_get).post(api_poll_start))
-    .route("/api/botaxt/runtime/poll/stop", post(api_poll_stop))
+    .route("/api/bot/runtime/poll", get(api_poll_get).post(api_poll_start))
+    .route("/api/bot/runtime/poll/stop", post(api_poll_stop))
     .route(
-      "/api/botaxt/runtime/raffle",
+      "/api/bot/runtime/raffle",
       get(api_raffle_get).post(api_raffle_start),
     )
-    .route("/api/botaxt/runtime/raffle/draw", post(api_raffle_draw))
-    .route("/api/botaxt/runtime/raffle/stop", post(api_raffle_stop))
+    .route("/api/bot/runtime/raffle/draw", post(api_raffle_draw))
+    .route("/api/bot/runtime/raffle/stop", post(api_raffle_stop))
     .route(
-      "/api/botaxt/runtime/songs",
+      "/api/bot/runtime/songs",
       get(api_songs_get).post(api_songs_add),
     )
-    .route("/api/botaxt/runtime/songs/skip", post(api_songs_skip))
-    .route("/api/botaxt/runtime/songs/play", post(api_songs_play))
-    .route("/api/botaxt/runtime/songs/pause", post(api_songs_pause))
-    .route("/api/botaxt/runtime/songs/clear", post(api_songs_clear))
-    .route("/api/botaxt/runtime/songs/reorder", post(api_songs_reorder))
-    .route("/api/botaxt/runtime/bus", post(api_widget_bus))
+    .route("/api/bot/runtime/songs/skip", post(api_songs_skip))
+    .route("/api/bot/runtime/songs/play", post(api_songs_play))
+    .route("/api/bot/runtime/songs/pause", post(api_songs_pause))
+    .route("/api/bot/runtime/songs/clear", post(api_songs_clear))
+    .route("/api/bot/runtime/songs/reorder", post(api_songs_reorder))
+    .route("/api/bot/runtime/bus", post(api_widget_bus))
 }
 
 fn broadcast_poll(state: &AppState) {
@@ -432,14 +432,14 @@ async fn api_donations_webhook(
   };
 
   // goals tablosuna ekle (ilk aktif hedef veya goal_id)
-  if let Err(e) = crate::db::botaxt_api::apply_donation_to_goals(
+  if let Err(e) = crate::db::bot_api::apply_donation_to_goals(
     &state.db,
     amount,
     body.goal_id.as_deref(),
   )
   .await
   {
-    yya_warn!("[webhook/donations] goal update: {e:#}");
+    studio_warn!("[webhook/donations] goal update: {e:#}");
   }
 
   // Widget config current alanını da artır (kind=goal)
@@ -467,7 +467,7 @@ async fn api_donations_webhook(
         }
       }
     }
-    Err(e) => yya_warn!("[webhook/donations] widget bump: {e:#}"),
+    Err(e) => studio_warn!("[webhook/donations] widget bump: {e:#}"),
   }
 
   state.broadcast_json(&json!({
@@ -510,7 +510,7 @@ struct RuntimeCmdFlags {
 }
 
 fn runtime_command_flags(extras_json: &str) -> RuntimeCmdFlags {
-  let extras = crate::db::botaxt_api::parse_json_object(extras_json);
+  let extras = crate::db::bot_api::parse_json_object(extras_json);
   let rc = extras.get("runtime_commands").cloned().unwrap_or(json!({}));
   RuntimeCmdFlags {
     oy: rc.get("oy").and_then(|v| v.as_bool()).unwrap_or(true),

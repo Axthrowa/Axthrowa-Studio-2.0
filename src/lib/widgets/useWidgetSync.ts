@@ -383,7 +383,7 @@ export async function fetchWidgetConfig(
   kind: string
 ): Promise<Record<string, unknown>> {
   try {
-    const res = await fetch(`${API_BASE}/api/botaxt/widgets`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/bot/widgets`, { cache: "no-store" });
     if (!res.ok) return {};
     const j = (await res.json()) as {
       widgets?: Array<{ kind?: string; config?: Record<string, unknown>; config_json?: string }>;

@@ -535,7 +535,7 @@ body.panel-app,
 }
 
 :root[data-skin="cyber-neon"] .studio-nav-btn:hover,
-:root[data-skin="cyber-neon"] .yya-btn-primary:hover {
+:root[data-skin="cyber-neon"] .studio-btn-primary:hover {
   /* Yazı üstünde glow = bulanık yazı; parlama yalnız kutuda kalsın. */
   box-shadow: 0 0 18px var(--panel-accent-glow);
 }
@@ -549,7 +549,7 @@ body.panel-app,
    eziyordu (aynı özgüllük, bu kural sonra geliyor). Menü z=1'de kalınca,
    DOM'da sonra gelen içerik sütunu onun ÜSTÜNE çiziliyordu: menü açılınca
    Giriş/Çıkış/Mola ekranlarında arkada kalıyor ve şeffafmış gibi görünüyordu. */
-.panel-shell > .yya-nav-rail {
+.panel-shell > .studio-nav-rail {
   z-index: 80;
 }
 .panel-shell > header {
@@ -582,42 +582,42 @@ textarea::placeholder {
 }
 
 @layer components {
-  .yya-card {
+  .studio-card {
     @apply rounded-md border border-white/[0.07] bg-white/[0.025] p-3.5 transition-colors duration-150;
   }
-  .yya-card-hover {
-    @apply yya-card hover:border-white/[0.14] hover:bg-white/[0.05];
+  .studio-card-hover {
+    @apply studio-card hover:border-white/[0.14] hover:bg-white/[0.05];
   }
-  .yya-input {
+  .studio-input {
     @apply h-9 w-full rounded border border-white/[0.12] bg-black/50 px-3 text-xs md:text-sm font-medium text-white outline-none transition-colors duration-150;
   }
-  .yya-input:focus {
+  .studio-input:focus {
     border-color: color-mix(in srgb, var(--panel-accent) 65%, transparent);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-accent) 40%, transparent);
   }
-  .yya-btn {
+  .studio-btn {
     @apply inline-flex h-9 items-center justify-center gap-2 rounded px-3.5 text-xs md:text-sm font-semibold transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none;
   }
-  .yya-btn-primary {
-    @apply yya-btn bg-panel-accent text-[color:var(--panel-cta-ink)] hover:brightness-110;
+  .studio-btn-primary {
+    @apply studio-btn bg-panel-accent text-[color:var(--panel-cta-ink)] hover:brightness-110;
   }
-  .yya-btn-accent {
-    @apply yya-btn bg-cyan-400 text-[#022227] hover:bg-cyan-300;
+  .studio-btn-accent {
+    @apply studio-btn bg-cyan-400 text-[#022227] hover:bg-cyan-300;
   }
-  .yya-btn-ghost {
-    @apply yya-btn border border-white/[0.08] bg-white/[0.02] text-white/80 hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-white;
+  .studio-btn-ghost {
+    @apply studio-btn border border-white/[0.08] bg-white/[0.02] text-white/80 hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-white;
   }
-  .yya-btn-danger {
-    @apply yya-btn border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/20 hover:border-red-500/50;
+  .studio-btn-danger {
+    @apply studio-btn border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/20 hover:border-red-500/50;
   }
-  .yya-nav-item {
+  .studio-nav-item {
     @apply flex w-full flex-col rounded-lg px-2.5 py-2 text-left transition-all duration-150;
   }
-  .yya-nav-item-active {
-    @apply yya-nav-item bg-cyan-400/15 text-cyan-300 font-semibold;
+  .studio-nav-item-active {
+    @apply studio-nav-item bg-cyan-400/15 text-cyan-300 font-semibold;
   }
-  .yya-nav-item-idle {
-    @apply yya-nav-item text-white/60 hover:bg-white/[0.06] hover:text-white/90;
+  .studio-nav-item-idle {
+    @apply studio-nav-item text-white/60 hover:bg-white/[0.06] hover:text-white/90;
   }
   .studio-nav-btn {
     @apply flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-all duration-150;
@@ -659,37 +659,37 @@ textarea::placeholder {
   .glow-turquoise {
     box-shadow: 0 0 35px -5px rgba(62, 237, 254, 0.3);
   }
-  .yya-pill {
+  .studio-pill {
     @apply rounded-full px-3 py-1 text-xs font-semibold transition-all duration-150;
   }
-  .yya-section-title {
+  .studio-section-title {
     @apply text-base font-bold tracking-tight text-white;
   }
-  .yya-section-sub {
+  .studio-section-sub {
     @apply mt-0.5 max-w-xl text-xs leading-relaxed text-white/80;
   }
-  .yya-stat {
+  .studio-stat {
     @apply rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3 shadow-sm;
   }
-  .yya-label {
+  .studio-label {
     @apply text-xs font-bold uppercase tracking-wider text-white/80;
   }
-  .yya-value {
+  .studio-value {
     @apply text-sm font-semibold text-white;
   }
-  .yya-settings-panel {
+  .studio-settings-panel {
     @apply overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025];
   }
-  .yya-modal-backdrop {
+  .studio-modal-backdrop {
     @apply bg-black/60 backdrop-blur-md;
   }
 
   /* Widget kök — OBS tam ekran; Master slot içinde parent’ı doldur */
-  .yya-widget-root {
+  .studio-widget-root {
     @apply relative h-screen w-screen bg-transparent;
   }
-  [data-master-slot="1"] .yya-widget-root,
-  [data-master-slot="1"] .yya-widget-stage {
+  [data-master-slot="1"] .studio-widget-root,
+  [data-master-slot="1"] .studio-widget-stage {
     height: 100% !important;
     width: 100% !important;
     max-height: 100% !important;
@@ -840,21 +840,21 @@ html.theme-light .text-white\/90 {
 :root.theme-light .text-panel-accent\/60 {
   color: rgb(var(--accent-text-rgb));
 }
-:root.theme-light .yya-btn-ghost {
+:root.theme-light .studio-btn-ghost {
   border-color: rgb(var(--fg-rgb) / 0.18);
   color: rgb(var(--fg-rgb) / 0.8);
 }
-:root.theme-light .yya-btn-ghost:hover {
+:root.theme-light .studio-btn-ghost:hover {
   background-color: rgb(var(--fg-rgb) / 0.06);
   color: rgb(var(--fg-rgb));
 }
-:root.theme-light .yya-pill {
+:root.theme-light .studio-pill {
   color: rgb(var(--fg-rgb) / 0.75);
 }
-:root.theme-light .yya-pill.text-panel-accent {
+:root.theme-light .studio-pill.text-panel-accent {
   color: rgb(var(--accent-text-rgb));
 }
-:root.theme-light .yya-input {
+:root.theme-light .studio-input {
   border-color: rgb(var(--fg-rgb) / 0.22);
 }
 html.theme-light .border-panel-border,
@@ -1037,10 +1037,10 @@ html.obs-transparent body.panel-app {
    `outline-none` sınıfını da ezer (aynı özgüllük, sonra gelir).
 --------------------------------------------------------------------------- */
 :root {
-  --yya-odak: rgb(var(--accent-text-rgb));
+  --studio-odak: rgb(var(--accent-text-rgb));
 }
 :root :focus-visible {
-  outline: 2px solid var(--yya-odak);
+  outline: 2px solid var(--studio-odak);
   outline-offset: 2px;
 }
 
@@ -1068,7 +1068,7 @@ html.obs-transparent body.panel-app {
   --basma: 1;
 }
 
-@keyframes yya-gir {
+@keyframes studio-gir {
   from {
     opacity: 0;
     translate: 0 var(--hareket-mesafe);
@@ -1077,21 +1077,21 @@ html.obs-transparent body.panel-app {
 
 /* Sayfa / sekme geçişi: içerik değişince yeniden takılır (key). `backwards`:
    bitince hiçbir değer kalmaz, sabit konumlu çocukların kapsayıcısı bozulmaz. */
-.yya-sayfa-gir {
-  animation: yya-gir var(--hz-giris) var(--egri-giris) backwards;
+.studio-sayfa-gir {
+  animation: studio-gir var(--hz-giris) var(--egri-giris) backwards;
 }
 
 /* Liste öğeleri: sırayla, en çok 7 adım gecikme */
-.yya-liste-gir > * {
-  animation: yya-gir var(--hz-giris) var(--egri-giris) backwards;
+.studio-liste-gir > * {
+  animation: studio-gir var(--hz-giris) var(--egri-giris) backwards;
 }
-.yya-liste-gir > :nth-child(2) { animation-delay: 30ms; }
-.yya-liste-gir > :nth-child(3) { animation-delay: 60ms; }
-.yya-liste-gir > :nth-child(4) { animation-delay: 90ms; }
-.yya-liste-gir > :nth-child(5) { animation-delay: 120ms; }
-.yya-liste-gir > :nth-child(6) { animation-delay: 150ms; }
-.yya-liste-gir > :nth-child(7) { animation-delay: 180ms; }
-.yya-liste-gir > :nth-child(n + 8) { animation-delay: 210ms; }
+.studio-liste-gir > :nth-child(2) { animation-delay: 30ms; }
+.studio-liste-gir > :nth-child(3) { animation-delay: 60ms; }
+.studio-liste-gir > :nth-child(4) { animation-delay: 90ms; }
+.studio-liste-gir > :nth-child(5) { animation-delay: 120ms; }
+.studio-liste-gir > :nth-child(6) { animation-delay: 150ms; }
+.studio-liste-gir > :nth-child(7) { animation-delay: 180ms; }
+.studio-liste-gir > :nth-child(n + 8) { animation-delay: 210ms; }
 
 /* Açılır pencere, ipucu, bildirim: giriş 220ms, çıkış 140ms */
 .animate-zoom-in,
@@ -1109,14 +1109,14 @@ html.obs-transparent body.panel-app {
 :root[data-hareket="azaltilmis"] .animate-zoom-out {
   animation-name: fade-out;
 }
-@keyframes yya-modal-gir {
+@keyframes studio-modal-gir {
   from {
     opacity: 0;
     scale: 0.97;
   }
 }
 .dt-modal {
-  animation: yya-modal-gir var(--hz-giris) var(--egri-giris) backwards;
+  animation: studio-modal-gir var(--hz-giris) var(--egri-giris) backwards;
 }
 :root[data-hareket="azaltilmis"] .dt-modal {
   animation-name: fade-in;
@@ -1124,7 +1124,7 @@ html.obs-transparent body.panel-app {
 
 /* Düğme basma ve kart kalkışı: `scale` / `translate` ayrı özellikler, Tailwind
    `transform`'uyla (konumlandırma, active:scale-95) çakışmaz. */
-.panel-shell :is(button, [role="button"], .yya-btn):not(:disabled, .obs-canvas-wrap *):active {
+.panel-shell :is(button, [role="button"], .studio-btn):not(:disabled, .obs-canvas-wrap *):active {
   scale: var(--basma);
 }
 .panel-shell button:not([class*="transition"], [class*="dt-"]) {
@@ -1133,14 +1133,14 @@ html.obs-transparent body.panel-app {
 .panel-shell button.transition-colors {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, scale;
 }
-.yya-card-hover,
-.yya-kalk {
+.studio-card-hover,
+.studio-kalk {
   transition-property: color, background-color, border-color, box-shadow, translate, scale;
   transition-duration: 180ms;
   transition-timing-function: var(--egri-giris);
 }
-.yya-card-hover:hover,
-.yya-kalk:hover {
+.studio-card-hover:hover,
+.studio-kalk:hover {
   translate: 0 var(--hover-kalk);
 }
 
@@ -1155,8 +1155,8 @@ html.obs-transparent body.panel-app {
   transition-delay: 0s !important;
   scroll-behavior: auto !important;
 }
-:root[data-hareket="kapali"] .panel-shell :is(button, [role="button"], .yya-btn):active,
-:root[data-hareket="kapali"] :is(.yya-card-hover, .yya-kalk):hover {
+:root[data-hareket="kapali"] .panel-shell :is(button, [role="button"], .studio-btn):active,
+:root[data-hareket="kapali"] :is(.studio-card-hover, .studio-kalk):hover {
   scale: none;
   translate: none;
 }
@@ -1167,14 +1167,14 @@ html.obs-transparent body.panel-app {
 :root[data-yogunluk="siki"] .panel-shell .p-6:not(.obs-canvas-wrap *) { padding: 1rem; }
 :root[data-yogunluk="siki"] .panel-shell .p-5:not(.obs-canvas-wrap *) { padding: 0.875rem; }
 :root[data-yogunluk="siki"] .panel-shell .p-4:not(.obs-canvas-wrap *) { padding: 0.75rem; }
-:root[data-yogunluk="siki"] .panel-shell :is(.p-3, .p-3\.5, .yya-card):not(.obs-canvas-wrap *) { padding: 0.5rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.p-3, .p-3\.5, .studio-card):not(.obs-canvas-wrap *) { padding: 0.5rem; }
 :root[data-yogunluk="siki"] .panel-shell :is(.px-4, .px-5):not(.obs-canvas-wrap *) { padding-left: 0.75rem; padding-right: 0.75rem; }
 :root[data-yogunluk="siki"] .panel-shell :is(.py-3, .py-2\.5):not(.obs-canvas-wrap *) { padding-top: 0.375rem; padding-bottom: 0.375rem; }
 :root[data-yogunluk="siki"] .panel-shell :is(.gap-4, .gap-5):not(.obs-canvas-wrap *) { gap: 0.625rem; }
 :root[data-yogunluk="siki"] .panel-shell :is(.gap-3, .gap-3\.5):not(.obs-canvas-wrap *) { gap: 0.5rem; }
 :root[data-yogunluk="siki"] .panel-shell :is(.space-y-4, .space-y-5):not(.obs-canvas-wrap *) > :not([hidden]) ~ :not([hidden]) { margin-top: 0.625rem; }
 :root[data-yogunluk="siki"] .panel-shell :is(.space-y-3, .space-y-2\.5):not(.obs-canvas-wrap *) > :not([hidden]) ~ :not([hidden]) { margin-top: 0.4rem; }
-:root[data-yogunluk="siki"] .panel-shell :is(.yya-btn, .yya-btn-primary, .yya-btn-ghost, .yya-btn-danger, .yya-btn-accent, .yya-input):not(.obs-canvas-wrap *) { height: 2rem; }
+:root[data-yogunluk="siki"] .panel-shell :is(.studio-btn, .studio-btn-primary, .studio-btn-ghost, .studio-btn-danger, .studio-btn-accent, .studio-input):not(.obs-canvas-wrap *) { height: 2rem; }
 
 /* ---------------------------------------------------------------------------
    Köşeler — Yuvarlak (varsayılan, değişiklik yok) · Az · Keskin.
@@ -1188,7 +1188,7 @@ html.obs-transparent body.panel-app {
 :root[data-kose="keskin"] .panel-shell :is(.rounded-md, .rounded):not(.obs-canvas-wrap *) { border-radius: 2px; }
 
 /* Komut paletinden açılan ayar: kısa süre vurgulanır */
-.yya-ayar-vurgu {
+.studio-ayar-vurgu {
   outline: 2px solid var(--panel-accent, #22d3ee);
   outline-offset: 3px;
   border-radius: 4px;

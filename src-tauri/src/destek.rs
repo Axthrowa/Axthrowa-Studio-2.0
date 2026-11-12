@@ -222,7 +222,7 @@ mod tests {
 
   #[test]
   fn son_satirlar_utf16_ve_sinir() {
-    let d = std::env::temp_dir().join(format!("yya-destek-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("studio-destek-{}", std::process::id()));
     std::fs::create_dir_all(&d).unwrap();
     let u8y = d.join("a.log");
     std::fs::write(&u8y, "1\n2\n3\n4\n").unwrap();

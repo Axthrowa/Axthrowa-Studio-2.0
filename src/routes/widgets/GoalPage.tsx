@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
-import type { StreamGoal } from "../../lib/smartBot/v2";
+import { useOverlayBotConfig } from "../../lib/sohbetBot/useOverlayWidgetEvents";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
+import type { StreamGoal } from "../../lib/sohbetBot/v2";
 import GoalWidget from "../../components/widgets/GoalWidget";
 
 const KIND_ALIASES: Record<string, StreamGoal["kind"]> = {

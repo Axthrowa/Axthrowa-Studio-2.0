@@ -16,15 +16,15 @@ use axum::response::Response;
 
 use crate::AppState;
 
-use super::botaxt::{extract_bearer, map_err_status};
+use super::bot_api::{extract_bearer, map_err_status};
 
 /// Overlay / OAuth / login gibi herkese açık yollar.
 pub fn is_public_path(path: &str) -> bool {
   if path == "/" || path == "/api/health" || path == "/api/server" {
     return true;
   }
-  if path.starts_with("/api/botaxt/remote/login")
-    || path.starts_with("/api/botaxt/remote/setup")
+  if path.starts_with("/api/bot/remote/login")
+    || path.starts_with("/api/bot/remote/setup")
   {
     return true;
   }
@@ -58,7 +58,7 @@ pub fn is_public_path(path: &str) -> bool {
     return true;
   }
   // Statik paket (js/css) — SPA yüklenmesi için. `/api/` hariç: uzantı kuralı
-  // `/api/botaxt/integrations/x.png` gibi parametreli uçları Bearer'sız açıyordu.
+  // `/api/bot/integrations/x.png` gibi parametreli uçları Bearer'sız açıyordu.
   if !path.starts_with("/api/")
     && (path.ends_with(".js")
     || path.ends_with(".css")
@@ -92,12 +92,12 @@ pub async fn require_bearer_outside_loopback(
     "Yetkisiz: uzak erişim için Bearer token gerekli (Settings → Alt kullanıcılar)".into(),
   ))?;
 
-  let info = crate::db::botaxt_api::remote_auth_full(&state.db, &token)
+  let info = crate::db::bot_api::remote_auth_full(&state.db, &token)
     .await
     .map_err(map_err_status)?;
   // Kısıtlı uzak kullanıcı yalnız kendi yetkisini denetleyen uçlara girer; eskiden geçerli her token
   // ayarlar, Kick, müzik gibi denetimsiz uçları da açıyordu
-  if !crate::db::botaxt_api::remote_has_perm(&info, "*") && !perm_checked_path(&path) {
+  if !crate::db::bot_api::remote_has_perm(&info, "*") && !perm_checked_path(&path) {
     return Err((StatusCode::FORBIDDEN, "Bu uç yalnız yönetici içindir".into()));
   }
 
@@ -107,7 +107,7 @@ pub async fn require_bearer_outside_loopback(
 /// İşleyicisi `remote_has_perm` ile kendi yetkisini denetleyen uçlar.
 fn perm_checked_path(path: &str) -> bool {
   [
-    "/api/botaxt/remote/",
+    "/api/bot/remote/",
     "/api/actions",
     "/api/asistan",
     "/api/obs/",
@@ -124,7 +124,7 @@ fn perm_checked_path(path: &str) -> bool {
 
 /// Panel ayarı / env: `0.0.0.0` veya `127.0.0.1`.
 pub fn resolve_bind_host(state: &AppState) -> [u8; 4] {
-  if let Ok(v) = std::env::var("BOTAXT_BIND") {
+  if let Ok(v) = std::env::var("STUDIO_BIND") {
     let t = v.trim().to_ascii_lowercase();
     if t == "0.0.0.0" || t == "lan" || t == "all" {
       return [0, 0, 0, 0];
@@ -153,8 +153,8 @@ mod tests {
 
   #[test]
   fn api_ucu_uzantiyla_herkese_acilmaz() {
-    assert!(!is_public_path("/api/botaxt/integrations/x.png"));
-    assert!(!is_public_path("/api/botaxt/widgets/a.js"));
+    assert!(!is_public_path("/api/bot/integrations/x.png"));
+    assert!(!is_public_path("/api/bot/widgets/a.js"));
     assert!(is_public_path("/assets/index-abc.js"));
     assert!(is_public_path("/logo.png"));
     assert!(is_public_path("/api/kick/oauth/callback"));
@@ -163,9 +163,9 @@ mod tests {
   #[test]
   fn kisitli_kullanici_denetimsiz_uca_giremez() {
     assert!(perm_checked_path("/api/multistream/status"));
-    assert!(perm_checked_path("/api/botaxt/remote/chat/send"));
+    assert!(perm_checked_path("/api/bot/remote/chat/send"));
     assert!(!perm_checked_path("/api/settings"));
     assert!(!perm_checked_path("/api/kick/oauth/disconnect"));
-    assert!(!perm_checked_path("/api/botaxt/alerts"));
+    assert!(!perm_checked_path("/api/bot/alerts"));
   }
 }

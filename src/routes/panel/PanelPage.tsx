@@ -41,7 +41,7 @@ const BotSessions = lazy(() => import("../../components/panel/BotSessions"));
 const BotEkrani = lazy(() => import("../../components/panel/BotEkrani"));
 const AppSettingsPage = lazy(() => import("../../components/panel/AppSettingsPage"));
 const SoundBoardPanel = lazy(() => import("../../components/panel/SoundBoardPanel"));
-const StreamAxtHost = lazy(() => import("../../components/panel/StreamAxtHost"));
+const AxBotHost = lazy(() => import("../../components/panel/AxBotHost"));
 const ProfileDashboard = lazy(() => import("../../components/panel/ProfileDashboard"));
 const ConnectionsHub = lazy(() => import("../../components/panel/ConnectionsHub"));
 const ObsControlHub = lazy(() => import("../../components/studio/ObsControlHub"));
@@ -100,12 +100,12 @@ import {
 import { ruleStopStream } from "../../lib/endRules";
 import { obsControl } from "../../lib/obsControl";
 import { clearPlatformChats, clearResultToast, temizlenebilirPlatformlar } from "../../lib/clearPlatformChats";
-import { endSession, fetchDashboard, startSession } from "../../lib/api/botaxt";
+import { endSession, fetchDashboard, startSession } from "../../lib/api/botApi";
 import { loadObsSaved, saveObsSaved } from "../../lib/obsPersist";
 import { pickObsConnection, sameObsConnection } from "../../lib/obsConnection";
 import { suggestSceneMap, type SceneRole } from "../../lib/sceneSuggest";
-import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
-import { notifyDiscordLive } from "../../lib/smartBot/platformActions";
+import { getBotConfig, saveBotConfig } from "../../lib/sohbetBot";
+import { notifyDiscordLive } from "../../lib/sohbetBot/platformActions";
 import { useCreditsCollector } from "../../lib/useCreditsCollector";
 import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec } from "../../lib/globalHotkeys";
 import { useVideoDownload } from "../../lib/useVideoDownload";
@@ -173,7 +173,7 @@ export default function PanelPage() {
       yayinSagligiIzle(
         async () => (isObsConnected() ? getStreamHealth() : null),
         (u) => ("temizle" in u ? clearNotice(u.id) : pushNotice({ id: u.id, level: u.seviye, text: u.metin, hint: u.ipucu })),
-        () => localStorage.getItem("yya.saglikSesi") !== "0"
+        () => localStorage.getItem("studio.saglikSesi") !== "0"
       ),
     []
   );
@@ -278,7 +278,7 @@ export default function PanelPage() {
   const [masterBusy, setMasterBusy] = useState(false);
   const [menuGizli, setMenuGizli] = useState(() => {
     try {
-      return localStorage.getItem("yya.panel.menuGizli") === "1";
+      return localStorage.getItem("studio.panel.menuGizli") === "1";
     } catch {
       return false;
     }
@@ -286,7 +286,7 @@ export default function PanelPage() {
   const menuGizle = () =>
     setMenuGizli((g) => {
       try {
-        localStorage.setItem("yya.panel.menuGizli", g ? "0" : "1");
+        localStorage.setItem("studio.panel.menuGizli", g ? "0" : "1");
       } catch {
         /* saklanamadı: bu oturumda yine geçerli */
       }
@@ -1761,7 +1761,7 @@ export default function PanelPage() {
       </header>
 
       {/* Sayfa geçişi: yalnız gösterilen dal değişince yeniden takılır; aynı daldaki sekmeler (Giriş/Çıkış/Mola) durumunu korur */}
-      <div key={sayfaDali} className="yya-sayfa-gir flex min-h-0 flex-1 flex-col">
+      <div key={sayfaDali} className="studio-sayfa-gir flex min-h-0 flex-1 flex-col">
       <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
       {profileTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4">
@@ -1875,7 +1875,7 @@ export default function PanelPage() {
                 })}
               </div>
             ) : null}
-            <StreamAxtHost onToast={showToast} tab={botSekme || "overlays"} embed onOpenMusic={() => setActiveNav("music")} />
+            <AxBotHost onToast={showToast} tab={botSekme || "overlays"} embed onOpenMusic={() => setActiveNav("music")} />
           </div>
         )
       ) : chatTab && !chatOverlaySettings ? (
@@ -1892,7 +1892,7 @@ export default function PanelPage() {
               Sohbet katmanı ayarları
             </button>
           </div>
-          <StreamAxtHost onToast={showToast} tab="multichat" embed onOpenMusic={() => {
+          <AxBotHost onToast={showToast} tab="multichat" embed onOpenMusic={() => {
             setActiveNav("music");
           }} />
         </div>
@@ -1909,7 +1909,7 @@ export default function PanelPage() {
         <AppSettingsPage
           prefs={prefs}
           onPrefs={setPrefs}
-          version={__YYA_SURUM__}
+          version={__STUDIO_SURUM__}
           layout={layout}
         />
         </div>

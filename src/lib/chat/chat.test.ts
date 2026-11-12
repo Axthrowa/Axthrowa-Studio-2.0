@@ -32,8 +32,8 @@ describe("normalizeChat", () => {
   it("roller, bot/sistem, kara liste ve kalkan işaretleri", () => {
     const m = normalizeChat(yuk({}, { isMod: true, isBroadcaster: true }))!;
     expect(m.roles).toEqual(["broadcaster", "moderator", "subscriber"]);
-    expect(normalizeChat(yuk({}, { id: "streamaxt_bot" }))!.isBot).toBe(true);
-    expect(normalizeChat(yuk({}, { id: "streamaxt_system" }))!.isSystem).toBe(true);
+    expect(normalizeChat(yuk({}, { id: "axbot_bot" }))!.isBot).toBe(true);
+    expect(normalizeChat(yuk({}, { id: "axbot_system" }))!.isSystem).toBe(true);
     expect(normalizeChat(yuk({ karaListede: true }))!.moderation).toBe("blocked");
     const k = normalizeChat(yuk({ kalkanda: "caps" }))!;
     expect(k.moderation).toBe("shielded");
@@ -85,7 +85,7 @@ describe("sohbet deposu", () => {
     s = addChat(s, normalizeChat(yuk({ id: "a", message: "@axthrowa selam" }))!);
     s = addChat(s, normalizeChat(yuk({ id: "b", platform: "kick", message: "bu hangi oyun?" }, { id: "k1", isSub: false }))!);
     s = addChat(s, normalizeChat(yuk({ id: "c", karaListede: true }, { id: "u9" }))!);
-    s = addChat(s, normalizeChat(yuk({ id: "d", message: "komut çalıştı" }, { id: "streamaxt_bot" }))!);
+    s = addChat(s, normalizeChat(yuk({ id: "d", message: "komut çalıştı" }, { id: "axbot_bot" }))!);
     const ids = (f: Partial<ChatFilter>) => filterChat(s.messages, { ...tum, ...f }).map((m) => m.messageId);
     expect(ids({ view: "mentions" })).toEqual(["a"]);
     expect(ids({ view: "questions" })).toEqual(["b"]);

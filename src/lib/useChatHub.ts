@@ -12,7 +12,7 @@ import type { ChatBadge } from "./chatBadges";
 import { KICK_ICONS, TWITCH_FALLBACK_ICONS, YOUTUBE_ICONS } from "./badgeIcons";
 import { kickParts, textPart } from "./chatParts";
 import { pushAppAlert } from "./appAlert";
-import { isLocalBotUser } from "./smartBot/botIdentity";
+import { isLocalBotUser } from "./sohbetBot/botIdentity";
 
 const INITIAL_STATUS: Record<Platform, PlatformStatus> = {
   kick: { platform: "kick", state: "off", detail: "kapalı", channel: "" },
@@ -231,7 +231,7 @@ export function useChatHub(
         key: `bot-ann-${id}-${Math.random().toString(36).slice(2, 7)}`,
         id: `bot-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
         platform,
-        user: String((ann as { user?: string }).user || "BotAxT"),
+        user: String((ann as { user?: string }).user || "AxBoT"),
         text: line,
         parts: [{ type: "text", text: line }],
         color: "#fbbf24",

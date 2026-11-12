@@ -5,7 +5,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use serde_json::json;
 
-use crate::db::botaxt_api::get_bot_settings;
+use crate::db::bot_api::get_bot_settings;
 use crate::db::loyalty::ensure_loyalty_user;
 use crate::db::profile::log_event;
 use crate::db::{chrono_now, default_channel_id};
@@ -52,7 +52,7 @@ pub async fn resolve_channels(state: &AppState) -> ChannelConfig {
 
   if kick.is_none() {
     kick = panel
-      .pointer("/smartBot/channelName")
+      .pointer("/sohbetBot/channelName")
       .and_then(|v| v.as_str())
       .or_else(|| panel.get("kickChannel").and_then(|v| v.as_str()))
       .map(|s| s.trim().to_string())
@@ -68,7 +68,7 @@ pub async fn resolve_channels(state: &AppState) -> ChannelConfig {
   }
   if twitch.is_none() {
     twitch = panel
-      .pointer("/smartBot/twitchChannel")
+      .pointer("/sohbetBot/twitchChannel")
       .and_then(|v| v.as_str())
       .or_else(|| starting.pointer("/socials/twitch").and_then(|v| v.as_str()))
       .map(|s| s.trim().trim_start_matches('#').to_string())

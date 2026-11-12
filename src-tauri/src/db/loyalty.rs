@@ -5,7 +5,7 @@ use anyhow::Result;
 use serde_json::json;
 use sqlx::SqlitePool;
 
-use crate::db::botaxt_api::get_loyalty_settings;
+use crate::db::bot_api::get_loyalty_settings;
 use crate::db::chrono_now;
 use crate::db::default_channel_id;
 use crate::db::models::LoyaltyUser;
@@ -85,10 +85,10 @@ pub async fn loyalty_tick(pool: &SqlitePool) -> Result<serde_json::Value> {
   .fetch_optional(pool)
   .await?;
   let watch_override = extras_raw.and_then(|(raw,)| {
-    let extras = crate::db::botaxt_api::parse_json_object(&raw);
+    let extras = crate::db::bot_api::parse_json_object(&raw);
     let chat = extras.get("chatbot_extras").cloned().unwrap_or(json!({}));
     let chat = if chat.is_string() {
-      crate::db::botaxt_api::parse_json_object(chat.as_str().unwrap_or(""))
+      crate::db::bot_api::parse_json_object(chat.as_str().unwrap_or(""))
     } else {
       chat
     };

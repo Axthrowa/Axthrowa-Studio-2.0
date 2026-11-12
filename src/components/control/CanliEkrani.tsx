@@ -13,7 +13,7 @@ import { actionsApi } from "../../lib/api/actions";
 import { getStreamHealth, isObsConnected, onObsConnection, type StreamHealth } from "../../lib/obs";
 import { isAudioInput, onizlemeBeklemesi, onizlemeGenisligi } from "../../lib/obsAudio";
 import { obsControl, type ObsInputInfo, type ObsSceneSnapshot } from "../../lib/obsControl";
-import { streamaxtBase } from "../../lib/streamaxt";
+import { axbotBase } from "../../lib/axbot";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { bitHiziKbps, ESIK } from "../../lib/yayinSagligi";
 import SohbetTemizleDiyalogu from "../panel/SohbetTemizleDiyalogu";
@@ -40,7 +40,7 @@ type Props = {
   yerelPanel: (id: string) => ReactNode;
 };
 
-const StreamAxtHost = lazy(() => import("../panel/StreamAxtHost"));
+const AxBotHost = lazy(() => import("../panel/AxBotHost"));
 
 type BotDurumu = {
   canli?: { izleyici?: number; platformlar?: { platform: string; canli?: boolean; izleyici?: number }[] };
@@ -141,8 +141,8 @@ function ayniysaKoru<T>(yeni: T) {
   return <E,>(eski: E): E | T => (JSON.stringify(eski) === JSON.stringify(yeni) ? eski : yeni);
 }
 
-const ONIZLEME_KAPALI_KEY = "yya.canli.onizlemeKapali";
-const GENIS_SOHBET_KEY = "yya.canli.genisSohbet";
+const ONIZLEME_KAPALI_KEY = "studio.canli.onizlemeKapali";
+const GENIS_SOHBET_KEY = "studio.canli.genisSohbet";
 
 function kayitliOnizlemeAcik(): boolean {
   try {
@@ -311,7 +311,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
     const obsBirak = onObsConnection(() => void obsYukle());
     const botYukle = async () => {
       try {
-        const base = await streamaxtBase();
+        const base = await axbotBase();
         const [d, p] = await Promise.all([
           fetch(`${base}/api/status`, { cache: "no-store" }).then((r) => r.json()),
           fetch(`${base}/api/pinned`, { cache: "no-store" }).then((r) => r.json()),
@@ -376,7 +376,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
 
   const soruSor = async () => {
     try {
-      const r = await fetch(`${await streamaxtBase()}/api/games/trigger`, {
+      const r = await fetch(`${await axbotBase()}/api/games/trigger`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ game: "trivia" }),
@@ -389,14 +389,14 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
 
   const sabitiKaldir = async () => {
     setSabit(null);
-    await fetch(`${await streamaxtBase()}/api/pinned`, { method: "DELETE" }).catch(() => {});
+    await fetch(`${await axbotBase()}/api/pinned`, { method: "DELETE" }).catch(() => {});
   };
 
   if (gelismis) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 px-4 pt-3">
-          <button type="button" className="yya-btn-ghost h-9 px-3 text-xs font-semibold" onClick={() => setGelismis(false)}>
+          <button type="button" className="studio-btn-ghost h-9 px-3 text-xs font-semibold" onClick={() => setGelismis(false)}>
             ← Canlı ekranına dön
           </button>
         </div>
@@ -490,7 +490,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
                   <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
                     {sekmesi ? (
                       <div className="flex h-full min-h-0 flex-col">
-                        <StreamAxtHost onToast={onToast} tab={sekmesi} embed onOpenMusic={() => onBot(sekmesi)} />
+                        <AxBotHost onToast={onToast} tab={sekmesi} embed onOpenMusic={() => onBot(sekmesi)} />
                       </div>
                     ) : (
                       <Sigdir>{yerelPanel(id)}</Sigdir>
@@ -581,7 +581,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
           {/* İkisi de bağlı kalır: sekme değişince liste ve filtreler kaybolmasın */}
           <div className={`flex min-h-0 flex-1 flex-col ${sekme === "sohbet" ? "" : "hidden"}`}>
             <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
-              <StreamAxtHost onToast={onToast} tab="multichat" embed onOpenMusic={() => onBot("multichat")} />
+              <AxBotHost onToast={onToast} tab="multichat" embed onOpenMusic={() => onBot("multichat")} />
             </Suspense>
           </div>
           <div className={`custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2 ${sekme === "olaylar" ? "" : "hidden"}`}><ActivityFeedPanel onToast={onToast} /></div>

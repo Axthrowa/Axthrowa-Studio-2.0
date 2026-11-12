@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
-use yayin_yonetim_araci_lib::AppState;
+use axthrowa_studio_lib::AppState;
 
 struct Harness {
   base: String,
@@ -35,7 +35,7 @@ fn free_port() -> u16 {
 }
 
 async fn make_state(root: PathBuf, portable: bool, port: u16) -> AppState {
-  yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.test");
+  axthrowa_studio_lib::secret_store::set_service_override("com.axthrowa.studio.test");
   let data_dir = root.join("app-data");
   tokio::task::spawn_blocking(move || AppState::new(root, data_dir, portable, port))
     .await
@@ -50,7 +50,7 @@ async fn start() -> Harness {
 
   let state = make_state(root.clone(), false, port).await;
   tokio::spawn(async move {
-    let _ = yayin_yonetim_araci_lib::server::serve(state).await;
+    let _ = axthrowa_studio_lib::server::serve(state).await;
   });
 
   let base = format!("http://127.0.0.1:{port}");
@@ -87,7 +87,7 @@ async fn restart(h: Harness) -> Harness {
   let port = free_port();
   let state = make_state(root.clone(), false, port).await;
   tokio::spawn(async move {
-    let _ = yayin_yonetim_araci_lib::server::serve(state).await;
+    let _ = axthrowa_studio_lib::server::serve(state).await;
   });
   let base = format!("http://127.0.0.1:{port}");
   for _ in 0..100 {
@@ -661,7 +661,7 @@ async fn spotify_authorize_url_is_pkce_and_loopback() {
   let allowed = body["allowedRedirectUris"].as_array().unwrap();
   assert_eq!(
     allowed.len(),
-    yayin_yonetim_araci_lib::server::SPOTIFY_CALLBACK_PATHS.len(),
+    axthrowa_studio_lib::server::SPOTIFY_CALLBACK_PATHS.len(),
     "{allowed:?}"
   );
   // Her seçenek bizim sunucumuza işaret etmeli
@@ -860,7 +860,7 @@ async fn serve_portable() {
   let state = make_state(root.clone(), true, port).await;
   println!("kök: {}", root.display());
   println!("panel: http://127.0.0.1:{port}/panel");
-  yayin_yonetim_araci_lib::server::serve(state).await.unwrap();
+  axthrowa_studio_lib::server::serve(state).await.unwrap();
 }
 
 /// Hazır refresh token yolu: geçersiz token sessizce kaydedilmemeli.
@@ -1110,7 +1110,7 @@ async fn multistream_api_keys_never_leak_and_actions_are_audited() {
     .await
     .unwrap();
   assert!(res.status().is_success());
-  assert!(yayin_yonetim_araci_lib::secret_store::get_secret("multistream.key.itest-twitch").is_none());
+  assert!(axthrowa_studio_lib::secret_store::get_secret("multistream.key.itest-twitch").is_none());
 }
 
 /// Eylem kayıt defteri: onay zorunluluğu, kullanılabilirlik, bilinmeyen eylem, AxBoT'a iletim ve denetim kaydı.
@@ -1139,7 +1139,7 @@ async fn action_registry_enforces_confirmation_availability_and_audit() {
   let sahte_port = dinleyici.local_addr().unwrap().port();
   tokio::spawn(async move { axum::serve(dinleyici, sahte).await.unwrap() });
   // Bu değişkeni yalnız eylem iletimi ve ön kontrolün çapraz sohbet sorgusu okur (2021 sürümünde set_var güvenli)
-  std::env::set_var("YYA_STREAMAXT_PORT", sahte_port.to_string());
+  std::env::set_var("AXBOT_PORT", sahte_port.to_string());
 
   let h = start().await;
   let liste: Value = h.client.get(format!("{}/api/actions", h.base)).send().await.unwrap().json().await.unwrap();
@@ -1254,7 +1254,7 @@ async fn eylem_eklemeleri_ve_destek_paketi_sir_sizdirmaz() {
   assert!(yol.starts_with(h.root.join("app-data")), "{yol:?}");
   let metin = std::fs::read_to_string(&yol).unwrap();
   let paket: Value = serde_json::from_str(&metin).unwrap();
-  assert_eq!(paket["bicim"], "yya-destek-paketi");
+  assert_eq!(paket["bicim"], "studio-destek-paketi");
   for bolum in ["uygulama", "obs", "cokluYayin", "onKontrol", "ayarlar", "denetim", "gunlukler", "gizleme"] {
     assert!(!paket[bolum].is_null(), "{bolum} bölümü yok");
   }
@@ -1281,7 +1281,7 @@ async fn eylem_eklemeleri_ve_destek_paketi_sir_sizdirmaz() {
     .await
     .unwrap();
   assert!(res.status().is_success());
-  assert!(yayin_yonetim_araci_lib::secret_store::get_secret("multistream.key.itest-a8").is_none());
+  assert!(axthrowa_studio_lib::secret_store::get_secret("multistream.key.itest-a8").is_none());
 }
 
 /// Çoklu yayın anahtarı: göster (yalnız yerel, önbelleksiz, denetimde değer yok), sil, bağlantı sınaması (yalnız

@@ -39,7 +39,7 @@ export function ViewersWidget({ config }: Cfg) {
     });
   }, [subscribe, isPreview, mode]);
   return (
-    <div className="flex yya-widget-root items-center justify-center bg-transparent">
+    <div className="flex studio-widget-root items-center justify-center bg-transparent">
       <p className="font-bold tabular-nums text-white" style={{ fontSize, color }}>
         {prefix}
         {n.toLocaleString("tr-TR")}
@@ -62,7 +62,7 @@ export function LabelsWidget({ config }: Cfg) {
     .map((i) => `${i.label || ""}: ${i.value || "—"}`)
     .join(sep);
   return (
-    <div className="flex yya-widget-root items-end bg-transparent p-4">
+    <div className="flex studio-widget-root items-end bg-transparent p-4">
       <div
         className={`w-full overflow-hidden whitespace-nowrap ${marquee ? "animate-pulse" : ""}`}
         style={{ fontSize, color }}
@@ -123,7 +123,7 @@ export function ActivityWidget({ config }: Cfg) {
     });
   }, !isPreview);
   return (
-    <div className="flex yya-widget-root items-end justify-end bg-transparent p-4">
+    <div className="flex studio-widget-root items-end justify-end bg-transparent p-4">
       <ul className="w-80 space-y-1.5 text-sm text-white">
         {rows.length === 0 ? (
           <li className="rounded-lg border border-dashed border-white/15 px-3 py-2 text-[12px] text-white/50">
@@ -160,9 +160,9 @@ export function ShoutoutWidget({ config }: Cfg) {
       window.setTimeout(() => setCard(null), durationMs);
     });
   }, [subscribe, cmd, durationMs, config.showLastGame]);
-  if (!card) return <div className="yya-widget-root bg-transparent" />;
+  if (!card) return <div className="studio-widget-root bg-transparent" />;
   return (
-    <div className="flex yya-widget-root items-center justify-center bg-transparent">
+    <div className="flex studio-widget-root items-center justify-center bg-transparent">
       <div className="rounded-2xl border border-[#3ecfcf]/40 bg-zinc-950/70 px-8 py-6 text-center text-white shadow-[0_0_40px_rgba(62,207,207,.25)] backdrop-blur-md">
         <p className="text-[11px] uppercase tracking-[0.25em] text-[#3ecfcf]">Shoutout</p>
         <p className="mt-1 font-display text-3xl font-bold">@{card.user}</p>
@@ -222,7 +222,7 @@ export function WheelWidget({ config }: Cfg) {
     .join(", ");
 
   return (
-    <div className="flex yya-widget-root flex-col items-center justify-center gap-5 bg-transparent" style={{ opacity }}>
+    <div className="flex studio-widget-root flex-col items-center justify-center gap-5 bg-transparent" style={{ opacity }}>
       <div className="relative">
         <div
           className="pointer-events-none absolute -inset-6 rounded-full opacity-70 blur-2xl"
@@ -304,7 +304,7 @@ export function PollWidget({ config }: Cfg) {
 
   return (
     <div
-      className="flex yya-widget-root items-center justify-center bg-transparent p-6"
+      className="flex studio-widget-root items-center justify-center bg-transparent p-6"
       style={{ opacity }}
     >
       <div className="w-full max-w-md space-y-3 rounded-2xl border border-[#3ecfcf]/25 bg-[#080b10]/75 p-5 text-white shadow-[0_0_40px_rgba(62,207,207,.14)] backdrop-blur-md">
@@ -398,7 +398,7 @@ export function RafflesWidget({ config }: Cfg) {
   const shownWinner = winner || raffle?.winner || null;
 
   return (
-    <div className="flex yya-widget-root items-center justify-center bg-transparent p-6">
+    <div className="flex studio-widget-root items-center justify-center bg-transparent p-6">
       <motion.div
         className="max-w-sm rounded-2xl border border-[#f59e0b]/35 bg-zinc-950/70 p-6 text-center text-white shadow-[0_0_50px_rgba(245,158,11,.2)] backdrop-blur"
         animate={shownWinner ? { scale: [1, 1.06, 1] } : {}}
@@ -462,7 +462,7 @@ export function HypeTrainWidget({ config }: Cfg) {
         : "border-cyan-400/30 bg-zinc-950/55 shadow-[0_0_30px_rgba(62,237,254,.15)]";
   return (
     <div
-      className="flex yya-widget-root items-start justify-center bg-transparent p-6"
+      className="flex studio-widget-root items-start justify-center bg-transparent p-6"
       style={
         bgUrl
           ? {
@@ -512,7 +512,7 @@ export function TtsWidget({ config }: Cfg) {
       window.speechSynthesis.speak(u);
     });
   }, [subscribe, config]);
-  return <div className="yya-widget-root bg-transparent" aria-hidden />;
+  return <div className="studio-widget-root bg-transparent" aria-hidden />;
 }
 
 export function SongRequestWidget({ config }: Cfg) {
@@ -539,7 +539,7 @@ export function SongRequestWidget({ config }: Cfg) {
 
   return (
     <div
-      className="relative flex yya-widget-root items-end justify-start bg-transparent p-4"
+      className="relative flex studio-widget-root items-end justify-start bg-transparent p-4"
       style={{ opacity }}
     >
       <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-[#3ecfcf]/28 bg-[#080b10]/72 shadow-[0_12px_40px_rgba(0,0,0,.45)] backdrop-blur-md">
@@ -620,11 +620,11 @@ export function CreditsWidget({ config }: Cfg) {
     });
   }, [config]);
   if (!playing) {
-    return <div className="yya-widget-root bg-transparent" />;
+    return <div className="studio-widget-root bg-transparent" />;
   }
   return (
     <div
-      className="relative yya-widget-root overflow-hidden bg-transparent text-white"
+      className="relative studio-widget-root overflow-hidden bg-transparent text-white"
       style={{ opacity }}
     >
       <style>{`

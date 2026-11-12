@@ -1,4 +1,4 @@
-/** Yerel akıllı bot — StreamElements / Botaxt tarzı çekirdek tipler. */
+/** Yerel akıllı bot — çekirdek tipler. */
 
 export type UserLevel = 100 | 250 | 400 | 500 | 1000 | 1500;
 
@@ -24,7 +24,7 @@ export type BotTimer = {
   enabled: boolean;
   /** Dakika */
   intervalMin: number;
-  /** Bu kadar satır olmadan gönderme (Botaxt lines) */
+  /** Bu kadar satır olmadan gönderme (Bot lines) */
   minLines: number;
   platforms: Array<"kick" | "twitch" | "youtube" | "all">;
 };
@@ -139,7 +139,7 @@ export function defaultBotConfig(): BotConfig {
   return {
     version: 1,
     enabled: true,
-    botName: "BotAxT",
+    botName: "AxBoT",
     replyToOverlay: true,
     replyToKick: true,
     replyToTwitch: true,

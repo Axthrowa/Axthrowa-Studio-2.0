@@ -1,5 +1,5 @@
 /**
- * Botaxt Modül 1 — Profil / Dashboard API istemcisi
+ * Bot modülü 1 — Profil / Dashboard API istemcisi
  */
 
 import { apiBaseCandidates } from "../api";
@@ -51,10 +51,10 @@ export type DashboardSnapshot = {
   commands: number;
   recent_events: EventLog[];
   sessions: StreamSession[];
-  migrated_smartbot: boolean;
+  eski_panel_aktarildi: boolean;
 };
 
-const PREFIX = "/api/botaxt";
+const PREFIX = "/api/bot";
 let cachedApiBase: string | null = null;
 
 function looksLikeJson(res: Response, text: string) {
@@ -131,8 +131,8 @@ async function resolveApiBase(): Promise<void> {
   }
 }
 
-/** Mutlak API yolu (ör. /api/botaxt/dashboard). */
-export async function botaxtUrl(path: string): Promise<string> {
+/** Mutlak API yolu (ör. /api/bot/dashboard). */
+export async function botUrl(path: string): Promise<string> {
   await resolveApiBase();
   const rest = path.startsWith("/") ? path : `/${path}`;
   return `${PREFIX}${rest}`;
@@ -147,7 +147,7 @@ function networkDownMessage(e: unknown) {
 }
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
-  const urlPath = await botaxtUrl(path);
+  const urlPath = await botUrl(path);
   let res: Response;
   try {
     res = await fetchWithBase(urlPath, init);
@@ -161,13 +161,13 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (res.status === 204) return undefined as T;
   if (!looksLikeJson(res, text)) {
-    throw new Error("API JSON dönmedi — sunucu Botaxt rotaları eksik olabilir");
+    throw new Error("API JSON dönmedi — sunucu Bot rotaları eksik olabilir");
   }
   return JSON.parse(text) as T;
 }
 
 async function raw(path: string, init?: RequestInit): Promise<Response> {
-  const urlPath = await botaxtUrl(path);
+  const urlPath = await botUrl(path);
   try {
     return await fetchWithBase(urlPath, init);
   } catch (e) {
@@ -207,7 +207,7 @@ export async function pushMetrics(body: {
   }).catch(() => undefined);
 }
 
-export async function logBotaxtEvent(body: {
+export async function logBotEvent(body: {
   kind: string;
   platform?: string;
   user_name: string;
@@ -221,7 +221,7 @@ export async function logBotaxtEvent(body: {
 }
 
 /** Modül 2–8 kısa istemci */
-export const botaxtApi = {
+export const botApi = {
   alerts: () => json<{ alerts: unknown[] }>("/alerts"),
   alertVariants: () => json<{ variants: unknown[] }>("/alerts/variants"),
   putAlertVariants: (variants: unknown[]) =>
@@ -314,7 +314,7 @@ export const botaxtApi = {
       body: JSON.stringify({ username, password }),
     }),
   remoteLogout: () => {
-    const token = localStorage.getItem("botaxt.remoteToken");
+    const token = localStorage.getItem("studio.bot.remoteToken");
     return raw("/remote/logout", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -330,7 +330,7 @@ export const botaxtApi = {
       body: JSON.stringify({ id }),
     }),
   remoteTriggerAlert: (body: Record<string, unknown>) => {
-    const token = localStorage.getItem("botaxt.remoteToken");
+    const token = localStorage.getItem("studio.bot.remoteToken");
     return raw("/remote/alerts/trigger", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -338,7 +338,7 @@ export const botaxtApi = {
     });
   },
   remoteChatSend: (text: string) => {
-    const token = localStorage.getItem("botaxt.remoteToken");
+    const token = localStorage.getItem("studio.bot.remoteToken");
     return raw("/remote/chat/send", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -346,7 +346,7 @@ export const botaxtApi = {
     });
   },
   remoteObsScene: (scene: string) => {
-    const token = localStorage.getItem("botaxt.remoteToken");
+    const token = localStorage.getItem("studio.bot.remoteToken");
     return raw("/remote/obs/scene", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -354,8 +354,8 @@ export const botaxtApi = {
     });
   },
   discordTest: () => raw("/integrations/discord/test", { method: "POST" }),
-  syncSmartbot: (force = false) =>
-    raw(`/sync/from-smartbot?force=${force ? 1 : 0}`, { method: "POST" }),
+  eskiPaneliAktar: (force = false) =>
+    raw(`/sync/eski-panel?force=${force ? 1 : 0}`, { method: "POST" }),
   seedWidgets: () => raw("/widgets/seed", { method: "POST" }),
 };
 

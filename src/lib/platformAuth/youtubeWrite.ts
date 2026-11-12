@@ -4,7 +4,7 @@
 
 import { API_BASE } from "../api";
 
-const LS = "yya.youtubeWrite.v1";
+const LS = "studio.youtubeWrite.v1";
 const SCOPES = "https://www.googleapis.com/auth/youtube.force-ssl";
 
 export type YoutubeWriteSession = {

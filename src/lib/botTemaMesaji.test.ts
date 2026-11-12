@@ -24,7 +24,7 @@ describe("botTemaMesaji", () => {
       "keskin",
     );
     expect(botTemaMesaji(renk)).toEqual({
-      tur: "yya-tema",
+      tur: "studio-tema",
       tema: "studio",
       degiskenler: {
         "--axt-zemin": "#06161a",

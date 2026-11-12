@@ -16,7 +16,7 @@ const candidates = [
     "src-tauri",
     "target",
     "release",
-    "yayin-yonetim-araci.exe"
+    "axthrowa-studio.exe"
   ),
   path.join(
     root,
@@ -24,7 +24,7 @@ const candidates = [
     "target",
     "x86_64-pc-windows-msvc",
     "release",
-    "yayin-yonetim-araci.exe"
+    "axthrowa-studio.exe"
   ),
   path.join(
     root,

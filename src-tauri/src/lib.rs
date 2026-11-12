@@ -1,9 +1,10 @@
 #![recursion_limit = "512"]
 
 #[macro_use]
-mod yya_log;
+mod studio_log;
 mod close_prompt;
-pub mod streamaxt;
+pub mod eski_adlar;
+pub mod axbot;
 pub mod db;
 pub mod kick;
 pub mod kutuphane;
@@ -107,7 +108,7 @@ impl AppState {
       let pool = match db::open_connected(&data_dir).await {
         Ok(p) => p,
         Err(e) => {
-          yya_warn!("SQLite açılamadı ({e:#}); bellek DB");
+          studio_warn!("SQLite açılamadı ({e:#}); bellek DB");
           sqlx::sqlite::SqlitePoolOptions::new()
             // her bellek bağlantısı ayrı DB; tek bağlantı yoksa tablolar "yok" görünür
             .max_connections(1)
@@ -118,16 +119,16 @@ impl AppState {
       };
       // Migrasyon + boş DB seed — HTTP ayağa kalkmadan ÖNCE (production race yok)
       if let Err(e) = db::init(&pool, &settings).await {
-        yya_warn!("DB init uyarısı: {e:#}");
+        studio_warn!("DB init uyarısı: {e:#}");
       }
-      match db::botaxt_api::seed_alerts_if_empty(&pool, &settings).await {
-        Ok(n) if n > 0 => yya_log!("Botaxt alerts seed (init): {n}"),
-        Err(e) => yya_warn!("alerts seed uyarısı: {e:#}"),
+      match db::bot_api::seed_alerts_if_empty(&pool, &settings).await {
+        Ok(n) if n > 0 => studio_log!("Bot alerts seed (init): {n}"),
+        Err(e) => studio_warn!("alerts seed uyarısı: {e:#}"),
         _ => {}
       }
-      match db::botaxt_api::seed_widgets_if_empty(&pool).await {
-        Ok(n) if n > 0 => yya_log!("Botaxt widgets seed (init): {n}"),
-        Err(e) => yya_warn!("widgets seed uyarısı: {e:#}"),
+      match db::bot_api::seed_widgets_if_empty(&pool).await {
+        Ok(n) if n > 0 => studio_log!("Bot widgets seed (init): {n}"),
+        Err(e) => studio_warn!("widgets seed uyarısı: {e:#}"),
         _ => {}
       }
       pool
@@ -142,7 +143,7 @@ impl AppState {
       music: Arc::new(music::MusicState::new(&data_dir)),
       ytdl: Arc::new(ytdl::YtdlState::new()),
       kick_auth: {
-        let _ = streamaxt::KICK_DOSYASI.set(data_dir.join("kick-oauth.json"));
+        let _ = axbot::KICK_DOSYASI.set(data_dir.join("kick-oauth.json"));
         Arc::new(kick::KickAuth::new(&data_dir))
       },
       kick_chat: Arc::new(bot::kick_chat::KickChatRuntime::new()),
@@ -282,8 +283,8 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
     .on_menu_event(|app, event| match event.id.as_ref() {
       "quit" => {
         // Axum + tüm tokio görevlerini zorla sonlandır (app.exit asılı kalabiliyor)
-        yya_log!("[tray] Çıkış — process::exit(0)");
-        streamaxt::shutdown();
+        studio_log!("[tray] Çıkış — process::exit(0)");
+        axbot::shutdown();
         std::process::exit(0);
       }
       "toggle" => {
@@ -602,7 +603,7 @@ pub fn panik_kaydini_kur(data_dir: &std::path::Path) {
   }));
 }
 
-/// Günlük kaydı: Rust (`yya_log!`/`yya_warn!`, `log::*`) ve arayüz (`@tauri-apps/plugin-log`) aynı dosyaya yazar:
+/// Günlük kaydı: Rust (`studio_log!`/`studio_warn!`, `log::*`) ve arayüz (`@tauri-apps/plugin-log`) aynı dosyaya yazar:
 /// `<veri>/logs/axthrowa.log`. 5 MB'ı geçince döner, son 5 dosya tutulur. Belirteç benzeri sözcükler, RTMP yolları
 /// ve kullanıcı klasörü destek paketindeki gizleyiciyle maskelenir (günlük paylaşılabilsin).
 fn gunluk_eklentisi(klasor: std::path::PathBuf) -> tauri::plugin::TauriPlugin<tauri::Wry> {
@@ -649,6 +650,8 @@ pub fn run() {
     if !single_instance::claim() {
       return;
     }
+    // Uygulama kimliği değişti: eski WebView verisi pencere açılmadan yeni klasöre kopyalanır
+    eski_adlar::webview_verisini_tasi();
     // WebView ayağa kalktıktan sonra etiketle (ayrı thread, gecikmeli).
     audio_brand::start("AxthrowA Studio", None);
   }
@@ -687,12 +690,12 @@ pub fn run() {
     &resolved.data_dir.join("assets"),
   ) {
     Ok(Some(m)) => {
-      yya_log!("{m}");
+      studio_log!("{m}");
       let _ = server::yedek_api::SON_UYGULANAN.set(m);
     }
     Ok(None) => {}
     Err(e) => {
-      yya_warn!("bekleyen geri yükleme uygulanamadı: {e:#}");
+      studio_warn!("bekleyen geri yükleme uygulanamadı: {e:#}");
       let _ = server::yedek_api::SON_UYGULANAN.set(format!("Geri yükleme başarısız: {e:#}"));
     }
   }
@@ -710,7 +713,7 @@ pub fn run() {
   let state_for_server = state.clone();
   tauri::async_runtime::spawn(async move {
     if let Err(e) = server::serve(state_for_server).await {
-      yya_warn!("HTTP server error: {e}");
+      studio_warn!("HTTP server error: {e}");
     }
   });
 
@@ -727,7 +730,7 @@ pub fn run() {
     tokio::time::sleep(std::time::Duration::from_secs(120)).await;
     loop {
       if let Err(e) = yedek::gerekirse_yedekle(&state_for_backup.data_dir, &state_for_backup.db, yedek::bot_veri_klasoru().as_deref(), 24 * 3600 * 1000).await {
-        yya_warn!("otomatik yedek alınamadı: {e:#}");
+        studio_warn!("otomatik yedek alınamadı: {e:#}");
       }
       tokio::time::sleep(std::time::Duration::from_secs(6 * 3600)).await;
     }
@@ -770,7 +773,7 @@ pub fn run() {
     .setup(|app| {
       setup_tray(app.handle())?;
       close_prompt::install(app.handle());
-      streamaxt::autostart();
+      axbot::autostart();
       // Arka plan servisleri eklenti olarak: OBS (kendiliğinden bağlanır), sohbet (Kick/Twitch + bot)
       let eklentiler = eklenti::varsayilan();
       eklentiler.baslat(app.handle());
@@ -813,9 +816,9 @@ pub fn run() {
       open_in_browser,
       launch_obs,
       sync_global_hotkeys,
-      streamaxt::streamaxt_status,
-      streamaxt::streamaxt_start,
-      streamaxt::streamaxt_stop,
+      axbot::axbot_status,
+      axbot::axbot_start,
+      axbot::axbot_stop,
       server::asistan_api::asistan_komut,
       hata_raporu::hata_raporu_durumu,
       hata_raporu::hata_raporu_izni,

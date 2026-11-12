@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
-import type { GiveawayConfig } from "../../lib/smartBot/v2";
+import { useOverlayBotConfig } from "../../lib/sohbetBot/useOverlayWidgetEvents";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
+import type { GiveawayConfig } from "../../lib/sohbetBot/v2";
 
 export default function GiveawayPage() {
   useObsKeepalive();

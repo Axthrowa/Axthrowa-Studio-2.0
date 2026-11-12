@@ -146,7 +146,7 @@ async fn api_websocket_al(State(state): State<Arc<AppState>>, ConnectInfo(addr):
     let birlesik = crate::settings::deep_merge(s.get(ScreenKind::Panel).clone(), yama);
     s.set(ScreenKind::Panel, birlesik.clone());
     if let Err(e) = s.save_one(&state.data_dir, ScreenKind::Panel) {
-      yya_warn!("ayar diske yazılamadı (panel): {e}");
+      studio_warn!("ayar diske yazılamadı (panel): {e}");
     }
     birlesik
   };

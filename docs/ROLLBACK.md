@@ -16,7 +16,7 @@ Kontrol Merkezi'nde **"OBS'i yönlendiriciye bağla"** kullanıldıysa OBS'in ya
 
 | Depo | Güvenlik etiketi | Önceki dal | Bu turun dalı |
 |---|---|---|---|
-| Panel | `pre-streaming-os-20260925-175532` | `streamaxt-bot` | `revamp/streaming-os-20260925` |
+| Panel | `pre-streaming-os-20260925-175532` | `axbot-bot` | `revamp/streaming-os-20260925` |
 | AxBoT | `pre-streaming-os-20260925-175532` | `revamp/botrix-parity-20260921` | `revamp/streaming-os-20260925` |
 | Panel (2. tur) | `pre-streaming-os-revision-20260926-010500` | `revamp/streaming-os-20260925` | `revamp/streaming-os-20260926` |
 | AxBoT (2. tur) | `pre-streaming-os-revision-20260926-010500` | `revamp/streaming-os-20260925` | `revamp/streaming-os-20260926` |
@@ -26,7 +26,7 @@ veritabanı şeması değişmedi; eklenen tek kalıcı ayar `settings-panel.json
 Git paketleri: `Desktop\yayin-yonetim-yedekler\git-20260926-tur2\` (`git bundle verify` → okay).
 
 ```bash
-git -C "C:/Users/Axthrowa/Desktop/yayin-yonetim-araci - Kopya (2)" switch streamaxt-bot
+git -C "C:/Users/Axthrowa/Desktop/yayin-yonetim-araci - Kopya (2)" switch axbot-bot
 ```
 
 ```bash
@@ -58,7 +58,7 @@ Bu turda şema göçü yok; hiçbir değişiklik veri silmez ya da mevcut alanı
 Yedek: `C:\Users\Axthrowa\Yedekler\backup-pre-streaming-os-20260925-175532` (3644 dosya, SHA-256 doğrulamalı).
 
 1. Paneli ve AxBoT'u kapatın (tepsi simgesinden çıkış).
-2. Depo: `git/panel.bundle` ve `git/streamaxt.bundle` → `git clone <bundle> <hedef>` ya da mevcut depoda
+2. Depo: `git/panel.bundle` ve `git/axbot.bundle` → `git clone <bundle> <hedef>` ya da mevcut depoda
    `git fetch <bundle> 'refs/*:refs/*'`.
 3. Veritabanları: `db-snapshots/` altındaki tutarlı kopyaları özgün yollarına kopyalayın (yollar `manifest.json`'da).
    Canlı `.db` üzerine yazmadan önce mevcut dosyayı yeniden adlandırın.
@@ -74,9 +74,9 @@ doldurulur). Kullanıcı verisi (`data`, `app-data`, `media`) paketin dışında
 
 - Önceki paket kopyası: `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\dagitim-oncesi-20260926-003528\`
   (413 dosya, 31 MB, `manifest.json`'da sha256):
-  - `panel-portable\` → `AxthrowAStudio.exe`, `dist`, `resonance`, `streamaxt\{dist,public,package.json}`;
+  - `panel-portable\` → `AxthrowAStudio.exe`, `dist`, `resonance`, `axbot\{dist,public,package.json}`;
     geri dönmek için bunları `cikti\portable\` altındaki karşılıklarının üzerine kopyalayın (panel kapalıyken).
-  - `streamaxt-release\` → `Projeler\release\app\{dist,public}` ve `…\StreamAxT-v1.0.0-Portable\app\{dist,public}`.
+  - `axbot-release\` → `Projeler\release\app\{dist,public}` ve `…\AxBoT-v1.0.0-Portable\app\{dist,public}`.
   - `db\` → dağıtım anındaki üç gerçek AxBoT veritabanının SQLite backup API kopyası (`integrity_check = ok`).
     Bu turda şema değişmediği için normalde gerekmez.
 
@@ -85,7 +85,7 @@ doldurulur). Kullanıcı verisi (`data`, `app-data`, `media`) paketin dışında
 - Dağıtım öncesi kopya: `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\dagitim-oncesi-20260926-060316\` (535 dosya,
   43,6 MB, `manifest.json` SHA-256; dağıtım öncesi doğrulandı: 0 uyuşmazlık). İçerik ilk turdakiyle aynı düzende;
   ek olarak `db\` altında WAL/SHM dosyaları ve kurulu mod veritabanı (`kurulu-appdata-botaxt.db`), ve
-  `streamaxt-release\…\node_modules\tiktok-live-*` (dağıtımda 2.5.0 → 2.4.0 değişen paketlerin eski hâli).
+  `axbot-release\…\node_modules\tiktok-live-*` (dağıtımda 2.5.0 → 2.4.0 değişen paketlerin eski hâli).
 - Uygulamalar kapalıyken kopyalandı (WAL dosyaları tutarlı). Veritabanları dağıtımda değiştirilmedi
-  (`panel-streamaxt.sqlite` karması dağıtımdan sonra aynı).
+  (`panel-axbot.sqlite` karması dağıtımdan sonra aynı).
 - Zip: `yedek-20260926-061213-streaming-os-tur2-deste-olcer-lisans-dagitim.zip`.

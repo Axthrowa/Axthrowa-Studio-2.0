@@ -189,7 +189,7 @@ export default function SubathonWidget({ config }: Props) {
 
   return (
     <div
-      className="yya-widget-root flex h-full w-full items-center justify-center bg-transparent"
+      className="studio-widget-root flex h-full w-full items-center justify-center bg-transparent"
       style={{
         opacity,
         transform: `scale(${scale})`,

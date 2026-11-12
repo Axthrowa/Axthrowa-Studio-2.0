@@ -24,7 +24,7 @@
     "allow-obs-control",
     "allow-alerts-widgets",
     "allow-kick-bot",
-    "allow-streamaxt",
+    "allow-axbot",
     "core:webview:allow-create-webview-window",
     "core:window:allow-set-focus",
     "core:window:allow-set-always-on-top",

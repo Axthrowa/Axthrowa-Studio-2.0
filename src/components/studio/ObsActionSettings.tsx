@@ -30,7 +30,7 @@ type Props = {
   hideKinds?: ActionKind[];
 };
 
-const field = "yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white";
+const field = "studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white";
 
 function newId() {
   return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `ac-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -240,7 +240,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
         </h3>
         <button
           type="button"
-          className="yya-btn-ghost inline-flex h-8 items-center gap-1 px-3 text-xs font-bold"
+          className="studio-btn-ghost inline-flex h-8 items-center gap-1 px-3 text-xs font-bold"
           onClick={() =>
             onChange([...rows, { id: newId(), kind: (ACTION_KINDS.find((k) => !hideKinds.includes(k.id))?.id || "volume") as ActionKind, hotkey: "" }])
           }

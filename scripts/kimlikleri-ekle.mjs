@@ -1,13 +1,13 @@
 /**
- * Bu bilgisayarda kayıtlı Client ID'leri pakete ekler: cikti/streamaxt/varsayilan-kimlikler.json.
+ * Bu bilgisayarda kayıtlı Client ID'leri pakete ekler: cikti/axbot/varsayilan-kimlikler.json.
  * Yalnız Client ID (Kick, Spotify); Client Secret, token ve parola asla alınmaz. Değerler ekrana yazılmaz.
  * Kaynak: uygulamanın kendi ayar dosyaları (kick-oauth.json, music.json).
  */
 import fs from "node:fs";
 import path from "node:path";
 
-const veri = path.join(process.env.APPDATA || "", "com.axthrowa.yayin-yonetim-araci");
-const hedef = process.argv[2] || "cikti/streamaxt/varsayilan-kimlikler.json";
+const veri = path.join(process.env.APPDATA || "", "com.axthrowa.studio");
+const hedef = process.argv[2] || "cikti/axbot/varsayilan-kimlikler.json";
 
 function oku(ad) {
   try {

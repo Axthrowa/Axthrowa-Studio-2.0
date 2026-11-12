@@ -177,7 +177,7 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
         </h3>
         <button
           type="button"
-          className="yya-btn-ghost inline-flex h-7 items-center gap-1 px-2 text-[11px]"
+          className="studio-btn-ghost inline-flex h-7 items-center gap-1 px-2 text-[11px]"
           onClick={() => setNaming((v) => !v)}
         >
           <Plus className="h-3 w-3" /> Bunu kaydet
@@ -197,7 +197,7 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
       {naming && (
         <div className="mb-2 flex items-center gap-1.5">
           <input
-            className="yya-input h-8 min-w-0 flex-1 text-xs"
+            className="studio-input h-8 min-w-0 flex-1 text-xs"
             value={name}
             maxLength={40}
             placeholder="Şablon adı"

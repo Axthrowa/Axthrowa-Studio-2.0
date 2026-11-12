@@ -4,10 +4,10 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { BOT_SEKMELERI, botSekmesiBul } from "../../lib/anaMenu";
-import { streamaxtBase } from "../../lib/streamaxt";
+import { axbotBase } from "../../lib/axbot";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import StatusDot from "@/components/axthrowa/StatusDot";
-import StreamAxtHost from "./StreamAxtHost";
+import AxBotHost from "./AxBotHost";
 
 type Props = {
   sayfa?: string;
@@ -28,7 +28,7 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
 
   const yukle = useCallback(async () => {
     try {
-      const base = await streamaxtBase();
+      const base = await axbotBase();
       const [d, s] = await Promise.all([
         fetch(`${base}/api/status`, { cache: "no-store" }).then((r) => r.json()),
         fetch(`${base}/api/bot/sessiz`, { cache: "no-store" }).then((r) => r.json()),
@@ -50,7 +50,7 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
   const yanitDegistir = async (yanitVersin: boolean) => {
     setSessiz(!yanitVersin);
     try {
-      const r = await fetch(`${await streamaxtBase()}/api/bot/sessiz`, {
+      const r = await fetch(`${await axbotBase()}/api/bot/sessiz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessiz: !yanitVersin }),
@@ -88,7 +88,7 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
           </label>
         </div>
       </div>
-      <StreamAxtHost onToast={onToast} tab={sayfa || BOT_SEKMELERI[0].id} embed={secili !== null} onOpenMusic={onOpenMusic} />
+      <AxBotHost onToast={onToast} tab={sayfa || BOT_SEKMELERI[0].id} embed={secili !== null} onOpenMusic={onOpenMusic} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 //! Otomatik yedekleme, geri yükleme ve eski klasörden ayar taşıma.
 //!
-//! Yedek: `data/yedekler/<zaman>/` altına ayar JSON'ları, `botaxt.db` (VACUUM INTO: açıkken tutarlı kopya)
+//! Yedek: `data/yedekler/<zaman>/` altına ayar JSON'ları, `studio.db` (VACUUM INTO: açıkken tutarlı kopya)
 //! ve gömülü AxBoT veritabanı. Günde bir kendiliğinden alınır; son `SAKLA` yedek ve son `SAKLA` günün
 //! her birinden en yenisi tutulur (elle alınan yedekler günlükleri itmesin).
 //! Geri yükleme / taşıma ANINDA yapılmaz: veritabanları açıkken üzerine yazılamaz. İstek bir işaret
@@ -15,15 +15,36 @@ use sqlx::SqlitePool;
 
 pub const SAKLA: usize = 7;
 const ISARET: &str = "bekleyen-geri-yukleme.txt";
-const BOT_DB: &str = "streamaxt.sqlite";
+const BOT_DB: &str = "axbot.sqlite";
+
+/// Eski sürümlerin yedeğinde Studio klasörü ve veritabanları eski adlarla durur
+fn studio_klasoru(kok: &Path) -> PathBuf {
+  let yeni = kok.join("studio");
+  if yeni.is_dir() { yeni } else { kok.join(crate::eski_adlar::YEDEK_KLASORU) }
+}
+
+fn yedekteki_bot_db(kok: &Path) -> Option<PathBuf> {
+  [BOT_DB, crate::eski_adlar::BOT_DB].iter().map(|ad| kok.join("bot").join(ad)).find(|p| p.exists())
+}
+
+/// Kopyalanan eski adlı veritabanı, varsa yeni adlıyı (ve eşlerini) değiştirir
+fn eski_db_yerlestir(klasor: &Path, eski_ad: &str, yeni_ad: &str) {
+  let eski = klasor.join(eski_ad);
+  if eski.exists() {
+    let yeni = klasor.join(yeni_ad);
+    let _ = std::fs::remove_file(&yeni);
+    yan_dosyalari_sil(&yeni);
+    crate::eski_adlar::db_tasi(&eski, &yeni);
+  }
+}
 
 pub fn yedek_klasoru(data_dir: &Path) -> PathBuf {
   data_dir.join("yedekler")
 }
 
-/// Gömülü botun veri klasörü (exe yanındaki `streamaxt/data`)
+/// Gömülü botun veri klasörü (exe yanındaki `axbot/data`)
 pub fn bot_veri_klasoru() -> Option<PathBuf> {
-  crate::streamaxt::find_dir().map(|d| d.join("data"))
+  crate::axbot::find_dir().map(|d| d.join("data"))
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
@@ -67,7 +88,7 @@ pub fn listele(data_dir: &Path) -> Vec<YedekBilgisi> {
             ad: e.file_name().to_string_lossy().to_string(),
             zaman,
             bayt: klasor_boyutu(&e.path()),
-            bot: e.path().join("bot").join(BOT_DB).exists(),
+            bot: yedekteki_bot_db(&e.path()).is_some(),
           }
         })
         .collect()
@@ -132,10 +153,10 @@ fn eskileri_sil(data_dir: &Path) {
 pub async fn yedekle(data_dir: &Path, pool: &SqlitePool, bot_veri: Option<&Path>) -> Result<YedekBilgisi> {
   let ad = yeni_ad();
   let hedef = yedek_klasoru(data_dir).join(&ad);
-  let yya = hedef.join("yya");
-  std::fs::create_dir_all(&yya).context("yedek klasörü")?;
-  ayar_dosyalarini_kopyala(data_dir, &yya)?;
-  vacuum_into(pool, &yya.join("botaxt.db")).await.context("botaxt.db yedeği")?;
+  let studio = hedef.join("studio");
+  std::fs::create_dir_all(&studio).context("yedek klasörü")?;
+  ayar_dosyalarini_kopyala(data_dir, &studio)?;
+  vacuum_into(pool, &studio.join("studio.db")).await.context("studio.db yedeği")?;
   // Bot veritabanı: ayrı, salt okunur bağlantıyla tutarlı kopya
   if let Some(kaynak) = bot_veri.map(|b| b.join(BOT_DB)).filter(|k| k.exists()) {
     let opts = sqlx::sqlite::SqliteConnectOptions::new().filename(&kaynak).read_only(true);
@@ -147,7 +168,7 @@ pub async fn yedekle(data_dir: &Path, pool: &SqlitePool, bot_veri: Option<&Path>
         sonuc.context("bot veritabanı yedeği")?;
       }
       // Yedek yine alınır; listede "bot verisi yok" görünür
-      Err(e) => yya_warn!("bot veritabanı yedeklenemedi (açılamadı): {e}"),
+      Err(e) => studio_warn!("bot veritabanı yedeklenemedi (açılamadı): {e}"),
     }
   }
   eskileri_sil(data_dir);
@@ -179,7 +200,7 @@ pub fn iptal(data_dir: &Path) {
 /// Eski kurulum klasörü mü (taşıma kaynağı): `data/` içinde ayar ya da veritabanı olmalı
 pub fn eski_kurulum_mu(kok: &Path) -> bool {
   let d = kok.join("data");
-  d.join("botaxt.db").exists() || d.join("settings-panel.json").exists()
+  d.join("studio.db").exists() || d.join(crate::eski_adlar::STUDIO_DB).exists() || d.join("settings-panel.json").exists()
 }
 
 fn dosya_kopyala(kaynak: &Path, hedef: &Path) -> Result<()> {
@@ -234,12 +255,12 @@ fn kapali_db_kopyala(kaynak: &Path, hedef: &Path) -> Result<()> {
 fn onceki_hali_yedekle(data_dir: &Path, bot_veri: Option<&Path>) -> Result<String> {
   let ad = yeni_ad();
   let hedef = yedek_klasoru(data_dir).join(&ad);
-  let yya = hedef.join("yya");
-  std::fs::create_dir_all(&yya).context("yedek klasörü")?;
-  ayar_dosyalarini_kopyala(data_dir, &yya)?;
-  let db = data_dir.join("botaxt.db");
+  let studio = hedef.join("studio");
+  std::fs::create_dir_all(&studio).context("yedek klasörü")?;
+  ayar_dosyalarini_kopyala(data_dir, &studio)?;
+  let db = data_dir.join("studio.db");
   if db.exists() {
-    kapali_db_kopyala(&db, &yya.join("botaxt.db"))?;
+    kapali_db_kopyala(&db, &studio.join("studio.db"))?;
   }
   if let Some(bot) = bot_veri.map(|b| b.join(BOT_DB)).filter(|b| b.exists()) {
     kapali_db_kopyala(&bot, &hedef.join("bot").join(BOT_DB))?;
@@ -258,10 +279,11 @@ pub fn bekleyeni_uygula(data_dir: &Path, bot_veri: Option<&Path>, assets: &Path)
 
 /// Yedeğin ayarlarını ve veritabanlarını yerine koyar
 fn yedekten_kopyala(kok: &Path, data_dir: &Path, bot_veri: Option<&Path>) -> Result<()> {
-  yan_dosyalari_sil(&data_dir.join("botaxt.db"));
-  klasor_kopyala(&kok.join("yya"), data_dir, &[])?;
-  if let (Some(bot), true) = (bot_veri, kok.join("bot").join(BOT_DB).exists()) {
-    kapali_db_kopyala(&kok.join("bot").join(BOT_DB), &bot.join(BOT_DB))?;
+  yan_dosyalari_sil(&data_dir.join("studio.db"));
+  klasor_kopyala(&studio_klasoru(kok), data_dir, &[])?;
+  eski_db_yerlestir(data_dir, crate::eski_adlar::STUDIO_DB, "studio.db");
+  if let (Some(bot), Some(kaynak)) = (bot_veri, yedekteki_bot_db(kok)) {
+    kapali_db_kopyala(&kaynak, &bot.join(BOT_DB))?;
   }
   Ok(())
 }
@@ -280,8 +302,8 @@ fn uygula(istek: &str, data_dir: &Path, bot_veri: Option<&Path>, assets: &Path) 
       return Err(anyhow!("geçersiz yedek adı"));
     }
     let kok = yedek_klasoru(data_dir).join(ad);
-    let yya = kok.join("yya");
-    if !yya.join("botaxt.db").exists() {
+    let studio = studio_klasoru(&kok);
+    if !studio.join("studio.db").exists() && !studio.join(crate::eski_adlar::STUDIO_DB).exists() {
       return Err(anyhow!("yedek eksik: {ad}"));
     }
     let onceki = onceki_hali_yedekle(data_dir, bot_veri).context("o anki hâl yedeklenemedi; geri yükleme yapılmadı")?;
@@ -297,18 +319,20 @@ fn uygula(istek: &str, data_dir: &Path, bot_veri: Option<&Path>, assets: &Path) 
     let onceki = onceki_hali_yedekle(data_dir, bot_veri).context("o anki hâl yedeklenemedi; taşıma yapılmadı")?;
     let tasi = || -> Result<()> {
       // Ayarlar + veritabanı (yedekler ve indirilen araçlar taşınmaz; -wal taşınır, son yazılanlar orada olabilir)
-      yan_dosyalari_sil(&data_dir.join("botaxt.db"));
-      klasor_kopyala(&eski.join("data"), data_dir, &["yedekler", "tools", "botaxt.db-shm"])?;
+      yan_dosyalari_sil(&data_dir.join("studio.db"));
+      klasor_kopyala(&eski.join("data"), data_dir, &["yedekler", "tools", "studio.db-shm", "botaxt.db-shm"])?;
+      eski_db_yerlestir(data_dir, crate::eski_adlar::STUDIO_DB, "studio.db");
       // Kullanıcının kütüphanesi (logo, video, müzik…)
       if eski.join("assets").is_dir() {
         klasor_kopyala(&eski.join("assets"), assets, &[])?;
       }
       // Bot verisi
       if let Some(bot) = bot_veri {
-        let eski_bot = eski.join("streamaxt").join("data");
-        if eski_bot.is_dir() {
+        let eski_bot = [eski.join("axbot"), eski.join(crate::eski_adlar::BOT_KLASORU)].into_iter().map(|d| d.join("data")).find(|d| d.is_dir());
+        if let Some(eski_bot) = eski_bot {
           yan_dosyalari_sil(&bot.join(BOT_DB));
-          klasor_kopyala(&eski_bot, bot, &["streamaxt.sqlite-shm"])?;
+          klasor_kopyala(&eski_bot, bot, &["axbot.sqlite-shm", "streamaxt.sqlite-shm"])?;
+          eski_db_yerlestir(bot, crate::eski_adlar::BOT_DB, BOT_DB);
         }
       }
       Ok(())
@@ -325,7 +349,7 @@ mod tests {
   use super::*;
 
   fn gecici(ad: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("yya-yedek-{ad}-{}", uuid::Uuid::new_v4()));
+    let d = std::env::temp_dir().join(format!("studio-yedek-{ad}-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&d).unwrap();
     d
   }
@@ -395,7 +419,7 @@ mod tests {
     assert!(bekleyen(&data).is_none());
     // Geri yüklemeden önceki hâl ayrı bir yedek olarak duruyor (yanlış seçim geri alınabilir)
     let onceki = listele(&data).into_iter().find(|x| x.ad != y.ad).expect("önceki hâl yedeği");
-    assert_eq!(std::fs::read_to_string(yedek_klasoru(&data).join(&onceki.ad).join("yya").join("settings-panel.json")).unwrap(), "{\"a\":2}");
+    assert_eq!(std::fs::read_to_string(yedek_klasoru(&data).join(&onceki.ad).join("studio").join("settings-panel.json")).unwrap(), "{\"a\":2}");
     assert!(onceki.bot);
     let _ = std::fs::remove_dir_all(&data);
     let _ = std::fs::remove_dir_all(&bot);
@@ -404,17 +428,17 @@ mod tests {
   #[test]
   fn yarida_kalan_geri_yukleme_onceki_hale_doner() {
     let data = gecici("yarim");
-    std::fs::write(data.join("botaxt.db"), "simdiki").unwrap();
+    std::fs::write(data.join("studio.db"), "simdiki").unwrap();
     // Yedekteki ikinci dosya kopyalanamaz: hedefte aynı adda klasör var
     std::fs::create_dir_all(data.join("z.json")).unwrap();
-    let yya = yedek_klasoru(&data).join("20261104-120000").join("yya");
-    std::fs::create_dir_all(&yya).unwrap();
-    std::fs::write(yya.join("botaxt.db"), "yedekteki").unwrap();
-    std::fs::write(yya.join("z.json"), "{}").unwrap();
+    let studio = yedek_klasoru(&data).join("20261104-120000").join("studio");
+    std::fs::create_dir_all(&studio).unwrap();
+    std::fs::write(studio.join("studio.db"), "yedekteki").unwrap();
+    std::fs::write(studio.join("z.json"), "{}").unwrap();
     isaretle(&data, "yedek:20261104-120000").unwrap();
     let hata = bekleyeni_uygula(&data, None, &data.join("assets")).unwrap_err().to_string();
     assert!(hata.contains("önceki hâle dönüldü"), "{hata}");
-    assert_eq!(std::fs::read_to_string(data.join("botaxt.db")).unwrap(), "simdiki");
+    assert_eq!(std::fs::read_to_string(data.join("studio.db")).unwrap(), "simdiki");
     assert!(bekleyen(&data).is_none());
     let _ = std::fs::remove_dir_all(&data);
   }
@@ -424,9 +448,9 @@ mod tests {
     let eski = gecici("eski");
     std::fs::create_dir_all(eski.join("data").join("tools")).unwrap();
     std::fs::write(eski.join("data").join("settings-panel.json"), "eski").unwrap();
-    std::fs::write(eski.join("data").join("botaxt.db"), "db").unwrap();
-    std::fs::write(eski.join("data").join("botaxt.db-wal"), "son yazilanlar").unwrap();
-    std::fs::write(eski.join("data").join("botaxt.db-shm"), "shm").unwrap();
+    std::fs::write(eski.join("data").join("studio.db"), "db").unwrap();
+    std::fs::write(eski.join("data").join("studio.db-wal"), "son yazilanlar").unwrap();
+    std::fs::write(eski.join("data").join("studio.db-shm"), "shm").unwrap();
     std::fs::write(eski.join("data").join("tools").join("ffmpeg.exe"), "x").unwrap();
     std::fs::create_dir_all(eski.join("assets").join("logos")).unwrap();
     std::fs::write(eski.join("assets").join("logos").join("l.png"), "png").unwrap();
@@ -438,14 +462,40 @@ mod tests {
     bekleyeni_uygula(&data, None, &yeni.join("assets")).unwrap();
     assert_eq!(std::fs::read_to_string(data.join("settings-panel.json")).unwrap(), "eski");
     // Temiz kapanmamış eski kurulumun son yazılanları taşınır; -shm taşınmaz
-    assert_eq!(std::fs::read_to_string(data.join("botaxt.db-wal")).unwrap(), "son yazilanlar");
-    assert!(!data.join("botaxt.db-shm").exists());
+    assert_eq!(std::fs::read_to_string(data.join("studio.db-wal")).unwrap(), "son yazilanlar");
+    assert!(!data.join("studio.db-shm").exists());
     assert!(!data.join("tools").exists());
     assert!(yeni.join("assets").join("logos").join("l.png").exists());
     // Taşımadan önceki ayarlar yedekte
     let onceki = &listele(&data)[0];
-    assert_eq!(std::fs::read_to_string(yedek_klasoru(&data).join(&onceki.ad).join("yya").join("settings-panel.json")).unwrap(), "yeni");
+    assert_eq!(std::fs::read_to_string(yedek_klasoru(&data).join(&onceki.ad).join("studio").join("settings-panel.json")).unwrap(), "yeni");
     let _ = std::fs::remove_dir_all(&eski);
     let _ = std::fs::remove_dir_all(&yeni);
+  }
+  #[test]
+  fn eski_adli_yedek_ve_kurulum_yeni_adlara_yerlesir() {
+    let data = gecici("eski-ad");
+    std::fs::write(data.join("studio.db"), "simdiki").unwrap();
+    std::fs::write(data.join("studio.db-wal"), "simdiki-wal").unwrap();
+    let yya = yedek_klasoru(&data).join("20261104-120000").join(crate::eski_adlar::YEDEK_KLASORU);
+    std::fs::create_dir_all(&yya).unwrap();
+    std::fs::write(yya.join(crate::eski_adlar::STUDIO_DB), "yedekteki").unwrap();
+    isaretle(&data, "yedek:20261104-120000").unwrap();
+    bekleyeni_uygula(&data, None, &data.join("assets")).unwrap();
+    assert_eq!(std::fs::read_to_string(data.join("studio.db")).unwrap(), "yedekteki");
+    assert!(!data.join("studio.db-wal").exists());
+    assert!(!data.join(crate::eski_adlar::STUDIO_DB).exists());
+
+    let eski = gecici("eski-ad-kurulum");
+    std::fs::create_dir_all(eski.join("data")).unwrap();
+    std::fs::write(eski.join("data").join(crate::eski_adlar::STUDIO_DB), "eski-db").unwrap();
+    std::fs::write(eski.join("data").join(format!("{}-wal", crate::eski_adlar::STUDIO_DB)), "eski-wal").unwrap();
+    assert!(eski_kurulum_mu(&eski));
+    isaretle(&data, &format!("tasi:{}", eski.display())).unwrap();
+    bekleyeni_uygula(&data, None, &data.join("assets")).unwrap();
+    assert_eq!(std::fs::read_to_string(data.join("studio.db")).unwrap(), "eski-db");
+    assert_eq!(std::fs::read_to_string(data.join("studio.db-wal")).unwrap(), "eski-wal");
+    let _ = std::fs::remove_dir_all(&eski);
+    let _ = std::fs::remove_dir_all(&data);
   }
 }

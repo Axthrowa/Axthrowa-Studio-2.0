@@ -263,6 +263,6 @@ jobs:
             echo "Sentry ayarlı değil; atlandı"
             exit 0
           fi
-          surum="yayin-yonetim-araci@${ETIKET#v}"
+          surum="axthrowa-studio@${ETIKET#v}"
           npx --yes @sentry/cli@2 releases new "$surum"
           npx --yes @sentry/cli@2 releases finalize "$surum"

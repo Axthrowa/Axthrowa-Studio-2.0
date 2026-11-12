@@ -163,7 +163,7 @@ const sbom = {
   specVersion: '1.5',
   version: 1,
   metadata: {
-    component: { type: 'application', name: 'yayin-yonetim-araci', version: surum, licenses: [{ expression: 'GPL-2.0-or-later' }] },
+    component: { type: 'application', name: 'axthrowa-studio', version: surum, licenses: [{ expression: 'GPL-2.0-or-later' }] },
   },
   components: liste.map((b) => ({
     type: 'library',

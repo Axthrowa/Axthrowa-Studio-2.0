@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
+import { useOverlayBotConfig } from "../../lib/sohbetBot/useOverlayWidgetEvents";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
 
 export default function PollPage() {
   useObsKeepalive();

@@ -14,7 +14,7 @@ export type ActionInfo = {
   category: string;
   perm: string;
   confirm: boolean;
-  requires: "obs" | "multistream" | "streamAxt";
+  requires: "obs" | "multistream" | "axBot";
   params: { name: string; kind: ActionParamKind }[];
   available: boolean;
   reason: string | null;

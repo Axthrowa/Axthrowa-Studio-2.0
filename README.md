@@ -48,7 +48,7 @@ cd src-tauri && cargo test --lib
 
 ### Tam paket
 
-Tam paket botu da içerir. `npm run build:cikti` önce Studio, Resonance ve AxBoT testlerini çalıştırır, sonra derleyip imzalar. AxBoT'un `Desktop\StreamAxT` klasöründe olması beklenir. Başka bir yerdeyse `scripts/streamaxt-hazirla.mjs` betiğine `--kaynak <klasör>` verin. Sürüm `package.json` içindedir; betik sürümü kendisi yükseltmez ve kurulumu kendiliğinden indirmez.
+Tam paket botu da içerir. `npm run build:cikti` önce Studio, Resonance ve AxBoT testlerini çalıştırır, sonra derleyip imzalar. AxBoT'un `Desktop\AxBoT` klasöründe olması beklenir. Başka bir yerdeyse `scripts/axbot-hazirla.mjs` betiğine `--kaynak <klasör>` verin. Sürüm `package.json` içindedir; betik sürümü kendisi yükseltmez ve kurulumu kendiliğinden indirmez.
 
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts/build-release-signed.ps1

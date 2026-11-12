@@ -83,8 +83,8 @@ export function formatAppError(raw: unknown): string {
   }
   if (low.includes("rate limit") || /\b429\b/.test(t) || low.includes("hız limiti")) {
     return (
-      "Kick sohbet hız limiti. BotAxT mesajları sıraya alır; birkaç saniye bekleyin.\n\n" +
-      "Yayın sohbetinde /mod BotAxT verin (Botrix’te botrixlive nasıl moderatörse)."
+      "Kick sohbet hız limiti. Bot mesajları sıraya alır; birkaç saniye bekleyin.\n\n" +
+      "Yayın sohbetinde bot hesabınıza /mod verin."
     );
   }
   return t;

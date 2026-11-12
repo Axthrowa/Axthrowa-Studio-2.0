@@ -18,7 +18,7 @@ $proj = Split-Path $PSScriptRoot -Parent
 Set-Location $proj
 
 # Cargo ciktisini Cursor sandbox cache'e degil kullanici LocalAppData'ya al
-$td = Join-Path $env:LOCALAPPDATA "yya-cargo-target"
+$td = Join-Path $env:LOCALAPPDATA "studio-cargo-target"
 New-Item -ItemType Directory -Force -Path $td | Out-Null
 $env:CARGO_TARGET_DIR = $td
 
@@ -30,12 +30,12 @@ if (-not $SkipTests) {
     npm --prefix resonance test
     if ($LASTEXITCODE -ne 0) { throw "Resonance testleri basarisiz" }
   }
-  $bot = Join-Path $env:USERPROFILE "Desktop\StreamAxT\server"
+  $bot = Join-Path $env:USERPROFILE "Desktop\AxBoT\server"
   if (Test-Path (Join-Path $bot "package.json")) {
     npm --prefix $bot exec vitest run
     if ($LASTEXITCODE -ne 0) { throw "AxBoT testleri basarisiz" }
   } else {
-    Write-Warning "Desktop\StreamAxT yok; AxBoT testleri atlandi"
+    Write-Warning "Desktop\AxBoT yok; AxBoT testleri atlandi"
   }
 }
 
@@ -63,8 +63,8 @@ if (-not $SkipRust) {
     cargo build --release
     if ($LASTEXITCODE -eq 0) {
       $rustOk = $true
-      $built = Join-Path $td "release\yayin-yonetim-araci.exe"
-      $dest = Join-Path $proj "src-tauri\target\release\yayin-yonetim-araci.exe"
+      $built = Join-Path $td "release\axthrowa-studio.exe"
+      $dest = Join-Path $proj "src-tauri\target\release\axthrowa-studio.exe"
       New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
       Copy-Item -LiteralPath $built -Destination $dest -Force
       Write-Host "exe copied -> $dest"
@@ -82,7 +82,7 @@ $bundleOk = $false
 $nsisDir = Join-Path $td "release\bundle\nsis"
 if (-not $SkipBundle) {
   Write-Host "== NSIS setup (tauri bundle) =="
-  $cfgPath = Join-Path $env:TEMP "yya-tauri-bundle.json"
+  $cfgPath = Join-Path $env:TEMP "studio-tauri-bundle.json"
   $kaynaklar = [ordered]@{ "../dist" = "dist/"; "../resonance/dist" = "resonance/dist/" }
   $cfg = @{ bundle = @{ createUpdaterArtifacts = $false; resources = $kaynaklar } } | ConvertTo-Json -Depth 5
   # UTF-8 BOM'suz: yol Turkce karakter icerebilir, tauri BOM'lu JSON'u okuyamaz.
@@ -101,7 +101,7 @@ if (-not $SkipBundle) {
 }
 
 Write-Host "== AxBoT =="
-node (Join-Path $proj "scripts\streamaxt-hazirla.mjs")
+node (Join-Path $proj "scripts\axbot-hazirla.mjs")
 if ($LASTEXITCODE -ne 0) { throw "AxBoT pakete hazirlanamadi" }
 
 Write-Host "== Paketle -> cikti\ =="

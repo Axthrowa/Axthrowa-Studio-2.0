@@ -1,6 +1,6 @@
 // Komut paletinin ayar dizinini üretir: src/lib/ayarDizini.json
 // Studio sayfaları çalışan Vite geliştirme sunucusunda başsız Chrome ile gezilir (her sayfa ve her sekmesi açılıp
-// etiket/başlık metinleri toplanır); bot (AxBoT) sayfaları ../StreamAxT/client/src/pages kaynağından okunur.
+// etiket/başlık metinleri toplanır); bot (AxBoT) sayfaları ../AxBoT/client/src/pages kaynağından okunur.
 // Kullanım: npx vite --port 5201 açıkken  node scripts/ayar-dizini.mjs http://127.0.0.1:5201/panel
 // Not: geliştirme sunucusunda API kökü Vite'ın kendisidir; gezinti gerçek uygulamaya hiçbir şey yazmaz.
 import { spawn } from 'node:child_process';
@@ -41,7 +41,7 @@ const TOPLA = `(() => {
   const ana = document.querySelector('.panel-shell') || document.body;
   const out = [];
   ana.querySelectorAll('label, legend, h2, h3, h4, summary, p.uppercase, div.uppercase > span').forEach((el) => {
-    if (el.closest('.yya-nav-rail') || el.closest('[role="dialog"]')) return;
+    if (el.closest('.studio-nav-rail') || el.closest('[role="dialog"]')) return;
     // Kopyadan seçim kutusu/düğme gibi denetimler çıkarılır: yalnız etiketin kendi yazısı kalır
     const k = el.cloneNode(true);
     k.querySelectorAll('select, option, input, textarea, button, svg, [aria-hidden="true"], .sr-only').forEach((x) => x.remove());
@@ -49,29 +49,29 @@ const TOPLA = `(() => {
     const t = (k.textContent || '').replace(/\\s+/g, ' ').trim();
     if (t) out.push(t);
   });
-  ana.querySelectorAll('[role="group"][aria-label]').forEach((el) => !el.closest('.yya-nav-rail') && out.push(el.getAttribute('aria-label')));
+  ana.querySelectorAll('[role="group"][aria-label]').forEach((el) => !el.closest('.studio-nav-rail') && out.push(el.getAttribute('aria-label')));
   return out;
 })()`;
-const SEKMELER = `[...(document.querySelector('.panel-shell') || document.body).querySelectorAll('[role="tab"]')].filter((e) => !e.closest('.yya-nav-rail')).map((e) => (e.innerText || '').trim()).filter(Boolean)`;
+const SEKMELER = `[...(document.querySelector('.panel-shell') || document.body).querySelectorAll('[role="tab"]')].filter((e) => !e.closest('.studio-nav-rail')).map((e) => (e.innerText || '').trim()).filter(Boolean)`;
 
 const kayit = [];
 const ekle = (s, a, t) => kayit.push(t ? { s, a, t } : { s, a });
-const gruplar = await js(`document.querySelectorAll('.yya-nav-rail nav > div').length`);
+const gruplar = await js(`document.querySelectorAll('.studio-nav-rail nav > div').length`);
 const gezilen = new Set();
 for (let g = 0; g < gruplar; g++) {
-  await js(`document.querySelectorAll('.yya-nav-rail nav > div')[${g}].querySelector('button').click()`);
+  await js(`document.querySelectorAll('.studio-nav-rail nav > div')[${g}].querySelector('button').click()`);
   await bekle(900);
-  const altlar = await js(`[...document.querySelectorAll('.yya-nav-rail nav > div')[${g}].querySelectorAll('button[data-nav-id]')].map((b) => b.dataset.navId)`);
+  const altlar = await js(`[...document.querySelectorAll('.studio-nav-rail nav > div')[${g}].querySelectorAll('button[data-nav-id]')].map((b) => b.dataset.navId)`);
   for (let i = 0; i < altlar.length; i++) {
     const nav = altlar[i];
     if (nav === 'bot' || gezilen.has(nav)) continue;
     gezilen.add(nav);
-    await js(`[...document.querySelectorAll('.yya-nav-rail nav > div')[${g}].querySelectorAll('button[data-nav-id]')][${i}].click()`);
+    await js(`[...document.querySelectorAll('.studio-nav-rail nav > div')[${g}].querySelectorAll('button[data-nav-id]')][${i}].click()`);
     await bekle(1800);
     for (const a of (await js(TOPLA)) || []) ekle(nav, a);
     const sekmeler = (await js(SEKMELER)) || [];
     for (const t of sekmeler) {
-      await js(`[...document.querySelector('.panel-shell').querySelectorAll('[role="tab"]')].filter((e) => !e.closest('.yya-nav-rail')).find((e) => (e.innerText || '').trim() === ${JSON.stringify(t)})?.click()`);
+      await js(`[...document.querySelector('.panel-shell').querySelectorAll('[role="tab"]')].filter((e) => !e.closest('.studio-nav-rail')).find((e) => (e.innerText || '').trim() === ${JSON.stringify(t)})?.click()`);
       await bekle(700);
       ekle(nav, t);
       for (const a of (await js(TOPLA)) || []) ekle(nav, a, t);
@@ -85,7 +85,7 @@ await bekle(800);
 await cdp("Browser.close").catch(() => {});
 
 // Bot sayfaları: App.tsx'teki `case 'sekme': return <Sayfa` eşlemesi, sayfa kaynağındaki etiket/başlık metinleri
-const botKok = path.resolve(kok, '../StreamAxT/client/src');
+const botKok = path.resolve(kok, '../AxBoT/client/src');
 if (existsSync(botKok)) {
   const app = readFileSync(path.join(botKok, 'App.tsx'), 'utf8');
   const esle = [...app.matchAll(/case '([\w-]+)': return <(\w+)/g)];

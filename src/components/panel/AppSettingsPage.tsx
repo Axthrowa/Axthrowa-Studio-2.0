@@ -30,7 +30,7 @@ import { SETTINGS_SECTIONS, visibleOrdered, type PanelLayout } from "../../lib/p
 import { useStudioTheme, type StudioSkin } from "../../lib/theme/ThemeContext";
 import { cn } from "../../lib/cn";
 import { SegmentedControl, TabPanel, Tabs } from "../ui";
-import { streamaxtBase } from "../../lib/streamaxt";
+import { axbotBase } from "../../lib/axbot";
 
 type Tab = "general" | "help" | "about";
 
@@ -155,7 +155,7 @@ export default function AppSettingsPage({
         })}
       />
 
-      <TabPanel key={activeTab} idPrefix="ayar" id={activeTab} className="yya-sayfa-gir">
+      <TabPanel key={activeTab} idPrefix="ayar" id={activeTab} className="studio-sayfa-gir">
       {activeTab === "general" && (
         // Geniş ekranda iki sütun: ayar blokları bölünmez, ayırıcı çizgiler sütunda gereksiz
         <div className="columns-1 gap-8 rounded-lg border border-white/[0.07] bg-panel-card/60 p-4 xl:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid [&>hr]:hidden xl:[&>hr]:hidden">
@@ -177,7 +177,7 @@ export default function AppSettingsPage({
           <div className="space-y-2.5">
             <p className="text-xs md:text-[13px] font-semibold uppercase tracking-wide text-white/85">Görünüm stili</p>
             {skin === "gun-isigi" ? <p className="text-xs text-white/75">{t("settings.skinLightHint")}</p> : null}
-            <div className="yya-liste-gir grid gap-1.5 sm:grid-cols-2">
+            <div className="studio-liste-gir grid gap-1.5 sm:grid-cols-2">
               {skins.map((s) => {
                 const on = skin === s.id;
                 return (
@@ -187,7 +187,7 @@ export default function AppSettingsPage({
                     aria-pressed={on}
                     onClick={() => setSkin(s.id as StudioSkin)}
                     className={cn(
-                      "yya-kalk flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-all duration-150 active:scale-[0.99]",
+                      "studio-kalk flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-all duration-150 active:scale-[0.99]",
                       on
                         ? "border-panel-accent/60 bg-panel-accent/[0.12] shadow-glow-sm"
                         : "border-white/[0.07] bg-black/30 hover:border-white/[0.12] hover:bg-black/50"
@@ -515,11 +515,11 @@ function DestekPaketi() {
   );
 }
 
-/** AxthrowA Studio ve gömülü AxBoT sürümü (bot kapalıysa yalnız YYA) */
+/** AxthrowA Studio ve gömülü AxBoT sürümü (bot kapalıysa yalnız Studio) */
 function SurumSatiri() {
   const [bot, setBot] = useState<string | null>(null);
   useEffect(() => {
-    streamaxtBase()
+    axbotBase()
       .then((b) => fetch(`${b}/health`))
       .then((r) => r.json())
       .then((d) => setBot(typeof d?.surum === "string" ? d.surum : null))
@@ -527,7 +527,7 @@ function SurumSatiri() {
   }, []);
   return (
     <p className="mt-1 text-xs text-panel-muted">
-      Sürüm <b className="text-white">v{__YYA_SURUM__}</b>
+      Sürüm <b className="text-white">v{__STUDIO_SURUM__}</b>
       {bot && (
         <>
           {" "}· AxBoT <b className="text-white">v{bot}</b>

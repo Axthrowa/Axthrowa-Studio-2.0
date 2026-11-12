@@ -1,12 +1,12 @@
 //! Uzak giriş şifreleri argon2id ile saklanır; eski tuzlu SHA-256 kayıtlar ilk girişte yükseltilir.
 
 use sha2::{Digest, Sha256};
-use yayin_yonetim_araci_lib::db::botaxt_api::{remote_login, remote_setup};
-use yayin_yonetim_araci_lib::AppState;
+use axthrowa_studio_lib::db::bot_api::{remote_login, remote_setup};
+use axthrowa_studio_lib::AppState;
 
 #[tokio::test]
 async fn eski_kayit_calisir_ve_girisle_yukseltilir() {
-  yayin_yonetim_araci_lib::secret_store::set_service_override("com.axthrowa.yayin-yonetim-araci.test");
+  axthrowa_studio_lib::secret_store::set_service_override("com.axthrowa.studio.test");
   let root = std::env::temp_dir().join(format!("yayin-uzakgiris-{}", std::process::id()));
   let _ = std::fs::remove_dir_all(&root);
   std::fs::create_dir_all(&root).unwrap();

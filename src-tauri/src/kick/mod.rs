@@ -119,18 +119,18 @@ async fn try_endpoint(url: &str, slug: &str) -> Result<(String, Option<Value>)> 
   let status = res.status();
   let text = res.text().await.unwrap_or_default();
   if status.as_u16() == 403 {
-    yya_warn!(
+    studio_warn!(
       "[kick] Cloudflare/403 engeli · {url} · gövde_uzunluk={}",
       text.len()
     );
     return Err(anyhow!("HTTP 403 (Cloudflare?)"));
   }
   if status.as_u16() == 404 {
-    yya_warn!("[kick] 404 kanal bulunamadı · {url} · slug={slug}");
+    studio_warn!("[kick] 404 kanal bulunamadı · {url} · slug={slug}");
     return Err(anyhow!("HTTP 404"));
   }
   if !status.is_success() {
-    yya_warn!("[kick] HTTP {status} · {url}");
+    studio_warn!("[kick] HTTP {status} · {url}");
     return Err(anyhow!("HTTP {status}"));
   }
   let parsed = serde_json::from_str::<Value>(&text).ok();
@@ -181,7 +181,7 @@ async fn try_curl(url: &str, slug: &str) -> Result<(String, Option<Value>)> {
   if text.contains("Just a moment") || text.contains("cf-browser-verification") {
     return Err(anyhow!("curl Cloudflare challenge HTML"));
   }
-  yya_log!(
+  studio_log!(
     "[kick] curl.exe OK · {url} · {} bayt",
     text.len()
   );
@@ -257,7 +257,7 @@ pub async fn fetch_chatroom(slug: &str) -> Result<Value> {
     return Err(anyhow!("Kick kullanıcı adı boş"));
   }
 
-  yya_log!("Kick kanal ID aranıyor: {slug}");
+  studio_log!("Kick kanal ID aranıyor: {slug}");
 
   let endpoints = [
     format!("https://kick.com/api/v1/channels/{slug}"),
@@ -276,7 +276,7 @@ pub async fn fetch_chatroom(slug: &str) -> Result<Value> {
           .and_then(chatroom_from_json)
           .or_else(|| scrape_chatroom_id(&body));
         if let Some(chatroom_id) = id {
-          yya_log!("Bulunan Chatroom ID: {chatroom_id}");
+          studio_log!("Bulunan Chatroom ID: {chatroom_id}");
           return Ok(pack_chatroom(
             &slug,
             chatroom_id,
@@ -285,11 +285,11 @@ pub async fn fetch_chatroom(slug: &str) -> Result<Value> {
           ));
         }
         last_err = format!("{url} → chatroom id yok");
-        yya_warn!("[kick] {last_err}");
+        studio_warn!("[kick] {last_err}");
       }
       Err(e) => {
         last_err = format!("{url} → {e}");
-        yya_warn!("[kick] reqwest başarısız, curl deneniyor · {last_err}");
+        studio_warn!("[kick] reqwest başarısız, curl deneniyor · {last_err}");
         // 2) curl.exe yedek
         match try_curl(url, &slug).await {
           Ok((body, parsed)) => {
@@ -298,7 +298,7 @@ pub async fn fetch_chatroom(slug: &str) -> Result<Value> {
               .and_then(chatroom_from_json)
               .or_else(|| scrape_chatroom_id(&body));
             if let Some(chatroom_id) = id {
-              yya_log!("Bulunan Chatroom ID: {chatroom_id} (curl)");
+              studio_log!("Bulunan Chatroom ID: {chatroom_id} (curl)");
               return Ok(pack_chatroom(
                 &slug,
                 chatroom_id,
@@ -307,7 +307,7 @@ pub async fn fetch_chatroom(slug: &str) -> Result<Value> {
               ));
             }
             last_err = format!("curl {url} → chatroom id yok");
-            yya_warn!("[kick] {last_err}");
+            studio_warn!("[kick] {last_err}");
           }
           Err(ce) => {
             last_err = format!("{url} → reqwest:{e} · curl:{ce}");

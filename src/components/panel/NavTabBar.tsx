@@ -71,7 +71,7 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, labelFor, 
   };
 
   return (
-    <aside className={`yya-nav-rail flex h-full shrink-0 flex-col border-r border-panel-border bg-[var(--dt-surface-1)] transition-[width] duration-150 ${dar ? "w-[52px]" : "w-[200px]"}`}>
+    <aside className={`studio-nav-rail flex h-full shrink-0 flex-col border-r border-panel-border bg-[var(--dt-surface-1)] transition-[width] duration-150 ${dar ? "w-[52px]" : "w-[200px]"}`}>
       <nav className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-2" aria-label={t("nav.menu")}>
         {ANA_MENU.map((grup) => {
           const sayfalar = grup.sayfalar.filter((s) => visible.has(s.nav));

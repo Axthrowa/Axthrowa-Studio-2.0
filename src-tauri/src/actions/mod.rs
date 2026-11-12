@@ -44,7 +44,7 @@ pub struct ParamSpec {
 pub enum Requires {
   Obs,
   Multistream,
-  StreamAxt,
+  AxBot,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -109,13 +109,13 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "audio.pushToMute", label: "Bas-sustur (basılıyken ses kapalı)", category: "audio", perm: "audio.control", confirm: false, requires: Requires::Obs, params: GIRIS },
   ActionSpec { id: "media.restart", label: "Medyayı baştan oynat", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: GIRIS },
   ActionSpec { id: "media.playPause", label: "Medyayı oynat / duraklat", category: "scene", perm: "scene.switch", confirm: false, requires: Requires::Obs, params: GIRIS },
-  ActionSpec { id: "voice.pushToTalk", label: "Sesli komut: bas-konuş (basılıyken dinler)", category: "voice", perm: "voice.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
-  ActionSpec { id: "alert.pause", label: "Uyarıları duraklat", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
-  ActionSpec { id: "alert.resume", label: "Uyarıları sürdür", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
-  ActionSpec { id: "alert.skip", label: "Uyarıyı atla", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
-  ActionSpec { id: "alert.mute", label: "Uyarı sesini kapat", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
-  ActionSpec { id: "alert.unmute", label: "Uyarı sesini aç", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::StreamAxt, params: &[] },
-  ActionSpec { id: "alert.clear", label: "Bekleyen uyarıları temizle", category: "alerts", perm: "alerts.control", confirm: true, requires: Requires::StreamAxt, params: &[] },
+  ActionSpec { id: "voice.pushToTalk", label: "Sesli komut: bas-konuş (basılıyken dinler)", category: "voice", perm: "voice.control", confirm: false, requires: Requires::AxBot, params: &[] },
+  ActionSpec { id: "alert.pause", label: "Uyarıları duraklat", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::AxBot, params: &[] },
+  ActionSpec { id: "alert.resume", label: "Uyarıları sürdür", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::AxBot, params: &[] },
+  ActionSpec { id: "alert.skip", label: "Uyarıyı atla", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::AxBot, params: &[] },
+  ActionSpec { id: "alert.mute", label: "Uyarı sesini kapat", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::AxBot, params: &[] },
+  ActionSpec { id: "alert.unmute", label: "Uyarı sesini aç", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::AxBot, params: &[] },
+  ActionSpec { id: "alert.clear", label: "Bekleyen uyarıları temizle", category: "alerts", perm: "alerts.control", confirm: true, requires: Requires::AxBot, params: &[] },
 ];
 
 pub fn find(id: &str) -> Option<&'static ActionSpec> {

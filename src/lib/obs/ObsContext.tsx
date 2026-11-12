@@ -12,7 +12,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { getBotConfig } from "../smartBot";
+import { getBotConfig } from "../sohbetBot";
 import {
   connectObs,
   disconnectObs,
@@ -197,7 +197,7 @@ export function ObsProvider({ children }: { children: ReactNode }) {
         }
         if (msg.type === "auth_success") {
           window.dispatchEvent(
-            new CustomEvent("yya-auth-success", { detail: msg })
+            new CustomEvent("studio-auth-success", { detail: msg })
           );
         }
       } catch {
@@ -223,10 +223,10 @@ export function ObsProvider({ children }: { children: ReactNode }) {
       if (!scene) return;
       void goScene(scene).catch((err) => logger.warn("[ObsProvider] shop scene:", err));
     };
-    window.addEventListener("yya-shop-scene", onShopScene);
+    window.addEventListener("studio-shop-scene", onShopScene);
     connectWs();
     return () => {
-      window.removeEventListener("yya-shop-scene", onShopScene);
+      window.removeEventListener("studio-shop-scene", onShopScene);
       closed = true;
       if (retry) window.clearTimeout(retry);
       try {

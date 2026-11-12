@@ -12,7 +12,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// `tauri.conf.json` → identifier
-pub const APP_IDENTIFIER: &str = "com.axthrowa.yayin-yonetim-araci";
+pub const APP_IDENTIFIER: &str = "com.axthrowa.studio";
 const PORTABLE_MARKER: &str = "portable.txt";
 const DATA_FOLDER: &str = "data";
 
@@ -45,7 +45,12 @@ fn installed_app_data_dir() -> PathBuf {
   #[cfg(windows)]
   {
     if let Some(appdata) = std::env::var_os("APPDATA") {
-      return PathBuf::from(appdata).join(APP_IDENTIFIER);
+      let kok = PathBuf::from(appdata);
+      // Kimlik değişti: eski klasör ilk açılışta kopyalanır; kopyalanamazsa veri kaybolmasın diye eskisi kullanılır
+      if !crate::eski_adlar::kimlik_klasorunu_kopyala(&kok, APP_IDENTIFIER) && kok.join(crate::eski_adlar::KIMLIK).is_dir() {
+        return kok.join(crate::eski_adlar::KIMLIK);
+      }
+      return kok.join(APP_IDENTIFIER);
     }
   }
   #[cfg(not(windows))]
@@ -69,7 +74,7 @@ fn portable_data_dir(exe: &Path) -> PathBuf {
       if data_c.starts_with(&exe_c) {
         data_c
       } else {
-        yya_warn!(
+        studio_warn!(
           "[paths] portable data yolu exe dışında kaldı ({}); yedek kullanılıyor",
           data_c.display()
         );
@@ -86,10 +91,10 @@ fn migrate_legacy_app_data(resource_root: &Path, data_dir: &Path) {
   if !legacy.is_dir() {
     return;
   }
-  let new_db = data_dir.join("botaxt.db");
-  let legacy_db = legacy.join("botaxt.db");
+  let new_db = data_dir.join("studio.db");
+  let legacy_db = legacy.join(crate::eski_adlar::STUDIO_DB);
   let legacy_botrix = legacy.join("botrix.db");
-  if new_db.exists() {
+  if new_db.exists() || data_dir.join(crate::eski_adlar::STUDIO_DB).exists() {
     return;
   }
   if !legacy_db.exists() && !legacy_botrix.exists() {
@@ -102,7 +107,7 @@ fn migrate_legacy_app_data(resource_root: &Path, data_dir: &Path) {
       return;
     }
   }
-  yya_warn!(
+  studio_warn!(
     "[paths] eski app-data → {} taşınıyor…",
     data_dir.display()
   );
@@ -122,7 +127,7 @@ fn migrate_legacy_app_data(resource_root: &Path, data_dir: &Path) {
   }
 }
 
-fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
+pub(crate) fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
   fs::create_dir_all(dst)?;
   for ent in fs::read_dir(src)? {
     let ent = ent?;
@@ -148,7 +153,7 @@ pub fn resolve(resource_root: PathBuf) -> AppPaths {
   migrate_legacy_app_data(&resource_root, &data_dir);
   let _ = fs::create_dir_all(&data_dir);
   let _ = fs::create_dir_all(data_dir.join("media"));
-  yya_log!(
+  studio_log!(
     "[paths] mode={} · data={} · resources={}",
     if portable { "portable" } else { "installed" },
     data_dir.display(),

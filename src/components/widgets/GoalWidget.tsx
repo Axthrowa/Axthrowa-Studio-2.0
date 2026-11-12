@@ -375,7 +375,7 @@ export default function GoalWidget({ config }: Props) {
 
   return (
     <motion.div
-      className="flex yya-widget-root h-full min-h-[64px] w-full items-center justify-center bg-transparent px-2 py-1.5"
+      className="flex studio-widget-root h-full min-h-[64px] w-full items-center justify-center bg-transparent px-2 py-1.5"
       style={{ opacity, fontFamily }}
       animate={
         isComplete

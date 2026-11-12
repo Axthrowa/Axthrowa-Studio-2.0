@@ -44,7 +44,7 @@ test asıl nedeni düzeltilerek geçirildi (aşağıda "Testlerin yakaladıklar�
 **Panel ön yüz (TS)**
 - `controlCenter.test.ts`: düzen ayrıştırma/göç, gizle/genişlik/sıra, hazır düzenler, durum etiketleri, bayt biçimi,
   yeni panelin eski kayıtlı düzene gizli eklenmesi.
-- `streamaxt.test.ts`: AxBoT kök adresi (port korunur, zararlı şema reddedilir), ses girişi kuralı.
+- `axbot.test.ts`: AxBoT kök adresi (port korunur, zararlı şema reddedilir), ses girişi kuralı.
 
 **AxBoT**
 - `modules/alerts/control.test.ts`: uyarı kuyruğu denetimi (duraklat/sürdür/atla/sustur/temizle/yeniden oynat),

@@ -76,7 +76,7 @@ impl KickChatRuntime {
       return;
     };
     if let Err(e) = self.connect(state, &slug).await {
-      yya_warn!("[kick-chat] kanal yüklenemedi: {e:#}");
+      studio_warn!("[kick-chat] kanal yüklenemedi: {e:#}");
     }
   }
 }
@@ -107,7 +107,7 @@ pub async fn save_kick_slug(pool: &sqlx::SqlitePool, slug: &str) -> Result<()> {
   .execute(pool)
   .await
   .context("Kick slug kaydı")?;
-  yya_log!("[kick-chat] SQLite’a kaydedildi: kick={slug}");
+  studio_log!("[kick-chat] SQLite’a kaydedildi: kick={slug}");
   Ok(())
 }
 

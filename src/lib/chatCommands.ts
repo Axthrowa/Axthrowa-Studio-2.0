@@ -11,8 +11,8 @@ import {
   resolveSoundboard,
   type SoundPad,
 } from "./soundboard";
-import { enqueueBotReply } from "./smartBot/replyQueue";
-import { isLocalBotUser } from "./smartBot/botIdentity";
+import { enqueueBotReply } from "./sohbetBot/replyQueue";
+import { isLocalBotUser } from "./sohbetBot/botIdentity";
 
 const RESERVED = new Set([
   "seslistesi",

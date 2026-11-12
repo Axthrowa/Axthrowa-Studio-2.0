@@ -73,7 +73,7 @@ async fn api_paket(
 
 /// Paketin gizlenmemiş hâli (yalnız bellekte) ve bölüm adları.
 async fn bot_ozeti() -> Value {
-  let adres = format!("http://127.0.0.1:{}/api/durum-ozeti", crate::streamaxt::port());
+  let adres = format!("http://127.0.0.1:{}/api/durum-ozeti", crate::axbot::port());
   let istemci = match reqwest::Client::builder().timeout(std::time::Duration::from_secs(2)).build() {
     Ok(i) => i,
     Err(e) => return json!({"hata": e.to_string()}),
@@ -87,7 +87,7 @@ async fn bot_ozeti() -> Value {
 
 async fn topla(state: &Arc<AppState>) -> (Value, Vec<&'static str>) {
   let mut p = json!({
-    "bicim": "yya-destek-paketi",
+    "bicim": "studio-destek-paketi",
     "surum": 1,
     "olusturuldu": chrono::Local::now().to_rfc3339(),
     "uygulama": {
@@ -135,8 +135,8 @@ async fn topla(state: &Arc<AppState>) -> (Value, Vec<&'static str>) {
   let mut gunluk = serde_json::Map::new();
   gunluk.insert("axthrowa.log".into(), json!(son_satirlar(&state.data_dir.join("logs").join("axthrowa.log"), 200)));
   gunluk.insert("hotkey-hatalari.log".into(), json!(son_satirlar(&state.data_dir.join("hotkey-hatalari.log"), 100)));
-  if let Some(d) = crate::streamaxt::find_dir() {
-    gunluk.insert("streamaxt.log".into(), json!(son_satirlar(&d.join("streamaxt.log"), 100)));
+  if let Some(d) = crate::axbot::find_dir() {
+    gunluk.insert("axbot.log".into(), json!(son_satirlar(&d.join("axbot.log"), 100)));
   }
   p["gunlukler"] = Value::Object(gunluk);
   bolumler.push("gunlukler");

@@ -1,5 +1,5 @@
 /**
- * Chat Overlay — Botrix tarzı temalar, rozet ikonları, emote, fade, gölge.
+ * Chat Overlay — hazır temalar, rozet ikonları, emote, fade, gölge.
  */
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -374,7 +374,7 @@ export default function ChatWidget({ config }: Props) {
 
   return (
     <div
-      className="relative flex yya-widget-root h-full w-full items-stretch justify-start bg-transparent p-2"
+      className="relative flex studio-widget-root h-full w-full items-stretch justify-start bg-transparent p-2"
       style={
         {
           opacity,
@@ -399,14 +399,14 @@ export default function ChatWidget({ config }: Props) {
           30% { opacity: .9 }
           100% { opacity: 0; transform: scale(1.06) }
         }
-        .yya-chat-scroll { scrollbar-width: none; }
-        .yya-chat-scroll::-webkit-scrollbar { display: none; }
-        .yya-chat-emote img { height: 1.35em; width: auto; vertical-align: -0.3em; }
+        .studio-chat-scroll { scrollbar-width: none; }
+        .studio-chat-scroll::-webkit-scrollbar { display: none; }
+        .studio-chat-emote img { height: 1.35em; width: auto; vertical-align: -0.3em; }
       `}</style>
 
       <div
         ref={scroller}
-        className={`yya-chat-scroll relative z-10 flex h-full min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden ${shell.wrap}`}
+        className={`studio-chat-scroll relative z-10 flex h-full min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden ${shell.wrap}`}
         style={{
           fontSize,
           background: shell.bg,
@@ -453,7 +453,7 @@ export default function ChatWidget({ config }: Props) {
                     {l.user}
                   </span>
                   <span className="text-white/50">: </span>
-                  <span className="yya-chat-emote" style={{ color: messageColor }}>
+                  <span className="studio-chat-emote" style={{ color: messageColor }}>
                     {showEmotes ? (
                       <MessageFormatter text={l.text} style={{ color: messageColor }} />
                     ) : (

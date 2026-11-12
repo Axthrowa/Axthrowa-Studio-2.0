@@ -195,7 +195,7 @@ async function endingEnd(live: OverlaySettings): Promise<{
   return { stopped, scene: scene || null };
 }
 
-export const STARTING_END_STORAGE_KEY = "yya.starting_end_at";
+export const STARTING_END_STORAGE_KEY = "studio.starting_end_at";
 
 export function seedStartingCountdown(minutes = 5): number {
   const end = Date.now() + Math.max(1, minutes) * 60_000;

@@ -5,7 +5,7 @@
  */
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ActivityFeedPanel } from "../components/control/UniversalChat";
-import StreamAxtHost from "../components/panel/StreamAxtHost";
+import AxBotHost from "../components/panel/AxBotHost";
 import { DeckPanel } from "../components/control/DeckPanel";
 import { YayinBilgisiDock } from "../components/control/YayinBilgisiDock";
 import { API_BASE } from "../lib/api";
@@ -52,7 +52,7 @@ export default function ObsDockSayfasi() {
   let icerik: React.ReactNode;
   switch (id) {
     case "sohbet":
-      icerik = <StreamAxtHost onToast={toast} tab="multichat" embed />;
+      icerik = <AxBotHost onToast={toast} tab="multichat" embed />;
       break;
     case "etkinlik":
       icerik = <ActivityFeedPanel onToast={toast} />;

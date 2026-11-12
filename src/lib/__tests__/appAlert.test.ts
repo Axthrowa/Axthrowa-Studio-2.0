@@ -24,7 +24,7 @@ describe("appAlert", () => {
       'Kick API chat gönderilemedi (429: {"data":{},"message":"Rate limit exceeded"})'
     );
     expect(msg).toContain("hız limiti");
-    expect(msg).toContain("/mod BotAxT");
+    expect(msg).toContain("/mod verin");
     expect(msg).not.toContain("Rate limit exceeded");
   });
 

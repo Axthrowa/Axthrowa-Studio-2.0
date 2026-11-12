@@ -94,7 +94,7 @@ function LiveMasterOverlay() {
 
   useEffect(() => {
     logger.log(
-      "[MasterOverlay/botaxt] enabled=",
+      "[MasterOverlay/bot] enabled=",
       enabledWidgets.length,
       "ws=",
       wsConnected,
@@ -147,14 +147,14 @@ function LiveMasterOverlay() {
   }, []);
 
   if (loading && enabledWidgets.length === 0) {
-    return <div className="h-screen w-screen bg-transparent" data-botaxt-master="loading" />;
+    return <div className="h-screen w-screen bg-transparent" data-bot-master="loading" />;
   }
 
   return (
     <div
       className="relative h-screen w-screen overflow-hidden bg-transparent"
       data-master-overlay="1"
-      data-botaxt-master="1"
+      data-bot-master="1"
       style={{ width: "100vw", height: "100vh" }}
     >
       <MasterOverlayCanvas

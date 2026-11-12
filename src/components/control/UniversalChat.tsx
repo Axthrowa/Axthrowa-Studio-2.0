@@ -8,7 +8,7 @@
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Pause, Play, RotateCcw, Search, Send } from "lucide-react";
-import { streamaxtBase } from "../../lib/streamaxt";
+import { axbotBase } from "../../lib/axbot";
 import { ACTIVITY_LABEL, CHAT_PLATFORMS, PLATFORM_LABEL, PLATFORM_SHORT, type ActivityEvent, type ChatPlatform, type NormalizedChatMessage } from "../../lib/chat/model";
 import { normalizeActivity, normalizeChat } from "../../lib/chat/normalize";
 import { addActivity, addChat, CHAT_VIEW_LABEL, CHAT_VIEWS, emptyChat, filterChat, platformCounts, type ChatState, type ChatView } from "../../lib/chat/store";
@@ -54,7 +54,7 @@ function enqueue(msg: unknown) {
 }
 
 async function connect() {
-  const base = await streamaxtBase();
+  const base = await axbotBase();
   if (!feed.listeners.size) return;
   publish({ base });
   const ws = new WebSocket(`${base.replace(/^http/, "ws")}/ws?type=dashboard`);
@@ -172,7 +172,7 @@ const RENDER_LIMIT = 250;
 
 /** Sohbet yazı boyutu (px) — izleyiciye özel tercih, bu tarayıcıda saklanır. */
 const YAZI_BOYUTLARI = [12, 14, 16] as const;
-const YAZI_KEY = "yya.chat.fontSize";
+const YAZI_KEY = "studio.chat.fontSize";
 
 function kayitliYaziBoyutu(): number {
   try {
@@ -303,7 +303,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
         </label>
         <div className="relative">
           <Search className="pointer-events-none absolute left-1.5 top-1.5 h-3 w-3 text-panel-muted" />
-          <input className="yya-input !py-0.5 !pl-6 w-32 text-xs" placeholder="Ara" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input className="studio-input !py-0.5 !pl-6 w-32 text-xs" placeholder="Ara" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <button type="button" className="min-h-6 rounded px-1 text-[11px] font-bold hover:bg-white/10" onClick={yaziBoyutuDegistir} title={`Yazı boyutu: ${yaziBoyutu} px (değiştirmek için tıkla)`} aria-label="Sohbet yazı boyutu">
           A<span className="text-[10px]">{yaziBoyutu}</span>
@@ -366,7 +366,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
       <ChatModes base={base} yetenek={yetenek} bagli={bagli} onToast={onToast} />
 
       <div className="flex items-center gap-1">
-        <select className="yya-input !w-auto max-w-[116px] shrink-0 !py-1 text-xs" value={hedef} onChange={(e) => setHedef(e.target.value)} title="Botun yazacağı platform">
+        <select className="studio-input !w-auto max-w-[116px] shrink-0 !py-1 text-xs" value={hedef} onChange={(e) => setHedef(e.target.value)} title="Botun yazacağı platform">
           <option value="all">Tüm platformlar</option>
           {gonderilebilir.map((p) => (
             <option key={p} value={p}>
@@ -375,14 +375,14 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
           ))}
         </select>
         <input
-          className="yya-input min-w-0 flex-1 !py-1 text-xs"
+          className="studio-input min-w-0 flex-1 !py-1 text-xs"
           placeholder="Bot olarak yaz…"
           maxLength={450}
           value={yazi}
           onChange={(e) => setYazi(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && gonder()}
         />
-        <button type="button" className="yya-btn-ghost !px-2 !py-1" disabled={!connected || !yazi.trim()} onClick={gonder} title="Gönder">
+        <button type="button" className="studio-btn-ghost !px-2 !py-1" disabled={!connected || !yazi.trim()} onClick={gonder} title="Gönder">
           <Send className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -494,7 +494,7 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
     <div className="space-y-2 text-xs">
       <div className="flex flex-wrap items-center gap-1">
         <span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "bg-red-400"}`} />
-        <select className="yya-input !py-0.5 text-xs" value={tur} onChange={(e) => setTur(e.target.value)}>
+        <select className="studio-input !py-0.5 text-xs" value={tur} onChange={(e) => setTur(e.target.value)}>
           <option value="all">Tüm olaylar</option>
           {turler.map((t) => (
             <option key={t} value={t}>

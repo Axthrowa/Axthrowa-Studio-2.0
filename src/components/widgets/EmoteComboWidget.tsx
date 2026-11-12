@@ -148,14 +148,14 @@ export default function EmoteComboWidget({ config }: Props) {
   const konum = useMemo(() => (adet ? yerler(boom ? 8 : adet) : []), [adet, boom]);
 
   if (sayi < 3) {
-    return <div className="yya-widget-root h-full w-full bg-transparent" style={{ opacity }} />;
+    return <div className="studio-widget-root h-full w-full bg-transparent" style={{ opacity }} />;
   }
   const buyume = Math.min(2.8, 1 + (sayi - 3) * 0.2) * Math.min(burstScale, 2);
   const px = Math.round(76 * buyume);
 
   return (
     <div
-      className="yya-widget-root relative h-full w-full overflow-visible bg-transparent"
+      className="studio-widget-root relative h-full w-full overflow-visible bg-transparent"
       style={{ opacity, transform: `scale(${scale})`, transformOrigin: "center" }}
     >
       {konum.map((b) => (

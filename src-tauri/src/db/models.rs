@@ -63,7 +63,7 @@ pub struct DashboardSnapshot {
   pub commands: i64,
   pub recent_events: Vec<EventLog>,
   pub sessions: Vec<StreamSession>,
-  pub migrated_smartbot: bool,
+  pub eski_panel_aktarildi: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]

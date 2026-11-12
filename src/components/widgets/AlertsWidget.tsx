@@ -108,7 +108,7 @@ export default function AlertsWidget({ config }: Props) {
   }, [preview]);
 
   return (
-    <div className="yya-widget-root h-full w-full bg-transparent">
+    <div className="studio-widget-root h-full w-full bg-transparent">
       <AlertWidget
         visible={!!current}
         template={current?.template || baseCfg.template}

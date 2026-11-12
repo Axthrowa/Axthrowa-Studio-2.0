@@ -4,7 +4,7 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\yedek-al.ps1 -Not "kisayol sekmesi"
 #   powershell -ExecutionPolicy Bypass -File scripts\yedek-al.ps1 -Sakla 20
 #
-# Yedekler proje klasorunun YANINDAKI "yayin-yonetim-yedekler" klasorune yazilir
+# Yedekler proje klasorunun YANINDAKI "axthrowa-studio-yedekler" klasorune yazilir
 # (proje boyutunu sisirmesin). En yeni -Sakla adet tutulur (varsayilan 10).
 #
 # Ne yedeklenir:
@@ -18,14 +18,14 @@ param([string]$Not = "", [int]$Sakla = 10)
 
 $ErrorActionPreference = "Stop"
 $proj = Split-Path $PSScriptRoot -Parent
-$hedefKok = Join-Path (Split-Path $proj -Parent) "yayin-yonetim-yedekler"
+$hedefKok = Join-Path (Split-Path $proj -Parent) "axthrowa-studio-yedekler"
 New-Item -ItemType Directory -Force -Path $hedefKok | Out-Null
 
 $damga = Get-Date -Format "yyyyMMdd-HHmmss"
 $temiz = ($Not -replace '[^\w\- ]', '' -replace '\s+', '-').Trim('-')
 $ad = if ($temiz) { "yedek-$damga-$temiz" } else { "yedek-$damga" }
 $zip = Join-Path $hedefKok "$ad.zip"
-$sahne = Join-Path $env:TEMP "yya-yedek-$damga"
+$sahne = Join-Path $env:TEMP "studio-yedek-$damga"
 
 try {
   New-Item -ItemType Directory -Force -Path $sahne | Out-Null

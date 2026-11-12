@@ -85,7 +85,7 @@ export default function SourceVisibilityHotkeys({
         <label className="min-w-[10rem] flex-1 text-xs font-bold uppercase tracking-wider text-white/80">
           Sahne
           <input
-            className="yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white"
+            className="studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white"
             list="src-vis-scenes"
             value={scene}
             placeholder="Boş = şu an yayındaki sahne"
@@ -95,7 +95,7 @@ export default function SourceVisibilityHotkeys({
         <button
           type="button"
           disabled={busy}
-          className="yya-btn-ghost h-9 px-3.5 text-xs md:text-sm font-bold disabled:opacity-50"
+          className="studio-btn-ghost h-9 px-3.5 text-xs md:text-sm font-bold disabled:opacity-50"
           onClick={() => void load()}
         >
           {busy ? "Yükleniyor…" : "Kaynakları yükle"}
@@ -158,7 +158,7 @@ export default function SourceVisibilityHotkeys({
                   </div>
                 </div>
                 <select
-                  className="yya-input h-9 w-[10rem] text-xs md:text-sm font-medium text-white"
+                  className="studio-input h-9 w-[10rem] text-xs md:text-sm font-medium text-white"
                   value={(r.mode as SourceMode) || "toggle"}
                   aria-label="İşlem"
                   onChange={(e) => patch(r.id, { mode: e.target.value })}

@@ -4,8 +4,8 @@
  */
 import { CHAT_PLATFORMS, type ActivityEvent, type ChatPlatform, type ChatRole, type NormalizedChatMessage } from "./model";
 
-const BOT_ID = "streamaxt_bot";
-const SYSTEM_ID = "streamaxt_system";
+const BOT_ID = "axbot_bot";
+const SYSTEM_ID = "axbot_system";
 const MAX_MESSAGE = 2000;
 
 type Raw = Record<string, unknown>;

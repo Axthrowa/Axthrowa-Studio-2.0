@@ -1,13 +1,13 @@
-//! Yerel Botaxt SQLite (sqlx) — pool, migrasyon, smartBot import.
+//! Yerel bot SQLite (sqlx) — pool, migrasyon, sohbetBot import.
 
 pub mod alerts;
 pub mod audit;
 pub mod bot_vars;
-pub mod botaxt_api;
+pub mod bot_api;
 pub mod loyalty;
 pub mod models;
 pub mod profile;
-pub mod smartbot_import;
+pub mod eski_panel_aktarimi;
 pub mod widgets;
 
 use std::path::{Path, PathBuf};
@@ -19,9 +19,11 @@ use sqlx::SqlitePool;
 use crate::settings::AppSettings;
 
 pub fn db_file(data_dir: &Path) -> PathBuf {
-  // Yeni düzen: data_dir/botaxt.db · eski: data_dir/app-data/botaxt.db
-  let path = data_dir.join("botaxt.db");
-  let nested = data_dir.join("app-data").join("botaxt.db");
+  // Yeni düzen: data_dir/studio.db · eski: data_dir/app-data/ ve eski dosya adı
+  let path = data_dir.join("studio.db");
+  let nested = data_dir.join("app-data").join("studio.db");
+  crate::eski_adlar::db_tasi(&data_dir.join(crate::eski_adlar::STUDIO_DB), &path);
+  crate::eski_adlar::db_tasi(&data_dir.join("app-data").join(crate::eski_adlar::STUDIO_DB), &nested);
   let legacy = data_dir.join("botrix.db");
   let nested_legacy = data_dir.join("app-data").join("botrix.db");
   if !path.exists() {
@@ -56,7 +58,7 @@ pub async fn open_connected(data_dir: &Path) -> Result<SqlitePool> {
     .context("sqlite connect")
 }
 
-/// Migrasyon + varsayılan kanal + smartBot otomatik import.
+/// Migrasyon + varsayılan kanal + sohbetBot otomatik import.
 pub async fn init(pool: &SqlitePool, settings: &AppSettings) -> Result<()> {
   sqlx::migrate!("./migrations")
     .run(pool)
@@ -64,7 +66,7 @@ pub async fn init(pool: &SqlitePool, settings: &AppSettings) -> Result<()> {
     .context("sqlx migrate")?;
 
   ensure_default_channel(pool).await?;
-  smartbot_import::import_if_needed(pool, settings).await?;
+  eski_panel_aktarimi::import_if_needed(pool, settings).await?;
   Ok(())
 }
 
@@ -123,12 +125,12 @@ mod tests {
   // portable data yolu canonicalize edilir (Windows: \?\C:\...); DB yine dosyada açılmalı
   #[tokio::test]
   async fn opens_file_db_in_canonical_dir() {
-    let dir = std::env::temp_dir().join(format!("yya-db-{}", uuid::Uuid::new_v4()));
+    let dir = std::env::temp_dir().join(format!("studio-db-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
     let canon = std::fs::canonicalize(&dir).unwrap();
     let pool = super::open_connected(&canon).await.unwrap();
     pool.close().await;
-    assert!(canon.join("botaxt.db").exists());
+    assert!(canon.join("studio.db").exists());
     let _ = std::fs::remove_dir_all(&dir);
   }
 

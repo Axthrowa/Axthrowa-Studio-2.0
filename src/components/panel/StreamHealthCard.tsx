@@ -29,7 +29,7 @@ export default function StreamHealthCard() {
   const [health, setHealth] = useState<StreamHealth>(EMPTY);
   const [obsErr, setObsErr] = useState<string | null>(null);
   const notices = useNotices();
-  const [sesli, setSesli] = useState(() => localStorage.getItem("yya.saglikSesi") !== "0");
+  const [sesli, setSesli] = useState(() => localStorage.getItem("studio.saglikSesi") !== "0");
 
   useEffect(() => {
     let cancelled = false;
@@ -78,7 +78,7 @@ export default function StreamHealthCard() {
               checked={sesli}
               onChange={(e) => {
                 setSesli(e.target.checked);
-                localStorage.setItem("yya.saglikSesi", e.target.checked ? "1" : "0");
+                localStorage.setItem("studio.saglikSesi", e.target.checked ? "1" : "0");
               }}
             />
             Sesli uyarı

@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-axbot"
+description = "Bot sekmesi: AxBoT sunucusunu başlatma / durdurma / durum"
+commands.allow = ["axbot_status", "axbot_start", "axbot_stop"]

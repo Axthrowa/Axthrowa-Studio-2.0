@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import type { WidgetEvent } from "../../lib/smartBot/events";
-import { useOverlayWidgetEvents } from "../../lib/smartBot/useOverlayWidgetEvents";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
+import type { WidgetEvent } from "../../lib/sohbetBot/events";
+import { useOverlayWidgetEvents } from "../../lib/sohbetBot/useOverlayWidgetEvents";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
 
 type Shout = { user: string; message: string; key: number };
 

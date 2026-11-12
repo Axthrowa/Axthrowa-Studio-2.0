@@ -236,7 +236,7 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
 /// AxBoT'un ekip çapındaki uyarı kuyruğu denetimine iletir. Sürüm gönderilmez: hızlı eylemde son yazan kazanır
 /// (AxBoT sürümsüz isteği kabul eder ve yeni durumu tüm panellere yayar).
 async fn uyari_denetimi(action: &str, actor: &str) -> Result<Value, String> {
-  let url = format!("http://127.0.0.1:{}/api/alerts/control", crate::streamaxt::port());
+  let url = format!("http://127.0.0.1:{}/api/alerts/control", crate::axbot::port());
   let client = reqwest::Client::builder()
     .timeout(Duration::from_secs(3))
     .build()

@@ -359,7 +359,7 @@ export default function CupWidget({ config }: Props) {
 
   return (
     <div
-      className="relative flex yya-widget-root flex-col items-center justify-end bg-transparent pb-2"
+      className="relative flex studio-widget-root flex-col items-center justify-end bg-transparent pb-2"
       style={{ opacity }}
     >
       <div ref={hostRef} className="relative" style={{ width, height }} />

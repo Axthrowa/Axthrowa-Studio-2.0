@@ -32,7 +32,7 @@ pub fn birlestir(kaynak: &Path, hedef: &Path) -> usize {
       if fs::create_dir_all(hedef).is_ok() && fs::copy(&p, &h).is_ok() {
         adet += 1;
       } else {
-        yya_warn!("[kutuphane] kopyalanamadı: {}", p.display());
+        studio_warn!("[kutuphane] kopyalanamadı: {}", p.display());
       }
     }
   }
@@ -73,7 +73,7 @@ fn isaretler(kutuphane: &Path) -> Vec<String> {
 pub fn hazirla(kurulum: &Path, veri: &Path, surum: &str) -> usize {
   let kutuphane = veri.join("assets");
   if fs::create_dir_all(&kutuphane).is_err() {
-    yya_warn!("[kutuphane] klasör oluşturulamadı: {}", kutuphane.display());
+    studio_warn!("[kutuphane] klasör oluşturulamadı: {}", kutuphane.display());
     return 0;
   }
   let yapilan = isaretler(&kutuphane);
@@ -92,7 +92,7 @@ pub fn hazirla(kurulum: &Path, veri: &Path, surum: &str) -> usize {
     }
     let n = birlestir(&kaynak, &kutuphane);
     if n > 0 {
-      yya_log!("[kutuphane] {} dosya aktarıldı: {}", n, kaynak.display());
+      studio_log!("[kutuphane] {} dosya aktarıldı: {}", n, kaynak.display());
     }
     toplam += n;
     yeni_isaret.push(anahtar);
@@ -110,7 +110,7 @@ mod tests {
   use super::*;
 
   fn gecici(ad: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("yya-kutuphane-{ad}-{}", uuid::Uuid::new_v4()));
+    let d = std::env::temp_dir().join(format!("studio-kutuphane-{ad}-{}", uuid::Uuid::new_v4()));
     fs::create_dir_all(&d).unwrap();
     d
   }

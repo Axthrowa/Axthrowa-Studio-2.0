@@ -30,12 +30,12 @@ pub async fn authorize(
       local: true,
     });
   }
-  let token = super::botaxt::extract_bearer(headers)
+  let token = super::bot_api::extract_bearer(headers)
     .ok_or((StatusCode::UNAUTHORIZED, "Yetkisiz: Bearer token gerekli".to_string()))?;
-  let info = crate::db::botaxt_api::remote_auth_full(&state.db, &token)
+  let info = crate::db::bot_api::remote_auth_full(&state.db, &token)
     .await
     .map_err(|_| (StatusCode::UNAUTHORIZED, "Oturum geçersiz".to_string()))?;
-  if !crate::db::botaxt_api::remote_has_perm(&info, perm) {
+  if !crate::db::bot_api::remote_has_perm(&info, perm) {
     return Err((StatusCode::FORBIDDEN, format!("Yetki yok: {perm}")));
   }
   Ok(Actor {
@@ -47,6 +47,6 @@ pub async fn authorize(
 /// Denetim kaydı; günlük yazılamasa bile eylem başarısız sayılmaz (yalnız uyarı).
 pub async fn audit(state: &AppState, actor: &Actor, action: &str, detail: Value) {
   if let Err(e) = crate::db::audit::record(&state.db, &actor.name, action, &detail).await {
-    yya_warn!("[denetim] yazılamadı ({action}): {e:#}");
+    studio_warn!("[denetim] yazılamadı ({action}): {e:#}");
   }
 }

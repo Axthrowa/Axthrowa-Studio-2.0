@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { baseFromUrl, streamaxtStatus } from "../../lib/streamaxt";
+import { baseFromUrl, axbotStatus } from "../../lib/axbot";
 import { overlaySyncWsUrl } from "../../lib/widgets/useWidgetSync";
 
 /**
@@ -15,7 +15,7 @@ export default function SesliDinleyiciCercevesi() {
   useEffect(() => {
     let iptal = false;
     const yokla = () =>
-      streamaxtStatus()
+      axbotStatus()
         .then((s) => !iptal && setKok(s.running ? baseFromUrl(s.url) : null))
         .catch(() => !iptal && setKok(null));
     void yokla();

@@ -38,7 +38,7 @@ describe("yayın sağlığı", () => {
     r = saglikDegerlendir({ onceki: h({}), yogunBas: null }, h({ active: false }), 13_000);
     expect(idler(r.uyarilar)).toContain("saglik-durdu");
   });
-  it("yayın bitince kare uyarısı temizlenir; YYA'nın kendi durdurması uyarı vermez", () => {
+  it("yayın bitince kare uyarısı temizlenir; Studio'nun kendi durdurması uyarı vermez", () => {
     let r = saglikDegerlendir(bas, h({ totalFrames: 1000 }), 0);
     r = saglikDegerlendir(r.durum, h({ totalFrames: 1100, skippedFrames: 10 }), 3000);
     expect(idler(r.uyarilar)).toContain("saglik-kare");

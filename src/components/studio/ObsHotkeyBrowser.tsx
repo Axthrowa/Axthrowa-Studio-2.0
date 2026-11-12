@@ -131,14 +131,14 @@ export default function ObsHotkeyBrowser({
           <button
             type="button"
             disabled={busy}
-            className="yya-btn-ghost h-9 px-3.5 text-xs md:text-sm font-bold disabled:opacity-50"
+            className="studio-btn-ghost h-9 px-3.5 text-xs md:text-sm font-bold disabled:opacity-50"
             onClick={() => void load()}
           >
             {busy ? "Okunuyor…" : catalog ? "Listeyi yenile" : "OBS'ten kısayolları yükle"}
           </button>
           {catalog && (
             <input
-              className="yya-input h-9 min-w-[10rem] flex-1 text-xs md:text-sm font-medium text-white"
+              className="studio-input h-9 min-w-[10rem] flex-1 text-xs md:text-sm font-medium text-white"
               placeholder="Ara (ör. sessize, tarayıcı, sahne)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -152,7 +152,7 @@ export default function ObsHotkeyBrowser({
             <label className="text-xs font-bold uppercase tracking-wider text-white/80">
               Kısayol
               <select
-                className="yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white"
+                className="studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white"
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -175,7 +175,7 @@ export default function ObsHotkeyBrowser({
             <label className="text-xs font-bold uppercase tracking-wider text-white/80">
               {group === "scene" ? "Sahne" : "Kaynak"}
               <input
-                className="yya-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white disabled:opacity-40"
+                className="studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white disabled:opacity-40"
                 list="obs-hk-context"
                 value={context}
                 disabled={!selected?.needsContext}

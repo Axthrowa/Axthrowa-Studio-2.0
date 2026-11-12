@@ -28,7 +28,7 @@ const ayarAdi = (el: Element) => {
 /** Sayfa açıldıktan sonra ayarı bulur (gerekirse sekmesini açar), görünür yere kaydırır ve kısa süre vurgular */
 function ayaraGit(ad: string, sekme?: string, deneme = 0) {
   const kok = document.querySelector(".panel-shell") || document.body;
-  const bul = (metin: string) => [...kok.querySelectorAll(AYAR_SECICI)].find((el) => !el.closest(".yya-nav-rail") && ayarAdi(el) === metin) as HTMLElement | undefined;
+  const bul = (metin: string) => [...kok.querySelectorAll(AYAR_SECICI)].find((el) => !el.closest(".studio-nav-rail") && ayarAdi(el) === metin) as HTMLElement | undefined;
   if (sekme && deneme === 0) bul(sekme)?.click();
   const el = bul(ad);
   if (!el) {
@@ -36,12 +36,12 @@ function ayaraGit(ad: string, sekme?: string, deneme = 0) {
     return;
   }
   el.scrollIntoView({ block: "center", behavior: "smooth" });
-  el.classList.add("yya-ayar-vurgu");
-  window.setTimeout(() => el.classList.remove("yya-ayar-vurgu"), 1800);
+  el.classList.add("studio-ayar-vurgu");
+  window.setTimeout(() => el.classList.remove("studio-ayar-vurgu"), 1800);
 }
 
 /** Gömülü bot çerçevesinden gelen Ctrl+K bu olayla ulaşır */
-export const PALET_AC_OLAYI = "yya:komut-paleti";
+export const PALET_AC_OLAYI = "studio:komut-paleti";
 
 type Props = {
   visibleTabs: string[];

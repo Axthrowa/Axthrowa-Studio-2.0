@@ -1,12 +1,12 @@
 //! Kasa adı geçersiz kılması süreç genelidir; bu yüzden kendi test ikilisinde (ayrı süreç) sınanır.
 
-use yayin_yonetim_araci_lib::secret_store::{delete_secret, get_secret, set_secret, set_service_override};
+use axthrowa_studio_lib::secret_store::{delete_secret, get_secret, set_secret, set_service_override};
 
-const GERCEK: &str = "com.axthrowa.yayin-yonetim-araci";
+const GERCEK: &str = "com.axthrowa.studio";
 
 #[test]
 fn gecersiz_kilma_gercek_kasaya_dokunmaz() {
-  set_service_override("com.axthrowa.yayin-yonetim-araci.yalitim-testi");
+  set_service_override("com.axthrowa.studio.yalitim-testi");
   // Benzersiz anahtar: gerçek kasadaki hiçbir kayıt okunmaz.
   let ad = format!("test.yalitim.{}", std::process::id());
   assert!(set_secret(&ad, "deger"), "yazılamadı");

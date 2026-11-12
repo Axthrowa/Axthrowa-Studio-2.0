@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
-const APP_ID = "com.axthrowa.yayin-yonetim-araci";
+const APP_ID = "com.axthrowa.studio";
 
 function rm(p, label) {
   if (!fs.existsSync(p)) {

@@ -51,10 +51,10 @@ export default function SohbetTemizleDiyalogu({
       description="Seçilen platformda sohbet herkes için temizlenir."
       footer={
         <>
-          <button type="button" className="yya-btn-ghost h-9 px-3.5 text-xs" onClick={onClose}>
+          <button type="button" className="studio-btn-ghost h-9 px-3.5 text-xs" onClick={onClose}>
             Vazgeç
           </button>
-          <button type="button" disabled={mesgul || !seciliOlanlar.length} className="yya-btn-danger h-9 px-3.5 text-xs" onClick={() => void temizle()}>
+          <button type="button" disabled={mesgul || !seciliOlanlar.length} className="studio-btn-danger h-9 px-3.5 text-xs" onClick={() => void temizle()}>
             {mesgul ? "Temizleniyor…" : "Temizle"}
           </button>
         </>

@@ -45,8 +45,8 @@ fn apply(app: &AppHandle, choice: CloseChoice) {
     CloseChoice::Tray => crate::pencereyi_gizle(app),
     CloseChoice::Quit => {
       // Tepsideki "Çıkış" ile aynı: axum + tokio görevlerini zorla sonlandır.
-      yya_log!("[pencere] Kapat — process::exit(0)");
-      crate::streamaxt::shutdown();
+      studio_log!("[pencere] Kapat — process::exit(0)");
+      crate::axbot::shutdown();
       std::process::exit(0);
     }
     CloseChoice::Cancel => {}

@@ -13,7 +13,7 @@ export const HAZIRLAR: { id: string; ad: string; renkler: ErisimRenkleri }[] = [
   { id: "yuksek-kontrast", ad: "Yüksek kontrast", renkler: { secim: "#ffff00", normal: "#00ff00", uyari: "#ffff00", hata: "#ff00ff" } },
 ];
 
-const ANAHTAR = "yya.erisilebilirlik.v1";
+const ANAHTAR = "studio.erisilebilirlik.v1";
 const HEX = /^#[0-9a-f]{6}$/i;
 
 export const CSS_DEGISKENLERI: Record<keyof ErisimRenkleri, string> = {

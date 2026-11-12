@@ -75,7 +75,7 @@ export function downloadBackupJson(backup: PanelBackup) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `yayin-yonetim-yedek-${backup.exportedAt.slice(0, 10)}.json`;
+  a.download = `axthrowa-studio-yedek-${backup.exportedAt.slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

@@ -1,6 +1,6 @@
 /**
  * Kilitli .exe sorununu çözer:
- * 1) çalışan yayin-yonetim-araci*.exe süreçlerini kapatır
+ * 1) çalışan axthrowa-studio*.exe süreçlerini kapatır
  * 2) en güncel release .exe + dist/ → Portable-Build-NEW
  * 3) uygulamayı yeniden başlatır
  *
@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const portable = path.join(root, "Portable-Build-NEW");
-const destExe = path.join(portable, "yayin-yonetim-araci.exe");
+const destExe = path.join(portable, "axthrowa-studio.exe");
 const destDist = path.join(portable, "dist");
 const wantBuild = process.argv.includes("--build");
 
@@ -43,9 +43,9 @@ function killApp() {
     return;
   }
   const images = [
-    "yayin-yonetim-araci.exe",
-    "yayin-yonetim-araci-FAZ2.exe",
-    "yayin-yonetim-araci.new.exe",
+    "axthrowa-studio.exe",
+    "axthrowa-studio-FAZ2.exe",
+    "axthrowa-studio.new.exe",
   ];
   for (const im of images) {
     const r = spawnSync("taskkill", ["/F", "/IM", im, "/T"], {
@@ -76,13 +76,13 @@ function candidateExes() {
   };
 
   // Öncelik: yeni isimler + cargo hedefi
-  push(path.join(portable, "yayin-yonetim-araci-FAZ2.exe"), "Portable FAZ2");
-  push(path.join(portable, "yayin-yonetim-araci.new.exe"), "Portable .new");
-  push(path.join(root, "src-tauri", "target", "release", "yayin-yonetim-araci.exe"), "local target/release");
+  push(path.join(portable, "axthrowa-studio-FAZ2.exe"), "Portable FAZ2");
+  push(path.join(portable, "axthrowa-studio.new.exe"), "Portable .new");
+  push(path.join(root, "src-tauri", "target", "release", "axthrowa-studio.exe"), "local target/release");
 
   const cargoTarget = process.env.CARGO_TARGET_DIR;
   if (cargoTarget) {
-    push(path.join(cargoTarget, "release", "yayin-yonetim-araci.exe"), "CARGO_TARGET_DIR");
+    push(path.join(cargoTarget, "release", "axthrowa-studio.exe"), "CARGO_TARGET_DIR");
   }
 
   // Cursor sandbox cache (bu ortamda cargo sık buraya yazar)
@@ -95,7 +95,7 @@ function candidateExes() {
     try {
       for (const dir of fs.readdirSync(sandboxRoot)) {
         push(
-          path.join(sandboxRoot, dir, "cargo-target", "release", "yayin-yonetim-araci.exe"),
+          path.join(sandboxRoot, dir, "cargo-target", "release", "axthrowa-studio.exe"),
           `sandbox:${dir.slice(0, 8)}`
         );
       }
@@ -149,7 +149,7 @@ function copyFileRetry(src, dest, tries = 20) {
       return;
     } catch (e) {
       last = e;
-      spawnSync("taskkill", ["/F", "/IM", "yayin-yonetim-araci.exe", "/T"], {
+      spawnSync("taskkill", ["/F", "/IM", "axthrowa-studio.exe", "/T"], {
         shell: true,
         windowsHide: true,
       });
@@ -214,7 +214,7 @@ async function main() {
 
   // Yan ürünleri de güncelle (sonraki restart adayları)
   try {
-    copyFileRetry(src.path, path.join(portable, "yayin-yonetim-araci.new.exe"));
+    copyFileRetry(src.path, path.join(portable, "axthrowa-studio.new.exe"));
   } catch {
     /* */
   }
@@ -229,7 +229,7 @@ async function main() {
     windowsHide: false,
   });
   child.unref();
-  log("hazır — Portable-Build-NEW\\yayin-yonetim-araci.exe");
+  log("hazır — Portable-Build-NEW\\axthrowa-studio.exe");
 }
 
 main().catch((e) => {

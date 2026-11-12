@@ -123,7 +123,7 @@ async function pump() {
       const job = queue.shift()!;
       const cfg = getBotConfig();
       const delay = Math.max(1100, Math.min(2500, cfg.replyDelayMs || 1200));
-      const name = cfg.botName || "BotAxT";
+      const name = cfg.botName || "AxBoT";
 
       if (job.toOverlay && job.lines.length) {
         for (const line of job.lines) {

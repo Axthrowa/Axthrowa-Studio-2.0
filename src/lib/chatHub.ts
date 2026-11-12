@@ -12,7 +12,7 @@ import { connectTwitchChat, normalizeTwitchChannel } from "./twitchChat";
 import { ChatPart, kickParts, normalizeParts, partsToText, textPart } from "./chatParts";
 import { ChatBadge, kickBadges, setKickSubBadges, youtubeBadges } from "./chatBadges";
 import { handleChatCommand } from "./chatCommands";
-import { streamaxtBase } from "./streamaxt";
+import { axbotBase } from "./axbot";
 import { setYoutubeLiveContext } from "./platformAuth/youtubeWrite";
 
 export type Platform = "kick" | "twitch" | "youtube";
@@ -184,7 +184,7 @@ function startKick(
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => data && setKickSubBadges(data.subscriberBadges))
       .catch(() => {});
-    const base = await streamaxtBase();
+    const base = await axbotBase();
     if (stopped) return;
     // Sekme değişince ya da sayfa yeniden açılınca son iletiler geri gelir
     fetch(`${base}/api/chat/history`, { cache: "no-store" })

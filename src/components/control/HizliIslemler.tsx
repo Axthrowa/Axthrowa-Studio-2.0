@@ -10,7 +10,7 @@ import { HIZLI_EN_COK, HIZLI_KEY, VARSAYILAN_HIZLI, hizliOku, type HizliIslem } 
 import { Dialog } from "../ui";
 import { TUS } from "./donanim";
 
-const StreamAxtHost = lazy(() => import("../panel/StreamAxtHost"));
+const AxBotHost = lazy(() => import("../panel/AxBotHost"));
 
 type Props = {
   onToast: (m: string) => void;
@@ -142,7 +142,7 @@ export default function HizliIslemler({ onToast, onSoru, onTemizle, duzen }: Pro
         {pencere ? (
           <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
             <div className="flex h-full min-h-0 flex-col">
-              <StreamAxtHost onToast={onToast} tab={pencere.id.slice(4)} embed onOpenMusic={() => {}} />
+              <AxBotHost onToast={onToast} tab={pencere.id.slice(4)} embed onOpenMusic={() => {}} />
             </div>
           </Suspense>
         ) : null}

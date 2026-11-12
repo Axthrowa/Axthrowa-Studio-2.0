@@ -1,4 +1,4 @@
-/** Botrix-tarzı derin alerts yapılandırması — Advanced Settings tam kapsam */
+/** Derin uyarı yapılandırması — Advanced Settings tam kapsam */
 
 export type AlertEventId = "sub" | "gifted" | "follow" | "host" | "tip" | "raid";
 
@@ -146,7 +146,7 @@ export function isAlertEventId(id: string): id is AlertEventId {
   return ["sub", "gifted", "follow", "host", "tip", "raid"].includes(id);
 }
 
-/** DB AlertType satırından Botrix config çıkar */
+/** DB AlertType satırından uyarı yapılandırması çıkar */
 export function configFromDbRow(row: Record<string, unknown>): AlertTypeConfig {
   const idRaw = String(row.id || "follow");
   const id: AlertEventId = isAlertEventId(idRaw) ? idRaw : "follow";

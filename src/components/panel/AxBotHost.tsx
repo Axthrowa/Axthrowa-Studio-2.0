@@ -7,15 +7,15 @@ import { botTemaMesaji, renkleriOku } from "../../lib/botTemaMesaji";
 import { PALET_AC_OLAYI } from "./KomutPaleti";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import { cn } from "../../lib/cn";
-import { streamaxtStatus as getStatus, type StreamAxtStatus } from "../../lib/streamaxt";
+import { axbotStatus as getStatus, type AxBotStatus } from "../../lib/axbot";
 
-export type { StreamAxtStatus };
+export type { AxBotStatus };
 
 /**
  * Bot sekmesi: AxBoT'u (ayrı Node sunucusu) gömer. Sunucuyu Rust başlatır;
  * burada durum izlenir, gerekirse başlat/durdur/yeniden başlat sunulur.
  */
-export type StreamAxtHostProps = {
+export type AxBotHostProps = {
   onToast?: (msg: string) => void;
   /** AxBoT'un hangi sekmesi açılsın (ör. "multichat"). */
   tab?: string;
@@ -31,8 +31,8 @@ export function frameUrl(base: string, tab?: string, embed?: boolean): string {
   return `${clean}${embed ? "?embed=1" : ""}${tab ? `#${tab}` : ""}`;
 }
 
-export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: StreamAxtHostProps) {
-  const [st, setSt] = useState<StreamAxtStatus | null>(null);
+export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHostProps) {
+  const [st, setSt] = useState<AxBotStatus | null>(null);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [error, setError] = useState<string | null>(null);
   const [frameKey, setFrameKey] = useState(0);
@@ -72,7 +72,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
     setBusy("start");
     setError(null);
     try {
-      setSt(await invoke<StreamAxtStatus>("streamaxt_start"));
+      setSt(await invoke<AxBotStatus>("axbot_start"));
       setFrameKey((k) => k + 1);
     } catch (e) {
       setError(String(e));
@@ -87,7 +87,7 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
       setBusy("stop");
       setError(null);
       try {
-        setSt(await invoke<StreamAxtStatus>("streamaxt_stop", { force }));
+        setSt(await invoke<AxBotStatus>("axbot_stop", { force }));
       } catch (e) {
         setError(String(e));
       } finally {
@@ -159,8 +159,8 @@ export default function StreamAxtHost({ onToast, tab, embed, onOpenMusic }: Stre
     return (
       <Notice
         title="AxBoT bulunamadı"
-        body="Uygulamanın yanında `streamaxt` klasörü olmalı. Hazırlamak için proje klasöründe şunu çalıştırın:"
-        code="node scripts/streamaxt-hazirla.mjs"
+        body="Uygulamanın yanında `axbot` klasörü olmalı. Hazırlamak için proje klasöründe şunu çalıştırın:"
+        code="node scripts/axbot-hazirla.mjs"
       />
     );
   }

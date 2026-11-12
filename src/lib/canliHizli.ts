@@ -5,7 +5,7 @@
  */
 export type HizliIslem = { id: string; ad: string };
 
-export const HIZLI_KEY = "yya.canli.hizliIslemler";
+export const HIZLI_KEY = "studio.canli.hizliIslemler";
 export const HIZLI_EN_COK = 24;
 
 export const VARSAYILAN_HIZLI: HizliIslem[] = [

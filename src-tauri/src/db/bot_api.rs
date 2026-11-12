@@ -1,4 +1,4 @@
-//! Botaxt Modül 2–8 — SQLite sorgu yardımcıları.
+//! Bot modülü 2–8 — SQLite sorgu yardımcıları.
 
 use anyhow::{bail, Context, Result};
 use serde::Serialize;
@@ -179,7 +179,7 @@ pub async fn seed_alerts_if_empty(pool: &SqlitePool, settings: &AppSettings) -> 
   }
 
   let panel = settings.get(ScreenKind::Panel);
-  let smart = panel.get("smartBot");
+  let smart = panel.get("sohbetBot");
   let mut seeded = 0usize;
 
   if let Some(types) = smart.and_then(|s| s.get("alertTypes")).and_then(|v| v.as_object()) {
@@ -679,7 +679,7 @@ pub async fn seed_default_commands(pool: &SqlitePool) -> Result<usize> {
     inserted += r.rows_affected() as usize;
   }
   if inserted > 0 {
-    yya_log!("[bot] varsayılan komut eklendi: {inserted}");
+    studio_log!("[bot] varsayılan komut eklendi: {inserted}");
   }
   let _ = sqlx::query(
     "UPDATE bot_commands SET response = 'Discord: {url}'
@@ -1158,7 +1158,7 @@ pub async fn get_bot_settings(pool: &SqlitePool) -> Result<BotSettings> {
   {
     return Ok(s);
   }
-  sqlx::query("INSERT INTO bot_settings(channel_id, bot_name, reply_delay_ms) VALUES(?, 'BotAxT', 0)")
+  sqlx::query("INSERT INTO bot_settings(channel_id, bot_name, reply_delay_ms) VALUES(?, 'AxBoT', 0)")
     .bind(&channel_id)
     .execute(pool)
     .await?;

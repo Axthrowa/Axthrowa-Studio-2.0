@@ -1,5 +1,5 @@
-/** Kick sohbetinde görünen bot kimliği — Botrix’teki `botrixlive` karşılığı. */
-export const DEFAULT_BOT_NAME = "BotAxT";
+/** Kick sohbetinde görünen bot kimliği. */
+export const DEFAULT_BOT_NAME = "AxBoT";
 
 const KNOWN = new Set(["botaxt", "sesbot", "bot axt", "axbot"]);
 

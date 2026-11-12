@@ -57,7 +57,7 @@ function Field({
       <input
         aria-label={label}
         type={type}
-        className="yya-input h-9 w-full rounded-xl border border-white/[0.12] bg-black/50 px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
+        className="studio-input h-9 w-full rounded-xl border border-white/[0.12] bg-black/50 px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}

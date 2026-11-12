@@ -7,7 +7,7 @@ import { ETIKET, TUS } from "./donanim";
 import { BOSLUK_PX, SABLONLAR, SATIR_PX, SUTUN, eklerleBirlestir, ekPanelMi, kipKutulari, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kip, type Kutu, type PanelId, type TemelPanelId } from "../../lib/canliYerlesim";
 import { EK_PANEL_GRUPLARI } from "../../lib/canliEkPaneller";
 
-const YERLESIM_KEY = "yya.canli.yerlesim";
+const YERLESIM_KEY = "studio.canli.yerlesim";
 /** Bu genişliğin altında paneller alt alta dizilir: küçük ekranda 12 sütunluk ızgarada panellerin içi sıkışıp iç içe giriyordu */
 const DAR_PX = 640;
 

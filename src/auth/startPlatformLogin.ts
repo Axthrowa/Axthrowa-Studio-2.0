@@ -1,8 +1,8 @@
-/** Botrix tarzı platform girişi → bot OAuth / çerez + kanal bağlama */
+/** Platform girişi → bot OAuth / çerez + kanal bağlama */
 
 import { patchSettings } from "../lib/api";
 import { openExternal } from "../lib/openExternal";
-import { loadBotConfig, saveBotConfig } from "../lib/smartBot/store";
+import { loadBotConfig, saveBotConfig } from "../lib/sohbetBot/store";
 import { buildTwitchAuthorizeUrl } from "../lib/platformAuth/twitchWrite";
 import { buildYoutubeAuthorizeUrl } from "../lib/platformAuth/youtubeWrite";
 import { buildDiscordAuthorizeUrl } from "../lib/platformAuth/discordAuth";
@@ -34,7 +34,7 @@ export async function startPlatformBotLogin(
         message: "Twitch Client ID gerekli — Bot → Entegrasyonlar’dan ekleyin.",
       };
     }
-    sessionStorage.setItem("yya.oauth.twitch.clientId", id);
+    sessionStorage.setItem("studio.oauth.twitch.clientId", id);
     setActivePlatform("twitch");
     const result = await openExternal(buildTwitchAuthorizeUrl(id));
     return {
@@ -53,7 +53,7 @@ export async function startPlatformBotLogin(
         message: "YouTube / Google Client ID gerekli — Bot → Entegrasyonlar’dan ekleyin.",
       };
     }
-    sessionStorage.setItem("yya.oauth.youtube.clientId", id);
+    sessionStorage.setItem("studio.oauth.youtube.clientId", id);
     setActivePlatform("youtube");
     const result = await openExternal(buildYoutubeAuthorizeUrl(id));
     return {
@@ -63,7 +63,7 @@ export async function startPlatformBotLogin(
     };
   }
 
-  const discordId = String(cfg.discordClientId || localStorage.getItem("yya.discord.clientId") || "").trim();
+  const discordId = String(cfg.discordClientId || localStorage.getItem("studio.discord.clientId") || "").trim();
   if (!discordId) {
     return {
       ok: false,
@@ -72,7 +72,7 @@ export async function startPlatformBotLogin(
         "Discord Client ID gerekli — Bot → Entegrasyonlar’da Discord Client ID kaydedin (Developer Portal OAuth2).",
     };
   }
-  sessionStorage.setItem("yya.oauth.discord.clientId", discordId);
+  sessionStorage.setItem("studio.oauth.discord.clientId", discordId);
   setActivePlatform("discord");
   const result = await openExternal(buildDiscordAuthorizeUrl(discordId));
   return {

@@ -1,11 +1,12 @@
 /** Debounced localStorage + settings sync — UI thread’i bloke etmez. */
 
 import { API_BASE, patchSettings } from "../api";
+import { panelBotu } from "../eskiAdlar";
 import { defaultBotConfig, type BotConfig } from "./types";
 import { DEFAULT_BOT_NAME } from "./botIdentity";
 import { ensureV2, type BotConfigV2 } from "./v2";
 
-const LS_KEY = "panel.smartBot";
+const LS_KEY = "panel.sohbetBot";
 const SAVE_DEBOUNCE_MS = 400;
 
 let cache: BotConfigV2 | null = null;
@@ -22,7 +23,7 @@ function mergeConfig(raw: unknown): BotConfigV2 {
   const o = raw as Partial<BotConfig>;
   const prevName = String(o.botName || "").replace(/^@/, "").trim();
   const botName =
-    !prevName || /^(bot|botaxt|sesbot|botrix)$/i.test(prevName) ? DEFAULT_BOT_NAME : prevName;
+    !prevName || /^(bot|sesbot)$/i.test(prevName) ? DEFAULT_BOT_NAME : prevName;
   const delayRaw = Number(o.replyDelayMs);
   const replyDelayMs =
     !Number.isFinite(delayRaw) || delayRaw >= 480 ? 250 : Math.max(100, delayRaw);
@@ -97,7 +98,7 @@ function flushPersist(c: BotConfigV2) {
   } catch {
     /* quota */
   }
-  void patchSettings("panel", { smartBot: c }).catch(() => {});
+  void patchSettings("panel", { sohbetBot: c }).catch(() => {});
 }
 
 export function saveBotConfig(
@@ -125,8 +126,9 @@ export async function hydrateBotConfigFromServer(): Promise<BotConfigV2> {
     const res = await fetch(`${API_BASE}/api/settings?screen=panel`);
     if (!res.ok) return loadBotConfig();
     const data = await res.json();
-    if (data?.smartBot && typeof data.smartBot === "object") {
-      return applyRemoteBotConfig(data.smartBot);
+    const bot = panelBotu(data);
+    if (bot && typeof bot === "object") {
+      return applyRemoteBotConfig(bot as never);
     }
   } catch {
     /* */
@@ -135,7 +137,7 @@ export async function hydrateBotConfigFromServer(): Promise<BotConfigV2> {
 }
 
 /**
- * OBS / başka sekme — sunucudan gelen smartBot’u uygula.
+ * OBS / başka sekme — sunucudan gelen sohbetBot’u uygula.
  * Tekrar PATCH etmez (echo loop yok).
  */
 export function applyRemoteBotConfig(raw: unknown): BotConfigV2 {

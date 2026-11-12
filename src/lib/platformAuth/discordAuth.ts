@@ -1,9 +1,9 @@
 /**
- * Discord OAuth (identify) — Botrix tarzı “Login with Discord”.
+ * Discord OAuth (identify) — “Login with Discord”.
  * Bot paneline bağlanınca webhook / bildirim için oturum saklanır.
  */
 
-const LS = "yya.discordAuth.v1";
+const LS = "studio.discordAuth.v1";
 const AUTH = "https://discord.com/api/oauth2/authorize";
 const TOKEN = "https://discord.com/api/oauth2/token";
 const ME = "https://discord.com/api/users/@me";

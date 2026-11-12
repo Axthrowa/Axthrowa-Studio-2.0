@@ -1,5 +1,5 @@
 /**
- * Kick Aboneler — kompakt Botrix tarzı liste + hedef + kısa alert.
+ * Kick Aboneler — kompakt liste + hedef + kısa alert.
  */
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -224,7 +224,7 @@ export default function KickSubsWidget({ config }: Props) {
     const sample = toast || (isPreview ? DEMO[0] : null);
     return (
       <div
-        className="yya-widget-root flex h-full w-full items-center justify-center p-3"
+        className="studio-widget-root flex h-full w-full items-center justify-center p-3"
         style={{ fontFamily, opacity }}
       >
         <AnimatePresence mode="wait">
@@ -264,7 +264,7 @@ export default function KickSubsWidget({ config }: Props) {
 
   return (
     <div
-      className="yya-widget-root flex h-full w-full flex-col justify-end p-2"
+      className="studio-widget-root flex h-full w-full flex-col justify-end p-2"
       style={{ fontFamily, opacity, color: textColor }}
     >
       <div

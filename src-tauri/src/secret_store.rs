@@ -4,7 +4,7 @@
 use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
 
-const SERVICE: &str = "com.axthrowa.yayin-yonetim-araci";
+const SERVICE: &str = "com.axthrowa.studio";
 
 static SERVICE_OVERRIDE: std::sync::OnceLock<&'static str> = std::sync::OnceLock::new();
 
@@ -18,7 +18,7 @@ fn service_name() -> &'static str {
   if let Some(name) = SERVICE_OVERRIDE.get() {
     name
   } else if cfg!(test) {
-    "com.axthrowa.yayin-yonetim-araci.test"
+    "com.axthrowa.studio.test"
   } else {
     SERVICE
   }
@@ -38,7 +38,16 @@ pub fn set_secret(key: &str, value: &str) -> bool {
 }
 
 pub fn get_secret(key: &str) -> Option<String> {
-  entry(key).ok()?.get_password().ok().filter(|s| !s.is_empty())
+  if let Some(v) = entry(key).ok()?.get_password().ok().filter(|s| !s.is_empty()) {
+    return Some(v);
+  }
+  // Kasa adı uygulama kimliğiyle değişti: eski kasadaki sır bir kez yenisine kopyalanır (eskisi silinmez)
+  if service_name() != SERVICE {
+    return None;
+  }
+  let eski = keyring::Entry::new(crate::eski_adlar::KIMLIK, key).ok()?.get_password().ok().filter(|s| !s.is_empty())?;
+  let _ = set_secret(key, &eski);
+  Some(eski)
 }
 
 pub fn delete_secret(key: &str) {

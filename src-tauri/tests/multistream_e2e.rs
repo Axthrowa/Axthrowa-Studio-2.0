@@ -13,9 +13,9 @@ use std::time::Duration;
 
 use tokio::process::Command;
 use tokio::sync::broadcast;
-use yayin_yonetim_araci_lib::multistream::config::{DestinationConfig, Platform};
-use yayin_yonetim_araci_lib::multistream::state::DestState;
-use yayin_yonetim_araci_lib::multistream::{MemoryStore, Router};
+use axthrowa_studio_lib::multistream::config::{DestinationConfig, Platform};
+use axthrowa_studio_lib::multistream::state::DestState;
+use axthrowa_studio_lib::multistream::{MemoryStore, Router};
 
 fn ffmpeg() -> Option<PathBuf> {
   let out = std::process::Command::new("where").arg("ffmpeg").output().ok()?;
@@ -77,7 +77,7 @@ async fn tek_kodlama_iki_hedef_bagimsiz_baslat_durdur() {
     eprintln!("FFmpeg bulunamadı — uçtan uca çoklu yayın testi atlandı");
     return;
   };
-  let dir = std::env::temp_dir().join(format!("yya-ms-{}", free_port()));
+  let dir = std::env::temp_dir().join(format!("studio-ms-{}", free_port()));
   std::fs::create_dir_all(&dir).unwrap();
   let (pa, pb) = (free_port(), free_port());
   let (fa, fb) = (dir.join("a.flv"), dir.join("b.flv"));
@@ -156,7 +156,7 @@ async fn dusen_hedef_digerini_etkilemez_ve_geri_baglanir() {
     eprintln!("FFmpeg bulunamadı — kaos testi atlandı");
     return;
   };
-  let dir = std::env::temp_dir().join(format!("yya-ms-kaos-{}", free_port()));
+  let dir = std::env::temp_dir().join(format!("studio-ms-kaos-{}", free_port()));
   std::fs::create_dir_all(&dir).unwrap();
   let (pa, pb) = (free_port(), free_port());
   let (fa, fb) = (dir.join("a.flv"), dir.join("b.flv"));

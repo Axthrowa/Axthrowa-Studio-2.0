@@ -84,9 +84,9 @@
    İzin listesi: MIT, Apache-2.0, BSD-2/3, ISC, Zlib, 0BSD, Unlicense, CC0, Unicode, BSL-1.0, MPL-2.0 (dosya düzeyi),
    CC-BY-4.0 (yalnız veri paketi). GPL/AGPL/SSPL/BUSL → test kırılır. Kilit dosyasında `license` alanı olmayan tek
    paket (`xmlhttprequest-ssl`, Resonance) LICENSE metni okunarak MIT doğrulandı ve istisna olarak kaydedildi.
-4. **Dağıtım klasörleri:** AxBoT `release/app` ve `release/StreamAxT-v1.0.0-Portable/app` kendi `node_modules`
+4. **Dağıtım klasörleri:** AxBoT `release/app` ve `release/AxBoT-v1.0.0-Portable/app` kendi `node_modules`
    kopyalarını taşıyor ve kaynak ağaçtaki sabitlemeden etkilenmiyordu (`tiktok-live-connector` 2.5.0 AGPL) — bu turun
-   dağıtımında 2.4.0'a indirildi (bkz. IMPLEMENTATION_REPORT). Eski `StreamAxT-v1.0.0-*.zip` arşivleri 2.5.0 içerir;
+   dağıtımında 2.4.0'a indirildi (bkz. IMPLEMENTATION_REPORT). Eski `AxBoT-v1.0.0-*.zip` arşivleri 2.5.0 içerir;
    yeniden paketlenmeden dağıtılmamalı.
 
 ## OBS Yami görünümü (2026-10-05)

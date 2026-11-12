@@ -146,10 +146,10 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
         )}
         {d.exe && <p className="mt-2 truncate font-mono text-xs text-white/60">{d.exe}</p>}
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" className="yya-btn-primary h-9 px-4 text-sm font-bold" disabled={!d.kurulu || d.calisiyor || mesgul !== null} onClick={() => void obsAc()}>
+          <button type="button" className="studio-btn-primary h-9 px-4 text-sm font-bold" disabled={!d.kurulu || d.calisiyor || mesgul !== null} onClick={() => void obsAc()}>
             {d.calisiyor ? "OBS açık" : mesgul === "ac" ? "Başlatılıyor…" : "OBS'i aç"}
           </button>
-          <button type="button" className="yya-btn-ghost h-9 px-3.5 text-sm font-bold" onClick={() => void yenile()}>
+          <button type="button" className="studio-btn-ghost h-9 px-3.5 text-sm font-bold" onClick={() => void yenile()}>
             <RefreshCw className="mr-1.5 inline h-3.5 w-3.5" /> Yenile
           </button>
         </div>
@@ -174,7 +174,7 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
           </p>
         )}
         <div className="mt-3">
-          <button type="button" className="yya-btn-accent h-9 px-4 text-sm font-bold" disabled={!ws?.etkin || mesgul !== null} onClick={() => void websocketAl()}>
+          <button type="button" className="studio-btn-accent h-9 px-4 text-sm font-bold" disabled={!ws?.etkin || mesgul !== null} onClick={() => void websocketAl()}>
             {mesgul === "ws" ? "Bağlanıyor…" : "Bağlantı bilgisini OBS'ten al"}
           </button>
         </div>
@@ -227,7 +227,7 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
-            className="yya-btn-primary h-9 px-4 text-sm font-bold"
+            className="studio-btn-primary h-9 px-4 text-sm font-bold"
             disabled={d.calisiyor || !d.ayarDizini || mesgul !== null}
             onClick={() => void docklariYaz([...secim])}
           >
@@ -235,7 +235,7 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
           </button>
           <button
             type="button"
-            className="yya-btn-ghost h-9 px-3.5 text-sm font-bold"
+            className="studio-btn-ghost h-9 px-3.5 text-sm font-bold"
             disabled={d.calisiyor || !d.ayarDizini || mesgul !== null || !d.docklar.some((k) => k.ekli)}
             onClick={() => void docklariYaz([])}
           >

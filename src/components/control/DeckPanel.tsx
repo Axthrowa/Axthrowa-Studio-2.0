@@ -116,14 +116,14 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
         ))}
         <span className="flex-1" />
         {duzenle && deck.pages.length < DECK_MAX_PAGES && (
-          <button type="button" className="yya-btn-ghost !px-2 !py-0.5" onClick={() => kaydet(addPage(deck, `Sayfa ${deck.pages.length + 1}`))}>
+          <button type="button" className="studio-btn-ghost !px-2 !py-0.5" onClick={() => kaydet(addPage(deck, `Sayfa ${deck.pages.length + 1}`))}>
             + Sayfa
           </button>
         )}
         {duzenle && deck.pages.length > 1 && (
           <button
             type="button"
-            className="yya-btn-ghost !px-2 !py-0.5"
+            className="studio-btn-ghost !px-2 !py-0.5"
             onClick={() => {
               kaydet(removePage(deck, sayfa.id));
               setSayfaId("");
@@ -132,7 +132,7 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
             Sayfayı sil
           </button>
         )}
-        <button type="button" className="yya-btn-ghost !px-2 !py-0.5" aria-pressed={duzenle} onClick={() => setDuzenle((v) => !v)}>
+        <button type="button" className="studio-btn-ghost !px-2 !py-0.5" aria-pressed={duzenle} onClick={() => setDuzenle((v) => !v)}>
           {duzenle ? "Bitti" : "Düzenle"}
         </button>
       </div>
@@ -224,7 +224,7 @@ function DugmeEkle({ eylemler, onEkle }: { eylemler: ActionInfo[]; onEkle: (b: O
     <div className="space-y-1.5 rounded-lg border border-white/10 p-2">
       <div className="flex flex-wrap gap-1.5">
         <select
-          className="yya-input !py-1 text-xs"
+          className="studio-input !py-1 text-xs"
           aria-label="Eylem"
           value={actionId}
           onChange={(e) => {
@@ -241,8 +241,8 @@ function DugmeEkle({ eylemler, onEkle }: { eylemler: ActionInfo[]; onEkle: (b: O
             </option>
           ))}
         </select>
-        <input className="yya-input !py-1 text-xs" aria-label="Düğme etiketi" placeholder="Etiket" maxLength={40} value={etiket} onChange={(e) => setEtiket(e.target.value)} />
-        <select className="yya-input !py-1 text-xs" aria-label="Renk" value={renk} onChange={(e) => setRenk(e.target.value as DeckColor)}>
+        <input className="studio-input !py-1 text-xs" aria-label="Düğme etiketi" placeholder="Etiket" maxLength={40} value={etiket} onChange={(e) => setEtiket(e.target.value)} />
+        <select className="studio-input !py-1 text-xs" aria-label="Renk" value={renk} onChange={(e) => setRenk(e.target.value as DeckColor)}>
           {DECK_COLORS.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -253,7 +253,7 @@ function DugmeEkle({ eylemler, onEkle }: { eylemler: ActionInfo[]; onEkle: (b: O
       {secili?.params.map((p) => (
         <div key={p.name}>
           <input
-            className="yya-input w-full !py-1 text-xs"
+            className="studio-input w-full !py-1 text-xs"
             aria-label={p.name}
             placeholder={p.kind === "optionalScene" ? "Sahne (boş = yayındaki)" : p.kind === "db" ? "dB farkı (örn. -3)" : PARAM_LABEL[p.kind]}
             inputMode={p.kind === "db" ? "decimal" : undefined}
@@ -272,7 +272,7 @@ function DugmeEkle({ eylemler, onEkle }: { eylemler: ActionInfo[]; onEkle: (b: O
       {secili?.confirm && <p className="text-amber-300">Bu eylem çift dokunuşla çalışır (kazara tetiklenmesin).</p>}
       <button
         type="button"
-        className="yya-btn-primary !px-2 !py-1"
+        className="studio-btn-primary !px-2 !py-1"
         disabled={!secili || eksik}
         onClick={() => {
           if (!secili) return;

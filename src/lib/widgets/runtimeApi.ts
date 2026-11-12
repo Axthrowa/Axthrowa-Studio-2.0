@@ -54,48 +54,48 @@ export type SongsRuntime = {
 };
 
 export const runtimeApi = {
-  getPoll: () => j<PollRuntime>("/api/botaxt/runtime/poll"),
+  getPoll: () => j<PollRuntime>("/api/bot/runtime/poll"),
   startPoll: (body: { question: string; options: string[]; command?: string }) =>
-    j<PollRuntime>("/api/botaxt/runtime/poll", {
+    j<PollRuntime>("/api/bot/runtime/poll", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   stopPoll: () =>
-    j<PollRuntime>("/api/botaxt/runtime/poll/stop", { method: "POST", body: "{}" }),
+    j<PollRuntime>("/api/bot/runtime/poll/stop", { method: "POST", body: "{}" }),
 
-  getRaffle: () => j<RaffleRuntime>("/api/botaxt/runtime/raffle"),
+  getRaffle: () => j<RaffleRuntime>("/api/bot/runtime/raffle"),
   startRaffle: (body: { joinCommand?: string; durationSec?: number }) =>
-    j<RaffleRuntime>("/api/botaxt/runtime/raffle", {
+    j<RaffleRuntime>("/api/bot/runtime/raffle", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   drawRaffle: () =>
-    j<RaffleRuntime>("/api/botaxt/runtime/raffle/draw", {
+    j<RaffleRuntime>("/api/bot/runtime/raffle/draw", {
       method: "POST",
       body: "{}",
     }),
   stopRaffle: () =>
-    j<RaffleRuntime>("/api/botaxt/runtime/raffle/stop", {
+    j<RaffleRuntime>("/api/bot/runtime/raffle/stop", {
       method: "POST",
       body: "{}",
     }),
 
-  getSongs: () => j<SongsRuntime>("/api/botaxt/runtime/songs"),
+  getSongs: () => j<SongsRuntime>("/api/bot/runtime/songs"),
   addSong: (body: { text?: string; by?: string; videoId?: string; title?: string }) =>
-    j<SongsRuntime>("/api/botaxt/runtime/songs", {
+    j<SongsRuntime>("/api/bot/runtime/songs", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   skipSong: () =>
-    j<SongsRuntime>("/api/botaxt/runtime/songs/skip", { method: "POST", body: "{}" }),
+    j<SongsRuntime>("/api/bot/runtime/songs/skip", { method: "POST", body: "{}" }),
   playSong: () =>
-    j<SongsRuntime>("/api/botaxt/runtime/songs/play", { method: "POST", body: "{}" }),
+    j<SongsRuntime>("/api/bot/runtime/songs/play", { method: "POST", body: "{}" }),
   pauseSong: () =>
-    j<SongsRuntime>("/api/botaxt/runtime/songs/pause", { method: "POST", body: "{}" }),
+    j<SongsRuntime>("/api/bot/runtime/songs/pause", { method: "POST", body: "{}" }),
   clearSongs: () =>
-    j<SongsRuntime>("/api/botaxt/runtime/songs/clear", { method: "POST", body: "{}" }),
+    j<SongsRuntime>("/api/bot/runtime/songs/clear", { method: "POST", body: "{}" }),
   reorderSongs: (order: string[]) =>
-    j<SongsRuntime>("/api/botaxt/runtime/songs/reorder", {
+    j<SongsRuntime>("/api/bot/runtime/songs/reorder", {
       method: "POST",
       body: JSON.stringify({ order }),
     }),

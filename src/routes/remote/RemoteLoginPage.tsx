@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { botaxtApi } from "../../lib/api/botaxt";
+import { botApi } from "../../lib/api/botApi";
 
-const TOKEN_KEY = "botaxt.remoteToken";
+const TOKEN_KEY = "studio.bot.remoteToken";
 
 export default function RemoteLoginPage() {
   const nav = useNavigate();
@@ -17,12 +17,12 @@ export default function RemoteLoginPage() {
     setBusy(true);
     setErr("");
     try {
-      const r = await botaxtApi.remoteLogin(user.trim(), pass);
+      const r = await botApi.remoteLogin(user.trim(), pass);
       const token = String((r as { token?: string }).token || "");
       if (!token) throw new Error("Token alınamadı");
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(
-        "botaxt.remoteUser",
+        "studio.bot.remoteUser",
         JSON.stringify({
           username: (r as { username?: string }).username || user,
           role: (r as { role?: string }).role,
@@ -41,7 +41,7 @@ export default function RemoteLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#0b0f14] px-4 text-white">
       <div className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-[#121820] p-6 shadow-xl">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">BotAxT Uzak Panel</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Uzak Panel</h1>
           <p className="mt-1 text-xs text-white/50">
             Moderatör girişi · Bearer oturum (7 gün)
           </p>
@@ -49,7 +49,7 @@ export default function RemoteLoginPage() {
         <label className="block text-xs text-white/60">
           Kullanıcı adı
           <input
-            className="yya-input mt-1 w-full"
+            className="studio-input mt-1 w-full"
             value={user}
             onChange={(e) => setUser(e.target.value)}
             autoComplete="username"
@@ -59,7 +59,7 @@ export default function RemoteLoginPage() {
           Şifre
           <input
             type="password"
-            className="yya-input mt-1 w-full"
+            className="studio-input mt-1 w-full"
             value={pass}
             onChange={(e) => setPass(e.target.value)}
             autoComplete="current-password"
@@ -72,7 +72,7 @@ export default function RemoteLoginPage() {
         <button
           type="button"
           disabled={busy || !user.trim() || !pass}
-          className="yya-btn w-full"
+          className="studio-btn w-full"
           onClick={() => void login()}
         >
           {busy ? "Giriş…" : "Giriş yap"}

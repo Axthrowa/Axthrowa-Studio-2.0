@@ -1,9 +1,9 @@
 //! Bot sekmesi: AxBoT (Node) sunucusunu başlatır, izler ve kapatır.
 //!
 //! AxBoT ayrı bir Node uygulamasıdır (`Desktop\Projeler`). Bot sekmesi onu
-//! `<exe klasörü>\streamaxt` altından çalıştırıp `http://127.0.0.1:<port>` adresini
+//! `<exe klasörü>\axbot` altından çalıştırıp `http://127.0.0.1:<port>` adresini
 //! gömer. Uygulama kapanırken çocuk süreç de kapatılır; kullanıcı elle durdurduysa
-//! (`data\yya-kapali` işareti) bir sonraki açılışta kendiliğinden başlatılmaz.
+//! (`data\studio-kapali` işareti) bir sonraki açılışta kendiliğinden başlatılmaz.
 
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
@@ -15,14 +15,14 @@ use std::time::{Duration, Instant};
 use serde_json::{json, Value};
 
 const DEFAULT_PORT: u16 = 3001;
-const OFF_MARKER: &str = "yya-kapali";
+const OFF_MARKER: &str = "studio-kapali";
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 static CHILD: Mutex<Option<Child>> = Mutex::new(None);
 
 pub fn port() -> u16 {
-  std::env::var("YYA_STREAMAXT_PORT")
+  std::env::var("AXBOT_PORT")
     .ok()
     .and_then(|v| v.trim().parse().ok())
     .unwrap_or(DEFAULT_PORT)
@@ -31,12 +31,14 @@ pub fn port() -> u16 {
 /// `dist/index.js` içeren AxBoT klasörü.
 pub fn find_dir() -> Option<PathBuf> {
   let mut cands: Vec<PathBuf> = Vec::new();
-  if let Ok(p) = std::env::var("YYA_STREAMAXT_DIR") {
+  if let Ok(p) = std::env::var("AXBOT_DIR") {
     cands.push(PathBuf::from(p));
   }
   if let Ok(exe) = std::env::current_exe() {
     if let Some(dir) = exe.parent() {
-      cands.push(dir.join("streamaxt"));
+      cands.push(dir.join("axbot"));
+      // Eski paket düzeni (veri klasörü elle taşınmış olabilir)
+      cands.push(dir.join(crate::eski_adlar::BOT_KLASORU));
     }
   }
   cands.into_iter().find(|d| d.join("dist").join("index.js").is_file())
@@ -63,7 +65,7 @@ pub fn find_in_path(path_var: &str, exe: &str) -> Option<PathBuf> {
 
 /// Yanıt AxBoT'un mu? `"status":"ok"` yetmez: 3001'de aynısını dönen başka bir uygulama AxBoT sanılıp kapatılıyordu
 fn axbot_yaniti(govde: &str) -> bool {
-  govde.contains("\"uygulama\":\"streamaxt\"")
+  govde.contains("\"uygulama\":\"axbot\"")
 }
 
 /// AxBoT ayakta mı?
@@ -90,7 +92,7 @@ fn health_body(port: u16) -> Option<String> {
 pub fn parse_gozcu_pid(health: &str) -> Option<u32> {
   let govde = &health[health.find('{')?..];
   let v: Value = serde_json::from_str(govde.trim()).ok()?;
-  if v.get("uygulama").and_then(Value::as_str) != Some("streamaxt") {
+  if v.get("uygulama").and_then(Value::as_str) != Some("axbot") {
     return None;
   }
   v.get("gozcuPid").and_then(Value::as_u64).and_then(|p| u32::try_from(p).ok()).filter(|p| *p > 4)
@@ -181,7 +183,7 @@ pub fn status() -> Value {
 }
 
 fn tail_log(dir: &Path) -> String {
-  let text = std::fs::read_to_string(dir.join("streamaxt.log")).unwrap_or_default();
+  let text = std::fs::read_to_string(dir.join("axbot.log")).unwrap_or_default();
   let lines: Vec<&str> = text.lines().rev().take(6).collect();
   lines.into_iter().rev().collect::<Vec<_>>().join("\n")
 }
@@ -196,7 +198,7 @@ pub fn start() -> Result<Value, String> {
   let _kilit = START_LOCK.lock().unwrap_or_else(|e| e.into_inner());
   let port = port();
   let dir = find_dir().ok_or_else(|| {
-    "AxBoT klasörü bulunamadı (uygulamanın yanında `streamaxt` olmalı).".to_string()
+    "AxBoT klasörü bulunamadı (uygulamanın yanında `axbot` olmalı).".to_string()
   })?;
   let _ = std::fs::remove_file(marker(&dir));
   if healthy(port) {
@@ -234,7 +236,7 @@ fn kick_uygulamasi(metin: &str) -> Option<(String, String)> {
 fn spawn_child(dir: &Path, port: u16) -> Result<(), String> {
   let node = find_node().ok_or_else(|| "Node.js 22+ bulunamadı — nodejs.org üzerinden kurun.".to_string())?;
 
-  let log_path = dir.join("streamaxt.log");
+  let log_path = dir.join("axbot.log");
   if std::fs::metadata(&log_path).map(|m| m.len() > 1_000_000).unwrap_or(false) {
     let _ = std::fs::remove_file(&log_path);
   }
@@ -255,7 +257,7 @@ fn spawn_child(dir: &Path, port: u16) -> Result<(), String> {
         .get()
         .and_then(|p| std::fs::read_to_string(p).ok())
         .and_then(|m| kick_uygulamasi(&m))
-        .map(|(id, sir)| [("STREAMAXT_KICK_CLIENT_ID", id), ("STREAMAXT_KICK_CLIENT_SECRET", sir)])
+        .map(|(id, sir)| [("AXBOT_KICK_CLIENT_ID", id), ("AXBOT_KICK_CLIENT_SECRET", sir)])
         .into_iter()
         .flatten(),
     )
@@ -365,24 +367,24 @@ pub fn autostart() {
       return;
     }
     match start() {
-      Ok(_) => yya_log!("[streamaxt] otomatik başlatıldı (port {})", port()),
-      Err(e) => yya_warn!("[streamaxt] otomatik başlatma: {e}"),
+      Ok(_) => studio_log!("[axbot] otomatik başlatıldı (port {})", port()),
+      Err(e) => studio_warn!("[axbot] otomatik başlatma: {e}"),
     }
   });
 }
 
 #[tauri::command]
-pub async fn streamaxt_status() -> Result<Value, String> {
+pub async fn axbot_status() -> Result<Value, String> {
   tauri::async_runtime::spawn_blocking(status).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn streamaxt_start() -> Result<Value, String> {
+pub async fn axbot_start() -> Result<Value, String> {
   tauri::async_runtime::spawn_blocking(start).await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub async fn streamaxt_stop(force: Option<bool>) -> Result<Value, String> {
+pub async fn axbot_stop(force: Option<bool>) -> Result<Value, String> {
   tauri::async_runtime::spawn_blocking(move || stop(force.unwrap_or(false)))
     .await
     .map_err(|e| e.to_string())?
@@ -402,19 +404,19 @@ mod tests {
 
   #[test]
   fn yalniz_axbot_imzasi_axbot_sayilir() {
-    assert!(axbot_yaniti("\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"streamaxt\",\"gozcuPid\":null}"));
+    assert!(axbot_yaniti("\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"axbot\",\"gozcuPid\":null}"));
     assert!(!axbot_yaniti("\r\n\r\n{\"status\":\"ok\"}"));
   }
 
   #[test]
   fn gozcu_pid_health_yanitindan_okunur() {
-    let yanit = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"streamaxt\",\"gozcuPid\":4321}";
+    let yanit = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"axbot\",\"gozcuPid\":4321}";
     assert_eq!(parse_gozcu_pid(yanit), Some(4321));
-    // Gözcüsüz (STREAMAXT_GOZCU=kapali) ya da başka bir uygulama: PID yok
-    assert_eq!(parse_gozcu_pid("\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"streamaxt\",\"gozcuPid\":null}"), None);
+    // Gözcüsüz (AXBOT_GOZCU=kapali) ya da başka bir uygulama: PID yok
+    assert_eq!(parse_gozcu_pid("\r\n\r\n{\"status\":\"ok\",\"uygulama\":\"axbot\",\"gozcuPid\":null}"), None);
     assert_eq!(parse_gozcu_pid("\r\n\r\n{\"status\":\"ok\",\"gozcuPid\":4321}"), None);
     // Sistem süreçleri (0/4) asla hedef olmaz
-    assert_eq!(parse_gozcu_pid("\r\n\r\n{\"uygulama\":\"streamaxt\",\"gozcuPid\":4}"), None);
+    assert_eq!(parse_gozcu_pid("\r\n\r\n{\"uygulama\":\"axbot\",\"gozcuPid\":4}"), None);
     assert_eq!(parse_gozcu_pid("bozuk"), None);
   }
 
@@ -436,7 +438,7 @@ mod tests {
 
   #[test]
   fn path_icinde_exe_aranir() {
-    let d = std::env::temp_dir().join("yya-streamaxt-test-path");
+    let d = std::env::temp_dir().join("studio-axbot-test-path");
     let _ = std::fs::create_dir_all(&d);
     let exe = if cfg!(windows) { "node.exe" } else { "node" };
     std::fs::write(d.join(exe), b"").unwrap();

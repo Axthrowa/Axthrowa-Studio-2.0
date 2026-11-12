@@ -3,7 +3,7 @@
  * Rust derlemesi gerekmez; token localStorage’da.
  */
 
-const LS = "yya.twitchWrite.v1";
+const LS = "studio.twitchWrite.v1";
 const AUTH_URL = "https://id.twitch.tv/oauth2/authorize";
 const IRC_URL = "wss://irc-ws.chat.twitch.tv:443";
 /** `channel:manage:broadcast`: Yayın Bilgisi dock'u (başlık/kategori/etiket; yalnız kullanıcı onaylayınca). Daha önce

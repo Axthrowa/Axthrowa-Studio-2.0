@@ -327,8 +327,9 @@ pub fn docklari_yaz(taban: &str, secilen: &[&str]) -> Result<DockSonucu, String>
   let yeni = ini_yaz(&metin, "BasicWindow", "ExtraBrowserDocks", &deger);
 
   // İlk değişiklikten önce özgün dosyanın yedeği (sonrakiler yedeği ezmez)
-  let yedek_yolu = dosya.with_extension("ini.yya-yedek");
-  let yedek = if !yedek_yolu.exists() && !ham.is_empty() {
+  let yedek_yolu = dosya.with_extension("ini.studio-yedek");
+  let eski_yedek = dosya.with_extension(crate::eski_adlar::OBS_YEDEK_UZANTISI);
+  let yedek = if !yedek_yolu.exists() && !eski_yedek.exists() && !ham.is_empty() {
     std::fs::write(&yedek_yolu, &ham).map_err(|e| format!("Yedek alınamadı: {e}"))?;
     Some(yedek_yolu.display().to_string())
   } else {
@@ -340,7 +341,7 @@ pub fn docklari_yaz(taban: &str, secilen: &[&str]) -> Result<DockSonucu, String>
     bayt.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
   }
   bayt.extend_from_slice(yeni.as_bytes());
-  let gecici = dosya.with_extension("ini.yya-gecici");
+  let gecici = dosya.with_extension("ini.studio-gecici");
   std::fs::write(&gecici, &bayt).map_err(|e| format!("{} yazılamadı: {e}", gecici.display()))?;
   std::fs::rename(&gecici, &dosya).map_err(|e| format!("{} yazılamadı: {e}", dosya.display()))?;
   Ok(DockSonucu { dosya: dosya.display().to_string(), yedek, ekli: ekli_docklar(&dizin) })

@@ -51,8 +51,8 @@ pub fn spawn_bot_runtime(state: AppState) {
   let st4 = state.clone();
   tauri::async_runtime::spawn(async move {
     tokio::time::sleep(Duration::from_millis(350)).await;
-    if let Err(e) = crate::db::botaxt_api::seed_default_commands(&st4.db).await {
-      yya_warn!("[bot] varsayılan komut seed: {e:#}");
+    if let Err(e) = crate::db::bot_api::seed_default_commands(&st4.db).await {
+      studio_warn!("[bot] varsayılan komut seed: {e:#}");
     }
   });
 }
@@ -60,7 +60,7 @@ pub fn spawn_bot_runtime(state: AppState) {
 async fn bot_supervisor(state: AppState) {
   loop {
     if let Err(e) = bot_session(state.clone()).await {
-      yya_warn!("[bot] oturum koptu: {e:#} — 5s sonra yeniden");
+      studio_warn!("[bot] oturum koptu: {e:#} — 5s sonra yeniden");
     }
     tokio::time::sleep(Duration::from_secs(5)).await;
   }
@@ -78,7 +78,7 @@ async fn bot_session(state: AppState) -> anyhow::Result<()> {
     let txt = tx.clone();
     handles.push(tokio::spawn(async move {
       if let Err(e) = twitch_listener(login, txt).await {
-        yya_warn!("[bot/twitch] {e:#}");
+        studio_warn!("[bot/twitch] {e:#}");
       }
     }));
   }
@@ -94,7 +94,7 @@ async fn bot_session(state: AppState) -> anyhow::Result<()> {
   let state = Arc::new(state);
   while let Some(msg) = rx.recv().await {
     if let Err(e) = handle_inbound(state.clone(), msg).await {
-      yya_warn!("[bot/pipeline] {e:#}");
+      studio_warn!("[bot/pipeline] {e:#}");
     }
   }
 

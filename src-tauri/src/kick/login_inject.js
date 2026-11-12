@@ -73,8 +73,8 @@
   }
 
   function signal() {
-    if (window.__yyaKickSignaled) return;
-    window.__yyaKickSignaled = true;
+    if (window.__studioKickSignaled) return;
+    window.__studioKickSignaled = true;
     try {
       location.href = "http://127.0.0.1:8843/api/kick/auth-signal";
     } catch (_) {}

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
 import {
   useAlertOverlayQueue,
   useTransparentObs,

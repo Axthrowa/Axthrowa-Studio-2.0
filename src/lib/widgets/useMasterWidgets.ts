@@ -16,7 +16,7 @@ export type MasterWidgetLive = MasterWidgetRow & {
 };
 
 async function fetchAllWidgets(): Promise<MasterWidgetLive[]> {
-  const res = await fetch(`${API_BASE}/api/botaxt/widgets`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}/api/bot/widgets`, { cache: "no-store" });
   if (!res.ok) return [];
   const j = (await res.json()) as { widgets?: MasterWidgetRow[] };
   const list = j.widgets || [];

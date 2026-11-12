@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { saveBotConfig } from "../../lib/smartBot";
-import { emitWidgetEvent } from "../../lib/smartBot/events";
-import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
+import { saveBotConfig } from "../../lib/sohbetBot";
+import { emitWidgetEvent } from "../../lib/sohbetBot/events";
+import { useOverlayBotConfig } from "../../lib/sohbetBot/useOverlayWidgetEvents";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
 import { useSubathonEvents } from "../../lib/widgets/useSubathonEvents";
 import { useWidgetSync } from "../../lib/widgets/useWidgetSync";
 

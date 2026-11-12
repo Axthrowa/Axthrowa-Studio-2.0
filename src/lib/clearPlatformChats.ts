@@ -1,8 +1,8 @@
 /**
- * Sohbeti seçilen platformlarda temizler (işi bot yapar) ve YYA sohbet katmanını sıfırlar.
+ * Sohbeti seçilen platformlarda temizler (işi bot yapar) ve Studio sohbet katmanını sıfırlar.
  */
 import { patchSettings } from "./api";
-import { streamaxtBase } from "./streamaxt";
+import { axbotBase } from "./axbot";
 
 export type TemizlenebilirPlatform = { id: string; bagli: boolean; tumu: boolean };
 
@@ -13,7 +13,7 @@ export type ClearPlatformResult = {
 };
 
 export async function temizlenebilirPlatformlar(): Promise<TemizlenebilirPlatform[]> {
-  const r = await fetch(`${await streamaxtBase()}/api/chat/clear-platforms`, { cache: "no-store" });
+  const r = await fetch(`${await axbotBase()}/api/chat/clear-platforms`, { cache: "no-store" });
   if (!r.ok) throw new Error(`Bot yanıt vermedi (${r.status})`);
   return ((await r.json()) as { platformlar: TemizlenebilirPlatform[] }).platformlar;
 }
@@ -28,7 +28,7 @@ export async function clearPlatformChats(platforms: string[]): Promise<ClearPlat
   }
   if (!platforms.length) return { local, sonuclar: {} };
   try {
-    const r = await fetch(`${await streamaxtBase()}/api/chat/clear-platforms`, {
+    const r = await fetch(`${await axbotBase()}/api/chat/clear-platforms`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ platforms }),

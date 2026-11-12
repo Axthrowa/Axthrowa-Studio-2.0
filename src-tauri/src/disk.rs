@@ -54,7 +54,7 @@ mod tests {
   fn olmayan_alt_klasor_ust_birime_duser() {
     let tmp = std::env::temp_dir();
     let a = bos_alan(&tmp);
-    let b = bos_alan(&tmp.join("yya-olmayan-klasor").join("alt"));
+    let b = bos_alan(&tmp.join("studio-olmayan-klasor").join("alt"));
     assert!(a.is_some());
     assert!(b.is_some());
   }

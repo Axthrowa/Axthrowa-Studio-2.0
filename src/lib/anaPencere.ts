@@ -40,7 +40,7 @@ export function anaPencereOku(metin: string | null): AnaPencere | null {
  */
 export async function anaPencereyiHatirla(): Promise<() => void> {
   if (!isTauri()) return () => {};
-  const ANAHTAR = "yya.pencere.ana";
+  const ANAHTAR = "studio.pencere.ana";
   const { getCurrentWindow, LogicalPosition, LogicalSize } = await import("@tauri-apps/api/window");
   const w = getCurrentWindow();
   if (w.label !== "main") return () => {};

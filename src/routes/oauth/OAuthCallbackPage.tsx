@@ -7,14 +7,14 @@ import { completeDiscordOAuthFromHash } from "../../lib/platformAuth/discordAuth
 import { completeTwitchOAuthFromHash } from "../../lib/platformAuth/twitchWrite";
 import { completeYoutubeOAuthFromHash } from "../../lib/platformAuth/youtubeWrite";
 import { setActivePlatform, type BotPlatform } from "../../lib/platformTheme";
-import { saveBotConfig } from "../../lib/smartBot/store";
+import { saveBotConfig } from "../../lib/sohbetBot/store";
 import { attachTwitchChannel } from "../../auth/startPlatformLogin";
 
 type Platform = "twitch" | "youtube" | "discord";
 
 async function notifyAuthSuccess(platform: string, username: string) {
   const detail = { type: "auth_success", platform, username };
-  window.dispatchEvent(new CustomEvent("yya-auth-success", { detail }));
+  window.dispatchEvent(new CustomEvent("studio-auth-success", { detail }));
   try {
     await fetch(`${API_BASE}/api/auth/notify-success`, {
       method: "POST",
@@ -48,7 +48,7 @@ export default function OAuthCallbackPage({ platform }: { platform: Platform }) 
         const hash = window.location.hash || "";
         const clientId =
           params.get("client_id") ||
-          sessionStorage.getItem(`yya.oauth.${platform}.clientId`) ||
+          sessionStorage.getItem(`studio.oauth.${platform}.clientId`) ||
           "";
         if (!clientId) throw new Error("Client ID bulunamadı — /login üzerinden tekrar deneyin");
 

@@ -1,5 +1,5 @@
 /**
- * Botaxt Alerts / Widgets — Tauri invoke + HTTP fallback.
+ * Bot Alerts / Widgets — Tauri invoke + HTTP fallback.
  * Medya: DB'de mutlak path; OBS için streamUrl (`/media/file` Range).
  */
 
@@ -54,7 +54,7 @@ export async function mediaPlayableUrls(path: string) {
 
 export function alertsList() {
   return invokeOrHttp<{ alerts: unknown[] }>("alerts_list", {}, () =>
-    jsonFetch("/api/botaxt/alerts")
+    jsonFetch("/api/bot/alerts")
   );
 }
 
@@ -62,7 +62,7 @@ export function alertVariantsList(typeId?: string) {
   return invokeOrHttp<{ variants: unknown[] }>(
     "alert_variants_list",
     { typeId: typeId ?? null },
-    () => jsonFetch("/api/botaxt/alerts/variants")
+    () => jsonFetch("/api/bot/alerts/variants")
   );
 }
 

@@ -40,7 +40,7 @@ export function renkleriOku(oku: (ad: string) => string, kose: string | null | u
 
 export function botTemaMesaji(renk: BotTemaRenk) {
   return {
-    tur: "yya-tema" as const,
+    tur: "studio-tema" as const,
     tema: "studio",
     degiskenler: {
       "--axt-zemin": renk.zemin,

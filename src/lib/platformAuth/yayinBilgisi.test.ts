@@ -52,11 +52,11 @@ describe("Twitch yayın bilgisi", () => {
   });
 
   it("kapsam yoksa yazma kapalı, varsa PATCH broadcaster_id ile gider", async () => {
-    sahteOrtam({ "yya.twitchWrite.v1": TWITCH }, () => ({ status: 204 }));
+    sahteOrtam({ "studio.twitchWrite.v1": TWITCH }, () => ({ status: 204 }));
     expect(twitchKanalYazabilir()).toBe(false);
     await expect(twitchKanalGuncelle({ baslik: "x" })).rejects.toThrow(/channel:manage:broadcast/);
     vi.unstubAllGlobals();
-    const istekler = sahteOrtam({ "yya.twitchWrite.v1": { ...TWITCH, scopes: ["chat:write", "channel:manage:broadcast"] } }, () => ({ status: 204 }));
+    const istekler = sahteOrtam({ "studio.twitchWrite.v1": { ...TWITCH, scopes: ["chat:write", "channel:manage:broadcast"] } }, () => ({ status: 204 }));
     expect(twitchKanalYazabilir()).toBe(true);
     await twitchKanalGuncelle({ baslik: "Yeni başlık" });
     expect(istekler).toHaveLength(1);
@@ -84,7 +84,7 @@ describe("YouTube yayın bilgisi", () => {
   });
 
   it("yayın videosu doğrulanırsa videos.update (açıklama korunur)", async () => {
-    const istekler = sahteOrtam({ "yya.youtubeWrite.v1": YOUTUBE }, (i) => {
+    const istekler = sahteOrtam({ "studio.youtubeWrite.v1": YOUTUBE }, (i) => {
       if (i.url.includes("/liveBroadcasts?part=snippet&broadcastStatus=active"))
         return { status: 200, json: { items: [{ id: "vid1", snippet: { title: "Eski" } }] } };
       if (i.url.includes("/videos?part=snippet&id=vid1"))
@@ -99,7 +99,7 @@ describe("YouTube yayın bilgisi", () => {
   });
 
   it("video doğrulanamazsa yalnız başlık liveBroadcasts.update ile; kategori reddedilir", async () => {
-    const istekler = sahteOrtam({ "yya.youtubeWrite.v1": YOUTUBE }, (i) => {
+    const istekler = sahteOrtam({ "studio.youtubeWrite.v1": YOUTUBE }, (i) => {
       if (i.url.includes("broadcastStatus=active")) return { status: 200, json: { items: [] } };
       if (i.url.includes("broadcastStatus=upcoming"))
         return { status: 200, json: { items: [{ id: "b1", snippet: { title: "Plan", scheduledStartTime: "2026-10-06T18:00:00Z", description: "D" } }] } };

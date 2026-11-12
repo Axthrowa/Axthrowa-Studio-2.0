@@ -125,7 +125,7 @@ export default function ObsShortcutSettings({
           </h3>
           <button
             type="button"
-            className="yya-btn-ghost h-8 px-2.5 text-xs font-bold"
+            className="studio-btn-ghost h-8 px-2.5 text-xs font-bold"
             onClick={() =>
               onPatch({
                 sceneSwitchHotkeys: [...extras, { id: newId("sc"), label: "", scene: "", hotkey: "" }],
@@ -366,7 +366,7 @@ export default function ObsShortcutSettings({
           <h4 className="text-xs font-bold uppercase tracking-wider text-white">Kaynak ses kısayolları</h4>
           <button
             type="button"
-            className="yya-btn-ghost h-8 px-2.5 text-xs font-bold"
+            className="studio-btn-ghost h-8 px-2.5 text-xs font-bold"
             onClick={() =>
               onPatch({
                 sourceMuteHotkeys: [...sourceMutes, { id: newId("sm"), input: "", hotkey: "" }],

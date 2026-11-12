@@ -1,5 +1,5 @@
 /**
- * Profil & Dashboard — Botaxt Modül 1 (SQLite analitik)
+ * Profil & Dashboard — Bot modülü 1 (SQLite analitik)
  */
 
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Bot, Eraser, MessageCircle, Radio, Users } from "lucide-react";
 import { API_BASE, fetchSettings, patchSettings, type OverlaySettings } from "../../lib/api";
 import {
-  botaxtApi,
+  botApi,
   endSession,
   fetchDashboard,
   fmtDuration,
@@ -16,14 +16,14 @@ import {
   type DashboardSnapshot,
   type EventLog,
   type StreamSession,
-} from "../../lib/api/botaxt";
-import { getBotConfig, saveBotConfig } from "../../lib/smartBot";
+} from "../../lib/api/botApi";
+import { getBotConfig, saveBotConfig } from "../../lib/sohbetBot";
 import { useChatHub } from "../../lib/useChatHub";
 import ChatFeed from "../chat/ChatFeed";
 import { useAxthrowaStore, type KickCanli } from "../../store/useAxthrowaStore";
 import SistemSagligi from "../axthrowa/SistemSagligi";
 import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
-import { streamaxtBase } from "../../lib/streamaxt";
+import { axbotBase } from "../../lib/axbot";
 
 /** Dashboard alt sekmeleri (PanelPage). Bileşen sekme değişse de BAĞLI kalır:
  *  sadakat sayacı, yayın metrikleri ve oturum kapatma arka planda sürmeli. */
@@ -75,7 +75,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
   const [remotePass, setRemotePass] = useState("");
   const [chatSettings, setChatSettings] = useState<OverlaySettings>({});
   const [temizleAcik, setTemizleAcik] = useState(false);
-  // Kanal botta kayıtlıysa önizleme ve sohbet onu kullanır (YYA'da ayrıca yazılmamış olsa da)
+  // Kanal botta kayıtlıysa önizleme ve sohbet onu kullanır (Studio'da ayrıca yazılmamış olsa da)
   const [botKanali, setBotKanali] = useState("");
   const [previewEpoch, setPreviewEpoch] = useState(0);
   const stopPending = useRef(false);
@@ -83,14 +83,14 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
   const refresh = useCallback(async () => {
     try {
       setErr("");
-      const [snap, bot] = await Promise.all([fetchDashboard(), botaxtApi.botSettings().catch(() => ({}))]);
+      const [snap, bot] = await Promise.all([fetchDashboard(), botApi.botSettings().catch(() => ({}))]);
       setData(snap);
       const botState = bot as Record<string, unknown>;
       setBotEnabled(Number(botState.enabled ?? 1) !== 0);
       let kanal = "";
       let botBagli = false;
       try {
-        const d = await (await fetch(`${await streamaxtBase()}/api/status`, { cache: "no-store" })).json();
+        const d = await (await fetch(`${await axbotBase()}/api/status`, { cache: "no-store" })).json();
         kanal = d?.platforms?.kick?.connected ? String(d.platforms.kick.channel || "") : "";
       } catch {
         /* bot kapalı */
@@ -201,7 +201,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
     const sessionId = data?.active_session?.id;
     if (!streamHealthy || !sessionId || announcedSession.current === sessionId) return;
     announcedSession.current = sessionId;
-    const text = "BotAxT: Bot, sohbet ve canlı yayın bağlantısı düzgün çalışıyor.";
+    const text = "Bot, sohbet ve canlı yayın bağlantısı düzgün çalışıyor.";
     onToast(text);
     void patchSettings("chat", {
       _botAnnounce: {
@@ -216,7 +216,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
   // Sadakat izleme tick (API yoksa sessizce geçer)
   useEffect(() => {
     const tick = () => {
-      void botaxtApi.loyaltyTick().catch(() => undefined);
+      void botApi.loyaltyTick().catch(() => undefined);
     };
     tick();
     const id = window.setInterval(tick, 60_000);
@@ -302,7 +302,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
         <>
           {/* Canlı durum + TEK istatistik ızgarası (eskiden iki ızgara aynı sayıları
               tekrar ediyordu: anlık izleyici ve oturum aboneleri iki kez). */}
-          <section className="yya-card space-y-3 p-3">
+          <section className="studio-card space-y-3 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-panel-accent">Canlı durum</p>
@@ -329,7 +329,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 <button
                   type="button"
                   disabled={busy}
-                  className="yya-btn-danger h-8 px-3 text-xs"
+                  className="studio-btn-danger h-8 px-3 text-xs"
                   onClick={() => void onEnd()}
                   title={
                     data?.active_session
@@ -339,7 +339,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 >
                   Çıkış ekranına geç
                 </button>
-                <button type="button" className="yya-btn-ghost h-8 px-3 text-xs" onClick={() => void refresh()}>
+                <button type="button" className="studio-btn-ghost h-8 px-3 text-xs" onClick={() => void refresh()}>
                   Yenile
                 </button>
               </div>
@@ -380,7 +380,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
             </div>
           </section>
 
-      <section className="yya-card overflow-hidden p-0">
+      <section className="studio-card overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-panel-border px-4 py-3">
           <div>
             <h3 className="text-sm font-semibold text-white">Canlı yayın ve sohbet önizlemesi</h3>
@@ -390,7 +390,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-panel-accent" />
-            <button type="button" className="yya-btn-ghost inline-flex items-center gap-1.5 text-xs" onClick={() => setTemizleAcik(true)}>
+            <button type="button" className="studio-btn-ghost inline-flex items-center gap-1.5 text-xs" onClick={() => setTemizleAcik(true)}>
               <Eraser className="h-3.5 w-3.5" />
               Sohbeti temizle
             </button>
@@ -472,7 +472,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
       )}
 
           {data && (
-            <section className="yya-card space-y-3">
+            <section className="studio-card space-y-3">
               <h3 className="font-display text-sm font-semibold text-white">Son olaylar</h3>
               <EventList events={data.recent_events} />
             </section>
@@ -482,11 +482,11 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
 
       {goster("gecmis") && data && (
         <>
-          <section className="yya-card space-y-3">
+          <section className="studio-card space-y-3">
             <h3 className="font-display text-sm font-semibold text-white">Yayın geçmişi</h3>
             <SessionList sessions={data.sessions} />
           </section>
-          <section className="yya-card space-y-3">
+          <section className="studio-card space-y-3">
             <h3 className="font-display text-sm font-semibold text-white">
               Önceki yayınlar — izleyici zirvesi
             </h3>
@@ -502,47 +502,47 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
             <Stat label="Komutlar" value={String(data.commands)} />
           </div>
           <section className="grid gap-4 lg:grid-cols-2">
-            <div className="yya-card space-y-3">
+            <div className="studio-card space-y-3">
               <h3 className="font-display text-sm font-semibold text-white">Yerel SQLite</h3>
               <p className="text-xs text-panel-muted">
-                Alert / widget seed, smartBot yeniden import, Discord test.
+                Alert / widget seed, sohbetBot yeniden import, Discord test.
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="yya-btn-ghost"
+                  className="studio-btn-ghost"
                   onClick={() =>
-                    void botaxtApi.seedAlerts().then(() => onToast("Alert tipleri seed"))
+                    void botApi.seedAlerts().then(() => onToast("Alert tipleri seed"))
                   }
                 >
                   Alert seed
                 </button>
                 <button
                   type="button"
-                  className="yya-btn-ghost"
+                  className="studio-btn-ghost"
                   onClick={() =>
-                    void botaxtApi.seedWidgets().then(() => onToast("Widget seed"))
+                    void botApi.seedWidgets().then(() => onToast("Widget seed"))
                   }
                 >
                   Widget seed
                 </button>
                 <button
                   type="button"
-                  className="yya-btn-accent"
+                  className="studio-btn-accent"
                   onClick={() =>
-                    void botaxtApi.syncSmartbot(true).then(() => {
-                      onToast("smartBot → SQLite sync");
+                    void botApi.eskiPaneliAktar(true).then(() => {
+                      onToast("sohbetBot → SQLite sync");
                       void refresh();
                     })
                   }
                 >
-                  Sync smartBot
+                  Sync sohbetBot
                 </button>
                 <button
                   type="button"
-                  className="yya-btn-ghost"
+                  className="studio-btn-ghost"
                   onClick={() =>
-                    void botaxtApi.discordTest().then(async (r) => {
+                    void botApi.discordTest().then(async (r) => {
                       onToast(r.ok ? "Discord test gönderildi" : "Discord webhook yok/hata");
                     })
                   }
@@ -551,9 +551,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 </button>
                 <button
                   type="button"
-                  className="yya-btn-primary"
+                  className="studio-btn-primary"
                   onClick={() =>
-                    void botaxtApi.testAlert({ kind: "follow", user: "TestUser" }).then(() =>
+                    void botApi.testAlert({ kind: "follow", user: "TestUser" }).then(() =>
                       onToast("Alert test")
                     )
                   }
@@ -562,7 +562,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 </button>
               </div>
             </div>
-            <div className="yya-card space-y-3">
+            <div className="studio-card space-y-3">
               <h3 className="font-display text-sm font-semibold text-white">
                 Uzak editör (Modül 8)
               </h3>
@@ -574,13 +574,13 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 Yalnız Ayarlar'da uzak erişim açıksa kullanılır. İlk yönetici yalnız bu bilgisayardan kurulur; şifre en az 8 karakter. 10 dakikada 8 hatalı girişten sonra o adres beklemeye alınır.
               </p>
               <input
-                className="yya-input"
+                className="studio-input"
                 placeholder="kullanıcı"
                 value={remoteUser}
                 onChange={(e) => setRemoteUser(e.target.value)}
               />
               <input
-                className="yya-input"
+                className="studio-input"
                 type="password"
                 placeholder="şifre (en az 8 karakter)"
                 value={remotePass}
@@ -589,9 +589,9 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="yya-btn-primary"
+                  className="studio-btn-primary"
                   onClick={() =>
-                    void botaxtApi
+                    void botApi
                       .remoteSetup(remoteUser.trim(), remotePass)
                       .then(() => onToast("Uzak admin oluşturuldu"))
                       .catch((e) => onToast(String(e.message || e)))
@@ -601,14 +601,14 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 </button>
                 <button
                   type="button"
-                  className="yya-btn-ghost"
+                  className="studio-btn-ghost"
                   onClick={() =>
-                    void botaxtApi
+                    void botApi
                       .remoteLogin(remoteUser.trim(), remotePass)
                       .then((j) => {
                         try {
                           localStorage.setItem(
-                            "botaxt.remoteToken",
+                            "studio.bot.remoteToken",
                             String(j.token || "")
                           );
                         } catch {

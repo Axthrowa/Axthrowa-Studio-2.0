@@ -45,7 +45,7 @@ export const TURQUOISE = {
   glow: "rgba(62, 237, 254, 0.18)",
 };
 
-const LS_PLATFORM = "yya.activePlatform";
+const LS_PLATFORM = "studio.activePlatform";
 let memoryPlatform: BotPlatform | null = null;
 
 function canUseStorage() {
@@ -74,7 +74,7 @@ export function setActivePlatform(platform: BotPlatform | null) {
   }
   applyPlatformTheme(platform);
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("yya-platform-theme", { detail: { platform } }));
+    window.dispatchEvent(new CustomEvent("studio-platform-theme", { detail: { platform } }));
   }
 }
 

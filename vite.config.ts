@@ -44,7 +44,7 @@ function resonanceDist(): Plugin {
 export default defineConfig({
   plugins: [react(), resonanceDist()],
   // Panelde gösterilen uygulama sürümü (package.json ile aynı)
-  define: { __YYA_SURUM__: JSON.stringify(surum) },
+  define: { __STUDIO_SURUM__: JSON.stringify(surum) },
   // Production / Tauri HTTP sunucu (8843): mutlak asset kökü.
   // `base: './'` + `/widgets/cup` → yanlışlıkla /widgets/assets/* ister (boş ekran).
   base: "/",

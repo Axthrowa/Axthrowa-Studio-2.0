@@ -1,10 +1,10 @@
 /** Kick girişi: botun resmi izin sayfasını varsayılan tarayıcıda açar; onaydan sonra bot kaydeder ve bağlanır. */
 import { openExternal } from "./openExternal";
-import { streamaxtBase } from "./streamaxt";
+import { axbotBase } from "./axbot";
 
 export async function kickGirisiAc(hedef: "bot" | "kanal"): Promise<{ ok: boolean; message: string; needConfig?: boolean }> {
   try {
-    const r = await fetch(`${await streamaxtBase()}/api/platforms/kick/auth-url?hedef=${hedef}`, { method: "POST", cache: "no-store" });
+    const r = await fetch(`${await axbotBase()}/api/platforms/kick/auth-url?hedef=${hedef}`, { method: "POST", cache: "no-store" });
     const d = (await r.json()) as { authUrl?: string };
     if (!r.ok || !d.authUrl) {
       return { ok: false, needConfig: true, message: "Önce Kick Client ID gerekli: Bot › Platformlar › Kick" };

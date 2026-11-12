@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * AxBoT'u (Desktop\StreamAxT; eski yer Desktop\Projeler) AxthrowA Studio'nun "Bot" sekmesi için hazırlar.
+ * AxBoT'u (Desktop\AxBoT; eski yer Desktop\Projeler) AxthrowA Studio'nun "Bot" sekmesi için hazırlar.
  *
  * - Arayüzü TURKUAZ temayla derler: kaynak AxBoT'a DOKUNULMAZ; istemci kaynağı
  *   geçici bir klasöre kopyalanır, mor/indigo/pembe tonları turkuaza çevrilir, orada derlenir.
  * - Sunucuyu (release/app) `<hedef>` klasörüne koyar. node_modules 160+ MB olduğu için
  *   varsayılan olarak kopyalanmaz, bağlantı (junction) olur; `--kopyala` ile gerçek kopya.
- * - Veri (streamaxt.sqlite + bilbakalim soruları) yalnız hedefte yoksa tohumlanır.
+ * - Veri (axbot.sqlite + bilbakalim soruları) yalnız hedefte yoksa tohumlanır.
  *
  * Kullanım:
- *   node scripts/streamaxt-hazirla.mjs [--kaynak <Projeler>] [--hedef <klasor>] [--kopyala] [--db-tohumla]
+ *   node scripts/axbot-hazirla.mjs [--kaynak <Projeler>] [--hedef <klasor>] [--kopyala] [--db-tohumla]
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -26,12 +26,12 @@ function arg(name, def) {
 }
 const flag = (name) => process.argv.includes(`--${name}`);
 
-// Varsayılan: GitHub'dan çekilen Desktop\StreamAxT; yoksa eski yer Desktop\Projeler
-const varsayilanKaynak = [path.join(os.homedir(), "Desktop", "StreamAxT"), path.join(os.homedir(), "Desktop", "Projeler")].find((p) =>
+// Varsayılan: GitHub'dan çekilen Desktop\AxBoT; yoksa eski yer Desktop\Projeler
+const varsayilanKaynak = [path.join(os.homedir(), "Desktop", "AxBoT"), path.join(os.homedir(), "Desktop", "Projeler")].find((p) =>
   fs.existsSync(path.join(p, "server", "package.json")),
-) ?? path.join(os.homedir(), "Desktop", "StreamAxT");
+) ?? path.join(os.homedir(), "Desktop", "AxBoT");
 const kaynak = path.resolve(arg("kaynak", varsayilanKaynak));
-const hedef = path.resolve(arg("hedef", path.join(root, "cikti", "portable", "streamaxt")));
+const hedef = path.resolve(arg("hedef", path.join(root, "cikti", "portable", "axbot")));
 
 // ---- Renk eşlemesi -----------------------------------------------------------
 // Tailwind v4 paletini `@theme` ile geçersiz kılarız: `bg-purple-600`, `text-purple-300/40`,
@@ -105,12 +105,12 @@ const appSrc = path.join(kaynak, "release", "app");
 const serverDist = path.join(kaynak, "server", "dist");
 for (const p of [clientSrc, path.join(appSrc, "package.json"), path.join(kaynak, "server", "tsconfig.json")]) {
   if (!fs.existsSync(p)) {
-    console.error(`[streamaxt] bulunamadı: ${p}\n  --kaynak ile AxBoT (Projeler) klasörünü verin.`);
+    console.error(`[axbot] bulunamadı: ${p}\n  --kaynak ile AxBoT (Projeler) klasörünü verin.`);
     process.exit(1);
   }
 }
 
-const work = path.join(os.tmpdir(), "streamaxt-client-turkuaz");
+const work = path.join(os.tmpdir(), "axbot-client-turkuaz");
 fs.rmSync(work, { recursive: true, force: true });
 fs.mkdirSync(work, { recursive: true });
 for (const f of ["index.html", "package.json", "vite.config.ts", "tsconfig.json"]) {
@@ -138,7 +138,7 @@ const appTsx = path.join(work, "src", "App.tsx");
 let app = fs.readFileSync(appTsx, "utf8");
 const tabState = "const [activeTab, setActiveTab] = useState('dashboard');";
 if (!app.includes(tabState)) {
-  console.error("[streamaxt] App.tsx sekme durumu bulunamadı — gömme yaması atlandı.");
+  console.error("[axbot] App.tsx sekme durumu bulunamadı — gömme yaması atlandı.");
 } else {
   app = app.replace(
     tabState,
@@ -163,7 +163,7 @@ if (!app.includes(tabState)) {
   );
   app = app.replace('<div className="flex-1 ml-64 flex flex-col min-h-screen">', "<div className={(embedded ? 'flex-1 min-w-0' : 'flex-1 min-w-0 ml-64') + ' flex flex-col min-h-screen'}>");
   fs.writeFileSync(appTsx, app);
-  console.log("[streamaxt] gömme yaması uygulandı (#sekme + ?embed=1).");
+  console.log("[axbot] gömme yaması uygulandı (#sekme + ?embed=1).");
 }
 
 const css = path.join(work, "src", "index.css");
@@ -174,7 +174,7 @@ const nm = [path.join(clientSrc, "node_modules", "vite"), path.join(kaynak, "nod
   fs.existsSync(p),
 );
 if (!nm) {
-  console.error("[streamaxt] vite bulunamadı; Projeler klasöründe `npm install` çalıştırın.");
+  console.error("[axbot] vite bulunamadı; Projeler klasöründe `npm install` çalıştırın.");
   process.exit(1);
 }
 link(path.dirname(nm), path.join(work, "node_modules"));
@@ -186,7 +186,7 @@ execFileSync(process.execPath, [viteBin, "build", "--outDir", publicOut, "--empt
   cwd: work,
   stdio: "inherit",
 });
-console.log(`[streamaxt] arayüz turkuaz derlendi (${changed} dosyada sabit renk değişti) → ${publicOut}`);
+console.log(`[axbot] arayüz turkuaz derlendi (${changed} dosyada sabit renk değişti) → ${publicOut}`);
 
 // ---- 2) Sunucu ---------------------------------------------------------------
 // Önce derlenir: eskiden hazır server/dist kopyalanıyordu, derlenmemiş sunucu düzeltmeleri
@@ -195,18 +195,18 @@ const tscBin = [path.join(kaynak, "server", "node_modules", "typescript", "bin",
   fs.existsSync(p)
 );
 if (!tscBin) {
-  console.error("[streamaxt] typescript bulunamadı; AxBoT klasöründe `npm install` çalıştırın.");
+  console.error("[axbot] typescript bulunamadı; AxBoT klasöründe `npm install` çalıştırın.");
   process.exit(1);
 }
 execFileSync(process.execPath, [tscBin, "-p", path.join(kaynak, "server")], { stdio: "inherit" });
-console.log("[streamaxt] sunucu derlendi");
+console.log("[axbot] sunucu derlendi");
 fs.rmSync(path.join(hedef, "dist"), { recursive: true, force: true });
 fs.cpSync(serverDist, path.join(hedef, "dist"), { recursive: true });
 // Testler dağıtıma girmez (örnek değerler ve gereksiz boyut)
 for (const f of fs.readdirSync(path.join(hedef, "dist"), { recursive: true })) {
   if (/\.test\.(js|js\.map|d\.ts)$/.test(String(f))) fs.rmSync(path.join(hedef, "dist", String(f)));
 }
-// Çalışma paketi release/app'ten; sürüm AxBoT'un gerçek sürümü (YYA "Hakkında" bunu gösterir)
+// Çalışma paketi release/app'ten; sürüm AxBoT'un gerçek sürümü (Studio "Hakkında" bunu gösterir)
 {
   const paket = JSON.parse(fs.readFileSync(path.join(appSrc, "package.json"), "utf8"));
   paket.version = JSON.parse(fs.readFileSync(path.join(kaynak, "package.json"), "utf8")).version || paket.version;
@@ -223,7 +223,7 @@ walk(path.join(hedef, "dist"), (p) => {
     serverChanged++;
   }
 });
-console.log(`[streamaxt] sunucu varsayılan renkleri: ${serverChanged} dosya`);
+console.log(`[axbot] sunucu varsayılan renkleri: ${serverChanged} dosya`);
 
 const nmDest = path.join(hedef, "node_modules");
 if (flag("kopyala")) {
@@ -240,13 +240,13 @@ const bilb = path.join(kaynak, "server", "data", "bilbakalim");
 if (fs.existsSync(bilb) && !fs.existsSync(path.join(dataDest, "bilbakalim"))) {
   fs.cpSync(bilb, path.join(dataDest, "bilbakalim"), { recursive: true });
 }
-const dbDest = path.join(dataDest, "streamaxt.sqlite");
+const dbDest = path.join(dataDest, "axbot.sqlite");
 if (flag("db-tohumla") && !fs.existsSync(dbDest)) {
-  for (const f of ["streamaxt.sqlite", "streamaxt.sqlite-wal", "streamaxt.sqlite-shm"]) {
+  for (const f of ["axbot.sqlite", "axbot.sqlite-wal", "axbot.sqlite-shm"]) {
     const s = path.join(kaynak, "server", "data", f);
     if (fs.existsSync(s)) fs.copyFileSync(s, path.join(dataDest, f));
   }
-  console.log("[streamaxt] mevcut AxBoT veritabanı tohumlandı (platform/komut ayarları taşındı).");
+  console.log("[axbot] mevcut AxBoT veritabanı tohumlandı (platform/komut ayarları taşındı).");
 }
 
 // Veritabanındaki kayıtlı widget renkleri (yalnız bizim kopya; sunucu kapalıyken çalıştırın).
@@ -276,11 +276,11 @@ if (flag("db-recolor") || flag("db-tohumla")) {
       }
     }
     db.close();
-    console.log(`[streamaxt] veritabanında ${n} kayıtlı renk turkuaza çevrildi.`);
+    console.log(`[axbot] veritabanında ${n} kayıtlı renk turkuaza çevrildi.`);
   }
 }
 
-console.log(`[streamaxt] hazır: ${hedef}`);
+console.log(`[axbot] hazır: ${hedef}`);
 
 // Resonance kaynağı Studio deposunda. Paket, orada derlenmiş dist'i alır;
 // botun kendi src ağacı elle eşitlenmez.
@@ -288,9 +288,9 @@ const resDist = path.join(root, "resonance", "dist");
 const resPaket = path.join(root, "cikti", "portable", "resonance", "dist");
 if (fs.existsSync(path.join(resDist, "index.html"))) {
   fs.cpSync(resDist, resPaket, { recursive: true });
-  console.log(`[streamaxt] Resonance derlemesi pakete kopyalandı → ${resPaket}`);
+  console.log(`[axbot] Resonance derlemesi pakete kopyalandı → ${resPaket}`);
 } else {
-  console.warn("[streamaxt] resonance/dist yok. Önce: npm run build:resonance");
+  console.warn("[axbot] resonance/dist yok. Önce: npm run build:resonance");
 }
 // Bu bilgisayarın Client ID'leri pakete girer (sır girmez): yeni kurulumda yeniden yazmak gerekmesin
 execFileSync(process.execPath, [path.join(root, "scripts", "kimlikleri-ekle.mjs"), path.join(hedef, "varsayilan-kimlikler.json")], { stdio: "inherit" });

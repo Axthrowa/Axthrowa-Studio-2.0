@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Matter from "matter-js";
 import { useWidgetSync, type WidgetSyncEvent } from "../../lib/widgets/useWidgetSync";
-import { isLocalBotUser } from "../../lib/smartBot/botIdentity";
+import { isLocalBotUser } from "../../lib/sohbetBot/botIdentity";
 import {
   playWidgetSfx,
   resolveSfx,
@@ -179,7 +179,7 @@ export default function EmoteWallWidget({ config }: Props) {
   return (
     <div
       ref={hostRef}
-      className="pointer-events-none relative yya-widget-root overflow-hidden bg-transparent"
+      className="pointer-events-none relative studio-widget-root overflow-hidden bg-transparent"
       style={{ opacity }}
     />
   );

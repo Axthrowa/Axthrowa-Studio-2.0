@@ -1,4 +1,4 @@
-/** OBS overlay’lerde ortak: widget event + smartBot canlı senkron. */
+/** OBS overlay’lerde ortak: widget event + sohbetBot canlı senkron. */
 
 import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "../api";
@@ -10,15 +10,17 @@ import {
   subscribeBotConfig,
 } from "./store";
 import type { BotConfigV2 } from "./v2";
+import { panelBotu } from "../eskiAdlar";
 
-function pickSmartBot(obj: unknown): unknown {
+function pickSohbetBot(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return undefined;
   const o = obj as Record<string, unknown>;
-  if (o.smartBot && typeof o.smartBot === "object") return o.smartBot;
+  const bot = panelBotu(o);
+  if (bot && typeof bot === "object") return bot;
   return undefined;
 }
 
-function extractPanelPayload(msg: unknown): { smartBot?: unknown; event?: WidgetEvent | null } {
+function extractPanelPayload(msg: unknown): { sohbetBot?: unknown; event?: WidgetEvent | null } {
   const m = msg as {
     type?: string;
     screen?: string;
@@ -29,9 +31,9 @@ function extractPanelPayload(msg: unknown): { smartBot?: unknown; event?: Widget
 
   // İlk bağlantı snapshot’ı — panel ayarları kökte
   if (m.type === "snapshot") {
-    const fromPanel = pickSmartBot(m.panel);
+    const fromPanel = pickSohbetBot(m.panel);
     const we = (m.panel?._widgetEvent || null) as WidgetEvent | null;
-    return { smartBot: fromPanel, event: we?.id ? we : null };
+    return { sohbetBot: fromPanel, event: we?.id ? we : null };
   }
 
   const data = (m.data || m) as Record<string, unknown> | undefined;
@@ -39,15 +41,15 @@ function extractPanelPayload(msg: unknown): { smartBot?: unknown; event?: Widget
   const screenOk = !m.screen || m.screen === "panel" || m.type === "snapshot";
   if (!screenOk && m.type === "settings") return {};
   const we = (data._widgetEvent || null) as WidgetEvent | null;
-  const smartBot = pickSmartBot(data) ?? (m.screen === "panel" ? pickSmartBot(data) : undefined);
-  return { smartBot, event: we?.id ? we : null };
+  const sohbetBot = pickSohbetBot(data) ?? (m.screen === "panel" ? pickSohbetBot(data) : undefined);
+  return { sohbetBot, event: we?.id ? we : null };
 }
 
-/** Sadece olay dinle; smartBot varsa uzak cache’e uygula. */
+/** Sadece olay dinle; sohbetBot varsa uzak cache’e uygula. */
 export function useOverlayWidgetEvents(onEvent: (ev: WidgetEvent) => void) {
   useEffect(() => {
     const onLocal = (e: Event) => onEvent((e as CustomEvent<WidgetEvent>).detail);
-    window.addEventListener("smartbot-widget-event", onLocal);
+    window.addEventListener("sohbet-bot-widget-olayi", onLocal);
 
     let ws: WebSocket | null = null;
     let retry: number | undefined;
@@ -61,9 +63,9 @@ export function useOverlayWidgetEvents(onEvent: (ev: WidgetEvent) => void) {
       ws.onmessage = (raw) => {
         try {
           const msg = JSON.parse(raw.data);
-          const { smartBot, event } = extractPanelPayload(msg);
-          if (smartBot && typeof smartBot === "object") {
-            applyRemoteBotConfig(smartBot);
+          const { sohbetBot, event } = extractPanelPayload(msg);
+          if (sohbetBot && typeof sohbetBot === "object") {
+            applyRemoteBotConfig(sohbetBot);
           }
           if (event?.id) onEvent(event);
         } catch {
@@ -76,7 +78,7 @@ export function useOverlayWidgetEvents(onEvent: (ev: WidgetEvent) => void) {
     };
     connect();
     return () => {
-      window.removeEventListener("smartbot-widget-event", onLocal);
+      window.removeEventListener("sohbet-bot-widget-olayi", onLocal);
       if (retry) window.clearTimeout(retry);
       try {
         ws?.close();
@@ -87,7 +89,7 @@ export function useOverlayWidgetEvents(onEvent: (ev: WidgetEvent) => void) {
   }, [onEvent]);
 }
 
-/** Widget sayfaları için: hydrate + subscribe + OBS live smartBot. */
+/** Widget sayfaları için: hydrate + subscribe + OBS live sohbetBot. */
 export function useOverlayBotConfig(): BotConfigV2 {
   const [cfg, setCfg] = useState<BotConfigV2>(() => getBotConfig());
 

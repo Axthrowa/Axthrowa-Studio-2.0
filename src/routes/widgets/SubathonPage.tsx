@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
-import { useOverlayBotConfig } from "../../lib/smartBot/useOverlayWidgetEvents";
-import { useIsWidgetPreview } from "../../lib/smartBot/widgetPreview";
+import { useOverlayBotConfig } from "../../lib/sohbetBot/useOverlayWidgetEvents";
+import { useIsWidgetPreview } from "../../lib/sohbetBot/widgetPreview";
 
 function formatRemaining(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));

@@ -1,4 +1,4 @@
-//! Botaxt Modül 2–8 HTTP handlers.
+//! Bot modülü 2–8 HTTP handlers.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -15,118 +15,118 @@ use crate::AppState;
 pub fn router() -> Router<Arc<AppState>> {
   Router::new()
     // Alerts
-    .route("/api/botaxt/alerts", get(api_alerts_get).put(api_alerts_put))
-    .route("/api/botaxt/alerts/seed", post(api_alerts_seed))
-    .route("/api/botaxt/alerts/test", post(api_alerts_test))
-    .route("/api/botaxt/alerts/queue", get(api_alerts_queue))
+    .route("/api/bot/alerts", get(api_alerts_get).put(api_alerts_put))
+    .route("/api/bot/alerts/seed", post(api_alerts_seed))
+    .route("/api/bot/alerts/test", post(api_alerts_test))
+    .route("/api/bot/alerts/queue", get(api_alerts_queue))
     .route(
-      "/api/botaxt/alerts/variants",
+      "/api/bot/alerts/variants",
       get(api_alert_variants_get).put(api_alert_variants_put),
     )
     // Widgets / Goals
     .route(
-      "/api/botaxt/goals",
+      "/api/bot/goals",
       get(api_goals_get).post(api_goals_post).patch(api_goals_patch),
     )
-    .route("/api/botaxt/widgets", get(api_widgets_get).post(api_widgets_post))
-    .route("/api/botaxt/widgets/seed", post(api_widgets_seed))
-    .route("/api/botaxt/widgets/test", post(api_widgets_test))
+    .route("/api/bot/widgets", get(api_widgets_get).post(api_widgets_post))
+    .route("/api/bot/widgets/seed", post(api_widgets_seed))
+    .route("/api/bot/widgets/test", post(api_widgets_test))
     .route(
-      "/api/botaxt/widgets/{id}/config",
+      "/api/bot/widgets/{id}/config",
       axum::routing::put(api_widgets_patch_config).patch(api_widgets_patch_config),
     )
-    .route("/api/botaxt/widgets/{id}", axum::routing::delete(api_widgets_delete))
+    .route("/api/bot/widgets/{id}", axum::routing::delete(api_widgets_delete))
     // Chatbot
     .route(
-      "/api/botaxt/commands",
+      "/api/bot/commands",
       get(api_commands_get)
         .post(api_commands_post)
         .put(api_commands_put)
         .delete(api_commands_delete),
     )
     .route(
-      "/api/botaxt/timers",
+      "/api/bot/timers",
       get(api_timers_get)
         .post(api_timers_post)
         .put(api_timers_put)
         .delete(api_timers_delete),
     )
-    .route("/api/botaxt/filters", get(api_filters_get).put(api_filters_put))
+    .route("/api/bot/filters", get(api_filters_get).put(api_filters_put))
     .route(
-      "/api/botaxt/bot-settings",
+      "/api/bot/bot-settings",
       get(api_bot_settings_get).put(api_bot_settings_put),
     )
-    .route("/api/botaxt/bot/console", get(api_bot_console))
+    .route("/api/bot/bot/console", get(api_bot_console))
     .route(
-      "/api/botaxt/settings/kick",
+      "/api/bot/settings/kick",
       get(api_kick_settings_get)
         .post(api_kick_settings_post)
         .delete(api_kick_settings_delete),
     )
     .route(
-      "/api/botaxt/settings/kick/status",
+      "/api/bot/settings/kick/status",
       get(api_kick_settings_status),
     )
-    .route("/api/botaxt/sync/from-smartbot", post(api_sync_smartbot))
+    .route("/api/bot/sync/eski-panel", post(api_eski_paneli_aktar))
     // Loyalty
-    .route("/api/botaxt/loyalty/users", get(api_loyalty_users))
+    .route("/api/bot/loyalty/users", get(api_loyalty_users))
     .route(
-      "/api/botaxt/loyalty/settings",
+      "/api/bot/loyalty/settings",
       get(api_loyalty_settings_get).put(api_loyalty_settings_put),
     )
     .route(
-      "/api/botaxt/shop",
+      "/api/bot/shop",
       get(api_shop_get)
         .post(api_shop_post)
         .put(api_shop_put)
         .delete(api_shop_delete),
     )
-    .route("/api/botaxt/loyalty/adjust", post(api_loyalty_adjust))
-    .route("/api/botaxt/loyalty/tick", post(api_loyalty_tick))
-    .route("/api/botaxt/loyalty/reset", post(api_loyalty_reset))
+    .route("/api/bot/loyalty/adjust", post(api_loyalty_adjust))
+    .route("/api/bot/loyalty/tick", post(api_loyalty_tick))
+    .route("/api/bot/loyalty/reset", post(api_loyalty_reset))
     // Games
     .route(
-      "/api/botaxt/games/settings",
+      "/api/bot/games/settings",
       get(api_games_settings_get).put(api_games_settings_put),
     )
-    .route("/api/botaxt/games/heist/start", post(api_heist_start))
-    .route("/api/botaxt/games/heist/join", post(api_heist_join))
-    .route("/api/botaxt/games/heist/settle", post(api_heist_settle))
-    .route("/api/botaxt/games/duel", post(api_duel))
-    .route("/api/botaxt/games/roulette", post(api_roulette))
-    .route("/api/botaxt/games/8ball", post(api_eightball))
+    .route("/api/bot/games/heist/start", post(api_heist_start))
+    .route("/api/bot/games/heist/join", post(api_heist_join))
+    .route("/api/bot/games/heist/settle", post(api_heist_settle))
+    .route("/api/bot/games/duel", post(api_duel))
+    .route("/api/bot/games/roulette", post(api_roulette))
+    .route("/api/bot/games/8ball", post(api_eightball))
     // Integrations — spesifik path önce
-    .route("/api/botaxt/integrations/discord/test", post(api_discord_test))
+    .route("/api/bot/integrations/discord/test", post(api_discord_test))
     .route(
-      "/api/botaxt/integrations/{provider}",
+      "/api/bot/integrations/{provider}",
       get(api_integration_get).put(api_integration_put),
     )
     .route(
-      "/api/botaxt/soundboard",
+      "/api/bot/soundboard",
       get(api_soundboard_get).post(api_soundboard_post),
     )
     // Remote
-    .route("/api/botaxt/remote/setup", post(api_remote_setup))
-    .route("/api/botaxt/remote/login", post(api_remote_login))
-    .route("/api/botaxt/remote/logout", post(api_remote_logout))
-    .route("/api/botaxt/remote/me", get(api_remote_me))
+    .route("/api/bot/remote/setup", post(api_remote_setup))
+    .route("/api/bot/remote/login", post(api_remote_login))
+    .route("/api/bot/remote/logout", post(api_remote_logout))
+    .route("/api/bot/remote/me", get(api_remote_me))
     .route(
-      "/api/botaxt/remote/users",
+      "/api/bot/remote/users",
       get(api_remote_users_list).post(api_remote_users_upsert),
     )
-    .route("/api/botaxt/remote/users/delete", post(api_remote_users_delete))
+    .route("/api/bot/remote/users/delete", post(api_remote_users_delete))
     .route(
-      "/api/botaxt/remote/panel/dashboard",
+      "/api/bot/remote/panel/dashboard",
       get(api_remote_dashboard),
     )
     .route(
-      "/api/botaxt/remote/panel/commands",
+      "/api/bot/remote/panel/commands",
       get(api_remote_commands_get).post(api_remote_commands_post),
     )
-    .route("/api/botaxt/remote/alerts/trigger", post(api_remote_alert_trigger))
-    .route("/api/botaxt/remote/chat/send", post(api_remote_chat_send))
-    .route("/api/botaxt/remote/obs/scene", post(api_remote_obs_scene))
-    .route("/api/botaxt/remote/settings/patch", post(api_remote_settings_patch))
+    .route("/api/bot/remote/alerts/trigger", post(api_remote_alert_trigger))
+    .route("/api/bot/remote/chat/send", post(api_remote_chat_send))
+    .route("/api/bot/remote/obs/scene", post(api_remote_obs_scene))
+    .route("/api/bot/remote/settings/patch", post(api_remote_settings_patch))
 }
 
 fn map_err(e: anyhow::Error) -> (StatusCode, String) {
@@ -166,12 +166,12 @@ pub(crate) fn extract_bearer(headers: &HeaderMap) -> Option<String> {
 async fn require_remote(
   state: &AppState,
   headers: &HeaderMap,
-) -> Result<crate::db::botaxt_api::RemoteAuthInfo, (StatusCode, String)> {
+) -> Result<crate::db::bot_api::RemoteAuthInfo, (StatusCode, String)> {
   let token = extract_bearer(headers).ok_or((
     StatusCode::UNAUTHORIZED,
     "Yetkisiz: Bearer token gerekli".into(),
   ))?;
-  crate::db::botaxt_api::remote_auth_full(&state.db, &token)
+  crate::db::bot_api::remote_auth_full(&state.db, &token)
     .await
     .map_err(map_err)
 }
@@ -180,9 +180,9 @@ async fn require_remote_perm(
   state: &AppState,
   headers: &HeaderMap,
   perm: &str,
-) -> Result<crate::db::botaxt_api::RemoteAuthInfo, (StatusCode, String)> {
+) -> Result<crate::db::bot_api::RemoteAuthInfo, (StatusCode, String)> {
   let info = require_remote(state, headers).await?;
-  if !crate::db::botaxt_api::remote_has_perm(&info, perm) {
+  if !crate::db::bot_api::remote_has_perm(&info, perm) {
     return Err((
       StatusCode::FORBIDDEN,
       format!("Yetki yok: {perm}"),
@@ -200,7 +200,7 @@ fn ok_json<T: serde::Serialize>(v: T) -> Json<Value> {
 async fn api_alerts_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_alerts(&state.db)
+  let rows = crate::db::bot_api::list_alerts(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "alerts": rows })))
@@ -216,7 +216,7 @@ async fn api_alerts_put(
     .cloned()
     .or_else(|| body.as_array().cloned())
     .unwrap_or_else(|| vec![body]);
-  let rows = crate::db::botaxt_api::upsert_alerts(&state.db, &items)
+  let rows = crate::db::bot_api::upsert_alerts(&state.db, &items)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "alerts": rows })))
@@ -226,7 +226,7 @@ async fn api_alerts_seed(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
   let settings = state.settings.read().clone();
-  let n = crate::db::botaxt_api::seed_alerts_if_empty(&state.db, &settings)
+  let n = crate::db::bot_api::seed_alerts_if_empty(&state.db, &settings)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "seeded": n })))
@@ -257,7 +257,7 @@ async fn api_alerts_test(
     .as_deref()
     .filter(|s| !s.is_empty())
     .unwrap_or(body.type_id.as_str());
-  let (item, ws) = crate::db::botaxt_api::enqueue_alert_test(
+  let (item, ws) = crate::db::bot_api::enqueue_alert_test(
     &state.db,
     type_id,
     body.user.as_deref(),
@@ -284,7 +284,7 @@ async fn api_alerts_test(
 async fn api_alerts_queue(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_alert_queue(&state.db)
+  let rows = crate::db::bot_api::list_alert_queue(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "queue": rows })))
@@ -325,7 +325,7 @@ async fn api_alert_variants_put(
 async fn api_goals_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_goals(&state.db)
+  let rows = crate::db::bot_api::list_goals(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "goals": rows })))
@@ -335,7 +335,7 @@ async fn api_goals_post(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::create_goal(&state.db, &body)
+  crate::db::bot_api::create_goal(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -345,7 +345,7 @@ async fn api_goals_patch(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::patch_goal(&state.db, &body)
+  crate::db::bot_api::patch_goal(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -621,7 +621,7 @@ async fn api_widgets_test(
               }
             }
           }
-          Err(e) => yya_warn!("[widgets/test] goal_bump: {e:#}"),
+          Err(e) => studio_warn!("[widgets/test] goal_bump: {e:#}"),
         }
         return Ok(Json(json!({
           "ok": true,
@@ -723,7 +723,7 @@ async fn api_widgets_test(
 async fn api_commands_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_commands(&state.db)
+  let rows = crate::db::bot_api::list_commands(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "commands": rows })))
@@ -733,7 +733,7 @@ async fn api_commands_post(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::upsert_command(&state.db, &body, true)
+  crate::db::bot_api::upsert_command(&state.db, &body, true)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -743,7 +743,7 @@ async fn api_commands_put(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::upsert_command(&state.db, &body, false)
+  crate::db::bot_api::upsert_command(&state.db, &body, false)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -761,7 +761,7 @@ async fn api_commands_delete(
   let id = q
     .id
     .ok_or((StatusCode::BAD_REQUEST, "id gerekli".into()))?;
-  let ok = crate::db::botaxt_api::delete_command(&state.db, &id)
+  let ok = crate::db::bot_api::delete_command(&state.db, &id)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "deleted": ok })))
@@ -770,7 +770,7 @@ async fn api_commands_delete(
 async fn api_timers_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_timers(&state.db)
+  let rows = crate::db::bot_api::list_timers(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "timers": rows })))
@@ -780,7 +780,7 @@ async fn api_timers_post(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::upsert_timer(&state.db, &body)
+  crate::db::bot_api::upsert_timer(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -790,7 +790,7 @@ async fn api_timers_put(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::upsert_timer(&state.db, &body)
+  crate::db::bot_api::upsert_timer(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -803,7 +803,7 @@ async fn api_timers_delete(
   let id = q
     .id
     .ok_or((StatusCode::BAD_REQUEST, "id gerekli".into()))?;
-  let ok = crate::db::botaxt_api::delete_timer(&state.db, &id)
+  let ok = crate::db::bot_api::delete_timer(&state.db, &id)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "deleted": ok })))
@@ -812,7 +812,7 @@ async fn api_timers_delete(
 async fn api_filters_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::get_filters(&state.db)
+  crate::db::bot_api::get_filters(&state.db)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -822,7 +822,7 @@ async fn api_filters_put(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::put_filters(&state.db, &body)
+  crate::db::bot_api::put_filters(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -831,7 +831,7 @@ async fn api_filters_put(
 async fn api_bot_settings_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::get_bot_settings(&state.db)
+  crate::db::bot_api::get_bot_settings(&state.db)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -848,7 +848,7 @@ async fn api_bot_settings_put(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::put_bot_settings(&state.db, &body)
+  crate::db::bot_api::put_bot_settings(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -862,21 +862,21 @@ struct KickSettingsBody {
   chatroom_id: Option<u64>,
 }
 
-/// GET /api/botaxt/settings/kick — kayıtlı kullanıcı + canlı durum
+/// GET /api/bot/settings/kick — kayıtlı kullanıcı + canlı durum
 async fn api_kick_settings_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
   Ok(Json(state.kick_chat.status_json()))
 }
 
-/// GET /api/botaxt/settings/kick/status — canlı Pusher bağlı mı?
+/// GET /api/bot/settings/kick/status — canlı Pusher bağlı mı?
 async fn api_kick_settings_status(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
   Ok(Json(state.kick_chat.status_json()))
 }
 
-/// POST /api/botaxt/settings/kick — kaydet + WebSocket’i hemen başlat
+/// POST /api/bot/settings/kick — kaydet + WebSocket’i hemen başlat
 async fn api_kick_settings_post(
   State(state): State<Arc<AppState>>,
   Json(body): Json<KickSettingsBody>,
@@ -893,7 +893,7 @@ async fn api_kick_settings_post(
       )
     })?;
 
-  yya_log!(
+  studio_log!(
     "[api] Kick bağlan isteği: {username} chatroom={:?}",
     body.chatroom_id
   );
@@ -903,14 +903,14 @@ async fn api_kick_settings_post(
     .await
     .map_err(map_err)?;
 
-  // Panel smartBot.channelName ile senkron
+  // Panel sohbetBot.channelName ile senkron
   {
     use crate::settings::ScreenKind;
     let mut settings = state.settings.write();
     let mut panel = settings.get(ScreenKind::Panel).clone();
     if let Some(obj) = panel.as_object_mut() {
       let smart = obj
-        .entry("smartBot".to_string())
+        .entry("sohbetBot".to_string())
         .or_insert_with(|| json!({}));
       if let Some(sb) = smart.as_object_mut() {
         sb.insert("channelName".into(), json!(username));
@@ -924,7 +924,7 @@ async fn api_kick_settings_post(
   Ok(Json(status))
 }
 
-/// DELETE /api/botaxt/settings/kick — Pusher bağlantısını kes
+/// DELETE /api/bot/settings/kick — Pusher bağlantısını kes
 async fn api_kick_settings_delete(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
@@ -943,7 +943,7 @@ struct SyncQuery {
   force: Option<String>,
 }
 
-async fn api_sync_smartbot(
+async fn api_eski_paneli_aktar(
   State(state): State<Arc<AppState>>,
   Query(q): Query<SyncQuery>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
@@ -952,7 +952,7 @@ async fn api_sync_smartbot(
     Some("1") | Some("true") | Some("yes")
   );
   let settings = state.settings.read().clone();
-  crate::db::smartbot_import::import_smartbot(&state.db, &settings, force)
+  crate::db::eski_panel_aktarimi::eski_paneli_aktar(&state.db, &settings, force)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "ok": true, "force": force })))
@@ -974,7 +974,7 @@ async fn api_loyalty_users(
   State(state): State<Arc<AppState>>,
   Query(q): Query<LimitQuery>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_loyalty_users(&state.db, q.limit)
+  let rows = crate::db::bot_api::list_loyalty_users(&state.db, q.limit)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "users": rows })))
@@ -983,7 +983,7 @@ async fn api_loyalty_users(
 async fn api_loyalty_settings_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::get_loyalty_settings(&state.db)
+  crate::db::bot_api::get_loyalty_settings(&state.db)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -993,7 +993,7 @@ async fn api_loyalty_settings_put(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::put_loyalty_settings(&state.db, &body)
+  crate::db::bot_api::put_loyalty_settings(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1002,7 +1002,7 @@ async fn api_loyalty_settings_put(
 async fn api_shop_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_shop(&state.db)
+  let rows = crate::db::bot_api::list_shop(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "items": rows })))
@@ -1012,7 +1012,7 @@ async fn api_shop_post(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::upsert_shop_item(&state.db, &body)
+  crate::db::bot_api::upsert_shop_item(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1022,7 +1022,7 @@ async fn api_shop_put(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::upsert_shop_item(&state.db, &body)
+  crate::db::bot_api::upsert_shop_item(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1035,7 +1035,7 @@ async fn api_shop_delete(
   let id = q
     .id
     .ok_or((StatusCode::BAD_REQUEST, "id gerekli".into()))?;
-  let ok = crate::db::botaxt_api::delete_shop_item(&state.db, &id)
+  let ok = crate::db::bot_api::delete_shop_item(&state.db, &id)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "deleted": ok })))
@@ -1057,7 +1057,7 @@ async fn api_loyalty_adjust(
   State(state): State<Arc<AppState>>,
   Json(body): Json<AdjustBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::adjust_loyalty(&state.db, &body.user_key, body.delta, &body.reason)
+  crate::db::bot_api::adjust_loyalty(&state.db, &body.user_key, body.delta, &body.reason)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1084,7 +1084,7 @@ async fn api_loyalty_reset(
   State(state): State<Arc<AppState>>,
   Json(body): Json<LoyaltyResetBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let updated = crate::db::botaxt_api::reset_loyalty(&state.db, body.points, body.levels)
+  let updated = crate::db::bot_api::reset_loyalty(&state.db, body.points, body.levels)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "ok": true, "updated": updated })))
@@ -1095,7 +1095,7 @@ async fn api_loyalty_reset(
 async fn api_games_settings_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::get_game_settings(&state.db)
+  crate::db::bot_api::get_game_settings(&state.db)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1105,7 +1105,7 @@ async fn api_games_settings_put(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::put_game_settings(&state.db, &body)
+  crate::db::bot_api::put_game_settings(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1114,7 +1114,7 @@ async fn api_games_settings_put(
 async fn api_heist_start(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::heist_start(&state.db)
+  crate::db::bot_api::heist_start(&state.db)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1131,7 +1131,7 @@ async fn api_heist_join(
   State(state): State<Arc<AppState>>,
   Json(body): Json<HeistJoinBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::heist_join(
+  crate::db::bot_api::heist_join(
     &state.db,
     &body.user_key,
     &body.user_name,
@@ -1145,7 +1145,7 @@ async fn api_heist_join(
 async fn api_heist_settle(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::heist_settle(&state.db)
+  crate::db::bot_api::heist_settle(&state.db)
     .await
     .map(Json)
     .map_err(map_err)
@@ -1164,7 +1164,7 @@ async fn api_duel(
   State(state): State<Arc<AppState>>,
   Json(body): Json<DuelBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::duel(
+  crate::db::bot_api::duel(
     &state.db,
     &body.a_key,
     &body.a_name,
@@ -1188,7 +1188,7 @@ async fn api_roulette(
   State(state): State<Arc<AppState>>,
   Json(body): Json<RouletteBody>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::roulette(
+  crate::db::bot_api::roulette(
     &state.db,
     body.user_key.as_deref(),
     body.bet,
@@ -1213,7 +1213,7 @@ async fn api_eightball(
     user_key: None,
     cost: None,
   });
-  crate::db::botaxt_api::eightball(&state.db, b.user_key.as_deref(), b.cost)
+  crate::db::bot_api::eightball(&state.db, b.user_key.as_deref(), b.cost)
     .await
     .map(Json)
     .map_err(map_err)
@@ -1225,7 +1225,7 @@ async fn api_integration_get(
   State(state): State<Arc<AppState>>,
   Path(provider): Path<String>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::get_integration(&state.db, &provider)
+  crate::db::bot_api::get_integration(&state.db, &provider)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1236,7 +1236,7 @@ async fn api_integration_put(
   Path(provider): Path<String>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::put_integration(&state.db, &provider, &body)
+  crate::db::bot_api::put_integration(&state.db, &provider, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1245,7 +1245,7 @@ async fn api_integration_put(
 async fn api_discord_test(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::discord_test_webhook(&state.db)
+  crate::db::bot_api::discord_test_webhook(&state.db)
     .await
     .map(Json)
     .map_err(map_err)
@@ -1254,7 +1254,7 @@ async fn api_discord_test(
 async fn api_soundboard_get(
   State(state): State<Arc<AppState>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::botaxt_api::list_soundboard(&state.db)
+  let rows = crate::db::bot_api::list_soundboard(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "pads": rows })))
@@ -1264,7 +1264,7 @@ async fn api_soundboard_post(
   State(state): State<Arc<AppState>>,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::botaxt_api::upsert_soundboard(&state.db, &body)
+  crate::db::bot_api::upsert_soundboard(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1292,7 +1292,7 @@ async fn api_remote_setup(
       "İlk yönetici yalnız bu bilgisayardaki panelden kurulabilir".into(),
     ));
   }
-  crate::db::botaxt_api::remote_setup(&state.db, &body.username, &body.password)
+  crate::db::bot_api::remote_setup(&state.db, &body.username, &body.password)
     .await
     .map(Json)
     .map_err(map_err)
@@ -1353,7 +1353,7 @@ async fn api_remote_login(
       "Çok fazla başarısız deneme — 10 dakika sonra tekrar deneyin".into(),
     ));
   }
-  match crate::db::botaxt_api::remote_login(&state.db, &body.username, &body.password).await {
+  match crate::db::bot_api::remote_login(&state.db, &body.username, &body.password).await {
     Ok(v) => {
       GIRIS_DENEMELERI.lock().basarili(ip);
       Ok(Json(v))
@@ -1376,7 +1376,7 @@ async fn api_remote_logout(
         .and_then(|Json(v)| v.get("token").and_then(|t| t.as_str()).map(str::to_string))
     })
     .ok_or((StatusCode::BAD_REQUEST, "token gerekli".into()))?;
-  crate::db::botaxt_api::remote_logout(&state.db, &token)
+  crate::db::bot_api::remote_logout(&state.db, &token)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "ok": true })))
@@ -1398,7 +1398,7 @@ async fn api_remote_commands_get(
   headers: HeaderMap,
 ) -> Result<Json<Value>, (StatusCode, String)> {
   let _ = require_remote_perm(&state, &headers, "commands").await?;
-  let rows = crate::db::botaxt_api::list_commands(&state.db)
+  let rows = crate::db::bot_api::list_commands(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "commands": rows })))
@@ -1418,7 +1418,7 @@ async fn api_remote_commands_post(
     "aliases": body.get("aliases").cloned().unwrap_or(json!([])),
     "cooldown_sec": body.get("cooldown_sec").cloned().unwrap_or(json!(5)),
   });
-  crate::db::botaxt_api::upsert_command(&state.db, &limited, true)
+  crate::db::bot_api::upsert_command(&state.db, &limited, true)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1445,11 +1445,11 @@ async fn api_remote_users_list(
   // Uzaktan sadece admin.
   if extract_bearer(&headers).is_some() {
     let info = require_remote(&state, &headers).await?;
-    if info.role != "admin" && !crate::db::botaxt_api::remote_has_perm(&info, "users") {
+    if info.role != "admin" && !crate::db::bot_api::remote_has_perm(&info, "users") {
       return Err((StatusCode::FORBIDDEN, "Yalnızca yönetici".into()));
     }
   }
-  let rows = crate::db::botaxt_api::list_remote_users(&state.db)
+  let rows = crate::db::bot_api::list_remote_users(&state.db)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "users": rows })))
@@ -1466,7 +1466,7 @@ async fn api_remote_users_upsert(
       return Err((StatusCode::FORBIDDEN, "Yalnızca yönetici".into()));
     }
   }
-  crate::db::botaxt_api::upsert_remote_user(&state.db, &body)
+  crate::db::bot_api::upsert_remote_user(&state.db, &body)
     .await
     .map(ok_json)
     .map_err(map_err)
@@ -1488,7 +1488,7 @@ async fn api_remote_users_delete(
       return Err((StatusCode::FORBIDDEN, "Yalnızca yönetici".into()));
     }
   }
-  let ok = crate::db::botaxt_api::delete_remote_user(&state.db, &body.id)
+  let ok = crate::db::bot_api::delete_remote_user(&state.db, &body.id)
     .await
     .map_err(map_err)?;
   Ok(Json(json!({ "ok": ok })))

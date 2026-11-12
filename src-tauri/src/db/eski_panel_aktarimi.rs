@@ -1,4 +1,4 @@
-//! panel.smartBot JSON → SQLite (bir kerelik, app_meta bayrağı ile).
+//! panel.sohbetBot JSON → SQLite (bir kerelik, app_meta bayrağı ile).
 
 use anyhow::Result;
 use serde_json::Value;
@@ -7,23 +7,24 @@ use sqlx::SqlitePool;
 use crate::db::{chrono_now, default_channel_id, meta_get, meta_set};
 use crate::settings::{AppSettings, ScreenKind};
 
-const FLAG: &str = "smartbot_imported_v1";
+/// Değer eski sürümlerle aynı kalmalı: değişirse aktarım yeniden koşar
+pub const BAYRAK: &str = "smartbot_imported_v1";
 
 pub async fn import_if_needed(pool: &SqlitePool, settings: &AppSettings) -> Result<()> {
-  import_smartbot(pool, settings, false).await
+  eski_paneli_aktar(pool, settings, false).await
 }
 
 /// `force=true` iken bayrak yok sayılır; mevcut satırlar INSERT OR IGNORE ile korunur,
 /// ayarlar / loyalty upsert edilir. (İleride argon2 benzeri yükseltmeler gibi soft re-import.)
-pub async fn import_smartbot(pool: &SqlitePool, settings: &AppSettings, force: bool) -> Result<()> {
-  if !force && meta_get(pool, FLAG).await?.as_deref() == Some("1") {
+pub async fn eski_paneli_aktar(pool: &SqlitePool, settings: &AppSettings, force: bool) -> Result<()> {
+  if !force && meta_get(pool, BAYRAK).await?.as_deref() == Some("1") {
     return Ok(());
   }
 
   let panel = settings.get(ScreenKind::Panel);
-  let smart = panel.get("smartBot").cloned().unwrap_or(Value::Null);
+  let smart = panel.get("sohbetBot").or_else(|| panel.get("smartBot")).cloned().unwrap_or(Value::Null);
   if smart.is_null() {
-    meta_set(pool, FLAG, "1").await?;
+    meta_set(pool, BAYRAK, "1").await?;
     return Ok(());
   }
 
@@ -39,7 +40,7 @@ pub async fn import_smartbot(pool: &SqlitePool, settings: &AppSettings, force: b
   let bot_name = smart
     .get("botName")
     .and_then(|v| v.as_str())
-    .unwrap_or("BotAxT");
+    .unwrap_or("AxBoT");
 
   sqlx::query("UPDATE channels SET display_name = ?, slug = ?, updated_at = ? WHERE id = ?")
     .bind(display)
@@ -383,7 +384,7 @@ pub async fn import_smartbot(pool: &SqlitePool, settings: &AppSettings, force: b
     }
   }
 
-  meta_set(pool, FLAG, "1").await?;
-  yya_warn!("smartBot → SQLite otomatik migrate tamam ({channel_id})");
+  meta_set(pool, BAYRAK, "1").await?;
+  studio_warn!("sohbetBot → SQLite otomatik migrate tamam ({channel_id})");
   Ok(())
 }

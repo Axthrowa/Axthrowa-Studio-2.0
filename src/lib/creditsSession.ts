@@ -9,7 +9,7 @@ export type CreditsSession = {
   followers: string[];
 };
 
-const STORAGE_KEY = "yya-credits-session-v1";
+const STORAGE_KEY = "studio-credits-session-v1";
 const MAX_PER = 80;
 
 const listeners = new Set<() => void>();

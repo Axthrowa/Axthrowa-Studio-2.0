@@ -85,7 +85,8 @@ await bekle(800);
 await cdp("Browser.close").catch(() => {});
 
 // Bot sayfaları: App.tsx'teki `case 'sekme': return <Sayfa` eşlemesi, sayfa kaynağındaki etiket/başlık metinleri
-const botKok = path.resolve(kok, '../AxBoT/client/src');
+// Bot deposu Desktop\AxBoT ya da eski adıyla Desktop\StreamAxT olabilir
+const botKok = ['../AxBoT/client/src', '../StreamAxT/client/src'].map((y) => path.resolve(kok, y)).find((y) => existsSync(y)) ?? path.resolve(kok, '../AxBoT/client/src');
 if (existsSync(botKok)) {
   const app = readFileSync(path.join(botKok, 'App.tsx'), 'utf8');
   const esle = [...app.matchAll(/case '([\w-]+)': return <(\w+)/g)];

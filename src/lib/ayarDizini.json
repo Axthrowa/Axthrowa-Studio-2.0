@@ -440,7 +440,7 @@
 {"s":"bot","b":"integrations","a":"Mesaj şablonu"},
 {"s":"bot","b":"integrations","a":"Bekleme (dakika)"},
 {"s":"bot","b":"integrations","a":"Etiket"},
-{"s":"bot","b":"integrations","a":"Nightbot verisini içe aktar"},
+{"s":"bot","b":"integrations","a":"Komutları içe aktar"},{"s":"bot","b":"integrations","a":"Komutlarımı dışa aktar"},
 {"s":"bot","b":"integrations","a":"Ya da JSON’u buraya yapıştırın"},
 {"s":"bot","b":"integrations","a":"Aynı adlı mevcut komutların üzerine yaz"},
 {"s":"bot","b":"integrations","a":"Sonuç"},

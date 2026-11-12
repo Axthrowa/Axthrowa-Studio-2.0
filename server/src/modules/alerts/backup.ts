@@ -86,7 +86,7 @@ export const GOMULU_MEDYA_UST = 100 * 1024 * 1024;
 
 /** `/api/media/<id>/dosya` → `<id>` */
 export function medyaKimligi(url: unknown): string {
-  const m = String(url ?? '').match(/^\/api\/media\/([0-9a-f-]+)\/dosya$/i);
+  const m = String(url ?? '').match(/^\/api\/media\/([0-9a-f-]+)\/dosya(?:#t=[\d.,]*)?$/i);
   return m ? m[1] : '';
 }
 
@@ -95,7 +95,8 @@ export function medyaBaglantisiniCevir(url: unknown, harita: Map<string, string>
   const id = medyaKimligi(url);
   if (!id) return url;
   const yeni = harita.get(id);
-  return yeni ? `/api/media/${yeni}/dosya` : url;
+  // Ses kırpma parçası (#t=2,5) yeni bağlantıda korunur
+  return yeni ? `/api/media/${yeni}/dosya${String(url).match(/#t=[\d.,]*$/)?.[0] || ''}` : url;
 }
 
 export interface IceAktarmaSonucu {

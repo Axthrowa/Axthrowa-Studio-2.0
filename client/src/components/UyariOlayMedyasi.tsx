@@ -2,6 +2,7 @@
  * Uyarı kutusu: her olay (takip, abone, bağış, raid…) için ayrı GIF/görsel ve ses.
  * Widget ayarları penceresinde gösterilir; kayıt Uyarılar sayfasıyla aynı (`alert_presets`).
  */
+import { SesKirpma } from './SesKirpma';
 import { useEffect, useState } from 'react';
 import { Play } from 'lucide-react';
 import { MediaLibrary, type MedyaOgesi } from './MediaLibrary.js';
@@ -81,6 +82,13 @@ export function UyariOlayMedyasi() {
               />
               <button type="button" onClick={() => setKutuphane({ olay: o.id, tur: 'audio' })} className="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-200">Seç</button>
             </div>
+            <SesKirpma
+              url={k.sound_url || ''}
+              degistir={(u) => {
+                setKayitlar(l => [...l.filter(x => x.event_type !== o.id), { ...k, sound_url: u }]);
+                void kaydet(o.id, { sound_url: u });
+              }}
+            />
             <label className="text-[10px] text-gray-400 flex items-center gap-2">
               Ses {Math.round((k.sound_volume ?? 0.7) * 100)}%
               <input type="range" min={0} max={1} step={0.05} value={k.sound_volume ?? 0.7}

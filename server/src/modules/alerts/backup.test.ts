@@ -67,3 +67,11 @@ describe('gömülü medya bağlantıları', () => {
     expect(medyaBaglantisiniCevir('', harita)).toBe('');
   });
 });
+
+describe('ses kırpma parçası', () => {
+  it('#t=2,5 olan yerel ses tanınır ve yeni kimlikte parça korunur', () => {
+    const eski = '00000000-0000-0000-0000-000000000001';
+    expect(medyaKimligi(`/api/media/${eski}/dosya#t=2,5`)).toBe(eski);
+    expect(medyaBaglantisiniCevir(`/api/media/${eski}/dosya#t=2,5`, new Map([[eski, 'abc']]))).toBe('/api/media/abc/dosya#t=2,5');
+  });
+});

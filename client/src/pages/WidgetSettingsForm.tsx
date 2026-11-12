@@ -2,6 +2,7 @@
  * AxBoT widget settings
  * Developed by AxthrowA
  */
+import { SesKirpma } from '../components/SesKirpma';
 import { KatmanBaglantisi } from '../components/KatmanBaglantisi.js';
 import { useEffect, useRef, useState } from 'react';
 import { Save } from 'lucide-react';
@@ -756,7 +757,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {anahtarSonda(grouped[section]).map(key => {
               const type = inferType(key, values[key] ?? defaults[key], ayarId);
-              return (
+              const alan = (
                 <label key={key} className={`text-[11px] text-gray-300 font-semibold ${type === 'checkbox' ? 'flex items-center justify-between gap-2 bg-white/5 rounded-lg px-2.5 py-2' : 'space-y-1'}`}>
                   <span>{etiketi(key)}</span>
                   {type === 'checkbox' ? (
@@ -793,6 +794,12 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                   )}
                 </label>
               );
+              return key === 'soundUrl' ? (
+                <div key={key} className="space-y-1">
+                  {alan}
+                  <SesKirpma url={String(values[key] ?? '')} degistir={(u) => setValues(v => ({ ...v, [key]: u }))} />
+                </div>
+              ) : alan;
             })}
           </div>
         </Katlanir>

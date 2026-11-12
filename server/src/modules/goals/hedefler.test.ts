@@ -58,3 +58,14 @@ describe('hedef ilerlemesi (sunucuda kalıcı)', () => {
     expect(toplam).toEqual({ follower: 480, sub: 4, tip: 40, kicks: 25 });
   });
 });
+
+import { hedefListesi } from './hedefler.js';
+describe('birden fazla hedef çubuğu', () => {
+  it('kayıtlı ek hedef kimliklerini taban türüyle listeler, yabancı anahtarları almaz', () => {
+    const liste = hedefListesi(['widget_settings_follower-goal-2', 'widget_settings_kicks-goal-3', 'widget_settings_foo-goal-2', 'widget_settings_follower-goal']);
+    expect(liste).toContainEqual(['follower-goal-2', 'follower']);
+    expect(liste).toContainEqual(['kicks-goal-3', 'kicks']);
+    expect(liste.find(([id]) => id === 'foo-goal-2')).toBeUndefined();
+    expect(liste.filter(([id]) => id === 'follower-goal')).toHaveLength(1);
+  });
+});

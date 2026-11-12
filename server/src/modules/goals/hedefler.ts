@@ -66,7 +66,7 @@ export function hedefleriToplamdanYaz(
   yaz: (id: string, govde: Record<string, unknown>) => unknown
 ): string[] {
   const doldu: string[] = [];
-  for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
+  for (const [id, varsayilanTur] of kayitliHedefler()) {
     const ayar = oku(id);
     const alan = TOPLAM_TUR[String(ayar.type || varsayilanTur)];
     if (!alan) continue;
@@ -106,6 +106,26 @@ export const HEDEF_WIDGETLARI: Record<string, string> = {
   'kicks-goal': 'kicks'
 };
 
+/** Ek hedef çubukları `follower-goal-2` gibi kimlik alır; türü taban kimlikten gelir. */
+export function hedefListesi(anahtarlar: string[]): [string, string][] {
+  const liste = Object.entries(HEDEF_WIDGETLARI);
+  for (const k of anahtarlar) {
+    const id = k.replace(/^widget_settings_/, '');
+    const taban = id.replace(/-\d+$/, '');
+    if (id !== taban && HEDEF_WIDGETLARI[taban] && /-\d+$/.test(id)) liste.push([id, HEDEF_WIDGETLARI[taban]]);
+  }
+  return liste;
+}
+
+function kayitliHedefler(): [string, string][] {
+  try {
+    const satirlar = db.prepare("SELECT key FROM bot_settings WHERE key LIKE 'widget_settings_%-goal-%'").all() as { key: string }[];
+    return hedefListesi(satirlar.map((r) => r.key));
+  } catch {
+    return Object.entries(HEDEF_WIDGETLARI);
+  }
+}
+
 /**
  * Takipçi hedefi varsayılan olarak kanalın gerçek takipçi sayısını gösterir: bot kapalıyken gelenler de sayılır,
  * bırakanlar düşer. `gercekSayi: false` ise eskisi gibi elle girilen değerden olay başına artar.
@@ -116,7 +136,7 @@ export function takipciSayisiniYaz(
   yaz: (id: string, govde: Record<string, unknown>) => unknown
 ): string[] {
   const doldu: string[] = [];
-  for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
+  for (const [id, varsayilanTur] of kayitliHedefler()) {
     const ayar = oku(id);
     if (String(ayar.type || varsayilanTur) !== 'follower' || ayar.gercekSayi === false) continue;
     if (Number(ayar.current) !== sayi) {
@@ -146,7 +166,7 @@ export function hedefleriIlerlet(
   yaz: (id: string, govde: Record<string, unknown>) => unknown
 ): string[] {
   const doldu: string[] = [];
-  for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
+  for (const [id, varsayilanTur] of kayitliHedefler()) {
     const ayar = oku(id);
     const tur = String(ayar.type || varsayilanTur);
     // Gerçek sayıya bağlı takipçi hedefini sayı olayı günceller; burada artarsa iki kez sayılır

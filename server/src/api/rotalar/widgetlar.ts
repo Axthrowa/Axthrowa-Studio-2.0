@@ -242,6 +242,12 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
     wsHub.broadcastTo(['all'], { type: 'katman_ornek', anahtar: ornek[1] });
     return;
   }
+  // Ek hedef çubuğu (follower-goal-2…): test yalnız o çubukta görünür
+  const ekHedef = widgetName.match(/^(donation|follower|subscriber|kicks)-goal-\d+$/);
+  if (ekHedef) {
+    wsHub.broadcastTo(['all'], { type: 'hedef_testi', widgetId: widgetName, artis: ({ donation: 50, kicks: 100 } as Record<string, number>)[ekHedef[1]] || 1 });
+    return;
+  }
   switch (widgetName) {
     case 'on-screen-emotes':
       // Kombodan ayrı: yalnız ekranda emote widget'ı alır; sohbetten gelen emote'lar gibi kenardan kenara uçar

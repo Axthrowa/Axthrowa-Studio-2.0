@@ -28,7 +28,7 @@ function urlAyarlari(): Record<string, any> {
 }
 
 export function useWidgetSettings<T extends Record<string, any>>(widgetId: string, defaults?: T) {
-  const base = { ...(WIDGET_DEFAULTS[widgetId] || {}), ...(defaults || {}) } as T;
+  const base = { ...(WIDGET_DEFAULTS[widgetId] || WIDGET_DEFAULTS[widgetId.replace(/-\d+$/, '')] || {}), ...(defaults || {}) } as T;
   const [settings, setSettings] = useState<T>(base);
 
   useEffect(() => {

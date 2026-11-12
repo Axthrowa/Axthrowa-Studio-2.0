@@ -593,7 +593,11 @@ function CarkPaneli({ values, degistir }: { values: Record<string, any>; degisti
 }
 
 export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = true }: { widgetId: string; baseUrl: string; onUrlChange?: (url: string) => void; autoSave?: boolean }) {
-  const ayarId = AYAR_TAKMA[widgetId] || widgetId;
+  /** Kaydın kimliği; ek hedef çubuğunda `follower-goal-2` gibi. Varsayılan, tema ve bölümler taban kimlikten gelir. */
+  const kayitId = AYAR_TAKMA[widgetId] || widgetId;
+  const hedefNo = kayitId.match(/-goal-(\d+)$/)?.[1];
+  const ayarId = hedefNo ? kayitId.replace(/-\d+$/, '') : kayitId;
+  const yol = (PATH_MAP[widgetId] || PATH_MAP[ayarId] || '') + (hedefNo ? `?hedef=${hedefNo}` : '');
   const defaults = WIDGET_DEFAULTS[ayarId] || {};
   const keys = Object.keys(defaults).filter(k => typeof defaults[k] !== 'object' || defaults[k] === null);
   const [values, setValues] = useState<Record<string, any>>(defaults);
@@ -611,21 +615,21 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   }, []);
 
   useEffect(() => {
-    fetch(`/api/widgets/${ayarId}/settings`)
+    fetch(`/api/widgets/${kayitId}/settings`)
       .then(r => r.json())
       .then(d => { ilkDeger.current = true; sonKayit.current = { ...defaults, ...d }; setValues(eskiHareketiCevir({ ...defaults, ...d })); })
       .catch(() => { ilkDeger.current = true; sonKayit.current = { ...defaults }; setValues(defaults); });
-  }, [ayarId]);
+  }, [kayitId]);
 
   const buildUrl = (next = values) => {
-    const qs = new URLSearchParams();
+    const qs = new URLSearchParams(hedefNo ? { hedef: hedefNo } : {});
     Object.entries(next).forEach(([k, v]) => {
       if (typeof v === 'object') return;
       if (typeof v === 'boolean') qs.set(k, v ? '1' : '0');
       else if (v !== undefined && v !== '') qs.set(k, String(v));
     });
     const q = qs.toString();
-    return `${baseUrl}${PATH_MAP[widgetId] || '/widgets/alertbox'}${q ? `?${q}` : ''}`;
+    return `${baseUrl}${PATH_MAP[widgetId] || PATH_MAP[ayarId] || '/widgets/alertbox'}${q ? `?${q}` : ''}`;
   };
 
   const save = async (veri: Record<string, any> = values) => {
@@ -633,7 +637,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
     // sunucu hedefin "Mevcut" değerini artırınca, başka bir ayarı değiştirmek eski değeri geri yazıyordu.
     const fark = Object.fromEntries(Object.entries(veri).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(sonKayit.current[k])));
     if (Object.keys(fark).length) {
-      await fetch(`/api/widgets/${ayarId}/settings`, {
+      await fetch(`/api/widgets/${kayitId}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fark)
@@ -688,7 +692,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
     <div className="p-4 bg-black/40 rounded-xl border border-white/5 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-xs font-bold text-gray-200 shrink-0">Widget Ayarları</h4>
-        <KatmanBaglantisi yol={PATH_MAP[widgetId] || ''} />
+        <KatmanBaglantisi yol={yol} />
         <input
           type="search"
           value={ara}

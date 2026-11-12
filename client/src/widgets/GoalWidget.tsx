@@ -79,7 +79,7 @@ export function emojiResmi(emoji: string): string | null {
   return sonuc;
 }
 
-function widgetIdFromPath() {
+function tabanHedefKimligi() {
   const params = new URLSearchParams(window.location.search);
   const type = params.get('type');
   if (type === 'follower') return 'follower-goal';
@@ -91,6 +91,12 @@ function widgetIdFromPath() {
   if (path.includes('subscriber-goal')) return 'subscriber-goal';
   if (path.includes('kicks-goal')) return 'kicks-goal';
   return 'donation-goal';
+}
+
+/** `?hedef=2` ile aynı türden ayrı bir hedef çubuğu (kendi ayarı ve ilerlemesi olur) */
+function widgetIdFromPath() {
+  const n = Number(new URLSearchParams(window.location.search).get('hedef'));
+  return Number.isInteger(n) && n >= 2 && n <= 99 ? `${tabanHedefKimligi()}-${n}` : tabanHedefKimligi();
 }
 
 /** Çubuk dolgusu: düz, iki renk geçişi, akan çizgili ya da üstten parlak */

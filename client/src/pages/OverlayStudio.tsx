@@ -279,6 +279,8 @@ function onizlemeBoyutu(galeriId: string): { w: number; h: number } | undefined 
 }
 
 /** Galeri kimliği → sunucudaki test adı (widgets/test/:ad). Listede olmayanın ayrı testi yok, önizlemesi var. */
+const HEDEF_TABANLARI = ['donation-goal', 'follower-goal', 'subscriber-goal', 'kicks-goal'];
+
 const TEST_ADI: Record<string, string> = {
   'activity-feed': 'activity-feed',
   'alert-box': 'alert-box',
@@ -836,6 +838,37 @@ export function OverlayStudio() {
     return () => window.removeEventListener('keydown', kapat);
   }, [selectedWidgetModal]);
   const [modalActionStatus, setModalActionStatus] = useState<string | null>(null);
+  // Birden fazla hedef çubuğu: 2. ve sonraki çubuklar `follower-goal-2` gibi ayrı ayar ve `?hedef=2` adresi alır
+  const [hedefNo, setHedefNo] = useState(1);
+  const [hedefSayisi, setHedefSayisi] = useState(1);
+  const hedefTabani = HEDEF_TABANLARI.includes(selectedWidgetModal?.id);
+  useEffect(() => {
+    setHedefNo(1);
+    setHedefSayisi(1);
+    const id = selectedWidgetModal?.id;
+    if (!HEDEF_TABANLARI.includes(id)) return;
+    let iptal = false;
+    void (async () => {
+      let n = 2;
+      for (; n <= 20; n++) {
+        const d = await fetch(`/api/widgets/${id}-${n}/settings`).then((r) => r.json()).catch(() => ({}));
+        if (iptal || !d || !Object.keys(d).length) break;
+      }
+      if (!iptal) setHedefSayisi(n - 1);
+    })();
+    return () => {
+      iptal = true;
+    };
+  }, [selectedWidgetModal?.id]);
+  const modalId: string = selectedWidgetModal && hedefNo > 1 ? `${selectedWidgetModal.id}-${hedefNo}` : selectedWidgetModal?.id;
+  const modalUrl: string = selectedWidgetModal && hedefNo > 1 ? `${selectedWidgetModal.url}?hedef=${hedefNo}` : selectedWidgetModal?.url;
+  const yeniHedefCubugu = async () => {
+    const n = hedefSayisi + 1;
+    // Boş ayar kaydedilmez; çubuğun var olduğu ilk değerle kaydedilir
+    await fetch(`/api/widgets/${selectedWidgetModal.id}-${n}/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current: 0 }) }).catch(() => {});
+    setHedefSayisi(n);
+    setHedefNo(n);
+  };
 
   // AlertBox State
   const [alerts, setAlerts] = useState<AlertPreset[]>([]);
@@ -2172,6 +2205,27 @@ export function OverlayStudio() {
                   </div>
                 )}
 
+                {hedefTabani && (
+                  <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Hedef çubukları">
+                    {Array.from({ length: hedefSayisi }, (_, i) => i + 1).map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setHedefNo(n)}
+                        aria-pressed={hedefNo === n}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold ${hedefNo === n ? 'bg-purple-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/15'}`}
+                      >
+                        {n}. çubuk
+                      </button>
+                    ))}
+                    {hedefSayisi < 20 && (
+                      <button onClick={() => void yeniHedefCubugu()} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white">
+                        + Yeni hedef çubuğu
+                      </button>
+                    )}
+                    {hedefNo > 1 && <span className="text-[11px] text-gray-400">Bu çubuğun kendi adresi var; OBS'e ayrı kaynak olarak ekleyin.</span>}
+                  </div>
+                )}
+
                 {selectedWidgetModal.id === 'now-playing' ? (
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-gray-300 space-y-2">
                     <p>Görünüm (tema, renk, animasyon, kapak biçimi) Resonance’ın kendi ekranında ayarlanır; OBS adresi aynı kalır.</p>
@@ -2182,9 +2236,9 @@ export function OverlayStudio() {
                 ) : (
                   // Ayarlar solda (geniş), önizleme sağda sabit genişlikte (kaydırırken görünür kalır)
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
-                    <WidgetSettingsForm widgetId={selectedWidgetModal.id} baseUrl={baseUrl} />
+                    <WidgetSettingsForm key={modalId} widgetId={modalId} baseUrl={baseUrl} />
                     <div className="lg:sticky lg:top-0">
-                      <WidgetOnizleme url={selectedWidgetModal.url} testAdi={TEST_ADI[selectedWidgetModal.id]} boyut={onizlemeBoyutu(selectedWidgetModal.id)} />
+                      <WidgetOnizleme url={modalUrl} testAdi={hedefNo > 1 ? modalId : TEST_ADI[selectedWidgetModal.id]} boyut={onizlemeBoyutu(selectedWidgetModal.id)} />
                     </div>
                   </div>
                 )}
@@ -2196,18 +2250,18 @@ export function OverlayStudio() {
                     <input aria-label="Bağımsız OBS adresi" 
                       type="text" 
                       readOnly 
-                      value={selectedWidgetModal.url}
+                      value={modalUrl}
                       className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono w-full select-all"
                     />
                     <button
-                      onClick={() => copyToClipboard(selectedWidgetModal.url)}
+                      onClick={() => copyToClipboard(modalUrl)}
                       className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0"
                     >
-                      {copiedUrl === selectedWidgetModal.url ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                      <span>{copiedUrl === selectedWidgetModal.url ? 'Kopyalandı' : 'Kopyala'}</span>
+                      {copiedUrl === modalUrl ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                      <span>{copiedUrl === modalUrl ? 'Kopyalandı' : 'Kopyala'}</span>
                     </button>
                   </div>
-                  {GALERI_KATMANI[selectedWidgetModal.id] && (
+                  {GALERI_KATMANI[selectedWidgetModal.id] && hedefNo === 1 && (
                     <button
                       onClick={() => tekUrlyeEkle(selectedWidgetModal.id)}
                       className="mt-2 w-full px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
@@ -2223,7 +2277,7 @@ export function OverlayStudio() {
                   <h4 className="text-xs font-bold text-gray-200">Canlı İşlev & Test Kontrolleri</h4>
                   {TEST_ADI[selectedWidgetModal.id] ? (
                     <button
-                      onClick={() => triggerWidgetTest(TEST_ADI[selectedWidgetModal.id])}
+                      onClick={() => triggerWidgetTest(hedefNo > 1 ? modalId : TEST_ADI[selectedWidgetModal.id])}
                       className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
                     >
                       ▶ Hızlı test (OBS'te örnek göster)
@@ -2236,7 +2290,7 @@ export function OverlayStudio() {
 
                   {/* Universal Fallback Test Button */}
                   <button 
-                    onClick={() => triggerWidgetTest(selectedWidgetModal.id)}
+                    onClick={() => triggerWidgetTest(modalId)}
                     className="px-3 py-2 bg-white/10 hover:bg-white/15 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
                   >
                     <Play className="w-3.5 h-3.5 text-purple-400" />

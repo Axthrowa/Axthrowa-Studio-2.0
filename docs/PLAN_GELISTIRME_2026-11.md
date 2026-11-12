@@ -6,6 +6,17 @@ Her işin yanında **Bitti sayılır** ölçütü var: o ölçüt sınanmadan i�
 
 ---
 
+## Kapsamlı plan Faz 1 durumu (12 Kasım, Studio 1.7.0 / AxBoT 1.14.0)
+
+Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — Kapsamlı Geliştirme Planı") Faz 1'e taşındı.
+
+- U13 güncelleme bildirimi: zaten vardı (`guncelleme_api::acilista_denetle` + `UpdateModal`), sürüm notlarını gösterir, kendiliğinden indirmez.
+- T3 paket bölme: ana parça 358 kB (hedef 800 kB altı); sayfalar zaten tembel yükleniyor.
+- U2 boş durumlar: OBS kopukken kutular zaten "OBS'e bağlan" düğmesi gösteriyordu; OBS bağlı ama sahne yokken ve olay akışı boşken açıklama eklendi.
+- R1 Resonance temizliği: Pro sayfası kaldırıldı, sürüm 1.7.0, Studio teması Müzik sekmesine aynı iletiyle geçer (tarayıcıda doğrulandı).
+
+---
+
 ## Aşama 0 — Gerçek yayın provası (kod yok, 1 oturum)
 
 Şimdiye kadarki düzeltmelerin çoğu sandbox'ta doğrulandı, gerçek OBS ve gerçek Kick ile değil. Yeni iş eklemeden önce bunlar kapanmalı.

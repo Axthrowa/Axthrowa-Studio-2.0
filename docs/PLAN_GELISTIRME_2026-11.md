@@ -14,6 +14,10 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - T3 paket bölme: ana parça 358 kB (hedef 800 kB altı); sayfalar zaten tembel yükleniyor.
 - U2 boş durumlar: OBS kopukken kutular zaten "OBS'e bağlan" düğmesi gösteriyordu; OBS bağlı ama sahne yokken ve olay akışı boşken açıklama eklendi.
 - R1 Resonance temizliği: Pro sayfası kaldırıldı, sürüm 1.7.0, Studio teması Müzik sekmesine aynı iletiyle geçer (tarayıcıda doğrulandı).
+- B1 sessiz komutlar: `!clip` kapalıyken tek satır yazar; özel komut beklemedeyken "N sn bekle" (genel beklemede komut başına, kişi başı beklemede kişi başına bir kez). Yerleşik komutta "Reddedince sessiz kal", özel komutta "Reddedince sohbete yanıt ver" (`commands.refusal_reply`, göç 12). Test: `ret-yaniti.test.ts`.
+- B11 içe aktarma: Nightbot yanında StreamElements ve Fossabot dosyaları tanınır (`disa-aktarim-bicimleri.ts`); `GET /api/integrations/disa-aktar` kendi komut ve zamanlayıcıları yazar, aynı kutudan geri yüklenir. Aynı dosya iki kez yüklenince zamanlayıcı çoğalmaz. SE/Fossabot alan adları gerçek dışa aktarımla sınanmadı.
+- A6 klavye: Canlı ekranında adsız denetim yok, odak halkası 3 px; tüm temalar zaten kontrast testinde.
+- Açık: U1 kurulum sihirbazı, A1–A5 (bot bileşenleri, menü, Ekranlar sayfası, tek kaydetme modeli, bildirim merkezi), T1–T2 (ortak tasarım değişkenleri, gömülü sayfa sözleşmesi).
 
 ---
 

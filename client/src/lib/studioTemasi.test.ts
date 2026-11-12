@@ -6,9 +6,9 @@ describe('Studio teması iletisi', () => {
     const t = studioTemasiCoz({
       tur: 'studio-tema',
       tema: 'studio',
-      degiskenler: { '--axt-zemin': '#06161a', '--axt-vurgu': 'rgb(45 212 191)', '--axt-yuzey': 'red;}body{x', '--baska': '#fff', '--axt-yaricap-kart': '0.75rem' }
+      degiskenler: { '--axt-zemin': '#06161a', '--axt-vurgu': 'rgb(45 212 191)', '--axt-yuzey': 'red;}body{x', '--baska': '#fff', '--axt-yaricap-kart': '0.75rem', '--axt-yazi-baslik': '1.25rem', '--axt-yaricap-dugme': '.75rem' }
     });
-    expect(t).toEqual({ tema: 'studio', degiskenler: { '--axt-zemin': '#06161a', '--axt-vurgu': 'rgb(45 212 191)', '--axt-yaricap-kart': '0.75rem' } });
+    expect(t).toEqual({ tema: 'studio', degiskenler: { '--axt-zemin': '#06161a', '--axt-vurgu': 'rgb(45 212 191)', '--axt-yaricap-kart': '0.75rem', '--axt-yazi-baslik': '1.25rem', '--axt-yaricap-dugme': '.75rem' } });
   });
 
   it('başka iletileri ve bozuk tema adını reddeder', () => {

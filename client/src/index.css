@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./axt-tasarim.css";
 @import "./panel-temalari.css";
 
 @layer base {

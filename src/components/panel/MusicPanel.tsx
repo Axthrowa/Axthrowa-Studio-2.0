@@ -5,6 +5,8 @@ import type { PlayerStatus } from "../../lib/api";
 import { fetchPlayerStatus, sendPlayerCommand } from "../../lib/api";
 import { useNowPlaying } from "../../lib/useNowPlaying";
 import { useI18n } from "../../i18n";
+import { frameOrigin, temaIstegi } from "../../lib/embedMessages";
+import { botTemaMesaji, renkleriOku } from "../../lib/botTemaMesaji";
 import type { MsgKey } from "../../i18n/messages";
 
 type Props = {
@@ -42,6 +44,27 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
       /* sunucu yeniden başlıyor olabilir */
     }
   }, []);
+
+  // Studio teması gömülü Resonance'a da gider: çerçeve hazır olunca ister, tema değişince yeniden gönderilir
+  useEffect(() => {
+    const kok = frameOrigin(base);
+    if (!kok) return;
+    const gonder = () => {
+      const el = document.documentElement;
+      frameRef.current?.contentWindow?.postMessage(
+        botTemaMesaji(renkleriOku((ad) => getComputedStyle(el).getPropertyValue(ad), el.dataset.kose ?? null)),
+        kok,
+      );
+    };
+    const dinle = (ev: MessageEvent) => temaIstegi(ev, frameRef.current?.contentWindow, kok) && gonder();
+    window.addEventListener("message", dinle);
+    const goz = new MutationObserver(gonder);
+    goz.observe(document.documentElement, { attributes: true, attributeFilter: ["data-skin", "data-kose"] });
+    return () => {
+      window.removeEventListener("message", dinle);
+      goz.disconnect();
+    };
+  }, [base]);
 
   useEffect(() => {
     void refresh();

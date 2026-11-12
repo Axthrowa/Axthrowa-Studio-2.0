@@ -29,15 +29,6 @@ export function Topbar({ onToggleSidebar }) {
       </button>
 
       <div className="flex items-center gap-1">
-        <Link
-          to="/dashboard/pro"
-          className="group mr-2 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold"
-        >
-          <span className="gradient-text transition duration-300 group-hover:scale-110">
-            {t('topbar.goPro')}
-          </span>
-        </Link>
-
         <a
           href="#"
           onClick={(e) => e.preventDefault()}

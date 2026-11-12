@@ -1,12 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import { useState } from 'react'
-import { Home, Heart, Bell, LayoutGrid, Link2, User, ChevronDown, AudioWaveform } from 'lucide-react'
+import { Home, Bell, LayoutGrid, Link2, User, ChevronDown, AudioWaveform } from 'lucide-react'
 import { useLanguage } from '../../context/LanguageContext'
 
 const NAV = [
   { sectionKey: 'sidebar.dashboard' },
   { to: '/dashboard/home', labelKey: 'sidebar.home', icon: Home },
-  { to: '/dashboard/pro', labelKey: 'sidebar.pro', icon: Heart },
   { to: '/dashboard/whats-new', labelKey: 'sidebar.whatsNew', icon: Bell },
   {
     labelKey: 'sidebar.widgets',

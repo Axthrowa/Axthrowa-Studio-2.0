@@ -15,7 +15,6 @@ import Login from './pages/Login'
 import Callback from './pages/Callback'
 import Overlay from './pages/Overlay'
 import Home from './pages/Home'
-import Pro from './pages/Pro'
 import Pulse from './pages/widgets/Pulse'
 import WidgetsOverview from './pages/widgets/Overview'
 import MusicConnections from './pages/connections/Music'
@@ -74,7 +73,6 @@ function renderApp() {
 
                         <Route path="/dashboard" element={<DashboardLayout />}>
                           <Route path="home" element={<Home />} />
-                          <Route path="pro" element={<Pro />} />
                           <Route path="whats-new" element={<WhatsNew />} />
                           <Route path="widgets/overview" element={<WidgetsOverview />} />
                           <Route path="widgets/pulse" element={<Pulse />} />

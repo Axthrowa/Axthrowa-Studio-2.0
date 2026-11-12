@@ -7,7 +7,6 @@ export const translations = {
     sidebar: {
       dashboard: 'Dashboard',
       home: 'Home',
-      pro: 'Resonance Pro',
       whatsNew: "What's New",
       widgets: 'Widgets',
       overview: 'Overview',
@@ -20,7 +19,6 @@ export const translations = {
       settings: 'Settings',
     },
     topbar: {
-      goPro: 'All Unlocked',
       discord: 'Discord',
       toggleTheme: 'Toggle theme',
       language: 'Türkçe',
@@ -287,7 +285,6 @@ export const translations = {
     sidebar: {
       dashboard: 'Panel',
       home: 'Anasayfa',
-      pro: 'Resonance Pro',
       whatsNew: 'Yenilikler',
       widgets: 'Widgetlar',
       overview: 'Genel Bakış',
@@ -300,7 +297,6 @@ export const translations = {
       settings: 'Ayarlar',
     },
     topbar: {
-      goPro: 'Tümü Açık',
       discord: 'Discord',
       toggleTheme: 'Temayı değiştir',
       language: 'English',

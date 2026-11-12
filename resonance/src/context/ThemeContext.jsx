@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { studioTemasiniDinle } from '../lib/studioTemasi'
 
 const ThemeContext = createContext(null)
 const STORAGE_KEY = 'resonance_theme'
@@ -11,7 +12,9 @@ export function ThemeProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, theme)
   }, [theme])
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  useEffect(() => studioTemasiniDinle(), [])
+
+  const toggleTheme =() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>

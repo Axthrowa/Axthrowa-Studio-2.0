@@ -18,8 +18,8 @@ tutuluyor.
 | U1 | **Kick'i bir kez yeniden bağlayın** (Platformlar → Kick → Kick ile giriş) | Eski token yalnız `chat:write channel:read user:read` izniyle alınmıştı. Zaman aşımı, mesaj silme ve başlık/kategori değiştirme `moderation:ban`, `moderation:chat_message:manage`, `channel:write` ister. Yeniden bağlanmadan bu eylemler 403 alır; sebep panelde ve günlükte yazar |
 | U2 | Twitch jetonunun izinleri | Moderasyon için `moderator:manage:banned_users` ve `moderator:manage:chat_messages`, başlık/kategori için `channel:manage:broadcast`. Eksikse eylem **hangi iznin eksik olduğunu söyleyerek** reddedilir |
 | U3 | YouTube'da yazma/moderasyon için OAuth jetonu | API anahtarı yalnız okur. Gönderme, silme, zaman aşımı ve başlık OAuth jetonu ister; yoksa "YouTube moderasyonu için OAuth jetonu gerekir" döner |
-| U4 | Taşınabilir kopyayı **başka bilgisayara** taşırsanız tokenları yeniden girin | Sırlar Windows DPAPI ile bu Windows kullanıcısına bağlı şifrelenir; başka makinede çözülemez, boş sayılır ("yeniden bağlan"). Kapatmak: `STREAMAXT_SIFRELEME=kapali` (yeni yazımlar düz kalır, mevcut şifreliler okunmaya devam eder) |
-| U5 | OBS başka bilgisayardaysa (LAN kipi) | `STREAMAXT_HOST=0.0.0.0`. Makine adı/IP'si dışında bir adla erişiliyorsa `STREAMAXT_IZINLI_HOSTLAR="ad1,ad2"`; aksi hâlde Host denetimi 403 verir |
+| U4 | Taşınabilir kopyayı **başka bilgisayara** taşırsanız tokenları yeniden girin | Sırlar Windows DPAPI ile bu Windows kullanıcısına bağlı şifrelenir; başka makinede çözülemez, boş sayılır ("yeniden bağlan"). Kapatmak: `AXBOT_SIFRELEME=kapali` (yeni yazımlar düz kalır, mevcut şifreliler okunmaya devam eder) |
+| U5 | OBS başka bilgisayardaysa (LAN kipi) | `AXBOT_HOST=0.0.0.0`. Makine adı/IP'si dışında bir adla erişiliyorsa `AXBOT_IZINLI_HOSTLAR="ad1,ad2"`; aksi hâlde Host denetimi 403 verir |
 
 ---
 
@@ -163,7 +163,7 @@ cd "C:\Users\Axthrowa\Desktop\Projeler" && git checkout pre-botrix-revision-2026
 Veritabanı değişiklikleri **eklemeli** (yeni tablo + varsayılanlı yeni sütun);
 eski kod yeni şema üstünde sorunsuz çalışır. **Tek istisna DPAPI:** eski kod
 `dpapi:v1:` önekli değeri çözemez. 3. turdan öncesine dönülecekse sıra:
-(1) yeni sürüm `STREAMAXT_SIFRELEME=kapali` ile açılır, (2) tokenlar
+(1) yeni sürüm `AXBOT_SIFRELEME=kapali` ile açılır, (2) tokenlar
 panelden yeniden girilir — bu kipte düz yazılır, (3) kod geri alınır.
 Ya da `BACKUP_MANIFEST §10`'daki göç öncesi veritabanı yedeği kullanılır.
 
@@ -186,7 +186,7 @@ Ya da `BACKUP_MANIFEST §10`'daki göç öncesi veritabanı yedeği kullanılır
    bağlantısı yeniden yetkilendirilmeli. Kick ve YouTube'un resmi API'sinde sohbet modu yok → yetenek kapalı.
 2. **`tiktok-live-connector` 2.4.0'da sabit:** TikTok'un resmi olmayan protokolü değişirse bağlantı kopabilir;
    daha yeni sürüm AGPL-3.0 (karar ürün sahibinin — panel `docs/LICENSE_AND_DEPENDENCY_REVIEW.md` §3).
-3. **Eski arşivler:** `release\StreamAxT-v1.0.0-Portable.zip` ve `StreamAxT-v1.0.0-Setup.zip` hâlâ 2.5.0 (AGPL)
+3. **Eski arşivler:** `release\AxBoT-v1.0.0-Portable.zip` ve `AxBoT-v1.0.0-Setup.zip` hâlâ 2.5.0 (AGPL)
    içerir; yeniden paketlenmeden dağıtılmamalı.
 4. `$(jsonset)` / `$(jsonunset)` yalnız `local`, `uservar` ve `globalvar` kapsamlarında çalışır; sonuç 8000 karakteri
    aşarsa yazılmaz ve `(json çok büyük)` döner; bozuk JSON'a yazılmaz (`(json invalid)`).
@@ -349,7 +349,7 @@ Eklenmeyen: Twitch/BTTV/FFZ emote setleri (yalnız 7TV).
 - **Kendi kendine kapanma:** günlükte iki neden görüldü: 3001 portu doluyken açılış (`EADDRINUSE`) ve
   açılışta "database is locked". `index.ts` artık bir gözcü: uygulamayı (`app.ts`) alt süreç olarak açar,
   çökünce 3/6/12…30 sn bekleyip yeniden başlatır, 10 dakikada 8 çökmede vazgeçer. Port başka bir AxBoT'daysa
-  çıkış kodu 2 (yeniden başlatılmaz). SQLite 15 sn kilit beklemesiyle açılıyor. `STREAMAXT_GOZCU=kapali` gözcüyü kapatır.
+  çıkış kodu 2 (yeniden başlatılmaz). SQLite 15 sn kilit beklemesiyle açılıyor. `AXBOT_GOZCU=kapali` gözcüyü kapatır.
 - **Yavaş ağ:** bu makinede IPv6/IPv4 belirtilmemiş DNS sorguları 4–12 sn sürüyordu (Kick/Discord/Gemini zaman
   aşımı). `core/dns-hizli.ts` süreç genelinde önce IPv4 sorgular.
 - **Gemini çalışmıyor — KOD DEĞİL ANAHTAR:** kayıtlı anahtar `AQ.` ile başlıyor; Google yanıtı

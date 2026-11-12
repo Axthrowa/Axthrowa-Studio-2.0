@@ -4,7 +4,7 @@
 `BACKUP_MANIFEST.md` ve yedek klasöründe:
 
 - Yedek: `C:\Users\Axthrowa\Yedekler\backup-pre-streaming-os-20260925-175532` (3644 dosya, SHA-256 ile 3644/3644 doğrulandı)
-- Bu depo: dal `revamp/botrix-parity-20260921`, HEAD `ef6481e21c6eb56997442dc91becce7e96714755`, paket `git/streamaxt.bundle`
+- Bu depo: dal `revamp/botrix-parity-20260921`, HEAD `ef6481e21c6eb56997442dc91becce7e96714755`, paket `git/axbot.bundle`
 - Güvenlik noktası: etiket `pre-streaming-os-20260925-175532`, çalışma dalı `revamp/streaming-os-20260925`
 
 ---
@@ -23,7 +23,7 @@ dönülebilir bir güvenli nokta oluşturmak.
 
 ```
 C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\backup-pre-botrix-revision-20260921-182105\
-├── Projeler\                  (StreamAxT — bot sunucusu + panel arayüzü)
+├── Projeler\                  (AxBoT — bot sunucusu + panel arayüzü)
 └── yayin-yonetim-araci\       (Tauri masaüstü kabuğu)
 ```
 
@@ -37,8 +37,8 @@ döngü riski)
 
 | Proje | Kaynak yol | Rol |
 |---|---|---|
-| **StreamAxT** | `C:\Users\Axthrowa\Desktop\Projeler` | Yayın botu: Express sunucu + React panel + OBS widget'ları |
-| **Panel kabuğu** | `C:\Users\Axthrowa\Desktop\yayin-yonetim-araci - Kopya (2)` | Tauri 2 masaüstü uygulaması; StreamAxT'yi Bot sekmesinde gömülü çalıştırır |
+| **AxBoT** | `C:\Users\Axthrowa\Desktop\Projeler` | Yayın botu: Express sunucu + React panel + OBS widget'ları |
+| **Panel kabuğu** | `C:\Users\Axthrowa\Desktop\yayin-yonetim-araci - Kopya (2)` | Tauri 2 masaüstü uygulaması; AxBoT'yi Bot sekmesinde gömülü çalıştırır |
 
 ---
 
@@ -48,7 +48,7 @@ döngü riski)
 - Tüm yapılandırma (`package.json`, `tsconfig.json`, `vite.config.ts`,
   `tauri.conf.json`, `Cargo.toml`)
 - **Tüm SQLite veritabanları ve WAL/SHM dosyaları** (aşağıda liste)
-- `scripts/` (yedek alma, soru içe aktarma, StreamAxT hazırlama betikleri)
+- `scripts/` (yedek alma, soru içe aktarma, AxBoT hazırlama betikleri)
 - `docs/` (mevcut araştırma notları)
 - `release/` ve `release - Kopya/` dağıtım klasörleri (node_modules hariç)
 - Panel `cikti/portable/` (çalışan taşınabilir sürüm, node_modules hariç)
@@ -58,11 +58,11 @@ döngü riski)
 
 | Dosya | Boyut | İçerik |
 |---|---|---|
-| `Projeler\server\data\streamaxt.sqlite` | 1.138.688 B | **Geliştirme veritabanı** (26 tablo) |
-| `Projeler\data\streamaxt.sqlite` | 1.138.688 B | Çalışma dizini kopyası |
-| `Projeler\release\data\streamaxt.sqlite` | 978.944 B | Dağıtım kopyası |
-| `Projeler\release\StreamAxT-v1.0.0-Portable\app\data\streamaxt.sqlite` | 1.114.112 B | Taşınabilir sürüm |
-| `yayin-yonetim-araci\cikti\portable\streamaxt\data\streamaxt.sqlite` (+WAL 622 KB, +SHM) | 1.122.304 B | **Panelde çalışan CANLI veritabanı** |
+| `Projeler\server\data\axbot.sqlite` | 1.138.688 B | **Geliştirme veritabanı** (26 tablo) |
+| `Projeler\data\axbot.sqlite` | 1.138.688 B | Çalışma dizini kopyası |
+| `Projeler\release\data\axbot.sqlite` | 978.944 B | Dağıtım kopyası |
+| `Projeler\release\AxBoT-v1.0.0-Portable\app\data\axbot.sqlite` | 1.114.112 B | Taşınabilir sürüm |
+| `yayin-yonetim-araci\cikti\portable\axbot\data\axbot.sqlite` (+WAL 622 KB, +SHM) | 1.122.304 B | **Panelde çalışan CANLI veritabanı** |
 | `Projeler\server\data\bilbakalim\bilbakalim.db` | 466.944 B | Bil Bakalım soru bankası |
 | `Projeler\release - Kopya\**` | çeşitli | Eski sürüm kopyaları |
 
@@ -78,7 +78,7 @@ döngü riski)
 | `client/dist/`, `server/dist/` | Derleme çıktısı | `npm run build` |
 | `src-tauri/target/`, `target-docker/`, `target-linux/` | Rust derleme önbelleği (GB'larca) | `cargo build` |
 | `.vite/`, `.turbo/` | Araç önbelleği | otomatik |
-| Junction/symlink hedefleri | `robocopy /XJ`; hedefleri zaten ayrıca yedeklendi | `scripts/streamaxt-hazirla.mjs` |
+| Junction/symlink hedefleri | `robocopy /XJ`; hedefleri zaten ayrıca yedeklendi | `scripts/axbot-hazirla.mjs` |
 
 **Kritik not:** `package-lock.json` yedeğe dahildir, bu yüzden bağımlılıklar
 birebir aynı sürümlerle geri kurulabilir.
@@ -87,7 +87,7 @@ birebir aynı sürümlerle geri kurulabilir.
 
 ## 5. Git durumu (revizyon öncesi)
 
-### StreamAxT (`Projeler`)
+### AxBoT (`Projeler`)
 
 Revizyon öncesinde **git deposu yoktu**. Rollback'i mümkün kılmak için bu
 revizyon kapsamında oluşturuldu:
@@ -95,7 +95,7 @@ revizyon kapsamında oluşturuldu:
 | | |
 |---|---|
 | Başlangıç commit'i | `cdc968e347666ea44bac82f253a866898ae20496` |
-| Commit mesajı | "Revizyon öncesi anlık görüntü: StreamAxT mevcut durumu" |
+| Commit mesajı | "Revizyon öncesi anlık görüntü: AxBoT mevcut durumu" |
 | Güvenlik etiketi | `pre-botrix-revision-20260921-182105` |
 | Çalışma branch'i | `revamp/botrix-parity-20260921` |
 | İzlenen dosya | 109 |
@@ -111,13 +111,13 @@ Mevcut git deposu korundu; **working tree'ye dokunulmadı**.
 
 | | |
 |---|---|
-| Aktif branch (değişmedi) | `streamaxt-bot` |
+| Aktif branch (değişmedi) | `axbot-bot` |
 | HEAD | `9a4faa66b91716a568089cdd3144851fce733c64` |
 | Son commit | "Sol menü içeriğin üstünde kalsın (Giriş/Çıkış/Mola'da arkada kalıyordu)" |
 | Uzak depo | `github.com/Axthrowa/yayin-yonetim-araci` (private) |
 | Güvenlik etiketi | `pre-botrix-revision-20260921-182105` |
 | Hazırlanan branch | `revamp/botrix-parity-20260921` (checkout **yapılmadı**) |
-| Kaydedilmemiş değişiklik | 4 dosya — `SoundBoardPanel.tsx`, `StreamAxtHost.tsx`, `CopyUrl.tsx`, `PanelPage.tsx` |
+| Kaydedilmemiş değişiklik | 4 dosya — `SoundBoardPanel.tsx`, `AxBotHost.tsx`, `CopyUrl.tsx`, `PanelPage.tsx` |
 | Takip edilmeyen dosya | yok |
 
 > Panelin branch'i bilerek değiştirilmedi: bu klasörde başka bir araç da
@@ -136,14 +136,14 @@ Kopyalama sonrası 12 kritik dosyanın **SHA-256 özeti** kaynakla karşılaşt�
 | `Projeler\server\src\api\routes.ts` | ✅ eşleşti (71,8 KB) |
 | `Projeler\server\src\ws\server.ts` | ✅ eşleşti (17,9 KB) |
 | `Projeler\server\src\db\index.ts` | ✅ eşleşti (25,4 KB) |
-| `Projeler\server\data\streamaxt.sqlite` | ✅ eşleşti (1.112 KB) |
-| `Projeler\data\streamaxt.sqlite` | ✅ eşleşti (1.112 KB) |
+| `Projeler\server\data\axbot.sqlite` | ✅ eşleşti (1.112 KB) |
+| `Projeler\data\axbot.sqlite` | ✅ eşleşti (1.112 KB) |
 | `Projeler\client\src\App.tsx` | ✅ eşleşti (12,6 KB) |
 | `Projeler\client\src\pages\OverlayStudio.tsx` | ✅ eşleşti (115,1 KB) |
 | `Projeler\package.json` | ✅ eşleşti |
 | `yayin-yonetim-araci\src-tauri\src\main.rs` | ✅ eşleşti |
 | `yayin-yonetim-araci\src\components\panel\MusicPanel.tsx` | ✅ eşleşti (9,1 KB) |
-| `Projeler\release\app\data\streamaxt.sqlite` | ⚠️ yok — **kaynakta da yok**; doğrulama listesindeki yol hatalıydı, gerçek yollar `release\data\` ve `release\StreamAxT-v1.0.0-Portable\app\data\` olup ikisi de yedekte mevcut |
+| `Projeler\release\app\data\axbot.sqlite` | ⚠️ yok — **kaynakta da yok**; doğrulama listesindeki yol hatalıydı, gerçek yollar `release\data\` ve `release\AxBoT-v1.0.0-Portable\app\data\` olup ikisi de yedekte mevcut |
 
 **Sonuç: yedek doğrulandı.** Gerçekten var olan 11 kritik dosyanın tamamı
 bit düzeyinde birebir.
@@ -172,16 +172,16 @@ cd "C:\Users\Axthrowa\Desktop\Projeler" && git checkout -B main pre-botrix-revis
 
 ### C) Veritabanını geri almak
 
-**Önce StreamAxT'yi kapatın** (port 3001 boş olmalı), sonra:
+**Önce AxBoT'yi kapatın** (port 3001 boş olmalı), sonra:
 
 ```bash
-cp "C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\backup-pre-botrix-revision-20260921-182105\Projeler\server\data\streamaxt.sqlite" "C:\Users\Axthrowa\Desktop\Projeler\server\data\streamaxt.sqlite"
+cp "C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\backup-pre-botrix-revision-20260921-182105\Projeler\server\data\axbot.sqlite" "C:\Users\Axthrowa\Desktop\Projeler\server\data\axbot.sqlite"
 ```
 
 Panelde çalışan canlı veritabanı için:
 
 ```bash
-cp "C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\backup-pre-botrix-revision-20260921-182105\yayin-yonetim-araci\cikti\portable\streamaxt\data\streamaxt.sqlite" "C:\Users\Axthrowa\Desktop\yayin-yonetim-araci - Kopya (2)\cikti\portable\streamaxt\data\streamaxt.sqlite"
+cp "C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\backup-pre-botrix-revision-20260921-182105\yayin-yonetim-araci\cikti\portable\axbot\data\axbot.sqlite" "C:\Users\Axthrowa\Desktop\yayin-yonetim-araci - Kopya (2)\cikti\portable\axbot\data\axbot.sqlite"
 ```
 
 > WAL/SHM dosyalarını da birlikte kopyalayın, yoksa SQLite eski duruma döner.
@@ -203,7 +203,7 @@ cd "C:\Users\Axthrowa\Desktop\Projeler" && npm install
 
 ### E) Tam geri dönüş (nükleer seçenek)
 
-1. StreamAxT'yi ve paneli kapatın.
+1. AxBoT'yi ve paneli kapatın.
 2. `Projeler` ve `yayin-yonetim-araci - Kopya (2)` klasörlerini yeniden adlandırın.
 3. Yedekteki iki klasörü Desktop'a kopyalayın.
 4. Her iki projede `npm install` çalıştırın.
@@ -221,7 +221,7 @@ anahtarı içerdiği için** yedek klasörü, kaynak proje kadar gizli tutulmal�
 **3. tur güncellemesi:** Sırlar artık diskte Windows DPAPI ile şifreli
 (`dpapi:v1:`), ama bu yalnız yeni sürüm **açıldıktan sonra** yazılan
 veritabanları için geçerli. Bu klasördeki 2026-09-24 ve öncesine ait bütün
-zip'ler ve `streamaxt-veritabani-dpapi-oncesi-*.zip` **düz metin token**
+zip'ler ve `axbot-veritabani-dpapi-oncesi-*.zip` **düz metin token**
 içerir — paylaşmayın. Şifreli bir veritabanı da başka bilgisayarda
 çözülemez; taşınabilir yedek için tokenlar yeniden girilmelidir.
 
@@ -231,14 +231,14 @@ içerir — paylaşmayın. Şifreli bir veritabanı da başka bilgisayarda
 
 | Yedek | Konum | Doğrulama |
 |---|---|---|
-| **StreamAxT git paketi — SON** (tüm geçmiş) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\streamaxt-tur2-final-20260923-182538.bundle` (690 KB) | `git bundle verify` → *is okay*; `revamp/botrix-parity-20260921` = `70610fd` (Trovo düzeltmeleri dahil) |
-| StreamAxT git paketi — ara | `…\streamaxt-tur2-20260923-182053.bundle` (687 KB) | `5b48133`; son paket bunu kapsar |
-| **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` ayarları ve veritabanı) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\yedek-20260923-181946-streamaxt-P2-P3-tur2-trovo-etkilesim-entegrasyon.zip` (10,8 MB) | `scripts\yedek-al.ps1` |
+| **AxBoT git paketi — SON** (tüm geçmiş) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\axbot-tur2-final-20260923-182538.bundle` (690 KB) | `git bundle verify` → *is okay*; `revamp/botrix-parity-20260921` = `70610fd` (Trovo düzeltmeleri dahil) |
+| AxBoT git paketi — ara | `…\axbot-tur2-20260923-182053.bundle` (687 KB) | `5b48133`; son paket bunu kapsar |
+| **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` ayarları ve veritabanı) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\yedek-20260923-181946-axbot-P2-P3-tur2-trovo-etkilesim-entegrasyon.zip` (10,8 MB) | `scripts\yedek-al.ps1` |
 
 Git paketinden geri yükleme:
 
 ```bash
-git clone streamaxt-tur2-final-20260923-182538.bundle StreamAxT-geri -b revamp/botrix-parity-20260921
+git clone axbot-tur2-final-20260923-182538.bundle AxBoT-geri -b revamp/botrix-parity-20260921
 ```
 
 İkinci turun veritabanı değişiklikleri **eklemeli**dir: beş yeni tablo
@@ -254,15 +254,15 @@ veri kaybettirmeden aynen geçerlidir.
 
 | Yedek | Konum | Doğrulama |
 |---|---|---|
-| **StreamAxT git paketi** (tüm geçmiş) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\streamaxt-tur3-final-20260924-233106.bundle` (840 KB, sha256 `8c148f2b…0c46ad9`) | `git bundle verify` → *is okay*, tam geçmiş; `revamp/botrix-parity-20260921` = `52b99d0` (kod + belgeler), `master` ve `pre-botrix-revision-20260921-182105` etiketi dahil |
-| **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` + `app-data`) | `…\yedek-20260924-233048-streamaxt-tur3-guvenlik-dpapi-rotalar-belgeler.zip` (10,8 MB, 500 dosya) | Zip bütünlük denetimi OK. `-Sakla 11` ile alındı: betiğin varsayılanı (10) en eski zip'i (`yedek-20260921-013303-…`) **silecekti**; hiçbir yedek silinmedi |
-| **StreamAxT gerçek veritabanı — DPAPI göçünden önce** | `…\streamaxt-veritabani-dpapi-oncesi-20260924-233145.zip` (458 KB, sha256 `6013b769…fc528a25daa`) | Zip bütünlük OK; `streamaxt.sqlite` + `-wal` + `-shm`, bot çalışmıyorken kopyalandı. Panel yedek betiği `cikti\portable\streamaxt\data` klasörünü **paketlemediği** için ayrıca alındı |
-| **StreamAxT release veritabanı — DPAPI göçünden önce** (`Projeler\release\data`, `Start-StreamAxT.bat` / tepsi başlatıcısının kullandığı) | `…\streamaxt-release-veritabani-dpapi-oncesi-20260924-233349.zip` (295 KB, sha256 `2ab0a569…406373cf`) | Zip bütünlük OK; bot çalışmıyorken kopyalandı. `release/` git dışında olduğu için başka yedeği yoktu |
+| **AxBoT git paketi** (tüm geçmiş) | `C:\Users\Axthrowa\Desktop\yayin-yonetim-yedekler\axbot-tur3-final-20260924-233106.bundle` (840 KB, sha256 `8c148f2b…0c46ad9`) | `git bundle verify` → *is okay*, tam geçmiş; `revamp/botrix-parity-20260921` = `52b99d0` (kod + belgeler), `master` ve `pre-botrix-revision-20260921-182105` etiketi dahil |
+| **Panel kabuğu zip'i** (kaynak + `cikti\portable\data` + `app-data`) | `…\yedek-20260924-233048-axbot-tur3-guvenlik-dpapi-rotalar-belgeler.zip` (10,8 MB, 500 dosya) | Zip bütünlük denetimi OK. `-Sakla 11` ile alındı: betiğin varsayılanı (10) en eski zip'i (`yedek-20260921-013303-…`) **silecekti**; hiçbir yedek silinmedi |
+| **AxBoT gerçek veritabanı — DPAPI göçünden önce** | `…\axbot-veritabani-dpapi-oncesi-20260924-233145.zip` (458 KB, sha256 `6013b769…fc528a25daa`) | Zip bütünlük OK; `axbot.sqlite` + `-wal` + `-shm`, bot çalışmıyorken kopyalandı. Panel yedek betiği `cikti\portable\axbot\data` klasörünü **paketlemediği** için ayrıca alındı |
+| **AxBoT release veritabanı — DPAPI göçünden önce** (`Projeler\release\data`, `Start-AxBoT.bat` / tepsi başlatıcısının kullandığı) | `…\axbot-release-veritabani-dpapi-oncesi-20260924-233349.zip` (295 KB, sha256 `2ab0a569…406373cf`) | Zip bütünlük OK; bot çalışmıyorken kopyalandı. `release/` git dışında olduğu için başka yedeği yoktu |
 
 Git paketinden geri yükleme:
 
 ```bash
-git clone streamaxt-tur3-final-20260924-233106.bundle StreamAxT-geri -b revamp/botrix-parity-20260921
+git clone axbot-tur3-final-20260924-233106.bundle AxBoT-geri -b revamp/botrix-parity-20260921
 ```
 
 **Gerçek veritabanlarının durumu** (zip'teki kopyalar geçici klasörde
@@ -270,12 +270,12 @@ açılarak okundu; asıl dosyalara ve sır değerlerine dokunulmadı):
 
 | Veritabanı | Uygulanmış göç | Son yazım | Token | İlk açılışta |
 |---|---|---|---|---|
-| Panel gömmesi (`cikti\portable\streamaxt\data`) | 1–5 | 2026-09-21 22:50 | Kick, **düz metin** | Göç #6 + DPAPI |
+| Panel gömmesi (`cikti\portable\axbot\data`) | 1–5 | 2026-09-21 22:50 | Kick, **düz metin** | Göç #6 + DPAPI |
 | Release (`Projeler\release\data`) | yok (göç sistemi öncesi) | 2026-09-21 22:07 | Kick, **düz metin** | Göç #1–#6 + DPAPI |
 
 Göçlerin hepsi eklemelidir (yeni tablo / varsayılanlı yeni sütun).
 
 **3. turdan önceye dönüş:** bot kapalıyken ilgili veritabanı zip'indeki üç
-dosyayı kendi klasörüne (`cikti\portable\streamaxt\data\` ya da
+dosyayı kendi klasörüne (`cikti\portable\axbot\data\` ya da
 `Projeler\release\data\`) koyun ve kodu geri alın (`§7`). Kodu geri almadan yalnız veritabanını geri koymak da
 güvenlidir: yeni sürüm açılışta göç #6'yı ve şifrelemeyi yeniden uygular.

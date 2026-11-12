@@ -362,8 +362,8 @@ Dağıtım modeli: derlenmiş `client/dist` + `server/dist` bir klasöre kopyala
 `node dist/index.js` ile çalıştırılıyor.
 
 İki hedef:
-1. `release/app/` ve `release/StreamAxT-v1.0.0-Portable/app/` — taşınabilir klasör
-2. `yayin-yonetim-araci` (Tauri 2) — `scripts/streamaxt-hazirla.mjs` ile
+1. `release/app/` ve `release/AxBoT-v1.0.0-Portable/app/` — taşınabilir klasör
+2. `yayin-yonetim-araci` (Tauri 2) — `scripts/axbot-hazirla.mjs` ile
    turkuaz temalı derleme yapıp Bot sekmesine iframe ile gömüyor. Rust tarafı
    Node sürecini Windows job object ile uygulama ömrüne bağlıyor.
 

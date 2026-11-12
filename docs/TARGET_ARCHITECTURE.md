@@ -130,7 +130,7 @@ Tek kullanıcılı yerel araç. Tehdit "internetten saldırgan" değil:
 
 | Katman | Karar |
 |---|---|
-| **Bağlama** | Varsayılan `127.0.0.1`. LAN erişimi isteniyorsa `STREAMAXT_HOST` ile açık tercih |
+| **Bağlama** | Varsayılan `127.0.0.1`. LAN erişimi isteniyorsa `AXBOT_HOST` ile açık tercih |
 | **CORS** | Beyaz liste: `localhost`/`127.0.0.1` + `tauri://localhost` + OBS kaynağı (`null` origin). `*` kaldırılıyor |
 | **Yazma koruması** | Değiştiren tüm uçlar (`POST`/`PUT`/`DELETE`) yerel origin doğrulaması ister |
 | **Sır temizleme** | `redact()` — `token`, `refresh_token`, `*_secret`, `*_api_key` yanıtlardan çıkarılır. Panel "ayarlı/ayarsız" bilgisini görür, değeri değil |

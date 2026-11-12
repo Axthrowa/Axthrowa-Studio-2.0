@@ -84,7 +84,7 @@ Denetimde bulunan **4 kritik bulgu** kapatıldı:
 
 | Bulgu | Önce | Sonra |
 |---|---|---|
-| Bağlama adresi | `0.0.0.0` (tüm ağ arayüzleri) | `127.0.0.1` · `STREAMAXT_HOST` ile açık tercih + uyarı |
+| Bağlama adresi | `0.0.0.0` (tüm ağ arayüzleri) | `127.0.0.1` · `AXBOT_HOST` ile açık tercih + uyarı |
 | CORS | `origin: '*'` | Yerel köken beyaz listesi |
 | `GET /api/platforms` | Düz metin OAuth tokenı | Maskeli + `tokenVar` bayrağı |
 | `GET /api/settings` | `kick_client_secret`, `gemini_api_key` düz metin | Maskeli |
@@ -238,8 +238,8 @@ Ayrıntı: [`TEST_REPORT.md §4`](TEST_REPORT.md)
 | Hedef | Durum |
 |---|---|
 | `release/app/{dist,public}` | ✅ |
-| `release/StreamAxT-v1.0.0-Portable/app/{dist,public}` | ✅ |
-| Panel gömmesi `cikti/portable/streamaxt` | ✅ turkuaz derleme |
+| `release/AxBoT-v1.0.0-Portable/app/{dist,public}` | ✅ |
+| Panel gömmesi `cikti/portable/axbot` | ✅ turkuaz derleme |
 
 > Kullanıcının kendi AxBoT'su (port 3001) kapalıydı; açınca yeni sürümü
 > alacak. Tüm doğrulama **izole test örneğinde** (port 3011, boş veritabanı)
@@ -495,8 +495,8 @@ kopya başka bilgisayara taşınırsa tokenlar yeniden girilmeli.
 | Hedef | Durum |
 |---|---|
 | `release/app/{dist,public}` | Güncellendi (bağımlılık değişmedi; `node_modules`'a dokunulmadı) |
-| `release/StreamAxT-v1.0.0-Portable/app/{dist,public}` | Güncellendi |
-| Panel gömmesi `cikti/portable/streamaxt` | `node scripts/streamaxt-hazirla.mjs` — turkuaz derleme, gömme yaması uygulandı. Gömülü kipte (`?embed=1`) sekme adresten açılıyor, yan menü gizli, adres değişimi ve geri tuşu tarayıcıda denendi |
+| `release/AxBoT-v1.0.0-Portable/app/{dist,public}` | Güncellendi |
+| Panel gömmesi `cikti/portable/axbot` | `node scripts/axbot-hazirla.mjs` — turkuaz derleme, gömme yaması uygulandı. Gömülü kipte (`?embed=1`) sekme adresten açılıyor, yan menü gizli, adres değişimi ve geri tuşu tarayıcıda denendi |
 
 Gerçek bot (3001) dağıtım sırasında **çalışmıyordu**; yeni sürüm panel bir
 sonraki açılışta başlatınca devreye girer. DPAPI göçü o ilk açılışta
@@ -528,7 +528,7 @@ deposunda (`docs/IMPLEMENTATION_REPORT.md` §7).
 
 | Commit | İş | Durum |
 |---|---|---|
-| 71d0c37 | `tiktok-live-connector` tam sürüm `2.4.0` (son MIT sürüm; 2.4.1+ AGPL-3.0-only). Dağıtım klasörleri (`release/app`, `release/StreamAxT-v1.0.0-Portable/app`) de 2.4.0 + proto 0.2.3'e indirildi | DONE |
+| 71d0c37 | `tiktok-live-connector` tam sürüm `2.4.0` (son MIT sürüm; 2.4.1+ AGPL-3.0-only). Dağıtım klasörleri (`release/app`, `release/AxBoT-v1.0.0-Portable/app`) de 2.4.0 + proto 0.2.3'e indirildi | DONE |
 | 3837b88 | `$(jsonset)` / `$(jsonunset)` — JSON yolu yazma/silme (8000 karakter sınırı, `__proto__` / `prototype` / `constructor` reddi) | DONE |
 | 64023eb | Tek mesaj silme (`POST /api/moderation/delete-message`) ve Twitch sohbet modları (`POST /api/moderation/chat-mode`: yavaş, takipçi, abone, yalnız emote, sohbet gecikmesi) — yetenek güdümlü (`moderasyon.mesajSil`, `moderasyon.sohbetModlari` yalnız Twitch), denetim kaydı, Twitch belgesindeki sınırlar | DONE (canlı UNVERIFIED) |
 | f8a247d | Lisans bekçisi testi (kilit dosyası + 2.4.0 sabitlemesi) | DONE |

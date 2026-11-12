@@ -193,8 +193,8 @@ sütunların varsayılan değeri var.
 | Hedef | Durum |
 |---|---|
 | `release/app/{dist,public}` | ✅ güncellendi |
-| `release/StreamAxT-v1.0.0-Portable/app/{dist,public}` | ✅ güncellendi |
-| Panel gömmesi (`cikti/portable/streamaxt`) | ✅ `streamaxt-hazirla.mjs` ile turkuaz derleme |
+| `release/AxBoT-v1.0.0-Portable/app/{dist,public}` | ✅ güncellendi |
+| Panel gömmesi (`cikti/portable/axbot`) | ✅ `axbot-hazirla.mjs` ile turkuaz derleme |
 
 ---
 

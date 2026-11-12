@@ -30,12 +30,12 @@ if (-not $SkipTests) {
     npm --prefix resonance test
     if ($LASTEXITCODE -ne 0) { throw "Resonance testleri basarisiz" }
   }
-  $bot = Join-Path $env:USERPROFILE "Desktop\AxBoT\server"
-  if (Test-Path (Join-Path $bot "package.json")) {
+  $bot = @("AxBoT", "StreamAxT") | ForEach-Object { Join-Path $env:USERPROFILE "Desktop\$_\server" } | Where-Object { Test-Path (Join-Path $_ "package.json") } | Select-Object -First 1
+  if ($bot) {
     npm --prefix $bot exec vitest run
     if ($LASTEXITCODE -ne 0) { throw "AxBoT testleri basarisiz" }
   } else {
-    Write-Warning "Desktop\AxBoT yok; AxBoT testleri atlandi"
+    Write-Warning "Desktop\AxBoT ya da Desktop\StreamAxT yok; AxBoT testleri atlandi"
   }
 }
 

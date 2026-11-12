@@ -26,8 +26,8 @@ function arg(name, def) {
 }
 const flag = (name) => process.argv.includes(`--${name}`);
 
-// Varsayılan: GitHub'dan çekilen Desktop\AxBoT; yoksa eski yer Desktop\Projeler
-const varsayilanKaynak = [path.join(os.homedir(), "Desktop", "AxBoT"), path.join(os.homedir(), "Desktop", "Projeler")].find((p) =>
+// Varsayılan: Desktop\AxBoT; yoksa deponun klonlandığı Desktop\StreamAxT ya da eski yer Desktop\Projeler
+const varsayilanKaynak = [path.join(os.homedir(), "Desktop", "AxBoT"), path.join(os.homedir(), "Desktop", "StreamAxT"), path.join(os.homedir(), "Desktop", "Projeler")].find((p) =>
   fs.existsSync(path.join(p, "server", "package.json")),
 ) ?? path.join(os.homedir(), "Desktop", "AxBoT");
 const kaynak = path.resolve(arg("kaynak", varsayilanKaynak));

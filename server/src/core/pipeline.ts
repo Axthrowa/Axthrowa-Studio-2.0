@@ -23,6 +23,8 @@ import { geminiCoHost } from '../modules/ai/gemini.js';
 import { toplulukMesaji } from '../modules/community/topluluk.js';
 import { otomasyon } from '../modules/otomasyon/otomasyon.js';
 import { yayinOzeti } from '../modules/ai/yayin-ozeti.js';
+import axios from 'axios';
+import { muzikHost } from '../modules/muzik/index.js';
 
 export class MessagePipeline {
   private recentBotOutputs: Set<string> = new Set();
@@ -47,6 +49,9 @@ export class MessagePipeline {
       if (payload?.message) {
         const text = payload.message.trim();
         this.recentBotOutputs.add(text);
+        // Studio sohbeti kendi bağlantısından okur: metni bilsin ki emote duvarı / kombo botu saymasın
+        const studio = muzikHost.hariciAdres();
+        if (studio) void axios.post(`${studio}/api/bot/giden`, { metin: text }, { timeout: 1500 }).catch(() => {});
         setTimeout(() => {
           this.recentBotOutputs.delete(text);
         }, 15000);

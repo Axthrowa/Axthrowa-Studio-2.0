@@ -48,7 +48,7 @@ describe('harici müzik host (AxthrowA Studio)', () => {
     expect(h.simdiCalan()?.title).toBe('Paramparça');
     const p = await h.hariciIstek('teoman paramparça', true);
     expect(p.uri).toBe('spotify:track:0123456789abcdefghijkl');
-    expect(gelen[0]).toEqual({ query: 'teoman paramparça', queue: true });
+    expect(gelen[0]).toEqual({ query: 'teoman paramparça', queue: true, spotify_ac: false });
   });
 
   it('yalnız yerel adres kabul edilir', async () => {

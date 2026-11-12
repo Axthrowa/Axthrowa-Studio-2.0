@@ -78,3 +78,13 @@ describe('ffmpeg', () => {
     expect(a[a.length - 1]).toBe('C:/k/a.mp4');
   });
 });
+
+import { klipAdresiSec } from './klip-saf.js';
+
+describe('klipAdresiSec', () => {
+  it('yayın kapalıyken kanal adresi kullanılmaz; canlı ama adressiz ayrı hata', () => {
+    expect(klipAdresiSec('https://x/master.m3u8', false)).toBeNull();
+    expect(klipAdresiSec('https://x/master.m3u8', true)).toBe('https://x/master.m3u8');
+    expect(klipAdresiSec(null, true)).toBe('adres-yok');
+  });
+});

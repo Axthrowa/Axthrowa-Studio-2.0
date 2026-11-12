@@ -127,7 +127,7 @@ describe('YYA Spotify sırası (bot tarafında)', () => {
     calan.updatedAt = Date.now();
     await (muzikHost as any).hariciYokla();
     await songRequest.hariciSiraDenetle(Date.now(), false);
-    expect(istekler).toEqual([{ query: 'teoman', queue: false }]);
+    expect(istekler).toEqual([{ query: 'teoman', queue: false, spotify_ac: false }]);
     const satir = db.prepare('SELECT title, url FROM song_queue').get() as any;
     expect(satir).toEqual({ title: 'Paramparça — Teoman', url: 'https://open.spotify.com/track/0123456789abcdefghijkl' });
   });
@@ -236,9 +236,9 @@ describe('YYA Spotify sırası (bot tarafında)', () => {
     calan.source = 'spotify';
   });
 
-  it('sirasiGeldi: duraklatılmış şarkının ortasında beklenir', () => {
+  it('sirasiGeldi: duraklatılmış çalarda istek hemen çalar, çalarken şarkı sonu beklenir', () => {
     expect(sirasiGeldi(null, 0)).toBe(true);
-    expect(sirasiGeldi({ isPlaying: false, progress: 50_000, duration: 200_000, updatedAt: 0 } as any, 0)).toBe(false);
+    expect(sirasiGeldi({ isPlaying: false, progress: 50_000, duration: 200_000, updatedAt: 0 } as any, 0)).toBe(true);
     expect(sirasiGeldi({ isPlaying: false, progress: 199_000, duration: 200_000, updatedAt: 0 } as any, 0)).toBe(true);
     expect(sirasiGeldi({ isPlaying: true, progress: 190_000, duration: 200_000, updatedAt: 1 } as any, 8_001)).toBe(true);
     expect(sirasiGeldi({ isPlaying: true, progress: 50_000, duration: 200_000, updatedAt: 1 } as any, 8_001)).toBe(false);

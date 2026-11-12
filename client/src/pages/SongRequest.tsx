@@ -23,6 +23,7 @@ export function SongRequest() {
   const [desktopTarget, setDesktopTarget] = useState<string>('none');
   // Kuyruk boşken Otomatik DJ (önceki isteklerden rastgele klip)
   const [rastgele, setRastgele] = useState(true);
+  const [spotifyAc, setSpotifyAc] = useState(false);
   // Kişi başına sırada bekleyen istek sınırı (0 = sınırsız)
   const [kisiBasina, setKisiBasina] = useState(2);
   // Güvenlik filtreleri: 0 / boş = kapalı
@@ -66,6 +67,7 @@ export function SongRequest() {
           setDesktopTarget(d.sr_desktop_target);
         }
         setRastgele(d.sr_bos_rastgele !== 'false');
+        setSpotifyAc(d.sr_spotify_ac === 'true');
         if (d.sr_kisi_basina !== undefined) setKisiBasina(Number(d.sr_kisi_basina) || 0);
         setEngelli(d.sr_engelli || '');
         setMaxDk(Number(d.sr_max_dk) || 0);
@@ -292,6 +294,24 @@ export function SongRequest() {
           />
         </label>
       </div>
+
+      {desktopTarget !== 'none' && (
+        <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={spotifyAc}
+            onChange={(e) => {
+              setSpotifyAc(e.target.checked);
+              ayarYaz({ sr_spotify_ac: e.target.checked ? 'true' : 'false' });
+            }}
+            className="mt-0.5 accent-purple-600"
+          />
+          <span className="text-xs text-gray-300">
+            <b className="text-white">İstek gelince Spotify'ı otomatik aç</b> — Spotify kapalıysa ilk !sr isteğinde uygulama arka planda
+            (simge durumunda, oyunun önüne geçmeden) açılır ve şarkı çalmaya başlar. Spotify açık ama duraklatılmışsa istek hemen çalar.
+          </span>
+        </label>
+      )}
 
       {desktopTarget === 'none' && (
         <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">

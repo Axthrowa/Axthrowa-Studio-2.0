@@ -14,10 +14,11 @@ const BEKLEYEN = 'spotify-istek:';
  */
 export function sirasiGeldi(c: CalanSarki | null, simdi: number): boolean {
   if (!c) return true;
-  if (!(c.duration > 0)) return !c.isPlaying;
-  const konum = c.progress + (c.isPlaying ? Math.max(0, simdi - (Number(c.updatedAt) || simdi)) : 0);
-  const kalan = c.duration - konum;
-  return c.isPlaying ? kalan <= 3000 : kalan <= 2000;
+  // Çalar duraklatılmışsa istek beklemez, hemen çalar (Studio duraklatılmış Spotify'ı sürdürür)
+  if (!c.isPlaying) return true;
+  if (!(c.duration > 0)) return false;
+  const kalan = c.duration - (c.progress + Math.max(0, simdi - (Number(c.updatedAt) || simdi)));
+  return kalan <= 3000;
 }
 import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';

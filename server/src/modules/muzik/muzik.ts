@@ -146,7 +146,7 @@ export class MuzikHost {
     const adres = this.hariciAdres();
     if (!adres || (!this.harici.spotify && !this.harici.ytmd)) throw new Error('Spotify / YouTube Music bağlı değil');
     try {
-      const r = await axios.post(`${adres}/api/player/request`, { query: sorgu.slice(0, 200), video_id: videoId, queue: sira }, { timeout: 10_000 });
+      const r = await axios.post(`${adres}/api/player/request`, { query: sorgu.slice(0, 200), video_id: videoId, queue: sira, spotify_ac: this.depo.oku('sr_spotify_ac') === 'true' }, { timeout: 30_000 }); // Spotify açılırken 15 sn beklenebilir
       setTimeout(() => void this.hariciYokla().catch(() => {}), 1500).unref?.();
       return { title: String(r.data?.title || sorgu), artist: String(r.data?.artist || ''), uri: String(r.data?.id || '') };
     } catch (e: any) {

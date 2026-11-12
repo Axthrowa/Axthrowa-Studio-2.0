@@ -36,6 +36,15 @@ export function kickCanliMi(data: unknown): boolean {
   return Boolean(ls) && ls?.is_live !== false;
 }
 
+/**
+ * Klip girdisi: Kick yayın kapalıyken de kanalda `playback_url` döndürür; o adres
+ * kullanılırsa bot "kaydediliyor" deyip ffmpeg boş yayında düşüyordu. Yalnız canlıyken adres.
+ */
+export function klipAdresiSec(url: string | null, canli: boolean): string | null | 'adres-yok' {
+  if (!canli) return null;
+  return url || 'adres-yok';
+}
+
 /** `!clip 45` → 45 (en az 10, en çok `enCok`); sayı yoksa varsayılan. */
 export function klipSuresi(arg: string | undefined, varsayilan: number, enCok: number): number {
   const ust = Math.max(KLIP_EN_AZ, Math.min(600, Math.floor(Number(enCok) || 60)));

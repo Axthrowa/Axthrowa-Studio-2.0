@@ -13,7 +13,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
-import { ffmpegArgumanlari, hataSatiriTemizle, kickCanliMi, kickPlaybackAdresi, klipAdiGecerliMi, klipDosyaAdi, varyantSec } from './klip-saf.js';
+import { ffmpegArgumanlari, hataSatiriTemizle, kickCanliMi, kickPlaybackAdresi, klipAdiGecerliMi, klipAdresiSec, klipDosyaAdi, varyantSec } from './klip-saf.js';
 import { hataMetni } from '../../core/logger.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -76,21 +76,21 @@ async function hlsAdresi(platform: string): Promise<string | null> {
   });
   let url = kickPlaybackAdresi(r.data);
   let canli = kickCanliMi(r.data);
-  if (!url) {
+  if (!url || !canli) {
     try {
       const live = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(kanal)}/livestream`, {
         headers: { Accept: 'application/json', 'User-Agent': UA },
         timeout: 8000
       });
-      url = kickPlaybackAdresi(live.data) || kickPlaybackAdresi({ livestream: live.data });
+      url = url || kickPlaybackAdresi(live.data) || kickPlaybackAdresi({ livestream: live.data });
       canli = canli || kickCanliMi(live.data) || Boolean(live.data?.id);
     } catch {
       /* kanal yanıtı yeter */
     }
   }
-  if (url) return url;
-  if (canli) throw new Error('yayin-adresi-yok');
-  return null;
+  const secilen = klipAdresiSec(url, canli);
+  if (secilen === 'adres-yok') throw new Error('yayin-adresi-yok');
+  return secilen;
 }
 
 class KlipYoneticisi {

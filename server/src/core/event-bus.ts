@@ -23,6 +23,10 @@ export interface ChatMessagePayload {
     avatarUrl?: string;
   };
   message: string;
+  /** Twitch Shared Chat: mesaj ortak sohbetteki başka kanaldan geldi */
+  paylasimli?: boolean;
+  /** Platformun bildirdiği "kanaldaki ilk mesaj" */
+  ilkMesaj?: boolean;
   emotes?: Record<string, string[]>;
   timestamp: number;
 }

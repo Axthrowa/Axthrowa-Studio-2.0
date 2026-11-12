@@ -171,6 +171,24 @@ router.post('/pinned', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// Mesajı OBS sohbet kutusunda birkaç saniye vurgular (U5). Liste dışındaysa kutu onu vurgulu ekler.
+router.post('/chat/highlight', (req: Request, res: Response) => {
+  const message = String(req.body?.message ?? '').trim().slice(0, 500);
+  if (!message) return res.status(400).json({ success: false, error: 'Vurgulanacak mesaj boş.' });
+  const platform = /^(kick|twitch|youtube|tiktok|discord|trovo)$/.test(String(req.body?.platform)) ? String(req.body.platform) : 'kick';
+  const veri = {
+    id: String(req.body?.id ?? '').slice(0, 120) || `vurgu-${Date.now()}`,
+    platform,
+    username: String(req.body?.username ?? '').slice(0, 60),
+    displayName: String(req.body?.displayName ?? '').slice(0, 60),
+    color: /^#[0-9a-f]{3,8}$/i.test(String(req.body?.color)) ? String(req.body.color) : undefined,
+    message,
+    sure: 15000,
+  };
+  wsHub.broadcastTo(['chatbox'], { type: 'chat_highlight', data: veri });
+  res.json({ success: true });
+});
+
 router.delete('/pinned', (req: Request, res: Response) => {
   db.prepare('DELETE FROM pinned_messages').run();
   wsHub.broadcastTo(['all'], { type: 'pinned_message', data: null });

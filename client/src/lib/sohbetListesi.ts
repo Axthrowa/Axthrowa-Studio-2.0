@@ -29,3 +29,19 @@ export function iletiCikar<T extends SohbetOgesi>(
   if (k) return liste.filter((m) => !(ayniPlatform(m) && m.kullanici === k));
   return liste;
 }
+
+/**
+ * Panelden "katmanda vurgula" (U5): eşleşen iletiyi `vurguBitis` ile işaretler; listede yoksa
+ * (çoktan düşmüş ya da filtrelenmiş) vurgulu yeni öğe olarak ekler.
+ */
+export function iletiVurgula<T extends SohbetOgesi & { vurguBitis?: number }>(
+  liste: T[],
+  olay: { platform?: string; id?: string },
+  bitis: number,
+  yeni: () => T,
+  enCok: number
+): T[] {
+  const eslesir = (m: T) => !!olay.id && m.kaynakId === olay.id && (!olay.platform || m.platform === olay.platform);
+  if (liste.some(eslesir)) return liste.map((m) => (eslesir(m) ? { ...m, vurguBitis: bitis } : m));
+  return iletiEkle(liste, { ...yeni(), vurguBitis: bitis }, enCok);
+}

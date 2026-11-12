@@ -181,6 +181,8 @@ export class TwitchPlatform extends BasePlatform {
           isBroadcaster
         },
         message: messageText,
+        paylasimli: !!tags['source-room-id'] && tags['source-room-id'] !== tags['room-id'],
+        ilkMesaj: tags['first-msg'] === '1',
         emotes: twitchEmoteEtiketi(tags['emotes']),
         timestamp: Date.now()
       });

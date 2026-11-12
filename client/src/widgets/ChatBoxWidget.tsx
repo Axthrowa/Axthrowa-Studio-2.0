@@ -13,7 +13,7 @@ import { PlatformBadges } from '../components/PlatformBadge.js';
 import { kartTasarimlari, onizlemeKipi, yaziAilesi, yaziOlcegi } from '../lib/widget-style.js';
 import { kokOzellik, yapisalKabukMu } from '../lib/kabuklar.js';
 import { CIKIS_ORANI, animKimligi, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
-import { iletiCikar, iletiEkle } from '../lib/sohbetListesi.js';
+import { iletiCikar, iletiEkle, iletiVurgula } from '../lib/sohbetListesi.js';
 
 /** Yeni ileti sesi: dosya gerektirmeyen kısa bir "tık" (WebAudio). */
 let sesBaglami: AudioContext | null = null;
@@ -52,6 +52,8 @@ interface OverlayMsg {
   ts: string;
   special?: boolean;
   created: number;
+  /** Panelden "katmanda vurgula" bitiş zamanı (ms) */
+  vurguBitis?: number;
 }
 
 /** Platformların özgün marka renkleri */
@@ -129,6 +131,26 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
       setMessages((prev) => iletiEkle(prev, olay, s.maxMessages));
       return;
     }
+    if (lastMessage.type === 'chat_highlight') {
+      islenen.current = lastMessage;
+      const d = lastMessage.data || {};
+      const bitis = Date.now() + Math.min(60000, Math.max(3000, Number(d.sure) || 15000));
+      setMessages((prev) =>
+        iletiVurgula(prev, { platform: d.platform, id: d.id ? String(d.id) : undefined }, bitis, () => ({
+          id: `${Date.now()}-${Math.random()}`,
+          kaynakId: d.id ? String(d.id) : undefined,
+          kullanici: String(d.username || '').toLowerCase() || undefined,
+          platform: String(d.platform || 'kick'),
+          user: String(d.displayName || d.username || 'anon'),
+          color: d.color || PLATFORM_COLORS[d.platform] || '#fff',
+          text: String(d.message || ''),
+          rozet: {},
+          ts: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+          created: Date.now()
+        }), s.maxMessages)
+      );
+      return;
+    }
     if (lastMessage.type !== 'chat') return;
     islenen.current = lastMessage;
     const p = lastMessage.data || lastMessage.payload;
@@ -189,6 +211,16 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     canliGeldi.current = true;
     if (s.messageSound && !onizlemeKipi(props?.previewMode)) tikla(Number(s.messageSoundVolume) || 0.4);
   }, [lastMessage, s]);
+
+  useEffect(() => {
+    const bitisler = messages.map((m) => m.vurguBitis).filter((b): b is number => !!b);
+    if (!bitisler.length) return;
+    const t = window.setTimeout(() => {
+      const simdi = Date.now();
+      setMessages((prev) => prev.map((m) => (m.vurguBitis && m.vurguBitis <= simdi ? { ...m, vurguBitis: undefined } : m)));
+    }, Math.max(0, Math.min(...bitisler) - Date.now()) + 20);
+    return () => window.clearTimeout(t);
+  }, [messages]);
 
   const girisId = animKimligi(String(s.animation || 'fade'));
   const cikisId = cikisKimligi(s.animation, s.exitAnimation);
@@ -519,7 +551,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     }}>
       {list.map((msg) => (
         <div key={`${msg.id}-${girisId}-${girisMs}`} data-sohbet-satir="" className={gidenIdler.has(msg.id) ? `axt-cikis-${cikisId}` : `axt-anim-${girisId}`} style={{ flexShrink: 0, animationDuration: `${gidenIdler.has(msg.id) ? cikisMs : girisMs}ms` }}>
-          {ileti(msg)}
+          {msg.vurguBitis ? <div style={{ outline: `3px solid ${s.highlightColor}`, outlineOffset: 2, borderRadius: s.borderRadius, boxShadow: `0 0 18px ${s.highlightColor}` }}>{ileti(msg)}</div> : ileti(msg)}
         </div>
       ))}
     </div>

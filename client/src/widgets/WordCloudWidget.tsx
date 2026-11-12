@@ -7,7 +7,7 @@
  */
 import { kokOzellik } from '../lib/kabuklar.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { WORD_CLOUD_DEFAULTS } from '../lib/widget-defaults.js';
@@ -143,8 +143,9 @@ export function WordCloudWidget({ embedded = false, previewMode = false }: { emb
       {...kokOzellik(s)}
       data-katman-bos={yerler.length ? undefined : ''}
       className={`${embedded ? 'w-full h-full' : 'w-screen h-screen'} relative overflow-hidden select-none`}
-      style={{ background: Number(s.bgOpacity) > 0 ? rgba(s.bgColor, s.bgOpacity) : 'transparent', borderRadius: Number(s.radius) || 0, fontFamily: s.fontFamily, ...kutuTasarimi(s), ...ortakHareket(s) }}
+      style={{ background: Number(s.bgOpacity) > 0 ? rgba(s.bgColor, s.bgOpacity) : 'transparent', borderRadius: Number(s.radius) || 0, fontFamily: s.fontFamily, ...kutuTasarimi(s) }}
     >
+      <div key={hareketAnahtari(s)} style={{ position: 'absolute', inset: 0, ...ortakHareket(s) }}>
       {yerler.map((y, i) => (
         <span
           key={i}
@@ -163,6 +164,7 @@ export function WordCloudWidget({ embedded = false, previewMode = false }: { emb
           {y.sozcuk}
         </span>
       ))}
+      </div>
     </div>
   );
 }

@@ -92,7 +92,7 @@ export function Extras() {
             <label className="text-xs font-bold space-y-1">Varsayılan süre (sn)<input type="number" min={10} max={600} value={s.clip_default_sec} onChange={e => setS({ ...s, clip_default_sec: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
             <label className="text-xs font-bold space-y-1">En uzun süre (sn)<input type="number" min={10} max={600} value={s.clip_max_sec} onChange={e => setS({ ...s, clip_max_sec: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           </div>
-          <p className="text-[11px] text-gray-400"><code>!clip</code> ya da <code>!clip 45</code>: yayının son ~30 saniyesinden başlayıp istenen süreye kadar <b>gerçek video klip</b> kaydeder (yeniden kodlamadan, bilgisayarında kalır, platforma yüklenmez). Yayın kapalıyken çalışmaz. ffmpeg yoksa yalnız anı işaretler; o zaman yukarıdaki mesaj kullanılır (<code>{"{user}"}</code>, <code>{"{zaman}"}</code>).</p>
+          <p className="text-[11px] text-gray-400"><code>!clip</code> ya da <code>!clip 45</code>. Twitch yayında Helix klip linki yazar (<code>clips:edit</code>). Kick’te resmi klip ucu yok; yayın HLS’inden ffmpeg ile bu bilgisayara video kaydeder. Olmazsa sohbet ve aşağıdaki liste nedenini yazar.</p>
           <KlipListesi />
         </div>
       )}

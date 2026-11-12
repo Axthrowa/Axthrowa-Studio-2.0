@@ -8,7 +8,7 @@
  * uygulama bize ait, kod kopyalanmadı.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
@@ -148,7 +148,7 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
       className={kap}
       style={{ justifyContent: hizala === 'center' ? 'center' : hizala === 'right' ? 'flex-end' : 'flex-start' }}
     >
-      <div {...kokOzellik(s)}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
         style={{
           ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic), ...ortakHareket(s),
           borderRadius: tema === 'capsule' ? 999 : Number(s.radius) || 16,

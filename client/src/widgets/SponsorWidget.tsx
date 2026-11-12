@@ -9,8 +9,8 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SPONSOR_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi, rgba, kutuTasarimi } from '../lib/widget-style.js';
-import { efektEkle, animStili } from '../lib/animations.js';
-import { guvenliMedya, ogeSuresiMs, ogeTuru, useDongu, type SponsorOgesi, asamaAnimasyonu } from '../lib/donenWidget.js';
+import { animStili, efektEkle } from '../lib/animations.js';
+import { asamaAnimasyonu, donenSahneAnahtari, guvenliMedya, ogeSuresiMs, ogeTuru, useDongu, type SponsorOgesi } from '../lib/donenWidget.js';
 
 export interface SponsorWidgetProps {
   embedded?: boolean;
@@ -41,6 +41,7 @@ export function SponsorWidget({ embedded = false, previewMode = false }: Sponsor
   return (
     <div className={`${embedded ? 'w-full h-full' : 'w-screen h-screen'} bg-transparent select-none overflow-hidden`} style={{ fontFamily: s.fontFamily }}>
       <div
+        key={donenSahneAnahtari(i, oge ? asama : 'visible', s)}
         {...kokOzellik(s)}
         className="relative w-full h-full overflow-hidden"
         style={{ ...efektEkle(animStili(asamaAnimasyonu(s, oge ? asama : 'visible'), oge ? asama : 'visible', gecisMs), s, oge ? asama : 'visible', gecisMs), borderRadius: Number(s.radius) || 0, background: rgba(s.bgColor, s.bgOpacity), ...kutuTasarimi(s) }}

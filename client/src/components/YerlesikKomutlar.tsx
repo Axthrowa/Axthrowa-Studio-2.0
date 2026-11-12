@@ -13,6 +13,7 @@ interface Komut {
   modEk?: boolean;
   aciklama: string;
   kullanim?: string;
+  bekleme?: number;
 }
 interface Veri {
   komutlar: Komut[];
@@ -143,10 +144,10 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                       type="number"
                       min={0}
                       max={3600}
-                      defaultValue={ayar.bekleme || 0}
+                      defaultValue={ayar.bekleme ?? k.bekleme ?? 0}
                       onBlur={(e) => {
                         const sn = Math.max(0, Math.min(3600, Number(e.target.value) || 0));
-                        if (sn !== (ayar.bekleme || 0)) void kaydet(k.ad, { bekleme: sn });
+                        if (sn !== (ayar.bekleme ?? k.bekleme ?? 0)) void kaydet(k.ad, { bekleme: sn });
                       }}
                       className="w-20 bg-black/50 border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono"
                       title="Genel bekleme (sn); mod ve yayıncı muaf"

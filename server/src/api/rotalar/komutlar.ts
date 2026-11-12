@@ -53,7 +53,8 @@ router.post('/commands/builtin', (req: Request, res: Response) => {
   }
   if ('yetki' in g || 'bekleme' in g || 'yanit' in g) {
     const ayarlar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'));
-    const yeni = { ...ayarlar[kayit.ad], ...('yanit' in g ? { yanit: g.yanit || undefined } : {}), ...('yetki' in g ? { yetki: g.yetki || undefined } : {}), ...('bekleme' in g ? { bekleme: Number(g.bekleme) || undefined } : {}) };
+    const sn = Math.max(0, Math.min(3600, Math.round(Number(g.bekleme)) || 0));
+    const yeni = { ...ayarlar[kayit.ad], ...('yanit' in g ? { yanit: g.yanit || undefined } : {}), ...('yetki' in g ? { yetki: g.yetki || undefined } : {}), ...('bekleme' in g ? { bekleme: sn } : {}) };
     settingsCache.set('yerlesik_komut_ayarlari', JSON.stringify(yerlesikAyarlariCoz({ ...ayarlar, [kayit.ad]: yeni })));
   }
   res.json({ ok: true, kapali: kapaliYerlesikler(), ayarlar: yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}')) });

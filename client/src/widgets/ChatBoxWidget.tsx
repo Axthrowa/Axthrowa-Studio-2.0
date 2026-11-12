@@ -12,7 +12,7 @@ import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
 import { kartTasarimlari, onizlemeKipi, yaziAilesi, yaziOlcegi } from '../lib/widget-style.js';
 import { kokOzellik, yapisalKabukMu } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animKimligi, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { iletiCikar, iletiEkle } from '../lib/sohbetListesi.js';
 
 /** Yeni ileti sesi: dosya gerektirmeyen kısa bir "tık" (WebAudio). */
@@ -190,7 +190,10 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
     if (s.messageSound && !onizlemeKipi(props?.previewMode)) tikla(Number(s.messageSoundVolume) || 0.4);
   }, [lastMessage, s]);
 
-  const cikis = String(s.exitAnimation || 'fade');
+  const girisId = animKimligi(String(s.animation || 'fade'));
+  const cikisId = cikisKimligi(s.animation, s.exitAnimation);
+  const girisMs = Math.max(0, Number(s.animationDuration) || 450);
+  const cikisMs = Math.max(40, Math.round(girisMs * CIKIS_ORANI));
   useEffect(() => {
     const once = oncekiler.current;
     oncekiler.current = messages;
@@ -198,14 +201,14 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
       anlik.current = false;
       return;
     }
-    if (cikis === 'none') return;
+    if (cikisId === 'none') return;
     const kalan = new Set(messages.map((m) => m.id));
     const giden = once.filter((m) => !kalan.has(m.id));
     if (!giden.length) return;
     setGidenler((g) => [...g, ...giden]);
     // Temizlikte iptal edilmez: sohbet hızlıyken bir sonraki değişim zamanlayıcıyı iptal edip gidenleri biriktiriyordu
-    setTimeout(() => setGidenler((g) => g.filter((x) => !giden.includes(x))), 520);
-  }, [messages, cikis]);
+    setTimeout(() => setGidenler((g) => g.filter((x) => !giden.includes(x))), cikisMs + 40);
+  }, [messages, cikisId, cikisMs]);
 
   // Mesajlar kaybolsun (isteğe bağlı) · bağış/ödül satırları ayrı sürede kaybolur (varsayılan 30 sn)
   const olaySn = Number(s.eventFadeSec) || 0;
@@ -497,7 +500,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
   };
 
   return (
-    <div {...kokOzellik(s)} className="flex gap-1 p-4 h-full" style={{
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)} className="flex gap-1 p-4 h-full" style={{
       ...ortakHareket(s, { giris: false }),
       fontFamily: kurulu ? yaziAilesi(kurulu) : s.fontFamily,
       // Kalınlık uydurulmaz: yazı tipinde olmayan kalınlığı tarayıcı kendisi çizince harfler dağılıyordu
@@ -515,7 +518,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         : undefined
     }}>
       {list.map((msg) => (
-        <div key={msg.id} data-sohbet-satir="" className={gidenIdler.has(msg.id) ? `axt-cikis-${cikis}` : `axt-anim-${s.animation}`} style={{ flexShrink: 0, animationDuration: gidenIdler.has(msg.id) ? undefined : `${Number(s.animationDuration) || 450}ms` }}>
+        <div key={`${msg.id}-${girisId}-${girisMs}`} data-sohbet-satir="" className={gidenIdler.has(msg.id) ? `axt-cikis-${cikisId}` : `axt-anim-${girisId}`} style={{ flexShrink: 0, animationDuration: `${gidenIdler.has(msg.id) ? cikisMs : girisMs}ms` }}>
           {ileti(msg)}
         </div>
       ))}

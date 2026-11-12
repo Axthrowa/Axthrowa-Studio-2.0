@@ -9,7 +9,7 @@
  * yazan sahte bir kral görünüyordu.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { Crown, Sparkles, Timer } from 'lucide-react';
@@ -191,7 +191,7 @@ export function KingWidget({ embedded = false, previewMode = false }: KingWidget
       }
       style={{ fontFamily: s.fontFamily }}
     >
-      <div {...kokOzellik(s)}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
         className="relative flex items-center gap-3.5"
         style={{
           ...(kutuTasarimi(s) || temaStili[tema] || temaStili.royal), ...ortakHareket(s),

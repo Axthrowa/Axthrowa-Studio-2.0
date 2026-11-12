@@ -8,7 +8,7 @@
  * puanı gösteriyordu. Artık alan eşlemesi açık ve değer biçimlenerek yazılıyor.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -108,7 +108,7 @@ export function RankingsWidget({ embedded = false, previewMode = false }: Rankin
     <div
       className={embedded ? 'w-full h-full flex items-start' : 'w-screen h-screen bg-transparent p-4 flex items-start'}
     >
-      <div {...kokOzellik(s)}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
         style={{
           ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic), ...ortakHareket(s),
           borderRadius: Number(s.radius) || 16,

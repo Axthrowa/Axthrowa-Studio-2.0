@@ -8,7 +8,12 @@ import { klipYoneticisi, ffmpegVarMi } from '../../modules/clips/klip.js';
 const router = Router();
 
 router.get('/klipler', async (_req: Request, res: Response) => {
-  res.json({ klipler: klipYoneticisi.listele(), ffmpeg: await ffmpegVarMi(), mesgul: klipYoneticisi.mesgulMu() });
+  res.json({
+    klipler: klipYoneticisi.listele(),
+    ffmpeg: await ffmpegVarMi(),
+    mesgul: klipYoneticisi.mesgulMu(),
+    sonHata: klipYoneticisi.sonHataOku()
+  });
 });
 
 // Video: dosya adı sıkı desenle doğrulanır (yol geçişi yok); Range desteği sendFile'da

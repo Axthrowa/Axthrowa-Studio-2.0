@@ -50,7 +50,7 @@ import { SoundBoardWidget } from './SoundBoardWidget.js';
 import { MuzikVideoWidget } from './MuzikVideoWidget.js';
 import { WordCloudWidget } from './WordCloudWidget.js';
 import { ScoreboardWidget } from './ScoreboardWidget.js';
-import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
+import { cubukTurleri, hedefWidgetKimligi } from '../lib/widget-defaults.js';
 import { arkasiniGizlerMi, cakisincaGizlenirMi, gizlenecekKatmanlar, tuvaleSigdirmaPayi } from '../lib/katmanCakisma.js';
 
 export interface WidgetLayoutItem {
@@ -127,7 +127,17 @@ export const KATMANLAR: KatmanTanimi[] = [
     etiket: 'Hedef Çubuğu',
     z: 90,
     varsayilan: { x: 1480, y: 140, width: 400, height: 90 },
-    ciz: (o, item) => <GoalWidget embedded previewMode={o} widgetId={hedefWidgetKimligi(item?.type)} />
+    ciz: (o, item) => {
+      const turler = cubukTurleri(item);
+      if (turler.length <= 1) return <GoalWidget embedded previewMode={o} widgetId={hedefWidgetKimligi(turler[0])} />;
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, height: '100%', justifyContent: 'space-between' }}>
+          {turler.map((t) => (
+            <GoalWidget key={t} embedded previewMode={o} widgetId={hedefWidgetKimligi(t)} />
+          ))}
+        </div>
+      );
+    }
   },
   {
     anahtar: 'subathon',

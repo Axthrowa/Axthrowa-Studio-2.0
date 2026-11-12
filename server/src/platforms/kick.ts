@@ -51,6 +51,8 @@ export class KickPlatform extends BasePlatform {
   private botUsername: string = '';
   /** `type: bot` ile gönderilen metinler: Kick bunları token sahibinin adıyla yansıtmayabilir. */
   private botTuruGonderilen = new Set<string>();
+  /** `type: user` ile giden metin: yankı yayıncı hesabından gelir, izleyici aynı yazınca bot sayılmaz. */
+  private yayinciTuruGonderilen = new Set<string>();
   /**
    * Sohbetten öğrenilen kullanıcı adı → Kick kullanıcı kimliği.
    * Zaman aşımı için kimlik gerekir; her seferinde kanal sayfasını
@@ -316,10 +318,18 @@ export class KickPlatform extends BasePlatform {
       const senderName = String(sender.username || '').trim();
 
       // Check if message was sent by the bot itself
+      const metin = String(content).trim();
+      const botTuru = this.botTuruGonderilen.delete(metin);
+      const yayinciTuru =
+        this.yayinciTuruGonderilen.has(metin) &&
+        Boolean(this.broadcasterUserId) &&
+        senderId === Number(this.broadcasterUserId);
+      if (yayinciTuru) this.yayinciTuruGonderilen.delete(metin);
       const isSelf = Boolean(
         (this.botUserId && senderId === this.botUserId) ||
         (this.botUsername && senderName.toLowerCase() === this.botUsername.toLowerCase()) ||
-        this.botTuruGonderilen.delete(String(content).trim())
+        botTuru ||
+        yayinciTuru
       );
 
       const identity = sender.identity || {};
@@ -704,11 +714,10 @@ export class KickPlatform extends BasePlatform {
 
           if (officialRes.status === 200 || officialRes.status === 201) {
             console.log(`[Kick] Chat message sent successfully via Official API (v1, type: ${msgType})`);
-            if (msgType === 'bot') {
-              const metin = message.trim();
-              this.botTuruGonderilen.add(metin);
-              setTimeout(() => this.botTuruGonderilen.delete(metin), 15_000).unref();
-            }
+            const metin = message.trim();
+            const kume = msgType === 'bot' ? this.botTuruGonderilen : this.yayinciTuruGonderilen;
+            kume.add(metin);
+            setTimeout(() => kume.delete(metin), 15_000).unref();
             return {
               success: true,
               message: 'Mesaj Kick sohbetine başarıyla iletildi!'

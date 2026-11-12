@@ -61,7 +61,7 @@ export class MuzikHost {
    * bağlantısı yokken o host'un çalan şarkısını okur, !sr isteğini oraya iletir.
    * Eskiden ikinci bir Spotify bağlantısı gerekiyordu; yoksa sözler boş, !sr çalmıyordu.
    */
-  private harici = { spotify: false, ytmd: false, kaynak: '', sonraki: 0 };
+  private harici = { spotify: false, ytmd: false, kaynak: '', sonraki: 0, yuva: '' as '' | 'spotify' | 'youtube-music' };
 
   constructor(
     private depo: MuzikDeposu,
@@ -94,6 +94,7 @@ export class MuzikHost {
       this.harici.ytmd = Boolean(r.data?.ytmd?.connected);
       this.harici.kaynak = String(r.data?.source || '');
       const np = r.data?.nowPlaying;
+      const kaynak = np?.source === 'youtube-music' ? 'youtube-music' : 'spotify';
       this.calaniGuncelle(
         np?.title
           ? {
@@ -104,12 +105,15 @@ export class MuzikHost {
               isPlaying: Boolean(np.isPlaying),
               progress: Number(np.progress) || 0,
               duration: Number(np.duration) || 0,
-              source: String(np.source || 'spotify'),
+              source: kaynak,
               updatedAt: Number(np.updatedAt) || Date.now()
             }
           : null,
-        'spotify'
+        kaynak
       );
+      // Host tek parça bildirir: kaynak değişince öbür yuvadaki eski parça "çalıyor" kalıp sırayı kilitlemesin
+      if (this.harici.yuva && this.harici.yuva !== kaynak) this.calaniGuncelle(null, this.harici.yuva);
+      this.harici.yuva = kaynak;
     } catch {
       // Host kapalı (bağımsız kurulum): sık deneme
       this.harici.spotify = false;
@@ -444,6 +448,12 @@ export class MuzikHost {
   }
 
   async spotifyKomut(eylem: string): Promise<void> {
+    const ses = eylem.startsWith('volume:') ? Number(eylem.slice(7)) : NaN;
+    if (Number.isInteger(ses) && ses >= 0 && ses <= 100) {
+      const r = await this.istek('put', `/me/player/volume?volume_percent=${ses}`);
+      if (r.status >= 400) throw new Error(oynaticiHatasi(r.status));
+      return;
+    }
     const calan = this.calan?.isPlaying;
     const tablo: Record<string, ['put' | 'post', string]> = {
       play: ['put', '/me/player/play'],
@@ -490,14 +500,20 @@ export class MuzikHost {
     if (!token) throw new Error('YouTube Music Desktop bağlı değil');
     const host = this.depo.oku(A.ytmdHost) || '127.0.0.1';
     const port = this.depo.oku(A.ytmdPort) || '9863';
-    const komut = ['play', 'pause', 'playPause', 'next', 'previous', 'mute', 'unmute'].includes(eylem)
-      ? eylem
-      : eylem === 'muteToggle' || eylem === 'toggleMute'
-        ? 'playPause'
-        : null;
+    const ses = eylem.startsWith('volume:') ? Number(eylem.slice(7)) : NaN;
+    const sesAyari = Number.isInteger(ses) && ses >= 0 && ses <= 100;
+    const komut = sesAyari
+      ? 'setVolume'
+      : ['play', 'pause', 'playPause', 'next', 'previous', 'mute', 'unmute'].includes(eylem)
+        ? eylem
+        : eylem === 'muteToggle' || eylem === 'toggleMute'
+          ? 'playPause'
+          : null;
     if (!komut) throw new Error(`bilinmeyen komut: ${eylem}`);
+    // shortcut: YTMD setVolume `data` 0-100; 0-1 isteyen sürümde burayı değiştir
+    const govde = sesAyari ? { command: komut, data: ses } : { command: komut };
     for (const baslik of [token, `Bearer ${token}`]) {
-      const r = await axios.post(`http://${host}:${port}/api/v1/command`, { command: komut }, {
+      const r = await axios.post(`http://${host}:${port}/api/v1/command`, govde, {
         headers: { Authorization: baslik },
         timeout: 5000,
         validateStatus: () => true

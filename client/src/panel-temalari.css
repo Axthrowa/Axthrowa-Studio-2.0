@@ -162,3 +162,36 @@
   --color-white: #fff;
   --color-black: #000;
 }
+
+/*
+ * Studio teması: AxthrowA Studio içinde gömülüyken Studio'nun kendi renkleri. Değişkenler (--axt-zemin, --axt-yuzey,
+ * --axt-yuzey-2, --axt-kenar, --axt-vurgu, --axt-metin, --axt-soluk, köşeler) Studio'dan kök öğeye yazılır
+ * (lib/studioTemasi.ts); burada yalnız Tailwind renkleri bunlara bağlanır. Mor vurgu Studio vurgusuna döner;
+ * dolgu tonları (500–700) beyaz yazı taşısın diye koyulaştırılır.
+ */
+.axt-panel[data-panel-tema="studio"] {
+  --axt-golge: none;
+  --axt-doku: none;
+  --axt-odak: var(--axt-vurgu);
+  --color-purple-200: color-mix(in oklab, var(--axt-vurgu) 45%, white);
+  --color-purple-300: color-mix(in oklab, var(--axt-vurgu) 65%, white);
+  --color-purple-400: color-mix(in oklab, var(--axt-vurgu) 85%, white);
+  --color-purple-500: color-mix(in oklab, var(--axt-vurgu) 70%, black);
+  --color-purple-600: color-mix(in oklab, var(--axt-vurgu) 58%, black);
+  --color-purple-700: color-mix(in oklab, var(--axt-vurgu) 48%, black);
+  --color-purple-900: color-mix(in oklab, var(--axt-vurgu) 25%, black);
+  --color-violet-300: var(--color-purple-300);
+  --color-violet-400: var(--color-purple-400);
+  --color-violet-500: var(--color-purple-500);
+  --color-violet-600: var(--color-purple-600);
+  --color-indigo-400: var(--color-purple-400);
+  --color-indigo-500: var(--color-purple-500);
+  --color-indigo-600: var(--color-purple-600);
+  --color-gray-100: var(--axt-metin);
+  --color-gray-200: var(--axt-metin);
+  --color-gray-300: color-mix(in oklab, var(--axt-metin) 70%, var(--axt-soluk));
+  --color-gray-400: var(--axt-soluk);
+  --color-gray-500: var(--axt-soluk);
+  --color-gray-600: var(--axt-soluk);
+}
+.axt-panel[data-panel-tema="studio"] .glass-panel:not(.axt-onizleme *) { border-color: var(--axt-kenar); }

@@ -2,9 +2,10 @@
  * AxBoT Goal overlay — donation / follower / sub / kicks
  * Developed by AxthrowA
  */
-import { kutuTasarimi } from '../lib/widget-style.js';
-import { animBul, animKimligi, efektAnimasyonu, eskiHareketiCevir, ortakHareket } from '../lib/animations.js';
+import { kutla } from '../lib/kutlama.js';
+import { animBul, animKimligi, efektAnimasyonu, eskiHareketiCevir, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kokOzellik } from '../lib/kabuklar.js';
+import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -171,11 +172,12 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
   useEffect(() => {
     if (!lastMessage || islenen.current === lastMessage) return;
     islenen.current = lastMessage;
+    if (lastMessage.type === 'hedef_doldu' && lastMessage.widgetId === widgetId && !props?.previewMode) kutla('konfeti');
     if (lastMessage.type !== 'hedef_testi' || lastMessage.widgetId !== widgetId) return;
     setTestArtisi((v) => v + (Number(lastMessage.artis) || 1));
     // Temizlikte iptal edilmez: sonraki herhangi bir yayın zamanlayıcıyı iptal edip test artışını kalıcı yapardı
     setTimeout(() => setTestArtisi(0), 6000);
-  }, [lastMessage, widgetId]);
+  }, [lastMessage, widgetId, props?.previewMode]);
 
   const percent = Math.min(100, (current / Math.max(1, Number(s.target))) * 100);
   useEffect(() => {
@@ -307,7 +309,7 @@ export function GoalWidget(props?: { embedded?: boolean; previewMode?: boolean; 
   );
 
   return (
-    <div {...kokOzellik(s)} style={{ ...ortakHareket(s, { efekt: hedef === 'tum' }), background: Number(s.backgroundOpacity) === 0 ? 'transparent' : bg, borderRadius: s.borderRadius, ...kutuTasarimi(s), padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div key={`${hareketAnahtari(s)}|${HEDEF_PARCALARI.map((p) => `${s[`${p}Giris`] ?? ''}:${s[`${p}Efekti`] ?? ''}`).join(',')}`} {...kokOzellik(s)} style={{ ...ortakHareket(s, { efekt: hedef === 'tum' }), background: Number(s.backgroundOpacity) === 0 ? 'transparent' : bg, borderRadius: s.borderRadius, ...kutuTasarimi(s), padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <style>{'@keyframes axt-hedef-dalga { to { transform: translateX(-80px) } } @keyframes axt-hedef-parilti { from { transform: translateX(-100%) } to { transform: translateX(100%) } } @keyframes axt-hedef-cizgi { from { transform: translateX(0) } to { transform: translateX(28px) } } @keyframes axt-hedef-zipla { 0% { transform: scale(1) } 40% { transform: scale(1.35) translateY(-8%) } 100% { transform: scale(1) } }'}</style>
       {s.layout === 'text-below' ? <>{bar}{label}</> : <>{label}{bar}</>}
     </div>

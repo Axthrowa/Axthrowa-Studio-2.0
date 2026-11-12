@@ -8,7 +8,7 @@
  * onlarca TTS arka arkaya okunuyordu.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
@@ -92,7 +92,7 @@ export function AudioPlayerWidget({ embedded = false }: AudioPlayerWidgetProps) 
           : 'w-screen h-screen bg-transparent flex items-center justify-center p-4'
       }
     >
-      <div {...kokOzellik(s)}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
         className="flex items-center gap-2"
         style={{
           ...(kutuTasarimi(s) || temaStili[tema] || temaStili.status), ...ortakHareket(s),

@@ -1,5 +1,5 @@
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -457,7 +457,7 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
     // yukarı hem aşağı büyüyüp OBS'te yerinden oynuyordu. Üste hizalı duruyor,
     // büyüme yalnız aşağı doğru oluyor.
     <div className={embedded ? "w-full h-full bg-transparent p-0 flex items-start justify-center select-none font-sans" : "w-screen h-screen bg-transparent p-6 flex items-start justify-center select-none font-sans"}>
-      <div {...kokOzellik(ayar)}
+      <div key={hareketAnahtari(ayar)} {...kokOzellik(ayar)}
         className="w-full backdrop-blur-2xl border-2 overflow-hidden relative transition-all duration-300 p-5 md:p-6"
         style={{
           maxWidth: Number(ayar.maxWidth) || 672,

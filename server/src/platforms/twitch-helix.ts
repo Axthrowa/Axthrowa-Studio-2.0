@@ -263,6 +263,29 @@ export class TwitchHelix {
     return this.istek('POST', '/streams/markers', { user_id: yayinci.veri, description: aciklama.slice(0, 140) }, 'channel:manage:broadcast');
   }
 
+  /** Kanalın takipçi sayısı. Jeton `moderator:read:followers` ister. */
+  async takipciSayisi(kanal: string): Promise<HelixSonuc<number>> {
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    const r = await this.istek('GET', `/channels/followers?broadcaster_id=${yayinci.veri}&first=1`, undefined, 'moderator:read:followers');
+    if (!r.ok) return r;
+    const n = Number(r.veri?.total);
+    if (!Number.isFinite(n)) return { ok: false, hata: 'Twitch takipçi sayısı gelmedi' };
+    return { ok: true, veri: Math.floor(n) };
+  }
+
+  /** `!clip`: yayın açıkken Helix klip oluşturur. Jeton `clips:edit` ister. */
+  async klipOlustur(kanal: string): Promise<HelixSonuc<{ url: string }>> {
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    const r = await this.istek('POST', `/clips?broadcaster_id=${yayinci.veri}`, undefined, 'clips:edit');
+    if (!r.ok) return r;
+    const c = r.veri?.data?.[0];
+    const url = String(c?.edit_url || (c?.id ? `https://clips.twitch.tv/${c.id}` : ''));
+    if (!url) return { ok: false, hata: 'Twitch klip oluşturmadı — yayın açık mı?' };
+    return { ok: true, veri: { url } };
+  }
+
   /** Reklam (`!commercial`): 30-180 sn. Twitch yalnız yayıncının jetonuyla ve yayın açıkken başlatır. */
   async reklamBaslat(kanal: string, saniye: number): Promise<HelixSonuc> {
     const yayinci = await this.kullaniciKimligi(kanal);

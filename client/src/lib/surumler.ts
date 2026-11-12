@@ -11,6 +11,28 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.13.18',
+    ad: 'Animasyon',
+    tarih: '2026-11-12',
+    notlar: [
+      'Widget animasyonları girişle gelir, çıkışla gider: uyarı, sohbet, aktivite, shoutout, sadakat, sabit mesaj, jumpscare, anket ve hype treni. Eski "slide" adı kayarak sağdan oynar',
+      'Hedef çubuğu açılınca takipçi, abone, bağış ve KICKs toplamını yazar; bir katmana birden fazla çubuk konur. Dolunca hedef bir üst basamağa çıkar',
+      'Olay etiketleri her açılışta ve dakikada bir Kick takipçi sayısını yeniler',
+      'Sohbet kullanıcı kartında son 20 mesaj ve cezalar görünür. Takip küçük konfeti, 100 ve üstü bağış veya KICKs havai fişek'
+    ]
+  },
+  {
+    surum: '1.13.17',
+    ad: 'Klip',
+    tarih: '2026-11-12',
+    notlar: [
+      'Klip: Kick adres gelmezse veya ffmpeg yoksa sohbet ve klip listesi nedeni yazar. Twitch klibi Helix ile alınır; izin yoksa Bağlantılar’dan yeniden bağlanır',
+      'Kapalı komut, yetkisiz komut ve bekleme süresi sohbette sessiz kalmaz',
+      'Sohbet bağlı değilken liste boş durmaz. !takipci, !songpause, !songresume ve !songvol eklendi',
+      'Studio içine gömülünce panel Studio renklerini alır'
+    ]
+  },
+  {
     surum: '1.13.16',
     ad: 'Sağlık',
     tarih: '2026-11-11',

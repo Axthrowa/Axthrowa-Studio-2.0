@@ -101,6 +101,15 @@ export function parcaKimligi(metin: string): string | null {
   return m ? m[1] : null;
 }
 
+/** Sohbetten gelen ses: 0–100. `65`, `65%` olur; aralık dışı ve boş metin olmaz. */
+export function sesYuzdesi(ham: string): number | null {
+  const t = String(ham || '').trim().replace(/%$/, '');
+  if (!t) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 0 || n > 100) return null;
+  return Math.round(n);
+}
+
 /** Spotify oynatıcı hata kodlarını Türkçeye çevirir. */
 export function oynaticiHatasi(durum: number): string {
   if (durum === 401) return 'Spotify oturumu geçersiz — panelden yeniden bağlan.';

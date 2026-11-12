@@ -12,7 +12,7 @@
  * hızlanır, yana sapar, döner ve yere değince tek küçük sekmeyle oturur.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -222,7 +222,7 @@ export function TheCupWidget({ embedded = false, previewMode = false }: TheCupWi
         100% { transform: translate3d(0, 0, 0) rotate(var(--aci)) }
       }`}</style>
       <div className="relative flex flex-col items-center">
-        <div {...kokOzellik(s)}
+        <div key={hareketAnahtari(s)} {...kokOzellik(s)}
           className="relative overflow-hidden"
           style={{
             width: genislik,

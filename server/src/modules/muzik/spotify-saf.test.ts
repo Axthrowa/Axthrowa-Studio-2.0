@@ -11,6 +11,7 @@ import {
   koduAyikla,
   oynaticiHatasi,
   parcaKimligi,
+  sesYuzdesi,
   pkceUret,
   yetkiAdresi
 } from './spotify-saf.js';
@@ -32,6 +33,14 @@ describe('PKCE ve yetki adresi', () => {
     const kok = 'http://127.0.0.1:3001';
     expect(donusAdresiSec(kok, `${kok}/callback`)).toBe(`${kok}/callback`);
     expect(donusAdresiSec(kok, 'https://evil.example/callback')).toBe(`${kok}/resonance/callback`);
+  });
+  it('şarkı sesi 0-100; yüzde işareti olur, taşan olmaz', () => {
+    expect(sesYuzdesi('65')).toBe(65);
+    expect(sesYuzdesi('65%')).toBe(65);
+    expect(sesYuzdesi('0')).toBe(0);
+    expect(sesYuzdesi('100')).toBe(100);
+    expect(sesYuzdesi('101')).toBeNull();
+    expect(sesYuzdesi('')).toBeNull();
   });
   it('client id biçimi', () => {
     expect(clientIdGecerliMi('0123456789abcdef0123456789abcdef')).toBe(true);

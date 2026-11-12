@@ -953,6 +953,7 @@ export class SongRequestEngine {
     }
 
     if (force) {
+      this.atlaKarti(current, true);
       if (this.spotifyOtomatikMi()) void this.spotifyAtla();
       db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(current.id);
       this.currentSong = null;
@@ -972,7 +973,9 @@ export class SongRequestEngine {
 
     if (userTag) {
       this.skipVotes.add(userTag.toLowerCase());
-      if (this.skipVotes.size >= this.requiredVotes) {
+      const yeter = this.skipVotes.size >= this.requiredVotes;
+      this.atlaKarti(current, yeter);
+      if (yeter) {
         if (this.spotifyOtomatikMi()) void this.spotifyAtla();
         db.prepare('UPDATE song_queue SET is_played = 1 WHERE id = ?').run(current.id);
         this.currentSong = null;
@@ -997,6 +1000,20 @@ export class SongRequestEngine {
     }
 
     return { skipped: false, message: 'Oylama kaydedilemedi.' };
+  }
+
+  /** OBS !atla kartı: oy birikir, eşik dolunca “atlandı” yazılır. */
+  private atlaKarti(current: SongItem, skipped: boolean): void {
+    eventBus.emit('widget_update', {
+      type: 'atla',
+      data: {
+        title: current.title,
+        by: current.requestedBy,
+        votes: this.skipVotes.size,
+        required: this.requiredVotes,
+        skipped
+      }
+    });
   }
 
   getQueueList(): SongItem[] {

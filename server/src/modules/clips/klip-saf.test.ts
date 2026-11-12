@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  */
 import { describe, it, expect } from 'vitest';
-import { ffmpegArgumanlari, hataSatiriTemizle, klipAdiGecerliMi, klipDosyaAdi, klipSuresi, varyantSec } from './klip-saf.js';
+import { ffmpegArgumanlari, hataSatiriTemizle, kickCanliMi, kickPlaybackAdresi, klipAdiGecerliMi, klipDosyaAdi, klipSuresi, varyantSec } from './klip-saf.js';
 
 describe('hataSatiriTemizle', () => {
   it('akış adresini (belirteçli) ve disk yolunu sohbete sızdırmaz', () => {
@@ -15,6 +15,16 @@ describe('hataSatiriTemizle', () => {
     expect(r).toContain('403 Forbidden');
     expect(hataSatiriTemizle('x'.repeat(500))).toHaveLength(120);
     expect(hataSatiriTemizle(undefined as any)).toBe('');
+  });
+});
+
+describe('kickPlaybackAdresi', () => {
+  it('kökte ya da livestream içinde http adresini bulur', () => {
+    expect(kickPlaybackAdresi({ playback_url: 'https://cdn.example/a.m3u8' })).toBe('https://cdn.example/a.m3u8');
+    expect(kickPlaybackAdresi({ livestream: { is_live: true, playback_url: 'https://cdn.example/b.m3u8' } })).toBe('https://cdn.example/b.m3u8');
+    expect(kickPlaybackAdresi({ livestream: { is_live: true } })).toBeNull();
+    expect(kickCanliMi({ livestream: { is_live: true } })).toBe(true);
+    expect(kickCanliMi({ livestream: null })).toBe(false);
   });
 });
 

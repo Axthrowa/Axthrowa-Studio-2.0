@@ -10,7 +10,7 @@
  */
 import { kokOzellik } from '../lib/kabuklar.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
-import { CIKIS_ORANI, animStili, efektEkle, ortakHareket, type AnimAsamasi } from '../lib/animations.js';
+import { CIKIS_ORANI, animStili, efektEkle, hareketAnahtari, ortakHareket, type AnimAsamasi } from '../lib/animations.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { kutla } from '../lib/kutlama.js';
@@ -321,7 +321,7 @@ export function WheelWidget(_props?: { embedded?: boolean; previewMode?: boolean
       : efektEkle(animStili(faz === 'exiting' ? cikisAdi : girisAdi, gizli ? 'hidden' : faz, girisMs), s, faz, girisMs);
 
   return (
-    <div {...kokOzellik(s)} data-katman-bos={gizli ? '' : undefined} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16, ...kutuTasarimi(s), ...hareketStili, visibility: gizli ? 'hidden' : 'visible' }}>
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)} data-katman-bos={gizli ? '' : undefined} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 16, ...kutuTasarimi(s), ...hareketStili, visibility: gizli ? 'hidden' : 'visible' }}>
       <div style={{ position: 'relative', width: boyut, height: boyut }}>
         {/* İbre: saat 12 yönünde, çarkın üstünde */}
         <div

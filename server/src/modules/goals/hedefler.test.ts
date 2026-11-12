@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { takipciSayisiniYaz, hedefArtisi, hedefleriIlerlet } from './hedefler.js';
+import { takipciSayisiniYaz, hedefArtisi, hedefleriIlerlet, sonrakiBasamak, hedefToplamlari } from './hedefler.js';
 
 describe('hedef ilerlemesi (sunucuda kalıcı)', () => {
   it('gerçek olay ilgili hedefi artırır; test ve yeniden oynatma saymaz; panelde değiştirilen tür geçerli', () => {
@@ -32,5 +32,29 @@ describe('hedef ilerlemesi (sunucuda kalıcı)', () => {
     expect(yazilan).toEqual([]);
     hedefleriIlerlet('follow', {}, (id) => ayarlar[id] || {}, yaz);
     expect(yazilan).toEqual([['follower-goal', 11]]);
+  });
+
+  it('dolunca sonraki basamağa geçer: 100 → 250, aşarsa bir sonrakine', () => {
+    expect(sonrakiBasamak(40, 100)).toBeNull();
+    expect(sonrakiBasamak(100, 100)).toBe(250);
+    expect(sonrakiBasamak(300, 100)).toBe(500);
+    const ayarlar: Record<string, Record<string, unknown>> = { 'donation-goal': { current: 90, target: 100, type: 'tip' } };
+    const yazilan: Record<string, unknown>[] = [];
+    hedefleriIlerlet('tip', { amount: 20 }, (id) => ayarlar[id] || {}, (_id, g) => yazilan.push(g));
+    expect(yazilan).toEqual([{ current: 110, target: 250 }]);
+  });
+
+  it('Kick takipçisi ve kayıtlı olaylar hedef toplamını yazar, test olayını saymaz', () => {
+    const toplam = hedefToplamlari(
+      [
+        { event_type: 'sub', amount: null, metadata: null },
+        { event_type: 'gift_sub', amount: null, metadata: JSON.stringify({ count: 3 }) },
+        { event_type: 'tip', amount: 40, metadata: null },
+        { event_type: 'tip', amount: 10, metadata: JSON.stringify({ isTest: true }) },
+        { event_type: 'kicks', amount: 25, metadata: null }
+      ],
+      480
+    );
+    expect(toplam).toEqual({ follower: 480, sub: 4, tip: 40, kicks: 25 });
   });
 });

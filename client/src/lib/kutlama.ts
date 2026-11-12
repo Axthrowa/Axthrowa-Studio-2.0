@@ -22,6 +22,14 @@ export type Atis = { gecikmeMs: number; sekil?: 'kalp'; secenek: confetti.Option
 
 const SABIT_TURLER = KUTLAMA_SECENEKLERI.map((s) => s.value).filter((v) => v !== 'rastgele');
 const ORTA = { x: 0.5, y: 0.5 };
+const BUYUK_BAGIS = 100;
+
+/** Takip küçük konfeti, 100 ve üstü bağış/Kicks havai fişek. Diğer olaylar genel ayarı kullanır. */
+export function olayKutlamasi(olay: string, tutar: number, genel = 'konfeti'): { tur: string; guc: number } {
+  if (olay === 'follow') return { tur: 'konfeti', guc: 0.55 };
+  if ((olay === 'tip' || olay === 'kicks') && tutar >= BUYUK_BAGIS) return { tur: 'havaiFisek', guc: 1 };
+  return { tur: genel || 'konfeti', guc: 1 };
+}
 // Havai fişeklerin patlama noktaları: ortanın çevresinde, her çalışta aynı (yayında öngörülebilir)
 const FISEK_NOKTALARI = [ORTA, { x: 0.25, y: 0.35 }, { x: 0.75, y: 0.3 }, { x: 0.4, y: 0.6 }, { x: 0.65, y: 0.55 }, ORTA];
 

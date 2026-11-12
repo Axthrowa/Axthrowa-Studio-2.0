@@ -41,6 +41,10 @@ export const WIDGET_IPUCLARI: Record<string, string[]> = {
   'follower-goal': ['Takipçi hedefini çubukla gösterir; her yeni takip çubuğu doldurur.', 'Hedef ve başlık ayarlardan değiştirilir.'],
   'subscriber-goal': ['Abone hedefini gösterir; abone ve hediye abonelikler sayılır.', 'Hedef ve başlık ayarlardan değiştirilir.'],
   'kicks-goal': ['KICKs hedefini gösterir; gelen KICKs miktarı çubuğu doldurur.', 'Hedef ve başlık ayarlardan değiştirilir.'],
+  atla: [
+    'İzleyici !atla yazınca oy çubuğu görünür; eşik dolunca veya mod atlayınca kart “atlandı” der.',
+    'OBS tarayıcı kaynağı: /widgets/atla. Görünme süresi ayardan değişir.'
+  ],
   'emote-combo': [
     'Aynı emote art arda gelince ekranda belirir, geldikçe büyür; gelmeyi kesince patlayıp etrafa saçılır.',
     'Kaç kez art arda gelince belireceği ve patlama beklemesi ayarlanır.'

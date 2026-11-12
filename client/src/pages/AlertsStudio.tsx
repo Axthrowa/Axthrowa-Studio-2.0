@@ -91,7 +91,10 @@ export function AlertsStudio() {
     await fetch('/api/alerts/test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventType: OLAY_DISI.has(tab) ? 'follow' : tab })
+      body: JSON.stringify({
+        eventType: OLAY_DISI.has(tab) ? 'follow' : tab,
+        deger: tab === 'tip' || tab === 'kicks' ? 100 : undefined
+      })
     });
   };
 

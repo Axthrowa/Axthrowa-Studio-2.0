@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { YERLESIK_KOMUTLAR, komutlarMetni, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
+import { YERLESIK_KOMUTLAR, beklemeSuresi, komutlarMetni, sansSayi, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
 import { YERLESIK_ORNEKLER } from './yerlesik-ornekler.js';
 
 describe('yerleşik komut listesi', () => {
@@ -19,6 +19,11 @@ describe('yerleşik komut listesi', () => {
     expect(yerlesikAyarlariCoz('{"bakiye":{"yetki":"mod","bekleme":30},"yok":{"yetki":"mod"},"sr":{"yetki":"kral"}}')).toEqual({ puan: { yetki: 'mod', bekleme: 30 } });
     expect(yetkiYeterli('mod', { isMod: false })).toBe(false);
     expect(yetkiYeterli('yayinci', { isMod: true })).toBe(false);
+    expect(sansSayi(() => 0)).toBe(1);
+    expect(sansSayi(() => 0.999999)).toBe(9999);
+    expect(beklemeSuresi({ bekleme: 30 }, undefined)).toBe(30);
+    expect(beklemeSuresi({ bekleme: 30 }, { bekleme: 0 })).toBe(0);
+    expect(yerlesikAyarlariCoz('{"sans":{"bekleme":0}}').sans?.bekleme).toBe(0);
   });
 
   it('!komutlar sohbet sınırına sığar, kapalıları yazmaz; kategoriyle ayrıntı verir', () => {

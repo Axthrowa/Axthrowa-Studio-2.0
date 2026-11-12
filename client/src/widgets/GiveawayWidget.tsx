@@ -6,7 +6,7 @@
  * katılımcı adları kasa açar gibi sağdan sola kayar, yavaşlar ve kazanan `winnerShowSec` saniye gösterilip kaybolur.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { kutla } from '../lib/kutlama.js';
@@ -149,7 +149,7 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
   const bg = `${s.backgroundColor}${Math.round(s.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
 
   return (
-    <div {...kokOzellik(s)}
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)}
       data-katman-cekilis={kasa || winner ? '' : undefined}
       style={{ fontFamily: s.fontFamily, background: bg, borderRadius: s.borderRadius, padding: '18px 22px', color: s.fontColor, textAlign: 'center', overflow: 'hidden', ...kutuTasarimi(s), ...ortakHareket(s), borderTop: s.kabuk ? undefined : `4px solid ${s.accentColor}` }}
     >

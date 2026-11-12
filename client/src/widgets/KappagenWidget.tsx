@@ -8,7 +8,7 @@
  * ekrandaki emote sayısı sınırlıdır (OBS'i yormasın).
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { KAPPAGEN_DEFAULTS } from '../lib/widget-defaults.js';
@@ -174,7 +174,7 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
     <div {...kokOzellik(s)} data-katman-bos={ucanlar.length ? undefined : ''} style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
       <style>{KAPPAGEN_CSS}</style>
       {ucanlar.map((u) => (
-        <UcanEmote key={u.id} u={u} spin={Boolean(s.spin)} shadow={Boolean(s.shadow) && !(s as Record<string, any>).golgeKapali} hareket={ortakHareket(s).animation as string | undefined} />
+        <UcanEmote key={`${u.id}-${hareketAnahtari(s)}`} u={u} spin={Boolean(s.spin)} shadow={Boolean(s.shadow) && !(s as Record<string, any>).golgeKapali} hareket={ortakHareket(s).animation as string | undefined} />
       ))}
     </div>
   );

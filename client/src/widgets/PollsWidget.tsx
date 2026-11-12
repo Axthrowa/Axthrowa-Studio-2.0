@@ -7,7 +7,7 @@
  * olayı gelmezse "Anket bitti" kartı ekranda sonsuza dek kalıyordu.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animStili, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -103,23 +103,37 @@ export function PollsWidget({ previewMode: onizlemeProp = false }: { embedded?: 
     };
   }, [previewMode]);
 
-  if (!poll) return null;
+  const gizle = Number(s.hideAfterSec);
+  const sureDoldu = !previewMode && !!poll && (poll.bitti || poll.endsAt <= now) && gizle > 0 && now - poll.endsAt > gizle * 1000;
+  const [cikti, setCikti] = useState(false);
+  useEffect(() => {
+    if (!sureDoldu) {
+      setCikti(false);
+      return;
+    }
+    const ms = Math.max(80, Math.round((Number(s.animationDuration) || 600) * CIKIS_ORANI) + 40);
+    const t = setTimeout(() => setCikti(true), ms);
+    return () => clearTimeout(t);
+  }, [sureDoldu, s.animationDuration]);
+
+  if (!poll || (cikti && sureDoldu)) return null;
   const remaining = Math.max(0, Math.ceil((poll.endsAt - now) / 1000));
   const ended = poll.bitti || remaining <= 0;
-  // Bitişten `hideAfterSec` sn sonra kaybolur (0 = ekranda kalır)
-  const gizle = Number(s.hideAfterSec);
-  if (!previewMode && ended && gizle > 0 && now - poll.endsAt > gizle * 1000) return null;
+  // Bitişten `hideAfterSec` sn sonra çıkış animasyonu oynar, sonra kaybolur (0 = ekranda kalır)
   if (s.hideUntilEnd && !ended) return null;
   const total = Object.values(poll.votes || {}).reduce((a, b) => a + b, 0) || 1;
   const enCok = Math.max(...poll.options.map((_, i) => poll.votes?.[String(i + 1)] || 0));
   const bg = `${s.backgroundColor}${Math.round(s.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
 
   return (
-    <div {...kokOzellik(s)} style={{
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)} style={{
       fontFamily: s.fontFamily,
       background: bg,
       border: `1px solid ${s.borderColor}`,
-      ...kutuTasarimi(s), ...ortakHareket(s),
+      ...kutuTasarimi(s),
+      ...(sureDoldu
+        ? animStili(cikisKimligi(s.animation, s.exitAnimation), 'exiting', Math.max(0, Number(s.animationDuration) || 600))
+        : ortakHareket(s)),
       borderRadius: s.borderRadius,
       padding: 16,
       minWidth: 280

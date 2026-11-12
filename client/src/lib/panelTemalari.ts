@@ -46,7 +46,14 @@ function oku(): string {
 }
 
 let secili = oku();
+/** Studio'dan gelen tema (gömülüyken): kullanıcının bot seçimini ezmez, yalnız bu oturumda geçerli */
+let disTema: string | null = null;
 const dinleyiciler = new Set<() => void>();
+
+export function disTemaUygula(id: string | null): void {
+  disTema = id;
+  dinleyiciler.forEach((f) => f());
+}
 
 export function panelTemasiSec(id: string): void {
   secili = temaKimligi(id);
@@ -64,5 +71,5 @@ function abone(f: () => void): () => void {
 }
 
 export function usePanelTemasi(): string {
-  return useSyncExternalStore(abone, () => secili, () => VARSAYILAN_TEMA);
+  return useSyncExternalStore(abone, () => disTema ?? secili, () => VARSAYILAN_TEMA);
 }

@@ -9,8 +9,12 @@ import { seyrekUyar } from '../../core/logger.js';
 
 const durum: { deger: number | null; an: number; bekleyen: Promise<void> | null } = { deger: null, an: 0, bekleyen: null };
 
-export async function takipciSayisi(): Promise<number | null> {
-  if (Date.now() - durum.an < 60_000) return durum.deger;
+export async function takipciSayisi(taze = false): Promise<number | null> {
+  if (!taze && durum.an !== 0 && Date.now() - durum.an < 60_000) return durum.deger;
+  if (taze) {
+    durum.an = 0;
+    durum.bekleyen = null;
+  }
   durum.bekleyen ??= (async () => {
     try {
       const kanal = db.prepare("SELECT channel_name FROM channels WHERE platform = 'kick' AND is_active = 1").get() as
@@ -32,6 +36,6 @@ export async function takipciSayisi(): Promise<number | null> {
   })();
   // Eski değer varken beklenmez (yenileme arka planda): kick.com yavaşsa etiket isteği
   // dakikada bir 6 sn'ye kadar takılıyordu. Yalnız ilk istek sonucu bekler.
-  if (durum.an === 0) await durum.bekleyen;
+  if (taze || durum.an === 0) await durum.bekleyen;
   return durum.deger;
 }

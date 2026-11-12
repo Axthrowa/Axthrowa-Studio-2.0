@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas-confetti', () => ({ default: Object.assign(vi.fn(), { shapeFromText: vi.fn() }) }));
 
-import { KUTLAMA_SECENEKLERI, kutlamaPlani } from './kutlama';
+import { KUTLAMA_SECENEKLERI, kutlamaPlani, olayKutlamasi } from './kutlama';
 
 describe('kutlama planı', () => {
   it('konfeti tek atış, ekranın tam ortasından ve her yöne', () => {
@@ -34,5 +34,11 @@ describe('kutlama planı', () => {
     const tam = kutlamaPlani('konfeti', 1)[0].secenek.particleCount!;
     const yari = kutlamaPlani('konfeti', 0.5)[0].secenek.particleCount!;
     expect(yari).toBeLessThan(tam);
+  });
+
+  it('takip küçük konfeti, 100 ve üstü bağış havai fişek', () => {
+    expect(olayKutlamasi('follow', 0, 'havaiFisek')).toEqual({ tur: 'konfeti', guc: 0.55 });
+    expect(olayKutlamasi('tip', 100, 'konfeti')).toEqual({ tur: 'havaiFisek', guc: 1 });
+    expect(olayKutlamasi('tip', 50, 'yildiz')).toEqual({ tur: 'yildiz', guc: 1 });
   });
 });

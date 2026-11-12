@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   VIDEO_UST_MS,
   asamaSuresi,
+  donenSahneAnahtari,
   donguIlerle,
   guvenliMedya,
   hesapMetni,
@@ -32,6 +33,14 @@ describe('döngü', () => {
 
   it('liste küçülse de sınır dışına çıkmaz', () => {
     expect(donguIlerle({ i: 5, asama: 'exiting' }, 2, 0)).toEqual({ i: 0, asama: 'entering' });
+  });
+
+  it('giriş görünürle aynı kalır, hesap ve animasyon değişince yenilenir', () => {
+    const ayar = { animation: 'perdeDikey', animationDuration: 600 };
+    expect(donenSahneAnahtari(0, 'entering', ayar)).toBe(donenSahneAnahtari(0, 'visible', ayar));
+    expect(donenSahneAnahtari(0, 'visible', ayar)).not.toBe(donenSahneAnahtari(0, 'exiting', ayar));
+    expect(donenSahneAnahtari(0, 'entering', ayar)).not.toBe(donenSahneAnahtari(1, 'entering', ayar));
+    expect(donenSahneAnahtari(0, 'visible', ayar)).not.toBe(donenSahneAnahtari(0, 'visible', { ...ayar, animation: 'bounce' }));
   });
 
   it('her aşamanın süresi doğru', () => {

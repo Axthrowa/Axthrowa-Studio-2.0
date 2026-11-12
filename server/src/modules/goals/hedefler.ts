@@ -8,10 +8,97 @@
  * ayarı sunucuda artırılıp kaydedilir; ayar kanalı yeni değeri bütün OBS sayfalarına yayar.
  */
 import { eventBus, hediyeAdedi } from '../../core/event-bus.js';
+import { db } from '../../db/index.js';
 
 export type HedefOlayi = 'tip' | 'follow' | 'sub' | 'kicks';
 
-/** Hedef widget'ları ve varsayılan türleri (panelde tür değiştirilebilir: `type` ayarı) */
+/** 100, 250, 500… dolunca bir sonraki basamak. Hedef yoksa veya dolmadıysa null. */
+export const HEDEF_BASAMAKLARI = [100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
+
+export function sonrakiBasamak(mevcut: number, hedef: number): number | null {
+  if (!(hedef > 0) || mevcut < hedef) return null;
+  const bulunan = HEDEF_BASAMAKLARI.find((b) => b > hedef && b >= mevcut);
+  if (bulunan) return bulunan;
+  let n = HEDEF_BASAMAKLARI[HEDEF_BASAMAKLARI.length - 1];
+  while (n <= mevcut) n *= 2;
+  return n;
+}
+
+export interface ToplamSatiri {
+  event_type: string;
+  amount: number | null;
+  metadata: string | null;
+}
+
+/** Kayıtlı olayların toplamı. Takipçi sayısı Kick’ten gelirse o yazılır; yoksa null (eski değer korunur). */
+export function hedefToplamlari(satirlar: ToplamSatiri[], kickTakipci: number | null): { follower: number | null; sub: number; tip: number; kicks: number } {
+  let sub = 0;
+  let tip = 0;
+  let kicks = 0;
+  for (const s of satirlar) {
+    let meta: { isTest?: boolean; count?: unknown; recipient?: unknown; isGift?: boolean } | null = null;
+    try {
+      meta = s.metadata ? JSON.parse(s.metadata) : null;
+    } catch {
+      meta = null;
+    }
+    if (meta?.isTest) continue;
+    const t = s.event_type;
+    if (t === 'sub' || t === 'gift_sub' || t === 'subscription') sub += hediyeAdedi(meta);
+    else if (t === 'tip' || t === 'donation') tip += Math.max(0, Number(s.amount) || 0);
+    else if (t === 'kicks') kicks += Math.max(0, Number(s.amount) || 0);
+  }
+  return { follower: kickTakipci, sub, tip: Math.round(tip * 100) / 100, kicks };
+}
+
+const TOPLAM_TUR: Record<string, 'follower' | 'sub' | 'tip' | 'kicks'> = {
+  follower: 'follower',
+  sub: 'sub',
+  tip: 'tip',
+  donation: 'tip',
+  kicks: 'kicks'
+};
+
+/** Açılışta ve etiket isteğinde hedeflerin mevcut değerini Kick + kayıtlı olaylarla yazar. */
+export function hedefleriToplamdanYaz(
+  toplam: { follower: number | null; sub: number; tip: number; kicks: number },
+  oku: (id: string) => Record<string, unknown>,
+  yaz: (id: string, govde: Record<string, unknown>) => unknown
+): string[] {
+  const doldu: string[] = [];
+  for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
+    const ayar = oku(id);
+    const alan = TOPLAM_TUR[String(ayar.type || varsayilanTur)];
+    if (!alan) continue;
+    if (alan === 'follower' && ayar.gercekSayi === false) continue;
+    const sayi = toplam[alan];
+    if (sayi == null) continue;
+    const hedef = Number(ayar.target) || 0;
+    const sonraki = sonrakiBasamak(sayi, hedef);
+    if (Number(ayar.current) === sayi && (sonraki == null || sonraki === hedef)) continue;
+    yaz(id, sonraki != null && sonraki !== hedef ? { current: sayi, target: sonraki } : { current: sayi });
+    if (sonraki != null && sonraki !== hedef) doldu.push(id);
+  }
+  return doldu;
+}
+
+async function otomatikSatirlar(): Promise<ToplamSatiri[]> {
+  return db.prepare(
+    `SELECT event_type, amount, metadata FROM stream_events
+     WHERE event_type IN ('sub','gift_sub','subscription','tip','donation','kicks')`
+  ).all() as unknown as ToplamSatiri[];
+}
+
+/** Widget açılışı ve bot başlangıcı: Kick takipçisi ve kayıtlı bağış/abone/Kicks toplamı. */
+export async function hedefleriOtomatikYaz(): Promise<void> {
+  const { widgetAyariOku, widgetAyariYaz } = await import('../../api/rotalar/widgetlar.js');
+  const { takipciSayisi } = await import('../widgets/takipci-sayisi.js');
+  const kick = await takipciSayisi(true);
+  const toplam = hedefToplamlari(await otomatikSatirlar(), kick);
+  for (const widgetId of hedefleriToplamdanYaz(toplam, widgetAyariOku, widgetAyariYaz)) {
+    eventBus.emit('hedef_doldu', { widgetId });
+  }
+}
 export const HEDEF_WIDGETLARI: Record<string, string> = {
   'donation-goal': 'tip',
   'follower-goal': 'follower',
@@ -27,12 +114,18 @@ export function takipciSayisiniYaz(
   sayi: number,
   oku: (id: string) => Record<string, unknown>,
   yaz: (id: string, govde: Record<string, unknown>) => unknown
-): void {
+): string[] {
+  const doldu: string[] = [];
   for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
     const ayar = oku(id);
     if (String(ayar.type || varsayilanTur) !== 'follower' || ayar.gercekSayi === false) continue;
-    if (Number(ayar.current) !== sayi) yaz(id, { current: sayi });
+    if (Number(ayar.current) !== sayi) {
+      const sonraki = sonrakiBasamak(sayi, Number(ayar.target) || 0);
+      yaz(id, sonraki != null ? { current: sayi, target: sonraki } : { current: sayi });
+      if (sonraki != null) doldu.push(id);
+    }
   }
+  return doldu;
 }
 
 /** Olay bu türdeki hedefe kaç ekler (0 = eklemez) */
@@ -51,7 +144,8 @@ export function hedefleriIlerlet(
   p: unknown,
   oku: (id: string) => Record<string, unknown>,
   yaz: (id: string, govde: Record<string, unknown>) => unknown
-): void {
+): string[] {
+  const doldu: string[] = [];
   for (const [id, varsayilanTur] of Object.entries(HEDEF_WIDGETLARI)) {
     const ayar = oku(id);
     const tur = String(ayar.type || varsayilanTur);
@@ -60,15 +154,22 @@ export function hedefleriIlerlet(
     const artis = hedefArtisi(tur, olay, p);
     if (!artis) continue;
     const yeni = Math.round(((Number(ayar.current) || 0) + artis) * 100) / 100;
-    yaz(id, { current: yeni });
+    const sonraki = sonrakiBasamak(yeni, Number(ayar.target) || 0);
+    yaz(id, sonraki != null ? { current: yeni, target: sonraki } : { current: yeni });
+    if (sonraki != null) doldu.push(id);
   }
+  return doldu;
 }
 
 /** Olayı hedeflere işler. Olay yolundan geçmeyen bağışlar (BynoGame, web kancası) da bunu çağırır. */
 export function hedefOlayiIsle(olay: HedefOlayi, p: unknown): void {
   // Döngüsel içe aktarma olmasın: rotalar modülü olay anında yüklenir
   void import('../../api/rotalar/widgetlar.js')
-    .then(({ widgetAyariOku, widgetAyariYaz }) => hedefleriIlerlet(olay, p, widgetAyariOku, widgetAyariYaz))
+    .then(({ widgetAyariOku, widgetAyariYaz }) => {
+      for (const widgetId of hedefleriIlerlet(olay, p, widgetAyariOku, widgetAyariYaz)) {
+        eventBus.emit('hedef_doldu', { widgetId });
+      }
+    })
     .catch((e) => console.warn('[Hedef] ilerleme kaydedilemedi:', (e as Error)?.message || e));
 }
 
@@ -78,9 +179,14 @@ export function hedefleriBagla(): void {
   eventBus.on('follow', isle('follow'));
   eventBus.on('sub', isle('sub'));
   eventBus.on('kicks', isle('kicks'));
+  void hedefleriOtomatikYaz();
   eventBus.on('takipci_sayisi', (sayi: number) => {
     void import('../../api/rotalar/widgetlar.js')
-      .then(({ widgetAyariOku, widgetAyariYaz }) => takipciSayisiniYaz(sayi, widgetAyariOku, widgetAyariYaz))
+      .then(({ widgetAyariOku, widgetAyariYaz }) => {
+        for (const widgetId of takipciSayisiniYaz(sayi, widgetAyariOku, widgetAyariYaz)) {
+          eventBus.emit('hedef_doldu', { widgetId });
+        }
+      })
       .catch((e) => console.warn('[Hedef] takipçi sayısı yazılamadı:', (e as Error)?.message || e));
   });
 }

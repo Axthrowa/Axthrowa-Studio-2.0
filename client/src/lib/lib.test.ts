@@ -65,9 +65,11 @@ describe('animasyon ön ayarları', () => {
     expect(animKimligi('spin')).toBe('rotate');
   });
 
-  it('görünür aşama tam opaklık verir', () => {
+  it('görünür aşama opaklığı sabitlemez ki anahtar kare oynasın', () => {
     const s = animStili('fadeUp', 'visible', 400);
-    expect(s.opacity).toBe(1);
+    expect(s.opacity).toBeUndefined();
+    expect(s.transform).toBeUndefined();
+    expect(String(s.animation)).toContain('axt-on-fadeUp');
   });
 
   it('gizli aşama geçişsizdir — ilk karede animasyon oynamasın', () => {

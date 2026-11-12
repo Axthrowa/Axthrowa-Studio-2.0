@@ -20,6 +20,13 @@ export interface YerlesikKomut {
   modEk?: boolean;
   aciklama: string;
   kullanim?: string;
+  /** Panel boşsa kullanılan bekleme (sn). 0 = bekleme yok. */
+  bekleme?: number;
+}
+
+/** 1 ile 9999 arası. 0 → 1, neredeyse 1 → 9999. */
+export function sansSayi(rastgele: () => number = Math.random): number {
+  return 1 + Math.floor(Math.min(0.999999, Math.max(0, rastgele())) * 9999);
 }
 
 const k = (
@@ -82,10 +89,14 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
   k('sr', ['songrequest', 'sarkiiste'], 'Şarkı', 'herkes', 'Şarkı iste (ad, YouTube/Spotify linki)', '!sr Teoman Paramparça'),
   k('klip', ['klipiste'], 'Şarkı', 'herkes', 'Şarkı klibini OBS\'te video olarak aç', '!klip Teoman Paramparça'),
   k('sarki', ['song', 'currentsong'], 'Şarkı', 'herkes', 'Şu an çalan şarkı'),
+  k('songpause', ['sarkidur'], 'Şarkı', 'mod', 'Çalan şarkıyı duraklat'),
+  k('songresume', ['sarkidevam'], 'Şarkı', 'mod', 'Duraklatılmış şarkıyı sürdür'),
+  k('songvol', ['sarkises'], 'Şarkı', 'mod', 'Şarkı sesini ayarla', '!songvol 65'),
   k('sira', ['queue'], 'Şarkı', 'herkes', 'Sıradaki şarkılar'),
   k('when', ['sarkisiram'], 'Şarkı', 'herkes', 'İsteğinin sırası'),
   k('wrongsong', ['yanlissarki'], 'Şarkı', 'herkes', 'Son isteğini geri al'),
-  k('atla', ['skip', 'voteskip'], 'Şarkı', 'herkes', 'Atlama oyu · mod hemen atlar', undefined, true),
+  k('atla', ['skip', 'voteskip'], 'Şarkı', 'herkes', 'Atlama oyu · mod hemen atlar · OBS kartı', undefined, true),
+  { ...k('sans', ['şans', 'luck', 'chance'], 'Oyunlar', 'herkes', '1-9999 arası şans sayısı', '!şans'), bekleme: 30 },
   k('removesong', ['sarkisil'], 'Şarkı', 'mod', 'Sıradan şarkı sil', '!removesong <sıra no | @kullanıcı>'),
   k('srclear', ['sirabosalt'], 'Şarkı', 'mod', 'Şarkı sırasını temizle (çalan sürer)'),
 
@@ -135,6 +146,7 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
   k('title', ['baslik'], 'Yayın', 'herkes', 'Başlığı gösterir · mod değiştirir', '!title <yeni başlık>', true),
   k('game', ['category', 'kategori'], 'Yayın', 'herkes', 'Kategoriyi gösterir · mod değiştirir', '!game <kategori>', true),
   k('followage', ['takipsuresi'], 'Yayın', 'herkes', 'Takip süresi', '!followage [@kullanıcı]'),
+  k('followers', ['takipci', 'takipciler'], 'Yayın', 'herkes', 'Kanalın takipçi sayısı', '!followers'),
   k('accountage', ['hesapyasi'], 'Yayın', 'herkes', 'Hesap yaşı', '!accountage [@kullanıcı]'),
   k('so', ['promo'], 'Yayın', 'mod', 'Kanal tavsiyesi (shoutout)', '!so @kanal'),
   k('clip', [], 'Yayın', 'herkes', 'Yayından klip al'),
@@ -196,14 +208,24 @@ export function yerlesikAyarlariCoz(ham: unknown): Record<string, YerlesikAyar> 
   for (const [ad, a] of Object.entries(v as Record<string, any>)) {
     if (!yerlesikBul(ad) || !a || typeof a !== 'object') continue;
     const yetki = ['herkes', 'mod', 'yayinci'].includes(a.yetki) ? (a.yetki as KomutYetkisi) : undefined;
-    const bekleme = Number.isFinite(Number(a.bekleme)) ? Math.max(0, Math.min(3600, Math.round(Number(a.bekleme)))) : undefined;
+    const bekleme = a.bekleme == null || a.bekleme === '' || !Number.isFinite(Number(a.bekleme))
+      ? undefined
+      : Math.max(0, Math.min(3600, Math.round(Number(a.bekleme))));
     const yanit = String(a.yanit ?? '').trim().slice(0, 400);
-    if (yetki || bekleme || yanit) out[yerlesikBul(ad)!.ad] = { ...(yetki ? { yetki } : {}), ...(bekleme ? { bekleme } : {}), ...(yanit ? { yanit } : {}) };
+    if (yetki || bekleme !== undefined || yanit) {
+      out[yerlesikBul(ad)!.ad] = { ...(yetki ? { yetki } : {}), ...(bekleme !== undefined ? { bekleme } : {}), ...(yanit ? { yanit } : {}) };
+    }
   }
   return out;
 }
 
 /** Kullanıcı bu yetkiyle komutu çalıştırabilir mi? (Panelden yükseltilen yetki; komutun kendi kontrolü ayrıca geçerli) */
+/** Panel değeri (0 dahil) varsa o, yoksa komutun varsayılanı. */
+export function beklemeSuresi(kayit: { bekleme?: number }, ayar?: YerlesikAyar): number {
+  if (ayar && typeof ayar.bekleme === 'number') return ayar.bekleme;
+  return kayit.bekleme || 0;
+}
+
 export function yetkiYeterli(yetki: KomutYetkisi | undefined, u: { isMod?: boolean; isBroadcaster?: boolean }): boolean {
   if (!yetki || yetki === 'herkes') return true;
   if (yetki === 'yayinci') return Boolean(u.isBroadcaster);

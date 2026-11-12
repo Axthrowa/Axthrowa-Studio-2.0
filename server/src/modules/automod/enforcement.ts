@@ -18,6 +18,12 @@ export type IhlalEylemi = 'warn' | 'timeout' | 'timeout_warn' | 'delete' | 'dele
 
 export type KuralAdi = 'caps' | 'emotes' | 'links' | 'symbols' | 'blacklist' | 'repeat' | 'zalgo' | 'length';
 
+/** Denetim günlüğüne sığsın diye silinen mesajın tek satır özeti. */
+export function metinOzeti(metin: string): string {
+  const t = String(metin || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+  return t ? ` — “${t}”` : '';
+}
+
 /** BotRix'teki on bir kademe (BOTRIX_UI_INVENTORY §6.1). */
 export const TIMEOUT_KADEMELERI = [30, 60, 120, 300, 900, 1800, 3600, 7200, 18000, 43200, 86400] as const;
 

@@ -12,6 +12,30 @@
 
 export const KLIP_EN_AZ = 10;
 
+/**
+ * Kick kanal JSON'undan HLS adresi. Kökteki `playback_url` kaybolunca
+ * yayın açık olsa bile `!clip` "yayın kapalı" diyordu.
+ */
+export function kickPlaybackAdresi(data: unknown): string | null {
+  const d = data as {
+    playback_url?: unknown;
+    livestream?: { playback_url?: unknown; source?: unknown; is_live?: unknown } | null;
+  } | null;
+  const ls = d?.livestream;
+  const adaylar = [d?.playback_url, ls?.playback_url, ls?.source];
+  for (const a of adaylar) {
+    const s = String(a ?? '').trim();
+    if (/^https?:\/\//i.test(s)) return s;
+  }
+  return null;
+}
+
+/** Canlı yayın nesnesi var mı (adres ayrı bakılır). */
+export function kickCanliMi(data: unknown): boolean {
+  const ls = (data as { livestream?: { is_live?: unknown } | null } | null)?.livestream;
+  return Boolean(ls) && ls?.is_live !== false;
+}
+
 /** `!clip 45` → 45 (en az 10, en çok `enCok`); sayı yoksa varsayılan. */
 export function klipSuresi(arg: string | undefined, varsayilan: number, enCok: number): number {
   const ust = Math.max(KLIP_EN_AZ, Math.min(600, Math.floor(Number(enCok) || 60)));

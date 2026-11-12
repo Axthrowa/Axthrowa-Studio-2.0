@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animKimligi, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
@@ -49,6 +49,7 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
   const s = useWidgetSettings('activity-feed', ACTIVITY_DEFAULTS);
   const { lastMessage } = useWebSocket('all');
   const [items, setItems] = useState<FeedItem[]>(() => (onizlemeKipi(previewMode) ? ORNEK : []));
+  const [giden, setGiden] = useState<FeedItem[]>([]);
 
   const islenen = useRef<unknown>(null);
   useEffect(() => {
@@ -92,14 +93,31 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
     }
   }, [lastMessage, s]);
 
+  const girisId = animKimligi(String(s.animation || 'fade'));
+  const cikisId = cikisKimligi(s.animation, s.exitAnimation);
+  const girisMs = Math.max(0, Number(s.animationDuration) || 400);
+  const cikisMs = Math.max(40, Math.round(girisMs * CIKIS_ORANI));
+  const once = useRef(items);
+  useEffect(() => {
+    const eski = once.current;
+    once.current = items;
+    if (cikisId === 'none') return;
+    const kalan = new Set(items.map((i) => i.id));
+    const cik = eski.filter((i) => !kalan.has(i.id));
+    if (!cik.length) return;
+    setGiden((g) => [...g, ...cik]);
+    setTimeout(() => setGiden((g) => g.filter((x) => !cik.some((c) => c.id === x.id))), cikisMs + 40);
+  }, [items, cikisId, cikisMs]);
+  const ciz = [...items, ...giden.filter((i) => !items.some((x) => x.id === i.id))];
+
   const bg = s.backgroundColor.length === 7
     ? `${s.backgroundColor}${Math.round(s.backgroundOpacity * 255).toString(16).padStart(2, '0')}`
     : s.backgroundColor;
 
-  if (s.hideEmpty && items.length === 0) return null;
+  if (s.hideEmpty && ciz.length === 0) return null;
 
   return (
-    <div {...kokOzellik(s)} style={{
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)} style={{
       fontFamily: s.fontFamily,
       background: bg,
       borderRadius: s.borderRadius,
@@ -112,11 +130,11 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
       gap: s.gap,
       minHeight: 80
     }}>
-      {items.length === 0 && (
+      {ciz.length === 0 && (
         <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: 12 }}>Henüz aktivite yok</div>
       )}
-      {items.map(item => (
-        <div key={item.id} className={`axt-anim-${s.animation}`} style={{
+      {ciz.map(item => (
+        <div key={`${item.id}-${girisId}-${girisMs}`} className={giden.some((g) => g.id === item.id) && !items.some((x) => x.id === item.id) ? `axt-cikis-${cikisId}` : `axt-anim-${girisId}`} style={{
           display: 'flex',
           alignItems: 'center',
           gap: 10,
@@ -125,7 +143,7 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
           color: s.fontColor,
           letterSpacing: s.letterSpacing,
           WebkitTextStroke: s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined,
-          animationDuration: `${s.animationDuration}ms`
+          animationDuration: `${giden.some((g) => g.id === item.id) && !items.some((x) => x.id === item.id) ? cikisMs : girisMs}ms`
         }}>
           {s.showIcons && <span>{item.icon}</span>}
           <span style={{ flex: 1 }}>{item.text}</span>

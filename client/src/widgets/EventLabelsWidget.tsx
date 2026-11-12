@@ -10,7 +10,7 @@
  * son olaylar sunucudan (/api/event-labels) okunur, canlı olaylar üstüne yazar.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { animKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -55,6 +55,7 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
         .then((d) => d && typeof d === 'object' && setV((o) => ({ ...o, ...d })))
         .catch(() => {});
     void yukle();
+    const tekrar = window.setInterval(() => void yukle(), 60_000);
     const ws = new KaliciSoket(wsAdresi());
     ws.onyenidenbaglandi = () => void yukle();
     ws.onmessage = (e) => {
@@ -86,7 +87,10 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
         return o;
       });
     };
-    return () => ws.close();
+    return () => {
+      window.clearInterval(tekrar);
+      ws.close();
+    };
   }, [onizleme]);
 
   const bosDeger = String(s.emptyValue ?? '—');
@@ -126,7 +130,8 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
       justifyContent: s.align === 'right' ? 'flex-end' : s.align === 'center' ? 'center' : 'flex-start'
     }}>
       <div
-        className={kayan ? 'axt-marquee' : `axt-anim-${s.animation}`}
+        key={hareketAnahtari(s)}
+        className={kayan ? 'axt-marquee' : `axt-anim-${animKimligi(String(s.animation || 'fade'))}`}
         style={{
           display: 'flex',
           flexDirection: sutun ? 'column' : 'row',
@@ -140,7 +145,7 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
           textShadow: golge,
           WebkitTextStroke: kontur,
           paintOrder: 'stroke fill',
-          animationDuration: kayan ? `${s.marqueeSpeed}s` : undefined
+          animationDuration: kayan ? `${s.marqueeSpeed}s` : `${Math.max(0, Number(s.animationDuration) || 600)}ms`
         }}
       >
         {icerik}

@@ -8,6 +8,9 @@ let sunucu: http.Server;
 let kok = '';
 const gelen: any[] = [];
 
+let npKaynak = 'spotify';
+let ytmd = false;
+
 beforeAll(async () => {
   sunucu = http.createServer((req, res) => {
     let govde = '';
@@ -15,7 +18,11 @@ beforeAll(async () => {
     req.on('end', () => {
       res.setHeader('Content-Type', 'application/json');
       if (req.url === '/api/player/status') {
-        return res.end(JSON.stringify({ spotify: { connected: true }, nowPlaying: { title: 'Paramparça', artist: 'Teoman', isPlaying: true, progress: 1000, duration: 200000, source: 'spotify', updatedAt: 5 } }));
+        return res.end(JSON.stringify({
+          spotify: { connected: !ytmd },
+          ytmd: { connected: ytmd },
+          nowPlaying: { title: 'Paramparça', artist: 'Teoman', isPlaying: true, progress: 1000, duration: 200000, source: npKaynak, updatedAt: 5 }
+        }));
       }
       if (req.url === '/api/player/request') {
         gelen.push(JSON.parse(govde));
@@ -48,5 +55,16 @@ describe('harici müzik host (AxthrowA Studio)', () => {
     const h = new MuzikHost(depo, () => {}, () => 'http://kotu.example:8843');
     await (h as any).hariciYokla();
     expect(h.spotifyKullanilabilir()).toBe(false);
+  });
+
+  it('YouTube Music kaydını Spotify yuvasına yazmaz', async () => {
+    npKaynak = 'youtube-music';
+    ytmd = true;
+    const h = new MuzikHost(depo, () => {}, () => kok);
+    await (h as any).hariciYokla();
+    expect((h as any).ytmdCalan?.title).toBe('Paramparça');
+    expect((h as any).calan).toBeNull();
+    npKaynak = 'spotify';
+    ytmd = false;
   });
 });

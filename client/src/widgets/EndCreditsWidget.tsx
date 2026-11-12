@@ -9,7 +9,7 @@
  * süresi ayardan gelir.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -98,7 +98,7 @@ export function EndCreditsWidget({ embedded = false, previewMode = false }: EndC
   const boy = Number(s.fontSize) || 16;
 
   return (
-    <div {...kokOzellik(s)}
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)}
       className={
         embedded
           ? 'w-full h-full overflow-hidden relative font-sans select-none flex justify-center text-center'

@@ -8,7 +8,7 @@
  * birbirinin sayacını bozuyordu.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animStili, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { kutla } from '../lib/kutlama.js';
@@ -53,7 +53,8 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
     if (temizleRef.current) clearTimeout(temizleRef.current);
     gizleRef.current = setTimeout(() => {
       setVisible(false);
-      temizleRef.current = setTimeout(() => setSo(null), 500);
+      const sure = Math.max(0, Number(a.animationDuration) || 600);
+      temizleRef.current = setTimeout(() => setSo(null), Math.max(80, Math.round(sure * CIKIS_ORANI) + 40));
     }, Math.max(1000, Number(a.durationMs) || 8000));
   };
 
@@ -124,12 +125,13 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
       }
       style={{ alignItems: dikey(s.position), fontFamily: s.fontFamily }}
     >
-      <div {...kokOzellik(s)}
-        className={`transition-all duration-500 transform ${
-          visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 -translate-y-8'
-        } flex items-center gap-5 w-full`}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
+        className="flex items-center gap-5 w-full"
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card), ...(visible ? ortakHareket(s) : null),
+          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
+          ...(visible
+            ? ortakHareket(s)
+            : animStili(cikisKimligi(s.animation, s.exitAnimation), 'exiting', Math.max(0, Number(s.animationDuration) || 600))),
           borderRadius: Number(s.radius) || 24,
           padding: `${Number(s.paddingY) || 24}px ${Number(s.paddingX) || 24}px`,
           maxWidth: Number(s.maxWidth) || 512,

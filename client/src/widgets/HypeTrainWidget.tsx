@@ -16,7 +16,7 @@
  * geriye uyum için duruyor.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animStili, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -99,8 +99,21 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
   }, [onizleme]);
 
   const kalan = aktif ? Math.max(0, Math.round((bitisAni - Date.now()) / 1000)) : 0;
+  const gorundu = useRef(false);
+  if (aktif || onizleme) gorundu.current = true;
+  const gizlensin = !aktif && Boolean(s.hideIdle) && !onizleme && gorundu.current;
+  const [kapali, setKapali] = useState(false);
+  useEffect(() => {
+    if (!gizlensin) {
+      setKapali(false);
+      return;
+    }
+    const ms = Math.max(80, Math.round((Number(s.animationDuration) || 600) * CIKIS_ORANI) + 40);
+    const t = setTimeout(() => setKapali(true), ms);
+    return () => clearTimeout(t);
+  }, [gizlensin, s.animationDuration]);
 
-  if (!aktif && s.hideIdle) return null;
+  if ((!aktif && s.hideIdle && !onizleme && !gorundu.current) || (kapali && gizlensin)) return null;
 
   const hedef = seviyeHedefi(seviye, Number(s.levelGoal) || 500, Number(s.levelGrowth) || 1.5);
   const yuzde = Math.min(100, Math.round((puan / Math.max(1, hedef)) * 100));
@@ -140,10 +153,13 @@ export function HypeTrainWidget({ embedded = false, previewMode = false }: HypeT
       }
       style={{ fontFamily: s.fontFamily }}
     >
-      <div {...kokOzellik(s)}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
         className="w-full"
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic), ...ortakHareket(s),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.classic),
+          ...(gizlensin
+            ? animStili(cikisKimligi(s.animation, s.exitAnimation), 'exiting', Math.max(0, Number(s.animationDuration) || 600))
+            : ortakHareket(s)),
           borderRadius: Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           color: s.textColor

@@ -51,7 +51,7 @@ export const ACTIVITY_DEFAULTS = {
   outlineEnabled: false,
   outlineColor: '#000000',
   outlineWidth: 2,
-  animation: 'slide',
+  animation: 'slideRight',
   animationDuration: 400,
   gap: 8,
   iconFollow: '💜',
@@ -72,7 +72,8 @@ export const ACTIVITY_DEFAULTS = {
   soundUrl: '',
   soundVolume: 0.5,
   mute: false,
-  paused: false
+  paused: false,
+  exitAnimation: 'ayni'
 };
 
 export const CHAT_DEFAULTS = {
@@ -219,11 +220,15 @@ export const KAPPAGEN_DEFAULTS = {
   size: 64,
   durationMs: 3500,
   speed: 1,
-  maxOnScreen: 60,
+  maxOnScreen: 12,
   burstCopies: 4,
   spin: true,
   shadow: true,
   paused: false
+};
+
+export const ATLA_DEFAULTS = {
+  durationMs: 5000
 };
 
 export const EMOTE_COMBO_DEFAULTS = {
@@ -250,7 +255,7 @@ export const LABELS_DEFAULTS = {
   showTop: true,
   showRaid: false,
   showKicks: false,
-  showFollowers: false,
+  showFollowers: true,
   labelFollow: 'Son takipçi:',
   labelSub: 'Son abone:',
   labelTip: 'Son bağış:',
@@ -279,7 +284,9 @@ export const LABELS_DEFAULTS = {
   backgroundOpacity: 0.8,
   borderRadius: 14,
   height: 48,
-  paddingX: 20
+  paddingX: 20,
+  exitAnimation: 'ayni',
+  animationDuration: 600
 };
 
 export const POLL_DEFAULTS = {
@@ -301,6 +308,9 @@ export const POLL_DEFAULTS = {
   borderColor: '#10b981',
   borderRadius: 16,
   animation: 'fade',
+  /** Süre bitince oynayan çıkış ('ayni' = girişin tersi) */
+  exitAnimation: 'ayni',
+  animationDuration: 600,
   outlineEnabled: false,
   outlineColor: '#000000',
   outlineWidth: 1
@@ -616,7 +626,10 @@ export const PINNED_DEFAULTS = {
   showLabel: true,
   showAuthor: true,
   showPlatform: false,
-  autoHideSeconds: 0
+  autoHideSeconds: 0,
+  animation: 'pop',
+  exitAnimation: 'ayni',
+  animationDuration: 600
 };
 
 /** Dönen sosyal medya: hesap listesi panelde düzenlenir. */
@@ -695,7 +708,10 @@ export const SHOUTOUT_DEFAULTS = {
   showBio: true,
   showUrl: true,
   confetti: true,
-  celebration: 'konfeti'
+  celebration: 'konfeti',
+  animation: 'pop',
+  exitAnimation: 'ayni',
+  animationDuration: 600
 };
 
 /** Sıralama tablosu — sıralama ölçütü, tema, madalya ve satır sayısı. */
@@ -768,7 +784,10 @@ export const HYPE_TRAIN_DEFAULTS = {
   showSubtitle: true,
   showLastSupporter: true,
   /** Eskiden varsayılan açıktı: tren olay gelene dek hiç çizilmiyor, eklenmemiş sanılıyordu */
-  hideIdle: false
+  hideIdle: false,
+  animation: 'none',
+  exitAnimation: 'ayni',
+  animationDuration: 600
 };
 
 /** Şarkı sözleri — tema, satır sayısı ve tipografi. */
@@ -847,7 +866,9 @@ export const JUMPSCARE_DEFAULTS = {
   brightness: 125,
   screamFallback: true,
   showDonor: true,
-  shake: true
+  shake: true,
+  exitAnimation: 'ayni',
+  animationDuration: 600
 };
 
 /** Sadakat ödülü bildirimi. */
@@ -876,7 +897,10 @@ export const LOYALTY_DEFAULTS = {
   showPayload: true,
   confetti: true,
   celebration: 'konfeti',
-  soundEnabled: false
+  soundEnabled: false,
+  animation: 'none',
+  exitAnimation: 'ayni',
+  animationDuration: 600
 };
 
 /** Jenerik (kapanış) — bölümler, hız ve başlıklar. */
@@ -956,6 +980,7 @@ const WIDGET_AYARLARI: Record<string, Record<string, any>> = {
   'social-rotator': SOCIAL_ROTATOR_DEFAULTS,
   'sponsor-banner': SPONSOR_DEFAULTS,
   shoutout: SHOUTOUT_DEFAULTS,
+  atla: ATLA_DEFAULTS,
   rankings: RANKINGS_DEFAULTS,
   'hype-train': HYPE_TRAIN_DEFAULTS,
   lyrics: LYRICS_DEFAULTS,
@@ -1003,6 +1028,20 @@ export function hedefWidgetKimligi(tur?: unknown): string {
   if (tur === 'kicks') return 'kicks-goal';
   if (tur === 'tip' || tur === 'donation') return 'donation-goal';
   return 'follower-goal';
+}
+
+const HEDEF_TUR_KUME = new Set(['follower', 'sub', 'tip', 'kicks']);
+
+/** Tuvaldeki hedef çubukları. Liste yoksa tek çubuk (`type`). */
+// `object`: tuval öğe tipleri bu alanları bildirmez (ek alan olarak taşınır); tümü isteğe bağlı tipe TS "ortak alan yok" diyordu
+export function cubukTurleri(oge?: object): string[] {
+  const item = oge as { type?: unknown; cubuklar?: unknown } | undefined;
+  if (Array.isArray(item?.cubuklar)) {
+    const liste = [...new Set(item.cubuklar.map(String).filter((t) => HEDEF_TUR_KUME.has(t)))];
+    if (liste.length) return liste;
+  }
+  const t = String(item?.type || 'follower');
+  return HEDEF_TUR_KUME.has(t) ? [t] : ['follower'];
 }
 
 /** Olay başına uyarı kaydının varsayılanları (Uyarılar sayfası ve widget ayarları ortak kullanır) */

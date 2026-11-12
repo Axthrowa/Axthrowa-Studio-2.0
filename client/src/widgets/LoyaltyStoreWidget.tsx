@@ -8,7 +8,7 @@
  * kartını erken kapatıyordu.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animStili, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { kutla } from '../lib/kutlama.js';
@@ -68,7 +68,8 @@ export function LoyaltyStoreWidget({ embedded = false, previewMode = false }: Lo
     if (temizleRef.current) clearTimeout(temizleRef.current);
     gizleRef.current = setTimeout(() => {
       setVisible(false);
-      temizleRef.current = setTimeout(() => setEvent(null), 500);
+      const sure = Math.max(0, Number(a.animationDuration) || 600);
+      temizleRef.current = setTimeout(() => setEvent(null), Math.max(80, Math.round(sure * CIKIS_ORANI) + 40));
     }, Math.max(1000, Number(a.durationMs) || 6000));
   };
 
@@ -130,12 +131,13 @@ export function LoyaltyStoreWidget({ embedded = false, previewMode = false }: Lo
       }
       style={{ alignItems: dikey(s.position), fontFamily: s.fontFamily }}
     >
-      <div {...kokOzellik(s)}
-        className={`transition-all duration-500 transform ${
-          visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 -translate-y-6'
-        } flex flex-col items-center text-center`}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
+        className="flex flex-col items-center text-center"
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.card), ...(visible ? ortakHareket(s) : null),
+          ...(kutuTasarimi(s) || temaStili[tema] || temaStili.card),
+          ...(visible
+            ? ortakHareket(s)
+            : animStili(cikisKimligi(s.animation, s.exitAnimation), 'exiting', Math.max(0, Number(s.animationDuration) || 600))),
           borderRadius: Number(s.radius) || 24,
           padding: `${Number(s.paddingY) || 24}px ${Number(s.paddingX) || 24}px`,
           maxWidth: Number(s.maxWidth) || 448,

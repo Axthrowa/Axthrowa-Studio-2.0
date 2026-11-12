@@ -26,6 +26,15 @@ export const sureMetni = (dk: number) => (dk % 1440 === 0 ? `${dk / 1440} gün` 
 const PANEL_SOHBET_AYARI = '/api/widgets/panel-sohbet/settings';
 const AVATAR_VARSAYILAN = { avatarGoster: true, avatarBoyut: 28, avatarBicim: 'circle' };
 const PLATFORM_ADI: Record<string, string> = { kick: 'Kick', twitch: 'Twitch', youtube: 'YouTube', trovo: 'Trovo' };
+const CEZA_AD: Record<string, string> = {
+  MANUAL_TIMEOUT: 'Zaman aşımı',
+  MANUAL_BAN: 'Ban',
+  MANUAL_UNBAN: 'Ban kalktı',
+  MANUAL_DELETE_MESSAGE: 'Mesaj silindi',
+  SHARED_BAN_ENFORCED: 'Kara liste',
+  SHARED_BAN_FAILED: 'Kara liste başarısız'
+};
+const cezaAdi = (action: string) => (action.startsWith('automod:') ? `AutoMod (${action.slice(8)})` : CEZA_AD[action] || action);
 
 type TemizlikSonucu = { ok: boolean; yontem?: string; silinen?: number; kalan?: number; hata?: string };
 
@@ -40,6 +49,10 @@ interface ViewerModalData {
   note: string;
   sentiment: 'positive' | 'neutral' | 'negative';
   sentimentDetails?: { positives?: number; negatives?: number; messageCount?: number; summary?: string; source?: string; recent?: string[] };
+  kart?: {
+    mesajlar: { message: string; timestamp: number }[];
+    cezalar: { action: string; timestamp: number; details: string | null }[];
+  };
 }
 
 // AxthrowA Studio sayfayı `?embed=1` ile gömer (App.tsx ile aynı ölçüt)
@@ -183,9 +196,10 @@ export function MultiChat() {
 
     try {
       const ad = encodeURIComponent(username);
-      const [notesRes, sentimentRes] = await Promise.all([
+      const [notesRes, sentimentRes, kart] = await Promise.all([
         fetch(`/api/viewers/${ad}/notes`).then(r => r.json()),
-        fetch(`/api/viewers/${ad}/sentiment`).then(r => r.json())
+        fetch(`/api/viewers/${ad}/sentiment`).then(r => r.json()),
+        fetch(`/api/viewers/${ad}/kart`).then(r => (r.ok ? r.json() : { mesajlar: [], cezalar: [] })).catch(() => ({ mesajlar: [], cezalar: [] }))
       ]);
 
       const note = notesRes?.note || '';
@@ -196,7 +210,8 @@ export function MultiChat() {
         ...prev,
         note,
         sentiment,
-        sentimentDetails: sentimentRes
+        sentimentDetails: sentimentRes,
+        kart
       } : null);
     } catch {} finally {
       setLoadingViewer(false);
@@ -393,7 +408,9 @@ export function MultiChat() {
         >
           {filteredMessages.length === 0 ? (
             <div className="text-center py-24 text-gray-500 text-sm">
-              Sohbet akışı bekleniyor... Yayın başladığında veya platformlar bağlandığında tüm mesajlar anlık olarak burada akacaktır.
+              {connected
+                ? 'Sohbet akışı bekleniyor... Yayın başladığında veya platformlar bağlandığında tüm mesajlar anlık olarak burada akacaktır.'
+                : 'Sohbet bağlı değil.'}
             </div>
           ) : (
             filteredMessages.map(msg => (
@@ -592,6 +609,31 @@ export function MultiChat() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-gray-300">Son mesajlar</p>
+              <ul className="max-h-32 space-y-0.5 overflow-y-auto">
+                {(selectedViewer.kart?.mesajlar || []).length === 0 ? (
+                  <li className="text-[11px] text-gray-500">{loadingViewer ? '…' : 'Kayıtlı mesaj yok.'}</li>
+                ) : (
+                  selectedViewer.kart!.mesajlar.map((m, i) => (
+                    <li key={`${m.timestamp}-${i}`} className="truncate text-[11px] text-gray-300">· {m.message}</li>
+                  ))
+                )}
+              </ul>
+              <p className="text-xs font-bold text-gray-300">Cezalar</p>
+              <ul className="max-h-24 space-y-0.5 overflow-y-auto">
+                {(selectedViewer.kart?.cezalar || []).length === 0 ? (
+                  <li className="text-[11px] text-gray-500">{loadingViewer ? '…' : 'Ceza yok.'}</li>
+                ) : (
+                  selectedViewer.kart!.cezalar.map((c, i) => (
+                    <li key={`${c.timestamp}-${i}`} className="truncate text-[11px] text-gray-300">
+                      · {cezaAdi(c.action)}{c.details ? ` — ${c.details}` : ''}
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+
             {/* AI Sentiment Analysis Badge */}
             <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-800 space-y-1">
               <div className="flex items-center justify-between">
@@ -635,18 +677,6 @@ export function MultiChat() {
                   <span className="text-amber-300/80">· kelime tabanlı (Gemini anahtarı yok)</span>
                 )}
               </div>
-              {!!selectedViewer.sentimentDetails?.recent?.length && (
-                <details className="pt-1">
-                  <summary className="cursor-pointer text-[10px] text-gray-500 hover:text-gray-300">
-                    İncelenen son mesajlar
-                  </summary>
-                  <ul className="mt-1 space-y-0.5">
-                    {selectedViewer.sentimentDetails.recent.map((m: string, i: number) => (
-                      <li key={i} className="text-[10px] text-gray-400 truncate">· {m}</li>
-                    ))}
-                  </ul>
-                </details>
-              )}
             </div>
 
             {/* Private Streamer Note */}

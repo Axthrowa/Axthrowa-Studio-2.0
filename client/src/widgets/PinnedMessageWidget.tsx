@@ -9,7 +9,7 @@
  * mesajı kaldırır.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animStili, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { PINNED_DEFAULTS } from '../lib/widget-defaults.js';
@@ -42,6 +42,7 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
   const s = useWidgetSettings('pinned-messages', PINNED_DEFAULTS);
   const onizleme = onizlemeKipi(previewMode);
   const [pinned, setPinned] = useState<PinnedItem | null>(onizleme ? ORNEK : null);
+  const [ekran, setEkran] = useState<PinnedItem | null>(onizleme ? ORNEK : null);
   const gizleZaman = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -82,7 +83,18 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
     };
   }, [pinned, s.autoHideSeconds, onizleme]);
 
-  if (!pinned) return null;
+  useEffect(() => {
+    if (pinned) {
+      setEkran(pinned);
+      return;
+    }
+    const ms = Math.max(80, Math.round((Number(s.animationDuration) || 600) * CIKIS_ORANI) + 40);
+    const t = setTimeout(() => setEkran(null), ms);
+    return () => clearTimeout(t);
+  }, [pinned, s.animationDuration]);
+
+  const mesaj = pinned || ekran;
+  if (!mesaj) return null;
 
   const tema = String(s.theme || 'card');
   const temaStili: Record<string, React.CSSProperties> = {
@@ -120,10 +132,13 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
       }
       style={{ alignItems: dikey(s.position), justifyContent: yatay(s.align), fontFamily: s.fontFamily }}
     >
-      <div {...kokOzellik(s)}
+      <div key={hareketAnahtari(s)} {...kokOzellik(s)}
         className="flex items-center gap-3.5 shadow-2xl w-full"
         style={{
-          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card), ...ortakHareket(s),
+          ...(kutuTasarimi(s) || temaStili[tema] || kartTasarimlari(s)[tema] || temaStili.card),
+          ...(!pinned
+            ? animStili(cikisKimligi(s.animation, s.exitAnimation), 'exiting', Math.max(0, Number(s.animationDuration) || 600))
+            : ortakHareket(s)),
           borderRadius: tema === 'banner' ? 8 : Number(s.radius) || 16,
           padding: `${Number(s.paddingY) || 16}px ${Number(s.paddingX) || 16}px`,
           maxWidth: Number(s.maxWidth) || 512,
@@ -154,17 +169,17 @@ export function PinnedMessageWidget({ embedded = false, previewMode = false }: P
               )}
               {s.showAuthor && (
                 <span className="font-bold" style={{ fontSize: Math.max(10, boy * 0.82) }}>
-                  @{pinned.displayName || pinned.username}
+                  @{mesaj.displayName || mesaj.username}
                 </span>
               )}
-              {s.showPlatform && pinned.platform && (
-                <span style={{ fontSize: Math.max(9, boy * 0.68), opacity: 0.6 }}>{pinned.platform}</span>
+              {s.showPlatform && mesaj.platform && (
+                <span style={{ fontSize: Math.max(9, boy * 0.68), opacity: 0.6 }}>{mesaj.platform}</span>
               )}
             </div>
           )}
 
           <div className="font-semibold break-words leading-relaxed" style={{ fontSize: boy }}>
-            {pinned.message}
+            {mesaj.message}
           </div>
         </div>
       </div>

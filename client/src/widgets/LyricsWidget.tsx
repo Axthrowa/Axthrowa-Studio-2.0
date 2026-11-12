@@ -9,7 +9,7 @@
  */
 import { kokOzellik } from '../lib/kabuklar.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { useState, useEffect, useRef } from 'react';
 import { Disc } from 'lucide-react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
@@ -213,6 +213,7 @@ export function LyricsWidget({ embedded = false, previewMode = false }: LyricsWi
       style={{ fontFamily: s.fontFamily }}
     >
       <div
+        key={hareketAnahtari(s)}
         {...kokOzellik(s)}
         className="w-full flex flex-col items-center justify-center text-center overflow-hidden"
         style={{

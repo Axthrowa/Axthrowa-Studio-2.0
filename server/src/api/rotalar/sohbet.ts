@@ -17,6 +17,7 @@ import { takipAdaylari, TAKIP_TEMA_ADLARI, TEMA_ADLARI, TEMA_MESAJLARI } from '.
 import { seyrekUyar } from '../../core/logger.js';
 import { platformManager } from '../../platforms/manager.js';
 import { AvatarOnbellek, avatarIstegiGecerli } from '../../modules/chat-avatar/avatar-onbellek.js';
+import { kullaniciKarti } from '../../modules/moderation/kullanici-karti.js';
 
 const router = Router();
 
@@ -185,6 +186,22 @@ router.post('/viewers/:username/notes', (req: Request, res: Response) => {
 
   shieldModeService.addAuditLog('VIEWER_NOTE_SAVED', 'Yayıncı', `@${username} için yayıncı notu güncellendi.`, username);
   res.json({ success: true, username, note, tags, sentiment });
+});
+
+router.get('/viewers/:username/kart', (req: Request, res: Response) => {
+  const username = String(req.params.username || '').replace(/^@/, '').trim().slice(0, 60);
+  if (!username) return res.status(400).json({ hata: 'ad yok' });
+  const mesajlar = db.prepare(`
+    SELECT message, timestamp FROM stream_events
+    WHERE username = ? COLLATE NOCASE AND event_type = 'chat' AND message IS NOT NULL AND TRIM(message) <> ''
+    ORDER BY timestamp DESC LIMIT 20
+  `).all(username) as { message: string; timestamp: number }[];
+  const kayitlar = db.prepare(`
+    SELECT action, timestamp, details, target FROM audit_logs
+    WHERE target = ? COLLATE NOCASE OR target = ?
+    ORDER BY timestamp DESC LIMIT 40
+  `).all(username, `@${username}`) as { action: string; timestamp: number; details: string | null; target: string | null }[];
+  res.json(kullaniciKarti(username, mesajlar, kayitlar));
 });
 
 router.get('/viewers/:username/sentiment', async (req: Request, res: Response) => {

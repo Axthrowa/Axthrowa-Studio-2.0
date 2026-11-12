@@ -13,7 +13,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
-import { ffmpegArgumanlari, hataSatiriTemizle, klipAdiGecerliMi, klipDosyaAdi, varyantSec } from './klip-saf.js';
+import { ffmpegArgumanlari, hataSatiriTemizle, kickCanliMi, kickPlaybackAdresi, klipAdiGecerliMi, klipDosyaAdi, varyantSec } from './klip-saf.js';
 import { hataMetni } from '../../core/logger.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -74,15 +74,35 @@ async function hlsAdresi(platform: string): Promise<string | null> {
     headers: { Accept: 'application/json', 'User-Agent': UA },
     timeout: 8000
   });
-  if (!r.data?.livestream || !r.data?.playback_url) return null;
-  return String(r.data.playback_url);
+  let url = kickPlaybackAdresi(r.data);
+  let canli = kickCanliMi(r.data);
+  if (!url) {
+    try {
+      const live = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(kanal)}/livestream`, {
+        headers: { Accept: 'application/json', 'User-Agent': UA },
+        timeout: 8000
+      });
+      url = kickPlaybackAdresi(live.data) || kickPlaybackAdresi({ livestream: live.data });
+      canli = canli || kickCanliMi(live.data) || Boolean(live.data?.id);
+    } catch {
+      /* kanal yanıtı yeter */
+    }
+  }
+  if (url) return url;
+  if (canli) throw new Error('yayin-adresi-yok');
+  return null;
 }
 
 class KlipYoneticisi {
   private calisiyor = false;
+  private sonHata = '';
 
   mesgulMu(): boolean {
     return this.calisiyor;
+  }
+
+  sonHataOku(): string {
+    return this.sonHata;
   }
 
   /**
@@ -93,7 +113,7 @@ class KlipYoneticisi {
     kim: string,
     sure: number,
     bildir: (metin: string, dosya?: string) => void
-  ): Promise<{ ok: true } | { ok: false; sebep: 'mesgul' | 'ffmpeg-yok' | 'yayin-yok' | 'hata'; hata?: string }> {
+  ): Promise<{ ok: true } | { ok: false; sebep: 'mesgul' | 'ffmpeg-yok' | 'yayin-yok' | 'adres-yok' | 'hata'; hata?: string }> {
     if (this.calisiyor) return { ok: false, sebep: 'mesgul' };
     // Bayrak HEMEN alınır: aşağıdaki beklemeler sırasında gelen ikinci !clip
     // ikinci bir ffmpeg açmasın. Başlatılamazsa bırakılır.
@@ -113,15 +133,27 @@ class KlipYoneticisi {
     kim: string,
     sure: number,
     bildir: (metin: string, dosya?: string) => void
-  ): Promise<{ ok: true } | { ok: false; sebep: 'mesgul' | 'ffmpeg-yok' | 'yayin-yok' | 'hata'; hata?: string }> {
-    if (!(await ffmpegVarMi())) return { ok: false, sebep: 'ffmpeg-yok' };
+  ): Promise<{ ok: true } | { ok: false; sebep: 'mesgul' | 'ffmpeg-yok' | 'yayin-yok' | 'adres-yok' | 'hata'; hata?: string }> {
+    if (!(await ffmpegVarMi())) {
+      this.sonHata = 'ffmpeg yok. Kur: winget install Gyan.FFmpeg — sonra botu yeniden başlat.';
+      return { ok: false, sebep: 'ffmpeg-yok' };
+    }
+    this.sonHata = '';
     let ana: string | null;
     try {
       ana = await hlsAdresi(platform);
     } catch (e) {
-      return { ok: false, sebep: 'hata', hata: hataSatiriTemizle(hataMetni(e)) };
+      if (e instanceof Error && e.message === 'yayin-adresi-yok') {
+        this.sonHata = 'Yayın açık ama Kick klip adresi gelmedi.';
+        return { ok: false, sebep: 'adres-yok' };
+      }
+      this.sonHata = hataSatiriTemizle(hataMetni(e)) || 'Klip alınamadı.';
+      return { ok: false, sebep: 'hata', hata: this.sonHata };
     }
-    if (!ana) return { ok: false, sebep: 'yayin-yok' };
+    if (!ana) {
+      this.sonHata = 'Klip yalnız yayın açıkken alınabilir.';
+      return { ok: false, sebep: 'yayin-yok' };
+    }
 
     // Ana listeden 720p varyantı (yoksa adres zaten medya listesidir)
     let girdi = ana;

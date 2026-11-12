@@ -8,7 +8,7 @@
  * arda gelen iki tetikte ikincisi birincinin sayacıyla erken kapanıyordu.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { CIKIS_ORANI, animStili, cikisKimligi, hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { JUMPSCARE_DEFAULTS } from '../lib/widget-defaults.js';
@@ -62,6 +62,7 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
   ayarRef.current = s;
 
   const [isActive, setIsActive] = useState(false);
+  const [cikiyor, setCikiyor] = useState(false);
   const [scare, setScare] = useState<{
     mediaUrl: string;
     mediaType: string;
@@ -105,12 +106,20 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
             donor: data.donor,
             amount: data.amount
           });
+          setCikiyor(false);
           setIsActive(true);
           if (a.screamFallback) korkuSesi(ses);
 
           // Önceki tetiğin sayacı kalırsa yeni jumpscare erken kapanıyordu.
           if (kapatRef.current) clearTimeout(kapatRef.current);
-          kapatRef.current = setTimeout(() => setIsActive(false), sure);
+          const cikisMs = Math.max(80, Math.round((Number(a.animationDuration) || 600) * CIKIS_ORANI) + 40);
+          kapatRef.current = setTimeout(() => {
+            setCikiyor(true);
+            kapatRef.current = setTimeout(() => {
+              setIsActive(false);
+              setCikiyor(false);
+            }, cikisMs);
+          }, sure);
         } catch {
           /* bozuk mesaj */
         }
@@ -142,7 +151,7 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
   }%)`;
 
   return (
-    <div {...kokOzellik(s)} className="fixed inset-0 z-[99999] w-screen h-screen bg-black flex items-center justify-center overflow-hidden" style={ortakHareket(s)}>
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)} className="fixed inset-0 z-[99999] w-screen h-screen bg-black flex items-center justify-center overflow-hidden" style={cikiyor ? animStili(cikisKimligi(s.animation, s.exitAnimation), 'exiting', Math.max(0, Number(s.animationDuration) || 600)) : ortakHareket(s)}>
       {!mediaFailed && scare.mediaUrl && scare.mediaType === 'video' ? (
         <video
           ref={videoRef}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense, type ReactNode } from 'react';
+import { Component, useState, useEffect, useRef, useCallback, lazy, Suspense, type ReactNode } from 'react';
 import {
   LayoutDashboard,
   Link2,
@@ -54,6 +54,7 @@ const EventLabelsWidget = lazy(() => import('./widgets/EventLabelsWidget.js'));
 const ResonanceWidget = lazy(() => import('./widgets/ResonanceWidget.js'));
 const PollsWidget = lazy(() => import('./widgets/PollsWidget.js'));
 const ShoutoutWidget = lazy(() => import('./widgets/ShoutoutWidget.js'));
+const AtlaWidget = lazy(() => import('./widgets/AtlaWidget.js'));
 const TheCupWidget = lazy(() => import('./widgets/TheCupWidget.js'));
 const WordCloudWidget = lazy(() => import('./widgets/WordCloudWidget.js'));
 const ScoreboardWidget = lazy(() => import('./widgets/ScoreboardWidget.js'));
@@ -83,7 +84,23 @@ import { ToastSaglayici, useOnay } from './ui/index.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
 import { SURUMLER } from './lib/surumler.js';
-import { VARSAYILAN_TEMA, usePanelTemasi } from './lib/panelTemalari.js';
+import { VARSAYILAN_TEMA, disTemaUygula, usePanelTemasi } from './lib/panelTemalari.js';
+import { studioTemasiCoz } from './lib/studioTemasi.js';
+
+/** Bir widget çökerse menü de silinmesin; sekme değişince yeniden denensin. */
+class SayfaSiniri extends Component<{ anahtar: string; children: ReactNode }, { hata: boolean }> {
+  state = { hata: false };
+  static getDerivedStateFromError() {
+    return { hata: true };
+  }
+  componentDidUpdate(onceki: { anahtar: string }) {
+    if (onceki.anahtar !== this.props.anahtar && this.state.hata) this.setState({ hata: false });
+  }
+  render() {
+    if (this.state.hata) return <div className="p-6 text-sm text-red-300">Bu sayfa açılamadı. Başka bir sekmeye geçip yeniden deneyin.</div>;
+    return this.props.children;
+  }
+}
 
 export function App() {
   const path = window.location.pathname;
@@ -116,6 +133,7 @@ export function App() {
   if (path === '/widgets/now-playing' || path === '/widgets/resonance') return obsSayfasi(<ResonanceWidget />);
   if (path === '/widgets/polls') return obsSayfasi(<PollsWidget />);
   if (path === '/widgets/shoutout') return obsSayfasi(<ShoutoutWidget />);
+  if (path === '/widgets/atla') return obsSayfasi(<AtlaWidget />);
   if (path === '/widgets/the-cup') return obsSayfasi(<TheCupWidget />);
   if (path === '/widgets/word-cloud') return obsSayfasi(<WordCloudWidget />);
   if (path === '/widgets/scoreboard') return obsSayfasi(<ScoreboardWidget />);
@@ -146,6 +164,23 @@ export function App() {
   // uygulamada `beforeunload` sekme geçişinde tetiklenmez).
   const { sor: onayIste, eleman: onayDiyalogu } = useOnay();
   const panelTemasi = usePanelTemasi();
+  // Studio içinde: Studio'nun renkleri ve köşeleri (ilk yüklemede ve Studio'da tema değişince gelir)
+  useEffect(() => {
+    // Studio çerçevesinde (tek sayfa ya da tam panel) Studio renkleri geçerli. Ayrı pencerede botun kendi teması kalır.
+    if (window.parent === window) return;
+    const dinle = (e: MessageEvent) => {
+      if (e.source !== window.parent) return;
+      const t = studioTemasiCoz(e.data);
+      if (!t) return;
+      const kok = document.documentElement;
+      for (const [ad, deger] of Object.entries(t.degiskenler)) kok.style.setProperty(ad, deger);
+      disTemaUygula(t.tema);
+    };
+    window.addEventListener('message', dinle);
+    // Hazır olduğumuzu bildir: Studio temayı hemen gönderir (yükleme yarışında ilk ileti kaçmasın)
+    window.parent.postMessage({ tur: 'yya-tema-iste' }, '*');
+    return () => window.removeEventListener('message', dinle);
+  }, []);
   const aktifSekme = useRef(activeTab);
   aktifSekme.current = activeTab;
   const sekmeyeGec = useCallback((hedef: string) => {
@@ -344,9 +379,11 @@ export function App() {
               ))}
             </div>
           )}
-          <Suspense fallback={<div className="p-8 text-sm text-gray-400 animate-pulse">Yükleniyor…</div>}>
-            {renderActivePage()}
-          </Suspense>
+          <SayfaSiniri anahtar={activeTab}>
+            <Suspense fallback={<div className="p-8 text-sm text-gray-400 animate-pulse">Yükleniyor…</div>}>
+              {renderActivePage()}
+            </Suspense>
+          </SayfaSiniri>
         </main>
       </div>
     </div>

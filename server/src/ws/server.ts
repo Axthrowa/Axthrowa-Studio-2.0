@@ -484,6 +484,9 @@ export class WebSocketHub {
     eventBus.on('widget_update', (payload: any) => {
       this.broadcastTo(['all'], payload);
     });
+    eventBus.on('hedef_doldu', (veri: { widgetId?: string }) => {
+      if (veri?.widgetId) this.broadcastTo(['all'], { type: 'hedef_doldu', widgetId: veri.widgetId });
+    });
   }
 
   buildAlertPayload(eventType: string, variables: Record<string, any>, isTest: boolean = false) {

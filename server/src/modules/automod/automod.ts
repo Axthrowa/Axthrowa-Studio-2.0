@@ -6,6 +6,7 @@ import {
   bypassEder,
   eylemPlani,
   kuralAyariOku,
+  metinOzeti,
   sureyiYaz,
   type KuralAdi
 } from './enforcement.js';
@@ -303,7 +304,7 @@ export class AutoModEngine {
         `automod:${violation.rule}`,
         'AutoMod',
         message.user.username,
-        `${eylem} — ${violation.reason}`,
+        `${eylem} — ${violation.reason}${metinOzeti(message.message)}`,
         violation.rule === 'blacklist' ? 'high' : 'medium'
       );
     } catch (e) {

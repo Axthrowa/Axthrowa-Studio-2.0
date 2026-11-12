@@ -19,6 +19,7 @@ import { canliDurum } from '../../core/live-status.js';
 import { kupa } from '../../modules/engagement/kupa.js';
 import { etiketVerisi } from '../../modules/widgets/olay-etiketleri.js';
 import { takipciSayisi } from '../../modules/widgets/takipci-sayisi.js';
+import { hedefleriOtomatikYaz } from '../../modules/goals/hedefler.js';
 import { carkCevir } from '../../modules/engagement/cark.js';
 import { sohbetIstatistik } from '../../modules/community/sohbet-istatistik.js';
 import { skorOku, skorYaz } from '../../modules/community/sohbet-araclari.js';
@@ -61,7 +62,8 @@ router.post('/hype-train/start', (_req: Request, res: Response) => {
 // Olay Etiketleri — son olaylar veritabanından (sayfa açılınca "—" kalmasın)
 router.get('/event-labels', async (_req: Request, res: Response) => {
   try {
-    res.json({ ...etiketVerisi(), takipciSayisi: await takipciSayisi() });
+    await hedefleriOtomatikYaz();
+    res.json({ ...etiketVerisi(), takipciSayisi: await takipciSayisi(true) });
   } catch (e) {
     seyrekUyar('etiket:oku', '[Etiketler] Son olaylar okunamadı', e);
     res.json({});

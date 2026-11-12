@@ -11,9 +11,9 @@ import { eventBus } from '../core/event-bus.js';
 import { kickPlatform } from './kick.js';
 const k = kickPlatform as any;
 
-const gelen = (ad: string, id: string) => {
+const gelen = (ad: string, id: string, senderId = 99) => {
   const emit = vi.spyOn(eventBus, 'emitChat').mockImplementation(() => {});
-  k.handleChatMessage({ id, content: 'selam', sender: { id: 99, username: ad, identity: {} } }, 'kanal');
+  k.handleChatMessage({ id, content: 'selam', sender: { id: senderId, username: ad, identity: {} } }, 'kanal');
   const self = emit.mock.calls[0][0].user.isSelf;
   emit.mockRestore();
   return self;
@@ -28,7 +28,10 @@ describe('Kick bot türü yankısı', () => {
     k.botUserId = 1;
     k.botUsername = 'yayinci';
   });
-  afterEach(() => k.botTuruGonderilen.clear());
+  afterEach(() => {
+    k.botTuruGonderilen.clear();
+    k.yayinciTuruGonderilen.clear();
+  });
 
   it('ilk yankı botundur, aynı metni yazan izleyici değildir', async () => {
     post.mockImplementation(async (_u: string, govde: { type: string }) => {
@@ -41,9 +44,11 @@ describe('Kick bot türü yankısı', () => {
     expect(gelen('izleyici', 'b')).toBe(false);
   });
 
-  it('kullanıcı türüyle gönderimde metin hatırlanmaz', async () => {
+  it('kullanıcı türüyle gönderimde izleyici bot sayılmaz, yayıncı yankısı sayılır', async () => {
     post.mockResolvedValue({ status: 200 });
     await k.sendKickMessage('kanal', 'selam');
-    expect(gelen('izleyici', 'c')).toBe(false);
+    expect(gelen('yayinci', 'c', 5)).toBe(true);
+    await k.sendKickMessage('kanal', 'selam');
+    expect(gelen('izleyici', 'd')).toBe(false);
   });
 });

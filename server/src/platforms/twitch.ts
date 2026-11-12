@@ -351,6 +351,18 @@ export class TwitchPlatform extends BasePlatform {
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };
   }
 
+  async takipciSayisi(): Promise<{ ok: true; sayi: number } | { ok: false; hata: string }> {
+    if (!this.botToken || !this.currentChannel) return { ok: false, hata: 'Twitch bağlı değil' };
+    const r = await this.helix.takipciSayisi(this.currentChannel);
+    return r.ok ? { ok: true, sayi: r.veri } : { ok: false, hata: r.hata };
+  }
+
+  async klipOlustur(): Promise<{ ok: true; url: string } | { ok: false; hata: string }> {
+    if (!this.botToken || !this.currentChannel) return { ok: false, hata: 'Twitch bağlı değil' };
+    const r = await this.helix.klipOlustur(this.currentChannel);
+    return r.ok ? { ok: true, url: r.veri.url } : { ok: false, hata: r.hata };
+  }
+
   async isaretKoy(aciklama: string): Promise<ModerasyonSonucu> {
     const r = await this.helix.isaretKoy(this.currentChannel, aciklama);
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };

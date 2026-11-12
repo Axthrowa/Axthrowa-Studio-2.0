@@ -38,7 +38,8 @@ import {
   EyeOff,
   Settings2,
   RefreshCw,
-  Share2
+  Share2,
+  SkipForward
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
@@ -47,7 +48,7 @@ import { GALERI_KATMANI, KATMANLAR, OverlayKatmanlari } from '../widgets/Overlay
 import { arkasiniGizlerMi, cakisincaGizlenirMi } from '../lib/katmanCakisma.js';
 import { hizala, merkezdeBoyutla, sinirla, yapistir, type Kilavuzlar, type Kutu, type Yon } from '../lib/hizala.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
-import { hedefWidgetKimligi } from '../lib/widget-defaults.js';
+import { cubukTurleri, hedefWidgetKimligi } from '../lib/widget-defaults.js';
 import { ayarKanalinaKatil, YERLESIM_KIMLIGI } from '../lib/ayarKanali.js';
 import { SubathonPanel } from '../components/SubathonPanel.js';
 import { OBS_EKLEME, WIDGET_IPUCLARI } from '../lib/widget-ipuclari.js';
@@ -81,6 +82,7 @@ export interface AllInOneConfig {
   };
   goals: WidgetLayoutItem & {
     type?: 'follower' | 'sub' | 'tip' | 'kicks';
+    cubuklar?: Array<'follower' | 'sub' | 'tip' | 'kicks'>;
     target?: number;
     current?: number;
     title?: string;
@@ -197,6 +199,10 @@ const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   polls: {
     baslik: 'Anketler',
     aciklama: 'Yayında etkileşimli anket gösterir. İzleyiciler sohbetten (!oy) oy verir, sonuç anında güncellenir.'
+  },
+  atla: {
+    baslik: 'Şarkı Atla',
+    aciklama: 'İzleyici !atla yazınca oy çubuğu çıkar; mod hemen atlar. Kart birkaç saniye görünür.'
   },
   shoutout: {
     baslik: 'Shoutout (Tavsiye)',
@@ -1157,6 +1163,12 @@ export function OverlayStudio() {
       url: `${baseUrl}/widgets/shoutout`
     },
     {
+      id: 'atla',
+      category: 'On-Stream',
+      icon: SkipForward,
+      url: `${baseUrl}/widgets/atla`
+    },
+    {
       id: 'subathon',
       category: 'Goals',
       icon: Hourglass,
@@ -1910,18 +1922,45 @@ export function OverlayStudio() {
                         alanlar hiçbir yere bağlı değildi. */}
                     {selectedCanvasWidget === 'goals' && (
                       <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-1.5 text-xs">
-                        <label className="text-[10px] text-gray-400 block font-bold">Gösterilecek hedef</label>
-                        <select aria-label="Gösterilecek hedef"
-                          value={hedefWidgetKimligi(cur.type)}
-                          onChange={e => updateCur({ type: ({ 'follower-goal': 'follower', 'subscriber-goal': 'sub', 'donation-goal': 'tip', 'kicks-goal': 'kicks' } as Record<string, string>)[e.target.value] })}
-                          className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
-                        >
-                          <option value="follower-goal">Takipçi hedefi</option>
-                          <option value="subscriber-goal">Abone hedefi</option>
-                          <option value="donation-goal">Bağış hedefi</option>
-                          <option value="kicks-goal">KICKs hedefi</option>
-                        </select>
-                        <p className="text-[10px] text-gray-500">Başlık, hedef miktarı ve mevcut değer aşağıdaki ayarlardadır.</p>
+                        <label className="text-[10px] text-gray-400 block font-bold">Ekrandaki hedef çubukları</label>
+                        {cubukTurleri(cur).map((tur) => (
+                          <div key={tur} className="flex items-center justify-between gap-2 rounded-lg bg-black/40 px-2 py-1">
+                            <span>{tur === 'follower' ? 'Takipçi' : tur === 'sub' ? 'Abone' : tur === 'kicks' ? 'KICKs' : 'Bağış'}</span>
+                            {cubukTurleri(cur).length > 1 && (
+                              <button
+                                type="button"
+                                className="text-[10px] text-red-300"
+                                onClick={() => {
+                                  const kalan = cubukTurleri(cur).filter((t) => t !== tur);
+                                  updateCur({ cubuklar: kalan, type: kalan[0], height: Math.max(70, kalan.length * 78) });
+                                }}
+                              >
+                                Kaldır
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {(['follower', 'sub', 'tip', 'kicks'] as const).some((t) => !cubukTurleri(cur).includes(t)) && (
+                          <select
+                            aria-label="Hedef çubuğu ekle"
+                            value=""
+                            onChange={(e) => {
+                              const tur = e.target.value;
+                              if (!tur) return;
+                              const liste = [...cubukTurleri(cur), tur];
+                              updateCur({ cubuklar: liste, type: liste[0], height: Math.max(Number(cur.height) || 70, liste.length * 78) });
+                            }}
+                            className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                          >
+                            <option value="">Çubuk ekle…</option>
+                            {(['follower', 'sub', 'tip', 'kicks'] as const)
+                              .filter((t) => !cubukTurleri(cur).includes(t))
+                              .map((t) => (
+                                <option key={t} value={t}>{t === 'follower' ? 'Takipçi' : t === 'sub' ? 'Abone' : t === 'kicks' ? 'KICKs' : 'Bağış'}</option>
+                              ))}
+                          </select>
+                        )}
+                        <p className="text-[10px] text-gray-500">Takipçi sayısı Kick’ten, abone, bağış ve KICKs gelen olaylardan her açılışta yazılır.</p>
                       </div>
                     )}
 

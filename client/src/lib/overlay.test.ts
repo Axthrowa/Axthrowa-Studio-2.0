@@ -75,16 +75,18 @@ describe('animKimligi — geriye uyum', () => {
 });
 
 describe('animStili', () => {
-  it('görünür aşamada opaklık 1 ve transform yok', () => {
+  it('görünür aşamada giriş animasyonu bir kez oynar', () => {
     const s = animStili('fadeUp', 'visible', 400);
-    expect(s.opacity).toBe(1);
-    expect(s.transform).toBe('none');
+    expect(s.opacity).toBeUndefined();
+    expect(s.transform).toBeUndefined();
+    expect(String(s.animation)).toContain('axt-on-fadeUp');
+    expect(String(s.animation)).not.toContain('reverse');
   });
 
-  it('giriş aşamasında başlangıç durumundan başlar', () => {
+  it('giriş aşaması aynı anahtar kareyi başlatır', () => {
     const s = animStili('fadeUp', 'entering', 400);
-    expect(s.opacity).toBe(0);
-    expect(String(s.transform)).toContain('translateY');
+    expect(String(s.animation)).toContain('axt-on-fadeUp');
+    expect(String(s.animation)).not.toContain('reverse');
   });
 
   it('gizli aşamada geçiş yok ve görünmez', () => {
@@ -93,10 +95,10 @@ describe('animStili', () => {
     expect(s.visibility).toBe('hidden');
   });
 
-  it('süre ve gecikme geçişe yazılır', () => {
+  it('süre ve gecikme animasyona yazılır', () => {
     const s = animStili('zoom', 'entering', 650, 120);
-    expect(String(s.transition)).toContain('650ms');
-    expect(String(s.transition)).toContain('120ms');
+    expect(String(s.animation)).toContain('650ms');
+    expect(String(s.animation)).toContain('120ms');
   });
 
 });

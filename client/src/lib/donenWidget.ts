@@ -3,7 +3,7 @@
  * Developed by AxthrowA
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { AnimAsamasi } from './animations.js';
+import { hareketAnahtari, type AnimAsamasi } from './animations.js';
 
 export interface DonguDurumu {
   i: number;
@@ -37,6 +37,16 @@ export function asamaSuresi(asama: AnimAsamasi, gorunumMs: number, beklemeMs: nu
   if (asama === 'exiting') return gecisMs;
   if (asama === 'hidden') return beklemeMs;
   return GIRIS_KARESI_MS;
+}
+
+/**
+ * Hesap/görsel değişince ve çıkışta öğe baştan kurulur. Aynı animasyon adı
+ * durunca tarayıcı hareketi yeniden başlatmıyor; kart bir anda beliriyordu.
+ * Giriş ile görünür aynı anahtar: 40 ms'lik geçiş animasyonu yarıda kesmesin.
+ */
+export function donenSahneAnahtari(i: number, asama: string, ayar: Record<string, any>): string {
+  const yon = asama === 'exiting' ? 'cikis' : asama === 'hidden' ? 'gizli' : 'giris';
+  return `${i}:${yon}:${hareketAnahtari(ayar)}`;
 }
 
 /** Dönen widget'larda çıkışta oynayacak animasyon: 'ayni' (ya da boş) girişin tersi demek */

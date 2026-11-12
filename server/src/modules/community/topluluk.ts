@@ -26,6 +26,11 @@ export const votekick = new Votekick(() => ({
 export const piramit = new PiramitIzci();
 export const bingo = new Bingo();
 
+const GIZLI_HESAP = new Set([
+  'nightbot', 'streamelements', 'streamlabs', 'moobot', 'fossabot', 'botrix', 'botaxt', 'sesbot', 'wizebot', 'sery_bot'
+]);
+const emoteBekleme = new Map<string, number>();
+
 // Kappagen: saniyede en çok ~25 emote overlay'e gider (sohbet seli overlay'i boğmasın)
 const KOVA_KAPASITE = 25;
 let kova = KOVA_KAPASITE;
@@ -72,12 +77,19 @@ export function toplulukMesaji(message: ChatMessagePayload, ekle?: (puan: number
   const yanitlar: string[] = [];
   const metin = String(message.message || '');
   if (message.user.isSelf) return yanitlar;
+  const hesap = String(message.user.username || '').toLowerCase();
+  if (GIZLI_HESAP.has(hesap)) return yanitlar;
   yediTvTazele();
 
   // Kappagen: sohbetteki emote'lar overlay'de uçar (yalnız overlay — sohbete yazmaz)
   if (settingsCache.getBoolean('kappagen_chat_enabled', true) && !metin.startsWith('!')) {
-    const e = metindenEmoteler(metin);
-    if (e.length) kappagenGonder(e, false);
+    const simdi = Date.now();
+    if (simdi - (emoteBekleme.get(hesap) || 0) >= 4000) {
+      emoteBekleme.set(hesap, simdi);
+      if (emoteBekleme.size > 4000) emoteBekleme.delete(emoteBekleme.keys().next().value as string);
+      const e = metindenEmoteler(metin, 4);
+      if (e.length) kappagenGonder(e, false);
+    }
   }
 
   const duz = emoteAdlari(metin);

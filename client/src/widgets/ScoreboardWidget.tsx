@@ -7,7 +7,7 @@
  */
 import { kokOzellik } from '../lib/kabuklar.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { SCOREBOARD_DEFAULTS } from '../lib/widget-defaults.js';
@@ -195,7 +195,7 @@ export function ScoreboardWidget({ embedded = false, previewMode = false }: { em
   }
 
   return (
-    <div {...kokOzellik(s)} className={`${embedded ? 'w-full h-full' : 'w-screen h-screen p-6'} flex items-start justify-center select-none`} style={{ fontFamily: s.fontFamily, color: s.textColor, ...kutuTasarimi(s), ...ortakHareket(s) }}>
+    <div key={hareketAnahtari(s)} {...kokOzellik(s)} className={`${embedded ? 'w-full h-full' : 'w-screen h-screen p-6'} flex items-start justify-center select-none`} style={{ fontFamily: s.fontFamily, color: s.textColor, ...kutuTasarimi(s), ...ortakHareket(s) }}>
       <style>{SKOR_CSS}</style>
       {icerik}
     </div>

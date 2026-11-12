@@ -13,6 +13,8 @@ import { tahminler } from '../engagement/predictions.js';
 import { kuyruk } from '../engagement/queue.js';
 import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
+import { muzikHost } from '../muzik/index.js';
+import { sesYuzdesi } from '../muzik/spotify-saf.js';
 import { baslangicDuyurusu, giveaway, kazananDuyurusu } from '../giveaways/giveaways.js';
 import { acikAnket, anketBaslat, anketBitir, anketOyuCoz, anketOyuKaydet, anketKomutuCoz, anketSonucMetni } from '../engagement/anket.js';
 import { sohbetIstatistik } from '../community/sohbet-istatistik.js';
@@ -39,7 +41,8 @@ import { duzenliler } from '../community/regulars.js';
 import { votekick, bingo, ayarSayi, kappagenGonder, metindenEmoteler } from '../community/topluluk.js';
 import { emoteAdlari } from '../community/oyunlar.js';
 import { yediTv } from '../emotes/yedi-tv.js';
-import { komutlarMetni, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
+import { kickTakipciSayisi } from './takipci.js';
+import { beklemeSuresi, komutlarMetni, sansSayi, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -84,14 +87,10 @@ function parseTriviaCategory(raw: string): string {
   return 'all';
 }
 
-/** Eski varsayılan `!clip` yanıtı — klip alınmadığı hâlde "alındı" diyordu. */
-const ESKI_KLIP_MESAJI = 'Klip alındı — yayıncı panosundan paylaşılabilir.';
-const KLIP_MESAJI = '📌 @{user} klip anını işaretledi ({zaman}) — yayıncı panelden görecek.';
-
 /** `!modul kapat <ad>`: bu adlardaki yerleşik komutlar yanıt vermez */
 export const MODULLER: Record<string, string[]> = {
   oyunlar: ['slot', 'slots', 'rulet', 'roulette', 'duello', 'duel', 'soygun', 'heist', 'yaris', 'race', 'drag', 'balik', 'avla', 'fish', 'kasaac', 'kasa', 'case', 'bomba', 'c4', 'kes', 'cut', 'yazitura', 'cf', 'coinflip', 'zar', 'dice', 'kral', 'taht', 'king', 'tahtikap', 'claimthrone', 'claimking', 'cark', 'wheel'],
-  sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste'],
+  sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste', 'songpause', 'sarkidur', 'songresume', 'sarkidevam', 'songvol', 'sarkises'],
   yapayzeka: ['sor', 'ask', 'ai', 'cevir', 'translate', 'tr'],
   bilgi: ['soru', 'trivia', 'bilgi', 'bilgiyarismasi', 'yarisma', 'kelime', 'anagram'],
   market: ['market', 'magaza', 'store', 'shop', 'al', 'buy', 'redeem']
@@ -166,14 +165,19 @@ export class CommandManager {
    * "gönderildi" ardından "yetersiz bakiye") her zaman yazılır — yapılan
    * işlemin onayı yutulmaz. Mod ve yayıncı muaf. '' döner: özel komuta düşülmez.
    */
-  /** Panelden bekleme verilen yerleşik komutun son yanıtı (asıl ad → zaman) */
+  /** Panelden bekleme verilen yerleşik komutun son yanıtı. !şans kişi başınadır. */
   private yerlesikBeklemeSon: Map<string, number> = new Map();
+
+  private beklemeAnahtari(ad: string, message: ChatMessagePayload): string {
+    if (ad !== 'sans') return ad;
+    return `sans:${message.platform}:${message.user.username.toLowerCase()}`;
+  }
 
   private yerlesikSeli(ad: string, message: ChatMessagePayload, sonuc: string): string {
     const kayit = yerlesikBul(ad);
     const sablon = kayit && yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'))[kayit.ad]?.yanit;
     if (sablon && sonuc) sonuc = yanitSablonu(sablon, sonuc, message.user.displayName);
-    if (kayit) this.yerlesikBeklemeSon.set(kayit.ad, Date.now());
+    if (kayit && !sonuc.includes(' bekle.')) this.yerlesikBeklemeSon.set(this.beklemeAnahtari(kayit.ad, message), Date.now());
     if (!sonuc || message.user.isMod || message.user.isBroadcaster) return sonuc;
     const k = `${message.platform}:${message.user.username.toLowerCase()}:${ad}`;
     const simdi = Date.now();
@@ -296,6 +300,29 @@ export class CommandManager {
     return `📅 ${hedef} hesabı ${metin} önce açılmış (${new Date(t).toLocaleDateString('tr-TR')}).`;
   }
 
+  /** Kanalın takipçi sayısı. Kick v2 kanal yanıtı; Twitch Helix `moderator:read:followers`. */
+  private async takipciSayisi(message: ChatMessagePayload): Promise<string> {
+    const { platformManager } = await import('../../platforms/manager.js');
+    const yaz = (kanal: string, n: number) => `👥 ${kanal} kanalının ${n.toLocaleString('tr-TR')} takipçisi var.`;
+    if (message.platform === 'kick') {
+      const kick = platformManager.getPlatform('kick') as { getStatus?: () => { channel?: string }; profil?: (s: string) => Promise<unknown> } | undefined;
+      if (!kick) return 'Kick kanalı bağlı değil.';
+      const kanal = kick.getStatus?.().channel || '';
+      if (!kanal || typeof kick.profil !== 'function') return 'Kick kanalı bağlı değil.';
+      const n = kickTakipciSayisi(await kick.profil(kanal));
+      return n == null ? 'Kick takipçi sayısı alınamadı.' : yaz(kanal, n);
+    }
+    if (message.platform === 'twitch') {
+      const tw = platformManager.getPlatform('twitch') as { takipciSayisi?: () => Promise<{ ok: true; sayi: number } | { ok: false; hata: string }>; getStatus?: () => { channel?: string } } | undefined;
+      if (!tw) return 'Twitch bağlı değil.';
+      const r = await tw.takipciSayisi?.();
+      if (!r) return 'Twitch bağlı değil.';
+      if (!r.ok) return `Twitch takipçi sayısı alınamadı: ${r.hata}`;
+      return yaz(tw.getStatus?.().channel || 'kanal', r.sayi);
+    }
+    return 'Bu platformda takipçi sayısı yok.';
+  }
+
   /** Panelden kapatılan yerleşik komutlar (asıl ya da eski kayıtlarda takma ad) */
   private kapaliYerlesikler(): string[] {
     try {
@@ -317,18 +344,34 @@ export class CommandManager {
     return `📊 ANKET: ${r.title} — ${liste} · Oy vermek için sohbete numarasını (1-${r.options.length}) ya da şıkkın adını yaz (${r.durationSeconds} sn)`;
   }
 
+  private async sarkiKomutu(eylem: string, tamam: string): Promise<string> {
+    try {
+      await muzikHost.komut(eylem);
+      return tamam;
+    } catch (e) {
+      return hataMetni(e) || 'Müzik komutu başarısız.';
+    }
+  }
+
   private async executeBuiltIn(name: string, args: string[], message: ChatMessagePayload): Promise<string | null> {
     // Kapatma asıl adla tutulur ve takma adları da kapsar (eskiden !puan kapalıyken !bakiye çalışıyordu)
     const kayit = yerlesikBul(name);
-    if (this.kapaliYerlesikler().some((x) => x === name || x === kayit?.ad)) return null;
+    const kim = message.user.displayName;
+    if (kayit && this.kapaliYerlesikler().some((x) => x === name || x === kayit.ad)) {
+      return `@${kim}, !${kayit.ad} kapalı.`;
+    }
     if (kayit) {
       const ayar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'))[kayit.ad];
-      if (ayar && !yetkiYeterli(ayar.yetki, message.user)) return null;
+      if (!yetkiYeterli(ayar?.yetki || kayit.yetki, message.user)) return `@${kim}, !${kayit.ad} için yetkin yok.`;
       const ayricalikli = message.user.isMod || message.user.isBroadcaster;
-      if (ayar?.bekleme && !ayricalikli && Date.now() - (this.yerlesikBeklemeSon.get(kayit.ad) || 0) < ayar.bekleme * 1000) return null;
+      const sn = beklemeSuresi(kayit, ayar);
+      const anahtar = this.beklemeAnahtari(kayit.ad, message);
+      if (sn && !ayricalikli && Date.now() - (this.yerlesikBeklemeSon.get(anahtar) || 0) < sn * 1000) {
+        return `@${kim}, !${kayit.ad} için ${sn} sn bekle.`;
+      }
     }
     const modul = Object.entries(MODULLER).find(([, adlar]) => adlar.includes(name))?.[0];
-    if (modul && settingsCache.getBoolean(`modul_kapali_${modul}`, false)) return null;
+    if (modul && settingsCache.getBoolean(`modul_kapali_${modul}`, false)) return `@${kim}, !${name} kapalı.`;
 
     switch (name) {
       case 'puan':
@@ -401,6 +444,12 @@ export class CommandManager {
       case 'kure':
         return economy.handle8Ball(message, args);
 
+      case 'sans':
+      case 'şans':
+      case 'luck':
+      case 'chance':
+        return `🎲 @${message.user.displayName} şansın: ${sansSayi()}`;
+
       case 'sr':
       case 'songrequest':
       case 'sarkiiste':
@@ -414,6 +463,21 @@ export class CommandManager {
       case 'song':
       case 'currentsong':
         return songRequest.calanYaniti();
+
+      case 'songpause':
+      case 'sarkidur':
+        return this.sarkiKomutu('pause', '⏸️ Şarkı duraklatıldı.');
+
+      case 'songresume':
+      case 'sarkidevam':
+        return this.sarkiKomutu('play', '▶️ Şarkı devam ediyor.');
+
+      case 'songvol':
+      case 'sarkises': {
+        const y = sesYuzdesi(args[0] || '');
+        if (y === null) return 'Kullanım: !songvol 0-100';
+        return this.sarkiKomutu(`volume:${y}`, `🔊 Şarkı sesi %${y}.`);
+      }
 
       case 'atla':
       case 'skip':
@@ -676,11 +740,19 @@ export class CommandManager {
         const cfg = extras.getExtrasSettings();
         if (!cfg.clip_enabled) return null;
         if (Date.now() - this.clipLast < (cfg.clip_cooldown || 30) * 1000) return `@${message.user.displayName}, clip komutu beklemede.`;
-        this.clipLast = Date.now();
-        // Gerçek klip: canlı yayının son ~30 sn'si + istenen süreye kadar ileri
-        // (yerel ffmpeg, data/klipler). Kayıt arka planda; bitince sohbete haber.
-        const sure = klipSuresi(args[0], Number(cfg.clip_default_sec) || 30, Number(cfg.clip_max_sec) || 60);
         const dn = message.user.displayName;
+        if (message.platform === 'twitch') {
+          const { platformManager } = await import('../../platforms/manager.js');
+          const r = await (platformManager.getPlatform('twitch') as any)?.klipOlustur?.();
+          if (r?.ok) {
+            this.clipLast = Date.now();
+            return `🎬 @${dn} klip: ${r.url}`;
+          }
+          return `@${dn}, klip alınamadı: ${r?.hata || 'Twitch bağlı değil'}`;
+        }
+        if (message.platform !== 'kick') return `@${dn}, klip şu an Kick ve Twitch'te var.`;
+        // Kick: canlı yayının HLS'inden yerel ffmpeg (data/klipler). Bekleme yalnız kayıt başlayınca.
+        const sure = klipSuresi(args[0], Number(cfg.clip_default_sec) || 30, Number(cfg.clip_max_sec) || 60);
         const klip = await klipYoneticisi.baslat(message.platform, dn, sure, (metin, dosya) => {
           eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: `@${dn} ${metin}` });
           if (!dosya) return;
@@ -693,36 +765,15 @@ export class CommandManager {
             seyrekUyar('komut:clip', '[Komut] Klip kaydı olaylara yazılamadı', e);
           }
         });
-        if (klip.ok) return `🎬 @${dn} son ${sure} sn kaydediliyor…`;
+        if (klip.ok) {
+          this.clipLast = Date.now();
+          return `🎬 @${dn} son ${sure} sn kaydediliyor…`;
+        }
         if (klip.sebep === 'mesgul') return `@${dn}, şu an başka bir klip kaydediliyor; birkaç saniye sonra tekrar dene.`;
         if (klip.sebep === 'yayin-yok') return `@${dn}, klip yalnız yayın açıkken alınabilir.`;
-        // ffmpeg yok ya da kayıt başlatılamadı → anı işaretle (eski davranış)
-        // Bu yolda platformda klip OLUŞTURULMAZ. Eskiden "Klip alındı — yayıncı
-        // panosundan paylaşılabilir" deniyordu ama hiçbir yere kayıt düşmüyordu.
-        // Artık an, panelin "Son Etkinlikler" listesine işaretlenir; yayıncı
-        // kayıttan/VOD'dan keser.
-        const zaman = yayinAcikMi() === false ? '' : getStreamUptime();
-        try {
-          db.prepare(`
-            INSERT INTO stream_events (id, platform, event_type, username, display_name, message, timestamp)
-            VALUES (?, ?, 'klip', ?, ?, ?, ?)
-          `).run(
-            randomUUID(),
-            message.platform,
-            message.user.username,
-            message.user.displayName,
-            `📌 Klip anı — ${message.user.displayName}${zaman ? ` (yayın başlayalı ${zaman})` : ''}`,
-            Date.now()
-          );
-        } catch (e) {
-          seyrekUyar('komut:clip', '[Komut] Klip anı kaydedilemedi', e);
-        }
-        // Eski varsayılanlar (biri hiç doldurulmayan `{url}` içeriyordu) yeni metne döner
-        const eskiMi = !cfg.clip_message || cfg.clip_message === ESKI_KLIP_MESAJI || cfg.clip_message.includes('{url}');
-        const sablon = eskiMi ? KLIP_MESAJI : cfg.clip_message;
-        return sablon
-          .replace('{user}', () => message.user.displayName)
-          .replace('{zaman}', () => zaman || 'yayın kapalı');
+        if (klip.sebep === 'ffmpeg-yok') return `@${dn}, klip için ffmpeg yok. Kur: winget install Gyan.FFmpeg`;
+        if (klip.sebep === 'adres-yok') return `@${dn}, yayın açık ama Kick klip adresi gelmedi. Biraz sonra tekrar dene.`;
+        return `@${dn}, klip alınamadı${klip.hata ? `: ${klip.hata}` : ''}.`;
       }
 
       // Yayıncı (kanal sahibi) elle puan verir/alır.
@@ -1187,6 +1238,11 @@ export class CommandManager {
         const sa = Math.floor(dk / 60);
         return `⏳ ${r.display_name || hedef} bu kanalı ${sa > 0 ? `${sa} saat ` : ''}${dk % 60} dakika izledi.`;
       }
+
+      case 'followers':
+      case 'takipci':
+      case 'takipciler':
+        return await this.takipciSayisi(message);
 
       case 'followage':
       case 'takipsuresi': {

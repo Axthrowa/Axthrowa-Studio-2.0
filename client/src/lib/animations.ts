@@ -30,8 +30,6 @@ export interface AnimOnAyari {
   kare?: string;
 }
 
-const GORUNUR: CSSProperties = { opacity: 1, transform: 'none' };
-
 /** Kısa yazım: yalnız transform değişen ön ayarlar için. */
 function ta(id: string, etiket: string, grup: AnimGrubu, transform: string, opacity = 0, easing?: string): AnimOnAyari {
   return { id, etiket, grup, from: { opacity, transform }, easing };
@@ -42,8 +40,6 @@ const ZIPLAMA = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
 const GERI = 'cubic-bezier(0.68, -0.6, 0.32, 1.6)';
 /** Anahtar karelerin her aralığında: hızlanıp yavaşlar, kare geçişlerinde sarsılmaz */
 const AKICI = 'cubic-bezier(0.4, 0, 0.2, 1)';
-/** Çıkış: yavaş başlar, hızlanarak gider (girişten kısa sürer) */
-const CIKIS = 'cubic-bezier(0.4, 0, 0.9, 0.6)';
 /** Çıkış girişten kısa: göz giden öğeyi beklemez */
 export const CIKIS_ORANI = 0.8;
 
@@ -183,6 +179,14 @@ export function animKimligi(ham: string | undefined): string {
   return ESKI_ADLAR[k.toLowerCase()] || 'fade';
 }
 
+/** Çıkış seçilmemişse ya da "girişin tersi" ise girişin kendisi tersine oynar. */
+export function cikisKimligi(giris: unknown, cikis: unknown): string {
+  const gir = animKimligi(typeof giris === 'string' ? giris : String(giris ?? ''));
+  const c = String(cikis ?? 'ayni').trim();
+  if (!c || c === 'ayni') return gir;
+  return animKimligi(c);
+}
+
 export type AnimAsamasi = 'entering' | 'visible' | 'exiting' | 'hidden';
 
 /**
@@ -197,22 +201,28 @@ export function animStili(
   const a = animBul(animKimligi(animId));
   const egri = a.easing || YUMUSAK;
   const cikisMs = Math.round(sureMs * CIKIS_ORANI);
-  const gecis = `opacity ${sureMs}ms ${egri} ${gecikmeMs}ms, transform ${sureMs}ms ${egri} ${gecikmeMs}ms`;
+  // Geçiş (transition) Windows "animasyon efektleri" kapalıyken hiç oynamıyordu.
+  // Giriş ve çıkış aynı anahtar kare: çıkış reverse ile biter, dolgu son karede kalır.
+  const oyna = (ms: number, yon = '') => `axt-on-${a.id} ${ms}ms ${egri} ${gecikmeMs}ms${yon ? ' ' + yon : ''} both`.replace(/\s+/g, ' ');
 
-  if (a.kare) {
-    // Tersine oynarken eğri de tersine döner: giriş yavaşlayarak biter, çıkış hızlanarak gider
-    const oyna = (ms: number, yon = '') => `axt-on-${a.id} ${ms}ms ${egri} ${gecikmeMs}ms ${yon} both`.replace('  ', ' ');
-    if (asama === 'hidden') return { opacity: 0, transition: 'none', visibility: 'hidden' };
-    if (asama === 'entering') return { opacity: 0 };
-    if (asama === 'exiting') return { animation: oyna(cikisMs, 'reverse') };
-    return { animation: oyna(sureMs) };
+  if (a.id === 'none') {
+    const gizli = asama === 'hidden' || asama === 'exiting';
+    return { opacity: gizli ? 0 : 1, transform: 'none', animation: 'none', transition: 'none', visibility: asama === 'hidden' ? 'hidden' : 'visible' };
   }
+  if (asama === 'hidden') return { ...a.from, animation: 'none', transition: 'none', visibility: 'hidden' };
+  if (asama === 'exiting') return { animation: oyna(cikisMs, 'reverse') };
+  // opacity/transform burada yazılmaz. Yazılırsa anahtar kare bunları yenemez
+  // (OBS ve gömülü Chromium): her ön ayar aynı durur, seçim değişince hareket değişmez.
+  // `both` dolgusu başlangıç karesini ve bitişteki görünür hâli kendisi uygular.
+  return { animation: oyna(sureMs) };
+}
 
-  if (asama === 'hidden') return { ...a.from, transition: 'none', visibility: 'hidden' };
-  if (asama === 'entering') return { ...a.from, transition: gecis };
-  if (asama === 'exiting')
-    return { ...a.from, transition: `opacity ${cikisMs}ms ${CIKIS} ${gecikmeMs}ms, transform ${cikisMs}ms ${CIKIS} ${gecikmeMs}ms` };
-  return { ...GORUNUR, transition: gecis };
+/**
+ * Animasyon ayarı değişince öğe baştan kurulsun. CSS animasyonu bitince dolgu
+ * son karede kalır; yalnız stil güncellenince tarayıcı aynı hareketi yeniden oynatmayabilir.
+ */
+export function hareketAnahtari(s: Record<string, any>): string {
+  return [s.girisAnimasyonu, s.animation, s.animationDuration, s.exitAnimation, s.surekliEfekt, s.efektSuresi].map((v) => String(v ?? '')).join('|');
 }
 
 /** Metin katmanı efektleri (BotRix'te 6 seçenek gözlemlendi). */

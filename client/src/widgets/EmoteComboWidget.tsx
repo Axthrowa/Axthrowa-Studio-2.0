@@ -7,7 +7,7 @@
  * Yalnız emote'un kendisi görünür: çerçeve, ad ve sayaç yok.
  */
 import { kokOzellik } from '../lib/kabuklar.js';
-import { ortakHareket } from '../lib/animations.js';
+import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { EMOTE_COMBO_DEFAULTS } from '../lib/widget-defaults.js';
@@ -195,6 +195,8 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
         return;
       }
       if (m?.type !== 'chat') return;
+      // Botun kendi iletisi (ve yayıncı hesabından giden yankısı) komboyu büyütmesin
+      if (m.data?.user?.isSelf) return;
       // Ortak kara listedeki kullanıcı ve kalkana takılan mesaj kombo sayacına katılmaz
       if (m.data?.karaListede || m.data?.kalkanda) return;
       const metin = String(m.data?.message || m.payload?.message || '').trim();
@@ -221,7 +223,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
       <style>{KOMBO_CSS}</style>
       {kombo && (
         <div data-yuzey="" style={merkez}>
-          <div style={ortakHareket(s)}>
+          <div key={hareketAnahtari(s)} style={ortakHareket(s)}>
             {/* key=adet: her yeni emote'ta bir kez vurulmuş gibi zıplar */}
             <div key={kombo.adet} style={{ animation: 'axt-kombo-vurus 240ms ease-out' }}>
               {/* Gölge hareket eden katmanın içinde: dıştaki kapta olunca her karede tüm kap yeniden çiziliyordu */}

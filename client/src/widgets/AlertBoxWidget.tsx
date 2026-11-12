@@ -2,7 +2,7 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
-import { kutla } from '../lib/kutlama.js';
+import { kutla, olayKutlamasi } from '../lib/kutlama.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ALERT_ADVANCED_DEFAULTS } from '../lib/widget-defaults.js';
 import {
@@ -18,7 +18,7 @@ import {
   type KuyrukDurumu,
   olayYoksaGenel
 } from '../lib/alertQueue.js';
-import { animStili, type AnimAsamasi, efektEkle } from '../lib/animations.js';
+import { animStili, cikisKimligi, type AnimAsamasi, efektEkle } from '../lib/animations.js';
 
 interface AlertItem {
   id: string;
@@ -223,8 +223,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     }
 
     if (advanced.confetti && ['sub', 'tip', 'raid', 'gift_tiktok', 'follow', 'gift_sub', 'kicks', 'host'].includes(alert.eventType)) {
+      const k = olayKutlamasi(alert.eventType, alert.amount, String(advanced.celebration || 'konfeti'));
       kutlamaIptal.current();
-      kutlamaIptal.current = kutla(String(advanced.celebration || 'konfeti'), alert.eventType === 'follow' ? 0.55 : 1);
+      kutlamaIptal.current = kutla(k.tur, k.guc);
     }
   };
 
@@ -313,15 +314,13 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
   const aktifUyari = (kuyruk.aktif?.veri as AlertItem | undefined) || null;
   const displayAlert = aktifUyari || (isPreview ? mockPreviewAlert : null);
-  const asama: AnimAsamasi = aktifUyari
-    ? kuyruk.asama === 'entering'
-      ? 'visible' // giris: hedef duruma gecis (CSS animasyonu calissin)
-      : kuyruk.asama === 'exiting'
-        ? 'exiting'
-        : 'visible'
-    : isPreview
-      ? 'visible'
-      : 'hidden';
+  const animAdi = String((aktifUyari ? aktifUyari.animation : advanced.animation) || 'fade');
+  const uyariId = aktifUyari?.id || (isPreview && displayAlert ? `onizleme-${animAdi}` : '');
+  const asama: AnimAsamasi = !displayAlert
+    ? 'hidden'
+    : aktifUyari && kuyruk.asama === 'exiting'
+      ? 'exiting'
+      : 'visible';
 
   /**
    * Metin katmani gorunur mu?
@@ -367,11 +366,12 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
       {displayAlert && (
         <div
+          key={`${uyariId || 'yok'}-${animAdi}-${advanced.animationDuration}-${advanced.exitAnimation}`}
           {...kokOzellik(advanced as Record<string, any>)}
           style={{
             ...efektEkle(
               animStili(
-                asama === 'exiting' ? (advanced.exitAnimation || displayAlert.animation) : displayAlert.animation,
+                asama === 'exiting' ? cikisKimligi(animAdi, advanced.exitAnimation) : animAdi,
                 asama,
                 Math.max(0, Number(advanced.animationDuration) || 500)
               ),

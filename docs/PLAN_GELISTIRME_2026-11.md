@@ -27,6 +27,11 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - U1 kurulum sihirbazı: OBS → platform → sahne eşleme → test uyarısı; son adım birleşik overlay'i (`/overlay/master`) açık sahneye ekler, aynı adresli kaynak varsa eklemez. Bitti bilgisi panel ayarlarında `kurulumBitti`; OBS'i parolalı ayarlanmış eski kurulumlarda satır görünmez. Gerçek OBS'e ekleme sınanmadı (sandbox OBS'e bağlı değil).
 - Faz 1 tamam.
 
+## Faz 2 durumu
+
+- U3 uyarı kuyruğu monitörü: OBS'teki uyarı kutusu ekrandaki ve sıradaki uyarıları bota bildirir (`uyari_kuyrugu` → `alert_queue`), Canlı kipinde "Uyarı kuyruğu" paneli gösterir; duraklat, sustur, atla, temizle, yeniden oynat. Sandbox'ta beş test uyarısı sıraya girdi, duraklatınca 9 sn yenisi çıkmadı. Aynı kutu iki sahnede açıksa panel OBS kaynaklarından en son güncelleneni gösterir. Gerçek OBS'te sınanmadı.
+- Açık: U4, U5, U8, B2, B3, B4, B5, B12, A7, A8, T4, T5, T6.
+
 ---
 
 ## Aşama 0 — Gerçek yayın provası (kod yok, 1 oturum)

@@ -747,23 +747,6 @@ export class GamesEngine {
       return `🎲 ZAR DÜELLOSU: İki taraf da [${userTotal}] attı! BERABERE! Puanın iade edildi. 🤝`;
     }
   }
-
-  // 10. LIST ALL GAMES
-  handleGamesHelp(): string {
-    return '🎮 AXBOT OYUNLARI: ' +
-      '!soygun (Çete Banka Soygunu) | ' +
-      '!yaris (Sokak Yarışı) | ' +
-      '!soru (Bil Bakalım) | ' +
-      '!kelime (Kelime Avı) | ' +
-      '!balik (Balık Tutma) | ' +
-      '!kasaac (CS Kasa Açma) | ' +
-      '!bomba (Bomba İmha) | ' +
-      '!rulet (Rulet) | ' +
-      '!slot (Slot Çevir) | ' +
-      '!duello (Kılıç Düellosu) | ' +
-      '!yazitura (Yazı-Tura) | ' +
-      '!zar (Zar At)';
-  }
 }
 
 export const gamesEngine = new GamesEngine();

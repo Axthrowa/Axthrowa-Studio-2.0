@@ -248,10 +248,24 @@ export function komutlarMetni(o: { kategori?: string; kapali: string[]; ozel: st
     const liste = acik.filter((x) => x.kategori === kat).map((x) => `${x.kullanim || `!${x.ad}`}${x.yetki !== 'herkes' ? ' (mod)' : ''}`);
     return kirp(`📌 ${kat}: ${liste.join(' · ')}`, enCok);
   }
-  const herkes = acik.filter((x) => x.yetki === 'herkes').map((x) => `!${x.ad}`);
+  // Sade liste: 100'e yakın komut sohbette okunmuyordu; oyunlar !oyunlar'da
+  const herkes = SADE_LISTE.filter((ad) => acik.some((x) => x.ad === ad)).map((ad) => `!${ad}`);
   const ozel = o.ozel.map((x) => `!${x.replace(/^!/, '')}`).filter((x) => !herkes.includes(x));
   const ipucu = ` · Ayrıntı: !komutlar <${kategoriler.slice(0, 4).map(katla).join('|')}…>`;
   return kirp(`📌 Komutlar: ${[...ozel, ...herkes].join(' ')}`, enCok - ipucu.length) + ipucu;
+}
+
+const SADE_LISTE = ['sr', 'sarki', 'sira', 'puan', 'market', 'liderlik', 'profil', 'oyunlar', 'sor', 'uptime', 'followage', 'clip', 'lurk'];
+const OYUN_KATEGORILERI = ['Oyunlar', 'Bil Bakalım', 'Krallık'];
+
+/** `!oyunlar`: açık oyun komutları (oyun içi adımlar ve liste komutunun kendisi hariç). */
+export function oyunlarMetni(kapali: string[], enCok = 450): string {
+  const liste = YERLESIK_KOMUTLAR.filter(
+    (x) => OYUN_KATEGORILERI.includes(x.kategori) && x.yetki === 'herkes' && !kapali.includes(x.ad) && !['oyunlar', 'kes', 'triviaskor', 'triviatop'].includes(x.ad)
+  ).map((x) => `!${x.ad}`);
+  if (!liste.length) return '🎮 Şu an açık oyun yok.';
+  const ipucu = ' · Nasıl oynanır: !komutlar oyunlar';
+  return kirp(`🎮 Oyunlar: ${liste.join(' ')}`, enCok - ipucu.length) + ipucu;
 }
 
 function kirp(m: string, enCok: number): string {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { YERLESIK_KOMUTLAR, beklemeSuresi, komutlarMetni, sansSayi, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
+import { YERLESIK_KOMUTLAR, beklemeSuresi, komutlarMetni, oyunlarMetni, sansSayi, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
 import { YERLESIK_ORNEKLER } from './yerlesik-ornekler.js';
 
 describe('yerleşik komut listesi', () => {
@@ -33,6 +33,13 @@ describe('yerleşik komut listesi', () => {
     expect(m).not.toMatch(/!sr\b/);
     expect(komutlarMetni({ kategori: 'oyun', kapali: [], ozel: [] })).toContain('!slot 25');
     expect(komutlarMetni({ kategori: '123', kapali: [], ozel: [] })).toMatch(/^📌 Komutlar:/);
+    expect(m).toContain('!oyunlar');
+    expect(m).not.toContain('!slot');
+    const o = oyunlarMetni(['rulet']);
+    expect(o).toContain('!slot');
+    expect(o).toContain('!soru');
+    expect(o).not.toContain('!rulet');
+    expect(o.length).toBeLessThanOrEqual(450);
     expect(YERLESIK_KOMUTLAR.length).toBeGreaterThan(90);
   });
 });

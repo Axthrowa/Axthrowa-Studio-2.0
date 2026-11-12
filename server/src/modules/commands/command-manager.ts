@@ -42,7 +42,7 @@ import { votekick, bingo, ayarSayi, kappagenGonder, metindenEmoteler } from '../
 import { emoteAdlari } from '../community/oyunlar.js';
 import { yediTv } from '../emotes/yedi-tv.js';
 import { kickTakipciSayisi } from './takipci.js';
-import { beklemeSuresi, komutlarMetni, sansSayi, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
+import { beklemeSuresi, komutlarMetni, oyunlarMetni, sansSayi, yanitSablonu, yerlesikAyarlariCoz, yerlesikBul, yetkiYeterli } from './yerlesik-komutlar.js';
 
 interface CooldownEntry {
   expiresAt: number;
@@ -332,6 +332,13 @@ export class CommandManager {
       seyrekUyar('ayar:default_commands_disabled', '[Komut] Kapalı varsayılan komut listesi okunamadı', e);
       return [];
     }
+  }
+
+  /** `!modul kapat <ad>` ile kapatılan modüllerin komutları */
+  private modulKapaliYerlesikler(): string[] {
+    return Object.entries(MODULLER)
+      .filter(([m]) => settingsCache.getBoolean(`modul_kapali_${m}`, false))
+      .flatMap(([, adlar]) => adlar.map((a) => yerlesikBul(a)?.ad || a));
   }
 
   /** `!anketac [süre] Soru | A | B` → anket açılır, seçenekler sohbete yazılır */
@@ -884,7 +891,7 @@ export class CommandManager {
       // --- CHAT MINIGAMES ---
       case 'oyunlar':
       case 'games':
-        return gamesEngine.handleGamesHelp();
+        return oyunlarMetni([...this.kapaliYerlesikler(), ...this.modulKapaliYerlesikler()]);
 
       case 'soygun':
       case 'heist':
@@ -1061,10 +1068,7 @@ export class CommandManager {
         const ozel = db
           .prepare("SELECT name FROM commands WHERE is_enabled = 1 AND COALESCE(trigger_type, 'command') = 'command' ORDER BY use_count DESC, name LIMIT 40")
           .all() as Array<{ name: string }>;
-        const modulKapali = Object.entries(MODULLER)
-          .filter(([m]) => settingsCache.getBoolean(`modul_kapali_${m}`, false))
-          .flatMap(([, adlar]) => adlar.map((a) => yerlesikBul(a)?.ad || a));
-        return komutlarMetni({ kategori: args.join(' ').trim() || undefined, kapali: [...this.kapaliYerlesikler(), ...modulKapali], ozel: ozel.map((c) => String(c.name)) });
+        return komutlarMetni({ kategori: args.join(' ').trim() || undefined, kapali: [...this.kapaliYerlesikler(), ...this.modulKapaliYerlesikler()], ozel: ozel.map((c) => String(c.name)) });
       }
 
       // ---- Topluluk tahminleri: !tahmin (eski adı !bahis da çalışır) --------

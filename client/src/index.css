@@ -134,3 +134,6 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Studio komut paletinden inilen ayar kısa süre vurgulanır (gömülü sözleşme) */
+.axt-ayar-vurgu { outline: 2px solid var(--axt-vurgu, #a855f7); outline-offset: 3px; border-radius: 4px; transition: outline-color 0.3s; }

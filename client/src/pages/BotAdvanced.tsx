@@ -761,6 +761,8 @@ export function BotAdvanced() {
         {SEKMELER.map((s) => (
           <button
             key={s.id}
+            role="tab"
+            aria-selected={sekme === s.id}
             onClick={() => setSekme(s.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
               sekme === s.id ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10'

@@ -65,7 +65,7 @@ export function Extras() {
       </div>
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
         {(['alerts', 'clip', 'levels', 'quotes', 'topluluk'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === t ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === t ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>
             {t === 'alerts' ? 'Sohbet Uyarıları' : t === 'clip' ? 'Klip Komutu' : t === 'levels' ? 'Seviye Sistemi' : t === 'quotes' ? 'Alıntı & Sayaç' : 'Topluluk'}
           </button>
         ))}

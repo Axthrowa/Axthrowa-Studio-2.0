@@ -722,6 +722,8 @@ export function Integrations() {
         {SEKMELER.map((s) => (
           <button
             key={s.id}
+            role="tab"
+            aria-selected={sekme === s.id}
             onClick={() => setSekme(s.id)}
             className={`px-3 py-2 rounded-lg text-xs font-bold ${
               sekme === s.id ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'

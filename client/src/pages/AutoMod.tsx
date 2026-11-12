@@ -191,7 +191,7 @@ export function AutoMod() {
 
       <div className="flex flex-wrap gap-1 bg-black/30 p-1 rounded-xl">
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === t.id ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>{t.label}</button>
+          <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === t.id ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>{t.label}</button>
         ))}
       </div>
 

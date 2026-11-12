@@ -86,6 +86,7 @@ import { BRAND } from './brand.js';
 import { SURUMLER } from './lib/surumler.js';
 import { VARSAYILAN_TEMA, disTemaUygula, usePanelTemasi } from './lib/panelTemalari.js';
 import { studioTemasiCoz } from './lib/studioTemasi.js';
+import { ayaraGit, GERI_AL_OLAYI, ODAK_BIRAK, studioIstegiCoz } from './lib/gomuluSozlesme.js';
 
 /** Bir widget çökerse menü de silinmesin; sekme değişince yeniden denensin. */
 class SayfaSiniri extends Component<{ anahtar: string; children: ReactNode }, { hata: boolean }> {
@@ -170,6 +171,9 @@ export function App() {
     if (window.parent === window) return;
     const dinle = (e: MessageEvent) => {
       if (e.source !== window.parent) return;
+      const istek = studioIstegiCoz(e.data);
+      if (istek?.tur === 'ayara-git') return ayaraGit(istek.ayar, istek.sekme);
+      if (istek?.tur === 'geri-al') return void window.dispatchEvent(new Event(GERI_AL_OLAYI));
       const t = studioTemasiCoz(e.data);
       if (!t) return;
       const kok = document.documentElement;
@@ -196,10 +200,16 @@ export function App() {
   }, [onayIste]);
   const sekmeyeGecRef = useRef(sekmeyeGec);
   sekmeyeGecRef.current = sekmeyeGec;
-  // Panele gömülüyken Ctrl+K çerçeve dışına çıkmaz: komut paletini açsın diye panele bildirilir
+  // Panele gömülüyken Ctrl+K çerçeve dışına çıkmaz: komut paletini açsın diye panele bildirilir.
+  // Esc (açık pencere yokken) odağı Studio menüsüne bırakır (gömülü sözleşme, lib/gomuluSozlesme.ts)
   useEffect(() => {
     if (window.parent === window) return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented && !document.querySelector('[role="dialog"], [aria-modal="true"]')) {
+        (document.activeElement as HTMLElement | null)?.blur();
+        window.parent.postMessage({ type: ODAK_BIRAK }, '*');
+        return;
+      }
       if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return;
       e.preventDefault();
       window.parent.postMessage({ type: 'axbot:komut-paleti' }, '*');

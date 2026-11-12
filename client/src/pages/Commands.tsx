@@ -131,8 +131,8 @@ export function Commands() {
       </div>
 
       <div className="flex gap-1 bg-black/30 p-1 rounded-xl w-fit">
-        <button onClick={() => setTab('my')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'my' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Komutlarım</button>
-        <button onClick={() => setTab('default')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'default' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Yerleşik Komutlar</button>
+        <button role="tab" aria-selected={tab === 'my'} onClick={() => setTab('my')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'my' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Komutlarım</button>
+        <button role="tab" aria-selected={tab === 'default'} onClick={() => setTab('default')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'default' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Yerleşik Komutlar</button>
         <button onClick={() => setTab('karsilama')} className={`px-3 py-2 rounded-lg text-xs font-bold ${tab === 'karsilama' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Takipçi Karşılama</button>
       </div>
 

@@ -44,6 +44,10 @@ export type NormalizedChatMessage = {
   moderationReason?: string;
   /** bu oturumda kişinin ilk iletisi (depo ekler) */
   firstInSession?: boolean;
+  /** platformun bildirdiği "kanaldaki ilk mesajı" (Twitch first-msg) */
+  firstEver?: boolean;
+  /** Twitch Shared Chat: ortak sohbetteki başka kanaldan geldi */
+  shared?: boolean;
 };
 
 export type ActivityEvent = {

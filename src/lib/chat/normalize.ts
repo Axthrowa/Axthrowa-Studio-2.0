@@ -84,6 +84,8 @@ export function normalizeChat(data: unknown): NormalizedChatMessage | null {
     currency: str(d.currency, 10) || undefined,
     moderation: d.karaListede === true ? "blocked" : kalkan ? "shielded" : "visible",
     moderationReason: d.karaListede === true ? "kara liste" : kalkan || undefined,
+    firstEver: d.ilkMesaj === true || undefined,
+    shared: d.paylasimli === true || undefined,
   };
 }
 

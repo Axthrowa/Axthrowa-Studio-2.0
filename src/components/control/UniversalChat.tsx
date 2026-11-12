@@ -7,7 +7,8 @@
  * denetimli elle moderasyon ucuna gider (gerçek platform eylemi).
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Check, Pause, Play, RotateCcw, Search, Send } from "lucide-react";
+import { ArrowDownUp, Check, Pause, Pin, Play, RotateCcw, Search, Send, Sparkles } from "lucide-react";
+import KullaniciKarti from "./KullaniciKarti";
 import { axbotBase } from "../../lib/axbot";
 import { ACTIVITY_LABEL, CHAT_PLATFORMS, PLATFORM_LABEL, PLATFORM_SHORT, type ActivityEvent, type ChatPlatform, type NormalizedChatMessage } from "../../lib/chat/model";
 import { normalizeActivity, normalizeChat } from "../../lib/chat/normalize";
@@ -187,6 +188,15 @@ const RENDER_LIMIT = 250;
 const YAZI_BOYUTLARI = [12, 14, 16] as const;
 const YAZI_KEY = "studio.chat.fontSize";
 
+const TERS_KEY = "axt.sohbet.tersSira";
+function kayitliTers(): boolean {
+  try {
+    return localStorage.getItem(TERS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 function kayitliYaziBoyutu(): number {
   try {
     const v = Number(localStorage.getItem(YAZI_KEY));
@@ -209,6 +219,16 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
   const [yazi, setYazi] = useState("");
   const [armed, setArmed] = useState<string | null>(null);
   const [yaziBoyutu, setYaziBoyutu] = useState(kayitliYaziBoyutu);
+  const [ters, setTers] = useState(kayitliTers);
+  const [uzerinde, setUzerinde] = useState(false);
+  const [kart, setKart] = useState<NormalizedChatMessage | null>(null);
+  useEffect(() => {
+    try {
+      localStorage.setItem(TERS_KEY, ters ? "1" : "0");
+    } catch {
+      /* depolama kapalıysa yalnız bu oturumda */
+    }
+  }, [ters]);
   const yaziBoyutuDegistir = () =>
     setYaziBoyutu((onceki) => YAZI_BOYUTLARI[((YAZI_BOYUTLARI as readonly number[]).indexOf(onceki) + 1) % YAZI_BOYUTLARI.length]);
   useEffect(() => {
@@ -220,51 +240,85 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
   }, [yaziBoyutu]);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const kaynak = paused && frozen ? frozen : chat.messages;
+  // Fare listedeyken akış durur (okurken kaymasın); elle dondurma ayrıca kalıcıdır
+  const durdu = paused || uzerinde;
+  const kaynak = durdu && frozen ? frozen : chat.messages;
   const filtered = useMemo(() => filterChat(kaynak, { view, platforms, query, showBots }), [kaynak, view, platforms, query, showBots]);
-  const shown = filtered.slice(-RENDER_LIMIT);
+  const sonlar = filtered.slice(-RENDER_LIMIT);
+  const shown = ters ? [...sonlar].reverse() : sonlar;
   const sayac = useMemo(() => platformCounts(chat.messages), [chat.messages]);
-  const yeni = paused && frozen ? chat.messages.length - frozen.length : 0;
+  const yeni = durdu && frozen ? chat.messages.length - frozen.length : 0;
 
   useEffect(() => {
-    if (!paused) listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [shown.length, paused]);
+    if (!durdu) listRef.current?.scrollTo({ top: ters ? 0 : listRef.current.scrollHeight });
+  }, [shown.length, durdu, ters]);
+
+  const fareGirdi = () => {
+    setUzerinde(true);
+    setFrozen((f) => f ?? chat.messages);
+  };
+  const fareCikti = () => {
+    setUzerinde(false);
+    if (!paused) setFrozen(null);
+  };
+  const surdur = () => {
+    setPaused(false);
+    setUzerinde(false);
+    setFrozen(null);
+  };
 
   const togglePause = () => {
-    if (paused) {
-      setPaused(false);
-      setFrozen(null);
-    } else {
+    if (paused) surdur();
+    else {
       setPaused(true);
-      setFrozen(chat.messages);
+      setFrozen((f) => f ?? chat.messages);
     }
   };
 
-  const moderate = useCallback(
-    async (m: NormalizedChatMessage, eylem: "timeout" | "ban" | "delete") => {
-      const anahtar = `${m.key}:${eylem}`;
-      if (armed !== anahtar) {
-        setArmed(anahtar);
-        window.setTimeout(() => setArmed((a) => (a === anahtar ? null : a)), 4000);
-        return;
-      }
-      setArmed(null);
+  const cezaVer = useCallback(
+    async (m: NormalizedChatMessage, eylem: "timeout" | "ban" | "delete", sebep: string) => {
       try {
         const yol = eylem === "delete" ? "delete-message" : eylem;
         const r = await fetch(`${base}/api/moderation/${yol}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ platform: m.platform, username: m.username, messageId: m.messageId, saniye: 600, sebep: "Kontrol Merkezi", actor: "Kontrol Merkezi" }),
+          body: JSON.stringify({ platform: m.platform, username: m.username, messageId: m.messageId, saniye: 600, sebep, actor: "Kontrol Merkezi" }),
         });
         const d = await r.json().catch(() => ({}));
         const ne = eylem === "timeout" ? "10 dk zaman aşımı" : eylem === "ban" ? "kalıcı ban" : "mesaj silme";
-        onToast(r.ok ? `${m.displayName}: ${ne} uygulandı` : `${m.displayName}: ${d?.hata || `HTTP ${r.status}`}`);
+        onToast(r.ok ? `${m.displayName}: ${ne} uygulandı (${sebep})` : `${m.displayName}: ${d?.hata || `HTTP ${r.status}`}`);
       } catch {
         onToast("AxBoT'a ulaşılamadı");
       }
     },
-    [armed, base, onToast]
+    [base, onToast]
   );
+
+  const moderate = (m: NormalizedChatMessage, eylem: "timeout" | "ban" | "delete") => {
+    const anahtar = `${m.key}:${eylem}`;
+    if (armed !== anahtar) {
+      setArmed(anahtar);
+      window.setTimeout(() => setArmed((a) => (a === anahtar ? null : a)), 4000);
+      return;
+    }
+    setArmed(null);
+    void cezaVer(m, eylem, "Kontrol Merkezi");
+  };
+
+  // Sabitle (OBS sohbet kutusunun üstü) ve katmanda vurgula (birkaç saniye)
+  const katmana = async (m: NormalizedChatMessage, ne: "sabitle" | "vurgula") => {
+    try {
+      const govde = { id: m.messageId, platform: m.platform, username: m.username, displayName: m.displayName, message: m.message, color: m.color };
+      const r = await fetch(`${base}/api/${ne === "sabitle" ? "pinned" : "chat/highlight"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(govde),
+      });
+      onToast(r.ok ? `${m.displayName}: ${ne === "sabitle" ? "mesaj sabitlendi" : "katmanda vurgulandı"}` : `İşlem yapılamadı (HTTP ${r.status})`);
+    } catch {
+      onToast("AxBoT'a ulaşılamadı");
+    }
+  };
 
   const gonder = () => {
     const t = yazi.trim();
@@ -274,6 +328,12 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
       return;
     }
     setYazi("");
+  };
+
+  const kartIzni = (k: NormalizedChatMessage) => {
+    const y = yetenek[k.platform]?.moderasyon;
+    const ok = !k.isBot && !k.isSystem && !!bagli[k.platform] && !k.roles.includes("broadcaster") && !k.roles.includes("moderator");
+    return { timeout: ok && !!y?.timeout, ban: ok && !!y?.ban };
   };
 
   const gonderilebilir = CHAT_PLATFORMS.filter((p) => bagli[p] && yetenek[p]?.sohbet?.gonder);
@@ -321,12 +381,26 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
         <button type="button" className="min-h-6 rounded px-1 text-[11px] font-bold hover:bg-white/10" onClick={yaziBoyutuDegistir} title={`Yazı boyutu: ${yaziBoyutu} px (değiştirmek için tıkla)`} aria-label="Sohbet yazı boyutu">
           A<span className="text-[10px]">{yaziBoyutu}</span>
         </button>
+        <button type="button" className="min-h-6 min-w-6 rounded p-1 hover:bg-white/10" aria-pressed={ters} onClick={() => setTers((t) => !t)} title={ters ? "Sıra: yeni mesajlar üstte" : "Sıra: yeni mesajlar altta"} aria-label="Mesaj sırasını ters çevir">
+          <ArrowDownUp className="h-3.5 w-3.5" />
+        </button>
         <button type="button" className="min-h-6 min-w-6 rounded p-1 hover:bg-white/10" onClick={togglePause} title={paused ? "Akışı sürdür" : "Akışı dondur (okumak için)"}>
           {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
         </button>
       </div>
 
-      <div ref={listRef} className="custom-scrollbar min-h-0 flex-1 space-y-0.5 overflow-y-auto rounded-lg bg-black/20 p-1.5" style={{ fontSize: yaziBoyutu }} role="log" aria-live="polite">
+      <div className="relative flex min-h-0 flex-1 flex-col">
+      {kart && (
+        <KullaniciKarti
+          m={kart}
+          mesajlar={chat.messages}
+          base={base}
+          izin={kartIzni(kart)}
+          onCeza={(m, eylem, sebep) => cezaVer(m, eylem, sebep)}
+          onKapat={() => setKart(null)}
+        />
+      )}
+      <div ref={listRef} onMouseEnter={fareGirdi} onMouseLeave={fareCikti} className="custom-scrollbar min-h-0 flex-1 space-y-0.5 overflow-y-auto rounded-lg bg-black/20 p-1.5" style={{ fontSize: yaziBoyutu }} role="log" aria-live="polite">
         {filtered.length > shown.length && <p className="text-center text-[10px] text-panel-muted">{filtered.length - shown.length} eski ileti gizli — aramayla bulunur</p>}
         {shown.length === 0 && <p className="p-2 text-panel-muted">{connected ? "Bu görünümde ileti yok." : "AxBoT çalışmıyor — sohbet için Bot sekmesinden başlatın."}</p>}
         {shown.map((m) => {
@@ -340,15 +414,37 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
               <PlatformBadge p={m.platform} />
               <span className="shrink-0 text-[10px] text-panel-muted">{saat(m.timestamp)}</span>
               <span className="min-w-0 flex-1 break-words">
-                <b style={m.color ? { color: m.color } : undefined} title={`${PLATFORM_LABEL[m.platform]} · ${m.userKeySource === "id" ? m.userKey : "kimliksiz (ad)"}`}>
+                <button
+                  type="button"
+                  className="font-bold hover:underline"
+                  style={m.color ? { color: m.color } : undefined}
+                  disabled={m.isSystem}
+                  onClick={() => setKart(m)}
+                  title={`${PLATFORM_LABEL[m.platform]} · ${m.userKeySource === "id" ? m.userKey : "kimliksiz (ad)"} · kullanıcı kartı`}
+                >
                   {m.displayName}
-                </b>
-                {m.firstInSession && <span className="ml-1 rounded bg-sky-500/20 px-1 text-[10px] text-sky-200">ilk</span>}
+                </button>
+                {m.shared && <span className="ml-1 rounded bg-violet-500/20 px-1 text-[10px] text-violet-200" title="Twitch ortak sohbet: başka kanaldan">paylaşımlı</span>}
+                {m.firstEver ? (
+                  <span className="ml-1 rounded bg-emerald-500/20 px-1 text-[10px] text-emerald-200" title="Kanalda ilk kez yazıyor">ilk kez</span>
+                ) : m.firstInSession ? (
+                  <span className="ml-1 rounded bg-sky-500/20 px-1 text-[10px] text-sky-200" title="Bu oturumdaki ilk mesajı">ilk</span>
+                ) : null}
                 {m.moderation !== "visible" && <span className="ml-1 rounded bg-red-500/20 px-1 text-[10px] text-red-200">{m.moderation === "blocked" ? "kara liste" : `kalkan · ${m.moderationReason}`}</span>}
                 <span className="text-white/85">: {m.message}</span>
               </span>
+              {!m.isSystem && (
+                <span className="hidden shrink-0 gap-1 group-focus-within:flex group-hover:flex">
+                  <button type="button" className="rounded bg-white/10 p-0.5" title="Sabitle (OBS sohbetinin üstünde)" aria-label={`Sabitle: ${m.displayName}`} onClick={() => void katmana(m, "sabitle")}>
+                    <Pin className="h-3 w-3" />
+                  </button>
+                  <button type="button" className="rounded bg-white/10 p-0.5" title="Katmanda vurgula (15 sn)" aria-label={`Katmanda vurgula: ${m.displayName}`} onClick={() => void katmana(m, "vurgula")}>
+                    <Sparkles className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
               {modOk && (y?.timeout || y?.ban || (y?.mesajSil && !m.messageId.startsWith("yerel-"))) && (
-                <span className="hidden shrink-0 gap-1 group-hover:flex">
+                <span className="hidden shrink-0 gap-1 group-focus-within:flex group-hover:flex">
                   {y?.mesajSil && !m.messageId.startsWith("yerel-") && (
                     <button type="button" className={`rounded px-1 text-[10px] ${armed === `${m.key}:delete` ? "bg-red-600 text-white" : "bg-white/10"}`} onClick={() => void moderate(m, "delete")}>
                       {armed === `${m.key}:delete` ? "Emin misin?" : "Sil"}
@@ -370,10 +466,11 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
           );
         })}
         {yeni > 0 && (
-          <button type="button" className="sticky bottom-0 w-full rounded bg-sky-600/80 py-0.5 text-[10px] font-bold" onClick={togglePause}>
+          <button type="button" className={`sticky w-full rounded bg-sky-600/80 py-0.5 text-[10px] font-bold ${ters ? "top-0" : "bottom-0"}`} onClick={surdur}>
             {yeni} yeni ileti — sürdür
           </button>
         )}
+      </div>
       </div>
 
       <ChatModes base={base} yetenek={yetenek} bagli={bagli} onToast={onToast} />

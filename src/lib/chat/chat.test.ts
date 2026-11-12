@@ -23,6 +23,15 @@ describe("normalizeChat", () => {
     expect(tw.key).toBe("twitch:m1");
   });
 
+  it("Twitch Shared Chat ve kanaldaki ilk mesaj işaretleri", () => {
+    const m = normalizeChat(yuk({ paylasimli: true, ilkMesaj: true }))!;
+    expect(m.shared).toBe(true);
+    expect(m.firstEver).toBe(true);
+    const n = normalizeChat(yuk({ paylasimli: "evet" }))!;
+    expect(n.shared).toBeUndefined();
+    expect(n.firstEver).toBeUndefined();
+  });
+
   it("kimlik yoksa ada düşer ve bunu işaretler", () => {
     const m = normalizeChat(yuk({}, { id: "" }))!;
     expect(m.userKey).toBe("twitch:ad:ali");

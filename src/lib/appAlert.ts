@@ -1,39 +1,10 @@
 /**
- * Uygulama ortası hata kutusu — Tamam’a basılana kadar kalır.
- * Toast 2 sn’de kaybolur; Failed to fetch gibi hatalar kaçmasın.
+ * Hata metinleri: tanıma (`isErrorLike`) ve insan diline çevirme (`formatAppError`).
+ * `pushAppAlert` eskiden ekranın ortasında Tamam'a basılana kadar kalan bir pencere açıyordu;
+ * artık hata bildirimi olarak köşeye düşer ve kapatılana kadar durur (lib/bildirimler.ts, A5).
  */
 
-import { useSyncExternalStore } from "react";
-
-export type AppAlert = {
-  id: string;
-  title: string;
-  message: string;
-  hint?: string;
-};
-
-let current: AppAlert | null = null;
-const queue: AppAlert[] = [];
-const listeners = new Set<() => void>();
-
-function emit() {
-  for (const f of listeners) f();
-}
-
-export function getAppAlert(): AppAlert | null {
-  return current;
-}
-
-export function subscribeAppAlert(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => {
-    listeners.delete(cb);
-  };
-}
-
-export function useAppAlert(): AppAlert | null {
-  return useSyncExternalStore(subscribeAppAlert, getAppAlert, getAppAlert);
-}
+import { bildir } from "./bildirimler";
 
 export function isErrorLike(text: string): boolean {
   const s = String(text || "").trim();
@@ -90,31 +61,6 @@ export function formatAppError(raw: unknown): string {
   return t;
 }
 
-export function pushAppAlert(input: {
-  title?: string;
-  message: string;
-  hint?: string;
-}): void {
-  const message = formatAppError(input.message);
-  if (!message.trim()) return;
-  if (current && current.message === message && current.hint === input.hint) return;
-  if (queue.some((q) => q.message === message && q.hint === input.hint)) return;
-  const alert: AppAlert = {
-    id: `alert-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    title: input.title || "Hata",
-    message,
-    hint: input.hint,
-  };
-  if (!current) {
-    current = alert;
-    emit();
-    return;
-  }
-  queue.push(alert);
+export function pushAppAlert(input: { title?: string; message: string; hint?: string }): void {
+  bildir(input.message, "hata", { baslik: input.title, ipucu: input.hint });
 }
-
-export function dismissAppAlert(): void {
-  current = queue.shift() || null;
-  emit();
-}
-

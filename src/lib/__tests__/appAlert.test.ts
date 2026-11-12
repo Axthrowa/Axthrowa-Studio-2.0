@@ -1,17 +1,7 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import {
-  dismissAppAlert,
-  formatAppError,
-  getAppAlert,
-  isErrorLike,
-  pushAppAlert,
-} from "../appAlert";
+import { describe, expect, it } from "vitest";
+import { formatAppError, isErrorLike } from "../appAlert";
 
 describe("appAlert", () => {
-  beforeEach(() => {
-    while (getAppAlert()) dismissAppAlert();
-  });
-
   it("maps Failed to fetch to Turkish recovery text", () => {
     const msg = formatAppError("Failed to fetch");
     expect(msg).toContain("Yerel uygulamaya ulaşılamadı");
@@ -35,16 +25,5 @@ describe("appAlert", () => {
     expect(isErrorLike("Komut kaydedildi")).toBe(false);
     expect(isErrorLike("Kick API bağlandı ✓")).toBe(false);
     expect(isErrorLike("Test mesajı gönderildi ✓ (Kick API)")).toBe(false);
-  });
-
-  it("holds alert until dismiss and queues the next", () => {
-    pushAppAlert({ message: "Failed to fetch" });
-    expect(getAppAlert()?.message).toContain("Yerel uygulamaya");
-    pushAppAlert({ message: "İkinci hata 404" });
-    expect(getAppAlert()?.message).toContain("Yerel uygulamaya");
-    dismissAppAlert();
-    expect(getAppAlert()?.message).toContain("İkinci hata 404");
-    dismissAppAlert();
-    expect(getAppAlert()).toBeNull();
   });
 });

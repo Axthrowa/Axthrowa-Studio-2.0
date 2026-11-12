@@ -7,4 +7,5 @@ export { StatusPill, Badge, StatusDot, Kbd, Meter, type Ton } from "./Durum";
 export { Tooltip, type TooltipProps } from "./Tooltip";
 export { Dialog, ConfirmDialog, type DialogProps } from "./Dialog";
 export { EmptyState, Skeleton, ErrorState } from "./Geribildirim";
+export { BildirimYigini, BildirimMerkezi } from "./Bildirim";
 export { cn } from "./cn";

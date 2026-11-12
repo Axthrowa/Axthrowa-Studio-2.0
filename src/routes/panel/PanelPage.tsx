@@ -24,7 +24,7 @@ import MusicBridge from "../../components/panel/MusicBridge";
 import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar from "../../components/panel/NavTabBar";
 import KomutPaleti, { PALET_AC_OLAYI } from "../../components/panel/KomutPaleti";
-import { Kbd } from "@/components/ui";
+import { BildirimMerkezi, BildirimYigini, Kbd } from "@/components/ui";
 import { OVERLAY_PENCERESI, menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
@@ -112,10 +112,8 @@ import { useVideoDownload } from "../../lib/useVideoDownload";
 import { clearNotice, pushNotice, useNotices } from "../../lib/notices";
 import { yayinSagligiIzle } from "../../lib/yayinSagligi";
 import { getStreamHealth } from "../../lib/obs";
-import { isErrorLike, pushAppAlert } from "../../lib/appAlert";
-import AppAlertModal from "@/components/axthrowa/AppAlertModal";
+import { bildir } from "../../lib/bildirimler";
 import UpdateModal from "@/components/axthrowa/UpdateModal";
-import { Toast } from "@/components/axthrowa/Toast";
 import KarsilamaEkrani from "@/components/axthrowa/LisansEkrani";
 import { gunluk } from "../../lib/gunluk";
 import { olay } from "../../lib/analitik";
@@ -272,7 +270,6 @@ export default function PanelPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [server, setServer] = useState<any>(null);
-  const [toast, setToast] = useState("");
   const [obsConnected, setObsConnected] = useState(false);
   const [dashBolum, setDashBolum] = useDashboardBolumu();
   const [masterBusy, setMasterBusy] = useState(false);
@@ -349,7 +346,6 @@ export default function PanelPage() {
     }
   }, [previewOn]);
   const saveTimer = useRef<number | null>(null);
-  const toastTimer = useRef<number | null>(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   /** Sekmeler arası ortak OBS/kısayol — diskteki eski kopya UI'yi ezmesin */
@@ -418,28 +414,13 @@ export default function PanelPage() {
     []
   );
 
-  // Her bildirimde yeni bir zamanlayıcı bırakılıyordu; hızlı yazarken
-  // onlarca timer birikiyor ve mesaj titriyordu.
-  const showToast = useCallback((m: string) => {
-    const text = String(m || "").trim();
-    if (!text) return;
-    if (isErrorLike(text)) {
-      pushAppAlert({ message: text });
-      return;
-    }
-    setToast(text);
-    if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => {
-      setToast("");
-      toastTimer.current = null;
-    }, 2200);
-  }, []);
+  // Eski tek satırlık bildirimler ortak bildirim standardına gider (A5): tür metinden anlaşılır
+  const showToast = useCallback((m: string) => void bildir(m), []);
 
   useChatCommandBridge({ onToast: showToast });
 
   useEffect(
     () => () => {
-      if (toastTimer.current) window.clearTimeout(toastTimer.current);
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     },
     []
@@ -1689,6 +1670,7 @@ export default function PanelPage() {
         <span className="min-w-0 flex-1 truncate text-left">{tt("palet.baslik")}</span>
         <Kbd>Ctrl K</Kbd>
       </button>
+      <BildirimMerkezi />
     </PencereBasligi>
     <KomutPaleti visibleTabs={visibleTabs} labelFor={sayfaAdiBul} onSayfa={sayfaAc} onToast={showToast} kapali={kisayolYakalaniyor} />
     <UpdateModal />
@@ -1922,12 +1904,7 @@ export default function PanelPage() {
       {/* AxBoT sesli komut dinleyicisi: sekmeden bağımsız, arka planda */}
       <SesliDinleyiciCercevesi />
 
-      {toast && (
-        <div className="fixed bottom-10 right-4 z-50 max-w-sm">
-          <Toast key={toast}>{toast}</Toast>
-        </div>
-      )}
-      <AppAlertModal />
+      <BildirimYigini />
       </div>
     </div>
     </div>

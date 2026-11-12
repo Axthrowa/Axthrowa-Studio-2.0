@@ -5,7 +5,8 @@
  * olmayan eski bağlantılarda dock yeniden bağlanmayı söyler.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { API_BASE } from "../../lib/api";
+import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
+import { kategoriEslestir, sablonKaydet, sablonlariOku, type YayinSablonu } from "../../lib/yayinSablonlari";
 import { twitchKanalGuncelle, twitchKanalOku, twitchKanalYazabilir, twitchKategoriAra, twitchWriteStatus } from "../../lib/platformAuth/twitchWrite";
 import { youtubeKategoriler, youtubeWriteStatus, youtubeYayinGuncelle, youtubeYayinOku } from "../../lib/platformAuth/youtubeWrite";
 
@@ -62,6 +63,29 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
   const [onay, setOnay] = useState(false);
   const [mesgul, setMesgul] = useState(false);
   const zamanlayici = useRef<number | undefined>(undefined);
+  const [sablonlar, setSablonlar] = useState<YayinSablonu[]>([]);
+  const [seciliSablon, setSeciliSablon] = useState("");
+  const [sablonOnay, setSablonOnay] = useState(false);
+  const [sablonSonuc, setSablonSonuc] = useState<string[]>([]);
+  const [yeniSablonAdi, setYeniSablonAdi] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSettings("panel").then(
+      (p) => setSablonlar(sablonlariOku((p as Record<string, unknown>).yayinSablonlari)),
+      () => {}
+    );
+  }, []);
+
+  const sablonlariYaz = async (yeni: YayinSablonu[]) => {
+    try {
+      await patchSettings("panel", { yayinSablonlari: yeni });
+      setSablonlar(yeni);
+      return true;
+    } catch (e) {
+      onToast(`Şablon kaydedilemedi: ${hataMetni(e)}`);
+      return false;
+    }
+  };
 
   const yukle = useCallback(
     () =>
@@ -77,6 +101,60 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
   const yt = youtubeWriteStatus();
   const bagli = platform === "kick" ? !!kick?.bagli : platform === "twitch" ? tw.connected : yt.connected;
   const yazabilir = platform === "kick" ? !!kick?.yazabilir : platform === "twitch" ? twitchKanalYazabilir() : yt.connected;
+
+  // Şablonun gideceği yerler: bağlı ve yazma izni olan platformlar
+  const sablonHedefleri = (Object.keys(AD) as Platform[]).filter((p) =>
+    p === "kick" ? !!kick?.bagli && !!kick?.yazabilir : p === "twitch" ? tw.connected && twitchKanalYazabilir() : yt.connected
+  );
+
+  const sablonUygula = async () => {
+    const s = sablonlar.find((x) => x.ad === seciliSablon);
+    setSablonOnay(false);
+    if (!s) return;
+    setMesgul(true);
+    const sonuc: string[] = [];
+    const b = s.baslik || undefined;
+    const et = s.etiketler.length ? s.etiketler : undefined;
+    for (const p of sablonHedefleri) {
+      try {
+        let kat: Kategori | null = null;
+        if (s.kategori) {
+          const adaylar =
+            p === "kick"
+              ? (await istek<{ kategoriler: { id: number; name: string }[] }>(`/api/yayin-bilgisi/kategoriler?q=${encodeURIComponent(s.kategori)}`)).kategoriler.map((k) => ({ id: String(k.id), ad: k.name }))
+              : p === "twitch"
+                ? await twitchKategoriAra(s.kategori)
+                : await youtubeKategoriler();
+          kat = kategoriEslestir(s.kategori, adaylar, p !== "youtube");
+        }
+        let ek = s.kategori && !kat ? " (kategori bulunamadı, değişmedi)" : kat ? ` · ${kat.ad}` : "";
+        if (p === "kick") await istek("/api/yayin-bilgisi", { baslik: b, kategori_id: kat ? Number(kat.id) : undefined, etiketler: et, confirm: true });
+        else if (p === "twitch") await twitchKanalGuncelle({ baslik: b, kategoriId: kat?.id, etiketler: et });
+        else if ((await youtubeYayinGuncelle({ baslik: b, kategoriId: kat?.id, etiketler: et })) === "yayin") ek = " (yalnız başlık)";
+        sonuc.push(`${AD[p]}: güncellendi${ek}`);
+      } catch (e) {
+        sonuc.push(`${AD[p]}: ${hataMetni(e)}`);
+      }
+    }
+    setSablonSonuc(sonuc);
+    setMesgul(false);
+    onToast(`"${s.ad}" şablonu uygulandı`);
+  };
+
+  const sablonuKaydet = async () => {
+    const ad = (yeniSablonAdi ?? "").trim().slice(0, 60);
+    if (!ad) return;
+    const yeni = sablonKaydet(sablonlar, { ad, baslik: baslik.trim().slice(0, 140), kategori: kategori?.ad ?? "", etiketler: etiketleriAyir(etiketler) });
+    if (await sablonlariYaz(yeni)) {
+      setYeniSablonAdi(null);
+      setSeciliSablon(ad);
+      onToast(`"${ad}" şablonu kaydedildi`);
+    }
+  };
+
+  const sablonuSil = async () => {
+    if (await sablonlariYaz(sablonlar.filter((x) => x.ad !== seciliSablon))) setSeciliSablon("");
+  };
 
   const platformSec = (p: Platform) => {
     setPlatform(p);
@@ -196,10 +274,65 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
       : "yazma izni (channel:manage:broadcast) yok: güncellemek için Twitch'i yeniden bağlayın";
   const hesap = platform === "kick" ? kick?.kanal : platform === "twitch" ? tw.login : yt.email;
   const degisiklikVar = !!baslik.trim() || !!kategori || !!etiketler.trim();
+  const secili = sablonlar.find((x) => x.ad === seciliSablon);
   return (
     <section className="dt-dock h-full" aria-label="Yayın bilgisi">
       <div className="dt-dock-baslik">Yayın Bilgisi</div>
       <div className="dt-dock-govde flex flex-col gap-1.5 overflow-auto p-2 text-[12px]">
+        <div className="flex flex-col gap-1 border-b border-white/10 pb-1.5" aria-label="Yayın şablonları" role="group">
+          <div className="flex gap-1">
+            <select
+              className="dt-input min-w-0 flex-1"
+              aria-label="Yayın şablonu"
+              value={seciliSablon}
+              onChange={(e) => (setSeciliSablon(e.target.value), setSablonOnay(false), setSablonSonuc([]))}
+            >
+              <option value="">{sablonlar.length ? "Şablon seç…" : "Şablon yok"}</option>
+              {sablonlar.map((x) => (
+                <option key={x.ad} value={x.ad}>
+                  {x.ad}
+                </option>
+              ))}
+            </select>
+            {secili && (
+              <button type="button" className="dt-btn" onClick={() => void sablonuSil()} aria-label={`Şablonu sil: ${secili.ad}`}>
+                Sil
+              </button>
+            )}
+          </div>
+          {secili && (
+            <p className="dt-soluk">
+              {secili.baslik || "(başlık yok)"}
+              {secili.kategori ? ` · ${secili.kategori}` : ""}
+              {secili.etiketler.length ? ` · ${secili.etiketler.join(", ")}` : ""}
+            </p>
+          )}
+          {secili &&
+            (sablonOnay ? (
+              <div className="flex flex-col gap-1" role="alertdialog" aria-label="Şablon onayı">
+                <span>{sablonHedefleri.map((p) => AD[p]).join(", ")} kanal bilgisi herkese açık olarak değişecek. Emin misiniz?</span>
+                <div className="flex gap-1">
+                  <button type="button" className="dt-btn-primary" onClick={() => void sablonUygula()}>
+                    Uygula
+                  </button>
+                  <button type="button" className="dt-btn" onClick={() => setSablonOnay(false)}>
+                    Vazgeç
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" className="dt-btn-primary" disabled={mesgul || !sablonHedefleri.length} onClick={() => setSablonOnay(true)}>
+                {sablonHedefleri.length ? `Bağlı platformlara uygula (${sablonHedefleri.map((p) => AD[p]).join(", ")})…` : "Yazılabilir bağlı platform yok"}
+              </button>
+            ))}
+          {sablonSonuc.length > 0 && (
+            <ul className="dt-soluk" aria-label="Şablon sonucu">
+              {sablonSonuc.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          )}
+        </div>
         <div className="flex gap-1" role="tablist" aria-label="Platform">
           {(Object.keys(AD) as Platform[]).map((p) => (
             <button
@@ -301,6 +434,27 @@ export function YayinBilgisiDock({ onToast }: { onToast: (m: string) => void }) 
               <button type="button" className="dt-btn-primary" disabled={mesgul || !yazabilir || !degisiklikVar} onClick={() => setOnay(true)}>
                 {KONUM[platform]} güncelle…
               </button>
+            )}
+            {yeniSablonAdi === null ? (
+              <button type="button" className="dt-btn" disabled={!degisiklikVar} onClick={() => setYeniSablonAdi("")}>
+                Şablon olarak kaydet…
+              </button>
+            ) : (
+              <div className="flex gap-1">
+                <input
+                  className="dt-input min-w-0 flex-1"
+                  aria-label="Şablon adı"
+                  placeholder="Şablon adı"
+                  maxLength={60}
+                  autoFocus
+                  value={yeniSablonAdi}
+                  onChange={(e) => setYeniSablonAdi(e.target.value)}
+                  onKeyDown={(e) => (e.key === "Enter" ? void sablonuKaydet() : e.key === "Escape" ? setYeniSablonAdi(null) : undefined)}
+                />
+                <button type="button" className="dt-btn-primary" disabled={!yeniSablonAdi.trim()} onClick={() => void sablonuKaydet()}>
+                  Kaydet
+                </button>
+              </div>
             )}
           </>
         )}

@@ -3,7 +3,6 @@ import {
   Gamepad2,
   Trophy,
   Coins,
-  Check,
   Sparkles,
   Play,
   HelpCircle,
@@ -14,9 +13,8 @@ import {
   RefreshCw,
   CheckCircle2
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
-import { KaydedilmemisUyari } from '../ui/index.js';
-import { useKirliTakip } from '../hooks/useKirliTakip.js';
+import { KayitDurumu } from '../ui/index.js';
+import { useOtoKayit } from '../hooks/useOtoKayit.js';
 
 interface GameSettings {
   soygun: { enabled: boolean; minBet: number; maxBet: number; cooldownSec: number };
@@ -50,11 +48,11 @@ const DEFAULT_GAME_SETTINGS: GameSettings = {
 export function MiniGames() {
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [activeLobbies, setActiveLobbies] = useState<any[]>([]);
   const [selectedGameTab, setSelectedGameTab] = useState<string>('all');
-  const { kirli, taban } = useKirliTakip(settings);
+  // Anlık kayıt; ayarlar sunucudan gelmeden (taban yokken) hiçbir şey kaydedilmez
+  const { taban, durum, yeniden } = useOtoKayit(settings, () => handleSave(), setSettings);
 
   const fetchSettings = async () => {
     try {
@@ -86,8 +84,7 @@ export function MiniGames() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleSave = async (): Promise<boolean> => {
     try {
       const res = await fetch('/api/games/settings', {
         method: 'POST',
@@ -96,15 +93,12 @@ export function MiniGames() {
       });
       // fetch 4xx/5xx'te hata fırlatmaz: eskiden reddedilen kayıt da "başarıyla kaydedildi" diyordu
       if (!res.ok) throw new Error(String(res.status));
-      taban(settings);
-      confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } });
-      setStatusMessage('✅ Tüm chat oyun ayarları başarıyla kaydedildi!');
-      setTimeout(() => setStatusMessage(null), 3500);
+      return true;
     } catch {
       setStatusMessage('❌ Ayarlar kaydedilirken hata oluştu');
       setTimeout(() => setStatusMessage(null), 3500);
+      return false;
     }
-    setSaving(false);
   };
 
   const handleTriggerGame = async (game: string) => {
@@ -138,19 +132,8 @@ export function MiniGames() {
     } catch {}
   };
 
-  /** İpucu anahtarı hemen kaydedilir */
-  const ipucuYaz = async (acik: boolean) => {
-    const yeni = { ...settings, kelime: { ...settings.kelime, showHint: acik } };
-    setSettings(yeni);
-    const tamam = await fetch('/api/games/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kelime: { showHint: acik } })
-    }).then((r) => r.ok).catch(() => false);
-    if (tamam && !kirli) taban(yeni);
-    setStatusMessage(tamam ? (acik ? '✅ Kelime Bulmacası ipucu açıldı.' : '✅ Kelime Bulmacası artık ipucu göstermeyecek.') : '❌ İpucu ayarı kaydedilemedi');
-    setTimeout(() => setStatusMessage(null), 3500);
-  };
+  /** İpucu anahtarı: öteki ayarlar gibi anında kaydedilir */
+  const ipucuYaz = (acik: boolean) => setSettings((prev) => ({ ...prev, kelime: { ...prev.kelime, showHint: acik } }));
 
   const updateGameField = (gameKey: keyof GameSettings, field: string, value: any) => {
     setSettings(prev => ({
@@ -261,7 +244,6 @@ export function MiniGames() {
 
   return (
     <div className="space-y-6">
-      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -283,17 +265,7 @@ export function MiniGames() {
             <RefreshCw className="w-4 h-4" />
           </button>
 
-          <button
-            onClick={handleSave}
-            // Ayarlar sunucudan gelmeden kaydedilirse varsayılanlar gerçek
-            // ayarların üzerine yazılırdı (`loading` tutuluyor ama kullanılmıyordu)
-            disabled={saving || loading}
-            title={loading ? 'Ayarlar yükleniyor…' : undefined}
-            className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-purple-600/30 disabled:opacity-50"
-          >
-            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            <span>Tüm Oyun Ayarlarını Kaydet</span>
-          </button>
+          {loading ? <span className="text-[11px] text-gray-500">Ayarlar yükleniyor…</span> : <KayitDurumu durum={durum} onYeniden={yeniden} />}
         </div>
       </div>
 

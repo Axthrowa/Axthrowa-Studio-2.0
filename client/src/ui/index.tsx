@@ -22,6 +22,7 @@ import {
   type ReactNode
 } from 'react';
 import { kirliIsaretle } from '../lib/kaydedilmemis.js';
+import type { KayitDurumuTuru } from '../hooks/useOtoKayit.js';
 
 // ---- Buton -----------------------------------------------------------------
 
@@ -362,6 +363,31 @@ export function useOnay() {
   );
 
   return { sor, eleman };
+}
+
+// ---- Anlık kayıt durumu (A4) ------------------------------------------------
+
+/** Kaydet düğmesinin yerini alır: değişiklikler anında kaydedilir, burada yalnız durum görünür. */
+export function KayitDurumu({ durum, onYeniden }: { durum: KayitDurumuTuru; onYeniden?: () => void }) {
+  const metin =
+    durum === 'bekliyor' || durum === 'kaydediliyor'
+      ? 'Kaydediliyor…'
+      : durum === 'kaydedildi'
+        ? 'Kaydedildi'
+        : durum === 'hata'
+          ? 'Kaydedilemedi'
+          : 'Değişiklikler anında kaydedilir · Ctrl+Z geri alır';
+  const renk = durum === 'kaydedildi' ? 'text-emerald-400' : durum === 'hata' ? 'text-red-400' : 'text-gray-500';
+  return (
+    <span role="status" aria-live="polite" className={`inline-flex items-center gap-2 text-[11px] font-bold ${renk}`}>
+      {metin}
+      {durum === 'hata' && onYeniden && (
+        <Buton ton="ikincil" onClick={onYeniden}>
+          Yeniden dene
+        </Buton>
+      )}
+    </span>
+  );
 }
 
 // ---- Kaydedilmemiş değişiklik uyarısı --------------------------------------

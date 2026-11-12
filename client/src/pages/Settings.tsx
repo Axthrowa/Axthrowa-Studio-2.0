@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, Check, Volume2, Share2, Palette } from 'lucide-react';
-import { KaydedilmemisUyari, useToast } from '../ui/index.js';
-import { useKirliTakip } from '../hooks/useKirliTakip.js';
+import { Settings as SettingsIcon, Check, Volume2, Share2, Palette } from 'lucide-react';
+import { KayitDurumu, useToast } from '../ui/index.js';
+import { useOtoKayit } from '../hooks/useOtoKayit.js';
 import { PANEL_TEMALARI, panelTemasiSec, usePanelTemasi } from '../lib/panelTemalari.js';
 
 export function Settings() {
   const [settings, setSettings] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(false);
   const toast = useToast();
-  const { kirli, taban } = useKirliTakip(settings);
+  // Anlık kayıt: değişiklik kısa beklemeden sonra kaydedilir, Ctrl+Z geri alır
+  const { taban, durum, yeniden } = useOtoKayit(settings, () => handleSave(), setSettings);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -24,7 +24,7 @@ export function Settings() {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = async (e?: React.FormEvent) => {
+  const handleSave = async (e?: React.FormEvent): Promise<boolean> => {
     e?.preventDefault();
     // Eskiden yanıta bakılmadan "Kaydedildi" gösteriliyordu (sunucu reddetse de)
     const res = await fetch('/api/settings', {
@@ -35,16 +35,13 @@ export function Settings() {
     if (!res?.ok) {
       const hata = res ? await res.json().catch(() => null) : null;
       toast(`Ayarlar kaydedilemedi${hata?.error ? `: ${hata.error}` : ''}`, 'hata');
-      return;
+      return false;
     }
-    taban(settings);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    return true;
   };
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white">Genel Bot Ayarları</h1>
@@ -53,18 +50,10 @@ export function Settings() {
           </p>
         </div>
 
-        <button
-          onClick={handleSave}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-            saved ? 'bg-emerald-600 text-white' : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30'
-          }`}
-        >
-          {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          {saved ? 'Kaydedildi' : 'Tüm Ayarları Kaydet'}
-        </button>
+        <KayitDurumu durum={durum} onYeniden={yeniden} />
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
         {/* 1. Command Prefix & Bot Basics */}
         <div className="glass-panel p-6 rounded-2xl space-y-4">
           <div className="flex items-center space-x-2 pb-2 border-b border-white/10">

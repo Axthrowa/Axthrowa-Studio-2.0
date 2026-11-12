@@ -11,9 +11,9 @@
  */
 import { useState, useEffect } from 'react';
 import { AutoModSettings } from '../types.js';
-import { Shield, Check, Plus, X, Link, Type, Smile, Ban, Hash, User } from 'lucide-react';
-import { KaydedilmemisUyari, useToast } from '../ui/index.js';
-import { useKirliTakip } from '../hooks/useKirliTakip.js';
+import { Plus, X, Link, Type, Smile, Ban, Hash, User } from 'lucide-react';
+import { KayitDurumu, useToast } from '../ui/index.js';
+import { useOtoKayit } from '../hooks/useOtoKayit.js';
 
 type Adv = {
   caps_timeout: number; caps_exclude_subs: boolean; caps_exclude_vips: boolean; caps_warning: string; caps_action: string;
@@ -76,9 +76,13 @@ export function AutoMod() {
   const [gecersiz, setGecersiz] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [newNameWord, setNewNameWord] = useState('');
-  const [saved, setSaved] = useState(false);
   const toast = useToast();
-  const { kirli, taban } = useKirliTakip({ settings, adv, kural });
+  // Anlık kayıt; Ctrl+Z üç parçayı birlikte geri getirir
+  const { taban, durum, yeniden } = useOtoKayit({ settings, adv, kural }, () => handleSave(), (v) => {
+    setSettings(v.settings);
+    setAdv(v.adv);
+    setKural(v.kural);
+  });
 
   useEffect(() => {
     fetch('/api/automod')
@@ -106,8 +110,8 @@ export function AutoMod() {
       .catch(() => {});
   }, [taban]);
 
-  const handleSave = async () => {
-    if (!settings) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (!settings) return false;
     const res = await fetch('/api/automod', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -118,13 +122,11 @@ export function AutoMod() {
       // Eskiden başarısız kayıt sessizce yutuluyordu
       const hata = res ? await res.json().catch(() => null) : null;
       toast(`Moderasyon ayarları kaydedilemedi${hata?.error ? `: ${hata.error}` : ''}`, 'hata');
-      return;
+      return false;
     }
     const yanit = await res.json().catch(() => null);
     setGecersiz(Array.isArray(yanit?.gecersizKaliplar) ? yanit.gecersizKaliplar : []);
-    taban({ settings, adv, kural });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    return true;
   };
 
   if (!settings || !kural) return <div className="p-8 text-center text-gray-500">Yükleniyor...</div>;
@@ -177,16 +179,12 @@ export function AutoMod() {
 
   return (
     <div className="space-y-6">
-      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white">Bot Moderasyonu</h1>
           <p className="text-sm text-gray-400">Büyük harf, link, emoji, sembol, yasaklı kelime, tekrar ve kullanıcı adı koruması.</p>
         </div>
-        <button onClick={handleSave} className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${saved ? 'bg-emerald-600 text-white' : 'bg-purple-600 text-white'}`}>
-          {saved ? <Check className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
-          {saved ? 'Kaydedildi' : 'Kaydet'}
-        </button>
+        <KayitDurumu durum={durum} onYeniden={yeniden} />
       </div>
 
       <div className="flex flex-wrap gap-1 bg-black/30 p-1 rounded-xl">

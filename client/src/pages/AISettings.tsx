@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Bot, Save, Check, Send, User, MessageSquarePlus, Zap } from 'lucide-react';
-import { KaydedilmemisUyari, useToast } from '../ui/index.js';
-import { useKirliTakip } from '../hooks/useKirliTakip.js';
+import { Sparkles, Bot, Send, User, MessageSquarePlus, Zap } from 'lucide-react';
+import { KayitDurumu, useToast } from '../ui/index.js';
+import { useOtoKayit } from '../hooks/useOtoKayit.js';
 import { YayinOzetleri } from '../components/YayinOzetleri.js';
 
 interface ChatRescueSettings {
@@ -40,7 +40,6 @@ export function AISettings() {
   const [enabled, setEnabled] = useState(true);
   /** Sohbette "@BotAdı soru" yazılınca yapay zekâ yanıtlasın mı (varsayılan kapalı). */
   const [seslenme, setSeslenme] = useState(false);
-  const [saved, setSaved] = useState(false);
   // Anahtar sunucuda maskelenerek geliyor; panel gerçek değeri hiç görmez.
   const [anahtarKayitli, setAnahtarKayitli] = useState(false);
   const [aktifModel, setAktifModel] = useState('');
@@ -66,46 +65,61 @@ export function AISettings() {
   ]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
-  const gemini = useKirliTakip({ apiKey, prompt, enabled, seslenme });
-  const kurtarma = useKirliTakip(rescue);
-  const kirli = gemini.kirli || kurtarma.kirli;
-  const geminiTaban = gemini.taban;
-  const kurtarmaTaban = kurtarma.taban;
+  // Anlık kayıt: kaydedilen bütün alanlar izlenir (eskiden sağlayıcı, model ve web arama değişikliği "kaydedilmedi" sayılmıyordu)
+  const izlenen = { apiKey, prompt, enabled, seslenme, saglayici, saglayiciAnahtar, saglayiciModel, ozelAdres, webArama, rescue };
+  const kayit = useOtoKayit(izlenen, () => handleSave(), (v) => {
+    setApiKey(v.apiKey);
+    setPrompt(v.prompt);
+    setEnabled(v.enabled);
+    setSeslenme(v.seslenme);
+    setSaglayici(v.saglayici);
+    setSaglayiciAnahtar(v.saglayiciAnahtar);
+    setSaglayiciModel(v.saglayiciModel);
+    setOzelAdres(v.ozelAdres);
+    setWebArama(v.webArama);
+    setRescue(v.rescue);
+  });
+  const kayitTaban = kayit.taban;
 
   useEffect(() => {
-    fetch('/api/settings')
-      .then(r => r.json())
-      .then(d => {
-        const yuklenen = { apiKey: d.gemini_api_key || '', prompt: d.gemini_prompt || '', enabled: d.gemini_enabled !== 'false', seslenme: d.ai_mention_enabled === 'true' };
-        setSeslenme(yuklenen.seslenme);
-        setApiKey(yuklenen.apiKey);
+    // İki kaynak da gelince taban kurulur: biri gelmezse varsayılanlar gerçek ayarların üzerine kaydedilmesin
+    Promise.all([
+      fetch('/api/settings').then(r => r.json()),
+      fetch('/api/chat-rescue/settings').then(r => r.json())
+    ])
+      .then(([d, kurtarma]) => {
+        if (!d || !kurtarma || typeof kurtarma.isEnabled !== 'boolean') throw new Error('eksik');
+        const s0 = d.ai_provider || 'gemini';
+        const yuklenen = {
+          apiKey: d.gemini_api_key || '',
+          prompt: d.gemini_prompt || '',
+          enabled: d.gemini_enabled !== 'false',
+          seslenme: d.ai_mention_enabled === 'true',
+          saglayici: s0,
+          saglayiciAnahtar: d[`ai_${s0}_api_key`] || '',
+          saglayiciModel: d[`ai_${s0}_model`] || '',
+          ozelAdres: d.ai_custom_base_url || '',
+          webArama: d.ai_web_arama === 'true',
+          rescue: kurtarma as ChatRescueSettings
+        };
         setAnahtarKayitli(Boolean(d.gemini_api_keyVar));
         setKayitliAyarlar(d || {});
-        const s0 = d.ai_provider || 'gemini';
-        setSaglayici(s0);
-        setSaglayiciAnahtar(d[`ai_${s0}_api_key`] || '');
-        setSaglayiciModel(d[`ai_${s0}_model`] || '');
-        setOzelAdres(d.ai_custom_base_url || '');
-        setWebArama(d.ai_web_arama === 'true');
+        setApiKey(yuklenen.apiKey);
         setPrompt(yuklenen.prompt);
         setEnabled(yuklenen.enabled);
-        geminiTaban(yuklenen);
+        setSeslenme(yuklenen.seslenme);
+        setSaglayici(s0);
+        setSaglayiciAnahtar(yuklenen.saglayiciAnahtar);
+        setSaglayiciModel(yuklenen.saglayiciModel);
+        setOzelAdres(yuklenen.ozelAdres);
+        setWebArama(yuklenen.webArama);
+        setRescue(yuklenen.rescue);
+        kayitTaban(yuklenen);
       })
-      .catch(() => {});
+      .catch(() => toast('Yapay zekâ ayarları yüklenemedi; sayfa yenilenene kadar değişiklikler kaydedilmez.', 'hata'));
+  }, [kayitTaban]);
 
-    fetch('/api/chat-rescue/settings')
-      .then(r => r.json())
-      .then(d => {
-        if (d && typeof d.isEnabled === 'boolean') {
-          setRescue(d);
-          kurtarmaTaban(d);
-        }
-      })
-      .catch(() => {});
-  }, [geminiTaban, kurtarmaTaban]);
-
-  const handleSave = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const handleSave = async (): Promise<boolean> => {
     const [ayarYaniti, kurtarmaYaniti] = await Promise.all([
       fetch('/api/settings', {
         method: 'POST',
@@ -132,14 +146,9 @@ export function AISettings() {
     // Eskiden yanıtlara bakılmadan "Kaydedildi" gösteriliyordu
     if (!ayarYaniti?.ok || !kurtarmaYaniti?.ok) {
       toast(!ayarYaniti?.ok ? 'Yapay zekâ ayarları kaydedilemedi.' : 'Sohbet kurtarma ayarları kaydedilemedi.', 'hata');
-      if (ayarYaniti?.ok) geminiTaban({ apiKey, prompt, enabled, seslenme });
-      if (kurtarmaYaniti?.ok) kurtarmaTaban(rescue);
-      return;
+      return false;
     }
-    geminiTaban({ apiKey, prompt, enabled, seslenme });
-    kurtarmaTaban(rescue);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    return true;
   };
 
   const handleTriggerRescueNow = async () => {
@@ -215,7 +224,6 @@ export function AISettings() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      <KaydedilmemisUyari varMi={kirli} onKaydet={() => void handleSave()} />
       <div>
         <h1 className="text-2xl font-black text-white flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-purple-400" />
@@ -319,7 +327,7 @@ export function AISettings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Settings Form */}
-        <form onSubmit={handleSave} className="glass-panel p-6 rounded-2xl space-y-4 flex flex-col justify-between">
+        <form onSubmit={(e) => e.preventDefault()} className="glass-panel p-6 rounded-2xl space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <span className="font-bold text-white text-base flex items-center gap-2">
@@ -492,15 +500,7 @@ export function AISettings() {
           </div>
 
           <div className="pt-3 border-t border-white/10 flex justify-end">
-            <button
-              type="submit"
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                saved ? 'bg-emerald-600 text-white' : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30'
-              }`}
-            >
-              {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-              {saved ? 'Kaydedildi' : 'Tüm Ayarları Kaydet'}
-            </button>
+            <KayitDurumu durum={kayit.durum} onYeniden={kayit.yeniden} />
           </div>
         </form>
 

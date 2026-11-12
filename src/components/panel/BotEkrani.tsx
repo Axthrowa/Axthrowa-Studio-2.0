@@ -1,6 +1,6 @@
 /**
- * Bot ekranı: durum, sohbete yanıt anahtarı ve sekmeler. Sayfaların içi botun kendi sayfaları (gömülü);
- * sekmede olmayan her şey (platformlar, yapay zekâ…) "Tüm ayarlar"da botun tam panelinde açılır.
+ * Bot ekranı: durum, sohbete yanıt anahtarı ve sekmeler. Sayfaların içi botun kendi sayfaları (gömülü).
+ * "Tüm ayarlar" kaçış kapısı yok (A2): her bot sayfası bir sekmede ya da kendi menü başlığında (lib/anaMenu.ts).
  */
 import { useCallback, useEffect, useState } from "react";
 import { BOT_SEKMELERI, botSekmesiBul } from "../../lib/anaMenu";
@@ -17,9 +17,6 @@ type Props = {
 };
 
 type Kick = { connected?: boolean; yazabilir?: boolean; botHesabi?: string };
-
-/** Tam panel açılınca botun genel bakışı */
-const TUM_AYARLAR = "dashboard";
 
 export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Props) {
   const [kick, setKick] = useState<Kick | null>(null);
@@ -74,9 +71,6 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
               {s.ad}
             </button>
           ))}
-          <button type="button" role="tab" aria-selected={secili === null} className={sekmeSinifi(secili === null)} onClick={() => onSayfa(TUM_AYARLAR)}>
-            Tüm ayarlar
-          </button>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-panel-muted">
           <span className="inline-flex items-center gap-2">
@@ -88,7 +82,7 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
           </label>
         </div>
       </div>
-      <AxBotHost onToast={onToast} tab={sayfa || BOT_SEKMELERI[0].id} embed={secili !== null} onOpenMusic={onOpenMusic} />
+      <AxBotHost onToast={onToast} tab={sayfa || BOT_SEKMELERI[0].id} embed onOpenMusic={onOpenMusic} />
     </div>
   );
 }

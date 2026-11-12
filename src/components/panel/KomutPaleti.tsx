@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { actionsApi } from "../../lib/api/actions";
 import { fetchPlayerStatus, sendPlayerCommand } from "../../lib/api";
-import { ANA_MENU, type MenuSayfasi } from "../../lib/anaMenu";
+import { ANA_MENU, EKRANLAR, ekranMi, type MenuSayfasi } from "../../lib/anaMenu";
 import { komutAra, type Komut } from "../../lib/komutPaleti";
 import { obsControl } from "../../lib/obsControl";
 import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
@@ -131,9 +131,11 @@ export default function KomutPaleti({ visibleTabs, labelFor, onSayfa, onToast, k
 
   const komutlar = useMemo<Komut[]>(() => {
     const gorunur = new Set(visibleTabs);
+    // Ekranlar satırı paletde üç ayrı sayfa olarak aranır (Giriş, Mola, Çıkış)
     const sayfalar: Komut[] = ANA_MENU.flatMap((g) => g.sayfalar)
+      .flatMap((s): MenuSayfasi[] => (ekranMi(s.nav) ? EKRANLAR.map((e) => ({ nav: e.id, adAnahtari: e.adAnahtari })) : [s]))
       .filter((s) => gorunur.has(s.nav))
-      .map((s) => ({ id: `sayfa:${s.nav}:${s.botSayfa || ""}`, ad: labelFor(s), grup: "Sayfa", calistir: () => onSayfa(s) }));
+      .map((s) => ({ id: `sayfa:${s.nav}:${s.botSayfa || ""}:${s.kip || ""}`, ad: labelFor(s), grup: "Sayfa", calistir: () => onSayfa(s) }));
     const hazir: Komut[] = [
       { id: "cekilis", ad: "Çekiliş başlat", grup: "Bot", calistir: () => onSayfa({ nav: "bot", botSayfa: "giveaways" }) },
       { id: "anket", ad: "Anket aç", grup: "Bot", calistir: () => onSayfa({ nav: "bot", botSayfa: "polls" }) },

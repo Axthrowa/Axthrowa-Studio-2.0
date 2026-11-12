@@ -38,6 +38,10 @@ type Props = {
   onObsBagla: () => void;
   /** Uygulamanın kendi sayfaları (Müzik, Ses Paneli…): panele eklenince aynı bileşen çizilir */
   yerelPanel: (id: string) => ReactNode;
+  /** Menüden istenen kip ("Yayın sonrası → Rapor"); `null` kendiliğinden kip. `n` her istekte değişir. */
+  kipIstegi?: { kip: Kip | null; n: number } | null;
+  /** Geçerli kip: menü seçimini buna göre gösterir */
+  onKip?: (k: Kip) => void;
 };
 
 const AxBotHost = lazy(() => import("../panel/AxBotHost"));
@@ -251,13 +255,17 @@ function ObsOnizleme({ sahne, bagli, onBagla }: { sahne: string; bagli: boolean;
   );
 }
 
-export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, onObsBagla, yerelPanel }: Props) {
+export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, onObsBagla, yerelPanel, kipIstegi, onKip }: Props) {
   const [gelismis, setGelismis] = useState(false);
   const [duzenle, setDuzenle] = useState(false);
   // Kip: yayın açılınca "Canlı", kapanınca "Yayın öncesi" kendiliğinden seçilir; elle seçilen o değişime dek korunur
   const [kipSecim, setKipSecim] = useState<Kip | null>(null);
   useEffect(() => setKipSecim(null), [canli]);
   const kip = kipSecim ?? otomatikKip(canli);
+  useEffect(() => {
+    if (kipIstegi) setKipSecim(kipIstegi.kip);
+  }, [kipIstegi]);
+  useEffect(() => onKip?.(kip), [kip, onKip]);
   const [genisSohbet, setGenisSohbet] = useState(() => {
     try {
       return localStorage.getItem(GENIS_SOHBET_KEY) === "1";

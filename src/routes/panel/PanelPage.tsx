@@ -25,7 +25,9 @@ import LayoutEditor from "../../components/panel/LayoutEditor";
 import NavTabBar from "../../components/panel/NavTabBar";
 import KomutPaleti, { PALET_AC_OLAYI } from "../../components/panel/KomutPaleti";
 import { BildirimMerkezi, BildirimYigini, Kbd } from "@/components/ui";
-import { OVERLAY_PENCERESI, menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
+import { EKRANLAR, OVERLAY_PENCERESI, menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
+import type { Kip } from "../../lib/canliYerlesim";
+import { bosGecmis, gecmiseEkle, gecmisteGit } from "../../lib/gezinmeGecmisi";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
 import StreamHealthCard from "../../components/panel/StreamHealthCard";
@@ -178,6 +180,9 @@ export default function PanelPage() {
   const [screen, setScreen] = useState<ScreenId>("starting");
   // Müzik / Ayarlar ekran ayarlarından bağımsız; ScreenId şemasını kirletmez.
   const [activeNav, setActiveNav] = useState<NavId | ScreenId>("control");
+  // Canlı ekranının kipi: "Yayın sonrası → Rapor" bu kipi ister, menü de seçimini buna göre gösterir
+  const [canliKip, setCanliKip] = useState<Kip | null>(null);
+  const [kipIstegi, setKipIstegi] = useState<{ kip: Kip | null; n: number } | null>(null);
   // Bot sekmesinde açılacak AxBoT sayfası (Dashboard'daki "Bot'ta yönet" platformlar sayfasını açar)
   const [botSekme, setBotSekme] = useState<string | undefined>(undefined);
   useEffect(() => {
@@ -1549,13 +1554,19 @@ export default function PanelPage() {
 
   const sayfaMeta = DEFAULT_TABS.find((tab) => tab.id === activeNav);
   const botGrubu = botTab ? menuGrubuBul("bot", botSekme) : null;
+  const sahneSekmesi = activeNav === "starting" || activeNav === "ending" || activeNav === "brb";
   const sayfaAdi =
     botGrubu === "etkilesim"
       ? tt("nav.grup.etkilesim")
       : botGrubu === "sahne"
         ? tt("nav.overlaylar")
-        : (sayfaMeta?.labelKey && tt(sayfaMeta.labelKey as MsgKey)) || sayfaMeta?.label || String(activeNav);
-  const sahneSekmesi = activeNav === "starting" || activeNav === "ending" || activeNav === "brb";
+        : botGrubu === "hazirlik"
+          ? tt("nav.baglantilar")
+          : sahneSekmesi
+            ? tt("nav.ekranlar")
+            : activeNav === "control" && canliKip === "sonrasi"
+              ? tt("nav.grup.sonrasi")
+              : (sayfaMeta?.labelKey && tt(sayfaMeta.labelKey as MsgKey)) || sayfaMeta?.label || String(activeNav);
 
   const sayfaAdiBul = useCallback(
     (s: MenuSayfasi) => {
@@ -1567,9 +1578,11 @@ export default function PanelPage() {
     [prefs.locale]
   );
 
-  const sayfaAc = useCallback(({ nav: id, botSayfa }: MenuSayfasi) => {
+  const sayfaAc = useCallback(({ nav: id, botSayfa, kip }: MenuSayfasi) => {
     setActiveNav(id);
     setBotSekme(botSayfa);
+    // Rapor satırı yayın sonrası kipini, Kontrol satırı kendiliğinden kipi ister
+    if (id === "control") setKipIstegi({ kip: kip ?? null, n: Date.now() });
     forceNavRef.current = null;
     if (id === "starting" || id === "ending" || id === "brb" || id === "chat") {
       setScreen(id);
@@ -1582,6 +1595,35 @@ export default function PanelPage() {
       startingSwitchDoneRef.current = false;
     }
   }, []);
+
+  // Alt+← / Alt+→: gezinme geçmişi (menü, palet ve sayfa içi geçişlerin hepsi kaydedilir)
+  const gecmis = useRef(bosGecmis<MenuSayfasi>());
+  const gecmisteGidiliyor = useRef(false);
+  useEffect(() => {
+    const burasi: MenuSayfasi = { nav: activeNav as NavId, botSayfa: activeNav === "bot" ? botSekme : undefined, kip: activeNav === "control" && canliKip === "sonrasi" ? "sonrasi" : undefined };
+    // Kısa bekleme: "Rapor" önce Canlı'yı sonra kipini değiştirir; ara adım geçmişe düşmesin
+    const id = window.setTimeout(() => {
+      if (gecmisteGidiliyor.current) {
+        gecmisteGidiliyor.current = false;
+        return;
+      }
+      gecmis.current = gecmiseEkle(gecmis.current, burasi, (a, b) => a.nav === b.nav && a.botSayfa === b.botSayfa && a.kip === b.kip);
+    }, 150);
+    return () => window.clearTimeout(id);
+  }, [activeNav, botSekme, canliKip]);
+  useEffect(() => {
+    const tus = (e: KeyboardEvent) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+      const git = gecmisteGit(gecmis.current, e.key === "ArrowLeft" ? -1 : 1);
+      if (!git) return;
+      e.preventDefault();
+      gecmis.current = git.gecmis;
+      gecmisteGidiliyor.current = true;
+      sayfaAc(git.sayfa);
+    };
+    window.addEventListener("keydown", tus);
+    return () => window.removeEventListener("keydown", tus);
+  }, [sayfaAc]);
 
   // Aynı bileşenler kendi sayfasında ve Canlı ekranına eklenen panelde çizilir
   const muzikPaneli = (
@@ -1682,6 +1724,7 @@ export default function PanelPage() {
         visibleTabs={visibleTabs}
         activeNav={String(activeNav)}
         botSayfa={botSekme}
+        kip={activeNav === "control" ? canliKip : null}
         customizeLabel={tt("nav.customize")}
         editLayout={editLayout}
         onToggleEdit={() => setEditLayout((v) => !v)}
@@ -1700,6 +1743,23 @@ export default function PanelPage() {
       <header className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[var(--dt-surface-2)] px-3">
         <div className="flex min-w-0 items-center gap-3">
           <h1 className="truncate text-[13px] font-semibold text-white">{sayfaAdi}</h1>
+          {sahneSekmesi ? (
+            // Ekranlar: Giriş, Mola, Çıkış iç sekme (eskiden üç ayrı menü satırıydı)
+            <div role="tablist" aria-label={tt("nav.ekranlar")} className="flex shrink-0 gap-0.5 rounded-ui-2 bg-black/20 p-0.5">
+              {EKRANLAR.filter((e) => visibleTabs.includes(e.id)).map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeNav === e.id}
+                  onClick={() => sayfaAc({ nav: e.id })}
+                  className={`h-7 rounded-ui-1 px-3 text-xs font-semibold transition-colors ${activeNav === e.id ? "bg-white/10 text-white" : "text-panel-muted hover:text-white"}`}
+                >
+                  {tt(e.adAnahtari)}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {sahneSekmesi ? (
             <PanelTimer
               timer={{
@@ -1810,6 +1870,8 @@ export default function PanelPage() {
       ) : controlTab ? (
         <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
           <CanliEkrani
+            kipIstegi={kipIstegi}
+            onKip={setCanliKip}
             onToast={showToast}
             canli={liveOn}
             mesgul={masterBusy}

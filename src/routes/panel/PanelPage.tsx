@@ -26,6 +26,7 @@ import NavTabBar from "../../components/panel/NavTabBar";
 import KomutPaleti, { PALET_AC_OLAYI } from "../../components/panel/KomutPaleti";
 import { BildirimMerkezi, BildirimYigini, Kbd } from "@/components/ui";
 import { EKRANLAR, OVERLAY_PENCERESI, menuGrubuBul, type MenuSayfasi } from "../../lib/anaMenu";
+import { kurulumGerekli } from "../../lib/kurulum";
 import type { Kip } from "../../lib/canliYerlesim";
 import { bosGecmis, gecmiseEkle, gecmisteGit } from "../../lib/gezinmeGecmisi";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
@@ -41,6 +42,7 @@ import { resonanceLinkAllowed } from "../../lib/embedMessages";
 const MusicPanel = lazy(() => import("../../components/panel/MusicPanel"));
 const BotSessions = lazy(() => import("../../components/panel/BotSessions"));
 const BotEkrani = lazy(() => import("../../components/panel/BotEkrani"));
+const KurulumSihirbazi = lazy(() => import("../../components/panel/KurulumSihirbazi"));
 const AppSettingsPage = lazy(() => import("../../components/panel/AppSettingsPage"));
 const SoundBoardPanel = lazy(() => import("../../components/panel/SoundBoardPanel"));
 const AxBotHost = lazy(() => import("../../components/panel/AxBotHost"));
@@ -208,6 +210,8 @@ export default function PanelPage() {
   const kisayolYakalaniyor = useCallback(() => hotkeyCaptureRef.current, []);
   hotkeyCaptureRef.current = hotkeyCapture;
   const [settings, setSettings] = useState<OverlaySettings>({ socials: DEFAULT_SOCIALS });
+  // İlk kurulum bitene kadar Hazırlık'ın başında "Kurulum" satırı; temiz veride sihirbaz kendiliğinden açılır (U1)
+  const [kurulumGoster, setKurulumGoster] = useState(false);
   const musicTab = activeNav === "music";
   const controlTab = activeNav === "control";
   const yayinTab = activeNav === "yayin";
@@ -220,7 +224,7 @@ export default function PanelPage() {
   const soundsTab = activeNav === "sounds";
   const hotkeysTab = activeNav === "hotkeys";
   const settingsTab = activeNav === "settings";
-  const sayfaDali = profileTab ? "profile" : controlTab ? "control" : yayinTab ? "yayin" : musicTab ? "music" : botTab ? "bot" : chatTab ? "chat" : soundsTab ? "sounds" : hotkeysTab ? "hotkeys" : settingsTab ? "settings" : "sahne";
+  const sayfaDali = activeNav === "kurulum" ? "kurulum" : profileTab ? "profile" : controlTab ? "control" : yayinTab ? "yayin" : musicTab ? "music" : botTab ? "bot" : chatTab ? "chat" : soundsTab ? "sounds" : hotkeysTab ? "hotkeys" : settingsTab ? "settings" : "sahne";
 
   useEffect(() => {
     const sync = () => setSfxPads(loadSoundboard());
@@ -233,7 +237,13 @@ export default function PanelPage() {
       .then((s) => setClearChatHk(String(s.clearChatHotkey || "")))
       .catch(() => {});
     fetchSettings("panel")
-      .then((s) => setSfxStopHk(String(s.sfxStopHotkey || "")))
+      .then((s) => {
+        setSfxStopHk(String(s.sfxStopHotkey || ""));
+        if (kurulumGerekli(s)) {
+          setKurulumGoster(true);
+          setActiveNav("kurulum");
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -1526,10 +1536,10 @@ export default function PanelPage() {
     [leftSectionOrder, rightSectionOrder]
   );
 
-  const visibleTabs = useMemo(
-    () => visibleOrdered(layout.tabs, DEFAULT_TABS.map((t) => t.id)),
-    [layout.tabs]
-  );
+  const visibleTabs = useMemo(() => {
+    const v = visibleOrdered(layout.tabs, DEFAULT_TABS.map((t) => t.id));
+    return kurulumGoster ? ["kurulum", ...v] : v;
+  }, [layout.tabs, kurulumGoster]);
 
   // Açık sayfa menüde gizlendiyse ilk görünen sayfaya geç
   useEffect(() => {
@@ -1564,7 +1574,9 @@ export default function PanelPage() {
           ? tt("nav.baglantilar")
           : sahneSekmesi
             ? tt("nav.ekranlar")
-            : activeNav === "control" && canliKip === "sonrasi"
+            : activeNav === "kurulum"
+              ? tt("nav.kurulum")
+              : activeNav === "control" && canliKip === "sonrasi"
               ? tt("nav.grup.sonrasi")
               : (sayfaMeta?.labelKey && tt(sayfaMeta.labelKey as MsgKey)) || sayfaMeta?.label || String(activeNav);
 
@@ -1805,7 +1817,17 @@ export default function PanelPage() {
       {/* Sayfa geçişi: yalnız gösterilen dal değişince yeniden takılır; aynı daldaki sekmeler (Giriş/Çıkış/Mola) durumunu korur */}
       <div key={sayfaDali} className="studio-sayfa-gir flex min-h-0 flex-1 flex-col">
       <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
-      {profileTab ? (
+      {activeNav === "kurulum" ? (
+        <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
+          <KurulumSihirbazi
+            onToast={showToast}
+            onBitti={() => {
+              setKurulumGoster(false);
+              setActiveNav("control");
+            }}
+          />
+        </Suspense>
+      ) : profileTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4">
           <DashboardUstSerit
             bolum={dashBolum}

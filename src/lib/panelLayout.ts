@@ -1,6 +1,7 @@
 /** Panel üst sekmeleri + sol/sağ ayar kategorilerinin görünürlük/sırası. — AxthrowA */
 
 export type NavId =
+  | "kurulum"
   | "profile"
   | "yayin"
   | "control"

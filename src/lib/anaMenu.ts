@@ -24,7 +24,8 @@ export const ANA_MENU: MenuGrubu[] = [
   {
     id: "hazirlik",
     adAnahtari: "nav.grup.hazirlik",
-    sayfalar: [{ nav: "profile" }, { nav: "bot", botSayfa: "platforms", adAnahtari: "nav.baglantilar" }],
+    // "Kurulum" yalnız ilk kurulum bitene kadar görünür (PanelPage görünür sekmelere ekler)
+    sayfalar: [{ nav: "kurulum", adAnahtari: "nav.kurulum" }, { nav: "profile" }, { nav: "bot", botSayfa: "platforms", adAnahtari: "nav.baglantilar" }],
   },
   { id: "canli", adAnahtari: "nav.grup.canli", sayfalar: [{ nav: "control" }, { nav: "chat" }] },
   {

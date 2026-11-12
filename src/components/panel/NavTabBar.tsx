@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BarChart3, Bot, Cast, CheckCircle2, Clapperboard, FileText, Gift, History, Keyboard, Layers, ListMusic, MessageCircle, MessagesSquare, Monitor, MonitorPlay, Music, PlugZap, Radio, Settings, Settings2, SlidersHorizontal, Target, Volume2, type LucideIcon } from "lucide-react";
+import { BarChart3, Bot, Cast, CheckCircle2, Clapperboard, FileText, Gift, History, Keyboard, Layers, ListMusic, MessageCircle, MessagesSquare, Monitor, MonitorPlay, Music, PlugZap, Radio, Settings, Settings2, SlidersHorizontal, Target, Volume2, Wand2, type LucideIcon } from "lucide-react";
 import { useT } from "../../i18n";
 import { olay } from "../../lib/analitik";
 import type { Kip } from "../../lib/canliYerlesim";
@@ -53,6 +53,7 @@ const GRUP_RENGI: Record<MenuGrubuId, string> = {
 
 /** Alt sayfaların simgesi: bot sayfasında sekme adı, diğerlerinde gezinme kimliği */
 const SAYFA_IKONU: Record<string, LucideIcon> = {
+  kurulum: Wand2,
   profile: CheckCircle2,
   platforms: PlugZap,
   control: Clapperboard,

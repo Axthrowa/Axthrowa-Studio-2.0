@@ -132,6 +132,29 @@ export async function listTransitions() {
   return ((res as any).transitions || []).map((t: any) => t.transitionName as string);
 }
 
+/**
+ * Birleşik overlay'i (tek tarayıcı kaynağı) OBS'in açık sahnesine ekler (U1). Aynı adresli kaynak zaten varsa
+ * dokunmaz. Döner: eklendiği sahne ya da "zaten-var".
+ */
+export async function birlesikOverlayEkle(url: string, ad: string): Promise<{ durum: "eklendi"; sahne: string } | { durum: "zaten-var"; kaynak: string }> {
+  const yol = url.replace(/\?.*$/, "");
+  for (const i of await listInputs()) {
+    if (!/browser_source/i.test(i.kind)) continue;
+    const res = await getObs().call("GetInputSettings", { inputName: i.name }).catch(() => null);
+    const mevcut = String((res as any)?.inputSettings?.url || "");
+    if (i.name === ad || (mevcut && mevcut.replace(/\?.*$/, "") === yol)) return { durum: "zaten-var", kaynak: i.name };
+  }
+  const { currentProgramSceneName: sahne } = await getObs().call("GetCurrentProgramScene");
+  await getObs().call("CreateInput", {
+    sceneName: sahne,
+    inputName: ad,
+    inputKind: "browser_source",
+    inputSettings: { url, width: 1920, height: 1080, reroute_audio: true },
+    sceneItemEnabled: true,
+  });
+  return { durum: "eklendi", sahne };
+}
+
 export async function listInputs() {
   const { inputs } = await getObs().call("GetInputList");
   return (inputs as any[]).map((i) => ({

@@ -123,6 +123,11 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
     setChatMessages([]);
   }, []);
 
+  /** Ham ileti (ör. uyarı kutusunun kuyruk raporu) */
+  const gonder = useCallback((ileti: object) => {
+    wsRef.current?.send(JSON.stringify(ileti));
+  }, []);
+
   const triggerTTS = useCallback((text: string) => {
     wsRef.current?.send(JSON.stringify({ action: 'trigger_tts', text }));
   }, []);
@@ -140,6 +145,7 @@ export function useWebSocket(type: 'dashboard' | 'alertbox' | 'chatbox' | 'goals
     clearChat,
     triggerTTS,
     lastMessage,
-    alertControl
+    alertControl,
+    gonder
   };
 }

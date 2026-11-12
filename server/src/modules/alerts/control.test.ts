@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASLANGIC, kontrolUygula, SonUyarilar, uyariKimligi } from './control.js';
+import { BASLANGIC, BOS_AYNA, KuyrukAynalari, kontrolUygula, kuyrukRaporuTemizle, SonUyarilar, uyariKimligi } from './control.js';
 
 describe('kontrolUygula', () => {
   it('duraklat / sürdür / sustur / sesi aç durumu değiştirir ve sürümü artırır', () => {
@@ -65,5 +65,32 @@ describe('SonUyarilar', () => {
     expect(s.hepsi().map((x) => x.id)).toEqual(['u4', 'u3', 'u2']);
     expect(s.bul('u3')?.at).toBe(3);
     expect(s.bul('u0')).toBeUndefined();
+  });
+});
+
+describe('kuyruk aynası (U3)', () => {
+  it('ham raporu süzer: kimliksiz öğe düşer, liste 30 ile sınırlı, metin kısalır', () => {
+    const r = kuyrukRaporuTemizle({
+      aktif: { id: 'a1', eventType: 'follow', title: 'x'.repeat(200), isTest: true },
+      bekleyen: [{ id: '' }, ...Array.from({ length: 40 }, (_, i) => ({ id: `b${i}`, eventType: 'tip', title: 'T' }))]
+    })!;
+    expect(r.aktif).toEqual({ id: 'a1', eventType: 'follow', title: 'x'.repeat(80), message: '', isTest: true });
+    expect(r.bekleyen).toHaveLength(29);
+    expect(kuyrukRaporuTemizle({ aktif: null })).toBeNull();
+    expect(kuyrukRaporuTemizle('x')).toBeNull();
+  });
+
+  it('OBS kaynağının son raporu gösterilir; önizleme yalnız tek başınaysa; kopan kaynak düşer', () => {
+    const a = new KuyrukAynalari<string>();
+    expect(a.ozet()).toEqual(BOS_AYNA);
+    const oge = (id: string) => ({ id, eventType: 'follow', title: id, message: '', isTest: false });
+    a.bildir('onizleme', { aktif: oge('p'), bekleyen: [] }, false, 30);
+    expect(a.ozet().aktif?.id).toBe('p');
+    a.bildir('obs1', { aktif: oge('o1'), bekleyen: [oge('o2')] }, true, 10);
+    a.bildir('obs2', { aktif: null, bekleyen: [] }, true, 20);
+    expect(a.ozet()).toMatchObject({ aktif: null, guncellendi: 20, kaynak: 3 });
+    expect(a.kopar('obs2')).toBe(true);
+    expect(a.ozet()).toMatchObject({ aktif: { id: 'o1' }, bekleyen: [{ id: 'o2' }], kaynak: 2 });
+    expect(a.kopar('yok')).toBe(false);
   });
 });

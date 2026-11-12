@@ -13,6 +13,7 @@ import {
 } from './animations.js';
 import {
   BOS_DURUM,
+  kuyrukRaporu,
   GorulenKimlikler,
   asamaSuresi,
   atla,
@@ -275,5 +276,21 @@ describe('asamaSuresi', () => {
   it('tamamlanmış aşama sıfır sürer', () => {
     expect(asamaSuresi(oge('1'), 'completed')).toBe(0);
     expect(asamaSuresi(oge('1'), 'queued')).toBe(0);
+  });
+});
+
+describe('kuyruk raporu (U3)', () => {
+  it('aktif ve bekleyenleri bildirir; aynı kuyrukta anahtar değişmez', () => {
+    const oge = (id: string) => ({ id, tur: 'follow', veri: { title: `T ${id}`, isTest: true }, sureMs: 5000, animMs: 500 });
+    let d = kuyrugaEkle(BOS_DURUM, oge('a'), true, 0);
+    d = kuyrugaEkle(d, oge('b'), true, 0);
+    const r = kuyrukRaporu(d);
+    expect(r.ileti).toEqual({
+      action: 'uyari_kuyrugu',
+      aktif: { id: 'a', eventType: 'follow', title: 'T a', message: '', isTest: true },
+      bekleyen: [{ id: 'b', eventType: 'follow', title: 'T b', message: '', isTest: true }]
+    });
+    expect(kuyrukRaporu({ ...d, asamaBitis: 99 }).anahtar).toBe(r.anahtar);
+    expect(kuyrukRaporu(BOS_DURUM).ileti.aktif).toBeNull();
   });
 });

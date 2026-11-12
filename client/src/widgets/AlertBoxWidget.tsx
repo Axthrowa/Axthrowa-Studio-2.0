@@ -12,6 +12,7 @@ import {
   ilerlet,
   kuyrugaEkle,
   temizle,
+  kuyrukRaporu,
   metinPenceresiAcik,
   sonrakiMetinSiniri,
   sonrakiTik,
@@ -79,7 +80,7 @@ function playSynthesizedChime(volume: number = 0.7) {
 
 export function AlertBoxWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
   const advanced = useWidgetSettings('alert-box', ALERT_ADVANCED_DEFAULTS);
-  const { activeAlert, setActiveAlert, alertControl } = useWebSocket('alertbox');
+  const { activeAlert, setActiveAlert, alertControl, connected, gonder } = useWebSocket('alertbox');
   /** Ekip denetimi (duraklat / sustur); OBS kaynağı yeniden yüklense de sunucudan okunur */
   const [denetim, setDenetim] = useState({ paused: false, muted: false });
   const denetimRef = useRef(denetim);
@@ -94,6 +95,14 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
 
   const params = new URLSearchParams(window.location.search);
   const isPreview = previewMode || params.get('preview') === '1' || params.get('test') === '1';
+
+  // U3: sıradaki uyarıları sunucuya bildir (panel ve uzak moderatör görür). Panel içindeki önizleme bildirmez.
+  const rapor = kuyrukRaporu(kuyruk);
+  useEffect(() => {
+    if (embedded || isPreview || !connected) return;
+    gonder(rapor.ileti);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rapor.anahtar, connected, embedded, isPreview]);
 
   // Auto-hide helper indicator after 6 seconds
   useEffect(() => {

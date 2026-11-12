@@ -236,3 +236,11 @@ export function olayYoksaGenel(olay: unknown, genel: unknown, hazir: string): st
   const o = String(olay || '');
   return o && o !== hazir ? o : String(genel || hazir);
 }
+
+/** Sunucuya giden kuyruk raporu (U3): panel "sırada ne var" görsün. Değişmediyse aynı `anahtar` döner. */
+export function kuyrukRaporu(d: KuyrukDurumu): { anahtar: string; ileti: { action: 'uyari_kuyrugu'; aktif: unknown; bekleyen: unknown[] } } {
+  const oge = (o: UyariOgesi) => ({ id: o.id, eventType: o.tur, title: String(o.veri?.title ?? ''), message: String(o.veri?.message ?? ''), isTest: o.veri?.isTest === true });
+  const aktif = d.aktif && d.asama !== 'completed' ? oge(d.aktif) : null;
+  const bekleyen = d.bekleyen.map(oge);
+  return { anahtar: [aktif?.id ?? '-', ...bekleyen.map((b) => b.id)].join('|'), ileti: { action: 'uyari_kuyrugu', aktif, bekleyen } };
+}

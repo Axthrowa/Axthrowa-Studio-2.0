@@ -113,3 +113,69 @@ export class SonUyarilar {
     return [...this.liste];
   }
 }
+
+/** OBS'teki uyarı kutusunun bildirdiği kuyruk (U3): panel ve uzak moderatör "sırada ne var" görür. */
+export interface KuyrukOgesi {
+  id: string;
+  eventType: string;
+  title: string;
+  message: string;
+  isTest: boolean;
+}
+
+export interface KuyrukAynasi {
+  aktif: KuyrukOgesi | null;
+  bekleyen: KuyrukOgesi[];
+  /** Raporun geldiği an (0: hiç rapor yok) */
+  guncellendi: number;
+  /** Rapor gönderen açık uyarı kutusu sayısı */
+  kaynak: number;
+}
+
+export const BOS_AYNA: KuyrukAynasi = { aktif: null, bekleyen: [], guncellendi: 0, kaynak: 0 };
+const EN_COK_BEKLEYEN = 30;
+
+function ogeTemizle(ham: unknown): KuyrukOgesi | null {
+  if (!ham || typeof ham !== 'object') return null;
+  const o = ham as Record<string, unknown>;
+  const id = String(o.id ?? '').slice(0, 80);
+  if (!id) return null;
+  const temiz = (v: unknown, n: number) => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').slice(0, n);
+  return { id, eventType: temiz(o.eventType, 30), title: temiz(o.title, 80), message: temiz(o.message, 80), isTest: o.isTest === true };
+}
+
+/** Widget'tan gelen ham rapor (güvenilmez girdi) → temiz kuyruk; biçimsizse null */
+export function kuyrukRaporuTemizle(ham: unknown): { aktif: KuyrukOgesi | null; bekleyen: KuyrukOgesi[] } | null {
+  if (!ham || typeof ham !== 'object') return null;
+  const r = ham as Record<string, unknown>;
+  if (!Array.isArray(r.bekleyen)) return null;
+  return {
+    aktif: ogeTemizle(r.aktif),
+    bekleyen: r.bekleyen.slice(0, EN_COK_BEKLEYEN).map(ogeTemizle).filter((x): x is KuyrukOgesi => !!x)
+  };
+}
+
+/**
+ * Her açık uyarı kutusunun son raporu. Aynı kutu iki sahnede açıksa ikisi de kendi kuyruğunu çalıştırır; panel
+ * OBS kaynaklarından en son güncelleneni gösterir (OBS dışı önizleme yalnız başka kaynak yoksa).
+ */
+export class KuyrukAynalari<K> {
+  private raporlar = new Map<K, { aktif: KuyrukOgesi | null; bekleyen: KuyrukOgesi[]; obs: boolean; zaman: number }>();
+
+  bildir(kaynak: K, rapor: { aktif: KuyrukOgesi | null; bekleyen: KuyrukOgesi[] }, obs: boolean, simdi = Date.now()) {
+    this.raporlar.set(kaynak, { ...rapor, obs, zaman: simdi });
+  }
+
+  /** true: kaynağın raporu vardı ve silindi */
+  kopar(kaynak: K): boolean {
+    return this.raporlar.delete(kaynak);
+  }
+
+  ozet(): KuyrukAynasi {
+    const hepsi = [...this.raporlar.values()];
+    if (!hepsi.length) return BOS_AYNA;
+    const aday = hepsi.some((r) => r.obs) ? hepsi.filter((r) => r.obs) : hepsi;
+    const son = aday.reduce((a, b) => (b.zaman > a.zaman ? b : a));
+    return { aktif: son.aktif, bekleyen: son.bekleyen, guncellendi: son.zaman, kaynak: hepsi.length };
+  }
+}

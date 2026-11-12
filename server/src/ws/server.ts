@@ -13,7 +13,7 @@ import { varyantlar } from '../modules/alerts/variants.js';
 import { hataMetni, seyrekUyar } from '../core/logger.js';
 import { shoutoutGonder } from '../modules/otomasyon/shoutout.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
-import { BASLANGIC, kontrolUygula, KontrolDurumu, SonUyari, SonUyarilar, uyariKimligi } from '../modules/alerts/control.js';
+import { BASLANGIC, kontrolUygula, KontrolDurumu, KuyrukAynalari, kuyrukRaporuTemizle, SonUyari, SonUyarilar, uyariKimligi, type KuyrukAynasi } from '../modules/alerts/control.js';
 import { kupa } from '../modules/engagement/kupa.js';
 
 interface ClientConnection {
@@ -75,9 +75,16 @@ export class WebSocketHub {
   /** Ekip çapında uyarı kuyruğu denetimi (modules/alerts/control.ts) */
   private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
   private sonUyarilar = new SonUyarilar(50);
+  /** OBS'teki uyarı kutularının bildirdiği kuyruk (U3) */
+  private kuyrukAynalari = new KuyrukAynalari<ClientConnection>();
 
-  uyariKontrolDurumu(): { state: KontrolDurumu; recent: Omit<SonUyari, 'alert'>[] } {
+  private kuyrukYayinla() {
+    this.broadcastTo(['dashboard'], { type: 'alert_queue', queue: this.kuyrukAynalari.ozet() });
+  }
+
+  uyariKontrolDurumu(): { state: KontrolDurumu; recent: Omit<SonUyari, 'alert'>[]; queue: KuyrukAynasi } {
     return {
+      queue: this.kuyrukAynalari.ozet(),
       state: this.uyariKontrol,
       recent: this.sonUyarilar.hepsi().map(({ alert: _a, ...geri }) => geri)
     };
@@ -167,6 +174,7 @@ export class WebSocketHub {
         kapandi = true;
         this.clients.delete(clientConn);
         if (katman) this.katmanlar.koptu(katman);
+        if (this.kuyrukAynalari.kopar(clientConn)) this.kuyrukYayinla();
       };
 
       // Send initial state
@@ -182,7 +190,7 @@ export class WebSocketHub {
       ws.on('message', (raw) => {
         try {
           const msg = JSON.parse(raw.toString());
-          this.handleClientMessage(msg);
+          this.handleClientMessage(msg, clientConn);
         } catch (err) {
           console.error('[WS] Malformed message from client:', err);
         }
@@ -200,7 +208,15 @@ export class WebSocketHub {
     console.log('[AxBoT] WebSocket Hub active on /ws');
   }
 
-  private handleClientMessage(msg: any) {
+  private handleClientMessage(msg: any, kaynak?: ClientConnection) {
+    if (msg.action === 'uyari_kuyrugu') {
+      // Yalnız uyarı kutusu bildirir; başka sayfa kuyruğu yazamasın
+      const rapor = kaynak?.type === 'alertbox' ? kuyrukRaporuTemizle(msg) : null;
+      if (!rapor || !kaynak) return;
+      this.kuyrukAynalari.bildir(kaynak, rapor, !!kaynak.obs);
+      this.kuyrukYayinla();
+      return;
+    }
     if (msg.action === 'pano_bitti') {
       // Katman oynatmayı bitirdi (aynı istek için birden çok katman bildirebilir; hizmet yinelemeyi yok sayar)
       void import('../modules/pano/pano.js').then((m) => m.sesPanosu.bitti(String(msg.id || '')));

@@ -168,6 +168,18 @@ export class CommandManager {
   /** Panelden bekleme verilen yerleşik komutun son yanıtı. !şans kişi başınadır. */
   private yerlesikBeklemeSon: Map<string, number> = new Map();
 
+  /** Bekleme uyarısı verilenler: aynı kişiye bekleme bitene kadar ikinci kez yazılmaz (sohbet dolmasın). */
+  private beklemeUyarilari: Map<string, number> = new Map();
+
+  /** `anahtar` için bekleme `bitis` anına kadar uyarı verilmediyse true döner ve kaydeder. */
+  private birKezUyar(anahtar: string, bitis: number): boolean {
+    const simdi = Date.now();
+    if ((this.beklemeUyarilari.get(anahtar) || 0) > simdi) return false;
+    if (this.beklemeUyarilari.size > 2000) for (const [k, t] of this.beklemeUyarilari) if (t <= simdi) this.beklemeUyarilari.delete(k);
+    this.beklemeUyarilari.set(anahtar, bitis);
+    return true;
+  }
+
   private beklemeAnahtari(ad: string, message: ChatMessagePayload): string {
     if (ad !== 'sans') return ad;
     return `sans:${message.platform}:${message.user.username.toLowerCase()}`;
@@ -364,21 +376,24 @@ export class CommandManager {
     // Kapatma asıl adla tutulur ve takma adları da kapsar (eskiden !puan kapalıyken !bakiye çalışıyordu)
     const kayit = yerlesikBul(name);
     const kim = message.user.displayName;
+    const ayar = kayit ? yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'))[kayit.ad] : undefined;
+    // Panelde "reddedince sessiz kal" seçiliyse kapalı / yetki / bekleme yanıtı yazılmaz
+    const ret = (metin: string) => (ayar?.sessiz ? null : metin);
     if (kayit && this.kapaliYerlesikler().some((x) => x === name || x === kayit.ad)) {
-      return `@${kim}, !${kayit.ad} kapalı.`;
+      return ret(`@${kim}, !${kayit.ad} kapalı.`);
     }
     if (kayit) {
-      const ayar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'))[kayit.ad];
-      if (!yetkiYeterli(ayar?.yetki || kayit.yetki, message.user)) return `@${kim}, !${kayit.ad} için yetkin yok.`;
+      if (!yetkiYeterli(ayar?.yetki || kayit.yetki, message.user)) return ret(`@${kim}, !${kayit.ad} için yetkin yok.`);
       const ayricalikli = message.user.isMod || message.user.isBroadcaster;
       const sn = beklemeSuresi(kayit, ayar);
       const anahtar = this.beklemeAnahtari(kayit.ad, message);
-      if (sn && !ayricalikli && Date.now() - (this.yerlesikBeklemeSon.get(anahtar) || 0) < sn * 1000) {
-        return `@${kim}, !${kayit.ad} için ${sn} sn bekle.`;
+      const son = this.yerlesikBeklemeSon.get(anahtar) || 0;
+      if (sn && !ayricalikli && Date.now() - son < sn * 1000) {
+        return this.birKezUyar(`y:${anahtar}`, son + sn * 1000) ? ret(`@${kim}, !${kayit.ad} için ${sn} sn bekle.`) : null;
       }
     }
     const modul = Object.entries(MODULLER).find(([, adlar]) => adlar.includes(name))?.[0];
-    if (modul && settingsCache.getBoolean(`modul_kapali_${modul}`, false)) return `@${kim}, !${name} kapalı.`;
+    if (modul && settingsCache.getBoolean(`modul_kapali_${modul}`, false)) return ret(`@${kim}, !${name} kapalı.`);
 
     switch (name) {
       case 'puan':
@@ -745,7 +760,7 @@ export class CommandManager {
 
       case 'clip': {
         const cfg = extras.getExtrasSettings();
-        if (!cfg.clip_enabled) return null;
+        if (!cfg.clip_enabled) return ayar?.sessiz ? null : `@${message.user.displayName}, !clip kapalı.`;
         if (Date.now() - this.clipLast < (cfg.clip_cooldown || 30) * 1000) return `@${message.user.displayName}, clip komutu beklemede.`;
         const dn = message.user.displayName;
         if (message.platform === 'twitch') {
@@ -1652,16 +1667,18 @@ export class CommandManager {
     message: ChatMessagePayload,
     acikCagri = true
   ): Promise<string | null> {
+    // Reddetme yanıtı yalnız `!komut` ile çağrılınca ve komutta kapatılmamışsa yazılır
+    const yanitla = acikCagri && Number(cmd.refusal_reply ?? 1) !== 0;
     // 1) Yetki
     if (!this.hasPermission(cmd.user_level, message)) {
-      if (!acikCagri) return null;
+      if (!yanitla) return null;
       return `@${message.user.displayName}, bu komutu kullanma yetkiniz yok (${cmd.user_level}).`;
     }
 
     // 1b) Erişim kipi: her zaman / yalnız yayında / yalnız yayın kapalıyken
     const kip = String(cmd.access_mode || 'always');
     if (!erisimUygunMu(kip, canliDurum.genel().canli)) {
-      return acikCagri ? `@${message.user.displayName}, ${erisimAciklamasi(kip)}.` : null;
+      return yanitla ? `@${message.user.displayName}, ${erisimAciklamasi(kip)}.` : null;
     }
 
     // 1c) Seviye şartı (Seviye / XP sistemi açıksa)
@@ -1669,7 +1686,7 @@ export class CommandManager {
     if (minSeviye > 0 && !message.user.isBroadcaster && seviyeler.ayarOku().aktif) {
       const sv = seviyeler.kullanici(cuzdanAdi(message.platform, message.user.username)).seviye;
       if (sv < minSeviye) {
-        return acikCagri
+        return yanitla
           ? `@${message.user.displayName}, bu komut için seviye ${minSeviye} gerekiyor (seninki ${sv}).`
           : null;
       }
@@ -1701,12 +1718,12 @@ export class CommandManager {
     const kisiSn = Number(cmd.user_cooldown) || genelSn;
 
     if (!ayricalikli) {
-      if (beklemeKipi === 'user') {
-        const mevcut = this.userCooldowns.get(cdKey);
-        if (mevcut && mevcut.expiresAt > now) return null;
-      } else {
-        const mevcut = this.globalCooldowns.get(globalKey);
-        if (mevcut && mevcut.expiresAt > now) return null;
+      const mevcut = beklemeKipi === 'user' ? this.userCooldowns.get(cdKey) : this.globalCooldowns.get(globalKey);
+      if (mevcut && mevcut.expiresAt > now) {
+        const kalan = Math.ceil((mevcut.expiresAt - now) / 1000);
+        return yanitla && this.birKezUyar(`o:${beklemeKipi === 'user' ? cdKey : globalKey}`, mevcut.expiresAt)
+          ? `@${message.user.displayName}, !${cmd.name} için ${kalan} sn bekle.`
+          : null;
       }
     }
 

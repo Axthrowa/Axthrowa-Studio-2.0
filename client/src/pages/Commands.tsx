@@ -425,6 +425,19 @@ export function Commands() {
                 </div>
               </div>
 
+              <label className="flex cursor-pointer items-start gap-2 text-xs text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={(editingCmd.refusal_reply ?? 1) !== 0}
+                  onChange={e => setEditingCmd({ ...editingCmd, refusal_reply: e.target.checked ? 1 : 0 })}
+                  className="mt-0.5 h-4 w-4 accent-purple-600"
+                />
+                <span>
+                  <b className="text-gray-200">Reddedince sohbete yanıt ver</b>
+                  <span className="block text-[10px] text-gray-500">Yetki yokken, beklemedeyken ya da yayın durumu uymazken kısa yanıt yazar ("!komut için 12 sn bekle"). Bekleme uyarısı süre bitene kadar bir kez yazılır.</span>
+                </span>
+              </label>
+
               <div>
                 <span className="block text-xs font-bold text-gray-300 mb-1">Platformlar (hiçbiri seçili değilse hepsi)</span>
                 <div className="flex flex-wrap gap-2">

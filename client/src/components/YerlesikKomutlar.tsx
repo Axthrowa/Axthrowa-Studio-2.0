@@ -19,7 +19,7 @@ interface Veri {
   komutlar: Komut[];
   kapali: string[];
   ornekler: Record<string, string>;
-  ayarlar: Record<string, { yetki?: Yetki; bekleme?: number; yanit?: string }>;
+  ayarlar: Record<string, { yetki?: Yetki; bekleme?: number; yanit?: string; sessiz?: boolean }>;
   moduller: Record<string, { kapali: boolean; komutlar: string[] }>;
 }
 
@@ -53,7 +53,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
       .catch(() => setHata('Komut listesi alınamadı'));
   }, []);
 
-  const kaydet = async (ad: string, degisim: { acik?: boolean; yetki?: Yetki | ''; bekleme?: number; yanit?: string }) => {
+  const kaydet = async (ad: string, degisim: { acik?: boolean; yetki?: Yetki | ''; bekleme?: number; yanit?: string; sessiz?: boolean }) => {
     setHata('');
     try {
       const r = await fetch('/api/commands/builtin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ad, ...degisim }) });
@@ -164,6 +164,13 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                       <div className="min-w-0 flex-1">
                         <SohbetOnizleme yazilan={(k.kullanim || `!${k.ad}`).split(' · ')[0]} yanit={yanit} />
                       </div>
+                      <label
+                        className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-1 py-1 text-[11px] text-gray-300"
+                        title="Komut kapalıyken, yetki yokken ya da beklemedeyken sohbete kısa yanıt yazılmaz"
+                      >
+                        <input type="checkbox" checked={!!ayar.sessiz} onChange={(e) => void kaydet(k.ad, { sessiz: e.target.checked })} className="h-3.5 w-3.5 accent-purple-600" />
+                        Reddedince sessiz kal
+                      </label>
                       {ornek && (
                         <button
                           type="button"

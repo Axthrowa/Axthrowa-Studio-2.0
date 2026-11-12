@@ -189,6 +189,8 @@ export interface YerlesikAyar {
   bekleme?: number;
   /** Sohbete yazılan yanıtın şablonu: {sonuc} botun yanıtı, {kullanici} yazan kişi */
   yanit?: string;
+  /** Kapalı / yetki yok / bekleme durumunda sohbete yanıt yazma */
+  sessiz?: boolean;
 }
 
 /** Panelde yazılan yanıt şablonunu uygular. Değişken motoruna girmez: {sonuc} izleyici metni içerebilir. */
@@ -212,8 +214,9 @@ export function yerlesikAyarlariCoz(ham: unknown): Record<string, YerlesikAyar> 
       ? undefined
       : Math.max(0, Math.min(3600, Math.round(Number(a.bekleme))));
     const yanit = String(a.yanit ?? '').trim().slice(0, 400);
-    if (yetki || bekleme !== undefined || yanit) {
-      out[yerlesikBul(ad)!.ad] = { ...(yetki ? { yetki } : {}), ...(bekleme !== undefined ? { bekleme } : {}), ...(yanit ? { yanit } : {}) };
+    const sessiz = a.sessiz === true;
+    if (yetki || bekleme !== undefined || yanit || sessiz) {
+      out[yerlesikBul(ad)!.ad] = { ...(yetki ? { yetki } : {}), ...(bekleme !== undefined ? { bekleme } : {}), ...(yanit ? { yanit } : {}), ...(sessiz ? { sessiz } : {}) };
     }
   }
   return out;

@@ -51,10 +51,10 @@ router.post('/commands/builtin', (req: Request, res: Response) => {
     const kapali = kapaliYerlesikler().filter((x) => x !== kayit.ad);
     settingsCache.set('default_commands_disabled', JSON.stringify(g.acik ? kapali : [...kapali, kayit.ad]));
   }
-  if ('yetki' in g || 'bekleme' in g || 'yanit' in g) {
+  if ('yetki' in g || 'bekleme' in g || 'yanit' in g || 'sessiz' in g) {
     const ayarlar = yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}'));
     const sn = Math.max(0, Math.min(3600, Math.round(Number(g.bekleme)) || 0));
-    const yeni = { ...ayarlar[kayit.ad], ...('yanit' in g ? { yanit: g.yanit || undefined } : {}), ...('yetki' in g ? { yetki: g.yetki || undefined } : {}), ...('bekleme' in g ? { bekleme: sn } : {}) };
+    const yeni = { ...ayarlar[kayit.ad], ...('yanit' in g ? { yanit: g.yanit || undefined } : {}), ...('yetki' in g ? { yetki: g.yetki || undefined } : {}), ...('bekleme' in g ? { bekleme: sn } : {}), ...('sessiz' in g ? { sessiz: g.sessiz === true } : {}) };
     settingsCache.set('yerlesik_komut_ayarlari', JSON.stringify(yerlesikAyarlariCoz({ ...ayarlar, [kayit.ad]: yeni })));
   }
   res.json({ ok: true, kapali: kapaliYerlesikler(), ayarlar: yerlesikAyarlariCoz(settingsCache.get('yerlesik_komut_ayarlari', '{}')) });
@@ -84,7 +84,8 @@ const KOMUT_SUTUNLARI = [
   'min_level',
   'platforms',
   'trigger_type',
-  'access_mode'
+  'access_mode',
+  'refusal_reply'
 ] as const;
 
 router.post('/commands', (req: Request, res: Response) => {

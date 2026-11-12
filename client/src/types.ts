@@ -34,6 +34,8 @@ export interface CustomCommand {
   platforms?: string;
   trigger_type?: 'command' | 'keyword';
   access_mode?: 'always' | 'online' | 'offline';
+  /** 1: yetki, bekleme ya da erişim reddinde sohbete kısa yanıt yazılır */
+  refusal_reply?: number;
 }
 
 export interface TimerConfig {

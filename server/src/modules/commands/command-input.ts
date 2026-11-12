@@ -48,6 +48,8 @@ export interface KomutKaydi {
   platforms: string; // virgüllü, boş = hepsi
   trigger_type: Tetikleyici;
   access_mode: ErisimKipi;
+  /** 1: yetki, bekleme ya da erişim reddinde sohbete kısa yanıt yazılır */
+  refusal_reply: number;
 }
 
 export const VARSAYILAN_KOMUT: KomutKaydi = {
@@ -64,7 +66,8 @@ export const VARSAYILAN_KOMUT: KomutKaydi = {
   min_level: 0,
   platforms: '',
   trigger_type: 'command',
-  access_mode: 'always'
+  access_mode: 'always',
+  refusal_reply: 1
 };
 
 /** İki adlandırmadan hangisi geldiyse onu alır. */
@@ -192,7 +195,8 @@ export function komutGirdisiniCoz(
         ? platformlariCoz(al(govde, 'platforms', 'platforms'))
         : platformlariCoz(taban.platforms),
     trigger_type: tetikleyici,
-    access_mode: secenek(al(govde, 'access_mode', 'accessMode'), ERISIM_KIPLERI) ?? taban.access_mode
+    access_mode: secenek(al(govde, 'access_mode', 'accessMode'), ERISIM_KIPLERI) ?? taban.access_mode,
+    refusal_reply: mantiksal(al(govde, 'refusal_reply', 'refusalReply')) ?? taban.refusal_reply ?? 1
   };
 
   return { ok: true, kayit };

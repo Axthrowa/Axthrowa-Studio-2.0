@@ -168,6 +168,13 @@ export const GOCLER: Gocler[] = [
       if (!tablo) return;
       db.prepare("UPDATE bot_settings SET value = replace(value, 'Sen AxBot adında', 'Sen AxBoT adında') WHERE key = 'gemini_prompt'").run();
     }
+  },
+  {
+    version: 12,
+    name: 'commands — reddedince yanıt (yetki, bekleme, erişim)',
+    up(db) {
+      sutunEkle(db, 'commands', 'refusal_reply', 'INTEGER NOT NULL DEFAULT 1');
+    }
   }
 ];
 

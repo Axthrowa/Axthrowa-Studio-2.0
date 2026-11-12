@@ -11,6 +11,17 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.14.0',
+    ad: 'AxBoT',
+    tarih: '2026-11-12',
+    notlar: [
+      'Eski adlar kalktı: veritabanı axbot.sqlite olur, eski dosya ilk açılışta kendiliğinden taşınır',
+      'Bir katmana birden fazla hedef çubuğu: her çubuğun kendi ayarı ve adresi var',
+      'Widget seslerinde başlangıç ve en uzun çalma süresi',
+      '!clip kapalıyken sohbete tek satır yazar; özel komut beklemedeyken süre bitene kadar bir kez "bekle" der. Komut başına "Reddedince sessiz kal" seçeneği'
+    ]
+  },
+  {
     surum: '1.13.18',
     ad: 'Animasyon',
     tarih: '2026-11-12',

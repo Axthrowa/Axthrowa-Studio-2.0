@@ -18,6 +18,7 @@ import {
   Share2,
   ChevronRight,
   Sliders,
+  LayoutTemplate,
 } from "lucide-react";
 import { useT } from "../../i18n";
 
@@ -48,6 +49,7 @@ const SECTION_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   resonance: Radio,
   obsWs: Server,
   sosyal: Share2,
+  sablonlar: LayoutTemplate,
 };
 
 const STORAGE_KEY = "panel.sectionCollapsed";
@@ -146,11 +148,11 @@ export default function SettingsSection({
       data-section={id}
       data-open={open ? "1" : "0"}
       style={style}
-      className={"rounded-xl transition-all " + (open ? "space-y-2 mb-2 " : "mb-1.5 ") + className}
+      className={"rounded-xl transition-all " + (open ? "space-y-2 mb-2 " : "") + className}
     >
       <button
         type="button"
-        className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-left transition-all duration-150 hover:border-white/[0.15] hover:bg-white/[0.06]"
+        className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-1.5 text-left transition-all duration-150 hover:border-white/[0.15] hover:bg-white/[0.06]"
         title={open ? t("section.collapse") : t("section.expand")}
         aria-label={open ? t("section.collapse") : t("section.expand")}
         aria-expanded={open}

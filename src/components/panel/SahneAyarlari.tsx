@@ -225,7 +225,8 @@ export default function SahneAyarlari({
       pinned={panelsPinned}
       width={380}
       label="Ayar paneli — fareyi getir"
-      className="custom-scrollbar flex flex-col gap-4 overflow-y-auto rounded-2xl border border-white/[0.05] bg-panel-card/50 p-4"
+      // A3: 1366×768'de bölümler kapalıyken kaydırma gerekmesin diye aralıklar sıkı
+      className="custom-scrollbar flex flex-col gap-0.5 overflow-y-auto rounded-2xl border border-white/[0.05] bg-panel-card/50 p-3"
     >
       {screen !== "chat" && (
         <>
@@ -238,8 +239,18 @@ export default function SahneAyarlari({
             />
           )}
           {(screen === "starting" || screen === "ending" || screen === "brb") && (
-            <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-black/25 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">Sık kullanılan</p>
+            <div className="my-1.5 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/25 p-3">
+              <div className="col-span-2 flex items-center justify-between gap-2">
+                <p
+                  className="truncate text-[11px] font-bold uppercase tracking-wider text-white/70"
+                  title="Video ve arka plan her ekranda ayrı kaydedilir."
+                >
+                  Sık kullanılan · yalnız {screen === "starting" ? "Giriş" : screen === "ending" ? "Çıkış" : "Mola"}
+                </p>
+                <button type="button" className="max-w-[45%] shrink-0 truncate text-xs font-semibold text-panel-accent" onClick={() => ayarBolumuAc("logo")}>
+                  Logo: {settings.logoFile || "seç"}
+                </button>
+              </div>
               <Field label={tt("field.title")} value={settings.title || ""} onChange={(v) => update({ title: v })} />
               {screen === "brb" ? (
                 <Field
@@ -271,7 +282,7 @@ export default function SahneAyarlari({
                   <option value="youtube">{tt("bg.youtube")}</option>
                 </select>
               </div>
-              <label className="flex items-center gap-2 text-xs text-white/80">
+              <label className="flex items-center gap-2 self-end pb-2 text-xs text-white/80">
                 Müzik
                 <input
                   aria-label="Müzik sesi"
@@ -284,9 +295,6 @@ export default function SahneAyarlari({
                 />
                 <span className="w-8 text-right tabular-nums">{settings.musicVolume ?? 70}</span>
               </label>
-              <button type="button" className="text-left text-xs font-semibold text-panel-accent" onClick={() => ayarBolumuAc("logo")}>
-                Logo: {settings.logoFile || "seç"}
-              </button>
             </div>
           )}
           {!sectionHidden("metin") && (
@@ -536,11 +544,6 @@ export default function SahneAyarlari({
           )}
             </SettingsSection>
           )}
-
-          <div className="rounded-md border border-panel-border/60 bg-black/20 px-2 py-1.5 text-[11px] text-panel-muted">
-            Ayarlar bu ekrana özel ({screen === "starting" ? "Giriş" : screen === "ending" ? "Çıkış" : screen === "brb" ? "Mola" : screen}).
-            Video / arka plan her sekmede ayrı kaydedilir.
-          </div>
 
           {!sectionHidden("arkaPlan") && (
             <SettingsSection id="arkaPlan" title={tt("sec.arkaPlan")} style={secOrder("arkaPlan")}>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LayoutTemplate, Plus, Trash2, Undo2 } from "lucide-react";
+import { Plus, Trash2, Undo2 } from "lucide-react";
+import SettingsSection from "./SettingsSection";
 import { FONT_STACKS } from "../../lib/textStyles";
 import {
   captureTemplate,
@@ -167,14 +168,9 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
   };
 
   return (
-    <section
-      className="mb-3 rounded-2xl border border-white/[0.08] bg-panel-card/70 p-3.5 shadow-panel"
-      aria-label="Şablonlar"
-    >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-xs font-semibold text-white">
-          <LayoutTemplate className="h-4 w-4 text-panel-accent" /> Şablonlar
-        </h3>
+    // A3: kapalı bölüm olarak başlar; Ekranlar sayfası kaydırmasız sığsın
+    <SettingsSection id="sablonlar" title="Şablonlar">
+      <div className="flex items-center justify-end gap-2">
         <button
           type="button"
           className="studio-btn-ghost inline-flex h-7 items-center gap-1 px-2 text-[11px]"
@@ -270,6 +266,6 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
           </div>
         ))}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

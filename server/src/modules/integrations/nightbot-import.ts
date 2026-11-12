@@ -9,13 +9,22 @@
  *
  * Nightbot'un dışa aktarma biçimi JSON'dur. Değişken sözdizimi bizimkiyle
  * büyük ölçüde AYNI (`$(user)`, `$(touser)`, `$(count)`, `$(urlfetch)`),
- * farklı olanlar burada eşlenir.
+ * farklı olanlar burada eşlenir. StreamElements ve Fossabot dosyaları önce
+ * `disa-aktarim-bicimleri.ts` ile Nightbot biçimine çevrilir; kendi dışa
+ * aktarımımız (`kaynak: 'axbot'`) tüm sütunlarıyla geri yüklenir.
  */
 import crypto from 'node:crypto';
 import { db } from '../../db/index.js';
 
 export * from './nightbot-map.js';
 import { seviyeCevir, sablonCevir, type IceAktarmaSonucu, type NightbotKomut, type NightbotTimer } from './nightbot-map.js';
+import { disAktarimiCoz } from './disa-aktarim-bicimleri.js';
+
+const KENDI_TABLOLAR = ['commands', 'timers'] as const;
+
+function sutunlar(tablo: string): Set<string> {
+  return new Set((db.prepare(`PRAGMA table_info(${tablo})`).all() as Array<{ name: string }>).map((c) => c.name));
+}
 
 class NightbotIceAktarma {
   /**
@@ -31,11 +40,11 @@ class NightbotIceAktarma {
       uyarilar: []
     };
 
-    const komutlar: NightbotKomut[] = Array.isArray(veri?.commands)
-      ? veri.commands
-      : Array.isArray(veri)
-        ? veri
-        : [];
+    const cozulen = disAktarimiCoz(veri);
+    if (cozulen.kaynak === 'axbot') return this.kendiDosyamiz(veri, uzerineYaz);
+    sonuc.kaynak = cozulen.kaynak;
+    sonuc.uyarilar.push(...cozulen.uyarilar);
+    const komutlar: NightbotKomut[] = cozulen.komutlar;
 
     for (const k of komutlar) {
       const ad = String(k?.name || '').replace(/^!/, '').trim().toLowerCase();
@@ -80,11 +89,12 @@ class NightbotIceAktarma {
       sonuc.komut.eklenen++;
     }
 
-    const timerlar: NightbotTimer[] = Array.isArray(veri?.timers) ? veri.timers : [];
+    const timerlar: NightbotTimer[] = cozulen.zamanlayicilar;
     for (const t of timerlar) {
       const ad = String(t?.name || '').trim();
       const mesaj = String(t?.message || '').trim();
-      if (!ad || !mesaj) {
+      // Aynı dosya iki kez yüklenince zamanlayıcılar çoğalmasın
+      if (!ad || !mesaj || db.prepare('SELECT 1 FROM timers WHERE name = ?').get(ad)) {
         sonuc.zamanlayici.atlanan++;
         continue;
       }
@@ -103,6 +113,55 @@ class NightbotIceAktarma {
       sonuc.zamanlayici.eklenen++;
     }
 
+    return sonuc;
+  }
+
+  /** Kendi komut ve zamanlayıcılarımız: tablonun bütün sütunlarıyla, dosyaya yazılmak üzere. */
+  disaAktar() {
+    return {
+      kaynak: 'axbot' as const,
+      surum: 1,
+      tarih: new Date().toISOString(),
+      commands: db.prepare('SELECT * FROM commands ORDER BY name').all(),
+      timers: db.prepare('SELECT * FROM timers ORDER BY name').all()
+    };
+  }
+
+  /** `disaAktar` dosyasını geri yükler. Yalnız tabloda gerçekten olan sütunlar yazılır; aynı ad `uzerineYaz` yoksa atlanır. */
+  private kendiDosyamiz(veri: any, uzerineYaz: boolean): IceAktarmaSonucu {
+    const sonuc: IceAktarmaSonucu = { kaynak: 'axbot', komut: { eklenen: 0, atlanan: 0, atlananlar: [] }, zamanlayici: { eklenen: 0, atlanan: 0 }, uyarilar: [] };
+    db.exec('BEGIN');
+    try {
+      for (const tablo of KENDI_TABLOLAR) {
+        const izinli = sutunlar(tablo);
+        const sayac = tablo === 'commands' ? sonuc.komut : sonuc.zamanlayici;
+        for (const satir of Array.isArray(veri?.[tablo]) ? veri[tablo] : []) {
+          const ad = String(satir?.name || '').trim();
+          if (!ad) {
+            sayac.atlanan++;
+            continue;
+          }
+          const mevcut = db.prepare(`SELECT id FROM ${tablo} WHERE LOWER(name) = LOWER(?)`).get(ad) as { id?: string } | undefined;
+          if (mevcut && !uzerineYaz) {
+            sayac.atlanan++;
+            if (tablo === 'commands') sonuc.komut.atlananlar.push(`!${ad}`);
+            continue;
+          }
+          if (mevcut) db.prepare(`DELETE FROM ${tablo} WHERE id = ?`).run(mevcut.id ?? null);
+          const kayit: Record<string, any> = {};
+          for (const [k, v] of Object.entries(satir)) if (izinli.has(k) && (v === null || ['string', 'number'].includes(typeof v))) kayit[k] = v;
+          // Başka adla kayıtlı aynı kimlik varsa yeni kimlik
+          if (!kayit.id || db.prepare(`SELECT 1 FROM ${tablo} WHERE id = ?`).get(kayit.id)) kayit.id = crypto.randomUUID();
+          const ad_ = Object.keys(kayit);
+          db.prepare(`INSERT INTO ${tablo} (${ad_.join(', ')}) VALUES (${ad_.map(() => '?').join(', ')})`).run(...ad_.map((k) => kayit[k]));
+          sayac.eklenen++;
+        }
+      }
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
     return sonuc;
   }
 }

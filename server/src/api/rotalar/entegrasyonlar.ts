@@ -39,6 +39,12 @@ router.post('/integrations/discord/test', async (req: Request, res: Response) =>
   res.json(await discordDuyuru.duyur(kaynak, kanal, true));
 });
 
+// Kendi komut ve zamanlayıcılarımız: temiz kurulumda aynı içe aktarma ile geri yüklenir
+router.get('/integrations/disa-aktar', (_req: Request, res: Response) => {
+  res.setHeader('Content-Disposition', `attachment; filename="axbot-komutlar-${new Date().toISOString().slice(0, 10)}.json"`);
+  res.json(nightbot.disaAktar());
+});
+
 router.post('/integrations/nightbot/import', (req: Request, res: Response) => {
   const veri = req.body?.veri;
   if (!veri) return res.status(400).json({ error: 'veri gerekli (Nightbot JSON)' });

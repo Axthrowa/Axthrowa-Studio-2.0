@@ -18,7 +18,8 @@ export const SURUMLER: Surum[] = [
       'Eski adlar kalktı: veritabanı axbot.sqlite olur, eski dosya ilk açılışta kendiliğinden taşınır',
       'Bir katmana birden fazla hedef çubuğu: her çubuğun kendi ayarı ve adresi var',
       'Widget seslerinde başlangıç ve en uzun çalma süresi',
-      '!clip kapalıyken sohbete tek satır yazar; özel komut beklemedeyken süre bitene kadar bir kez "bekle" der. Komut başına "Reddedince sessiz kal" seçeneği'
+      '!clip kapalıyken sohbete tek satır yazar; özel komut beklemedeyken süre bitene kadar bir kez "bekle" der. Komut başına "Reddedince sessiz kal" seçeneği',
+      'Komut aktarma: Nightbot yanında StreamElements ve Fossabot dosyaları da okunur; kendi komut ve zamanlayıcılarınız dosyaya indirilip yeni kurulumda geri yüklenir'
     ]
   },
   {

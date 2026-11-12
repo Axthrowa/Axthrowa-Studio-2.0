@@ -23,6 +23,8 @@ export interface NightbotTimer {
 }
 
 export interface IceAktarmaSonucu {
+  /** Tanınan dosya biçimi */
+  kaynak?: 'nightbot' | 'streamelements' | 'fossabot' | 'axbot';
   komut: { eklenen: number; atlanan: number; atlananlar: string[] };
   zamanlayici: { eklenen: number; atlanan: number };
   uyarilar: string[];

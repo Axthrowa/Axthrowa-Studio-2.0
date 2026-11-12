@@ -32,7 +32,7 @@ type Sekme = 'discord' | 'nightbot' | 'yedek' | 'lol';
 
 const SEKMELER: Array<{ id: Sekme; etiket: string }> = [
   { id: 'discord', etiket: 'Discord Duyuruları' },
-  { id: 'nightbot', etiket: "Nightbot'tan İçe Aktar" },
+  { id: 'nightbot', etiket: 'Komut Aktarma' },
   { id: 'yedek', etiket: 'Uyarı Yedeği' },
   { id: 'lol', etiket: 'Oyun & Müzik Profilleri' }
 ];
@@ -236,6 +236,8 @@ function DiscordPaneli() {
 
 // --------------------------------------------------------------- Nightbot ---
 
+const KAYNAK_ADI: Record<string, string> = { nightbot: 'Nightbot', streamelements: 'StreamElements', fossabot: 'Fossabot', axbot: 'AxBoT' };
+
 function NightbotPaneli() {
   const toast = useToast();
   const { sor, eleman } = useOnay();
@@ -243,6 +245,22 @@ function NightbotPaneli() {
   const [dosyaAdi, setDosyaAdi] = useState('');
   const [uzerineYaz, setUzerineYaz] = useState(false);
   const [sonuc, setSonuc] = useState<any>(null);
+  const indirBag = useRef<HTMLAnchorElement | null>(null);
+
+  const disaAktar = async () => {
+    try {
+      const d = await al<any>('/api/integrations/disa-aktar');
+      const url = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }));
+      const a = indirBag.current!;
+      a.href = url;
+      a.download = `axbot-komutlar-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast(`${d.commands.length} komut, ${d.timers.length} zamanlayıcı indirildi.`, 'basari');
+    } catch (e: any) {
+      toast(String(e.message), 'hata');
+    }
+  };
 
   const aktar = () => {
     let veri: any;
@@ -256,7 +274,7 @@ function NightbotPaneli() {
       try {
         const r = await yolla<any>('/api/integrations/nightbot/import', { veri, uzerineYaz });
         setSonuc(r);
-        toast(`${r.komut.eklenen} komut, ${r.zamanlayici.eklenen} zamanlayıcı aktarıldı.`, 'basari');
+        toast(`${KAYNAK_ADI[r.kaynak] || 'Dosya'}: ${r.komut.eklenen} komut, ${r.zamanlayici.eklenen} zamanlayıcı aktarıldı.`, 'basari');
       } catch (e: any) {
         toast(String(e.message), 'hata');
       }
@@ -265,7 +283,7 @@ function NightbotPaneli() {
     if (uzerineYaz) {
       sor(
         'Aynı adlı komutların üzerine yazılsın mı?',
-        'Mevcut komutlarınızın yanıtı, yetki seviyesi ve bekleme süresi Nightbot verisiyle değiştirilir.',
+        'Mevcut komutlarınızın yanıtı, yetki seviyesi ve bekleme süresi dosyadaki veriyle değiştirilir.',
         calistir
       );
     } else {
@@ -278,8 +296,8 @@ function NightbotPaneli() {
       {eleman}
 
       <Kart
-        baslik="Nightbot verisini içe aktar"
-        aciklama="Komutlar ve zamanlayıcılar taşınır. Değişken sözdizimi büyük ölçüde aynıdır; farklı olanlar otomatik çevrilir."
+        baslik="Komutları içe aktar"
+        aciklama="Nightbot, StreamElements, Fossabot ya da AxBoT dışa aktarma dosyası. Biçim kendiliğinden tanınır; komutlar ve zamanlayıcılar taşınır, farklı değişkenler çevrilir, karşılığı olmayanlar aşağıda listelenir."
       >
         <div className="flex flex-wrap gap-2">
           <Buton
@@ -316,6 +334,16 @@ function NightbotPaneli() {
         <Buton ikon={<Play className="w-3.5 h-3.5" />} disabled={!metin.trim()} onClick={aktar}>
           İçe aktar
         </Buton>
+      </Kart>
+
+      <Kart
+        baslik="Komutlarımı dışa aktar"
+        aciklama="Bütün özel komutlar ve zamanlayıcılar tek JSON dosyasına yazılır. Yeni kurulumda yukarıdaki kutudan aynı dosyayı seçerek geri yüklersiniz."
+      >
+        <Buton ton="ikincil" ikon={<Download className="w-3.5 h-3.5" />} onClick={() => void disaAktar()}>
+          Dosyaya indir
+        </Buton>
+        <a ref={indirBag} className="hidden" aria-hidden />
       </Kart>
 
       {sonuc && (
@@ -686,7 +714,7 @@ export function Integrations() {
           <Plug className="w-6 h-6 text-purple-400" /> Entegrasyonlar
         </h1>
         <p className="text-sm text-gray-400">
-          Discord duyuruları, Nightbot’tan taşıma, uyarı ayarlarının yedeği ve League of Legends sıralaması.
+          Discord duyuruları, Nightbot, StreamElements ve Fossabot’tan komut taşıma, komut ve uyarı yedeği ve League of Legends sıralaması.
         </p>
       </div>
 

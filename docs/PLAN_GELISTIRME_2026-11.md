@@ -30,7 +30,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 ## Faz 2 durumu
 
 - U3 uyarı kuyruğu monitörü: OBS'teki uyarı kutusu ekrandaki ve sıradaki uyarıları bota bildirir (`uyari_kuyrugu` → `alert_queue`), Canlı kipinde "Uyarı kuyruğu" paneli gösterir; duraklat, sustur, atla, temizle, yeniden oynat. Sandbox'ta beş test uyarısı sıraya girdi, duraklatınca 9 sn yenisi çıkmadı. Aynı kutu iki sahnede açıksa panel OBS kaynaklarından en son güncelleneni gösterir. Gerçek OBS'te sınanmadı.
-- Açık: U4, U5, U8, B2, B3, B4, B5, B12, A7, A8, T4, T5, T6.
+- U4 etkinlik akışı: tek liste ve satırdan yeniden oynatma zaten vardı. Eklenen: bot son 200 olayı tutar (`GET /api/activity/history`), panel sonradan açılsa da akış dolu gelir; "teşekkür edildi" işareti botta ortak (`POST /api/activity/thanked` → `activity_thanked`), "teşekkür bekleyenler" süzgeci. Sandbox'ta takip satırından uyarı yeniden oynatıldı. Geçmiş bellekte: bot yeniden başlayınca boşalır.
+- Açık: U5, U8, B2, B3, B4, B5, B12, A7, A8, T4, T5, T6.
 
 ---
 

@@ -62,6 +62,8 @@ export type ActivityEvent = {
   isTest: boolean;
   /** AxBoT uyarı kuyruğundaki kimlik — yeniden oynatma için */
   alertId?: string;
+  /** "Teşekkür edildi" işareti (botta tutulur, tüm panellerde ortak) */
+  thanked?: boolean;
 };
 
 export const PLATFORM_LABEL: Record<ChatPlatform, string> = {

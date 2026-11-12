@@ -113,5 +113,6 @@ export function normalizeActivity(msg: unknown): ActivityEvent | null {
     message: str(d.message, 300) || undefined,
     isTest: d.isTest === true || a.isTest === true,
     alertId,
+    thanked: m.tesekkur === true,
   };
 }

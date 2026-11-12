@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isQuestion, mentions, normalizeActivity, normalizeChat } from "./normalize";
-import { addActivity, addChat, emptyChat, filterChat, platformCounts, type ChatFilter } from "./store";
+import { addActivity, addChat, emptyChat, filterChat, platformCounts, tesekkurUygula, type ChatFilter } from "./store";
 
 const yuk = (o: Record<string, unknown> = {}, user: Record<string, unknown> = {}) => ({
   id: "m1",
@@ -111,6 +111,15 @@ describe("etkinlik akışı", () => {
     expect(e).toMatchObject({ eventId: "uyari-7", alertId: "uyari-7", platform: "kick", eventType: "tip", user: "Veli", amount: 50, currency: "TRY", isTest: false });
     expect(normalizeActivity({ type: "chat" })).toBeNull();
     expect(normalizeActivity(alert("t", "follow", { isTest: true }))!.isTest).toBe(true);
+  });
+
+  it("teşekkür işareti geçmişten gelir ve sonradan değişir (U4)", () => {
+    const e = normalizeActivity({ ...alert("a"), tesekkur: true })!;
+    expect(e.thanked).toBe(true);
+    const l = [normalizeActivity(alert("b"))!, e];
+    expect(tesekkurUygula(l, "b", true).map((x) => x.thanked)).toEqual([true, true]);
+    expect(tesekkurUygula(l, "a", false)[1].thanked).toBe(false);
+    expect(tesekkurUygula(l, "yok", true)).toBe(l);
   });
 
   it("aynı olay yeniden gelirse (yeniden bağlanma) tek kayıt; en yeni başta", () => {

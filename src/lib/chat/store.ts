@@ -95,6 +95,12 @@ export function platformCounts(list: NormalizedChatMessage[]): Partial<Record<Ch
 }
 
 /** Etkinlik ekleme: olay kimliğine göre idempotent, en yeni başta, sınırlı. */
+/** Teşekkür işaretini uygular (botun `activity_thanked` iletisi); kimlik listede yoksa aynı liste döner */
+export function tesekkurUygula(list: ActivityEvent[], alertId: string, thanked: boolean): ActivityEvent[] {
+  if (!list.some((x) => x.alertId === alertId && !!x.thanked !== thanked)) return list;
+  return list.map((x) => (x.alertId === alertId ? { ...x, thanked } : x));
+}
+
 export function addActivity(list: ActivityEvent[], e: ActivityEvent, cap = ACTIVITY_CAP): ActivityEvent[] {
   if (list.some((x) => x.eventId === e.eventId)) return list;
   return [e, ...list].slice(0, cap);

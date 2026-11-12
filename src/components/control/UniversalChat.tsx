@@ -7,11 +7,11 @@
  * denetimli elle moderasyon ucuna gider (gerçek platform eylemi).
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Pause, Play, RotateCcw, Search, Send } from "lucide-react";
+import { Check, Pause, Play, RotateCcw, Search, Send } from "lucide-react";
 import { axbotBase } from "../../lib/axbot";
 import { ACTIVITY_LABEL, CHAT_PLATFORMS, PLATFORM_LABEL, PLATFORM_SHORT, type ActivityEvent, type ChatPlatform, type NormalizedChatMessage } from "../../lib/chat/model";
 import { normalizeActivity, normalizeChat } from "../../lib/chat/normalize";
-import { addActivity, addChat, CHAT_VIEW_LABEL, CHAT_VIEWS, emptyChat, filterChat, platformCounts, type ChatState, type ChatView } from "../../lib/chat/store";
+import { addActivity, tesekkurUygula, addChat, CHAT_VIEW_LABEL, CHAT_VIEWS, emptyChat, filterChat, platformCounts, type ChatState, type ChatView } from "../../lib/chat/store";
 
 // ─── Paylaşılan akış (tek WebSocket, çok abone) ─────────────────────────
 
@@ -47,6 +47,9 @@ function enqueue(msg: unknown) {
       } else if (o.type === "alert") {
         const e = normalizeActivity(m);
         if (e) activity = addActivity(activity, e);
+      } else if (o.type === "activity_thanked") {
+        const t = m as { id?: unknown; tesekkur?: unknown };
+        if (typeof t.id === "string") activity = tesekkurUygula(activity, t.id, t.tesekkur === true);
       }
     }
     publish({ chat, activity });
@@ -66,6 +69,16 @@ async function connect() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         for (const data of d?.mesajlar || []) enqueue({ type: "chat", data });
+      })
+      .catch(() => {});
+    // Etkinlik akışı geçmişi (U4): panel sonradan açılsa da son olaylar ve teşekkür işaretleri görünür
+    fetch(`${base}/api/activity/history`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        for (const o of d?.olaylar || []) {
+          enqueue(o);
+          if (o?.alert?.id) enqueue({ type: "activity_thanked", id: o.alert.id, tesekkur: o.tesekkur === true });
+        }
       })
       .catch(() => {});
   };
@@ -472,8 +485,23 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
   const { activity, connected, base } = useFeed();
   const [tur, setTur] = useState<string>("all");
   const [testGizle, setTestGizle] = useState(false);
+  const [bekleyenler, setBekleyenler] = useState(false);
   const turler = useMemo(() => Array.from(new Set(activity.map((e) => e.eventType))), [activity]);
-  const list = activity.filter((e) => (tur === "all" || e.eventType === tur) && (!testGizle || !e.isTest));
+  const list = activity.filter((e) => (tur === "all" || e.eventType === tur) && (!testGizle || !e.isTest) && (!bekleyenler || !e.thanked));
+
+  const tesekkur = async (e: ActivityEvent) => {
+    if (!base || !e.alertId) return;
+    try {
+      const r = await fetch(`${base}/api/activity/thanked`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: e.alertId, tesekkur: !e.thanked }),
+      });
+      if (!r.ok) onToast(((await r.json().catch(() => ({}))) as { error?: string }).error || `HTTP ${r.status}`);
+    } catch {
+      onToast("AxBoT'a ulaşılamadı");
+    }
+  };
 
   const tekrar = async (e: ActivityEvent) => {
     if (!base || !e.alertId) return;
@@ -503,13 +531,16 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
           ))}
         </select>
         <label className="ml-auto inline-flex items-center gap-1 text-white/70">
+          <input type="checkbox" checked={bekleyenler} onChange={(e) => setBekleyenler(e.target.checked)} /> teşekkür bekleyenler
+        </label>
+        <label className="inline-flex items-center gap-1 text-white/70">
           <input type="checkbox" checked={testGizle} onChange={(e) => setTestGizle(e.target.checked)} /> testleri gizle
         </label>
       </div>
       <div className="custom-scrollbar max-h-72 space-y-1 overflow-y-auto">
         {list.length === 0 && <p className="text-panel-muted">{connected ? "Bu oturumda olay yok. Takip, abone ve bağışlar geldikçe burada görünür." : "AxBoT çalışmıyor — olaylar için Bot sekmesinden başlatın."}</p>}
         {list.map((e) => (
-          <div key={e.eventId} className="flex items-center gap-1.5 rounded-lg bg-white/[0.03] px-2 py-1">
+          <div key={e.eventId} className={`flex items-center gap-1.5 rounded-lg px-2 py-1 ${e.thanked ? "bg-white/[0.015] opacity-60" : "bg-white/[0.03]"}`}>
             <PlatformBadge p={e.platform} />
             <span className="min-w-0 flex-1 truncate">
               <b className="text-white">{e.user}</b> <span className="text-white/80">{ACTIVITY_LABEL[e.eventType] || e.eventType}</span>
@@ -522,7 +553,19 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
             </span>
             <span className="shrink-0 text-[10px] text-panel-muted">{saat(e.timestamp)}</span>
             {e.alertId && (
-              <button type="button" className="shrink-0 rounded p-1 hover:bg-white/10" title="Uyarıyı yeniden oynat" onClick={() => void tekrar(e)}>
+              <button
+                type="button"
+                aria-pressed={!!e.thanked}
+                className={`shrink-0 rounded p-1 hover:bg-white/10 ${e.thanked ? "text-emerald-300" : "text-white/50"}`}
+                title={e.thanked ? "Teşekkür edildi (geri almak için bas)" : "Teşekkür edildi olarak işaretle"}
+                aria-label={`${e.user}: ${e.thanked ? "teşekkür edildi" : "teşekkür edildi olarak işaretle"}`}
+                onClick={() => void tesekkur(e)}
+              >
+                <Check className="h-3 w-3" />
+              </button>
+            )}
+            {e.alertId && (
+              <button type="button" className="shrink-0 rounded p-1 hover:bg-white/10" title="Uyarıyı yeniden oynat" aria-label={`${e.user}: uyarıyı yeniden oynat`} onClick={() => void tekrar(e)}>
                 <RotateCcw className="h-3 w-3" />
               </button>
             )}

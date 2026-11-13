@@ -1,4 +1,4 @@
-# Surumu uc yerde birden yukseltir: package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml
+# Surumu birden yukseltir: package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml, resonance (K7)
 # (Cargo.lock bir sonraki cargo derlemesinde kendiliginden guncellenir.)
 #   powershell -ExecutionPolicy Bypass -File scripts\surum-yukselt.ps1 -Surum 1.7.1
 param([Parameter(Mandatory)][string]$Surum, [string]$Kok)
@@ -12,7 +12,10 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 $hedefler = @(
   @{ Yol = "package.json"; Desen = '(?m)^(\s*"version"\s*:\s*")[^"]+(")' },
   @{ Yol = "src-tauri\tauri.conf.json"; Desen = '(?m)^(\s*"version"\s*:\s*")[^"]+(")' },
-  @{ Yol = "src-tauri\Cargo.toml"; Desen = '(?m)^(version\s*=\s*")[^"]+(")' }
+  @{ Yol = "src-tauri\Cargo.toml"; Desen = '(?m)^(version\s*=\s*")[^"]+(")' },
+  @{ Yol = "resonance\package.json"; Desen = '(?m)^(\s*"version"\s*:\s*")[^"]+(")' },
+  # Kilit: ust satir + packages[""] (ilk iki eslesme; bagimliliklar daha sonra gelir)
+  @{ Yol = "resonance\package-lock.json"; Desen = '(?m)^(\s*"version"\s*:\s*")[^"]+(")'; Adet = 2 }
 )
 # Once hepsini dogrula, sonra yaz: biri bulunamazsa hicbiri degismesin
 $yazilacak = foreach ($h in $hedefler) {
@@ -22,7 +25,8 @@ $yazilacak = foreach ($h in $hedefler) {
   $m = $re.Match($metin)
   if (-not $m.Success) { throw "Surum satiri bulunamadi: $($h.Yol)" }
   # Yalniz ilk eslesme: bagimlilik surumlerine dokunma
-  @{ Yol = $p; Eski = $m.Value; Metin = $re.Replace($metin, "`${1}$Surum`${2}", 1) }
+  $adet = if ($h.Adet) { $h.Adet } else { 1 }
+  @{ Yol = $p; Eski = $m.Value; Metin = $re.Replace($metin, "`${1}$Surum`${2}", $adet) }
 }
 foreach ($y in $yazilacak) {
   [IO.File]::WriteAllText($y.Yol, $y.Metin, $utf8)

@@ -89,6 +89,8 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "source.show", label: "Kaynağı göster", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
   ActionSpec { id: "source.hide", label: "Kaynağı gizle", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
   ActionSpec { id: "source.toggle", label: "Kaynağı göster / gizle", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
+  ActionSpec { id: "source.lock", label: "Kaynağı kilitle", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
+  ActionSpec { id: "source.unlock", label: "Kaynağın kilidini aç", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
   ActionSpec { id: "record.start", label: "Kaydı başlat", category: "recording", perm: "broadcast.record", confirm: false, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "record.stop", label: "Kaydı durdur", category: "recording", perm: "broadcast.record", confirm: true, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "replay.save", label: "Tekrarı kaydet", category: "replay", perm: "broadcast.replay", confirm: false, requires: Requires::Obs, params: &[] },
@@ -191,6 +193,8 @@ pub enum Action {
   DestinationsStopAll,
   /// `mode`: show | hide | toggle (hotkeys::source_enabled_after sözleşmesi)
   SourceVisibility { scene: Option<String>, source: String, mode: &'static str },
+  /// K5: katman kilidi; `scene` boşsa geçerli sahne
+  SourceLock { scene: Option<String>, source: String, locked: bool },
   AudioVolume { input: String, delta_db: f64 },
   /// `Some(true)` duraklat, `Some(false)` sürdür, `None` değiştir
   RecordPause { pause: Option<bool> },
@@ -295,6 +299,11 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
       scene: istege_bagli(params, "scene")?,
       source: metin(params, "source")?,
       mode: gorunurluk_kipi(spec.id),
+    },
+    "source.lock" | "source.unlock" => Action::SourceLock {
+      scene: istege_bagli(params, "scene")?,
+      source: metin(params, "source")?,
+      locked: spec.id == "source.lock",
     },
     "record.pause" => Action::RecordPause { pause: Some(true) },
     "record.resume" => Action::RecordPause { pause: Some(false) },
@@ -434,6 +443,14 @@ mod tests {
     assert_eq!(
       parse("source.toggle", &json!({"scene": "Oyun", "source": "Kamera"})).unwrap(),
       Action::SourceVisibility { scene: Some("Oyun".into()), source: "Kamera".into(), mode: "toggle" }
+    );
+    assert_eq!(
+      parse("source.lock", &json!({"source": "Kamera"})).unwrap(),
+      Action::SourceLock { scene: None, source: "Kamera".into(), locked: true }
+    );
+    assert_eq!(
+      parse("source.unlock", &json!({"scene": "Oyun", "source": "Kamera"})).unwrap(),
+      Action::SourceLock { scene: Some("Oyun".into()), source: "Kamera".into(), locked: false }
     );
     assert_eq!(
       parse("audio.volume", &json!({"input": "Müzik", "delta": -3})).unwrap(),

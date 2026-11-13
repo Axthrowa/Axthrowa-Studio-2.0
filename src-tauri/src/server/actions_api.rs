@@ -289,6 +289,14 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
       };
       crate::hotkeys::run_obs_action(state, &b, "srcToggle").await.map(|_| json!({ "source": source, "mode": mode }))
     }
+    Action::SourceLock { scene, source, locked } => {
+      let sahne = match scene {
+        Some(s) => s.clone(),
+        None => state.obs.scene_snapshot().await?.current_scene,
+      };
+      let op = if *locked { "lock" } else { "unlock" };
+      state.obs.scene_item_op(&sahne, source, op).await.map(|_| json!({ "source": source, "locked": locked }))
+    }
     Action::AudioVolume { input, delta_db } => {
       let b = HotkeyBindingIn { id: "action".into(), kind: "volume".into(), input: input.clone(), delta: *delta_db, ..Default::default() };
       crate::hotkeys::run_obs_action(state, &b, "volume").await.map(|_| json!({ "input": input, "delta": delta_db }))

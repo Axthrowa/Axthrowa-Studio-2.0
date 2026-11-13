@@ -197,7 +197,11 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
   const katmanIsle = async (source: ObsSourceInfo, op: KatmanIslemi, tamam: string) => {
     const sahne = snapshot.currentScene;
     try {
-      const adres = await obsControl.sceneItemOp(sahne, source.name, op);
+      // K5: kilit eylem kayıt defterinden geçer (denetim günlüğünde görünür); diğer işlemler doğrudan
+      const adres =
+        op === "lock" || op === "unlock"
+          ? (await actionsApi.run(op === "lock" ? "source.lock" : "source.unlock", { scene: sahne, source: source.name }), null)
+          : await obsControl.sceneItemOp(sahne, source.name, op);
       if (op === "url" && adres) await navigator.clipboard.writeText(adres);
       onToast(`${source.name}: ${tamam}`);
       setSources(await obsControl.sources(sahne));

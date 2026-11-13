@@ -64,21 +64,17 @@ function insertIfNew(
 }
 
 /**
- * Bil Bakalım soru bankasının bulunduğu klasörler.
+ * Ek soru paketlerinin klasörleri (`categories.json` + `questions/*.json` ya da `bilbakalim.db`).
  *
- * Banka artık ayrı bir depoda tutuluyor (`Desktop\Bil bakalım\data`): hem
- * `questions/*.json` hem `bilbakalim.db` orada. Yol `BILBAKALIM_DIR` ortam
- * değişkeniyle değiştirilebilir; sabit masaüstü yolu yalnız son çare olarak
- * denenir, böylece başka makinede de çalışır.
+ * Asıl soru bankası uygulamanın içindedir (trivia-data/extra/zor/havuz); masaüstündeki ayrı
+ * `Bil bakalım` deposuna artık bakılmaz. Ek paket isteyen uygulamanın `data/bilbakalim`
+ * klasörüne koyar ya da `BILBAKALIM_DIR` ile yol verir.
  */
 function bankCandidates(): string[] {
   const list: string[] = [];
   const env = (process.env.BILBAKALIM_DIR || '').trim();
   if (env) list.push(path.resolve(env));
-  // Ayrı banka deposu ÖNCE gelir: kullanıcı soruları orada tutuyor.
   list.push(
-    path.join(process.env.USERPROFILE || process.env.HOME || '', 'Desktop', 'Bil bakalım', 'data'),
-    path.resolve(process.cwd(), '..', 'Bil bakalım', 'data'),
     path.resolve(process.cwd(), 'data', 'bilbakalim'),
     path.resolve(process.cwd(), 'server', 'data', 'bilbakalim'),
   );

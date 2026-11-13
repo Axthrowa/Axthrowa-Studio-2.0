@@ -712,8 +712,18 @@ pub fn run() {
       let _ = server::yedek_api::SON_UYGULANAN.set(format!("Geri yükleme başarısız: {e:#}"));
     }
   }
-  // Logo/video/müzik kütüphanesi veri klasöründe: eski sürüm klasörlerindekiler bir kez birleştirilir
-  kutuphane::hazirla(&resolved.resource_root, &resolved.data_dir, env!("CARGO_PKG_VERSION"));
+  // Logo/video/müzik kütüphanesi veri klasöründe: eski sürüm klasörlerindekiler bir kez birleştirilir.
+  // T7: eski klasörde GB'larca video olabilir; açılış kopyayı beklemez, dosyalar bittikçe görünür.
+  {
+    let (kurulum, veri) = (resolved.resource_root.clone(), resolved.data_dir.clone());
+    std::thread::spawn(move || {
+      let t = std::time::Instant::now();
+      let n = kutuphane::hazirla(&kurulum, &veri, env!("CARGO_PKG_VERSION"));
+      if n > 0 {
+        studio_log!("[kutuphane] {n} dosya {} ms'de hazırlandı", t.elapsed().as_millis());
+      }
+    });
+  }
   let gunluk_klasoru = resolved.data_dir.join("logs");
   let state = AppState::new(
     resolved.resource_root,

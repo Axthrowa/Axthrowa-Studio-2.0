@@ -29,9 +29,12 @@ pub fn birlestir(kaynak: &Path, hedef: &Path) -> usize {
     if p.is_dir() {
       adet += birlestir(&p, &h);
     } else if !h.exists() {
-      if fs::create_dir_all(hedef).is_ok() && fs::copy(&p, &h).is_ok() {
+      // Kopya arka planda sürerken sunucu yarım dosya vermesin: gizli adla yaz, bitince adını ver
+      let gecici = hedef.join(format!(".{}.kopya", ad.to_string_lossy()));
+      if fs::create_dir_all(hedef).is_ok() && fs::copy(&p, &gecici).is_ok() && fs::rename(&gecici, &h).is_ok() {
         adet += 1;
       } else {
+        let _ = fs::remove_file(&gecici);
         studio_warn!("[kutuphane] kopyalanamadı: {}", p.display());
       }
     }
@@ -69,7 +72,7 @@ fn isaretler(kutuphane: &Path) -> Vec<String> {
     .unwrap_or_default()
 }
 
-/// Açılışta kütüphaneyi hazırlar (sunucu başlamadan önce). Kopyalanan toplam dosya sayısını döndürür.
+/// Kütüphaneyi hazırlar (açılışta arka plan iş parçacığında; sunucu beklemez). Kopyalanan toplam dosya sayısını döndürür.
 pub fn hazirla(kurulum: &Path, veri: &Path, surum: &str) -> usize {
   let kutuphane = veri.join("assets");
   if fs::create_dir_all(&kutuphane).is_err() {
@@ -130,6 +133,7 @@ mod tests {
     assert_eq!(birlestir(&k, &h), 1);
     assert_eq!(fs::read_to_string(h.join("logos/a.png")).unwrap(), "kullanicinin");
     assert_eq!(fs::read_to_string(h.join("logos/b.png")).unwrap(), "b");
+    assert!(!h.join("logos/.b.png.kopya").exists(), "geçici kopya kalmamalı");
   }
 
   #[test]

@@ -12,6 +12,7 @@ import {
 } from './enforcement.js';
 import { TekrarIzleyici } from './repeat.js';
 import { CezaMerdiveni } from './merdiven.js';
+import { kaliciOku, kaliciYazGecikmeli } from '../../core/kalici.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { kelimeEslesmesi, kelimeListesiDerle, zalgoMu, type KelimeKurali } from './kelime-kurali.js';
 import { duzenliler } from '../community/regulars.js';
@@ -34,7 +35,8 @@ export class AutoModEngine {
   private whitelistCache: string[] = [];
   private lastLoadTime: number = 0;
   private tekrar = new TekrarIzleyici();
-  private merdiven = new CezaMerdiveni();
+  // K2: basamak ve son ihlal anı kalıcı; yeniden başlatma cezayı sıfırlamaz
+  private merdiven = new CezaMerdiveni((k) => kaliciYazGecikmeli('ceza_merdiveni', () => k), kaliciOku('ceza_merdiveni', []));
 
   reload() {
     try {

@@ -14,8 +14,23 @@ export const MERDIVEN: readonly MerdivenBasamagi[] = [
 
 export const VARSAYILAN_PENCERE_MS = 30 * 60_000;
 
+/** En uzun pencere (1440 dk): bundan eski kayıt geri yüklenmez */
+const EN_UZUN_PENCERE_MS = 24 * 60 * 60_000;
+export type MerdivenKaydi = [string, { adim: number; son: number }][];
+
 export class CezaMerdiveni {
   private kayit = new Map<string, { adim: number; son: number }>();
+
+  /** `degisti`: her ihlalde kalıcı kayıt için (K2); `baslangic`: önceki çalışmadan kalan kayıt */
+  constructor(private degisti?: (kayit: MerdivenKaydi) => void, baslangic: unknown = [], simdi = Date.now()) {
+    if (!Array.isArray(baslangic)) return;
+    for (const g of baslangic) {
+      const [k, o] = Array.isArray(g) ? g : [];
+      if (typeof k === 'string' && Number.isInteger(o?.adim) && simdi - Number(o?.son) < EN_UZUN_PENCERE_MS) {
+        this.kayit.set(k, { adim: Math.min(Math.max(o.adim, 0), MERDIVEN.length - 1), son: Number(o.son) });
+      }
+    }
+  }
 
   /** İhlali kaydeder, uygulanacak basamağı (0'dan) ve basamağın kendisini döndürür. */
   ilerle(anahtar: string, pencereMs = VARSAYILAN_PENCERE_MS, simdi = Date.now()): { adim: number; basamak: MerdivenBasamagi } {
@@ -23,11 +38,12 @@ export class CezaMerdiveni {
     const o = this.kayit.get(k);
     const adim = o && simdi - o.son < pencereMs ? Math.min(o.adim + 1, MERDIVEN.length - 1) : 0;
     this.kayit.set(k, { adim, son: simdi });
-    // shortcut: yalnız bellekte ve en çok 5000 kişi; bot yeniden başlayınca merdiven sıfırlanır
+    // shortcut: en çok 5000 kişi (en eskisi düşer), 5000'den fazla aktif ihlalci olursa sınır büyütülmeli
     if (this.kayit.size > 5000) {
       const ilk = this.kayit.keys().next().value;
       if (ilk !== undefined) this.kayit.delete(ilk);
     }
+    this.degisti?.([...this.kayit]);
     return { adim, basamak: MERDIVEN[adim] };
   }
 }

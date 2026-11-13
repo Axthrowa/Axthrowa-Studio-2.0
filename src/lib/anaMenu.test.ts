@@ -57,6 +57,12 @@ describe("ana menü (A2)", () => {
     expect(sayfaAcikMi({ nav: "control" }, "control", undefined, "sonrasi")).toBe(false);
   });
 
+  it("A2b: Yayın bilgisi Hazırlık'ta kendi sayfası, Ödüller Etkileşim'de", () => {
+    expect(menuGrubuBul("yayinBilgisi")).toBe("hazirlik");
+    expect(menuGrubuBul("control", undefined, "oncesi")).toBe("canli");
+    expect(menuGrubuBul("bot", "oduller")).toBe("etkilesim");
+  });
+
   it("bot sayfası kendi başlığını bulur", () => {
     expect(menuGrubuBul("bot", "giveaways")).toBe("etkilesim");
     expect(menuGrubuBul("bot", "alerts")).toBe("sahne");
@@ -73,9 +79,9 @@ describe("ana menü (A2)", () => {
     expect(sayfaAcikMi(overlay, "bot", "commands")).toBe(false);
   });
 
-  it("Etkileşimde dört sayfa, yalnız açık olan seçili", () => {
+  it("Etkileşimde beş sayfa, yalnız açık olan seçili", () => {
     const grup = ANA_MENU.find((g) => g.id === "etkilesim")!;
-    expect(grup.sayfalar.map((s) => s.botSayfa)).toEqual(["polls", "giveaways", "interaction", "songrequest"]);
+    expect(grup.sayfalar.map((s) => s.botSayfa)).toEqual(["polls", "giveaways", "interaction", "songrequest", "oduller"]);
     expect(sayfaAcikMi(grup.sayfalar[1], "bot", "giveaways")).toBe(true);
     expect(sayfaAcikMi(grup.sayfalar[0], "bot", "giveaways")).toBe(false);
   });

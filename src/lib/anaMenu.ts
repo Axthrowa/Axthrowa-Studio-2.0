@@ -25,7 +25,7 @@ export const ANA_MENU: MenuGrubu[] = [
     id: "hazirlik",
     adAnahtari: "nav.grup.hazirlik",
     // "Kurulum" yalnız ilk kurulum bitene kadar görünür (PanelPage görünür sekmelere ekler)
-    sayfalar: [{ nav: "kurulum", adAnahtari: "nav.kurulum" }, { nav: "profile" }, { nav: "bot", botSayfa: "platforms", adAnahtari: "nav.baglantilar" }],
+    sayfalar: [{ nav: "kurulum", adAnahtari: "nav.kurulum" }, { nav: "profile" }, { nav: "bot", botSayfa: "platforms", adAnahtari: "nav.baglantilar" }, { nav: "yayinBilgisi" }],
   },
   { id: "canli", adAnahtari: "nav.grup.canli", sayfalar: [{ nav: "control" }, { nav: "chat" }] },
   {
@@ -47,6 +47,7 @@ export const ANA_MENU: MenuGrubu[] = [
       { nav: "bot", botSayfa: "giveaways", adAnahtari: "nav.cekilisler" },
       { nav: "bot", botSayfa: "interaction", adAnahtari: "nav.tahminKuyruk" },
       { nav: "bot", botSayfa: "songrequest", adAnahtari: "nav.sarkiIstekleri" },
+      { nav: "bot", botSayfa: "oduller", adAnahtari: "nav.oduller" },
     ],
   },
   { id: "bot", adAnahtari: "nav.bot", sayfalar: [{ nav: "bot", botSayfa: "commands" }] },
@@ -68,7 +69,7 @@ export const BOT_SEKMELERI: { id: string; ad: string; alt: string[] }[] = [
 export const TUM_AYARLAR = "tum-ayarlar";
 
 const HAZIRLIK_SAYFALARI = ["platforms"];
-const ETKILESIM_SAYFALARI = ["polls", "giveaways", "interaction", "songrequest"];
+const ETKILESIM_SAYFALARI = ["polls", "giveaways", "interaction", "songrequest", "oduller"];
 /** Sahne menüsündeki "Overlay ve Uyarılar" penceresinin iç sekmeleri */
 export const OVERLAY_PENCERESI: { id: string; ad: string }[] = [
   { id: "overlays", ad: "Overlay" },

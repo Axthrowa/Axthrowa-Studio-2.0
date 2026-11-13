@@ -51,7 +51,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - R4 tamam: yayın boyunca çalan şarkılar zamanla deftere yazılır, yayın sonu raporunda listelenir; `!oncekisarki` / `!lastsong`; rapordan "Discord'a gönder" düğmesi (kendiliğinden gitmez). Video kipindeki klip istekleri listeye girmez.
 - R6 tamam: Resonance katmanında çalan şarkıyı isteyen, sıradaki istek ve 6 sn "Yeni istek" satırı (Pulse › Şarkı istekleri ile kapatılır); salt okunur kuyruk paneli `/dock/sarki-sirasi`. Studio host'unda kuyruk ucu olmadığından şerit orada çıkmaz.
 - R7 tamam: `/ws/obs-meters` her yeni OBS ölçümünü (50 ms) iter; Ses Karıştırıcı, Kontrol Merkezi ve Resonance dalgası yoklamadan akışa geçti (akış açılamazsa HTTP'ye düşer). Yayın sağlık satırı 5 sn'lik tek okumada kaldı. Sahte OBS provasında akış sınandı; gerçek OBS'te kare hızı ölçülmedi.
-- Açık: R2, R3, R5, R8, R9, R10, T7.
+- R5 tamam: "değişimde N sn göster" ve "duraklayınca gizle" zaten vardı; eklenen Pulse › OBS sahne kuralları (`Oyun = pill`, `Mola = poster`, `Sohbet = gizle`). Sahne adı OBS tarayıcı kaynağının kendi API'sinden okunur (sunucuya istek yok); OBS dışında `?sahne=` ile denenir. Gerçek OBS içinde denenmedi.
+- Açık: R2, R3, R8, R9, R10, T7.
 
 ---
 

@@ -33,6 +33,7 @@ import {
   useToast
 } from '../ui/index.js';
 import { MediaLibrary, type MedyaOgesi } from './MediaLibrary.js';
+import { SesKirpma } from './SesKirpma.js';
 import { yetenekleriGetir, olayEtiketi, type YetenekHaritasi } from '../lib/capabilities.js';
 
 export interface UyariVaryanti {
@@ -315,6 +316,7 @@ export function AlertVariants() {
                   Kütüphane
                 </Buton>
               </div>
+              <SesKirpma url={duzenlenen.sesUrl} degistir={(u) => setDuzenlenen({ ...duzenlenen, sesUrl: u })} />
             </Alan>
 
             <Alan etiket={`Ses seviyesi (${duzenlenen.sesSeviyesi})`}>

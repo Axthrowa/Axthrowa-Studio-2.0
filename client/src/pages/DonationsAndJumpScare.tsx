@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SesKirpma } from '../components/SesKirpma.js';
 import {
   DollarSign,
   Copy,
@@ -369,6 +370,9 @@ export default function DonationsAndJumpScare() {
               onChange={e => setJsSettings({ ...jsSettings, audioUrl: e.target.value })}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-mono focus:border-red-500 focus:outline-none"
             />
+            <div className="mt-1">
+              <SesKirpma url={jsSettings.audioUrl || ''} degistir={(u) => setJsSettings({ ...jsSettings, audioUrl: u })} />
+            </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">

@@ -801,7 +801,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                   )}
                 </label>
               );
-              return key === 'soundUrl' ? (
+              return key === 'soundUrl' || key === 'audioUrl' ? (
                 <div key={key} className="space-y-1">
                   {alan}
                   <SesKirpma url={String(values[key] ?? '')} degistir={(u) => setValues(v => ({ ...v, [key]: u }))} />

@@ -14,6 +14,7 @@ import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { JUMPSCARE_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
+import { kirpmaOku } from '../lib/sesKirpma.js';
 
 export interface JumpScareWidgetProps {
   embedded?: boolean;
@@ -139,7 +140,8 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
     }
     if (audioRef.current && scare.audioUrl) {
       audioRef.current.volume = Math.max(0, Math.min(1, scare.volume ?? 1));
-      audioRef.current.currentTime = 0;
+      // Sıfıra sarmak adresteki #t= başlangıcını silerdi
+      audioRef.current.currentTime = kirpmaOku(scare.audioUrl).baslangic;
       audioRef.current.play().catch(() => {});
     }
   }, [isActive, scare]);

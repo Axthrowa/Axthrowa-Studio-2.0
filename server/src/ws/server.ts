@@ -15,6 +15,7 @@ import { shoutoutGonder } from '../modules/otomasyon/shoutout.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { BASLANGIC, kontrolUygula, KontrolDurumu, KuyrukAynalari, kuyrukRaporuTemizle, SonUyari, SonUyarilar, uyariKimligi, type KuyrukAynasi } from '../modules/alerts/control.js';
 import { kupa } from '../modules/engagement/kupa.js';
+import { OturumSayaci, kilometreMetni, type KilometreTuru } from '../modules/alerts/kilometre.js';
 
 interface ClientConnection {
   ws: WebSocket;
@@ -76,6 +77,8 @@ export class WebSocketHub {
   private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
   // Etkinlik akışı geçmişi de buradan (U4): panel sonradan açılınca son olaylar görünsün
   private sonUyarilar = new SonUyarilar(200);
+  // Test olayları ayrı sayılır: onuncu test takibi uyarıyı gösterir ama gerçek sayacı kirletmez
+  private kilometre = { gercek: new OturumSayaci(), test: new OturumSayaci() };
   /** OBS'teki uyarı kutularının bildirdiği kuyruk (U3) */
   private kuyrukAynalari = new KuyrukAynalari<ClientConnection>();
 
@@ -270,6 +273,13 @@ export class WebSocketHub {
   }
 
   private setupEventForwarding() {
+    // Kilometre taşları yayın başına sayılır (bot yeniden başlayınca yayın sürüyorsa ilk gözlem sıfırlamaz)
+    eventBus.on('stream_online', (p: any) => {
+      if (p?.ilkGozlem) return;
+      this.kilometre.gercek.sifirla();
+      this.kilometre.test.sifirla();
+    });
+
     // 1. Chat Event -> Send to Dashboard & ChatBox Overlay
     eventBus.on('chat', (payload: ChatMessagePayload) => {
       // Ortak kara listedeki kullanıcı: panelde işaretli görünür, OBS sohbet
@@ -341,6 +351,7 @@ export class WebSocketHub {
         data: payload,
         alert: alertData
       });
+      this.kilometreTasi('follow', 1, payload.displayName || payload.username, (payload as any)?.isTest === true);
     });
 
     // 3. Sub Event -> AlertBox & Dashboard & Goals & Loyalty Tracking
@@ -370,6 +381,8 @@ export class WebSocketHub {
         data: payload,
         alert: alertData
       });
+
+      this.kilometreTasi('sub', hediye ? hediyeAdedi(payload) : 1, payload.displayName || payload.username, (payload as any)?.isTest === true);
 
       // Bağış Kupası: hediye abonelik adediyle düşer (eskiden düz "sub" sayılıyordu)
       if (!(payload as any)?.isTest) this.kupayaDusur(tur, { user: payload.displayName || payload.username, count: hediye ? hediyeAdedi(payload) : 1 });
@@ -428,6 +441,7 @@ export class WebSocketHub {
         data: payload,
         alert: alertData
       });
+      this.kilometreTasi('kicks', Number(payload.amount) || 0, payload.displayName || payload.username, (payload as any)?.isTest === true);
 
       if (!(payload as any)?.isTest) this.kupayaDusur('kicks', { user: payload.displayName || payload.username, amount: payload.amount });
     });
@@ -576,7 +590,8 @@ export class WebSocketHub {
         gift_tiktok: { title: 'TIKTOK HEDİYESİ!', message: '{user} x{count} {giftName} gönderdi!', color: '#06b6d4', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' },
         gift_sub: { title: 'HEDİYE ABONE!', message: '{user} {count} hediye abone gönderdi!', color: '#f472b6', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' },
         host: { title: 'HOST!', message: '{user} kanalı host etti ({viewers})', color: '#38bdf8', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif' },
-        kicks: { title: 'KICKS!', message: '{user} {amount} Kick gönderdi!', color: '#53fc18', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' }
+        kicks: { title: 'KICKS!', message: '{user} {amount} Kick gönderdi!', color: '#53fc18', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' },
+        milestone: { title: 'KİLOMETRE TAŞI!', message: '{metin}', color: '#facc15', sound: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' }
       };
       const def = defaults[eventType] || defaults.follow;
       preset = {
@@ -737,6 +752,12 @@ export class WebSocketHub {
         dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, amount: d ?? 100, timestamp: Date.now(), isTest: true };
         alertData = this.buildAlertPayload('kicks', { user: randomUser, amount: d ?? 100 }, true);
         break;
+
+      case 'milestone': {
+        dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, kilometre: { tur: 'follow', esik: 10 }, isTest: true };
+        alertData = this.buildAlertPayload('milestone', { user: randomUser, sayi: 10, metin: kilometreMetni('follow', 10, randomUser) }, true);
+        break;
+      }
     }
 
     // Yalnız veri yolunda karşılığı OLMAYAN türler (gift_sub, host, kicks) için.
@@ -751,6 +772,7 @@ export class WebSocketHub {
       // Kupa yalnız `cup_drop` dinler (çift sayımı önlemek için). Veri
       // yolundan geçen türlerde bu yayın zaten yapılıyor; burada yalnız
       // test amaçlı gift_sub / kicks için ekleniyor.
+      if (eventType === 'kicks') this.kilometreTasi('kicks', Number(dataPayload?.amount) || 0, dataPayload?.displayName, true);
       if (eventType === 'gift_sub' || eventType === 'kicks') {
         this.kupayaDusur(eventType, {
           user: dataPayload?.displayName || dataPayload?.username,
@@ -758,6 +780,22 @@ export class WebSocketHub {
           amount: dataPayload?.amount
         });
       }
+    }
+  }
+
+  /** B4: yayın içi 10./25./50./100. takipçi-abone ve Kicks toplamı eşiklerinde ayrı uyarı. */
+  private kilometreTasi(tur: KilometreTuru, miktar: number, kisi: string | undefined, isTest: boolean) {
+    const esikler = (isTest ? this.kilometre.test : this.kilometre.gercek).ekle(tur, miktar);
+    for (const esik of esikler) {
+      const ad = kisi || 'Biri';
+      const alert = this.buildAlertPayload('milestone', { user: ad, sayi: esik, metin: kilometreMetni(tur, esik, ad) }, isTest);
+      if (!alert) continue;
+      this.broadcastTo(['dashboard', 'alertbox', 'all'], {
+        type: 'alert',
+        subType: 'milestone',
+        data: { username: ad, displayName: ad, kilometre: { tur, esik }, isTest },
+        alert
+      });
     }
   }
 

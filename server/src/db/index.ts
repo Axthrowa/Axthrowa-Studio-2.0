@@ -573,7 +573,8 @@ if (alertsCount.cnt === 0) {
 const extraAlerts = [
   { id: 'alert-gift-sub', eventType: 'gift_sub', title: 'HEDİYE ABONE!', msg: '{user} {count} hediye abone gönderdi!', color: '#f472b6' },
   { id: 'alert-host', eventType: 'host', title: 'HOST!', msg: '{user} kanalı host etti ({viewers})', color: '#38bdf8' },
-  { id: 'alert-kicks', eventType: 'kicks', title: 'KICKS!', msg: '{user} {amount} Kick gönderdi!', color: '#53fc18' }
+  { id: 'alert-kicks', eventType: 'kicks', title: 'KICKS!', msg: '{user} {amount} Kick gönderdi!', color: '#53fc18' },
+  { id: 'alert-milestone', eventType: 'milestone', title: 'KİLOMETRE TAŞI!', msg: '{metin}', color: '#facc15' }
 ];
 for (const a of extraAlerts) {
   try {

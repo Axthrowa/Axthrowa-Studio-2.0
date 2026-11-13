@@ -21,6 +21,7 @@ const TABS = [
   { id: 'tip', label: 'Bağış' },
   { id: 'kicks', label: 'Kicks' },
   { id: 'raid', label: 'Raid' },
+  { id: 'milestone', label: 'Kilometre Taşı' },
   // Bu turda eklendi: aynı olayın birden çok görünümü + yerel dosya kütüphanesi
   { id: 'variants', label: 'Varyantlar' },
   { id: 'media', label: 'Medya Kütüphanesi' }

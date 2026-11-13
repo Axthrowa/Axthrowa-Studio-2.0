@@ -223,6 +223,13 @@ db.exec(`
     value TEXT NOT NULL
   );
 
+  -- Yeniden başlatmada kaybolmaması gereken küçük durumlar (K1-K4); ayarlardan ayrı: yedekte/ayar ekranında görünmez
+  CREATE TABLE IF NOT EXISTS kalici_durum (
+    anahtar TEXT PRIMARY KEY,
+    deger TEXT NOT NULL,
+    guncellendi INTEGER NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS stream_events (
     id TEXT PRIMARY KEY,
     platform TEXT NOT NULL,

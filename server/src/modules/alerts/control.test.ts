@@ -106,3 +106,15 @@ describe('kuyruk aynası (U3)', () => {
     expect(a.kopar('yok')).toBe(false);
   });
 });
+
+describe('SonUyarilar kalıcılık (K1)', () => {
+  it('kaydedilen liste ve teşekkür işareti yeni örneğe geri yüklenir', () => {
+    let kayit: unknown = null;
+    const s = new SonUyarilar(3, (l) => (kayit = JSON.parse(JSON.stringify(l))));
+    s.ekle({ id: 'a', eventType: 'follow', title: '', message: '', at: 1, isTest: false, alert: {} });
+    s.tesekkurIsaretle('a', true);
+    const yeni = new SonUyarilar(3, undefined, kayit);
+    expect(yeni.bul('a')?.tesekkur).toBe(true);
+    expect(new SonUyarilar(3, undefined, 'bozuk').hepsi()).toEqual([]);
+  });
+});

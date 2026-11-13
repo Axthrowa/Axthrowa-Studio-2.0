@@ -16,6 +16,7 @@ import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { BASLANGIC, kontrolUygula, OGE_EYLEMLERI, KontrolDurumu, KuyrukAynalari, kuyrukRaporuTemizle, SonUyari, SonUyarilar, uyariKimligi, type KuyrukAynasi } from '../modules/alerts/control.js';
 import { kupa } from '../modules/engagement/kupa.js';
 import { OturumSayaci, kilometreMetni, type KilometreTuru } from '../modules/alerts/kilometre.js';
+import { kaliciOku, kaliciYazGecikmeli } from '../core/kalici.js';
 
 interface ClientConnection {
   ws: WebSocket;
@@ -76,7 +77,8 @@ export class WebSocketHub {
   /** Ekip çapında uyarı kuyruğu denetimi (modules/alerts/control.ts) */
   private uyariKontrol: KontrolDurumu = { ...BASLANGIC };
   // Etkinlik akışı geçmişi de buradan (U4): panel sonradan açılınca son olaylar görünsün
-  private sonUyarilar = new SonUyarilar(200);
+  // K1: liste ve teşekkür işaretleri kalıcı; yeniden başlayan bot akışı dolu açar
+  private sonUyarilar = new SonUyarilar(200, (l) => kaliciYazGecikmeli('etkinlik_gecmisi', () => l), kaliciOku('etkinlik_gecmisi', []));
   // Test olayları ayrı sayılır: onuncu test takibi uyarıyı gösterir ama gerçek sayacı kirletmez
   private kilometre = { gercek: new OturumSayaci(), test: new OturumSayaci() };
   /** OBS'teki uyarı kutularının bildirdiği kuyruk (U3) */

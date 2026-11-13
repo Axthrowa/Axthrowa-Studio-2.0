@@ -104,12 +104,16 @@ export interface SonUyari {
 
 /** Son uyarılar halkası (yeniden oynatma listesi). */
 export class SonUyarilar {
-  private liste: SonUyari[] = [];
-  constructor(private tavan = 50) {}
+  private liste: SonUyari[];
+  /** `degisti`: her değişiklikte (kalıcı kayıt için, K1); `baslangic`: önceki çalışmadan kalan liste */
+  constructor(private tavan = 50, private degisti?: (liste: SonUyari[]) => void, baslangic: unknown = []) {
+    this.liste = Array.isArray(baslangic) ? baslangic.filter((u) => u && typeof u.id === 'string').slice(0, tavan) : [];
+  }
 
   ekle(u: SonUyari): void {
     this.liste.unshift(u);
     if (this.liste.length > this.tavan) this.liste.length = this.tavan;
+    this.degisti?.(this.liste);
   }
 
   bul(id: string): SonUyari | undefined {
@@ -121,6 +125,7 @@ export class SonUyarilar {
     const u = this.bul(id);
     if (!u) return false;
     u.tesekkur = deger;
+    this.degisti?.(this.liste);
     return true;
   }
 

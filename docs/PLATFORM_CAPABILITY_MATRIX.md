@@ -59,3 +59,28 @@ Varsayılanlar uygulamayla gelir; kullanıcı ayarındaki `policyOverrides` ile 
 
 Engel seviyesi GO LIVE'ı o hedef için durdurur (diğer hedefler başlar); uyarı yayını durdurmaz ama kontrol listesinde
 kalır. Kurallar **hukuki tavsiye değildir**; kaynak ve doğrulama tarihi her uyarıda gösterilir.
+
+## 4. Kick API bağımlılık envanteri
+
+Güncellendi: 2026-11-13, resmi şema [docs.kick.com](https://docs.kick.com) ile karşılaştırıldı (canlı API'ye istek atılmadı).
+"Resmi" = `api.kick.com/public` + `id.kick.com` OAuth. "Resmi olmayan" = `kick.com/api/v1|v2` kanal sayfası
+ve `web.kick.com` gerçek zamanlı kanalı (Centrifugo, yedeği Pusher); Kick bunları duyurmadan değiştirebilir.
+
+| Özellik | Kod | Uç | Tür | Resmi karşılık |
+|---|---|---|---|---|
+| Sohbet ve olayları okuma (mesaj, takip, abone, hediye, KICKs, host, ban, temizleme) | bot `platforms/kick-realtime.ts` | `POST web.kick.com/api/v1/realtime/connection` → Centrifugo / Pusher | resmi olmayan | Webhook (`/public/v1/events/subscriptions`): Kick'e açık bir HTTPS adresi ister, yerel uygulamada çalışmaz. **Taşınmadı.** Studio'da webhook aboneliği ucu var (`kick/auth.rs` `subscribe_events`), adres tanımlıysa kullanılır |
+| Oda kimliği (gerçek zamanlı kanala abone olmak için) | bot `kick.ts` bağlanma; Studio `kick/mod.rs` `fetch_chatroom` | `kick.com/api/v2/channels/<kanal>` (Studio: v1 → v2 → sayfa) | resmi olmayan | Yok (oda kimliği resmi şemada yok). Gerçek zamanlı kanala bağlı kalır |
+| Sohbete yazma | bot `kick.ts` `sendMessage` | `POST /public/v1/chat` | resmi | — (yedek `kick.com/api/v2/messages/send` yalnız resmi uç iki hesapla da başarısızsa) |
+| Mesaj silme, zaman aşımı, ban, ban kaldırma | bot `kick.ts`; Studio `kick/auth.rs` | `/public/v1/chat/{id}`, `/public/v1/moderation/bans` | resmi | — |
+| Başlık / kategori değiştirme | bot `kick.ts` | `PATCH /public/v1/channels`, `GET /public/v2/categories` | resmi | — |
+| Kullanıcı bilgisi (bot hesabı, profil fotoğrafı) | bot `kick.ts`, `api/rotalar/platformlar.ts` | `GET /public/v1/users` | resmi | — (profil fotoğrafı kimlik bilinmezse kanal sayfasına düşer) |
+| Yayın durumu (açık mı, izleyici, başlangıç, başlık, kategori) | bot `kick.ts` `yayinDurumu` | `GET /public/v1/users/livestreams?user_id=` | resmi (**T5'te taşındı**) | Token ya da yayıncı kimliği yoksa, uç hata verirse kanal sayfasına düşer. `/public/v1/channels` bilerek kullanılmaz: şemasında yayın anahtarı (`stream.key`) var |
+| Hedef kullanıcı kimliği (ban / zaman aşımı için ad → kimlik) | bot `kick.ts` `hedefKimligi` | `GET /public/v1/channels?slug=` | resmi (**T5'te taşındı**) | Yanıttan yalnız `broadcaster_user_id` okunur; hata olursa kanal sayfası |
+| Yayıncı kimliği (Studio) | Studio `kick/auth.rs` `broadcaster_user_id_for_slug` | `GET /public/v1/channels?slug=` | resmi | Yedek kanal sayfası; yedekte kanal kimliğinin kullanıcı kimliği sanılması T5'te düzeltildi |
+| Takipçi sayısı (takipçi hedefi) | bot `kick.ts` yoklayıcı | `kick.com/api/v2/channels/<kanal>` | resmi olmayan | Yok (resmi kanal şemasında takipçi sayısı yok) |
+| Klip | bot `modules/clips/klip.ts` | `kick.com/api/v2/channels/<kanal>[/livestream]` | resmi olmayan | Yok (resmi klip ucu yok) |
+| Shoutout kartı (avatar, son oyun) | bot `modules/otomasyon/shoutout.ts` | `kick.com/api/v2/channels/<kanal>` | resmi olmayan | Kısmen: `channels?slug` + `users?id` iki istekle; son oynanan oyun yayın kapalıyken yok. **Taşınmadı**, kart bilgi alınamazsa adıyla çıkar |
+| Gönderme öncesi kimlik tazeleme | bot `kick.ts` `sendMessage` | `kick.com/api/v2/channels/<kanal>` | resmi olmayan | Yayıncı kimliği için `channels?slug` var; oda kimliği (v2 yedeği için) yok. Taşınmadı |
+
+Resmi olmayan uç bozulursa: sohbet okuma, takipçi hedefi, klip ve shoutout kartı etkilenir; yazma, moderasyon,
+başlık/kategori ve yayın durumu (token varken) etkilenmez.

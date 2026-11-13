@@ -1259,14 +1259,7 @@ async fn resolve_user_id_for_slug(slug: &str) -> Option<u64> {
     let Ok(j) = res.json::<Value>().await else {
       continue;
     };
-    if let Some(id) = j
-      .get("id")
-      .and_then(|v| v.as_u64().or_else(|| v.as_str().and_then(|s| s.parse().ok())))
-    {
-      if id > 0 {
-        return Some(id);
-      }
-    }
+    // Kanal sayfasında üst düzey `id` kanal kimliğidir, kullanıcı değil: yalnız `user_id` okunur
     if let Some(id) = j
       .pointer("/user_id")
       .and_then(|v| v.as_u64().or_else(|| v.as_str().and_then(|s| s.parse().ok())))
@@ -1276,7 +1269,6 @@ async fn resolve_user_id_for_slug(slug: &str) -> Option<u64> {
       }
     }
   }
-  // Official API with no auth may fail; try public v1 channels?skip
   None
 }
 

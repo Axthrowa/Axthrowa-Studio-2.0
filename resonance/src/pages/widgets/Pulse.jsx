@@ -33,6 +33,8 @@ import { getYtmdToken, getYtmdHost, getYtmdPort } from '../../lib/ytmdAuth'
 import { getRefreshToken, getClientId } from '../../lib/spotifyAuth'
 import { encodeOverlayData } from '../../lib/overlayData'
 import { isHostAvailable } from '../../lib/hostBridge'
+import { ETIKETLER, ayarlariDisaAktar, ayarlariIceAl, favoriDegistir, temalariSuz } from '../../lib/temaGalerisi'
+import { DEFAULT_CONFIG } from '../../context/ConfigContext'
 import { KAYNAK_SIRALARI, ofsetYaz, parcaAnahtari, parcaOfseti } from '../../lib/sozDenetimi'
 
 const COVERS = [
@@ -97,6 +99,30 @@ export default function Pulse() {
   const connectedForSelectedService =
     liveSource === 'youtube-music' ? ytmd.connected : isAuthenticated
 
+  // R8: galeri süzgeci (yalnız bu sayfada; seçim kalıcı değil)
+  const [temaArama, setTemaArama] = useState('')
+  const [temaEtiketi, setTemaEtiketi] = useState('')
+  const [yalnizFavori, setYalnizFavori] = useState(false)
+  const [iceAlmaNotu, setIceAlmaNotu] = useState('')
+  const disaAktar = () => {
+    const blob = new Blob([ayarlariDisaAktar(config, DEFAULT_CONFIG)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'resonance-ayarlari.json'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  }
+  const iceAl = async (dosya) => {
+    if (!dosya) return
+    try {
+      if (dosya.size > 200_000) throw new Error('Dosya çok büyük')
+      const yama = ayarlariIceAl(await dosya.text(), DEFAULT_CONFIG)
+      set(yama)
+      setIceAlmaNotu(`${Object.keys(yama).length} ayar uygulandı`)
+    } catch (e) {
+      setIceAlmaNotu(String(e?.message || e))
+    }
+  }
   const ANIMATION_OPTIONS = REVEAL_OPTIONS.map((o) => ({ value: o.value, label: t(`animations.${o.value}`) }))
   const SKIN_OPTIONS = SKIN_REGISTRY.map((s) => ({
     value: s.id,
@@ -340,7 +366,74 @@ export default function Pulse() {
 
       <Section title={t('pulse.appearance')}>
         <SubLabel>{t('pulse.playerAppearance')}</SubLabel>
-        <OptionGrid columns={5} value={config.skin} onChange={(v) => set({ skin: v })} options={SKIN_OPTIONS} />
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            value={temaArama}
+            onChange={(e) => setTemaArama(e.target.value)}
+            placeholder="Görünüm ara (ad ya da etiket)"
+            aria-label="Görünüm ara"
+            className="min-w-0 flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-accent)]"
+          />
+          {['', ...ETIKETLER].map((e) => (
+            <button
+              key={e || 'hepsi'}
+              type="button"
+              aria-pressed={temaEtiketi === e}
+              onClick={() => setTemaEtiketi(e)}
+              className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${temaEtiketi === e ? 'bg-[var(--color-accent)] text-black' : 'bg-white/5 text-white'}`}
+            >
+              {e || 'Hepsi'}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-pressed={yalnizFavori}
+            onClick={() => setYalnizFavori((v) => !v)}
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${yalnizFavori ? 'bg-[var(--color-accent)] text-black' : 'bg-white/5 text-white'}`}
+          >
+            ★ Sık kullanılan
+          </button>
+        </div>
+        {(() => {
+          const liste = temalariSuz(SKIN_OPTIONS, { arama: temaArama, etiket: temaEtiketi, favoriler: config.favoriteSkins, yalnizFavori })
+          const fav = new Set(config.favoriteSkins || [])
+          return liste.length ? (
+            <OptionGrid
+              columns={5}
+              value={config.skin}
+              onChange={(v) => set({ skin: v })}
+              options={liste.map((o) => (fav.has(o.value) ? { ...o, label: `★ ${o.label}` } : o))}
+            />
+          ) : (
+            <p className="text-sm text-[var(--color-text-muted)]">Bu süzgeçle görünüm yok.</p>
+          )
+        })()}
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => set({ favoriteSkins: favoriDegistir(config.favoriteSkins, config.skin) })}
+            className="rounded-lg bg-white/5 px-2.5 py-1 font-semibold text-white"
+          >
+            {(config.favoriteSkins || []).includes(config.skin) ? '★ Sık kullanılanlardan çıkar' : '☆ Seçili görünümü sık kullanılanlara ekle'}
+          </button>
+          <button type="button" onClick={disaAktar} className="rounded-lg bg-white/5 px-2.5 py-1 font-semibold text-white">
+            Ayarları dışa aktar
+          </button>
+          <label className="cursor-pointer rounded-lg bg-white/5 px-2.5 py-1 font-semibold text-white">
+            Ayarları içe aktar
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={(e) => {
+                void iceAl(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
+          </label>
+          {iceAlmaNotu ? <span role="status" className="text-[var(--color-text-muted)]">{iceAlmaNotu}</span> : null}
+        </div>
         <div className="mt-5">
           <SubLabel>{t('pulse.coverAppearance')}</SubLabel>
           <OptionGrid

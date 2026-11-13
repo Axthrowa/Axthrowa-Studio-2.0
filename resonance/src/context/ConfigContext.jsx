@@ -20,6 +20,8 @@ function saltOkunurSayfa() {
 export const DEFAULT_CONFIG = {
   musicService: 'spotify',
   skin: 'compact',
+  /** R8: galeride başa alınan görünümler */
+  favoriteSkins: [],
   cover: 'square',
   coverGlow: false,
   /** Yuvarlak kapakların çevresine ilerleme halkası. */

@@ -11,6 +11,20 @@ export interface Surum {
 
 export const SURUMLER: Surum[] = [
   {
+    surum: '1.15.0',
+    ad: 'Otomasyon',
+    tarih: '2026-11-14',
+    notlar: [
+      'Otomasyon: kuraldan önceki sahneye dönüş ({onceki_sahne}), eylemlerden rastgele biri, bekleme sırasında gelen olayları sıraya alma ve örnek olayla gerçek Çalıştır. Sayfa artık kendiliğinden kaydeder',
+      'Kick kanal ödülleri panelden oluşturulur, açılıp kapanır, silinir; ödül kullanımı otomasyonu tetikler (Kick bağlantısını bir kez yenilemek gerekir)',
+      'Yapay zekâ: bilgi bankası (SSS) ve günlük istek sınırı',
+      'Yayın raporunda en çok kullanılan komutlar ve CSV dışa aktarma',
+      'Şarkı isteği: seviyeye göre sınır, kullanıcı engeli, ücret ve iade, !songlike, !oncekisarki, oturum şarkı geçmişi',
+      'Ceza merdiveni (uyarı, 1 dk, 10 dk, ban), uyarı efektleri, oturum kilometre taşları, etkinlik akışı geçmişi',
+      'Sohbet, ekranda emote ve etkinlik akışına öğe tavanı: kalabalık sohbette kare düşmez'
+    ]
+  },
+  {
     surum: '1.14.0',
     ad: 'AxBoT',
     tarih: '2026-11-12',

@@ -13,9 +13,10 @@ vi.mock('../../db/index.js', async () => {
   return { db };
 });
 
-vi.mock('../economy/economy.js', () => ({ economy: { getUser: () => ({ points: 50 }) } }));
+vi.mock('../economy/economy.js', () => ({ economy: { getUser: () => ({ points: 50 }), removePoints: vi.fn(() => 30), addPoints: vi.fn(() => 50) } }));
 
 import { db } from '../../db/index.js';
+import { economy } from '../economy/economy.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { muzikHost } from '../muzik/index.js';
 import { songRequest, sirasiGeldi } from './songrequest.js';
@@ -77,6 +78,41 @@ describe('istek güvenlik filtreleri', () => {
     await (muzikHost as any).hariciYokla();
     expect(await songRequest.handleSongRequest(mod, ['a'])).not.toContain('puan');
     ayar({ sr_min_puan: '0' });
+  });
+
+  it('B6: ücret yalnız sıraya giren istekten düşer, yetmeyen bakiyede neden yazılır, iade bir kez', async () => {
+    db.exec('DELETE FROM song_queue');
+    await (muzikHost as any).hariciYokla();
+    const dus = vi.mocked(economy.removePoints);
+    dus.mockClear();
+    ayar({ sr_ucret: '80' });
+    expect(await songRequest.handleSongRequest(mesaj, ['a'])).toContain('80 puan, sende 50 var');
+    expect(sira()).toEqual([]);
+    ayar({ sr_ucret: '20', sr_engelli: 'yasak' });
+    expect(await songRequest.handleSongRequest(mesaj, ['yasak', 'şarkı'])).toContain('engel listesinde');
+    expect(dus).not.toHaveBeenCalled();
+    ayar({ sr_engelli: '' });
+    expect(await songRequest.handleSongRequest(mesaj, ['teoman'])).toContain('−20 puan');
+    expect(dus).toHaveBeenCalledWith('ali', 20);
+    const [id] = sira();
+    expect(await songRequest.iadeEt(id)).toContain('20 puanın iade edildi');
+    expect(economy.addPoints).toHaveBeenCalledWith('ali', 20);
+    expect(await songRequest.iadeEt(id)).toBe('');
+    ayar({ sr_ucret: '0' });
+    db.exec('DELETE FROM song_queue');
+  });
+
+  it('B6: engelli kullanıcı ve abone sınırı', async () => {
+    db.exec('DELETE FROM song_queue');
+    ayar({ sr_engelli_kullanici: '@Ali' });
+    expect(await songRequest.handleSongRequest(mesaj, ['a'])).toContain('isteğin kapatılmış');
+    ayar({ sr_engelli_kullanici: '', sr_kisi_basina: '1', sr_kisi_basina_abone: '2' });
+    ekle('b1', 1);
+    expect(await songRequest.handleSongRequest(mesaj, ['a'])).toContain('en fazla 1');
+    const abone = { ...mesaj, user: { ...mesaj.user, isSub: true } };
+    expect(await songRequest.handleSongRequest(abone, ['teoman'])).not.toContain('en fazla');
+    ayar({ sr_kisi_basina: '2', sr_kisi_basina_abone: '' });
+    db.exec('DELETE FROM song_queue');
   });
 
   it('süre sınırını aşan istek reddedilir, süre bilinmiyorsa geçer', () => {

@@ -90,7 +90,7 @@ function parseTriviaCategory(raw: string): string {
 /** `!modul kapat <ad>`: bu adlardaki yerleşik komutlar yanıt vermez */
 export const MODULLER: Record<string, string[]> = {
   oyunlar: ['slot', 'slots', 'rulet', 'roulette', 'duello', 'duel', 'soygun', 'heist', 'yaris', 'race', 'drag', 'balik', 'avla', 'fish', 'kasaac', 'kasa', 'case', 'bomba', 'c4', 'kes', 'cut', 'yazitura', 'cf', 'coinflip', 'zar', 'dice', 'kral', 'taht', 'king', 'tahtikap', 'claimthrone', 'claimking', 'cark', 'wheel'],
-  sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste', 'songpause', 'sarkidur', 'songresume', 'sarkidevam', 'songvol', 'sarkises'],
+  sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste', 'songpause', 'sarkidur', 'songresume', 'sarkidevam', 'songvol', 'sarkises', 'songlike', 'sarkibegen'],
   yapayzeka: ['sor', 'ask', 'ai', 'cevir', 'translate', 'tr'],
   bilgi: ['soru', 'trivia', 'bilgi', 'bilgiyarismasi', 'yarisma', 'kelime', 'anagram'],
   market: ['market', 'magaza', 'store', 'shop', 'al', 'buy', 'redeem']
@@ -496,6 +496,10 @@ export class CommandManager {
       case 'song':
       case 'currentsong':
         return songRequest.calanYaniti();
+
+      case 'songlike':
+      case 'sarkibegen':
+        return songRequest.begen(message.user.username, message.user.displayName);
 
       case 'songpause':
       case 'sarkidur':
@@ -1585,7 +1589,7 @@ export class CommandManager {
         if (!son) return `@${message.user.displayName}, kuyrukta şarkın yok.`;
         if (son.i === 0) return `@${message.user.displayName}, şarkın şu an çalıyor; atlamak için !skip.`;
         db.prepare('DELETE FROM song_queue WHERE id = ?').run(son.id);
-        return `🗑️ @${message.user.displayName}, "${son.title}" kuyruktan çıkarıldı.`;
+        return `🗑️ @${message.user.displayName}, "${son.title}" kuyruktan çıkarıldı.${await songRequest.iadeEt(son.id)}`;
       }
 
       case 'removesong':

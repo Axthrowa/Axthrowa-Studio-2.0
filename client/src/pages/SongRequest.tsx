@@ -30,6 +30,11 @@ export function SongRequest() {
   const [engelli, setEngelli] = useState('');
   const [maxDk, setMaxDk] = useState(0);
   const [minPuan, setMinPuan] = useState(0);
+  // B6: seviyeye göre sınır (boş = izleyici sınırı), istek ücreti, kullanıcı engel listesi
+  const [aboneSiniri, setAboneSiniri] = useState('');
+  const [vipSiniri, setVipSiniri] = useState('');
+  const [ucret, setUcret] = useState(0);
+  const [engelliKullanici, setEngelliKullanici] = useState('');
   const [siralanabilir, setSiralanabilir] = useState(true);
   // Sürüklenen satır: sürerken 4 sn'lik yenileme satırları yerinden oynatmasın
   const surukle = useRef<string | null>(null);
@@ -72,6 +77,10 @@ export function SongRequest() {
         setEngelli(d.sr_engelli || '');
         setMaxDk(Number(d.sr_max_dk) || 0);
         setMinPuan(Number(d.sr_min_puan) || 0);
+        setAboneSiniri(d.sr_kisi_basina_abone ?? '');
+        setVipSiniri(d.sr_kisi_basina_vip ?? '');
+        setUcret(Number(d.sr_ucret) || 0);
+        setEngelliKullanici(d.sr_engelli_kullanici || '');
       })
       .catch(() => {});
   };
@@ -247,6 +256,35 @@ export function SongRequest() {
         />
       </label>
 
+      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap items-center gap-3 text-xs text-gray-300">
+        <span className="basis-full">
+          <b className="text-white">Seviyeye göre sınır</b> — boş bırakılırsa izleyici sınırı geçerli; 0 sınırsız. Hem abone hem VIP olana yüksek olan uygulanır.
+        </span>
+        {(
+          [
+            ['Abone', aboneSiniri, setAboneSiniri, 'sr_kisi_basina_abone'],
+            ['VIP', vipSiniri, setVipSiniri, 'sr_kisi_basina_vip']
+          ] as const
+        ).map(([ad, deger, yaz, anahtar]) => (
+          <label key={anahtar} className="flex items-center gap-2">
+            {ad}
+            <input
+              type="number"
+              min={0}
+              max={20}
+              value={deger}
+              placeholder={String(kisiBasina)}
+              onChange={(e) => {
+                const v = e.target.value === '' ? '' : String(Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0))));
+                yaz(v);
+                ayarYaz({ [anahtar]: v });
+              }}
+              className="w-20 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+            />
+          </label>
+        ))}
+      </div>
+
       <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
         <div className="text-xs text-gray-300">
           <b className="text-white">İstek güvenlik filtreleri</b> — süre ve puan kuralından yayıncı ile modlar muaf; 0 kuralı kapatır.
@@ -283,6 +321,31 @@ export function SongRequest() {
             />
           </label>
         </div>
+        <label className="flex items-center gap-2 text-xs text-gray-300">
+          İstek ücreti (puan)
+          <input
+            type="number"
+            min={0}
+            value={ucret}
+            onChange={(e) => {
+              const n = Math.max(0, Math.floor(Number(e.target.value) || 0));
+              setUcret(n);
+              ayarYaz({ sr_ucret: String(n) });
+            }}
+            className="w-24 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+          />
+          <span className="text-gray-400">İstek sıraya girince düşülür; çalınamazsa ya da izleyici !wrongsong ile geri alırsa iade edilir.</span>
+        </label>
+        <label className="block text-xs text-gray-300">
+          Engelli kullanıcılar — her satıra bir kullanıcı adı. Bu kişilerin istekleri kabul edilmez.
+          <textarea
+            rows={2}
+            value={engelliKullanici}
+            onChange={(e) => setEngelliKullanici(e.target.value)}
+            onBlur={() => ayarYaz({ sr_engelli_kullanici: engelliKullanici })}
+            className="mt-1 w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+          />
+        </label>
         <label className="block text-xs text-gray-300">
           Engel listesi — her satıra bir şarkı, sanatçı ya da sözcük. Başlığında geçen istek reddedilir.
           <textarea

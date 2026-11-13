@@ -3,6 +3,7 @@ import { db } from '../../db/index.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { anahtarSorunu } from './gemini-hata.js';
 import { metinUret, saglayiciDurumu, seciliSaglayici, saglayiciAyari } from './saglayicilar.js';
+import { istekHakkiAl } from './gunluk-sinir.js';
 
 /**
  * Sozu verilen sure icinde bitmezse vazgec.
@@ -29,6 +30,12 @@ const URETIM_ZAMAN_ASIMI = 25000;
 /** "Güncel bilgi: internette ara" açık mı (haber, skor; Gemini'de Google Arama, Groq'ta gpt-oss browser_search) */
 function webAramaAcik(): boolean {
   return (db.prepare("SELECT value FROM bot_settings WHERE key = 'ai_web_arama'").get() as { value?: string } | undefined)?.value === 'true';
+}
+
+/** B9: yayıncının bilgi bankası (SSS); yönergeye eklenir, en çok 4000 karakter */
+export function bilgiBankasiYonergesi(metin: string | undefined): string {
+  const t = (metin || '').trim().slice(0, 4000);
+  return t ? `\n\nYayıncı ve yayın hakkında bilgi bankası (sorulursa buna dayanarak cevap ver; burada olmayan yayın bilgisini uydurma):\n${t}` : '';
 }
 
 class GeminiCoHost {
@@ -288,6 +295,7 @@ class GeminiCoHost {
 
   /** Duygu/zehirlilik gibi yardımcı istekler: seçili sağlayıcı varsa ona, yoksa Gemini'ye. */
   async yardimciUret(metin: string, ms: number, etiket: string): Promise<string | null> {
+    if (!istekHakkiAl()) return null; // B9: günlük sınır doldu, çağıran yapay zekâsız yola düşer
     const saglayici = seciliSaglayici();
     if (saglayici) return metinUret(saglayici, 'Kısa ve yalnız istenen biçimde yanıt ver.', metin, ms);
     const client = this.initClient();
@@ -302,14 +310,18 @@ class GeminiCoHost {
     if (enabledRow?.value === 'false') {
       return 'Yapay zeka asistanı şu an devre dışı.';
     }
+    // B9: günlük sınır dolduysa sessiz kal (boş yanıt sohbete yazılmaz; panel durumu gösterir)
+    if (!istekHakkiAl()) return '';
 
     const promptRow = db.prepare("SELECT value FROM bot_settings WHERE key = 'gemini_prompt'").get() as { value: string } | undefined;
     const webArama = webAramaAcik();
+    const bilgi = (db.prepare("SELECT value FROM bot_settings WHERE key = 'ai_bilgi_bankasi'").get() as { value?: string } | undefined)?.value;
     // Model bugünü bilmez: "bugünkü maç", "son haber" sorularında tarih gerekir
     const systemInstruction =
       (promptRow?.value || 'Sen neşeli, esprili ve zeki bir canlı yayın botusun. Cevapların kısa, dinamik ve canlı yayın sohbetine uygun olsun (en fazla 2-3 cümle).') +
       ` Bugünün tarihi: ${new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })}.` +
-      (webArama ? ' Güncel haber, skor ve sonuç sorularında internette arayıp kısa ve doğru cevap ver; bulamazsan uydurma.' : '');
+      (webArama ? ' Güncel haber, skor ve sonuç sorularında internette arayıp kısa ve doğru cevap ver; bulamazsan uydurma.' : '') +
+      bilgiBankasiYonergesi(bilgi);
 
     // Gemini dışında bir sağlayıcı seçildiyse (OpenAI, Claude, Groq…) aynı yönerge ve geçmişle ona sorulur
     const saglayici = seciliSaglayici();

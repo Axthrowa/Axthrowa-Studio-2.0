@@ -37,6 +37,11 @@ export function AISettings() {
   const [webArama, setWebArama] = useState(false);
   const [kayitliAyarlar, setKayitliAyarlar] = useState<Record<string, string>>({});
   const [prompt, setPrompt] = useState('');
+  // B9: bilgi bankası (SSS) ve günlük istek sınırı (0 = sınırsız)
+  const [bilgi, setBilgi] = useState('');
+  const [sinir, setSinir] = useState('0');
+  const [gunluk, setGunluk] = useState<{ kullanilan: number; sinir: number; doldu: boolean } | null>(null);
+  const gunlukYenile = () => fetch('/api/ai/gunluk').then(r => r.json()).then(setGunluk).catch(() => {});
   const [enabled, setEnabled] = useState(true);
   /** Sohbette "@BotAdı soru" yazılınca yapay zekâ yanıtlasın mı (varsayılan kapalı). */
   const [seslenme, setSeslenme] = useState(false);
@@ -66,10 +71,12 @@ export function AISettings() {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   // Anlık kayıt: kaydedilen bütün alanlar izlenir (eskiden sağlayıcı, model ve web arama değişikliği "kaydedilmedi" sayılmıyordu)
-  const izlenen = { apiKey, prompt, enabled, seslenme, saglayici, saglayiciAnahtar, saglayiciModel, ozelAdres, webArama, rescue };
+  const izlenen = { apiKey, prompt, bilgi, sinir, enabled, seslenme, saglayici, saglayiciAnahtar, saglayiciModel, ozelAdres, webArama, rescue };
   const kayit = useOtoKayit(izlenen, () => handleSave(), (v) => {
     setApiKey(v.apiKey);
     setPrompt(v.prompt);
+    setBilgi(v.bilgi);
+    setSinir(v.sinir);
     setEnabled(v.enabled);
     setSeslenme(v.seslenme);
     setSaglayici(v.saglayici);
@@ -93,6 +100,8 @@ export function AISettings() {
         const yuklenen = {
           apiKey: d.gemini_api_key || '',
           prompt: d.gemini_prompt || '',
+          bilgi: d.ai_bilgi_bankasi || '',
+          sinir: d.ai_gunluk_sinir || '0',
           enabled: d.gemini_enabled !== 'false',
           seslenme: d.ai_mention_enabled === 'true',
           saglayici: s0,
@@ -106,6 +115,8 @@ export function AISettings() {
         setKayitliAyarlar(d || {});
         setApiKey(yuklenen.apiKey);
         setPrompt(yuklenen.prompt);
+        setBilgi(yuklenen.bilgi);
+        setSinir(yuklenen.sinir);
         setEnabled(yuklenen.enabled);
         setSeslenme(yuklenen.seslenme);
         setSaglayici(s0);
@@ -118,6 +129,9 @@ export function AISettings() {
       })
       .catch(() => toast('Yapay zekâ ayarları yüklenemedi; sayfa yenilenene kadar değişiklikler kaydedilmez.', 'hata'));
   }, [kayitTaban]);
+  useEffect(() => {
+    void gunlukYenile();
+  }, []);
 
   const handleSave = async (): Promise<boolean> => {
     const [ayarYaniti, kurtarmaYaniti] = await Promise.all([
@@ -127,6 +141,8 @@ export function AISettings() {
         body: JSON.stringify({
           gemini_api_key: apiKey,
           gemini_prompt: prompt,
+          ai_bilgi_bankasi: bilgi,
+          ai_gunluk_sinir: String(Math.max(0, Math.floor(Number(sinir) || 0))),
           gemini_enabled: enabled ? 'true' : 'false',
           ai_provider: saglayici,
           ai_web_arama: webArama ? 'true' : 'false',
@@ -205,6 +221,7 @@ export function AISettings() {
       yaz(`⚠️ AxBoT sunucusuna ulaşılamadı: ${String(err?.message || err)}`);
     } finally {
       setLoading(false);
+      void gunlukYenile();
     }
   };
 
@@ -496,6 +513,42 @@ export function AISettings() {
               <p className="text-[11px] text-gray-500 mt-1">
                 Botun yanıt tarzını belirleyin (Örn: "Bir espor koçu gibi taktiksel konuş", "Aşırı esprili ve yayıncıya sadık ol").
               </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1">Bilgi bankası (sık sorulanlar)</label>
+              <textarea aria-label="Bilgi bankası (sık sorulanlar)"
+                rows={5}
+                maxLength={4000}
+                value={bilgi}
+                onChange={e => setBilgi(e.target.value)}
+                placeholder={'Yayın saatleri: Hafta içi 20:00-24:00\nKasa: Ryzen 7 7800X3D, RTX 4070\nDiscord: !discord yaz'}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">
+                İzleyiciler bunları sorduğunda bot buradaki bilgiyle cevap verir; burada olmayan yayın bilgisini uydurmaz. ({bilgi.length}/4000)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1" htmlFor="ai-gunluk-sinir">Günlük istek sınırı</label>
+              <input id="ai-gunluk-sinir"
+                type="number"
+                min={0}
+                value={sinir}
+                onChange={e => setSinir(e.target.value)}
+                className="w-32 bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">
+                0 = sınırsız. Sınır dolunca bot gün sonuna kadar sohbette sessiz kalır (özet, çeviri gibi yardımcı işler de durur).
+              </p>
+              {gunluk && (
+                <p className={`text-[11px] mt-1 ${gunluk.doldu ? 'text-amber-300 font-bold' : 'text-gray-400'}`}>
+                  {gunluk.doldu
+                    ? `Bugünkü sınır doldu (${gunluk.kullanilan}/${gunluk.sinir}); bot yarına kadar sessiz.`
+                    : `Bugün kullanılan: ${gunluk.kullanilan}${gunluk.sinir ? ` / ${gunluk.sinir}` : ''}`}
+                </p>
+              )}
             </div>
           </div>
 

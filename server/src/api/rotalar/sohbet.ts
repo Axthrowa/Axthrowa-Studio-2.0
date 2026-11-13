@@ -12,6 +12,7 @@ import { wsHub } from '../../ws/server.js';
 import { widgetAyariOku, widgetAyariYaz } from './widgetlar.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { geminiCoHost } from '../../modules/ai/gemini.js';
+import { gunlukDurum } from '../../modules/ai/gunluk-sinir.js';
 import { sohbetUyarilari } from '../../modules/chat-alerts/chat-alerts.js';
 import { takipAdaylari, varsayilanTakipMetinleri, TAKIP_TEMA_ADLARI, TEMA_ADLARI, TEMA_MESAJLARI } from '../../modules/chat-alerts/temalar.js';
 import { seyrekUyar } from '../../core/logger.js';
@@ -87,12 +88,21 @@ router.post('/ai/ask', async (req: Request, res: Response) => {
 
   try {
     const cevap = await geminiCoHost.ask(soru, kimden);
+    if (cevap === '') {
+      const g = gunlukDurum();
+      return res.json({ success: false, cevap: `⏸ Günlük yapay zekâ sınırı doldu (${g.kullanilan}/${g.sinir}). Bot yarına kadar sohbette sessiz kalıyor.`, gunluk: g });
+    }
     // `ask` hata durumunda da metin dondurur; uyari isaretini ayirt et.
     const hataMi = typeof cevap === 'string' && cevap.startsWith('⚠️');
     res.json({ success: !hataMi, cevap, model: geminiCoHost.aktifModel() });
   } catch (e: any) {
     res.status(500).json({ success: false, error: String(e?.message || e) });
   }
+});
+
+// B9: günlük istek sayacı (panel "sınır doldu" uyarısı)
+router.get('/ai/gunluk', (_req: Request, res: Response) => {
+  res.json(gunlukDurum());
 });
 
 // Baglanti testi: anahtar gecerli mi, hangi modeller acik?

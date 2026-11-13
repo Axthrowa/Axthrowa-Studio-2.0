@@ -31,8 +31,11 @@ hiçbir şey arayüzde destekleniyor gibi gösterilmez.
    ve ayrı pencere (CONTROL_CENTER_ARCHITECTURE.md §2) yapılmadı.
 7. ~~Sahne geçişi ve susturma denetim günlüğüne yazılmaz~~ → Kontrol Merkezi'nden (Sahne & Ses, Hızlı eylemler,
    Kontrol destesi) yapılanlar artık eylem kayıt defterinden geçer ve `ACTION:<id>` olarak günlüğe düşer (e58c677).
-   **Kalan:** küresel kısayollar ve Dashboard'daki OBS kartı hâlâ doğrudan Tauri/obs-websocket yolunu kullanır —
-   günlüğe yazılmaz.
+   T6: Dashboard'daki OBS kartı da (sahne, kaynak göster/gizle, susturma) eylem kayıt defterinden geçer. Küresel
+   kısayolların eski türleri (sahne, mikrofon, kaynak, ses, filtre, kayıt) kendi OBS yürütücüsüyle çalışır (OBS
+   bağlantısı kopmuşsa yeniden bağlanır) ama `ACTION:<kayıt defteri kimliği>`, `via: "hotkey"` olarak günlüğe yazılır;
+   karşılığı olmayanlar (`muteAll`, `sceneNext`, `obsHotkey`, kayıt aç/kapa) `ACTION:hotkey.<tür>`. **Kalan:** katman
+   işlemleri (çoğalt, kilitle, öne/arkaya al, sil) kayıt defterinde yok, günlüğe yazılmaz.
 8. ~~Ses karıştırıcıda seviye ölçer yok~~ → Sahne & Ses panelinde tepe/ortalama ölçer (4b8b20d). Ses seviyesi
    (fader) ayarı yok; yalnız susturma.
 

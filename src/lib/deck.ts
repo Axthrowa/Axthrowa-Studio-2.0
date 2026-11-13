@@ -21,7 +21,8 @@ export type DeckButton = {
 };
 
 export type DeckPage = { id: string; name: string; buttons: DeckButton[] };
-export type DeckConfig = { version: typeof DECK_VERSION; pages: DeckPage[] };
+/** `rev`: sunucudaki kayıt sürümü (T6 kilidi); kayıt eski sürümle gelirse sunucu 409 döner */
+export type DeckConfig = { version: typeof DECK_VERSION; rev?: number; pages: DeckPage[] };
 
 const ID_RE = /^[a-z0-9-]{1,40}$/;
 const ACTION_RE = /^[a-z][a-zA-Z]*\.[a-zA-Z]+$/;
@@ -94,7 +95,9 @@ export function parseDeck(raw: unknown): DeckConfig {
     }
     pages.push({ id, name: metin(o.name, 30) || "Sayfa", buttons });
   }
-  return pages.length ? { version: DECK_VERSION, pages } : defaultDeck();
+  const rev = Number(d.rev);
+  const deste = pages.length ? { version: DECK_VERSION, pages } : defaultDeck();
+  return Number.isInteger(rev) && rev > 0 ? { ...deste, rev } : deste;
 }
 
 export function addButton(deck: DeckConfig, pageId: string, b: Omit<DeckButton, "id">): DeckConfig {

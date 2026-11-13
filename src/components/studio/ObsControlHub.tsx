@@ -4,6 +4,7 @@ import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
 import { sahneMenusu } from "../control/sahneMenusu";
 import type { KatmanIslemi } from "../../lib/obsControl";
 import { fetchSettings, patchSettings } from "../../lib/api";
+import { actionsApi } from "../../lib/api/actions";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import HotkeyInput from "../panel/HotkeyInput";
 import HotkeyStatusDot, { type HotkeyFailure } from "./HotkeyStatusDot";
@@ -166,7 +167,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
     if (busy) return;
     setBusy(`scene:${sceneName}`);
     try {
-      await obsControl.setScene(sceneName);
+      await actionsApi.run("scene.switch", { scene: sceneName });
       setSnapshot((prev) => ({ ...prev, currentScene: sceneName }));
       setSources(await obsControl.sources(sceneName));
     } catch (error) {
@@ -182,7 +183,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
       prev.map((item) => (item.name === source.name ? { ...item, visible } : item))
     );
     try {
-      await obsControl.setSourceVisible(snapshot.currentScene, source.name, visible);
+      await actionsApi.run(visible ? "source.show" : "source.hide", { scene: snapshot.currentScene, source: source.name });
     } catch (error) {
       setSources((prev) =>
         prev.map((item) =>
@@ -227,7 +228,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
       prev.map((item) => (item.name === input.name ? { ...item, muted } : item))
     );
     try {
-      await obsControl.setMuted(input.name, muted);
+      await actionsApi.run(muted ? "audio.mute" : "audio.unmute", { input: input.name });
     } catch (error) {
       setInputs((prev) =>
         prev.map((item) =>

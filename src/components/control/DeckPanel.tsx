@@ -5,12 +5,12 @@
  * sunucuda uygulanır; burada yalnız görünüm ve yapılandırma var. Onay isteyen eylemler (yayın durdurma vb.)
  * çift dokunuşla çalışır. Yapılandırma `settings-panel.json` içinde `controlDeck` altında saklanır.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { Copy, Keyboard, Palette, PencilSimple, Trash } from "@phosphor-icons/react";
 import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
 import { DESTE_OLAYI, destedenKisayol, KISAYOL_YOK, kisayolAta } from "../../lib/nesneMenusu";
-import { fetchSettings, patchSettings } from "../../lib/api";
+import { API_BASE, fetchSettings } from "../../lib/api";
 import { actionsApi, CATEGORY_LABEL, PARAM_LABEL, type ActionInfo, type ActionParamKind } from "../../lib/api/actions";
 import { multistreamApi } from "../../lib/api/multistream";
 import { obsControl } from "../../lib/obsControl";
@@ -47,13 +47,30 @@ const RENK: Record<DeckColor, string> = {
 type Oneriler = Partial<Record<ActionParamKind, string[]>>;
 
 /** Başka bir ekrandan desteye düğme ekler (sahne sağ tık "Desteye ekle"); açık deste kendini yeniler */
+/** Desteyi yazar; başka pencere arada kaydettiyse (sürüm kilidi, 409) null döner. Dönen deste yeni sürümü taşır. */
+async function desteYaz(d: DeckConfig): Promise<DeckConfig | null> {
+  const res = await fetch(`${API_BASE}/api/settings/patch?screen=panel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ controlDeck: { ...d, rev: d.rev ?? 0 } }),
+  });
+  if (res.status === 409) return null;
+  if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
+  return parseDeck((await res.json()).controlDeck);
+}
+
 export async function desteyeEkle(b: Omit<DeckButton, "id">): Promise<string> {
-  const s = await fetchSettings("panel");
-  const r = addToFirstFree(parseDeck(s.controlDeck), b);
-  if (!r) return "Destede yer yok: bir sayfayı boşaltın ya da yeni sayfa ekleyin";
-  await patchSettings("panel", { controlDeck: r.deck });
-  window.dispatchEvent(new Event(DESTE_OLAYI));
-  return `${b.label}: desteye eklendi (${r.page})`;
+  // Sürüm çakışırsa (deste o an başka pencerede kaydedildi) bir kez daha okuyup dener
+  for (let deneme = 0; deneme < 2; deneme++) {
+    const s = await fetchSettings("panel");
+    const r = addToFirstFree(parseDeck(s.controlDeck), b);
+    if (!r) return "Destede yer yok: bir sayfayı boşaltın ya da yeni sayfa ekleyin";
+    if (await desteYaz(r.deck)) {
+      window.dispatchEvent(new Event(DESTE_OLAYI));
+      return `${b.label}: desteye eklendi (${r.page})`;
+    }
+  }
+  return "Deste başka bir pencerede değişiyor; birazdan yeniden deneyin";
 }
 
 export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
@@ -67,15 +84,24 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
 
   const [duzenlenen, setDuzenlenen] = useState<DeckButton | null>(null);
 
-  useEffect(() => {
-    const oku = () =>
+  const sira = useRef(Promise.resolve());
+  const rev = useRef<number | undefined>(undefined);
+  const oku = useCallback(
+    () =>
       fetchSettings("panel")
-        .then((s) => setDeck(parseDeck(s.controlDeck)))
-        .catch(() => setDeck((d) => d ?? defaultDeck()));
-    oku();
+        .then((s) => {
+          const d = parseDeck(s.controlDeck);
+          rev.current = d.rev;
+          setDeck(d);
+        })
+        .catch(() => setDeck((d) => d ?? defaultDeck())),
+    []
+  );
+  useEffect(() => {
+    void oku();
     window.addEventListener(DESTE_OLAYI, oku);
     return () => window.removeEventListener(DESTE_OLAYI, oku);
-  }, []);
+  }, [oku]);
 
   const yukle = useCallback(async () => {
     try {
@@ -97,9 +123,20 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
     return () => window.clearTimeout(t);
   }, [kurulu]);
 
+  // Kayıtlar sırayla gider; her biri bir öncekinin döndürdüğü sürümle yazılır (art arda düzenleme kendine çakışmaz)
   const kaydet = (d: DeckConfig) => {
     setDeck(d);
-    patchSettings("panel", { controlDeck: d }).catch((e) => onToast(`Deste kaydedilemedi: ${String((e as Error).message || e).slice(0, 120)}`));
+    sira.current = sira.current
+      .then(async () => {
+        const yazilan = await desteYaz({ ...d, rev: rev.current });
+        if (yazilan) {
+          rev.current = yazilan.rev;
+          return;
+        }
+        onToast("Deste başka bir pencerede değişti; son hâli yüklendi");
+        await oku();
+      })
+      .catch((e) => onToast(`Deste kaydedilemedi: ${String((e as Error).message || e).slice(0, 120)}`));
   };
 
   const eylem = useMemo(() => Object.fromEntries(eylemler.map((a) => [a.id, a])), [eylemler]);

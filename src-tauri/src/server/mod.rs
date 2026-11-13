@@ -23,7 +23,7 @@ use crate::AppState;
 
 mod actions_api;
 pub mod asistan_api;
-pub(crate) use actions_api::kisayol_eylemi;
+pub(crate) use actions_api::{kisayol_eylemi, kisayol_kaydi};
 mod auth;
 mod bot_api;
 mod control_plane;
@@ -377,13 +377,15 @@ async fn api_post_settings(
 async fn api_patch_settings(
   State(state): State<Arc<AppState>>,
   Query(q): Query<ScreenQuery>,
-  Json(patch): Json<Value>,
+  Json(mut patch): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
   let screen = q.screen.unwrap_or_else(|| "starting".into());
   let kind = ScreenKind::parse(&screen).map_err(|e| (StatusCode::BAD_REQUEST, e))?;
   let merged = {
     let mut s = state.settings.write();
     let current = s.get(kind).clone();
+    crate::settings::deste_kilidi(&current, &mut patch)
+      .map_err(|rev| (StatusCode::CONFLICT, format!("Deste başka bir pencerede değişti (sürüm {rev}); yeniden yükleyin")))?;
     let merged = crate::settings::deep_merge(current, patch);
     s.set(kind, merged.clone());
     // Disk yazımı başarısızsa ayar yalnızca bellekte kalır ve yeniden

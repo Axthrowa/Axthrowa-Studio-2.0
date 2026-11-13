@@ -299,7 +299,11 @@ async fn fire_binding<R: Runtime>(app: &AppHandle<R>, b: &HotkeyBindingIn) -> Re
     "sfx" | "clearChat" | "sfxStop" => {}
     "mic" | "srcMute" | "muteAll" | "scene" | "srcToggle" | "volume" | "record" | "filter"
     | "obsHotkey" | "sceneNext" | "scenePrev" => {
-      run_obs_action(state.inner(), b, kind).await?;
+      let sonuc = run_obs_action(state.inner(), b, kind).await;
+      let obs = obs_cfg_from_settings(state.inner()).3;
+      let (eylem, params) = kayit_karsiligi(kind, b, &obs);
+      crate::server::kisayol_kaydi(state.inner(), &eylem, params, &sonuc).await;
+      sonuc?;
     }
     // Eylem kayıt defteri: Kontrol Merkezi, deste ve uzak arayüzle aynı yol (kullanılabilirlik + denetim kaydı)
     "action" => {
@@ -307,10 +311,53 @@ async fn fire_binding<R: Runtime>(app: &AppHandle<R>, b: &HotkeyBindingIn) -> Re
     }
     _ if b.id.starts_with("sfx:") || b.id == "clearChat" || b.id == "sfxStop" => {}
     _ => {
-      run_obs_action(state.inner(), b, "scene").await?;
+      let sonuc = run_obs_action(state.inner(), b, "scene").await;
+      let obs = obs_cfg_from_settings(state.inner()).3;
+      let (eylem, params) = kayit_karsiligi("scene", b, &obs);
+      crate::server::kisayol_kaydi(state.inner(), &eylem, params, &sonuc).await;
+      sonuc?;
     }
   }
   Ok(())
+}
+
+/// Eski tür kısayolun denetim kaydındaki eylem kimliği ve parametreleri (eylem kayıt defteriyle aynı adlar).
+/// Kayıt defterinde karşılığı olmayanlar (`muteAll`, `sceneNext`, `obsHotkey`…) `hotkey.<tür>` olarak yazılır.
+pub(crate) fn kayit_karsiligi(kind: &str, b: &HotkeyBindingIn, obs: &serde_json::Value) -> (String, serde_json::Value) {
+  use serde_json::json;
+  let mik = || {
+    if b.input.trim().is_empty() {
+      obs.get("micInput").and_then(|v| v.as_str()).unwrap_or("").to_string()
+    } else {
+      b.input.trim().to_string()
+    }
+  };
+  let (id, params) = match kind {
+    "scene" => {
+      let sahne = if b.scene.trim().is_empty() { resolve_scene(obs, &b.id) } else { b.scene.trim().to_string() };
+      ("scene.switch", json!({ "scene": sahne }))
+    }
+    "mic" => ("audio.toggle", json!({ "input": mik() })),
+    "srcMute" => ("audio.toggle", json!({ "input": b.input.trim() })),
+    "srcToggle" => (
+      match b.mode.trim().to_ascii_lowercase().as_str() {
+        "show" => "source.show",
+        "hide" => "source.hide",
+        _ => "source.toggle",
+      },
+      json!({ "scene": b.scene.trim(), "source": b.source.trim() }),
+    ),
+    "volume" => ("audio.volume", json!({ "input": b.input.trim(), "delta": b.delta })),
+    "filter" => ("filter.toggle", json!({ "source": b.source.trim(), "filter": b.filter.trim() })),
+    "record" => match record_mode(&b.mode) {
+      "start" => ("record.start", json!({})),
+      "stop" => ("record.stop", json!({})),
+      "pause" => ("record.togglePause", json!({})),
+      _ => return ("hotkey.record".into(), json!({})),
+    },
+    _ => return (format!("hotkey.{kind}"), json!({})),
+  };
+  (id.into(), params)
 }
 
 /// Kaynak görünürlüğü kısayolunun yeni durumu: `show`/`hide` sabit yapar (yayın
@@ -853,6 +900,19 @@ mod plan_testleri {
 
   fn b(id: &str, spec: &str) -> HotkeyBindingIn {
     HotkeyBindingIn { id: id.into(), spec: spec.into(), ..Default::default() }
+  }
+
+  #[test]
+  fn eski_kisayol_denetim_kaydinda_kayit_defteri_adiyla() {
+    let obs = serde_json::json!({ "brbScene": "Mola", "micInput": "Mik" });
+    assert_eq!(kayit_karsiligi("scene", &b("brb", "F3"), &obs), ("scene.switch".into(), serde_json::json!({ "scene": "Mola" })));
+    assert_eq!(kayit_karsiligi("mic", &b("mic", "F4"), &obs).1["input"], "Mik");
+    let gizle = HotkeyBindingIn { source: "Kamera".into(), mode: "hide".into(), ..b("k", "F5") };
+    assert_eq!(kayit_karsiligi("srcToggle", &gizle, &obs).0, "source.hide");
+    let kayit = HotkeyBindingIn { mode: "stop".into(), ..b("r", "F6") };
+    assert_eq!(kayit_karsiligi("record", &kayit, &obs).0, "record.stop");
+    assert_eq!(kayit_karsiligi("record", &b("r", "F6"), &obs).0, "hotkey.record");
+    assert_eq!(kayit_karsiligi("sceneNext", &b("n", "F7"), &obs).0, "hotkey.sceneNext");
   }
 
   #[test]

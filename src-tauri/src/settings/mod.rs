@@ -175,6 +175,22 @@ fn migrate_legacy(root: &Path, kind: ScreenKind) -> Option<Value> {
     .and_then(|s| serde_json::from_str(&s).ok())
 }
 
+/// T6 deste sürüm kilidi: yama `controlDeck.rev` taşıyorsa kayıttakiyle aynı olmalı (başka pencere arada
+/// kaydetmediyse); tutarsa sürüm bir artırılır. `rev` taşımayan eski istemci kilitsiz yazar, sürüm yine artar.
+pub fn deste_kilidi(mevcut: &Value, yama: &mut Value) -> Result<(), u64> {
+  let Some(deste) = yama.get_mut("controlDeck").and_then(Value::as_object_mut) else {
+    return Ok(());
+  };
+  let kayitli = mevcut.pointer("/controlDeck/rev").and_then(Value::as_u64).unwrap_or(0);
+  if let Some(gelen) = deste.get("rev") {
+    if gelen.as_u64() != Some(kayitli) {
+      return Err(kayitli);
+    }
+  }
+  deste.insert("rev".into(), Value::from(kayitli + 1));
+  Ok(())
+}
+
 pub fn deep_merge(mut base: Value, patch: Value) -> Value {
   match (&mut base, patch) {
     (Value::Object(a), Value::Object(b)) => {
@@ -416,6 +432,23 @@ pub fn defaults(kind: ScreenKind) -> Value {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn deste_kilidi_eski_surumu_reddeder() {
+    use serde_json::json;
+    let kayit = json!({ "controlDeck": { "rev": 3, "pages": [] } });
+    let mut yama = json!({ "controlDeck": { "rev": 3, "pages": [] } });
+    assert!(deste_kilidi(&kayit, &mut yama).is_ok());
+    assert_eq!(yama["controlDeck"]["rev"], 4);
+    let mut eski = json!({ "controlDeck": { "rev": 2, "pages": [] } });
+    assert_eq!(deste_kilidi(&kayit, &mut eski), Err(3));
+    let mut surumsuz = json!({ "controlDeck": { "pages": [] } });
+    assert!(deste_kilidi(&json!({}), &mut surumsuz).is_ok());
+    assert_eq!(surumsuz["controlDeck"]["rev"], 1);
+    let mut baska = json!({ "theme": "x" });
+    assert!(deste_kilidi(&kayit, &mut baska).is_ok());
+    assert!(baska.get("controlDeck").is_none());
+  }
 
   #[test]
   fn parse_accepts_aliases_and_rejects_unknown() {

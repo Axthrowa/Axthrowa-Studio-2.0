@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { addButton, addPage, DECK_MAX_BUTTONS, defaultDeck, moveButton, parseDeck, removeButton, removePage } from "./deck";
 
 describe("parseDeck", () => {
+  it("kayıt sürümü (T6 kilidi) korunur; geçersizse yazılmaz", () => {
+    const d = defaultDeck();
+    expect(parseDeck({ ...d, rev: 5 }).rev).toBe(5);
+    expect(parseDeck({ ...d, rev: -1 }).rev).toBeUndefined();
+    expect(parseDeck({ ...d, rev: "x" }).rev).toBeUndefined();
+  });
   it("bozuk ya da boş kayıt varsayılan desteye düşer", () => {
     expect(parseDeck(null)).toEqual(defaultDeck());
     expect(parseDeck({ pages: "x" })).toEqual(defaultDeck());

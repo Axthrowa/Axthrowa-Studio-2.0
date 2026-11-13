@@ -163,6 +163,22 @@ pub(crate) async fn kisayol_eylemi(state: &AppState, id: &str, params: Value, on
   calistir(state, spec, &params, onayli, &actor, Some("hotkey")).await.map_err(|(_, e)| e)
 }
 
+/// T6: eski tür genel kısayollar (sahne, mikrofon, kaynak…) kendi OBS yürütücüsüyle çalışır (bağlantı kopmuşsa
+/// yeniden bağlanır); denetim kaydı yine eylem kayıt defterindeki adla `ACTION:<id>`, `via: "hotkey"`.
+pub(crate) async fn kisayol_kaydi(state: &AppState, eylem: &str, params: Value, sonuc: &Result<(), String>) {
+  let mut kayit = match actions::find(eylem) {
+    Some(spec) => actions::audit_detail(spec, &params),
+    None => json!({ "id": eylem }),
+  };
+  kayit["via"] = json!("hotkey");
+  kayit["ok"] = json!(sonuc.is_ok());
+  if let Err(e) = sonuc {
+    kayit["error"] = json!(e.chars().take(200).collect::<String>());
+  }
+  let actor = Actor { name: "yerel".into(), local: true };
+  audit(state, &actor, &format!("ACTION:{eylem}"), kayit).await;
+}
+
 async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, String> {
   match action {
     Action::SceneSwitch { scene } => state.obs.set_scene(scene).await.map(|_| json!({ "scene": scene })),

@@ -64,6 +64,9 @@ export const BOT_SEKMELERI: { id: string; ad: string; alt: string[] }[] = [
   { id: "settings", ad: "Genel", alt: ["settings", "botadvanced", "dashboard", "kurulum", "multichat"] },
 ];
 
+/** Botun tam paneli (kendi yan menüsüyle, bütün sayfalar); sekme listesinde en sonda */
+export const TUM_AYARLAR = "tum-ayarlar";
+
 const HAZIRLIK_SAYFALARI = ["platforms"];
 const ETKILESIM_SAYFALARI = ["polls", "giveaways", "interaction", "songrequest"];
 /** Sahne menüsündeki "Overlay ve Uyarılar" penceresinin iç sekmeleri */
@@ -91,6 +94,7 @@ export function menuGrubuBul(nav: string, botSayfa?: string, kip?: Kip | null): 
 /** Bot ekranında seçili sekme; bilinmeyen sayfa ilk sekmede açılır */
 export function botSekmesiBul(botSayfa?: string): string {
   if (!botSayfa) return BOT_SEKMELERI[0].id;
+  if (botSayfa === TUM_AYARLAR) return TUM_AYARLAR;
   return BOT_SEKMELERI.find((s) => s.alt.includes(botSayfa))?.id ?? BOT_SEKMELERI[0].id;
 }
 

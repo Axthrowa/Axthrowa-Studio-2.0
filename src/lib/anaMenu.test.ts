@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANA_MENU, BOT_SEKMELERI, OVERLAY_PENCERESI, botSekmesiBul, menuGrubuBul, satirGorunur, satirHedefi, sayfaAcikMi } from "./anaMenu";
+import { ANA_MENU, BOT_SEKMELERI, OVERLAY_PENCERESI, TUM_AYARLAR, botSekmesiBul, menuGrubuBul, satirGorunur, satirHedefi, sayfaAcikMi } from "./anaMenu";
 import { DEFAULT_TABS } from "./panelLayout";
 import { bosGecmis, gecmiseEkle, gecmisteGit } from "./gezinmeGecmisi";
 
@@ -43,6 +43,8 @@ describe("ana menü (A2)", () => {
     expect(botSekmesiBul("otomasyon")).toBe("otomasyon");
     expect(botSekmesiBul("ai")).toBe("commands");
     expect(botSekmesiBul("bilinmeyen")).toBe("commands");
+    expect(botSekmesiBul(TUM_AYARLAR)).toBe(TUM_AYARLAR);
+    expect(menuGrubuBul("bot", TUM_AYARLAR)).toBe("bot");
     expect(BOT_SEKMELERI.map((s) => s.ad)).toEqual(["Komutlar", "Oyunlar", "Puanlar", "Moderasyon", "Otomasyon", "Genel"]);
   });
 

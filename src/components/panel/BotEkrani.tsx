@@ -1,9 +1,10 @@
 /**
  * Bot ekranı: durum, sohbete yanıt anahtarı ve sekmeler. Sayfaların içi botun kendi sayfaları (gömülü).
- * "Tüm ayarlar" kaçış kapısı yok (A2): her bot sayfası bir sekmede ya da kendi menü başlığında (lib/anaMenu.ts).
+ * Her bot sayfası bir sekmede ya da kendi menü başlığında (lib/anaMenu.ts); "Tüm ayarlar" botun tam panelini
+ * kendi yan menüsüyle açar (kullanıcı isteği: A2'de kaldırılmıştı, geri geldi).
  */
 import { useCallback, useEffect, useState } from "react";
-import { BOT_SEKMELERI, botSekmesiBul } from "../../lib/anaMenu";
+import { BOT_SEKMELERI, TUM_AYARLAR, botSekmesiBul } from "../../lib/anaMenu";
 import { axbotBase } from "../../lib/axbot";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import StatusDot from "@/components/axthrowa/StatusDot";
@@ -22,6 +23,7 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
   const [kick, setKick] = useState<Kick | null>(null);
   const [sessiz, setSessiz] = useState<boolean | null>(null);
   const secili = botSekmesiBul(sayfa);
+  const tumu = secili === TUM_AYARLAR;
 
   const yukle = useCallback(async () => {
     try {
@@ -71,6 +73,9 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
               {s.ad}
             </button>
           ))}
+          <button type="button" role="tab" aria-selected={tumu} className={sekmeSinifi(tumu)} onClick={() => onSayfa(TUM_AYARLAR)}>
+            Tüm ayarlar
+          </button>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-panel-muted">
           <span className="inline-flex items-center gap-2">
@@ -82,7 +87,7 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
           </label>
         </div>
       </div>
-      <AxBotHost onToast={onToast} tab={sayfa || BOT_SEKMELERI[0].id} embed onOpenMusic={onOpenMusic} />
+      <AxBotHost onToast={onToast} tab={tumu ? "dashboard" : sayfa || BOT_SEKMELERI[0].id} embed={!tumu} onOpenMusic={onOpenMusic} />
     </div>
   );
 }

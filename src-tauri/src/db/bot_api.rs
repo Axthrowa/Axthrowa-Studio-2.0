@@ -2496,6 +2496,93 @@ pub fn remote_has_perm(info: &RemoteAuthInfo, need: &str) -> bool {
     .any(|p| p == "*" || p == need || p.starts_with(&format!("{need}:")))
 }
 
+// ─── T8: eşleştirilmiş cihazlar ───────────────────────────────────────
+//
+// Her cihaz kendi `remote_users` satırıdır (rol `cihaz`, yönetici olamaz, parolasıyla girilemez) ve tek oturumu vardır.
+// Cihazı silmek satırı ve oturumu birlikte siler: iptal anında geçerli.
+
+/// Cihaza verilebilecek izinler. Ayar yazma, çıkış hedefleri (yayın anahtarı), kullanıcılar ve denetim günlüğü yok.
+pub const CIHAZ_IZINLERI: &[&str] = &[
+  "broadcast.read",
+  "scene.switch",
+  "scene.edit",
+  "audio.control",
+  "alerts.control",
+  "music.control",
+  "broadcast.replay",
+  "broadcast.record",
+  "broadcast.stream",
+  "voice.control",
+  "actions.read",
+];
+pub const CIHAZ_OTURUM_GUN: i64 = 90;
+
+pub fn cihaz_izinlerini_suz(ham: &Value) -> Vec<String> {
+  let mut l: Vec<String> = ham
+    .as_array()
+    .map(|a| a.iter().filter_map(|v| v.as_str()).filter(|p| CIHAZ_IZINLERI.contains(p)).map(String::from).collect())
+    .unwrap_or_default();
+  l.sort();
+  l.dedup();
+  l
+}
+
+pub async fn cihaz_ekle(pool: &SqlitePool, ad: &str, izinler: &[String]) -> Result<Value> {
+  let channel_id = default_channel_id(pool).await?;
+  let uid = uuid::Uuid::new_v4().to_string();
+  let now = chrono_now();
+  // Kullanıcı adı benzersiz ve elle girişe kapalı: parola rastgele, kimse bilmez
+  let kullanici = format!("cihaz:{}:{}", ad, &uid[..8]);
+  sqlx::query(
+    "INSERT INTO remote_users(id, channel_id, username, password_hash, role, permissions_json, enabled, created_at)
+     VALUES(?,?,?,?,?,?,1,?)",
+  )
+  .bind(&uid)
+  .bind(&channel_id)
+  .bind(&kullanici)
+  .bind(hash_password(&uuid::Uuid::new_v4().to_string()))
+  .bind("cihaz")
+  .bind(serde_json::to_string(izinler)?)
+  .bind(now)
+  .execute(pool)
+  .await?;
+  let token = format!("{}{}", uuid::Uuid::new_v4().simple(), uuid::Uuid::new_v4().simple());
+  let expires = now + CIHAZ_OTURUM_GUN * 24 * 60 * 60 * 1000;
+  sqlx::query("INSERT INTO remote_sessions(token, user_id, expires_at, created_at, last_seen_at) VALUES(?,?,?,?,?)")
+    .bind(&token)
+    .bind(&uid)
+    .bind(expires)
+    .bind(now)
+    .bind(now)
+    .execute(pool)
+    .await?;
+  Ok(json!({ "token": token, "token_type": "Bearer", "expires_at": expires, "cihaz": ad, "izinler": izinler }))
+}
+
+/// Cihaz listesi: anahtar asla dönmez
+pub async fn cihazlar(pool: &SqlitePool) -> Result<Vec<Value>> {
+  let rows: Vec<(String, String, String, i64, Option<i64>, Option<i64>)> = sqlx::query_as(
+    "SELECT u.id, u.username, u.permissions_json, u.created_at, MAX(s.last_seen_at), MAX(s.expires_at)
+     FROM remote_users u LEFT JOIN remote_sessions s ON s.user_id = u.id
+     WHERE u.role = 'cihaz' GROUP BY u.id ORDER BY u.created_at DESC",
+  )
+  .fetch_all(pool)
+  .await?;
+  Ok(rows
+    .into_iter()
+    .map(|(id, ad, izin, olusma, son, bitis)| {
+      let ad = ad.strip_prefix("cihaz:").and_then(|a| a.rsplit_once(':')).map(|(a, _)| a.to_string()).unwrap_or(ad);
+      json!({ "id": id, "ad": ad, "izinler": serde_json::from_str::<Value>(&izin).unwrap_or(json!([])), "olusturma": olusma, "sonGorulme": son, "bitis": bitis })
+    })
+    .collect())
+}
+
+pub async fn cihaz_sil(pool: &SqlitePool, id: &str) -> Result<bool> {
+  sqlx::query("DELETE FROM remote_sessions WHERE user_id = ?").bind(id).execute(pool).await?;
+  let r = sqlx::query("DELETE FROM remote_users WHERE id = ? AND role = 'cihaz'").bind(id).execute(pool).await?;
+  Ok(r.rows_affected() > 0)
+}
+
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct RemoteUserRow {
   pub id: String,

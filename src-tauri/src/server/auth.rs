@@ -25,6 +25,7 @@ pub fn is_public_path(path: &str) -> bool {
   }
   if path.starts_with("/api/bot/remote/login")
     || path.starts_with("/api/bot/remote/setup")
+    || path == "/api/bot/remote/eslestirme/tamamla"
   {
     return true;
   }

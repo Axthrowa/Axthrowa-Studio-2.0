@@ -1304,11 +1304,11 @@ const GIRIS_SINIRI: u32 = 8;
 const GIRIS_PENCERESI_MS: u64 = 10 * 60 * 1000;
 
 #[derive(Default)]
-struct GirisDenemeleri(std::collections::HashMap<std::net::IpAddr, (u32, u64)>);
+pub(super) struct GirisDenemeleri(std::collections::HashMap<std::net::IpAddr, (u32, u64)>);
 
 impl GirisDenemeleri {
   /// Bu adres şu an engelli mi? (süresi dolan kayıt temizlenir)
-  fn engelli(&mut self, ip: std::net::IpAddr, simdi_ms: u64) -> bool {
+  pub(super) fn engelli(&mut self, ip: std::net::IpAddr, simdi_ms: u64) -> bool {
     match self.0.get(&ip) {
       Some(&(_, bas)) if simdi_ms.saturating_sub(bas) > GIRIS_PENCERESI_MS => {
         self.0.remove(&ip);
@@ -1318,7 +1318,7 @@ impl GirisDenemeleri {
       None => false,
     }
   }
-  fn basarisiz(&mut self, ip: std::net::IpAddr, simdi_ms: u64) {
+  pub(super) fn basarisiz(&mut self, ip: std::net::IpAddr, simdi_ms: u64) {
     let e = self.0.entry(ip).or_insert((0, simdi_ms));
     e.0 += 1;
     // Bellek sınırı: çok sayıda farklı adresten deneme tabloyu şişirmesin
@@ -1326,15 +1326,15 @@ impl GirisDenemeleri {
       self.0.retain(|_, (_, bas)| simdi_ms.saturating_sub(*bas) <= GIRIS_PENCERESI_MS);
     }
   }
-  fn basarili(&mut self, ip: std::net::IpAddr) {
+  pub(super) fn basarili(&mut self, ip: std::net::IpAddr) {
     self.0.remove(&ip);
   }
 }
 
-static GIRIS_DENEMELERI: std::sync::LazyLock<parking_lot::Mutex<GirisDenemeleri>> =
+pub(super) static GIRIS_DENEMELERI: std::sync::LazyLock<parking_lot::Mutex<GirisDenemeleri>> =
   std::sync::LazyLock::new(Default::default);
 
-fn simdi_ms() -> u64 {
+pub(super) fn simdi_ms() -> u64 {
   std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map(|d| d.as_millis() as u64)

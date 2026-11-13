@@ -141,3 +141,16 @@ açık değil. Gömülü AxBoT'ta follow-redirects 1.16.1'e çıkarıldı; vosk-
 - npm: `postcss-selector-parser` 7.1.7'ye zorlandı (`overrides`); üretilen CSS bayt bayt aynı. vite 6.4.4 (panel) ve
   Resonance vite güncellendi (GHSA-698v-4r3x-3vcv, yalnız geliştirme sunucusu). Yalnız `braces` kaldı: tüm sürümleri
   etkilenmiş, düzeltmesi Tailwind 4 göçü; yalnız derlemede kendi glob desenlerimizi işler, pakete girmez.
+
+## T8 — Mobil kumanda eşleştirmesi (2026-11-13)
+
+| Konu | Uygulanan denetim | Doğrulama |
+|---|---|---|
+| Eşleştirme kodu | Yalnız loopback'ten üretilir; 64 bit rastgele, **60 sn**, **tek kullanımlık** (geçersiz kullanım da kodu düşürür); bellekte en çok 10 bekleyen kod. Tamamlama ucu herkese açık ama giriş ile aynı adres başına deneme sınırına bağlı (10 dk'da 8 hata). | `eslestirme::tests`, `server_api::cihaz_eslestirme_tek_kullanim_ve_iptal` |
+| Cihaz anahtarı | Her cihaz ayrı `remote_users` satırı (rol `cihaz`, yönetici olamaz, parolası rastgele: elle girişe kapalı) ve 90 günlük tek oturum; anahtar yalnız eşleşme yanıtında bir kez döner, listede yok. | aynı test (liste anahtar içermez) |
+| İzinler | Yalnız `CIHAZ_IZINLERI`: sahne, ses, uyarı, müzik, tekrar, kayıt, yayın başlat/durdur, durum okuma. `*`, `settings.write`, `broadcast.outputs` (yayın anahtarı), `users`, `audit.read` verilemez. Cihaz yönetici olmadığı için `perm_checked_path` dışındaki uçlar (ayarlar, OBS şifresi) 403. | `cihaza_tehlikeli_izin_verilmez` |
+| İptal | Cihaz silinince satır ve oturum birlikte silinir; sonraki istek 401. | test + sanal Studio'da panelden iptal |
+| Yerel ağa açılma | Panelde onay sorusundan sonra `remote.bindLan`; yeniden başlatınca geçerli. Eşleşmemiş cihaz Bearer olmadan her korumalı uçtan 401 alır (mevcut ara katman). | elle; sanal ortamda LAN açılmadı (0.0.0.0 dinlenmedi) |
+| Denetim | `REMOTE:pair_start`, `REMOTE:pair_done` (cihaz adı, izinler, adres), `REMOTE:device_revoke`; cihazın eylemleri mevcut eylem kayıt defterinden ve denetim günlüğünden geçer. | `audit` çağrıları |
+
+Bilinen sınır: QR görüntüsü yok (yeni bağımlılık gerektiriyor); panel kodu ve bağlantıyı yazı olarak gösterir. Oturum anahtarları veritabanında düz saklanıyor (mevcut uzak oturumlarla aynı); karma ile saklamak ayrı iş.

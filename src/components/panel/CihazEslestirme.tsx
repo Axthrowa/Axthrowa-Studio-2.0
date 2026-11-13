@@ -1,0 +1,139 @@
+import { useEffect, useState } from "react";
+import { API_BASE, patchSettings } from "../../lib/api";
+import { botApi, type EslesmisCihaz } from "../../lib/api/botApi";
+
+/** Cihaza verilebilen izinler (sunucu: `CIHAZ_IZINLERI`); ayar, yayın anahtarı ve kullanıcı yönetimi yok */
+const IZINLER: Array<[string, string]> = [
+  ["scene.switch", "Sahne değiştir"],
+  ["audio.control", "Ses aç/kapa"],
+  ["alerts.control", "Uyarıları duraklat"],
+  ["music.control", "Müzik"],
+  ["broadcast.replay", "Tekrar kaydı"],
+  ["broadcast.read", "Yayın durumunu gör"],
+  ["broadcast.record", "Kaydı başlat/durdur"],
+  ["broadcast.stream", "Yayını başlat/durdur"],
+];
+
+/** T8: telefonu tek kullanımlık kodla eşleştir; cihazları listele ve iptal et. */
+export default function CihazEslestirme({ onToast }: { onToast: (m: string) => void }) {
+  const [izinler, setIzinler] = useState<string[]>(["scene.switch", "audio.control", "broadcast.read"]);
+  const [kod, setKod] = useState<{ kod: string; bitis: number } | null>(null);
+  const [kalan, setKalan] = useState(0);
+  const [cihazlar, setCihazlar] = useState<EslesmisCihaz[]>([]);
+  const [lan, setLan] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch(`${API_BASE}/api/server`).then((r) => r.json()).then((d) => setLan(d.bindLan === true)).catch(() => {});
+  }, []);
+  /** Yerel ağa açılma açık onayla; dinleme adresi yeniden başlatınca değişir */
+  const lanDegistir = async (ac: boolean) => {
+    if (ac && !confirm("Studio yerel ağdaki cihazlara açılsın mı? Eşleşmemiş cihazlar hiçbir uca giremez (401), ama aynı ağdaki herkes giriş sayfasını görür. Uygulama yeniden başlatılınca geçerli olur.")) return;
+    await patchSettings("panel", { remote: { bindLan: ac } } as never);
+    setLan(ac);
+    onToast(ac ? "Yerel ağ erişimi açık — Studio'yu yeniden başlatın" : "Yerel ağ erişimi kapalı — Studio'yu yeniden başlatın");
+  };
+
+  const yenile = () => void botApi.cihazlar().then((r) => setCihazlar(r.cihazlar)).catch(() => {});
+  useEffect(yenile, []);
+  useEffect(() => {
+    if (!kod) return;
+    const t = setInterval(() => {
+      const s = Math.max(0, Math.ceil((kod.bitis - Date.now()) / 1000));
+      setKalan(s);
+      if (s === 0) {
+        setKod(null);
+        yenile();
+      }
+    }, 500);
+    // Telefon eşleşince listede hemen görünsün
+    const l = setInterval(yenile, 2000);
+    return () => {
+      clearInterval(t);
+      clearInterval(l);
+    };
+  }, [kod]);
+
+  const baslat = async () => {
+    try {
+      const r = await botApi.eslestirmeBaslat(izinler);
+      setKod({ kod: r.kod, bitis: Date.now() + r.gecerlilikSn * 1000 });
+      setKalan(r.gecerlilikSn);
+    } catch (e) {
+      onToast(String((e as Error).message || e));
+    }
+  };
+  // Telefon aynı ağdaki adresle açar; localhost yerine bilgisayarın ağ adı/adresini yazmak gerekir
+  const baglanti = kod ? `${location.protocol}//${location.hostname === "127.0.0.1" || location.hostname === "localhost" ? "<bilgisayar-adresi>" : location.hostname}:${location.port}/remote?eslestir=${kod.kod}` : "";
+
+  return (
+    <div className="studio-card space-y-3">
+      <h3 className="font-display text-sm font-semibold text-white">Telefon eşleştir</h3>
+      <p className="text-[11px] text-panel-muted">
+        Kod tek kullanımlıktır ve 60 sn geçerlidir. Telefon yalnız seçtiğin izinleri alır; ayarlara, OBS şifresine ve yayın anahtarına erişemez.
+      </p>
+      <label className="flex items-center gap-2 text-xs">
+        <input type="checkbox" checked={lan === true} disabled={lan === null} onChange={(e) => void lanDegistir(e.target.checked)} />
+        Yerel ağdan erişime izin ver (yeniden başlatınca)
+      </label>
+      <fieldset className="grid grid-cols-2 gap-1 text-xs">
+        <legend className="sr-only">Telefonun izinleri</legend>
+        {IZINLER.map(([id, ad]) => (
+          <label key={id} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={izinler.includes(id)}
+              onChange={(e) => setIzinler(e.target.checked ? [...izinler, id] : izinler.filter((x) => x !== id))}
+            />
+            {ad}
+          </label>
+        ))}
+      </fieldset>
+      <button type="button" className="studio-btn-primary" disabled={!izinler.length} onClick={() => void baslat()}>
+        Eşleştirme kodu üret
+      </button>
+      {kod && (
+        <div role="status" className="rounded-xl bg-black/30 p-3 text-xs">
+          <p>
+            Kod: <strong className="font-mono text-base tracking-widest text-white">{kod.kod}</strong> · {kalan} sn
+          </p>
+          <p className="mt-1 break-all text-panel-muted">
+            Telefonda aç: <code className="text-panel-accent">{baglanti}</code>
+          </p>
+        </div>
+      )}
+      <div>
+        <p className="text-xs font-semibold">Eşleşmiş cihazlar</p>
+        {cihazlar.length === 0 ? (
+          <p className="text-[11px] text-panel-muted">Henüz yok.</p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {cihazlar.map((c) => (
+              <li key={c.id} className="flex items-center gap-2 rounded-md bg-white/5 px-2 py-1 text-xs">
+                <span className="flex-1">
+                  <strong>{c.ad}</strong>
+                  <span className="ml-2 text-panel-muted">
+                    {c.sonGorulme ? `son: ${new Date(c.sonGorulme).toLocaleString("tr-TR")}` : "hiç bağlanmadı"} · {c.izinler.length} izin
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="studio-btn-ghost !px-2 !py-0.5"
+                  onClick={() =>
+                    void botApi
+                      .cihazSil(c.id)
+                      .then(() => {
+                        onToast(`${c.ad} iptal edildi`);
+                        yenile();
+                      })
+                      .catch((e) => onToast(String(e.message || e)))
+                  }
+                >
+                  İptal et
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}

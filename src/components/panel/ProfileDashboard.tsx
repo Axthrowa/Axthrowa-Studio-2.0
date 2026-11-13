@@ -25,6 +25,7 @@ import SistemSagligi from "../axthrowa/SistemSagligi";
 import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
 import { axbotBase } from "../../lib/axbot";
 import { BasiliTutDugme } from "../ui/BasiliTut";
+import CihazEslestirme from "./CihazEslestirme";
 
 /** Dashboard alt sekmeleri (PanelPage). Bileşen sekme değişse de BAĞLI kalır:
  *  sadakat sayacı, yayın metrikleri ve oturum kapatma arka planda sürmeli. */
@@ -624,6 +625,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 </button>
               </div>
             </div>
+            <CihazEslestirme onToast={onToast} />
           </section>
         </>
       )}

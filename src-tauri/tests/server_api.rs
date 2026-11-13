@@ -1396,3 +1396,41 @@ async fn yayin_bilgisi_kick_bagli_degilken() {
   assert_eq!(k("a").await.unwrap().status(), 400);
   assert_eq!(k("Just%20Chatting").await.unwrap().status(), 409);
 }
+
+/// T8: eşleştirme kodu tek kullanımlık; cihaz anahtarı yalnız seçilen izinleri taşır, yönetici değildir; iptal anında geçerli.
+#[tokio::test]
+async fn cihaz_eslestirme_tek_kullanim_ve_iptal() {
+  let h = start().await;
+  let c = &h.client;
+  let r: Value = c
+    .post(format!("{}/api/bot/remote/eslestirme", h.base))
+    .json(&json!({ "izinler": ["scene.switch", "settings.write", "*"] }))
+    .send()
+    .await
+    .unwrap()
+    .json()
+    .await
+    .unwrap();
+  assert_eq!(r["izinler"], json!(["scene.switch"]), "tehlikeli izinler süzülür");
+  let kod = r["kod"].as_str().unwrap().to_string();
+
+  let tamamla = |kod: String| c.post(format!("{}/api/bot/remote/eslestirme/tamamla", h.base)).json(&json!({ "kod": kod, "cihaz": "Pixel" })).send();
+  let ilk = tamamla(kod.clone()).await.unwrap();
+  assert_eq!(ilk.status(), 200);
+  let anahtar = ilk.json::<Value>().await.unwrap()["token"].as_str().unwrap().to_string();
+  assert_eq!(tamamla(kod).await.unwrap().status(), 401, "kod ikinci kez kullanılamaz");
+
+  let ben: Value = c.get(format!("{}/api/bot/remote/me", h.base)).bearer_auth(&anahtar).send().await.unwrap().json().await.unwrap();
+  assert_eq!(ben["role"], "cihaz");
+  assert_eq!(ben["permissions"], json!(["scene.switch"]));
+
+  let liste: Value = c.get(format!("{}/api/bot/remote/cihazlar", h.base)).send().await.unwrap().json().await.unwrap();
+  let cihaz = &liste["cihazlar"][0];
+  assert_eq!(cihaz["ad"], "Pixel");
+  assert!(!liste.to_string().contains(&anahtar), "liste anahtarı göstermez");
+
+  let sil = c.post(format!("{}/api/bot/remote/cihazlar/sil", h.base)).json(&json!({ "id": cihaz["id"] })).send().await.unwrap();
+  assert_eq!(sil.status(), 200);
+  let sonra = c.get(format!("{}/api/bot/remote/me", h.base)).bearer_auth(&anahtar).send().await.unwrap();
+  assert_eq!(sonra.status(), 401, "iptal edilen cihaz anahtarı geçersiz");
+}

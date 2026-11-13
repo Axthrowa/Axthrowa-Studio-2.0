@@ -178,6 +178,35 @@ function PanelEylemiAlanlari({
                     </select>
                   </label>
                 );
+              case "percent":
+                return (
+                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                    Müzik sesi (%)
+                    <input
+                      className={field}
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={row.delta ?? ""}
+                      placeholder="örn. 40"
+                      onChange={(e) => onPatch({ delta: e.target.value === "" ? undefined : Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
+                    />
+                  </label>
+                );
+              case "playlist":
+                return (
+                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                    Çalma listesi
+                    <input
+                      className={field}
+                      value={row.text || ""}
+                      placeholder="Boş = AxthrowA Yayın (yoksa oluşturulur)"
+                      maxLength={100}
+                      onChange={(e) => onPatch({ text: e.target.value })}
+                    />
+                  </label>
+                );
               case "db":
                 return (
                   <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">

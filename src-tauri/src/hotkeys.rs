@@ -76,6 +76,9 @@ pub(crate) fn eylem_parametreleri(b: &HotkeyBindingIn) -> serde_json::Value {
     "filter": b.filter,
     "transition": b.transition,
     "text": b.text,
+    // Müzik eylemleri ayrı alan açmadan satırdaki sayı ve metin alanını kullanır
+    "percent": b.delta,
+    "playlist": b.text,
   })
 }
 

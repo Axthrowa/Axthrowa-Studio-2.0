@@ -37,6 +37,11 @@ describe("kısayol satırından eylem parametreleri", () => {
       source: "Kamera",
       delta: -3,
       id: "h1",
+      filter: "",
+      transition: "",
+      text: "",
+      percent: -3,
+      playlist: "",
     });
   });
   it("eksik zorunlu parametreyi adlandırır; isteğe bağlı sahne boş kalabilir", () => {
@@ -48,5 +53,9 @@ describe("kısayol satırından eylem parametreleri", () => {
     expect(missingActionParam(kaynak, { source: "Kamera" })).toBeNull();
     expect(missingActionParam(spec([{ name: "delta", kind: "db" }]), { delta: 0 })).toBe("dB farkı");
     expect(missingActionParam(spec([{ name: "id", kind: "destination" }]), { target: " " })).toBe("hedef");
+    expect(missingActionParam(spec([{ name: "playlist", kind: "playlist" }]), {})).toBeNull();
+    expect(missingActionParam(spec([{ name: "percent", kind: "percent" }]), { delta: 0 })).toBeNull();
+    expect(missingActionParam(spec([{ name: "percent", kind: "percent" }]), {})).toBe("yüzde (0–100)");
+    expect(actionParams({ filter: "Renk", text: "Gece", delta: 40 })).toMatchObject({ filter: "Renk", percent: 40, playlist: "Gece" });
   });
 });

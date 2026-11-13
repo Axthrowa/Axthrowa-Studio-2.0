@@ -38,6 +38,15 @@ pub fn ses_yuzdesi(action: &str) -> Option<u8> {
   if n > 100 { None } else { Some(n) }
 }
 
+/// Tekrar kipi döngüsü: kapalı → liste → şarkı → kapalı (Spotify adları).
+pub fn sonraki_tekrar(simdiki: &str) -> &'static str {
+  match simdiki {
+    "off" => "context",
+    "context" => "track",
+    _ => "off",
+  }
+}
+
 /// Süresi geçmiş denemeleri atar, en fazla `MAX_PENDING` tutar.
 fn prune_pending(mut list: Vec<PendingAuth>) -> Vec<PendingAuth> {
   let now = now_ms();
@@ -452,6 +461,11 @@ impl MusicState {
 
   pub fn set_note(&self, note: Option<String>) {
     *self.note.write() = note;
+  }
+
+  /// Oynatıcı eylemleri için en az bir müzik kaynağı bağlı mı
+  pub fn kaynak_bagli(&self) -> bool {
+    self.spotify_connected() || !self.ytmd.read().token.is_empty()
   }
 
   pub fn spotify_connected(&self) -> bool {
@@ -876,8 +890,10 @@ impl MusicState {
     }))
   }
 
-  /// Şu an Spotify'da çalan parçayı beğenir (`like`) ya da "AxthrowA Yayın" listesine ekler (`playlistAdd`).
-  pub async fn spotify_kitaplik(&self, eylem: &str) -> Result<String> {
+  /// Şu an Spotify'da çalan parçayı beğenir (`like`) ya da adı verilen (yoksa "AxthrowA Yayın") gizli listeye ekler
+  /// (`playlistAdd`); liste ilk 50'de yoksa oluşturulur.
+  pub async fn spotify_kitaplik(&self, eylem: &str, liste: Option<&str>) -> Result<String> {
+    let liste_adi = liste.map(str::trim).filter(|s| !s.is_empty()).unwrap_or(YAYIN_LISTESI);
     let np = self.now_playing().filter(|n| n.source == SOURCE_SPOTIFY).ok_or_else(|| anyhow!("Spotify'da çalan bir şarkı yok"))?;
     let id = spotify_parca_kimligi(&np.url).ok_or_else(|| anyhow!("Bu parça Spotify kitaplığına eklenemez (bölüm ya da yerel dosya)"))?.to_string();
     let token = self.spotify_access_token().await?;
@@ -897,7 +913,7 @@ impl MusicState {
       return Err(izin(r.status().as_u16()));
     }
     let listeler: Value = r.json().await?;
-    let mevcut = listeler["items"].as_array().into_iter().flatten().find(|p| p["name"].as_str() == Some(YAYIN_LISTESI)).and_then(|p| p["id"].as_str()).map(str::to_string);
+    let mevcut = listeler["items"].as_array().into_iter().flatten().find(|p| p["name"].as_str() == Some(liste_adi)).and_then(|p| p["id"].as_str()).map(str::to_string);
     let liste = match mevcut {
       Some(l) => l,
       None => {
@@ -907,7 +923,7 @@ impl MusicState {
           .client
           .post(format!("https://api.spotify.com/v1/users/{kullanici}/playlists"))
           .bearer_auth(&token)
-          .json(&serde_json::json!({ "name": YAYIN_LISTESI, "public": false, "description": "Yayında beğenilen şarkılar (AxthrowA Studio)" }))
+          .json(&serde_json::json!({ "name": liste_adi, "public": false, "description": "Yayında beğenilen şarkılar (AxthrowA Studio)" }))
           .send()
           .await?;
         if !r.status().is_success() {
@@ -924,7 +940,7 @@ impl MusicState {
       .json(&serde_json::json!({ "uris": [format!("spotify:track:{id}")] }))
       .send()
       .await?;
-    if r.status().is_success() { Ok(format!("{} → {YAYIN_LISTESI}", np.title)) } else { Err(izin(r.status().as_u16())) }
+    if r.status().is_success() { Ok(format!("{} → {liste_adi}", np.title)) } else { Err(izin(r.status().as_u16())) }
   }
 
   async fn spotify_command(&self, action: &str) -> Result<()> {
@@ -938,6 +954,37 @@ impl MusicState {
       let res = self
         .client
         .put(format!("https://api.spotify.com/v1/me/player/volume?volume_percent={n}"))
+        .bearer_auth(&token)
+        .header(reqwest::header::CONTENT_LENGTH, "0")
+        .body("")
+        .send()
+        .await?;
+      return match res.status().as_u16() {
+        200 | 202 | 204 => Ok(()),
+        403 => Err(anyhow!("Spotify kontrolü reddetti — oynatma kontrolü Spotify Premium gerektirir")),
+        404 => Err(anyhow!("Aktif Spotify cihazı yok — Spotify'da bir şey çalmaya başlatın")),
+        code => Err(anyhow!("Spotify komutu başarısız ({code})")),
+      };
+    }
+
+    // Karıştır / tekrar: önce oynatıcı durumu okunur, sonra karşıtı (ya da döngüdeki sonraki) yazılır
+    if matches!(action, "shuffle" | "repeat") {
+      let r = self.client.get("https://api.spotify.com/v1/me/player").bearer_auth(&token).send().await?;
+      if r.status().as_u16() == 204 {
+        return Err(anyhow!("Aktif Spotify cihazı yok — Spotify'da bir şey çalmaya başlatın"));
+      }
+      if !r.status().is_success() {
+        return Err(anyhow!("Spotify oynatıcı durumu okunamadı ({})", r.status().as_u16()));
+      }
+      let d: Value = r.json().await?;
+      let yol = if action == "shuffle" {
+        format!("shuffle?state={}", !d["shuffle_state"].as_bool().unwrap_or(false))
+      } else {
+        format!("repeat?state={}", sonraki_tekrar(d["repeat_state"].as_str().unwrap_or("off")))
+      };
+      let res = self
+        .client
+        .put(format!("https://api.spotify.com/v1/me/player/{yol}"))
         .bearer_auth(&token)
         .header(reqwest::header::CONTENT_LENGTH, "0")
         .body("")
@@ -1217,8 +1264,17 @@ impl MusicState {
     }
 
     // muteToggle: durumdan oku → mute/unmute (YTMD ayrı komutlar sunuyor).
-    let ses = ses_yuzdesi(action);
-    let command = if ses.is_some() {
+    // Tekrar: YTMD 0 kapalı, 1 liste, 2 şarkı; durumdan okunup sonrakine geçilir
+    let ses = match action {
+      "repeat" => Some(
+        ((self.ytmd_durum(&host, &port, &token).await.and_then(|v| v.pointer("/player/queue/repeatMode").and_then(Value::as_i64)).unwrap_or(-1) + 1)
+          .rem_euclid(3)) as u8,
+      ),
+      _ => ses_yuzdesi(action),
+    };
+    let command = if action == "repeat" {
+      "repeatMode".to_string()
+    } else if ses.is_some() {
       "setVolume".to_string()
     } else {
       match action {
@@ -1227,6 +1283,7 @@ impl MusicState {
       "playPause" => "playPause".to_string(),
       "next" => "next".to_string(),
       "previous" => "previous".to_string(),
+      "shuffle" => "shuffle".to_string(),
       "mute" => "mute".to_string(),
       "unmute" => "unmute".to_string(),
       "muteToggle" | "toggleMute" => {
@@ -1266,37 +1323,29 @@ impl MusicState {
     Err(anyhow!("YTMD yetkilendirmesi reddedildi — yeniden bağlanın"))
   }
 
-  async fn ytmd_is_muted(&self, host: &str, port: &str, token: &str) -> Result<bool> {
+  /// YTMD oynatıcı durumu (okunamazsa None)
+  async fn ytmd_durum(&self, host: &str, port: &str, token: &str) -> Option<Value> {
     let url = format!("http://{host}:{port}/api/v1/state");
     for header in [token.to_string(), format!("Bearer {token}")] {
-      let res = self
-        .client
-        .get(&url)
-        .header(reqwest::header::AUTHORIZATION, header)
-        .send()
-        .await;
-      match res {
-        Ok(r) if r.status().is_success() => {
-          let v: Value = r.json().await.unwrap_or(json!({}));
-          let muted = v
-            .pointer("/player/muted")
-            .and_then(|x| x.as_bool())
-            .or_else(|| v.get("muted").and_then(|x| x.as_bool()))
-            .unwrap_or(false);
-          return Ok(muted);
-        }
+      match self.client.get(&url).header(reqwest::header::AUTHORIZATION, header).send().await {
+        Ok(r) if r.status().is_success() => return r.json().await.ok(),
         Ok(r) if r.status().as_u16() == 401 => continue,
-        Ok(_) | Err(_) => break,
+        _ => break,
       }
     }
-    Ok(false)
+    None
+  }
+
+  async fn ytmd_is_muted(&self, host: &str, port: &str, token: &str) -> Result<bool> {
+    let v = self.ytmd_durum(host, port, token).await.unwrap_or_default();
+    Ok(v.pointer("/player/muted").and_then(Value::as_bool).or_else(|| v.get("muted").and_then(Value::as_bool)).unwrap_or(false))
   }
 
   /// Kaynak verilmezse aktif kaynağı dener; başarısızsa diğer bağlı kaynağa düşer.
   /// Böylece panelde Spotify seçili olsa bile YTMD bağlıysa komut oraya da gider.
   pub async fn command(&self, action: &str, source: Option<&str>) -> Result<()> {
     if matches!(action, "like" | "playlistAdd") {
-      return self.spotify_kitaplik(action).await.map(|_| ());
+      return self.spotify_kitaplik(action, None).await.map(|_| ());
     }
     let preferred = source
       .map(|s| s.to_string())
@@ -1393,6 +1442,9 @@ mod tests {
 
   #[test]
   fn volume_action_is_0_to_100() {
+    assert_eq!(sonraki_tekrar("off"), "context");
+    assert_eq!(sonraki_tekrar("context"), "track");
+    assert_eq!(sonraki_tekrar("track"), "off");
     assert_eq!(ses_yuzdesi("volume:65"), Some(65));
     assert_eq!(ses_yuzdesi("volume:0"), Some(0));
     assert_eq!(ses_yuzdesi("volume:100"), Some(100));

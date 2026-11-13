@@ -140,6 +140,7 @@ async fn hazir_mi(state: &AppState, r: Requires) -> (bool, Option<&'static str>)
   match r {
     Requires::Obs if !state.obs.is_connected() => (false, Some("OBS bağlı değil")),
     Requires::Multistream if !state.multistream.session_active() => (false, Some("Çoklu yayın oturumu kapalı")),
+    Requires::Music if !state.music.kaynak_bagli() => (false, Some("Müzik kaynağı bağlı değil (Spotify ya da YTMD)")),
     // AxBoT her çağrıda yoklanmaz (liste ucu hızlı kalsın); yürütmede ulaşılamazsa hata döner
     _ => (true, None),
   }
@@ -272,6 +273,10 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
       Ok(json!({ "stopped": true }))
     }
     Action::Alert { action } => uyari_denetimi(action, actor).await,
+    Action::Muzik { komut, liste } if komut == "playlistAdd" => {
+      state.music.spotify_kitaplik(komut, liste.as_deref()).await.map(|ileti| json!({ "message": ileti })).map_err(|e| e.to_string())
+    }
+    Action::Muzik { komut, .. } => state.music.command(komut, None).await.map(|_| json!({ "command": komut })).map_err(|e| e.to_string()),
     // OBS kaynak görünürlüğü ve ses seviyesi kısayollarla aynı yürütücüden geçer (tek davranış, tek test)
     Action::SourceVisibility { scene, source, mode } => {
       let b = HotkeyBindingIn {

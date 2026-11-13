@@ -29,6 +29,10 @@ pub enum ParamKind {
   Transition,
   /// Serbest metin (ör. altyazı satırı)
   Text,
+  /// Yüzde (0…100), ör. müzik sesi
+  Percent,
+  /// İsteğe bağlı çalma listesi adı (boş = "AxthrowA Yayın")
+  Playlist,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -45,6 +49,8 @@ pub enum Requires {
   Obs,
   Multistream,
   AxBot,
+  /// Spotify ya da YouTube Music Desktop bağlı olmalı
+  Music,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -116,6 +122,14 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "alert.mute", label: "Uyarı sesini kapat", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::AxBot, params: &[] },
   ActionSpec { id: "alert.unmute", label: "Uyarı sesini aç", category: "alerts", perm: "alerts.control", confirm: false, requires: Requires::AxBot, params: &[] },
   ActionSpec { id: "alert.clear", label: "Bekleyen uyarıları temizle", category: "alerts", perm: "alerts.control", confirm: true, requires: Requires::AxBot, params: &[] },
+  ActionSpec { id: "music.playPause", label: "Müziği oynat / duraklat", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[] },
+  ActionSpec { id: "music.next", label: "Sonraki şarkı", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[] },
+  ActionSpec { id: "music.previous", label: "Önceki şarkı", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[] },
+  ActionSpec { id: "music.volume", label: "Müzik sesini ayarla", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[ParamSpec { name: "percent", kind: ParamKind::Percent }] },
+  ActionSpec { id: "music.shuffle", label: "Karıştırmayı aç / kapat", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[] },
+  ActionSpec { id: "music.repeat", label: "Tekrar kipini değiştir (kapalı → liste → şarkı)", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[] },
+  ActionSpec { id: "music.like", label: "Çalan şarkıyı beğen (Spotify)", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[] },
+  ActionSpec { id: "music.playlistAdd", label: "Çalan şarkıyı listeye ekle (Spotify)", category: "music", perm: "music.control", confirm: false, requires: Requires::Music, params: &[ParamSpec { name: "playlist", kind: ParamKind::Playlist }] },
 ];
 
 pub fn find(id: &str) -> Option<&'static ActionSpec> {
@@ -196,6 +210,8 @@ pub enum Action {
   Alert { action: &'static str },
   /// AxBoT sesli komut dinleyicisinin bas-konuş tuşu (panel gizli dinleyici çerçevesine iletir)
   SesliBasKonus { basili: bool },
+  /// Müzik oynatıcı komutu (`music::MusicHost::command` sözleşmesi); `liste` yalnız playlistAdd'de
+  Muzik { komut: String, liste: Option<String> },
 }
 
 const AD_SINIRI: usize = 256;
@@ -224,6 +240,18 @@ fn istege_bagli(params: &Value, ad: &str) -> Result<Option<String>, String> {
 
 /// Ses seviyesi farkı: sonlu, sıfırdan farklı, en çok ±30 dB (tek basışta kulak zedeleyecek sıçrama olmasın).
 /// Sayı ya da sayı metni kabul edilir (deste düğmeleri parametreleri metin olarak saklar; ondalık virgül olabilir).
+/// Yüzde: 0…100 tamsayı; sayı ya da sayı metni.
+fn yuzde(params: &Value) -> Result<u8, String> {
+  let v = params
+    .get("percent")
+    .and_then(|v| v.as_f64().or_else(|| v.as_str().and_then(|s| s.trim().parse::<f64>().ok())))
+    .ok_or("'percent' gerekli (0…100)")?;
+  if !v.is_finite() || !(0.0..=100.0).contains(&v) {
+    return Err("'percent' 0…100 arasında olmalı".into());
+  }
+  Ok(v.round() as u8)
+}
+
 fn db_farki(params: &Value) -> Result<f64, String> {
   let v = params
     .get("delta")
@@ -301,6 +329,11 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
     "alert.mute" => Action::Alert { action: "mute" },
     "alert.unmute" => Action::Alert { action: "unmute" },
     "alert.clear" => Action::Alert { action: "clear" },
+    "music.playPause" | "music.next" | "music.previous" | "music.shuffle" | "music.repeat" | "music.like" => {
+      Action::Muzik { komut: spec.id.trim_start_matches("music.").into(), liste: None }
+    }
+    "music.volume" => Action::Muzik { komut: format!("volume:{}", yuzde(params)?), liste: None },
+    "music.playlistAdd" => Action::Muzik { komut: "playlistAdd".into(), liste: istege_bagli(params, "playlist")? },
     other => return Err(format!("Eylem tanımlı ama yürütücüsü yok: {other}")),
   })
 }
@@ -324,7 +357,7 @@ pub fn audit_detail(spec: &ActionSpec, params: &Value) -> Value {
       Some(Value::String(v)) => {
         m.insert(p.name.into(), Value::String(v.chars().take(80).collect()));
       }
-      Some(Value::Number(n)) if p.kind == ParamKind::Db => {
+      Some(Value::Number(n)) if matches!(p.kind, ParamKind::Db | ParamKind::Percent) => {
         m.insert(p.name.into(), Value::Number(n.clone()));
       }
       _ => {}
@@ -343,7 +376,7 @@ mod tests {
     let mut gorulen = std::collections::HashSet::new();
     for a in ACTIONS {
       assert!(gorulen.insert(a.id), "yinelenen kimlik: {}", a.id);
-      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk", "transition": "Kes", "text": "Merhaba"});
+      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk", "transition": "Kes", "text": "Merhaba", "percent": 40});
       assert!(parse(a.id, &ornek).is_ok(), "yürütücüsüz eylem: {}", a.id);
       assert!(!a.perm.is_empty() && a.perm.contains('.'), "izin adı: {}", a.id);
     }
@@ -445,6 +478,23 @@ mod tests {
     assert_eq!(parse("studio.transition", &json!({})).unwrap(), Action::StudioTransition { transition: None });
     assert!(parse("studio.quickTransition", &json!({})).is_err());
     assert!(BASILI_EYLEMLER.iter().all(|id| find(id).is_some()));
+  }
+
+  #[test]
+  fn muzik_eylemleri() {
+    assert_eq!(parse("music.next", &json!({})).unwrap(), Action::Muzik { komut: "next".into(), liste: None });
+    assert_eq!(parse("music.volume", &json!({"percent": "35"})).unwrap(), Action::Muzik { komut: "volume:35".into(), liste: None });
+    assert_eq!(parse("music.volume", &json!({"percent": 0})).unwrap(), Action::Muzik { komut: "volume:0".into(), liste: None });
+    for kotu in [json!(101), json!(-1), json!("çok"), json!(null)] {
+      assert!(parse("music.volume", &json!({"percent": kotu})).is_err(), "{kotu}");
+    }
+    assert_eq!(parse("music.playlistAdd", &json!({"playlist": "  "})).unwrap(), Action::Muzik { komut: "playlistAdd".into(), liste: None });
+    assert_eq!(
+      parse("music.playlistAdd", &json!({"playlist": " Gece "})).unwrap(),
+      Action::Muzik { komut: "playlistAdd".into(), liste: Some("Gece".into()) }
+    );
+    assert!(parse("music.playlistAdd", &json!({"playlist": "a\u{0007}b"})).is_err());
+    assert!(ACTIONS.iter().filter(|a| a.category == "music").all(|a| a.requires == Requires::Music && !a.confirm));
   }
 
   #[test]

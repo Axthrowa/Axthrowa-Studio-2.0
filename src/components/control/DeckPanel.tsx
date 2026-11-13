@@ -298,7 +298,7 @@ function DugmeEkle({ eylemler, onEkle, ilk, onVazgec }: { eylemler: ActionInfo[]
   }, [secili?.id, secili?.params.length]);
 
   // İsteğe bağlı sahne boş kalabilir (boş = yayındaki sahne)
-  const eksik = !!secili && secili.params.some((p) => p.kind !== "optionalScene" && !(params[p.name] || "").trim());
+  const eksik = !!secili && secili.params.some((p) => p.kind !== "optionalScene" && p.kind !== "playlist" && !(params[p.name] || "").trim());
 
   return (
     <div className="space-y-1.5 rounded-lg border border-white/10 p-2">
@@ -336,7 +336,7 @@ function DugmeEkle({ eylemler, onEkle, ilk, onVazgec }: { eylemler: ActionInfo[]
             className="studio-input w-full !py-1 text-xs"
             aria-label={p.name}
             placeholder={p.kind === "optionalScene" ? "Sahne (boş = yayındaki)" : p.kind === "db" ? "dB farkı (örn. -3)" : PARAM_LABEL[p.kind]}
-            inputMode={p.kind === "db" ? "decimal" : undefined}
+            inputMode={p.kind === "db" ? "decimal" : p.kind === "percent" ? "numeric" : undefined}
             list={`deck-oneri-${p.kind}`}
             maxLength={256}
             value={params[p.name] || ""}

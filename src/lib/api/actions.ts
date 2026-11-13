@@ -6,7 +6,7 @@ import { API_BASE } from "../api";
 import { olay } from "../analitik";
 
 export type ActionParamKind =
-  "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "filter" | "transition" | "text";
+  "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "filter" | "transition" | "text" | "percent" | "playlist";
 
 export type ActionInfo = {
   id: string;
@@ -14,7 +14,7 @@ export type ActionInfo = {
   category: string;
   perm: string;
   confirm: boolean;
-  requires: "obs" | "multistream" | "axBot";
+  requires: "obs" | "multistream" | "axBot" | "music";
   params: { name: string; kind: ActionParamKind }[];
   available: boolean;
   reason: string | null;
@@ -73,27 +73,38 @@ export const CATEGORY_LABEL: Record<string, string> = {
   audio: "Ses",
   engine: "Yayın motoru",
   voice: "Sesli komut",
+  music: "Müzik",
 };
 
 /** Kayıt defteri eyleminin parametreleri — kısayol satırındaki alanlardan (Rust `hotkeys::eylem_parametreleri`). */
-export function actionParams(row: { scene?: string; input?: string; source?: string; delta?: number; target?: string }) {
+export function actionParams(row: { scene?: string; input?: string; source?: string; delta?: number; target?: string; filter?: string; transition?: string; text?: string }) {
   return {
     scene: row.scene || "",
     input: row.input || "",
     source: row.source || "",
     delta: Number(row.delta) || 0,
     id: row.target || "",
+    filter: row.filter || "",
+    transition: row.transition || "",
+    text: row.text || "",
+    percent: Number(row.delta) || 0,
+    playlist: row.text || "",
   };
 }
 
 /** Satırda doldurulmamış zorunlu parametre (isteğe bağlı sahne hariç); yoksa null. */
 export function missingActionParam(
   spec: Pick<ActionInfo, "params">,
-  row: { scene?: string; input?: string; source?: string; delta?: number; target?: string }
+  row: { scene?: string; input?: string; source?: string; delta?: number; target?: string; filter?: string; transition?: string; text?: string }
 ): string | null {
   const p = actionParams(row);
   for (const x of spec.params) {
-    if (x.kind === "optionalScene") continue;
+    if (x.kind === "optionalScene" || x.kind === "playlist") continue;
+    // Yüzde 0 (sessiz) geçerli ama boş bırakılan alan sessize almasın
+    if (x.kind === "percent") {
+      if (row.delta == null || !Number.isFinite(Number(row.delta))) return PARAM_LABEL.percent;
+      continue;
+    }
     if (x.kind === "db" ? !p.delta : !String(p[x.name as keyof typeof p] ?? "").trim()) return PARAM_LABEL[x.kind];
   }
   return null;
@@ -109,6 +120,8 @@ export const PARAM_LABEL: Record<ActionParamKind, string> = {
   filter: "filtre adı",
   transition: "geçiş adı",
   text: "metin",
+  percent: "yüzde (0–100)",
+  playlist: "liste adı (boş = AxthrowA Yayın)",
 };
 
 /** Destek paketi (§93): sırları ayıklanmış JSON dosyası uygulama veri klasörüne yazılır; hiçbir yere gönderilmez. */

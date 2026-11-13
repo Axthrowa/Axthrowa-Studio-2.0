@@ -57,7 +57,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - R10 tamam: deste/kısayol müzik eylemleri (oynat/duraklat, sonraki, önceki, ses %, karıştır, tekrar döngüsü, beğen, adı seçilen listeye ekle; liste yoksa gizli olarak oluşturulur). Kaynak bağlı değilse 409. Gerçek Spotify/YTMD ile denenmedi.
 - R2 tamam: Windows medya oturumu (SMTC) saniyede bir okunur (Apple Music, Tidal, tarayıcı, VLC); Spotify/YTMD bağlıysa öncelik onlarda, onların SMTC oturumu atlanır. Oynat/duraklat/sonraki/önceki ekrandaki oynatıcıya gider. Sanal ortamda gerçek Brave oturumu 2 sn içinde panelde görüldü; kapak resmi yok, Apple Music ile denenmedi.
 - R3 tamam: Müzik › Müzik kaynağı: otomatik (en son çalan) ya da sıra (Spotify, YouTube Music, Windows medya); Windows medyada yok sayılan uygulamalar (adında geçen parça, en çok 20). Sanal ortamda Brave yok sayılınca tarayıcıdaki YouTube 2,5 sn içinde overlay'den indi.
-- Açık: T7.
+- T7 tamam (Studio `7061c08`, StreamAxT `5ce7c90`): ilk açılış kütüphane kopyası arka planda (gizli adla kopyalanıp adlandırılır, yarım dosya sunulmaz). Ölçüm başsız Chrome 1920x1080'de (gerçek OBS yok): 18 bot widget'ı, Studio master/uyarı/widget ve Resonance overlay'i varsayılan ayarla p95 5,7 ms. Sayfa içi sahte yükte en pahalı üç widget sohbet kutusu, ekranda emote ve etkinlik akışı; ayarda sınırsız sayı yazılabildiği için 500/400/300'de DOM 6500/1150/1230'a çıkıyor, kare 16,7 ms'yi aşıyordu. Tavan: sohbet 100, emote 60, akış 50 (DOM 1600/200/230; saniyede 16 mesajda p95 9,5 ms). Not: master overlay her widget için ayrı overlay-sync soketi açıyor (sunucu yokken toplam ~3 deneme/sn); tek ortak soket ayrı iş.
+- Faz 3 tamam.
 
 ---
 

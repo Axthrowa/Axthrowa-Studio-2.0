@@ -46,7 +46,7 @@ async fn start() -> Harness {
   let port = free_port();
   let root = std::env::temp_dir().join(format!("yayin-itest-{port}"));
   let _ = std::fs::remove_dir_all(&root);
-  std::fs::create_dir_all(root.join("assets").join("videos")).unwrap();
+  std::fs::create_dir_all(videolar(&root)).unwrap();
 
   let state = make_state(root.clone(), false, port).await;
   tokio::spawn(async move {
@@ -100,8 +100,13 @@ async fn restart(h: Harness) -> Harness {
 }
 
 /// Oynatılabilir olması gerekmez; testler yalnız bayt/başlık semantiğine bakar.
+/// Kütüphane sürüm klasöründe değil veri klasöründe (`<veri>/assets`, bkz. `kutuphane.rs`)
+fn videolar(root: &Path) -> PathBuf {
+  root.join("app-data").join("assets").join("videos")
+}
+
 fn write_video(root: &Path, name: &str, len: usize) -> PathBuf {
-  let path = root.join("assets").join("videos").join(name);
+  let path = videolar(root).join(name);
   let data: Vec<u8> = (0..len).map(|i| (i % 251) as u8).collect();
   std::fs::write(&path, data).unwrap();
   path
@@ -448,7 +453,7 @@ async fn library_listings_are_arrays_and_reflect_disk() {
   write_video(&h.root, "a.mp4", 16);
   write_video(&h.root, "b.webm", 16);
   // Videolar arasına video olmayan bir dosya bırak — listeye sızmamalı
-  std::fs::write(h.root.join("assets").join("videos").join("notlar.txt"), b"x").unwrap();
+  std::fs::write(videolar(&h.root).join("notlar.txt"), b"x").unwrap();
 
   let list: Vec<String> = h
     .client

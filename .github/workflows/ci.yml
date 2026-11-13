@@ -41,3 +41,5 @@ jobs:
           cargo test --lib --manifest-path src-tauri/Cargo.toml
       - name: Yayın provası (sahte OBS ile başlat, uyarı, mola, bitir)
         run: cargo test --manifest-path src-tauri/Cargo.toml --test yayin_provasi
+      - name: Sunucu uçtan uca (gerçek HTTP sunucusu, yalnız yerel sahte hizmetler)
+        run: cargo test --manifest-path src-tauri/Cargo.toml --test server_api

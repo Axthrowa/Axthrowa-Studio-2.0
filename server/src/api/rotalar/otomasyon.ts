@@ -20,4 +20,9 @@ router.post('/otomasyon/dene', async (req: Request, res: Response) => {
   res.json(r);
 });
 
+// B7: kuralı örnek olayla gerçekten çalıştırır (panel onay sorar)
+router.post('/otomasyon/calistir', async (req: Request, res: Response) => {
+  res.json(await otomasyon.calistir(req.body?.kural));
+});
+
 export default router;

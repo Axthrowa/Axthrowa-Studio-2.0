@@ -8,7 +8,7 @@ import { eventBus, type ChatMessagePayload } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { muzikHost } from '../muzik/index.js';
-import { EN_COK_KURAL, eylemAciklamasi, kosulEngeli, kuralDuzelt, metniDoldur, PatlamaSayaci, tetikUyar, type Eylem, type Kural, type Olay } from './kural.js';
+import { EN_COK_KURAL, EN_COK_SIRA, eylemAciklamasi, kosulEngeli, kuralDuzelt, metniDoldur, ONCEKI_SAHNE, PatlamaSayaci, tetikUyar, type Eylem, type Kural, type Olay } from './kural.js';
 import { shoutoutGonder } from './shoutout.js';
 
 const ANAHTAR = 'otomasyon_kurallari';
@@ -34,6 +34,8 @@ export class Otomasyon {
   private patlamalar = new Map<string, PatlamaSayaci>();
   private gunluk: GunlukSatiri[] = [];
   private bagli = false;
+  /** B7: sıralı kuralların bekleyen işleri */
+  private siralar = new Map<string, { bekleyen: number; zincir: Promise<void> }>();
 
   kurallar(): Kural[] {
     const ham = settingsCache.get(ANAHTAR, '[]');
@@ -80,7 +82,7 @@ export class Otomasyon {
     const r = kuralDuzelt(ham);
     if (!r.ok) return r;
     const k = r.kural;
-    const olay: Olay = { kullanici: 'ornek_izleyici', platform: 'kick', miktar: 100, mesaj: k.tetik.tur === 'komut' ? `!${k.tetik.komut} merhaba` : 'merhaba', odul: k.tetik.tur === 'odul' ? k.tetik.odul : '', ...ornek, tur: k.tetik.tur };
+    const olay = ornekOlay(k, ornek);
     return {
       ok: true,
       uyar: tetikUyar(k.tetik, olay),
@@ -103,8 +105,46 @@ export class Otomasyon {
     return { puan, canli };
   }
 
+  /**
+   * B7 "Çalıştır": kuralı örnek olayla GERÇEKTEN çalıştırır (koşul ve bekleme atlanır). Kaydedilmemiş kural da olur.
+   * Sohbet, OBS, Discord eylemleri gerçekten yapılır; panel bunu onayla sorar.
+   */
+  async calistir(ham: unknown, ornek: Partial<Olay> = {}): Promise<{ ok: boolean; mesaj: string }> {
+    const r = kuralDuzelt(ham);
+    if (!r.ok) return { ok: false, mesaj: r.hata };
+    return this.eylemleriCalistir(r.kural, ornekOlay(r.kural, ornek));
+  }
+
+  /** Kuralın eylemleri (sıralı ya da rastgele biri); sonuç günlüğe yazılır */
+  private async eylemleriCalistir(k: Kural, o: Olay): Promise<{ ok: boolean; mesaj: string }> {
+    const baglam: Baglam = {};
+    const eylemler = k.kip === 'rastgele' ? [k.eylemler[Math.floor(Math.random() * k.eylemler.length)]] : k.eylemler;
+    try {
+      for (const e of eylemler) await this.eylem(e, o, baglam);
+      const mesaj = k.kip === 'rastgele' ? `Rastgele seçilen: ${eylemAciklamasi(eylemler[0], o)}` : `${eylemler.length} eylem çalıştı`;
+      this.yaz(k.ad, true, mesaj);
+      return { ok: true, mesaj };
+    } catch (e: any) {
+      const mesaj = String(e?.message || e);
+      this.yaz(k.ad, false, mesaj);
+      return { ok: false, mesaj };
+    }
+  }
+
+  /** Studio'daki o anki program sahnesi; okunamazsa boş */
+  private async simdikiSahne(): Promise<string> {
+    const adres = muzikHost.hariciAdres();
+    if (!adres) return '';
+    try {
+      const r = await axios.get(`${adres}/api/obs/kumanda`, { timeout: 5000 });
+      return String(r.data?.currentScene || '');
+    } catch {
+      return '';
+    }
+  }
+
   /** Tek eylem. Hata fırlatabilir: kuralın kalan adımları o zaman çalışmaz. */
-  private async eylem(e: Eylem, o: Olay): Promise<void> {
+  private async eylem(e: Eylem, o: Olay, baglam: Baglam = {}): Promise<void> {
     const platform = o.platform || 'all';
     switch (e.tur) {
       case 'sohbet':
@@ -123,8 +163,15 @@ export class Otomasyon {
       case 'shoutout':
         await shoutoutGonder(metniDoldur(e.kanal, o).replace(/^@/, ''), o.platform || ilkKanal()?.platform || 'kick');
         return;
-      case 'obs_sahne':
+      case 'obs_sahne': {
+        if (e.sahne.trim() === ONCEKI_SAHNE) {
+          if (!baglam.onceki) throw new Error('Önceki sahne bilinmiyor: kuralda önce bir sahneye geçilmeli (Studio sahneyi okuyamadı)');
+          return this.yyaEylemi('scene.switch', { scene: baglam.onceki });
+        }
+        // Kuralın ilk sahne değişiminden önceki sahne hatırlanır: "10 sn sonra geri dön"
+        if (baglam.onceki === undefined) baglam.onceki = await this.simdikiSahne();
         return this.yyaEylemi('scene.switch', { scene: metniDoldur(e.sahne, o) });
+      }
       case 'replay':
         return this.yyaEylemi('replay.save', {});
       case 'klip': {
@@ -170,6 +217,7 @@ export class Otomasyon {
       this.patlamalar.set(k.id, s);
       if (!s.ekle(simdi, k.tetik.mesaj, k.tetik.saniye)) return;
     }
+    if (k.sira) return this.sirayaKoy(k, o);
     if (simdi - (this.sonCalisma.get(k.id) ?? -Infinity) < k.beklemeSn * 1000) return;
     // Bekleme önce yazılır: koşul okunurken gelen ikinci olay kuralı iki kez çalıştırmasın
     const onceki = this.sonCalisma.get(k.id);
@@ -182,11 +230,41 @@ export class Otomasyon {
         else this.sonCalisma.set(k.id, onceki);
         return;
       }
-      for (const e of k.eylemler) await this.eylem(e, o);
-      this.yaz(k.ad, true, `${k.eylemler.length} eylem çalıştı`);
     } catch (e: any) {
       this.yaz(k.ad, false, String(e?.message || e));
+      return;
     }
+    await this.eylemleriCalistir(k, o);
+  }
+
+  /**
+   * B7 kural sırası: olaylar atılmaz, birbirinin üstüne binmez. Her iş öncekinin bitmesini ve
+   * bekleme süresini bekler; sırada en çok EN_COK_SIRA iş durur, fazlası atılır.
+   */
+  private sirayaKoy(k: Kural, o: Olay): Promise<void> {
+    const s = this.siralar.get(k.id) ?? { bekleyen: 0, zincir: Promise.resolve() };
+    this.siralar.set(k.id, s);
+    if (s.bekleyen >= EN_COK_SIRA) {
+      this.yaz(k.ad, false, `Sıra dolu (${EN_COK_SIRA}); olay atıldı`);
+      return Promise.resolve();
+    }
+    s.bekleyen++;
+    const is = s.zincir.then(async () => {
+      try {
+        const engel = kosulEngeli(k.kosullar, o, await this.durum(k, o));
+        if (engel) return;
+        const kalan = (this.sonCalisma.get(k.id) ?? -Infinity) + k.beklemeSn * 1000 - Date.now();
+        if (kalan > 0) await new Promise((r) => setTimeout(r, kalan));
+        this.sonCalisma.set(k.id, Date.now());
+        await this.eylemleriCalistir(k, o);
+      } catch (e: any) {
+        this.yaz(k.ad, false, String(e?.message || e));
+      } finally {
+        s.bekleyen--;
+      }
+    });
+    s.zincir = is;
+    return is;
   }
 
   /** Süzgeçlerden geçmiş sohbet mesajı (pipeline çağırır); botun kendi yazdığı sayılmaz */
@@ -217,6 +295,13 @@ export class Otomasyon {
       }
     }, 15_000).unref?.();
   }
+}
+
+type Baglam = { onceki?: string };
+
+/** "Dene" ve "Çalıştır" için tetiğe uygun örnek olay */
+function ornekOlay(k: Kural, ornek: Partial<Olay>): Olay {
+  return { kullanici: 'ornek_izleyici', platform: 'kick', miktar: 100, mesaj: k.tetik.tur === 'komut' ? `!${k.tetik.komut} merhaba` : 'merhaba', odul: k.tetik.tur === 'odul' ? k.tetik.odul : '', ...ornek, tur: k.tetik.tur };
 }
 
 export const otomasyon = new Otomasyon();

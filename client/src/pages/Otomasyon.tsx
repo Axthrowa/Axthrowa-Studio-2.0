@@ -3,7 +3,7 @@
  * "Dene" hiçbir eylemi çalıştırmaz, yalnız ne olacağını gösterir.
  */
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, FlaskConical, Plus, Trash2, Workflow, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, FlaskConical, Play, Plus, Trash2, Workflow, Zap } from 'lucide-react';
 import { Anahtar, BosDurum, Buton, Girdi, KaydedilmemisUyari, Kart, Secim, useToast } from '../ui/index.js';
 import { KICK_ODUL_LISTESI, KickOdulleri } from '../components/KickOdulleri.js';
 
@@ -13,6 +13,10 @@ interface Kural {
   ad: string;
   etkin: boolean;
   beklemeSn: number;
+  /** B7: sırayla ya da her seferinde rastgele bir eylem */
+  kip?: 'sirali' | 'rastgele';
+  /** B7: bekleme sırasında gelen olaylar sıraya girer */
+  sira?: boolean;
   tetik: Alanlar;
   kosullar: Alanlar[];
   eylemler: Alanlar[];
@@ -24,7 +28,8 @@ interface Gunluk {
   mesaj: string;
 }
 
-type AlanTanimi = { ad: string; etiket: string; sayi?: boolean; ipucu?: string };
+type AlanTanimi = { ad: string; etiket: string; sayi?: boolean; ipucu?: string; liste?: string };
+const SAHNE_ONERILERI = 'otomasyon-sahne-onerileri';
 type Tanim = { etiket: string; alanlar: AlanTanimi[]; varsayilan?: Record<string, any> };
 
 const TETIKLER: Record<string, Tanim> = {
@@ -57,7 +62,7 @@ const EYLEMLER: Record<string, Tanim> = {
   tts: { etiket: 'Seslendir', alanlar: [{ ad: 'metin', etiket: 'Metin' }] },
   pano_oynat: { etiket: 'Ses panosundan çal', alanlar: [] },
   shoutout: { etiket: 'Shoutout kartı göster', alanlar: [{ ad: 'kanal', etiket: 'Kanal', ipucu: '{kullanici}' }], varsayilan: { kanal: '{kullanici}' } },
-  obs_sahne: { etiket: 'OBS sahnesine geç', alanlar: [{ ad: 'sahne', etiket: 'Sahne adı' }] },
+  obs_sahne: { etiket: 'OBS sahnesine geç', alanlar: [{ ad: 'sahne', etiket: 'Sahne adı', ipucu: 'Sahne adı ya da {onceki_sahne}', liste: SAHNE_ONERILERI }] },
   replay: { etiket: 'OBS tekrar arabelleğini kaydet', alanlar: [] },
   klip: { etiket: 'Klip al', alanlar: [{ ad: 'saniye', etiket: 'Saniye', sayi: true }], varsayilan: { saniye: 30 } },
   discord: { etiket: "Discord'a yaz", alanlar: [{ ad: 'metin', etiket: 'Metin' }] },
@@ -99,7 +104,7 @@ function Blok({ tanimlar, deger, degistir, pano }: { tanimlar: Record<string, Ta
           type={a.sayi ? 'number' : 'text'}
           min={a.sayi ? 0 : undefined}
           placeholder={a.ipucu || a.etiket}
-          list={a.ad === 'odul' ? KICK_ODUL_LISTESI : undefined}
+          list={a.liste ?? (a.ad === 'odul' ? KICK_ODUL_LISTESI : undefined)}
           className={a.sayi ? 'w-28' : 'min-w-40 flex-1'}
           value={deger[a.ad] ?? ''}
           onChange={(e) => degistir({ ...deger, [a.ad]: a.sayi ? Number(e.target.value) : e.target.value })}
@@ -137,8 +142,10 @@ const ikonTus = 'rounded-lg p-1.5 text-gray-400 transition-all hover:bg-white/10
 function KuralDuzenleyici({ kural, degistir, sil, pano }: { kural: Kural; degistir: (k: Kural) => void; sil: () => void; pano: Array<{ id: string; ad: string }> }) {
   const toast = useToast();
   const [sonuc, setSonuc] = useState<{ uyar: boolean; engel: string | null; adimlar: string[] } | null>(null);
+  const [calisma, setCalisma] = useState<{ ok: boolean; mesaj: string } | 'suruyor' | null>(null);
   const yama = (d: Partial<Kural>) => {
     setSonuc(null);
+    setCalisma(null);
     degistir({ ...kural, ...d });
   };
   const liste = (ad: 'kosullar' | 'eylemler', i: number, d: Alanlar) => yama({ [ad]: kural[ad].map((x, j) => (j === i ? d : x)) });
@@ -154,6 +161,13 @@ function KuralDuzenleyici({ kural, degistir, sil, pano }: { kural: Kural; degist
     if (!r?.ok) return toast(d?.error || 'Denenemedi', 'hata');
     setSonuc(d);
   };
+  const calistir = async () => {
+    if (!confirm(`"${kural.ad}" örnek bir olayla gerçekten çalıştırılsın mı? Sohbet, OBS ve Discord eylemleri gerçekten yapılır.`)) return;
+    setCalisma('suruyor');
+    const r = await fetch('/api/otomasyon/calistir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kural }) }).catch(() => null);
+    const d = await r?.json().catch(() => null);
+    setCalisma(d && typeof d.ok === 'boolean' ? d : { ok: false, mesaj: 'Bota ulaşılamadı' });
+  };
 
   return (
     <Kart
@@ -162,6 +176,9 @@ function KuralDuzenleyici({ kural, degistir, sil, pano }: { kural: Kural; degist
         <div className="flex items-center gap-2">
           <Buton ton="ikincil" ikon={<FlaskConical className="h-3.5 w-3.5" />} onClick={() => void dene()}>
             Dene
+          </Buton>
+          <Buton ton="ikincil" disabled={calisma === 'suruyor'} ikon={<Play className="h-3.5 w-3.5" />} onClick={() => void calistir()}>
+            {calisma === 'suruyor' ? 'Çalışıyor…' : 'Çalıştır'}
           </Buton>
           <button type="button" className={ikonTus} aria-label={`${kural.ad} kuralını sil`} title="Kuralı sil" onClick={sil}>
             <Trash2 className="h-4 w-4" />
@@ -176,7 +193,24 @@ function KuralDuzenleyici({ kural, degistir, sil, pano }: { kural: Kural; degist
           <Girdi type="number" min={0} className="w-24" value={kural.beklemeSn} onChange={(e) => yama({ beklemeSn: Number(e.target.value) })} />
         </label>
         <Anahtar acik={kural.etkin} onChange={(v) => yama({ etkin: v })} etiket="Etkin" />
+        <Secim
+          aria-label="Çalıştırma biçimi"
+          className="w-56"
+          value={kural.kip || 'sirali'}
+          onChange={(e) => yama({ kip: e.target.value as Kural['kip'] })}
+          secenekler={[
+            { value: 'sirali', label: 'Eylemler sırayla' },
+            { value: 'rastgele', label: 'Her seferinde rastgele biri' },
+          ]}
+        />
+        <label className="flex items-center gap-2 text-xs text-gray-300" title="Bekleme sırasında gelen olaylar atılmaz; sırayla, beklemeye uyarak çalışır (en çok 10)">
+          <input type="checkbox" checked={kural.sira === true} onChange={(e) => yama({ sira: e.target.checked })} />
+          Sıraya al
+        </label>
       </div>
+      <datalist id={SAHNE_ONERILERI}>
+        <option value="{onceki_sahne}">Kuraldan önceki sahneye dön</option>
+      </datalist>
 
       {baslik('1 · Tetikleyici')}
       <div className={satirSinif}>
@@ -197,7 +231,7 @@ function KuralDuzenleyici({ kural, degistir, sil, pano }: { kural: Kural; degist
         Koşul ekle
       </Buton>
 
-      {baslik('3 · Eylemler (sırayla)')}
+      {baslik(kural.kip === 'rastgele' ? '3 · Eylemler (rastgele biri)' : '3 · Eylemler (sırayla)')}
       {kural.eylemler.map((e, i) => (
         <div key={i} className={satirSinif}>
           <span className="w-5 flex-shrink-0 text-center text-xs font-black text-gray-500">{i + 1}</span>
@@ -217,6 +251,12 @@ function KuralDuzenleyici({ kural, degistir, sil, pano }: { kural: Kural; degist
         Eylem ekle
       </Buton>
 
+      {calisma && calisma !== 'suruyor' ? (
+        <p role="status" className={`rounded-xl border border-white/10 bg-black/40 p-3 text-xs ${calisma.ok ? 'text-emerald-300' : 'text-red-300'}`}>
+          {calisma.ok ? 'Çalıştı: ' : 'Durdu: '}
+          {calisma.mesaj}
+        </p>
+      ) : null}
       {sonuc ? (
         <div role="status" className="rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-gray-300">
           <p className="font-bold text-white">Deneme: hiçbir eylem çalıştırılmadı</p>
@@ -282,7 +322,7 @@ export function Otomasyon() {
             <Workflow className="h-6 w-6 text-purple-400" /> Otomasyon
           </h1>
           <p className="text-sm text-gray-400">
-            Bir olay olunca botun ne yapacağını kur. Metinlerde <code className="text-purple-400">{'{kullanici} {miktar} {mesaj} {odul} {platform}'}</code> kullanılabilir. OBS eylemleri için AxthrowA Studio açık olmalı.
+            Bir olay olunca botun ne yapacağını kur. Metinlerde <code className="text-purple-400">{'{kullanici} {miktar} {mesaj} {odul} {platform}'}</code> kullanılabilir; sahne adına <code className="text-purple-400">{'{onceki_sahne}'}</code> yazılırsa kuraldan önceki sahneye dönülür. OBS eylemleri için AxthrowA Studio açık olmalı.
           </p>
         </div>
         <div className="flex gap-2">

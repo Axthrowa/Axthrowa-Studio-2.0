@@ -35,6 +35,10 @@ export interface Kural {
   ad: string;
   etkin: boolean;
   beklemeSn: number;
+  /** B7: eylemler sırayla mı, yoksa her seferinde rastgele biri mi */
+  kip: 'sirali' | 'rastgele';
+  /** B7: bekleme ya da çalışma sırasında gelen olaylar atılmaz, sıraya girer (en çok EN_COK_SIRA) */
+  sira: boolean;
   tetik: Tetik;
   kosullar: Kosul[];
   eylemler: Eylem[];
@@ -54,6 +58,9 @@ export interface Olay {
 
 export const EN_COK_KURAL = 100;
 export const EN_COK_EYLEM = 12;
+export const EN_COK_SIRA = 10;
+/** Sahne alanına yazılınca kuralın ilk sahne değişiminden önceki sahneye döner */
+export const ONCEKI_SAHNE = '{onceki_sahne}';
 const EN_COK_METIN = 400;
 /** Sohbet patlaması sürer: aynı anı defalarca kliplememek için daha uzun bekleme */
 const EN_AZ_BEKLEME: Partial<Record<Tetik['tur'], number>> = { patlama: 30 };
@@ -149,6 +156,8 @@ export function kuralDuzelt(ham: any): { ok: true; kural: Kural } | { ok: false;
       ad,
       etkin: ham?.etkin !== false,
       beklemeSn: sayi(ham?.beklemeSn, EN_AZ_BEKLEME[tetik.tur] ?? VARSAYILAN_EN_AZ_BEKLEME, 86_400),
+      kip: ham?.kip === 'rastgele' ? 'rastgele' : 'sirali',
+      sira: ham?.sira === true,
       tetik,
       kosullar: kosullar as Kosul[],
       eylemler: eylemler as Eylem[],
@@ -230,7 +239,7 @@ export function eylemAciklamasi(e: Eylem, o: Olay): string {
     case 'shoutout':
       return `Shoutout kartı: ${metniDoldur(e.kanal, o)}`;
     case 'obs_sahne':
-      return `OBS sahnesine geç: ${metniDoldur(e.sahne, o)}`;
+      return e.sahne.trim() === ONCEKI_SAHNE ? 'OBS: kuraldan önceki sahneye dön' : `OBS sahnesine geç: ${metniDoldur(e.sahne, o)}`;
     case 'replay':
       return 'OBS tekrar arabelleğini kaydet';
     case 'klip':

@@ -68,6 +68,10 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - B7 tamam (StreamAxT `381664b`): tetik/koşul/eylem düzenleyicisi, bekleme, değişkenler ve kuru Dene zaten vardı. Eklenen: sahne adında `{onceki_sahne}` (kuralın ilk sahne değişiminden önceki sahne Studio `/api/obs/kumanda`dan okunur), sıralı/rastgele kip, kural başına sıra (en çok 10, bekleme süresine uyar), onaylı gerçek Çalıştır (`POST /api/otomasyon/calistir`). "Raid gelince sahneyi değiştir, 10 sn sonra geri dön" kuralı sanal panelde kodsuz kuruldu, Dene adımları doğru gösterdi; Çalıştır sanal Studio'ya (18843, OBS yok) ulaştı ve "OBS bağlı değil" döndü. Sahne değişimi ve geri dönüş birim testinde (sahte Studio) doğrulandı; gerçek OBS'te denenmedi. Sanal bot artık `AXBOT_MUZIK_HOST=http://127.0.0.1:18843` ile başlıyor (önceden varsayılan 8843 gerçek Studio'ydu).
 - Faz 4 bitti.
 
+## Faz 5 durumu
+
+- T8 güvenlik çekirdeği tamam (Studio, bu commit): panel tek kullanımlık 60 sn kod üretir (yalnız loopback), telefon `/remote?eslestir=` ile bir kez kullanır ve yalnız seçilen izinleri taşıyan, yönetici olamayan, 90 günlük kendi anahtarını alır; cihaz listesi anahtarsız, iptal anında 401. Yerel ağa açılma panelde onayla. Sanal Studio'da kod üret → eşleş → ikinci kullanım 401 → iptal → 401 zinciri tarayıcıda doğrulandı; LAN açılmadı. Eksik: QR görüntüsü (yeni npm bağımlılığı ister, onay bekliyor), oturum anahtarlarını karma ile saklama, mobil kumanda arayüzünün kendisi (ayrı plan).
+
 ---
 
 ## Aşama 0 — Gerçek yayın provası (kod yok, 1 oturum)

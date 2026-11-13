@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../db/index.js', () => ({ db: { prepare: () => ({ get: () => undefined, all: () => [], run: () => ({}) }) } }));
 
-import { anketKomutuCoz, anketSonucMetni } from './anket.js';
+import { anketKazananMetni, anketKomutuCoz, anketSonucMetni } from './anket.js';
 
 const coz = (metin: string) => anketKomutuCoz(metin.split(/\s+/));
 
@@ -41,6 +41,14 @@ describe('anket sonucu duyurusu', () => {
   it('beraberlik ve hiç oy yok', () => {
     expect(anketSonucMetni({ title: 'Oyun', options: ['A', 'B'], oylar: [2, 2] })).toContain('berabere — A / B');
     expect(anketSonucMetni({ title: 'Oyun', options: ['A', 'B'], oylar: [0, 0] })).toContain('hiç oy gelmedi');
+  });
+});
+
+describe('uyarı kutusundaki anket kazananı', () => {
+  it('kazanan, beraberlik; hiç oy yoksa uyarı yok', () => {
+    expect(anketKazananMetni({ options: ['A', 'B'], oylar: [5, 3] })).toEqual({ kazanan: 'A', metin: 'A kazandı! (5 oy, %63)' });
+    expect(anketKazananMetni({ options: ['A', 'B', 'C'], oylar: [2, 2, 1] })?.metin).toBe("Berabere: A / B (2'er oy)");
+    expect(anketKazananMetni({ options: ['A', 'B'], oylar: [0, 0] })).toBeNull();
   });
 });
 

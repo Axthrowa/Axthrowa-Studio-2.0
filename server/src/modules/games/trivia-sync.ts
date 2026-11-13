@@ -9,6 +9,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import { TRIVIA_SEED_QUESTIONS } from './trivia-data.js';
 import { TRIVIA_EXTRA_QUESTIONS } from './trivia-extra.js';
 import { TRIVIA_ZOR_SORULAR } from './trivia-zor.js';
+import { TRIVIA_HAVUZ_SORULARI } from './trivia-havuz.js';
 import { bankayiDenetle, copSoruMu } from './soru-kalite.js';
 
 /** Kalite kuralları değişince bu artar: banka bir kez daha denetlenir */
@@ -234,7 +235,7 @@ export function syncTriviaBank(database: DatabaseSync): TriviaSyncResult {
     for (const q of TRIVIA_SEED_QUESTIONS) {
       if (insertIfNew(database, check, insert, q)) sources.core++;
     }
-    for (const q of [...TRIVIA_EXTRA_QUESTIONS, ...TRIVIA_ZOR_SORULAR]) {
+    for (const q of [...TRIVIA_EXTRA_QUESTIONS, ...TRIVIA_ZOR_SORULAR, ...TRIVIA_HAVUZ_SORULARI]) {
       if (insertIfNew(database, check, insert, q)) sources.extra++;
     }
     sources.json = importJsonBank(database, check, insert);

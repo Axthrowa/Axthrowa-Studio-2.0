@@ -591,6 +591,7 @@ export class WebSocketHub {
         gift_sub: { title: 'HEDİYE ABONE!', message: '{user} {count} hediye abone gönderdi!', color: '#f472b6', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' },
         host: { title: 'HOST!', message: '{user} kanalı host etti ({viewers})', color: '#38bdf8', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif' },
         kicks: { title: 'KICKS!', message: '{user} {amount} Kick gönderdi!', color: '#53fc18', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' },
+        poll_result: { title: 'ANKET SONUCU', message: '{metin}', color: '#38bdf8', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: '' },
         milestone: { title: 'KİLOMETRE TAŞI!', message: '{metin}', color: '#facc15', sound: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' }
       };
       const def = defaults[eventType] || defaults.follow;
@@ -753,6 +754,11 @@ export class WebSocketHub {
         alertData = this.buildAlertPayload('kicks', { user: randomUser, amount: d ?? 100 }, true);
         break;
 
+      case 'poll_result':
+        dataPayload = { baslik: 'Test anketi', isTest: true };
+        alertData = this.buildAlertPayload('poll_result', { user: 'Valorant', baslik: 'Test anketi', metin: 'Valorant kazandı! (12 oy, %60)' }, true);
+        break;
+
       case 'milestone': {
         dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, kilometre: { tur: 'follow', esik: 10 }, isTest: true };
         alertData = this.buildAlertPayload('milestone', { user: randomUser, sayi: 10, metin: kilometreMetni('follow', 10, randomUser) }, true);
@@ -788,15 +794,15 @@ export class WebSocketHub {
     const esikler = (isTest ? this.kilometre.test : this.kilometre.gercek).ekle(tur, miktar);
     for (const esik of esikler) {
       const ad = kisi || 'Biri';
-      const alert = this.buildAlertPayload('milestone', { user: ad, sayi: esik, metin: kilometreMetni(tur, esik, ad) }, isTest);
-      if (!alert) continue;
-      this.broadcastTo(['dashboard', 'alertbox', 'all'], {
-        type: 'alert',
-        subType: 'milestone',
-        data: { username: ad, displayName: ad, kilometre: { tur, esik }, isTest },
-        alert
-      });
+      this.ekUyari('milestone', { user: ad, sayi: esik, metin: kilometreMetni(tur, esik, ad) }, { username: ad, displayName: ad, kilometre: { tur, esik }, isTest }, isTest);
     }
+  }
+
+  /** Olay yolunda karşılığı olmayan uyarılar (kilometre taşı, anket sonucu): şablon kapalıysa çıkmaz. */
+  ekUyari(tur: string, degiskenler: Record<string, unknown>, data: Record<string, unknown>, isTest = false) {
+    const alert = this.buildAlertPayload(tur, degiskenler, isTest);
+    if (!alert) return;
+    this.broadcastTo(['dashboard', 'alertbox', 'all'], { type: 'alert', subType: tur, data, alert });
   }
 
   /**

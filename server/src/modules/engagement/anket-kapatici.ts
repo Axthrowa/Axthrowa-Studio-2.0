@@ -48,7 +48,7 @@ export function anketKapaticiyiBaslat(): void {
       if (!kapanan.length) return;
       const { wsHub } = await import('../../ws/server.js');
       const { eventBus } = await import('../../core/event-bus.js');
-      const { anketSonucMetni } = await import('./anket.js');
+      const { anketSonucMetni, anketSonucunuGoster } = await import('./anket.js');
       const { platformManager } = await import('../../platforms/manager.js');
       for (const p of kapanan) {
         wsHub.broadcastTo(['all'], { type: 'poll_ended', poll: { ...p, question: p.title, endsAt: Date.now() } });
@@ -58,6 +58,7 @@ export function anketKapaticiyiBaslat(): void {
         const oylar = p.options.map(() => 0);
         for (const v of p.votes as Array<{ option_index: number; count: number }>) if (v.option_index < oylar.length) oylar[v.option_index] = Number(v.count) || 0;
         const metin = anketSonucMetni({ title: p.title, options: p.options, oylar });
+        anketSonucunuGoster({ title: p.title, options: p.options, oylar });
         // Yayın sohbetlerine; Discord sunucusu yayındaki anketin sonucunu almaz
         for (const ad of yayinSohbetleri(platformManager)) eventBus.emitBotMessage({ platform: ad as any, channel: '', message: metin });
       }

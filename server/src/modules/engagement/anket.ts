@@ -108,7 +108,27 @@ export async function anketBitir(): Promise<{ title: string; options: string[]; 
   for (const v of db.prepare('SELECT option_index, COUNT(*) as count FROM poll_votes WHERE poll_id = ? GROUP BY option_index').all(poll.id) as any[]) {
     if (v.option_index >= 0 && v.option_index < oylar.length) oylar[v.option_index] = Number(v.count) || 0;
   }
+  anketSonucunuGoster({ title: poll.title, options, oylar });
   return { title: poll.title, options, oylar };
+}
+
+/** Uyarı kutusundaki kısa sonuç: "Valorant kazandı! (5 oy, %63)"; hiç oy yoksa null (uyarı çıkmaz). */
+export function anketKazananMetni(s: { options: string[]; oylar: number[] }): { kazanan: string; metin: string } | null {
+  const toplam = s.oylar.reduce((a, b) => a + b, 0);
+  if (!toplam) return null;
+  const en = Math.max(...s.oylar);
+  const kazananlar = s.options.filter((_, i) => s.oylar[i] === en);
+  if (kazananlar.length > 1) return { kazanan: kazananlar.join(' / '), metin: `Berabere: ${kazananlar.join(' / ')} (${en}'er oy)` };
+  return { kazanan: kazananlar[0], metin: `${kazananlar[0]} kazandı! (${en} oy, %${Math.round((en / toplam) * 100)})` };
+}
+
+/** B5: anket bitince kazanan uyarı kutusunda (Anket Sonucu şablonu, varsayılan 5 sn) */
+export function anketSonucunuGoster(s: { title: string; options: string[]; oylar: number[] }): void {
+  const k = anketKazananMetni(s);
+  if (!k) return;
+  void import('../../ws/server.js')
+    .then(({ wsHub }) => wsHub.ekUyari('poll_result', { user: k.kazanan, baslik: s.title, metin: k.metin }, { baslik: s.title, kazanan: k.kazanan }))
+    .catch((e) => console.warn('[Anket] sonuç uyarısı gönderilemedi:', hataMetni(e)));
 }
 
 /**

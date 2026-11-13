@@ -574,11 +574,12 @@ const extraAlerts = [
   { id: 'alert-gift-sub', eventType: 'gift_sub', title: 'HEDİYE ABONE!', msg: '{user} {count} hediye abone gönderdi!', color: '#f472b6' },
   { id: 'alert-host', eventType: 'host', title: 'HOST!', msg: '{user} kanalı host etti ({viewers})', color: '#38bdf8' },
   { id: 'alert-kicks', eventType: 'kicks', title: 'KICKS!', msg: '{user} {amount} Kick gönderdi!', color: '#53fc18' },
-  { id: 'alert-milestone', eventType: 'milestone', title: 'KİLOMETRE TAŞI!', msg: '{metin}', color: '#facc15' }
+  { id: 'alert-milestone', eventType: 'milestone', title: 'KİLOMETRE TAŞI!', msg: '{metin}', color: '#facc15' },
+  { id: 'alert-poll-result', eventType: 'poll_result', title: 'ANKET SONUCU', msg: '{metin}', color: '#38bdf8', sure: 5000 }
 ];
 for (const a of extraAlerts) {
   try {
-    db.prepare(`INSERT OR IGNORE INTO alert_presets (id, event_type, title_template, message_template, sound_url, image_url, duration_ms, font_family, text_color, accent_color, animation, sound_volume, is_enabled) VALUES (?, ?, ?, ?, '', '', 6000, 'Plus Jakarta Sans', '#ffffff', ?, 'bounce', 0.7, 1)`).run(a.id, a.eventType, a.title, a.msg, a.color);
+    db.prepare(`INSERT OR IGNORE INTO alert_presets (id, event_type, title_template, message_template, sound_url, image_url, duration_ms, font_family, text_color, accent_color, animation, sound_volume, is_enabled) VALUES (?, ?, ?, ?, '', '', ?, 'Plus Jakarta Sans', '#ffffff', ?, 'bounce', 0.7, 1)`).run(a.id, a.eventType, a.title, a.msg, a.sure ?? 6000, a.color);
   } catch (e) {
     console.warn('[DB] Varsayılan uyarı şablonu eklenemedi:', a.id, hataMetni(e));
   }

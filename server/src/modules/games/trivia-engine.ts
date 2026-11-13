@@ -36,6 +36,9 @@ export interface TournamentPlayerScore {
 
 export type TriviaEngineStatus = 'idle' | 'question_active' | 'revealing_answer' | 'round_ended' | 'podium';
 
+/** Aynı soru en az bu kadar soru boyunca yeniden sorulmaz (kategori havuzu daha küçükse havuz kadar) */
+export const SON_SORU_SINIRI = 200;
+
 export class TriviaEngine extends EventEmitter {
   private status: TriviaEngineStatus = 'idle';
   private currentQuestion: TriviaQuestion | null = null;
@@ -56,6 +59,7 @@ export class TriviaEngine extends EventEmitter {
   private votes: Map<string, { option: 'A' | 'B' | 'C' | 'D'; timestamp: number; platform: string; displayName: string; answerMs: number }> = new Map();
   private tournamentScores: Map<string, TournamentPlayerScore> = new Map();
   private lastQuestionWinners: TriviaWinnerInfo[] = [];
+  /** Son sorulanlar (en çok SON_SORU_SINIRI; Set ekleme sırasını korur, en eskisi önce düşer) */
   private usedQuestionIds: Set<string> = new Set();
 
   constructor() {
@@ -129,14 +133,18 @@ export class TriviaEngine extends EventEmitter {
       query += ' ORDER BY RANDOM() LIMIT 1';
       questionRow = db.prepare(query).get(...params);
 
-      // Reset pool if exhausted
+      // Kategori tükendi: liste korunur, yalnız az önce sorulan dışlanır (art arda aynı soru gelmesin)
       if (!questionRow) {
-        this.usedQuestionIds.clear();
+        const son = [...this.usedQuestionIds].pop();
         let fallbackQuery = 'SELECT * FROM trivia_questions';
         const fallbackParams: any[] = [];
         if (cat && cat !== 'all') {
           fallbackQuery += ' WHERE category = ?';
           fallbackParams.push(cat);
+        }
+        if (son) {
+          fallbackQuery += (fallbackParams.length ? ' AND' : ' WHERE') + ' id != ?';
+          fallbackParams.push(son);
         }
         fallbackQuery += ' ORDER BY RANDOM() LIMIT 1';
         questionRow = db.prepare(fallbackQuery).get(...fallbackParams);
@@ -163,7 +171,9 @@ export class TriviaEngine extends EventEmitter {
       createdAt: questionRow.created_at
     };
 
+    this.usedQuestionIds.delete(this.currentQuestion.id);
     this.usedQuestionIds.add(this.currentQuestion.id);
+    while (this.usedQuestionIds.size > SON_SORU_SINIRI) this.usedQuestionIds.delete(this.usedQuestionIds.values().next().value!);
     this.status = 'question_active';
     this.durationSeconds = dur;
     this.remainingSeconds = dur;
@@ -202,7 +212,6 @@ export class TriviaEngine extends EventEmitter {
     this.tournamentTotalQuestions = totalQuestions;
     this.tournamentCurrentIndex = 1;
     this.tournamentScores.clear();
-    this.usedQuestionIds.clear();
 
     const catName = category === 'all' ? 'Karışık Kategoriler' : category;
     eventBus.emitBotMessage({

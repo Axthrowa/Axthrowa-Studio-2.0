@@ -515,19 +515,32 @@ async fn music_poll_loop(state: AppState) {
         }
       }
     }
-    let payload = serde_json::json!({
-      "type": "now-playing",
-      "data": state.music.now_playing(),
-    });
-    let key = state
-      .music
-      .now_playing()
-      .map(|n| format!("{}|{}|{}|{}", n.source, n.title, n.artist, n.is_playing))
-      .unwrap_or_default();
-    if key != last {
-      last = key;
-      state.broadcast_json(&payload);
-    }
+    calani_yayinla(&state, &mut last);
+  }
+}
+
+/// Şu an çalan değiştiyse panele ve overlay'lere iter
+fn calani_yayinla(state: &AppState, last: &mut String) {
+  let np = state.music.now_playing();
+  let key = np
+    .as_ref()
+    .map(|n| format!("{}|{}|{}|{}", n.source, n.title, n.artist, n.is_playing))
+    .unwrap_or_default();
+  if key != *last {
+    *last = key;
+    state.broadcast_json(&serde_json::json!({ "type": "now-playing", "data": np }));
+  }
+}
+
+/// R2: Windows medya oturumu (Apple Music, Tidal, tarayıcı, VLC) saniyede bir okunur; değişiklik 2 sn içinde ekranda.
+pub async fn smtc_poll_loop(state: AppState) {
+  let mut last = String::new();
+  loop {
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    let (sp, yt) = state.music.dogrudan_bagli();
+    let np = tokio::task::spawn_blocking(move || music::smtc::oku(sp, yt)).await.ok().flatten();
+    state.music.ingest_smtc(np);
+    calani_yayinla(&state, &mut last);
   }
 }
 
@@ -740,6 +753,7 @@ pub fn run() {
   tauri::async_runtime::spawn(async move {
     music_poll_loop(state_for_music).await;
   });
+  tauri::async_runtime::spawn(smtc_poll_loop(state.clone()));
 
   let hub = std::sync::Arc::new(hotkeys::HotkeyHub::new());
   let hub_for_plugin = hub.clone();

@@ -143,6 +143,8 @@ export type NowPlaying = {
   updatedAt: number;
   /** Paylaşım bağlantısı (Spotify); bilinmiyorsa boş */
   url?: string;
+  /** source "smtc": Windows medya oturumundaki oynatıcı (ör. AppleMusic, Brave) */
+  app?: string;
 };
 
 export type PlayerStatus = {

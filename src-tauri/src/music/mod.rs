@@ -11,6 +11,8 @@
 //! doğrudan yoklar, YouTube Music Desktop verisini Resonance köprüsü POST eder.
 //! Panel ve tüm overlay'ler aynı anlık görüntüyü okur.
 
+pub mod smtc;
+
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -162,6 +164,17 @@ fn pick_active_now(
   paused.into_iter().max_by_key(|np| np.updated_at).cloned()
 }
 
+/// Doğrudan kaynak (Spotify/YTMD) çalıyorsa o; çalmıyorsa çalan Windows medya oturumu; hiçbiri çalmıyorsa doğrudan
+/// kaynağın son parçası, o da yoksa duraklamış medya oturumu.
+fn smtc_ile(dogrudan: Option<NowPlaying>, smtc: Option<NowPlaying>) -> Option<NowPlaying> {
+  match (&dogrudan, &smtc) {
+    (Some(d), _) if d.is_playing => dogrudan,
+    (_, Some(s)) if s.is_playing && has_title(s) => smtc,
+    (None, _) => smtc.filter(has_title),
+    _ => dogrudan,
+  }
+}
+
 pub fn parca_adi(s: &str) -> String {
   s.trim().to_lowercase()
 }
@@ -200,6 +213,9 @@ pub struct NowPlaying {
   /// Parçanın paylaşım bağlantısı (Spotify'da open.spotify.com/track/…); bilinmiyorsa boş
   #[serde(default)]
   pub url: String,
+  /// Windows medya oturumunda oynatıcının uygulama kimliği (ör. Apple Music); doğrudan kaynaklarda boş
+  #[serde(default, skip_serializing_if = "String::is_empty")]
+  pub app: String,
 }
 
 /// open.spotify.com/track/<kimlik> bağlantısından parça kimliği
@@ -280,6 +296,7 @@ pub struct MusicState {
   now: RwLock<Option<NowPlaying>>,
   spotify_snap: RwLock<Option<NowPlaying>>,
   ytmd_snap: RwLock<Option<NowPlaying>>,
+  smtc_snap: RwLock<Option<NowPlaying>>,
   spotify: RwLock<SpotifyCreds>,
   ytmd: RwLock<YtmdCreds>,
   source: RwLock<String>,
@@ -326,6 +343,7 @@ impl MusicState {
       now: RwLock::new(None),
       spotify_snap: RwLock::new(None),
       ytmd_snap: RwLock::new(None),
+      smtc_snap: RwLock::new(None),
       spotify: RwLock::new(doc.spotify),
       ytmd: RwLock::new(doc.ytmd),
       source: RwLock::new(source),
@@ -420,7 +438,21 @@ impl MusicState {
         self.save();
       }
     }
-    *self.now.write() = pick;
+    *self.now.write() = smtc_ile(pick, self.smtc_snap.read().clone());
+  }
+
+  /// R2: Windows medya oturumu anlık görüntüsü (yoklama döngüsünden)
+  pub fn ingest_smtc(&self, mut np: Option<NowPlaying>) {
+    if let Some(v) = np.as_mut() {
+      v.updated_at = now_ms();
+    }
+    *self.smtc_snap.write() = np;
+    self.publish_active();
+  }
+
+  /// SMTC okurken atlanacak doğrudan kaynaklar: (Spotify, YTMD)
+  pub fn dogrudan_bagli(&self) -> (bool, bool) {
+    (self.spotify_connected(), !self.ytmd.read().token.is_empty())
   }
 
   /// !sr hemen çalınca overlay bu parçayı gösterir. Spotify eski parçayı
@@ -465,7 +497,7 @@ impl MusicState {
 
   /// Oynatıcı eylemleri için en az bir müzik kaynağı bağlı mı
   pub fn kaynak_bagli(&self) -> bool {
-    self.spotify_connected() || !self.ytmd.read().token.is_empty()
+    self.spotify_connected() || !self.ytmd.read().token.is_empty() || self.smtc_snap.read().is_some()
   }
 
   pub fn spotify_connected(&self) -> bool {
@@ -490,6 +522,7 @@ impl MusicState {
         "port": y.port,
       },
       "note": self.note.read().clone(),
+      "smtc": self.smtc_snap.read().as_ref().map(|n| json!({ "app": n.app, "title": n.title, "isPlaying": n.is_playing })),
       "nowPlaying": self.now_playing(),
     })
   }
@@ -887,6 +920,7 @@ impl MusicState {
       source: SOURCE_SPOTIFY.into(),
       updated_at: now_ms(),
       url: item.pointer("/external_urls/spotify").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+      app: String::new(),
     }))
   }
 
@@ -1347,6 +1381,13 @@ impl MusicState {
     if matches!(action, "like" | "playlistAdd") {
       return self.spotify_kitaplik(action, None).await.map(|_| ());
     }
+    // Ekranda Windows medya oturumu varsa komut o oynatıcıya gider (panel kaynağı "smtc" diye yollar)
+    if source.is_none_or(|s| s == smtc::SOURCE_SMTC) {
+      if let Some(np) = self.now_playing().filter(|n| n.source == smtc::SOURCE_SMTC) {
+        let eylem = action.to_string();
+        return tokio::task::spawn_blocking(move || smtc::komut(&np.app, &eylem)).await?;
+      }
+    }
     let preferred = source
       .map(|s| s.to_string())
       .unwrap_or_else(|| self.source());
@@ -1559,6 +1600,19 @@ mod tests {
     assert_eq!(spotify_parca_kimligi("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=x"), Some("4uLU6hMCjMI75M1A2tKUQC"));
     assert_eq!(spotify_parca_kimligi("https://open.spotify.com/episode/abc"), None);
     assert_eq!(spotify_parca_kimligi(""), None);
+  }
+
+  #[test]
+  fn smtc_dogrudan_kaynak_calmiyorsa_gosterilir() {
+    let sp_calar = Some(np("spotify", true, "S", 1));
+    let sp_durdu = Some(np("spotify", false, "S", 1));
+    let am_calar = Some(np("smtc", true, "Apple", 2));
+    let am_durdu = Some(np("smtc", false, "Apple", 2));
+    assert_eq!(smtc_ile(sp_calar.clone(), am_calar.clone()).unwrap().title, "S");
+    assert_eq!(smtc_ile(sp_durdu.clone(), am_calar.clone()).unwrap().title, "Apple");
+    assert_eq!(smtc_ile(sp_durdu, am_durdu.clone()).unwrap().title, "S");
+    assert_eq!(smtc_ile(None, am_durdu).unwrap().title, "Apple");
+    assert!(smtc_ile(None, Some(np("smtc", true, " ", 2))).is_none());
   }
 
   fn np(source: &str, playing: bool, title: &str, updated_at: i64) -> NowPlaying {

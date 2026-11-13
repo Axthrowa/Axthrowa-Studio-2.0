@@ -24,6 +24,10 @@ async fn main() {
   })
   .await
   .expect("AppState");
+  // Windows medya oturumu yalnız okunur (R2 sınaması); STUDIO_HEADLESS_SMTC=0 kapatır
+  if std::env::var("STUDIO_HEADLESS_SMTC").as_deref() != Ok("0") {
+    tokio::spawn(axthrowa_studio_lib::smtc_poll_loop(state.clone()));
+  }
   if let Err(e) = axthrowa_studio_lib::server::serve(state).await {
     eprintln!("sunucu hatası: {e:#}");
   }

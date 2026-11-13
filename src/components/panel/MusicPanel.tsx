@@ -162,7 +162,7 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
         <div>
           <h2 className="text-sm font-semibold">Müzik kaynağı</h2>
           <div className="mt-2 rounded-md bg-panel-accent px-3 py-2 text-sm text-black">
-            Otomatik — {source === "youtube-music" ? "YouTube Music" : "Spotify"}
+            Otomatik — {source === "youtube-music" ? "YouTube Music" : source === "smtc" ? `Windows medya (${track?.app || "oynatıcı"})` : "Spotify"}
           </div>
           <p className="mt-2 text-[11px] text-panel-muted">
             Hangisinde müzik çalıyorsa widget o kaynağa geçer.

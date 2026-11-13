@@ -218,6 +218,9 @@ export function triviaBankasiniOnar(database: DatabaseSync, zorla = false): { on
   return { onarildi: sonuc.onarilan.length, atildi: sonuc.atilacak.length };
 }
 
+/** Aynı konunun iki adı: eski satırlar ve dış bankalar tek ada toplanır (K10). */
+export const KATEGORI_ESLERI: Record<string, string> = { 'Sinema TV': 'Film ve Dizi', Oyunlar: 'Oyun' };
+
 export function syncTriviaBank(database: DatabaseSync): TriviaSyncResult {
   const check = database.prepare('SELECT id FROM trivia_questions WHERE question = ?');
   const insert = database.prepare(`
@@ -236,6 +239,8 @@ export function syncTriviaBank(database: DatabaseSync): TriviaSyncResult {
     }
     sources.json = importJsonBank(database, check, insert);
     sources.sqlite = importSqliteBank(database, check, insert);
+    const birlestir = database.prepare('UPDATE trivia_questions SET category = ? WHERE category = ?');
+    for (const [eski, yeni] of Object.entries(KATEGORI_ESLERI)) birlestir.run(yeni, eski);
     database.exec('COMMIT');
   } catch (err) {
     try { database.exec('ROLLBACK'); } catch {}

@@ -59,7 +59,7 @@ function parseTriviaCategory(raw: string): string {
   if (r.includes('osmanli') || r.includes('osmanlı')) return 'Osmanlı Tarihi';
   if (r.includes('tarih')) return 'Tarih';
   if (r.includes('sanat')) return 'Sanat';
-  if (r.includes('sinema') || r.includes('tv')) return 'Sinema TV';
+  if (r.includes('sinema') || r.includes('tv')) return 'Film ve Dizi';
   if (r.includes('film') || r.includes('dizi')) return 'Film ve Dizi';
   if (r.includes('tib') || r.includes('tıb') || r.includes('sağlık') || r.includes('saglik') || r.includes('doktor')) return 'Tıbbi Terimler';
   if (r.includes('azer') || r.includes('türkçe') || r.includes('turkce')) return 'Azerbaycan Türkçesi';
@@ -69,7 +69,6 @@ function parseTriviaCategory(raw: string): string {
   if (r.includes('tekno')) return 'Teknoloji';
   if (r.includes('bilim')) return 'Bilim';
   if (r.includes('bilgi')) return 'Bilgi';
-  if (r.includes('oyunlar')) return 'Oyunlar';
   if (r.includes('oyun') || r.includes('game')) return 'Oyun';
   if (r.includes('iz') || r.includes('bırakan') || r.includes('birakan')) return 'İz Bırakanlar';
   if (r.includes('gecmis') || r.includes('geçmiş')) return 'Geçmişten Günümüze';

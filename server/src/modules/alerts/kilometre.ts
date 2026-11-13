@@ -16,6 +16,19 @@ const AD: Record<KilometreTuru, string> = { follow: 'takipçi', sub: 'abone', ki
 export class OturumSayaci {
   private toplam: Record<KilometreTuru, number> = { follow: 0, sub: 0, kicks: 0 };
 
+  /** `baslangic`: önceki çalışmadan kalan toplamlar (K3); bozuk alan 0 sayılır */
+  constructor(baslangic?: unknown) {
+    const b = (baslangic ?? {}) as Record<string, unknown>;
+    for (const t of Object.keys(this.toplam) as KilometreTuru[]) {
+      const v = Math.floor(Number(b[t]));
+      if (v > 0) this.toplam[t] = v;
+    }
+  }
+
+  durum(): Record<KilometreTuru, number> {
+    return { ...this.toplam };
+  }
+
   /** Miktarı ekler; bu eklemeyle geçilen eşikleri (küçükten büyüğe) döndürür. */
   ekle(tur: KilometreTuru, miktar: number): number[] {
     const m = Math.max(0, Math.floor(Number(miktar) || 0));
@@ -28,6 +41,17 @@ export class OturumSayaci {
   sifirla() {
     this.toplam = { follow: 0, sub: 0, kicks: 0 };
   }
+}
+
+/**
+ * K3: yayın açıldı olayında sayaç sıfırlanmalı mı? Bot yayın ortasında yeniden başladıysa (ilk gözlem)
+ * ve yayın bilinen bir yayınsa sayım sürer; arada yeni yayın başladıysa ya da bot zaten açıkken açıldıysa sıfırlanır.
+ */
+export function kilometreSifirlansinMi(p: { platform?: string; yayinId?: string; baslangic?: unknown; ilkGozlem?: boolean }, bilinenler: string[]): { sifirla: boolean; anahtar: string } {
+  const kimlik = p.yayinId || (p.baslangic ? String(p.baslangic) : '');
+  const anahtar = kimlik ? `${p.platform || ''}:${kimlik}` : '';
+  if (p.ilkGozlem && (!anahtar || bilinenler.includes(anahtar))) return { sifirla: false, anahtar };
+  return { sifirla: true, anahtar };
 }
 
 /** Uyarı metni: takip/abone için kişiyi, Kicks için toplamı öne çıkarır. */

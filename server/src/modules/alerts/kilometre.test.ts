@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OturumSayaci, kilometreMetni } from './kilometre';
+import { OturumSayaci, kilometreMetni, kilometreSifirlansinMi } from './kilometre';
 
 describe('oturum kilometre taşları', () => {
   it('onuncu takipte bir kez eşik verir', () => {
@@ -27,5 +27,20 @@ describe('oturum kilometre taşları', () => {
   it('metin', () => {
     expect(kilometreMetni('follow', 10, 'Ali')).toBe('Bu yayının 10. takipçi: Ali!');
     expect(kilometreMetni('kicks', 500, 'Ali')).toContain('500 Kicks');
+  });
+});
+
+describe('kilometre kalıcılık (K3)', () => {
+  it('toplam geri yüklenir; eşik ikinci kez çıkmaz', () => {
+    const s = new OturumSayaci({ follow: 9, sub: 'bozuk' });
+    expect(s.durum()).toEqual({ follow: 9, sub: 0, kicks: 0 });
+    expect(s.ekle('follow', 1)).toEqual([10]);
+  });
+
+  it('aynı yayında yeniden başlayan bot sıfırlamaz, yeni yayın sıfırlar', () => {
+    expect(kilometreSifirlansinMi({ platform: 'kick', yayinId: '7', ilkGozlem: true }, ['kick:7'])).toEqual({ sifirla: false, anahtar: 'kick:7' });
+    expect(kilometreSifirlansinMi({ platform: 'kick', yayinId: '8', ilkGozlem: true }, ['kick:7']).sifirla).toBe(true);
+    expect(kilometreSifirlansinMi({ platform: 'kick', yayinId: '7' }, ['kick:7']).sifirla).toBe(true);
+    expect(kilometreSifirlansinMi({ platform: 'kick', ilkGozlem: true }, []).sifirla).toBe(false);
   });
 });

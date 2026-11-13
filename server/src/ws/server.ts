@@ -15,7 +15,7 @@ import { shoutoutGonder, shoutoutMetni } from '../modules/otomasyon/shoutout.js'
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
 import { BASLANGIC, kontrolUygula, OGE_EYLEMLERI, KontrolDurumu, KuyrukAynalari, kuyrukRaporuTemizle, SonUyari, SonUyarilar, uyariKimligi, type KuyrukAynasi } from '../modules/alerts/control.js';
 import { kupa } from '../modules/engagement/kupa.js';
-import { OturumSayaci, kilometreMetni, type KilometreTuru } from '../modules/alerts/kilometre.js';
+import { OturumSayaci, kilometreMetni, kilometreSifirlansinMi, type KilometreTuru } from '../modules/alerts/kilometre.js';
 import { kaliciOku, kaliciYazGecikmeli } from '../core/kalici.js';
 
 interface ClientConnection {
@@ -80,7 +80,13 @@ export class WebSocketHub {
   // K1: liste ve teşekkür işaretleri kalıcı; yeniden başlayan bot akışı dolu açar
   private sonUyarilar = new SonUyarilar(200, (l) => kaliciYazGecikmeli('etkinlik_gecmisi', () => l), kaliciOku('etkinlik_gecmisi', []));
   // Test olayları ayrı sayılır: onuncu test takibi uyarıyı gösterir ama gerçek sayacı kirletmez
-  private kilometre = { gercek: new OturumSayaci(), test: new OturumSayaci() };
+  private kilometreKaydi = kaliciOku<{ toplam?: unknown; yayinlar?: string[] }>('kilometre', {});
+  private kilometre = { gercek: new OturumSayaci(this.kilometreKaydi.toplam), test: new OturumSayaci() };
+  /** K3: sayacın ait olduğu yayınlar (platform:yayın kimliği); aynı yayında yeniden başlayan bot sıfırlamaz */
+  private kilometreYayinlari: string[] = Array.isArray(this.kilometreKaydi.yayinlar) ? this.kilometreKaydi.yayinlar : [];
+  private kilometreKaydet() {
+    kaliciYazGecikmeli('kilometre', () => ({ toplam: this.kilometre.gercek.durum(), yayinlar: this.kilometreYayinlari }));
+  }
   /** OBS'teki uyarı kutularının bildirdiği kuyruk (U3) */
   private kuyrukAynalari = new KuyrukAynalari<ClientConnection>();
 
@@ -287,9 +293,15 @@ export class WebSocketHub {
   private setupEventForwarding() {
     // Kilometre taşları yayın başına sayılır (bot yeniden başlayınca yayın sürüyorsa ilk gözlem sıfırlamaz)
     eventBus.on('stream_online', (p: any) => {
-      if (p?.ilkGozlem) return;
-      this.kilometre.gercek.sifirla();
-      this.kilometre.test.sifirla();
+      const { sifirla, anahtar } = kilometreSifirlansinMi(p || {}, this.kilometreYayinlari);
+      if (sifirla) {
+        this.kilometre.gercek.sifirla();
+        this.kilometre.test.sifirla();
+        this.kilometreYayinlari = [];
+      }
+      // Aynı anda açık birden çok platformun yayını da bilinsin (en çok 10)
+      if (anahtar && !this.kilometreYayinlari.includes(anahtar)) this.kilometreYayinlari = [...this.kilometreYayinlari, anahtar].slice(-10);
+      this.kilometreKaydet();
     });
 
     // 1. Chat Event -> Send to Dashboard & ChatBox Overlay
@@ -804,6 +816,7 @@ export class WebSocketHub {
   /** B4: yayın içi 10./25./50./100. takipçi-abone ve Kicks toplamı eşiklerinde ayrı uyarı. */
   private kilometreTasi(tur: KilometreTuru, miktar: number, kisi: string | undefined, isTest: boolean) {
     const esikler = (isTest ? this.kilometre.test : this.kilometre.gercek).ekle(tur, miktar);
+    if (!isTest) this.kilometreKaydet();
     for (const esik of esikler) {
       const ad = kisi || 'Biri';
       this.ekUyari('milestone', { user: ad, sayi: esik, metin: kilometreMetni(tur, esik, ad) }, { username: ad, displayName: ad, kilometre: { tur, esik }, isTest }, isTest);

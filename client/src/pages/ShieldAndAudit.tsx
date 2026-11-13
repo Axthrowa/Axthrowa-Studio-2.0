@@ -22,13 +22,17 @@ interface ShieldSettings {
   subOnly: boolean;
   karaListeEylemi?: KaraListeEylemi;
   platformdaSil?: boolean;
+  platformModlari?: boolean;
+  takipSuresiDk?: number;
+  yavasModSn?: number;
+  twitchAcilanModlar?: string[];
   /** Sunucu: bu etkinleştirmeden beri engellenen mesaj */
   engellenenMesaj?: number;
   /** Sunucu: uygulanamayan ayar → gerekçe */
   desteklenmeyen?: Partial<Record<'followerOnly' | 'minAccountAgeDays', string>>;
 }
 
-type KalkanKurali = 'subOnly' | 'blockLinks' | 'blockCaps' | 'blockEmotes' | 'platformdaSil' | 'autoClearRaidMessages';
+type KalkanKurali = 'subOnly' | 'blockLinks' | 'blockCaps' | 'blockEmotes' | 'platformdaSil' | 'autoClearRaidMessages' | 'followerOnly' | 'platformModlari';
 
 const KALKAN_KURALLARI: Array<{ id: KalkanKurali; ad: string; aciklama: string }> = [
   { id: 'blockLinks', ad: 'Link engeli', aciklama: 'Adres içeren her mesaj (normal moddaki izinli alan adları kalkanda geçmez).' },
@@ -38,6 +42,8 @@ const KALKAN_KURALLARI: Array<{ id: KalkanKurali; ad: string; aciklama: string }
   { id: 'platformdaSil', ad: 'Platformda da sil', aciklama: "Takılan mesaj platformda da silinir (Kick, Twitch, YouTube, Trovo, Discord). Kapalıyken yalnız bot yok sayar ve OBS'te gizlenir." },
   { id: 'autoClearRaidMessages', ad: 'Açarken OBS sohbetini temizle', aciklama: 'Kalkan açılınca OBS sohbet katmanı boşaltılır (platform sohbetine dokunulmaz).' }
 ];
+
+const TWITCH_MOD_ADI: Record<string, string> = { follower_mode: 'takipçi modu', subscriber_mode: 'abone modu', slow_mode: 'yavaş mod' };
 
 const DESTEKLENMEYEN_AD: Record<'followerOnly' | 'minAccountAgeDays', string> = {
   followerOnly: 'Yalnız takipçiler',
@@ -179,6 +185,26 @@ export default function ShieldAndAudit() {
     }
   };
 
+  const sayiKaydet = async (id: 'takipSuresiDk' | 'yavasModSn', ham: string) => {
+    const n = Number(ham);
+    if (!Number.isFinite(n) || n === shield[id]) return;
+    setKuralNotu(null);
+    try {
+      const res = await fetch('/api/moderation/shield/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [id]: n })
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d?.settings) {
+        setShield((s) => ({ ...s, ...d.settings }));
+        setKuralNotu({ ok: true, text: 'Kaydedildi.' });
+      } else setKuralNotu({ ok: false, text: d?.error || `Kaydedilemedi (HTTP ${res.status})` });
+    } catch {
+      setKuralNotu({ ok: false, text: 'Sunucuya ulaşılamadı' });
+    }
+  };
+
   const karaListeEylemiKaydet = async (eylem: KaraListeEylemi) => {
     if (eylem === 'ban' && !confirm('Kara listedeki kişi yazınca o platformda KALICI banlanacak. Emin misiniz?')) return;
     setEylemNotu(null);
@@ -247,8 +273,8 @@ export default function ShieldAndAudit() {
             </h1>
             <p className="text-gray-300 text-sm max-w-2xl">
               Raid, spam ya da bot saldırısında tek tıkla açın: aşağıdaki kurallara takılan mesajları bot yok sayar ve
-              OBS sohbetinde gösterilmez; isterseniz platformda da silinir. Platformun kendi sohbet modları (yalnız
-              takipçi, yavaş mod) buradan değiştirilmez.
+              OBS sohbetinde gösterilmez; isterseniz platformda da silinir. Twitch bağlıysa Twitch'in kendi sohbet
+              modları da (yalnız takipçi, abone, yavaş mod) kalkanla birlikte açılıp kapanır.
             </p>
           </div>
 
@@ -300,11 +326,53 @@ export default function ShieldAndAudit() {
             </label>
           ))}
         </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" className="mt-0.5" checked={shield.platformModlari !== false} onChange={(e) => void kuralKaydet('platformModlari', e.target.checked)} />
+            <span className="min-w-0">
+              <span className="block text-xs font-bold text-white">Twitch sohbet modlarını da aç</span>
+              <span className="block text-[11px] text-gray-400 leading-snug">
+                Kalkan açılınca Twitch'te seçilenler açılır, kapanınca yalnız kalkanın açtıkları kapanır (zaten açık tuttuğunuz moda dokunulmaz). Kick ve YouTube'un API'sinde sohbet modu yok.
+              </span>
+            </span>
+          </label>
+          {shield.platformModlari !== false && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-6">
+              <label className="flex items-center gap-2 text-[11px] text-gray-300">
+                <input type="checkbox" checked={!!shield.followerOnly} onChange={(e) => void kuralKaydet('followerOnly', e.target.checked)} />
+                Yalnız takipçiler
+              </label>
+              <label className="flex items-center gap-2 text-[11px] text-gray-300">
+                En az takip
+                <input
+                  type="number" min={0} max={129600} defaultValue={shield.takipSuresiDk ?? 10} key={`tk-${shield.takipSuresiDk}`}
+                  onBlur={(e) => void sayiKaydet('takipSuresiDk', e.target.value)}
+                  className="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-white"
+                />
+                dk
+              </label>
+              <label className="flex items-center gap-2 text-[11px] text-gray-300">
+                Yavaş mod
+                <input
+                  type="number" min={0} max={120} defaultValue={shield.yavasModSn ?? 0} key={`ym-${shield.yavasModSn}`}
+                  onBlur={(e) => void sayiKaydet('yavasModSn', e.target.value)}
+                  className="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-white"
+                />
+                sn (0 = dokunma)
+              </label>
+            </div>
+          )}
+          {shield.isActive && !!shield.twitchAcilanModlar?.length && (
+            <p className="pl-6 text-[11px] text-amber-200">
+              Kalkanın Twitch'te açtığı: {shield.twitchAcilanModlar.map((m) => TWITCH_MOD_ADI[m] ?? m).join(', ')}
+            </p>
+          )}
+        </div>
         {shield.desteklenmeyen && Object.keys(shield.desteklenmeyen).length > 0 && (
           <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 space-y-1">
             {(Object.entries(shield.desteklenmeyen) as Array<['followerOnly' | 'minAccountAgeDays', string]>).map(([id, neden]) => (
               <p key={id} className="text-[11px] text-gray-400">
-                <span className="font-bold text-gray-300">{DESTEKLENMEYEN_AD[id] ?? id}</span> — desteklenmiyor: {neden}
+                <span className="font-bold text-gray-300">{DESTEKLENMEYEN_AD[id] ?? id}</span> — {neden}
               </p>
             ))}
           </div>

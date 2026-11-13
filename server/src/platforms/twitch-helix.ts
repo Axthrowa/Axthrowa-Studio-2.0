@@ -230,6 +230,16 @@ export class TwitchHelix {
     );
   }
 
+  /** Sohbet modlarının şu anki durumu: `GET /chat/settings` (izin istemez). */
+  async sohbetAyarlariOku(kanal: string): Promise<HelixSonuc<Record<string, unknown>>> {
+    const yayinci = await this.kullaniciKimligi(kanal);
+    if (!yayinci.ok) return yayinci;
+    const r = await this.istek('GET', `/chat/settings?broadcaster_id=${yayinci.veri}`);
+    if (!r.ok) return r;
+    const v = r.veri?.data?.[0];
+    return v && typeof v === 'object' ? { ok: true, veri: v } : { ok: false, hata: 'Twitch sohbet ayarları gelmedi' };
+  }
+
   /** Kategori adıyla arar; tam eşleşme yoksa ilk sonuç. */
   async kategoriBul(ad: string): Promise<HelixSonuc<{ id: string; ad: string }>> {
     const r = await this.istek('GET', `/search/categories?query=${encodeURIComponent(ad)}&first=10`);

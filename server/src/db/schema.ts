@@ -76,6 +76,14 @@ export interface ShieldModeSettings {
    * platformda). Varsayılan kapalı: eskiden kalkan yalnız botun yok saymasıydı.
    */
   platformdaSil?: boolean;
+  /** Kalkan açılınca platformun kendi sohbet modları da açılsın (bugün yalnız Twitch). Varsayılan açık. */
+  platformModlari?: boolean;
+  /** Twitch takipçi modunda en az takip süresi (dk, 0 = takip etmesi yeter). Varsayılan 10. */
+  takipSuresiDk?: number;
+  /** Kalkan açıkken Twitch yavaş modu (sn, 0 = dokunma). */
+  yavasModSn?: number;
+  /** Kalkanın Twitch'te açtığı modlar: kapanınca yalnız bunlar kapatılır */
+  twitchAcilanModlar?: string[];
 }
 
 export interface ChatRescueSettings {

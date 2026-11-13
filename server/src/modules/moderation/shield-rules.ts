@@ -35,8 +35,8 @@ export interface KalkanMesaji {
 
 /** Arayüzün "desteklenmiyor" diye gösterdiği ayarlar ve nedeni. */
 export const KALKAN_DESTEKLENMEYEN = {
-  followerOnly: 'Platformların sohbet olayları gönderenin takip durumunu içermiyor.',
-  minAccountAgeDays: 'Platformların sohbet olayları hesabın açılış tarihini içermiyor.'
+  followerOnly: "Bot mesajda takip durumunu göremez; Twitch'te kalkan açılınca Twitch'in kendi takipçi modu açılır. Kick ve YouTube'un API'sinde sohbet modu yok.",
+  minAccountAgeDays: "Bot mesajda hesap yaşını göremez ve hiçbir platformun API'si hesap yaşı modu açtırmıyor. Twitch'te takipçi modundaki en az takip süresi benzer koruma sağlar."
 } as const;
 
 /** Kalkan AutoMod'dan katıdır: normal kuralda serbest kalan kısa bağırışlar da yakalanır. */

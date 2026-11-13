@@ -332,6 +332,14 @@ export class TwitchPlatform extends BasePlatform {
     return r.ok ? { ok: true } : { ok: false, hata: r.hata };
   }
 
+  /** Kalkan için: takipçi / abone / yavaş mod şu an açık mı (okunamazsa null) */
+  async sohbetAyarlari(): Promise<{ follower_mode?: boolean; subscriber_mode?: boolean; slow_mode?: boolean } | null> {
+    if (!this.currentChannel) return null;
+    const r = await this.helix.sohbetAyarlariOku(this.currentChannel);
+    if (!r.ok) return null;
+    return { follower_mode: r.veri.follower_mode === true, subscriber_mode: r.veri.subscriber_mode === true, slow_mode: r.veri.slow_mode === true };
+  }
+
   /** `!accountage` için. */
   async hesapOlusturma(login: string): Promise<number | null> {
     if (!this.botToken) return null;

@@ -50,9 +50,12 @@ export interface KalkanAyarGirdisi {
   subOnly?: boolean;
   karaListeEylemi?: KaraListeEylemi;
   platformdaSil?: boolean;
+  platformModlari?: boolean;
+  takipSuresiDk?: number;
+  yavasModSn?: number;
 }
 
-const MANTIKSAL = ['autoClearRaidMessages', 'blockLinks', 'blockCaps', 'blockEmotes', 'followerOnly', 'subOnly', 'platformdaSil'] as const;
+const MANTIKSAL = ['autoClearRaidMessages', 'blockLinks', 'blockCaps', 'blockEmotes', 'followerOnly', 'subOnly', 'platformdaSil', 'platformModlari'] as const;
 
 export function kalkanAyariniCoz(govde: unknown): KalkanAyarGirdisi {
   const g = (govde && typeof govde === 'object' ? govde : {}) as Record<string, unknown>;
@@ -63,6 +66,15 @@ export function kalkanAyariniCoz(govde: unknown): KalkanAyarGirdisi {
   if (g.minAccountAgeDays !== undefined) {
     const n = Math.round(Number(g.minAccountAgeDays));
     if (Number.isFinite(n)) cikti.minAccountAgeDays = Math.min(365, Math.max(0, n));
+  }
+  if (g.takipSuresiDk !== undefined) {
+    const n = Math.round(Number(g.takipSuresiDk));
+    if (Number.isFinite(n)) cikti.takipSuresiDk = Math.min(129_600, Math.max(0, n));
+  }
+  if (g.yavasModSn !== undefined) {
+    // Twitch yavaş modu 3-120 sn; 0 = kalkan yavaş moda dokunmaz
+    const n = Math.round(Number(g.yavasModSn));
+    if (Number.isFinite(n)) cikti.yavasModSn = n <= 0 ? 0 : Math.min(120, Math.max(3, n));
   }
   if (typeof g.karaListeEylemi === 'string' && (KARA_LISTE_EYLEMLERI as readonly string[]).includes(g.karaListeEylemi)) {
     cikti.karaListeEylemi = g.karaListeEylemi as KaraListeEylemi;

@@ -13,6 +13,7 @@ import { autoMod } from '../../modules/automod/automod.js';
 import { kelimeListesiDerle } from '../../modules/automod/kelime-kurali.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 import { KALKAN_DESTEKLENMEYEN } from '../../modules/moderation/shield-rules.js';
+import { kalkanSohbetModlariniUygula } from '../../modules/moderation/kalkan-sohbet-modu.js';
 import { elleModerasyonCoz, kalkanAyariniCoz, MODERASYON_PLATFORMLARI, type ElleEylem } from '../../modules/moderation/moderation-input.js';
 import { sohbetModuGovdesi } from '../../platforms/twitch-rules.js';
 import { platformManager } from '../../platforms/manager.js';
@@ -27,11 +28,18 @@ const GECERLI_MUAF = new Set(['regular', 'sub', 'vip', 'og', 'mod', 'broadcaster
 const router = Router();
 
 // Modül olaylarını açık panellere ve OBS kaynaklarına yayınla
+// B12: platformun kendi sohbet modları (Twitch takipçi/abone/yavaş mod) kalkanla birlikte açılıp kapanır
+const kalkanModlari = (acik: boolean) =>
+  void kalkanSohbetModlariniUygula(acik, platformManager.getPlatform('twitch') as any, shieldModeService).catch((e) =>
+    console.warn('[Kalkan] Twitch sohbet modu uygulanamadı:', e?.message || e)
+  );
 shieldModeService.on('activated', (data) => {
   wsHub.broadcastTo(['all'], { type: 'shield_mode_update', active: true, moderator: data.moderator });
+  kalkanModlari(true);
 });
 shieldModeService.on('deactivated', (data) => {
   wsHub.broadcastTo(['all'], { type: 'shield_mode_update', active: false, moderator: data.moderator });
+  kalkanModlari(false);
 });
 
 // Eskiden 'chat_message' türüyle yayınlanıyordu; onu dinleyen hiçbir şey yoktu, mesaj hiçbir yerde görünmüyordu

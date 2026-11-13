@@ -14,6 +14,7 @@ interface Rapor {
   abone: number;
   bagislar: Record<string, number>;
   baskinlar: Array<{ ad: string; izleyici: number }>;
+  sarkilar?: Array<{ zaman: number; ad: string }>;
   maddeler: string[];
   aiHatasi?: string;
 }
@@ -52,6 +53,12 @@ export function YayinOzetleri() {
     setOzetler((l) => [d, ...l].slice(0, 10));
   };
 
+  const discordaGonder = async (id: string) => {
+    const r = await postJson(`/api/yayin-ozetleri/${encodeURIComponent(id)}/discord`).catch(() => null);
+    const d = await r?.json().catch(() => null);
+    toast(r?.ok ? "Şarkı listesi Discord'a gönderildi" : d?.error || 'Gönderilemedi', r?.ok ? 'basari' : 'hata');
+  };
+
   return (
     <Kart
       baslik="Yayın Sonu Özeti"
@@ -85,6 +92,21 @@ export function YayinOzetleri() {
                 <li key={i}>{m}</li>
               ))}
             </ul>
+          ) : null}
+          {o.sarkilar?.length ? (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-gray-200">Çalan şarkılar ({o.sarkilar.length})</summary>
+              <ol className="mt-1 space-y-0.5 tabular-nums">
+                {o.sarkilar.map((s, i) => (
+                  <li key={i}>
+                    <span className="text-gray-500">{new Date(s.zaman).toLocaleTimeString('tr-TR', { timeStyle: 'short' })}</span> {s.ad}
+                  </li>
+                ))}
+              </ol>
+              <Buton ton="ikincil" className="mt-2" onClick={() => void discordaGonder(o.id)}>
+                Discord'a gönder
+              </Buton>
+            </details>
           ) : null}
           {o.aiHatasi ? <p className="mt-2 text-amber-300">{o.aiHatasi}</p> : null}
         </article>

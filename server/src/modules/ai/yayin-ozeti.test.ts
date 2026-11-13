@@ -8,10 +8,12 @@ vi.mock('../../db/index.js', async () => {
 });
 const ai = vi.hoisted(() => ({ yardimciUret: vi.fn(async (): Promise<string | null> => '1. Bir\n- Iki\n**Uc**\nDort') }));
 vi.mock('./gemini.js', () => ({ geminiCoHost: ai }));
+const muzik = vi.hoisted(() => ({ dinleyici: null as null | ((c: any) => void) }));
+vi.mock('../muzik/index.js', () => ({ muzikHost: { parcaDegisince: (f: any) => (muzik.dinleyici = f) } }));
 
 import { eventBus } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
-import { maddeleriAyikla, ozetIstemi, YayinDefteri } from './yayin-ozeti-saf.js';
+import { maddeleriAyikla, oncekiSarki, ozetIstemi, sarkiListesiMetni, YayinDefteri } from './yayin-ozeti-saf.js';
 import { YayinOzeti } from './yayin-ozeti.js';
 
 const dolu = () => {
@@ -119,5 +121,36 @@ describe('YayinOzeti', () => {
     await new Promise((r) => setTimeout(r, 5));
     expect(o.raporlar()).toHaveLength(1);
     expect(await o.olustur()).toBeNull();
+  });
+});
+
+describe('oturum şarkı geçmişi (R4)', () => {
+  it('10 parçalık oturum zaman sırasıyla, art arda tekrar olmadan rapora girer', () => {
+    const d = new YayinDefteri(0);
+    const zamanlar = [5, 1, 9, 3, 7, 2, 10, 4, 8, 6];
+    for (const z of zamanlar) d.sarkiEkle(`Parça ${z}`, z * 60_000);
+    d.sarkiEkle('Parça 6', 11 * 60_000); // duraklat/devam aynı parçayı yeniden bildirir
+    const r = d.rapor(20 * 60_000);
+    expect(r.sarkilar!.map((s) => s.zaman / 60_000)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(sarkiListesiMetni(r).split(/\r?\n/)).toEqual([expect.stringContaining('çalanlar (10)'), '00:01 Parça 1', ...[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => `00:${String(n).padStart(2, '0')} Parça ${n}`)]);
+  });
+
+  it('önceki şarkı çalanı atlar; tek parçada yoktur', () => {
+    const l = [{ zaman: 1, ad: 'A' }, { zaman: 2, ad: 'B' }];
+    expect(oncekiSarki(l, 'B')?.ad).toBe('A');
+    expect(oncekiSarki(l, '')?.ad).toBe('B');
+    expect(oncekiSarki([{ zaman: 1, ad: 'A' }], 'A')).toBeNull();
+  });
+
+  it('oynatıcıdaki parça değişimi deftere yazılır, yayın açılınca sıfırlanır', () => {
+    const o = new YayinOzeti();
+    o.baslat();
+    muzik.dinleyici!({ title: 'Paramparça', artist: 'Teoman' });
+    muzik.dinleyici!(null);
+    expect(o.sarkilar().map((s) => s.ad)).toEqual(['Paramparça — Teoman']);
+    expect(o.onceki('Yeni')?.ad).toBe('Paramparça — Teoman');
+    eventBus.emit('stream_online', { platform: 'r4-test' });
+    expect(o.sarkilar()).toEqual([]);
+    eventBus.emit('stream_offline', { platform: 'r4-test' });
   });
 });

@@ -13,6 +13,7 @@ import { tahminler } from '../engagement/predictions.js';
 import { kuyruk } from '../engagement/queue.js';
 import { puanDususu } from '../engagement/point-drops.js';
 import { songRequest } from '../songrequest/songrequest.js';
+import { yayinOzeti } from '../ai/yayin-ozeti.js';
 import { muzikHost } from '../muzik/index.js';
 import { sesYuzdesi } from '../muzik/spotify-saf.js';
 import { baslangicDuyurusu, giveaway, kazananDuyurusu } from '../giveaways/giveaways.js';
@@ -90,7 +91,7 @@ function parseTriviaCategory(raw: string): string {
 /** `!modul kapat <ad>`: bu adlardaki yerleşik komutlar yanıt vermez */
 export const MODULLER: Record<string, string[]> = {
   oyunlar: ['slot', 'slots', 'rulet', 'roulette', 'duello', 'duel', 'soygun', 'heist', 'yaris', 'race', 'drag', 'balik', 'avla', 'fish', 'kasaac', 'kasa', 'case', 'bomba', 'c4', 'kes', 'cut', 'yazitura', 'cf', 'coinflip', 'zar', 'dice', 'kral', 'taht', 'king', 'tahtikap', 'claimthrone', 'claimking', 'cark', 'wheel'],
-  sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste', 'songpause', 'sarkidur', 'songresume', 'sarkidevam', 'songvol', 'sarkises', 'songlike', 'sarkibegen'],
+  sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste', 'songpause', 'sarkidur', 'songresume', 'sarkidevam', 'songvol', 'sarkises', 'songlike', 'sarkibegen', 'oncekisarki', 'lastsong'],
   yapayzeka: ['sor', 'ask', 'ai', 'cevir', 'translate', 'tr'],
   bilgi: ['soru', 'trivia', 'bilgi', 'bilgiyarismasi', 'yarisma', 'kelime', 'anagram'],
   market: ['market', 'magaza', 'store', 'shop', 'al', 'buy', 'redeem']
@@ -500,6 +501,12 @@ export class CommandManager {
       case 'songlike':
       case 'sarkibegen':
         return songRequest.begen(message.user.username, message.user.displayName);
+
+      case 'oncekisarki':
+      case 'lastsong': {
+        const o = yayinOzeti.onceki(songRequest.calanAdi());
+        return o ? `⏮️ Önceki şarkı: "${o.ad}"` : 'Bu yayında henüz önceki bir şarkı yok.';
+      }
 
       case 'songpause':
       case 'sarkidur':

@@ -7,7 +7,8 @@ import { eventBus, type ChatMessagePayload } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { geminiCoHost } from './gemini.js';
-import { maddeleriAyikla, ozetIstemi, YayinDefteri, type YayinRaporu } from './yayin-ozeti-saf.js';
+import { muzikHost } from '../muzik/index.js';
+import { maddeleriAyikla, oncekiSarki, ozetIstemi, YayinDefteri, type CalanKaydi, type YayinRaporu } from './yayin-ozeti-saf.js';
 
 const RAPORLAR = 'yayin_ozetleri';
 const AI_AYARI = 'ai_yayin_ozeti';
@@ -39,6 +40,15 @@ export class YayinOzeti {
     if (!m.user.isSelf) this.defter.sohbet(m.user.displayName || m.user.username, String(m.message ?? ''));
   }
 
+  /** Bu oturumda çalan şarkılar (yayın açılınca sıfırlanır) */
+  sarkilar(): CalanKaydi[] {
+    return this.defter.sarkiListesi();
+  }
+
+  onceki(simdiki: string): CalanKaydi | null {
+    return oncekiSarki(this.defter.sarkiListesi(), simdiki);
+  }
+
   /** Defterden rapor üretip saklar; defter boşsa null */
   async olustur(bitis = Date.now()): Promise<YayinRaporu | null> {
     const defter = this.defter;
@@ -66,6 +76,10 @@ export class YayinOzeti {
     eventBus.on('sub', (p: any) => void (p?.isTest || this.defter.aboneEkle(p?.count)));
     eventBus.on('tip', (p: any) => void (p?.isTest || this.defter.bagisEkle(p?.amount, p?.currency)));
     eventBus.on('raid', (p: any) => void (p?.isTest || this.defter.baskinEkle(ad(p), p?.viewers)));
+    // shortcut: yalnız Spotify / YTMD / Studio'dan gelen parça; video kipindeki klip istekleri listeye girmez
+    muzikHost.parcaDegisince((c) => {
+      if (c?.title) this.defter.sarkiEkle(c.artist ? `${c.title} — ${c.artist}` : c.title);
+    });
     eventBus.on('stream_online', (p: any) => {
       // Çok platformlu yayında defter ilk açılışta başlar, son kapanışta biter
       if (!this.canlilar.size) this.defter = new YayinDefteri();

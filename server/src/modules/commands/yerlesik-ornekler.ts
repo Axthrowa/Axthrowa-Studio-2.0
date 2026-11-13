@@ -45,6 +45,7 @@ export const YERLESIK_ORNEKLER: Record<string, string> = {
   sr: '🎵 @izleyici, "Şarkı adı" sıraya eklendi! (Sıradaki #3)',
   klip: '🎬 @izleyici, "Şarkı adı" klibi sıraya eklendi! (Sıradaki #3)',
   sarki: 'Şu anda çalan bir şarkı yok. Şarkı istemek için: !sr <şarkı adı>',
+  oncekisarki: '⏮️ Önceki şarkı: "Paramparça — Teoman"',
   songlike: '❤️ @ali "Paramparça — Teoman" şarkısını beğendi (3 beğeni).',
   songpause: '⏸️ Şarkı duraklatıldı.',
   songresume: '▶️ Şarkı devam ediyor.',

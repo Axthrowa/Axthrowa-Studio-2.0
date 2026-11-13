@@ -2,6 +2,12 @@
 
 const ORNEK_SINIRI = 400;
 const KISI_SINIRI = 5000;
+const SARKI_SINIRI = 300;
+
+export interface CalanKaydi {
+  zaman: number;
+  ad: string;
+}
 
 export interface YayinRaporu {
   id: string;
@@ -14,6 +20,8 @@ export interface YayinRaporu {
   abone: number;
   bagislar: Record<string, number>;
   baskinlar: Array<{ ad: string; izleyici: number }>;
+  /** R4: yayında çalan şarkılar, zaman sırasıyla (eski raporlarda yok) */
+  sarkilar?: CalanKaydi[];
   /** Yapay zekâ kapalıysa ya da yanıt alınamadıysa boş; sayılar yine durur */
   maddeler: string[];
   /** Yapay zekâ açıkken özet alınamadıysa nedeni */
@@ -30,6 +38,7 @@ export class YayinDefteri {
   private abone = 0;
   private bagislar: Record<string, number> = {};
   private baskinlar: Array<{ ad: string; izleyici: number }> = [];
+  private sarkilar: CalanKaydi[] = [];
 
   constructor(baslangic = Date.now()) {
     this.baslangic = baslangic;
@@ -66,6 +75,17 @@ export class YayinDefteri {
     if (this.baskinlar.length < 50) this.baskinlar.push({ ad, izleyici: Number(izleyici) || 0 });
   }
 
+  /** Aynı parça art arda yazılmaz (duraklat/devam aynı şarkıyı yeniden bildirir) */
+  sarkiEkle(ad: string, zaman = Date.now()): void {
+    if (!ad || this.sarkilar[this.sarkilar.length - 1]?.ad === ad) return;
+    this.sarkilar.push({ zaman, ad: ad.slice(0, 200) });
+    if (this.sarkilar.length > SARKI_SINIRI) this.sarkilar.shift();
+  }
+
+  sarkiListesi(): CalanKaydi[] {
+    return [...this.sarkilar].sort((a, b) => a.zaman - b.zaman);
+  }
+
   /** Kopup gelen yayında boş rapor çıkmasın */
   bosMu(): boolean {
     return this.mesaj < 5 && !this.takip && !this.abone && !this.baskinlar.length && !Object.keys(this.bagislar).length;
@@ -83,6 +103,7 @@ export class YayinDefteri {
       abone: this.abone,
       bagislar: { ...this.bagislar },
       baskinlar: [...this.baskinlar],
+      sarkilar: this.sarkiListesi(),
       maddeler: [],
     };
   }
@@ -109,6 +130,22 @@ export function ozetIstemi(r: YayinRaporu, sohbet: string): string {
     sohbet || '(sohbet yok)',
     '--- SON ---',
   ].join('\n');
+}
+
+/** `simdiki` dışında en son çalan şarkı (!oncekisarki) */
+export function oncekiSarki(liste: CalanKaydi[], simdiki: string): CalanKaydi | null {
+  for (let i = liste.length - 1; i >= 0; i--) if (liste[i].ad !== simdiki) return liste[i];
+  return null;
+}
+
+/** Discord'a gidecek şarkı listesi: yayın başından geçen süreyle */
+export function sarkiListesiMetni(r: YayinRaporu): string {
+  const tarih = new Date(r.baslangic).toLocaleDateString('tr-TR');
+  const satirlar = (r.sarkilar ?? []).map((s) => {
+    const dk = Math.max(0, Math.floor((s.zaman - r.baslangic) / 60_000));
+    return `${String(Math.floor(dk / 60)).padStart(2, '0')}:${String(dk % 60).padStart(2, '0')} ${s.ad}`;
+  });
+  return [`🎶 ${tarih} yayınında çalanlar (${satirlar.length})`, ...satirlar].join('\n');
 }
 
 /** Yanıttan en çok 3 madde: işaret ve numaralar atılır */

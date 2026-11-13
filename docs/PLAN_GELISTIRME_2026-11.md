@@ -54,7 +54,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - R5 tamam: "değişimde N sn göster" ve "duraklayınca gizle" zaten vardı; eklenen Pulse › OBS sahne kuralları (`Oyun = pill`, `Mola = poster`, `Sohbet = gizle`). Sahne adı OBS tarayıcı kaynağının kendi API'sinden okunur (sunucuya istek yok); OBS dışında `?sahne=` ile denenir. Gerçek OBS içinde denenmedi.
 - R9 tamam: Pulse › sözler: şarkıya özel kayma (±100/±500 ms, parça başına hatırlanır, en çok 300 parça), kaynak sırası seçimi (NetEase kapatılabilir), küfür maskesi (TR/EN temel liste + ek kelimeler; ilk harf kalır). Söz bulunamayan parçada katman altta boş yer ayırmaz.
 - R8 tamam: Pulse › görünüm galerisi: arama (ad + etiket), etiketler (dikey, küçük, büyük, kapak, retro, sade, renkli), sık kullanılanlar başta, ayarları JSON olarak dışa/içe aktarma (yalnız bilinen ve aynı türdeki alanlar; müzik kaynağı taşınmaz). "dikey" ölçüden türer: 27 tema korumalı alanda ölçüldü, genişliği ≤ 320 px ya da kendisi dikey olan 11 tema. Ölçü varsayılan kart genişliğine göredir.
-- Açık: R2, R3, R10, T7.
+- R10 tamam: deste/kısayol müzik eylemleri (oynat/duraklat, sonraki, önceki, ses %, karıştır, tekrar döngüsü, beğen, adı seçilen listeye ekle; liste yoksa gizli olarak oluşturulur). Kaynak bağlı değilse 409. Gerçek Spotify/YTMD ile denenmedi.
+- Açık: R2, R3, T7.
 
 ---
 

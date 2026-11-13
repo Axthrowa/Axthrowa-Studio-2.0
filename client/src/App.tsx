@@ -23,6 +23,7 @@ const Commands = lazy(() => import('./pages/Commands.js'));
 const Timers = lazy(() => import('./pages/Timers.js'));
 const AutoMod = lazy(() => import('./pages/AutoMod.js'));
 const SongRequest = lazy(() => import('./pages/SongRequest.js'));
+const KickOdulleri = lazy(() => import('./components/KickOdulleri.js').then((m) => ({ default: m.KickOdulleri })));
 const Economy = lazy(() => import('./pages/Economy.js'));
 const MiniGames = lazy(() => import('./pages/MiniGames.js'));
 const TriviaStudio = lazy(() => import('./pages/TriviaStudio.js'));
@@ -248,7 +249,7 @@ export function App() {
   const sayfaAdlari: Record<string, string> = {
     dashboard: 'Genel Bakış', kurulum: 'Hızlı Kurulum', multichat: 'Canlı Multi-Chat',
     overlays: 'Overlay Stüdyo', alerts: 'Uyarılar', pano: 'Ses / Video Panosu', tts: 'TTS',
-    songrequest: 'Şarkı İsteği', polls: 'Anketler', giveaways: 'Çekilişler', interaction: 'Tahmin & Kuyruk',
+    songrequest: 'Şarkı İsteği', polls: 'Anketler', giveaways: 'Çekilişler', interaction: 'Tahmin & Kuyruk', oduller: 'Kanal Ödülleri',
     trivia: 'Bil Bakalım', games: 'Chat Oyunları', economy: 'Sadakat & Market', rankings: 'Sıralamalar',
     donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar', otomasyon: 'Otomasyon',
     extras: 'Klip & Seviye', automod: 'Bot Moderasyonu', shield: 'Kalkan & Denetim', ai: 'Yapay Zekâ',
@@ -261,7 +262,7 @@ export function App() {
     { id: 'sohbet', label: 'Canlı Sohbet', icon: MessageSquare, grup: 'Yayın sırasında', alt: ['multichat'] },
     { id: 'obs', label: 'OBS & Uyarılar', icon: Layers, grup: 'Yayın sırasında', alt: ['overlays', 'alerts', 'pano', 'tts'] },
     { id: 'muzik', label: 'Müzik', icon: Music, grup: 'Yayın sırasında', alt: ['songrequest'] },
-    { id: 'etkinlik', label: 'Anket & Çekiliş', icon: BarChart3, grup: 'Yayın sırasında', alt: ['polls', 'giveaways', 'interaction'] },
+    { id: 'etkinlik', label: 'Anket & Çekiliş', icon: BarChart3, grup: 'Yayın sırasında', alt: ['polls', 'giveaways', 'interaction', 'oduller'] },
     { id: 'oyun', label: 'Oyunlar', icon: Gamepad2, grup: 'Etkileşim', alt: ['trivia', 'games'] },
     { id: 'ekonomi', label: 'Puan & Bağış', icon: Coins, grup: 'Etkileşim', alt: ['economy', 'rankings', 'donations'] },
     { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'otomasyon', 'sesli', 'extras'] },
@@ -306,6 +307,7 @@ export function App() {
       case 'sesli': return <VoiceCommands />;
       case 'otomasyon': return <Otomasyon />;
       case 'songrequest': return <SongRequest />;
+      case 'oduller': return <div className="space-y-4"><KickOdulleri /></div>;
       case 'economy': return <Economy />;
       case 'games': return <MiniGames />;
       case 'giveaways': return <Giveaways />;

@@ -56,7 +56,7 @@ export function KickOdulleri() {
   return (
     <Kart
       baslik="Kick kanal ödülleri"
-      aciklama="Burada açılan ödül Kick'te görünür; izleyici kullanınca yukarıdaki “Ödül” tetikli kurallar çalışır."
+      aciklama="Burada açılan ödül Kick'te görünür; izleyici kullanınca Otomasyon sayfasındaki “Ödül” tetikli kurallar çalışır."
       sag={
         <Buton ton="ikincil" ikon={<RefreshCw className="h-3.5 w-3.5" />} onClick={() => void yenile()}>
           Yenile

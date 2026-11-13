@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, FlaskConical, Play, Plus, Trash2, Workflow, Zap } from 'lucide-react';
 import { Anahtar, BosDurum, Buton, Girdi, Kart, KayitDurumu, Secim, useToast } from '../ui/index.js';
 import { useOtoKayit } from '../hooks/useOtoKayit.js';
-import { KICK_ODUL_LISTESI, KickOdulleri } from '../components/KickOdulleri.js';
+import { KICK_ODUL_LISTESI } from '../components/KickOdulleri.js';
 
 type Alanlar = Record<string, any> & { tur: string };
 interface Kural {
@@ -351,8 +351,6 @@ export function Otomasyon() {
           sil={() => guncelle((kurallar || []).filter((x) => x.id !== k.id))}
         />
       ))}
-
-      <KickOdulleri />
 
       <Kart baslik="Son çalışmalar" aciklama="Bot yeniden başlayınca sıfırlanır">
         {gunluk.length === 0 ? <p className="text-xs text-gray-500">Henüz çalışan kural yok.</p> : null}

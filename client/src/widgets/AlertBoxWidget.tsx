@@ -12,6 +12,9 @@ import {
   atla,
   ilerlet,
   kuyrugaEkle,
+  simdiOynat,
+  sirdanCikar,
+  sonaAl,
   temizle,
   kuyrukRaporu,
   metinPenceresiAcik,
@@ -267,6 +270,11 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       setKuyruk((d) => atla(d));
     } else if (alertControl.action === 'clear') {
       setKuyruk((d) => temizle(d));
+    } else if (alertControl.alertId) {
+      const id = String(alertControl.alertId);
+      if (alertControl.action === 'play_now') setKuyruk((d) => simdiOynat(d, id));
+      else if (alertControl.action === 'move_last') setKuyruk((d) => sonaAl(d, id));
+      else if (alertControl.action === 'remove') setKuyruk((d) => sirdanCikar(d, id));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alertControl]);

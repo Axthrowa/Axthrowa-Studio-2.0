@@ -57,6 +57,13 @@ router.post('/songrequest/sira', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+/** Studio "Şu an çalan › Sanatçıyı engelle": sanatçı adı şarkı isteği engel listesine */
+router.post('/songrequest/engel', (req: Request, res: Response) => {
+  const metin = String(req.body?.metin ?? '');
+  if (metin.trim().length < 2) return res.status(400).json({ error: 'Engellenecek ad boş' });
+  res.json({ ok: true, eklendi: songRequest.engelEkle(metin) });
+});
+
 router.post('/songrequest/:id/engelle', (req: Request, res: Response) => {
   if (!songRequest.engelle(String(req.params.id))) return res.status(404).json({ error: 'İstek bulunamadı' });
   res.json({ success: true });

@@ -14,9 +14,12 @@
  * benzersiz (`uyariKimligi`).
  */
 
-export type KontrolEylemi = 'pause' | 'resume' | 'mute' | 'unmute' | 'skip' | 'clear' | 'replay';
+export type KontrolEylemi = 'pause' | 'resume' | 'mute' | 'unmute' | 'skip' | 'clear' | 'replay' | 'play_now' | 'move_last' | 'remove';
 
-export const EYLEMLER: KontrolEylemi[] = ['pause', 'resume', 'mute', 'unmute', 'skip', 'clear', 'replay'];
+export const EYLEMLER: KontrolEylemi[] = ['pause', 'resume', 'mute', 'unmute', 'skip', 'clear', 'replay', 'play_now', 'move_last', 'remove'];
+
+/** Sıradaki tek bir uyarıya uygulanan eylemler (A7 sağ tık): `alertId` zorunlu, kuyruğu uyarı kutusu uygular */
+export const OGE_EYLEMLERI: readonly KontrolEylemi[] = ['play_now', 'move_last', 'remove'];
 
 export interface KontrolDurumu {
   /** Duraklatılmışken ekrandaki uyarı biter, sıradaki başlamaz */

@@ -343,9 +343,16 @@ export class SongRequestEngine {
   engelle(id: string): boolean {
     const satir = db.prepare('SELECT title FROM song_queue WHERE id = ?').get(id) as { title: string } | undefined;
     if (!satir) return false;
-    const liste = settingsCache.get('sr_engelli', '');
-    if (!this.engelli(satir.title)) settingsCache.set('sr_engelli', [liste.trim(), satir.title.trim()].filter(Boolean).join('\n'));
+    this.engelEkle(satir.title);
     this.kaldir(id);
+    return true;
+  }
+
+  /** Engel listesine satır ekler (Studio "Sanatçıyı engelle"); zaten engelliyse dokunmaz. Eklendiyse true. */
+  engelEkle(metin: string): boolean {
+    const m = metin.replace(/[\r\n]+/g, ' ').trim().slice(0, 120);
+    if (m.length < 2 || this.engelli(m)) return false;
+    settingsCache.set('sr_engelli', [settingsCache.get('sr_engelli', '').trim(), m].filter(Boolean).join('\n'));
     return true;
   }
 

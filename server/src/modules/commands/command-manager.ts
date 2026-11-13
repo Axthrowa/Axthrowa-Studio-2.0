@@ -32,7 +32,7 @@ import { hataMetni, seyrekUyar } from '../../core/logger.js';
 import { trKatla } from '../../core/text.js';
 import { klipYoneticisi } from '../clips/klip.js';
 import { klipSuresi } from '../clips/klip-saf.js';
-import { shoutoutGonder } from '../otomasyon/shoutout.js';
+import { shoutoutGonder, shoutoutMetni } from '../otomasyon/shoutout.js';
 import { kendiMesajlari, nukeArgumanlari, nukeHedefleri, sonMesajlar } from '../moderation/son-mesajlar.js';
 import { sureyiYaz } from '../automod/enforcement.js';
 import { rastgeleIzleyici } from '../../core/variables/registry.js';
@@ -1295,15 +1295,9 @@ export class CommandManager {
         if (!message.user.isMod && !message.user.isBroadcaster) return null;
         const kanal = (args[0] || '').replace(/^@/, '').trim();
         if (!kanal) return `@${message.user.displayName}, kullanim: !so <kanal>`;
-        const adresler: Record<string, string> = {
-          kick: 'https://kick.com',
-          twitch: 'https://twitch.tv',
-          youtube: 'https://youtube.com/@'
-        };
-        const kok = adresler[String(message.platform).toLowerCase()] || 'https://kick.com';
         // Overlay'deki Shoutout widget'ini da tetikle
         void shoutoutGonder(kanal, message.platform).catch((e) => seyrekUyar('shoutout:widget', '[Komut] Shoutout widget bildirimi başarısız', e));
-        return `📢 ${kanal} kanalına göz atın: ${kok}/${kanal}`;
+        return shoutoutMetni(kanal, message.platform);
       }
 
       // `sayac` burada da vardı ama yukarıdaki `count`/`sayac` onu gölgeliyordu

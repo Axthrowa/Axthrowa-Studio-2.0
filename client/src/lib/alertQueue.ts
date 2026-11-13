@@ -184,6 +184,26 @@ export function atla(durum: KuyrukDurumu, simdi = Date.now()): KuyrukDurumu {
   return { ...durum, asama: 'exiting', asamaBitis: simdi };
 }
 
+/** Sıradaki uyarıyı hemen oynatır: başa alınır, ekrandaki uyarı kapanır (A7 sağ tık "Şimdi oynat"). */
+export function simdiOynat(durum: KuyrukDurumu, id: string, simdi = Date.now()): KuyrukDurumu {
+  const i = durum.bekleyen.findIndex((o) => o.id === id);
+  if (i < 0) return durum;
+  const bekleyen = [durum.bekleyen[i], ...durum.bekleyen.filter((_, j) => j !== i)];
+  return atla({ ...durum, bekleyen }, simdi);
+}
+
+/** Sıradaki uyarıyı kuyruğun sonuna alır. */
+export function sonaAl(durum: KuyrukDurumu, id: string): KuyrukDurumu {
+  const i = durum.bekleyen.findIndex((o) => o.id === id);
+  if (i < 0 || i === durum.bekleyen.length - 1) return durum;
+  return { ...durum, bekleyen: [...durum.bekleyen.filter((_, j) => j !== i), durum.bekleyen[i]] };
+}
+
+/** Sıradaki uyarıyı oynatmadan çıkarır (son uyarılar listesinden yine oynatılabilir). */
+export function sirdanCikar(durum: KuyrukDurumu, id: string): KuyrukDurumu {
+  return durum.bekleyen.some((o) => o.id === id) ? { ...durum, bekleyen: durum.bekleyen.filter((o) => o.id !== id) } : durum;
+}
+
 /** Kuyruğu boşaltır. */
 export function temizle(durum: KuyrukDurumu): KuyrukDurumu {
   return {

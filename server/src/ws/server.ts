@@ -11,9 +11,9 @@ import { platformManager } from '../platforms/manager.js';
 import { economy } from '../modules/economy/economy.js';
 import { varyantlar } from '../modules/alerts/variants.js';
 import { hataMetni, seyrekUyar } from '../core/logger.js';
-import { shoutoutGonder } from '../modules/otomasyon/shoutout.js';
+import { shoutoutGonder, shoutoutMetni } from '../modules/otomasyon/shoutout.js';
 import { shieldModeService } from '../modules/moderation/shield-mode.js';
-import { BASLANGIC, kontrolUygula, KontrolDurumu, KuyrukAynalari, kuyrukRaporuTemizle, SonUyari, SonUyarilar, uyariKimligi, type KuyrukAynasi } from '../modules/alerts/control.js';
+import { BASLANGIC, kontrolUygula, OGE_EYLEMLERI, KontrolDurumu, KuyrukAynalari, kuyrukRaporuTemizle, SonUyari, SonUyarilar, uyariKimligi, type KuyrukAynasi } from '../modules/alerts/control.js';
 import { kupa } from '../modules/engagement/kupa.js';
 import { OturumSayaci, kilometreMetni, type KilometreTuru } from '../modules/alerts/kilometre.js';
 
@@ -103,6 +103,9 @@ export class WebSocketHub {
     if (eylem === 'replay') {
       tekrar = alertId ? this.sonUyarilar.bul(String(alertId)) : undefined;
       if (!tekrar) return { ok: false as const, kod: 'invalid' as const, mesaj: 'Yeniden oynatılacak uyarı bulunamadı', durum: this.uyariKontrol };
+    }
+    if ((OGE_EYLEMLERI as readonly string[]).includes(eylem) && !alertId) {
+      return { ok: false as const, kod: 'invalid' as const, mesaj: 'Hangi uyarı olduğu belirtilmedi', durum: this.uyariKontrol };
     }
     const sonuc = kontrolUygula(this.uyariKontrol, eylem, kim, surum);
     if (!sonuc.ok) return sonuc;
@@ -246,6 +249,13 @@ export class WebSocketHub {
     } else if (msg.action === 'send_chat') {
       // Yayıncı elle yazdı: `!bot mute` otomatik yanıtlar içindir, bu mesajı sessizce yutmamalı
       eventBus.emitBotMessage({ platform: msg.platform, message: msg.message, sessizdeBile: true, panelden: true });
+    } else if (msg.action === 'shoutout') {
+      // Paneldeki etkinlik satırının "Shoutout"u: `!so` ile aynı — sohbete tanıtım yazılır, katmanda kart çıkar
+      const kanal = String(msg.kanal || '').replace(/^@/, '').trim().slice(0, 40);
+      const platform = (['kick', 'twitch', 'youtube'] as const).find((p) => p === msg.platform) || 'kick';
+      if (!kanal) return;
+      eventBus.emitBotMessage({ platform, message: shoutoutMetni(kanal, platform), sessizdeBile: true, panelden: true });
+      void shoutoutGonder(kanal, platform).catch(() => undefined);
     } else if (msg.action === 'trigger_tts') {
       ttsEngine.enqueue(msg.text || 'Test TTS', 'Yayıncı');
     } else if (msg.action === 'clear_chat') {

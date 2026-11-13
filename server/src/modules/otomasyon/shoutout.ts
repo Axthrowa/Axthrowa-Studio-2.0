@@ -18,6 +18,13 @@ export function kickKanalBilgisi(veri: any): { avatarUrl?: string; oyun?: string
   };
 }
 
+const KANAL_KOKU: Record<string, string> = { kick: 'https://kick.com', twitch: 'https://twitch.tv', youtube: 'https://youtube.com/@' };
+
+/** `!so` ve paneldeki "Shoutout" aynı sohbet metnini yazar */
+export function shoutoutMetni(kanal: string, platform: string): string {
+  return `📢 ${kanal} kanalına göz atın: ${KANAL_KOKU[String(platform).toLowerCase()] || KANAL_KOKU.kick}/${kanal}`;
+}
+
 export async function shoutoutGonder(kanal: string, platform: string): Promise<void> {
   let bilgi: { avatarUrl?: string; oyun?: string } = {};
   if (platform === 'kick' && KANAL_ADI.test(kanal)) {

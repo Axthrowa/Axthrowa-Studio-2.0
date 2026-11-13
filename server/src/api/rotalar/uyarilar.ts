@@ -64,7 +64,10 @@ const EYLEM_ETIKETI: Record<string, string> = {
   unmute: 'sesini açtı',
   skip: 'geçerli uyarıyı atladı',
   clear: 'bekleyen uyarıları temizledi',
-  replay: 'uyarıyı yeniden oynattı'
+  replay: 'uyarıyı yeniden oynattı',
+  play_now: 'sıradaki uyarıyı hemen oynattı',
+  move_last: 'sıradaki uyarıyı sona aldı',
+  remove: 'sıradaki uyarıyı sildi'
 };
 
 router.post('/alerts/control', (req: Request, res: Response) => {

@@ -50,6 +50,13 @@ export const DEFAULT_CONFIG = {
   sceneRules: '',
   /** Sözleri kaydır (ms; + ileri). */
   lyricsOffsetMs: 0,
+  /** R9: şarkıya özel kayma (ms), anahtar `ad|sanatçı`; yoksa genel kayma. */
+  lyricsTrackOffsets: {},
+  /** R9: söz kaynak sırası: varsayilan | lrclib | netease-yok */
+  lyricsSources: 'varsayilan',
+  /** R9: küfür maskesi ve ek kelimeler */
+  lyricsMask: false,
+  lyricsMaskWords: '',
   /** Söz görünümü: giriş/çıkış/mola ekranları ve ayrı OBS kaynağı aynı ayarı kullanır. */
   lyricsFontSize: 26,
   lyricsSideSize: 18,

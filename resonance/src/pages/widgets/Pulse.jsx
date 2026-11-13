@@ -33,6 +33,7 @@ import { getYtmdToken, getYtmdHost, getYtmdPort } from '../../lib/ytmdAuth'
 import { getRefreshToken, getClientId } from '../../lib/spotifyAuth'
 import { encodeOverlayData } from '../../lib/overlayData'
 import { isHostAvailable } from '../../lib/hostBridge'
+import { KAYNAK_SIRALARI, ofsetYaz, parcaAnahtari, parcaOfseti } from '../../lib/sozDenetimi'
 
 const COVERS = [
   { value: 'square', key: 'square', preview: <SquarePreview /> },
@@ -413,6 +414,60 @@ export default function Pulse() {
               suffix={t('pulse.seconds')}
               onChange={(v) => set({ lyricsOffsetMs: Math.round(v * 1000) })}
             />
+            {track && (
+              <div className="mt-2 rounded-lg bg-white/5 p-2 text-xs text-white">
+                <p className="mb-1 truncate">
+                  Bu şarkı için: <span className="text-[var(--color-text-muted)]">{track.name}</span> ·{' '}
+                  <span className="tabular-nums">{(parcaOfseti(config, track) / 1000).toFixed(1)} sn</span>
+                  {config.lyricsTrackOffsets?.[parcaAnahtari(track)] != null ? ' (hatırlanıyor)' : ' (genel)'}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {[-500, -100, 100, 500].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => set({ lyricsTrackOffsets: ofsetYaz(config.lyricsTrackOffsets, parcaAnahtari(track), parcaOfseti(config, track) + d) })}
+                      className="rounded-lg bg-white/5 px-2 py-1 font-semibold tabular-nums"
+                    >
+                      {d > 0 ? '+' : '−'}
+                      {Math.abs(d)} ms
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => set({ lyricsTrackOffsets: ofsetYaz(config.lyricsTrackOffsets, parcaAnahtari(track), null) })}
+                    className="rounded-lg bg-white/5 px-2 py-1"
+                  >
+                    Genel kaymaya dön
+                  </button>
+                </div>
+              </div>
+            )}
+            <SubLabel>Söz kaynakları</SubLabel>
+            <Select
+              value={KAYNAK_SIRALARI[config.lyricsSources] ? config.lyricsSources : 'varsayilan'}
+              onChange={(v) => set({ lyricsSources: v })}
+              options={[
+                { value: 'varsayilan', label: 'Kelime zamanlı önce (NetEase), sonra LRCLIB, Lyrics.ovh' },
+                { value: 'lrclib', label: 'LRCLIB önce, sonra NetEase, Lyrics.ovh' },
+                { value: 'netease-yok', label: 'Yalnız LRCLIB ve Lyrics.ovh (NetEase kapalı)' },
+              ]}
+            />
+            <ToggleRow
+              title="Küfür maskesi"
+              description="Sözlerdeki küfürlerin ilk harfi kalır, gerisi yıldızla gizlenir (Türkçe ve İngilizce temel liste)."
+              checked={config.lyricsMask === true}
+              onChange={(v) => set({ lyricsMask: v })}
+            />
+            {config.lyricsMask === true && (
+              <input
+                value={config.lyricsMaskWords || ''}
+                onChange={(e) => set({ lyricsMaskWords: e.target.value.slice(0, 500) })}
+                placeholder="Ek kelimeler, virgülle ayrılır"
+                aria-label="Maskelenecek ek kelimeler"
+                className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-accent)]"
+              />
+            )}
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">
               {t('pulse.lyricsUrl')} {`${window.location.origin}/resonance/lyrics`}
             </p>

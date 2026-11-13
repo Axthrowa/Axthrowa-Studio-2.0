@@ -30,6 +30,9 @@ if (-not $SkipTests) {
     npm --prefix resonance test
     if ($LASTEXITCODE -ne 0) { throw "Resonance testleri basarisiz" }
   }
+  # Yayin provasi (T4): sahte OBS ile baslat, uyari, mola, bitir
+  cargo test -j 4 --manifest-path (Join-Path $proj "src-tauri\Cargo.toml") --test yayin_provasi
+  if ($LASTEXITCODE -ne 0) { throw "Yayin provasi basarisiz" }
   $bot = @("AxBoT", "StreamAxT") | ForEach-Object { Join-Path $env:USERPROFILE "Desktop\$_\server" } | Where-Object { Test-Path (Join-Path $_ "package.json") } | Select-Object -First 1
   if ($bot) {
     npm --prefix $bot exec vitest run

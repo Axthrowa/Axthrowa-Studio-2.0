@@ -39,3 +39,5 @@ jobs:
           npm run build
           mkdir -p resonance/dist
           cargo test --lib --manifest-path src-tauri/Cargo.toml
+      - name: Yayın provası (sahte OBS ile başlat, uyarı, mola, bitir)
+        run: cargo test --manifest-path src-tauri/Cargo.toml --test yayin_provasi

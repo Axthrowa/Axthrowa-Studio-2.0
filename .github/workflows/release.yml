@@ -82,6 +82,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           cargo test --lib --manifest-path src-tauri/Cargo.toml
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          # Yayın provası: sahte OBS ile başlat, uyarı, mola, bitir
+          cargo test --manifest-path src-tauri/Cargo.toml --test yayin_provasi
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Lisans denetimi ve üçüncü taraf bildirimleri
         run: |

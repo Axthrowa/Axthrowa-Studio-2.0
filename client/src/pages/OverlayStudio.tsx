@@ -1,3 +1,4 @@
+import { CanliDuzenlemeSeridi } from '../components/CanliDuzenlemeSeridi.js';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertPreset } from '../types.js';
 import {
@@ -1309,6 +1310,7 @@ export function OverlayStudio() {
 
   return (
     <div className="space-y-6">
+      <CanliDuzenlemeSeridi />
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

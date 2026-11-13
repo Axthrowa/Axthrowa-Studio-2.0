@@ -2,6 +2,7 @@
  * AxBoT Alerts Studio
  * Developed by AxthrowA
  */
+import { CanliDuzenlemeSeridi } from '../components/CanliDuzenlemeSeridi.js';
 import { useEffect, useState } from 'react';
 import { Bell, Check, Play, Save } from 'lucide-react';
 import { Alan, AlanMetni, Anahtar, Buton, Girdi, Katlanir, Secim } from '../ui/index.js';
@@ -90,6 +91,7 @@ export function AlertsStudio() {
 
   return (
     <div className="space-y-6">
+      <CanliDuzenlemeSeridi />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2"><Bell className="w-6 h-6 text-purple-400" /> Uyarılar (Alert Box)</h1>

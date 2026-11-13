@@ -55,7 +55,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - R9 tamam: Pulse › sözler: şarkıya özel kayma (±100/±500 ms, parça başına hatırlanır, en çok 300 parça), kaynak sırası seçimi (NetEase kapatılabilir), küfür maskesi (TR/EN temel liste + ek kelimeler; ilk harf kalır). Söz bulunamayan parçada katman altta boş yer ayırmaz.
 - R8 tamam: Pulse › görünüm galerisi: arama (ad + etiket), etiketler (dikey, küçük, büyük, kapak, retro, sade, renkli), sık kullanılanlar başta, ayarları JSON olarak dışa/içe aktarma (yalnız bilinen ve aynı türdeki alanlar; müzik kaynağı taşınmaz). "dikey" ölçüden türer: 27 tema korumalı alanda ölçüldü, genişliği ≤ 320 px ya da kendisi dikey olan 11 tema. Ölçü varsayılan kart genişliğine göredir.
 - R10 tamam: deste/kısayol müzik eylemleri (oynat/duraklat, sonraki, önceki, ses %, karıştır, tekrar döngüsü, beğen, adı seçilen listeye ekle; liste yoksa gizli olarak oluşturulur). Kaynak bağlı değilse 409. Gerçek Spotify/YTMD ile denenmedi.
-- Açık: R2, R3, T7.
+- R2 tamam: Windows medya oturumu (SMTC) saniyede bir okunur (Apple Music, Tidal, tarayıcı, VLC); Spotify/YTMD bağlıysa öncelik onlarda, onların SMTC oturumu atlanır. Oynat/duraklat/sonraki/önceki ekrandaki oynatıcıya gider. Sanal ortamda gerçek Brave oturumu 2 sn içinde panelde görüldü; kapak resmi yok, Apple Music ile denenmedi.
+- Açık: R3, T7.
 
 ---
 

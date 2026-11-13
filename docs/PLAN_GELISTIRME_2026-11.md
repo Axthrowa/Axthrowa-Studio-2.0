@@ -60,6 +60,11 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - T7 tamam (Studio `7061c08`, StreamAxT `5ce7c90`): ilk açılış kütüphane kopyası arka planda (gizli adla kopyalanıp adlandırılır, yarım dosya sunulmaz). Ölçüm başsız Chrome 1920x1080'de (gerçek OBS yok): 18 bot widget'ı, Studio master/uyarı/widget ve Resonance overlay'i varsayılan ayarla p95 5,7 ms. Sayfa içi sahte yükte en pahalı üç widget sohbet kutusu, ekranda emote ve etkinlik akışı; ayarda sınırsız sayı yazılabildiği için 500/400/300'de DOM 6500/1150/1230'a çıkıyor, kare 16,7 ms'yi aşıyordu. Tavan: sohbet 100, emote 60, akış 50 (DOM 1600/200/230; saniyede 16 mesajda p95 9,5 ms). Not: master overlay her widget için ayrı overlay-sync soketi açıyor (sunucu yokken toplam ~3 deneme/sn); tek ortak soket ayrı iş.
 - Faz 3 tamam.
 
+## Faz 4 durumu
+
+- B10 tamam (StreamAxT `f91aa60`): !quote / !addquote ve panel listesi zaten vardı. Eklenen: yayın defteri sohbetteki `!ad` iletilerini sayar, yayın sonu raporunda en çok kullanılan 10 komut; `GET /api/yayin-ozetleri/:id/csv` (özet, en çok yazanlar, komutlar, bağış, baskın, şarkılar; formül enjeksiyonu kaçışlı). Sanal ortamda sahte raporla panel ve CSV doğrulandı, rapor sonra silindi.
+- Açık: B7 (görsel otomasyon düzenleyicisi), B8 (Kick kanal ödülleri), B9 (yapay zekâ kişiliği ve bilgi bankası).
+
 ---
 
 ## Aşama 0 — Gerçek yayın provası (kod yok, 1 oturum)

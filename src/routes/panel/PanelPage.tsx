@@ -121,6 +121,8 @@ import UpdateModal from "@/components/axthrowa/UpdateModal";
 import KarsilamaEkrani from "@/components/axthrowa/LisansEkrani";
 import { gunluk } from "../../lib/gunluk";
 import { olay } from "../../lib/analitik";
+import { KISAYOL_OLAYI, kisayolSatiriEkle, type KisayolIstegi } from "../../lib/nesneMenusu";
+import type { HotkeyRow } from "../../lib/obsHotkeyCatalog";
 import { useAxthrowaStore, useAxthrowaStoreKoprusu } from "../../store/useAxthrowaStore";
 import {
   clearCreditsSession,
@@ -534,6 +536,23 @@ export default function PanelPage() {
     },
     [scheduleSave, mirrorMusic, mirrorObs]
   );
+
+  // Sağ tık "Kısayol ata" (sahne, deste tuşu): Kısayollar sayfasında tuşu boş satır açılır
+  useEffect(() => {
+    const ata = (e: Event) => {
+      const istek = (e as CustomEvent<KisayolIstegi>).detail;
+      if (!istek?.name) return;
+      e.preventDefault();
+      const obs = (settingsRef.current.obs || {}) as Record<string, unknown>;
+      const satirlar = Array.isArray(obs.actionHotkeys) ? (obs.actionHotkeys as HotkeyRow[]) : [];
+      const r = kisayolSatiriEkle(satirlar, istek, `hk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`);
+      if (r.yeni) update({ obs: { actionHotkeys: r.satirlar } });
+      setActiveNav("hotkeys");
+      bildir(r.yeni ? `${istek.label}: kısayol satırı açıldı, tuş kutusuna basıp tuşu ata` : `${istek.label}: kısayol satırı zaten var${r.satir.hotkey ? ` (${r.satir.hotkey})` : ""}`);
+    };
+    window.addEventListener(KISAYOL_OLAYI, ata);
+    return () => window.removeEventListener(KISAYOL_OLAYI, ata);
+  }, [update]);
 
   const reload = useCallback(async (s: ScreenId) => {
     try {

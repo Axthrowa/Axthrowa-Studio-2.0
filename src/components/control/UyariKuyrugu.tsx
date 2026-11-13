@@ -5,7 +5,9 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { Pause, Play, RotateCcw, SkipForward, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ArrowLineDown, FastForward, Play as OynatIkon, Trash } from "@phosphor-icons/react";
 import { axbotBase } from "../../lib/axbot";
+import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
 
 type AlertState = { paused: boolean; muted: boolean; version: number; updatedBy: string; lastAction: string | null; updatedAt: number };
 type RecentAlert = { id: string; eventType: string; title: string; message: string; at: number; isTest: boolean };
@@ -95,6 +97,14 @@ export default function UyariKuyrugu({ onToast }: { onToast: (m: string) => void
     }
   };
 
+  // Tablo A7 — Şimdi oynat · Atla · Sona al · Sil. Ekrandaki uyarıda yalnız Atla; sıradakilerde diğerleri.
+  const kuyrukMenusu = (o: KuyrukOgesi, ekranda: boolean, sonuncu: boolean): MenuOgesi[] => [
+    { ad: "Şimdi oynat", ikon: OynatIkon, kapali: ekranda || !state, yap: () => void act("play_now", o.id) },
+    { ad: "Atla", ikon: FastForward, kapali: !ekranda || !state, yap: () => void act("skip") },
+    { ad: "Sona al", ikon: ArrowLineDown, kapali: ekranda || sonuncu || !state, yap: () => void act("move_last", o.id) },
+    { ad: "Sil", ikon: Trash, kapali: ekranda || !state, onay: true, ayrac: true, yap: () => void act("remove", o.id) },
+  ];
+
   if (offline) return <p className="text-xs text-white/50">AxBoT çalışmıyor: uyarı kuyruğu için Bot sekmesinden başlatın.</p>;
 
   const bekleyen = kuyruk?.bekleyen ?? [];
@@ -122,12 +132,22 @@ export default function UyariKuyrugu({ onToast }: { onToast: (m: string) => void
           <p className="text-panel-muted">OBS'te açık uyarı kutusu yok; sıradaki uyarılar kutu açılınca görünür.</p>
         ) : (
           <>
-            <div className="rounded-lg bg-white/[0.05] px-2 py-1">{kuyruk.aktif ? <Oge o={kuyruk.aktif} etiket="EKRANDA" /> : <span className="text-panel-muted">Ekranda uyarı yok</span>}</div>
+            <div
+              className="rounded-lg bg-white/[0.05] px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-sky-400/60"
+              tabIndex={kuyruk.aktif ? 0 : undefined}
+              onContextMenu={nesneMenusu(() => (kuyruk.aktif ? kuyrukMenusu(kuyruk.aktif, true, false) : []))}
+            >
+              {kuyruk.aktif ? <Oge o={kuyruk.aktif} etiket="EKRANDA" /> : <span className="text-panel-muted">Ekranda uyarı yok</span>}</div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">Sırada ({bekleyen.length})</p>
             {bekleyen.length ? (
               <ol className="max-h-32 space-y-1 overflow-y-auto">
                 {bekleyen.map((o, i) => (
-                  <li key={o.id} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2 py-1">
+                  <li
+                    key={o.id}
+                    tabIndex={0}
+                    onContextMenu={nesneMenusu(() => kuyrukMenusu(o, false, i === bekleyen.length - 1))}
+                    className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-sky-400/60"
+                  >
                     <span className="w-4 shrink-0 text-right tabular-nums text-panel-muted">{i + 1}</span>
                     <Oge o={o} />
                   </li>

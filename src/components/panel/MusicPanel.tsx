@@ -8,6 +8,9 @@ import { useI18n } from "../../i18n";
 import { frameOrigin, temaIstegi } from "../../lib/embedMessages";
 import { botTemaMesaji, renkleriOku } from "../../lib/botTemaMesaji";
 import type { MsgKey } from "../../i18n/messages";
+import { Heart, LinkSimple, ListPlus, Prohibit } from "@phosphor-icons/react";
+import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
+import { axbotBase } from "../../lib/axbot";
 
 type Props = {
   baseUrl: string;
@@ -116,6 +119,43 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
 
   const pct = track?.duration ? Math.min(100, (progress / track.duration) * 100) : 0;
 
+  // Tablo A7 — şu an çalan: Beğen · Çalma listesine ekle · Sanatçıyı engelle · Bağlantıyı kopyala
+  const kitaplik = async (eylem: "like" | "playlistAdd", tamam: string) => {
+    try {
+      await sendPlayerCommand(eylem);
+      onToast(tamam);
+    } catch (e) {
+      onToast(String((e as Error).message || e).slice(0, 200));
+    }
+  };
+  const calanMenusu = (): MenuOgesi[] => {
+    if (!track) return [];
+    const spotify = track.source === "spotify" && !!track.url;
+    const sanatci = track.artist.split(",")[0].trim();
+    return [
+      { ad: "Beğen", ikon: Heart, kapali: !spotify, yap: () => void kitaplik("like", `${track.title}: Spotify'da beğenildi`) },
+      { ad: "Çalma listesine ekle", ikon: ListPlus, kapali: !spotify, yap: () => void kitaplik("playlistAdd", `${track.title}: "AxthrowA Yayın" listesine eklendi`) },
+      {
+        ad: "Sanatçıyı engelle",
+        ikon: Prohibit,
+        kapali: sanatci.length < 2,
+        onay: true,
+        ayrac: true,
+        yap: () =>
+          void (async () => {
+            try {
+              const r = await fetch(`${await axbotBase()}/api/songrequest/engel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metin: sanatci }) });
+              const d = (await r.json().catch(() => ({}))) as { eklendi?: boolean; error?: string };
+              onToast(!r.ok ? d.error || `HTTP ${r.status}` : d.eklendi ? `${sanatci}: şarkı isteklerinde engellendi` : `${sanatci} zaten engelli`);
+            } catch {
+              onToast("AxBoT'a ulaşılamadı");
+            }
+          })(),
+      },
+      { ad: "Bağlantıyı kopyala", ikon: LinkSimple, kapali: !track.url, yap: () => void navigator.clipboard.writeText(track.url || "").then(() => onToast("Şarkı bağlantısı kopyalandı")).catch(() => onToast("Panoya yazılamadı")) },
+    ];
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_1fr]">
       <aside className="max-h-[calc(100vh-140px)] space-y-4 overflow-y-auto rounded-xl border border-panel-border bg-panel-card p-4">
@@ -160,7 +200,12 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
 
         <div>
           <h2 className="text-sm font-semibold">Şu an çalıyor</h2>
-          <div className="mt-2 flex gap-3 rounded-lg border border-panel-border bg-black/30 p-3">
+          <div
+            tabIndex={track ? 0 : undefined}
+            onContextMenu={nesneMenusu(calanMenusu)}
+            aria-label={track ? `Şu an çalıyor: ${track.title} — ${track.artist}` : undefined}
+            className="mt-2 flex gap-3 rounded-lg border border-panel-border bg-black/30 p-3 outline-none focus-visible:ring-1 focus-visible:ring-panel-accent/60"
+          >
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-black/50">
               {track?.albumArt ? (
                 <img src={track.albumArt} alt="" className="h-full w-full object-cover" />

@@ -8,7 +8,9 @@
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowDownUp, Check, Pause, Pin, Play, RotateCcw, Search, Send, Sparkles } from "lucide-react";
+import { ArrowBendUpLeft, ArrowCounterClockwise, Copy, HandHeart, IdentificationCard, Megaphone, Prohibit, PushPin, Sparkle, Timer, Trash } from "@phosphor-icons/react";
 import KullaniciKarti from "./KullaniciKarti";
+import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
 import { axbotBase } from "../../lib/axbot";
 import { ACTIVITY_LABEL, CHAT_PLATFORMS, PLATFORM_LABEL, PLATFORM_SHORT, type ActivityEvent, type ChatPlatform, type NormalizedChatMessage } from "../../lib/chat/model";
 import { normalizeActivity, normalizeChat } from "../../lib/chat/normalize";
@@ -114,6 +116,24 @@ function subscribe(l: () => void) {
 
 function useFeed(): FeedSnapshot {
   return useSyncExternalStore(subscribe, () => feed.snap);
+}
+
+/** Etkinlik satırındaki "Kullanıcı kartı": kart sohbet panelinde açılır */
+const KART_OLAYI = "axt:kullanici-karti";
+type KartIstegi = { platform: ChatPlatform; username: string };
+
+/** Kişinin son sohbet iletisi; hiç yazmadıysa kart için yalnız kimliği taşıyan bir ileti */
+export function kartIletisi(mesajlar: NormalizedChatMessage[], k: KartIstegi): NormalizedChatMessage {
+  const ad = k.username.toLocaleLowerCase("tr-TR");
+  for (let i = mesajlar.length - 1; i >= 0; i--) {
+    const m = mesajlar[i];
+    if (m.platform === k.platform && !m.isSystem && (m.username.toLocaleLowerCase("tr-TR") === ad || m.displayName.toLocaleLowerCase("tr-TR") === ad)) return m;
+  }
+  return {
+    key: `kart:${k.platform}:${ad}`, messageId: `yerel-kart-${ad}`, platform: k.platform, channelId: "", userKey: `${k.platform}:${ad}`, userKeySource: "name",
+    userId: "", username: k.username, displayName: k.username, badges: [], roles: [], timestamp: Date.now(), message: "",
+    isBot: false, isSystem: false, mentionsChannel: false, isQuestion: false, isPaid: false, moderation: "visible",
+  };
 }
 
 function sendChat(platform: string, message: string): boolean {
@@ -276,16 +296,16 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
   };
 
   const cezaVer = useCallback(
-    async (m: NormalizedChatMessage, eylem: "timeout" | "ban" | "delete", sebep: string) => {
+    async (m: NormalizedChatMessage, eylem: "timeout" | "ban" | "delete", sebep: string, saniye = 600) => {
       try {
         const yol = eylem === "delete" ? "delete-message" : eylem;
         const r = await fetch(`${base}/api/moderation/${yol}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ platform: m.platform, username: m.username, messageId: m.messageId, saniye: 600, sebep, actor: "Kontrol Merkezi" }),
+          body: JSON.stringify({ platform: m.platform, username: m.username, messageId: m.messageId, saniye, sebep, actor: "Kontrol Merkezi" }),
         });
         const d = await r.json().catch(() => ({}));
-        const ne = eylem === "timeout" ? "10 dk zaman aşımı" : eylem === "ban" ? "kalıcı ban" : "mesaj silme";
+        const ne = eylem === "timeout" ? `${saniye >= 3600 ? `${saniye / 3600} sa` : `${Math.round(saniye / 60)} dk`} zaman aşımı` : eylem === "ban" ? "kalıcı ban" : "mesaj silme";
         onToast(r.ok ? `${m.displayName}: ${ne} uygulandı (${sebep})` : `${m.displayName}: ${d?.hata || `HTTP ${r.status}`}`);
       } catch {
         onToast("AxBoT'a ulaşılamadı");
@@ -328,6 +348,43 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
       return;
     }
     setYazi("");
+  };
+
+  const yaziKutusu = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const ac = (e: Event) => setKart(kartIletisi(chat.messages, (e as CustomEvent<KartIstegi>).detail));
+    window.addEventListener(KART_OLAYI, ac);
+    return () => window.removeEventListener(KART_OLAYI, ac);
+  }, [chat.messages]);
+
+  // Sağ tık / Menü tuşu: tablo A7 — Yanıtla · Sabitle · Katmanda vurgula · Sil · Sustur · Banla · Kullanıcı kartı · Kopyala
+  const mesajMenusu = (m: NormalizedChatMessage): MenuOgesi[] => {
+    const y = yetenek[m.platform]?.moderasyon;
+    const modOk = !m.isBot && !m.isSystem && !!bagli[m.platform] && !m.roles.includes("broadcaster") && !m.roles.includes("moderator");
+    const ogeler: MenuOgesi[] = [
+      {
+        ad: "Yanıtla",
+        ikon: ArrowBendUpLeft,
+        kapali: m.isSystem || !(gonderilebilir as string[]).includes(m.platform),
+        yap: () => {
+          setHedef(m.platform);
+          setYazi((t) => `@${m.username} ${t.replace(/^@\S+\s*/, "")}`);
+          window.setTimeout(() => yaziKutusu.current?.focus(), 0);
+        },
+      },
+      { ad: "Sabitle", ikon: PushPin, kapali: m.isSystem, yap: () => void katmana(m, "sabitle") },
+      { ad: "Katmanda vurgula", ikon: Sparkle, kapali: m.isSystem, yap: () => void katmana(m, "vurgula") },
+    ];
+    if (modOk && y?.mesajSil && !m.messageId.startsWith("yerel-")) ogeler.push({ ad: "Sil", ikon: Trash, onay: true, ayrac: true, yap: () => void cezaVer(m, "delete", "Kontrol Merkezi") });
+    if (modOk && y?.timeout)
+      for (const [ad, sn] of [["Sustur 1 dk", 60], ["Sustur 10 dk", 600], ["Sustur 1 sa", 3600]] as const)
+        ogeler.push({ ad, ikon: Timer, onay: true, ayrac: ad === "Sustur 1 dk" && !ogeler.some((o) => o.ad === "Sil"), yap: () => void cezaVer(m, "timeout", "Kontrol Merkezi", sn) });
+    if (modOk && y?.ban) ogeler.push({ ad: "Banla", ikon: Prohibit, onay: true, yap: () => void cezaVer(m, "ban", "Kontrol Merkezi") });
+    ogeler.push(
+      { ad: "Kullanıcı kartı", ikon: IdentificationCard, kapali: m.isSystem, ayrac: true, yap: () => setKart(m) },
+      { ad: "Kopyala", ikon: Copy, yap: () => void navigator.clipboard?.writeText(m.message).then(() => onToast("İleti kopyalandı")).catch(() => onToast("Panoya yazılamadı")) }
+    );
+    return ogeler;
   };
 
   const kartIzni = (k: NormalizedChatMessage) => {
@@ -409,7 +466,10 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
           return (
             <div
               key={m.key}
-              className={`group flex items-start gap-1.5 rounded px-1 py-0.5 ${m.mentionsChannel ? "bg-amber-500/10" : ""} ${m.moderation !== "visible" ? "opacity-60" : ""} ${m.isSystem ? "text-red-300" : ""}`}
+              tabIndex={0}
+              onContextMenu={nesneMenusu(() => mesajMenusu(m))}
+              aria-label={`${m.displayName}: ${m.message}`}
+              className={`group flex items-start gap-1.5 rounded px-1 py-0.5 outline-none focus-visible:ring-1 focus-visible:ring-sky-400/60 ${m.mentionsChannel ? "bg-amber-500/10" : ""} ${m.moderation !== "visible" ? "opacity-60" : ""} ${m.isSystem ? "text-red-300" : ""}`}
             >
               <PlatformBadge p={m.platform} />
               <span className="shrink-0 text-[10px] text-panel-muted">{saat(m.timestamp)}</span>
@@ -485,6 +545,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
           ))}
         </select>
         <input
+          ref={yaziKutusu}
           className="studio-input min-w-0 flex-1 !py-1 text-xs"
           placeholder="Bot olarak yaz…"
           maxLength={450}
@@ -615,6 +676,31 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
     }
   };
 
+  // Tablo A7 — Yeniden oynat · Teşekkür edildi · Shoutout · Kullanıcı kartı
+  const olayMenusu = (e: ActivityEvent): MenuOgesi[] => {
+    const kisi = (CHAT_PLATFORMS as readonly string[]).includes(e.platform) && !!e.user;
+    return [
+      { ad: "Yeniden oynat", ikon: ArrowCounterClockwise, kapali: !e.alertId, yap: () => void tekrar(e) },
+      { ad: e.thanked ? "Teşekkürü geri al" : "Teşekkür edildi", ikon: HandHeart, kapali: !e.alertId, yap: () => void tesekkur(e) },
+      {
+        ad: "Shoutout",
+        ikon: Megaphone,
+        kapali: !kisi || e.isTest || !connected,
+        yap: () => {
+          if (!feed.ws || feed.ws.readyState !== WebSocket.OPEN) return onToast("Sohbet bağlantısı yok");
+          feed.ws.send(JSON.stringify({ action: "shoutout", kanal: e.user, platform: e.platform }));
+          onToast(`${e.user} için shoutout gönderildi`);
+        },
+      },
+      {
+        ad: "Kullanıcı kartı",
+        ikon: IdentificationCard,
+        kapali: !kisi,
+        yap: () => window.dispatchEvent(new CustomEvent<KartIstegi>(KART_OLAYI, { detail: { platform: e.platform as ChatPlatform, username: e.user } })),
+      },
+    ];
+  };
+
   return (
     <div className="space-y-2 text-xs">
       <div className="flex flex-wrap items-center gap-1">
@@ -637,7 +723,11 @@ export const ActivityFeedPanel = memo(function ActivityFeedPanel({ onToast }: { 
       <div className="custom-scrollbar max-h-72 space-y-1 overflow-y-auto">
         {list.length === 0 && <p className="text-panel-muted">{connected ? "Bu oturumda olay yok. Takip, abone ve bağışlar geldikçe burada görünür." : "AxBoT çalışmıyor — olaylar için Bot sekmesinden başlatın."}</p>}
         {list.map((e) => (
-          <div key={e.eventId} className={`flex items-center gap-1.5 rounded-lg px-2 py-1 ${e.thanked ? "bg-white/[0.015] opacity-60" : "bg-white/[0.03]"}`}>
+          <div
+            key={e.eventId}
+            tabIndex={0}
+            onContextMenu={nesneMenusu(() => olayMenusu(e))}
+            className={`flex items-center gap-1.5 rounded-lg px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-sky-400/60 ${e.thanked ? "bg-white/[0.015] opacity-60" : "bg-white/[0.03]"}`}>
             <PlatformBadge p={e.platform} />
             <span className="min-w-0 flex-1 truncate">
               <b className="text-white">{e.user}</b> <span className="text-white/80">{ACTIVITY_LABEL[e.eventType] || e.eventType}</span>

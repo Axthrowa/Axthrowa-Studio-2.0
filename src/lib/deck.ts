@@ -106,6 +106,35 @@ export function addButton(deck: DeckConfig, pageId: string, b: Omit<DeckButton, 
   };
 }
 
+/** Düğmenin etiket, eylem, parametre ya da rengini değiştirir (sağ tık Düzenle / Renk) */
+export function updateButton(deck: DeckConfig, pageId: string, buttonId: string, patch: Partial<Omit<DeckButton, "id">>): DeckConfig {
+  return { ...deck, pages: deck.pages.map((p) => (p.id === pageId ? { ...p, buttons: p.buttons.map((b) => (b.id === buttonId ? { ...b, ...patch } : b)) } : p)) };
+}
+
+/** Düğmenin kopyası hemen arkasına (sağ tık Kopyala); sayfa doluysa değişmez */
+export function duplicateButton(deck: DeckConfig, pageId: string, buttonId: string): DeckConfig {
+  return {
+    ...deck,
+    pages: deck.pages.map((p) => {
+      const i = p.buttons.findIndex((b) => b.id === buttonId);
+      if (p.id !== pageId || i < 0 || p.buttons.length >= DECK_MAX_BUTTONS) return p;
+      const buttons = [...p.buttons];
+      buttons.splice(i + 1, 0, { ...p.buttons[i], params: { ...p.buttons[i].params }, id: newId("b") });
+      return { ...p, buttons };
+    }),
+  };
+}
+
+/** Yer olan ilk sayfaya ekler (sahnenin "Desteye ekle"si); hiçbir sayfada yer yoksa null */
+export function addToFirstFree(deck: DeckConfig, b: Omit<DeckButton, "id">): { deck: DeckConfig; page: string } | null {
+  const p = deck.pages.find((x) => x.buttons.length < DECK_MAX_BUTTONS);
+  return p ? { deck: addButton(deck, p.id, b), page: p.name } : null;
+}
+
+export function nextColor(c: DeckColor): DeckColor {
+  return DECK_COLORS[(DECK_COLORS.indexOf(c) + 1) % DECK_COLORS.length];
+}
+
 export function removeButton(deck: DeckConfig, pageId: string, buttonId: string): DeckConfig {
   return { ...deck, pages: deck.pages.map((p) => (p.id === pageId ? { ...p, buttons: p.buttons.filter((b) => b.id !== buttonId) } : p)) };
 }

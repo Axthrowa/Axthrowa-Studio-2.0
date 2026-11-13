@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowClockwise, FilmSlate, GearSix, Microphone, MicrophoneSlash, VideoCamera, Waveform } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowFatDown, ArrowFatUp, CopySimple, Eye, EyeSlash, FilmSlate, GearSix, LinkSimple, Lock, LockOpen, Microphone, MicrophoneSlash, Trash, VideoCamera, Waveform } from "@phosphor-icons/react";
+import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
+import { sahneMenusu } from "../control/sahneMenusu";
+import type { KatmanIslemi } from "../../lib/obsControl";
 import { fetchSettings, patchSettings } from "../../lib/api";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import HotkeyInput from "../panel/HotkeyInput";
@@ -190,6 +193,34 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
     }
   };
 
+  const katmanIsle = async (source: ObsSourceInfo, op: KatmanIslemi, tamam: string) => {
+    const sahne = snapshot.currentScene;
+    try {
+      const adres = await obsControl.sceneItemOp(sahne, source.name, op);
+      if (op === "url" && adres) await navigator.clipboard.writeText(adres);
+      onToast(`${source.name}: ${tamam}`);
+      setSources(await obsControl.sources(sahne));
+    } catch (error) {
+      onToast(String((error as Error)?.message || error));
+    }
+  };
+
+  // Tablo A7 — katman öğesi: Çoğalt · Kilitle · Gizle · Öne ve arkaya al · Adresi kopyala · Sil
+  const katmanMenusu = (source: ObsSourceInfo, i: number): MenuOgesi[] => [
+    { ad: "Çoğalt", ikon: CopySimple, yap: () => void katmanIsle(source, "duplicate", "çoğaltıldı") },
+    {
+      ad: source.locked ? "Kilidi aç" : "Kilitle",
+      ikon: source.locked ? LockOpen : Lock,
+      yap: () => void katmanIsle(source, source.locked ? "unlock" : "lock", source.locked ? "kilidi açıldı" : "kilitlendi"),
+    },
+    { ad: source.visible ? "Gizle" : "Göster", ikon: source.visible ? EyeSlash : Eye, yap: () => void updateSource(source) },
+    // obs-websocket listesi alttan üste sıralı: ilk satır en arkada, son satır en önde
+    { ad: "Öne al", ikon: ArrowFatUp, ayrac: true, kapali: i === sources.length - 1, yap: () => void katmanIsle(source, "front", "öne alındı") },
+    { ad: "Arkaya al", ikon: ArrowFatDown, kapali: i === 0, yap: () => void katmanIsle(source, "back", "arkaya alındı") },
+    { ad: "Adresi kopyala", ikon: LinkSimple, kapali: !/browser/i.test(source.kind), yap: () => void katmanIsle(source, "url", "adres kopyalandı") },
+    { ad: "Sil", ikon: Trash, onay: true, ayrac: true, yap: () => void katmanIsle(source, "remove", "sahneden silindi") },
+  ];
+
   const updateMute = async (input: ObsInputInfo) => {
     const muted = !input.muted;
     setInputs((prev) =>
@@ -335,6 +366,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
                 type="button"
                 disabled={!status.connected || !!busy}
                 onClick={() => void selectScene(scene)}
+                onContextMenu={nesneMenusu(() => sahneMenusu(scene, active, () => void selectScene(scene), onToast))}
                 className={`group flex min-h-[4.5rem] flex-col justify-between rounded-xl px-4 py-3 text-left transition-all duration-300 active:scale-[.98] ${
                   active
                     ? "bg-axthrowa-violet/10 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.45),0_0_24px_rgba(139,92,246,0.12)]"
@@ -362,11 +394,12 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
           icon={<VideoCamera weight="duotone" className="h-4 w-4 text-axthrowa-cyan" />}
         >
           <div className="-mx-2 max-h-64 space-y-0.5 overflow-y-auto">
-            {sources.map((source) => (
+            {sources.map((source, i) => (
               <ControlRow
                 key={source.name}
                 label={source.name}
-                hint={source.kind}
+                hint={source.locked ? `${source.kind} · kilitli` : source.kind}
+                menu={() => katmanMenusu(source, i)}
                 enabled={source.visible}
                 onToggle={() => void updateSource(source)}
                 hotkey={sourceHotkey(source.name)}
@@ -540,6 +573,7 @@ function ControlRow({
   icon,
   onToggle,
   hotkey,
+  menu,
 }: {
   label: string;
   hint: string;
@@ -550,9 +584,15 @@ function ControlRow({
   onToggle: () => void;
   /** Satırın kısayol kutusu (nokta + tuş) */
   hotkey?: React.ReactNode;
+  /** Sağ tık / Menü tuşu menüsü */
+  menu?: () => MenuOgesi[];
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 rounded-xl px-3 py-2.5 transition-all duration-300 hover:bg-zinc-800/50">
+    <div
+      tabIndex={menu ? 0 : undefined}
+      onContextMenu={menu ? nesneMenusu(menu) : undefined}
+      className="flex items-center justify-between gap-6 rounded-xl px-3 py-2.5 outline-none transition-all duration-300 hover:bg-zinc-800/50 focus-visible:ring-1 focus-visible:ring-axthrowa-cyan/60"
+    >
       <div className="flex min-w-0 items-center gap-3">
         {icon}
         <div className="flex min-w-0 flex-col gap-0.5">

@@ -6,9 +6,11 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
+import { EyeSlash, FadersHorizontal, Headphones, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
+import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
 import { obsApi, type ObsInputLevel } from "../../lib/api/actions";
 import { dbYazisi, meterPercent, olcerAdimi, OLCER_BOSTA, sesDbdenYuzde, sesYuzdedenDb, type OlcerDurumu } from "../../lib/obsAudio";
-import { obsControl, type ObsInputInfo } from "../../lib/obsControl";
+import { obsControl, type IzlemeTuru, type ObsInputInfo } from "../../lib/obsControl";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 
 /** OBS'in eşikleri: yeşil -20 dB'ye, sarı -9 dB'ye kadar, üstü kırmızı */
@@ -23,6 +25,22 @@ const VARSAYILAN_KANAL = 2;
 /** LED görünümü: 3 px yanık, 1 px boşluk */
 const LED = "repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 4px)";
 const OLCUM_MS = 100;
+const GIZLI_KEY = "axt.mikser.gizli";
+
+function kayitliGizli(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(GIZLI_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+const IZLEME: { tur: IzlemeTuru; ad: string }[] = [
+  { tur: "none", ad: "İzleme: kapalı" },
+  { tur: "monitorOnly", ad: "İzleme: yalnız dinle" },
+  { tur: "monitorAndOutput", ad: "İzleme: dinle ve yayına ver" },
+];
 
 function Olcer({ ad, kanal, susturulmus }: { ad: string; kanal: number; susturulmus: boolean }) {
   return (
@@ -33,7 +51,7 @@ function Olcer({ ad, kanal, susturulmus }: { ad: string; kanal: number; susturul
   );
 }
 
-function Satir({ girdi, kanalSayisi, onSustur, onToast }: { girdi: ObsInputInfo; kanalSayisi: number; onSustur: () => void; onToast: (m: string) => void }) {
+function Satir({ girdi, kanalSayisi, onSustur, onToast, menu }: { girdi: ObsInputInfo; kanalSayisi: number; onSustur: () => void; onToast: (m: string) => void; menu: () => MenuOgesi[] }) {
   const [db, setDb] = useState<number | null>(null);
   const surukleniyor = useRef(false);
   const sonGonderim = useRef(0);
@@ -71,7 +89,7 @@ function Satir({ girdi, kanalSayisi, onSustur, onToast }: { girdi: ObsInputInfo;
   };
 
   return (
-    <div className="flex w-[104px] shrink-0 flex-col items-center gap-1 px-1.5 py-2">
+    <div className="flex w-[104px] shrink-0 flex-col items-center gap-1 px-1.5 py-2" onContextMenu={nesneMenusu(menu)}>
       <span className={`w-full truncate text-center text-xs font-medium ${girdi.muted ? "text-panel-muted" : "text-white"}`} title={girdi.name}>{girdi.name}</span>
       <span className="h-4 font-mono text-[11px] tabular-nums text-panel-muted">{db === null ? "" : dbYazisi(db)}</span>
       <div className="flex min-h-44 flex-1 items-stretch justify-center gap-1.5">
@@ -126,6 +144,30 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
   const kutu = useRef<HTMLDivElement>(null);
   const seviyeler = useRef<Map<string, ObsInputLevel>>(new Map());
   const [kanallar, setKanallar] = useState<Record<string, number>>({});
+  const [gizli, setGizli] = useState(kayitliGizli);
+  const gizliYaz = (l: string[]) => {
+    setGizli(l);
+    try {
+      localStorage.setItem(GIZLI_KEY, JSON.stringify(l));
+    } catch {
+      /* depolama kapalıysa yalnız bu oturumda */
+    }
+  };
+  const hata = (g: ObsInputInfo, e: unknown) => onToast(`${g.name}: ${String((e as Error).message || e).slice(0, 140)}`);
+  // Tablo A7 — Sustur · İzleme türü · Filtreler · Gizle
+  const kanalMenusu = (g: ObsInputInfo): MenuOgesi[] => [
+    { ad: g.muted ? "Sesi aç" : "Sustur", ikon: g.muted ? SpeakerHigh : SpeakerSlash, yap: () => onSustur(g) },
+    ...IZLEME.map((i, n) => ({
+      ad: i.ad,
+      ikon: Headphones,
+      ayrac: n === 0,
+      yap: () => void obsControl.setMonitorType(g.name, i.tur).then(() => onToast(`${g.name}: ${i.ad.toLocaleLowerCase("tr-TR")}`)).catch((e) => hata(g, e)),
+    })),
+    { ad: "Filtreler", ikon: FadersHorizontal, ayrac: true, yap: () => void obsControl.openFilters(g.name).then(() => onToast(`${g.name}: OBS'te filtre penceresi açıldı`)).catch((e) => hata(g, e)) },
+    { ad: "Gizle", ikon: EyeSlash, yap: () => gizliYaz([...gizli.filter((x) => x !== g.name), g.name]) },
+  ];
+  const gorunen = girisler.filter((g) => !gizli.includes(g.name));
+  const gizlenen = girisler.length - gorunen.length;
   const varMi = girisler.length > 0;
 
   useEffect(() => {
@@ -183,9 +225,14 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
   if (!varMi) return <p className="text-xs text-panel-muted">Ses girişi bulunamadı.</p>;
   return (
     <div ref={kutu} className="custom-scrollbar flex h-full divide-x divide-panel-border overflow-x-auto">
-      {girisler.map((g) => (
-        <Satir key={g.name} girdi={g} kanalSayisi={kanallar[g.name] || VARSAYILAN_KANAL} onSustur={() => onSustur(g)} onToast={onToast} />
+      {gorunen.map((g) => (
+        <Satir key={g.name} girdi={g} kanalSayisi={kanallar[g.name] || VARSAYILAN_KANAL} onSustur={() => onSustur(g)} onToast={onToast} menu={() => kanalMenusu(g)} />
       ))}
+      {gizlenen > 0 && (
+        <button type="button" className="shrink-0 self-start px-2 py-2 text-[11px] text-panel-muted hover:text-white" onClick={() => gizliYaz([])} title="Gizlenen kanalları yeniden göster">
+          {gizlenen} gizli kanal · göster
+        </button>
+      )}
     </div>
   );
 }

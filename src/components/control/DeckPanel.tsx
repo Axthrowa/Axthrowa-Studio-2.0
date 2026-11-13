@@ -7,6 +7,9 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react";
+import { Copy, Keyboard, Palette, PencilSimple, Trash } from "@phosphor-icons/react";
+import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
+import { DESTE_OLAYI, destedenKisayol, KISAYOL_YOK, kisayolAta } from "../../lib/nesneMenusu";
 import { fetchSettings, patchSettings } from "../../lib/api";
 import { actionsApi, CATEGORY_LABEL, PARAM_LABEL, type ActionInfo, type ActionParamKind } from "../../lib/api/actions";
 import { multistreamApi } from "../../lib/api/multistream";
@@ -15,6 +18,10 @@ import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInter
 import {
   addButton,
   addPage,
+  addToFirstFree,
+  duplicateButton,
+  nextColor,
+  updateButton,
   DECK_COLORS,
   DECK_MAX_BUTTONS,
   DECK_MAX_PAGES,
@@ -39,6 +46,16 @@ const RENK: Record<DeckColor, string> = {
 
 type Oneriler = Partial<Record<ActionParamKind, string[]>>;
 
+/** Başka bir ekrandan desteye düğme ekler (sahne sağ tık "Desteye ekle"); açık deste kendini yeniler */
+export async function desteyeEkle(b: Omit<DeckButton, "id">): Promise<string> {
+  const s = await fetchSettings("panel");
+  const r = addToFirstFree(parseDeck(s.controlDeck), b);
+  if (!r) return "Destede yer yok: bir sayfayı boşaltın ya da yeni sayfa ekleyin";
+  await patchSettings("panel", { controlDeck: r.deck });
+  window.dispatchEvent(new Event(DESTE_OLAYI));
+  return `${b.label}: desteye eklendi (${r.page})`;
+}
+
 export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
   const [deck, setDeck] = useState<DeckConfig | null>(null);
   const [sayfaId, setSayfaId] = useState("");
@@ -48,10 +65,16 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
   const [kurulu, setKurulu] = useState<string | null>(null); // onay bekleyen düğme
   const [hata, setHata] = useState("");
 
+  const [duzenlenen, setDuzenlenen] = useState<DeckButton | null>(null);
+
   useEffect(() => {
-    fetchSettings("panel")
-      .then((s) => setDeck(parseDeck(s.controlDeck)))
-      .catch(() => setDeck(defaultDeck()));
+    const oku = () =>
+      fetchSettings("panel")
+        .then((s) => setDeck(parseDeck(s.controlDeck)))
+        .catch(() => setDeck((d) => d ?? defaultDeck()));
+    oku();
+    window.addEventListener(DESTE_OLAYI, oku);
+    return () => window.removeEventListener(DESTE_OLAYI, oku);
   }, []);
 
   const yukle = useCallback(async () => {
@@ -101,6 +124,15 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
 
   if (!deck || !sayfa) return <p className="text-xs text-panel-muted">Yükleniyor…</p>;
 
+  // Tablo A7 — Düzenle · Kopyala · Renk · Kısayol ata · Sil
+  const tusMenusu = (b: DeckButton): MenuOgesi[] => [
+    { ad: "Düzenle", ikon: PencilSimple, yap: () => setDuzenlenen(b) },
+    { ad: "Kopyala", ikon: Copy, kapali: sayfa.buttons.length >= DECK_MAX_BUTTONS, yap: () => kaydet(duplicateButton(deck, sayfa.id, b.id)) },
+    { ad: `Renk: ${nextColor(b.color)}`, ikon: Palette, yap: () => kaydet(updateButton(deck, sayfa.id, b.id, { color: nextColor(b.color) })) },
+    { ad: "Kısayol ata", ikon: Keyboard, kapali: !eylem[b.actionId], yap: () => void (kisayolAta(destedenKisayol(b)) || onToast(KISAYOL_YOK)) },
+    { ad: "Sil", ikon: Trash, onay: true, ayrac: true, yap: () => kaydet(removeButton(deck, sayfa.id, b.id)) },
+  ];
+
   return (
     <div className="space-y-2 text-xs">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -144,7 +176,7 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
           const hazir = !!a && a.available;
           const ipucu = !a ? "Bu eylem artık tanımlı değil" : !a.available ? a.reason || "Kullanılamıyor" : a.confirm ? "Çift dokunuş ister" : a.label;
           return (
-            <div key={b.id} className="relative">
+            <div key={b.id} className="relative" onContextMenu={nesneMenusu(() => tusMenusu(b))}>
               <button
                 type="button"
                 title={ipucu}
@@ -182,18 +214,29 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
         {sayfa.buttons.length === 0 && !duzenle && <p className="col-span-full text-panel-muted">Bu sayfada düğme yok — “Düzenle” ile ekle.</p>}
       </div>
 
-      {duzenle && sayfa.buttons.length < DECK_MAX_BUTTONS && (
-        <DugmeEkle eylemler={eylemler} onEkle={(b) => kaydet(addButton(deck, sayfa.id, b))} />
+      {duzenlenen ? (
+        <DugmeEkle
+          key={duzenlenen.id}
+          eylemler={eylemler}
+          ilk={duzenlenen}
+          onEkle={(b) => {
+            kaydet(updateButton(deck, sayfa.id, duzenlenen.id, b));
+            setDuzenlenen(null);
+          }}
+          onVazgec={() => setDuzenlenen(null)}
+        />
+      ) : (
+        duzenle && sayfa.buttons.length < DECK_MAX_BUTTONS && <DugmeEkle eylemler={eylemler} onEkle={(b) => kaydet(addButton(deck, sayfa.id, b))} />
       )}
     </div>
   );
 }
 
-function DugmeEkle({ eylemler, onEkle }: { eylemler: ActionInfo[]; onEkle: (b: Omit<DeckButton, "id">) => void }) {
-  const [actionId, setActionId] = useState("");
-  const [etiket, setEtiket] = useState("");
-  const [params, setParams] = useState<Record<string, string>>({});
-  const [renk, setRenk] = useState<DeckColor>("slate");
+function DugmeEkle({ eylemler, onEkle, ilk, onVazgec }: { eylemler: ActionInfo[]; onEkle: (b: Omit<DeckButton, "id">) => void; ilk?: DeckButton; onVazgec?: () => void }) {
+  const [actionId, setActionId] = useState(ilk?.actionId ?? "");
+  const [etiket, setEtiket] = useState(ilk?.label ?? "");
+  const [params, setParams] = useState<Record<string, string>>(ilk?.params ?? {});
+  const [renk, setRenk] = useState<DeckColor>(ilk?.color ?? "slate");
   const [oneri, setOneri] = useState<Oneriler>({});
 
   const secili = eylemler.find((a) => a.id === actionId);
@@ -283,8 +326,13 @@ function DugmeEkle({ eylemler, onEkle }: { eylemler: ActionInfo[]; onEkle: (b: O
         }}
       >
         <Plus className="mr-1 inline h-3 w-3" />
-        Düğme ekle
+        {ilk ? "Kaydet" : "Düğme ekle"}
       </button>
+      {onVazgec && (
+        <button type="button" className="studio-btn-ghost ml-1.5 !px-2 !py-1" onClick={onVazgec}>
+          Vazgeç
+        </button>
+      )}
     </div>
   );
 }

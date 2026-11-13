@@ -141,6 +141,8 @@ export type NowPlaying = {
   duration: number;
   source: string;
   updatedAt: number;
+  /** Paylaşım bağlantısı (Spotify); bilinmiyorsa boş */
+  url?: string;
 };
 
 export type PlayerStatus = {

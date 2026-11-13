@@ -30,7 +30,12 @@ export type ObsSourceInfo = {
   name: string;
   kind: string;
   visible: boolean;
+  /** OBS'te kilitli (yerinden oynatılamaz) */
+  locked?: boolean;
 };
+
+/** Katman öğesi sağ tık işlemleri (A7) */
+export type KatmanIslemi = "duplicate" | "lock" | "unlock" | "front" | "back" | "remove" | "url";
 
 export type ObsInputInfo = {
   name: string;
@@ -62,6 +67,13 @@ async function sceneSnapshotJs(): Promise<ObsSceneSnapshot> {
     streaming,
   };
 }
+
+export type IzlemeTuru = "none" | "monitorOnly" | "monitorAndOutput";
+const OBS_IZLEME: Record<IzlemeTuru, string> = {
+  none: "OBS_MONITORING_TYPE_NONE",
+  monitorOnly: "OBS_MONITORING_TYPE_MONITOR_ONLY",
+  monitorAndOutput: "OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT",
+};
 
 export const obsControl = {
   connect: async (host: string, port: number, password: string) => {
@@ -123,13 +135,14 @@ export const obsControl = {
     } catch {
       const client = getObs();
       const res = (await client.call("GetSceneItemList", { sceneName })) as unknown as {
-        sceneItems?: { sourceName: string; sourceType?: string; sceneItemEnabled?: boolean }[];
+        sceneItems?: { sourceName: string; sourceType?: string; sceneItemEnabled?: boolean; sceneItemLocked?: boolean }[];
       };
       const items = res.sceneItems || [];
       return items.map((item) => ({
         name: item.sourceName,
         kind: item.sourceType || "",
         visible: item.sceneItemEnabled !== false,
+        locked: item.sceneItemLocked === true,
       }));
     }
   },
@@ -189,6 +202,41 @@ export const obsControl = {
       await tryInvoke<void>("obs_set_volume", { inputName, db });
     } catch {
       await getObs().call("SetInputVolume", { inputName, inputVolumeDb: db });
+    }
+  },
+  /** `url` tarayıcı kaynağının adresini döndürür */
+  sceneItemOp: async (sceneName: string, sourceName: string, op: KatmanIslemi): Promise<string | null> => {
+    try {
+      return await tryInvoke<string | null>("obs_scene_item_op", { sceneName, sourceName, op });
+    } catch (e) {
+      // Rust komutu yoksa (tarayıcıda geliştirme) yalnız adres okuma JS istemcisiyle yapılır
+      if (op !== "url") throw e;
+      const r = (await getObs().call("GetInputSettings", { inputName: sourceName })) as { inputSettings?: { url?: string } };
+      if (!r.inputSettings?.url) throw new Error("Bu kaynağın adresi yok (tarayıcı kaynağı değil)");
+      return r.inputSettings.url;
+    }
+  },
+  monitorType: async (inputName: string): Promise<IzlemeTuru> => {
+    try {
+      return await tryInvoke<IzlemeTuru>("obs_get_monitor_type", { inputName });
+    } catch {
+      const r = (await getObs().call("GetInputAudioMonitorType", { inputName })) as { monitorType: string };
+      return (Object.keys(OBS_IZLEME) as IzlemeTuru[]).find((k) => OBS_IZLEME[k] === r.monitorType) || "none";
+    }
+  },
+  setMonitorType: async (inputName: string, tur: IzlemeTuru) => {
+    try {
+      await tryInvoke<void>("obs_set_monitor_type", { inputName, tur });
+    } catch {
+      await getObs().call("SetInputAudioMonitorType", { inputName, monitorType: OBS_IZLEME[tur] } as never);
+    }
+  },
+  /** OBS'in kendi filtre penceresi (OBS'in çalıştığı makinede açılır) */
+  openFilters: async (inputName: string) => {
+    try {
+      await tryInvoke<void>("obs_open_filters", { inputName });
+    } catch {
+      await getObs().call("OpenInputFiltersDialog", { inputName });
     }
   },
   /** Sahnenin anlık karesi (data URL) */

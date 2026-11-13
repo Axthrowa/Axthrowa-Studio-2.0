@@ -32,6 +32,8 @@ import { ActivityFeedPanel, UniversalChatPanel } from "./UniversalChat";
 import { DeckPanel } from "./DeckPanel";
 import UyariKuyrugu from "./UyariKuyrugu";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
+import { nesneMenusu } from "../axthrowa/SagTikMenusu";
+import { sahneMenusu } from "./sahneMenusu";
 import {
   applyPreset,
   cycleSpan,
@@ -642,6 +644,7 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
               disabled={busy !== null}
               aria-pressed={aktif}
               onClick={() => !aktif && void sahne(ad)}
+              onContextMenu={nesneMenusu(() => sahneMenusu(ad, aktif, () => void sahne(ad), onToast))}
               className={`truncate rounded-lg border px-2 py-2 text-left font-semibold transition ${
                 aktif ? "border-red-500/60 bg-red-500/20 text-white" : "border-white/10 bg-white/[0.03] text-white/80 hover:border-white/30"
               }`}

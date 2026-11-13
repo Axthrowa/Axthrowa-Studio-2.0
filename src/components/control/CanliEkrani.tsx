@@ -6,6 +6,8 @@
  * yeniden çizilmesin.
  */
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { nesneMenusu } from "../axthrowa/SagTikMenusu";
+import { sahneMenusu } from "./sahneMenusu";
 import { Activity, Eye, EyeOff, Gauge, Pin, Plug, Radio, Settings2, TriangleAlert, Users, type LucideIcon } from "lucide-react";
 import { PlatformLogo } from "../chat/ChatFeed";
 import type { Platform } from "../../lib/chatHub";
@@ -168,7 +170,7 @@ function ObsBos({ metin, onBagla }: { metin: string; onBagla: () => void }) {
   );
 }
 
-function ObsOnizleme({ sahne, bagli, onBagla }: { sahne: string; bagli: boolean; onBagla: () => void }) {
+function ObsOnizleme({ sahne, bagli, onBagla, onProgramaDon }: { sahne: string; bagli: boolean; onBagla: () => void; onProgramaDon?: () => void }) {
   const tuval = useRef<HTMLCanvasElement>(null);
   const [kareVar, setKareVar] = useState(false);
   const [acik, setAcik] = useState(kayitliOnizlemeAcik);
@@ -242,7 +244,16 @@ function ObsOnizleme({ sahne, bagli, onBagla }: { sahne: string; bagli: boolean;
           {sahne ? "Önizleme yükleniyor…" : "OBS bağlanınca önizleme burada görünür"}
         </div>
       ) : null}
-      {sahne ? <span className="absolute left-3 top-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-medium text-white">{sahne}</span> : null}
+      {sahne ? (
+        <span className={`absolute left-3 top-3 rounded-md px-2.5 py-1 text-xs font-medium text-white ${onProgramaDon ? "bg-amber-600/90" : "bg-black/70"}`}>
+          {onProgramaDon ? `Önizleme: ${sahne} (yayında değil)` : sahne}
+        </span>
+      ) : null}
+      {onProgramaDon ? (
+        <button type="button" onClick={onProgramaDon} className="absolute bottom-3 left-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-medium text-white hover:bg-[var(--dt-surface-3)]">
+          Yayındaki sahneye dön
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={degistir}
@@ -288,6 +299,11 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
   const [bot, setBot] = useState<BotDurumu | null>(null);
   const [obsBagli, setObsBagli] = useState(false);
   const [snap, setSnap] = useState<ObsSceneSnapshot | null>(null);
+  // Sağ tık "Önizle": yayına geçmeden başka bir sahnenin karesi önizleme panelinde
+  const [onizlenen, setOnizlenen] = useState<string | null>(null);
+  useEffect(() => {
+    if (onizlenen && (onizlenen === snap?.currentScene || !snap?.scenes?.includes(onizlenen))) setOnizlenen(null);
+  }, [onizlenen, snap?.currentScene, snap?.scenes]);
   const [girisler, setGirisler] = useState<ObsInputInfo[]>([]);
   const [saglik, setSaglik] = useState<StreamHealth | null>(null);
   const [kbps, setKbps] = useState<number | null>(null);
@@ -512,7 +528,11 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
               bilgi: { baslik: "Yayın bilgisi", gosterBaslik: false, icerik: <YayinBilgisiDock onToast={onToast} /> },
               kontrol: { baslik: "Yayın öncesi kontrol", gosterBaslik: true, icerik: <KontrolListesi onToast={onToast} /> },
               uyarilar: { baslik: "Uyarı kuyruğu", gosterBaslik: true, icerik: <UyariKuyrugu onToast={onToast} /> },
-              onizleme: { baslik: "Önizleme", gosterBaslik: false, icerik: <ObsOnizleme sahne={snap?.currentScene || ""} bagli={obsBagli} onBagla={onObsBagla} /> },
+              onizleme: {
+                baslik: "Önizleme",
+                gosterBaslik: false,
+                icerik: <ObsOnizleme sahne={onizlenen || snap?.currentScene || ""} bagli={obsBagli} onBagla={onObsBagla} onProgramaDon={onizlenen ? () => setOnizlenen(null) : undefined} />,
+              },
               sahne: {
                 baslik: "Sahne",
                 gosterBaslik: true,
@@ -531,6 +551,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
                       disabled={mesgulSahne}
                       aria-pressed={aktif}
                       onClick={() => !aktif && void sahneSec(ad)}
+                      onContextMenu={nesneMenusu(() => sahneMenusu(ad, aktif, () => void sahneSec(ad), onToast, () => setOnizlenen(ad)))}
                       title={ad}
                       className={`${TUS_TABAN} h-12 truncate px-3 text-xs font-bold ${aktif ? "border-panel-accent bg-panel-accent text-[var(--panel-cta-ink)]" : "border-panel-border bg-panel-elevated text-white hover:bg-[var(--dt-surface-3)]"}`}
                     >

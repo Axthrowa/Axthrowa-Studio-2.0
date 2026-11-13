@@ -43,6 +43,7 @@ pub struct ObsSourceInfo {
   pub name: String,
   pub kind: String,
   pub visible: bool,
+  pub locked: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -384,10 +385,12 @@ impl ObsClientState {
         .enabled(SceneId::Name(scene_name), item.id)
         .await
         .unwrap_or(false);
+      let locked = client.scene_items().locked(SceneId::Name(scene_name), item.id).await.unwrap_or(false);
       output.push(ObsSourceInfo {
         name: item.source_name,
         kind: item.input_kind.unwrap_or_else(|| format!("{:?}", item.source_type)),
         visible,
+        locked,
       });
     }
     Ok(output)
@@ -471,6 +474,74 @@ impl ObsClientState {
       .set_volume(InputId::Name(input_name), Volume::Db(db))
       .await
       .map_err(|error| format!("OBS ses düzeyi değiştirilemedi: {error}"))
+  }
+
+  /// Katman öğesi (sahnedeki kaynak) sağ tık işlemleri (A7): duplicate | lock | unlock | front | back | remove | url.
+  /// `url` tarayıcı kaynağının adresini döndürür; diğerleri None.
+  pub async fn scene_item_op(&self, scene_name: &str, source_name: &str, op: &str) -> Result<Option<String>, String> {
+    use obws::requests::scene_items::{Duplicate, SetIndex, SetLocked};
+    let client = self.client()?;
+    let scene = SceneId::Name(scene_name);
+    let items = client.scene_items().list(scene).await.map_err(|error| format!("OBS kaynakları alınamadı: {error}"))?;
+    let item = items
+      .into_iter()
+      .find(|item| item.source_name.eq_ignore_ascii_case(source_name))
+      .ok_or_else(|| format!("Kaynak bulunamadı: {source_name}"))?;
+    let si = client.scene_items();
+    let hata = |error: obws::error::Error| format!("OBS kaynağı değiştirilemedi: {error}");
+    match op {
+      "duplicate" => si.duplicate(Duplicate { scene, item_id: item.id, destination: None }).await.map(|_| None).map_err(hata),
+      "lock" | "unlock" => si.set_locked(SetLocked { scene, item_id: item.id, locked: op == "lock" }).await.map(|_| None).map_err(hata),
+      "front" | "back" => {
+        // OBS'te büyük sıra numarası üstte çizilir
+        let i = si.index(scene, item.id).await.map_err(hata)?;
+        let hedef = if op == "front" { i.saturating_add(1) } else { i.saturating_sub(1) };
+        si.set_index(SetIndex { scene, item_id: item.id, index: hedef }).await.map(|_| None).map_err(hata)
+      }
+      "remove" => si.remove(scene, item.id).await.map(|_| None).map_err(hata),
+      "url" => {
+        let ayar = client
+          .inputs()
+          .settings::<serde_json::Value>(InputId::Name(&item.source_name))
+          .await
+          .map_err(|error| format!("Kaynak ayarları okunamadı: {error}"))?;
+        ayar.settings.get("url").and_then(|v| v.as_str()).filter(|u| !u.is_empty()).map(|u| Some(u.to_string())).ok_or_else(|| "Bu kaynağın adresi yok (tarayıcı kaynağı değil)".to_string())
+      }
+      _ => Err(format!("Geçersiz işlem: {op}")),
+    }
+  }
+
+  /// Ses izleme türü: "none" | "monitorOnly" | "monitorAndOutput" (mikser sağ tık menüsü, A7)
+  pub async fn monitor_type(&self, input_name: &str) -> Result<String, String> {
+    use obws::common::MonitorType;
+    let t = self.client()?.inputs().audio_monitor_type(InputId::Name(input_name)).await.map_err(|error| format!("OBS izleme türü okunamadı: {error}"))?;
+    Ok(match t {
+      MonitorType::MonitorOnly => "monitorOnly",
+      MonitorType::MonitorAndOutput => "monitorAndOutput",
+      _ => "none",
+    }
+    .to_string())
+  }
+
+  pub async fn set_monitor_type(&self, input_name: &str, tur: &str) -> Result<(), String> {
+    use obws::common::MonitorType;
+    let t = match tur {
+      "none" => MonitorType::None,
+      "monitorOnly" => MonitorType::MonitorOnly,
+      "monitorAndOutput" => MonitorType::MonitorAndOutput,
+      _ => return Err(format!("Geçersiz izleme türü: {tur}")),
+    };
+    self
+      .client()?
+      .inputs()
+      .set_audio_monitor_type(InputId::Name(input_name), t)
+      .await
+      .map_err(|error| format!("OBS izleme türü değiştirilemedi: {error}"))
+  }
+
+  /// OBS'in kendi filtre penceresini açar (yayıncının makinesinde)
+  pub async fn open_filters(&self, input_name: &str) -> Result<(), String> {
+    self.client()?.ui().open_filters_dialog(InputId::Name(input_name)).await.map_err(|error| format!("OBS filtre penceresi açılamadı: {error}"))
   }
 
   /// Sahnenin anlık karesi (data URL). Canlı ekranının önizlemesi.
@@ -961,6 +1032,26 @@ pub async fn obs_get_volume(state: State<'_, AppState>, input_name: String) -> R
 #[tauri::command]
 pub async fn obs_set_volume(state: State<'_, AppState>, input_name: String, db: f32) -> Result<(), String> {
   state.obs.set_volume_db(&input_name, db).await
+}
+
+#[tauri::command]
+pub async fn obs_scene_item_op(state: State<'_, AppState>, scene_name: String, source_name: String, op: String) -> Result<Option<String>, String> {
+  state.obs.scene_item_op(&scene_name, &source_name, &op).await
+}
+
+#[tauri::command]
+pub async fn obs_get_monitor_type(state: State<'_, AppState>, input_name: String) -> Result<String, String> {
+  state.obs.monitor_type(&input_name).await
+}
+
+#[tauri::command]
+pub async fn obs_set_monitor_type(state: State<'_, AppState>, input_name: String, tur: String) -> Result<(), String> {
+  state.obs.set_monitor_type(&input_name, &tur).await
+}
+
+#[tauri::command]
+pub async fn obs_open_filters(state: State<'_, AppState>, input_name: String) -> Result<(), String> {
+  state.obs.open_filters(&input_name).await
 }
 
 #[tauri::command]

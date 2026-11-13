@@ -21,7 +21,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
-pub const SPOTIFY_SCOPES: &str = "user-read-currently-playing user-read-playback-state user-read-recently-played user-top-read user-modify-playback-state";
+// Kitaplık ve çalma listesi izinleri (A7 "Beğen", "Çalma listesine ekle"): eski bağlantılar yeniden bağlanana dek 403 alır
+pub const SPOTIFY_SCOPES: &str = "user-read-currently-playing user-read-playback-state user-read-recently-played user-top-read user-modify-playback-state user-library-modify playlist-read-private playlist-modify-private";
+/// "Çalma listesine ekle"nin kullandığı (yoksa oluşturulan) gizli liste
+pub const YAYIN_LISTESI: &str = "AxthrowA Yayın";
 
 /// Aynı anda geçerli sayılan yetkilendirme denemesi sayısı
 const MAX_PENDING: usize = 5;
@@ -185,6 +188,15 @@ pub struct NowPlaying {
   pub source: String,
   #[serde(default)]
   pub updated_at: i64,
+  /// Parçanın paylaşım bağlantısı (Spotify'da open.spotify.com/track/…); bilinmiyorsa boş
+  #[serde(default)]
+  pub url: String,
+}
+
+/// open.spotify.com/track/<kimlik> bağlantısından parça kimliği
+pub fn spotify_parca_kimligi(url: &str) -> Option<&str> {
+  let id = url.split("/track/").nth(1)?.split(['?', '/', '#']).next()?;
+  (!id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric())).then_some(id)
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -860,7 +872,59 @@ impl MusicState {
       duration: item.get("duration_ms").and_then(|v| v.as_i64()).unwrap_or(0),
       source: SOURCE_SPOTIFY.into(),
       updated_at: now_ms(),
+      url: item.pointer("/external_urls/spotify").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
     }))
+  }
+
+  /// Şu an Spotify'da çalan parçayı beğenir (`like`) ya da "AxthrowA Yayın" listesine ekler (`playlistAdd`).
+  pub async fn spotify_kitaplik(&self, eylem: &str) -> Result<String> {
+    let np = self.now_playing().filter(|n| n.source == SOURCE_SPOTIFY).ok_or_else(|| anyhow!("Spotify'da çalan bir şarkı yok"))?;
+    let id = spotify_parca_kimligi(&np.url).ok_or_else(|| anyhow!("Bu parça Spotify kitaplığına eklenemez (bölüm ya da yerel dosya)"))?.to_string();
+    let token = self.spotify_access_token().await?;
+    let izin = |kod: u16| match kod {
+      401 | 403 => anyhow!("Spotify bu izni vermedi: Bağlantılar'dan Spotify'ı yeniden bağlayın"),
+      kod => anyhow!("Spotify isteği başarısız ({kod})"),
+    };
+    if eylem == "like" {
+      let r = self.client.put(format!("https://api.spotify.com/v1/me/tracks?ids={id}")).bearer_auth(&token).header(reqwest::header::CONTENT_LENGTH, "0").body("").send().await?;
+      return if r.status().is_success() { Ok(format!("{} beğenilenlere eklendi", np.title)) } else { Err(izin(r.status().as_u16())) };
+    }
+    if eylem != "playlistAdd" {
+      return Err(anyhow!("bilinmeyen kitaplık işlemi: {eylem}"));
+    }
+    let r = self.client.get("https://api.spotify.com/v1/me/playlists?limit=50").bearer_auth(&token).send().await?;
+    if !r.status().is_success() {
+      return Err(izin(r.status().as_u16()));
+    }
+    let listeler: Value = r.json().await?;
+    let mevcut = listeler["items"].as_array().into_iter().flatten().find(|p| p["name"].as_str() == Some(YAYIN_LISTESI)).and_then(|p| p["id"].as_str()).map(str::to_string);
+    let liste = match mevcut {
+      Some(l) => l,
+      None => {
+        let ben: Value = self.client.get("https://api.spotify.com/v1/me").bearer_auth(&token).send().await?.json().await?;
+        let kullanici = ben["id"].as_str().ok_or_else(|| anyhow!("Spotify hesabı okunamadı"))?;
+        let r = self
+          .client
+          .post(format!("https://api.spotify.com/v1/users/{kullanici}/playlists"))
+          .bearer_auth(&token)
+          .json(&serde_json::json!({ "name": YAYIN_LISTESI, "public": false, "description": "Yayında beğenilen şarkılar (AxthrowA Studio)" }))
+          .send()
+          .await?;
+        if !r.status().is_success() {
+          return Err(izin(r.status().as_u16()));
+        }
+        let v: Value = r.json().await?;
+        v["id"].as_str().ok_or_else(|| anyhow!("Spotify listesi oluşturulamadı"))?.to_string()
+      }
+    };
+    let r = self
+      .client
+      .post(format!("https://api.spotify.com/v1/playlists/{liste}/tracks"))
+      .bearer_auth(&token)
+      .json(&serde_json::json!({ "uris": [format!("spotify:track:{id}")] }))
+      .send()
+      .await?;
+    if r.status().is_success() { Ok(format!("{} → {YAYIN_LISTESI}", np.title)) } else { Err(izin(r.status().as_u16())) }
   }
 
   async fn spotify_command(&self, action: &str) -> Result<()> {
@@ -1231,6 +1295,9 @@ impl MusicState {
   /// Kaynak verilmezse aktif kaynağı dener; başarısızsa diğer bağlı kaynağa düşer.
   /// Böylece panelde Spotify seçili olsa bile YTMD bağlıysa komut oraya da gider.
   pub async fn command(&self, action: &str, source: Option<&str>) -> Result<()> {
+    if matches!(action, "like" | "playlistAdd") {
+      return self.spotify_kitaplik(action).await.map(|_| ());
+    }
     let preferred = source
       .map(|s| s.to_string())
       .unwrap_or_else(|| self.source());
@@ -1433,6 +1500,13 @@ mod tests {
     assert!(pending
       .iter()
       .any(|p| p.redirect_uri.ends_with("/api/player/spotify/callback")));
+  }
+
+  #[test]
+  fn spotify_baglantisindan_parca_kimligi() {
+    assert_eq!(spotify_parca_kimligi("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=x"), Some("4uLU6hMCjMI75M1A2tKUQC"));
+    assert_eq!(spotify_parca_kimligi("https://open.spotify.com/episode/abc"), None);
+    assert_eq!(spotify_parca_kimligi(""), None);
   }
 
   fn np(source: &str, playing: bool, title: &str, updated_at: i64) -> NowPlaying {

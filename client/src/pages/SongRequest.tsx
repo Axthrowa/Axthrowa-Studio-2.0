@@ -180,6 +180,9 @@ export function SongRequest() {
           <p className="text-sm text-gray-400">
             İzleyicilerinizin <code className="text-purple-400">!sr &lt;şarkı veya link&gt;</code> ile şarkı istemesini sağlayın. Şarkıları ister OBS Browser'da, ister doğrudan masaüstü Spotify veya YouTube Music uygulamanızda dinleyin.
           </p>
+          <p className="mt-1 text-xs text-gray-400">
+            Kuyruğu OBS'te görmek için: Paneller › Özel Tarayıcı Panelleri › adres <code className="text-purple-400 select-all">{`${window.location.origin}/dock/sarki-sirasi`}</code>
+          </p>
         </div>
       </div>
 

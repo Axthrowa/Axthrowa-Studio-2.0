@@ -7,6 +7,7 @@ import { useNowPlaying } from '../hooks/useNowPlaying'
 import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
 import { sarkiBitti } from '../lib/lyrics'
 import { hostBaseUrl, loadOverlayConfig } from '../lib/hostBridge'
+import { useIstekSirasi } from '../hooks/useIstekSirasi'
 
 /** Önizlemede gösterilen örnek parça (kapak: gömülü degrade, ağa çıkmaz) */
 export const ORNEK_PARCA = {
@@ -132,6 +133,8 @@ export default function Overlay({ lyricsOnly = false }) {
   const track = ornekKipi ? ORNEK_PARCA : canli.track
   const isPlaying = ornekKipi ? true : canli.isPlaying
   const progressMs = ornekKipi ? ornekIlerleme : canli.progressMs
+  // R6: AxBoT istek kuyruğu (isteyen, sıradaki, yeni istek); örnek kipte ve söz sayfasında yok
+  const istek = useIstekSirasi(Boolean(config) && !lyricsOnly && !ornekKipi && config.showRequests !== false)
 
   useEffect(() => {
     document.body.classList.add('overlay-transparent')
@@ -234,6 +237,26 @@ export default function Overlay({ lyricsOnly = false }) {
             {track && isPlaying && !ornekKipi && !sarkiBitti(track, progressMs) && (
               <Lyrics track={track} progressMs={progressMs} config={config} />
             )}
+          </div>
+        )}
+        {kartGorunur && (istek.isteyen || istek.siradaki || istek.yeni) && (
+          <div
+            className="mt-1 flex max-w-full flex-col items-center gap-0.5 text-center text-sm text-white"
+            style={{ minWidth: '100%', width: 0, textShadow: '0 1px 4px rgba(0,0,0,.85)' }}
+          >
+            {istek.yeni ? (
+              <span className="truncate font-semibold" style={{ maxWidth: '100%' }}>
+                Yeni istek: {istek.yeni.ad}
+                {istek.yeni.isteyen ? ` · ${istek.yeni.isteyen}` : ''}
+              </span>
+            ) : null}
+            {istek.isteyen ? <span className="truncate opacity-90" style={{ maxWidth: '100%' }}>İsteyen: {istek.isteyen}</span> : null}
+            {istek.siradaki ? (
+              <span className="truncate opacity-75" style={{ maxWidth: '100%' }}>
+                Sıradaki: {istek.siradaki.ad}
+                {istek.siradaki.isteyen ? ` (${istek.siradaki.isteyen})` : ''}
+              </span>
+            ) : null}
           </div>
         )}
       </div>

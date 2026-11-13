@@ -28,6 +28,7 @@ const MiniGames = lazy(() => import('./pages/MiniGames.js'));
 const TriviaStudio = lazy(() => import('./pages/TriviaStudio.js'));
 const Giveaways = lazy(() => import('./pages/Giveaways.js'));
 const MultiChat = lazy(() => import('./pages/MultiChat.js'));
+const SarkiSirasiDock = lazy(() => import('./widgets/SarkiSirasiDock.js'));
 const OverlayStudio = lazy(() => import('./pages/OverlayStudio.js'));
 const AISettings = lazy(() => import('./pages/AISettings.js'));
 const Settings = lazy(() => import('./pages/Settings.js'));
@@ -132,6 +133,7 @@ export function App() {
   if (path === '/widgets/event-labels') return obsSayfasi(<EventLabelsWidget />);
   // "Şu An Çalan" artık Resonance (eski adres de onu gösterir)
   if (path === '/widgets/now-playing' || path === '/widgets/resonance') return obsSayfasi(<ResonanceWidget />);
+  if (path === '/dock/sarki-sirasi') return obsSayfasi(<SarkiSirasiDock />);
   if (path === '/widgets/polls') return obsSayfasi(<PollsWidget />);
   if (path === '/widgets/shoutout') return obsSayfasi(<ShoutoutWidget />);
   if (path === '/widgets/atla') return obsSayfasi(<AtlaWidget />);

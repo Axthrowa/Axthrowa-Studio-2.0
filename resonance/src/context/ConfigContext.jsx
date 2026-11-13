@@ -46,6 +46,8 @@ export const DEFAULT_CONFIG = {
   cardWidth: 0,
   /** Senkron şarkı sözlerini kartın altında göster. */
   showLyrics: false,
+  /** R6: AxBoT şarkı isteği: isteyen, sıradaki ve yeni istek kartın altında. */
+  showRequests: true,
   /** Sözleri kaydır (ms; + ileri). */
   lyricsOffsetMs: 0,
   /** Söz görünümü: giriş/çıkış/mola ekranları ve ayrı OBS kaynağı aynı ayarı kullanır. */

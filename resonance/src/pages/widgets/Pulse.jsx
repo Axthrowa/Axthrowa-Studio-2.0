@@ -403,6 +403,12 @@ export default function Pulse() {
             checked={config.showLyrics === true}
             onChange={(v) => set({ showLyrics: v })}
           />
+          <ToggleRow
+            title={t('pulse.requests')}
+            description={t('pulse.requestsDesc')}
+            checked={config.showRequests !== false}
+            onChange={(v) => set({ showRequests: v })}
+          />
           <div className="mt-2">
             <SubLabel>{t('pulse.lyricsOffset')}</SubLabel>
             <Slider

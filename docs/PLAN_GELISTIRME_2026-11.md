@@ -49,7 +49,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 
 - B6 tamam (StreamAxT `10ace97`): sıradaki istek sınırı seviyeye göre (izleyici, abone, VIP; boşsa izleyici sınırı, hem abone hem VIP olana yüksek olan), kullanıcı engel listesi, istek ücreti (`sr_ucret`): yetmeyen bakiyede neden yazılır, ücret yalnız istek sıraya girince düşülür; istek sonradan çalınamazsa (engel, bulunamadı, YouTube'da kapalı) ya da izleyici `!wrongsong` ile geri alırsa iade edilir. `!songlike` / `!sarkibegen` çalan şarkıyı kişi başı bir kez beğenir. En uzun süre, şarkı/sanatçı engeli ve `!voteskip` zaten vardı. Ödenen istekler ve beğeniler bellekte: bot yeniden başlarsa o anki sıradaki isteklerin iadesi yapılamaz. Sandbox'ta ayar sayfası denendi; ücret akışı testte, gerçek sohbetle denenmedi.
 - R4 tamam: yayın boyunca çalan şarkılar zamanla deftere yazılır, yayın sonu raporunda listelenir; `!oncekisarki` / `!lastsong`; rapordan "Discord'a gönder" düğmesi (kendiliğinden gitmez). Video kipindeki klip istekleri listeye girmez.
-- Açık: R2, R3, R5, R6, R7, R8, R9, R10, T7.
+- R6 tamam: Resonance katmanında çalan şarkıyı isteyen, sıradaki istek ve 6 sn "Yeni istek" satırı (Pulse › Şarkı istekleri ile kapatılır); salt okunur kuyruk paneli `/dock/sarki-sirasi`. Studio host'unda kuyruk ucu olmadığından şerit orada çıkmaz.
+- Açık: R2, R3, R5, R7, R8, R9, R10, T7.
 
 ---
 

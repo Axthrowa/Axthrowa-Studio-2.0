@@ -56,7 +56,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - R8 tamam: Pulse › görünüm galerisi: arama (ad + etiket), etiketler (dikey, küçük, büyük, kapak, retro, sade, renkli), sık kullanılanlar başta, ayarları JSON olarak dışa/içe aktarma (yalnız bilinen ve aynı türdeki alanlar; müzik kaynağı taşınmaz). "dikey" ölçüden türer: 27 tema korumalı alanda ölçüldü, genişliği ≤ 320 px ya da kendisi dikey olan 11 tema. Ölçü varsayılan kart genişliğine göredir.
 - R10 tamam: deste/kısayol müzik eylemleri (oynat/duraklat, sonraki, önceki, ses %, karıştır, tekrar döngüsü, beğen, adı seçilen listeye ekle; liste yoksa gizli olarak oluşturulur). Kaynak bağlı değilse 409. Gerçek Spotify/YTMD ile denenmedi.
 - R2 tamam: Windows medya oturumu (SMTC) saniyede bir okunur (Apple Music, Tidal, tarayıcı, VLC); Spotify/YTMD bağlıysa öncelik onlarda, onların SMTC oturumu atlanır. Oynat/duraklat/sonraki/önceki ekrandaki oynatıcıya gider. Sanal ortamda gerçek Brave oturumu 2 sn içinde panelde görüldü; kapak resmi yok, Apple Music ile denenmedi.
-- Açık: R3, T7.
+- R3 tamam: Müzik › Müzik kaynağı: otomatik (en son çalan) ya da sıra (Spotify, YouTube Music, Windows medya); Windows medyada yok sayılan uygulamalar (adında geçen parça, en çok 20). Sanal ortamda Brave yok sayılınca tarayıcıdaki YouTube 2,5 sn içinde overlay'den indi.
+- Açık: T7.
 
 ---
 

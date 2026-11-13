@@ -11,6 +11,11 @@ export default function YayinSaglikSatiri() {
 
   useEffect(() => {
     let iptal = false;
+    // K11: kırpma ölçer akışından (WebSocket) gelir; HTTP yoklaması yok. Son 5 sn'de kırptıysa uyarı kalır
+    let sonKirpma = 0;
+    const kapat = obsApi.olcerAkisi((m) => {
+      if (m?.inputs.some((g) => (g.channels?.length ? g.channels : [{ peakDb: g.peakDb }]).some((c) => meterZone(c.peakDb) === "clip"))) sonKirpma = Date.now();
+    });
     const tick = async () => {
       if (!isObsConnected()) {
         if (!iptal) setMetin(saglikSatiri({ obs: false, yayin: false, dropPct: 0, clip: false }));
@@ -18,7 +23,7 @@ export default function YayinSaglikSatiri() {
       }
       let yayin = false;
       let dropPct = 0;
-      let clip = false;
+      const clip = Date.now() - sonKirpma < 5000;
       try {
         const h = await getStreamHealth();
         yayin = h.active;
@@ -26,18 +31,13 @@ export default function YayinSaglikSatiri() {
       } catch {
         /* satır yine de yazılır */
       }
-      try {
-        const m = await obsApi.meters();
-        clip = m.inputs.some((g) => (g.channels?.length ? g.channels : [{ peakDb: g.peakDb }]).some((c) => meterZone(c.peakDb) === "clip"));
-      } catch {
-        /* ölçer yok */
-      }
       if (!iptal) setMetin(saglikSatiri({ obs: true, yayin, dropPct, clip }));
     };
     void tick();
     const id = setVisibleInterval(() => void tick(), 5000);
     return () => {
       iptal = true;
+      kapat();
       clearVisibleInterval(id);
     };
   }, []);

@@ -46,6 +46,8 @@ export const DEFAULT_CONFIG = {
   cardWidth: 0,
   /** Senkron şarkı sözlerini kartın altında göster. */
   showLyrics: false,
+  /** R5: OBS sahnesine göre kural; her satır `Sahne = gizle | göster | tema kimliği`. */
+  sceneRules: '',
   /** Sözleri kaydır (ms; + ileri). */
   lyricsOffsetMs: 0,
   /** Söz görünümü: giriş/çıkış/mola ekranları ve ayrı OBS kaynağı aynı ayarı kullanır. */

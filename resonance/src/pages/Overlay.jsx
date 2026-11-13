@@ -7,6 +7,9 @@ import { useNowPlaying } from '../hooks/useNowPlaying'
 import { decodeOverlayData, ACTIVE_OVERLAY_ID } from '../lib/overlayData'
 import { sarkiBitti } from '../lib/lyrics'
 import { hostBaseUrl, loadOverlayConfig } from '../lib/hostBridge'
+import { useObsSahnesi } from '../hooks/useObsSahnesi'
+import { sahneEylemi } from '../lib/sahneKurali'
+import { SKIN_REGISTRY } from '../components/widget/skins'
 
 /** Önizlemede gösterilen örnek parça (kapak: gömülü degrade, ağa çıkmaz) */
 export const ORNEK_PARCA = {
@@ -119,7 +122,12 @@ export default function Overlay({ lyricsOnly = false }) {
   // Host cevabı gelmeden localStorage varsayılanına (compact) düşme —
   // OBS'te yanlış temanın bir anlığına / kalıcı görünmesine yol açıyordu.
   const rawConfig = hosted?.config || (configReady ? portable?.config || profile?.config : null)
-  const config = rawConfig ? { ...DEFAULT_CONFIG, ...rawConfig } : null
+  const temelConfig = rawConfig ? { ...DEFAULT_CONFIG, ...rawConfig } : null
+  // R5: OBS sahnesine göre gizle / göster / başka tema (`?sahne=` OBS dışında denemek için)
+  const sahne = useObsSahnesi(params.get('sahne') || '')
+  const sahneKurali =
+    temelConfig && !lyricsOnly ? sahneEylemi(temelConfig.sceneRules, sahne, (id) => SKIN_REGISTRY.some((s) => s.id === id)) : null
+  const config = sahneKurali?.skin ? { ...temelConfig, skin: sahneKurali.skin } : temelConfig
   const overrides = { ytmd: portable?.ytmd || null, spotify: portable?.spotify || null }
   const canli = useNowPlaying(
     config?.musicService || DEFAULT_CONFIG.musicService,
@@ -221,7 +229,7 @@ export default function Overlay({ lyricsOnly = false }) {
             isPlaying={isPlaying}
             progressMs={progressMs}
             config={config}
-            demoVisible={ornekKipi ? true : undefined}
+            demoVisible={sahneKurali?.gizle ? false : ornekKipi || sahneKurali?.goster ? true : undefined}
             onVisibilityChange={onVisibilityChange}
           />
         )}
@@ -231,7 +239,7 @@ export default function Overlay({ lyricsOnly = false }) {
             className={lyricsOnly ? 'w-screen px-4' : 'mt-2'}
             style={lyricsOnly ? undefined : { width: kartGorunur ? 0 : 420, minWidth: kartGorunur ? '100%' : undefined, minHeight: sozYuksekligi(config) }}
           >
-            {track && isPlaying && !ornekKipi && !sarkiBitti(track, progressMs) && (
+            {track && isPlaying && !ornekKipi && !sahneKurali?.gizle && !sarkiBitti(track, progressMs) && (
               <Lyrics track={track} progressMs={progressMs} config={config} />
             )}
           </div>

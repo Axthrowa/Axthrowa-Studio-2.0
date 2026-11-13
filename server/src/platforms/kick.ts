@@ -4,6 +4,7 @@ import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { KickRealtime } from './kick-realtime.js';
 import { abonelikKanallari, kickAnketi, olayAdi } from './kick-realtime-protokol.js';
 import { kickZamani, type YayinBilgisi } from '../core/live-status-math.js';
+import { kickYayinKimligi, resmiKullaniciKimligi, resmiYayinBilgisi } from './kick-resmi.js';
 import { sifreleHepsi } from '../core/security/vault.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
@@ -851,6 +852,20 @@ export class KickPlatform extends BasePlatform {
   private async hedefKimligi(ad: string): Promise<number | undefined> {
     const onbellek = this.kullaniciKimlikleri.get(ad.toLowerCase());
     if (onbellek) return onbellek;
+    const token = await this.yetkiliToken();
+    if (token) {
+      try {
+        const r = await axios.get('https://api.kick.com/public/v1/channels', {
+          params: { slug: ad.toLowerCase() },
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          timeout: 8000
+        });
+        const id = resmiKullaniciKimligi(r.data);
+        if (id) return id;
+      } catch {
+        /* kanal sayfasına düşülür */
+      }
+    }
     const kanal = await axios.get(`https://kick.com/api/v2/channels/${encodeURIComponent(ad.toLowerCase())}`, {
       headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
       timeout: 8000
@@ -938,6 +953,22 @@ export class KickPlatform extends BasePlatform {
    */
   async yayinDurumu(): Promise<YayinBilgisi | null> {
     if (!this.connected || !this.currentChannel) return null;
+    // T5: önce resmi `GET /public/v1/users/livestreams` (yayın anahtarı içermez); token ya da kimlik yoksa,
+    // uç hata verirse ya da biçim beklenmedikse kanal sayfasına düşülür.
+    const token = this.broadcasterUserId ? await this.yetkiliToken() : '';
+    if (token) {
+      try {
+        const r = await axios.get('https://api.kick.com/public/v1/users/livestreams', {
+          params: { user_id: this.broadcasterUserId },
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          timeout: 8000
+        });
+        const b = resmiYayinBilgisi(r.data, this.currentChannel);
+        if (b) return b;
+      } catch {
+        /* kanal sayfasına düşülür */
+      }
+    }
     try {
       const res = await axios.get(`https://kick.com/api/v2/channels/${this.currentChannel}`, {
         headers: {
@@ -955,7 +986,7 @@ export class KickPlatform extends BasePlatform {
         izleyici: Number(ls.viewer_count) || 0,
         baslik: String(ls.session_title || ''),
         kategori: String(ls.categories?.[0]?.name || ''),
-        yayinId: String(ls.id || ''),
+        yayinId: kickYayinKimligi(kickZamani(ls.start_time || ls.created_at), ls.id),
         kanal: this.currentChannel
       };
     } catch {

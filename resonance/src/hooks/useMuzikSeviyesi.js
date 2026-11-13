@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
  * Müziğin anlık ses seviyesi (0..1): AxthrowA Studio'nun OBS ölçerlerinden (`/api/obs/meters`) okunur, dalgalar
  * gerçek ritimle oynar. OBS bağlı değilse, ölçer yoksa ya da müzik girişi sessizse `null` döner: çağıran kendi
  * süslü animasyonuna düşer. Bütün dalgalar tek okuyucuyu paylaşır.
- * shortcut: ~12 Hz HTTP yoklaması, OBS ölçerleri WebSocket ile yayınlanırsa oraya geçilmeli.
+ * R7: önce `/ws/obs-meters` akışı (OBS'in 50 ms'lik ölçümü, yoklama yok); akış yoksa (bağımsız Resonance, AxBoT)
+ * eskisi gibi HTTP yoklamasına düşer.
  */
 const ARALIK_MS = 80
 /** Bu adlardaki giriş müzik sayılır; yoksa mikrofon dışındaki en yüksek giriş */
@@ -27,6 +28,42 @@ let zamanlayici = null
 let son = null
 let hataSayisi = 0
 
+let soket = null
+
+/** Yeni ham ölçümü yumuşatıp dinleyicilere dağıtır */
+function yay(ham) {
+  // Yumuşatma: yükselişi hemen al, düşüşü yavaş bırak (ölçer iğnesi gibi)
+  son = ham == null ? null : son == null ? ham : ham > son ? ham : son * 0.7 + ham * 0.3
+  dinleyiciler.forEach((f) => f(son))
+}
+
+async function akisiAc() {
+  zamanlayici = null
+  const { hostBaseUrl } = await import('../lib/hostBridge')
+  let geldi = false
+  try {
+    soket = new WebSocket(`${hostBaseUrl().replace(/^http/, 'ws')}/ws/obs-meters`)
+  } catch {
+    soket = null
+    return oku()
+  }
+  soket.onmessage = (e) => {
+    geldi = true
+    try {
+      yay(muzikSeviyesi(JSON.parse(e.data)?.inputs))
+    } catch {
+      yay(null)
+    }
+  }
+  soket.onclose = () => {
+    soket = null
+    if (!dinleyiciler.size) return
+    yay(null)
+    // Akış hiç açılmadıysa bu sunucuda yok: yoklamaya geç; açılıp koptuysa biraz sonra yeniden dene
+    zamanlayici = setTimeout(geldi ? akisiAc : oku, geldi ? 2000 : 0)
+  }
+}
+
 async function oku() {
   try {
     // Geç yüklenir: hostBridge açılışta `window`a bakıyor (testler ve sunucu çizimi window'suz)
@@ -35,13 +72,11 @@ async function oku() {
     if (!r.ok) throw new Error(String(r.status))
     const ham = muzikSeviyesi((await r.json())?.inputs)
     hataSayisi = 0
-    // Yumuşatma: yükselişi hemen al, düşüşü yavaş bırak (ölçer iğnesi gibi)
-    son = ham == null ? null : son == null ? ham : ham > son ? ham : son * 0.7 + ham * 0.3
+    yay(ham)
   } catch {
-    son = null
     hataSayisi += 1
+    yay(null)
   }
-  dinleyiciler.forEach((f) => f(son))
   // Ölçer yoksa (bağımsız Resonance, OBS kapalı) sunucuyu boşuna yormamak için seyrekleşir
   if (dinleyiciler.size) zamanlayici = setTimeout(oku, hataSayisi > 3 ? 3000 : ARALIK_MS)
   else zamanlayici = null
@@ -55,9 +90,10 @@ export function useMuzikSeviyesi(acik) {
       return undefined
     }
     dinleyiciler.add(setSeviye)
-    if (!zamanlayici) oku()
+    if (!zamanlayici && !soket) void akisiAc()
     return () => {
       dinleyiciler.delete(setSeviye)
+      if (!dinleyiciler.size && soket) soket.close()
     }
   }, [acik])
   return acik ? seviye : null

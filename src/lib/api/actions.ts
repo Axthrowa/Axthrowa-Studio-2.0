@@ -141,4 +141,44 @@ export const obsApi = {
     if (!r.ok) throw new ActionError((await r.text()) || `HTTP ${r.status}`, r.status);
     return r.json();
   },
+  /**
+   * R7: ölçerler WebSocket'ten (OBS'in 50 ms'lik akışı, yoklama yok). `null` = OBS bağlı değil / ölçer yok.
+   * Akış açılamazsa (uzaktan, Bearer'lı panel: tarayıcı WS'e başlık ekleyemez) 2 sn'de bir HTTP'ye düşer.
+   */
+  olcerAkisi(dinle: (r: { inputs: ObsInputLevel[]; ageMs: number } | null) => void): () => void {
+    let bitti = false;
+    let ws: WebSocket | null = null;
+    let zaman: ReturnType<typeof setTimeout> | undefined;
+    const ac = () => {
+      if (bitti) return;
+      let geldi = false;
+      try {
+        ws = new WebSocket(`${API_BASE.replace(/^http/, "ws")}/ws/obs-meters`);
+      } catch {
+        ws = null;
+      }
+      if (!ws) return void (zaman = setTimeout(ac, 2000));
+      ws.onmessage = (e) => {
+        geldi = true;
+        try {
+          const d = JSON.parse(String(e.data));
+          dinle(Array.isArray(d?.inputs) ? d : null);
+        } catch {
+          dinle(null);
+        }
+      };
+      ws.onclose = () => {
+        if (bitti) return;
+        dinle(null);
+        if (!geldi) void obsApi.meters().then(dinle, () => dinle(null));
+        zaman = setTimeout(ac, 2000);
+      };
+    };
+    ac();
+    return () => {
+      bitti = true;
+      clearTimeout(zaman);
+      ws?.close();
+    };
+  },
 };

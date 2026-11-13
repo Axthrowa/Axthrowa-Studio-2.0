@@ -27,6 +27,22 @@ async fn sahte_obs_oturumu(mut ws: WebSocket, kayit: Kayit) {
     let v: Value = serde_json::from_str(&t).unwrap_or(Value::Null);
     let cevap = match v["op"].as_i64() {
       Some(1) => json!({"op": 2, "d": {"negotiatedRpcVersion": 1}}),
+      // Yeniden tanıtma (ölçer aboneliği): onayla, ardından OBS gibi 50 ms'de bir ölçüm gönder
+      Some(3) => {
+        if ws.send(Message::Text(json!({"op": 2, "d": {"negotiatedRpcVersion": 1}}).to_string().into())).await.is_err() {
+          return;
+        }
+        for i in 0..6 {
+          tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+          let olcum = json!({"op": 5, "d": {"eventType": "InputVolumeMeters", "eventIntent": 65536, "eventData": {
+            "inputs": [{"inputName": "Müzik", "inputLevelsMul": [[0.5, 0.5, 0.1 * i as f64], [0.5, 0.5, 0.0]]}]
+          }}});
+          if ws.send(Message::Text(olcum.to_string().into())).await.is_err() {
+            return;
+          }
+        }
+        continue;
+      }
       Some(6) => {
         let d = &v["d"];
         let tur = d["requestType"].as_str().unwrap_or("").to_string();
@@ -154,5 +170,24 @@ async fn yayin_provasi_baslat_uyari_mola_bitir() {
       "{ad} günlükte yok"
     );
   }
+
+  // R7: ölçerler WebSocket'ten yoklamasız gelir
+  let (mut akis, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/ws/obs-meters")).await.expect("ölçer akışı açılmalı");
+  use futures_util::StreamExt;
+  let ilk = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+    while let Some(Ok(m)) = akis.next().await {
+      if let tokio_tungstenite::tungstenite::Message::Text(t) = m {
+        let v: Value = serde_json::from_str(&t).unwrap();
+        if v["inputs"].as_array().is_some_and(|l| !l.is_empty()) {
+          return v;
+        }
+      }
+    }
+    panic!("akış ölçüm göndermeden kapandı");
+  })
+  .await
+  .expect("ölçüm 5 sn içinde gelmeli");
+  assert_eq!(ilk["inputs"][0]["name"], "Müzik", "{ilk}");
+  assert!(ilk["ageMs"].as_i64().unwrap() >= 0);
   let _ = std::fs::remove_dir_all(&root);
 }

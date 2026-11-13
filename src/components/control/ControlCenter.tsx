@@ -576,23 +576,17 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
     return () => clearVisibleInterval(id);
   }, [load]);
 
-  // Ses ölçerleri: panel görünürken 2/sn. OBS aboneliği istek kesilince kapanır.
+  // Ses ölçerleri: WebSocket akışı (R7), en çok 4/sn çizilir. OBS aboneliği akış kapanınca düşer.
   const bagli = !!status?.connected && inputs.length > 0;
   useEffect(() => {
     if (!bagli) return;
-    let iptal = false;
-    const id = setVisibleInterval(() => {
-      obsApi
-        .meters()
-        .then((r) => {
-          if (!iptal) setSeviye(r.ageMs >= 0 && r.ageMs < 2000 ? Object.fromEntries(r.inputs.map((l) => [l.name, l])) : {});
-        })
-        .catch(() => !iptal && setSeviye({}));
-    }, 500);
-    return () => {
-      iptal = true;
-      clearVisibleInterval(id);
-    };
+    let son = 0;
+    return obsApi.olcerAkisi((r) => {
+      const simdi = performance.now();
+      if (r && simdi - son < 250) return;
+      son = simdi;
+      setSeviye(r && r.ageMs >= 0 && r.ageMs < 2000 ? Object.fromEntries(r.inputs.map((l) => [l.name, l])) : {});
+    });
   }, [bagli]);
 
   const sahne = async (ad: string) => {

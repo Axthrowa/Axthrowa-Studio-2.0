@@ -24,7 +24,6 @@ const CETVEL = [-60, -50, -40, -30, -20, -10, 0];
 const VARSAYILAN_KANAL = 2;
 /** LED görünümü: 3 px yanık, 1 px boşluk */
 const LED = "repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 4px)";
-const OLCUM_MS = 100;
 const GIZLI_KEY = "axt.mikser.gizli";
 
 function kayitliGizli(): string[] {
@@ -172,27 +171,17 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
 
   useEffect(() => {
     if (!varMi) return;
-    let bekliyor = false;
-    const id = setVisibleInterval(() => {
-      if (bekliyor) return;
-      bekliyor = true;
-      obsApi
-        .meters()
-        .then((r) => {
-          const taze = r.ageMs >= 0 && r.ageMs < 2000;
-          seviyeler.current = new Map(taze ? r.inputs.map((l) => [l.name, l]) : []);
-          if (taze) {
-            // Kanal sayısı yalnız değişince yeniden çizilir
-            setKanallar((o) => (r.inputs.every((l) => !l.channels?.length || o[l.name] === l.channels.length) ? o : Object.fromEntries(r.inputs.map((l) => [l.name, l.channels?.length || VARSAYILAN_KANAL]))));
-          }
-        })
-        .catch(() => seviyeler.current.clear())
-        .finally(() => {
-          bekliyor = false;
-        });
-    }, OLCUM_MS);
+    // R7: ölçüm WebSocket'ten OBS hızında (20/sn) gelir, yoklama yok
+    const kapat = obsApi.olcerAkisi((r) => {
+      const taze = !!r && r.ageMs >= 0 && r.ageMs < 2000;
+      seviyeler.current = new Map(taze && r ? r.inputs.map((l) => [l.name, l]) : []);
+      if (taze && r) {
+        // Kanal sayısı yalnız değişince yeniden çizilir
+        setKanallar((o) => (r.inputs.every((l) => !l.channels?.length || o[l.name] === l.channels.length) ? o : Object.fromEntries(r.inputs.map((l) => [l.name, l.channels?.length || VARSAYILAN_KANAL]))));
+      }
+    });
 
-    // Ölçüm 10/sn gelir; düşüş her karede yumuşak ilerler
+    // Düşüş her karede yumuşak ilerler
     const durum = new Map<string, OlcerDurumu>();
     let kare = 0;
     let son = performance.now();
@@ -217,7 +206,7 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
     };
     kare = requestAnimationFrame(ciz);
     return () => {
-      clearVisibleInterval(id);
+      kapat();
       cancelAnimationFrame(kare);
     };
   }, [varMi]);

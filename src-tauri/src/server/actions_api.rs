@@ -7,7 +7,9 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{ConnectInfo, State};
+use axum::response::IntoResponse;
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -27,6 +29,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/actions/run", post(api_run))
     .route("/api/obs/canvases", get(api_canvases))
     .route("/api/obs/meters", get(api_meters))
+    .route("/ws/obs-meters", get(ws_meters))
     .route("/api/obs/kumanda", get(api_kumanda))
 }
 
@@ -57,6 +60,66 @@ async fn api_meters(
   }
   let (inputs, age_ms) = state.obs.meters().await.map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
   Ok(Json(json!({ "inputs": inputs, "ageMs": age_ms })))
+}
+
+/// R7: ölçerleri yoklamasız yayınlar. OBS 50 ms'de bir ölçüm gönderir; her yeni ölçüm `{inputs, ageMs}` olarak
+/// itilir, OBS bağlı değilse saniyede bir `{error}`. İzin HTTP ucuyla aynı (tarayıcı WS başlık gönderemez: uzaktan Bearer
+/// olmadan reddedilir, loopback açıktır). Bağlantı sürdükçe ölçer talebi tazelenir; kapanınca abonelik kendiliğinden düşer.
+async fn ws_meters(
+  ws: WebSocketUpgrade,
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+  authorize(&state, &addr, &headers, "broadcast.read").await?;
+  Ok(ws.on_upgrade(move |socket| olcer_akisi(socket, state)))
+}
+
+async fn olcer_akisi(mut socket: WebSocket, state: Arc<AppState>) {
+  let mut tik = tokio::time::interval(Duration::from_millis(25));
+  tik.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+  let mut son_yas: Option<i64> = None;
+  let mut son_hata = 0i64;
+  loop {
+    tokio::select! {
+      gelen = socket.recv() => match gelen {
+        Some(Ok(Message::Close(_))) | Some(Err(_)) | None => return,
+        _ => continue,
+      },
+      _ = tik.tick() => {}
+    }
+    let simdi = crate::db::chrono_now();
+    let mesaj = if !state.obs.is_connected() {
+      None
+    } else {
+      match state.obs.meters().await {
+        Ok((inputs, yas)) => {
+          // Aynı ölçümü yeniden gönderme: ölçüm zamanı (şimdi - yaş) değişmediyse yeni veri yok
+          let damga = if yas < 0 { -1 } else { simdi - yas };
+          if son_yas == Some(damga) {
+            continue;
+          }
+          son_yas = Some(damga);
+          Some(json!({ "inputs": inputs, "ageMs": yas }))
+        }
+        Err(e) => Some(json!({ "error": e })),
+      }
+    };
+    let mesaj = match mesaj {
+      Some(m) if m.get("error").is_none() => m,
+      hata => {
+        if simdi - son_hata < 1000 {
+          continue;
+        }
+        son_hata = simdi;
+        son_yas = None;
+        hata.unwrap_or_else(|| json!({ "error": "OBS bağlı değil" }))
+      }
+    };
+    if socket.send(Message::Text(mesaj.to_string().into())).await.is_err() {
+      return;
+    }
+  }
 }
 
 /// OBS tuvalleri (salt-okunur). İkincil tuvalde sahne geçişi obs-websocket'te yok; sağlayıcı eklenti adıyla gösterilir.

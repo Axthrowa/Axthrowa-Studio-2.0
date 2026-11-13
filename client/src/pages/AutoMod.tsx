@@ -24,6 +24,7 @@ type Adv = {
   name_enabled: boolean; name_words: string[]; name_regex: string; name_timeout: number; name_warning: string;
   zalgo_enabled: boolean; zalgo_action: string; zalgo_timeout: number; zalgo_warning: string;
   length_enabled: boolean; length_max: number; length_action: string; length_timeout: number; length_warning: string;
+  merdiven_acik: boolean; merdiven_pencere_dk: number; moderasyon_hesabi: 'kanal' | 'bot';
 };
 
 const ADV_DEFAULT: Adv = {
@@ -34,7 +35,8 @@ const ADV_DEFAULT: Adv = {
   blacklist_timeout: 300, blacklist_exclude_subs: false, blacklist_warning: 'Yasaklı kelime kullanıldı.', blacklist_action: 'timeout',
   name_enabled: false, name_words: [], name_regex: '', name_timeout: 600, name_warning: 'Kullanıcı adın kurala uymuyor.',
   zalgo_enabled: false, zalgo_action: 'delete_warn', zalgo_timeout: 60, zalgo_warning: 'Bozuk (Zalgo) yazı kullanımı yasaktır.',
-  length_enabled: false, length_max: 400, length_action: 'delete', length_timeout: 60, length_warning: 'Mesaj çok uzun.'
+  length_enabled: false, length_max: 400, length_action: 'delete', length_timeout: 60, length_warning: 'Mesaj çok uzun.',
+  merdiven_acik: false, merdiven_pencere_dk: 30, moderasyon_hesabi: 'kanal'
 };
 
 const TABS = [
@@ -44,7 +46,8 @@ const TABS = [
   { id: 'symbols', label: 'Sembol' },
   { id: 'words', label: 'Yasaklı Kelimeler' },
   { id: 'repeat', label: 'Tekrar' },
-  { id: 'name', label: 'Kullanıcı Adı' }
+  { id: 'name', label: 'Kullanıcı Adı' },
+  { id: 'ceza', label: 'Ceza' }
 ];
 
 type Kural = 'caps' | 'links' | 'emotes' | 'symbols' | 'blacklist' | 'repeat';
@@ -62,7 +65,7 @@ const EYLEMLER = [
 
 /** Örnek alınan bottaki on bir kademe. */
 const SURELER = [
-  [30, '30 sn'], [60, '1 dk'], [120, '2 dk'], [300, '5 dk'], [900, '15 dk'], [1800, '30 dk'],
+  [30, '30 sn'], [60, '1 dk'], [120, '2 dk'], [300, '5 dk'], [600, '10 dk'], [900, '15 dk'], [1800, '30 dk'],
   [3600, '1 sa'], [7200, '2 sa'], [18000, '5 sa'], [43200, '12 sa'], [86400, '1 gün']
 ] as const;
 
@@ -289,6 +292,22 @@ export function AutoMod() {
           ))}</div>
           {ekKural('zalgo', 'Zalgo (bozuk) yazı filtresi', 'Harflerin üstüne/altına yığılmış işaretlerle sohbeti bozan mesajlar.')}
           {ekKural('length', 'Mesaj uzunluğu sınırı', 'Belirlenen karakter sayısından uzun mesajlar.')}
+        </div>
+      )}
+
+      {tab === 'ceza' && (
+        <div className="glass-panel p-6 rounded-2xl space-y-4">
+          <div className="flex items-center gap-2"><Ban className="w-5 h-5 text-orange-400" /><h2 className="font-bold">Ceza Merdiveni ve Hesap</h2></div>
+          <label className="flex justify-between text-xs">Ceza merdiveni <input type="checkbox" checked={!!adv.merdiven_acik} onChange={e => setAdv(a => ({ ...a, merdiven_acik: e.target.checked }))} /></label>
+          <p className="text-[11px] text-gray-500">Açıkken kuralların kendi eylemi yerine aynı kişinin ihlal sayısına göre artan ceza uygulanır: 1. uyarı, 2. 1 dk susturma, 3. 10 dk susturma, 4. kalıcı ban. Belirlenen süre boyunca temiz kalan baştan başlar. Tekrarı sürdüren her mesaj bir basamak çıkarır. Sayım bot yeniden başlayınca sıfırlanır.</p>
+          <label className="text-xs space-y-1 block">Temiz kalınca sıfırlama (dk)<input type="number" min={1} max={1440} value={adv.merdiven_pencere_dk} onChange={e => setAdv(a => ({ ...a, merdiven_pencere_dk: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
+          <label className="text-xs space-y-1 block">Kick'te cezayı uygulayan hesap
+            <select value={adv.moderasyon_hesabi} onChange={e => setAdv(a => ({ ...a, moderasyon_hesabi: e.target.value === 'bot' ? 'bot' : 'kanal' }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2">
+              <option value="kanal">Yayıncı (kanal girişi)</option>
+              <option value="bot">Bot hesabı</option>
+            </select>
+          </label>
+          <p className="text-[11px] text-gray-500">Susturma, ban ve mesaj silme Kick'te bu hesapla yapılır; bot hesabı seçiliyse kanalda moderatör olmalıdır. Bot bağlı değilse yayıncı hesabına düşülür. Twitch tek hesapla bağlandığı için bu seçim orada geçerli değil. Silinen mesajlar metniyle Kalkan ve Denetim günlüğüne yazılır.</p>
         </div>
       )}
 

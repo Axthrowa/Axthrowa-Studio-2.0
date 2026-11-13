@@ -26,6 +26,24 @@ export interface KickChannelVerification {
 }
 
 /** Sohbet temizleme: `/clear` sonrası olay bekleme ve yedek olarak tek tek silme sınırları */
+/** Bot Moderasyonu'ndaki seçim: Kick moderasyon eylemlerini hangi hesap yapar ("kanal" varsayılan). */
+export function moderasyonHesabiOku(hamAyar: string | undefined): 'kanal' | 'bot' {
+  try {
+    return hamAyar && JSON.parse(hamAyar).moderasyon_hesabi === 'bot' ? 'bot' : 'kanal';
+  } catch {
+    return 'kanal';
+  }
+}
+
+function moderasyonHesabi(): 'kanal' | 'bot' {
+  try {
+    const r = db.prepare("SELECT value FROM bot_settings WHERE key = 'automod_advanced'").get() as { value: string } | undefined;
+    return moderasyonHesabiOku(r?.value);
+  } catch {
+    return 'kanal';
+  }
+}
+
 const KOMUT_BEKLEME_MS = 3000;
 const TEK_TEK_EN_COK = 100;
 const TEK_TEK_ARALIK_MS = 150;
@@ -590,6 +608,16 @@ export class KickPlatform extends BasePlatform {
     return r.data?.user?.profile_pic || null;
   }
 
+  /**
+   * Susturma, ban ve mesaj silmeyi yapan hesap (B2): Bot Moderasyonu'nda "bot" seçiliyse ve bot hesabı
+   * bağlıysa bot; yoksa kanal girişi (eskisi gibi). Kick'te bot hesabı kanalda moderatör olmalıdır.
+   */
+  private async moderasyonTokeni(): Promise<string> {
+    const bot = (this.botToken || '').replace(/^Bearer\s+/i, '').trim();
+    if (bot && moderasyonHesabi() === 'bot') return bot;
+    return this.yetkiliToken();
+  }
+
   private async yetkiliToken(): Promise<string> {
     if (this.kanalToken && this.kanalBitis && Date.now() > this.kanalBitis - 60_000 && !(await this.kanalBelirteciniYenile())) {
       // Yenilenemeyen giriş bu oturumda bırakılır: bot moderatörse işler onunla sürer
@@ -847,7 +875,7 @@ export class KickPlatform extends BasePlatform {
     if (!ad) return { ok: false, hata: 'Kullanici adi bos' };
     if (!this.broadcasterUserId) return { ok: false, hata: 'Kanal kimligi bilinmiyor (baglanti yok)' };
 
-    const token = await this.yetkiliToken();
+    const token = await this.moderasyonTokeni();
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
 
     try {
@@ -879,7 +907,7 @@ export class KickPlatform extends BasePlatform {
 
   /** Resmi API: `DELETE /public/v1/chat/{message_id}` — izin `moderation:chat_message:manage`. */
   async deleteMessage(messageId: string): Promise<ModerasyonSonucu> {
-    const token = await this.yetkiliToken();
+    const token = await this.moderasyonTokeni();
     if (!token) return { ok: false, hata: 'Kick tokeni yok — Platformlar sekmesinden baglan' };
     if (!messageId) return { ok: false, hata: 'Mesaj kimligi yok' };
     try {

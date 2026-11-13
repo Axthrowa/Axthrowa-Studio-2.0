@@ -96,6 +96,17 @@ export const MODULLER: Record<string, string[]> = {
   market: ['market', 'magaza', 'store', 'shop', 'al', 'buy', 'redeem']
 };
 
+/** `!permit` süresi: Bot Moderasyonu > Link'teki ayar (10–3600 sn; eskiden hep 60 sn yazılıyordu). */
+export function permitSuresi(): number {
+  try {
+    const r = db.prepare("SELECT value FROM bot_settings WHERE key = 'automod_advanced'").get() as { value: string } | undefined;
+    const sn = Number(r?.value ? JSON.parse(r.value).links_permit_seconds : NaN);
+    return Number.isFinite(sn) && sn > 0 ? Math.min(3600, Math.max(10, Math.round(sn))) : 60;
+  } catch {
+    return 60;
+  }
+}
+
 export class CommandManager {
   private userCooldowns: Map<string, CooldownEntry> = new Map();
   private globalCooldowns: Map<string, CooldownEntry> = new Map();
@@ -819,8 +830,9 @@ export class CommandManager {
         if (!message.user.isMod && !message.user.isBroadcaster) return `@${message.user.displayName}, permit yalnızca modlar.`;
         const target = (args[0] || '').replace('@', '').toLowerCase();
         if (!target) return 'Kullanım: !permit kullanıcı';
-        this.permits.set(target, Date.now() + 60000);
-        return `@${target} 60 saniye link paylaşabilir.`;
+        const sn = permitSuresi();
+        this.permits.set(target, Date.now() + sn * 1000);
+        return `@${target} ${sn} saniye link paylaşabilir.`;
       }
 
       case 'quote': {

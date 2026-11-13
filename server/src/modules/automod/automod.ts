@@ -11,6 +11,7 @@ import {
   type KuralAdi
 } from './enforcement.js';
 import { TekrarIzleyici } from './repeat.js';
+import { CezaMerdiveni } from './merdiven.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { kelimeEslesmesi, kelimeListesiDerle, zalgoMu, type KelimeKurali } from './kelime-kurali.js';
 import { duzenliler } from '../community/regulars.js';
@@ -33,6 +34,7 @@ export class AutoModEngine {
   private whitelistCache: string[] = [];
   private lastLoadTime: number = 0;
   private tekrar = new TekrarIzleyici();
+  private merdiven = new CezaMerdiveni();
 
   reload() {
     try {
@@ -212,7 +214,8 @@ export class AutoModEngine {
 
     // 6. Tekrarlanan mesaj (B9)
     if (tekrarAcik && tekrarSayisi >= Math.max(2, Number(row.repeat_count) || 3)) {
-      this.tekrar.sifirla(message.user.username);
+      // Merdiven açıkken sayaç sıfırlanmaz: tekrarı sürdüren her mesajda bir basamak çıkar
+      if (!advanced.merdiven_acik) this.tekrar.sifirla(message.user.username);
       return {
         rule: 'repeat',
         reason: advanced.repeat_warning || 'Aynı mesajı tekrar tekrar yazma.'
@@ -229,16 +232,26 @@ export class AutoModEngine {
    * icinde eleniyor ama abone/VIP muafiyeti burada), sonra platform
    * eylemi, en son sohbet uyarisi.
    */
-  async ihlaliUygula(message: ChatMessagePayload, violation: AutoModViolation): Promise<void> {
+  async ihlaliUygula(message: ChatMessagePayload, ihlal: AutoModViolation): Promise<void> {
+    let violation = ihlal;
     const row = this.getSettings();
     const kural = (violation.rule === 'ai_toxic' ? 'blacklist' : violation.rule) as KuralAdi;
     // Zalgo ve uzunluk kuralının eylem ayarları gelişmiş ayarlarda (göçsüz)
     const kaynak = kural === 'zalgo' || kural === 'length' ? { ...row, ...this.advancedCache } : row;
-    const ayar = kuralAyariOku(kaynak, kural, violation.reason);
+    let ayar = kuralAyariOku(kaynak, kural, violation.reason);
 
     // Rol muafiyeti — örnek alınan botta her kuralin kendi bypass listesi var
     const roller = { ...message.user, isRegular: duzenliler.mi(message.platform, message.user.username) };
     if (bypassEder(roller as any, ayar.bypass)) return;
+
+    // Ceza merdiveni (B2): açıksa kural eylemi yerine kişinin ihlal sayısına göre basamak uygulanır
+    if (this.advancedCache.merdiven_acik) {
+      const pencere = Math.min(1440, Math.max(1, Number(this.advancedCache.merdiven_pencere_dk) || 30)) * 60_000;
+      const { adim, basamak } = this.merdiven.ilerle(`${message.platform}:${message.user.username}`, pencere);
+      violation = { ...violation, reason: `${violation.reason} (ceza merdiveni ${adim + 1}/4)` };
+      if (basamak.tur === 'ban') return this.merdivenBani(message, violation, ayar.mesaj);
+      ayar = { ...ayar, eylem: basamak.tur === 'uyari' ? 'warn' : 'timeout_warn', timeoutSn: basamak.tur === 'timeout' ? basamak.saniye : ayar.timeoutSn };
+    }
 
     const plan = eylemPlani(ayar, message.platform);
 
@@ -292,6 +305,20 @@ export class AutoModEngine {
       });
       this.denetimKaydet(message, violation, 'uyari');
     }
+  }
+
+  /** Merdivenin son basamağı: kalıcı ban; olmazsa sebebiyle uyarıya düşer. */
+  private async merdivenBani(message: ChatMessagePayload, violation: AutoModViolation, mesaj: string): Promise<void> {
+    const p: any = platformManager.getPlatform(message.platform);
+    const sonuc = typeof p?.banUser === 'function' ? await p.banUser(message.user.username, mesaj) : { ok: false, hata: `${message.platform} ban desteklemiyor` };
+    if (sonuc?.ok) {
+      this.denetimKaydet(message, violation, 'kalıcı ban');
+      eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: `🛡️ @${message.user.displayName} kalıcı olarak yasaklandı: ${mesaj}` });
+      return;
+    }
+    eventBus.emitSendError(message.platform, `AutoMod ban uygulanamadi: ${sonuc?.hata || 'bilinmeyen hata'}`);
+    eventBus.emitBotMessage({ platform: message.platform, channel: message.channel, message: `🛡️ AutoMod: @${message.user.displayName}, ${mesaj} (${sonuc?.hata || 'ban uygulanamadı'})` });
+    this.denetimKaydet(message, violation, 'uyari (ban uygulanamadı)');
   }
 
   /** Denetim kaydi — panelde "Kalkan & Denetim" sekmesinde gorunur. */

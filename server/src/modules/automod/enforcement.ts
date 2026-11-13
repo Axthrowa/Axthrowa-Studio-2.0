@@ -25,7 +25,7 @@ export function metinOzeti(metin: string): string {
 }
 
 /** Örnek alınan bottaki on bir kademe (rakip incelemesi). */
-export const TIMEOUT_KADEMELERI = [30, 60, 120, 300, 900, 1800, 3600, 7200, 18000, 43200, 86400] as const;
+export const TIMEOUT_KADEMELERI = [30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 18000, 43200, 86400] as const;
 
 export const EYLEM_SECENEKLERI: Array<{ value: IhlalEylemi; label: string }> = [
   { value: 'warn', label: 'Uyarı mesajı gönder' },

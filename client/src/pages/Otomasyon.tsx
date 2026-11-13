@@ -4,7 +4,8 @@
  */
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, FlaskConical, Play, Plus, Trash2, Workflow, Zap } from 'lucide-react';
-import { Anahtar, BosDurum, Buton, Girdi, KaydedilmemisUyari, Kart, Secim, useToast } from '../ui/index.js';
+import { Anahtar, BosDurum, Buton, Girdi, Kart, KayitDurumu, Secim, useToast } from '../ui/index.js';
+import { useOtoKayit } from '../hooks/useOtoKayit.js';
 import { KICK_ODUL_LISTESI, KickOdulleri } from '../components/KickOdulleri.js';
 
 type Alanlar = Record<string, any> & { tur: string };
@@ -277,7 +278,18 @@ export function Otomasyon() {
   const [kurallar, setKurallar] = useState<Kural[] | null>(null);
   const [gunluk, setGunluk] = useState<Gunluk[]>([]);
   const [pano, setPano] = useState<Array<{ id: string; ad: string }>>([]);
-  const [degisti, setDegisti] = useState(false);
+  const [eksik, setEksik] = useState<string | null>(null);
+  const kaydet = async () => {
+    const r = await fetch('/api/otomasyon', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kurallar }) }).catch(() => null);
+    const d = await r?.json().catch(() => null);
+    // Yarım kural (400) hata sayılmaz: eksik yazılır, tamamlanınca kendiliğinden kaydedilir
+    setEksik(r?.status === 400 ? d?.error || 'Kural eksik' : null);
+    if (!r?.ok && r?.status !== 400) toast(d?.error || 'Kaydedilemedi', 'hata');
+    return !!r?.ok;
+  };
+  // A4: değişiklik kısa beklemeden sonra kendiliğinden kaydedilir, Ctrl+Z geri alır
+  const kayit = useOtoKayit(kurallar, kaydet, setKurallar);
+  const kayitTaban = kayit.taban;
 
   useEffect(() => {
     const oku = (ilk: boolean) =>
@@ -285,9 +297,12 @@ export function Otomasyon() {
         .then((r) => r.json())
         .then((d) => {
           setGunluk(d.gunluk || []);
-          if (ilk) setKurallar(d.kurallar || []);
+          if (!ilk) return;
+          setKurallar(d.kurallar || []);
+          kayitTaban(d.kurallar || []);
         })
         .catch(() => {
+          // Okunamadıysa taban kurulmaz: boş liste gerçek kuralların üzerine kaydedilmesin
           if (ilk) setKurallar([]);
         });
     void oku(true);
@@ -297,25 +312,12 @@ export function Otomasyon() {
       .catch(() => {});
     const t = setInterval(() => void oku(false), 5000);
     return () => clearInterval(t);
-  }, []);
+  }, [kayitTaban]);
 
-  const guncelle = (l: Kural[]) => {
-    setKurallar(l);
-    setDegisti(true);
-  };
-
-  const kaydet = async () => {
-    const r = await fetch('/api/otomasyon', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kurallar }) }).catch(() => null);
-    const d = await r?.json().catch(() => null);
-    if (!r?.ok) return toast(d?.error || 'Kaydedilemedi', 'hata');
-    setKurallar(d.kurallar);
-    setDegisti(false);
-    toast('Kurallar kaydedildi', 'basari');
-  };
+  const guncelle = setKurallar;
 
   return (
     <div className="space-y-4">
-      <KaydedilmemisUyari varMi={degisti} onKaydet={() => void kaydet()} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-black text-white">
@@ -329,9 +331,13 @@ export function Otomasyon() {
           <Buton ton="ikincil" ikon={<Plus className="h-3.5 w-3.5" />} onClick={() => guncelle([...(kurallar || []), yeniKural()])}>
             Yeni kural
           </Buton>
-          <Buton disabled={!degisti} onClick={() => void kaydet()}>
-            Kaydet
-          </Buton>
+          {eksik && kayit.durum === 'hata' ? (
+            <span role="status" className="self-center text-xs text-amber-300">
+              Tamamlanınca kaydedilecek: {eksik}
+            </span>
+          ) : (
+            <KayitDurumu durum={kayit.durum} onYeniden={kayit.yeniden} />
+          )}
         </div>
       </div>
 

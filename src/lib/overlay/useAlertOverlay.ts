@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "../api";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 import { mediaPlayableUrls } from "../api/studioMedia";
 import { alertsList, alertVariantsList } from "../api/studioMedia";
 import type { WidgetEvent } from "../sohbetBot/events";
@@ -310,16 +311,8 @@ export function useAlertOverlayQueue() {
     window.addEventListener("trigger_alert", onLocal);
     window.addEventListener("new_alert", onLocal);
 
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    const connect = () => {
-      try {
-        ws = new WebSocket(`${API_BASE.replace(/^http/, "ws")}/ws/overlay-sync`);
-      } catch {
-        retry = window.setTimeout(connect, 2000);
-        return;
-      }
-      ws.onmessage = (ev) => {
+    const unsubscribe = subscribeOverlaySync({
+      onMessage: (ev) => {
         try {
           const msg = JSON.parse(ev.data) as Record<string, unknown>;
           const we = extractWidgetEvent(msg);
@@ -334,12 +327,8 @@ export function useAlertOverlayQueue() {
         } catch {
           /* */
         }
-      };
-      ws.onclose = () => {
-        retry = window.setTimeout(connect, 2000);
-      };
-    };
-    connect();
+      },
+    });
 
     let unlisten: (() => void) | undefined;
     void (async () => {
@@ -357,12 +346,7 @@ export function useAlertOverlayQueue() {
       window.removeEventListener("sohbet-bot-widget-olayi", onLocal);
       window.removeEventListener("trigger_alert", onLocal);
       window.removeEventListener("new_alert", onLocal);
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
+      unsubscribe();
       unlisten?.();
       clearPhaseTimers();
     };

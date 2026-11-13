@@ -2,11 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  overlaySyncWsUrl,
-  useWidgetSync,
-  type WidgetSyncEvent,
-} from "../../lib/widgets/useWidgetSync";
+import { useWidgetSync, type WidgetSyncEvent } from "../../lib/widgets/useWidgetSync";
+import { subscribeOverlaySync } from "../../lib/overlaySyncHub";
 
 type Props = { config: Record<string, unknown> };
 
@@ -85,19 +82,8 @@ export default function EmoteComboWidget({ config }: Props) {
 
   useEffect(() => {
     if (isPreview) return;
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-
-    const connect = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(overlaySyncWsUrl());
-      } catch {
-        retry = window.setTimeout(connect, 2200);
-        return;
-      }
-      ws.onmessage = (e) => {
+    const unsubscribe = subscribeOverlaySync({
+      onMessage: (e) => {
         try {
           const msg = JSON.parse(String(e.data)) as Record<string, unknown>;
           if (msg.type !== "emote_combo_updated") return;
@@ -110,22 +96,12 @@ export default function EmoteComboWidget({ config }: Props) {
         } catch {
           /* */
         }
-      };
-      ws.onclose = () => {
-        if (!closed) retry = window.setTimeout(connect, 2200);
-      };
-    };
-    connect();
+      },
+    });
     return () => {
-      closed = true;
-      if (retry) window.clearTimeout(retry);
+      unsubscribe();
       if (hideTimer.current) window.clearTimeout(hideTimer.current);
       if (clearTimer.current) window.clearTimeout(clearTimer.current);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
     };
   }, [isPreview]);
 

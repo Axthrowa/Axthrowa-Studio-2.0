@@ -6,7 +6,7 @@
 import type { CSSProperties } from "react";
 import { API_BASE } from "../api";
 import { sfxCandidateUrls } from "../soundboard";
-import { overlaySyncWsUrl } from "./useWidgetSync";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 import { logger } from "../logger";
 
 export type WidgetBusAction =
@@ -250,57 +250,18 @@ export function injectCustomCss(id: string, css: string | undefined | null): () 
   };
 }
 
-/** Tekil WS dinleyici (overlay başına bir bağlantı paylaşılabilir) */
+/** Sayfanın ortak overlay-sync soketi üzerinden `widget-bus` dinleyici */
 type BusListener = (ev: WidgetBusEvent) => void;
-const globalListeners = new Set<BusListener>();
-let sharedWs: WebSocket | null = null;
-let sharedRetry: number | undefined;
-
-function ensureSharedBus() {
-  if (
-    sharedWs &&
-    (sharedWs.readyState === WebSocket.OPEN ||
-      sharedWs.readyState === WebSocket.CONNECTING)
-  ) {
-    return;
-  }
-  const url = overlaySyncWsUrl();
-  try {
-    sharedWs = new WebSocket(url);
-  } catch {
-    sharedRetry = window.setTimeout(ensureSharedBus, 2200);
-    return;
-  }
-  sharedWs.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(String(e.data)) as WidgetBusEvent;
-      if (msg?.type !== "widget-bus") return;
-      globalListeners.forEach((fn) => {
-        try {
-          fn(msg);
-        } catch {
-          /* */
-        }
-      });
-    } catch {
-      /* */
-    }
-  };
-  sharedWs.onclose = () => {
-    sharedWs = null;
-    if (globalListeners.size > 0) {
-      sharedRetry = window.setTimeout(ensureSharedBus, 2200);
-    }
-  };
-}
 
 export function subscribeWidgetBus(fn: BusListener): () => void {
-  globalListeners.add(fn);
-  ensureSharedBus();
-  return () => {
-    globalListeners.delete(fn);
-    if (globalListeners.size === 0 && sharedRetry) {
-      window.clearTimeout(sharedRetry);
-    }
-  };
+  return subscribeOverlaySync({
+    onMessage: (e) => {
+      try {
+        const msg = JSON.parse(String(e.data)) as WidgetBusEvent;
+        if (msg?.type === "widget-bus") fn(msg);
+      } catch {
+        /* */
+      }
+    },
+  });
 }

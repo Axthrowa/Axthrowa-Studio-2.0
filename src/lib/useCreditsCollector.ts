@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchSettings, OverlaySettings } from "./api";
 import { ChatMessage, chatHubConfig, configKey, startChatHub } from "./chatHub";
 import { pushCredit } from "./creditsSession";
+import { subscribeOverlaySync } from "./overlaySyncHub";
 
 /**
  * Panel açıkken Kick/Twitch/YouTube olaylarını dinler ve çıkış jeneriği
@@ -27,20 +28,8 @@ export function useCreditsCollector(enabled = true) {
       });
 
     // Ayarlar WS ile değişince yenile
-    const url = (import.meta as any).env?.VITE_API_BASE
-      ? String((import.meta as any).env.VITE_API_BASE).replace(/^http/, "ws") + "/ws/overlay-sync"
-      : "ws://127.0.0.1:8843/ws/overlay-sync";
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    const connect = () => {
-      if (cancelled) return;
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        retry = window.setTimeout(connect, 2000);
-        return;
-      }
-      ws.onmessage = (ev) => {
+    const unsubscribe = subscribeOverlaySync({
+      onMessage: (ev) => {
         try {
           const msg = JSON.parse(ev.data);
           if (msg.type === "settings" && msg.screen === "chat") setChat(msg.data || {});
@@ -52,16 +41,11 @@ export function useCreditsCollector(enabled = true) {
         } catch {
           /* */
         }
-      };
-      ws.onclose = () => {
-        if (!cancelled) retry = window.setTimeout(connect, 2000);
-      };
-    };
-    connect();
+      },
+    });
     return () => {
       cancelled = true;
-      if (retry) window.clearTimeout(retry);
-      ws?.close();
+      unsubscribe();
     };
   }, [enabled]);
 

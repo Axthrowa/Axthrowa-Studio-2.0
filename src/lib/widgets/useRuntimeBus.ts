@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { overlaySyncWsUrl } from "./useWidgetSync";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 import type { PollRuntime, RaffleRuntime, SongsRuntime } from "./runtimeApi";
 
 export type RuntimeMsg = {
@@ -30,11 +30,6 @@ export function useRuntimeBus() {
   }, []);
 
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-    const url = overlaySyncWsUrl();
-
     const onMsg = (raw: string) => {
       try {
         const msg = JSON.parse(raw) as RuntimeMsg;
@@ -60,29 +55,7 @@ export function useRuntimeBus() {
       }
     };
 
-    const connect = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        retry = window.setTimeout(connect, 2200);
-        return;
-      }
-      ws.onmessage = (e) => onMsg(String(e.data));
-      ws.onclose = () => {
-        if (!closed) retry = window.setTimeout(connect, 2200);
-      };
-    };
-    connect();
-    return () => {
-      closed = true;
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
-    };
+    return subscribeOverlaySync({ onMessage: (e) => onMsg(String(e.data)) });
   }, []);
 
   return { poll, raffle, songs, lastWinner, goalBump, subscribe, setPoll, setRaffle, setSongs };

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { API_BASE, NowPlaying, fetchNowPlaying } from "./api";
+import { NowPlaying, fetchNowPlaying } from "./api";
+import { subscribeOverlaySync } from "./overlaySyncHub";
 
 /**
  * Panel ve overlay ekranlarının paylaştığı "şu an çalan" kaynağı.
@@ -76,27 +77,15 @@ export function useNowPlaying(enabled = true, pollMs = 5000) {
     };
 
     // Sunucu her değişimde yayın yapıyor; yoklama yalnız yedek kalsın.
-    let ws: WebSocket | null = null;
-    let retry = 0;
-    const connect = () => {
-      if (cancelled || document.hidden) return;
-      try {
-        ws = new WebSocket(`${API_BASE.replace(/^http/, "ws")}/ws/overlay-sync`);
-      } catch {
-        return;
-      }
-      ws.onmessage = (ev) => {
+    const unsubscribe = subscribeOverlaySync({
+      onMessage: (ev) => {
         try {
           if (JSON.parse(ev.data)?.type === "now-playing") void poll();
         } catch {
           /* ilgisiz mesaj */
         }
-      };
-      ws.onclose = () => {
-        if (!cancelled) retry = window.setTimeout(connect, 3000);
-      };
-    };
-    connect();
+      },
+    });
 
     start();
     document.addEventListener("visibilitychange", onVisibility);
@@ -104,12 +93,7 @@ export function useNowPlaying(enabled = true, pollMs = 5000) {
     return () => {
       cancelled = true;
       stop();
-      window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
+      unsubscribe();
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [enabled, pollMs]);

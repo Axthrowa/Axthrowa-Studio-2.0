@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { overlaySyncWsUrl } from "./useWidgetSync";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 
 export type SubathonEventPayload = {
   kind: "follow" | "sub" | "tip" | "donation" | "kick" | "raid" | "bits" | "host";
@@ -73,20 +73,8 @@ export function useSubathonEvents(
   useEffect(() => {
     if (!enabled) return;
 
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-
-    const connect = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(overlaySyncWsUrl());
-      } catch {
-        retry = window.setTimeout(connect, 2200);
-        return;
-      }
-
-      ws.onmessage = (e) => {
+    return subscribeOverlaySync({
+      onMessage: (e) => {
         try {
           const msg = JSON.parse(String(e.data)) as Record<string, unknown>;
           const ev = fromSubathonWire(msg);
@@ -94,22 +82,7 @@ export function useSubathonEvents(
         } catch {
           /* */
         }
-      };
-
-      ws.onclose = () => {
-        if (!closed) retry = window.setTimeout(connect, 2200);
-      };
-    };
-
-    connect();
-    return () => {
-      closed = true;
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
-    };
+      },
+    });
   }, [enabled]);
 }

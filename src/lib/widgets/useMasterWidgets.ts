@@ -9,7 +9,7 @@ import {
   parseWidgetConfig,
   type MasterWidgetRow,
 } from "./masterLayout";
-import { overlaySyncWsUrl } from "./useWidgetSync";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 
 export type MasterWidgetLive = MasterWidgetRow & {
   config: Record<string, unknown>;
@@ -58,11 +58,6 @@ export function useMasterWidgets() {
       });
     }, 20000);
 
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-    const url = overlaySyncWsUrl();
-
     const onMsg = (raw: string) => {
       try {
         const msg = JSON.parse(raw) as Record<string, unknown>;
@@ -110,40 +105,16 @@ export function useMasterWidgets() {
       }
     };
 
-    const connect = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        retry = window.setTimeout(connect, 2500);
-        return;
-      }
-      ws.onopen = () => setWsConnected(true);
-      ws.onclose = () => {
-        setWsConnected(false);
-        if (!closed) retry = window.setTimeout(connect, 2500);
-      };
-      ws.onerror = () => {
-        try {
-          ws?.close();
-        } catch {
-          /* */
-        }
-      };
-      ws.onmessage = (e) => onMsg(String(e.data));
-    };
-    connect();
+    const unsubscribe = subscribeOverlaySync({
+      onOpen: () => setWsConnected(true),
+      onClose: () => setWsConnected(false),
+      onMessage: (e) => onMsg(String(e.data)),
+    });
 
     return () => {
       alive = false;
-      closed = true;
       window.clearInterval(poll);
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
+      unsubscribe();
     };
   }, [reload]);
 

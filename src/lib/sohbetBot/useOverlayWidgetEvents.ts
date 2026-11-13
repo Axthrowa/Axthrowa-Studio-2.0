@@ -1,7 +1,7 @@
 /** OBS overlay’lerde ortak: widget event + sohbetBot canlı senkron. */
 
 import { useCallback, useEffect, useState } from "react";
-import { API_BASE } from "../api";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 import type { WidgetEvent } from "./events";
 import {
   applyRemoteBotConfig,
@@ -51,16 +51,8 @@ export function useOverlayWidgetEvents(onEvent: (ev: WidgetEvent) => void) {
     const onLocal = (e: Event) => onEvent((e as CustomEvent<WidgetEvent>).detail);
     window.addEventListener("sohbet-bot-widget-olayi", onLocal);
 
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    const connect = () => {
-      try {
-        ws = new WebSocket(`${API_BASE.replace(/^http/, "ws")}/ws/overlay-sync`);
-      } catch {
-        retry = window.setTimeout(connect, 2000);
-        return;
-      }
-      ws.onmessage = (raw) => {
+    const unsubscribe = subscribeOverlaySync({
+      onMessage: (raw) => {
         try {
           const msg = JSON.parse(raw.data);
           const { sohbetBot, event } = extractPanelPayload(msg);
@@ -71,20 +63,11 @@ export function useOverlayWidgetEvents(onEvent: (ev: WidgetEvent) => void) {
         } catch {
           /* */
         }
-      };
-      ws.onclose = () => {
-        retry = window.setTimeout(connect, 2000);
-      };
-    };
-    connect();
+      },
+    });
     return () => {
       window.removeEventListener("sohbet-bot-widget-olayi", onLocal);
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
+      unsubscribe();
     };
   }, [onEvent]);
 }

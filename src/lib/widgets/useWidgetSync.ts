@@ -16,6 +16,7 @@ import {
 } from "react";
 import { API_BASE } from "../api";
 import { logger } from "../logger";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 
 export type WidgetSyncEvent = {
   id: string;
@@ -38,15 +39,7 @@ export type UseWidgetSyncOptions = {
   enabled?: boolean;
 };
 
-/** OBS Browser Source için her zaman loopback — API_BASE yanlış olsa bile. */
-export function overlaySyncWsUrl(): string {
-  const fromEnv = (import.meta as { env?: { VITE_WS_OVERLAY?: string } }).env
-    ?.VITE_WS_OVERLAY;
-  if (fromEnv && fromEnv.startsWith("ws")) return fromEnv;
-  const portMatch = API_BASE.match(/:(\d+)/);
-  const port = portMatch?.[1] || "8843";
-  return `ws://127.0.0.1:${port}/ws/overlay-sync`;
-}
+export { overlaySyncWsUrl } from "../overlaySyncHub";
 
 type SharedSyncCtx = {
   connected: boolean;
@@ -78,11 +71,6 @@ export function WidgetSyncProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-    const url = overlaySyncWsUrl();
-
     const push = (ev: WidgetSyncEvent) => {
       listeners.current.forEach(({ fn, kinds }) => {
         if (kinds?.length && !kinds.includes(ev.kind)) return;
@@ -94,41 +82,14 @@ export function WidgetSyncProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    const connect = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        retry = window.setTimeout(connect, 2200);
-        return;
-      }
-      ws.onopen = () => setConnected(true);
-      ws.onclose = () => {
-        setConnected(false);
-        if (!closed) retry = window.setTimeout(connect, 2200);
-      };
-      ws.onerror = () => {
-        try {
-          ws?.close();
-        } catch {
-          /* */
-        }
-      };
-      ws.onmessage = (e) => {
+    return subscribeOverlaySync({
+      onOpen: () => setConnected(true),
+      onClose: () => setConnected(false),
+      onMessage: (e) => {
         const ev = parseMessage(String(e.data));
         if (ev) push(ev);
-      };
-    };
-    connect();
-    return () => {
-      closed = true;
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
-    };
+      },
+    });
   }, []);
 
   const value = useMemo(() => ({ connected, subscribe }), [connected, subscribe]);
@@ -312,11 +273,6 @@ export function useWidgetSync(options: UseWidgetSyncOptions = {}) {
   useEffect(() => {
     if (!enabled || shared) return;
 
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-    const url = overlaySyncWsUrl();
-
     const push = (ev: WidgetSyncEvent) => {
       if (kinds?.length && !kinds.includes(ev.kind)) return;
       logger.log("[WS] → widget handler:", ev.kind, ev);
@@ -331,49 +287,20 @@ export function useWidgetSync(options: UseWidgetSyncOptions = {}) {
       });
     };
 
-    const connect = () => {
-      if (closed) return;
-      logger.log("[WS] connecting", url);
-      try {
-        ws = new WebSocket(url);
-      } catch (e) {
-        logger.error("[WS] construct failed", e);
-        retry = window.setTimeout(connect, 2200);
-        return;
-      }
-      ws.onopen = () => {
-        logger.log("[WS] open", url);
+    return subscribeOverlaySync({
+      onOpen: () => {
+        logger.log("[WS] open");
         setConnected(true);
-      };
-      ws.onclose = () => {
+      },
+      onClose: () => {
         logger.log("[WS] close");
         setConnected(false);
-        if (!closed) retry = window.setTimeout(connect, 2200);
-      };
-      ws.onerror = () => {
-        logger.warn("[WS] error");
-        try {
-          ws?.close();
-        } catch {
-          /* */
-        }
-      };
-      ws.onmessage = (e) => {
+      },
+      onMessage: (e) => {
         const ev = parseMessage(String(e.data));
         if (ev) push(ev);
-      };
-    };
-
-    connect();
-    return () => {
-      closed = true;
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
-    };
+      },
+    });
   }, [enabled, kindsKey, shared]);
 
   return { connected: shared ? shared.connected : connected, lastEvent, events, subscribe };
@@ -426,11 +353,6 @@ export function useWidgetConfig(kind: string) {
       });
     }, 15000);
 
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-    const url = overlaySyncWsUrl();
-
     const onMsg = (raw: string) => {
       try {
         const msg = JSON.parse(raw) as Record<string, unknown>;
@@ -451,38 +373,12 @@ export function useWidgetConfig(kind: string) {
       }
     };
 
-    const connect = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        retry = window.setTimeout(connect, 2500);
-        return;
-      }
-      ws.onmessage = (e) => onMsg(String(e.data));
-      ws.onclose = () => {
-        if (!closed) retry = window.setTimeout(connect, 2500);
-      };
-      ws.onerror = () => {
-        try {
-          ws?.close();
-        } catch {
-          /* */
-        }
-      };
-    };
-    connect();
+    const unsubscribe = subscribeOverlaySync({ onMessage: (e) => onMsg(String(e.data)) });
 
     return () => {
       alive = false;
-      closed = true;
       window.clearInterval(poll);
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
+      unsubscribe();
     };
   }, [kind]);
 

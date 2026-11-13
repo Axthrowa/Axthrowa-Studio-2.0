@@ -10,7 +10,7 @@ import {
   playWidgetSfx,
   unlockWidgetAudio,
 } from "../../lib/widgets/widgetBus";
-import { overlaySyncWsUrl } from "../../lib/widgets/useWidgetSync";
+import { subscribeOverlaySync } from "../../lib/overlaySyncHub";
 import { logger } from "../../lib/logger";
 import MasterOverlayCanvas, {
   type CanvasWidget,
@@ -106,18 +106,8 @@ function LiveMasterOverlay() {
   useEffect(() => {
     const unlock = () => void unlockWidgetAudio();
     window.addEventListener("pointerdown", unlock, { once: true });
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-    const connect = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(overlaySyncWsUrl());
-      } catch {
-        retry = window.setTimeout(connect, 2200);
-        return;
-      }
-      ws.onmessage = (e) => {
+    const unsubscribe = subscribeOverlaySync({
+      onMessage: (e) => {
         try {
           const msg = JSON.parse(String(e.data)) as Record<string, unknown>;
           if (msg.type === "widget-sfx-test") {
@@ -128,21 +118,11 @@ function LiveMasterOverlay() {
         } catch {
           /* */
         }
-      };
-      ws.onclose = () => {
-        if (!closed) retry = window.setTimeout(connect, 2200);
-      };
-    };
-    connect();
+      },
+    });
     return () => {
-      closed = true;
       window.removeEventListener("pointerdown", unlock);
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
+      unsubscribe();
     };
   }, []);
 

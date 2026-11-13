@@ -24,6 +24,7 @@ import {
 import { useAxthrowaStore } from "../../store/useAxthrowaStore";
 import { yerelBildirim } from "../yerelBildirim";
 import { API_BASE, isObsMode } from "../api";
+import { subscribeOverlaySync } from "../overlaySyncHub";
 import { logger } from "../logger";
 import { sendTwitchPrivmsg } from "../platformAuth/twitchWrite";
 
@@ -160,12 +161,6 @@ export function ObsProvider({ children }: { children: ReactNode }) {
 
   // Bot → Twitch cevap + shop OBS sahne (tek WS dinleyici)
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    let closed = false;
-    const port = (API_BASE.match(/:(\d+)/) || [])[1] || "8843";
-    const url = `ws://127.0.0.1:${port}/ws/overlay-sync`;
-
     const onMsg = async (raw: string) => {
       try {
         const msg = JSON.parse(raw) as Record<string, unknown>;
@@ -205,35 +200,16 @@ export function ObsProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const connectWs = () => {
-      if (closed) return;
-      try {
-        ws = new WebSocket(url);
-      } catch {
-        retry = window.setTimeout(connectWs, 2500);
-        return;
-      }
-      ws.onmessage = (e) => void onMsg(String(e.data));
-      ws.onclose = () => {
-        if (!closed) retry = window.setTimeout(connectWs, 2500);
-      };
-    };
     const onShopScene = (e: Event) => {
       const scene = String((e as CustomEvent<{ scene?: string }>).detail?.scene || "").trim();
       if (!scene) return;
       void goScene(scene).catch((err) => logger.warn("[ObsProvider] shop scene:", err));
     };
     window.addEventListener("studio-shop-scene", onShopScene);
-    connectWs();
+    const unsubscribe = subscribeOverlaySync({ onMessage: (e) => void onMsg(String(e.data)) });
     return () => {
       window.removeEventListener("studio-shop-scene", onShopScene);
-      closed = true;
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
+      unsubscribe();
     };
   }, [goScene]);
 

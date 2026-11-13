@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API_BASE, OverlaySettings, fetchSettings } from "./api";
+import { OverlaySettings, fetchSettings } from "./api";
+import { subscribeOverlaySync } from "./overlaySyncHub";
 import {
   ChatMessage,
   Platform,
@@ -246,16 +247,8 @@ export function useChatHub(
   // Bot akışı ve IRC ile aynı anahtarı kullan: çift mesaj olmasın; emote + rozet ikonları gelsin.
   useEffect(() => {
     if (!enabled) return;
-    let ws: WebSocket | null = null;
-    let retry: number | undefined;
-    const connect = () => {
-      try {
-        ws = new WebSocket(`${API_BASE.replace(/^http/, "ws")}/ws/overlay-sync`);
-      } catch {
-        retry = window.setTimeout(connect, 2500);
-        return;
-      }
-      ws.onmessage = (ev) => {
+    return subscribeOverlaySync({
+      onMessage: (ev) => {
         try {
           const msg = JSON.parse(ev.data);
           if (msg?.type === "bot-error") {
@@ -302,20 +295,8 @@ export function useChatHub(
         } catch {
           /* */
         }
-      };
-      ws.onclose = () => {
-        retry = window.setTimeout(connect, 2500);
-      };
-    };
-    connect();
-    return () => {
-      if (retry) window.clearTimeout(retry);
-      try {
-        ws?.close();
-      } catch {
-        /* */
-      }
-    };
+      },
+    });
   }, [enabled, push]);
 
   // Panel / kısayol: clearEpoch artınca tüm chat yüzeyleri temizlenir.

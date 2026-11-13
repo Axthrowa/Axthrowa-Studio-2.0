@@ -63,7 +63,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 ## Faz 4 durumu
 
 - B10 tamam (StreamAxT `f91aa60`): !quote / !addquote ve panel listesi zaten vardı. Eklenen: yayın defteri sohbetteki `!ad` iletilerini sayar, yayın sonu raporunda en çok kullanılan 10 komut; `GET /api/yayin-ozetleri/:id/csv` (özet, en çok yazanlar, komutlar, bağış, baskın, şarkılar; formül enjeksiyonu kaçışlı). Sanal ortamda sahte raporla panel ve CSV doğrulandı, rapor sonra silindi.
-- Açık: B7 (görsel otomasyon düzenleyicisi), B8 (Kick kanal ödülleri), B9 (yapay zekâ kişiliği ve bilgi bankası).
+- B9 tamam (StreamAxT `73feade`): kişilik yönergesi zaten vardı. Eklenen: bilgi bankası (`ai_bilgi_bankasi`, 4000 karakter, yönergeye eklenir) ve günlük istek sınırı (`ai_gunluk_sinir`, sayaç ayarlarda, gün değişince sıfırlanır; dolunca sohbette sessiz, panelde uyarı). Yapay zekâ moderasyonu ceza vermiyor (`ai_toxic` kuralı hiç üretilmiyor), öneri katmanı gerekmedi. Sanal ortamda sahte yerel OpenAI uyumlu sunucuyla SSS cevabı ve 2/2 sınırı doğrulandı, ayarlar sonra silindi.
+- Açık: B7 (görsel otomasyon düzenleyicisi), B8 (Kick kanal ödülleri).
 
 ---
 

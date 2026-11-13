@@ -3,6 +3,7 @@
  * (otomatik günlük yedek, geri yükleme, eski kurulumdan taşıma). — AxthrowA
  */
 import { useEffect, useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { API_BASE } from "../../lib/api";
 
 export async function istek<T>(yol: string, govde?: unknown): Promise<T> {
@@ -100,6 +101,27 @@ export function YedekPaneli() {
       setYuk(false);
     }
   };
+  const kutuphaneAl = async () => {
+    // Masaüstünde klasör seçici; tarayıcıdan açılan panelde yol elle yazılır
+    let klasor: string | null = null;
+    try {
+      const s = await open({ directory: true, multiple: false, title: "Eski AxthrowA Studio klasörünü seç" });
+      klasor = typeof s === "string" ? s : null;
+    } catch {
+      klasor = prompt("Eski sürüm klasörünün tam yolu (ör. C:\…\AxthrowA-Studio-1.6.15)");
+    }
+    if (!klasor?.trim()) return;
+    setYuk(true);
+    setMesaj("");
+    try {
+      const r = await istek<{ kopyalanan: number }>("/api/kutuphane/ice-aktar", { klasor });
+      setMesaj(r.kopyalanan ? `${r.kopyalanan} dosya kütüphaneye eklendi` : "Yeni dosya yok; hepsi zaten kütüphanede");
+    } catch (e) {
+      setMesaj(String((e as Error).message || e).slice(0, 240));
+    } finally {
+      setYuk(false);
+    }
+  };
   if (!d) return mesaj ? <p className="text-xs text-red-300">{mesaj}</p> : null;
   return (
     <div className="space-y-2">
@@ -151,6 +173,12 @@ export function YedekPaneli() {
           <input className="min-w-[260px] flex-1 rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-xs text-white" value={kaynak} onChange={(e) => setKaynak(e.target.value)} placeholder="Eski klasörün tam yolu" />
           <button type="button" className="dt-btn" disabled={yuk || !kaynak.trim()} onClick={() => void calistir("/api/yedekler/tasi", { kaynak }, "Taşıma bir sonraki açılışta uygulanacak")}>Taşı</button>
         </div>
+      </div>      <div className="space-y-1 pt-2">
+        <h4 className="text-xs font-bold text-white">Eski kütüphaneyi içe aktar</h4>
+        <p className="text-[11px] text-white/65">
+          Yalnız logo, video, müzik ve ses dosyalarını eski bir sürüm klasöründen hemen alır. Var olan dosyaların üzerine yazmaz, hiçbir şeyi silmez.
+        </p>
+        <button type="button" className="dt-btn" disabled={yuk} onClick={() => void kutuphaneAl()}>Klasör seç…</button>
       </div>
       {mesaj && <p className="text-xs text-amber-200">{mesaj}</p>}
     </div>

@@ -26,6 +26,7 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/yedekler/geri-yukle", post(api_geri_yukle))
     .route("/api/yedekler/tasi", post(api_tasi))
     .route("/api/yedekler/iptal", post(api_iptal))
+    .route("/api/kutuphane/ice-aktar", post(api_kutuphane_ice_aktar))
 }
 
 fn yerel(addr: &SocketAddr) -> Result<(), (StatusCode, String)> {
@@ -98,6 +99,32 @@ async fn api_tasi(
   }
   yedek::isaretle(&state.data_dir, &format!("tasi:{}", kok.display())).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   Ok(Json(durum(&state)))
+}
+
+#[derive(Deserialize)]
+struct KlasorGovde {
+  klasor: String,
+}
+
+/// T9: eski sürümün kütüphanesini (logo, video, ses…) hemen birleştirir; yeniden başlatma gerekmez
+async fn api_kutuphane_ice_aktar(
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  State(state): State<Arc<AppState>>,
+  Json(g): Json<KlasorGovde>,
+) -> ApiResult {
+  yerel(&addr)?;
+  let secilen = PathBuf::from(g.klasor.trim().trim_matches('"'));
+  if !secilen.is_absolute() {
+    return Err((StatusCode::BAD_REQUEST, "Klasörün tam yolunu seçin".into()));
+  }
+  let veri = state.data_dir.clone();
+  let sonuc = tokio::task::spawn_blocking(move || crate::kutuphane::ice_aktar(&secilen, &veri))
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+  let Some((kaynak, kopyalanan)) = sonuc else {
+    return Err((StatusCode::BAD_REQUEST, "Bu klasörde kütüphane bulunamadı: eski sürüm klasörünü (AxthrowA-Studio-…) ya da onun assets klasörünü seçin".into()));
+  };
+  Ok(Json(json!({ "kopyalanan": kopyalanan, "kaynak": kaynak.to_string_lossy() })))
 }
 
 async fn api_iptal(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(state): State<Arc<AppState>>) -> ApiResult {

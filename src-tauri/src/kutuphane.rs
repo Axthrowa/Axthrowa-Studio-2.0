@@ -66,6 +66,27 @@ pub fn kardes_kutuphaneler(kurulum: &Path) -> Vec<PathBuf> {
   bulunan
 }
 
+/// T9: kullanıcının seçtiği klasördeki kütüphane. Sürüm klasörü (`portable/assets` ya da `assets` içeren) veya
+/// adı `assets` olan klasörün kendisi kabul edilir; rastgele bir klasör (ör. sürücü kökü) kopyalanmaz.
+/// Kendi kütüphanesinin içi ya da üstü seçilirse `None`.
+pub fn secilen_kutuphane(secilen: &Path, veri: &Path) -> Option<PathBuf> {
+  let aday = [secilen.join("portable").join("assets"), secilen.join("assets")]
+    .into_iter()
+    .find(|a| a.is_dir())
+    .or_else(|| (secilen.file_name().is_some_and(|n| n.eq_ignore_ascii_case("assets")) && secilen.is_dir()).then(|| secilen.to_path_buf()))?;
+  let a = fs::canonicalize(&aday).ok()?;
+  let kendi = fs::canonicalize(veri.join("assets")).unwrap_or_else(|_| veri.join("assets"));
+  (!a.starts_with(&kendi) && !kendi.starts_with(&a)).then_some(a)
+}
+
+/// Seçilen klasörün kütüphanesini `<veri>/assets` içine birleştirir (üzerine yazmaz, silmez)
+pub fn ice_aktar(secilen: &Path, veri: &Path) -> Option<(PathBuf, usize)> {
+  let kaynak = secilen_kutuphane(secilen, veri)?;
+  let n = birlestir(&kaynak, &veri.join("assets"));
+  studio_log!("[kutuphane] elle içe aktarma: {} dosya, {}", n, kaynak.display());
+  Some((kaynak, n))
+}
+
 fn isaretler(kutuphane: &Path) -> Vec<String> {
   fs::read_to_string(kutuphane.join(ISARET))
     .map(|s| s.lines().map(str::to_string).collect())
@@ -170,5 +191,26 @@ mod tests {
     let l = kardes_kutuphaneler(&m.join("AxthrowA-Studio-1.6.17/portable"));
     assert_eq!(l.len(), 1);
     assert!(l[0].to_string_lossy().contains("1.6.11"));
+  }
+
+  #[test]
+  fn secilen_klasorden_ice_aktarir_ama_rastgele_klasoru_almaz() {
+    let m = gecici("ice-aktar");
+    let veri = m.join("veri");
+    yaz(&veri.join("assets/logos/var.png"), "yeni");
+    yaz(&m.join("AxthrowA-Studio-1.5.0/portable/assets/logos/var.png"), "eski");
+    yaz(&m.join("AxthrowA-Studio-1.5.0/portable/assets/logos/eski.png"), "e");
+    yaz(&m.join("rastgele/belge.txt"), "x");
+    // Sürüm klasörü seçilince portable/assets bulunur; var olanın üzerine yazılmaz
+    let (_, n) = ice_aktar(&m.join("AxthrowA-Studio-1.5.0"), &veri).unwrap();
+    assert_eq!(n, 1);
+    assert_eq!(fs::read_to_string(veri.join("assets/logos/var.png")).unwrap(), "yeni");
+    assert!(veri.join("assets/logos/eski.png").exists());
+    // assets klasörünün kendisi de olur
+    assert!(secilen_kutuphane(&m.join("AxthrowA-Studio-1.5.0/portable/assets"), &veri).is_some());
+    // Rastgele klasör, kendi kütüphanesi ve onun üstü reddedilir
+    assert!(secilen_kutuphane(&m.join("rastgele"), &veri).is_none());
+    assert!(secilen_kutuphane(&veri.join("assets"), &veri).is_none());
+    assert!(secilen_kutuphane(&veri, &veri).is_none());
   }
 }

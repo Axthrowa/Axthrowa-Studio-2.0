@@ -5,13 +5,15 @@
 #   npm run guncelle
 #   powershell -ExecutionPolicy Bypass -File scripts\guncelle-ui.ps1
 #
-# Tam yeni EXE (test, AxBoT, derleme, imza). Kendisi surum yukseltmez, kurulum indirmez:
+# Tam yeni EXE (test, AxBoT, derleme, imza, Defender taramasi). Kurulum indirmez:
 #   powershell -ExecutionPolicy Bypass -File scripts\build-release-signed.ps1
+# Surumu de yukseltmek icin (package.json + tauri.conf.json + Cargo.toml):
+#   powershell -ExecutionPolicy Bypass -File scripts\build-release-signed.ps1 -Surum 1.7.1
 #
 # Not: WDAC cargo build-script'leri engelliyorsa (os error 4551) once
 # "Sertifikalar > Guvenilen Yayincilar" icinde CN=Axthrowa olmali.
 
-param([switch]$SkipRust, [switch]$SkipBundle, [switch]$SkipSign, [switch]$SkipTests)
+param([switch]$SkipRust, [switch]$SkipBundle, [switch]$SkipSign, [switch]$SkipTests, [switch]$SkipScan, [string]$Surum)
 
 $ErrorActionPreference = "Stop"
 $proj = Split-Path $PSScriptRoot -Parent
@@ -21,6 +23,12 @@ Set-Location $proj
 $td = Join-Path $env:LOCALAPPDATA "studio-cargo-target"
 New-Item -ItemType Directory -Force -Path $td | Out-Null
 $env:CARGO_TARGET_DIR = $td
+
+if ($Surum) {
+  Write-Host "== Surum -> $Surum =="
+  & powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "surum-yukselt.ps1") -Surum $Surum
+  if ($LASTEXITCODE -ne 0) { throw "surum yukseltilemedi" }
+}
 
 if (-not $SkipTests) {
   Write-Host "== Testler =="
@@ -124,6 +132,23 @@ foreach ($f in @($exe, $setup)) {
   Write-Host ("Imza: {0}  {1}  <- {2}" -f $sig.Status, $sig.SignerCertificate.Subject, $name)
   if ($sig.Status -ne "Valid") {
     Write-Warning "Imza: $name  $($sig.Status)"
+  }
+}
+
+# T9: dagitmadan once Windows Defender ile tara (yalniz tarar, dosyaya dokunmaz)
+if (-not $SkipScan) {
+  Write-Host "== Defender taramasi =="
+  $mp = Join-Path $env:ProgramFiles "Windows Defender\MpCmdRun.exe"
+  if (-not (Test-Path $mp)) {
+    Write-Warning "MpCmdRun.exe yok; tarama atlandi"
+  } else {
+    foreach ($f in @((Join-Path $proj "cikti\portable"), $setup)) {
+      if (-not (Test-Path $f)) { continue }
+      & $mp -Scan -ScanType 3 -File $f -DisableRemediation | Out-Host
+      # 0: temiz, 2: tehdit bulundu; digerleri tarama hatasi
+      if ($LASTEXITCODE -eq 2) { throw "Defender tehdit buldu: $f (dagitma)" }
+      if ($LASTEXITCODE -ne 0) { Write-Warning "Defender taramasi tamamlanamadi ($LASTEXITCODE): $f" }
+    }
   }
 }
 

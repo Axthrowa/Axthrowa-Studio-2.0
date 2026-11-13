@@ -31,3 +31,26 @@ export function ucretDurumu(u: IstekYapan, ucret: number, bakiye: number): { ucr
   if (bakiye < u2) return { neden: `şarkı isteği ${u2} puan, sende ${bakiye} var` };
   return { ucret: u2 };
 }
+
+/** K4: kayıtlı ödemeler → yalnız hâlâ sırada bekleyen ve biçimi doğru olanlar */
+export function odenenleriYukle(kayit: unknown, bekliyor: (id: string) => boolean): Map<string, { kullanici: string; ucret: number }> {
+  const m = new Map<string, { kullanici: string; ucret: number }>();
+  if (!Array.isArray(kayit)) return m;
+  for (const g of kayit) {
+    const [id, o] = Array.isArray(g) ? g : [];
+    const ucret = Math.floor(Number(o?.ucret));
+    if (typeof id === 'string' && typeof o?.kullanici === 'string' && ucret > 0 && bekliyor(id)) m.set(id, { kullanici: o.kullanici, ucret });
+  }
+  return m;
+}
+
+/** K4: kayıtlı beğeniler (son 50 şarkı) → şarkı adı başına beğenen kişiler */
+export function begenileriYukle(kayit: unknown): Map<string, Set<string>> {
+  if (!Array.isArray(kayit)) return new Map();
+  return new Map(
+    kayit
+      .filter((g): g is [string, unknown[]] => Array.isArray(g) && typeof g[0] === 'string' && Array.isArray(g[1]))
+      .slice(-50)
+      .map(([ad, kisiler]) => [ad, new Set(kisiler.map(String))])
+  );
+}

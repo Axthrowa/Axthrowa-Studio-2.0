@@ -21,6 +21,8 @@ export function sirasiGeldi(c: CalanSarki | null, simdi: number): boolean {
   return kalan <= 3000;
 }
 import { settingsCache } from '../../core/settings-cache.js';
+import { kaliciOku, kaliciYazGecikmeli } from '../../core/kalici.js';
+import { begenileriYukle, odenenleriYukle } from './istek-kurallari.js';
 import { muzikHost } from '../muzik/index.js';
 import { parcaKimligi } from '../muzik/spotify-saf.js';
 import { aramaAdaylari, engelliMi, siraDegerleri, youtubeSuresi } from './istek-filtresi.js';
@@ -733,17 +735,22 @@ export class SongRequestEngine {
     if (!yeni) return yanit;
     const kalan = economy.removePoints(message.user.username, ucret.ucret);
     this.odenen.set(yeni.id, { kullanici: message.user.username, ucret: ucret.ucret });
+    this.odenenKaydet();
     return `${yanit} (−${ucret.ucret} puan, kalan ${kalan})`;
   }
 
-  /** shortcut: ödenen istekler bellekte; bot yeniden başlarsa o anki sıradaki isteklerin iadesi yapılamaz, kalıcı iade gerekirse song_queue'ya sütun eklenir */
-  private odenen = new Map<string, { kullanici: string; ucret: number }>();
+  /** K4: ödenen istekler kalıcı; yalnız hâlâ sırada bekleyenler geri yüklenir, yeniden başlatma sonrası da iade edilir */
+  private odenen = odenenleriYukle(kaliciOku('sarki_odenen', []), (id) => !!db.prepare('SELECT 1 FROM song_queue WHERE id = ? AND is_played = 0').get(id));
+  private odenenKaydet() {
+    kaliciYazGecikmeli('sarki_odenen', () => [...this.odenen]);
+  }
 
   /** Ücretli istek çalınamadıysa ya da sahibi geri aldıysa puanı geri verir; sohbet mesajına eklenecek notu döndürür */
   async iadeEt(id: string): Promise<string> {
     const o = this.odenen.get(id);
     if (!o) return '';
     this.odenen.delete(id);
+    this.odenenKaydet();
     const { economy } = await import('../economy/economy.js');
     economy.addPoints(o.kullanici, o.ucret);
     return ` ${o.ucret} puanın iade edildi.`;
@@ -967,8 +974,8 @@ export class SongRequestEngine {
     return c?.title ? (c.artist ? `${c.title} — ${c.artist}` : c.title) : '';
   }
 
-  /** shortcut: beğeniler bellekte ve yalnız son 50 şarkı için; oturum raporuna (R4) kalıcı yazım gerekirse tabloya alınır */
-  private begeniler = new Map<string, Set<string>>();
+  /** K4: son 50 şarkının beğenileri kalıcı */
+  private begeniler = begenileriYukle(kaliciOku('sarki_begeniler', []));
 
   /** !songlike: izleyici çalan şarkıyı beğenir; aynı kişi bir şarkıyı bir kez sayılır */
   begen(kullanici: string, gorunen: string): string {
@@ -980,6 +987,7 @@ export class SongRequestEngine {
     this.begeniler.delete(ad);
     this.begeniler.set(ad, kume);
     if (this.begeniler.size > 50) this.begeniler.delete(this.begeniler.keys().next().value as string);
+    if (yeni) kaliciYazGecikmeli('sarki_begeniler', () => [...this.begeniler].map(([a, k]) => [a, [...k]]));
     return yeni ? `❤️ @${gorunen} "${ad.slice(0, 80)}" şarkısını beğendi (${kume.size} beğeni).` : `@${gorunen}, bu şarkıyı zaten beğendin (${kume.size} beğeni).`;
   }
 

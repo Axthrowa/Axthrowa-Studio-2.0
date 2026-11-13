@@ -1,9 +1,11 @@
 # Surumu uc yerde birden yukseltir: package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml
 # (Cargo.lock bir sonraki cargo derlemesinde kendiliginden guncellenir.)
 #   powershell -ExecutionPolicy Bypass -File scripts\surum-yukselt.ps1 -Surum 1.7.1
-param([Parameter(Mandatory)][string]$Surum, [string]$Kok = (Split-Path $PSScriptRoot -Parent))
+param([Parameter(Mandatory)][string]$Surum, [string]$Kok)
 
 $ErrorActionPreference = "Stop"
+# PS 5.1 param varsayilaninda $PSScriptRoot bos: govdede coz
+if (-not $Kok) { $Kok = Split-Path $PSScriptRoot -Parent }
 if ($Surum -notmatch '^\d+\.\d+\.\d+$') { throw "Surum x.y.z biciminde olmali: $Surum" }
 
 $utf8 = New-Object Text.UTF8Encoding($false)

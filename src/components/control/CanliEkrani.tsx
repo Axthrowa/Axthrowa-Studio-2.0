@@ -29,6 +29,7 @@ import { KIPLER, otomatikKip, type Kip } from "../../lib/canliYerlesim";
 import { botSekmesi, ekPanelBul } from "../../lib/canliEkPaneller";
 import { YayinBilgisiDock } from "./YayinBilgisiDock";
 import { ActivityFeedPanel } from "./UniversalChat";
+import { BasiliTutDugme } from "../ui/BasiliTut";
 
 type Props = {
   onToast: (m: string) => void;
@@ -469,14 +470,14 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
           <button type="button" className={`${TUS} min-h-10 flex-1 px-3 text-xs font-semibold xl:flex-none`} onClick={() => setGelismis(true)}>
             Gelişmiş masa
           </button>
-          <button
-            type="button"
+          <BasiliTutDugme
+            basiliTut={canli}
             disabled={mesgul}
             className={`${TUS_TABAN} min-h-10 flex-1 px-4 text-xs font-bold disabled:opacity-60 xl:flex-none ${canli ? "border-red-500 bg-panel-elevated text-red-400 hover:bg-[var(--dt-surface-3)]" : "border-panel-accent bg-panel-accent text-[var(--panel-cta-ink)] hover:bg-panel-accent/85"}`}
-            onClick={onYayin}
+            onOnay={onYayin}
           >
             {mesgul ? "…" : canli ? "Yayını bitir" : "Yayını başlat"}
-          </button>
+          </BasiliTutDugme>
         </div>
       </div>
 

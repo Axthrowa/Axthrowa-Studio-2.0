@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CirclePower, History, LayoutDashboard, PlugZap, SlidersHorizontal, Wrench } from "lucide-react";
 import type { DashboardBolumu } from "./ProfileDashboard";
 import YayinSaglikSatiri from "./YayinSaglikSatiri";
+import { BasiliTutDugme } from "../ui/BasiliTut";
 
 /**
  * Dashboard üst şeridi: alt sekmeler + her sekmeden erişilen yayın düğmesi.
@@ -97,10 +98,10 @@ export default function DashboardUstSerit({ bolum, onBolum, master, obsBagli }: 
           <span className={`h-2 w-2 rounded-full ${obsBagli ? "bg-emerald-400" : "bg-red-400"}`} />
           OBS {obsBagli ? "bağlı" : "bağlı değil"}
         </button>
-        <button
-          type="button"
+        <BasiliTutDugme
+          basiliTut={master.live}
           disabled={master.busy}
-          onClick={master.onToggle}
+          onOnay={master.onToggle}
           title={master.live ? "OBS yayınını ve platform oturumunu bitir" : "OBS + platform: tek tıkla canlıya geç"}
           className={
             "inline-flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-extrabold uppercase tracking-wider transition disabled:opacity-60 " +
@@ -111,7 +112,7 @@ export default function DashboardUstSerit({ bolum, onBolum, master, obsBagli }: 
         >
           <CirclePower className="h-4 w-4" />
           {master.busy ? "İşleniyor…" : master.live ? "Yayını bitir" : "Yayını başlat"}
-        </button>
+        </BasiliTutDugme>
       </div>
     </div>
   );

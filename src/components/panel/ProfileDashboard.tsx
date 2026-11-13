@@ -24,6 +24,7 @@ import { useAxthrowaStore, type KickCanli } from "../../store/useAxthrowaStore";
 import SistemSagligi from "../axthrowa/SistemSagligi";
 import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
 import { axbotBase } from "../../lib/axbot";
+import { BasiliTutDugme } from "../ui/BasiliTut";
 
 /** Dashboard alt sekmeleri (PanelPage). Bileşen sekme değişse de BAĞLI kalır:
  *  sadakat sayacı, yayın metrikleri ve oturum kapatma arka planda sürmeli. */
@@ -326,11 +327,11 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                 </span>
                 <SistemSagligi />
                 {/* Düğme her zaman görünür: çıkış ekranına geçiş oturumdan bağımsız. */}
-                <button
-                  type="button"
+                <BasiliTutDugme
+                  basiliTut={!!(streamLive || data?.active_session)}
                   disabled={busy}
                   className="studio-btn-danger h-8 px-3 text-xs"
-                  onClick={() => void onEnd()}
+                  onOnay={() => void onEnd()}
                   title={
                     data?.active_session
                       ? "Yayını bitir: çıkış ekranına geç ve OBS yayınını durdur"
@@ -338,7 +339,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
                   }
                 >
                   Çıkış ekranına geç
-                </button>
+                </BasiliTutDugme>
                 <button type="button" className="studio-btn-ghost h-8 px-3 text-xs" onClick={() => void refresh()}>
                   Yenile
                 </button>

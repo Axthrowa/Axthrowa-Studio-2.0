@@ -8,6 +8,7 @@ import CopyUrl from "@/components/axthrowa/CopyUrl";
 import { DEFAULT_END_MARGIN } from "../../lib/youtube";
 import { DEFAULT_SOCIALS, SOCIAL_META } from "../../lib/socials";
 import EdgePanel from "./EdgePanel";
+import CanliDuzenlemeSeridi from "./CanliDuzenlemeSeridi";
 import HotkeyInput from "./HotkeyInput";
 import LazyMount from "./LazyMount";
 import LivePreview from "./LivePreview";
@@ -220,6 +221,7 @@ export default function SahneAyarlari({
       (panelsPinned ? "px-4 xl:grid-cols-[380px_1fr_340px]" : "px-6")
     }
   >
+    <CanliDuzenlemeSeridi className="pointer-events-none absolute left-1/2 top-1 z-30 -translate-x-1/2" />
     <EdgePanel
       side="left"
       pinned={panelsPinned}

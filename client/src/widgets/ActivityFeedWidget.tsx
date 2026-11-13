@@ -8,7 +8,7 @@ import { kutuTasarimi } from '../lib/widget-style.js';
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
-import { ACTIVITY_DEFAULTS } from '../lib/widget-defaults.js';
+import { ACTIVITY_DEFAULTS, OGE_TAVANI } from '../lib/widget-defaults.js';
 import { onizlemeKipi } from '../lib/widget-style.js';
 
 interface FeedItem {
@@ -84,7 +84,7 @@ export function ActivityFeedWidget({ previewMode = false }: { embedded?: boolean
     setItems(prev => {
       const next = { id: yeniId, type, icon: icons[type] || '✨', text, time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
       const list = s.newestFirst ? [next, ...prev] : [...prev, next];
-      return list.slice(0, s.maxItems);
+      return list.slice(0, Math.min(OGE_TAVANI.akis, s.maxItems));
     });
     if (s.soundEnabled && s.soundUrl && !s.mute) {
       const a = new Audio(s.soundUrl);

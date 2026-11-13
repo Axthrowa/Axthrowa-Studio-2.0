@@ -11,7 +11,7 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
-import { KAPPAGEN_DEFAULTS } from '../lib/widget-defaults.js';
+import { KAPPAGEN_DEFAULTS, OGE_TAVANI } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { hizCarpani, wsAdresi } from '../lib/widget-style.js';
 
@@ -145,7 +145,7 @@ export function KappagenWidget(_props?: { embedded?: boolean; previewMode?: bool
       }
       if (!yeni.length) return;
       const baslat = () => {
-        setUcanlar((u) => [...u, ...yeni].slice(-Math.max(5, a.maxOnScreen)));
+        setUcanlar((u) => [...u, ...yeni].slice(-Math.min(OGE_TAVANI.emote, Math.max(5, a.maxOnScreen))));
         const enUzun = Math.max(...yeni.map((y) => y.sure));
         const kimlikler = new Set(yeni.map((y) => y.id));
         setTimeout(() => setUcanlar((u) => u.filter((x) => !kimlikler.has(x.id))), enUzun + 100);

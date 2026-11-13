@@ -6,7 +6,7 @@ import { SohbetAvatari } from '../components/SohbetAvatari.js';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
-import { CHAT_DEFAULTS } from '../lib/widget-defaults.js';
+import { CHAT_DEFAULTS, OGE_TAVANI } from '../lib/widget-defaults.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
@@ -128,7 +128,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         special: true,
         created: Date.now()
       };
-      setMessages((prev) => iletiEkle(prev, olay, s.maxMessages));
+      setMessages((prev) => iletiEkle(prev, olay, Math.min(OGE_TAVANI.sohbet, s.maxMessages)));
       return;
     }
     if (lastMessage.type === 'chat_highlight') {
@@ -147,7 +147,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
           rozet: {},
           ts: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
           created: Date.now()
-        }), s.maxMessages)
+        }), Math.min(OGE_TAVANI.sohbet, s.maxMessages))
       );
       return;
     }
@@ -206,7 +206,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         special: Boolean(user?.isSub || user?.isMod || user?.isBroadcaster),
         created: Date.now()
       };
-      return iletiEkle(prev, next, s.maxMessages);
+      return iletiEkle(prev, next, Math.min(OGE_TAVANI.sohbet, s.maxMessages));
     });
     canliGeldi.current = true;
     if (s.messageSound && !onizlemeKipi(props?.previewMode)) tikla(Number(s.messageSoundVolume) || 0.4);

@@ -1092,3 +1092,10 @@ export function uyariKaydiGovdesi(olay: string, p: Record<string, any>) {
     textEffect: p.text_effect
   };
 }
+
+/**
+ * T7: ayara ne yazılırsa yazılsın ekrandaki öğe tavanı. Ölçüm (2026-11-13, başsız Chrome 1920x1080): 500 mesaj /
+ * 400 emote / 300 öğe ayarında DOM 6500 / 1150 / 1230'a çıkıyor, sohbet ve emote karesi 16,7 ms'yi aşıyordu; tavanla
+ * 1600 / 200 / 230, saniyede 16 mesajlık sohbette p95 9,5 ms.
+ */
+export const OGE_TAVANI = { sohbet: 100, emote: 60, akis: 50 } as const;

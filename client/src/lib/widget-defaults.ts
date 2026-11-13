@@ -3,6 +3,16 @@
  * Developed by AxthrowA
  */
 
+/** Uyarı kutusunda olay başına efekt ve güç (B3; lib/kutlama.ts okur). Eski sabit davranış: takip küçük konfeti,
+ * 100 ve üstü bağış/Kicks havai fişek, gerisi genel kutlama efekti. */
+export const EFEKT_VARSAYILANLARI = {
+  efektTakip: 'konfeti', gucTakip: '0.55',
+  efektAbone: 'genel', gucAbone: '1',
+  efektBagis: 'genel', gucBagis: '1',
+  efektBuyukBagis: 'havaiFisek', gucBuyukBagis: '1',
+  efektRaid: 'genel', gucRaid: '1'
+};
+
 export const FONTS = [
   'Plus Jakarta Sans', 'Inter', 'Roboto', 'Montserrat', 'Oswald', 'Poppins',
   'Anton', 'Russo One', 'Bangers', 'Teko', 'Orbitron', 'Nunito',
@@ -413,7 +423,9 @@ export const ALERT_ADVANCED_DEFAULTS = {
   minKicks: 0,
   confetti: true,
   /** Kutlama efekti türü (lib/kutlama.ts) */
-  celebration: 'konfeti'
+  celebration: 'konfeti',
+  /** Olay başına efekt ve güç (B3); varsayılanlar eski sabit davranış */
+  ...EFEKT_VARSAYILANLARI
 };
 
 // Çekiliş KURALLARI (süre, kazanan sayısı, şartlar) Çekilişler sayfasında; bunlar yalnız katman görünümü.

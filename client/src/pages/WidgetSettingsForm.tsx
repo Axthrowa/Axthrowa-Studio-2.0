@@ -10,7 +10,7 @@ import { FONTS, WIDGET_DEFAULTS } from '../lib/widget-defaults.js';
 import { KUTU_TASARIMLARI } from '../lib/widget-style.js';
 import { yaziAilesi } from '../lib/widget-style.js';
 import { YAPISAL_KABUKLAR } from '../lib/kabuklar.js';
-import { KUTLAMA_SECENEKLERI, kutla } from '../lib/kutlama.js';
+import { EFEKT_SECENEKLERI, EKRAN_EFEKTLERI, GUC_SECENEKLERI, KUTLAMA_SECENEKLERI, kutla } from '../lib/kutlama.js';
 import { ANIM_SECENEKLERI, METIN_EFEKTLERI, SUREKLI_EFEKTLER, eskiHareketiCevir } from '../lib/animations.js';
 import { temalar, temayiUygula } from '../lib/themes.js';
 import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
@@ -74,7 +74,10 @@ const LABELS: Record<string, string> = {
   showPercent: 'Yüzde göster', showGlow: 'Parıltı', decimals: 'Ondalık', prefix: 'Önek', suffix: 'Sonek',
   textTransform: 'Metin dönüşümü', minCombo: 'Kaç kez art arda gelince belirsin', maxSize: 'En büyük emote boyu', speed: 'Hız (1 normal, 0.5 yarı hız, 0.1 en yavaş)', barIconFlip: 'Simgeyi ters çevir', kasaTema: 'Kayan isim kartları', drawSec: 'Çekiliş kayma süresi (sn)', showBorder: 'Çerçeve göster', timeoutMs: 'Son emote vardıktan kaç ms sonra patlasın',
   displayMs: 'Gösterim (ms)', size: 'Emote boyutu', showFloating: 'Uçan emote', showPopup: 'Popup göster',
-  confetti: 'Kutlama efekti açık', celebration: 'Kutlama efekti', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
+  confetti: 'Kutlama efekti açık', celebration: 'Kutlama efekti',
+  efektTakip: 'Takip efekti', gucTakip: 'Takip efekti gücü', efektAbone: 'Abone efekti', gucAbone: 'Abone efekti gücü',
+  efektBagis: 'Bağış / Kicks efekti', gucBagis: 'Bağış efekti gücü', efektBuyukBagis: '100 ve üstü bağış / Kicks efekti', gucBuyukBagis: 'Büyük bağış efekti gücü',
+  efektRaid: 'Raid / host efekti', gucRaid: 'Raid efekti gücü', template: 'Şablon', subTemplate: 'Alt şablon', onlyKnownEmotes: 'Sadece bilinen emote',
   gatherMode: "Gelen emote'lar büyük emote'ta toplansın", burstOnEnd: "Kombo bitince emote'lar etrafa dağılıp kaybolsun",
   showTop: 'Top bağışçı', separator: 'Ayırıcı', marqueeSpeed: 'Kayan yazı hızı', height: 'Yükseklik',
   paddingX: 'Yatay dolgu', command: 'Komut', titleColor: 'Başlık rengi', showVotes: 'Oy sayısı',
@@ -194,7 +197,9 @@ const SECTIONS: Record<string, string> = {
   decimals: 'Düzen', prefix: 'Düzen', suffix: 'Düzen', height: 'Düzen', paddingX: 'Düzen',
   showVotes: 'Düzen', hideUntilEnd: 'Düzen', layoutMode: 'Düzen', queueEnabled: 'Gelişmiş',
   gapMs: 'Gelişmiş', ttsEnabled: 'Gelişmiş', ttsReadMessage: 'Gelişmiş', textEffect: 'Gelişmiş',
-  minTipAmount: 'Gelişmiş', minKicks: 'Gelişmiş', skipEnabled: 'Gelişmiş', confetti: 'Gelişmiş', celebration: 'Gelişmiş',
+  minTipAmount: 'Gelişmiş', minKicks: 'Gelişmiş', skipEnabled: 'Gelişmiş', confetti: 'Efektler', celebration: 'Efektler',
+  efektTakip: 'Efektler', gucTakip: 'Efektler', efektAbone: 'Efektler', gucAbone: 'Efektler', efektBagis: 'Efektler', gucBagis: 'Efektler',
+  efektBuyukBagis: 'Efektler', gucBuyukBagis: 'Efektler', efektRaid: 'Efektler', gucRaid: 'Efektler',
   usernameColorMode: 'Düzen', customUsernameColor: 'Görünüm', chatStyle: 'Görünüm', platformColors: 'Görünüm',
   iconFollow: 'İkonlar', iconSub: 'İkonlar', iconTip: 'İkonlar', iconRaid: 'İkonlar', iconHost: 'İkonlar', iconKicks: 'İkonlar',
   title: 'Hedef', endingTitle: 'Hedef', current: 'Hedef', target: 'Hedef', currency: 'Hedef', type: 'Hedef',
@@ -273,7 +278,7 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
 
 /** Önce widget'ın işi, sonra görünümü: listede olmayan bölümler ikisinin arasına girer */
 const ILK_BOLUMLER = ['Genel', 'Hedef', 'Çekiliş', 'Komut', 'Kontrol', 'Sıralama', 'Kupa', 'Tren', 'Puanlar', 'Bölümler', 'Combo', 'Olaylar', 'Medya', 'Ses', 'Metin', 'Şablon', 'Zamanlama'];
-const SON_BOLUMLER = ['Platformlar', 'Düzen', 'Görünürlük', 'Tema', 'Görünüm', 'Tipografi', 'Animasyon', 'Parçalar', 'İkonlar', 'Emojiler', 'Gelişmiş'];
+const SON_BOLUMLER = ['Platformlar', 'Düzen', 'Görünürlük', 'Tema', 'Görünüm', 'Tipografi', 'Animasyon', 'Efektler', 'Parçalar', 'İkonlar', 'Emojiler', 'Gelişmiş'];
 const BOLUM_ACIKLAMASI: Record<string, string> = {
   Platformlar: 'Hangi platformlar görünsün',
   Düzen: 'Ne gösterilsin, nasıl dizilsin',
@@ -374,7 +379,9 @@ const SELECTS: Record<string, Array<{ value: string; label: string }>> = {
     { value: 'text-over', label: 'Yazı üstünde' }
   ],
   textEffect: METIN_EFEKTLERI,
-  celebration: [...KUTLAMA_SECENEKLERI]
+  celebration: [...KUTLAMA_SECENEKLERI],
+  efektTakip: EFEKT_SECENEKLERI, efektAbone: EFEKT_SECENEKLERI, efektBagis: EFEKT_SECENEKLERI, efektBuyukBagis: EFEKT_SECENEKLERI, efektRaid: EFEKT_SECENEKLERI,
+  gucTakip: GUC_SECENEKLERI, gucAbone: GUC_SECENEKLERI, gucBagis: GUC_SECENEKLERI, gucBuyukBagis: GUC_SECENEKLERI, gucRaid: GUC_SECENEKLERI
 };
 
 /**
@@ -767,8 +774,8 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                       <select value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="flex-1 min-w-0 w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white">
                         {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: yaziAilesi(o.value) } : undefined}>{o.label}</option>)}
                       </select>
-                      {key === 'celebration' && (
-                        <button type="button" onClick={() => kutla(String(values[key] || 'konfeti'))} className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-white shrink-0">Dene</button>
+                      {(key === 'celebration' || (key.startsWith('efekt') && !['genel', 'yok', ...EKRAN_EFEKTLERI].includes(String(values[key])))) && (
+                        <button type="button" onClick={() => kutla(String(values[key] || 'konfeti'), Number(values[key.replace('efekt', 'guc')]) || 1)} className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-white shrink-0">Dene</button>
                       )}
                     </div>
                   ) : type === 'textarea' ? (

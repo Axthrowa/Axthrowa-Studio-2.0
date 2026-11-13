@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas-confetti', () => ({ default: Object.assign(vi.fn(), { shapeFromText: vi.fn() }) }));
 
-import { KUTLAMA_SECENEKLERI, kutlamaPlani, olayKutlamasi } from './kutlama';
+import { EKRAN_EFEKTLERI, KUTLAMA_SECENEKLERI, kutlamaPlani, olayEfekti } from './kutlama';
 
 describe('kutlama planı', () => {
   it('konfeti tek atış, ekranın tam ortasından ve her yöne', () => {
@@ -20,14 +20,15 @@ describe('kutlama planı', () => {
     expect(p.at(-1)!.gecikmeMs).toBeGreaterThan(p[0].gecikmeMs);
   });
 
-  it('her seçenek en az bir atış üretir, bilinmeyen tür konfetiye düşer', () => {
-    for (const s of KUTLAMA_SECENEKLERI) expect(kutlamaPlani(s.value).length).toBeGreaterThan(0);
+  it('her konfeti seçeneği en az bir atış üretir, ekran efektleri hiç; bilinmeyen tür konfetiye düşer', () => {
+    for (const s of KUTLAMA_SECENEKLERI) expect(kutlamaPlani(s.value).length > 0).toBe(!EKRAN_EFEKTLERI.includes(s.value));
     expect(kutlamaPlani('yok-boyle-bir-sey')).toEqual(kutlamaPlani('konfeti'));
   });
 
   it('rastgele, sabit türlerden birini seçer', () => {
     expect(kutlamaPlani('rastgele', 1, () => 0)).toEqual(kutlamaPlani('konfeti'));
-    expect(kutlamaPlani('rastgele', 1, () => 0.999)).toEqual(kutlamaPlani('yagmur'));
+    expect(kutlamaPlani('rastgele', 1, () => 0.999)).toEqual(kutlamaPlani('emoji'));
+    for (let i = 0; i < 20; i++) expect(kutlamaPlani('rastgele', 1, () => i / 20).length).toBeGreaterThan(0);
   });
 
   it('güç parçacık sayısını ölçekler', () => {
@@ -36,9 +37,19 @@ describe('kutlama planı', () => {
     expect(yari).toBeLessThan(tam);
   });
 
-  it('takip küçük konfeti, 100 ve üstü bağış havai fişek', () => {
-    expect(olayKutlamasi('follow', 0, 'havaiFisek')).toEqual({ tur: 'konfeti', guc: 0.55 });
-    expect(olayKutlamasi('tip', 100, 'konfeti')).toEqual({ tur: 'havaiFisek', guc: 1 });
-    expect(olayKutlamasi('tip', 50, 'yildiz')).toEqual({ tur: 'yildiz', guc: 1 });
+  it('varsayılan: takip küçük konfeti, 100 ve üstü bağış havai fişek, gerisi genel efekt', () => {
+    expect(olayEfekti('follow', 0, { celebration: 'havaiFisek' })).toEqual({ tur: 'konfeti', guc: 0.55 });
+    expect(olayEfekti('tip', 100, { celebration: 'konfeti' })).toEqual({ tur: 'havaiFisek', guc: 1 });
+    expect(olayEfekti('tip', 50, { celebration: 'yildiz' })).toEqual({ tur: 'yildiz', guc: 1 });
+    expect(olayEfekti('chat', 0, {})).toBeNull();
+  });
+
+  it('olay başına efekt ve güç ayardan; "yok" efekti kapatır, güç sınırlanır', () => {
+    const ayar = { efektTakip: 'emoji', gucTakip: '1.5', efektBuyukBagis: 'sarsinti', gucBuyukBagis: '9', efektRaid: 'yok' };
+    expect(olayEfekti('follow', 0, ayar)).toEqual({ tur: 'emoji', guc: 1.5 });
+    expect(olayEfekti('kicks', 250, ayar)).toEqual({ tur: 'sarsinti', guc: 1.5 });
+    expect(olayEfekti('host', 0, ayar)).toBeNull();
+    // TikTok hediyesi tutarı jeton: büyük bağış basamağına girmez
+    expect(olayEfekti('gift_tiktok', 500, ayar)).toEqual({ tur: 'konfeti', guc: 1 });
   });
 });

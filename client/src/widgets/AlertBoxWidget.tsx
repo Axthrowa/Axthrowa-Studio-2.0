@@ -2,7 +2,8 @@ import { kokOzellik } from '../lib/kabuklar.js';
 import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
-import { kutla, olayKutlamasi } from '../lib/kutlama.js';
+import { EKRAN_EFEKTLERI, kutla, olayEfekti } from '../lib/kutlama.js';
+import { EKRAN_EFEKTI_MS, EkranEfekti, sarsintiStili } from './EkranEfekti.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ALERT_ADVANCED_DEFAULTS } from '../lib/widget-defaults.js';
 import {
@@ -90,6 +91,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
   const [imgError, setImgError] = useState(false);
   /** Bekleyen kutlama atışlarını iptal eder (yeni uyarı gelince / kaynak kapanınca) */
   const kutlamaIptal = useRef<() => void>(() => {});
+  const [ekranEfekti, setEkranEfekti] = useState<{ tur: string; guc: number; anahtar: number } | null>(null);
   useEffect(() => () => kutlamaIptal.current(), []);
   const [showHelper, setShowHelper] = useState(!embedded);
 
@@ -231,10 +233,18 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       playSynthesizedChime(alert.soundVolume);
     }
 
-    if (advanced.confetti && ['sub', 'tip', 'raid', 'gift_tiktok', 'follow', 'gift_sub', 'kicks', 'host'].includes(alert.eventType)) {
-      const k = olayKutlamasi(alert.eventType, alert.amount, String(advanced.celebration || 'konfeti'));
+    // Olay başına efekt ve güç (B3): konfeti tuvalde, emote/sarsıntı/ışık kutunun kendisinde
+    const k = advanced.confetti ? olayEfekti(alert.eventType, alert.amount, advanced as Record<string, unknown>) : null;
+    if (k) {
       kutlamaIptal.current();
-      kutlamaIptal.current = kutla(k.tur, k.guc);
+      if (EKRAN_EFEKTLERI.includes(k.tur)) {
+        setEkranEfekti({ ...k, anahtar: Date.now() });
+        const t = setTimeout(() => setEkranEfekti(null), EKRAN_EFEKTI_MS);
+        kutlamaIptal.current = () => {
+          clearTimeout(t);
+          setEkranEfekti(null);
+        };
+      } else kutlamaIptal.current = kutla(k.tur, k.guc);
     }
   };
 
@@ -364,7 +374,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       data-katman-bos={displayAlert ? undefined : ''}
       onClick={unlockAudio}
       className={`${embedded ? 'w-full h-full' : 'w-screen h-screen'} bg-transparent flex flex-col items-center justify-center overflow-hidden select-none cursor-pointer relative`}
+      style={ekranEfekti?.tur === 'sarsinti' ? sarsintiStili(ekranEfekti.guc) : undefined}
     >
+      {ekranEfekti && <EkranEfekti {...ekranEfekti} />}
       {/* Discreet Ready / Autoplay Unlock Banner */}
       {showHelper && !displayAlert && (
         <div className="absolute bottom-4 px-4 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-[11px] text-gray-300 font-mono flex items-center gap-2 pointer-events-none transition-opacity">

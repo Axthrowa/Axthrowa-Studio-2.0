@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, FlaskConical, Plus, Trash2, Workflow, Zap } from 'lucide-react';
 import { Anahtar, BosDurum, Buton, Girdi, KaydedilmemisUyari, Kart, Secim, useToast } from '../ui/index.js';
+import { KICK_ODUL_LISTESI, KickOdulleri } from '../components/KickOdulleri.js';
 
 type Alanlar = Record<string, any> & { tur: string };
 interface Kural {
@@ -32,7 +33,7 @@ const TETIKLER: Record<string, Tanim> = {
   abone: { etiket: 'Yeni abonelik', alanlar: [] },
   bagis: { etiket: 'Bağış', alanlar: [{ ad: 'enAz', etiket: 'En az miktar', sayi: true }], varsayilan: { enAz: 0 } },
   baskin: { etiket: 'Baskın (raid)', alanlar: [{ ad: 'enAz', etiket: 'En az izleyici', sayi: true }], varsayilan: { enAz: 0 } },
-  odul: { etiket: 'Kanal puanı ödülü', alanlar: [{ ad: 'odul', etiket: 'Ödül adı (boş = hepsi)' }], varsayilan: { odul: '' } },
+  odul: { etiket: 'Ödül (bot puanı ya da Kick kanal ödülü)', alanlar: [{ ad: 'odul', etiket: 'Ödül adı (boş = hepsi)' }], varsayilan: { odul: '' } },
   sure: { etiket: 'Belirli aralıkla', alanlar: [{ ad: 'dakika', etiket: 'Her kaç dakikada', sayi: true }], varsayilan: { dakika: 30 } },
   patlama: {
     etiket: 'Sohbet patlaması',
@@ -98,6 +99,7 @@ function Blok({ tanimlar, deger, degistir, pano }: { tanimlar: Record<string, Ta
           type={a.sayi ? 'number' : 'text'}
           min={a.sayi ? 0 : undefined}
           placeholder={a.ipucu || a.etiket}
+          list={a.ad === 'odul' ? KICK_ODUL_LISTESI : undefined}
           className={a.sayi ? 'w-28' : 'min-w-40 flex-1'}
           value={deger[a.ad] ?? ''}
           onChange={(e) => degistir({ ...deger, [a.ad]: a.sayi ? Number(e.target.value) : e.target.value })}
@@ -303,6 +305,8 @@ export function Otomasyon() {
           sil={() => guncelle((kurallar || []).filter((x) => x.id !== k.id))}
         />
       ))}
+
+      <KickOdulleri />
 
       <Kart baslik="Son çalışmalar" aciklama="Bot yeniden başlayınca sıfırlanır">
         {gunluk.length === 0 ? <p className="text-xs text-gray-500">Henüz çalışan kural yok.</p> : null}

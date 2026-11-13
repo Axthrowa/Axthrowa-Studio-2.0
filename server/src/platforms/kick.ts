@@ -12,6 +12,7 @@ import { settingsCache } from '../core/settings-cache.js';
 import { hataMetni, seyrekUyar } from '../core/logger.js';
 import { takipciArtisi, TAKIPCI_YOKLAMA_MS, type TakipciIzi } from './kick-takipci.js';
 import { mesajiParcala } from '../core/text.js';
+import { odulKullanimi, odulListesi, type KickOdulu } from './kick-oduller.js';
 
 export interface KickChannelVerification {
   success: boolean;
@@ -426,8 +427,25 @@ export class KickPlatform extends BasePlatform {
     }
     if (!p || typeof p !== 'object') return;
 
+    // --- B8: kanal ödülü kullanıldı → otomasyonun "ödül" tetiği ve panel akışı (botun puan ödülleriyle aynı olay) ---
+    if (/RewardRedeemed/i.test(ad)) {
+      const k = odulKullanimi(p);
+      if (k) {
+        eventBus.emit('loyalty_redeemed', {
+          id: `kick_${Date.now()}`,
+          platform: 'kick',
+          kaynak: 'kick',
+          user: k.kullanici,
+          rewardTitle: k.baslik,
+          payload: k.girdi,
+          timestamp: Date.now()
+        });
+      }
+      return;
+    }
+
     // --- KICKs ---
-    if (/kick(s)?(gift|sent|received)|KicksGifted|RewardRedeemed/i.test(ad)) {
+    if (/kick(s)?(gift|sent|received)|KicksGifted/i.test(ad)) {
       const adet = Number(
         p.amount ?? p.kicks ?? p.quantity ?? p.gift?.amount ?? p.kicks_amount ?? 0
       );
@@ -917,6 +935,32 @@ export class KickPlatform extends BasePlatform {
           : `${String(e?.response?.data?.message || e?.message || e)}${durum === 400 ? ' (Kick isteği reddetti: hedef yayıncı/moderatör olabilir ya da zaten yasaklı)' : ''}`;
       console.warn(`[Kick] ${tur} basarisiz (${ad}):`, mesaj);
       return { ok: false, hata: mesaj };
+    }
+  }
+
+  /**
+   * B8: kanal ödülleri. Yalnız KANAL girişiyle (ödüller tokenin kendi kanalına yazılır; bot hesabı başka kanaldır).
+   * İzin: `channel:rewards:read` / `channel:rewards:write` — eski girişler bir kez yeniden bağlanmalı.
+   */
+  async odulIstegi(yontem: 'get' | 'post' | 'patch' | 'delete', yol: string, govde?: unknown): Promise<{ ok: true; oduller?: KickOdulu[] } | { ok: false; hata: string }> {
+    const token = await this.yetkiliToken();
+    if (!this.kanalToken || !token) return { ok: false, hata: 'Kanala giriş yok — Bağlantılar > Kick > Kanala giriş' };
+    try {
+      const r = await axios.request({
+        method: yontem,
+        url: `https://api.kick.com/public/v1/channels/rewards${yol}`,
+        data: govde,
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', ...(govde ? { 'Content-Type': 'application/json' } : {}) },
+        timeout: 10000
+      });
+      return yontem === 'get' ? { ok: true, oduller: odulListesi(r.data) } : { ok: true };
+    } catch (e: any) {
+      const durum = e?.response?.status;
+      const hata =
+        durum === 401 || durum === 403
+          ? 'Kick girişinde ödül izni yok ya da ödül başka bir uygulamanın — Bağlantılar > Kick > yeniden bağlan'
+          : String(e?.response?.data?.message || e?.message || e).slice(0, 200);
+      return { ok: false, hata };
     }
   }
 

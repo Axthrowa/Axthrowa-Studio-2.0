@@ -13,6 +13,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import axios from 'axios';
 import { platformManager } from '../../platforms/manager.js';
 import { kickPlatform } from '../../platforms/kick.js';
+import { odulGovdesi, odulKimligiGecerli } from '../../platforms/kick-oduller.js';
 import { wsHub } from '../../ws/server.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import crypto from 'crypto';
@@ -223,7 +224,7 @@ router.post('/platforms/kick/auth-url', (req: Request, res: Response) => {
   // Kick 403 döner ve AutoMod uyarıya düşer. Kullanıcı bir kez yeniden
   // bağlanmalı (Platformlar > Kick). Kaynak: docs.kick.com/getting-started/scopes
   const scope = encodeURIComponent(
-    'chat:write channel:read user:read channel:write moderation:ban moderation:chat_message:manage'
+    'chat:write channel:read user:read channel:write moderation:ban moderation:chat_message:manage channel:rewards:read channel:rewards:write'
   );
   const authUrl = `https://id.kick.com/oauth/authorize?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256&state=${encodeURIComponent(state)}&prompt=login`;
   // PKCE doğrulayıcısı sunucuda kalır (istemci kullanmıyordu; yanıta konmaz)
@@ -366,6 +367,33 @@ router.get('/auth/kick/callback', async (req: Request, res: Response) => {
       </script>
     </body></html>
   `);
+});
+
+// B8: Kick kanal ödülleri (oluştur, düzenle, aç/kapat, sil). Kullanımı otomasyonun "ödül" tetiğini çalıştırır.
+router.get('/kick/oduller', async (_req: Request, res: Response) => {
+  const r = await kickPlatform.odulIstegi('get', '');
+  res.status(r.ok ? 200 : 400).json(r);
+});
+
+router.post('/kick/oduller', async (req: Request, res: Response) => {
+  const g = odulGovdesi(req.body, true);
+  if (!g.ok) return res.status(400).json(g);
+  const r = await kickPlatform.odulIstegi('post', '', g.govde);
+  res.status(r.ok ? 200 : 400).json(r);
+});
+
+router.patch('/kick/oduller/:id', async (req: Request, res: Response) => {
+  if (!odulKimligiGecerli(String(req.params.id))) return res.status(400).json({ ok: false, hata: 'Geçersiz ödül kimliği' });
+  const g = odulGovdesi(req.body, false);
+  if (!g.ok) return res.status(400).json(g);
+  const r = await kickPlatform.odulIstegi('patch', `/${req.params.id}`, g.govde);
+  res.status(r.ok ? 200 : 400).json(r);
+});
+
+router.delete('/kick/oduller/:id', async (req: Request, res: Response) => {
+  if (!odulKimligiGecerli(String(req.params.id))) return res.status(400).json({ ok: false, hata: 'Geçersiz ödül kimliği' });
+  const r = await kickPlatform.odulIstegi('delete', `/${req.params.id}`);
+  res.status(r.ok ? 200 : 400).json(r);
 });
 
 export default router;

@@ -15,7 +15,7 @@ tutuluyor.
 
 | # | Adım | Neden |
 |---|---|---|
-| U1 | **Kick'i bir kez yeniden bağlayın** (Platformlar → Kick → Kick ile giriş) | Eski token yalnız `chat:write channel:read user:read` izniyle alınmıştı. Zaman aşımı, mesaj silme ve başlık/kategori değiştirme `moderation:ban`, `moderation:chat_message:manage`, `channel:write` ister. Yeniden bağlanmadan bu eylemler 403 alır; sebep panelde ve günlükte yazar |
+| U1 | **Kick'i bir kez yeniden bağlayın** (Platformlar → Kick → Kick ile giriş) | Eski token yalnız `chat:write channel:read user:read` izniyle alınmıştı. Zaman aşımı, mesaj silme ve başlık/kategori değiştirme `moderation:ban`, `moderation:chat_message:manage`, `channel:write` ister. Kick kanal ödülleri (Otomasyon sayfası) `channel:rewards:read`, `channel:rewards:write` ister. Yeniden bağlanmadan bu eylemler 403 alır; sebep panelde ve günlükte yazar |
 | U2 | Twitch jetonunun izinleri | Moderasyon için `moderator:manage:banned_users` ve `moderator:manage:chat_messages`, başlık/kategori için `channel:manage:broadcast`. Eksikse eylem **hangi iznin eksik olduğunu söyleyerek** reddedilir |
 | U3 | YouTube'da yazma/moderasyon için OAuth jetonu | API anahtarı yalnız okur. Gönderme, silme, zaman aşımı ve başlık OAuth jetonu ister; yoksa "YouTube moderasyonu için OAuth jetonu gerekir" döner |
 | U4 | Taşınabilir kopyayı **başka bilgisayara** taşırsanız tokenları yeniden girin | Sırlar Windows DPAPI ile bu Windows kullanıcısına bağlı şifrelenir; başka makinede çözülemez, boş sayılır ("yeniden bağlan"). Kapatmak: `AXBOT_SIFRELEME=kapali` (yeni yazımlar düz kalır, mevcut şifreliler okunmaya devam eder) |

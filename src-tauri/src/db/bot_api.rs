@@ -2416,7 +2416,7 @@ pub async fn remote_login(pool: &SqlitePool, username: &str, password: &str) -> 
     "INSERT INTO remote_sessions(token, user_id, expires_at, created_at, last_seen_at)
      VALUES(?,?,?,?,?)",
   )
-  .bind(&token)
+  .bind(oturum_anahtari(&token))
   .bind(&uid)
   .bind(expires)
   .bind(now)
@@ -2435,8 +2435,22 @@ pub async fn remote_login(pool: &SqlitePool, username: &str, password: &str) -> 
   }))
 }
 
+/// T8: oturum anahtarı veritabanında düz değil `h:` + SHA-256 olarak durur; veritabanı dosyasını okuyan
+/// biri geçerli bir anahtar elde edemez. Anahtarlar 122 bit rastgele olduğu için tuzsuz özet yeterli.
+pub fn oturum_anahtari(token: &str) -> String {
+  let ozet = Sha256::digest(token.as_bytes());
+  let mut s = String::with_capacity(66);
+  s.push_str("h:");
+  for b in ozet {
+    s.push_str(&format!("{b:02x}"));
+  }
+  s
+}
+
 pub async fn remote_logout(pool: &SqlitePool, token: &str) -> Result<()> {
-  sqlx::query("DELETE FROM remote_sessions WHERE token = ?")
+  // Eski düz kayıt da silinsin (özetli kaydın kendisi anahtar yerine geçmez)
+  sqlx::query("DELETE FROM remote_sessions WHERE token = ? OR (token = ? AND token NOT LIKE 'h:%')")
+    .bind(oturum_anahtari(token))
     .bind(token)
     .execute(pool)
     .await?;
@@ -2453,28 +2467,32 @@ pub struct RemoteAuthInfo {
 
 pub async fn remote_auth_full(pool: &SqlitePool, token: &str) -> Result<RemoteAuthInfo> {
   let now = chrono_now();
-  let row: Option<(String, String, String, String, i64)> = sqlx::query_as(
-    "SELECT u.id, u.username, u.role, u.permissions_json, s.expires_at
+  let anahtar = oturum_anahtari(token);
+  // Güncellemeden önce açılmış oturumlar düz durur: ilk kullanımda özete çevrilir, kimse çıkış yapmak zorunda kalmaz
+  let row: Option<(String, String, String, String, i64, String)> = sqlx::query_as(
+    "SELECT u.id, u.username, u.role, u.permissions_json, s.expires_at, s.token
      FROM remote_sessions s
      JOIN remote_users u ON u.id = s.user_id
-     WHERE s.token = ? AND u.enabled = 1",
+     WHERE (s.token = ? OR (s.token = ? AND s.token NOT LIKE 'h:%')) AND u.enabled = 1",
   )
+  .bind(&anahtar)
   .bind(token)
   .fetch_optional(pool)
   .await?;
-  let Some((uid, uname, role, perms_json, exp)) = row else {
+  let Some((uid, uname, role, perms_json, exp, kayitli)) = row else {
     bail!("Yetkisiz");
   };
   if exp < now {
     let _ = sqlx::query("DELETE FROM remote_sessions WHERE token = ?")
-      .bind(token)
+      .bind(&kayitli)
       .execute(pool)
       .await;
     bail!("Oturum süresi doldu");
   }
-  let _ = sqlx::query("UPDATE remote_sessions SET last_seen_at = ? WHERE token = ?")
+  let _ = sqlx::query("UPDATE remote_sessions SET last_seen_at = ?, token = ? WHERE token = ?")
     .bind(now)
-    .bind(token)
+    .bind(&anahtar)
+    .bind(&kayitli)
     .execute(pool)
     .await;
   let permissions: Vec<String> = serde_json::from_str(&perms_json).unwrap_or_default();
@@ -2549,7 +2567,7 @@ pub async fn cihaz_ekle(pool: &SqlitePool, ad: &str, izinler: &[String]) -> Resu
   let token = format!("{}{}", uuid::Uuid::new_v4().simple(), uuid::Uuid::new_v4().simple());
   let expires = now + CIHAZ_OTURUM_GUN * 24 * 60 * 60 * 1000;
   sqlx::query("INSERT INTO remote_sessions(token, user_id, expires_at, created_at, last_seen_at) VALUES(?,?,?,?,?)")
-    .bind(&token)
+    .bind(oturum_anahtari(&token))
     .bind(&uid)
     .bind(expires)
     .bind(now)
@@ -2789,5 +2807,35 @@ mod flag_tests {
     assert!(names.contains(&"ping"));
     assert!(names.contains(&"commands"));
     assert!(names.contains(&"sosyal"));
+  }
+}
+
+#[cfg(test)]
+mod oturum_testleri {
+  use super::*;
+
+  #[tokio::test]
+  async fn oturum_anahtari_ozet_olarak_saklanir_eski_duz_kayit_yukseltilir() {
+    // Bellek veritabanı bağlantı başına ayrı: tek bağlantı
+    let pool = sqlx::sqlite::SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    crate::db::ensure_default_channel(&pool).await.unwrap();
+    remote_setup(&pool, "yonetici", "parola-123456").await.unwrap();
+
+    let g = remote_login(&pool, "yonetici", "parola-123456").await.unwrap();
+    let token = g["token"].as_str().unwrap().to_string();
+    let kayitlar: Vec<(String,)> = sqlx::query_as("SELECT token FROM remote_sessions").fetch_all(&pool).await.unwrap();
+    assert!(kayitlar.iter().all(|(t,)| t.starts_with("h:") && *t != token), "düz anahtar saklanmaz");
+    assert_eq!(remote_auth_full(&pool, &token).await.unwrap().username, "yonetici");
+    assert!(remote_auth_full(&pool, &oturum_anahtari(&token)).await.is_err(), "özetin kendisi anahtar yerine geçmez");
+
+    // Güncellemeden önce açılmış düz oturum: ilk kullanımda geçer ve özete çevrilir
+    sqlx::query("UPDATE remote_sessions SET token = ?").bind(&token).execute(&pool).await.unwrap();
+    assert!(remote_auth_full(&pool, &token).await.is_ok());
+    let (t,): (String,) = sqlx::query_as("SELECT token FROM remote_sessions").fetch_one(&pool).await.unwrap();
+    assert_eq!(t, oturum_anahtari(&token));
+
+    remote_logout(&pool, &token).await.unwrap();
+    assert!(remote_auth_full(&pool, &token).await.is_err());
   }
 }

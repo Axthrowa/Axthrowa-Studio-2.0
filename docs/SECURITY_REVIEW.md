@@ -151,6 +151,7 @@ açık değil. Gömülü AxBoT'ta follow-redirects 1.16.1'e çıkarıldı; vosk-
 | İzinler | Yalnız `CIHAZ_IZINLERI`: sahne, ses, uyarı, müzik, tekrar, kayıt, yayın başlat/durdur, durum okuma. `*`, `settings.write`, `broadcast.outputs` (yayın anahtarı), `users`, `audit.read` verilemez. Cihaz yönetici olmadığı için `perm_checked_path` dışındaki uçlar (ayarlar, OBS şifresi) 403. | `cihaza_tehlikeli_izin_verilmez` |
 | İptal | Cihaz silinince satır ve oturum birlikte silinir; sonraki istek 401. | test + sanal Studio'da panelden iptal |
 | Yerel ağa açılma | Panelde onay sorusundan sonra `remote.bindLan`; yeniden başlatınca geçerli. Eşleşmemiş cihaz Bearer olmadan her korumalı uçtan 401 alır (mevcut ara katman). | elle; sanal ortamda LAN açılmadı (0.0.0.0 dinlenmedi) |
+| Oturum anahtarı saklama | Uzak giriş ve cihaz oturumları veritabanında `h:` + SHA-256 olarak durur; veritabanını okuyan biri geçerli anahtar elde edemez, özetin kendisi de anahtar yerine geçmez. Güncellemeden önce açılmış düz oturumlar ilk kullanımda özete çevrilir (kimse çıkış yapmak zorunda kalmaz). | `oturum_testleri` |
 | Denetim | `REMOTE:pair_start`, `REMOTE:pair_done` (cihaz adı, izinler, adres), `REMOTE:device_revoke`; cihazın eylemleri mevcut eylem kayıt defterinden ve denetim günlüğünden geçer. | `audit` çağrıları |
 
-Bilinen sınır: QR görüntüsü yok (yeni bağımlılık gerektiriyor); panel kodu ve bağlantıyı yazı olarak gösterir. Oturum anahtarları veritabanında düz saklanıyor (mevcut uzak oturumlarla aynı); karma ile saklamak ayrı iş.
+Bilinen sınır: QR görüntüsü yok (yeni bağımlılık gerektiriyor); panel kodu ve bağlantıyı yazı olarak gösterir. Hiç kullanılmayan eski düz oturumlar süresi dolana kadar (giriş 7, cihaz 90 gün) düz kalır.

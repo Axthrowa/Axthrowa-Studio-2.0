@@ -20,7 +20,7 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - T1 ortak tasarım değişkenleri: `src/styles/axt-tasarim.css` (köşe, başlık yazısı, boşluk); Studio, Resonance ve gömülü bot aynı değişkenleri okur.
 - T2 gömülü sayfa sözleşmesi: `docs/GOMULU_SOZLESME.md`; ayara git, Esc ile odak bırakma, Ctrl+Z geri alma.
 - A1 bot bileşenleri: Uyarı Stüdyosu ortak `Alan/Girdi/Secim/Anahtar/Buton` bileşenlerinde.
-- A4 tek kaydetme modeli: `useOtoKayit` (700 ms sonra kaydeder, Ctrl+Z); Ayarlar, Mini oyunlar, Moderasyon, Yapay zekâ sayfaları. `Otomasyon.tsx` hâlâ eski "kaydedilmedi" şeridini kullanır.
+- A4 tek kaydetme modeli: `useOtoKayit` (700 ms sonra kaydeder, Ctrl+Z); Ayarlar, Mini oyunlar, Moderasyon, Yapay zekâ sayfaları. `Otomasyon.tsx` de geçti (8b8c8ab).
 - A5 bildirim merkezi: `lib/bildirimler.ts`, zil simgesinde son 200 bildirim; hata kalıcı, bilgi 4 sn.
 - A2 menü: yedi başlık (Hazırlık, Canlı, Sahne ve Overlay, Etkileşim, Bot, Yayın sonrası, Ayarlar), Giriş/Mola/Çıkış tek "Ekranlar" satırı + iç sekme, "Tüm ayarlar" kalktı. Ctrl+1..7 başlık, Alt+←/→ gezinme geçmişi, dar kipte 300 ms sonra yan panel, katlanan başlık hatırlanır (`studio.menu.katli`). Test: `anaMenu.test.ts`.
 - A3 Ekranlar: 1366×768'de bölümler kapalıyken ayar paneli kaydırmasız (en uzun Çıkış 631/662 px). Şablonlar katlanır bölüm, sık kullanılanlar iki sütun.
@@ -70,7 +70,10 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 
 ## Faz 5 durumu
 
-- T8 güvenlik çekirdeği tamam (Studio, bu commit): panel tek kullanımlık 60 sn kod üretir (yalnız loopback), telefon `/remote?eslestir=` ile bir kez kullanır ve yalnız seçilen izinleri taşıyan, yönetici olamayan, 90 günlük kendi anahtarını alır; cihaz listesi anahtarsız, iptal anında 401. Yerel ağa açılma panelde onayla. Sanal Studio'da kod üret → eşleş → ikinci kullanım 401 → iptal → 401 zinciri tarayıcıda doğrulandı; LAN açılmadı. Eksik: QR görüntüsü (yeni npm bağımlılığı ister, onay bekliyor), oturum anahtarlarını karma ile saklama, mobil kumanda arayüzünün kendisi (ayrı plan).
+- T8 güvenlik çekirdeği tamam (Studio, bu commit): panel tek kullanımlık 60 sn kod üretir (yalnız loopback), telefon `/remote?eslestir=` ile bir kez kullanır ve yalnız seçilen izinleri taşıyan, yönetici olamayan, 90 günlük kendi anahtarını alır; cihaz listesi anahtarsız, iptal anında 401. Yerel ağa açılma panelde onayla. Sanal Studio'da kod üret → eşleş → ikinci kullanım 401 → iptal → 401 zinciri tarayıcıda doğrulandı; LAN açılmadı. Eksik: QR görüntüsü (yeni npm bağımlılığı ister, onay bekliyor), mobil kumanda arayüzünün kendisi (ayrı plan).
+- T8 ek (Studio): uzak oturum anahtarları artık `h:` + SHA-256 olarak saklanıyor; eski düz oturumlar ilk kullanımda çevriliyor. Özetin kendisini anahtar diye gönderme açığı testte yakalanıp kapatıldı.
+- T9 tamam (Studio `c0a5474`): Ayarlar › Yedekler'de "Eski kütüphaneyi içe aktar" (klasör seçici; sürüm klasörü ya da `assets`; üzerine yazmaz, silmez, rastgele klasörü reddeder; yeniden başlatma gerekmez). `scripts/surum-yukselt.ps1` ve `build-release-signed.ps1 -Surum x.y.z` üç dosyayı birlikte yükseltir; paketlemeden sonra Defender taraması (tehdit bulursa durur, `-SkipScan`). Sanal Studio'da uç doğrulandı (1 dosya, ikinci kez 0, `C:\Windows` ve göreli yol 400). İmzalı paket bu oturumda çalıştırılmadı.
+- A4 tamam (StreamAxT `8b8c8ab`): Otomasyon sayfası da `useOtoKayit` kullanıyor; yarım kural hata değil "tamamlanınca kaydedilecek" diye gösterilir. Sanal panelde yeni kural → doldur → kendiliğinden kaydedildi → sil doğrulandı.
 
 ---
 

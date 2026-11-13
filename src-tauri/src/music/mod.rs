@@ -264,6 +264,44 @@ impl Default for YtmdCreds {
   }
 }
 
+/// R3: kaynak sırası ve yok sayılan uygulamalar (music.json'da)
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct KaynakTercihi {
+  /// Boş = otomatik (çalan, en son güncellenen). Değerler: spotify, youtube-music, smtc
+  #[serde(default)]
+  pub oncelik: Vec<String>,
+  /// Windows medya oturumunda yok sayılacak uygulamalar (kimlikte geçen parça, ör. "brave", "chrome")
+  #[serde(default)]
+  pub yoksay: Vec<String>,
+}
+
+impl KaynakTercihi {
+  /// Bilinmeyen kaynak, yineleme, boş ve denetim karakterli girdi atılır; en çok 20 uygulama, her biri 100 harf.
+  pub fn temizle(self) -> Self {
+    let mut oncelik: Vec<String> = Vec::new();
+    for k in self.oncelik {
+      if [SOURCE_SPOTIFY, SOURCE_YTMD, smtc::SOURCE_SMTC].contains(&k.as_str()) && !oncelik.contains(&k) {
+        oncelik.push(k);
+      }
+    }
+    let mut yoksay: Vec<String> = Vec::new();
+    for y in self.yoksay {
+      let y = y.trim().to_lowercase();
+      if !y.is_empty() && y.chars().count() <= 100 && !y.chars().any(char::is_control) && !yoksay.contains(&y) && yoksay.len() < 20 {
+        yoksay.push(y);
+      }
+    }
+    Self { oncelik, yoksay }
+  }
+}
+
+/// Sıra verilmişse: sıradaki ilk çalan kaynak, hiçbiri çalmıyorsa sıradaki ilk başlıklı kaynak.
+fn oncelikle(oncelik: &[String], adaylar: [&Option<NowPlaying>; 3]) -> Option<NowPlaying> {
+  let sirali = || oncelik.iter().filter_map(|k| adaylar.iter().find_map(|a| a.as_ref().filter(|n| n.source == *k && has_title(n))));
+  sirali().find(|n| n.is_playing).or_else(|| sirali().next()).cloned()
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct MusicDoc {
@@ -273,6 +311,8 @@ struct MusicDoc {
   ytmd: YtmdCreds,
   #[serde(default)]
   source: String,
+  #[serde(default)]
+  tercih: KaynakTercihi,
   /// Tamamlanmamış yetkilendirmeler. Bellekte tutulunca uygulama onay
   /// verilmeden önce yeniden başlarsa doğrulayıcı kayboluyor ve Spotify
   /// `invalid_grant` diyordu; diske yazınca akış yeniden başlatmaya dayanır.
@@ -300,6 +340,7 @@ pub struct MusicState {
   spotify: RwLock<SpotifyCreds>,
   ytmd: RwLock<YtmdCreds>,
   source: RwLock<String>,
+  tercih: RwLock<KaynakTercihi>,
   /// (access_token, expires_at_ms) — diske yazılmaz
   access: RwLock<(String, i64)>,
   /// Son yetkilendirme denemeleri (en yenisi sonda).
@@ -347,6 +388,7 @@ impl MusicState {
       spotify: RwLock::new(doc.spotify),
       ytmd: RwLock::new(doc.ytmd),
       source: RwLock::new(source),
+      tercih: RwLock::new(doc.tercih.clone().temizle()),
       access: RwLock::new((String::new(), 0)),
       pending: RwLock::new(prune_pending(doc.pending)),
       note: RwLock::new(None),
@@ -359,6 +401,7 @@ impl MusicState {
       spotify: self.spotify.read().clone(),
       ytmd: self.ytmd.read().clone(),
       source: self.source.read().clone(),
+      tercih: self.tercih.read().clone(),
       pending: self.pending.read().clone(),
     };
     let path = doc_path(&self.root);
@@ -438,7 +481,9 @@ impl MusicState {
         self.save();
       }
     }
-    *self.now.write() = smtc_ile(pick, self.smtc_snap.read().clone());
+    let smtc = self.smtc_snap.read().clone();
+    let oncelik = self.tercih.read().oncelik.clone();
+    *self.now.write() = if oncelik.is_empty() { smtc_ile(pick, smtc) } else { oncelikle(&oncelik, [&sp, &yt, &smtc]) };
   }
 
   /// R2: Windows medya oturumu anlık görüntüsü (yoklama döngüsünden)
@@ -450,9 +495,27 @@ impl MusicState {
     self.publish_active();
   }
 
-  /// SMTC okurken atlanacak doğrudan kaynaklar: (Spotify, YTMD)
-  pub fn dogrudan_bagli(&self) -> (bool, bool) {
-    (self.spotify_connected(), !self.ytmd.read().token.is_empty())
+  /// SMTC okurken atlananlar: (Spotify bağlı, YTMD bağlı, yok sayılan uygulamalar)
+  pub fn smtc_suzgeci(&self) -> (bool, bool, Vec<String>) {
+    (self.spotify_connected(), !self.ytmd.read().token.is_empty(), self.tercih.read().yoksay.clone())
+  }
+
+  pub fn tercih(&self) -> KaynakTercihi {
+    self.tercih.read().clone()
+  }
+
+  /// R3: sıra ve yok sayma listesi kaydedilir; yok sayılan oynatıcı bir sonraki okumayı beklemeden ekrandan iner
+  pub fn set_tercih(&self, t: KaynakTercihi) {
+    let t = t.temizle();
+    {
+      let mut s = self.smtc_snap.write();
+      if s.as_ref().is_some_and(|n| smtc::atla(&n.app, false, false, &t.yoksay)) {
+        *s = None;
+      }
+    }
+    *self.tercih.write() = t;
+    self.save();
+    self.publish_active();
   }
 
   /// !sr hemen çalınca overlay bu parçayı gösterir. Spotify eski parçayı
@@ -510,7 +573,8 @@ impl MusicState {
     let y = self.ytmd.read().clone();
     json!({
       "source": self.source(),
-      "sourceAuto": true,
+      "sourceAuto": self.tercih.read().oncelik.is_empty(),
+      "tercih": self.tercih(),
       "spotify": {
         "connected": !s.client_id.is_empty() && !s.refresh_token.is_empty(),
         "clientId": s.client_id,
@@ -1613,6 +1677,22 @@ mod tests {
     assert_eq!(smtc_ile(sp_durdu, am_durdu.clone()).unwrap().title, "S");
     assert_eq!(smtc_ile(None, am_durdu).unwrap().title, "Apple");
     assert!(smtc_ile(None, Some(np("smtc", true, " ", 2))).is_none());
+  }
+
+  #[test]
+  fn oncelik_sirasi_ve_temizleme() {
+    let t = KaynakTercihi { oncelik: vec!["smtc".into(), "uydurma".into(), "spotify".into(), "smtc".into()], yoksay: vec![" Brave ".into(), "".into(), "brave".into(), "a\u{7}".into()] }.temizle();
+    assert_eq!(t.oncelik, vec!["smtc", "spotify"]);
+    assert_eq!(t.yoksay, vec!["brave"]);
+    let sp = Some(np("spotify", true, "S", 5));
+    let am = Some(np("smtc", true, "Apple", 1));
+    let am_durdu = Some(np("smtc", false, "Apple", 1));
+    let sira = vec!["smtc".to_string(), "spotify".to_string()];
+    assert_eq!(oncelikle(&sira, [&sp, &None, &am]).unwrap().title, "Apple");
+    // Öncelikli kaynak duraklamışsa çalan sonraki kazanır
+    assert_eq!(oncelikle(&sira, [&sp, &None, &am_durdu]).unwrap().title, "S");
+    // Sırada olmayan kaynak hiç gösterilmez
+    assert!(oncelikle(&["youtube-music".to_string()], [&sp, &None, &am]).is_none());
   }
 
   fn np(source: &str, playing: bool, title: &str, updated_at: i64) -> NowPlaying {

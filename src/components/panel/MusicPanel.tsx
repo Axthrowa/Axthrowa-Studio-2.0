@@ -11,6 +11,7 @@ import type { MsgKey } from "../../i18n/messages";
 import { Heart, LinkSimple, ListPlus, Prohibit } from "@phosphor-icons/react";
 import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
 import { axbotBase } from "../../lib/axbot";
+import KaynakTercihi from "./KaynakTercihi";
 
 type Props = {
   baseUrl: string;
@@ -162,7 +163,7 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
         <div>
           <h2 className="text-sm font-semibold">Müzik kaynağı</h2>
           <div className="mt-2 rounded-md bg-panel-accent px-3 py-2 text-sm text-black">
-            Otomatik — {source === "youtube-music" ? "YouTube Music" : source === "smtc" ? `Windows medya (${track?.app || "oynatıcı"})` : "Spotify"}
+            {status?.sourceAuto === false ? "Sıralı" : "Otomatik"} — {source === "youtube-music" ? "YouTube Music" : source === "smtc" ? `Windows medya (${track?.app || "oynatıcı"})` : "Spotify"}
           </div>
           <p className="mt-2 text-[11px] text-panel-muted">
             Hangisinde müzik çalıyorsa widget o kaynağa geçer.
@@ -194,6 +195,9 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
             </p>
           </div>
           {status?.note && <p className="mt-1 text-xs text-amber-300">{status.note}</p>}
+          <div className="mt-3">
+            <KaynakTercihi status={status} track={track} onSaved={setStatus} onToast={onToast} />
+          </div>
         </div>
 
         <hr className="border-panel-border" />

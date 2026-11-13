@@ -154,6 +154,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/player/status", get(api_player_status))
     .route("/api/player/sozler", get(api_player_sozler))
     .route("/api/player/source", post(api_player_source))
+    .route("/api/player/tercih", post(api_player_tercih))
     .route("/api/player/command", post(api_player_command))
     .route("/api/player/request", post(api_player_request))
     .route("/api/bot/giden", post(api_bot_giden))
@@ -1454,6 +1455,12 @@ async fn api_player_source(
   Json(body): Json<SourceBody>,
 ) -> Json<Value> {
   state.music.set_source(&body.source);
+  Json(state.music.status())
+}
+
+/// R3: kaynak sırası ve yok sayılan uygulamalar
+async fn api_player_tercih(State(state): State<Arc<AppState>>, Json(body): Json<crate::music::KaynakTercihi>) -> Json<Value> {
+  state.music.set_tercih(body);
   Json(state.music.status())
 }
 

@@ -537,8 +537,8 @@ pub async fn smtc_poll_loop(state: AppState) {
   let mut last = String::new();
   loop {
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    let (sp, yt) = state.music.dogrudan_bagli();
-    let np = tokio::task::spawn_blocking(move || music::smtc::oku(sp, yt)).await.ok().flatten();
+    let (sp, yt, yoksay) = state.music.smtc_suzgeci();
+    let np = tokio::task::spawn_blocking(move || music::smtc::oku(sp, yt, &yoksay)).await.ok().flatten();
     state.music.ingest_smtc(np);
     calani_yayinla(&state, &mut last);
   }

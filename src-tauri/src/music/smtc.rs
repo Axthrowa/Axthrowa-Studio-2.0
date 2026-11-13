@@ -5,10 +5,13 @@ use super::NowPlaying;
 
 pub const SOURCE_SMTC: &str = "smtc";
 
-/// Doğrudan bağlantısı kurulu oynatıcı SMTC'den ikinci kez okunmaz.
-pub fn atla(app: &str, spotify: bool, ytmd: bool) -> bool {
-  let a = app.to_ascii_lowercase();
-  (spotify && a.contains("spotify")) || (ytmd && (a.contains("youtube-music") || a.contains("ytmd")))
+/// Doğrudan bağlantısı kurulu oynatıcı SMTC'den ikinci kez okunmaz; kullanıcının yok saydığı uygulama da (R3,
+/// uygulama kimliğinde geçen parça, büyük/küçük harf duyarsız).
+pub fn atla(app: &str, spotify: bool, ytmd: bool, yoksay: &[String]) -> bool {
+  let a = app.to_lowercase();
+  (spotify && a.contains("spotify"))
+    || (ytmd && (a.contains("youtube-music") || a.contains("ytmd")))
+    || yoksay.iter().any(|y| !y.is_empty() && a.contains(&y.to_lowercase()))
 }
 
 /// SMTC zaman çizelgesi son güncellemedeki konumu verir; çalarken aradan geçen süre eklenir. Girdi 100 ns, çıktı ms.
@@ -46,11 +49,11 @@ mod win {
   }
 
   /// Çalan ilk oturum; yoksa başlığı olan ilk duraklamış oturum. Engelleyen çağrı (spawn_blocking içinde).
-  pub fn oku(spotify: bool, ytmd: bool) -> Option<NowPlaying> {
+  pub fn oku(spotify: bool, ytmd: bool, yoksay: &[String]) -> Option<NowPlaying> {
     let mut aday = None;
     for o in oturumlar().ok()? {
       let app = uygulama(&o);
-      if atla(&app, spotify, ytmd) {
+      if atla(&app, spotify, ytmd, yoksay) {
         continue;
       }
       let Some(np) = parca(&o, app) else { continue };
@@ -117,7 +120,7 @@ mod win {
 pub use win::{komut, oku};
 
 #[cfg(not(windows))]
-pub fn oku(_spotify: bool, _ytmd: bool) -> Option<NowPlaying> {
+pub fn oku(_spotify: bool, _ytmd: bool, _yoksay: &[String]) -> Option<NowPlaying> {
   None
 }
 
@@ -132,10 +135,13 @@ mod tests {
 
   #[test]
   fn dogrudan_bagli_oynatici_atlanir() {
-    assert!(atla("Spotify.exe", true, false));
-    assert!(!atla("Spotify.exe", false, false));
-    assert!(atla("com.github.th-ch.youtube-music", false, true));
-    assert!(!atla("AppleInc.AppleMusicWin_nzyj5cx40ttqa!App", true, true));
+    assert!(atla("Spotify.exe", true, false, &[]));
+    assert!(!atla("Spotify.exe", false, false, &[]));
+    assert!(atla("com.github.th-ch.youtube-music", false, true, &[]));
+    assert!(!atla("AppleInc.AppleMusicWin_nzyj5cx40ttqa!App", true, true, &[]));
+    let yoksay = vec!["brave".to_string(), String::new()];
+    assert!(atla("Brave", false, false, &yoksay));
+    assert!(!atla("AppleInc.AppleMusicWin_nzyj5cx40ttqa!App", false, false, &yoksay));
   }
 
   #[test]

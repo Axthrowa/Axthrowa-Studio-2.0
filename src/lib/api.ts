@@ -150,6 +150,8 @@ export type NowPlaying = {
 export type PlayerStatus = {
   source: "spotify" | "youtube-music";
   sourceAuto?: boolean;
+  /** R3: kaynak sırası (boş = otomatik) ve yok sayılan uygulamalar */
+  tercih?: { oncelik: string[]; yoksay: string[] };
   spotify: { connected: boolean; clientId: string; displayName: string };
   ytmd: { connected: boolean; host: string; port: string };
   note: string | null;
@@ -165,6 +167,16 @@ export async function fetchNowPlaying(): Promise<NowPlaying | null> {
 export async function fetchPlayerStatus(): Promise<PlayerStatus> {
   const res = await fetch(`${API_BASE}/api/player/status`, { cache: "no-store" });
   if (!res.ok) throw new Error("player status failed");
+  return res.json();
+}
+
+export async function setPlayerTercih(tercih: { oncelik: string[]; yoksay: string[] }): Promise<PlayerStatus> {
+  const res = await fetch(`${API_BASE}/api/player/tercih`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(tercih),
+  });
+  if (!res.ok) throw new Error("tercih kaydedilemedi");
   return res.json();
 }
 

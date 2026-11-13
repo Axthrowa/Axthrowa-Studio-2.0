@@ -216,6 +216,8 @@ export default function Overlay({ lyricsOnly = false }) {
 
   // Sözler kartın genişliğini alır; kart gizliyken kutunun genişliği sıfır olur
   const [kartGorunur, setKartGorunur] = useState(true)
+  // R9: bu parçada söz yoksa altta boş yer ayrılmaz (katman daralır)
+  const [sozVar, setSozVar] = useState(false)
   const onVisibilityChange = useCallback((visible) => {
     stateRef.current.visible = Boolean(visible)
     setKartGorunur(Boolean(visible))
@@ -237,13 +239,13 @@ export default function Overlay({ lyricsOnly = false }) {
           />
         )}
         {config && (lyricsOnly || config.showLyrics) && (
-          // Kartın altında, kartın genişliğinde. Yer baştan ayrılır: satır gelip gidince kart yerinden oynamaz
+          // Kartın altında, kartın genişliğinde. Söz bulunan parçada yer baştan ayrılır: satır gelip gidince kart yerinden oynamaz
           <div
             className={lyricsOnly ? 'w-screen px-4' : 'mt-2'}
-            style={lyricsOnly ? undefined : { width: kartGorunur ? 0 : 420, minWidth: kartGorunur ? '100%' : undefined, minHeight: sozYuksekligi(config) }}
+            style={lyricsOnly ? undefined : { width: kartGorunur ? 0 : 420, minWidth: kartGorunur ? '100%' : undefined, minHeight: sozVar ? sozYuksekligi(config) : 0 }}
           >
             {track && isPlaying && !ornekKipi && !sahneKurali?.gizle && !sarkiBitti(track, progressMs) && (
-              <Lyrics track={track} progressMs={progressMs} config={config} />
+              <Lyrics track={track} progressMs={progressMs} config={config} onSozDurumu={setSozVar} />
             )}
           </div>
         )}

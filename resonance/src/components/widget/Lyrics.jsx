@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useLyrics } from '../../hooks/useLyrics'
 import { kelimeDolumu, kelimeleriTahminEt, saatOku, satirSuresi } from '../../lib/lyrics'
+import { kaynakSirasi, parcaOfseti } from '../../lib/sozDenetimi'
 
 /** Söz görünümleri. `kutu`: çevreleyen alan; `etkin`: şu anki satır; `yan`: önceki/sonraki satır */
 export const SOZ_TEMALARI = {
@@ -112,8 +113,13 @@ function KaraokeSatir({ satir, satirSn, saat, offsetMs, renk, metinRengi, style 
  * Şarkı sözleri: önceki, şu anki ve sonraki satır. Görünüm Resonance'ta seçilir. Zamanı olmayan sözler
  * süreye yayılarak yaklaşık gösterilir ("Zamanı olmayan sözleri de göster" kapatılabilir).
  */
-export function Lyrics({ track, progressMs, config, preview = false }) {
-  const { lines, synced, tahmini, index, saat } = useLyrics(track, progressMs, true, Number(config?.lyricsOffsetMs) || 0)
+/** `onSozDurumu(var)`: bu parçada gösterilecek söz var mı (katman boş yer ayırmasın diye, R9) */
+export function Lyrics({ track, progressMs, config, preview = false, onSozDurumu }) {
+  const ofset = parcaOfseti(config, track)
+  const { lines, synced, tahmini, index, saat } = useLyrics(track, progressMs, true, ofset, {
+    sira: kaynakSirasi(config?.lyricsSources),
+    maske: config?.lyricsMask ? String(config?.lyricsMaskWords || '') : null,
+  })
   const tema = SOZ_TEMALARI[config?.lyricsTheme] || SOZ_TEMALARI.klasik
   const renk = config?.tintColor || '#22d3b8'
   const zemin = `rgba(15,16,21,${Number(config?.lyricsBgOpacity ?? 0.75)})`
@@ -124,6 +130,10 @@ export function Lyrics({ track, progressMs, config, preview = false }) {
   const metinRengi = config?.lyricsColor || '#ffffff'
   const n = satirSayisi(config)
   const goster = synced || (tahmini && config?.lyricsPlain !== false)
+  const sozVar = Boolean(goster && lines.length)
+  useEffect(() => {
+    onSozDurumu?.(sozVar)
+  }, [sozVar, onSozDurumu])
 
   let satirlar = []
   if (goster && lines.length) {
@@ -156,7 +166,7 @@ export function Lyrics({ track, progressMs, config, preview = false }) {
               satir={l}
               satirSn={satirSuresi(lines, index)}
               saat={saat}
-              offsetMs={Number(config?.lyricsOffsetMs) || 0}
+              offsetMs={ofset}
               renk={renk}
               metinRengi={metinRengi}
               style={satirStili}

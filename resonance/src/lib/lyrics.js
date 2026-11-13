@@ -276,10 +276,17 @@ const BOS = { synced: false, tahmini: false, lines: [], kaynak: '' }
  * Parçanın sözleri: önce zamanlı kaynaklar (LRCLIB, NetEase), yoksa düz metin (LRCLIB, Lyrics.ovh).
  * Geçici hatada (ağ, 429, 5xx) sonraki kaynağa geçilir ve "söz yok" önbelleğe yazılmaz.
  */
-export async function sozleriGetir(title, artist, sureMs = 0, kaynaklar = { kelimeSor, lrclibSor, neteaseSor, ovhSor }) {
+export async function sozleriGetir(
+  title,
+  artist,
+  sureMs = 0,
+  kaynaklar = { kelimeSor, lrclibSor, neteaseSor, ovhSor },
+  /** R9: kaynak sırası (`kelime` = NetEase kelime zamanlı); listede olmayan kaynak sorulmaz */
+  sira = ['kelime', 'lrclib', 'netease', 'ovh'],
+) {
   const adaylar = aramaAdaylari(title, artist)
   if (!adaylar.length) return BOS
-  const anahtar = `${adaylar[0].baslik.toLowerCase()}|${adaylar[0].sanatci.toLowerCase()}`
+  const anahtar = `${adaylar[0].baslik.toLowerCase()}|${adaylar[0].sanatci.toLowerCase()}|${sira.join(',')}`
   if (onbellek.has(anahtar)) return onbellek.get(anahtar)
   let geciciVar = false
   let duz = null
@@ -291,9 +298,13 @@ export async function sozleriGetir(title, artist, sureMs = 0, kaynaklar = { keli
       return null
     }
   }
-  let son = kaynaklar.kelimeSor ? await dene(kaynaklar.kelimeSor, adaylar[0]) : null
-  for (const fn of son ? [] : [kaynaklar.lrclibSor, kaynaklar.neteaseSor, kaynaklar.ovhSor]) {
-    for (const aday of adaylar) {
+  const kaynakFn = { kelime: kaynaklar.kelimeSor, lrclib: kaynaklar.lrclibSor, netease: kaynaklar.neteaseSor, ovh: kaynaklar.ovhSor }
+  let son = null
+  for (const ad of sira) {
+    const fn = kaynakFn[ad]
+    if (!fn) continue
+    // Kelime zamanlı söz yalnız en iyi adayla sorulur (NetEase'e gereksiz yük olmasın)
+    for (const aday of ad === 'kelime' ? adaylar.slice(0, 1) : adaylar) {
       const s = await dene(fn, aday)
       if (s?.lines) {
         son = s

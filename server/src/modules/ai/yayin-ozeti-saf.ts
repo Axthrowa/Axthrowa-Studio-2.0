@@ -22,6 +22,8 @@ export interface YayinRaporu {
   baskinlar: Array<{ ad: string; izleyici: number }>;
   /** R4: yayında çalan şarkılar, zaman sırasıyla (eski raporlarda yok) */
   sarkilar?: CalanKaydi[];
+  /** B10: yayında en çok kullanılan komutlar (sohbette `!ad` ile başlayan iletiler; eski raporlarda yok) */
+  komutlar?: Array<{ ad: string; sayi: number }>;
   /** Yapay zekâ kapalıysa ya da yanıt alınamadıysa boş; sayılar yine durur */
   maddeler: string[];
   /** Yapay zekâ açıkken özet alınamadıysa nedeni */
@@ -39,6 +41,7 @@ export class YayinDefteri {
   private bagislar: Record<string, number> = {};
   private baskinlar: Array<{ ad: string; izleyici: number }> = [];
   private sarkilar: CalanKaydi[] = [];
+  private komutlar = new Map<string, number>();
 
   constructor(baslangic = Date.now()) {
     this.baslangic = baslangic;
@@ -50,6 +53,13 @@ export class YayinDefteri {
     const k = this.kisiler.get(anahtar);
     if (k) k.sayi++;
     else if (this.kisiler.size < KISI_SINIRI) this.kisiler.set(anahtar, { ad, sayi: 1 });
+    const komut = /^!([\p{L}\p{N}_]{1,32})/u.exec(metin.trim());
+    if (komut) {
+      const ad = komut[1].toLocaleLowerCase('tr');
+      // Uydurma komut seli belleği şişirmesin: en çok 200 ayrı ad
+      if (this.komutlar.has(ad) || this.komutlar.size < 200) this.komutlar.set(ad, (this.komutlar.get(ad) || 0) + 1);
+      return;
+    }
     if (metin.trim().startsWith('!')) return;
     // Rezervuar örnekleme: uzun yayında da başı ve sonu eşit şansla örnekte kalır, bellek sabit
     this.gorulen++;
@@ -104,6 +114,7 @@ export class YayinDefteri {
       bagislar: { ...this.bagislar },
       baskinlar: [...this.baskinlar],
       sarkilar: this.sarkiListesi(),
+      komutlar: [...this.komutlar].map(([ad, sayi]) => ({ ad, sayi })).sort((a, b) => b.sayi - a.sayi).slice(0, 10),
       maddeler: [],
     };
   }
@@ -149,6 +160,26 @@ export function sarkiListesiMetni(r: YayinRaporu): string {
 }
 
 /** Yanıttan en çok 3 madde: işaret ve numaralar atılır */
+/** CSV hücresi: tırnak kaçışı; sohbetten gelen adlar hesap tablosunda formül olarak çalışmasın */
+function hucre(v: unknown): string {
+  let s = String(v ?? '');
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return /[",;\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** B10: raporun tabloları tek CSV'de (bölüm, ad, değer); Excel Türkçe için UTF-8 BOM ile */
+export function raporCsv(r: YayinRaporu): string {
+  const satirlar: unknown[][] = [['Bölüm', 'Ad', 'Değer']];
+  const saat = (z: number) => new Date(z).toISOString();
+  satirlar.push(['Özet', 'Başlangıç', saat(r.baslangic)], ['Özet', 'Bitiş', saat(r.bitis)], ['Özet', 'Mesaj', r.mesaj], ['Özet', 'Yazan kişi', r.kisi], ['Özet', 'Takip', r.takip], ['Özet', 'Abone', r.abone]);
+  for (const k of r.enCokYazanlar) satirlar.push(['En çok yazan', k.ad, k.sayi]);
+  for (const k of r.komutlar || []) satirlar.push(['Komut', `!${k.ad}`, k.sayi]);
+  for (const [birim, n] of Object.entries(r.bagislar)) satirlar.push(['Bağış', birim, n]);
+  for (const b of r.baskinlar) satirlar.push(['Baskın', b.ad, b.izleyici]);
+  for (const s of r.sarkilar || []) satirlar.push(['Şarkı', s.ad, saat(s.zaman)]);
+  return '﻿' + satirlar.map((s) => s.map(hucre).join(',')).join('\r\n') + '\r\n';
+}
+
 export function maddeleriAyikla(yanit: string): string[] {
   return String(yanit ?? '')
     .split(/\r?\n/)

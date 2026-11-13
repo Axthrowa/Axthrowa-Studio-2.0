@@ -13,7 +13,7 @@ vi.mock('../muzik/index.js', () => ({ muzikHost: { parcaDegisince: (f: any) => (
 
 import { eventBus } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
-import { maddeleriAyikla, oncekiSarki, ozetIstemi, sarkiListesiMetni, YayinDefteri } from './yayin-ozeti-saf.js';
+import { maddeleriAyikla, oncekiSarki, ozetIstemi, raporCsv, sarkiListesiMetni, YayinDefteri } from './yayin-ozeti-saf.js';
 import { YayinOzeti } from './yayin-ozeti.js';
 
 const dolu = () => {
@@ -152,5 +152,25 @@ describe('oturum şarkı geçmişi (R4)', () => {
     eventBus.emit('stream_online', { platform: 'r4-test' });
     expect(o.sarkilar()).toEqual([]);
     eventBus.emit('stream_offline', { platform: 'r4-test' });
+  });
+});
+
+describe('B10 komut kullanımı ve CSV', () => {
+  it('komutlar sayılır, sohbet örneğine girmez, en çok kullanılan başta', () => {
+    const d = new YayinDefteri(0);
+    for (const m of ['!SR şarkı', '!sr başka', '!quote', 'merhaba', '! boşluk', '!İSTEK']) d.sohbet('Ali', m, 1);
+    const r = d.rapor(10);
+    expect(r.komutlar).toEqual([{ ad: 'sr', sayi: 2 }, { ad: 'quote', sayi: 1 }, { ad: 'istek', sayi: 1 }]);
+    expect(d.ornekMetni()).not.toContain('!sr');
+    expect(r.mesaj).toBe(6);
+  });
+
+  it('CSV formül enjeksiyonunu ve tırnağı kaçırır', () => {
+    const d = new YayinDefteri(0);
+    for (let i = 0; i < 6; i++) d.sohbet('=HYPERLINK("x")', '!sr a', i);
+    const csv = raporCsv(d.rapor(1000));
+    expect(csv.startsWith('﻿Bölüm,Ad,Değer')).toBe(true);
+    expect(csv).toContain(`"'=HYPERLINK(""x"")",6`);
+    expect(csv).toContain('Komut,!sr,6');
   });
 });

@@ -15,6 +15,7 @@ interface Rapor {
   bagislar: Record<string, number>;
   baskinlar: Array<{ ad: string; izleyici: number }>;
   sarkilar?: Array<{ zaman: number; ad: string }>;
+  komutlar?: Array<{ ad: string; sayi: number }>;
   maddeler: string[];
   aiHatasi?: string;
 }
@@ -85,6 +86,7 @@ export function YayinOzetleri() {
             {Object.entries(o.bagislar).map(([birim, miktar]) => ` · ${Math.round(miktar * 100) / 100} ${birim}`)}
           </p>
           {o.enCokYazanlar.length ? <p className="mt-1">En çok yazanlar: {o.enCokYazanlar.map((k) => `${k.ad} (${k.sayi})`).join(', ')}</p> : null}
+          {o.komutlar?.length ? <p className="mt-1">Komutlar: {o.komutlar.map((k) => `!${k.ad} (${k.sayi})`).join(', ')}</p> : null}
           {o.baskinlar.length ? <p className="mt-1">Baskınlar: {o.baskinlar.map((b) => `${b.ad} (${b.izleyici})`).join(', ')}</p> : null}
           {o.maddeler.length ? (
             <ul className="mt-2 list-disc space-y-1 pl-4 text-gray-200">
@@ -109,6 +111,9 @@ export function YayinOzetleri() {
             </details>
           ) : null}
           {o.aiHatasi ? <p className="mt-2 text-amber-300">{o.aiHatasi}</p> : null}
+          <a className="mt-2 inline-block text-xs text-gray-300 underline hover:text-white" href={`/api/yayin-ozetleri/${encodeURIComponent(o.id)}/csv`} download>
+            Tabloları CSV olarak indir
+          </a>
         </article>
       ))}
     </Kart>

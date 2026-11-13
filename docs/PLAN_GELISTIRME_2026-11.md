@@ -45,6 +45,11 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - T6 tamam (Studio `6eeb951`): Dashboard OBS kartının sahne, kaynak göster/gizle ve susturması eylem kayıt defterinden (`/api/actions/run`). Küresel kısayolların eski türleri aynı OBS yürütücüsüyle çalışır (kopuk bağlantıyı yeniden kurma davranışı korunsun diye) ama her basış `ACTION:<kimlik>`, `via: hotkey` olarak günlüğe düşer; kısayolla sahne geçişi `ACTION:scene.switch`. Deste: ayar yamasında `controlDeck.rev` karşılaştırılır, eski sürümle kayıt 409; deste penceresi kayıtları sıraya koyar, çakışmada uyarıp yeniden yükler, "Desteye ekle" bir kez yeniden dener. Sandbox'ta 409, art arda iki kayıt ve çakışma uyarısı denendi. Küresel kısayol denetim kaydı yalnız birim testiyle doğrulandı (başsız sunucuda küresel kısayol yok). Katman işlemleri kayıt defterinde değil.
 - Plan tablosundaki işler bitti.
 
+## Faz 3 durumu
+
+- B6 tamam (StreamAxT `10ace97`): sıradaki istek sınırı seviyeye göre (izleyici, abone, VIP; boşsa izleyici sınırı, hem abone hem VIP olana yüksek olan), kullanıcı engel listesi, istek ücreti (`sr_ucret`): yetmeyen bakiyede neden yazılır, ücret yalnız istek sıraya girince düşülür; istek sonradan çalınamazsa (engel, bulunamadı, YouTube'da kapalı) ya da izleyici `!wrongsong` ile geri alırsa iade edilir. `!songlike` / `!sarkibegen` çalan şarkıyı kişi başı bir kez beğenir. En uzun süre, şarkı/sanatçı engeli ve `!voteskip` zaten vardı. Ödenen istekler ve beğeniler bellekte: bot yeniden başlarsa o anki sıradaki isteklerin iadesi yapılamaz. Sandbox'ta ayar sayfası denendi; ücret akışı testte, gerçek sohbetle denenmedi.
+- Açık: R2, R3, R4, R5, R6, R7, R8, R9, R10, T7.
+
 ---
 
 ## Aşama 0 — Gerçek yayın provası (kod yok, 1 oturum)

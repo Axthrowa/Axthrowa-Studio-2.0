@@ -100,7 +100,9 @@ if (-not $SkipBundle) {
   [IO.File]::WriteAllText($cfgPath, $cfg, (New-Object Text.UTF8Encoding($false)))
   npx --yes tauri bundle --bundles nsis --ci --config $cfgPath
   Remove-Item -LiteralPath $cfgPath -Force -ErrorAction SilentlyContinue
-  $nsisHit = Get-ChildItem -LiteralPath $nsisDir -Filter "*setup*.exe" -File -ErrorAction SilentlyContinue |
+  $surumAdi = (Get-Content -LiteralPath (Join-Path $proj "package.json") -Raw | ConvertFrom-Json).version
+  # Yalniz bu surumun kurulumu; bundle duserse eski surumun dosyasi basari sayilmasin
+  $nsisHit = Get-ChildItem -LiteralPath $nsisDir -Filter "*_${surumAdi}_x64-setup.exe" -File -ErrorAction SilentlyContinue |
     Sort-Object LastWriteTime -Descending |
     Select-Object -First 1
   if ($nsisHit) {

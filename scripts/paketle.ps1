@@ -144,7 +144,8 @@ function Find-NsisSetup {
   )
   foreach ($dir in $dirs) {
     if (-not (Test-Path $dir)) { continue }
-    $hit = Get-ChildItem -LiteralPath $dir -Filter "*setup*.exe" -File -ErrorAction SilentlyContinue |
+    # Yalniz bu surumun kurulumu: eskiden klasordeki en yeni dosya aliniyordu, tauri bundle dusunce eski surum yeni adla paketlendi
+    $hit = Get-ChildItem -LiteralPath $dir -Filter "*_${surum}_x64-setup.exe" -File -ErrorAction SilentlyContinue |
       Sort-Object LastWriteTime -Descending |
       Select-Object -First 1
     if ($hit) { return $hit.FullName }
@@ -162,7 +163,9 @@ if ($srcNsis) {
   Write-Host "setup    -> $destSetup"
   Write-Host "setup    -> $destSetupVer"
 } else {
-  Write-Warning "NSIS setup bulunamadi. build-release-signed.ps1 icinde tauri bundle adimi calismis olmali."
+  # Eski kurulum yeni surum gibi dagitilmasin
+  Remove-Item -LiteralPath $destSetup, $destSetupVer -Force -ErrorAction SilentlyContinue
+  Write-Warning "NSIS setup ($surum) bulunamadi. build-release-signed.ps1 icinde tauri bundle adimi calismis olmali."
 }
 
 # 6) OKU.txt

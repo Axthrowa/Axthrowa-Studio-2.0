@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { API_BASE, patchSettings } from "../../lib/api";
 import { botApi, type EslesmisCihaz } from "../../lib/api/botApi";
 
@@ -17,7 +18,8 @@ const IZINLER: Array<[string, string]> = [
 /** T8: telefonu tek kullanımlık kodla eşleştir; cihazları listele ve iptal et. */
 export default function CihazEslestirme({ onToast }: { onToast: (m: string) => void }) {
   const [izinler, setIzinler] = useState<string[]>(["scene.switch", "audio.control", "broadcast.read"]);
-  const [kod, setKod] = useState<{ kod: string; bitis: number } | null>(null);
+  const [kod, setKod] = useState<{ kod: string; bitis: number; adres: string | null } | null>(null);
+  const [qr, setQr] = useState("");
   const [kalan, setKalan] = useState(0);
   const [cihazlar, setCihazlar] = useState<EslesmisCihaz[]>([]);
   const [lan, setLan] = useState<boolean | null>(null);
@@ -55,14 +57,21 @@ export default function CihazEslestirme({ onToast }: { onToast: (m: string) => v
   const baslat = async () => {
     try {
       const r = await botApi.eslestirmeBaslat(izinler);
-      setKod({ kod: r.kod, bitis: Date.now() + r.gecerlilikSn * 1000 });
+      setKod({ kod: r.kod, bitis: Date.now() + r.gecerlilikSn * 1000, adres: r.adres ?? null });
       setKalan(r.gecerlilikSn);
     } catch (e) {
       onToast(String((e as Error).message || e));
     }
   };
-  // Telefon aynı ağdaki adresle açar; localhost yerine bilgisayarın ağ adı/adresini yazmak gerekir
-  const baglanti = kod ? `${location.protocol}//${location.hostname === "127.0.0.1" || location.hostname === "localhost" ? "<bilgisayar-adresi>" : location.hostname}:${location.port}/remote?eslestir=${kod.kod}` : "";
+  // Telefon bilgisayarın yerel ağ adresini açar; Studio yerel ağa kapalıyken adres yoktur, QR da çizilmez
+  const yerelden = location.hostname === "127.0.0.1" || location.hostname === "localhost";
+  const kok = kod?.adres ?? (yerelden ? null : location.origin);
+  const baglanti = kod ? `${kok ?? `${location.protocol}//<bilgisayar-adresi>:${location.port}`}/remote?eslestir=${kod.kod}` : "";
+  useEffect(() => {
+    setQr("");
+    if (!kod || !kok) return;
+    QRCode.toDataURL(baglanti, { margin: 1, width: 192 }).then(setQr).catch(() => {});
+  }, [kod, kok, baglanti]);
 
   return (
     <div className="studio-card space-y-3">
@@ -95,6 +104,11 @@ export default function CihazEslestirme({ onToast }: { onToast: (m: string) => v
           <p>
             Kod: <strong className="font-mono text-base tracking-widest text-white">{kod.kod}</strong> · {kalan} sn
           </p>
+          {qr ? (
+            <img src={qr} alt={`Telefonla okut: ${baglanti}`} width={192} height={192} className="mt-2 rounded-md bg-white" />
+          ) : (
+            <p className="mt-1 text-amber-200">QR için önce "Yerel ağdan erişime izin ver"i açıp Studio'yu yeniden başlatın.</p>
+          )}
           <p className="mt-1 break-all text-panel-muted">
             Telefonda aç: <code className="text-panel-accent">{baglanti}</code>
           </p>

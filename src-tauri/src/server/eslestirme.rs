@@ -71,6 +71,18 @@ fn yerel() -> Actor {
   Actor { name: "yerel".into(), local: true }
 }
 
+/// Telefonun açacağı adres: yalnız yerel ağa açıkken, bilgisayarın ağdaki IPv4 adresi.
+/// UDP `connect` paket göndermez; yalnız işletim sistemine hangi arayüzün kullanılacağını sordurur.
+fn lan_adresi(state: &AppState) -> Option<String> {
+  if super::auth::resolve_bind_host(state) != [0, 0, 0, 0] {
+    return None;
+  }
+  let s = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
+  s.connect("192.0.2.1:9").ok()?;
+  let ip = s.local_addr().ok()?.ip();
+  (!ip.is_loopback() && !ip.is_unspecified()).then(|| format!("http://{ip}:{}", state.port))
+}
+
 /// Cihaz adı: görünür karakterler, en çok 40
 pub fn cihaz_adi(ham: &str) -> String {
   let a: String = ham.chars().filter(|c| !c.is_control() && *c != ':').take(40).collect();
@@ -86,7 +98,7 @@ async fn api_baslat(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(state): St
   }
   let kod = KODLAR.lock().uret(izinler.clone(), simdi_ms());
   audit(&state, &yerel(), "REMOTE:pair_start", json!({ "izinler": izinler })).await;
-  Ok(Json(json!({ "kod": kod, "gecerlilikSn": KOD_OMRU_MS / 1000, "izinler": izinler })))
+  Ok(Json(json!({ "kod": kod, "gecerlilikSn": KOD_OMRU_MS / 1000, "izinler": izinler, "adres": lan_adresi(&state) })))
 }
 
 async fn api_tamamla(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> ApiResult {

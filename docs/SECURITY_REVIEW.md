@@ -154,4 +154,4 @@ açık değil. Gömülü AxBoT'ta follow-redirects 1.16.1'e çıkarıldı; vosk-
 | Oturum anahtarı saklama | Uzak giriş ve cihaz oturumları veritabanında `h:` + SHA-256 olarak durur; veritabanını okuyan biri geçerli anahtar elde edemez, özetin kendisi de anahtar yerine geçmez. Güncellemeden önce açılmış düz oturumlar ilk kullanımda özete çevrilir (kimse çıkış yapmak zorunda kalmaz). | `oturum_testleri` |
 | Denetim | `REMOTE:pair_start`, `REMOTE:pair_done` (cihaz adı, izinler, adres), `REMOTE:device_revoke`; cihazın eylemleri mevcut eylem kayıt defterinden ve denetim günlüğünden geçer. | `audit` çağrıları |
 
-Bilinen sınır: QR görüntüsü yok (yeni bağımlılık gerektiriyor); panel kodu ve bağlantıyı yazı olarak gösterir. Hiç kullanılmayan eski düz oturumlar süresi dolana kadar (giriş 7, cihaz 90 gün) düz kalır.
+QR: `qrcode` (MIT) panelde çizilir; yalnız yerel ağa açıkken sunucu bilgisayarın ağ adresini verir (UDP `connect` ile arayüz seçimi, paket gönderilmez), kapalıyken adres ve QR yok. Bilinen sınır: Hiç kullanılmayan eski düz oturumlar süresi dolana kadar (giriş 7, cihaz 90 gün) düz kalır.

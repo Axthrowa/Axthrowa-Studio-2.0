@@ -1412,6 +1412,7 @@ async fn cihaz_eslestirme_tek_kullanim_ve_iptal() {
     .await
     .unwrap();
   assert_eq!(r["izinler"], json!(["scene.switch"]), "tehlikeli izinler süzülür");
+  assert!(r["adres"].is_null(), "yerel ağa kapalıyken telefon adresi verilmez");
   let kod = r["kod"].as_str().unwrap().to_string();
 
   let tamamla = |kod: String| c.post(format!("{}/api/bot/remote/eslestirme/tamamla", h.base)).json(&json!({ "kod": kod, "cihaz": "Pixel" })).send();

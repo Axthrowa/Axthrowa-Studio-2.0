@@ -324,7 +324,7 @@ export const botApi = {
   remoteUsers: () => json<{ users: unknown[] }>("/remote/users"),
   /** T8: tek kullanımlık eşleştirme kodu (yalnız bu bilgisayardan) */
   eslestirmeBaslat: (izinler: string[]) =>
-    json<{ kod: string; gecerlilikSn: number; izinler: string[] }>("/remote/eslestirme", { method: "POST", body: JSON.stringify({ izinler }) }),
+    json<{ kod: string; gecerlilikSn: number; izinler: string[]; adres: string | null }>("/remote/eslestirme", { method: "POST", body: JSON.stringify({ izinler }) }),
   eslestirmeTamamla: (kod: string, cihaz: string) =>
     json<{ token: string; izinler: string[]; cihaz: string }>("/remote/eslestirme/tamamla", { method: "POST", body: JSON.stringify({ kod, cihaz }) }),
   cihazlar: () => json<{ cihazlar: EslesmisCihaz[] }>("/remote/cihazlar"),

@@ -100,3 +100,11 @@ describe('Y12 Studio bağlantı tetikleri', () => {
     expect(tetikUyar({ tur: 'bit_hizi_dustu' }, { tur: 'baglanti_duzeldi' })).toBe(false);
   });
 });
+
+describe('Y7 Twitch reklam tetikleri', () => {
+  it('reklam tetikleri türle eşleşir', () => {
+    const r = kuralDuzelt({ ad: 'r', tetik: { tur: 'reklam_basliyor' }, eylemler: [{ tur: 'sohbet', metin: 'x' }] });
+    expect(r.ok && r.kural.tetik).toEqual({ tur: 'reklam_basliyor' });
+    expect(tetikUyar({ tur: 'reklam_bitti' }, { tur: 'reklam_basliyor' })).toBe(false);
+  });
+});

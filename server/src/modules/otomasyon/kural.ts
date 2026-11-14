@@ -15,7 +15,11 @@ export type Tetik =
   // Y12: Studio'nun bağlantı koruması bildirir (bit hızı eşiğin altında / OBS yeniden bağlanıyor, ve düzelme)
   | { tur: 'bit_hizi_dustu' }
   | { tur: 'baglanti_duzeldi' }
-  | { tur: 'kare_dususu'; enAz: number };
+  | { tur: 'kare_dususu'; enAz: number }
+  // Y7: Studio Twitch reklam takviminden bildirir
+  | { tur: 'reklam_yaklasiyor' }
+  | { tur: 'reklam_basliyor' }
+  | { tur: 'reklam_bitti' };
 
 export type Kosul = { tur: 'mod' } | { tur: 'abone' } | { tur: 'canli' } | { tur: 'en_az_puan'; puan: number };
 
@@ -96,6 +100,9 @@ function tetikDuzelt(t: any): Tetik | null {
       return { tur: 'patlama', mesaj: sayi(t.mesaj, 5, 1000), saniye: sayi(t.saniye, 3, 120) };
     case 'bit_hizi_dustu':
     case 'baglanti_duzeldi':
+    case 'reklam_yaklasiyor':
+    case 'reklam_basliyor':
+    case 'reklam_bitti':
       return { tur: t.tur };
     case 'kare_dususu':
       return { tur: 'kare_dususu', enAz: sayi(t.enAz, 1, 100) };

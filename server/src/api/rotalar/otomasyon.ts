@@ -26,8 +26,8 @@ router.post('/otomasyon/calistir', async (req: Request, res: Response) => {
   res.json(await otomasyon.calistir(req.body?.kural));
 });
 
-// Y12: AxthrowA Studio bağlantı korumasının olayları. Yalnız bu üç tür kabul edilir; isteğe bağlı tek satır sohbete gider.
-const STUDIO_OLAYLARI = new Set(['bit_hizi_dustu', 'baglanti_duzeldi', 'kare_dususu']);
+// Y12/Y7: AxthrowA Studio'nun bağlantı koruması ve Twitch reklam olayları. Yalnız bu türler kabul edilir; isteğe bağlı tek satır sohbete gider.
+const STUDIO_OLAYLARI = new Set(['bit_hizi_dustu', 'baglanti_duzeldi', 'kare_dususu', 'reklam_yaklasiyor', 'reklam_basliyor', 'reklam_bitti']);
 router.post('/otomasyon/olay', async (req: Request, res: Response) => {
   const tur = String(req.body?.tur || '');
   if (!STUDIO_OLAYLARI.has(tur)) return res.status(400).json({ error: 'Bilinmeyen olay' });

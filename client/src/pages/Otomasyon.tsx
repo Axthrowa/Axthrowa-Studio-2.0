@@ -53,6 +53,10 @@ const TETIKLER: Record<string, Tanim> = {
   bit_hizi_dustu: { etiket: 'Bit hızı düştü (Studio)', alanlar: [] },
   baglanti_duzeldi: { etiket: 'Bağlantı düzeldi (Studio)', alanlar: [] },
   kare_dususu: { etiket: 'Düşen kare eşiği (Studio)', alanlar: [{ ad: 'enAz', etiket: 'En az yüzde', sayi: true }], varsayilan: { enAz: 5 } },
+  // Y7: Twitch reklam takvimi (Studio)
+  reklam_yaklasiyor: { etiket: 'Reklama 60 sn kaldı (Twitch)', alanlar: [] },
+  reklam_basliyor: { etiket: 'Reklam başlıyor (Twitch)', alanlar: [] },
+  reklam_bitti: { etiket: 'Reklam bitti (Twitch)', alanlar: [] },
 };
 
 const KOSULLAR: Record<string, Tanim> = {

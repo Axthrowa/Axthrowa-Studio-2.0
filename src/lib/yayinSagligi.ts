@@ -19,6 +19,8 @@ export const ESIK = {
   /** Ağ yoğunluğu (0-1) ve bu kadar süre sürerse uyar */
   yogunluk: 0.5,
   yogunlukMs: 10_000,
+  /** Y4: YouTube 12 saat sınırından 30 dk önce */
+  uzunYayinMs: 11.5 * 3_600_000,
 };
 
 /** İki örnek arasındaki bit hızı (kbps). Süre OBS'ten gelir: önbellekten dönen örnek hesabı bozmaz. Hesaplanamıyorsa null. */
@@ -71,6 +73,13 @@ export function saglikDegerlendir(d: SaglikDurumu, h: StreamHealth, simdi: numbe
     uyarilar.push({ id: "saglik-durdu", seviye: "warn", metin: "Yayın durdu", ipucu: "Sen durdurmadıysan OBS'i ve internet bağlantını denetle" });
   }
   if (h.active) uyarilar.push({ id: "saglik-durdu", temizle: true });
+
+  // Y4: YouTube 12 saati aşan yayını arşivlemeyebilir; yarım saat önceden uyar
+  if (h.active && h.durationMs >= ESIK.uzunYayinMs) {
+    uyarilar.push({ id: "saglik-youtube12", seviye: "warn", metin: "Yayın 11,5 saati geçti: YouTube 12 saati aşan yayını arşivlemeyebilir", ipucu: "VOD'u saklamak istiyorsan yayını bölmeyi ya da yerel kaydı düşün" });
+  } else if (!h.active) {
+    uyarilar.push({ id: "saglik-youtube12", temizle: true });
+  }
 
   return { durum: { onceki: h, yogunBas }, uyarilar };
 }

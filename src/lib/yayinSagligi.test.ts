@@ -47,3 +47,11 @@ describe("yayın sağlığı", () => {
     expect(idler(bitis.uyarilar)).not.toContain("saglik-durdu");
   });
 });
+
+describe("uzun yayın (Y4)", () => {
+  it("11,5 saati geçince YouTube uyarısı verir, yayın bitince temizler", () => {
+    expect(idler(saglikDegerlendir(bas, h({ durationMs: 11 * 3_600_000 }), 0).uyarilar)).not.toContain("saglik-youtube12");
+    expect(idler(saglikDegerlendir(bas, h({ durationMs: 11.6 * 3_600_000 }), 0).uyarilar)).toContain("saglik-youtube12");
+    expect(saglikDegerlendir(bas, h({ active: false }), 0).uyarilar).toContainEqual({ id: "saglik-youtube12", temizle: true });
+  });
+});

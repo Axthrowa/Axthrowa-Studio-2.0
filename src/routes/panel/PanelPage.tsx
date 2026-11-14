@@ -116,7 +116,8 @@ import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec } from "../../lib
 import { useVideoDownload } from "../../lib/useVideoDownload";
 import { clearNotice, pushNotice, useNotices } from "../../lib/notices";
 import { sonYayinKareleriniAl, yayinSagligiIzle } from "../../lib/yayinSagligi";
-import { getStreamHealth } from "../../lib/obs";
+import { getObs, getStreamHealth } from "../../lib/obs";
+import { KAYIT_KAPALI_UYARISI, gorulenleriOku, gorulenleriYaz, vodHatirlatmalari } from "../../lib/vodHatirlatici";
 import { bildir } from "../../lib/bildirimler";
 import UpdateModal from "@/components/axthrowa/UpdateModal";
 import KarsilamaEkrani from "@/components/axthrowa/LisansEkrani";
@@ -817,6 +818,18 @@ export default function PanelPage() {
     [obsConnect, refreshObsLists, update, showToast]
   );
 
+  // Y4: Kick VOD'u silinmeye 2 gün kalan yayınlar (açılışta bir kez)
+  useEffect(() => {
+    void fetchDashboard()
+      .then((d) => {
+        const gorulen = gorulenleriOku();
+        const liste = vodHatirlatmalari(d.sessions, Date.now(), gorulen);
+        for (const h of liste) bildir(h.metin, "uyari");
+        if (liste.length) gorulenleriYaz([...gorulen, ...liste.map((h) => h.id)]);
+      })
+      .catch(() => {});
+  }, []);
+
   // A8b: bekleyen taslağı yazacak işlev
   useEffect(() => {
     useOnizlemeTaslagi.setState({
@@ -1085,6 +1098,15 @@ export default function PanelPage() {
     }
 
     setLiveOn(true);
+    // Y4: OBS'in "yayınla birlikte kaydet" ayarı okunamaz; kaydın başlamasına süre tanıyıp durumuna bakılır
+    window.setTimeout(() => {
+      void getObs()
+        .call("GetRecordStatus")
+        .then((r) => {
+          if (!(r as { outputActive?: boolean }).outputActive) bildir(KAYIT_KAPALI_UYARISI, "uyari");
+        })
+        .catch(() => {});
+    }, 5000);
     const bot = getBotConfig() as {
       channelName?: string;
       title?: string;

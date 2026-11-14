@@ -152,6 +152,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/library/import", post(api_library_import))
     // Gömülü müzik eklentisi — tüm ekranların paylaştığı tek "şu an çalan"
     .route("/api/now-playing", get(api_now_playing).post(api_set_now_playing))
+    .route("/api/songrequest/queue", get(api_istek_sirasi))
     .route("/api/player/status", get(api_player_status))
     .route("/api/player/sozler", get(api_player_sozler))
     .route("/api/player/source", post(api_player_source))
@@ -1419,6 +1420,19 @@ async fn api_library_import(
 // ---------------------------------------------------------------------------
 // Gömülü müzik eklentisi
 // ---------------------------------------------------------------------------
+
+/// K6: Resonance katmanındaki istek şeridi (R6) AxBoT'un kuyruğunu okur; Studio host'unda aynı adresle bota iletilir.
+/// Yalnız okuma; AxBoT kapalıysa 502 (şerit çıkmaz, katman seyrek yeniden dener).
+async fn api_istek_sirasi() -> Result<Json<Value>, (StatusCode, String)> {
+  let kapali = |_| (StatusCode::BAD_GATEWAY, "AxBoT kuyruğu okunamadı".to_string());
+  let client = reqwest::Client::builder().timeout(std::time::Duration::from_millis(1500)).build().map_err(kapali)?;
+  let url = format!("http://127.0.0.1:{}/api/songrequest/queue", crate::axbot::port());
+  let r = client.get(url).send().await.map_err(kapali)?;
+  if !r.status().is_success() {
+    return Err((StatusCode::BAD_GATEWAY, format!("AxBoT kuyruğu: HTTP {}", r.status().as_u16())));
+  }
+  r.json::<Value>().await.map(Json).map_err(kapali)
+}
 
 async fn api_now_playing(State(state): State<Arc<AppState>>) -> Json<Value> {
   Json(serde_json::to_value(state.music.now_playing()).unwrap_or(Value::Null))

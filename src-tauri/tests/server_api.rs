@@ -1125,7 +1125,9 @@ async fn action_registry_enforces_confirmation_availability_and_audit() {
   use std::sync::{Arc, Mutex};
   let alinan: Arc<Mutex<Vec<Value>>> = Arc::new(Mutex::new(Vec::new()));
   let kayit = alinan.clone();
-  let sahte = axum::Router::new().route(
+  let sahte = axum::Router::new()
+    .route("/api/songrequest/queue", axum::routing::get(|| async { axum::Json(json!({"current": null, "queue": [{"title": "Sıradaki", "requestedBy": "ali"}]})) }))
+    .route(
     "/api/alerts/control",
     axum::routing::post(move |axum::Json(govde): axum::Json<Value>| {
       let kayit = kayit.clone();
@@ -1147,6 +1149,9 @@ async fn action_registry_enforces_confirmation_availability_and_audit() {
   std::env::set_var("AXBOT_PORT", sahte_port.to_string());
 
   let h = start().await;
+  // K6: Resonance istek şeridi Studio host'unda bota iletilir
+  let kuyruk: Value = h.client.get(format!("{}/api/songrequest/queue", h.base)).send().await.unwrap().json().await.unwrap();
+  assert_eq!(kuyruk["queue"][0]["title"], "Sıradaki");
   let liste: Value = h.client.get(format!("{}/api/actions", h.base)).send().await.unwrap().json().await.unwrap();
   let eylemler = liste["actions"].as_array().unwrap();
   assert!(eylemler.len() >= 18);

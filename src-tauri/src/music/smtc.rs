@@ -14,6 +14,16 @@ pub fn atla(app: &str, spotify: bool, ytmd: bool, yoksay: &[String]) -> bool {
     || yoksay.iter().any(|y| !y.is_empty() && a.contains(&y.to_lowercase()))
 }
 
+/// R2b: kapak en çok bu boyutta okunur (data URL olarak her `now-playing` yayınına girer)
+pub const KAPAK_EN_COK: u64 = 512 * 1024;
+
+/// Kapak baytları → `<img>` için data URL; resim olmayan tür JPEG sayılır
+pub fn kapak_adresi(tur: &str, bayt: &[u8]) -> String {
+  use base64::Engine;
+  let tur = if tur.starts_with("image/") { tur } else { "image/jpeg" };
+  format!("data:{tur};base64,{}", base64::engine::general_purpose::STANDARD.encode(bayt))
+}
+
 /// SMTC zaman çizelgesi son güncellemedeki konumu verir; çalarken aradan geçen süre eklenir. Girdi 100 ns, çıktı ms.
 pub fn ilerleme_ms(konum: i64, son: i64, guncellenme: i64, simdi: i64, caliyor: bool) -> i64 {
   let mut p = konum;
@@ -30,6 +40,9 @@ pub fn ilerleme_ms(konum: i64, son: i64, guncellenme: i64, simdi: i64, caliyor: 
 mod win {
   use super::*;
   use anyhow::{anyhow, bail, Result};
+  use std::sync::Mutex;
+  use windows::Media::Control::GlobalSystemMediaTransportControlsSessionMediaProperties as Ozellikler;
+  use windows::Storage::Streams::DataReader;
   use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSession as Oturum, GlobalSystemMediaTransportControlsSessionManager as Yonetici,
     GlobalSystemMediaTransportControlsSessionPlaybackStatus as Durum,
@@ -65,6 +78,36 @@ mod win {
     aday
   }
 
+  /// Son okunan kapak (uygulama|başlık|sanatçı → data URL): saniyelik yoklamada aynı parça yeniden okunmaz
+  static KAPAK: Mutex<Option<(String, String)>> = Mutex::new(None);
+
+  fn kapak(m: &Ozellikler, anahtar: String) -> String {
+    if let Some((k, adres)) = KAPAK.lock().ok().and_then(|g| g.clone()) {
+      if k == anahtar {
+        return adres;
+      }
+    }
+    let adres = kapak_oku(m).unwrap_or_default();
+    if let Ok(mut g) = KAPAK.lock() {
+      *g = Some((anahtar, adres.clone()));
+    }
+    adres
+  }
+
+  fn kapak_oku(m: &Ozellikler) -> Option<String> {
+    let akis = m.Thumbnail().ok()?.OpenReadAsync().ok()?.get().ok()?;
+    let boyut = akis.Size().ok()?;
+    if boyut == 0 || boyut > KAPAK_EN_COK {
+      return None;
+    }
+    let tur = akis.ContentType().map(|t| t.to_string()).unwrap_or_default();
+    let okuyucu = DataReader::CreateDataReader(&akis).ok()?;
+    let n = okuyucu.LoadAsync(boyut as u32).ok()?.get().ok()?;
+    let mut bayt = vec![0u8; n as usize];
+    okuyucu.ReadBytes(&mut bayt).ok()?;
+    Some(kapak_adresi(&tur, &bayt))
+  }
+
   fn parca(o: &Oturum, app: String) -> Option<NowPlaying> {
     let m = o.TryGetMediaPropertiesAsync().ok()?.get().ok()?;
     let title = m.Title().ok()?.to_string();
@@ -84,9 +127,12 @@ mod win {
       .unwrap_or_default();
     // DateTime.UniversalTime: 1601'den beri 100 ns
     let simdi = (super::super::now_ms() + 11_644_473_600_000) * 10_000;
+    let artist = m.Artist().map(|s| s.to_string()).unwrap_or_default();
+    let album_art = kapak(&m, format!("{app}|{title}|{artist}"));
     Some(NowPlaying {
       title,
-      artist: m.Artist().map(|s| s.to_string()).unwrap_or_default(),
+      artist,
+      album_art,
       album: m.AlbumTitle().map(|s| s.to_string()).unwrap_or_default(),
       is_playing: caliyor,
       progress: ilerleme_ms(konum, son, guncel, simdi, caliyor),
@@ -142,6 +188,12 @@ mod tests {
     let yoksay = vec!["brave".to_string(), String::new()];
     assert!(atla("Brave", false, false, &yoksay));
     assert!(!atla("AppleInc.AppleMusicWin_nzyj5cx40ttqa!App", false, false, &yoksay));
+  }
+
+  #[test]
+  fn kapak_data_url() {
+    assert_eq!(kapak_adresi("image/png", b"ab"), "data:image/png;base64,YWI=");
+    assert_eq!(kapak_adresi("application/octet-stream", b"ab"), "data:image/jpeg;base64,YWI=");
   }
 
   #[test]

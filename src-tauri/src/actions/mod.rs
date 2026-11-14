@@ -94,6 +94,7 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "record.start", label: "Kaydı başlat", category: "recording", perm: "broadcast.record", confirm: false, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "record.stop", label: "Kaydı durdur", category: "recording", perm: "broadcast.record", confirm: true, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "replay.save", label: "Tekrarı kaydet", category: "replay", perm: "broadcast.replay", confirm: false, requires: Requires::Obs, params: &[] },
+  ActionSpec { id: "marker.add", label: "An işaretle (tekrar + kayıt bölümü)", category: "replay", perm: "broadcast.replay", confirm: false, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "stream.start", label: "OBS yayınını başlat", category: "stream", perm: "broadcast.stream", confirm: true, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "stream.stop", label: "OBS yayınını durdur", category: "stream", perm: "broadcast.stream", confirm: true, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "destination.start", label: "Hedefi başlat", category: "outputs", perm: "broadcast.outputs", confirm: false, requires: Requires::Multistream, params: HEDEF },
@@ -185,6 +186,8 @@ pub enum Action {
   RecordStart,
   RecordStop,
   ReplaySave,
+  /// U6: `note` ve `via` (chat, hotkey…) isteğe bağlı; sohbetteki !isaret notu taşır
+  MarkerAdd { note: Option<String>, via: Option<String> },
   StreamStart,
   StreamStop,
   DestinationStart { id: String },
@@ -288,6 +291,10 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
     "record.start" => Action::RecordStart,
     "record.stop" => Action::RecordStop,
     "replay.save" => Action::ReplaySave,
+    "marker.add" => Action::MarkerAdd {
+      note: istege_bagli(params, "note")?.map(|n| n.chars().take(120).collect()),
+      via: istege_bagli(params, "via")?.map(|n| n.chars().take(20).collect()),
+    },
     "stream.start" => Action::StreamStart,
     "stream.stop" => Action::StreamStop,
     "destination.start" => Action::DestinationStart { id: hedef()? },
@@ -404,7 +411,7 @@ mod tests {
     ] {
       assert!(find(id).unwrap().confirm, "{id} onay istemeli");
     }
-    for id in ["scene.switch", "audio.toggle", "replay.save", "alert.pause", "source.toggle", "audio.volume", "record.togglePause", "virtualcam.toggle"] {
+    for id in ["scene.switch", "audio.toggle", "replay.save", "marker.add", "alert.pause", "source.toggle", "audio.volume", "record.togglePause", "virtualcam.toggle"] {
       assert!(!find(id).unwrap().confirm, "{id} tek dokunuş olmalı");
     }
   }

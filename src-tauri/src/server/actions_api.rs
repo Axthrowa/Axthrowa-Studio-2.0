@@ -263,6 +263,15 @@ async fn yurut(state: &AppState, action: &Action, actor: &str) -> Result<Value, 
     Action::RecordStart => state.obs.set_recording(true).await.map(|_| json!({ "recording": true })),
     Action::RecordStop => state.obs.set_recording(false).await.map(|_| json!({ "recording": false })),
     Action::ReplaySave => state.obs.save_replay().await.map(|_| json!({ "saved": true })),
+    Action::MarkerAdd { note, via } => {
+      let mut i = state.obs.isaret_al(note.as_deref()).await?;
+      i.note = note.clone();
+      i.via = via.clone();
+      let id = crate::db::profile::isaret_ekle(&state.db, &i).await.map_err(|e| format!("İşaret yazılamadı: {e}"))?;
+      let mut v = json!(i);
+      v["id"] = json!(id);
+      Ok(v)
+    }
     Action::StreamStart => state.obs.start_stream().await.map(|_| json!({ "streaming": true })),
     Action::StreamStop => state.obs.stop_stream().await.map(|_| json!({ "streaming": false })),
     Action::DestinationStart { id } => state.multistream.start_destination(id).map(|_| json!({ "id": id })),

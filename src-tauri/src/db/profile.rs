@@ -259,6 +259,53 @@ pub async fn oturum_raporu(pool: &SqlitePool, session_id: &str) -> Result<serde_
   }))
 }
 
+/// U6: OBS'ten toplanan işaret bilgisi (yazılmadan önce)
+#[derive(Debug, Default, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Isaret {
+  pub offset_ms: Option<i64>,
+  pub scene: Option<String>,
+  pub note: Option<String>,
+  pub replay_path: Option<String>,
+  pub chapter: bool,
+  pub via: Option<String>,
+}
+
+/// U6: işareti açık yayın oturumuna (yoksa oturumsuz) yazar; kimliği döner
+pub async fn isaret_ekle(pool: &SqlitePool, i: &Isaret) -> Result<i64> {
+  let oturum: Option<(String,)> = sqlx::query_as("SELECT id FROM stream_sessions WHERE ended_at IS NULL ORDER BY started_at DESC LIMIT 1")
+    .fetch_optional(pool)
+    .await?;
+  let r = sqlx::query("INSERT INTO stream_markers(session_id, ts, offset_ms, scene, note, replay_path, chapter, via) VALUES(?,?,?,?,?,?,?,?)")
+    .bind(oturum.map(|o| o.0))
+    .bind(super::chrono_now())
+    .bind(i.offset_ms)
+    .bind(&i.scene)
+    .bind(&i.note)
+    .bind(&i.replay_path)
+    .bind(i.chapter as i64)
+    .bind(&i.via)
+    .execute(pool)
+    .await?;
+  Ok(r.last_insert_rowid())
+}
+
+/// U6: işaret listesi; `session_id` verilmezse son 100 işaret (yeniden eskiye)
+pub async fn isaretler(pool: &SqlitePool, session_id: Option<&str>) -> Result<Vec<serde_json::Value>> {
+  let satirlar: Vec<(i64, Option<String>, i64, Option<i64>, Option<String>, Option<String>, Option<String>, i64, Option<String>)> = match session_id {
+    Some(id) => sqlx::query_as("SELECT id, session_id, ts, offset_ms, scene, note, replay_path, chapter, via FROM stream_markers WHERE session_id = ? ORDER BY ts DESC").bind(id).fetch_all(pool).await?,
+    None => sqlx::query_as("SELECT id, session_id, ts, offset_ms, scene, note, replay_path, chapter, via FROM stream_markers ORDER BY ts DESC LIMIT 100").fetch_all(pool).await?,
+  };
+  Ok(
+    satirlar
+      .into_iter()
+      .map(|(id, sid, ts, off, scene, note, path, chapter, via)| {
+        serde_json::json!({ "id": id, "sessionId": sid, "ts": ts, "offsetMs": off, "scene": scene, "note": note, "replayPath": path, "chapter": chapter != 0, "via": via })
+      })
+      .collect(),
+  )
+}
+
 pub async fn push_metric(
   pool: &SqlitePool,
   session_id: &str,
@@ -373,5 +420,29 @@ mod seyrelt_testleri {
     assert_eq!(s[0], (0, 0));
     assert_eq!(s[199], (999, 999));
     assert_eq!(seyrelt(vec![(1, 1)], 200), vec![(1, 1)]);
+  }
+}
+
+#[cfg(test)]
+mod isaret_testleri {
+  use super::*;
+
+  #[tokio::test]
+  async fn isaret_acik_oturuma_yazilir_ve_listelenir() {
+    let pool = sqlx::sqlite::SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    crate::db::ensure_default_channel(&pool).await.unwrap();
+    // Oturum yokken de yazılır (oturumsuz)
+    isaret_ekle(&pool, &Isaret { note: Some("önce".into()), ..Default::default() }).await.unwrap();
+    let s = start_session(&pool, Some("Prova".into())).await.unwrap();
+    let i = Isaret { offset_ms: Some(65_000), scene: Some("Oyun".into()), replay_path: Some("C:/k/tekrar.mkv".into()), chapter: true, via: Some("chat".into()), ..Default::default() };
+    isaret_ekle(&pool, &i).await.unwrap();
+    let liste = isaretler(&pool, Some(&s.id)).await.unwrap();
+    assert_eq!(liste.len(), 1);
+    assert_eq!(liste[0]["offsetMs"], 65_000);
+    assert_eq!(liste[0]["scene"], "Oyun");
+    assert_eq!(liste[0]["replayPath"], "C:/k/tekrar.mkv");
+    assert_eq!(liste[0]["chapter"], true);
+    assert_eq!(isaretler(&pool, None).await.unwrap().len(), 2);
   }
 }

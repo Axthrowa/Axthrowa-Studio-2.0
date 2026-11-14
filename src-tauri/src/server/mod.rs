@@ -174,6 +174,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/bot/sessions", get(api_bot_sessions).post(api_bot_session_start))
     .route("/api/bot/sessions/end", post(api_bot_session_end))
     .route("/api/bot/sessions/report", get(api_bot_session_report))
+    .route("/api/bot/markers", get(api_bot_markers))
     .route("/api/bot/metrics", post(api_bot_metrics))
     .route("/api/bot/events", get(api_bot_events).post(api_bot_event_log))
     // Spotify kodunun düşebileceği kısa yollar. Kullanıcı Dashboard'a
@@ -2243,6 +2244,22 @@ async fn api_bot_session_report(
   crate::db::profile::oturum_raporu(&state.db, &q.id)
     .await
     .map(Json)
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+#[derive(Deserialize)]
+struct IsaretQuery {
+  session: Option<String>,
+}
+
+/// U6: yayının işaretleri (oturum verilmezse son 100)
+async fn api_bot_markers(
+  State(state): State<Arc<AppState>>,
+  Query(q): Query<IsaretQuery>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+  crate::db::profile::isaretler(&state.db, q.session.as_deref().filter(|s| !s.is_empty()))
+    .await
+    .map(|v| Json(json!(v)))
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 

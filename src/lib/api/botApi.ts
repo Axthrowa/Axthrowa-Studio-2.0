@@ -197,8 +197,30 @@ export function endSession(sessionId: string, kare?: { dusen: number; toplam: nu
 
 export type OturumRaporu = { izleyici: [number, number][]; dusenKare: number | null; toplamKare: number | null };
 
+/** Y3: son `limit` yayın (yeniden eskiye) */
+export function listSessions(limit: number) {
+  return json<{ sessions: StreamSession[] }>(`/sessions?limit=${limit}`);
+}
+
 export function sessionReport(sessionId: string) {
   return json<OturumRaporu>(`/sessions/report?id=${encodeURIComponent(sessionId)}`);
+}
+
+/** U6: yayının işaretli anı (kısayol, deste tuşu ya da sohbette !isaret) */
+export type Isaret = {
+  id: number;
+  sessionId: string | null;
+  ts: number;
+  offsetMs: number | null;
+  scene: string | null;
+  note: string | null;
+  replayPath: string | null;
+  chapter: boolean;
+  via: string | null;
+};
+
+export function markers(sessionId: string) {
+  return json<Isaret[]>(`/markers?session=${encodeURIComponent(sessionId)}`);
 }
 
 export async function pushMetrics(body: {

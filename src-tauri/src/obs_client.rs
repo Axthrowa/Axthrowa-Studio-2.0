@@ -806,6 +806,37 @@ impl ObsClientState {
       .map_err(|error| format!("Tekrar kaydedilemedi: {error}"))
   }
 
+  /// U6: yayının o anı: tekrar arabelleği açıksa kaydeder ve dosya yolunu bekler, kayıt açıksa bölüm ekler
+  /// (yalnız Hybrid MP4 destekler; desteklenmezse bölümsüz devam), sahneyi ve yayın süresini okur.
+  pub async fn isaret_al(&self, not: Option<&str>) -> Result<crate::db::profile::Isaret, String> {
+    let client = self.client()?;
+    let mut i = crate::db::profile::Isaret::default();
+    i.scene = client.scenes().current_program_scene().await.ok().map(|s| s.id.name);
+    if let Ok(st) = client.streaming().status().await {
+      if st.active {
+        i.offset_ms = Some(st.duration.whole_milliseconds() as i64);
+      }
+    }
+    if client.recording().status().await.map(|r| r.active).unwrap_or(false) {
+      i.chapter = client.recording().create_chapter(Some(not.unwrap_or("İşaret"))).await.is_ok();
+    }
+    if client.replay_buffer().status().await.unwrap_or(false) {
+      let onceki = client.replay_buffer().last_replay().await.ok();
+      client.replay_buffer().save().await.map_err(|e| format!("Tekrar kaydedilemedi: {e}"))?;
+      // Dosya OBS'te eşzamansız yazılır: yol değişene dek en çok ~3 sn bekle
+      for _ in 0..12 {
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        if let Ok(yol) = client.replay_buffer().last_replay().await {
+          if !yol.is_empty() && Some(&yol) != onceki.as_ref() {
+            i.replay_path = Some(yol);
+            break;
+          }
+        }
+      }
+    }
+    Ok(i)
+  }
+
   pub async fn toggle_stream(&self) -> Result<bool, String> {
     let client = self.client()?;
     client

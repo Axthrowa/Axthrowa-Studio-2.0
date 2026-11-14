@@ -23,7 +23,7 @@ export default function RemoteLoginPage() {
       const r = await botApi.eslestirmeTamamla(eslestirKodu, cihaz.trim());
       localStorage.setItem(TOKEN_KEY, r.token);
       localStorage.setItem("studio.bot.remoteUser", JSON.stringify({ username: r.cihaz, role: "cihaz", permissions: r.izinler }));
-      nav("/panel?nav=dashboard&remote=1", { replace: true });
+      nav("/remote", { replace: true });
     } catch (e) {
       setErr(String((e as Error).message || "Eşleştirme başarısız"));
     } finally {

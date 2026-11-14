@@ -27,6 +27,7 @@ pub fn router() -> Router<Arc<AppState>> {
   Router::new()
     .route("/api/actions", get(api_list))
     .route("/api/actions/run", post(api_run))
+    .route("/api/actions/deste", get(api_deste))
     .route("/api/obs/canvases", get(api_canvases))
     .route("/api/obs/meters", get(api_meters))
     .route("/ws/obs-meters", get(ws_meters))
@@ -165,6 +166,23 @@ async fn api_list(
   Ok(Json(json!({ "actions": list, "local": actor.local })))
 }
 
+/// U11: telefon kumandası panel ayarlarını okuyamaz; yalnız deste yapılandırması verilir (düğmeler yine
+/// `/api/actions/run` ile, her eylemin kendi izniyle yürür).
+async fn api_deste(
+  State(state): State<Arc<AppState>>,
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  headers: HeaderMap,
+) -> ApiResult {
+  authorize(&state, &addr, &headers, "actions.read").await?;
+  let deck = state.settings.read().get(crate::settings::ScreenKind::Panel).get("controlDeck").cloned();
+  Ok(Json(json!({ "deck": deck })))
+}
+
+/// Denetim kaydındaki `via`: açık kaynak ("hotkey", "chat") yoksa uzaktan gelen çağrı "remote" sayılır
+fn denetim_kaynagi<'a>(kaynak: Option<&'a str>, actor: &Actor) -> Option<&'a str> {
+  kaynak.or(if actor.local { None } else { Some("remote") })
+}
+
 #[derive(Deserialize)]
 struct RunBody {
   id: String,
@@ -207,7 +225,7 @@ pub(crate) async fn calistir(
   }
 
   let mut kayit = actions::audit_detail(spec, params);
-  if let Some(k) = kaynak {
+  if let Some(k) = denetim_kaynagi(kaynak, actor) {
     kayit["via"] = json!(k);
   }
   let sonuc = yurut(state, &action, &actor.name).await;
@@ -354,4 +372,16 @@ async fn uyari_denetimi(action: &str, actor: &str) -> Result<Value, String> {
     return Err(govde.get("error").and_then(|v| v.as_str()).unwrap_or("Uyarı denetimi uygulanamadı").to_string());
   }
   Ok(govde.get("state").cloned().unwrap_or(Value::Null))
+}
+
+#[cfg(test)]
+mod uzak_tests {
+  #[test]
+  fn uzak_cagri_denetimde_remote_gorunur() {
+    let uzak = super::Actor { name: "Telefon".into(), local: false };
+    let yerel = super::Actor { name: "yerel".into(), local: true };
+    assert_eq!(super::denetim_kaynagi(None, &uzak), Some("remote"));
+    assert_eq!(super::denetim_kaynagi(None, &yerel), None);
+    assert_eq!(super::denetim_kaynagi(Some("hotkey"), &uzak), Some("hotkey"));
+  }
 }

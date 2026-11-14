@@ -29,6 +29,7 @@ const OverlayAlertsPage = lazy(() => import("./routes/overlay/OverlayAlertsPage"
 const OverlayWidgetRedirect = lazy(() => import("./routes/overlay/OverlayWidgetRedirect"));
 const MasterOverlay = lazy(() => import("./routes/overlay/MasterOverlay"));
 const RemoteLoginPage = lazy(() => import("./routes/remote/RemoteLoginPage"));
+const RemotePage = lazy(() => import("./routes/remote/RemotePage"));
 const LoginPage = lazy(() => import("./auth/LoginPage"));
 const ObsDockSayfasi = lazy(() => import("./routes/ObsDockSayfasi"));
 const SagTikMenusu = lazy(() => import("@/components/axthrowa/SagTikMenusu"));
@@ -48,7 +49,7 @@ export default function App() {
       <Route path="/panel" element={<PanelPage />} />
       <Route path="/dock" element={<ObsDockSayfasi />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/remote" element={<RemoteLoginPage />} />
+      <Route path="/remote" element={<RemotePage />} />
       <Route path="/remote/login" element={<RemoteLoginPage />} />
       <Route path="/oauth/twitch" element={<OAuthCallbackPage platform="twitch" />} />
       <Route path="/oauth/youtube" element={<OAuthCallbackPage platform="youtube" />} />

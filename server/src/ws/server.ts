@@ -54,7 +54,7 @@ export class WebSocketHub {
       const ham = (db.prepare("SELECT value FROM bot_settings WHERE key = 'widget_settings_shoutout'").get() as { value?: string } | undefined)?.value;
       const esik = Number(ham ? JSON.parse(ham).raidOtomatikEsik : 0) || 0;
       if (esik > 0 && Number(payload.viewers) > esik) {
-        void shoutoutGonder(payload.username, String(payload.platform || 'kick'));
+        void shoutoutGonder(payload.username, String(payload.platform || 'kick'), { klip: true });
       }
     } catch {
       /* bozuk ayar: otomatik shoutout atlanır */

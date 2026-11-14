@@ -25,8 +25,20 @@ export function shoutoutMetni(kanal: string, platform: string): string {
   return `📢 ${kanal} kanalına göz atın: ${KANAL_KOKU[String(platform).toLowerCase()] || KANAL_KOKU.kick}/${kanal}`;
 }
 
-export async function shoutoutGonder(kanal: string, platform: string): Promise<void> {
-  let bilgi: { avatarUrl?: string; oyun?: string } = {};
+/** `klip`: Y10 gelen Twitch baskınında baskın yapanın son klibi kartın altında oynar */
+export async function shoutoutGonder(kanal: string, platform: string, secenek: { klip?: boolean } = {}): Promise<void> {
+  let bilgi: { avatarUrl?: string; oyun?: string; klipId?: string; klipSure?: number } = {};
+  if (platform === 'twitch' && secenek.klip && KANAL_ADI.test(kanal)) {
+    try {
+      const { platformManager } = await import('../../platforms/manager.js');
+      const tw: any = platformManager.getPlatform('twitch');
+      const [klip, avatar] = await Promise.all([tw?.sonKlip?.(kanal), tw?.avatarBul?.(kanal)]);
+      if (klip) bilgi = { klipId: klip.id, klipSure: klip.sure };
+      if (typeof avatar === 'string' && avatar.startsWith('https://')) bilgi.avatarUrl = avatar;
+    } catch {
+      /* klip bulunamadı: kart klipsiz çıkar */
+    }
+  }
   if (platform === 'kick' && KANAL_ADI.test(kanal)) {
     try {
       const r = await axios.get(`https://kick.com/api/v2/channels/${kanal}`, { headers: { Accept: 'application/json', 'User-Agent': UA }, timeout: 2500 });

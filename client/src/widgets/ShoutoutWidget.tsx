@@ -24,6 +24,9 @@ interface ShoutoutData {
   bio?: string;
   /** Yayında oynadığı ya da son oynadığı oyun */
   oyun?: string;
+  /** Y10: gelen baskında baskın yapanın son Twitch klibi */
+  klipId?: string;
+  klipSure?: number;
 }
 
 export interface ShoutoutWidgetProps {
@@ -55,7 +58,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
       setVisible(false);
       const sure = Math.max(0, Number(a.animationDuration) || 600);
       temizleRef.current = setTimeout(() => setSo(null), Math.max(80, Math.round(sure * CIKIS_ORANI) + 40));
-    }, Math.max(1000, Number(a.durationMs) || 8000));
+    }, Math.max(1000, Number(a.durationMs) || 8000, data.klipId ? (Number(data.klipSure) || 30) * 1000 + 1500 : 0));
   };
 
   useEffect(() => {
@@ -125,6 +128,7 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
       }
       style={{ alignItems: dikey(s.position), fontFamily: s.fontFamily }}
     >
+      <div className="flex w-full flex-col items-center gap-3" style={{ maxWidth: Number(s.maxWidth) || 512 }}>
       <div key={hareketAnahtari(s)} {...kokOzellik(s)}
         className="flex items-center gap-5 w-full"
         style={{
@@ -194,6 +198,17 @@ export function ShoutoutWidget({ embedded = false, previewMode = false }: Shouto
             </div>
           )}
         </div>
+      </div>
+      {/* Y10: Twitch gömmesi parent olarak sayfanın alan adını ister; OBS tarayıcı kaynağı 127.0.0.1'den açar */}
+      {so.klipId && visible && (
+        <iframe
+          title="Baskın yapanın son klibi"
+          src={`https://clips.twitch.tv/embed?clip=${encodeURIComponent(so.klipId)}&parent=${encodeURIComponent(window.location.hostname)}&autoplay=true&muted=false`}
+          className="w-full rounded-xl border-0"
+          style={{ aspectRatio: '16 / 9' }}
+          allow="autoplay; fullscreen"
+        />
+      )}
       </div>
     </div>
   );

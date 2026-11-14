@@ -16,7 +16,8 @@ import {
   twitchJetonTemizle,
   twitchRozetHaritasi,
   twitchSureSinirla,
-  twitchYayinCoz
+  twitchYayinCoz,
+  enYeniKlip
 } from './twitch-rules.js';
 
 export interface TwitchDogrulama {
@@ -126,6 +127,15 @@ export class TwitchHelix {
     if (!id) return { ok: false, hata: `Twitch'te "${l}" bulunamadı` };
     this.kimlikler.set(l, id);
     return { ok: true, veri: id };
+  }
+
+  /** Y10: kanalın son 30 gündeki en yeni klibi (gelen baskında katmanda oynatılır) */
+  async sonKlip(login: string): Promise<{ id: string; sure: number } | null> {
+    const id = await this.kullaniciKimligi(login);
+    if (!id.ok) return null;
+    const baslangic = new Date(Date.now() - 30 * 86_400_000).toISOString();
+    const r = await this.istek('GET', `/clips?broadcaster_id=${id.veri}&started_at=${encodeURIComponent(baslangic)}&first=20`);
+    return r.ok ? enYeniKlip(r.veri?.data) : null;
   }
 
   async avatarBul(login: string): Promise<string | null> {

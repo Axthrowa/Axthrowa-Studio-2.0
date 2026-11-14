@@ -289,6 +289,10 @@ export class TwitchPlatform extends BasePlatform {
     }
   }
 
+  sonKlip(kullanici: string): Promise<{ id: string; sure: number } | null> {
+    return this.helix.sonKlip(kullanici);
+  }
+
   avatarBul(kullanici: string): Promise<string | null> {
     return this.helix.avatarBul(kullanici);
   }

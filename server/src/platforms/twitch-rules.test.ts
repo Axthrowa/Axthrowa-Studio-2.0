@@ -70,3 +70,16 @@ describe('Y8: Power-up ve izleme serisi etiketleri', () => {
     expect(twitchIzlemeSerisi({ 'msg-id': 'viewermilestone', 'msg-param-category': 'watch-streak', 'msg-param-value': 'x' })).toBeNull();
   });
 });
+
+import { enYeniKlip } from './twitch-rules.js';
+
+describe('Y10: baskın yapanın son klibi', () => {
+  it('en yeni oluşturulanı seçer, süreyi 60 sn ile sınırlar', () => {
+    expect(enYeniKlip([
+      { id: 'eski', created_at: '2026-10-01T00:00:00Z', duration: 20 },
+      { id: 'yeni', created_at: '2026-11-10T00:00:00Z', duration: 90 },
+    ])).toEqual({ id: 'yeni', sure: 60 });
+    expect(enYeniKlip([])).toBeNull();
+    expect(enYeniKlip(undefined)).toBeNull();
+  });
+});

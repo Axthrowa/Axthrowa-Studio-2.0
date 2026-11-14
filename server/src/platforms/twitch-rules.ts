@@ -198,3 +198,11 @@ export function twitchIzlemeSerisi(tags: Record<string, string>): number | null 
   const n = parseInt(tags['msg-param-value'] || '', 10);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
+
+/** Y10: Get Clips yanıtından en yeni klip (Twitch izlenmeye göre sıralar, biz oluşturma zamanına bakarız) */
+export function enYeniKlip(data: unknown): { id: string; sure: number } | null {
+  const liste = Array.isArray(data) ? data : [];
+  let en: any = null;
+  for (const k of liste) if (k?.id && (!en || String(k.created_at) > String(en.created_at))) en = k;
+  return en ? { id: String(en.id), sure: Math.min(60, Number(en.duration) || 30) } : null;
+}

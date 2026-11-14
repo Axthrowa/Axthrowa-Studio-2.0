@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Guncelleme, YedekPaneli } from "./GuncellemeYedek";
 import { PaketPaylasimi } from "./PaketPaylasimi";
+import { BaglantiKorumasiKarti } from "./BaglantiKorumasiKarti";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
@@ -396,6 +397,8 @@ export default function AppSettingsPage({
           <YedekPaneli />
           <hr className="border-white/[0.08]" />
           <PaketPaylasimi />
+          <hr className="border-white/[0.08]" />
+          <BaglantiKorumasiKarti />
           <hr className="border-white/[0.08]" />
           <DestekPaketi />
         </div>

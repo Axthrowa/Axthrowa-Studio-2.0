@@ -440,6 +440,18 @@ export default function PanelPage() {
 
   // Eski tek satırlık bildirimler ortak bildirim standardına gider (A5): tür metinden anlaşılır
   const showToast = useCallback((m: string) => void bildir(m), []);
+  // Y12: bağlantı koruması (ayar kapalıyken yalnız ayarı okur)
+  useEffect(() => {
+    let durdur: (() => void) | undefined;
+    let bitti = false;
+    void import("../../lib/baglantiKorumasi").then((m) => {
+      if (!bitti) durdur = m.baglantiKorumasiIzle((t) => void bildir(t));
+    });
+    return () => {
+      bitti = true;
+      durdur?.();
+    };
+  }, []);
   // U9: önceki oturumda ayrı pencerede kalan paneller aynı yerde yeniden açılır
   useEffect(() => {
     void import("../../lib/ayrikPanel").then((m) => m.ayrikPencereleriGeriAc());

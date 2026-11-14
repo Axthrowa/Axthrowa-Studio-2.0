@@ -32,6 +32,8 @@ import { ActivityFeedPanel, UniversalChatPanel } from "./UniversalChat";
 import { DeckPanel } from "./DeckPanel";
 import UyariKuyrugu from "./UyariKuyrugu";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
+import { isObsConnected } from "../../lib/obs";
+import { vodMuzikDenetle, vodMuzikDuzelt } from "../../lib/vodMuzik";
 import { nesneMenusu } from "../axthrowa/SagTikMenusu";
 import { sahneMenusu } from "./sahneMenusu";
 import {
@@ -456,7 +458,46 @@ function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
 
 /** Canlı ekranının "Yayın öncesi" çalışma alanı için */
 export function KontrolListesi({ onToast }: { onToast: (m: string) => void }) {
-  return <PreflightPanel ms={useMultistream(onToast)} />;
+  return (
+    <>
+      <VodMuzikUyarisi onToast={onToast} />
+      <PreflightPanel ms={useMultistream(onToast)} />
+    </>
+  );
+}
+
+/** Y14: müzik Twitch VOD izine de gidiyorsa uyarı ve tek tıkla düzeltme */
+function VodMuzikUyarisi({ onToast }: { onToast: (m: string) => void }) {
+  const [sonuc, setSonuc] = useState<{ iz: number | null; sorunlu: string[] } | null>(null);
+  const denetle = useCallback(() => {
+    if (!isObsConnected()) return;
+    vodMuzikDenetle()
+      .then(setSonuc)
+      .catch(() => setSonuc(null));
+  }, []);
+  useEffect(denetle, [denetle]);
+  if (!sonuc?.sorunlu.length || sonuc.iz === null) return null;
+  const iz = sonuc.iz;
+  return (
+    <div className="mb-2 flex items-start gap-2 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-xs">
+      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+      <span className="min-w-0 flex-1 text-white/90">
+        Müzik Twitch VOD izine ({iz}. iz) de gidiyor: {sonuc.sorunlu.join(", ")}. Telifli müzik VOD'u sessize aldırabilir.
+      </span>
+      <button
+        type="button"
+        className="studio-btn-ghost shrink-0 !px-2 !py-0.5"
+        onClick={() =>
+          void vodMuzikDuzelt(iz, sonuc.sorunlu)
+            .then(() => onToast("Müzik VOD izinden çıkarıldı; canlı yayında çalmaya devam eder"))
+            .catch((e) => onToast(`Düzeltilemedi: ${String((e as Error).message || e).slice(0, 120)}`))
+            .finally(denetle)
+        }
+      >
+        Düzelt
+      </button>
+    </div>
+  );
 }
 
 function PreflightPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {

@@ -7,6 +7,7 @@ import { Guncelleme, YedekPaneli } from "./GuncellemeYedek";
 import { PaketPaylasimi } from "./PaketPaylasimi";
 import { BaglantiKorumasiKarti } from "./BaglantiKorumasiKarti";
 import { YayinTakvimiKarti } from "./YayinTakvimiKarti";
+import { CanliAltyaziKarti } from "./CanliAltyaziKarti";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import {
@@ -402,6 +403,8 @@ export default function AppSettingsPage({
           <BaglantiKorumasiKarti />
           <hr className="border-white/[0.08]" />
           <YayinTakvimiKarti />
+          <hr className="border-white/[0.08]" />
+          <CanliAltyaziKarti />
           <hr className="border-white/[0.08]" />
           <DestekPaketi />
         </div>

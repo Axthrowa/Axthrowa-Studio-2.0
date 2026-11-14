@@ -15,6 +15,7 @@ const SubathonPage = lazy(() => import("./routes/widgets/SubathonPage"));
 const ViewerCountPage = lazy(() => import("./routes/widgets/ViewerCountPage"));
 const EmoteComboPage = lazy(() => import("./routes/widgets/EmoteComboPage"));
 const ShoutoutPage = lazy(() => import("./routes/widgets/ShoutoutPage"));
+const AltyaziPage = lazy(() => import("./routes/widgets/AltyaziPage"));
 const WheelPage = lazy(() => import("./routes/widgets/WheelPage"));
 const HypeTrainPage = lazy(() => import("./routes/widgets/HypeTrainPage"));
 const NowPlayingWidgetPage = lazy(() => import("./routes/widgets/NowPlayingWidgetPage"));
@@ -77,6 +78,7 @@ export default function App() {
       <Route path="/widgets/master" element={<MasterOverlay />} />
       <Route path="/overlay/widgets/:kind" element={<OverlayWidgetRedirect />} />
       <Route path="/overlay/widgets" element={<OverlayWidgetRedirect />} />
+      <Route path="/widgets/altyazi" element={<AltyaziPage />} />
       <Route path="/widgets/:kind" element={<WidgetOverlay />} />
       <Route path="/widgets" element={<WidgetOverlay />} />
       <Route path="/starting" element={<StartingPage />} />

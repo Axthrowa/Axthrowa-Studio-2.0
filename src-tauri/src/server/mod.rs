@@ -178,6 +178,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/bot/markers", get(api_bot_markers))
     .route("/api/klip/kare", get(api_klip_kare))
     .route("/api/klip/dikey", post(api_klip_dikey))
+    .route("/api/altyazi", post(api_altyazi))
     .route("/api/bot/metrics", post(api_bot_metrics))
     .route("/api/bot/events", get(api_bot_events).post(api_bot_event_log))
     // Spotify kodunun düşebileceği kısa yollar. Kullanıcı Dashboard'a
@@ -2317,6 +2318,28 @@ struct KlipDikeyBody {
 }
 
 /// Y2: işaretin tekrar dosyasından 1080×1920 MP4 (kaynağın yanına)
+#[derive(Deserialize)]
+struct AltyaziBody {
+  metin: String,
+  #[serde(default)]
+  kesin: bool,
+  #[serde(default)]
+  obs: bool,
+}
+
+/// Y13 canlı altyazı: paneldeki tanıyıcının metni katmana (`/widgets/altyazi`) yayılır; kesinleşen satır
+/// istenirse OBS'e CEA-608 olarak gider (yayın kapalıyken OBS reddeder, hata metni döner, katman yine yazar).
+async fn api_altyazi(State(state): State<Arc<AppState>>, Json(b): Json<AltyaziBody>) -> Json<Value> {
+  let metin: String = b.metin.trim().chars().take(500).collect();
+  state.broadcast_json(&json!({ "type": "altyazi", "metin": metin, "kesin": b.kesin }));
+  let obs = if b.kesin && b.obs && !metin.is_empty() && state.obs.is_connected() {
+    Some(state.obs.send_caption(&metin).await)
+  } else {
+    None
+  };
+  Json(json!({ "obs": obs.as_ref().map(|r| r.is_ok()), "hata": obs.and_then(|r| r.err()) }))
+}
+
 async fn api_klip_dikey(State(state): State<Arc<AppState>>, Json(b): Json<KlipDikeyBody>) -> Result<Json<Value>, (StatusCode, String)> {
   let filtre = crate::klip::dikey_filtre(b.oyun, b.kamera).map_err(|e| (StatusCode::BAD_REQUEST, e))?;
   let (ffmpeg, yol) = klip_kaynagi(&state, b.isaret).await?;

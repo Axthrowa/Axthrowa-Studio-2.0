@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <title>AxthrowA Studio</title>
+    <style>
+      body { margin: 0; padding: 8px 12px; font: 13px system-ui, sans-serif; color: #d8d8d8; background: #2d2d2d; }
+      label { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 8px; margin: 6px 0; }
+      select { width: 100%; background: #3d3d3d; color: #fff; border: 1px solid #555; border-radius: 3px; padding: 3px; }
+      p { color: #a0a0a0; margin: 6px 0; }
+    </style>
+  </head>
+  <body>
+    <label id="satir"><span id="etiket">Düğme</span><select id="secim"><option value="">Yükleniyor…</option></select></label>
+    <p id="not"></p>
+    <script>
+      // Stream Deck ayar sayfası protokolü (SDK websocket): eklentiden listeyi ister, seçimi ayar olarak kaydeder.
+      let ws, uuid, eylem, ayar = {};
+      const secim = document.getElementById("secim");
+      window.connectElgatoStreamDeckSocket = (port, piUuid, olay, bilgi, eylemBilgi) => {
+        uuid = piUuid;
+        const e = JSON.parse(eylemBilgi);
+        eylem = e.action;
+        ayar = e.payload.settings || {};
+        const deste = eylem === "com.axthrowa.studio.deste";
+        document.getElementById("etiket").textContent = deste ? "Düğme" : "Ses girişi";
+        ws = new WebSocket("ws://127.0.0.1:" + port);
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ event: olay, uuid }));
+          ws.send(JSON.stringify({ event: "sendToPlugin", action: eylem, context: uuid, payload: { istek: "liste" } }));
+        };
+        ws.onmessage = (m) => {
+          const v = JSON.parse(m.data);
+          if (v.event !== "sendToPropertyInspector") return;
+          const l = deste ? v.payload.dugmeler.map((b) => [b.id, b.ad]) : v.payload.girisler.map((g) => [g, g]);
+          const secili = deste ? ayar.buton : ayar.giris;
+          secim.replaceChildren(new Option("Seç…", ""), ...l.map(([d, ad]) => new Option(ad, d, false, d === secili)));
+          document.getElementById("not").textContent =
+            v.payload.baglanti === "tamam" ? "" : deste && l.length ? "" : "Studio açık değil ya da OBS bağlı değil: " + v.payload.baglanti;
+        };
+      };
+      secim.onchange = () => {
+        ayar = eylem === "com.axthrowa.studio.deste" ? { buton: secim.value } : { giris: secim.value };
+        ws?.send(JSON.stringify({ event: "setSettings", context: uuid, payload: ayar }));
+      };
+    </script>
+  </body>
+</html>

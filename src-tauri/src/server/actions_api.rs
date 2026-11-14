@@ -46,7 +46,7 @@ async fn api_kumanda(
   }
   let sahne = state.obs.scene_snapshot().await.map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
   let girisler = state.obs.inputs().await.map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
-  Ok(Json(json!({ "scenes": sahne.scenes, "currentScene": sahne.current_scene, "streaming": sahne.streaming, "inputs": girisler })))
+  Ok(Json(json!({ "scenes": sahne.scenes, "currentScene": sahne.current_scene, "streaming": sahne.streaming, "recording": sahne.recording, "inputs": girisler })))
 }
 
 /// Giriş ses seviyeleri (salt-okunur). Abonelik ilk istekte açılır, istek kesilince kendiliğinden kapanır.

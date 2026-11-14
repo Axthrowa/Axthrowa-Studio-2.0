@@ -1,0 +1,103 @@
+{
+  "Name": "AxthrowA Studio",
+  "Version": "0.1.0.0",
+  "Author": "AxthrowA",
+  "Actions": [
+    {
+      "Name": "Deste düğmesi",
+      "UUID": "com.axthrowa.studio.deste",
+      "Icon": "imgs/actions/deste/icon",
+      "Tooltip": "Studio destesindeki bir düğmeyi bu tuşa atar.",
+      "PropertyInspectorPath": "ui/ayar.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/deste/key",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    },
+    {
+      "Name": "Mikrofon",
+      "UUID": "com.axthrowa.studio.sustur",
+      "Icon": "imgs/actions/sustur/icon",
+      "Tooltip": "OBS ses girişini susturur / açar; tuş durumu gösterir.",
+      "PropertyInspectorPath": "ui/ayar.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/actions/sustur/acik",
+          "TitleAlignment": "bottom"
+        },
+        {
+          "Image": "imgs/actions/sustur/kapali",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    },
+    {
+      "Name": "Yayın",
+      "UUID": "com.axthrowa.studio.yayin",
+      "Icon": "imgs/actions/yayin/icon",
+      "Tooltip": "OBS yayınını başlatır / durdurur (iki kez bas). Canlıyken tuş kırmızı.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/actions/yayin/kapali",
+          "TitleAlignment": "bottom"
+        },
+        {
+          "Image": "imgs/actions/yayin/canli",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    },
+    {
+      "Name": "Kayıt",
+      "UUID": "com.axthrowa.studio.kayit",
+      "Icon": "imgs/actions/kayit/icon",
+      "Tooltip": "OBS kaydını başlatır / durdurur (durdurmak için iki kez bas). Kayıttayken tuş kırmızı.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/actions/kayit/kapali",
+          "TitleAlignment": "bottom"
+        },
+        {
+          "Image": "imgs/actions/kayit/kayitta",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    }
+  ],
+  "Category": "AxthrowA Studio",
+  "CategoryIcon": "imgs/plugin/category-icon",
+  "CodePath": "bin/plugin.js",
+  "Description": "AxthrowA Studio destesini ve OBS durumunu (susturuldu, canlı, kayıtta) Stream Deck tuşlarına getirir. Yalnız bu bilgisayardaki Studio'ya (127.0.0.1:8843) bağlanır.",
+  "Icon": "imgs/plugin/marketplace",
+  "SDKVersion": 3,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "24"
+  },
+  "UUID": "com.axthrowa.studio"
+}

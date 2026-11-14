@@ -1,0 +1,17 @@
+{
+  "name": "axthrowa-studio-streamdeck",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../node_modules/esbuild/bin/esbuild src/plugin.ts --bundle --platform=node --target=node20 --format=esm --outfile=com.axthrowa.studio.sdPlugin/bin/plugin.js",
+    "test": "node --test --experimental-strip-types src/*.test.ts",
+    "validate": "streamdeck validate com.axthrowa.studio.sdPlugin",
+    "pack": "streamdeck pack com.axthrowa.studio.sdPlugin --output dist --force"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "3.0.4"
+  },
+  "devDependencies": {
+    "@elgato/cli": "1.10.4"
+  }
+}

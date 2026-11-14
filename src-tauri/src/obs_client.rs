@@ -35,6 +35,8 @@ pub struct ObsSceneSnapshot {
   pub scenes: Vec<String>,
   pub current_scene: String,
   pub streaming: bool,
+  /// U12: Stream Deck tuşu kayıt durumunu gösterir
+  pub recording: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -340,6 +342,7 @@ impl ObsClientState {
         .await
         .map(|status| status.active)
         .unwrap_or(false);
+      let recording = client.recording().status().await.map(|status| status.active).unwrap_or(false);
       let current_scene = list
         .current_program_scene
         .map(|scene| scene.name)
@@ -349,6 +352,7 @@ impl ObsClientState {
         scenes,
         current_scene,
         streaming,
+        recording,
       })
     }
     .await;

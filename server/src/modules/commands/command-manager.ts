@@ -746,10 +746,17 @@ export class CommandManager {
       case 'marker':
       case 'isaret': {
         if (!message.user.isMod && !message.user.isBroadcaster) return null;
-        if (message.platform !== 'twitch') return 'İşaret (marker) yalnız Twitch\'te var.';
-        const { platformManager } = await import('../../platforms/manager.js');
-        const r = await (platformManager.getPlatform('twitch') as any)?.isaretKoy?.(args.join(' ') || `${message.user.displayName} işareti`);
-        return r?.ok ? '📍 Yayına işaret kondu.' : `İşaret konamadı: ${r?.hata || 'Twitch bağlı değil'}`;
+        // U6: Studio'da an işareti (her platform) + Twitch'te platform işareti
+        const not = args.join(' ').slice(0, 120) || `${message.user.displayName} işareti`;
+        const { isaretYaniti, studioIsareti } = await import('./isaret.js');
+        const twitchIsareti = async () => {
+          if (message.platform !== 'twitch') return null;
+          const { platformManager } = await import('../../platforms/manager.js');
+          const r = await (platformManager.getPlatform('twitch') as any)?.isaretKoy?.(not);
+          return r?.ok ? { ok: true as const } : { ok: false as const, hata: String(r?.hata || 'Twitch bağlı değil') };
+        };
+        const [studio, twitch] = await Promise.all([studioIsareti(not), twitchIsareti()]);
+        return isaretYaniti(studio, twitch);
       }
 
       case 'commercial':

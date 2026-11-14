@@ -152,7 +152,7 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
   k('accountage', ['hesapyasi'], 'Yayın', 'herkes', 'Hesap yaşı', '!accountage [@kullanıcı]'),
   k('so', ['promo'], 'Yayın', 'mod', 'Kanal tavsiyesi (shoutout)', '!so @kanal'),
   k('clip', [], 'Yayın', 'herkes', 'Yayından klip al'),
-  k('marker', ['isaret'], 'Yayın', 'mod', 'Twitch yayın işareti koy'),
+  k('marker', ['isaret'], 'Yayın', 'mod', 'Yayının anını işaretle (Studio: tekrar + kayıt bölümü; Twitch: yayın işareti)', '!isaret güzel an'),
   k('commercial', ['reklam'], 'Yayın', 'mod', 'Twitch reklamı başlat', '!commercial 60'),
 
   // Moderasyon

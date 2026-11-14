@@ -1,5 +1,5 @@
 AxthrowA Studio — ÜÇÜNCÜ TARAF BİLDİRİMLERİ
-Sürüm 1.6.13. Bu dosya scripts/ucuncu-taraf-bildirimleri.mjs ile üretilir; elle düzenlemeyin.
+Sürüm 1.8.0. Bu dosya scripts/ucuncu-taraf-bildirimleri.mjs ile üretilir; elle düzenlemeyin.
 
 Ürün lisansı: GNU General Public License sürüm 2 ya da (tercihinize göre) daha sonraki bir sürüm
 (GPL-2.0-or-later). Lisans metni: LICENSE.txt. Bu programın ikili sürümünü alan herkes, karşılık gelen tam
@@ -10,7 +10,7 @@ Bu uygulama kullanıcının bilgisayarında kurulu OBS Studio ile obs-websocket 
 tarayıcı dock'u olarak eklenir; OBS Studio ve OBS eklentileri bu pakete dahil değildir. OBS Studio, OBS Project'in
 markasıdır; bu ürün onunla bağlantılı değildir.
 
-Bileşen sayısı: 521
+Bileşen sayısı: 552
 ====================================================================================================
 
 adler2 2.0.1  [cargo; panel (Rust)]
@@ -16951,9 +16951,205 @@ Lisans: MIT
 Kaynak: https://github.com/dtolnay/zmij
 LICENSE-MIT: metin #3 ile aynı
 
-@fontsource/open-sans 5.3.0  [npm; panel ön yüzü (npm)]
+@fontsource/ibm-plex-mono 5.3.0  [npm; panel ön yüzü (npm)]
 Lisans: OFL-1.1
 --- LICENSE (metin #253) ---
+Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-ThinItalic.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-ExtraLight.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-ExtraLightItalic.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-Light.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-LightItalic.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-Regular.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-Italic.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-Medium.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-MediumItalic.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-SemiBold.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-SemiBoldItalic.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-Bold.ttf: Copyright 2017 IBM Corp. All rights reserved. IBMPlexMono-BoldItalic.ttf: Copyright 2017 IBM Corp. All rights reserved.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+--- son ---
+
+@fontsource/ibm-plex-sans 5.3.0  [npm; panel ön yüzü (npm)]
+Lisans: OFL-1.1
+--- LICENSE (metin #254) ---
+Copyright 2019 IBM Corp. All rights reserved. IBMPlexSans-Italic[wdth,wght].ttf: Copyright 2019 IBM Corp. All rights reserved.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+--- son ---
+
+@fontsource/open-sans 5.3.0  [npm; panel ön yüzü (npm)]
+Lisans: OFL-1.1
+--- LICENSE (metin #255) ---
 Copyright 2020 The Open Sans Project Authors (https://github.com/googlefonts/opensans) OpenSans-Italic[wdth,wght].ttf: Copyright 2020 The Open Sans Project Authors (https://github.com/googlefonts/opensans)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
@@ -17051,7 +17247,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 @msgpack/msgpack 2.8.0  [npm; panel ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #254) ---
+--- LICENSE (metin #256) ---
 Copyright 2019 The MessagePack Community.
 
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
@@ -17061,7 +17257,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 
 @phosphor-icons/react 2.1.10  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #255) ---
+--- LICENSE (metin #257) ---
 MIT License
 
 Copyright (c) 2020 Phosphor Icons
@@ -17091,7 +17287,7 @@ Lisans: MIT
 
 @posthog/core 1.61.2  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #256) ---
+--- LICENSE (metin #258) ---
 Copyright 2020 Posthog / Hiberly, Inc.
 
 Copyright 2015 Mixpanel, Inc.
@@ -17513,11 +17709,11 @@ SOFTWARE.
 
 @posthog/types 1.418.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #256 ile aynı
+LICENSE: metin #258 ile aynı
 
 @reduxjs/toolkit 2.12.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #257) ---
+--- LICENSE (metin #259) ---
 MIT License
 
 Copyright (c) 2018 Mark Erikson
@@ -17543,7 +17739,7 @@ SOFTWARE.
 
 @socket.io/component-emitter 3.1.2  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #258) ---
+--- LICENSE (metin #260) ---
 (The MIT License)
 
 Copyright (c) 2014 Component contributors <dev@component.io>
@@ -17572,7 +17768,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 @standard-schema/spec 1.1.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #259) ---
+--- LICENSE (metin #261) ---
 MIT License
 
 Copyright (c) 2024 Colin McDonnell
@@ -17598,7 +17794,7 @@ SOFTWARE.
 
 @standard-schema/utils 0.3.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #260) ---
+--- LICENSE (metin #262) ---
 MIT License
 
 Copyright (c) 2024 Fabian Hiller
@@ -17687,9 +17883,31 @@ LICENSE: metin #244 ile aynı
 Lisans: MIT
 LICENSE: metin #244 ile aynı
 
+ansi-regex 5.0.1  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- license (metin #263) ---
+MIT License
+
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--- son ---
+
+ansi-styles 4.3.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
+camelcase 5.3.1  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
 canvas-confetti 1.9.4  [npm; panel ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #261) ---
+--- LICENSE (metin #264) ---
 ISC License
 
 Copyright (c) 2020, Kiril Vatev
@@ -17707,9 +17925,28 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 --- son ---
 
+cliui 6.0.0  [npm; panel ön yüzü (npm)]
+Lisans: ISC
+--- LICENSE.txt (metin #265) ---
+Copyright (c) 2015, Contributors
+
+Permission to use, copy, modify, and/or distribute this software
+for any purpose with or without fee is hereby granted, provided
+that the above copyright notice and this permission notice
+appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE
+LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--- son ---
+
 clsx 2.1.1  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- license (metin #262) ---
+--- license (metin #266) ---
 MIT License
 
 Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)
@@ -17721,9 +17958,47 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --- son ---
 
+color-convert 2.0.1  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- LICENSE (metin #267) ---
+Copyright (c) 2011-2016 Heather Arthur <fayearthur@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--- son ---
+
+color-name 1.1.4  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- LICENSE (metin #268) ---
+The MIT License (MIT)
+Copyright (c) 2015 Dmitry Ivanov
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--- son ---
+
 cookie 1.1.1  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #263) ---
+--- LICENSE (metin #269) ---
 (The MIT License)
 
 Copyright (c) 2012-2014 Roman Shtylman <shtylman@gmail.com>
@@ -17751,7 +18026,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 core-js 3.51.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #264) ---
+--- LICENSE (metin #270) ---
 Copyright (c) 2013–2025 Denis Pushkarev (zloirock.ru)
 Copyright (c) 2025–2026 CoreJS Company (core-js.io)
 
@@ -17776,7 +18051,7 @@ THE SOFTWARE.
 
 crypto-js 4.2.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #265) ---
+--- LICENSE (metin #271) ---
 # License
 
 [The MIT License (MIT)](http://opensource.org/licenses/MIT)
@@ -17805,7 +18080,7 @@ THE SOFTWARE.
 
 csstype 3.2.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #266) ---
+--- LICENSE (metin #272) ---
 Copyright (c) 2017-2018 Fredrik Nicol
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -17829,7 +18104,7 @@ SOFTWARE.
 
 d3-array 3.2.4  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #267) ---
+--- LICENSE (metin #273) ---
 Copyright 2010-2023 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
@@ -17847,7 +18122,7 @@ THIS SOFTWARE.
 
 d3-color 3.1.0  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #268) ---
+--- LICENSE (metin #274) ---
 Copyright 2010-2022 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
@@ -17865,7 +18140,7 @@ THIS SOFTWARE.
 
 d3-ease 3.0.1  [npm; Resonance ön yüzü (npm)]
 Lisans: BSD-3-Clause
---- LICENSE (metin #269) ---
+--- LICENSE (metin #275) ---
 Copyright 2010-2021 Mike Bostock
 Copyright 2001 Robert Penner
 All rights reserved.
@@ -17898,7 +18173,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 d3-format 3.1.2  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #270) ---
+--- LICENSE (metin #276) ---
 Copyright 2010-2026 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
@@ -17916,7 +18191,7 @@ THIS SOFTWARE.
 
 d3-interpolate 3.0.1  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #271) ---
+--- LICENSE (metin #277) ---
 Copyright 2010-2021 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
@@ -17934,7 +18209,7 @@ THIS SOFTWARE.
 
 d3-path 3.1.0  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #272) ---
+--- LICENSE (metin #278) ---
 Copyright 2015-2022 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
@@ -17952,27 +18227,27 @@ THIS SOFTWARE.
 
 d3-scale 4.0.2  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
-LICENSE: metin #271 ile aynı
+LICENSE: metin #277 ile aynı
 
 d3-shape 3.2.0  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
-LICENSE: metin #268 ile aynı
+LICENSE: metin #274 ile aynı
 
 d3-time 3.1.0  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
-LICENSE: metin #268 ile aynı
+LICENSE: metin #274 ile aynı
 
 d3-time-format 4.1.0  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
-LICENSE: metin #271 ile aynı
+LICENSE: metin #277 ile aynı
 
 d3-timer 3.0.1  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
-LICENSE: metin #271 ile aynı
+LICENSE: metin #277 ile aynı
 
 debug 4.4.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #273) ---
+--- LICENSE (metin #279) ---
 (The MIT License)
 
 Copyright (c) 2014-2017 TJ Holowaychuk <tj@vision-media.ca>
@@ -17994,9 +18269,35 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --- son ---
 
+decamelize 1.2.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- license (metin #280) ---
+The MIT License (MIT)
+
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+--- son ---
+
 decimal.js-light 2.5.1  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENCE.md (metin #274) ---
+--- LICENCE.md (metin #281) ---
 The MIT Expat Licence.
 
 Copyright (c) 2020 Michael Mclaughlin
@@ -18021,14 +18322,63 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --- son ---
 
+dijkstrajs 1.0.3  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- LICENSE.md (metin #282) ---
+```
+Dijkstra path-finding functions. Adapted from the Dijkstar Python project.
+
+Copyright (C) 2008
+  Wyatt Baldwin <self@wyattbaldwin.com>
+  All rights reserved
+
+Licensed under the MIT license.
+
+  http://www.opensource.org/licenses/mit-license.php
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
+--- son ---
+
 dompurify 3.4.17  [npm; panel ön yüzü (npm)]
 Lisans: (MPL-2.0 OR Apache-2.0)
 LICENSE: metin #73 ile aynı
 LICENSE-MPL: metin #46 ile aynı
 
+emoji-regex 8.0.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- LICENSE-MIT.txt (metin #283) ---
+Copyright Mathias Bynens <https://mathiasbynens.be/>
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--- son ---
+
 engine.io-client 6.6.6  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #275) ---
+--- LICENSE (metin #284) ---
 (The MIT License)
 
 Copyright (c) 2014-present Guillermo Rauch and Socket.IO contributors
@@ -18055,11 +18405,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 engine.io-parser 5.2.3  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #275 ile aynı
+LICENSE: metin #284 ile aynı
 
 es-toolkit 1.52.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #276) ---
+--- LICENSE (metin #285) ---
 MIT License
 
 Copyright (c) 2024 Viva Republica, Inc.
@@ -18082,7 +18432,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --- son ---
---- NOTICE (metin #277) ---
+--- NOTICE (metin #286) ---
 es-toolkit
 
 Parts of the test suite and compatibility layer in es-toolkit/compat are
@@ -18126,7 +18476,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 eventemitter3 5.0.4  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #278) ---
+--- LICENSE (metin #287) ---
 The MIT License (MIT)
 
 Copyright (c) 2014 Arnout Kazemier
@@ -18152,7 +18502,7 @@ SOFTWARE.
 
 fflate 0.4.9  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #279) ---
+--- LICENSE (metin #288) ---
 MIT License
 
 Copyright (c) 2020 Arjun Barrett
@@ -18176,9 +18526,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --- son ---
 
+find-up 4.1.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
 framer-motion 13.1.1  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #280) ---
+--- LICENSE.md (metin #289) ---
 The MIT License (MIT)
 
 Copyright (c) 2018 Framer B.V.
@@ -18204,11 +18558,22 @@ SOFTWARE.
 
 framer-motion 13.2.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #280 ile aynı
+LICENSE.md: metin #289 ile aynı
+
+get-caller-file 2.0.5  [npm; panel ön yüzü (npm)]
+Lisans: ISC
+--- LICENSE.md (metin #290) ---
+ISC License (ISC)
+Copyright 2018 Stefan Penner
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--- son ---
 
 immer 11.1.18  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #281) ---
+--- LICENSE (metin #291) ---
 MIT License
 
 Copyright (c) 2017 Michel Weststrate
@@ -18234,7 +18599,7 @@ SOFTWARE.
 
 internmap 2.0.3  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #282) ---
+--- LICENSE (metin #292) ---
 Copyright 2021 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
@@ -18250,9 +18615,13 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 --- son ---
 
+is-fullwidth-code-point 3.0.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
 isomorphic-ws 5.0.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #283) ---
+--- LICENSE (metin #293) ---
 The MIT License (MIT)
 
 Copyright (c) 2018 Zejin Zhuang <heineiuo@gmail.com>
@@ -18276,9 +18645,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --- son ---
 
+locate-path 5.0.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
 lucide-react 1.38.0  [npm; Resonance ön yüzü (npm)]
 Lisans: ISC
---- LICENSE (metin #284) ---
+--- LICENSE (metin #294) ---
 ISC License
 
 Copyright (c) 2026 Lucide Icons and Contributors
@@ -18326,11 +18699,11 @@ SOFTWARE.
 
 lucide-react 1.43.0  [npm; panel ön yüzü (npm)]
 Lisans: ISC
-LICENSE: metin #284 ile aynı
+LICENSE: metin #294 ile aynı
 
 matter-js 0.20.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #285) ---
+--- LICENSE (metin #295) ---
 The MIT License (MIT)
 
 Copyright (c) Liam Brummitt and contributors.
@@ -18356,7 +18729,7 @@ THE SOFTWARE.
 
 motion-dom 13.1.1  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #286) ---
+--- LICENSE.md (metin #296) ---
 The MIT License (MIT)
 
 Copyright (c) 2024 [Motion](https://motion.dev) B.V.
@@ -18382,15 +18755,15 @@ SOFTWARE.
 
 motion-dom 13.2.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #286 ile aynı
+LICENSE.md: metin #296 ile aynı
 
 motion-utils 13.0.0  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #286 ile aynı
+LICENSE.md: metin #296 ile aynı
 
 ms 2.1.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- license.md (metin #287) ---
+--- license.md (metin #297) ---
 The MIT License (MIT)
 
 Copyright (c) 2020 Vercel, Inc.
@@ -18416,7 +18789,7 @@ SOFTWARE.
 
 obs-websocket-js 5.0.8  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #288) ---
+--- LICENSE.md (metin #298) ---
 The MIT License (MIT)
 
 Copyright (c) 2016 Brendan Hagan
@@ -18440,13 +18813,54 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --- son ---
 
+p-limit 2.3.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
+p-locate 4.1.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
+p-try 2.2.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
+path-exists 4.0.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
+pngjs 5.0.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- LICENSE (metin #299) ---
+pngjs2 original work Copyright (c) 2015 Luke Page & Original Contributors
+pngjs derived work Copyright (c) 2012 Kuba Niegowski
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+--- son ---
+
 posthog-js 1.442.0  [npm; panel ön yüzü (npm)]
 Lisans: (Apache-2.0 AND MIT)
-LICENSE: metin #256 ile aynı
+LICENSE: metin #258 ile aynı
 
 preact 10.29.8  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #289) ---
+--- LICENSE (metin #300) ---
 The MIT License (MIT)
 
 Copyright (c) 2015-present Jason Miller
@@ -18470,9 +18884,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --- son ---
 
+qrcode 1.5.4  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- license (metin #301) ---
+The MIT License (MIT)
+
+Copyright (c) 2012 Ryan Day
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--- son ---
+
 query-selector-shadow-dom 1.0.1  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #290) ---
+--- LICENSE (metin #302) ---
 MIT License
 
 Copyright (c) 2020 George Griffiths
@@ -18498,7 +18926,7 @@ SOFTWARE.
 
 react 19.2.8  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #291) ---
+--- LICENSE (metin #303) ---
 MIT License
 
 Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -18524,15 +18952,15 @@ SOFTWARE.
 
 react-dom 19.2.8  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #291 ile aynı
+LICENSE: metin #303 ile aynı
 
 react-is 19.2.8  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #291 ile aynı
+LICENSE: metin #303 ile aynı
 
 react-redux 9.3.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #292) ---
+--- LICENSE.md (metin #304) ---
 The MIT License (MIT)
 
 Copyright (c) 2015-present Dan Abramov
@@ -18558,7 +18986,7 @@ SOFTWARE.
 
 react-router 7.18.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #293) ---
+--- LICENSE.md (metin #305) ---
 MIT License
 
 Copyright (c) React Training LLC 2015-2019
@@ -18586,11 +19014,11 @@ SOFTWARE.
 
 react-router-dom 7.18.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #293 ile aynı
+LICENSE.md: metin #305 ile aynı
 
 recharts 3.10.1  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #294) ---
+--- LICENSE (metin #306) ---
 The MIT License (MIT)
 
 Copyright (c) 2015-present recharts
@@ -18616,15 +19044,61 @@ SOFTWARE.
 
 redux 5.0.1  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #292 ile aynı
+LICENSE.md: metin #304 ile aynı
 
 redux-thunk 3.1.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE.md: metin #292 ile aynı
+LICENSE.md: metin #304 ile aynı
+
+require-directory 2.1.1  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- LICENSE (metin #307) ---
+The MIT License (MIT)
+
+Copyright (c) 2011 Troy Goode <troygoode@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--- son ---
+
+require-main-filename 2.0.0  [npm; panel ön yüzü (npm)]
+Lisans: ISC
+--- LICENSE.txt (metin #308) ---
+Copyright (c) 2016, Contributors
+
+Permission to use, copy, modify, and/or distribute this software
+for any purpose with or without fee is hereby granted, provided
+that the above copyright notice and this permission notice
+appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE
+LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--- son ---
 
 reselect 5.2.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #295) ---
+--- LICENSE (metin #309) ---
 The MIT License (MIT)
 
 Copyright (c) 2015-2018 Reselect Contributors
@@ -18650,11 +19124,15 @@ SOFTWARE.
 
 scheduler 0.27.0  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #291 ile aynı
+LICENSE: metin #303 ile aynı
+
+set-blocking 2.0.0  [npm; panel ön yüzü (npm)]
+Lisans: ISC
+LICENSE.txt: metin #308 ile aynı
 
 set-cookie-parser 2.7.2  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #296) ---
+--- LICENSE (metin #310) ---
 The MIT License (MIT)
 
 Copyright (c) 2015 Nathan Friedly <nathan@nfriedly.com> (http://nfriedly.com/)
@@ -18680,7 +19158,7 @@ THE SOFTWARE.
 
 socket.io-client 4.8.3  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #297) ---
+--- LICENSE (metin #311) ---
 The MIT License (MIT)
 
 Copyright (c) 2014-present Guillermo Rauch and Socket.IO contributors
@@ -18706,7 +19184,7 @@ THE SOFTWARE.
 
 socket.io-parser 4.2.7  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #298) ---
+--- LICENSE (metin #312) ---
 (The MIT License)
 
 Copyright (c) 2014-present Guillermo Rauch and Socket.IO contributors
@@ -18729,9 +19207,17 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --- son ---
 
+string-width 4.2.3  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
+strip-ansi 6.0.1  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
+
 tailwind-merge 3.6.0  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE.md (metin #299) ---
+--- LICENSE.md (metin #313) ---
 MIT License
 
 Copyright (c) 2021 Dany Castillo
@@ -18757,7 +19243,7 @@ SOFTWARE.
 
 tiny-invariant 1.3.3  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #300) ---
+--- LICENSE (metin #314) ---
 MIT License
 
 Copyright (c) 2019 Alexander Reardon
@@ -18783,7 +19269,7 @@ SOFTWARE.
 
 tslib 2.8.1  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: 0BSD
---- LICENSE.txt (metin #301) ---
+--- LICENSE.txt (metin #315) ---
 Copyright (c) Microsoft Corporation.
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -18804,7 +19290,7 @@ Lisans: (MIT OR CC0-1.0)
 
 use-sync-external-store 1.6.0  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT
-LICENSE: metin #291 ile aynı
+LICENSE: metin #303 ile aynı
 
 victory-vendor 37.3.6  [npm; Resonance ön yüzü (npm)]
 Lisans: MIT AND ISC
@@ -18812,7 +19298,7 @@ Lisans: MIT AND ISC
 
 web-vitals 6.2.3  [npm; panel ön yüzü (npm)]
 Lisans: Apache-2.0
---- LICENSE (metin #302) ---
+--- LICENSE (metin #316) ---
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -19018,11 +19504,33 @@ Apache License
 
 web-vitals-soft-navs 6.2.1  [npm; panel ön yüzü (npm)]
 Lisans: Apache-2.0
-LICENSE: metin #302 ile aynı
+LICENSE: metin #316 ile aynı
+
+which-module 2.0.1  [npm; panel ön yüzü (npm)]
+Lisans: ISC
+--- LICENSE (metin #317) ---
+Copyright (c) 2016, Contributors
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+--- son ---
+
+wrap-ansi 6.2.0  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+license: metin #263 ile aynı
 
 ws 8.21.3  [npm; panel ön yüzü (npm), Resonance ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #303) ---
+--- LICENSE (metin #318) ---
 Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 Copyright (c) 2013 Arnout Kazemier and contributors
 Copyright (c) 2016 Luigi Pinca and contributors
@@ -19047,7 +19555,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 xmlhttprequest-ssl 2.1.2  [npm; Resonance ön yüzü (npm)]
 Lisans: belirtilmemiş
---- LICENSE (metin #304) ---
+--- LICENSE (metin #319) ---
 Copyright (c) 2010 passive.ly LLC
 
  Permission is hereby granted, free of charge, to any person
@@ -19072,9 +19580,57 @@ Copyright (c) 2010 passive.ly LLC
  OTHER DEALINGS IN THE SOFTWARE.
 --- son ---
 
+y18n 4.0.3  [npm; panel ön yüzü (npm)]
+Lisans: ISC
+--- LICENSE (metin #320) ---
+Copyright (c) 2015, Contributors
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+--- son ---
+
+yargs 15.4.1  [npm; panel ön yüzü (npm)]
+Lisans: MIT
+--- LICENSE (metin #321) ---
+MIT License
+
+Copyright 2010 James Halliday (mail@substack.net); Modified work Copyright 2014 Contributors (ben@npmjs.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+--- son ---
+
+yargs-parser 18.1.3  [npm; panel ön yüzü (npm)]
+Lisans: ISC
+LICENSE.txt: metin #308 ile aynı
+
 zustand 5.0.16  [npm; panel ön yüzü (npm)]
 Lisans: MIT
---- LICENSE (metin #305) ---
+--- LICENSE (metin #322) ---
 MIT License
 
 Copyright (c) 2019 Paul Henschel

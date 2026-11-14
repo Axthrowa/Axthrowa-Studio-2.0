@@ -10,7 +10,7 @@ const IRC_URL = "wss://irc-ws.chat.twitch.tv:443";
  * bağlanmış oturumlarda yoktur — yeniden bağlanana dek yazma kapalı kalır. */
 // `channel:manage:clips`: Y1 VOD'dan klip (Create Clip From VOD)
 // Y7 reklam takvimi/erteleme, Y9 resmi sabitleme
-const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit channel:manage:clips channel:read:ads channel:manage:ads moderator:manage:chat_messages user:read:follows channel:manage:raids";
+const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit channel:manage:clips channel:read:ads channel:manage:ads moderator:manage:chat_messages user:read:follows channel:manage:raids channel:manage:schedule";
 const HELIX = "https://api.twitch.tv/helix";
 
 export type TwitchWriteSession = {
@@ -364,4 +364,32 @@ export async function twitchBaskinBaslat(hedefId: string): Promise<void> {
 
 export async function twitchBaskinIptal(): Promise<void> {
   await helix(`/raids?broadcaster_id=${encodeURIComponent(load()?.userId ?? "")}`, { method: "DELETE" });
+}
+
+/** Y11: Twitch yayın takvimi (tek seferlik segment) */
+export function twitchTakvimYazabilir(): boolean {
+  const s = load();
+  return !!s?.userId && !!s.scopes?.includes("channel:manage:schedule");
+}
+
+export async function twitchTakvimEkle(d: { zaman: string; sureDk: number; baslik: string; kategoriId?: string | null }): Promise<string> {
+  if (!twitchTakvimYazabilir()) throw new Error("Twitch oturumunda channel:manage:schedule izni yok — Twitch'i yeniden bağlayın");
+  const govde: Record<string, unknown> = {
+    start_time: new Date(d.zaman).toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Istanbul",
+    duration: String(Math.min(1380, Math.max(30, Math.round(d.sureDk)))),
+    is_recurring: false,
+    title: d.baslik.slice(0, 140),
+    ...(d.kategoriId ? { category_id: d.kategoriId } : {}),
+  };
+  const id = encodeURIComponent(load()?.userId ?? "");
+  const j = (await (await helix(`/schedule/segment?broadcaster_id=${id}`, { method: "POST", body: JSON.stringify(govde) })).json()) as { data?: { segments?: { id?: string }[] } };
+  const seg = j.data?.segments?.[0]?.id;
+  if (!seg) throw new Error("Twitch takvim kaydının kimliği dönmedi");
+  return seg;
+}
+
+export async function twitchTakvimSil(segmentId: string): Promise<void> {
+  const id = encodeURIComponent(load()?.userId ?? "");
+  await helix(`/schedule/segment?broadcaster_id=${id}&id=${encodeURIComponent(segmentId)}`, { method: "DELETE" });
 }

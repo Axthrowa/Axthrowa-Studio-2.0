@@ -453,6 +453,27 @@ export default function PanelPage() {
       durdur?.();
     };
   }, []);
+  // Y11: planlı yayından 5 dk önce panelde ve (pencere gizliyse) masaüstünde hatırlat
+  useEffect(() => {
+    const hatirlatilan = new Set<string>();
+    const tur = async () => {
+      try {
+        const [{ takvimAyari, hatirlatilacaklar }, { yerelBildirim }] = await Promise.all([import("../../lib/yayinTakvimi"), import("../../lib/yerelBildirim")]);
+        const a = takvimAyari((await fetchSettings("panel")).yayinTakvimi);
+        for (const y of hatirlatilacaklar(a.liste, Date.now(), hatirlatilan)) {
+          hatirlatilan.add(y.id);
+          const metin = `Planlı yayın ${new Date(y.zaman).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}: ${y.baslik || "başlıksız"}`;
+          bildir(metin, "bilgi");
+          void yerelBildirim("Yayın saati yaklaştı", metin);
+        }
+      } catch {
+        /* ayar okunamadı: sonraki turda */
+      }
+    };
+    void tur();
+    const t = setInterval(() => void tur(), 30_000);
+    return () => clearInterval(t);
+  }, []);
   // U9: önceki oturumda ayrı pencerede kalan paneller aynı yerde yeniden açılır
   useEffect(() => {
     void import("../../lib/ayrikPanel").then((m) => m.ayrikPencereleriGeriAc());

@@ -35,6 +35,7 @@ import { usePreviewQuality } from "../../lib/previewQuality";
 import { clearNotice, pushNotice } from "../../lib/notices";
 import { useObsKeepalive } from "../../lib/obsKeepalive";
 import { useObsSourceActive } from "../../lib/obsSourceActive";
+import { useSiradakiYayin } from "./useSiradakiYayin";
 import {
   canliOturum,
   getCreditsSession,
@@ -175,6 +176,7 @@ export default function OverlayShell({
   const effTarget = endRule.useTargetDate ? endRule.targetDate : "";
   const timerWanted = !!effTarget || effMinutes > 0;
   const isEndScreen = screen === "starting" || screen === "brb" || screen === "ending";
+  const siradaki = useSiradakiYayin(screen === "starting" || screen === "ending");
 
   const countdownActive = isEndScreen && timerWanted;
   const minuteTimerArmed = isEndScreen && !effTarget && effMinutes > 0;
@@ -1437,6 +1439,15 @@ export default function OverlayShell({
               <YerindeMetin deger={s.sub} aktif={edit} onKaydet={(v) => void metniKaydet("sub", v)} bosOlabilir />
             </p>,
             s.positions?.sub || { x: 50, y: 52 }
+          )}
+
+        {siradaki &&
+          renderDraggable(
+            "siradaki",
+            <p className="stream-sub" {...textProps("sub")}>
+              {siradaki}
+            </p>,
+            s.positions?.siradaki || { x: 50, y: 72 }
           )}
 
         {/* Çıkış: OBS'te sayaç yok. Panelde yalnızca aktif geri sayım (kırmızı rozet yok). */}

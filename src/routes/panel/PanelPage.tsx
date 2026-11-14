@@ -33,6 +33,7 @@ import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
 import StreamHealthCard from "../../components/panel/StreamHealthCard";
 import ProfileSwitcher from "../../components/panel/ProfileSwitcher";
+import { ReklamSayaci } from "../../components/control/ReklamSayaci";
 import PanelTimer from "../../components/panel/PanelTimer";
 import CloseRequestModal from "../../components/panel/CloseRequestModal";
 import DashboardUstSerit, { useDashboardBolumu } from "../../components/panel/DashboardUstSerit";
@@ -1916,6 +1917,7 @@ export default function PanelPage() {
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <ReklamSayaci />
           <ProfileSwitcher onToast={showToast} />
           <button
             type="button"

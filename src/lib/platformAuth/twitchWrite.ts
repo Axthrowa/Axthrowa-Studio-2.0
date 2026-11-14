@@ -9,7 +9,8 @@ const IRC_URL = "wss://irc-ws.chat.twitch.tv:443";
 /** `channel:manage:broadcast`: Yayın Bilgisi dock'u (başlık/kategori/etiket; yalnız kullanıcı onaylayınca). Daha önce
  * bağlanmış oturumlarda yoktur — yeniden bağlanana dek yazma kapalı kalır. */
 // `channel:manage:clips`: Y1 VOD'dan klip (Create Clip From VOD)
-const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit channel:manage:clips";
+// Y7 reklam takvimi/erteleme, Y9 resmi sabitleme
+const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit channel:manage:clips channel:read:ads channel:manage:ads moderator:manage:chat_messages";
 const HELIX = "https://api.twitch.tv/helix";
 
 export type TwitchWriteSession = {
@@ -288,4 +289,33 @@ export async function twitchVodKlibi(d: { anMs: number; baslik: string; sureSn: 
   const k = j.data?.[0];
   if (!k) throw new Error("Twitch klip kimliği dönmedi");
   return { id: k.id, editUrl: k.edit_url };
+}
+
+/** Y7: GET /channels/ads — zamanlar Unix saniye (0 = yok / yayında değil) */
+export type ReklamTakvimi = { sonrakiReklam: number; sure: number; ertelemeHakki: number; ertelemeYenilenme: number; sonReklam: number; prerollSuresi: number };
+
+export function twitchReklamOkuyabilir(): boolean {
+  const s = load();
+  return !!s?.userId && !!s.scopes?.includes("channel:read:ads");
+}
+
+function takvimCevir(d: Record<string, unknown> | undefined): ReklamTakvimi {
+  const n = (k: string) => Number(d?.[k]) || 0;
+  return { sonrakiReklam: n("next_ad_at"), sure: n("duration"), ertelemeHakki: n("snooze_count"), ertelemeYenilenme: n("snooze_refresh_at"), sonReklam: n("last_ad_at"), prerollSuresi: n("preroll_free_time") };
+}
+
+export async function twitchReklamTakvimi(): Promise<ReklamTakvimi> {
+  const id = load()?.userId ?? "";
+  const j = (await (await helix(`/channels/ads?broadcaster_id=${encodeURIComponent(id)}`)).json()) as { data?: Record<string, unknown>[] };
+  return takvimCevir(j.data?.[0]);
+}
+
+/** Sonraki reklamı 5 dk erteler; hak yoksa Twitch 429 döner */
+export async function twitchReklamErtele(): Promise<Pick<ReklamTakvimi, "sonrakiReklam" | "ertelemeHakki" | "ertelemeYenilenme">> {
+  const s = load();
+  if (!s?.scopes?.includes("channel:manage:ads")) throw new Error("Twitch oturumunda channel:manage:ads izni yok — Twitch'i yeniden bağlayın");
+  const j = (await (await helix(`/channels/ads/schedule/snooze?broadcaster_id=${encodeURIComponent(s.userId ?? "")}`, { method: "POST" })).json()) as { data?: Record<string, unknown>[] };
+  // Yanıtta yalnız erteleme alanları ve yeni zaman var
+  const { sonrakiReklam, ertelemeHakki, ertelemeYenilenme } = takvimCevir(j.data?.[0]);
+  return { sonrakiReklam, ertelemeHakki, ertelemeYenilenme };
 }

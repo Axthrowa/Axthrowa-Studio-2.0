@@ -104,6 +104,15 @@ export function uyariSesi(): void {
  * Arka planda izler: 3 sn'de bir OBS'ten okur, uyarıları panel bildirimine yazar, yeni uyarıda ses çalar.
  * (Kart yalnız görünürken ölçüyordu; oyun tam ekrandayken kimse uyarılmıyordu.) Durdurmak için dönen işlevi çağır.
  */
+let sonAktif: StreamHealth | null = null;
+
+/** U7b: yayın açıkken okunan son kare sayaçları; bir kez alınır (sonraki yayına eskisi taşınmasın) */
+export function sonYayinKareleriniAl(): { dusen: number; toplam: number } | null {
+  const h = sonAktif;
+  sonAktif = null;
+  return h && h.totalFrames > 0 ? { dusen: h.skippedFrames, toplam: h.totalFrames } : null;
+}
+
 export function yayinSagligiIzle(
   oku: () => Promise<StreamHealth | null>,
   bildir: (u: Uyari) => void,
@@ -116,6 +125,7 @@ export function yayinSagligiIzle(
     try {
       const h = await oku();
       if (iptal || !h) return;
+      if (h.active) sonAktif = h;
       const simdi = Date.now();
       const r = saglikDegerlendir(durum, h, simdi, simdi - bilerekDurdurma < BILEREK_MS);
       durum = r.durum;

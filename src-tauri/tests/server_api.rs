@@ -1440,3 +1440,27 @@ async fn cihaz_eslestirme_tek_kullanim_ve_iptal() {
   let sonra = c.get(format!("{}/api/bot/remote/me", h.base)).bearer_auth(&anahtar).send().await.unwrap();
   assert_eq!(sonra.status(), 401, "iptal edilen cihaz anahtarı geçersiz");
 }
+
+#[tokio::test]
+async fn u7b_yayin_raporu_izleyici_egrisi_ve_dusen_kare() {
+  let h = start().await;
+  let s: Value = h.client.post(format!("{}/api/bot/sessions", h.base)).json(&json!({"title": "Prova"})).send().await.unwrap().json().await.unwrap();
+  let sid = s["id"].as_str().or_else(|| s["session"]["id"].as_str()).unwrap().to_string();
+  for v in [3, 9, 5] {
+    let r = h.client.post(format!("{}/api/bot/metrics", h.base)).json(&json!({"session_id": sid, "viewers": v})).send().await.unwrap();
+    assert!(r.status().is_success());
+  }
+  let r = h
+    .client
+    .post(format!("{}/api/bot/sessions/end", h.base))
+    .json(&json!({"session_id": sid, "dropped_frames": 12, "total_frames": 6000}))
+    .send()
+    .await
+    .unwrap();
+  assert!(r.status().is_success());
+  let rapor: Value = h.client.get(format!("{}/api/bot/sessions/report?id={sid}", h.base)).send().await.unwrap().json().await.unwrap();
+  let egri: Vec<i64> = rapor["izleyici"].as_array().unwrap().iter().map(|n| n[1].as_i64().unwrap()).collect();
+  assert_eq!(egri, vec![3, 9, 5]);
+  assert_eq!(rapor["dusenKare"], 12);
+  assert_eq!(rapor["toplamKare"], 6000);
+}

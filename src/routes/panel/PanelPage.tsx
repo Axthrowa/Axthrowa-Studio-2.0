@@ -115,7 +115,7 @@ import { useCreditsCollector } from "../../lib/useCreditsCollector";
 import { useGlobalHotkeys, eventToSpec, canonicalizeHotkeySpec } from "../../lib/globalHotkeys";
 import { useVideoDownload } from "../../lib/useVideoDownload";
 import { clearNotice, pushNotice, useNotices } from "../../lib/notices";
-import { yayinSagligiIzle } from "../../lib/yayinSagligi";
+import { sonYayinKareleriniAl, yayinSagligiIzle } from "../../lib/yayinSagligi";
 import { getStreamHealth } from "../../lib/obs";
 import { bildir } from "../../lib/bildirimler";
 import UpdateModal from "@/components/axthrowa/UpdateModal";
@@ -1094,14 +1094,19 @@ export default function PanelPage() {
     clearStartingCountdown();
   }, [scheduleOverlayRefresh]);
 
-  const closeDbSessionQuiet = useCallback(async () => {
+  /** `raporuAc`: yayın gerçekten kapandıysa (çıkış ekranı bitti) Yayın sonrası → Rapor kendiliğinden açılır (U7b) */
+  const closeDbSessionQuiet = useCallback(async (raporuAc = true) => {
     try {
       const dash = await fetchDashboard();
       const sid = dash.active_session?.id;
-      if (sid) await endSession(sid);
+      if (sid) await endSession(sid, sonYayinKareleriniAl());
       saveBotConfig((prev) => ({ ...prev, streamStartedAt: null }));
     } catch {
       /* */
+    }
+    if (raporuAc) {
+      setActiveNav("control");
+      setKipIstegi({ kip: "sonrasi", n: Date.now() });
     }
   }, []);
 
@@ -1112,7 +1117,8 @@ export default function PanelPage() {
       if (liveOn) {
         gunluk.info("Yayın durduruluyor");
         await endLiveFromProfile();
-        await closeDbSessionQuiet();
+        // Çıkış ekranı hâlâ sürüyor: rapor, çıkış bitince (sayaç yolunda) açılır
+        await closeDbSessionQuiet(false);
         gunluk.info("Yayın durduruldu");
         olay("yayin_bitti");
       } else {

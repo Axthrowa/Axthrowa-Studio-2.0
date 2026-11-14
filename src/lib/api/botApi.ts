@@ -187,11 +187,18 @@ export function startSession(title?: string) {
   });
 }
 
-export function endSession(sessionId: string) {
+/** `kare`: OBS'in yayın sonundaki kare sayaçları (U7b, raporda düşen kare) */
+export function endSession(sessionId: string, kare?: { dusen: number; toplam: number } | null) {
   return json<{ session: StreamSession | null }>("/sessions/end", {
     method: "POST",
-    body: JSON.stringify({ session_id: sessionId }),
+    body: JSON.stringify({ session_id: sessionId, dropped_frames: kare?.dusen, total_frames: kare?.toplam }),
   });
+}
+
+export type OturumRaporu = { izleyici: [number, number][]; dusenKare: number | null; toplamKare: number | null };
+
+export function sessionReport(sessionId: string) {
+  return json<OturumRaporu>(`/sessions/report?id=${encodeURIComponent(sessionId)}`);
 }
 
 export async function pushMetrics(body: {

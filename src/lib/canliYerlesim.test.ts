@@ -108,3 +108,11 @@ describe("sonradan eklenen temel panel (U3)", () => {
     expect(cakismaVar(okunan)).toBe(false);
   });
 });
+
+describe("U7b yayın raporu bölmesi", () => {
+  it("Yayın sonrası kipinde var; eski kayıtlı düzene alta eklenir", () => {
+    expect(kipKutulari("sonrasi").some((k) => k.id === "rapor")).toBe(true);
+    const eski = kipKutulari("sonrasi").filter((k) => k.id !== "rapor");
+    expect(yerlesimOku(JSON.stringify(eski), kipKutulari("sonrasi")).some((k) => k.id === "rapor")).toBe(true);
+  });
+});

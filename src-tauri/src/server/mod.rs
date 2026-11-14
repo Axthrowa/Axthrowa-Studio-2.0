@@ -173,6 +173,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/bot/dashboard", get(api_bot_dashboard))
     .route("/api/bot/sessions", get(api_bot_sessions).post(api_bot_session_start))
     .route("/api/bot/sessions/end", post(api_bot_session_end))
+    .route("/api/bot/sessions/report", get(api_bot_session_report))
     .route("/api/bot/metrics", post(api_bot_metrics))
     .route("/api/bot/events", get(api_bot_events).post(api_bot_event_log))
     // Spotify kodunun düşebileceği kısa yollar. Kullanıcı Dashboard'a
@@ -2223,6 +2224,26 @@ async fn api_bot_session_start(
 #[derive(Deserialize)]
 struct SessionEndBody {
   session_id: String,
+  /// U7b: OBS'in yayın sonundaki kare sayaçları (isteğe bağlı)
+  #[serde(default)]
+  dropped_frames: Option<i64>,
+  #[serde(default)]
+  total_frames: Option<i64>,
+}
+
+#[derive(Deserialize)]
+struct RaporQuery {
+  id: String,
+}
+
+async fn api_bot_session_report(
+  State(state): State<Arc<AppState>>,
+  Query(q): Query<RaporQuery>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+  crate::db::profile::oturum_raporu(&state.db, &q.id)
+    .await
+    .map(Json)
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
 async fn api_bot_session_end(
@@ -2237,6 +2258,13 @@ async fn api_bot_session_end(
   .await
   .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
   .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+  if let (Some(dusen), Some(toplam), Some(_)) = (body.dropped_frames, body.total_frames, &session) {
+    if toplam > 0 {
+      crate::db::profile::kareleri_yaz(&state.db, &body.session_id, dusen, toplam)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+  }
 
   state.broadcast_json(&serde_json::json!({
     "type": "session",

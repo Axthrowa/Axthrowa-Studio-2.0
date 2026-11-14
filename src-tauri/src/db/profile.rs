@@ -223,6 +223,42 @@ pub async fn end_session(pool: &SqlitePool, session_id: &str) -> Result<Option<S
   Ok(s)
 }
 
+/// U7b: yayının son OBS kare sayaçları (düşen / toplam)
+pub async fn kareleri_yaz(pool: &SqlitePool, session_id: &str, dusen: i64, toplam: i64) -> Result<()> {
+  sqlx::query("INSERT OR REPLACE INTO stream_session_frames(session_id, dropped, total) VALUES(?,?,?)")
+    .bind(session_id)
+    .bind(dusen.max(0))
+    .bind(toplam.max(0))
+    .execute(pool)
+    .await?;
+  Ok(())
+}
+
+/// Grafiğe en çok `n` nokta: uçlar korunarak eşit aralıkla seyreltilir
+pub fn seyrelt(v: Vec<(i64, i64)>, n: usize) -> Vec<(i64, i64)> {
+  if v.len() <= n || n < 2 {
+    return v;
+  }
+  (0..n).map(|i| v[i * (v.len() - 1) / (n - 1)]).collect()
+}
+
+/// U7b: yayın raporu: izleyici eğrisi ([zaman ms, izleyici]) ve düşen kare (yazılmadıysa null)
+pub async fn oturum_raporu(pool: &SqlitePool, session_id: &str) -> Result<serde_json::Value> {
+  let ornekler: Vec<(i64, i64)> = sqlx::query_as("SELECT ts, viewers FROM stream_metrics_samples WHERE session_id = ? ORDER BY ts")
+    .bind(session_id)
+    .fetch_all(pool)
+    .await?;
+  let kare: Option<(i64, i64)> = sqlx::query_as("SELECT dropped, total FROM stream_session_frames WHERE session_id = ?")
+    .bind(session_id)
+    .fetch_optional(pool)
+    .await?;
+  Ok(serde_json::json!({
+    "izleyici": seyrelt(ornekler, 200),
+    "dusenKare": kare.map(|k| k.0),
+    "toplamKare": kare.map(|k| k.1),
+  }))
+}
+
 pub async fn push_metric(
   pool: &SqlitePool,
   session_id: &str,
@@ -323,4 +359,19 @@ pub async fn log_event(
     }
   }
   Ok(())
+}
+
+#[cfg(test)]
+mod seyrelt_testleri {
+  use super::seyrelt;
+
+  #[test]
+  fn uclari_korur_ve_sinira_iner() {
+    let v: Vec<(i64, i64)> = (0..1000).map(|i| (i, i)).collect();
+    let s = seyrelt(v, 200);
+    assert_eq!(s.len(), 200);
+    assert_eq!(s[0], (0, 0));
+    assert_eq!(s[199], (999, 999));
+    assert_eq!(seyrelt(vec![(1, 1)], 200), vec![(1, 1)]);
+  }
 }

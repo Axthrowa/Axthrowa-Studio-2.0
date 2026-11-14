@@ -29,6 +29,7 @@ import { KIPLER, otomatikKip, type Kip } from "../../lib/canliYerlesim";
 import { botSekmesi, ekPanelBul } from "../../lib/canliEkPaneller";
 import { YayinBilgisiDock } from "./YayinBilgisiDock";
 import { YayinRaporu } from "./YayinRaporu";
+import { YayinKarsilastirma } from "./YayinKarsilastirma";
 import { ActivityFeedPanel } from "./UniversalChat";
 import { BasiliTutDugme } from "../ui/BasiliTut";
 
@@ -531,6 +532,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
               kontrol: { baslik: "Yayın öncesi kontrol", gosterBaslik: true, icerik: <KontrolListesi onToast={onToast} /> },
               uyarilar: { baslik: "Uyarı kuyruğu", gosterBaslik: true, icerik: <UyariKuyrugu onToast={onToast} /> },
               rapor: { baslik: "Yayın raporu", gosterBaslik: true, icerik: <YayinRaporu /> },
+              karsilastirma: { baslik: "Yayınlar arası karşılaştırma", gosterBaslik: true, icerik: <YayinKarsilastirma /> },
               onizleme: {
                 baslik: "Önizleme",
                 gosterBaslik: false,

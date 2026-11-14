@@ -2,7 +2,7 @@
  * Canlı ekranının "Yayın" bölümündeki panellerin yerleşimi: 12 sütunluk ızgarada konum ve boyut.
  * Saf: sürükleme ve boyutlandırma bu işlevlerden geçer, çakışan panel aşağı itilir.
  */
-export type TemelPanelId = "onizleme" | "sahne" | "ses" | "hizli" | "bilgi" | "kontrol" | "uyarilar" | "rapor";
+export type TemelPanelId = "onizleme" | "sahne" | "ses" | "hizli" | "bilgi" | "kontrol" | "uyarilar" | "rapor" | "karsilastirma";
 /** Temel paneller ya da sonradan eklenen `ek:…` paneller */
 export type PanelId = TemelPanelId | `ek:${string}`;
 export type Kutu = { id: PanelId; x: number; y: number; w: number; h: number };
@@ -68,6 +68,7 @@ const EN_AZ: Record<TemelPanelId, { w: number; h: number }> = {
   kontrol: { w: 3, h: 5 },
   uyarilar: { w: 3, h: 6 },
   rapor: { w: 4, h: 5 },
+  karsilastirma: { w: 4, h: 5 },
 };
 
 const EK_EN_AZ = { w: 3, h: 6 };
@@ -136,6 +137,8 @@ export const KIPLER: { id: Kip; ad: string; kutular: Kutu[] }[] = [
       { id: "ses", x: 0, y: 10, w: 8, h: 8 },
       // U7b: son yayının raporu (izleyici eğrisi, düşen kare)
       { id: "rapor", x: 0, y: 18, w: 12, h: 9 },
+      // Y3: son 30 yayının karşılaştırması
+      { id: "karsilastirma", x: 0, y: 27, w: 12, h: 9 },
     ],
   },
 ];

@@ -102,4 +102,6 @@ export const ACTIVITY_LABEL: Record<string, string> = {
   host: "host etti",
   gift_tiktok: "TikTok hediyesi",
   loyalty_redeemed: "ödül aldı",
+  watch_streak: "izleme serisi",
+  power_up: "power-up kullandı",
 };

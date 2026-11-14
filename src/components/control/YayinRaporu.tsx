@@ -1,5 +1,6 @@
 /** U7b: son biten yayının raporu: süre, zirve, izleyici eğrisi ve düşen kare (Yayın sonrası kipi). */
 import { useEffect, useState } from "react";
+import { spotifyYayinListesi } from "../../lib/api";
 import { fetchDashboard, fmtDuration, markers, sessionReport, type Isaret, type OturumRaporu, type StreamSession } from "../../lib/api/botApi";
 
 /** Eğri noktaları (svg viewBox 0..w, 0..h); tek örnekte yatay çizgi */
@@ -27,6 +28,7 @@ export function YayinRaporu() {
   const [rapor, setRapor] = useState<OturumRaporu | null>(null);
   const [hata, setHata] = useState("");
   const [isaretler, setIsaretler] = useState<Isaret[]>([]);
+  const [liste, setListe] = useState<{ durum: "bos" | "yapiliyor" | "hata"; metin?: string } | { durum: "tamam"; url: string; eklenen: number }>({ durum: "bos" });
 
   useEffect(() => {
     let iptal = false;
@@ -67,6 +69,31 @@ export function YayinRaporu() {
         <span>+{oturum.new_followers} takip</span>
         <span>+{oturum.new_subs} abone</span>
         <span>Düşen kare {kare}</span>
+        {oturum.ended_at && (
+          <button
+            type="button"
+            disabled={liste.durum === "yapiliyor" || liste.durum === "tamam"}
+            className="rounded-md border border-white/10 px-2 text-white/90 hover:bg-white/5 disabled:opacity-60"
+            onClick={() => {
+              setListe({ durum: "yapiliyor" });
+              const ad = `Yayın ${new Date(oturum.started_at).toLocaleDateString("tr-TR")}${oturum.title ? ` — ${oturum.title}` : ""}`;
+              spotifyYayinListesi(oturum.started_at, oturum.ended_at as number, ad)
+                .then((r) => setListe({ durum: "tamam", url: r.url, eklenen: r.eklenen }))
+                .catch((e) => setListe({ durum: "hata", metin: String((e as Error)?.message || e) }));
+            }}
+          >
+            {liste.durum === "yapiliyor" ? "Liste yapılıyor…" : "Spotify çalma listesi yap"}
+          </button>
+        )}
+        {liste.durum === "tamam" &&
+          (liste.url ? (
+            <a href={liste.url} target="_blank" rel="noreferrer" className="text-panel-accent underline">
+              {liste.eklenen} şarkılık liste Spotify'da
+            </a>
+          ) : (
+            <span>{liste.eklenen} şarkılık liste Spotify'da oluştu</span>
+          ))}
+        {liste.durum === "hata" && <span className="text-red-300">{liste.metin}</span>}
       </div>
       {egri.length ? (
         <svg viewBox="0 0 600 120" preserveAspectRatio="none" className="h-28 w-full" role="img" aria-label="İzleyici eğrisi">

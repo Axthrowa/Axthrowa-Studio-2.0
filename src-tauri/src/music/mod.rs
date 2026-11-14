@@ -219,6 +219,30 @@ pub struct NowPlaying {
 }
 
 /// open.spotify.com/track/<kimlik> bağlantısından parça kimliği
+fn spotify_izin_hatasi(kod: u16) -> anyhow::Error {
+  match kod {
+    401 | 403 => anyhow!("Spotify bu izni vermedi: Bağlantılar'dan Spotify'ı yeniden bağlayın"),
+    kod => anyhow!("Spotify isteği başarısız ({kod})"),
+  }
+}
+
+/// Y5: son çalınanlardan yayın aralığındaki parçalar, çalınma sırasıyla ve tekrarsız (`spotify:track:…`)
+pub fn yayin_parcalari(son: &Value, baslangic_ms: i64, bitis_ms: i64) -> Vec<String> {
+  let mut v: Vec<(i64, String)> = son["items"]
+    .as_array()
+    .into_iter()
+    .flatten()
+    .filter_map(|i| {
+      let t = chrono::DateTime::parse_from_rfc3339(i["played_at"].as_str()?).ok()?.timestamp_millis();
+      let uri = i["track"]["uri"].as_str().or_else(|| i["item"]["uri"].as_str())?;
+      (t >= baslangic_ms && t <= bitis_ms && uri.starts_with("spotify:track:")).then(|| (t, uri.to_string()))
+    })
+    .collect();
+  v.sort_by_key(|x| x.0);
+  let mut gorulen = std::collections::HashSet::new();
+  v.into_iter().filter(|(_, u)| gorulen.insert(u.clone())).map(|(_, u)| u).collect()
+}
+
 pub fn spotify_parca_kimligi(url: &str) -> Option<&str> {
   let id = url.split("/track/").nth(1)?.split(['?', '/', '#']).next()?;
   (!id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric())).then_some(id)
@@ -995,12 +1019,10 @@ impl MusicState {
     let np = self.now_playing().filter(|n| n.source == SOURCE_SPOTIFY).ok_or_else(|| anyhow!("Spotify'da çalan bir şarkı yok"))?;
     let id = spotify_parca_kimligi(&np.url).ok_or_else(|| anyhow!("Bu parça Spotify kitaplığına eklenemez (bölüm ya da yerel dosya)"))?.to_string();
     let token = self.spotify_access_token().await?;
-    let izin = |kod: u16| match kod {
-      401 | 403 => anyhow!("Spotify bu izni vermedi: Bağlantılar'dan Spotify'ı yeniden bağlayın"),
-      kod => anyhow!("Spotify isteği başarısız ({kod})"),
-    };
+    let izin = spotify_izin_hatasi;
     if eylem == "like" {
-      let r = self.client.put(format!("https://api.spotify.com/v1/me/tracks?ids={id}")).bearer_auth(&token).header(reqwest::header::CONTENT_LENGTH, "0").body("").send().await?;
+      // Şubat 2026: PUT /me/tracks kaldırıldı, yerine PUT /me/library?uris=
+      let r = self.client.put(format!("https://api.spotify.com/v1/me/library?uris=spotify%3Atrack%3A{id}")).bearer_auth(&token).header(reqwest::header::CONTENT_LENGTH, "0").body("").send().await?;
       return if r.status().is_success() { Ok(format!("{} beğenilenlere eklendi", np.title)) } else { Err(izin(r.status().as_u16())) };
     }
     if eylem != "playlistAdd" {
@@ -1014,31 +1036,67 @@ impl MusicState {
     let mevcut = listeler["items"].as_array().into_iter().flatten().find(|p| p["name"].as_str() == Some(liste_adi)).and_then(|p| p["id"].as_str()).map(str::to_string);
     let liste = match mevcut {
       Some(l) => l,
-      None => {
-        let ben: Value = self.client.get("https://api.spotify.com/v1/me").bearer_auth(&token).send().await?.json().await?;
-        let kullanici = ben["id"].as_str().ok_or_else(|| anyhow!("Spotify hesabı okunamadı"))?;
-        let r = self
-          .client
-          .post(format!("https://api.spotify.com/v1/users/{kullanici}/playlists"))
-          .bearer_auth(&token)
-          .json(&serde_json::json!({ "name": liste_adi, "public": false, "description": "Yayında beğenilen şarkılar (AxthrowA Studio)" }))
-          .send()
-          .await?;
-        if !r.status().is_success() {
-          return Err(izin(r.status().as_u16()));
-        }
-        let v: Value = r.json().await?;
-        v["id"].as_str().ok_or_else(|| anyhow!("Spotify listesi oluşturulamadı"))?.to_string()
-      }
+      None => self.spotify_liste_olustur(&token, liste_adi, "Yayında beğenilen şarkılar (AxthrowA Studio)").await?.0,
     };
+    self.spotify_listeye_ekle(&token, &liste, &[format!("spotify:track:{id}")]).await?;
+    Ok(format!("{} → {liste_adi}", np.title))
+  }
+
+  /// Gizli liste oluşturur; (kimlik, bağlantı). Şubat 2026: POST /users/{id}/playlists kaldırıldı, yerine /me/playlists
+  async fn spotify_liste_olustur(&self, token: &str, ad: &str, aciklama: &str) -> Result<(String, String)> {
     let r = self
       .client
-      .post(format!("https://api.spotify.com/v1/playlists/{liste}/tracks"))
-      .bearer_auth(&token)
-      .json(&serde_json::json!({ "uris": [format!("spotify:track:{id}")] }))
+      .post("https://api.spotify.com/v1/me/playlists")
+      .bearer_auth(token)
+      .json(&serde_json::json!({ "name": ad, "public": false, "description": aciklama }))
       .send()
       .await?;
-    if r.status().is_success() { Ok(format!("{} → {liste_adi}", np.title)) } else { Err(izin(r.status().as_u16())) }
+    if !r.status().is_success() {
+      return Err(spotify_izin_hatasi(r.status().as_u16()));
+    }
+    let v: Value = r.json().await?;
+    let id = v["id"].as_str().ok_or_else(|| anyhow!("Spotify listesi oluşturulamadı"))?.to_string();
+    Ok((id, v["external_urls"]["spotify"].as_str().unwrap_or_default().to_string()))
+  }
+
+  /// Şubat 2026: /playlists/{id}/tracks kaldırıldı, yerine /items (istek başına en çok 100)
+  async fn spotify_listeye_ekle(&self, token: &str, liste: &str, uris: &[String]) -> Result<()> {
+    for parca in uris.chunks(100) {
+      let r = self
+        .client
+        .post(format!("https://api.spotify.com/v1/playlists/{liste}/items"))
+        .bearer_auth(token)
+        .json(&serde_json::json!({ "uris": parca }))
+        .send()
+        .await?;
+      if !r.status().is_success() {
+        return Err(spotify_izin_hatasi(r.status().as_u16()));
+      }
+    }
+    Ok(())
+  }
+
+  /// Y5: yayın süresince Spotify'da çalınan şarkılardan yeni gizli liste; `{ ad, url, eklenen }`.
+  /// shortcut: Spotify son çalınanları en çok 50 parça ve ≥30 sn çalınanlarla verir; uzun yayında baştakiler
+  /// eksik kalabilir; yayın boyunca parça kimliği biriktirilirse tam liste çıkar.
+  pub async fn spotify_yayin_listesi(&self, baslangic_ms: i64, bitis_ms: i64, ad: &str) -> Result<Value> {
+    let token = self.spotify_access_token().await?;
+    let r = self
+      .client
+      .get(format!("https://api.spotify.com/v1/me/player/recently-played?limit=50&after={baslangic_ms}"))
+      .bearer_auth(&token)
+      .send()
+      .await?;
+    if !r.status().is_success() {
+      return Err(spotify_izin_hatasi(r.status().as_u16()));
+    }
+    let uris = yayin_parcalari(&r.json().await?, baslangic_ms, bitis_ms);
+    if uris.is_empty() {
+      return Err(anyhow!("Bu yayın süresince Spotify'da çalınan şarkı bulunamadı"));
+    }
+    let (liste, url) = self.spotify_liste_olustur(&token, ad, "Yayında çalan şarkılar (AxthrowA Studio)").await?;
+    self.spotify_listeye_ekle(&token, &liste, &uris).await?;
+    Ok(serde_json::json!({ "ad": ad, "url": url, "eklenen": uris.len() }))
   }
 
   async fn spotify_command(&self, action: &str) -> Result<()> {
@@ -1657,6 +1715,21 @@ mod tests {
     assert!(pending
       .iter()
       .any(|p| p.redirect_uri.ends_with("/api/player/spotify/callback")));
+  }
+
+  #[test]
+  fn yayin_parcalari_araliktakileri_sirali_ve_tekrarsiz_verir() {
+    let son = serde_json::json!({ "items": [
+      { "played_at": "2026-11-14T20:30:00.000Z", "track": { "uri": "spotify:track:B" } },
+      { "played_at": "2026-11-14T20:10:00Z", "track": { "uri": "spotify:track:A" } },
+      { "played_at": "2026-11-14T20:40:00Z", "track": { "uri": "spotify:track:A" } },
+      { "played_at": "2026-11-14T19:00:00Z", "track": { "uri": "spotify:track:Once" } },
+      { "played_at": "2026-11-14T20:20:00Z", "track": { "uri": "spotify:episode:E" } },
+      { "played_at": "2026-11-14T20:50:00Z", "item": { "uri": "spotify:track:C" } }
+    ]});
+    let bas = chrono::DateTime::parse_from_rfc3339("2026-11-14T20:00:00Z").unwrap().timestamp_millis();
+    let bit = chrono::DateTime::parse_from_rfc3339("2026-11-14T21:00:00Z").unwrap().timestamp_millis();
+    assert_eq!(yayin_parcalari(&son, bas, bit), vec!["spotify:track:A", "spotify:track:B", "spotify:track:C"]);
   }
 
   #[test]

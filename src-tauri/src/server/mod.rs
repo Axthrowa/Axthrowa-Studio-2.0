@@ -164,6 +164,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/player/spotify/callback", get(api_spotify_callback))
     .route("/api/player/spotify/disconnect", post(api_spotify_disconnect))
     .route("/api/player/spotify/recently-played", get(api_spotify_recently_played))
+    .route("/api/player/spotify/yayin-listesi", post(api_spotify_yayin_listesi))
     .route("/api/open-external", post(api_open_external))
     .route("/api/automation/claim", post(api_automation_claim))
     .route("/api/automation/release", post(api_automation_release))
@@ -2002,6 +2003,25 @@ async fn api_spotify_recently_played(
     .await
     .map(Json)
     .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))
+}
+
+#[derive(Deserialize)]
+struct YayinListesiBody {
+  baslangic: i64,
+  bitis: i64,
+  ad: String,
+}
+
+/// Y5: yayının Spotify şarkılarından çalma listesi
+async fn api_spotify_yayin_listesi(
+  State(state): State<Arc<AppState>>,
+  Json(b): Json<YayinListesiBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+  let ad: String = b.ad.trim().chars().filter(|c| !c.is_control()).take(100).collect();
+  if ad.is_empty() || b.bitis <= b.baslangic {
+    return Err((StatusCode::BAD_REQUEST, "Liste adı ve yayın aralığı gerekli".into()));
+  }
+  state.music.spotify_yayin_listesi(b.baslangic, b.bitis, &ad).await.map(Json).map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))
 }
 
 #[derive(Deserialize)]

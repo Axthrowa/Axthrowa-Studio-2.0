@@ -189,6 +189,17 @@ export async function sendPlayerCommand(action: string, source?: string) {
   if (!res.ok) throw new Error((await res.text()) || "komut başarısız");
 }
 
+/** Y5: yayın süresince Spotify'da çalanlardan gizli çalma listesi */
+export async function spotifyYayinListesi(baslangic: number, bitis: number, ad: string): Promise<{ ad: string; url: string; eklenen: number }> {
+  const res = await fetch(`${API_BASE}/api/player/spotify/yayin-listesi`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ baslangic, bitis, ad }),
+  });
+  if (!res.ok) throw new Error((await res.text()) || "liste oluşturulamadı");
+  return res.json();
+}
+
 export async function fetchServerInfo() {
   const res = await fetch(`${API_BASE}/api/server`, { cache: "no-store" });
   return res.json();

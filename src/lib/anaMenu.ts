@@ -52,7 +52,7 @@ export const ANA_MENU: MenuGrubu[] = [
   },
   { id: "bot", adAnahtari: "nav.bot", sayfalar: [{ nav: "bot", botSayfa: "commands" }] },
   { id: "sonrasi", adAnahtari: "nav.grup.sonrasi", sayfalar: [{ nav: "control", kip: "sonrasi", adAnahtari: "nav.rapor" }] },
-  { id: "ayarlar", adAnahtari: "nav.grup.ayarlar", sayfalar: [{ nav: "settings" }, { nav: "hotkeys" }] },
+  { id: "ayarlar", adAnahtari: "nav.grup.ayarlar", sayfalar: [{ nav: "settings" }, { nav: "hotkeys" }, { nav: "cihazlar" }] },
 ];
 
 /** Bot ekranının sekmeleri. `alt`: botta o sekmenin altındaki sayfalar. Başka başlığa ait olmayan her bot sayfası bir sekmededir. */

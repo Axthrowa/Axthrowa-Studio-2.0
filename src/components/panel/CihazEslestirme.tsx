@@ -115,7 +115,25 @@ export default function CihazEslestirme({ onToast }: { onToast: (m: string) => v
         </div>
       )}
       <div>
-        <p className="text-xs font-semibold">Eşleşmiş cihazlar</p>
+        <div className="flex items-center gap-2">
+          <p className="flex-1 text-xs font-semibold">Eşleşmiş cihazlar</p>
+          {cihazlar.length > 1 && (
+            <button
+              type="button"
+              className="studio-btn-ghost !px-2 !py-0.5 text-xs"
+              onClick={() => {
+                if (!confirm(`${cihazlar.length} cihazın hepsi iptal edilsin mi? Yeniden eşleştirmek gerekir.`)) return;
+                void Promise.allSettled(cihazlar.map((c) => botApi.cihazSil(c.id))).then((r) => {
+                  const basarisiz = r.filter((x) => x.status === "rejected").length;
+                  onToast(basarisiz ? `${basarisiz} cihaz iptal edilemedi` : "Tüm cihazlar iptal edildi");
+                  yenile();
+                });
+              }}
+            >
+              Tümünü iptal et
+            </button>
+          )}
+        </div>
         {cihazlar.length === 0 ? (
           <p className="text-[11px] text-panel-muted">Henüz yok.</p>
         ) : (
@@ -125,7 +143,7 @@ export default function CihazEslestirme({ onToast }: { onToast: (m: string) => v
                 <span className="flex-1">
                   <strong>{c.ad}</strong>
                   <span className="ml-2 text-panel-muted">
-                    {c.sonGorulme ? `son: ${new Date(c.sonGorulme).toLocaleString("tr-TR")}` : "hiç bağlanmadı"} · {c.izinler.length} izin
+                    {c.sonGorulme ? `son: ${new Date(c.sonGorulme).toLocaleString("tr-TR")}` : "hiç bağlanmadı"} · {c.izinler.join(", ") || "izin yok"}
                   </span>
                 </span>
                 <button

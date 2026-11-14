@@ -44,6 +44,7 @@ const BotSessions = lazy(() => import("../../components/panel/BotSessions"));
 const BotEkrani = lazy(() => import("../../components/panel/BotEkrani"));
 const KurulumSihirbazi = lazy(() => import("../../components/panel/KurulumSihirbazi"));
 const AppSettingsPage = lazy(() => import("../../components/panel/AppSettingsPage"));
+const CihazEslestirme = lazy(() => import("../../components/panel/CihazEslestirme"));
 const YayinBilgisiDock = lazy(() => import("../../components/control/YayinBilgisiDock").then((m) => ({ default: m.YayinBilgisiDock })));
 const SoundBoardPanel = lazy(() => import("../../components/panel/SoundBoardPanel"));
 const AxBotHost = lazy(() => import("../../components/panel/AxBotHost"));
@@ -229,8 +230,9 @@ export default function PanelPage() {
   const soundsTab = activeNav === "sounds";
   const hotkeysTab = activeNav === "hotkeys";
   const yayinBilgisiTab = activeNav === "yayinBilgisi";
+  const cihazlarTab = activeNav === "cihazlar";
   const settingsTab = activeNav === "settings";
-  const sayfaDali = activeNav === "kurulum" ? "kurulum" : profileTab ? "profile" : controlTab ? "control" : yayinTab ? "yayin" : musicTab ? "music" : botTab ? "bot" : chatTab ? "chat" : soundsTab ? "sounds" : hotkeysTab ? "hotkeys" : yayinBilgisiTab ? "yayinBilgisi" : settingsTab ? "settings" : "sahne";
+  const sayfaDali = activeNav === "kurulum" ? "kurulum" : profileTab ? "profile" : controlTab ? "control" : yayinTab ? "yayin" : musicTab ? "music" : botTab ? "bot" : chatTab ? "chat" : soundsTab ? "sounds" : hotkeysTab ? "hotkeys" : yayinBilgisiTab ? "yayinBilgisi" : cihazlarTab ? "cihazlar" : settingsTab ? "settings" : "sahne";
 
   useEffect(() => {
     const sync = () => setSfxPads(loadSoundboard());
@@ -2054,6 +2056,11 @@ export default function PanelPage() {
         // A2b: başlık, kategori, etiketler ve şablonlar; Canlı ekranındaki bölmenin aynısı
         <div className="custom-scrollbar mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto p-4">
           <YayinBilgisiDock onToast={showToast} />
+        </div>
+      ) : cihazlarTab ? (
+        // Y6: eşleşmiş telefonlar, izinler, iptal ve yerel ağ erişimi
+        <div className="custom-scrollbar mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto p-4">
+          <CihazEslestirme onToast={showToast} />
         </div>
       ) : hotkeysTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">

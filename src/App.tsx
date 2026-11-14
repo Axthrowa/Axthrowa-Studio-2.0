@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
+import { useAxthrowaStore } from "./store/useAxthrowaStore";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 const PanelPage = lazy(() => import("./routes/panel/PanelPage"));
 const StartingPage = lazy(() => import("./routes/starting/StartingPage"));
@@ -39,6 +40,23 @@ export const PANEL_YOLLARI = new Set(["/", "/panel", "/dock"]);
 
 export default function App() {
   const loc = useLocation();
+  // Y15: İngilizce seçiliyse panel sayfaları sözlükten çevrilir (OBS'e verilen sayfalar Türkçe kalır)
+  const locale = useAxthrowaStore((s) => s.locale);
+  const panelSayfasi = PANEL_YOLLARI.has(loc.pathname) || loc.pathname.startsWith("/remote") || loc.pathname === "/login";
+  useEffect(() => {
+    if (locale !== "en" || !panelSayfasi) return;
+    let durdur: (() => void) | undefined;
+    let bitti = false;
+    void import("./i18n/domCeviri").then((m) => {
+      if (bitti) return;
+      m.domCeviriBaslat();
+      durdur = m.domCeviriDurdur;
+    });
+    return () => {
+      bitti = true;
+      durdur?.();
+    };
+  }, [locale, panelSayfasi]);
   // Her sayfa kendi parçasını yükler: OBS katmanları (giriş/mola/sohbet…) panelin
   // tamamını (~1,3 MB) indirmesin. Yüklenirken saydam (OBS'te boş kare yok).
   return (

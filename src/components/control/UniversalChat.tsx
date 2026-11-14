@@ -503,7 +503,7 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
                   <span className="ml-1 rounded bg-sky-500/20 px-1 text-[10px] text-sky-200" title="Bu oturumdaki ilk mesajı">ilk</span>
                 ) : null}
                 {m.moderation !== "visible" && <span className="ml-1 rounded bg-red-500/20 px-1 text-[10px] text-red-200">{m.moderation === "blocked" ? "kara liste" : `kalkan · ${m.moderationReason}`}</span>}
-                <span className="text-white/85">: {m.message}</span>
+                <span className="text-white/85" data-ceviri="yok">: {m.message}</span>
               </span>
               {!m.isSystem && (
                 <span className="hidden shrink-0 gap-1 group-focus-within:flex group-hover:flex">

@@ -1242,6 +1242,7 @@ export default function OverlayShell({
   return (
     <div
       ref={wrapRef}
+      data-ceviri="yok"
       className={`obs-canvas-wrap ${edit ? "edit-mode" : ""}`}
       data-bg={bgStyle === "image" || bgStyle === "custom" ? "custom" : bgStyle}
       data-font={settings.font || "system"}

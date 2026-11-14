@@ -319,3 +319,17 @@ export async function twitchReklamErtele(): Promise<Pick<ReklamTakvimi, "sonraki
   const { sonrakiReklam, ertelemeHakki, ertelemeYenilenme } = takvimCevir(j.data?.[0]);
   return { sonrakiReklam, ertelemeHakki, ertelemeYenilenme };
 }
+
+/** Y9: Twitch'in resmi sabitlemesi (izleyicilerin sohbetinin üstünde); yayıncı oturumu moderatör olarak kullanılır */
+export function twitchSabitleyebilir(): boolean {
+  const s = load();
+  return !!s?.userId && !!s.scopes?.includes("moderator:manage:chat_messages");
+}
+
+/** sureSn null = yayın bitene dek; Twitch 30-1800 sn kabul eder. Başka mesaj sabitliyse 409 döner. */
+export async function twitchSabitle(mesajId: string, sureSn: number | null): Promise<void> {
+  if (!twitchSabitleyebilir()) throw new Error("Twitch oturumunda moderator:manage:chat_messages izni yok — Twitch'i yeniden bağlayın");
+  const id = encodeURIComponent(load()?.userId ?? "");
+  const sure = sureSn === null ? "" : `&duration_seconds=${Math.min(1800, Math.max(30, Math.round(sureSn)))}`;
+  await helix(`/chat/pins?broadcaster_id=${id}&moderator_id=${id}&message_id=${encodeURIComponent(mesajId)}${sure}`, { method: "PUT" });
+}

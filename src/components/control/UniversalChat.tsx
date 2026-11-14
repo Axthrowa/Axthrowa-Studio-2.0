@@ -12,6 +12,7 @@ import { ArrowBendUpLeft, ArrowCounterClockwise, Copy, HandHeart, Identification
 import KullaniciKarti from "./KullaniciKarti";
 import { nesneMenusu, type MenuOgesi } from "../axthrowa/SagTikMenusu";
 import { axbotBase } from "../../lib/axbot";
+import { twitchSabitle, twitchSabitleyebilir } from "../../lib/platformAuth/twitchWrite";
 import { ACTIVITY_LABEL, CHAT_PLATFORMS, PLATFORM_LABEL, PLATFORM_SHORT, type ActivityEvent, type ChatPlatform, type NormalizedChatMessage } from "../../lib/chat/model";
 import { normalizeActivity, normalizeChat } from "../../lib/chat/normalize";
 import { addActivity, tesekkurUygula, addChat, CHAT_VIEW_LABEL, CHAT_VIEWS, emptyChat, filterChat, platformCounts, type ChatState, type ChatView } from "../../lib/chat/store";
@@ -375,6 +376,17 @@ export const UniversalChatPanel = memo(function UniversalChatPanel({ onToast }: 
       { ad: "Sabitle", ikon: PushPin, kapali: m.isSystem, yap: () => void katmana(m, "sabitle") },
       { ad: "Katmanda vurgula", ikon: Sparkle, kapali: m.isSystem, yap: () => void katmana(m, "vurgula") },
     ];
+    // Y9: Twitch sohbetinde herkesin göreceği resmi sabitleme
+    if (m.platform === "twitch" && !m.isSystem && !m.messageId.startsWith("yerel-") && twitchSabitleyebilir())
+      for (const [ad, sn] of [["Twitch'te sabitle 2 dk", 120], ["Twitch'te sabitle 10 dk", 600], ["Twitch'te sabitle (yayın sonuna dek)", null]] as const)
+        ogeler.push({
+          ad,
+          ikon: PushPin,
+          yap: () =>
+            void twitchSabitle(m.messageId, sn)
+              .then(() => onToast(`${m.displayName}: Twitch'te sabitlendi`))
+              .catch((e) => onToast(String((e as Error).message).includes("409") ? "Twitch'te zaten sabit bir mesaj var" : `Sabitlenemedi: ${String((e as Error).message).slice(0, 100)}`)),
+        });
     if (modOk && y?.mesajSil && !m.messageId.startsWith("yerel-")) ogeler.push({ ad: "Sil", ikon: Trash, onay: true, ayrac: true, yap: () => void cezaVer(m, "delete", "Kontrol Merkezi") });
     if (modOk && y?.timeout)
       for (const [ad, sn] of [["Sustur 1 dk", 60], ["Sustur 10 dk", 600], ["Sustur 1 sa", 3600]] as const)

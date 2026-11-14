@@ -290,6 +290,12 @@ pub async fn isaret_ekle(pool: &SqlitePool, i: &Isaret) -> Result<i64> {
   Ok(r.last_insert_rowid())
 }
 
+/// Y2: işaretin tekrar dosyası (yoksa None)
+pub async fn isaret_dosyasi(pool: &SqlitePool, id: i64) -> Result<Option<String>> {
+  let r: Option<(Option<String>,)> = sqlx::query_as("SELECT replay_path FROM stream_markers WHERE id = ?").bind(id).fetch_optional(pool).await?;
+  Ok(r.and_then(|r| r.0).filter(|p| !p.is_empty()))
+}
+
 /// U6: işaret listesi; `session_id` verilmezse son 100 işaret (yeniden eskiye)
 pub async fn isaretler(pool: &SqlitePool, session_id: Option<&str>) -> Result<Vec<serde_json::Value>> {
   let satirlar: Vec<(i64, Option<String>, i64, Option<i64>, Option<String>, Option<String>, Option<String>, i64, Option<String>)> = match session_id {

@@ -176,6 +176,8 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .route("/api/bot/sessions/end", post(api_bot_session_end))
     .route("/api/bot/sessions/report", get(api_bot_session_report))
     .route("/api/bot/markers", get(api_bot_markers))
+    .route("/api/klip/kare", get(api_klip_kare))
+    .route("/api/klip/dikey", post(api_klip_dikey))
     .route("/api/bot/metrics", post(api_bot_metrics))
     .route("/api/bot/events", get(api_bot_events).post(api_bot_event_log))
     // Spotify kodunun düşebileceği kısa yollar. Kullanıcı Dashboard'a
@@ -2281,6 +2283,45 @@ async fn api_bot_markers(
     .await
     .map(|v| Json(json!(v)))
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+/// Y2: işaretin tekrar dosyası ve ffmpeg; ikisi de yoksa açıklayıcı hata
+async fn klip_kaynagi(state: &AppState, isaret: i64) -> Result<(std::path::PathBuf, std::path::PathBuf), (StatusCode, String)> {
+  let yol = crate::db::profile::isaret_dosyasi(&state.db, isaret)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .map(std::path::PathBuf::from)
+    .filter(|p| p.is_file())
+    .ok_or((StatusCode::NOT_FOUND, "Bu işaretin tekrar dosyası yok ya da taşınmış".to_string()))?;
+  let ffmpeg = crate::ytdl::ffmpeg_yolu(&state.data_dir).ok_or((StatusCode::FAILED_DEPENDENCY, "ffmpeg bulunamadı".to_string()))?;
+  Ok((ffmpeg, yol))
+}
+
+#[derive(Deserialize)]
+struct KlipKareQuery {
+  isaret: i64,
+}
+
+async fn api_klip_kare(State(state): State<Arc<AppState>>, Query(q): Query<KlipKareQuery>) -> Result<axum::response::Response, (StatusCode, String)> {
+  let (ffmpeg, yol) = klip_kaynagi(&state, q.isaret).await?;
+  let jpeg = crate::klip::kare(&ffmpeg, &yol).await.map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
+  Ok(([(axum::http::header::CONTENT_TYPE, "image/jpeg")], jpeg).into_response())
+}
+
+#[derive(Deserialize)]
+struct KlipDikeyBody {
+  isaret: i64,
+  oyun: crate::klip::Bolge,
+  kamera: Option<crate::klip::Bolge>,
+  sure: Option<f64>,
+}
+
+/// Y2: işaretin tekrar dosyasından 1080×1920 MP4 (kaynağın yanına)
+async fn api_klip_dikey(State(state): State<Arc<AppState>>, Json(b): Json<KlipDikeyBody>) -> Result<Json<Value>, (StatusCode, String)> {
+  let filtre = crate::klip::dikey_filtre(b.oyun, b.kamera).map_err(|e| (StatusCode::BAD_REQUEST, e))?;
+  let (ffmpeg, yol) = klip_kaynagi(&state, b.isaret).await?;
+  let cikti = crate::klip::dikey_yap(&ffmpeg, &yol, &filtre, b.sure).await.map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
+  Ok(Json(json!({ "yol": cikti.to_string_lossy() })))
 }
 
 async fn api_bot_session_end(

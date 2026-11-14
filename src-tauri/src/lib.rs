@@ -40,6 +40,7 @@ pub mod performans;
 pub mod lisans;
 pub mod hata_raporu;
 pub mod asistan;
+pub mod klip;
 
 use std::path::PathBuf;
 use std::sync::Arc;

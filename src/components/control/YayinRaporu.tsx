@@ -1,6 +1,7 @@
 /** U7b: son biten yayının raporu: süre, zirve, izleyici eğrisi ve düşen kare (Yayın sonrası kipi). */
 import { useEffect, useState } from "react";
 import { spotifyYayinListesi } from "../../lib/api";
+import { KlipDuzenleyici } from "./KlipDuzenleyici";
 import { fetchDashboard, fmtDuration, markers, sessionReport, type Isaret, type OturumRaporu, type StreamSession } from "../../lib/api/botApi";
 
 /** Eğri noktaları (svg viewBox 0..w, 0..h); tek örnekte yatay çizgi */
@@ -28,6 +29,7 @@ export function YayinRaporu() {
   const [rapor, setRapor] = useState<OturumRaporu | null>(null);
   const [hata, setHata] = useState("");
   const [isaretler, setIsaretler] = useState<Isaret[]>([]);
+  const [dikey, setDikey] = useState<number | null>(null);
   const [liste, setListe] = useState<{ durum: "bos" | "yapiliyor" | "hata"; metin?: string } | { durum: "tamam"; url: string; eklenen: number }>({ durum: "bos" });
 
   useEffect(() => {
@@ -114,6 +116,14 @@ export function YayinRaporu() {
                 {i.chapter && <span className="ml-2 text-panel-muted">kayda bölüm eklendi</span>}
                 {i.note && <span className="ml-2">“{i.note}”</span>}
                 <div className="break-all text-[11px] text-panel-muted">{i.replayPath || "Tekrar dosyası yok (tekrar arabelleği kapalıydı)"}</div>
+                {i.replayPath &&
+                  (dikey === i.id ? (
+                    <KlipDuzenleyici isaret={i.id} onKapat={() => setDikey(null)} />
+                  ) : (
+                    <button type="button" className="text-[11px] text-panel-accent hover:underline" onClick={() => setDikey(i.id)}>
+                      Dikey klip (9:16)
+                    </button>
+                  ))}
               </li>
             ))}
           </ul>

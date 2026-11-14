@@ -176,3 +176,25 @@ export function twitchRozetleri(badgesStr: string, harita: ReadonlyMap<string, s
       return url ? { type: b.split('/')[0], text: b, imageUrl: url } : b;
     });
 }
+
+/**
+ * Y8: Power-up (kanal puanıyla açılan otomatik ödüller) PRIVMSG `msg-id` etiketi.
+ * shortcut: bu değerler Twitch IRC belgesinde yok (topluluk istemcilerinden), değişirse olay gelmez — EventSub
+ * `channel.channel_points_automatic_reward_redemption.add` eklendiğinde ona geçilmeli.
+ */
+const POWER_UP: Record<string, string> = {
+  'highlighted-message': 'Mesajı vurgula',
+  'gigantified-emote-message': "Emote'u devleştir",
+  'animated-message': 'Mesaj efekti',
+  'skip-subs-mode-message': 'Abone kipini aş'
+};
+export function twitchPowerUp(msgId: unknown): string | null {
+  return POWER_UP[String(msgId ?? '')] ?? null;
+}
+
+/** USERNOTICE `viewermilestone` + `msg-param-category=watch-streak` → seri (art arda izlenen yayın sayısı) */
+export function twitchIzlemeSerisi(tags: Record<string, string>): number | null {
+  if (tags['msg-id'] !== 'viewermilestone' || tags['msg-param-category'] !== 'watch-streak') return null;
+  const n = parseInt(tags['msg-param-value'] || '', 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}

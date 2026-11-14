@@ -1,7 +1,7 @@
 export interface StreamEvent {
   id: string;
   platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo';
-  eventType: 'chat' | 'follow' | 'sub' | 'gift' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid';
+  eventType: 'chat' | 'follow' | 'sub' | 'gift' | 'gift_sub' | 'tip' | 'kicks' | 'host' | 'raid' | 'watch_streak' | 'power_up';
   username: string;
   displayName?: string;
   message?: string;

@@ -19,7 +19,10 @@ export type Tetik =
   // Y7: Studio Twitch reklam takviminden bildirir
   | { tur: 'reklam_yaklasiyor' }
   | { tur: 'reklam_basliyor' }
-  | { tur: 'reklam_bitti' };
+  | { tur: 'reklam_bitti' }
+  // Y8: Twitch izleme serisi ve power-up
+  | { tur: 'izleme_serisi'; enAz: number }
+  | { tur: 'power_up'; guc: string };
 
 export type Kosul = { tur: 'mod' } | { tur: 'abone' } | { tur: 'canli' } | { tur: 'en_az_puan'; puan: number };
 
@@ -106,6 +109,10 @@ function tetikDuzelt(t: any): Tetik | null {
       return { tur: t.tur };
     case 'kare_dususu':
       return { tur: 'kare_dususu', enAz: sayi(t.enAz, 1, 100) };
+    case 'izleme_serisi':
+      return { tur: 'izleme_serisi', enAz: sayi(t.enAz, 0, 1000) };
+    case 'power_up':
+      return { tur: 'power_up', guc: yazi(t.guc, 60) };
     default:
       return null;
   }
@@ -192,7 +199,10 @@ export function tetikUyar(t: Tetik, o: Olay): boolean {
     case 'bagis':
     case 'baskin':
     case 'kare_dususu':
+    case 'izleme_serisi':
       return (Number(o.miktar) || 0) >= t.enAz;
+    case 'power_up':
+      return !t.guc || String(o.odul ?? '').toLocaleLowerCase('tr') === t.guc.toLocaleLowerCase('tr');
     case 'odul':
       return !t.odul || String(o.odul ?? '').toLocaleLowerCase('tr') === t.odul.toLocaleLowerCase('tr');
     default:

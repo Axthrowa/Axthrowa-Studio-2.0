@@ -57,6 +57,9 @@ const TETIKLER: Record<string, Tanim> = {
   reklam_yaklasiyor: { etiket: 'Reklama 60 sn kaldı (Twitch)', alanlar: [] },
   reklam_basliyor: { etiket: 'Reklam başlıyor (Twitch)', alanlar: [] },
   reklam_bitti: { etiket: 'Reklam bitti (Twitch)', alanlar: [] },
+  // Y8
+  izleme_serisi: { etiket: 'İzleme serisi (Twitch)', alanlar: [{ ad: 'enAz', etiket: 'En az yayın', sayi: true }], varsayilan: { enAz: 3 } },
+  power_up: { etiket: 'Power-up (Twitch)', alanlar: [{ ad: 'guc', etiket: 'Power-up adı (boş = hepsi)' }], varsayilan: { guc: '' } },
 };
 
 const KOSULLAR: Record<string, Tanim> = {

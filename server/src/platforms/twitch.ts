@@ -3,7 +3,7 @@ import { BasePlatform, PlatformStatus, ModerasyonSonucu } from './base.js';
 import { eventBus } from '../core/event-bus.js';
 import { db } from '../db/index.js';
 import { TwitchHelix } from './twitch-helix.js';
-import { twitchEmoteEtiketi, twitchRozetleri } from './twitch-rules.js';
+import { twitchEmoteEtiketi, twitchIzlemeSerisi, twitchPowerUp, twitchRozetleri } from './twitch-rules.js';
 import type { YayinBilgisi } from '../core/live-status-math.js';
 
 export class TwitchPlatform extends BasePlatform {
@@ -161,6 +161,9 @@ export class TwitchPlatform extends BasePlatform {
         });
       }
 
+      const guc = twitchPowerUp(tags['msg-id']);
+      if (guc) eventBus.emitPowerUp({ platform: 'twitch', channel: this.currentChannel, username, displayName: username, guc, message: messageText, timestamp: Date.now() });
+
       // Zaman aşımı için kullanıcı kimliği gerekir; sohbetten öğrenilir
       if (tags['user-id']) this.helix.kimlikOgren(tags['login'] || username, tags['user-id']);
 
@@ -223,6 +226,9 @@ export class TwitchPlatform extends BasePlatform {
           recipient: tags['msg-param-recipient-display-name'] || 'İzleyici',
           timestamp: Date.now()
         });
+      } else if (msgId === 'viewermilestone') {
+        const seri = twitchIzlemeSerisi(tags);
+        if (seri) eventBus.emitIzlemeSerisi({ platform: 'twitch', channel: this.currentChannel, username, displayName: username, seri, timestamp: Date.now() });
       } else if (msgId === 'raid') {
         const viewers = parseInt(tags['msg-param-viewerCount'] || '1', 10);
         eventBus.emitRaid({

@@ -109,6 +109,27 @@ export interface TikTokGiftPayload {
   timestamp: number;
 }
 
+/** Y8: Twitch izleme serisi (art arda izlenen yayın) */
+export interface IzlemeSerisiPayload {
+  platform: 'twitch';
+  channel: string;
+  username: string;
+  displayName?: string;
+  seri: number;
+  timestamp: number;
+}
+
+/** Y8: Twitch power-up (kanal puanıyla açılan otomatik ödül) */
+export interface PowerUpPayload {
+  platform: 'twitch';
+  channel: string;
+  username: string;
+  displayName?: string;
+  guc: string;
+  message: string;
+  timestamp: number;
+}
+
 export interface BotMessagePayload {
   platform: 'twitch' | 'kick' | 'youtube' | 'discord' | 'tiktok' | 'trovo' | 'all';
   channel?: string;
@@ -251,6 +272,33 @@ class UniversalEventBus extends EventEmitter {
       amount: payload.diamonds,
       currency: 'Diamonds',
       avatarUrl: payload.avatarUrl,
+      timestamp: payload.timestamp
+    }, (payload as any)?.isTest === true);
+  }
+
+  emitIzlemeSerisi(payload: IzlemeSerisiPayload) {
+    this.emit('izleme_serisi', payload);
+    this.logEvent({
+      id: uuidv4(),
+      platform: payload.platform,
+      eventType: 'watch_streak',
+      username: payload.username,
+      displayName: payload.displayName || payload.username,
+      amount: payload.seri,
+      message: `${payload.seri} yayındır art arda izliyor`,
+      timestamp: payload.timestamp
+    }, (payload as any)?.isTest === true);
+  }
+
+  emitPowerUp(payload: PowerUpPayload) {
+    this.emit('power_up', payload);
+    this.logEvent({
+      id: uuidv4(),
+      platform: payload.platform,
+      eventType: 'power_up',
+      username: payload.username,
+      displayName: payload.displayName || payload.username,
+      message: payload.guc,
       timestamp: payload.timestamp
     }, (payload as any)?.isTest === true);
   }

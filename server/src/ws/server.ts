@@ -501,6 +501,16 @@ export class WebSocketHub {
       this.raidShoutout(payload);
     });
 
+    // Y8: Twitch izleme serisi ve power-up -> AlertBox & Dashboard
+    eventBus.on('izleme_serisi', (payload: any) => {
+      const alert = this.buildAlertPayload('watch_streak', { user: payload.displayName || payload.username, count: payload.seri }, payload?.isTest === true);
+      this.broadcastTo(['dashboard', 'alertbox', 'all'], { type: 'alert', subType: 'watch_streak', data: { ...payload, count: payload.seri }, alert });
+    });
+    eventBus.on('power_up', (payload: any) => {
+      const alert = this.buildAlertPayload('power_up', { user: payload.displayName || payload.username, guc: payload.guc, message: payload.message }, payload?.isTest === true);
+      this.broadcastTo(['dashboard', 'alertbox', 'all'], { type: 'alert', subType: 'power_up', data: payload, alert });
+    });
+
     // 6. TikTok Gift Event -> AlertBox & Dashboard
     eventBus.on('gift_tiktok', (payload: TikTokGiftPayload) => {
       try {
@@ -616,6 +626,8 @@ export class WebSocketHub {
         host: { title: 'HOST!', message: '{user} kanalı host etti ({viewers})', color: '#38bdf8', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: 'https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif' },
         kicks: { title: 'KICKS!', message: '{user} {amount} Kick gönderdi!', color: '#53fc18', sound: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', img: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' },
         poll_result: { title: 'ANKET SONUCU', message: '{metin}', color: '#38bdf8', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: '' },
+        watch_streak: { title: 'İZLEME SERİSİ!', message: '{user} {count} yayındır art arda izliyor!', color: '#a78bfa', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: '' },
+        power_up: { title: 'POWER-UP!', message: '{user}: {guc}', color: '#22d3ee', sound: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', img: '' },
         milestone: { title: 'KİLOMETRE TAŞI!', message: '{metin}', color: '#facc15', sound: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', img: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif' }
       };
       const def = defaults[eventType] || defaults.follow;

@@ -108,3 +108,16 @@ describe('Y7 Twitch reklam tetikleri', () => {
     expect(tetikUyar({ tur: 'reklam_bitti' }, { tur: 'reklam_basliyor' })).toBe(false);
   });
 });
+
+describe('Y8 izleme serisi ve power-up tetikleri', () => {
+  it('seri eşiği ve power-up adı', () => {
+    const r = kuralDuzelt({ ad: 's', tetik: { tur: 'izleme_serisi', enAz: 5 }, eylemler: [{ tur: 'sohbet', metin: 'x' }] });
+    expect(r.ok && r.kural.tetik).toEqual({ tur: 'izleme_serisi', enAz: 5 });
+    if (!r.ok) return;
+    expect(tetikUyar(r.kural.tetik, { tur: 'izleme_serisi', miktar: 5 })).toBe(true);
+    expect(tetikUyar(r.kural.tetik, { tur: 'izleme_serisi', miktar: 4 })).toBe(false);
+    expect(tetikUyar({ tur: 'power_up', guc: '' }, { tur: 'power_up', odul: 'Mesaj efekti' })).toBe(true);
+    expect(tetikUyar({ tur: 'power_up', guc: 'mesaj efekti' }, { tur: 'power_up', odul: 'Mesaj efekti' })).toBe(true);
+    expect(tetikUyar({ tur: 'power_up', guc: 'Mesajı vurgula' }, { tur: 'power_up', odul: 'Mesaj efekti' })).toBe(false);
+  });
+});

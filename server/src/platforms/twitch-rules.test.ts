@@ -55,3 +55,18 @@ describe('Twitch sohbet emote ve rozetleri', () => {
     ]);
   });
 });
+
+import { twitchIzlemeSerisi, twitchPowerUp } from './twitch-rules.js';
+
+describe('Y8: Power-up ve izleme serisi etiketleri', () => {
+  it('power-up msg-id adını verir, sıradan mesajda null', () => {
+    expect(twitchPowerUp('gigantified-emote-message')).toBe("Emote'u devleştir");
+    expect(twitchPowerUp(undefined)).toBeNull();
+    expect(twitchPowerUp('sub')).toBeNull();
+  });
+  it('izleme serisi yalnız viewermilestone/watch-streak ile', () => {
+    expect(twitchIzlemeSerisi({ 'msg-id': 'viewermilestone', 'msg-param-category': 'watch-streak', 'msg-param-value': '7' })).toBe(7);
+    expect(twitchIzlemeSerisi({ 'msg-id': 'viewermilestone', 'msg-param-category': 'baska', 'msg-param-value': '7' })).toBeNull();
+    expect(twitchIzlemeSerisi({ 'msg-id': 'viewermilestone', 'msg-param-category': 'watch-streak', 'msg-param-value': 'x' })).toBeNull();
+  });
+});

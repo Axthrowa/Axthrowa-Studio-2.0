@@ -283,6 +283,8 @@ export class Otomasyon {
     eventBus.on('sub', (p: any) => void (p?.isTest ? 0 : this.olay({ tur: 'abone', platform: p.platform, kullanici: ad(p), miktar: p.count ?? p.months })));
     eventBus.on('tip', (p: any) => void (p?.isTest ? 0 : this.olay({ tur: 'bagis', platform: p.platform, kullanici: ad(p), miktar: p.amount, mesaj: p.message })));
     eventBus.on('raid', (p: any) => void (p?.isTest ? 0 : this.olay({ tur: 'baskin', platform: p.platform, kullanici: ad(p), miktar: p.viewers })));
+    eventBus.on('izleme_serisi', (p: any) => void (p?.isTest ? 0 : this.olay({ tur: 'izleme_serisi', platform: p.platform, kullanici: ad(p), miktar: p.seri })));
+    eventBus.on('power_up', (p: any) => void (p?.isTest ? 0 : this.olay({ tur: 'power_up', platform: p.platform, kullanici: ad(p), odul: p.guc, mesaj: p.message })));
     eventBus.on('loyalty_redeemed', (p: any) => void this.olay({ tur: 'odul', kullanici: p?.user, odul: p?.rewardTitle, miktar: p?.cost, mesaj: p?.payload }));
     // Süreli kurallar: ilk çalışma bir aralık sonra, açılışta hepsi birden çalışmasın
     const acilis = Date.now();

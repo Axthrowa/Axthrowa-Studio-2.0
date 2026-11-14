@@ -8,7 +8,8 @@ const AUTH_URL = "https://id.twitch.tv/oauth2/authorize";
 const IRC_URL = "wss://irc-ws.chat.twitch.tv:443";
 /** `channel:manage:broadcast`: Yayın Bilgisi dock'u (başlık/kategori/etiket; yalnız kullanıcı onaylayınca). Daha önce
  * bağlanmış oturumlarda yoktur — yeniden bağlanana dek yazma kapalı kalır. */
-const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit";
+// `channel:manage:clips`: Y1 VOD'dan klip (Create Clip From VOD)
+const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit channel:manage:clips";
 const HELIX = "https://api.twitch.tv/helix";
 
 export type TwitchWriteSession = {
@@ -237,4 +238,54 @@ export async function twitchKanalGuncelle(d: { baslik?: string; kategoriId?: str
   const govde = twitchKanalGovdesi(d);
   const id = load()?.userId ?? "";
   await helix(`/channels?broadcaster_id=${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(govde) });
+}
+
+/** Y1: Twitch süre biçimi "1h2m3s" → saniye */
+export function twitchSuresi(s: string): number {
+  const m = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(s.trim());
+  return m ? Number(m[1] || 0) * 3600 + Number(m[2] || 0) * 60 + Number(m[3] || 0) : 0;
+}
+
+type Vod = { id: string; created_at: string; duration: string };
+
+/** İşaret anını (ms) içeren VOD ve işaretin VOD içindeki saniyesi */
+export function vodBul(videolar: Vod[], anMs: number): { vodId: string; ofsetSn: number } | null {
+  for (const v of videolar) {
+    const bas = Date.parse(v.created_at);
+    const ofset = (anMs - bas) / 1000;
+    if (Number.isFinite(bas) && ofset >= 0 && ofset <= twitchSuresi(v.duration)) return { vodId: v.id, ofsetSn: ofset };
+  }
+  return null;
+}
+
+/** Klibin VOD'da bittiği saniye: işaret + kaydırma (başlangıç) + süre; Twitch süreden küçüğünü reddeder */
+export function klipBitisi(ofsetSn: number, kaydirmaSn: number, sureSn: number): number {
+  return Math.max(Math.ceil(sureSn), Math.round(ofsetSn + kaydirmaSn + sureSn));
+}
+
+export function twitchKlipYazabilir(): boolean {
+  const s = load();
+  return !!s?.userId && !!s.scopes?.includes("channel:manage:clips");
+}
+
+/** Create Clip From VOD: 202 ile işlem başlar; dönen düzenleme adresi listede gösterilir */
+export async function twitchVodKlibi(d: { anMs: number; baslik: string; sureSn: number; kaydirmaSn: number }): Promise<{ id: string; editUrl: string }> {
+  if (!twitchKlipYazabilir()) throw new Error("Twitch oturumunda channel:manage:clips izni yok — Twitch'i yeniden bağlayın");
+  const sure = Math.min(60, Math.max(5, Math.round(d.sureSn * 10) / 10));
+  const id = load()?.userId ?? "";
+  const v = (await (await helix(`/videos?user_id=${encodeURIComponent(id)}&type=archive&first=20`)).json()) as { data?: Vod[] };
+  const vod = vodBul(v.data ?? [], d.anMs);
+  if (!vod) throw new Error("Bu anı içeren Twitch VOD'u bulunamadı (VOD kaydı kapalı ya da silinmiş olabilir)");
+  const q = new URLSearchParams({
+    editor_id: id,
+    broadcaster_id: id,
+    vod_id: vod.vodId,
+    vod_offset: String(klipBitisi(vod.ofsetSn, d.kaydirmaSn, sure)),
+    duration: String(sure),
+    title: d.baslik.trim().slice(0, 100) || "Klip",
+  });
+  const j = (await (await helix(`/videos/clips?${q}`, { method: "POST" })).json()) as { data?: { id: string; edit_url: string }[] };
+  const k = j.data?.[0];
+  if (!k) throw new Error("Twitch klip kimliği dönmedi");
+  return { id: k.id, editUrl: k.edit_url };
 }

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { spotifyYayinListesi } from "../../lib/api";
 import { KlipDuzenleyici } from "./KlipDuzenleyici";
+import { TwitchKlipFormu } from "./TwitchKlipFormu";
 import { fetchDashboard, fmtDuration, markers, sessionReport, type Isaret, type OturumRaporu, type StreamSession } from "../../lib/api/botApi";
 
 /** Eğri noktaları (svg viewBox 0..w, 0..h); tek örnekte yatay çizgi */
@@ -124,6 +125,7 @@ export function YayinRaporu() {
                       Dikey klip (9:16)
                     </button>
                   ))}
+                <TwitchKlipFormu isaret={i} />
               </li>
             ))}
           </ul>

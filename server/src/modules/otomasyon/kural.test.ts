@@ -88,3 +88,15 @@ describe('PatlamaSayaci', () => {
     expect(s.ekle(6000, 2, 5)).toBe(false);
   });
 });
+
+describe('Y12 Studio bağlantı tetikleri', () => {
+  it('kare düşüşü eşiği yüzdeyle uyar, bit hızı tetiği türle', () => {
+    const r = kuralDuzelt({ ad: 'k', tetik: { tur: 'kare_dususu', enAz: 5 }, eylemler: [{ tur: 'sohbet', metin: 'x' }] });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(tetikUyar(r.kural.tetik, { tur: 'kare_dususu', miktar: 7 })).toBe(true);
+    expect(tetikUyar(r.kural.tetik, { tur: 'kare_dususu', miktar: 3 })).toBe(false);
+    expect(tetikUyar({ tur: 'bit_hizi_dustu' }, { tur: 'bit_hizi_dustu' })).toBe(true);
+    expect(tetikUyar({ tur: 'bit_hizi_dustu' }, { tur: 'baglanti_duzeldi' })).toBe(false);
+  });
+});

@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { otomasyon } from '../../modules/otomasyon/otomasyon.js';
+import { eventBus } from '../../core/event-bus.js';
 
 const router = Router();
 
@@ -23,6 +24,18 @@ router.post('/otomasyon/dene', async (req: Request, res: Response) => {
 // B7: kuralı örnek olayla gerçekten çalıştırır (panel onay sorar)
 router.post('/otomasyon/calistir', async (req: Request, res: Response) => {
   res.json(await otomasyon.calistir(req.body?.kural));
+});
+
+// Y12: AxthrowA Studio bağlantı korumasının olayları. Yalnız bu üç tür kabul edilir; isteğe bağlı tek satır sohbete gider.
+const STUDIO_OLAYLARI = new Set(['bit_hizi_dustu', 'baglanti_duzeldi', 'kare_dususu']);
+router.post('/otomasyon/olay', async (req: Request, res: Response) => {
+  const tur = String(req.body?.tur || '');
+  if (!STUDIO_OLAYLARI.has(tur)) return res.status(400).json({ error: 'Bilinmeyen olay' });
+  const sohbet = String(req.body?.sohbet ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 200);
+  if (sohbet) eventBus.emitBotMessage({ platform: 'all', message: sohbet });
+  const miktar = Number(req.body?.miktar);
+  await otomasyon.olay({ tur: tur as 'bit_hizi_dustu', miktar: Number.isFinite(miktar) ? miktar : undefined });
+  res.json({ ok: true });
 });
 
 export default router;

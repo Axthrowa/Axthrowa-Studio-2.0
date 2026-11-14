@@ -11,7 +11,11 @@ export type Tetik =
   | { tur: 'baskin'; enAz: number }
   | { tur: 'odul'; odul: string }
   | { tur: 'sure'; dakika: number }
-  | { tur: 'patlama'; mesaj: number; saniye: number };
+  | { tur: 'patlama'; mesaj: number; saniye: number }
+  // Y12: Studio'nun bağlantı koruması bildirir (bit hızı eşiğin altında / OBS yeniden bağlanıyor, ve düzelme)
+  | { tur: 'bit_hizi_dustu' }
+  | { tur: 'baglanti_duzeldi' }
+  | { tur: 'kare_dususu'; enAz: number };
 
 export type Kosul = { tur: 'mod' } | { tur: 'abone' } | { tur: 'canli' } | { tur: 'en_az_puan'; puan: number };
 
@@ -90,6 +94,11 @@ function tetikDuzelt(t: any): Tetik | null {
       return { tur: 'sure', dakika: sayi(t.dakika, 1, 1440) };
     case 'patlama':
       return { tur: 'patlama', mesaj: sayi(t.mesaj, 5, 1000), saniye: sayi(t.saniye, 3, 120) };
+    case 'bit_hizi_dustu':
+    case 'baglanti_duzeldi':
+      return { tur: t.tur };
+    case 'kare_dususu':
+      return { tur: 'kare_dususu', enAz: sayi(t.enAz, 1, 100) };
     default:
       return null;
   }
@@ -175,6 +184,7 @@ export function tetikUyar(t: Tetik, o: Olay): boolean {
     }
     case 'bagis':
     case 'baskin':
+    case 'kare_dususu':
       return (Number(o.miktar) || 0) >= t.enAz;
     case 'odul':
       return !t.odul || String(o.odul ?? '').toLocaleLowerCase('tr') === t.odul.toLocaleLowerCase('tr');

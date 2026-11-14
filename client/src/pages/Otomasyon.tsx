@@ -49,6 +49,10 @@ const TETIKLER: Record<string, Tanim> = {
     ],
     varsayilan: { mesaj: 30, saniye: 10 },
   },
+  // Y12: AxthrowA Studio'nun bağlantı koruması bildirir
+  bit_hizi_dustu: { etiket: 'Bit hızı düştü (Studio)', alanlar: [] },
+  baglanti_duzeldi: { etiket: 'Bağlantı düzeldi (Studio)', alanlar: [] },
+  kare_dususu: { etiket: 'Düşen kare eşiği (Studio)', alanlar: [{ ad: 'enAz', etiket: 'En az yüzde', sayi: true }], varsayilan: { enAz: 5 } },
 };
 
 const KOSULLAR: Record<string, Tanim> = {

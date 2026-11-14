@@ -10,7 +10,7 @@ const IRC_URL = "wss://irc-ws.chat.twitch.tv:443";
  * bağlanmış oturumlarda yoktur — yeniden bağlanana dek yazma kapalı kalır. */
 // `channel:manage:clips`: Y1 VOD'dan klip (Create Clip From VOD)
 // Y7 reklam takvimi/erteleme, Y9 resmi sabitleme
-const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit channel:manage:clips channel:read:ads channel:manage:ads moderator:manage:chat_messages";
+const SCOPES = "chat:read chat:write user:read:chat channel:manage:broadcast clips:edit channel:manage:clips channel:read:ads channel:manage:ads moderator:manage:chat_messages user:read:follows channel:manage:raids";
 const HELIX = "https://api.twitch.tv/helix";
 
 export type TwitchWriteSession = {
@@ -332,4 +332,36 @@ export async function twitchSabitle(mesajId: string, sureSn: number | null): Pro
   const id = encodeURIComponent(load()?.userId ?? "");
   const sure = sureSn === null ? "" : `&duration_seconds=${Math.min(1800, Math.max(30, Math.round(sureSn)))}`;
   await helix(`/chat/pins?broadcaster_id=${id}&moderator_id=${id}&message_id=${encodeURIComponent(mesajId)}${sure}`, { method: "PUT" });
+}
+
+/** Y10: canlı takip edilen kanallar ve baskın */
+export type TakipYayini = { id: string; login: string; ad: string; kategori: string; izleyici: number; baslik: string };
+
+export function takipYayinlari(data: Record<string, unknown>[] | undefined): TakipYayini[] {
+  return (data ?? [])
+    .map((d) => ({ id: String(d.user_id ?? ""), login: String(d.user_login ?? ""), ad: String(d.user_name ?? d.user_login ?? ""), kategori: String(d.game_name ?? ""), izleyici: Number(d.viewer_count) || 0, baslik: String(d.title ?? "") }))
+    .filter((y) => y.id && y.login)
+    .sort((a, b) => b.izleyici - a.izleyici);
+}
+
+export function twitchBaskinYapabilir(): boolean {
+  const s = load();
+  return !!s?.userId && !!s.scopes?.includes("user:read:follows") && !!s.scopes.includes("channel:manage:raids");
+}
+
+export async function twitchTakipYayinlari(): Promise<TakipYayini[]> {
+  const id = encodeURIComponent(load()?.userId ?? "");
+  const j = (await (await helix(`/streams/followed?user_id=${id}&first=100`)).json()) as { data?: Record<string, unknown>[] };
+  return takipYayinlari(j.data);
+}
+
+/** Baskın 90 sn geri sayımla başlar; Twitch arayüzünden ya da `twitchBaskinIptal` ile iptal edilebilir */
+export async function twitchBaskinBaslat(hedefId: string): Promise<void> {
+  if (!twitchBaskinYapabilir()) throw new Error("Twitch oturumunda channel:manage:raids izni yok — Twitch'i yeniden bağlayın");
+  const id = encodeURIComponent(load()?.userId ?? "");
+  await helix(`/raids?from_broadcaster_id=${id}&to_broadcaster_id=${encodeURIComponent(hedefId)}`, { method: "POST" });
+}
+
+export async function twitchBaskinIptal(): Promise<void> {
+  await helix(`/raids?broadcaster_id=${encodeURIComponent(load()?.userId ?? "")}`, { method: "DELETE" });
 }

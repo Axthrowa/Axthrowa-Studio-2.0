@@ -32,6 +32,8 @@ import { YayinRaporu } from "./YayinRaporu";
 import { YayinKarsilastirma } from "./YayinKarsilastirma";
 import { ActivityFeedPanel } from "./UniversalChat";
 import { BasiliTutDugme } from "../ui/BasiliTut";
+import { BaskinYardimcisi } from "./BaskinYardimcisi";
+import { twitchBaskinYapabilir } from "../../lib/platformAuth/twitchWrite";
 import { panelAyir, paneliGeriAl, useAyrikPaneller, type AyrikId } from "../../lib/ayrikPanel";
 
 /** U9: başlıktaki "Ayır" düğmesi */
@@ -299,6 +301,7 @@ function ObsOnizleme({ sahne, bagli, onBagla, onProgramaDon }: { sahne: string; 
 
 export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, onObsBagla, yerelPanel, kipIstegi, onKip }: Props) {
   const [gelismis, setGelismis] = useState(false);
+  const [baskinAcik, setBaskinAcik] = useState(false);
   const [duzenle, setDuzenle] = useState(false);
   // Kip: yayın açılınca "Canlı", kapanınca "Yayın öncesi" kendiliğinden seçilir; elle seçilen o değişime dek korunur
   const [kipSecim, setKipSecim] = useState<Kip | null>(null);
@@ -500,6 +503,12 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
           <button type="button" className={`${TUS} min-h-10 flex-1 px-3 text-xs font-semibold xl:flex-none`} onClick={() => setGelismis(true)}>
             Gelişmiş masa
           </button>
+          {canli && twitchBaskinYapabilir() && (
+            <button type="button" className={`${TUS} min-h-10 flex-1 px-3 text-xs font-semibold xl:flex-none`} onClick={() => setBaskinAcik(true)} title="Yayını bitirmeden önce takip ettiğin canlı bir kanala baskın yap">
+              Baskın
+            </button>
+          )}
+          <BaskinYardimcisi acik={baskinAcik} kapat={() => setBaskinAcik(false)} />
           <BasiliTutDugme
             basiliTut={canli}
             disabled={mesgul}

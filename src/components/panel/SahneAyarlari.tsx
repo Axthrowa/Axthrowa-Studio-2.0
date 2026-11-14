@@ -221,7 +221,7 @@ export default function SahneAyarlari({
       (panelsPinned ? "px-4 xl:grid-cols-[380px_1fr_340px]" : "px-6")
     }
   >
-    <CanliDuzenlemeSeridi className="pointer-events-none absolute left-1/2 top-1 z-30 -translate-x-1/2" />
+    <CanliDuzenlemeSeridi className="absolute left-1/2 top-1 z-30 -translate-x-1/2" />
     <EdgePanel
       side="left"
       pinned={panelsPinned}

@@ -125,6 +125,7 @@ import { olay } from "../../lib/analitik";
 import { KISAYOL_OLAYI, kisayolSatiriEkle, type KisayolIstegi } from "../../lib/nesneMenusu";
 import type { HotkeyRow } from "../../lib/obsHotkeyCatalog";
 import { useAxthrowaStore, useAxthrowaStoreKoprusu } from "../../store/useAxthrowaStore";
+import { useOnizlemeTaslagi } from "../../lib/onizlemeTaslagi";
 import {
   clearCreditsSession,
   creditsSessionCounts,
@@ -469,6 +470,11 @@ export default function PanelPage() {
   const scheduleSave = useCallback(
     (data: OverlaySettings) => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
+      // A8b: yayındayken "önce önizlemede dene" açıksa OBS'e gitmez; önizleme yerel ayardan çizer
+      if (useAxthrowaStore.getState().isLive && useOnizlemeTaslagi.getState().acik) {
+        useOnizlemeTaslagi.getState().beklet({ ekran: screen, veri: data });
+        return;
+      }
       // OBS'e yansıma süresi bu gecikme + WebSocket yayını kadar. 140 ms
       // tuş vuruşlarını hâlâ birleştiriyor ama gözle fark edilmiyor.
       saveTimer.current = window.setTimeout(() => {
@@ -808,7 +814,21 @@ export default function PanelPage() {
     [obsConnect, refreshObsLists, update, showToast]
   );
 
+  // A8b: bekleyen taslağı yazacak işlev
   useEffect(() => {
+    useOnizlemeTaslagi.setState({
+      uygulayici: (t) =>
+        persistNow(t.ekran as ScreenId, t.veri as OverlaySettings).then(() => showToast("Yayına uygulandı")),
+    });
+  }, [persistNow, showToast]);
+  // Yayın bitince bekleyen kaybolmasın
+  useEffect(() => {
+    if (!liveOn) void useOnizlemeTaslagi.getState().uygula().catch(() => showToast("Kaydedilemedi — sunucu kapalı olabilir"));
+  }, [liveOn, showToast]);
+
+  useEffect(() => {
+    // Ekran değişince önceki ekranın bekleyeni yazılır
+    void useOnizlemeTaslagi.getState().uygula().catch(() => showToast("Kaydedilemedi — sunucu kapalı olabilir"));
     void reload(screen);
     fetchServerInfo().then(setServer).catch(() => {});
     refreshParticles();
@@ -816,7 +836,7 @@ export default function PanelPage() {
     refreshLogos();
     refreshVideos();
     refreshBackgrounds();
-  }, [screen, reload, refreshParticles, refreshMusic, refreshLogos, refreshVideos, refreshBackgrounds]);
+  }, [screen, reload, refreshParticles, refreshMusic, refreshLogos, refreshVideos, refreshBackgrounds, showToast]);
 
   // Program açılınca OBS WebSocket'e sessiz otomatik bağlan; koparsa tekrar dene
   useEffect(() => {

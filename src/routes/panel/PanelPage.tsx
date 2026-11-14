@@ -172,6 +172,7 @@ const OBS_SHARE_SCREENS: ScreenId[] = ["starting", "ending", "brb", "chat"];
 const ROL_AD: Record<SceneRole, string> = { starting: "Giriş", ending: "Çıkış", brb: "Mola", game: "Oyun" };
 
 const SahneAyarlari = lazy(() => import("../../components/panel/SahneAyarlari"));
+const MiniKip = lazy(() => import("../../components/control/MiniKip").then((m) => ({ default: m.MiniKip })));
 
 export default function PanelPage() {
   const { connect: obsConnect, connected: obsCtxConnected } = useObs();
@@ -439,6 +440,26 @@ export default function PanelPage() {
 
   // Eski tek satırlık bildirimler ortak bildirim standardına gider (A5): tür metinden anlaşılır
   const showToast = useCallback((m: string) => void bildir(m), []);
+  // U10: Ctrl+M tam pencere ile her zaman üstte mini şerit arasında geçer
+  const [mini, setMini] = useState(false);
+  const miniyeGec = useCallback((ac: boolean) => {
+    setMini(ac);
+    void import("../../lib/miniKip").then((m) => m.miniKipAyarla(ac));
+  }, []);
+  useEffect(() => {
+    const tus = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || e.altKey || e.shiftKey || e.metaKey || e.key.toLowerCase() !== "m") return;
+      const el = e.target as HTMLElement | null;
+      if (el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable) return;
+      e.preventDefault();
+      setMini((m) => {
+        void import("../../lib/miniKip").then((k) => k.miniKipAyarla(!m));
+        return !m;
+      });
+    };
+    window.addEventListener("keydown", tus);
+    return () => window.removeEventListener("keydown", tus);
+  }, []);
 
   useChatCommandBridge({ onToast: showToast });
 
@@ -1780,6 +1801,14 @@ export default function PanelPage() {
     if (ekran) return kaydirmali(<SahneAyarlari {...sahneOrtak} screen={ekran as typeof screen} />);
     return null;
   };
+
+  if (mini) {
+    return (
+      <Suspense fallback={null}>
+        <MiniKip onCik={() => miniyeGec(false)} onToast={showToast} />
+      </Suspense>
+    );
+  }
 
   return (
     <MotionConfig reducedMotion={hareket === "acik" ? "never" : "always"}>

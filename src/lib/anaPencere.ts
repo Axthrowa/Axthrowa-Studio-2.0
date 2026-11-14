@@ -3,6 +3,7 @@
  * monitör sökülünce pencere görünmez yerde kalmasın).
  */
 import { isTauri } from "@tauri-apps/api/core";
+import { miniKipAcik } from "./miniKip";
 
 export type Monitor = { ad: string; x: number; y: number; genislik: number; yukseklik: number; olcek: number };
 
@@ -60,6 +61,8 @@ export async function anaPencereyiHatirla(): Promise<() => void> {
   const kaydet = () => {
     window.clearTimeout(zaman);
     zaman = window.setTimeout(async () => {
+      // Mini kipin dar boyutu ana pencere boyutu olarak kalmasın
+      if (miniKipAcik()) return;
       try {
         const [buyuk, olcek] = await Promise.all([w.isMaximized(), w.scaleFactor()]);
         // Büyütülmüşken boyut kaydedilmez (geri küçültünce eski boyut kalsın)

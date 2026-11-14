@@ -467,11 +467,13 @@ export default function PanelPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [persistNow, screen, settings, showToast, tt]);
 
+  const onizlemedeBekliyor = () => useAxthrowaStore.getState().isLive && useOnizlemeTaslagi.getState().acik;
+
   const scheduleSave = useCallback(
     (data: OverlaySettings) => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
       // A8b: yayındayken "önce önizlemede dene" açıksa OBS'e gitmez; önizleme yerel ayardan çizer
-      if (useAxthrowaStore.getState().isLive && useOnizlemeTaslagi.getState().acik) {
+      if (onizlemedeBekliyor()) {
         useOnizlemeTaslagi.getState().beklet({ ekran: screen, veri: data });
         return;
       }
@@ -533,7 +535,8 @@ export default function PanelPage() {
           obsSharedRef.current = next.obs as Record<string, unknown>;
         }
         scheduleSave(next);
-        if (next.musicShared && MUSIC_KEYS.some((k) => k in patch)) {
+        // A8b: bekletilirken paylaşılan müzik de öbür ekranlara uygulanınca kopyalanır
+        if (next.musicShared && MUSIC_KEYS.some((k) => k in patch) && !onizlemedeBekliyor()) {
           void mirrorMusic(next);
         }
         if (patch.obs) {
@@ -817,18 +820,27 @@ export default function PanelPage() {
   // A8b: bekleyen taslağı yazacak işlev
   useEffect(() => {
     useOnizlemeTaslagi.setState({
-      uygulayici: (t) =>
-        persistNow(t.ekran as ScreenId, t.veri as OverlaySettings).then(() => showToast("Yayına uygulandı")),
+      uygulayici: async (t) => {
+        const veri = t.veri as OverlaySettings;
+        try {
+          await persistNow(t.ekran as ScreenId, veri);
+          if (veri.musicShared) await mirrorMusic(veri);
+          showToast("Yayına uygulandı");
+        } catch (e) {
+          showToast("Yayına uygulanamadı — sunucu kapalı olabilir");
+          throw e;
+        }
+      },
     });
-  }, [persistNow, showToast]);
+  }, [persistNow, mirrorMusic, showToast]);
   // Yayın bitince bekleyen kaybolmasın
   useEffect(() => {
-    if (!liveOn) void useOnizlemeTaslagi.getState().uygula().catch(() => showToast("Kaydedilemedi — sunucu kapalı olabilir"));
-  }, [liveOn, showToast]);
+    if (!liveOn) void useOnizlemeTaslagi.getState().uygula().catch(() => {});
+  }, [liveOn]);
 
   useEffect(() => {
     // Ekran değişince önceki ekranın bekleyeni yazılır
-    void useOnizlemeTaslagi.getState().uygula().catch(() => showToast("Kaydedilemedi — sunucu kapalı olabilir"));
+    void useOnizlemeTaslagi.getState().uygula().catch(() => {});
     void reload(screen);
     fetchServerInfo().then(setServer).catch(() => {});
     refreshParticles();
@@ -836,7 +848,7 @@ export default function PanelPage() {
     refreshLogos();
     refreshVideos();
     refreshBackgrounds();
-  }, [screen, reload, refreshParticles, refreshMusic, refreshLogos, refreshVideos, refreshBackgrounds, showToast]);
+  }, [screen, reload, refreshParticles, refreshMusic, refreshLogos, refreshVideos, refreshBackgrounds]);
 
   // Program açılınca OBS WebSocket'e sessiz otomatik bağlan; koparsa tekrar dene
   useEffect(() => {
@@ -1137,8 +1149,11 @@ export default function PanelPage() {
       if (liveOn) {
         gunluk.info("Yayın durduruluyor");
         await endLiveFromProfile();
-        // Çıkış ekranı hâlâ sürüyor: rapor, çıkış bitince (sayaç yolunda) açılır
-        await closeDbSessionQuiet(false);
+        // Çıkış sayacı yayını kendisi kapatacaksa rapor o zaman açılır; kapatmayacaksa şimdi (yoksa hiç açılmaz)
+        // endingMinutes çıkış ekranının ayarı; o an başka ekran açık olabilir
+        const cikis = await fetchSettings("ending").catch(() => settingsRef.current);
+        const sayacKapatir = (Number(cikis.endingMinutes) || 0) > 0 && ruleStopStream((settingsRef.current.obs || {}) as never);
+        await closeDbSessionQuiet(!sayacKapatir);
         gunluk.info("Yayın durduruldu");
         olay("yayin_bitti");
       } else {

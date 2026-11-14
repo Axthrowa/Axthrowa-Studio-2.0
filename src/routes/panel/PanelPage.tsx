@@ -440,6 +440,10 @@ export default function PanelPage() {
 
   // Eski tek satırlık bildirimler ortak bildirim standardına gider (A5): tür metinden anlaşılır
   const showToast = useCallback((m: string) => void bildir(m), []);
+  // U9: önceki oturumda ayrı pencerede kalan paneller aynı yerde yeniden açılır
+  useEffect(() => {
+    void import("../../lib/ayrikPanel").then((m) => m.ayrikPencereleriGeriAc());
+  }, []);
   // U10: Ctrl+M tam pencere ile her zaman üstte mini şerit arasında geçer
   const [mini, setMini] = useState(false);
   const miniyeGec = useCallback((ac: boolean) => {

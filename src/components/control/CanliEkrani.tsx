@@ -32,6 +32,33 @@ import { YayinRaporu } from "./YayinRaporu";
 import { YayinKarsilastirma } from "./YayinKarsilastirma";
 import { ActivityFeedPanel } from "./UniversalChat";
 import { BasiliTutDugme } from "../ui/BasiliTut";
+import { panelAyir, paneliGeriAl, useAyrikPaneller, type AyrikId } from "../../lib/ayrikPanel";
+
+/** U9: başlıktaki "Ayır" düğmesi */
+function AyirDugmesi({ id }: { id: AyrikId }) {
+  return (
+    <button
+      type="button"
+      title="Ayrı pencerede aç"
+      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-white/70 transition-colors hover:bg-[var(--dt-surface-3)] hover:text-white"
+      onClick={() => void panelAyir(id)}
+    >
+      Ayır
+    </button>
+  );
+}
+
+/** Panel ayrı penceredeyken yerinde kalan kutu */
+function AyrikYer({ id }: { id: AyrikId }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2 p-3 text-sm text-panel-muted">
+      Ayrı pencerede açık
+      <button type="button" className={`${TUS} px-2 py-1 text-xs`} onClick={() => void paneliGeriAl(id)}>
+        Panele geri al
+      </button>
+    </div>
+  );
+}
 
 type Props = {
   onToast: (m: string) => void;
@@ -297,6 +324,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
     }
   };
   const [sekme, setSekme] = useState<"sohbet" | "olaylar">("sohbet");
+  const ayrik = useAyrikPaneller((s) => s.ayrik);
   const [temizleAcik, setTemizleAcik] = useState(false);
   const [hizliDuzen, setHizliDuzen] = useState(false);
   const [bot, setBot] = useState<BotDurumu | null>(null);
@@ -530,7 +558,12 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
             paneller={{
               bilgi: { baslik: "Yayın bilgisi", gosterBaslik: false, icerik: <YayinBilgisiDock onToast={onToast} /> },
               kontrol: { baslik: "Yayın öncesi kontrol", gosterBaslik: true, icerik: <KontrolListesi onToast={onToast} /> },
-              uyarilar: { baslik: "Uyarı kuyruğu", gosterBaslik: true, icerik: <UyariKuyrugu onToast={onToast} /> },
+              uyarilar: {
+                baslik: "Uyarı kuyruğu",
+                gosterBaslik: true,
+                baslikEki: ayrik.includes("uyarilar") ? undefined : <AyirDugmesi id="uyarilar" />,
+                icerik: ayrik.includes("uyarilar") ? <AyrikYer id="uyarilar" /> : <UyariKuyrugu onToast={onToast} />,
+              },
               rapor: { baslik: "Yayın raporu", gosterBaslik: true, icerik: <YayinRaporu /> },
               karsilastirma: { baslik: "Yayınlar arası karşılaştırma", gosterBaslik: true, icerik: <YayinKarsilastirma /> },
               onizleme: {
@@ -570,7 +603,8 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
               ses: {
                 baslik: "Ses karıştırıcısı",
                 gosterBaslik: true,
-                icerik: obsBagli ? <SesKaristirici girisler={girisler} onSustur={(g) => void sustur(g)} onToast={onToast} /> : <ObsBos metin="Ses karıştırıcısı için OBS bağlı değil." onBagla={onObsBagla} />,
+                baslikEki: ayrik.includes("mikser") ? undefined : <AyirDugmesi id="mikser" />,
+                icerik: ayrik.includes("mikser") ? <AyrikYer id="mikser" /> : obsBagli ? <SesKaristirici girisler={girisler} onSustur={(g) => void sustur(g)} onToast={onToast} /> : <ObsBos metin="Ses karıştırıcısı için OBS bağlı değil." onBagla={onObsBagla} />,
               },
               hizli: {
                 baslik: "Hızlı işlem",
@@ -608,6 +642,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
                 {s === "sohbet" ? "Sohbet" : "Olaylar"}
               </button>
             ))}
+            {!ayrik.includes(sekme === "sohbet" ? "sohbet" : "etkinlik") && <AyirDugmesi id={sekme === "sohbet" ? "sohbet" : "etkinlik"} />}
           </div>
           {sabit && sekme === "sohbet" ? (
             <div className="mx-2 flex shrink-0 items-center gap-2 rounded-md border border-panel-border px-3 py-2 text-[13px]">
@@ -618,11 +653,17 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
           ) : null}
           {/* İkisi de bağlı kalır: sekme değişince liste ve filtreler kaybolmasın */}
           <div className={`flex min-h-0 flex-1 flex-col ${sekme === "sohbet" ? "" : "hidden"}`}>
-            <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
-              <AxBotHost onToast={onToast} tab="multichat" embed onOpenMusic={() => onBot("multichat")} />
-            </Suspense>
+            {ayrik.includes("sohbet") ? (
+              <AyrikYer id="sohbet" />
+            ) : (
+              <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
+                <AxBotHost onToast={onToast} tab="multichat" embed onOpenMusic={() => onBot("multichat")} />
+              </Suspense>
+            )}
           </div>
-          <div className={`custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2 ${sekme === "olaylar" ? "" : "hidden"}`}><ActivityFeedPanel onToast={onToast} /></div>
+          <div className={`custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2 ${sekme === "olaylar" ? "" : "hidden"}`}>
+            {ayrik.includes("etkinlik") ? <AyrikYer id="etkinlik" /> : <ActivityFeedPanel onToast={onToast} />}
+          </div>
         </aside>
       </div>
 

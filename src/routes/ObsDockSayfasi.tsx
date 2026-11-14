@@ -1,5 +1,6 @@
 /**
- * OBS özel tarayıcı dock'u: `/dock?id=sohbet|etkinlik|deste|yayinbilgisi|kontrol|muzik|sesler`. OBS Studio › Docklar
+ * OBS özel tarayıcı dock'u: `/dock?id=sohbet|etkinlik|deste|yayinbilgisi|kontrol|muzik|sesler|uyarilar|mikser`.
+ * Studio'nun ayrılabilir panelleri (U9, `lib/ayrikPanel`) de bu sayfayı ayrı pencerede açar. OBS Studio › Docklar
  * menüsünde görünür (OBS Studio sekmesi dock'ları OBS'in kullanıcı ayarına yazar). Veri ve eylemler ana panelle aynı
  * uçlardan gelir (izin + denetim sunucuda); dock yalnız görünümdür. Görünüm OBS'in koyu temasına uyar.
  */
@@ -9,6 +10,10 @@ import AxBotHost from "../components/panel/AxBotHost";
 import { DeckPanel } from "../components/control/DeckPanel";
 import { YayinBilgisiDock } from "../components/control/YayinBilgisiDock";
 import { API_BASE } from "../lib/api";
+import { actionsApi } from "../lib/api/actions";
+import { obsControl } from "../lib/obsControl";
+import { isAudioInput } from "../lib/obsAudio";
+import type { ObsInputInfo } from "../lib/obsControl";
 import "../styles/desktop.css";
 import "@fontsource/open-sans/400.css";
 import "@fontsource/open-sans/700.css";
@@ -17,8 +22,45 @@ import "../styles/obs-yami.css";
 const ControlCenter = lazy(() => import("../components/control/ControlCenter"));
 const MusicPanel = lazy(() => import("../components/panel/MusicPanel"));
 const SoundBoardPanel = lazy(() => import("../components/panel/SoundBoardPanel"));
+const UyariKuyrugu = lazy(() => import("../components/control/UyariKuyrugu"));
+const SesKaristirici = lazy(() => import("../components/control/SesKaristirici"));
 
-export const OBS_DOCKLARI = ["sohbet", "etkinlik", "deste", "yayinbilgisi", "kontrol", "muzik", "sesler"] as const;
+/** Mikser tek başına: girişleri Studio'dan okur, susturma eylem kayıt defterinden (Canlı ekranındakiyle aynı) */
+function MikserDock({ onToast }: { onToast: (m: string) => void }) {
+  const [girisler, setGirisler] = useState<ObsInputInfo[] | null>(null);
+  useEffect(() => {
+    let bitti = false;
+    const oku = async () => {
+      try {
+        const st = await obsControl.status();
+        const l = st.connected ? (await obsControl.inputs()).filter((i) => isAudioInput(i.kind, i.name)) : null;
+        if (!bitti) setGirisler(l);
+      } catch {
+        if (!bitti) setGirisler(null);
+      }
+    };
+    void oku();
+    const t = window.setInterval(() => void oku(), 2000);
+    return () => {
+      bitti = true;
+      window.clearInterval(t);
+    };
+  }, []);
+  const sustur = async (g: ObsInputInfo) => {
+    const hedef = !g.muted;
+    setGirisler((l) => l && l.map((i) => (i.name === g.name ? { ...i, muted: hedef } : i)));
+    try {
+      await actionsApi.run(hedef ? "audio.mute" : "audio.unmute", { input: g.name });
+    } catch (e) {
+      setGirisler((l) => l && l.map((i) => (i.name === g.name ? { ...i, muted: !hedef } : i)));
+      onToast(`${g.name}: ${String((e as Error).message || e).slice(0, 160)}`);
+    }
+  };
+  if (!girisler) return <p className="p-3 text-[12px] dt-soluk">Ses karıştırıcısı için OBS bağlı değil.</p>;
+  return <SesKaristirici girisler={girisler} onSustur={(g) => void sustur(g)} onToast={onToast} />;
+}
+
+export const OBS_DOCKLARI = ["sohbet", "etkinlik", "deste", "yayinbilgisi", "kontrol", "muzik", "sesler", "uyarilar", "mikser"] as const;
 export type ObsDockKimligi = (typeof OBS_DOCKLARI)[number];
 
 const AD: Record<ObsDockKimligi, string> = {
@@ -29,6 +71,8 @@ const AD: Record<ObsDockKimligi, string> = {
   kontrol: "Kontrol Merkezi",
   muzik: "Müzik",
   sesler: "Ses Paneli",
+  uyarilar: "Uyarı Kuyruğu",
+  mikser: "Ses Karıştırıcısı",
 };
 
 export function dockKimligi(arama: string): ObsDockKimligi {
@@ -77,6 +121,12 @@ export default function ObsDockSayfasi() {
       break;
     case "sesler":
       icerik = <SoundBoardPanel onToast={toast} />;
+      break;
+    case "uyarilar":
+      icerik = <UyariKuyrugu onToast={toast} />;
+      break;
+    case "mikser":
+      icerik = <MikserDock onToast={toast} />;
       break;
   }
 

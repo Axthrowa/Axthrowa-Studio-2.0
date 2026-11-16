@@ -61,6 +61,12 @@ export function hamSorgu(sql: string) {
     }
     return st;
   };
+  // Node 22'nin SQLite'ı şema değişince önbellekteki ifadeyi yeniden derlemez (`SELECT *` eski sütunlarla döner)
+  const asilExec = db.exec.bind(db);
+  (db as any).exec = (sql: string) => {
+    if (/\b(ALTER|DROP|CREATE)\b/i.test(sql)) onbellek.clear();
+    return asilExec(sql);
+  };
 }
 db.exec('PRAGMA optimize;');
 

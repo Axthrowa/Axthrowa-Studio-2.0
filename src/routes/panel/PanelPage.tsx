@@ -1735,11 +1735,21 @@ export default function PanelPage() {
     [prefs.locale]
   );
 
-  const sayfaAc = useCallback(({ nav: id, botSayfa, kip }: MenuSayfasi) => {
+  const sayfaAc = useCallback(({ nav: id, botSayfa, kip, bolum }: MenuSayfasi) => {
     setActiveNav(id);
     setBotSekme(botSayfa);
     // Rapor satırı yayın sonrası kipini, Kontrol satırı kendiliğinden kipi ister
     if (id === "control") setKipIstegi({ kip: kip ?? null, n: Date.now() });
+    // Bölüm satırı: rapor çizilince o bölüme kay (en çok 2 sn bekler)
+    if (bolum) {
+      let n = 0;
+      const kay = () => {
+        const e = document.getElementById(`rapor-${bolum}`);
+        if (e) e.scrollIntoView({ behavior: "smooth", block: "start" });
+        else if (++n < 20) setTimeout(kay, 100);
+      };
+      setTimeout(kay, 50);
+    }
     forceNavRef.current = null;
     if (id === "starting" || id === "ending" || id === "brb" || id === "chat") {
       setScreen(id);

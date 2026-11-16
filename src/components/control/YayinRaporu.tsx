@@ -1,6 +1,7 @@
 /** U7b: son biten yayının raporu: süre, zirve, izleyici eğrisi ve düşen kare (Yayın sonrası kipi). */
 import { useEffect, useState } from "react";
 import { spotifyYayinListesi } from "../../lib/api";
+import { axbotBase } from "../../lib/axbot";
 import { KlipDuzenleyici } from "./KlipDuzenleyici";
 import { TwitchKlipFormu } from "./TwitchKlipFormu";
 import { fetchDashboard, fmtDuration, markers, sessionReport, type Isaret, type OturumRaporu, type StreamSession } from "../../lib/api/botApi";
@@ -23,6 +24,49 @@ export function anMetni(ms: number | null): string | null {
   const d = Math.floor((sn % 3600) / 60);
   const iki = (n: number) => String(n).padStart(2, "0");
   return s ? `${s}:${iki(d)}:${iki(sn % 60)}` : `${d}:${iki(sn % 60)}`;
+}
+
+type Sarki = { zaman: number; ad: string };
+/** AxBoT yayın özetlerinden bu yayına ait olanın şarkıları: başlangıcı yayının başlangıcına 10 dk içinde en yakın özet */
+export function yayinSarkilari(ozetler: { baslangic: number; sarkilar?: Sarki[] }[], baslangic: number): Sarki[] {
+  let en: { fark: number; sarkilar: Sarki[] } | null = null;
+  for (const o of ozetler) {
+    const fark = Math.abs(o.baslangic - baslangic);
+    if (fark <= 600_000 && (!en || fark < en.fark)) en = { fark, sarkilar: o.sarkilar ?? [] };
+  }
+  return en?.sarkilar ?? [];
+}
+
+/** Yayında çalan şarkılar (AxBoT oturum şarkı geçmişi, R4) */
+function SarkiListesi({ baslangic }: { baslangic: number }) {
+  const [sarkilar, setSarkilar] = useState<Sarki[] | null>(null);
+  useEffect(() => {
+    let iptal = false;
+    void axbotBase()
+      .then((b) => fetch(`${b}/api/yayin-ozetleri`))
+      .then((r) => r.json())
+      .then((j: { ozetler?: { baslangic: number; sarkilar?: Sarki[] }[] }) => !iptal && setSarkilar(yayinSarkilari(j.ozetler ?? [], baslangic)))
+      .catch(() => !iptal && setSarkilar([]));
+    return () => {
+      iptal = true;
+    };
+  }, [baslangic]);
+  return (
+    <div id="rapor-sarkilar">
+      <p className="mb-1 text-[12px] font-medium text-white/90">Şarkı listesi ({sarkilar?.length ?? "…"})</p>
+      {sarkilar?.length ? (
+        <ol className="flex flex-col gap-0.5 text-[12px] tabular-nums">
+          {sarkilar.map((s, i) => (
+            <li key={i} data-ceviri="yok">
+              <span className="text-panel-muted">{new Date(s.zaman).toLocaleTimeString("tr-TR", { timeStyle: "short" })}</span> {s.ad}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        sarkilar && <p className="text-[12px] text-panel-muted">Bu yayında kaydedilen şarkı yok.</p>
+      )}
+    </div>
+  );
 }
 
 export function YayinRaporu() {
@@ -105,7 +149,8 @@ export function YayinRaporu() {
       ) : (
         <p className="text-[12px] text-panel-muted">İzleyici eğrisi için bu yayında örnek kaydedilmedi.</p>
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+        <div id="rapor-isaretler">
         <p className="mb-1 text-[12px] font-medium text-white/90">İşaretler ({isaretler.length})</p>
         {isaretler.length ? (
           <ul className="flex flex-col gap-1 text-[12px]">
@@ -132,6 +177,8 @@ export function YayinRaporu() {
         ) : (
           <p className="text-[12px] text-panel-muted">İşaret yok. Yayında "An işaretle" kısayolu, deste tuşu ya da sohbette !isaret ile eklenir.</p>
         )}
+        </div>
+        <SarkiListesi baslangic={oturum.started_at} />
       </div>
     </div>
   );

@@ -73,10 +73,10 @@ export function YayinKarsilastirma() {
 
   if (hata) return <p className="text-sm text-panel-muted">Yayınlar okunamadı: {hata}</p>;
   if (!satirlar) return null;
-  if (satirlar.length < 2) return <p className="text-sm text-panel-muted">Karşılaştırma için en az iki biten yayın gerekir.</p>;
+  if (satirlar.length < 2) return <p id="rapor-karsilastirma" className="text-sm text-panel-muted">Karşılaştırma için en az iki biten yayın gerekir.</p>;
   const en = enIyiDilim(satirlar);
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 text-[12px]">
+    <div id="rapor-karsilastirma" className="flex h-full min-h-0 flex-col gap-2 text-[12px]">
       {en && (
         <p className="text-panel-muted">
           En iyi dilim: <span className="font-medium text-white/90">{en.ad}</span> — ortalama {en.ort} izleyici ({en.yayin} yayın)

@@ -55,6 +55,11 @@ describe("ana menü (A2)", () => {
     expect(menuGrubuBul("control", undefined, "canli")).toBe("canli");
     expect(sayfaAcikMi(rapor, "control", undefined, "sonrasi")).toBe(true);
     expect(sayfaAcikMi({ nav: "control" }, "control", undefined, "sonrasi")).toBe(false);
+    // Faz 7 menüsü: bölüm satırları raporu açar, seçili görünen Rapor'dur
+    const sonrasi = ANA_MENU.find((g) => g.id === "sonrasi")!.sayfalar;
+    expect(sonrasi.map((x) => x.bolum ?? null)).toEqual([null, "isaretler", "sarkilar", "karsilastirma"]);
+    expect(sayfaAcikMi(sonrasi[1], "control", undefined, "sonrasi")).toBe(false);
+    expect(menuGrubuBul("control", undefined, "sonrasi")).toBe("sonrasi");
   });
 
   it("A2b: Yayın bilgisi Hazırlık'ta kendi sayfası, Ödüller Etkileşim'de", () => {

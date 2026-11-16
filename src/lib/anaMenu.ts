@@ -7,7 +7,9 @@ import type { MsgKey } from "../i18n/messages";
 import type { Kip } from "./canliYerlesim";
 import type { NavId } from "./panelLayout";
 
-export type MenuSayfasi = { nav: NavId; botSayfa?: string; adAnahtari?: MsgKey; kip?: Kip };
+/** Yayın sonrası raporunun bölümleri: menü satırı raporu açıp o bölüme kayar (`#rapor-<bölüm>`) */
+export type RaporBolumu = "isaretler" | "sarkilar" | "karsilastirma";
+export type MenuSayfasi = { nav: NavId; botSayfa?: string; adAnahtari?: MsgKey; kip?: Kip; bolum?: RaporBolumu };
 export type MenuGrubuId = "hazirlik" | "canli" | "sahne" | "etkilesim" | "bot" | "sonrasi" | "ayarlar";
 export type MenuGrubu = { id: MenuGrubuId; adAnahtari: MsgKey; sayfalar: MenuSayfasi[] };
 
@@ -51,7 +53,16 @@ export const ANA_MENU: MenuGrubu[] = [
     ],
   },
   { id: "bot", adAnahtari: "nav.bot", sayfalar: [{ nav: "bot", botSayfa: "commands" }] },
-  { id: "sonrasi", adAnahtari: "nav.grup.sonrasi", sayfalar: [{ nav: "control", kip: "sonrasi", adAnahtari: "nav.rapor" }] },
+  {
+    id: "sonrasi",
+    adAnahtari: "nav.grup.sonrasi",
+    sayfalar: [
+      { nav: "control", kip: "sonrasi", adAnahtari: "nav.rapor" },
+      { nav: "control", kip: "sonrasi", bolum: "isaretler", adAnahtari: "nav.isaretler" },
+      { nav: "control", kip: "sonrasi", bolum: "sarkilar", adAnahtari: "nav.sarkiListesi" },
+      { nav: "control", kip: "sonrasi", bolum: "karsilastirma", adAnahtari: "nav.karsilastirma" },
+    ],
+  },
   { id: "ayarlar", adAnahtari: "nav.grup.ayarlar", sayfalar: [{ nav: "settings" }, { nav: "hotkeys" }, { nav: "cihazlar" }] },
 ];
 
@@ -103,7 +114,8 @@ export function botSekmesiBul(botSayfa?: string): string {
 export function sayfaAcikMi(s: MenuSayfasi, nav: string, botSayfa?: string, kip?: Kip | null): boolean {
   if (ekranMi(s.nav)) return ekranMi(nav);
   if (s.nav !== nav) return false;
-  if (nav === "control") return (s.kip === "sonrasi") === (kip === "sonrasi");
+  // Bölüm satırları aynı sayfaya kayar; seçili görünen Rapor satırıdır
+  if (nav === "control") return !s.bolum && (s.kip === "sonrasi") === (kip === "sonrasi");
   if (nav !== "bot") return true;
   // Etkileşim ve hazırlık satırlarının her biri ayrı sayfa
   if (s.botSayfa && (ETKILESIM_SAYFALARI.includes(s.botSayfa) || HAZIRLIK_SAYFALARI.includes(s.botSayfa))) return s.botSayfa === botSayfa;

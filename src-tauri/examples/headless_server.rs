@@ -4,7 +4,7 @@
 //!   cargo run --example headless_server -- 18843
 //!   node scripts/ui-headless.mjs 18843 1421     (Vite, VITE_API_BASE bu sunucuya ayarlı)
 //!
-//! OBS'e otomatik bağlanma, tepsi, kısayollar ve AxBoT süreci BAŞLATILMAZ (yalnız `server::serve`).
+//! OBS'e otomatik bağlanma (STUDIO_HEADLESS_OBS=1 hariç), tepsi, kısayollar ve AxBoT süreci BAŞLATILMAZ (yalnız `server::serve`).
 
 use std::path::PathBuf;
 
@@ -27,6 +27,24 @@ async fn main() {
   // Windows medya oturumu yalnız okunur (R2 sınaması); STUDIO_HEADLESS_SMTC=0 kapatır
   if std::env::var("STUDIO_HEADLESS_SMTC").as_deref() != Ok("0") {
     tokio::spawn(axthrowa_studio_lib::smtc_poll_loop(state.clone()));
+  }
+  // STUDIO_HEADLESS_OBS=1: panel ayarındaki OBS bilgisiyle bağlanır (sahne eylemleri sınaması); olay akışı yok
+  if std::env::var("STUDIO_HEADLESS_OBS").as_deref() == Ok("1") {
+    let st = state.clone();
+    tokio::spawn(async move {
+      loop {
+        if !st.obs.is_connected() && !st.obs.is_connecting() {
+          let obs = st.settings.read().get(axthrowa_studio_lib::settings::ScreenKind::Panel).get("obs").cloned().unwrap_or_default();
+          let host = obs.get("host").and_then(|v| v.as_str()).unwrap_or("127.0.0.1").to_string();
+          let port = obs.get("port").and_then(|v| v.as_u64()).unwrap_or(4455) as u16;
+          let sifre = obs.get("password").and_then(|v| v.as_str()).unwrap_or("").to_string();
+          if let Err(e) = st.obs.connect(&host, port, &sifre).await {
+            eprintln!("OBS bağlantısı: {e}");
+          }
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+      }
+    });
   }
   if let Err(e) = axthrowa_studio_lib::server::serve(state).await {
     eprintln!("sunucu hatası: {e:#}");

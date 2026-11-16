@@ -143,25 +143,6 @@ pub struct WidgetInstance {
   pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct Goal {
-  pub id: String,
-  pub channel_id: String,
-  pub widget_id: Option<String>,
-  pub kind: String,
-  pub name: String,
-  pub current_value: f64,
-  pub target_value: f64,
-  pub start_value: f64,
-  pub ends_at: Option<i64>,
-  pub color: String,
-  pub gradient_to: Option<String>,
-  pub thickness: i64,
-  pub enabled: i64,
-  pub layout: String,
-  pub show_percent: i64,
-  pub schema_version: i64,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct BotSettings {
@@ -177,55 +158,8 @@ pub struct BotSettings {
   pub extras_json: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct BotCommand {
-  pub id: String,
-  pub channel_id: String,
-  pub name: String,
-  pub aliases_json: String,
-  pub response: String,
-  pub enabled: i64,
-  pub cooldown_sec: i64,
-  pub user_cooldown_sec: i64,
-  pub min_level: i64,
-  pub cost_points: i64,
-  pub platforms_json: String,
-  pub live_only: i64,
-  pub count_uses: i64,
-  pub extras_json: String,
-}
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct BotTimer {
-  pub id: String,
-  pub channel_id: String,
-  pub name: String,
-  pub message: String,
-  pub enabled: i64,
-  pub interval_sec: i64,
-  pub min_chat_lines: i64,
-  pub last_fired_at: Option<i64>,
-  pub lines_since: i64,
-}
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct BotFilters {
-  pub channel_id: String,
-  pub caps_enabled: i64,
-  pub caps_min_len: i64,
-  pub caps_ratio: f64,
-  pub long_msg_enabled: i64,
-  pub long_msg_max: i64,
-  pub links_enabled: i64,
-  pub symbols_enabled: i64,
-  pub symbols_max: i64,
-  pub blacklist_json: String,
-  pub action: String,
-  pub timeout_sec: i64,
-  pub exempt_level: i64,
-  pub strike_window_sec: i64,
-  pub strike_ladder_json: String,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct LoyaltySettings {
@@ -291,18 +225,6 @@ pub struct GameSettings {
   pub config_json: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct GameRound {
-  pub id: String,
-  pub channel_id: String,
-  pub game: String,
-  pub status: String,
-  pub pot: i64,
-  pub config_json: String,
-  pub result_json: String,
-  pub started_at: i64,
-  pub settled_at: Option<i64>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Integration {
@@ -314,14 +236,4 @@ pub struct Integration {
   pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct SoundboardPad {
-  pub id: String,
-  pub channel_id: String,
-  pub name: String,
-  pub file_path: String,
-  pub hotkey: Option<String>,
-  pub volume: f64,
-  pub sort_order: i64,
-}
 

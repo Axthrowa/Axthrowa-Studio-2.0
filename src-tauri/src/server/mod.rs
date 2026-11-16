@@ -26,6 +26,7 @@ pub mod asistan_api;
 pub(crate) use actions_api::{kisayol_eylemi, kisayol_kaydi};
 mod auth;
 mod bot_api;
+mod eski_widgetlar;
 mod control_plane;
 mod destek_api;
 mod dosya_adi;
@@ -201,6 +202,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
   // Bot modülü 2–8
   let mut api = api
     .merge(bot_api::router())
+    .merge(eski_widgetlar::router())
     .merge(runtime_api::router())
     .merge(multistream_api::router())
     .merge(discord_api::router())

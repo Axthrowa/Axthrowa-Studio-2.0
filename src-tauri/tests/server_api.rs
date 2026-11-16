@@ -1464,3 +1464,25 @@ async fn u7b_yayin_raporu_izleyici_egrisi_ve_dusen_kare() {
   assert_eq!(rapor["dusenKare"], 12);
   assert_eq!(rapor["toplamKare"], 6000);
 }
+
+/// WID-0: OBS'e eklenmiş eski Studio widget adresleri AxBoT'a yönlenir; Studio'ya özgü sayfalar yönlenmez
+#[tokio::test]
+async fn eski_widget_adresleri_bota_yonlenir() {
+  let h = start().await;
+  let c = reqwest::Client::builder().redirect(reqwest::redirect::Policy::none()).build().unwrap();
+  let bot = format!("http://127.0.0.1:{}", axthrowa_studio_lib::axbot::port());
+  for (eski, yeni) in [
+    ("/goal?kind=followers&obs=1", "/widgets/follower-goal?kind=followers&obs=1"),
+    ("/widgets/poll?obs=1", "/widgets/polls?obs=1"),
+    ("/overlay/widgets/wheel", "/widgets/wheel"),
+    ("/overlay/alerts", "/widgets/alertbox"),
+  ] {
+    let r = c.get(format!("{}{eski}", h.base)).send().await.unwrap();
+    assert_eq!(r.status(), 307, "{eski}");
+    assert_eq!(r.headers()["location"], format!("{bot}{yeni}").as_str(), "{eski}");
+  }
+  for kalan in ["/chat", "/widgets/altyazi", "/overlay/master", "/starting"] {
+    let r = c.get(format!("{}{kalan}", h.base)).send().await.unwrap();
+    assert_ne!(r.status(), 307, "{kalan} yönlenmemeli");
+  }
+}

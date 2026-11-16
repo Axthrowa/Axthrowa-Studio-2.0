@@ -15,7 +15,7 @@
     "dev:client": "npm run dev --workspace=client",
     "build": "npm run build --workspaces && npm run build:resonance",
     "start": "npm run start --workspace=server",
-    "build:resonance": "npm --prefix resonance run build"
+    "build:resonance": "npm --prefix ../resonance run build"
   },
   "keywords": [
     "axbot",

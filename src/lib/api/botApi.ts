@@ -251,13 +251,6 @@ export async function logBotEvent(body: {
 
 /** Modül 2–8 kısa istemci */
 export const botApi = {
-  alerts: () => json<{ alerts: unknown[] }>("/alerts"),
-  alertVariants: () => json<{ variants: unknown[] }>("/alerts/variants"),
-  putAlertVariants: (variants: unknown[]) =>
-    json<{ variants: unknown[] }>("/alerts/variants", {
-      method: "PUT",
-      body: JSON.stringify({ variants }),
-    }),
   seedAlerts: () => raw("/alerts/seed", { method: "POST" }),
   testAlert: (body: {
     kind?: string;
@@ -276,62 +269,13 @@ export const botApi = {
         amount: body.amount,
       }),
     }),
-  goals: () => json<{ goals: unknown[] }>("/goals"),
-  commands: () => json<{ commands: unknown[] }>("/commands"),
-  createCommand: (body: Record<string, unknown>) =>
-    json<unknown>("/commands", { method: "POST", body: JSON.stringify(body) }),
-  updateCommand: (body: Record<string, unknown>) =>
-    json<unknown>("/commands", { method: "PUT", body: JSON.stringify(body) }),
-  deleteCommand: (id: string) =>
-    raw(`/commands?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
-  timers: () => json<{ timers: unknown[] }>("/timers"),
-  upsertTimer: (body: Record<string, unknown>) =>
-    json<unknown>("/timers", { method: "POST", body: JSON.stringify(body) }),
-  deleteTimer: (id: string) =>
-    raw(`/timers?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
-  loyaltyUsers: (limit = 50) =>
-    json<{ users: unknown[] }>(`/loyalty/users?limit=${limit}`),
-  loyaltySettings: () => json<Record<string, unknown>>("/loyalty/settings"),
-  putLoyaltySettings: (body: Record<string, unknown>) =>
-    json<Record<string, unknown>>("/loyalty/settings", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
   loyaltyTick: () =>
     json<{
       ticked: boolean;
       users_updated?: number;
       reason?: string;
     }>("/loyalty/tick", { method: "POST" }),
-  resetLoyalty: (body: { points: boolean; levels: boolean }) =>
-    json<{ ok: boolean; updated: number }>("/loyalty/reset", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
   botSettings: () => json<Record<string, unknown>>("/bot-settings"),
-  putBotSettings: (body: Record<string, unknown>) =>
-    json<Record<string, unknown>>("/bot-settings", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  shop: () => json<{ items: unknown[] }>("/shop"),
-  upsertShop: (body: Record<string, unknown>) =>
-    json<unknown>("/shop", { method: "POST", body: JSON.stringify(body) }),
-  deleteShop: (id: string) =>
-    raw(`/shop?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
-  filters: () => json<Record<string, unknown>>("/filters"),
-  putFilters: (body: Record<string, unknown>) =>
-    json<Record<string, unknown>>("/filters", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  gamesSettings: () => json<unknown>("/games/settings"),
-  putGamesSettings: (body: Record<string, unknown>) =>
-    json<unknown>("/games/settings", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  heistStart: () => raw("/games/heist/start", { method: "POST" }),
   remoteSetup: (username: string, password: string) =>
     json<{ ok?: boolean; user_id?: string }>("/remote/setup", {
       method: "POST",
@@ -342,15 +286,6 @@ export const botApi = {
       method: "POST",
       body: JSON.stringify({ username, password }),
     }),
-  remoteLogout: () => {
-    const token = localStorage.getItem("studio.bot.remoteToken");
-    return raw("/remote/logout", {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: JSON.stringify(token ? { token } : {}),
-    });
-  },
-  remoteUsers: () => json<{ users: unknown[] }>("/remote/users"),
   /** T8: tek kullanımlık eşleştirme kodu (yalnız bu bilgisayardan) */
   eslestirmeBaslat: (izinler: string[]) =>
     json<{ kod: string; gecerlilikSn: number; izinler: string[]; adres: string | null }>("/remote/eslestirme", { method: "POST", body: JSON.stringify({ izinler }) }),
@@ -358,37 +293,6 @@ export const botApi = {
     json<{ token: string; izinler: string[]; cihaz: string }>("/remote/eslestirme/tamamla", { method: "POST", body: JSON.stringify({ kod, cihaz }) }),
   cihazlar: () => json<{ cihazlar: EslesmisCihaz[] }>("/remote/cihazlar"),
   cihazSil: (id: string) => json<{ ok: boolean }>("/remote/cihazlar/sil", { method: "POST", body: JSON.stringify({ id }) }),
-  upsertRemoteUser: (body: Record<string, unknown>) =>
-    json<unknown>("/remote/users", { method: "POST", body: JSON.stringify(body) }),
-  deleteRemoteUser: (id: string) =>
-    json<{ ok: boolean }>("/remote/users/delete", {
-      method: "POST",
-      body: JSON.stringify({ id }),
-    }),
-  remoteTriggerAlert: (body: Record<string, unknown>) => {
-    const token = localStorage.getItem("studio.bot.remoteToken");
-    return raw("/remote/alerts/trigger", {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: JSON.stringify(body),
-    });
-  },
-  remoteChatSend: (text: string) => {
-    const token = localStorage.getItem("studio.bot.remoteToken");
-    return raw("/remote/chat/send", {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: JSON.stringify({ text }),
-    });
-  },
-  remoteObsScene: (scene: string) => {
-    const token = localStorage.getItem("studio.bot.remoteToken");
-    return raw("/remote/obs/scene", {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: JSON.stringify({ scene }),
-    });
-  },
   discordTest: () => raw("/integrations/discord/test", { method: "POST" }),
   eskiPaneliAktar: (force = false) =>
     raw(`/sync/eski-panel?force=${force ? 1 : 0}`, { method: "POST" }),

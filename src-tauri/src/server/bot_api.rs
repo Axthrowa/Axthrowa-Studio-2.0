@@ -3,7 +3,7 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::extract::{ConnectInfo, Path, Query, State};
+use axum::extract::{ConnectInfo, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -15,22 +15,11 @@ use crate::AppState;
 pub fn router() -> Router<Arc<AppState>> {
   Router::new()
     // Alerts
-    .route("/api/bot/alerts", get(api_alerts_get).put(api_alerts_put))
     .route("/api/bot/alerts/seed", post(api_alerts_seed))
     .route("/api/bot/alerts/test", post(api_alerts_test))
-    .route("/api/bot/alerts/queue", get(api_alerts_queue))
-    .route(
-      "/api/bot/alerts/variants",
-      get(api_alert_variants_get).put(api_alert_variants_put),
-    )
     // Widgets / Goals
-    .route(
-      "/api/bot/goals",
-      get(api_goals_get).post(api_goals_post).patch(api_goals_patch),
-    )
     .route("/api/bot/widgets", get(api_widgets_get).post(api_widgets_post))
     .route("/api/bot/widgets/seed", post(api_widgets_seed))
-    .route("/api/bot/widgets/test", post(api_widgets_test))
     .route(
       "/api/bot/widgets/{id}/config",
       axum::routing::put(api_widgets_patch_config).patch(api_widgets_patch_config),
@@ -38,73 +27,14 @@ pub fn router() -> Router<Arc<AppState>> {
     .route("/api/bot/widgets/{id}", axum::routing::delete(api_widgets_delete))
     // Chatbot
     .route(
-      "/api/bot/commands",
-      get(api_commands_get)
-        .post(api_commands_post)
-        .put(api_commands_put)
-        .delete(api_commands_delete),
-    )
-    .route(
-      "/api/bot/timers",
-      get(api_timers_get)
-        .post(api_timers_post)
-        .put(api_timers_put)
-        .delete(api_timers_delete),
-    )
-    .route("/api/bot/filters", get(api_filters_get).put(api_filters_put))
-    .route(
       "/api/bot/bot-settings",
-      get(api_bot_settings_get).put(api_bot_settings_put),
-    )
-    .route("/api/bot/bot/console", get(api_bot_console))
-    .route(
-      "/api/bot/settings/kick",
-      get(api_kick_settings_get)
-        .post(api_kick_settings_post)
-        .delete(api_kick_settings_delete),
-    )
-    .route(
-      "/api/bot/settings/kick/status",
-      get(api_kick_settings_status),
+      get(api_bot_settings_get),
     )
     .route("/api/bot/sync/eski-panel", post(api_eski_paneli_aktar))
     // Loyalty
-    .route("/api/bot/loyalty/users", get(api_loyalty_users))
-    .route(
-      "/api/bot/loyalty/settings",
-      get(api_loyalty_settings_get).put(api_loyalty_settings_put),
-    )
-    .route(
-      "/api/bot/shop",
-      get(api_shop_get)
-        .post(api_shop_post)
-        .put(api_shop_put)
-        .delete(api_shop_delete),
-    )
-    .route("/api/bot/loyalty/adjust", post(api_loyalty_adjust))
     .route("/api/bot/loyalty/tick", post(api_loyalty_tick))
-    .route("/api/bot/loyalty/reset", post(api_loyalty_reset))
-    // Games
-    .route(
-      "/api/bot/games/settings",
-      get(api_games_settings_get).put(api_games_settings_put),
-    )
-    .route("/api/bot/games/heist/start", post(api_heist_start))
-    .route("/api/bot/games/heist/join", post(api_heist_join))
-    .route("/api/bot/games/heist/settle", post(api_heist_settle))
-    .route("/api/bot/games/duel", post(api_duel))
-    .route("/api/bot/games/roulette", post(api_roulette))
-    .route("/api/bot/games/8ball", post(api_eightball))
     // Integrations — spesifik path önce
     .route("/api/bot/integrations/discord/test", post(api_discord_test))
-    .route(
-      "/api/bot/integrations/{provider}",
-      get(api_integration_get).put(api_integration_put),
-    )
-    .route(
-      "/api/bot/soundboard",
-      get(api_soundboard_get).post(api_soundboard_post),
-    )
     // Remote
     .route("/api/bot/remote/setup", post(api_remote_setup))
     .route("/api/bot/remote/login", post(api_remote_login))
@@ -115,18 +45,6 @@ pub fn router() -> Router<Arc<AppState>> {
       get(api_remote_users_list).post(api_remote_users_upsert),
     )
     .route("/api/bot/remote/users/delete", post(api_remote_users_delete))
-    .route(
-      "/api/bot/remote/panel/dashboard",
-      get(api_remote_dashboard),
-    )
-    .route(
-      "/api/bot/remote/panel/commands",
-      get(api_remote_commands_get).post(api_remote_commands_post),
-    )
-    .route("/api/bot/remote/alerts/trigger", post(api_remote_alert_trigger))
-    .route("/api/bot/remote/chat/send", post(api_remote_chat_send))
-    .route("/api/bot/remote/obs/scene", post(api_remote_obs_scene))
-    .route("/api/bot/remote/settings/patch", post(api_remote_settings_patch))
 }
 
 fn map_err(e: anyhow::Error) -> (StatusCode, String) {
@@ -176,20 +94,6 @@ async fn require_remote(
     .map_err(map_err)
 }
 
-async fn require_remote_perm(
-  state: &AppState,
-  headers: &HeaderMap,
-  perm: &str,
-) -> Result<crate::db::bot_api::RemoteAuthInfo, (StatusCode, String)> {
-  let info = require_remote(state, headers).await?;
-  if !crate::db::bot_api::remote_has_perm(&info, perm) {
-    return Err((
-      StatusCode::FORBIDDEN,
-      format!("Yetki yok: {perm}"),
-    ));
-  }
-  Ok(info)
-}
 
 fn ok_json<T: serde::Serialize>(v: T) -> Json<Value> {
   Json(serde_json::to_value(v).unwrap_or(Value::Null))
@@ -197,30 +101,7 @@ fn ok_json<T: serde::Serialize>(v: T) -> Json<Value> {
 
 // ─── Alerts ───────────────────────────────────────────────────────────
 
-async fn api_alerts_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_alerts(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "alerts": rows })))
-}
 
-async fn api_alerts_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let items = body
-    .get("alerts")
-    .and_then(|v| v.as_array())
-    .cloned()
-    .or_else(|| body.as_array().cloned())
-    .unwrap_or_else(|| vec![body]);
-  let rows = crate::db::bot_api::upsert_alerts(&state.db, &items)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "alerts": rows })))
-}
 
 async fn api_alerts_seed(
   State(state): State<Arc<AppState>>,
@@ -281,75 +162,13 @@ async fn api_alerts_test(
   Ok(Json(json!({ "queue": item, "broadcast": ws })))
 }
 
-async fn api_alerts_queue(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_alert_queue(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "queue": rows })))
-}
 
-async fn api_alert_variants_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::alerts::list_alert_variants(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "variants": rows })))
-}
 
-async fn api_alert_variants_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let items = body
-    .get("variants")
-    .and_then(|v| v.as_array())
-    .cloned()
-    .or_else(|| body.as_array().cloned())
-    .unwrap_or_else(|| vec![body]);
-  let rows = crate::db::alerts::upsert_alert_variants(
-    &state.db,
-    &items,
-    &state.data_dir,
-    &state.base_url(),
-  )
-  .await
-  .map_err(map_err)?;
-  Ok(Json(json!({ "variants": rows })))
-}
 
 // ─── Goals / Widgets ──────────────────────────────────────────────────
 
-async fn api_goals_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_goals(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "goals": rows })))
-}
 
-async fn api_goals_post(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::create_goal(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_goals_patch(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::patch_goal(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
 async fn api_widgets_get(
   State(state): State<Arc<AppState>>,
@@ -437,396 +256,19 @@ async fn api_widgets_seed(
 }
 
 /// Panel “Test Et” — overlay-sync üzerinden sahte olay yayınla.
-async fn api_widgets_test(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let kind = body
-    .get("kind")
-    .and_then(|v| v.as_str())
-    .unwrap_or("cup")
-    .to_ascii_lowercase();
-  let event = body
-    .get("event")
-    .and_then(|v| v.as_str())
-    .map(|s| s.to_ascii_lowercase());
-  let now = crate::db::chrono_now();
-  let mut broadcast = 0usize;
-
-  let push_alert = |st: &AppState, ev_kind: &str, user: &str, message: &str, amount: Value| -> usize {
-    let ev = json!({
-      "id": uuid::Uuid::new_v4().to_string(),
-      "kind": ev_kind,
-      "user": user,
-      "message": message,
-      "amount": amount,
-      "platform": "test",
-      "t": now,
-    });
-    st.broadcast_json(&json!({
-      "type": "settings",
-      "screen": "panel",
-      "data": { "_widgetEvent": ev }
-    }));
-    st.broadcast_json(&json!({ "type": "trigger_alert", "data": ev.clone() }));
-    st.broadcast_json(&json!({
-      "type": "widget-test",
-      "widgetKind": kind,
-      "data": ev.clone()
-    }));
-    let subathon_type = match ev_kind {
-      "follow" => Some("new_follow"),
-      "sub" => Some("new_sub"),
-      "tip" | "donation" => Some("new_donation"),
-      "raid" => Some("new_kick"),
-      _ => None,
-    };
-    if let Some(evt_type) = subathon_type {
-      st.broadcast_json(&json!({
-        "type": evt_type,
-        "user": user,
-        "message": message,
-        "amount": amount,
-        "platform": "test",
-        "t": now,
-        "data": ev
-      }));
-      return 4;
-    }
-    3
-  };
-
-  let push_chat = |st: &AppState, text: &str, user: &str| {
-    let msg = json!({
-      "type": "chat-message",
-      "platform": "test",
-      "user": user,
-      "user_key": format!("test:{user}"),
-      "text": text,
-      "badges": ["subscriber"],
-      "is_mod": false,
-      "is_vip": false,
-      "is_sub": true,
-      "color": "#3ECFCF",
-      "id": uuid::Uuid::new_v4().to_string(),
-      "t": now,
-    });
-    st.broadcast_json(&msg);
-    st.broadcast_json(&json!({
-      "type": "widget-test",
-      "widgetKind": kind,
-      "data": msg
-    }));
-  };
-
-  if let Some(ev) = event.as_deref() {
-    match ev {
-      "chat" | "message" => {
-        let text = if kind == "emotewall" || kind == "emotecombo" {
-          "🔥 😂 ✨ 🎉 TEST EMOTE"
-        } else {
-          "Merhaba! Bu bir widget test mesajı."
-        };
-        push_chat(state.as_ref(), text, "TestUser");
-        broadcast += 2;
-      }
-      "tip" | "donation" => {
-        broadcast += push_alert(state.as_ref(), "tip", "TestDonor", "Test bağışı!", json!(100));
-      }
-      "sub" => {
-        broadcast += push_alert(state.as_ref(), "sub", "TestSub", "Test abone!", Value::Null);
-      }
-      "follow" => {
-        broadcast += push_alert(state.as_ref(), "follow", "TestFollower", "", Value::Null);
-      }
-      "kick" | "host" | "raid" => {
-        state.broadcast_json(&serde_json::json!({
-          "type": "new_kick",
-          "user": "TestKick",
-          "message": "Kick / host test",
-          "platform": "test",
-          "t": now,
-          "data": {
-            "kind": "kick",
-            "user": "TestKick",
-            "message": "Kick / host test",
-            "platform": "test",
-            "t": now,
-          }
-        }));
-        broadcast += push_alert(state.as_ref(), "raid", "TestKick", "Kick test", Value::Null);
-      }
-      "bits" => {
-        broadcast += push_alert(state.as_ref(), "bits", "TestCheerer", "Cheer test!", json!(500));
-      }
-      "vote" => {
-        push_chat(state.as_ref(), "!oy 1", "TestVoter");
-        broadcast += 2;
-      }
-      "goal_bump" | "goal-bump" => {
-        let mut bump = body
-          .get("amount")
-          .and_then(|v| v.as_f64())
-          .unwrap_or(0.0);
-        if bump <= 0.0 {
-          bump = 15.0;
-          if let Ok(cid) = crate::db::default_channel_id(&state.db).await {
-            if let Ok(Some((cfg_text,))) = sqlx::query_as::<_, (String,)>(
-              "SELECT config_json FROM widget_instances
-               WHERE channel_id = ? AND kind IN ('goal','goals') AND enabled = 1
-               ORDER BY sort_order LIMIT 1",
-            )
-            .bind(&cid)
-            .fetch_optional(&state.db)
-            .await
-            {
-              if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&cfg_text) {
-                let target = cfg.get("target").and_then(|v| v.as_f64()).unwrap_or(100.0).max(1.0);
-                let start = cfg
-                  .get("startValue")
-                  .or_else(|| cfg.get("start"))
-                  .and_then(|v| v.as_f64())
-                  .unwrap_or(0.0);
-                bump = ((target - start).max(1.0) * 0.15).max(5.0);
-              }
-            }
-          }
-        }
-        match crate::db::widgets::bump_goal_widget_current(&state.db, bump, false).await {
-          Ok(rows) => {
-            for (_id, cur, target, completed) in &rows {
-              state.broadcast_json(&serde_json::json!({
-                "type": "goal-update",
-                "amount": bump,
-                "current": cur,
-                "target": target,
-                "t": now,
-              }));
-              state.broadcast_json(&serde_json::json!({
-                "type": "config_updated",
-                "kind": "goal",
-                "t": now,
-              }));
-              if *completed {
-                state.broadcast_json(&serde_json::json!({
-                  "type": "widget-bus",
-                  "from": "goal",
-                  "action": "goal.complete",
-                  "payload": { "current": cur, "target": target, "user": "Test" },
-                  "t": now,
-                }));
-                broadcast += 3;
-              } else {
-                broadcast += 2;
-              }
-            }
-          }
-          Err(e) => studio_warn!("[widgets/test] goal_bump: {e:#}"),
-        }
-        return Ok(Json(json!({
-          "ok": true,
-          "kind": kind,
-          "event": ev,
-          "broadcast": broadcast,
-          "bump": bump,
-        })));
-      }
-      "sfx_test" => {
-        state.broadcast_json(&serde_json::json!({
-          "type": "widget-sfx-test",
-          "preset": "coin",
-          "volume": 0.75,
-          "t": now,
-        }));
-        broadcast += 1;
-        return Ok(Json(json!({
-          "ok": true,
-          "kind": kind,
-          "event": ev,
-          "broadcast": broadcast,
-        })));
-      }
-      _ => {
-        broadcast += push_alert(
-          state.as_ref(),
-          "tip",
-          "TestUser",
-          &format!("test:{ev}"),
-          json!(100),
-        );
-      }
-    }
-
-    return Ok(Json(json!({
-      "ok": true,
-      "kind": kind,
-      "event": ev,
-      "broadcast": broadcast,
-    })));
-  }
-
-  match kind.as_str() {
-    "chat" | "emotewall" | "emotecombo" => {
-      let text = if kind == "emotewall" || kind == "emotecombo" {
-        "🔥 🔥 🔥 TEST EMOTE"
-      } else {
-        "Merhaba! Bu bir widget test mesajı."
-      };
-      push_chat(state.as_ref(), text, "TestUser");
-      broadcast += 2;
-    }
-    "cup" | "glass" | "subathon" | "hypetrain" | "hype" | "activity" => {
-      broadcast += push_alert(state.as_ref(), "tip", "TestDonor", "Test bağışı!", json!(100));
-      broadcast += push_alert(state.as_ref(), "sub", "TestSub", "Test abone!", Value::Null);
-    }
-    "goal" | "goals" | "viewers" | "labels" => {
-      broadcast += push_alert(state.as_ref(), "follow", "TestFollower", "", Value::Null);
-      broadcast += push_alert(state.as_ref(), "tip", "TestDonor", "100", json!(100));
-    }
-    "shoutout" | "shoutouts" => {
-      push_chat(state.as_ref(), "!so @TestStreamer", "ModUser");
-      broadcast += 2;
-    }
-    "wheel" | "fortunewheel" | "poll" | "polls" | "raffles" | "giveaway" => {
-      let cmd = match kind.as_str() {
-        "poll" | "polls" => "!oy 1",
-        "raffles" | "giveaway" => "!katil",
-        _ => "!cark",
-      };
-      push_chat(state.as_ref(), cmd, "TestUser");
-      broadcast += 2;
-    }
-    "tts" | "cloudtts" | "credits" | "moviecredits" => {
-      push_alert(state.as_ref(), "tip", "TestDonor", "Sesli test mesajı", json!(50));
-      broadcast += 3;
-    }
-    _ => {
-      broadcast += push_alert(
-        state.as_ref(),
-        "tip",
-        "TestUser",
-        &format!("test:{kind}"),
-        json!(100),
-      );
-    }
-  }
-
-  Ok(Json(json!({
-    "ok": true,
-    "kind": kind,
-    "broadcast": broadcast,
-  })))
-}
 
 // ─── Chatbot ──────────────────────────────────────────────────────────
 
-async fn api_commands_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_commands(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "commands": rows })))
-}
 
-async fn api_commands_post(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::upsert_command(&state.db, &body, true)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_commands_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::upsert_command(&state.db, &body, false)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-#[derive(Deserialize)]
-struct IdQuery {
-  id: Option<String>,
-}
 
-async fn api_commands_delete(
-  State(state): State<Arc<AppState>>,
-  Query(q): Query<IdQuery>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let id = q
-    .id
-    .ok_or((StatusCode::BAD_REQUEST, "id gerekli".into()))?;
-  let ok = crate::db::bot_api::delete_command(&state.db, &id)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "deleted": ok })))
-}
 
-async fn api_timers_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_timers(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "timers": rows })))
-}
 
-async fn api_timers_post(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::upsert_timer(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_timers_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::upsert_timer(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_timers_delete(
-  State(state): State<Arc<AppState>>,
-  Query(q): Query<IdQuery>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let id = q
-    .id
-    .ok_or((StatusCode::BAD_REQUEST, "id gerekli".into()))?;
-  let ok = crate::db::bot_api::delete_timer(&state.db, &id)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "deleted": ok })))
-}
 
-async fn api_filters_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::get_filters(&state.db)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_filters_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::put_filters(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
 async fn api_bot_settings_get(
   State(state): State<Arc<AppState>>,
@@ -837,105 +279,16 @@ async fn api_bot_settings_get(
     .map_err(map_err)
 }
 
-async fn api_bot_console(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let lines = state.bot_activity.snapshot(120);
-  Ok(Json(json!({ "lines": lines })))
-}
 
-async fn api_bot_settings_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::put_bot_settings(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-#[derive(Deserialize)]
-struct KickSettingsBody {
-  #[serde(alias = "username", alias = "slug", alias = "channel")]
-  username: Option<String>,
-  #[serde(default, alias = "chatroom_id", alias = "chatroomId")]
-  chatroom_id: Option<u64>,
-}
 
 /// GET /api/bot/settings/kick — kayıtlı kullanıcı + canlı durum
-async fn api_kick_settings_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  Ok(Json(state.kick_chat.status_json()))
-}
 
 /// GET /api/bot/settings/kick/status — canlı Pusher bağlı mı?
-async fn api_kick_settings_status(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  Ok(Json(state.kick_chat.status_json()))
-}
 
 /// POST /api/bot/settings/kick — kaydet + WebSocket’i hemen başlat
-async fn api_kick_settings_post(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<KickSettingsBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let username = body
-    .username
-    .as_deref()
-    .map(str::trim)
-    .filter(|s| !s.is_empty())
-    .ok_or_else(|| {
-      (
-        StatusCode::BAD_REQUEST,
-        "username gerekli (Kick kullanıcı adı)".into(),
-      )
-    })?;
-
-  studio_log!(
-    "[api] Kick bağlan isteği: {username} chatroom={:?}",
-    body.chatroom_id
-  );
-  let status = state
-    .kick_chat
-    .connect_with_chatroom(state.as_ref().clone(), username, body.chatroom_id)
-    .await
-    .map_err(map_err)?;
-
-  // Panel sohbetBot.channelName ile senkron
-  {
-    use crate::settings::ScreenKind;
-    let mut settings = state.settings.write();
-    let mut panel = settings.get(ScreenKind::Panel).clone();
-    if let Some(obj) = panel.as_object_mut() {
-      let smart = obj
-        .entry("sohbetBot".to_string())
-        .or_insert_with(|| json!({}));
-      if let Some(sb) = smart.as_object_mut() {
-        sb.insert("channelName".into(), json!(username));
-      }
-      obj.insert("kickChannel".into(), json!(username));
-    }
-    settings.set(ScreenKind::Panel, panel);
-    let _ = settings.save_one(&state.data_dir, ScreenKind::Panel);
-  }
-
-  Ok(Json(status))
-}
 
 /// DELETE /api/bot/settings/kick — Pusher bağlantısını kes
-async fn api_kick_settings_delete(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  state.kick_chat.disconnect();
-  let _ = crate::bot::kick_chat::clear_kick_slug(&state.db).await;
-  Ok(Json(json!({
-    "ok": true,
-    "connected": false,
-    "username": serde_json::Value::Null,
-  })))
-}
 
 #[derive(Deserialize)]
 struct SyncQuery {
@@ -960,108 +313,17 @@ async fn api_eski_paneli_aktar(
 
 // ─── Loyalty ──────────────────────────────────────────────────────────
 
-#[derive(Deserialize)]
-struct LimitQuery {
-  #[serde(default = "default_loyalty_limit")]
-  limit: i64,
-}
 
-fn default_loyalty_limit() -> i64 {
-  50
-}
 
-async fn api_loyalty_users(
-  State(state): State<Arc<AppState>>,
-  Query(q): Query<LimitQuery>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_loyalty_users(&state.db, q.limit)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "users": rows })))
-}
 
-async fn api_loyalty_settings_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::get_loyalty_settings(&state.db)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_loyalty_settings_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::put_loyalty_settings(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_shop_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_shop(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "items": rows })))
-}
 
-async fn api_shop_post(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::upsert_shop_item(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_shop_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::upsert_shop_item(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_shop_delete(
-  State(state): State<Arc<AppState>>,
-  Query(q): Query<IdQuery>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let id = q
-    .id
-    .ok_or((StatusCode::BAD_REQUEST, "id gerekli".into()))?;
-  let ok = crate::db::bot_api::delete_shop_item(&state.db, &id)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "deleted": ok })))
-}
 
-#[derive(Deserialize)]
-struct AdjustBody {
-  user_key: String,
-  delta: i64,
-  #[serde(default = "default_reason")]
-  reason: String,
-}
 
-fn default_reason() -> String {
-  "manual".into()
-}
 
-async fn api_loyalty_adjust(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<AdjustBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::adjust_loyalty(&state.db, &body.user_key, body.delta, &body.reason)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
 async fn api_loyalty_tick(
   State(state): State<Arc<AppState>>,
@@ -1072,175 +334,25 @@ async fn api_loyalty_tick(
     .map_err(map_err)
 }
 
-#[derive(Deserialize)]
-struct LoyaltyResetBody {
-  #[serde(default)]
-  points: bool,
-  #[serde(default)]
-  levels: bool,
-}
 
-async fn api_loyalty_reset(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<LoyaltyResetBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let updated = crate::db::bot_api::reset_loyalty(&state.db, body.points, body.levels)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "ok": true, "updated": updated })))
-}
 
 // ─── Games ────────────────────────────────────────────────────────────
 
-async fn api_games_settings_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::get_game_settings(&state.db)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_games_settings_put(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::put_game_settings(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_heist_start(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::heist_start(&state.db)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-#[derive(Deserialize)]
-struct HeistJoinBody {
-  user_key: String,
-  user_name: String,
-  amount: i64,
-}
 
-async fn api_heist_join(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<HeistJoinBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::heist_join(
-    &state.db,
-    &body.user_key,
-    &body.user_name,
-    body.amount,
-  )
-  .await
-  .map(Json)
-  .map_err(map_err)
-}
 
-async fn api_heist_settle(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::heist_settle(&state.db)
-    .await
-    .map(Json)
-    .map_err(map_err)
-}
 
-#[derive(Deserialize)]
-struct DuelBody {
-  a_key: String,
-  a_name: String,
-  b_key: String,
-  b_name: String,
-  amount: i64,
-}
 
-async fn api_duel(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<DuelBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::duel(
-    &state.db,
-    &body.a_key,
-    &body.a_name,
-    &body.b_key,
-    &body.b_name,
-    body.amount,
-  )
-  .await
-  .map(Json)
-  .map_err(map_err)
-}
 
-#[derive(Deserialize)]
-struct RouletteBody {
-  user_key: Option<String>,
-  bet: Option<i64>,
-  choice: Option<String>,
-}
 
-async fn api_roulette(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<RouletteBody>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::roulette(
-    &state.db,
-    body.user_key.as_deref(),
-    body.bet,
-    body.choice.as_deref(),
-  )
-  .await
-  .map(Json)
-  .map_err(map_err)
-}
 
-#[derive(Deserialize)]
-struct EightBody {
-  user_key: Option<String>,
-  cost: Option<i64>,
-}
 
-async fn api_eightball(
-  State(state): State<Arc<AppState>>,
-  body: Option<Json<EightBody>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let b = body.map(|Json(v)| v).unwrap_or(EightBody {
-    user_key: None,
-    cost: None,
-  });
-  crate::db::bot_api::eightball(&state.db, b.user_key.as_deref(), b.cost)
-    .await
-    .map(Json)
-    .map_err(map_err)
-}
 
 // ─── Integrations ─────────────────────────────────────────────────────
 
-async fn api_integration_get(
-  State(state): State<Arc<AppState>>,
-  Path(provider): Path<String>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::get_integration(&state.db, &provider)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_integration_put(
-  State(state): State<Arc<AppState>>,
-  Path(provider): Path<String>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::put_integration(&state.db, &provider, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
 async fn api_discord_test(
   State(state): State<Arc<AppState>>,
@@ -1251,24 +363,7 @@ async fn api_discord_test(
     .map_err(map_err)
 }
 
-async fn api_soundboard_get(
-  State(state): State<Arc<AppState>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let rows = crate::db::bot_api::list_soundboard(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "pads": rows })))
-}
 
-async fn api_soundboard_post(
-  State(state): State<Arc<AppState>>,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  crate::db::bot_api::upsert_soundboard(&state.db, &body)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
 // ─── Remote ───────────────────────────────────────────────────────────
 
@@ -1382,47 +477,8 @@ async fn api_remote_logout(
   Ok(Json(json!({ "ok": true })))
 }
 
-async fn api_remote_dashboard(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let _ = require_remote_perm(&state, &headers, "dashboard").await?;
-  crate::db::profile::dashboard(&state.db)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
-async fn api_remote_commands_get(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let _ = require_remote_perm(&state, &headers, "commands").await?;
-  let rows = crate::db::bot_api::list_commands(&state.db)
-    .await
-    .map_err(map_err)?;
-  Ok(Json(json!({ "commands": rows })))
-}
 
-async fn api_remote_commands_post(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let _ = require_remote_perm(&state, &headers, "commands").await?;
-  let limited = json!({
-    "id": body.get("id"),
-    "name": body.get("name"),
-    "response": body.get("response").cloned().unwrap_or(json!("")),
-    "enabled": body.get("enabled").cloned().unwrap_or(json!(true)),
-    "aliases": body.get("aliases").cloned().unwrap_or(json!([])),
-    "cooldown_sec": body.get("cooldown_sec").cloned().unwrap_or(json!(5)),
-  });
-  crate::db::bot_api::upsert_command(&state.db, &limited, true)
-    .await
-    .map(ok_json)
-    .map_err(map_err)
-}
 
 async fn api_remote_me(
   State(state): State<Arc<AppState>>,
@@ -1494,146 +550,9 @@ async fn api_remote_users_delete(
   Ok(Json(json!({ "ok": ok })))
 }
 
-async fn api_remote_alert_trigger(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let info = require_remote_perm(&state, &headers, "alerts").await?;
-  let kind = body
-    .get("kind")
-    .and_then(|v| v.as_str())
-    .unwrap_or("follow");
-  let user = body
-    .get("user")
-    .and_then(|v| v.as_str())
-    .unwrap_or(&info.username);
-  let message = body
-    .get("message")
-    .and_then(|v| v.as_str())
-    .unwrap_or("");
-  let ev = json!({
-    "id": uuid::Uuid::new_v4().to_string(),
-    "kind": kind,
-    "user": user,
-    "message": message,
-    "amount": body.get("amount").cloned().unwrap_or(Value::Null),
-    "platform": "remote",
-    "t": crate::db::chrono_now(),
-  });
-  state.broadcast_json(&json!({
-    "type": "settings",
-    "screen": "panel",
-    "data": { "_widgetEvent": ev }
-  }));
-  state.broadcast_json(&json!({ "type": "trigger_alert", "data": ev }));
-  Ok(Json(json!({ "ok": true, "event": ev })))
-}
 
-async fn api_remote_chat_send(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let _ = require_remote_perm(&state, &headers, "chat").await?;
-  let text = body
-    .get("text")
-    .or_else(|| body.get("message"))
-    .and_then(|v| v.as_str())
-    .unwrap_or("")
-    .trim();
-  if text.is_empty() {
-    return Err((StatusCode::BAD_REQUEST, "text gerekli".into()));
-  }
-  let slug = crate::bot::pipeline::resolve_channels(&state)
-    .await
-    .kick_slug;
-  state
-    .kick_auth
-    .send_chat(text, slug.as_deref())
-    .await
-    .map_err(map_err)?;
-  // Twitch FE köprüsü
-  state.broadcast_json(&json!({
-    "type": "bot-reply-request",
-    "platform": "twitch",
-    "text": text,
-    "t": crate::db::chrono_now(),
-  }));
-  Ok(Json(json!({ "ok": true })))
-}
 
-async fn api_remote_obs_scene(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let _ = require_remote_perm(&state, &headers, "obs").await?;
-  let scene = body
-    .get("scene")
-    .or_else(|| body.get("sceneName"))
-    .and_then(|v| v.as_str())
-    .unwrap_or("")
-    .trim();
-  if scene.is_empty() {
-    return Err((StatusCode::BAD_REQUEST, "scene gerekli".into()));
-  }
-  state.broadcast_json(&json!({
-    "type": "shop-obs-scene",
-    "scene": scene,
-    "user": "remote",
-    "t": crate::db::chrono_now(),
-  }));
-  state.broadcast_json(&json!({
-    "type": "settings",
-    "screen": "panel",
-    "data": { "_shopObsScene": { "scene": scene, "user": "remote" } }
-  }));
-  Ok(Json(json!({ "ok": true, "scene": scene })))
-}
 
-async fn api_remote_settings_patch(
-  State(state): State<Arc<AppState>>,
-  headers: HeaderMap,
-  Json(body): Json<Value>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-  let info = require_remote_perm(&state, &headers, "dashboard").await?;
-  let screen = body
-    .get("screen")
-    .and_then(|v| v.as_str())
-    .unwrap_or("panel");
-  let kind = crate::settings::ScreenKind::parse(screen)
-    .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
-  // Panel ekranı OBS bağlantısı, çoklu yayın hedefleri ve LAN ayarını taşır: yalnız yönetici
-  if kind == crate::settings::ScreenKind::Panel
-    && !crate::db::bot_api::remote_has_perm(&info, "*")
-  {
-    return Err((StatusCode::FORBIDDEN, "Panel ayarları yalnız yönetici içindir".into()));
-  }
-  let patch = body
-    .get("data")
-    .cloned()
-    .or_else(|| body.get("patch").cloned())
-    .unwrap_or(body.clone());
-  {
-    let mut s = state.settings.write();
-    let mut cur = s.get(kind).clone();
-    if let (Some(c), Some(p)) = (cur.as_object_mut(), patch.as_object()) {
-      for (k, v) in p {
-        c.insert(k.clone(), v.clone());
-      }
-    }
-    s.set(kind, cur.clone());
-    s.save_one(&state.data_dir, kind)
-      .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    state.broadcast_json(&json!({
-      "type": "settings",
-      "screen": screen,
-      "data": cur,
-    }));
-  }
-  Ok(Json(json!({ "ok": true })))
-}
 
 #[cfg(test)]
 mod giris_sinir_testleri {

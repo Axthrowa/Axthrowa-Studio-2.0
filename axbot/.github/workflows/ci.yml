@@ -28,11 +28,11 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            resonance/package-lock.json
+            ../resonance/package-lock.json
       - name: Bağımlılıklar
         run: |
           npm ci
-          npm ci --prefix resonance
+          npm ci --prefix ../resonance
       - name: Sunucu (tsc + vitest)
         working-directory: server
         run: |
@@ -42,5 +42,5 @@ jobs:
         working-directory: client
         run: npm test
       - name: Resonance (vitest)
-        working-directory: resonance
+        working-directory: ../resonance
         run: npm test

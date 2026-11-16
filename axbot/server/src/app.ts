@@ -187,11 +187,12 @@ app.get('/health', (req, res) => {
 wsHub.init(server);
 
 // Resonance (müzik çalar + OBS "şu an çalan") — /resonance/ altında.
-// Paket: <kök>/resonance ; geliştirme: ../resonance/dist
+// Paket: <kök>/resonance ; geliştirme: depo kökündeki tek Resonance kaynağı (RES-1), ../../resonance/dist
 const resonanceDist = [
   path.resolve(process.cwd(), 'resonance'),
   path.resolve(process.cwd(), 'resonance/dist'),
-  path.resolve(process.cwd(), '../resonance/dist')
+  path.resolve(process.cwd(), '../resonance/dist'),
+  path.resolve(process.cwd(), '../../resonance/dist')
 ].find((p) => fs.existsSync(path.join(p, 'index.html')));
 // Spotify dönüşü: Dashboard'a hangisi kayıtlıysa (kod yoksa uygulamaya düşer)
 app.get(['/callback', '/resonance/callback'], (req, res, next) => {

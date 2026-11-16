@@ -90,7 +90,7 @@ app.get(['/callback', '/resonance/callback'], (req, res, next) => {
   next();
 });
 
-const dist = [path.resolve(process.cwd(), 'resonance'), path.resolve(__dirname, '..', 'resonance'), path.resolve(__dirname, '..', '..', 'resonance', 'dist')].find((p) =>
+const dist = [path.resolve(process.cwd(), 'resonance'), path.resolve(__dirname, '..', 'resonance'), path.resolve(__dirname, '..', '..', 'resonance', 'dist'), path.resolve(__dirname, '..', '..', '..', 'resonance', 'dist')].find((p) =>
   fs.existsSync(path.join(p, 'index.html'))
 );
 if (dist) {

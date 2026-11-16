@@ -31,7 +31,11 @@ export function cevir(metin: string): string | null {
     for (const k of kaliplar) {
       const m = k.re.exec(t);
       if (m) {
-        en = k.en.replace(/\{(\d+)\}/g, (_, i) => m[Number(i) + 1] ?? "");
+        // Yer tutucuya gelen parça da çevrilir ("Eklenemedi: {0}" içindeki sunucu hatası gibi); parça hep daha kısa, döngü olmaz
+        en = k.en.replace(/\{(\d+)\}/g, (_, i) => {
+          const p = m[Number(i) + 1] ?? "";
+          return (p !== t && cevir(p)) || p;
+        });
         break;
       }
     }

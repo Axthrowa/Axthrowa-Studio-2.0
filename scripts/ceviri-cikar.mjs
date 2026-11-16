@@ -28,6 +28,7 @@ function ekle(t, dosya) {
   if (t && !bulunan.has(t)) bulunan.set(t, dosya);
 }
 
+const KOD_SABLON = /^(Bearer|Key|Digit|F|PASS oauth:|NICK|PRIVMSG|JOIN|PONG|HTTP|OAuth|Ctrl\+|Control\+|M) ?[{#]/;
 const NITELIK = new Set(["title", "aria-label", "placeholder", "alt", "label", "description", "confirmLabel", "cancelLabel", "etiket", "ad", "baslik", "aciklama"]);
 
 function gez(dosya) {
@@ -47,7 +48,8 @@ function gez(dosya) {
     } else if (ts.isTemplateExpression(n)) {
       let s = n.head.text;
       n.templateSpans.forEach((sp, i) => (s += `{${i}}` + sp.literal.text));
-      ekle(metinMi(s, false), rel);
+      // Türkçe harfsiz şablonlar da ("Eklenemedi: {0}") büyük harfle başlıyorsa alınır; protokol/tuş/başlık kalıpları hariç
+      if (!KOD_SABLON.test(s)) ekle(metinMi(s, true), rel);
     }
     ts.forEachChild(n, ziyaret);
   };
@@ -63,6 +65,31 @@ function dolas(d) {
 }
 dolas(path.join(kok, "src"));
 for (const [t, d] of bulunan) if (d.includes(`i18n${path.sep}`)) bulunan.delete(t);
+
+// Rust: arayüze hata/durum olarak dönen dizgiler (format yer tutucuları {0}, {1}…). Günlük satırları ve test modülleri hariç.
+// Yerel pencere metinleri (tepsi menüsü, kapatma sorusu) DOM'da değil, çevrilmez: RUST_HARIC.
+const RUST_HARIC = new Set(["lib.rs", "close_prompt.rs", "single_instance.rs"]);
+const GUNLUK = /studio_(warn|info|error|debug)!|log::|tracing::|e?println!|debug!|warn!|info!|panic!|expect\(|assert/;
+function rustGez(d) {
+  for (const g of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = path.join(d, g.name);
+    if (g.isDirectory()) rustGez(p);
+    else if (g.name.endsWith(".rs") && !RUST_HARIC.has(g.name)) {
+      const govde = fs.readFileSync(p, "utf8").split("#[cfg(test)]")[0];
+      for (const sat of govde.split("\n")) {
+        const s = sat.trim();
+        if (s.startsWith("//") || GUNLUK.test(s)) continue;
+        for (const m of s.matchAll(/"((?:[^"\\]|\\.)*)"/g)) {
+          // "[kick] …" gibi etiketli dizgiler günlük satırıdır
+          if (!TR.test(m[1]) || m[1].length < 3 || /^\[[\w-]+\]/u.test(m[1]) || /^\[\p{L}+\]/u.test(m[1])) continue;
+          let i = 0;
+          ekle(m[1].replace(/\{[\w.:?#]*\}/g, () => `{${i++}}`).replace(/\\"/g, '"').replace(/\\n/g, "\n"), path.relative(kok, p));
+        }
+      }
+    }
+  }
+}
+rustGez(path.join(kok, "src-tauri", "src"));
 
 const sozlukYolu = path.join(kok, "src", "i18n", "sozluk.en.json");
 const sozluk = fs.existsSync(sozlukYolu) ? JSON.parse(fs.readFileSync(sozlukYolu, "utf8")) : {};

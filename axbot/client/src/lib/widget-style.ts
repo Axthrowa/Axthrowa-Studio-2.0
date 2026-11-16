@@ -59,23 +59,6 @@ export function sureYaz(toplamSaniye: number): string {
   return `${dk}:${String(sn).padStart(2, '0')}`;
 }
 
-/**
- * Widget yazı tipini Google Fonts'tan yükler (OBS tarayıcısında kurulu olmayabilir).
- * Yalnız FONTS listesindeki adlar: ayardan gelen keyfi değer adrese yazılmaz.
- * Kalın sürümler de istenir (Google olmayan kalınlığı atlar); eskiden yalnız 400 gelince
- * tarayıcı kalınlığı kendisi uyduruyor, harfler dağılıp okunmuyordu.
- */
-export function fontuYukle(ad: string | undefined, liste: readonly string[]): void {
-  if (!ad || !liste.includes(ad) || typeof document === 'undefined') return;
-  const id = 'axt-font-' + ad.replace(/\s+/g, '-');
-  if (document.getElementById(id)) return;
-  const link = document.createElement('link');
-  link.id = id;
-  link.rel = 'stylesheet';
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(ad).replace(/%20/g, '+')}:wght@400;600;700;800&display=swap`;
-  document.head.appendChild(link);
-}
-
 /** Hız ayarı: 1 normal, 2 iki kat hızlı, 0.1 en yavaş. 0 eskiden "ayar yok" sayılıp normal hıza dönüyordu. */
 export function hizCarpani(deger: unknown): number {
   const n = deger === '' || deger === null || deger === undefined ? 1 : Number(deger);

@@ -1,4 +1,4 @@
-# Surumu birden yukseltir: package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml, resonance (K7)
+# Surumu birden yukseltir: package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml, resonance (K7), README (F0-6)
 # (Cargo.lock bir sonraki cargo derlemesinde kendiliginden guncellenir.)
 #   powershell -ExecutionPolicy Bypass -File scripts\surum-yukselt.ps1 -Surum 1.7.1
 param([Parameter(Mandatory)][string]$Surum, [string]$Kok)
@@ -28,6 +28,18 @@ $yazilacak = foreach ($h in $hedefler) {
   $adet = if ($h.Adet) { $h.Adet } else { 1 }
   @{ Yol = $p; Eski = $m.Value; Metin = $re.Replace($metin, "`${1}$Surum`${2}", $adet) }
 }
+# README: "Gecerli surum: **x** (icinde AxBoT y)" satiri; AxBoT surumu axbot/package.json'dan okunur
+# (desen ASCII: PS 5.1 BOM'suz betigi ANSI okur, Turkce harf yazilmaz)
+$botPaket = [IO.File]::ReadAllText((Join-Path $Kok "axbot\package.json"), $utf8)
+$botSurum = ([regex]'(?m)^\s*"version"\s*:\s*"([^"]+)"').Match($botPaket).Groups[1].Value
+if (-not $botSurum) { throw "AxBoT surumu okunamadi: axbot\package.json" }
+$readme = Join-Path $Kok "README.md"
+$readmeMetin = [IO.File]::ReadAllText($readme, $utf8)
+$readmeRe = [regex]'(Ge.erli s.r.m: \*\*)[^*]+(\*\* \(i.inde AxBoT )[^)]+(\))'
+$readmeEski = $readmeRe.Match($readmeMetin)
+if (-not $readmeEski.Success) { throw "Surum satiri bulunamadi: README.md" }
+$yazilacak = @($yazilacak) + @{ Yol = $readme; Eski = $readmeEski.Value; Metin = $readmeRe.Replace($readmeMetin, "`${1}$Surum`${2}$botSurum`${3}", 1) }
+
 foreach ($y in $yazilacak) {
   [IO.File]::WriteAllText($y.Yol, $y.Metin, $utf8)
   Write-Host ("{0}: {1} -> {2}" -f (Split-Path $y.Yol -Leaf), $y.Eski.Trim(), $Surum)

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, typ
 import { ETIKET, TUS } from "./donanim";
 import { BOSLUK_PX, SABLONLAR, SATIR_PX, SUTUN, eklerleBirlestir, ekPanelMi, kipKutulari, panelEkle, panelKaldir, yerlesimOku, yerlestir, type Kip, type Kutu, type PanelId, type TemelPanelId } from "../../lib/canliYerlesim";
 import { EK_PANEL_GRUPLARI } from "../../lib/canliEkPaneller";
+import { HataSiniri } from "../ui/HataSiniri";
 
 const YERLESIM_KEY = "studio.canli.yerlesim";
 /** Bu genişliğin altında paneller alt alta dizilir: küçük ekranda 12 sütunluk ızgarada panellerin içi sıkışıp iç içe giriyordu */
@@ -166,7 +167,7 @@ export default function YayinDuzeni({ kip, duzenle, onBitti, onGenisSohbet, pane
                   {p.baslikEki}
                 </div>
               ) : null}
-              <div className="custom-scrollbar min-h-0 flex-1 overflow-auto">{p.icerik}</div>
+              <div className="custom-scrollbar min-h-0 flex-1 overflow-auto"><HataSiniri ad={p.baslik}>{p.icerik}</HataSiniri></div>
               {duzenlemede ? (
                 <div
                   role="group"

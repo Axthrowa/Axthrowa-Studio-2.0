@@ -157,3 +157,12 @@ Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
 | Betikler | DESTEKLENMİYOR | obs-scripting ön yüze bağlı; yerine Kontrol Merkezi otomasyonu |
 | Altyazı: CEA-608 | sade | Kesinleşen satır isteğe bağlı OBS'e gider (yayın açık olmalı); ş/ğ/ı Latin karşılığıyla gider. Platform oynatıcısında görünüm UNVERIFIED (yalnız akış baytları doğrulandı) |
 | Özel tarayıcı dock'u ve CSP | ödünleşim | Masaüstü uygulamasının CSP'sinde `frame-src` https ve yerel adreslere açıldı (önceden yalnız Kick/YouTube). Çerçeve `sandbox` ile açılır (üst pencereye gezinme yok, köken farklı olduğundan uygulamaya erişim yok), `script-src` değişmedi. Bazı siteler çerçeve içinde açılmayı reddeder (X-Frame-Options) — "Tarayıcıda aç" düğmesi sunulur |
+
+## Plan 3, Faz 0 (2026-11-16)
+
+| Konu | Durum | Not |
+|---|---|---|
+| Gerçek ortam provası (D3–D8, D12–D16) | **UNVERIFIED** | Gerçek hesap, telefon ve müzik çalma ister; satırlar `docs/PROVA.md`'de "bekliyor". Kick moderasyonu, Twitch sohbet modları, Kick ödülleri, yayın bilgisi yazma, Discord etkinliği ve SE/Fossabot içe aktarma hâlâ yalnız sahte sunucuyla sınandı. |
+| Bölüm hata sınırları | birim testli | Panel sayfaları, Canlı kutuları, sohbet ve olaylar kendi sınırında; tarayıcıda 503 senaryosu bu turda yeniden çalıştırılmadı. Ortak `okJson` yalnız `ok` denetimi atlanan çağrılara uygulandı; diğer `fetch` çağrıları kendi denetimini yapıyor. |
+| Yazı tipleri | pakette | `scripts/yazi-tiplerini-indir.mjs` yalnız latin + latin-ext alt kümesini ve 300–800 ağırlıklarını indirir; italik yok (tarayıcı eğer). Kiril, Yunan vb. karakterler yedek yazı tipiyle çizilir. Yeni yazı tipi betik yeniden koşturulunca gelir. `axbot/resonance` kopyası RES-1'de kaldırılacağı için güncellenmedi. |
+| BTTV / FFZ | yalnız genel set | Sunucuda 30 dk önbellek; kanal setleri WID-4'te. |

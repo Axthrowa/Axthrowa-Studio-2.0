@@ -1,6 +1,6 @@
 /** U7b: son biten yayının raporu: süre, zirve, izleyici eğrisi ve düşen kare (Yayın sonrası kipi). */
 import { useEffect, useState } from "react";
-import { spotifyYayinListesi } from "../../lib/api";
+import { spotifyYayinListesi, okJson } from "../../lib/api";
 import { axbotBase } from "../../lib/axbot";
 import { KlipDuzenleyici } from "./KlipDuzenleyici";
 import { TwitchKlipFormu } from "./TwitchKlipFormu";
@@ -44,7 +44,7 @@ function SarkiListesi({ baslangic }: { baslangic: number }) {
     let iptal = false;
     void axbotBase()
       .then((b) => fetch(`${b}/api/yayin-ozetleri`))
-      .then((r) => r.json())
+      .then(okJson)
       .then((j: { ozetler?: { baslangic: number; sarkilar?: Sarki[] }[] }) => !iptal && setSarkilar(yayinSarkilari(j.ozetler ?? [], baslangic)))
       .catch(() => !iptal && setSarkilar([]));
     return () => {

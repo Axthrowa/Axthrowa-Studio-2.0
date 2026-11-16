@@ -85,15 +85,15 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
     if (onizleme) return;
     const load = () =>
       fetch('/api/giveaways')
-        .then((r) => r.json())
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
         .then((d) => {
           setActive(d.active || null);
           // Çekiliş kapanınca liste boşalır: çark son bilinen adları kullanabilsin
           if (d.active) setEntries((d.entries || []).map((e: any) => e.username));
         })
         .catch(() => {});
+    // Yoklama yok (H6): ilk yükleme + soket olayları (başladı, katılım, kazanan, iptal) ve yeniden bağlanınca bir kez
     load();
-    const t = setInterval(load, 4000);
 
     const carkiDondur = (kazanan: string, adaylar: string[], sonucSn: number) => {
       zamanlar.current.forEach(clearTimeout);
@@ -131,7 +131,6 @@ export function GiveawayWidget(props?: { embedded?: boolean; previewMode?: boole
       if (m?.type === 'giveaway_join' || m?.type === 'giveaway_started') load();
     };
     return () => {
-      clearInterval(t);
       zamanlar.current.forEach(clearTimeout);
       ws.close();
     };

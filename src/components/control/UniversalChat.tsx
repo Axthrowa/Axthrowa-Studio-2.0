@@ -17,6 +17,7 @@ import { ACTIVITY_LABEL, CHAT_PLATFORMS, PLATFORM_LABEL, PLATFORM_SHORT, type Ac
 import { normalizeActivity, normalizeChat } from "../../lib/chat/normalize";
 import { addActivity, tesekkurUygula, addChat, CHAT_VIEW_LABEL, CHAT_VIEWS, emptyChat, filterChat, platformCounts, type ChatState, type ChatView } from "../../lib/chat/store";
 
+import { okJson } from "../../lib/api";
 // ─── Paylaşılan akış (tek WebSocket, çok abone) ─────────────────────────
 
 type FeedSnapshot = { chat: ChatState; activity: ActivityEvent[]; connected: boolean; base: string | null };
@@ -156,8 +157,8 @@ function usePlatformState(base: string | null) {
     const yukle = async () => {
       try {
         const [y, s] = await Promise.all([
-          fetch(`${base}/api/platforms/capabilities`, { cache: "no-store" }).then((r) => r.json()),
-          fetch(`${base}/api/status`, { cache: "no-store" }).then((r) => r.json()),
+          fetch(`${base}/api/platforms/capabilities`, { cache: "no-store" }).then(okJson),
+          fetch(`${base}/api/status`, { cache: "no-store" }).then(okJson),
         ]);
         if (iptal) return;
         setYetenek(y?.yetenekler || {});

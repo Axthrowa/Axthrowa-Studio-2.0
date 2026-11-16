@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { twitchEmoteHaritasi } from '../components/ChatMessageContent.js';
 import { kapsa } from '../components/WidgetOnizleme.js';
-import { bttvAyikla, ffzAyikla } from './yediTv.js';
 import { yaziAilesi, yaziOlcegi } from './widget-style.js';
 
 describe('sohbet emote kaynakları', () => {
   it('Twitch konumları kod noktası sayar (emoji UTF-16 kaydırmaz)', () => {
     const h = twitchEmoteHaritasi('🔥 Kappa selam', { '25': ['2-6'] });
     expect(h.get('Kappa')).toBe('https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0');
-  });
-  it('BTTV ve FFZ yalnız kendi CDN adreslerini kabul eder', () => {
-    expect(bttvAyikla([{ id: '54fa8f1401e468494b85b537', code: ':tf:' }, { id: '../x', code: 'kotu' }])).toEqual([[':tf:', 'https://cdn.betterttv.net/emote/54fa8f1401e468494b85b537/2x']]);
-    const ffz = { sets: { '3': { emoticons: [{ name: 'ZrehplaR', urls: { '2': 'https://cdn.frankerfacez.com/emote/9/2' } }, { name: 'kotu', urls: { '2': 'https://kotu.example/x' } }] } } };
-    expect(ffzAyikla(ffz)).toEqual([['ZrehplaR', 'https://cdn.frankerfacez.com/emote/9/2']]);
   });
 });
 

@@ -36,6 +36,35 @@ export function sayiBicimle(n: number, kisalt: boolean): string {
   return `${(n / 1_000_000).toFixed(1).replace('.', ',')} M`;
 }
 
+type Sayilar = { kick: number; twitch: number; youtube: number };
+type Gelen = { kick?: unknown; twitch?: unknown; youtube?: unknown };
+const TEST_MS = 8000;
+
+const sayi = (v: unknown, onceki: number) => (v === undefined || v === null ? onceki : Number(v) || 0);
+const birlestir = (p: Sayilar, m: Gelen): Sayilar => ({ kick: sayi(m.kick, p.kick), twitch: sayi(m.twitch, p.twitch), youtube: sayi(m.youtube, p.youtube) });
+
+/**
+ * Gerçek sayılar her zaman saklanır; test örneği yalnız TEST_MS boyunca gösterimin üstüne biner.
+ * Dönen değer: ekranda gösterilecek sayılar (test sürerken gerçek güncelleme `null` döner, ekran değişmez).
+ */
+export function sayacDurumu(ilk: Sayilar) {
+  let gercek = ilk;
+  let testBitis = 0;
+  return {
+    gercek(m: Gelen, simdi: number): Sayilar | null {
+      gercek = birlestir(gercek, m);
+      return simdi < testBitis ? null : gercek;
+    },
+    test(m: Gelen, simdi: number): Sayilar {
+      testBitis = simdi + TEST_MS;
+      return birlestir(gercek, m);
+    },
+    bitti(simdi: number): Sayilar | null {
+      return simdi < testBitis ? null : gercek;
+    }
+  };
+}
+
 export function ViewerCounterWidget({ embedded = false, previewMode = false }: { embedded?: boolean; previewMode?: boolean }) {
   const s = useWidgetSettings('viewer-counter', VIEWER_COUNTER_DEFAULTS);
   const { lastMessage } = useWebSocket('all');
@@ -50,14 +79,16 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
   });
 
   // Sayılar botun yayın yoklamasından gelir. Eskiden platform durumundan okunuyordu; orada izleyici hiç yoktu, hep 0 yazıyordu
-  const testBitis = useRef(0);
+  const durum = useRef(sayacDurumu(counts));
   useEffect(() => {
     if (onizleme) return;
     const cek = () => {
-      if (Date.now() < testBitis.current) return;
       fetch('/api/overlay/izleyici')
-        .then((r) => r.json())
-        .then((d) => setCounts({ kick: Number(d.kick) || 0, twitch: Number(d.twitch) || 0, youtube: Number(d.youtube) || 0 }))
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((d) => {
+          const g = durum.current.gercek({ kick: d.kick, twitch: d.twitch, youtube: d.youtube }, Date.now());
+          if (g) setCounts(g);
+        })
         .catch(() => {});
     };
     cek();
@@ -66,20 +97,20 @@ export function ViewerCounterWidget({ embedded = false, previewMode = false }: {
   }, [onizleme]);
 
   useEffect(() => {
-    if (onizleme) return;
-    if (lastMessage?.type === 'viewer_count') {
-      // Test örneği birkaç saniye görünür, sonra önceki sayılar geri gelir
-      if (lastMessage.test) {
-        testBitis.current = Date.now() + 8000;
-        const onceki = counts;
-        setTimeout(() => setCounts(onceki), 8000);
-      }
-      setCounts((prev) => ({
-        kick: lastMessage.kick ?? prev.kick,
-        twitch: lastMessage.twitch ?? prev.twitch,
-        youtube: lastMessage.youtube ?? prev.youtube
-      }));
+    if (onizleme || lastMessage?.type !== 'viewer_count') return;
+    const m = { kick: lastMessage.kick, twitch: lastMessage.twitch, youtube: lastMessage.youtube };
+    if (!lastMessage.test) {
+      const g = durum.current.gercek(m, Date.now());
+      if (g) setCounts(g);
+      return;
     }
+    // Test örneği birkaç saniye görünür; o arada gelen gerçek sayı kaybolmaz, süre bitince o gösterilir
+    setCounts(durum.current.test(m, Date.now()));
+    // Temizlenmez: sonraki ileti gelince iptal olursa test hiç bitmezdi; erken tetiklenen zamanlayıcıyı `bitti` yok sayar
+    setTimeout(() => {
+      const g = durum.current.bitti(Date.now());
+      if (g) setCounts(g);
+    }, TEST_MS);
   }, [lastMessage, onizleme]);
 
   const satirlar: Satir[] = [

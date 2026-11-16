@@ -10,6 +10,7 @@ import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInter
 import StatusDot from "@/components/axthrowa/StatusDot";
 import AxBotHost from "./AxBotHost";
 
+import { okJson } from "../../lib/api";
 type Props = {
   sayfa?: string;
   onSayfa: (sayfa: string) => void;
@@ -29,8 +30,8 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
     try {
       const base = await axbotBase();
       const [d, s] = await Promise.all([
-        fetch(`${base}/api/status`, { cache: "no-store" }).then((r) => r.json()),
-        fetch(`${base}/api/bot/sessiz`, { cache: "no-store" }).then((r) => r.json()),
+        fetch(`${base}/api/status`, { cache: "no-store" }).then(okJson),
+        fetch(`${base}/api/bot/sessiz`, { cache: "no-store" }).then(okJson),
       ]);
       setKick(d?.platforms?.kick || {});
       setSessiz(!!s?.sessiz);

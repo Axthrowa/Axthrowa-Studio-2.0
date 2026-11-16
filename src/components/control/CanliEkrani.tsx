@@ -35,7 +35,9 @@ import { BasiliTutDugme } from "../ui/BasiliTut";
 import { BaskinYardimcisi } from "./BaskinYardimcisi";
 import { twitchBaskinYapabilir } from "../../lib/platformAuth/twitchWrite";
 import { panelAyir, paneliGeriAl, useAyrikPaneller, type AyrikId } from "../../lib/ayrikPanel";
+import { HataSiniri } from "../ui/HataSiniri";
 
+import { okJson } from "../../lib/api";
 /** U9: başlıktaki "Ayır" düğmesi */
 function AyirDugmesi({ id }: { id: AyrikId }) {
   return (
@@ -372,8 +374,8 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
       try {
         const base = await axbotBase();
         const [d, p] = await Promise.all([
-          fetch(`${base}/api/status`, { cache: "no-store" }).then((r) => r.json()),
-          fetch(`${base}/api/pinned`, { cache: "no-store" }).then((r) => r.json()),
+          fetch(`${base}/api/status`, { cache: "no-store" }).then(okJson),
+          fetch(`${base}/api/pinned`, { cache: "no-store" }).then(okJson),
         ]);
         setBot(ayniysaKoru(d));
         setSabit(ayniysaKoru(p?.message ? p : null));
@@ -666,12 +668,14 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
               <AyrikYer id="sohbet" />
             ) : (
               <Suspense fallback={<p className="p-3 text-sm text-panel-muted">Yükleniyor…</p>}>
-                <AxBotHost onToast={onToast} tab="multichat" embed onOpenMusic={() => onBot("multichat")} />
+                <HataSiniri ad="Sohbet">
+                  <AxBotHost onToast={onToast} tab="multichat" embed onOpenMusic={() => onBot("multichat")} />
+                </HataSiniri>
               </Suspense>
             )}
           </div>
           <div className={`custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2 ${sekme === "olaylar" ? "" : "hidden"}`}>
-            {ayrik.includes("etkinlik") ? <AyrikYer id="etkinlik" /> : <ActivityFeedPanel onToast={onToast} />}
+            {ayrik.includes("etkinlik") ? <AyrikYer id="etkinlik" /> : <HataSiniri ad="Olaylar"><ActivityFeedPanel onToast={onToast} /></HataSiniri>}
           </div>
         </aside>
       </div>

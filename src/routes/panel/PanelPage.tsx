@@ -14,6 +14,7 @@ import {
   saveSettings,
   ScreenId,
   sendPlayerCommand,
+  okJson,
 } from "../../lib/api";
 import { bindingName, buildHotkeyPlan, conflictFailures, migrateHotkeyDefaults } from "../../lib/hotkeyPlan";
 import { wasHandledByNative } from "../../lib/globalHotkeys";
@@ -55,6 +56,7 @@ const ObsControlHub = lazy(() => import("../../components/studio/ObsControlHub")
 const HotkeysPage = lazy(() => import("../../components/panel/HotkeysPage"));
 const CanliEkrani = lazy(() => import("../../components/control/CanliEkrani"));
 const ObsStudioPanel = lazy(() => import("../../components/panel/ObsStudioPanel"));
+import { HataSiniri } from "../../components/ui/HataSiniri";
 import { en, tr, type MsgKey } from "../../i18n/messages";
 import {
   applyArayuzToDom,
@@ -717,28 +719,28 @@ export default function PanelPage() {
 
   const refreshParticles = useCallback(() => {
     fetch(`${API_BASE}/api/particles`)
-      .then((r) => r.json())
-      .then(setParticleFiles)
+      .then(okJson)
+      .then((list) => setParticleFiles(Array.isArray(list) ? list : []))
       .catch(() => setParticleFiles([]));
   }, []);
 
   const refreshMusic = useCallback(() => {
     fetch(`${API_BASE}/api/music`)
-      .then((r) => r.json())
+      .then(okJson)
       .then((list) => setMusicFiles(Array.isArray(list) ? list : []))
       .catch(() => setMusicFiles([]));
   }, []);
 
   const refreshLogos = useCallback(() => {
     fetch(`${API_BASE}/api/logos`)
-      .then((r) => r.json())
+      .then(okJson)
       .then((list) => setLogoFiles(Array.isArray(list) ? list : []))
       .catch(() => setLogoFiles([]));
   }, []);
 
   const refreshVideos = useCallback(() => {
     fetch(`${API_BASE}/api/videos`)
-      .then((r) => r.json())
+      .then(okJson)
       .then((list) => setVideoFiles(Array.isArray(list) ? list : []))
       .catch(() => setVideoFiles([]));
   }, []);
@@ -776,7 +778,7 @@ export default function PanelPage() {
 
   const refreshBackgrounds = useCallback(() => {
     fetch(`${API_BASE}/api/backgrounds`)
-      .then((r) => r.json())
+      .then(okJson)
       .then((list) => setBgFiles(Array.isArray(list) ? list : []))
       .catch(() => setBgFiles([]));
   }, []);
@@ -1980,6 +1982,7 @@ export default function PanelPage() {
 
       {/* Sayfa geçişi: yalnız gösterilen dal değişince yeniden takılır; aynı daldaki sekmeler (Giriş/Çıkış/Mola) durumunu korur */}
       <div key={sayfaDali} className="studio-sayfa-gir flex min-h-0 flex-1 flex-col">
+      <HataSiniri ad={String(sayfaAdi || "Sayfa")}>
       <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
       {activeNav === "kurulum" ? (
         <Suspense fallback={<div className="flex-1 p-6 text-sm text-panel-muted">Yükleniyor…</div>}>
@@ -2157,6 +2160,7 @@ export default function PanelPage() {
         <SahneAyarlari {...sahneOrtak} />
       )}
       </Suspense>
+      </HataSiniri>
       </div>
 
       {/* AxBoT sesli komut dinleyicisi: sekmeden bağımsız, arka planda */}

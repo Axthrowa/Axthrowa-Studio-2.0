@@ -612,16 +612,6 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   const [status, setStatus] = useState('');
   const [ara, setAra] = useState('');
 
-  // Yazı tipi listesi kendi görünümüyle gösterilsin: panel tüm yazı tiplerini bir kez yükler
-  useEffect(() => {
-    if (document.getElementById('axt-tum-yazilar')) return;
-    const l = document.createElement('link');
-    l.id = 'axt-tum-yazilar';
-    l.rel = 'stylesheet';
-    l.href = `https://fonts.googleapis.com/css2?${FONTS.map(f => `family=${encodeURIComponent(f).replace(/%20/g, '+')}`).join('&')}&display=swap`;
-    document.head.appendChild(l);
-  }, []);
-
   useEffect(() => {
     fetch(`/api/widgets/${kayitId}/settings`)
       .then(r => r.json())

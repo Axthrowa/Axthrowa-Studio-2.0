@@ -24,7 +24,7 @@ import {
 import { useI18n } from "../../i18n";
 import type { MsgKey } from "../../i18n/messages";
 import type { AppPrefs, AppTheme, Hareket, Kose, MenuYazi, Yogunluk } from "../../lib/appPrefs";
-import { API_BASE, fetchSettings, patchSettings } from "../../lib/api";
+import { API_BASE, fetchSettings, patchSettings, okJson } from "../../lib/api";
 import { Switch } from "../axthrowa/switch";
 import { LisansFormu } from "../axthrowa/LisansEkrani";
 import PrivacySettings from "../axthrowa/PrivacySettings";
@@ -533,7 +533,7 @@ function SurumSatiri() {
   useEffect(() => {
     axbotBase()
       .then((b) => fetch(`${b}/health`))
-      .then((r) => r.json())
+      .then(okJson)
       .then((d) => setBot(typeof d?.surum === "string" ? d.surum : null))
       .catch(() => {});
   }, []);

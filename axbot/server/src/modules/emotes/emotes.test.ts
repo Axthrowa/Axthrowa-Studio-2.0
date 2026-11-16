@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { emoteleriAyikla } from './ayikla.js';
-import { yediTvAyikla } from './yedi-tv.js';
+import { bttvAyikla, ffzAyikla, yediTvAyikla } from './yedi-tv.js';
 
 describe('emoteleriAyikla', () => {
   const harita = new Map([['catJAM', 'https://cdn.7tv.app/emote/01ABCDEFGHJK/2x.webp']]);
@@ -50,5 +50,15 @@ describe('yediTvAyikla', () => {
   it('beklenmedik yanıtta boş liste', () => {
     expect(yediTvAyikla(null)).toEqual([]);
     expect(yediTvAyikla({ emotes: 'x' })).toEqual([]);
+  });
+});
+
+describe('BTTV ve FFZ (sunucu önbelleği)', () => {
+  it('yalnız kendi CDN adreslerini kabul eder', () => {
+    expect(bttvAyikla([{ id: '54fa8f1401e468494b85b537', code: ':tf:' }, { id: '../x', code: 'kotu' }])).toEqual([
+      { ad: ':tf:', url: 'https://cdn.betterttv.net/emote/54fa8f1401e468494b85b537/2x', animasyonlu: false }
+    ]);
+    const ffz = { sets: { '3': { emoticons: [{ name: 'ZrehplaR', urls: { '2': 'https://cdn.frankerfacez.com/emote/9/2' } }, { name: 'kotu', urls: { '2': 'https://kotu.example/x' } }] } } };
+    expect(ffzAyikla(ffz)).toEqual([{ ad: 'ZrehplaR', url: 'https://cdn.frankerfacez.com/emote/9/2', animasyonlu: false }]);
   });
 });

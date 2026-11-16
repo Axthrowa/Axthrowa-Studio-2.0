@@ -13,11 +13,12 @@ const PLATFORMLAR = new Set(['kick', 'twitch', 'youtube', 'tiktok', 'discord', '
 
 // Sohbet katmanı ve panel 7TV adlarını görsele çevirmek için okur
 router.get('/emotes', async (req: Request, res: Response) => {
-  if (!settingsCache.getBoolean('seventv_enabled', true)) {
-    return res.json({ yediTv: { kanal: [], genel: [], kanalDurum: 'kapali', guncellendi: 0 } });
-  }
   const { kickPlatform } = await import('../../platforms/kick.js');
   const d = await yediTv.getir(kickPlatform.getStatus().channel || null, req.query.yenile === '1');
+  // 7TV kapalıyken de BTTV ve FFZ gelir (eskiden tarayıcı onları ayrıca çekiyordu)
+  if (!settingsCache.getBoolean('seventv_enabled', true)) {
+    return res.json({ yediTv: { ...d, kanal: [], genel: [], kanalDurum: 'kapali' } });
+  }
   res.json({ yediTv: d });
 });
 

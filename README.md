@@ -2,7 +2,7 @@
 
 Canlı yayıncılar için Windows masaüstü kontrol merkezi. OBS Studio'yu yönetir; sohbeti, müziği, sahneleri, overlay'leri ve yayın botunu tek uygulamada toplar.
 
-Geçerli sürüm: **1.6.20** (içinde AxBoT 1.13.18).
+Geçerli sürüm: **1.8.0** (içinde AxBoT 1.15.0).
 
 > OBS Studio pakete dahil değildir. Yayının kendisi kurulu OBS üzerinden yapılır; Studio OBS ile obs-websocket üzerinden konuşur.
 

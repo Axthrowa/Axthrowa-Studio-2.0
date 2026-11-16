@@ -1,4 +1,4 @@
-import { API_BASE } from "../api";
+import { API_BASE, okJson } from "../api";
 import { builtinFor } from "./builtin";
 import { parseStoredTemplates, type ScreenTemplate, type TemplateScreen } from "./fields";
 
@@ -84,7 +84,7 @@ async function persist(list: ScreenTemplate[]) {
   }
   // Yazıldığını geri okuyarak doğrula.
   try {
-    const back = await fetch(`${API_BASE}/api/settings?screen=panel`, { cache: "no-store" }).then((r) => r.json());
+    const back = await fetch(`${API_BASE}/api/settings?screen=panel`, { cache: "no-store" }).then(okJson);
     const ids = new Set(parseStoredTemplates(back?.screenTemplates).map((t) => t.id));
     if (trimmed.some((t) => !ids.has(t.id))) {
       throw new TemplateSaveError("sunucu şablonu kalıcı yazmadı", true);

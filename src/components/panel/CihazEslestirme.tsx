@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { API_BASE, patchSettings } from "../../lib/api";
+import { API_BASE, patchSettings, okJson } from "../../lib/api";
 import { botApi, type EslesmisCihaz } from "../../lib/api/botApi";
 
 /** Cihaza verilebilen izinler (sunucu: `CIHAZ_IZINLERI`); ayar, yayın anahtarı ve kullanıcı yönetimi yok */
@@ -24,7 +24,7 @@ export default function CihazEslestirme({ onToast }: { onToast: (m: string) => v
   const [cihazlar, setCihazlar] = useState<EslesmisCihaz[]>([]);
   const [lan, setLan] = useState<boolean | null>(null);
   useEffect(() => {
-    fetch(`${API_BASE}/api/server`).then((r) => r.json()).then((d) => setLan(d.bindLan === true)).catch(() => {});
+    fetch(`${API_BASE}/api/server`).then(okJson).then((d) => setLan(d.bindLan === true)).catch(() => {});
   }, []);
   /** Yerel ağa açılma açık onayla; dinleme adresi yeniden başlatınca değişir */
   const lanDegistir = async (ac: boolean) => {

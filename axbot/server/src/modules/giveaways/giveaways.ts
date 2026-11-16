@@ -90,6 +90,8 @@ export class GiveawayEngine {
       katilanlar.map((k) => ({ kullanici: cuzdanAdi(k.platform, k.username), puan: Number(onceki.cost_points) })),
       () => db.prepare('UPDATE giveaways SET is_active = 0, closed_at = ? WHERE is_active = 1').run(Date.now())
     );
+    // Katman yoklamıyor (H6): kapanış da soketle duyurulur
+    if (onceki) eventBus.emit('cekilis_katilim', {});
     return onceki;
   }
 

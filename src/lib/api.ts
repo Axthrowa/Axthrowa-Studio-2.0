@@ -19,6 +19,12 @@ function computeApiBase(): string {
   return "http://127.0.0.1:8843";
 }
 
+/** Başarısız yanıtın gövdesini (ör. 503 + {"error"}) veri sanmaz: `ok` değilse hata fırlatır. */
+export async function okJson<T = any>(r: Response): Promise<T> {
+  if (!r.ok) throw new Error(`HTTP ${r.status}${r.url ? ` ${r.url}` : ""}`);
+  return r.json() as Promise<T>;
+}
+
 /** Aynı kökte (8843) göreli yol; Vite (1420) → yerel bot sunucusu. */
 export const API_BASE = computeApiBase();
 

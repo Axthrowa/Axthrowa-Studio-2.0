@@ -20,6 +20,9 @@ export interface YediTvEmote {
 export interface YediTvDurum {
   kanal: YediTvEmote[];
   genel: YediTvEmote[];
+  /** BTTV ve FFZ genel setleri: katmanlar dış adrese gitmesin diye sunucuda önbellekte (F0-4) */
+  bttv: YediTvEmote[];
+  ffz: YediTvEmote[];
   /** Kanal setinin durumu: 'ok' | 'hesap-yok' | 'kanal-yok' | 'hata' | 'kapali' */
   kanalDurum: string;
   guncellendi: number;
@@ -49,8 +52,29 @@ export function yediTvAyikla(set: any): YediTvEmote[] {
   return out;
 }
 
+/** BTTV genel seti: [{ id, code }] → yalnız cdn.betterttv.net adresleri */
+export function bttvAyikla(liste: unknown): YediTvEmote[] {
+  return (Array.isArray(liste) ? liste : [])
+    .filter((e) => typeof e?.code === 'string' && e.code.length <= 60 && /^[0-9a-f]{24}$/.test(String(e?.id)))
+    .slice(0, EN_COK)
+    .map((e) => ({ ad: e.code, url: `https://cdn.betterttv.net/emote/${e.id}/2x`, animasyonlu: e.imageType === 'gif' || Boolean(e.animated) }));
+}
+
+/** FFZ genel seti: { sets: { <kimlik>: { emoticons: [{ name, urls: { '2': adres } }] } } } → yalnız cdn.frankerfacez.com */
+export function ffzAyikla(g: any): YediTvEmote[] {
+  const out: YediTvEmote[] = [];
+  for (const set of Object.values(g?.sets || {}) as any[]) {
+    for (const e of Array.isArray(set?.emoticons) ? set.emoticons : []) {
+      if (out.length >= EN_COK) return out;
+      const url = String(e?.urls?.['2'] || e?.urls?.['1'] || '');
+      if (typeof e?.name === 'string' && e.name.length <= 60 && /^https:\/\/cdn\.frankerfacez\.com\/[\w/.-]+$/.test(url)) out.push({ ad: e.name, url, animasyonlu: Boolean(e?.animated) });
+    }
+  }
+  return out;
+}
+
 class YediTv {
-  private durum: YediTvDurum = { kanal: [], genel: [], kanalDurum: 'kapali', guncellendi: 0 };
+  private durum: YediTvDurum = { kanal: [], genel: [], bttv: [], ffz: [], kanalDurum: 'kapali', guncellendi: 0 };
   private yukleniyor: Promise<YediTvDurum> | null = null;
 
   /** Önbellekten döner; süresi dolduysa arka planda yeniler. */
@@ -78,12 +102,12 @@ class YediTv {
 
   private async yukle(kanalSlug: string | null): Promise<YediTvDurum> {
     const opts = { timeout: 15_000, httpsAgent: AJAN, headers: { Accept: 'application/json' } };
-    let genel = this.durum.genel;
-    try {
-      genel = yediTvAyikla((await axios.get(`${API}/emote-sets/global`, opts)).data);
-    } catch {
-      /* genel set alınamadı: eldekiyle devam */
-    }
+    // Genel setler alınamazsa eldekiyle devam
+    const [genel, bttv, ffz] = await Promise.all([
+      axios.get(`${API}/emote-sets/global`, opts).then((r) => yediTvAyikla(r.data), () => this.durum.genel),
+      axios.get('https://api.betterttv.net/3/cached/emotes/global', opts).then((r) => bttvAyikla(r.data), () => this.durum.bttv),
+      axios.get('https://api.frankerfacez.com/v1/set/global', opts).then((r) => ffzAyikla(r.data), () => this.durum.ffz)
+    ]);
 
     let kanal: YediTvEmote[] = [];
     let kanalDurum = 'kanal-yok';
@@ -106,7 +130,7 @@ class YediTv {
         kanalDurum = 'hata';
       }
     }
-    this.durum = { kanal, genel, kanalDurum, guncellendi: Date.now() };
+    this.durum = { kanal, genel, bttv, ffz, kanalDurum, guncellendi: Date.now() };
     const h = new Map<string, string>();
     for (const e of [...genel, ...kanal]) h.set(e.ad, e.url);
     this.haritaOnbellek = h;

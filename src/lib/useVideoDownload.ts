@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { API_BASE } from "./api";
+import { API_BASE, okJson } from "./api";
 
 /** Sunucudaki `ytdl::Phase` ile birebir. */
 export type DownloadPhase =
@@ -94,7 +94,7 @@ export function useVideoDownload(onBitti?: (dosya: string) => void) {
   useEffect(() => {
     let iptal = false;
     fetch(`${API_BASE}/api/videos/download`)
-      .then((r) => r.json())
+      .then(okJson)
       .then((d) => {
         if (iptal) return;
         const mevcut = normalize(d);

@@ -54,7 +54,7 @@ export default defineConfig({
   // Resonance kendi paketi (kendi React kopyası ve vitest'i var): kök koşucu onun
   // testlerini çalıştırırsa iki React kopyası çakışıp kanca (hook) testleri
   // "useContext null" ile düşüyor. `npm --prefix resonance test` ile ayrı koşar.
-  test: { exclude: ["**/node_modules/**", "resonance/**", "streamdeck/**", "**/dist/**", "src-tauri/**", "**/src_backup*/**"] },
+  test: { exclude: ["**/node_modules/**", "resonance/**", "streamdeck/**", "axbot/**", "**/dist/**", "src-tauri/**", "**/src_backup*/**"] },
   clearScreen: false,
   server: {
     port: 1420,

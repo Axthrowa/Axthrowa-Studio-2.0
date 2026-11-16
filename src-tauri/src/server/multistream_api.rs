@@ -115,6 +115,10 @@ fn varsayilan_acik() -> bool {
   true
 }
 
+fn anahtar_yeniden_gerekli(eski: &DestinationConfig, yeni: &DestinationConfig) -> bool {
+  eski.server.trim() != yeni.server.trim() || eski.platform != yeni.platform
+}
+
 async fn api_upsert(
   State(state): State<Arc<AppState>>,
   ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -135,7 +139,15 @@ async fn api_upsert(
     enabled: body.enabled,
   };
   config::validate(&cfg).map_err(bad)?;
-  if let Some(k) = body.key.as_deref().map(str::trim).filter(|k| !k.is_empty()) {
+  let yeni_anahtar = body.key.as_deref().map(str::trim).filter(|k| !k.is_empty());
+  // GÜVENLİK: kayıtlı anahtar yalnız girildiği sunucuya gider; sunucu ya da platform değişirse
+  // eski anahtar yeni (belki saldırganın) adrese taşınmasın
+  if yeni_anahtar.is_none()
+    && state.multistream.configs().iter().any(|c| c.id == id && anahtar_yeniden_gerekli(c, &cfg))
+  {
+    return Err(bad("Sunucu ya da platform değişti: yayın anahtarını yeniden girin"));
+  }
+  if let Some(k) = yeni_anahtar {
     if k.chars().any(|c| c.is_whitespace() || c.is_control()) || k.len() > 512 {
       return Err(bad("Yayın anahtarı geçersiz karakter içeriyor"));
     }
@@ -516,4 +528,26 @@ async fn api_audit(
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
   Ok(Json(json!({ "items": rows })))
+}
+
+#[cfg(test)]
+mod anahtar_baglama_testleri {
+  use super::*;
+
+  #[test]
+  fn sunucu_degisince_anahtar_istenir() {
+    let eski = DestinationConfig {
+      id: "a1".into(),
+      name: "Twitch".into(),
+      platform: Platform::parse("twitch").unwrap(),
+      server: "rtmp://live.twitch.tv/app".into(),
+      enabled: true,
+    };
+    let mut yeni = eski.clone();
+    yeni.name = "Yeni ad".into();
+    yeni.enabled = false;
+    assert!(!anahtar_yeniden_gerekli(&eski, &yeni), "ad/açık değişimi anahtarı korur");
+    yeni.server = "rtmp://saldirgan.example/app".into();
+    assert!(anahtar_yeniden_gerekli(&eski, &yeni));
+  }
 }

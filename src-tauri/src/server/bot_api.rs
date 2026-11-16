@@ -1597,13 +1597,19 @@ async fn api_remote_settings_patch(
   headers: HeaderMap,
   Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-  let _ = require_remote_perm(&state, &headers, "dashboard").await?;
+  let info = require_remote_perm(&state, &headers, "dashboard").await?;
   let screen = body
     .get("screen")
     .and_then(|v| v.as_str())
     .unwrap_or("panel");
   let kind = crate::settings::ScreenKind::parse(screen)
     .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
+  // Panel ekranı OBS bağlantısı, çoklu yayın hedefleri ve LAN ayarını taşır: yalnız yönetici
+  if kind == crate::settings::ScreenKind::Panel
+    && !crate::db::bot_api::remote_has_perm(&info, "*")
+  {
+    return Err((StatusCode::FORBIDDEN, "Panel ayarları yalnız yönetici içindir".into()));
+  }
   let patch = body
     .get("data")
     .cloned()

@@ -2058,16 +2058,38 @@ struct MediaQuery {
   path: String,
 }
 
+/// Yol (sembolik bağlar çözülerek) veri ya da kurulum `assets` klasörünün içinde mi?
+fn medya_kutuphanede(kokler: &[PathBuf], path: &std::path::Path) -> bool {
+  let Ok(gercek) = std::fs::canonicalize(path) else { return false };
+  kokler
+    .iter()
+    .filter_map(|k| std::fs::canonicalize(k).ok())
+    .any(|k| gercek.starts_with(k))
+}
+
 /// Yerel medyayı **akış** olarak servis eder.
 ///
 /// Kritik: Range başlığı yokken asla 206 dönmez — WebView2/Chromium bunu bozuk
 /// sayıp `<video>` öğesini hiç başlatmaz (yerel videonun oynamama nedeni buydu).
 /// Range yoksa tam boyutlu 200 + akışlı gövde gider; RAM'e alınmaz.
 async fn api_media_file(
+  ConnectInfo(addr): ConnectInfo<SocketAddr>,
+  State(state): State<Arc<AppState>>,
   Query(q): Query<MediaQuery>,
   headers: HeaderMap,
 ) -> Result<Response, (StatusCode, String)> {
   let path = media::sanitize_path(&q.path).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+  // GÜVENLİK: `/media/` herkese açık (LAN'daki OBS kaynakları). Anahtarsız LAN isteği diskteki her
+  // medya dosyasını değil, yalnız kütüphane klasörünü okuyabilir.
+  if !addr.ip().is_loopback() && !medya_kutuphanede(&[state.data_dir.join("assets"), state.root.join("assets")], &path) {
+    let gecerli = match bot_api::extract_bearer(&headers) {
+      Some(t) => crate::db::bot_api::remote_auth_full(&state.db, &t).await.is_ok(),
+      None => false,
+    };
+    if !gecerli {
+      return Err((StatusCode::NOT_FOUND, "dosya bulunamadı".into()));
+    }
+  }
   let total = media::file_len(&path).map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
   let range = headers.get(header::RANGE).and_then(|v| v.to_str().ok());
   let plan = media::plan_range(total, range);
@@ -2673,5 +2695,25 @@ mod onbellek_testleri {
     assert!(!degismez_varlik_mi("/assets/logo.png"));
     assert!(!degismez_varlik_mi("/assets/music/sarki-abcdefgh.mp3"));
     assert!(!degismez_varlik_mi("/widgets/index-BgLx5yHd.js"));
+  }
+}
+
+#[cfg(test)]
+mod medya_lan_testleri {
+  use super::medya_kutuphanede;
+
+  #[test]
+  fn yalniz_kutuphane_icindeki_dosya_gecer() {
+    let kok = std::env::temp_dir().join(format!("medya-lan-{}", std::process::id()));
+    let assets = kok.join("assets").join("sfx");
+    std::fs::create_dir_all(&assets).unwrap();
+    let ic = assets.join("a.mp3");
+    let dis = kok.join("ozel.mp3");
+    std::fs::write(&ic, b"x").unwrap();
+    std::fs::write(&dis, b"x").unwrap();
+    let kokler = [kok.join("assets")];
+    assert!(medya_kutuphanede(&kokler, &ic));
+    assert!(!medya_kutuphanede(&kokler, &dis), "kütüphane dışı dosya LAN'a açılmaz");
+    let _ = std::fs::remove_dir_all(&kok);
   }
 }

@@ -2699,6 +2699,11 @@ pub async fn upsert_remote_user(pool: &SqlitePool, body: &Value) -> Result<Remot
       .bind(&id)
       .execute(pool)
       .await?;
+      // Şifre değişti: eski oturumlar (sızmış olabilir) geçersiz
+      sqlx::query("DELETE FROM remote_sessions WHERE user_id = ?")
+        .bind(&id)
+        .execute(pool)
+        .await?;
     } else {
       sqlx::query(
         "UPDATE remote_users SET username=?, role=?, permissions_json=?, enabled=? WHERE id=?",
@@ -2837,5 +2842,22 @@ mod oturum_testleri {
 
     remote_logout(&pool, &token).await.unwrap();
     assert!(remote_auth_full(&pool, &token).await.is_err());
+  }
+
+  #[tokio::test]
+  async fn sifre_degisince_eski_oturum_kapanir() {
+    let pool = sqlx::sqlite::SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    crate::db::ensure_default_channel(&pool).await.unwrap();
+    let u = upsert_remote_user(&pool, &json!({"username": "mod1", "password": "eski-sifre"})).await.unwrap();
+    let token = remote_login(&pool, "mod1", "eski-sifre").await.unwrap()["token"].as_str().unwrap().to_string();
+    assert!(remote_auth_full(&pool, &token).await.is_ok());
+
+    // Şifresiz güncelleme oturumu düşürmez
+    upsert_remote_user(&pool, &json!({"id": u.id, "username": "mod1"})).await.unwrap();
+    assert!(remote_auth_full(&pool, &token).await.is_ok());
+
+    upsert_remote_user(&pool, &json!({"id": u.id, "username": "mod1", "password": "yeni-sifre"})).await.unwrap();
+    assert!(remote_auth_full(&pool, &token).await.is_err(), "şifre sıfırlanınca eski anahtar geçmez");
   }
 }

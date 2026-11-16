@@ -76,6 +76,13 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - T9 tamam (Studio `c0a5474`): Ayarlar › Yedekler'de "Eski kütüphaneyi içe aktar" (klasör seçici; sürüm klasörü ya da `assets`; üzerine yazmaz, silmez, rastgele klasörü reddeder; yeniden başlatma gerekmez). `scripts/surum-yukselt.ps1` ve `build-release-signed.ps1 -Surum x.y.z` üç dosyayı birlikte yükseltir; paketlemeden sonra Defender taraması (tehdit bulursa durur, `-SkipScan`). Sanal Studio'da uç doğrulandı (1 dosya, ikinci kez 0, `C:\Windows` ve göreli yol 400). İmzalı paket bu oturumda çalıştırılmadı.
 - A4 tamam (StreamAxT `8b8c8ab`): Otomasyon sayfası da `useOtoKayit` kullanıyor; yarım kural hata değil "tamamlanınca kaydedilecek" diye gösterilir. Sanal panelde yeni kural → doldur → kendiliğinden kaydedildi → sil doğrulandı.
 
+## Plan 2 — gerçek ortam provası (`Desktop\PLAN_GELISTIRME_2_2026-11.md`, 16 Kasım)
+
+- D1 geçti: gerçek OBS (WebSocket parolalı, parolayı yayıncı girdi), boş veri klasörlü başsız Studio. Sihirbazın son adımı "AxthrowA Overlay" tarayıcı kaynağını açık sahneye ("Oyun ekranı") bir kez ekledi; ikinci basış "OBS'te zaten var" dedi, kaynak sayısı 1 kaldı. Yayın kapalıydı; deneme kaynağı sonra silindi. Birim testi: `src/lib/obsBirlesikOverlay.test.ts` (yeniden adlandırılmış kaynak adresinden tanınır).
+- D16 yapılamadı: gerçek StreamElements ve Fossabot dışa aktarım dosyası yok (indirmek hesaba giriş ister). İnceleme sırasında bulunan açık kapandı (StreamAxT `3de05bb`): SE zamanlayıcısındaki ek mesajlar artık sessizce düşmüyor, içe aktarma uyarısı veriyor. Alan adları hâlâ gerçek dosyayla doğrulanmadı.
+- Y11 Discord etkinliği (Studio `1fc1aa0`): bot token ve sunucu kimliği kimlik kasasında; planlı yayın dış konumlu (yayın adresi) Discord etkinliği olarak açılır, silinince etkinlik de silinir. Sanal Studio'da geçersiz kimlik, sahte token (Discord 401), geçmiş tarih ve silme yolları sınandı; gerçek sunucuda etkinlik açılmadı.
+- D2–D15 bekliyor: gerçek Twitch/Kick/YouTube hesapları, telefon, müzik çalma ya da OBS sahnelerinde değişiklik ister; yayıncıyla ayrı oturum.
+
 ---
 
 ## Aşama 0 — Gerçek yayın provası (kod yok, 1 oturum)

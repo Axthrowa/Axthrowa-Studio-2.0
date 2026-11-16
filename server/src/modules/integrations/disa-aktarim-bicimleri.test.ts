@@ -21,6 +21,12 @@ describe('disAktarimiCoz', () => {
     expect(disAktarimiCoz({ kaynak: 'axbot', commands: [] }).kaynak).toBe('axbot');
   });
 
+  it('SE zamanlayıcısındaki ek mesajlar sessizce düşmez, uyarı olur', () => {
+    const c = disAktarimiCoz({ commands: [{ command: 'a', reply: 'b' }], timers: [{ name: 't', messages: ['bir', 'iki', ' ', 'üç'], online: { interval: 5 } }] });
+    expect(c.zamanlayicilar[0].message).toBe('bir');
+    expect(c.uyarilar).toEqual(['t: 2 ek mesaj aktarılmadı (yalnız ilki alındı), elle ekleyin']);
+  });
+
   it('SE argüman ve özel API değişkenleri', () => {
     expect(seSablonu('${1} ${customapi.https://ornek.com/a?b=1}').metin).toBe('{1} $(urlfetch https://ornek.com/a?b=1)');
   });

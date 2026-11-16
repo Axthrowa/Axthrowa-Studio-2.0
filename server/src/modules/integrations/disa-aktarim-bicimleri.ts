@@ -113,6 +113,9 @@ export function disAktarimiCoz(veri: any): CozulmusAktarim {
     const ad = metin(t, 'name');
     // SE ve Fossabot aralığı dakika tutar; Nightbot biçimi saniye
     const dk = sayi(t.online?.interval, t.onlineInterval, t.interval);
+    // Nightbot zamanlayıcısı tek mesaj tutar; SE'nin sıradaki mesajları kaybolmasın diye bildirilir
+    const fazla = Array.isArray(t.messages) ? t.messages.filter((m: unknown) => typeof m === 'string' && m.trim()).length - 1 : 0;
+    if (fazla > 0) uyarilar.push(`${ad}: ${fazla} ek mesaj aktarılmadı (yalnız ilki alındı), elle ekleyin`);
     return {
       name: ad,
       message: sablon(ad, metin(t, 'messages', 'message', 'response', 'text')),

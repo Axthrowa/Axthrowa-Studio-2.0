@@ -85,8 +85,8 @@ Bu belgenin Aşama 2'si, kapsamlı plandaki (Docs: "Yayın Yönetim Aracı — K
 - D2 geçti: gerçek OBS'te iki uyarı kutusu kaynağı; "Duraklat" bekleyen uyarıyı göstermedi (kaynak görüntüsü boş), "Sürdür" ile "YENİ TAKİPÇİ" göründü. Açık kutu sayısı 2 → 3 (tarayıcı önizlemesi) → kaynaklar silinince 1. Yalnız test uyarısı (WebSocket), gerçek olay yok.
 - D9 geçti: yalıtılmış AxBoT'ta "baskında Mola'ya geç, 10 sn bekle, `{onceki_sahne}`" kuralı "Çalıştır" yoluyla çalıştı; gerçek OBS'te Oyun ekranı → Mola → Oyun ekranı. Yayın ve kayıt kapalıydı. Başsız Studio OBS'e bağlanmadığı için `STUDIO_HEADLESS_OBS=1` eklendi (panel ayarındaki bilgiyle bağlanır, olay akışı yok).
 - D10 geçti: `sceneRules` "Sahne 2 = göster / Mola = gizle" olan Resonance kaynağı her iki sahnede; OBS kaynak görüntüsünde kart Sahne 2'de görünür (%10,5 dolu), Mola'da gizli (%0), geri dönünce yine görünür. Kaynak sonra silindi. Not: OBS'te `RemoveInput` program dışı sahnelerdeki girişi bazen bırakıyor; sahne öğesini silmek (`RemoveSceneItem`) güvenilir.
-- D11 yarım: gerçek OBS'e bağlı başsız Studio'da `/ws/obs-meters` saniyede 20 ölçüm verdi (medyan 46 ms, p95 62 ms; OBS'in 50 ms'lik ölçümü), 6 girişin hepsi geldi. O an ses çalmıyordu (hepsi -100 dB); dalganın müzikle 30 fps akışı müzik çalarken bakılmalı.
-- D3–D8, D11 (dalga), D12–D15 bekliyor: gerçek Twitch/Kick/YouTube hesapları, telefon ya da müzik çalma ister; yayıncıyla ayrı oturum.
+- D11 geçti: gerçek OBS'e bağlı başsız Studio'da `/ws/obs-meters` saniyede 20 ölçüm verdi (medyan 46 ms, p95 62 ms; OBS'in 50 ms'lik ölçümü). Yayıncı müzik açınca "Müzik" girişi -33…-37 dB oynadı; Resonance katmanı ölçer kipine geçti (90 ms geçiş) ve dalga çubuğu saniyede ~130 karede değişti (tarayıcı 180 Hz, p95 kare 5,7 ms). Ölçüm uygulama tarayıcısında; OBS tarayıcı kaynağı kendi kare hızıyla (çoğunlukla 60) çizer.
+- D3–D8, D12–D15 bekliyor: gerçek Twitch/Kick/YouTube hesapları, telefon ya da müzik çalma ister; yayıncıyla ayrı oturum.
 
 ---
 

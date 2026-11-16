@@ -200,6 +200,18 @@ export async function spotifyYayinListesi(baslangic: number, bitis: number, ad: 
   return res.json();
 }
 
+/** Y11 Discord etkinliği: bot token'ı yalnız Studio kasasında; yanıtlarda dönmez */
+export type DiscordEtkinlikDurumu = { tokenVar: boolean; sunucuId: string; sunucuAdi?: string; hata?: string };
+async function discordIstek<T>(yol: string, govde?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}/api/discord/etkinlik${yol}`, govde === undefined ? { cache: "no-store" } : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(govde) });
+  if (!res.ok) throw new Error((await res.text()) || `Discord isteği başarısız (${res.status})`);
+  return res.json();
+}
+export const discordEtkinlikDurumu = () => discordIstek<DiscordEtkinlikDurumu>("/durum");
+export const discordEtkinlikAyari = (a: { token?: string; sunucuId?: string; sil?: boolean }) => discordIstek<DiscordEtkinlikDurumu>("/ayar", a);
+export const discordEtkinlikEkle = (e: { baslik: string; zaman: string; sureDk: number; konum: string; aciklama?: string }) => discordIstek<{ id: string }>("", e);
+export const discordEtkinlikSil = (id: string) => discordIstek<{ tamam: boolean }>("/sil", { id });
+
 export async function fetchServerInfo() {
   const res = await fetch(`${API_BASE}/api/server`, { cache: "no-store" });
   return res.json();

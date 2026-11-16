@@ -2,7 +2,7 @@
  * Y11 yayın takvimi: planlı yayınlar panel ayarında (`yayinTakvimi`) durur. Twitch takvimine yazılan yayının segment
  * kimliği saklanır (silince Twitch'ten de kalkar). Giriş/Çıkış ekranı sıradaki yayını, panel yayın saatinde hatırlatır.
  */
-export type PlanliYayin = { id: string; zaman: string; baslik: string; kategori: string; sureDk: number; twitchId?: string };
+export type PlanliYayin = { id: string; zaman: string; baslik: string; kategori: string; sureDk: number; twitchId?: string; discordId?: string };
 export type TakvimAyari = { goster: boolean; liste: PlanliYayin[] };
 
 export function takvimAyari(v: unknown): TakvimAyari {
@@ -16,6 +16,7 @@ export function takvimAyari(v: unknown): TakvimAyari {
       kategori: String(y.kategori ?? "").slice(0, 100),
       sureDk: Math.min(1440, Math.max(30, Number(y.sureDk) || 120)),
       ...(typeof y.twitchId === "string" && y.twitchId ? { twitchId: y.twitchId.slice(0, 200) } : {}),
+      ...(typeof y.discordId === "string" && /^\d{17,20}$/.test(y.discordId) ? { discordId: y.discordId } : {}),
     }))
     .sort((x, y) => x.zaman.localeCompare(y.zaman))
     .slice(0, 50);

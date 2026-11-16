@@ -10,6 +10,8 @@ describe("yayın takvimi (Y11)", () => {
     expect(a.goster).toBe(true);
     expect(a.liste.map((y) => [y.id, y.sureDk])).toEqual([["a", 120], ["b", 30]]);
     expect(takvimAyari(null)).toEqual({ goster: true, liste: [] });
+    const d = takvimAyari({ liste: [{ id: "d", zaman: yerel(16, 20), discordId: "123456789012345678" }, { id: "e", zaman: yerel(16, 21), discordId: "x" }] }).liste;
+    expect(d.map((y) => y.discordId)).toEqual(["123456789012345678", undefined]);
   });
 
   it("sıradaki yayın: süresi dolmamış ilk yayın, metin bugün/yarın/gün adı", () => {

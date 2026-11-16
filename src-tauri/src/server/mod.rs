@@ -34,6 +34,7 @@ mod local_guard;
 pub mod guncelleme_api;
 pub mod yedek_api;
 mod yayin_bilgisi_api;
+mod discord_api;
 mod multistream_api;
 mod obs_studio_api;
 mod otomasyon_kilidi;
@@ -202,6 +203,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(bot_api::router())
     .merge(runtime_api::router())
     .merge(multistream_api::router())
+    .merge(discord_api::router())
     .merge(actions_api::router())
     .merge(eslestirme::router())
     .merge(asistan_api::router())

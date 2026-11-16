@@ -1,0 +1,177 @@
+/**
+ * AxBoT — anket başlatma/bitirme (panel ve sohbet komutu ortak)
+ * Developed by AxthrowA
+ *
+ * Eskiden anket yalnız panelden açılabiliyordu; mantık rota gövdesindeydi. Sohbet
+ * komutu (`!anketac`) aynı yolu kullansın diye buraya taşındı.
+ */
+import { db } from '../../db/index.js';
+import { hataMetni } from '../../core/logger.js';
+import { trKatla } from '../../core/text.js';
+
+export interface AnketGirdisi {
+  title?: unknown;
+  options?: unknown;
+  durationSeconds?: unknown;
+  command?: unknown;
+}
+
+export type AnketSonucu = { ok: true; id: string; title: string; options: string[]; durationSeconds: number; command: string } | { ok: false; hata: string };
+
+export async function anketBaslat(g: AnketGirdisi): Promise<AnketSonucu> {
+  const title = String(g.title ?? '').trim().slice(0, 200);
+  const options: string[] = Array.isArray(g.options)
+    ? g.options.map((o: unknown) => String(o ?? '').trim().slice(0, 100)).filter(Boolean).slice(0, 10)
+    : [];
+  // NaN/negatif süre anketi anında kapatıyor ya da hiç kapatmıyordu
+  const durationSeconds = Math.min(3600, Math.max(10, Math.floor(Number(g.durationSeconds)) || 60));
+  const command = /^![\p{L}\p{N}_]{1,20}$/u.test(String(g.command || '')) ? String(g.command) : '!oy';
+  if (!title || options.length < 2) return { ok: false, hata: 'Başlık ve en az 2 seçenek gerekli.' };
+
+  db.prepare('UPDATE polls SET is_active = 0 WHERE is_active = 1').run();
+  const id = `poll-${Date.now()}`;
+  const endsAt = Date.now() + durationSeconds * 1000;
+  db.prepare(`
+    INSERT INTO polls (id, title, options, is_active, created_at, duration_seconds, ends_at, command)
+    VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+  `).run(id, title, JSON.stringify(options), Date.now(), durationSeconds, endsAt, command);
+
+  // Tek URL yerleşiminde anket katmanı kapalıysa anket OBS'te hiç görünmüyordu: başlayınca açılır
+  // (widget anket yokken kendini gizler, açık kalması zararsız). Rota modülü komut yöneticisiyle
+  // döngü kurmasın diye geç yüklenir.
+  try {
+    const { overlayAyariOku, overlayAyariYaz } = await import('../../api/rotalar/widgetlar.js');
+    const yerlesim = overlayAyariOku();
+    if (!yerlesim?.polls?.enabled) overlayAyariYaz({ ...yerlesim, polls: { ...yerlesim.polls, enabled: true } });
+  } catch (e) {
+    console.warn('[Anket] Katman açılamadı:', hataMetni(e));
+  }
+
+  const { wsHub } = await import('../../ws/server.js');
+  wsHub.broadcastTo(['all'], {
+    type: 'poll_started',
+    poll: { id, title, question: title, options, votes: [], endsAt, durationSeconds }
+  });
+  return { ok: true, id, title, options, durationSeconds, command };
+}
+
+/**
+ * Düz sohbet mesajı oy mu? Yalnız numara ("2") ya da şıkkın kendisi ("Valorant", büyük-küçük ve Türkçe harf
+ * farkı önemsiz) oy sayılır; içinde başka söz geçen mesaj sayılmaz. Dönen değer şık sırası (0'dan), yoksa null.
+ */
+export function anketOyuCoz(metin: string, secenekler: string[]): number | null {
+  const t = String(metin || '').trim();
+  if (!t || t.length > 100) return null;
+  if (/^\d{1,2}$/.test(t)) {
+    const n = Number(t);
+    return n >= 1 && n <= secenekler.length ? n - 1 : null;
+  }
+  const i = secenekler.findIndex((s) => trKatla(s) === trKatla(t));
+  return i >= 0 ? i : null;
+}
+
+/** Oyu yazar ve widget'lara duyurur. Aynı kişi ikinci kez oy veremez: false döner. */
+export async function anketOyuKaydet(poll: any, kullanici: string, sira: number): Promise<boolean> {
+  try {
+    db.prepare('INSERT INTO poll_votes (id, poll_id, username, option_index, voted_at) VALUES (?, ?, ?, ?, ?)').run(`vote-${Date.now()}-${kullanici}`, poll.id, kullanici.toLowerCase(), sira, Date.now());
+  } catch {
+    return false;
+  }
+  const votes = db.prepare('SELECT option_index, COUNT(*) as count FROM poll_votes WHERE poll_id = ? GROUP BY option_index').all(poll.id);
+  const { wsHub } = await import('../../ws/server.js');
+  wsHub.broadcastTo(['all'], { type: 'poll_update', poll: { ...poll, options: JSON.parse(poll.options || '[]'), votes, endsAt: poll.ends_at } });
+  return true;
+}
+
+/** Süresi dolmamış açık anket (yoksa null) */
+export function acikAnket(): any | null {
+  const poll = db.prepare('SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1').get() as any;
+  // Kapatıcı 5 sn'de bir kapatır; arada gelen oy sayılmasın
+  if (!poll || (Number(poll.ends_at) > 0 && Date.now() > Number(poll.ends_at))) return null;
+  return poll;
+}
+
+/** Açık anketi kapatır; sonuçları döndürür (açık anket yoksa null). */
+export async function anketBitir(): Promise<{ title: string; options: string[]; oylar: number[] } | null> {
+  const poll = db.prepare('SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1').get() as any;
+  db.prepare('UPDATE polls SET is_active = 0 WHERE is_active = 1').run();
+  const { wsHub } = await import('../../ws/server.js');
+  wsHub.broadcastTo(['all'], { type: 'poll_ended' });
+  if (!poll) return null;
+  let options: string[] = [];
+  try {
+    options = JSON.parse(poll.options || '[]');
+  } catch {
+    /* bozuk seçenek listesi */
+  }
+  const oylar = options.map(() => 0);
+  for (const v of db.prepare('SELECT option_index, COUNT(*) as count FROM poll_votes WHERE poll_id = ? GROUP BY option_index').all(poll.id) as any[]) {
+    if (v.option_index >= 0 && v.option_index < oylar.length) oylar[v.option_index] = Number(v.count) || 0;
+  }
+  anketSonucunuGoster({ title: poll.title, options, oylar });
+  return { title: poll.title, options, oylar };
+}
+
+/** Uyarı kutusundaki kısa sonuç: "Valorant kazandı! (5 oy, %63)"; hiç oy yoksa null (uyarı çıkmaz). */
+export function anketKazananMetni(s: { options: string[]; oylar: number[] }): { kazanan: string; metin: string } | null {
+  const toplam = s.oylar.reduce((a, b) => a + b, 0);
+  if (!toplam) return null;
+  const en = Math.max(...s.oylar);
+  const kazananlar = s.options.filter((_, i) => s.oylar[i] === en);
+  if (kazananlar.length > 1) return { kazanan: kazananlar.join(' / '), metin: `Berabere: ${kazananlar.join(' / ')} (${en}'er oy)` };
+  return { kazanan: kazananlar[0], metin: `${kazananlar[0]} kazandı! (${en} oy, %${Math.round((en / toplam) * 100)})` };
+}
+
+/** B5: anket bitince kazanan uyarı kutusunda (Anket Sonucu şablonu, varsayılan 5 sn) */
+export function anketSonucunuGoster(s: { title: string; options: string[]; oylar: number[] }): void {
+  const k = anketKazananMetni(s);
+  if (!k) return;
+  void import('../../ws/server.js')
+    .then(({ wsHub }) => wsHub.ekUyari('poll_result', { user: k.kazanan, baslik: s.title, metin: k.metin }, { baslik: s.title, kazanan: k.kazanan }))
+    .catch((e) => console.warn('[Anket] sonuç uyarısı gönderilemedi:', hataMetni(e)));
+}
+
+/**
+ * Sohbet komutu, iki biçim:
+ *  - `!anketac [süre] Soru | Seçenek 1 | Seçenek 2 …`
+ *  - `!anketac [süre], Soru, Seçenek 1, Seçenek 2 …` (virgüllü; süre ilk parça olabilir)
+ * Süre: `90` (saniye, en çok 600), `90sn`, `2dk`.
+ */
+export function anketKomutuCoz(args: string[]): { soru: string; secenekler: string[]; sure: number } | { hata: string } {
+  const metin = args.join(' ').trim();
+  const ayirac = metin.includes('|') ? '|' : ',';
+  let parcalar = metin.split(ayirac).map((p) => p.trim()).filter(Boolean);
+  let sure = 60;
+  // Süre: virgüllü biçimde ilk parçanın tamamı, | biçiminde ilk sözcük
+  const sureOku = (t: string): number | null => {
+    const m = /^(\d{1,4})\s*(sn|dk)?$/i.exec(t);
+    // Birimsiz sayı yalnız 600'e kadar süre sayılır: "2026 en iyi oyun?" sorunun parçası
+    if (!m || (!m[2] && Number(m[1]) > 600)) return null;
+    return /^dk$/i.test(m[2] || '') ? Number(m[1]) * 60 : Number(m[1]);
+  };
+  if (ayirac === ',' && parcalar.length && sureOku(parcalar[0]) !== null) {
+    sure = sureOku(parcalar[0])!;
+    parcalar = parcalar.slice(1);
+  } else if (ayirac === '|' && parcalar.length) {
+    const [ilk, ...kalan] = parcalar[0].split(/\s+/);
+    const n = sureOku(ilk);
+    if (n !== null && kalan.length) {
+      sure = n;
+      parcalar[0] = kalan.join(' ');
+    }
+  }
+  if (parcalar.length < 3) return { hata: 'Kullanım: !anketac 60, Hangi oyun?, Valorant, CS2  ya da  !anketac 2dk Hangi oyun? | Valorant | CS2' };
+  return { soru: parcalar[0], secenekler: parcalar.slice(1), sure };
+}
+
+/** Kapanış duyurusu: "🏆 Valorant (5 oy, %62)" ya da beraberlik */
+export function anketSonucMetni(s: { title: string; options: string[]; oylar: number[] }): string {
+  const toplam = s.oylar.reduce((a, b) => a + b, 0);
+  if (!toplam) return `📊 "${s.title}" anketi bitti — hiç oy gelmedi.`;
+  const en = Math.max(...s.oylar);
+  const kazananlar = s.options.filter((_, i) => s.oylar[i] === en);
+  const yuzde = Math.round((en / toplam) * 100);
+  return kazananlar.length > 1
+    ? `📊 "${s.title}" bitti: berabere — ${kazananlar.join(' / ')} (${en}'er oy, toplam ${toplam})`
+    : `📊 "${s.title}" bitti: 🏆 ${kazananlar[0]} (${en} oy, %${yuzde}, toplam ${toplam})`;
+}

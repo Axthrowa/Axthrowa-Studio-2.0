@@ -1,0 +1,36 @@
+{
+  "name": "axbot-workspace",
+  "version": "1.15.0",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "build": "npm run build --workspaces && npm run build:resonance",
+    "start": "npm run start --workspace=server",
+    "build:resonance": "npm --prefix resonance run build"
+  },
+  "keywords": [
+    "axbot",
+    "twitch",
+    "kick",
+    "youtube",
+    "discord",
+    "tiktok",
+    "streaming-bot"
+  ],
+  "author": "Axthrowa",
+  "license": "MIT",
+  "overrides": {
+    "vosk-browser": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+# AxBoT — sürüm takibi dışı tutulanlar
+# Not: Buradaki her şeyin tam kopyası dosya sistemi yedeğinde duruyor
+# (bkz. BACKUP_MANIFEST.md). Git yalnız kaynak kodu izler.
+
+# Bağımlılıklar (npm install ile yeniden kurulur)
+node_modules/
+**/node_modules/
+
+# Derleme çıktıları (npm run build ile yeniden üretilir)
+client/dist/
+server/dist/
+.vite/
+*.tsbuildinfo
+
+# Dağıtım klasörleri — derlemenin kopyası, kaynak değil
+release/
+release - Kopya/
+
+# Kullanıcı verisi ve sırlar: ASLA depoya girmez
+# (OAuth tokenları ve API anahtarları bu veritabanlarında duruyor)
+data/
+server/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+.env
+.env.*
+!.env.example
+
+# İşletim sistemi / editör
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+
+# Resonance derleme çıktısı (npm run build:resonance)
+resonance/dist/

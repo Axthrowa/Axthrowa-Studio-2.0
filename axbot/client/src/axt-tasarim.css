@@ -1,0 +1,27 @@
+/*
+ * AxBoT kopyası: kaynak AxthrowA Studio deposunda src/styles/axt-tasarim.css; paket derlemesi onu kullanır. Elle değiştirmeyin, oradan kopyalayın.
+ * Ortak tasarım değişkenleri (T1) — köşe, yazı ölçeği, boşluk.
+ * Kaynak bu dosyadır: Studio doğrudan alır, Resonance `@import` ile alır, AxBoT derlemede
+ * (scripts/axbot-hazirla.mjs) bu dosyanın kopyasını alır. Gömülüyken değerler tema iletisiyle de gider
+ * (src/lib/botTemaMesaji.ts), yani bir değeri burada değiştirmek üç arayüzü birden değiştirir.
+ * Renkler burada değil: her görünümün (data-skin) kendi renkleri styles/index.css içinde.
+ */
+:root {
+  --axt-yaricap-kart: 1rem;
+  --axt-yaricap-dugme: 0.75rem;
+  --axt-yaricap-kucuk: 0.5rem;
+  --axt-yazi-baslik: 1.25rem;
+  --axt-yazi-govde: 0.875rem;
+  --axt-yazi-kucuk: 0.75rem;
+  --axt-bosluk: 1rem;
+}
+:root[data-kose="az"] {
+  --axt-yaricap-kart: 0.625rem;
+  --axt-yaricap-dugme: 0.5rem;
+  --axt-yaricap-kucuk: 0.3125rem;
+}
+:root[data-kose="keskin"] {
+  --axt-yaricap-kart: 0.25rem;
+  --axt-yaricap-dugme: 0.1875rem;
+  --axt-yaricap-kucuk: 0.1875rem;
+}

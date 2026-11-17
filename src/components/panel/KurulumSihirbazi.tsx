@@ -16,7 +16,7 @@ type Props = { onToast: (m: string) => void; onBitti: () => void };
 
 const ADIM_ADI = { obs: "OBS'e bağlan", platform: "Platform bağla", sahne: "Sahneleri eşle", test: "Test uyarısı" } as const;
 
-const girdi = "h-9 w-full rounded-lg border border-white/[0.12] bg-[#12151e] px-3 text-sm text-white";
+const girdi = "h-9 w-full rounded-lg border border-white/[0.12] bg-ui-s1 px-3 text-sm text-white";
 const etiket = "mb-1 block text-xs text-panel-muted";
 
 export default function KurulumSihirbazi({ onToast, onBitti }: Props) {

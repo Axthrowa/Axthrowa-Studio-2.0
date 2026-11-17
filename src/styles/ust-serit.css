@@ -319,3 +319,22 @@
 .ust-serit kbd {
   font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
 }
+
+/* UI-1: ortak belirteçler (ortak/tasarim.css) Studio'da görünümün --ui-* renklerine bağlanır.
+   Gömülü bot ve Resonance bu değerleri tema iletisiyle alır, böylece aynı tür düğme üç arayüzde aynıdır. */
+:root {
+  --axt-zemin: rgb(var(--ui-bg));
+  --axt-yuzey: rgb(var(--ui-s1));
+  --axt-yuzey-2: rgb(var(--ui-s2));
+  --axt-kenar: rgb(var(--ui-line2));
+  --axt-metin: rgb(var(--ui-fg));
+  --axt-soluk: rgb(var(--ui-fg2));
+  --axt-vurgu: rgb(var(--ui-accent));
+  --axt-vurgu-metin: rgb(var(--ui-accent-ink));
+  --axt-tehlike: rgb(var(--ui-danger));
+  --axt-basari: rgb(var(--ui-ok));
+  --axt-uyari: rgb(var(--ui-warn));
+  --axt-dugme-y: var(--ctl);
+  --axt-dugme-yaricap: var(--r-2);
+  --axt-dugme-buyuk-y: var(--hit);
+}

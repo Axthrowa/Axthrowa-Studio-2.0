@@ -38,8 +38,35 @@ describe("botTemaMesaji", () => {
         "--axt-yaricap-kart": "0.25rem",
         "--axt-yaricap-dugme": "0.1875rem",
         "--axt-yazi-baslik": "1.25rem",
+        // Eski derlemede düğme belirteçleri yok: boş gider, alıcı süzer ve kendi varsayılanını kullanır
+        "--axt-vurgu-metin": "",
+        "--axt-tehlike": "",
+        "--axt-dugme-y": "",
+        "--axt-dugme-yaricap": "",
+        "--axt-dugme-buyuk-y": "",
       },
     });
+  });
+
+  it("düğme belirteçlerini ve ortak vurguyu gönderir (UI-1)", () => {
+    const d: Record<string, string> = {
+      "--panel-accent": "#00e5ff",
+      "--axt-vurgu": "rgb(46 197 219)",
+      "--axt-vurgu-metin": "rgb(6 38 44)",
+      "--axt-tehlike": "rgb(200 35 43)",
+      "--axt-dugme-y": "24px",
+      "--axt-dugme-yaricap": "2px",
+      "--axt-dugme-buyuk-y": "40px",
+    };
+    const m = botTemaMesaji(renkleriOku((ad) => d[ad] || "", null)).degiskenler;
+    expect(m["--axt-vurgu"]).toBe("rgb(46 197 219)");
+    expect([m["--axt-vurgu-metin"], m["--axt-tehlike"], m["--axt-dugme-y"], m["--axt-dugme-yaricap"], m["--axt-dugme-buyuk-y"]]).toEqual([
+      "rgb(6 38 44)",
+      "rgb(200 35 43)",
+      "24px",
+      "2px",
+      "40px",
+    ]);
   });
 
   it("köşe ve başlık ölçüsünü ortak tasarım dosyasından alır (T1)", () => {

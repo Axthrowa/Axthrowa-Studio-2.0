@@ -69,9 +69,9 @@ export default function CopyUrl({ url, onCopied, onFail, onOpened, className = "
         className={
           "group flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-left transition-all duration-150 hover:border-white/[0.14] hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-panel-accent/60 " +
           (state === "ok"
-            ? "!border-emerald-500/40 !bg-emerald-500/15 shadow-[0_0_12px_rgba(16,185,129,0.2)] "
+            ? "!border-emerald-500/40 !bg-emerald-500/15 shadow-[0_0_12px_rgb(var(--ui-ok)/0.2)] "
             : state === "fail"
-              ? "!border-red-500/40 !bg-red-500/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] "
+              ? "!border-red-500/40 !bg-red-500/15 shadow-[0_0_12px_rgb(var(--ui-danger)/0.2)] "
               : "")
         }
       >

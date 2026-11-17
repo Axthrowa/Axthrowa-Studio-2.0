@@ -4,6 +4,8 @@
  * `.axt-onizleme` (stüdyo tuvali, ana ekran) en altta varsayılan palete döner; OBS widget sayfalarında `.axt-panel` yoktur.
  * Renk değerleri Tailwind 4.3 paletinden türetildi; açık temada metin tonları koyu, dolgu tonları beyaz yazı taşıyacak koyulukta.
  */
+/* UI-1: tek başına açılan botta düğme vurgusu botun mor paletinden (temalar onu yeniden tanımlar); Studio içinde Studio'nun vurgusu */
+.axt-panel:not([data-panel-tema="studio"]) { --axt-vurgu: var(--color-purple-600); --axt-vurgu-metin: #fff; }
 .axt-panel[data-panel-tema] { background-color: var(--axt-zemin); background-image: var(--axt-doku); color-scheme: dark; }
 
 /* Sabit koyu yüzeyler (kenar çubuğu, başlık, kartlar) tema yüzeyine bağlanır */

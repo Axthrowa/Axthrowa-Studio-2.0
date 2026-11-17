@@ -20,7 +20,7 @@ export default function SistemSagligi() {
   return (
     <Tooltip content={`Sistem sağlığı · ${s.surecSayisi} süreç (uygulama, WebView2, bot)`}>
       <div
-        className="flex items-center gap-3 rounded-full bg-axthrowa-card/80 px-3 py-1.5 font-mono text-[11px] text-zinc-300 shadow-[0_4px_16px_rgba(0,0,0,0.35)]"
+        className="flex items-center gap-3 rounded-full bg-axthrowa-card/80 px-3 py-1.5 font-mono text-[11px] text-zinc-300 shadow-panel"
         aria-label={`İşlemci yüzde ${Math.round(s.cpu)}, bellek ${ram}`}
       >
         <span className="flex items-center gap-1.5">

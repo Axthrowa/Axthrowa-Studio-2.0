@@ -48,7 +48,7 @@ export function Guncelleme() {
         Güncelleme bildirimi adresi (https JSON): <code>{'{"surum":"1.2.0","sayfa":"https://…","notlar":"…","kurulum":"https://…Setup.exe"}'}</code>. Uygulama açılışta bakar ve notları gösterir. Kendiliğinden indirmez. "İndir ve kur"a basınca kurulumu indirir; yalnız bu uygulamanın sertifikasıyla imzalıysa çalıştırır.
       </p>
       <div className="flex flex-wrap gap-2">
-        <input className="min-w-[260px] flex-1 rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-xs text-white" placeholder="https://…/guncelleme.json" value={adres} onChange={(e) => setAdres(e.target.value)} />
+        <input className="min-w-[260px] flex-1 rounded-md border border-panel-border bg-ui-s2 px-2 py-1.5 text-xs text-white" placeholder="https://…/guncelleme.json" value={adres} onChange={(e) => setAdres(e.target.value)} />
         <button type="button" className="dt-btn" disabled={yuk} onClick={() => calistir(async () => { await istek("/api/guncelleme", { adres }); setMesaj("Kaydedildi"); })}>Kaydet</button>
         <button type="button" className="dt-btn" disabled={yuk} onClick={() => calistir(async () => setD(await istek<Denetim>("/api/guncelleme/denetle", {})))}>{yuk ? "…" : "Şimdi denetle"}</button>
       </div>
@@ -170,7 +170,7 @@ export function YedekPaneli() {
           açılışta buraya kopyalanır. Eski uygulamayı önce kapat.
         </p>
         <div className="flex flex-wrap gap-2">
-          <input className="min-w-[260px] flex-1 rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-xs text-white" value={kaynak} onChange={(e) => setKaynak(e.target.value)} placeholder="Eski klasörün tam yolu" />
+          <input className="min-w-[260px] flex-1 rounded-md border border-panel-border bg-ui-s2 px-2 py-1.5 text-xs text-white" value={kaynak} onChange={(e) => setKaynak(e.target.value)} placeholder="Eski klasörün tam yolu" />
           <button type="button" className="dt-btn" disabled={yuk || !kaynak.trim()} onClick={() => void calistir("/api/yedekler/tasi", { kaynak }, "Taşıma bir sonraki açılışta uygulanacak")}>Taşı</button>
         </div>
       </div>      <div className="space-y-1 pt-2">

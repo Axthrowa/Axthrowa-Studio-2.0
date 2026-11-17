@@ -81,7 +81,7 @@ export default function OAuthCallbackPage({ platform }: { platform: Platform }) 
     platform === "twitch" ? "Twitch" : platform === "youtube" ? "YouTube" : "Discord";
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#0c0d10] text-white">
+    <div className="grid min-h-screen place-items-center bg-ui-bg text-white">
       <div className="max-w-md rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 text-center backdrop-blur-md">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-400/90">
           {label} · Bot bağlantısı

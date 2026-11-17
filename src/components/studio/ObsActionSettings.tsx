@@ -309,7 +309,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
                   type="button"
                   title="Şimdi dene"
                   disabled={!!eksik}
-                  className="shrink-0 rounded-lg bg-panel-accent/85 px-3 py-2 text-xs font-bold text-[#08131c] hover:bg-panel-accent disabled:opacity-40"
+                  className="shrink-0 rounded-lg bg-panel-accent/85 px-3 py-2 text-xs font-bold text-ui-accent-ink hover:bg-panel-accent disabled:opacity-40"
                   onClick={() => onRun(row)}
                 >
                   <Play className="h-3.5 w-3.5" />

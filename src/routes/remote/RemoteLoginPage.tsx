@@ -57,8 +57,8 @@ export default function RemoteLoginPage() {
 
   if (eslestirKodu) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0b0f14] px-4 text-white">
-        <div className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-[#121820] p-6 shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-ui-bg px-4 text-white">
+        <div className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-ui-s1 p-6 shadow-xl">
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Cihazı eşleştir</h1>
             <p className="mt-1 text-xs text-white/50">Kod tek kullanımlık; bu cihaz yalnız panelde seçilen izinleri alır.</p>
@@ -77,8 +77,8 @@ export default function RemoteLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0b0f14] px-4 text-white">
-      <div className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-[#121820] p-6 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-ui-bg px-4 text-white">
+      <div className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-ui-s1 p-6 shadow-xl">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Uzak Panel</h1>
           <p className="mt-1 text-xs text-white/50">

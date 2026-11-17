@@ -15,20 +15,24 @@ function Cizim({ baslik, children, yukseklik = 170 }: { baslik: string; children
   );
 }
 
-const VURGU = "#2dd4bf";
-const KUTU = "#1b2330";
-const CIZGI = "rgba(255,255,255,.22)";
-const SOLUK = "rgba(255,255,255,.62)";
+// Görünüm rengini izlesin diye CSS değişkeni; değişken öznitelikte değil `style` içinde çalışır
+const VURGU = "rgb(var(--ui-accent))";
+const KUTU = "rgb(var(--ui-s2))";
+const CIZGI = "rgb(var(--ui-fg) / 0.22)";
+const SOLUK = "rgb(var(--ui-fg2))";
+const METIN = "rgb(var(--ui-fg))";
+const ZEMIN = "rgb(var(--ui-bg))";
+const VURGU_ZEMIN = "rgb(var(--ui-accent) / 0.14)";
 
 function Kutucuk({ x, y, g, h, metin, alt, vurgulu }: { x: number; y: number; g: number; h: number; metin: string; alt?: string; vurgulu?: boolean }) {
   return (
     <g>
-      <rect x={x} y={y} width={g} height={h} rx={8} fill={vurgulu ? "rgba(45,212,191,.16)" : KUTU} stroke={vurgulu ? VURGU : CIZGI} />
-      <text x={x + g / 2} y={y + (alt ? h / 2 - 3 : h / 2 + 4)} textAnchor="middle" fontSize={12} fontWeight={700} fill="#fff">
+      <rect x={x} y={y} width={g} height={h} rx={8} style={{ fill: vurgulu ? VURGU_ZEMIN : KUTU, stroke: vurgulu ? VURGU : CIZGI }} />
+      <text x={x + g / 2} y={y + (alt ? h / 2 - 3 : h / 2 + 4)} textAnchor="middle" fontSize={12} fontWeight={700} style={{ fill: METIN }}>
         {metin}
       </text>
       {alt && (
-        <text x={x + g / 2} y={y + h / 2 + 13} textAnchor="middle" fontSize={10} fill={SOLUK}>
+        <text x={x + g / 2} y={y + h / 2 + 13} textAnchor="middle" fontSize={10} style={{ fill: SOLUK }}>
           {alt}
         </text>
       )}
@@ -38,7 +42,7 @@ function Kutucuk({ x, y, g, h, metin, alt, vurgulu }: { x: number; y: number; g:
 
 function Ok({ x1, x2, y }: { x1: number; x2: number; y: number }) {
   return (
-    <g stroke={VURGU} strokeWidth={2} fill="none">
+    <g strokeWidth={2} style={{ stroke: VURGU, fill: "none" }}>
       <line x1={x1} y1={y} x2={x2 - 6} y2={y} />
       <path d={`M ${x2 - 8} ${y - 5} L ${x2} ${y} L ${x2 - 8} ${y + 5}`} />
     </g>
@@ -59,19 +63,19 @@ const CizimAkis = () => (
 
 const CizimTarayici = () => (
   <Cizim baslik="OBS tarayıcı kaynağı penceresi: adres, genişlik 1920, yükseklik 1080">
-    <rect x={70} y={14} width={420} height={142} rx={8} fill={KUTU} stroke={CIZGI} />
-    <text x={86} y={35} fontSize={12} fontWeight={700} fill="#fff">Tarayıcı kaynağı özellikleri</text>
-    <text x={86} y={60} fontSize={11} fill={SOLUK}>URL</text>
-    <rect x={160} y={47} width={314} height={22} rx={4} fill="rgba(45,212,191,.12)" stroke={VURGU} />
-    <text x={168} y={62} fontSize={11} fill="#fff">http://127.0.0.1:8843/starting?obs=1</text>
-    <text x={86} y={92} fontSize={11} fill={SOLUK}>Genişlik</text>
-    <rect x={160} y={79} width={90} height={22} rx={4} fill="#0d1219" stroke={VURGU} />
-    <text x={168} y={94} fontSize={11} fill="#fff">1920</text>
-    <text x={86} y={124} fontSize={11} fill={SOLUK}>Yükseklik</text>
-    <rect x={160} y={111} width={90} height={22} rx={4} fill="#0d1219" stroke={VURGU} />
-    <text x={168} y={126} fontSize={11} fill="#fff">1080</text>
-    <rect x={400} y={122} width={74} height={24} rx={4} fill={VURGU} />
-    <text x={437} y={138} textAnchor="middle" fontSize={11} fontWeight={700} fill="#04201c">Tamam</text>
+    <rect x={70} y={14} width={420} height={142} rx={8} style={{ fill: KUTU, stroke: CIZGI }} />
+    <text x={86} y={35} fontSize={12} fontWeight={700} style={{ fill: METIN }}>Tarayıcı kaynağı özellikleri</text>
+    <text x={86} y={60} fontSize={11} style={{ fill: SOLUK }}>URL</text>
+    <rect x={160} y={47} width={314} height={22} rx={4} style={{ fill: VURGU_ZEMIN, stroke: VURGU }} />
+    <text x={168} y={62} fontSize={11} style={{ fill: METIN }}>http://127.0.0.1:8843/starting?obs=1</text>
+    <text x={86} y={92} fontSize={11} style={{ fill: SOLUK }}>Genişlik</text>
+    <rect x={160} y={79} width={90} height={22} rx={4} style={{ fill: ZEMIN, stroke: VURGU }} />
+    <text x={168} y={94} fontSize={11} style={{ fill: METIN }}>1920</text>
+    <text x={86} y={124} fontSize={11} style={{ fill: SOLUK }}>Yükseklik</text>
+    <rect x={160} y={111} width={90} height={22} rx={4} style={{ fill: ZEMIN, stroke: VURGU }} />
+    <text x={168} y={126} fontSize={11} style={{ fill: METIN }}>1080</text>
+    <rect x={400} y={122} width={74} height={24} rx={4} style={{ fill: VURGU }} />
+    <text x={437} y={138} textAnchor="middle" fontSize={11} fontWeight={700} style={{ fill: "rgb(var(--ui-accent-ink))" }}>Tamam</text>
   </Cizim>
 );
 
@@ -81,45 +85,45 @@ const CizimWebSocket = () => (
     <Ok x1={218} x2={256} y={65} />
     <Kutucuk x={260} y={26} g={170} h={78} metin="Uygulama: OBS WebSocket" alt="Port ve parolayı yaz, Bağlan" />
     <Ok x1={434} x2={462} y={65} />
-    <circle cx={510} cy={55} r={11} fill="#22c55e" />
-    <text x={510} y={86} textAnchor="middle" fontSize={11} fontWeight={700} fill="#fff">Bağlı</text>
+    <circle cx={510} cy={55} r={11} style={{ fill: "rgb(var(--ui-ok))" }} />
+    <text x={510} y={86} textAnchor="middle" fontSize={11} fontWeight={700} style={{ fill: METIN }}>Bağlı</text>
   </Cizim>
 );
 
 const CizimEkran = () => (
   <Cizim baslik="Giriş ekranı: başlık, geri sayım, şimdi çalıyor kartı ve şarkı sözleri" yukseklik={190}>
-    <rect x={110} y={10} width={340} height={170} rx={6} fill="#10151d" stroke={CIZGI} />
-    <text x={280} y={46} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff">YAYIN BİRAZDAN BAŞLIYOR</text>
-    <text x={280} y={78} textAnchor="middle" fontSize={22} fontWeight={800} fill={VURGU}>04:59</text>
-    <rect x={165} y={100} width={230} height={32} rx={5} fill="rgba(45,212,191,.12)" stroke={VURGU} strokeDasharray="4 3" />
-    <text x={280} y={115} textAnchor="middle" fontSize={11} fontWeight={700} fill="#fff">Şarkı sözleri</text>
-    <text x={280} y={127} textAnchor="middle" fontSize={9} fill={SOLUK}>sürükleyerek taşı, köşesinden büyüt</text>
-    <rect x={120} y={142} width={140} height={30} rx={5} fill={KUTU} stroke={CIZGI} />
-    <text x={190} y={161} textAnchor="middle" fontSize={11} fill="#fff">Şimdi Çalıyor</text>
+    <rect x={110} y={10} width={340} height={170} rx={6} style={{ fill: ZEMIN, stroke: CIZGI }} />
+    <text x={280} y={46} textAnchor="middle" fontSize={15} fontWeight={800} style={{ fill: METIN }}>YAYIN BİRAZDAN BAŞLIYOR</text>
+    <text x={280} y={78} textAnchor="middle" fontSize={22} fontWeight={800} style={{ fill: VURGU }}>04:59</text>
+    <rect x={165} y={100} width={230} height={32} rx={5} strokeDasharray="4 3" style={{ fill: VURGU_ZEMIN, stroke: VURGU }} />
+    <text x={280} y={115} textAnchor="middle" fontSize={11} fontWeight={700} style={{ fill: METIN }}>Şarkı sözleri</text>
+    <text x={280} y={127} textAnchor="middle" fontSize={9} style={{ fill: SOLUK }}>sürükleyerek taşı, köşesinden büyüt</text>
+    <rect x={120} y={142} width={140} height={30} rx={5} style={{ fill: KUTU, stroke: CIZGI }} />
+    <text x={190} y={161} textAnchor="middle" fontSize={11} style={{ fill: METIN }}>Şimdi Çalıyor</text>
   </Cizim>
 );
 
 const CizimTekUrl = () => (
   <Cizim baslik="Tek URL: bütün widget'lar tek OBS kaynağında, yalnız seçili widget taşınır" yukseklik={190}>
-    <rect x={20} y={10} width={330} height={170} rx={6} fill="#10151d" stroke={CIZGI} />
-    <rect x={32} y={80} width={84} height={90} rx={4} fill={KUTU} stroke={CIZGI} />
-    <text x={74} y={129} textAnchor="middle" fontSize={11} fill={SOLUK}>Sohbet</text>
-    <rect x={140} y={22} width={120} height={52} rx={4} fill="rgba(45,212,191,.14)" stroke={VURGU} strokeWidth={2} />
-    <text x={200} y={45} textAnchor="middle" fontSize={11} fontWeight={700} fill="#fff">Uyarı kutusu</text>
-    <text x={200} y={60} textAnchor="middle" fontSize={9} fill={VURGU}>seçili: taşınır</text>
-    <rect x={272} y={22} width={68} height={40} rx={4} fill={KUTU} stroke={CIZGI} />
-    <text x={306} y={46} textAnchor="middle" fontSize={10} fill={SOLUK}>Subathon</text>
-    <circle cx={290} cy={130} r={34} fill={KUTU} stroke={CIZGI} />
-    <text x={290} y={134} textAnchor="middle" fontSize={11} fill={SOLUK}>Çark</text>
-    <rect x={368} y={10} width={176} height={170} rx={6} fill={KUTU} stroke={CIZGI} />
-    <text x={380} y={32} fontSize={11} fontWeight={700} fill="#fff">Düzenlenecek Bileşen</text>
-    <rect x={380} y={40} width={152} height={22} rx={4} fill="#0d1219" stroke={VURGU} />
-    <text x={388} y={55} fontSize={10} fill="#fff">Uyarı kutusu ▾</text>
-    <text x={380} y={84} fontSize={10} fill={SOLUK}>☑ Yayında göster</text>
-    <text x={380} y={103} fontSize={10} fill={SOLUK}>☑ Arkasındakileri gizle</text>
-    <text x={380} y={122} fontSize={10} fill={SOLUK}>Konum ve boyut</text>
-    <text x={380} y={141} fontSize={10} fill={SOLUK}>Widget ayarları</text>
-    <text x={380} y={160} fontSize={10} fill={SOLUK}>Test düğmeleri tuvalin üstünde</text>
+    <rect x={20} y={10} width={330} height={170} rx={6} style={{ fill: ZEMIN, stroke: CIZGI }} />
+    <rect x={32} y={80} width={84} height={90} rx={4} style={{ fill: KUTU, stroke: CIZGI }} />
+    <text x={74} y={129} textAnchor="middle" fontSize={11} style={{ fill: SOLUK }}>Sohbet</text>
+    <rect x={140} y={22} width={120} height={52} rx={4} strokeWidth={2} style={{ fill: VURGU_ZEMIN, stroke: VURGU }} />
+    <text x={200} y={45} textAnchor="middle" fontSize={11} fontWeight={700} style={{ fill: METIN }}>Uyarı kutusu</text>
+    <text x={200} y={60} textAnchor="middle" fontSize={9} style={{ fill: VURGU }}>seçili: taşınır</text>
+    <rect x={272} y={22} width={68} height={40} rx={4} style={{ fill: KUTU, stroke: CIZGI }} />
+    <text x={306} y={46} textAnchor="middle" fontSize={10} style={{ fill: SOLUK }}>Subathon</text>
+    <circle cx={290} cy={130} r={34} style={{ fill: KUTU, stroke: CIZGI }} />
+    <text x={290} y={134} textAnchor="middle" fontSize={11} style={{ fill: SOLUK }}>Çark</text>
+    <rect x={368} y={10} width={176} height={170} rx={6} style={{ fill: KUTU, stroke: CIZGI }} />
+    <text x={380} y={32} fontSize={11} fontWeight={700} style={{ fill: METIN }}>Düzenlenecek Bileşen</text>
+    <rect x={380} y={40} width={152} height={22} rx={4} style={{ fill: ZEMIN, stroke: VURGU }} />
+    <text x={388} y={55} fontSize={10} style={{ fill: METIN }}>Uyarı kutusu ▾</text>
+    <text x={380} y={84} fontSize={10} style={{ fill: SOLUK }}>☑ Yayında göster</text>
+    <text x={380} y={103} fontSize={10} style={{ fill: SOLUK }}>☑ Arkasındakileri gizle</text>
+    <text x={380} y={122} fontSize={10} style={{ fill: SOLUK }}>Konum ve boyut</text>
+    <text x={380} y={141} fontSize={10} style={{ fill: SOLUK }}>Widget ayarları</text>
+    <text x={380} y={160} fontSize={10} style={{ fill: SOLUK }}>Test düğmeleri tuvalin üstünde</text>
   </Cizim>
 );
 

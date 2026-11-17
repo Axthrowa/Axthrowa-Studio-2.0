@@ -13,8 +13,8 @@ export default function StatusDot({
       <span
         className={`h-2 w-2 shrink-0 rounded-full transition-all duration-300 ${
           ok
-            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]"
-            : "bg-red-500/80 shadow-[0_0_6px_rgba(239,68,68,0.4)]"
+            ? "bg-emerald-400 shadow-[0_0_8px_rgb(var(--ui-ok)/0.7)]"
+            : "bg-red-500/80 shadow-[0_0_6px_rgb(var(--ui-danger)/0.4)]"
         }`}
         aria-hidden
       />

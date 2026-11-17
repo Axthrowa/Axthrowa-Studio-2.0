@@ -178,7 +178,7 @@ export default function SourceVisibilityHotkeys({
                 <button
                   type="button"
                   title="Şimdi dene"
-                  className="rounded-lg bg-panel-accent/85 p-2 text-[#08131c] hover:bg-panel-accent"
+                  className="rounded-lg bg-panel-accent/85 p-2 text-ui-accent-ink hover:bg-panel-accent"
                   onClick={() => onRun(r)}
                 >
                   <Play className="h-3.5 w-3.5" />

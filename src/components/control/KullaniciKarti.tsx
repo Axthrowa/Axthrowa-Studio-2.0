@@ -73,7 +73,7 @@ export default function KullaniciKarti({ m, mesajlar, base, izin, onCeza, onKapa
     <div
       role="dialog"
       aria-label={`Kullanıcı kartı: ${m.displayName}`}
-      className="absolute inset-0 z-10 flex flex-col gap-2 rounded-lg border border-white/10 bg-[#12151e] p-2"
+      className="absolute inset-0 z-10 flex flex-col gap-2 rounded-lg border border-white/10 bg-ui-s1 p-2"
       onKeyDown={(e) => e.key === "Escape" && onKapat()}
     >
       <div className="flex items-center gap-2">

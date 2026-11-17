@@ -106,8 +106,8 @@ export default function DashboardUstSerit({ bolum, onBolum, master, obsBagli }: 
           className={
             "inline-flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-extrabold uppercase tracking-wider transition disabled:opacity-60 " +
             (master.live
-              ? "bg-red-500 text-white shadow-[0_0_18px_rgba(239,68,68,0.45)] hover:bg-red-400"
-              : "bg-emerald-500 text-[#03291e] shadow-[0_0_18px_rgba(16,185,129,0.35)] hover:bg-emerald-400")
+              ? "bg-red-500 text-white shadow-[0_0_18px_rgb(var(--ui-danger)/0.45)] hover:bg-red-400"
+              : "bg-emerald-500 text-ui-bg shadow-[0_0_18px_rgb(var(--ui-ok)/0.35)] hover:bg-emerald-400")
           }
         >
           <CirclePower className="h-4 w-4" />

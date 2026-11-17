@@ -1,18 +1,50 @@
 /*
- * Ortak tasarım değişkenleri (T1) — köşe, yazı ölçeği, boşluk.
+ * Ortak tasarım belirteçleri (T1, UI-1): renk rolleri, düğme, başlık, boşluk ve köşe ölçeği.
  * Tek kaynak bu dosyadır (TEK-1): Studio (src/main.tsx), Resonance ve AxBoT istemcisi (index.css `@import`)
- * doğrudan alır; paket derlemesi (scripts/axbot-hazirla.mjs) geçici klasöre kopyalar. Gömülüyken değerler tema iletisiyle de gider
- * (src/lib/botTemaMesaji.ts), yani bir değeri burada değiştirmek üç arayüzü birden değiştirir.
- * Renkler burada değil: her görünümün (data-skin) kendi renkleri styles/index.css içinde.
+ * doğrudan alır; paket derlemesi (scripts/axbot-hazirla.mjs) geçici klasöre kopyalar.
+ *
+ * Değerler Studio'nun varsayılan görünümüdür (Gece Sinyali). Studio kendi görünümüne göre bunları
+ * styles/ust-serit.css içinde `--ui-*` değişkenlerine bağlar ve gömülü bota/Resonance'a tema iletisiyle
+ * gönderir (src/lib/botTemaMesaji.ts). Tek başına açılan bot ve Resonance bu varsayılanları kullanır.
  */
 :root {
+  /* Renk rolleri */
+  --axt-zemin: rgb(13 14 16);
+  --axt-yuzey: rgb(20 21 24);
+  --axt-yuzey-2: rgb(27 29 33);
+  --axt-kenar: rgb(58 63 70);
+  --axt-metin: rgb(228 230 234);
+  --axt-soluk: rgb(167 173 182);
+  --axt-vurgu: rgb(46 197 219);
+  --axt-vurgu-metin: rgb(6 38 44);
+  --axt-tehlike: rgb(200 35 43);
+  --axt-basari: rgb(63 207 142);
+  --axt-uyari: rgb(232 185 49);
+
+  /* Köşe */
   --axt-yaricap-kart: 1rem;
   --axt-yaricap-dugme: 0.75rem;
   --axt-yaricap-kucuk: 0.5rem;
+
+  /* Yazı: 3 başlık düzeyi, gövde, küçük */
   --axt-yazi-baslik: 1.25rem;
+  --axt-yazi-baslik-2: 1rem;
+  --axt-yazi-baslik-3: 0.875rem;
   --axt-yazi-govde: 0.875rem;
   --axt-yazi-kucuk: 0.75rem;
+
+  /* Boşluk ölçeği */
   --axt-bosluk: 1rem;
+  --axt-bosluk-1: 0.25rem;
+  --axt-bosluk-2: 0.5rem;
+  --axt-bosluk-3: 0.75rem;
+  --axt-bosluk-4: 1rem;
+  --axt-bosluk-6: 1.5rem;
+
+  /* Düğme: Studio'nun orta boy düğmesi (yükseklik = --ctl, köşe = --r-2) */
+  --axt-dugme-y: 1.5rem;
+  --axt-dugme-yaricap: var(--axt-yaricap-dugme);
+  --axt-dugme-buyuk-y: 2.5rem;
 }
 :root[data-kose="az"] {
   --axt-yaricap-kart: 0.625rem;
@@ -24,3 +56,38 @@
   --axt-yaricap-dugme: 0.1875rem;
   --axt-yaricap-kucuk: 0.1875rem;
 }
+
+/* 4 düğme türü. Studio `components/ui/Button` ile aynı ölçü ve renk; bot `Buton`, Resonance `Button` bunları kullanır */
+.axt-dugme {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: var(--axt-dugme-y);
+  padding: 0 0.625rem;
+  border: 1px solid transparent;
+  border-radius: var(--axt-dugme-yaricap);
+  font-size: var(--axt-yazi-kucuk);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 140ms, border-color 140ms, color 140ms;
+}
+.axt-dugme:disabled,
+.axt-dugme[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+.axt-dugme-birincil { background: var(--axt-vurgu); border-color: var(--axt-vurgu); color: var(--axt-vurgu-metin); font-weight: 600; }
+.axt-dugme-birincil:not(:disabled):hover { background: color-mix(in srgb, var(--axt-vurgu) 90%, transparent); }
+.axt-dugme-ikincil { background: var(--axt-yuzey-2); border-color: var(--axt-kenar); color: var(--axt-metin); }
+.axt-dugme-ikincil:not(:disabled):hover { background: color-mix(in srgb, var(--axt-yuzey-2) 70%, var(--axt-kenar)); }
+.axt-dugme-sessiz { background: transparent; color: var(--axt-soluk); }
+.axt-dugme-sessiz:not(:disabled):hover { background: var(--axt-yuzey-2); color: var(--axt-metin); }
+.axt-dugme-tehlike { background: transparent; border-color: var(--axt-tehlike); color: var(--axt-metin); }
+.axt-dugme-tehlike:not(:disabled):hover { background: color-mix(in srgb, var(--axt-tehlike) 10%, transparent); }
+.axt-dugme-buyuk { height: var(--axt-dugme-buyuk-y); padding: 0 0.75rem; font-size: var(--axt-yazi-govde); }
+
+/* 3 başlık düzeyi: sayfa, bölüm, kart */
+.axt-baslik-1 { font-size: var(--axt-yazi-baslik); font-weight: 600; line-height: 1.4; letter-spacing: -0.025em; color: var(--axt-metin); }
+.axt-baslik-2 { font-size: var(--axt-yazi-baslik-2); font-weight: 600; line-height: 1.4; color: var(--axt-metin); }
+.axt-baslik-3 { font-size: var(--axt-yazi-baslik-3); font-weight: 600; line-height: 1.4; color: var(--axt-metin); }

@@ -33,7 +33,7 @@ export default class GlobalErrorBoundary extends Component<{ children: ReactNode
     // OBS tarayıcı kaynakları (overlay, widget) yayında görünür: orada çökme kartı yerine boş (saydam) kalır
     if (!PANEL_YOLLARI.has(window.location.pathname)) return null;
     return (
-      <div className="flex min-h-screen items-center justify-center bg-axthrowa-dark bg-[radial-gradient(ellipse_60%_50%_at_50%_40%,rgba(139,92,246,0.12),transparent_70%)] p-6 text-zinc-100">
+      <div className="flex min-h-screen items-center justify-center bg-axthrowa-dark bg-[radial-gradient(ellipse_60%_50%_at_50%_40%,rgb(var(--ui-brand)/0.12),transparent_70%)] p-6 text-zinc-100">
         <div className="relative w-full max-w-xl rounded-2xl bg-axthrowa-card px-8 py-7 shadow-float before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl before:border-t before:border-white/5">
           <div className="flex items-center gap-3">
             <WarningOctagon weight="duotone" className="h-8 w-8 text-red-400" />

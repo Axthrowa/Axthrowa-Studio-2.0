@@ -14,7 +14,9 @@ const ESLEME = {
 }
 const RENK = /^(#[0-9a-f]{3,8}|rgba?\(\s*[\d.\s,%/]+\))$/i
 /** Ölçüler ortak tasarım dosyasındaki adla aynen yazılır (köşe, başlık) */
-const OLCULER = ['--axt-yaricap-kart', '--axt-yaricap-dugme', '--axt-yazi-baslik']
+const OLCULER = ['--axt-yaricap-kart', '--axt-yaricap-dugme', '--axt-yazi-baslik', '--axt-dugme-y', '--axt-dugme-yaricap', '--axt-dugme-buyuk-y']
+/** Düğme renkleri ortak adla aynen yazılır (ortak/tasarim.css .axt-dugme) */
+const ORTAK_RENKLER = ['--axt-vurgu', '--axt-vurgu-metin', '--axt-tehlike', '--axt-kenar', '--axt-yuzey-2', '--axt-metin', '--axt-soluk']
 const OLCU = /^(\d{1,2}(\.\d+)?|\.\d+)(rem|px)$/ // sıkıştırılmış CSS baştaki sıfırı atar (.75rem)
 
 /** Geçerli iletiden Resonance değişkenlerini çıkarır; tanınmayan ileti için null. */
@@ -25,6 +27,10 @@ export function studioTemasiCoz(veri) {
   for (const [axt, bizim] of Object.entries(ESLEME)) {
     const d = typeof ham[axt] === 'string' ? ham[axt].trim() : ''
     if (RENK.test(d)) cikti[bizim] = d
+  }
+  for (const ad of ORTAK_RENKLER) {
+    const d = typeof ham[ad] === 'string' ? ham[ad].trim() : ''
+    if (RENK.test(d)) cikti[ad] = d
   }
   for (const ad of OLCULER) {
     const d = typeof ham[ad] === 'string' ? ham[ad].trim() : ''

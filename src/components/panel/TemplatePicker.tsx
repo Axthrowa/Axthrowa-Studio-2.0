@@ -203,7 +203,7 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
           />
           <button
             type="button"
-            className="shrink-0 rounded bg-panel-accent/80 px-2.5 py-1.5 text-[11px] font-medium text-[#08131c]"
+            className="shrink-0 rounded bg-panel-accent/80 px-2.5 py-1.5 text-[11px] font-medium text-ui-accent-ink"
             disabled={saving}
             onClick={() => void saveCurrent()}
           >

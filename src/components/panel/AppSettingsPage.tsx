@@ -336,7 +336,7 @@ export default function AppSettingsPage({
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 px-4 py-2.5 text-xs md:text-sm font-bold text-[#08131c] shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 px-4 py-2.5 text-xs md:text-sm font-bold text-ui-accent-ink shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95"
                 onClick={async () => {
                   try {
                     const { buildBackup, downloadBackupJson } = await import("../../lib/panelBackup");

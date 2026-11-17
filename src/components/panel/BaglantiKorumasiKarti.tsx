@@ -5,7 +5,7 @@ import { korumaAyari, type KorumaAyari } from "../../lib/baglantiKorumasi";
 import { isObsConnected, listScenes } from "../../lib/obs";
 import { Switch } from "../axthrowa/switch";
 
-const ALAN = "w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-xs text-white";
+const ALAN = "w-full rounded-md border border-panel-border bg-ui-s2 px-2 py-1.5 text-xs text-white";
 
 export function BaglantiKorumasiKarti() {
   const [ayar, setAyar] = useState<KorumaAyari | null>(null);

@@ -57,7 +57,7 @@ export default function BotSessions({ onAc }: { onAc?: () => void } = {}) {
         <span
           className={
             "h-2 w-2 shrink-0 rounded-full " +
-            (live ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-neutral-500")
+            (live ? "bg-emerald-400 shadow-[0_0_8px_rgb(var(--ui-ok)/0.8)]" : "bg-neutral-500")
           }
         />
         <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">Bot · AxBoT</span>

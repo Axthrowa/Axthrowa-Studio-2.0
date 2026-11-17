@@ -169,7 +169,7 @@ export default function ObsShortcutSettings({
                   />
                 </div>
                 <select
-                  className="h-9 w-full rounded-lg border border-panel-border bg-[#12151e] px-2.5 py-1 text-xs md:text-sm font-medium text-white"
+                  className="h-9 w-full rounded-lg border border-panel-border bg-ui-s1 px-2.5 py-1 text-xs md:text-sm font-medium text-white"
                   value={scenes.includes(sceneVal) ? sceneVal : sceneVal ? sceneVal : ""}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -237,7 +237,7 @@ export default function ObsShortcutSettings({
                 <div className="flex items-center gap-2">
                   {scenes.length > 0 ? (
                     <select
-                      className="h-9 min-w-0 flex-1 rounded-lg border border-panel-border bg-[#12151e] px-2 py-1 text-xs md:text-sm font-medium text-white"
+                      className="h-9 min-w-0 flex-1 rounded-lg border border-panel-border bg-ui-s1 px-2 py-1 text-xs md:text-sm font-medium text-white"
                       value={scenes.includes(sceneName) ? sceneName : ""}
                       onChange={(e) => {
                         const next = [...extras];
@@ -387,7 +387,7 @@ export default function ObsShortcutSettings({
               >
                 <div className="flex items-center gap-2">
                   <select
-                    className="h-9 min-w-0 flex-1 rounded-lg border border-panel-border bg-[#12151e] px-2.5 py-1 text-xs md:text-sm font-medium text-white"
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-panel-border bg-ui-s1 px-2.5 py-1 text-xs md:text-sm font-medium text-white"
                     value={inputName}
                     onChange={(e) => {
                       const next = [...sourceMutes];

@@ -127,7 +127,7 @@ export default function ProfileSwitcher({ onToast }: Props) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-10 z-[90] w-72 rounded-2xl border border-white/[0.12] bg-[#0c0e14] p-2.5 shadow-glass-elevated"
+          className="absolute right-0 top-10 z-[90] w-72 rounded-2xl border border-white/[0.12] bg-ui-bg p-2.5 shadow-glass-elevated"
         >
           <p className="px-2 pb-1.5 text-[11px] leading-snug text-panel-muted">
             Profil, Giriş/Çıkış/Mola/Chat ayarlarını ve ses panelini saklar. OBS bağlantısı ortaktır.
@@ -223,7 +223,7 @@ export default function ProfileSwitcher({ onToast }: Props) {
                 disabled={busy || state.profiles.length >= MAX_PROFILES}
                 onClick={() => void create()}
                 title="Geçerli ayarlardan yeni profil oluştur"
-                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-panel-accent px-2.5 text-xs font-medium text-[#08131c] disabled:opacity-40"
+                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-panel-accent px-2.5 text-xs font-medium text-ui-accent-ink disabled:opacity-40"
               >
                 <Plus className="h-3.5 w-3.5" /> Oluştur
               </button>

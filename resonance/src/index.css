@@ -1,6 +1,6 @@
 @import "tailwindcss";
 /* Ortak tasarım değişkenleri: Studio ile aynı dosya (T1) */
-@import "../../ortak/tasarim.css";
+@import "../../ortak/tasarim.css" layer(components);
 
 /* Tailwind köşeleri ortak değişkenlere bağlı; Studio içinde tema iletisi bunları günceller */
 :root {
@@ -20,6 +20,16 @@
   --color-accent: #22d3b8;
   --color-accent-2: #6366f1;
   --font-sans: "Poppins", "Poppins Fallback", sans-serif;
+}
+
+/* UI-1: ortak düğme belirteçleri (ortak/tasarim.css) Resonance renklerine bağlı; Studio içinde iletiyle gelir */
+:root {
+  --axt-vurgu: var(--color-accent);
+  --axt-vurgu-metin: #fff;
+  --axt-yuzey-2: var(--color-surface-2);
+  --axt-kenar: var(--color-border);
+  --axt-metin: var(--color-text);
+  --axt-soluk: var(--color-text-muted);
 }
 
 * {

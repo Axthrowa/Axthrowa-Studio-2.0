@@ -1970,7 +1970,7 @@ export default function PanelPage() {
               disabled={masterBusy}
               className={
                 "inline-flex h-8 items-center rounded px-3 text-[13px] font-semibold transition-colors duration-150 disabled:opacity-60 " +
-                (liveOn ? "bg-[var(--dt-live)] text-white" : "bg-[var(--dt-ok)] text-[#03291e]")
+                (liveOn ? "bg-[var(--dt-live)] text-white" : "bg-[var(--dt-ok)] text-ui-bg")
               }
               onClick={() => void runMasterStream()}
             >

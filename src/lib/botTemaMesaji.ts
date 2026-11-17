@@ -14,6 +14,12 @@ export type BotTemaRenk = {
   kart: string;
   dugme: string;
   baslik: string;
+  /** UI-1: düğme belirteçleri (ortak/tasarim.css); boşsa alıcı kendi varsayılanını kullanır */
+  vurguMetin: string;
+  tehlike: string;
+  dugmeY: string;
+  dugmeYaricap: string;
+  dugmeBuyukY: string;
 };
 
 export function yaricapOku(kose: string | null | undefined): { kart: string; dugme: string } {
@@ -31,13 +37,19 @@ export function renkleriOku(oku: (ad: string) => string, kose: string | null | u
     yuzey: v("--panel-card"),
     yuzey2: v("--panel-elevated"),
     kenar: v("--panel-border"),
-    vurgu: v("--panel-accent"),
+    // Düğme vurgusu Studio'nun ortak belirteci; eski derlemede panel vurgusu
+    vurgu: v("--axt-vurgu") || v("--panel-accent"),
     metin: v("--title-color") || (fg ? `rgb(${fg})` : ""),
     soluk: v("--panel-muted"),
     // Ortak dosya yüklenmemişse (eski derleme, sınama) data-kose eşlemesine düşülür
     kart: v("--axt-yaricap-kart") || y.kart,
     dugme: v("--axt-yaricap-dugme") || y.dugme,
     baslik: v("--axt-yazi-baslik") || "1.25rem",
+    vurguMetin: v("--axt-vurgu-metin"),
+    tehlike: v("--axt-tehlike"),
+    dugmeY: v("--axt-dugme-y"),
+    dugmeYaricap: v("--axt-dugme-yaricap"),
+    dugmeBuyukY: v("--axt-dugme-buyuk-y"),
   };
 }
 
@@ -56,6 +68,11 @@ export function botTemaMesaji(renk: BotTemaRenk) {
       "--axt-yaricap-kart": renk.kart,
       "--axt-yaricap-dugme": renk.dugme,
       "--axt-yazi-baslik": renk.baslik,
+      "--axt-vurgu-metin": renk.vurguMetin,
+      "--axt-tehlike": renk.tehlike,
+      "--axt-dugme-y": renk.dugmeY,
+      "--axt-dugme-yaricap": renk.dugmeYaricap,
+      "--axt-dugme-buyuk-y": renk.dugmeBuyukY,
     },
   };
 }

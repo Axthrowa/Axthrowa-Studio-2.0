@@ -94,11 +94,11 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd, onPartSelect
       className="relative h-full w-full overflow-hidden rounded-2xl bg-axthrowa-dark bg-[radial-gradient(#27272a_1px,transparent_1px)] bg-[size:20px_20px]"
     >
       {/* Derinlik: tuvalin ortasından dışa sönen koyu menekşe parlama */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_50%,rgba(139,92,246,0.14),rgba(139,92,246,0.04)_45%,transparent_75%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_50%,rgb(var(--ui-brand)/0.14),rgb(var(--ui-brand)/0.04)_45%,transparent_75%)]" />
 
       {/* Önizleme penceresi: ölçeklenmiş boyutunda, ortada; çizgi yerine yayılan gölge ve ince iç ışık */}
       <div
-        className="absolute left-1/2 top-1/2 overflow-hidden rounded-xl bg-black shadow-[0_0_40px_rgba(139,92,246,0.1),0_20px_50px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/10"
+        className="absolute left-1/2 top-1/2 overflow-hidden rounded-xl bg-black shadow-[0_0_40px_rgb(var(--ui-brand)/0.1),var(--ui-shadow-float)] ring-1 ring-white/10"
         style={{
           width: CANVAS_W * scale,
           height: CANVAS_H * scale,
@@ -135,14 +135,14 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd, onPartSelect
       </div>
 
       {/* Stüdyo etiketi: üstte ortada, çerçevesiz cam hap */}
-      <div className="pointer-events-none absolute left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-axthrowa-card/80 px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.4)] backdrop-blur-md">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]" />
+      <div className="pointer-events-none absolute left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-axthrowa-card/80 px-3 py-1.5 shadow-panel backdrop-blur-md">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgb(var(--ui-danger)/0.9)]" />
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-300">Canlı önizleme</span>
         <span className="font-mono text-[10px] text-zinc-400">1920×1080</span>
       </div>
 
       {/* Ses: sağ alt köşede cam hap */}
-      <div className="absolute bottom-4 right-4 z-50 flex items-center gap-3 rounded-full bg-axthrowa-card/85 py-2 pl-3 pr-4 shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md">
+      <div className="absolute bottom-4 right-4 z-50 flex items-center gap-3 rounded-full bg-axthrowa-card/85 py-2 pl-3 pr-4 shadow-panel backdrop-blur-md">
         <button
           type="button"
           className="p-1 transition-colors duration-200"

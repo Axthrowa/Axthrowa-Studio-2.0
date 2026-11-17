@@ -119,7 +119,7 @@ export default function KarsilamaEkrani() {
       aria-modal="true"
       aria-label="AxthrowA'ya hoş geldiniz"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_45%,rgba(139,92,246,0.18),transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_45%,rgb(var(--ui-brand)/0.18),transparent_70%)]" />
       <WidgetCard
         title="AxthrowA'ya hoş geldiniz"
         description="Premium lisansınız varsa anahtarı girin. Lisans olmadan da bütün özellikler açık; bu adımı atlayabilirsiniz."

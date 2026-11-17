@@ -202,7 +202,7 @@ export default function SoundBoardPanel({
           <button
             type="button"
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 px-4 py-2.5 text-xs md:text-sm font-bold text-[#08131c] shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 px-4 py-2.5 text-xs md:text-sm font-bold text-ui-accent-ink shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95 disabled:opacity-50"
             onClick={() => void browseNative()}
           >
             <Plus className="size-4" />
@@ -362,7 +362,7 @@ export default function SoundBoardPanel({
                   {t("sfx.file")}
                 </span>
                 <select
-                  className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#12151e] px-2.5 py-1.5 text-xs md:text-sm font-medium text-white outline-none focus:border-panel-accent/60"
+                  className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-ui-s1 px-2.5 py-1.5 text-xs md:text-sm font-medium text-white outline-none focus:border-panel-accent/60"
                   value={pad.file}
                   onChange={(e) => patchPad(pad.id, { file: e.target.value })}
                 >

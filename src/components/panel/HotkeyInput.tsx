@@ -280,7 +280,7 @@ export default function HotkeyInput({
         <input
           className={`${className} ${
             listening
-              ? "!border-amber-500/80 !bg-amber-500/10 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+              ? "!border-amber-500/80 !bg-amber-500/10 shadow-[0_0_12px_rgb(var(--ui-warn)/0.25)]"
               : ""
           }`}
           value={listening ? preview || draft : draft}

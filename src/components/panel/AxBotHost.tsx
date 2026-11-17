@@ -225,7 +225,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
         <span
           className={cn(
             "h-2 w-2 rounded-full",
-            st.running ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-amber-400",
+            st.running ? "bg-emerald-400 shadow-[0_0_8px_rgb(var(--ui-ok)/0.8)]" : "bg-amber-400",
           )}
         />
         <span className="font-semibold text-white">AxBoT</span>
@@ -292,7 +292,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
           ref={frameRef}
           title="AxBoT"
           src={frameUrl(st.url, tab, embed)}
-          className="min-h-0 w-full flex-1 border-0 bg-[#090b10]"
+          className="min-h-0 w-full flex-1 border-0 bg-ui-bg"
           // microphone: Sesli Komutlar sayfasında "Bu pencerede dinle" ve mikrofon listesi
           allow="clipboard-write; autoplay; fullscreen; microphone"
         />
@@ -310,7 +310,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
                 <button
                   type="button"
                   onClick={() => void start()}
-                  className="rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 px-4 py-2 text-xs font-bold text-[#022227] shadow-[0_0_15px_rgba(62,237,254,0.3)]"
+                  className="rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 px-4 py-2 text-xs font-bold text-ui-accent-ink shadow-[0_0_15px_rgb(var(--ui-accent)/0.3)]"
                 >
                   Başlat
                 </button>

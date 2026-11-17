@@ -16,14 +16,14 @@ import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInter
 /** OBS'in eşikleri: yeşil -20 dB'ye, sarı -9 dB'ye kadar, üstü kırmızı */
 const SARI = meterPercent(-20);
 const KIRMIZI = meterPercent(-9);
-const ZEMIN = `linear-gradient(0deg, #1f5c2f 0 ${SARI}%, #6b5f1c ${SARI}% ${KIRMIZI}%, #6b2424 ${KIRMIZI}% 100%)`;
-const DOLU = `linear-gradient(0deg, #4ade50 0 ${SARI}%, #facc15 ${SARI}% ${KIRMIZI}%, #ef4444 ${KIRMIZI}% 100%)`;
-const SUSTURULMUS_ZEMIN = "#2c2d36";
-const SUSTURULMUS_DOLU = "#8b8d9b";
+const ZEMIN = `linear-gradient(0deg, rgb(var(--ui-ok) / 0.3) 0 ${SARI}%, rgb(var(--ui-warn) / 0.3) ${SARI}% ${KIRMIZI}%, rgb(var(--ui-danger) / 0.3) ${KIRMIZI}% 100%)`;
+const DOLU = `linear-gradient(0deg, rgb(var(--ui-ok)) 0 ${SARI}%, rgb(var(--ui-warn)) ${SARI}% ${KIRMIZI}%, rgb(var(--ui-danger)) ${KIRMIZI}% 100%)`;
+const SUSTURULMUS_ZEMIN = "rgb(var(--ui-s3))";
+const SUSTURULMUS_DOLU = "rgb(var(--ui-fg3))";
 const CETVEL = [-60, -50, -40, -30, -20, -10, 0];
 const VARSAYILAN_KANAL = 2;
 /** LED görünümü: 3 px yanık, 1 px boşluk */
-const LED = "repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 4px)";
+const LED = "repeating-linear-gradient(0deg, rgb(var(--ui-bg)) 0 3px, transparent 3px 4px)";
 const GIZLI_KEY = "axt.mikser.gizli";
 
 function kayitliGizli(): string[] {
@@ -200,7 +200,7 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
         const yuzde = meterPercent(d.tepe);
         tepe.style.opacity = yuzde > 0 ? "1" : "0";
         tepe.style.bottom = `calc(${yuzde}% - 2px)`;
-        tepe.style.background = yuzde >= KIRMIZI ? "#ef4444" : yuzde >= SARI ? "#facc15" : "#4ade50";
+        tepe.style.background = yuzde >= KIRMIZI ? "rgb(var(--ui-danger))" : yuzde >= SARI ? "rgb(var(--ui-warn))" : "rgb(var(--ui-ok))";
       });
       kare = requestAnimationFrame(ciz);
     };

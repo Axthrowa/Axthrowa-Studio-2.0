@@ -544,7 +544,7 @@ export default function VideoScrubber({
           <VolumeIcon muted={muted} />
         </button>
         <select
-          className="h-8 rounded-xl border border-white/[0.09] bg-[#12151e] px-2 text-xs font-semibold text-white outline-none focus:border-panel-accent/60"
+          className="h-8 rounded-xl border border-white/[0.09] bg-ui-s1 px-2 text-xs font-semibold text-white outline-none focus:border-panel-accent/60"
           value={speed}
           title="Oynatma hızı"
           onChange={(e) => setSpeed(Number(e.target.value))}
@@ -560,7 +560,7 @@ export default function VideoScrubber({
       {onGoLive && (
         <button
           type="button"
-          className="flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 text-xs font-bold text-[#08131c] shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95"
+          className="flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-panel-accent/40 bg-panel-accent/90 text-xs font-bold text-ui-accent-ink shadow-glow-sm transition-all hover:bg-panel-accent active:scale-95"
           onClick={() => {
             onGoLive(Math.round(ctl().now() * 10) / 10);
             setLiveAt(Date.now());

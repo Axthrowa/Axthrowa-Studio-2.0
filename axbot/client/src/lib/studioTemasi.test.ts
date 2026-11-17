@@ -16,4 +16,9 @@ describe('Studio teması iletisi', () => {
     expect(studioTemasiCoz({ tur: 'studio-tema', tema: 'x"]{}' })).toBeNull();
     expect(studioTemasiCoz(null)).toBeNull();
   });
+
+  it('düğme belirteçlerini alır, bozuk ölçüyü atar (UI-1)', () => {
+    const t = studioTemasiCoz({ tur: 'studio-tema', tema: 'studio', degiskenler: { '--axt-dugme-y': '24px', '--axt-dugme-yaricap': '2px', '--axt-dugme-buyuk-y': 'calc(1px)', '--axt-vurgu-metin': 'rgb(6 38 44)', '--axt-tehlike': 'red;x' } });
+    expect(t?.degiskenler).toEqual({ '--axt-dugme-y': '24px', '--axt-dugme-yaricap': '2px', '--axt-vurgu-metin': 'rgb(6 38 44)' });
+  });
 });

@@ -83,7 +83,7 @@ function Select({
       <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
       <select
         aria-label={label}
-        className="h-9 w-full rounded-xl border border-white/[0.12] bg-[#12151e] px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
+        className="h-9 w-full rounded-xl border border-white/[0.12] bg-ui-s1 px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -272,7 +272,7 @@ export default function SahneAyarlari({
                 <label className="mb-1 block text-xs text-panel-muted">{tt("field.bg")}</label>
                 <select
                   aria-label={tt("field.bg")}
-                  className="h-9 w-full rounded-xl border border-white/[0.12] bg-[#12151e] px-3 text-sm text-white"
+                  className="h-9 w-full rounded-xl border border-white/[0.12] bg-ui-s1 px-3 text-sm text-white"
                   value={settings.bgStyle || "mix"}
                   onChange={(e) => update({ bgStyle: e.target.value })}
                 >
@@ -553,7 +553,7 @@ export default function SahneAyarlari({
             <label className="mb-1 block text-xs text-panel-muted">{tt("field.bg")}</label>
             <select
               aria-label={tt("field.bg")}
-              className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
+              className="w-full rounded-md border border-panel-border bg-ui-s2 px-2 py-2 text-sm text-white"
               value={settings.bgStyle || "mix"}
               onChange={(e) => update({ bgStyle: e.target.value })}
             >
@@ -760,7 +760,7 @@ export default function SahneAyarlari({
             label="Yerel kırpma"
           />
 
-          <div className="rounded-md border border-panel-border/60 bg-[#141824] p-3">
+          <div className="rounded-md border border-panel-border/60 bg-ui-s1 p-3">
             <label className="flex items-center gap-2 text-sm text-white">
               <input
                 type="checkbox"
@@ -926,7 +926,7 @@ export default function SahneAyarlari({
               <div>
                 <label className="mb-1 block text-xs text-panel-muted">YouTube kalite</label>
                 <select aria-label="YouTube kalite"
-                  className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
+                  className="w-full rounded-md border border-panel-border bg-ui-s2 px-2 py-2 text-sm text-white"
                   value={settings.youtubeQuality || "hd1080"}
                   onChange={(e) => update({ youtubeQuality: e.target.value, bgStyle: "youtube" })}
                 >
@@ -991,7 +991,7 @@ export default function SahneAyarlari({
                 </p>
               </div>
 
-          <div className="rounded-md border border-panel-border/60 bg-[#141824] p-3">
+          <div className="rounded-md border border-panel-border/60 bg-ui-s1 p-3">
             <label className="flex items-center gap-2 text-sm text-white">
               <input
                 type="checkbox"
@@ -1136,7 +1136,7 @@ export default function SahneAyarlari({
 
           {/* Video sesi artık ilgili videonun yanında; burada müzik kalıyor. */}
           <p className="text-[11px] font-medium text-panel-muted">Müzik sesi</p>
-          <div className="space-y-3 rounded-md border border-panel-border/60 bg-[#141824] p-3">
+          <div className="space-y-3 rounded-md border border-panel-border/60 bg-ui-s1 p-3">
             <div>
               <label className="flex items-center gap-2 text-sm text-white">
                 <input
@@ -1255,7 +1255,7 @@ export default function SahneAyarlari({
           <div className="flex items-center gap-2 text-xs">
             <span className="w-20 text-panel-muted">Biçim</span>
             <select aria-label="Logo biçimi"
-              className="flex-1 rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-sm text-white"
+              className="flex-1 rounded-md border border-panel-border bg-ui-s2 px-2 py-1.5 text-sm text-white"
               value={settings.logoShape || "daire"}
               onChange={(e) => update({ logoShape: e.target.value })}
             >
@@ -1303,7 +1303,7 @@ export default function SahneAyarlari({
           <div>
             <label className="mb-1 block text-xs text-panel-muted">Logo efekt</label>
             <select aria-label="Logo efekt"
-              className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
+              className="w-full rounded-md border border-panel-border bg-ui-s2 px-2 py-2 text-sm text-white"
               value={settings.logoEffect || "none"}
               onChange={(e) => update({ logoEffect: e.target.value })}
             >
@@ -1317,7 +1317,7 @@ export default function SahneAyarlari({
           <div>
             <label className="mb-1 block text-xs text-panel-muted">Logo animasyon</label>
             <select aria-label="Logo animasyon"
-              className="w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-2 text-sm text-white"
+              className="w-full rounded-md border border-panel-border bg-ui-s2 px-2 py-2 text-sm text-white"
               value={settings.logoAnim || "none"}
               onChange={(e) => update({ logoAnim: e.target.value })}
             >
@@ -1334,7 +1334,7 @@ export default function SahneAyarlari({
               <input
                 type="color"
                 aria-label="Logo vurgu rengi"
-                className="h-9 w-12 cursor-pointer rounded border border-panel-border bg-[#1c2030]"
+                className="h-9 w-12 cursor-pointer rounded border border-panel-border bg-ui-s2"
                 value={settings.logoAccentColor || settings.accent || "#7c5cff"}
                 onChange={(e) => update({ logoAccentColor: e.target.value })}
               />
@@ -1859,7 +1859,7 @@ export default function SahneAyarlari({
                   type="number"
                   min={2}
                   max={180}
-                  className="w-16 rounded-md border border-panel-border bg-[#1c2030] px-2 py-1 text-sm text-white"
+                  className="w-16 rounded-md border border-panel-border bg-ui-s2 px-2 py-1 text-sm text-white"
                   value={Number(settings.messageHideSec) || 12}
                   onChange={(e) =>
                     update({ messageHideSec: clampInt(e.target.value, 2, 180, 12) })
@@ -2020,7 +2020,7 @@ export default function SahneAyarlari({
             ))}
             <button
               type="button"
-              className="ml-auto rounded-full bg-panel-accent/90 px-2.5 py-1 text-[11px] font-semibold text-[#08131c]"
+              className="ml-auto rounded-full bg-panel-accent/90 px-2.5 py-1 text-[11px] font-semibold text-ui-accent-ink"
               onClick={restoreAllParts}
             >
               Tümünü geri getir
@@ -2161,7 +2161,7 @@ export default function SahneAyarlari({
         </p>
         <button
           type="button"
-          className="mt-2 w-full rounded-md bg-panel-accent px-3 py-2 text-sm font-medium text-[#08131c]"
+          className="mt-2 w-full rounded-md bg-panel-accent px-3 py-2 text-sm font-medium text-ui-accent-ink"
           onClick={() => {
             setActiveNav("hotkeys");
           }}

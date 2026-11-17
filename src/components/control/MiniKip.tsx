@@ -63,7 +63,7 @@ export function MiniKip({ onCik, onToast }: { onCik: () => void; onToast: (m: st
 
   const uyari = uyarilar[0];
   return (
-    <div className="flex h-screen flex-col gap-1 overflow-hidden bg-[#0b0f14] p-2 text-white">
+    <div className="flex h-screen flex-col gap-1 overflow-hidden bg-ui-bg p-2 text-white">
       <div data-tauri-drag-region className="flex cursor-move items-center gap-2 text-xs">
         {canli ? <span className="rounded bg-red-600 px-1.5 font-bold">CANLI {saglik ? sureMetni(saglik.sureMs) : ""}</span> : <span className="text-white/50">Yayında değil</span>}
         <span data-tauri-drag-region className={`min-w-0 flex-1 truncate ${uyari ? (uyari.level === "error" ? "text-red-300" : "text-amber-300") : "text-emerald-300"}`}>

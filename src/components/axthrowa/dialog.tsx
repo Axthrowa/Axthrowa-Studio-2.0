@@ -69,7 +69,7 @@ export function Dialog({ open, onOpenChange, title, description, icon, children,
         aria-describedby={description ? aciklamaId : undefined}
         data-state={state}
         className={cn(
-          "relative w-full max-w-md overflow-hidden rounded-2xl bg-axthrowa-card shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]",
+          "relative w-full max-w-md overflow-hidden rounded-2xl bg-axthrowa-card shadow-float",
           "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl before:border-t before:border-white/5",
           "transform-gpu data-[state=closed]:animate-zoom-out data-[state=open]:animate-zoom-in",
           className

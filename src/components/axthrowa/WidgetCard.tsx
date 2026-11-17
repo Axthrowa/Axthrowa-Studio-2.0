@@ -25,7 +25,7 @@ export function WidgetCard({ title, description, action, icon, children, classNa
   return (
     <section
       className={cn(
-        "relative rounded-2xl bg-axthrowa-card px-6 py-5 shadow-[0_8px_30px_rgb(0,0,0,0.06)]",
+        "relative rounded-2xl bg-axthrowa-card px-6 py-5 shadow-panel",
         "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl before:border-t before:border-white/5",
         className
       )}

@@ -48,7 +48,7 @@ function StyleRow({
         <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Font
           <select
-            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-[#12151e] px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
+            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-ui-s1 px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
             value={st.font || defaultFont || "system"}
             onChange={(e) => onPatch({ font: e.target.value })}
           >
@@ -62,7 +62,7 @@ function StyleRow({
         <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Efekt
           <select
-            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-[#12151e] px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
+            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-ui-s1 px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
             value={st.effect || "none"}
             onChange={(e) => onPatch({ effect: e.target.value })}
           >
@@ -76,7 +76,7 @@ function StyleRow({
         <label className="col-span-2 block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
           Animasyon
           <select
-            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-[#12151e] px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
+            className="mt-1 w-full rounded-lg border border-white/[0.09] bg-ui-s1 px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
             value={st.anim || "none"}
             onChange={(e) => onPatch({ anim: e.target.value })}
           >
@@ -91,7 +91,7 @@ function StyleRow({
           Yazı Rengi
           <input
             type="color"
-            className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-[#12151e] p-0.5 text-white"
+            className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-ui-s1 p-0.5 text-white"
             value={renk}
             onChange={(e) => onPatch({ color: e.target.value })}
           />
@@ -100,7 +100,7 @@ function StyleRow({
           Vurgu Rengi
           <input
             type="color"
-            className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-[#12151e] p-0.5 text-white"
+            className="mt-1 h-8 w-full cursor-pointer rounded-lg border border-white/[0.09] bg-ui-s1 p-0.5 text-white"
             value={vurgu}
             onChange={(e) => onPatch({ accentColor: e.target.value })}
           />
@@ -189,7 +189,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
           <label className="mb-1 block text-[10px] text-panel-muted">
             Görünüm
             <select
-              className="mt-0.5 w-full rounded-md border border-panel-border bg-[#1c2030] text-white px-1.5 py-1.5 text-xs"
+              className="mt-0.5 w-full rounded-md border border-panel-border bg-ui-s2 text-white px-1.5 py-1.5 text-xs"
               value={settings.countdownStyle === "minimal" ? "minimal" : "boxes"}
               onChange={(e) => onChange({ countdownStyle: e.target.value })}
             >
@@ -280,7 +280,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
               <label className="block text-[10px] text-panel-muted">
                 Satırlar (her satır bir isim)
                 <textarea
-                  className="mt-0.5 h-20 w-full rounded-md border border-panel-border bg-[#1c2030] text-white px-2 py-1.5 text-xs"
+                  className="mt-0.5 h-20 w-full rounded-md border border-panel-border bg-ui-s2 text-white px-2 py-1.5 text-xs"
                   value={(sec.lines || []).join("\n")}
                   onChange={(e) =>
                     patchSection(i, {
@@ -322,7 +322,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
           ))}
           <button
             type="button"
-            className="w-full rounded-md bg-[#1c2030] text-white px-2 py-2 text-xs"
+            className="w-full rounded-md bg-ui-s2 text-white px-2 py-2 text-xs"
             onClick={() => {
               const next = [...sections, { title: "Yeni Bölüm", lines: [] }];
               onChange({
@@ -377,7 +377,7 @@ function FieldInline({
     <label className="block text-[10px] text-panel-muted">
       {label}
       <input
-        className="mt-0.5 w-full rounded-md border border-panel-border bg-[#1c2030] text-white px-2 py-1.5 text-xs"
+        className="mt-0.5 w-full rounded-md border border-panel-border bg-ui-s2 text-white px-2 py-1.5 text-xs"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

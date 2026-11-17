@@ -97,7 +97,7 @@ export function AlertsStudio() {
           <h1 className="text-2xl font-black text-white flex items-center gap-2"><Bell className="w-6 h-6 text-purple-400" /> Uyarılar (Alert Box)</h1>
           <p className="text-sm text-gray-400">Takip, abone, hediye abone, host, bağış, kicks ve raid alert ayarları.</p>
         </div>
-        <Buton ton="basari" onClick={test} ikon={<Play className="w-4 h-4" />}>Test uyarısı</Buton>
+        <Buton ton="birincil" onClick={test} ikon={<Play className="w-4 h-4" />}>Test uyarısı</Buton>
       </div>
 
       <div className="flex flex-wrap gap-1 bg-black/30 p-1 rounded-xl">

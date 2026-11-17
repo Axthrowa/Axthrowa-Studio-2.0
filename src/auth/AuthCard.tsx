@@ -26,7 +26,7 @@ export default function AuthCard() {
   };
 
   return (
-    <div className="w-full max-w-[400px] overflow-hidden rounded-2xl border border-white/[0.07] bg-[#12141a]/95 shadow-[0_28px_80px_rgba(0,0,0,0.55)] backdrop-blur-md">
+    <div className="w-full max-w-[400px] overflow-hidden rounded-2xl border border-white/[0.07] bg-ui-s1/95 shadow-float backdrop-blur-md">
       <div className="border-b border-white/[0.05] px-7 py-6 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
           AxthrowA Studio · AxBoT

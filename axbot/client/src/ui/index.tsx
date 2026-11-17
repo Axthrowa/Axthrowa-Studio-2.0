@@ -26,14 +26,14 @@ import type { KayitDurumuTuru } from '../hooks/useOtoKayit.js';
 
 // ---- Buton -----------------------------------------------------------------
 
-type ButonTonu = 'birincil' | 'ikincil' | 'tehlike' | 'basari' | 'sade';
+type ButonTonu = 'birincil' | 'ikincil' | 'tehlike' | 'sade';
 
+// UI-1: görünüm ortak/tasarim.css içindeki 4 düğme türünden gelir (Studio ve Resonance ile aynı)
 const TON: Record<ButonTonu, string> = {
-  birincil: 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20',
-  ikincil: 'bg-white/5 hover:bg-white/10 text-gray-100 border border-white/10',
-  tehlike: 'bg-red-600 hover:bg-red-500 text-white',
-  basari: 'bg-emerald-700 hover:bg-emerald-600 text-white',
-  sade: 'bg-transparent hover:bg-white/5 text-gray-300'
+  birincil: 'axt-dugme-birincil',
+  ikincil: 'axt-dugme-ikincil',
+  tehlike: 'axt-dugme-tehlike',
+  sade: 'axt-dugme-sessiz'
 };
 
 export function Buton({
@@ -46,7 +46,7 @@ export function Buton({
   return (
     <button
       {...p}
-      className={`px-3 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${TON[ton]} ${className}`}
+      className={`axt-dugme ${TON[ton]} ${className}`}
     >
       {ikon}
       {children}
@@ -431,7 +431,7 @@ export function KaydedilmemisUyari({ varMi, onKaydet }: { varMi: boolean; onKayd
     <div className="sticky top-2 z-40 bg-amber-500/15 border border-amber-500/40 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
       <span className="text-[11px] font-bold text-amber-200">Kaydedilmemiş değişiklikleriniz var.</span>
       {onKaydet && (
-        <Buton ton="basari" onClick={onKaydet}>
+        <Buton ton="birincil" onClick={onKaydet}>
           Kaydet
         </Buton>
       )}

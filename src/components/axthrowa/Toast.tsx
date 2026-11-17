@@ -13,8 +13,8 @@ type Variant = "success" | "error" | "warn";
 
 const TUR: Record<Variant, { kutu: string; ikon: typeof CheckCircle; renk: string }> = {
   success: { kutu: "shadow-glow-cyan", ikon: CheckCircle, renk: "text-axthrowa-cyan" },
-  error: { kutu: "shadow-[0_8px_24px_rgba(0,0,0,0.45),0_0_16px_rgba(239,68,68,0.28)]", ikon: WarningOctagon, renk: "text-red-400" },
-  warn: { kutu: "shadow-[0_8px_24px_rgba(0,0,0,0.45),0_0_16px_rgba(249,115,22,0.25)]", ikon: Warning, renk: "text-orange-400" },
+  error: { kutu: "shadow-[var(--ui-shadow-float),0_0_16px_rgb(var(--ui-danger)/0.28)]", ikon: WarningOctagon, renk: "text-red-400" },
+  warn: { kutu: "shadow-[var(--ui-shadow-float),0_0_16px_rgb(var(--ui-warn)/0.25)]", ikon: Warning, renk: "text-orange-400" },
 };
 
 type Props = {

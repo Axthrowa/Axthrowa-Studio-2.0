@@ -87,7 +87,7 @@ export default function StreamHealthCard() {
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
             health.active
-              ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+              ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300 shadow-[0_0_10px_rgb(var(--ui-ok)/0.3)]"
               : "border border-white/10 bg-white/5 text-white/70"
           }`}
         >

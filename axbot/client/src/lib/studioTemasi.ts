@@ -9,7 +9,8 @@ export interface StudioTemasi {
   degiskenler: Record<string, string>;
 }
 
-const IZINLI = ['--axt-zemin', '--axt-yuzey', '--axt-yuzey-2', '--axt-kenar', '--axt-vurgu', '--axt-metin', '--axt-soluk', '--axt-yaricap-kart', '--axt-yaricap-dugme', '--axt-yazi-baslik'] as const;
+const IZINLI = ['--axt-zemin', '--axt-yuzey', '--axt-yuzey-2', '--axt-kenar', '--axt-vurgu', '--axt-metin', '--axt-soluk', '--axt-yaricap-kart', '--axt-yaricap-dugme', '--axt-yazi-baslik', '--axt-vurgu-metin', '--axt-tehlike', '--axt-dugme-y', '--axt-dugme-yaricap', '--axt-dugme-buyuk-y'] as const;
+const OLCULER = new Set<string>(['--axt-yaricap-kart', '--axt-yaricap-dugme', '--axt-yazi-baslik', '--axt-dugme-y', '--axt-dugme-yaricap', '--axt-dugme-buyuk-y']);
 const RENK = /^(#[0-9a-f]{3,8}|rgba?\(\s*[\d.\s,%/]+\))$/i;
 const OLCU = /^(\d{1,2}(\.\d+)?|\.\d+)(rem|px)$/; // sıkıştırılmış CSS baştaki sıfırı atar (.75rem)
 const TEMA = /^[a-z0-9-]{1,30}$/;
@@ -23,7 +24,7 @@ export function studioTemasiCoz(veri: unknown): StudioTemasi | null {
   const ham = (v.degiskenler && typeof v.degiskenler === 'object' ? v.degiskenler : {}) as Record<string, unknown>;
   for (const ad of IZINLI) {
     const d = typeof ham[ad] === 'string' ? (ham[ad] as string).trim() : '';
-    if (d && (ad.startsWith('--axt-yaricap') || ad === '--axt-yazi-baslik' ? OLCU.test(d) : RENK.test(d))) degiskenler[ad] = d;
+    if (d && (OLCULER.has(ad) ? OLCU.test(d) : RENK.test(d))) degiskenler[ad] = d;
   }
   return { tema: v.tema, degiskenler };
 }

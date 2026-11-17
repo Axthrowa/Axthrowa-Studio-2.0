@@ -5,7 +5,7 @@ import { takvimAyari, type PlanliYayin, type TakvimAyari } from "../../lib/yayin
 import { twitchKategoriAra, twitchTakvimEkle, twitchTakvimSil, twitchTakvimYazabilir, twitchWriteStatus } from "../../lib/platformAuth/twitchWrite";
 import { Switch } from "../axthrowa/switch";
 
-const ALAN = "w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-xs text-white";
+const ALAN = "w-full rounded-md border border-panel-border bg-ui-s2 px-2 py-1.5 text-xs text-white";
 
 /** Discord bot token'ı ve sunucu kimliği; token yazılır ama hiç geri okunmaz */
 function DiscordAyari({ durum, setDurum }: { durum: DiscordEtkinlikDurumu; setDurum: (d: DiscordEtkinlikDurumu) => void }) {

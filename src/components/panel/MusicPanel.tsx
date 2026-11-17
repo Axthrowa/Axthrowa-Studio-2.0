@@ -283,7 +283,7 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
           ))}
           <span className="ml-auto text-panel-muted">Resonance — uygulama içinde</span>
         </div>
-        <div className="h-[calc(100vh-190px)] w-full bg-[#0b0d13]">
+        <div className="h-[calc(100vh-190px)] w-full bg-ui-bg">
           {available === false ? (
             <div className="flex h-full items-center justify-center p-8 text-center text-sm text-panel-muted">
               Resonance paketi bulunamadı. Uygulamayı <code className="mx-1 text-white/70">npm run build:all</code>

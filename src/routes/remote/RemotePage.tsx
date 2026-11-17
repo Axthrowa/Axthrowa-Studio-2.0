@@ -170,7 +170,7 @@ function Kumanda() {
 
   const butonlar = deste?.pages.flatMap((p) => p.buttons) ?? [];
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#0b0f14] text-white">
+    <div className="flex min-h-[100dvh] flex-col bg-ui-bg text-white">
       <header className="flex items-center gap-2 border-b border-white/10 px-3 py-2 text-sm">
         {kumanda?.streaming ? <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-bold">CANLI</span> : <span className="text-xs text-white/50">Yayında değil</span>}
         <span className="flex-1 truncate text-xs text-white/60">{obsHata || kumanda?.currentScene || ""}</span>

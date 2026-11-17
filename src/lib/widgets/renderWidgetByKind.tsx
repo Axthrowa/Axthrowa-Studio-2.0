@@ -144,7 +144,7 @@ export function renderWidgetByKind(
       inner = (
         <div className="flex h-full w-full items-center justify-center bg-transparent">
           <div className="rounded-xl border border-white/20 bg-black/70 px-5 py-3 text-sm text-white">
-            Widget: <strong className="text-[#ff8a5b]">{kind || "?"}</strong>
+            Widget: <strong className="text-ui-warn">{kind || "?"}</strong>
           </div>
         </div>
       );

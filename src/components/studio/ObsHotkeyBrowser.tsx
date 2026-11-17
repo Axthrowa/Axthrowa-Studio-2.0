@@ -203,7 +203,7 @@ export default function ObsHotkeyBrowser({
               <button
                 type="button"
                 disabled={!canAdd}
-                className="h-9 rounded-lg bg-panel-accent px-4 text-xs md:text-sm font-bold text-[#08131c] hover:bg-panel-accent/90 disabled:opacity-40"
+                className="h-9 rounded-lg bg-panel-accent px-4 text-xs md:text-sm font-bold text-ui-accent-ink hover:bg-panel-accent/90 disabled:opacity-40"
                 onClick={add}
               >
                 Ekle
@@ -245,7 +245,7 @@ export default function ObsHotkeyBrowser({
               <button
                 type="button"
                 title="Şimdi dene"
-                className="rounded bg-panel-accent/80 px-2 py-1 text-[#08131c]"
+                className="rounded bg-panel-accent/80 px-2 py-1 text-ui-accent-ink"
                 onClick={() => onRun(r)}
               >
                 <Play className="h-3 w-3" />

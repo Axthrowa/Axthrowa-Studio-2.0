@@ -374,7 +374,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
                 onContextMenu={nesneMenusu(() => sahneMenusu(scene, active, () => void selectScene(scene), onToast))}
                 className={`group flex min-h-[4.5rem] flex-col justify-between rounded-xl px-4 py-3 text-left transition-all duration-300 active:scale-[.98] ${
                   active
-                    ? "bg-axthrowa-violet/10 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.45),0_0_24px_rgba(139,92,246,0.12)]"
+                    ? "bg-axthrowa-violet/10 shadow-[inset_0_0_0_1px_rgb(var(--ui-brand)/0.45),0_0_24px_rgb(var(--ui-brand)/0.12)]"
                     : "bg-zinc-900/60 hover:bg-zinc-800/50"
                 }`}
               >

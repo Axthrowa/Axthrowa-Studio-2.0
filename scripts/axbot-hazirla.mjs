@@ -122,7 +122,7 @@ fs.cpSync(path.join(clientSrc, "src"), path.join(work, "src"), { recursive: true
 fs.copyFileSync(path.join(root, "ortak", "tasarim.css"), path.join(work, "src", "axt-tasarim.css"));
 {
   const css = path.join(work, "src", "index.css");
-  fs.writeFileSync(css, fs.readFileSync(css, "utf8").replace(/@import\s+["'][^"']*tasarim\.css["'];/, '@import "./axt-tasarim.css";'));
+  fs.writeFileSync(css, fs.readFileSync(css, "utf8").replace(/@import\s+["'][^"']*tasarim\.css["']/, '@import "./axt-tasarim.css"'));
 }
 if (fs.existsSync(path.join(clientSrc, "public"))) {
   fs.cpSync(path.join(clientSrc, "public"), path.join(work, "public"), { recursive: true });

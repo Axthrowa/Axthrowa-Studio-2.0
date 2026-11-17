@@ -42,7 +42,7 @@ export default function CloseRequestModal() {
       aria-modal="true"
       aria-label="Kapatma seçenekleri"
     >
-      <div className="w-full max-w-[280px] rounded-2xl bg-[#14181d] p-4 text-center shadow-2xl ring-1 ring-white/10">
+      <div className="w-full max-w-[280px] rounded-2xl bg-ui-s1 p-4 text-center shadow-2xl ring-1 ring-white/10">
         <p className="text-sm font-semibold text-white">Kapatılsın mı?</p>
         <p className="mt-1 text-[11px] leading-snug text-white/55">
           Tepsiye küçültürsen bot, sunucu ve kısayollar çalışmaya devam eder.
@@ -52,7 +52,7 @@ export default function CloseRequestModal() {
             type="button"
             autoFocus
             onClick={() => choose("tray")}
-            className="rounded-xl bg-teal-500 px-3 py-2 text-xs font-semibold text-[#042f2e] hover:bg-teal-400"
+            className="rounded-xl bg-teal-500 px-3 py-2 text-xs font-semibold text-ui-accent-ink hover:bg-teal-400"
           >
             Tepsiye küçült
           </button>

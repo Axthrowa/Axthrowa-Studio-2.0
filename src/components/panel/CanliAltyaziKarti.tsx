@@ -6,7 +6,7 @@ import { altyaziAbone, altyaziBaslat, altyaziDurdur, altyaziDurumu, mikrofonlar,
 import { Switch } from "../axthrowa/switch";
 
 const ANAHTAR = "studio.altyazi.v1";
-const ALAN = "w-full rounded-md border border-panel-border bg-[#1c2030] px-2 py-1.5 text-xs text-white";
+const ALAN = "w-full rounded-md border border-panel-border bg-ui-s2 px-2 py-1.5 text-xs text-white";
 type Kayit = AltyaziAyar & { indirilen: string[] };
 
 function oku(): Kayit {

@@ -22,13 +22,20 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            axbot/package-lock.json
+            resonance/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
       - name: Bağımlılıklar
-        run: npm ci
-      - name: Arayüz (tsc + vitest)
+        run: |
+          npm ci
+          npm ci --prefix axbot
+          npm ci --prefix resonance
+      - name: Arayüz (tsc + vitest; Studio, AxBoT sunucu ve panel, Resonance)
         run: |
           npm run typecheck
           npm test

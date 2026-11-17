@@ -1,8 +1,7 @@
 /*
- * AxBoT kopyası: kaynak AxthrowA Studio deposunda src/styles/axt-tasarim.css; paket derlemesi onu kullanır. Elle değiştirmeyin, oradan kopyalayın.
  * Ortak tasarım değişkenleri (T1) — köşe, yazı ölçeği, boşluk.
- * Kaynak bu dosyadır: Studio doğrudan alır, Resonance `@import` ile alır, AxBoT derlemede
- * (scripts/axbot-hazirla.mjs) bu dosyanın kopyasını alır. Gömülüyken değerler tema iletisiyle de gider
+ * Tek kaynak bu dosyadır (TEK-1): Studio (src/main.tsx), Resonance ve AxBoT istemcisi (index.css `@import`)
+ * doğrudan alır; paket derlemesi (scripts/axbot-hazirla.mjs) geçici klasöre kopyalar. Gömülüyken değerler tema iletisiyle de gider
  * (src/lib/botTemaMesaji.ts), yani bir değeri burada değiştirmek üç arayüzü birden değiştirir.
  * Renkler burada değil: her görünümün (data-skin) kendi renkleri styles/index.css içinde.
  */

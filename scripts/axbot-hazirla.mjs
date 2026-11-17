@@ -26,9 +26,9 @@ function arg(name, def) {
 }
 const flag = (name) => process.argv.includes(`--${name}`);
 
-// Varsayılan: Desktop\AxBoT; yoksa deponun klonlandığı Desktop\StreamAxT ya da eski yer Desktop\Projeler
-const varsayilanKaynak = [path.join(os.homedir(), "Desktop", "AxBoT"), path.join(os.homedir(), "Desktop", "StreamAxT"), path.join(os.homedir(), "Desktop", "Projeler")].find((p) =>
-  fs.existsSync(path.join(p, "server", "package.json")),
+// Varsayılan: depodaki axbot/ (çalışma paketi release/app hazırsa); yoksa Desktop\AxBoT, Desktop\StreamAxT, Desktop\Projeler
+const varsayilanKaynak = [path.join(root, "axbot"), path.join(os.homedir(), "Desktop", "AxBoT"), path.join(os.homedir(), "Desktop", "StreamAxT"), path.join(os.homedir(), "Desktop", "Projeler")].find((p) =>
+  fs.existsSync(path.join(p, "release", "app", "package.json")),
 ) ?? path.join(os.homedir(), "Desktop", "AxBoT");
 const kaynak = path.resolve(arg("kaynak", varsayilanKaynak));
 const hedef = path.resolve(arg("hedef", path.join(root, "cikti", "portable", "axbot")));
@@ -117,8 +117,13 @@ for (const f of ["index.html", "package.json", "vite.config.ts", "tsconfig.json"
   if (fs.existsSync(path.join(clientSrc, f))) fs.copyFileSync(path.join(clientSrc, f), path.join(work, f));
 }
 fs.cpSync(path.join(clientSrc, "src"), path.join(work, "src"), { recursive: true });
-// Ortak tasarım değişkenleri (T1): botun kendi kopyası yerine Studio'daki kaynak dosya derlenir
-fs.copyFileSync(path.join(root, "src", "styles", "axt-tasarim.css"), path.join(work, "src", "axt-tasarim.css"));
+// Ortak tasarım değişkenleri (TEK-1): tek kaynak ortak/tasarim.css. Geçici klasörden göreli yol tutmaz,
+// bu yüzden dosya yanına kopyalanır ve index.css içindeki içe aktarma ona çevrilir
+fs.copyFileSync(path.join(root, "ortak", "tasarim.css"), path.join(work, "src", "axt-tasarim.css"));
+{
+  const css = path.join(work, "src", "index.css");
+  fs.writeFileSync(css, fs.readFileSync(css, "utf8").replace(/@import\s+["'][^"']*tasarim\.css["'];/, '@import "./axt-tasarim.css";'));
+}
 if (fs.existsSync(path.join(clientSrc, "public"))) {
   fs.cpSync(path.join(clientSrc, "public"), path.join(work, "public"), { recursive: true });
 }

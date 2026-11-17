@@ -195,5 +195,5 @@
   --color-gray-600: var(--axt-soluk);
 }
 .axt-panel[data-panel-tema="studio"] .glass-panel:not(.axt-onizleme *) { border-color: var(--axt-kenar); }
-/* Sayfa başlığı Studio sayfa başlığıyla aynı ölçüde; ölçü ortak tasarım dosyasından (axt-tasarim.css) */
+/* Sayfa başlığı Studio sayfa başlığıyla aynı ölçüde; ölçü ortak tasarım dosyasından (ortak/tasarim.css) */
 .axt-panel[data-panel-tema="studio"] h1.text-2xl:not(.axt-onizleme *) { font-size: var(--axt-yazi-baslik); line-height: 1.4; font-weight: 600; letter-spacing: -0.025em; }

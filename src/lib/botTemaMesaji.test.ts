@@ -50,9 +50,10 @@ describe("botTemaMesaji", () => {
 
   it("ortak dosya Studio, Resonance ve AxBoT derlemesine bağlı", () => {
     const oku = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
-    expect(oku("../main.tsx")).toContain('import "./styles/axt-tasarim.css"');
-    expect(oku("../../resonance/src/index.css")).toContain('@import "../../src/styles/axt-tasarim.css"');
-    expect(oku("../../scripts/axbot-hazirla.mjs")).toContain("axt-tasarim.css");
-    for (const ad of ["--axt-yaricap-kart", "--axt-yaricap-dugme", "--axt-yazi-baslik"]) expect(oku("../styles/axt-tasarim.css")).toContain(ad);
+    expect(oku("../main.tsx")).toContain('import "../ortak/tasarim.css"');
+    expect(oku("../../resonance/src/index.css")).toContain('@import "../../ortak/tasarim.css"');
+    expect(oku("../../axbot/client/src/index.css")).toContain('@import "../../../ortak/tasarim.css"');
+    expect(oku("../../scripts/axbot-hazirla.mjs")).toContain('"ortak", "tasarim.css"');
+    for (const ad of ["--axt-yaricap-kart", "--axt-yaricap-dugme", "--axt-yazi-baslik"]) expect(oku("../../ortak/tasarim.css")).toContain(ad);
   });
 });

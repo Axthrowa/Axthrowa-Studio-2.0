@@ -1,6 +1,6 @@
 /**
  * Gömülü AxBoT'a ve Resonance'a giden tema iletisi. Renkler Studio'nun hesaplanmış panel
- * değişkenlerinden, köşe ve başlık ölçüsü ortak tasarım dosyasından (styles/axt-tasarim.css) okunur.
+ * değişkenlerinden, köşe ve başlık ölçüsü ortak tasarım dosyasından (ortak/tasarim.css) okunur.
  */
 
 export type BotTemaRenk = {

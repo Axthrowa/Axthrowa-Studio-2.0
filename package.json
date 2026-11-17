@@ -19,7 +19,8 @@
     "build:fresh-portable": "node scripts/fresh-portable.mjs",
     "restart": "node scripts/restart-app.mjs",
     "restart:build": "node scripts/restart-app.mjs --build",
-    "test": "vitest run",
+    "test": "npm run test:studio && npm --prefix axbot run test --workspaces && npm --prefix resonance test",
+    "test:studio": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },

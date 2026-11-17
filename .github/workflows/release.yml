@@ -62,6 +62,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
+            axbot/package-lock.json
             resonance/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
@@ -73,6 +74,7 @@ jobs:
       - name: Bağımlılıklar
         run: |
           npm ci
+          npm --prefix axbot ci
           npm --prefix resonance ci
 
       - name: Sınamalar

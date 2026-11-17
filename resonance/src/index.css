@@ -1,6 +1,6 @@
 @import "tailwindcss";
 /* Ortak tasarım değişkenleri: Studio ile aynı dosya (T1) */
-@import "../../src/styles/axt-tasarim.css";
+@import "../../ortak/tasarim.css";
 
 /* Tailwind köşeleri ortak değişkenlere bağlı; Studio içinde tema iletisi bunları günceller */
 :root {

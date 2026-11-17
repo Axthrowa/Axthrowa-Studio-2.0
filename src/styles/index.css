@@ -1177,7 +1177,7 @@ html.obs-transparent body.panel-app {
 :root[data-yogunluk="siki"] .panel-shell :is(.studio-btn, .studio-btn-primary, .studio-btn-ghost, .studio-btn-danger, .studio-btn-accent, .studio-input):not(.obs-canvas-wrap *) { height: 2rem; }
 
 /* ---------------------------------------------------------------------------
-   Köşeler — Yuvarlak (varsayılan) · Az · Keskin. Değerler ortak dosyada (axt-tasarim.css).
+   Köşeler — Yuvarlak (varsayılan) · Az · Keskin. Değerler ortak dosyada (ortak/tasarim.css).
    Yalnız düz köşe sınıfları; `rounded-full` (hap, nokta, anahtar) korunur.
 --------------------------------------------------------------------------- */
 .panel-shell .rounded-2xl:not(.obs-canvas-wrap *),

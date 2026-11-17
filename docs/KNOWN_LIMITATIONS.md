@@ -168,3 +168,10 @@ Mode T-bar, yeniden muxla, Multiview, kaynak araç çubuğu.
 | BTTV / FFZ | yalnız genel set | Sunucuda 30 dk önbellek; kanal setleri WID-4'te. |
 | Eski widget adresleri (WID-0) | yönlendirme | `/goal`, `/widgets/poll`, `/overlay/alerts` vb. AxBoT'a 307 ile yönlenir (`docs/WIDGET_ESLESME.md`). O widget'lar için Studio'da yapılmış eski ayarlar bota taşınmaz; bot kendi ayarıyla çizer. Birleşik katman içindeki widget'lar hâlâ Studio bileşenleriyle çiziliyor (ikinci uygulama, WID-6'ya kaldı). Gerçek OBS'te eski kaynakla denenmedi. |
 | Eski Studio botu (TEK-2) | kısmen kaldırıldı | Çağıranı olmayan 29 uç silindi (`docs/ESKI_BOT_ENVANTERI.md`); tablolar ve eski veri yerinde. Rust Twitch dinleyicisi Studio katmanları için çalışmaya devam ediyor. |
+
+## Plan 3, TEK-1 (2026-11-17)
+
+- Tasarım belirteçlerinin tek kaynağı `ortak/tasarim.css`. Studio, Resonance ve `axbot/client` doğrudan içe aktarır; botun kopyası silindi. Paylaşılan türler henüz `ortak/` altında değil (BOT-8 ile gelir).
+- Kökte `npm test` dört paketi sırayla çalıştırır (Studio, `axbot` sunucu ve panel, Resonance); yalnız Studio için `npm run test:studio`. Her paket kendi kilit dosyasını tutar, ortak npm çalışma alanı yok.
+- `scripts/axbot-hazirla.mjs` önce depodaki `axbot/` klasörünü dener, ama yalnız `axbot/release/app` (çalışma paketi) hazırsa. Bu klasör depoda yok (git dışı), bu makinede paket hâlâ `Desktop\StreamAxT` kaynağından derlenir. Yani `axbot/` içinde yapılan değişiklikler, `release/app` depoda üretilene ya da StreamAxT eşitlenene kadar pakete girmez.
+- `axbot/.github/workflows/ci.yml` GitHub'da çalışmaz (yalnız kökteki `.github` okunur); bot sınamaları artık kök iş akışında.

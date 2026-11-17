@@ -37,7 +37,7 @@ buraya bir satır ve bir test ekleyin.
 `--axt-soluk`. Değerleri Studio'nun o anki görünümünden (`--panel-*`) gelir.
 
 **Ölçüler:** `--axt-yaricap-kart`, `--axt-yaricap-dugme`, `--axt-yazi-baslik`. Değerleri ortak tasarım
-dosyasından (`src/styles/axt-tasarim.css`) gelir.
+dosyasından (`ortak/tasarim.css`) gelir.
 
 Bu dosyanın kopyaları:
 - **Resonance:** dosyayı `@import` ile alır.

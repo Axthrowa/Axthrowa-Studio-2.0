@@ -8,6 +8,8 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  // Depo kökündeki Studio postcss/Tailwind 3 ayarını arama; Tailwind 4 Vite eklentisi yeterli
+  css: { postcss: {} },
   server: {
     port: 5173,
     proxy: {

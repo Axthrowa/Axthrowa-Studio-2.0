@@ -16,6 +16,15 @@ export function isWide() {
   }
 }
 
+/** Studio'nun Müzik sekmesinde çerçeve içinde açıldı mı: o zaman kendi menüsü, üst çubuğu ve karşılama penceresi yok */
+export function gomuluMu() {
+  try {
+    return window.self !== window.top
+  } catch {
+    return true
+  }
+}
+
 export function initialSidebarOpen() {
   if (!isWide()) return false
   try {
@@ -52,6 +61,14 @@ export function DashboardLayout() {
       <div className="flex h-screen items-center justify-center text-[var(--color-text-muted)]">
         Loading...
       </div>
+    )
+  }
+
+  if (gomuluMu()) {
+    return (
+      <main className="min-h-screen p-4 lg:p-6">
+        <Outlet />
+      </main>
     )
   }
 

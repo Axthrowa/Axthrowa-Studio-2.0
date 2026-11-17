@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { gomuluMu } from '../../components/layout/DashboardLayout'
 import { copyText } from '../../lib/clipboard'
 import { ExternalLink, Loader2 } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
@@ -154,7 +155,8 @@ export default function MusicConnections() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-3xl font-bold text-white">{t('connectionsPage.title')}</h1>
+      {/* Studio içinde başlık sekme adında: marka başlığı tekrarlanmaz */}
+      {!gomuluMu() && <h1 className="text-3xl font-bold text-white">{t('connectionsPage.title')}</h1>}
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>

@@ -19,10 +19,11 @@ type Props = {
   onOpenExternal: (url: string) => void | Promise<void>;
 };
 
+// UI-8: Resonance gömülü açılır (kendi menüsü ve logosu yok); Müzik sekmesi üç iç sekme
 const TAB_DEFS = [
-  { id: "pulse", labelKey: "music.widget" as MsgKey, path: "/resonance/dashboard/widgets/pulse" },
-  { id: "connections", labelKey: "music.connections" as MsgKey, path: "/resonance/dashboard/connections/music" },
-  { id: "home", labelKey: "music.general" as MsgKey, path: "/resonance/dashboard/home" },
+  { id: "kaynak", labelKey: "music.kaynak" as MsgKey, path: "/resonance/dashboard/connections/music" },
+  { id: "gorunum", labelKey: "music.gorunum" as MsgKey, path: "/resonance/dashboard/widgets/pulse?bolum=gorunum" },
+  { id: "sozler", labelKey: "music.sozler" as MsgKey, path: "/resonance/dashboard/widgets/pulse?bolum=sozler" },
 ] as const;
 
 /**
@@ -30,7 +31,7 @@ const TAB_DEFS = [
  */
 export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) {
   const { t } = useI18n();
-  const [tab, setTab] = useState<(typeof TAB_DEFS)[number]["id"]>("pulse");
+  const [tab, setTab] = useState<(typeof TAB_DEFS)[number]["id"]>("gorunum");
   const [status, setStatus] = useState<PlayerStatus | null>(null);
   const [available, setAvailable] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -271,17 +272,18 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
       </aside>
 
       <section className="overflow-hidden rounded-xl border border-panel-border bg-black">
-        <div className="flex items-center gap-2 border-b border-panel-border px-3 py-2 text-xs">
+        <div role="tablist" aria-label="Müzik" className="flex items-center gap-2 border-b border-panel-border px-3 py-2 text-xs">
           {TABS.map((item) => (
             <button
               key={item.id}
+              role="tab"
+              aria-selected={tab === item.id}
               className={`rounded px-2 py-1 ${tab === item.id ? "bg-panel-accent text-black" : "bg-black/40 text-panel-muted"}`}
               onClick={() => setTab(item.id)}
             >
               {t(item.labelKey)}
             </button>
           ))}
-          <span className="ml-auto text-panel-muted">Resonance — uygulama içinde</span>
         </div>
         <div className="h-[calc(100vh-190px)] w-full bg-ui-bg">
           {available === false ? (

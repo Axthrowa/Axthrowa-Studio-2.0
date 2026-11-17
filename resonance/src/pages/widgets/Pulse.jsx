@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { gomuluMu } from '../../components/layout/DashboardLayout'
 import { copyText } from '../../lib/clipboard'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Copy, Check, Plus } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
@@ -86,6 +87,7 @@ const ORNEK_ADLAR = {
 
 export default function Pulse() {
   const { t, language } = useLanguage()
+  const [arama] = useSearchParams()
   const { profiles, activeProfile, activeId, setActiveId, addProfile, updateConfig } = useConfig()
   const ytmd = useYtmd()
   const { isAuthenticated } = useAuth()
@@ -237,6 +239,11 @@ export default function Pulse() {
     }
   }
 
+  // Studio'nun Müzik sekmesi Görünüm ve Sözler'i ayrı iç sekmede açar (?bolum=gorunum|sozler); yalın açılışta hepsi
+  const bolum = arama.get('bolum')
+  const gorunumVar = bolum !== 'sozler'
+  const sozVar = bolum !== 'gorunum'
+
   if (!config) return null
 
   const onizlemeParcasi = ornekAd
@@ -245,8 +252,10 @@ export default function Pulse() {
 
   return (
     <div className="mx-auto max-w-3xl pb-24">
-      <h1 className="text-3xl font-bold text-white">{t('pulse.title')}</h1>
+      {/* Studio içinde başlık sekme adında: marka başlığı tekrarlanmaz */}
+      {!gomuluMu() && <h1 className="text-3xl font-bold text-white">{t('pulse.title')}</h1>}
 
+      {gorunumVar && (<>
       <div className="sticky top-20 z-20 mt-6 flex justify-center overflow-visible rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-12 backdrop-blur">
         <NowPlayingWidget
           track={onizlemeParcasi}
@@ -281,7 +290,8 @@ export default function Pulse() {
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">Kart genişliği sabittir: şarkı adı değişince kart ve yazılar yerinde kalır, sığmayan ad kısaltılır.</p>
         </div>
       </div>
-      {config.showLyrics && (
+      </>)}
+      {sozVar && config.showLyrics && (
         <div className="mx-auto mt-2 w-full max-w-[640px] rounded-2xl bg-black/60 p-4">
           <Lyrics track={track} progressMs={progressMs} config={config} preview />
         </div>
@@ -293,6 +303,7 @@ export default function Pulse() {
         </p>
       )}
 
+      {gorunumVar && (<>
       <Section title={t('pulse.general')} className="mt-6">
         <SubLabel>
           {t('pulse.profiles')} <span className="ml-1 text-[var(--color-text-muted)]">({profiles.length})</span>
@@ -492,122 +503,11 @@ export default function Pulse() {
             onChange={(v) => set({ coverBlur: v })}
           />
           <ToggleRow
-            title={t('pulse.lyrics')}
-            description={t('pulse.lyricsDesc')}
-            checked={config.showLyrics === true}
-            onChange={(v) => set({ showLyrics: v })}
-          />
-          <ToggleRow
             title={t('pulse.requests')}
             description={t('pulse.requestsDesc')}
             checked={config.showRequests !== false}
             onChange={(v) => set({ showRequests: v })}
           />
-          <div className="mt-2">
-            <SubLabel>{t('pulse.lyricsOffset')}</SubLabel>
-            <Slider
-              value={Math.round((Number(config.lyricsOffsetMs) || 0) / 100) / 10}
-              min={-5}
-              max={5}
-              step={0.5}
-              suffix={t('pulse.seconds')}
-              onChange={(v) => set({ lyricsOffsetMs: Math.round(v * 1000) })}
-            />
-            {track && (
-              <div className="mt-2 rounded-lg bg-white/5 p-2 text-xs text-white">
-                <p className="mb-1 truncate">
-                  Bu şarkı için: <span className="text-[var(--color-text-muted)]">{track.name}</span> ·{' '}
-                  <span className="tabular-nums">{(parcaOfseti(config, track) / 1000).toFixed(1)} sn</span>
-                  {config.lyricsTrackOffsets?.[parcaAnahtari(track)] != null ? ' (hatırlanıyor)' : ' (genel)'}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {[-500, -100, 100, 500].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => set({ lyricsTrackOffsets: ofsetYaz(config.lyricsTrackOffsets, parcaAnahtari(track), parcaOfseti(config, track) + d) })}
-                      className="rounded-lg bg-white/5 px-2 py-1 font-semibold tabular-nums"
-                    >
-                      {d > 0 ? '+' : '−'}
-                      {Math.abs(d)} ms
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => set({ lyricsTrackOffsets: ofsetYaz(config.lyricsTrackOffsets, parcaAnahtari(track), null) })}
-                    className="rounded-lg bg-white/5 px-2 py-1"
-                  >
-                    Genel kaymaya dön
-                  </button>
-                </div>
-              </div>
-            )}
-            <SubLabel>Söz kaynakları</SubLabel>
-            <Select
-              value={KAYNAK_SIRALARI[config.lyricsSources] ? config.lyricsSources : 'varsayilan'}
-              onChange={(v) => set({ lyricsSources: v })}
-              options={[
-                { value: 'varsayilan', label: 'Kelime zamanlı önce (NetEase), sonra LRCLIB, Lyrics.ovh' },
-                { value: 'lrclib', label: 'LRCLIB önce, sonra NetEase, Lyrics.ovh' },
-                { value: 'netease-yok', label: 'Yalnız LRCLIB ve Lyrics.ovh (NetEase kapalı)' },
-              ]}
-            />
-            <ToggleRow
-              title="Küfür maskesi"
-              description="Sözlerdeki küfürlerin ilk harfi kalır, gerisi yıldızla gizlenir (Türkçe ve İngilizce temel liste)."
-              checked={config.lyricsMask === true}
-              onChange={(v) => set({ lyricsMask: v })}
-            />
-            {config.lyricsMask === true && (
-              <input
-                value={config.lyricsMaskWords || ''}
-                onChange={(e) => set({ lyricsMaskWords: e.target.value.slice(0, 500) })}
-                placeholder="Ek kelimeler, virgülle ayrılır"
-                aria-label="Maskelenecek ek kelimeler"
-                className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-accent)]"
-              />
-            )}
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              {t('pulse.lyricsUrl')} {`${window.location.origin}/resonance/lyrics`}
-            </p>
-            <SubLabel>Söz görünümü</SubLabel>
-            <Select value={config.lyricsTheme || 'klasik'} onChange={(v) => set({ lyricsTheme: v })} options={Object.entries(SOZ_TEMALARI).map(([value, x]) => ({ value, label: x.ad }))} />
-            <SubLabel>Satır sayısı</SubLabel>
-            <Select
-              value={config.lyricsSingleLine === true ? 'tek' : config.lyricsLayout || 'uc'}
-              onChange={(v) => set({ lyricsLayout: v, lyricsSingleLine: false })}
-              options={[{ value: 'uc', label: 'Önceki, şu anki, sonraki' }, { value: 'iki', label: 'Şu anki ve sonraki' }, { value: 'tek', label: 'Yalnız şu anki' }]}
-            />
-            <SubLabel>Hizalama</SubLabel>
-            <Select value={config.lyricsAlign || 'center'} onChange={(v) => set({ lyricsAlign: v })} options={[{ value: 'left', label: 'Sola' }, { value: 'center', label: 'Ortaya' }, { value: 'right', label: 'Sağa' }]} />
-            <SubLabel>Söz yazı tipi</SubLabel>
-            <Select value={config.lyricsFont || ''} onChange={(v) => set({ lyricsFont: v })} options={[{ value: '', label: 'Kartla aynı' }, ...FONTS]} />
-            {config.lyricsTheme === 'kart' && (
-              <>
-                <SubLabel>Kart saydamlığı</SubLabel>
-                <Slider value={Math.round((Number(config.lyricsBgOpacity ?? 0.75)) * 100)} min={0} max={100} step={5} suffix=" %" onChange={(v) => set({ lyricsBgOpacity: v / 100 })} />
-              </>
-            )}
-            <ToggleRow
-              title="Zamanı olmayan sözleri de göster"
-              description="Yalnız düz metin bulunan şarkılarda sözler süreye yayılarak yaklaşık gösterilir."
-              checked={config.lyricsPlain !== false}
-              onChange={(v) => set({ lyricsPlain: v })}
-            />
-            <SubLabel>{t('pulse.lyricsSize')}</SubLabel>
-            <Slider value={Number(config.lyricsFontSize) || 26} min={14} max={72} step={1} suffix=" px" onChange={(v) => set({ lyricsFontSize: v })} />
-            <SubLabel>{t('pulse.lyricsSideSize')}</SubLabel>
-            <Slider value={Number(config.lyricsSideSize) || 18} min={10} max={56} step={1} suffix=" px" onChange={(v) => set({ lyricsSideSize: v })} />
-            <SubLabel>{t('pulse.lyricsColor')}</SubLabel>
-            <input
-              type="color"
-              aria-label={t('pulse.lyricsColor')}
-              value={config.lyricsColor || '#ffffff'}
-              onChange={(e) => set({ lyricsColor: e.target.value })}
-              className="h-9 w-16 cursor-pointer rounded border-0 bg-transparent"
-            />
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t('pulse.lyricsScreens')}</p>
-          </div>
         </div>
       </Section>
 
@@ -776,6 +676,122 @@ export default function Pulse() {
           onChange={(v) => set({ hideVisualizer: v })}
         />
       </Section>
+      </>)}
+      {sozVar && (
+        <Section title={t('pulse.lyrics')} className="mt-6">
+        <ToggleRow
+          title={t('pulse.lyrics')}
+          description={t('pulse.lyricsDesc')}
+          checked={config.showLyrics === true}
+          onChange={(v) => set({ showLyrics: v })}
+        />
+        <div className="mt-2">
+          <SubLabel>{t('pulse.lyricsOffset')}</SubLabel>
+          <Slider
+            value={Math.round((Number(config.lyricsOffsetMs) || 0) / 100) / 10}
+            min={-5}
+            max={5}
+            step={0.5}
+            suffix={t('pulse.seconds')}
+            onChange={(v) => set({ lyricsOffsetMs: Math.round(v * 1000) })}
+          />
+          {track && (
+            <div className="mt-2 rounded-lg bg-white/5 p-2 text-xs text-white">
+              <p className="mb-1 truncate">
+                Bu şarkı için: <span className="text-[var(--color-text-muted)]">{track.name}</span> ·{' '}
+                <span className="tabular-nums">{(parcaOfseti(config, track) / 1000).toFixed(1)} sn</span>
+                {config.lyricsTrackOffsets?.[parcaAnahtari(track)] != null ? ' (hatırlanıyor)' : ' (genel)'}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {[-500, -100, 100, 500].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => set({ lyricsTrackOffsets: ofsetYaz(config.lyricsTrackOffsets, parcaAnahtari(track), parcaOfseti(config, track) + d) })}
+                    className="rounded-lg bg-white/5 px-2 py-1 font-semibold tabular-nums"
+                  >
+                    {d > 0 ? '+' : '−'}
+                    {Math.abs(d)} ms
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => set({ lyricsTrackOffsets: ofsetYaz(config.lyricsTrackOffsets, parcaAnahtari(track), null) })}
+                  className="rounded-lg bg-white/5 px-2 py-1"
+                >
+                  Genel kaymaya dön
+                </button>
+              </div>
+            </div>
+          )}
+          <SubLabel>Söz kaynakları</SubLabel>
+          <Select
+            value={KAYNAK_SIRALARI[config.lyricsSources] ? config.lyricsSources : 'varsayilan'}
+            onChange={(v) => set({ lyricsSources: v })}
+            options={[
+              { value: 'varsayilan', label: 'Kelime zamanlı önce (NetEase), sonra LRCLIB, Lyrics.ovh' },
+              { value: 'lrclib', label: 'LRCLIB önce, sonra NetEase, Lyrics.ovh' },
+              { value: 'netease-yok', label: 'Yalnız LRCLIB ve Lyrics.ovh (NetEase kapalı)' },
+            ]}
+          />
+          <ToggleRow
+            title="Küfür maskesi"
+            description="Sözlerdeki küfürlerin ilk harfi kalır, gerisi yıldızla gizlenir (Türkçe ve İngilizce temel liste)."
+            checked={config.lyricsMask === true}
+            onChange={(v) => set({ lyricsMask: v })}
+          />
+          {config.lyricsMask === true && (
+            <input
+              value={config.lyricsMaskWords || ''}
+              onChange={(e) => set({ lyricsMaskWords: e.target.value.slice(0, 500) })}
+              placeholder="Ek kelimeler, virgülle ayrılır"
+              aria-label="Maskelenecek ek kelimeler"
+              className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-accent)]"
+            />
+          )}
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            {t('pulse.lyricsUrl')} {`${window.location.origin}/resonance/lyrics`}
+          </p>
+          <SubLabel>Söz görünümü</SubLabel>
+          <Select value={config.lyricsTheme || 'klasik'} onChange={(v) => set({ lyricsTheme: v })} options={Object.entries(SOZ_TEMALARI).map(([value, x]) => ({ value, label: x.ad }))} />
+          <SubLabel>Satır sayısı</SubLabel>
+          <Select
+            value={config.lyricsSingleLine === true ? 'tek' : config.lyricsLayout || 'uc'}
+            onChange={(v) => set({ lyricsLayout: v, lyricsSingleLine: false })}
+            options={[{ value: 'uc', label: 'Önceki, şu anki, sonraki' }, { value: 'iki', label: 'Şu anki ve sonraki' }, { value: 'tek', label: 'Yalnız şu anki' }]}
+          />
+          <SubLabel>Hizalama</SubLabel>
+          <Select value={config.lyricsAlign || 'center'} onChange={(v) => set({ lyricsAlign: v })} options={[{ value: 'left', label: 'Sola' }, { value: 'center', label: 'Ortaya' }, { value: 'right', label: 'Sağa' }]} />
+          <SubLabel>Söz yazı tipi</SubLabel>
+          <Select value={config.lyricsFont || ''} onChange={(v) => set({ lyricsFont: v })} options={[{ value: '', label: 'Kartla aynı' }, ...FONTS]} />
+          {config.lyricsTheme === 'kart' && (
+            <>
+              <SubLabel>Kart saydamlığı</SubLabel>
+              <Slider value={Math.round((Number(config.lyricsBgOpacity ?? 0.75)) * 100)} min={0} max={100} step={5} suffix=" %" onChange={(v) => set({ lyricsBgOpacity: v / 100 })} />
+            </>
+          )}
+          <ToggleRow
+            title="Zamanı olmayan sözleri de göster"
+            description="Yalnız düz metin bulunan şarkılarda sözler süreye yayılarak yaklaşık gösterilir."
+            checked={config.lyricsPlain !== false}
+            onChange={(v) => set({ lyricsPlain: v })}
+          />
+          <SubLabel>{t('pulse.lyricsSize')}</SubLabel>
+          <Slider value={Number(config.lyricsFontSize) || 26} min={14} max={72} step={1} suffix=" px" onChange={(v) => set({ lyricsFontSize: v })} />
+          <SubLabel>{t('pulse.lyricsSideSize')}</SubLabel>
+          <Slider value={Number(config.lyricsSideSize) || 18} min={10} max={56} step={1} suffix=" px" onChange={(v) => set({ lyricsSideSize: v })} />
+          <SubLabel>{t('pulse.lyricsColor')}</SubLabel>
+          <input
+            type="color"
+            aria-label={t('pulse.lyricsColor')}
+            value={config.lyricsColor || '#ffffff'}
+            onChange={(e) => set({ lyricsColor: e.target.value })}
+            className="h-9 w-16 cursor-pointer rounded border-0 bg-transparent"
+          />
+          <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t('pulse.lyricsScreens')}</p>
+        </div>
+        </Section>
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 // Komut paletinin ayar dizinini üretir: src/lib/ayarDizini.json
 // Studio sayfaları çalışan Vite geliştirme sunucusunda başsız Chrome ile gezilir (her sayfa ve her sekmesi açılıp
-// etiket/başlık metinleri toplanır); bot (AxBoT) sayfaları ../AxBoT/client/src/pages kaynağından okunur.
+// etiket/başlık metinleri toplanır); bot (AxBoT) sayfaları axbot/client/src/pages kaynağından okunur.
 // Kullanım: npx vite --port 5201 açıkken  node scripts/ayar-dizini.mjs http://127.0.0.1:5201/panel
 // Not: geliştirme sunucusunda API kökü Vite'ın kendisidir; gezinti gerçek uygulamaya hiçbir şey yazmaz.
 import { spawn } from 'node:child_process';
@@ -85,8 +85,8 @@ await bekle(800);
 await cdp("Browser.close").catch(() => {});
 
 // Bot sayfaları: App.tsx'teki `case 'sekme': return <Sayfa` eşlemesi, sayfa kaynağındaki etiket/başlık metinleri
-// Bot deposu Desktop\AxBoT ya da eski adıyla Desktop\StreamAxT olabilir
-const botKok = ['../AxBoT/client/src', '../StreamAxT/client/src'].map((y) => path.resolve(kok, y)).find((y) => existsSync(y)) ?? path.resolve(kok, '../AxBoT/client/src');
+// Bot bu depoda: axbot/client/src
+const botKok = path.resolve(kok, 'axbot/client/src');
 if (existsSync(botKok)) {
   const app = readFileSync(path.join(botKok, 'App.tsx'), 'utf8');
   const esle = [...app.matchAll(/case '([\w-]+)': return <(\w+)/g)];
@@ -108,10 +108,14 @@ if (existsSync(galeri)) {
 
 // Ayıkla: sayı, saat, tek harf ve tekrarlar dışarıda
 const gorulen = new Set();
+const anahtarOf = (k) => `${k.s}|${k.b || ''}|${k.a.toLocaleLowerCase('tr')}`;
+for (const k of kayit) k.a = k.a.replace(/[:：]\s*$/, '').replace(/\s+/g, ' ').trim();
+// Aynı ayar hem sekmesiz (ilk açılış) hem sekmeli toplandıysa sekmeli kalsın: palet önce o sekmeyi açar
+const sekmeli = new Set(kayit.filter((k) => k.t).map(anahtarOf));
 const temiz = kayit.filter((k) => {
-  k.a = k.a.replace(/[:：]\s*$/, '').replace(/\s+/g, ' ').trim();
+  if (!k.t && sekmeli.has(anahtarOf(k))) return false;
   if (k.a.length < 3 || k.a.length > 60 || !/\p{L}{3}/u.test(k.a) || /^[\d\s:.,%—-]+$/.test(k.a)) return false;
-  const anahtar = `${k.s}|${k.b || ''}|${k.a.toLocaleLowerCase('tr')}`;
+  const anahtar = anahtarOf(k);
   if (gorulen.has(anahtar)) return false;
   gorulen.add(anahtar);
   return true;

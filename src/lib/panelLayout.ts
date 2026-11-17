@@ -37,7 +37,7 @@ export type SectionId =
   | "obsWs"
   | "sosyal";
 
-export type SettingsSectionId = "general" | "help" | "about";
+export type SettingsSectionId = "gorunum" | "obs" | "yedek" | "guncelleme" | "paylasim" | "altyazi" | "gizlilik" | "gelismis" | "help" | "about";
 
 export type OrderHidden = { order: string[]; hidden: string[] };
 
@@ -89,7 +89,14 @@ export const RIGHT_SECTIONS: { id: SectionId; labelKey: string; label: string }[
 ];
 
 export const SETTINGS_SECTIONS: { id: SettingsSectionId; labelKey: string; label: string }[] = [
-  { id: "general", labelKey: "settings.general", label: "Genel" },
+  { id: "gorunum", labelKey: "settings.bolum.gorunum", label: "Görünüm" },
+  { id: "obs", labelKey: "settings.bolum.obs", label: "OBS" },
+  { id: "yedek", labelKey: "settings.bolum.yedek", label: "Yedek" },
+  { id: "guncelleme", labelKey: "settings.bolum.guncelleme", label: "Güncelleme" },
+  { id: "paylasim", labelKey: "settings.bolum.paylasim", label: "Paylaşım" },
+  { id: "altyazi", labelKey: "settings.bolum.altyazi", label: "Altyazı" },
+  { id: "gizlilik", labelKey: "settings.bolum.gizlilik", label: "Gizlilik" },
+  { id: "gelismis", labelKey: "settings.bolum.gelismis", label: "Gelişmiş" },
   { id: "help", labelKey: "settings.help", label: "Yardım" },
   { id: "about", labelKey: "settings.about", label: "Hakkında" },
 ];

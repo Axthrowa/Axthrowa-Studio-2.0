@@ -30,10 +30,17 @@ const ayarAdi = (el: Element) => {
 function ayaraGit(ad: string, sekme?: string, deneme = 0) {
   const kok = document.querySelector(".panel-shell") || document.body;
   const bul = (metin: string) => [...kok.querySelectorAll(AYAR_SECICI)].find((el) => !el.closest(".studio-nav-rail") && ayarAdi(el) === metin) as HTMLElement | undefined;
-  if (sekme && deneme === 0) bul(sekme)?.click();
-  const el = bul(ad);
+  // Sayfa tembel yüklenir: sekme düğmesi görünene kadar beklenir, bir kez tıklanır (sonra undefined geçilir)
+  if (sekme) {
+    const s = bul(sekme);
+    if (s) {
+      if (s.getAttribute("aria-selected") !== "true") s.click();
+      sekme = undefined;
+    }
+  }
+  const el = sekme ? undefined : bul(ad);
   if (!el) {
-    if (deneme < 12) window.setTimeout(() => ayaraGit(ad, sekme, deneme + 1), 150);
+    if (deneme < 20) window.setTimeout(() => ayaraGit(ad, sekme, deneme + 1), 150);
     return;
   }
   el.scrollIntoView({ block: "center", behavior: "smooth" });

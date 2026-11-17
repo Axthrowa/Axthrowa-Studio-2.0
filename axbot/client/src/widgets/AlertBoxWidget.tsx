@@ -6,6 +6,7 @@ import { EKRAN_EFEKTLERI, kutla, olayEfekti } from '../lib/kutlama.js';
 import { EKRAN_EFEKTI_MS, EkranEfekti, sarsintiStili } from './EkranEfekti.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { ALERT_ADVANCED_DEFAULTS } from '../lib/widget-defaults.js';
+import { uyariSablonuHtml } from '../lib/ozelGorunum.js';
 import {
   BOS_DURUM,
   GorulenKimlikler,
@@ -41,6 +42,8 @@ interface AlertItem {
   soundVolume: number;
   amount: number;
   isTest: boolean;
+  /** Olayı yapan (şablondaki {ad}) */
+  user: string;
 }
 
 // Tek ses bağlamı: her zil için yenisi açılıp kapatılmıyordu, uzun yayında tarayıcının bağlam sınırı dolup zil susuyordu
@@ -146,7 +149,8 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
           textEffect: 'shine',
           soundVolume: 0.7,
           amount: 0,
-          isTest: true
+          isTest: true,
+          user: 'Test'
         });
       }, 500);
     }
@@ -169,7 +173,8 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
       textEffect: olayYoksaGenel(raw.textEffect || raw.text_effect, advanced.textEffect, 'shine'),
       soundVolume: raw.soundVolume ?? raw.sound_volume ?? 0.7,
       amount: Number(raw.amount) || 0,
-      isTest: raw.isTest === true
+      isTest: raw.isTest === true,
+      user: String(raw.user || raw.username || '')
     };
   };
 
@@ -336,7 +341,8 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
     textEffect: 'shine',
     soundVolume: 0.7,
     amount: 0,
-    isTest: true
+    isTest: true,
+    user: 'Ahmet_Kaya'
   };
 
   const aktifUyari = (kuyruk.aktif?.veri as AlertItem | undefined) || null;
@@ -418,6 +424,19 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
               : 'flex flex-col items-center justify-center text-center'
           }`}
         >
+          {advanced.ozelSablon ? (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: uyariSablonuHtml(String(advanced.ozelSablon), {
+                  ad: displayAlert.user,
+                  metin: displayAlert.title,
+                  tutar: displayAlert.amount || '',
+                  mesaj: advanced.hideUserMessage ? '' : displayAlert.message,
+                  gorsel: displayAlert.imageUrl
+                })
+              }}
+            />
+          ) : (<>
           {/* Animated Image / GIF or Stylized Fallback */}
           {displayAlert.imageUrl && !imgError ? (
             <div className={`relative ${displayAlert.layoutMode === 'text-over' ? 'w-full max-h-56' : 'mb-3'} drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)]`}>
@@ -483,6 +502,7 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
               </div>
             )}
           </div>
+          </>)}
         </div>
       )}
     </div>

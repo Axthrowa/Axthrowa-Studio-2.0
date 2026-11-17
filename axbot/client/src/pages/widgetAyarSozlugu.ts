@@ -8,6 +8,8 @@ import { CARK_PALETLERI } from '../widgets/WheelWidget.js';
 
 export const LABELS: Record<string, string> = {
   avatarShape: 'Avatar biçimi', avatarFallback: 'Resim yoksa baş harfi göster',
+  ozelCss: 'Özel CSS (yalnız bu widget; :kok kökün kendisi)',
+  ozelSablon: 'Özel HTML şablonu: {ad}, {metin}, {tutar}, {mesaj}, {gorsel}',
   arkaPlanKapali: 'Arka planı kapat', cerceveKapali: 'Çerçeveyi kapat', golgeKapali: 'Gölgeyi kapat',
   surekliEfekt: 'Sürekli efekt', efektSuresi: 'Efekt süresi (sn)', efektHedefi: 'Genel efekt nereye uygulansın', girisAnimasyonu: 'Giriş animasyonu',
   satirCizgisi: 'Satır başı çizgileri',
@@ -149,6 +151,7 @@ export const LABELS: Record<string, string> = {
 
 export const SECTIONS: Record<string, string> = {
   avatarShape: 'Düzen', avatarFallback: 'Düzen',
+  ozelCss: 'Gelişmiş', ozelSablon: 'Şablon',
   arkaPlanKapali: 'Görünüm', cerceveKapali: 'Görünüm', golgeKapali: 'Görünüm', satirCizgisi: 'Görünüm',
   surekliEfekt: 'Animasyon', efektSuresi: 'Animasyon', efektHedefi: 'Animasyon', girisAnimasyonu: 'Animasyon',
   baslikGiris: 'Parçalar', baslikEfekti: 'Parçalar', rakamGiris: 'Parçalar', rakamEfekti: 'Parçalar', barGiris: 'Parçalar', barEfekti: 'Parçalar', dolguGiris: 'Parçalar', dolguEfekti: 'Parçalar', simgeGiris: 'Parçalar', simgeEfekti: 'Parçalar',

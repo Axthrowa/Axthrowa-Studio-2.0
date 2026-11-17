@@ -117,7 +117,7 @@ function inferType(key: string, value: any, widgetId = ''): 'text' | 'textarea' 
     return 'number';
   }
   if (key.toLowerCase().includes('color')) return 'color';
-  if (key.toLowerCase().includes('template') || key === 'ignoreList') return 'textarea';
+  if (key.toLowerCase().includes('template') || key === 'ignoreList' || key === 'ozelCss' || key === 'ozelSablon') return 'textarea';
   return 'text';
 }
 
@@ -349,7 +349,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                       )}
                     </div>
                   ) : type === 'textarea' ? (
-                    <textarea value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white min-h-[52px]" />
+                    <textarea value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} spellCheck={key.startsWith('ozel') ? false : undefined} className={`w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white ${key.startsWith('ozel') ? 'font-mono min-h-[120px]' : 'min-h-[52px]'}`} />
                   ) : key === 'speed' ? (
                     <div className="flex items-center gap-2">
                       <input type="range" min={0.1} max={3} step={0.05} value={Number(values[key] ?? 1) || 0.5} onChange={e => setValues(v => ({ ...v, [key]: parseFloat(e.target.value) }))} className="flex-1 accent-purple-600" />

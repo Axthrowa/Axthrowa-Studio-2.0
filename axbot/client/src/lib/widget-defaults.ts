@@ -381,6 +381,8 @@ export const WHEEL_DEFAULTS = {
  * görünüm penceresi ve animasyon süresi hiç ayarlanamıyordu.
  */
 export const ALERT_ADVANCED_DEFAULTS = {
+  // WID-2: doluysa uyarının içeriği bu HTML'le çizilir ({ad}, {metin}, {tutar}, {mesaj}, {gorsel}); betik çalışmaz
+  ozelSablon: '',
   // Kuyruk
   queueEnabled: true,
   gapMs: 800,
@@ -1022,6 +1024,8 @@ export function ortakAyarlarEkle(id: string, d: Record<string, any>): Record<str
     animationDuration: 600,
     surekliEfekt: 'none',
     efektSuresi: 2,
+    // WID-2: yalnız bu widget'ın köküne kapsamlanır (`:kok` kökün kendisi)
+    ozelCss: '',
     ...d
   };
 }

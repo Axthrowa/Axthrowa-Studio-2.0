@@ -4811,6 +4811,8 @@
   "Örneğin: !hype yazılınca sahneyi değiştir, ses çal, sohbete yaz.": "For example: when !hype is typed, change the scene, play a sound, write to chat.",
   "Özel": "Custom",
   "Özel (OpenAI uyumlu adres)": "Custom (OpenAI-compatible address)",
+  "Özel CSS (yalnız bu widget; :kok kökün kendisi)": "Custom CSS (this widget only; :kok is the widget root)",
+  "Özel HTML şablonu: {ad}, {metin}, {tutar}, {mesaj}, {gorsel}": "Custom HTML template: {ad}, {metin}, {tutar}, {mesaj}, {gorsel}",
   "Özel RTMP": "Custom RTMP",
   "Özel Sponsor": "Custom Sponsor",
   "Özel Talep (Yayıncı Onaylı)": "Custom request (streamer-approved)",

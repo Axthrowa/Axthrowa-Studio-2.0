@@ -665,6 +665,8 @@ export class WebSocketHub {
       eventType: preset.event_type,
       // Uyarı kutusunun "en düşük bağış / Kicks" eşiği bunu okur
       amount: Number(variables?.amount) || 0,
+      // Uyarı kutusunun özel HTML şablonundaki {ad}
+      user: String(variables?.user ?? ''),
       title,
       message,
       soundUrl: preset.sound_url,

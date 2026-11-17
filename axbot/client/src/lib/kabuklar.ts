@@ -7,6 +7,7 @@
  * Hareketler yalnız transform/opacity ile: arka plan konumu her karede sayfayı yeniden boyatıyordu.
  */
 import type { CSSProperties } from 'react';
+import { ozelCssKimligi } from './ozelGorunum.js';
 
 export const YAPISAL_KABUKLAR: Array<{ value: string; label: string }> = [
   ['holo', 'Hologram (dönen kenar)'], ['crt', 'CRT ekran (tarama çizgili)'], ['brutal', 'Brutalist (köşe şeritli)'], ['defter', 'Karalama defteri (bantlı)'],
@@ -36,6 +37,9 @@ export function kokOzellik(s: Record<string, any>): Record<string, string> {
   if (s.arkaPlanKapali) o['data-arka-yok'] = '';
   if (s.cerceveKapali) o['data-cerceve-yok'] = '';
   if (s.golgeKapali) o['data-golge-yok'] = '';
+  // WID-2: özel CSS yalnız bu köke kapsamlanır
+  const css = ozelCssKimligi(s.ozelCss);
+  if (css) o['data-axt-css'] = css;
   return o;
 }
 

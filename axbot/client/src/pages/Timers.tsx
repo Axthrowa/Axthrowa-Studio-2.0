@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TimerConfig } from '../types.js';
-import { BosDurum } from '../ui/index.js';
+import { Anahtar, BosDurum, Panel } from '../ui/index.js';
 import { Clock, Plus, Trash2, Edit2, Check, MessageSquare } from 'lucide-react';
 
 export function Timers() {
@@ -111,7 +111,7 @@ export function Timers() {
           }
 
           return (
-            <div key={t.id} className="glass-panel p-6 rounded-2xl flex flex-col justify-between space-y-4">
+            <Panel key={t.id} className="p-6 rounded-2xl flex flex-col justify-between space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
@@ -173,7 +173,7 @@ export function Timers() {
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-            </div>
+            </Panel>
           );
         })}
       </div>
@@ -181,7 +181,7 @@ export function Timers() {
       {/* Modal */}
       {editingTimer && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
+          <Panel className="w-full max-w-lg p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-purple-400" />
               {isNew ? 'Yeni Zamanlayıcı' : 'Zamanlayıcıyı Düzenle'}
@@ -249,11 +249,11 @@ export function Timers() {
               <div className="space-y-2 text-xs font-bold text-gray-300">
                 <label className="flex items-center justify-between">
                   Açık
-                  <input type="checkbox" checked={editingTimer.is_enabled !== 0} onChange={e => setEditingTimer({ ...editingTimer, is_enabled: e.target.checked ? 1 : 0 })} />
+                  <Anahtar acik={editingTimer.is_enabled !== 0} onChange={(v) => setEditingTimer({ ...editingTimer, is_enabled: v ? 1 : 0 })} />
                 </label>
                 <label className="flex items-center justify-between">
                   Yalnız yayın açıkken gönder
-                  <input type="checkbox" checked={Number(editingTimer.only_live) === 1} onChange={e => setEditingTimer({ ...editingTimer, only_live: e.target.checked ? 1 : 0 })} />
+                  <Anahtar acik={Number(editingTimer.only_live) === 1} onChange={(v) => setEditingTimer({ ...editingTimer, only_live: v ? 1 : 0 })} />
                 </label>
                 <p className="text-[11px] font-normal text-gray-500">
                   Süre dolduğunda son mesajdan beri en az bu kadar sohbet satırı gelmişse hemen gönderilir; gelmemişse satır sayısı tamamlandığı anda gönderilir. Mesajlarda <code>$(...)</code> değişkenleri kullanılabilir.
@@ -277,7 +277,7 @@ export function Timers() {
                 </button>
               </div>
             </form>
-          </div>
+          </Panel>
         </div>
       )}
     </div>

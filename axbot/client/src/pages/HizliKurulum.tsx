@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { MUZIK_ADI, useDurumOzeti } from '../lib/durumOzeti.js';
+import { Panel } from '../ui/index.js';
 
 export function HizliKurulum({ git }: { git: (sekme: string) => void }) {
   const d = useDurumOzeti();
@@ -77,7 +78,7 @@ export function HizliKurulum({ git }: { git: (sekme: string) => void }) {
       </div>
       <ol className="space-y-3">
         {adimlar.map((a, i) => (
-          <li key={a.baslik} className="glass-panel flex flex-col gap-3 rounded-2xl border border-white/10 p-4 md:flex-row md:items-center md:justify-between">
+          <Panel as="li" key={a.baslik} className="flex flex-col gap-3 rounded-2xl border border-white/10 p-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start gap-3">
               <span
                 className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${a.tamam ? 'bg-emerald-500 text-black' : 'bg-white/10 text-gray-300'}`}
@@ -91,7 +92,7 @@ export function HizliKurulum({ git }: { git: (sekme: string) => void }) {
               </div>
             </div>
             {a.eylem}
-          </li>
+          </Panel>
         ))}
       </ol>
     </div>

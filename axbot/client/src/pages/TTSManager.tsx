@@ -19,6 +19,7 @@ import {
   Zap,
   Key
 } from 'lucide-react';
+import { Anahtar, Secim } from '../ui/index.js';
 
 interface VoiceOption {
   id: string;
@@ -445,19 +446,19 @@ export default function TTSManager() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-300 mb-1.5">Konuşma Dili</label>
-                <select aria-label="Konuşma Dili"
+                <Secim aria-label="Konuşma Dili"
                   value={settings.language}
                   onChange={e => applyLanguage(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+ className="w-full"
                 >
                   {languages.map(l => (
                     <option key={l.id} value={l.id}>{l.label}</option>
                   ))}
-                </select>
+                </Secim>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-300 mb-1.5">Edge Neural Ses</label>
-                <select aria-label="Edge Neural Ses"
+                <Secim aria-label="Edge Neural Ses"
                   value={settings.edgeVoice}
                   onChange={e => {
                     const id = e.target.value;
@@ -473,36 +474,36 @@ export default function TTSManager() {
                       elevenlabsVoiceId: elevenPick
                     });
                   }}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+ className="w-full"
                 >
                   {(voicesForLang.length ? voicesForLang : edgeVoices).map(v => (
                     <option key={v.id} value={v.id}>{v.label}</option>
                   ))}
-                </select>
+                </Secim>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-300 mb-1.5">Google TTS Dili</label>
-                <select aria-label="Google TTS Dili"
+                <Secim aria-label="Google TTS Dili"
                   value={settings.googleLang}
                   onChange={e => setSettings({ ...settings, googleLang: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+ className="w-full"
                 >
                   {languages.map(l => (
                     <option key={l.google} value={l.google}>{l.label} ({l.google})</option>
                   ))}
-                </select>
+                </Secim>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-300 mb-1.5">Gemini AI Sesi</label>
-                <select aria-label="Gemini AI Sesi"
+                <Secim aria-label="Gemini AI Sesi"
                   value={settings.geminiVoice}
                   onChange={e => setSettings({ ...settings, geminiVoice: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+ className="w-full"
                 >
                   {geminiVoices.map(v => (
                     <option key={v.id} value={v.id}>{v.label}</option>
                   ))}
-                </select>
+                </Secim>
               </div>
             </div>
 
@@ -519,16 +520,16 @@ export default function TTSManager() {
                   onChange={e => setSettings({ ...settings, elevenlabsApiKey: e.target.value })}
                   className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none"
                 />
-                <select aria-label="ElevenLabs sesi"
+                <Secim aria-label="ElevenLabs sesi"
                   value={settings.elevenlabsVoiceId || ''}
                   onChange={e => setSettings({ ...settings, elevenlabsVoiceId: e.target.value })}
-                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none"
+
                 >
                   <option value="">Cinsiyete göre otomatik</option>
                   {elevenVoices.map(v => (
                     <option key={v.id} value={v.id}>{v.label}</option>
                   ))}
-                </select>
+                </Secim>
               </div>
             </div>
 
@@ -558,11 +559,11 @@ export default function TTSManager() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={settings.profanityFilter} onChange={e => setSettings({ ...settings, profanityFilter: e.target.checked })} className="w-4 h-4 rounded text-blue-600" />
+                <Anahtar acik={settings.profanityFilter} onChange={(v) => setSettings({ ...settings, profanityFilter: v })} />
                 <span className="text-xs text-gray-300">Küfür filtresi</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={settings.removeUrls} onChange={e => setSettings({ ...settings, removeUrls: e.target.checked })} className="w-4 h-4 rounded text-blue-600" />
+                <Anahtar acik={settings.removeUrls} onChange={(v) => setSettings({ ...settings, removeUrls: v })} />
                 <span className="text-xs text-gray-300">Linkleri okuma</span>
               </label>
             </div>

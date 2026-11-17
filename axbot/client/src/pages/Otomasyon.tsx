@@ -216,7 +216,7 @@ function KuralDuzenleyici({ kural, degistir, sil, pano }: { kural: Kural; degist
           ]}
         />
         <label className="flex items-center gap-2 text-xs text-gray-300" title="Bekleme sırasında gelen olaylar atılmaz; sırayla, beklemeye uyarak çalışır (en çok 10)">
-          <input type="checkbox" checked={kural.sira === true} onChange={(e) => yama({ sira: e.target.checked })} />
+          <Anahtar acik={kural.sira === true} onChange={(v) => yama({ sira: v })} />
           Sıraya al
         </label>
       </div>

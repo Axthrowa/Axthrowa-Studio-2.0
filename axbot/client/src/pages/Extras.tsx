@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Sparkles, Check } from 'lucide-react';
 import { KlipListesi } from '../components/KlipListesi.js';
 import { ToplulukAyarlari } from '../components/ToplulukAyarlari.js';
+import { Anahtar, Panel } from '../ui/index.js';
 
 const DEFAULTS = {
   chat_alerts_enabled: true,
@@ -72,19 +73,19 @@ export function Extras() {
       </div>
 
       {tab === 'alerts' && (
-        <div className="glass-panel p-6 rounded-2xl space-y-3">
+        <Panel className="p-6 rounded-2xl space-y-3">
           <p className="text-[11px] rounded-lg border border-white/10 bg-black/30 p-2 text-gray-300">
             Basit sohbet uyarıları. Daha ayrıntılı sürüm (eşik, bekleme, karşılama, yayın başladı duyurusu) <b>Gelişmiş Bot → Sohbet uyarıları</b>'nda; orada bir olay açıksa buradaki mesaj o olay için gönderilmez (çift mesaj olmasın).
           </p>
-          <label className="flex justify-between text-xs font-bold">Chat alerts açık <input type="checkbox" checked={s.chat_alerts_enabled} onChange={e => setS({ ...s, chat_alerts_enabled: e.target.checked })} /></label>
+          <label className="flex justify-between text-xs font-bold">Chat alerts açık <Anahtar acik={s.chat_alerts_enabled} onChange={(v) => setS({ ...s, chat_alerts_enabled: v })} /></label>
           {(['chat_alert_follow','chat_alert_sub','chat_alert_gift_sub','chat_alert_tip','chat_alert_raid','chat_alert_host','chat_alert_kicks'] as const).map(k => (
             <label key={k} className="text-xs font-bold space-y-1">{k.replace('chat_alert_', '')}<input value={(s as any)[k]} onChange={e => setS({ ...s, [k]: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           ))}
-        </div>
+        </Panel>
       )}
       {tab === 'clip' && (
-        <div className="glass-panel p-6 rounded-2xl space-y-3">
-          <label className="flex justify-between text-xs font-bold">Clip komutu açık <input type="checkbox" checked={s.clip_enabled} onChange={e => setS({ ...s, clip_enabled: e.target.checked })} /></label>
+        <Panel className="p-6 rounded-2xl space-y-3">
+          <label className="flex justify-between text-xs font-bold">Clip komutu açık <Anahtar acik={s.clip_enabled} onChange={(v) => setS({ ...s, clip_enabled: v })} /></label>
           <label className="text-xs font-bold space-y-1">Komut<input value={s.clip_command} onChange={e => setS({ ...s, clip_command: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Cooldown (sn)<input type="number" value={s.clip_cooldown} onChange={e => setS({ ...s, clip_cooldown: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Mesaj<input value={s.clip_message} onChange={e => setS({ ...s, clip_message: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
@@ -94,20 +95,20 @@ export function Extras() {
           </div>
           <p className="text-[11px] text-gray-400"><code>!clip</code> ya da <code>!clip 45</code>. Twitch yayında Helix klip linki yazar (<code>clips:edit</code>). Kick’te resmi klip ucu yok; yayın HLS’inden ffmpeg ile bu bilgisayara video kaydeder. Olmazsa sohbet ve aşağıdaki liste nedenini yazar.</p>
           <KlipListesi />
-        </div>
+        </Panel>
       )}
       {tab === 'levels' && (
-        <div className="glass-panel p-6 rounded-2xl space-y-3">
-          <label className="flex justify-between text-xs font-bold">Seviye sistemi <input type="checkbox" checked={s.levels_enabled} onChange={e => setS({ ...s, levels_enabled: e.target.checked })} /></label>
+        <Panel className="p-6 rounded-2xl space-y-3">
+          <label className="flex justify-between text-xs font-bold">Seviye sistemi <Anahtar acik={s.levels_enabled} onChange={(v) => setS({ ...s, levels_enabled: v })} /></label>
           <label className="text-xs font-bold space-y-1">Mesaj başına XP<input type="number" value={s.xp_per_message} onChange={e => setS({ ...s, xp_per_message: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs font-bold space-y-1">Dakika başına XP<input type="number" value={s.xp_per_minute} onChange={e => setS({ ...s, xp_per_minute: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <label className="flex justify-between text-xs font-bold">Level atlayınca duyur <input type="checkbox" checked={s.announce_levelup} onChange={e => setS({ ...s, announce_levelup: e.target.checked })} /></label>
+          <label className="flex justify-between text-xs font-bold">Level atlayınca duyur <Anahtar acik={s.announce_levelup} onChange={(v) => setS({ ...s, announce_levelup: v })} /></label>
           <label className="text-xs font-bold space-y-1">Level-up mesajı<input value={s.levelup_message} onChange={e => setS({ ...s, levelup_message: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-        </div>
+        </Panel>
       )}
       {tab === 'topluluk' && <ToplulukAyarlari />}
       {tab === 'quotes' && (
-        <div className="glass-panel p-6 rounded-2xl space-y-4">
+        <Panel className="p-6 rounded-2xl space-y-4">
           <div className="flex gap-2">
             <input value={newQuote} onChange={e => setNewQuote(e.target.value)} placeholder="Alıntı" className="flex-1 bg-black/40 border border-white/10 rounded-xl p-2 text-sm" />
             <button onClick={async () => { await fetch('/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: newQuote }) }); setNewQuote(''); const d = await fetch('/api/extras').then(r => r.json()); setQuotes(d.quotes || []); }} className="px-3 py-2 bg-purple-600 rounded-xl text-xs font-bold">Ekle</button>
@@ -120,7 +121,7 @@ export function Extras() {
             <button onClick={async () => { await fetch('/api/counters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newCounter }) }); const d = await fetch('/api/extras').then(r => r.json()); setCounters(d.counters || []); }} className="px-3 py-2 bg-emerald-600 rounded-xl text-xs font-bold">Sayaç oluştur</button>
           </div>
           <div className="text-xs text-gray-400">{counters.map((c: any) => `${c.name}: ${c.count}`).join(' · ') || 'Sayaç yok'}</div>
-        </div>
+        </Panel>
       )}
     </div>
   );

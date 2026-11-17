@@ -13,7 +13,7 @@ import {
   RefreshCw,
   CheckCircle2
 } from 'lucide-react';
-import { KayitDurumu } from '../ui/index.js';
+import { Anahtar, KayitDurumu, Panel } from '../ui/index.js';
 import { useOtoKayit } from '../hooks/useOtoKayit.js';
 
 interface GameSettings {
@@ -278,7 +278,7 @@ export function MiniGames() {
       )}
 
       {/* Top Controls & Manual Triggers Banner */}
-      <div className="glass-panel p-5 rounded-2xl border border-white/10 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+      <Panel className="p-5 rounded-2xl border border-white/10 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
         <div>
           <h3 className="text-sm font-extrabold text-white">Yayıncı Hızlı Tetikleyicileri</h3>
           <p className="text-xs text-gray-400">Chati hareketlendirmek için tek tıkla oyun başlatın.</p>
@@ -317,11 +317,11 @@ export function MiniGames() {
             <span>🏎️ Yarış Çağrısı Yap</span>
           </button>
         </div>
-      </div>
+      </Panel>
 
       {/* Active Lobbies Live Tracker */}
       {activeLobbies.length > 0 && (
-        <div className="glass-panel p-5 rounded-2xl border border-amber-500/30 bg-amber-950/20 space-y-3">
+        <Panel className="p-5 rounded-2xl border border-amber-500/30 bg-amber-950/20 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
@@ -354,7 +354,7 @@ export function MiniGames() {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Filter Tabs */}
@@ -392,9 +392,9 @@ export function MiniGames() {
           const conf = (settings as any)[game.id] || {};
 
           return (
-            <div
+            <Panel
               key={game.id}
-              className={`glass-panel p-5 rounded-2xl border ${game.borderColor} bg-[#11131a]/90 space-y-4 relative flex flex-col justify-between`}
+              className={`p-5 rounded-2xl border ${game.borderColor} bg-[#11131a]/90 space-y-4 relative flex flex-col justify-between`}
             >
               <div>
                 {/* Card Header */}
@@ -420,12 +420,7 @@ export function MiniGames() {
 
                   {/* Enable Switch */}
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(conf.enabled)}
-                      onChange={e => updateGameField(game.id as any, 'enabled', e.target.checked)}
-                      className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
-                    />
+                    <Anahtar acik={Boolean(conf.enabled)} onChange={(v) => updateGameField(game.id as any, 'enabled', v)} />
                     <span className="text-xs font-bold text-gray-300">
                       {conf.enabled ? 'Aktif' : 'Pasif'}
                     </span>
@@ -471,12 +466,7 @@ export function MiniGames() {
                   {game.id === 'kelime' && (
                     <label className="bg-black/50 p-2.5 rounded-xl border border-white/5 flex items-center justify-between gap-2 cursor-pointer">
                       <span className="text-[10px] text-gray-400">İpucu göster</span>
-                      <input aria-label="İpucu göster"
-                        type="checkbox"
-                        checked={(conf as any).showHint !== false}
-                        onChange={e => void ipucuYaz(e.target.checked)}
-                        className="w-4 h-4 accent-purple-600"
-                      />
+                      <Anahtar acik={(conf as any).showHint !== false} onChange={(v) => void ipucuYaz(v)} ad="İpucu göster" />
                     </label>
                   )}
 
@@ -552,7 +542,7 @@ export function MiniGames() {
                   <span>Chate Gönder</span>
                 </button>
               </div>
-            </div>
+            </Panel>
           );
         })}
       </div>

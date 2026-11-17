@@ -13,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
+import { Anahtar, Panel } from '../ui/index.js';
 
 export function SongRequest() {
   const [current, setCurrent] = useState<SongItem | null>(null);
@@ -189,7 +190,7 @@ export function SongRequest() {
       <SpotifyBaglanti />
 
       {/* Desktop Player Integration Selector Card */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+      <Panel className="p-4 rounded-2xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
             <Laptop className="w-5 h-5" />
@@ -234,9 +235,9 @@ export function SongRequest() {
             YouTube Music
           </button>
         </div>
-      </div>
+      </Panel>
 
-      <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-center justify-between gap-3">
+      <Panel as="label" className="p-4 rounded-2xl border border-white/10 flex items-center justify-between gap-3">
         <span className="text-xs text-gray-300">
           <b className="text-white">Kişi başına istek sınırı</b> — bir izleyicinin sırada aynı anda kaç isteği olabilir (0 = sınırsız; yayıncı ve modlar muaf)
         </span>
@@ -257,9 +258,9 @@ export function SongRequest() {
           className="w-20 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
           aria-label="Kişi başına istek sınırı"
         />
-      </label>
+      </Panel>
 
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap items-center gap-3 text-xs text-gray-300">
+      <Panel className="p-4 rounded-2xl border border-white/10 flex flex-wrap items-center gap-3 text-xs text-gray-300">
         <span className="basis-full">
           <b className="text-white">Seviyeye göre sınır</b> — boş bırakılırsa izleyici sınırı geçerli; 0 sınırsız. Hem abone hem VIP olana yüksek olan uygulanır.
         </span>
@@ -286,9 +287,9 @@ export function SongRequest() {
             />
           </label>
         ))}
-      </div>
+      </Panel>
 
-      <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
+      <Panel className="p-4 rounded-2xl border border-white/10 space-y-3">
         <div className="text-xs text-gray-300">
           <b className="text-white">İstek güvenlik filtreleri</b> — süre ve puan kuralından yayıncı ile modlar muaf; 0 kuralı kapatır.
           Spotify AxthrowA Studio'da bağlıyken süre önceden bilinmediği için süre sınırı uygulanamaz.
@@ -359,46 +360,36 @@ export function SongRequest() {
             className="mt-1 w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
           />
         </label>
-      </div>
+      </Panel>
 
       {desktopTarget !== 'none' && (
-        <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={spotifyAc}
-            onChange={(e) => {
-              setSpotifyAc(e.target.checked);
-              ayarYaz({ sr_spotify_ac: e.target.checked ? 'true' : 'false' });
-            }}
-            className="mt-0.5 accent-purple-600"
-          />
+        <Panel as="label" className="p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">
+          <Anahtar acik={spotifyAc} onChange={(v) => {
+              setSpotifyAc(v);
+              ayarYaz({ sr_spotify_ac: v ? 'true' : 'false' });
+            }} />
           <span className="text-xs text-gray-300">
             <b className="text-white">İstek gelince Spotify'ı otomatik aç</b> — Spotify kapalıysa ilk !sr isteğinde uygulama arka planda
             (simge durumunda, oyunun önüne geçmeden) açılır ve şarkı çalmaya başlar. Spotify açık ama duraklatılmışsa istek hemen çalar.
           </span>
-        </label>
+        </Panel>
       )}
 
       {desktopTarget === 'none' && (
-        <label className="glass-panel p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={rastgele}
-            onChange={(e) => {
-              setRastgele(e.target.checked);
+        <Panel as="label" className="p-4 rounded-2xl border border-white/10 flex items-start gap-3 cursor-pointer">
+          <Anahtar acik={rastgele} onChange={(v) => {
+              setRastgele(v);
               void fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sr_bos_rastgele: e.target.checked ? 'true' : 'false' })
+                body: JSON.stringify({ sr_bos_rastgele: v ? 'true' : 'false' })
               }).catch(() => {});
-            }}
-            className="mt-0.5 accent-purple-600"
-          />
+            }} />
           <span className="text-xs text-gray-300">
             <b className="text-white">Kuyruk boşken rastgele çal (Otomatik DJ)</b> — sırada istek yoksa Şarkı Klipleri daha önce
             istenmiş kliplerden rastgele çalmaya devam eder; yeni bir !sr gelince ona geçer. İstekler sırayla, sen müdahale etmeden çalar.
           </span>
-        </label>
+        </Panel>
       )}
 
       {statusMsg && (
@@ -409,7 +400,7 @@ export function SongRequest() {
       )}
 
       {/* Currently Playing Card */}
-      <div className="glass-panel p-6 rounded-2xl border border-purple-500/30 glow-purple">
+      <Panel className="p-6 rounded-2xl border border-purple-500/30 glow-purple">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
@@ -507,10 +498,10 @@ export function SongRequest() {
             {calan ? 'Sırada bekleyen istek yok.' : 'Şu anda çalan bir şarkı yok.'} İzleyicileriniz <code className="text-purple-400">!sr &lt;şarkı veya link&gt;</code> yazdığında kuyruk burada başlayacaktır.
           </div>
         )}
-      </div>
+      </Panel>
 
       {/* Up Next Queue */}
-      <div className="glass-panel p-6 rounded-2xl space-y-4">
+      <Panel className="p-6 rounded-2xl space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center space-x-2">
             <Music className="w-5 h-5 text-purple-400" />
@@ -605,7 +596,7 @@ export function SongRequest() {
             ))}
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

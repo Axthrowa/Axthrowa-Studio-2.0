@@ -15,7 +15,7 @@ import { UyariOlayMedyasi } from '../components/UyariOlayMedyasi.js';
 import { SosyalHesapPaneli, SponsorPaneli } from '../components/DonenWidgetPanelleri.js';
 import { SabitMesajPaneli, SkorTablosuPaneli, SohbetIstatistikPaneli } from '../components/SohbetAraclariPaneli.js';
 import { MediaLibrary } from '../components/MediaLibrary.js';
-import { Katlanir } from '../ui/index.js';
+import { Anahtar, Katlanir, Secim } from '../ui/index.js';
 import { LABELS, SECTIONS, SELECTS, WIDGET_SELECTS } from './widgetAyarSozlugu';
 
 /**
@@ -338,12 +338,12 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                 <label key={key} className={`text-[11px] text-gray-300 font-semibold ${type === 'checkbox' ? 'flex items-center justify-between gap-2 bg-white/5 rounded-lg px-2.5 py-2' : 'space-y-1'}`}>
                   <span>{etiketi(key)}</span>
                   {type === 'checkbox' ? (
-                    <input type="checkbox" checked={!!values[key]} onChange={e => setValues(v => ({ ...v, [key]: e.target.checked }))} className="ml-2 accent-purple-600" />
+                    <Anahtar acik={!!values[key]} onChange={(v) => setValues(v => ({ ...v, [key]: v }))} />
                   ) : type === 'select' ? (
                     <div className="flex items-center gap-1.5">
-                      <select value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="flex-1 min-w-0 w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white">
+                      <Secim value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="flex-1 min-w-0 w-full">
                         {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: yaziAilesi(o.value) } : undefined}>{o.label}</option>)}
-                      </select>
+                      </Secim>
                       {(key === 'celebration' || (key.startsWith('efekt') && !['genel', 'yok', ...EKRAN_EFEKTLERI].includes(String(values[key])))) && (
                         <button type="button" onClick={() => kutla(String(values[key] || 'konfeti'), Number(values[key.replace('efekt', 'guc')]) || 1)} className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-white shrink-0">Dene</button>
                       )}

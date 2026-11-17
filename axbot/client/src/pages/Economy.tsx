@@ -14,6 +14,7 @@ import {
   Bell
 } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
+import { Anahtar, Panel, Secim } from '../ui/index.js';
 
 interface LoyaltyUser {
   id: string;
@@ -271,7 +272,7 @@ export function Economy() {
 
       {/* TAB 0: REDEMPTIONS QUEUE */}
       {activeTab === 'queue' && (
-        <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+        <Panel className="p-6 rounded-2xl border border-white/10 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <div>
               <h2 className="text-base font-extrabold text-white flex items-center gap-2">
@@ -284,7 +285,7 @@ export function Economy() {
             </div>
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold" title="Kapalıyken tamamlanan ve iade edilen talepler 10 dakika sonra listeden düşer">
-                <input type="checkbox" checked={gecmis} onChange={(e) => setGecmis(e.target.checked)} className="accent-purple-600" />
+                <Anahtar acik={gecmis} onChange={(v) => setGecmis(v)} />
                 Geçmişi göster
               </label>
               <button
@@ -368,12 +369,12 @@ export function Economy() {
               </table>
             </div>
           )}
-        </div>
+        </Panel>
       )}
 
       {/* TAB 1: LEADERBOARD & STATS */}
       {activeTab === 'leaderboard' && (
-        <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+        <Panel className="p-6 rounded-2xl border border-white/10 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
             <div>
               <h2 className="text-base font-extrabold text-white flex items-center gap-2">
@@ -443,12 +444,12 @@ export function Economy() {
               </tbody>
             </table>
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* TAB 2: STORE MANAGEMENT */}
       {activeTab === 'store' && (
-        <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-5">
+        <Panel className="p-6 rounded-2xl border border-white/10 space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <div>
               <h2 className="text-base font-extrabold text-white flex items-center gap-2">
@@ -485,12 +486,12 @@ export function Economy() {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* TAB 3: LOYALTY SETTINGS & RATES */}
       {activeTab === 'settings' && (
-        <div className="max-w-xl glass-panel p-6 rounded-2xl border border-white/10 space-y-5">
+        <Panel className="max-w-xl p-6 rounded-2xl border border-white/10 space-y-5">
           <div>
             <h2 className="text-base font-extrabold text-white flex items-center gap-2">
               <Sliders className="w-4 h-4 text-purple-400" />
@@ -568,7 +569,7 @@ export function Economy() {
               <span>Oranları Kaydet</span>
             </button>
           </form>
-        </div>
+        </Panel>
       )}
 
       {/* Modal: Yeni Ödül Ekle */}
@@ -603,17 +604,17 @@ export function Economy() {
 
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Ödül Türü (Aksiyon)</label>
-                <select aria-label="Ödül Türü (Aksiyon)"
+                <Secim aria-label="Ödül Türü (Aksiyon)"
                   value={newReward.rewardType}
                   onChange={e => setNewReward({ ...newReward, rewardType: e.target.value })}
-                  className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-white"
+ className="w-full"
                 >
                   <option value="sound">Ses Efekti Çal (Sound)</option>
                   <option value="tts">TTS Sesli Okuma</option>
                   <option value="vip">Geçici VIP Rolü</option>
                   <option value="gif">Ekranda GIF / Kutlama</option>
                   <option value="custom">Özel Talep (Yayıncı Onaylı)</option>
-                </select>
+                </Secim>
               </div>
 
               <div className="flex justify-end gap-2 pt-3">

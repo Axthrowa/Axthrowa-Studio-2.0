@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
+import { Panel } from '../ui/index.js';
 
 export function Rankings() {
   const [sort, setSort] = useState<'points' | 'watch_time_minutes' | 'messages_count'>('points');
@@ -70,7 +71,7 @@ export function Rankings() {
         <button onClick={() => setSort('watch_time_minutes')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'watch_time_minutes' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>İzleme süresi</button>
         <button onClick={() => setSort('messages_count')} className={`px-3 py-2 rounded-lg text-xs font-bold ${sort === 'messages_count' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}>Mesaj</button>
       </div>
-      <div className="glass-panel rounded-2xl overflow-hidden">
+      <Panel className="rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-white/[0.04] text-xs text-gray-400 uppercase"><tr><th className="p-3">#</th><th className="p-3 text-left">Kullanıcı</th><th className="p-3">{label}</th><th className="p-3">Seviye</th></tr></thead>
           <tbody className="divide-y divide-white/5">
@@ -84,7 +85,7 @@ export function Rankings() {
             ))}
           </tbody>
         </table>
-      </div>
+      </Panel>
     </div>
   );
 }

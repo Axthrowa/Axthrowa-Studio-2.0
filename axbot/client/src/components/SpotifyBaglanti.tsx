@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink, Music2, Unplug } from 'lucide-react';
 import { openLink } from '../lib/openLink.js';
+import { Anahtar, Panel, Secim } from '../ui/index.js';
 
 interface Durum {
   spotify: { connected: boolean; clientId: string; displayName: string };
@@ -83,7 +84,7 @@ export function SpotifyBaglanti() {
   const studio = !d?.spotify?.connected && Boolean(d?.harici?.spotify);
   const bagli = d?.spotify?.connected || studio;
   return (
-    <div className="glass-panel p-5 rounded-2xl border border-emerald-500/20 space-y-3">
+    <Panel className="p-5 rounded-2xl border border-emerald-500/20 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
           <Music2 className="w-4 h-4 text-emerald-400" /> Spotify — istekler kendiliğinden çalsın
@@ -128,14 +129,14 @@ export function SpotifyBaglanti() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-bold text-gray-300">
         <label className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 p-2">
           İstekleri Spotify'da çal
-          <input type="checkbox" checked={otomatik} onChange={(e) => { setOtomatik(e.target.checked); void ayar('sr_spotify_api', e.target.checked ? 'true' : 'false'); }} />
+          <Anahtar acik={otomatik} onChange={(v) => { setOtomatik(v); void ayar('sr_spotify_api', v ? 'true' : 'false'); }} />
         </label>
         <label className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/30 p-2">
           Nasıl?
-          <select value={mod} onChange={(e) => { setMod(e.target.value); void ayar('sr_spotify_mod', e.target.value); }} className="bg-black/50 rounded-lg p-1 text-xs">
+          <Secim kucuk value={mod} onChange={(e) => { setMod(e.target.value); void ayar('sr_spotify_mod', e.target.value); }}>
             <option value="sira">Sıraya ekle — çalan şarkı bitince çalar (önerilen)</option>
             <option value="hemen">Hemen çal — çalan şarkıyı keser</option>
-          </select>
+          </Secim>
         </label>
       </div>
       {d?.nowPlaying && (
@@ -157,7 +158,7 @@ export function SpotifyBaglanti() {
       >
         Resonance müzik çalarını aç (Spotify / YouTube Music, OBS "şu an çalan") <ExternalLink className="inline w-3 h-3" />
       </a>
-    </div>
+    </Panel>
   );
 }
 

@@ -7,6 +7,7 @@ import { merkezdeBoyutla } from '../lib/hizala.js';
 import { cubukTurleri } from '../lib/widget-defaults.js';
 import { TEST_ADI, HizaIzgarasi, KATMAN_EMOJISI, KATMAN_AYAR_ID } from './overlayStudioVerileri';
 import type { OverlayStudioSonucu } from './useOverlayStudio';
+import { Anahtar, Panel, Secim } from '../ui/index.js';
 
 export function TekUrlSekmesi(p: OverlayStudioSonucu) {
   const { allInOne, baseUrl, copiedUrl, copyToClipboard, handleCekilisPointerDown, handlePointerMove, handlePointerUp, handleResetWidget, handleResizePointerDown, handleSaveAllInOne, handleToggleTestMode, handleWidgetPointerDown, hizalaCekilis, hizalaSecili, katmaniTestEt, kenarPayi, kilavuz, modalActionStatus, obsGorunumu, seciliAyarId, selectedCanvasWidget, setAllInOne, setKenarPayi, setObsGorunumu, setSelectedCanvasWidget, singleOverlayUrl, tekUrlYenile, testKatmanlari, triggerWidgetTest, tuvalAnahtari, tuvalOlcek, tuvalRef, widgetGalleryItems, widgetKontrolleri, yerlesimDurumu } = p;
@@ -14,7 +15,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
     <>
       <div className="space-y-6">
         {/* Master OBS Link Card */}
-        <div className="glass-panel p-5 rounded-2xl border border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-purple-900/20 to-black flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <Panel className="p-5 rounded-2xl border border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-purple-900/20 to-black flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${allInOne.testMode ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
@@ -56,12 +57,12 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
               <span>{copiedUrl === singleOverlayUrl ? 'Kopyalandı' : 'Kopyala'}</span>
             </button>
           </div>
-        </div>
+        </Panel>
 
         {/* Interactive Screen Preview & Controls Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left: 16:9 Stream Canvas Preview with Interactive Drag & Drop */}
-          <div className="lg:col-span-8 lg:sticky lg:top-0 lg:self-start glass-panel p-5 rounded-2xl border border-white/10 space-y-4">
+          <Panel className="lg:col-span-8 lg:sticky lg:top-0 lg:self-start p-5 rounded-2xl border border-white/10 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -279,10 +280,10 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
               </div>
 
             </div>
-          </div>
+          </Panel>
 
           {/* Right: Detailed Component Positioning & Settings Panel */}
-          <div className="lg:col-span-4 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto glass-panel p-5 rounded-2xl border border-white/10 space-y-4">
+          <Panel className="lg:col-span-4 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto p-5 rounded-2xl border border-white/10 space-y-4">
             <div className="pb-3 border-b border-white/10 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
@@ -298,10 +299,10 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
               <label className="text-[11px] font-bold text-gray-300 block mb-1">
                 Düzenlenecek Bileşen:
               </label>
-              <select aria-label="Düzenlenecek Bileşen"
+              <Secim aria-label="Düzenlenecek Bileşen"
                 value={selectedCanvasWidget}
                 onChange={e => setSelectedCanvasWidget(e.target.value)}
-                className="w-full bg-[#12141a] border border-white/15 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500"
+ className="w-full"
               >
                 <option value="chat">💬 Canlı Sohbet (Chat)</option>
                 <option value="alerts">🔔 AlertBox Bildirimleri</option>
@@ -323,7 +324,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                     {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
                   </option>
                 ))}
-              </select>
+              </Secim>
             </div>
 
 
@@ -380,12 +381,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                       <span className="text-xs font-bold text-white block">Yayında göster</span>
                       <span className="text-[10px] text-gray-400">Kapalıysa OBS'te görünmez</span>
                     </div>
-                    <input aria-label="Yayında göster" 
-                      type="checkbox"
-                      checked={Boolean(cur.enabled)}
-                      onChange={e => updateCur({ enabled: e.target.checked })}
-                      className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
-                    />
+                    <Anahtar acik={Boolean(cur.enabled)} onChange={(v) => updateCur({ enabled: v })} ad="Yayında göster" />
                   </div>
 
                   {selectedCanvasWidget === 'emoteCombo' && (
@@ -394,12 +390,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                         <span className="text-xs font-bold text-white block">Etki tüm ekranı kaplasın</span>
                         <span className="text-[10px] text-gray-400">Emote'lar ekranın her yerinden gelir ve her yere saçılır. Ortadaki emote kutunun yerinde kalır</span>
                       </span>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(cur.etkiTamEkran)}
-                        onChange={(e) => updateCur({ etkiTamEkran: e.target.checked })}
-                        className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
-                      />
+                      <Anahtar acik={Boolean(cur.etkiTamEkran)} onChange={(v) => updateCur({ etkiTamEkran: v })} />
                     </label>
                   )}
 
@@ -409,12 +400,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                         <span className="text-xs font-bold text-white block">Çekilirken farklı konumda dursun</span>
                         <span className="text-[10px] text-gray-400">Tuvalde turuncu kesikli kutuyu sürükle. Çekiliş başlayınca widget oraya geçer, bitince geri döner.</span>
                       </span>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(cur.cekilis)}
-                        onChange={(e) => updateCur({ cekilis: e.target.checked ? { x: cur.x, y: Math.max(0, cur.y - 240) } : undefined })}
-                        className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
-                      />
+                      <Anahtar acik={Boolean(cur.cekilis)} onChange={(v) => updateCur({ cekilis: v ? { x: cur.x, y: Math.max(0, cur.y - 240) } : undefined })} />
                     </label>
                   )}
 
@@ -432,24 +418,14 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                           <span className="text-xs font-bold text-white block">Öne bir şey gelince gizlen</span>
                           <span className="text-[10px] text-gray-400">Uyarı, anket gibi widget bunun üstüne gelince gizlenir, bitince geri gelir</span>
                         </span>
-                        <input
-                          type="checkbox"
-                          checked={cakisincaGizlenirMi(selectedCanvasWidget, cur)}
-                          onChange={(e) => updateCur({ cakisincaGizle: e.target.checked })}
-                          className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
-                        />
+                        <Anahtar acik={cakisincaGizlenirMi(selectedCanvasWidget, cur)} onChange={(v) => updateCur({ cakisincaGizle: v })} />
                       </label>
                       <label className="flex items-center justify-between gap-3 cursor-pointer">
                         <span>
                           <span className="text-xs font-bold text-white block">Ekrana gelince arkasındakileri gizle</span>
                           <span className="text-[10px] text-gray-400">Sürekli görünen widget'ta açarsan arkası hep gizli kalır</span>
                         </span>
-                        <input
-                          type="checkbox"
-                          checked={arkasiniGizlerMi(selectedCanvasWidget, cur)}
-                          onChange={(e) => updateCur({ arkasiniGizle: e.target.checked })}
-                          className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
-                        />
+                        <Anahtar acik={arkasiniGizlerMi(selectedCanvasWidget, cur)} onChange={(v) => updateCur({ arkasiniGizle: v })} />
                       </label>
                     </div>
                   )}
@@ -609,7 +585,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                         </div>
                       ))}
                       {(['follower', 'sub', 'tip', 'kicks'] as const).some((t) => !cubukTurleri(cur).includes(t)) && (
-                        <select
+                        <Secim
                           aria-label="Hedef çubuğu ekle"
                           value=""
                           onChange={(e) => {
@@ -618,7 +594,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                             const liste = [...cubukTurleri(cur), tur];
                             updateCur({ cubuklar: liste, type: liste[0], height: Math.max(Number(cur.height) || 70, liste.length * 78) });
                           }}
-                          className="w-full bg-black/60 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+ className="w-full"
                         >
                           <option value="">Çubuk ekle…</option>
                           {(['follower', 'sub', 'tip', 'kicks'] as const)
@@ -626,7 +602,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                             .map((t) => (
                               <option key={t} value={t}>{t === 'follower' ? 'Takipçi' : t === 'sub' ? 'Abone' : t === 'kicks' ? 'KICKs' : 'Bağış'}</option>
                             ))}
-                        </select>
+                        </Secim>
                       )}
                       <p className="text-[10px] text-gray-500">Takipçi sayısı Kick’ten, abone, bağış ve KICKs gelen olaylardan her açılışta yazılır.</p>
                     </div>
@@ -673,7 +649,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                     ? 'Kaydedilemedi — AxBoT çalışıyor mu? Tekrar deneyin.'
                     : 'Konum ve boyut değişiklikleri kendiliğinden kaydedilir ve OBS\'e yansır.'}
             </p>
-          </div>
+          </Panel>
         </div>
       </div>
     </>

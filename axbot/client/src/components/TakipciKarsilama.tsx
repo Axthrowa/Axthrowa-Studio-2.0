@@ -3,6 +3,7 @@
  * Discord botundaki gibi birden çok tema seçilir; her takipte seçilenlerden rastgele bir mesaj gider.
  */
 import { useEffect, useState } from 'react';
+import { Anahtar, Panel, Secim } from '../ui/index.js';
 
 interface Tema { id: string; ad: string; ornekler: string[]; varsayilan?: string[]; duzenlendi?: boolean }
 interface Kural { aktif: boolean; adsizKarsila?: boolean }
@@ -70,17 +71,17 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
   const ornek = ornekler.length ? ornekler[ornekNo % ornekler.length].replace(/\$\(sender\)/g, 'izleyici').replace(/\$\(channel\)/g, 'kanal') : '';
 
   return (
-    <div className="glass-panel rounded-2xl border border-white/10 p-4 space-y-3">
+    <Panel className="rounded-2xl border border-white/10 p-4 space-y-3">
       <div>
         <h3 className="text-sm font-bold text-white">Yeni takipçi karşılaması</h3>
         <p className="text-[11px] text-gray-400">Biri kanalı takip edince bot sohbete seçili temalardan rastgele bir karşılama yazar; aynı mesaj art arda gelmez.</p>
       </div>
       <label className="flex items-center gap-2 text-xs text-gray-200">
-        <input type="checkbox" className="w-4 h-4 accent-purple-600" checked={kural.aktif} onChange={(e) => kuralYaz({ aktif: e.target.checked })} />
+        <Anahtar acik={kural.aktif} onChange={(v) => kuralYaz({ aktif: v })} />
         Yeni takipçiyi sohbette karşıla
       </label>
       <label className="flex items-center gap-2 text-xs text-gray-200">
-        <input type="checkbox" className="w-4 h-4 accent-purple-600" checked={kural.adsizKarsila !== false} onChange={(e) => kuralYaz({ adsizKarsila: e.target.checked })} />
+        <Anahtar acik={kural.adsizKarsila !== false} onChange={(v) => kuralYaz({ adsizKarsila: v })} />
         Kick takipçinin adını vermezse “Yeni takipçi” diye karşıla
       </label>
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Karşılama temaları">
@@ -122,14 +123,14 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
         <div className="mt-2 space-y-2">
           <label className="flex items-center gap-2 text-[11px] text-gray-300">
             Tema
-            <select value={duzenlenen} onChange={(e) => duzenlemeAc(e.target.value)} className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
+            <Secim value={duzenlenen} onChange={(e) => duzenlemeAc(e.target.value)}>
               {temalar.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.ad}
                   {t.duzenlendi ? ' (düzenlendi)' : ''}
                 </option>
               ))}
-            </select>
+            </Secim>
           </label>
           <textarea
             value={taslak}
@@ -158,7 +159,7 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
         </div>
       </details>
       {hata && <p className="text-xs text-red-300">{hata}</p>}
-    </div>
+    </Panel>
   );
 }
 

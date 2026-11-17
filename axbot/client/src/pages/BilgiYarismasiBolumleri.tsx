@@ -21,6 +21,7 @@ import {
 import { TriviaWidget } from '../widgets/TriviaWidget.js';
 import type { BilgiYarismasiSonucu } from './useBilgiYarismasi';
 import { CATEGORIES } from './bilgiYarismasiKategorileri';
+import { Secim } from '../ui/index.js';
 
 export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
   const { copiedUrl, gameState, handleCopyUrl, handleSkipQuestion, handleStartQuestion, handleStartTournament, handleStopGame, isQuestionActive, overlayUrl, questionDuration, selectedCategory, setQuestionDuration, setSelectedCategory, setTournamentCount, tournamentCount } = p;
@@ -282,15 +283,15 @@ export function SorularSekmesi(p: BilgiYarismasiSonucu) {
         <div className="bg-[#0f131c] border border-white/10 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
             {/* Category Filter */}
-            <select aria-label="Kategori filtresi"
+            <Secim aria-label="Kategori filtresi"
               value={filterCat}
               onChange={(e) => setFilterCat(e.target.value)}
-              className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-200 focus:outline-none"
+
             >
               {CATEGORIES.map(c => (
                 <option key={c.id} value={c.id} className="bg-gray-900">{c.label}</option>
               ))}
-            </select>
+            </Secim>
 
             {/* Search Bar */}
             <div className="relative">
@@ -515,15 +516,15 @@ export function SoruEkleModali(p: BilgiYarismasiSonucu) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-gray-300 font-bold block mb-1">Kategori:</label>
-                <select aria-label="Kategori"
+                <Secim aria-label="Kategori"
                   value={newQuestionForm.category}
                   onChange={(e) => setNewQuestionForm({ ...newQuestionForm, category: e.target.value })}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white"
+ className="w-full"
                 >
                   {CATEGORIES.filter(c => c.id !== 'all').map(c => (
                     <option key={c.id} value={c.id} className="bg-gray-900">{c.label}</option>
                   ))}
-                </select>
+                </Secim>
               </div>
               <div>
                 <label className="text-gray-300 font-bold block mb-1">Ödül Puanı:</label>
@@ -665,41 +666,41 @@ export function YapayZekaModali(p: BilgiYarismasiSonucu) {
           <div className="space-y-3 text-xs">
             <div>
               <label className="text-gray-300 font-bold block mb-1">Kategori:</label>
-              <select aria-label="Kategori"
+              <Secim aria-label="Kategori"
                 value={aiConfig.category}
                 onChange={(e) => setAiConfig({ ...aiConfig, category: e.target.value })}
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white"
+ className="w-full"
               >
                 {CATEGORIES.filter(c => c.id !== 'all').map(c => (
                   <option key={c.id} value={c.id} className="bg-gray-900">{c.label}</option>
                 ))}
-              </select>
+              </Secim>
             </div>
 
             <div>
               <label className="text-gray-300 font-bold block mb-1">Üretilecek Soru Sayısı:</label>
-              <select aria-label="Üretilecek Soru Sayısı"
+              <Secim aria-label="Üretilecek Soru Sayısı"
                 value={aiConfig.count}
                 onChange={(e) => setAiConfig({ ...aiConfig, count: parseInt(e.target.value, 10) })}
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white font-mono"
+ className="w-full"
               >
                 <option value={3}>3 Adet Soru</option>
                 <option value={5}>5 Adet Soru</option>
                 <option value={10}>10 Adet Soru</option>
-              </select>
+              </Secim>
             </div>
 
             <div>
               <label className="text-gray-300 font-bold block mb-1">Zorluk Derecesi:</label>
-              <select aria-label="Zorluk Derecesi"
+              <Secim aria-label="Zorluk Derecesi"
                 value={aiConfig.difficulty}
                 onChange={(e) => setAiConfig({ ...aiConfig, difficulty: e.target.value })}
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white"
+ className="w-full"
               >
                 <option value="kolay">Kolay (Herkes bilsin)</option>
                 <option value="orta">Orta (Dengeli yarışma)</option>
                 <option value="zor">Zor (Zorlayıcı sorular)</option>
-              </select>
+              </Secim>
             </div>
 
             <div className="flex justify-end gap-2 pt-3">

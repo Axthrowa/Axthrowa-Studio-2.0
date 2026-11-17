@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Bot, Send, User, MessageSquarePlus, Zap } from 'lucide-react';
-import { KayitDurumu, useToast } from '../ui/index.js';
+import { Anahtar, KayitDurumu, Panel, Secim, useToast } from '../ui/index.js';
 import { useOtoKayit } from '../hooks/useOtoKayit.js';
 import { YayinOzetleri } from '../components/YayinOzetleri.js';
 
@@ -296,17 +296,17 @@ export function AISettings() {
             <label className="block text-xs font-semibold text-gray-300 mb-1.5">
               Bot Kişiliği (Persona):
             </label>
-            <select aria-label="Bot Kişiliği (Persona)"
+            <Secim aria-label="Bot Kişiliği (Persona)"
               value={rescue.personality}
               onChange={e => setRescue({ ...rescue, personality: e.target.value as any })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-purple-500 focus:outline-none"
+ className="w-full"
             >
               <option value="friendly">😊 Samimi / Kanka (Sıcak & Esprili)</option>
               <option value="troll">😈 Troll / İğneleyici (Hafif Taş Atan)</option>
               <option value="wise">📜 Bilge / Filozof (Derin Düşünceler)</option>
               <option value="gamer">⚡ Heyecanlı / Gamer (Yüksek Enerji)</option>
               <option value="custom">✨ Özel Prompt (Aşağıda Tanımla)</option>
-            </select>
+            </Secim>
           </div>
 
           <div>
@@ -328,12 +328,7 @@ export function AISettings() {
 
           <div className="flex items-center pt-4">
             <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={rescue.isEnabled}
-                onChange={e => setRescue({ ...rescue, isEnabled: e.target.checked })}
-                className="w-4 h-4 rounded text-purple-600 focus:ring-0"
-              />
+              <Anahtar acik={rescue.isEnabled} onChange={(v) => setRescue({ ...rescue, isEnabled: v })} />
               <span className="text-xs font-bold text-white">
                 Otomatik Sohbet Kurtarma Aktif
               </span>
@@ -344,7 +339,7 @@ export function AISettings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Settings Form */}
-        <form onSubmit={(e) => e.preventDefault()} className="glass-panel p-6 rounded-2xl space-y-4 flex flex-col justify-between">
+        <Panel as="form" onSubmit={(e) => e.preventDefault()} className="p-6 rounded-2xl space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <span className="font-bold text-white text-base flex items-center gap-2">
@@ -352,19 +347,11 @@ export function AISettings() {
                 Yapay Zekâ Yapılandırması
               </span>
 
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enabled}
-                  onChange={e => setEnabled(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-              </label>
+              <Anahtar acik={enabled} onChange={(v) => setEnabled(v)} ad="Yapay zekâ yanıtları" />
             </div>
 
             <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
-              <input type="checkbox" checked={seslenme} onChange={e => setSeslenme(e.target.checked)} className="mt-0.5 accent-purple-600" />
+              <Anahtar acik={seslenme} onChange={(v) => setSeslenme(v)} />
               <span className="text-xs text-gray-300">
                 <b className="text-white">Sohbette seslenince yanıtla</b> — izleyici mesajına botun adıyla (AxBoT ya da bot hesabının adı) başlarsa (ör. <code>@AxBoT bugün ne oynuyoruz?</code>) yapay zekâ yanıt verir. Kişi başına 30 sn, genel 4 sn bekleme uygulanır.
               </span>
@@ -372,7 +359,7 @@ export function AISettings() {
 
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-1">Yapay zekâ sağlayıcısı</label>
-              <select aria-label="Yapay zekâ sağlayıcısı"
+              <Secim aria-label="Yapay zekâ sağlayıcısı"
                 value={saglayici}
                 onChange={(e) => {
                   const y = e.target.value;
@@ -380,17 +367,17 @@ export function AISettings() {
                   setSaglayiciAnahtar(kayitliAyarlar[`ai_${y}_api_key`] || '');
                   setSaglayiciModel(kayitliAyarlar[`ai_${y}_model`] || '');
                 }}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+ className="w-full"
               >
                 {AI_SAGLAYICILARI.map((p) => (
                   <option key={p.id} value={p.id}>{p.ad}</option>
                 ))}
-              </select>
+              </Secim>
               <p className="text-[11px] text-gray-500 mt-1">Kaydedip "Bağlantıyı sına" ile anahtarı ve modelleri denetleyebilirsin. Bilgi yarışması soru üretimi yalnız Gemini ile çalışır.</p>
             </div>
 
             <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
-              <input type="checkbox" checked={webArama} onChange={(e) => setWebArama(e.target.checked)} className="mt-0.5 accent-purple-600" />
+              <Anahtar acik={webArama} onChange={(v) => setWebArama(v)} />
               <span className="text-xs text-gray-300">
                 <b className="text-white">Güncel bilgi: internette ara</b> — güncel haber, maç skoru, sonuç gibi sorularda yapay zekâ internette arar.
                 Groq'ta gpt-oss modellerinin yerleşik internet araması, Gemini'de Google Arama kullanılır. Cevap birkaç saniye daha uzun sürer;
@@ -555,10 +542,10 @@ export function AISettings() {
           <div className="pt-3 border-t border-white/10 flex justify-end">
             <KayitDurumu durum={kayit.durum} onYeniden={kayit.yeniden} />
           </div>
-        </form>
+        </Panel>
 
         {/* Interactive Chat Test Simulator */}
-        <div className="glass-panel p-6 rounded-2xl flex flex-col justify-between space-y-4">
+        <Panel className="p-6 rounded-2xl flex flex-col justify-between space-y-4">
           <div className="flex items-center space-x-2 pb-3 border-b border-white/10">
             <Sparkles className="w-5 h-5 text-purple-400" />
             <h2 className="font-bold text-white text-base">Yapay Zeka Canlı Test Alanı</h2>
@@ -611,7 +598,7 @@ export function AISettings() {
               <Send className="w-3.5 h-3.5" /> Sor
             </button>
           </form>
-        </div>
+        </Panel>
       </div>
 
       <YayinOzetleri />

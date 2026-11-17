@@ -5,7 +5,7 @@
 import { CanliDuzenlemeSeridi } from '../components/CanliDuzenlemeSeridi.js';
 import { useEffect, useState } from 'react';
 import { Bell, Check, Play, Save } from 'lucide-react';
-import { Alan, AlanMetni, Anahtar, Buton, Girdi, Katlanir, Secim } from '../ui/index.js';
+import { Alan, AlanMetni, Anahtar, Buton, Girdi, Katlanir, Panel, Secim } from '../ui/index.js';
 import { FONTS, uyariKaydiGovdesi, yeniUyariKaydi } from '../lib/widget-defaults.js';
 import { ANIM_SECENEKLERI, animKimligi } from '../lib/animations.js';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
@@ -113,12 +113,12 @@ export function AlertsStudio() {
       ) : tab === 'media' ? (
         <MediaLibrary />
       ) : tab === 'advanced' ? (
-        <div className="glass-panel p-6 rounded-2xl">
+        <Panel className="p-6 rounded-2xl">
           {/* Widget galerisindeki formun aynısı: iki ayrı form aynı ayarları farklı yazıyordu */}
           <WidgetSettingsForm widgetId="alert-box" baseUrl={window.location.origin} />
-        </div>
+        </Panel>
       ) : (
-        <div className="glass-panel p-6 rounded-2xl space-y-3">
+        <Panel className="p-6 rounded-2xl space-y-3">
           <Katlanir baslik="Metin" aciklama="Uyarıda ne yazsın" acik>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Anahtar etiket="Uyarı açık" acik={current.is_enabled !== 0} onChange={(v) => updatePreset({ is_enabled: v ? 1 : 0 })} />
@@ -172,7 +172,7 @@ export function AlertsStudio() {
             </div>
           </Katlanir>
           <Buton onClick={saveEvent} ikon={<Save className="w-4 h-4" />}>Bu sekmeyi kaydet</Buton>
-        </div>
+        </Panel>
       )}
       {saved && <div className="text-xs text-emerald-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {saved}</div>}
     </div>

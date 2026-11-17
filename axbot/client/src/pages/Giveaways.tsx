@@ -4,7 +4,7 @@ import { Gift, Trophy, Plus, Users, RotateCw, Settings2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
-import { Katlanir } from '../ui/index.js';
+import { Anahtar, Katlanir, Panel, Secim } from '../ui/index.js';
 
 export function Giveaways() {
   const [active, setActive] = useState<Giveaway | null>(null);
@@ -157,7 +157,7 @@ export function Giveaways() {
 
       {/* Active Giveaway Section */}
       {active ? (
-        <div className="glass-panel p-6 rounded-2xl border border-purple-500/40 glow-purple space-y-6">
+        <Panel className="p-6 rounded-2xl border border-purple-500/40 glow-purple space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <span className="bg-purple-500/20 text-purple-300 text-xs px-2.5 py-0.5 rounded-full font-bold border border-purple-500/40">
@@ -205,9 +205,9 @@ export function Giveaways() {
               ))}
             </div>
           </div>
-        </div>
+        </Panel>
       ) : (
-        <div className="glass-panel p-8 rounded-2xl text-center space-y-4">
+        <Panel className="p-8 rounded-2xl text-center space-y-4">
           <Gift className="w-12 h-12 text-gray-600 mx-auto" />
           <div>
             <h3 className="text-lg font-bold text-white">Şu Anda Aktif Çekiliş Yok</h3>
@@ -215,13 +215,13 @@ export function Giveaways() {
               Yayın sırasında anında çekiliş başlatmak için yukarıdaki "Yeni Çekiliş Başlat" butonuna tıklayın.
             </p>
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Create Modal */}
       {isCreating && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
+          <Panel className="w-full max-w-md max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <Gift className="w-5 h-5 text-purple-400" />
               {duzenleniyor ? 'Çekilişi düzenle' : 'Yeni Çekiliş Başlat'}
@@ -262,22 +262,22 @@ export function Giveaways() {
               </div>
 
               <Katlanir baslik="Katılım şartları" aciklama="İsteğe bağlı" acik={subOnly || minWatch > 0 || maxEntries > 0 || costPoints > 0 || subMultiplier !== 1}>
-                <label className="flex items-center gap-2 text-xs font-bold text-gray-300"><input type="checkbox" checked={subOnly} onChange={e => setSubOnly(e.target.checked)} /> Yalnız aboneler katılabilsin</label>
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-300"><Anahtar acik={subOnly} onChange={(v) => setSubOnly(v)} /> Yalnız aboneler katılabilsin</label>
                 <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Abone Bilet Çarpanı
                   </label>
-                  <select aria-label="Abone Bilet Çarpanı"
+                  <Secim aria-label="Abone Bilet Çarpanı"
                     value={subMultiplier}
                     onChange={e => setSubMultiplier(parseFloat(e.target.value))}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+ className="w-full"
                   >
                     <option value="1">Eşit şans (önerilen)</option>
                     <option value="2">2x Bilet</option>
                     <option value="3">3x Bilet</option>
                     <option value="5">5x Bilet</option>
-                  </select>
+                  </Secim>
                 </div>
                   <label className="block text-xs font-bold text-gray-300 space-y-1">Katılım bedeli (puan, 0 = ücretsiz)<input type="number" disabled={duzenleniyor} title={duzenleniyor ? 'Katılanlar eski bedeli ödedi; açık çekilişte değişmez' : undefined} value={costPoints} onChange={e => setCostPoints(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1 disabled:opacity-50" /></label>
                   <label className="block text-xs font-bold text-gray-300 space-y-1">En fazla katılımcı (0 = sınırsız)<input type="number" value={maxEntries} onChange={e => setMaxEntries(+e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-2 mt-1" /></label>
@@ -301,7 +301,7 @@ export function Giveaways() {
                 </button>
               </div>
             </form>
-          </div>
+          </Panel>
         </div>
       )}
 

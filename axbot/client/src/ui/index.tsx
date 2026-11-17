@@ -92,33 +92,56 @@ export function AlanMetni({ className = '', ...p }: React.TextareaHTMLAttributes
   return <textarea {...p} className={`${GIRDI_SINIF} min-h-[70px] ${className}`} />;
 }
 
+const SECIM_KUCUK =
+  'bg-black/60 border border-white/10 rounded-lg px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-colors';
+
+/** Açılır liste. Seçenekler `secenekler` dizisiyle ya da `<option>` çocuklarıyla verilir; `kucuk` satır içi denetimler için. */
 export function Secim({
   secenekler,
+  kucuk,
   className = '',
+  children,
   ...p
-}: React.SelectHTMLAttributes<HTMLSelectElement> & { secenekler: Array<{ value: string; label: string }> }) {
+}: React.SelectHTMLAttributes<HTMLSelectElement> & { secenekler?: Array<{ value: string; label: string }>; kucuk?: boolean }) {
   return (
-    <select {...p} className={`${GIRDI_SINIF} ${className}`}>
-      {secenekler.map((o) => (
+    <select {...p} className={`${kucuk ? SECIM_KUCUK : GIRDI_SINIF} ${className}`}>
+      {secenekler?.map((o) => (
         <option key={o.value} value={o.value}>
           {o.label}
         </option>
       ))}
+      {children}
     </select>
   );
+}
+
+type PanelEtiketi = 'div' | 'section' | 'form' | 'li' | 'label';
+
+/** Cam görünümlü bölüm kutusu (`glass-panel`); dolgu ve yerleşim `className` ile verilir, anlamlı öğe `as` ile. */
+export function Panel<T extends PanelEtiketi = 'div'>({
+  as,
+  className = '',
+  ...p
+}: { as?: T } & React.ComponentPropsWithoutRef<T>) {
+  const Etiket = (as ?? 'div') as React.ElementType;
+  return <Etiket {...p} className={`glass-panel ${className}`} />;
 }
 
 export function Anahtar({
   acik,
   onChange,
   etiket,
-  ad
+  ad,
+  disabled,
+  id
 }: {
   acik: boolean;
   onChange: (v: boolean) => void;
   etiket?: string;
   /** Görünür etiketi olmayan anahtarın ekran okuyucu adı */
   ad?: string;
+  disabled?: boolean;
+  id?: string;
 }) {
   return (
     <button
@@ -126,8 +149,10 @@ export function Anahtar({
       role="switch"
       aria-checked={acik}
       aria-label={etiket ? undefined : ad}
+      id={id}
+      disabled={disabled}
       onClick={() => onChange(!acik)}
-      className="inline-flex items-center gap-2 group"
+      className="inline-flex items-center gap-2 group shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <span
         className={`w-9 h-5 rounded-full transition-colors relative ${acik ? 'bg-emerald-500' : 'bg-white/15'}`}

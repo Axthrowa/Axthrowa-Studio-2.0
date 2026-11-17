@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
+import { Anahtar, Panel } from '../ui/index.js';
 
 interface Duzenli {
   platform: string;
@@ -103,7 +104,7 @@ export function ToplulukAyarlari() {
   const anahtar = (k: Anahtar, etiket: string) => (
     <label className="flex justify-between items-center text-xs font-bold">
       {etiket}
-      <input type="checkbox" checked={acik(k)} onChange={(e) => setA({ ...a, [k]: e.target.checked ? 'true' : 'false' })} />
+      <Anahtar acik={acik(k)} onChange={(v) => setA({ ...a, [k]: v ? 'true' : 'false' })} />
     </label>
   );
   const sayi = (k: Anahtar, etiket: string, min: number, max: number) => (
@@ -121,7 +122,7 @@ export function ToplulukAyarlari() {
         </button>
       </div>
 
-      <section className="glass-panel p-5 rounded-2xl space-y-3">
+      <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
           <Users className="w-4 h-4 text-purple-400" /> Düzenli izleyiciler ({duzenliler.length})
         </h3>
@@ -145,9 +146,9 @@ export function ToplulukAyarlari() {
             </span>
           ))}
         </div>
-      </section>
+      </Panel>
 
-      <section className="glass-panel p-5 rounded-2xl space-y-3">
+      <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Oylu susturma — !votekick</h3>
         <p className="text-[11px] text-gray-400">
           İzleyici <code>!votekick @kişi</code> ile oylama açar, diğerleri <code>!votekick</code> yazarak katılır. Eşik dolunca kişi susturulur.
@@ -159,9 +160,9 @@ export function ToplulukAyarlari() {
           {sayi('votekick_window', 'Oylama süresi (sn)', 10, 600)}
           {sayi('votekick_timeout', 'Susturma (sn)', 10, 86400)}
         </div>
-      </section>
+      </Panel>
 
-      <section className="glass-panel p-5 rounded-2xl space-y-3">
+      <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Emote piramidi</h3>
         <p className="text-[11px] text-gray-400">Aynı kişi <code>E</code>, <code>E E</code>, <code>E E E</code>, <code>E E</code>, <code>E</code> yazınca bot tebrik eder.</p>
         {anahtar('pyramid_enabled', 'Açık')}
@@ -172,17 +173,17 @@ export function ToplulukAyarlari() {
             <input value={a.pyramid_message} onChange={(e) => setA({ ...a, pyramid_message: e.target.value })} className={girdi} />
           </label>
         </div>
-      </section>
+      </Panel>
 
-      <section className="glass-panel p-5 rounded-2xl space-y-3">
+      <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Emote bingo</h3>
         <p className="text-[11px] text-gray-400">
           Mod: <code>!bingo start KEKW PogU LUL 500</code> (son sayı ödül puanı; emote vermezsen 7TV'den 8 tane seçilir). Gizli emote'u ilk yazan kazanır.
           <code> !bingo stop</code> bitirir ve gizli emote'u açıklar.
         </p>
-      </section>
+      </Panel>
 
-      <section className="glass-panel p-5 rounded-2xl space-y-3">
+      <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Kappagen ve 7TV</h3>
         <p className="text-[11px] text-gray-400">
           Overlay: Overlay Stüdyo → <b>Ekranda Emojiler (Kappagen)</b>. <code>!kappagen [emote]</code> ortadan patlatır.
@@ -198,7 +199,7 @@ export function ToplulukAyarlari() {
             <RefreshCw className="w-3.5 h-3.5" /> Yenile
           </button>
         </div>
-      </section>
+      </Panel>
     </div>
   );
 }

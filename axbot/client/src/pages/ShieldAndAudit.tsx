@@ -9,6 +9,7 @@ import {
   Lock,
   Plus
 } from 'lucide-react';
+import { Anahtar, Secim } from '../ui/index.js';
 
 interface ShieldSettings {
   isActive: boolean;
@@ -313,12 +314,7 @@ export default function ShieldAndAudit() {
               key={k.id}
               className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-950/60 p-3 cursor-pointer hover:border-slate-600"
             >
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={!!shield[k.id]}
-                onChange={(e) => void kuralKaydet(k.id, e.target.checked)}
-              />
+              <Anahtar acik={!!shield[k.id]} onChange={(v) => void kuralKaydet(k.id, v)} />
               <span className="min-w-0">
                 <span className="block text-xs font-bold text-white">{k.ad}</span>
                 <span className="block text-[11px] text-gray-400 leading-snug">{k.aciklama}</span>
@@ -328,7 +324,7 @@ export default function ShieldAndAudit() {
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
           <label className="flex items-start gap-2.5 cursor-pointer">
-            <input type="checkbox" className="mt-0.5" checked={shield.platformModlari !== false} onChange={(e) => void kuralKaydet('platformModlari', e.target.checked)} />
+            <Anahtar acik={shield.platformModlari !== false} onChange={(v) => void kuralKaydet('platformModlari', v)} />
             <span className="min-w-0">
               <span className="block text-xs font-bold text-white">Twitch sohbet modlarını da aç</span>
               <span className="block text-[11px] text-gray-400 leading-snug">
@@ -339,7 +335,7 @@ export default function ShieldAndAudit() {
           {shield.platformModlari !== false && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-6">
               <label className="flex items-center gap-2 text-[11px] text-gray-300">
-                <input type="checkbox" checked={!!shield.followerOnly} onChange={(e) => void kuralKaydet('followerOnly', e.target.checked)} />
+                <Anahtar acik={!!shield.followerOnly} onChange={(v) => void kuralKaydet('followerOnly', v)} />
                 Yalnız takipçiler
               </label>
               <label className="flex items-center gap-2 text-[11px] text-gray-300">
@@ -436,16 +432,16 @@ export default function ShieldAndAudit() {
                   onChange={e => setNewBanUser(e.target.value)}
                   className="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-red-500 focus:outline-none"
                 />
-                <select aria-label="Platform"
+                <Secim aria-label="Platform"
                   value={newBanPlatform}
                   onChange={e => setNewBanPlatform(e.target.value)}
                   title="Kayıt yalnız bu platformda geçerli olur: başka platformdaki aynı adlı kişi etkilenmez"
-                  className="bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-white text-xs focus:border-red-500 focus:outline-none"
+
                 >
                   {KARA_LISTE_PLATFORMLARI.map((p) => (
                     <option key={p.id} value={p.id}>{p.ad}</option>
                   ))}
-                </select>
+                </Secim>
               </div>
               <input
                 type="text"
@@ -501,10 +497,10 @@ export default function ShieldAndAudit() {
               Denetim Günlüğü (Audit Logs)
             </h2>
             <div className="flex items-center gap-2">
-              <select aria-label="İşlem filtresi"
+              <Secim aria-label="İşlem filtresi"
                 value={actionFilter}
                 onChange={e => setActionFilter(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-xs text-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none"
+
               >
                 <option value="">Tüm Olaylar</option>
                 <option value="SHIELD_MODE_ACTIVATED">Kalkan Açıldı</option>
@@ -519,7 +515,7 @@ export default function ShieldAndAudit() {
                 <option value="KING_CROWNED">Kral Değişimi</option>
                 <option value="VIEWER_NOTE_SAVED">Yayıncı Notu</option>
                 <option value="TTS_SETTINGS_UPDATED">TTS Değişikliği</option>
-              </select>
+              </Secim>
               <button
                 onClick={fetchData}
                 className="p-1.5 rounded-lg bg-slate-800 text-gray-300 hover:text-white transition-colors"

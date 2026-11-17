@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { BarChart3, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
+import { Panel } from '../ui/index.js';
 
 export function PollsStudio() {
   const [title, setTitle] = useState('');
@@ -43,16 +44,16 @@ export function PollsStudio() {
         <p className="text-sm text-gray-400">Anket oluştur, sohbetten oyla, overlay’de göster.</p>
       </div>
       {active ? (
-        <div className="glass-panel p-5 rounded-2xl border border-emerald-500/40 flex flex-wrap items-center justify-between gap-3">
+        <Panel className="p-5 rounded-2xl border border-emerald-500/40 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black">AKTİF ANKET</span>
             <div className="text-base font-bold text-white mt-1 truncate">{active.title || active.question}</div>
             <div className="text-[11px] text-gray-400">İzleyiciler sohbetten oy verir.</div>
           </div>
           <button onClick={end} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold flex items-center gap-1"><Square className="w-4 h-4" /> Anketi bitir</button>
-        </div>
+        </Panel>
       ) : (
-        <div className="glass-panel p-5 rounded-2xl space-y-4">
+        <Panel className="p-5 rounded-2xl space-y-4">
           <h2 className="text-sm font-bold text-white">Yeni anket</h2>
           <label className="block text-xs font-bold text-gray-300 space-y-1">
             <span>Soru</span>
@@ -77,7 +78,7 @@ export function PollsStudio() {
             </label>
             <button onClick={create} disabled={!hazir} title={hazir ? undefined : 'Soru ve en az 2 seçenek gerekli'} className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1"><Play className="w-4 h-4" /> Anketi başlat</button>
           </div>
-        </div>
+        </Panel>
       )}
       <div className="space-y-2">
         <h2 className="text-sm font-bold text-white">OBS'teki görünüm</h2>

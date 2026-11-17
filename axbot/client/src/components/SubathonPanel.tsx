@@ -13,6 +13,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Play, Square, Plus, Minus, Save, RefreshCw } from 'lucide-react';
+import { Anahtar } from '../ui/index.js';
 
 interface Ayar {
   aktif: boolean;
@@ -76,7 +77,7 @@ function Kural({
         <span className="w-2 h-2 rounded-full" style={{ background: renk }} />
         <span className="text-xs font-black text-white flex-1">{baslik}</span>
         <span className="text-[10px] text-gray-400">{acik ? 'Süre ekler' : 'Kapalı'}</span>
-        <input type="checkbox" checked={acik} onChange={(e) => onAcik(e.target.checked)} className="w-4 h-4 accent-cyan-500 cursor-pointer" />
+        <Anahtar acik={acik} onChange={(v) => onAcik(v)} />
       </label>
       <div className={`flex items-end gap-2 ${acik ? '' : 'opacity-40'}`}>
         <label className="flex-1">

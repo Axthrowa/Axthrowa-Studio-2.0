@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Check, Volume2, Share2, Palette } from 'lucide-react';
-import { KayitDurumu, useToast } from '../ui/index.js';
+import { Anahtar, KayitDurumu, Panel, Secim, useToast } from '../ui/index.js';
 import { useOtoKayit } from '../hooks/useOtoKayit.js';
 import { PANEL_TEMALARI, panelTemasiSec, usePanelTemasi } from '../lib/panelTemalari.js';
 
@@ -55,7 +55,7 @@ export function Settings() {
 
       <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
         {/* 1. Command Prefix & Bot Basics */}
-        <div className="glass-panel p-6 rounded-2xl space-y-4">
+        <Panel className="p-6 rounded-2xl space-y-4">
           <div className="flex items-center space-x-2 pb-2 border-b border-white/10">
             <SettingsIcon className="w-5 h-5 text-purple-400" />
             <h2 className="font-bold text-white text-base">Komut Öneki & Temel Ayarlar</h2>
@@ -87,25 +87,17 @@ export function Settings() {
               />
             </div>
           </div>
-        </div>
+        </Panel>
 
         {/* 2. Cross-Chat Relay */}
-        <div className="glass-panel p-6 rounded-2xl space-y-4">
+        <Panel className="p-6 rounded-2xl space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-white/10">
             <div className="flex items-center space-x-2">
               <Share2 className="w-5 h-5 text-emerald-400" />
               <h2 className="font-bold text-white text-base">Çapraz Sohbet Aktarımı (Cross-Chat Relay)</h2>
             </div>
 
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.cross_chat_enabled === 'true'}
-                onChange={e => handleChange('cross_chat_enabled', e.target.checked ? 'true' : 'false')}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-            </label>
+            <Anahtar acik={settings.cross_chat_enabled === 'true'} onChange={(v) => handleChange('cross_chat_enabled', v ? 'true' : 'false')} ad="Çapraz sohbet aktarımı" />
           </div>
 
           <p className="text-xs text-gray-400">
@@ -126,25 +118,17 @@ export function Settings() {
               Desteklenen etiketler: <code className="text-purple-400">$platform</code>, <code className="text-purple-400">$user</code>, <code className="text-purple-400">$message</code>
             </p>
           </div>
-        </div>
+        </Panel>
 
         {/* 3. Text-to-Speech (TTS) Settings */}
-        <div className="glass-panel p-6 rounded-2xl space-y-4">
+        <Panel className="p-6 rounded-2xl space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-white/10">
             <div className="flex items-center space-x-2">
               <Volume2 className="w-5 h-5 text-blue-400" />
               <h2 className="font-bold text-white text-base">Sesli Okuma (TTS) Ayarları</h2>
             </div>
 
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.tts_enabled !== 'false'}
-                onChange={e => handleChange('tts_enabled', e.target.checked ? 'true' : 'false')}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-            </label>
+            <Anahtar acik={settings.tts_enabled !== 'false'} onChange={(v) => handleChange('tts_enabled', v ? 'true' : 'false')} ad="Sesli okuma (TTS)" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -152,16 +136,16 @@ export function Settings() {
               <label className="block text-xs font-bold text-gray-300 mb-1">
                 Varsayılan Ses
               </label>
-              <select aria-label="Varsayılan Ses"
+              <Secim aria-label="Varsayılan Ses"
                 value={settings.tts_voice || 'tr-TR-AhmetNeural'}
                 onChange={e => handleChange('tts_voice', e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+ className="w-full"
               >
                 <option value="tr-TR-AhmetNeural">Türkçe (Ahmet - Erkek)</option>
                 <option value="tr-TR-EmelNeural">Türkçe (Emel - Kadın)</option>
                 <option value="en-US-BrianNeural">English (Brian - Classic Streamer)</option>
                 <option value="en-US-JennyNeural">English (Jenny)</option>
-              </select>
+              </Secim>
             </div>
 
             <div>
@@ -179,7 +163,7 @@ export function Settings() {
               />
             </div>
           </div>
-        </div>
+        </Panel>
       </form>
 
       <PanelTemasiSecici />
@@ -191,7 +175,7 @@ export function Settings() {
 function PanelTemasiSecici() {
   const secili = usePanelTemasi();
   return (
-    <section className="glass-panel p-6 rounded-2xl space-y-4" aria-labelledby="panel-temasi-baslik">
+    <Panel as="section" className="p-6 rounded-2xl space-y-4" aria-labelledby="panel-temasi-baslik">
       <div className="flex items-center space-x-2 pb-2 border-b border-white/10">
         <Palette className="w-5 h-5 text-purple-400" aria-hidden />
         <h2 id="panel-temasi-baslik" className="font-bold text-white text-base">Panel teması</h2>
@@ -238,7 +222,7 @@ function PanelTemasiSecici() {
           );
         })}
       </div>
-    </section>
+    </Panel>
   );
 }
 

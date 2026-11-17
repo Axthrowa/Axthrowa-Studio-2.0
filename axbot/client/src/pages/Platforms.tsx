@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { sunucuPortu } from '../lib/widget-style.js'; import { usePlatformBaglantilari } from './usePlatformBaglantilari';
+import { Anahtar, Panel } from '../ui/index.js';
 
 export interface KickVerificationResult {
   success: boolean;
@@ -494,10 +495,10 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
             const isSaved = savedPlatform === p.key;
 
             return (
-              <div
+              <Panel
                 id={`platform-${p.key}`}
                 key={p.key}
-                className={`glass-panel p-6 rounded-2xl flex flex-col justify-between space-y-4 ${focusPlatform === p.key ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#090b10]' : ''}`}
+                className={`p-6 rounded-2xl flex flex-col justify-between space-y-4 ${focusPlatform === p.key ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#090b10]' : ''}`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -507,15 +508,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                     </div>
 
                     {/* Active Switch */}
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={conf.is_active !== 0}
-                        onChange={e => handleChange(p.key, 'is_active', e.target.checked ? 1 : 0)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
+                    <Anahtar acik={conf.is_active !== 0} onChange={(v) => handleChange(p.key, 'is_active', v ? 1 : 0)} ad={`${p.name} etkin`} />
                   </div>
 
                   <div className="space-y-3 mt-4">
@@ -585,7 +578,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                     {isSaved ? 'Kaydedildi & Bağlandı' : 'Kaydet ve Bağlan'}
                   </button>
                 </div>
-              </div>
+              </Panel>
             );
           })}
         </div>

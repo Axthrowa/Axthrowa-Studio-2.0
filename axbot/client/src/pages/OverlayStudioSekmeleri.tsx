@@ -7,6 +7,7 @@ import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { OBS_EKLEME, WIDGET_IPUCLARI } from '../lib/widget-ipuclari.js';
 import { KATEGORI_ADI, onizlemeBoyutu, TEST_ADI } from './overlayStudioVerileri';
 import type { OverlayStudioSonucu } from './useOverlayStudio';
+import { Panel, Secim } from '../ui/index.js';
 
 export function GaleriSekmesi(p: OverlayStudioSonucu) {
   const { baseUrl, categoryFilter, copiedUrl, copyToClipboard, filteredWidgets, hedefNo, hedefSayisi, hedefTabani, modalActionStatus, modalId, modalUrl, searchQuery, selectedWidgetModal, setCategoryFilter, setHedefNo, setSearchQuery, setSelectedWidgetModal, tekUrlyeEkle, triggerWidgetTest, widgetKontrolleri, yeniHedefCubugu } = p;
@@ -14,7 +15,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
     <>
       <div className="space-y-6">
         {/* Gallery Header & Search */}
-        <div className="glass-panel p-5 rounded-2xl border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <Panel className="p-5 rounded-2xl border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-black text-white flex items-center gap-2">
               Widget Galerisi
@@ -37,29 +38,29 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
               />
             </div>
 
-            <select aria-label="Kategori filtresi"
+            <Secim aria-label="Kategori filtresi"
               value={categoryFilter}
               onChange={e => setCategoryFilter(e.target.value)}
-              className="bg-[#12141a] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+
             >
               <option value="All">Tüm Kategoriler</option>
               <option value="Goals">Hedefler</option>
               <option value="Engagement">Etkileşim</option>
               <option value="On-Stream">Ekran Üstü</option>
               <option value="Audio & AI">Ses & Yapay Zekâ</option>
-            </select>
+            </Secim>
           </div>
-        </div>
+        </Panel>
 
         {/* 4-Column Responsive Grid matching Image 2 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredWidgets.map(widget => {
             const Icon = widget.icon;
             return (
-              <div
+              <Panel
                 key={widget.id}
                 onClick={() => setSelectedWidgetModal(widget)}
-                className="glass-panel p-5 rounded-2xl border border-white/10 hover:border-purple-500/50 bg-[#12141a]/90 hover:bg-[#181b24] transition-all flex flex-col justify-between group cursor-pointer relative"
+                className="p-5 rounded-2xl border border-white/10 hover:border-purple-500/50 bg-[#12141a]/90 hover:bg-[#181b24] transition-all flex flex-col justify-between group cursor-pointer relative"
               >
 
                 <div>
@@ -120,7 +121,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
                   </button>
                   </div>
                 </div>
-              </div>
+              </Panel>
             );
           })}
         </div>
@@ -293,7 +294,7 @@ export function SohbetAyarSekmesi(p: OverlayStudioSonucu) {
     <>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Settings Form (Exact replication of Image 1) */}
-        <div className="lg:col-span-6 glass-panel p-6 rounded-2xl border border-white/10 space-y-5">
+        <Panel className="lg:col-span-6 p-6 rounded-2xl border border-white/10 space-y-5">
           <div className="pb-3 border-b border-white/10 flex items-center justify-between">
             <div>
               <h2 className="text-base font-extrabold text-white">Chat Overlay Özelleştirme</h2>
@@ -308,10 +309,10 @@ export function SohbetAyarSekmesi(p: OverlayStudioSonucu) {
               OBS'teki sohbet bileşeni o kaydı HİÇ okumuyordu ("önizlemede başka, OBS'te başka").
               Artık gerçek bileşenin kendi ayarları: değişiklik kendiliğinden kaydedilir ve OBS'e gider. */}
           <WidgetSettingsForm widgetId="chat-overlay" baseUrl={baseUrl} />
-        </div>
+        </Panel>
 
         {/* Right: Live Chatbox Simulation */}
-        <div className="lg:col-span-6 glass-panel p-6 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4">
+        <Panel className="lg:col-span-6 p-6 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -349,7 +350,7 @@ export function SohbetAyarSekmesi(p: OverlayStudioSonucu) {
               </button>
             </div>
           </div>
-        </div>
+        </Panel>
       </div>
     </>
   );
@@ -361,7 +362,7 @@ export function UyariSekmesi(p: OverlayStudioSonucu) {
     <>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Alert Presets */}
-        <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+        <Panel className="lg:col-span-5 p-6 rounded-2xl border border-white/10 space-y-4">
           <h2 className="text-base font-extrabold text-white">Bildirim Şablonları</h2>
           <div className="space-y-2.5">
             {alerts.map(preset => (
@@ -388,10 +389,10 @@ export function UyariSekmesi(p: OverlayStudioSonucu) {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
 
         {/* Right: Alert Test & Simulator */}
-        <div className="lg:col-span-7 glass-panel p-6 rounded-2xl border border-white/10 space-y-5">
+        <Panel className="lg:col-span-7 p-6 rounded-2xl border border-white/10 space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Bell className="w-4 h-4 text-amber-400" />
@@ -446,7 +447,7 @@ export function UyariSekmesi(p: OverlayStudioSonucu) {
               </button>
             </div>
           </div>
-        </div>
+        </Panel>
       </div>
     </>
   );

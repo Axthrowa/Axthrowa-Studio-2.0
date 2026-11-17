@@ -7,6 +7,7 @@ import { PlatformBadges } from '../components/PlatformBadge.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
 import { yetenekleriGetir, type YetenekHaritasi } from '../lib/capabilities.js';
 import { cezaAdi, TemizlikSonucu, ViewerModalData } from './multiChatTipleri';
+import { Anahtar, Panel, Secim } from '../ui/index.js';
 
 const KALKAN_ETIKETI: Record<'abone' | 'link' | 'caps' | 'emoji', string> = {
   abone: 'yalnız abone',
@@ -319,21 +320,21 @@ export function MultiChat() {
 
           <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 px-2 py-1 rounded-xl text-[11px] text-gray-200">
             <label className="flex items-center gap-1.5 cursor-pointer font-bold">
-              <input type="checkbox" checked={avatarAyar.avatarGoster} onChange={(e) => avatarYaz({ avatarGoster: e.target.checked })} />
+              <Anahtar acik={avatarAyar.avatarGoster} onChange={(v) => avatarYaz({ avatarGoster: v })} />
               Avatarlar
             </label>
             {avatarAyar.avatarGoster && (
               <>
-                <select aria-label="Avatar boyutu" value={avatarAyar.avatarBoyut} onChange={(e) => avatarYaz({ avatarBoyut: Number(e.target.value) })} className="bg-black/60 border border-white/10 rounded-lg px-1 py-0.5 text-white">
+                <Secim kucuk aria-label="Avatar boyutu" value={avatarAyar.avatarBoyut} onChange={(e) => avatarYaz({ avatarBoyut: Number(e.target.value) })}>
                   <option value={20}>Küçük</option>
                   <option value={28}>Orta</option>
                   <option value={40}>Büyük</option>
-                </select>
-                <select aria-label="Avatar biçimi" value={avatarAyar.avatarBicim} onChange={(e) => avatarYaz({ avatarBicim: e.target.value })} className="bg-black/60 border border-white/10 rounded-lg px-1 py-0.5 text-white">
+                </Secim>
+                <Secim kucuk aria-label="Avatar biçimi" value={avatarAyar.avatarBicim} onChange={(e) => avatarYaz({ avatarBicim: e.target.value })}>
                   <option value="circle">Daire</option>
                   <option value="rounded">Yuvarlak köşe</option>
                   <option value="square">Kare</option>
-                </select>
+                </Secim>
               </>
             )}
           </div>
@@ -370,7 +371,7 @@ export function MultiChat() {
       )}
 
       {/* Chat Messages Box */}
-      <div className="flex-1 min-h-0 glass-panel p-4 rounded-2xl border border-white/10 flex flex-col">
+      <Panel className="flex-1 min-h-0 p-4 rounded-2xl border border-white/10 flex flex-col">
         <div
           ref={listeRef}
           onScroll={(e) => {
@@ -470,14 +471,14 @@ export function MultiChat() {
             ))
           )}
         </div>
-      </div>
+      </Panel>
 
       {/* Input Sender Bar */}
-      <form onSubmit={handleSend} className="glass-panel p-2.5 rounded-2xl flex items-center gap-2 border border-white/10">
-        <select aria-label="Mesajın gideceği platform"
+      <Panel as="form" onSubmit={handleSend} className="p-2.5 rounded-2xl flex items-center gap-2 border border-white/10">
+        <Secim aria-label="Mesajın gideceği platform"
           value={targetPlatform}
           onChange={e => setTargetPlatform(e.target.value)}
-          className="min-w-0 max-w-[45%] shrink bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-purple-300 focus:outline-none"
+ className="min-w-0 max-w-[45%] shrink text-purple-300"
         >
           <option value="all">Tüm Platformlara Gönder</option>
           <option value="kick">Sadece Kick</option>
@@ -485,7 +486,7 @@ export function MultiChat() {
           <option value="youtube">Sadece YouTube</option>
           <option value="trovo">Sadece Trovo</option>
           <option value="discord">Sadece Discord</option>
-        </select>
+        </Secim>
 
         <input
           type="text"
@@ -502,7 +503,7 @@ export function MultiChat() {
         >
           <Send className="w-3.5 h-3.5" /> Gönder
         </button>
-      </form>
+      </Panel>
 
       {/* Sohbeti nerede temizlemeli? */}
       {temizleListe && (
@@ -513,12 +514,7 @@ export function MultiChat() {
             <div className="space-y-1">
               {temizleListe.map((p) => (
                 <label key={p.id} className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm ${p.bagli ? 'text-white cursor-pointer hover:bg-white/5' : 'text-gray-500'}`}>
-                  <input
-                    type="checkbox"
-                    disabled={!p.bagli}
-                    checked={!!temizleSecili[p.id]}
-                    onChange={(e) => setTemizleSecili((s) => ({ ...s, [p.id]: e.target.checked }))}
-                  />
+                  <Anahtar acik={!!temizleSecili[p.id]} onChange={(v) => setTemizleSecili((s) => ({ ...s, [p.id]: v }))} disabled={!p.bagli} />
                   <PlatformLogo platform={p.id} size={14} />
                   {PLATFORM_ADI[p.id] || p.id}
                   {!p.bagli && <span className="ml-auto text-[11px]">bağlı değil</span>}
@@ -679,7 +675,7 @@ export function MultiChat() {
               </div>
               <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-300">
                 <label htmlFor="sustur-sure" className="font-semibold">Susturma süresi</label>
-                <select
+                <Secim
                   id="sustur-sure"
                   value={ozelSure ? 'ozel' : String(sureDk)}
                   onChange={(e) => {
@@ -687,13 +683,13 @@ export function MultiChat() {
                     setOzelSure(false);
                     setSureDk(Number(e.target.value));
                   }}
-                  className="bg-black/60 border border-white/10 rounded-lg px-1.5 py-1 text-white"
+
                 >
                   {SURE_SECENEKLERI.map((dk) => (
                     <option key={dk} value={dk}>{sureMetni(dk)}</option>
                   ))}
                   <option value="ozel">Özel…</option>
-                </select>
+                </Secim>
                 {ozelSure && (
                   <>
                     <input

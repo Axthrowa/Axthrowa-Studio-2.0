@@ -3,6 +3,7 @@
  * yetki ve bekleme. Eskiden panelde elle yazılmış 37 satırlık ayrı bir liste vardı; çoğu komut görünmüyordu.
  */
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Anahtar, Panel, Secim } from '../ui/index.js';
 
 type Yetki = 'herkes' | 'mod' | 'yayinci';
 interface Komut {
@@ -95,7 +96,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
         o bölümün tümünü kullanım örnekleriyle yazar. Yetkiyi yükseltmek (ör. herkes → mod) komutu izleyicilere kapatır; mod komutunu herkese açmaz.
       </p>
       {hata && <p className="text-xs text-red-300">{hata}</p>}
-      <div className="glass-panel rounded-2xl overflow-hidden border border-white/10">
+      <Panel className="rounded-2xl overflow-hidden border border-white/10">
         <table className="w-full text-left text-sm">
           <thead className="bg-white/[0.04] text-xs font-bold text-gray-400 uppercase">
             <tr>
@@ -128,16 +129,16 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                     {modul && <div className="mt-0.5 text-[10px] text-amber-300">“{modul}” modülü kapalı (!modul ac {modul})</div>}
                   </td>
                   <td className="py-2.5 px-4 align-top">
-                    <select
+                    <Secim
                       value={ayar.yetki || ''}
                       onChange={(e) => void kaydet(k.ad, { yetki: e.target.value as Yetki | '' })}
-                      className="bg-black/50 border border-white/10 rounded-lg px-2 py-1 text-xs text-white"
+
                       title="Varsayılan: komutun kendi kuralı"
                     >
                       <option value="">Varsayılan ({YETKI_ADI[k.yetki]}{k.modEk ? ' + mod ek' : ''})</option>
                       {k.yetki === 'herkes' && <option value="mod">Yalnız mod</option>}
                       {k.yetki !== 'yayinci' && <option value="yayinci">Yalnız yayıncı</option>}
-                    </select>
+                    </Secim>
                   </td>
                   <td className="py-2.5 px-4 align-top">
                     <input
@@ -155,7 +156,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                     <span className="ml-1 text-[10px] text-gray-500">sn</span>
                   </td>
                   <td className="py-2.5 px-4 align-top">
-                    <input type="checkbox" checked={acik} onChange={(e) => void kaydet(k.ad, { acik: e.target.checked })} className="w-4 h-4 accent-purple-600" aria-label={`!${k.ad} açık`} />
+                    <Anahtar acik={acik} onChange={(v) => void kaydet(k.ad, { acik: v })} ad={`!${k.ad} açık`} />
                   </td>
                 </tr>
                 <tr className={acik ? '' : 'opacity-50'}>
@@ -168,7 +169,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                         className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-1 py-1 text-[11px] text-gray-300"
                         title="Komut kapalıyken, yetki yokken ya da beklemedeyken sohbete kısa yanıt yazılmaz"
                       >
-                        <input type="checkbox" checked={!!ayar.sessiz} onChange={(e) => void kaydet(k.ad, { sessiz: e.target.checked })} className="h-3.5 w-3.5 accent-purple-600" />
+                        <Anahtar acik={!!ayar.sessiz} onChange={(v) => void kaydet(k.ad, { sessiz: v })} />
                         Reddedince sessiz kal
                       </label>
                       {ornek && (
@@ -219,7 +220,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
             })}
           </tbody>
         </table>
-      </div>
+      </Panel>
     </div>
   );
 }

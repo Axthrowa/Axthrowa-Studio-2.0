@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { MediaLibrary } from './MediaLibrary.js';
 import { guvenliMedya, medyaTuru, ogeTuru, type SponsorOgesi } from '../lib/donenWidget.js';
 import { SOSYAL_PLATFORMLAR } from '../lib/sosyalPlatformlar.js';
+import { Secim } from '../ui/index.js';
 
 interface PanelProps {
   values: Record<string, any>;
@@ -42,7 +43,7 @@ export function SosyalHesapPaneli({ values, degistir }: PanelProps) {
       {hesaplar.map((h, i) => (
         <div key={i} className="space-y-1 border-b border-white/10 pb-2">
           <div className="flex items-center justify-between gap-1.5">
-          <select
+          <Secim
             aria-label="Platform"
             value={h.platform}
             onChange={(e) => yaz(hesaplar.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)))}
@@ -56,7 +57,7 @@ export function SosyalHesapPaneli({ values, degistir }: PanelProps) {
               </optgroup>
             ))}
             <option value="diger">Diğer</option>
-          </select>
+          </Secim>
           <SiraDugmeleri i={i} n={hesaplar.length} ad="Hesabı" tasi={(a, b) => yaz(tasinmis(hesaplar, a, b))} sil={(k) => yaz(hesaplar.filter((_, j) => j !== k))} />
           </div>
           <input

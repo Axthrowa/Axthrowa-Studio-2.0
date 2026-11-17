@@ -9,6 +9,7 @@ import {
   Save,
   Clock
 } from 'lucide-react';
+import { Anahtar } from '../ui/index.js';
 
 interface JumpScareSettings {
   isEnabled: boolean;
@@ -288,12 +289,7 @@ export default function DonationsAndJumpScare() {
               OBS JumpScare Overlay Katmanı
             </h2>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={jsSettings.isEnabled}
-                onChange={e => setJsSettings({ ...jsSettings, isEnabled: e.target.checked })}
-                className="w-4 h-4 rounded text-red-600 focus:ring-0"
-              />
+              <Anahtar acik={jsSettings.isEnabled} onChange={(v) => setJsSettings({ ...jsSettings, isEnabled: v })} />
               <span className="text-xs font-bold text-white">JumpScare Aktif</span>
             </label>
           </div>

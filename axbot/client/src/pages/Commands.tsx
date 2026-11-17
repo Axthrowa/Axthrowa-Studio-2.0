@@ -3,7 +3,7 @@ import { CustomCommand } from '../types.js';
 import { Terminal, Plus, Edit2, Trash2, Check, Sparkles, Search } from 'lucide-react';
 import { SohbetOnizleme, YerlesikKomutlar } from '../components/YerlesikKomutlar.js';
 import { TakipciKarsilama } from '../components/TakipciKarsilama.js';
-import { BosDurum } from '../ui/index.js';
+import { Anahtar, BosDurum, Panel, Secim } from '../ui/index.js';
 
 /** Önizleme: sık değişkenler örnek değerle; diğerleri olduğu gibi kalır */
 const ornekYanit = (metin: string) => metin.replace(/\$\((sender|user)\)/g, 'izleyici').replace(/\$\(channel\)/g, 'kanal');
@@ -152,7 +152,7 @@ export function Commands() {
       {tab === 'default' && <YerlesikKomutlar arama={search} />}
       {tab === 'karsilama' && <TakipciKarsilama />}
 
-      {tab === 'my' && <div className="glass-panel rounded-2xl overflow-hidden border border-white/10">
+      {tab === 'my' && <Panel className="rounded-2xl overflow-hidden border border-white/10">
         <table className="w-full text-left text-sm">
           <thead className="bg-white/[0.04] text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-white/10">
             <tr>
@@ -236,12 +236,12 @@ export function Commands() {
             aciklama={commands.length ? 'Aramayı değiştirin ya da temizleyin.' : 'Yerleşik komutlar "Varsayılan" sekmesinde. Kendi komutunuzu yukarıdaki düğmeyle ekleyin.'}
           />
         )}
-      </div>}
+      </Panel>}
 
       {/* Modal for Add / Edit */}
       {editingCmd && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
+          <Panel className="w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 rounded-2xl border border-white/20 shadow-2xl space-y-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-400" />
               {isNew ? 'Yeni Komut Oluştur' : `Komutu Düzenle (!${editingCmd.name})`}
@@ -251,26 +251,26 @@ export function Commands() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Etkinleştirme</label>
-                  <select aria-label="Etkinleştirme"
+                  <Secim aria-label="Etkinleştirme"
                     value={editingCmd.trigger_type || 'command'}
                     onChange={e => setEditingCmd({ ...editingCmd, trigger_type: e.target.value as any })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+ className="w-full"
                   >
                     <option value="command">Sadece komut (!ad)</option>
                     <option value="keyword">Sohbet anahtar kelimesi</option>
-                  </select>
+                  </Secim>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Erişim</label>
-                  <select aria-label="Erişim"
+                  <Secim aria-label="Erişim"
                     value={editingCmd.access_mode || 'always'}
                     onChange={e => setEditingCmd({ ...editingCmd, access_mode: e.target.value as any })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+ className="w-full"
                   >
                     <option value="always">Her zaman</option>
                     <option value="online">Yalnız yayın açıkken</option>
                     <option value="offline">Yalnız yayın kapalıyken</option>
-                  </select>
+                  </Secim>
                 </div>
               </div>
 
@@ -353,10 +353,10 @@ export function Commands() {
                   <label className="block text-xs font-bold text-gray-300 mb-1">
                     Kullanıcı Yetkisi
                   </label>
-                  <select aria-label="Kullanıcı Yetkisi"
+                  <Secim aria-label="Kullanıcı Yetkisi"
                     value={editingCmd.user_level}
                     onChange={e => setEditingCmd({ ...editingCmd, user_level: e.target.value as any })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+ className="w-full"
                   >
                     <option value="everyone">Herkes (Everyone)</option>
                     <option value="regular">Düzenli izleyiciler (!regulars ile eklenenler + VIP + mod)</option>
@@ -364,7 +364,7 @@ export function Commands() {
                     <option value="vip">VIP</option>
                     <option value="mod">Moderatörler</option>
                     <option value="broadcaster">Yalnızca Yayıncı</option>
-                  </select>
+                  </Secim>
                 </div>
 
                 <div>
@@ -383,14 +383,14 @@ export function Commands() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Bekleme modu</label>
-                  <select aria-label="Bekleme modu"
+                  <Secim aria-label="Bekleme modu"
                     value={editingCmd.cooldown_mode || 'global'}
                     onChange={e => setEditingCmd({ ...editingCmd, cooldown_mode: e.target.value as any })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+ className="w-full"
                   >
                     <option value="global">Genel (herkes için tek sayaç)</option>
                     <option value="user">Kullanıcı başına</option>
-                  </select>
+                  </Secim>
                 </div>
                 {editingCmd.cooldown_mode === 'user' && (
                   <div>
@@ -433,12 +433,7 @@ export function Commands() {
               </div>
 
               <label className="flex cursor-pointer items-start gap-2 text-xs text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={(editingCmd.refusal_reply ?? 1) !== 0}
-                  onChange={e => setEditingCmd({ ...editingCmd, refusal_reply: e.target.checked ? 1 : 0 })}
-                  className="mt-0.5 h-4 w-4 accent-purple-600"
-                />
+                <Anahtar acik={(editingCmd.refusal_reply ?? 1) !== 0} onChange={(v) => setEditingCmd({ ...editingCmd, refusal_reply: v ? 1 : 0 })} />
                 <span>
                   <b className="text-gray-200">Reddedince sohbete yanıt ver</b>
                   <span className="block text-[10px] text-gray-500">Yetki yokken, beklemedeyken ya da yayın durumu uymazken kısa yanıt yazar ("!komut için 12 sn bekle"). Bekleme uyarısı süre bitene kadar bir kez yazılır.</span>
@@ -478,7 +473,7 @@ export function Commands() {
                 <input value={(() => { try { return JSON.parse(editingCmd.aliases || '[]').join(', '); } catch { return ''; } })()} onChange={e => setEditingCmd({ ...editingCmd, aliases: JSON.stringify(e.target.value.split(',').map(s => s.trim()).filter(Boolean)) })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm mt-1" />
               </label>
               <label className="flex items-center gap-2 text-xs font-bold text-gray-300">
-                <input type="checkbox" checked={editingCmd.is_enabled !== 0} onChange={e => setEditingCmd({ ...editingCmd, is_enabled: e.target.checked ? 1 : 0 })} /> Komut açık
+                <Anahtar acik={editingCmd.is_enabled !== 0} onChange={(v) => setEditingCmd({ ...editingCmd, is_enabled: v ? 1 : 0 })} /> Komut açık
               </label>
 
               {kayitHatasi && (
@@ -501,7 +496,7 @@ export function Commands() {
                 </button>
               </div>
             </form>
-          </div>
+          </Panel>
         </div>
       )}
     </div>

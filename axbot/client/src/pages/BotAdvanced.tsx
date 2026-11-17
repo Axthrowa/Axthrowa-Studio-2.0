@@ -13,20 +13,7 @@
 import { TakipciKarsilama } from '../components/TakipciKarsilama.js';
 import { useEffect, useState } from 'react';
 import { Save, RotateCcw, Play, Search, Trash2 } from 'lucide-react';
-import {
-  Alan,
-  AlanMetni,
-  Anahtar,
-  Buton,
-  BosDurum,
-  Girdi,
-  HataDurumu,
-  Iskelet,
-  Kart,
-  Secim,
-  useOnay,
-  useToast
-} from '../ui/index.js';
+import { Alan, AlanMetni, Anahtar, BosDurum, Buton, Girdi, HataDurumu, Iskelet, Kart, Secim, useOnay, useToast } from '../ui/index.js';
 
 type Sekme = 'levels' | 'stats' | 'tts' | 'chatAlerts' | 'moderation' | 'variables';
 
@@ -392,7 +379,7 @@ function TemaSecici() {
       baslik="Temalı eğlenceli mesajlar"
       aciklama="Bir tema seçince her olayda o temadan FARKLI bir mesaj gider (aynısı art arda gelmez). 'Tema yok' seçiliyse aşağıdaki kendi şablonların ve ek mesajların kullanılır. Olayların açık/kapalı ve eşik ayarları her iki durumda da geçerlidir."
     >
-      <select
+      <Secim
         value={d.tema}
         onChange={(e) =>
           yolla<any>('/api/chat-alerts/tema', { tema: e.target.value })
@@ -402,14 +389,14 @@ function TemaSecici() {
             })
             .catch(() => toast('Kaydedilemedi.', 'hata'))
         }
-        className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm"
+ className="w-full"
       >
         {Object.entries(d.temalar).map(([id, ad]) => (
           <option key={id} value={id}>
             {ad}
           </option>
         ))}
-      </select>
+      </Secim>
       {ornek && (
         <div className="mt-3 space-y-1 text-[11px] text-gray-300 max-h-48 overflow-y-auto">
           {Object.entries(OLAY_ADLARI).map(([olay, ad]) => (

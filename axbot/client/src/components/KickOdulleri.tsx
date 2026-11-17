@@ -105,7 +105,7 @@ export function KickOdulleri() {
           <Girdi aria-label="Bedel" type="number" min={1} className="w-24" value={yeni.bedel} onChange={(e) => setYeni({ ...yeni, bedel: Number(e.target.value) })} />
           <Girdi aria-label="Açıklama" placeholder="Açıklama (isteğe bağlı)" maxLength={200} className="min-w-40 flex-1" value={yeni.aciklama} onChange={(e) => setYeni({ ...yeni, aciklama: e.target.value })} />
           <label className="flex items-center gap-1 text-xs text-gray-300">
-            <input type="checkbox" checked={yeni.girdiGerekli} onChange={(e) => setYeni({ ...yeni, girdiGerekli: e.target.checked })} />
+            <Anahtar acik={yeni.girdiGerekli} onChange={(v) => setYeni({ ...yeni, girdiGerekli: v })} />
             Metin istesin
           </label>
           <Buton type="submit" disabled={mesgul || !yeni.baslik.trim() || yeni.bedel < 1} ikon={<Plus className="h-3.5 w-3.5" />}>

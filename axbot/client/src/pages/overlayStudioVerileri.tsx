@@ -1,6 +1,7 @@
 /** Tek URL ve widget stüdyosunun sabit verileri: galeri adları, test adları, varsayılan yerleşim ve hizalama ızgarası (TEK-4). */
 import { GALERI_KATMANI, KATMANLAR } from '../widgets/OverlayLayers.js';
 import { type Yon } from '../lib/hizala.js';
+import { Secim } from '../ui/index.js';
 
 export interface WidgetLayoutItem {
   enabled: boolean;
@@ -282,9 +283,9 @@ export function HizaIzgarasi({ onSec, pay, payDegisti }: { onSec: (yonler: Yon[]
         <button type="button" onClick={() => onSec(['dikeyOrta'])} className={`${dugme} w-full`}>↕ Yalnız dikey orta</button>
         <label className="flex items-center justify-between gap-1 text-[10px] font-bold text-gray-400">
           Kenar payı
-          <select value={pay} onChange={(e) => payDegisti(Number(e.target.value))} className="bg-black/60 border border-white/10 rounded p-0.5 text-white">
+          <Secim kucuk value={pay} onChange={(e) => payDegisti(Number(e.target.value))}>
             {[0, 20, 40, 80].map((p) => <option key={p} value={p}>{p} px</option>)}
-          </select>
+          </Secim>
         </label>
       </div>
     </div>

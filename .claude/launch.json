@@ -2,16 +2,68 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "bot-sunucu",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "axbot/server",
+        "run",
+        "dev"
+      ],
+      "port": 3001
+    },
+    {
       "name": "bot-panel",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["--prefix", "axbot/client", "vite", "axbot/client", "--port", "5179", "--strictPort"],
+      "runtimeArgs": [
+        "--prefix",
+        "axbot/client",
+        "vite",
+        "axbot/client",
+        "--port",
+        "5179",
+        "--strictPort"
+      ],
       "port": 5179
     },
     {
       "name": "resonance",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "resonance", "run", "dev", "--", "--port", "5180", "--strictPort"],
+      "runtimeArgs": [
+        "--prefix",
+        "resonance",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5180",
+        "--strictPort"
+      ],
       "port": 5180
+    },
+    {
+      "name": "studio-sunucu",
+      "runtimeExecutable": "cargo",
+      "runtimeArgs": [
+        "run",
+        "--example",
+        "headless_server",
+        "--manifest-path",
+        "src-tauri/Cargo.toml",
+        "--",
+        "18843"
+      ],
+      "port": 18843
+    },
+    {
+      "name": "studio-ui",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/ui-headless.mjs",
+        "18843",
+        "1421"
+      ],
+      "port": 1421
     }
   ]
 }

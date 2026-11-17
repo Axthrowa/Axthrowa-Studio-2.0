@@ -1,0 +1,36 @@
+/** Bilgi yarışması kategorileri (TEK-4). */
+import { Trophy, Sparkles, HelpCircle, Lightbulb, Compass, Gamepad2, Film, Atom, BookOpen, Activity, HeartPulse, Languages, Newspaper, TrendingUp, Utensils, Cpu, Award, History, Calculator, PenTool, Quote } from 'lucide-react';
+
+export const CATEGORIES = [
+  { id: 'all', label: 'Tüm Kategoriler', icon: HelpCircle, color: 'text-purple-400' },
+  { id: 'Genel Kültür', label: 'Genel Kültür', icon: Lightbulb, color: 'text-amber-400' },
+  { id: 'Bilgi', label: 'Bilgi', icon: Atom, color: 'text-cyan-400' },
+  { id: 'Bilim', label: 'Bilim', icon: Atom, color: 'text-cyan-400' },
+  { id: 'Oyun', label: 'Oyun', icon: Gamepad2, color: 'text-purple-400' },
+  { id: 'Film ve Dizi', label: 'Film & Dizi', icon: Film, color: 'text-rose-400' },
+  { id: 'Coğrafya', label: 'Coğrafya', icon: Compass, color: 'text-emerald-400' },
+  { id: 'Tarih', label: 'Tarih', icon: BookOpen, color: 'text-orange-400' },
+  { id: 'Osmanlı Tarihi', label: 'Osmanlı Tarihi', icon: BookOpen, color: 'text-amber-500' },
+  { id: 'Spor', label: 'Spor', icon: Trophy, color: 'text-green-400' },
+  { id: 'Basketbol', label: 'Basketbol', icon: Activity, color: 'text-orange-400' },
+  { id: 'Sanat', label: 'Sanat', icon: Sparkles, color: 'text-fuchsia-400' },
+  { id: 'Tıbbi Terimler', label: 'Tıbbi Terimler', icon: HeartPulse, color: 'text-red-400' },
+  { id: 'Azerbaycan Türkçesi', label: 'Azerbaycan Türkçesi', icon: Languages, color: 'text-sky-400' },
+  { id: 'Gündem 2000/26', label: 'Gündem 2000/26', icon: Newspaper, color: 'text-violet-400' },
+  { id: 'Ekonomi', label: 'Ekonomi', icon: TrendingUp, color: 'text-emerald-400' },
+  { id: 'Türk Mutfağı', label: 'Türk Mutfağı', icon: Utensils, color: 'text-amber-400' },
+  { id: 'Teknoloji', label: 'Teknoloji', icon: Cpu, color: 'text-blue-400' },
+  { id: 'İz Bırakanlar', label: 'İz Bırakanlar', icon: Award, color: 'text-yellow-400' },
+  { id: 'Geçmişten Günümüze', label: 'Geçmişten Günümüze', icon: History, color: 'text-zinc-400' },
+  { id: '4 İşlem', label: '4 İşlem', icon: Calculator, color: 'text-indigo-400' },
+  { id: 'Yazım Yanlışları', label: 'Yazım Yanlışları', icon: PenTool, color: 'text-teal-400' },
+  { id: 'Söz ve Deyiş', label: 'Söz ve Deyiş', icon: Quote, color: 'text-pink-400' },
+  { id: 'Mitoloji', label: 'Mitoloji', icon: Sparkles, color: 'text-violet-400' },
+  { id: 'Müzik', label: 'Müzik', icon: Sparkles, color: 'text-fuchsia-300' },
+  { id: 'Futbol', label: 'Futbol', icon: Trophy, color: 'text-lime-400' },
+  { id: 'Edebiyat', label: 'Edebiyat', icon: BookOpen, color: 'text-orange-300' },
+  { id: 'Uzay', label: 'Uzay', icon: Atom, color: 'text-sky-300' },
+  { id: 'Hayvanlar', label: 'Hayvanlar', icon: HeartPulse, color: 'text-green-300' },
+  { id: 'İnternet Kültürü', label: 'İnternet Kültürü', icon: Cpu, color: 'text-cyan-300' },
+  { id: 'İcatlar', label: 'İcatlar', icon: Lightbulb, color: 'text-yellow-300' }
+];

@@ -213,3 +213,5 @@ export function SkinCard({
     </div>
   )
 }
+/** Süre satırının sağındaki dalga: süre satırı varken hiç çizilmez (aradaki dalga kapatılsa da), yalnız süresiz kaynakta */
+export const sagDalga = (config, durationMs) => !config.hideVisualizer && !(Number(durationMs) > 0)

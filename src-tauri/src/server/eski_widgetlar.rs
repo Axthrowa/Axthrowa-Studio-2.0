@@ -1,7 +1,9 @@
 //! WID-0: Studio'nun eski widget adresleri AxBoT'taki tek uygulamaya yönlenir.
 //! OBS'e önceki sürümlerde eklenmiş kaynaklar (`/goal`, `/widgets/poll`, `/overlay/widgets/wheel`…)
 //! çalışmaya devam eder; görünüm ve ayar artık botun widget'ından gelir.
-//! Studio'ya özgü olanlar burada yok: giriş/mola/çıkış, sohbet ekranı, altyazı, ses efekti, birleşik katman.
+//! Birleşik katman (`/overlay/master`) da botun Tek URL katmanına (`/widgets/overlay`) gider: kurulum sihirbazının
+//! OBS'e eklediği adres değişmez, içerik Overlay Stüdyo'da düzenlenen tek katmandan gelir.
+//! Studio'ya özgü olanlar burada yok: giriş/mola/çıkış, sohbet ekranı, altyazı, ses efekti.
 
 use std::sync::Arc;
 
@@ -50,6 +52,7 @@ const ESLESME: &[(&str, &str)] = &[
   ("alerts", "/widgets/alertbox"),
   ("alert", "/widgets/alertbox"),
   ("chat", "/widgets/chatbox"),
+  ("master", "/widgets/overlay"),
 ];
 
 /// Hedef türüne göre ayrı bot adresi olan hedef çubukları (`/goal?kind=followers`).
@@ -95,12 +98,12 @@ async fn yonlendir(uri: Uri) -> Response {
   }
 }
 
-/// Eski adreslerin hepsi: kök (`/goal`), `/widgets/<tür>`, `/overlay/widgets/<tür>` ve `/overlay/alerts`.
+/// Eski adreslerin hepsi: kök (`/goal`), `/widgets/<tür>`, `/overlay/widgets/<tür>`, `/overlay/alerts` ve `/overlay/master`.
 pub fn router() -> Router<Arc<AppState>> {
-  let mut r = Router::new().route("/overlay/alerts", get(yonlendir));
+  let mut r = Router::new().route("/overlay/alerts", get(yonlendir)).route("/overlay/master", get(yonlendir));
   for (tur, _) in ESLESME {
-    // Kökteki `/chat` Studio'nun sohbet ekranıdır (kalır); yalnız widget biçimi yönlenir
-    if *tur != "chat" {
+    // Kökteki `/chat` Studio'nun sohbet ekranıdır (kalır); yalnız widget biçimi yönlenir. `/master` hiç olmadı
+    if *tur != "chat" && *tur != "master" {
       r = r.route(&format!("/{tur}"), get(yonlendir));
     }
     r = r.route(&format!("/widgets/{tur}"), get(yonlendir));
@@ -121,11 +124,13 @@ mod tests {
     assert_eq!(hedef("/overlay/widgets/Wheel", None).as_deref(), Some("/widgets/wheel"));
     assert_eq!(hedef("/overlay/alerts", None).as_deref(), Some("/widgets/alertbox"));
     assert_eq!(hedef("/widgets/chat", None).as_deref(), Some("/widgets/chatbox"));
+    assert_eq!(hedef("/overlay/master", Some("obs=1")).as_deref(), Some("/widgets/overlay?obs=1"));
+    assert_eq!(hedef("/widgets/master", None).as_deref(), Some("/widgets/overlay"));
   }
 
   #[test]
   fn studioya_ozgu_adresler_yonlenmez() {
-    for yol in ["/widgets/altyazi", "/widgets/master", "/overlay/master", "/starting", "/sfx"] {
+    for yol in ["/widgets/altyazi", "/starting", "/sfx"] {
       assert_eq!(hedef(yol, None), None, "{yol}");
     }
   }

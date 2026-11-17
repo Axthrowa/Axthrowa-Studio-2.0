@@ -1482,12 +1482,13 @@ async fn eski_widget_adresleri_bota_yonlenir() {
     ("/widgets/poll?obs=1", "/widgets/polls?obs=1"),
     ("/overlay/widgets/wheel", "/widgets/wheel"),
     ("/overlay/alerts", "/widgets/alertbox"),
+    ("/overlay/master?obs=1", "/widgets/overlay?obs=1"),
   ] {
     let r = c.get(format!("{}{eski}", h.base)).send().await.unwrap();
     assert_eq!(r.status(), 307, "{eski}");
     assert_eq!(r.headers()["location"], format!("{bot}{yeni}").as_str(), "{eski}");
   }
-  for kalan in ["/chat", "/widgets/altyazi", "/overlay/master", "/starting"] {
+  for kalan in ["/chat", "/widgets/altyazi", "/starting"] {
     let r = c.get(format!("{}{kalan}", h.base)).send().await.unwrap();
     assert_ne!(r.status(), 307, "{kalan} yönlenmemeli");
   }

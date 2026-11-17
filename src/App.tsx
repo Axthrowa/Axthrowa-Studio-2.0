@@ -10,7 +10,6 @@ const ChatPage = lazy(() => import("./routes/chat/ChatPage"));
 const SfxPage = lazy(() => import("./routes/sfx/SfxPage"));
 const AltyaziPage = lazy(() => import("./routes/widgets/AltyaziPage"));
 const OAuthCallbackPage = lazy(() => import("./routes/oauth/OAuthCallbackPage"));
-const MasterOverlay = lazy(() => import("./routes/overlay/MasterOverlay"));
 const RemoteLoginPage = lazy(() => import("./routes/remote/RemoteLoginPage"));
 const RemotePage = lazy(() => import("./routes/remote/RemotePage"));
 const LoginPage = lazy(() => import("./auth/LoginPage"));
@@ -55,8 +54,6 @@ export default function App() {
       <Route path="/oauth/twitch" element={<OAuthCallbackPage platform="twitch" />} />
       <Route path="/oauth/youtube" element={<OAuthCallbackPage platform="youtube" />} />
       <Route path="/oauth/discord" element={<OAuthCallbackPage platform="discord" />} />
-      <Route path="/overlay/master" element={<MasterOverlay />} />
-      <Route path="/widgets/master" element={<MasterOverlay />} />
       <Route path="/widgets/altyazi" element={<AltyaziPage />} />
       <Route path="/starting" element={<StartingPage />} />
       <Route path="/ending" element={<EndingPage />} />

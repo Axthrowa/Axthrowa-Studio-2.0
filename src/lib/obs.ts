@@ -143,7 +143,9 @@ export async function birlesikOverlayBul(url: string, ad: string): Promise<strin
     if (!/browser_source/i.test(i.kind)) continue;
     const res = await getObs().call("GetInputSettings", { inputName: i.name }).catch(() => null);
     const mevcut = String((res as any)?.inputSettings?.url || "");
-    if (i.name === ad || (mevcut && mevcut.replace(/\?.*$/, "") === yol)) return i.name;
+    const kaynakYolu = mevcut.replace(/\?.*$/, "");
+    // WID-0: /overlay/master botun Tek URL katmanına yönlenir; OBS'e doğrudan bottan eklenen katman da aynı katmandır
+    if (i.name === ad || (mevcut && (kaynakYolu === yol || /\/widgets\/overlay\/?$/.test(kaynakYolu)))) return i.name;
   }
   return null;
 }

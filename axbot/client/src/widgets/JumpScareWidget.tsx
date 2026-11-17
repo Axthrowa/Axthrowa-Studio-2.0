@@ -15,6 +15,7 @@ import { JUMPSCARE_DEFAULTS } from '../lib/widget-defaults.js';
 import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { kirpmaOku } from '../lib/sesKirpma.js';
+import { hareketAz } from '../lib/hareket.js';
 
 export interface JumpScareWidgetProps {
   embedded?: boolean;
@@ -169,7 +170,7 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
           src={scare.mediaUrl}
           alt=""
           onError={() => setMediaFailed(true)}
-          className={`w-full h-full object-cover ${s.shake ? 'animate-bounce' : ''}`}
+          className={`w-full h-full object-cover ${s.shake && !hareketAz() ? 'animate-bounce' : ''}`}
           style={{ filter: filtre }}
         />
       ) : (
@@ -183,7 +184,7 @@ export function JumpScareWidget({ previewMode = false }: JumpScareWidgetProps) {
       {s.showDonor && scare.donor && (
         <div
           className={`absolute bottom-10 left-1/2 -translate-x-1/2 text-white font-black text-2xl md:text-4xl px-8 py-3 rounded-full border-2 border-white tracking-widest uppercase ${
-            s.shake ? 'animate-bounce' : ''
+            s.shake && !hareketAz() ? 'animate-bounce' : ''
           }`}
           style={{ background: s.donorLabelColor, boxShadow: `0 0 30px ${s.donorLabelColor}` }}
         >

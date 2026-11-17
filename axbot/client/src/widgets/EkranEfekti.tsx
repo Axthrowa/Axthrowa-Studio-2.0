@@ -4,6 +4,7 @@
  */
 import { memo, useMemo, type CSSProperties } from 'react';
 import { useYediTvHaritasi } from '../lib/yediTv.js';
+import { hareketAz } from '../lib/hareket.js';
 
 export const EKRAN_EFEKTI_MS = 3200;
 
@@ -13,6 +14,7 @@ const CSS = `@keyframes axt-ef-dus { from { transform: translateY(-15vh) rotate(
 
 /** Sarsıntı: güç 1'de 10 px genlik, 0.6 sn */
 export function sarsintiStili(guc: number): CSSProperties {
+  if (hareketAz()) return {};
   return { ['--g' as string]: `${Math.round(10 * guc)}px`, animation: 'axt-ef-sars 600ms ease-in-out 2' };
 }
 
@@ -42,7 +44,7 @@ export const EkranEfekti = memo(function EkranEfekti({ tur, guc, anahtar }: { tu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tur, guc, anahtar, harita.size]);
 
-  if (tur !== 'emote' && tur !== 'isik') return <style>{CSS}</style>;
+  if ((tur !== 'emote' && tur !== 'isik') || hareketAz()) return <style>{CSS}</style>;
   return (
     <div aria-hidden="true" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }}>
       <style>{CSS}</style>

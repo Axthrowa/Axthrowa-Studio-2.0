@@ -7,7 +7,8 @@
  * `pano_durdur` gönderirse (atla) hemen keser. Önizleme kipinde (?preview=1) örnek kutu gösterir, ses çalmaz.
  */
 import { useEffect, useRef, useState } from 'react';
-import { onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
+import { onizlemeKipi } from '../lib/widget-style.js';
+import { useWidgetSoketi } from '../hooks/useWidgetCalismasi.js';
 import { konumStili, type PanoGorunum } from '../lib/pano.js';
 
 interface Istek {
@@ -27,7 +28,6 @@ export function SoundBoardWidget({ previewMode = false }: { previewMode?: boolea
   const onizleme = onizlemeKipi(previewMode);
   const [istek, setIstek] = useState<Istek | null>(null);
   const [gorunum, setGorunum] = useState<PanoGorunum>(VARSAYILAN_GORUNUM);
-  const ws = useRef<WebSocket | null>(null);
   const ses = useRef<HTMLAudioElement | null>(null);
   const video = useRef<HTMLVideoElement | null>(null);
   const sinir = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -38,58 +38,31 @@ export function SoundBoardWidget({ previewMode = false }: { previewMode?: boolea
     calan.current = null;
     if (sinir.current) clearTimeout(sinir.current);
     setIstek(null);
-    try {
-      ws.current?.send(JSON.stringify({ action: 'pano_bitti', id }));
-    } catch {
-      /* bağlantı yoksa sunucu süre sınırında ilerler */
-    }
+    // Bağlantı yoksa sunucu süre sınırında ilerler
+    gonder({ action: 'pano_bitti', id });
   };
 
-  useEffect(() => {
-    if (onizleme) {
-      setIstek({ id: 'onizleme', ad: 'Örnek ses', tur: 'audio', medyaUrl: '', gorselUrl: null, ses: 0, sureSn: 5, kullanici: 'İzleyici' });
-      return;
+  const { gonder } = useWidgetSoketi('pano', {
+    acik: !onizleme,
+    onMesaj: (m) => {
+      if (m.type === 'pano_oynat' && m.oge) {
+        if (m.gorunum) setGorunum(m.gorunum);
+        calan.current = m.oge.id;
+        setIstek(m.oge);
+        if (sinir.current) clearTimeout(sinir.current);
+        const id = m.oge.id;
+        sinir.current = setTimeout(() => bitir(id), Math.max(1, Number(m.oge.sureSn) || 15) * 1000);
+      } else if (m.type === 'pano_durdur' && m.id === calan.current) {
+        bitir(m.id);
+      }
     }
-    let kapandi = false;
-    let bekle = 1000;
-    let yeniden: ReturnType<typeof setTimeout> | null = null;
-    const baglan = () => {
-      const s = new WebSocket(wsAdresi('pano'));
-      ws.current = s;
-      s.onopen = () => (bekle = 1000);
-      s.onmessage = (e) => {
-        let m: any;
-        try {
-          m = JSON.parse(String(e.data));
-        } catch {
-          return;
-        }
-        if (m.type === 'pano_oynat' && m.oge) {
-          if (m.gorunum) setGorunum(m.gorunum);
-          calan.current = m.oge.id;
-          setIstek(m.oge);
-          if (sinir.current) clearTimeout(sinir.current);
-          const id = m.oge.id;
-          sinir.current = setTimeout(() => bitir(id), Math.max(1, Number(m.oge.sureSn) || 15) * 1000);
-        } else if (m.type === 'pano_durdur' && m.id === calan.current) {
-          bitir(m.id);
-        }
-      };
-      s.onclose = () => {
-        ws.current = null;
-        if (kapandi) return;
-        yeniden = setTimeout(baglan, bekle);
-        bekle = Math.min(bekle * 2, 10000);
-      };
-    };
-    baglan();
+  });
+
+  useEffect(() => {
+    if (onizleme) setIstek({ id: 'onizleme', ad: 'Örnek ses', tur: 'audio', medyaUrl: '', gorselUrl: null, ses: 0, sureSn: 5, kullanici: 'İzleyici' });
     return () => {
-      kapandi = true;
-      if (yeniden) clearTimeout(yeniden);
       if (sinir.current) clearTimeout(sinir.current);
-      ws.current?.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onizleme]);
 
   // Yeni istek: ses düzeyi ve oynatma

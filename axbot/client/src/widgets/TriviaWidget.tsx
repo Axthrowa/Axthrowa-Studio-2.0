@@ -4,7 +4,7 @@ import { kutuTasarimi } from '../lib/widget-style.js';
 import { useState, useEffect, useRef } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { TRIVIA_DEFAULTS } from '../lib/widget-defaults.js';
-import { wsAdresi } from '../lib/widget-style.js';
+import { useWidgetSoketi } from '../hooks/useWidgetCalismasi.js';
 import {
   Trophy,
   Clock,
@@ -247,96 +247,61 @@ export function TriviaWidget({ embedded = false, previewMode = false }: TriviaWi
     } catch {}
   };
 
-  // WebSocket Connection
-  useEffect(() => {
-    if (onizleme) return;
-
-    let ws: WebSocket | null = null;
-    let reconnectTimeout: any = null;
-
-    const connect = () => {
-      const wsUrl = wsAdresi('trivia');
-
-      try {
-        ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          // Fetch initial state via REST
-          fetch('/api/trivia/state')
-            .then(r => r.json())
-            .then(d => {
-              if (d) setState(d);
-            })
-            .catch(() => {});
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-
-            if (msg.type === 'trivia_state' || msg.type === 'trivia_question_start') {
-              setState(msg.data);
-              if (msg.type === 'trivia_question_start') {
-                playSound('tick');
-              }
-            } else if (msg.type === 'trivia_tick') {
-              setState(prev => {
-                if (!prev) return null;
-                const rem = msg.data.remainingSeconds;
-                if (rem <= 5 && rem > 0) {
-                  playSound('urgent_tick');
-                } else if (rem > 5) {
-                  playSound('tick');
-                }
-                return {
-                  ...prev,
-                  remainingSeconds: rem,
-                  durationSeconds: msg.data.durationSeconds,
-                  progressPercent: msg.data.progressPercent
-                };
-              });
-            } else if (msg.type === 'trivia_vote_update') {
-              setState(prev => {
-                if (!prev) return null;
-                return {
-                  ...prev,
-                  votes: {
-                    total: msg.data.distribution.total,
-                    distribution: msg.data.distribution
-                  }
-                };
-              });
-            } else if (msg.type === 'trivia_answer_reveal') {
-              setState(msg.data);
-              playSound('reveal');
-              kutlaAyarli(0.5);
-            } else if (msg.type === 'trivia_podium') {
-              setState(prev => prev ? { ...prev, status: 'podium' } : null);
-              playSound('podium');
-              kutlaAyarli(1);
+  // Sunucu soketi: paylaşılan, kopunca yeniden bağlanır; her açılışta durum yeniden okunur
+  useWidgetSoketi('trivia', {
+    acik: !onizleme,
+    onAcildi: () => {
+      fetch('/api/trivia/state')
+        .then(r => r.json())
+        .then(d => {
+          if (d) setState(d);
+        })
+        .catch(() => {});
+    },
+    onMesaj: (msg) => {
+      if (msg.type === 'trivia_state' || msg.type === 'trivia_question_start') {
+        setState(msg.data);
+        if (msg.type === 'trivia_question_start') {
+          playSound('tick');
+        }
+      } else if (msg.type === 'trivia_tick') {
+        setState(prev => {
+          if (!prev) return null;
+          const rem = msg.data.remainingSeconds;
+          if (rem <= 5 && rem > 0) {
+            playSound('urgent_tick');
+          } else if (rem > 5) {
+            playSound('tick');
+          }
+          return {
+            ...prev,
+            remainingSeconds: rem,
+            durationSeconds: msg.data.durationSeconds,
+            progressPercent: msg.data.progressPercent
+          };
+        });
+      } else if (msg.type === 'trivia_vote_update') {
+        setState(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            votes: {
+              total: msg.data.distribution.total,
+              distribution: msg.data.distribution
             }
-          } catch {}
-        };
-
-        ws.onclose = () => {
-          reconnectTimeout = setTimeout(connect, 2500);
-        };
-
-        ws.onerror = () => {
-          ws?.close();
-        };
-      } catch {
-        reconnectTimeout = setTimeout(connect, 2500);
+          };
+        });
+      } else if (msg.type === 'trivia_answer_reveal') {
+        setState(msg.data);
+        playSound('reveal');
+        kutlaAyarli(0.5);
+      } else if (msg.type === 'trivia_podium') {
+        setState(prev => prev ? { ...prev, status: 'podium' } : null);
+        playSound('podium');
+        kutlaAyarli(1);
       }
-    };
-
-    connect();
-
-    return () => {
-      if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (ws) ws.close();
-    };
-  }, [onizleme]);
+    }
+  });
 
   // Initial fetch
   useEffect(() => {

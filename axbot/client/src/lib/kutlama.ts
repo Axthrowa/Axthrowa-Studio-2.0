@@ -5,6 +5,7 @@
  * Tüm efektler ekranın tam ortasını (0.5, 0.5) merkez alır.
  */
 import confetti from 'canvas-confetti';
+import { hareketAz } from './hareket.js';
 import { EFEKT_VARSAYILANLARI } from './widget-defaults.js';
 
 export const KUTLAMA_SECENEKLERI = [
@@ -117,6 +118,7 @@ const sekiller = new Map<string, confetti.Shape>();
 
 /** Planı oynatır; dönen işlev bekleyen atışları iptal eder. Tuval yoksa (sınama, eski tarayıcı) sessizce geçer. */
 export function kutla(tur: string, guc = 1): () => void {
+  if (hareketAz()) return () => {};
   const zamanlayicilar = kutlamaPlani(tur, guc).map((a) =>
     setTimeout(() => {
       try {

@@ -79,6 +79,7 @@ export const OVERLAY_PENCERESI: { id: string; ad: string }[] = [
   { id: "overlays", ad: "Overlay" },
   { id: "alerts", ad: "Uyarılar" },
   { id: "pano", ad: "Ses panosu" },
+  { id: "ozelwidget", ad: "Özel widget" },
   { id: "tts", ad: "Metin okuma" },
 ];
 const OVERLAY_SAYFALARI = OVERLAY_PENCERESI.map((s) => s.id);

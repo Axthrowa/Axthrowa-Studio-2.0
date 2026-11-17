@@ -12,6 +12,7 @@ export const SAYFA_ADLARI = {
   overlays: "Overlay Stüdyo",
   alerts: "Uyarılar",
   pano: "Ses / Video Panosu",
+  ozelwidget: "Özel Widget",
   tts: "TTS",
   songrequest: "Şarkı İstekleri",
   polls: "Anketler",
@@ -51,7 +52,7 @@ export type BotMenuOgesi = {
 export const BOT_MENUSU: BotMenuOgesi[] = [
   { id: "genel", ad: "Genel Bakış", grup: "Yayın sırasında", alt: ["dashboard", "kurulum"] },
   { id: "sohbet", ad: "Sohbet", grup: "Yayın sırasında", alt: ["multichat"] },
-  { id: "obs", ad: "Overlay ve Uyarılar", grup: "Yayın sırasında", alt: ["overlays", "alerts", "pano", "tts"] },
+  { id: "obs", ad: "Overlay ve Uyarılar", grup: "Yayın sırasında", alt: ["overlays", "alerts", "pano", "ozelwidget", "tts"] },
   { id: "muzik", ad: "Müzik", grup: "Yayın sırasında", alt: ["songrequest"] },
   { id: "etkinlik", ad: "Anket ve Çekiliş", grup: "Yayın sırasında", alt: ["polls", "giveaways", "interaction", "oduller"] },
   { id: "oyun", ad: "Oyunlar", grup: "Etkileşim", alt: ["trivia", "games"] },

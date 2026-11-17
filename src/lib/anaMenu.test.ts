@@ -100,7 +100,7 @@ describe("ana menü (A2)", () => {
   });
 
   it("Overlay ve Uyarılar penceresinde dört sayfa; aynı gruptaki alt sayfada satır seçili kalır", () => {
-    expect(OVERLAY_PENCERESI.map((s) => s.id)).toEqual(["overlays", "alerts", "pano", "tts"]);
+    expect(OVERLAY_PENCERESI.map((s) => s.id)).toEqual(["overlays", "alerts", "pano", "ozelwidget", "tts"]);
     const overlay = { nav: "bot" as const, botSayfa: "overlays" };
     expect(sayfaAcikMi(overlay, "bot", "alerts")).toBe(true);
     expect(sayfaAcikMi(overlay, "bot", "commands")).toBe(false);

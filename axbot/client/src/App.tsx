@@ -43,6 +43,8 @@ const Rankings = lazy(() => import('./pages/Rankings.js'));
 
 // OBS Widgets
 const TriviaWidget = lazy(() => import('./widgets/TriviaWidget.js'));
+const OzelWidgetSayfasi = lazy(() => import('./widgets/OzelWidgetSayfasi.js'));
+const OzelWidgetDuzenleyici = lazy(() => import('./pages/OzelWidgetDuzenleyici.js'));
 const AlertBoxWidget = lazy(() => import('./widgets/AlertBoxWidget.js'));
 const ChatBoxWidget = lazy(() => import('./widgets/ChatBoxWidget.js'));
 const GoalWidget = lazy(() => import('./widgets/GoalWidget.js'));
@@ -158,6 +160,7 @@ export function App() {
   if (path === '/widgets/jumpscare') return obsSayfasi(<JumpScareWidget />);
   if (path === '/widgets/king') return obsSayfasi(<KingWidget />);
   if (path === '/widgets/pano') return obsSayfasi(<SoundBoardWidget />);
+  if (path === '/widgets/ozel') return obsSayfasi(<OzelWidgetSayfasi />);
   if (path === '/sesli-dinleyici') return obsSayfasi(<SesliDinleyici />);
   if (path === '/widgets/trivia' || path === '/trivia' || path === '/trivia-overlay') return obsSayfasi(<TriviaWidget />);
   if (path === '/widgets/viewer-counter') return obsSayfasi(<ViewerCounterWidget />);
@@ -289,6 +292,7 @@ export function App() {
       case 'alerts': return <AlertsStudio />;
       case 'polls': return <PollsStudio />;
       case 'pano': return <SoundBoard />;
+      case 'ozelwidget': return <OzelWidgetDuzenleyici />;
       case 'sesli': return <VoiceCommands />;
       case 'otomasyon': return <Otomasyon />;
       case 'songrequest': return <SongRequest />;

@@ -8,6 +8,11 @@ import { kabukStiliniEkle } from './lib/kabuklar.js';
 animasyonStiliniEkle();
 kabukStiliniEkle();
 
+// UI-10: Studio İngilizce seçiliyse gömülü panel (?dil=en) Studio'nun sözlüğüyle çevrilir; OBS'e verilen widget sayfaları Türkçe kalır
+if (new URLSearchParams(window.location.search).get('dil') === 'en' && !/^\/(widgets|overlay)/.test(window.location.pathname)) {
+  void import('../../../src/i18n/domCeviri.js').then((m) => m.domCeviriBaslat());
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

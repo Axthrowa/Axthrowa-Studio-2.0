@@ -16,4 +16,9 @@ describe("İngilizce arayüz sözlüğü (Y15)", () => {
     expect(cevir("Eklenemedi: Discord geçmiş zamanlı etkinlik kabul etmez")).toBe("Could not add: Discord does not accept events in the past");
     expect(cevir("Eklenemedi: OBS sahnesi değiştirilemedi: timeout")).toBe("Could not add: Could not switch OBS scene: timeout");
   });
+  it("uzun kalıp kısa kalıptan önce eşleşir (bot yayın süresi)", () => {
+    expect(cevir("1 saat 2 dakika 5 saniye")).toBe("1 h 2 min 5 s");
+    expect(cevir("54 dakika 31 saniye")).toBe("54 min 31 s");
+    expect(cevir("CANLI · 1.234 izleyici")).toBe("LIVE · 1.234 viewers");
+  });
 });

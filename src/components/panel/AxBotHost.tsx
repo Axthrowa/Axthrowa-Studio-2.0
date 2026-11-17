@@ -16,6 +16,7 @@ import {
   openMusicRequest,
   temaIstegi,
 } from "../../lib/embedMessages";
+import { useI18n } from "../../i18n";
 import { botTemaMesaji, renkleriOku } from "../../lib/botTemaMesaji";
 import { PALET_AC_OLAYI } from "./KomutPaleti";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
@@ -38,13 +39,15 @@ export type AxBotHostProps = {
   onOpenMusic?: () => void;
 };
 
-/** Gömülecek adres: `#sekme` açılış sekmesini, `?embed=1` kenar çubuğunu belirler. */
-export function frameUrl(base: string, tab?: string, embed?: boolean): string {
+/** Gömülecek adres: `#sekme` açılış sekmesini, `?embed=1` kenar çubuğunu, `dil=en` İngilizce arayüzü (UI-10) belirler. */
+export function frameUrl(base: string, tab?: string, embed?: boolean, dil?: string): string {
   const clean = base.replace(/[#?].*$/, "");
-  return `${clean}${embed ? "?embed=1" : ""}${tab ? `#${tab}` : ""}`;
+  const q = [embed && "embed=1", dil === "en" && "dil=en"].filter(Boolean).join("&");
+  return `${clean}${q ? `?${q}` : ""}${tab ? `#${tab}` : ""}`;
 }
 
 export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHostProps) {
+  const { locale } = useI18n();
   const [st, setSt] = useState<AxBotStatus | null>(null);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [error, setError] = useState<string | null>(null);
@@ -296,7 +299,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
           onLoad={() => setYuklendi(true)}
           ref={frameRef}
           title="AxBoT"
-          src={frameUrl(st.url, tab, embed)}
+          src={frameUrl(st.url, tab, embed, locale)}
           className="min-h-0 w-full flex-1 border-0 bg-ui-bg"
           // microphone: Sesli Komutlar sayfasında "Bu pencerede dinle" ve mikrofon listesi
           allow="clipboard-write; autoplay; fullscreen; microphone"

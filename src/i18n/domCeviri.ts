@@ -16,6 +16,8 @@ for (const [tr, en] of Object.entries(sozluk as Record<string, string>)) {
     kaliplar.push({ re: new RegExp(`^${kacis}$`, "s"), en });
   } else tam.set(tr, en);
 }
+// Uzun (daha belirgin) kalıp önce: "1 saat 2 dakika 5 saniye" kısa "{0} dakika {1} saniye"ye takılmasın
+kaliplar.sort((a, b) => b.re.source.length - a.re.source.length);
 // Tablodaki anahtarlı metinler de: dil iki yerde tutulduğu için (uygulama tercihi ve panel ayarı) Türkçe çizilen kalmasın
 for (const [k, v] of Object.entries(trTablo)) {
   const e = enTablo[k as keyof typeof trTablo];

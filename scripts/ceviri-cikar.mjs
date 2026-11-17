@@ -64,6 +64,9 @@ function dolas(d) {
   }
 }
 dolas(path.join(kok, "src"));
+// UI-10: gömülü bot paneli de aynı sözlükle çevrilir (yayın katmanları/widget'lar OBS'te görünür, çevrilmez)
+for (const alt of ["pages", "components", "ui", "hooks"]) dolas(path.join(kok, "axbot", "client", "src", alt));
+gez(path.join(kok, "axbot", "client", "src", "App.tsx"));
 for (const [t, d] of bulunan) if (d.includes(`i18n${path.sep}`)) bulunan.delete(t);
 
 // Rust: arayüze hata/durum olarak dönen dizgiler (format yer tutucuları {0}, {1}…). Günlük satırları ve test modülleri hariç.

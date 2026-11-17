@@ -1,6 +1,6 @@
 /** Debounced localStorage + settings sync — UI thread’i bloke etmez. */
 
-import { API_BASE, patchSettings } from "../api";
+import { fetchSettings, patchSettings } from "../api";
 import { panelBotu } from "../eskiAdlar";
 import { defaultBotConfig, type BotConfig } from "./types";
 import { DEFAULT_BOT_NAME } from "./botIdentity";
@@ -103,9 +103,8 @@ export function updateBotConfig(patch: Partial<BotConfigV2>): BotConfigV2 {
 
 export async function hydrateBotConfigFromServer(): Promise<BotConfigV2> {
   try {
-    const res = await fetch(`${API_BASE}/api/settings?screen=panel`);
-    if (!res.ok) return loadBotConfig();
-    const data = await res.json();
+    const data = await fetchSettings("panel").catch(() => null);
+    if (!data) return loadBotConfig();
     const bot = panelBotu(data);
     if (bot && typeof bot === "object") {
       return applyRemoteBotConfig(bot as never);

@@ -91,9 +91,12 @@ fn save_destinations(state: &AppState, list: &[DestinationConfig]) -> Result<(),
     panel = json!({});
   }
   panel["multistream"] = json!({ "version": 1, "destinations": list });
-  s.set(ScreenKind::Panel, panel);
+  s.set(ScreenKind::Panel, panel.clone());
   s.save_one(&state.data_dir, ScreenKind::Panel)
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("ayar yazılamadı: {e}")))
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("ayar yazılamadı: {e}")))?;
+  // Studio'nun ortak ayar deposu (TEK-3) soketten güncellenir; anahtarlar ayarda değil, Kimlik Yöneticisinde
+  state.broadcast_json(&json!({ "type": "settings", "screen": "panel", "data": panel }));
+  Ok(())
 }
 
 #[derive(Deserialize)]

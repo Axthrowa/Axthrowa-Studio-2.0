@@ -23,7 +23,7 @@ import {
 } from "../obs";
 import { useAxthrowaStore } from "../../store/useAxthrowaStore";
 import { yerelBildirim } from "../yerelBildirim";
-import { API_BASE, isObsMode } from "../api";
+import { fetchSettings, isObsMode } from "../api";
 import { subscribeOverlaySync } from "../overlaySyncHub";
 import { logger } from "../logger";
 import { sendTwitchPrivmsg } from "../platformAuth/twitchWrite";
@@ -50,10 +50,8 @@ function defaultCfg(): ObsConnection {
 /** Panel ayarlarındaki OBS bloğunu HTTP üzerinden oku (yoksa varsayılan). */
 async function loadObsCfgFromServer(): Promise<ObsConnection> {
   try {
-    const r = await fetch(`${API_BASE}/api/settings`, { cache: "no-store" });
-    if (!r.ok) return defaultCfg();
-    const j = await r.json();
-    const screens = [j?.panel, j?.starting, j?.brb];
+    // Ekran adı verilmezse sunucu yalnız "starting"i döndürür: üç ekran ortak depodan ayrı ayrı okunur
+    const screens = await Promise.all((["panel", "starting", "brb"] as const).map((e) => fetchSettings(e).catch(() => null)));
     for (const screen of screens) {
       const obs = ((screen || {}) as Record<string, unknown>).obs as
         | Record<string, unknown>

@@ -6,7 +6,7 @@
  */
 
 import { buildPlayCue, buildStopCue, decidePadTrigger } from "./sfxCue";
-import { API_BASE, overlayUrl, patchSettings } from "./api";
+import { API_BASE, fetchSettings, overlayUrl, patchSettings } from "./api";
 
 export type SoundPad = {
   id: string;
@@ -59,9 +59,8 @@ export function saveSoundboard(pads: SoundPad[]) {
 export async function resolveSoundboard(): Promise<SoundPad[]> {
   const local = loadSoundboard();
   try {
-    const res = await fetch(`${API_BASE}/api/settings?screen=panel`, { cache: "no-store" });
-    if (!res.ok) return local;
-    const data = await res.json();
+    const data = await fetchSettings("panel").catch(() => null);
+    if (!data) return local;
     const remote = data?.soundboard;
     if (Array.isArray(remote) && remote.length) {
       const pads = remote

@@ -83,8 +83,10 @@ pub async fn hata_raporu_izni(state: State<'_, AppState>, acik: bool) -> Result<
   IZIN.store(acik, Ordering::Relaxed);
   let mut s = state.settings.write();
   let birlesik = crate::settings::deep_merge(s.get(ScreenKind::Panel).clone(), json!({ "hataRaporuIzni": acik }));
-  s.set(ScreenKind::Panel, birlesik);
+  s.set(ScreenKind::Panel, birlesik.clone());
   s.save_one(&state.data_dir, ScreenKind::Panel).map_err(|e| format!("ayar diske yazılamadı: {e}"))?;
+  // Studio'nun ortak ayar deposu (TEK-3) soketten güncellenir
+  state.broadcast_json(&json!({ "type": "settings", "screen": "panel", "data": birlesik }));
   log::info!(target: "hata_raporu", "çökme raporu izni: {acik}");
   Ok(())
 }

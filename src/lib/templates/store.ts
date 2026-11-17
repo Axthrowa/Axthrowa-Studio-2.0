@@ -1,4 +1,4 @@
-import { API_BASE, okJson } from "../api";
+import { API_BASE, fetchSettings, okJson } from "../api";
 import { builtinFor } from "./builtin";
 import { parseStoredTemplates, type ScreenTemplate, type TemplateScreen } from "./fields";
 
@@ -40,9 +40,8 @@ export function mergeTemplateLists(remote: ScreenTemplate[], local: ScreenTempla
 export async function loadUserTemplates(): Promise<ScreenTemplate[]> {
   const local = readLocal();
   try {
-    const res = await fetch(`${API_BASE}/api/settings?screen=panel`, { cache: "no-store" });
-    if (!res.ok) return local;
-    const data = await res.json();
+    const data = await fetchSettings("panel").catch(() => null);
+    if (!data) return local;
     const merged = mergeTemplateLists(parseStoredTemplates(data?.screenTemplates), local);
     writeLocal(merged);
     return merged;

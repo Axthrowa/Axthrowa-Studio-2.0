@@ -1,3 +1,5 @@
+import { ayarOku, ayarYaz } from "./ayarDeposu";
+
 function computeApiBase(): string {
   const env = String((import.meta as any).env?.VITE_API_BASE || "")
     .trim()
@@ -57,20 +59,24 @@ export type ScreenId = "starting" | "ending" | "brb" | "chat" | "panel";
 
 export type OverlaySettings = Record<string, any>;
 
-export async function fetchSettings(screen: ScreenId): Promise<OverlaySettings> {
-  const res = await fetch(`${API_BASE}/api/settings?screen=${screen}`, {
-    cache: "no-store",
+/** Ortak ayar deposundan okur (TEK-3): ekran başına tek istek, soket açıkken ağa gitmez */
+export function fetchSettings(screen: ScreenId): Promise<OverlaySettings> {
+  return ayarOku(screen, async () => {
+    const res = await fetch(`${API_BASE}/api/settings?screen=${screen}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("settings fetch failed");
+    return res.json();
   });
-  if (!res.ok) throw new Error("settings fetch failed");
-  return res.json();
 }
 
 export async function saveSettings(screen: ScreenId, data: OverlaySettings) {
-  await fetch(`${API_BASE}/api/settings?screen=${screen}`, {
+  const res = await fetch(`${API_BASE}/api/settings?screen=${screen}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
+  if (res.ok) ayarYaz(screen, data);
 }
 
 export async function patchSettings(screen: ScreenId, patch: OverlaySettings) {
@@ -79,7 +85,9 @@ export async function patchSettings(screen: ScreenId, patch: OverlaySettings) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
-  return res.json();
+  const birlesik = await res.json();
+  if (res.ok) ayarYaz(screen, birlesik);
+  return birlesik;
 }
 
 const AUDIO_EXT = /\.(mp3|wav|ogg|flac|m4a|aac)$/i;

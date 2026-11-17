@@ -258,11 +258,11 @@ export default function ShieldAndAudit() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                shield.isActive 
-                  ? 'bg-red-500 text-white animate-pulse' 
-                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              }`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-black axt-etiket flex items-center gap-1.5 ${
+        shield.isActive 
+         ? 'bg-red-500 text-white animate-pulse' 
+         : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+       }`}>
                 {shield.isActive ? <ShieldAlert className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                 {shield.isActive ? 'KALKAN MODU AKTİF (ACİL DURUM)' : 'SİSTEM GÜVENLİ (NORMAL MOD)'}
               </span>
@@ -317,7 +317,7 @@ export default function ShieldAndAudit() {
               <Anahtar acik={!!shield[k.id]} onChange={(v) => void kuralKaydet(k.id, v)} />
               <span className="min-w-0">
                 <span className="block text-xs font-bold text-white">{k.ad}</span>
-                <span className="block text-[11px] text-gray-400 leading-snug">{k.aciklama}</span>
+                <span className="block text-xs text-gray-400 leading-snug">{k.aciklama}</span>
               </span>
             </label>
           ))}
@@ -327,18 +327,18 @@ export default function ShieldAndAudit() {
             <Anahtar acik={shield.platformModlari !== false} onChange={(v) => void kuralKaydet('platformModlari', v)} />
             <span className="min-w-0">
               <span className="block text-xs font-bold text-white">Twitch sohbet modlarını da aç</span>
-              <span className="block text-[11px] text-gray-400 leading-snug">
+              <span className="block text-xs text-gray-400 leading-snug">
                 Kalkan açılınca Twitch'te seçilenler açılır, kapanınca yalnız kalkanın açtıkları kapanır (zaten açık tuttuğunuz moda dokunulmaz). Kick ve YouTube'un API'sinde sohbet modu yok.
               </span>
             </span>
           </label>
           {shield.platformModlari !== false && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-6">
-              <label className="flex items-center gap-2 text-[11px] text-gray-300">
+              <label className="flex items-center gap-2 text-xs text-gray-300">
                 <Anahtar acik={!!shield.followerOnly} onChange={(v) => void kuralKaydet('followerOnly', v)} />
                 Yalnız takipçiler
               </label>
-              <label className="flex items-center gap-2 text-[11px] text-gray-300">
+              <label className="flex items-center gap-2 text-xs text-gray-300">
                 En az takip
                 <input
                   type="number" min={0} max={129600} defaultValue={shield.takipSuresiDk ?? 10} key={`tk-${shield.takipSuresiDk}`}
@@ -347,7 +347,7 @@ export default function ShieldAndAudit() {
                 />
                 dk
               </label>
-              <label className="flex items-center gap-2 text-[11px] text-gray-300">
+              <label className="flex items-center gap-2 text-xs text-gray-300">
                 Yavaş mod
                 <input
                   type="number" min={0} max={120} defaultValue={shield.yavasModSn ?? 0} key={`ym-${shield.yavasModSn}`}
@@ -359,7 +359,7 @@ export default function ShieldAndAudit() {
             </div>
           )}
           {shield.isActive && !!shield.twitchAcilanModlar?.length && (
-            <p className="pl-6 text-[11px] text-amber-200">
+            <p className="pl-6 text-xs text-amber-200">
               Kalkanın Twitch'te açtığı: {shield.twitchAcilanModlar.map((m) => TWITCH_MOD_ADI[m] ?? m).join(', ')}
             </p>
           )}
@@ -367,14 +367,14 @@ export default function ShieldAndAudit() {
         {shield.desteklenmeyen && Object.keys(shield.desteklenmeyen).length > 0 && (
           <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 space-y-1">
             {(Object.entries(shield.desteklenmeyen) as Array<['followerOnly' | 'minAccountAgeDays', string]>).map(([id, neden]) => (
-              <p key={id} className="text-[11px] text-gray-400">
+              <p key={id} className="text-xs text-gray-400">
                 <span className="font-bold text-gray-300">{DESTEKLENMEYEN_AD[id] ?? id}</span> — {neden}
               </p>
             ))}
           </div>
         )}
         {kuralNotu && (
-          <p className={`text-[11px] font-semibold ${kuralNotu.ok ? 'text-emerald-400' : 'text-red-300'}`}>{kuralNotu.text}</p>
+          <p className={`text-xs font-semibold ${kuralNotu.ok ? 'text-emerald-400' : 'text-red-300'}`}>{kuralNotu.text}</p>
         )}
       </div>
 
@@ -392,7 +392,7 @@ export default function ShieldAndAudit() {
             </p>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-300">Listedeki kişi yazınca</label>
+              <label className="text-xs font-bold text-gray-300">Listedeki kişi yazınca</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {KARA_LISTE_EYLEMLERI.map((e) => {
                   const secili = (shield.karaListeEylemi || 'yoksay') === e.id;
@@ -402,7 +402,7 @@ export default function ShieldAndAudit() {
                       type="button"
                       title={e.aciklama}
                       onClick={() => !secili && void karaListeEylemiKaydet(e.id)}
-                      className={`text-[11px] font-bold px-2 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                      className={`text-xs font-bold px-2 py-1.5 rounded-lg border transition-all cursor-pointer ${
                         secili
                           ? e.id === 'ban'
                             ? 'bg-red-600 border-red-500 text-white'
@@ -415,11 +415,11 @@ export default function ShieldAndAudit() {
                   );
                 })}
               </div>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-xs text-gray-500">
                 {KARA_LISTE_EYLEMLERI.find((e) => e.id === (shield.karaListeEylemi || 'yoksay'))?.aciklama}
               </p>
               {eylemNotu && (
-                <p className={`text-[11px] font-semibold ${eylemNotu.ok ? 'text-emerald-400' : 'text-red-300'}`}>{eylemNotu.text}</p>
+                <p className={`text-xs font-semibold ${eylemNotu.ok ? 'text-emerald-400' : 'text-red-300'}`}>{eylemNotu.text}</p>
               )}
             </div>
 
@@ -469,7 +469,7 @@ export default function ShieldAndAudit() {
                     <div>
                       <div className="font-bold text-white text-sm flex items-center gap-1.5">
                         <span className="text-red-400">@{b.username}</span>
-                        <span className="text-[10px] font-semibold text-gray-400 bg-slate-800 rounded px-1.5 py-0.5">
+                        <span className="text-xs font-semibold text-gray-400 bg-slate-800 rounded px-1.5 py-0.5">
                           {KARA_LISTE_PLATFORMLARI.find((p) => p.id === (b.platform || 'kick'))?.ad || b.platform}
                         </span>
                       </div>
@@ -541,7 +541,7 @@ export default function ShieldAndAudit() {
                     <div key={log.id} className="p-4 hover:bg-slate-800/40 transition-colors flex items-start justify-between gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${
+                          <span className={`px-2 py-0.5 rounded text-xs axt-etiket font-bold ${
                             isDanger 
                               ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
                               : isWarn 
@@ -565,7 +565,7 @@ export default function ShieldAndAudit() {
                         )}
                       </div>
 
-                      <div className="text-[11px] text-gray-500 whitespace-nowrap pt-0.5">
+                      <div className="text-xs text-gray-500 whitespace-nowrap pt-0.5">
                         {formatTime(log.timestamp)}
                       </div>
                     </div>

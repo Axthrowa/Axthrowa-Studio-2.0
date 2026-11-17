@@ -34,9 +34,9 @@ async function istek<T>(yol: string, govde?: unknown): Promise<T> {
 function Rozet({ ok, evet, hayir }: { ok: boolean; evet: string; hayir: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-        ok ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300" : "border border-white/10 bg-white/5 text-white/70"
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold axt-etiket ${
+    ok ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300" : "border border-white/10 bg-white/5 text-white/70"
+   }`}
     >
       {ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
       {ok ? evet : hayir}
@@ -45,7 +45,7 @@ function Rozet({ ok, evet, hayir }: { ok: boolean; evet: string; hayir: string }
 }
 
 const KART = "rounded-2xl border border-white/[0.08] bg-panel-card/70 p-4 shadow-panel";
-const BASLIK = "flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white";
+const BASLIK = "flex items-center gap-2 text-sm font-bold axt-etiket text-white";
 
 export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => void }) {
   const [d, setD] = useState<Durum | null>(null);
@@ -185,7 +185,7 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
           <h3 className={BASLIK}>
             <LayoutPanelLeft className="h-4 w-4 text-panel-accent" /> OBS dock'ları
           </h3>
-          <span className="text-xs font-bold uppercase tracking-wider text-white/70">{d.docklar.filter((k) => k.ekli).length} ekli</span>
+          <span className="text-xs font-bold axt-etiket text-white/70">{d.docklar.filter((k) => k.ekli).length} ekli</span>
         </div>
         <p className="mb-3 text-sm text-white/80">
           Seçtiğiniz paneller OBS'in Docklar menüsüne eklenir; yerlerini OBS'te sürükleyerek ayarlarsınız ve OBS hatırlar. Dock'ların çalışması için
@@ -203,7 +203,7 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
               />
               <label htmlFor={`dock-${k.kimlik}`} className="min-w-0 flex-1 cursor-pointer">
                 <span className="block text-sm font-bold text-white">{k.baslik.replace(/^AX Studio · /, "")}</span>
-                <span className="block truncate font-mono text-[11px] text-white/55">{k.url}</span>
+                <span className="block truncate font-mono text-ui-2 text-white/55">{k.url}</span>
               </label>
               {k.ekli && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-label="OBS'te ekli" />}
               <button

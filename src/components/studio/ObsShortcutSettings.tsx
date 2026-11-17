@@ -120,7 +120,7 @@ export default function ObsShortcutSettings({
     >
       <section className="min-w-0 rounded-lg border border-white/[0.07] bg-panel-card/60 p-4">
         <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
-          <h3 className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-white">
+          <h3 className="flex items-center gap-2 text-[13px] font-semibold axt-etiket text-white">
             <Keyboard className="h-4.5 w-4.5 text-panel-accent" /> Sahne kısayolları
           </h3>
           <button
@@ -287,7 +287,7 @@ export default function ObsShortcutSettings({
       </section>
 
       <section className="min-w-0 rounded-lg border border-white/[0.07] bg-panel-card/60 p-4">
-        <h3 className="mb-2.5 flex items-center gap-2 border-b border-white/[0.06] pb-2.5 text-[13px] font-semibold uppercase tracking-wide text-white">
+        <h3 className="mb-2.5 flex items-center gap-2 border-b border-white/[0.06] pb-2.5 text-[13px] font-semibold axt-etiket text-white">
           <Volume2 className="h-4.5 w-4.5 text-panel-accent" /> Ses kısayolları
         </h3>
         <div className="mb-3 grid grid-cols-2 gap-2.5">
@@ -363,7 +363,7 @@ export default function ObsShortcutSettings({
 
         <hr className="my-3.5 border-white/[0.07]" />
         <div className="mb-2.5 flex items-center justify-between">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Kaynak ses kısayolları</h4>
+          <h4 className="text-xs font-bold axt-etiket text-white">Kaynak ses kısayolları</h4>
           <button
             type="button"
             className="studio-btn-ghost h-8 px-2.5 text-xs font-bold"
@@ -424,7 +424,7 @@ export default function ObsShortcutSettings({
                   </button>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-white/80">Kısayol</span>
+                  <span className="text-xs font-bold axt-etiket text-white/80">Kısayol</span>
                   <HotkeyDot id={`srcMute:${row.id}`} spec={hk} registered={globalHotkeys} failures={hotkeyFailures} />
                   <HotkeyInput
                     className="w-32 rounded-lg border border-panel-border bg-black/40 px-2 py-1.5 text-center font-mono text-xs md:text-sm font-medium text-white"

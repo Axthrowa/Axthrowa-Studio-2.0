@@ -80,7 +80,7 @@ export default function KullaniciKarti({ m, mesajlar, base, izin, onCeza, onKapa
         <b className="min-w-0 truncate text-sm" style={m.color ? { color: m.color } : undefined}>
           {m.displayName}
         </b>
-        <span className="text-[10px] text-panel-muted">{PLATFORM_LABEL[m.platform]}</span>
+        <span className="text-ui-2 text-panel-muted">{PLATFORM_LABEL[m.platform]}</span>
         <button ref={ilk} type="button" className="ml-auto rounded p-1 hover:bg-white/10" onClick={onKapat} aria-label="Kartı kapat">
           <X className="h-3.5 w-3.5" />
         </button>
@@ -90,21 +90,21 @@ export default function KullaniciKarti({ m, mesajlar, base, izin, onCeza, onKapa
         <div className="space-y-1">
           <div className="flex gap-1">
             {izin.timeout && (
-              <button type="button" aria-pressed={secili === "timeout"} className={`rounded px-2 py-1 text-[11px] font-semibold ${secili === "timeout" ? "bg-amber-600 text-white" : "bg-white/10 hover:bg-white/15"}`} onClick={() => setSecili((s) => (s === "timeout" ? null : "timeout"))}>
+              <button type="button" aria-pressed={secili === "timeout"} className={`rounded px-2 py-1 text-ui-2 font-semibold ${secili === "timeout" ? "bg-amber-600 text-white" : "bg-white/10 hover:bg-white/15"}`} onClick={() => setSecili((s) => (s === "timeout" ? null : "timeout"))}>
                 10 dk sustur
               </button>
             )}
             {izin.ban && (
-              <button type="button" aria-pressed={secili === "ban"} className={`rounded px-2 py-1 text-[11px] font-semibold ${secili === "ban" ? "bg-red-600 text-white" : "bg-white/10 hover:bg-white/15"}`} onClick={() => setSecili((s) => (s === "ban" ? null : "ban"))}>
+              <button type="button" aria-pressed={secili === "ban"} className={`rounded px-2 py-1 text-ui-2 font-semibold ${secili === "ban" ? "bg-red-600 text-white" : "bg-white/10 hover:bg-white/15"}`} onClick={() => setSecili((s) => (s === "ban" ? null : "ban"))}>
                 Kalıcı ban
               </button>
             )}
           </div>
           {secili && (
             <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Ceza nedeni">
-              <span className="text-[10px] text-panel-muted">Neden seç, uygulanır:</span>
+              <span className="text-ui-2 text-panel-muted">Neden seç, uygulanır:</span>
               {HAZIR_NEDENLER.map((n) => (
-                <button key={n} type="button" disabled={mesgul} className="rounded border border-white/15 px-2 py-0.5 text-[11px] hover:border-white/40 hover:bg-white/10" onClick={() => void uygula(n)}>
+                <button key={n} type="button" disabled={mesgul} className="rounded border border-white/15 px-2 py-0.5 text-ui-2 hover:border-white/40 hover:bg-white/10" onClick={() => void uygula(n)}>
                   {n}
                 </button>
               ))}
@@ -112,11 +112,11 @@ export default function KullaniciKarti({ m, mesajlar, base, izin, onCeza, onKapa
           )}
         </div>
       ) : (
-        <p className="text-[10px] text-panel-muted">Bu kullanıcıya buradan ceza verilemez (platform bağlı değil, yetki yok ya da yayıncı/moderatör).</p>
+        <p className="text-ui-2 text-panel-muted">Bu kullanıcıya buradan ceza verilemez (platform bağlı değil, yetki yok ya da yayıncı/moderatör).</p>
       )}
 
       <section aria-label="Geçmiş cezalar" className="space-y-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">Geçmiş cezalar</p>
+        <p className="text-ui-2 axt-etiket font-semibold text-panel-muted">Geçmiş cezalar</p>
         {cezalar === null ? (
           <p className="text-panel-muted">Yükleniyor…</p>
         ) : cezalar.length === 0 ? (
@@ -134,12 +134,12 @@ export default function KullaniciKarti({ m, mesajlar, base, izin, onCeza, onKapa
       </section>
 
       <section aria-label="Son mesajlar" className="flex min-h-0 flex-1 flex-col gap-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">Son mesajlar ({liste.length})</p>
+        <p className="text-ui-2 axt-etiket font-semibold text-panel-muted">Son mesajlar ({liste.length})</p>
         <ul className="custom-scrollbar min-h-0 flex-1 space-y-0.5 overflow-y-auto">
           {liste.length === 0 && <li className="text-panel-muted">Mesaj yok.</li>}
           {liste.map((x, i) => (
             <li key={i} className="break-words">
-              <span className="text-[10px] text-panel-muted">{saat(x.timestamp)}</span> {x.message}
+              <span className="text-ui-2 text-panel-muted">{saat(x.timestamp)}</span> {x.message}
             </li>
           ))}
         </ul>

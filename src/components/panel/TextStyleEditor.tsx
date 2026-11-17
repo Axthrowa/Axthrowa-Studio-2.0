@@ -42,10 +42,10 @@ function StyleRow({
 }) {
   return (
     <div className="space-y-2 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 shadow-sm">
-      <div className="text-xs font-bold uppercase tracking-wider text-white/90">{label}</div>
+      <div className="text-xs font-bold axt-etiket text-white/90">{label}</div>
       {extra}
       <div className="grid grid-cols-2 gap-2">
-        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+        <label className="block text-ui-2 axt-etiket font-semibold text-panel-muted">
           Font
           <select
             className="mt-1 w-full rounded-lg border border-white/[0.09] bg-ui-s1 px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
@@ -59,7 +59,7 @@ function StyleRow({
             ))}
           </select>
         </label>
-        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+        <label className="block text-ui-2 axt-etiket font-semibold text-panel-muted">
           Efekt
           <select
             className="mt-1 w-full rounded-lg border border-white/[0.09] bg-ui-s1 px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
@@ -73,7 +73,7 @@ function StyleRow({
             ))}
           </select>
         </label>
-        <label className="col-span-2 block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+        <label className="col-span-2 block text-ui-2 axt-etiket font-semibold text-panel-muted">
           Animasyon
           <select
             className="mt-1 w-full rounded-lg border border-white/[0.09] bg-ui-s1 px-2 py-1.5 text-xs text-white outline-none transition focus:border-panel-accent/60"
@@ -87,7 +87,7 @@ function StyleRow({
             ))}
           </select>
         </label>
-        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+        <label className="block text-ui-2 axt-etiket font-semibold text-panel-muted">
           Yazı Rengi
           <input
             type="color"
@@ -96,7 +96,7 @@ function StyleRow({
             onChange={(e) => onPatch({ color: e.target.value })}
           />
         </label>
-        <label className="block text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+        <label className="block text-ui-2 axt-etiket font-semibold text-panel-muted">
           Vurgu Rengi
           <input
             type="color"
@@ -106,8 +106,8 @@ function StyleRow({
           />
         </label>
       </div>
-      <div className="flex items-center gap-2 pt-1 text-[10px]">
-        <span className="font-semibold uppercase tracking-wider text-panel-muted">Boyut</span>
+      <div className="flex items-center gap-2 pt-1 text-ui-2">
+        <span className="font-semibold axt-etiket text-panel-muted">Boyut</span>
         <input aria-label="Boyut"
           type="range"
           min={40}
@@ -169,11 +169,11 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
   return (
     <div className="space-y-3">
       {sadece ? (
-        <h4 className="pt-1 text-[11px] font-semibold uppercase tracking-wider text-panel-muted">Yazı stili</h4>
+        <h4 className="pt-1 text-ui-2 axt-etiket font-semibold text-panel-muted">Yazı stili</h4>
       ) : (
         <>
           <h3 className="text-sm font-semibold">Yazı stilleri</h3>
-          <p className="text-[11px] text-panel-muted">Her yazı ayrı: font, boyut, efekt ve animasyon</p>
+          <p className="text-ui-2 text-panel-muted">Her yazı ayrı: font, boyut, efekt ve animasyon</p>
         </>
       )}
 
@@ -186,7 +186,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
         vurgu={etkinVurguRengi("countdown", settings)}
         onPatch={(p) => patchKey("countdown", p)}
         extra={
-          <label className="mb-1 block text-[10px] text-panel-muted">
+          <label className="mb-1 block text-ui-2 text-panel-muted">
             Görünüm
             <select
               className="mt-0.5 w-full rounded-md border border-panel-border bg-ui-s2 text-white px-1.5 py-1.5 text-xs"
@@ -216,7 +216,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
               onPatch={(p) => patchKey(key, p)}
             />
             {key === "ticker" && (
-              <div className="mt-1.5 space-y-1.5 px-1 text-[10px]">
+              <div className="mt-1.5 space-y-1.5 px-1 text-ui-2">
                 <div className="flex items-center gap-2">
                   <span className="text-panel-muted">Akış hızı</span>
                   <input aria-label="Akış hızı"
@@ -267,7 +267,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
       {includeCredits && (
         <div className="space-y-2 border-t border-panel-border pt-3">
           <h3 className="text-sm font-semibold">Jenerik bölümleri</h3>
-          <p className="text-[11px] text-panel-muted">
+          <p className="text-ui-2 text-panel-muted">
             Her bölüm (Destekçiler, Yeni Takipçiler…) kendi efekt / animasyonuna sahip
           </p>
           {sections.map((sec, i) => (
@@ -277,7 +277,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
                 value={sec.title || ""}
                 onChange={(v) => patchSection(i, { title: v })}
               />
-              <label className="block text-[10px] text-panel-muted">
+              <label className="block text-ui-2 text-panel-muted">
                 Satırlar (her satır bir isim)
                 <textarea
                   className="mt-0.5 h-20 w-full rounded-md border border-panel-border bg-ui-s2 text-white px-2 py-1.5 text-xs"
@@ -307,7 +307,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
               />
               <button
                 type="button"
-                className="text-[11px] text-red-300"
+                className="text-ui-2 text-red-300"
                 onClick={() => {
                   const next = sections.filter((_, j) => j !== i);
                   onChange({
@@ -334,7 +334,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
           >
             + Bölüm ekle
           </button>
-          <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-ui-2">
             <span className="text-panel-muted">Jenerik hızı (sn)</span>
             <input aria-label="Jenerik hızı (sn)"
               type="range"
@@ -346,7 +346,7 @@ export default function TextStyleEditor({ settings, onChange, includeCredits, sa
             />
             <span>{settings.creditsSpeed ?? 40}s</span>
           </div>
-          <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-ui-2">
             <span className="text-panel-muted">Bitince bekle (sn)</span>
             <input aria-label="Bitince bekle (sn)"
               type="range"
@@ -374,7 +374,7 @@ function FieldInline({
   onChange: (v: string) => void;
 }) {
   return (
-    <label className="block text-[10px] text-panel-muted">
+    <label className="block text-ui-2 text-panel-muted">
       {label}
       <input
         className="mt-0.5 w-full rounded-md border border-panel-border bg-ui-s2 text-white px-2 py-1.5 text-xs"

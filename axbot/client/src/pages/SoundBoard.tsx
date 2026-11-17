@@ -191,7 +191,7 @@ export default function SoundBoard() {
             </div>
           </Alan>
           <div>
-            <span className="block text-[11px] font-bold text-gray-300 mb-1">Şu an</span>
+            <span className="block text-xs font-bold text-gray-300 mb-1">Şu an</span>
             <div className="flex flex-wrap items-center gap-2 text-sm text-white">
               {d.calan ? (
                 <span>
@@ -235,7 +235,7 @@ export default function SoundBoard() {
                     <div className="truncate text-sm font-bold text-white">
                       {o.tur === 'video' ? '🎬' : '🔊'} {o.ad}
                     </div>
-                    <div className="truncate text-[11px] text-gray-400">
+                    <div className="truncate text-xs text-gray-400">
                       !ses {o.komut} · {o.maliyet} puan · {o.beklemeSn} sn{o.kovaId ? ` · 🎲 ${d.kovalar.find((k) => k.id === o.kovaId)?.ad ?? ''}` : ''}
                       {o.yetki !== 'herkes' ? ` · ${o.yetki === 'mod' ? 'yalnız mod' : 'yalnız abone'}` : ''}
                     </div>
@@ -330,7 +330,7 @@ export default function SoundBoard() {
           </div>
           {secici && (
             <div className="mt-3 rounded-xl border border-white/10 p-2">
-              <div className="mb-2 text-[11px] font-bold text-gray-300">{secici === 'medya' ? 'Ses ya da video seçin' : 'Görsel / GIF seçin'} (yeni dosyayı da buradan yükleyebilirsiniz)</div>
+              <div className="mb-2 text-xs font-bold text-gray-300">{secici === 'medya' ? 'Ses ya da video seçin' : 'Görsel / GIF seçin'} (yeni dosyayı da buradan yükleyebilirsiniz)</div>
               <MediaLibrary
                 onSec={(m) => {
                   if (secici === 'medya' && m.tur === 'image') return toast('Bu alan ses ya da video ister', 'hata');
@@ -433,7 +433,7 @@ export default function SoundBoard() {
             <Anahtar acik={a.modlarUcretsiz} onChange={(v) => void ayarYaz({ modlarUcretsiz: v })} etiket="Mod ve yayıncı ücretsiz" />
           </div>
         </div>
-        <p className="mt-3 text-[11px] text-gray-500">
+        <p className="mt-3 text-xs text-gray-500">
           Platform kanal puanı ödülleri bu sürümde bağlı değil: Kick ödül olayı yalnız webhook'la gelir (herkese açık adres gerekir), Twitch için
           EventSub gerekir. İzleyiciler bot puanıyla (!ses) oynatır.
         </p>

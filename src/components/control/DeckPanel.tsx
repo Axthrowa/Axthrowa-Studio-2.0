@@ -224,7 +224,7 @@ export function DeckPanel({ onToast }: { onToast: (m: string) => void }) {
                 } ${kurulu === b.id ? "ring-2 ring-red-400" : ""}`}
               >
                 <span className="line-clamp-2">{kurulu === b.id ? "Emin misin? Tekrar dokun" : b.label}</span>
-                {!duzenle && a && !a.available && <span className="mt-0.5 text-[10px] font-normal text-white/60">{a.reason}</span>}
+                {!duzenle && a && !a.available && <span className="mt-0.5 text-ui-2 font-normal text-white/60">{a.reason}</span>}
               </button>
               {duzenle && (
                 <div className="absolute inset-x-0 bottom-0 flex justify-center gap-1 pb-0.5">

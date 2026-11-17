@@ -73,7 +73,7 @@ export function Rankings() {
       </div>
       <Panel className="rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-white/[0.04] text-xs text-gray-400 uppercase"><tr><th className="p-3">#</th><th className="p-3 text-left">Kullanıcı</th><th className="p-3">{label}</th><th className="p-3">Seviye</th></tr></thead>
+          <thead className="bg-white/[0.04] text-xs text-gray-400 axt-etiket"><tr><th className="p-3">#</th><th className="p-3 text-left">Kullanıcı</th><th className="p-3">{label}</th><th className="p-3">Seviye</th></tr></thead>
           <tbody className="divide-y divide-white/5">
             {users.map((u, i) => (
               <tr key={u.id || u.username}>

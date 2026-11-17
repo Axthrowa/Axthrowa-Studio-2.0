@@ -23,7 +23,7 @@ function Satir({ b, kapatilabilir }: { b: Bildirim; kapatilabilir?: boolean }) {
       <div className="min-w-0 flex-1">
         {b.baslik ? <p className="text-ui-2 font-semibold text-ui-fg">{b.baslik}</p> : null}
         <p className="whitespace-pre-wrap break-words text-ui-2 text-ui-fg">{b.metin}</p>
-        {b.ipucu ? <p className="mt-0.5 text-ui-1 text-ui-fg2">{b.ipucu}</p> : null}
+        {b.ipucu ? <p className="mt-0.5 text-ui-2 text-ui-fg2">{b.ipucu}</p> : null}
       </div>
       {kapatilabilir ? (
         <button
@@ -92,7 +92,7 @@ export function BildirimMerkezi() {
       >
         <Bell aria-hidden className="h-4 w-4" />
         {okunmamis ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-ui-accent px-0.5 font-mono text-[9px] font-bold text-ui-accent-ink">
+          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-ui-accent px-0.5 font-mono text-ui-2 font-bold text-ui-accent-ink">
             {okunmamis > 9 ? "9+" : okunmamis}
           </span>
         ) : null}
@@ -106,7 +106,7 @@ export function BildirimMerkezi() {
           <div className="flex items-center justify-between border-b border-ui-line px-3 py-2">
             <p className="text-ui-2 font-semibold text-ui-fg">{t("bildirim.merkez")}</p>
             {liste.length ? (
-              <button type="button" onClick={gecmisiTemizle} className="text-ui-1 text-ui-fg2 hover:text-ui-fg">
+              <button type="button" onClick={gecmisiTemizle} className="text-ui-2 text-ui-fg2 hover:text-ui-fg">
                 {t("bildirim.temizle")}
               </button>
             ) : null}
@@ -118,7 +118,7 @@ export function BildirimMerkezi() {
                   <div className="min-w-0 flex-1">
                     <Satir b={b} kapatilabilir={b.acik} />
                   </div>
-                  <span className="shrink-0 font-mono text-ui-1 text-ui-fg3">{saat(b.zaman)}</span>
+                  <span className="shrink-0 font-mono text-ui-2 text-ui-fg3">{saat(b.zaman)}</span>
                 </li>
               ))}
             </ul>

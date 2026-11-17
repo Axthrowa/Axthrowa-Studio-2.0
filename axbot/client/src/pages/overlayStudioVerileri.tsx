@@ -268,7 +268,7 @@ export const HIZA_NOKTALARI: Array<[string, string, Yon[]]> = [
 
 /** Tuvalin dokuz noktasına tek tıkla hizalama + yalnız tek eksen + kenardan bırakılacak pay */
 export function HizaIzgarasi({ onSec, pay, payDegisti }: { onSec: (yonler: Yon[]) => void; pay: number; payDegisti: (p: number) => void }) {
-  const dugme = 'py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[11px] font-bold text-gray-200 transition-colors';
+  const dugme = 'py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-gray-200 transition-colors';
   return (
     <div className="flex gap-2 pt-1" role="group" aria-label="Hizalama">
       <div className="grid grid-cols-3 gap-1 w-28 shrink-0">
@@ -281,7 +281,7 @@ export function HizaIzgarasi({ onSec, pay, payDegisti }: { onSec: (yonler: Yon[]
       <div className="flex-1 space-y-1">
         <button type="button" onClick={() => onSec(['yatayOrta'])} className={`${dugme} w-full`}>↔ Yalnız yatay orta</button>
         <button type="button" onClick={() => onSec(['dikeyOrta'])} className={`${dugme} w-full`}>↕ Yalnız dikey orta</button>
-        <label className="flex items-center justify-between gap-1 text-[10px] font-bold text-gray-400">
+        <label className="flex items-center justify-between gap-1 text-xs font-bold text-gray-400">
           Kenar payı
           <Secim kucuk value={pay} onChange={(e) => payDegisti(Number(e.target.value))}>
             {[0, 20, 40, 80].map((p) => <option key={p} value={p}>{p} px</option>)}

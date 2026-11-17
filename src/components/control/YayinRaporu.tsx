@@ -161,12 +161,12 @@ export function YayinRaporu() {
                 {i.scene && <span className="ml-2 text-panel-muted">{i.scene}</span>}
                 {i.chapter && <span className="ml-2 text-panel-muted">kayda bölüm eklendi</span>}
                 {i.note && <span className="ml-2">“{i.note}”</span>}
-                <div className="break-all text-[11px] text-panel-muted">{i.replayPath || "Tekrar dosyası yok (tekrar arabelleği kapalıydı)"}</div>
+                <div className="break-all text-ui-2 text-panel-muted">{i.replayPath || "Tekrar dosyası yok (tekrar arabelleği kapalıydı)"}</div>
                 {i.replayPath &&
                   (dikey === i.id ? (
                     <KlipDuzenleyici isaret={i.id} onKapat={() => setDikey(null)} />
                   ) : (
-                    <button type="button" className="text-[11px] text-panel-accent hover:underline" onClick={() => setDikey(i.id)}>
+                    <button type="button" className="text-ui-2 text-panel-accent hover:underline" onClick={() => setDikey(i.id)}>
                       Dikey klip (9:16)
                     </button>
                   ))}

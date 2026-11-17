@@ -76,12 +76,12 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
                     {widget.description}
                   </p>
                   {WIDGET_IPUCLARI[widget.id]?.[0] && (
-                    <p className="text-[11px] text-purple-200/80 mt-2 leading-snug line-clamp-2">💡 {WIDGET_IPUCLARI[widget.id][0]}</p>
+                    <p className="text-xs text-purple-200/80 mt-2 leading-snug line-clamp-2">💡 {WIDGET_IPUCLARI[widget.id][0]}</p>
                   )}
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-                  <span className="text-[10px] font-medium text-gray-500">{KATEGORI_ADI[widget.category] || widget.category}</span>
+                  <span className="text-xs font-medium text-gray-500">{KATEGORI_ADI[widget.category] || widget.category}</span>
                   <div className="flex items-center gap-1">
                   {TEST_ADI[widget.id] && (
                     <button
@@ -89,7 +89,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
                         e.stopPropagation();
                         void triggerWidgetTest(TEST_ADI[widget.id]);
                       }}
-                      className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-purple-300 transition-colors text-[11px] font-bold"
+                      className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-purple-300 transition-colors text-xs font-bold"
                       title="Hızlı test: OBS'te örnek göster"
                       aria-label="Hızlı test"
                     >
@@ -164,7 +164,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
               {WIDGET_IPUCLARI[selectedWidgetModal.id] && (
                 <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 space-y-1.5">
                   <h4 className="text-xs font-bold text-purple-200">💡 Nasıl çalışır?</h4>
-                  <ul className="text-[11px] text-gray-300 space-y-1 list-disc pl-4">
+                  <ul className="text-xs text-gray-300 space-y-1 list-disc pl-4">
                     {WIDGET_IPUCLARI[selectedWidgetModal.id].map((m) => (
                       <li key={m}>{m}</li>
                     ))}
@@ -190,7 +190,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
                       + Yeni hedef çubuğu
                     </button>
                   )}
-                  {hedefNo > 1 && <span className="text-[11px] text-gray-400">Bu çubuğun kendi adresi var; OBS'e ayrı kaynak olarak ekleyin.</span>}
+                  {hedefNo > 1 && <span className="text-xs text-gray-400">Bu çubuğun kendi adresi var; OBS'e ayrı kaynak olarak ekleyin.</span>}
                 </div>
               )}
 
@@ -213,7 +213,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
 
               {/* Standalone OBS URL Box */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-400">Bağımsız OBS Browser Source URL:</label>
+                <label className="text-xs font-bold text-gray-400">Bağımsız OBS Browser Source URL:</label>
                 <div className="flex items-center gap-2">
                   <input aria-label="Bağımsız OBS adresi" 
                     type="text" 
@@ -251,7 +251,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
                     ▶ Hızlı test (OBS'te örnek göster)
                   </button>
                 ) : (
-                  <p className="text-[11px] text-gray-500">Bu widget gerçek olayla çalışır; örnek görünüm yukarıdaki önizlemede.</p>
+                  <p className="text-xs text-gray-500">Bu widget gerçek olayla çalışır; örnek görünüm yukarıdaki önizlemede.</p>
                 )}
 
                 {widgetKontrolleri(selectedWidgetModal.id)}
@@ -300,7 +300,7 @@ export function SohbetAyarSekmesi(p: OverlayStudioSonucu) {
               <h2 className="text-base font-extrabold text-white">Chat Overlay Özelleştirme</h2>
               <p className="text-xs text-gray-400">OBS sohbet kutunuzun görünüm ve kaybolma davranışlarını belirleyin.</p>
             </div>
-            <span className="text-[10px] font-mono bg-purple-600/20 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-full font-bold">
+            <span className="text-xs font-mono bg-purple-600/20 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-full font-bold">
               OBS 450x700 px
             </span>
           </div>
@@ -319,7 +319,7 @@ export function SohbetAyarSekmesi(p: OverlayStudioSonucu) {
                 <Play className="w-4 h-4 text-emerald-400" />
                 Canlı Önizleme (OBS ile aynı bileşen)
               </h3>
-              <span className="text-[10px] text-gray-400 font-mono">OBS Önizleme (400x550)</span>
+              <span className="text-xs text-gray-400 font-mono">OBS Önizleme (400x550)</span>
             </div>
 
             {/* GERÇEK sohbet bileşeni (OBS'tekiyle aynı kod ve ayarlar); sohbet boşken örnek mesajlar */}
@@ -382,10 +382,10 @@ export function UyariSekmesi(p: OverlayStudioSonucu) {
                   />
                   <div>
                     <h4 className="text-xs font-extrabold text-white capitalize">{preset.event_type}</h4>
-                    <p className="text-[11px] text-gray-400 truncate max-w-[200px]">{preset.title_template}</p>
+                    <p className="text-xs text-gray-400 truncate max-w-[200px]">{preset.title_template}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-gray-500">{(preset.duration_ms || 5000) / 1000}s</span>
+                <span className="text-xs font-mono text-gray-500">{(preset.duration_ms || 5000) / 1000}s</span>
               </div>
             ))}
           </div>

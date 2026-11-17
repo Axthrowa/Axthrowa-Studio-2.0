@@ -39,7 +39,8 @@ export function renkleriOku(oku: (ad: string) => string, kose: string | null | u
     kenar: v("--panel-border"),
     // Düğme vurgusu Studio'nun ortak belirteci; eski derlemede panel vurgusu
     vurgu: v("--axt-vurgu") || v("--panel-accent"),
-    metin: v("--title-color") || (fg ? `rgb(${fg})` : ""),
+    // Temanın kendi yazı rengi önce: --title-color sabit beyaz, açık temada (Gün Işığı) zeminde kayboluyordu
+    metin: fg ? `rgb(${fg})` : v("--title-color"),
     soluk: v("--panel-muted"),
     // Ortak dosya yüklenmemişse (eski derleme, sınama) data-kose eşlemesine düşülür
     kart: v("--axt-yaricap-kart") || y.kart,

@@ -129,7 +129,7 @@ export default function ProfileSwitcher({ onToast }: Props) {
           role="menu"
           className="absolute right-0 top-10 z-[90] w-72 rounded-2xl border border-white/[0.12] bg-ui-bg p-2.5 shadow-glass-elevated"
         >
-          <p className="px-2 pb-1.5 text-[11px] leading-snug text-panel-muted">
+          <p className="px-2 pb-1.5 text-ui-2 leading-snug text-panel-muted">
             Profil, Giriş/Çıkış/Mola/Chat ayarlarını ve ses panelini saklar. OBS bağlantısı ortaktır.
           </p>
           <div className="max-h-64 space-y-0.5 overflow-y-auto">
@@ -161,7 +161,7 @@ export default function ProfileSwitcher({ onToast }: Props) {
                         {isActive && <Check className="h-3.5 w-3.5 text-panel-accent" />}
                       </span>
                       <span className="truncate">{p.name}</span>
-                      {isActive && <span className="shrink-0 text-[10px] text-panel-muted">etkin</span>}
+                      {isActive && <span className="shrink-0 text-ui-2 text-panel-muted">etkin</span>}
                     </button>
                   )}
                   {renaming !== p.id && (
@@ -228,7 +228,7 @@ export default function ProfileSwitcher({ onToast }: Props) {
                 <Plus className="h-3.5 w-3.5" /> Oluştur
               </button>
             </div>
-            <p className="mt-1 text-[10px] text-panel-muted">
+            <p className="mt-1 text-ui-2 text-panel-muted">
               Yeni profil geçerli ayarların kopyasıyla başlar ({state.profiles.length}/{MAX_PROFILES}).
             </p>
           </div>

@@ -71,7 +71,7 @@ export default function SohbetTemizleDiyalogu({
               onChange={(e) => setSecili((s) => ({ ...s, [p.id]: e.target.checked }))}
             />
             {AD[p.id] || p.id}
-            {!p.bagli && <span className="ml-auto text-[11px]">bağlı değil</span>}
+            {!p.bagli && <span className="ml-auto text-ui-2">bağlı değil</span>}
           </label>
         ))}
       </div>

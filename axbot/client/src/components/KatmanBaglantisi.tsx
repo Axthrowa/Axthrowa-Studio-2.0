@@ -21,7 +21,7 @@ export function KatmanBaglantisi({ yol }: { yol: string }) {
       ? ['bg-emerald-400', k.obs > 0 ? `OBS’te açık (${k.obs})` : `Açık (${k.bagli}, tarayıcı)`]
       : ['bg-amber-400 animate-pulse', `Bağlantı koptu · ${once(k.sonKopma)}`];
   return (
-    <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-gray-400" role="status">
+    <span className="flex min-w-0 items-center gap-1.5 text-xs text-gray-400" role="status">
       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${renk}`} aria-hidden />
       <span className="truncate">{metin}</span>
     </span>

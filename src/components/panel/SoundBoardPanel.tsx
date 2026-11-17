@@ -256,7 +256,7 @@ export default function SoundBoardPanel({
 
       {/* OBS Overlay URL Box */}
       <div className="rounded-xl border border-white/[0.07] bg-panel-card/40 p-4 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/85">
+        <div className="flex items-center gap-2 text-xs font-bold axt-etiket text-white/85">
           <Radio className="size-4 text-panel-accent" />
           <span>{t("sfx.obsUrl")}</span>
         </div>
@@ -358,7 +358,7 @@ export default function SoundBoardPanel({
 
               {/* File selector row */}
               <div className="flex items-center gap-2.5 text-xs">
-                <span className="w-16 shrink-0 text-xs font-bold uppercase tracking-wider text-white/85">
+                <span className="w-16 shrink-0 text-xs font-bold axt-etiket text-white/85">
                   {t("sfx.file")}
                 </span>
                 <select
@@ -379,7 +379,7 @@ export default function SoundBoardPanel({
 
               {/* Hotkey row */}
               <div className="flex items-center gap-2.5 text-xs">
-                <span className="w-16 shrink-0 text-xs font-bold uppercase tracking-wider text-white/85">
+                <span className="w-16 shrink-0 text-xs font-bold axt-etiket text-white/85">
                   {t("sfx.hotkey")}
                 </span>
                 <span
@@ -411,7 +411,7 @@ export default function SoundBoardPanel({
 
               {/* Volume slider */}
               <div className="flex items-center gap-2.5 text-xs">
-                <span className="flex w-16 shrink-0 items-center gap-1 text-xs font-bold uppercase tracking-wider text-white/85">
+                <span className="flex w-16 shrink-0 items-center gap-1 text-xs font-bold axt-etiket text-white/85">
                   <Volume2 className="size-3.5" />
                   {t("sfx.volume")}
                 </span>

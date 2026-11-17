@@ -256,7 +256,7 @@ export function AISettings() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="bg-purple-500/20 text-purple-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-purple-500/30 uppercase tracking-wider">
+              <span className="bg-purple-500/20 text-purple-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-purple-500/30 axt-etiket">
                 AxBoT Chat Rescue
               </span>
               <span className="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -323,7 +323,7 @@ export function AISettings() {
               onChange={e => setRescue({ ...rescue, inactivityMinutes: parseInt(e.target.value, 10) || 5 })}
               className="w-full accent-purple-500"
             />
-            <span className="text-[10px] text-gray-500">Sohettte bu süre mesaj olmazsa tetiklenir</span>
+            <span className="text-xs text-gray-500">Sohettte bu süre mesaj olmazsa tetiklenir</span>
           </div>
 
           <div className="flex items-center pt-4">
@@ -373,7 +373,7 @@ export function AISettings() {
                   <option key={p.id} value={p.id}>{p.ad}</option>
                 ))}
               </Secim>
-              <p className="text-[11px] text-gray-500 mt-1">Kaydedip "Bağlantıyı sına" ile anahtarı ve modelleri denetleyebilirsin. Bilgi yarışması soru üretimi yalnız Gemini ile çalışır.</p>
+              <p className="text-xs text-gray-500 mt-1">Kaydedip "Bağlantıyı sına" ile anahtarı ve modelleri denetleyebilirsin. Bilgi yarışması soru üretimi yalnız Gemini ile çalışır.</p>
             </div>
 
             <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/30 p-3 cursor-pointer">
@@ -402,10 +402,10 @@ export function AISettings() {
                       <input type="password" value={saglayiciAnahtar} onChange={(e) => setSaglayiciAnahtar(e.target.value)} placeholder={p.ornek}
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono" />
                       {kayitliAyarlar[`ai_${saglayici}_api_keyVar`] && (
-                        <span className="mt-1 inline-block text-[10px] px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">✓ Anahtar kayıtlı (maskeli)</span>
+                        <span className="mt-1 inline-block text-xs px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">✓ Anahtar kayıtlı (maskeli)</span>
                       )}
                       {p.adres && (
-                        <p className="text-[11px] text-gray-500 mt-1">Anahtar al: <a href={p.adres} target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">{p.adres.replace('https://', '')}</a></p>
+                        <p className="text-xs text-gray-500 mt-1">Anahtar al: <a href={p.adres} target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">{p.adres.replace('https://', '')}</a></p>
                       )}
                     </div>
                   )}
@@ -417,7 +417,7 @@ export function AISettings() {
                     <datalist id="ai-modeller">
                       {(durum?.modeller || []).map((m: string) => <option key={m} value={m} />)}
                     </datalist>
-                    <p className="text-[11px] text-gray-500 mt-1">Boş bırakılırsa: {p.model || '—'}</p>
+                    <p className="text-xs text-gray-500 mt-1">Boş bırakılırsa: {p.model || '—'}</p>
                   </div>
                 </div>
               );
@@ -434,7 +434,7 @@ export function AISettings() {
                 placeholder="AIzaSy..."
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono"
               />
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Google AI Studio üzerinden ücretsiz API anahtarınızı alabilirsiniz: <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">aistudio.google.com</a>
               </p>
 
@@ -442,7 +442,7 @@ export function AISettings() {
                   Kutuyu bos birakip kaydetmek kayitli anahtari SILMEZ. */}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {anahtarKayitli && (
-                  <span className="text-[10px] px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
+                  <span className="text-xs px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
                     ✓ Anahtar kayıtlı (güvenlik için maskeli gösterilir)
                   </span>
                 )}
@@ -450,12 +450,12 @@ export function AISettings() {
                   type="button"
                   onClick={durumuYenile}
                   disabled={durumYukleniyor}
-                  className="text-[10px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-bold disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-bold disabled:opacity-50"
                 >
                   {durumYukleniyor ? 'Deneniyor…' : 'Bağlantıyı sına'}
                 </button>
                 {aktifModel && (
-                  <span className="text-[10px] px-2 py-1 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
+                  <span className="text-xs px-2 py-1 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
                     model: {aktifModel}
                   </span>
                 )}
@@ -463,7 +463,7 @@ export function AISettings() {
 
               {durum && (
                 <div
-                  className={`mt-2 text-[11px] rounded-xl px-3 py-2 border ${
+                  className={`mt-2 text-xs rounded-xl px-3 py-2 border ${
                     durum.hazir
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
                       : 'bg-red-500/10 border-red-500/30 text-red-200'
@@ -497,7 +497,7 @@ export function AISettings() {
                 placeholder="Sen neşeli, esprili ve zeki bir canlı yayın botusun..."
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
               />
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Botun yanıt tarzını belirleyin (Örn: "Bir espor koçu gibi taktiksel konuş", "Aşırı esprili ve yayıncıya sadık ol").
               </p>
             </div>
@@ -512,7 +512,7 @@ export function AISettings() {
                 placeholder={'Yayın saatleri: Hafta içi 20:00-24:00\nKasa: Ryzen 7 7800X3D, RTX 4070\nDiscord: !discord yaz'}
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
               />
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 İzleyiciler bunları sorduğunda bot buradaki bilgiyle cevap verir; burada olmayan yayın bilgisini uydurmaz. ({bilgi.length}/4000)
               </p>
             </div>
@@ -526,11 +526,11 @@ export function AISettings() {
                 onChange={e => setSinir(e.target.value)}
                 className="w-32 bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
               />
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 0 = sınırsız. Sınır dolunca bot gün sonuna kadar sohbette sessiz kalır (özet, çeviri gibi yardımcı işler de durur).
               </p>
               {gunluk && (
-                <p className={`text-[11px] mt-1 ${gunluk.doldu ? 'text-amber-300 font-bold' : 'text-gray-400'}`}>
+                <p className={`text-xs mt-1 ${gunluk.doldu ? 'text-amber-300 font-bold' : 'text-gray-400'}`}>
                   {gunluk.doldu
                     ? `Bugünkü sınır doldu (${gunluk.kullanilan}/${gunluk.sinir}); bot yarına kadar sessiz.`
                     : `Bugün kullanılan: ${gunluk.kullanilan}${gunluk.sinir ? ` / ${gunluk.sinir}` : ''}`}

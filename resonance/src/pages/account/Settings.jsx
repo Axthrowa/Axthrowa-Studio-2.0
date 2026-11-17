@@ -26,7 +26,7 @@ export default function AccountSettings() {
       <Card className="mt-6">
         <h3 className="text-lg font-semibold text-white">{t('profilePage.title')}</h3>
         <div className="mt-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          <p className="mb-2 text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
             {t('profilePage.displayName')}
           </p>
           <input
@@ -37,7 +37,7 @@ export default function AccountSettings() {
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t('profilePage.displayNameHint')}</p>
         </div>
         <div className="mt-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          <p className="mb-2 text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
             {t('profilePage.bio')}
           </p>
           <textarea
@@ -55,7 +55,7 @@ export default function AccountSettings() {
       <Card className="mt-6 border-red-500/30">
         <h3 className="text-lg font-semibold text-red-300">{t('profilePage.dangerZone')}</h3>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">{t('profilePage.resetWarning')}</p>
-        <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+        <p className="mb-2 mt-4 text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
           {t('profilePage.typeToConfirm').replace('{word}', 'DELETE')}
         </p>
         <input

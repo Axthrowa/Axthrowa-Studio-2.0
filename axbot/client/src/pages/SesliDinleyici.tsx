@@ -111,7 +111,7 @@ export default function SesliDinleyici() {
       <div className="flex items-center gap-2">
         <span className={`h-2.5 w-2.5 rounded-full ${durum === 'dinliyor' ? (basili ? 'bg-red-500' : 'bg-emerald-400') : durum === 'hata' ? 'bg-red-500' : 'bg-gray-500'}`} />
         <b data-durum={durum}>{DURUM_METNI[durum]}</b>
-        {basili && <span className="rounded bg-red-500/20 px-1.5 text-[11px] text-red-300">BAS-KONUŞ</span>}
+        {basili && <span className="rounded bg-red-500/20 px-1.5 text-xs text-red-300">BAS-KONUŞ</span>}
         <div className="ml-auto flex gap-1">
           {durum === 'dinliyor' ? (
             <button className="rounded bg-white/10 px-2 py-1 text-xs" onClick={() => d.durdur()}>
@@ -127,7 +127,7 @@ export default function SesliDinleyici() {
       <div className="mt-2 h-1.5 overflow-hidden rounded bg-white/10">
         <div className="h-full bg-emerald-400 transition-[width] duration-100" style={{ width: `${Math.round(seviye * 100)}%` }} />
       </div>
-      {mesaj && <p className="mt-2 text-[11px] text-gray-400">{mesaj}</p>}
+      {mesaj && <p className="mt-2 text-xs text-gray-400">{mesaj}</p>}
       <p className="mt-2 min-h-[1.25rem] italic text-gray-400" data-kismi>
         {kismi}
       </p>

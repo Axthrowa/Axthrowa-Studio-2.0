@@ -40,7 +40,7 @@ await bekle(4000);
 const TOPLA = `(() => {
   const ana = document.querySelector('.panel-shell') || document.body;
   const out = [];
-  ana.querySelectorAll('label, legend, h2, h3, h4, summary, p.uppercase, div.uppercase > span').forEach((el) => {
+  ana.querySelectorAll('label, legend, h2, h3, h4, summary, p.axt-etiket, div.axt-etiket > span').forEach((el) => {
     if (el.closest('.studio-nav-rail') || el.closest('[role="dialog"]')) return;
     // Kopyadan seçim kutusu/düğme gibi denetimler çıkarılır: yalnız etiketin kendi yazısı kalır
     const k = el.cloneNode(true);
@@ -91,12 +91,19 @@ if (existsSync(botKok)) {
   const app = readFileSync(path.join(botKok, 'App.tsx'), 'utf8');
   const esle = [...app.matchAll(/case '([\w-]+)': return <(\w+)/g)];
   const ACIK = /<(?:label|h2|h3|h4|legend)\b[^>]*>\s*([^<{}]+?)\s*</g;
-  const OZ = /\b(?:etiket|label|baslik)="([^"]{2,60})"/g;
-  for (const [, sekme, bilesen] of esle) {
-    const dosya = path.join(botKok, 'pages', `${bilesen}.tsx`);
-    if (!existsSync(dosya)) continue;
+  // `ad` — Anahtar'ın ekran okuyucu adı (UI-7'de aria-label'lı onay kutularının yerini aldı)
+  const OZ = /\b(?:etiket|label|baslik|ad)="([^"]{2,60})"/g;
+  // Sayfa bölünmüş olabilir (TEK-4): sayfanın pages/ içinden içe aktardığı dosyalar da aynı sekmeye sayılır
+  const sayfaDosyalari = (ad, gorulen = new Set()) => {
+    const dosya = path.join(botKok, 'pages', `${ad}.tsx`);
+    if (gorulen.has(ad) || !existsSync(dosya)) return [];
+    gorulen.add(ad);
     const src = readFileSync(dosya, 'utf8');
-    for (const re of [ACIK, OZ]) for (const m of src.matchAll(re)) kayit.push({ s: 'bot', b: sekme, a: m[1].replace(/\s+/g, ' ').trim() });
+    return [src, ...[...src.matchAll(/from '\.\/(\w+)(?:\.js)?'/g)].flatMap((m) => sayfaDosyalari(m[1], gorulen))];
+  };
+  for (const [, sekme, bilesen] of esle) {
+    for (const src of sayfaDosyalari(bilesen))
+      for (const re of [ACIK, OZ]) for (const m of src.matchAll(re)) kayit.push({ s: 'bot', b: sekme, a: m[1].replace(/\s+/g, ' ').trim() });
   }
 }
 

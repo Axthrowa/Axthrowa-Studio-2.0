@@ -9,4 +9,4 @@ export const TUS_TABAN =
 
 export const TUS = `${TUS_TABAN} border-panel-border bg-panel-elevated text-white hover:bg-[var(--dt-surface-3)] disabled:pointer-events-none disabled:opacity-40`;
 
-export const ETIKET = "text-[11px] font-semibold uppercase tracking-wider text-white/55";
+export const ETIKET = "text-ui-2 axt-etiket font-semibold text-white/55";

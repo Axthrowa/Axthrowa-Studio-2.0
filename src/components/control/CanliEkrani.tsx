@@ -44,7 +44,7 @@ function AyirDugmesi({ id }: { id: AyrikId }) {
     <button
       type="button"
       title="Ayrı pencerede aç"
-      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-white/70 transition-colors hover:bg-[var(--dt-surface-3)] hover:text-white"
+      className="rounded px-1.5 py-0.5 text-ui-2 font-semibold text-white/70 transition-colors hover:bg-[var(--dt-surface-3)] hover:text-white"
       onClick={() => void panelAyir(id)}
     >
       Ayır
@@ -624,7 +624,7 @@ export default function CanliEkrani({ onToast, canli, mesgul, onYayin, onBot, on
                   <button
                     type="button"
                     aria-pressed={hizliDuzen}
-                    className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-white/70 transition-colors hover:bg-[var(--dt-surface-3)] hover:text-white"
+                    className="flex items-center gap-1 rounded px-1.5 py-0.5 text-ui-2 font-semibold text-white/70 transition-colors hover:bg-[var(--dt-surface-3)] hover:text-white"
                     onClick={() => setHizliDuzen((d) => !d)}
                   >
                     <Settings2 aria-hidden className="h-3.5 w-3.5" />

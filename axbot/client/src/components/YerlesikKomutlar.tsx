@@ -85,20 +85,20 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
             key={kt || 'hepsi'}
             type="button"
             onClick={() => setKategori(kt)}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${kategori === kt ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'}`}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${kategori === kt ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'}`}
           >
             {kt || `Hepsi (${v.komutlar.length})`}
           </button>
         ))}
       </div>
-      <p className="text-[11px] text-gray-400">
+      <p className="text-xs text-gray-400">
         Sohbette <b className="text-gray-200">!komutlar</b> herkesin kullanabildiği açık komutları, <b className="text-gray-200">!komutlar oyunlar</b> gibi kategoriyle
         o bölümün tümünü kullanım örnekleriyle yazar. Yetkiyi yükseltmek (ör. herkes → mod) komutu izleyicilere kapatır; mod komutunu herkese açmaz.
       </p>
       {hata && <p className="text-xs text-red-300">{hata}</p>}
       <Panel className="rounded-2xl overflow-hidden border border-white/10">
         <table className="w-full text-left text-sm">
-          <thead className="bg-white/[0.04] text-xs font-bold text-gray-400 uppercase">
+          <thead className="bg-white/[0.04] text-xs font-bold text-gray-400 axt-etiket">
             <tr>
               <th className="py-3 px-4">Komut</th>
               <th className="py-3 px-4">Ne yapar</th>
@@ -120,13 +120,13 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                 <tr className={acik ? '' : 'opacity-50'}>
                   <td className="py-2.5 px-4 align-top">
                     <div className="font-bold text-purple-400">!{k.ad}</div>
-                    {k.takma.length > 0 && <div className="text-[10px] text-gray-500">{k.takma.map((t) => `!${t}`).join(' ')}</div>}
-                    <div className="text-[10px] text-gray-500">{k.kategori}</div>
+                    {k.takma.length > 0 && <div className="text-xs text-gray-500">{k.takma.map((t) => `!${t}`).join(' ')}</div>}
+                    <div className="text-xs text-gray-500">{k.kategori}</div>
                   </td>
                   <td className="py-2.5 px-4 align-top text-gray-300">
                     {k.aciklama}
-                    {k.kullanim && <div className="mt-0.5 font-mono text-[11px] text-cyan-300/90">{k.kullanim}</div>}
-                    {modul && <div className="mt-0.5 text-[10px] text-amber-300">“{modul}” modülü kapalı (!modul ac {modul})</div>}
+                    {k.kullanim && <div className="mt-0.5 font-mono text-xs text-cyan-300/90">{k.kullanim}</div>}
+                    {modul && <div className="mt-0.5 text-xs text-amber-300">“{modul}” modülü kapalı (!modul ac {modul})</div>}
                   </td>
                   <td className="py-2.5 px-4 align-top">
                     <Secim
@@ -153,7 +153,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                       className="w-20 bg-black/50 border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono"
                       title="Genel bekleme (sn); mod ve yayıncı muaf"
                     />
-                    <span className="ml-1 text-[10px] text-gray-500">sn</span>
+                    <span className="ml-1 text-xs text-gray-500">sn</span>
                   </td>
                   <td className="py-2.5 px-4 align-top">
                     <Anahtar acik={acik} onChange={(v) => void kaydet(k.ad, { acik: v })} ad={`!${k.ad} açık`} />
@@ -166,7 +166,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                         <SohbetOnizleme yazilan={(k.kullanim || `!${k.ad}`).split(' · ')[0]} yanit={yanit} />
                       </div>
                       <label
-                        className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-1 py-1 text-[11px] text-gray-300"
+                        className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-1 py-1 text-xs text-gray-300"
                         title="Komut kapalıyken, yetki yokken ya da beklemedeyken sohbete kısa yanıt yazılmaz"
                       >
                         <Anahtar acik={!!ayar.sessiz} onChange={(v) => void kaydet(k.ad, { sessiz: v })} />
@@ -176,7 +176,7 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                         <button
                           type="button"
                           onClick={() => setDuzen(duzen?.ad === k.ad ? null : { ad: k.ad, metin: ayar.yanit || '{sonuc}' })}
-                          className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-gray-200 hover:bg-white/10"
+                          className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-bold text-gray-200 hover:bg-white/10"
                         >
                           {ayar.yanit ? 'Yanıtı düzenle ●' : 'Yanıtı düzenle'}
                         </button>
@@ -192,21 +192,21 @@ export function YerlesikKomutlar({ arama }: { arama: string }) {
                           onChange={(e) => setDuzen({ ad: k.ad, metin: e.target.value })}
                           className="w-full bg-black/50 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white"
                         />
-                        <p className="text-[10px] text-gray-400">
+                        <p className="text-xs text-gray-400">
                           <b>{'{sonuc}'}</b> botun yanıtı, <b>{'{kullanici}'}</b> komutu yazan kişi. {'{sonuc}'} olmazsa puan, kazanç ve hata mesajları da görünmez; her durumda bu metin yazılır.
                         </p>
                         <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={() => void kaydet(k.ad, { yanit: duzen.metin.trim() === '{sonuc}' ? '' : duzen.metin }).then(() => setDuzen(null))}
-                            className="rounded-lg bg-purple-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-purple-500"
+                            className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white hover:bg-purple-500"
                           >
                             Kaydet
                           </button>
                           <button
                             type="button"
                             onClick={() => void kaydet(k.ad, { yanit: '' }).then(() => setDuzen(null))}
-                            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-gray-200 hover:bg-white/10"
+                            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-gray-200 hover:bg-white/10"
                           >
                             Varsayılana dön
                           </button>

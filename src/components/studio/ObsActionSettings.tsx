@@ -74,7 +74,7 @@ function PanelEylemiAlanlari({
   const eksik = spec ? missingActionParam(spec, row) : null;
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-bold uppercase tracking-wider text-white/80">
+      <label className="block text-xs font-bold axt-etiket text-white/80">
         Eylem
         <select className={field} value={row.name || ""} onChange={(e) => onPatch({ name: e.target.value, confirmed: false })}>
           <option value="">Eylem seç…</option>
@@ -97,7 +97,7 @@ function PanelEylemiAlanlari({
               case "scene":
               case "optionalScene":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Sahne
                     <input
                       className={field}
@@ -110,7 +110,7 @@ function PanelEylemiAlanlari({
                 );
               case "filter":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Filtre adı
                     <input
                       className={field}
@@ -122,7 +122,7 @@ function PanelEylemiAlanlari({
                 );
               case "transition":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Geçiş adı
                     <input
                       className={field}
@@ -134,7 +134,7 @@ function PanelEylemiAlanlari({
                 );
               case "text":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Metin
                     <input
                       className={field}
@@ -147,14 +147,14 @@ function PanelEylemiAlanlari({
                 );
               case "input":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Ses girişi
                     <input className={field} list="obs-act-inputs" value={row.input || ""} onChange={(e) => onPatch({ input: e.target.value })} />
                   </label>
                 );
               case "source":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Kaynak adı
                     <input
                       className={field}
@@ -166,7 +166,7 @@ function PanelEylemiAlanlari({
                 );
               case "destination":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Hedef
                     <select className={field} value={row.target || ""} onChange={(e) => onPatch({ target: e.target.value })}>
                       <option value="">Hedef seç…</option>
@@ -180,7 +180,7 @@ function PanelEylemiAlanlari({
                 );
               case "percent":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Müzik sesi (%)
                     <input
                       className={field}
@@ -196,7 +196,7 @@ function PanelEylemiAlanlari({
                 );
               case "playlist":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Çalma listesi
                     <input
                       className={field}
@@ -209,7 +209,7 @@ function PanelEylemiAlanlari({
                 );
               case "db":
                 return (
-                  <label key={p.name} className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label key={p.name} className="text-xs font-bold axt-etiket text-white/80">
                     Fark (dB, −30…+30)
                     <input
                       className={field}
@@ -264,7 +264,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
   return (
     <section className="w-full min-w-0 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
       <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
-        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+        <h3 className="flex items-center gap-2 text-sm font-bold axt-etiket text-white">
           <Zap className="h-4.5 w-4.5 text-panel-accent" /> OBS eylemleri
         </h3>
         <button
@@ -327,7 +327,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
               {/* --- türe göre alanlar --- */}
               {row.kind === "srcToggle" && (
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label className="text-xs font-bold axt-etiket text-white/80">
                     Sahne
                     <input
                       className={field}
@@ -337,7 +337,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
                       onChange={(e) => patch(idx, { scene: e.target.value })}
                     />
                   </label>
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label className="text-xs font-bold axt-etiket text-white/80">
                     Kaynak adı
                     <input className={field} value={row.source || ""} placeholder="örn. Kamera" onChange={(e) => patch(idx, { source: e.target.value })} />
                   </label>
@@ -346,7 +346,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
 
               {row.kind === "volume" && (
                 <div className="grid grid-cols-[1fr_6rem] gap-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label className="text-xs font-bold axt-etiket text-white/80">
                     Ses girişi
                     <input
                       className={field}
@@ -356,7 +356,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
                       onChange={(e) => patch(idx, { input: e.target.value })}
                     />
                   </label>
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label className="text-xs font-bold axt-etiket text-white/80">
                     Fark (dB)
                     <input
                       className={field}
@@ -370,7 +370,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
               )}
 
               {row.kind === "record" && (
-                <label className="block text-xs font-bold uppercase tracking-wider text-white/80">
+                <label className="block text-xs font-bold axt-etiket text-white/80">
                   Ne yapsın?
                   <select className={field} value={normalizeRecordMode(row.mode)} onChange={(e) => patch(idx, { mode: e.target.value as RecordMode })}>
                     <option value="toggle">Başlat / durdur (tersle)</option>
@@ -383,11 +383,11 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
 
               {row.kind === "filter" && (
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label className="text-xs font-bold axt-etiket text-white/80">
                     Kaynak
                     <input className={field} value={row.source || ""} placeholder="örn. Kamera" onChange={(e) => patch(idx, { source: e.target.value })} />
                   </label>
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+                  <label className="text-xs font-bold axt-etiket text-white/80">
                     Filtre adı
                     <input className={field} value={row.filter || ""} placeholder="örn. Bulanıklık" onChange={(e) => patch(idx, { filter: e.target.value })} />
                   </label>
@@ -397,7 +397,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
               {row.kind === "action" && <PanelEylemiAlanlari row={row} katalog={katalog} hedefler={hedefler} onPatch={(p) => patch(idx, p)} />}
 
               {row.kind === "obsHotkey" && (
-                <label className="block text-xs font-bold uppercase tracking-wider text-white/80">
+                <label className="block text-xs font-bold axt-etiket text-white/80">
                   OBS kısayol adı
                   <input
                     className={field}
@@ -409,7 +409,7 @@ export default function ObsActionSettings({ rows, scenes, inputs, registered, fa
               )}
 
               <div className="flex items-center gap-2.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-white/80">Kısayol</span>
+                <span className="text-xs font-bold axt-etiket text-white/80">Kısayol</span>
                 <HotkeyInput
                   className="min-w-0 flex-1 rounded-lg border border-panel-border bg-black/50 px-2.5 py-1.5 text-center font-mono text-xs md:text-sm font-medium text-white"
                   value={row.hotkey || ""}

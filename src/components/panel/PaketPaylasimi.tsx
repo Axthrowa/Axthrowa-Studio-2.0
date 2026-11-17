@@ -92,7 +92,7 @@ export function PaketPaylasimi() {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-white">Paket paylaşımı</h3>
+      <h3 className="text-sm font-bold axt-etiket text-white">Paket paylaşımı</h3>
       <p className="text-xs font-medium text-white/75">
         Sahne ekranlarının görünümü, overlay widget düzeni ve deste tek dosyaya yazılır. Parola, belirteç ve yayın anahtarı gibi sırlar dosyaya
         girmez. İçe aktarırken önce neyin değişeceği gösterilir.

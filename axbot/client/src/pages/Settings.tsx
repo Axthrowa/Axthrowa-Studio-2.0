@@ -72,7 +72,7 @@ export function Settings() {
                 onChange={e => handleChange('prefix', e.target.value)}
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white font-mono"
               />
-              <p className="text-[11px] text-gray-500 mt-1">Örnek: ! veya ? veya .</p>
+              <p className="text-xs text-gray-500 mt-1">Örnek: ! veya ? veya .</p>
             </div>
 
             <div>
@@ -114,7 +114,7 @@ export function Settings() {
               onChange={e => handleChange('cross_chat_format', e.target.value)}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white font-mono"
             />
-            <p className="text-[11px] text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Desteklenen etiketler: <code className="text-purple-400">$platform</code>, <code className="text-purple-400">$user</code>, <code className="text-purple-400">$message</code>
             </p>
           </div>
@@ -180,7 +180,7 @@ function PanelTemasiSecici() {
         <Palette className="w-5 h-5 text-purple-400" aria-hidden />
         <h2 id="panel-temasi-baslik" className="font-bold text-white text-base">Panel teması</h2>
       </div>
-      <p className="text-[11px] text-gray-400">
+      <p className="text-xs text-gray-400">
         Yalnız bu paneli boyar ve bu tarayıcıda saklanır. OBS widget'ları ve stüdyo önizlemesi değişmez. Ok tuşlarıyla da seçebilirsiniz.
       </p>
       <div role="radiogroup" aria-labelledby="panel-temasi-baslik" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -217,7 +217,7 @@ function PanelTemasiSecici() {
                 <span className="text-xs font-bold text-white">{t.ad}</span>
                 {secili === t.id && <Check className="w-3.5 h-3.5 text-purple-400" aria-hidden />}
               </span>
-              <span id={`panel-temasi-${t.id}`} className="block text-[11px] text-gray-400 leading-snug">{t.aciklama}</span>
+              <span id={`panel-temasi-${t.id}`} className="block text-xs text-gray-400 leading-snug">{t.aciklama}</span>
             </label>
           );
         })}

@@ -157,7 +157,7 @@ export default function DonationsAndJumpScare() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30 uppercase tracking-wider">
+              <span className="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30 axt-etiket">
                 AxBoT Bağış & Alert Ekosistemi
               </span>
             </div>
@@ -201,7 +201,7 @@ export default function DonationsAndJumpScare() {
         {!disAdres && (
           <p className="text-xs text-amber-300">Tünel adresi yok: aşağıdaki adresler yalnız bu bilgisayardan çalışır, bağış sitesine yapıştırılırsa bağış gelmez.</p>
         )}
-        <p className="text-[11px] text-gray-500">Adresler gizli anahtar içerir, ekranda göstermeyin. Geçici tünelin adresi her açılışta değişir; değişince burayı ve bağış sitesini güncelleyin.</p>
+        <p className="text-xs text-gray-500">Adresler gizli anahtar içerir, ekranda göstermeyin. Geçici tünelin adresi her açılışta değişir; değişince burayı ve bağış sitesini güncelleyin.</p>
       </div>
 
       {/* Webhook URLs & Setup Guides */}
@@ -236,7 +236,7 @@ export default function DonationsAndJumpScare() {
             </button>
           </div>
 
-          <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl text-[11px] text-gray-400 space-y-1">
+          <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl text-xs text-gray-400 space-y-1">
             <p className="font-semibold text-gray-300">💡 BynoGame Kurulum Adımları:</p>
             <p>1. bynogame.com hesabınıza giriş yapıp Yayıncı Paneli &gt; Bildirim Ayarlarına gidin.</p>
             <p>2. "POST Bildirim URL" kutusuna yukarıdaki URL'yi yapıştırın ve kaydedin.</p>
@@ -273,7 +273,7 @@ export default function DonationsAndJumpScare() {
             </button>
           </div>
 
-          <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl text-[11px] text-gray-400">
+          <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-xl text-xs text-gray-400">
             JSON formatında <code className="text-blue-300">{"{ donorName, amount, currency, message }"}</code> gönderildiğinde alertler anında oynatılır. Ko-fi'nin kendi biçimi de okunur.
           </div>
         </div>
@@ -414,7 +414,7 @@ export default function DonationsAndJumpScare() {
                 onChange={e => setSimAmount(parseInt(e.target.value, 10) || 50)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 focus:outline-none"
               />
-              <span className="text-[11px] text-gray-400 mt-1 block">
+              <span className="text-xs text-gray-400 mt-1 block">
                 {simAmount >= jsSettings.minAmount ? '🔥 JumpScare tetiklenecek!' : '⚠️ JumpScare tetiklenmeyecek (eşik altı)'}
               </span>
             </div>
@@ -473,7 +473,7 @@ export default function DonationsAndJumpScare() {
                     <td className="py-3 font-bold text-white">{d.donor_name}</td>
                     <td className="py-3 font-extrabold text-emerald-400">{d.amount} {d.currency}</td>
                     <td className="py-3 text-gray-300 max-w-xs truncate">{d.message || '-'}</td>
-                    <td className="py-3 uppercase text-gray-400 font-semibold">{d.platform}</td>
+                    <td className="py-3 axt-etiket text-gray-400 font-semibold">{d.platform}</td>
                     <td className="py-3">
                       {d.jumpscare_triggered ? (
                         <span className="text-red-400 font-bold flex items-center gap-1">

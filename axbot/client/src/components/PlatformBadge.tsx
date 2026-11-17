@@ -162,7 +162,7 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = ({ platform, badge, s
       return (
         <span
           title="Bot"
-          className="inline-flex items-center justify-center px-1 rounded bg-[#5865f2] text-white text-[9px] font-black tracking-wider uppercase flex-shrink-0 align-middle select-none h-[14px]"
+          className="inline-flex items-center justify-center px-1 rounded bg-[#5865f2] text-white text-xs axt-etiket font-black flex-shrink-0 align-middle select-none h-[14px]"
         >
           BOT
         </span>
@@ -184,28 +184,28 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = ({ platform, badge, s
   // 6. Generic Fallback Role Badge
   if (type === 'broadcaster' || type === 'owner') {
     return (
-      <span className="bg-red-500/90 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 select-none">
+      <span className="bg-red-500/90 text-white text-xs axt-etiket font-black px-1.5 py-0.5 rounded inline-flex items-center gap-1 select-none">
         YAYINCI
       </span>
     );
   }
   if (type === 'moderator' || type === 'mod') {
     return (
-      <span className="bg-[#53fc18] text-black text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 select-none">
+      <span className="bg-[#53fc18] text-black text-xs axt-etiket font-black px-1.5 py-0.5 rounded inline-flex items-center gap-1 select-none">
         MOD
       </span>
     );
   }
   if (type === 'subscriber' || type === 'sub') {
     return (
-      <span className="bg-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 select-none">
+      <span className="bg-purple-600 text-white text-xs axt-etiket font-black px-1.5 py-0.5 rounded inline-flex items-center gap-1 select-none">
         ABONE
       </span>
     );
   }
   if (type === 'vip') {
     return (
-      <span className="bg-fuchsia-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 select-none">
+      <span className="bg-fuchsia-600 text-white text-xs axt-etiket font-black px-1.5 py-0.5 rounded inline-flex items-center gap-1 select-none">
         VIP
       </span>
     );

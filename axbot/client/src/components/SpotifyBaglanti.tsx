@@ -89,16 +89,16 @@ export function SpotifyBaglanti() {
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
           <Music2 className="w-4 h-4 text-emerald-400" /> Spotify — istekler kendiliğinden çalsın
         </h3>
-        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${bagli ? 'bg-emerald-500/20 text-emerald-300' : 'bg-gray-700 text-gray-300'}`}>
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${bagli ? 'bg-emerald-500/20 text-emerald-300' : 'bg-gray-700 text-gray-300'}`}>
           {studio ? "Bağlı · AxthrowA Studio'dan" : bagli ? `Bağlı${d?.spotify.displayName ? ` · ${d.spotify.displayName}` : ''}` : 'Bağlı değil'}
         </span>
       </div>
-      <p className="text-[11px] text-gray-400">
+      <p className="text-xs text-gray-400">
         Bağlıyken <code>!sr şarkı adı</code> (ya da Spotify/YouTube linki) şarkıyı Spotify'da bulur ve <b>senin müdahalen olmadan</b> çalar.
         Spotify bunun için <b>Premium</b> hesap ve açık bir Spotify uygulaması (cihaz) ister.
       </p>
       {!bagli && (
-        <ol className="text-[11px] text-gray-300 list-decimal pl-4 space-y-1">
+        <ol className="text-xs text-gray-300 list-decimal pl-4 space-y-1">
           <li>
             <a className="text-emerald-300 underline" href="https://developer.spotify.com/dashboard" target="_blank" rel="noreferrer">
               developer.spotify.com/dashboard <ExternalLink className="inline w-3 h-3" />
@@ -112,7 +112,7 @@ export function SpotifyBaglanti() {
         </ol>
       )}
       {studio && (
-        <p className="text-[11px] text-emerald-300">Spotify AxthrowA Studio'da bağlı; bot onu kullanıyor, burada ayrıca bağlamana gerek yok.</p>
+        <p className="text-xs text-emerald-300">Spotify AxthrowA Studio'da bağlı; bot onu kullanıyor, burada ayrıca bağlamana gerek yok.</p>
       )}
       <div className={studio ? 'hidden' : 'flex gap-2'}>
         <input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Spotify Client ID (32 karakter)" className={girdi} disabled={bagli} />
@@ -140,12 +140,12 @@ export function SpotifyBaglanti() {
         </label>
       </div>
       {d?.nowPlaying && (
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           {d.nowPlaying.isPlaying ? '▶' : '⏸'} {d.nowPlaying.title}
           {d.nowPlaying.artist ? ` — ${d.nowPlaying.artist}` : ''}
         </p>
       )}
-      {(mesaj || d?.note) && <p className="text-[11px] text-amber-200">{mesaj || d?.note}</p>}
+      {(mesaj || d?.note) && <p className="text-xs text-amber-200">{mesaj || d?.note}</p>}
       <a
         href="/resonance/"
         onClick={(e) => {
@@ -154,7 +154,7 @@ export function SpotifyBaglanti() {
           if (window.parent !== window) window.parent.postMessage({ type: 'axbot:open-music' }, '*');
           else openLink(`${window.location.origin}/resonance/`);
         }}
-        className="text-[11px] text-emerald-300 underline"
+        className="text-xs text-emerald-300 underline"
       >
         Resonance müzik çalarını aç (Spotify / YouTube Music, OBS "şu an çalan") <ExternalLink className="inline w-3 h-3" />
       </a>

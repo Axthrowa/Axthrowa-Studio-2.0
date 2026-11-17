@@ -35,7 +35,7 @@ function RozetEtiketi({ rozet }: { rozet: Rozet }) {
   return (
     <span
       title={rozet.ipucu}
-      className={`inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${ROZET_RENGI[rozet.tur]}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 text-xs axt-etiket font-bold ${ROZET_RENGI[rozet.tur]}`}
     >
       {rozet.tur === 'canli' && <span className="h-1.5 w-1.5 rounded-full bg-red-500" />}
       {rozet.metin}
@@ -178,7 +178,7 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
 
       <Modul
         etiket="Canlı olay akışı"
-        sag={<span className="font-mono text-[10px] text-zinc-500">SON 50</span>}
+        sag={<span className="font-mono text-xs text-zinc-500">SON 50</span>}
         className="col-span-12 flex min-w-0 flex-col lg:col-span-8"
       >
         {/* Masaüstünde yüksekliği sol sütun belirler: akış uzadıkça ızgara uzamaz, liste kayar */}
@@ -190,7 +190,7 @@ export function Dashboard({ onConnectPlatform }: { onConnectPlatform?: (platform
           ) : (
             events.map((ev: StreamEvent) => (
               <div key={ev.id} className="flex items-center gap-2 py-1.5 text-sm">
-                <span className="shrink-0 font-mono text-[11px] text-zinc-500">
+                <span className="shrink-0 font-mono text-xs text-zinc-500">
                   {new Date(ev.timestamp).toLocaleTimeString()}
                 </span>
                 <span className="shrink-0"><PlatformLogo platform={ev.platform} size={13} variant="badge" showLabel={true} /></span>

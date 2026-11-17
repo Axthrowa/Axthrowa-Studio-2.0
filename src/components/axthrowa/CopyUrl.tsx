@@ -75,10 +75,10 @@ export default function CopyUrl({ url, onCopied, onFail, onOpened, className = "
               : "")
         }
       >
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-white/90 group-hover:text-white">{url}</span>
+        <span className="min-w-0 flex-1 truncate font-mono text-ui-2 text-white/90 group-hover:text-white">{url}</span>
         <span
           className={
-            "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold transition-all duration-150 " +
+            "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-ui-2 font-semibold transition-all duration-150" +
             (state === "ok"
               ? "bg-emerald-500/20 text-emerald-300"
               : state === "fail"
@@ -97,7 +97,7 @@ export default function CopyUrl({ url, onCopied, onFail, onOpened, className = "
         disabled={opening}
         title={`Önizle: ${url}\nTarayıcıda açar (OBS'e eklemeden önce kontrol)`}
         aria-label={`Önizle: ${url}`}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-panel-accent/30 bg-panel-accent/15 px-2.5 text-[11px] font-semibold text-panel-accent transition-all duration-150 hover:border-panel-accent/50 hover:bg-panel-accent/25 disabled:opacity-50"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-panel-accent/30 bg-panel-accent/15 px-2.5 text-ui-2 font-semibold text-panel-accent transition-all duration-150 hover:border-panel-accent/50 hover:bg-panel-accent/25 disabled:opacity-50"
       >
         <ExternalLink className="h-3.5 w-3.5" />
         {opening ? "Açılıyor…" : "Önizle"}

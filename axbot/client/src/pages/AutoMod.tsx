@@ -137,7 +137,7 @@ export function AutoMod() {
   const ekKural = (on: 'zalgo' | 'length', baslik: string, aciklama: string) => (
     <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
       <label className="flex justify-between text-xs font-bold">{baslik} <Anahtar acik={!!(adv as any)[on + '_enabled']} onChange={(v) => setAdv(a => ({ ...a, [on + '_enabled']: v } as any))} /></label>
-      <p className="text-[11px] text-gray-500">{aciklama}</p>
+      <p className="text-xs text-gray-500">{aciklama}</p>
       <div className="grid grid-cols-3 gap-2 text-xs">
         {on === 'length' && <label className="space-y-1">En çok karakter<input type="number" min={20} max={2000} value={adv.length_max} onChange={e => setAdv(a => ({ ...a, length_max: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-lg p-1.5" /></label>}
         <label className="space-y-1">Eylem<Secim value={(adv as any)[on + '_action']} onChange={e => setAdv(a => ({ ...a, [on + '_action']: e.target.value } as any))} className="w-full"><option value="warn">Uyar</option><option value="delete">Sil</option><option value="delete_warn">Sil + uyar</option><option value="timeout_warn">Sustur + uyar</option></Secim></label>
@@ -261,7 +261,7 @@ export function AutoMod() {
       {tab === 'repeat' && (
         <Panel className="p-6 rounded-2xl space-y-4">
           <div className="flex items-center gap-2"><Type className="w-5 h-5 text-sky-400" /><h2 className="font-bold">Tekrarlanan Mesaj Koruması</h2></div>
-          <p className="text-[11px] text-gray-500">Aynı izleyici kısa sürede aynı mesajı tekrar yazarsa ihlal sayılır. "Merhaba", "MERHABA!!" ve "merhaba" aynı mesajdır. Moderatör ve yayıncı muaftır.</p>
+          <p className="text-xs text-gray-500">Aynı izleyici kısa sürede aynı mesajı tekrar yazarsa ihlal sayılır. "Merhaba", "MERHABA!!" ve "merhaba" aynı mesajdır. Moderatör ve yayıncı muaftır.</p>
           <label className="flex justify-between text-xs">Tekrar koruması <Anahtar acik={Number((settings as any).repeat_enabled) === 1} onChange={(v) => setSettings({ ...settings, repeat_enabled: v ? 1 : 0 } as any)} /></label>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-xs space-y-1">Kaçıncı tekrarda ({Number((settings as any).repeat_count) || 3})<input type="range" min={2} max={10} value={Number((settings as any).repeat_count) || 3} onChange={e => setSettings({ ...settings, repeat_count: +e.target.value } as any)} className="w-full" /></label>
@@ -285,8 +285,8 @@ export function AutoMod() {
             <input value={newWord} onChange={e => setNewWord(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWord.trim()) { setSettings({ ...settings, blacklist_words: [...settings.blacklist_words, newWord.trim()] }); setNewWord(''); } }} placeholder="yasaklı kelime" className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm" />
             <button type="button" onClick={() => { if (newWord.trim()) setSettings({ ...settings, blacklist_words: [...settings.blacklist_words, newWord.trim()] }); setNewWord(''); }} className="px-4 py-2 bg-red-600 rounded-xl text-xs font-bold">Ekle</button>
           </div>
-          <p className="text-[11px] text-gray-500">Yazım: <code>kelime</code> (Türkçe harf ve büyük/küçük fark etmez) · <code>test*</code> joker (testing, testçi…) · <code>~/desen/i</code> düzenli ifade. İç içe niceleyicili riskli desenler (<code>(a+)+</code>) kayıtta reddedilir. Silinen mesajın kendisi Kalkan ve Denetim günlüğüne yazılır.</p>
-          {gecersiz.length > 0 && <p className="text-[11px] rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-amber-200">Uygulanmayan (geçersiz ya da riskli) kalıplar: {gecersiz.join(', ')}</p>}
+          <p className="text-xs text-gray-500">Yazım: <code>kelime</code> (Türkçe harf ve büyük/küçük fark etmez) · <code>test*</code> joker (testing, testçi…) · <code>~/desen/i</code> düzenli ifade. İç içe niceleyicili riskli desenler (<code>(a+)+</code>) kayıtta reddedilir. Silinen mesajın kendisi Kalkan ve Denetim günlüğüne yazılır.</p>
+          {gecersiz.length > 0 && <p className="text-xs rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-amber-200">Uygulanmayan (geçersiz ya da riskli) kalıplar: {gecersiz.join(', ')}</p>}
           <div className="flex flex-wrap gap-2">{settings.blacklist_words.map(word => (
             <span key={word} className="px-3 py-1.5 rounded-xl bg-red-500/15 text-red-300 text-xs font-bold flex items-center gap-2">{word}<button onClick={() => setSettings({ ...settings, blacklist_words: settings.blacklist_words.filter(w => w !== word) })}><X className="w-3.5 h-3.5" /></button></span>
           ))}</div>
@@ -299,7 +299,7 @@ export function AutoMod() {
         <Panel className="p-6 rounded-2xl space-y-4">
           <div className="flex items-center gap-2"><Ban className="w-5 h-5 text-orange-400" /><h2 className="font-bold">Ceza Merdiveni ve Hesap</h2></div>
           <label className="flex justify-between text-xs">Ceza merdiveni <Anahtar acik={!!adv.merdiven_acik} onChange={(v) => setAdv(a => ({ ...a, merdiven_acik: v }))} /></label>
-          <p className="text-[11px] text-gray-500">Açıkken kuralların kendi eylemi yerine aynı kişinin ihlal sayısına göre artan ceza uygulanır: 1. uyarı, 2. 1 dk susturma, 3. 10 dk susturma, 4. kalıcı ban. Belirlenen süre boyunca temiz kalan baştan başlar. Tekrarı sürdüren her mesaj bir basamak çıkarır. Sayım bot yeniden başlayınca sıfırlanır.</p>
+          <p className="text-xs text-gray-500">Açıkken kuralların kendi eylemi yerine aynı kişinin ihlal sayısına göre artan ceza uygulanır: 1. uyarı, 2. 1 dk susturma, 3. 10 dk susturma, 4. kalıcı ban. Belirlenen süre boyunca temiz kalan baştan başlar. Tekrarı sürdüren her mesaj bir basamak çıkarır. Sayım bot yeniden başlayınca sıfırlanır.</p>
           <label className="text-xs space-y-1 block">Temiz kalınca sıfırlama (dk)<input type="number" min={1} max={1440} value={adv.merdiven_pencere_dk} onChange={e => setAdv(a => ({ ...a, merdiven_pencere_dk: +e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <label className="text-xs space-y-1 block">Kick'te cezayı uygulayan hesap
             <Secim value={adv.moderasyon_hesabi} onChange={e => setAdv(a => ({ ...a, moderasyon_hesabi: e.target.value === 'bot' ? 'bot' : 'kanal' }))} className="w-full">
@@ -307,7 +307,7 @@ export function AutoMod() {
               <option value="bot">Bot hesabı</option>
             </Secim>
           </label>
-          <p className="text-[11px] text-gray-500">Susturma, ban ve mesaj silme Kick'te bu hesapla yapılır; bot hesabı seçiliyse kanalda moderatör olmalıdır. Bot bağlı değilse yayıncı hesabına düşülür. Twitch tek hesapla bağlandığı için bu seçim orada geçerli değil. Silinen mesajlar metniyle Kalkan ve Denetim günlüğüne yazılır.</p>
+          <p className="text-xs text-gray-500">Susturma, ban ve mesaj silme Kick'te bu hesapla yapılır; bot hesabı seçiliyse kanalda moderatör olmalıdır. Bot bağlı değilse yayıncı hesabına düşülür. Twitch tek hesapla bağlandığı için bu seçim orada geçerli değil. Silinen mesajlar metniyle Kalkan ve Denetim günlüğüne yazılır.</p>
         </Panel>
       )}
 
@@ -316,7 +316,7 @@ export function AutoMod() {
           <div className="flex items-center gap-2"><User className="w-5 h-5 text-cyan-400" /><h2 className="font-bold">Kullanıcı Adı Koruması</h2></div>
           <label className="flex justify-between text-xs">Kullanıcı adı filtresi <Anahtar acik={adv.name_enabled} onChange={(v) => setAdv(a => ({ ...a, name_enabled: v }))} /></label>
           <label className="text-xs space-y-1">Regex<input value={adv.name_regex} onChange={e => setAdv(a => ({ ...a, name_regex: e.target.value }))} placeholder="(scam|xxx)" className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
-          <p className="text-[10px] text-gray-500">İhlalde "Yasaklı Kelimeler" kuralının eylemi uygulanır.</p>
+          <p className="text-xs text-gray-500">İhlalde "Yasaklı Kelimeler" kuralının eylemi uygulanır.</p>
           <label className="text-xs space-y-1">Uyarı<input value={adv.name_warning} onChange={e => setAdv(a => ({ ...a, name_warning: e.target.value }))} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           <div className="flex gap-2">
             <input value={newNameWord} onChange={e => setNewNameWord(e.target.value)} placeholder="yasaklı isim parçası" className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs" />

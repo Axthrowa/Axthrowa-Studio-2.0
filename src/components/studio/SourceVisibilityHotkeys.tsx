@@ -72,7 +72,7 @@ export default function SourceVisibilityHotkeys({
   return (
     <section className="space-y-4 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
       <div className="border-b border-white/[0.06] pb-2.5">
-        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+        <h3 className="flex items-center gap-2 text-sm font-bold axt-etiket text-white">
           <Eye className="h-4.5 w-4.5 text-panel-accent" /> Kaynak görünürlüğü
         </h3>
         <p className="mt-1 text-xs leading-relaxed text-white/75">
@@ -82,7 +82,7 @@ export default function SourceVisibilityHotkeys({
       </div>
 
       <div className="flex flex-wrap items-end gap-2.5 rounded-xl bg-white/[0.03] p-3">
-        <label className="min-w-[10rem] flex-1 text-xs font-bold uppercase tracking-wider text-white/80">
+        <label className="min-w-[10rem] flex-1 text-xs font-bold axt-etiket text-white/80">
           Sahne
           <input
             className="studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white"

@@ -98,7 +98,7 @@ export function Sidebar({ open, onNavigate }) {
           return (
             <p
               key={i}
-              className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]"
+              className="mb-1 mt-3 px-3 text-xs font-semibold axt-etiket text-[var(--color-text-muted)]"
             >
               {t(item.sectionKey)}
             </p>

@@ -52,7 +52,7 @@ export function SesKirpma({ url, degistir }: { url: string; degistir: (yeni: str
   const kalan = uzunluk === null ? null : Math.max(0, uzunluk - baslangic);
   const caldigi = kalan === null ? null : sure ? Math.min(sure, kalan) : kalan;
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-400">
+    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400">
       <span>{uzunluk === null ? 'Uzunluk okunamadı' : `Ses: ${sn(uzunluk)}`}</span>
       <label className="flex items-center gap-1">
         Başla

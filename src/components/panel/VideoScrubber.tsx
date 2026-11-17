@@ -510,7 +510,7 @@ export default function VideoScrubber({
         />
       </div>
 
-      <div className="flex items-center justify-between font-mono text-[11px] text-panel-muted">
+      <div className="flex items-center justify-between font-mono text-ui-2 text-panel-muted">
         <span className="text-white font-semibold">{formatClock(time)}</span>
         <span>{duration > 0 ? formatClock(duration) : "—"}</span>
       </div>
@@ -571,7 +571,7 @@ export default function VideoScrubber({
         </button>
       )}
       {liveAt > 0 && (
-        <p className="text-[10px] text-panel-accent">
+        <p className="text-ui-2 text-panel-accent">
           Yayına verildi — OBS bu saniyeden devam ediyor.
         </p>
       )}
@@ -599,7 +599,7 @@ export default function VideoScrubber({
         </div>
       )}
 
-      <p className="text-[10px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Önizleme yalnız burada oynar; yayına gitmez. ← → 5 sn, boşluk oynat/duraklat.
       </p>
     </div>

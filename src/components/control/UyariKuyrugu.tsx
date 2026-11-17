@@ -14,16 +14,16 @@ type RecentAlert = { id: string; eventType: string; title: string; message: stri
 type KuyrukOgesi = { id: string; eventType: string; title: string; message?: string; isTest: boolean };
 type Kuyruk = { aktif: KuyrukOgesi | null; bekleyen: KuyrukOgesi[]; guncellendi: number; kaynak: number };
 
-const ROZET = "rounded-full border px-2 py-0.5 text-[10px] font-bold";
+const ROZET = "rounded-full border px-2 py-0.5 text-ui-2 font-bold";
 const DUGME = "studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1";
 
 function Oge({ o, etiket }: { o: KuyrukOgesi; etiket?: string }) {
   return (
     <span className="min-w-0 truncate text-white/80">
-      {etiket ? <span className="mr-1 text-[10px] font-bold text-panel-accent">{etiket}</span> : null}
+      {etiket ? <span className="mr-1 text-ui-2 font-bold text-panel-accent">{etiket}</span> : null}
       {o.title || o.eventType}
       {o.message ? <span className="ml-1 text-panel-muted">{o.message}</span> : null}
-      {o.isTest ? <span className="ml-1 text-[10px] text-cyan-300">TEST</span> : null}
+      {o.isTest ? <span className="ml-1 text-ui-2 text-cyan-300">TEST</span> : null}
     </span>
   );
 }
@@ -138,7 +138,7 @@ export default function UyariKuyrugu({ onToast }: { onToast: (m: string) => void
               onContextMenu={nesneMenusu(() => (kuyruk.aktif ? kuyrukMenusu(kuyruk.aktif, true, false) : []))}
             >
               {kuyruk.aktif ? <Oge o={kuyruk.aktif} etiket="EKRANDA" /> : <span className="text-panel-muted">Ekranda uyarı yok</span>}</div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">Sırada ({bekleyen.length})</p>
+            <p className="text-ui-2 axt-etiket font-semibold text-panel-muted">Sırada ({bekleyen.length})</p>
             {bekleyen.length ? (
               <ol className="max-h-32 space-y-1 overflow-y-auto">
                 {bekleyen.map((o, i) => (
@@ -161,20 +161,20 @@ export default function UyariKuyrugu({ onToast }: { onToast: (m: string) => void
       </section>
 
       {state?.lastAction ? (
-        <p className="text-[10px] text-panel-muted">
+        <p className="text-ui-2 text-panel-muted">
           Son: {state.updatedBy} · {state.lastAction} · {new Date(state.updatedAt).toLocaleTimeString("tr-TR")}
         </p>
       ) : null}
 
       <section aria-label="Son uyarılar" className="space-y-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">Son uyarılar</p>
+        <p className="text-ui-2 axt-etiket font-semibold text-panel-muted">Son uyarılar</p>
         <div className="max-h-40 space-y-1 overflow-y-auto">
           {recent.length === 0 ? <p className="text-panel-muted">Bu oturumda uyarı yok.</p> : null}
           {recent.map((u) => (
             <div key={u.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2 py-1">
               <span className="min-w-0 truncate text-white/80">
                 {u.title || u.eventType} <span className="text-panel-muted">{u.message}</span>
-                {u.isTest ? <span className="ml-1 text-[10px] text-cyan-300">TEST</span> : null}
+                {u.isTest ? <span className="ml-1 text-ui-2 text-cyan-300">TEST</span> : null}
               </span>
               <button type="button" className="shrink-0 rounded p-1 hover:bg-white/10" title="Yeniden oynat" aria-label={`Yeniden oynat: ${u.title || u.eventType}`} onClick={() => void act("replay", u.id)}>
                 <RotateCcw className="h-3 w-3" />

@@ -246,8 +246,8 @@ function TtsPaneli() {
   const anahtar = (k: string, etiket: string, ipucu?: string) => (
     <div className="flex items-start justify-between gap-2 bg-black/20 rounded-lg px-3 py-2">
       <div>
-        <div className="text-[11px] font-bold text-gray-200">{etiket}</div>
-        {ipucu && <div className="text-[10px] text-gray-500">{ipucu}</div>}
+        <div className="text-xs font-bold text-gray-200">{etiket}</div>
+        {ipucu && <div className="text-xs text-gray-500">{ipucu}</div>}
       </div>
       <Anahtar acik={!!f[k]} onChange={(v) => setF({ ...f, [k]: v })} ad={etiket} />
     </div>
@@ -398,7 +398,7 @@ function TemaSecici() {
         ))}
       </Secim>
       {ornek && (
-        <div className="mt-3 space-y-1 text-[11px] text-gray-300 max-h-48 overflow-y-auto">
+        <div className="mt-3 space-y-1 text-xs text-gray-300 max-h-48 overflow-y-auto">
           {Object.entries(OLAY_ADLARI).map(([olay, ad]) => (
             <p key={olay}>
               <b className="text-gray-400">{ad}:</b> {ornek[olay]?.[0]}
@@ -565,7 +565,7 @@ function ModerasyonPaneli() {
         baslik="İhlal eylemleri"
         aciklama="Önceden AutoMod yalnız sohbete uyarı yazıyordu; platformda hiçbir eylem yapmıyordu."
       >
-        <div className="text-[10px] text-gray-400 bg-black/25 rounded-lg px-3 py-2">
+        <div className="text-xs text-gray-400 bg-black/25 rounded-lg px-3 py-2">
           Zaman aşımı destekleyen: <strong className="text-emerald-300">{timeoutOlan.join(', ') || 'yok'}</strong> ·
           Mesaj silme destekleyen: <strong className="text-emerald-300">{silmeOlan.join(', ') || 'yok'}</strong>.
           Desteklemeyen platformda uyarıya düşülür ve sebebi sohbette belirtilir.
@@ -611,7 +611,7 @@ function ModerasyonPaneli() {
                   </Alan>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-[10px] font-bold text-gray-400">Muaf roller:</span>
+                  <span className="text-xs font-bold text-gray-400">Muaf roller:</span>
                   {['regular', 'sub', 'vip', 'og'].map((rol) => (
                     <Anahtar
                       key={rol}
@@ -623,7 +623,7 @@ function ModerasyonPaneli() {
                       }}
                     />
                   ))}
-                  <span className="text-[10px] text-gray-500">Moderatör ve yayıncı her zaman muaftır.</span>
+                  <span className="text-xs text-gray-500">Moderatör ve yayıncı her zaman muaftır.</span>
                 </div>
               </div>
             );
@@ -701,7 +701,7 @@ function DegiskenPaneli() {
             if (!suzulmus.length) return null;
             return (
               <div key={grup}>
-                <div className="text-[10px] font-black uppercase tracking-wider text-purple-300 mb-1">{grup}</div>
+                <div className="text-xs axt-etiket font-black text-purple-300 mb-1">{grup}</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                   {suzulmus.map((d: any) => (
                     <button
@@ -714,10 +714,10 @@ function DegiskenPaneli() {
                       className="text-left bg-black/25 hover:bg-black/40 rounded-lg px-2.5 py-1.5 transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
-                        <code className="text-[11px] font-mono text-cyan-300">$({d.ad})</code>
-                        {d.ag && <span className="text-[9px] text-amber-400">ağ</span>}
+                        <code className="text-xs font-mono text-cyan-300">$({d.ad})</code>
+                        {d.ag && <span className="text-xs text-amber-400">ağ</span>}
                       </div>
-                      <div className="text-[10px] text-gray-400">{d.aciklama}</div>
+                      <div className="text-xs text-gray-400">{d.aciklama}</div>
                     </button>
                   ))}
                 </div>

@@ -273,7 +273,7 @@ export default function VoiceCommands() {
       >
         <div className="grid gap-4 lg:grid-cols-2">
           <div>
-            <span className="mb-1 block text-[11px] font-bold text-gray-300">Türkçe konuşma modeli</span>
+            <span className="mb-1 block text-xs font-bold text-gray-300">Türkçe konuşma modeli</span>
             {model.durum === 'hazir' ? (
               <p className="text-sm text-emerald-300">Hazır ({(model.boyut / 1048576).toFixed(1)} MB) — Vosk küçük Türkçe model, Apache-2.0</p>
             ) : model.durum === 'indiriliyor' ? (
@@ -281,12 +281,12 @@ export default function VoiceCommands() {
                 <div className="h-2 overflow-hidden rounded bg-white/10">
                   <div className="h-full bg-cyan-500" style={{ width: `${model.yuzde}%` }} />
                 </div>
-                <p className="mt-1 text-[11px] text-gray-400">{model.mesaj}</p>
+                <p className="mt-1 text-xs text-gray-400">{model.mesaj}</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {model.durum === 'hata' && <p className="text-sm text-red-300">İndirme başarısız: {model.mesaj}</p>}
-                <p className="text-[11px] text-gray-400">
+                <p className="text-xs text-gray-400">
                   Model bir kez indirilir (~37 MB, alphacephei.com, Apache-2.0) ve bilgisayarda saklanır; sonra internetsiz çalışır.
                 </p>
                 <Buton ikon={<Download className="h-3.5 w-3.5" />} onClick={() => void istek('/api/sesli/model/indir', 'POST').then(setModel, (x) => toast(x.message, 'hata'))}>
@@ -296,11 +296,11 @@ export default function VoiceCommands() {
             )}
           </div>
           <div>
-            <span className="mb-1 block text-[11px] font-bold text-gray-300">Dinleyici</span>
+            <span className="mb-1 block text-xs font-bold text-gray-300">Dinleyici</span>
             <div className="flex items-center gap-2 text-sm">
               <span className={`h-2.5 w-2.5 rounded-full ${dDurum === 'dinliyor' ? (basili ? 'bg-red-500' : 'bg-emerald-400') : dDurum === 'hata' ? 'bg-red-500' : 'bg-gray-500'}`} />
               <b>{DURUM_METNI[dDurum]}</b>
-              {basili && <span className="rounded bg-red-500/20 px-1.5 text-[11px] text-red-300">BAS-KONUŞ</span>}
+              {basili && <span className="rounded bg-red-500/20 px-1.5 text-xs text-red-300">BAS-KONUŞ</span>}
               <span className="ml-auto flex gap-2">
                 {dinleyiciBuradaMi ? (
                   <Buton ton="ikincil" ikon={<MicOff className="h-3.5 w-3.5" />} onClick={() => panelDinleyicisi().durdur()}>
@@ -316,7 +316,7 @@ export default function VoiceCommands() {
             <div className="mt-2 h-1.5 overflow-hidden rounded bg-white/10">
               <div className="h-full bg-emerald-400 transition-[width] duration-100" style={{ width: `${Math.round(seviye * 100)}%` }} />
             </div>
-            {dMesaj && <p className="mt-1 text-[11px] text-gray-400">{dMesaj}</p>}
+            {dMesaj && <p className="mt-1 text-xs text-gray-400">{dMesaj}</p>}
             <p className="mt-1 min-h-[1.1rem] text-[12px] italic text-gray-400">{kismi}</p>
             <button
               className={`mt-1 w-full select-none rounded-xl py-2 text-xs font-bold ${basili ? 'bg-red-600 text-white' : 'bg-white/10 text-gray-200 hover:bg-white/15'}`}
@@ -327,7 +327,7 @@ export default function VoiceCommands() {
             >
               Basılı tut ve konuş
             </button>
-            <p className="mt-2 text-[11px] text-gray-500">
+            <p className="mt-2 text-xs text-gray-500">
               AxthrowA Studio dinleyiciyi arka planda açık tutar ve genel kısayolla bas-konuş sağlar (oyun içindeyken de). Ayrı kullanımda bu
               sayfayı açık bırakın ya da dinleyiciyi OBS'te özel tarayıcı dock'u olarak ekleyin:{' '}
               <code className="select-all text-gray-400">{dinleyiciAdresi}</code>
@@ -386,7 +386,7 @@ export default function VoiceCommands() {
               <div key={k.id} className={`flex items-center gap-3 py-2 ${k.etkin ? '' : 'opacity-50'}`}>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-bold text-white">{k.ad}</div>
-                  <div className="truncate text-[11px] text-gray-400">
+                  <div className="truncate text-xs text-gray-400">
                     “{k.ifadeler.join('” · “')}” → {k.aciklama}
                   </div>
                 </div>
@@ -506,7 +506,7 @@ export default function VoiceCommands() {
               Çalıştır
             </Buton>
           </div>
-          <div className="mt-3 text-[11px] leading-relaxed text-gray-400">
+          <div className="mt-3 text-xs leading-relaxed text-gray-400">
             <b className="text-gray-300">Komut tanımlamadan çalışanlar:</b>
             <br />• “{ayar.uyandirma}, davul çal” / “{ayar.uyandirma}, alkış sesini çal” — ses panosundaki ada göre
             <br />• “{ayar.uyandirma}, anketi aç” / “{ayar.uyandirma}, sohbeti gizle” — Overlay Studio widget'ları

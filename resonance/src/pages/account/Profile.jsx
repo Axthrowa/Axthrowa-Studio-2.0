@@ -30,19 +30,19 @@ export default function Profile() {
 
           <div className="mt-6 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+              <p className="text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
                 {t('profilePage.displayName')}
               </p>
               <p className="mt-1 text-sm text-white">{username}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+              <p className="text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
                 {t('profilePage.joined')}
               </p>
               <p className="mt-1 text-sm text-white">{joined}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+              <p className="text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
                 {t('profilePage.bio')}
               </p>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">

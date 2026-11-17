@@ -76,12 +76,12 @@ function Kural({
       <label className="flex items-center gap-2 mb-2 cursor-pointer">
         <span className="w-2 h-2 rounded-full" style={{ background: renk }} />
         <span className="text-xs font-black text-white flex-1">{baslik}</span>
-        <span className="text-[10px] text-gray-400">{acik ? 'Süre ekler' : 'Kapalı'}</span>
+        <span className="text-xs text-gray-400">{acik ? 'Süre ekler' : 'Kapalı'}</span>
         <Anahtar acik={acik} onChange={(v) => onAcik(v)} />
       </label>
       <div className={`flex items-end gap-2 ${acik ? '' : 'opacity-40'}`}>
         <label className="flex-1">
-          <span className="block text-[10px] text-gray-400 font-bold mb-1">Eklenecek dakika</span>
+          <span className="block text-xs text-gray-400 font-bold mb-1">Eklenecek dakika</span>
           <input aria-label="Eklenecek dakika"
             type="number"
             min={0}
@@ -94,7 +94,7 @@ function Kural({
           <>
             <span className="text-gray-500 text-xs pb-2">her</span>
             <label className="flex-1">
-              <span className="block text-[10px] text-gray-400 font-bold mb-1">{birimEtiketi}</span>
+              <span className="block text-xs text-gray-400 font-bold mb-1">{birimEtiketi}</span>
               <input
                 type="number"
                 min={1}
@@ -106,7 +106,7 @@ function Kural({
           </>
         )}
       </div>
-      <p className="text-[10px] text-gray-500 mt-1.5">{aciklama}</p>
+      <p className="text-xs text-gray-500 mt-1.5">{aciklama}</p>
     </div>
   );
 }
@@ -176,16 +176,16 @@ export function SubathonPanel() {
       {/* Canlı durum */}
       <div className="bg-black/40 border border-white/10 rounded-xl p-4 flex flex-wrap items-center gap-4">
         <div>
-          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Kalan süre</div>
+          <div className="text-xs axt-etiket text-gray-400 font-bold">Kalan süre</div>
           <div className="text-3xl font-black font-mono text-white">{sureYaz(durum.kalanSaniye)}</div>
         </div>
         <div className="flex-1 min-w-[120px]">
-          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Durum</div>
+          <div className="text-xs axt-etiket text-gray-400 font-bold">Durum</div>
           <div className={`text-sm font-black ${durum.aktif ? 'text-emerald-400' : 'text-gray-500'}`}>
             {durum.aktif ? '● Çalışıyor' : durum.duraklatildi ? '⏸ Duraklatıldı (kalan süre saklı)' : '○ Durduruldu'}
           </div>
           {durum.eklenenSaniye > 0 && (
-            <div className="text-[10px] text-gray-500 mt-0.5">Bu yayında eklenen: {sureYaz(durum.eklenenSaniye)}</div>
+            <div className="text-xs text-gray-500 mt-0.5">Bu yayında eklenen: {sureYaz(durum.eklenenSaniye)}</div>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -232,7 +232,7 @@ export function SubathonPanel() {
       </div>
 
       {durum.sonEkleme && (
-        <div className="text-[11px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 rounded-lg px-3 py-2">
+        <div className="text-xs text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 rounded-lg px-3 py-2">
           Son ekleme: {durum.sonEkleme.metin}
         </div>
       )}
@@ -240,7 +240,7 @@ export function SubathonPanel() {
       {/* Elle süre */}
       <div className="bg-black/30 border border-white/10 rounded-xl p-3 flex items-end gap-2">
         <label className="flex-1">
-          <span className="block text-[10px] text-gray-400 font-bold mb-1">Elle süre ekle / çıkar (dakika)</span>
+          <span className="block text-xs text-gray-400 font-bold mb-1">Elle süre ekle / çıkar (dakika)</span>
           <input aria-label="Elle süre ekle / çıkar (dakika)"
             type="number"
             value={elleDakika}
@@ -268,7 +268,7 @@ export function SubathonPanel() {
       <div>
         <h4 className="text-xs font-black text-white mb-2">
           Otomatik süre kuralları
-          <span className="ml-2 text-[10px] font-normal text-emerald-400">
+          <span className="ml-2 text-xs font-normal text-emerald-400">
             olaylar geldikçe süre kendiliğinden uzar
           </span>
         </h4>
@@ -330,7 +330,7 @@ export function SubathonPanel() {
       {/* Genel */}
       <div className="grid grid-cols-2 gap-2">
         <label>
-          <span className="block text-[10px] text-gray-400 font-bold mb-1">Başlangıç süresi (dakika)</span>
+          <span className="block text-xs text-gray-400 font-bold mb-1">Başlangıç süresi (dakika)</span>
           <input aria-label="Başlangıç süresi (dakika)"
             type="number"
             min={1}
@@ -340,7 +340,7 @@ export function SubathonPanel() {
           />
         </label>
         <label>
-          <span className="block text-[10px] text-gray-400 font-bold mb-1">Üst sınır (saat, 0 = sınırsız)</span>
+          <span className="block text-xs text-gray-400 font-bold mb-1">Üst sınır (saat, 0 = sınırsız)</span>
           <input aria-label="Üst sınır (saat, 0 = sınırsız)"
             type="number"
             min={0}
@@ -360,7 +360,7 @@ export function SubathonPanel() {
         >
           <Save className="w-3.5 h-3.5" /> {kaydedildi ? 'Kaydedildi' : 'Kuralları Kaydet'}
         </button>
-        {hata && <span className="text-[11px] text-red-400">{hata}</span>}
+        {hata && <span className="text-xs text-red-400">{hata}</span>}
       </div>
     </div>
   );

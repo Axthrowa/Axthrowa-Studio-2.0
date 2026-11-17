@@ -137,8 +137,8 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd, onPartSelect
       {/* Stüdyo etiketi: üstte ortada, çerçevesiz cam hap */}
       <div className="pointer-events-none absolute left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-axthrowa-card/80 px-3 py-1.5 shadow-panel backdrop-blur-md">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgb(var(--ui-danger)/0.9)]" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-300">Canlı önizleme</span>
-        <span className="font-mono text-[10px] text-zinc-400">1920×1080</span>
+        <span className="text-ui-2 axt-etiket font-semibold text-zinc-300">Canlı önizleme</span>
+        <span className="font-mono text-ui-2 text-zinc-400">1920×1080</span>
       </div>
 
       {/* Ses: sağ alt köşede cam hap */}
@@ -168,7 +168,7 @@ function ScaledOverlay({ screen, settings, onPatch, onCountdownEnd, onPartSelect
             setPreviewMuted(false);
           }}
         />
-        <span className="w-8 text-right font-mono text-[10px] text-zinc-400">
+        <span className="w-8 text-right font-mono text-ui-2 text-zinc-400">
           {previewMuted ? 0 : previewVolume}%
         </span>
       </div>

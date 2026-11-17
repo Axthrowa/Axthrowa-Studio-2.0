@@ -117,7 +117,7 @@ export default function ObsHotkeyBrowser({
   return (
     <section className="space-y-4 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
       <div className="border-b border-white/[0.06] pb-2.5">
-        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+        <h3 className="flex items-center gap-2 text-sm font-bold axt-etiket text-white">
           <Search className="h-4.5 w-4.5 text-panel-accent" /> Diğer OBS kısayolları
         </h3>
         <p className="mt-1 text-xs leading-relaxed text-white/75">
@@ -149,7 +149,7 @@ export default function ObsHotkeyBrowser({
 
         {catalog && (
           <div className="grid gap-2.5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto_auto]">
-            <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+            <label className="text-xs font-bold axt-etiket text-white/80">
               Kısayol
               <select
                 className="studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white"
@@ -172,7 +172,7 @@ export default function ObsHotkeyBrowser({
                 ))}
               </select>
             </label>
-            <label className="text-xs font-bold uppercase tracking-wider text-white/80">
+            <label className="text-xs font-bold axt-etiket text-white/80">
               {group === "scene" ? "Sahne" : "Kaynak"}
               <input
                 className="studio-input mt-1 h-9 w-full text-xs md:text-sm font-medium text-white disabled:opacity-40"
@@ -188,7 +188,7 @@ export default function ObsHotkeyBrowser({
                 ))}
               </datalist>
             </label>
-            <div className="text-xs font-bold uppercase tracking-wider text-white/80">
+            <div className="text-xs font-bold axt-etiket text-white/80">
               Tuş
               <div className="mt-1">
                 <HotkeyInput
@@ -212,7 +212,7 @@ export default function ObsHotkeyBrowser({
           </div>
         )}
         {catalog && selected?.needsContext && (
-          <p className="text-[10px] text-panel-muted">
+          <p className="text-ui-2 text-panel-muted">
             Bu kısayol OBS'te {selected.count} yerde tanımlı; hangi {group === "scene" ? "sahne" : "kaynak"} için
             olduğunu yaz.
           </p>
@@ -234,7 +234,7 @@ export default function ObsHotkeyBrowser({
                   {friendlyHotkeyName(String(r.name))}
                   {r.source ? ` · ${r.source}` : ""}
                 </div>
-                <div className="truncate font-mono text-[10px] text-panel-muted">{r.name}</div>
+                <div className="truncate font-mono text-ui-2 text-panel-muted">{r.name}</div>
               </div>
               <HotkeyInput
                 className="w-28 rounded border border-panel-border bg-black/40 px-1.5 py-1 text-center text-xs"

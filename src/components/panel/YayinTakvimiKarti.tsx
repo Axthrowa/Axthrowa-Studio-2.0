@@ -31,16 +31,16 @@ function DiscordAyari({ durum, setDurum }: { durum: DiscordEtkinlikDurumu; setDu
   return (
     <details className="rounded-md border border-panel-border px-2 py-1.5 text-xs text-white">
       <summary className="cursor-pointer select-none font-medium">Discord etkinliği {durum.tokenVar && durum.sunucuId ? "· bağlı" : "· kurulmadı"}</summary>
-      <p className="mt-1 text-[11px] text-white/70">
+      <p className="mt-1 text-ui-2 text-white/70">
         Planlı yayın, Discord sunucunda etkinlik olarak da açılır. Discord Developer Portal'da bir bot oluşturup sunucuya &quot;Etkinlikleri Yönet&quot; izniyle ekle;
         token yalnız bu bilgisayarın kimlik kasasında saklanır.
       </p>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Sunucu kimliği
           <input className={ALAN} inputMode="numeric" value={sunucuId} onChange={(e) => setSunucuId(e.target.value.trim())} placeholder="123456789012345678" />
         </label>
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Bot token
           <input className={ALAN} type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} placeholder={durum.tokenVar ? "Kayıtlı (değiştirmek için yaz)" : ""} />
         </label>
@@ -126,7 +126,7 @@ export function YayinTakvimiKarti() {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-white">Yayın takvimi</h3>
+      <h3 className="text-sm font-bold axt-etiket text-white">Yayın takvimi</h3>
       <p className="text-xs font-medium text-white/75">
         Planlı yayınlar Giriş ve Çıkış ekranında &quot;Sıradaki yayın&quot; olarak görünür; yayından 5 dk önce hatırlatılır.
         {twitch ? " Twitch takvimine de yazılabilir." : " Twitch takvimine yazmak için Twitch'i yeniden bağlayın (takvim izni)."}
@@ -140,8 +140,8 @@ export function YayinTakvimiKarti() {
           <li key={y.id} className="flex items-center gap-2 rounded-md border border-panel-border px-2 py-1 text-xs text-white">
             <span className="shrink-0 font-mono">{new Date(y.zaman).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}</span>
             <span className="min-w-0 flex-1 truncate">{y.baslik || "Başlıksız"}{y.kategori ? ` · ${y.kategori}` : ""}</span>
-            {y.twitchId && <span className="shrink-0 text-[10px] text-purple-300">Twitch</span>}
-            {y.discordId && <span className="shrink-0 text-[10px] text-indigo-300">Discord</span>}
+            {y.twitchId && <span className="shrink-0 text-ui-2 text-purple-300">Twitch</span>}
+            {y.discordId && <span className="shrink-0 text-ui-2 text-indigo-300">Discord</span>}
             <button type="button" className="shrink-0 rounded px-1.5 text-white/70 hover:bg-white/10 hover:text-white" onClick={() => void sil(y)} aria-label={`Sil: ${y.baslik || y.zaman}`}>
               Sil
             </button>
@@ -149,24 +149,24 @@ export function YayinTakvimiKarti() {
         ))}
       </ul>
       <div className="grid gap-2 sm:grid-cols-2">
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Tarih ve saat
           <input className={ALAN} type="datetime-local" value={yeni.zaman} onChange={(e) => setYeni({ ...yeni, zaman: e.target.value })} />
         </label>
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Süre (dk)
           <input className={ALAN} type="number" min={30} max={1380} value={yeni.sureDk} onChange={(e) => setYeni({ ...yeni, sureDk: Number(e.target.value) || 120 })} />
         </label>
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Başlık
           <input className={ALAN} maxLength={140} value={yeni.baslik} onChange={(e) => setYeni({ ...yeni, baslik: e.target.value })} />
         </label>
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Kategori
           <input className={ALAN} maxLength={100} value={yeni.kategori} onChange={(e) => setYeni({ ...yeni, kategori: e.target.value })} placeholder="Just Chatting" />
         </label>
         {discordHazir && discordAc && (
-          <label className="text-[11px] text-white/70 sm:col-span-2">
+          <label className="text-ui-2 text-white/70 sm:col-span-2">
             Yayın adresi (Discord etkinliğinin konumu)
             <input className={ALAN} maxLength={100} value={konum} onChange={(e) => setKonum(e.target.value)} placeholder="https://twitch.tv/kanal" />
           </label>

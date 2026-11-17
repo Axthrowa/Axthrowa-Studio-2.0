@@ -18,7 +18,7 @@ import type { NavId } from "../../lib/panelLayout";
 /** `scripts/ayar-dizini.mjs` üretir: s sayfa, b bot sekmesi, t ayarın bulunduğu sekme, a ayarın adı */
 type AyarKaydi = { s: string; a: string; b?: string; t?: string; g?: string };
 
-const AYAR_SECICI = 'label, legend, h2, h3, h4, summary, p.uppercase, div.uppercase > span, [role="tab"], [role="group"][aria-label]';
+const AYAR_SECICI = 'label, legend, h2, h3, h4, summary, p.axt-etiket, div.axt-etiket > span, [role="tab"], [role="group"][aria-label]';
 const ayarAdi = (el: Element) => {
   if (el.matches('[role="group"][aria-label]')) return el.getAttribute("aria-label") || "";
   const k = el.cloneNode(true) as Element;
@@ -247,7 +247,7 @@ export default function KomutPaleti({ visibleTabs, labelFor, onSayfa, onToast, k
                 placeholder="Komut, ayar, sahne ya da sayfa ara…"
                 className="h-11 min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-panel-muted"
               />
-              <kbd className="shrink-0 rounded border border-panel-border px-1.5 py-0.5 font-mono text-[11px] text-panel-muted">Esc</kbd>
+              <kbd className="shrink-0 rounded border border-panel-border px-1.5 py-0.5 font-mono text-ui-2 text-panel-muted">Esc</kbd>
             </div>
             <div ref={liste} id="komut-listesi" role="listbox" aria-label="Komutlar" className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-1">
               {sonuc.length === 0 ? <p className="px-3 py-6 text-center text-[13px] text-panel-muted">Eşleşen komut yok.</p> : null}
@@ -274,7 +274,7 @@ export default function KomutPaleti({ visibleTabs, labelFor, onSayfa, onToast, k
                     {onayli === k.id ? (
                       <span className="shrink-0 text-xs font-semibold text-red-400">Emin misin? Tekrar Enter</span>
                     ) : (
-                      <span className="shrink-0 text-[11px] text-panel-muted">{k.engel ? "Kullanılamıyor" : k.grup}</span>
+                      <span className="shrink-0 text-ui-2 text-panel-muted">{k.engel ? "Kullanılamıyor" : k.grup}</span>
                     )}
                   </button>
                 );

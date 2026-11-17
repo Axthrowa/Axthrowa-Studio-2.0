@@ -75,11 +75,11 @@ export default function UnifiedChatPanel({ settings }: { settings: OverlaySettin
         })}
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-[11px] text-panel-muted">
+          <span className="text-ui-2 text-panel-muted">
             {shown.length} {t("chat.msgCount")}
           </span>
           <button
-            className="rounded-md bg-black/40 px-2 py-1 text-[11px] text-white"
+            className="rounded-md bg-black/40 px-2 py-1 text-ui-2 text-white"
             onClick={clear}
           >
             {t("chat.clearBtn")}
@@ -112,7 +112,7 @@ export default function UnifiedChatPanel({ settings }: { settings: OverlaySettin
         </div>
       </div>
 
-      <div className="border-t border-panel-border px-3 py-1.5 text-[11px] text-panel-muted">
+      <div className="border-t border-panel-border px-3 py-1.5 text-ui-2 text-panel-muted">
         {PLATFORMS.map((p) => {
           const st = status[p];
           if (st.state === "off") return null;

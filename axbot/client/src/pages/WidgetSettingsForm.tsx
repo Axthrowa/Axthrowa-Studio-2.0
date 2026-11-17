@@ -130,13 +130,13 @@ function CarkPaneli({ values, degistir }: { values: Record<string, any>; degisti
     <div className="space-y-3 p-3 rounded-xl border border-white/10 bg-black/20">
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold text-white">Orta görsel / GIF</span>
+          <span className="text-xs font-bold text-white">Orta görsel / GIF</span>
           <div className="flex gap-1.5">
-            <button type="button" onClick={() => setKutuphane((a) => !a)} className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[10px] font-bold text-white">
+            <button type="button" onClick={() => setKutuphane((a) => !a)} className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-bold text-white">
               {kutuphane ? 'Kapat' : 'Kütüphaneden seç / yükle'}
             </button>
             {values.centerImageUrl && (
-              <button type="button" onClick={() => degistir({ centerImageUrl: '' })} className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-bold text-gray-300">
+              <button type="button" onClick={() => degistir({ centerImageUrl: '' })} className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300">
                 Kaldır
               </button>
             )}
@@ -147,7 +147,7 @@ function CarkPaneli({ values, degistir }: { values: Record<string, any>; degisti
           value={values.centerImageUrl || ''}
           onChange={(e) => degistir({ centerImageUrl: e.target.value.trim() })}
           placeholder="ya da görsel/GIF adresi yapıştırın (https://…)"
-          className="w-full bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-white"
+          className="w-full bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white"
         />
         {values.centerImageUrl && <img src={values.centerImageUrl} alt="" className="w-14 h-14 rounded-full object-cover border border-white/20" />}
         {kutuphane && (
@@ -161,7 +161,7 @@ function CarkPaneli({ values, degistir }: { values: Record<string, any>; degisti
         )}
       </div>
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-white">Dilimler</span>
+        <span className="text-xs font-bold text-white">Dilimler</span>
         {dilimler.map((d, i) => (
           <div key={i} className="flex items-center gap-1.5">
             <input aria-label="Dilim rengi" type="color" value={d.color} onChange={(e) => dilimYaz(i, { color: e.target.value })} className="w-7 h-7 bg-transparent cursor-pointer shrink-0" />
@@ -172,7 +172,7 @@ function CarkPaneli({ values, degistir }: { values: Record<string, any>; degisti
             </button>
           </div>
         ))}
-        <button type="button" onClick={() => degistir({ segments: [...dilimler, { label: `Dilim ${dilimler.length + 1}`, color: '#8b5cf6', weight: 1 }] })} className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[10px] font-bold text-white">
+        <button type="button" onClick={() => degistir({ segments: [...dilimler, { label: `Dilim ${dilimler.length + 1}`, color: '#8b5cf6', weight: 1 }] })} className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-bold text-white">
           + Dilim ekle
         </button>
       </div>
@@ -277,7 +277,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
           onChange={e => setAra(e.target.value)}
           placeholder="Ayar ara…"
           aria-label="Ayar ara"
-          className="w-40 min-w-0 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+          className="w-40 min-w-0 bg-black/60 border border-white/10 rounded-lg px-2 py-1 text-xs text-white"
         />
       </div>
 
@@ -308,9 +308,9 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                 className="h-7 flex items-center justify-center"
                 style={{ background: t.onizleme.arka, borderBottom: `2px solid ${t.onizleme.vurgu}` }}
               >
-                <span className="text-[11px] font-black" style={{ color: t.onizleme.metin, fontFamily: t.onizleme.yazi || (t.degerler.fontFamily ? yaziAilesi(String(t.degerler.fontFamily)) : undefined) }}>Aa</span>
+                <span className="text-xs font-black" style={{ color: t.onizleme.metin, fontFamily: t.onizleme.yazi || (t.degerler.fontFamily ? yaziAilesi(String(t.degerler.fontFamily)) : undefined) }}>Aa</span>
               </div>
-              <div className="px-1 py-0.5 text-[9px] text-gray-300 truncate">{t.etiket}</div>
+              <div className="px-1 py-0.5 text-xs text-gray-300 truncate">{t.etiket}</div>
             </button>
           ))}
         </div>
@@ -327,7 +327,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
         </>
       )}
 
-      {aranan && !sections.length && <p className="text-[11px] text-gray-500">"{ara.trim()}" ile eşleşen ayar yok.</p>}
+      {aranan && !sections.length && <p className="text-xs text-gray-500">"{ara.trim()}" ile eşleşen ayar yok.</p>}
 
       {sections.map((section, sira) => (
         <Katlanir key={section + (aranan ? '-ara' : '')} baslik={section} sayi={grouped[section].length} aciklama={BOLUM_ACIKLAMASI[section]} acik={Boolean(aranan) || sira === 0}>
@@ -335,7 +335,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
             {anahtarSonda(grouped[section]).map(key => {
               const type = inferType(key, values[key] ?? defaults[key], ayarId);
               const alan = (
-                <label key={key} className={`text-[11px] text-gray-300 font-semibold ${type === 'checkbox' ? 'flex items-center justify-between gap-2 bg-white/5 rounded-lg px-2.5 py-2' : 'space-y-1'}`}>
+                <label key={key} className={`text-xs text-gray-300 font-semibold ${type === 'checkbox' ? 'flex items-center justify-between gap-2 bg-white/5 rounded-lg px-2.5 py-2' : 'space-y-1'}`}>
                   <span>{etiketi(key)}</span>
                   {type === 'checkbox' ? (
                     <Anahtar acik={!!values[key]} onChange={(v) => setValues(v => ({ ...v, [key]: v }))} />
@@ -345,7 +345,7 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                         {(secenekler(ayarId, key) || []).map(o => <option key={o.value} value={o.value} style={/font/i.test(key) && FONTS.includes(o.value) ? { fontFamily: yaziAilesi(o.value) } : undefined}>{o.label}</option>)}
                       </Secim>
                       {(key === 'celebration' || (key.startsWith('efekt') && !['genel', 'yok', ...EKRAN_EFEKTLERI].includes(String(values[key])))) && (
-                        <button type="button" onClick={() => kutla(String(values[key] || 'konfeti'), Number(values[key.replace('efekt', 'guc')]) || 1)} className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-white shrink-0">Dene</button>
+                        <button type="button" onClick={() => kutla(String(values[key] || 'konfeti'), Number(values[key.replace('efekt', 'guc')]) || 1)} className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white shrink-0">Dene</button>
                       )}
                     </div>
                   ) : type === 'textarea' ? (

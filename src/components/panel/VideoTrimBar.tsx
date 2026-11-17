@@ -137,7 +137,7 @@ export default function VideoTrimBar({
 
   return (
     <div className="space-y-3 rounded-2xl border border-white/[0.08] bg-black/40 p-4 shadow-glass">
-      <div className="flex justify-between font-mono text-[11px] font-medium text-panel-muted">
+      <div className="flex justify-between font-mono text-ui-2 font-medium text-panel-muted">
         <span className="text-white">
           {label}: {formatTime(start)}
         </span>
@@ -178,7 +178,7 @@ export default function VideoTrimBar({
         />
       </div>
       <div className="grid grid-cols-2 gap-2.5">
-        <label className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+        <label className="text-ui-2 axt-etiket font-semibold text-panel-muted">
           Başlangıç (sn)
           <input
             type="number"
@@ -190,7 +190,7 @@ export default function VideoTrimBar({
             onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0), end)}
           />
         </label>
-        <label className="text-[10px] font-semibold uppercase tracking-wider text-panel-muted">
+        <label className="text-ui-2 axt-etiket font-semibold text-panel-muted">
           Bitiş (sn, 0=son)
           <input
             type="number"
@@ -203,7 +203,7 @@ export default function VideoTrimBar({
           />
         </label>
       </div>
-      <p className="text-[10px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         {maxDur > 0
           ? "Tutamaçları sürükleyerek başlangıç / bitiş seç"
           : "Video süresi yüklenince kırpma barı aktif olur"}

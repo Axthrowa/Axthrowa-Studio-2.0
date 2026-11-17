@@ -118,7 +118,7 @@ export function Timers() {
                     <Clock className="w-4 h-4 text-purple-400" />
                     <h3 className="font-bold text-white text-base">{t.name}</h3>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                     t.is_enabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700 text-gray-400'
                   }`}>
                     {t.is_enabled ? 'Aktif' : 'Devre Dışı'}
@@ -132,7 +132,7 @@ export function Timers() {
                     {Number((t as any).only_live) === 1 && <span className="text-amber-300">Yalnız yayındayken</span>}
                   </div>
                   {t.is_enabled && durumlar[t.id] && (
-                    <div className="text-[11px] text-gray-400">
+                    <div className="text-xs text-gray-400">
                       {durumlar[t.id].kalanSn > 0
                         ? `Sıradaki mesaj: ${Math.floor(durumlar[t.id].kalanSn / 60)} dk ${durumlar[t.id].kalanSn % 60} sn sonra`
                         : `Süre doldu — ${Math.max(0, durumlar[t.id].minSatir - durumlar[t.id].satir)} sohbet satırı daha bekleniyor`}
@@ -255,7 +255,7 @@ export function Timers() {
                   Yalnız yayın açıkken gönder
                   <Anahtar acik={Number(editingTimer.only_live) === 1} onChange={(v) => setEditingTimer({ ...editingTimer, only_live: v ? 1 : 0 })} />
                 </label>
-                <p className="text-[11px] font-normal text-gray-500">
+                <p className="text-xs font-normal text-gray-500">
                   Süre dolduğunda son mesajdan beri en az bu kadar sohbet satırı gelmişse hemen gönderilir; gelmemişse satır sayısı tamamlandığı anda gönderilir. Mesajlarda <code>$(...)</code> değişkenleri kullanılabilir.
                 </p>
                 {hata && <p className="text-red-300 font-normal">{hata}</p>}

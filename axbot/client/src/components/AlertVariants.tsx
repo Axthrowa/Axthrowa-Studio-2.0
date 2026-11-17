@@ -147,11 +147,11 @@ export function AlertVariants() {
           />
         }
       >
-        <p className="text-[11px] text-gray-500">
+        <p className="text-xs text-gray-500">
           Hiç varyant yoksa Alert Box sekmesindeki temel ayar kullanılır — varyant eklemek zorunlu değildir.
         </p>
         {olayEtiketi(yetenek, olay) && (
-          <p className="text-[11px] text-amber-300/90">
+          <p className="text-xs text-amber-300/90">
             Bu olayı üreten kaynaklar: {olayEtiketi(yetenek, olay)}
           </p>
         )}
@@ -176,7 +176,7 @@ export function AlertVariants() {
                 />
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-white truncate">{v.ad}</p>
-                  <p className="text-[10px] text-gray-500">
+                  <p className="text-xs text-gray-500">
                     {secili.degerAdi === '—' ? 'eşiksiz' : `${secili.degerAdi} ≥ ${v.minDeger}`} · ağırlık {v.agirlik}
                     {!v.aktif && ' · KAPALI'}
                   </p>
@@ -401,7 +401,7 @@ export function AlertVariants() {
               Overlay’de dene
             </Buton>
           </div>
-          <p className="text-[10px] text-gray-500">
+          <p className="text-xs text-gray-500">
             <Layers className="w-3 h-3 inline mr-1" />
             Test, kayıtlı varyantlar arasından kural gereği seçim yapar — önce kaydedin. Eşiği denemek için test
             değeri girin (ör. 500 → "tutar ≥ 500" varyantı seçilir).

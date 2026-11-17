@@ -226,7 +226,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       {/* Gömülü sayfalarda sunucu şeridi gerekmez: bot çalışıyorsa yer kaplamasın ("Tüm ayarlar"da görünür) */}
-      <div className={cn("flex shrink-0 items-center gap-2 px-3 py-1.5 text-[11px] text-white/70", embed && st.running && "hidden")}>
+      <div className={cn("flex shrink-0 items-center gap-2 px-3 py-1.5 text-ui-2 text-white/70", embed && st.running && "hidden")}>
         <span
           className={cn(
             "h-2 w-2 rounded-full",
@@ -261,7 +261,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
       </div>
 
       {st.external && isTauri() && (
-        <div className="mx-3 mb-1.5 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-200">
+        <div className="mx-3 mb-1.5 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-1.5 text-ui-2 text-amber-200">
           <span className="min-w-0 flex-1">
             {st.port} portunda uygulamanın başlatmadığı bir AxBoT çalışıyor; eski arayüzü gösterebilir.
           </span>
@@ -279,7 +279,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
       )}
 
       {error && (
-        <pre className="mx-3 mb-1.5 max-h-28 overflow-auto whitespace-pre-wrap rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-200">
+        <pre className="mx-3 mb-1.5 max-h-28 overflow-auto whitespace-pre-wrap rounded-lg bg-red-500/10 px-3 py-2 text-ui-2 text-red-200">
           {error}
         </pre>
       )}
@@ -349,7 +349,7 @@ function Notice({ title, body, code }: { title: string; body: string; code?: str
         <p className="text-sm font-semibold text-white">{title}</p>
         <p className="mt-1.5 text-xs leading-relaxed text-white/70">{body}</p>
         {code && (
-          <code className="mt-3 block rounded-lg bg-black/40 px-3 py-2 font-mono text-[11px] text-cyan-300">{code}</code>
+          <code className="mt-3 block rounded-lg bg-black/40 px-3 py-2 font-mono text-ui-2 text-cyan-300">{code}</code>
         )}
       </div>
     </div>

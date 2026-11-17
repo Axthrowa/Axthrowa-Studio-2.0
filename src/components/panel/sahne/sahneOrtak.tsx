@@ -37,7 +37,7 @@ export function Field({
 }) {
   return (
     <div data-alan={alan}>
-      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold axt-etiket text-white/85">{label}</label>
       <input
         aria-label={label}
         type={type}
@@ -63,7 +63,7 @@ export function Select({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/85">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold axt-etiket text-white/85">{label}</label>
       <select
         aria-label={label}
         className="h-9 w-full rounded-xl border border-white/[0.12] bg-ui-s1 px-3 text-sm font-medium text-white outline-none transition-all duration-150 focus:border-panel-accent/70 focus:ring-1 focus:ring-panel-accent/40"

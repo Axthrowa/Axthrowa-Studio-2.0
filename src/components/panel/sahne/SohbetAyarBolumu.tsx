@@ -8,11 +8,11 @@ export function ChatAyarlariBolumu(p: SahneAyarlariProps) {
   const { clearChatHk, clearChatNow, fetchKickChatroom, secOrder, setClearChatHk, setHotkeyCapture, settings, tt, update } = p;
   return (
     <SettingsSection id="chatAyarlari" title={tt("sec.chatAyarlari")} style={secOrder("chatAyarlari")} defaultOpen>
-      <div className="rounded-xl border border-panel-accent/30 bg-panel-soft px-2.5 py-2 text-[11px] leading-relaxed text-panel-accent/90">
+      <div className="rounded-xl border border-panel-accent/30 bg-panel-soft px-2.5 py-2 text-ui-2 leading-relaxed text-panel-accent/90">
         <p className="mb-1 font-semibold text-panel-accent">{tt("chat.tipsTitle")}</p>
         <p>{tt("chat.tipsBody")}</p>
       </div>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Üç platform tek listede akar. Kanal alanlarını boş bırakırsan{" "}
         <b className="text-white/80">Giriş</b> ekranındaki sosyal hesap adları
         kullanılır. OBS Browser Source:{" "}
@@ -36,7 +36,7 @@ export function ChatAyarlariBolumu(p: SahneAyarlariProps) {
         onChange={(v) => update({ chatBoxHeight: clampInt(v, 20, 100, 100) })}
         type="number"
       />
-      <p className="text-[11px] text-panel-muted">{tt("chat.sizeHint")}</p>
+      <p className="text-ui-2 text-panel-muted">{tt("chat.sizeHint")}</p>
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 text-xs">{tt("chat.clearHotkey")}</span>
         <HotkeyInput
@@ -50,7 +50,7 @@ export function ChatAyarlariBolumu(p: SahneAyarlariProps) {
           }}
         />
       </div>
-      <p className="text-[11px] text-panel-muted">{tt("chat.clearHotkeyHint")}</p>
+      <p className="text-ui-2 text-panel-muted">{tt("chat.clearHotkeyHint")}</p>
       <button
         type="button"
         className="w-full rounded-md bg-black/40 px-3 py-2 text-sm"
@@ -132,7 +132,7 @@ export function ChatAyarlariBolumu(p: SahneAyarlariProps) {
             value={settings.youtubeVideoId || ""}
             onChange={(v) => update({ youtubeVideoId: v })}
           />
-          <p className="text-[11px] text-panel-muted">
+          <p className="text-ui-2 text-panel-muted">
             Kanal yayındayken @handle yeterli; yayın bitip yeniden başlarsa video
             kimliği kendiliğinden yenilenir.
           </p>
@@ -219,7 +219,7 @@ export function ChatAyarlariBolumu(p: SahneAyarlariProps) {
             />
             <span className="text-xs text-panel-muted">sn</span>
           </div>
-          <p className="mt-1 text-[11px] text-panel-muted">
+          <p className="mt-1 text-ui-2 text-panel-muted">
             Süre dolunca mesaj solar ve listeden çıkar (varsayılan 12 sn).
           </p>
         </div>

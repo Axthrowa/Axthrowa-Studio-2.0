@@ -63,7 +63,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-white">Kick.com API Bağlama Merkezi</h2>
-                <span className="px-2 py-0.5 rounded bg-[#53fc18]/20 text-[#53fc18] text-[10px] font-black tracking-wider uppercase border border-[#53fc18]/30">
+                <span className="px-2 py-0.5 rounded bg-[#53fc18]/20 text-[#53fc18] text-xs axt-etiket font-black border border-[#53fc18]/30">
                   Resmi API v1 + Pusher V2
                 </span>
               </div>
@@ -105,9 +105,9 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 <Zap className="w-4 h-4 text-[#53fc18]" />
                 1. Hızlı Bağlantı
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-gray-300 font-bold">Önerilen</span>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-white/10 text-gray-300 font-bold">Önerilen</span>
             </div>
-            <p className="text-[11px] text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               Yalnızca kanal adınızı girin. Canlı sohbet, takipçi ve abonelikleri anında dinlemeye başlar.
             </p>
           </button>
@@ -126,9 +126,9 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 <Key className="w-4 h-4 text-[#53fc18]" />
                 2. Kick Developer OAuth
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#53fc18]/20 text-[#53fc18] font-bold">Resmi API</span>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-[#53fc18]/20 text-[#53fc18] font-bold">Resmi API</span>
             </div>
-            <p className="text-[11px] text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               Kick Developer Portal (Client ID & Secret) ile tam yetkili resmi API bağlantısı.
             </p>
           </button>
@@ -147,9 +147,9 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 <Lock className="w-4 h-4 text-[#53fc18]" />
                 3. Manuel Bot Tokeni
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-gray-300 font-bold">Gelişmiş</span>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-white/10 text-gray-300 font-bold">Gelişmiş</span>
             </div>
-            <p className="text-[11px] text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               Bot hesabınızın Bearer tokenini doğrudan yapıştırarak sohbete yazma iznini açın.
             </p>
           </button>
@@ -161,7 +161,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
             <Sparkles className="w-4 h-4 text-[#53fc18]" />
             <span>Kick Bağlantı Rehberi: Hangi Yöntemi Seçmeliyim?</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-gray-400">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-400">
             <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
               <span className="font-bold text-[#53fc18] block mb-0.5">✅ 1. Canlı Sohbet Okuma & OBS Uyarıları (Tokensiz)</span>
               <span>Yalnızca kanal adınızı girerek <b>Hızlı Bağlantı</b>'yı seçin. OBS ChatBox, Takipçi/Abone/Hediye sesli uyarıları, Şarkı İsteği (!sr) ve Çekiliş (!cekilis) şifresiz ve tokensiz anında çalışır!</span>
@@ -183,11 +183,11 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-white">{ad}</span>
                 <span className="text-xs text-[#53fc18] truncate">{hesap ? (hesap === 'kayıtlı' ? hesap : `@${hesap}`) : ''}</span>
-                <button type="button" onClick={() => void kickGirisi(hedef)} className="ml-auto px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[#53fc18] text-black cursor-pointer shrink-0">
+                <button type="button" onClick={() => void kickGirisi(hedef)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-[#53fc18] text-black cursor-pointer shrink-0">
                   {hesap ? 'Değiştir' : 'Giriş yap'}
                 </button>
               </div>
-              <p className="text-[11px] text-gray-400">{aciklama}</p>
+              <p className="text-xs text-gray-400">{aciklama}</p>
             </div>
           ))}
         </div>
@@ -246,7 +246,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                     kick.com/settings/developer <ExternalLink className="w-3 h-3"/>
                   </a>
                 </div>
-                <ol className="list-decimal list-inside space-y-1 text-gray-300 text-[11px] leading-relaxed">
+                <ol className="list-decimal list-inside space-y-1 text-gray-300 text-xs leading-relaxed">
                   <li>Yukarıdaki linkten Kick Developer Portal'a gidin ve <b>"Create App"</b> butonuna basın.</li>
                   <li>Redirect URI alanına şunu girin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-[#53fc18] font-mono select-all">{`http://localhost:${sunucuPortu()}/api/auth/kick/callback`}</code></li>
                   <li>Oluşan <b>Client ID</b> ve <b>Client Secret</b> değerlerini yukarıdaki kutulara yapıştırın.</li>
@@ -261,22 +261,22 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                       Bot Hesabıyla Giriş Rehberi (Önerilen):
                     </span>
                     {copiedLink && (
-                      <span className="flex items-center gap-1 text-[11px] bg-[#53fc18]/20 px-2 py-0.5 rounded text-[#53fc18] font-bold animate-pulse">
+                      <span className="flex items-center gap-1 text-xs bg-[#53fc18]/20 px-2 py-0.5 rounded text-[#53fc18] font-bold animate-pulse">
                         <Check className="w-3 h-3" /> Link Kopyalandı!
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-gray-300 leading-relaxed">
+                  <p className="text-xs text-gray-300 leading-relaxed">
                     Tarayıcınızda ana yayıncı hesabınız açık olduğu için Kick otomatik olarak o hesabı seçebilir. Yayıncı hesabınızdan <b>çıkış yapmadan bot hesabınızı bağlamak için:</b>
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-300">
                       <b className="text-white block mb-0.5">1. Linki Kopyalayın</b>
                       Mor butona basarak Kick OAuth giriş linkini panoya kopyalayın.
                     </div>
                     <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-300">
                       <b className="text-[#53fc18] block mb-0.5">2. Gizli Pencere Açın</b>
-                      Klavyeden <kbd className="bg-black px-1.5 py-0.5 rounded text-white font-mono text-[10px] border border-white/20">Ctrl + Shift + N</kbd> yapın ve linki yapıştırın.
+                      Klavyeden <kbd className="bg-black px-1.5 py-0.5 rounded text-white font-mono text-xs border border-white/20">Ctrl + Shift + N</kbd> yapın ve linki yapıştırın.
                     </div>
                     <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-300">
                       <b className="text-white block mb-0.5">3. Bot ile Giriş Yapın</b>
@@ -286,13 +286,13 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
 
                   {oauthUrlForCopy && (
                     <div className="pt-1">
-                      <label className="text-[10px] text-gray-400 block mb-1">Oluşturulan OAuth Giriş Linki:</label>
+                      <label className="text-xs text-gray-400 block mb-1">Oluşturulan OAuth Giriş Linki:</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
                           readOnly
                           value={oauthUrlForCopy}
-                          className="w-full bg-black/80 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-emerald-300 font-mono select-all focus:outline-none"
+                          className="w-full bg-black/80 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono select-all focus:outline-none"
                         />
                         <button
                           type="button"
@@ -340,7 +340,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                   <Key className="w-4 h-4 text-[#53fc18]" />
                   Bot Yetki Tokeni / Bearer Token
                 </span>
-                <span className="text-[11px] text-[#53fc18] font-bold">En Hızlı & Kolay Yöntem</span>
+                <span className="text-xs text-[#53fc18] font-bold">En Hızlı & Kolay Yöntem</span>
               </label>
               <input
                 type="password"
@@ -349,7 +349,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                 placeholder="Bearer eyJhbGciOi... veya hesap tokeni"
                 className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-mono text-xs focus:outline-none focus:border-[#53fc18]"
               />
-              <div className="mt-2 p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-gray-400 space-y-1">
+              <div className="mt-2 p-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-gray-400 space-y-1">
                 <span className="font-bold text-gray-200 block">💡 Developer App Olmadan Token Nasıl Alınır?</span>
                 <p className="leading-relaxed">
                   Kick.com'da bot hesabınızla giriş yapın. Klavyeden <b>F12</b> (Geliştirici Araçları) tuşuna basın, <b>Ağ (Network)</b> sekmesine geçin. Herhangi bir sayfayı yeniledikten sonra listedeki bir API isteğine tıklayıp <code>Headers -&gt; Authorization: Bearer eyJ...</code> kısmını kopyalayarak buraya yapıştırın. Developer Portal ile uğraşmadan botunuz anında sohbete yazar!
@@ -402,7 +402,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
               )}
             </div>
 
-            <div className="text-[11px] text-gray-400 flex items-center gap-1">
+            <div className="text-xs text-gray-400 flex items-center gap-1">
               <HelpCircle className="w-3.5 h-3.5 text-[#53fc18]" />
               <span>Botun chatte engellenmemesi için kanalınızda <code className="text-[#53fc18] font-bold">/mod AxBoT</code> yazabilirsiniz.</span>
             </div>
@@ -425,27 +425,27 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
         {kickResult && kickResult.success && (
           <div className="p-4 rounded-2xl bg-[#53fc18]/5 border border-[#53fc18]/30 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
-              <div className="text-gray-400 text-[11px]">Kanal Kullanıcısı</div>
+              <div className="text-gray-400 text-xs">Kanal Kullanıcısı</div>
               <div className="text-white font-black text-sm flex items-center gap-1">
                 <span>@{kickResult.channelSlug}</span>
                 {kickResult.isVerified && (
-                  <span className="px-1 py-0.2 rounded bg-[#53fc18] text-black text-[9px] font-black">VERIFIED</span>
+                  <span className="px-1 py-0.2 rounded bg-[#53fc18] text-black text-xs font-black">VERIFIED</span>
                 )}
               </div>
             </div>
 
             <div>
-              <div className="text-gray-400 text-[11px]">Chatroom ID</div>
+              <div className="text-gray-400 text-xs">Chatroom ID</div>
               <div className="text-white font-mono font-bold text-sm">#{kickResult.chatroomId}</div>
             </div>
 
             <div>
-              <div className="text-gray-400 text-[11px]">Takipçi Sayısı</div>
+              <div className="text-gray-400 text-xs">Takipçi Sayısı</div>
               <div className="text-white font-bold text-sm">{kickResult.followersCount?.toLocaleString()}</div>
             </div>
 
             <div>
-              <div className="text-gray-400 text-[11px]">Bot Sohbet Durumu</div>
+              <div className="text-gray-400 text-xs">Bot Sohbet Durumu</div>
               <div className="font-bold text-xs">
                 {kickResult.canSendChat ? (
                   <span className="text-[#53fc18] flex items-center gap-1">
@@ -558,7 +558,7 @@ export function Platforms({ focusPlatform }: { focusPlatform?: string | null }) 
                       </div>
                     )}
 
-                    <p className="text-[11px] text-gray-500 italic">
+                    <p className="text-xs text-gray-500 italic">
                       ℹ️ {p.helpText}
                     </p>
                   </div>

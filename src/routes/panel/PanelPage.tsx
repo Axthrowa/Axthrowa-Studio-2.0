@@ -706,7 +706,7 @@ export default function PanelPage() {
         // Canlı Chat = AxBoT'un Multi-Chat'i (çapraz sohbet, izleyici kartları).
         // Panelin kendi sohbet KATMANI ayarlarına düğmeyle dönülür.
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex shrink-0 items-center gap-2 px-3 pt-1.5 text-[11px] text-panel-muted">
+          <div className="flex shrink-0 items-center gap-2 px-3 pt-1.5 text-ui-2 text-panel-muted">
             <span className="ml-auto" />
             <button
               type="button"

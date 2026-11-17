@@ -161,33 +161,33 @@ export function WidgetOnizleme({ url, testAdi, boyut }: { url: string; testAdi?:
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <span className="text-[11px] font-black uppercase tracking-wider text-cyan-300">
+        <span className="text-xs axt-etiket font-black text-cyan-300">
           {canli ? 'Canlı görünüm' : 'Örnek görünüm'}
         </span>
         <div className="flex gap-1.5 flex-wrap">
           {testAdi && (
-            <button type="button" onClick={() => void test()} className="text-[10px] px-2 py-1 rounded-lg bg-emerald-600/80 text-white font-bold flex items-center gap-1">
+            <button type="button" onClick={() => void test()} className="text-xs px-2 py-1 rounded-lg bg-emerald-600/80 text-white font-bold flex items-center gap-1">
               <Play className="w-3 h-3" /> Test et
             </button>
           )}
           <button
             type="button"
             onClick={() => { setCanli((c) => !c); setAnahtar((k) => k + 1); }}
-            className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold"
+            className="text-xs px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold"
             title="Örnek: hazır örnek veri · Canlı: gerçek durum ve test olayları"
           >
             {canli ? 'Örneğe dön' : 'Canlı'}
           </button>
           {boyut ? (
-            <button type="button" onClick={() => { setTuval((t) => !t); setAnahtar((k) => k + 1); }} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1" title="Widget boyutu: OBS'teki kaynak boyutu · Tüm tuval: 1280×720 sahne">
+            <button type="button" onClick={() => { setTuval((t) => !t); setAnahtar((k) => k + 1); }} className="text-xs px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1" title="Widget boyutu: OBS'teki kaynak boyutu · Tüm tuval: 1280×720 sahne">
               {tuval ? <Maximize2 className="w-3 h-3" /> : <Minimize2 className="w-3 h-3" />} {tuval ? 'Widget boyutu' : 'Tüm tuval'}
             </button>
           ) : (
-            <button type="button" onClick={() => setYakin((y) => !y)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
+            <button type="button" onClick={() => setYakin((y) => !y)} className="text-xs px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
               {yakin ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />} {yakin ? 'Tüm tuval' : 'Yakınlaş'}
             </button>
           )}
-          <button type="button" onClick={() => setAnahtar((k) => k + 1)} className="text-[10px] px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
+          <button type="button" onClick={() => setAnahtar((k) => k + 1)} className="text-xs px-2 py-1 rounded-lg bg-white/10 text-gray-200 font-bold flex items-center gap-1">
             <RefreshCw className="w-3 h-3" /> Yenile
           </button>
         </div>
@@ -211,9 +211,9 @@ export function WidgetOnizleme({ url, testAdi, boyut }: { url: string; testAdi?:
         />
       </div>
       {durum ? (
-        <p className="text-[10px] text-emerald-400">{durum}</p>
+        <p className="text-xs text-emerald-400">{durum}</p>
       ) : (
-        <p className="text-[10px] text-gray-500">Ayar değişince önizleme kendiliğinden güncellenir. "Test et" önizlemeyi canlı kipe alıp örnek olay gönderir.</p>
+        <p className="text-xs text-gray-500">Ayar değişince önizleme kendiliğinden güncellenir. "Test et" önizlemeyi canlı kipe alıp örnek olay gönderir.</p>
       )}
     </div>
   );

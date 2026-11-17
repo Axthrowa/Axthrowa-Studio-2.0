@@ -76,7 +76,7 @@ export default function CihazEslestirme({ onToast }: { onToast: (m: string) => v
   return (
     <div className="studio-card space-y-3">
       <h3 className="font-display text-sm font-semibold text-white">Telefon eşleştir</h3>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Kod tek kullanımlıktır ve 60 sn geçerlidir. Telefon yalnız seçtiğin izinleri alır; ayarlara, OBS şifresine ve yayın anahtarına erişemez.
       </p>
       <label className="flex items-center gap-2 text-xs">
@@ -135,7 +135,7 @@ export default function CihazEslestirme({ onToast }: { onToast: (m: string) => v
           )}
         </div>
         {cihazlar.length === 0 ? (
-          <p className="text-[11px] text-panel-muted">Henüz yok.</p>
+          <p className="text-ui-2 text-panel-muted">Henüz yok.</p>
         ) : (
           <ul className="mt-1 space-y-1">
             {cihazlar.map((c) => (

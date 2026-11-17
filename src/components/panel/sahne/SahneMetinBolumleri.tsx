@@ -120,7 +120,7 @@ export function GeriSayimBolumu(p: SahneAyarlariProps) {
           />
           <div className="rounded-xl border border-panel-accent/30 bg-panel-elevated/60 px-3 py-2.5 text-sm">
             <div className="font-medium text-panel-accent">Sabit geri sayım: 5:00</div>
-            <p className="mt-1 text-[11px] leading-relaxed text-panel-muted">
+            <p className="mt-1 text-ui-2 leading-relaxed text-panel-muted">
               Giriş sahnesine her geçişte 5 dakikadan geri sayar. Süre bitince OBS’de
               atanmış <b className="text-white/80">Oyun</b> sahnesine geçer.
             </p>
@@ -186,7 +186,7 @@ export function GeriSayimBolumu(p: SahneAyarlariProps) {
             />
             <span>
               Sayaç yokken / bitmişken video-müzik bitince de oyun sahnesine geç
-              <span className="mt-0.5 block text-[11px] text-panel-muted">
+              <span className="mt-0.5 block text-ui-2 text-panel-muted">
                 5 dk sayacı çalışırken bu seçenek uygulanmaz; önce süre biter.
               </span>
             </span>
@@ -236,7 +236,7 @@ export function GeriSayimBolumu(p: SahneAyarlariProps) {
             type="number"
             placeholder="Boş = video/müzik bitince"
           />
-          <p className="text-[11px] text-panel-muted">
+          <p className="text-ui-2 text-panel-muted">
             Boş bırakırsan arka plan videosu veya fon müziği bitince bitiş aksiyonu
             çalışır. Dakika girersen önce geri sayım biter.
           </p>
@@ -251,7 +251,7 @@ export function GeriSayimBolumu(p: SahneAyarlariProps) {
             />
             <span>
               Video / müzik (veya süre) bitince yayını kapat
-              <span className="mt-0.5 block text-[11px] text-panel-muted">
+              <span className="mt-0.5 block text-ui-2 text-panel-muted">
                 OBS Stop Stream. Kapalıysa medya bitince yayın kapanmaz.
               </span>
             </span>
@@ -289,13 +289,13 @@ export function ArkaPlanBolumu(p: SahneAyarlariProps) {
       >
         + Hareketli / sabit arka plan ekle (GIF, WebP, PNG)
       </button>
-      <p className="text-[11px] font-medium text-panel-muted">Arka plan görselleri</p>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 font-medium text-panel-muted">Arka plan görselleri</p>
+      <p className="text-ui-2 text-panel-muted">
         GIF ve animasyonlu WebP desteklenir. Sil = uygulama deposundan kalıcı siler.
       </p>
       <div className="max-h-36 space-y-1 overflow-y-auto rounded-md border border-panel-border/60 bg-black/20 p-1.5">
         {bgFiles.length === 0 && (
-          <p className="px-1 py-2 text-[11px] text-panel-muted">Henüz arka plan yok</p>
+          <p className="px-1 py-2 text-ui-2 text-panel-muted">Henüz arka plan yok</p>
         )}
         {bgFiles.map((name) => {
           const active =
@@ -313,7 +313,7 @@ export function ArkaPlanBolumu(p: SahneAyarlariProps) {
               </button>
               <button
                 type="button"
-                className="shrink-0 text-[10px] text-red-300"
+                className="shrink-0 text-ui-2 text-red-300"
                 onClick={async () => {
                   await fetch(`${API_BASE}/api/backgrounds/delete`, {
                     method: "POST",
@@ -332,7 +332,7 @@ export function ArkaPlanBolumu(p: SahneAyarlariProps) {
         })}
       </div>
       {settings.bgImagePath && (
-        <p className="truncate text-[11px] text-panel-muted">
+        <p className="truncate text-ui-2 text-panel-muted">
           Aktif arka plan: {String(settings.bgImagePath).split(/[/\\]/).pop()}
         </p>
       )}
@@ -375,13 +375,13 @@ export function VideoBolumu(p: SahneAyarlariProps) {
   const { pickLocalVideo, refreshVideos, secOrder, settings, showToast, tt, update, videoFiles } = p;
   return (
     <SettingsSection id="video" title={tt("sec.video")} style={secOrder("video")}>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Videolar <code className="text-white/70">assets/videos</code> içine kopyalanır. Sil =
         diskten de siler.
       </p>
       <div className="max-h-36 space-y-1 overflow-y-auto rounded-md border border-panel-border/60 bg-black/20 p-1.5">
         {videoFiles.length === 0 && (
-          <p className="px-1 py-2 text-[11px] text-panel-muted">Henüz yerel video yok</p>
+          <p className="px-1 py-2 text-ui-2 text-panel-muted">Henüz yerel video yok</p>
         )}
         {videoFiles.map((name) => {
           const active =
@@ -407,7 +407,7 @@ export function VideoBolumu(p: SahneAyarlariProps) {
               </button>
               <button
                 type="button"
-                className="shrink-0 text-[10px] text-red-300"
+                className="shrink-0 text-ui-2 text-red-300"
                 onClick={async () => {
                   await fetch(`${API_BASE}/api/videos/delete`, {
                     method: "POST",
@@ -431,7 +431,7 @@ export function VideoBolumu(p: SahneAyarlariProps) {
       {/* OBS'in gömülü tarayıcısında donanımlı VP9/AV1 çözümü yok; bu
           biçimler uygulamada akıcı oynarken OBS'te takılabiliyor. */}
       {/\.(webm|mkv)$/i.test(String(settings.bgVideoPath || "")) && (
-        <p className="rounded-md border border-panel-cta/40 bg-panel-cta/10 px-2 py-1.5 text-[11px] text-orange-100">
+        <p className="rounded-md border border-panel-cta/40 bg-panel-cta/10 px-2 py-1.5 text-ui-2 text-orange-100">
           Bu video <b>{String(settings.bgVideoPath).split(".").pop()?.toUpperCase()}</b>{" "}
           biçiminde. OBS&apos;in tarayıcı kaynağı VP9/AV1&apos;i donanımla çözemediği için
           uygulamada akıcı oynasa da OBS&apos;te takılabilir — özellikle 4K dosyalarda.
@@ -439,7 +439,7 @@ export function VideoBolumu(p: SahneAyarlariProps) {
         </p>
       )}
       {settings.bgVideoPath && (
-        <p className="truncate text-[11px] text-panel-muted">
+        <p className="truncate text-ui-2 text-panel-muted">
           Aktif yerel: {String(settings.bgVideoPath).split(/[/\\]/).pop()}
         </p>
       )}
@@ -495,7 +495,7 @@ export function VideoBolumu(p: SahneAyarlariProps) {
           />
           <span className="w-10 text-right text-white">{settings.videoVolume ?? 100}%</span>
         </div>
-        <p className="mt-1 text-[10px] text-panel-muted">
+        <p className="mt-1 text-ui-2 text-panel-muted">
           Yerel video ve YouTube aynı ses ayarını kullanır — hangisi fon ise o çalar.
           Windows ses karıştırıcısında &quot;AxBoT&quot; adıyla görünür
           (ses çalarken; Edge WebView2 diye arama).

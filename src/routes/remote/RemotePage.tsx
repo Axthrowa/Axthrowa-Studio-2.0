@@ -98,7 +98,7 @@ function Dugme({ etiket, renk, onay, aktif, onCalistir }: { etiket: string; renk
         />
       )}
       <span className="relative">{etiket}</span>
-      {onay && <span className="relative block text-[10px] font-normal opacity-70">basılı tut</span>}
+      {onay && <span className="relative block text-ui-2 font-normal opacity-70">basılı tut</span>}
     </button>
   );
 }

@@ -188,3 +188,6 @@ body {
 [data-bare='1']:not([data-keep-border='1']) {
   border-color: transparent !important;
 }
+
+/* UI-9: odak halkası Studio ve AxBoT ile aynı kalınlıkta */
+:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }

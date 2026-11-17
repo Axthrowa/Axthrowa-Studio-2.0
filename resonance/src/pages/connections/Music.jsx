@@ -213,7 +213,7 @@ export default function MusicConnections() {
                 />
               </div>
 
-              <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+              <p className="mb-1 mt-4 text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
                 Client ID
               </p>
               <input
@@ -222,7 +222,7 @@ export default function MusicConnections() {
                 placeholder="Spotify Client ID"
                 className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3 text-sm text-white outline-none focus:border-[var(--color-accent)]"
               />
-              <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+              <p className="mb-1 mt-4 text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
                 Redirect URI
               </p>
               {hostMode ? (
@@ -254,7 +254,7 @@ export default function MusicConnections() {
                           setRedirectUri(uri)
                           setBrokerRedirectUri(uri)
                         }}
-                        className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-[11px] text-[var(--color-text-muted)] hover:text-white"
+                        className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs text-[var(--color-text-muted)] hover:text-white"
                       >
                         {uri.replace(hostBase, '') || '/'}
                       </button>
@@ -310,7 +310,7 @@ export default function MusicConnections() {
                       value={authorizeUrl}
                       rows={3}
                       onFocus={(e) => e.target.select()}
-                      className="w-full break-all rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-[11px] text-[var(--color-text)] outline-none"
+                      className="w-full break-all rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-xs text-[var(--color-text)] outline-none"
                     />
                     <p className="text-xs text-[var(--color-text-muted)]">
                       2. Onaydan sonra tarayıcının adres çubuğundaki linki buraya yapıştır.

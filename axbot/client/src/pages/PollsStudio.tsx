@@ -46,9 +46,9 @@ export function PollsStudio() {
       {active ? (
         <Panel className="p-5 rounded-2xl border border-emerald-500/40 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black">AKTİF ANKET</span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black">AKTİF ANKET</span>
             <div className="text-base font-bold text-white mt-1 truncate">{active.title || active.question}</div>
-            <div className="text-[11px] text-gray-400">İzleyiciler sohbetten oy verir.</div>
+            <div className="text-xs text-gray-400">İzleyiciler sohbetten oy verir.</div>
           </div>
           <button onClick={end} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold flex items-center gap-1"><Square className="w-4 h-4" /> Anketi bitir</button>
         </Panel>

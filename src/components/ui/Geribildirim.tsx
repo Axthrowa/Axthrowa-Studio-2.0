@@ -78,7 +78,7 @@ export function ErrorState({ title, description, error, onRetry, action, live, c
         {ham ? (
           <details className="mt-2 text-ui-2">
             <summary className="cursor-pointer select-none text-ui-fg2 hover:text-ui-fg">{t("ui.error.details")}</summary>
-            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-ui-1 border border-ui-line bg-ui-bg p-2 font-mono text-ui-1 text-ui-fg2">
+            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-ui-1 border border-ui-line bg-ui-bg p-2 font-mono text-ui-2 text-ui-fg2">
               {ham}
             </pre>
           </details>

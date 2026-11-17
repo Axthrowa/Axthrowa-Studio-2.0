@@ -38,7 +38,7 @@ export default class GlobalErrorBoundary extends Component<{ children: ReactNode
           <div className="flex items-center gap-3">
             <WarningOctagon weight="duotone" className="h-8 w-8 text-red-400" />
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-axthrowa-violet">AxthrowA</p>
+              <p className="text-ui-2 axt-etiket font-semibold text-axthrowa-violet">AxthrowA</p>
               <h1 className="text-xl font-semibold tracking-tight">Beklenmeyen bir hata oluştu</h1>
             </div>
           </div>

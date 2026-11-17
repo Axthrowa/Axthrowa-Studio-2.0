@@ -402,7 +402,7 @@ export function SongRequest() {
       {/* Currently Playing Card */}
       <Panel className="p-6 rounded-2xl border border-purple-500/30 glow-purple">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
+          <div className="flex items-center space-x-2 text-xs font-bold text-purple-400 axt-etiket">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
             <span>Şu Anda Çalıyor</span>
           </div>
@@ -439,7 +439,7 @@ export function SongRequest() {
               <div className="w-20 h-20 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0"><Music className="w-8 h-8 text-gray-500" /></div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">
+              <div className="text-xs axt-etiket font-bold text-emerald-400">
                 {calan.isPlaying ? '● Çalıyor' : '❚❚ Duraklatıldı'} · {calan.source === 'youtube-music' ? 'YouTube Music' : 'Spotify'}
               </div>
               <div className="text-lg font-extrabold text-white truncate">{calan.title}</div>
@@ -544,7 +544,7 @@ export function SongRequest() {
                   )}
                   <div className="min-w-0">
                     <div className="font-bold text-white text-sm truncate max-w-md">{item.title}</div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
                       <span>İsteyen: @{item.requestedBy}</span>
                       <PlatformLogo platform={item.platform} size={10} variant="badge" showLabel={true} />
                     </div>

@@ -64,7 +64,7 @@ export default function WhatsNew() {
 
       {entries.map((entry) => (
         <Card key={entry.date} className="mt-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          <p className="text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
             {entry.date}
           </p>
           <h2 className="mt-1 text-xl font-semibold text-white">{entry.title}</h2>

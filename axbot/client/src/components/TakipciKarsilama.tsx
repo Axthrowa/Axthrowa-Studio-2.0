@@ -74,7 +74,7 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
     <Panel className="rounded-2xl border border-white/10 p-4 space-y-3">
       <div>
         <h3 className="text-sm font-bold text-white">Yeni takipçi karşılaması</h3>
-        <p className="text-[11px] text-gray-400">Biri kanalı takip edince bot sohbete seçili temalardan rastgele bir karşılama yazar; aynı mesaj art arda gelmez.</p>
+        <p className="text-xs text-gray-400">Biri kanalı takip edince bot sohbete seçili temalardan rastgele bir karşılama yazar; aynı mesaj art arda gelmez.</p>
       </div>
       <label className="flex items-center gap-2 text-xs text-gray-200">
         <Anahtar acik={kural.aktif} onChange={(v) => kuralYaz({ aktif: v })} />
@@ -93,16 +93,16 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
               type="button"
               aria-pressed={acik}
               onClick={() => temaYaz(acik ? secili.filter((x) => x !== t.id) : [...secili, t.id])}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${acik ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'}`}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${acik ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'}`}
             >
               {t.ad} <span className="opacity-60">{t.ornekler.length}</span>
             </button>
           );
         })}
-        <button type="button" onClick={() => temaYaz(temalar.map((t) => t.id))} className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-cyan-300 hover:bg-white/10">
+        <button type="button" onClick={() => temaYaz(temalar.map((t) => t.id))} className="px-2.5 py-1 rounded-lg text-xs font-bold text-cyan-300 hover:bg-white/10">
           Hepsi
         </button>
-        <button type="button" onClick={() => temaYaz([])} className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-gray-400 hover:bg-white/10">
+        <button type="button" onClick={() => temaYaz([])} className="px-2.5 py-1 rounded-lg text-xs font-bold text-gray-400 hover:bg-white/10">
           Hiçbiri
         </button>
       </div>
@@ -111,17 +111,17 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
           <span className="min-w-0 flex-1 break-words text-gray-200">
             <b className="text-emerald-400">AxBoT:</b> {ornek}
           </span>
-          <button type="button" onClick={() => setOrnekNo((n) => n + 1)} className="shrink-0 text-[11px] font-bold text-cyan-300 hover:underline">
+          <button type="button" onClick={() => setOrnekNo((n) => n + 1)} className="shrink-0 text-xs font-bold text-cyan-300 hover:underline">
             Başka örnek
           </button>
         </div>
       ) : (
-        <p className="text-[11px] text-gray-400">Tema seçili değil: Sohbet uyarılarındaki kendi takip şablonun gider.</p>
+        <p className="text-xs text-gray-400">Tema seçili değil: Sohbet uyarılarındaki kendi takip şablonun gider.</p>
       )}
       <details className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
         <summary className="cursor-pointer text-xs font-bold text-gray-200">Metinleri gör ve düzenle</summary>
         <div className="mt-2 space-y-2">
-          <label className="flex items-center gap-2 text-[11px] text-gray-300">
+          <label className="flex items-center gap-2 text-xs text-gray-300">
             Tema
             <Secim value={duzenlenen} onChange={(e) => duzenlemeAc(e.target.value)}>
               {temalar.map((t) => (
@@ -143,18 +143,18 @@ export function TakipciKarsilama({ degisti }: { degisti?: () => void }) {
             placeholder="Her satıra bir karşılama yaz. Örnek: Hoş geldin $(sender), $(channel) ailesine katıldın!"
             className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white font-mono"
           />
-          <p className="text-[10px] text-gray-500">Her satır bir metin. $(sender) takip edenin adı, $(channel) kanal adı olur. En çok 100 satır, satır başına 300 harf.</p>
+          <p className="text-xs text-gray-500">Her satır bir metin. $(sender) takip edenin adı, $(channel) kanal adı olur. En çok 100 satır, satır başına 300 harf.</p>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => metinYaz(taslak.split('\n'))} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-[11px] font-bold text-white">
+            <button type="button" onClick={() => metinYaz(taslak.split('\n'))} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white">
               Kaydet
             </button>
             {duzenTema?.duzenlendi && (
-              <button type="button" onClick={() => metinYaz(null)} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-gray-200">
+              <button type="button" onClick={() => metinYaz(null)} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-gray-200">
                 Varsayılana dön
               </button>
             )}
-            {kaydedildi && <span className="text-[11px] text-emerald-400">{kaydedildi}</span>}
-            {duzenTema && !secili.includes(duzenTema.id) && <span className="text-[11px] text-amber-300">Bu tema seçili değil; metinleri gitmesi için yukarıdan seç.</span>}
+            {kaydedildi && <span className="text-xs text-emerald-400">{kaydedildi}</span>}
+            {duzenTema && !secili.includes(duzenTema.id) && <span className="text-xs text-amber-300">Bu tema seçili değil; metinleri gitmesi için yukarıdan seç.</span>}
           </div>
         </div>
       </details>

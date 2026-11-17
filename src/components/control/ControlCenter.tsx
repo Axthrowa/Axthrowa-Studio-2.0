@@ -148,7 +148,7 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
     <div className="space-y-3 text-xs">
       <div className="flex items-center gap-2">
         <span className="font-bold text-white/80">Sahneler</span>
-        {snap?.streaming && <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${TONE_CLASS.bad}`}>OBS YAYINDA</span>}
+        {snap?.streaming && <span className={`rounded-full border px-2 py-0.5 text-ui-2 font-bold ${TONE_CLASS.bad}`}>OBS YAYINDA</span>}
       </div>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
         {(snap?.scenes || []).map((ad) => {
@@ -166,7 +166,7 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
               }`}
               title={aktif ? "Yayındaki sahne" : `${ad} sahnesine geç`}
             >
-              {aktif && <span className="mr-1 text-[10px] font-black text-red-300">CANLI</span>}
+              {aktif && <span className="mr-1 text-ui-2 font-black text-red-300">CANLI</span>}
               {ad}
             </button>
           );
@@ -181,7 +181,7 @@ function ScenesPanel({ onToast }: { onToast: (m: string) => void }) {
               <span className="min-w-0 truncate text-white/85">
                 {t.name} <span className="text-panel-muted">{t.width}×{t.height}@{Math.round(t.fps)}</span>
               </span>
-              <span className="shrink-0 text-[10px] text-panel-muted" title={t.sceneSwitchSupported ? "" : "obs-websocket ikincil tuvalde sahne geçişine izin vermiyor"}>
+              <span className="shrink-0 text-ui-2 text-panel-muted" title={t.sceneSwitchSupported ? "" : "obs-websocket ikincil tuvalde sahne geçişine izin vermiyor"}>
                 {t.main ? "ana tuval — yukarıdan yönetilir" : `${t.provider || "eklenti"} yönetir`}
               </span>
             </div>
@@ -396,7 +396,7 @@ export default function ControlCenter({ onToast }: Props) {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Radio className="h-4 w-4 text-panel-accent" />
         <h2 className="text-sm font-bold text-white">Kontrol Merkezi</h2>
-        {ms.error && <span className="text-[11px] text-red-300">{ms.error.slice(0, 120)}</span>}
+        {ms.error && <span className="text-ui-2 text-red-300">{ms.error.slice(0, 120)}</span>}
         <span className="ml-auto" />
         <select
           className="studio-input !py-1 text-xs"
@@ -417,7 +417,7 @@ export default function ControlCenter({ onToast }: Props) {
       </div>
 
       {editing && hidden.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-1.5 text-[11px]">
+        <div className="mb-3 flex flex-wrap gap-1.5 text-ui-2">
           <span className="text-white/50">Gizli paneller:</span>
           {hidden.map((p) => (
             <button key={p.id} type="button" className="studio-btn-ghost !px-2 !py-0.5" onClick={() => setLayout(toggleVisible(layout, p.id))}>
@@ -444,7 +444,7 @@ export default function ControlCenter({ onToast }: Props) {
               {editing && <GripVertical className="h-3.5 w-3.5 cursor-grab text-panel-muted" />}
               <h3 className="text-xs font-bold text-white">{meta[p.id].title}</h3>
               {/* Açıklama yalnız düzenlerken: yayın sırasında başlık yeter */}
-              {editing && <span className="truncate text-[10px] text-panel-muted">{meta[p.id].hint}</span>}
+              {editing && <span className="truncate text-ui-2 text-panel-muted">{meta[p.id].hint}</span>}
               {editing && (
                 <span className="ml-auto flex gap-1">
                   <button type="button" className="rounded p-1 hover:bg-white/10" title="Genişlik" onClick={() => setLayout(cycleSpan(layout, p.id))}>

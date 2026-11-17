@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SKIN, STUDIO_SKINS, parseSkin } from "../lib/theme/ThemeContext";
+import { renkleriOku } from "../lib/botTemaMesaji";
 
 // Vitest CSS dosyalarını `?raw` ile bile boş döndürüyor; dosyayı doğrudan okuyoruz.
 const css = readFileSync(new URL("./index.css", import.meta.url), "utf8");
@@ -264,6 +265,22 @@ describe("okunabilirlik", () => {
       }
     }
     expect(sorunlar).toEqual([]);
+  });
+});
+
+describe("üç arayüz (UI-9)", () => {
+  // Gömülü AxBoT ve Resonance Studio'nun renklerini renkleriOku → botTemaMesaji ile alır:
+  // aynı 15 stil üç arayüzde de okunur olmalı.
+  it.each(STUDIO_SKINS.map((s) => s.id))("%s: bot ve Resonance'a giden yazı renkleri AA'yı geçer", (id) => {
+    const v = effective(id);
+    const r = renkleriOku((ad) => v[ad] ?? "", null);
+    const zemin = parseColor(r.zemin);
+    const yuzey = parseColor(r.yuzey, zemin);
+    expect(contrast(parseColor(r.metin, zemin), zemin), "metin/zemin").toBeGreaterThanOrEqual(7);
+    for (const [ad, alt] of [["zemin", zemin], ["yüzey", yuzey]] as const) {
+      expect(contrast(parseColor(r.soluk, alt), alt), `soluk/${ad}`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(parseColor(r.metin, alt), alt), `metin/${ad}`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });
 

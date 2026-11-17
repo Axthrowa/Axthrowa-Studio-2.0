@@ -52,7 +52,7 @@ export function TriviaStudio() {
               <h1 className="text-2xl font-black text-white tracking-tight">
                 Bil Bakalım Stüdyosu
               </h1>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+              <span className="text-xs bg-emerald-500/20 text-emerald-400 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                 CANLI YARIŞMA
               </span>
             </div>
@@ -109,7 +109,7 @@ export function TriviaStudio() {
             }`}
           >
             <span>Soru Bankası</span>
-            <span className="text-[10px] bg-white/10 px-1.5 py-0.2 rounded-full font-mono">{totalQuestions}</span>
+            <span className="text-xs bg-white/10 px-1.5 py-0.2 rounded-full font-mono">{totalQuestions}</span>
           </button>
           <button
             onClick={() => { setActiveTab('leaderboard'); fetchLeaderboard(); }}

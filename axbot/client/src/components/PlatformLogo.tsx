@@ -149,12 +149,12 @@ export const PlatformLogo: React.FC<PlatformLogoProps> = ({
     };
 
     const cfg = badgeConfigs[norm] || { bg: 'bg-gray-700', text: 'text-white', label: norm.toUpperCase(), logoColor: 'text-white' };
-    const padding = showLabel ? 'px-2 py-0.5 rounded-lg text-[10px]' : 'p-1 rounded-[5px]';
+    const padding = showLabel ? 'px-2 py-0.5 rounded-lg text-xs' : 'p-1 rounded-[5px]';
 
     return (
       <span
         title={cfg.label}
-        className={`inline-flex items-center justify-center gap-1.5 flex-shrink-0 align-middle ${padding} font-black tracking-wider uppercase ${cfg.bg} ${cfg.text} shadow-sm ${className}`}
+        className={`inline-flex items-center justify-center gap-1.5 flex-shrink-0 align-middle ${padding} font-black axt-etiket ${cfg.bg} ${cfg.text} shadow-sm ${className}`}
       >
         <span className={`${cfg.logoColor} flex items-center justify-center`}>
           {renderSvg()}

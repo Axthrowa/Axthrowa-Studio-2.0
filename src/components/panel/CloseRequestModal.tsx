@@ -44,7 +44,7 @@ export default function CloseRequestModal() {
     >
       <div className="w-full max-w-[280px] rounded-2xl bg-ui-s1 p-4 text-center shadow-2xl ring-1 ring-white/10">
         <p className="text-sm font-semibold text-white">Kapatılsın mı?</p>
-        <p className="mt-1 text-[11px] leading-snug text-white/55">
+        <p className="mt-1 text-ui-2 leading-snug text-white/55">
           Tepsiye küçültürsen bot, sunucu ve kısayollar çalışmaya devam eder.
         </p>
         <div className="mt-3 flex flex-col gap-1.5">
@@ -66,7 +66,7 @@ export default function CloseRequestModal() {
           <button
             type="button"
             onClick={() => choose("cancel")}
-            className="rounded-xl px-3 py-1.5 text-[11px] text-white/50 hover:text-white/80"
+            className="rounded-xl px-3 py-1.5 text-ui-2 text-white/50 hover:text-white/80"
           >
             Vazgeç
           </button>

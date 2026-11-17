@@ -302,7 +302,7 @@ export default function HotkeyInput({
         <button
           type="button"
           className={
-            "shrink-0 rounded-lg border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-150 active:scale-95 " +
+            "shrink-0 rounded-lg border px-2 py-1 text-ui-2 axt-etiket font-semibold whitespace-nowrap transition-all duration-150 active:scale-95" +
             (listening
               ? "border-amber-500/60 bg-amber-500 text-black shadow-glow animate-pulse"
               : "border-panel-accent/30 bg-panel-accent/15 text-panel-accent hover:border-panel-accent/50 hover:bg-panel-accent/25")
@@ -320,7 +320,7 @@ export default function HotkeyInput({
         </button>
       </div>
       {listening || hint ? (
-        <span className="max-w-[18rem] text-[10px] font-medium leading-tight text-amber-300">
+        <span className="max-w-[18rem] text-ui-2 font-medium leading-tight text-amber-300">
           {listening
             ? `${t("hotkey.listenHint")}${preview ? ` · ${preview}` : ""}`
             : hint}

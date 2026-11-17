@@ -183,7 +183,7 @@
   border: 1px solid var(--dt-line-strong);
   border-radius: 3px;
   color: var(--dt-text-3);
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 .dt-toggle[aria-pressed="true"] {
@@ -233,7 +233,7 @@
 }
 .dt-birim {
   color: var(--dt-text-3);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* ── Liste ve tablo ───────────────────────────────────────── */
@@ -318,7 +318,7 @@
   border-radius: 3px;
   background: var(--dt-live);
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -332,7 +332,7 @@
   border: 1px solid color-mix(in srgb, var(--dt-rec) 60%, transparent);
   border-radius: 3px;
   color: var(--dt-rec);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -386,7 +386,7 @@
 .dt-menu-kisayol {
   margin-left: auto;
   color: var(--dt-text-3);
-  font-size: 11px;
+  font-size: 12px;
 }
 .dt-modal-arka {
   position: fixed;
@@ -531,7 +531,7 @@
 }
 .dt-kod {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 11px;
+  font-size: 12px;
   word-break: break-all;
 }
 
@@ -581,7 +581,7 @@
   flex-shrink: 0;
   padding: 3px 8px 0;
   color: var(--dt-text-2);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 .dt-onizleme-alan {
@@ -802,7 +802,7 @@
   border-top: 1px solid var(--dt-line);
   background: var(--dt-surface-2);
   color: var(--dt-text-2);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* ── Yayın ayarları: çoklu yayın kartları ── */
@@ -825,7 +825,7 @@
   border: 1px solid var(--dt-line-strong);
   border-radius: 50%;
   color: var(--dt-text-2);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 .dt-anahtar-alani {

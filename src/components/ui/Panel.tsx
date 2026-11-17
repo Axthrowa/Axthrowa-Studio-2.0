@@ -29,10 +29,10 @@ export function Panel({ title, meta, actions, scroll = true, className, bodyClas
   return (
     <section aria-labelledby={baslikId} className={cn("flex min-h-0 min-w-0 flex-col bg-ui-s1", className)} {...rest}>
       <header className="flex h-6 shrink-0 items-center gap-1.5 border-b border-ui-line px-pad">
-        <h2 id={baslikId} className="truncate font-sans text-ui-1 font-semibold uppercase tracking-[0.05em] text-ui-fg2">
+        <h2 id={baslikId} className="truncate font-sans text-ui-2 axt-etiket font-semibold text-ui-fg2">
           {title}
         </h2>
-        {meta != null ? <span className="font-mono text-ui-1 text-ui-fg3">{meta}</span> : null}
+        {meta != null ? <span className="font-mono text-ui-2 text-ui-fg3">{meta}</span> : null}
         {actions ? <div className="ml-auto flex items-center gap-0.5">{actions}</div> : null}
       </header>
       <div className={cn("min-h-0 flex-1", scroll && "overflow-auto", bodyClassName)}>{children}</div>

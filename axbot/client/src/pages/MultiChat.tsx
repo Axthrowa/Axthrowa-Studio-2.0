@@ -318,7 +318,7 @@ export function MultiChat() {
             <span>Sohbeti Temizle</span>
           </button>
 
-          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 px-2 py-1 rounded-xl text-[11px] text-gray-200">
+          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 px-2 py-1 rounded-xl text-xs text-gray-200">
             <label className="flex items-center gap-1.5 cursor-pointer font-bold">
               <Anahtar acik={avatarAyar.avatarGoster} onChange={(v) => avatarYaz({ avatarGoster: v })} />
               Avatarlar
@@ -345,7 +345,7 @@ export function MultiChat() {
               <button
                 key={p}
                 onClick={() => setFilter(p)}
-                className={`px-2.5 py-1 rounded-lg uppercase text-[11px] transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs axt-etiket transition-all flex items-center gap-1.5 cursor-pointer ${
                   filter === p
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-gray-400 hover:text-white'
@@ -429,16 +429,16 @@ export function MultiChat() {
                       {msg.user.displayName || msg.user.username}:
                     </button>
                     {msg.karaListede && (
-                      <span className="text-[9px] font-bold uppercase text-red-300 bg-red-500/15 border border-red-500/30 rounded px-1.5 py-0.5">
+                      <span className="text-xs axt-etiket font-bold text-red-300 bg-red-500/15 border border-red-500/30 rounded px-1.5 py-0.5">
                         kara liste
                       </span>
                     )}
                     {msg.kalkanda && (
-                      <span className="text-[9px] font-bold uppercase text-amber-200 bg-amber-500/15 border border-amber-500/30 rounded px-1.5 py-0.5">
+                      <span className="text-xs axt-etiket font-bold text-amber-200 bg-amber-500/15 border border-amber-500/30 rounded px-1.5 py-0.5">
                         kalkan · {KALKAN_ETIKETI[msg.kalkanda]}
                       </span>
                     )}
-                    <span className="text-[10px] text-gray-500">
+                    <span className="text-xs text-gray-500">
                       {new Date(msg.timestamp).toLocaleTimeString('tr-TR')}
                     </span>
                     {/* OBS "Sabitlenmiş Mesajlar" widget'ına gönder (eskiden panelde bunu yapan bir düğme yoktu) */}
@@ -446,7 +446,7 @@ export function MultiChat() {
                       type="button"
                       title="Sabitle (OBS'te ve burada görünür)"
                       onClick={() => void mesajiSabitle(msg)}
-                      className="text-[11px] opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+                      className="text-xs opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
                     >
                       📌
                     </button>
@@ -517,7 +517,7 @@ export function MultiChat() {
                   <Anahtar acik={!!temizleSecili[p.id]} onChange={(v) => setTemizleSecili((s) => ({ ...s, [p.id]: v }))} disabled={!p.bagli} />
                   <PlatformLogo platform={p.id} size={14} />
                   {PLATFORM_ADI[p.id] || p.id}
-                  {!p.bagli && <span className="ml-auto text-[11px]">bağlı değil</span>}
+                  {!p.bagli && <span className="ml-auto text-xs">bağlı değil</span>}
                 </label>
               ))}
             </div>
@@ -582,20 +582,20 @@ export function MultiChat() {
               <p className="text-xs font-bold text-gray-300">Son mesajlar</p>
               <ul className="max-h-32 space-y-0.5 overflow-y-auto">
                 {(selectedViewer.kart?.mesajlar || []).length === 0 ? (
-                  <li className="text-[11px] text-gray-500">{loadingViewer ? '…' : 'Kayıtlı mesaj yok.'}</li>
+                  <li className="text-xs text-gray-500">{loadingViewer ? '…' : 'Kayıtlı mesaj yok.'}</li>
                 ) : (
                   selectedViewer.kart!.mesajlar.map((m, i) => (
-                    <li key={`${m.timestamp}-${i}`} className="truncate text-[11px] text-gray-300">· {m.message}</li>
+                    <li key={`${m.timestamp}-${i}`} className="truncate text-xs text-gray-300">· {m.message}</li>
                   ))
                 )}
               </ul>
               <p className="text-xs font-bold text-gray-300">Cezalar</p>
               <ul className="max-h-24 space-y-0.5 overflow-y-auto">
                 {(selectedViewer.kart?.cezalar || []).length === 0 ? (
-                  <li className="text-[11px] text-gray-500">{loadingViewer ? '…' : 'Ceza yok.'}</li>
+                  <li className="text-xs text-gray-500">{loadingViewer ? '…' : 'Ceza yok.'}</li>
                 ) : (
                   selectedViewer.kart!.cezalar.map((c, i) => (
-                    <li key={`${c.timestamp}-${i}`} className="truncate text-[11px] text-gray-300">
+                    <li key={`${c.timestamp}-${i}`} className="truncate text-xs text-gray-300">
                       · {cezaAdi(c.action)}{c.details ? ` — ${c.details}` : ''}
                     </li>
                   ))
@@ -627,7 +627,7 @@ export function MultiChat() {
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-gray-400">
+              <p className="text-xs text-gray-400">
                 {loadingViewer ? 'Mesajlar inceleniyor…' : selectedViewer.sentimentDetails?.summary ||
                   (selectedViewer.sentiment === 'positive'
                     ? 'İzleyici son mesajlarında yayıncıyı öven, pozitif bir ton kullandı.'
@@ -635,7 +635,7 @@ export function MultiChat() {
                       ? 'Son mesajlarında sert/öfkeli bir ton var, dikkatli olun.'
                       : 'İzleyicinin genel sohbet tonu dengeli ve sakin.')}
               </p>
-              <div className="flex items-center gap-2 text-[10px] text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>
                   {selectedViewer.sentimentDetails?.messageCount ?? 0} mesaj incelendi
                 </span>
@@ -673,7 +673,7 @@ export function MultiChat() {
                 <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
                 Moderasyon ({selectedViewer.platform})
               </div>
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-300">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-300">
                 <label htmlFor="sustur-sure" className="font-semibold">Susturma süresi</label>
                 <Secim
                   id="sustur-sure"
@@ -719,7 +719,7 @@ export function MultiChat() {
                       onClick={() => void moderasyonYap(eylem)}
                       disabled={!!sebep || modBusy !== null}
                       title={sebep || undefined}
-                      className={`text-[11px] font-bold px-2 py-1.5 rounded-lg border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                      className={`text-xs font-bold px-2 py-1.5 rounded-lg border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                         eylem === 'ban'
                           ? 'bg-red-600/20 border-red-500/40 text-red-200 hover:bg-red-600/30'
                           : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'
@@ -731,7 +731,7 @@ export function MultiChat() {
                 })}
               </div>
               {modMesaj && (
-                <div className={`text-[11px] font-semibold ${modMesaj.ok ? 'text-emerald-400' : 'text-red-300'}`}>
+                <div className={`text-xs font-semibold ${modMesaj.ok ? 'text-emerald-400' : 'text-red-300'}`}>
                   {modMesaj.ok ? '✅ ' : '⚠️ '}
                   {modMesaj.text}
                 </div>

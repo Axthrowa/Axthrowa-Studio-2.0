@@ -10,7 +10,7 @@ export function BoyutlarBolumu(p: SahneAyarlariProps) {
   const { PART_LABELS, secOrder, settings, tt, update } = p;
   return (
     <SettingsSection id="boyutlar" title={tt("sec.boyutlar")} style={secOrder("boyutlar")}>
-      <p className="text-[11px] text-panel-muted">Önizlemede köşeden de ölçeklenebilir.</p>
+      <p className="text-ui-2 text-panel-muted">Önizlemede köşeden de ölçeklenebilir.</p>
       {(["logo", "eyebrow", "title", "sub", "countdown", "socials", "ticker", "credits", "visualizer", "nowPlaying", "lyrics"] as const).map((k) => (
         <div key={k} className="flex items-center gap-2 text-xs">
           <span className="w-20 text-panel-muted">{PART_LABELS[k] || k}</span>
@@ -36,7 +36,7 @@ export function GorunurlukBolumu(p: SahneAyarlariProps) {
   const { PART_LABELS, secOrder, settings, tt, update } = p;
   return (
     <SettingsSection id="gorunurluk" title={tt("sec.gorunurluk")} style={secOrder("gorunurluk")}>
-      <p className="text-[11px] text-panel-muted">Overlay öğelerini göster / gizle.</p>
+      <p className="text-ui-2 text-panel-muted">Overlay öğelerini göster / gizle.</p>
       {(["logo", "eyebrow", "title", "sub", "countdown", "socials", "ticker", "credits"] as const).map((k) => (
         <label key={k} className="flex items-center gap-2 text-sm">
           <input
@@ -85,7 +85,7 @@ export function GorunurlukBolumu(p: SahneAyarlariProps) {
             />
             Resonance temasını kullan
           </label>
-          <p className="text-[11px] text-panel-muted">
+          <p className="text-ui-2 text-panel-muted">
             Açıkken Müzik sekmesinde seçtiğin tema/skin bu ekranda da aynen görünür.
             Kapatırsan sade yerleşik kart kullanılır.
           </p>
@@ -98,7 +98,7 @@ export function GorunurlukBolumu(p: SahneAyarlariProps) {
             Yalnızca müzik çalarken göster
           </label>
           {settings.nowPlayingTheme !== false && (
-            <p className="text-[11px] text-panel-muted">
+            <p className="text-ui-2 text-panel-muted">
               Kart boyutu temaya göre kendiliğinden ayarlanır. Büyütmek/küçültmek
               için önizlemede karta tıklayıp boyut tutamacını kullan.
             </p>
@@ -113,7 +113,7 @@ export function ParcacikBolumu(p: SahneAyarlariProps) {
   const { particleFiles, particleKeys, refreshParticles, secOrder, setParticleFiles, settings, showToast, tt, update } = p;
   return (
     <SettingsSection id="parcacik" title={tt("sec.parcacik")} style={secOrder("parcacik")}>
-      <p className="text-[11px] font-medium text-panel-muted">Parçacıklar</p>
+      <p className="text-ui-2 font-medium text-panel-muted">Parçacıklar</p>
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
@@ -176,7 +176,7 @@ export function ParcacikBolumu(p: SahneAyarlariProps) {
         </button>
       </div>
       {particleKeys.length === 0 && (
-        <p className="text-[11px] text-panel-muted">Henüz parçacık yok — PNG/WEBP ekle</p>
+        <p className="text-ui-2 text-panel-muted">Henüz parçacık yok — PNG/WEBP ekle</p>
       )}
       {particleKeys.map((key) => {
         const file = particleFiles.find((f) => f.replace(/\.(png|webp)$/i, "") === key) || `${key}.png`;
@@ -201,7 +201,7 @@ export function ParcacikBolumu(p: SahneAyarlariProps) {
                 {key}
               </label>
               <button
-                className="rounded bg-red-800/70 px-2 py-1 text-[10px]"
+                className="rounded bg-red-800/70 px-2 py-1 text-ui-2"
                 onClick={async () => {
                   if (!confirm(`${file} silinsin mi?`)) return;
                   const res = await fetch(`${API_BASE}/api/particles/delete`, {
@@ -248,7 +248,7 @@ export function ParcacikBolumu(p: SahneAyarlariProps) {
                   }
                   className="h-7 w-10 cursor-pointer rounded border border-panel-border bg-transparent"
                 />
-                <label className="ml-auto flex items-center gap-1.5 text-[11px]">
+                <label className="ml-auto flex items-center gap-1.5 text-ui-2">
                   <input
                     type="checkbox"
                     checked={settings.particleGlow?.[key] !== false}
@@ -274,7 +274,7 @@ export function JenerikBolumu(p: SahneAyarlariProps) {
     <SettingsSection id="jenerik" title={tt("sec.jenerik")} style={secOrder("jenerik")}>
       <TextStyleEditor settings={settings} onChange={update} includeCredits sadece={["credits"]} />
       <h3 className="text-sm font-semibold">Otomatik jenerik</h3>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Panel açıkken Twitch/Kick/YouTube abone, bağış (Super Chat / bits) ve
         takip/raid olayları jeneriğe yazılır. Bölüm başlıkları: Destekçiler, Yeni
         Aboneler, Yeni Takipçiler.
@@ -295,7 +295,7 @@ export function JenerikBolumu(p: SahneAyarlariProps) {
         />
         Yalnız bu yayında gelenleri göster (hiçbiri yoksa jenerik açılmaz)
       </label>
-      <div className="rounded-md border border-panel-border/60 bg-black/20 px-2 py-2 text-[11px] text-panel-muted">
+      <div className="rounded-md border border-panel-border/60 bg-black/20 px-2 py-2 text-ui-2 text-panel-muted">
         Bu oturum:{" "}
         <span className="text-white/80">{creditCounts.donors}</span> destek ·{" "}
         <span className="text-white/80">{creditCounts.subscribers}</span> abone ·{" "}
@@ -312,7 +312,7 @@ export function JenerikBolumu(p: SahneAyarlariProps) {
       >
         Oturum listesini temizle
       </button>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Manuel satırlar ve stiller yukarıdaki &quot;Jenerik bölümleri&quot;nden
         düzenlenir.
       </p>

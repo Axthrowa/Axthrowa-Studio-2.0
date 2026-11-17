@@ -117,8 +117,8 @@ export function AlertQueueControl() {
       etiket="Uyarı kuyruğu"
       sag={
         <div className="flex gap-1">
-          {durum?.paused && <span className="rounded-sm border border-zinc-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-300">Duraklatıldı</span>}
-          {durum?.muted && <span className="rounded-sm border border-red-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-400">Sessiz</span>}
+          {durum?.paused && <span className="rounded-sm border border-zinc-600 px-1.5 py-0.5 text-xs axt-etiket font-bold text-zinc-300">Duraklatıldı</span>}
+          {durum?.muted && <span className="rounded-sm border border-red-500 px-1.5 py-0.5 text-xs axt-etiket font-bold text-red-400">Sessiz</span>}
         </div>
       }
     >
@@ -136,7 +136,7 @@ export function AlertQueueControl() {
           </button>
         ))}
       </div>
-      <p className="mt-2 font-mono text-[11px] text-zinc-500">{son3}</p>
+      <p className="mt-2 font-mono text-xs text-zinc-500">{son3}</p>
 
       <div className="mt-2 max-h-56 divide-y divide-zinc-800 overflow-y-auto">
         {son.length === 0 && <p className="text-xs text-zinc-500">Bu oturumda henüz uyarı gösterilmedi.</p>}
@@ -145,9 +145,9 @@ export function AlertQueueControl() {
             <div className="min-w-0">
               <div className="truncate text-xs text-zinc-100">
                 {u.title || u.eventType}
-                {u.isTest && <span className="ml-1.5 font-mono text-[10px] text-zinc-500">TEST</span>}
+                {u.isTest && <span className="ml-1.5 font-mono text-xs text-zinc-500">TEST</span>}
               </div>
-              <div className="truncate text-[11px] text-zinc-400">{u.message}</div>
+              <div className="truncate text-xs text-zinc-400">{u.message}</div>
             </div>
             <button
               type="button"

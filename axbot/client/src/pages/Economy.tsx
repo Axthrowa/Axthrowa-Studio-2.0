@@ -219,7 +219,7 @@ export function Economy() {
             <Bell className="w-3.5 h-3.5" />
             <span>Gelen Talepler</span>
             {pendingCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black">
+              <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-xs font-black">
                 {pendingCount}
               </span>
             )}
@@ -284,7 +284,7 @@ export function Economy() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold" title="Kapalıyken tamamlanan ve iade edilen talepler 10 dakika sonra listeden düşer">
+              <label className="flex items-center gap-1.5 text-xs text-gray-300 font-bold" title="Kapalıyken tamamlanan ve iade edilen talepler 10 dakika sonra listeden düşer">
                 <Anahtar acik={gecmis} onChange={(v) => setGecmis(v)} />
                 Geçmişi göster
               </label>
@@ -305,7 +305,7 @@ export function Economy() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-white/10 text-gray-400 text-[11px] uppercase">
+                  <tr className="border-b border-white/10 text-gray-400 text-xs axt-etiket">
                     <th className="py-2.5 px-3">İzleyici</th>
                     <th className="py-2.5 px-3">Ödül</th>
                     <th className="py-2.5 px-3">Puan</th>
@@ -320,16 +320,16 @@ export function Economy() {
                     <tr key={r.id} className="hover:bg-white/5 transition-colors">
                       <td className="py-3 px-3 font-bold text-white flex items-center gap-1.5">
                         <span>@{r.display_name || r.username}</span>
-                        <span className="text-[10px] text-gray-500 uppercase font-mono">({r.platform})</span>
+                        <span className="text-xs axt-etiket text-gray-500 font-mono">({r.platform})</span>
                       </td>
                       <td className="py-3 px-3 text-purple-300 font-extrabold">{r.reward_title}</td>
                       <td className="py-3 px-3 text-amber-400 font-mono font-bold">-{r.cost}</td>
                       <td className="py-3 px-3 text-gray-300 italic">{r.custom_input || '—'}</td>
-                      <td className="py-3 px-3 text-gray-400 font-mono text-[11px]">
+                      <td className="py-3 px-3 text-gray-400 font-mono text-xs">
                         {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-black ${
                           r.status === 'pending'
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                             : r.status === 'completed'
@@ -344,7 +344,7 @@ export function Economy() {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleUpdateRedemptionStatus(r.id, 'completed')}
-                              className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all"
+                              className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all"
                               title="Tamamla"
                             >
                               <Check className="w-3 h-3" />
@@ -352,7 +352,7 @@ export function Economy() {
                             </button>
                             <button
                               onClick={() => handleUpdateRedemptionStatus(r.id, 'refunded')}
-                              className="px-2.5 py-1 bg-red-600/30 hover:bg-red-600/50 text-red-200 border border-red-500/40 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all"
+                              className="px-2.5 py-1 bg-red-600/30 hover:bg-red-600/50 text-red-200 border border-red-500/40 rounded-lg text-xs font-bold flex items-center gap-1 transition-all"
                               title="Reddet & Puanı İade Et"
                             >
                               <RotateCcw className="w-3 h-3" />
@@ -360,7 +360,7 @@ export function Economy() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-[10px] text-gray-500 font-mono">İşlendi</span>
+                          <span className="text-xs text-gray-500 font-mono">İşlendi</span>
                         )}
                       </td>
                     </tr>
@@ -399,7 +399,7 @@ export function Economy() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-white/10 text-gray-400 text-[11px] uppercase">
+                <tr className="border-b border-white/10 text-gray-400 text-xs axt-etiket">
                   <th className="py-2 px-3"># Sıra</th>
                   <th className="py-2 px-3">Kullanıcı</th>
                   <th className="py-2 px-3">Rütbe (Tier)</th>
@@ -419,10 +419,10 @@ export function Economy() {
                       </td>
                       <td className="py-3 px-3 font-bold text-white flex items-center gap-2">
                         <span>@{user.display_name || user.username}</span>
-                        <span className="text-[10px] text-gray-500 uppercase font-mono">({user.platform})</span>
+                        <span className="text-xs axt-etiket text-gray-500 font-mono">({user.platform})</span>
                       </td>
                       <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-600/20 text-purple-300 border border-purple-500/30">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-600/20 text-purple-300 border border-purple-500/30">
                           {user.loyalty_tier || '🥉 Çaylak'}
                         </span>
                       </td>
@@ -476,10 +476,10 @@ export function Economy() {
                     {item.cost} Puan
                   </span>
                 </div>
-                <div className="text-[11px] text-gray-400 font-mono">
+                <div className="text-xs text-gray-400 font-mono">
                   Komut: <code className="text-purple-300">!al {item.id.replace('reward-', '')}</code>
                 </div>
-                <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-[11px] text-gray-500">
+                <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-xs text-gray-500">
                   <span>Tür: <b className="text-gray-300">{item.reward_type}</b></span>
                   {item.payload && <span className="truncate">({item.payload})</span>}
                 </div>

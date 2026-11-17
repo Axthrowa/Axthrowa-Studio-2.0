@@ -74,7 +74,7 @@ export function Extras() {
 
       {tab === 'alerts' && (
         <Panel className="p-6 rounded-2xl space-y-3">
-          <p className="text-[11px] rounded-lg border border-white/10 bg-black/30 p-2 text-gray-300">
+          <p className="text-xs rounded-lg border border-white/10 bg-black/30 p-2 text-gray-300">
             Basit sohbet uyarıları. Daha ayrıntılı sürüm (eşik, bekleme, karşılama, yayın başladı duyurusu) <b>Gelişmiş Bot → Sohbet uyarıları</b>'nda; orada bir olay açıksa buradaki mesaj o olay için gönderilmez (çift mesaj olmasın).
           </p>
           <label className="flex justify-between text-xs font-bold">Chat alerts açık <Anahtar acik={s.chat_alerts_enabled} onChange={(v) => setS({ ...s, chat_alerts_enabled: v })} /></label>
@@ -93,7 +93,7 @@ export function Extras() {
             <label className="text-xs font-bold space-y-1">Varsayılan süre (sn)<input type="number" min={10} max={600} value={s.clip_default_sec} onChange={e => setS({ ...s, clip_default_sec: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
             <label className="text-xs font-bold space-y-1">En uzun süre (sn)<input type="number" min={10} max={600} value={s.clip_max_sec} onChange={e => setS({ ...s, clip_max_sec: +e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl p-2" /></label>
           </div>
-          <p className="text-[11px] text-gray-400"><code>!clip</code> ya da <code>!clip 45</code>. Twitch yayında Helix klip linki yazar (<code>clips:edit</code>). Kick’te resmi klip ucu yok; yayın HLS’inden ffmpeg ile bu bilgisayara video kaydeder. Olmazsa sohbet ve aşağıdaki liste nedenini yazar.</p>
+          <p className="text-xs text-gray-400"><code>!clip</code> ya da <code>!clip 45</code>. Twitch yayında Helix klip linki yazar (<code>clips:edit</code>). Kick’te resmi klip ucu yok; yayın HLS’inden ffmpeg ile bu bilgisayara video kaydeder. Olmazsa sohbet ve aşağıdaki liste nedenini yazar.</p>
           <KlipListesi />
         </Panel>
       )}

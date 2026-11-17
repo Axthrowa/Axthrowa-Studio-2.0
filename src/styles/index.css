@@ -1040,7 +1040,7 @@ html.obs-transparent body.panel-app {
   --studio-odak: rgb(var(--accent-text-rgb));
 }
 :root :focus-visible {
-  outline: 2px solid var(--studio-odak);
+  outline: 3px solid var(--studio-odak);
   outline-offset: 2px;
 }
 

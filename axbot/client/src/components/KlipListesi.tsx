@@ -53,12 +53,12 @@ export function KlipListesi() {
         </button>
       </div>
       {ffmpeg === false && (
-        <p className="text-[11px] rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-amber-200">
+        <p className="text-xs rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-amber-200">
           ffmpeg yok. Kur: <code>winget install Gyan.FFmpeg</code> — sonra botu yeniden başlat. Twitch klibi ffmpeg istemez; jetonun <code>clips:edit</code> izni yoksa Bağlantılar’dan Twitch’i yeniden bağla.
         </p>
       )}
       {sonHata && (
-        <p className="text-[11px] rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-200">{sonHata}</p>
+        <p className="text-xs rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-200">{sonHata}</p>
       )}
       {klipler.length === 0 ? (
         <p className="text-xs text-gray-500">Henüz klip yok. Yayın açıkken sohbete <code>!clip</code> ya da <code>!clip 45</code> yazılınca burada görünür.</p>

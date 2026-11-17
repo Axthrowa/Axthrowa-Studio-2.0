@@ -279,7 +279,7 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
         {row?.hotkey ? (
           <select
             aria-label="Kısayolun işlemi"
-            className="h-8 w-[5.5rem] rounded-lg bg-zinc-900/80 px-1.5 text-[11px] text-zinc-200 ring-1 ring-white/5 focus:outline-none focus:ring-axthrowa-violet/60"
+            className="h-8 w-[5.5rem] rounded-lg bg-zinc-900/80 px-1.5 text-ui-2 text-zinc-200 ring-1 ring-white/5 focus:outline-none focus:ring-axthrowa-violet/60"
             value={String(row.mode || "toggle")}
             onChange={(e) =>
               shortcuts.onPatch({ actionHotkeys: setSrcToggleMode(actionRows, row.id, e.target.value) } as never)
@@ -379,8 +379,8 @@ export default function ObsControlHub({ onToast, shortcuts }: Props) {
                 }`}
               >
                 <span className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] tabular-nums text-zinc-500">{String(index + 1).padStart(2, "0")}</span>
-                  {active && <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-axthrowa-violet">Program</span>}
+                  <span className="font-mono text-ui-2 tabular-nums text-zinc-500">{String(index + 1).padStart(2, "0")}</span>
+                  {active && <span className="text-ui-2 axt-etiket font-semibold text-axthrowa-violet">Program</span>}
                 </span>
                 <span className={`mt-2 block truncate text-sm font-medium ${active ? "text-zinc-100" : "text-zinc-400 group-hover:text-zinc-200"}`}>
                   {scene}
@@ -538,7 +538,7 @@ const GIRDI =
 const DUGME =
   "inline-flex items-center gap-2 rounded-xl bg-zinc-800/60 px-4 py-2 text-sm font-medium text-zinc-300 transition-all duration-300 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-40";
 const KISAYOL =
-  "w-24 rounded-lg bg-zinc-900/80 px-2 py-1.5 text-center font-mono text-[11px] text-zinc-200 ring-1 ring-white/5 transition-all duration-300 focus:outline-none focus:ring-axthrowa-violet/60";
+  "w-24 rounded-lg bg-zinc-900/80 px-2 py-1.5 text-center font-mono text-ui-2 text-zinc-200 ring-1 ring-white/5 transition-all duration-300 focus:outline-none focus:ring-axthrowa-violet/60";
 
 function Alan({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -607,7 +607,7 @@ function ControlRow({
       </div>
       <div className="flex shrink-0 items-center gap-3">
         {hotkey && <div className="flex items-center gap-1.5">{hotkey}</div>}
-        <span className={`w-16 text-right text-[11px] ${enabled ? "text-axthrowa-cyan" : "text-zinc-500"}`}>
+        <span className={`w-16 text-right text-ui-2 ${enabled ? "text-axthrowa-cyan" : "text-zinc-500"}`}>
           {enabled ? enabledText : disabledText}
         </span>
         <Switch checked={enabled} onCheckedChange={onToggle} aria-label={`${label}: ${enabled ? enabledText : disabledText}`} />

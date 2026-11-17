@@ -64,14 +64,14 @@ function RowList({
             </label>
             <button
               type="button"
-              className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]"
+              className="rounded bg-white/10 px-1.5 py-0.5 text-ui-2"
               onClick={() => onMove(id, -1)}
             >
               ↑
             </button>
             <button
               type="button"
-              className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]"
+              className="rounded bg-white/10 px-1.5 py-0.5 text-ui-2"
               onClick={() => onMove(id, 1)}
             >
               ↓
@@ -164,7 +164,7 @@ export default function LayoutEditor({
         </button>
       </div>
 
-      <p className="mb-1 text-[11px] font-medium text-panel-muted">{t("layout.tabs")}</p>
+      <p className="mb-1 text-ui-2 font-medium text-panel-muted">{t("layout.tabs")}</p>
       <RowList
         ids={DEFAULT_TABS.map((x) => x.id)}
         labels={tabLabels}
@@ -184,7 +184,7 @@ export default function LayoutEditor({
         }
       />
 
-      <p className="mb-1 mt-3 text-[11px] font-medium text-panel-muted">{t("layout.screen")}</p>
+      <p className="mb-1 mt-3 text-ui-2 font-medium text-panel-muted">{t("layout.screen")}</p>
       <select
         className="mb-2 w-full rounded border border-panel-border bg-black/40 px-2 py-1.5 text-xs"
         value={editScreen}
@@ -195,7 +195,7 @@ export default function LayoutEditor({
         <option value="brb">{t("nav.brb")}</option>
         <option value="chat">{t("nav.chat")}</option>
       </select>
-      <p className="mb-1 text-[11px] font-medium text-panel-muted">{t("layout.left")}</p>
+      <p className="mb-1 text-ui-2 font-medium text-panel-muted">{t("layout.left")}</p>
       <RowList
         ids={leftDefs.map((s) => s.id)}
         labels={leftLabels}
@@ -214,7 +214,7 @@ export default function LayoutEditor({
         }
       />
 
-      <p className="mb-1 mt-3 text-[11px] font-medium text-panel-muted">{t("layout.right")}</p>
+      <p className="mb-1 mt-3 text-ui-2 font-medium text-panel-muted">{t("layout.right")}</p>
       <RowList
         ids={RIGHT_SECTIONS.map((s) => s.id)}
         labels={rightLabels}
@@ -233,7 +233,7 @@ export default function LayoutEditor({
         }
       />
 
-      <p className="mb-1 mt-3 text-[11px] font-medium text-panel-muted">
+      <p className="mb-1 mt-3 text-ui-2 font-medium text-panel-muted">
         {t("layout.settings")}
       </p>
       <RowList

@@ -28,7 +28,7 @@ export function BaglantiKorumasiKarti() {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-white">Bağlantı koruması</h3>
+      <h3 className="text-sm font-bold axt-etiket text-white">Bağlantı koruması</h3>
       <p className="text-xs font-medium text-white/75">
         Bit hızı eşiğin altına 5 sn düşerse ya da OBS yeniden bağlanıyorsa seçilen sahneye geçer; ağ 10 sn sakin kalınca önceki sahneye döner.
         AxBoT otomasyonuna &quot;Bit hızı düştü&quot;, &quot;Bağlantı düzeldi&quot; ve &quot;Düşen kare eşiği&quot; olarak da bildirilir.
@@ -38,7 +38,7 @@ export function BaglantiKorumasiKarti() {
         Açık
       </label>
       <div className="grid gap-2 sm:grid-cols-2">
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Geçilecek sahne (boş = yalnız bildir)
           <input className={ALAN} list="koruma-sahneleri" value={ayar.sahne} onChange={(e) => yaz({ sahne: e.target.value })} placeholder="Mola" />
           <datalist id="koruma-sahneleri">
@@ -47,15 +47,15 @@ export function BaglantiKorumasiKarti() {
             ))}
           </datalist>
         </label>
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Bit hızı eşiği (kbps)
           <input className={ALAN} type="number" min={100} value={ayar.esikKbps} onChange={(e) => yaz({ esikKbps: Number(e.target.value) || ayar.esikKbps })} />
         </label>
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Düşen kare eşiği (%)
           <input className={ALAN} type="number" min={1} max={100} value={ayar.kareEsigi} onChange={(e) => yaz({ kareEsigi: Number(e.target.value) || ayar.kareEsigi })} />
         </label>
-        <label className="text-[11px] text-white/70">
+        <label className="text-ui-2 text-white/70">
           Sohbete yazılacak satır (boş = yazma)
           <input className={ALAN} maxLength={200} value={ayar.sohbet} onChange={(e) => yaz({ sohbet: e.target.value })} />
         </label>

@@ -125,11 +125,11 @@ export function AlertsStudio() {
           <Alan etiket="Başlık şablonu"><Girdi value={current.title_template || ''} onChange={e => updatePreset({ title_template: e.target.value })} /></Alan>
           <div className="md:col-span-2"><Alan etiket="Mesaj şablonu"><AlanMetni value={current.message_template || ''} onChange={e => updatePreset({ message_template: e.target.value })} /></Alan></div>
           {olayEtiketi(yetenek, tab) && (
-            <p className="md:col-span-2 text-[11px] text-amber-300/90">
+            <p className="md:col-span-2 text-xs text-amber-300/90">
               Bu olayı üreten kaynaklar: {olayEtiketi(yetenek, tab)}
             </p>
           )}
-          <p className="md:col-span-2 text-[11px] text-gray-500">Değişkenler: {'{user} {amount} {currency} {message} {months} {tier} {count} {viewers}'}</p>
+          <p className="md:col-span-2 text-xs text-gray-500">Değişkenler: {'{user} {amount} {currency} {message} {months} {tier} {count} {viewers}'}</p>
             </div>
           </Katlanir>
           <Katlanir baslik="Görsel ve ses" aciklama="GIF, ses dosyası, süre">

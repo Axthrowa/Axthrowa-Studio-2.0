@@ -265,7 +265,7 @@ export function MiniGames() {
             <RefreshCw className="w-4 h-4" />
           </button>
 
-          {loading ? <span className="text-[11px] text-gray-500">Ayarlar yükleniyor…</span> : <KayitDurumu durum={durum} onYeniden={yeniden} />}
+          {loading ? <span className="text-xs text-gray-500">Ayarlar yükleniyor…</span> : <KayitDurumu durum={durum} onYeniden={yeniden} />}
         </div>
       </div>
 
@@ -327,7 +327,7 @@ export function MiniGames() {
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
               <h3 className="text-sm font-extrabold text-white">Canlı Bekleyen Oyun Lobileri</h3>
             </div>
-            <span className="text-[10px] font-mono text-amber-300 font-bold">
+            <span className="text-xs font-mono text-amber-300 font-bold">
               {activeLobbies.length} Aktif Lobi
             </span>
           </div>
@@ -338,16 +338,16 @@ export function MiniGames() {
                 <div>
                   <div className="text-xs font-black text-amber-300 capitalize flex items-center gap-1">
                     <span>🎮 {lobby.game}</span>
-                    <span className="text-[10px] text-gray-400 font-normal">({lobby.participants?.length || 0} Oyuncu)</span>
+                    <span className="text-xs text-gray-400 font-normal">({lobby.participants?.length || 0} Oyuncu)</span>
                   </div>
-                  <div className="text-[10px] text-gray-300 font-mono mt-0.5">
+                  <div className="text-xs text-gray-300 font-mono mt-0.5">
                     Toplam Havuz: <b>{lobby.totalPot || 0} Puan</b>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleCancelLobby(lobby.game)}
-                  className="px-2.5 py-1 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-lg text-[10px] font-bold"
+                  className="px-2.5 py-1 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-lg text-xs font-bold"
                 >
                   İptal Et
                 </button>
@@ -412,7 +412,7 @@ export function MiniGames() {
                           <span className="w-2 h-2 rounded-full bg-gray-500" />
                         )}
                       </h3>
-                      <span className="text-[11px] font-mono text-purple-300 font-bold">
+                      <span className="text-xs font-mono text-purple-300 font-bold">
                         {game.command}
                       </span>
                     </div>
@@ -436,7 +436,7 @@ export function MiniGames() {
                   {/* Min Bet */}
                   {conf.minBet !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Min Bahis</label>
+                      <label className="text-xs text-gray-400 block mb-1">Min Bahis</label>
                       <input aria-label="Min Bahis"
                         type="number"
                         min="1"
@@ -450,7 +450,7 @@ export function MiniGames() {
                   {/* Max Bet */}
                   {conf.maxBet !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Maks Bahis</label>
+                      <label className="text-xs text-gray-400 block mb-1">Maks Bahis</label>
                       <input aria-label="Maks Bahis"
                         type="number"
                         min="1"
@@ -465,7 +465,7 @@ export function MiniGames() {
 
                   {game.id === 'kelime' && (
                     <label className="bg-black/50 p-2.5 rounded-xl border border-white/5 flex items-center justify-between gap-2 cursor-pointer">
-                      <span className="text-[10px] text-gray-400">İpucu göster</span>
+                      <span className="text-xs text-gray-400">İpucu göster</span>
                       <Anahtar acik={(conf as any).showHint !== false} onChange={(v) => void ipucuYaz(v)} ad="İpucu göster" />
                     </label>
                   )}
@@ -473,7 +473,7 @@ export function MiniGames() {
                   {/* Reward Points (Trivia & Kelime) */}
                   {conf.rewardPoints !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Doğru Cevap Ödülü</label>
+                      <label className="text-xs text-gray-400 block mb-1">Doğru Cevap Ödülü</label>
                       <input aria-label="Doğru Cevap Ödülü"
                         type="number"
                         min="1"
@@ -487,7 +487,7 @@ export function MiniGames() {
                   {/* Timeout Sec */}
                   {conf.timeoutSec !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Cevaplama Süresi</label>
+                      <label className="text-xs text-gray-400 block mb-1">Cevaplama Süresi</label>
                       <input aria-label="Cevaplama Süresi"
                         type="number"
                         min="10"
@@ -502,7 +502,7 @@ export function MiniGames() {
                   {/* Kasa Cost */}
                   {conf.cost !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">Kasa Ücreti (Puan)</label>
+                      <label className="text-xs text-gray-400 block mb-1">Kasa Ücreti (Puan)</label>
                       <input aria-label="Kasa Ücreti (Puan)"
                         type="number"
                         min="10"
@@ -518,7 +518,7 @@ export function MiniGames() {
                   {/* Cooldown Sec */}
                   {conf.cooldownSec !== undefined && (
                     <div className="bg-black/50 p-2.5 rounded-xl border border-white/5">
-                      <label className="text-[10px] text-gray-400 block mb-1">{SURE_ETIKETI[game.id] || 'Süre (sn)'}</label>
+                      <label className="text-xs text-gray-400 block mb-1">{SURE_ETIKETI[game.id] || 'Süre (sn)'}</label>
                       <input aria-label={SURE_ETIKETI[game.id] || 'Süre (sn)'}
                         type="number"
                         min="5"
@@ -533,7 +533,7 @@ export function MiniGames() {
 
               {/* Bottom Quick Test Button */}
               <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[10px] text-gray-500 font-mono">Chat Komutu: {game.command.split(' ')[0]}</span>
+                <span className="text-xs text-gray-500 font-mono">Chat Komutu: {game.command.split(' ')[0]}</span>
                 <button
                   onClick={() => handleTriggerGame(game.id)}
                   className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"

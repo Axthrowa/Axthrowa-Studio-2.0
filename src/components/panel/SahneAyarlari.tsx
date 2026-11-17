@@ -48,7 +48,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
             <div className="my-1.5 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/25 p-3">
               <div className="col-span-2 flex items-center justify-between gap-2">
                 <p
-                  className="truncate text-[11px] font-bold uppercase tracking-wider text-white/70"
+                  className="truncate text-ui-2 axt-etiket font-bold text-white/70"
                   title="Video ve arka plan her ekranda ayrı kaydedilir."
                 >
                   Sık kullanılan · yalnız {screen === "starting" ? "Giriş" : screen === "ending" ? "Çıkış" : "Mola"}
@@ -116,7 +116,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
           )}
 
           {settings.bgStyle === "video" && settings.transparent && (
-            <p className="rounded-md border border-panel-cta/40 bg-panel-cta/10 px-2 py-1.5 text-[11px] text-orange-100">
+            <p className="rounded-md border border-panel-cta/40 bg-panel-cta/10 px-2 py-1.5 text-ui-2 text-orange-100">
               &quot;Şeffaf arka plan&quot; açıkken video gizlenir. Videoyu görmek için
               şeffaflığı kapat.
             </p>
@@ -170,10 +170,10 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
               previewOn ? "bg-emerald-400 shadow-glow-sm" : "bg-neutral-500"
             }`}
           />
-          <span className="font-display text-[11px] font-bold tracking-wider text-white">
+          <span className="font-display text-ui-2 font-bold text-white">
             {previewOn ? tt("preview.on") : tt("preview.off")}
           </span>
-          <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.2 text-[10px] font-mono text-panel-muted">
+          <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.2 text-ui-2 font-mono text-panel-muted">
             1080P STUDIO
           </span>
         </div>
@@ -188,7 +188,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
               onChange={(e) => setPreviewOn(e.target.checked)}
               className="size-3.5 rounded border-white/20 text-panel-accent focus:ring-panel-accent/40"
             />
-            <span className="text-[11px] font-medium">{tt("preview.toggle")}</span>
+            <span className="text-ui-2 font-medium">{tt("preview.toggle")}</span>
           </label>
           <button
             type="button"
@@ -198,13 +198,13 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
                 ? "Yan panelleri kenara gizle (önizleme büyür)"
                 : "Yan panelleri sabitle (hep açık kalsın)"
             }
-            className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-white/80 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white"
+            className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-ui-2 font-semibold text-white/80 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white"
           >
             {panelsPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
             <span>{panelsPinned ? "Panelleri gizle" : "Panelleri sabitle"}</span>
           </button>
           <a
-            className="inline-flex items-center gap-1 rounded-lg border border-panel-accent/30 bg-panel-accent/15 px-2.5 py-1 text-[11px] font-semibold text-panel-accent transition hover:border-panel-accent/50 hover:bg-panel-accent/25"
+            className="inline-flex items-center gap-1 rounded-lg border border-panel-accent/30 bg-panel-accent/15 px-2.5 py-1 text-ui-2 font-semibold text-panel-accent transition hover:border-panel-accent/50 hover:bg-panel-accent/25"
             href={obsUrl}
             onClick={(e) => {
               e.preventDefault();
@@ -247,7 +247,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
             <p className="text-sm text-panel-muted">
               Önizleme kapalı — video çözme ve parçacık çizimi durdu.
             </p>
-            <p className="text-[11px] text-panel-muted">
+            <p className="text-ui-2 text-panel-muted">
               OBS çıktısı bundan etkilenmez. Öğeleri sürükleyerek konumlamak için
               önizlemeyi tekrar aç.
             </p>
@@ -263,17 +263,17 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
       </div>
       <div className="flex flex-wrap items-center gap-1.5 border-t border-panel-border px-3 py-2">
         {hiddenParts.length === 0 ? (
-          <span className="text-[11px] text-panel-muted">
+          <span className="text-ui-2 text-panel-muted">
             Gizlenen parça yok — kapattıkların buraya düşer, tek tıkla geri gelir.
           </span>
         ) : (
           <>
-            <span className="text-[11px] text-panel-muted">Gizlenenler:</span>
+            <span className="text-ui-2 text-panel-muted">Gizlenenler:</span>
             {hiddenParts.map((k) => (
               <button
                 key={k}
                 type="button"
-                className="rounded-full border border-panel-border bg-black/40 px-2.5 py-1 text-[11px] text-white transition hover:border-panel-accent hover:text-panel-accent"
+                className="rounded-full border border-panel-border bg-black/40 px-2.5 py-1 text-ui-2 text-white transition hover:border-panel-accent hover:text-panel-accent"
                 onClick={() => restorePart(k)}
                 title="Yeniden göster"
               >
@@ -282,7 +282,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
             ))}
             <button
               type="button"
-              className="ml-auto rounded-full bg-panel-accent/90 px-2.5 py-1 text-[11px] font-semibold text-ui-accent-ink"
+              className="ml-auto rounded-full bg-panel-accent/90 px-2.5 py-1 text-ui-2 font-semibold text-ui-accent-ink"
               onClick={restoreAllParts}
             >
               Tümünü geri getir
@@ -301,7 +301,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
     >
       {!sectionHidden("obsUrl") && (
         <SettingsSection id="obsUrl" title={tt("sec.obsUrl")} style={secOrder("obsUrl", true)}>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         URL: <code className="text-white/80">http://127.0.0.1:8843/starting?obs=1</code> — uygulama açık olmalı. Genişlik 1920, Yükseklik 1080.
       </p>
       <CopyUrl
@@ -314,7 +314,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
 
       {!sectionHidden("resonance") && (
         <SettingsSection id="resonance" title={tt("sec.resonance")} style={secOrder("resonance", true)}>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Spotify / YouTube Music now-playing. Eklenti uygulamanın içinde, üstteki
         <b className="text-white/80"> Müzik</b> sekmesinde çalışır.
       </p>
@@ -345,10 +345,10 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
         />
         Bu ekranda şarkı sözlerini göster
       </label>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Söz boyutu, rengi ve zamanlaması Müzik sayfasında (Resonance) ayarlanır.
       </p>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Ayrı OBS kaynağı isterseniz yukarıdaki adresi kullan. Gerekmez — “Şimdi Çalıyor”
         widget’ı zaten Giriş/Mola/Çıkış ekranlarında.
       </p>
@@ -370,7 +370,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
         onChange={(v) => update({ obs: { ...(settings.obs || {}), sceneOnEnd: v } })}
       />
       {!scenes.length && (
-        <p className="text-[11px] text-panel-muted">Sahne listesi için Dashboard’dan OBS’e bağlan (veya sahne adını elle yaz)</p>
+        <p className="text-ui-2 text-panel-muted">Sahne listesi için Dashboard’dan OBS’e bağlan (veya sahne adını elle yaz)</p>
       )}
       <Field
         label="Oyun / dönüş sahne adı (elle)"
@@ -467,7 +467,7 @@ export default function SahneAyarlari(p: SahneAyarlariProps) {
                     }
                     className="size-3.5 rounded border-white/20 text-panel-accent focus:ring-panel-accent/40"
                   />
-                  <span className="w-16 truncate font-mono text-[11px] font-bold uppercase tracking-wider text-panel-muted">
+                  <span className="w-16 truncate font-mono text-ui-2 axt-etiket font-bold text-panel-muted">
                     {key}
                   </span>
                   <input

@@ -90,7 +90,7 @@ function Satir({ girdi, kanalSayisi, onSustur, onToast, menu }: { girdi: ObsInpu
   return (
     <div className="flex w-[104px] shrink-0 flex-col items-center gap-1 px-1.5 py-2" onContextMenu={nesneMenusu(menu)}>
       <span className={`w-full truncate text-center text-xs font-medium ${girdi.muted ? "text-panel-muted" : "text-white"}`} title={girdi.name}>{girdi.name}</span>
-      <span className="h-4 font-mono text-[11px] tabular-nums text-panel-muted">{db === null ? "" : dbYazisi(db)}</span>
+      <span className="h-4 font-mono text-ui-2 tabular-nums text-panel-muted">{db === null ? "" : dbYazisi(db)}</span>
       <div className="flex min-h-44 flex-1 items-stretch justify-center gap-1.5">
         <input
           type="range"
@@ -119,7 +119,7 @@ function Satir({ girdi, kanalSayisi, onSustur, onToast, menu }: { girdi: ObsInpu
             <Olcer key={k} ad={girdi.name} kanal={k} susturulmus={girdi.muted} />
           ))}
         </div>
-        <div aria-hidden className="relative w-5 text-[9px] leading-none text-panel-muted">
+        <div aria-hidden className="relative w-5 text-ui-2 leading-none text-panel-muted">
           {CETVEL.map((d) => (
             <span key={d} className="absolute left-0 translate-y-1/2" style={{ bottom: `${meterPercent(d)}%` }}>{d}</span>
           ))}
@@ -218,7 +218,7 @@ export default function SesKaristirici({ girisler, onSustur, onToast }: { girisl
         <Satir key={g.name} girdi={g} kanalSayisi={kanallar[g.name] || VARSAYILAN_KANAL} onSustur={() => onSustur(g)} onToast={onToast} menu={() => kanalMenusu(g)} />
       ))}
       {gizlenen > 0 && (
-        <button type="button" className="shrink-0 self-start px-2 py-2 text-[11px] text-panel-muted hover:text-white" onClick={() => gizliYaz([])} title="Gizlenen kanalları yeniden göster">
+        <button type="button" className="shrink-0 self-start px-2 py-2 text-ui-2 text-panel-muted hover:text-white" onClick={() => gizliYaz([])} title="Gizlenen kanalları yeniden göster">
           {gizlenen} gizli kanal · göster
         </button>
       )}

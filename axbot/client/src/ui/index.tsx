@@ -69,13 +69,13 @@ export function Alan({
 }) {
   return (
     <label className="block">
-      <span className="block text-[11px] font-bold text-gray-300 mb-1">{etiket}</span>
+      <span className="block text-xs font-bold text-gray-300 mb-1">{etiket}</span>
       {children}
       {/* Hata alan SEVİYESİNDE gösterilir — eskiden hiç gösterilmiyordu */}
       {hata ? (
-        <span className="block text-[10px] text-red-400 mt-1">{hata}</span>
+        <span className="block text-xs text-red-400 mt-1">{hata}</span>
       ) : ipucu ? (
-        <span className="block text-[10px] text-gray-500 mt-1">{ipucu}</span>
+        <span className="block text-xs text-gray-500 mt-1">{ipucu}</span>
       ) : null}
     </label>
   );
@@ -161,7 +161,7 @@ export function Anahtar({
           className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${acik ? 'left-[18px]' : 'left-0.5'}`}
         />
       </span>
-      {etiket && <span className="text-[11px] font-bold text-gray-300 group-hover:text-white">{etiket}</span>}
+      {etiket && <span className="text-xs font-bold text-gray-300 group-hover:text-white">{etiket}</span>}
     </button>
   );
 }
@@ -187,10 +187,10 @@ export function Katlanir({
   return (
     <details open={ilkAcik} className="group rounded-xl border border-white/10 bg-black/20">
       <summary className="flex items-center gap-2 cursor-pointer select-none px-3 py-2.5 list-none [&::-webkit-details-marker]:hidden">
-        <span aria-hidden className="text-[10px] text-gray-400 transition-transform group-open:rotate-90">▶</span>
+        <span aria-hidden className="text-xs text-gray-400 transition-transform group-open:rotate-90">▶</span>
         <span className="text-xs font-bold text-white">{baslik}</span>
-        {sayi !== undefined && <span className="text-[10px] text-gray-500">{sayi}</span>}
-        {aciklama && <span className="ml-auto pl-3 text-[10px] text-gray-500 truncate">{aciklama}</span>}
+        {sayi !== undefined && <span className="text-xs text-gray-500">{sayi}</span>}
+        {aciklama && <span className="ml-auto pl-3 text-xs text-gray-500 truncate">{aciklama}</span>}
       </summary>
       <div className="px-3 pb-3 pt-1 space-y-3">{children}</div>
     </details>
@@ -216,7 +216,7 @@ export function Kart({
         <header className="flex items-start justify-between gap-3 pb-2 border-b border-white/10">
           <div>
             {baslik && <h3 className="text-sm font-extrabold text-white">{baslik}</h3>}
-            {aciklama && <p className="text-[11px] text-gray-400 mt-0.5">{aciklama}</p>}
+            {aciklama && <p className="text-xs text-gray-400 mt-0.5">{aciklama}</p>}
           </div>
           {sag}
         </header>
@@ -230,7 +230,7 @@ export function BosDurum({ baslik, aciklama, eylem }: { baslik: string; aciklama
   return (
     <div className="text-center py-8 px-4">
       <p className="text-sm font-bold text-gray-300">{baslik}</p>
-      {aciklama && <p className="text-[11px] text-gray-500 mt-1">{aciklama}</p>}
+      {aciklama && <p className="text-xs text-gray-500 mt-1">{aciklama}</p>}
       {eylem && <div className="mt-3 inline-block">{eylem}</div>}
     </div>
   );
@@ -239,7 +239,7 @@ export function BosDurum({ baslik, aciklama, eylem }: { baslik: string; aciklama
 export function HataDurumu({ mesaj, yenidenDene }: { mesaj: string; yenidenDene?: () => void }) {
   return (
     <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
-      <span className="text-[11px] text-red-200">{mesaj}</span>
+      <span className="text-xs text-red-200">{mesaj}</span>
       {yenidenDene && (
         <Buton ton="ikincil" onClick={yenidenDene}>
           Yeniden dene
@@ -416,7 +416,7 @@ export function KayitDurumu({ durum, onYeniden }: { durum: KayitDurumuTuru; onYe
           : 'Değişiklikler anında kaydedilir · Ctrl+Z geri alır';
   const renk = durum === 'kaydedildi' ? 'text-emerald-400' : durum === 'hata' ? 'text-red-400' : 'text-gray-500';
   return (
-    <span role="status" aria-live="polite" className={`inline-flex items-center gap-2 text-[11px] font-bold ${renk}`}>
+    <span role="status" aria-live="polite" className={`inline-flex items-center gap-2 text-xs font-bold ${renk}`}>
       {metin}
       {durum === 'hata' && onYeniden && (
         <Buton ton="ikincil" onClick={onYeniden}>
@@ -454,7 +454,7 @@ export function KaydedilmemisUyari({ varMi, onKaydet }: { varMi: boolean; onKayd
 
   return (
     <div className="sticky top-2 z-40 bg-amber-500/15 border border-amber-500/40 rounded-xl px-3 py-2 flex items-center justify-between gap-3">
-      <span className="text-[11px] font-bold text-amber-200">Kaydedilmemiş değişiklikleriniz var.</span>
+      <span className="text-xs font-bold text-amber-200">Kaydedilmemiş değişiklikleriniz var.</span>
       {onKaydet && (
         <Buton ton="birincil" onClick={onKaydet}>
           Kaydet
@@ -483,7 +483,7 @@ export function Modul({
   return (
     <section aria-label={etiket} className={`rounded-md border border-zinc-800 bg-zinc-900/50 p-3 ${className}`}>
       <header className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{etiket}</h2>
+        <h2 className="text-xs axt-etiket font-bold text-zinc-500">{etiket}</h2>
         {sag}
       </header>
       {children}

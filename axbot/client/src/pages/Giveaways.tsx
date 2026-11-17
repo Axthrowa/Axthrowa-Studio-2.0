@@ -144,7 +144,7 @@ export function Giveaways() {
       {/* Kazanan: çekiliş kapandıktan sonra da görünür (eskiden yalnız açık çekilişin içindeydi, hiç görünmüyordu) */}
       {winner && (
         <div className="border border-yellow-500/40 bg-yellow-500/10 p-4 rounded-xl text-center space-y-2">
-          <div className="text-yellow-400 font-extrabold text-xs tracking-wider uppercase">Kazanan</div>
+          <div className="text-yellow-400 font-extrabold text-xs axt-etiket">Kazanan</div>
           <div className="text-3xl font-black text-white">@{(winner.winners?.length ? winner.winners : [winner.winner]).join(', @')}</div>
           <div className="text-xs text-gray-300">
             {winner.participantsCount} katılımcı ve {winner.totalTickets} bilet arasından rastgele seçildi.
@@ -164,7 +164,7 @@ export function Giveaways() {
                 AKTİF ÇEKİLİŞ
               </span>
               <h2 className="text-2xl font-black text-white mt-1">{active.title}</h2>
-              <div className="flex flex-wrap gap-1.5 text-[11px] text-gray-400 mt-2">
+              <div className="flex flex-wrap gap-1.5 text-xs text-gray-400 mt-2">
                 <span className="px-2 py-1 rounded-lg bg-white/5">Katılım: <b className="text-purple-400">{active.keyword}</b></span>
                 <span className="px-2 py-1 rounded-lg bg-white/5">Katılımcı: <b className="text-emerald-400">{entries.length}</b></span>
                 <span className="px-2 py-1 rounded-lg bg-white/5">Süre: <b className="text-white">{(active as any).duration_minutes ? `${(active as any).duration_minutes} dk` : 'süresiz'}</b></span>
@@ -190,7 +190,7 @@ export function Giveaways() {
 
           {/* Entrants List */}
           <div className="space-y-3 pt-2">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-bold text-gray-400 axt-etiket flex items-center gap-1.5">
               <Users className="w-4 h-4 text-purple-400" /> Katılımcı Listesi ({entries.length})
             </h3>
 
@@ -198,7 +198,7 @@ export function Giveaways() {
               {entries.map(e => (
                 <div key={e.id} className="bg-black/40 border border-white/5 p-2.5 rounded-xl flex items-center justify-between text-xs">
                   <span className="font-bold text-white truncate">@{e.username}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">
+                  <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono text-xs font-bold">
                     {e.tickets} bilet · %{Math.round((e.tickets / Math.max(1, entries.reduce((t, x) => t + Math.max(1, Number(x.tickets) || 1), 0))) * 1000) / 10}
                   </span>
                 </div>
@@ -323,7 +323,7 @@ export function Giveaways() {
               <div key={g.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <div className="min-w-0">
                   <div className="font-semibold text-white truncate">{g.title}</div>
-                  <div className="text-[11px] text-gray-500">
+                  <div className="text-xs text-gray-500">
                     {new Date(g.created_at).toLocaleString('tr-TR')} · {g.keyword}
                   </div>
                 </div>

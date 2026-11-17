@@ -30,7 +30,7 @@ export default function GeneralObsHotkeys({ all, registered, failures, onListeni
   return (
     <section className="space-y-4 rounded-2xl border border-white/[0.07] bg-panel-card/60 p-5 shadow-glass">
       <div className="border-b border-white/[0.06] pb-2.5">
-        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+        <h3 className="flex items-center gap-2 text-sm font-bold axt-etiket text-white">
           <Radio className="h-4.5 w-4.5 text-panel-accent" /> Yayın ve kayıt
         </h3>
         <p className="mt-1 text-xs leading-relaxed text-white/75">

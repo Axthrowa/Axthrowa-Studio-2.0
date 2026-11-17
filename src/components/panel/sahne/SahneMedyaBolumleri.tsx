@@ -29,7 +29,7 @@ export function YoutubeBolumu(p: SahneAyarlariProps) {
       />
       {!!settings.youtubeUrl && (
         <div className="space-y-1.5 rounded-md border border-panel-border/60 bg-black/20 p-2">
-          <p className="text-[11px] text-panel-muted">
+          <p className="text-ui-2 text-panel-muted">
             YouTube oynatıcısı videonun başında başlık ile duraklat ikonunu, sonunda da
             bitiş kartlarını kendi çiziyor. Videoyu yerele indirirsen bu arayüz hiç
             olmaz, döngü de kesintisiz olur.
@@ -47,12 +47,12 @@ export function YoutubeBolumu(p: SahneAyarlariProps) {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-[11px] text-panel-muted">
+                <span className="min-w-0 flex-1 truncate text-ui-2 text-panel-muted">
                   {indirmeMetni}
                 </span>
                 <button
                   type="button"
-                  className="rounded-md bg-black/40 px-2 py-1 text-[11px]"
+                  className="rounded-md bg-black/40 px-2 py-1 text-ui-2"
                   onClick={() => indirme.iptalEt()}
                 >
                   İptal
@@ -69,7 +69,7 @@ export function YoutubeBolumu(p: SahneAyarlariProps) {
             </button>
           )}
           {(indirme.durum.phase === "hata" || indirme.durum.phase === "iptal") && (
-            <p className="rounded-md border border-panel-cta/40 bg-panel-cta/10 px-2 py-1.5 text-[11px] text-orange-100">
+            <p className="rounded-md border border-panel-cta/40 bg-panel-cta/10 px-2 py-1.5 text-ui-2 text-orange-100">
               {indirme.durum.message || "İndirme tamamlanamadı"}
             </p>
           )}
@@ -135,12 +135,12 @@ export function YoutubeBolumu(p: SahneAyarlariProps) {
             label="YouTube kırpma"
           />
           {Number(settings.youtubeDuration) > 0 ? (
-            <p className="text-[11px] text-panel-muted">
+            <p className="text-ui-2 text-panel-muted">
               Süre otomatik: {Math.floor(Number(settings.youtubeDuration) / 60)}:
               {String(Math.floor(Number(settings.youtubeDuration) % 60)).padStart(2, "0")}
             </p>
           ) : (
-            <p className="text-[11px] text-panel-muted">Süre yükleniyor (önizleme / OBS açıkken)…</p>
+            <p className="text-ui-2 text-panel-muted">Süre yükleniyor (önizleme / OBS açıkken)…</p>
           )}
           <div>
             <label className="mb-1 block text-xs text-panel-muted">YouTube kalite</label>
@@ -167,7 +167,7 @@ export function YoutubeBolumu(p: SahneAyarlariProps) {
             />
             <span>
               Bitiş kartlarını engelle
-              <span className="mt-0.5 block text-[11px] text-panel-muted">
+              <span className="mt-0.5 block text-ui-2 text-panel-muted">
                 YouTube&apos;un bitiş kartları oynatıcının kendi içinde çiziliyor;
                 dışarıdan kapatan bir ayar ya da CSS yok. Tek çalışan yol o bölüme hiç
                 girmemek. Uygulama videonun kart bilgisini YouTube&apos;dan okuyor:
@@ -202,7 +202,7 @@ export function YoutubeBolumu(p: SahneAyarlariProps) {
                 })
               }
             />
-            <p className="mt-1 text-[10px] text-panel-muted">
+            <p className="mt-1 text-ui-2 text-panel-muted">
               Normalde kullanılmaz — video sonuna kadar ya da tam kartın çıktığı saniyeye
               kadar oynar. Yalnızca YouTube&apos;a ulaşılamayıp kart bilgisi okunamadığında
               bu kör pay devreye girer. Kartlar en erken bitişten 20 sn önce
@@ -232,7 +232,7 @@ export function YoutubeBolumu(p: SahneAyarlariProps) {
           />
           <span className="w-10 text-right text-white">{settings.videoVolume ?? 100}%</span>
         </div>
-        <p className="mt-1 text-[10px] text-panel-muted">
+        <p className="mt-1 text-ui-2 text-panel-muted">
           Yerel video ve YouTube aynı ses ayarını kullanır — hangisi fon ise o çalar.
         </p>
       </div>
@@ -247,13 +247,13 @@ export function FonMuzigiBolumu(p: SahneAyarlariProps) {
   const { musicFiles, refreshMusic, screen, secOrder, settings, showToast, tt, update } = p;
   return (
     <SettingsSection id="fonMuzigi" title={tt("sec.fonMuzigi")} style={secOrder("fonMuzigi")}>
-      <p className="text-[11px] text-panel-muted">
+      <p className="text-ui-2 text-panel-muted">
         Arka plan müziği uygulama deposunda saklanır; varsayılan olarak döngüde çalar. Sil =
         diskten siler.
       </p>
       <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-panel-border/60 bg-black/20 p-1.5">
         {musicFiles.length === 0 && (
-          <p className="px-1 py-2 text-[11px] text-panel-muted">Henüz müzik yok</p>
+          <p className="px-1 py-2 text-ui-2 text-panel-muted">Henüz müzik yok</p>
         )}
         {musicFiles.map((name) => {
           const active =
@@ -274,7 +274,7 @@ export function FonMuzigiBolumu(p: SahneAyarlariProps) {
               </button>
               <button
                 type="button"
-                className="shrink-0 text-[10px] text-red-300"
+                className="shrink-0 text-ui-2 text-red-300"
                 onClick={async () => {
                   await fetch(`${API_BASE}/api/music/delete`, {
                     method: "POST",
@@ -334,7 +334,7 @@ export function FonMuzigiBolumu(p: SahneAyarlariProps) {
         )}
       </div>
       {settings.bgAudioPath && (
-        <p className="truncate text-[11px] text-panel-muted">
+        <p className="truncate text-ui-2 text-panel-muted">
           Aktif: {String(settings.bgAudioPath).split(/[/\\]/).pop()}
         </p>
       )}
@@ -348,7 +348,7 @@ export function FonMuzigiBolumu(p: SahneAyarlariProps) {
         />
         <span>
           Aynı müzik Giriş, Çıkış ve Mola ekranlarında çalsın
-          <span className="mt-0.5 block text-[11px] text-panel-muted">
+          <span className="mt-0.5 block text-ui-2 text-panel-muted">
             Seçtiğin parça, döngü, ses açık/kapalı ve seviye üç ekrana birden yazılır.
             OBS&apos;te üç sahne aynı anda açıksa sesi üst üste duyarsın — kaynak
             ayarlarında &ldquo;Görünür değilken kaynağı kapat&rdquo;ı işaretle.
@@ -357,7 +357,7 @@ export function FonMuzigiBolumu(p: SahneAyarlariProps) {
       </label>
 
       {/* Video sesi artık ilgili videonun yanında; burada müzik kalıyor. */}
-      <p className="text-[11px] font-medium text-panel-muted">Müzik sesi</p>
+      <p className="text-ui-2 font-medium text-panel-muted">Müzik sesi</p>
       <div className="space-y-3 rounded-md border border-panel-border/60 bg-ui-s1 p-3">
         <div>
           <label className="flex items-center gap-2 text-sm text-white">
@@ -390,7 +390,7 @@ export function FonMuzigiBolumu(p: SahneAyarlariProps) {
               settings.obs?.stopStreamOnEnd !== false &&
               !settings.endingMinutes &&
               !settings.targetDate)) && (
-            <p className="mt-1 text-[10px] text-panel-muted">
+            <p className="mt-1 text-ui-2 text-panel-muted">
               Medya bitiş aksiyonu açıkken müzik bir kez çalar (döngü kapalı).
             </p>
           )}
@@ -417,10 +417,10 @@ export function LogoBolumu(p: SahneAyarlariProps) {
   const { logoFiles, pickLogo, refreshLogos, secOrder, settings, tt, update } = p;
   return (
     <SettingsSection id="logo" title={tt("sec.logo")} style={secOrder("logo")}>
-      <p className="text-[11px] text-panel-muted">Dosya olarak kaydedilir; kapanınca kaybolmaz.</p>
+      <p className="text-ui-2 text-panel-muted">Dosya olarak kaydedilir; kapanınca kaybolmaz.</p>
       <div className="max-h-28 space-y-1 overflow-y-auto rounded-md border border-panel-border/60 bg-black/20 p-1.5">
         {logoFiles.length === 0 && (
-          <p className="px-1 py-2 text-[11px] text-panel-muted">Henüz logo yok</p>
+          <p className="px-1 py-2 text-ui-2 text-panel-muted">Henüz logo yok</p>
         )}
         {logoFiles.map((name) => {
           const active = settings.logoFile === name;
@@ -436,7 +436,7 @@ export function LogoBolumu(p: SahneAyarlariProps) {
               </button>
               <button
                 type="button"
-                className="shrink-0 text-[10px] text-red-300"
+                className="shrink-0 text-ui-2 text-red-300"
                 onClick={async () => {
                   await fetch(`${API_BASE}/api/logos/delete`, {
                     method: "POST",
@@ -454,7 +454,7 @@ export function LogoBolumu(p: SahneAyarlariProps) {
         })}
       </div>
       {settings.logoFile && !logoFiles.includes(settings.logoFile) ? (
-        <p role="alert" className="rounded-md border border-amber-400/40 bg-amber-400/10 px-2 py-1.5 text-[11px] text-amber-200">
+        <p role="alert" className="rounded-md border border-amber-400/40 bg-amber-400/10 px-2 py-1.5 text-ui-2 text-amber-200">
           Seçili logo ({settings.logoFile}) bu uygulama klasörünün assets\logos klasöründe yok, ekranda görünmez. Yeni sürüm klasörüne geçtiysen logoyu yeniden ekle.
         </p>
       ) : null}
@@ -565,7 +565,7 @@ export function LogoBolumu(p: SahneAyarlariProps) {
           />
           <button
             type="button"
-            className="rounded-md bg-black/40 px-2 py-1.5 text-[11px] text-white"
+            className="rounded-md bg-black/40 px-2 py-1.5 text-ui-2 text-white"
             onClick={() => update({ logoAccentColor: null })}
           >
             Genel accent

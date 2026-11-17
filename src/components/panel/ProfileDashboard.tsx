@@ -294,7 +294,7 @@ export default function ProfileDashboard({ onToast, streamLive, bolum }: Props) 
                 Yerel ağ / Tailscale:{" "}
                 <code className="text-panel-accent">POST …/remote/login</code>
               </p>
-              <p className="text-[11px] text-panel-muted">
+              <p className="text-ui-2 text-panel-muted">
                 Yalnız Ayarlar'da uzak erişim açıksa kullanılır. İlk yönetici yalnız bu bilgisayardan kurulur; şifre en az 8 karakter. 10 dakikada 8 hatalı girişten sonra o adres beklemeye alınır.
               </p>
               <input
@@ -366,9 +366,9 @@ function Stat({
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-panel-card/70 p-3.5 shadow-panel transition-all duration-150 hover:border-white/[0.14] hover:bg-white/[0.04]">
-      <div className="text-[10px] font-bold uppercase tracking-wider text-panel-muted">{label}</div>
+      <div className="text-ui-2 axt-etiket font-bold text-panel-muted">{label}</div>
       <div className="mt-1.5 font-display text-2xl font-bold tracking-tight text-panel-accent">{value}</div>
-      {hint && <div className="mt-1 text-[10px] text-white/50">{hint}</div>}
+      {hint && <div className="mt-1 text-ui-2 text-white/50">{hint}</div>}
     </div>
   );
 }
@@ -397,9 +397,9 @@ function SessionList({ sessions }: { sessions: StreamSession[] }) {
               <span className="font-medium text-white/90">
                 {s.title || "Yayın"} {live && <span className="text-panel-accent">● canlı</span>}
               </span>
-              <span className="text-[10px] text-panel-muted">{fmtTs(s.started_at)}</span>
+              <span className="text-ui-2 text-panel-muted">{fmtTs(s.started_at)}</span>
             </div>
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-panel-muted">
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-ui-2 text-panel-muted">
               <span>Süre {fmtDuration(dur)}</span>
               <span>Peak {s.peak_viewers}</span>
               <span>+{s.new_followers} takip</span>
@@ -448,7 +448,7 @@ function SessionSparkline({ sessions }: { sessions: StreamSession[] }) {
           return <circle key={i} cx={x} cy={y} r="3.5" className="fill-panel-accent" />;
         })}
       </svg>
-      <div className="mt-1 flex justify-between text-[10px] text-panel-muted">
+      <div className="mt-1 flex justify-between text-ui-2 text-panel-muted">
         <span>{fmtTs(rows[0].started_at)}</span>
         <span>max {max}</span>
         <span>{fmtTs(rows[rows.length - 1].started_at)}</span>

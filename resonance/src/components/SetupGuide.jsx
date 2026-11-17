@@ -217,7 +217,7 @@ function Steps({ steps }) {
     <ol className="mt-3 space-y-3">
       {steps.map((s, i) => (
         <li key={s.title} className="grid grid-cols-[1.4rem_1fr] gap-2">
-          <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[#08131c]">
+          <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-xs font-bold text-[#08131c]">
             {i + 1}
           </span>
           <div className="min-w-0">

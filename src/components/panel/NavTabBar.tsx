@@ -216,7 +216,7 @@ export default function NavTabBar({ visibleTabs, activeNav, botSayfa, kip, label
                   aria-label={t(grup.adAnahtari)}
                   className="ui-gir absolute left-full top-0 z-50 ml-1 flex w-48 flex-col rounded-ui-2 border border-ui-line2 bg-[var(--dt-surface-2)] py-1 shadow-xl"
                 >
-                  <p className="px-3 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/50">{t(grup.adAnahtari)}</p>
+                  <p className="px-3 pb-1 pt-0.5 text-ui-2 axt-etiket font-semibold text-white/50">{t(grup.adAnahtari)}</p>
                   {sayfalar.map((s) => sayfaDugmesi(s, grup.id, true, true))}
                 </div>
               ) : null}

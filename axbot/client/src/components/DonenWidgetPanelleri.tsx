@@ -13,8 +13,8 @@ interface PanelProps {
   degistir: (p: Record<string, any>) => void;
 }
 
-const GIRDI = 'bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-white';
-const DUGME = 'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-white disabled:opacity-40';
+const GIRDI = 'bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white';
+const DUGME = 'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white disabled:opacity-40';
 
 /** Dönüş sırası elle belirlenir. */
 function SiraDugmeleri({ i, n, tasi, sil, ad }: { i: number; n: number; tasi: (a: number, b: number) => void; sil: (i: number) => void; ad: string }) {
@@ -38,8 +38,8 @@ export function SosyalHesapPaneli({ values, degistir }: PanelProps) {
   const yaz = (yeni: typeof hesaplar) => degistir({ hesaplar: yeni });
   return (
     <div className="space-y-1.5 p-3 rounded-xl border border-white/10 bg-black/20">
-      <span className="text-[11px] font-bold text-white">Sosyal medya hesapları</span>
-      {!hesaplar.length && <p className="text-[11px] text-gray-300">Hesap eklenene kadar yayında bu widget görünmez.</p>}
+      <span className="text-xs font-bold text-white">Sosyal medya hesapları</span>
+      {!hesaplar.length && <p className="text-xs text-gray-300">Hesap eklenene kadar yayında bu widget görünmez.</p>}
       {hesaplar.map((h, i) => (
         <div key={i} className="space-y-1 border-b border-white/10 pb-2">
           <div className="flex items-center justify-between gap-1.5">
@@ -81,8 +81,8 @@ export function SponsorPaneli({ values, degistir }: PanelProps) {
   const oge = (i: number, p: Partial<SponsorOgesi>) => yaz(ogeler.map((x, j) => (j === i ? { ...x, ...p } : x)));
   return (
     <div className="space-y-2 p-3 rounded-xl border border-white/10 bg-black/20">
-      <span className="text-[11px] font-bold text-white">Sponsor görselleri, GIF ve videolar</span>
-      {!ogeler.length && <p className="text-[11px] text-gray-300">Medya eklenene kadar yayında bu widget görünmez.</p>}
+      <span className="text-xs font-bold text-white">Sponsor görselleri, GIF ve videolar</span>
+      {!ogeler.length && <p className="text-xs text-gray-300">Medya eklenene kadar yayında bu widget görünmez.</p>}
       {ogeler.map((o, i) => {
         const gecerli = guvenliMedya(o.url);
         return (
@@ -101,7 +101,7 @@ export function SponsorPaneli({ values, degistir }: PanelProps) {
                 onChange={(e) => oge(i, { url: e.target.value.trim(), tur: medyaTuru(e.target.value) })}
                 className={`${GIRDI} w-full`}
               />
-              {o.url && !gecerli && <p className="text-[11px] text-amber-300">Bu adres çizilmez: http(s) ile başlayan bir dosya adresi girin.</p>}
+              {o.url && !gecerli && <p className="text-xs text-amber-300">Bu adres çizilmez: http(s) ile başlayan bir dosya adresi girin.</p>}
               <input
                 aria-label="Alt yazı"
                 value={o.metin || ''}
@@ -109,7 +109,7 @@ export function SponsorPaneli({ values, degistir }: PanelProps) {
                 onChange={(e) => oge(i, { metin: e.target.value })}
                 className={`${GIRDI} w-full`}
               />
-              <label className="flex items-center gap-1.5 text-[11px] text-gray-300">
+              <label className="flex items-center gap-1.5 text-xs text-gray-300">
                 Süre (sn)
                 <input
                   title="0: görselde varsayılan süre, videoda bitene kadar"
@@ -127,7 +127,7 @@ export function SponsorPaneli({ values, degistir }: PanelProps) {
         <button type="button" onClick={() => setKutuphane((a) => !a)} className={DUGME}>{kutuphane ? 'Kapat' : '+ Kütüphaneden seç / yükle'}</button>
         <button type="button" onClick={() => yaz([...ogeler, { url: '', sure: 0 }])} className={DUGME}>+ Adres ekle</button>
       </div>
-      <p className="text-[11px] text-gray-300">Süre 0 ise görsel varsayılan süre kadar, video bitene kadar kalır. Yükleme sınırı: görsel ve GIF 5 MB, video 30 MB. YouTube gibi sayfa adresleri çalışmaz.</p>
+      <p className="text-xs text-gray-300">Süre 0 ise görsel varsayılan süre kadar, video bitene kadar kalır. Yükleme sınırı: görsel ve GIF 5 MB, video 30 MB. YouTube gibi sayfa adresleri çalışmaz.</p>
       {kutuphane && (
         <MediaLibrary
           onSec={(m) => {

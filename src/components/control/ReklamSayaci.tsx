@@ -53,7 +53,7 @@ export function ReklamSayaci() {
   };
 
   return (
-    <div className={`flex items-center gap-1.5 rounded-ui-1 px-2 py-0.5 text-[11px] ${yakin ? "bg-amber-500/20 text-amber-200" : "bg-black/20 text-white/70"}`} title="Sonraki Twitch reklamı">
+    <div className={`flex items-center gap-1.5 rounded-ui-1 px-2 py-0.5 text-ui-2 ${yakin ? "bg-amber-500/20 text-amber-200" : "bg-black/20 text-white/70"}`} title="Sonraki Twitch reklamı">
       <span>Reklam</span>
       <span className="font-mono tabular-nums">{sureMetni(kalanMs)}</span>
       <button

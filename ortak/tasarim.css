@@ -91,3 +91,6 @@
 .axt-baslik-1 { font-size: var(--axt-yazi-baslik); font-weight: 600; line-height: 1.4; letter-spacing: -0.025em; color: var(--axt-metin); }
 .axt-baslik-2 { font-size: var(--axt-yazi-baslik-2); font-weight: 600; line-height: 1.4; color: var(--axt-metin); }
 .axt-baslik-3 { font-size: var(--axt-yazi-baslik-3); font-weight: 600; line-height: 1.4; color: var(--axt-metin); }
+
+/* UI-9: sayısal alanlarda rakamlar eşit genişlikte (değer değişince yazı kaymaz) */
+input[type="number"] { font-variant-numeric: tabular-nums; }

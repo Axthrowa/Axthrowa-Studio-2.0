@@ -132,7 +132,7 @@ export function SessionPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) 
     <div className="space-y-3 text-xs">
       <div className="flex flex-wrap items-center gap-2">
         <span
-          className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${
+          className={`rounded-full border px-2.5 py-1 text-ui-2 font-bold ${
             genel === "live" ? TONE_CLASS.ok : genel === "partial" ? TONE_CLASS.warn : TONE_CLASS.idle
           }`}
         >
@@ -191,18 +191,18 @@ export function SessionPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) 
           label="Hepsini bitir"
           confirmLabel="Emin misin? Tekrar tıkla"
           disabled={!!busy || !s?.session}
-          className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[11px] font-semibold text-red-200 disabled:opacity-40"
+          className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-ui-2 font-semibold text-red-200 disabled:opacity-40"
           onConfirm={() => void go("end", () => ms.run("Oturumu kapatma", multistreamApi.endAll))}
         />
       </div>
       {s?.ingest && (
-        <p className="text-[11px] text-panel-muted">
+        <p className="text-ui-2 text-panel-muted">
           Elle kurulum için OBS → Ayarlar → Yayın → Özel: sunucu <code className="text-white/70">{s.ingest.server}</code>
           {" "}(anahtar "OBS'i yönlendiriciye bağla" ile otomatik yazılır).
         </p>
       )}
       {!!s?.log?.length && (
-        <div className="max-h-24 overflow-y-auto rounded-lg bg-black/30 px-2.5 py-1.5 font-mono text-[10px] text-white/50">
+        <div className="max-h-24 overflow-y-auto rounded-lg bg-black/30 px-2.5 py-1.5 font-mono text-ui-2 text-white/50">
           {[...s.log].reverse().slice(0, 12).map((l, i) => (
             <div key={i}>{l}</div>
           ))}
@@ -253,31 +253,31 @@ export function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-white">{d.name}</div>
-                  <div className="text-[10px] text-panel-muted">
+                  <div className="text-ui-2 text-panel-muted">
                     {d.platformLabel} · {d.hasKey ? "anahtar kayıtlı" : "anahtar YOK"}
                   </div>
                 </div>
-                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${TONE_CLASS[tone]}`}>
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-ui-2 font-bold ${TONE_CLASS[tone]}`}>
                   {STATE_LABEL[d.state]}
                   {d.state === "reconnecting" && d.retryInSecs != null ? ` · ${d.retryInSecs} sn` : ""}
                 </span>
               </div>
               {p && isActive(d.state) && (
-                <div className="mt-1.5 grid grid-cols-3 gap-1 text-[10px] text-white/60">
+                <div className="mt-1.5 grid grid-cols-3 gap-1 text-ui-2 text-white/60">
                   <span>{p.bitrateKbps != null ? `${Math.round(p.bitrateKbps)} kbps` : "—"}</span>
                   <span>{p.fps ? `${p.fps.toFixed(0)} fps` : "—"}</span>
                   <span>{p.speed != null ? `hız ${p.speed.toFixed(2)}x` : "—"}</span>
                 </div>
               )}
-              {d.droppedTotal > 0 && <div className="mt-1 text-[10px] text-amber-300">Düşürülen paket: {d.droppedTotal}</div>}
+              {d.droppedTotal > 0 && <div className="mt-1 text-ui-2 text-amber-300">Düşürülen paket: {d.droppedTotal}</div>}
               {d.lastError && (d.state === "failed" || d.state === "reconnecting" || d.state === "warning") && (
-                <div className="mt-1 line-clamp-2 text-[10px] text-red-300/90">{d.lastError}</div>
+                <div className="mt-1 line-clamp-2 text-ui-2 text-red-300/90">{d.lastError}</div>
               )}
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {isActive(d.state) ? (
                   <button
                     type="button"
-                    className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
+                    className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-ui-2"
                     onClick={() => void ms.run(`${d.name} durdurma`, () => multistreamApi.stop(d.id))}
                   >
                     <Square className="h-3 w-3" /> Durdur
@@ -285,7 +285,7 @@ export function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream
                 ) : (
                   <button
                     type="button"
-                    className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
+                    className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-ui-2"
                     disabled={!d.enabled || !d.hasKey || !s?.session}
                     title={!s?.session ? "Önce çoklu yayını başlatın" : !d.hasKey ? "Yayın anahtarı yok" : undefined}
                     onClick={() => void ms.run(`${d.name} başlatma`, () => multistreamApi.start(d.id))}
@@ -295,7 +295,7 @@ export function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream
                 )}
                 <button
                   type="button"
-                  className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-[11px]"
+                  className="studio-btn-ghost inline-flex items-center gap-1 !px-2 !py-1 text-ui-2"
                   onClick={() => openEdit(d)}
                 >
                   <Pencil className="h-3 w-3" /> Düzenle
@@ -303,7 +303,7 @@ export function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream
                 <ConfirmButton
                   label="Sil"
                   confirmLabel="Silinsin mi?"
-                  className="rounded-lg px-2 py-1 text-[11px] text-red-300 hover:bg-red-500/10"
+                  className="rounded-lg px-2 py-1 text-ui-2 text-red-300 hover:bg-red-500/10"
                   onConfirm={() => void ms.run("Silme", () => multistreamApi.remove(d.id))}
                 />
               </div>
@@ -364,7 +364,7 @@ export function DestinationsPanel({ ms }: { ms: ReturnType<typeof useMultistream
               placeholder="Windows Kimlik Yöneticisinde saklanır"
             />
           </label>
-          <label className="flex items-center gap-2 text-[11px] text-white/70">
+          <label className="flex items-center gap-2 text-ui-2 text-white/70">
             <input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} />
             GO LIVE ile başlasın
           </label>
@@ -457,7 +457,7 @@ export function PreflightPanel({ ms }: { ms: ReturnType<typeof useMultistream> }
     l === "block" ? <ShieldAlert className="h-3.5 w-3.5 text-red-300" /> : l === "warn" ? <AlertTriangle className="h-3.5 w-3.5 text-amber-300" /> : <Info className="h-3.5 w-3.5 text-sky-300" />;
   return (
     <div className="space-y-2 text-xs">
-      <div className="flex items-center justify-between gap-2 text-[11px] text-white/60">
+      <div className="flex items-center justify-between gap-2 text-ui-2 text-white/60">
         <span>
           OBS: {e?.codec ? e.codec.toUpperCase() : "?"} · {e?.bitrateKbps ?? "?"} kbps · {e?.rateControl ?? "?"} · anahtar kare{" "}
           {e?.keyintSec ?? "?"} sn · {e?.width && e?.height ? `${e.width}×${e.height}` : "?"}
@@ -467,7 +467,7 @@ export function PreflightPanel({ ms }: { ms: ReturnType<typeof useMultistream> }
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
-      <label className="flex items-center gap-2 text-[11px] text-white/70">
+      <label className="flex items-center gap-2 text-ui-2 text-white/70">
         Ölçtüğüm yükleme hızı
         <input
           className="studio-input w-20 !py-0.5 text-xs"
@@ -487,7 +487,7 @@ export function PreflightPanel({ ms }: { ms: ReturnType<typeof useMultistream> }
             <span className="mt-0.5 shrink-0">{icon(f.level)}</span>
             <span className="min-w-0">
               <span className="text-white/90">{f.message}</span>
-              <span className="block text-[10px] text-panel-muted">
+              <span className="block text-ui-2 text-panel-muted">
                 {f.source}
                 {f.source === "hesap" || f.source === "uygulama" ? "" : ` · doğrulama ${f.verified}`}
                 {f.destination ? ` · hedef ${ms.status?.destinations.find((d) => d.id === f.destination)?.name || f.destination}` : ""}
@@ -525,7 +525,7 @@ export function AuditPanel({ ms }: { ms: ReturnType<typeof useMultistream> }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logKey]);
   return (
-    <div className="max-h-64 space-y-1 overflow-y-auto text-[11px]">
+    <div className="max-h-64 space-y-1 overflow-y-auto text-ui-2">
       {rows.length === 0 && <p className="text-panel-muted">Kayıt yok.</p>}
       {rows.map((r) => (
         <div key={r.id} className="flex justify-between gap-2 rounded bg-white/[0.03] px-2 py-1">

@@ -21,7 +21,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
               <span className={`w-2.5 h-2.5 rounded-full ${allInOne.testMode ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
               <h3 className="text-sm font-medium text-white">OBS adresi</h3>
               {allInOne.testMode && (
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-bold animate-pulse">
+                <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-bold animate-pulse">
                   Test modu açık
                 </span>
               )}
@@ -113,7 +113,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                     onClick={() => {
                       setObsGorunumu(deger);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                       obsGorunumu === deger ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-white/10'
                     }`}
                   >
@@ -125,11 +125,11 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                 type="button"
                 onClick={() => void tekUrlYenile()}
                 title="OBS'teki Tek URL kaynağını ve bu önizlemeyi yeniden yükler"
-                className="px-3 py-1.5 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10 flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10 flex items-center gap-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Yenile
               </button>
-              <p className="text-[10px] text-gray-400 max-w-md">
+              <p className="text-xs text-gray-400 max-w-md">
                 {obsGorunumu
                   ? allInOne.testMode
                     ? 'OBS Test Modu açık: OBS de örnek verileri gösteriyor.'
@@ -140,13 +140,13 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
 
             {/* Açık katmanların testleri: yayında görünür, bitince önceki hâline döner */}
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-bold text-gray-400 mr-1">Test:</span>
+              <span className="text-xs font-bold text-gray-400 mr-1">Test:</span>
               {KATMANLAR.filter((k) => (allInOne as any)[k.anahtar]?.enabled).map((k) => (
                 <button
                   key={k.anahtar}
                   type="button"
                   onClick={() => void katmaniTestEt(k.anahtar, k.etiket, TEST_ADI[KATMAN_AYAR_ID[k.anahtar]] || `ornek-${k.anahtar}`)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10"
                 >
                   {KATMAN_EMOJISI[k.anahtar] || '🧩'} {k.etiket}
                 </button>
@@ -296,7 +296,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
 
             {/* Widget Selector Dropdown */}
             <div>
-              <label className="text-[11px] font-bold text-gray-300 block mb-1">
+              <label className="text-xs font-bold text-gray-300 block mb-1">
                 Düzenlenecek Bileşen:
               </label>
               <Secim aria-label="Düzenlenecek Bileşen"
@@ -355,18 +355,18 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                   {kendiUrl && (
                     <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-1.5">
                       <span className="text-xs font-bold text-white block">Bu widget'ın kendi adresi</span>
-                      <span className="text-[10px] text-gray-400 block">OBS'te Tek URL olmadan ayrı kaynak olarak eklemek için</span>
+                      <span className="text-xs text-gray-400 block">OBS'te Tek URL olmadan ayrı kaynak olarak eklemek için</span>
                       <div className="space-y-1.5">
                         <p
                           data-widget-adresi
-                          className="bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-purple-300 font-mono break-all select-all"
+                          className="bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-purple-300 font-mono break-all select-all"
                         >
                           {kendiUrl}
                         </p>
                         <button
                           type="button"
                           onClick={() => copyToClipboard(kendiUrl)}
-                          className="w-full justify-center px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[11px] font-bold flex items-center gap-1"
+                          className="w-full justify-center px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
                         >
                           {copiedUrl === kendiUrl ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
                           <span>{copiedUrl === kendiUrl ? 'Kopyalandı' : 'Kopyala'}</span>
@@ -379,7 +379,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                   <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between">
                     <div>
                       <span className="text-xs font-bold text-white block">Yayında göster</span>
-                      <span className="text-[10px] text-gray-400">Kapalıysa OBS'te görünmez</span>
+                      <span className="text-xs text-gray-400">Kapalıysa OBS'te görünmez</span>
                     </div>
                     <Anahtar acik={Boolean(cur.enabled)} onChange={(v) => updateCur({ enabled: v })} ad="Yayında göster" />
                   </div>
@@ -388,7 +388,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                     <label className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between gap-3 cursor-pointer">
                       <span>
                         <span className="text-xs font-bold text-white block">Etki tüm ekranı kaplasın</span>
-                        <span className="text-[10px] text-gray-400">Emote'lar ekranın her yerinden gelir ve her yere saçılır. Ortadaki emote kutunun yerinde kalır</span>
+                        <span className="text-xs text-gray-400">Emote'lar ekranın her yerinden gelir ve her yere saçılır. Ortadaki emote kutunun yerinde kalır</span>
                       </span>
                       <Anahtar acik={Boolean(cur.etkiTamEkran)} onChange={(v) => updateCur({ etkiTamEkran: v })} />
                     </label>
@@ -398,7 +398,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                     <label className="p-3 bg-[#11131a] rounded-xl border border-white/10 flex items-center justify-between gap-3 cursor-pointer">
                       <span>
                         <span className="text-xs font-bold text-white block">Çekilirken farklı konumda dursun</span>
-                        <span className="text-[10px] text-gray-400">Tuvalde turuncu kesikli kutuyu sürükle. Çekiliş başlayınca widget oraya geçer, bitince geri döner.</span>
+                        <span className="text-xs text-gray-400">Tuvalde turuncu kesikli kutuyu sürükle. Çekiliş başlayınca widget oraya geçer, bitince geri döner.</span>
                       </span>
                       <Anahtar acik={Boolean(cur.cekilis)} onChange={(v) => updateCur({ cekilis: v ? { x: cur.x, y: Math.max(0, cur.y - 240) } : undefined })} />
                     </label>
@@ -416,14 +416,14 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                       <label className="flex items-center justify-between gap-3 cursor-pointer">
                         <span>
                           <span className="text-xs font-bold text-white block">Öne bir şey gelince gizlen</span>
-                          <span className="text-[10px] text-gray-400">Uyarı, anket gibi widget bunun üstüne gelince gizlenir, bitince geri gelir</span>
+                          <span className="text-xs text-gray-400">Uyarı, anket gibi widget bunun üstüne gelince gizlenir, bitince geri gelir</span>
                         </span>
                         <Anahtar acik={cakisincaGizlenirMi(selectedCanvasWidget, cur)} onChange={(v) => updateCur({ cakisincaGizle: v })} />
                       </label>
                       <label className="flex items-center justify-between gap-3 cursor-pointer">
                         <span>
                           <span className="text-xs font-bold text-white block">Ekrana gelince arkasındakileri gizle</span>
-                          <span className="text-[10px] text-gray-400">Sürekli görünen widget'ta açarsan arkası hep gizli kalır</span>
+                          <span className="text-xs text-gray-400">Sürekli görünen widget'ta açarsan arkası hep gizli kalır</span>
                         </span>
                         <Anahtar acik={arkasiniGizlerMi(selectedCanvasWidget, cur)} onChange={(v) => updateCur({ arkasiniGizle: v })} />
                       </label>
@@ -432,16 +432,16 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
 
                   {/* Numeric Coordinate and Size Inputs */}
                   <div className="p-3.5 bg-[#11131a] rounded-xl border border-white/10 space-y-3">
-                    <div className="text-[11px] font-bold text-purple-300 flex items-center justify-between">
+                    <div className="text-xs font-bold text-purple-300 flex items-center justify-between">
                       <span>Konum ve boyut</span>
-                      <span className="text-[10px] text-gray-400 font-mono">
+                      <span className="text-xs text-gray-400 font-mono">
                         X:{cur.x} Y:{cur.y} | {cur.width}x{cur.height}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <label className="text-[10px] text-gray-400 block mb-0.5">X Konumu (px)</label>
+                        <label className="text-xs text-gray-400 block mb-0.5">X Konumu (px)</label>
                         <input aria-label="X Konumu (px)"
                           type="number"
                           value={cur.x ?? 0}
@@ -450,7 +450,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 block mb-0.5">Y Konumu (px)</label>
+                        <label className="text-xs text-gray-400 block mb-0.5">Y Konumu (px)</label>
                         <input aria-label="Y Konumu (px)"
                           type="number"
                           value={cur.y ?? 0}
@@ -459,7 +459,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 block mb-0.5">Genişlik (px)</label>
+                        <label className="text-xs text-gray-400 block mb-0.5">Genişlik (px)</label>
                         <input aria-label="Genişlik (px)"
                           type="number"
                           value={cur.width ?? 300}
@@ -468,7 +468,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 block mb-0.5">Yükseklik (px)</label>
+                        <label className="text-xs text-gray-400 block mb-0.5">Yükseklik (px)</label>
                         <input aria-label="Yükseklik (px)"
                           type="number"
                           value={cur.height ?? 200}
@@ -481,8 +481,8 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                     {/* Scale Slider */}
                     <div className="pt-1">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-[10px] text-gray-400">Ölçek (Scale)</span>
-                        <span className="text-[10px] font-mono text-purple-300 font-bold">{cur.scale ?? 1}x</span>
+                        <span className="text-xs text-gray-400">Ölçek (Scale)</span>
+                        <span className="text-xs font-mono text-purple-300 font-bold">{cur.scale ?? 1}x</span>
                       </div>
                       <input aria-label="Ölçek"
                         type="range"
@@ -497,13 +497,13 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
 
                     {/* Alignment Action Buttons */}
                     <HizaIzgarasi onSec={hizalaSecili} pay={kenarPayi} payDegisti={setKenarPayi} />
-                    <p className="text-[10px] text-gray-500 leading-snug">
+                    <p className="text-xs text-gray-500 leading-snug">
                       Sürüklerken kenarlara, ortaya ve diğer katmanlara yapışır (Alt basılı: serbest). Ok tuşları 1 px, Shift+ok 10 px kaydırır.
                     </p>
                     <div className="grid grid-cols-1 gap-1.5">
                       <button
                         onClick={() => handleResetWidget(selectedCanvasWidget)}
-                        className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-amber-300 transition-colors"
+                        className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-amber-300 transition-colors"
                       >
                         🔄 Sıfırla
                       </button>
@@ -518,41 +518,41 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                           <Bell className="w-3.5 h-3.5" />
                           Ayrıntılı AlertBox Ayarları
                         </span>
-                        <span className="text-[10px] text-gray-400 font-mono">OBS Bildirimleri</span>
+                        <span className="text-xs text-gray-400 font-mono">OBS Bildirimleri</span>
                       </div>
 
                       {/* Düzen, animasyon, süre ve ses eskiden burada AYRI alanlardı ama hiçbir
                           bileşen onları okumuyordu (OBS'e yansımıyordu). Gerçek ayarlar aşağıdaki
                           "Seçili Bileşen Ayarları"nda; OBS ile önizleme aynı kaydı kullanır. */}
-                      <p className="text-[10px] text-gray-400 leading-relaxed">
+                      <p className="text-xs text-gray-400 leading-relaxed">
                         Düzen, animasyon, yazı efekti ve ses düzeyi aşağıdaki <b className="text-cyan-300">Seçili Bileşen Ayarları</b> bölümünden değişir ve anında OBS'e gider.
                       </p>
 
                       {/* Quick Test Trigger Buttons */}
                       <div className="pt-2 border-t border-white/5 space-y-1.5">
-                        <label className="text-[10px] font-bold text-gray-400 block">OBS Canlı Bildirim Testi:</label>
+                        <label className="text-xs font-bold text-gray-400 block">OBS Canlı Bildirim Testi:</label>
                         <div className="grid grid-cols-2 gap-1.5">
                           <button
                             onClick={() => triggerWidgetTest('follow', { username: 'EmreCan' })}
-                            className="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-lg text-[10px] font-bold"
+                            className="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-bold"
                           >
                             💜 Takip Testi
                           </button>
                           <button
                             onClick={() => triggerWidgetTest('sub', { username: 'Ahmet_Kaya' })}
-                            className="px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-lg text-[10px] font-bold"
+                            className="px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold"
                           >
                             ⭐ Abone Testi
                           </button>
                           <button
                             onClick={() => triggerWidgetTest('tip', { username: 'Caner', amount: 100, currency: 'TL' })}
-                            className="px-2.5 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-bold"
+                            className="px-2.5 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold"
                           >
                             💰 Bağış Testi
                           </button>
                           <button
                             onClick={() => triggerWidgetTest('raid', { username: 'ProGamer', viewers: 120 })}
-                            className="px-2.5 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 rounded-lg text-[10px] font-bold"
+                            className="px-2.5 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 rounded-lg text-xs font-bold"
                           >
                             🚀 Raid Testi
                           </button>
@@ -566,14 +566,14 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                       alanlar hiçbir yere bağlı değildi. */}
                   {selectedCanvasWidget === 'goals' && (
                     <div className="p-3 bg-[#11131a] rounded-xl border border-white/10 space-y-1.5 text-xs">
-                      <label className="text-[10px] text-gray-400 block font-bold">Ekrandaki hedef çubukları</label>
+                      <label className="text-xs text-gray-400 block font-bold">Ekrandaki hedef çubukları</label>
                       {cubukTurleri(cur).map((tur) => (
                         <div key={tur} className="flex items-center justify-between gap-2 rounded-lg bg-black/40 px-2 py-1">
                           <span>{tur === 'follower' ? 'Takipçi' : tur === 'sub' ? 'Abone' : tur === 'kicks' ? 'KICKs' : 'Bağış'}</span>
                           {cubukTurleri(cur).length > 1 && (
                             <button
                               type="button"
-                              className="text-[10px] text-red-300"
+                              className="text-xs text-red-300"
                               onClick={() => {
                                 const kalan = cubukTurleri(cur).filter((t) => t !== tur);
                                 updateCur({ cubuklar: kalan, type: kalan[0], height: Math.max(70, kalan.length * 78) });
@@ -604,7 +604,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
                             ))}
                         </Secim>
                       )}
-                      <p className="text-[10px] text-gray-500">Takipçi sayısı Kick’ten, abone, bağış ve KICKs gelen olaylardan her açılışta yazılır.</p>
+                      <p className="text-xs text-gray-500">Takipçi sayısı Kick’ten, abone, bağış ve KICKs gelen olaylardan her açılışta yazılır.</p>
                     </div>
                   )}
 
@@ -616,10 +616,10 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
             {seciliAyarId && (
               <div className="pt-1">
                 <div className="flex items-center justify-between pb-2">
-                  <h4 className="text-[11px] font-black uppercase tracking-wider text-cyan-300">
+                  <h4 className="text-xs axt-etiket font-black text-cyan-300">
                     Seçili Bileşen Ayarları
                   </h4>
-                  <span className="text-[10px] text-emerald-400">otomatik kaydedilir</span>
+                  <span className="text-xs text-emerald-400">otomatik kaydedilir</span>
                 </div>
                 <div className="space-y-2 pb-3">
                   {widgetKontrolleri(seciliAyarId)}
@@ -640,7 +640,7 @@ export function TekUrlSekmesi(p: OverlayStudioSonucu) {
               <Sparkles className="w-4 h-4" />
               <span>Şimdi Kaydet</span>
             </button>
-            <p className={`text-[10px] text-center ${yerlesimDurumu === 'hata' ? 'text-red-400' : 'text-gray-500'}`}>
+            <p className={`text-xs text-center ${yerlesimDurumu === 'hata' ? 'text-red-400' : 'text-gray-500'}`}>
               {yerlesimDurumu === 'kaydediliyor'
                 ? 'Kaydediliyor…'
                 : yerlesimDurumu === 'bekliyor'

@@ -66,11 +66,11 @@ export default function KaynakTercihi({ status, track, onSaved, onToast }: Props
           ))}
         </ol>
       )}
-      {!otomatik && <p className="text-[11px] text-panel-muted">Üstteki kaynak çalıyorsa o gösterilir; çalmıyorsa sıradaki.</p>}
+      {!otomatik && <p className="text-ui-2 text-panel-muted">Üstteki kaynak çalıyorsa o gösterilir; çalmıyorsa sıradaki.</p>}
 
       <div>
         <p className="font-semibold">Yok sayılan uygulamalar</p>
-        <p className="text-[11px] text-panel-muted">Windows medya oturumunda adı bunları içeren oynatıcılar overlay'e gelmez (ör. brave, chrome, msedge).</p>
+        <p className="text-ui-2 text-panel-muted">Windows medya oturumunda adı bunları içeren oynatıcılar overlay'e gelmez (ör. brave, chrome, msedge).</p>
         {tercih.yoksay.length > 0 && (
           <ul className="mt-1 flex flex-wrap gap-1">
             {tercih.yoksay.map((y) => (

@@ -48,7 +48,7 @@ export function CanliAltyaziKarti() {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-white">Canlı altyazı</h3>
+      <h3 className="text-sm font-bold axt-etiket text-white">Canlı altyazı</h3>
       <p className="text-xs text-white/55">
         Mikrofon bu bilgisayarda metne çevrilir; ses dışarı gönderilmez. Metin OBS katmanında görünür, istersen yayına CEA-608 altyazı olarak da gider.
         Bu sayfa (Studio penceresi) açık kaldıkça çalışır.

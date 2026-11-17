@@ -68,7 +68,7 @@ export function KlipDuzenleyici({ isaret, onKapat }: { isaret: number; onKapat: 
       onPointerMove={tasi}
       onPointerUp={() => (surukle.current = null)}
     >
-      <span className="absolute left-0 top-0 bg-black/70 px-1 text-[10px] text-white">{etiket}</span>
+      <span className="absolute left-0 top-0 bg-black/70 px-1 text-ui-2 text-white">{etiket}</span>
       <span
         aria-label={`${etiket} boyutu`}
         className="absolute bottom-0 right-0 h-3 w-3 cursor-nwse-resize bg-white"
@@ -103,8 +103,8 @@ export function KlipDuzenleyici({ isaret, onKapat }: { isaret: number; onKapat: 
           Kapat
         </button>
       </div>
-      {durum.tur === "tamam" && <p className="break-all text-[11px] text-emerald-300">Yazıldı: {durum.metin}</p>}
-      {durum.tur === "hata" && <p className="text-[11px] text-red-300">{durum.metin}</p>}
+      {durum.tur === "tamam" && <p className="break-all text-ui-2 text-emerald-300">Yazıldı: {durum.metin}</p>}
+      {durum.tur === "hata" && <p className="text-ui-2 text-red-300">{durum.metin}</p>}
     </div>
   );
 }

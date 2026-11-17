@@ -140,7 +140,7 @@ export default function UpdateModal() {
                 style={yuzde !== null || bitti ? { width: `${bitti ? 100 : yuzde}%` } : undefined}
               />
             </div>
-            <div className="flex justify-between font-mono text-[11px] text-zinc-500">
+            <div className="flex justify-between font-mono text-ui-2 text-zinc-500">
               <span>{durumYazisi}</span>
               {yuzde !== null && !bitti ? <span className="text-axthrowa-cyan">%{yuzde}</span> : null}
             </div>

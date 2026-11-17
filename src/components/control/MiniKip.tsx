@@ -86,7 +86,7 @@ export function MiniKip({ onCik, onToast }: { onCik: () => void; onToast: (m: st
       </p>
       <div className="grid flex-1 grid-cols-6 gap-1">
         {eylemler.map((a) => (
-          <button key={a.id} type="button" title={a.label} onClick={() => void calistir(a.id, {}, a.confirm)} className="truncate rounded bg-white/10 px-1 text-[11px] hover:bg-white/20">
+          <button key={a.id} type="button" title={a.label} onClick={() => void calistir(a.id, {}, a.confirm)} className="truncate rounded bg-white/10 px-1 text-ui-2 hover:bg-white/20">
             {a.label}
           </button>
         ))}

@@ -166,7 +166,7 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
           <div className="mt-2 rounded-md bg-panel-accent px-3 py-2 text-sm text-black">
             {status?.sourceAuto === false ? "Sıralı" : "Otomatik"} — {source === "youtube-music" ? "YouTube Music" : source === "smtc" ? `Windows medya (${track?.app || "oynatıcı"})` : "Spotify"}
           </div>
-          <p className="mt-2 text-[11px] text-panel-muted">
+          <p className="mt-2 text-ui-2 text-panel-muted">
             Hangisinde müzik çalıyorsa widget o kaynağa geçer.
           </p>
           <div className="mt-2 space-y-1 text-xs text-panel-muted">
@@ -248,7 +248,7 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
               ⏭ Sonraki
             </button>
           </div>
-          <p className="mt-2 text-[11px] text-panel-muted">
+          <p className="mt-2 text-ui-2 text-panel-muted">
             Spotify'da oynatma kontrolü Premium hesap ve açık bir cihaz gerektirir.
           </p>
         </div>
@@ -257,7 +257,7 @@ export default function MusicPanel({ baseUrl, onToast, onOpenExternal }: Props) 
 
         <div>
           <h2 className="text-sm font-semibold">Overlay</h2>
-          <p className="mt-1 text-[11px] text-panel-muted">
+          <p className="mt-1 text-ui-2 text-panel-muted">
             Şarkı bilgisi Giriş / Mola / Çıkış ekranlarındaki “Şimdi Çalıyor” widget’ında görünür.
             Görünürlüğü ve konumu ilgili ekranın ayarlarından değiştirin.
           </p>

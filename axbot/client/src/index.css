@@ -121,9 +121,9 @@
 }
 .axt-panel ::placeholder { color: var(--color-gray-500); opacity: 1; }
 .axt-panel .axt-onizleme ::placeholder { color: revert; opacity: revert; }
-.axt-panel :focus-visible:not(.axt-onizleme *) { outline: 2px solid var(--axt-odak, #c4b5fd); outline-offset: 2px; }
+.axt-panel :focus-visible:not(.axt-onizleme *) { outline: 3px solid var(--axt-odak, #c4b5fd); outline-offset: 2px; }
 .axt-panel :is(input, select, textarea):focus-visible:not(.axt-onizleme *) { outline-offset: 0; }
-.axt-panel :is(.text-\[8px\], .text-\[9px\], .text-\[10px\]):not(.axt-onizleme *) { font-size: 11px; }
+.axt-panel :is(.text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\]):not(.axt-onizleme *) { font-size: 12px; }
 .axt-panel button:not(:disabled):not(.axt-onizleme *) { cursor: pointer; }
 .axt-panel button:not(.axt-onizleme *) { min-width: 24px; min-height: 24px; }
 @media (prefers-reduced-motion: reduce) {

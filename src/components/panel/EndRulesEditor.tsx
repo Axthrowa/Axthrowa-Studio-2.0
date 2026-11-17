@@ -73,7 +73,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
   return (
     <div className="mt-2.5 space-y-2 rounded-xl border border-panel-border/70 bg-black/30 p-2.5">
       <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-1.5">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-white">Bitiş Kuralı</h4>
+        <h4 className="text-xs font-bold axt-etiket text-white">Bitiş Kuralı</h4>
         <span className="text-xs font-medium text-white/70">Ekran ne zaman bitsin?</span>
       </div>
 
@@ -107,7 +107,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             </div>
 
             {(mode === "minutes" || mode === "minutesOrMediaEnd") && (
-              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
+              <label className="mt-2 block text-xs font-bold axt-etiket text-white/80">
                 Süre (dakika)
                 <input
                   className={field}
@@ -122,7 +122,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {mode === "mediaLoops" && (
-              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
+              <label className="mt-2 block text-xs font-bold axt-etiket text-white/80">
                 Video kaç kez dönünce bitsin? ({MIN_LOOPS}–{MAX_LOOPS})
                 <input
                   className={field}
@@ -136,7 +136,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {mode === "targetDate" && (
-              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
+              <label className="mt-2 block text-xs font-bold axt-etiket text-white/80">
                 Hedef tarih ve saat
                 <input
                   className={field}
@@ -148,7 +148,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {mode !== "" && mode !== "manual" && (
-              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
+              <label className="mt-2 block text-xs font-bold axt-etiket text-white/80">
                 Bitince geçilecek OBS sahnesi
                 <input
                   className={field}
@@ -166,7 +166,7 @@ export default function EndRulesEditor({ obs, legacy, scenes = [], onChange }: P
             )}
 
             {id === "ending" && mode !== "" && mode !== "manual" && (
-              <label className="mt-2 block text-xs font-bold uppercase tracking-wider text-white/80">
+              <label className="mt-2 block text-xs font-bold axt-etiket text-white/80">
                 Bitince yayın
                 <select
                   className={field}

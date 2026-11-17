@@ -346,7 +346,7 @@ export function App() {
           </nav>
         </div>
 
-        <div className="px-5 py-3 text-[11px] text-gray-600">{BRAND.author}</div>
+        <div className="px-5 py-3 text-xs text-gray-600">{BRAND.author}</div>
       </aside>}
 
       {/* Main Content Area */}

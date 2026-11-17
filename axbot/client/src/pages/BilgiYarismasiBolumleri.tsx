@@ -37,11 +37,11 @@ export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-purple-400" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-gray-200">
+                <h3 className="text-xs font-black axt-etiket text-gray-200">
                   OBS Tarayıcı Kaynağı (Browser Source) Linki
                 </h3>
               </div>
-              <span className="text-[11px] text-gray-400 font-mono">Önerilen Boyut: 800 x 600</span>
+              <span className="text-xs text-gray-400 font-mono">Önerilen Boyut: 800 x 600</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
 
               <div className="flex items-center gap-2">
                 <span className={`w-3 h-3 rounded-full ${isQuestionActive ? 'bg-emerald-400 animate-ping' : 'bg-gray-600'}`} />
-                <span className="text-xs font-mono font-bold text-gray-300 uppercase">
+                <span className="text-xs font-mono font-bold text-gray-300 axt-etiket">
                   {gameState?.status || 'Boşta'}
                 </span>
               </div>
@@ -94,7 +94,7 @@ export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
             <div className="space-y-2">
               <label className="text-xs font-extrabold text-gray-300 flex items-center justify-between">
                 <span>Yarışma Kategorisi Seçin:</span>
-                <span className="text-[11px] text-purple-400 font-mono font-normal">
+                <span className="text-xs text-purple-400 font-mono font-normal">
                   {selectedCategory === 'all' ? 'Tüm Kategorilerden Karışık' : selectedCategory}
                 </span>
               </label>
@@ -138,7 +138,7 @@ export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
                   onChange={(e) => setQuestionDuration(parseInt(e.target.value, 10))}
                   className="w-full accent-purple-500 cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] text-gray-500 font-mono">
+                <div className="flex justify-between text-xs text-gray-500 font-mono">
                   <span>10 sn (Hızlı)</span>
                   <span>20 sn (Önerilen)</span>
                   <span>45 sn</span>
@@ -159,7 +159,7 @@ export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
                   onChange={(e) => setTournamentCount(parseInt(e.target.value, 10))}
                   className="w-full accent-pink-500 cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] text-gray-500 font-mono">
+                <div className="flex justify-between text-xs text-gray-500 font-mono">
                   <span>3 Soru</span>
                   <span>5 Soru (Standart)</span>
                   <span>15 Soru</span>
@@ -225,26 +225,26 @@ export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
 
           {/* Chat Commands Quick Cheat Sheet */}
           <div className="bg-[#0f131c] border border-white/10 rounded-3xl p-5 shadow-xl space-y-3">
-            <div className="flex items-center gap-2 text-xs font-extrabold text-gray-300 uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-extrabold text-gray-300 axt-etiket">
               <Zap className="w-4 h-4 text-yellow-400" />
               <span>Chat Botu Bilgi Yarışması Komutları</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
               <div className="bg-black/40 p-2.5 rounded-xl border border-white/5">
                 <span className="text-purple-400 font-bold">!soru [kategori]</span>
-                <p className="text-[11px] text-gray-400 mt-0.5">Tek soru başlatır (Örn: !soru cografya)</p>
+                <p className="text-xs text-gray-400 mt-0.5">Tek soru başlatır (Örn: !soru cografya)</p>
               </div>
               <div className="bg-black/40 p-2.5 rounded-xl border border-white/5">
                 <span className="text-pink-400 font-bold">!yarisma baslat [kat] [adet]</span>
-                <p className="text-[11px] text-gray-400 mt-0.5">Turnuva başlatır (Örn: !yarisma baslat tarih 5)</p>
+                <p className="text-xs text-gray-400 mt-0.5">Turnuva başlatır (Örn: !yarisma baslat tarih 5)</p>
               </div>
               <div className="bg-black/40 p-2.5 rounded-xl border border-white/5">
                 <span className="text-emerald-400 font-bold">A, B, C veya D</span>
-                <p className="text-[11px] text-gray-400 mt-0.5">İzleyiciler sadece şıkkı yazarak oy verir</p>
+                <p className="text-xs text-gray-400 mt-0.5">İzleyiciler sadece şıkkı yazarak oy verir</p>
               </div>
               <div className="bg-black/40 p-2.5 rounded-xl border border-white/5">
                 <span className="text-cyan-400 font-bold">!skor & !triviatop</span>
-                <p className="text-[11px] text-gray-400 mt-0.5">Kişisel puan & genel Top 5 sıralaması</p>
+                <p className="text-xs text-gray-400 mt-0.5">Kişisel puan & genel Top 5 sıralaması</p>
               </div>
             </div>
           </div>
@@ -256,11 +256,11 @@ export function KontrolSekmesi(p: BilgiYarismasiSonucu) {
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                <h3 className="text-xs font-black axt-etiket text-white">
                   Canlı OBS Overlay Önizlemesi
                 </h3>
               </div>
-              <span className="text-[10px] text-purple-400 font-bold font-mono">1:1 Canlı Ekran</span>
+              <span className="text-xs text-purple-400 font-bold font-mono">1:1 Canlı Ekran</span>
             </div>
 
             {/* Embedded Trivia Widget Preview */}
@@ -348,10 +348,10 @@ export function SorularSekmesi(p: BilgiYarismasiSonucu) {
                 <div key={q.id} className="p-4 hover:bg-white/[0.02] transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1.5 max-w-3xl">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      <span className="text-xs axt-etiket font-extrabold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
                         {q.category}
                       </span>
-                      <span className="text-[10px] font-mono font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded">
+                      <span className="text-xs font-mono font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded">
                         +{q.points} PUAN
                       </span>
                     </div>
@@ -373,7 +373,7 @@ export function SorularSekmesi(p: BilgiYarismasiSonucu) {
                       </span>
                     </div>
                     {q.explanation && (
-                      <p className="text-[11px] text-gray-400 italic pt-0.5">
+                      <p className="text-xs text-gray-400 italic pt-0.5">
                         💡 Bilgi Notu: {q.explanation}
                       </p>
                     )}
@@ -465,7 +465,7 @@ export function SiralamaSekmesi(p: BilgiYarismasiSonucu) {
                         @{user.displayName}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-[10px] font-mono font-bold uppercase bg-white/5 px-2 py-0.5 rounded text-gray-300">
+                        <span className="text-xs axt-etiket font-mono font-bold bg-white/5 px-2 py-0.5 rounded text-gray-300">
                           {user.platform}
                         </span>
                       </td>

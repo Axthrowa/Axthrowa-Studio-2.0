@@ -23,7 +23,7 @@ export function OptionGrid({ options, value, onChange, columns = 5 }) {
             } ${opt.locked ? 'opacity-60' : ''} ${opt.disabled ? 'cursor-not-allowed opacity-40' : ''}`}
           >
             {opt.badge && (
-              <span className="absolute -top-2 right-1 z-10 rounded-full bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+              <span className="absolute -top-2 right-1 z-10 rounded-full bg-[var(--color-accent)] px-1.5 py-0.5 text-xs font-bold text-white">
                 {opt.badge}
               </span>
             )}

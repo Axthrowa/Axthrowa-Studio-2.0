@@ -150,7 +150,7 @@ function TahminPaneli() {
           }
           sag={
             <span
-              className={`px-2 py-1 rounded-lg text-[10px] font-black ${
+              className={`px-2 py-1 rounded-lg text-xs font-black ${
                 t.durum === 'kilitli' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
               }`}
             >
@@ -184,7 +184,7 @@ function TahminPaneli() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
-            <span className="text-[11px] text-gray-400 mr-auto">
+            <span className="text-xs text-gray-400 mr-auto">
               Havuz: <b className="text-white">{d.havuz}</b> puan · {d.bahisSayisi} bahis
             </span>
             {t.durum === 'acik' && (
@@ -215,7 +215,7 @@ function TahminPaneli() {
           </Alan>
 
           <div className="space-y-2">
-            <span className="block text-[11px] font-bold text-gray-300">Seçenekler (en az 2, en çok 6)</span>
+            <span className="block text-xs font-bold text-gray-300">Seçenekler (en az 2, en çok 6)</span>
             {secenekler.map((s, i) => (
               <div key={i} className="flex gap-2">
                 <Girdi
@@ -255,7 +255,7 @@ function TahminPaneli() {
       )}
 
       <Katlanir baslik="Sohbet komutları" aciklama="Sohbetten de yönetilebilir">
-        <ul className="text-[11px] text-gray-400 space-y-1">
+        <ul className="text-xs text-gray-400 space-y-1">
           <li>
             <code className="text-purple-300">!tahmin</code> — açık tahminin durumunu gösterir
           </li>
@@ -380,11 +380,11 @@ function KuyrukPaneli() {
                 <span className="w-6 text-xs font-black text-purple-300">{i + 1}</span>
                 <span className="text-sm text-white font-bold">{k.gorunenAd}</span>
                 {k.oncelikli && (
-                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-black">
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-black">
                     ÖNCELİKLİ
                   </span>
                 )}
-                <span className="ml-auto text-[10px] text-gray-500">{k.platform || '—'}</span>
+                <span className="ml-auto text-xs text-gray-500">{k.platform || '—'}</span>
                 <Buton
                   ton="tehlike"
                   ikon={<X className="w-3.5 h-3.5" />}
@@ -430,7 +430,7 @@ function KuyrukPaneli() {
       </Kart>
 
       <Katlanir baslik="Sohbet komutları" aciklama="Sohbetten de yönetilebilir">
-        <ul className="text-[11px] text-gray-400 space-y-1">
+        <ul className="text-xs text-gray-400 space-y-1">
           <li>
             <code className="text-purple-300">!joinq</code> katıl ·{' '}
             <code className="text-purple-300">!leaveq</code> ayrıl ·{' '}
@@ -522,7 +522,7 @@ function DususPaneli() {
         }
         sag={
           <span
-            className={`px-2 py-1 rounded-lg text-[10px] font-black ${
+            className={`px-2 py-1 rounded-lg text-xs font-black ${
               d.aktif ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-gray-400'
             }`}
           >
@@ -563,7 +563,7 @@ function DususPaneli() {
         {d.aktif && d.katilanlar.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/10">
             {d.katilanlar.map((k: string) => (
-              <span key={k} className="px-2 py-0.5 rounded-lg bg-white/10 text-[10px] text-white font-bold">
+              <span key={k} className="px-2 py-0.5 rounded-lg bg-white/10 text-xs text-white font-bold">
                 {k}
               </span>
             ))}
@@ -644,7 +644,7 @@ function DususPaneli() {
       </Kart>
 
       <Katlanir baslik="Sohbet komutları" aciklama="Sohbetten de yönetilebilir">
-        <ul className="text-[11px] text-gray-400 space-y-1">
+        <ul className="text-xs text-gray-400 space-y-1">
           <li>
             <code className="text-purple-300">!pdrops start</code> ·{' '}
             <code className="text-purple-300">!pdrops stop</code> ·{' '}

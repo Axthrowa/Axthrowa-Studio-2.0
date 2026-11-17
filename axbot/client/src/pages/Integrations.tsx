@@ -155,7 +155,7 @@ function DiscordPaneli() {
         baslik="Nasıl çalışır?"
         aciklama="Discord botunu sunucunuza eklemeye gerek yok — kanal ayarlarından bir webhook adresi alıp yapıştırmanız yeterli."
       >
-        <ol className="text-[11px] text-gray-400 space-y-1 list-decimal list-inside">
+        <ol className="text-xs text-gray-400 space-y-1 list-decimal list-inside">
           <li>Discord’da kanal → Ayarlar → Entegrasyonlar → Webhook’lar → Yeni Webhook</li>
           <li>“Webhook URL’sini kopyala” deyin ve aşağıdaki ilgili platforma yapıştırın</li>
           <li>Yayına başlayınca duyuru otomatik gider (yayın durumu dakikada bir okunur); test düğmesi beklemeyi atlar</li>
@@ -312,14 +312,14 @@ function NightbotPaneli() {
           >
             JSON dosyası seç
           </Buton>
-          {dosyaAdi && <span className="text-[11px] text-gray-400 self-center">{dosyaAdi}</span>}
+          {dosyaAdi && <span className="text-xs text-gray-400 self-center">{dosyaAdi}</span>}
         </div>
 
         <Alan etiket="Ya da JSON’u buraya yapıştırın" ipucu='Biçim: { "commands": [...], "timers": [...] } veya doğrudan komut dizisi'>
           <AlanMetni
             value={metin}
             onChange={(e) => setMetin(e.target.value)}
-            className="min-h-[160px] font-mono text-[11px]"
+            className="min-h-[160px] font-mono text-xs"
             placeholder='{ "commands": [ { "name": "!merhaba", "message": "Selam $(user)!" } ] }'
             spellCheck={false}
           />
@@ -360,13 +360,13 @@ function NightbotPaneli() {
           </ul>
 
           {sonuc.komut.atlananlar?.length > 0 && (
-            <p className="text-[11px] text-gray-500">Atlananlar: {sonuc.komut.atlananlar.join(', ')}</p>
+            <p className="text-xs text-gray-500">Atlananlar: {sonuc.komut.atlananlar.join(', ')}</p>
           )}
 
           {sonuc.uyarilar?.length > 0 && (
             <div className="space-y-1 pt-2 border-t border-white/10">
               {sonuc.uyarilar.map((u: string, i: number) => (
-                <p key={i} className="text-[11px] text-amber-300 flex items-start gap-1.5">
+                <p key={i} className="text-xs text-amber-300 flex items-start gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                   {u}
                 </p>
@@ -377,7 +377,7 @@ function NightbotPaneli() {
       )}
 
       <Kart baslik="Değişken eşlemesi">
-        <ul className="text-[11px] text-gray-400 space-y-1">
+        <ul className="text-xs text-gray-400 space-y-1">
           <li>
             <code>$(user)</code> → <code className="text-purple-300">$(sender)</code>
           </li>
@@ -472,7 +472,7 @@ function YedekPaneli() {
         baslik="Uyarı ayarlarını yedekle"
         aciklama="Alert preset’leri, varyantlar ve Alert Box gelişmiş ayarları tek bir JSON dosyasına yazılır."
       >
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           Dosyanın içinde <b>şifre, token veya webhook adresi bulunmaz</b> — paylaşmak güvenlidir.
         </p>
         <Anahtar
@@ -480,7 +480,7 @@ function YedekPaneli() {
           etiket="Uyarıların kullandığı medya dosyalarını da ekle (başka bilgisayara taşırken)"
           onChange={setMedyaIle}
         />
-        <p className="text-[10px] text-gray-500">
+        <p className="text-xs text-gray-500">
           Açıkken yalnız uyarıların KULLANDIĞI yerel görsel ve sesler gömülür (en fazla 100 MB); dosya büyür. Kapalıyken
           yalnız ayarlar yedeklenir, yerel medya başka bilgisayarda boş görünür.
         </p>
@@ -495,7 +495,7 @@ function YedekPaneli() {
           etiket="Aynı olaydaki mevcut uyarıların üzerine yaz"
           onChange={setUzerineYaz}
         />
-        <p className="text-[11px] text-gray-500">
+        <p className="text-xs text-gray-500">
           Varyantlar her durumda <b>eklenir</b>; geri yükleme mevcut varyantlarınızı silmez.
         </p>
         <Buton ton="ikincil" ikon={<Upload className="w-3.5 h-3.5" />} onClick={iceAktar}>
@@ -528,7 +528,7 @@ function YedekPaneli() {
           {sonuc.uyarilar?.length > 0 && (
             <div className="space-y-1 pt-2 border-t border-white/10">
               {sonuc.uyarilar.map((u: string, i: number) => (
-                <p key={i} className="text-[11px] text-amber-300 flex items-start gap-1.5">
+                <p key={i} className="text-xs text-amber-300 flex items-start gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                   {u}
                 </p>

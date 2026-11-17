@@ -147,7 +147,7 @@ function Blok({ tanimlar, deger, degistir, pano }: { tanimlar: Record<string, Ta
   );
 }
 
-const baslik = (n: string) => <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{n}</h4>;
+const baslik = (n: string) => <h4 className="text-xs axt-etiket font-bold text-gray-400">{n}</h4>;
 const satirSinif = 'flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 p-2';
 const ikonTus = 'rounded-lg p-1.5 text-gray-400 transition-all hover:bg-white/10 hover:text-white active:scale-[0.98] disabled:opacity-30';
 

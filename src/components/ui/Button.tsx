@@ -22,7 +22,7 @@ const VARYANT: Record<ButtonVariant, string> = {
 
 // md = yoğunluğa bağlı denetim yüksekliği; lg = büyük vuruş alanı (deste, sahne, GO LIVE)
 const BOYUT: Record<ButtonSize, string> = {
-  sm: "h-5 gap-1 px-1.5 text-ui-1",
+  sm: "h-5 gap-1 px-1.5 text-ui-2",
   md: "h-ctl gap-1.5 px-2.5 text-ui-2",
   lg: "h-hit gap-2 px-3 text-ui-3",
 };

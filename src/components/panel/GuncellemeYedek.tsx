@@ -43,7 +43,7 @@ export function Guncelleme() {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-white">Güncellemeler</h3>
+      <h3 className="text-sm font-bold axt-etiket text-white">Güncellemeler</h3>
       <p className="text-xs font-medium text-white/75">
         Güncelleme bildirimi adresi (https JSON): <code>{'{"surum":"1.2.0","sayfa":"https://…","notlar":"…","kurulum":"https://…Setup.exe"}'}</code>. Uygulama açılışta bakar ve notları gösterir. Kendiliğinden indirmez. "İndir ve kur"a basınca kurulumu indirir; yalnız bu uygulamanın sertifikasıyla imzalıysa çalıştırır.
       </p>
@@ -125,7 +125,7 @@ export function YedekPaneli() {
   if (!d) return mesaj ? <p className="text-xs text-red-300">{mesaj}</p> : null;
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-white">Yedekler</h3>
+      <h3 className="text-sm font-bold axt-etiket text-white">Yedekler</h3>
       <p className="text-xs font-medium text-white/75">
         Ayarlar, veritabanı ve bot verisi günde bir kendiliğinden yedeklenir (son {d.sakla} yedek ve son {d.sakla} günün
         her birinden bir yedek tutulur). Geri yükleme ve taşıma uygulamanın bir sonraki açılışında uygulanır; uygulamadan önce o anki
@@ -165,7 +165,7 @@ export function YedekPaneli() {
       </ul>
       <div className="space-y-1 pt-2">
         <h4 className="text-xs font-bold text-white">Eski kurulumdan taşı</h4>
-        <p className="text-[11px] text-white/65">
+        <p className="text-ui-2 text-white/65">
           Eski taşınabilir klasörün yolunu yaz (ör. C:\Users\…\AxthrowAStudio-1.4.2). Ayarlar, veritabanı, kütüphane (assets) ve bot verisi bir sonraki
           açılışta buraya kopyalanır. Eski uygulamayı önce kapat.
         </p>
@@ -175,7 +175,7 @@ export function YedekPaneli() {
         </div>
       </div>      <div className="space-y-1 pt-2">
         <h4 className="text-xs font-bold text-white">Eski kütüphaneyi içe aktar</h4>
-        <p className="text-[11px] text-white/65">
+        <p className="text-ui-2 text-white/65">
           Yalnız logo, video, müzik ve ses dosyalarını eski bir sürüm klasöründen hemen alır. Var olan dosyaların üzerine yazmaz, hiçbir şeyi silmez.
         </p>
         <button type="button" className="dt-btn" disabled={yuk} onClick={() => void kutuphaneAl()}>Klasör seç…</button>

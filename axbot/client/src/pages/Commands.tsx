@@ -154,7 +154,7 @@ export function Commands() {
 
       {tab === 'my' && <Panel className="rounded-2xl overflow-hidden border border-white/10">
         <table className="w-full text-left text-sm">
-          <thead className="bg-white/[0.04] text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-white/10">
+          <thead className="bg-white/[0.04] text-xs font-bold text-gray-400 axt-etiket border-b border-white/10">
             <tr>
               <th className="py-3 px-4">Komut</th>
               <th className="py-3 px-4">Yanıt / Eylem</th>
@@ -174,23 +174,23 @@ export function Commands() {
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {cmd.trigger_type === 'keyword' && (
-                      <span className="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 text-[9px] font-black">ANAHTAR KELİME</span>
+                      <span className="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 text-xs font-black">ANAHTAR KELİME</span>
                     )}
                     {cmd.access_mode && cmd.access_mode !== 'always' && (
-                      <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 text-[9px] font-black">
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 text-xs font-black">
                         yalnız {ERISIM_ETIKETI[cmd.access_mode]}
                       </span>
                     )}
                     {!!cmd.cost_points && (
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[9px] font-black">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-xs font-black">
                         {cmd.cost_points} puan
                       </span>
                     )}
                     {!!cmd.platforms && (
-                      <span className="px-1.5 py-0.5 rounded bg-white/10 text-gray-300 text-[9px] font-black">{cmd.platforms}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-white/10 text-gray-300 text-xs font-black">{cmd.platforms}</span>
                     )}
                     {!cmd.is_enabled && (
-                      <span className="px-1.5 py-0.5 rounded bg-red-500/15 text-red-300 text-[9px] font-black">KAPALI</span>
+                      <span className="px-1.5 py-0.5 rounded bg-red-500/15 text-red-300 text-xs font-black">KAPALI</span>
                     )}
                   </div>
                 </td>
@@ -198,7 +198,7 @@ export function Commands() {
                   <SohbetOnizleme yazilan={`!${cmd.name}`} yanit={ornekYanit(cmd.response)} />
                 </td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-gray-300">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-white/10 text-gray-300">
                     {cmd.user_level}
                   </span>
                 </td>
@@ -289,13 +289,13 @@ export function Commands() {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                 />
                 {editingCmd.trigger_type === 'keyword' && (
-                  <p className="text-[10px] text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     Bütün kelime olarak eşleşir ("selam", "selamlar" içinde tetiklenmez), Türkçe büyük/küçük harf fark etmez.
                     Anahtar kelimeyle tetiklenince puan alınmaz ve yetki reddi sessizdir. Botun kendi mesajı tetiklemez.
                   </p>
                 )}
                 {editingCmd.access_mode && editingCmd.access_mode !== 'always' && (
-                  <p className="text-[10px] text-amber-300/80 mt-1">
+                  <p className="text-xs text-amber-300/80 mt-1">
                     Yayın durumu Kick, Twitch (jetonla), YouTube (video kimliğiyle), TikTok ve Trovo'dan okunur. Hiçbir platform
                     durum bildirmiyorsa komut engellenmez.
                   </p>
@@ -307,7 +307,7 @@ export function Commands() {
                   <label className="block text-xs font-bold text-gray-300">
                     Bot Yanıtı
                   </label>
-                  <span className="text-[11px] text-purple-400 font-semibold">Tıklayarak değişken ekleyin:</span>
+                  <span className="text-xs text-purple-400 font-semibold">Tıklayarak değişken ekleyin:</span>
                 </div>
 
                 {/* Variable Pills */}
@@ -326,7 +326,7 @@ export function Commands() {
                       key={tag}
                       type="button"
                       onClick={() => insertVariable(tag)}
-                      className="text-[11px] font-mono px-2 py-0.5 rounded bg-purple-500/15 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all"
+                      className="text-xs font-mono px-2 py-0.5 rounded bg-purple-500/15 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all"
                     >
                       {tag}
                     </button>
@@ -417,7 +417,7 @@ export function Commands() {
                     onChange={e => setEditingCmd({ ...editingCmd, cost_points: Math.max(0, parseInt(e.target.value, 10) || 0) })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">Yetersiz bakiyede komut çalışmaz; yayıncıdan alınmaz.</p>
+                  <p className="text-xs text-gray-500 mt-1">Yetersiz bakiyede komut çalışmaz; yayıncıdan alınmaz.</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">En düşük seviye</label>
@@ -428,7 +428,7 @@ export function Commands() {
                     onChange={e => setEditingCmd({ ...editingCmd, min_level: Math.max(0, parseInt(e.target.value, 10) || 0) })}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">0 = şart yok. Seviye sistemi kapalıysa uygulanmaz.</p>
+                  <p className="text-xs text-gray-500 mt-1">0 = şart yok. Seviye sistemi kapalıysa uygulanmaz.</p>
                 </div>
               </div>
 
@@ -436,7 +436,7 @@ export function Commands() {
                 <Anahtar acik={(editingCmd.refusal_reply ?? 1) !== 0} onChange={(v) => setEditingCmd({ ...editingCmd, refusal_reply: v ? 1 : 0 })} />
                 <span>
                   <b className="text-gray-200">Reddedince sohbete yanıt ver</b>
-                  <span className="block text-[10px] text-gray-500">Yetki yokken, beklemedeyken ya da yayın durumu uymazken kısa yanıt yazar ("!komut için 12 sn bekle"). Bekleme uyarısı süre bitene kadar bir kez yazılır.</span>
+                  <span className="block text-xs text-gray-500">Yetki yokken, beklemedeyken ya da yayın durumu uymazken kısa yanıt yazar ("!komut için 12 sn bekle"). Bekleme uyarısı süre bitene kadar bir kez yazılır.</span>
                 </span>
               </label>
 
@@ -448,7 +448,7 @@ export function Commands() {
                     return (
                       <label
                         key={pl.id}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer border ${
                           secili ? 'bg-purple-600/30 border-purple-500 text-white' : 'bg-black/30 border-white/10 text-gray-400'
                         }`}
                       >

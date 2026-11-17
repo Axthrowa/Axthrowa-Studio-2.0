@@ -126,7 +126,7 @@ export function ToplulukAyarlari() {
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
           <Users className="w-4 h-4 text-purple-400" /> Düzenli izleyiciler ({duzenliler.length})
         </h3>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           Komut yetkisinde <b>Düzenli izleyiciler</b> seçilen komutları ve AutoMod'da "Düzenli" muafiyetini kullanır. Sohbetten: <code>!regulars add @kişi</code>, <code>!regulars remove @kişi</code>, <code>!regulars list</code> (mod).
         </p>
         <div className="flex gap-2">
@@ -135,7 +135,7 @@ export function ToplulukAyarlari() {
             <Plus className="w-3.5 h-3.5" /> Ekle
           </button>
         </div>
-        {hata && <p className="text-[11px] text-red-300">{hata}</p>}
+        {hata && <p className="text-xs text-red-300">{hata}</p>}
         <div className="flex flex-wrap gap-2">
           {duzenliler.map((d) => (
             <span key={`${d.platform}:${d.username}`} className="text-xs bg-black/40 border border-white/10 rounded-lg px-2 py-1 flex items-center gap-1">
@@ -150,7 +150,7 @@ export function ToplulukAyarlari() {
 
       <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Oylu susturma — !votekick</h3>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           İzleyici <code>!votekick @kişi</code> ile oylama açar, diğerleri <code>!votekick</code> yazarak katılır. Eşik dolunca kişi susturulur.
           Mod/yayıncı/bot hedef alınamaz; hedef son 3 dakikada yazmış olmalı. Modlar <code>!votekick iptal</code> ile kapatır.
         </p>
@@ -164,7 +164,7 @@ export function ToplulukAyarlari() {
 
       <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Emote piramidi</h3>
-        <p className="text-[11px] text-gray-400">Aynı kişi <code>E</code>, <code>E E</code>, <code>E E E</code>, <code>E E</code>, <code>E</code> yazınca bot tebrik eder.</p>
+        <p className="text-xs text-gray-400">Aynı kişi <code>E</code>, <code>E E</code>, <code>E E E</code>, <code>E E</code>, <code>E</code> yazınca bot tebrik eder.</p>
         {anahtar('pyramid_enabled', 'Açık')}
         <div className="grid grid-cols-3 gap-3">
           {sayi('pyramid_min', 'En az kat', 3, 20)}
@@ -177,7 +177,7 @@ export function ToplulukAyarlari() {
 
       <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Emote bingo</h3>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           Mod: <code>!bingo start KEKW PogU LUL 500</code> (son sayı ödül puanı; emote vermezsen 7TV'den 8 tane seçilir). Gizli emote'u ilk yazan kazanır.
           <code> !bingo stop</code> bitirir ve gizli emote'u açıklar.
         </p>
@@ -185,13 +185,13 @@ export function ToplulukAyarlari() {
 
       <Panel as="section" className="p-5 rounded-2xl space-y-3">
         <h3 className="text-sm font-bold text-white">Kappagen ve 7TV</h3>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           Overlay: Overlay Stüdyo → <b>Ekranda Emojiler (Kappagen)</b>. <code>!kappagen [emote]</code> ortadan patlatır.
         </p>
         {anahtar('kappagen_chat_enabled', "Sohbetteki emote'lar overlay'de uçsun")}
         {sayi('kappagen_cost', '!kappagen izleyici ücreti (puan; 0 = yalnız mod)', 0, 1000000)}
         {anahtar('seventv_enabled', '7TV emote\'ları (sohbet katmanı, kappagen, bingo)')}
-        <div className="flex items-center justify-between text-[11px] text-gray-300 rounded-lg border border-white/10 bg-black/30 p-2">
+        <div className="flex items-center justify-between text-xs text-gray-300 rounded-lg border border-white/10 bg-black/30 p-2">
           <span>
             7TV: {yedi ? `${yedi.genel} genel · ${yedi.kanal} kanal — ${KANAL_DURUM[yedi.durum] || yedi.durum}` : 'okunamadı'}
           </span>

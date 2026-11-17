@@ -25,13 +25,13 @@ export function TwitchKlipFormu({ isaret }: { isaret: Isaret }) {
 
   if (klip)
     return (
-      <a href={klip.editUrl} target="_blank" rel="noreferrer" className="block text-[11px] text-panel-accent hover:underline">
+      <a href={klip.editUrl} target="_blank" rel="noreferrer" className="block text-ui-2 text-panel-accent hover:underline">
         Twitch klibi: {klip.id}
       </a>
     );
   if (!acik)
     return (
-      <button type="button" className="text-[11px] text-panel-accent hover:underline" onClick={() => setAcik(true)}>
+      <button type="button" className="text-ui-2 text-panel-accent hover:underline" onClick={() => setAcik(true)}>
         Twitch klibi (VOD'dan)
       </button>
     );

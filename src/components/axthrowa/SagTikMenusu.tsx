@@ -182,7 +182,7 @@ export default function SagTikMenusu() {
             >
               <Ikon weight="duotone" className={`h-4 w-4 ${soruyor ? "text-white" : "text-zinc-500"}`} />
               <span className="flex-1">{soruyor ? `Emin misin? ${o.ad}` : o.ad}</span>
-              {o.kisayol ? <span className="font-mono text-[11px] text-zinc-600">{o.kisayol}</span> : null}
+              {o.kisayol ? <span className="font-mono text-ui-2 text-zinc-600">{o.kisayol}</span> : null}
             </button>
           </div>
         );

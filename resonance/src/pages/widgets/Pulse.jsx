@@ -73,7 +73,7 @@ function Section({ title, children, className = '' }) {
 
 function SubLabel({ children }) {
   return (
-    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+    <p className="mb-2 text-xs font-semibold axt-etiket text-[var(--color-text-muted)]">
       {children}
     </p>
   )

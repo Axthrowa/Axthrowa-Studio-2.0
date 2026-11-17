@@ -22,7 +22,7 @@ export function SohbetIstatistikPaneli() {
         <button
           type="button"
           onClick={() => void fetch('/api/sohbet-istatistik/sifirla', { method: 'POST' }).then((r) => r.json()).then(kabul)}
-          className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-bold"
+          className="px-2 py-1 rounded-lg bg-white/10 text-xs font-bold"
         >
           Sıfırla
         </button>
@@ -39,15 +39,15 @@ export function SohbetIstatistikPaneli() {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <div className="text-[10px] uppercase text-gray-500 font-bold">En çok yazanlar</div>
+          <div className="text-xs axt-etiket text-gray-500 font-bold">En çok yazanlar</div>
           {o.enCokYazanlar.map((k: any) => <div key={k.ad}>{k.ad} <span className="text-gray-500">({k.sayi})</span></div>)}
         </div>
         <div>
-          <div className="text-[10px] uppercase text-gray-500 font-bold">En çok geçenler</div>
+          <div className="text-xs axt-etiket text-gray-500 font-bold">En çok geçenler</div>
           {o.bulut.slice(0, 10).map((b: any) => <div key={b.sozcuk}>{b.sozcuk} <span className="text-gray-500">({b.sayi})</span></div>)}
         </div>
       </div>
-      <p className="text-[10px] text-gray-500">Sohbetten: !chatstats · !emotecount KEKW · mod: !chatstats sifirla</p>
+      <p className="text-xs text-gray-500">Sohbetten: !chatstats · !emotecount KEKW · mod: !chatstats sifirla</p>
     </div>
   );
 }

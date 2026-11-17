@@ -56,7 +56,7 @@ function Preview({ t }: { t: ScreenTemplate }) {
       aria-hidden
     >
       <span
-        className="text-[8px] uppercase tracking-widest font-semibold"
+        className="text-ui-2 axt-etiket font-semibold"
         style={{ color: s.eyebrowColor || s.accent }}
       >
         {s.eyebrow || "etiket"}
@@ -68,7 +68,7 @@ function Preview({ t }: { t: ScreenTemplate }) {
         {s.title || "Başlık"}
       </span>
       <span
-        className="mt-0.5 rounded px-1.5 text-[10px] tabular-nums font-mono"
+        className="mt-0.5 rounded px-1.5 text-ui-2 tabular-nums font-mono"
         style={{ color: s.countdownColor || "#fff", border: `1px solid ${s.accent || "#fff"}88` }}
       >
         05:00
@@ -173,19 +173,19 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
       <div className="flex items-center justify-end gap-2">
         <button
           type="button"
-          className="studio-btn-ghost inline-flex h-7 items-center gap-1 px-2 text-[11px]"
+          className="studio-btn-ghost inline-flex h-7 items-center gap-1 px-2 text-ui-2"
           onClick={() => setNaming((v) => !v)}
         >
           <Plus className="h-3 w-3" /> Bunu kaydet
         </button>
       </div>
 
-      <p className="mb-2 text-[11px] leading-snug text-panel-muted">
+      <p className="mb-2 text-ui-2 leading-snug text-panel-muted">
         Renk, yazı tipi ve yerleşimi tek tıkla değiştirir. Logo, video, sosyal hesaplar ve OBS
         ayarların olduğu gibi kalır.
       </p>
 
-      <label className="mb-2 flex items-center gap-2 text-[11px] text-panel-muted">
+      <label className="mb-2 flex items-center gap-2 text-ui-2 text-panel-muted">
         <input type="checkbox" checked={withTexts} onChange={(e) => setWithTexts(e.target.checked)} />
         Şablonun yazılarını da uygula (başlık, alt yazı…)
       </label>
@@ -203,7 +203,7 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
           />
           <button
             type="button"
-            className="shrink-0 rounded bg-panel-accent/80 px-2.5 py-1.5 text-[11px] font-medium text-ui-accent-ink"
+            className="shrink-0 rounded bg-panel-accent/80 px-2.5 py-1.5 text-ui-2 font-medium text-ui-accent-ink"
             disabled={saving}
             onClick={() => void saveCurrent()}
           >
@@ -216,7 +216,7 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
         <p
           role="status"
           className={
-            "mb-2 rounded-md px-2 py-1.5 text-[11px] " +
+            "mb-2 rounded-md px-2 py-1.5 text-ui-2" +
             (saveNote.ok ? "bg-emerald-500/10 text-emerald-200" : "bg-red-500/10 text-red-200")
           }
         >
@@ -225,7 +225,7 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
       )}
 
       {undo && (
-        <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-200">
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-ui-2 text-amber-200">
           <span>«{undo.label}» uygulandı.</span>
           <button
             type="button"
@@ -247,8 +247,8 @@ export default function TemplatePicker({ screen, settings, onApply, onToast }: P
               className="block w-full rounded-lg border border-white/[0.08] bg-black/20 p-1.5 text-left transition hover:border-panel-accent/60"
             >
               <Preview t={t} />
-              <div className="mt-1.5 truncate text-[11px] font-medium text-white">{t.name}</div>
-              <div className="truncate text-[10px] text-panel-muted">
+              <div className="mt-1.5 truncate text-ui-2 font-medium text-white">{t.name}</div>
+              <div className="truncate text-ui-2 text-panel-muted">
                 {t.builtin ? t.description : "Kendi şablonum"}
               </div>
             </button>

@@ -147,7 +147,7 @@ export function MediaLibrary({ onSec }: { onSec?: (oge: MedyaOgesi) => void }) {
           >
             {yukleniyor ? 'Yükleniyor…' : 'Dosya yükle'}
           </Buton>
-          <span className="text-[11px] text-gray-500">
+          <span className="text-xs text-gray-500">
             PNG · JPG · GIF · WEBP · MP3 · WAV · OGG · MP4 · WEBM — dosya başına en fazla{' '}
             {boyutMetni(d.maksBoyut || 0)}
             {d.maksVideo ? ` (video ${boyutMetni(d.maksVideo)})` : ''}
@@ -155,7 +155,7 @@ export function MediaLibrary({ onSec }: { onSec?: (oge: MedyaOgesi) => void }) {
         </div>
 
         <div className="space-y-1">
-          <div className="flex justify-between text-[10px] text-gray-500">
+          <div className="flex justify-between text-xs text-gray-500">
             <span>
               Kullanılan: {boyutMetni(d.toplamBoyut || 0)} / {boyutMetni(d.maksToplam || 0)}
             </span>
@@ -192,10 +192,10 @@ export function MediaLibrary({ onSec }: { onSec?: (oge: MedyaOgesi) => void }) {
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-white truncate" title={o.ad}>
+                  <p className="text-xs font-bold text-white truncate" title={o.ad}>
                     {o.ad}
                   </p>
-                  <p className="text-[10px] text-gray-500">{boyutMetni(o.boyut)}</p>
+                  <p className="text-xs text-gray-500">{boyutMetni(o.boyut)}</p>
                 </div>
 
                 {o.tur === 'audio' && <audio src={o.url} controls className="w-full h-7" preload="none" />}

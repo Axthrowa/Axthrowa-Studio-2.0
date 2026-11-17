@@ -58,7 +58,7 @@ export function StatusPill({ tone = "neutral", icon, className, children, ...res
   return (
     <span
       className={cn(
-        "inline-flex h-[18px] shrink-0 items-center gap-1 whitespace-nowrap rounded-ui-1 border px-1.5 text-ui-1 font-semibold",
+        "inline-flex h-[18px] shrink-0 items-center gap-1 whitespace-nowrap rounded-ui-1 border px-1.5 text-ui-2 font-semibold",
         tone === "live" ? "border-ui-live bg-ui-live" : "border-ui-line bg-ui-s2",
         TON_YAZI[tone],
         className
@@ -76,7 +76,7 @@ export function Badge({ className, children, ...rest }: HTMLAttributes<HTMLSpanE
   return (
     <span
       className={cn(
-        "inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-ui-1 bg-ui-s3 px-1 font-mono text-ui-1 text-ui-fg2",
+        "inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-ui-1 bg-ui-s3 px-1 font-mono text-ui-2 text-ui-fg2",
         className
       )}
       {...rest}
@@ -109,7 +109,7 @@ export function Kbd({ className, children, ...rest }: HTMLAttributes<HTMLElement
   return (
     <kbd
       className={cn(
-        "inline-flex h-4 items-center whitespace-nowrap rounded-ui-1 border border-ui-line2 px-1 font-mono text-ui-1 leading-4 text-ui-fg3",
+        "inline-flex h-4 items-center whitespace-nowrap rounded-ui-1 border border-ui-line2 px-1 font-mono text-ui-2 leading-4 text-ui-fg3",
         className
       )}
       {...rest}

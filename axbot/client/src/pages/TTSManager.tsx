@@ -297,7 +297,7 @@ export default function TTSManager() {
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="bg-blue-500/20 text-blue-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-500/30 uppercase tracking-wider">
+              <span className="bg-blue-500/20 text-blue-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-500/30 axt-etiket">
                 AxBoT Kesintisiz Mimari
               </span>
               <span className="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -416,7 +416,7 @@ export default function TTSManager() {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-white text-sm">{eng.name}</span>
                         {isPrimary && (
-                          <span className="bg-blue-600 text-white text-[10px] font-black px-1.5 rounded uppercase">Ana Motor</span>
+                          <span className="bg-blue-600 text-white text-xs axt-etiket font-black px-1.5 rounded">Ana Motor</span>
                         )}
                       </div>
                       <p className="text-xs text-gray-400 line-clamp-1">{eng.desc}</p>

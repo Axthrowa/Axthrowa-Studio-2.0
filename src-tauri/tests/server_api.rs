@@ -1322,9 +1322,15 @@ async fn multistream_anahtar_goster_sil_ve_baglanti_sinamasi() {
   let r = post("/api/multistream/destinations/reveal", json!({"id": id})).await;
   assert_eq!(r.headers()["cache-control"], "no-store");
   assert_eq!(r.json::<Value>().await.unwrap()["key"], json!(anahtar));
-  // Kapalı port: başarısız
-  let r = post("/api/multistream/destinations", json!({"id": id, "name": "Sır sınaması", "platform": "custom", "server": format!("rtmp://127.0.0.1:{kapali}/live")})).await;
+  // Aynı sunucu: anahtar verilmeden güncelleme mevcut anahtarı korur
+  let r = post("/api/multistream/destinations", json!({"id": id, "name": "Sır sınaması 2", "platform": "custom", "server": format!("rtmp://127.0.0.1:{acik}/live")})).await;
   assert!(r.status().is_success(), "anahtar verilmeden güncelleme mevcut anahtarı korur");
+  // Sunucu değişince kayıtlı anahtar yeni adrese taşınmaz: anahtar yeniden istenir
+  let r = post("/api/multistream/destinations", json!({"id": id, "name": "Sır sınaması", "platform": "custom", "server": format!("rtmp://127.0.0.1:{kapali}/live")})).await;
+  assert_eq!(r.status(), 400, "sunucu değişti, anahtar yeniden girilmeli");
+  // Kapalı port: başarısız
+  let r = post("/api/multistream/destinations", json!({"id": id, "name": "Sır sınaması", "platform": "custom", "server": format!("rtmp://127.0.0.1:{kapali}/live"), "key": anahtar})).await;
+  assert!(r.status().is_success());
   let t: Value = post("/api/multistream/destinations/test", json!({"id": id})).await.json().await.unwrap();
   assert_eq!(t["ok"], false, "{t}");
   assert_eq!(post("/api/multistream/destinations/reveal", json!({"id": id})).await.json::<Value>().await.unwrap()["key"], json!(anahtar));

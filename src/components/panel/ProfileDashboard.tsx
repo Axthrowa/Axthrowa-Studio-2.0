@@ -3,28 +3,20 @@
  */
 
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Bot, Eraser, MessageCircle, Radio, Users } from "lucide-react";
-import { API_BASE, fetchSettings, patchSettings, type OverlaySettings } from "../../lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { API_BASE, patchSettings } from "../../lib/api";
 import {
   botApi,
-  endSession,
   fetchDashboard,
   fmtDuration,
   fmtTs,
   pushMetrics,
   type DashboardSnapshot,
-  type EventLog,
   type StreamSession,
 } from "../../lib/api/botApi";
 import { getBotConfig, saveBotConfig } from "../../lib/sohbetBot";
-import { useChatHub } from "../../lib/useChatHub";
-import ChatFeed from "../chat/ChatFeed";
 import { useAxthrowaStore, type KickCanli } from "../../store/useAxthrowaStore";
-import SistemSagligi from "../axthrowa/SistemSagligi";
-import SohbetTemizleDiyalogu from "./SohbetTemizleDiyalogu";
 import { axbotBase } from "../../lib/axbot";
-import { BasiliTutDugme } from "../ui/BasiliTut";
 import CihazEslestirme from "./CihazEslestirme";
 
 /** Dashboard alt sekmeleri (PanelPage). Bileşen sekme değişse de BAĞLI kalır:
@@ -33,20 +25,13 @@ export type DashboardBolumu = "genel" | "baglantilar" | "obs" | "gecmis" | "geli
 
 type Props = {
   onToast: (m: string) => void;
-  onEndLive?: () => Promise<void> | void;
+
   streamLive?: boolean;
   /** Hangi bölüm çizilsin; verilmezse hepsi (eski görünüm). */
   bolum?: DashboardBolumu;
 };
 
 type KickLiveStatus = KickCanli;
-
-function markStreamLive(live: boolean) {
-  saveBotConfig((prev) => ({
-    ...prev,
-    streamStartedAt: live ? Date.now() : null,
-  }));
-}
 
 /**
  * `<video src>` bu akışı doğrudan oynatabilir mi?
@@ -59,10 +44,9 @@ export function canPlayDirectly(url: string): boolean {
   return !/\.m3u8(\?|$)/i.test(url);
 }
 
-export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum }: Props) {
+export default function ProfileDashboard({ onToast, streamLive, bolum }: Props) {
   const goster = (b: DashboardBolumu) => !bolum || bolum === b;
   const [data, setData] = useState<DashboardSnapshot | null>(null);
-  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [botEnabled, setBotEnabled] = useState(false);
   const [chatConnected, setChatConnected] = useState(false);
@@ -75,12 +59,6 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
 
   const [remoteUser, setRemoteUser] = useState("editor");
   const [remotePass, setRemotePass] = useState("");
-  const [chatSettings, setChatSettings] = useState<OverlaySettings>({});
-  const [temizleAcik, setTemizleAcik] = useState(false);
-  // Kanal botta kayıtlıysa önizleme ve sohbet onu kullanır (Studio'da ayrıca yazılmamış olsa da)
-  const [botKanali, setBotKanali] = useState("");
-  const [previewEpoch, setPreviewEpoch] = useState(0);
-  const stopPending = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -97,7 +75,6 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
       } catch {
         /* bot kapalı */
       }
-      setBotKanali(kanal);
       // Sohbeti bot okuyor: durum da ondan (Rust'un eski Pusher dinleyicisi artık bağlanamıyor)
       botBagli = !!kanal;
       setChatConnected(botBagli);
@@ -149,50 +126,6 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
     const id = setVisibleInterval(poll, 20_000);
     return () => clearVisibleInterval(id);
   }, [kickSlug]);
-
-  useEffect(() => {
-    setPreviewEpoch(Date.now());
-  }, [liveStatus.live, kickSlug]);
-
-  useEffect(() => {
-    void fetchSettings("chat")
-      .then(setChatSettings)
-      .catch(() => undefined);
-  }, []);
-
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void import("@tauri-apps/api/event")
-      .then(({ listen }) =>
-        listen<{ outputActive?: boolean }>("obs-stream-state", (event) => {
-          setPreviewEpoch(Date.now());
-          if (event.payload?.outputActive === false && stopPending.current) {
-            stopPending.current = false;
-            const sid = liveSessionId.current;
-            if (sid) {
-              void endSession(sid)
-                .then(() => {
-                  markStreamLive(false);
-                  void refresh();
-                })
-                .catch(() => undefined);
-            }
-          }
-        })
-      )
-      .then((fn) => {
-        unlisten = fn;
-      })
-      .catch(() => undefined);
-    return () => {
-      unlisten?.();
-    };
-  }, [refresh]);
-
-  const { messages, clear } = useChatHub(botKanali ? { ...chatSettings, kickSlug: botKanali, enableKick: true } : chatSettings, {
-    max: 200,
-    hideAfterMs: 0,
-  });
 
   const streamHealthy =
     !!data?.active_session && botEnabled && chatConnected && liveStatus.live;
@@ -250,38 +183,8 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
     data?.session_subs,
   ]);
 
-  const onEnd = async () => {
-    if (busy) return;
-    // Çıkış ekranı veritabanı oturumuna BAĞLI DEĞİL. Eskiden `active_session`
-    // yoksa (yayın OBS'ten başlatıldıysa ya da oturum açılamadıysa) düğme hiç
-    // çalışmıyordu: "yayını kapat dediğimde çıkış ekranı gelmiyor".
-    const sid = data?.active_session?.id;
-    setBusy(true);
-    stopPending.current = !!sid;
-    try {
-      onToast(sid ? "Çıkış ekranı — yayın süre bitince kapanacak" : "Çıkış ekranına geçiliyor");
-      setBusy(false);
-      void (async () => {
-        try {
-          await Promise.race([
-            Promise.resolve(onEndLive?.()),
-            new Promise<never>((_, rej) =>
-              setTimeout(() => rej(new Error("timeout")), 8000)
-            ),
-          ]);
-        } catch {
-          /* OBS durdurma arka planda sürer */
-        }
-        await refresh();
-      })();
-    } catch (e) {
-      stopPending.current = false;
-      onToast(String((e as Error).message || "Bitirilemedi"));
-      setBusy(false);
-    }
-  };
-
-  if (!goster("genel") && !goster("gecmis") && !goster("gelismis")) return null;
+  // "genel" artık hazırlık listesi: bu bileşen orada yalnız arka planda çalışır (sayaç, metrik), hata da listede görünür
+  if (bolum === "genel" || (!goster("gecmis") && !goster("gelismis"))) return null;
 
   if (!data && !err) {
     return (
@@ -300,188 +203,7 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
         </div>
       )}
 
-      {goster("genel") && (
-        <>
-          {/* Canlı durum + TEK istatistik ızgarası (eskiden iki ızgara aynı sayıları
-              tekrar ediyordu: anlık izleyici ve oturum aboneleri iki kez). */}
-          <section className="studio-card space-y-3 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-panel-accent">Canlı durum</p>
-                <h2 className="font-display text-base font-semibold text-white">
-                  {data?.channel_name || "Yayıncı"}
-                </h2>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                    streamHealthy
-                      ? "border-panel-accent/40 bg-panel-accent/10 text-panel-accent"
-                      : "border-amber-400/30 bg-amber-500/10 text-amber-200"
-                  }`}
-                >
-                  {streamHealthy
-                    ? "● Her şey düzgün çalışıyor"
-                    : data?.active_session
-                      ? "● Bağlantı kontrol ediliyor"
-                      : "○ Yayın kapalı"}
-                </span>
-                <SistemSagligi />
-                {/* Düğme her zaman görünür: çıkış ekranına geçiş oturumdan bağımsız. */}
-                <BasiliTutDugme
-                  basiliTut={!!(streamLive || data?.active_session)}
-                  disabled={busy}
-                  className="studio-btn-danger h-8 px-3 text-xs"
-                  onOnay={() => void onEnd()}
-                  title={
-                    data?.active_session
-                      ? "Yayını bitir: çıkış ekranına geç ve OBS yayınını durdur"
-                      : "Çıkış ekranına geç ve OBS yayınını durdur"
-                  }
-                >
-                  Çıkış ekranına geç
-                </BasiliTutDugme>
-                <button type="button" className="studio-btn-ghost h-8 px-3 text-xs" onClick={() => void refresh()}>
-                  Yenile
-                </button>
-              </div>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <HealthBadge
-                icon={<Bot className="h-4 w-4" />}
-                label="Bot"
-                ok={botEnabled}
-                value={botEnabled ? "Aktif" : "Kapalı"}
-              />
-              <HealthBadge
-                icon={<MessageCircle className="h-4 w-4" />}
-                label="Sohbet"
-                ok={chatConnected}
-                value={chatConnected ? "Bağlı" : "Bağlı değil"}
-              />
-              <HealthBadge
-                icon={<Radio className="h-4 w-4" />}
-                label="Kick yayını"
-                ok={liveStatus.live}
-                value={liveStatus.live ? "Canlı" : "Çevrimdışı"}
-              />
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat label="Anlık izleyici" value={String(currentViewers)} hint="Kick" />
-              <Stat label="Chatte aktif" value={String(data?.active_chatters || 0)} hint="son 5 dakika" />
-              <Stat label="Chat hızı" value={`${(data?.chat_rpm || 0).toFixed(1)}/dk`} hint="mesaj / dakika" />
-              <Stat
-                label="Oturum"
-                value={data?.active_session ? "Canlı" : "Kapalı"}
-                hint={data?.active_session ? fmtTs(data.active_session.started_at) : "Başlatınca kayıt tutulur"}
-              />
-              <Stat label="Oturum izleyicisi" value={String(data?.session_viewers || 0)} hint="chatte görülen tekil kişi" />
-              <Stat label="Oturum takip" value={String(data?.session_followers || 0)} />
-              <Stat label="Oturum abone" value={String(data?.session_subs || 0)} />
-              <Stat label="Oturum chat" value={String(data?.session_chat || 0)} />
-            </div>
-          </section>
-
-      <section className="studio-card overflow-hidden p-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-panel-border px-4 py-3">
-          <div>
-            <h3 className="text-sm font-semibold text-white">Canlı yayın ve sohbet önizlemesi</h3>
-            <p className="text-[10px] text-panel-muted">
-              {liveStatus.streamTitle || kickSlug || "Kick kanalı"}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-panel-accent" />
-            <button type="button" className="studio-btn-ghost inline-flex items-center gap-1.5 text-xs" onClick={() => setTemizleAcik(true)}>
-              <Eraser className="h-3.5 w-3.5" />
-              Sohbeti temizle
-            </button>
-            <SohbetTemizleDiyalogu
-              open={temizleAcik}
-              onClose={() => setTemizleAcik(false)}
-              onDone={(mesaj) => {
-                clear();
-                onToast(mesaj);
-              }}
-            />
-          </div>
-        </div>
-        <div className="grid min-h-[28rem] lg:grid-cols-[1.55fr_1fr]">
-          <div className="min-h-[22rem] bg-black lg:min-h-[28rem]">
-            {(liveStatus.live || streamLive || !!data?.active_session) && kickSlug ? (
-              liveStatus.playbackUrl && canPlayDirectly(liveStatus.playbackUrl) ? (
-                <video
-                  key={`${kickSlug}-hls-${previewEpoch}`}
-                  className="h-full min-h-[22rem] w-full object-contain lg:min-h-[28rem]"
-                  src={liveStatus.playbackUrl}
-                  autoPlay
-                  muted
-                  playsInline
-                  controls
-                />
-              ) : (
-              <iframe
-                // Yayın durumu değişince yeniden yüklenir: yayın başlamadan açılan
-                // oynatıcı aksi hâlde "çevrimdışı" ekranında kalıyordu.
-                key={`${kickSlug}-${previewEpoch}`}
-                title={`${kickSlug} canlı yayın önizlemesi`}
-                src={`https://player.kick.com/${encodeURIComponent(kickSlug)}?autoplay=true&muted=true`}
-                className="h-full min-h-[22rem] w-full border-0 lg:min-h-[28rem]"
-                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-              )
-            ) : (
-              <div className="flex h-full min-h-[22rem] flex-col items-center justify-center gap-2 text-center lg:min-h-[28rem]">
-                <Radio className="h-10 w-10 text-panel-muted/50" />
-                <p className="text-xs text-panel-muted">Yayın başlayınca önizleme burada açılır.</p>
-              </div>
-            )}
-          </div>
-          <div className="flex min-h-[18rem] flex-col border-t border-panel-border bg-black lg:border-l lg:border-t-0">
-            <div className="border-b border-panel-border px-3 py-2 text-[11px] uppercase tracking-wider text-panel-muted">
-              Canlı sohbet · {messages.length} mesaj
-            </div>
-            <div className="min-h-0 flex-1">
-              <div
-                className="chat-overlay !h-full !w-full !p-2"
-                style={{
-                  background: "transparent",
-                  ["--chat-size" as never]: "13px",
-                  ["--accent" as never]: "#3EEDFE",
-                }}
-              >
-                <ChatFeed
-                  messages={messages}
-                  showBadge
-                  showUserBadges
-                  emptyText="Sohbet bekleniyor…"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {err && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {err}
-          <p className="mt-1 text-[11px] text-red-200/70">
-            Dashboard API yanıt vermiyor. Uygulamayı yeniden başlatıp tekrar deneyin.
-          </p>
-        </div>
-      )}
-
-          {data && (
-            <section className="studio-card space-y-3">
-              <h3 className="font-display text-sm font-semibold text-white">Son olaylar</h3>
-              <EventList events={data.recent_events} />
-            </section>
-          )}
-        </>
-      )}
-
+      {/* UI-4: "genel" bölümü artık hazırlık listesi (HazirlikListesi); canlı durum, önizleme, sohbet ve olaylar Canlı ekranında */}
       {goster("gecmis") && data && (
         <>
           <section className="studio-card space-y-3">
@@ -633,30 +355,6 @@ export default function ProfileDashboard({ onToast, onEndLive, streamLive, bolum
   );
 }
 
-function HealthBadge({
-  icon,
-  label,
-  ok,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  ok: boolean;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-panel-card/70 px-3.5 py-2.5 shadow-panel">
-      <span className={ok ? "text-panel-accent" : "text-amber-300"}>{icon}</span>
-      <span>
-        <span className="block text-[10px] font-bold uppercase tracking-wider text-panel-muted">{label}</span>
-        <span className={`text-xs font-bold ${ok ? "text-panel-accent" : "text-amber-200"}`}>
-          {value}
-        </span>
-      </span>
-    </div>
-  );
-}
-
 function Stat({
   label,
   value,
@@ -672,29 +370,6 @@ function Stat({
       <div className="mt-1.5 font-display text-2xl font-bold tracking-tight text-panel-accent">{value}</div>
       {hint && <div className="mt-1 text-[10px] text-white/50">{hint}</div>}
     </div>
-  );
-}
-
-function EventList({ events }: { events: EventLog[] }) {
-  if (!events.length) {
-    return <p className="text-xs text-panel-muted">Henüz olay yok — bot/chat olayları burada birikir.</p>;
-  }
-  return (
-    <ul className="max-h-72 space-y-1.5 overflow-y-auto text-sm">
-      {events.map((e) => (
-        <li
-          key={e.id}
-          className="flex items-baseline justify-between gap-2 border-b border-panel-border/40 py-1.5 last:border-0"
-        >
-          <span className="min-w-0 truncate">
-            <span className="mr-2 text-[10px] uppercase text-panel-accent">{e.kind}</span>
-            <span className="font-medium text-white/90">{e.user_name}</span>
-            {e.message && <span className="text-panel-muted"> · {e.message}</span>}
-          </span>
-          <span className="shrink-0 text-[10px] text-panel-muted">{fmtTs(e.ts)}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

@@ -136,14 +136,21 @@ export async function listTransitions() {
  * Birleşik overlay'i (tek tarayıcı kaynağı) OBS'in açık sahnesine ekler (U1). Aynı adresli kaynak zaten varsa
  * dokunmaz. Döner: eklendiği sahne ya da "zaten-var".
  */
-export async function birlesikOverlayEkle(url: string, ad: string): Promise<{ durum: "eklendi"; sahne: string } | { durum: "zaten-var"; kaynak: string }> {
+/** Birleşik katmanı gösteren tarayıcı kaynağının adı (aynı ad ya da sorgusuz aynı adres); yoksa null */
+export async function birlesikOverlayBul(url: string, ad: string): Promise<string | null> {
   const yol = url.replace(/\?.*$/, "");
   for (const i of await listInputs()) {
     if (!/browser_source/i.test(i.kind)) continue;
     const res = await getObs().call("GetInputSettings", { inputName: i.name }).catch(() => null);
     const mevcut = String((res as any)?.inputSettings?.url || "");
-    if (i.name === ad || (mevcut && mevcut.replace(/\?.*$/, "") === yol)) return { durum: "zaten-var", kaynak: i.name };
+    if (i.name === ad || (mevcut && mevcut.replace(/\?.*$/, "") === yol)) return i.name;
   }
+  return null;
+}
+
+export async function birlesikOverlayEkle(url: string, ad: string): Promise<{ durum: "eklendi"; sahne: string } | { durum: "zaten-var"; kaynak: string }> {
+  const kaynak = await birlesikOverlayBul(url, ad);
+  if (kaynak) return { durum: "zaten-var", kaynak };
   const { currentProgramSceneName: sahne } = await getObs().call("GetCurrentProgramScene");
   await getObs().call("CreateInput", {
     sceneName: sahne,

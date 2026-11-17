@@ -9,6 +9,7 @@ import {
   bekleyenBotAyariAl,
   frameOrigin,
   geriAlBotaGider,
+  botBaslatRequest,
   komutPaletiRequest,
   odakBirakRequest,
   openExternalRequest,
@@ -133,6 +134,10 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
         hedef?.focus();
         return;
       }
+      if (botBaslatRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
+        void start();
+        return;
+      }
       if (komutPaletiRequest(ev, frameRef.current?.contentWindow, expectedOrigin)) {
         window.dispatchEvent(new Event(PALET_AC_OLAYI));
         return;
@@ -146,7 +151,7 @@ export default function AxBotHost({ onToast, tab, embed, onOpenMusic }: AxBotHos
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [onToast, expectedOrigin, onOpenMusic, temaGonder]);
+  }, [onToast, expectedOrigin, onOpenMusic, temaGonder, start]);
 
   // Gömülü sözleşme (docs/GOMULU_SOZLESME.md): komut paletinden bot ayarına inme ve Ctrl+Z
   useEffect(() => {

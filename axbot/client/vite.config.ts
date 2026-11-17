@@ -17,6 +17,7 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true
       },
+      '/health': 'http://localhost:3001',
       '/ws': {
         target: 'ws://localhost:3001',
         ws: true

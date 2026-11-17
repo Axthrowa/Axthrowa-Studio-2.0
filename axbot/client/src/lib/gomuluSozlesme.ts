@@ -5,6 +5,8 @@
 
 /** Bot → Studio: Esc ile odak çerçeveden çıkıp Studio menüsüne döner */
 export const ODAK_BIRAK = 'axbot:odak-birak';
+/** Bot → Studio: bot sunucusu kapandı, Studio başlatsın (UI-5; yalnız Studio çerçevesinde anlamlı) */
+export const BOT_BASLAT = 'axbot:baslat';
 /** Bot içinde geri alma isteği (Ctrl+Z ya da Studio'dan gelen `geri-al`) bu pencere olayıyla dağılır */
 export const GERI_AL_OLAYI = 'axbot:geri-al';
 

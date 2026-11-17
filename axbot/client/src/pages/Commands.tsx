@@ -3,6 +3,7 @@ import { CustomCommand } from '../types.js';
 import { Terminal, Plus, Edit2, Trash2, Check, Sparkles, Search } from 'lucide-react';
 import { SohbetOnizleme, YerlesikKomutlar } from '../components/YerlesikKomutlar.js';
 import { TakipciKarsilama } from '../components/TakipciKarsilama.js';
+import { BosDurum } from '../ui/index.js';
 
 /** Önizleme: sık değişkenler örnek değerle; diğerleri olduğu gibi kalır */
 const ornekYanit = (metin: string) => metin.replace(/\$\((sender|user)\)/g, 'izleyici').replace(/\$\(channel\)/g, 'kanal');
@@ -229,6 +230,12 @@ export function Commands() {
             ))}
           </tbody>
         </table>
+        {filteredCommands.length === 0 && (
+          <BosDurum
+            baslik={commands.length ? 'Aramayla eşleşen komut yok' : 'Henüz özel komut yok'}
+            aciklama={commands.length ? 'Aramayı değiştirin ya da temizleyin.' : 'Yerleşik komutlar "Varsayılan" sekmesinde. Kendi komutunuzu yukarıdaki düğmeyle ekleyin.'}
+          />
+        )}
       </div>}
 
       {/* Modal for Add / Edit */}

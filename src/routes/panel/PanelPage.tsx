@@ -32,7 +32,7 @@ import type { Kip } from "../../lib/canliYerlesim";
 import { bosGecmis, gecmiseEkle, gecmisteGit } from "../../lib/gezinmeGecmisi";
 import PencereBasligi from "@/components/axthrowa/PencereBasligi";
 import SesliDinleyiciCercevesi from "../../components/panel/SesliDinleyiciCercevesi";
-import StreamHealthCard from "../../components/panel/StreamHealthCard";
+import HazirlikListesi from "../../components/panel/HazirlikListesi";
 import ProfileSwitcher from "../../components/panel/ProfileSwitcher";
 import { ReklamSayaci } from "../../components/control/ReklamSayaci";
 import PanelTimer from "../../components/panel/PanelTimer";
@@ -42,7 +42,6 @@ import { runObsAction, type ActionRow } from "../../lib/obsActions";
 import { resonanceLinkAllowed } from "../../lib/embedMessages";
 // Kontrol Merkezi yalnız o sekme açılınca yüklenir (ana paketi büyütmesin)
 const MusicPanel = lazy(() => import("../../components/panel/MusicPanel"));
-const BotSessions = lazy(() => import("../../components/panel/BotSessions"));
 const BotEkrani = lazy(() => import("../../components/panel/BotEkrani"));
 const KurulumSihirbazi = lazy(() => import("../../components/panel/KurulumSihirbazi"));
 const AppSettingsPage = lazy(() => import("../../components/panel/AppSettingsPage"));
@@ -1996,16 +1995,7 @@ export default function PanelPage() {
         </Suspense>
       ) : profileTab ? (
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4">
-          <DashboardUstSerit
-            bolum={dashBolum}
-            onBolum={setDashBolum}
-            obsBagli={obsConnected}
-            master={{
-              live: liveOn,
-              busy: masterBusy,
-              onToggle: () => void runMasterStream(),
-            }}
-          />
+          <DashboardUstSerit bolum={dashBolum} onBolum={setDashBolum} />
           {dashBolum === "baglantilar" && (
             <ConnectionsHub
               onBotPlatformlar={() => {
@@ -2019,20 +2009,21 @@ export default function PanelPage() {
             />
           )}
           {dashBolum === "genel" && (
-            <div className="mx-4 mb-3">
-              <BotSessions
-                onAc={() => {
-                  setBotSekme("platforms");
-                  setActiveNav("bot");
-                }}
-              />
-            </div>
+            <HazirlikListesi
+              onToast={showToast}
+              onCanli={() => sayfaAc({ nav: "control" })}
+              onGit={(h) => {
+                if (h === "obs") setDashBolum("baglantilar");
+                else if (h === "platformlar") sayfaAc({ nav: "bot", botSayfa: "platforms" });
+                else if (h === "bot") sayfaAc({ nav: "bot" });
+                else if (h === "sahneler") sayfaAc({ nav: "starting" });
+                else sayfaAc({ nav: "bot", botSayfa: "overlays" });
+              }}
+            />
           )}
-          {dashBolum === "genel" && <StreamHealthCard />}
           {/* Sekme değişse de bağlı kalır: sadakat sayacı, metrikler ve oturum kapatma sürer */}
           <ProfileDashboard
             onToast={showToast}
-            onEndLive={endLiveFromProfile}
             streamLive={liveOn}
             bolum={dashBolum}
           />

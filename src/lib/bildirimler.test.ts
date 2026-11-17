@@ -57,4 +57,19 @@ describe("bildirim standardı (A5)", () => {
     pushAppAlert({ title: "Sohbet", message: "Mesaj gönderilemedi", hint: "Bot hesabına /mod verin" });
     expect(acik()).toEqual([expect.objectContaining({ tur: "hata", baslik: "Sohbet", ipucu: "Bot hesabına /mod verin" })]);
   });
+
+  it("sunucu kapalıyken farklı sözlerle gelen aynı sorun tek bildirim (UI-5, H8)", () => {
+    bildir("Failed to fetch", "hata");
+    bildir("Kaydedilemedi — sunucu kapalı olabilir", "hata");
+    bildir("Yayına uygulanamadı — sunucu kapalı olabilir", "hata");
+    expect(acik()).toHaveLength(1);
+    expect(acik()[0].metin).toContain("Yerel uygulamaya ulaşılamadı");
+  });
+
+  it("önce yumuşak söz gelirse kayıt hataya yükselir ve açık kalır", () => {
+    bildir("Kaydedilemedi — sunucu kapalı olabilir", "bilgi");
+    bildir("Failed to fetch", "hata");
+    vi.advanceTimersByTime(10_000);
+    expect(acik()).toEqual([expect.objectContaining({ tur: "hata" })]);
+  });
 });

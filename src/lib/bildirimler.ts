@@ -47,13 +47,24 @@ export function turTahmini(metin: string): BildirimTuru {
  * Bildirim gösterir. Aynı metin köşede zaten açıksa yenisi eklenmez, süresi baştan başlar.
  * Döner: bildirimin kimliği (boş metinde `null`).
  */
+/** "Sunucuya ulaşılamıyor" türünden bir ileti mi (farklı sözlerle gelen aynı sorun) */
+export const sunucuKopukMu = (metin: string) => /yerel uygulamaya ulaşılamadı|sunucu kapalı olabilir|sunucuya ulaşılamıyor/i.test(metin);
+
 export function bildir(metin: string, tur?: BildirimTuru, ek?: { baslik?: string; ipucu?: string }): number | null {
   const ham = String(metin ?? "").trim();
   if (!ham) return null;
   const t = tur ?? turTahmini(ham);
   const yazi = t === "hata" ? formatAppError(ham) : ham;
-  const ayni = durum.liste.find((b) => b.acik && b.tur === t && b.metin === yazi && b.ipucu === ek?.ipucu);
+  // UI-5 (H8): sunucu kapalıyken her başarısız istek kendi sözüyle bildirmesin; açık olan tek kayıt yeter
+  const ayni = durum.liste.find((b) => b.acik && ((b.tur === t && b.metin === yazi && b.ipucu === ek?.ipucu) || (sunucuKopukMu(yazi) && sunucuKopukMu(b.metin))));
   const id = ayni?.id ?? ++sonId;
+  // Önce yumuşak söz (bilgi) gelip sonra asıl hata gelirse kayıt hataya yükselir; kendiliğinden kapanmaz
+  if (ayni && t === "hata" && ayni.tur !== "hata") {
+    clearTimeout(zamanlayicilar.get(id));
+    zamanlayicilar.delete(id);
+    yay(durum.liste.map((b) => (b.id === id ? { ...b, tur: t, metin: yazi, baslik: ek?.baslik ?? b.baslik, ipucu: ek?.ipucu ?? b.ipucu } : b)));
+    return id;
+  }
   if (!ayni) {
     const b: Bildirim = { id, tur: t, metin: yazi, baslik: ek?.baslik, ipucu: ek?.ipucu, zaman: Date.now(), acik: true, okundu: false };
     yay([...durum.liste, b].slice(-GECMIS_SINIRI));

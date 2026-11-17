@@ -19,6 +19,8 @@ export const KOMUT_PALETI_TYPE = "axbot:komut-paleti";
 export const TEMA_ISTE_TUR = "studio-tema-iste";
 /** Bot içinde Esc: odak çerçeveden çıkıp Studio menüsüne döner. Sözleşmenin tamamı: docs/GOMULU_SOZLESME.md */
 export const ODAK_BIRAK_TYPE = "axbot:odak-birak";
+/** Bot sunucusu kapandı: gömülü sayfa "Başlat"a basınca Studio botu başlatır (UI-5) */
+export const BOT_BASLAT_TYPE = "axbot:baslat";
 /** Komut paletinden seçilen bot ayarı AxBotHost'a bu pencere olayıyla haber verilir (istek: bekleyenBotAyariAl) */
 export const BOT_AYAR_OLAYI = "studio:bot-ayar";
 
@@ -101,6 +103,13 @@ export function odakBirakRequest(ev: EmbedMessageEvent, frameWindow: unknown, ex
   if (!frameWindow || ev.source !== frameWindow) return false;
   if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
   return (ev.data as { type?: unknown } | null)?.type === ODAK_BIRAK_TYPE;
+}
+
+/** Yalnız bizim çerçevemizden ve AxBoT kökeninden gelen "botu başlat" isteği mi. */
+export function botBaslatRequest(ev: EmbedMessageEvent, frameWindow: unknown, expectedOrigin: string | null): boolean {
+  if (!frameWindow || ev.source !== frameWindow) return false;
+  if (!expectedOrigin || ev.origin !== expectedOrigin) return false;
+  return (ev.data as { type?: unknown } | null)?.type === BOT_BASLAT_TYPE;
 }
 
 /** Yalnız bizim çerçevemizden gelen "temayı gönder" isteği mi. */

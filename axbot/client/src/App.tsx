@@ -82,7 +82,8 @@ const SoundBoardWidget = lazy(() => import('./widgets/SoundBoardWidget.js'));
 const SesliDinleyici = lazy(() => import('./pages/SesliDinleyici.js'));
 const Otomasyon = lazy(() => import('./pages/Otomasyon.js'));
 const VoiceCommands = lazy(() => import('./pages/VoiceCommands.js'));
-import { ToastSaglayici, useOnay } from './ui/index.js';
+import { BosDurum, Buton, ToastSaglayici, useOnay } from './ui/index.js';
+import { studiodanBaslat, useSunucuErisimi } from './lib/sunucuErisimi.js';
 import { AYRILMA_SORUSU, kaydedilmemisVar, kirlileriBirak } from './lib/kaydedilmemis.js';
 import { BRAND } from './brand.js';
 import { SURUMLER } from './lib/surumler.js';
@@ -257,6 +258,7 @@ export function App() {
   const aktifMerkez = navItems.find((m) => m.alt.includes(activeTab));
   // AxthrowA Studio tek bir sayfayı gömer (?embed=1): menü ve başlık orada zaten var
   const gomulu = new URLSearchParams(window.location.search).has('embed');
+  const erisim = useSunucuErisimi();
   if (aktifMerkez) sonAltSayfa.current[aktifMerkez.id] = activeTab;
 
   const renderActivePage = () => {
@@ -376,11 +378,24 @@ export function App() {
               ))}
             </div>
           )}
-          <SayfaSiniri anahtar={activeTab}>
-            <Suspense fallback={<div className="p-8 text-sm text-gray-400 animate-pulse">Yükleniyor…</div>}>
-              {renderActivePage()}
-            </Suspense>
-          </SayfaSiniri>
+          {erisim.durum === 'kapali' ? (
+            // UI-5: boş tablo yerine nedeni ve tek düğme ("komut yok" ile "bot kapalı" ayrılsın)
+            <BosDurum
+              baslik="Bot kapalı"
+              aciklama="Bot sunucusuna ulaşılamıyor. Komutlar, ayarlar ve listeler bot çalışınca görünür."
+              eylem={
+                <Buton onClick={() => { if (!studiodanBaslat()) erisim.yenidenDene(); else window.setTimeout(erisim.yenidenDene, 3000); }}>
+                  {gomulu ? 'Başlat' : 'Yeniden dene'}
+                </Buton>
+              }
+            />
+          ) : (
+            <SayfaSiniri anahtar={activeTab}>
+              <Suspense fallback={<div className="p-8 text-sm text-gray-400 animate-pulse">Yükleniyor…</div>}>
+                {renderActivePage()}
+              </Suspense>
+            </SayfaSiniri>
+          )}
         </main>
       </div>
     </div>

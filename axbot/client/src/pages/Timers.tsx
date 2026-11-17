@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TimerConfig } from '../types.js';
+import { BosDurum } from '../ui/index.js';
 import { Clock, Plus, Trash2, Edit2, Check, MessageSquare } from 'lucide-react';
 
 export function Timers() {
@@ -97,6 +98,9 @@ export function Timers() {
         </button>
       </div>
 
+      {timers.length === 0 && (
+        <BosDurum baslik="Henüz zamanlayıcı yok" aciklama="Zamanlayıcı belirli aralıkla sohbete duyuru yazar. Yukarıdaki düğmeyle ilkini ekleyin." />
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {timers.map(t => {
           let messagesList: string[] = [];

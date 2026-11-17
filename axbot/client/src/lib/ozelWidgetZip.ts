@@ -74,7 +74,8 @@ export function seParcalari(dosyalar: Dosya[], ad = 'İçe alınan widget'): Oze
   if (!html && !js) throw new Error('Zip içinde .html ya da .js dosyası yok');
   const kok = (html ?? js)!.ad.split('/');
   return {
-    ad: kok.length > 1 ? kok[kok.length - 2] : ad,
+    // Klasör adı; klasörsüz dosyalarda html/js dosyasının adı (chat.html → chat)
+    ad: kok.length > 1 ? kok[kok.length - 2] : kok[0].replace(/\.[^.]+$/, '') || ad,
     html: html?.metin ?? '',
     css: css?.metin ?? '',
     js: js?.metin ?? '',

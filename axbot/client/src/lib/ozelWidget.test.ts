@@ -1,6 +1,6 @@
 import { deflateRawSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { alanVerisi, oturumaIsle, oturumIskeleti, seOlayinaCevir, srcdocOlustur, yerlestir, BOS_WIDGET } from './ozelWidget';
+import { alanVerisi, oturumaIsle, oturumIskeleti, seOlayinaCevir, srcdocOlustur, yerlestir, httpsYap, BOS_WIDGET } from './ozelWidget';
 import { seParcalari, zipAc } from './ozelWidgetZip';
 
 describe('SE alanları', () => {
@@ -44,6 +44,10 @@ describe('bot iletisi → SE olayı', () => {
 });
 
 describe('çerçeve belgesi', () => {
+  it('protokolsüz CDN adresi https olur', () => {
+    expect(httpsYap(`<script src="//cdnjs.x/a.js"></script><a href='//b'>`)).toBe(`<script src="https://cdnjs.x/a.js"></script><a href='https://b'>`);
+  });
+
   it('CSP yerel API bağlantısını kapatır; kullanıcı kodu etiketi kapatamaz', () => {
     const s = srcdocOlustur({ ...BOS_WIDGET, js: "var a='</script><script>kotu()';", css: '</style><script>x</script>' });
     expect(s).toContain("connect-src https: wss:");
@@ -108,6 +112,7 @@ describe('zip içe alma', () => {
   });
 
   it('html/js yoksa ya da JSON bozuksa açık hata', () => {
+    expect(seParcalari([{ ad: 'greeter.html', metin: '' }]).ad).toBe('greeter');
     expect(() => seParcalari([{ ad: 'a.css', metin: '' }])).toThrow(/html/);
     expect(() => seParcalari([{ ad: 'w.html', metin: '' }, { ad: 'fields.json', metin: '{' }])).toThrow(/geçersiz JSON/);
   });

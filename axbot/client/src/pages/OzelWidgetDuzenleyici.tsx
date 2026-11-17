@@ -151,8 +151,7 @@ export default function OzelWidgetDuzenleyici() {
         if (f.name.toLowerCase().endsWith('.zip')) parcalar.push(...(await zipAc(await f.arrayBuffer())));
         else parcalar.push({ ad: f.name, metin: await f.text() });
       }
-      const ad = dosyalar.length === 1 ? dosyalar[0].name.replace(/\.[^.]+$/, '') : 'İçe alınan widget';
-      await ekle(seParcalari(parcalar, ad));
+      await ekle(seParcalari(parcalar));
     } catch (e) {
       toast(`İçe alınamadı: ${(e as Error).message}`, 'hata');
     } finally {

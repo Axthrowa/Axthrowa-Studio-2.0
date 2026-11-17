@@ -219,6 +219,9 @@ getOverlayStatus:function(){return {isEditorMode:${editorde},muted:false};}};
 })();`;
 }
 
+/** `//cdn…` adresleri: SE katmanı https'tedir; çerçevede http'ye çözülüp CSP'ye takılmasın */
+export const httpsYap = (html: string) => html.replace(/(\s(?:src|href)\s*=\s*["']?)\/\//gi, '$1https://');
+
 /** Kullanıcı metni betik/stil etiketini kapatamasın */
 const betikIci = (s: string) => s.replace(/<\/script/gi, '<\\/script');
 const stilIci = (s: string) => s.replace(/<\/style/gi, '');
@@ -232,7 +235,7 @@ ${JQUERY}
 <style>html,body{margin:0;background:transparent;overflow:hidden}</style>
 <style>${stilIci(yerlestir(w.css || '', veri))}</style>
 </head><body>
-${yerlestir(w.html || '', veri)}
+${httpsYap(yerlestir(w.html || '', veri))}
 <script>${betikIci(yerlestir(w.js || '', veri))}</script>
 </body></html>`;
 }

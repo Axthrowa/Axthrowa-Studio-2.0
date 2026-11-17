@@ -88,7 +88,13 @@ import { BRAND } from './brand.js';
 import { SURUMLER } from './lib/surumler.js';
 import { VARSAYILAN_TEMA, disTemaUygula, usePanelTemasi } from './lib/panelTemalari.js';
 import { studioTemasiCoz } from './lib/studioTemasi.js';
+import { BOT_MENUSU, SAYFA_ADLARI } from '../../../ortak/menu.js';
 import { ayaraGit, GERI_AL_OLAYI, ODAK_BIRAK, studioIstegiCoz } from './lib/gomuluSozlesme.js';
+
+const MENU_IKONLARI: Record<string, typeof LayoutDashboard> = {
+  genel: LayoutDashboard, sohbet: MessageSquare, obs: Layers, muzik: Music, etkinlik: BarChart3, oyun: Gamepad2,
+  ekonomi: Coins, komut: Terminal, moderasyon: ShieldCheck, yapayzeka: Sparkles, baglanti: Link2, ayarlar: SettingsIcon
+};
 
 /** Bir widget çökerse menü de silinmesin; sekme değişince yeniden denensin. */
 class SayfaSiniri extends Component<{ anahtar: string; children: ReactNode }, { hata: boolean }> {
@@ -245,32 +251,9 @@ export function App() {
   const [focusPlatform, setFocusPlatform] = useState<string | null>(null);
   const sonAltSayfa = useRef<Record<string, string>>({});
 
-  // Sayfa adları (alt sekme ve başlık). Kimlikler adres (#overlays…) ve gömülü Studio için AYNI kalmalı.
-  const sayfaAdlari: Record<string, string> = {
-    dashboard: 'Genel Bakış', kurulum: 'Hızlı Kurulum', multichat: 'Canlı Multi-Chat',
-    overlays: 'Overlay Stüdyo', alerts: 'Uyarılar', pano: 'Ses / Video Panosu', tts: 'TTS',
-    songrequest: 'Şarkı İsteği', polls: 'Anketler', giveaways: 'Çekilişler', interaction: 'Tahmin & Kuyruk', oduller: 'Kanal Ödülleri',
-    trivia: 'Bil Bakalım', games: 'Chat Oyunları', economy: 'Sadakat & Market', rankings: 'Sıralamalar',
-    donations: 'Bağış & JumpScare', commands: 'Komutlar', timers: 'Zamanlayıcılar', sesli: 'Sesli Komutlar', otomasyon: 'Otomasyon',
-    extras: 'Klip & Seviye', automod: 'Bot Moderasyonu', shield: 'Kalkan & Denetim', ai: 'Yapay Zekâ',
-    platforms: 'Platformlar', integrations: 'Discord & Entegrasyonlar', settings: 'Genel Ayarlar', botadvanced: 'Gelişmiş Bot'
-  };
-
-  // Aynı konudaki sayfalar tek ana sekmede: 27 menü satırı 12'ye indi, sayfalar alt sekme oldu
-  const navItems = [
-    { id: 'genel', label: 'Genel Bakış', icon: LayoutDashboard, grup: 'Yayın sırasında', alt: ['dashboard', 'kurulum'] },
-    { id: 'sohbet', label: 'Canlı Sohbet', icon: MessageSquare, grup: 'Yayın sırasında', alt: ['multichat'] },
-    { id: 'obs', label: 'OBS & Uyarılar', icon: Layers, grup: 'Yayın sırasında', alt: ['overlays', 'alerts', 'pano', 'tts'] },
-    { id: 'muzik', label: 'Müzik', icon: Music, grup: 'Yayın sırasında', alt: ['songrequest'] },
-    { id: 'etkinlik', label: 'Anket & Çekiliş', icon: BarChart3, grup: 'Yayın sırasında', alt: ['polls', 'giveaways', 'interaction', 'oduller'] },
-    { id: 'oyun', label: 'Oyunlar', icon: Gamepad2, grup: 'Etkileşim', alt: ['trivia', 'games'] },
-    { id: 'ekonomi', label: 'Puan & Bağış', icon: Coins, grup: 'Etkileşim', alt: ['economy', 'rankings', 'donations'] },
-    { id: 'komut', label: 'Komutlar', icon: Terminal, grup: 'Etkileşim', alt: ['commands', 'timers', 'otomasyon', 'sesli', 'extras'] },
-    { id: 'moderasyon', label: 'Moderasyon', icon: ShieldCheck, grup: 'Kurulum & Ayarlar', alt: ['automod', 'shield'] },
-    { id: 'yapayzeka', label: 'Yapay Zekâ', icon: Sparkles, grup: 'Kurulum & Ayarlar', alt: ['ai'] },
-    { id: 'baglanti', label: 'Bağlantılar', icon: Link2, grup: 'Kurulum & Ayarlar', alt: ['platforms', 'integrations'] },
-    { id: 'ayarlar', label: 'Ayarlar', icon: SettingsIcon, grup: 'Kurulum & Ayarlar', alt: ['settings', 'botadvanced'] },
-  ];
+  // Sayfa adları ve menü tek kaynaktan (ortak/menu.ts, UI-2/UI-3): Studio'nun bot sekmeleri de oradan üretilir
+  const sayfaAdlari: Record<string, string> = SAYFA_ADLARI;
+  const navItems = BOT_MENUSU.map((m) => ({ ...m, label: m.ad, icon: MENU_IKONLARI[m.id] ?? LayoutDashboard, alt: m.alt as string[] }));
   const aktifMerkez = navItems.find((m) => m.alt.includes(activeTab));
   // AxthrowA Studio tek bir sayfayı gömer (?embed=1): menü ve başlık orada zaten var
   const gomulu = new URLSearchParams(window.location.search).has('embed');
@@ -374,7 +357,7 @@ export function App() {
         </header>}
 
         {/* Page Content */}
-        <main className={`flex-1 min-h-0 overflow-y-auto ${gomulu ? 'p-4' : 'p-8'}`}>
+        <main data-gomulu={gomulu || undefined} className={`flex-1 min-h-0 overflow-y-auto ${gomulu ? 'p-4' : 'p-8'}`}>
           {!gomulu && aktifMerkez && aktifMerkez.alt.length > 1 && (
             <div role="tablist" aria-label={aktifMerkez.label} className="mb-6 flex flex-wrap gap-5 border-b border-white/[0.08]">
               {aktifMerkez.alt.map((alt) => (

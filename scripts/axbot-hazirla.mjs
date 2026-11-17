@@ -110,20 +110,17 @@ for (const p of [clientSrc, path.join(appSrc, "package.json"), path.join(kaynak,
   }
 }
 
-const work = path.join(os.tmpdir(), "axbot-client-turkuaz");
-fs.rmSync(work, { recursive: true, force: true });
+// Depodaki yerleşim korunur (<kök>/axbot/client + <kök>/ortak): istemci ortak dosyaları (tasarım, menü)
+// göreli yolla içe aktarır, kopyada da aynı yol çalışsın
+const calisma = path.join(os.tmpdir(), "axbot-client-turkuaz");
+const work = path.join(calisma, "axbot", "client");
+fs.rmSync(calisma, { recursive: true, force: true });
 fs.mkdirSync(work, { recursive: true });
+fs.cpSync(path.join(root, "ortak"), path.join(calisma, "ortak"), { recursive: true });
 for (const f of ["index.html", "package.json", "vite.config.ts", "tsconfig.json"]) {
   if (fs.existsSync(path.join(clientSrc, f))) fs.copyFileSync(path.join(clientSrc, f), path.join(work, f));
 }
 fs.cpSync(path.join(clientSrc, "src"), path.join(work, "src"), { recursive: true });
-// Ortak tasarım değişkenleri (TEK-1): tek kaynak ortak/tasarim.css. Geçici klasörden göreli yol tutmaz,
-// bu yüzden dosya yanına kopyalanır ve index.css içindeki içe aktarma ona çevrilir
-fs.copyFileSync(path.join(root, "ortak", "tasarim.css"), path.join(work, "src", "axt-tasarim.css"));
-{
-  const css = path.join(work, "src", "index.css");
-  fs.writeFileSync(css, fs.readFileSync(css, "utf8").replace(/@import\s+["'][^"']*tasarim\.css["']/, '@import "./axt-tasarim.css"'));
-}
 if (fs.existsSync(path.join(clientSrc, "public"))) {
   fs.cpSync(path.join(clientSrc, "public"), path.join(work, "public"), { recursive: true });
 }

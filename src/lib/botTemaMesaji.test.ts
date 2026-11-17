@@ -80,7 +80,7 @@ describe("botTemaMesaji", () => {
     expect(oku("../main.tsx")).toContain('import "../ortak/tasarim.css"');
     expect(oku("../../resonance/src/index.css")).toContain('@import "../../ortak/tasarim.css"');
     expect(oku("../../axbot/client/src/index.css")).toContain('@import "../../../ortak/tasarim.css"');
-    expect(oku("../../scripts/axbot-hazirla.mjs")).toContain('"ortak", "tasarim.css"');
+    expect(oku("../../scripts/axbot-hazirla.mjs")).toContain('fs.cpSync(path.join(root, "ortak")');
     for (const ad of ["--axt-yaricap-kart", "--axt-yaricap-dugme", "--axt-yazi-baslik"]) expect(oku("../../ortak/tasarim.css")).toContain(ad);
   });
 });

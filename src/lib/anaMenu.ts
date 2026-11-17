@@ -6,6 +6,7 @@
 import type { MsgKey } from "../i18n/messages";
 import type { Kip } from "./canliYerlesim";
 import type { NavId } from "./panelLayout";
+import { BOT_MENUSU } from "../../ortak/menu";
 
 /** Yayın sonrası raporunun bölümleri: menü satırı raporu açıp o bölüme kayar (`#rapor-<bölüm>`) */
 export type RaporBolumu = "isaretler" | "sarkilar" | "karsilastirma";
@@ -66,21 +67,13 @@ export const ANA_MENU: MenuGrubu[] = [
   { id: "ayarlar", adAnahtari: "nav.grup.ayarlar", sayfalar: [{ nav: "settings" }, { nav: "hotkeys" }, { nav: "cihazlar" }] },
 ];
 
-/** Bot ekranının sekmeleri. `alt`: botta o sekmenin altındaki sayfalar. Başka başlığa ait olmayan her bot sayfası bir sekmededir. */
-export const BOT_SEKMELERI: { id: string; ad: string; alt: string[] }[] = [
-  { id: "commands", ad: "Komutlar", alt: ["commands", "timers", "sesli", "extras", "ai", "integrations"] },
-  { id: "games", ad: "Oyunlar", alt: ["games", "trivia"] },
-  { id: "economy", ad: "Puanlar", alt: ["economy", "rankings", "donations"] },
-  { id: "automod", ad: "Moderasyon", alt: ["automod", "shield"] },
-  { id: "otomasyon", ad: "Otomasyon", alt: ["otomasyon"] },
-  { id: "settings", ad: "Genel", alt: ["settings", "botadvanced", "dashboard", "kurulum", "multichat"] },
-];
-
 /** Botun tam paneli (kendi yan menüsüyle, bütün sayfalar); sekme listesinde en sonda */
 export const TUM_AYARLAR = "tum-ayarlar";
 
 const HAZIRLIK_SAYFALARI = ["platforms"];
 const ETKILESIM_SAYFALARI = ["polls", "giveaways", "interaction", "songrequest", "oduller"];
+/** Botun çoklu sohbeti Canlı ekranında ek pano (lib/canliEkPaneller.ts); bot sekmesinde ikinci "Sohbet" olmasın */
+const CANLI_SAYFALARI = ["multichat"];
 /** Sahne menüsündeki "Overlay ve Uyarılar" penceresinin iç sekmeleri */
 export const OVERLAY_PENCERESI: { id: string; ad: string }[] = [
   { id: "overlays", ad: "Overlay" },
@@ -90,10 +83,23 @@ export const OVERLAY_PENCERESI: { id: string; ad: string }[] = [
 ];
 const OVERLAY_SAYFALARI = OVERLAY_PENCERESI.map((s) => s.id);
 
+/**
+ * Bot ekranının sekmeleri (UI-2): botun kendi menüsünden (ortak/menu.ts) üretilir, aynı ad ve sırayla.
+ * Studio'da kendi başlığı olan sayfalar (bağlantılar, overlay, etkileşim) sekmeden düşer; sayfası kalmayan satır görünmez.
+ * `alt`: sekmenin alt sayfaları, Studio'nun ikinci sekme satırında.
+ */
+const BASKA_BASLIKTA = new Set([...HAZIRLIK_SAYFALARI, ...ETKILESIM_SAYFALARI, ...OVERLAY_SAYFALARI, ...CANLI_SAYFALARI]);
+export const BOT_SEKMELERI: { id: string; ad: string; alt: string[] }[] = BOT_MENUSU.map((m) => ({
+  id: m.id,
+  ad: m.ad,
+  alt: (m.alt as string[]).filter((s) => !BASKA_BASLIKTA.has(s)),
+})).filter((m) => m.alt.length > 0);
+
 /** Açık sayfanın ait olduğu menü başlığı. `kip`: Canlı ekranının o anki kipi (yayın sonrası kendi başlığındadır). */
 export function menuGrubuBul(nav: string, botSayfa?: string, kip?: Kip | null): MenuGrubuId {
   if (nav === "bot") {
     if (botSayfa && HAZIRLIK_SAYFALARI.includes(botSayfa)) return "hazirlik";
+    if (botSayfa && CANLI_SAYFALARI.includes(botSayfa)) return "canli";
     if (botSayfa && ETKILESIM_SAYFALARI.includes(botSayfa)) return "etkilesim";
     if (botSayfa && OVERLAY_SAYFALARI.includes(botSayfa)) return "sahne";
     return "bot";
@@ -103,11 +109,14 @@ export function menuGrubuBul(nav: string, botSayfa?: string, kip?: Kip | null): 
   return ANA_MENU.find((g) => g.sayfalar.some((s) => s.nav === nav))?.id ?? "hazirlik";
 }
 
-/** Bot ekranında seçili sekme; bilinmeyen sayfa ilk sekmede açılır */
+/** Bot ekranı sayfa verilmeden açılınca Komutlar (menüdeki "Bot" satırı) */
+export const VARSAYILAN_BOT_SAYFASI = "commands";
+
+/** Bot ekranında seçili sekme; bilinmeyen sayfa Komutlar sekmesinde açılır */
 export function botSekmesiBul(botSayfa?: string): string {
-  if (!botSayfa) return BOT_SEKMELERI[0].id;
   if (botSayfa === TUM_AYARLAR) return TUM_AYARLAR;
-  return BOT_SEKMELERI.find((s) => s.alt.includes(botSayfa))?.id ?? BOT_SEKMELERI[0].id;
+  const bul = (s: string) => BOT_SEKMELERI.find((t) => t.alt.includes(s))?.id;
+  return (botSayfa && bul(botSayfa)) || bul(VARSAYILAN_BOT_SAYFASI)!;
 }
 
 /** Bu sayfa menüdeki bu satır mı? */

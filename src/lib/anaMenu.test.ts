@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ANA_MENU, BOT_SEKMELERI, OVERLAY_PENCERESI, TUM_AYARLAR, botSekmesiBul, menuGrubuBul, satirGorunur, satirHedefi, sayfaAcikMi } from "./anaMenu";
 import { DEFAULT_TABS } from "./panelLayout";
+import { BOT_MENUSU, menuOgesiBul, sayfaAdi } from "../../ortak/menu";
+import { tr } from "../i18n/messages";
 import { bosGecmis, gecmiseEkle, gecmisteGit } from "./gezinmeGecmisi";
 
 /** Botun App.tsx'teki bütün sayfaları (yeni sayfa eklenince buraya da eklenir) */
@@ -40,12 +42,32 @@ describe("ana menü (A2)", () => {
     }
     expect(menuGrubuBul("bot", "platforms")).toBe("hazirlik");
     expect(menuGrubuBul("bot", "songrequest")).toBe("etkilesim");
-    expect(botSekmesiBul("otomasyon")).toBe("otomasyon");
-    expect(botSekmesiBul("ai")).toBe("commands");
-    expect(botSekmesiBul("bilinmeyen")).toBe("commands");
+    expect(botSekmesiBul("otomasyon")).toBe("komut");
+    expect(botSekmesiBul("ai")).toBe("yapayzeka");
+    expect(botSekmesiBul("bilinmeyen")).toBe("komut");
+    expect(botSekmesiBul(undefined)).toBe("komut");
     expect(botSekmesiBul(TUM_AYARLAR)).toBe(TUM_AYARLAR);
     expect(menuGrubuBul("bot", TUM_AYARLAR)).toBe("bot");
-    expect(BOT_SEKMELERI.map((s) => s.ad)).toEqual(["Komutlar", "Oyunlar", "Puanlar", "Moderasyon", "Otomasyon", "Genel"]);
+  });
+
+  it("bot sekmeleri botun kendi menüsüyle aynı ad ve sırada (UI-2, UI-3)", () => {
+    // Studio'da kendi başlığı olan satırlar (Sohbet, Overlay ve Uyarılar, Müzik, Anket ve Çekiliş) sekmede yok
+    expect(BOT_SEKMELERI.map((s) => s.ad)).toEqual(["Genel Bakış", "Oyunlar", "Puan ve Bağış", "Komutlar", "Moderasyon", "Yapay Zekâ", "Bağlantılar", "Ayarlar"]);
+    for (const s of BOT_SEKMELERI) {
+      const bot = BOT_MENUSU.find((m) => m.id === s.id)!;
+      expect(s.ad).toBe(bot.ad);
+      expect(s.alt.every((a) => (bot.alt as string[]).includes(a))).toBe(true);
+    }
+  });
+
+  it("Studio menüsündeki bot sayfası adları ortak sözlükle aynı (UI-3)", () => {
+    for (const g of ANA_MENU)
+      for (const s of g.sayfalar) {
+        if (!s.botSayfa || !s.adAnahtari || g.id === "bot") continue;
+        // Satır ya sayfanın adını ya da botta o sayfanın bulunduğu menü satırının adını taşır
+        const adlar = [sayfaAdi(s.botSayfa), menuOgesiBul(s.botSayfa)?.ad];
+        expect(adlar, s.botSayfa).toContain(tr[s.adAnahtari]);
+      }
   });
 
   it("Yayın sonrası: Rapor, Canlı ekranının yayın sonrası kipidir", () => {

@@ -137,3 +137,8 @@
 
 /* Studio komut paletinden inilen ayar kısa süre vurgulanır (gömülü sözleşme) */
 .axt-ayar-vurgu { outline: 2px solid var(--axt-vurgu, #a855f7); outline-offset: 3px; border-radius: 4px; transition: outline-color 0.3s; }
+
+/* UI-2: Studio içinde sayfa adı Studio'nun sekme satırında; sayfanın kendi büyük başlığı yalnız ekran okuyucuya kalır */
+main[data-gomulu] h1:not(.axt-onizleme *) {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

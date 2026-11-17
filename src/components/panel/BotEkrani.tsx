@@ -4,7 +4,8 @@
  * kendi yan menüsüyle açar (kullanıcı isteği: A2'de kaldırılmıştı, geri geldi).
  */
 import { useCallback, useEffect, useState } from "react";
-import { BOT_SEKMELERI, TUM_AYARLAR, botSekmesiBul } from "../../lib/anaMenu";
+import { BOT_SEKMELERI, TUM_AYARLAR, VARSAYILAN_BOT_SAYFASI, botSekmesiBul } from "../../lib/anaMenu";
+import { sayfaAdi } from "../../../ortak/menu";
 import { axbotBase } from "../../lib/axbot";
 import { clearVisibleInterval, setVisibleInterval } from "../../lib/visibleInterval";
 import StatusDot from "@/components/axthrowa/StatusDot";
@@ -25,6 +26,9 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
   const [sessiz, setSessiz] = useState<boolean | null>(null);
   const secili = botSekmesiBul(sayfa);
   const tumu = secili === TUM_AYARLAR;
+  const acikSayfa = tumu ? "dashboard" : sayfa && sayfa !== TUM_AYARLAR ? sayfa : VARSAYILAN_BOT_SAYFASI;
+  // UI-2: botun hap sekmeleri (alt sayfalar) gömülüyken Studio'nun sekme satırında
+  const altSayfalar = tumu ? [] : BOT_SEKMELERI.find((s) => s.id === secili)?.alt ?? [];
 
   const yukle = useCallback(async () => {
     try {
@@ -70,7 +74,7 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
       <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 px-4 py-2">
         <div role="tablist" aria-label="Bot bölümleri" className="flex flex-wrap gap-1">
           {BOT_SEKMELERI.map((s) => (
-            <button key={s.id} type="button" role="tab" aria-selected={secili === s.id} className={sekmeSinifi(secili === s.id)} onClick={() => onSayfa(s.id)}>
+            <button key={s.id} type="button" role="tab" aria-selected={secili === s.id} className={sekmeSinifi(secili === s.id)} onClick={() => onSayfa(s.alt[0])}>
               {s.ad}
             </button>
           ))}
@@ -88,7 +92,23 @@ export default function BotEkrani({ sayfa, onSayfa, onToast, onOpenMusic }: Prop
           </label>
         </div>
       </div>
-      <AxBotHost onToast={onToast} tab={tumu ? "dashboard" : sayfa || BOT_SEKMELERI[0].id} embed={!tumu} onOpenMusic={onOpenMusic} />
+      {altSayfalar.length > 1 && (
+        <div role="tablist" aria-label="Bölüm sayfaları" className="flex shrink-0 flex-wrap gap-4 border-b border-white/10 px-4">
+          {altSayfalar.map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="tab"
+              aria-selected={acikSayfa === s}
+              onClick={() => onSayfa(s)}
+              className={`-mb-px border-b-2 py-2 text-sm transition-colors ${acikSayfa === s ? "border-panel-accent text-white" : "border-transparent text-panel-muted hover:text-white"}`}
+            >
+              {sayfaAdi(s)}
+            </button>
+          ))}
+        </div>
+      )}
+      <AxBotHost onToast={onToast} tab={acikSayfa} embed={!tumu} onOpenMusic={onOpenMusic} />
     </div>
   );
 }

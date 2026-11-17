@@ -40,3 +40,6 @@ public/LICENSE.txt
 streamdeck/dist/
 streamdeck/com.axthrowa.studio.sdPlugin/bin/
 streamdeck/com.axthrowa.studio.sdPlugin/logs/
+
+# UI-11 görsel gerileme çıktısı (fark resimleri)
+test-results/

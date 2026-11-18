@@ -10,6 +10,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
 import { wsHub } from '../../ws/server.js';
 import { medya, MAKS_BOYUT, MAKS_VIDEO, MAKS_TOPLAM } from '../../modules/media/media.js';
+import { yaziTipleri } from '../../modules/media/yazi-tipleri.js';
 import { varyantlar } from '../../modules/alerts/variants.js';
 import { uyariYedegi } from '../../modules/alerts/backup.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
@@ -161,6 +162,38 @@ router.get('/media/:id/dosya', (req: Request, res: Response) => {
   // SVG izinli listede yok; yine de tarayici tur tahmini yapmasin
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.sendFile(medya.dosyaYolu(oge));
+});
+
+// WID-5: yüklenen yazı tipleri (katmanlar /api/fonts.css'i yükler; değişince `yazi_tipleri` yayını)
+router.get('/fonts', (_req: Request, res: Response) => {
+  res.json({ ogeler: yaziTipleri.listele() });
+});
+
+router.get('/fonts.css', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.send(yaziTipleri.css());
+});
+
+router.post('/fonts', (req: Request, res: Response) => {
+  const sonuc = yaziTipleri.ekle(String(req.body?.ad || ''), String(req.body?.veri || ''));
+  if (sonuc.ok) wsHub.broadcastTo(['all'], { type: 'yazi_tipleri' });
+  res.status(sonuc.ok ? 200 : 400).json(sonuc);
+});
+
+router.delete('/fonts/:id', (req: Request, res: Response) => {
+  const ok = yaziTipleri.sil(String(req.params.id || ''));
+  if (ok) wsHub.broadcastTo(['all'], { type: 'yazi_tipleri' });
+  res.json({ ok });
+});
+
+router.get('/fonts/:id/dosya', (req: Request, res: Response) => {
+  const d = yaziTipleri.dosya(String(req.params.id || ''));
+  if (!d) return res.status(404).json({ error: 'Bulunamadı' });
+  res.setHeader('Content-Type', d.mime);
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.send(d.veri);
 });
 
 export default router;

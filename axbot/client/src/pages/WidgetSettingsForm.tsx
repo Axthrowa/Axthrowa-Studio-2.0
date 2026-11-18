@@ -16,6 +16,7 @@ import { SosyalHesapPaneli, SponsorPaneli } from '../components/DonenWidgetPanel
 import { SabitMesajPaneli, SkorTablosuPaneli, SohbetIstatistikPaneli } from '../components/SohbetAraclariPaneli.js';
 import { MediaLibrary } from '../components/MediaLibrary.js';
 import { Anahtar, Katlanir, Secim } from '../ui/index.js';
+import { YaziTipiSecici } from '../components/YaziTipiSecici.js';
 import { LABELS, SECTIONS, SELECTS, WIDGET_SELECTS } from './widgetAyarSozlugu';
 
 /**
@@ -339,6 +340,8 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
                   <span>{etiketi(key)}</span>
                   {type === 'checkbox' ? (
                     <Anahtar acik={!!values[key]} onChange={(v) => setValues(v => ({ ...v, [key]: v }))} />
+                  ) : type === 'select' && /fontfamily$/i.test(key) ? (
+                    <YaziTipiSecici value={String(values[key] ?? '')} onChange={(v) => setValues((s) => ({ ...s, [key]: v }))} secenekler={secenekler(ayarId, key) || []} />
                   ) : type === 'select' ? (
                     <div className="flex items-center gap-1.5">
                       <Secim value={values[key] ?? ''} onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))} className="flex-1 min-w-0 w-full">

@@ -28,6 +28,8 @@ export interface AyarDinleyicisi {
 
 /** Tek tuval yerleşimini (`all_in_one_overlay_settings`) dinlemek için ayrılmış kimlik. */
 export const YERLESIM_KIMLIGI = '__tek-tuval-yerlesimi__';
+/** WID-5: yüklenen yazı tipleri değişti (`yazi_tipleri`) */
+export const YAZI_TIPI_KIMLIGI = '__yazi-tipleri__';
 
 const dinleyiciler = new Set<AyarDinleyicisi>();
 let soket: KaliciSoket | null = null;
@@ -76,6 +78,8 @@ function baglan() {
       for (const d of dinleyiciler) if (d.widgetId === msg.widgetId) d.ayar(msg.settings);
     } else if (msg?.type === 'all_in_one_overlay_settings' && msg.config) {
       for (const d of dinleyiciler) if (d.widgetId === YERLESIM_KIMLIGI) d.ayar(msg.config);
+    } else if (msg?.type === 'yazi_tipleri') {
+      for (const d of dinleyiciler) if (d.widgetId === YAZI_TIPI_KIMLIGI) d.ayar({});
     }
   };
 }

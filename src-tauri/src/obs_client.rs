@@ -515,6 +515,32 @@ impl ObsClientState {
     }
   }
 
+  /// BOT-1: sahnedeki kaynağın konumu, ölçeği (iki eksen aynı), açısı; None olan alan değişmez
+  pub async fn set_item_transform(&self, scene_name: &str, source_name: &str, x: Option<f64>, y: Option<f64>, scale: Option<f64>, rotation: Option<f64>) -> Result<(), String> {
+    use obws::requests::scene_items::{Position, Scale, SceneItemTransform, SetTransform};
+    let client = self.client()?;
+    let scene = SceneId::Name(scene_name);
+    let item = client
+      .scene_items()
+      .list(scene)
+      .await
+      .map_err(|error| format!("OBS kaynakları alınamadı: {error}"))?
+      .into_iter()
+      .find(|item| item.source_name.eq_ignore_ascii_case(source_name))
+      .ok_or_else(|| format!("Kaynak bulunamadı: {source_name}"))?;
+    let transform = SceneItemTransform {
+      position: (x.is_some() || y.is_some()).then(|| Position { x: x.map(|v| v as f32), y: y.map(|v| v as f32) }),
+      rotation: rotation.map(|v| v as f32),
+      scale: scale.map(|s| Scale { x: Some(s as f32), y: Some(s as f32) }),
+      ..Default::default()
+    };
+    client
+      .scene_items()
+      .set_transform(SetTransform { scene, item_id: item.id, transform })
+      .await
+      .map_err(|error| format!("Kaynak dönüştürülemedi: {error}"))
+  }
+
   /// Ses izleme türü: "none" | "monitorOnly" | "monitorAndOutput" (mikser sağ tık menüsü, A7)
   pub async fn monitor_type(&self, input_name: &str) -> Result<String, String> {
     use obws::common::MonitorType;

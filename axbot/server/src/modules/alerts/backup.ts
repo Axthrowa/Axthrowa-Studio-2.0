@@ -173,24 +173,7 @@ class UyariYedegiDeposu {
       for (const v of varyantlar) for (const a of ['gorsel_url', 'ses_url']) kimlikler.add(medyaKimligi(v[a]));
       kimlikler.delete('');
 
-      const gomulu: GomuluMedya[] = [];
-      let toplam = 0;
-      let atlanan = 0;
-      for (const id of kimlikler) {
-        const oge = medya.bul(id);
-        if (!oge) continue;
-        if (toplam + oge.boyut > GOMULU_MEDYA_UST) {
-          atlanan++;
-          continue;
-        }
-        try {
-          const bayt = fs.readFileSync(medya.dosyaYolu(oge));
-          gomulu.push({ eskiId: id, ad: oge.ad, veri: bayt.toString('base64') });
-          toplam += bayt.length;
-        } catch {
-          atlanan++;
-        }
-      }
+      const { gomulu, atlanan } = medyaGom(kimlikler);
       yedek.medya = gomulu;
       if (atlanan) {
         yedek.medyaUyarisi = `${atlanan} dosya ${Math.round(GOMULU_MEDYA_UST / 1024 / 1024)} MB sınırı yüzünden yedeğe eklenmedi.`;
@@ -198,62 +181,6 @@ class UyariYedegiDeposu {
     }
 
     return yedek;
-  }
-
-  /**
-   * Gömülü medyayı kütüphaneye geri yükler. İçeriği AYNI olan dosya zaten
-   * varsa yenisi yazılmaz (aynı yedeği iki kez yüklemek kütüphaneyi
-   * şişirmesin). Döner: eski kimlik → yeni kimlik.
-   */
-  private medyaGeriYukle(liste: GomuluMedya[], sonuc: IceAktarmaSonucu): Map<string, string> {
-    const harita = new Map<string, string>();
-    const ozet = (b: Buffer) => crypto.createHash('sha256').update(b).digest('hex');
-
-    // Mevcut kütüphanenin özetleri (yalnız gerektiğinde, boyuta göre)
-    const mevcutlar = medya.listele();
-    const ozetOnbellek = new Map<string, string>();
-    const mevcutOzet = (id: string, dosya: string) => {
-      if (!ozetOnbellek.has(id)) {
-        try {
-          ozetOnbellek.set(id, ozet(fs.readFileSync(dosya)));
-        } catch {
-          ozetOnbellek.set(id, '');
-        }
-      }
-      return ozetOnbellek.get(id)!;
-    };
-
-    for (const m of liste) {
-      const eskiId = String(m?.eskiId || '');
-      const veri = String(m?.veri || '');
-      if (!eskiId || !veri) continue;
-      let bayt: Buffer;
-      try {
-        bayt = Buffer.from(veri, 'base64');
-      } catch {
-        sonuc.uyarilar.push(`"${m?.ad || eskiId}" çözülemedi, atlandı.`);
-        continue;
-      }
-      const o = ozet(bayt);
-      const ayni = mevcutlar.find((x) => x.boyut === bayt.length && mevcutOzet(x.id, medya.dosyaYolu(x)) === o);
-      if (ayni) {
-        harita.set(eskiId, ayni.id);
-        sonuc.medya.zatenVardi++;
-        continue;
-      }
-      // İçerik imzası doğrulaması medya.ekle içinde: sahte uzantı geçmez
-      const r = medya.ekle(String(m?.ad || 'dosya'), veri);
-      if (r.ok) {
-        harita.set(eskiId, r.oge.id);
-        mevcutlar.push(r.oge);
-        ozetOnbellek.set(r.oge.id, o);
-        sonuc.medya.eklenen++;
-      } else {
-        sonuc.medya.atlanan++;
-        sonuc.uyarilar.push(`"${m?.ad || eskiId}" yüklenemedi: ${r.hata}`);
-      }
-    }
-    return harita;
   }
 
   /**
@@ -286,7 +213,7 @@ class UyariYedegiDeposu {
 
     // Gömülü medya varsa ÖNCE kütüphaneye yüklenir; bağlantılar yeni
     // kimliklere çevrilir. Yoksa bağlantılar olduğu gibi kalır (uyarı verilir).
-    const harita = Array.isArray(veri.medya) ? this.medyaGeriYukle(veri.medya, sonuc) : new Map<string, string>();
+    const harita = Array.isArray(veri.medya) ? gomuluMedyaYukle(veri.medya, sonuc) : new Map<string, string>();
 
     for (const ham of Array.isArray(veri.presets) ? veri.presets : []) {
       const p = suz(ham, PRESET_ALANLARI);
@@ -453,3 +380,82 @@ class UyariYedegiDeposu {
 
 export const uyariYedegi = new UyariYedegiDeposu();
 export default uyariYedegi;
+
+/** Kimlikleri verilen kütüphane dosyaları (toplam GOMULU_MEDYA_UST'e kadar) base64 olarak; sığmayan ya da okunamayan sayılır */
+export function medyaGom(kimlikler: Iterable<string>): { gomulu: GomuluMedya[]; atlanan: number } {
+  const gomulu: GomuluMedya[] = [];
+  let toplam = 0;
+  let atlanan = 0;
+  for (const id of kimlikler) {
+    const oge = medya.bul(id);
+    if (!oge) continue;
+    if (toplam + oge.boyut > GOMULU_MEDYA_UST) {
+      atlanan++;
+      continue;
+    }
+    try {
+      const bayt = fs.readFileSync(medya.dosyaYolu(oge));
+      gomulu.push({ eskiId: id, ad: oge.ad, veri: bayt.toString('base64') });
+      toplam += bayt.length;
+    } catch {
+      atlanan++;
+    }
+  }
+  return { gomulu, atlanan };
+}
+
+/**
+ * Gömülü medyayı kütüphaneye geri yükler. İçeriği AYNI olan dosya zaten
+ * varsa yenisi yazılmaz (aynı yedeği iki kez yüklemek kütüphaneyi
+ * şişirmesin). Döner: eski kimlik → yeni kimlik.
+ */
+export function gomuluMedyaYukle(liste: GomuluMedya[], sonuc: Pick<IceAktarmaSonucu, 'medya' | 'uyarilar'>): Map<string, string> {
+  const harita = new Map<string, string>();
+  const ozet = (b: Buffer) => crypto.createHash('sha256').update(b).digest('hex');
+
+  // Mevcut kütüphanenin özetleri (yalnız gerektiğinde, boyuta göre)
+  const mevcutlar = medya.listele();
+  const ozetOnbellek = new Map<string, string>();
+  const mevcutOzet = (id: string, dosya: string) => {
+    if (!ozetOnbellek.has(id)) {
+      try {
+        ozetOnbellek.set(id, ozet(fs.readFileSync(dosya)));
+      } catch {
+        ozetOnbellek.set(id, '');
+      }
+    }
+    return ozetOnbellek.get(id)!;
+  };
+
+  for (const m of liste) {
+    const eskiId = String(m?.eskiId || '');
+    const veri = String(m?.veri || '');
+    if (!eskiId || !veri) continue;
+    let bayt: Buffer;
+    try {
+      bayt = Buffer.from(veri, 'base64');
+    } catch {
+      sonuc.uyarilar.push(`"${m?.ad || eskiId}" çözülemedi, atlandı.`);
+      continue;
+    }
+    const o = ozet(bayt);
+    const ayni = mevcutlar.find((x) => x.boyut === bayt.length && mevcutOzet(x.id, medya.dosyaYolu(x)) === o);
+    if (ayni) {
+      harita.set(eskiId, ayni.id);
+      sonuc.medya.zatenVardi++;
+      continue;
+    }
+    // İçerik imzası doğrulaması medya.ekle içinde: sahte uzantı geçmez
+    const r = medya.ekle(String(m?.ad || 'dosya'), veri);
+    if (r.ok) {
+      harita.set(eskiId, r.oge.id);
+      mevcutlar.push(r.oge);
+      ozetOnbellek.set(r.oge.id, o);
+      sonuc.medya.eklenen++;
+    } else {
+      sonuc.medya.atlanan++;
+      sonuc.uyarilar.push(`"${m?.ad || eskiId}" yüklenemedi: ${r.hata}`);
+    }
+  }
+  return harita;
+}

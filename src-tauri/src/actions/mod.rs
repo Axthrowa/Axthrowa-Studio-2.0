@@ -33,6 +33,8 @@ pub enum ParamKind {
   Percent,
   /// İsteğe bağlı çalma listesi adı (boş = "AxthrowA Yayın")
   Playlist,
+  /// İsteğe bağlı sayı (kaynak dönüşümü: konum, ölçek, açı). Studio formları göstermez; AxBoT otomasyonu çağırır
+  Number,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -76,6 +78,14 @@ const KAYNAK: &[ParamSpec] = &[
 ];
 const SEVIYE: &[ParamSpec] = &[ParamSpec { name: "input", kind: ParamKind::Input }, ParamSpec { name: "delta", kind: ParamKind::Db }];
 const FILTRE: &[ParamSpec] = &[ParamSpec { name: "source", kind: ParamKind::Source }, ParamSpec { name: "filter", kind: ParamKind::Filter }];
+const DONUSUM: &[ParamSpec] = &[
+  ParamSpec { name: "scene", kind: ParamKind::OptionalScene },
+  ParamSpec { name: "source", kind: ParamKind::Source },
+  ParamSpec { name: "x", kind: ParamKind::Number },
+  ParamSpec { name: "y", kind: ParamKind::Number },
+  ParamSpec { name: "scale", kind: ParamKind::Number },
+  ParamSpec { name: "rotation", kind: ParamKind::Number },
+];
 
 /// Basılı tutma eylemleri: kısayol bırakılınca da çağrılır (`durum: "released"`)
 pub const BASILI_EYLEMLER: [&str; 3] = ["audio.pushToTalk", "audio.pushToMute", "voice.pushToTalk"];
@@ -91,6 +101,7 @@ pub const ACTIONS: &[ActionSpec] = &[
   ActionSpec { id: "source.toggle", label: "Kaynağı göster / gizle", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
   ActionSpec { id: "source.lock", label: "Kaynağı kilitle", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
   ActionSpec { id: "source.unlock", label: "Kaynağın kilidini aç", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: KAYNAK },
+  ActionSpec { id: "source.transform", label: "Kaynağı taşı / ölçekle / döndür", category: "scene", perm: "scene.edit", confirm: false, requires: Requires::Obs, params: DONUSUM },
   ActionSpec { id: "record.start", label: "Kaydı başlat", category: "recording", perm: "broadcast.record", confirm: false, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "record.stop", label: "Kaydı durdur", category: "recording", perm: "broadcast.record", confirm: true, requires: Requires::Obs, params: &[] },
   ActionSpec { id: "replay.save", label: "Tekrarı kaydet", category: "replay", perm: "broadcast.replay", confirm: false, requires: Requires::Obs, params: &[] },
@@ -198,6 +209,8 @@ pub enum Action {
   SourceVisibility { scene: Option<String>, source: String, mode: &'static str },
   /// K5: katman kilidi; `scene` boşsa geçerli sahne
   SourceLock { scene: Option<String>, source: String, locked: bool },
+  /// BOT-1: verilen alanlar değişir (konum piksel, ölçek çarpan, açı derece); verilmeyen olduğu gibi kalır
+  SourceTransform { scene: Option<String>, source: String, x: Option<f64>, y: Option<f64>, scale: Option<f64>, rotation: Option<f64> },
   AudioVolume { input: String, delta_db: f64 },
   /// `Some(true)` duraklat, `Some(false)` sürdür, `None` değiştir
   RecordPause { pause: Option<bool> },
@@ -270,6 +283,19 @@ fn db_farki(params: &Value) -> Result<f64, String> {
   Ok(v)
 }
 
+/// İsteğe bağlı sayı: yok ya da boşsa None; sayı ya da sayı metni (ondalık virgül olabilir), sınır içinde
+fn sayi_param(params: &Value, ad: &str, en_az: f64, en_cok: f64) -> Result<Option<f64>, String> {
+  let v = match params.get(ad) {
+    None | Some(Value::Null) => return Ok(None),
+    Some(Value::String(s)) if s.trim().is_empty() => return Ok(None),
+    Some(v) => v.as_f64().or_else(|| v.as_str().and_then(|s| s.trim().replace(',', ".").parse::<f64>().ok())),
+  };
+  match v {
+    Some(n) if n.is_finite() && (en_az..=en_cok).contains(&n) => Ok(Some(n)),
+    _ => Err(format!("'{ad}' {en_az}…{en_cok} arasında bir sayı olmalı")),
+  }
+}
+
 /// Kimlik + parametrelerden eylemi kurar. Bilinmeyen kimlik ya da eksik/geçersiz parametre hata döner — hiçbir
 /// eylem yarım parametreyle yürütülmez.
 pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
@@ -312,6 +338,16 @@ pub fn parse(id: &str, params: &Value) -> Result<Action, String> {
       source: metin(params, "source")?,
       locked: spec.id == "source.lock",
     },
+    "source.transform" => {
+      let x = sayi_param(params, "x", -20_000.0, 20_000.0)?;
+      let y = sayi_param(params, "y", -20_000.0, 20_000.0)?;
+      let scale = sayi_param(params, "scale", 0.01, 20.0)?;
+      let rotation = sayi_param(params, "rotation", -360.0, 360.0)?;
+      if x.is_none() && y.is_none() && scale.is_none() && rotation.is_none() {
+        return Err("Konum, ölçek ya da açıdan en az biri gerekli".into());
+      }
+      Action::SourceTransform { scene: istege_bagli(params, "scene")?, source: metin(params, "source")?, x, y, scale, rotation }
+    }
     "record.pause" => Action::RecordPause { pause: Some(true) },
     "record.resume" => Action::RecordPause { pause: Some(false) },
     "record.togglePause" => Action::RecordPause { pause: None },
@@ -388,11 +424,22 @@ mod tests {
   use serde_json::json;
 
   #[test]
+  fn kaynak_donusumu_en_az_bir_alan_ister_ve_sinirlari_denetler() {
+    assert!(parse("source.transform", &json!({"source": "Kamera"})).is_err());
+    assert!(parse("source.transform", &json!({"source": "Kamera", "scale": 0})).is_err());
+    assert!(parse("source.transform", &json!({"source": "Kamera", "x": "abc"})).is_err());
+    assert_eq!(
+      parse("source.transform", &json!({"source": "Kamera", "x": "120,5", "scale": 1.5, "y": ""})).unwrap(),
+      Action::SourceTransform { scene: None, source: "Kamera".into(), x: Some(120.5), y: None, scale: Some(1.5), rotation: None }
+    );
+  }
+
+  #[test]
   fn her_tanimli_eylemin_yurutucusu_var_ve_kimlikler_tekil() {
     let mut gorulen = std::collections::HashSet::new();
     for a in ACTIONS {
       assert!(gorulen.insert(a.id), "yinelenen kimlik: {}", a.id);
-      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk", "transition": "Kes", "text": "Merhaba", "percent": 40});
+      let ornek = json!({"scene": "Oyun", "input": "Mikrofon", "id": "hedef-1", "source": "Kamera", "delta": -3, "filter": "Renk", "transition": "Kes", "text": "Merhaba", "percent": 40, "x": 100});
       assert!(parse(a.id, &ornek).is_ok(), "yürütücüsüz eylem: {}", a.id);
       assert!(!a.perm.is_empty() && a.perm.contains('.'), "izin adı: {}", a.id);
     }

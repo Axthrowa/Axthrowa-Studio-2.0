@@ -156,6 +156,19 @@ async fn yayin_provasi_baslat_uyari_mola_bitir() {
   let turler: Vec<&str> = obs.iter().map(|i| i["tur"].as_str().unwrap()).collect();
   assert_eq!(turler, ["StartStream", "SetCurrentProgramScene", "StopStream"], "{obs:?}");
   assert_eq!(obs[1]["veri"]["sceneName"], "Mola");
+
+  // BOT-1 kabulü: AxBoT otomasyonunun "abone → ışık aç … 5 sn sonra kapat" kuralının Studio'ya yaptığı çağrılar (ortak fikstür)
+  let fikstur: Value = serde_json::from_str(include_str!("../../tests/fixtures/otomasyon-abone-isik.json")).unwrap();
+  let once = obs_istekleri.lock().unwrap().len();
+  for govde in fikstur["studioCagrilari"].as_array().unwrap() {
+    let r = calistir(govde.clone()).await;
+    assert!(r.status().is_success(), "{govde}: {}", r.text().await.unwrap_or_default());
+  }
+  let filtre: Vec<Value> = obs_istekleri.lock().unwrap()[once..].to_vec();
+  assert_eq!(filtre.iter().map(|i| i["tur"].as_str().unwrap()).collect::<Vec<_>>(), ["SetSourceFilterEnabled", "SetSourceFilterEnabled"], "{filtre:?}");
+  assert_eq!((filtre[0]["veri"]["filterEnabled"].as_bool(), filtre[1]["veri"]["filterEnabled"].as_bool()), (Some(true), Some(false)));
+  assert_eq!(filtre[0]["veri"]["sourceName"], "Kamera");
+  assert_eq!(filtre[0]["veri"]["filterName"], "Işık");
   let bot = bot_istekleri.lock().unwrap().clone();
   assert_eq!(bot.len(), 1);
   assert_eq!(bot[0]["action"], "skip");

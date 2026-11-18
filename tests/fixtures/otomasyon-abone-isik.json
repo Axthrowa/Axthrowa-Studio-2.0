@@ -1,0 +1,21 @@
+{
+  "aciklama": "BOT-1 kabul kuralı: abone gelince ışık filtresini aç, ses çal, 5 sn sonra kapat. AxBoT testi kuralı sahte Studio'ya karşı çalıştırır; Studio provası aynı çağrıları sahte OBS'e karşı yürütür.",
+  "kural": {
+    "id": "abone-isik",
+    "ad": "Abone ışığı",
+    "etkin": true,
+    "beklemeSn": 0,
+    "tetik": { "tur": "abone" },
+    "kosullar": [],
+    "eylemler": [
+      { "tur": "obs_filtre", "durum": "ac", "kaynak": "Kamera", "filtre": "Işık" },
+      { "tur": "pano_oynat", "ogeId": "pano-abone-sesi" },
+      { "tur": "bekle", "saniye": 5 },
+      { "tur": "obs_filtre", "durum": "kapat", "kaynak": "Kamera", "filtre": "Işık" }
+    ]
+  },
+  "studioCagrilari": [
+    { "id": "filter.enable", "params": { "source": "Kamera", "filter": "Işık" }, "confirm": false },
+    { "id": "filter.disable", "params": { "source": "Kamera", "filter": "Işık" }, "confirm": false }
+  ]
+}

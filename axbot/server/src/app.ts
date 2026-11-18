@@ -89,7 +89,7 @@ const normalGovde = express.json({ limit: '12mb' });
 // Medya yüklemesi: 30 MB video base64'te ~40 MB
 const medyaGovde = express.json({ limit: '45mb' });
 app.use((req, res, next) =>
-  req.path === '/api/alerts/backup/import'
+  req.path === '/api/alerts/backup/import' || req.path === '/api/otomasyon/ice-aktar'
     ? buyukGovde(req, res, next)
     : req.path === '/api/media' && req.method === 'POST'
       ? medyaGovde(req, res, next)

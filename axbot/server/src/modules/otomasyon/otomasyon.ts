@@ -8,10 +8,15 @@ import { eventBus, type ChatMessagePayload } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { seyrekUyar } from '../../core/logger.js';
 import { muzikHost } from '../muzik/index.js';
-import { EN_COK_KURAL, EN_COK_SIRA, eylemAciklamasi, kosulEngeli, kuralDuzelt, metniDoldur, ONCEKI_SAHNE, PatlamaSayaci, tetikUyar, type Eylem, type Kural, type Olay } from './kural.js';
+import { EN_COK_DAL_DERINLIGI, EN_COK_KURAL, EN_COK_KUYRUK, EN_COK_SIRA, eylemAciklamasi, jsonKodla, kosulEngeli, kuralDuzelt, kuyrukDuzelt, metniDoldur, ONCEKI_SAHNE, PatlamaSayaci, tetikUyar, tumEylemler, urlKodla, type Eylem, type Kural, type Kuyruk, type Olay } from './kural.js';
 import { shoutoutGonder } from './shoutout.js';
 
 const ANAHTAR = 'otomasyon_kurallari';
+const KUYRUK_ANAHTARI = 'otomasyon_kuyruklari';
+/** HTTP eyleminin {yanit} olarak sonraki adımlara geçen kısmı */
+const YANIT_SINIRI = 300;
+/** Studio'ya giden OBS eylemleri: yalnız bunlar (yayını bitirme gibi onaylılar yok) */
+const YYA_EYLEMLERI = new Set(['scene.switch', 'replay.save', 'filter.enable', 'filter.disable', 'filter.toggle', 'source.show', 'source.hide', 'source.toggle', 'source.transform']);
 const GUNLUK_SINIRI = 50;
 
 export interface GunlukSatiri {
@@ -36,6 +41,23 @@ export class Otomasyon {
   private bagli = false;
   /** B7: sıralı kuralların bekleyen işleri */
   private siralar = new Map<string, { bekleyen: number; zincir: Promise<void> }>();
+  /** BOT-1: adlı kuyrukların çalışan ve bekleyen işleri */
+  private kuyrukDurumu = new Map<string, { calisan: number; bekleyen: (() => void)[] }>();
+  private sonKuyrukHam: string | null = null;
+  private kuyrukListesi: Kuyruk[] = [];
+
+  kuyruklar(): Kuyruk[] {
+    const ham = settingsCache.get(KUYRUK_ANAHTARI, '[]');
+    if (ham === this.sonKuyrukHam) return this.kuyrukListesi;
+    this.sonKuyrukHam = ham;
+    try {
+      const okunan = JSON.parse(ham);
+      this.kuyrukListesi = (Array.isArray(okunan) ? okunan : []).flatMap((k) => kuyrukDuzelt(k) ?? []);
+    } catch {
+      this.kuyrukListesi = [];
+    }
+    return this.kuyrukListesi;
+  }
 
   kurallar(): Kural[] {
     const ham = settingsCache.get(ANAHTAR, '[]');
@@ -55,18 +77,37 @@ export class Otomasyon {
   }
 
   /** Bütün listeyi doğrulayıp yazar; bozuk kural varsa hiçbiri yazılmaz */
-  kaydet(ham: unknown): { ok: true; kurallar: Kural[] } | { ok: false; hata: string } {
+  kaydet(ham: unknown, hamKuyruk?: unknown): { ok: true; kurallar: Kural[]; kuyruklar: Kuyruk[] } | { ok: false; hata: string } {
     if (!Array.isArray(ham)) return { ok: false, hata: 'Kural listesi geçersiz' };
     if (ham.length > EN_COK_KURAL) return { ok: false, hata: `En çok ${EN_COK_KURAL} kural olabilir` };
+    // Kuyruk listesi gönderilmezse olduğu gibi kalır
+    let kuyruklar = this.kuyruklar();
+    if (hamKuyruk !== undefined) {
+      if (!Array.isArray(hamKuyruk) || hamKuyruk.length > EN_COK_KUYRUK) return { ok: false, hata: `En çok ${EN_COK_KUYRUK} kuyruk olabilir` };
+      kuyruklar = [];
+      for (const q of hamKuyruk) {
+        const k = kuyrukDuzelt(q);
+        if (!k) return { ok: false, hata: 'Kuyruk adı geçersiz (harf, rakam, boşluk, - _; en çok 40)' };
+        if (kuyruklar.some((x) => x.ad.toLocaleLowerCase('tr') === k.ad.toLocaleLowerCase('tr'))) return { ok: false, hata: `Aynı adla iki kuyruk: ${k.ad}` };
+        kuyruklar.push(k);
+      }
+    }
     const kurallar: Kural[] = [];
     for (const k of ham) {
       const r = kuralDuzelt(k);
       if (!r.ok) return r;
       kurallar.push(r.kural);
     }
+    const idler = new Set(kurallar.map((k) => k.id));
+    for (const k of kurallar) {
+      if (k.kuyruk && !kuyruklar.some((q) => q.ad === k.kuyruk)) return { ok: false, hata: `${k.ad}: "${k.kuyruk}" adlı kuyruk yok` };
+      const yok = tumEylemler(k.eylemler).find((e) => e.tur === 'kural_calistir' && !idler.has(e.kuralId));
+      if (yok) return { ok: false, hata: `${k.ad}: çalıştırılacak kural bulunamadı` };
+    }
+    settingsCache.set(KUYRUK_ANAHTARI, JSON.stringify(kuyruklar));
     settingsCache.set(ANAHTAR, JSON.stringify(kurallar));
     this.patlamalar.clear();
-    return { ok: true, kurallar: this.kurallar() };
+    return { ok: true, kurallar: this.kurallar(), kuyruklar: this.kuyruklar() };
   }
 
   gunlukOku(): GunlukSatiri[] {
@@ -87,7 +128,7 @@ export class Otomasyon {
       ok: true,
       uyar: tetikUyar(k.tetik, olay),
       engel: kosulEngeli(k.kosullar, olay, await this.durum(k, olay)),
-      adimlar: k.eylemler.map((e) => eylemAciklamasi(e, olay)),
+      adimlar: tumEylemler(k.eylemler).map((e) => eylemAciklamasi(e, olay)),
     };
   }
 
@@ -117,10 +158,10 @@ export class Otomasyon {
 
   /** Kuralın eylemleri (sıralı ya da rastgele biri); sonuç günlüğe yazılır */
   private async eylemleriCalistir(k: Kural, o: Olay): Promise<{ ok: boolean; mesaj: string }> {
-    const baglam: Baglam = {};
-    const eylemler = k.kip === 'rastgele' ? [k.eylemler[Math.floor(Math.random() * k.eylemler.length)]] : k.eylemler;
+    const baglam: Baglam = { derinlik: 0, yigin: [k.id] };
+    const eylemler = secilenEylemler(k);
     try {
-      for (const e of eylemler) await this.eylem(e, o, baglam);
+      await this.eylemListesi(eylemler, o, baglam);
       const mesaj = k.kip === 'rastgele' ? `Rastgele seçilen: ${eylemAciklamasi(eylemler[0], o)}` : `${eylemler.length} eylem çalıştı`;
       this.yaz(k.ad, true, mesaj);
       return { ok: true, mesaj };
@@ -143,12 +184,17 @@ export class Otomasyon {
     }
   }
 
+  private async eylemListesi(eylemler: Eylem[], o: Olay, baglam: Baglam): Promise<void> {
+    for (const e of eylemler) await this.eylem(e, o, baglam);
+  }
+
   /** Tek eylem. Hata fırlatabilir: kuralın kalan adımları o zaman çalışmaz. */
-  private async eylem(e: Eylem, o: Olay, baglam: Baglam = {}): Promise<void> {
+  private async eylem(e: Eylem, o: Olay, baglam: Baglam): Promise<void> {
     const platform = o.platform || 'all';
+    const doldur = (sablon: string) => metniDoldur(sablon, o, { yanit: baglam.yanit });
     switch (e.tur) {
       case 'sohbet':
-        eventBus.emitBotMessage({ platform: platform as any, message: metniDoldur(e.metin, o) });
+        eventBus.emitBotMessage({ platform: platform as any, message: doldur(e.metin) });
         return;
       case 'tts':
       case 'pano_oynat':
@@ -157,11 +203,11 @@ export class Otomasyon {
       case 'kalkan':
       case 'komut': {
         const { sesliKomutlar } = await import('../sesli/sesli.js');
-        await sesliKomutlar.calistir(e.tur === 'tts' ? { tur: 'tts', metin: metniDoldur(e.metin, o) } : e);
+        await sesliKomutlar.calistir(e.tur === 'tts' ? { tur: 'tts', metin: doldur(e.metin) } : e);
         return;
       }
       case 'shoutout':
-        await shoutoutGonder(metniDoldur(e.kanal, o).replace(/^@/, ''), o.platform || ilkKanal()?.platform || 'kick');
+        await shoutoutGonder(doldur(e.kanal).replace(/^@/, ''), o.platform || ilkKanal()?.platform || 'kick');
         return;
       case 'obs_sahne': {
         if (e.sahne.trim() === ONCEKI_SAHNE) {
@@ -182,17 +228,98 @@ export class Otomasyon {
       }
       case 'discord': {
         const { discordDuyuru } = await import('../integrations/discord-announce.js');
-        await discordDuyuru.metinGonder(metniDoldur(e.metin, o));
+        await discordDuyuru.metinGonder(doldur(e.metin));
         return;
       }
       case 'bekle':
         await new Promise((r) => setTimeout(r, e.saniye * 1000));
         return;
+      case 'obs_filtre':
+        return this.yyaEylemi(`filter.${{ ac: 'enable', kapat: 'disable', degistir: 'toggle' }[e.durum]}`, { source: e.kaynak, filter: e.filtre });
+      case 'obs_kaynak':
+        return this.yyaEylemi(`source.${{ goster: 'show', gizle: 'hide', degistir: 'toggle' }[e.durum]}`, { ...(e.sahne ? { scene: e.sahne } : {}), source: e.kaynak });
+      case 'obs_donusum':
+        return this.yyaEylemi('source.transform', { ...(e.sahne ? { scene: e.sahne } : {}), source: e.kaynak, x: e.x, y: e.y, scale: e.olcek, rotation: e.aci });
+      case 'http': {
+        const adres = metniDoldur(e.adres, o, { yanit: baglam.yanit, kodla: urlKodla });
+        const govde = /^\s*[[{]/.test(e.govde) ? metniDoldur(e.govde, o, { yanit: baglam.yanit, kodla: jsonKodla }) : doldur(e.govde);
+        try {
+          const r = await axios.request({
+            method: e.yontem,
+            url: adres,
+            data: e.yontem === 'POST' ? govde : undefined,
+            headers: e.yontem === 'POST' ? { 'Content-Type': /^\s*[[{]/.test(govde) ? 'application/json' : 'text/plain' } : undefined,
+            timeout: 10_000,
+            maxContentLength: 64 * 1024,
+            maxRedirects: 3,
+            responseType: 'text',
+            transformResponse: (v) => v
+          });
+          baglam.yanit = String(r.data ?? '').slice(0, YANIT_SINIRI);
+        } catch (h: any) {
+          throw new Error(`HTTP isteği başarısız: ${h?.response?.status ? `durum ${h.response.status}` : String(h?.message || h)}`.slice(0, 160));
+        }
+        return;
+      }
+      case 'degisken': {
+        const deger = doldur(e.deger);
+        if (e.hedef === 'kanal') {
+          const { kvYaz } = await import('../../core/variables/store.js');
+          kvYaz('global', '', e.ad, deger);
+          return;
+        }
+        const n = Number(deger.replace(',', '.'));
+        if (!Number.isFinite(n)) throw new Error(`Sayaç ${e.ad}: "${deger.slice(0, 40)}" sayı değil`);
+        const { sayacAyarla, sayacDegistir } = await import('../../core/variables/store.js');
+        if (e.islem === 'ekle') sayacDegistir(e.ad, n);
+        else sayacAyarla(e.ad, n);
+        return;
+      }
+      case 'rastgele_dal':
+        return this.eylemListesi(Math.random() * 100 < e.yuzde ? e.evet : e.hayir, o, baglam);
+      case 'kural_calistir': {
+        const hedef = this.kurallar().find((k) => k.id === e.kuralId);
+        if (!hedef) throw new Error('Çalıştırılacak kural bulunamadı');
+        if (baglam.yigin.includes(hedef.id)) throw new Error(`Döngü: ${hedef.ad} zaten çalışıyor`);
+        if (baglam.derinlik + 1 > EN_COK_DAL_DERINLIGI) throw new Error(`İç içe kural çağrısı en çok ${EN_COK_DAL_DERINLIGI}`);
+        // Çağrılan kuralın tetiği, koşulu ve beklemesi atlanır; sahne ve yanıt kendi bağlamında
+        return this.eylemListesi(secilenEylemler(hedef), o, { derinlik: baglam.derinlik + 1, yigin: [...baglam.yigin, hedef.id] });
+      }
+    }
+  }
+
+  /**
+   * BOT-1 adlı kuyruk: aynı kuyruktaki kuralların eylemleri en çok `ayniAnda` tanesi birlikte çalışır,
+   * kalanlar sırayla bekler; bekleyen sınırı dolunca yeni olay atılır. Kuyruğu silinmiş kural doğrudan çalışır.
+   */
+  private async kuyrukla(k: Kural, is: () => Promise<unknown>): Promise<void> {
+    const q = k.kuyruk ? this.kuyruklar().find((x) => x.ad === k.kuyruk) : undefined;
+    if (!q) {
+      await is();
+      return;
+    }
+    const d = this.kuyrukDurumu.get(q.ad) ?? { calisan: 0, bekleyen: [] };
+    this.kuyrukDurumu.set(q.ad, d);
+    if (d.calisan >= q.ayniAnda) {
+      if (d.bekleyen.length >= q.enCokBekleyen) {
+        this.yaz(k.ad, false, `Kuyruk "${q.ad}" dolu (${q.enCokBekleyen}); olay atıldı`);
+        return;
+      }
+      await new Promise<void>((r) => d.bekleyen.push(r));
+    } else d.calisan++;
+    try {
+      await is();
+    } finally {
+      // Sıradaki iş yuvayı devralır: çalışan sayısı düşmeden geçer
+      const sonraki = d.bekleyen.shift();
+      if (sonraki) sonraki();
+      else d.calisan--;
     }
   }
 
   /** OBS denetimi AxthrowA Studio'da: yalnız bu bilinçli seçilmiş eylemler gönderilir (yayını bitirme gibi onaylılar yok) */
-  private async yyaEylemi(id: 'scene.switch' | 'replay.save', params: Record<string, string>): Promise<void> {
+  private async yyaEylemi(id: string, params: Record<string, unknown>): Promise<void> {
+    if (!YYA_EYLEMLERI.has(id)) throw new Error(`İzin verilmeyen Studio eylemi: ${id}`);
     const adres = muzikHost.hariciAdres();
     if (!adres) throw new Error("OBS için AxthrowA Studio açık olmalı");
     try {
@@ -234,7 +361,7 @@ export class Otomasyon {
       this.yaz(k.ad, false, String(e?.message || e));
       return;
     }
-    await this.eylemleriCalistir(k, o);
+    await this.kuyrukla(k, () => this.eylemleriCalistir(k, o));
   }
 
   /**
@@ -256,7 +383,7 @@ export class Otomasyon {
         const kalan = (this.sonCalisma.get(k.id) ?? -Infinity) + k.beklemeSn * 1000 - Date.now();
         if (kalan > 0) await new Promise((r) => setTimeout(r, kalan));
         this.sonCalisma.set(k.id, Date.now());
-        await this.eylemleriCalistir(k, o);
+        await this.kuyrukla(k, () => this.eylemleriCalistir(k, o));
       } catch (e: any) {
         this.yaz(k.ad, false, String(e?.message || e));
       } finally {
@@ -299,7 +426,13 @@ export class Otomasyon {
   }
 }
 
-type Baglam = { onceki?: string };
+/** Bir kural çalışmasının durumu: önceki sahne, son HTTP yanıtı, iç içe kural çağrısı yığını */
+type Baglam = { onceki?: string; yanit?: string; derinlik: number; yigin: string[] };
+
+/** Sıralı kipte hepsi, rastgele kipte biri */
+function secilenEylemler(k: Kural): Eylem[] {
+  return k.kip === 'rastgele' ? [k.eylemler[Math.floor(Math.random() * k.eylemler.length)]] : k.eylemler;
+}
 
 /** "Dene" ve "Çalıştır" için tetiğe uygun örnek olay */
 function ornekOlay(k: Kural, ornek: Partial<Olay>): Olay {

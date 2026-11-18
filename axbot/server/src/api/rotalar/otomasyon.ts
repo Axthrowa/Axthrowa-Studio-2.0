@@ -1,17 +1,30 @@
 import { Router, type Request, type Response } from 'express';
 import { otomasyon } from '../../modules/otomasyon/otomasyon.js';
+import { disaAktar, iceAktar } from '../../modules/otomasyon/paket.js';
 import { eventBus } from '../../core/event-bus.js';
 
 const router = Router();
 
 router.get('/otomasyon', (_req: Request, res: Response) => {
-  res.json({ kurallar: otomasyon.kurallar(), gunluk: otomasyon.gunlukOku() });
+  res.json({ kurallar: otomasyon.kurallar(), kuyruklar: otomasyon.kuyruklar(), gunluk: otomasyon.gunlukOku() });
 });
 
 router.put('/otomasyon', (req: Request, res: Response) => {
-  const r = otomasyon.kaydet(req.body?.kurallar);
+  const r = otomasyon.kaydet(req.body?.kurallar, req.body?.kuyruklar);
   if (!r.ok) return res.status(400).json({ error: r.hata });
-  res.json({ kurallar: r.kurallar });
+  res.json({ kurallar: r.kurallar, kuyruklar: r.kuyruklar });
+});
+
+// BOT-1: ?id=a,b yalnız o kurallar (ve çağırdıkları); yoksa hepsi. Dosya olarak iner.
+router.get('/otomasyon/disa-aktar', (req: Request, res: Response) => {
+  const id = String(req.query.id ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+  res.setHeader('Content-Disposition', 'attachment; filename="axbot-otomasyon.json"');
+  res.json(disaAktar(id));
+});
+
+router.post('/otomasyon/ice-aktar', (req: Request, res: Response) => {
+  const r = iceAktar(req.body);
+  res.status(r.ok ? 200 : 400).json(r.ok ? r : { ...r, error: r.hata });
 });
 
 // Hiçbir eylemi çalıştırmaz: koşul sonucu ve adımların dökümü

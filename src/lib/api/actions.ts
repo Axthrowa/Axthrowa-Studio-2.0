@@ -6,7 +6,7 @@ import { API_BASE } from "../api";
 import { olay } from "../analitik";
 
 export type ActionParamKind =
-  "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "filter" | "transition" | "text" | "percent" | "playlist";
+  "scene" | "optionalScene" | "input" | "source" | "destination" | "db" | "filter" | "transition" | "text" | "percent" | "playlist" | "number";
 
 export type ActionInfo = {
   id: string;
@@ -41,7 +41,8 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const actionsApi = {
-  list: () => call<{ actions: ActionInfo[]; local: boolean }>("/api/actions").then((r) => r.actions),
+  // Sayısal parametreli eylemler (kaynak dönüşümü) yalnız AxBoT otomasyonundan çağrılır: Studio formlarında bu alanlar yok
+  list: () => call<{ actions: ActionInfo[]; local: boolean }>("/api/actions").then((r) => r.actions.filter((a) => !a.params.some((p) => p.kind === "number"))),
   run: (id: string, params: Record<string, string | number> = {}, confirm = false) => {
     // Eylem kimliği ürün verisi (ör. scene.switch); parametreler (sahne/kaynak adı) gönderilmez
     olay("eylem_calisti", { eylem: id });
@@ -122,6 +123,7 @@ export const PARAM_LABEL: Record<ActionParamKind, string> = {
   text: "metin",
   percent: "yüzde (0–100)",
   playlist: "liste adı (boş = AxthrowA Yayın)",
+  number: "sayı",
 };
 
 /** Destek paketi (§93): sırları ayıklanmış JSON dosyası uygulama veri klasörüne yazılır; hiçbir yere gönderilmez. */

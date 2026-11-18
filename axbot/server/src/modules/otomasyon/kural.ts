@@ -39,7 +39,23 @@ export type Eylem =
   | { tur: 'sohbet_temizle' }
   | { tur: 'kalkan'; durum: 'ac' | 'kapat' }
   | { tur: 'discord'; metin: string }
-  | { tur: 'bekle'; saniye: number };
+  | { tur: 'bekle'; saniye: number }
+  // BOT-1 eylem kitaplığı
+  | { tur: 'obs_filtre'; kaynak: string; filtre: string; durum: 'ac' | 'kapat' | 'degistir' }
+  | { tur: 'obs_kaynak'; sahne: string; kaynak: string; durum: 'goster' | 'gizle' | 'degistir' }
+  | { tur: 'obs_donusum'; sahne: string; kaynak: string; x: number | null; y: number | null; olcek: number | null; aci: number | null }
+  | { tur: 'http'; yontem: 'GET' | 'POST'; adres: string; govde: string }
+  | { tur: 'degisken'; hedef: 'sayac' | 'kanal'; ad: string; islem: 'ayarla' | 'ekle'; deger: string }
+  | { tur: 'rastgele_dal'; yuzde: number; evet: Eylem[]; hayir: Eylem[] }
+  | { tur: 'kural_calistir'; kuralId: string };
+
+/** BOT-1: adlı eylem kuyruğu. Aynı kuyruktaki kuralların eylemleri en çok `ayniAnda` tanesi birlikte çalışır (1 = sıralı) */
+export interface Kuyruk {
+  ad: string;
+  ayniAnda: number;
+  /** Sırada bekleyebilecek iş; dolunca yeni olay atılır */
+  enCokBekleyen: number;
+}
 
 export interface Kural {
   id: string;
@@ -50,6 +66,8 @@ export interface Kural {
   kip: 'sirali' | 'rastgele';
   /** B7: bekleme ya da çalışma sırasında gelen olaylar atılmaz, sıraya girer (en çok EN_COK_SIRA) */
   sira: boolean;
+  /** BOT-1: adlı kuyruk (boş = kuyruksuz, kurallar birbirini beklemez) */
+  kuyruk: string;
   tetik: Tetik;
   kosullar: Kosul[];
   eylemler: Eylem[];
@@ -68,7 +86,11 @@ export interface Olay {
 }
 
 export const EN_COK_KURAL = 100;
-export const EN_COK_EYLEM = 12;
+export const EN_COK_EYLEM = 20;
+/** Dallar dahil bir kuraldaki toplam eylem ve dal derinliği */
+export const EN_COK_TOPLAM_EYLEM = 60;
+export const EN_COK_DAL_DERINLIGI = 3;
+export const EN_COK_KUYRUK = 20;
 export const EN_COK_SIRA = 10;
 /** Sahne alanına yazılınca kuralın ilk sahne değişiminden önceki sahneye döner */
 export const ONCEKI_SAHNE = '{onceki_sahne}';
@@ -124,7 +146,49 @@ function kosulDuzelt(k: any): Kosul | null {
   return null;
 }
 
-function eylemDuzelt(e: any): Eylem | null {
+const KUYRUK_ADI = /^[\p{L}\p{N} _-]{1,40}$/u;
+const kuyrukAdi = (v: unknown): string => {
+  const a = yazi(v, 40);
+  return KUYRUK_ADI.test(a) ? a : '';
+};
+
+export function kuyrukDuzelt(k: any): Kuyruk | null {
+  const ad = kuyrukAdi(k?.ad);
+  if (!ad) return null;
+  return { ad, ayniAnda: sayi(k?.ayniAnda ?? 1, 1, 10), enCokBekleyen: sayi(k?.enCokBekleyen ?? 20, 1, 100) };
+}
+
+/** İsteğe bağlı sayı alanı: boş/yok → null */
+const secimliSayi = (v: unknown, en: number, cok: number): number | null => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(cok, Math.max(en, n)) : null;
+};
+
+/**
+ * HTTP eylemi adresi: yalnız http/https; izleyici değeri ({mesaj}…) şema ve sunucu kısmına giremez,
+ * yoksa sohbetten istek başka sunucuya yönlendirilebilirdi.
+ */
+export function httpAdresiGecerli(adres: string): boolean {
+  const m = adres.match(/^(https?):\/\/([^/?#]+)/i);
+  if (!m || /[{}]/.test(m[0])) return false;
+  try {
+    new URL(adres.replace(/\{[a-z_:]+\}/gi, 'x'));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Dallardaki eylemler de sayılır: `sayac.n` toplam */
+function eylemListesi(ham: unknown, derinlik: number, sayac: { n: number }): Eylem[] | null {
+  if (!Array.isArray(ham) || ham.length > EN_COK_EYLEM) return null;
+  const l = ham.map((e) => eylemDuzelt(e, derinlik, sayac));
+  return l.includes(null) ? null : (l as Eylem[]);
+}
+
+function eylemDuzelt(e: any, derinlik = 0, sayac = { n: 0 }): Eylem | null {
+  if (++sayac.n > EN_COK_TOPLAM_EYLEM) return null;
   const metinli = (tur: 'sohbet' | 'tts' | 'discord' | 'komut'): Eylem | null => {
     const metin = yazi(e.metin);
     return metin ? ({ tur, metin } as Eylem) : null;
@@ -152,6 +216,44 @@ function eylemDuzelt(e: any): Eylem | null {
       return e.durum === 'ac' || e.durum === 'kapat' ? { tur: 'kalkan', durum: e.durum } : null;
     case 'bekle':
       return { tur: 'bekle', saniye: sayi(e.saniye, 1, 60) };
+    case 'obs_filtre': {
+      const kaynak = yazi(e.kaynak, 120), filtre = yazi(e.filtre, 120);
+      const durum = e.durum === 'kapat' || e.durum === 'degistir' ? e.durum : 'ac';
+      return kaynak && filtre ? { tur: 'obs_filtre', kaynak, filtre, durum } : null;
+    }
+    case 'obs_kaynak': {
+      const kaynak = yazi(e.kaynak, 120);
+      const durum = e.durum === 'gizle' || e.durum === 'degistir' ? e.durum : 'goster';
+      return kaynak ? { tur: 'obs_kaynak', sahne: yazi(e.sahne, 120), kaynak, durum } : null;
+    }
+    case 'obs_donusum': {
+      const kaynak = yazi(e.kaynak, 120);
+      const r = { x: secimliSayi(e.x, -20_000, 20_000), y: secimliSayi(e.y, -20_000, 20_000), olcek: secimliSayi(e.olcek, 0.01, 20), aci: secimliSayi(e.aci, -360, 360) };
+      if (!kaynak || Object.values(r).every((v) => v === null)) return null;
+      return { tur: 'obs_donusum', sahne: yazi(e.sahne, 120), kaynak, ...r };
+    }
+    case 'http': {
+      const adres = yazi(e.adres, 500);
+      if (!httpAdresiGecerli(adres)) return null;
+      return { tur: 'http', yontem: e.yontem === 'POST' ? 'POST' : 'GET', adres, govde: e.yontem === 'POST' ? yazi(e.govde, 2000) : '' };
+    }
+    case 'degisken': {
+      const ad = yazi(e.ad, 40).toLocaleLowerCase('tr');
+      if (!/^[\p{L}\p{N}_-]+$/u.test(ad)) return null;
+      const hedef = e.hedef === 'kanal' ? 'kanal' : 'sayac';
+      // Kanal değişkeni metindir: "ekle" yalnız sayaçta
+      const islem = hedef === 'sayac' && e.islem === 'ekle' ? 'ekle' : 'ayarla';
+      return { tur: 'degisken', hedef, ad, islem, deger: yazi(e.deger, 200) };
+    }
+    case 'rastgele_dal': {
+      if (derinlik + 1 >= EN_COK_DAL_DERINLIGI) return null;
+      const evet = eylemListesi(e.evet ?? [], derinlik + 1, sayac);
+      const hayir = eylemListesi(e.hayir ?? [], derinlik + 1, sayac);
+      if (!evet || !hayir || evet.length + hayir.length === 0) return null;
+      return { tur: 'rastgele_dal', yuzde: sayi(e.yuzde ?? 50, 0, 100), evet, hayir };
+    }
+    case 'kural_calistir':
+      return yazi(e.kuralId, 60) ? { tur: 'kural_calistir', kuralId: yazi(e.kuralId, 60) } : null;
     default:
       return null;
   }
@@ -169,7 +271,9 @@ export function kuralDuzelt(ham: any): { ok: true; kural: Kural } | { ok: false;
   const hamEylem = Array.isArray(ham?.eylemler) ? ham.eylemler : [];
   if (!hamEylem.length) return { ok: false, hata: `${ad}: en az bir eylem gerekli` };
   if (hamEylem.length > EN_COK_EYLEM) return { ok: false, hata: `${ad}: en çok ${EN_COK_EYLEM} eylem olabilir` };
-  const eylemler = hamEylem.map(eylemDuzelt);
+  const sayac = { n: 0 };
+  const eylemler = hamEylem.map((e: any) => eylemDuzelt(e, 0, sayac));
+  if (sayac.n > EN_COK_TOPLAM_EYLEM) return { ok: false, hata: `${ad}: dallarla birlikte en çok ${EN_COK_TOPLAM_EYLEM} eylem olabilir` };
   const bozuk = eylemler.indexOf(null);
   if (bozuk >= 0) return { ok: false, hata: `${ad}: ${bozuk + 1}. eylem eksik ya da geçersiz` };
   return {
@@ -181,6 +285,7 @@ export function kuralDuzelt(ham: any): { ok: true; kural: Kural } | { ok: false;
       beklemeSn: sayi(ham?.beklemeSn, EN_AZ_BEKLEME[tetik.tur] ?? VARSAYILAN_EN_AZ_BEKLEME, 86_400),
       kip: ham?.kip === 'rastgele' ? 'rastgele' : 'sirali',
       sira: ham?.sira === true,
+      kuyruk: kuyrukAdi(ham?.kuyruk),
       tetik,
       kosullar: kosullar as Kosul[],
       eylemler: eylemler as Eylem[],
@@ -234,10 +339,15 @@ function temizDeger(v: unknown): string {
  * `{kullanici} {miktar} {mesaj} {odul} {platform}` alanlarını doldurur. Komut eylemleri bundan geçmez:
  * yayıncı yetkisiyle çalıştıkları için içlerine izleyici metni girmemeli.
  */
-export function metniDoldur(sablon: string, o: Olay): string {
-  const degerler: Record<string, unknown> = { kullanici: o.kullanici, miktar: o.miktar, mesaj: o.mesaj, odul: o.odul, platform: o.platform };
-  return sablon.replace(/\{(kullanici|miktar|mesaj|odul|platform)\}/g, (_, a: string) => temizDeger(degerler[a]));
+export function metniDoldur(sablon: string, o: Olay, ek: { yanit?: string; kodla?: (v: string) => string } = {}): string {
+  const degerler: Record<string, unknown> = { kullanici: o.kullanici, miktar: o.miktar, mesaj: o.mesaj, odul: o.odul, platform: o.platform, yanit: ek.yanit };
+  const kodla = ek.kodla ?? ((v: string) => v);
+  return sablon.replace(/\{(kullanici|miktar|mesaj|odul|platform|yanit)\}/g, (_, a: string) => kodla(temizDeger(degerler[a])));
 }
+
+/** HTTP eylemi: adrese giren değer URL kodlanır, JSON gövdeye giren dize kaçışlanır */
+export const urlKodla = (v: string) => encodeURIComponent(v);
+export const jsonKodla = (v: string) => JSON.stringify(v).slice(1, -1);
 
 /** Son `saniye` içinde `mesaj` kadar sohbet oldu mu */
 export class PatlamaSayaci {
@@ -281,5 +391,26 @@ export function eylemAciklamasi(e: Eylem, o: Olay): string {
       return `Discord'a yaz: ${metniDoldur(e.metin, o)}`;
     case 'bekle':
       return `${e.saniye} sn bekle`;
+    case 'obs_filtre':
+      return `OBS filtresi ${{ ac: 'aç', kapat: 'kapat', degistir: 'aç/kapat' }[e.durum]}: ${e.kaynak} › ${e.filtre}`;
+    case 'obs_kaynak':
+      return `OBS kaynağı ${{ goster: 'göster', gizle: 'gizle', degistir: 'göster/gizle' }[e.durum]}: ${e.sahne ? `${e.sahne} › ` : ''}${e.kaynak}`;
+    case 'obs_donusum': {
+      const p = [e.x !== null || e.y !== null ? `konum ${e.x ?? '–'}, ${e.y ?? '–'}` : '', e.olcek !== null ? `ölçek ${e.olcek}` : '', e.aci !== null ? `açı ${e.aci}°` : ''].filter(Boolean);
+      return `OBS kaynağını dönüştür: ${e.kaynak} (${p.join(', ')})`;
+    }
+    case 'http':
+      return `HTTP ${e.yontem}: ${metniDoldur(e.adres, o, { kodla: urlKodla })}`;
+    case 'degisken':
+      return `${e.hedef === 'sayac' ? 'Sayaç' : 'Kanal değişkeni'} ${e.ad} ${e.islem === 'ekle' ? '+=' : '='} ${metniDoldur(e.deger, o)}`;
+    case 'rastgele_dal':
+      return `%${e.yuzde} olasılıkla ${e.evet.length} eylem, yoksa ${e.hayir.length} eylem`;
+    case 'kural_calistir':
+      return `Başka kuralı çalıştır: ${e.kuralId}`;
   }
+}
+
+/** Kuralın (dallar dahil) bütün eylemleri: dışa aktarmada başvurular, doğrulamada sayım */
+export function tumEylemler(eylemler: Eylem[]): Eylem[] {
+  return eylemler.flatMap((e) => (e.tur === 'rastgele_dal' ? [e, ...tumEylemler(e.evet), ...tumEylemler(e.hayir)] : [e]));
 }

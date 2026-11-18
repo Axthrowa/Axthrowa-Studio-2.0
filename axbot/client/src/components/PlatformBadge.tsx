@@ -288,10 +288,10 @@ export const PlatformBadges: React.FC<PlatformBadgesProps> = ({ platform, user, 
   if (badgeItems.length === 0) return null;
 
   return (
-    <div className="inline-flex items-center gap-1 flex-shrink-0 align-middle mr-0.5">
+    <span className="inline-flex items-center gap-1 flex-shrink-0 align-middle mr-0.5">
       {badgeItems.map(item => (
         <PlatformBadge key={item.key} platform={platform} badge={item.badge} size={size} />
       ))}
-    </div>
+    </span>
   );
 };

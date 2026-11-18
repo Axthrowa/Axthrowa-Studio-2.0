@@ -1,4 +1,5 @@
 import { Component, useState, useEffect, useRef, useCallback, lazy, Suspense, type ReactNode } from 'react';
+import { OrnekTestKabugu } from './components/OrnekTestKabugu.js';
 import {
   LayoutDashboard,
   Link2,
@@ -119,7 +120,7 @@ export function App() {
 
   // OBS sayfaları yalnız kendi widget'ının kodunu yükler (panelin tamamını değil);
   // yüklenirken saydam kalır.
-  const obsSayfasi = (icerik: ReactNode) => <Suspense fallback={null}>{icerik}</Suspense>;
+  const obsSayfasi = (icerik: ReactNode) => <Suspense fallback={null}><OrnekTestKabugu>{icerik}</OrnekTestKabugu></Suspense>;
 
   // YouTube, 127.0.0.1'de açılan gömülü oynatıcıda müzik videolarını reddediyor (hata 150); aynı video localhost'ta oynuyor.
   // Yalnız OBS'in açtığı üst sayfa: panel içindeki iframe önizlemeleri aynı kökende kalmalı.

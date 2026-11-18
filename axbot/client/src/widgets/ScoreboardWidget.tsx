@@ -115,7 +115,9 @@ export function ScoreboardWidget({ embedded = false, previewMode = false }: { em
           clipPath: sag ? 'polygon(0 0, 100% 0, 100% 100%, 14px 100%)' : 'polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%)',
           padding: `${boy * 0.18}px ${boy * 0.5}px`,
           flexDirection: sag ? 'row-reverse' : 'row',
-          minWidth: boy * 3.2
+          minWidth: boy * 3.2,
+          // Uzun takım adı paneli büyütüp çubuğu kaynaktan taşırıyordu: ad "…" ile kısalır
+          maxWidth: '40vw'
         }}
       >
         <span className="absolute top-0 bottom-0 w-1/3" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent)', animation: 'axt-skor-parilti 3.5s ease-in-out infinite' }} />
@@ -126,7 +128,7 @@ export function ScoreboardWidget({ embedded = false, previewMode = false }: { em
     icerik = (
       <div className="flex flex-col items-stretch gap-1">
         {s.showTitle && (
-          <div data-yuzey="" className="self-center px-4 py-0.5 rounded-t-lg" style={{ background: rgba(s.bgColor, Math.max(0.6, Number(s.bgOpacity))) }}>
+          <div data-yuzey="" className="self-center px-4 py-0.5 rounded-t-lg max-w-full truncate" style={{ background: rgba(s.bgColor, Math.max(0.6, Number(s.bgOpacity))) }}>
             {baslik}
           </div>
         )}

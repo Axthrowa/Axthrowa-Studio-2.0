@@ -648,7 +648,8 @@ export function temalar(widgetId: string): TemaTanimi[] {
   const ozel = (WIDGET_TEMALARI[widgetId] || []).map((t) =>
     widgetId === 'chat-overlay' && !('chatStyle' in t.degerler) ? { ...t, degerler: { chatStyle: 'klasik', ...t.degerler } } : t
   );
-  const genel = GENEL_TEMALAR.filter((t) => !t.widgetlar || t.widgetlar.includes(widgetId));
+  // Aynı kimlikte widget'a özel tema varsa genel olan listeye girmez (kimlik tekil olmalı: seçim ve React anahtarı)
+  const genel = GENEL_TEMALAR.filter((t) => (!t.widgetlar || t.widgetlar.includes(widgetId)) && !ozel.some((o) => o.id === t.id));
   return [...ozel, ...genel]; // Widget'a özel temalar önce: hedef çubuğunda asıl seçenekler onlar
 }
 

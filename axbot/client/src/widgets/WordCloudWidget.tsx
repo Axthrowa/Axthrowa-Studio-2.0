@@ -67,7 +67,8 @@ export function bulutYerlesimi(liste: Sozcuk[], w: number, h: number, enKucuk: n
     const oran = max === min ? 1 : (s.sayi - min) / (max - min);
     const boyut = Math.round(enKucuk + Math.sqrt(oran) * (enBuyuk - enKucuk));
     const donuk = i > 0 && (i * 7) % 10 < dikeyOran * 10;
-    const kw = s.sozcuk.length * boyut * 0.62 + 6;
+    // Büyük harf (KEKW, LUL) küçükten geniş: tek oranla kenardaki sözcük taşıyordu
+    const kw = [...s.sozcuk].reduce((t, h) => t + (h !== h.toLowerCase() ? 0.82 : 0.62), 0) * boyut + 6;
     const kh = boyut * 1.1;
     const [bw, bh] = donuk ? [kh, kw] : [kw, kh];
     for (let t = 0; t < 2000; t += 1) {

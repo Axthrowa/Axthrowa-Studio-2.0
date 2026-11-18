@@ -5,7 +5,7 @@ import { WidgetOnizleme } from '../components/WidgetOnizleme.js';
 import { GALERI_KATMANI } from '../widgets/OverlayLayers.js';
 import { ChatBoxWidget } from '../widgets/ChatBoxWidget.js';
 import { OBS_EKLEME, WIDGET_IPUCLARI } from '../lib/widget-ipuclari.js';
-import { KATEGORI_ADI, onizlemeBoyutu, TEST_ADI } from './overlayStudioVerileri';
+import { KATEGORI_ADI, onizlemeBoyutu, testAdiBul } from './overlayStudioVerileri';
 import type { OverlayStudioSonucu } from './useOverlayStudio';
 import { Panel, Secim } from '../ui/index.js';
 
@@ -83,11 +83,11 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
                 <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs">
                   <span className="text-xs font-medium text-gray-500">{KATEGORI_ADI[widget.category] || widget.category}</span>
                   <div className="flex items-center gap-1">
-                  {TEST_ADI[widget.id] && (
+                  {testAdiBul(widget.id) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        void triggerWidgetTest(TEST_ADI[widget.id]);
+                        void triggerWidgetTest(testAdiBul(widget.id)!);
                       }}
                       className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-purple-300 transition-colors text-xs font-bold"
                       title="Hızlı test: OBS'te örnek göster"
@@ -206,7 +206,7 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
                   <WidgetSettingsForm key={modalId} widgetId={modalId} baseUrl={baseUrl} />
                   <div className="lg:sticky lg:top-0">
-                    <WidgetOnizleme url={modalUrl} testAdi={hedefNo > 1 ? modalId : TEST_ADI[selectedWidgetModal.id]} boyut={onizlemeBoyutu(selectedWidgetModal.id)} />
+                    <WidgetOnizleme url={modalUrl} testAdi={hedefNo > 1 ? modalId : testAdiBul(selectedWidgetModal.id)} boyut={onizlemeBoyutu(selectedWidgetModal.id)} />
                   </div>
                 </div>
               )}
@@ -243,9 +243,9 @@ export function GaleriSekmesi(p: OverlayStudioSonucu) {
               {/* Widget Specific Action & Test Panel */}
               <div className="p-4 bg-black/40 rounded-xl border border-white/5 space-y-3">
                 <h4 className="text-xs font-bold text-gray-200">Canlı İşlev & Test Kontrolleri</h4>
-                {TEST_ADI[selectedWidgetModal.id] ? (
+                {testAdiBul(selectedWidgetModal.id) ? (
                   <button
-                    onClick={() => triggerWidgetTest(hedefNo > 1 ? modalId : TEST_ADI[selectedWidgetModal.id])}
+                    onClick={() => triggerWidgetTest(hedefNo > 1 ? modalId : testAdiBul(selectedWidgetModal.id)!)}
                     className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
                   >
                     ▶ Hızlı test (OBS'te örnek göster)

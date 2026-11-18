@@ -8,7 +8,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { db } from '../../db/index.js';
-import { wsHub } from '../../ws/server.js';
+import { wsHub, type TestSecenegi } from '../../ws/server.js';
 import { ttsEngine } from '../../modules/tts/tts.js';
 import { subathon } from '../../modules/subathon/subathon.js';
 import { hypeTreni } from '../../modules/hype/hype-train.js';
@@ -235,6 +235,15 @@ router.post('/overlay/all-in-one', (req: Request, res: Response) => {
 
 // 18. Universal Widget Test Trigger Endpoint
 /** Widget test tetikleyicisi (Overlay Studio "Test" düğmesi ve sesli komutlar). Gerçek durum değişmez. */
+const TEST_PLATFORMLARI = ['kick', 'twitch', 'youtube', 'tiktok'] as const;
+
+/** WID-8: test olayında platform / ad / mesaj seçimi; gövde dışarıdan gelir, sınırlanır */
+export function testSecenegi(body: any): TestSecenegi {
+  const yazi = (v: unknown, en: number) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, en) : undefined);
+  const platform = TEST_PLATFORMLARI.find((x) => x === body?.platform);
+  return { platform, kullanici: yazi(body?.kullanici, 60), mesaj: yazi(body?.mesaj, 500) };
+}
+
 export function widgetTesti(widgetName: string, body: any = {}): void {
   // ornek-<katman>: gerçek veriye dokunmadan Tek URL'de katmanın örneği birkaç saniye görünür
   const ornek = widgetName.match(/^ornek-([a-zA-Z]{1,40})$/);
@@ -264,6 +273,13 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
     case 'muzik-video':
       wsHub.broadcastTo(['all'], { type: 'muzik_video_test' });
       break;
+    case 'atla': {
+      // Oy birikir, sonra atlanır: kartın iki hâli de görünsün
+      const kart = { title: String(body.title || 'Test Şarkısı'), by: String(body.kullanici || 'TestIzleyici'), required: 3 };
+      wsHub.broadcastTo(['all'], { type: 'atla', data: { ...kart, votes: 2, skipped: false } });
+      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'atla', data: { ...kart, votes: 3, skipped: true } }), 1500).unref?.();
+      break;
+    }
     case 'the-cup':
       {
         // Yalnız görsel: kupanın kayıtlı içeriği değişmez, widget birkaç saniye sonra kayıtlı hâline döner
@@ -371,15 +387,16 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
     case 'chat-overlay': {
       const testId = `test-${Date.now()}`;
       // Örnek mesaj birkaç saniye sonra sohbet katmanından kalkar
-      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'chat_deleted', data: { platform: 'kick', id: testId } }), 8000).unref?.();
+      const { platform = 'kick', kullanici = 'TestIzleyici', mesaj } = testSecenegi(body);
+      setTimeout(() => wsHub.broadcastTo(['all'], { type: 'chat_deleted', data: { platform, id: testId } }), 8000).unref?.();
       wsHub.broadcastTo(['all'], {
         type: 'chat',
         data: {
           id: testId,
-          platform: 'kick',
+          platform,
           channel: 'test',
-          user: { id: 'test', username: 'testizleyici', displayName: 'TestIzleyici', badges: [], isMod: false, isSub: true, isVip: false, isBroadcaster: false, color: '#22d3ee' },
-          message: body.message || 'Merhaba! Bu bir sohbet katmanı testidir 👋',
+          user: { id: 'test', username: kullanici.toLowerCase(), displayName: kullanici, badges: [], isMod: false, isSub: true, isVip: false, isBroadcaster: false, color: '#22d3ee' },
+          message: mesaj || body.message || 'Merhaba! Bu bir sohbet katmanı testidir 👋',
           timestamp: Date.now()
         }
       });
@@ -433,10 +450,10 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
     case 'tip':
     case 'raid':
     case 'gift_tiktok':
-      wsHub.triggerTestAlert(['follow', 'sub', 'tip', 'raid', 'gift_tiktok'].includes(widgetName) ? widgetName : (body.eventType || 'follow'));
+      wsHub.triggerTestAlert(['follow', 'sub', 'tip', 'raid', 'gift_tiktok'].includes(widgetName) ? widgetName : (body.eventType || 'follow'), undefined, testSecenegi(body));
       break;
     default:
-      wsHub.triggerTestAlert(body.eventType || 'follow');
+      wsHub.triggerTestAlert(body.eventType || 'follow', undefined, testSecenegi(body));
       break;
   }
 }

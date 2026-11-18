@@ -43,6 +43,13 @@ export function kokenDogrula(info: { origin?: string; req: { headers: Record<str
 
 const GECMIS_EN_COK = 500;
 
+/** Test uyarısında örnek veri yerine kullanılacaklar (sınırlar rotada uygulanır) */
+export interface TestSecenegi {
+  platform?: 'kick' | 'twitch' | 'youtube' | 'tiktok';
+  kullanici?: string;
+  mesaj?: string;
+}
+
 export class WebSocketHub {
   private wss: WebSocketServer | null = null;
   private clients: Set<ClientConnection> = new Set();
@@ -686,10 +693,12 @@ export class WebSocketHub {
    * Test uyarısı. `deger` verilirse sabit örnek tutar yerine o kullanılır —
    * tutara göre seçilen varyantlar (ör. 500+ bağış) panelden denenebilsin.
    */
-  triggerTestAlert(eventType: string = 'follow', deger?: number) {
+  triggerTestAlert(eventType: string = 'follow', deger?: number, secenek: TestSecenegi = {}) {
     const d = Number.isFinite(Number(deger)) && Number(deger) > 0 ? Number(deger) : undefined;
     const mockUsers = ['ProGamer34', 'StreamQueen', 'ApexLegend', 'YildizKullanici', 'GamerBoy'];
-    const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+    // WID-8: platform / uzun ad / uzun mesaj denemesi (panel ve widget turu); yoksa her türün kendi örneği
+    const p = secenek.platform;
+    const randomUser = secenek.kullanici || mockUsers[Math.floor(Math.random() * mockUsers.length)];
 
     let alertData: any = null;
     // Olay veri yoluna (eventBus) da basılan türlerde AYRICA doğrudan yayın
@@ -701,7 +710,7 @@ export class WebSocketHub {
     switch (eventType) {
       case 'follow':
         dataPayload = {
-          platform: 'kick',
+          platform: p ?? 'kick',
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
@@ -715,7 +724,7 @@ export class WebSocketHub {
 
       case 'sub':
         dataPayload = {
-          platform: 'twitch',
+          platform: p ?? 'twitch',
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
@@ -732,24 +741,24 @@ export class WebSocketHub {
 
       case 'tip':
         dataPayload = {
-          platform: 'youtube',
+          platform: p ?? 'youtube',
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
           amount: d ?? 50,
           currency: '₺',
-          message: 'Harika yayınlar, seviliyorsun!',
+          message: (secenek.mesaj ?? 'Harika yayınlar, seviliyorsun!'),
           timestamp: Date.now(),
           isTest: true
         };
-        alertData = this.buildAlertPayload('tip', { user: randomUser, amount: d ?? 50, currency: '₺', message: 'Harika yayınlar, seviliyorsun!' }, true);
+        alertData = this.buildAlertPayload('tip', { user: randomUser, amount: d ?? 50, currency: '₺', message: (secenek.mesaj ?? 'Harika yayınlar, seviliyorsun!') }, true);
         eventBus.emitTip(dataPayload);
         veriYolunaBasildi = true;
         break;
 
       case 'raid':
         dataPayload = {
-          platform: 'twitch',
+          platform: p ?? 'twitch',
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
@@ -764,7 +773,7 @@ export class WebSocketHub {
 
       case 'gift_tiktok':
         dataPayload = {
-          platform: 'tiktok',
+          platform: p ?? 'tiktok',
           channel: 'test',
           username: randomUser,
           displayName: randomUser,
@@ -780,15 +789,15 @@ export class WebSocketHub {
         break;
 
       case 'gift_sub':
-        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, count: d ?? 5, timestamp: Date.now(), isTest: true };
+        dataPayload = { platform: p ?? 'twitch', channel: 'test', username: randomUser, displayName: randomUser, count: d ?? 5, timestamp: Date.now(), isTest: true };
         alertData = this.buildAlertPayload('gift_sub', { user: randomUser, count: d ?? 5 }, true);
         break;
       case 'host':
-        dataPayload = { platform: 'twitch', channel: 'test', username: randomUser, displayName: randomUser, viewers: d ?? 42, timestamp: Date.now(), isTest: true };
+        dataPayload = { platform: p ?? 'twitch', channel: 'test', username: randomUser, displayName: randomUser, viewers: d ?? 42, timestamp: Date.now(), isTest: true };
         alertData = this.buildAlertPayload('host', { user: randomUser, viewers: d ?? 42 }, true);
         break;
       case 'kicks':
-        dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, amount: d ?? 100, timestamp: Date.now(), isTest: true };
+        dataPayload = { platform: p ?? 'kick', channel: 'test', username: randomUser, displayName: randomUser, amount: d ?? 100, timestamp: Date.now(), isTest: true };
         alertData = this.buildAlertPayload('kicks', { user: randomUser, amount: d ?? 100 }, true);
         break;
 
@@ -798,7 +807,7 @@ export class WebSocketHub {
         break;
 
       case 'milestone': {
-        dataPayload = { platform: 'kick', channel: 'test', username: randomUser, displayName: randomUser, kilometre: { tur: 'follow', esik: 10 }, isTest: true };
+        dataPayload = { platform: p ?? 'kick', channel: 'test', username: randomUser, displayName: randomUser, kilometre: { tur: 'follow', esik: 10 }, isTest: true };
         alertData = this.buildAlertPayload('milestone', { user: randomUser, sayi: 10, metin: kilometreMetni('follow', 10, randomUser) }, true);
         break;
       }

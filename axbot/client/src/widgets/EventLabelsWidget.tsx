@@ -110,10 +110,11 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
   const kontur = s.outlineEnabled ? `${s.outlineWidth}px ${s.outlineColor}` : undefined;
 
   const icerik = parcalar.map((p, i) => (
-    <span key={`${p.anahtar}${i}`} style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap' }}>
-      {!sutun && i > 0 && <span style={{ color: s.labelColor, opacity: 0.6, margin: '0 10px' }}>{s.separator}</span>}
-      <span style={{ color: s.labelColor, fontWeight: 600, fontSize: Number(s.fontSize) * 0.85 }}>{p.baslik}</span>
-      <span style={{ color: s.fontColor, fontWeight: s.fontWeight }}>{p.deger}</span>
+    <span key={`${p.anahtar}${i}`} style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap', maxWidth: kayan ? undefined : '100%' }}>
+      {!sutun && i > 0 && <span style={{ color: s.labelColor, opacity: 0.6, margin: '0 10px', flexShrink: 0 }}>{s.separator}</span>}
+      <span style={{ color: s.labelColor, fontWeight: 600, fontSize: Number(s.fontSize) * 0.85, flexShrink: 0 }}>{p.baslik}</span>
+      {/* Kaynaktan geniş tek etiket: değer "…" ile kısalır */}
+      <span style={{ color: s.fontColor, fontWeight: s.fontWeight, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.deger}</span>
     </span>
   ));
 
@@ -137,6 +138,10 @@ export function EventLabelsWidget(props?: { embedded?: boolean; previewMode?: bo
           flexDirection: sutun ? 'column' : 'row',
           alignItems: sutun ? 'flex-start' : 'center',
           gap: sutun ? 6 : 0,
+          // Dar kaynakta yan yana sığmayan etiket alta geçer; kayan yazı tek satırda kalır
+          flexWrap: !sutun && !kayan ? 'wrap' : undefined,
+          maxWidth: kayan ? undefined : '100%',
+          rowGap: 4,
           whiteSpace: 'nowrap',
           fontFamily: s.fontFamily,
           fontSize: s.fontSize,

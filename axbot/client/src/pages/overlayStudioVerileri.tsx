@@ -257,8 +257,15 @@ export const TEST_ADI: Record<string, string> = {
   'pinned-messages': 'pinned-messages',
   king: 'king',
   scoreboard: 'scoreboard',
-  'muzik-video': 'muzik-video'
+  'muzik-video': 'muzik-video',
+  atla: 'atla'
 };
+
+/** WID-8: olay testi olmayan widget'ta Test düğmesi katmanın örneğini birkaç saniye gösterir (Tek URL sekmesiyle aynı) */
+export function testAdiBul(galeriId: string): string | undefined {
+  const katman = GALERI_KATMANI[galeriId]?.anahtar;
+  return TEST_ADI[galeriId] || (katman ? `ornek-${katman}` : undefined);
+}
 
 export const HIZA_NOKTALARI: Array<[string, string, Yon[]]> = [
   ['↖', 'Sol üst köşe', ['sol', 'ust']], ['↑', 'Üst orta', ['yatayOrta', 'ust']], ['↗', 'Sağ üst köşe', ['sag', 'ust']],

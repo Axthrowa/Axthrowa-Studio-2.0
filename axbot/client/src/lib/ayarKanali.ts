@@ -30,6 +30,8 @@ export interface AyarDinleyicisi {
 export const YERLESIM_KIMLIGI = '__tek-tuval-yerlesimi__';
 /** WID-5: yüklenen yazı tipleri değişti (`yazi_tipleri`) */
 export const YAZI_TIPI_KIMLIGI = '__yazi-tipleri__';
+/** WID-8: Test düğmesinin örnek gösterimi (`katman_ornek`); ayar nesnesi `{ anahtar }` */
+export const ORNEK_KIMLIGI = '__katman-ornegi__';
 
 const dinleyiciler = new Set<AyarDinleyicisi>();
 let soket: KaliciSoket | null = null;
@@ -80,6 +82,8 @@ function baglan() {
       for (const d of dinleyiciler) if (d.widgetId === YERLESIM_KIMLIGI) d.ayar(msg.config);
     } else if (msg?.type === 'yazi_tipleri') {
       for (const d of dinleyiciler) if (d.widgetId === YAZI_TIPI_KIMLIGI) d.ayar({});
+    } else if (msg?.type === 'katman_ornek' && typeof msg.anahtar === 'string') {
+      for (const d of dinleyiciler) if (d.widgetId === ORNEK_KIMLIGI) d.ayar({ anahtar: msg.anahtar });
     }
   };
 }

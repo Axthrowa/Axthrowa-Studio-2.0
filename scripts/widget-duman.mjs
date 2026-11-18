@@ -7,6 +7,8 @@
 //   node scripts/widget-duman.mjs             karşılaştır (kırmızı varsa çıkış kodu 1, çıktı test-results/widget/)
 //   node scripts/widget-duman.mjs --guncelle  bilinçli görünüm değişikliğinden sonra referansları yeniden yazar
 //   node scripts/widget-duman.mjs chatbox     yalnız adı geçen widget'lar
+//   node scripts/widget-duman.mjs --tur       WID-8 iyileştirme turu (rapor, CI'da koşmaz): canlı sayfada boş durum,
+//                                             uzun metin, dar alan, dört platform; galeride Test düğmesi ve ipucu
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -18,6 +20,7 @@ const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bot = path.join(kok, 'axbot');
 const { PNG } = createRequire(import.meta.url)('pngjs');
 const guncelle = process.argv.includes('--guncelle');
+const tur = process.argv.includes('--tur');
 const secilen = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const REF = path.join(kok, 'tests/widget-gorsel');
 const CIKTI = path.join(kok, 'test-results/widget');
@@ -171,6 +174,13 @@ const KARE_OLC = `new Promise((tamam) => { const z = []; const bas = performance
 
 mkdirSync(CIKTI, { recursive: true });
 mkdirSync(REF, { recursive: true });
+if (tur) {
+  await turuKos();
+  await cdp('Browser.close').catch(() => {});
+  await vite.close();
+  kapat();
+  process.exit(0);
+}
 const sonuc = [];
 for (const [ad, test, esik = ESIK] of liste) {
   istisnalar = [];
@@ -229,3 +239,166 @@ writeFileSync(path.join(CIKTI, 'sonuc.json'), JSON.stringify({ kareButcesi: KARE
 console.log(`${sonuc.length} widget; en yüksek p95 ${(p95ler.at(-1) ?? 0).toFixed(1)} ms. ${kirmizi ? `${kirmizi} kırmızı` : 'Hepsi yeşil'}`);
 kapat();
 process.exit(kirmizi ? 1 : 0);
+
+// ---------------------------------------------------------------- WID-8 turu
+// Her satır "geçti" ya da bulunan hatayla kapanır; sonuç test-results/widget/tur.json, görüntüler tur/ klasöründe.
+async function turuKos() {
+  const ist = path.join(bot, 'client/src');
+  const oku = (d) => readFileSync(path.join(ist, d), 'utf8');
+  const blok = (s, bas) => {
+    const i = s.indexOf(bas);
+    let d = 0, j = s.indexOf('= {', i) + 2;
+    const b = j;
+    for (; j < s.length; j++) { if (s[j] === '{') d++; else if (s[j] === '}' && --d === 0) break; }
+    return s.slice(b, j);
+  };
+  const anahtarlar = (b) => new Set([...b.matchAll(/^\s{2}'?([a-z0-9-]+)'?\s*:/gm)].map((m) => m[1]));
+  const testAdi = anahtarlar(blok(oku('pages/overlayStudioVerileri.tsx'), 'export const TEST_ADI'));
+  const katmanli = anahtarlar(blok(oku('widgets/OverlayLayers.tsx'), 'export const GALERI_KATMANI'));
+  const ipucu = anahtarlar(blok(oku('lib/widget-ipuclari.ts'), 'WIDGET_IPUCLARI'));
+  // Galeri kimliği → sayfa; aynı sayfayı kullanan ilk galeri kaydı satıra yazılır
+  const galeri = [...oku('pages/useOverlayStudioGaleri.tsx').matchAll(/id: '([a-z0-9-]+)',[\s\S]*?url: `\$\{baseUrl\}\/([a-z0-9/-]+)`/g)]
+    .map((m) => [m[1], m[2].replace(/^widgets\//, '')]);
+  const sayfaGalerisi = new Map();
+  for (const [id, sayfa] of galeri) if (!sayfaGalerisi.has(sayfa)) sayfaGalerisi.set(sayfa, id);
+
+  // Kick ve Twitch kullanıcı adı en çok 25 karakter
+  const UZUN_AD = 'CokUzunKullaniciAdi_12345';
+  const UZUN_MESAJ = 'Bu çok uzun bir deneme mesajıdır; satır kaydırma, taşma ve kesilme denetimi için yazıldı. '.repeat(4).trim();
+  // Test olayı platform bilgisi taşıyan (uyarı/sohbet/olay akışı) widget'lar
+  const PLATFORMLU = new Set(['alert-box', 'chat-overlay', 'activity-feed', 'event-labels']);
+  const KOTU_METIN = `(() => { const m = (document.getElementById('root')?.innerText || '').match(/\\bundefined\\b|\\bNaN\\b|\\[object Object\\]|\\bnull\\b/); return m ? m[0] : ''; })()`;
+  // Yatay taşma: metin "…" olmadan kesiliyor (kırpan atası ellipsis değil) ya da kaynağın kenarından çıkıyor
+  const TASMA = `(() => { const W = innerWidth, k = []; const r = document.createRange();
+    const w = document.createTreeWalker(document.getElementById('root') || document.body, NodeFilter.SHOW_TEXT);
+    while (w.nextNode() && k.length < 3) { const n = w.currentNode; const el = n.parentElement; if (!n.textContent.trim() || !el) continue;
+      if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+      r.selectNodeContents(n);
+      let hata = '';
+      for (const b of r.getClientRects()) { if (b.width < 1) continue;
+        let karar = '';
+        for (let a = el; a && a !== document.documentElement && !karar; a = a.parentElement) { const cs = getComputedStyle(a);
+          if (cs.overflowX === 'visible') continue;
+          const c = a.getBoundingClientRect();
+          if (b.right > c.right + 2 || b.left < c.left - 2) karar = cs.textOverflow === 'ellipsis' ? 'tamam' : 'kesiliyor'; }
+        if (!karar && (b.right > W + 2 || b.left < -2)) karar = 'kenardan çıkıyor';
+        if (karar && karar !== 'tamam') { hata = karar; break; } }
+      if (hata) k.push(hata + ': "' + n.textContent.trim().slice(0, 24) + '"'); }
+    return k; })()`;
+  // Her metni uzat (yalnız sayı olanlar hariç): widget kendi uzun verisini üretmese de yerleşim sınanır
+  const UZAT = `new Promise((tamam) => { const w = document.createTreeWalker(document.getElementById('root') || document.body, NodeFilter.SHOW_TEXT); const l = [];
+    while (w.nextNode()) { const n = w.currentNode; if (n.textContent.trim().length >= 3 && !/^[\\d\\s.,:%/+-]+$/.test(n.textContent)) l.push(n); }
+    for (const n of l) n.textContent = n.textContent + ' ' + 'uzatılmış deneme metni '.repeat(4).trim();
+    requestAnimationFrame(() => requestAnimationFrame(() => tamam(l.length))); })`;
+  const gonder = (ad, govde = {}) =>
+    js(`fetch('/api/widgets/test/${ad}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: ${JSON.stringify(JSON.stringify(govde))} }).then(() => true)`);
+  const ac = async (ad, g, y) => {
+    await cdp('Emulation.setDeviceMetricsOverride', { width: g, height: y, deviceScaleFactor: 1, mobile: false });
+    istisnalar = [];
+    await cdp('Page.navigate', { url: `http://localhost:${UI}/widgets/${ad}` });
+    for (let i = 0; i < 30; i++) { await bekle(500); if (await js(`document.readyState === 'complete' && !!document.getElementById('root')`)) break; }
+    await bekle(2000);
+  };
+  const resim = async (dosya) => writeFileSync(path.join(CIKTI, 'tur', dosya), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).result.data, 'base64'));
+  const hatalar = () => [...new Set(istisnalar)].map((e) => `istisna: ${e}`);
+  const durum = (h) => (h.length ? h.join('; ') : 'geçti');
+  const kamel = (ad) => ad.replace(/-([a-z0-9])/g, (_, h) => h.toUpperCase());
+  mkdirSync(path.join(CIKTI, 'tur'), { recursive: true });
+
+  const satirlar = [];
+  for (const [ad, test] of liste) {
+    const olay = test || `ornek-${kamel(ad)}`;
+    const satir = { ad, olay };
+    // 1) Boş durum: canlı sayfa, hiç veri yok
+    await ac(ad, GENISLIK, YUKSEKLIK);
+    let h = hatalar();
+    let km = await js(KOTU_METIN);
+    if (km) h.push(`ekranda "${km}"`);
+    await resim(`${ad}-bos.png`);
+    satir.bos = durum(h);
+    // 2) Uzun metin: uzun ad/mesajlı test olayı, sonra bütün metinler uzatılır
+    await gonder(olay, { kullanici: UZUN_AD, mesaj: UZUN_MESAJ });
+    await bekle(2500); await js(DONDUR); await bekle(200);
+    h = hatalar();
+    km = await js(KOTU_METIN);
+    if (km) h.push(`ekranda "${km}"`);
+    let t = await js(TASMA);
+    if (t?.length) h.push(`uzun adla ${t[0]}`);
+    await resim(`${ad}-uzun.png`);
+    if (await js(UZAT)) {
+      t = await js(TASMA);
+      if (t?.length) h.push(`uzatılmış metin ${t[0]}`);
+      await resim(`${ad}-uzatilmis.png`);
+    }
+    satir.uzun = durum(h);
+    // 3) Dar alan: 480×360 kaynak
+    await ac(ad, 480, 360);
+    await gonder(olay, { kullanici: UZUN_AD, mesaj: UZUN_MESAJ });
+    await bekle(2500); await js(DONDUR); await bekle(200);
+    h = hatalar();
+    t = await js(TASMA);
+    if (t?.length) h.push(t[0]);
+    await resim(`${ad}-dar.png`);
+    satir.dar = durum(h);
+    // 4) Platform: olaylı widget'larda dört platformdan olay
+    if (test && PLATFORMLU.has(test)) {
+      await ac(ad, GENISLIK, YUKSEKLIK);
+      h = [];
+      for (const platform of ['kick', 'twitch', 'youtube', 'tiktok']) {
+        istisnalar = [];
+        await gonder(olay, { platform, kullanici: `Deneme_${platform}` });
+        await bekle(1800);
+        for (const e of new Set(istisnalar)) h.push(`${platform}: ${e}`);
+        km = await js(KOTU_METIN);
+        if (km) h.push(`${platform}: ekranda "${km}"`);
+      }
+      await resim(`${ad}-platform.png`);
+      satir.platform = durum(h);
+    } else satir.platform = '—';
+    // 5–6) Galeri: Test düğmesi (olay testi ya da katman örneği) ve ipucu
+    const galeriId = sayfaGalerisi.get(ad);
+    satir.galeri = galeriId || '';
+    satir.testDugmesi = !galeriId ? '—' : testAdi.has(galeriId) ? 'geçti' : katmanli.has(galeriId) ? 'geçti (katman örneği)' : 'yok';
+    satir.ipucu = !galeriId ? '—' : ipucu.has(galeriId) ? 'geçti' : 'yok';
+    console.log(`${ad.padEnd(16)} boş: ${satir.bos} | uzun: ${satir.uzun} | dar: ${satir.dar} | platform: ${satir.platform} | test: ${satir.testDugmesi} | ipucu: ${satir.ipucu}`);
+    satirlar.push(satir);
+  }
+  writeFileSync(path.join(CIKTI, 'tur.json'), JSON.stringify(satirlar, null, 2));
+  turBelgesi(satirlar);
+  console.log(`tur bitti: ${satirlar.length} widget → docs/WIDGET_TURU.md`);
+}
+
+function turBelgesi(satirlar) {
+  // Bilerek kenarda kesilen içerik: denetim bulgusu kalır, satır gerekçeyle kapanır
+  const BILEREK = {
+    giveaways: 'çekiliş makarası kenarda soluklaşarak bilerek kesilir',
+    wheel: 'çark dilim adını en çok 14 karakterle (maxLabel) kısaltır; uzatma bunu atlıyor',
+    'word-cloud': 'yerleşim gerçek sözcükten hesaplanır, sığmayan sözcük bulutuna girmez; uzatma bunu atlıyor',
+    'the-cup': 'kupaya düşen öğeler kenardan girer'
+  };
+  const hucre = (ad, v) => {
+    if (v === 'geçti' || v.startsWith('geçti') || v === '—') return v;
+    return BILEREK[ad] ? `geçti (bilerek: ${BILEREK[ad]}; bulgu: ${v})` : `**hata:** ${v}`;
+  };
+  const tarih = new Date().toISOString().slice(0, 10);
+  const satir = (x) => `| ${x.ad} | ${x.galeri || '—'} | ${[x.bos, x.uzun, x.dar, x.platform, x.testDugmesi, x.ipucu].map((v) => hucre(x.ad, v).replace(/\|/g, '\\|')).join(' | ')} |`;
+  const metin = `# Widget iyileştirme turu (WID-8)
+
+Son doğrulama: ${tarih} · Plan 3, WID-8 · \`node scripts/widget-duman.mjs --tur\` ile üretilir (elle düzenlemeyin)
+
+Her widget sayfası canlı kipte (önizleme verisi olmadan) başsız Chrome'da açılır, geçici veri klasöründe çalışan kendi botuna bağlanır:
+
+- **Boş durum:** veri yokken yakalanmamış istisna ya da ekranda \`undefined\`, \`NaN\`, \`null\`, \`[object Object]\` yok.
+- **Uzun metin:** 25 karakterlik ad (Kick/Twitch sınırı) ve uzun mesajla test olayı; ardından ekrandaki her metin uzatılır. Metin "…" olmadan kesilmemeli, kaynağın kenarından çıkmamalı.
+- **Dar alan:** aynı olay 480×360 kaynakta.
+- **Platform:** platform bilgisi taşıyan olaylarda Kick, Twitch, YouTube ve TikTok'tan birer olay (\`—\`: widget platforma bağlı olay göstermiyor).
+- **Test düğmesi / ipucu:** galeri kartında Test düğmesi (olay testi ya da Tek URL katman örneği) ve "Nasıl çalışır?" ipucu. \`—\`: sayfa galeride ayrı kart değil.
+
+Ekran görüntüleri ve ham sonuç: \`test-results/widget/tur/\`, \`test-results/widget/tur.json\`. Test düğmesi ve ipucu kapsamı ayrıca \`axbot/client/src/pages/galeriKapsami.test.ts\` ile CI'da korunur.
+
+| Sayfa | Galeri | Boş durum | Uzun metin | Dar alan | Platform | Test düğmesi | İpucu |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+${satirlar.map(satir).join('\n')}
+`;
+  writeFileSync(path.join(kok, 'docs/WIDGET_TURU.md'), metin);
+}

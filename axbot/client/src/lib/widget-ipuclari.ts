@@ -143,5 +143,10 @@ export const WIDGET_IPUCLARI: Record<string, string[]> = {
   jumpscare: [
     'Belirlenen tutarın üstünde bağış gelince ekranda korku sahnesi oynatır.',
     'Medya, ses ve eşik Bağış & Jumpscare sayfasından ayarlanır.'
+  ],
+  'muzik-video': [
+    '!sr istekleri YouTube klibiyle sırayla oynar; Şarkı İstekleri’nde "OBS Şarkı Klipleri" kipini seç.',
+    'Video bitince ya da gömülmeye kapalıysa sıradaki istek başlar.',
+    'Sesi OBS’te bu kaynaktan gelir; "Test" düğmesi 15 saniyelik örnek klip oynatır.'
   ]
 };

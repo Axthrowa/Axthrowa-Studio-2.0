@@ -10,11 +10,13 @@ import { FONTS, uyariKaydiGovdesi, yeniUyariKaydi } from '../lib/widget-defaults
 import { ANIM_SECENEKLERI, animKimligi } from '../lib/animations.js';
 import { WidgetSettingsForm } from './WidgetSettingsForm.js';
 import AlertVariants from '../components/AlertVariants.js';
+import { UyariSetGalerisi } from '../components/UyariSetGalerisi.js';
 import { MediaLibrary, type MedyaOgesi } from '../components/MediaLibrary.js';
 import { yetenekleriGetir, olayEtiketi, type YetenekHaritasi } from '../lib/capabilities.js';
 
 const TABS = [
   { id: 'advanced', label: 'Gelişmiş Ayarlar' },
+  { id: 'galeri', label: 'Hazır Setler' },
   { id: 'follow', label: 'Takipçi' },
   { id: 'sub', label: 'Abonelik' },
   { id: 'gift_sub', label: 'Hediye Abone' },
@@ -30,7 +32,7 @@ const TABS = [
 ];
 
 /** Ayar sekmesi olmayan (olay preseti taşımayan) sekmeler. */
-const OLAY_DISI = new Set(['advanced', 'variants', 'media']);
+const OLAY_DISI = new Set(['advanced', 'galeri', 'variants', 'media']);
 
 const DUZENLER = [{ value: 'stacked', label: 'Üst üste' }, { value: 'side-by-side', label: 'Yan yana' }, { value: 'text-over', label: 'Yazı üstünde' }];
 const YAZI_EFEKTLERI = [{ value: 'none', label: 'Yok' }, { value: 'shine', label: 'Parlama' }, { value: 'wiggle', label: 'Kıpırtı' }, { value: 'wave', label: 'Dalga' }, { value: 'pulse', label: 'Nabız' }];
@@ -108,7 +110,9 @@ export function AlertsStudio() {
         ))}
       </div>
 
-      {tab === 'variants' ? (
+      {tab === 'galeri' ? (
+        <UyariSetGalerisi onDegisti={load} />
+      ) : tab === 'variants' ? (
         <AlertVariants />
       ) : tab === 'media' ? (
         <MediaLibrary />

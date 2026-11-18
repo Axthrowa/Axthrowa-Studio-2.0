@@ -192,8 +192,11 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
   const [values, setValues] = useState<Record<string, any>>(defaults);
   const [status, setStatus] = useState('');
   const [ara, setAra] = useState('');
+  // WID-3: tema uygulanmadan önceki ayarlar (art arda tema denense de ilk duruma döner)
+  const [temaOncesi, setTemaOncesi] = useState<{ degerler: Record<string, any>; tema: string } | null>(null);
 
   useEffect(() => {
+    setTemaOncesi(null);
     fetch(`/api/widgets/${kayitId}/settings`)
       .then(r => r.json())
       .then(d => { ilkDeger.current = true; sonKayit.current = { ...defaults, ...d }; setValues(eskiHareketiCevir({ ...defaults, ...d })); })
@@ -289,21 +292,29 @@ export function WidgetSettingsForm({ widgetId, baseUrl, onUrlChange, autoSave = 
           ilgili alanlar dolar, kullanici sonra tek tek degistirebilir.
           Widget'in TANIMADIGI anahtarlar atlanir. */}
       <Katlanir baslik="Hazır temalar" sayi={temalar(ayarId).length} aciklama="Tek tıkla görünüm">
+        {temaOncesi && (
+          <div className="flex items-center justify-between gap-2 mb-2 rounded-lg bg-cyan-500/10 border border-cyan-400/30 px-2.5 py-1.5 text-xs text-cyan-100">
+            <span>Uygulanan tema: <b>{temalar(ayarId).find(t => t.id === temaOncesi.tema)?.etiket}</b></span>
+            <button type="button" onClick={() => { setValues(temaOncesi.degerler); setTemaOncesi(null); }} className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white font-semibold">Temayı geri al</button>
+          </div>
+        )}
         <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-60 overflow-y-auto pr-1">
           {temalar(ayarId).map(t => (
             <button
               key={t.id}
               type="button"
               title={t.etiket}
-              onClick={() =>
+              onClick={() => {
+                setTemaOncesi(o => ({ degerler: o?.degerler ?? values, tema: t.id }));
                 setValues(v =>
                   temayiUygula(v, t, keys, (k, deger) => {
                     const sec = secenekler(ayarId, k);
                     return !sec || sec.some(o => o.value === deger);
                   }) as Record<string, any>
-                )
-              }
-              className="rounded-lg border border-white/10 hover:border-cyan-400 overflow-hidden text-left transition-colors"
+                );
+              }}
+              aria-pressed={temaOncesi?.tema === t.id}
+              className={`rounded-lg border overflow-hidden text-left transition-colors ${temaOncesi?.tema === t.id ? 'border-cyan-400' : 'border-white/10 hover:border-cyan-400'}`}
             >
               <div
                 className="h-7 flex items-center justify-center"

@@ -13,6 +13,7 @@ import { medya, MAKS_BOYUT, MAKS_VIDEO, MAKS_TOPLAM } from '../../modules/media/
 import { yaziTipleri } from '../../modules/media/yazi-tipleri.js';
 import { varyantlar } from '../../modules/alerts/variants.js';
 import { uyariYedegi } from '../../modules/alerts/backup.js';
+import { setleriListele, setPaketi } from '../../modules/alerts/hazir-setler.js';
 import { shieldModeService } from '../../modules/moderation/shield-mode.js';
 
 const router = Router();
@@ -162,6 +163,20 @@ router.get('/media/:id/dosya', (req: Request, res: Response) => {
   // SVG izinli listede yok; yine de tarayici tur tahmini yapmasin
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.sendFile(medya.dosyaYolu(oge));
+});
+
+// WID-3: internetsiz hazır uyarı setleri (uyarı yedeği paket biçiminde). Uygulamadan önceki uyarılar
+// yanıtta döner; panel "Geri al"da bunu üzerine yazarak geri yükler.
+router.get('/alerts/sets', (_req: Request, res: Response) => {
+  res.json({ setler: setleriListele() });
+});
+
+router.post('/alerts/sets/:id/apply', (req: Request, res: Response) => {
+  const paket = setPaketi(String(req.params.id || ''));
+  if (!paket) return res.status(404).json({ ok: false, hata: 'Set bulunamadı' });
+  const onceki = uyariYedegi.disaAktar(false);
+  const sonuc = uyariYedegi.iceAktar(paket, true);
+  res.status(sonuc.ok ? 200 : 400).json({ ...sonuc, onceki });
 });
 
 // WID-5: yüklenen yazı tipleri (katmanlar /api/fonts.css'i yükler; değişince `yazi_tipleri` yayını)

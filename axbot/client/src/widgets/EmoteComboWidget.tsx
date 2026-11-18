@@ -14,7 +14,7 @@ import { EMOTE_COMBO_DEFAULTS } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { hizCarpani, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
 import { emoteleriAyikla, guvenliEmoteAdresi, type EmoteParca } from '../lib/emote.js';
-import { useYediTvHaritasi } from '../lib/yediTv.js';
+import { donmusAdres, useYediTvHaritasi } from '../lib/yediTv.js';
 
 interface Kombo { emote: EmoteParca; adet: number }
 /** Patlamada saçılan parça (piksel) */
@@ -80,8 +80,8 @@ const KOMBO_CSS = `
 @keyframes axt-kombo-sac { from { transform: translate(0, 0) rotate(0) scale(1) } to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(var(--s)) } }
 `;
 
-function EmoteGorsel({ e, boyut }: { e: EmoteParca; boyut: number }) {
-  const url = guvenliEmoteAdresi(e.url);
+function EmoteGorsel({ e, boyut, dondur }: { e: EmoteParca; boyut: number; dondur?: boolean }) {
+  const url = guvenliEmoteAdresi(donmusAdres(e.url, Boolean(dondur)));
   if (url) {
     return <img src={url} alt="" style={{ height: boyut, maxWidth: boyut * 2.5, objectFit: 'contain', display: 'block', transition: 'height .18s ease-out' }} referrerPolicy="no-referrer" />;
   }
@@ -227,7 +227,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
             {/* key=adet: her yeni emote'ta bir kez vurulmuş gibi zıplar */}
             <div key={kombo.adet} style={{ animation: 'axt-kombo-vurus 240ms ease-out' }}>
               {/* Gölge hareket eden katmanın içinde: dıştaki kapta olunca her karede tüm kap yeniden çiziliyordu */}
-              <span style={{ display: 'block', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}><EmoteGorsel e={kombo.emote} boyut={boy} /></span>
+              <span style={{ display: 'block', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}><EmoteGorsel e={kombo.emote} boyut={boy} dondur={s.emoteDondur} /></span>
             </div>
           </div>
         </div>
@@ -249,7 +249,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               animation: `axt-kombo-topla ${ucusSuresi(s.speed)}ms cubic-bezier(.22,.55,.45,1) forwards`
             }}
           >
-            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.5))' }}><EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} /></span>
+            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.5))' }}><EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} dondur={s.emoteDondur} /></span>
           </span>
         </span>
       ))}
@@ -270,7 +270,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               animation: `axt-kombo-sac ${p.sure}ms cubic-bezier(.3,.55,.6,1) ${p.gecikme}ms both`
             }}
           >
-            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))' }}><EmoteGorsel e={patlama.emote} boyut={patlama.boy} /></span>
+            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))' }}><EmoteGorsel e={patlama.emote} boyut={patlama.boy} dondur={s.emoteDondur} /></span>
           </span>
         </span>
       ))}

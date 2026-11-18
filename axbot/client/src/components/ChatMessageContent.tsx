@@ -8,6 +8,8 @@ interface ChatMessageContentProps {
   size?: number; // emote height in px, default 24
   /** Twitch IRC `emotes` etiketi (kimlik → "baş-son" konumları): kanalın kendi ve abone emote'ları */
   twitchEmotes?: Record<string, string[]>;
+  /** Hareketli 7TV/BTTV emote'ları ilk karesiyle */
+  dondur?: boolean;
 }
 
 /** Twitch konumları kod noktası (UTF-16 değil) sayar: ad → görsel */
@@ -85,10 +87,11 @@ export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({
   message,
   className = '',
   size = 24,
-  twitchEmotes
+  twitchEmotes,
+  dondur = false
 }) => {
   // Kanalın ve 7TV genel setinin canlı listesi (sabit sözlük çevrimdışı yedek)
-  const yediTv = useYediTvHaritasi();
+  const yediTv = useYediTvHaritasi(dondur);
   if (!message) return null;
   const twitch = twitchEmoteHaritasi(message, twitchEmotes);
 

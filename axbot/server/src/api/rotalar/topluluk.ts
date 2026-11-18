@@ -3,7 +3,8 @@
  * Developed by AxthrowA
  */
 import { Router, Request, Response } from 'express';
-import { yediTv } from '../../modules/emotes/yedi-tv.js';
+import { kanallarlaGetir } from '../../modules/emotes/yedi-tv.js';
+import { kullaniciBoyasi } from '../../modules/emotes/yedi-tv-boya.js';
 import { duzenliler } from '../../modules/community/regulars.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { bingo, votekick } from '../../modules/community/topluluk.js';
@@ -13,13 +14,21 @@ const PLATFORMLAR = new Set(['kick', 'twitch', 'youtube', 'tiktok', 'discord', '
 
 // Sohbet katmanı ve panel 7TV adlarını görsele çevirmek için okur
 router.get('/emotes', async (req: Request, res: Response) => {
-  const { kickPlatform } = await import('../../platforms/kick.js');
-  const d = await yediTv.getir(kickPlatform.getStatus().channel || null, req.query.yenile === '1');
+  const d = await kanallarlaGetir(req.query.yenile === '1');
   // 7TV kapalıyken de BTTV ve FFZ gelir (eskiden tarayıcı onları ayrıca çekiyordu)
   if (!settingsCache.getBoolean('seventv_enabled', true)) {
     return res.json({ yediTv: { ...d, kanal: [], genel: [], kanalDurum: 'kapali' } });
   }
   res.json({ yediTv: d });
+});
+
+// WID-4: sohbet katmanında kullanıcı adının 7TV boyası (katman 7TV'ye gitmez; sunucu önbellekte tutar)
+router.get('/emotes/boya', async (req: Request, res: Response) => {
+  const platform = req.query.platform === 'twitch' ? 'twitch' : req.query.platform === 'kick' ? 'kick' : null;
+  const kimlik = String(req.query.id ?? '');
+  if (!platform || !settingsCache.getBoolean('seventv_enabled', true)) return res.json({ boya: null });
+  res.setHeader('Cache-Control', 'max-age=1800');
+  res.json({ boya: await kullaniciBoyasi(platform, kimlik) });
 });
 
 router.get('/regulars', (req: Request, res: Response) => {

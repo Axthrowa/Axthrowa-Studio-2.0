@@ -10,7 +10,7 @@ import type { ChatMessagePayload } from '../../core/event-bus.js';
 import { settingsCache } from '../../core/settings-cache.js';
 import { Bingo, PiramitIzci, Votekick, emoteAdlari } from './oyunlar.js';
 import { emoteleriAyikla, type EmoteParcasi } from '../emotes/ayikla.js';
-import { yediTv } from '../emotes/yedi-tv.js';
+import { kanallarlaGetir, yediTv } from '../emotes/yedi-tv.js';
 
 /** Ayardan sınırlı tam sayı */
 export function ayarSayi(anahtar: string, varsayilan: number, min: number, max: number): number {
@@ -56,9 +56,7 @@ async function yayinla(payload: any) {
 /** 7TV haritasını tazeler (önbellekliyse anında döner). */
 export function yediTvTazele(): void {
   if (!settingsCache.getBoolean('seventv_enabled', true)) return;
-  void import('../../platforms/kick.js')
-    .then(({ kickPlatform }) => yediTv.getir(kickPlatform.getStatus().channel || null))
-    .catch(() => {});
+  void kanallarlaGetir().catch(() => {});
 }
 
 /** Overlay'e emote patlaması gönderir (kappagen). */

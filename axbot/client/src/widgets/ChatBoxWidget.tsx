@@ -8,6 +8,7 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { CHAT_DEFAULTS, OGE_TAVANI } from '../lib/widget-defaults.js';
 import { ChatMessageContent } from '../components/ChatMessageContent.js';
+import { boyaStili, useYediTvBoyasi } from '../lib/yediTv.js';
 import { PlatformLogo } from '../components/PlatformLogo.js';
 import { PlatformBadges } from '../components/PlatformBadge.js';
 import { kartTasarimlari, onizlemeKipi, yaziAilesi, yaziOlcegi } from '../lib/widget-style.js';
@@ -34,12 +35,20 @@ function tikla(ses: number) {
   }
 }
 
+/** Kullanıcının 7TV boyası varsa ad degrade/gölgeyle; yoksa düz renk */
+function BoyaliAd({ msg, acik, style, children }: { msg: OverlayMsg; acik: unknown; style: CSSProperties; children: ReactNode }) {
+  const boya = useYediTvBoyasi(msg.platform, msg.kullaniciId, acik !== false);
+  return <span style={{ ...style, ...boyaStili(boya) }}>{children}</span>;
+}
+
 interface OverlayMsg {
   id: string;
   /** Platformun ileti kimliği (moderatör silince kaldırmak için) */
   kaynakId?: string;
   /** Küçük harf kullanıcı adı (yasaklanınca iletilerini kaldırmak için) */
   kullanici?: string;
+  /** Platform kullanıcı kimliği (7TV ad boyası için) */
+  kullaniciId?: string;
   platform: string;
   user: string;
   color: string;
@@ -194,6 +203,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         id: `${Date.now()}-${Math.random()}`,
         kaynakId: p.id ? String(p.id) : undefined,
         kullanici: username || undefined,
+        kullaniciId: user?.id != null ? String(user.id) : undefined,
         platform: p.platform,
         user: user?.displayName || user?.username || 'anon',
         color,
@@ -334,8 +344,8 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
         <PlatformBadges platform={msg.platform as any} user={msg.rozet as any} size={Math.round(boy * 1.05) || 18} />
       </span>
     ) : null;
-    const icerik = <ChatMessageContent message={msg.text} size={Math.round(boy * (Number(s.emoteScale) || 1.3)) || 24} twitchEmotes={msg.emotes} />;
-    const ad = (renk: string = msg.color) => (s.hideUsernames ? null : <span style={{ color: renk, fontWeight: 800 }}>{msg.user}</span>);
+    const icerik = <ChatMessageContent message={msg.text} size={Math.round(boy * (Number(s.emoteScale) || 1.3)) || 24} twitchEmotes={msg.emotes} dondur={s.emoteDondur} />;
+    const ad = (renk: string = msg.color) => (s.hideUsernames ? null : <BoyaliAd msg={msg} acik={s.yediTvBoyalari} style={{ color: renk, fontWeight: 800 }}>{msg.user}</BoyaliAd>);
     const kutu: CSSProperties = { whiteSpace: yanYana ? 'nowrap' : undefined, textShadow: s.textShadow ? '0 2px 8px #000' : undefined };
     // Ad satırı + ileti (kart, neon ve şerit görünümlerinde ortak)
     const satir = (oncesi: ReactNode, renk?: string) => (
@@ -523,7 +533,7 @@ export function ChatBoxWidget(props?: { embedded?: boolean; previewMode?: boolea
             {avatar}
             <p style={{ ...metinStili, marginTop: avatar ? Math.max(0, Math.round((avatarBoyu - satirBoyu) / 2)) : 0 }}>
               {(logo() || zaman || rozetler) && <span style={{ ...sira, marginRight: 6 }}>{logo()}{zaman}{rozetler}</span>}
-              {s.hideUsernames ? null : <span style={{ color: msg.color, fontWeight: 800, display: s.nameOnOwnLine ? 'block' : undefined }}>{msg.user}{s.nameOnOwnLine ? '' : ': '}</span>}
+              {s.hideUsernames ? null : <span style={{ fontWeight: 800, display: s.nameOnOwnLine ? 'block' : undefined }}><BoyaliAd msg={msg} acik={s.yediTvBoyalari} style={{ color: msg.color }}>{msg.user}</BoyaliAd>{s.nameOnOwnLine ? '' : ': '}</span>}
               {icerik}
             </p>
           </div>

@@ -23,7 +23,7 @@ export function kickEmoteAdresi(id: string): string {
 /** Yalnız bilinen emote sunucularından görsel (sohbetten gelen veri) */
 export function guvenliEmoteAdresi(url?: string): string | undefined {
   if (!url) return undefined;
-  return /^https:\/\/(files\.kick\.com\/emotes\/\d+\/fullsize|cdn\.7tv\.app\/emote\/[A-Za-z0-9]+\/\dx\.webp)$/.test(url) ? url : undefined;
+  return /^https:\/\/(files\.kick\.com\/emotes\/\d+\/fullsize|cdn\.7tv\.app\/emote\/[A-Za-z0-9]+\/\dx(?:_static)?\.webp|cdn\.betterttv\.net\/emote\/[a-f0-9]{24}\/(?:[123]x|static\/2x\.webp)|cdn\.frankerfacez\.com\/[\w/.-]+)$/.test(url) ? url : undefined;
 }
 
 export function emoteleriAyikla(metin: string, yediTv: ReadonlyMap<string, string>, enCok = 8): EmoteParca[] {

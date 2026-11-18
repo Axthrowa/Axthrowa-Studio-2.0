@@ -15,6 +15,8 @@ export interface YediTvEmote {
   ad: string;
   url: string;
   animasyonlu: boolean;
+  /** Hareketli emote'un ilk karesi ("animasyonlu emote'u dondur", WID-4) */
+  statik?: string;
 }
 
 export interface YediTvDurum {
@@ -23,6 +25,11 @@ export interface YediTvDurum {
   /** BTTV ve FFZ genel setleri: katmanlar dış adrese gitmesin diye sunucuda önbellekte (F0-4) */
   bttv: YediTvEmote[];
   ffz: YediTvEmote[];
+  /** Kanala özgü BTTV (kanal + paylaşılan) ve FFZ setleri (WID-4; Twitch kanalı gerekir) */
+  bttvKanal: YediTvEmote[];
+  ffzKanal: YediTvEmote[];
+  /** 7TV kanal setinin kimliği: set değişince EventAPI'den haber gelir */
+  kanalSetId: string | null;
   /** Kanal setinin durumu: 'ok' | 'hesap-yok' | 'kanal-yok' | 'hata' | 'kapali' */
   kanalDurum: string;
   guncellendi: number;
@@ -47,7 +54,8 @@ export function yediTvAyikla(set: any): YediTvEmote[] {
     const m = host.match(/^(?:https?:)?\/\/cdn\.7tv\.app\/emote\/([A-Za-z0-9]{10,40})$/);
     if (!ad || ad.length > 60 || /\s/.test(ad) || !m || gorulen.has(ad)) continue;
     gorulen.add(ad);
-    out.push({ ad, url: `https://cdn.7tv.app/emote/${m[1]}/2x.webp`, animasyonlu: Boolean(e?.data?.animated) });
+    const animasyonlu = Boolean(e?.data?.animated);
+    out.push({ ad, url: `https://cdn.7tv.app/emote/${m[1]}/2x.webp`, animasyonlu, ...(animasyonlu ? { statik: `https://cdn.7tv.app/emote/${m[1]}/2x_static.webp` } : {}) });
   }
   return out;
 }
@@ -57,10 +65,22 @@ export function bttvAyikla(liste: unknown): YediTvEmote[] {
   return (Array.isArray(liste) ? liste : [])
     .filter((e) => typeof e?.code === 'string' && e.code.length <= 60 && /^[0-9a-f]{24}$/.test(String(e?.id)))
     .slice(0, EN_COK)
-    .map((e) => ({ ad: e.code, url: `https://cdn.betterttv.net/emote/${e.id}/2x`, animasyonlu: e.imageType === 'gif' || Boolean(e.animated) }));
+    .map((e) => {
+      const animasyonlu = e.imageType === 'gif' || Boolean(e.animated);
+      // static/ yalnız hareketli emote'ta var (durağanda 404)
+      return { ad: e.code, url: `https://cdn.betterttv.net/emote/${e.id}/2x`, animasyonlu, ...(animasyonlu ? { statik: `https://cdn.betterttv.net/emote/${e.id}/static/2x.webp` } : {}) };
+    });
 }
 
-/** FFZ genel seti: { sets: { <kimlik>: { emoticons: [{ name, urls: { '2': adres } }] } } } → yalnız cdn.frankerfacez.com */
+/** BTTV kanal yanıtı: { channelEmotes, sharedEmotes } */
+export function bttvKanalAyikla(d: any): YediTvEmote[] {
+  return bttvAyikla([...(Array.isArray(d?.channelEmotes) ? d.channelEmotes : []), ...(Array.isArray(d?.sharedEmotes) ? d.sharedEmotes : [])]);
+}
+
+/** Twitch kullanıcı adı (adrese yazılır: yalnız Twitch'in izin verdiği karakterler) */
+export const TWITCH_ADI = /^[a-z0-9_]{2,25}$/;
+
+/** FFZ seti: { sets: { <kimlik>: { emoticons: [{ name, urls: { '2': adres } }] } } } → yalnız cdn.frankerfacez.com (genel ve oda yanıtı aynı biçim) */
 export function ffzAyikla(g: any): YediTvEmote[] {
   const out: YediTvEmote[] = [];
   for (const set of Object.values(g?.sets || {}) as any[]) {
@@ -74,11 +94,17 @@ export function ffzAyikla(g: any): YediTvEmote[] {
 }
 
 class YediTv {
-  private durum: YediTvDurum = { kanal: [], genel: [], bttv: [], ffz: [], kanalDurum: 'kapali', guncellendi: 0 };
+  private durum: YediTvDurum = { kanal: [], genel: [], bttv: [], ffz: [], bttvKanal: [], ffzKanal: [], kanalSetId: null, kanalDurum: 'kapali', guncellendi: 0 };
+  private twitchAdi: string | null = null;
   private yukleniyor: Promise<YediTvDurum> | null = null;
 
   /** Önbellekten döner; süresi dolduysa arka planda yeniler. */
-  async getir(kanalSlug: string | null, zorla = false): Promise<YediTvDurum> {
+  async getir(kanalSlug: string | null, zorla = false, twitchAdi?: string | null): Promise<YediTvDurum> {
+    if (twitchAdi !== undefined) {
+      const ad = twitchAdi ? twitchAdi.replace(/^#/, '').toLowerCase() : null;
+      if (ad !== this.twitchAdi) zorla = true;
+      this.twitchAdi = ad && TWITCH_ADI.test(ad) ? ad : null;
+    }
     const yas = Date.now() - this.durum.guncellendi;
     const sure = this.durum.kanalDurum === 'hata' ? HATA_ONBELLEK_MS : ONBELLEK_MS;
     if (!zorla && this.durum.guncellendi && yas < sure) return this.durum;
@@ -95,6 +121,11 @@ class YediTv {
     return [...this.haritaOnbellek.keys()];
   }
 
+  /** Son bilinen durum (EventAPI aboneliği ve sınama için) */
+  sonDurum(): YediTvDurum {
+    return this.durum;
+  }
+
   /** ad → görsel adresi (kanal seti genel seti ezer). */
   harita(): ReadonlyMap<string, string> {
     return this.haritaOnbellek;
@@ -109,8 +140,42 @@ class YediTv {
       axios.get('https://api.frankerfacez.com/v1/set/global', opts).then((r) => ffzAyikla(r.data), () => this.durum.ffz)
     ]);
 
+    // Twitch kanalı: FFZ odası Twitch kimliğini de verir; BTTV ve (Kick yoksa) 7TV kanal seti bununla bulunur
+    let ffzKanal: YediTvEmote[] = this.durum.ffzKanal;
+    let bttvKanal: YediTvEmote[] = this.durum.bttvKanal;
+    let twitchKimlik = '';
+    if (this.twitchAdi) {
+      const oda = await axios.get(`https://api.frankerfacez.com/v1/room/${this.twitchAdi}`, { ...opts, validateStatus: (s) => s === 200 || s === 404 }).catch(() => null);
+      if (oda?.status === 200) {
+        ffzKanal = ffzAyikla(oda.data);
+        twitchKimlik = /^\d{1,20}$/.test(String(oda.data?.room?.twitch_id)) ? String(oda.data.room.twitch_id) : '';
+      } else if (oda?.status === 404) ffzKanal = [];
+      if (twitchKimlik) {
+        const b = await axios.get(`https://api.betterttv.net/3/cached/users/twitch/${twitchKimlik}`, { ...opts, validateStatus: (s) => s === 200 || s === 404 }).catch(() => null);
+        if (b?.status === 200) bttvKanal = bttvKanalAyikla(b.data);
+        else if (b?.status === 404) bttvKanal = [];
+      }
+    } else {
+      ffzKanal = [];
+      bttvKanal = [];
+    }
+
     let kanal: YediTvEmote[] = [];
+    let kanalSetId: string | null = null;
     let kanalDurum = 'kanal-yok';
+    if (!kanalSlug && twitchKimlik) {
+      try {
+        const r = await axios.get(`${API}/users/twitch/${twitchKimlik}`, { ...opts, validateStatus: (s) => s === 200 || s === 404 });
+        if (r.status === 404) kanalDurum = 'hesap-yok';
+        else {
+          kanal = yediTvAyikla(r.data?.emote_set);
+          kanalSetId = typeof r.data?.emote_set?.id === 'string' ? r.data.emote_set.id : null;
+          kanalDurum = 'ok';
+        }
+      } catch {
+        kanalDurum = 'hata';
+      }
+    }
     if (kanalSlug) {
       try {
         const { kickPlatform } = await import('../../platforms/kick.js');
@@ -123,6 +188,7 @@ class YediTv {
           if (r.status === 404) kanalDurum = 'hesap-yok';
           else {
             kanal = yediTvAyikla(r.data?.emote_set);
+            kanalSetId = typeof r.data?.emote_set?.id === 'string' ? r.data.emote_set.id : null;
             kanalDurum = 'ok';
           }
         }
@@ -130,12 +196,22 @@ class YediTv {
         kanalDurum = 'hata';
       }
     }
-    this.durum = { kanal, genel, bttv, ffz, kanalDurum, guncellendi: Date.now() };
+    this.durum = { kanal, genel, bttv, ffz, bttvKanal, ffzKanal, kanalSetId, kanalDurum, guncellendi: Date.now() };
+    // Öncelik (sonra gelen ezer): FFZ < BTTV < FFZ kanal < BTTV kanal < 7TV genel < 7TV kanal
     const h = new Map<string, string>();
-    for (const e of [...genel, ...kanal]) h.set(e.ad, e.url);
+    for (const e of [...ffz, ...bttv, ...ffzKanal, ...bttvKanal, ...genel, ...kanal]) h.set(e.ad, e.url);
     this.haritaOnbellek = h;
     return this.durum;
   }
 }
 
 export const yediTv = new YediTv();
+
+/** Bağlı Kick ve Twitch kanallarıyla getirir (Kick 7TV seti, Twitch BTTV/FFZ kanal setleri) */
+export async function kanallarlaGetir(zorla = false): Promise<YediTvDurum> {
+  const [{ kickPlatform }, { twitchPlatform }] = await Promise.all([import('../../platforms/kick.js'), import('../../platforms/twitch.js')]);
+  const d = await yediTv.getir(kickPlatform.getStatus().channel || null, zorla, twitchPlatform.getStatus().channel || null);
+  // Set değişikliği canlı izlenir (sınamada dış bağlantı açılmaz)
+  if (!process.env.VITEST) void import('./yedi-tv-canli.js').then((m) => m.yediTvSetiniIzle(d.kanalSetId)).catch(() => {});
+  return d;
+}

@@ -98,6 +98,10 @@ export const CHAT_DEFAULTS = {
   nameOnOwnLine: false,
   hideUsernames: false,
   emoteScale: 1.3,
+  /** Hareketli 7TV/BTTV emote'ları ilk karesinde durur */
+  emoteDondur: false,
+  /** Kullanıcı adları 7TV boyasıyla (degrade/gölge) */
+  yediTvBoyalari: true,
   // Vurgu, çerçeve ve etiketlerde platformların özgün renkleri
   platformColors: true,
   fontSize: 22,
@@ -249,6 +253,7 @@ export const EMOTE_COMBO_DEFAULTS = {
   /** Emote bu kadar süre gelmezse patlar */
   timeoutMs: 2500,
   size: 96,
+  emoteDondur: false,
   /** Kombo büyüdükçe emote en fazla bu boya çıkar */
   maxSize: 300,
   speed: 1,

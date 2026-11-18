@@ -58,3 +58,11 @@ jobs:
         with:
           name: gorsel-fark
           path: test-results/gorsel/
+      - name: Widget duman testi ve kare bütçesi (p95 > 16,7 ms kırmızı)
+        run: npm run test:widget
+      - name: Widget fark resimleri
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: widget-fark
+          path: test-results/widget/

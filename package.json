@@ -23,6 +23,7 @@
     "test:studio": "vitest run",
     "test:watch": "vitest",
     "test:gorsel": "node scripts/gorsel-gerileme.mjs",
+    "test:widget": "node scripts/widget-duman.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -439,7 +439,9 @@ export function AlertBoxWidget({ embedded = false, previewMode = false }: { embe
           ) : (<>
           {/* Animated Image / GIF or Stylized Fallback */}
           {displayAlert.imageUrl && !imgError ? (
-            <div className={`relative ${displayAlert.layoutMode === 'text-over' ? 'w-full max-h-56' : 'mb-3'} drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)]`}>
+            <div className={`relative isolate ${displayAlert.layoutMode === 'text-over' ? 'w-full max-h-56' : 'mb-3'}`}>
+              {/* Filtresiz gölge: drop-shadow hareketli GIF'in her karesinde 30 px bulanıklıkla yeniden taranıyordu */}
+              <span aria-hidden style={{ position: 'absolute', left: '6%', right: '6%', top: '18%', bottom: '-14%', zIndex: -1, background: 'radial-gradient(closest-side, rgba(0,0,0,.62), rgba(0,0,0,.3) 55%, rgba(0,0,0,0))', pointerEvents: 'none' }} />
               <img
                 src={displayAlert.imageUrl}
                 alt="Alert GIF"

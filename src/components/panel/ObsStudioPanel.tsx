@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Copy, LayoutPanelLeft, MonitorPlay, PlugZap, RefreshCw, XCircle } from "lucide-react";
 import { API_BASE } from "../../lib/api";
 import { copyText } from "../../lib/clipboard";
+import GecisEfektleri from "./GecisEfektleri";
 
 type Dock = { kimlik: string; baslik: string; url: string; ekli: boolean; onerilen: boolean };
 type Durum = {
@@ -243,6 +244,8 @@ export default function ObsStudioPanel({ onToast }: { onToast: (m: string) => vo
           </button>
         </div>
       </section>
+
+      <GecisEfektleri onToast={onToast} />
     </div>
   );
 }

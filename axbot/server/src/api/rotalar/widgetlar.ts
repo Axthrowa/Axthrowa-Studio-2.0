@@ -128,6 +128,23 @@ router.post('/subathon/add', (req: Request, res: Response) => {
 
 // Tek URL'yi açık tüm OBS kaynaklarında yeniden yükler
 // İzleyici Sayacı widget'ı: yayın yoklamasının gördüğü sayılar
+// Sayaç / izleyici sırası / geri sayım katmanları açılışta güncel durumu buradan alır; sonrası WebSocket ile gelir
+router.get('/overlay/sayac', async (req: Request, res: Response) => {
+  const { sayacAl } = await import('../../core/variables/store.js');
+  const ad = String(req.query.ad || 'count').toLowerCase().slice(0, 60);
+  res.json({ ad, deger: sayacAl(ad) });
+});
+
+router.get('/overlay/kuyruk', async (_req: Request, res: Response) => {
+  const { kuyruk } = await import('../../modules/engagement/queue.js');
+  res.json({ liste: kuyruk.liste(), ayar: kuyruk.ayarOku() });
+});
+
+router.get('/overlay/geri-sayim', async (_req: Request, res: Response) => {
+  const { geriSayim } = await import('../../modules/engagement/geri-sayim.js');
+  res.json(geriSayim.durum());
+});
+
 router.get('/overlay/izleyici', (_req: Request, res: Response) => {
   const say = (p: string) => canliDurum.platform(p)?.izleyici ?? 0;
   res.json({ kick: say('kick'), twitch: say('twitch'), youtube: say('youtube') });
@@ -258,6 +275,29 @@ export function widgetTesti(widgetName: string, body: any = {}): void {
     return;
   }
   switch (widgetName) {
+    case 'sayac':
+      // Kayıt yazmadan: yalnız ekrandaki sayı birkaç kez artar
+      [1, 2, 3].forEach((n, i) => setTimeout(() => wsHub.broadcastTo(['all'], { type: 'sayac_durumu', test: true, data: { ad: String(body.ad || '*'), deger: 40 + n } }), i * 700).unref?.());
+      break;
+    case 'izleyici-sirasi':
+      wsHub.broadcastTo(['all'], {
+        type: 'kuyruk_durumu',
+        test: true,
+        data: {
+          ayar: { acik: true, maksKisi: 0 },
+          liste: ['ayse', 'mert', 'ece', 'kaan', 'deniz'].map((ad, i) => ({ kullanici: ad, gorunenAd: ad, platform: i % 2 ? 'twitch' : 'kick', katilma: Date.now() - (5 - i) * 60000, oncelikli: i === 0 }))
+        }
+      });
+      break;
+    case 'geri-sayim':
+      wsHub.broadcastTo(['all'], { type: 'geri_sayim_durumu', test: true, data: { bitis: Date.now() + 15000, kalanMs: null, toplamMs: 15000, baslik: 'Test geri sayımı', simdi: Date.now() } });
+      break;
+    case 'atla-oyunu':
+      // Kayıtsız test atlayışları: katman oynatır, sunucu sonucu saymaz (skor ve puan yazılmaz)
+      ['test_ayse', 'test_mert', 'test_ece', 'test_kaan'].forEach((ad, i) =>
+        setTimeout(() => wsHub.broadcastTo(['all'], { type: 'atla_oyunu_atla', data: { id: `test-${Date.now()}-${i}`, kullanici: ad, gorunen: ad.replace('test_', ''), platform: 'kick', emote: i === 2 ? { ad: '🐸' } : undefined } }), i * 450).unref?.()
+      );
+      break;
     case 'on-screen-emotes':
       // Kombodan ayrı: yalnız ekranda emote widget'ı alır; sohbetten gelen emote'lar gibi kenardan kenara uçar
       for (let i = 0; i < 8; i++) {

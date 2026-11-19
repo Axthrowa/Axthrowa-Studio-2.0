@@ -94,7 +94,9 @@ export function listCounters() {
 export function bumpCounter(name: string, delta = 1) {
   const key = name.toLowerCase();
   db.prepare(`INSERT INTO counters (name, count, updated_at) VALUES (?, ?, ?) ON CONFLICT(name) DO UPDATE SET count = count + ?, updated_at = excluded.updated_at`).run(key, delta, Date.now(), delta);
-  return db.prepare('SELECT * FROM counters WHERE name = ?').get(key);
+  const r = db.prepare('SELECT * FROM counters WHERE name = ?').get(key) as { name: string; count: number } | undefined;
+  if (r) eventBus.emit('widget_update', { type: 'sayac_durumu', data: { ad: r.name, deger: Number(r.count) } });
+  return r;
 }
 
 export function initExtras() {

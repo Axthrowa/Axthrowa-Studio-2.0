@@ -19,6 +19,12 @@ import { syncTriviaBank } from '../../modules/games/trivia-sync.js';
 const router = Router();
 
 // 17. Chat Minigames API
+// !atla oyunu skor tablosu (katman açılınca ve panelde)
+router.get('/atla-oyunu/tablo', async (_req: Request, res: Response) => {
+  const { atlaOyunu } = await import('../../modules/games/atla-oyunu.js');
+  res.json({ tablo: atlaOyunu.tablo(10).map(({ gorunen, enIyi, toplam, atlayis, isabet }) => ({ gorunen, enIyi, toplam, atlayis, isabet })) });
+});
+
 router.get('/games/settings', (req: Request, res: Response) => {
   res.json(panelAyari(gamesEngine.getSettings()));
 });

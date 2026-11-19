@@ -8,12 +8,12 @@
  */
 import { kokOzellik } from '../lib/kabuklar.js';
 import { hareketAnahtari, ortakHareket } from '../lib/animations.js';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useWidgetSettings } from '../hooks/useWidgetSettings.js';
 import { EMOTE_COMBO_DEFAULTS } from '../lib/widget-defaults.js';
 import { KaliciSoket } from '../lib/kaliciSoket.js';
 import { hizCarpani, onizlemeKipi, wsAdresi } from '../lib/widget-style.js';
-import { emoteleriAyikla, guvenliEmoteAdresi, type EmoteParca } from '../lib/emote.js';
+import { EMOTE_GOLGESI, emoteleriAyikla, guvenliEmoteAdresi, type EmoteParca } from '../lib/emote.js';
 import { donmusAdres, useYediTvHaritasi } from '../lib/yediTv.js';
 
 interface Kombo { emote: EmoteParca; adet: number }
@@ -34,6 +34,16 @@ const PATLAMA_EN_UZUN_MS = 2600;
 const PARCA_ORANI = 0.6;
 
 /** Kombo büyüdükçe emote boyu; kutuya ve ayarlanan en büyük boya kadar */
+/** Emote + arkasında filtresiz gölge halkası (bkz. EMOTE_GOLGESI) */
+function GolgeliEmote({ children }: { children: ReactNode }) {
+  return (
+    <span style={{ display: 'block', position: 'relative' }}>
+      <span aria-hidden="true" style={{ position: 'absolute', inset: '-14%', background: EMOTE_GOLGESI }} />
+      <span style={{ display: 'block', position: 'relative' }}>{children}</span>
+    </span>
+  );
+}
+
 export function emoteBoyu(taban: number, adet: number, enAz: number, kutu: number, enBuyuk = Infinity): number {
   const b = taban * (1 + Math.max(0, adet - enAz) * 0.35);
   return Math.min(b, Math.max(taban, Math.min(kutu * 0.7, enBuyuk)));
@@ -226,8 +236,8 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
           <div key={hareketAnahtari(s)} style={ortakHareket(s)}>
             {/* key=adet: her yeni emote'ta bir kez vurulmuş gibi zıplar */}
             <div key={kombo.adet} style={{ animation: 'axt-kombo-vurus 240ms ease-out' }}>
-              {/* Gölge hareket eden katmanın içinde: dıştaki kapta olunca her karede tüm kap yeniden çiziliyordu */}
-              <span style={{ display: 'block', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }}><EmoteGorsel e={kombo.emote} boyut={boy} dondur={s.emoteDondur} /></span>
+              {/* Gölge filtresiz halka: drop-shadow hareketli emote'un her karesinde yeniden taranıyordu */}
+              <GolgeliEmote><EmoteGorsel e={kombo.emote} boyut={boy} dondur={s.emoteDondur} /></GolgeliEmote>
             </div>
           </div>
         </div>
@@ -249,7 +259,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               animation: `axt-kombo-topla ${ucusSuresi(s.speed)}ms cubic-bezier(.22,.55,.45,1) forwards`
             }}
           >
-            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.5))' }}><EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} dondur={s.emoteDondur} /></span>
+            <GolgeliEmote><EmoteGorsel e={g.emote} boyut={Number(s.size) || 96} dondur={s.emoteDondur} /></GolgeliEmote>
           </span>
         </span>
       ))}
@@ -270,7 +280,7 @@ export function EmoteComboWidget(props?: { embedded?: boolean; previewMode?: boo
               animation: `axt-kombo-sac ${p.sure}ms cubic-bezier(.3,.55,.6,1) ${p.gecikme}ms both`
             }}
           >
-            <span style={{ display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.6))' }}><EmoteGorsel e={patlama.emote} boyut={patlama.boy} dondur={s.emoteDondur} /></span>
+            <GolgeliEmote><EmoteGorsel e={patlama.emote} boyut={patlama.boy} dondur={s.emoteDondur} /></GolgeliEmote>
           </span>
         </span>
       ))}

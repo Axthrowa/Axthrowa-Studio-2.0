@@ -1,0 +1,65 @@
+[
+ {
+  "id": "neon-supurme",
+  "ad": "Neon süpürme",
+  "aciklama": "Eğik neon şeritler soldan girip ekranı örter, sağdan çıkar.",
+  "sureMs": 1200,
+  "noktaMs": 600
+ },
+ {
+  "id": "murekkep",
+  "ad": "Mürekkep lekesi",
+  "aciklama": "Organik bir leke ortadan yayılıp ekranı kaplar, içten delinerek açılır.",
+  "sureMs": 1300,
+  "noktaMs": 650
+ },
+ {
+  "id": "panjur",
+  "ad": "Panjur",
+  "aciklama": "Dikey paneller sırayla iner, sahne değişince yukarı katlanır.",
+  "sureMs": 1200,
+  "noktaMs": 600
+ },
+ {
+  "id": "isik-hizi",
+  "ad": "Işık hızı",
+  "aciklama": "Ortadan dışa fırlayan ışık çizgileri hızlanır, parlamayla sahne değişir.",
+  "sureMs": 1100,
+  "noktaMs": 550
+ },
+ {
+  "id": "glitch",
+  "ad": "Glitch",
+  "aciklama": "Kayan dijital bloklar ve renk sapmasıyla bozulup sahne değişir.",
+  "sureMs": 1000,
+  "noktaMs": 500
+ },
+ {
+  "id": "iris",
+  "ad": "İris",
+  "aciklama": "Halkalar kenardan içe kapanır, sahne değişince ortadan genişleyerek açılır.",
+  "sureMs": 1200,
+  "noktaMs": 600
+ },
+ {
+  "id": "serit",
+  "ad": "Şeritler",
+  "aciklama": "Üç yatay şerit karşı yönlerden kayarak birleşir, sonra ayrılır.",
+  "sureMs": 1150,
+  "noktaMs": 575
+ },
+ {
+  "id": "dalga",
+  "ad": "Sıvı dalga",
+  "aciklama": "Dalgalı bir sıvı aşağıdan yükselip ekranı doldurur, yukarı akıp gider.",
+  "sureMs": 1400,
+  "noktaMs": 700
+ },
+ {
+  "id": "piksel",
+  "ad": "Piksel çözülme",
+  "aciklama": "Kareler köşeden köşeye çapraz dalgayla belirir, sonra aynı yönde çözülür.",
+  "sureMs": 1200,
+  "noktaMs": 600
+ }
+]

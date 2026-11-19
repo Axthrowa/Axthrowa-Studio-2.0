@@ -242,6 +242,11 @@ export class WebSocketHub {
     void import('../modules/pano/pano.js').then((m) => m.sesPanosu.yayinciBagla((p) => this.broadcastTo(['pano', 'dashboard'], p)));
     // Sesli komutlar: sonuç/ayar/model iletileri panele ve dinleyici sayfasına
     void import('../modules/sesli/sesli.js').then((m) => m.sesliKomutlar.yayinciBagla((p) => this.broadcastTo(['sesli', 'dashboard'], p)));
+    // !atla oyunu: atlayışlar bütün katmanlara; katman açık mı, Atla Oyunu ya da Tek URL sayfası bağlıysa
+    void import('../modules/games/atla-oyunu.js').then((m) => {
+      m.atlaOyunu.yayinla = (p) => this.broadcastTo(['all'], p);
+      m.atlaOyunu.katmanAcikMi = () => [...this.clients].some((c) => c.katman === 'atla-oyunu' || c.katman === 'overlay');
+    });
     console.log('[AxBoT] WebSocket Hub active on /ws');
   }
 
@@ -252,6 +257,12 @@ export class WebSocketHub {
       if (!rapor || !kaynak) return;
       this.kuyrukAynalari.bildir(kaynak, rapor, !!kaynak.obs);
       this.kuyrukYayinla();
+      return;
+    }
+    if (msg.action === 'atla_oyunu_sonuc') {
+      // Yalnız OBS katmanı (Atla Oyunu ya da Tek URL) bildirir; atlayış kimliği bir kez sayılır
+      if (kaynak?.katman !== 'atla-oyunu' && kaynak?.katman !== 'overlay') return;
+      void import('../modules/games/atla-oyunu.js').then((m) => m.atlaOyunu.sonuc(msg.id, msg.puan));
       return;
     }
     if (msg.action === 'pano_bitti') {

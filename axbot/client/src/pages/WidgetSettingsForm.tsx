@@ -34,11 +34,22 @@ const WIDGET_SECTIONS: Record<string, Record<string, string>> = {
   'viewer-counter': { title: 'Genel' },
   trivia: { title: 'Genel' },
   'wheel-of-fortune': { size: 'Görünüm', palette: 'Görünüm' },
-  'audio-player': { label: 'Genel' }
+  'audio-player': { label: 'Genel' },
+  sayac: { sayacAdi: 'Genel', etiket: 'Genel', simge: 'Genel', hedef: 'Genel', sifirdaGizle: 'Görünürlük', duzen: 'Düzen', artisAnimasyonu: 'Animasyon' },
+  'izleyici-sirasi': { title: 'Genel', katilmaKomutu: 'Genel', enCok: 'Düzen', platformGoster: 'Düzen', genislik: 'Düzen', kapaliysaGizle: 'Görünürlük', bosGizle: 'Görünürlük' },
+  'geri-sayim': { varsayilanBaslik: 'Genel', bitinceMetin: 'Genel', bitinceGosterSn: 'Genel', bosGizle: 'Görünürlük', cubukGoster: 'Düzen', sifirliDakika: 'Düzen', sesAcik: 'Ses', sesDuzeyi: 'Ses' },
+  'atla-oyunu': {
+    boyut: 'Karakter', avatarKullan: 'Karakter', parasutRengi: 'Karakter', adGoster: 'Karakter', adRengi: 'Karakter', inisteKalmaSn: 'Karakter',
+    hedefGenislik: 'Hedef', hedefTema: 'Hedef', hedefGorseli: 'Hedef', zeminPayi: 'Hedef', hedefTasi: 'Hedef', hedefGizleSn: 'Hedef',
+    yercekimi: 'Fizik', ruzgar: 'Fizik', inisHizi: 'Fizik', carpisma: 'Fizik',
+    tamIsabetKutlama: 'Efektler', sesAcik: 'Ses', sesDuzeyi: 'Ses',
+    ruzgarGoster: 'Görünüm', skorTablosu: 'Görünüm', skorTablosuKonum: 'Görünüm',
+    beklemeSn: 'Oyun kuralları', enCokHavada: 'Oyun kuralları', puanCarpani: 'Oyun kuralları', iskaDuyur: 'Oyun kuralları', topluSn: 'Oyun kuralları'
+  }
 };
 
 /** Önce widget'ın işi, sonra görünümü: listede olmayan bölümler ikisinin arasına girer */
-const ILK_BOLUMLER = ['Genel', 'Hedef', 'Çekiliş', 'Komut', 'Kontrol', 'Sıralama', 'Kupa', 'Tren', 'Puanlar', 'Bölümler', 'Combo', 'Olaylar', 'Medya', 'Ses', 'Metin', 'Şablon', 'Zamanlama'];
+const ILK_BOLUMLER = ['Genel', 'Oyun kuralları', 'Karakter', 'Hedef', 'Fizik', 'Hedef', 'Çekiliş', 'Komut', 'Kontrol', 'Sıralama', 'Kupa', 'Tren', 'Puanlar', 'Bölümler', 'Combo', 'Olaylar', 'Medya', 'Ses', 'Metin', 'Şablon', 'Zamanlama'];
 const SON_BOLUMLER = ['Platformlar', 'Düzen', 'Görünürlük', 'Tema', 'Görünüm', 'Tipografi', 'Animasyon', 'Efektler', 'Parçalar', 'İkonlar', 'Emojiler', 'Gelişmiş'];
 const BOLUM_ACIKLAMASI: Record<string, string> = {
   Platformlar: 'Hangi platformlar görünsün',
@@ -81,6 +92,10 @@ export const PATH_MAP: Record<string, string> = {
   'kicks-goal': '/widgets/kicks-goal',
   'emote-combo': '/widgets/emote-combo',
   'on-screen-emotes': '/widgets/emotes',
+  'atla-oyunu': '/widgets/atla-oyunu',
+  sayac: '/widgets/sayac',
+  'izleyici-sirasi': '/widgets/izleyici-sirasi',
+  'geri-sayim': '/widgets/geri-sayim',
   'event-labels': '/widgets/event-labels',
   subathon: '/widgets/subathon',
   'the-cup': '/widgets/the-cup',
@@ -117,7 +132,8 @@ function inferType(key: string, value: any, widgetId = ''): 'text' | 'textarea' 
     if (key.toLowerCase().includes('opacity') || key.toLowerCase().includes('volume')) return 'range';
     return 'number';
   }
-  if (key.toLowerCase().includes('color')) return 'color';
+  // Türkçe adlı renkler (adRengi …) de renk seçici; boş değer "otomatik" demek, yazı alanı kalır
+  if (key.toLowerCase().includes('color') || (/Rengi$/.test(key) && String(value || '').startsWith('#'))) return 'color';
   if (key.toLowerCase().includes('template') || key === 'ignoreList' || key === 'ozelCss' || key === 'ozelSablon') return 'textarea';
   return 'text';
 }

@@ -82,6 +82,21 @@ export const LABELS: Record<string, string> = {
   // --- 2026-09 revizyonu: ayar sistemine yeni bağlanan widget'lar ---
   fromChat: "Sohbetteki emote'lar uçsun", durationMs: 'Uçuş süresi (ms)', maxOnScreen: 'Ekranda en çok',
   burstCopies: '!kappagen kopya sayısı', spin: 'Dönerek uç', shadow: 'Gölge',
+  // --- !atla oyunu ---
+  boyut: 'Karakter boyu (px, 1080p)', avatarKullan: 'Profil resmi karakter olsun', parasutRengi: 'Paraşüt rengi (boş = herkese kendi rengi)',
+  adGoster: 'Adı göster', adRengi: 'Ad rengi', inisteKalmaSn: 'İnince ekranda kalma (sn)',
+  hedefGenislik: 'Hedef genişliği (px, 1080p)', hedefTema: 'Hedef görünümü', hedefGorseli: 'Özel hedef görseli (https ya da medya)',
+  zeminPayi: 'Zeminin alttan uzaklığı (px)', hedefTasi: 'İsabetten sonra hedef yer değiştirsin', hedefGizleSn: 'Kimse atlamazsa hedefi gizle (sn, 0 = hep görünür)',
+  sayacAdi: 'Sayaç adı (!count ile aynı)', etiket: 'Etiket', simge: 'Simge (emoji)', hedef: 'Hedef (0 = yok)', duzen: 'Yerleşim',
+  artisAnimasyonu: 'Değişince büyüsün', sifirdaGizle: 'Sıfırken gizle', katilmaKomutu: 'Katılma komutu (ekranda yazar)',
+  enCok: 'En çok kaç kişi görünsün', platformGoster: 'Platform logosu', kapaliysaGizle: 'Sıra kapalıyken gizle', bosGizle: 'Boşken gizle',
+  genislik: 'Genişlik (px)', varsayilanBaslik: 'Başlık (komut başlık vermezse)', bitinceMetin: 'Bitince yazı', bitinceGosterSn: 'Bitiş yazısı süresi (sn, 0 = kalıcı)',
+  cubukGoster: 'İlerleme çubuğu', sifirliDakika: 'Dakika iki haneli (05:00)',
+  yercekimi: 'Yerçekimi', ruzgar: 'Rüzgâr gücü (0 = yok)', inisHizi: 'Paraşütle iniş hızı', carpisma: 'Karakterler çarpışsın',
+  tamIsabetKutlama: 'Tam isabette (95+) kutlama', sesAcik: 'Sesler', sesDuzeyi: 'Ses düzeyi',
+  ruzgarGoster: 'Rüzgâr göstergesi', skorTablosu: 'Skor tablosu', skorTablosuKonum: 'Skor tablosu konumu',
+  beklemeSn: 'Kişi başı bekleme (sn)', enCokHavada: 'Havada en çok karakter', puanCarpani: 'Sadakat puanı çarpanı (0 = verme)',
+  iskaDuyur: 'Iskalayınca da sohbete yaz', topluSn: '!topluatla bekleme süresi (sn)',
   theme: 'Tema', position: 'Ekran konumu', label: 'Etiket', icon: 'İkon',
   maxWidth: 'Maks. genişlik', minWidth: 'Min. genişlik', paddingY: 'Dikey dolgu',
   radius: 'Köşe yuvarlaklığı', bgColor: 'Arka plan rengi', bgOpacity: 'Arka plan opaklığı',
@@ -347,6 +362,17 @@ export const tema = (...ler: Array<[string, string]>) => ler.map(([value, label]
 export const AYRI_CIKIS = [{ value: 'ayni', label: 'Girişin tersi' }, ...ANIM_SECENEKLERI];
 
 export const WIDGET_SELECTS: Record<string, Record<string, Array<{ value: string; label: string }>>> = {
+  sayac: {
+    theme: tema(['kart', 'Kart'], ['hap', 'Hap'], ['neon', 'Neon'], ['sade', 'Sade (zeminsiz)']),
+    duzen: tema(['yatay', 'Yan yana'], ['dikey', 'Alt alta'])
+  },
+  'izleyici-sirasi': { theme: tema(['kart', 'Kart'], ['hap', 'Hap'], ['neon', 'Neon'], ['sade', 'Sade (zeminsiz)']) },
+  'geri-sayim': { theme: tema(['kart', 'Kart'], ['hap', 'Hap'], ['neon', 'Neon'], ['sade', 'Sade (zeminsiz)']) },
+  'atla-oyunu': {
+    hedefTema: tema(['havuz', 'Havuz'], ['hedef', 'Hedef tahtası'], ['platform', 'Platform'], ['ozel', 'Özel görsel']),
+    skorTablosuKonum: tema(['sagUst', 'Sağ üst'], ['solUst', 'Sol üst'], ['sagAlt', 'Sağ alt'], ['solAlt', 'Sol alt']),
+    tamIsabetKutlama: [{ value: 'yok', label: 'Yok' }, ...KUTLAMA_SECENEKLERI.map((k) => ({ value: k.value, label: k.label }))]
+  },
   'social-rotator': {
     exitAnimation: AYRI_CIKIS,
     theme: tema(['kart', 'Kart'], ['hap', 'Hap'], ['neon', 'Neon'], ['sade', 'Sade']),

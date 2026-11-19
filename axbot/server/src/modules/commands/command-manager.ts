@@ -89,7 +89,7 @@ function parseTriviaCategory(raw: string): string {
 
 /** `!modul kapat <ad>`: bu adlardaki yerleşik komutlar yanıt vermez */
 export const MODULLER: Record<string, string[]> = {
-  oyunlar: ['slot', 'slots', 'rulet', 'roulette', 'duello', 'duel', 'soygun', 'heist', 'yaris', 'race', 'drag', 'balik', 'avla', 'fish', 'kasaac', 'kasa', 'case', 'bomba', 'c4', 'kes', 'cut', 'yazitura', 'cf', 'coinflip', 'zar', 'dice', 'kral', 'taht', 'king', 'tahtikap', 'claimthrone', 'claimking', 'cark', 'wheel'],
+  oyunlar: ['atla', 'jump', 'drop', 'zipla', 'parasut', 'topluatla', 'groupjump', 'atlat', 'atlaiptal', 'atlaskor', 'jumpscore', 'atlaenler', 'jumptop', 'atlatop', 'slot', 'slots', 'rulet', 'roulette', 'duello', 'duel', 'soygun', 'heist', 'yaris', 'race', 'drag', 'balik', 'avla', 'fish', 'kasaac', 'kasa', 'case', 'bomba', 'c4', 'kes', 'cut', 'yazitura', 'cf', 'coinflip', 'zar', 'dice', 'kral', 'taht', 'king', 'tahtikap', 'claimthrone', 'claimking', 'cark', 'wheel'],
   sarki: ['sr', 'songrequest', 'sarkiiste', 'klip', 'klipiste', 'songpause', 'sarkidur', 'songresume', 'sarkidevam', 'songvol', 'sarkises', 'songlike', 'sarkibegen', 'oncekisarki', 'lastsong'],
   yapayzeka: ['sor', 'ask', 'ai', 'cevir', 'translate', 'tr'],
   bilgi: ['soru', 'trivia', 'bilgi', 'bilgiyarismasi', 'yarisma', 'kelime', 'anagram'],
@@ -522,12 +522,63 @@ export class CommandManager {
         return this.sarkiKomutu(`volume:${y}`, `🔊 Şarkı sesi %${y}.`);
       }
 
-      case 'atla':
       case 'skip':
-      case 'voteskip': {
+      case 'voteskip':
+      case 'sarkiatla':
+      case 'sarkigec': {
         const isMod = message.user.isBroadcaster || message.user.isMod;
         const res = songRequest.skipSong(isMod, message.user.username);
         return res.message;
+      }
+
+      // !atla oyunu: paraşütle hedefe atlama (sonuç katmandan gelir, bkz. modules/games/atla-oyunu.ts)
+      case 'atla':
+      case 'jump':
+      case 'drop':
+      case 'zipla':
+      case 'parasut': {
+        const { atlaOyunu } = await import('../games/atla-oyunu.js');
+        const emote = metindenEmoteler(args.join(' '), 1)[0];
+        return atlaOyunu.atla(message, emote);
+      }
+
+      case 'topluatla':
+      case 'groupjump': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return '';
+        const { atlaOyunu } = await import('../games/atla-oyunu.js');
+        return atlaOyunu.topluAc(Number(args[0]) || undefined);
+      }
+
+      case 'atlat': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return '';
+        const { atlaOyunu } = await import('../games/atla-oyunu.js');
+        return atlaOyunu.birak();
+      }
+
+      case 'atlaiptal': {
+        if (!message.user.isMod && !message.user.isBroadcaster) return '';
+        const { atlaOyunu } = await import('../games/atla-oyunu.js');
+        return atlaOyunu.iptal();
+      }
+
+      case 'atlaskor':
+      case 'jumpscore': {
+        const { atlaOyunu } = await import('../games/atla-oyunu.js');
+        return atlaOyunu.skor(message);
+      }
+
+      case 'atlaenler':
+      case 'jumptop':
+      case 'atlatop': {
+        const { atlaOyunu } = await import('../games/atla-oyunu.js');
+        return atlaOyunu.enler();
+      }
+
+      case 'atlasifirla': {
+        if (!message.user.isBroadcaster) return '';
+        if ((args[0] || '').toLowerCase() !== 'onay') return `@${message.user.displayName}, skor tablosunu silmek için: !atlasifirla onay`;
+        const { atlaOyunu } = await import('../games/atla-oyunu.js');
+        return atlaOyunu.sifirla();
       }
 
       case 'sira':
@@ -865,8 +916,21 @@ export class CommandManager {
       }
       case 'count':
       case 'sayac': {
-        const n = extras.bumpCounter(args[0] || 'count', args[1] === 'reset' ? 0 : 1) as any;
+        // `!count ölüm reset` sıfırlar (eskiden 0 ekliyordu, sıfırlamıyordu); sıfırlama mod işi
+        if (args[1] === 'reset' || args[1] === 'sifirla') {
+          if (!message.user.isMod && !message.user.isBroadcaster) return null;
+          return `🔢 ${args[0] || 'count'}: ${sayacAyarla(args[0] || 'count', 0)}`;
+        }
+        const n = extras.bumpCounter(args[0] || 'count', 1) as any;
         return `🔢 ${n.name}: ${n.count}`;
+      }
+
+      case 'gerisayim':
+      case 'countdown': {
+        // Argümansız: herkes kalan süreyi görür. Değiştirmek mod işi
+        if (args.length && !message.user.isMod && !message.user.isBroadcaster) return null;
+        const { geriSayim } = await import('../engagement/geri-sayim.js');
+        return geriSayim.komut(args);
       }
       // NOT: Burada eskiden `watchtime`/`izleme` ve `followage` için SAHTE
       // vakalar vardı; aşağıdaki gerçek uygulamaları GÖLGELİYORDU (switch ilk

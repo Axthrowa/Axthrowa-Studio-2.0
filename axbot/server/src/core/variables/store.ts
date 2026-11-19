@@ -11,6 +11,7 @@
  * ondalık değer alabilir (`!editcounter dollars 10.5`).
  */
 import { db } from '../../db/index.js';
+import { eventBus } from '../event-bus.js';
 
 export { sayacIfadesi } from './pure.js';
 
@@ -60,7 +61,13 @@ export function sayacAl(ad: string): number {
 export function sayacAyarla(ad: string, deger: number): number {
   const d = Number.isFinite(deger) ? deger : 0;
   sayacYaz.run(String(ad).toLowerCase(), d, Date.now());
+  sayacYayinla(ad, d);
   return d;
+}
+
+/** Sayaç değişince OBS'teki Sayaç widget'ı anında güncellensin */
+export function sayacYayinla(ad: string, deger: number) {
+  eventBus.emit('widget_update', { type: 'sayac_durumu', data: { ad: String(ad).toLowerCase(), deger } });
 }
 
 /** `$(count +1)` / `$(count -10)` — mevcut değere ekler, yeni değeri döner. */

@@ -175,6 +175,48 @@ export const GOCLER: Gocler[] = [
     up(db) {
       sutunEkle(db, 'commands', 'refusal_reply', 'INTEGER NOT NULL DEFAULT 1');
     }
+  },
+  {
+    version: 13,
+    name: '!atla oyunu — skor tablosu; şarkı atlama komutu skip adına',
+    up(db) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS atla_skorlar (
+          kullanici TEXT PRIMARY KEY,
+          gorunen   TEXT NOT NULL DEFAULT '',
+          en_iyi    INTEGER NOT NULL DEFAULT 0,
+          toplam    INTEGER NOT NULL DEFAULT 0,
+          atlayis   INTEGER NOT NULL DEFAULT 0,
+          isabet    INTEGER NOT NULL DEFAULT 0,
+          son_puan  INTEGER NOT NULL DEFAULT 0,
+          son_tarih INTEGER NOT NULL DEFAULT 0
+        );
+      `);
+      // `atla` eskiden şarkı atlamanın asıl adıydı: panelde verilen yetki/bekleme/yanıt ve kapalı listesi
+      // şarkı atlamada (`skip`) kalsın, yeni oyun temiz başlasın. Veri silinmez, yalnız anahtar taşınır.
+      const tablo = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'bot_settings'").get();
+      if (!tablo) return;
+      const oku = (k: string) => (db.prepare('SELECT value FROM bot_settings WHERE key = ?').get(k) as { value?: string } | undefined)?.value;
+      const yaz = (k: string, v: string) => db.prepare('UPDATE bot_settings SET value = ? WHERE key = ?').run(v, k);
+      try {
+        const ayar = JSON.parse(oku('yerlesik_komut_ayarlari') || '{}');
+        if (ayar && typeof ayar === 'object' && ayar.atla && !ayar.skip) {
+          ayar.skip = ayar.atla;
+          delete ayar.atla;
+          yaz('yerlesik_komut_ayarlari', JSON.stringify(ayar));
+        }
+      } catch {
+        /* bozuk kayıt: dokunulmaz */
+      }
+      try {
+        const kapali = JSON.parse(oku('default_commands_disabled') || '[]');
+        if (Array.isArray(kapali) && kapali.includes('atla')) {
+          yaz('default_commands_disabled', JSON.stringify([...new Set(kapali.map((x: unknown) => (x === 'atla' ? 'skip' : x)))]));
+        }
+      } catch {
+        /* bozuk kayıt: dokunulmaz */
+      }
+    }
   }
 ];
 

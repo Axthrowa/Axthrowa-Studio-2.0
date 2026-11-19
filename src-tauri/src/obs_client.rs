@@ -667,6 +667,47 @@ impl ObsClientState {
       .map_err(|error| format!("Studio Mode geçişi yapılamadı: {error}"))
   }
 
+  /// OBS'teki Stinger geçişlerinin adları (`obs_stinger_transition`). obs-websocket yeni geçiş oluşturamaz:
+  /// liste boşsa kullanıcı OBS'te Sahne Geçişleri → + → Stinger ile bir tane eklemelidir.
+  pub async fn stinger_gecisleri(&self) -> Result<Vec<String>, String> {
+    let client = self.client()?;
+    let liste = client.transitions().list().await.map_err(|e| format!("Geçiş listesi alınamadı: {e}"))?;
+    Ok(
+      liste
+        .transitions
+        .into_iter()
+        .filter(|t| t.kind == "obs_stinger_transition")
+        .map(|t| t.id.name)
+        .collect(),
+    )
+  }
+
+  /// Stinger videosunu ve geçiş noktasını (ms) OBS'teki Stinger geçişine yazar ve onu etkin geçiş yapar.
+  /// `ad` verilmezse ilk Stinger geçişi kullanılır. Dönen: ayarlanan geçişin adı.
+  pub async fn stinger_ayarla(&self, ad: Option<&str>, yol: &str, nokta_ms: u32) -> Result<String, String> {
+    let adlar = self.stinger_gecisleri().await?;
+    let hedef = match ad {
+      Some(a) => adlar.into_iter().find(|n| n == a).ok_or_else(|| format!("OBS'te «{a}» adlı Stinger geçişi yok"))?,
+      None => adlar
+        .into_iter()
+        .next()
+        .ok_or_else(|| "OBS'te Stinger geçişi yok: Sahne Geçişleri panelinde + → Stinger ile bir tane ekleyin".to_string())?,
+    };
+    let client = self.client()?;
+    client
+      .transitions()
+      .set_current(&hedef)
+      .await
+      .map_err(|e| format!("«{hedef}» geçişi seçilemedi: {e}"))?;
+    // transition_point_type 0 = süre (ms); overlay: kullanıcının ses/maske ayarları korunur
+    client
+      .transitions()
+      .set_current_settings(json!({ "path": yol, "transition_point_type": 0, "transition_point": nokta_ms }), Some(true))
+      .await
+      .map_err(|e| format!("Stinger ayarlanamadı: {e}"))?;
+    Ok(hedef)
+  }
+
   /// CEA-608 altyazı satırını yayına gönderir (yayın açık olmalı).
   pub async fn send_caption(&self, text: &str) -> Result<(), String> {
     let client = self.client()?;

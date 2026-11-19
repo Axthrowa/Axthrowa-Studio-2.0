@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}canvas{display:block}</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas><script src="stingerler.js"></script>
+<script>
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+window.ciz = (id, t, renk) => { const s = STINGERLER.find(x => x.id === id); ctx.clearRect(0,0,1920,1080); ctx.save(); s.ciz(ctx, t, 1920, 1080, Object.assign({}, STINGER_RENK, renk || {})); ctx.restore();
+  const d = ctx.getImageData(0,0,1920,1080).data; let enAz = 255; for (let i = 3; i < d.length; i += 4*97) if (d[i] < enAz) enAz = d[i]; return enAz; };
+window.liste = () => STINGERLER.map(({id, ad, aciklama, sure, nokta}) => ({id, ad, aciklama, sure, nokta}));
+</script></body></html>

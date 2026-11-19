@@ -41,8 +41,24 @@ export const WIDGET_IPUCLARI: Record<string, string[]> = {
   'follower-goal': ['Takipçi hedefini çubukla gösterir; her yeni takip çubuğu doldurur.', 'Hedef ve başlık ayarlardan değiştirilir.'],
   'subscriber-goal': ['Abone hedefini gösterir; abone ve hediye abonelikler sayılır.', 'Hedef ve başlık ayarlardan değiştirilir.'],
   'kicks-goal': ['KICKs hedefini gösterir; gelen KICKs miktarı çubuğu doldurur.', 'Hedef ve başlık ayarlardan değiştirilir.'],
+  sayac: [
+    'Sohbet sayacını gösterir: !count ölüm bir artırır, !editcounter ölüm 5 ayarlar, !count ölüm reset sıfırlar (mod).',
+    'Sayaç adı burada yazdığınızla aynı olmalı. Komutlarda $(count ölüm +1) da kullanılabilir.'
+  ],
+  'izleyici-sirasi': [
+    'İzleyiciler !joinq ile sıraya girer, !leaveq ile çıkar; mod !openq / !closeq / !nextq / !removeq / !clearq.',
+    'Sıra Etkileşim > İzleyici kuyruğu sayfasından da yönetilir; ekran anında güncellenir.'
+  ],
+  'geri-sayim': [
+    'Mod: !gerisayim 10m Yayın başlıyor · !gerisayim 1h30m · !gerisayim 20:30 (o saate) · !gerisayim +2m · duraklat / devam / dur.',
+    'Herkes argümansız !gerisayim yazınca kalan süreyi görür. Süre sunucuda tutulur; kaynak yenilense de kaldığı yerden sürer.'
+  ],
+  'atla-oyunu': [
+    'İzleyici !atla yazınca karakteri paraşütle düşer; !atla 🐸 ya da bir emote yazarsa karakter o olur. Ortaya yakın iniş 100 puan.',
+    "Mod: !topluatla 30 (herkes birlikte atlar), !atlat, !atlaiptal. Herkes: !atlaskor, !atlaenler. OBS: /widgets/atla-oyunu ya da Tek URL'de Atla Oyunu katmanı."
+  ],
   atla: [
-    'İzleyici !atla yazınca oy çubuğu görünür; eşik dolunca veya mod atlayınca kart “atlandı” der.',
+    'İzleyici !skip yazınca oy çubuğu görünür; eşik dolunca veya mod atlayınca kart “atlandı” der.',
     'OBS tarayıcı kaynağı: /widgets/atla. Görünme süresi ayardan değişir.'
   ],
   'emote-combo': [

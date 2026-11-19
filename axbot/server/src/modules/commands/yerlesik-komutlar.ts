@@ -97,8 +97,17 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
   k('sira', ['queue'], 'Şarkı', 'herkes', 'Sıradaki şarkılar'),
   k('when', ['sarkisiram'], 'Şarkı', 'herkes', 'İsteğinin sırası'),
   k('wrongsong', ['yanlissarki'], 'Şarkı', 'herkes', 'Son isteğini geri al'),
-  k('atla', ['skip', 'voteskip'], 'Şarkı', 'herkes', 'Atlama oyu · mod hemen atlar · OBS kartı', undefined, true),
+  // `!atla` artık paraşüt oyunu; şarkı atlama `!skip` (göç 13 eski ayarları taşır)
+  k('skip', ['voteskip', 'sarkiatla', 'sarkigec'], 'Şarkı', 'herkes', 'Şarkı atlama oyu · mod hemen atlar · OBS kartı', undefined, true),
   { ...k('sans', ['şans', 'luck', 'chance'], 'Oyunlar', 'herkes', '1-9999 arası şans sayısı', '!şans'), bekleme: 30 },
+  // !atla oyunu (paraşütle hedefe atlama; OBS'te Atla Oyunu katmanı)
+  k('atla', ['jump', 'drop', 'zipla', 'parasut'], 'Oyunlar', 'herkes', 'Paraşütle hedefe atla; emote yazarsan karakterin o olur', '!atla [emote]'),
+  k('topluatla', ['groupjump'], 'Oyunlar', 'mod', 'Toplu atlama: süre dolunca herkes aynı anda atlar', '!topluatla 30'),
+  k('atlat', [], 'Oyunlar', 'mod', 'Toplu atlamayı hemen başlat'),
+  k('atlaiptal', [], 'Oyunlar', 'mod', 'Toplu atlamayı iptal et'),
+  k('atlaskor', ['jumpscore'], 'Oyunlar', 'herkes', 'Atla oyunu skorun'),
+  k('atlaenler', ['jumptop', 'atlatop'], 'Oyunlar', 'herkes', 'Atla oyununda en iyi 5'),
+  k('atlasifirla', [], 'Oyunlar', 'yayinci', 'Atla skor tablosunu sil', '!atlasifirla onay'),
   k('removesong', ['sarkisil'], 'Şarkı', 'mod', 'Sıradan şarkı sil', '!removesong <sıra no | @kullanıcı>'),
   k('srclear', ['sirabosalt'], 'Şarkı', 'mod', 'Şarkı sırasını temizle (çalan sürer)'),
 
@@ -142,6 +151,7 @@ export const YERLESIK_KOMUTLAR: YerlesikKomut[] = [
   k('addquote', [], 'Sohbet', 'mod', 'Alıntı ekle', '!addquote metin'),
   k('count', ['sayac'], 'Sohbet', 'herkes', 'Sayacı artır', '!count ölüm'),
   k('editcounter', ['sayacduzenle'], 'Sohbet', 'mod', 'Sayacı ayarla', '!editcounter ölüm 5'),
+  k('gerisayim', ['countdown'], 'Sohbet', 'mod', 'Ekrandaki geri sayımı başlat / uzat / durdur', '!gerisayim 10m Yayın başlıyor'),
 
   // Yayın
   k('uptime', ['yayinsuresi'], 'Yayın', 'herkes', 'Yayın süresi'),

@@ -49,3 +49,11 @@ export function emoteleriAyikla(metin: string, yediTv: ReadonlyMap<string, strin
   }
   return out;
 }
+
+/**
+ * Emote gölgesi: `filter: drop-shadow` yerine filtresiz degrade halka. Filtre hareketli (GIF/WebP) emote'un her
+ * karesinde yeniden taranıyordu (18 Kasım ölçümü: tarama ~3 kat, 60 → 20-30 FPS). Halka bir kez taranır ve
+ * emote'la birlikte kayar. Emote'un arkasında, kutusunu her yönde %14 aşan bir katman olarak kullanılır.
+ */
+export const EMOTE_GOLGESI =
+  'radial-gradient(circle at 50% 56%, rgba(0,0,0,.42) 0%, rgba(0,0,0,.24) 38%, rgba(0,0,0,0) 66%)';

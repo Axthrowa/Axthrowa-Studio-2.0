@@ -31,6 +31,7 @@ mod control_plane;
 mod destek_api;
 mod dosya_adi;
 mod eslestirme;
+mod gecis_api;
 mod local_guard;
 pub mod guncelleme_api;
 pub mod yedek_api;
@@ -219,6 +220,7 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
     .merge(multistream_api::router())
     .merge(discord_api::router())
     .merge(actions_api::router())
+    .merge(gecis_api::router())
     .merge(eslestirme::router())
     .merge(asistan_api::router())
     .merge(destek_api::router())

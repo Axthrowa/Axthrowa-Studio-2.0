@@ -43,6 +43,10 @@ import { ViewerCounterWidget } from './ViewerCounterWidget.js';
 import { RankingsWidget } from './RankingsWidget.js';
 import { LoyaltyStoreWidget } from './LoyaltyStoreWidget.js';
 import { KappagenWidget } from './KappagenWidget.js';
+import { AtlaOyunuWidget } from './AtlaOyunuWidget.js';
+import { SayacWidget } from './SayacWidget.js';
+import { IzleyiciSirasiWidget } from './IzleyiciSirasiWidget.js';
+import { GeriSayimWidget } from './GeriSayimWidget.js';
 import { JumpScareWidget } from './JumpScareWidget.js';
 import { EndCreditsWidget } from './EndCreditsWidget.js';
 import { AudioPlayerWidget } from './AudioPlayerWidget.js';
@@ -89,6 +93,10 @@ export type KatmanAnahtari =
   | 'rankings'
   | 'loyalty'
   | 'kappagen'
+  | 'atlaOyunu'
+  | 'sayac'
+  | 'izleyiciSirasi'
+  | 'geriSayim'
   | 'jumpScare'
   | 'endCredits'
   | 'tts'
@@ -297,6 +305,35 @@ export const KATMANLAR: KatmanTanimi[] = [
     ciz: (o) => <KappagenWidget embedded previewMode={o} />
   },
   {
+    anahtar: 'atlaOyunu',
+    etiket: 'Atla Oyunu',
+    tamEkran: true,
+    z: 90,
+    varsayilan: { x: 0, y: 0, width: 1920, height: 1080 },
+    ciz: (o) => <AtlaOyunuWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'sayac',
+    etiket: 'Sayaç',
+    z: 64,
+    varsayilan: { x: 40, y: 900, width: 320, height: 110 },
+    ciz: (o) => <SayacWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'izleyiciSirasi',
+    etiket: 'İzleyici Sırası',
+    z: 63,
+    varsayilan: { x: 40, y: 300, width: 380, height: 420 },
+    ciz: (o) => <IzleyiciSirasiWidget embedded previewMode={o} />
+  },
+  {
+    anahtar: 'geriSayim',
+    etiket: 'Geri Sayım',
+    z: 67,
+    varsayilan: { x: 760, y: 60, width: 400, height: 170 },
+    ciz: (o) => <GeriSayimWidget embedded previewMode={o} />
+  },
+  {
     anahtar: 'jumpScare',
     etiket: 'JumpScare',
     tamEkran: true,
@@ -378,6 +415,10 @@ export const GALERI_KATMANI: Record<string, { anahtar: KatmanAnahtari; ek?: Reco
   rankings: { anahtar: 'rankings' },
   'loyalty-redemptions': { anahtar: 'loyalty' },
   'on-screen-emotes': { anahtar: 'kappagen' },
+  'atla-oyunu': { anahtar: 'atlaOyunu' },
+  sayac: { anahtar: 'sayac' },
+  'izleyici-sirasi': { anahtar: 'izleyiciSirasi' },
+  'geri-sayim': { anahtar: 'geriSayim' },
   'end-credits': { anahtar: 'endCredits' },
   tts: { anahtar: 'tts' },
   'cloud-tts': { anahtar: 'tts' },

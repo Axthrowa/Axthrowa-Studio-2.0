@@ -1,7 +1,7 @@
 /** Overlay Stüdyosu galerisi: widget listesi, filtre, tek URL, uyarı testleri */
 import { useState, useEffect } from 'react';
 import { AlertPreset } from '../types.js';
-import { Layers, Bell, Play, Volume2, MessageSquare, Cloud, DollarSign, Smile, Film, Tag, TrendingUp, Gift, Train, Trophy, Music, Pin, BarChart3, Megaphone, Hourglass, Target, Wine, Users, Disc, Gem, HelpCircle, Eye, Share2, SkipForward } from 'lucide-react';
+import { Wind, Hash, ListOrdered, Timer, Layers, Bell, Play, Volume2, MessageSquare, Cloud, DollarSign, Smile, Film, Tag, TrendingUp, Gift, Train, Trophy, Music, Pin, BarChart3, Megaphone, Hourglass, Target, Wine, Users, Disc, Gem, HelpCircle, Eye, Share2, SkipForward } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { GALERI_KATMANI, KATMANLAR } from '../widgets/OverlayLayers.js';
 import { SubathonPanel } from '../components/SubathonPanel.js';
@@ -401,6 +401,30 @@ export function useOverlayStudioGaleri({ allInOne, obsGorunumu, setActiveTab, se
       category: 'On-Stream',
       icon: SkipForward,
       url: `${baseUrl}/widgets/atla`
+    },
+    {
+      id: 'atla-oyunu',
+      category: 'Engagement',
+      icon: Wind,
+      url: `${baseUrl}/widgets/atla-oyunu`
+    },
+    {
+      id: 'sayac',
+      category: 'On-Stream',
+      icon: Hash,
+      url: `${baseUrl}/widgets/sayac`
+    },
+    {
+      id: 'izleyici-sirasi',
+      category: 'Engagement',
+      icon: ListOrdered,
+      url: `${baseUrl}/widgets/izleyici-sirasi`
+    },
+    {
+      id: 'geri-sayim',
+      category: 'On-Stream',
+      icon: Timer,
+      url: `${baseUrl}/widgets/geri-sayim`
     },
     {
       id: 'subathon',

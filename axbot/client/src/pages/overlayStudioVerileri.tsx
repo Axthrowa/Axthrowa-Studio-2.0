@@ -150,7 +150,23 @@ export const GALERI_TR: Record<string, { baslik: string; aciklama: string }> = {
   },
   atla: {
     baslik: 'Şarkı Atla',
-    aciklama: 'İzleyici !atla yazınca oy çubuğu çıkar; mod hemen atlar. Kart birkaç saniye görünür.'
+    aciklama: 'İzleyici !skip yazınca oy çubuğu çıkar; mod hemen atlar. Kart birkaç saniye görünür.'
+  },
+  'atla-oyunu': {
+    baslik: 'Atla Oyunu',
+    aciklama: "İzleyiciler !atla yazınca paraşütle düşer, rüzgârla süzülüp hedefe iner; ortaya yakınlığa göre 1–100 puan, skor tablosu ve toplu atlama."
+  },
+  sayac: {
+    baslik: 'Sayaç',
+    aciklama: 'Ölüm, galibiyet gibi bir sohbet sayacını ekranda tutar; !count ölüm ya da !editcounter ölüm 5 ile anında değişir.'
+  },
+  'izleyici-sirasi': {
+    baslik: 'İzleyici Sırası',
+    aciklama: '!joinq ile sıraya girenleri ekranda gösterir; sıra açık/kapalı durumu ve ilk sıradaki vurgulanır.'
+  },
+  'geri-sayim': {
+    baslik: 'Geri Sayım',
+    aciklama: 'Sohbetten !gerisayim 10m Yayın başlıyor ya da !gerisayim 20:30 ile başlayan sayaç; uzatılır, duraklatılır.'
   },
   shoutout: {
     baslik: 'Shoutout (Tavsiye)',
@@ -234,6 +250,10 @@ export const TEST_ADI: Record<string, string> = {
   'alert-box': 'alert-box',
   'emote-combo': 'emote-combo',
   'on-screen-emotes': 'on-screen-emotes',
+  'atla-oyunu': 'atla-oyunu',
+  sayac: 'sayac',
+  'izleyici-sirasi': 'izleyici-sirasi',
+  'geri-sayim': 'geri-sayim',
   'the-cup': 'the-cup',
   'hype-train': 'hype-train',
   subathon: 'subathon',
@@ -304,7 +324,7 @@ export const KATMAN_EMOJISI: Record<string, string> = {
   chat: '💬', alerts: '🔔', goals: '🎯', subathon: '⏳', trivia: '🧠', eventLabels: '🏷️', theCup: '🏆', polls: '📊',
   wheel: '🎡', hypeTrain: '🚂', nowPlaying: '🎵', emoteCombo: '🔥', lyrics: '🎤', king: '👑', jumpScare: '👻',
   socials: '🔗', sponsor: '🤝', activityFeed: '📰', giveaway: '🎁', pinned: '📌', shoutout: '📣', viewerCounter: '👀', rankings: '🥇', loyalty: '🎟️',
-  kappagen: '🎉', endCredits: '🎬', tts: '🗣️', soundBoard: '🎛️', muzikVideo: '📺', wordCloud: '☁️', scoreboard: '🏅'
+  kappagen: '🎉', atlaOyunu: '🪂', sayac: '🔢', izleyiciSirasi: '🧑‍🤝‍🧑', geriSayim: '⏳', endCredits: '🎬', tts: '🗣️', soundBoard: '🎛️', muzikVideo: '📺', wordCloud: '☁️', scoreboard: '🏅'
 };
 
 // Tek URL katmanı → ayar kimliği. Eskiden elle yazılmış 14 katmanla sınırlıydı: sabitlenmiş mesaj, shoutout,

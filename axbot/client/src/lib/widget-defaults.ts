@@ -238,11 +238,60 @@ export const KAPPAGEN_DEFAULTS = {
   burstCopies: 4,
   spin: true,
   shadow: true,
+  /** Hareketli 7TV/BTTV emote'lar durağan karede (WID-4); kalabalık sohbette OBS'i en çok rahatlatan ayar */
+  emoteDondur: false,
   paused: false
 };
 
 export const ATLA_DEFAULTS = {
   durationMs: 5000
+};
+
+/** !atla oyunu (paraşütle hedefe atlama). Sunucu da bu ayarlardan bekleme, puan ve duyuruyu okur. */
+export const ATLA_OYUNU_DEFAULTS = {
+  /** Karakter boyu (px, 1080p ekranda) */
+  boyut: 72,
+  /** Hedef genişliği (px, 1080p) */
+  hedefGenislik: 320,
+  /** Hedef görünümü: havuz, hedef tahtası, platform ya da özel görsel */
+  hedefTema: 'havuz',
+  hedefGorseli: '',
+  /** Zemin çizgisinin alttan uzaklığı (px, 1080p) */
+  zeminPayi: 40,
+  yercekimi: 1,
+  ruzgar: 1,
+  inisHizi: 1,
+  carpisma: true,
+  /** İzleyicinin profil resmini karakter yapar (yoksa varsayılan karakter) */
+  avatarKullan: true,
+  /** Paraşüt rengi; boşsa her izleyiciye kendi rengi */
+  parasutRengi: '',
+  adGoster: true,
+  adRengi: '#ffffff',
+  /** İnen karakter ekranda kaç saniye kalır */
+  inisteKalmaSn: 4,
+  /** Hedefi vuran olunca hedef yer değiştirir */
+  hedefTasi: true,
+  /** Bu kadar saniye kimse atlamazsa hedef gizlenir (0 = hep görünür) */
+  hedefGizleSn: 45,
+  /** Tam isabette (95+) kutlama */
+  tamIsabetKutlama: 'yildiz',
+  sesAcik: true,
+  sesDuzeyi: 0.5,
+  ruzgarGoster: true,
+  skorTablosu: true,
+  skorTablosuKonum: 'sagUst',
+  // --- sunucu (sohbet) ---
+  /** Kişi başı bekleme (sn) */
+  beklemeSn: 30,
+  /** Aynı anda havada en çok karakter (toplu atlamada 4 katı) */
+  enCokHavada: 8,
+  /** Puanın sadakat puanına çarpanı (0 = puan verme) */
+  puanCarpani: 1,
+  /** Iskalayınca da sohbete yaz */
+  iskaDuyur: false,
+  /** Toplu atlamada bekleme süresi (sn) */
+  topluSn: 30
 };
 
 export const EMOTE_COMBO_DEFAULTS = {
@@ -553,6 +602,67 @@ export const TRIVIA_DEFAULTS = {
 
 
 /** İzleyici sayacı — tema, hizalama, ikon ve platform seçimi. */
+/** Sayaç: `!count ölüm` / `!editcounter ölüm 5` ile değişen adlandırılmış sayaç */
+export const SAYAC_DEFAULTS = {
+  sayacAdi: 'ölüm',
+  etiket: 'Ölüm',
+  simge: '💀',
+  hedef: 0,
+  duzen: 'yatay',
+  fontSize: 48,
+  accentColor: '#f43f5e',
+  artisAnimasyonu: true,
+  sifirdaGizle: false,
+  kabuk: '',
+  theme: 'kart',
+  fontFamily: 'Plus Jakarta Sans',
+  textColor: '#ffffff',
+  bgColor: '#0b0d12',
+  bgOpacity: 0.8,
+  radius: 18,
+};
+
+/** İzleyici sırası: `!joinq` kuyruğu */
+export const IZLEYICI_SIRASI_DEFAULTS = {
+  title: 'İzleyici sırası',
+  katilmaKomutu: '!joinq',
+  enCok: 6,
+  platformGoster: true,
+  kapaliysaGizle: false,
+  bosGizle: false,
+  genislik: 340,
+  fontSize: 18,
+  accentColor: '#22d3ee',
+  kabuk: '',
+  theme: 'kart',
+  fontFamily: 'Plus Jakarta Sans',
+  textColor: '#ffffff',
+  bgColor: '#0b0d12',
+  bgOpacity: 0.8,
+  radius: 18,
+};
+
+/** Geri sayım: `!gerisayim 10m Başlık` */
+export const GERI_SAYIM_DEFAULTS = {
+  varsayilanBaslik: '',
+  bitinceMetin: 'Başlıyor!',
+  bitinceGosterSn: 10,
+  bosGizle: true,
+  cubukGoster: true,
+  sifirliDakika: false,
+  sesAcik: true,
+  sesDuzeyi: 0.5,
+  fontSize: 72,
+  accentColor: '#22d3ee',
+  kabuk: '',
+  theme: 'kart',
+  fontFamily: 'Plus Jakarta Sans',
+  textColor: '#ffffff',
+  bgColor: '#0b0d12',
+  bgOpacity: 0.8,
+  radius: 18,
+};
+
 export const VIEWER_COUNTER_DEFAULTS = {
   kabuk: '',
   title: 'İZLEYİCİ',
@@ -1000,6 +1110,10 @@ const WIDGET_AYARLARI: Record<string, Record<string, any>> = {
   'sponsor-banner': SPONSOR_DEFAULTS,
   shoutout: SHOUTOUT_DEFAULTS,
   atla: ATLA_DEFAULTS,
+  'atla-oyunu': ATLA_OYUNU_DEFAULTS,
+  sayac: SAYAC_DEFAULTS,
+  'izleyici-sirasi': IZLEYICI_SIRASI_DEFAULTS,
+  'geri-sayim': GERI_SAYIM_DEFAULTS,
   rankings: RANKINGS_DEFAULTS,
   'hype-train': HYPE_TRAIN_DEFAULTS,
   lyrics: LYRICS_DEFAULTS,

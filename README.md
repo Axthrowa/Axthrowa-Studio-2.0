@@ -2,7 +2,7 @@
 
 Canlı yayıncılar için Windows masaüstü kontrol merkezi. OBS Studio'yu yönetir; sohbeti, müziği, sahneleri, overlay'leri ve yayın botunu tek uygulamada toplar.
 
-Geçerli sürüm: **1.8.0** (içinde AxBoT 1.15.0).
+Geçerli sürüm: **2.0.0** (içinde AxBoT 1.15.0).
 
 > OBS Studio pakete dahil değildir. Yayının kendisi kurulu OBS üzerinden yapılır; Studio OBS ile obs-websocket üzerinden konuşur.
 
@@ -21,7 +21,7 @@ Geçerli sürüm: **1.8.0** (içinde AxBoT 1.15.0).
 - **Arayüz:** React 19, Vite, Tailwind CSS (`src/`)
 - **Masaüstü ve yerel sunucu:** Tauri 2, Rust (`src-tauri/`)
 - **Müzik:** Resonance (`resonance/`)
-- **Bot:** AxBoT, Node.js ve Express ([ayrı depo](https://github.com/Axthrowa/AxBoT-Kick))
+- **Bot:** AxBoT (`axbot/`), Node.js ve Express. Kaynak bu depodadır ve Studio ile birlikte derlenir.
 
 ## Geliştirme
 
@@ -48,7 +48,7 @@ cd src-tauri && cargo test --lib
 
 ### Tam paket
 
-Tam paket botu da içerir. `npm run build:cikti` önce Studio, Resonance ve AxBoT testlerini çalıştırır, sonra derleyip imzalar. AxBoT'un `Desktop\AxBoT` ya da `Desktop\StreamAxT` klasöründe olması beklenir. Başka bir yerdeyse `scripts/axbot-hazirla.mjs` betiğine `--kaynak <klasör>` verin. Sürüm `package.json` içindedir; betik sürümü kendisi yükseltmez ve kurulumu kendiliğinden indirmez.
+Tam paket botu da içerir. `npm run build:cikti` önce Studio, Resonance ve AxBoT testlerini çalıştırır, sonra derleyip imzalar. AxBoT kaynağı depodaki `axbot/` klasörüdür. Betik orada hazır bir çalışma paketi bulamazsa `Desktop\AxBoT` veya `Desktop\StreamAxT` klasörüne bakar. Başka bir yerdeyse `scripts/axbot-hazirla.mjs` betiğine `--kaynak <klasör>` verin. Sürüm `package.json` içindedir; betik sürümü kendisi yükseltmez ve kurulumu kendiliğinden indirmez.
 
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts/build-release-signed.ps1

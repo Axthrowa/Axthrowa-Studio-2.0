@@ -83,7 +83,7 @@ export function UyariSetGalerisi({ onDegisti }: { onDegisti: () => void }) {
               <img src={s.onizleme} alt="" width={56} height={56} />
               <div className="min-w-0">
                 <div className="text-sm font-bold text-white">{s.ad}</div>
-                <div className="text-[11px] text-gray-400">{s.aciklama}</div>
+                <div className="text-xs text-gray-400">{s.aciklama}</div>
               </div>
             </div>
             <div className="flex gap-1.5">

@@ -87,7 +87,7 @@ export function YaziTipiSecici({ value, onChange, secenekler }: { value: string;
           }}
         />
       )}
-      {hata && <p className="text-[11px] text-red-300">{hata}</p>}
+      {hata && <p className="text-xs text-red-300">{hata}</p>}
     </div>
   );
 }

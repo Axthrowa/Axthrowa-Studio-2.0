@@ -80,7 +80,7 @@ function GecisKarti({ g, secili, onSec }: { g: Gecis; secili: boolean; onSec: ()
         <div className="p-2.5">
           <span className="block text-sm font-bold text-white">{g.ad}</span>
           <span className="mt-0.5 block text-ui-2 leading-snug text-white/60">{g.aciklama}</span>
-          <span className="mt-1 block font-mono text-ui-2 text-white/45">
+          <span className="mt-1 block font-mono text-ui-2 text-white/50">
             {(g.sureMs / 1000).toFixed(2)} sn · geçiş noktası {g.noktaMs} ms
           </span>
         </div>
